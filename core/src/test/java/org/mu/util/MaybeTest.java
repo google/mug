@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import org.junit.Test;
@@ -35,23 +36,27 @@ public class MaybeTest {
   @Test public void testMap_success() {
     Maybe<Integer, MyException> maybe = Maybe.of(1);
     assertThat(maybe.map(Object::toString)).isEqualTo(Maybe.of("1"));
+    assertThrows(NullPointerException.class, () -> maybe.map(null));
   }
 
   @Test public void testMap_failure() {
     MyException exception = new MyException("test");
     Maybe<?, MyException> maybe = Maybe.except(exception).map(Object::toString);
     assertSame(exception, assertThrows(MyException.class, maybe::get));
+    assertThrows(NullPointerException.class, () -> maybe.map(null));
   }
 
   @Test public void testFlatMap_success() {
     Maybe<Integer, MyException> maybe = Maybe.of(1);
     assertThat(maybe.flatMap(o -> Maybe.of(o.toString()))).isEqualTo(Maybe.of("1"));
+    assertThrows(NullPointerException.class, () -> maybe.flatMap(null));
   }
 
   @Test public void testFlatMap_failure() {
     MyException exception = new MyException("test");
     Maybe<?, MyException> maybe = Maybe.except(exception).flatMap(o -> Maybe.of(o.toString()));
     assertSame(exception, assertThrows(MyException.class, maybe::get));
+    assertThrows(NullPointerException.class, () -> maybe.flatMap(null));
   }
 
   @Test public void testIsPresent() {
@@ -63,17 +68,36 @@ public class MaybeTest {
     AtomicInteger succeeded = new AtomicInteger();
     Maybe.of(100).ifPresent(i -> succeeded.set(i));
     assertThat(succeeded.get()).isEqualTo(100);
+    assertThrows(NullPointerException.class, () -> Maybe.of(0).ifPresent(null));
   }
 
   @Test public void testIfPresent_failure() {
     AtomicBoolean succeeded = new AtomicBoolean();
     Maybe.except(new Exception()).ifPresent(i -> succeeded.set(true));
     assertThat(succeeded.get()).isFalse();
+    assertThrows(NullPointerException.class, () -> Maybe.except(new Exception()).ifPresent(null));
   }
 
   @Test public void testOrElse() {
     assertThat(Maybe.of("good").orElse(Throwable::getMessage)).isEqualTo("good");
     assertThat(Maybe.except(new Exception("bad")).orElse(Throwable::getMessage)).isEqualTo("bad");
+    assertThrows(NullPointerException.class, () -> Maybe.of("good").orElse(null));
+    assertThrows(NullPointerException.class, () -> Maybe.except(new Exception()).orElse(null));
+  }
+
+  @Test public void testCatching_success() {
+    AtomicReference<Throwable> failed = new AtomicReference<>();
+    Maybe.of(100).catching(e -> {failed.set(e);});
+    assertThat(failed.get()).isNull();
+    assertThrows(NullPointerException.class, () -> Maybe.of(0).catching(null));
+  }
+
+  @Test public void testCatching_failure() {
+    MyException exception = new MyException("test");
+    AtomicReference<Throwable> failed = new AtomicReference<>();
+    Maybe.except(exception).catching(e -> {failed.set(e);});
+    assertThat(failed.get()).isSameAs(exception);
+    assertThrows(NullPointerException.class, () -> Maybe.except(exception).catching(null));
   }
 
   @Test public void testEqualsAndHashCode() {

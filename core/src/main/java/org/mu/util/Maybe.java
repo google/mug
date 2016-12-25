@@ -116,6 +116,7 @@ public abstract class Maybe<T, E extends Throwable> {
    * exceptional results.
    */
   public final Stream<T> catching(Consumer<? super E> handler) {
+    requireNonNull(handler);
     return map(Stream::of).orElse(e -> {
       handler.accept(e);
       return Stream.empty();
@@ -328,6 +329,7 @@ public abstract class Maybe<T, E extends Throwable> {
     }
 
     @Override public T orElse(Function<? super E, ? extends T> f) {
+      requireNonNull(f);
       return value;
     }
 
@@ -356,10 +358,12 @@ public abstract class Maybe<T, E extends Throwable> {
     }
 
     @Override public <T2> Maybe<T2, E> map(Function<? super T, ? extends T2> f) {
+      requireNonNull(f);
       return except(exception);
     }
 
     @Override public <T2> Maybe<T2, E> flatMap(Function<? super T, Maybe<T2, E>> f) {
+      requireNonNull(f);
       return except(exception);
     }
 
@@ -371,7 +375,9 @@ public abstract class Maybe<T, E extends Throwable> {
       return false;
     }
 
-    @Override public void ifPresent(Consumer<? super T> consumer) {}
+    @Override public void ifPresent(Consumer<? super T> consumer) {
+      requireNonNull(consumer);
+    }
 
     @Override public T orElse(Function<? super E, ? extends T> f) {
       return f.apply(exception);
