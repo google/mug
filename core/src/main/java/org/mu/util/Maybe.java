@@ -144,6 +144,7 @@ public abstract class Maybe<T, E extends Throwable> {
    * as not to accidentally swallow exceptions.
    */
   public static <T, E extends Throwable> Predicate<Maybe<T, E>> byValue(Predicate<T> condition) {
+    requireNonNull(condition);
     return maybe -> maybe.map(condition::test).orElse(e -> true);
   }
 
@@ -154,6 +155,7 @@ public abstract class Maybe<T, E extends Throwable> {
    */
   public static <T, E extends Throwable> Supplier<Maybe<T, E>> wrap(
       CheckedSupplier<T, E> supplier) {
+    requireNonNull(supplier);
     return () -> getChecked(supplier);
   }
 
@@ -164,6 +166,7 @@ public abstract class Maybe<T, E extends Throwable> {
    */
   public static <F, T, E extends Throwable> Function<F, Maybe<T, E>> wrap(
       CheckedFunction<F, T, E> function) {
+    requireNonNull(function);
     return from -> getChecked(()->function.apply(from));
   }
 
@@ -174,6 +177,7 @@ public abstract class Maybe<T, E extends Throwable> {
    */
   public static <A, B, T, E extends Throwable> BiFunction<A, B, Maybe<T, E>> wrap(
       CheckedBiFunction<A, B, T, E> function) {
+    requireNonNull(function);
     return (a, b) -> getChecked(()->function.apply(a, b));
   }
 
@@ -200,6 +204,8 @@ public abstract class Maybe<T, E extends Throwable> {
    */
   public static <T, E extends Throwable> Supplier<Maybe<T, E>> wrap(
       CheckedSupplier<T, E> supplier, Class<E> exceptionType) {
+    requireNonNull(supplier);
+    requireNonNull(exceptionType);
     return () -> get(supplier, exceptionType);
   }
 
@@ -226,6 +232,8 @@ public abstract class Maybe<T, E extends Throwable> {
    */
   public static <F, T, E extends Throwable> Function<F, Maybe<T, E>> wrap(
       CheckedFunction<F, T, E> function, Class<E> exceptionType) {
+    requireNonNull(function);
+    requireNonNull(exceptionType);
     return from -> get(() -> function.apply(from), exceptionType);
   }
 
@@ -252,6 +260,8 @@ public abstract class Maybe<T, E extends Throwable> {
    */
   public static <A, B, T, E extends Throwable> BiFunction<A, B, Maybe<T, E>> wrap(
       CheckedBiFunction<A, B, T, E> function, Class<E> exceptionType) {
+    requireNonNull(function);
+    requireNonNull(exceptionType);
     return (a, b) -> get(() -> function.apply(a, b), exceptionType);
   }
 

@@ -13,6 +13,9 @@ import java.util.stream.Stream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.mu.functional.CheckedBiFunction;
+import org.mu.functional.CheckedFunction;
+import org.mu.functional.CheckedSupplier;
 
 import com.google.common.truth.IterableSubject;
 
@@ -91,6 +94,26 @@ public class MaybeTest {
   @Test public void testNulls() {
     assertThrows(NullPointerException.class, () -> Maybe.of(null));
     assertThrows(NullPointerException.class, () -> Maybe.except(null));
+    assertThrows(NullPointerException.class, () -> Maybe.wrap((CheckedSupplier<?, ?>) null));
+    assertThrows(
+        NullPointerException.class,
+        () -> Maybe.wrap((CheckedSupplier<?, RuntimeException>) null, RuntimeException.class));
+    assertThrows(
+        NullPointerException.class, () -> Maybe.wrap(() -> justReturn("good"), null));
+    assertThrows(NullPointerException.class, () -> Maybe.wrap((CheckedFunction<?, ?, ?>) null));
+    assertThrows(
+        NullPointerException.class,
+        () -> Maybe.wrap((CheckedFunction<?, ?, RuntimeException>) null, RuntimeException.class));
+    assertThrows(NullPointerException.class, () -> Maybe.wrap(this::justReturn, null));
+    assertThrows(
+        NullPointerException.class, () -> Maybe.wrap((CheckedBiFunction<?, ?, ?, ?>) null));
+    assertThrows(
+        NullPointerException.class,
+        () -> Maybe.wrap((String a, String b) -> justReturn(a + b), null));
+    assertThrows(
+        NullPointerException.class,
+        () -> Maybe.wrap((CheckedBiFunction<?, ?, ?, Exception>) null, Exception.class));
+    assertThrows(NullPointerException.class, () -> Maybe.byValue(null));
   }
 
   @Test public void testStream_success() throws MyException {
