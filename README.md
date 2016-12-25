@@ -1,5 +1,5 @@
 # μ
-Some Extra Utilities with Java Lambda.
+Some Extra Utilities with Java Lambda ([javadoc](http://mu.github.io/mu/apidocs/)).
 
 ## Maybe
 
