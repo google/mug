@@ -25,7 +25,7 @@ And what if you want to log and swallow?
 
 ```java
 private <T> Stream<T> logAndSwallow(Maybe<T> maybe) {
-  return maybe.catching(e -> logger.atWarning().log(e));
+  return maybe.catching(logger::warn);
 }
 
 List<String> getPendingJobNames() {

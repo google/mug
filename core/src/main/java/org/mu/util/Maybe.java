@@ -63,7 +63,7 @@ import org.mu.function.CheckedSupplier;
  *
  * <pre>{@code
  *   private <T> Stream<T> logAndSwallow(Maybe<T> maybe) {
- *     return maybe.catching(e -> logger.atWarning().log(e));
+ *     return maybe.catching(logger::warn);
  *   }
  *
  *   List<String> getPendingJobNames() {
