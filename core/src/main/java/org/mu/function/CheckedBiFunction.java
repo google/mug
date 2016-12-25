@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package org.mu.functional;
+package org.mu.function;
 
-/** A supplier that can throw checked exceptions. */
+/** A binary function that can throw checked exceptions. */
 @FunctionalInterface
-public interface CheckedSupplier<T, E extends Throwable> {
-  T get() throws E;
+public interface CheckedBiFunction<A, B, T, E extends Throwable> {
+  T apply(A a, B b) throws E;
 }

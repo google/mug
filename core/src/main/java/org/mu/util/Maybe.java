@@ -27,9 +27,9 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.mu.functional.CheckedBiFunction;
-import org.mu.functional.CheckedFunction;
-import org.mu.functional.CheckedSupplier;
+import org.mu.function.CheckedBiFunction;
+import org.mu.function.CheckedFunction;
+import org.mu.function.CheckedSupplier;
 
 /**
  * Class that wraps checked exceptions and tunnel them through stream operations.

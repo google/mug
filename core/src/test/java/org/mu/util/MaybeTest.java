@@ -13,9 +13,9 @@ import java.util.stream.Stream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.mu.functional.CheckedBiFunction;
-import org.mu.functional.CheckedFunction;
-import org.mu.functional.CheckedSupplier;
+import org.mu.function.CheckedBiFunction;
+import org.mu.function.CheckedFunction;
+import org.mu.function.CheckedSupplier;
 
 import com.google.common.truth.IterableSubject;
 
