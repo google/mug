@@ -6,7 +6,7 @@ Some Extra Utilities with Java Lambda.
 Represents a value that may have failed with an exception.
 Tunnels checked exceptions through stream, no cheating.
 
-For a stream operation that would have looked like this if checked exception wasn't in the way:
+For a stream operation that would have looked like this if checked exception weren't in the way:
 
 ```java
 return files.stream()
