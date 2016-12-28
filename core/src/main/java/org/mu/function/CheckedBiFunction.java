@@ -22,7 +22,10 @@ import static java.util.Objects.requireNonNull;
 public interface CheckedBiFunction<A, B, T, E extends Throwable> {
   T apply(A a, B b) throws E;
 
-  /** Returns a new {@code CheckedBiFunction} that maps the return value using {@code mapper}. */
+  /**
+   * Returns a new {@code CheckedBiFunction} that maps the return value using {@code mapper}.
+   * For example: {@code ((a, b) -> a + b).map(Object::toString).apply(1, 2) => "3"}.
+   */
   default <R> CheckedBiFunction<A, B, R, E> map(
       CheckedFunction<? super T, ? extends R, ? extends E> mapper) {
     requireNonNull(mapper);

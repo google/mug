@@ -22,7 +22,10 @@ import static java.util.Objects.requireNonNull;
 public interface CheckedFunction<F, T, E extends Throwable> {
   T apply(F from) throws E;
 
-  /** Returns a new {@code CheckedFunction} that maps the return value using {@code mapper}. */
+  /**
+   * Returns a new {@code CheckedFunction} that maps the return value using {@code mapper}.
+   * For example: {@code (x -> x).map(Object::toString).apply(1) => "1"}.
+   */
   default <R> CheckedFunction<F, R, E> map(
       CheckedFunction<? super T, ? extends R, ? extends E> mapper) {
     requireNonNull(mapper);

@@ -49,7 +49,7 @@ public class Retryer {
 
   /**
    * Invokes and possibly retries {@code supplier} upon exceptions, according to the retry
-   * strategies specified with {@link Builder#upon}.
+   * strategies specified with {@link Builder#upon upon()}.
    * 
    * <p>This method blocks while waiting to retry. If interrupted, retry is canceled.
    *
@@ -75,7 +75,7 @@ public class Retryer {
 
   /**
    * Invokes and possibly retries {@code supplier} upon exceptions, according to the retry
-   * strategies specified with {@link Builder#upon}.
+   * strategies specified with {@link Builder#upon upon()}.
    *
    * <p>The first invocation is done in the current thread. Unchecked exceptions thrown by
    * {@code supplier} directly are propagated unless explicitly configured to retry.
@@ -95,7 +95,7 @@ public class Retryer {
 
   /**
    * Invokes and possibly retries {@code asyncSupplier} upon exceptions, according to the retry
-   * strategies specified with {@link Builder#upon}.
+   * strategies specified with  {@link Builder#upon upon()}.
    *
    * <p>The first invocation is done in the current thread. Unchecked exceptions thrown by
    * {@code asyncSupplier} directly are propagated unless explicitly configured to retry.
@@ -152,7 +152,7 @@ public class Retryer {
 
   /**
    * Returns an immutable {@code List} of durations with {@code size}. The first duration
-   * (if {@code size > 0}) is {code firstDelay} and the following durations are exponentially
+   * (if {@code size > 0}) is {@code firstDelay} and the following durations are exponentially
    * multiplied using {@code multiplier}.
    */
   public static List<Duration> exponentialBackoff(
@@ -191,8 +191,8 @@ public class Retryer {
   }
 
   /**
-   * Similar to {@link #timed}, this method wraps {@code list} to make it empty when
-   * {@code condition} is false.
+   * Similar to {@link #timed timed()}, this method wraps {@code list} to make it empty when
+   * {@code condition} becomes false.
    */
   public static <T> List<T> guarded(List<T> list, BooleanSupplier condition) {
     requireNonNull(list);
