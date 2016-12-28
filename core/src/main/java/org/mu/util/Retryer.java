@@ -306,12 +306,12 @@ public class Retryer {
       CheckedSupplier<? extends CompletionStage<T>, E> supplier, CompletableFuture<T> result) {
     Maybe<ExceptionPlan.Execution<Delay>, ?> maybeRetry = plan.execute(e);
     maybeRetry.ifPresent(execution -> {
+      execution.strategy().beforeDelay(e);
       Failable retry = () -> {
         execution.strategy().afterDelay(e);
         new Retryer(execution.remainingExceptionPlan())
             .invokeWithRetry(supplier, retryExecutor, result);
       };
-      execution.strategy().beforeDelay(e);
       retryExecutor.schedule(
           () -> retry.run(result::completeExceptionally),
           execution.strategy().duration().toMillis(), TimeUnit.MILLISECONDS);
