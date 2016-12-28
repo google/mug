@@ -49,8 +49,25 @@ Retryer is a helper that makes it easier to retry an operation with configurable
 For example:
 
 ```java
-new Retry.Builder()
-    .upon(IOException.class, Retry.exponentialBackoff(ofMillis(1), 2, 3))
-    .build()
-    .retry(this::closeAccount, executor);
+CompletionStage<Account> future = new Retryer()
+    .upon(IOException.class, Delay.exponentialBackoff(ofMillis(1), 2, 3))
+    .retry(this::getAccount, executor);
+```
+
+In order to customize retry events such as to log differently, client code can create a subclass of Delay:
+
+```java
+class CustomDelay extends Delay {
+  CustomDelay(Duration duration) {
+    super(duration);
+  }
+
+  @Override public void beforeDelay(Throwable e) {
+    // log
+  }
+
+  @Override public void afterDelay(Throwable e) {
+    // log
+  }
+}
 ```
