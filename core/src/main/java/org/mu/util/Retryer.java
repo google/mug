@@ -148,7 +148,7 @@ public class Retryer {
     return future;
   }
 
-  /** Represents a single delay interval between retries. */
+  /** Represents a single delay interval between attempts. */
   public static class Delay implements Comparable<Delay> {
     private final Duration duration;
 
