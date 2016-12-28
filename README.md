@@ -46,7 +46,7 @@ Alternatively, if the asynchronous code returns `Maybe<Foo, MyException>` instea
 
 ## Retryer
 
-Retryer is a helper that makes it easier to retry an operation with configurable backoffs. Backoffs are eitherdone synchronously (through `Thread.sleep()`) or asynchronously (using a `ScheduledExecutorService`).
+Retryer is a helper that makes it easier to retry an operation with configurable backoffs. Backoffs are either done synchronously (through `Thread.sleep()`) or asynchronously (using a `ScheduledExecutorService`).
 
 For example:
 
