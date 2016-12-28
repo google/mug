@@ -1,5 +1,5 @@
 # μ
-Some Extra Utilities with Java Lambda ([javadoc](http://fluentfuture.github.io/mu/apidocs/)).
+Extra Java 8 Utilities ([javadoc](http://fluentfuture.github.io/mu/apidocs/)).
 
 This library has 0 dependencies.
 
