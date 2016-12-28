@@ -226,7 +226,7 @@ public class Retryer {
 
     /** Called if {@code exception} will be retried after the delay. */
     public void beforeDelay(Throwable exception) {
-      logger.info("Retrying for " + exception.getClass() + " after " + duration);
+      logger.info("Will retry for " + exception.getClass() + " after " + duration);
       
     }
 
