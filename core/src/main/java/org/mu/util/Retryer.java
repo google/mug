@@ -64,7 +64,7 @@ public class Retryer {
    * Returns a new {@code Retryer} that uses {@code delays} when an exception is instance of
    * {@code exceptionType}.
    */
-  public <E extends Throwable> Retryer upon(Class<E> exceptionType, List<Delay> delays) {
+  public Retryer upon(Class<? extends Throwable> exceptionType, List<Delay> delays) {
     return new Retryer(plan.upon(exceptionType, delays));
   }
 
