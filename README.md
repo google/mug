@@ -42,7 +42,7 @@ List<String> getPendingJobNames() {
 
 In asynchronous programming, checked exceptions are wrapped inside ExecutionException. By the time the caller catches it, the static type of the causal exception is already lost. The caller code usually resorts to `instanceof MyException`.
 
-Alternatively, if the asynchronous code returns `Maybe<Foo, MyException>` instead, then upon getting a `Future<Maybe<Foo, MyException>>`, the exception can handled static type safely using `maybe.catching()` or `maybe.orElse()`.
+Alternatively, if the asynchronous code returns `Maybe<Foo, MyException>` instead, then upon getting a `Future<Maybe<Foo, MyException>>`, the exception can be handled type safely using `maybe.catching()` or `maybe.orElse()`.
 
 ## Retryer
 
