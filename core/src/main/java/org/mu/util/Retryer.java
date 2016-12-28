@@ -301,9 +301,9 @@ public class Retryer {
     }
   }
 
-  private <E extends Throwable, T> void scheduleRetry(
+  private <T> void scheduleRetry(
       Throwable e, ScheduledExecutorService retryExecutor,
-      CheckedSupplier<? extends CompletionStage<T>, E> supplier, CompletableFuture<T> result) {
+      CheckedSupplier<? extends CompletionStage<T>, ?> supplier, CompletableFuture<T> result) {
     Maybe<ExceptionPlan.Execution<Delay>, ?> maybeRetry = plan.execute(e);
     maybeRetry.ifPresent(execution -> {
       execution.strategy().beforeDelay(e);
