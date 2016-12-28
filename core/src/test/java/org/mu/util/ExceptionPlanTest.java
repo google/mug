@@ -12,39 +12,37 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class ExceptionPlanTest {
   @Test public void emptyPlan_errorPropagation() {
-    ExceptionPlan<String> plan = new ExceptionPlan.Builder<String>().build();
+    ExceptionPlan<String> plan = new ExceptionPlan<>();
     MyError error = new MyError();
     Maybe<ExceptionPlan.Execution<String>, MyError> maybe = plan.execute(error);
     assertSame(error, assertThrows(MyError.class, maybe::get));
   }
 
   @Test public void emptyPlan_uncheckedPropagation() {
-    ExceptionPlan<String> plan = new ExceptionPlan.Builder<String>().build();
+    ExceptionPlan<String> plan = new ExceptionPlan<>();
     RuntimeException exception = new RuntimeException("test");
     Maybe<ExceptionPlan.Execution<String>, RuntimeException> maybe = plan.execute(exception);
     assertSame(exception, assertThrows(RuntimeException.class, maybe::get));
   }
 
   @Test public void emptyPlan_checkedPropagation() {
-    ExceptionPlan<String> plan = new ExceptionPlan.Builder<String>().build();
+    ExceptionPlan<String> plan = new ExceptionPlan<>();
     Exception exception = new Exception("test");
     Maybe<ExceptionPlan.Execution<String>, Exception> maybe = plan.execute(exception);
     assertSame(exception, assertThrows(Exception.class, maybe::get));
   }
 
   @Test public void planWithZeroStrategies() {
-    ExceptionPlan<String> plan = new ExceptionPlan.Builder<String>()
-        .upon(Exception.class, asList())
-        .build();
+    ExceptionPlan<String> plan = new ExceptionPlan<String>()
+        .upon(Exception.class, asList());
     Exception exception = new Exception("test");
     Maybe<ExceptionPlan.Execution<String>, Exception> maybe = plan.execute(exception);
     assertSame(exception, assertThrows(Exception.class, maybe::get));
   }
 
   @Test public void planWithStrategies() throws Exception {
-    ExceptionPlan<String> plan = new ExceptionPlan.Builder<String>()
-        .upon(Exception.class, asList("retry", "report"))
-        .build();
+    ExceptionPlan<String> plan = new ExceptionPlan<String>()
+        .upon(Exception.class, asList("retry", "report"));
     Exception exception = new Exception("test");
     ExceptionPlan.Execution<String> execution = plan.execute(exception).get();
     assertThat(execution.strategy()).isEqualTo("retry");
@@ -56,10 +54,9 @@ public class ExceptionPlanTest {
   }
 
   @Test public void planWithPartiallyOverlappingRules() throws Exception {
-    ExceptionPlan<String> plan = new ExceptionPlan.Builder<String>()
+    ExceptionPlan<String> plan = new ExceptionPlan<String>()
         .upon(MyException.class, asList("report"))
-        .upon(Exception.class, asList("report", "report"))
-        .build();
+        .upon(Exception.class, asList("report", "report"));
     MyException myException = new MyException();
     ExceptionPlan.Execution<String> execution = plan.execute(myException).get();
     assertThat(execution.strategy()).isEqualTo("report");
@@ -70,10 +67,9 @@ public class ExceptionPlanTest {
   }
 
   @Test public void withTypedPredicate() throws Exception {
-    ExceptionPlan<String> plan = new ExceptionPlan.Builder<String>()
+    ExceptionPlan<String> plan = new ExceptionPlan<String>()
         .upon(Exception.class, e -> "recoverable".equals(e.getMessage()), asList("recover"))
-        .upon(Exception.class, asList("report"))
-        .build();
+        .upon(Exception.class, asList("report"));
     MyError error = new MyError();
     assertSame(error, assertThrows(MyError.class, () -> plan.execute(error).get()));
     
@@ -84,10 +80,9 @@ public class ExceptionPlanTest {
   }
 
   @Test public void withPredicate() throws Exception {
-    ExceptionPlan<String> plan = new ExceptionPlan.Builder<String>()
+    ExceptionPlan<String> plan = new ExceptionPlan<String>()
         .upon(e -> "recoverable".equals(e.getMessage()), asList("recover"))
-        .upon(Exception.class, asList("report"))
-        .build();
+        .upon(Exception.class, asList("report"));
     MyError error = new MyError();
     assertSame(error, assertThrows(MyError.class, () -> plan.execute(error).get()));
     ExceptionPlan.Execution<String> execution = plan.execute(new Exception("recoverable")).get();
