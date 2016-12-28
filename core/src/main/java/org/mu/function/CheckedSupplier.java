@@ -15,8 +15,20 @@
  *****************************************************************************/
 package org.mu.function;
 
+import static java.util.Objects.requireNonNull;
+
 /** A supplier that can throw checked exceptions. */
 @FunctionalInterface
 public interface CheckedSupplier<T, E extends Throwable> {
   T get() throws E;
+
+  /**
+   * Returns a new {@code CheckedSupplier} that maps the return value using {@code mapper}.
+   * For example: {@code (x -> 1).map(Object::toString).get() => "1"}.
+   */
+  default <R> CheckedSupplier<R, E> map(
+      CheckedFunction<? super T, ? extends R, ? extends E> mapper) {
+    requireNonNull(mapper);
+    return () -> mapper.apply(get());
+  }
 }
