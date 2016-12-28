@@ -1,6 +1,8 @@
 # μ
 Some Extra Utilities with Java Lambda ([javadoc](http://fluentfuture.github.io/mu/apidocs/)).
 
+This library has 0 dependencies.
+
 ## Maybe
 
 Represents a value that may have failed with an exception.
