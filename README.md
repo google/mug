@@ -4,7 +4,7 @@ Some Extra Utilities with Java Lambda ([javadoc](http://fluentfuture.github.io/m
 ## Maybe
 
 Represents a value that may have failed with an exception.
-Tunnels checked exceptions through stream, no cheating.
+Tunnels checked exceptions through streams or futures.
 
 For a stream operation that would have looked like this if checked exception weren't in the way:
 
@@ -36,4 +36,21 @@ List<String> getPendingJobNames() {
       .map(Job::getName)
       .collect(Collectors.toList());
 }
+```
+
+In asynchronous programming, checked exceptions are wrapped inside ExecutionException. By the time the caller catches it, the static type of the causal exception is already lost. The caller code usually resorts to `instanceof MyException`.
+
+Alternatively, if the asynchronous code returns `Maybe<Foo, MyException>` instead, then upon getting a `Future<Maybe<Foo, MyException>>`, the exception can handled static type safely using `maybe.catching()` or `maybe.orElse()`.
+
+## Retryer
+
+Retryer is a helper that makes it easier to retry an operation with configurable backoffs. Backoffs are eitherdone synchronously (through `Thread.sleep()`) or asynchronously (using a `ScheduledExecutorService`).
+
+For example:
+
+```java
+new Retry.Builder()
+    .upon(IOException.class, Retry.exponentialBackoff(ofMillis(1), 2, 3))
+    .build()
+    .retry(this::closeAccount, executor);
 ```

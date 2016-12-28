@@ -18,6 +18,7 @@ package org.mu.util;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -36,13 +37,57 @@ import java.util.function.Predicate;
  *
  * <p>For {@link Retryer}, {@code T} can be {@link java.time.Duration} of delay between retries.
  * But other users can potentially use any strategy type.
+ * 
+ * <p>Strategies specified through {@link #upon} are picked with
+ * respect to the order they are added. Think of them as a bunch of
+ * {@code if ... else if ...}. That is, <em>always specify the more specific exception first</em>.
+ * The following code is wrong because the {@code IOException} strategies will always be
+ * overshadowed by the {@code Exception} strategies.
+ * <pre>{@code
+ * ExceptionPlan<Duration> = new ExceptionPlan<Duration>()
+ *     .upon(Exception.class, exponentialBackoff(...))
+ *     .upon(IOException.class, uniformDelay(...));
+ * }</pre>
  */
 final class ExceptionPlan<T> {
 
   private final List<Rule<T>> rules;
   
+  public ExceptionPlan() {
+    this.rules = Collections.emptyList();
+  }
+  
   private ExceptionPlan(List<Rule<T>> rules) {
     this.rules = rules;
+  }
+
+  /**
+   * Returns a new {@link ExceptionPlan} that uses {@code strategies} when an exception satisfies
+   * {@code condition}.
+   */
+  public ExceptionPlan<T> upon(
+      Predicate<? super Throwable> condition, List<? extends T> strategies) {
+    List<Rule<T>> newRules = new ArrayList<>(rules);
+    newRules.add(new Rule<T>(condition, strategies));
+    return new ExceptionPlan<>(newRules);
+  }
+
+  /**
+   * Returns a new {@link ExceptionPlan} that uses {@code strategies} when an exception is
+   * instance of {@code exceptionType}.
+   */
+  public <E extends Throwable> ExceptionPlan<T> upon(
+      Class<E> exceptionType, List<? extends T> strategies) {
+    return upon(exceptionType::isInstance, strategies);
+  }
+
+  /**
+   * Returns a new {@link ExceptionPlan} that uses {@code strategies} when an exception is instance
+   * of {@code exceptionType} and satisfies {@code condition}.
+   */
+  public <E extends Throwable> ExceptionPlan<T> upon(
+      Class<E> exceptionType, Predicate<? super E> condition, List<? extends T> strategies) {
+    return upon(e -> cast(e, exceptionType).map(condition::test).orElse(false) , strategies);
   }
 
   /**
@@ -91,50 +136,6 @@ final class ExceptionPlan<T> {
     /** Returns the exception plan for remaining exceptions. */
     public ExceptionPlan<T> remainingExceptionPlan() {
       return exceptionPlan;
-    }
-  }
-
-  /**
-   * Builds an {@link ExceptionPlan}. Strategies specified through {@link #upon} are picked with
-   * respect to the order they are added to the builder. Think of them as a bunch of
-   * {@code if ... else if ...}. That is, <em>always specify the more specific exception first</em>.
-   * The following code is wrong because the {@code IOException} strategies will always be
-   * overshadowed by the {@code Exception} strategies.
-   * <pre>{@code
-   * new ExceptionPlan.Builder<Duration>()
-   *     .upon(Exception.class, exponentialBackoff(...))
-   *     .upon(IOException.class, uniformDelay(...))
-   *     .build();
-   * }</pre>
-   */
-  public static final class Builder<T> {
-    private final List<Rule<T>> rules = new ArrayList<>();
-
-    /** Use {@code strategies} when an exception satisfies {@code condition}. */
-    public Builder<T> upon(
-        Predicate<? super Throwable> condition, List<? extends T> strategies) {
-      rules.add(new Rule<T>(condition, strategies));
-      return this;
-    }
-
-    /** Use {@code strategies} when an exception is instance of {@code exceptionType}. */
-    public <E extends Throwable> Builder<T> upon(
-        Class<E> exceptionType, List<? extends T> strategies) {
-      return upon(exceptionType::isInstance, strategies);
-    }
-
-    /**
-     * Use {@code strategies} when an exception is instance of {@code exceptionType} and satisfies
-     * {@code condition}.
-     */
-    public <E extends Throwable> Builder<T> upon(
-        Class<E> exceptionType, Predicate<? super E> condition, List<? extends T> strategies) {
-      return upon(e -> cast(e, exceptionType).map(condition::test).orElse(false) , strategies);
-    }
- 
-    /** Builds the {@code ExecutionPlan}. */
-    public ExceptionPlan<T> build() {
-      return new ExceptionPlan<T>(new ArrayList<>(rules));
     }
   }
 

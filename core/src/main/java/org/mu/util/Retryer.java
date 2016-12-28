@@ -41,15 +41,45 @@ public class Retryer {
 
   private static final Logger logger = Logger.getLogger(Retryer.class.getName());
 
-  private final ExceptionPlan<Duration> plan;
+  private final ExceptionPlan<Delay> plan;
 
-  private Retryer(ExceptionPlan<Duration> plan) {
+  /** Constructs an empty {@code Retryer}. */
+  public Retryer() {
+    this(new ExceptionPlan<>());
+  }
+
+  private Retryer(ExceptionPlan<Delay> plan) {
     this.plan = requireNonNull(plan);
   }
 
   /**
+   * Returns a new {@code Retryer} that uses {@code delays} when an exception satisfies
+   * {@code condition}.
+   */
+  public Retryer upon(Predicate<? super Throwable> condition, List<Delay> delays) {
+    return new Retryer(plan.upon(condition, delays));
+  }
+
+  /**
+   * Returns a new {@code Retryer} that uses {@code delays} when an exception is instance of
+   * {@code exceptionType}.
+   */
+  public <E extends Throwable> Retryer upon(Class<E> exceptionType, List<Delay> delays) {
+    return new Retryer(plan.upon(exceptionType, delays));
+  }
+
+  /**
+   * Returns a new {@code Retryer} that uses {@code delays} when an exception is instance of
+   * {@code exceptionType} and satisfies {@code condition}.
+   */
+  public <E extends Throwable> Retryer upon(
+      Class<E> exceptionType, Predicate<? super E> condition, List<Delay> delays) {
+    return new Retryer(plan.upon(exceptionType, condition, delays));
+  }
+
+  /**
    * Invokes and possibly retries {@code supplier} upon exceptions, according to the retry
-   * strategies specified with {@link Builder#upon upon()}.
+   * strategies specified with {@link #upon upon()}.
    * 
    * <p>This method blocks while waiting to retry. If interrupted, retry is canceled.
    *
@@ -58,7 +88,7 @@ public class Retryer {
    */
   public <T, E extends Throwable> T retryBlockingly(CheckedSupplier<T, E> supplier) throws E {
     requireNonNull(supplier);
-    for (ExceptionPlan<Duration> currentPlan = plan; ;) {
+    for (ExceptionPlan<Delay> currentPlan = plan; ;) {
       try {
         return supplier.get();
       } catch (RuntimeException e) {
@@ -75,7 +105,7 @@ public class Retryer {
 
   /**
    * Invokes and possibly retries {@code supplier} upon exceptions, according to the retry
-   * strategies specified with {@link Builder#upon upon()}.
+   * strategies specified with {@link #upon upon()}.
    *
    * <p>The first invocation is done in the current thread. Unchecked exceptions thrown by
    * {@code supplier} directly are propagated unless explicitly configured to retry.
@@ -95,7 +125,7 @@ public class Retryer {
 
   /**
    * Invokes and possibly retries {@code asyncSupplier} upon exceptions, according to the retry
-   * strategies specified with  {@link Builder#upon upon()}.
+   * strategies specified with {@link #upon upon()}.
    *
    * <p>The first invocation is done in the current thread. Unchecked exceptions thrown by
    * {@code asyncSupplier} directly are propagated unless explicitly configured to retry.
@@ -118,108 +148,125 @@ public class Retryer {
     return future;
   }
 
-  /** Builds a {@link Retryer}.*/
-  public static final class Builder {
-    private final ExceptionPlan.Builder<Duration> planBuilder = new ExceptionPlan.Builder<>();
+  /** Represents a single delay interval between retries. */
+  public static class Delay implements Comparable<Delay> {
+    private final Duration duration;
 
-    /** Use {@code delays} when an exception satisfies {@code condition}. */
-    public Builder upon(Predicate<? super Throwable> condition, List<Duration> delays) {
-      planBuilder.upon(condition, delays);
-      return this;
+    public Delay(Duration duration) {
+      this.duration = requireNonNull(duration);
     }
 
-    /** Use {@code delays} when an exception is instance of {@code exceptionType}. */
-    public <E extends Throwable> Builder upon(Class<E> exceptionType, List<Duration> delays) {
-      planBuilder.upon(exceptionType, delays);
-      return this;
+    /** Shorthand for {@code new Delay(Duration.ofMillis(millis))}. */
+    public static Delay ofMillis(long millis) {
+      return new Delay(Duration.ofMillis(millis));
     }
 
     /**
-     * Use {@code delays} when an exception is instance of {@code exceptionType} and satisfies
-     * {@code condition}.
+     * Returns an immutable {@code List} of durations with {@code size}. The first duration
+     * (if {@code size > 0}) is {@code firstDelay} and the following durations are exponentially
+     * multiplied using {@code multiplier}.
      */
-    public <E extends Throwable> Builder upon(
-        Class<E> exceptionType, Predicate<? super E> condition, List<Duration> delays) {
-      planBuilder.upon(exceptionType, condition, delays);
-      return this;
+    public static List<Delay> exponentialBackoff(
+        Duration firstDelay, double multiplier, int size) {
+      requireNonNull(firstDelay);
+      if (multiplier <= 0) throw new IllegalArgumentException("Invalid multiplier: " + multiplier);
+      if (size < 0) throw new IllegalArgumentException("Invalid size: " + size);
+      if (size == 0) return Collections.emptyList();
+      return new AbstractList<Delay>() {
+        @Override public Delay get(int index) {
+          return new Delay(scale(firstDelay, Math.pow(multiplier, index)));
+        }
+        @Override public int size() {
+          return size;
+        }
+      };
     }
- 
-    /** Builds the {@code Retryer}. */
-    public Retryer build() {
-      return new Retryer(planBuilder.build());
+
+    /**
+     * Returns a wrapper of {@code delays} list that while not modifiable, can suddenly become empty
+     * when {@code totalDuration} has elapsed since the time the wrapper was created. {@code clock}
+     * is used to measure time.
+     */
+    public static List<Delay> timed(List<Delay> delays, Duration totalDuration, Clock clock) {
+      requireNonNull(clock);
+      Instant until = clock.instant().plus(totalDuration);
+      return guarded(delays, () -> clock.instant().isBefore(until));
+    }
+
+    /**
+     * Returns a wrapper of {@code delays} list that while not modifiable, can suddenly become empty
+     * when {@code totalDuration} has elapsed since the time the wrapper was created.
+     */
+    public static List<Delay> timed(List<Delay> delays, Duration totalDuration) {
+      return timed(delays, totalDuration, Clock.systemUTC());
+    }
+
+    /**
+     * Similar to {@link #timed timed()}, this method wraps {@code list} to make it empty when
+     * {@code condition} becomes false.
+     */
+    public static <T> List<T> guarded(List<T> list, BooleanSupplier condition) {
+      requireNonNull(list);
+      requireNonNull(condition);
+      return new AbstractList<T>() {
+        @Override public T get(int index) {
+          if (condition.getAsBoolean()) return list.get(index);
+          throw new IndexOutOfBoundsException();
+        }
+        @Override public int size() {
+          return condition.getAsBoolean() ? list.size() : 0;
+        }
+      };
+    }
+
+    /** Returns the delay interval. */
+    public final Duration duration() {
+      return duration;
+    }
+
+    /** Called if {@code exception} will be retried after the delay. */
+    public void beforeDelay(Throwable exception) {
+      logger.info("Retrying for " + exception.getClass() + " after " + duration);
+      
+    }
+
+    /** Called after delay immediately before the retry. */
+    public void afterDelay(Throwable exception) {
+      logger.log(Level.INFO, "Retrying now after " + duration, exception);
+    }
+
+    @Override public int compareTo(Delay that) {
+      return duration.compareTo(that.duration);
+    }
+
+    @Override public boolean equals(Object obj) {
+      if (obj instanceof Delay) {
+        Delay that = (Delay) obj;
+        return duration.equals(that.duration);
+      }
+      return false;
+    }
+
+    @Override public int hashCode() {
+      return duration.hashCode();
+    }
+
+    @Override public String toString() {
+      return duration.toString();
     }
   }
 
-  /**
-   * Returns an immutable {@code List} of durations with {@code size}. The first duration
-   * (if {@code size > 0}) is {@code firstDelay} and the following durations are exponentially
-   * multiplied using {@code multiplier}.
-   */
-  public static List<Duration> exponentialBackoff(
-      Duration firstDelay, double multiplier, int size) {
-    requireNonNull(firstDelay);
-    if (multiplier <= 0) throw new IllegalArgumentException("Invalid multiplier: " + multiplier);
-    if (size < 0) throw new IllegalArgumentException("Invalid size: " + size);
-    if (size == 0) return Collections.emptyList();
-    return new AbstractList<Duration>() {
-      @Override public Duration get(int index) {
-        return scale(firstDelay, Math.pow(multiplier, index));
-      }
-      @Override public int size() {
-        return size;
-      }
-    };
-  }
-
-  /**
-   * Returns a wrapper of {@code delays} list that while not modifiable, can suddenly become empty
-   * when {@code totalDuration} has elapsed since the time the wrapper was created. {@code clock}
-   * is used to measure time.
-   */
-  public static List<Duration> timed(List<Duration> delays, Duration totalDuration, Clock clock) {
-    requireNonNull(clock);
-    Instant until = clock.instant().plus(totalDuration);
-    return guarded(delays, () -> clock.instant().isBefore(until));
-  }
-
-  /**
-   * Returns a wrapper of {@code delays} list that while not modifiable, can suddenly become empty
-   * when {@code totalDuration} has elapsed since the time the wrapper was created.
-   */
-  public static List<Duration> timed(List<Duration> delays, Duration totalDuration) {
-    return timed(delays, totalDuration, Clock.systemUTC());
-  }
-
-  /**
-   * Similar to {@link #timed timed()}, this method wraps {@code list} to make it empty when
-   * {@code condition} becomes false.
-   */
-  public static <T> List<T> guarded(List<T> list, BooleanSupplier condition) {
-    requireNonNull(list);
-    requireNonNull(condition);
-    return new AbstractList<T>() {
-      @Override public T get(int index) {
-        if (condition.getAsBoolean()) return list.get(index);
-        throw new IndexOutOfBoundsException();
-      }
-      @Override public int size() {
-        return condition.getAsBoolean() ? list.size() : 0;
-      }
-    };
-  }
-
-  private static <E extends Throwable> ExceptionPlan<Duration> delay(
-      E exception, ExceptionPlan<Duration> plan) throws E {
-    ExceptionPlan.Execution<Duration> execution = plan.execute(exception).get();
+  private static <E extends Throwable> ExceptionPlan<Delay> delay(
+      E exception, ExceptionPlan<Delay> plan) throws E {
+    ExceptionPlan.Execution<Delay> execution = plan.execute(exception).get();
     try {
-      Thread.sleep(execution.strategy().toMillis());
+      Thread.sleep(execution.strategy().duration().toMillis());
     } catch (InterruptedException e) {
       logger.info("Interrupted while waiting to retry upon " + exception.getClass());
       Thread.currentThread().interrupt();
       throw exception;
     }
-    logger.log(
-        Level.INFO, "About to retry after sleeping for " + execution.strategy(), exception);
+    execution.strategy().afterDelay(exception);
     return execution.remainingExceptionPlan();
   }
 
@@ -257,17 +304,17 @@ public class Retryer {
   private <E extends Throwable, T> void scheduleRetry(
       Throwable e, ScheduledExecutorService retryExecutor,
       CheckedSupplier<? extends CompletionStage<T>, E> supplier, CompletableFuture<T> result) {
-    Maybe<ExceptionPlan.Execution<Duration>, ?> maybeRetry = plan.execute(e);
+    Maybe<ExceptionPlan.Execution<Delay>, ?> maybeRetry = plan.execute(e);
     maybeRetry.ifPresent(execution -> {
       Failable retry = () -> {
-        logger.log(Level.INFO, "Retrying after " + execution.strategy(), e);
+        execution.strategy().afterDelay(e);
         new Retryer(execution.remainingExceptionPlan())
             .invokeWithRetry(supplier, retryExecutor, result);
       };
-      logger.info("Scheduling retry for " + e.getClass() + " after " + execution.strategy());
+      execution.strategy().beforeDelay(e);
       retryExecutor.schedule(
           () -> retry.run(result::completeExceptionally),
-          execution.strategy().toMillis(), TimeUnit.MILLISECONDS);
+          execution.strategy().duration().toMillis(), TimeUnit.MILLISECONDS);
     });
     maybeRetry.catching(result::completeExceptionally);
   }

@@ -38,6 +38,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mu.function.CheckedSupplier;
+import org.mu.util.Retryer.Delay;
 
 import com.google.common.truth.ThrowableSubject;
 import com.google.common.truth.Truth;
@@ -48,7 +49,7 @@ public class RetryerTest {
   @Spy private FakeClock clock;
   @Spy private FakeScheduledExecutorService executor;
   @Mock private Action action;
-  private final Retryer.Builder builder = new Retryer.Builder();
+  private Retryer retryer = new Retryer();
 
   @Before public void setUpMocks() {
     MockitoAnnotations.initMocks(this);
@@ -66,7 +67,7 @@ public class RetryerTest {
 
   @Test public void errorPropagated() throws Exception {
     Error error = new Error("test");
-    builder.upon(IOException.class, asList(Duration.ofSeconds(1)));
+    upon(IOException.class, asList(ofSeconds(1)));
     when(action.run()).thenThrow(error);
     assertException(Error.class, () -> retry(action::run)).isSameAs(error);
     verify(action).run();
@@ -74,7 +75,7 @@ public class RetryerTest {
 
   @Test public void uncheckedExceptionPropagated() throws Exception {
     RuntimeException error = new RuntimeException("test");
-    builder.upon(IOException.class, asList(Duration.ofSeconds(1)));
+    upon(IOException.class, asList(ofSeconds(1)));
     when(action.run()).thenThrow(error);
     assertException(RuntimeException.class, () -> retry(action::run)).isSameAs(error);
     verify(action).run();
@@ -89,7 +90,7 @@ public class RetryerTest {
   }
 
   @Test public void actionFailedAndScheduledForRetry() throws Exception {
-    builder.upon(IOException.class, asList(Duration.ofSeconds(1)));
+    upon(IOException.class, asList(ofSeconds(1)));
     when(action.run()).thenThrow(new IOException());
     CompletionStage<String> stage = retry(action::run);
     assertThat(stage.toCompletableFuture().isDone()).isFalse();
@@ -99,7 +100,7 @@ public class RetryerTest {
   }
 
   @Test public void actionFailedAndRetriedToSuccess() throws Exception {
-    builder.upon(IOException.class, asList(Duration.ofSeconds(1)));
+    upon(IOException.class, asList(ofSeconds(1)));
     when(action.run()).thenThrow(new IOException()).thenReturn("fixed");
     CompletionStage<String> stage = retry(action::run);
     assertThat(stage.toCompletableFuture().isDone()).isFalse();
@@ -111,7 +112,7 @@ public class RetryerTest {
   }
 
   @Test public void errorRetried() throws Exception {
-    builder.upon(MyError.class, asList(Duration.ofSeconds(1)));
+    upon(MyError.class, asList(ofSeconds(1)));
     when(action.run()).thenThrow(new MyError("test")).thenReturn("fixed");
     CompletionStage<String> stage = retry(action::run);
     assertThat(stage.toCompletableFuture().isDone()).isFalse();
@@ -123,7 +124,7 @@ public class RetryerTest {
   }
 
   @Test public void uncheckedExceptionRetried() throws Exception {
-    builder.upon(RuntimeException.class, asList(Duration.ofSeconds(1)));
+    upon(RuntimeException.class, asList(ofSeconds(1)));
     when(action.run()).thenThrow(new RuntimeException("test")).thenReturn("fixed");
     CompletionStage<String> stage = retry(action::run);
     assertThat(stage.toCompletableFuture().isDone()).isFalse();
@@ -135,7 +136,7 @@ public class RetryerTest {
   }
 
   @Test public void actionFailedAfterRetry() throws Exception {
-    builder.upon(IOException.class, asList(Duration.ofSeconds(1)));
+    upon(IOException.class, asList(ofSeconds(1)));
     IOException exception = new IOException("hopeless");
     when(action.run()).thenThrow(new IOException()).thenThrow(exception);
     CompletionStage<String> stage = retry(action::run);
@@ -149,10 +150,10 @@ public class RetryerTest {
   }
 
   @Test public void retrialExceedsTime() throws Exception {
-    builder.upon(
+    upon(
         IOException.class,
-        Retryer.timed(
-            Collections.nCopies(100, Duration.ofSeconds(1)), Duration.ofSeconds(3), clock));
+        Delay.timed(
+            Collections.nCopies(100, ofSeconds(1)), Duration.ofSeconds(3), clock));
     IOException exception = new IOException("hopeless");
     when(action.run()).thenThrow(new IOException()).thenThrow(exception);
     CompletionStage<String> stage = retry(action::run);
@@ -167,7 +168,7 @@ public class RetryerTest {
   }
 
   @Test public void asyncExceptionRetriedToSuccess() throws Exception {
-    builder.upon(IOException.class, asList(Duration.ofSeconds(1)));
+    upon(IOException.class, asList(ofSeconds(1)));
     when(action.runAsync())
         .thenReturn(exceptionally(new IOException()))
         .thenReturn(CompletableFuture.completedFuture("fixed"));
@@ -181,7 +182,7 @@ public class RetryerTest {
   }
 
   @Test public void asyncFailedAfterRetry() throws Exception {
-    builder.upon(IOException.class, asList(Duration.ofSeconds(1)));
+    upon(IOException.class, asList(ofSeconds(1)));
     IOException exception = new IOException("hopeless");
     when(action.runAsync())
         .thenReturn(exceptionally(new IOException()))
@@ -198,7 +199,7 @@ public class RetryerTest {
 
   @Test public void guardedList() {
     AtomicBoolean guard = new AtomicBoolean(true);
-    List<Integer> list = Retryer.guarded(asList(1, 2), guard::get);
+    List<Integer> list = Delay.guarded(asList(1, 2), guard::get);
     assertThat(list).hasSize(2);
     assertThat(list).isNotEmpty();
     assertThat(list).containsExactly(1, 2);
@@ -209,39 +210,56 @@ public class RetryerTest {
   }
 
   @Test public void testNulls() {
-    assertThrows(NullPointerException.class, () -> builder.build().retry(null, executor));
-    assertThrows(NullPointerException.class, () -> builder.build().retry(action::run, null));
-    assertThrows(NullPointerException.class, () -> builder.build().retryBlockingly(null));
-    assertThrows(NullPointerException.class, () -> builder.build().retryAsync(null, executor));
+    assertThrows(NullPointerException.class, () -> new Retryer().retry(null, executor));
+    assertThrows(NullPointerException.class, () -> new Retryer().retry(action::run, null));
+    assertThrows(NullPointerException.class, () -> new Retryer().retryBlockingly(null));
+    assertThrows(NullPointerException.class, () -> new Retryer().retryAsync(null, executor));
     assertThrows(
-        NullPointerException.class, () -> builder.build().retryAsync(action::runAsync, null));
-    assertThrows(NullPointerException.class, () -> Retryer.exponentialBackoff(null, 1, 1));
-    assertThrows(NullPointerException.class, () -> Retryer.guarded(null, () -> true));
-    assertThrows(NullPointerException.class, () -> Retryer.guarded(asList(), null));
-    assertThrows(NullPointerException.class, () -> Retryer.timed(asList(), null));
-    assertThrows(NullPointerException.class, () -> Retryer.timed(null, Duration.ofDays(1)));
+        NullPointerException.class, () -> new Retryer().retryAsync(action::runAsync, null));
+    assertThrows(NullPointerException.class, () -> Delay.exponentialBackoff(null, 1, 1));
+    assertThrows(NullPointerException.class, () -> Delay.guarded(null, () -> true));
+    assertThrows(NullPointerException.class, () -> Delay.guarded(asList(), null));
+    assertThrows(NullPointerException.class, () -> Delay.timed(asList(), null));
+    assertThrows(NullPointerException.class, () -> Delay.timed(null, Duration.ofDays(1)));
     assertThrows(
-        NullPointerException.class, () -> Retryer.timed(asList(), Duration.ofDays(1), null));
+        NullPointerException.class, () -> Delay.timed(asList(), Duration.ofDays(1), null));
+    assertThrows(NullPointerException.class, () -> new Delay(null));
   }
 
   @Test public void testExponentialBackoff() {
-    assertThat(Retryer.exponentialBackoff(Duration.ofDays(1), 2, 3))
-        .containsExactly(Duration.ofDays(1), Duration.ofDays(2), Duration.ofDays(4))
+    assertThat(Delay.exponentialBackoff(Duration.ofDays(1), 2, 3))
+        .containsExactly(ofDays(1), ofDays(2), ofDays(4))
         .inOrder();
-    assertThat(Retryer.exponentialBackoff(Duration.ofDays(1), 1, 2))
-        .containsExactly(Duration.ofDays(1), Duration.ofDays(1))
+    assertThat(Delay.exponentialBackoff(Duration.ofDays(1), 1, 2))
+        .containsExactly(ofDays(1), ofDays(1))
         .inOrder();
-    assertThat(Retryer.exponentialBackoff(Duration.ofDays(1), 1, 0))
+    assertThat(Delay.exponentialBackoff(Duration.ofDays(1), 1, 0))
         .isEmpty();
     assertThrows(
         IllegalArgumentException.class,
-        () -> Retryer.exponentialBackoff(Duration.ofDays(1), 0, 1));
+        () -> Delay.exponentialBackoff(Duration.ofDays(1), 0, 1));
     assertThrows(
         IllegalArgumentException.class,
-        () -> Retryer.exponentialBackoff(Duration.ofDays(1), -1, 1));
+        () -> Delay.exponentialBackoff(Duration.ofDays(1), -1, 1));
     assertThrows(
         IllegalArgumentException.class,
-        () -> Retryer.exponentialBackoff(Duration.ofDays(1), 2, -1));
+        () -> Delay.exponentialBackoff(Duration.ofDays(1), 2, -1));
+  }
+
+  @Test public void testDelay_equals() {
+    Delay one = Delay.ofMillis(1);
+    assertThat(one).isEqualTo(one);
+    assertThat(one).isEqualTo(Delay.ofMillis(1));
+    assertThat(one).isNotEqualTo(Delay.ofMillis(2));
+    assertThat(one).isNotEqualTo(Duration.ofMillis(1));
+    assertThat(one).isNotEqualTo(null);
+    assertThat(one.hashCode()).isEqualTo(Delay.ofMillis(1).hashCode());
+  }
+
+  @Test public void testDelay_compareTo() {
+    assertThat(Delay.ofMillis(1)).isLessThan(Delay.ofMillis(2));
+    assertThat(Delay.ofMillis(1)).isGreaterThan(Delay.ofMillis(0));
+    assertThat(Delay.ofMillis(1)).isEquivalentAccordingToCompareTo(Delay.ofMillis(1));
   }
 
   @Test public void testFakeScheduledExecutorService_taskScheduledButNotRunYet() {
@@ -266,13 +284,25 @@ public class RetryerTest {
     return future;
   }
 
+  private static Delay ofSeconds(long seconds) {
+    return new Delay(Duration.ofSeconds(seconds));
+  }
+
+  private static Delay ofDays(long days) {
+    return new Delay(Duration.ofDays(days));
+  }
+
+  private void upon(Class<? extends Throwable> exceptionType, List<Delay> delays) {
+    retryer = retryer.upon(exceptionType, delays);
+  }
+
   private <T> CompletionStage<T> retry(CheckedSupplier<T, ?> supplier) {
-    return builder.build().retry(supplier, executor);
+    return retryer.retry(supplier, executor);
   }
 
   private <T> CompletionStage<T> retryAsync(
       CheckedSupplier<? extends CompletionStage<T>, ?> supplier) {
-    return builder.build().retryAsync(supplier, executor);
+    return retryer.retryAsync(supplier, executor);
   }
 
   private ThrowableSubject assertException(
