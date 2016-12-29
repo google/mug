@@ -225,7 +225,6 @@ public class RetryerTest {
     assertThrows(NullPointerException.class, () -> new Retryer().retryAsync(null, executor));
     assertThrows(
         NullPointerException.class, () -> new Retryer().retryAsync(action::runAsync, null));
-    assertThrows(NullPointerException.class, () -> Delay.exponentialBackoff(null, 1, 1));
     assertThrows(NullPointerException.class, () -> Delay.guarded(null, () -> true));
     assertThrows(NullPointerException.class, () -> Delay.guarded(asList(), null));
     assertThrows(NullPointerException.class, () -> Delay.timed(asList(), null));
@@ -235,24 +234,25 @@ public class RetryerTest {
     assertThrows(NullPointerException.class, () -> Delay.of(null));
   }
 
-  @Test public void testExponentialBackoff() {
-    assertThat(Delay.exponentialBackoff(Duration.ofDays(1), 2, 3))
+  @Test public void testDelay_multiplied() {
+    assertThat(ofDays(1).multipliedBy(0)).isEqualTo(ofDays(0));
+    assertThat(ofDays(2).multipliedBy(1)).isEqualTo(ofDays(2));
+    assertThat(ofDays(3).multipliedBy(2)).isEqualTo(ofDays(6));
+    assertThrows(IllegalArgumentException.class, () -> ofDays(1).multipliedBy(-1));
+    assertThat(ofDays(1).multipliedBy(Double.MIN_VALUE)).isEqualTo(Delay.ofMillis(1));
+  }
+
+  @Test public void testDelay_exponentialBackoff() {
+    assertThat(ofDays(1).exponentialBackoff(2, 3))
         .containsExactly(ofDays(1), ofDays(2), ofDays(4))
         .inOrder();
-    assertThat(Delay.exponentialBackoff(Duration.ofDays(1), 1, 2))
+    assertThat(ofDays(1).exponentialBackoff(1, 2))
         .containsExactly(ofDays(1), ofDays(1))
         .inOrder();
-    assertThat(Delay.exponentialBackoff(Duration.ofDays(1), 1, 0))
-        .isEmpty();
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> Delay.exponentialBackoff(Duration.ofDays(1), 0, 1));
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> Delay.exponentialBackoff(Duration.ofDays(1), -1, 1));
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> Delay.exponentialBackoff(Duration.ofDays(1), 2, -1));
+    assertThat(ofDays(1).exponentialBackoff(1, 0)).isEmpty();
+    assertThrows(IllegalArgumentException.class, () -> ofDays(1).exponentialBackoff(0, 1));
+    assertThrows(IllegalArgumentException.class, () -> ofDays(1).exponentialBackoff(-1, 1));
+    assertThrows(IllegalArgumentException.class, () -> ofDays(1).exponentialBackoff(2, -1));
   }
 
   @Test public void testDelay_equals() {
@@ -269,6 +269,22 @@ public class RetryerTest {
     assertThat(Delay.ofMillis(1)).isLessThan(Delay.ofMillis(2));
     assertThat(Delay.ofMillis(1)).isGreaterThan(Delay.ofMillis(0));
     assertThat(Delay.ofMillis(1)).isEquivalentAccordingToCompareTo(Delay.ofMillis(1));
+  }
+
+  @Test public void testDelay_of() {
+    assertThat(Delay.ofMillis(Long.MAX_VALUE).duration())
+        .isEqualTo(Duration.ofMillis(Long.MAX_VALUE));
+    assertThat(Delay.ofMillis(0).duration()).isEqualTo(Duration.ofMillis(0));
+    assertThat(Delay.ofMillis(1).duration()).isEqualTo(Duration.ofMillis(1));
+    assertThat(ofDays(0).duration()).isEqualTo(Duration.ofDays(0));
+    assertThat(ofDays(1).duration()).isEqualTo(Duration.ofDays(1));
+  }
+
+  @Test public void testDelay_invalid() {
+    assertThrows(ArithmeticException.class, () -> ofDays(Long.MAX_VALUE));
+    assertThrows(IllegalArgumentException.class, () -> Delay.ofMillis(-1));
+    assertThrows(ArithmeticException.class, () -> Delay.ofMillis(Long.MIN_VALUE));
+    assertThrows(IllegalArgumentException.class, () -> ofDays(-1));
   }
 
   @Test public void testFakeScheduledExecutorService_taskScheduledButNotRunYet() {
