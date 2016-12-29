@@ -64,7 +64,7 @@ public class Retryer {
    * Returns a new {@code Retryer} that uses {@code delays} when an exception is instance of
    * {@code exceptionType}.
    */
-  public <E extends Throwable> Retryer upon(Class<E> exceptionType, List<Delay> delays) {
+  public Retryer upon(Class<? extends Throwable> exceptionType, List<Delay> delays) {
     return new Retryer(plan.upon(exceptionType, delays));
   }
 
@@ -226,7 +226,7 @@ public class Retryer {
 
     /** Called if {@code exception} will be retried after the delay. */
     public void beforeDelay(Throwable exception) {
-      logger.info("Retrying for " + exception.getClass() + " after " + duration);
+      logger.info("Will retry for " + exception.getClass() + " after " + duration);
       
     }
 
@@ -301,17 +301,17 @@ public class Retryer {
     }
   }
 
-  private <E extends Throwable, T> void scheduleRetry(
+  private <T> void scheduleRetry(
       Throwable e, ScheduledExecutorService retryExecutor,
-      CheckedSupplier<? extends CompletionStage<T>, E> supplier, CompletableFuture<T> result) {
+      CheckedSupplier<? extends CompletionStage<T>, ?> supplier, CompletableFuture<T> result) {
     Maybe<ExceptionPlan.Execution<Delay>, ?> maybeRetry = plan.execute(e);
     maybeRetry.ifPresent(execution -> {
+      execution.strategy().beforeDelay(e);
       Failable retry = () -> {
         execution.strategy().afterDelay(e);
         new Retryer(execution.remainingExceptionPlan())
             .invokeWithRetry(supplier, retryExecutor, result);
       };
-      execution.strategy().beforeDelay(e);
       retryExecutor.schedule(
           () -> retry.run(result::completeExceptionally),
           execution.strategy().duration().toMillis(), TimeUnit.MILLISECONDS);

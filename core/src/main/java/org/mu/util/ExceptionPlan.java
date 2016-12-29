@@ -76,8 +76,8 @@ final class ExceptionPlan<T> {
    * Returns a new {@link ExceptionPlan} that uses {@code strategies} when an exception is
    * instance of {@code exceptionType}.
    */
-  public <E extends Throwable> ExceptionPlan<T> upon(
-      Class<E> exceptionType, List<? extends T> strategies) {
+  public ExceptionPlan<T> upon(
+      Class<? extends Throwable> exceptionType, List<? extends T> strategies) {
     return upon(exceptionType::isInstance, strategies);
   }
 
