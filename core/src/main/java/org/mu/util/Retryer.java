@@ -244,16 +244,25 @@ public class Retryer {
     /**
      * Returns a new {@code Delay} with duration multiplied by {@code multiplier}.
      *
-     * <p>This method is called by {@link #exponentialBackoff} to create new instances of
-     * {@code Delay}. A subclass must override this method for {@code exponentialBackoff} to create
-     * instances of the subclass.
-     *
      * @param multiplier must not be negative
      */
-    public Delay multipliedBy(double multiplier) {
+    public final Delay multipliedBy(double multiplier) {
       if (multiplier < 0) throw new IllegalArgumentException("Invalid multiplier: " + multiplier);
       double millis = duration().toMillis() * multiplier;
-      return of(Duration.ofMillis(Math.round(Math.ceil(millis))));
+      return withDuration(Duration.ofMillis(Math.round(Math.ceil(millis))));
+    }
+
+    /**
+     * Returns a new {@code Delay} with {@code newDuration}.
+     *
+     * <p>This method is called by {@link #exponentialBackoff} and {@link #multipliedBy}
+     * to create new instances of {@code Delay}. A subclass must override this method to create
+     * instances of the subclass.
+     *
+     * @param newDuration must not be negative
+     */
+    protected Delay withDuration(Duration newDuration) {
+      return of(newDuration);
     }
 
     /** Called if {@code exception} will be retried after the delay. */
