@@ -157,34 +157,17 @@ public class Retryer {
   /** Represents a single delay interval between attempts. */
   public interface Delay extends Comparable<Delay> {
 
+    /** Returns the delay interval. */
+    Duration duration();
+
     /** Shorthand for {@code new Delay(Duration.ofMillis(millis))}. */
     static Delay ofMillis(long millis) {
-      return new DefaultDelay(Duration.ofMillis(millis));
+      return of(Duration.ofMillis(millis));
     }
 
     /** Returns a {@code Delay} of {@code duration}. */
     static Delay of(Duration duration) {
-      return new DefaultDelay(requireNonNull(duration));
-    }
-
-    /**
-     * Returns an immutable {@code List} of durations with {@code size}. The first duration
-     * (if {@code size > 0}) is {@code firstDelay} and the following durations are exponentially
-     * multiplied using {@code multiplier}.
-     */
-    static List<Delay> exponentialBackoff(Duration firstDelay, double multiplier, int size) {
-      requireNonNull(firstDelay);
-      if (multiplier <= 0) throw new IllegalArgumentException("Invalid multiplier: " + multiplier);
-      if (size < 0) throw new IllegalArgumentException("Invalid size: " + size);
-      if (size == 0) return Collections.emptyList();
-      return new AbstractList<Delay>() {
-        @Override public Delay get(int index) {
-          return new DefaultDelay(scale(firstDelay, Math.pow(multiplier, index)));
-        }
-        @Override public int size() {
-          return size;
-        }
-      };
+      return new DefaultDelay(duration);
     }
 
     /**
@@ -224,8 +207,29 @@ public class Retryer {
       };
     }
 
-    /** Returns the delay interval. */
-    Duration duration();
+    /**
+     * Returns an immutable {@code List} of delays with {@code size}. The first delay
+     * (if {@code size > 0}) is {@code this} and the following delays are exponentially
+     * multiplied using {@code multiplier}.
+     */
+    default List<Delay> exponentialBackoff(double multiplier, int size) {
+      if (multiplier <= 0) throw new IllegalArgumentException("Invalid multiplier: " + multiplier);
+      if (size < 0) throw new IllegalArgumentException("Invalid size: " + size);
+      if (size == 0) return Collections.emptyList();
+      return new AbstractList<Delay>() {
+        @Override public Delay get(int index) {
+          return multipliedBy(Math.pow(multiplier, index));
+        }
+        @Override public int size() {
+          return size;
+        }
+      };
+    }
+ 
+    /** Returns a new {@code Delay} with duration multiplied by {@code multiplier}. */
+    default Delay multipliedBy(double multiplier) {
+      return of(scale(duration(), multiplier));
+    }
 
     @Override default int compareTo(Delay that) {
       return duration().compareTo(that.duration());
@@ -248,6 +252,9 @@ public class Retryer {
     private final Duration duration;
 
     DefaultDelay(Duration duration) {
+      if (duration.toMillis() < 0) {
+        throw new IllegalArgumentException("Invalid duration: " + duration);
+      }
       this.duration = duration;
     }
 
@@ -343,8 +350,9 @@ public class Retryer {
   }
 
   private static Duration scale(Duration duration, double multiplier) {
+    if (multiplier < 0) throw new IllegalArgumentException("Invalid multiplier: " + multiplier);
     double millis = duration.toMillis() * multiplier;
-    return Duration.ofMillis(Math.round(millis));
+    return Duration.ofMillis(Math.round(Math.ceil(millis)));
   }
 
   @FunctionalInterface
