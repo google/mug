@@ -155,16 +155,16 @@ public class Retryer {
   }
 
   /** Represents a single delay interval between attempts. */
-  public static class Delay implements Comparable<Delay> {
-    private final Duration duration;
-
-    public Delay(Duration duration) {
-      this.duration = requireNonNull(duration);
-    }
+  public interface Delay extends Comparable<Delay> {
 
     /** Shorthand for {@code new Delay(Duration.ofMillis(millis))}. */
-    public static Delay ofMillis(long millis) {
-      return new Delay(Duration.ofMillis(millis));
+    static Delay ofMillis(long millis) {
+      return new DefaultDelay(Duration.ofMillis(millis));
+    }
+
+    /** Returns a {@code Delay} of {@code duration}. */
+    static Delay of(Duration duration) {
+      return new DefaultDelay(requireNonNull(duration));
     }
 
     /**
@@ -172,15 +172,14 @@ public class Retryer {
      * (if {@code size > 0}) is {@code firstDelay} and the following durations are exponentially
      * multiplied using {@code multiplier}.
      */
-    public static List<Delay> exponentialBackoff(
-        Duration firstDelay, double multiplier, int size) {
+    static List<Delay> exponentialBackoff(Duration firstDelay, double multiplier, int size) {
       requireNonNull(firstDelay);
       if (multiplier <= 0) throw new IllegalArgumentException("Invalid multiplier: " + multiplier);
       if (size < 0) throw new IllegalArgumentException("Invalid size: " + size);
       if (size == 0) return Collections.emptyList();
       return new AbstractList<Delay>() {
         @Override public Delay get(int index) {
-          return new Delay(scale(firstDelay, Math.pow(multiplier, index)));
+          return new DefaultDelay(scale(firstDelay, Math.pow(multiplier, index)));
         }
         @Override public int size() {
           return size;
@@ -193,7 +192,7 @@ public class Retryer {
      * when {@code totalDuration} has elapsed since the time the wrapper was created. {@code clock}
      * is used to measure time.
      */
-    public static List<Delay> timed(List<Delay> delays, Duration totalDuration, Clock clock) {
+    static List<Delay> timed(List<Delay> delays, Duration totalDuration, Clock clock) {
       requireNonNull(clock);
       Instant until = clock.instant().plus(totalDuration);
       return guarded(delays, () -> clock.instant().isBefore(until));
@@ -203,7 +202,7 @@ public class Retryer {
      * Returns a wrapper of {@code delays} list that while not modifiable, can suddenly become empty
      * when {@code totalDuration} has elapsed since the time the wrapper was created.
      */
-    public static List<Delay> timed(List<Delay> delays, Duration totalDuration) {
+    static List<Delay> timed(List<Delay> delays, Duration totalDuration) {
       return timed(delays, totalDuration, Clock.systemUTC());
     }
 
@@ -211,7 +210,7 @@ public class Retryer {
      * Similar to {@link #timed timed()}, this method wraps {@code list} to make it empty when
      * {@code condition} becomes false.
      */
-    public static <T> List<T> guarded(List<T> list, BooleanSupplier condition) {
+    static <T> List<T> guarded(List<T> list, BooleanSupplier condition) {
       requireNonNull(list);
       requireNonNull(condition);
       return new AbstractList<T>() {
@@ -226,29 +225,40 @@ public class Retryer {
     }
 
     /** Returns the delay interval. */
-    public final Duration duration() {
-      return duration;
+    Duration duration();
+
+    @Override default int compareTo(Delay that) {
+      return duration().compareTo(that.duration());
     }
 
     /** Called if {@code exception} will be retried after the delay. */
-    public void beforeDelay(Throwable exception) {
-      logger.info("Will retry for " + exception.getClass() + " after " + duration);
+    default void beforeDelay(Throwable exception) {
+      logger.info("Will retry for " + exception.getClass() + " after " + duration());
       
     }
 
-    /** Called after delay immediately before the retry. */
-    public void afterDelay(Throwable exception) {
-      logger.log(Level.INFO, "Retrying now after " + duration, exception);
+    /** Called after the delay, immediately before the retry. */
+    default void afterDelay(Throwable exception) {
+      logger.log(Level.INFO, "Retrying now after " + duration(), exception);
+    }
+  }
+
+  private static final class DefaultDelay implements Delay {
+
+    private final Duration duration;
+
+    DefaultDelay(Duration duration) {
+      this.duration = duration;
     }
 
-    @Override public int compareTo(Delay that) {
-      return duration.compareTo(that.duration);
+    @Override public final Duration duration() {
+      return duration;
     }
 
     @Override public boolean equals(Object obj) {
       if (obj instanceof Delay) {
         Delay that = (Delay) obj;
-        return duration.equals(that.duration);
+        return duration.equals(that.duration());
       }
       return false;
     }
