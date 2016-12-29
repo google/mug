@@ -1,7 +1,5 @@
 # μ
-Extra Java 8 Utilities ([javadoc](http://fluentfuture.github.io/mu/apidocs/)).
-
-This library has 0 dependencies.
+Tiny Java 8 Utilities ([javadoc](http://fluentfuture.github.io/mu/apidocs/)) for some, with 0 dependencies.
 
 ## Retryer
 
