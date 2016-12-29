@@ -72,7 +72,7 @@ List<Result> convert(List<Input> inputs) {
 }
 ```
 
-But most remote services are expensive and hence could benefit from batching. Can you batch the ones needing remote conversion and convert them together?
+In reality, most remote services are expensive and hence could benefit from batching. Can you batch the ones needing remote conversion and convert them together?
 
 Perhaps this?
 
