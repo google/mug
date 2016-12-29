@@ -197,6 +197,15 @@ public class RetryerTest {
     verify(action, times(2)).runAsync();
   }
 
+  @Test public void testImmutable() throws IOException {
+    retryer.upon(IOException.class, asList(ofSeconds(1)));  // Should have no effect
+    IOException exception = new IOException("bad");
+    when(action.run()).thenThrow(exception);
+    assertCauseOf(ExecutionException.class, () -> retry(action::run).toCompletableFuture().get())
+        .isSameAs(exception);
+    verify(action).run();
+  }
+
   @Test public void guardedList() {
     AtomicBoolean guard = new AtomicBoolean(true);
     List<Integer> list = Delay.guarded(asList(1, 2), guard::get);
