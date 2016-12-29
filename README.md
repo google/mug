@@ -146,7 +146,7 @@ List<Result> convert(List<Input> inputs) {
 }
 ```
 
-Close. But it breaks the ordering of inputs. The caller no longer knows which result is for which input.
+Close. Except it breaks the ordering of inputs. The caller no longer knows which result is for which input.
 
 Tl;Dr: maintaining the encounter order while dispatching objects to batches requires careful juggling of the indices and messes up the code rather quickly.
 
