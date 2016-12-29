@@ -244,6 +244,10 @@ public class Retryer {
     /**
      * Returns a new {@code Delay} with duration multiplied by {@code multiplier}.
      *
+     * <p>This method is called by {@link #exponentialBackoff} to create new instances of
+     * {@code Delay}. A subclass must override this method for {@code exponentialBackoff} to create
+     * instances of the subclass.
+     *
      * @param multiplier must not be negative
      */
     public Delay multipliedBy(double multiplier) {

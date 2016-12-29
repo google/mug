@@ -32,6 +32,10 @@ class CustomDelay extends Delay {
     ...
   }
 
+  @Override public Delay multipliedBy(double multiplier) {
+    ...
+  }
+
   @Override public void beforeDelay(Throwable e) {
     // log
   }
