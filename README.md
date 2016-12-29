@@ -3,14 +3,12 @@ Tiny Java 8 utilities ([javadoc](http://fluentfuture.github.io/mu/apidocs/)) for
 
 ## Retryer
 
-Retryer is a helper that makes it easier to retry an operation with configurable backoffs. Backoffs are either done synchronously (through `Thread.sleep()`) or asynchronously (using a `ScheduledExecutorService`).
-
-For example:
+Retryer is a helper that makes it easier to retry an operation with configurable backoffs.
 
 Retry blockingly:
 ```java
 Account fetchAccountWithRetry() throws IOException {
-  Account future = new Retryer()
+  return new Retryer()
       .upon(IOException.class, Delay.exponentialBackoff(ofMillis(1), 2, 3))
       .retryBlockingly(this::getAccount);
 }
@@ -18,9 +16,11 @@ Account fetchAccountWithRetry() throws IOException {
 
 Or asynchronously:
 ```java
-CompletionStage<Account> future = new Retryer()
-    .upon(IOException.class, Delay.exponentialBackoff(ofMillis(1), 2, 3))
-    .retry(this::getAccount, executor);
+CompletableStage<Account> fetchAccountWithRetry(ScheduledExecutorService executor) {
+  return new Retryer()
+      .upon(IOException.class, Delay.exponentialBackoff(ofMillis(1), 2, 3))
+      .retry(this::getAccount, executor);
+}
 ```
 
 To customize retry events such as to log differently, client code can create custom Delay implementation:
