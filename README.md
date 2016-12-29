@@ -52,8 +52,8 @@ Alternatively, if the asynchronous code returns `Maybe<Foo, MyException>` instea
 * Helps overcome awkward situations in Java where checked exception isn't the sweet spot.
 
 #### What isn't `Maybe`?
-* It's not Haskell Maybe (Optional is his cousin).
-* It's not Haskell `Either` either. In Java we think of return values and exceptional cases, not "left" or "right.
+* It's not Haskell Maybe (Optional is her cousin).
+* It's not Haskell `Either` either. In Java we think of return values and exceptional cases, not "Left" or "Right".
 * It's not to replace throwing and catching exceptions. Java code should do the Java way. When in Rome.
 * It's not designed for writing more "functional" code or shifting your programming paradigm. Use it only where it helps.
 
@@ -166,6 +166,6 @@ List<Result> convert(List<Input> inputs) {
   return funnel.run();
 }
 ```
-All the code has to do is to define the batch using the ```funnel.through()``` and then inputs can be added to the batch without breaking encounter order.
+All the code has to do is to define the batch with ```funnel.through()``` and then inputs can be added to the batch without breaking encounter order.
 
-So what if there are 3 kinds of inputs and two kinds require different batch conversions? Funnel supports arbitrary number of batches. Just register them with ```through()```.
+So what if there are 3 kinds of inputs and two kinds require two different batch conversions? Funnel supports arbitrary number of batches. Just register them with ```through()``` and ```through()```.
