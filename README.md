@@ -36,7 +36,7 @@ class CustomDelay implements Delay {
 
 ## Funnel
 
-Ever had the need to convert a list of objects? It's as simple as it gets:
+Ever needed to convert a list of objects? It's as simple as it gets:
 
 ```java
 List<Result> convert(List<Input> inputs) {
@@ -57,7 +57,7 @@ return inputs.stream()
 
 Normally such API has the contract that the order of results are in the same order as the inputs.
 
-Well. what if now Input can have two different kinds, and one kind need to be converted through a remote service? Again, it's almost as simple:
+Well. what if Input can be of two different kinds, and one kind needs to be converted through a remote service? Again, it's almost as simple:
 
 ```java
 List<Result> convert(List<Input> inputs) {
@@ -73,7 +73,7 @@ List<Result> convert(List<Input> inputs) {
 }
 ```
 
-In reality, most remote services are expensive and hence could benefit from batching. Can you batch the ones needing remote conversion and convert them together?
+In reality though, most remote services are expensive and hence could benefit from batching. Can you batch the ones needing remote conversion and convert them together?
 
 Perhaps this?
 
