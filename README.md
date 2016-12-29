@@ -1,18 +1,26 @@
 # μ
-Extra Java 8 Utilities ([javadoc](http://fluentfuture.github.io/mu/apidocs/)).
-
-This library has 0 dependencies.
+Tiny Java 8 utilities ([javadoc](http://fluentfuture.github.io/mu/apidocs/)) for some, with 0 dependencies.
 
 ## Retryer
 
-Retryer is a helper that makes it easier to retry an operation with configurable backoffs. Backoffs are either done synchronously (through `Thread.sleep()`) or asynchronously (using a `ScheduledExecutorService`).
+Retryer is a helper that makes it easier to retry an operation with configurable backoffs.
 
-For example:
-
+Retry blockingly:
 ```java
-CompletionStage<Account> future = new Retryer()
-    .upon(IOException.class, Delay.exponentialBackoff(ofMillis(1), 2, 3))
-    .retry(this::getAccount, executor);
+Account fetchAccountWithRetry() throws IOException {
+  return new Retryer()
+      .upon(IOException.class, Delay.exponentialBackoff(ofMillis(1), 2, 3))
+      .retryBlockingly(this::getAccount);
+}
+```
+
+Or asynchronously:
+```java
+CompletableStage<Account> fetchAccountWithRetry(ScheduledExecutorService executor) {
+  return new Retryer()
+      .upon(IOException.class, Delay.exponentialBackoff(ofMillis(1), 2, 3))
+      .retry(this::getAccount, executor);
+}
 ```
 
 To customize retry events such as to log differently, client code can create custom Delay implementation:
@@ -36,7 +44,7 @@ class CustomDelay implements Delay {
 
 ## Funnel
 
-Ever had the need to convert a list of objects? It's as simple as it gets:
+Ever needed to convert a list of objects? It's as simple as it gets:
 
 ```java
 List<Result> convert(List<Input> inputs) {
@@ -57,7 +65,7 @@ return inputs.stream()
 
 Normally such API has the contract that the order of results are in the same order as the inputs.
 
-Well. what if now Input can have two different kinds, and one kind need to be converted through a remote service? Again, it's almost as simple:
+Well. what if Input can be of two different kinds, and one kind needs to be converted through a remote service? Again, it's almost as simple:
 
 ```java
 List<Result> convert(List<Input> inputs) {
@@ -73,7 +81,7 @@ List<Result> convert(List<Input> inputs) {
 }
 ```
 
-In reality, most remote services are expensive and hence could benefit from batching. Can you batch the ones needing remote conversion and convert them together?
+In reality though, most remote services are expensive and hence could benefit from batching. Can you batch the ones needing remote conversion and convert them in one remote call?
 
 Perhaps this?
 
@@ -97,7 +105,7 @@ Close. Except it breaks the ordering of inputs. The caller no longer knows which
 
 Tl;Dr: maintaining the encounter order while dispatching objects to batches requires careful juggling of the indices and messes up the code rather quickly.
 
-Funnel is a simple library to stop this bleeding:
+Funnel is a simple library to stop the bleeding:
 
 ```java
 List<Result> convert(List<Input> inputs) {
@@ -115,7 +123,7 @@ List<Result> convert(List<Input> inputs) {
 ```
 All the code has to do is to define the batch with ```funnel.through()``` and then inputs can be added to the batch without breaking encounter order.
 
-So what if there are 3 kinds of inputs and two kinds require two different batch conversions? Funnel supports arbitrary number of batches. Just register them with ```through()``` and ```through()```.
+So what if there are 3 kinds of inputs and two kinds require two different batch conversions? Funnel supports arbitrary number of batches. Just define them with ```through()``` and ```through()```.
 
 ## Maybe
 
