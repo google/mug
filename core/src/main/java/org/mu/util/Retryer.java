@@ -36,7 +36,13 @@ import java.util.logging.Logger;
 
 import org.mu.function.CheckedSupplier;
 
-/** Retries actions upon exceptions. */
+/**
+ * Immutable object that retries actions upon exceptions.
+ *
+ * <p>Backoff intervals are configured through chaining {@link #upon upon()} calls. It's critical
+ * to use the <em>new</em> {@code Retryer} instances returned by {@code upon()}. Just remember
+ * {@code Retryer} is <em>immutable</em>.
+ */
 public class Retryer {
 
   private static final Logger logger = Logger.getLogger(Retryer.class.getName());
