@@ -232,7 +232,7 @@ public class RetryerTest {
     assertThrows(NullPointerException.class, () -> Delay.timed(null, Duration.ofDays(1)));
     assertThrows(
         NullPointerException.class, () -> Delay.timed(asList(), Duration.ofDays(1), null));
-    assertThrows(NullPointerException.class, () -> new Delay(null));
+    assertThrows(NullPointerException.class, () -> Delay.of(null));
   }
 
   @Test public void testExponentialBackoff() {
@@ -294,11 +294,11 @@ public class RetryerTest {
   }
 
   private static Delay ofSeconds(long seconds) {
-    return new Delay(Duration.ofSeconds(seconds));
+    return Delay.of(Duration.ofSeconds(seconds));
   }
 
   private static Delay ofDays(long days) {
-    return new Delay(Duration.ofDays(days));
+    return Delay.of(Duration.ofDays(days));
   }
 
   private void upon(Class<? extends Throwable> exceptionType, List<Delay> delays) {

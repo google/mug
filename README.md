@@ -15,12 +15,13 @@ CompletionStage<Account> future = new Retryer()
     .retry(this::getAccount, executor);
 ```
 
-In order to customize retry events such as to log differently, client code can create a subclass of Delay:
+To customize retry events such as to log differently, client code can create custom Delay implementation:
 
 ```java
-class CustomDelay extends Delay {
-  CustomDelay(Duration duration) {
-    super(duration);
+class CustomDelay implements Delay {
+
+  @Override public Duration duration() {
+    ...
   }
 
   @Override public void beforeDelay(Throwable e) {
