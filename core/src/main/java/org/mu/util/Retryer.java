@@ -62,7 +62,7 @@ public class Retryer {
    * Returns a new {@code Retryer} that uses {@code delays} when an exception satisfies
    * {@code condition}.
    */
-  public Retryer upon(Predicate<? super Throwable> condition, List<Delay> delays) {
+  public Retryer upon(Predicate<? super Throwable> condition, List<? extends Delay> delays) {
     return new Retryer(plan.upon(condition, delays));
   }
 
@@ -70,7 +70,7 @@ public class Retryer {
    * Returns a new {@code Retryer} that uses {@code delays} when an exception is instance of
    * {@code exceptionType}.
    */
-  public Retryer upon(Class<? extends Throwable> exceptionType, List<Delay> delays) {
+  public Retryer upon(Class<? extends Throwable> exceptionType, List<? extends Delay> delays) {
     return new Retryer(plan.upon(exceptionType, delays));
   }
 
@@ -79,7 +79,7 @@ public class Retryer {
    * {@code exceptionType} and satisfies {@code condition}.
    */
   public <E extends Throwable> Retryer upon(
-      Class<E> exceptionType, Predicate<? super E> condition, List<Delay> delays) {
+      Class<E> exceptionType, Predicate<? super E> condition, List<? extends Delay> delays) {
     return new Retryer(plan.upon(exceptionType, condition, delays));
   }
 
@@ -188,21 +188,21 @@ public class Retryer {
     }
 
     /**
-     * Returns a wrapper of {@code delays} list that while not modifiable, can suddenly become empty
+     * Returns a wrapper of {@code list} that while not modifiable, can suddenly become empty
      * when {@code totalDuration} has elapsed since the time the wrapper was created. {@code clock}
      * is used to measure time.
      */
-    static List<Delay> timed(List<Delay> delays, Duration totalDuration, Clock clock) {
+    static <T> List<T> timed(List<T> list, Duration totalDuration, Clock clock) {
       requireNonNull(clock);
       Instant until = clock.instant().plus(totalDuration);
-      return guarded(delays, () -> clock.instant().isBefore(until));
+      return guarded(list, () -> clock.instant().isBefore(until));
     }
 
     /**
-     * Returns a wrapper of {@code delays} list that while not modifiable, can suddenly become empty
+     * Returns a wrapper of {@code list} that while not modifiable, can suddenly become empty
      * when {@code totalDuration} has elapsed since the time the wrapper was created.
      */
-    static List<Delay> timed(List<Delay> delays, Duration totalDuration) {
+    static <T> List<T> timed(List<T> delays, Duration totalDuration) {
       return timed(delays, totalDuration, Clock.systemUTC());
     }
 
