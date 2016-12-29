@@ -198,8 +198,8 @@ public class Retryer {
      * Returns a wrapper of {@code list} that while not modifiable, can suddenly become empty
      * when {@code totalDuration} has elapsed since the time the wrapper was created.
      */
-    public static <T> List<T> timed(List<T> delays, Duration totalDuration) {
-      return timed(delays, totalDuration, Clock.systemUTC());
+    public static <T> List<T> timed(List<T> list, Duration totalDuration) {
+      return timed(list, totalDuration, Clock.systemUTC());
     }
 
     /**
