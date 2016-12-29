@@ -8,7 +8,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import java.time.Duration;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -112,7 +111,7 @@ public class RetryerBlockingTest {
   @Test public void actionFailsEvenAfterRetry()
       throws IOException, InterruptedException {
     Retryer retryer = new Retryer()
-        .upon(IOException.class, Delay.exponentialBackoff(Duration.ofMillis(100), 10, 2));
+        .upon(IOException.class, Delay.ofMillis(100).exponentialBackoff(10, 2));
     IOException exception = new IOException();
     when(action.run())
         .thenThrow(new IOException()).thenThrow(new IOException()).thenThrow(exception);
@@ -126,7 +125,7 @@ public class RetryerBlockingTest {
 
   @Test public void interruptedDuringRetry() throws IOException, InterruptedException {
     Retryer retryer = new Retryer()
-        .upon(IOException.class, Delay.exponentialBackoff(Duration.ofMillis(100), 10, 1));
+        .upon(IOException.class, Delay.ofMillis(100).exponentialBackoff(10, 1));
     IOException exception = new IOException();
     when(action.run()).thenThrow(exception);
     PowerMockito.doThrow(new InterruptedException()).when(Thread.class); Thread.sleep(100);
