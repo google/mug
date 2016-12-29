@@ -161,7 +161,7 @@ public class Retryer {
     Duration duration();
 
     /**
-     * Shorthand for {@code new Delay(Duration.ofMillis(millis))}.
+     * Shorthand for {@code of(Duration.ofMillis(millis))}.
      *
      * @param millis must not be negative
      */
