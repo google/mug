@@ -26,9 +26,13 @@ CompletableStage<Account> fetchAccountWithRetry(ScheduledExecutorService executo
 To customize retry events such as to log differently, client code can create custom Delay implementation:
 
 ```java
-class CustomDelay implements Delay {
+class CustomDelay extends Delay {
 
   @Override public Duration duration() {
+    ...
+  }
+
+  @Override public Delay multipliedBy(double multiplier) {
     ...
   }
 
