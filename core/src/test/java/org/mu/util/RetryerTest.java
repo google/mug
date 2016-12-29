@@ -17,6 +17,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
@@ -258,6 +259,33 @@ public class RetryerTest {
     assertThrows(IllegalArgumentException.class, () -> ofDays(1).exponentialBackoff(0, 1));
     assertThrows(IllegalArgumentException.class, () -> ofDays(1).exponentialBackoff(-1, 1));
     assertThrows(IllegalArgumentException.class, () -> ofDays(1).exponentialBackoff(2, -1));
+  }
+
+  @Test public void testDelay_randomized_invalid() {
+    assertThrows(NullPointerException.class, () -> ofDays(1).randomized(null, 1));
+    assertThrows(IllegalArgumentException.class, () -> ofDays(1).randomized(new Random(), -0.1));
+    assertThrows(IllegalArgumentException.class, () -> ofDays(1).randomized(new Random(), 1.1));
+  }
+
+  @Test public void testDelay_randomized_zeroRandomness() {
+    Delay delay = ofDays(1).randomized(new Random(), 0);
+    assertThat(delay).isEqualTo(ofDays(1));
+  }
+
+  @Test public void testDelay_randomized_halfRandomness() {
+    Random random = Mockito.mock(Random.class);
+    when(random.nextDouble()).thenReturn(0D).thenReturn(0.5D).thenReturn(1D);
+    assertThat(ofDays(1).randomized(random, 0.5).duration()).isEqualTo(Duration.ofHours(12));
+    assertThat(ofDays(1).randomized(random, 0.5).duration()).isEqualTo(Duration.ofHours(24));
+    assertThat(ofDays(1).randomized(random, 0.5).duration()).isEqualTo(Duration.ofHours(36));
+  }
+
+  @Test public void testDelay_randomized_fullRandomness() {
+    Random random = Mockito.mock(Random.class);
+    when(random.nextDouble()).thenReturn(0D).thenReturn(0.5D).thenReturn(1D);
+    assertThat(ofDays(1).randomized(random, 1).duration()).isEqualTo(Duration.ofHours(0));
+    assertThat(ofDays(1).randomized(random, 1).duration()).isEqualTo(Duration.ofHours(24));
+    assertThat(ofDays(1).randomized(random, 1).duration()).isEqualTo(Duration.ofHours(48));
   }
 
   @Test public void testDelay_equals() {

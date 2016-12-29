@@ -22,6 +22,7 @@ import java.time.Instant;
 import java.util.AbstractList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
@@ -250,6 +251,29 @@ public class Retryer {
       if (multiplier < 0) throw new IllegalArgumentException("Invalid multiplier: " + multiplier);
       double millis = duration().toMillis() * multiplier;
       return withDuration(Duration.ofMillis(Math.round(Math.ceil(millis))));
+    }
+  
+    /**
+     * Returns a new {@code Delay} with some extra randomness.
+     * To randomize a list of {@code Delay}s, for example:
+     *
+     * <pre>{@code
+     *   Random random = new Random();
+     *   List<Delay> randomized = Delay.ofMillis(100).exponentialBackoff(2, 5).stream()
+     *       .map(d -> d.randomized(random, 0.5))
+     *       .collect(toList());
+     * }</pre>
+     *
+     * @param random random generator
+     * @param randomness Must be in the range of [0, 1]. 0 means no randomness; and 1 means the
+     *        delay randomly ranges from 0x to 2x.
+     */
+    public final Delay randomized(Random random, double randomness) {
+      if (randomness < 0 || randomness > 1) {
+        throw new IllegalArgumentException("Randomness must be in range of [0, 1]: " + randomness);
+      }
+      if (randomness == 0) return this;
+      return multipliedBy(1 + (random.nextDouble() - 0.5) * 2 * randomness);
     }
 
     /**
