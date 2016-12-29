@@ -279,9 +279,9 @@ public class Retryer {
     /**
      * Returns a new {@code Delay} with {@code newDuration}.
      *
-     * <p>This method is called by {@link #exponentialBackoff} and {@link #multipliedBy}
-     * to create new instances of {@code Delay}. A subclass must override this method to create
-     * instances of the subclass.
+     * <p>This method is called by {@link #exponentialBackoff}, {@link #multipliedBy} and
+     * {@link #randomized} to create new instances of {@code Delay}.
+     * A subclass must override this method to create instances of the subclass.
      *
      * @param newDuration must not be negative
      */
