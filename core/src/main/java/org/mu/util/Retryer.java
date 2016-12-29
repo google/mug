@@ -211,6 +211,9 @@ public class Retryer {
      * Returns an immutable {@code List} of delays with {@code size}. The first delay
      * (if {@code size > 0}) is {@code this} and the following delays are exponentially
      * multiplied using {@code multiplier}.
+     *
+     * @param multiplier must be positive.
+     * @param size must not be negative.
      */
     default List<Delay> exponentialBackoff(double multiplier, int size) {
       if (multiplier <= 0) throw new IllegalArgumentException("Invalid multiplier: " + multiplier);
