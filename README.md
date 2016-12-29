@@ -7,6 +7,16 @@ Retryer is a helper that makes it easier to retry an operation with configurable
 
 For example:
 
+Retry blockingly:
+```java
+Account fetchAccountWithRetry() throws IOException {
+  Account future = new Retryer()
+      .upon(IOException.class, Delay.exponentialBackoff(ofMillis(1), 2, 3))
+      .retryBlockingly(this::getAccount);
+}
+```
+
+Or asynchronously:
 ```java
 CompletionStage<Account> future = new Retryer()
     .upon(IOException.class, Delay.exponentialBackoff(ofMillis(1), 2, 3))
