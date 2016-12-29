@@ -160,12 +160,20 @@ public class Retryer {
     /** Returns the delay interval. */
     Duration duration();
 
-    /** Shorthand for {@code new Delay(Duration.ofMillis(millis))}. */
+    /**
+     * Shorthand for {@code new Delay(Duration.ofMillis(millis))}.
+     *
+     * @param millis must not be negative
+     */
     static Delay ofMillis(long millis) {
       return of(Duration.ofMillis(millis));
     }
 
-    /** Returns a {@code Delay} of {@code duration}. */
+    /**
+     * Returns a {@code Delay} of {@code duration}.
+     *
+     * @param duration must not be negative
+     */
     static Delay of(Duration duration) {
       return new DefaultDelay(duration);
     }
@@ -176,8 +184,7 @@ public class Retryer {
      * is used to measure time.
      */
     static <T> List<T> timed(List<T> list, Duration totalDuration, Clock clock) {
-      requireNonNull(clock);
-      Instant until = clock.instant().plus(totalDuration);
+      Instant until = clock.instant().plus(requireNonNegative(totalDuration));
       return guarded(list, () -> clock.instant().isBefore(until));
     }
 
@@ -212,8 +219,8 @@ public class Retryer {
      * (if {@code size > 0}) is {@code this} and the following delays are exponentially
      * multiplied using {@code multiplier}.
      *
-     * @param multiplier must be positive.
-     * @param size must not be negative.
+     * @param multiplier must be positive
+     * @param size must not be negative
      */
     default List<Delay> exponentialBackoff(double multiplier, int size) {
       if (multiplier <= 0) throw new IllegalArgumentException("Invalid multiplier: " + multiplier);
@@ -229,7 +236,11 @@ public class Retryer {
       };
     }
  
-    /** Returns a new {@code Delay} with duration multiplied by {@code multiplier}. */
+    /**
+     * Returns a new {@code Delay} with duration multiplied by {@code multiplier}.
+     *
+     * @param multiplier must not be negative
+     */
     default Delay multipliedBy(double multiplier) {
       return of(scale(duration(), multiplier));
     }
@@ -255,10 +266,7 @@ public class Retryer {
     private final Duration duration;
 
     DefaultDelay(Duration duration) {
-      if (duration.toMillis() < 0) {
-        throw new IllegalArgumentException("Invalid duration: " + duration);
-      }
-      this.duration = duration;
+      this.duration = requireNonNegative(duration);
     }
 
     @Override public final Duration duration() {
@@ -356,6 +364,13 @@ public class Retryer {
     if (multiplier < 0) throw new IllegalArgumentException("Invalid multiplier: " + multiplier);
     double millis = duration.toMillis() * multiplier;
     return Duration.ofMillis(Math.round(Math.ceil(millis)));
+  }
+
+  private static Duration requireNonNegative(Duration duration) {
+    if (duration.toMillis() < 0) {
+      throw new IllegalArgumentException("Negative duration: " + duration);
+    }
+    return duration;
   }
 
   @FunctionalInterface

@@ -234,6 +234,11 @@ public class RetryerTest {
     assertThrows(NullPointerException.class, () -> Delay.of(null));
   }
 
+  @Test public void testDelay_timed_invalid() {
+    assertThrows(
+        IllegalArgumentException.class, () -> Delay.timed(asList(), Duration.ofMillis(-1)));
+  }
+
   @Test public void testDelay_multiplied() {
     assertThat(ofDays(1).multipliedBy(0)).isEqualTo(ofDays(0));
     assertThat(ofDays(2).multipliedBy(1)).isEqualTo(ofDays(2));
