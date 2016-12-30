@@ -19,7 +19,7 @@ Account fetchAccountWithRetry() throws IOException {
 #### To retry asynchronously
 
 ```java
-CompletableStage<Account> fetchAccountWithRetry(ScheduledExecutorService executor) {
+CompletionStage<Account> fetchAccountWithRetry(ScheduledExecutorService executor) {
   return new Retryer()
       .upon(IOException.class, Delay.ofMillis(1).exponentialBackoff(1.5, 4))
       .retry(this::getAccount, executor);
@@ -29,7 +29,7 @@ CompletableStage<Account> fetchAccountWithRetry(ScheduledExecutorService executo
 `getAccount()` itself runs asynchronously and returns `CompletionStage<Account>`? No problem.
 And for demo purpose, how about we also use a bit of randomization in the backoff to avoid bursty traffic?
 ```java
-CompletableStage<Account> fetchAccountWithRetry(ScheduledExecutorService executor) {
+CompletionStage<Account> fetchAccountWithRetry(ScheduledExecutorService executor) {
   Random rnd = new Random();
   return new Retryer()
       .upon(IOException.class,
