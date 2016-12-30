@@ -20,6 +20,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.AbstractList;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
@@ -34,6 +35,8 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.mu.function.CheckedSupplier;
 
@@ -63,18 +66,38 @@ public class Retryer {
    * Returns a new {@code Retryer} that uses {@code delays} when an exception satisfies
    * {@code condition}.
    */
-  public Retryer upon(
+  public final Retryer upon(
       Predicate<? super Throwable> condition, List<? extends Delay<Throwable>> delays) {
     return new Retryer(plan.upon(condition, delays));
+  }
+
+  /**
+   * Returns a new {@code Retryer} that uses {@code delays} when an exception satisfies
+   * {@code condition}.
+   */
+  public final Retryer upon(
+      Predicate<? super Throwable> condition, Stream<? extends Delay<Throwable>> delays) {
+    return upon(condition, delays.collect(Collectors.toCollection(ArrayList::new)));
   }
 
   /**
    * Returns a new {@code Retryer} that uses {@code delays} when an exception is instance of
    * {@code exceptionType}.
    */
-  public <E extends Throwable> Retryer upon(
+  public final <E extends Throwable> Retryer upon(
       Class<E> exceptionType, List<? extends Delay<? super E>> delays) {
     return new Retryer(plan.upon(exceptionType, delays));
+  }
+
+  /**
+   * Returns a new {@code Retryer} that uses {@code delays} when an exception is instance of
+   * {@code exceptionType}.
+   */
+  public final <E extends Throwable> Retryer upon(
+      Class<E> exceptionType, Stream<? extends Delay<? super E>> delays) {
+    List<? extends Delay<? super E>> delayList =
+        delays.collect(Collectors.toCollection(ArrayList::new));
+    return upon(exceptionType, delayList);
   }
 
   /**
@@ -85,6 +108,18 @@ public class Retryer {
       Class<E> exceptionType, Predicate<? super E> condition,
       List<? extends Delay<? super E>> delays) {
     return new Retryer(plan.upon(exceptionType, condition, delays));
+  }
+
+  /**
+   * Returns a new {@code Retryer} that uses {@code delays} when an exception is instance of
+   * {@code exceptionType} and satisfies {@code condition}.
+   */
+  public <E extends Throwable> Retryer upon(
+      Class<E> exceptionType, Predicate<? super E> condition,
+      Stream<? extends Delay<? super E>> delays) {
+    List<? extends Delay<? super E>> delayList =
+        delays.collect(Collectors.toCollection(ArrayList::new));
+    return upon(exceptionType, condition, delayList);
   }
 
   /**
@@ -255,7 +290,7 @@ public class Retryer {
     public final Delay<E> multipliedBy(double multiplier) {
       if (multiplier < 0) throw new IllegalArgumentException("Invalid multiplier: " + multiplier);
       double millis = duration().toMillis() * multiplier;
-      return withDuration(Duration.ofMillis(Math.round(Math.ceil(millis))));
+      return of(Duration.ofMillis(Math.round(Math.ceil(millis))));
     }
   
     /**
@@ -279,19 +314,6 @@ public class Retryer {
       }
       if (randomness == 0) return this;
       return multipliedBy(1 + (random.nextDouble() - 0.5) * 2 * randomness);
-    }
-
-    /**
-     * Returns a new {@code Delay} with {@code newDuration}.
-     *
-     * <p>This method is called by {@link #exponentialBackoff}, {@link #multipliedBy} and
-     * {@link #randomized} to create new instances of {@code Delay}.
-     * A subclass must override this method to create instances of the subclass.
-     *
-     * @param newDuration must not be negative
-     */
-    protected Delay<E> withDuration(Duration newDuration) {
-      return of(newDuration);
     }
 
     /** Called if {@code exception} will be retried after the delay. */

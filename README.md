@@ -9,7 +9,7 @@ Retry blockingly:
 ```java
 Account fetchAccountWithRetry() throws IOException {
   return new Retryer()
-      .upon(IOException.class, Delay.ofMillis(1).exponentialBackoff(2, 3))
+      .upon(IOException.class, Delay.ofMillis(1).exponentialBackoff(1.5, 3))
       .retryBlockingly(this::getAccount);
 }
 ```
@@ -18,7 +18,7 @@ or asynchronously:
 ```java
 CompletableStage<Account> fetchAccountWithRetry(ScheduledExecutorService executor) {
   return new Retryer()
-      .upon(IOException.class, Delay.ofMillis(1).exponentialBackoff(2, 3))
+      .upon(IOException.class, Delay.ofMillis(1).exponentialBackoff(1.5, 3))
       .retry(this::getAccount, executor);
 }
 ```
@@ -30,9 +30,8 @@ CompletableStage<Account> fetchAccountWithRetry(ScheduledExecutorService executo
   Random rnd = new Random();
   return new Retryer()
       .upon(IOException.class,
-            Delay.ofMillis(1).exponentialBackoff(2, 3).stream()
-                .map(d -> d.randomized(rnd, 0.5))
-                .collect(toList())),
+            Delay.ofMillis(1).exponentialBackoff(1.5, 3).stream()
+                .map(d -> d.randomized(rnd, 0.5)))
       .retryAsync(this::getAccount, executor);
 }
 ```
@@ -42,25 +41,25 @@ Sometimes the program may need custom handling of retry events, like, for exampl
 ```java
 class RpcDelay extends Delay<RpcException> {
 
+  RpcDelay(Delay delay) {...}
+
   @Override public Duration duration() {
     ...
   }
 
-  @Override protected Delay withDuration(Duration duration) {
-    return new RpcDelay(duration);
-  }
-
   @Override public void beforeDelay(RpcException e) {
-    UpdateStatsCounter(e.getErrorCode(), "before delay", duration());
+    updateStatsCounter(e.getErrorCode(), "before delay", duration());
   }
 
-  @Override public void afterDelay(MySpecialException e) {
-    UpdateStatsCounter(e.getErrorCode(), "after delay", duration());
+  @Override public void afterDelay(RpcException e) {
+    updateStatsCounter(e.getErrorCode(), "after delay", duration());
   }
 }
 
 return new Retryer()
-    .upon(RpcException.class, new RpcDelay(ofMillis(10)).exponentialBackoff())
+    .upon(RpcException.class,
+          Delay.ofMillis(10).exponentialBackoff(...).stream()
+              .map(RpcDelay::new))
     .retry(this::sendRpcRequest, executor);
 ```
 
