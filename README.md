@@ -5,7 +5,7 @@ Tiny Java 8 utilities ([javadoc](http://fluentfuture.github.io/mu/apidocs/)) for
 
 Retryer is a helper that makes it easier to retry an operation with configurable backoffs.
 
-Retry blockingly:
+#### To retry blockingly:
 ```java
 Account fetchAccountWithRetry() throws IOException {
   return new Retryer()
@@ -14,7 +14,7 @@ Account fetchAccountWithRetry() throws IOException {
 }
 ```
 
-or asynchronously:
+#### Asynchronously:
 ```java
 CompletableStage<Account> fetchAccountWithRetry(ScheduledExecutorService executor) {
   return new Retryer()
@@ -35,6 +35,8 @@ CompletableStage<Account> fetchAccountWithRetry(ScheduledExecutorService executo
       .retryAsync(this::getAccount, executor);
 }
 ```
+
+#### To handle retry events
 
 Sometimes the program may need custom handling of retry events, like, for example, to increment a stats counter based on the error code in the exception. Requirements like this can be done with a custom Delay implementation:
 
@@ -63,6 +65,8 @@ return new Retryer()
 ```
 
 ## Funnel
+
+#### The problem
 
 Ever needed to convert a list of objects? It's trivial:
 
@@ -117,6 +121,8 @@ List<Result> convert(List<Input> inputs) {
 Close. Except it breaks the ordering of inputs. The caller no longer knows which result is for which input.
 
 Tl;Dr: maintaining the encounter order while dispatching objects to batches requires careful juggling of the indices and messes up the code rather quickly.
+
+#### The tool
 
 Funnel is a simple library to stop the bleeding:
 
