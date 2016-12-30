@@ -52,7 +52,7 @@ return new Retryer()
 
 ## Funnel
 
-Ever needed to convert a list of objects? It's as simple as it gets:
+Ever needed to convert a list of objects? It's trivial:
 
 ```java
 List<Result> convert(List<Input> inputs) {
@@ -63,17 +63,10 @@ List<Result> convert(List<Input> inputs) {
   return list;
 }
 ```
-or, who doesn't love lambda?
-
-```java
-return inputs.stream()
-    .map(this::convertInput)
-    .collect(toList());  
-```
 
 Normally such API has the contract that the order of results are in the same order as the inputs.
 
-Well. what if Input can be of two different kinds, and one kind needs to be converted through a remote service? Again, it's almost as simple:
+Well. what if Input can be of two different kinds, and one kind needs to be converted through a remote service? Pretty straight-forward too:
 
 ```java
 List<Result> convert(List<Input> inputs) {
@@ -89,7 +82,7 @@ List<Result> convert(List<Input> inputs) {
 }
 ```
 
-In reality though, most remote services are expensive and hence could benefit from batching. Can you batch the ones needing remote conversion and convert them in one remote call?
+In reality though, most remote services are expensive and could use batching as an optimization. Can you batch the ones needing remote conversion and convert them in one remote call?
 
 Perhaps this?
 
@@ -131,7 +124,7 @@ List<Result> convert(List<Input> inputs) {
 ```
 All the code has to do is to define the batch with ```funnel.through()``` and then inputs can be added to the batch without breaking encounter order.
 
-So what if there are 3 kinds of inputs and two kinds require two different batch conversions? Funnel supports arbitrary number of batches. Just define them with ```through()``` and ```through()```.
+What happens if there are 3 kinds of inputs and two kinds require two different batch conversions? Funnel supports arbitrary number of batches. Just define them with ```through()``` and ```through()```.
 
 ## Maybe
 
