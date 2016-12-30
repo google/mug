@@ -234,15 +234,32 @@ public class Retryer {
      * Returns a wrapper of {@code list} that while not modifiable, can suddenly become empty
      * when {@link #duration} has elapsed since the time the wrapper was created.
      */
+    public final <T> List<T> timed(Stream<T> list) {
+      return timed(list, Clock.systemUTC());
+    }
+
+    /**
+     * Returns a wrapper of {@code list} that while not modifiable, can suddenly become empty
+     * when {@link #duration} has elapsed since the time the wrapper was created.
+     */
     public final <T> List<T> timed(List<T> list) {
       return timed(list, Clock.systemUTC());
+    }
+
+    /**
+     * Returns a wrapper of {@code list} that while not modifiable, can suddenly become empty
+     * when {@link #duration} has elapsed since the time the wrapper was created. {@code clock}
+     * is used to measure time.
+     */
+    public final <T> List<T> timed(Stream<T> list, Clock clock) {
+      return timed(copyOf(list), clock);
     }
 
     /**
      * Similar to {@link #timed timed()}, this method wraps {@code list} to make it empty when
      * {@code condition} becomes false.
      */
-    public static <T> List<T> guarded(List<T> list, BooleanSupplier condition) {
+    static <T> List<T> guarded(List<T> list, BooleanSupplier condition) {
       requireNonNull(list);
       requireNonNull(condition);
       return new AbstractList<T>() {

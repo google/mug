@@ -25,13 +25,16 @@ CompletableStage<Account> fetchAccountWithRetry(ScheduledExecutorService executo
 
 `getAccount()` itself runs asynchronously and returns `CompletionStage<Account>`? No problem.
 And for demo purpose, how about we also use a bit of randomization in the backoff to avoid bursty traffic?
+To be perfectly safe, we can also add a cap to the total retry time, just in case things are delayed for too long:
 ```java
 CompletableStage<Account> fetchAccountWithRetry(ScheduledExecutorService executor) {
+  Delay<?> cap = Delay.ofMillis(500);  // Half second is a loooong time
   Random rnd = new Random();
   return new Retryer()
       .upon(IOException.class,
-            Delay.ofMillis(1).exponentialBackoff(1.5, 3).stream()
-                .map(d -> d.randomized(rnd, 0.5)))
+            cap.timed(
+                Delay.ofMillis(30).exponentialBackoff(1.5, 3).stream()
+                    .map(d -> d.randomized(rnd, 0.5))))
       .retryAsync(this::getAccount, executor);
 }
 ```
