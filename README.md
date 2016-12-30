@@ -9,16 +9,20 @@ Retry blockingly:
 ```java
 Account fetchAccountWithRetry() throws IOException {
   return new Retryer()
-      .upon(IOException.class, Delay.exponentialBackoff(ofMillis(1), 2, 3))
+      .upon(IOException.class, Delay.ofMillis(1).exponentialBackoff(2, 3))
       .retryBlockingly(this::getAccount);
 }
 ```
 
-Or asynchronously:
+Or asynchronously (for demo purpose, let's also use a bit of randomization in the backoff):
 ```java
 CompletableStage<Account> fetchAccountWithRetry(ScheduledExecutorService executor) {
+  Random rnd = new Random();
   return new Retryer()
-      .upon(IOException.class, Delay.exponentialBackoff(ofMillis(1), 2, 3))
+      .upon(IOException.class,
+            Delay.ofMillis(1).exponentialBackoff(2, 3).stream()
+                .map(d -> d.randomized(rnd, 0.5))
+                .collect(toList())),
       .retry(this::getAccount, executor);
 }
 ```
