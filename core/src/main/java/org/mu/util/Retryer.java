@@ -48,14 +48,14 @@ public class Retryer {
 
   private static final Logger logger = Logger.getLogger(Retryer.class.getName());
 
-  private final ExceptionPlan<Delay> plan;
+  private final ExceptionPlan<Delay<?>> plan;
 
   /** Constructs an empty {@code Retryer}. */
   public Retryer() {
     this(new ExceptionPlan<>());
   }
 
-  private Retryer(ExceptionPlan<Delay> plan) {
+  private Retryer(ExceptionPlan<Delay<?>> plan) {
     this.plan = requireNonNull(plan);
   }
 
@@ -63,7 +63,8 @@ public class Retryer {
    * Returns a new {@code Retryer} that uses {@code delays} when an exception satisfies
    * {@code condition}.
    */
-  public Retryer upon(Predicate<? super Throwable> condition, List<? extends Delay> delays) {
+  public Retryer upon(
+      Predicate<? super Throwable> condition, List<? extends Delay<Throwable>> delays) {
     return new Retryer(plan.upon(condition, delays));
   }
 
@@ -71,7 +72,8 @@ public class Retryer {
    * Returns a new {@code Retryer} that uses {@code delays} when an exception is instance of
    * {@code exceptionType}.
    */
-  public Retryer upon(Class<? extends Throwable> exceptionType, List<? extends Delay> delays) {
+  public <E extends Throwable> Retryer upon(
+      Class<E> exceptionType, List<? extends Delay<? super E>> delays) {
     return new Retryer(plan.upon(exceptionType, delays));
   }
 
@@ -80,7 +82,8 @@ public class Retryer {
    * {@code exceptionType} and satisfies {@code condition}.
    */
   public <E extends Throwable> Retryer upon(
-      Class<E> exceptionType, Predicate<? super E> condition, List<? extends Delay> delays) {
+      Class<E> exceptionType, Predicate<? super E> condition,
+      List<? extends Delay<? super E>> delays) {
     return new Retryer(plan.upon(exceptionType, condition, delays));
   }
 
@@ -95,7 +98,7 @@ public class Retryer {
    */
   public <T, E extends Throwable> T retryBlockingly(CheckedSupplier<T, E> supplier) throws E {
     requireNonNull(supplier);
-    for (ExceptionPlan<Delay> currentPlan = plan; ;) {
+    for (ExceptionPlan<Delay<?>> currentPlan = plan; ;) {
       try {
         return supplier.get();
       } catch (RuntimeException e) {
@@ -155,8 +158,10 @@ public class Retryer {
     return future;
   }
 
-  /** Represents a single delay interval between retry attempts. */
-  public static abstract class Delay implements Comparable<Delay> {
+  /**
+   * Represents a delay interval between retry attempts for exceptions of type {@code E}.
+   */
+  public static abstract class Delay<E extends Throwable> implements Comparable<Delay<E>> {
 
     /** Returns the delay interval. */
     public abstract Duration duration();
@@ -166,7 +171,7 @@ public class Retryer {
      *
      * @param millis must not be negative
      */
-    public static Delay ofMillis(long millis) {
+    public static <E extends Throwable> Delay<E> ofMillis(long millis) {
       return of(Duration.ofMillis(millis));
     }
 
@@ -175,9 +180,9 @@ public class Retryer {
      *
      * @param duration must not be negative
      */
-    public static Delay of(Duration duration) {
+    public static <E extends Throwable> Delay<E> of(Duration duration) {
       requireNonNegative(duration);
-      return new Delay() {
+      return new Delay<E>() {
         @Override public Duration duration() {
           return duration;
         }
@@ -228,12 +233,12 @@ public class Retryer {
      * @param multiplier must be positive
      * @param size must not be negative
      */
-    public final List<Delay> exponentialBackoff(double multiplier, int size) {
+    public final List<Delay<E>> exponentialBackoff(double multiplier, int size) {
       if (multiplier <= 0) throw new IllegalArgumentException("Invalid multiplier: " + multiplier);
       if (size < 0) throw new IllegalArgumentException("Invalid size: " + size);
       if (size == 0) return Collections.emptyList();
-      return new AbstractList<Delay>() {
-        @Override public Delay get(int index) {
+      return new AbstractList<Delay<E>>() {
+        @Override public Delay<E> get(int index) {
           return multipliedBy(Math.pow(multiplier, index));
         }
         @Override public int size() {
@@ -247,7 +252,7 @@ public class Retryer {
      *
      * @param multiplier must not be negative
      */
-    public final Delay multipliedBy(double multiplier) {
+    public final Delay<E> multipliedBy(double multiplier) {
       if (multiplier < 0) throw new IllegalArgumentException("Invalid multiplier: " + multiplier);
       double millis = duration().toMillis() * multiplier;
       return withDuration(Duration.ofMillis(Math.round(Math.ceil(millis))));
@@ -268,7 +273,7 @@ public class Retryer {
      * @param randomness Must be in the range of [0, 1]. 0 means no randomness; and 1 means the
      *        delay randomly ranges from 0x to 2x.
      */
-    public final Delay randomized(Random random, double randomness) {
+    public final Delay<E> randomized(Random random, double randomness) {
       if (randomness < 0 || randomness > 1) {
         throw new IllegalArgumentException("Randomness must be in range of [0, 1]: " + randomness);
       }
@@ -285,28 +290,28 @@ public class Retryer {
      *
      * @param newDuration must not be negative
      */
-    protected Delay withDuration(Duration newDuration) {
+    protected Delay<E> withDuration(Duration newDuration) {
       return of(newDuration);
     }
 
     /** Called if {@code exception} will be retried after the delay. */
-    public void beforeDelay(Throwable exception) {
+    public void beforeDelay(E exception) {
       logger.info("Will retry for " + exception.getClass() + " after " + duration());
       
     }
 
     /** Called after the delay, immediately before the retry. */
-    public void afterDelay(Throwable exception) {
+    public void afterDelay(E exception) {
       logger.log(Level.INFO, "Retrying now after " + duration(), exception);
     }
 
-    @Override public int compareTo(Delay that) {
+    @Override public int compareTo(Delay<E> that) {
       return duration().compareTo(that.duration());
     }
 
     @Override public boolean equals(Object obj) {
       if (obj instanceof Delay) {
-        Delay that = (Delay) obj;
+        Delay<?> that = (Delay<?>) obj;
         return duration().equals(that.duration());
       }
       return false;
@@ -328,17 +333,20 @@ public class Retryer {
     }
   }
 
-  private static <E extends Throwable> ExceptionPlan<Delay> delay(
-      E exception, ExceptionPlan<Delay> plan) throws E {
-    ExceptionPlan.Execution<Delay> execution = plan.execute(exception).get();
+  private static <E extends Throwable> ExceptionPlan<Delay<?>> delay(
+      E exception, ExceptionPlan<Delay<?>> plan) throws E {
+    ExceptionPlan.Execution<Delay<?>> execution = plan.execute(exception).get();
+    @SuppressWarnings("unchecked")  // Applicable delays were from upon(), enforcing <? super E>
+    Delay<? super E> delay = (Delay<? super E>) execution.strategy();
+    delay.beforeDelay(exception);
     try {
-      Thread.sleep(execution.strategy().duration().toMillis());
+      Thread.sleep(delay.duration().toMillis());
     } catch (InterruptedException e) {
       logger.info("Interrupted while waiting to retry upon " + exception.getClass());
       Thread.currentThread().interrupt();
       throw exception;
     }
-    execution.strategy().afterDelay(exception);
+    delay.afterDelay(exception);
     return execution.remainingExceptionPlan();
   }
 
@@ -376,17 +384,19 @@ public class Retryer {
   private <T> void scheduleRetry(
       Throwable e, ScheduledExecutorService retryExecutor,
       CheckedSupplier<? extends CompletionStage<T>, ?> supplier, CompletableFuture<T> result) {
-    Maybe<ExceptionPlan.Execution<Delay>, ?> maybeRetry = plan.execute(e);
+    Maybe<ExceptionPlan.Execution<Delay<?>>, ?> maybeRetry = plan.execute(e);
     maybeRetry.ifPresent(execution -> {
-      execution.strategy().beforeDelay(e);
+      @SuppressWarnings("unchecked")  // delay came from upon(), which enforces <? super E>.
+      Delay<Throwable> delay = (Delay<Throwable>) execution.strategy();
+      delay.beforeDelay(e);
       Failable retry = () -> {
-        execution.strategy().afterDelay(e);
+        delay.afterDelay(e);
         new Retryer(execution.remainingExceptionPlan())
             .invokeWithRetry(supplier, retryExecutor, result);
       };
       retryExecutor.schedule(
           () -> retry.run(result::completeExceptionally),
-          execution.strategy().duration().toMillis(), TimeUnit.MILLISECONDS);
+          delay.duration().toMillis(), TimeUnit.MILLISECONDS);
     });
     maybeRetry.catching(result::completeExceptionally);
   }
