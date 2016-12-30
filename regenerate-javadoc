@@ -1,4 +1,0 @@
-mvn org.apache.maven.plugins:maven-javadoc-plugin:javadoc
-rm -Rf apidocs
-cp -R core/target/site/apidocs .
-git commit -a -m "Javadoc regenerated"
