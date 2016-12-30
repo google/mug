@@ -24,6 +24,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -227,6 +228,34 @@ public class RetryerTest {
     assertCauseOf(ExecutionException.class, () -> stage.toCompletableFuture().get())
         .isSameAs(exception);
     verify(action, times(3)).run();  // Retry twice.
+  }
+
+  @Test public void retryBlockinglyWithZeroDelayIsOkayWithJdk() throws Exception {
+    Delay<Throwable> delay = Mockito.spy(ofSeconds(0));
+    upon(IOException.class, asList(delay));
+    IOException exception = new IOException();
+    when(action.run()).thenThrow(exception).thenReturn("fixed");
+    assertThat(retryer.retryBlockingly(action::run)).isEqualTo("fixed");
+    verify(action, times(2)).run();
+    verify(delay).beforeDelay(exception);
+    verify(delay).afterDelay(exception);
+  }
+
+  @Test public void retryWithZeroDelayIsOkayWithJdk() throws Exception {
+    ScheduledThreadPoolExecutor realExecutor = new ScheduledThreadPoolExecutor(1);
+    try {
+      Delay<Throwable> delay = Mockito.spy(ofSeconds(0));
+      upon(IOException.class, asList(delay));
+      IOException exception = new IOException();
+      when(action.run()).thenThrow(exception).thenReturn("fixed");
+      assertThat(retryer.retry(action::run, realExecutor).toCompletableFuture().get())
+          .isEqualTo("fixed");
+      verify(action, times(2)).run();
+      verify(delay).beforeDelay(exception);
+      verify(delay).afterDelay(exception);
+    } finally {
+      realExecutor.shutdown();
+    }
   }
 
   @Test public void testCustomDelay() throws Exception {
