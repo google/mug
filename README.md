@@ -7,6 +7,7 @@ Retryer is a helper that makes it easier to retry an operation with configurable
 
 #### To retry blockingly
 
+Blocking retry isn't always a good idea for server side. It is however simple and being able to propagate exceptions directly up the call stack is nice:
 ```java
 Account fetchAccountWithRetry() throws IOException {
   return new Retryer()
@@ -14,7 +15,6 @@ Account fetchAccountWithRetry() throws IOException {
       .retryBlockingly(this::getAccount);
 }
 ```
-Blocking retry isn't always a good idea for server side. It is however simple and being able to propagate exceptions directly up the call stack is nice.
 
 #### To retry asynchronously
 
