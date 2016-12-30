@@ -222,20 +222,20 @@ public class Retryer {
 
     /**
      * Returns a wrapper of {@code list} that while not modifiable, can suddenly become empty
-     * when {@code totalDuration} has elapsed since the time the wrapper was created. {@code clock}
+     * when {@link #duration} has elapsed since the time the wrapper was created. {@code clock}
      * is used to measure time.
      */
-    public static <T> List<T> timed(List<T> list, Duration totalDuration, Clock clock) {
-      Instant until = clock.instant().plus(requireNonNegative(totalDuration));
+    public final <T> List<T> timed(List<T> list, Clock clock) {
+      Instant until = clock.instant().plus(duration());
       return guarded(list, () -> clock.instant().isBefore(until));
     }
 
     /**
      * Returns a wrapper of {@code list} that while not modifiable, can suddenly become empty
-     * when {@code totalDuration} has elapsed since the time the wrapper was created.
+     * when {@link #duration} has elapsed since the time the wrapper was created.
      */
-    public static <T> List<T> timed(List<T> list, Duration totalDuration) {
-      return timed(list, totalDuration, Clock.systemUTC());
+    public final <T> List<T> timed(List<T> list) {
+      return timed(list, Clock.systemUTC());
     }
 
     /**
