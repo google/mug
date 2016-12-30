@@ -27,6 +27,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.junit.After;
 import org.junit.Before;
@@ -155,7 +156,7 @@ public class RetryerTest {
     elapse(Duration.ofSeconds(1));
     assertThat(stage.toCompletableFuture().isDone()).isTrue();
     assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isFalse();
-    assertThat(stage.toCompletableFuture().get()).isEqualTo("fixed");;
+    assertThat(stage.toCompletableFuture().get()).isEqualTo("fixed");
     verify(action, times(2)).run();
     verify(delay).beforeDelay(exception);
     verify(delay).afterDelay(exception);
@@ -236,9 +237,6 @@ public class RetryerTest {
       @Override public Duration duration() {
         return Duration.ofMillis(1);
       }
-      @Override public IoDelay withDuration(Duration duration) {
-        return new IoDelay();
-      }
       @Override public void beforeDelay(IOException exception) {
         before = exception;
       }
@@ -247,7 +245,7 @@ public class RetryerTest {
       }
     }
     IoDelay delay = new IoDelay();
-    upon(IOException.class, asList(delay));
+    upon(IOException.class, asList(delay).stream());  // to make sure the stream overload works.
     IOException exception = new IOException();
     when(action.run()).thenThrow(exception).thenReturn("fixed");
     CompletionStage<String> stage = retry(action::run);
@@ -446,6 +444,11 @@ public class RetryerTest {
 
   private <E extends Throwable> void upon(
       Class<E> exceptionType, List<? extends Delay<? super E>> delays) {
+    retryer = retryer.upon(exceptionType, delays);
+  }
+
+  private <E extends Throwable> void upon(
+      Class<E> exceptionType, Stream<? extends Delay<? super E>> delays) {
     retryer = retryer.upon(exceptionType, delays);
   }
 

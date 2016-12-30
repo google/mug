@@ -31,8 +31,7 @@ CompletableStage<Account> fetchAccountWithRetry(ScheduledExecutorService executo
   return new Retryer()
       .upon(IOException.class,
             Delay.ofMillis(1).exponentialBackoff(1.5, 3).stream()
-                .map(d -> d.randomized(rnd, 0.5))
-                .collect(toList())),
+                .map(d -> d.randomized(rnd, 0.5)))
       .retryAsync(this::getAccount, executor);
 }
 ```
@@ -42,12 +41,10 @@ Sometimes the program may need custom handling of retry events, like, for exampl
 ```java
 class RpcDelay extends Delay<RpcException> {
 
+  RpcDelay(Delay delay) {...}
+
   @Override public Duration duration() {
     ...
-  }
-
-  @Override protected Delay withDuration(Duration duration) {
-    return new RpcDelay(duration);
   }
 
   @Override public void beforeDelay(RpcException e) {
@@ -60,7 +57,9 @@ class RpcDelay extends Delay<RpcException> {
 }
 
 return new Retryer()
-    .upon(RpcException.class, new RpcDelay(ofMillis(10)).exponentialBackoff(...))
+    .upon(RpcException.class,
+          Delay.ofMillis(10).exponentialBackoff(...).stream()
+              .map(RpcDelay::new))
     .retry(this::sendRpcRequest, executor);
 ```
 
