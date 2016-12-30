@@ -5,7 +5,8 @@ Tiny Java 8 utilities ([javadoc](http://fluentfuture.github.io/mu/apidocs/)) for
 
 Retryer is a helper that makes it easier to retry an operation with configurable backoffs.
 
-#### To retry blockingly:
+#### To retry blockingly
+
 ```java
 Account fetchAccountWithRetry() throws IOException {
   return new Retryer()
@@ -14,7 +15,8 @@ Account fetchAccountWithRetry() throws IOException {
 }
 ```
 
-#### Asynchronously:
+#### To retry asynchronously
+
 ```java
 CompletableStage<Account> fetchAccountWithRetry(ScheduledExecutorService executor) {
   return new Retryer()
