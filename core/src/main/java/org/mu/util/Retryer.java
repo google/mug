@@ -221,9 +221,25 @@ public class Retryer {
     }
 
     /**
-     * Returns a wrapper of {@code list} that while not modifiable, can suddenly become empty
-     * when {@link #duration} has elapsed since the time the wrapper was created. {@code clock}
-     * is used to measure time.
+     * Returns a view of {@code list} that while not modifiable, will become empty
+     * when {@link #duration} has elapsed since the time the view was created as if another
+     * thread had just concurrently removed all elements from it.
+     *
+     * <p>Useful for setting a retry deadline to avoid long response time. For example:
+     *
+     * <pre>{@code
+     *   Delay<?> deadline = Delay.ofMillis(500);
+     *   new Retryer()
+     *       .upon(RpcException.class,
+     *             deadline.timed(Delay.ofMillis(30).exponentialBackoff(2, 5), clock))
+     *       .retry(this::getAccount, executor);
+     * }</pre>
+     *
+     * <p>The returned {@code List} view's state is dependent on the current time.
+     * Beware of copying the list, because when you do, time is frozen as far as the copy is
+     * concerned. Passing the copy to {@link #upon upon()} no longer respects "timed" semantics.
+     *
+     * <p>{@code clock} is used to measure time.
      */
     public final <T> List<T> timed(List<T> list, Clock clock) {
       Instant until = clock.instant().plus(duration());
@@ -231,32 +247,25 @@ public class Retryer {
     }
 
     /**
-     * Returns an unmodifiable {@code List} with contents from {@code stream}, that can suddenly
-     * become empty when {@link #duration} has elapsed since the time the wrapper was created.
+     * Returns a view of {@code list} that while not modifiable, will become empty
+     * when {@link #duration} has elapsed since the time the view was created as if another
+     * thread had just concurrently removed all elements from it.
      *
-     * <p>Useful to set a cap to total retry time.
-     */
-    public final <T> List<T> timed(Stream<T> stream) {
-      return timed(stream, Clock.systemUTC());
-    }
-
-    /**
-     * Returns a wrapper of {@code list} that while not modifiable, can suddenly become empty
-     * when {@link #duration} has elapsed since the time the wrapper was created.
+     * <p>Useful for setting a retry deadline to avoid long response time. For example:
+     *
+     * <pre>{@code
+     *   Delay<?> deadline = Delay.ofMillis(500);
+     *   new Retryer()
+     *       .upon(RpcException.class, deadline.timed(Delay.ofMillis(30).exponentialBackoff(2, 5)))
+     *       .retry(this::getAccount, executor);
+     * }</pre>
+     *
+     * <p>The returned {@code List} view's state is dependent on the current time.
+     * Beware of copying the list, because when you do, time is frozen as far as the copy is
+     * concerned. Passing the copy to {@link #upon upon()} no longer respects "timed" semantics.
      */
     public final <T> List<T> timed(List<T> list) {
       return timed(list, Clock.systemUTC());
-    }
-
-    /**
-     * Returns an unmodifiable {@code List} with contents from {@code stream}, that can suddenly
-     * become empty when {@link #duration} has elapsed since the time the wrapper was created.
-     * {@code clock} is used to measure time.
-     *
-     * <p>Useful to set a cap to total retry time.
-     */
-    public final <T> List<T> timed(Stream<T> stream, Clock clock) {
-      return timed(copyOf(stream), clock);
     }
 
     /**

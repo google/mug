@@ -319,8 +319,7 @@ public class RetryerTest {
         NullPointerException.class, () -> new Retryer().retryAsync(action::runAsync, null));
     assertThrows(NullPointerException.class, () -> Delay.guarded(null, () -> true));
     assertThrows(NullPointerException.class, () -> Delay.guarded(asList(), null));
-    assertThrows(NullPointerException.class, () -> ofDays(1).timed((Stream<?>) null));
-    assertThrows(NullPointerException.class, () -> ofDays(1).timed((List<?>) null));
+    assertThrows(NullPointerException.class, () -> ofDays(1).timed(null));
     assertThrows(
         NullPointerException.class, () -> ofDays(1).timed(asList(), null));
     assertThrows(NullPointerException.class, () -> Delay.of(null));
