@@ -231,11 +231,13 @@ public class Retryer {
     }
 
     /**
-     * Returns a wrapper of {@code list} that while not modifiable, can suddenly become empty
-     * when {@link #duration} has elapsed since the time the wrapper was created.
+     * Returns an unmodifiable {@code List} with contents from {@code stream}, that can suddenly
+     * become empty when {@link #duration} has elapsed since the time the wrapper was created.
+     *
+     * <p>Useful to set a cap to total retry time.
      */
-    public final <T> List<T> timed(Stream<T> list) {
-      return timed(list, Clock.systemUTC());
+    public final <T> List<T> timed(Stream<T> stream) {
+      return timed(stream, Clock.systemUTC());
     }
 
     /**
@@ -247,12 +249,14 @@ public class Retryer {
     }
 
     /**
-     * Returns a wrapper of {@code list} that while not modifiable, can suddenly become empty
-     * when {@link #duration} has elapsed since the time the wrapper was created. {@code clock}
-     * is used to measure time.
+     * Returns an unmodifiable {@code List} with contents from {@code stream}, that can suddenly
+     * become empty when {@link #duration} has elapsed since the time the wrapper was created.
+     * {@code clock} is used to measure time.
+     *
+     * <p>Useful to set a cap to total retry time.
      */
-    public final <T> List<T> timed(Stream<T> list, Clock clock) {
-      return timed(copyOf(list), clock);
+    public final <T> List<T> timed(Stream<T> stream, Clock clock) {
+      return timed(copyOf(stream), clock);
     }
 
     /**
