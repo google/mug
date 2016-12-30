@@ -54,7 +54,7 @@ class RpcDelay extends Delay<RpcException> {
     updateStatsCounter(e.getErrorCode(), "before delay", duration());
   }
 
-  @Override public void afterDelay(MySpecialException e) {
+  @Override public void afterDelay(RpcException e) {
     updateStatsCounter(e.getErrorCode(), "after delay", duration());
   }
 }
