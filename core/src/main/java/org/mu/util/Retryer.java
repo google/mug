@@ -77,7 +77,7 @@ public class Retryer {
    */
   public final Retryer upon(
       Predicate<? super Throwable> condition, Stream<? extends Delay<Throwable>> delays) {
-    return upon(condition, delays.collect(Collectors.toCollection(ArrayList::new)));
+    return upon(condition, copyOf(delays));
   }
 
   /**
@@ -95,9 +95,7 @@ public class Retryer {
    */
   public final <E extends Throwable> Retryer upon(
       Class<E> exceptionType, Stream<? extends Delay<? super E>> delays) {
-    List<? extends Delay<? super E>> delayList =
-        delays.collect(Collectors.toCollection(ArrayList::new));
-    return upon(exceptionType, delayList);
+    return upon(exceptionType, copyOf(delays));
   }
 
   /**
@@ -117,9 +115,7 @@ public class Retryer {
   public <E extends Throwable> Retryer upon(
       Class<E> exceptionType, Predicate<? super E> condition,
       Stream<? extends Delay<? super E>> delays) {
-    List<? extends Delay<? super E>> delayList =
-        delays.collect(Collectors.toCollection(ArrayList::new));
-    return upon(exceptionType, condition, delayList);
+    return upon(exceptionType, condition, copyOf(delays));
   }
 
   /**
@@ -226,20 +222,20 @@ public class Retryer {
 
     /**
      * Returns a wrapper of {@code list} that while not modifiable, can suddenly become empty
-     * when {@code totalDuration} has elapsed since the time the wrapper was created. {@code clock}
+     * when {@link #duration} has elapsed since the time the wrapper was created. {@code clock}
      * is used to measure time.
      */
-    public static <T> List<T> timed(List<T> list, Duration totalDuration, Clock clock) {
-      Instant until = clock.instant().plus(requireNonNegative(totalDuration));
+    public final <T> List<T> timed(List<T> list, Clock clock) {
+      Instant until = clock.instant().plus(duration());
       return guarded(list, () -> clock.instant().isBefore(until));
     }
 
     /**
      * Returns a wrapper of {@code list} that while not modifiable, can suddenly become empty
-     * when {@code totalDuration} has elapsed since the time the wrapper was created.
+     * when {@link #duration} has elapsed since the time the wrapper was created.
      */
-    public static <T> List<T> timed(List<T> list, Duration totalDuration) {
-      return timed(list, totalDuration, Clock.systemUTC());
+    public final <T> List<T> timed(List<T> list) {
+      return timed(list, Clock.systemUTC());
     }
 
     /**
@@ -428,6 +424,11 @@ public class Retryer {
       return exception.getCause() == null ? exception : exception.getCause();
     }
     return exception;
+  }
+
+  private static <T> List<T> copyOf(Stream<? extends T> stream) {
+    // Collectors.toList() doesn't guarantee thread-safety.
+    return stream.collect(Collectors.toCollection(ArrayList::new));
   }
 
   @FunctionalInterface

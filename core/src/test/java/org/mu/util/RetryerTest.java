@@ -215,8 +215,7 @@ public class RetryerTest {
   @Test public void retrialExceedsTime() throws Exception {
     upon(
         IOException.class,
-        Delay.timed(
-            Collections.nCopies(100, ofSeconds(1)), Duration.ofSeconds(3), clock));
+        ofSeconds(3).timed(Collections.nCopies(100, ofSeconds(1)), clock));
     IOException exception = new IOException("hopeless");
     when(action.run()).thenThrow(new IOException()).thenThrow(exception);
     CompletionStage<String> stage = retry(action::run);
@@ -320,16 +319,10 @@ public class RetryerTest {
         NullPointerException.class, () -> new Retryer().retryAsync(action::runAsync, null));
     assertThrows(NullPointerException.class, () -> Delay.guarded(null, () -> true));
     assertThrows(NullPointerException.class, () -> Delay.guarded(asList(), null));
-    assertThrows(NullPointerException.class, () -> Delay.timed(asList(), null));
-    assertThrows(NullPointerException.class, () -> Delay.timed(null, Duration.ofDays(1)));
+    assertThrows(NullPointerException.class, () -> ofDays(1).timed(null));
     assertThrows(
-        NullPointerException.class, () -> Delay.timed(asList(), Duration.ofDays(1), null));
+        NullPointerException.class, () -> ofDays(1).timed(asList(), null));
     assertThrows(NullPointerException.class, () -> Delay.of(null));
-  }
-
-  @Test public void testDelay_timed_invalid() {
-    assertThrows(
-        IllegalArgumentException.class, () -> Delay.timed(asList(), Duration.ofMillis(-1)));
   }
 
   @Test public void testDelay_multiplied() {
