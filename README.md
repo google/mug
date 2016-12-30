@@ -41,8 +41,6 @@ Sometimes the program may need custom handling of retry events, like, for exampl
 ```java
 class RpcDelay extends Delay<RpcException> {
 
-  RpcDelay(Delay delay) {...}
-
   @Override public Duration duration() {
     ...
   }
@@ -59,6 +57,7 @@ class RpcDelay extends Delay<RpcException> {
 return new Retryer()
     .upon(RpcException.class,
           Delay.ofMillis(10).exponentialBackoff(...).stream()
+              .map(Delay::duration)
               .map(RpcDelay::new))
     .retry(this::sendRpcRequest, executor);
 ```
