@@ -2,6 +2,7 @@ package org.mu.util;
 
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.Arrays.asList;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.only;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -14,7 +15,9 @@ import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.runner.RunWith;
+import org.mockito.Matchers;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mu.util.Retryer.Delay;
 import org.powermock.api.mockito.PowerMockito;
@@ -29,6 +32,7 @@ import com.google.common.truth.Truth;
 public class RetryerBlockingTest {
 
   @Mock private Action action;
+  private final Delay<Throwable> delay = Mockito.spy(Delay.ofMillis(100));
 
   @Before public void setUpMocks() {
     MockitoAnnotations.initMocks(this);
@@ -55,57 +59,96 @@ public class RetryerBlockingTest {
 
   @Test public void actionFailsButRetryConfiguredForDifferentException() throws IOException {
     Retryer retryer = new Retryer()
-        .upon(RuntimeException.class, asList(Delay.ofMillis(100)));
+        .upon(RuntimeException.class, asList(delay));
     IOException exception = new IOException();
     when(action.run()).thenThrow(exception);
     assertException(IOException.class, () -> retryer.retryBlockingly(action::run))
         .isSameAs(exception);
     verify(action).run();
+    verify(delay, never()).beforeDelay(Matchers.<Throwable>any());
+    verify(delay, never()).afterDelay(Matchers.<Throwable>any());
   }
 
   @Test public void actionFailsWithUncheckedButRetryConfiguredForDifferentException()
       throws IOException {
     Retryer retryer = new Retryer()
-        .upon(IOException.class, asList(Delay.ofMillis(100)));
+        .upon(IOException.class, asList(delay));
     RuntimeException exception = new RuntimeException();
     when(action.run()).thenThrow(exception);
     assertException(RuntimeException.class, () -> retryer.retryBlockingly(action::run))
         .isSameAs(exception);
     verify(action).run();
+    verify(delay, never()).beforeDelay(Matchers.<Throwable>any());
+    verify(delay, never()).afterDelay(Matchers.<Throwable>any());
+  }
+
+  @Test public void exceptionFromBeforeDelayPropagated() throws IOException {
+    Retryer retryer = new Retryer()
+        .upon(IOException.class, asList(delay));
+    RuntimeException unexpected = new RuntimeException();
+    IOException exception = new IOException();
+    when(action.run()).thenThrow(exception);
+    Mockito.doThrow(unexpected).when(delay).beforeDelay(exception);
+    assertException(RuntimeException.class, () -> retryer.retryBlockingly(action::run))
+        .isSameAs(unexpected);
+    verify(action).run();
+    verify(delay).beforeDelay(exception);
+    verify(delay, never()).afterDelay(exception);
+  }
+
+  @Test public void exceptionFromAfterDelayPropgated() throws IOException, InterruptedException {
+    Retryer retryer = new Retryer()
+        .upon(IOException.class, asList(delay));
+    RuntimeException unexpected = new RuntimeException();
+    IOException exception = new IOException();
+    when(action.run()).thenThrow(exception);
+    Mockito.doThrow(unexpected).when(delay).afterDelay(exception);
+    assertException(RuntimeException.class, () -> retryer.retryBlockingly(action::run))
+        .isSameAs(unexpected);
+    verify(action).run();
+    PowerMockito.verifyStatic(only()); Thread.sleep(delay.duration().toMillis());
+    verify(delay).beforeDelay(exception);
+    verify(delay).afterDelay(exception);
   }
 
   @Test public void actionFailsThenSucceedsAfterRetry() throws IOException, InterruptedException {
     Retryer retryer = new Retryer()
-        .upon(IOException.class, asList(Delay.ofMillis(100)));
+        .upon(IOException.class, asList(delay));
     IOException exception = new IOException();
     when(action.run()).thenThrow(exception).thenReturn("fixed");
     assertThat(retryer.retryBlockingly(action::run)).isEqualTo("fixed");
     verify(action, times(2)).run();
-    PowerMockito.verifyStatic(only()); Thread.sleep(100);
+    PowerMockito.verifyStatic(only()); Thread.sleep(delay.duration().toMillis());
+    verify(delay).beforeDelay(exception);
+    verify(delay).afterDelay(exception);
   }
 
   @Test public void actionFailsWithUncheckedThenSucceedsAfterRetry()
       throws IOException, InterruptedException {
     Retryer retryer = new Retryer()
-        .upon(RuntimeException.class, asList(Delay.ofMillis(100)));
+        .upon(RuntimeException.class, asList(delay));
     RuntimeException exception = new RuntimeException();
     when(action.run()).thenThrow(exception).thenReturn("fixed");
 
     assertThat(retryer.retryBlockingly(action::run)).isEqualTo("fixed");
     verify(action, times(2)).run();
-    PowerMockito.verifyStatic(only()); Thread.sleep(100);
+    PowerMockito.verifyStatic(only()); Thread.sleep(delay.duration().toMillis());
+    verify(delay).beforeDelay(exception);
+    verify(delay).afterDelay(exception);
   }
 
   @Test public void actionFailsWithErrorThenSucceedsAfterRetry()
       throws IOException, InterruptedException {
     Retryer retryer = new Retryer()
-        .upon(Error.class, asList(Delay.ofMillis(100)));
+        .upon(Error.class, asList(delay));
     Error exception = new Error();
     when(action.run()).thenThrow(exception).thenReturn("fixed");
 
     assertThat(retryer.retryBlockingly(action::run)).isEqualTo("fixed");
     verify(action, times(2)).run();
-    PowerMockito.verifyStatic(only()); Thread.sleep(100);
+    PowerMockito.verifyStatic(only()); Thread.sleep(delay.duration().toMillis());
+    verify(delay).beforeDelay(exception);
+    verify(delay).afterDelay(exception);
   }
 
   @Test public void actionFailsEvenAfterRetry()

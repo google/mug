@@ -23,27 +23,31 @@ CompletableStage<Account> fetchAccountWithRetry(ScheduledExecutorService executo
 }
 ```
 
-To customize retry events such as to log differently, client code can create custom Delay implementation:
+Sometimes the program may need custom handling of retry events, like, for example, to increment a stats counter based on the error code in the exception. Requirements like this can be done with a custom Delay implementation:
 
 ```java
-class CustomDelay extends Delay {
+class RpcDelay extends Delay<RpcException> {
 
   @Override public Duration duration() {
     ...
   }
 
   @Override protected Delay withDuration(Duration duration) {
-    return new CustomDelay(duration);
+    return new RpcDelay(duration);
   }
 
-  @Override public void beforeDelay(Throwable e) {
-    // log
+  @Override public void beforeDelay(RpcException e) {
+    UpdateStatsCounter(e.getErrorCode(), "before delay", duration());
   }
 
-  @Override public void afterDelay(Throwable e) {
-    // log
+  @Override public void afterDelay(MySpecialException e) {
+    UpdateStatsCounter(e.getErrorCode(), "after delay", duration());
   }
 }
+
+return new Retryer()
+    .upon(RpcException.class, new RpcDelay(ofMillis(10)).exponentialBackoff())
+    .retry(this::sendRpcRequest, executor);
 ```
 
 ## Funnel
