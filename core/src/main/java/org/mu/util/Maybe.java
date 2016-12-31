@@ -266,6 +266,17 @@ public abstract class Maybe<T, E extends Throwable> {
     return (a, b) -> get(() -> function.apply(a, b), exceptionType);
   }
 
+  /** Propagates {@code exception} if it's unchecked, or else return it as is. */
+  static <E extends Throwable> E propagateIfUnchecked(E e) {
+    if (e instanceof RuntimeException) {
+      throw (RuntimeException) e;
+    } else if (e instanceof Error) {
+      throw (Error) e;
+    } else {
+      return e;
+    }
+  }
+
   // TODO: Add Checked* interfaces for all other java.util.function interfaces such as IntSupplier.
   private static <T, E extends Throwable> Maybe<T, E> get(
       CheckedSupplier<T, E> supplier, Class<E> exceptionType) {
@@ -275,25 +286,17 @@ public abstract class Maybe<T, E extends Throwable> {
       if (exceptionType.isInstance(e)) {
         return except(exceptionType.cast(e));
       }
-      if (e instanceof Error) {
-        throw (Error) e;
-      }
-      if (e instanceof RuntimeException) {
-        throw (RuntimeException) e;
-      }
-      throw new AssertionError(e);
+      throw new AssertionError(propagateIfUnchecked(e));
     }
   }
 
   private static <T, E extends Throwable> Maybe<T, E> getChecked(CheckedSupplier<T, E> supplier) {
     try {
       return of(supplier.get());
-    } catch (RuntimeException | Error e) {
-      throw e;
     } catch (Throwable e) {
-      // CheckedSupplier<T, E> can only throw RuntimeException, Error or E.
+      // CheckedSupplier<T, E> can only throw unchecked or E.
       @SuppressWarnings("unchecked")
-      E exception = (E) e;
+      E exception = (E) propagateIfUnchecked(e);
       return except(exception);
     }
   }

@@ -15,6 +15,7 @@
 package org.mu.util;
 
 import static java.util.Objects.requireNonNull;
+import static org.mu.util.Maybe.propagateIfUnchecked;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -127,7 +128,7 @@ public class Retryer {
     } catch (Throwable e) {
       exceptions.stream().forEach(p -> addSuppressedTo(e, p));
       @SuppressWarnings("unchecked")  // Caller makes sure the exception is either E or unchecked.
-      E checked = (E) propagateUnchecked(e);
+      E checked = (E) propagateIfUnchecked(e);
       throw checked;
     }
   }
@@ -456,16 +457,6 @@ public class Retryer {
       return exception.getCause() == null ? exception : exception.getCause();
     }
     return exception;
-  }
-
-  private static Throwable propagateUnchecked(Throwable e) {
-    if (e instanceof RuntimeException) {
-      throw (RuntimeException) e;
-    } else if (e instanceof Error) {
-      throw (Error) e;
-    } else {
-      return e;
-    }
   }
 
   private static <T> List<T> copyOf(Stream<? extends T> stream) {
