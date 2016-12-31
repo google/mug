@@ -76,6 +76,7 @@ public class RetryerTest {
     upon(IOException.class, asList(delay));
     when(action.run()).thenThrow(error);
     assertException(Error.class, () -> retry(action::run)).isSameAs(error);
+    assertThat(error.getSuppressed()).isEmpty();
     verify(action).run();
     verify(delay, never()).beforeDelay(Matchers.<Throwable>any());
     verify(delay, never()).afterDelay(Matchers.<Throwable>any());
@@ -87,6 +88,7 @@ public class RetryerTest {
     upon(IOException.class, asList(delay));
     when(action.run()).thenThrow(error);
     assertException(RuntimeException.class, () -> retry(action::run)).isSameAs(error);
+    assertThat(error.getSuppressed()).isEmpty();
     verify(action).run();
     verify(delay, never()).beforeDelay(Matchers.<Throwable>any());
     verify(delay, never()).afterDelay(Matchers.<Throwable>any());
@@ -97,6 +99,7 @@ public class RetryerTest {
     when(action.run()).thenThrow(exception);
     assertCauseOf(ExecutionException.class, () -> retry(action::run).toCompletableFuture().get())
         .isSameAs(exception);
+    assertThat(exception.getSuppressed()).isEmpty();
     verify(action).run();
   }
 
@@ -109,6 +112,7 @@ public class RetryerTest {
     Mockito.doThrow(unexpected).when(delay).beforeDelay(Matchers.<Throwable>any());
     assertException(RuntimeException.class, () -> retry(action::run))
         .isSameAs(unexpected);
+    assertThat(asList(unexpected.getSuppressed())).containsExactly(exception);
     verify(action).run();
     verify(delay).beforeDelay(exception);
     verify(delay, never()).afterDelay(exception);
@@ -128,6 +132,7 @@ public class RetryerTest {
     assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isTrue();
     assertCauseOf(ExecutionException.class, () -> stage.toCompletableFuture().get())
         .isSameAs(unexpected);
+    assertThat(asList(unexpected.getSuppressed())).containsExactly(exception);
     verify(action).run();
     verify(delay).beforeDelay(exception);
     verify(delay).afterDelay(exception);
@@ -208,6 +213,7 @@ public class RetryerTest {
     assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isTrue();
     assertCauseOf(ExecutionException.class, () -> stage.toCompletableFuture().get())
         .isSameAs(exception);
+    assertThat(asList(exception.getSuppressed())).containsExactly(firstException);
     verify(action, times(2)).run();
     verify(delay).beforeDelay(firstException);
     verify(delay).afterDelay(firstException);
@@ -217,8 +223,9 @@ public class RetryerTest {
     upon(
         IOException.class,
         ofSeconds(3).timed(Collections.nCopies(100, ofSeconds(1)), clock));
+    IOException exception1 = new IOException();
     IOException exception = new IOException("hopeless");
-    when(action.run()).thenThrow(new IOException()).thenThrow(exception);
+    when(action.run()).thenThrow(exception1).thenThrow(exception);
     CompletionStage<String> stage = retry(action::run);
     assertThat(stage.toCompletableFuture().isDone()).isFalse();
     elapse(Duration.ofSeconds(2));
@@ -227,6 +234,7 @@ public class RetryerTest {
     assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isTrue();
     assertCauseOf(ExecutionException.class, () -> stage.toCompletableFuture().get())
         .isSameAs(exception);
+    assertThat(asList(exception.getSuppressed())).containsExactly(exception1);
     verify(action, times(3)).run();  // Retry twice.
   }
 

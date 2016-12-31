@@ -54,6 +54,7 @@ public class RetryerBlockingTest {
     when(action.run()).thenThrow(exception);
     assertException(IOException.class, () -> new Retryer().retryBlockingly(action::run))
         .isSameAs(exception);
+    assertThat(exception.getSuppressed()).isEmpty();
     verify(action).run();
   }
 
@@ -64,6 +65,7 @@ public class RetryerBlockingTest {
     when(action.run()).thenThrow(exception);
     assertException(IOException.class, () -> retryer.retryBlockingly(action::run))
         .isSameAs(exception);
+    assertThat(exception.getSuppressed()).isEmpty();
     verify(action).run();
     verify(delay, never()).beforeDelay(Matchers.<Throwable>any());
     verify(delay, never()).afterDelay(Matchers.<Throwable>any());
@@ -77,6 +79,7 @@ public class RetryerBlockingTest {
     when(action.run()).thenThrow(exception);
     assertException(RuntimeException.class, () -> retryer.retryBlockingly(action::run))
         .isSameAs(exception);
+    assertThat(exception.getSuppressed()).isEmpty();
     verify(action).run();
     verify(delay, never()).beforeDelay(Matchers.<Throwable>any());
     verify(delay, never()).afterDelay(Matchers.<Throwable>any());
@@ -91,6 +94,7 @@ public class RetryerBlockingTest {
     Mockito.doThrow(unexpected).when(delay).beforeDelay(exception);
     assertException(RuntimeException.class, () -> retryer.retryBlockingly(action::run))
         .isSameAs(unexpected);
+    assertThat(asList(unexpected.getSuppressed())).containsExactly(exception);
     verify(action).run();
     verify(delay).beforeDelay(exception);
     verify(delay, never()).afterDelay(exception);
@@ -105,6 +109,7 @@ public class RetryerBlockingTest {
     Mockito.doThrow(unexpected).when(delay).afterDelay(exception);
     assertException(RuntimeException.class, () -> retryer.retryBlockingly(action::run))
         .isSameAs(unexpected);
+    assertThat(asList(unexpected.getSuppressed())).containsExactly(exception);
     verify(action).run();
     PowerMockito.verifyStatic(only()); Thread.sleep(delay.duration().toMillis());
     verify(delay).beforeDelay(exception);
@@ -155,12 +160,32 @@ public class RetryerBlockingTest {
       throws IOException, InterruptedException {
     Retryer retryer = new Retryer()
         .upon(IOException.class, Delay.ofMillis(100).exponentialBackoff(10, 2));
+    IOException exception1 = new IOException();
+    IOException exception2 = new IOException();
     IOException exception = new IOException();
     when(action.run())
-        .thenThrow(new IOException()).thenThrow(new IOException()).thenThrow(exception);
+        .thenThrow(exception1).thenThrow(exception2).thenThrow(exception);
 
     assertException(IOException.class, () -> retryer.retryBlockingly(action::run))
         .isSameAs(exception);
+    assertThat(asList(exception.getSuppressed())).containsExactly(exception1, exception2).inOrder();
+    verify(action, times(3)).run();
+    PowerMockito.verifyStatic(); Thread.sleep(100);
+    PowerMockito.verifyStatic(); Thread.sleep(1000);
+  }
+
+  @Test public void sameExceptionNotAddedAsCause()
+      throws IOException, InterruptedException {
+    Retryer retryer = new Retryer()
+        .upon(IOException.class, Delay.ofMillis(100).exponentialBackoff(10, 2));
+    IOException exception1 = new IOException();
+    IOException exception2 = new IOException();
+    when(action.run())
+        .thenThrow(exception1).thenThrow(exception2).thenThrow(exception2);
+
+    assertException(IOException.class, () -> retryer.retryBlockingly(action::run))
+        .isSameAs(exception2);
+    assertThat(asList(exception2.getSuppressed())).containsExactly(exception1).inOrder();
     verify(action, times(3)).run();
     PowerMockito.verifyStatic(); Thread.sleep(100);
     PowerMockito.verifyStatic(); Thread.sleep(1000);
@@ -177,6 +202,7 @@ public class RetryerBlockingTest {
 
     assertException(IOException.class, () -> retryer.retryBlockingly(action::run))
         .isSameAs(exception);
+    assertThat(exception.getSuppressed()).isEmpty();
     verify(action).run();
     verify(thread).interrupt();
     PowerMockito.verifyStatic(); Thread.sleep(100);

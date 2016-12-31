@@ -72,15 +72,6 @@ public class Retryer {
   }
 
   /**
-   * Returns a new {@code Retryer} that uses {@code delays} when an exception satisfies
-   * {@code condition}.
-   */
-  public final Retryer upon(
-      Predicate<? super Throwable> condition, Stream<? extends Delay<Throwable>> delays) {
-    return upon(condition, copyOf(delays));
-  }
-
-  /**
    * Returns a new {@code Retryer} that uses {@code delays} when an exception is instance of
    * {@code exceptionType}.
    */
@@ -129,18 +120,29 @@ public class Retryer {
    */
   public <T, E extends Throwable> T retryBlockingly(CheckedSupplier<T, E> supplier) throws E {
     requireNonNull(supplier);
-    for (ExceptionPlan<Delay<?>> currentPlan = plan; ;) {
-      try {
-        return supplier.get();
-      } catch (RuntimeException e) {
-        currentPlan = delay(e, currentPlan);
-      } catch (Error e) {
-        currentPlan = delay(e, currentPlan);
-      } catch (Throwable e) {
-        @SuppressWarnings("unchecked")  // supplier can only throw unchecked or E.
-        E checked = (E) e;
-        currentPlan = delay(checked, currentPlan);
+    List<Throwable> exceptions = new ArrayList<>();
+    try {
+      for (ExceptionPlan<Delay<?>> currentPlan = plan; ;) {
+        try {
+          try {
+            return supplier.get();
+          } catch (Throwable e) {
+            exceptions.add(e);
+            throw e;
+          }
+        } catch (RuntimeException e) {
+          currentPlan = delay(e, currentPlan);
+        } catch (Error e) {
+          currentPlan = delay(e, currentPlan);
+        } catch (Throwable e) {
+          @SuppressWarnings("unchecked")  // supplier can only throw unchecked or E.
+          E checked = (E) e;
+          currentPlan = delay(checked, currentPlan);
+        }
       }
+    } catch (Throwable e) {
+      exceptions.stream().forEach(p -> addSuppressedTo(e, p));
+      throw e;
     }
   }
 
@@ -433,20 +435,34 @@ public class Retryer {
       Throwable e, ScheduledExecutorService retryExecutor,
       CheckedSupplier<? extends CompletionStage<T>, ?> supplier, CompletableFuture<T> result) {
     Maybe<ExceptionPlan.Execution<Delay<?>>, ?> maybeRetry = plan.execute(e);
-    maybeRetry.ifPresent(execution -> {
-      @SuppressWarnings("unchecked")  // delay came from upon(), which enforces <? super E>.
-      Delay<Throwable> delay = (Delay<Throwable>) execution.strategy();
-      delay.beforeDelay(e);
-      Failable retry = () -> {
-        delay.afterDelay(e);
-        new Retryer(execution.remainingExceptionPlan())
-            .invokeWithRetry(supplier, retryExecutor, result);
-      };
-      retryExecutor.schedule(
-          () -> retry.run(result::completeExceptionally),
-          delay.duration().toMillis(), TimeUnit.MILLISECONDS);
-    });
-    maybeRetry.catching(result::completeExceptionally);
+    try {
+      maybeRetry.ifPresent(execution -> {
+        result.whenComplete((v, x) -> {
+          if (x != null) addSuppressedTo(x, e);
+        });
+        @SuppressWarnings("unchecked")  // delay came from upon(), which enforces <? super E>.
+        Delay<Throwable> delay = (Delay<Throwable>) execution.strategy();
+        delay.beforeDelay(e);
+        Failable retry = () -> {
+          delay.afterDelay(e);
+          new Retryer(execution.remainingExceptionPlan())
+              .invokeWithRetry(supplier, retryExecutor, result);
+        };
+        retryExecutor.schedule(
+            () -> retry.run(result::completeExceptionally),
+            delay.duration().toMillis(), TimeUnit.MILLISECONDS);
+      });
+      maybeRetry.catching(result::completeExceptionally);
+    } catch (Throwable unexpected) {
+      addSuppressedTo(unexpected, e);
+      throw unexpected;
+    }
+  }
+
+  private static void addSuppressedTo(Throwable exception, Throwable suppressed) {
+    if (exception != suppressed) {  // In case user code throws same exception again.
+      exception.addSuppressed(suppressed);
+    }
   }
 
   private static Throwable getInterestedException(Throwable exception) {
