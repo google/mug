@@ -126,7 +126,9 @@ public class Retryer {
       }
     } catch (Throwable e) {
       exceptions.stream().forEach(p -> addSuppressedTo(e, p));
-      throw Retryer.<E>unsafeCast(e);  // This is safe because e is either unchecked or E.
+      @SuppressWarnings("unchecked")  // Caller makes sure the exception is either E or unchecked.
+      E checked = (E) propagateUnchecked(e);
+      throw checked;
     }
   }
 
@@ -456,15 +458,13 @@ public class Retryer {
     return exception;
   }
 
-  private static <E extends Throwable> E unsafeCast(Throwable e) {
+  private static Throwable propagateUnchecked(Throwable e) {
     if (e instanceof RuntimeException) {
       throw (RuntimeException) e;
     } else if (e instanceof Error) {
       throw (Error) e;
     } else {
-      @SuppressWarnings("unchecked")  // Caller makes sure the exception is either E or unchecked.
-      E checked = (E) e;
-      return checked;
+      return e;
     }
   }
 
