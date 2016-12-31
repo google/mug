@@ -63,15 +63,6 @@ public class Retryer {
   }
 
   /**
-   * Returns a new {@code Retryer} that uses {@code delays} when an exception satisfies
-   * {@code condition}.
-   */
-  public final Retryer upon(
-      Predicate<? super Throwable> condition, List<? extends Delay<Throwable>> delays) {
-    return new Retryer(plan.upon(condition, delays));
-  }
-
-  /**
    * Returns a new {@code Retryer} that uses {@code delays} when an exception is instance of
    * {@code exceptionType}.
    */
