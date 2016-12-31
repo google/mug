@@ -118,25 +118,15 @@ public class Retryer {
     try {
       for (ExceptionPlan<Delay<?>> currentPlan = plan; ;) {
         try {
-          try {
-            return supplier.get();
-          } catch (Throwable e) {
-            exceptions.add(e);
-            throw e;
-          }
-        } catch (RuntimeException e) {
-          currentPlan = delay(e, currentPlan);
-        } catch (Error e) {
-          currentPlan = delay(e, currentPlan);
+          return supplier.get();
         } catch (Throwable e) {
-          @SuppressWarnings("unchecked")  // supplier can only throw unchecked or E.
-          E checked = (E) e;
-          currentPlan = delay(checked, currentPlan);
+          exceptions.add(e);
+          currentPlan = delay(e, currentPlan);
         }
       }
     } catch (Throwable e) {
       exceptions.stream().forEach(p -> addSuppressedTo(e, p));
-      throw e;
+      throw Retryer.<E>unsafeCast(e);  // This is safe because e is either unchecked or E.
     }
   }
 
@@ -464,6 +454,18 @@ public class Retryer {
       return exception.getCause() == null ? exception : exception.getCause();
     }
     return exception;
+  }
+
+  private static <E extends Throwable> E unsafeCast(Throwable e) {
+    if (e instanceof RuntimeException) {
+      throw (RuntimeException) e;
+    } else if (e instanceof Error) {
+      throw (Error) e;
+    } else {
+      @SuppressWarnings("unchecked")  // Caller makes sure the exception is either E or unchecked.
+      E checked = (E) e;
+      return checked;
+    }
   }
 
   private static <T> List<T> copyOf(Stream<? extends T> stream) {
