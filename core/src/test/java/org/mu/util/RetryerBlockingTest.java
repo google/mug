@@ -2,6 +2,7 @@ package org.mu.util;
 
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.Arrays.asList;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.only;
 import static org.mockito.Mockito.times;
@@ -15,7 +16,6 @@ import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -28,11 +28,11 @@ import com.google.common.truth.ThrowableSubject;
 import com.google.common.truth.Truth;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({Retryer.class, Thread.class})
+@PrepareForTest({Thread.class, Retryer.Delay.class})
 public class RetryerBlockingTest {
 
   @Mock private Action action;
-  private final Delay<Throwable> delay = Mockito.spy(Delay.ofMillis(100));
+  private final Delay<Object> delay = Mockito.spy(Delay.ofMillis(100));
 
   @Before public void setUpMocks() {
     MockitoAnnotations.initMocks(this);
@@ -41,6 +41,79 @@ public class RetryerBlockingTest {
 
   @Before public void noMoreInteractions() {
     PowerMockito.verifyNoMoreInteractions(Thread.class);
+  }
+
+  @Test public void noRetryIfReturnValueIsGoodFirstTime() throws IOException {
+    when(action.run()).thenReturn("good");
+    Retryer retryer = new Retryer();
+    assertThat(retryer.uponReturn("bad", asList(delay)).retryBlockingly(action::run))
+        .isEqualTo("good");
+    verify(action).run();
+  }
+
+  @Test public void exceptionFromBeforeDelayPropagatedDuringReturnValueRetry() throws IOException {
+    Retryer.ForReturnValue<String> retryer = new Retryer().uponReturn("bad", asList(delay));
+    RuntimeException unexpected = new RuntimeException();
+    when(action.run()).thenReturn("bad");
+    Mockito.doThrow(unexpected).when(delay).beforeDelay("bad");
+    assertException(RuntimeException.class, () -> retryer.retryBlockingly(action::run))
+        .isSameAs(unexpected);
+    assertThat(unexpected.getSuppressed()).isEmpty();
+    verify(action).run();
+    verify(delay).beforeDelay("bad");
+    verify(delay, never()).afterDelay(any());
+  }
+
+  @Test public void exceptionFromAfterDelayPropgatedDuringReturnValueRetry()
+      throws IOException, InterruptedException {
+    Retryer.ForReturnValue<String> retryer = new Retryer().uponReturn("bad", asList(delay));
+    RuntimeException unexpected = new RuntimeException();
+    when(action.run()).thenReturn("bad");
+    Mockito.doThrow(unexpected).when(delay).afterDelay("bad");
+    assertException(RuntimeException.class, () -> retryer.retryBlockingly(action::run))
+        .isSameAs(unexpected);
+    assertThat(unexpected.getSuppressed()).isEmpty();
+    verify(action).run();
+    PowerMockito.verifyStatic(only()); Thread.sleep(delay.duration().toMillis());
+    verify(delay).beforeDelay("bad");
+    verify(delay).afterDelay("bad");
+  }
+
+  @Test public void returnValueChangesToExpectedAfterRetry()
+      throws IOException, InterruptedException {
+    Retryer.ForReturnValue<String> retryer = new Retryer().uponReturn("bad", asList(delay));
+    when(action.run()).thenReturn("bad").thenReturn("fixed");
+    assertThat(retryer.retryBlockingly(action::run)).isEqualTo("fixed");
+    verify(action, times(2)).run();
+    PowerMockito.verifyStatic(only()); Thread.sleep(delay.duration().toMillis());
+    verify(delay).beforeDelay("bad");
+    verify(delay).afterDelay("bad");
+  }
+
+  @Test public void returnValueStillBadEvenAfterRetry()
+      throws IOException, InterruptedException {
+    Retryer.ForReturnValue<String> retryer =
+        new Retryer().uponReturn("bad", Delay.ofMillis(100).exponentialBackoff(10, 2));
+    when(action.run()).thenReturn("bad");
+
+    assertThat(retryer.retryBlockingly(action::run)).isEqualTo("bad");
+    verify(action, times(3)).run();
+    PowerMockito.verifyStatic(); Thread.sleep(100);
+    PowerMockito.verifyStatic(); Thread.sleep(1000);
+  }
+
+  @Test public void interruptedDuringReturnValueRetry() throws IOException, InterruptedException {
+    Retryer.ForReturnValue<String> retryer = new Retryer()
+        .uponReturn("bad", Delay.ofMillis(100).exponentialBackoff(10, 1));
+    when(action.run()).thenReturn("bad");
+    PowerMockito.doThrow(new InterruptedException()).when(Thread.class); Thread.sleep(100);
+    Thread thread = PowerMockito.mock(Thread.class);
+    PowerMockito.doReturn(thread).when(Thread.class); Thread.currentThread();
+
+    assertThat(retryer.retryBlockingly(action::run)).isEqualTo("bad");
+    verify(action).run();
+    verify(thread).interrupt();
+    PowerMockito.verifyStatic(); Thread.sleep(100);
   }
 
   @Test public void noRetryIfActionSucceedsFirstTime() throws IOException {
@@ -67,8 +140,8 @@ public class RetryerBlockingTest {
         .isSameAs(exception);
     assertThat(exception.getSuppressed()).isEmpty();
     verify(action).run();
-    verify(delay, never()).beforeDelay(Matchers.<Throwable>any());
-    verify(delay, never()).afterDelay(Matchers.<Throwable>any());
+    verify(delay, never()).beforeDelay(any());
+    verify(delay, never()).afterDelay(any());
   }
 
   @Test public void actionFailsWithUncheckedButRetryConfiguredForDifferentException()
@@ -81,8 +154,8 @@ public class RetryerBlockingTest {
         .isSameAs(exception);
     assertThat(exception.getSuppressed()).isEmpty();
     verify(action).run();
-    verify(delay, never()).beforeDelay(Matchers.<Throwable>any());
-    verify(delay, never()).afterDelay(Matchers.<Throwable>any());
+    verify(delay, never()).beforeDelay(any());
+    verify(delay, never()).afterDelay(any());
   }
 
   @Test public void exceptionFromBeforeDelayPropagated() throws IOException {

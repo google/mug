@@ -531,7 +531,7 @@ public class Retryer {
     /** Called after the delay, immediately before the retry. */
     public void afterDelay(@SuppressWarnings("unused") E event) {}
 
-    /** Called if {@code event} will be retried after the delay. */
+    /** Called if delay for {@code event} is interrupted. */
     final void interrupted(E event) {
       logger.info("Interrupted while waiting to retry upon " + event);
       Thread.currentThread().interrupt();
