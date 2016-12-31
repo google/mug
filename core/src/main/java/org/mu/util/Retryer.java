@@ -46,6 +46,9 @@ import org.mu.function.CheckedSupplier;
  * <p>Backoff intervals are configured through chaining {@link #upon upon()} calls. It's critical
  * to use the new {@code Retryer} instances returned by {@code upon()}. Just remember
  * {@code Retryer} is <em>immutable</em>.
+ *
+ * <p>If the retried operation still fails after retry, the previous exceptions can be accessed
+ * through {@link Throwable#getSuppressed()}.
  */
 public class Retryer {
 
