@@ -48,6 +48,10 @@ new Retryer()
     .retryBlockingly(this::depositeMyMoney);
 ```
 
+#### Backoffs are just `List<Delay>`
+
+`exponentialBackoff()`, `timed()` and `randomized()` are provided out of the box for convenience purpose only. But at the end of the day, backoffs are just an old-school boring `List`. You can create the List in any way you are used to. For example, there isn't a `uniformDelay()` in this library, because there is already `Collections.nCopies(n, delay)`.
+
 #### To handle retry events
 
 Sometimes the program may need custom handling of retry events, like, for example, to increment a stats counter based on the error code in the exception. Requirements like this can be done with a custom Delay implementation:

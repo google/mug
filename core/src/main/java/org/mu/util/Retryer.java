@@ -142,7 +142,7 @@ public class Retryer {
    * Checked exceptions are reported through the returned {@link CompletionStage} so callers only
    * need to deal with them in one place.
    *
-   * <p>Retries are scheduled are performed by {@code executor}.
+   * <p>Retries are scheduled and performed by {@code executor}.
    * 
    * <p>NOTE that if {@code executor.shutdownNow()} is called, the returned {@link CompletionStage}
    * will never be done.
@@ -162,7 +162,7 @@ public class Retryer {
    * Checked exceptions are reported through the returned {@link CompletionStage} so callers only
    * need to deal with them in one place.
    *
-   * <p>Retries are scheduled are performed by {@code executor}.
+   * <p>Retries are scheduled and performed by {@code executor}.
    * 
    * <p>NOTE that if {@code executor.shutdownNow()} is called, the returned {@link CompletionStage}
    * will never be done.
@@ -230,7 +230,7 @@ public class Retryer {
         Retryer retryer,
         Predicate<? super T> condition, List<? extends Delay<? super T>> delays) {
       this.condition = condition;
-      this.retryer = retryer.upon(MagicReturnError.class, MagicReturnError.wrap(delays));
+      this.retryer = retryer.upon(WrapReturnToThrow.class, WrapReturnToThrow.wrap(delays));
     }
 
     /**
@@ -244,7 +244,7 @@ public class Retryer {
      */
     public <R extends T, E extends Throwable> R retryBlockingly(
         CheckedSupplier<R, E> supplier) throws E {
-      return MagicReturnError.unwrap(() -> retryer.retryBlockingly(supplier.map(this::wrap)));
+      return WrapReturnToThrow.unwrap(() -> retryer.retryBlockingly(supplier.map(this::wrap)));
     }
 
     /**
@@ -256,7 +256,7 @@ public class Retryer {
      * Checked exceptions are reported through the returned {@link CompletionStage} so callers only
      * need to deal with them in one place.
      *
-     * <p>Retries are scheduled are performed by {@code executor}.
+     * <p>Retries are scheduled and performed by {@code executor}.
      * 
      * <p>NOTE that if {@code executor.shutdownNow()} is called, the returned
      * {@link CompletionStage} will never be done.
@@ -264,7 +264,7 @@ public class Retryer {
     public <R extends T, E extends Throwable> CompletionStage<R> retry(
         CheckedSupplier<? extends R, E> supplier,
         ScheduledExecutorService retryExecutor) {
-      return MagicReturnError.unwrapAsync(
+      return WrapReturnToThrow.unwrapAsync(
           () -> retryer.retry(supplier.map(this::wrap), retryExecutor));
     }
 
@@ -277,7 +277,7 @@ public class Retryer {
      * Checked exceptions are reported through the returned {@link CompletionStage} so callers only
      * need to deal with them in one place.
      *
-     * <p>Retries are scheduled are performed by {@code executor}.
+     * <p>Retries are scheduled and performed by {@code executor}.
      * 
      * <p>NOTE that if {@code executor.shutdownNow()} is called, the returned
      * {@link CompletionStage} will never be done.
@@ -285,31 +285,38 @@ public class Retryer {
     public <R extends T, E extends Throwable> CompletionStage<R> retryAsync(
         CheckedSupplier<? extends CompletionStage<R>, E> asyncSupplier,
         ScheduledExecutorService retryExecutor) {
-      return MagicReturnError.unwrapAsync(
+      return WrapReturnToThrow.unwrapAsync(
           () -> retryer.retryAsync(() -> asyncSupplier.get().thenApply(this::wrap), retryExecutor));
     }
 
     private <R extends T> R wrap(R returnValue) {
-      if (condition.test(returnValue)) throw new MagicReturnError(returnValue);
+      if (condition.test(returnValue)) throw new WrapReturnToThrow(returnValue);
       return returnValue;
     }
 
+    /**
+     * This would have been static type safe if exception classes are allowed to be parameterized.
+     * Failing that, we have to resort to old time Object.
+     *
+     * At call site, we always wrap and unwrap in the same function for the same T, so we are
+     * safe.
+     */
     @SuppressWarnings("serial")
-    private static final class MagicReturnError extends Error {
+    private static final class WrapReturnToThrow extends Error {
       private static final boolean DISABLE_SUPPRESSION = false;
       private static final boolean NO_STACK_TRACE = false;
       private final Object returnValue;
 
-      MagicReturnError(Object returnValue) {
-        super("magic!", null, DISABLE_SUPPRESSION, NO_STACK_TRACE);
+      WrapReturnToThrow(Object returnValue) {
+        super("This should never escape!", null, DISABLE_SUPPRESSION, NO_STACK_TRACE);
         this.returnValue = returnValue;
       }
   
       static <T, E extends Throwable> T unwrap(CheckedSupplier<T, E> supplier) throws E {
         try {
           return supplier.get();
-        } catch (MagicReturnError magic) {
-          return magic.unsafeCast();
+        } catch (WrapReturnToThrow thrown) {
+          return thrown.unsafeCast();
         }
       }
   
@@ -319,52 +326,52 @@ public class Retryer {
         CompletableFuture<T> unwrapped = new CompletableFuture<>();
         stage.thenAccept(unwrapped::complete);
         stage.exceptionally(e -> {
-          MagicReturnError magic = findMagicReturn(e);
-          if (magic == null) {
+          WrapReturnToThrow thrown = findThrownReturn(e);
+          if (thrown == null) {
             unwrapped.completeExceptionally(e);
           } else {
-            unwrapped.complete(magic.unsafeCast());
+            unwrapped.complete(thrown.unsafeCast());
           }
           return null;
         });
         return unwrapped;
       }
   
-      static List<Delay<MagicReturnError>> wrap(List<? extends Delay<?>> delays) {
-        return new AbstractList<Delay<MagicReturnError>>() {
+      static List<Delay<WrapReturnToThrow>> wrap(List<? extends Delay<?>> delays) {
+        return new AbstractList<Delay<WrapReturnToThrow>>() {
           @Override public int size() {
             return delays.size();
           }
-          @Override public Delay<MagicReturnError> get(int index) {
+          @Override public Delay<WrapReturnToThrow> get(int index) {
             return wrap(delays.get(index));
           }
         };
       }
 
-      /** Exception cannot be parameterized. But we essentially use it as MagicReturn<T>. */
+      /** Exception cannot be parameterized. But we essentially use it as WrapReturnToThrow<T>. */
       @SuppressWarnings("unchecked")
       private <T> T unsafeCast() {
         return (T) returnValue;
       }
   
-      private static Delay<MagicReturnError> wrap(Delay<?> delay) {
-        return new Delay<MagicReturnError>() {
+      private static Delay<WrapReturnToThrow> wrap(Delay<?> delay) {
+        return new Delay<WrapReturnToThrow>() {
           @Override public Duration duration() {
             return delay.duration();
           }
-          @Override public void beforeDelay(MagicReturnError magic) {
-            delay.beforeDelay(magic.unsafeCast());
+          @Override public void beforeDelay(WrapReturnToThrow thrown) {
+            delay.beforeDelay(thrown.unsafeCast());
           }
-          @Override public void afterDelay(MagicReturnError magic) {
-            delay.afterDelay(magic.unsafeCast());
+          @Override public void afterDelay(WrapReturnToThrow thrown) {
+            delay.afterDelay(thrown.unsafeCast());
           }
         };
       }
   
-      private static MagicReturnError findMagicReturn(Throwable e) {
+      private static WrapReturnToThrow findThrownReturn(Throwable e) {
         for (Throwable actual = e; actual != null; actual = actual.getCause()) {
-          if (actual instanceof MagicReturnError) {
-            return (MagicReturnError) actual;
+          if (actual instanceof WrapReturnToThrow) {
+            return (WrapReturnToThrow) actual;
           }
         }
         return null;
@@ -373,7 +380,7 @@ public class Retryer {
   }
 
   /**
-   * Represents a delay interval between retry attempts for exceptions of type {@code E}.
+   * Represents a delay interval between retry attempts for exceptional events of type {@code E}.
    */
   public static abstract class Delay<E> implements Comparable<Delay<E>> {
 
@@ -652,7 +659,7 @@ public class Retryer {
   }
 
   private static void addSuppressedTo(Throwable exception, Throwable suppressed) {
-    if (suppressed instanceof ForReturnValue.MagicReturnError) return;
+    if (suppressed instanceof ForReturnValue.WrapReturnToThrow) return;
     if (exception != suppressed) {  // In case user code throws same exception again.
       exception.addSuppressed(suppressed);
     }
