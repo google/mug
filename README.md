@@ -39,6 +39,15 @@ CompletionStage<Account> fetchAccountWithRetry(ScheduledExecutorService executor
 }
 ```
 
+#### To retry based on return value
+
+Sometimes the API you work with may return error codes instead of throwing exceptions. Retries can be based on return values too:
+```java
+new Retryer()
+    .uponReturn(ErrorCode::BAD, Delay.ofMillis(10).exponentialBackoff(1.5, 4))
+    .retryBlockingly(this::depositeMyMoney);
+```
+
 #### To handle retry events
 
 Sometimes the program may need custom handling of retry events, like, for example, to increment a stats counter based on the error code in the exception. Requirements like this can be done with a custom Delay implementation:
