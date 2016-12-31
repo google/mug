@@ -34,7 +34,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -143,7 +142,7 @@ public class Retryer {
    * Checked exceptions are reported through the returned {@link CompletionStage} so callers only
    * need to deal with them in one place.
    *
-   * <p>Retries are scheduled and performed by {@code executor}.
+   * <p>Retries are scheduled are performed by {@code executor}.
    * 
    * <p>NOTE that if {@code executor.shutdownNow()} is called, the returned {@link CompletionStage}
    * will never be done.
@@ -163,7 +162,7 @@ public class Retryer {
    * Checked exceptions are reported through the returned {@link CompletionStage} so callers only
    * need to deal with them in one place.
    *
-   * <p>Retries are scheduled and performed by {@code executor}.
+   * <p>Retries are scheduled are performed by {@code executor}.
    * 
    * <p>NOTE that if {@code executor.shutdownNow()} is called, the returned {@link CompletionStage}
    * will never be done.
@@ -179,9 +178,204 @@ public class Retryer {
   }
 
   /**
+   * Returns a new object that retries if the return value satisfies {@code condition}.
+   * {@code delays} specify the backoffs between retries.
+   */
+  public <T> ForReturnValue<T> uponReturn(
+      Predicate<? super T> condition, List<? extends Delay<? super T>> delays) {
+    return new ForReturnValue<>(this, condition, delays);
+  }
+
+  /**
+   * Returns a new object that retries if the return value satisfies {@code condition}.
+   * {@code delays} specify the backoffs between retries.
+   */
+  public <T> ForReturnValue<T> uponReturn(
+      Predicate<? super T> condition, Stream<? extends Delay<? super T>> delays) {
+    List<? extends Delay<? super T>> delayList = copyOf(delays);
+    return uponReturn(condition, delayList);
+  }
+
+  /**
+   * Returns a new object that retries if the function returns {@code returnValue}.
+   * 
+   * @param returnValue The return value that triggers retry. Must not be {@code null}.
+   *        To retry for null return value, use {@code r -> r == null}.
+   * @param delays specify the backoffs between retries
+   */
+  public <T> ForReturnValue<T> uponReturn(
+      T returnValue, Stream<? extends Delay<? super T>> delays) {
+    return uponReturn(returnValue, copyOf(delays));
+  }
+
+  /**
+   * Returns a new object that retries if the function returns {@code returnValue}.
+   * 
+   * @param returnValue The return value that triggers retry. Must not be {@code null}.
+   *        To retry for null return value, use {@code r -> r == null}.
+   * @param delays specify the backoffs between retries
+   */
+  public <T> ForReturnValue<T> uponReturn(
+      T returnValue, List<? extends Delay<? super T>> delays) {
+    requireNonNull(returnValue);
+    return uponReturn(returnValue::equals, delays);
+  }
+
+  /** Retries based on return values. */
+  public static final class ForReturnValue<T> {
+    private final Retryer retryer;
+    private final Predicate<? super T> condition;
+
+    ForReturnValue(
+        Retryer retryer,
+        Predicate<? super T> condition, List<? extends Delay<? super T>> delays) {
+      this.condition = condition;
+      this.retryer = retryer.upon(MagicReturnError.class, MagicReturnError.wrap(delays));
+    }
+
+    /**
+     * Invokes and possibly retries {@code supplier} according to the retry
+     * strategies specified with {@link #uponReturn uponReturn()}.
+     * 
+     * <p>This method blocks while waiting to retry. If interrupted, retry is canceled.
+     *
+     * <p>If {@code supplier} fails despite retrying, the return value from the most recent
+     * invocation is returned.
+     */
+    public <R extends T, E extends Throwable> R retryBlockingly(
+        CheckedSupplier<R, E> supplier) throws E {
+      return MagicReturnError.unwrap(() -> retryer.retryBlockingly(supplier.map(this::wrap)));
+    }
+
+    /**
+     * Invokes and possibly retries {@code supplier} according to the retry
+     * strategies specified with {@link #uponReturn uponReturn()}.
+     *
+     * <p>The first invocation is done in the current thread. Unchecked exceptions thrown by
+     * {@code supplier} directly are propagated. This is to avoid hiding programming errors.
+     * Checked exceptions are reported through the returned {@link CompletionStage} so callers only
+     * need to deal with them in one place.
+     *
+     * <p>Retries are scheduled are performed by {@code executor}.
+     * 
+     * <p>NOTE that if {@code executor.shutdownNow()} is called, the returned
+     * {@link CompletionStage} will never be done.
+     */
+    public <R extends T, E extends Throwable> CompletionStage<R> retry(
+        CheckedSupplier<? extends R, E> supplier,
+        ScheduledExecutorService retryExecutor) {
+      return MagicReturnError.unwrapAsync(
+          () -> retryer.retry(supplier.map(this::wrap), retryExecutor));
+    }
+
+    /**
+     * Invokes and possibly retries {@code asyncSupplier} according to the retry
+     * strategies specified with {@link #uponReturn uponReturn()}.
+     *
+     * <p>The first invocation is done in the current thread. Unchecked exceptions thrown by
+     * {@code asyncSupplier} directly are propagated. This is to avoid hiding programming errors.
+     * Checked exceptions are reported through the returned {@link CompletionStage} so callers only
+     * need to deal with them in one place.
+     *
+     * <p>Retries are scheduled are performed by {@code executor}.
+     * 
+     * <p>NOTE that if {@code executor.shutdownNow()} is called, the returned
+     * {@link CompletionStage} will never be done.
+     */
+    public <R extends T, E extends Throwable> CompletionStage<R> retryAsync(
+        CheckedSupplier<? extends CompletionStage<R>, E> asyncSupplier,
+        ScheduledExecutorService retryExecutor) {
+      return MagicReturnError.unwrapAsync(
+          () -> retryer.retryAsync(() -> asyncSupplier.get().thenApply(this::wrap), retryExecutor));
+    }
+
+    private <R extends T> R wrap(R returnValue) {
+      if (condition.test(returnValue)) throw new MagicReturnError(returnValue);
+      return returnValue;
+    }
+
+    @SuppressWarnings("serial")
+    private static final class MagicReturnError extends Error {
+      private static final boolean DISABLE_SUPPRESSION = false;
+      private static final boolean NO_STACK_TRACE = false;
+      private final Object returnValue;
+
+      MagicReturnError(Object returnValue) {
+        super("magic!", null, DISABLE_SUPPRESSION, NO_STACK_TRACE);
+        this.returnValue = returnValue;
+      }
+  
+      static <T, E extends Throwable> T unwrap(CheckedSupplier<T, E> supplier) throws E {
+        try {
+          return supplier.get();
+        } catch (MagicReturnError magic) {
+          return magic.unsafeCast();
+        }
+      }
+  
+      static <T, E extends Throwable> CompletionStage<T> unwrapAsync(
+          CheckedSupplier<? extends CompletionStage<T>, E> supplier) throws E {
+        CompletionStage<T> stage = unwrap(supplier);
+        CompletableFuture<T> unwrapped = new CompletableFuture<>();
+        stage.thenAccept(unwrapped::complete);
+        stage.exceptionally(e -> {
+          MagicReturnError magic = findMagicReturn(e);
+          if (magic == null) {
+            unwrapped.completeExceptionally(e);
+          } else {
+            unwrapped.complete(magic.unsafeCast());
+          }
+          return null;
+        });
+        return unwrapped;
+      }
+  
+      static List<Delay<MagicReturnError>> wrap(List<? extends Delay<?>> delays) {
+        return new AbstractList<Delay<MagicReturnError>>() {
+          @Override public int size() {
+            return delays.size();
+          }
+          @Override public Delay<MagicReturnError> get(int index) {
+            return wrap(delays.get(index));
+          }
+        };
+      }
+
+      /** Exception cannot be parameterized. But we essentially use it as MagicReturn<T>. */
+      @SuppressWarnings("unchecked")
+      private <T> T unsafeCast() {
+        return (T) returnValue;
+      }
+  
+      private static Delay<MagicReturnError> wrap(Delay<?> delay) {
+        return new Delay<MagicReturnError>() {
+          @Override public Duration duration() {
+            return delay.duration();
+          }
+          @Override public void beforeDelay(MagicReturnError magic) {
+            delay.beforeDelay(magic.unsafeCast());
+          }
+          @Override public void afterDelay(MagicReturnError magic) {
+            delay.afterDelay(magic.unsafeCast());
+          }
+        };
+      }
+  
+      private static MagicReturnError findMagicReturn(Throwable e) {
+        for (Throwable actual = e; actual != null; actual = actual.getCause()) {
+          if (actual instanceof MagicReturnError) {
+            return (MagicReturnError) actual;
+          }
+        }
+        return null;
+      }
+    }
+  }
+
+  /**
    * Represents a delay interval between retry attempts for exceptions of type {@code E}.
    */
-  public static abstract class Delay<E extends Throwable> implements Comparable<Delay<E>> {
+  public static abstract class Delay<E> implements Comparable<Delay<E>> {
 
     /** Returns the delay interval. */
     public abstract Duration duration();
@@ -191,7 +385,7 @@ public class Retryer {
      *
      * @param millis must not be negative
      */
-    public static <E extends Throwable> Delay<E> ofMillis(long millis) {
+    public static <E> Delay<E> ofMillis(long millis) {
       return of(Duration.ofMillis(millis));
     }
 
@@ -200,7 +394,7 @@ public class Retryer {
      *
      * @param duration must not be negative
      */
-    public static <E extends Throwable> Delay<E> of(Duration duration) {
+    public static <E> Delay<E> of(Duration duration) {
       requireNonNegative(duration);
       return new Delay<E>() {
         @Override public Duration duration() {
@@ -331,15 +525,16 @@ public class Retryer {
       return multipliedBy(1 + (random.nextDouble() - 0.5) * 2 * randomness);
     }
 
-    /** Called if {@code exception} will be retried after the delay. */
-    public void beforeDelay(E exception) {
-      logger.info("Will retry for " + exception.getClass() + " after " + duration());
-      
-    }
+    /** Called if {@code event} will be retried after the delay. */
+    public void beforeDelay(@SuppressWarnings("unused") E event) {}
 
     /** Called after the delay, immediately before the retry. */
-    public void afterDelay(E exception) {
-      logger.log(Level.INFO, "Retrying now after " + duration(), exception);
+    public void afterDelay(@SuppressWarnings("unused") E event) {}
+
+    /** Called if {@code event} will be retried after the delay. */
+    final void interrupted(E event) {
+      logger.info("Interrupted while waiting to retry upon " + event);
+      Thread.currentThread().interrupt();
     }
 
     @Override public int compareTo(Delay<E> that) {
@@ -362,6 +557,24 @@ public class Retryer {
       return duration().toString();
     }
 
+    final void synchronously(E event) throws InterruptedException {
+      beforeDelay(event);
+      Thread.sleep(duration().toMillis());
+      afterDelay(event);
+    }
+
+    final void asynchronously(
+        E event, Failable continuation, Consumer<? super Throwable> exceptionHandler,
+        ScheduledExecutorService executor) {
+      beforeDelay(event);
+      Failable afterDelay = () -> {
+        afterDelay(event);
+        continuation.run();
+      };
+      executor.schedule(
+          () -> afterDelay.run(exceptionHandler), duration().toMillis(), TimeUnit.MILLISECONDS);
+    }
+
     private static Duration requireNonNegative(Duration duration) {
       if (duration.toMillis() < 0) {
         throw new IllegalArgumentException("Negative duration: " + duration);
@@ -375,15 +588,12 @@ public class Retryer {
     ExceptionPlan.Execution<Delay<?>> execution = plan.execute(exception).get();
     @SuppressWarnings("unchecked")  // Applicable delays were from upon(), enforcing <? super E>
     Delay<? super E> delay = (Delay<? super E>) execution.strategy();
-    delay.beforeDelay(exception);
     try {
-      Thread.sleep(delay.duration().toMillis());
+      delay.synchronously(exception);
     } catch (InterruptedException e) {
-      logger.info("Interrupted while waiting to retry upon " + exception.getClass());
-      Thread.currentThread().interrupt();
+      delay.interrupted(exception);
       throw exception;
     }
-    delay.afterDelay(exception);
     return execution.remainingExceptionPlan();
   }
 
@@ -424,20 +634,15 @@ public class Retryer {
     Maybe<ExceptionPlan.Execution<Delay<?>>, ?> maybeRetry = plan.execute(e);
     try {
       maybeRetry.ifPresent(execution -> {
-        result.whenComplete((v, x) -> {
-          if (x != null) addSuppressedTo(x, e);
+        result.exceptionally(x -> {
+          addSuppressedTo(x, e);
+          return null;
         });
         @SuppressWarnings("unchecked")  // delay came from upon(), which enforces <? super E>.
         Delay<Throwable> delay = (Delay<Throwable>) execution.strategy();
-        delay.beforeDelay(e);
-        Failable retry = () -> {
-          delay.afterDelay(e);
-          new Retryer(execution.remainingExceptionPlan())
-              .invokeWithRetry(supplier, retryExecutor, result);
-        };
-        retryExecutor.schedule(
-            () -> retry.run(result::completeExceptionally),
-            delay.duration().toMillis(), TimeUnit.MILLISECONDS);
+        Retryer nextRound = new Retryer(execution.remainingExceptionPlan());
+        Failable retry = () -> nextRound.invokeWithRetry(supplier, retryExecutor, result);
+        delay.asynchronously(e, retry, result::completeExceptionally, retryExecutor);
       });
       maybeRetry.catching(result::completeExceptionally);
     } catch (Throwable unexpected) {
@@ -447,6 +652,7 @@ public class Retryer {
   }
 
   private static void addSuppressedTo(Throwable exception, Throwable suppressed) {
+    if (suppressed instanceof ForReturnValue.MagicReturnError) return;
     if (exception != suppressed) {  // In case user code throws same exception again.
       exception.addSuppressed(suppressed);
     }
