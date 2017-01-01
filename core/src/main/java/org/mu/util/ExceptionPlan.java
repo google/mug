@@ -35,8 +35,8 @@ import java.util.function.Predicate;
  * question, and a new {@code ExeceptionPlan} object for upcoming exceptions in the same logical
  * group (such as exceptions thrown by the same method invocation in a retry).
  *
- * <p>For {@link Retryer}, {@code T} can be {@link java.time.Duration} of delay between retries.
- * But other users can potentially use any strategy type.
+ * <p>For {@link Retryer}, {@code T} can be {@link Delay} between retries. But any strategy types
+ * work too.
  * 
  * <p>Strategies specified through {@link #upon} are picked with
  * respect to the order they are added. Think of them as a bunch of
