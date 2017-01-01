@@ -150,9 +150,8 @@ public class Retryer {
    */
   public <T> CompletionStage<T> retry(
       CheckedSupplier<T, ?> supplier, ScheduledExecutorService executor) {
-    CheckedSupplier<CompletableFuture<T>, ?> asyncSupplier =
-        supplier.map(CompletableFuture::completedFuture);
-    return retryAsync(asyncSupplier, executor);
+    return retryAsync(
+        supplier.<CompletionStage<T>>map(CompletableFuture::completedFuture), executor);
   }
 
   /**
@@ -185,7 +184,7 @@ public class Retryer {
    * {@code delays} specify the backoffs between retries.
    */
   public <T> ForReturnValue<T> ifReturns(
-      Predicate<? super T> condition, List<? extends Delay<? super T>> delays) {
+      Predicate<T> condition, List<? extends Delay<? super T>> delays) {
     return new ForReturnValue<>(this, condition, delays);
   }
 
@@ -194,7 +193,7 @@ public class Retryer {
    * {@code delays} specify the backoffs between retries.
    */
   public <T> ForReturnValue<T> ifReturns(
-      Predicate<? super T> condition, Stream<? extends Delay<? super T>> delays) {
+      Predicate<T> condition, Stream<? extends Delay<? super T>> delays) {
     List<? extends Delay<? super T>> delayList = copyOf(delays);
     return ifReturns(condition, delayList);
   }
