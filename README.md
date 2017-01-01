@@ -80,6 +80,13 @@ return new Retryer()
     .retry(this::sendRpcRequest, executor);
 ```
 
+#### To keep track of exceptions
+
+If the method succeeds after retry, the exceptions are by default logged. As shown above, one can override `beforeDelay()` and `afterDelay()` to change or suppress the loggging.
+
+If the method fails after retry, the exceptions can also be accessed programmatically through `exception.getSuppressed()`.
+
+
 ## Funnel
 
 #### The problem

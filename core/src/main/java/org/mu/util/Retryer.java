@@ -533,10 +533,14 @@ public class Retryer {
     }
 
     /** Called if {@code event} will be retried after the delay. */
-    public void beforeDelay(@SuppressWarnings("unused") E event) {}
+    public void beforeDelay(E event) {
+      logger.info(event + ": will retry after " + duration());
+    }
 
     /** Called after the delay, immediately before the retry. */
-    public void afterDelay(@SuppressWarnings("unused") E event) {}
+    public void afterDelay(E event) {
+      logger.info(event + ": " + duration() + " has passed. Retrying now...");
+    }
 
     /** Called if delay for {@code event} is interrupted. */
     final void interrupted(E event) {
