@@ -99,6 +99,82 @@ If the method succeeds after retry, the exceptions are by default logged. As sho
 
 If the method fails after retry, the exceptions can also be accessed programmatically through `exception.getSuppressed()`.
 
+## [Maybe](https://fluentfuture.github.io/mu/apidocs/org/mu/util/Maybe.html)
+
+Represents a value that may have failed with an exception.
+Tunnels checked exceptions through streams or futures.
+
+#### Streams
+
+For a stream operation that would have looked like this if checked exception weren't in the way:
+
+```java
+return files.stream()
+   .map(Files::toByteArray)
+   .collect(toList());
+```
+
+The code can remain mostly as is by using `Maybe`:
+
+```java
+Stream<Maybe<byte[], IOException>> contents = files.stream()
+    .map(Maybe.wrap(Files::toByteArray));
+return Maybe.collect(contents);
+```
+And what if you want to log and swallow?
+
+```java
+private <T> Stream<T> logAndSwallow(Maybe<T> maybe) {
+  return maybe.catching(logger::warn);
+}
+
+List<String> getJobNames() {
+  return pendingJobIds.stream()
+      .map(Maybe.wrap(this::fetchJob))
+      .flatMap(this::logAndSwallow)
+      .map(Job::getName)
+      .collect(Collectors.toList());
+}
+```
+
+#### Futures
+
+In asynchronous programming, checked exceptions are wrapped inside ExecutionException or CompletionException. By the time the caller catches it, the static type of the causal exception is already lost. The caller code usually resorts to `instanceof MyException`.
+
+That aside, what do you do if instanceof is false? If you've been following the best practice of avoiding the blocking `Future.get()` call and instead using the asynchronous model encouraged by the new JDK CompletionStage API, you are most likely in a Function, BiFunction, Consumer or BiConsumer callback when handling the exception. Say,  you've decided that it's not your type of exception to handle, how do you possibly re-throw it? It's a freakin Throwable:
+```java
+CompletionStage<User> assumeAnonymousIfNotAuthenticated(CompletionStage<User> stage) {
+  return stage.exceptionally((Throwable e) -> {
+    if (e instanceof ExecutionException || e instanceof CompletionException) {
+      e = e.getCause();
+    }
+    if (e instanceof AuthenticationException) {
+      return new AnonymousUser();
+    }
+    // NOW WHAT?
+  });
+}
+```
+
+Alternatively, if the asynchronous code returns `Maybe<Foo, AuthenticationException>` instead, then upon getting a `Future<Maybe<Foo, AuthenticationException>>`, the exception can be handled type safely using `maybe.catching()` or `maybe.orElse()` etc.
+```java
+CompletionStage<User> assumeAnonymousIfNotAuthenticated(CompletionStage<User> stage) {
+  CompletionStage<Maybe<User, AuthenticationException>> authenticationStage =
+      Maybe.wrapException(AuthenticationException.class, stage)
+  return authenticationStage.thenApply(maybe -> maybe.orElse(e -> new AnonymousUser()));
+}
+```
+
+#### Conceptually, what is `Maybe`?
+* A computation result that could have failed.
+* Helps overcome awkward situations in Java where checked exception isn't the sweet spot.
+
+#### What isn't `Maybe`?
+* It's not Haskell Maybe (Optional is her cousin).
+* It's not Haskell `Either` either. In Java we think of return values and exceptional cases, not "Left" or "Right".
+* It's not to replace throwing and catching exceptions. Java code should do the Java way. When in Rome.
+* It's not designed for writing more "functional" code or shifting your programming paradigm. Use it where it helps.
+
 
 ## [Funnel](https://fluentfuture.github.io/mu/apidocs/org/mu/util/Funnel.html)
 
@@ -179,79 +255,3 @@ List<Result> convert(List<Input> inputs) {
 All the code has to do is to define the batch with ```funnel.through()``` and then inputs can be added to the batch without breaking encounter order.
 
 What happens if there are 3 kinds of inputs and two kinds require two different batch conversions? Funnel supports arbitrary number of batches. Just define them with ```through()``` and ```through()```.
-
-## [Maybe](https://fluentfuture.github.io/mu/apidocs/org/mu/util/Maybe.html)
-
-Represents a value that may have failed with an exception.
-Tunnels checked exceptions through streams or futures.
-
-#### Streams
-
-For a stream operation that would have looked like this if checked exception weren't in the way:
-
-```java
-return files.stream()
-   .map(Files::toByteArray)
-   .collect(toList());
-```
-
-The code can remain mostly as is by using `Maybe`:
-
-```java
-Stream<Maybe<byte[], IOException>> contents = files.stream()
-    .map(Maybe.wrap(Files::toByteArray));
-return Maybe.collect(contents);
-```
-And what if you want to log and swallow?
-
-```java
-private <T> Stream<T> logAndSwallow(Maybe<T> maybe) {
-  return maybe.catching(logger::warn);
-}
-
-List<String> getJobNames() {
-  return pendingJobIds.stream()
-      .map(Maybe.wrap(this::fetchJob))
-      .flatMap(this::logAndSwallow)
-      .map(Job::getName)
-      .collect(Collectors.toList());
-}
-```
-
-#### Futures
-
-In asynchronous programming, checked exceptions are wrapped inside ExecutionException or CompletionException. By the time the caller catches it, the static type of the causal exception is already lost. The caller code usually resorts to `instanceof MyException`.
-
-That aside, what do you do if instanceof is false? If you've been following the best practice of avoiding the blocking `Future.get()` call and instead using the asynchronous model encouraged by the new JDK CompletionStage API, you are most likely in a Function, BiFunction, Consumer or BiConsumer callback when handling the exception. Say,  you've decided that it's not your type of exception to handle, how do you possibly re-throw it? It's a freakin Throwable:
-```java
-CompletionStage<User> assumeAnonymousIfNotAuthenticated(CompletionStage<User> stage) {
-  return stage.exceptionally((Throwable e) -> {
-    if (e instanceof ExecutionException || e instanceof CompletionException) {
-      e = e.getCause();
-    }
-    if (e instanceof AuthenticationException) {
-      return new AnonymousUser();
-    }
-    // NOW WHAT?
-  });
-}
-```
-
-Alternatively, if the asynchronous code returns `Maybe<Foo, AuthenticationException>` instead, then upon getting a `Future<Maybe<Foo, AuthenticationException>>`, the exception can be handled type safely using `maybe.catching()` or `maybe.orElse()` etc.
-```java
-CompletionStage<User> assumeAnonymousIfNotAuthenticated(CompletionStage<User> stage) {
-  CompletionStage<Maybe<User, AuthenticationException>> authenticationStage =
-      Maybe.wrapException(AuthenticationException.class, stage)
-  return authenticationStage.thenApply(maybe -> maybe.orElse(e -> new AnonymousUser()));
-}
-```
-
-#### Conceptually, what is `Maybe`?
-* A computation result that could have failed.
-* Helps overcome awkward situations in Java where checked exception isn't the sweet spot.
-
-#### What isn't `Maybe`?
-* It's not Haskell Maybe (Optional is her cousin).
-* It's not Haskell `Either` either. In Java we think of return values and exceptional cases, not "Left" or "Right".
-* It's not to replace throwing and catching exceptions. Java code should do the Java way. When in Rome.
-* It's not designed for writing more "functional" code or shifting your programming paradigm. Use it where it helps.
