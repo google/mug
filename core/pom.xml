@@ -3,7 +3,7 @@
   <parent>
       <groupId>org.mu</groupId>
       <artifactId>mu-root</artifactId>
-      <version>1.0.1</version>
+      <version>1.1-SNAPSHOT</version>
       <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>mu</artifactId>
