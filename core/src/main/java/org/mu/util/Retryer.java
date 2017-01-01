@@ -363,15 +363,6 @@ public class Retryer {
           }
         };
       }
-  
-      private static ThrownReturn findThrownReturn(Throwable e) {
-        for (Throwable actual = e; actual != null; actual = actual.getCause()) {
-          if (actual instanceof ThrownReturn) {
-            return (ThrownReturn) actual;
-          }
-        }
-        return null;
-      }
     }
   }
 
