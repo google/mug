@@ -1,7 +1,6 @@
 package org.mu.util;
 
 import static com.google.common.truth.Truth.assertThat;
-import static java.util.Arrays.asList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertSame;
@@ -9,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -230,8 +228,6 @@ public class MaybeTest {
     assertThat(stage.toCompletableFuture().isDone()).isTrue();
     assertThat(stage.toCompletableFuture().get()).isEqualTo(Maybe.except(exception));
     assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isFalse();
-    assertThat(asList(exception.getSuppressed())).hasSize(1);
-    assertThat(exception.getSuppressed()[0]).isInstanceOf(CompletionException.class);
   }
 
   @Test public void wrapFuture_futureIsUnexpectedFailure() throws Exception {
