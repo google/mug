@@ -97,17 +97,17 @@ final class ExceptionPlan<T> {
   public <E extends Throwable> Maybe<Execution<T>, E> execute(E exception) {
     requireNonNull(exception);
     List<Rule<T>> remainingRules = new ArrayList<>();
-    Optional<? extends T> strategy = null;  // null means no rule has been found.
+    Rule<T> applicable = null;
     for (Rule<T> rule : rules) {
-      if (strategy == null && rule.condition.test(exception)) {
-        strategy = rule.currentStrategy();  // even if it's empty, we don't use other rules.
+      if (applicable == null && rule.appliesTo(exception)) {
+        applicable = rule;
         remainingRules.add(rule.remaining());
       } else {
         remainingRules.add(rule);
       }
     }
-    if (strategy == null) return Maybe.except(exception);  // No rule applicable.
-    return strategy
+    if (applicable == null) return Maybe.except(exception);
+    return applicable.currentStrategy()
         .map(s -> new Execution<>(s, new ExceptionPlan<>(remainingRules)))
         .map(Maybe::<Execution<T>, E>of)
         .orElse(Maybe.except(exception));  // The rule refuses to handle it.
@@ -115,7 +115,7 @@ final class ExceptionPlan<T> {
 
   /** Returns {@code true} if {@code exception} is covered in this plan. */
   public boolean covers(Throwable exception) {
-    return rules.stream().anyMatch(rule -> rule.condition.test(exception));
+    return rules.stream().anyMatch(rule -> rule.appliesTo(exception));
   }
 
   /** Describes what to do for the given exception. */
@@ -144,7 +144,7 @@ final class ExceptionPlan<T> {
   }
 
   private static final class Rule<T> {
-    final Predicate<? super Throwable> condition;
+    private final Predicate<? super Throwable> condition;
     private final List<? extends T> strategies;
     private final int index;
 
@@ -156,6 +156,10 @@ final class ExceptionPlan<T> {
 
     Rule(Predicate<? super Throwable> condition, List<? extends T> strategies) {
       this(condition, strategies, 0);
+    }
+
+    boolean appliesTo(Throwable exception) {
+      return condition.test(exception);
     }
 
     Rule<T> remaining() {
