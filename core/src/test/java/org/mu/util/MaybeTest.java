@@ -17,7 +17,6 @@ import java.util.stream.Stream;
 
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.function.Executable;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.mu.function.CheckedBiFunction;
@@ -236,8 +235,7 @@ public class MaybeTest {
         Maybe.wrapException(MyException.class, exceptionally(exception));
     assertThat(stage.toCompletableFuture().isDone()).isTrue();
     assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isTrue();
-    assertCauseOf(ExecutionException.class, () -> stage.toCompletableFuture().get())
-        .isSameAs(exception);
+    assertCauseOf(ExecutionException.class, stage).isSameAs(exception);
   }
 
   @Test public void wrapFuture_futureBecomesSuccess() throws Exception {
@@ -267,8 +265,7 @@ public class MaybeTest {
     future.completeExceptionally(exception);
     assertThat(stage.toCompletableFuture().isDone()).isTrue();
     assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isTrue();
-    assertCauseOf(ExecutionException.class, () -> stage.toCompletableFuture().get())
-        .isSameAs(exception);
+    assertCauseOf(ExecutionException.class, stage).isSameAs(exception);
   }
 
   @Test public void testExecutionExceptionally() {
@@ -291,11 +288,6 @@ public class MaybeTest {
       Class<? extends Throwable> exceptionType, CompletionStage<?> stage) {
     return assertThat(
         Assertions.assertThrows(exceptionType, stage.toCompletableFuture()::get).getCause());
-  }
-
-  private static ThrowableSubject assertCauseOf(
-      Class<? extends Throwable> exceptionType, Executable executable) {
-    return assertThat(Assertions.assertThrows(exceptionType, executable).getCause());
   }
 
   private String raise(String s) throws MyException {

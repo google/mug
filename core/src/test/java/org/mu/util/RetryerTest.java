@@ -729,8 +729,7 @@ public class RetryerTest {
     retryer.upon(IOException.class, asList(ofSeconds(1)));  // Should have no effect
     IOException exception = new IOException("bad");
     when(action.run()).thenThrow(exception);
-    assertCauseOf(ExecutionException.class, () -> retry(action::run).toCompletableFuture().get())
-        .isSameAs(exception);
+    assertCauseOf(ExecutionException.class, retry(action::run)).isSameAs(exception);
     verify(action).run();
   }
 
@@ -918,11 +917,6 @@ public class RetryerTest {
       Class<? extends Throwable> exceptionType, Executable executable) {
     Throwable thrown = Assertions.assertThrows(exceptionType, executable);
     return Truth.assertThat(thrown);
-  }
-
-  private static ThrowableSubject assertCauseOf(
-      Class<? extends Throwable> exceptionType, Executable executable) {
-    return assertThat(Assertions.assertThrows(exceptionType, executable).getCause());
   }
 
   private static ThrowableSubject assertCauseOf(
