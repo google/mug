@@ -5,7 +5,9 @@ A few Java 8 util classes ([javadoc](http://fluentfuture.github.io/mu/apidocs/))
 
 ## [Retryer](https://fluentfuture.github.io/mu/apidocs/org/mu/util/Retryer.html)
 
-Retryer is a helper class that makes it easier to retry an operation with configurable backoffs.
+* Retry blockingly or async
+* Configurable and _extensible_ backoff strategies
+* Retry on exception or by return value
 
 #### To retry blockingly
 
