@@ -159,9 +159,9 @@ CompletionStage<User> assumeAnonymousIfNotAuthenticated(CompletionStage<User> st
 Alternatively, if the asynchronous code returns `Maybe<Foo, AuthenticationException>` instead, then upon getting a `Future<Maybe<Foo, AuthenticationException>>`, the exception can be handled type safely using `maybe.catching()` or `maybe.orElse()` etc.
 ```java
 CompletionStage<User> assumeAnonymousIfNotAuthenticated(CompletionStage<User> stage) {
-  CompletionStage<Maybe<User, AuthenticationException>> authenticationStage =
-      Maybe.catchException(AuthenticationException.class, stage)
-  return authenticationStage.thenApply(maybe -> maybe.orElse(e -> new AnonymousUser()));
+  CompletionStage<Maybe<User, AuthenticationException>> authenticated =
+      Maybe.catchException(AuthenticationException.class, stage);
+  return authenticated.thenApply(maybe -> maybe.orElse(e -> new AnonymousUser()));
 }
 ```
 
