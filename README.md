@@ -160,7 +160,7 @@ Alternatively, if the asynchronous code returns `Maybe<Foo, AuthenticationExcept
 ```java
 CompletionStage<User> assumeAnonymousIfNotAuthenticated(CompletionStage<User> stage) {
   CompletionStage<Maybe<User, AuthenticationException>> authenticationStage =
-      Maybe.wrapException(AuthenticationException.class, stage)
+      Maybe.catchException(AuthenticationException.class, stage)
   return authenticationStage.thenApply(maybe -> maybe.orElse(e -> new AnonymousUser()));
 }
 ```
