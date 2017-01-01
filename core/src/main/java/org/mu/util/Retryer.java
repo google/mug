@@ -35,6 +35,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -149,7 +150,9 @@ public class Retryer {
    */
   public <T> CompletionStage<T> retry(
       CheckedSupplier<T, ?> supplier, ScheduledExecutorService executor) {
-    return retryAsync(supplier.map(CompletableFuture::completedFuture), executor);
+    CheckedSupplier<CompletableFuture<T>, ?> asyncSupplier =
+        supplier.map(CompletableFuture::completedFuture);
+    return retryAsync(asyncSupplier, executor);
   }
 
   /**
@@ -682,7 +685,8 @@ public class Retryer {
 
   private static <T> List<T> copyOf(Stream<? extends T> stream) {
     // Collectors.toList() doesn't guarantee thread-safety.
-    return stream.collect(Collectors.toCollection(ArrayList::new));
+    Collector<T, ?, ArrayList<T>> collector = Collectors.toCollection(ArrayList::new);
+    return stream.collect(collector);
   }
 
   @FunctionalInterface
