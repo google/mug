@@ -5,7 +5,7 @@ A few Java 8 util classes ([javadoc](http://fluentfuture.github.io/mu/apidocs/))
 
 ## [Retryer](https://fluentfuture.github.io/mu/apidocs/org/mu/util/Retryer.html)
 
-* Retry blockingly or async
+* Retry blockingly or _async_
 * Configurable and _extensible_ backoff strategies
 * Retry on exception or by return value
 
