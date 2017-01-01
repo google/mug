@@ -232,7 +232,7 @@ public class Retryer {
         Retryer retryer,
         Predicate<? super T> condition, List<? extends Delay<? super T>> delays) {
       this.condition = condition;
-      this.retryer = retryer.upon(WrapReturnToThrow.class, WrapReturnToThrow.wrap(delays));
+      this.retryer = retryer.upon(ThrownReturn.class, ThrownReturn.wrap(delays));
     }
 
     /**
@@ -247,7 +247,7 @@ public class Retryer {
     public <R extends T, E extends Throwable> R retryBlockingly(
         CheckedSupplier<R, E> supplier) throws E {
       CheckedSupplier<R, E> wrapped = () -> retryer.retryBlockingly(supplier.map(this::wrap));
-      return WrapReturnToThrow.unwrap(wrapped);
+      return ThrownReturn.unwrap(wrapped);
     }
 
     /**
@@ -267,7 +267,7 @@ public class Retryer {
     public <R extends T, E extends Throwable> CompletionStage<R> retry(
         CheckedSupplier<? extends R, E> supplier,
         ScheduledExecutorService retryExecutor) {
-      return WrapReturnToThrow.unwrapAsync(
+      return ThrownReturn.unwrapAsync(
           () -> retryer.retry(supplier.map(this::wrap), retryExecutor));
     }
 
@@ -288,12 +288,12 @@ public class Retryer {
     public <R extends T, E extends Throwable> CompletionStage<R> retryAsync(
         CheckedSupplier<? extends CompletionStage<R>, E> asyncSupplier,
         ScheduledExecutorService retryExecutor) {
-      return WrapReturnToThrow.unwrapAsync(
+      return ThrownReturn.unwrapAsync(
           () -> retryer.retryAsync(() -> asyncSupplier.get().thenApply(this::wrap), retryExecutor));
     }
 
     private <R extends T> R wrap(R returnValue) {
-      if (condition.test(returnValue)) throw new WrapReturnToThrow(returnValue);
+      if (condition.test(returnValue)) throw new ThrownReturn(returnValue);
       return returnValue;
     }
 
@@ -305,12 +305,12 @@ public class Retryer {
      * safe.
      */
     @SuppressWarnings("serial")
-    private static final class WrapReturnToThrow extends Error {
+    private static final class ThrownReturn extends Error {
       private static final boolean DISABLE_SUPPRESSION = false;
       private static final boolean NO_STACK_TRACE = false;
       private final Object returnValue;
 
-      WrapReturnToThrow(Object returnValue) {
+      ThrownReturn(Object returnValue) {
         super("This should never escape!", null, DISABLE_SUPPRESSION, NO_STACK_TRACE);
         this.returnValue = returnValue;
       }
@@ -318,66 +318,56 @@ public class Retryer {
       static <T, E extends Throwable> T unwrap(CheckedSupplier<T, E> supplier) throws E {
         try {
           return supplier.get();
-        } catch (WrapReturnToThrow thrown) {
-          return thrown.unsafeCast();
+        } catch (ThrownReturn thrown) {
+          return thrown.unsafeGet();
         }
       }
   
       static <T, E extends Throwable> CompletionStage<T> unwrapAsync(
           CheckedSupplier<? extends CompletionStage<T>, E> supplier) throws E {
         CompletionStage<T> stage = unwrap(supplier);
-        CompletableFuture<T> unwrapped = new CompletableFuture<>();
-        stage.thenAccept(unwrapped::complete);
-        stage.exceptionally(e -> {
-          WrapReturnToThrow thrown = findThrownReturn(e);
-          if (thrown == null) {
-            unwrapped.completeExceptionally(e);
-          } else {
-            unwrapped.complete(thrown.unsafeCast());
-          }
-          return null;
-        });
-        return unwrapped;
+        return Maybe.wrapException(ThrownReturn.class, stage)
+            .thenApply(maybe -> maybe.orElse(ThrownReturn::unsafeGet));
       }
   
-      static List<Delay<WrapReturnToThrow>> wrap(List<? extends Delay<?>> delays) {
-        return new AbstractList<Delay<WrapReturnToThrow>>() {
+      static List<Delay<ThrownReturn>> wrap(List<? extends Delay<?>> delays) {
+        return new AbstractList<Delay<ThrownReturn>>() {
           @Override public int size() {
             return delays.size();
           }
-          @Override public Delay<WrapReturnToThrow> get(int index) {
+          @Override public Delay<ThrownReturn> get(int index) {
             return wrap(delays.get(index));
           }
         };
       }
 
-      /** Exception cannot be parameterized. But we essentially use it as WrapReturnToThrow<T>. */
+      /** Exception cannot be parameterized. But we essentially use it as ThrownReturn<T>. */
       @SuppressWarnings("unchecked")
-      private <T> T unsafeCast() {
+      private <T> T unsafeGet() {
         return (T) returnValue;
       }
   
-      private static Delay<WrapReturnToThrow> wrap(Delay<?> delay) {
-        return new Delay<WrapReturnToThrow>() {
+      private static Delay<ThrownReturn> wrap(Delay<?> delay) {
+        return new Delay<ThrownReturn>() {
           @Override public Duration duration() {
             return delay.duration();
           }
-          @Override public void beforeDelay(WrapReturnToThrow thrown) {
-            delay.beforeDelay(thrown.unsafeCast());
+          @Override public void beforeDelay(ThrownReturn thrown) {
+            delay.beforeDelay(thrown.unsafeGet());
           }
-          @Override public void afterDelay(WrapReturnToThrow thrown) {
-            delay.afterDelay(thrown.unsafeCast());
+          @Override public void afterDelay(ThrownReturn thrown) {
+            delay.afterDelay(thrown.unsafeGet());
           }
-          @Override void interrupted(WrapReturnToThrow thrown) {
-            delay.interrupted(thrown.unsafeCast());
+          @Override void interrupted(ThrownReturn thrown) {
+            delay.interrupted(thrown.unsafeGet());
           }
         };
       }
   
-      private static WrapReturnToThrow findThrownReturn(Throwable e) {
+      private static ThrownReturn findThrownReturn(Throwable e) {
         for (Throwable actual = e; actual != null; actual = actual.getCause()) {
-          if (actual instanceof WrapReturnToThrow) {
-            return (WrapReturnToThrow) actual;
+          if (actual instanceof ThrownReturn) {
+            return (ThrownReturn) actual;
           }
         }
         return null;
@@ -669,7 +659,7 @@ public class Retryer {
   }
 
   private static void addSuppressedTo(Throwable exception, Throwable suppressed) {
-    if (suppressed instanceof ForReturnValue.WrapReturnToThrow) return;
+    if (suppressed instanceof ForReturnValue.ThrownReturn) return;
     if (exception != suppressed) {  // In case user code throws same exception again.
       exception.addSuppressed(suppressed);
     }

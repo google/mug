@@ -18,6 +18,11 @@ package org.mu.util;
 import static java.util.Objects.requireNonNull;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -266,6 +271,28 @@ public abstract class Maybe<T, E extends Throwable> {
     return (a, b) -> get(() -> function.apply(a, b), exceptionType);
   }
 
+  /**
+   * Returns a wrapper of {@code stage} that if {@code stage} failed with exception of
+   * {@code exceptionType}, that exception is wrapped inside a {@link Maybe} and returned normally.
+   *
+   * <p>This is useful if the code is interested in recovering from its own exception while not
+   * wanting to mess with other types. Both {@link CompletionStage#exceptionally} and
+   * {@link CompletionStage#handle} methods don't allow re-throwing checked exceptions that you
+   * can't recover from.
+   */
+  public static <T, E extends Throwable> CompletionStage<Maybe<T, E>> wrapException(
+      Class<E> exceptionType, CompletionStage<T> stage) {
+    CompletableFuture<Maybe<T, E>> future = new CompletableFuture<>();
+    stage.thenAccept(v -> future.complete(Maybe.of(v)));
+    stage.exceptionally(e -> {
+      unwrapFutureException(exceptionType, e)
+          .map(cause -> future.complete(Maybe.except(cause)))
+          .orElseGet(() -> future.completeExceptionally(e));
+      return null;
+    });
+    return future;
+  }
+
   /** Propagates {@code exception} if it's unchecked, or else return it as is. */
   static <E extends Throwable> E propagateIfUnchecked(E e) {
     if (e instanceof RuntimeException) {
@@ -274,6 +301,21 @@ public abstract class Maybe<T, E extends Throwable> {
       throw (Error) e;
     } else {
       return e;
+    }
+  }
+
+  private static <E extends Throwable> Optional<E> unwrapFutureException(
+      Class<E> causeType, Throwable exception) {
+    for (Throwable e = exception; ; e = e.getCause()) {
+      if (causeType.isInstance(e)) {
+        if (e != exception) {
+          e.addSuppressed(exception);
+        }
+        return Optional.of(causeType.cast(e));
+      }
+      if (!(e instanceof ExecutionException || e instanceof CompletionException)) {
+        return Optional.empty();
+      }
     }
   }
 
