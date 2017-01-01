@@ -50,7 +50,16 @@ new Retryer()
 
 #### Backoffs are just `List<Delay>`
 
-`exponentialBackoff()`, `timed()` and `randomized()` are provided out of the box for convenience purpose only. But at the end of the day, backoffs are just an old-school boring `List`. You can create the List in any way you are used to. For example, there isn't a `uniformDelay()` in this library, because there is already `Collections.nCopies(n, delay)`.
+`exponentialBackoff()`, `timed()` and `randomized()` are provided out of the box for convenience purpose only. But at the end of the day, backoffs are just old-school boring `List`s. You can create the List in any way you are used to. For example, there isn't a `uniformDelay()` in this library, because there is already `Collections.nCopies(n, delay)`.
+
+Or, to concatenate two different backoff strategies together (first uniform and then exponential), the Stream API has a good tool for the job:
+```java
+new Retryer()
+    .upon(RpcException.class,
+          Stream.concat(nCopies(3, Delay.ofMillis(1)).stream(),
+                        Delay.ofMillis(2).exponentialBackoff(1.5, 4).stream()))
+    .retry(...);
+```
 
 #### To handle retry events
 
