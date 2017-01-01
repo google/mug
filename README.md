@@ -141,7 +141,7 @@ List<String> getJobNames() {
 
 In asynchronous programming, checked exceptions are wrapped inside ExecutionException or CompletionException. By the time the caller catches it, the static type of the causal exception is already lost. The caller code usually resorts to `instanceof MyException`.
 
-That aside, what do you do if instanceof is false? If you've been following the best practice of avoiding the blocking `Future.get()` call and instead using the asynchronous model encouraged by the new JDK CompletionStage API, you are most likely in a Function, BiFunction, Consumer or BiConsumer callback when handling the exception. Say,  you've decided that it's not your type of exception to handle, how do you possibly re-throw it? It's a freakin Throwable:
+That aside, what do you do if instanceof is false? If you've been following the best practice of avoiding the blocking `Future.get()` call and instead using the asynchronous model encouraged by the new JDK CompletionStage API, you are most likely in a Function, BiFunction, Consumer or BiConsumer callback when handling the exception. Say,  you've decided that it's not your type of exception to handle, how do you possibly re-throw it? It's a freakin Throwable inside a lambda that doesn't like checked exceptions:
 ```java
 CompletionStage<User> assumeAnonymousIfNotAuthenticated(CompletionStage<User> stage) {
   return stage.exceptionally((Throwable e) -> {
@@ -151,7 +151,7 @@ CompletionStage<User> assumeAnonymousIfNotAuthenticated(CompletionStage<User> st
     if (e instanceof AuthenticationException) {
       return new AnonymousUser();
     }
-    // NOW WHAT?
+    throw e;  // Doesn't compile. NOW WHAT?
   });
 }
 ```
