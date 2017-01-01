@@ -222,7 +222,12 @@ List<String> getJobNames() {
 
 In asynchronous programming, checked exceptions are wrapped inside ExecutionException. By the time the caller catches it, the static type of the causal exception is already lost. The caller code usually resorts to `instanceof MyException`.
 
-Alternatively, if the asynchronous code returns `Maybe<Foo, MyException>` instead, then upon getting a `Future<Maybe<Foo, MyException>>`, the exception can be handled type safely using `maybe.catching()` or `maybe.orElse()`.
+Alternatively, if the asynchronous code returns `Maybe<Foo, MyException>` instead, then upon getting a `Future<Maybe<Foo, MyException>>`, the exception can be handled type safely using `maybe.catching()` or `maybe.orElse()`. For example, to selectively handle RpcException, the following code wraps it inside a `Maybe` and then downstream code can handle it type safely:
+```java
+CompletionStage<Foo> stage = ...;
+CompletionStage<Maybe<Foo, RpcException>> rpcStage = Maybe.wrapException(RpcException.class, stage);
+rpcStage.thenApply(maybe -> maybe.map(...).orElse(...));
+```
 
 #### Conceptually, what is `Maybe`?
 * A computation result that could have failed.

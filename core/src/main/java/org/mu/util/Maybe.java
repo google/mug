@@ -276,9 +276,9 @@ public abstract class Maybe<T, E extends Throwable> {
    * {@code exceptionType}, that exception is wrapped inside a {@link Maybe} and returned normally.
    *
    * <p>This is useful if the code is interested in recovering from its own exception while not
-   * wanting to mess with other types. Both {@link CompletionStage#exceptionally} and
-   * {@link CompletionStage#handle} methods don't allow re-throwing checked exceptions that you
-   * can't recover from.
+   * wanting to mess with other types. Neither of {@link CompletionStage#exceptionally} and
+   * {@link CompletionStage#handle} methods allow selective exception recovery because you can't
+   * re-throw the {@code Throwable} unless it's unchecked.
    */
   public static <T, E extends Throwable> CompletionStage<Maybe<T, E>> wrapException(
       Class<E> exceptionType, CompletionStage<T> stage) {
