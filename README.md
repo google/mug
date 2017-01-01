@@ -166,14 +166,15 @@ CompletionStage<User> assumeAnonymousIfNotAuthenticated(CompletionStage<User> st
 ```
 
 #### Conceptually, what is `Maybe`?
-* A computation result that could have failed.
+* An (otherwise) Java Optional that tells the reason of absence.
+* A computation result that could have failed with expected exception.
 * Helps overcome awkward situations in Java where checked exception isn't the sweet spot.
 
-#### What isn't `Maybe`?
+#### What's not `Maybe`?
 * It's not Haskell Maybe (Optional is her cousin).
-* It's not Haskell `Either` either. In Java we think of return values and exceptional cases, not "Left" or "Right".
+* It's not Haskell `Either` either. In Java we think of return values and exceptions, not mathematical "Left" and "Right".
 * It's not to replace throwing and catching exceptions. Java code should do the Java way. When in Rome.
-* It's not designed for writing more "functional" code or shifting your programming paradigm. Use it where it helps.
+* It's not designed to write code more "functional" just because you can. Use it where it helps.
 
 
 ## [Funnel](https://fluentfuture.github.io/mu/apidocs/org/mu/util/Funnel.html)
