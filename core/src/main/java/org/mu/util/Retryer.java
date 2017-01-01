@@ -181,7 +181,7 @@ public class Retryer {
    * Returns a new object that retries if the return value satisfies {@code condition}.
    * {@code delays} specify the backoffs between retries.
    */
-  public <T> ForReturnValue<T> uponReturn(
+  public <T> ForReturnValue<T> ifReturns(
       Predicate<? super T> condition, List<? extends Delay<? super T>> delays) {
     return new ForReturnValue<>(this, condition, delays);
   }
@@ -190,10 +190,10 @@ public class Retryer {
    * Returns a new object that retries if the return value satisfies {@code condition}.
    * {@code delays} specify the backoffs between retries.
    */
-  public <T> ForReturnValue<T> uponReturn(
+  public <T> ForReturnValue<T> ifReturns(
       Predicate<? super T> condition, Stream<? extends Delay<? super T>> delays) {
     List<? extends Delay<? super T>> delayList = copyOf(delays);
-    return uponReturn(condition, delayList);
+    return ifReturns(condition, delayList);
   }
 
   /**
@@ -218,7 +218,7 @@ public class Retryer {
   public <T> ForReturnValue<T> uponReturn(
       T returnValue, List<? extends Delay<? super T>> delays) {
     requireNonNull(returnValue);
-    return uponReturn(returnValue::equals, delays);
+    return ifReturns(returnValue::equals, delays);
   }
 
   /** Retries based on return values. */

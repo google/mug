@@ -246,7 +246,7 @@ public class RetryerTest {
   @Test public void returnValueAsyncFailedAfterRetry() throws Exception {
     Delay<String> delay = Mockito.spy(ofSeconds(1));
     Retryer.ForReturnValue<String> forReturnValue =
-        retryer.uponReturn(s -> s.startsWith("bad"), asList(delay));
+        retryer.ifReturns(s -> s.startsWith("bad"), asList(delay));
     when(action.runAsync())
         .thenReturn(completedFuture("bad"))
         .thenReturn(completedFuture("bad2"));
@@ -267,7 +267,7 @@ public class RetryerTest {
       }
     };
     Retryer.ForReturnValue<String> forReturnValue =
-        retryer.uponReturn(s -> s.startsWith("bad"), asList(delay).stream());
+        retryer.ifReturns(s -> s.startsWith("bad"), asList(delay).stream());
     when(action.run()).thenReturn("bad").thenReturn("fixed");
     CompletionStage<String> stage = forReturnValue.retry(action::run, executor);
     elapse(Duration.ofMillis(1));
