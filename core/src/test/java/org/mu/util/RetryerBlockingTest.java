@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.time.Duration;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -32,7 +33,7 @@ import com.google.common.truth.Truth;
 public class RetryerBlockingTest {
 
   @Mock private Action action;
-  private final Delay<Object> delay = Mockito.spy(Delay.ofMillis(100));
+  private final Delay<Object> delay = Mockito.spy(new DelayForMock<>(Duration.ofMillis(100)));
 
   @Before public void setUpMocks() {
     MockitoAnnotations.initMocks(this);
@@ -383,7 +384,7 @@ public class RetryerBlockingTest {
     verify(delay).afterDelay(exception1);
   }
 
-  private ThrowableSubject assertException(
+  private static ThrowableSubject assertException(
       Class<? extends Throwable> exceptionType, Executable executable) {
     Throwable exception = Assertions.assertThrows(exceptionType, executable);
     return Truth.assertThat(exception);

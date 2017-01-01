@@ -63,7 +63,7 @@ public final class Funnel<T> {
       List<F> params = indexedSources.stream()
           .map(i -> i.value)
           .collect(toList());
-      List<T> results = new ArrayList<T>(converter.apply(params));
+      List<T> results = new ArrayList<>(converter.apply(params));
       if (params.size() != results.size()) {
         throw new IllegalStateException(
             converter + " expected to return " + params.size() + " elements for input "

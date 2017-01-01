@@ -861,7 +861,7 @@ public class RetryerTest {
     assertThrows(ArithmeticException.class, () -> ofDays(Long.MAX_VALUE));
     assertThrows(IllegalArgumentException.class, () -> Delay.ofMillis(-1));
     assertThrows(ArithmeticException.class, () -> Delay.ofMillis(Long.MIN_VALUE));
-    assertThrows(IllegalArgumentException.class, () -> ofDays(-1));
+    assertThrows(IllegalArgumentException.class, () -> Delay.of(Duration.ofDays(-1)));
   }
 
   @Test public void testFakeScheduledExecutorService_taskScheduledButNotRunYet() {
@@ -897,11 +897,11 @@ public class RetryerTest {
   }
 
   private static <E> Delay<E> ofSeconds(long seconds) {
-    return Delay.of(Duration.ofSeconds(seconds));
+    return new DelayForMock<>(Duration.ofSeconds(seconds));
   }
 
   private static <E> Delay<E> ofDays(long days) {
-    return Delay.of(Duration.ofDays(days));
+    return new DelayForMock<>(Duration.ofDays(days));
   }
 
   private <E extends Throwable> void upon(
@@ -923,12 +923,13 @@ public class RetryerTest {
     return retryer.retryAsync(supplier, executor);
   }
 
-  private ThrowableSubject assertException(
+  private static ThrowableSubject assertException(
       Class<? extends Throwable> exceptionType, Executable executable) {
-    return Truth.assertThat(Assertions.assertThrows(exceptionType, executable));
+    Throwable thrown = Assertions.assertThrows(exceptionType, executable);
+    return Truth.assertThat(thrown);
   }
 
-  private ThrowableSubject assertCauseOf(
+  private static ThrowableSubject assertCauseOf(
       Class<? extends Throwable> exceptionType, Executable executable) {
     return assertThat(Assertions.assertThrows(exceptionType, executable).getCause());
   }

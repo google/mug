@@ -244,7 +244,8 @@ public class Retryer {
      */
     public <R extends T, E extends Throwable> R retryBlockingly(
         CheckedSupplier<R, E> supplier) throws E {
-      return WrapReturnToThrow.unwrap(() -> retryer.retryBlockingly(supplier.map(this::wrap)));
+      CheckedSupplier<R, E> wrapped = () -> retryer.retryBlockingly(supplier.map(this::wrap));
+      return WrapReturnToThrow.unwrap(wrapped);
     }
 
     /**
