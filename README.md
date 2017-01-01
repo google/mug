@@ -168,7 +168,7 @@ CompletionStage<User> assumeAnonymousIfNotAuthenticated(CompletionStage<User> st
 #### Conceptually, what is `Maybe`?
 * An (otherwise) Java Optional that tells the reason of absence.
 * A computation result that could have failed with expected exception.
-* Helps overcome awkward situations in Java where checked exception isn't the sweet spot.
+* Helps with awkward situations in Java where checked exception isn't the sweet spot.
 
 #### What's not `Maybe`?
 * It's not Haskell Maybe (Optional is her cousin).
