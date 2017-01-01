@@ -1,7 +1,9 @@
 # μ
-Tiny Java 8 utilities ([javadoc](http://fluentfuture.github.io/mu/apidocs/)) for some, with 0 dependencies.
+A few Java 8 util classes ([javadoc](http://fluentfuture.github.io/mu/apidocs/)) for some, with 0 dependencies.
 
-## Retryer
+![](https://travis-ci.org/fluentfuture/mu.svg?branch=master)
+
+## [Retryer](https://fluentfuture.github.io/mu/apidocs/org/mu/util/Retryer.html)
 
 Retryer is a helper that makes it easier to retry an operation with configurable backoffs.
 
@@ -52,7 +54,7 @@ new Retryer()
 
 `exponentialBackoff()`, `timed()` and `randomized()` are provided out of the box for convenience purpose only. But at the end of the day, backoffs are just old-school boring `List`s. You can create the List in any way you are used to. For example, there isn't a `uniformDelay()` in this library, because there is already `Collections.nCopies(n, delay)`.
 
-Or, to concatenate two different backoff strategies together (first uniform and then exponential), the Stream API has a good tool for the job:
+Or, to concatenate two different backoff strategies together (first uniform and then exponential), the Java 8 Stream API has a good tool for the job:
 ```java
 new Retryer()
     .upon(RpcException.class,
@@ -60,6 +62,8 @@ new Retryer()
                         Delay.ofMillis(2).exponentialBackoff(1.5, 4).stream()))
     .retry(...);
 ```
+
+Want to retry infinitely? Too bad, Java doesn't have infinite List. How about `Collections.nCopies(Integer.MAX_VALUE, delay)`? It's not infinite but probably enough to retry until the death of the universe. JDK is smart enough that it only uses O(1) time and space for creating it (`Delay#exponentialBackoff()` follows suit).
 
 #### To handle retry events
 
@@ -96,7 +100,7 @@ If the method succeeds after retry, the exceptions are by default logged. As sho
 If the method fails after retry, the exceptions can also be accessed programmatically through `exception.getSuppressed()`.
 
 
-## Funnel
+## [Funnel](https://fluentfuture.github.io/mu/apidocs/org/mu/util/Funnel.html)
 
 #### The problem
 
@@ -176,7 +180,7 @@ All the code has to do is to define the batch with ```funnel.through()``` and th
 
 What happens if there are 3 kinds of inputs and two kinds require two different batch conversions? Funnel supports arbitrary number of batches. Just define them with ```through()``` and ```through()```.
 
-## Maybe
+## [Maybe](https://fluentfuture.github.io/mu/apidocs/org/mu/util/Maybe.html)
 
 Represents a value that may have failed with an exception.
 Tunnels checked exceptions through streams or futures.
