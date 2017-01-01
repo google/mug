@@ -63,6 +63,8 @@ new Retryer()
     .retry(...);
 ```
 
+Want to retry infinitely? Too bad, Java doesn't have infinite List. How about `Collections.nCopies(Integer.MAX_VALUE, delay)`? It's not infinite but probably enough to retry until the death of the universe. JDK is smart enough that it only uses O(1) time and space for creating it (`Delay.exponentialBackofff` follows suit).
+
 #### To handle retry events
 
 Sometimes the program may need custom handling of retry events, like, for example, to increment a stats counter based on the error code in the exception. Requirements like this can be done with a custom Delay implementation:
