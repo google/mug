@@ -1,6 +1,8 @@
 # μ
 A few Java 8 util classes ([javadoc](http://fluentfuture.github.io/mu/apidocs/)) for some, with 0 dependencies.
 
+![](https://travis-ci.org/fluentfuture/mu.svg?branch=master)
+
 ## [Retryer](https://fluentfuture.github.io/mu/apidocs/org/mu/util/Retryer.html)
 
 Retryer is a helper that makes it easier to retry an operation with configurable backoffs.
