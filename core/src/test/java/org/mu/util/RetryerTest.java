@@ -246,7 +246,7 @@ public class RetryerTest {
   @Test public void returnValueAsyncFailedAfterRetry() throws Exception {
     Delay<String> delay = Mockito.spy(ofSeconds(1));
     Retryer.ForReturnValue<String> forReturnValue =
-        retryer.ifReturns(s -> s.startsWith("bad"), asList(delay));
+        retryer.ifReturns((String s) -> s.startsWith("bad"), asList(delay));
     when(action.runAsync())
         .thenReturn(completedFuture("bad"))
         .thenReturn(completedFuture("bad2"));
