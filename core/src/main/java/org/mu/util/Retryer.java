@@ -366,6 +366,9 @@ public class Retryer {
           @Override public void afterDelay(WrapReturnToThrow thrown) {
             delay.afterDelay(thrown.unsafeCast());
           }
+          @Override void interrupted(WrapReturnToThrow thrown) {
+            delay.interrupted(thrown.unsafeCast());
+          }
         };
       }
   
@@ -544,8 +547,8 @@ public class Retryer {
     }
 
     /** Called if delay for {@code event} is interrupted. */
-    final void interrupted(E event) {
-      logger.info("Interrupted while waiting to retry upon " + event);
+    void interrupted(E event) {
+      logger.info(event + ": interrupted while waiting to retry upon .");
       Thread.currentThread().interrupt();
     }
 
