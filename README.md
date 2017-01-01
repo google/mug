@@ -1,7 +1,7 @@
 # μ
-Tiny Java 8 utilities ([javadoc](http://fluentfuture.github.io/mu/apidocs/)) for some, with 0 dependencies.
+A few Java 8 util classes ([javadoc](http://fluentfuture.github.io/mu/apidocs/)) for some, with 0 dependencies.
 
-## Retryer
+## [Retryer](https://fluentfuture.github.io/mu/apidocs/org/mu/util/Retryer.html)
 
 Retryer is a helper that makes it easier to retry an operation with configurable backoffs.
 
@@ -96,7 +96,7 @@ If the method succeeds after retry, the exceptions are by default logged. As sho
 If the method fails after retry, the exceptions can also be accessed programmatically through `exception.getSuppressed()`.
 
 
-## Funnel
+## [Funnel](https://fluentfuture.github.io/mu/apidocs/org/mu/util/Funnel.html)
 
 #### The problem
 
@@ -176,7 +176,7 @@ All the code has to do is to define the batch with ```funnel.through()``` and th
 
 What happens if there are 3 kinds of inputs and two kinds require two different batch conversions? Funnel supports arbitrary number of batches. Just define them with ```through()``` and ```through()```.
 
-## Maybe
+## [Maybe](https://fluentfuture.github.io/mu/apidocs/org/mu/util/Maybe.html)
 
 Represents a value that may have failed with an exception.
 Tunnels checked exceptions through streams or futures.
