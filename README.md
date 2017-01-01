@@ -220,13 +220,29 @@ List<String> getJobNames() {
 
 #### Futures
 
-In asynchronous programming, checked exceptions are wrapped inside ExecutionException. By the time the caller catches it, the static type of the causal exception is already lost. The caller code usually resorts to `instanceof MyException`.
+In asynchronous programming, checked exceptions are wrapped inside ExecutionException or CompletionException. By the time the caller catches it, the static type of the causal exception is already lost. The caller code usually resorts to `instanceof MyException`.
 
-Alternatively, if the asynchronous code returns `Maybe<Foo, MyException>` instead, then upon getting a `Future<Maybe<Foo, MyException>>`, the exception can be handled type safely using `maybe.catching()` or `maybe.orElse()`. For example, to selectively handle RpcException, the following code wraps it inside a `Maybe` and then downstream code can handle it type safely:
+That aside, what do you do if instanceof is false? If you've been following the best practice of avoiding the blocking `Future.get()` call and instead using the asynchronous model encouraged by the new JDK CompletionStage API, you are most likely in a Function, BiFunction, Consumer or BiConsumer callback when handling the exception. Say,  you've decided that it's not your type of exception to handle, but you can't rethrow it because it's a freakin Throwable.
 ```java
-CompletionStage<Foo> stage = ...;
-CompletionStage<Maybe<Foo, RpcException>> rpcStage = Maybe.wrapException(RpcException.class, stage);
-rpcStage.thenApply(maybe -> maybe.map(...).orElse(...));
+CompletionStage<User> assumeAnonymousIfNotAuthenticated(CompletionStage<User> stage) {
+  return stage.exceptionally((Throwable e) -> {
+    if (e instanceof ExecutionException || e instanceof CompletionException) {
+      e = e.getCause();
+    }
+    if (e instanceof AuthenticationException) {
+      return new AnonymousUser();
+    }
+    // NOW WHAT?
+  });
+}
+```
+
+Alternatively, if the asynchronous code returns `Maybe<Foo, AuthenticationException>` instead, then upon getting a `Future<Maybe<Foo, AuthenticationException>>`, the exception can be handled type safely using `maybe.catching()` or `maybe.orElse()` etc.
+```java
+CompletionStage<User> assumeAnonymousIfNotAuthenticated(CompletionStage<User> stage) {
+  CompletionStage<Maybe<User, AuthenticationException>> authenticationStage =
+      Maybe.wrapException(AuthenticationException.class, stage)
+  return authenticationStage.thenApply(maybe -> maybe.orElse(e -> new AnonymousUser()));
 ```
 
 #### Conceptually, what is `Maybe`?
