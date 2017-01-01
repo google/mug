@@ -326,7 +326,7 @@ public class Retryer {
       static <T, E extends Throwable> CompletionStage<T> unwrapAsync(
           CheckedSupplier<? extends CompletionStage<T>, E> supplier) throws E {
         CompletionStage<T> stage = unwrap(supplier);
-        return Maybe.wrapException(ThrownReturn.class, stage)
+        return Maybe.catchException(ThrownReturn.class, stage)
             .thenApply(maybe -> maybe.orElse(ThrownReturn::unsafeGet));
       }
   

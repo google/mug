@@ -273,14 +273,15 @@ public abstract class Maybe<T, E extends Throwable> {
 
   /**
    * Returns a wrapper of {@code stage} that if {@code stage} failed with exception of
-   * {@code exceptionType}, that exception is wrapped inside a {@link Maybe} and returned normally.
+   * {@code exceptionType}, that exception is caught and wrapped inside a {@link Maybe} to complete
+   * the wrapper stage normally.
    *
    * <p>This is useful if the code is interested in recovering from its own exception while not
    * wanting to mess with other types. Neither of {@link CompletionStage#exceptionally} and
    * {@link CompletionStage#handle} methods allow selective exception recovery because you can't
    * re-throw the {@code Throwable} unless it's unchecked.
    */
-  public static <T, E extends Throwable> CompletionStage<Maybe<T, E>> wrapException(
+  public static <T, E extends Throwable> CompletionStage<Maybe<T, E>> catchException(
       Class<E> exceptionType, CompletionStage<T> stage) {
     CompletableFuture<Maybe<T, E>> future = new CompletableFuture<>();
     stage.thenAccept(v -> future.complete(Maybe.of(v)));
