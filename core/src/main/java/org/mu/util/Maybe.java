@@ -279,6 +279,10 @@ public abstract class Maybe<T, E extends Throwable> {
    * wanting to mess with other types. Neither of {@link CompletionStage#exceptionally} and
    * {@link CompletionStage#handle} methods allow selective exception recovery because you can't
    * re-throw the {@code Throwable} unless it's unchecked.
+   *
+   * <p>If the exception of {@code exceptionType} was wrapped inside an {@link ExecutionException}
+   * or {@link CompletionException}, that original wrapper exception can be accessed through
+   * {@link Throwable#getSuppressed}.
    */
   public static <T, E extends Throwable> CompletionStage<Maybe<T, E>> wrapException(
       Class<E> exceptionType, CompletionStage<T> stage) {
