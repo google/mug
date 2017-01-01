@@ -135,8 +135,7 @@ public class RetryerTest {
     elapse(Duration.ofSeconds(1));
     assertThat(stage.toCompletableFuture().isDone()).isTrue();
     assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isTrue();
-    assertCauseOf(ExecutionException.class, () -> stage.toCompletableFuture().get())
-        .isSameAs(unexpected);
+    assertCauseOf(ExecutionException.class, stage).isSameAs(unexpected);
     assertThat(unexpected.getSuppressed()).isEmpty();
     verify(action).run();
     verify(delay).beforeDelay("bad");
@@ -310,8 +309,7 @@ public class RetryerTest {
   @Test public void actionFailedButNoRetry() throws Exception {
     IOException exception = new IOException("bad");
     when(action.run()).thenThrow(exception);
-    assertCauseOf(ExecutionException.class, () -> retry(action::run).toCompletableFuture().get())
-        .isSameAs(exception);
+    assertCauseOf(ExecutionException.class, retry(action::run)).isSameAs(exception);
     assertThat(exception.getSuppressed()).isEmpty();
     verify(action).run();
   }
@@ -343,8 +341,7 @@ public class RetryerTest {
     elapse(Duration.ofSeconds(1));
     assertThat(stage.toCompletableFuture().isDone()).isTrue();
     assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isTrue();
-    assertCauseOf(ExecutionException.class, () -> stage.toCompletableFuture().get())
-        .isSameAs(unexpected);
+    assertCauseOf(ExecutionException.class, stage).isSameAs(unexpected);
     assertThat(asList(unexpected.getSuppressed())).containsExactly(exception);
     verify(action).run();
     verify(delay).beforeDelay(exception);
@@ -424,8 +421,7 @@ public class RetryerTest {
     elapse(Duration.ofSeconds(1));
     assertThat(stage.toCompletableFuture().isDone()).isTrue();
     assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isTrue();
-    assertCauseOf(ExecutionException.class, () -> stage.toCompletableFuture().get())
-        .isSameAs(exception);
+    assertCauseOf(ExecutionException.class, stage).isSameAs(exception);
     assertThat(asList(exception.getSuppressed())).containsExactly(firstException);
     verify(action, times(2)).run();
     verify(delay).beforeDelay(firstException);
@@ -447,8 +443,7 @@ public class RetryerTest {
     elapse(Duration.ofSeconds(1));  // exceeds time
     assertThat(stage.toCompletableFuture().isDone()).isTrue();
     assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isTrue();
-    assertCauseOf(ExecutionException.class, () -> stage.toCompletableFuture().get())
-        .isSameAs(exception);
+    assertCauseOf(ExecutionException.class, stage).isSameAs(exception);
     assertThat(asList(exception.getSuppressed())).containsExactly(exception1);
     verify(action, times(3)).run();  // Retry twice.
   }
@@ -508,8 +503,7 @@ public class RetryerTest {
     elapse(Duration.ofSeconds(1));
     assertThat(stage.toCompletableFuture().isDone()).isTrue();
     assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isTrue();
-    assertCauseOf(ExecutionException.class, () -> stage.toCompletableFuture().get())
-        .isSameAs(exception);
+    assertCauseOf(ExecutionException.class, stage).isSameAs(exception);
     verify(action, times(2)).runAsync();
     verify(delay).beforeDelay(firstException);
     verify(delay).afterDelay(firstException);
@@ -550,8 +544,7 @@ public class RetryerTest {
     elapse(4, Duration.ofSeconds(1));
     assertThat(stage.toCompletableFuture().isDone()).isTrue();
     assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isTrue();
-    assertCauseOf(ExecutionException.class, () -> stage.toCompletableFuture().get())
-        .isSameAs(error4);
+    assertCauseOf(ExecutionException.class, stage).isSameAs(error4);
     assertThat(asList(error4.getSuppressed())).containsExactly(exception1, error2, exception3);
     assertThat(error4.getCause()).isNull();
     assertThat(exception3.getSuppressed()).isEmpty();
@@ -627,8 +620,7 @@ public class RetryerTest {
     elapse(4, Duration.ofSeconds(1));
     assertThat(stage.toCompletableFuture().isDone()).isTrue();
     assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isTrue();
-    assertCauseOf(ExecutionException.class, () -> stage.toCompletableFuture().get())
-        .isSameAs(exception);
+    assertCauseOf(ExecutionException.class, stage).isSameAs(exception);
     assertThat(asList(exception.getSuppressed())).containsExactly(exception1);
     verify(action, times(4)).run();
     verify(returnValueDelay, times(2)).beforeDelay("bad");
@@ -707,8 +699,7 @@ public class RetryerTest {
     elapse(4, Duration.ofSeconds(1));
     assertThat(stage.toCompletableFuture().isDone()).isTrue();
     assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isTrue();
-    assertCauseOf(ExecutionException.class, () -> stage.toCompletableFuture().get())
-        .isSameAs(exception);
+    assertCauseOf(ExecutionException.class, stage).isSameAs(exception);
     assertThat(asList(exception.getSuppressed())).containsExactly(exception1);
     verify(action, times(4)).runAsync();
     verify(returnValueDelay, times(2)).beforeDelay("bad");
@@ -932,6 +923,12 @@ public class RetryerTest {
   private static ThrowableSubject assertCauseOf(
       Class<? extends Throwable> exceptionType, Executable executable) {
     return assertThat(Assertions.assertThrows(exceptionType, executable).getCause());
+  }
+
+  private static ThrowableSubject assertCauseOf(
+      Class<? extends Throwable> exceptionType, CompletionStage<?> stage) {
+    return assertThat(
+        Assertions.assertThrows(exceptionType, stage.toCompletableFuture()::get).getCause());
   }
 
   private void elapse(int counts, Duration duration) {
