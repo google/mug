@@ -244,8 +244,8 @@
             <artifactId>maven-gpg-plugin</artifactId>
             <version>1.5</version>
             <configuration>
-				<arguments>-Dgpg.passphrase=${gpg.passphrase}</arguments>
-			</configuration>
+              <arguments>-Dgpg.passphrase=${gpg.passphrase}</arguments>
+            </configuration>
             <executions>
               <execution>
                 <id>sign-artifacts</id>
