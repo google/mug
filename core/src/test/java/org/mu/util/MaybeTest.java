@@ -6,8 +6,10 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -238,10 +240,44 @@ public class MaybeTest {
     assertCauseOf(ExecutionException.class, stage).isSameAs(exception);
   }
 
-  @Test public void wrapFuture_futureIsUnexpectedFailure_idempotence() throws Exception {
+  @Test public void wrapFuture_futureIsUnexpectedCheckedException_idempotence() throws Exception {
+    MyException exception = new MyException("test");
+    CompletionStage<?> stage =
+        Maybe.catchException(IOException.class, exceptionally(exception));
+    stage = Maybe.catchException(IOException.class, stage);
+    stage = Maybe.catchException(MyUncheckedException.class, stage);
+    assertThat(stage.toCompletableFuture().isDone()).isTrue();
+    assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isTrue();
+    assertCauseOf(ExecutionException.class, stage).isSameAs(exception);
+  }
+
+  @Test public void wrapFuture_futureIsUnexpectedUncheckedException_idempotence() throws Exception {
     RuntimeException exception = new RuntimeException("test");
     CompletionStage<?> stage =
-        Maybe.catchException(MyException.class, exceptionally(exception));
+        Maybe.catchException(IOException.class, exceptionally(exception));
+    stage = Maybe.catchException(IOException.class, stage);
+    stage = Maybe.catchException(MyException.class, stage);
+    stage = Maybe.catchException(Error.class, stage);
+    assertThat(stage.toCompletableFuture().isDone()).isTrue();
+    assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isTrue();
+    assertCauseOf(ExecutionException.class, stage).isSameAs(exception);
+  }
+
+  @Test public void wrapFuture_futureIsUnexpectedError_idempotence() throws Exception {
+    Error error = new Error("test");
+    CompletionStage<?> stage =
+        Maybe.catchException(IOException.class, exceptionally(error));
+    stage = Maybe.catchException(IOException.class, stage);
+    stage = Maybe.catchException(MyException.class, stage);
+    stage = Maybe.catchException(MyUncheckedException.class, stage);
+    assertThat(stage.toCompletableFuture().isDone()).isTrue();
+    assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isTrue();
+    assertCauseOf(ExecutionException.class, stage).isSameAs(error);
+  }
+
+  @Test public void wrapFuture_futureIsUnexpectedFailure_notApplied() throws Exception {
+    RuntimeException exception = new RuntimeException("test");
+    CompletionStage<?> stage = exceptionally(exception);
     assertThat(stage.toCompletableFuture().isDone()).isTrue();
     assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isTrue();
     assertCauseOf(ExecutionException.class, stage).isSameAs(exception);

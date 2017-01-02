@@ -19,7 +19,6 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
@@ -283,15 +282,15 @@ public abstract class Maybe<T, E extends Throwable> {
    */
   public static <T, E extends Throwable> CompletionStage<Maybe<T, E>> catchException(
       Class<E> exceptionType, CompletionStage<T> stage) {
-    CompletableFuture<Maybe<T, E>> future = new CompletableFuture<>();
-    stage.thenAccept(v -> future.complete(Maybe.of(v)));
-    stage.exceptionally(e -> {
-      unwrapFutureException(exceptionType, e)
-          .map(cause -> future.complete(Maybe.except(cause)))
-          .orElseGet(() -> future.completeExceptionally(e));
-      return null;
+    return stage.handle((v, e) -> {
+      if (e == null) return Maybe.of(v);
+      return unwrapFutureException(exceptionType, e)
+          .map(Maybe::<T, E>except)
+          .<CompletionException>orElseThrow(() -> {
+            propagateIfUnchecked(e);
+            return new CompletionException(e);
+          });
     });
-    return future;
   }
 
   /** Propagates {@code exception} if it's unchecked, or else return it as is. */
