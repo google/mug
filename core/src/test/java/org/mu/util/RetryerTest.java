@@ -782,6 +782,17 @@ public class RetryerTest {
     assertThrows(NullPointerException.class, () -> new Retryer().retryAsync(null, executor));
     assertThrows(
         NullPointerException.class, () -> new Retryer().retryAsync(action::runAsync, null));
+    assertThrows(NullPointerException.class, () -> new Retryer().upon(null, asList()));
+    assertThrows(
+        NullPointerException.class,
+        () -> new Retryer().upon(Exception.class, (List<Delay<Object>>) null));
+    assertThrows(NullPointerException.class, () -> new Retryer().uponReturn(null, asList()));
+    assertThrows(
+        NullPointerException.class, () -> new Retryer().uponReturn("", (List<Delay<String>>) null));
+    assertThrows(
+        NullPointerException.class,
+        () -> new Retryer().ifReturns(r -> true, (List<Delay<String>>) null));
+    assertThrows(NullPointerException.class, () -> new Retryer().ifReturns(null, asList()));
   }
 
   @Test public void testForReturnValue_nulls() {

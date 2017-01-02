@@ -78,6 +78,7 @@ final class ExceptionPlan<T> {
    */
   public ExceptionPlan<T> upon(
       Class<? extends Throwable> exceptionType, List<? extends T> strategies) {
+    requireNonNull(exceptionType);
     return upon(exceptionType::isInstance, strategies);
   }
 

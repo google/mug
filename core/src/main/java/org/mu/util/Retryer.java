@@ -230,7 +230,7 @@ public class Retryer {
     ForReturnValue(
         Retryer retryer,
         Predicate<? super T> condition, List<? extends Delay<? super T>> delays) {
-      this.condition = condition;
+      this.condition = requireNonNull(condition);
       this.retryer = retryer.upon(ThrownReturn.class, ThrownReturn.wrap(delays));
     }
 
@@ -330,6 +330,7 @@ public class Retryer {
       }
   
       static List<Delay<ThrownReturn>> wrap(List<? extends Delay<?>> delays) {
+        requireNonNull(delays);
         return new AbstractList<Delay<ThrownReturn>>() {
           @Override public int size() {
             return delays.size();
