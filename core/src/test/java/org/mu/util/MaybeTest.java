@@ -238,6 +238,15 @@ public class MaybeTest {
     assertCauseOf(ExecutionException.class, stage).isSameAs(exception);
   }
 
+  @Test public void wrapFuture_futureIsUnexpectedFailure_idempotence() throws Exception {
+    RuntimeException exception = new RuntimeException("test");
+    CompletionStage<?> stage =
+        Maybe.catchException(MyException.class, exceptionally(exception));
+    assertThat(stage.toCompletableFuture().isDone()).isTrue();
+    assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isTrue();
+    assertCauseOf(ExecutionException.class, stage).isSameAs(exception);
+  }
+
   @Test public void wrapFuture_futureBecomesSuccess() throws Exception {
     CompletableFuture<String> future = new CompletableFuture<>();
     CompletionStage<Maybe<String, Exception>> stage = Maybe.catchException(Exception.class, future);
