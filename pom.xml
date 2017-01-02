@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.mu</groupId>
   <artifactId>mu-root</artifactId>
-  <packaging>pom</packaging>
+  <packaging>pom-SNAPSHOT</packaging>
   <version>1.1</version>
 
   <name>mu-root</name>
