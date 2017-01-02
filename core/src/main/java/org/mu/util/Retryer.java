@@ -31,7 +31,6 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
@@ -416,11 +415,26 @@ public class Retryer {
      * Beware of copying the list, because when you do, time is frozen as far as the copy is
      * concerned. Passing the copy to {@link #upon upon()} no longer respects "timed" semantics.
      *
+     * <p>Note that if the timed deadline <em>would have been</em> exceeded after the current
+     * delay, that delay will be considered "removed" and hence cause the retry to stop.
+     *
      * <p>{@code clock} is used to measure time.
      */
-    public final <T> List<T> timed(List<T> list, Clock clock) {
+    public final <T extends Delay<?>> List<T> timed(List<T> list, Clock clock) {
       Instant until = clock.instant().plus(duration());
-      return guarded(list, () -> clock.instant().isBefore(until));
+      requireNonNull(list);
+      return new AbstractList<T>() {
+        @Override public T get(int index) {
+          T actual = list.get(index);
+          if (clock.instant().plus(actual.duration()).isBefore(until)) {
+            return list.get(index);
+          }
+          throw new IndexOutOfBoundsException();
+        }
+        @Override public int size() {
+          return clock.instant().isBefore(until) ? list.size() : 0;
+        }
+      };
     }
 
     /**
@@ -440,27 +454,12 @@ public class Retryer {
      * <p>The returned {@code List} view's state is dependent on the current time.
      * Beware of copying the list, because when you do, time is frozen as far as the copy is
      * concerned. Passing the copy to {@link #upon upon()} no longer respects "timed" semantics.
+     *
+     * <p>Note that if the timed deadline <em>would have been</em> exceeded after the current
+     * delay, that delay will be considered "removed" and hence cause the retry to stop.
      */
-    public final <T> List<T> timed(List<T> list) {
+    public final <T extends Delay<?>> List<T> timed(List<T> list) {
       return timed(list, Clock.systemUTC());
-    }
-
-    /**
-     * Similar to {@link #timed timed()}, this method wraps {@code list} to make it empty when
-     * {@code condition} becomes false.
-     */
-    static <T> List<T> guarded(List<T> list, BooleanSupplier condition) {
-      requireNonNull(list);
-      requireNonNull(condition);
-      return new AbstractList<T>() {
-        @Override public T get(int index) {
-          if (condition.getAsBoolean()) return list.get(index);
-          throw new IndexOutOfBoundsException();
-        }
-        @Override public int size() {
-          return condition.getAsBoolean() ? list.size() : 0;
-        }
-      };
     }
 
     /**

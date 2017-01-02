@@ -31,7 +31,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
 import org.junit.After;
@@ -189,7 +188,7 @@ public class RetryerTest {
 
   @Test public void returnValueRetrialExceedsTime() throws Exception {
     Retryer.ForReturnValue<String> forReturnValue = retryer.uponReturn(
-        "bad", ofSeconds(3).timed(Collections.nCopies(100, ofSeconds(1)), clock));
+        "bad", ofSeconds(4).timed(Collections.nCopies(100, ofSeconds(1)), clock));
     when(action.run()).thenReturn("bad").thenReturn("bad").thenReturn("bad").thenReturn("good");
     CompletionStage<String> stage = forReturnValue.retry(action::run, executor);
     assertThat(stage.toCompletableFuture().isDone()).isFalse();
@@ -431,7 +430,7 @@ public class RetryerTest {
   @Test public void retrialExceedsTime() throws Exception {
     upon(
         IOException.class,
-        ofSeconds(3).timed(Collections.nCopies(100, ofSeconds(1)), clock));
+        ofSeconds(4).timed(Collections.nCopies(100, ofSeconds(1)), clock));
     IOException exception1 = new IOException();
     IOException exception = new IOException("hopeless");
     when(action.run())
@@ -733,16 +732,19 @@ public class RetryerTest {
     verify(action).run();
   }
 
-  @Test public void guardedList() {
-    AtomicBoolean guard = new AtomicBoolean(true);
-    List<Integer> list = Delay.guarded(asList(1, 2), guard::get);
-    assertThat(list).hasSize(2);
-    assertThat(list).isNotEmpty();
-    assertThat(list).containsExactly(1, 2);
-    guard.set(false);
-    assertThat(list).isEmpty();
-    guard.set(true);
-    assertThat(list).containsExactly(1, 2);
+  @Test public void testTimed() {
+    List<Delay<?>> delays = asList(1L, 8L, 1L).stream()
+        .map(Delay::ofMillis)
+        .collect(toList());
+    List<Delay<?>> timed = Delay.ofMillis(10).timed(delays, clock);
+    assertThat(timed).hasSize(3);
+    assertThat(timed).isNotEmpty();
+    assertThat(timed).containsExactlyElementsIn(delays);
+    elapse(Duration.ofMillis(1));
+    assertThat(timed).containsExactlyElementsIn(delays);
+    elapse(Duration.ofMillis(1));
+    assertThat(timed.get(0)).isEqualTo(delays.get(0));
+    assertThrows(IndexOutOfBoundsException.class, () -> timed.get(1));
   }
 
   @Test public void testNulls() {
@@ -766,8 +768,6 @@ public class RetryerTest {
   }
 
   @Test public void testDelay_nulls() {
-    assertThrows(NullPointerException.class, () -> Delay.guarded(null, () -> true));
-    assertThrows(NullPointerException.class, () -> Delay.guarded(asList(), null));
     assertThrows(NullPointerException.class, () -> ofDays(1).timed(null));
     assertThrows(
         NullPointerException.class, () -> ofDays(1).timed(asList(), null));
