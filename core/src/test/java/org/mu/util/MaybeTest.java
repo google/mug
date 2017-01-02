@@ -212,6 +212,15 @@ public class MaybeTest {
     assertThat(stage.toCompletableFuture().get().get()).isEqualTo("good");
   }
 
+  @Test public void wrapFuture_futureIsSuccessNull() throws Exception {
+    CompletionStage<Maybe<String, Exception>> stage =
+        Maybe.catchException(Exception.class, completedFuture(null));
+    assertThat(completedFuture(null).isDone()).isTrue();
+    assertThat(stage.toCompletableFuture().isDone()).isTrue();
+    assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isFalse();
+    assertThat(stage.toCompletableFuture().get().get()).isNull();
+  }
+
   @Test public void wrapFuture_futureIsExpectedFailure() throws Exception {
     MyException exception = new MyException("test");
     CompletionStage<Maybe<String, MyException>> stage =
@@ -301,6 +310,47 @@ public class MaybeTest {
     future.completeExceptionally(exception);
     assertThat(stage.toCompletableFuture().isDone()).isTrue();
     assertThat(stage.toCompletableFuture().get()).isEqualTo(Maybe.except(exception));
+  }
+
+  @Test public void wrapFuture_transparentToHandle() throws Exception {
+    assertThat(naiveExceptionHandlingCode(exceptionalUserCode()).toCompletableFuture().get())
+        .isNull();
+    assertThat(naiveExceptionHandlingCode(
+        Maybe.catchException(MyUncheckedException.class, exceptionalUserCode()))
+            .toCompletableFuture().get())
+        .isNull();
+  }
+
+  @Test public void wrapFuture_transparentToExceptionally() throws Exception {
+    assertThat(naiveExceptionallyCode(exceptionalUserCode()).toCompletableFuture().get())
+        .isNull();
+    assertThat(naiveExceptionallyCode(
+        Maybe.catchException(MyUncheckedException.class, exceptionalUserCode()))
+            .toCompletableFuture().get())
+        .isNull();
+  }
+
+  private static CompletionStage<String> exceptionalUserCode() {
+    CompletableFuture<String> future = new CompletableFuture<>();
+    MyException exception = new MyException("test");
+    future.completeExceptionally(exception);
+    return future;
+  }
+
+  private static <T> CompletionStage<T> naiveExceptionHandlingCode(
+      CompletionStage<T> stage) {
+    return stage.handle((v, e) -> {
+      assertThat(e).isInstanceOf(MyException.class);
+      return null;
+    });
+  }
+
+  private static <T> CompletionStage<T> naiveExceptionallyCode(
+      CompletionStage<T> stage) {
+    return stage.exceptionally(e -> {
+      assertThat(e).isInstanceOf(MyException.class);
+      return null;
+    });
   }
 
   @Test public void testCompletionStage_handle_wraps() throws Exception {

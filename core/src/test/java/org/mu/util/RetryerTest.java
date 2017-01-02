@@ -79,6 +79,34 @@ public class RetryerTest {
     verify(delay, never()).afterDelay(any());
   }
 
+  @Test public void nullReturnValueIsGood() throws Exception {
+    Delay<String> delay = Mockito.spy(ofSeconds(1));
+    when(action.run()).thenReturn(null);
+    Retryer.ForReturnValue<String> forReturnValue =
+        retryer.uponReturn("bad", asList(delay));
+    assertThat(forReturnValue.retry(action::run, executor).toCompletableFuture().get())
+        .isNull();
+    verify(action).run();
+    verify(delay, never()).beforeDelay(any());
+    verify(delay, never()).afterDelay(any());
+  }
+
+  @Test public void nullReturnValueRetried() throws Exception {
+    Delay<String> delay = Mockito.spy(ofSeconds(1));
+    Retryer.ForReturnValue<String> forReturnValue =
+        retryer.ifReturns(r -> r == null, asList(delay));
+    when(action.run()).thenReturn(null).thenReturn("fixed");
+    CompletionStage<String> stage = forReturnValue.retry(action::run, executor);
+    assertThat(stage.toCompletableFuture().isDone()).isFalse();
+    elapse(Duration.ofSeconds(1));
+    assertThat(stage.toCompletableFuture().isDone()).isTrue();
+    assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isFalse();
+    assertThat(stage.toCompletableFuture().get()).isEqualTo("fixed");
+    verify(action, times(2)).run();
+    verify(delay).beforeDelay(null);
+    verify(delay).afterDelay(null);
+  }
+
   @Test public void errorPropagatedDuringReturnValueRetry() throws Exception {
     Error error = new Error("test");
     Delay<String> delay = Mockito.spy(ofSeconds(1));
