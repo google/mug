@@ -85,7 +85,12 @@ public abstract class Maybe<T, E extends Throwable> {
 
   /** Creates a {@code Maybe} for {@code value}. */
   public static <T, E extends Throwable> Maybe<T, E> of(T value) {
-    return new Success<>(value);
+    return new Success<>(requireNonNull(value));
+  }
+
+  /** Creates a {@code Maybe} representing {@code null}. */
+  public static <T, E extends Throwable> Maybe<T, E> ofNull() {
+    return new Success<>(null);
   }
 
   /** Creates an exceptional {@code Maybe} for {@code exception}. */
@@ -284,11 +289,18 @@ public abstract class Maybe<T, E extends Throwable> {
   public static <T, E extends Throwable> CompletionStage<Maybe<T, E>> catchException(
       Class<E> exceptionType, CompletionStage<T> stage) {
     CompletableFuture<Maybe<T, E>> future = new CompletableFuture<>();
-    stage.thenAccept(v -> future.complete(Maybe.of(v)));
+    stage.thenAccept(v -> {
+      future.complete(v == null ? Maybe.ofNull() : Maybe.of(v));
+    });
     stage.exceptionally(e -> {
-      unwrapFutureException(exceptionType, e)
-          .map(cause -> future.complete(Maybe.except(cause)))
-          .orElseGet(() -> future.completeExceptionally(e));
+      try {
+        unwrapFutureException(exceptionType, e)
+            .map(cause -> future.complete(Maybe.except(cause)))
+            .orElseGet(() -> future.completeExceptionally(e));
+      } catch (Throwable x) {  // Just in case there was a bug. Don't hang the thread.
+        x.addSuppressed(e);
+        future.completeExceptionally(x);
+      }
       return null;
     });
     return future;
@@ -348,7 +360,7 @@ public abstract class Maybe<T, E extends Throwable> {
     private final T value;
 
     Success(T value) {
-      this.value = requireNonNull(value);
+      this.value = value;
     }
 
     @Override public <T2> Maybe<T2, E> map(Function<? super T, ? extends T2> f) {
