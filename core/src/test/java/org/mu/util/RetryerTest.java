@@ -94,7 +94,7 @@ public class RetryerTest {
   @Test public void nullReturnValueRetried() throws Exception {
     Delay<String> delay = Mockito.spy(ofSeconds(1));
     Retryer.ForReturnValue<String> forReturnValue =
-        retryer.ifReturns(r -> r == null, asList(delay));
+        retryer.<String>ifReturns(r -> r == null, asList(delay));
     when(action.run()).thenReturn(null).thenReturn("fixed");
     CompletionStage<String> stage = forReturnValue.retry(action::run, executor);
     assertThat(stage.toCompletableFuture().isDone()).isFalse();
