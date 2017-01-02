@@ -299,7 +299,7 @@ public abstract class Maybe<T, E extends Throwable> {
               .orElseGet(() -> future.completeExceptionally(e));
         }
       } catch (Throwable x) {  // Just in case there was a bug. Don't hang the thread.
-        x.addSuppressed(e);
+        if (x != e) x.addSuppressed(e);
         future.completeExceptionally(x);
       }
       return null;
