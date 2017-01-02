@@ -598,9 +598,9 @@ public class Retryer {
       CompletableFuture<T> result) {
     try {
       CompletionStage<T> stage = supplier.get();
-      stage.thenAccept(result::complete);
-      stage.exceptionally(e -> {
-        scheduleRetry(getInterestedException(e), retryExecutor, supplier, result);
+      stage.handle((v, e) -> {
+        if (e == null) result.complete(v);
+        else scheduleRetry(getInterestedException(e), retryExecutor, supplier, result);
         return null;
       });
     } catch (RuntimeException e) {

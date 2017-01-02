@@ -302,6 +302,28 @@ public class MaybeTest {
     assertThat(stage.toCompletableFuture().get()).isEqualTo(Maybe.except(exception));
   }
 
+  @Test public void testCompletionStage_handle_wraps() throws Exception {
+    CompletableFuture<String> future = new CompletableFuture<>();
+    MyException exception = new MyException("test");
+    future.completeExceptionally(exception);
+    CompletionStage<String> stage = future.handle((v, e) -> {
+      throw new CompletionException(e);
+    });
+    assertCauseOf(ExecutionException.class, stage)
+        .isSameAs(exception);
+  }
+
+  @Test public void testCompletionStage_exceptionally_wraps() throws Exception {
+    CompletableFuture<String> future = new CompletableFuture<>();
+    MyException exception = new MyException("test");
+    future.completeExceptionally(exception);
+    CompletionStage<String> stage = future.exceptionally(e -> {
+      throw new CompletionException(e);
+    });
+    assertCauseOf(ExecutionException.class, stage)
+        .isSameAs(exception);
+  }
+
   @Test public void wrapFuture_futureBecomesUnexpectedFailure() throws Exception {
     CompletableFuture<String> future = new CompletableFuture<>();
     CompletionStage<Maybe<String, MyException>> stage = Maybe.catchException(MyException.class, future);
