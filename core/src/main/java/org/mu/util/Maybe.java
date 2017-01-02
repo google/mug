@@ -282,12 +282,14 @@ public abstract class Maybe<T, E extends Throwable> {
    */
   public static <T, E extends Throwable> CompletionStage<Maybe<T, E>> catchException(
       Class<E> exceptionType, CompletionStage<T> stage) {
-    return stage.handle((v, e) -> {
-      if (e == null) return Maybe.of(v);
-      return unwrapFutureException(exceptionType, e)
-          .map(Maybe::<T, E>except)
-          .<CompletionException>orElseThrow(() -> new CompletionException(propagateIfUnchecked(e)));
-    });
+    return stage
+        .thenApply(Maybe::<T, E>of)
+        .exceptionally(e -> {
+          return unwrapFutureException(exceptionType, e)
+              .map(Maybe::<T, E>except)
+              .<CompletionException>orElseThrow(
+                  () -> new CompletionException(propagateIfUnchecked(e)));
+        });
   }
 
   /** Propagates {@code exception} if it's unchecked, or else return it as is. */

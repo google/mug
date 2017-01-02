@@ -294,7 +294,8 @@ public class MaybeTest {
 
   @Test public void wrapFuture_futureBecomesExpectedFailure() throws Exception {
     CompletableFuture<String> future = new CompletableFuture<>();
-    CompletionStage<Maybe<String, Exception>> stage = Maybe.catchException(Exception.class, future);
+    CompletionStage<Maybe<String, MyException>> stage =
+        Maybe.catchException(MyException.class, future);
     assertThat(stage.toCompletableFuture().isDone()).isFalse();
     MyException exception = new MyException("test");
     future.completeExceptionally(exception);
