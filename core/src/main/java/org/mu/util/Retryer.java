@@ -426,9 +426,7 @@ public class Retryer {
       return new AbstractList<T>() {
         @Override public T get(int index) {
           T actual = list.get(index);
-          if (clock.instant().plus(actual.duration()).isBefore(until)) {
-            return list.get(index);
-          }
+          if (clock.instant().plus(actual.duration()).isBefore(until)) return actual;
           throw new IndexOutOfBoundsException();
         }
         @Override public int size() {
