@@ -31,6 +31,11 @@ import com.google.common.truth.ThrowableSubject;
 @RunWith(JUnit4.class)
 public class MaybeTest {
 
+  @Test public void testOfNull() throws Throwable {
+    assertThat(Maybe.of(null).get()).isEqualTo(null);
+    assertThat(Maybe.of(null).toString()).isEqualTo("null");
+  }
+
   @Test public void testGet_success() throws Throwable {
     assertThat(Maybe.of("test").get()).isEqualTo("test");
   }
@@ -111,11 +116,18 @@ public class MaybeTest {
   @Test public void testEqualsAndHashCode() {
     Maybe<?, ?> fail1 = Maybe.except(new MyException("bad"));
     Maybe<?, ?> fail2 = Maybe.except(new Exception());
+    Maybe<?, ?> nil = Maybe.of(null);
     assertThat(Maybe.of("hello")).isEqualTo(Maybe.of("hello"));
     assertThat(Maybe.of("hello").hashCode()).isEqualTo(Maybe.of("hello").hashCode());
     assertThat(Maybe.of("hello")).isNotEqualTo(Maybe.of("world"));
     assertThat(Maybe.of("hello")).isNotEqualTo(fail1);
     assertThat(Maybe.of("hello")).isNotEqualTo(null);
+    assertThat(Maybe.of("hello")).isNotEqualTo(nil);
+    assertThat(nil).isEqualTo(nil);
+    assertThat(nil.hashCode()).isEqualTo(Maybe.of(null).hashCode());
+    assertThat(nil).isNotEqualTo(Maybe.of("hello"));
+    assertThat(nil).isNotEqualTo(fail1);
+    assertThat(fail1).isNotEqualTo(nil);
     assertThat(fail1).isEqualTo(fail1);
     assertThat(fail1.hashCode()).isEqualTo(fail1.hashCode());
     assertThat(fail1).isNotEqualTo(fail2);
@@ -124,7 +136,6 @@ public class MaybeTest {
   }
 
   @Test public void testNulls() {
-    assertThrows(NullPointerException.class, () -> Maybe.of(null));
     assertThrows(NullPointerException.class, () -> Maybe.except(null));
     assertThrows(NullPointerException.class, () -> Maybe.wrap((CheckedSupplier<?, ?>) null));
     assertThrows(

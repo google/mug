@@ -18,6 +18,7 @@ package org.mu.util;
 import static java.util.Objects.requireNonNull;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -83,14 +84,13 @@ import org.mu.function.CheckedSupplier;
  */
 public abstract class Maybe<T, E extends Throwable> {
 
-  /** Creates a {@code Maybe} for {@code value}. */
+  /**
+   * Creates a {@code Maybe} for {@code value}.
+   *
+   * @param value can be null
+   */
   public static <T, E extends Throwable> Maybe<T, E> of(T value) {
-    return new Success<>(requireNonNull(value));
-  }
-
-  /** Creates a {@code Maybe} representing {@code null}. */
-  public static <T, E extends Throwable> Maybe<T, E> ofNull() {
-    return new Success<>(null);
+    return new Success<>(value);
   }
 
   /** Creates an exceptional {@code Maybe} for {@code exception}. */
@@ -289,14 +289,15 @@ public abstract class Maybe<T, E extends Throwable> {
   public static <T, E extends Throwable> CompletionStage<Maybe<T, E>> catchException(
       Class<E> exceptionType, CompletionStage<T> stage) {
     CompletableFuture<Maybe<T, E>> future = new CompletableFuture<>();
-    stage.thenAccept(v -> {
-      future.complete(v == null ? Maybe.ofNull() : Maybe.of(v));
-    });
-    stage.exceptionally(e -> {
+    stage.handle((v, e) -> {
       try {
-        unwrapFutureException(exceptionType, e)
-            .map(cause -> future.complete(Maybe.except(cause)))
-            .orElseGet(() -> future.completeExceptionally(e));
+        if (e == null) {
+          future.complete(Maybe.of(v));
+        } else {
+          unwrapFutureException(exceptionType, e)
+              .map(cause -> future.complete(Maybe.except(cause)))
+              .orElseGet(() -> future.completeExceptionally(e));
+        }
       } catch (Throwable x) {  // Just in case there was a bug. Don't hang the thread.
         x.addSuppressed(e);
         future.completeExceptionally(x);
@@ -389,17 +390,17 @@ public abstract class Maybe<T, E extends Throwable> {
     }
 
     @Override public String toString() {
-      return value.toString();
+      return String.valueOf(value);
     }
 
     @Override public int hashCode() {
-      return value.hashCode();
+      return value == null ? 0 : value.hashCode();
     }
 
     @Override public boolean equals(Object obj) {
       if (obj instanceof Success<?, ?>) {
         Success<?, ?> that = (Success<?, ?>) obj;
-        return value.equals(that.value);
+        return Objects.equals(value, that.value);
       }
       return false;
     }
