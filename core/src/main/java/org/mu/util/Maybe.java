@@ -286,10 +286,7 @@ public abstract class Maybe<T, E extends Throwable> {
       if (e == null) return Maybe.of(v);
       return unwrapFutureException(exceptionType, e)
           .map(Maybe::<T, E>except)
-          .<CompletionException>orElseThrow(() -> {
-            propagateIfUnchecked(e);
-            return new CompletionException(e);
-          });
+          .<CompletionException>orElseThrow(() -> new CompletionException(propagateIfUnchecked(e)));
     });
   }
 
