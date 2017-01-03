@@ -168,7 +168,7 @@ CompletionStage<User> assumeAnonymousIfNotAuthenticated(CompletionStage<User> st
     if (actual instanceof AuthenticationException) {
       return new AnonymousUser();
     }
-    // The following re-throw the exception or wrap it.
+    // The following re-throws the exception and possibly wraps it.
     if (e instanceof RuntimeException) {
       throw (RuntimeException) e;
     }
