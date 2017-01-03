@@ -53,6 +53,10 @@ CompletionStage<Account> fetchAccountWithRetry(ScheduledExecutorService executor
       .retryAsync(this::getAccount, executor);
 }
 ```
+_A side note_: the above Stream code will eagerly evaluate all list elements before `retryAsync()` is called. If that isn't desirable (like, you have nCopies(10000000, delay)), it's best to use some kind of lazy List transformation library. For example, if you use Guava, then:
+```java
+Lists.transform(nCopies(1000000, Delay.ofMillis(30)), d -> d.randomized(rnd, 0.3))
+```
 
 #### To retry based on return value
 
@@ -164,7 +168,7 @@ CompletionStage<User> assumeAnonymousIfNotAuthenticated(CompletionStage<User> st
     if (actual instanceof AuthenticationException) {
       return new AnonymousUser();
     }
-    // The following re-throw the exception or wrap it.
+    // The following re-throws the exception and possibly wraps it.
     if (e instanceof RuntimeException) {
       throw (RuntimeException) e;
     }
