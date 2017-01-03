@@ -3,7 +3,7 @@
   <parent>
       <groupId>com.github.fluentfuture</groupId>
       <artifactId>mu-root</artifactId>
-      <version>1.4-SNAPSHOT</version>
+      <version>1.4</version>
       <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>mu</artifactId>
