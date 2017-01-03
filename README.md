@@ -6,11 +6,13 @@ A few Java 8 util classes ([javadoc](http://fluentfuture.github.io/mu/apidocs/))
 ## Maven
 
 Add the following to pom.xml:
+```
   <dependency>
     <groupId>com.github.fluentfuture</groupId>
     <artifactId>mu</artifactId>
     <version>1.4</version>
   </dependency>
+```
 
 ## [Retryer](https://fluentfuture.github.io/mu/apidocs/org/mu/util/Retryer.html)
 
