@@ -266,8 +266,7 @@ public class Retryer {
     public <R extends T, E extends Throwable> CompletionStage<R> retry(
         CheckedSupplier<? extends R, E> supplier,
         ScheduledExecutorService retryExecutor) {
-      return ThrownReturn.unwrapAsync(
-          () -> retryer.retry(supplier.map(this::wrap), retryExecutor));
+      return ThrownReturn.unwrapAsync(() -> retryer.retry(supplier.map(this::wrap), retryExecutor));
     }
 
     /**
