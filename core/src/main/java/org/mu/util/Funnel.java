@@ -11,10 +11,10 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * A funnel dispatches a sequence of inputs through arbitrary batch conversions while maintaining
- * first-in-first-out order. For example, the following code can either batch load users from a
- * user store, or batch load from third party user store, or else create a dummy user immediately
- * without conversion:
+ * A funnel that dispatches a sequence of inputs through arbitrary batch conversions while
+ * maintaining first-in-first-out order. For example, the following code can either batch load users
+ * from a user store, or batch load from third party user store, or else create a dummy user
+ * immediately without conversion:
  *
  * <pre>{@code
  * Funnel<User> funnel = new Funnel<>();
