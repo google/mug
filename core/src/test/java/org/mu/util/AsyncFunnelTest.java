@@ -51,12 +51,10 @@ public class AsyncFunnelTest {
 
   @Test public void unchecked() throws Exception {
     AsyncFunnel<String> funnel = new AsyncFunnel<>();
-    CompletionStage<String> one = funnel.through(renderer::render).accept(1);
-    CompletionStage<String> aloha = funnel.through(translator::translate).accept("aloha");
+    funnel.through(renderer::render).accept(1);
+    funnel.through(translator::translate).accept("aloha");
     List<CompletionStage<String>> futures = funnel.run(executor);
     assertThat(futures).hasSize(2);
-    assertNotCompleted(one);
-    assertNotCompleted(aloha);
     assertNotCompleted(futures.get(0));
     assertNotCompleted(futures.get(1));
     when(translator.translate(asList("aloha"))).thenReturn(asList("hi"));
@@ -64,46 +62,40 @@ public class AsyncFunnelTest {
     executor.run();
     assertCompleted(futures.get(0)).isEqualTo("one");
     assertCompleted(futures.get(1)).isEqualTo("hi");
-    assertCompleted(one).isEqualTo("one");
-    assertCompleted(aloha).isEqualTo("hi");
     verify(executor, times(2)).execute(any(Runnable.class));
   }
 
   @Test public void unchecked_nullOutputIsFine() throws Exception {
     AsyncFunnel<String> funnel = new AsyncFunnel<>();
-    CompletionStage<String> one = funnel.through(renderer::render).accept(1);
+    funnel.through(renderer::render).accept(1);
     List<CompletionStage<String>> futures = funnel.run(executor);
     assertThat(futures).hasSize(1);
-    assertNotCompleted(one);
     assertNotCompleted(futures.get(0));
     when(renderer.render(asList(1))).thenReturn(Collections.singletonList(null));
     executor.run();
     assertCompleted(futures.get(0)).isNull();
-    assertCompleted(one).isNull();
     verify(executor).execute(any(Runnable.class));
   }
 
   @Test public void unchecked_exceptional() throws Exception {
     MyUncheckedException exception = new MyUncheckedException();
     AsyncFunnel<String> funnel = new AsyncFunnel<>();
-    CompletionStage<String> one = funnel.through(renderer::render).accept(1);
+    funnel.through(renderer::render).accept(1);
     List<CompletionStage<String>> futures = funnel.run(executor);
     assertThat(futures).hasSize(1);
     when(renderer.render(asList(1))).thenThrow(exception);
     executor.run();
-    assertCauseOf(ExecutionException.class, one).isSameAs(exception);
     assertCauseOf(ExecutionException.class, futures.get(0)).isSameAs(exception);
     verify(executor).execute(any(Runnable.class));
   }
 
   @Test public void batchOutputsLessThanInputs() throws Exception {
     AsyncFunnel<String> funnel = new AsyncFunnel<>();
-    CompletionStage<String> one = funnel.through(renderer::render).accept(1);
+    funnel.through(renderer::render).accept(1);
     List<CompletionStage<String>> futures = funnel.run(executor);
     assertThat(futures).hasSize(1);
     when(renderer.render(asList(1))).thenReturn(asList());
     executor.run();
-    assertCauseOf(ExecutionException.class, one).isInstanceOf(IllegalStateException.class);
     assertCauseOf(ExecutionException.class, futures.get(0))
         .isInstanceOf(IllegalStateException.class);
     verify(executor).execute(any(Runnable.class));
@@ -111,12 +103,11 @@ public class AsyncFunnelTest {
 
   @Test public void batchOutputsMoreThanInputs() throws Exception {
     AsyncFunnel<String> funnel = new AsyncFunnel<>();
-    CompletionStage<String> one = funnel.through(renderer::render).accept(1);
+    funnel.through(renderer::render).accept(1);
     List<CompletionStage<String>> futures = funnel.run(executor);
     assertThat(futures).hasSize(1);
     when(renderer.render(asList(1))).thenReturn(asList("bad", "bad"));
     executor.run();
-    assertCauseOf(ExecutionException.class, one).isInstanceOf(IllegalStateException.class);
     assertCauseOf(ExecutionException.class, futures.get(0))
         .isInstanceOf(IllegalStateException.class);
     verify(executor).execute(any(Runnable.class));
@@ -125,12 +116,11 @@ public class AsyncFunnelTest {
   @Test public void unchecked_error() throws Exception {
     MyError error = new MyError();
     AsyncFunnel<String> funnel = new AsyncFunnel<>();
-    CompletionStage<String> one = funnel.through(renderer::render).accept(1);
+    funnel.through(renderer::render).accept(1);
     List<CompletionStage<String>> futures = funnel.run(executor);
     assertThat(futures).hasSize(1);
     when(renderer.render(asList(1))).thenThrow(error);
     executor.run();
-    assertCauseOf(ExecutionException.class, one).isSameAs(error);
     assertCauseOf(ExecutionException.class, futures.get(0)).isSameAs(error);
     verify(executor).execute(any(Runnable.class));
   }
@@ -219,12 +209,11 @@ public class AsyncFunnelTest {
 
   @Test public void noReruns() throws Exception {
     AsyncFunnel<String> funnel = new AsyncFunnel<>();
-    CompletionStage<String> one = funnel.through(renderer::render).accept(1);
+    funnel.through(renderer::render).accept(1);
     List<CompletionStage<String>> futures = funnel.run(executor);
     when(renderer.render(asList(1))).thenReturn(asList("one"));
     executor.run();
     assertCompleted(futures.get(0)).isEqualTo("one");
-    assertCompleted(one).isEqualTo("one");
     verify(executor).execute(any(Runnable.class));
 
     // Should not execute anything any more.

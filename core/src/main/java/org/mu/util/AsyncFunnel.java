@@ -61,7 +61,7 @@ public final class AsyncFunnel<T> {
 
   /** Adds {@code value} directly without conversion. */
   public void add(T value) {
-    passthrough.accept(value);
+    passthrough.add(value);
   }
 
   /**
@@ -121,6 +121,11 @@ public final class AsyncFunnel<T> {
       this.batchConverter = requireNonNull(batchConverter);
     }
 
+    /** Accepts {@code input} to the batch. */
+    public void accept(F input) {
+      add(input);
+    }
+
     @Override void submit(List<Task<F, T>> tasks, Executor executor) {
       if (tasks.isEmpty()) return;
       List<F> inputs = copyOf(tasks.stream().map(t -> t.input));
@@ -159,11 +164,16 @@ public final class AsyncFunnel<T> {
     }
 
     /**
-     * Accepts {@code input} into the batch and returns future of {@code Maybe<T, E>} to allow the
-     * client to handle exception type safely.
+     * Accepts {@code input} into the batch and returns future of {@code Maybe<T, E>} that
+     * represents the conversion result, or an exception of type {@code E}.
+     *
+     * <p>WARNING: while the client can use the future returned by {@code accept()}, the future
+     * won't complete until {@link #run} is called. Be careful because it's easy to forget to call
+     * {@code funnel.run()} when the list of futures returned by {@code run()} isn't needed by the
+     * caller code. Forgetting to call {@code run()} may cause the program to hang.
      */
     public CompletionStage<Maybe<T, E>> accept(F input) {
-      return Maybe.catchException(exceptionType, wrapped.accept(input));
+      return Maybe.catchException(exceptionType, wrapped.add(input));
     }
   }
 
@@ -175,11 +185,7 @@ public final class AsyncFunnel<T> {
       this.funnel = funnel;
     }
 
-    /**
-     * Accepts {@code input} to the batch and returns a future object that can be used to access
-     * the conversion result after the batch conversion is done.
-     */
-    public final CompletionStage<T> accept(F input) {
+    final CompletionStage<T> add(F input) {
       Task<F, T> task = new Task<>(this, input);
       funnel.tasks.add(task);
       return task.future;
