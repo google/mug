@@ -51,7 +51,7 @@ public final class AsyncFunnel<T> {
   private final List<AbstractBatch<?, T>> batches = new ArrayList<>();
   private final AbstractBatch<T, T> passthrough = new AbstractBatch<T, T>(this) {
     @Override void submit(List<Task<T, T>> trivialTasks, Executor executor) {
-      trivialTasks.forEach(t -> t.future.complete(t.input));
+      for (Task<T, T> task : trivialTasks) task.future.complete(task.input);
     }
   };
 

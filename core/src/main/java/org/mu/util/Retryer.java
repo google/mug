@@ -125,7 +125,7 @@ public class Retryer {
         }
       }
     } catch (Throwable e) {
-      exceptions.stream().forEach(p -> addSuppressedTo(e, p));
+      for (Throwable t : exceptions) addSuppressedTo(e, t);
       @SuppressWarnings("unchecked")  // Caller makes sure the exception is either E or unchecked.
       E checked = (E) propagateIfUnchecked(e);
       throw checked;
