@@ -111,7 +111,7 @@ public final class AsyncFunnel<T> {
   }
 
   /** Represents a single batch to be executed asynchronously. */
-  public static class Batch<F, T> extends AbstractBatch<F, T> {
+  public static final class Batch<F, T> extends AbstractBatch<F, T> {
     private final CheckedFunction<? super List<F>, ? extends Collection<T>, ?> batchConverter;
 
     Batch(
