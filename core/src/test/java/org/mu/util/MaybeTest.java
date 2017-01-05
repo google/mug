@@ -19,6 +19,7 @@ import java.util.stream.Stream;
 
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.function.Executable;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.mu.function.CheckedBiFunction;
@@ -27,6 +28,7 @@ import org.mu.function.CheckedSupplier;
 
 import com.google.common.truth.IterableSubject;
 import com.google.common.truth.ThrowableSubject;
+import com.google.common.truth.Truth;
 
 @RunWith(JUnit4.class)
 public class MaybeTest {
@@ -43,7 +45,18 @@ public class MaybeTest {
   @Test public void testGet_failure() throws Throwable {
     MyException exception = new MyException("test");
     Maybe<?, MyException> maybe = Maybe.except(exception);
-    assertSame(exception, assertThrows(MyException.class, maybe::get));
+    assertException(MyException.class, maybe::get).isSameAs(exception);
+  }
+
+  @Test public void testGetOrThrow_success() throws Throwable {
+    assertThat(Maybe.of("test").orElseThrow(IOException::new)).isEqualTo("test");
+  }
+
+  @Test public void testGetOrThrow_failure() throws Throwable {
+    MyException exception = new MyException("test");
+    Maybe<?, MyException> maybe = Maybe.except(exception);
+    IOException thrown = assertThrows(IOException.class, () -> maybe.orElseThrow(IOException::new));
+    assertSame(exception, thrown.getCause());
   }
 
   @Test public void testMap_success() {
@@ -55,7 +68,7 @@ public class MaybeTest {
   @Test public void testMap_failure() {
     MyException exception = new MyException("test");
     Maybe<?, MyException> maybe = Maybe.except(exception).map(Object::toString);
-    assertSame(exception, assertThrows(MyException.class, maybe::get));
+    assertException(MyException.class, maybe::get).isSameAs(exception);
     assertThrows(NullPointerException.class, () -> maybe.map(null));
   }
 
@@ -68,7 +81,7 @@ public class MaybeTest {
   @Test public void testFlatMap_failure() {
     MyException exception = new MyException("test");
     Maybe<?, MyException> maybe = Maybe.except(exception).flatMap(o -> Maybe.of(o.toString()));
-    assertSame(exception, assertThrows(MyException.class, maybe::get));
+    assertException(MyException.class, maybe::get).isSameAs(exception);
     assertThrows(NullPointerException.class, () -> maybe.flatMap(null));
   }
 
@@ -157,6 +170,7 @@ public class MaybeTest {
         NullPointerException.class,
         () -> Maybe.wrap((CheckedBiFunction<?, ?, ?, Exception>) null, Exception.class));
     assertThrows(NullPointerException.class, () -> Maybe.byValue(null));
+    assertThrows(NullPointerException.class, () -> Maybe.of(1).orElseThrow(null));
   }
 
   @Test public void testStream_success() throws MyException {
@@ -436,6 +450,12 @@ public class MaybeTest {
   private static <T, E extends Throwable> IterableSubject assertStream(
       Stream<Maybe<T, E>> stream) throws E {
     return assertThat(Maybe.collect(stream));
+  }
+
+  private static ThrowableSubject assertException(
+      Class<? extends Throwable> exceptionType, Executable executable) {
+    Throwable thrown = Assertions.assertThrows(exceptionType, executable);
+    return Truth.assertThat(thrown);
   }
 
   @SuppressWarnings("serial")

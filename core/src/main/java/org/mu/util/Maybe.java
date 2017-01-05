@@ -118,7 +118,26 @@ public abstract class Maybe<T, E extends Throwable> {
   public abstract void ifPresent(Consumer<? super T> consumer);
 
   /** Either returns the encapsulated value, or translates exception using {@code function}. */
-  public abstract T orElse(Function<? super E, ? extends T> function);
+  public abstract <X extends Throwable> T orElse(CheckedFunction<? super E, ? extends T, X> f)
+      throws X;
+
+  /**
+   * Either returns success value, or throw exception created by {@code exceptionSupplier}.
+   * The original causal exception of type {@code E} is set as cause of the thrown exception of type
+   * {@code X}.
+   *
+   * <p>This is useful when the encapsulated exception may be from a different thread (like the case
+   * of {@link #catchException}. Directly propagating exception from a different thread can result
+   * in confusing stack trace.
+   */
+  public final <X extends Throwable> T orElseThrow(Supplier<X> exceptionSupplier) throws X {
+    requireNonNull(exceptionSupplier);
+    return orElse(e -> {
+      X wrapper = exceptionSupplier.get();
+      wrapper.initCause(e);
+      throw wrapper;
+    });
+  }
 
   /**
    * Catches and handles exception with {@code handler}, and then skips it in the returned
@@ -384,7 +403,8 @@ public abstract class Maybe<T, E extends Throwable> {
       consumer.accept(value);
     }
 
-    @Override public T orElse(Function<? super E, ? extends T> f) {
+    @Override public <X extends Throwable> T orElse(CheckedFunction<? super E, ? extends T, X> f)
+        throws X {
       requireNonNull(f);
       return value;
     }
@@ -435,7 +455,8 @@ public abstract class Maybe<T, E extends Throwable> {
       requireNonNull(consumer);
     }
 
-    @Override public T orElse(Function<? super E, ? extends T> f) {
+    @Override public <X extends Throwable> T orElse(CheckedFunction<? super E, ? extends T, X> f)
+        throws X {
       return f.apply(exception);
     }
 

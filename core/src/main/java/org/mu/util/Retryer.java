@@ -325,7 +325,7 @@ public class Retryer {
           CheckedSupplier<? extends CompletionStage<T>, E> supplier) throws E {
         CompletionStage<T> stage = unwrap(supplier);
         return Maybe.catchException(ThrownReturn.class, stage)
-            .thenApply(maybe -> maybe.orElse(ThrownReturn::unsafeGet));
+            .thenApply(maybe -> maybe.<RuntimeException>orElse(ThrownReturn::unsafeGet));
       }
   
       static List<Delay<ThrownReturn>> wrap(List<? extends Delay<?>> delays) {
