@@ -832,6 +832,21 @@ public class RetryerTest {
     assertThrows(IllegalArgumentException.class, () -> ofDays(1).exponentialBackoff(0, 1));
     assertThrows(IllegalArgumentException.class, () -> ofDays(1).exponentialBackoff(-1, 1));
     assertThrows(IllegalArgumentException.class, () -> ofDays(1).exponentialBackoff(2, -1));
+    assertThrows(IndexOutOfBoundsException.class, () -> ofDays(1).exponentialBackoff(1, 1).get(-1));
+    assertThrows(IndexOutOfBoundsException.class, () -> ofDays(1).exponentialBackoff(1, 1).get(1));
+  }
+
+  @Test public void testDelay_fibonacci() {
+    assertThat(ofDays(1).fibonacci(1)).containsExactly(ofDays(1)).inOrder();
+    assertThat(ofDays(1).fibonacci(2)).containsExactly(ofDays(1), ofDays(1)).inOrder();
+    assertThat(ofDays(1).fibonacci(3)).containsExactly(ofDays(1), ofDays(1), ofDays(2)).inOrder();
+    assertThat(ofDays(1).fibonacci(5))
+        .containsExactly(ofDays(1), ofDays(1), ofDays(2), ofDays(3), ofDays(5))
+        .inOrder();
+    assertThat(ofDays(1).fibonacci(0)).isEmpty();
+    assertThrows(IllegalArgumentException.class, () -> ofDays(1).fibonacci(-1));
+    assertThrows(IndexOutOfBoundsException.class, () -> ofDays(1).fibonacci(1).get(-1));
+    assertThrows(IndexOutOfBoundsException.class, () -> ofDays(1).fibonacci(1).get(1));
   }
 
   @Test public void testDelay_randomized_invalid() {
@@ -917,6 +932,21 @@ public class RetryerTest {
     elapse(Duration.ofMillis(3));
     verify(runnable).run();
     Mockito.verifyNoMoreInteractions(runnable);
+  }
+
+  @Test public void testFibonacci() {
+    assertThat(Math.round(Retryer.fib(0))).isEqualTo(0);
+    assertThat(Math.round(Retryer.fib(1))).isEqualTo(1);
+    List<Long> results = new ArrayList<>();
+    results.add(0L);
+    results.add(1L);
+    for (int i = 2; i < 93; i++) {
+      long f = Math.round(Retryer.fib(i));
+      assertThat(f).named("fibonacci(%s)", i).isLessThan(Long.MAX_VALUE);
+      assertThat((double) f).named("fibonacci(%s)", i)
+          .isWithin(f / 1000).of(results.get(i - 2).doubleValue() + results.get(i - 1).doubleValue());
+      results.add(f);
+    }
   }
 
   private static CompletionStage<String> exceptionally(Throwable e) {

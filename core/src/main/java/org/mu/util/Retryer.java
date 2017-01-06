@@ -470,11 +470,11 @@ public class Retryer {
      */
     public final List<Delay<E>> exponentialBackoff(double multiplier, int size) {
       if (multiplier <= 0) throw new IllegalArgumentException("Invalid multiplier: " + multiplier);
-      if (size < 0) throw new IllegalArgumentException("Invalid size: " + size);
+      checkSize(size);
       if (size == 0) return Collections.emptyList();
       return new AbstractList<Delay<E>>() {
         @Override public Delay<E> get(int index) {
-          return multipliedBy(Math.pow(multiplier, index));
+          return multipliedBy(Math.pow(multiplier, checkIndex(index, size)));
         }
         @Override public int size() {
           return size;
@@ -514,6 +514,20 @@ public class Retryer {
       }
       if (randomness == 0) return this;
       return multipliedBy(1 + (random.nextDouble() - 0.5) * 2 * randomness);
+    }
+
+    /** Returns a fibonacci series of delays of {@code size}. */
+    public final List<Delay<E>> fibonacci(int size) {
+      checkSize(size);
+      if (size == 0) return Collections.emptyList();
+      return new AbstractList<Delay<E>>() {
+        @Override public Delay<E> get(int index) {
+          return ofMillis(Math.round(fib(checkIndex(index, size) + 1) * duration().toMillis()));
+        }
+        @Override public int size() {
+          return size;
+        }
+      };
     }
 
     /** Called if {@code event} will be retried after the delay. */
@@ -576,6 +590,11 @@ public class Retryer {
       }
       return duration;
     }
+  }
+  
+  static double fib(int n) {
+    double phi = 1.6180339887;
+    return (Math.pow(phi, n) - Math.pow(-phi, -n)) / (2 * phi - 1);
   }
 
   private static <E extends Throwable> ExceptionPlan<Delay<?>> delay(
@@ -664,6 +683,15 @@ public class Retryer {
     // Collectors.toList() doesn't guarantee thread-safety.
     Collector<T, ?, ArrayList<T>> collector = Collectors.toCollection(ArrayList::new);
     return stream.collect(collector);
+  }
+
+  private static void checkSize(int size) {
+    if (size < 0) throw new IllegalArgumentException("Invalid size: " + size);
+  }
+
+  private static int checkIndex(int index, int size) {
+    if (index < 0 || index >= size) throw new IndexOutOfBoundsException("Invalid index: " + index);
+    return index;
   }
 
   @FunctionalInterface
