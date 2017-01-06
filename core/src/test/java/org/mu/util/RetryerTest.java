@@ -94,7 +94,7 @@ public class RetryerTest {
   @Test public void nullReturnValueRetried() throws Exception {
     Delay<String> delay = Mockito.spy(ofSeconds(1));
     Retryer.ForReturnValue<String> forReturnValue =
-        retryer.ifReturns(r -> r == null, asList(delay));
+        retryer.<String>ifReturns(r -> r == null, asList(delay));
     when(action.run()).thenReturn(null).thenReturn("fixed");
     CompletionStage<String> stage = forReturnValue.retry(action::run, executor);
     assertThat(stage.toCompletableFuture().isDone()).isFalse();
@@ -782,6 +782,17 @@ public class RetryerTest {
     assertThrows(NullPointerException.class, () -> new Retryer().retryAsync(null, executor));
     assertThrows(
         NullPointerException.class, () -> new Retryer().retryAsync(action::runAsync, null));
+    assertThrows(NullPointerException.class, () -> new Retryer().upon(null, asList()));
+    assertThrows(
+        NullPointerException.class,
+        () -> new Retryer().upon(Exception.class, (List<Delay<Object>>) null));
+    assertThrows(NullPointerException.class, () -> new Retryer().uponReturn(null, asList()));
+    assertThrows(
+        NullPointerException.class, () -> new Retryer().uponReturn("", (List<Delay<String>>) null));
+    assertThrows(
+        NullPointerException.class,
+        () -> new Retryer().ifReturns(r -> true, (List<Delay<String>>) null));
+    assertThrows(NullPointerException.class, () -> new Retryer().ifReturns(null, asList()));
   }
 
   @Test public void testForReturnValue_nulls() {

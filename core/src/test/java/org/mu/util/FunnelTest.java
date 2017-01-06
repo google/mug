@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import java.util.function.Consumer;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -37,6 +36,10 @@ public final class FunnelTest {
   @Test public void batchRejectsNullElement() {
     Funnel<String> funnel = new Funnel<>();
     assertThrows(NullPointerException.class, () -> funnel.through(batch::send).accept(null));
+    assertThrows(
+        NullPointerException.class, () -> funnel.through(batch::send).accept(null, x -> x));
+    assertThrows(
+        NullPointerException.class, () -> funnel.through(batch::send).accept("", null));
   }
 
   @Test public void rejectsNullBatchConverter() {
@@ -66,7 +69,7 @@ public final class FunnelTest {
 
   @Test public void batchInvokedWithTwoElements() {
     Funnel<String> funnel = new Funnel<>();
-    Consumer<Integer> toSpell = funnel.through(batch::send);
+    Funnel.Batch<Integer, String> toSpell = funnel.through(batch::send);
     toSpell.accept(1);
     toSpell.accept(2);
     when(batch.send(asList(1, 2))).thenReturn(asList("one", "two"));
@@ -75,11 +78,45 @@ public final class FunnelTest {
     Mockito.verifyNoMoreInteractions(batch);
   }
 
+  @Test public void batchInvokedWithPostConversion() {
+    Funnel<String> funnel = new Funnel<>();
+    Funnel.Batch<Integer, String> toSpell = funnel.through(batch::send);
+    toSpell.accept(1, s -> s + s);
+    toSpell.accept(2);
+    when(batch.send(asList(1, 2))).thenReturn(asList("one", "two"));
+    assertThat(funnel.run()).containsExactly("oneone", "two").inOrder();
+    Mockito.verify(batch).send(asList(1, 2));
+    Mockito.verifyNoMoreInteractions(batch);
+  }
+
+  @Test public void batchInvokedWithPostConversionThatReturnsNull() {
+    Funnel<String> funnel = new Funnel<>();
+    Funnel.Batch<Integer, String> toSpell = funnel.through(batch::send);
+    toSpell.accept(1, s -> null);
+    toSpell.accept(2);
+    when(batch.send(asList(1, 2))).thenReturn(asList("one", "two"));
+    assertThat(funnel.run()).containsExactly(null, "two").inOrder();
+    Mockito.verify(batch).send(asList(1, 2));
+    Mockito.verifyNoMoreInteractions(batch);
+  }
+
+  @Test public void batchInvokedWithPostConversionThatThrows() {
+    MyUncheckedException exception = new MyUncheckedException();
+    Funnel<String> funnel = new Funnel<>();
+    Funnel.Batch<Integer, String> toSpell = funnel.through(batch::send);
+    toSpell.accept(1, s -> {throw exception;});
+    toSpell.accept(2);
+    when(batch.send(asList(1, 2))).thenReturn(asList("one", "two"));
+    assertThrows(MyUncheckedException.class, funnel::run);
+    Mockito.verify(batch).send(asList(1, 2));
+    Mockito.verifyNoMoreInteractions(batch);
+  }
+
   @Test public void interleavedButRespectsOrder() {
     Batch batch2 = Mockito.mock(Batch.class);
     Funnel<String> funnel = new Funnel<>();
-    Consumer<Integer> toSpell = funnel.through(batch::send);
-    Consumer<String> toLowerCase = funnel.through(batch2::send);
+    Funnel.Batch<Integer, String> toSpell = funnel.through(batch::send);
+    Funnel.Batch<String, String> toLowerCase = funnel.through(batch2::send);
     funnel.add("zero");
     toSpell.accept(1);
     funnel.add("two");
@@ -96,7 +133,7 @@ public final class FunnelTest {
 
   @Test public void batchReturnsEmpty() {
     Funnel<String> funnel = new Funnel<>();
-    Consumer<Integer> toSpell = funnel.through(batch::send);
+    Funnel.Batch<Integer, String> toSpell = funnel.through(batch::send);
     toSpell.accept(1);
     when(batch.send(asList(1))).thenReturn(asList());
     assertThrows(IllegalStateException.class, funnel::run);
@@ -104,7 +141,7 @@ public final class FunnelTest {
 
   @Test public void batchReturnsLessThanInput() {
     Funnel<String> funnel = new Funnel<>();
-    Consumer<Integer> toSpell = funnel.through(batch::send);
+    Funnel.Batch<Integer, String> toSpell = funnel.through(batch::send);
     toSpell.accept(1);
     toSpell.accept(2);
     when(batch.send(asList(1, 2))).thenReturn(asList("one"));
@@ -113,10 +150,17 @@ public final class FunnelTest {
 
   @Test public void batchReturnsMoreThanInput() {
     Funnel<String> funnel = new Funnel<>();
-    Consumer<Integer> toSpell = funnel.through(batch::send);
+    Funnel.Batch<Integer, String> toSpell = funnel.through(batch::send);
     toSpell.accept(1);
     when(batch.send(asList(1))).thenReturn(asList("one", "two"));
     assertThrows(IllegalStateException.class, funnel::run);
+  }
+
+  @SuppressWarnings("serial")
+  private static class MyUncheckedException extends RuntimeException {
+    MyUncheckedException() {
+      super("test");
+    }
   }
 
   private interface Batch {

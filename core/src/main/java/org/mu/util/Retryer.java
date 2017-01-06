@@ -125,7 +125,7 @@ public class Retryer {
         }
       }
     } catch (Throwable e) {
-      exceptions.stream().forEach(p -> addSuppressedTo(e, p));
+      for (Throwable t : exceptions) addSuppressedTo(e, t);
       @SuppressWarnings("unchecked")  // Caller makes sure the exception is either E or unchecked.
       E checked = (E) propagateIfUnchecked(e);
       throw checked;
@@ -230,7 +230,7 @@ public class Retryer {
     ForReturnValue(
         Retryer retryer,
         Predicate<? super T> condition, List<? extends Delay<? super T>> delays) {
-      this.condition = condition;
+      this.condition = requireNonNull(condition);
       this.retryer = retryer.upon(ThrownReturn.class, ThrownReturn.wrap(delays));
     }
 
@@ -266,8 +266,7 @@ public class Retryer {
     public <R extends T, E extends Throwable> CompletionStage<R> retry(
         CheckedSupplier<? extends R, E> supplier,
         ScheduledExecutorService retryExecutor) {
-      return ThrownReturn.unwrapAsync(
-          () -> retryer.retry(supplier.map(this::wrap), retryExecutor));
+      return ThrownReturn.unwrapAsync(() -> retryer.retry(supplier.map(this::wrap), retryExecutor));
     }
 
     /**
@@ -326,10 +325,11 @@ public class Retryer {
           CheckedSupplier<? extends CompletionStage<T>, E> supplier) throws E {
         CompletionStage<T> stage = unwrap(supplier);
         return Maybe.catchException(ThrownReturn.class, stage)
-            .thenApply(maybe -> maybe.orElse(ThrownReturn::unsafeGet));
+            .thenApply(maybe -> maybe.<RuntimeException>orElse(ThrownReturn::unsafeGet));
       }
   
       static List<Delay<ThrownReturn>> wrap(List<? extends Delay<?>> delays) {
+        requireNonNull(delays);
         return new AbstractList<Delay<ThrownReturn>>() {
           @Override public int size() {
             return delays.size();
