@@ -516,7 +516,10 @@ public class Retryer {
       return multipliedBy(1 + (random.nextDouble() - 0.5) * 2 * randomness);
     }
 
-    /** Returns a fibonacci list of delays of {@code size}. */
+    /**
+     * Returns a fibonacci list of delays of {@code size}, as in {@code 1, 1, 2, 3, 5, 8, ...} with
+     * {@code this} delay being the multiplier.
+     */
     public final List<Delay<E>> fibonacci(int size) {
       checkSize(size);
       if (size == 0) return Collections.emptyList();
