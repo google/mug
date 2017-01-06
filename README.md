@@ -266,7 +266,8 @@ Funnel is a simple library to stop the bleeding:
 ```java
 List<Result> convert(List<Input> inputs) {
   Funnel<Result> funnel = new Funnel<>();
-  Consumer<Input> remoteBatch = funnel.through(remoteService::convertInputs);
+  Funnel.Batch<Input, Result> remoteBatch =
+      funnel.through(remoteService::convertInputs);
   for (Input input : inputs) {
     if (input.needsRemoteConversion()) {
       remoteBatch.accept(input);
