@@ -19,6 +19,7 @@ Add the following to pom.xml:
 * Retry blockingly or _async_
 * Configurable and _extensible_ backoff strategies
 * Retry on exception or by return value
+* Everything is @Immutable and @ThreadSafe
 
 #### To retry blockingly
 
