@@ -6,6 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -17,6 +20,7 @@ import org.mockito.MockitoAnnotations;
 
 @RunWith(JUnit4.class)
 public final class FunnelTest {
+  private final Funnel<String> funnel = new Funnel<>();
   @Mock private Batch batch;
 
   @Before public void setUpMocks() {
@@ -24,51 +28,47 @@ public final class FunnelTest {
   }
 
   @Test public void emptyFunnel() {
-    Funnel<String> funnel = new Funnel<>();
     assertThat(funnel.run()).isEmpty();
   }
 
   @Test public void rejectsNullElement() {
-    Funnel<String> funnel = new Funnel<>();
     assertThrows(NullPointerException.class, () -> funnel.add(null));
   }
 
   @Test public void batchRejectsNullElement() {
-    Funnel<String> funnel = new Funnel<>();
     assertThrows(NullPointerException.class, () -> funnel.through(batch::send).accept(null));
     assertThrows(
         NullPointerException.class, () -> funnel.through(batch::send).accept(null, x -> x));
+    Consumer<String> nullEffect = null;
+    Function<String, String> nullConversion = null;
     assertThrows(
-        NullPointerException.class, () -> funnel.through(batch::send).accept("", null));
+        NullPointerException.class, () -> funnel.through(batch::send).accept("", nullEffect));
+    assertThrows(
+        NullPointerException.class, () -> funnel.through(batch::send).accept("", nullConversion));
   }
 
   @Test public void rejectsNullBatchConverter() {
-    Funnel<String> funnel = new Funnel<>();
     assertThrows(NullPointerException.class, () -> funnel.through(null));
   }
 
   @Test public void singleElementFunnel() {
-    Funnel<String> funnel = new Funnel<>();
     funnel.add("hello");
     assertThat(funnel.run()).containsExactly("hello");
   }
 
   @Test public void twoElementsFunnel() {
-    Funnel<String> funnel = new Funnel<>();
     funnel.add("hello");
     funnel.add("world");
     assertThat(funnel.run()).containsExactly("hello", "world").inOrder();
   }
 
   @Test public void batchFunctionNotCalledIfNothingAdded() {
-    Funnel<String> funnel = new Funnel<>();
     funnel.through(batch::send);
     assertThat(funnel.run()).isEmpty();
     Mockito.verifyNoMoreInteractions(batch);
   }
 
   @Test public void batchInvokedWithTwoElements() {
-    Funnel<String> funnel = new Funnel<>();
     Funnel.Batch<Integer, String> toSpell = funnel.through(batch::send);
     toSpell.accept(1);
     toSpell.accept(2);
@@ -79,7 +79,6 @@ public final class FunnelTest {
   }
 
   @Test public void batchInvokedWithPostConversion() {
-    Funnel<String> funnel = new Funnel<>();
     Funnel.Batch<Integer, String> toSpell = funnel.through(batch::send);
     toSpell.accept(1, s -> s + s);
     toSpell.accept(2);
@@ -90,7 +89,6 @@ public final class FunnelTest {
   }
 
   @Test public void batchInvokedWithPostConversionThatReturnsNull() {
-    Funnel<String> funnel = new Funnel<>();
     Funnel.Batch<Integer, String> toSpell = funnel.through(batch::send);
     toSpell.accept(1, s -> null);
     toSpell.accept(2);
@@ -102,9 +100,33 @@ public final class FunnelTest {
 
   @Test public void batchInvokedWithPostConversionThatThrows() {
     MyUncheckedException exception = new MyUncheckedException();
-    Funnel<String> funnel = new Funnel<>();
     Funnel.Batch<Integer, String> toSpell = funnel.through(batch::send);
-    toSpell.accept(1, s -> {throw exception;});
+    Function<String, String> throwingFunction = s -> {throw exception;};
+    toSpell.accept(1, throwingFunction);
+    toSpell.accept(2);
+    when(batch.send(asList(1, 2))).thenReturn(asList("one", "two"));
+    assertThrows(MyUncheckedException.class, funnel::run);
+    Mockito.verify(batch).send(asList(1, 2));
+    Mockito.verifyNoMoreInteractions(batch);
+  }
+
+  @Test public void batchInvokedWithAftereffect() {
+    Funnel.Batch<Integer, String> toSpell = funnel.through(batch::send);
+    AtomicReference<String> spelled = new AtomicReference<>();
+    toSpell.accept(1, spelled::set);
+    toSpell.accept(2);
+    when(batch.send(asList(1, 2))).thenReturn(asList("one", "two"));
+    assertThat(funnel.run()).containsExactly("one", "two").inOrder();
+    assertThat(spelled.get()).isEqualTo("one");
+    Mockito.verify(batch).send(asList(1, 2));
+    Mockito.verifyNoMoreInteractions(batch);
+  }
+
+  @Test public void batchInvokedWithAftereffectThatThrows() {
+    MyUncheckedException exception = new MyUncheckedException();
+    Funnel.Batch<Integer, String> toSpell = funnel.through(batch::send);
+    Consumer<String> throwingEffect = s -> {throw exception;};
+    toSpell.accept(1, throwingEffect);
     toSpell.accept(2);
     when(batch.send(asList(1, 2))).thenReturn(asList("one", "two"));
     assertThrows(MyUncheckedException.class, funnel::run);
@@ -114,7 +136,6 @@ public final class FunnelTest {
 
   @Test public void interleavedButRespectsOrder() {
     Batch batch2 = Mockito.mock(Batch.class);
-    Funnel<String> funnel = new Funnel<>();
     Funnel.Batch<Integer, String> toSpell = funnel.through(batch::send);
     Funnel.Batch<String, String> toLowerCase = funnel.through(batch2::send);
     funnel.add("zero");
@@ -132,7 +153,6 @@ public final class FunnelTest {
   }
 
   @Test public void batchReturnsEmpty() {
-    Funnel<String> funnel = new Funnel<>();
     Funnel.Batch<Integer, String> toSpell = funnel.through(batch::send);
     toSpell.accept(1);
     when(batch.send(asList(1))).thenReturn(asList());
@@ -140,7 +160,6 @@ public final class FunnelTest {
   }
 
   @Test public void batchReturnsLessThanInput() {
-    Funnel<String> funnel = new Funnel<>();
     Funnel.Batch<Integer, String> toSpell = funnel.through(batch::send);
     toSpell.accept(1);
     toSpell.accept(2);
@@ -149,7 +168,6 @@ public final class FunnelTest {
   }
 
   @Test public void batchReturnsMoreThanInput() {
-    Funnel<String> funnel = new Funnel<>();
     Funnel.Batch<Integer, String> toSpell = funnel.through(batch::send);
     toSpell.accept(1);
     when(batch.send(asList(1))).thenReturn(asList("one", "two"));
