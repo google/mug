@@ -843,6 +843,7 @@ public class RetryerTest {
     assertThat(ofDays(1).fibonacci(5))
         .containsExactly(ofDays(1), ofDays(1), ofDays(2), ofDays(3), ofDays(5))
         .inOrder();
+    assertThat(ofDays(1).fibonacci(500).get(499)).isEqualTo(Delay.ofMillis(Long.MAX_VALUE));
     assertThat(ofDays(1).fibonacci(0)).isEmpty();
     assertThrows(IllegalArgumentException.class, () -> ofDays(1).fibonacci(-1));
     assertThrows(IndexOutOfBoundsException.class, () -> ofDays(1).fibonacci(1).get(-1));
