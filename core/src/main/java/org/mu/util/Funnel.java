@@ -33,8 +33,10 @@ import java.util.function.Function;
  * }</pre>
  *
  * <p>Elements flow out of the funnel in the same order as they enter, regardless of which
- * {@link Batch} admitted them, or if they were directly {@link #add added} into the funnel without
+ * {@link Batch} converted them, or if they were directly {@link #add added} into the funnel without
  * conversion.
+ *
+ * @param <T> the output type
  */
 public final class Funnel<T> {
 
@@ -42,7 +44,12 @@ public final class Funnel<T> {
   private final List<Batch<?, T>> batches = new ArrayList<>();
   private final Batch<T, T> passthrough = through(x -> x);
 
-  /** Holds the elements to be converted through a batch conversion. */
+  /**
+   * Holds the elements to be converted through a single batch conversion.
+   *
+   * @param <F> batch input element type
+   * @param <T> batch output element type
+   */
   public static final class Batch<F, T> {
     private final Funnel<T> funnel;
     private final Function<? super List<F>, ? extends Collection<? extends T>> converter;
@@ -70,8 +77,7 @@ public final class Funnel<T> {
 
     /**
      * Adds {@code source} to be converted.
-     * {@code aftereffect} will be applied after the batch conversion completes against the final
-     * result for this input.
+     * {@code aftereffect} will be applied against the conversion result after the batch completes.
      */
     public void accept(F source, Consumer<? super T> aftereffect) {
       requireNonNull(aftereffect);
