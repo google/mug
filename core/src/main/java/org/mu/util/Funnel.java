@@ -68,6 +68,19 @@ public final class Funnel<T> {
       indexedSources.add(new Indexed<>(funnel.size++, source, postConversion));
     }
 
+    /**
+     * Adds {@code source} to be converted.
+     * {@code aftereffect} will be applied after the batch conversion completes against the final
+     * result for this input.
+     */
+    public void accept(F source, Consumer<? super T> aftereffect) {
+      requireNonNull(aftereffect);
+      accept(source, v -> {
+        aftereffect.accept(v);
+        return v;
+      });
+    }
+
     void convertInto(ArrayList<T> output) {
       if (indexedSources.isEmpty()) {
         return;
