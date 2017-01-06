@@ -188,14 +188,14 @@ CompletionStage<User> assumeAnonymousIfNotAuthenticated(CompletionStage<User> st
   return authenticated.thenApply(maybe -> maybe.orElse(e -> new AnonymousUser()));
 }
 ```
-One caveat with using `Future<Maybe<>>` is about stack trace. When you are ready to let the encapsulated exception propagate, consider to use `orElseThrow()`:
+One caveat with using `Future<Maybe<>>` is about stack trace. When the future completes and you are ready to let the encapsulated exception propagate, consider to use `orElseThrow()`:
 ```java
 Future<Maybe<User, AuthenticationException>> future = ...;
 User user = future.get().orElseThrow(AuthenticationException::new);
 ```
 `orElseThrow()` will throw a new exception with the encapsulated exception (which may have been thrown by a different thread) as the cause.
 
-This is because seeing stack trace from a different thread can be very confusing when debugging production system.
+This is because seeing stack trace from a different thread can be very confusing when debugging a production problem.
 
 #### Conceptually, what is `Maybe`?
 * An (otherwise) Java Optional that tells the reason of absence.
