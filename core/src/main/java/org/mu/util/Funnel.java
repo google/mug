@@ -32,9 +32,9 @@ import java.util.function.Function;
  * List<User> users = funnel.run();
  * }</pre>
  *
- * <p>Elements flow out of the funnel in the same order as they enter, regardless of which {@link
- * Consumer} instance admitted them, or if they were directly {@link #add added} into the
- * funnel without conversion.
+ * <p>Elements flow out of the funnel in the same order as they enter, regardless of which
+ * {@link Batch} admitted them, or if they were directly {@link #add added} into the funnel without
+ * conversion.
  */
 public final class Funnel<T> {
 
@@ -102,7 +102,7 @@ public final class Funnel<T> {
   }
 
   /**
-   * Returns a {@link Consumer} instance accepting elements that, when {@link #run} is called,
+   * Returns a {@link Batch} accepting elements that, when {@link #run} is called,
    * will be converted together in a batch through {@code converter}.
    */
   public <F> Batch<F, T> through(
