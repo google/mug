@@ -1,6 +1,5 @@
 package org.mu.util;
 
-import static java.util.Collections.unmodifiableList;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
@@ -51,7 +50,7 @@ public final class AsyncFunnel<T> {
   private final List<AbstractBatch<?, T>> batches = new ArrayList<>();
   private final AbstractBatch<T, T> passthrough = new AbstractBatch<T, T>(this) {
     @Override void submit(List<Task<T, T>> trivialTasks, Executor executor) {
-      for (Task<T, T> task : trivialTasks) task.future.complete(task.input);
+      for (Task<T, T> task : trivialTasks) task.complete(task.input);
     }
   };
 
@@ -89,18 +88,19 @@ public final class AsyncFunnel<T> {
     Funnel<CompletionStage<T>> funnel = new Funnel<>();
     // We need a Batch<F, T> -> Consumer<F> mapping. But that's much ado to create a type-safe
     // version. Just so unchecked.
-    IdentityHashMap<AbstractBatch<?, T>, Consumer<Task<?, T>>> batchMap = new IdentityHashMap<>();
+    IdentityHashMap<AbstractBatch<?, T>, Funnel.Batch<Task<?, T>, ?>> batchMap =
+        new IdentityHashMap<>();
     for (AbstractBatch<?, T> batch : batches) {
       @SuppressWarnings({ "rawtypes", "unchecked" })  // batch comes from miscellaneous list.
-      Consumer<Task<?, T>> consumer = (Consumer) funnel.through(batch.asConverter(executor));
-      batchMap.put(batch, consumer);
+      Funnel.Batch<Task<?, T>, ?> admitter =
+          (Funnel.Batch) funnel.through(batch.asConverter(executor));
+      batchMap.put(batch, admitter);
     }
     for (Task<?, T> task : tasks) {
       batchMap.get(task.batch).accept(task);
     }
-    funnel.run();
     try {
-      return unmodifiableList(copyOf(tasks.stream().map(t -> t.future)));
+      return funnel.run();
     } finally {
       // It makes no sense to change the future objects stored in the Task objects, if run()
       // ever gets called again.
@@ -126,6 +126,14 @@ public final class AsyncFunnel<T> {
       add(input);
     }
 
+    /**
+     * Accepts {@code input} to the batch. {@code postConversion} will be applied after the batch
+     * conversion completes, to compute the final result for this input.
+     */
+    public void accept(F input, CheckedFunction<? super T, ? extends T, ?> postConversion) {
+      add(input, postConversion);
+    }
+
     @Override void submit(List<Task<F, T>> tasks, Executor executor) {
       if (tasks.isEmpty()) return;
       List<F> inputs = copyOf(tasks.stream().map(t -> t.input));
@@ -137,7 +145,7 @@ public final class AsyncFunnel<T> {
                 "Batch returned " + results.size() + " outputs for " + inputs.size() + " inputs.");
           }
           for (int i = 0; i < tasks.size(); i++) {
-            tasks.get(i).future.complete(results.get(i));
+            tasks.get(i).complete(results.get(i));
           }
         } catch (Throwable e) {
           for (Task<?, ?> task : tasks) {
@@ -166,6 +174,8 @@ public final class AsyncFunnel<T> {
     /**
      * Accepts {@code input} into the batch and returns future of {@code Maybe<T, E>} that
      * represents the conversion result, or an exception of type {@code E}.
+     * {@code postConversion} will be applied after the batch conversion completes, to compute the
+     * final result for this input.
      *
      * <p>WARNING: while the client can use the future returned by {@code accept()}, the future
      * won't complete until {@link #run} is called. Be careful because it's easy to forget to call
@@ -174,6 +184,22 @@ public final class AsyncFunnel<T> {
      */
     public CompletionStage<Maybe<T, E>> accept(F input) {
       return Maybe.catchException(exceptionType, wrapped.add(input));
+    }
+
+    /**
+     * Accepts {@code input} into the batch and returns future of {@code Maybe<T, E>} that
+     * represents the conversion result, or an exception of type {@code E}.
+     * {@code postConversion} will be applied to compute the final result in the {@link Executor}
+     * passed into {@link #run}.
+     *
+     * <p>WARNING: while the client can use the future returned by {@code accept()}, the future
+     * won't complete until {@link #run} is called. Be careful because it's easy to forget to call
+     * {@code funnel.run()} when the list of futures returned by {@code run()} isn't needed by the
+     * caller code. Forgetting to call {@code run()} may cause the program to hang.
+     */
+    public CompletionStage<Maybe<T, E>> accept(
+        F input, CheckedFunction<? super T, ? extends T, ?> postConversion) {
+      return Maybe.catchException(exceptionType, wrapped.add(input, postConversion));
     }
   }
 
@@ -186,7 +212,12 @@ public final class AsyncFunnel<T> {
     }
 
     final CompletionStage<T> add(F input) {
-      Task<F, T> task = new Task<>(this, input);
+      return add(input, v -> v);
+    }
+
+    final CompletionStage<T> add(
+        F input, CheckedFunction<? super T, ? extends T, ?> postConversion) {
+      Task<F, T> task = new Task<>(this, input, postConversion);
       funnel.tasks.add(task);
       return task.future;
     }
@@ -204,11 +235,21 @@ public final class AsyncFunnel<T> {
   private static final class Task<F, T> {
     final AbstractBatch<F, T> batch;
     final F input;
-    final CompletableFuture<T> future = new CompletableFuture<>();
+    final CheckedFunction<? super T, ? extends T, ?> converter;
+    private final CompletableFuture<T> future = new CompletableFuture<>();
 
-    Task(AbstractBatch<F, T> batch, F input) {
+    Task(AbstractBatch<F, T> batch, F input, CheckedFunction<? super T, ? extends T, ?> converter) {
       this.batch = batch;
       this.input = requireNonNull(input);
+      this.converter = requireNonNull(converter);
+    }
+
+    void complete(T value) {
+      try {
+        future.complete(converter.apply(value));
+      } catch (Throwable e) {
+        future.completeExceptionally(e);
+      }
     }
   }
 

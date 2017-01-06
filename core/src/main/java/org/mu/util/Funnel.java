@@ -39,24 +39,36 @@ import java.util.function.Function;
 public final class Funnel<T> {
 
   private int size = 0;
-  private final List<Batch<?>> batches = new ArrayList<>();
-  private final Consumer<T> passthrough = through(x -> x);
+  private final List<Batch<?, T>> batches = new ArrayList<>();
+  private final Batch<T, T> passthrough = through(x -> x);
 
   /** Holds the elements to be converted through a batch conversion. */
-  private final class Batch<F> implements Consumer<F> {
+  public static final class Batch<F, T> {
+    private final Funnel<T> funnel;
     private final Function<? super List<F>, ? extends Collection<? extends T>> converter;
-    private final List<Indexed<F>> indexedSources = new ArrayList<>();
+    private final List<Indexed<F, T>> indexedSources = new ArrayList<>();
 
-    private Batch(Function<? super List<F>, ? extends Collection<? extends T>> converter) {
+    Batch(
+        Funnel<T> funnel, Function<? super List<F>, ? extends Collection<? extends T>> converter) {
+      this.funnel = funnel;
       this.converter = requireNonNull(converter);
     }
 
     /** Adds {@code source} to be converted. */
-    @Override public void accept(F source) {
-      indexedSources.add(new Indexed<>(size++, source));
+    public void accept(F source) {
+      accept(source, v -> v);
     }
 
-    private void convertInto(ArrayList<T> output) {
+    /**
+     * Adds {@code source} to be converted.
+     * {@code postConversion} will be applied after the batch conversion completes,
+     * to compute the final result for this input.
+     */
+    public void accept(F source, Function<? super T, ? extends T> postConversion) {
+      indexedSources.add(new Indexed<>(funnel.size++, source, postConversion));
+    }
+
+    void convertInto(ArrayList<T> output) {
       if (indexedSources.isEmpty()) {
         return;
       }
@@ -70,7 +82,8 @@ public final class Funnel<T> {
                 + params + ", but got " + results + " of size " + results.size() + ".");
       }
       for (int i = 0; i < indexedSources.size(); i++) {
-        output.set(indexedSources.get(i).index, results.get(i));
+        Indexed<F, T> source = indexedSources.get(i);
+        output.set(source.index, source.converter.apply(results.get(i)));
       }
     }
   }
@@ -79,9 +92,9 @@ public final class Funnel<T> {
    * Returns a {@link Consumer} instance accepting elements that, when {@link #run} is called,
    * will be converted together in a batch through {@code converter}.
    */
-  public <F> Consumer<F> through(
+  public <F> Batch<F, T> through(
       Function<? super List<F>, ? extends Collection<? extends T>> converter) {
-    Batch<F> batch = new Batch<>(converter);
+    Batch<F, T> batch = new Batch<>(this, converter);
     batches.add(batch);
     return batch;
   }
@@ -97,19 +110,21 @@ public final class Funnel<T> {
    */
   public List<T> run() {
     ArrayList<T> output = new ArrayList<>(Collections.nCopies(size, null));
-    for (Batch<?> batch : batches) {
+    for (Batch<?, T> batch : batches) {
       batch.convertInto(output);
     }
     return output;
   }
 
-  private static final class Indexed<T> {
+  private static final class Indexed<F, T> {
     final int index;
-    final T value;
+    final F value;
+    final Function<? super T, ? extends T> converter;
 
-    Indexed(int index, T value) {
+    Indexed(int index, F value, Function<? super T, ? extends T> converter) {
       this.index = index;
       this.value = requireNonNull(value);
+      this.converter = requireNonNull(converter);
     }
   }
 }
