@@ -376,6 +376,11 @@ public class AsyncFunnelTest {
     assertThrows(NullPointerException.class, () -> funnel.through(null, Exception.class));
     assertThrows(NullPointerException.class, () -> funnel.through(c -> asList(), null));
     assertThrows(NullPointerException.class, () -> funnel.through(c -> asList()).accept(null));
+    assertThrows(NullPointerException.class, () -> funnel.through(c -> asList()).accept(null));
+    assertThrows(
+        NullPointerException.class, () -> funnel.through(c -> asList()).accept(null, v -> v));
+    assertThrows(
+        NullPointerException.class, () -> funnel.through(c -> asList()).accept("", null));
     assertThrows(
         NullPointerException.class,
         () -> funnel.through(c -> asList(), Exception.class).accept(null));

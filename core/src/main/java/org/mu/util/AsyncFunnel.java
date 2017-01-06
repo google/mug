@@ -166,7 +166,7 @@ public final class AsyncFunnel<T> {
     private final AbstractBatch<F, T> wrapped;
     private final Class<E> exceptionType;
 
-    public CheckedBatch(Batch<F, T> wrapped, Class<E> exceptionType) {
+    CheckedBatch(Batch<F, T> wrapped, Class<E> exceptionType) {
       this.wrapped = wrapped;
       this.exceptionType = requireNonNull(exceptionType);
     }
