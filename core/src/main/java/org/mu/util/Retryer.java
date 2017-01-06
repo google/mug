@@ -50,7 +50,7 @@ import org.mu.function.CheckedSupplier;
  * <p>If the retried operation still fails after retry, the previous exceptions can be accessed
  * through {@link Throwable#getSuppressed()}.
  */
-public class Retryer {
+public final class Retryer {
 
   private static final Logger logger = Logger.getLogger(Retryer.class.getName());
 
