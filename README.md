@@ -69,7 +69,7 @@ new Retryer()
 
 #### Backoffs are just `List<Delay>`
 
-`exponentialBackoff()`, `timed()` and `randomized()` are provided out of the box for convenience purpose only. But at the end of the day, backoffs are just old-school boring `List`s. You can create the List in any way you are used to. For example, there isn't a `uniformDelay()` in this library, because there is already `Collections.nCopies(n, delay)`.
+`exponentialBackoff()`, `fibonacci()`, `timed()` and `randomized()` are provided out of the box for convenience purpose only. But at the end of the day, backoffs are just old-school boring `List`s. You can create the List in any way you are used to. For example, there isn't a `uniformDelay()` in this library, because there is already `Collections.nCopies(n, delay)`.
 
 Or, to concatenate two different backoff strategies together (first uniform and then exponential), the Java 8 Stream API has a good tool for the job:
 ```java
@@ -188,6 +188,14 @@ CompletionStage<User> assumeAnonymousIfNotAuthenticated(CompletionStage<User> st
   return authenticated.thenApply(maybe -> maybe.orElse(e -> new AnonymousUser()));
 }
 ```
+One caveat with using `Future<Maybe<>>` is about stack trace. When the future completes and you are ready to let the encapsulated exception propagate, consider to use `orElseThrow()`:
+```java
+Future<Maybe<User, AuthenticationException>> future = ...;
+User user = future.get().orElseThrow(AuthenticationException::new);
+```
+`orElseThrow()` will throw a new exception with the encapsulated exception (which may have been thrown by a different thread) as the cause.
+
+This is because seeing stack trace from a different thread can be very confusing when debugging a production problem.
 
 #### Conceptually, what is `Maybe`?
 * An (otherwise) Java Optional that tells the reason of absence.
