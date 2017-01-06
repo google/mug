@@ -25,8 +25,9 @@ import org.mu.function.CheckedFunction;
  *
  * <pre>{@code
  * AsyncFunnel<User> funnel = new AsyncFunnel<>();
- * Batch<Long, User> userStoreBatch = funnel.through(userStore::loadUsers);
- * Batch<ThirdPartyUser> thirdPartyBatch = funnel.through(thirdPartyClient::loadUsers);
+ * AsyncFunnel.Batch<Long, User> userStoreBatch = funnel.through(userStore::loadUsers);
+ * AsyncFunnel.Batch<ThirdPartyUser, User> thirdPartyBatch =
+ *     funnel.through(thirdPartyClient::loadUsers);
  * for (UserDto dto : users) {
  *   if (dto.hasUserId()) {
  *     userStoreBatch.accept(dto.getUserId());

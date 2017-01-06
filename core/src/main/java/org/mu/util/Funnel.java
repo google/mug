@@ -18,8 +18,8 @@ import java.util.function.Function;
  *
  * <pre>{@code
  * Funnel<User> funnel = new Funnel<>();
- * Consumer<Long> userStoreBatch = funnel.through(userStore::loadUsers);
- * Consumer<ThirdPartyUser> thirdPartyBatch = funnel.through(thirdPartyClient::loadUsers);
+ * Funnel.Batch<Long, User> userStoreBatch = funnel.through(userStore::loadUsers);
+ * Funnel.Batch<ThirdPartyUser, User> thirdPartyBatch = funnel.through(thirdPartyClient::loadUsers);
  * for (UserDto dto : users) {
  *   if (dto.hasUserId()) {
  *     userStoreBatch.accept(dto.getUserId());
