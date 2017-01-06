@@ -45,7 +45,7 @@ CompletionStage<Account> fetchAccountWithRetry(ScheduledExecutorService executor
 #### To retry an already asynchronous operation
 If `getAccount()` itself already runs asynchronously and returns `CompletionStage<Account>`, it can be retried using the `retryAsync()` method.
 
-And for demo purpose, let's use Fibonacci backoff strategy, with a bit of randomization in the backoff to avoid bursty traffic.
+And for demo purpose, let's use Fibonacci backoff strategy, with a bit of randomization in the backoff to avoid bursty traffic, why not?
 ```java
 CompletionStage<Account> fetchAccountWithRetry(ScheduledExecutorService executor) {
   Random rnd = new Random();
