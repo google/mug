@@ -365,9 +365,7 @@ public class Retryer {
     }
   }
 
-  /**
-   * Represents a delay interval between retry attempts for exceptional events of type {@code E}.
-   */
+  /** Represents a delay upon an event of type {@code E} prior to the retry attempt. */
   public static abstract class Delay<E> implements Comparable<Delay<E>> {
 
     /** Returns the delay interval. */
@@ -470,8 +468,7 @@ public class Retryer {
      */
     public final List<Delay<E>> exponentialBackoff(double multiplier, int size) {
       if (multiplier <= 0) throw new IllegalArgumentException("Invalid multiplier: " + multiplier);
-      checkSize(size);
-      if (size == 0) return Collections.emptyList();
+      if (checkSize(size) == 0) return Collections.emptyList();
       return new AbstractList<Delay<E>>() {
         @Override public Delay<E> get(int index) {
           return multipliedBy(Math.pow(multiplier, checkIndex(index, size)));
@@ -490,7 +487,7 @@ public class Retryer {
     public final Delay<E> multipliedBy(double multiplier) {
       if (multiplier < 0) throw new IllegalArgumentException("Invalid multiplier: " + multiplier);
       double millis = duration().toMillis() * multiplier;
-      return of(Duration.ofMillis(Math.round(Math.ceil(millis))));
+      return ofMillis(Math.round(Math.ceil(millis)));
     }
   
     /**
@@ -521,8 +518,7 @@ public class Retryer {
      * {@code this} delay being the multiplier.
      */
     public final List<Delay<E>> fibonacci(int size) {
-      checkSize(size);
-      if (size == 0) return Collections.emptyList();
+      if (checkSize(size) == 0) return Collections.emptyList();
       return new AbstractList<Delay<E>>() {
         @Override public Delay<E> get(int index) {
           return ofMillis(Math.round(fib(checkIndex(index, size) + 1) * duration().toMillis()));
@@ -688,8 +684,9 @@ public class Retryer {
     return stream.collect(collector);
   }
 
-  private static void checkSize(int size) {
+  private static int checkSize(int size) {
     if (size < 0) throw new IllegalArgumentException("Invalid size: " + size);
+    return size;
   }
 
   private static int checkIndex(int index, int size) {
