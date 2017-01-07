@@ -42,14 +42,16 @@ CompletionStage<Account> fetchAccountWithRetry(ScheduledExecutorService executor
 }
 ```
 
-`getAccount()` itself runs asynchronously and returns `CompletionStage<Account>`? No problem.
-And for demo purpose, how about we also use a bit of randomization in the backoff to avoid bursty traffic?
+#### To retry an already asynchronous operation
+If `getAccount()` itself already runs asynchronously and returns `CompletionStage<Account>`, it can be retried using the `retryAsync()` method.
+
+And for demo purpose, let's use Fibonacci backoff strategy, with a bit of randomization in the backoff to avoid bursty traffic, why not?
 ```java
 CompletionStage<Account> fetchAccountWithRetry(ScheduledExecutorService executor) {
   Random rnd = new Random();
   return new Retryer()
       .upon(IOException.class,
-            Delay.ofMillis(30).exponentialBackoff(1.5, 4).stream()
+            Delay.ofMillis(30).fibonacci(4).stream()
                 .map(d -> d.randomized(rnd, 0.3)))
       .retryAsync(this::getAccount, executor);
 }
@@ -81,7 +83,7 @@ new Retryer()
     .retry(...);
 ```
 
-Want to retry infinitely? Too bad, Java doesn't have infinite List. How about `Collections.nCopies(Integer.MAX_VALUE, delay)`? It's not infinite but probably enough to retry until the death of the universe. JDK is smart enough that it only uses O(1) time and space for creating it (`Delay#exponentialBackoff()` follows suit).
+Want to retry infinitely? Too bad, Java doesn't have infinite List. How about `Collections.nCopies(Integer.MAX_VALUE, delay)`? It's not infinite but probably enough to retry until the death of the universe. JDK is smart enough that it only uses O(1) time and space for creating it (`Delay#exponentialBackoff()` and `Delay#fibonacci()` follow suit).
 
 #### To handle retry events
 
@@ -109,6 +111,26 @@ return new Retryer()
               .map(Delay::duration)
               .map(RpcDelay::new))
     .retry(this::sendRpcRequest, executor);
+```
+
+Or, to also get access to the retry attempt number, here's an example:
+```java
+class RpcDelay extends Delay<RpcException> {
+  RpcDelay(int attempt, Duration duration) {...}
+
+  @Override public void beforeDelay(RpcException e) {
+    updateStatsCounter(e.getErrorCode(), "before delay " + attempt, duration());
+  }
+
+  @Override public void afterDelay(RpcException e) {...}
+}
+
+List<Delay<?>> delays = Delay.ofMillis(10).fibonacci(...);
+return new Retryer()
+    .upon(RpcException.class,
+          IntStream.range(0, delays.size())
+              .mapToObj(i -> new RpcDelayWithIndex(i, delays.get(i).duration())))
+    .retry(...);
 ```
 
 #### To keep track of exceptions

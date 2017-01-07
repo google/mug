@@ -529,12 +529,12 @@ public final class Retryer {
       };
     }
 
-    /** Called if {@code event} will be retried after the delay. */
+    /** Called if {@code event} will be retried after the delay. Logs the event by default. */
     public void beforeDelay(E event) {
       logger.info(event + ": will retry after " + duration());
     }
 
-    /** Called after the delay, immediately before the retry. */
+    /** Called after the delay, immediately before the retry. Logs the event by default. */
     public void afterDelay(E event) {
       logger.info(event + ": " + duration() + " has passed. Retrying now...");
     }
