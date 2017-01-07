@@ -16,6 +16,8 @@
 package org.mu.util;
 
 import static java.util.Objects.requireNonNull;
+import static org.mu.util.Utils.cast;
+import static org.mu.util.Utils.propagateIfUnchecked;
 
 import java.util.List;
 import java.util.Objects;
@@ -39,7 +41,7 @@ import org.mu.function.CheckedSupplier;
 
 /**
  * Class that wraps checked exceptions and tunnel them through stream operations.
- * 
+ *
  * <p>The idea is to wrap checked exceptions inside Stream<Maybe<T, E>>, then map(), flatMap(),
  * filter() away through normal stream operations, and only unwrap/collect at the end. Exception is
  * only thrown at the "collecting" step. For example:
@@ -56,7 +58,7 @@ import org.mu.function.CheckedSupplier;
  *
  * <pre>{@code
  *   private Job fetchJob(long jobId) throws IOException;
- *   
+ *
  *   List<Job> getPendingJobs() throws IOException {
  *     Stream<Maybe<Job, IOException>> stream = pendingJobIds.stream()
  *         .map(Maybe.wrap(this::fetchJob))
@@ -314,8 +316,8 @@ public abstract class Maybe<T, E extends Throwable> {
           future.complete(Maybe.of(v));
         } else {
           unwrapFutureException(exceptionType, e)
-              .map(cause -> future.complete(Maybe.except(cause)))
-              .orElseGet(() -> future.completeExceptionally(e));
+          .map(cause -> future.complete(Maybe.except(cause)))
+          .orElseGet(() -> future.completeExceptionally(e));
         }
       } catch (Throwable x) {  // Just in case there was a bug. Don't hang the thread.
         if (x != e) x.addSuppressed(e);
@@ -324,17 +326,6 @@ public abstract class Maybe<T, E extends Throwable> {
       return null;
     });
     return future;
-  }
-
-  /** Propagates {@code exception} if it's unchecked, or else return it as is. */
-  static <E extends Throwable> E propagateIfUnchecked(E e) {
-    if (e instanceof RuntimeException) {
-      throw (RuntimeException) e;
-    } else if (e instanceof Error) {
-      throw (Error) e;
-    } else {
-      return e;
-    }
   }
 
   private static <E extends Throwable> Optional<E> unwrapFutureException(
@@ -355,10 +346,9 @@ public abstract class Maybe<T, E extends Throwable> {
     try {
       return of(supplier.get());
     } catch (Throwable e) {
-      if (exceptionType.isInstance(e)) {
-        return except(exceptionType.cast(e));
-      }
-      throw new AssertionError(propagateIfUnchecked(e));
+      return cast(e, exceptionType)
+          .map(Maybe::<T, E>except)
+          .orElseThrow(() -> new AssertionError(propagateIfUnchecked(e)));
     }
   }
 

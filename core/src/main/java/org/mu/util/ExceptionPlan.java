@@ -16,6 +16,7 @@
 package org.mu.util;
 
 import static java.util.Objects.requireNonNull;
+import static org.mu.util.Utils.typed;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -23,9 +24,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 
+import org.mu.util.Retryer.Delay;
+
 /**
  * Configures an abstract plan based on exceptions.
- * 
+ *
  * This class is immutable.
  *
  * Each exceptional rule is configured with a list of abstract strategies.
@@ -37,7 +40,7 @@ import java.util.function.Predicate;
  *
  * <p>For {@link Retryer}, {@code T} can be {@link Delay} between retries. But any strategy types
  * work too.
- * 
+ *
  * <p>Strategies specified through {@link #upon} are picked with
  * respect to the order they are added. Think of them as a bunch of
  * {@code if ... else if ...}. That is, <em>always specify the more specific exception first</em>.
@@ -52,11 +55,11 @@ import java.util.function.Predicate;
 final class ExceptionPlan<T> {
 
   private final List<Rule<T>> rules;
-  
+
   public ExceptionPlan() {
     this.rules = Collections.emptyList();
   }
-  
+
   private ExceptionPlan(List<Rule<T>> rules) {
     this.rules = rules;
   }
@@ -88,7 +91,7 @@ final class ExceptionPlan<T> {
    */
   public <E extends Throwable> ExceptionPlan<T> upon(
       Class<E> exceptionType, Predicate<? super E> condition, List<? extends T> strategies) {
-    return upon(Utils.typed(exceptionType, condition) , strategies);
+    return upon(typed(exceptionType, condition) , strategies);
   }
 
   /**

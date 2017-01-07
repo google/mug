@@ -15,8 +15,8 @@
 package org.mu.util;
 
 import static java.util.Objects.requireNonNull;
-import static org.mu.util.Maybe.propagateIfUnchecked;
 import static org.mu.util.Utils.mapList;
+import static org.mu.util.Utils.propagateIfUnchecked;
 
 import java.time.Clock;
 import java.time.Duration;

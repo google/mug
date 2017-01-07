@@ -8,6 +8,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Optional;
+
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -49,6 +51,19 @@ public class UtilsTest {
     when(condition.test("hi")).thenReturn(true);
     assertThat(Utils.typed(String.class, condition::test).test("hi")).isTrue();
     verify(condition).test("hi");
+  }
+
+  @Test public void testCast_notAnInstance() {
+    assertThat(Utils.cast(1, String.class)).isEqualTo(Optional.empty());
+  }
+
+  @Test public void testCast_isAnInstance() {
+    assertThat(Utils.cast("hi", String.class)).isEqualTo(Optional.of("hi"));
+  }
+
+  @Test public void testCast_null() {
+    assertThat(Utils.cast(null, String.class)).isEqualTo(Optional.empty());
+    assertThrows(NullPointerException.class, () -> Utils.cast("hi", null));
   }
 
   @Test public void testTyped_doesNotPassCondition() {
