@@ -119,7 +119,7 @@ class RpcDelay extends Delay<RpcException> {
   RpcDelay(int attempt, Duration duration) {...}
 
   @Override public void beforeDelay(RpcException e) {
-    logger.log("Retry attempt " + attempt + ...);
+    updateStatsCounter(e.getErrorCode(), "before delay " + attempt, duration());
   }
 
   @Override public void afterDelay(RpcException e) {...}
