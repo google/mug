@@ -25,7 +25,7 @@ import java.util.function.Predicate;
 /** Some relatively trivial re-invented wheels as cost of 0-dependency. */
 final class Utils {
   /** Only need it because we don't have Guava Lists.transform(). */
-  static <F, T> List<T> mapList(List<? extends F> list, Function<? super F, ? extends T> mapper) {
+  static <F, T> List<T> mapList(List<F> list, Function<? super F, ? extends T> mapper) {
     requireNonNull(list);
     requireNonNull(mapper);
     return new AbstractList<T>() {
