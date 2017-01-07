@@ -108,7 +108,7 @@ public final class Retryer {
   /**
    * Invokes and possibly retries {@code supplier} upon exceptions, according to the retry
    * strategies specified with {@link #upon upon()}.
-   * 
+   *
    * <p>This method blocks while waiting to retry. If interrupted, retry is canceled.
    *
    * <p>If {@code supplier} fails despite retrying, the exception from the most recent invocation
@@ -145,7 +145,7 @@ public final class Retryer {
    * need to deal with them in one place.
    *
    * <p>Retries are scheduled and performed by {@code executor}.
-   * 
+   *
    * <p>NOTE that if {@code executor.shutdownNow()} is called, the returned {@link CompletionStage}
    * will never be done.
    */
@@ -166,7 +166,7 @@ public final class Retryer {
    * need to deal with them in one place.
    *
    * <p>Retries are scheduled and performed by {@code executor}.
-   * 
+   *
    * <p>NOTE that if {@code executor.shutdownNow()} is called, the returned {@link CompletionStage}
    * will never be done.
    */
@@ -201,7 +201,7 @@ public final class Retryer {
 
   /**
    * Returns a new object that retries if the function returns {@code returnValue}.
-   * 
+   *
    * @param returnValue The return value that triggers retry. Must not be {@code null}.
    *        To retry for null return value, use {@code r -> r == null}.
    * @param delays specify the backoffs between retries
@@ -213,7 +213,7 @@ public final class Retryer {
 
   /**
    * Returns a new object that retries if the function returns {@code returnValue}.
-   * 
+   *
    * @param returnValue The return value that triggers retry. Must not be {@code null}.
    *        To retry for null return value, use {@code r -> r == null}.
    * @param delays specify the backoffs between retries
@@ -242,7 +242,7 @@ public final class Retryer {
     /**
      * Invokes and possibly retries {@code supplier} according to the retry
      * strategies specified with {@link #uponReturn uponReturn()}.
-     * 
+     *
      * <p>This method blocks while waiting to retry. If interrupted, retry is canceled.
      *
      * <p>If {@code supplier} fails despite retrying, the return value from the most recent
@@ -264,7 +264,7 @@ public final class Retryer {
      * need to deal with them in one place.
      *
      * <p>Retries are scheduled and performed by {@code executor}.
-     * 
+     *
      * <p>NOTE that if {@code executor.shutdownNow()} is called, the returned
      * {@link CompletionStage} will never be done.
      */
@@ -284,7 +284,7 @@ public final class Retryer {
      * need to deal with them in one place.
      *
      * <p>Retries are scheduled and performed by {@code executor}.
-     * 
+     *
      * <p>NOTE that if {@code executor.shutdownNow()} is called, the returned
      * {@link CompletionStage} will never be done.
      */
@@ -317,7 +317,7 @@ public final class Retryer {
         super("This should never escape!", null, DISABLE_SUPPRESSION, NO_STACK_TRACE);
         this.returnValue = returnValue;
       }
-  
+
       static <T, E extends Throwable> T unwrap(CheckedSupplier<T, E> supplier) throws E {
         try {
           return supplier.get();
@@ -325,7 +325,7 @@ public final class Retryer {
           return thrown.unsafeGet();
         }
       }
-  
+
       static <T, E extends Throwable> CompletionStage<T> unwrapAsync(
           CheckedSupplier<? extends CompletionStage<T>, E> supplier) throws E {
         CompletionStage<T> stage = unwrap(supplier);
@@ -454,7 +454,7 @@ public final class Retryer {
         }
       };
     }
- 
+
     /**
      * Returns a new {@code Delay} with duration multiplied by {@code multiplier}.
      *
@@ -465,7 +465,7 @@ public final class Retryer {
       double millis = duration().toMillis() * multiplier;
       return ofMillis(Math.round(Math.ceil(millis)));
     }
-  
+
     /**
      * Returns a new {@code Delay} with some extra randomness.
      * To randomize a list of {@code Delay}s, for example:
@@ -563,7 +563,7 @@ public final class Retryer {
      * Returns an adapter of {@code this} as type {@code F}, which uses {@code eventTranslator} to
      * translate events to type {@code E} before accepting them.
      */
-    final <F> Delay<F> forEvents(Function<? super F, ? extends E> eventTranslator) {
+    final <F> Delay<F> forEvents(Function<F, ? extends E> eventTranslator) {
       requireNonNull(eventTranslator);
       Delay<E> delegate = this;
       return new Delay<F>() {
@@ -589,7 +589,7 @@ public final class Retryer {
       return duration;
     }
   }
-  
+
   static double fib(int n) {
     double phi = 1.6180339887;
     return (Math.pow(phi, n) - Math.pow(-phi, -n)) / (2 * phi - 1);
@@ -632,7 +632,7 @@ public final class Retryer {
   private <E extends Throwable, T> void retryIfCovered(
       E e, ScheduledExecutorService retryExecutor,
       CheckedSupplier<? extends CompletionStage<T>, ?> supplier, CompletableFuture<T> result)
-      throws E {
+          throws E {
     if (plan.covers(e)) {
       scheduleRetry(e, retryExecutor, supplier, result);
     } else {
