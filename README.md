@@ -70,6 +70,13 @@ new Retryer()
     .retryBlockingly(this::depositeMyMoney);
 ```
 
+Or, use a predicate:
+```java
+new Retryer()
+    .ifReturns(r -> r == null, Delay.ofMillis(10).exponentialBackoff(1.5, 4))
+    .retryBlockingly(this::depositeMyMoney);
+```
+
 #### Backoffs are just `List<Delay>`
 
 `exponentialBackoff()`, `fibonacci()`, `timed()` and `randomized()` are provided out of the box for convenience purpose only. But at the end of the day, backoffs are just old-school boring `List`s. You can create the List in any way you are used to. For example, there isn't a `uniformDelay()` in this library, because there is already `Collections.nCopies(n, delay)`.
