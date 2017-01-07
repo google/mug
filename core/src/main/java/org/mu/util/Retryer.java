@@ -558,7 +558,11 @@ public final class Retryer {
       executor.schedule(
           () -> afterDelay.run(exceptionHandler), duration().toMillis(), TimeUnit.MILLISECONDS);
     }
-    
+
+    /**
+     * Returns an adapter of {@code this} as type {@code F}, which uses {@code eventTranslator} to
+     * translate events to type {@code E} before accepting them.
+     */
     final <F> Delay<F> forEvents(Function<? super F, ? extends E> eventTranslator) {
       requireNonNull(eventTranslator);
       Delay<E> delegate = this;
