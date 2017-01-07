@@ -88,7 +88,7 @@ final class ExceptionPlan<T> {
    */
   public <E extends Throwable> ExceptionPlan<T> upon(
       Class<E> exceptionType, Predicate<? super E> condition, List<? extends T> strategies) {
-    return upon(e -> cast(e, exceptionType).map(condition::test).orElse(false) , strategies);
+    return upon(Utils.typed(exceptionType, condition) , strategies);
   }
 
   /**
@@ -138,10 +138,6 @@ final class ExceptionPlan<T> {
     public ExceptionPlan<T> remainingExceptionPlan() {
       return exceptionPlan;
     }
-  }
-
-  private static <T> Optional<T> cast(Object object, Class<T> type) {
-    return type.isInstance(object) ? Optional.of(type.cast(object)) : Optional.empty();
   }
 
   private static final class Rule<T> {

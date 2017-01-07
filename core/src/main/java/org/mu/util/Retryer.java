@@ -16,6 +16,7 @@ package org.mu.util;
 
 import static java.util.Objects.requireNonNull;
 import static org.mu.util.Maybe.propagateIfUnchecked;
+import static org.mu.util.Utils.mapList;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -32,6 +33,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.stream.Collector;
@@ -231,7 +233,10 @@ public final class Retryer {
         Retryer retryer,
         Predicate<? super T> condition, List<? extends Delay<? super T>> delays) {
       this.condition = requireNonNull(condition);
-      this.retryer = retryer.upon(ThrownReturn.class, ThrownReturn.wrap(delays));
+      this.retryer = retryer.upon(
+          ThrownReturn.class,
+          // Safe because it's essentially ThrownReturn<T> and Delay<? super T>.
+          mapList(delays, (Delay<? super T> d) -> d.forEvents(ThrownReturn::unsafeGet)));
     }
 
     /**
@@ -327,40 +332,11 @@ public final class Retryer {
         return Maybe.catchException(ThrownReturn.class, stage)
             .thenApply(maybe -> maybe.<RuntimeException>orElse(ThrownReturn::unsafeGet));
       }
-  
-      static List<Delay<ThrownReturn>> wrap(List<? extends Delay<?>> delays) {
-        requireNonNull(delays);
-        return new AbstractList<Delay<ThrownReturn>>() {
-          @Override public int size() {
-            return delays.size();
-          }
-          @Override public Delay<ThrownReturn> get(int index) {
-            return wrap(delays.get(index));
-          }
-        };
-      }
 
       /** Exception cannot be parameterized. But we essentially use it as ThrownReturn<T>. */
       @SuppressWarnings("unchecked")
       private <T> T unsafeGet() {
         return (T) returnValue;
-      }
-  
-      private static Delay<ThrownReturn> wrap(Delay<?> delay) {
-        return new Delay<ThrownReturn>() {
-          @Override public Duration duration() {
-            return delay.duration();
-          }
-          @Override public void beforeDelay(ThrownReturn thrown) {
-            delay.beforeDelay(thrown.unsafeGet());
-          }
-          @Override public void afterDelay(ThrownReturn thrown) {
-            delay.afterDelay(thrown.unsafeGet());
-          }
-          @Override void interrupted(ThrownReturn thrown) {
-            delay.interrupted(thrown.unsafeGet());
-          }
-        };
       }
     }
   }
@@ -581,6 +557,25 @@ public final class Retryer {
       };
       executor.schedule(
           () -> afterDelay.run(exceptionHandler), duration().toMillis(), TimeUnit.MILLISECONDS);
+    }
+    
+    final <F> Delay<F> forEvents(Function<? super F, ? extends E> eventTranslator) {
+      requireNonNull(eventTranslator);
+      Delay<E> delegate = this;
+      return new Delay<F>() {
+        @Override public Duration duration() {
+          return delegate.duration();
+        }
+        @Override public void beforeDelay(F from) {
+          delegate.beforeDelay(eventTranslator.apply(from));
+        }
+        @Override public void afterDelay(F from) {
+          delegate.afterDelay(eventTranslator.apply(from));
+        }
+        @Override void interrupted(F from) {
+          delegate.interrupted(eventTranslator.apply(from));
+        }
+      };
     }
 
     private static Duration requireNonNegative(Duration duration) {
