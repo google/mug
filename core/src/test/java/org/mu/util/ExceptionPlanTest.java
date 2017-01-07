@@ -5,6 +5,8 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.function.Predicate;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -89,6 +91,28 @@ public class ExceptionPlanTest {
     assertThat(execution.strategy()).isEqualTo("recover");
     execution = plan.execute(new Exception("bad")).get();
     assertThat(execution.strategy()).isEqualTo("report");
+  }
+
+  @Test public void testNulls() {
+    Class<Throwable> nullType = null;
+    Predicate<Object> nullCondition = null;
+    assertThrows(NullPointerException.class, () -> new ExceptionPlan<>().upon(nullType, asList()));
+    assertThrows(
+        NullPointerException.class, () -> new ExceptionPlan<>().upon(Exception.class, null));
+    assertThrows(
+        NullPointerException.class,
+        () -> new ExceptionPlan<>().upon(nullType, x -> true, asList()));
+    assertThrows(
+        NullPointerException.class,
+        () -> new ExceptionPlan<>().upon(Exception.class, nullCondition, asList()));
+    assertThrows(
+        NullPointerException.class,
+        () -> new ExceptionPlan<>().upon(nullCondition, asList()));
+    assertThrows(
+        NullPointerException.class, () -> new ExceptionPlan<>().upon(x -> true, null));
+    assertThrows(
+        NullPointerException.class,
+        () -> new ExceptionPlan<>().upon(Exception.class, x -> true, null));
   }
 
   @SuppressWarnings("serial")
