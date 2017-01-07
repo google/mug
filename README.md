@@ -113,6 +113,26 @@ return new Retryer()
     .retry(this::sendRpcRequest, executor);
 ```
 
+Or, to also get access to the retry attempt number, here's an example:
+```java
+class RpcDelay extends Delay<RpcException> {
+  RpcDelay(int attempt, Duration duration) {...}
+
+  @Override public void beforeDelay(RpcException e) {
+    logger.log("Retry attempt " + attempt + ...);
+  }
+
+  @Override public void afterDelay(RpcException e) {...}
+}
+
+List<Delay<?>> delays = Delay.ofMillis(10).fibonacci(...);
+return new Retryer()
+    .upon(RpcException.class,
+          IntStream.range(0, delays.size())
+              .mapToObj(i -> new RpcDelayWithIndex(i, delays.get(i).duration())))
+    .retry(...);
+```
+
 #### To keep track of exceptions
 
 If the method succeeds after retry, the exceptions are by default logged. As shown above, one can override `beforeDelay()` and `afterDelay()` to change or suppress the loggging.
