@@ -120,7 +120,7 @@ return new Retryer()
     .retry(this::sendRpcRequest, executor);
 ```
 
-Or, to also get access to the retry attempt number, here's an example:
+Or, to also get access to the retry attempt number, which is also the list's index, here's an example:
 ```java
 class RpcDelay extends Delay<RpcException> {
   RpcDelay(int attempt, Duration duration) {...}
