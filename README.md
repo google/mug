@@ -56,7 +56,7 @@ CompletionStage<Account> fetchAccountWithRetry(ScheduledExecutorService executor
       .retryAsync(this::getAccount, executor);
 }
 ```
-_A side note_: the above Stream code will eagerly evaluate all list elements before `retryAsync()` is called. If that isn't desirable (like, you have nCopies(10000000, delay)), it's best to use some kind of lazy List transformation library. For example, if you use Guava, then:
+_A side note_: using Stream to transform will eagerly evaluate all list elements before `retryAsync()` is called. If that isn't desirable (like, you have nCopies(10000000, delay)), it's best to use some kind of lazy List transformation library. For example, if you use Guava, then:
 ```java
 Lists.transform(nCopies(1000000, Delay.ofMillis(30)), d -> d.randomized(rnd, 0.3))
 ```
@@ -67,6 +67,13 @@ Sometimes the API you work with may return error codes instead of throwing excep
 ```java
 new Retryer()
     .uponReturn(ErrorCode::BAD, Delay.ofMillis(10).exponentialBackoff(1.5, 4))
+    .retryBlockingly(this::depositeMyMoney);
+```
+
+Or, use a predicate:
+```java
+new Retryer()
+    .ifReturns(r -> r == null, Delay.ofMillis(10).exponentialBackoff(1.5, 4))
     .retryBlockingly(this::depositeMyMoney);
 ```
 
@@ -83,7 +90,7 @@ new Retryer()
     .retry(...);
 ```
 
-Want to retry infinitely? Too bad, Java doesn't have infinite List. How about `Collections.nCopies(Integer.MAX_VALUE, delay)`? It's not infinite but probably enough to retry until the death of the universe. JDK is smart enough that it only uses O(1) time and space for creating it (`Delay#exponentialBackoff()` and `Delay#fibonacci()` follow suit).
+What about to retry infinitely? `Collections.nCopies(Integer.MAX_VALUE, delay)` isn't infinite but close. JDK only uses O(1) time and space for creating it; same goes for `Delay#exponentialBackoff()` and `Delay#fibonacci()`.
 
 #### To handle retry events
 
@@ -113,7 +120,7 @@ return new Retryer()
     .retry(this::sendRpcRequest, executor);
 ```
 
-Or, to also get access to the retry attempt number, here's an example:
+Or, to also get access to the retry attempt number, which is also the list's index, here's an example:
 ```java
 class RpcDelay extends Delay<RpcException> {
   RpcDelay(int attempt, Duration duration) {...}

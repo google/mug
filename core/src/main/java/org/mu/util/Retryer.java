@@ -15,7 +15,8 @@
 package org.mu.util;
 
 import static java.util.Objects.requireNonNull;
-import static org.mu.util.Maybe.propagateIfUnchecked;
+import static org.mu.util.Utils.mapList;
+import static org.mu.util.Utils.propagateIfUnchecked;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -32,6 +33,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.stream.Collector;
@@ -106,7 +108,7 @@ public final class Retryer {
   /**
    * Invokes and possibly retries {@code supplier} upon exceptions, according to the retry
    * strategies specified with {@link #upon upon()}.
-   * 
+   *
    * <p>This method blocks while waiting to retry. If interrupted, retry is canceled.
    *
    * <p>If {@code supplier} fails despite retrying, the exception from the most recent invocation
@@ -143,7 +145,7 @@ public final class Retryer {
    * need to deal with them in one place.
    *
    * <p>Retries are scheduled and performed by {@code executor}.
-   * 
+   *
    * <p>NOTE that if {@code executor.shutdownNow()} is called, the returned {@link CompletionStage}
    * will never be done.
    */
@@ -164,7 +166,7 @@ public final class Retryer {
    * need to deal with them in one place.
    *
    * <p>Retries are scheduled and performed by {@code executor}.
-   * 
+   *
    * <p>NOTE that if {@code executor.shutdownNow()} is called, the returned {@link CompletionStage}
    * will never be done.
    */
@@ -199,7 +201,7 @@ public final class Retryer {
 
   /**
    * Returns a new object that retries if the function returns {@code returnValue}.
-   * 
+   *
    * @param returnValue The return value that triggers retry. Must not be {@code null}.
    *        To retry for null return value, use {@code r -> r == null}.
    * @param delays specify the backoffs between retries
@@ -211,7 +213,7 @@ public final class Retryer {
 
   /**
    * Returns a new object that retries if the function returns {@code returnValue}.
-   * 
+   *
    * @param returnValue The return value that triggers retry. Must not be {@code null}.
    *        To retry for null return value, use {@code r -> r == null}.
    * @param delays specify the backoffs between retries
@@ -231,13 +233,16 @@ public final class Retryer {
         Retryer retryer,
         Predicate<? super T> condition, List<? extends Delay<? super T>> delays) {
       this.condition = requireNonNull(condition);
-      this.retryer = retryer.upon(ThrownReturn.class, ThrownReturn.wrap(delays));
+      this.retryer = retryer.upon(
+          ThrownReturn.class,
+          // Safe because it's essentially ThrownReturn<T> and Delay<? super T>.
+          mapList(delays, (Delay<? super T> d) -> d.forEvents(ThrownReturn::unsafeGet)));
     }
 
     /**
      * Invokes and possibly retries {@code supplier} according to the retry
      * strategies specified with {@link #uponReturn uponReturn()}.
-     * 
+     *
      * <p>This method blocks while waiting to retry. If interrupted, retry is canceled.
      *
      * <p>If {@code supplier} fails despite retrying, the return value from the most recent
@@ -259,7 +264,7 @@ public final class Retryer {
      * need to deal with them in one place.
      *
      * <p>Retries are scheduled and performed by {@code executor}.
-     * 
+     *
      * <p>NOTE that if {@code executor.shutdownNow()} is called, the returned
      * {@link CompletionStage} will never be done.
      */
@@ -279,7 +284,7 @@ public final class Retryer {
      * need to deal with them in one place.
      *
      * <p>Retries are scheduled and performed by {@code executor}.
-     * 
+     *
      * <p>NOTE that if {@code executor.shutdownNow()} is called, the returned
      * {@link CompletionStage} will never be done.
      */
@@ -312,7 +317,7 @@ public final class Retryer {
         super("This should never escape!", null, DISABLE_SUPPRESSION, NO_STACK_TRACE);
         this.returnValue = returnValue;
       }
-  
+
       static <T, E extends Throwable> T unwrap(CheckedSupplier<T, E> supplier) throws E {
         try {
           return supplier.get();
@@ -320,47 +325,18 @@ public final class Retryer {
           return thrown.unsafeGet();
         }
       }
-  
+
       static <T, E extends Throwable> CompletionStage<T> unwrapAsync(
           CheckedSupplier<? extends CompletionStage<T>, E> supplier) throws E {
         CompletionStage<T> stage = unwrap(supplier);
         return Maybe.catchException(ThrownReturn.class, stage)
             .thenApply(maybe -> maybe.<RuntimeException>orElse(ThrownReturn::unsafeGet));
       }
-  
-      static List<Delay<ThrownReturn>> wrap(List<? extends Delay<?>> delays) {
-        requireNonNull(delays);
-        return new AbstractList<Delay<ThrownReturn>>() {
-          @Override public int size() {
-            return delays.size();
-          }
-          @Override public Delay<ThrownReturn> get(int index) {
-            return wrap(delays.get(index));
-          }
-        };
-      }
 
       /** Exception cannot be parameterized. But we essentially use it as ThrownReturn<T>. */
       @SuppressWarnings("unchecked")
       private <T> T unsafeGet() {
         return (T) returnValue;
-      }
-  
-      private static Delay<ThrownReturn> wrap(Delay<?> delay) {
-        return new Delay<ThrownReturn>() {
-          @Override public Duration duration() {
-            return delay.duration();
-          }
-          @Override public void beforeDelay(ThrownReturn thrown) {
-            delay.beforeDelay(thrown.unsafeGet());
-          }
-          @Override public void afterDelay(ThrownReturn thrown) {
-            delay.afterDelay(thrown.unsafeGet());
-          }
-          @Override void interrupted(ThrownReturn thrown) {
-            delay.interrupted(thrown.unsafeGet());
-          }
-        };
       }
     }
   }
@@ -478,7 +454,7 @@ public final class Retryer {
         }
       };
     }
- 
+
     /**
      * Returns a new {@code Delay} with duration multiplied by {@code multiplier}.
      *
@@ -489,7 +465,7 @@ public final class Retryer {
       double millis = duration().toMillis() * multiplier;
       return ofMillis(Math.round(Math.ceil(millis)));
     }
-  
+
     /**
      * Returns a new {@code Delay} with some extra randomness.
      * To randomize a list of {@code Delay}s, for example:
@@ -583,6 +559,29 @@ public final class Retryer {
           () -> afterDelay.run(exceptionHandler), duration().toMillis(), TimeUnit.MILLISECONDS);
     }
 
+    /**
+     * Returns an adapter of {@code this} as type {@code F}, which uses {@code eventTranslator} to
+     * translate events to type {@code E} before accepting them.
+     */
+    final <F> Delay<F> forEvents(Function<F, ? extends E> eventTranslator) {
+      requireNonNull(eventTranslator);
+      Delay<E> delegate = this;
+      return new Delay<F>() {
+        @Override public Duration duration() {
+          return delegate.duration();
+        }
+        @Override public void beforeDelay(F from) {
+          delegate.beforeDelay(eventTranslator.apply(from));
+        }
+        @Override public void afterDelay(F from) {
+          delegate.afterDelay(eventTranslator.apply(from));
+        }
+        @Override void interrupted(F from) {
+          delegate.interrupted(eventTranslator.apply(from));
+        }
+      };
+    }
+
     private static Duration requireNonNegative(Duration duration) {
       if (duration.toMillis() < 0) {
         throw new IllegalArgumentException("Negative duration: " + duration);
@@ -590,7 +589,7 @@ public final class Retryer {
       return duration;
     }
   }
-  
+
   static double fib(int n) {
     double phi = 1.6180339887;
     return (Math.pow(phi, n) - Math.pow(-phi, -n)) / (2 * phi - 1);
@@ -633,7 +632,7 @@ public final class Retryer {
   private <E extends Throwable, T> void retryIfCovered(
       E e, ScheduledExecutorService retryExecutor,
       CheckedSupplier<? extends CompletionStage<T>, ?> supplier, CompletableFuture<T> result)
-      throws E {
+          throws E {
     if (plan.covers(e)) {
       scheduleRetry(e, retryExecutor, supplier, result);
     } else {

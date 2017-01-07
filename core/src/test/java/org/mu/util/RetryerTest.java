@@ -1,3 +1,17 @@
+/*****************************************************************************
+ * ------------------------------------------------------------------------- *
+ * Licensed under the Apache License, Version 2.0 (the "License");           *
+ * you may not use this file except in compliance with the License.          *
+ * You may obtain a copy of the License at                                   *
+ *                                                                           *
+ * http://www.apache.org/licenses/LICENSE-2.0                                *
+ *                                                                           *
+ * Unless required by applicable law or agreed to in writing, software       *
+ * distributed under the License is distributed on an "AS IS" BASIS,         *
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+ * See the License for the specific language governing permissions and       *
+ * limitations under the License.                                            *
+ *****************************************************************************/
 package org.mu.util;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -10,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -68,31 +83,31 @@ public class RetryerTest {
   }
 
   @Test public void expectedReturnValueFirstTime() throws Exception {
-    Delay<String> delay = Mockito.spy(ofSeconds(1));
+    Delay<String> delay = spy(ofSeconds(1));
     when(action.run()).thenReturn("good");
     Retryer.ForReturnValue<String> forReturnValue =
         retryer.uponReturn("bad", asList(delay));
     assertThat(forReturnValue.retry(action::run, executor).toCompletableFuture().get())
-        .isEqualTo("good");
+    .isEqualTo("good");
     verify(action).run();
     verify(delay, never()).beforeDelay(any());
     verify(delay, never()).afterDelay(any());
   }
 
   @Test public void nullReturnValueIsGood() throws Exception {
-    Delay<String> delay = Mockito.spy(ofSeconds(1));
+    Delay<String> delay = spy(ofSeconds(1));
     when(action.run()).thenReturn(null);
     Retryer.ForReturnValue<String> forReturnValue =
         retryer.uponReturn("bad", asList(delay));
     assertThat(forReturnValue.retry(action::run, executor).toCompletableFuture().get())
-        .isNull();
+    .isNull();
     verify(action).run();
     verify(delay, never()).beforeDelay(any());
     verify(delay, never()).afterDelay(any());
   }
 
   @Test public void nullReturnValueRetried() throws Exception {
-    Delay<String> delay = Mockito.spy(ofSeconds(1));
+    Delay<String> delay = spy(ofSeconds(1));
     Retryer.ForReturnValue<String> forReturnValue =
         retryer.<String>ifReturns(r -> r == null, asList(delay));
     when(action.run()).thenReturn(null).thenReturn("fixed");
@@ -109,12 +124,12 @@ public class RetryerTest {
 
   @Test public void errorPropagatedDuringReturnValueRetry() throws Exception {
     Error error = new Error("test");
-    Delay<String> delay = Mockito.spy(ofSeconds(1));
+    Delay<String> delay = spy(ofSeconds(1));
     Retryer.ForReturnValue<String> forReturnValue =
         retryer.uponReturn("bad", asList(delay));
     when(action.run()).thenThrow(error);
     assertException(Error.class, () -> forReturnValue.retry(action::run, executor))
-        .isSameAs(error);
+    .isSameAs(error);
     assertThat(error.getSuppressed()).isEmpty();
     verify(action).run();
     verify(delay, never()).beforeDelay(any());
@@ -123,12 +138,12 @@ public class RetryerTest {
 
   @Test public void uncheckedExceptionPropagatedDuringReturnValueRetry() throws Exception {
     RuntimeException error = new RuntimeException("test");
-    Delay<String> delay = Mockito.spy(ofSeconds(1));
+    Delay<String> delay = spy(ofSeconds(1));
     Retryer.ForReturnValue<String> forReturnValue =
         retryer.uponReturn("bad", asList(delay));
     when(action.run()).thenThrow(error);
     assertException(RuntimeException.class, () -> forReturnValue.retry(action::run, executor))
-        .isSameAs(error);
+    .isSameAs(error);
     assertThat(error.getSuppressed()).isEmpty();
     verify(action).run();
     verify(delay, never()).beforeDelay(any());
@@ -136,14 +151,14 @@ public class RetryerTest {
   }
 
   @Test public void exceptionFromBeforeDelayReportedDuringReturnValueRetry() throws Exception {
-    Delay<String> delay = Mockito.spy(ofSeconds(1));
+    Delay<String> delay = spy(ofSeconds(1));
     Retryer.ForReturnValue<String> forReturnValue = retryer.uponReturn("bad", asList(delay));
     when(action.run()).thenReturn("bad");
     RuntimeException unexpected = new RuntimeException();
     Mockito.doThrow(unexpected).when(delay).beforeDelay("bad");
     assertException(
-            RuntimeException.class,
-            () -> forReturnValue.retry(action::run, executor).toCompletableFuture().get())
+        RuntimeException.class,
+        () -> forReturnValue.retry(action::run, executor).toCompletableFuture().get())
         .isSameAs(unexpected);
     assertThat(unexpected.getSuppressed()).isEmpty();
     verify(action).run();
@@ -152,7 +167,7 @@ public class RetryerTest {
   }
 
   @Test public void exceptionFromAfterDelayReportedDuringReturnValueRetry() throws Exception {
-    Delay<String> delay = Mockito.spy(ofSeconds(1));
+    Delay<String> delay = spy(ofSeconds(1));
     Retryer.ForReturnValue<String> forReturnValue = retryer.uponReturn("bad", asList(delay));
     when(action.run()).thenReturn("bad");
     RuntimeException unexpected = new RuntimeException();
@@ -170,7 +185,7 @@ public class RetryerTest {
   }
 
   @Test public void returnValueScheduledForRetry() throws Exception {
-    Delay<String> delay = Mockito.spy(ofSeconds(1));
+    Delay<String> delay = spy(ofSeconds(1));
     Retryer.ForReturnValue<String> forReturnValue = retryer.uponReturn("bad", asList(delay));
     when(action.run()).thenReturn("bad");
     CompletionStage<String> stage = forReturnValue.retry(action::run, executor);
@@ -183,7 +198,7 @@ public class RetryerTest {
   }
 
   @Test public void returnValueRetried() throws Exception {
-    Delay<String> delay = Mockito.spy(ofSeconds(1));
+    Delay<String> delay = spy(ofSeconds(1));
     Retryer.ForReturnValue<String> forReturnValue = retryer.uponReturn("bad", asList(delay));
     when(action.run()).thenReturn("bad").thenReturn("fixed");
     CompletionStage<String> stage = forReturnValue.retry(action::run, executor);
@@ -198,7 +213,7 @@ public class RetryerTest {
   }
 
   @Test public void returnValueRetriedToNoAvail() throws Exception {
-    Delay<String> delay = Mockito.spy(ofSeconds(1));
+    Delay<String> delay = spy(ofSeconds(1));
     Retryer.ForReturnValue<String> forReturnValue = retryer.uponReturn("bad", asList(delay, delay));
     when(action.run()).thenReturn("bad");
     CompletionStage<String> stage = forReturnValue.retry(action::run, executor);
@@ -237,7 +252,7 @@ public class RetryerTest {
   }
 
   @Test public void returnValueRetryBlockinglyWithZeroDelayIsOkayWithJdk() throws Exception {
-    Delay<String> delay = Mockito.spy(ofSeconds(0));
+    Delay<String> delay = spy(ofSeconds(0));
     Retryer.ForReturnValue<String> forReturnValue = retryer.uponReturn("bad", asList(delay));
     when(action.run()).thenReturn("bad").thenReturn("fixed");
     assertThat(forReturnValue.retryBlockingly(action::run)).isEqualTo("fixed");
@@ -253,7 +268,7 @@ public class RetryerTest {
       Retryer.ForReturnValue<String> forReturnValue = retryer.uponReturn("bad", asList(delay));
       when(action.run()).thenReturn("bad").thenReturn("fixed");
       assertThat(forReturnValue.retry(action::run, realExecutor).toCompletableFuture().get())
-          .isEqualTo("fixed");
+      .isEqualTo("fixed");
       verify(action, times(2)).run();
     } finally {
       realExecutor.shutdown();
@@ -263,11 +278,11 @@ public class RetryerTest {
   @Test public void returnValueRetryWithZeroDelayIsOkayWithJdk() throws Exception {
     ScheduledThreadPoolExecutor realExecutor = new ScheduledThreadPoolExecutor(1);
     try {
-      Delay<String> delay = Mockito.spy(ofSeconds(0));
+      Delay<String> delay = spy(ofSeconds(0));
       Retryer.ForReturnValue<String> forReturnValue = retryer.uponReturn("bad", asList(delay));
       when(action.run()).thenReturn("bad").thenReturn("fixed");
       assertThat(forReturnValue.retry(action::run, realExecutor).toCompletableFuture().get())
-          .isEqualTo("fixed");
+      .isEqualTo("fixed");
       verify(action, times(2)).run();
       verify(delay).beforeDelay("bad");
       verify(delay).afterDelay("bad");
@@ -280,8 +295,8 @@ public class RetryerTest {
     Retryer.ForReturnValue<String> forReturnValue = retryer.uponReturn(
         "bad", ofSeconds(1).exponentialBackoff(2, 1));
     when(action.runAsync())
-        .thenReturn(completedFuture("bad"))
-        .thenReturn(completedFuture("fixed"));
+    .thenReturn(completedFuture("bad"))
+    .thenReturn(completedFuture("fixed"));
     CompletionStage<String> stage = forReturnValue.retryAsync(action::runAsync, executor);
     assertThat(stage.toCompletableFuture().isDone()).isFalse();
     elapse(Duration.ofSeconds(1));
@@ -292,12 +307,12 @@ public class RetryerTest {
   }
 
   @Test public void returnValueAsyncFailedAfterRetry() throws Exception {
-    Delay<String> delay = Mockito.spy(ofSeconds(1));
+    Delay<String> delay = spy(ofSeconds(1));
     Retryer.ForReturnValue<String> forReturnValue =
         retryer.ifReturns((String s) -> s.startsWith("bad"), asList(delay));
     when(action.runAsync())
-        .thenReturn(completedFuture("bad"))
-        .thenReturn(completedFuture("bad2"));
+    .thenReturn(completedFuture("bad"))
+    .thenReturn(completedFuture("bad2"));
     CompletionStage<String> stage = forReturnValue.retryAsync(action::runAsync, executor);
     assertThat(stage.toCompletableFuture().isDone()).isFalse();
     elapse(Duration.ofSeconds(1));
@@ -333,7 +348,7 @@ public class RetryerTest {
 
   @Test public void errorPropagated() throws Exception {
     Error error = new Error("test");
-    Delay<Throwable> delay = Mockito.spy(ofSeconds(1));
+    Delay<Throwable> delay = spy(ofSeconds(1));
     upon(IOException.class, asList(delay));
     when(action.run()).thenThrow(error);
     assertException(Error.class, () -> retry(action::run)).isSameAs(error);
@@ -345,7 +360,7 @@ public class RetryerTest {
 
   @Test public void uncheckedExceptionPropagated() throws Exception {
     RuntimeException error = new RuntimeException("test");
-    Delay<Throwable> delay = Mockito.spy(ofSeconds(1));
+    Delay<Throwable> delay = spy(ofSeconds(1));
     upon(IOException.class, asList(delay));
     when(action.run()).thenThrow(error);
     assertException(RuntimeException.class, () -> retry(action::run)).isSameAs(error);
@@ -364,14 +379,14 @@ public class RetryerTest {
   }
 
   @Test public void exceptionFromBeforeDelayPropagated() throws Exception {
-    Delay<Throwable> delay = Mockito.spy(ofSeconds(1));
+    Delay<Throwable> delay = spy(ofSeconds(1));
     upon(IOException.class, asList(delay));
     IOException exception = new IOException();
     when(action.run()).thenThrow(exception);
     RuntimeException unexpected = new RuntimeException();
     Mockito.doThrow(unexpected).when(delay).beforeDelay(Matchers.<Throwable>any());
     assertException(RuntimeException.class, () -> retry(action::run))
-        .isSameAs(unexpected);
+    .isSameAs(unexpected);
     assertThat(asList(unexpected.getSuppressed())).containsExactly(exception);
     verify(action).run();
     verify(delay).beforeDelay(exception);
@@ -379,7 +394,7 @@ public class RetryerTest {
   }
 
   @Test public void exceptionFromAfterDelayResultsInExecutionException() throws Exception {
-    Delay<Throwable> delay = Mockito.spy(ofSeconds(1));
+    Delay<Throwable> delay = spy(ofSeconds(1));
     upon(IOException.class, asList(delay));
     IOException exception = new IOException();
     when(action.run()).thenThrow(exception);
@@ -398,7 +413,7 @@ public class RetryerTest {
   }
 
   @Test public void actionFailedAndScheduledForRetry() throws Exception {
-    Delay<Throwable> delay = Mockito.spy(ofSeconds(1));
+    Delay<Throwable> delay = spy(ofSeconds(1));
     upon(IOException.class, asList(delay));
     IOException exception = new IOException();
     when(action.run()).thenThrow(exception);
@@ -412,7 +427,7 @@ public class RetryerTest {
   }
 
   @Test public void actionFailedAndRetriedToSuccess() throws Exception {
-    Delay<Throwable> delay = Mockito.spy(ofSeconds(1));
+    Delay<Throwable> delay = spy(ofSeconds(1));
     upon(IOException.class, asList(delay));
     IOException exception = new IOException();
     when(action.run()).thenThrow(exception).thenReturn("fixed");
@@ -428,7 +443,7 @@ public class RetryerTest {
   }
 
   @Test public void errorRetried() throws Exception {
-    Delay<Throwable> delay = Mockito.spy(ofSeconds(1));
+    Delay<Throwable> delay = spy(ofSeconds(1));
     upon(MyError.class, asList(delay));
     MyError error = new MyError("test");
     when(action.run()).thenThrow(error).thenReturn("fixed");
@@ -444,7 +459,7 @@ public class RetryerTest {
   }
 
   @Test public void uncheckedExceptionRetried() throws Exception {
-    Delay<Throwable> delay = Mockito.spy(ofSeconds(1));
+    Delay<Throwable> delay = spy(ofSeconds(1));
     upon(RuntimeException.class, asList(delay));
     RuntimeException exception = new RuntimeException("test");
     when(action.run()).thenThrow(exception).thenReturn("fixed");
@@ -460,7 +475,7 @@ public class RetryerTest {
   }
 
   @Test public void actionFailedAfterRetry() throws Exception {
-    Delay<Throwable> delay = Mockito.spy(ofSeconds(1));
+    Delay<Throwable> delay = spy(ofSeconds(1));
     upon(IOException.class, asList(delay));
     IOException firstException = new IOException();
     IOException exception = new IOException("hopeless");
@@ -484,7 +499,7 @@ public class RetryerTest {
     IOException exception1 = new IOException();
     IOException exception = new IOException("hopeless");
     when(action.run())
-        .thenThrow(exception1).thenThrow(exception).thenThrow(exception).thenReturn("good");
+    .thenThrow(exception1).thenThrow(exception).thenThrow(exception).thenReturn("good");
     CompletionStage<String> stage = retry(action::run);
     assertThat(stage.toCompletableFuture().isDone()).isFalse();
     elapse(Duration.ofSeconds(2));
@@ -507,7 +522,7 @@ public class RetryerTest {
   }
 
   @Test public void retryBlockinglyWithZeroDelayIsOkayWithJdk() throws Exception {
-    Delay<Throwable> delay = Mockito.spy(ofSeconds(0));
+    Delay<Throwable> delay = spy(ofSeconds(0));
     upon(IOException.class, asList(delay));
     IOException exception = new IOException();
     when(action.run()).thenThrow(exception).thenReturn("fixed");
@@ -525,7 +540,7 @@ public class RetryerTest {
       IOException exception = new IOException();
       when(action.run()).thenThrow(exception).thenReturn("fixed");
       assertThat(retryer.retry(action::run, realExecutor).toCompletableFuture().get())
-          .isEqualTo("fixed");
+      .isEqualTo("fixed");
       verify(action, times(2)).run();
     } finally {
       realExecutor.shutdown();
@@ -535,12 +550,12 @@ public class RetryerTest {
   @Test public void retryWithZeroDelayIsOkayWithJdk() throws Exception {
     ScheduledThreadPoolExecutor realExecutor = new ScheduledThreadPoolExecutor(1);
     try {
-      Delay<Throwable> delay = Mockito.spy(ofSeconds(0));
+      Delay<Throwable> delay = spy(ofSeconds(0));
       upon(IOException.class, asList(delay));
       IOException exception = new IOException();
       when(action.run()).thenThrow(exception).thenReturn("fixed");
       assertThat(retryer.retry(action::run, realExecutor).toCompletableFuture().get())
-          .isEqualTo("fixed");
+      .isEqualTo("fixed");
       verify(action, times(2)).run();
       verify(delay).beforeDelay(exception);
       verify(delay).afterDelay(exception);
@@ -552,8 +567,8 @@ public class RetryerTest {
   @Test public void asyncExceptionRetriedToSuccess() throws Exception {
     upon(IOException.class, ofSeconds(1).exponentialBackoff(2, 1));
     when(action.runAsync())
-        .thenReturn(exceptionally(new IOException()))
-        .thenReturn(completedFuture("fixed"));
+    .thenReturn(exceptionally(new IOException()))
+    .thenReturn(completedFuture("fixed"));
     CompletionStage<String> stage = retryAsync(action::runAsync);
     assertThat(stage.toCompletableFuture().isDone()).isFalse();
     elapse(Duration.ofSeconds(1));
@@ -564,13 +579,13 @@ public class RetryerTest {
   }
 
   @Test public void asyncFailedAfterRetry() throws Exception {
-    Delay<Throwable> delay = Mockito.spy(ofSeconds(1));
+    Delay<Throwable> delay = spy(ofSeconds(1));
     upon(IOException.class, asList(delay));
     IOException firstException = new IOException();
     IOException exception = new IOException("hopeless");
     when(action.runAsync())
-        .thenReturn(exceptionally(firstException))
-        .thenReturn(exceptionally(exception));
+    .thenReturn(exceptionally(firstException))
+    .thenReturn(exceptionally(exception));
     CompletionStage<String> stage = retryAsync(action::runAsync);
     assertThat(stage.toCompletableFuture().isDone()).isFalse();
     elapse(Duration.ofSeconds(1));
@@ -583,7 +598,7 @@ public class RetryerTest {
   }
 
   @Test public void twoDifferentExceptionRulesRetriedToSuccess() throws Exception {
-    Delay<Throwable> delay = Mockito.spy(ofSeconds(1));
+    Delay<Throwable> delay = spy(ofSeconds(1));
     upon(IOException.class, asList(delay, delay));
     upon(MyError.class, asList(delay));
     IOException exception = new IOException();
@@ -603,7 +618,7 @@ public class RetryerTest {
   }
 
   @Test public void twoDifferentExceptionRulesRetriedAndFailed() throws Exception {
-    Delay<Throwable> delay = Mockito.spy(ofSeconds(1));
+    Delay<Throwable> delay = spy(ofSeconds(1));
     upon(IOException.class, asList(delay, delay));
     upon(MyError.class, asList(delay));
     IOException exception1 = new IOException();
@@ -611,7 +626,7 @@ public class RetryerTest {
     IOException exception3 = new IOException();
     MyError error4 = new MyError("test");
     when(action.run()).thenThrow(exception1).thenThrow(error2).thenThrow(exception3)
-        .thenThrow(error4);
+    .thenThrow(error4);
     CompletionStage<String> stage = retry(action::run);
     assertThat(stage.toCompletableFuture().isDone()).isFalse();
     elapse(4, Duration.ofSeconds(1));
@@ -633,14 +648,14 @@ public class RetryerTest {
   }
 
   @Test public void returnValueAndExceptionRetryToSuccess() throws Exception {
-    Delay<Throwable> exceptionDelay = Mockito.spy(ofSeconds(1));
-    Delay<String> returnValueDelay = Mockito.spy(ofSeconds(1));
+    Delay<Throwable> exceptionDelay = spy(ofSeconds(1));
+    Delay<String> returnValueDelay = spy(ofSeconds(1));
     Retryer.ForReturnValue<String> forReturnValue = retryer
         .upon(IOException.class, asList(exceptionDelay))
         .uponReturn("bad", asList(returnValueDelay, returnValueDelay));
     IOException exception = new IOException();
     when(action.run())
-        .thenReturn("bad").thenThrow(exception).thenReturn("bad").thenReturn("fixed");
+    .thenReturn("bad").thenThrow(exception).thenReturn("bad").thenReturn("fixed");
     CompletionStage<String> stage = forReturnValue.retry(action::run, executor);
     assertThat(stage.toCompletableFuture().isDone()).isFalse();
     elapse(4, Duration.ofSeconds(1));
@@ -655,15 +670,15 @@ public class RetryerTest {
   }
 
   @Test public void returnValueAndExceptionRetriedButStillReturnBad() throws Exception {
-    Delay<Throwable> exceptionDelay = Mockito.spy(ofSeconds(1));
-    Delay<String> returnValueDelay = Mockito.spy(ofSeconds(1));
+    Delay<Throwable> exceptionDelay = spy(ofSeconds(1));
+    Delay<String> returnValueDelay = spy(ofSeconds(1));
     Retryer.ForReturnValue<String> forReturnValue = retryer
         .upon(IOException.class, asList(exceptionDelay))
         .uponReturn("bad", asList(returnValueDelay, returnValueDelay));
     IOException exception = new IOException();
     when(action.run())
-        .thenReturn("bad").thenThrow(exception).thenReturn("bad").thenReturn("bad")
-        .thenReturn("fixed");
+    .thenReturn("bad").thenThrow(exception).thenReturn("bad").thenReturn("bad")
+    .thenReturn("fixed");
     CompletionStage<String> stage = forReturnValue.retry(action::run, executor);
     assertThat(stage.toCompletableFuture().isDone()).isFalse();
     elapse(4, Duration.ofSeconds(1));
@@ -678,16 +693,16 @@ public class RetryerTest {
   }
 
   @Test public void returnValueAndExceptionRetriedButStillThrows() throws Exception {
-    Delay<Throwable> exceptionDelay = Mockito.spy(ofSeconds(1));
-    Delay<String> returnValueDelay = Mockito.spy(ofSeconds(1));
+    Delay<Throwable> exceptionDelay = spy(ofSeconds(1));
+    Delay<String> returnValueDelay = spy(ofSeconds(1));
     Retryer.ForReturnValue<String> forReturnValue = retryer
         .upon(IOException.class, asList(exceptionDelay))
         .uponReturn("bad", asList(returnValueDelay, returnValueDelay));
     IOException exception1 = new IOException();
     IOException exception = new IOException();
     when(action.run())
-        .thenReturn("bad").thenThrow(exception1).thenReturn("bad").thenThrow(exception)
-        .thenReturn("fixed");
+    .thenReturn("bad").thenThrow(exception1).thenReturn("bad").thenThrow(exception)
+    .thenReturn("fixed");
     CompletionStage<String> stage = forReturnValue.retry(action::run, executor);
     assertThat(stage.toCompletableFuture().isDone()).isFalse();
     elapse(4, Duration.ofSeconds(1));
@@ -703,17 +718,17 @@ public class RetryerTest {
   }
 
   @Test public void returnValueAndExceptionAsyncRetryToSuccess() throws Exception {
-    Delay<Throwable> exceptionDelay = Mockito.spy(ofSeconds(1));
-    Delay<String> returnValueDelay = Mockito.spy(ofSeconds(1));
+    Delay<Throwable> exceptionDelay = spy(ofSeconds(1));
+    Delay<String> returnValueDelay = spy(ofSeconds(1));
     Retryer.ForReturnValue<String> forReturnValue = retryer
         .upon(IOException.class, asList(exceptionDelay))
         .uponReturn("bad", asList(returnValueDelay, returnValueDelay));
     IOException exception = new IOException();
     when(action.runAsync())
-        .thenReturn(completedFuture("bad"))
-        .thenReturn(exceptionally(exception))
-        .thenReturn(completedFuture("bad"))
-        .thenReturn(completedFuture("fixed"));
+    .thenReturn(completedFuture("bad"))
+    .thenReturn(exceptionally(exception))
+    .thenReturn(completedFuture("bad"))
+    .thenReturn(completedFuture("fixed"));
     CompletionStage<String> stage = forReturnValue.retryAsync(action::runAsync, executor);
     assertThat(stage.toCompletableFuture().isDone()).isFalse();
     elapse(4, Duration.ofSeconds(1));
@@ -728,18 +743,18 @@ public class RetryerTest {
   }
 
   @Test public void returnValueAndExceptionAsyncRetriedButStillReturnBad() throws Exception {
-    Delay<Throwable> exceptionDelay = Mockito.spy(ofSeconds(1));
-    Delay<String> returnValueDelay = Mockito.spy(ofSeconds(1));
+    Delay<Throwable> exceptionDelay = spy(ofSeconds(1));
+    Delay<String> returnValueDelay = spy(ofSeconds(1));
     Retryer.ForReturnValue<String> forReturnValue = retryer
         .upon(IOException.class, asList(exceptionDelay))
         .uponReturn("bad", asList(returnValueDelay, returnValueDelay));
     IOException exception = new IOException();
     when(action.runAsync())
-        .thenReturn(completedFuture("bad"))
-        .thenThrow(exception)
-        .thenReturn(completedFuture("bad"))
-        .thenReturn(completedFuture("bad"))
-        .thenReturn(completedFuture("fixed"));
+    .thenReturn(completedFuture("bad"))
+    .thenThrow(exception)
+    .thenReturn(completedFuture("bad"))
+    .thenReturn(completedFuture("bad"))
+    .thenReturn(completedFuture("fixed"));
     CompletionStage<String> stage = forReturnValue.retryAsync(action::runAsync, executor);
     assertThat(stage.toCompletableFuture().isDone()).isFalse();
     elapse(4, Duration.ofSeconds(1));
@@ -754,19 +769,19 @@ public class RetryerTest {
   }
 
   @Test public void returnValueAndExceptionAsyncRetriedButStillThrows() throws Exception {
-    Delay<Throwable> exceptionDelay = Mockito.spy(ofSeconds(1));
-    Delay<String> returnValueDelay = Mockito.spy(ofSeconds(1));
+    Delay<Throwable> exceptionDelay = spy(ofSeconds(1));
+    Delay<String> returnValueDelay = spy(ofSeconds(1));
     Retryer.ForReturnValue<String> forReturnValue = retryer
         .upon(IOException.class, asList(exceptionDelay))
         .uponReturn("bad", asList(returnValueDelay, returnValueDelay));
     IOException exception1 = new IOException();
     IOException exception = new IOException();
     when(action.runAsync())
-        .thenReturn(completedFuture("bad"))
-        .thenReturn(exceptionally(exception1))
-        .thenReturn(completedFuture("bad"))
-        .thenThrow(exception)
-        .thenReturn(completedFuture("fixed"));
+    .thenReturn(completedFuture("bad"))
+    .thenReturn(exceptionally(exception1))
+    .thenReturn(completedFuture("bad"))
+    .thenThrow(exception)
+    .thenReturn(completedFuture("fixed"));
     CompletionStage<String> stage = forReturnValue.retryAsync(action::runAsync, executor);
     assertThat(stage.toCompletableFuture().isDone()).isFalse();
     elapse(4, Duration.ofSeconds(1));
@@ -857,6 +872,7 @@ public class RetryerTest {
     assertThrows(
         NullPointerException.class, () -> ofDays(1).timed(asList(), null));
     assertThrows(NullPointerException.class, () -> Delay.of(null));
+    assertThrows(NullPointerException.class, () -> Delay.ofMillis(1).forEvents(null));
   }
 
   @Test public void testDelay_multiplied() {
@@ -869,11 +885,11 @@ public class RetryerTest {
 
   @Test public void testDelay_exponentialBackoff() {
     assertThat(ofDays(1).exponentialBackoff(2, 3))
-        .containsExactly(ofDays(1), ofDays(2), ofDays(4))
-        .inOrder();
+    .containsExactly(ofDays(1), ofDays(2), ofDays(4))
+    .inOrder();
     assertThat(ofDays(1).exponentialBackoff(1, 2))
-        .containsExactly(ofDays(1), ofDays(1))
-        .inOrder();
+    .containsExactly(ofDays(1), ofDays(1))
+    .inOrder();
     assertThat(ofDays(1).exponentialBackoff(1, 0)).isEmpty();
     assertThrows(IllegalArgumentException.class, () -> ofDays(1).exponentialBackoff(0, 1));
     assertThrows(IllegalArgumentException.class, () -> ofDays(1).exponentialBackoff(-1, 1));
@@ -887,8 +903,8 @@ public class RetryerTest {
     assertThat(ofDays(1).fibonacci(2)).containsExactly(ofDays(1), ofDays(1)).inOrder();
     assertThat(ofDays(1).fibonacci(3)).containsExactly(ofDays(1), ofDays(1), ofDays(2)).inOrder();
     assertThat(ofDays(1).fibonacci(5))
-        .containsExactly(ofDays(1), ofDays(1), ofDays(2), ofDays(3), ofDays(5))
-        .inOrder();
+    .containsExactly(ofDays(1), ofDays(1), ofDays(2), ofDays(3), ofDays(5))
+    .inOrder();
     assertThat(ofDays(1).fibonacci(500).get(499)).isEqualTo(Delay.ofMillis(Long.MAX_VALUE));
     assertThat(ofDays(1).fibonacci(0)).isEmpty();
     assertThrows(IllegalArgumentException.class, () -> ofDays(1).fibonacci(-1));
@@ -941,7 +957,7 @@ public class RetryerTest {
 
   @Test public void testDelay_of() {
     assertThat(Delay.ofMillis(Long.MAX_VALUE).duration())
-        .isEqualTo(Duration.ofMillis(Long.MAX_VALUE));
+    .isEqualTo(Duration.ofMillis(Long.MAX_VALUE));
     assertThat(Delay.ofMillis(0).duration()).isEqualTo(Duration.ofMillis(0));
     assertThat(Delay.ofMillis(1).duration()).isEqualTo(Duration.ofMillis(1));
     assertThat(ofDays(0).duration()).isEqualTo(Duration.ofDays(0));
@@ -953,6 +969,16 @@ public class RetryerTest {
     assertThrows(IllegalArgumentException.class, () -> Delay.ofMillis(-1));
     assertThrows(ArithmeticException.class, () -> Delay.ofMillis(Long.MIN_VALUE));
     assertThrows(IllegalArgumentException.class, () -> Delay.of(Duration.ofDays(-1)));
+  }
+
+  @Test public void testDelay_forEvents() {
+    Delay<String> delay = spy(new DelayForMock<String>(Duration.ofDays(1)));
+    Delay<Integer> mapped = delay.forEvents(Object::toString);
+    assertThat(mapped).isEqualTo(delay);
+    mapped.beforeDelay(123);
+    verify(delay).beforeDelay("123");
+    mapped.afterDelay(456);
+    verify(delay).afterDelay("456");
   }
 
   @Test public void testFakeScheduledExecutorService_taskScheduledButNotRunYet() {
@@ -991,7 +1017,7 @@ public class RetryerTest {
       long f = Math.round(Retryer.fib(i));
       assertThat(f).named("fibonacci(%s)", i).isLessThan(Long.MAX_VALUE);
       assertThat((double) f).named("fibonacci(%s)", i)
-          .isWithin(f / 1000).of(results.get(i - 2).doubleValue() + results.get(i - 1).doubleValue());
+      .isWithin(f / 1000).of(results.get(i - 2).doubleValue() + results.get(i - 1).doubleValue());
       results.add(f);
     }
   }
@@ -1088,7 +1114,7 @@ public class RetryerTest {
           .collect(toCollection(ArrayList::new));
       ready.forEach(s -> s.command.run());
     }
-  
+
     @Override public void execute(Runnable command) {
       schedule(command, 1, TimeUnit.MILLISECONDS);
     }

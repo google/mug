@@ -1,9 +1,25 @@
+/*****************************************************************************
+ * ------------------------------------------------------------------------- *
+ * Licensed under the Apache License, Version 2.0 (the "License");           *
+ * you may not use this file except in compliance with the License.          *
+ * You may obtain a copy of the License at                                   *
+ *                                                                           *
+ * http://www.apache.org/licenses/LICENSE-2.0                                *
+ *                                                                           *
+ * Unless required by applicable law or agreed to in writing, software       *
+ * distributed under the License is distributed on an "AS IS" BASIS,         *
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+ * See the License for the specific language governing permissions and       *
+ * limitations under the License.                                            *
+ *****************************************************************************/
 package org.mu.util;
 
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.util.function.Predicate;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -72,7 +88,7 @@ public class ExceptionPlanTest {
         .upon(Exception.class, asList("report"));
     MyError error = new MyError();
     assertSame(error, assertThrows(MyError.class, () -> plan.execute(error).get()));
-    
+
     ExceptionPlan.Execution<String> execution = plan.execute(new Exception("recoverable")).get();
     assertThat(execution.strategy()).isEqualTo("recover");
     execution = plan.execute(new Exception("bad")).get();
@@ -89,6 +105,28 @@ public class ExceptionPlanTest {
     assertThat(execution.strategy()).isEqualTo("recover");
     execution = plan.execute(new Exception("bad")).get();
     assertThat(execution.strategy()).isEqualTo("report");
+  }
+
+  @Test public void testNulls() {
+    Class<Throwable> nullType = null;
+    Predicate<Object> nullCondition = null;
+    assertThrows(NullPointerException.class, () -> new ExceptionPlan<>().upon(nullType, asList()));
+    assertThrows(
+        NullPointerException.class, () -> new ExceptionPlan<>().upon(Exception.class, null));
+    assertThrows(
+        NullPointerException.class,
+        () -> new ExceptionPlan<>().upon(nullType, x -> true, asList()));
+    assertThrows(
+        NullPointerException.class,
+        () -> new ExceptionPlan<>().upon(Exception.class, nullCondition, asList()));
+    assertThrows(
+        NullPointerException.class,
+        () -> new ExceptionPlan<>().upon(nullCondition, asList()));
+    assertThrows(
+        NullPointerException.class, () -> new ExceptionPlan<>().upon(x -> true, null));
+    assertThrows(
+        NullPointerException.class,
+        () -> new ExceptionPlan<>().upon(Exception.class, x -> true, null));
   }
 
   @SuppressWarnings("serial")
