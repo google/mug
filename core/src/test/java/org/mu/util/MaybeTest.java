@@ -1,3 +1,17 @@
+/*****************************************************************************
+ * ------------------------------------------------------------------------- *
+ * Licensed under the Apache License, Version 2.0 (the "License");           *
+ * you may not use this file except in compliance with the License.          *
+ * You may obtain a copy of the License at                                   *
+ *                                                                           *
+ * http://www.apache.org/licenses/LICENSE-2.0                                *
+ *                                                                           *
+ * Unless required by applicable law or agreed to in writing, software       *
+ * distributed under the License is distributed on an "AS IS" BASIS,         *
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+ * See the License for the specific language governing permissions and       *
+ * limitations under the License.                                            *
+ *****************************************************************************/
 package org.mu.util;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -175,33 +189,33 @@ public class MaybeTest {
 
   @Test public void testStream_success() throws MyException {
     assertStream(Stream.of("hello", "friend").map(Maybe.wrap(this::justReturn)))
-        .containsExactly("hello", "friend").inOrder();
+    .containsExactly("hello", "friend").inOrder();
   }
 
   @Test public void testStream_exception() {
-    Stream<Maybe<String, MyException>> stream = 
+    Stream<Maybe<String, MyException>> stream =
         Stream.of("hello", "friend").map(Maybe.wrap(this::raise));
     assertThrows(MyException.class, () -> Maybe.collect(stream));
   }
 
   @Test public void testStream_uncheckedExceptionNotCaptured() {
     Stream<String> stream = Stream.of("hello", "friend")
-          .map(Maybe.wrap(this::raiseUnchecked))
-          .flatMap(m -> m.catching(e -> {}));
+        .map(Maybe.wrap(this::raiseUnchecked))
+        .flatMap(m -> m.catching(e -> {}));
     assertThrows(RuntimeException.class, () -> stream.collect(toList()));
   }
 
   @Test public void testStream_swallowException() {
     assertThat(Stream.of("hello", "friend")
-            .map(Maybe.wrap(this::raise))
-            .flatMap(m -> m.catching(e -> {}))
-            .collect(toList()))
+        .map(Maybe.wrap(this::raise))
+        .flatMap(m -> m.catching(e -> {}))
+        .collect(toList()))
         .isEmpty();
   }
 
   @Test public void testStream_generateSuccess() {
     assertThat(Stream.generate(Maybe.wrap(() -> justReturn("good"))).findFirst().get())
-        .isEqualTo(Maybe.of("good"));
+    .isEqualTo(Maybe.of("good"));
   }
 
   @Test public void testStream_generateFailure() {
@@ -212,8 +226,8 @@ public class MaybeTest {
 
   @Test public void testFilterByValue_successValueFiltered() throws MyException {
     assertStream(Stream.of("hello", "friend")
-            .map(Maybe.wrap(this::justReturn))
-            .filter(Maybe.byValue("hello"::equals)))
+        .map(Maybe.wrap(this::justReturn))
+        .filter(Maybe.byValue("hello"::equals)))
         .containsExactly("hello");
   }
 
@@ -224,9 +238,9 @@ public class MaybeTest {
         .collect(toList());
     assertThat(maybes).hasSize(2);
     assertThat(assertThrows(MyException.class, () -> maybes.get(0).get()).getMessage())
-        .isEqualTo("hello");
+    .isEqualTo("hello");
     assertThat(assertThrows(MyException.class, () -> maybes.get(1).get()).getMessage())
-        .isEqualTo("friend");
+    .isEqualTo("friend");
   }
 
   @Test public void wrapFuture_futureIsSuccess() throws Exception {
@@ -339,19 +353,19 @@ public class MaybeTest {
 
   @Test public void wrapFuture_transparentToHandle() throws Exception {
     assertThat(naiveExceptionHandlingCode(exceptionalUserCode()).toCompletableFuture().get())
-        .isNull();
+    .isNull();
     assertThat(naiveExceptionHandlingCode(
         Maybe.catchException(MyUncheckedException.class, exceptionalUserCode()))
-            .toCompletableFuture().get())
+        .toCompletableFuture().get())
         .isNull();
   }
 
   @Test public void wrapFuture_transparentToExceptionally() throws Exception {
     assertThat(naiveExceptionallyCode(exceptionalUserCode()).toCompletableFuture().get())
-        .isNull();
+    .isNull();
     assertThat(naiveExceptionallyCode(
         Maybe.catchException(MyUncheckedException.class, exceptionalUserCode()))
-            .toCompletableFuture().get())
+        .toCompletableFuture().get())
         .isNull();
   }
 
@@ -386,7 +400,7 @@ public class MaybeTest {
       throw new CompletionException(e);
     });
     assertCauseOf(ExecutionException.class, stage)
-        .isSameAs(exception);
+    .isSameAs(exception);
   }
 
   @Test public void testCompletionStage_exceptionally_wraps() throws Exception {
@@ -397,7 +411,7 @@ public class MaybeTest {
       throw new CompletionException(e);
     });
     assertCauseOf(ExecutionException.class, stage)
-        .isSameAs(exception);
+    .isSameAs(exception);
   }
 
   @Test public void wrapFuture_futureBecomesUnexpectedFailure() throws Exception {
@@ -414,7 +428,7 @@ public class MaybeTest {
   @Test public void testExecutionExceptionally() {
     RuntimeException exception = new RuntimeException("test");
     assertCauseOf(ExecutionException.class, executionExceptionally(exception))
-        .isSameAs(exception);
+    .isSameAs(exception);
   }
 
   private static <T> CompletionStage<T> exceptionally(Throwable e) {
