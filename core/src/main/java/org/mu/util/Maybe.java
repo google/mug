@@ -316,8 +316,8 @@ public abstract class Maybe<T, E extends Throwable> {
           future.complete(Maybe.of(v));
         } else {
           unwrapFutureException(exceptionType, e)
-          .map(cause -> future.complete(Maybe.except(cause)))
-          .orElseGet(() -> future.completeExceptionally(e));
+              .map(cause -> future.complete(Maybe.except(cause)))
+              .orElseGet(() -> future.completeExceptionally(e));
         }
       } catch (Throwable x) {  // Just in case there was a bug. Don't hang the thread.
         if (x != e) x.addSuppressed(e);

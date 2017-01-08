@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
@@ -288,6 +289,22 @@ public class MaybeTest {
     assertCauseOf(ExecutionException.class, stage).isSameAs(exception);
   }
 
+  @Test public void wrapFuture_futureIsCancelledWithInterruption() throws Exception {
+    CompletionStage<Maybe<String, MyException>> stage =
+        Maybe.catchException(MyException.class, cancelled(true));
+    assertThat(stage.toCompletableFuture().isDone()).isTrue();
+    assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isTrue();
+    assertCauseOf(CancellationException.class, stage);
+  }
+
+  @Test public void wrapFuture_futureIsCancelledWithNoInterruption() throws Exception {
+    CompletionStage<Maybe<String, MyException>> stage =
+        Maybe.catchException(MyException.class, cancelled(false));
+    assertThat(stage.toCompletableFuture().isDone()).isTrue();
+    assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isTrue();
+    assertCauseOf(CancellationException.class, stage);
+  }
+
   @Test public void wrapFuture_futureIsUnexpectedCheckedException_idempotence() throws Exception {
     MyException exception = new MyException("test");
     CompletionStage<?> stage =
@@ -434,6 +451,12 @@ public class MaybeTest {
   private static <T> CompletionStage<T> exceptionally(Throwable e) {
     CompletableFuture<T> future = new CompletableFuture<>();
     future.completeExceptionally(e);
+    return future;
+  }
+
+  private static <T> CompletionStage<T> cancelled(boolean mayInterruptIfRunning) {
+    CompletableFuture<T> future = new CompletableFuture<>();
+    future.cancel(mayInterruptIfRunning);
     return future;
   }
 

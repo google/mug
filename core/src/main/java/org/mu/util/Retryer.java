@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
@@ -300,6 +301,21 @@ public final class Retryer {
       return returnValue;
     }
 
+    /** Lets cancellation from {@code from} to propagate to {@code to}. */
+    private static <T> CompletionStage<T> propagateCancellation(
+        CompletionStage<T> outer, CompletionStage<?> inner) {
+      outer.exceptionally(e -> {
+        if (e instanceof CancellationException) {
+          // Even if this isn't supported, the worst is that we don't propagate cancellation.
+          // But that's fine because without a Future we cannot propagate anyway.
+          CompletableFuture<?> innerFuture = inner.toCompletableFuture();
+          if (!innerFuture.isDone()) innerFuture.completeExceptionally(e);
+        }
+        return null;
+      });
+      return outer;
+    }
+
     /**
      * This would have been static type safe if exception classes are allowed to be parameterized.
      * Failing that, we have to resort to old time Object.
@@ -329,8 +345,10 @@ public final class Retryer {
       static <T, E extends Throwable> CompletionStage<T> unwrapAsync(
           CheckedSupplier<? extends CompletionStage<T>, E> supplier) throws E {
         CompletionStage<T> stage = unwrap(supplier);
-        return Maybe.catchException(ThrownReturn.class, stage)
+        CompletionStage<T> outer = Maybe.catchException(ThrownReturn.class, stage)
             .thenApply(maybe -> maybe.<RuntimeException>orElse(ThrownReturn::unsafeGet));
+        propagateCancellation(outer, stage);
+        return outer;
       }
 
       /** Exception cannot be parameterized. But we essentially use it as ThrownReturn<T>. */
@@ -613,6 +631,7 @@ public final class Retryer {
       CheckedSupplier<? extends CompletionStage<T>, ?> supplier,
       ScheduledExecutorService retryExecutor,
       CompletableFuture<T> result) {
+    if (result.isDone()) return;  // like, canceled
     try {
       CompletionStage<T> stage = supplier.get();
       stage.handle((v, e) -> {
@@ -643,13 +662,14 @@ public final class Retryer {
   private <T> void scheduleRetry(
       Throwable e, ScheduledExecutorService retryExecutor,
       CheckedSupplier<? extends CompletionStage<T>, ?> supplier, CompletableFuture<T> result) {
-    Maybe<ExceptionPlan.Execution<Delay<?>>, ?> maybeRetry = plan.execute(e);
     try {
+      Maybe<ExceptionPlan.Execution<Delay<?>>, ?> maybeRetry = plan.execute(e);
       maybeRetry.ifPresent(execution -> {
         result.exceptionally(x -> {
           addSuppressedTo(x, e);
           return null;
         });
+        if (result.isDone()) return;  // like, canceled
         @SuppressWarnings("unchecked")  // delay came from upon(), which enforces <? super E>.
         Delay<Throwable> delay = (Delay<Throwable>) execution.strategy();
         Retryer nextRound = new Retryer(execution.remainingExceptionPlan());
