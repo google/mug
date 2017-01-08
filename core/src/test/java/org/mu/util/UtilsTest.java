@@ -22,10 +22,19 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.IOException;
 import java.util.Optional;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.mockito.Mockito;
+
+import com.google.common.truth.ThrowableSubject;
 
 public class UtilsTest {
 
@@ -82,6 +91,185 @@ public class UtilsTest {
 
   @Test public void testTyped_doesNotPassCondition() {
     assertThat(Utils.typed(String.class, x -> true).test(1)).isFalse();
+  }
+
+  @Test public void testIfCancelled_pending() {
+    AtomicReference<CancellationException> cancelled = new AtomicReference<>();
+    CompletableFuture<String> future = new CompletableFuture<>();
+    Utils.ifCancelled(future, cancelled::set);
+    assertThat(cancelled.get()).isNull();
+  }
+
+  @Test public void testIfCancelled_completed() {
+    AtomicReference<CancellationException> cancelled = new AtomicReference<>();
+    CompletableFuture<String> future = new CompletableFuture<>();
+    future.complete("good");
+    Utils.ifCancelled(future, cancelled::set);
+    assertThat(cancelled.get()).isNull();
+  }
+
+  @Test public void testIfCancelled_exception() {
+    AtomicReference<CancellationException> cancelled = new AtomicReference<>();
+    CompletableFuture<String> future = new CompletableFuture<>();
+    future.completeExceptionally(new RuntimeException());
+    Utils.ifCancelled(future, cancelled::set);
+    assertThat(cancelled.get()).isNull();
+  }
+
+  @Test public void testIfCancelled_cancellationException() {
+    AtomicReference<CancellationException> cancelled = new AtomicReference<>();
+    CompletableFuture<String> future = new CompletableFuture<>();
+    CancellationException exception = new CancellationException();
+    future.completeExceptionally(exception);
+    Utils.ifCancelled(future, cancelled::set);
+    assertThat(cancelled.get()).isSameAs(exception);
+  }
+
+  @Test public void testIfCancelled_cancelledWithInterruption() {
+    AtomicReference<CancellationException> cancelled = new AtomicReference<>();
+    CompletableFuture<String> future = new CompletableFuture<>();
+    future.cancel(true);
+    Utils.ifCancelled(future, cancelled::set);
+    assertThat(cancelled.get()).isInstanceOf(CancellationException.class);
+  }
+
+  @Test public void testIfCancelled_cancelledWithoutInterruption() {
+    AtomicReference<CancellationException> cancelled = new AtomicReference<>();
+    CompletableFuture<String> future = new CompletableFuture<>();
+    future.cancel(false);
+    Utils.ifCancelled(future, cancelled::set);
+    assertThat(cancelled.get()).isInstanceOf(CancellationException.class);
+  }
+
+  @Test public void testIfCancelled_callbackExceptionIgnored() {
+    CompletableFuture<String> future = new CompletableFuture<>();
+    future.cancel(false);
+    Utils.ifCancelled(future, e -> {throw new NullPointerException();});
+    assertThat(future.isCancelled()).isTrue();
+  }
+
+  @Test public void testPropagateCancellation_bothPending() {
+    CompletableFuture<String> outer = new CompletableFuture<>();
+    CompletableFuture<String> inner = new CompletableFuture<>();
+    assertThat(Utils.propagateCancellation(outer, inner)).isSameAs(outer);
+    assertThat(outer.isCancelled()).isFalse();
+    assertThat(inner.isCancelled()).isFalse();
+    assertThat(outer.isDone()).isFalse();
+    assertThat(inner.isDone()).isFalse();
+  }
+
+  @Test public void testPropagateCancellation_cancellationWithInterruptionPropagated() {
+    CompletableFuture<String> outer = new CompletableFuture<>();
+    CompletableFuture<String> inner = new CompletableFuture<>();
+    assertThat(Utils.propagateCancellation(outer, inner)).isSameAs(outer);
+    outer.cancel(true);
+    assertThat(outer.isCancelled()).isTrue();
+    assertThat(inner.isCancelled()).isTrue();
+    assertThat(outer.isDone()).isTrue();
+    assertThat(inner.isDone()).isTrue();
+    assertThrows(CancellationException.class, inner::get);
+  }
+
+  @Test public void testPropagateCancellation_cancellationWithoutInterruptionPropagated() {
+    CompletableFuture<String> outer = new CompletableFuture<>();
+    CompletableFuture<String> inner = new CompletableFuture<>();
+    assertThat(Utils.propagateCancellation(outer, inner)).isSameAs(outer);
+    outer.cancel(false);
+    assertThat(outer.isCancelled()).isTrue();
+    assertThat(inner.isCancelled()).isTrue();
+    assertThat(outer.isDone()).isTrue();
+    assertThat(inner.isDone()).isTrue();
+    assertThrows(CancellationException.class, inner::get);
+  }
+
+  @Test public void testPropagateCancellation_completedResultNotPropagated() {
+    CompletableFuture<String> outer = new CompletableFuture<>();
+    CompletableFuture<String> inner = new CompletableFuture<>();
+    assertThat(Utils.propagateCancellation(outer, inner)).isSameAs(outer);
+    outer.complete("ok");
+    assertThat(outer.isCancelled()).isFalse();
+    assertThat(inner.isCancelled()).isFalse();
+    assertThat(outer.isDone()).isTrue();
+    assertThat(inner.isDone()).isFalse();
+  }
+
+  @Test public void testPropagateCancellation_exceptionalResultNotPropagated() {
+    CompletableFuture<String> outer = new CompletableFuture<>();
+    CompletableFuture<String> inner = new CompletableFuture<>();
+    assertThat(Utils.propagateCancellation(outer, inner)).isSameAs(outer);
+    outer.completeExceptionally(new IllegalArgumentException());
+    assertThat(outer.isCancelled()).isFalse();
+    assertThat(inner.isCancelled()).isFalse();
+    assertThat(outer.isCompletedExceptionally()).isTrue();
+    assertThat(inner.isCompletedExceptionally()).isFalse();
+    assertThat(outer.isDone()).isTrue();
+    assertThat(inner.isDone()).isFalse();
+  }
+
+  @Test public void testPropagateCancellation_innerAlreadyCancelled() {
+    CompletableFuture<String> outer = new CompletableFuture<>();
+    CompletableFuture<String> inner = new CompletableFuture<>();
+    assertThat(Utils.propagateCancellation(outer, inner)).isSameAs(outer);
+    inner.cancel(false);
+    outer.cancel(false);
+    assertThat(outer.isCancelled()).isTrue();
+    assertThat(inner.isCancelled()).isTrue();
+    assertThat(outer.isCompletedExceptionally()).isTrue();
+    assertThat(inner.isCompletedExceptionally()).isTrue();
+    assertThat(outer.isDone()).isTrue();
+    assertThat(inner.isDone()).isTrue();
+  }
+
+  @Test public void testPropagateCancellation_innerAlreadyCompleted() throws Exception {
+    CompletableFuture<String> outer = new CompletableFuture<>();
+    CompletableFuture<String> inner = new CompletableFuture<>();
+    assertThat(Utils.propagateCancellation(outer, inner)).isSameAs(outer);
+    inner.complete("inner");
+    outer.cancel(false);
+    assertThat(outer.isCancelled()).isTrue();
+    assertThat(inner.isCancelled()).isFalse();
+    assertThat(outer.isCompletedExceptionally()).isTrue();
+    assertThat(inner.isCompletedExceptionally()).isFalse();
+    assertThat(outer.isDone()).isTrue();
+    assertThat(inner.isDone()).isTrue();
+    assertThat(inner.get()).isEqualTo("inner");
+  }
+
+  @Test public void testPropagateCancellation_innerAlreadyFailed() {
+    CompletableFuture<String> outer = new CompletableFuture<>();
+    CompletableFuture<String> inner = new CompletableFuture<>();
+    assertThat(Utils.propagateCancellation(outer, inner)).isSameAs(outer);
+    IOException exception = new IOException();
+    inner.completeExceptionally(exception);
+    outer.cancel(false);
+    assertThat(outer.isCancelled()).isTrue();
+    assertThat(inner.isCancelled()).isFalse();
+    assertThat(outer.isCompletedExceptionally()).isTrue();
+    assertThat(inner.isCompletedExceptionally()).isTrue();
+    assertThat(outer.isDone()).isTrue();
+    assertThat(inner.isDone()).isTrue();
+    assertCauseOf(ExecutionException.class, inner).isSameAs(exception);
+  }
+
+  @Test public void testPropagateCancellation_innerDoesNotSupportToCompletableFuture() {
+    CompletableFuture<String> outer = new CompletableFuture<>();
+    CompletableFuture<String> inner = Mockito.spy(new CompletableFuture<>());
+    assertThat(Utils.propagateCancellation(outer, inner)).isSameAs(outer);
+    Mockito.doThrow(new UnsupportedOperationException()).when(inner).toCompletableFuture();
+    outer.cancel(false);
+    assertThat(outer.isCancelled()).isTrue();
+    assertThat(inner.isCancelled()).isFalse();
+    assertThat(outer.isCompletedExceptionally()).isTrue();
+    assertThat(inner.isCompletedExceptionally()).isFalse();
+    assertThat(outer.isDone()).isTrue();
+    assertThat(inner.isDone()).isFalse();
+    assertThrows(CancellationException.class, outer::get);
+  }
+
+  private static ThrowableSubject assertCauseOf(
+      Class<? extends Throwable> exceptionType, CompletionStage<?> stage) {
+    return assertThat(
+        Assertions.assertThrows(exceptionType, stage.toCompletableFuture()::get).getCause());
   }
 
   private interface StringCondition {
