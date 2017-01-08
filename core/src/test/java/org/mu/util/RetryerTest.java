@@ -27,6 +27,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -74,6 +75,7 @@ public class RetryerTest {
   @Spy private FakeClock clock;
   @Spy private FakeScheduledExecutorService executor;
   @Mock private Action action;
+  private final List<ScheduledFuture<?>> scheduledFutures = new ArrayList<>();
   private Retryer retryer = new Retryer();
 
   @Before public void setUpMocks() {
@@ -222,14 +224,18 @@ public class RetryerTest {
     assertThat(future.isDone()).isFalse();
     future.cancel(true);
     assertThat(future.isDone()).isTrue();
-    elapse(Duration.ofSeconds(1));
+    assertThat(scheduledFutures).hasSize(1);
+    verify(scheduledFutures.get(0)).cancel(true);
     assertThat(future.isDone()).isTrue();
     CancellationException cancelled = assertThrows(CancellationException.class, future::get);
     assertThat(cancelled.getSuppressed()).isEmpty();
     assertThat(future.isCompletedExceptionally()).isTrue();
     verify(action).run();
     verify(delay).beforeDelay("bad");
-    verify(delay).afterDelay("bad");
+
+    // Cancelled so no more retry.
+    elapse(Duration.ofSeconds(100));
+    verifyNoMoreInteractions(action);
   }
 
   @Test public void returnValueRetried() throws Exception {
@@ -477,6 +483,28 @@ public class RetryerTest {
     verify(delay, never()).afterDelay(Matchers.<Throwable>any());
   }
 
+  @Test public void actionNotScheduledForRetryDueToCancellation() throws Exception {
+    Delay<Throwable> delay = spy(ofSeconds(1));
+    upon(IOException.class, asList(delay));
+    CompletableFuture<String> result = new CompletableFuture<>();
+    when(action.runAsync()).thenReturn(result);
+    CompletionStage<String> stage = retryAsync(action::runAsync);
+    assertThat(stage.toCompletableFuture().isDone()).isFalse();
+    stage.toCompletableFuture().cancel(false);
+    IOException exception = new IOException();
+    result.completeExceptionally(exception);
+    assertThat(stage.toCompletableFuture().isDone()).isTrue();
+    assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isTrue();
+    assertThat(stage.toCompletableFuture().isCancelled()).isTrue();
+    CancellationException cancelled =
+        assertThrows(CancellationException.class, stage.toCompletableFuture()::get);
+    assertThat(asList(cancelled.getSuppressed())).containsExactly(exception);
+    verify(action).runAsync();
+    verify(executor, never()).schedule(any(Runnable.class), any(long.class), any(TimeUnit.class));
+    verify(delay, never()).beforeDelay(exception);
+    verify(delay, never()).afterDelay(exception);
+  }
+
   @Test public void actionRetriedButCancelled() throws Exception {
     Delay<Throwable> delay = spy(ofSeconds(1));
     upon(IOException.class, asList(delay));
@@ -485,7 +513,8 @@ public class RetryerTest {
     CompletionStage<String> stage = retry(action::run);
     assertThat(stage.toCompletableFuture().isDone()).isFalse();
     stage.toCompletableFuture().cancel(false);
-    elapse(Duration.ofSeconds(1));
+    assertThat(scheduledFutures).hasSize(1);
+    verify(scheduledFutures.get(0)).cancel(true);
     assertThat(stage.toCompletableFuture().isDone()).isTrue();
     assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isTrue();
     assertThat(stage.toCompletableFuture().isCancelled()).isTrue();
@@ -494,7 +523,10 @@ public class RetryerTest {
     assertThat(asList(cancelled.getSuppressed())).containsExactly(exception);
     verify(action).run();
     verify(delay).beforeDelay(exception);
-    verify(delay).afterDelay(exception);
+
+    // Cancelled so no more retry.
+    elapse(Duration.ofSeconds(100));
+    verifyNoMoreInteractions(action);
   }
 
   @Test public void actionFailedAndRetriedToSuccess() throws Exception {
@@ -1070,8 +1102,8 @@ public class RetryerTest {
 
   @Test public void testFakeScheduledExecutorService_taskScheduleAnotherTask() {
     Runnable runnable = mock(Runnable.class);
-    executor.schedule(
-        () -> executor.schedule(runnable, 3, TimeUnit.MILLISECONDS), 2, TimeUnit.MILLISECONDS);
+    Runnable scheduled = () -> executor.schedule(runnable, 3, TimeUnit.MILLISECONDS);
+    executor.schedule(scheduled, 2, TimeUnit.MILLISECONDS);
     elapse(Duration.ofMillis(2));
     elapse(Duration.ofMillis(3));
     verify(runnable).run();
@@ -1194,19 +1226,20 @@ public class RetryerTest {
         Runnable command, long delay, TimeUnit unit) {
       assertThat(unit).isEqualTo(TimeUnit.MILLISECONDS);
       schedules.add(new Schedule(clock.instant().plus(delay, ChronoUnit.MILLIS), command));
-      return null;  // Retryer doesn't use the return.
+      return addScheduledFuture();
     }
 
+    private <T> ScheduledFuture<T> addScheduledFuture() {
+      @SuppressWarnings("unchecked")  // mock is safe.
+      ScheduledFuture<T> scheduled = Mockito.mock(ScheduledFuture.class);
+      scheduledFutures.add(scheduled);
+      return scheduled;
+    }
+
+    @Deprecated  // Should not accidentally call this one since we don't use it.
     @Override public <V> ScheduledFuture<V> schedule(
         Callable<V> callable, long delay, TimeUnit unit) {
-      schedule(() -> {
-        try {
-          callable.call();
-        } catch (Exception e) {
-          throw new RuntimeException(e);
-        }
-      }, delay, unit);
-      return null;
+      throw new UnsupportedOperationException();
     }
   }
 

@@ -19,6 +19,10 @@ import static java.util.Objects.requireNonNull;
 import java.util.AbstractList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -61,5 +65,25 @@ final class Utils {
     } else {
       return e;
     }
+  }
+
+  static CompletionStage<?> ifCancelled(
+      CompletionStage<?> stage, Consumer<? super CancellationException> action) {
+    return stage.exceptionally(e -> {
+      cast(e, CancellationException.class).ifPresent(action);
+      return null;
+    });
+  }
+
+  /** Lets cancellation from {@code from} to propagate to {@code to}. */
+  static <T> CompletionStage<T> propagateCancellation(
+      CompletionStage<T> outer, CompletionStage<?> inner) {
+    ifCancelled(outer, e -> {
+      // Even if this isn't supported, the worst is that we don't propagate cancellation.
+      // But that's fine because without a Future we cannot propagate anyway.
+      CompletableFuture<?> innerFuture = inner.toCompletableFuture();
+      if (!innerFuture.isDone()) innerFuture.completeExceptionally(e);
+    });
+    return outer;
   }
 }

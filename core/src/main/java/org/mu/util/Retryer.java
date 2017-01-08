@@ -15,7 +15,9 @@
 package org.mu.util;
 
 import static java.util.Objects.requireNonNull;
+import static org.mu.util.Utils.ifCancelled;
 import static org.mu.util.Utils.mapList;
+import static org.mu.util.Utils.propagateCancellation;
 import static org.mu.util.Utils.propagateIfUnchecked;
 
 import java.time.Clock;
@@ -26,12 +28,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -301,21 +303,6 @@ public final class Retryer {
       return returnValue;
     }
 
-    /** Lets cancellation from {@code from} to propagate to {@code to}. */
-    private static <T> CompletionStage<T> propagateCancellation(
-        CompletionStage<T> outer, CompletionStage<?> inner) {
-      outer.exceptionally(e -> {
-        if (e instanceof CancellationException) {
-          // Even if this isn't supported, the worst is that we don't propagate cancellation.
-          // But that's fine because without a Future we cannot propagate anyway.
-          CompletableFuture<?> innerFuture = inner.toCompletableFuture();
-          if (!innerFuture.isDone()) innerFuture.completeExceptionally(e);
-        }
-        return null;
-      });
-      return outer;
-    }
-
     /**
      * This would have been static type safe if exception classes are allowed to be parameterized.
      * Failing that, we have to resort to old time Object.
@@ -566,15 +553,17 @@ public final class Retryer {
     }
 
     final void asynchronously(
-        E event, Failable continuation, Consumer<? super Throwable> exceptionHandler,
+        E event, Failable continuation, CompletableFuture<?> future,
         ScheduledExecutorService executor) {
       beforeDelay(event);
       Failable afterDelay = () -> {
         afterDelay(event);
         continuation.run();
       };
-      executor.schedule(
-          () -> afterDelay.run(exceptionHandler), duration().toMillis(), TimeUnit.MILLISECONDS);
+      ScheduledFuture<?> scheduled = executor.schedule(
+          () -> afterDelay.run(future::completeExceptionally),
+          duration().toMillis(), TimeUnit.MILLISECONDS);
+      ifCancelled(future, canceled -> {scheduled.cancel(true);});
     }
 
     /**
@@ -630,30 +619,30 @@ public final class Retryer {
   private <T> void invokeWithRetry(
       CheckedSupplier<? extends CompletionStage<T>, ?> supplier,
       ScheduledExecutorService retryExecutor,
-      CompletableFuture<T> result) {
-    if (result.isDone()) return;  // like, canceled
+      CompletableFuture<T> future) {
+    if (future.isDone()) return;  // like, canceled before retrying.
     try {
       CompletionStage<T> stage = supplier.get();
       stage.handle((v, e) -> {
-        if (e == null) result.complete(v);
-        else scheduleRetry(getInterestedException(e), retryExecutor, supplier, result);
+        if (e == null) future.complete(v);
+        else scheduleRetry(getInterestedException(e), retryExecutor, supplier, future);
         return null;
       });
     } catch (RuntimeException e) {
-      retryIfCovered(e, retryExecutor, supplier, result);
+      retryIfCovered(e, retryExecutor, supplier, future);
     } catch (Error e) {
-      retryIfCovered(e, retryExecutor, supplier, result);
+      retryIfCovered(e, retryExecutor, supplier, future);
     } catch (Throwable e) {
-      scheduleRetry(e, retryExecutor, supplier, result);
+      scheduleRetry(e, retryExecutor, supplier, future);
     }
   }
 
   private <E extends Throwable, T> void retryIfCovered(
       E e, ScheduledExecutorService retryExecutor,
-      CheckedSupplier<? extends CompletionStage<T>, ?> supplier, CompletableFuture<T> result)
+      CheckedSupplier<? extends CompletionStage<T>, ?> supplier, CompletableFuture<T> future)
           throws E {
     if (plan.covers(e)) {
-      scheduleRetry(e, retryExecutor, supplier, result);
+      scheduleRetry(e, retryExecutor, supplier, future);
     } else {
       throw e;
     }
@@ -661,22 +650,22 @@ public final class Retryer {
 
   private <T> void scheduleRetry(
       Throwable e, ScheduledExecutorService retryExecutor,
-      CheckedSupplier<? extends CompletionStage<T>, ?> supplier, CompletableFuture<T> result) {
+      CheckedSupplier<? extends CompletionStage<T>, ?> supplier, CompletableFuture<T> future) {
     try {
       Maybe<ExceptionPlan.Execution<Delay<?>>, ?> maybeRetry = plan.execute(e);
       maybeRetry.ifPresent(execution -> {
-        result.exceptionally(x -> {
+        future.exceptionally(x -> {
           addSuppressedTo(x, e);
           return null;
         });
-        if (result.isDone()) return;  // like, canceled
+        if (future.isDone()) return;  // like, canceled immediately before scheduling.
         @SuppressWarnings("unchecked")  // delay came from upon(), which enforces <? super E>.
         Delay<Throwable> delay = (Delay<Throwable>) execution.strategy();
         Retryer nextRound = new Retryer(execution.remainingExceptionPlan());
-        Failable retry = () -> nextRound.invokeWithRetry(supplier, retryExecutor, result);
-        delay.asynchronously(e, retry, result::completeExceptionally, retryExecutor);
+        Failable retry = () -> nextRound.invokeWithRetry(supplier, retryExecutor, future);
+        delay.asynchronously(e, retry, future, retryExecutor);
       });
-      maybeRetry.catching(result::completeExceptionally);
+      maybeRetry.catching(future::completeExceptionally);
     } catch (Throwable unexpected) {
       addSuppressedTo(unexpected, e);
       throw unexpected;
