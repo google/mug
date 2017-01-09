@@ -193,7 +193,7 @@ public class MaybeTest {
 
   @Test public void testStream_success() throws MyException {
     assertStream(Stream.of("hello", "friend").map(Maybe.wrap(this::justReturn)))
-    .containsExactly("hello", "friend").inOrder();
+        .containsExactly("hello", "friend").inOrder();
   }
 
   @Test public void testStream_exception() {
@@ -219,7 +219,7 @@ public class MaybeTest {
 
   @Test public void testStream_generateSuccess() {
     assertThat(Stream.generate(Maybe.wrap(() -> justReturn("good"))).findFirst().get())
-    .isEqualTo(Maybe.of("good"));
+        .isEqualTo(Maybe.of("good"));
   }
 
   @Test public void testStream_generateFailure() {
@@ -242,9 +242,9 @@ public class MaybeTest {
         .collect(toList());
     assertThat(maybes).hasSize(2);
     assertThat(assertThrows(MyException.class, () -> maybes.get(0).get()).getMessage())
-    .isEqualTo("hello");
+        .isEqualTo("hello");
     assertThat(assertThrows(MyException.class, () -> maybes.get(1).get()).getMessage())
-    .isEqualTo("friend");
+        .isEqualTo("friend");
   }
 
   @Test public void wrapFuture_futureIsSuccess() throws Exception {
@@ -392,7 +392,7 @@ public class MaybeTest {
       throw new CompletionException(e);
     });
     assertCauseOf(ExecutionException.class, stage)
-    .isSameAs(exception);
+        .isSameAs(exception);
   }
 
   @Test public void testCompletionStage_exceptionally_wraps() throws Exception {
@@ -403,7 +403,7 @@ public class MaybeTest {
       throw new CompletionException(e);
     });
     assertCauseOf(ExecutionException.class, stage)
-    .isSameAs(exception);
+        .isSameAs(exception);
   }
 
   @Test public void wrapFuture_futureBecomesUnexpectedFailure() throws Exception {
@@ -418,7 +418,7 @@ public class MaybeTest {
   @Test public void testExecutionExceptionally() {
     RuntimeException exception = new RuntimeException("test");
     assertCauseOf(ExecutionException.class, executionExceptionally(exception))
-    .isSameAs(exception);
+        .isSameAs(exception);
   }
 
   private static <T> CompletionStage<T> exceptionally(Throwable e) {
