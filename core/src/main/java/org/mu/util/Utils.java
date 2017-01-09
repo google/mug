@@ -20,7 +20,6 @@ import java.util.AbstractList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CancellationException;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 import java.util.function.Function;

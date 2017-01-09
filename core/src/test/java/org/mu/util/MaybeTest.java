@@ -19,6 +19,9 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mu.util.FutureAssertions.assertCauseOf;
+import static org.mu.util.FutureAssertions.assertCompleted;
+import static org.mu.util.FutureAssertions.assertPending;
 
 import java.io.IOException;
 import java.util.List;
@@ -247,27 +250,21 @@ public class MaybeTest {
   @Test public void wrapFuture_futureIsSuccess() throws Exception {
     CompletionStage<Maybe<String, Exception>> stage =
         Maybe.catchException(Exception.class, completedFuture("good"));
-    assertThat(stage.toCompletableFuture().isDone()).isTrue();
-    assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isFalse();
-    assertThat(stage.toCompletableFuture().get().get()).isEqualTo("good");
+    assertCompleted(stage).isEqualTo(Maybe.of("good"));
   }
 
   @Test public void wrapFuture_futureIsSuccessNull() throws Exception {
     CompletionStage<Maybe<String, Exception>> stage =
         Maybe.catchException(Exception.class, completedFuture(null));
     assertThat(completedFuture(null).isDone()).isTrue();
-    assertThat(stage.toCompletableFuture().isDone()).isTrue();
-    assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isFalse();
-    assertThat(stage.toCompletableFuture().get().get()).isNull();
+    assertCompleted(stage).isEqualTo(Maybe.of(null));
   }
 
   @Test public void wrapFuture_futureIsExpectedFailure() throws Exception {
     MyException exception = new MyException("test");
     CompletionStage<Maybe<String, MyException>> stage =
         Maybe.catchException(MyException.class, exceptionally(exception));
-    assertThat(stage.toCompletableFuture().isDone()).isTrue();
-    assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isFalse();
-    assertThat(stage.toCompletableFuture().get()).isEqualTo(Maybe.except(exception));
+    assertCompleted(stage).isEqualTo(Maybe.except(exception));
   }
 
   @Test public void wrapFuture_futureIsExpectedFailureNestedInExecutionException()
@@ -275,33 +272,25 @@ public class MaybeTest {
     MyUncheckedException exception = new MyUncheckedException("test");
     CompletionStage<Maybe<String, MyUncheckedException>> stage =
         Maybe.catchException(MyUncheckedException.class, executionExceptionally(exception));
-    assertThat(stage.toCompletableFuture().isDone()).isTrue();
-    assertThat(stage.toCompletableFuture().get()).isEqualTo(Maybe.except(exception));
-    assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isFalse();
+    assertCompleted(stage).isEqualTo(Maybe.except(exception));
   }
 
   @Test public void wrapFuture_futureIsUnexpectedFailure() throws Exception {
     RuntimeException exception = new RuntimeException("test");
     CompletionStage<Maybe<String, MyException>> stage =
         Maybe.catchException(MyException.class, exceptionally(exception));
-    assertThat(stage.toCompletableFuture().isDone()).isTrue();
-    assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isTrue();
     assertCauseOf(ExecutionException.class, stage).isSameAs(exception);
   }
 
   @Test public void wrapFuture_futureIsCancelledWithInterruption() throws Exception {
     CompletionStage<Maybe<String, MyException>> stage =
         Maybe.catchException(MyException.class, cancelled(true));
-    assertThat(stage.toCompletableFuture().isDone()).isTrue();
-    assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isTrue();
     assertCauseOf(CancellationException.class, stage);
   }
 
   @Test public void wrapFuture_futureIsCancelledWithNoInterruption() throws Exception {
     CompletionStage<Maybe<String, MyException>> stage =
         Maybe.catchException(MyException.class, cancelled(false));
-    assertThat(stage.toCompletableFuture().isDone()).isTrue();
-    assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isTrue();
     assertCauseOf(CancellationException.class, stage);
   }
 
@@ -311,8 +300,6 @@ public class MaybeTest {
         Maybe.catchException(IOException.class, exceptionally(exception));
     stage = Maybe.catchException(IOException.class, stage);
     stage = Maybe.catchException(MyUncheckedException.class, stage);
-    assertThat(stage.toCompletableFuture().isDone()).isTrue();
-    assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isTrue();
     assertCauseOf(ExecutionException.class, stage).isSameAs(exception);
   }
 
@@ -323,8 +310,6 @@ public class MaybeTest {
     stage = Maybe.catchException(IOException.class, stage);
     stage = Maybe.catchException(MyException.class, stage);
     stage = Maybe.catchException(Error.class, stage);
-    assertThat(stage.toCompletableFuture().isDone()).isTrue();
-    assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isTrue();
     assertCauseOf(ExecutionException.class, stage).isSameAs(exception);
   }
 
@@ -335,54 +320,44 @@ public class MaybeTest {
     stage = Maybe.catchException(IOException.class, stage);
     stage = Maybe.catchException(MyException.class, stage);
     stage = Maybe.catchException(MyUncheckedException.class, stage);
-    assertThat(stage.toCompletableFuture().isDone()).isTrue();
-    assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isTrue();
     assertCauseOf(ExecutionException.class, stage).isSameAs(error);
   }
 
   @Test public void wrapFuture_futureIsUnexpectedFailure_notApplied() throws Exception {
     RuntimeException exception = new RuntimeException("test");
     CompletionStage<?> stage = exceptionally(exception);
-    assertThat(stage.toCompletableFuture().isDone()).isTrue();
-    assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isTrue();
     assertCauseOf(ExecutionException.class, stage).isSameAs(exception);
   }
 
   @Test public void wrapFuture_futureBecomesSuccess() throws Exception {
     CompletableFuture<String> future = new CompletableFuture<>();
     CompletionStage<Maybe<String, Exception>> stage = Maybe.catchException(Exception.class, future);
-    assertThat(stage.toCompletableFuture().isDone()).isFalse();
+    assertPending(stage);
     future.complete("good");
-    assertThat(stage.toCompletableFuture().isDone()).isTrue();
-    assertThat(stage.toCompletableFuture().get().get()).isEqualTo("good");
+    assertCompleted(stage).isEqualTo(Maybe.of("good"));
   }
 
   @Test public void wrapFuture_futureBecomesExpectedFailure() throws Exception {
     CompletableFuture<String> future = new CompletableFuture<>();
     CompletionStage<Maybe<String, MyException>> stage =
         Maybe.catchException(MyException.class, future);
-    assertThat(stage.toCompletableFuture().isDone()).isFalse();
+    assertPending(stage);
     MyException exception = new MyException("test");
     future.completeExceptionally(exception);
-    assertThat(stage.toCompletableFuture().isDone()).isTrue();
-    assertThat(stage.toCompletableFuture().get()).isEqualTo(Maybe.except(exception));
+    assertCompleted(stage).isEqualTo(Maybe.except(exception));
   }
 
   @Test public void wrapFuture_transparentToHandle() throws Exception {
-    assertThat(naiveExceptionHandlingCode(exceptionalUserCode()).toCompletableFuture().get())
-    .isNull();
-    assertThat(naiveExceptionHandlingCode(
-        Maybe.catchException(MyUncheckedException.class, exceptionalUserCode()))
-        .toCompletableFuture().get())
+    assertCompleted(naiveExceptionHandlingCode(exceptionalUserCode())).isNull();
+    assertCompleted(naiveExceptionHandlingCode(
+            Maybe.catchException(MyUncheckedException.class, exceptionalUserCode())))
         .isNull();
   }
 
   @Test public void wrapFuture_transparentToExceptionally() throws Exception {
-    assertThat(naiveExceptionallyCode(exceptionalUserCode()).toCompletableFuture().get())
-    .isNull();
-    assertThat(naiveExceptionallyCode(
-        Maybe.catchException(MyUncheckedException.class, exceptionalUserCode()))
-        .toCompletableFuture().get())
+    assertCompleted(naiveExceptionallyCode(exceptionalUserCode())).isNull();
+    assertCompleted(naiveExceptionallyCode(
+            Maybe.catchException(MyUncheckedException.class, exceptionalUserCode())))
         .isNull();
   }
 
@@ -434,11 +409,9 @@ public class MaybeTest {
   @Test public void wrapFuture_futureBecomesUnexpectedFailure() throws Exception {
     CompletableFuture<String> future = new CompletableFuture<>();
     CompletionStage<Maybe<String, MyException>> stage = Maybe.catchException(MyException.class, future);
-    assertThat(stage.toCompletableFuture().isDone()).isFalse();
+    assertPending(stage);
     RuntimeException exception = new RuntimeException("test");
     future.completeExceptionally(exception);
-    assertThat(stage.toCompletableFuture().isDone()).isTrue();
-    assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isTrue();
     assertCauseOf(ExecutionException.class, stage).isSameAs(exception);
   }
 
@@ -462,12 +435,6 @@ public class MaybeTest {
 
   private static <T> CompletionStage<T> executionExceptionally(RuntimeException e) {
     return completedFuture((T) null).whenComplete((v, x) -> {throw e;});
-  }
-
-  private static ThrowableSubject assertCauseOf(
-      Class<? extends Throwable> exceptionType, CompletionStage<?> stage) {
-    return assertThat(
-        Assertions.assertThrows(exceptionType, stage.toCompletableFuture()::get).getCause());
   }
 
   private String raise(String s) throws MyException {

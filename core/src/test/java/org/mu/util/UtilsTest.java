@@ -21,20 +21,17 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mu.util.FutureAssertions.assertCauseOf;
 
 import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Test;
-import org.junit.jupiter.api.Assertions;
 import org.mockito.Mockito;
-
-import com.google.common.truth.ThrowableSubject;
 
 public class UtilsTest {
 
@@ -264,12 +261,6 @@ public class UtilsTest {
     assertThat(outer.isDone()).isTrue();
     assertThat(inner.isDone()).isFalse();
     assertThrows(CancellationException.class, outer::get);
-  }
-
-  private static ThrowableSubject assertCauseOf(
-      Class<? extends Throwable> exceptionType, CompletionStage<?> stage) {
-    return assertThat(
-        Assertions.assertThrows(exceptionType, stage.toCompletableFuture()::get).getCause());
   }
 
   private interface StringCondition {
