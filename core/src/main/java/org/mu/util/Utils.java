@@ -75,7 +75,7 @@ final class Utils {
     });
   }
 
-  /** Lets cancellation from {@code outer} to propagate to {@code inner}. */
+  /** Propagates cancellation from {@code outer} to {@code inner}. */
   static <T> CompletionStage<T> propagateCancellation(
       CompletionStage<T> outer, CompletionStage<?> inner) {
     ifCancelled(outer, e -> {
