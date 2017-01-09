@@ -553,17 +553,16 @@ public final class Retryer {
     }
 
     final void asynchronously(
-        E event, Failable continuation, CompletableFuture<?> future,
-        ScheduledExecutorService executor) {
+        E event, Failable retry, ScheduledExecutorService executor, CompletableFuture<?> result) {
       beforeDelay(event);
       Failable afterDelay = () -> {
         afterDelay(event);
-        continuation.run();
+        retry.run();
       };
       ScheduledFuture<?> scheduled = executor.schedule(
-          () -> afterDelay.run(future::completeExceptionally),
+          () -> afterDelay.run(result::completeExceptionally),
           duration().toMillis(), TimeUnit.MILLISECONDS);
-      ifCancelled(future, canceled -> {scheduled.cancel(true);});
+      ifCancelled(result, canceled -> {scheduled.cancel(true);});
     }
 
     /**
@@ -663,7 +662,7 @@ public final class Retryer {
         Delay<Throwable> delay = (Delay<Throwable>) execution.strategy();
         Retryer nextRound = new Retryer(execution.remainingExceptionPlan());
         Failable retry = () -> nextRound.invokeWithRetry(supplier, retryExecutor, future);
-        delay.asynchronously(e, retry, future, retryExecutor);
+        delay.asynchronously(e, retry, retryExecutor, future);
       });
       maybeRetry.catching(future::completeExceptionally);
     } catch (Throwable unexpected) {

@@ -81,8 +81,7 @@ final class Utils {
     ifCancelled(outer, e -> {
       // Even if this isn't supported, the worst is that we don't propagate cancellation.
       // But that's fine because without a Future we cannot propagate anyway.
-      CompletableFuture<?> innerFuture = inner.toCompletableFuture();
-      if (!innerFuture.isDone()) innerFuture.completeExceptionally(e);
+      inner.toCompletableFuture().completeExceptionally(e);
     });
     return outer;
   }
