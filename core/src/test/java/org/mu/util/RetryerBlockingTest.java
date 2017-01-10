@@ -169,6 +169,8 @@ public class RetryerBlockingTest {
     assertThat(exception.getSuppressed()).asList().containsExactly(exception1);
     verify(delay).beforeDelay(exception1);
     verify(delay).afterDelay(exception1);
+    verify(delay, never()).beforeDelay(exception);
+    verify(delay, never()).afterDelay(exception);
   }
 
   @Test public void actionFailsButRetryNotConfigured() throws IOException {
