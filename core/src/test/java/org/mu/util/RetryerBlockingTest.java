@@ -47,6 +47,7 @@ import com.google.common.truth.Truth;
 public class RetryerBlockingTest {
 
   @Mock private Action action;
+  @Mock private Interruptible interruptible;
   private final Delay<Object> delay = Mockito.spy(new DelayForMock<>(Duration.ofMillis(100)));
 
   @Before public void setUpMocks() {
@@ -62,7 +63,7 @@ public class RetryerBlockingTest {
     when(action.run()).thenReturn("good");
     Retryer retryer = new Retryer();
     assertThat(retryer.uponReturn("bad", asList(delay)).retryBlockingly(action::run))
-    .isEqualTo("good");
+        .isEqualTo("good");
     verify(action).run();
   }
 
@@ -72,7 +73,7 @@ public class RetryerBlockingTest {
     when(action.run()).thenReturn("bad");
     Mockito.doThrow(unexpected).when(delay).beforeDelay("bad");
     assertException(RuntimeException.class, () -> retryer.retryBlockingly(action::run))
-    .isSameAs(unexpected);
+        .isSameAs(unexpected);
     assertThat(unexpected.getSuppressed()).isEmpty();
     verify(action).run();
     verify(delay).beforeDelay("bad");
@@ -86,7 +87,7 @@ public class RetryerBlockingTest {
     when(action.run()).thenReturn("bad");
     Mockito.doThrow(unexpected).when(delay).afterDelay("bad");
     assertException(RuntimeException.class, () -> retryer.retryBlockingly(action::run))
-    .isSameAs(unexpected);
+        .isSameAs(unexpected);
     assertThat(unexpected.getSuppressed()).isEmpty();
     verify(action).run();
     PowerMockito.verifyStatic(only()); Thread.sleep(delay.duration().toMillis());
@@ -119,7 +120,7 @@ public class RetryerBlockingTest {
 
   @Test public void interruptedDuringReturnValueRetry() throws IOException, InterruptedException {
     Retryer.ForReturnValue<String> retryer = new Retryer()
-    .uponReturn("bad", Delay.ofMillis(100).exponentialBackoff(10, 1));
+        .uponReturn("bad", Delay.ofMillis(100).exponentialBackoff(10, 1));
     when(action.run()).thenReturn("bad");
     PowerMockito.doThrow(new InterruptedException()).when(Thread.class); Thread.sleep(100);
     Thread thread = PowerMockito.mock(Thread.class);
@@ -133,26 +134,59 @@ public class RetryerBlockingTest {
 
   @Test public void noRetryIfActionSucceedsFirstTime() throws IOException {
     when(action.run()).thenReturn("good");
-    new Retryer().retryBlockingly(action::run);
+    assertThat(new Retryer().retryBlockingly(action::run)).isEqualTo("good");
     verify(action).run();
+  }
+
+  @Test public void notIntrrupted() throws InterruptedException {
+    when(interruptible.compute()).thenReturn("good");
+    new Retryer().retryBlockingly(interruptible::compute);
+    verify(interruptible).compute();
+  }
+
+  @Test public void interruptedExceptionNotRetried()
+      throws InterruptedException {
+    Retryer retryer = new Retryer().upon(Exception.class, asList(delay));
+    InterruptedException exception = new InterruptedException();
+    when(interruptible.compute()).thenThrow(exception);
+    assertException(
+            InterruptedException.class, () -> retryer.retryBlockingly(interruptible::compute))
+        .isSameAs(exception);
+    assertThat(exception.getSuppressed()).isEmpty();
+    verify(delay, never()).beforeDelay(any());
+    verify(delay, never()).afterDelay(any());
+  }
+
+  @Test public void interruptedTheSecondTimeNotRetriedButCarriesSuppressed()
+      throws InterruptedException {
+    Retryer retryer = new Retryer().upon(Exception.class, asList(delay, delay));
+    RuntimeException exception1 = new RuntimeException();
+    InterruptedException exception = new InterruptedException();
+    when(interruptible.compute()).thenThrow(exception1).thenThrow(exception);
+    assertException(
+            InterruptedException.class, () -> retryer.retryBlockingly(interruptible::compute))
+        .isSameAs(exception);
+    assertThat(exception.getSuppressed()).asList().containsExactly(exception1);
+    verify(delay).beforeDelay(exception1);
+    verify(delay).afterDelay(exception1);
   }
 
   @Test public void actionFailsButRetryNotConfigured() throws IOException {
     IOException exception = new IOException();
     when(action.run()).thenThrow(exception);
     assertException(IOException.class, () -> new Retryer().retryBlockingly(action::run))
-    .isSameAs(exception);
+        .isSameAs(exception);
     assertThat(exception.getSuppressed()).isEmpty();
     verify(action).run();
   }
 
   @Test public void actionFailsButRetryConfiguredForDifferentException() throws IOException {
     Retryer retryer = new Retryer()
-    .upon(RuntimeException.class, asList(delay));
+        .upon(RuntimeException.class, asList(delay));
     IOException exception = new IOException();
     when(action.run()).thenThrow(exception);
     assertException(IOException.class, () -> retryer.retryBlockingly(action::run))
-    .isSameAs(exception);
+        .isSameAs(exception);
     assertThat(exception.getSuppressed()).isEmpty();
     verify(action).run();
     verify(delay, never()).beforeDelay(any());
@@ -162,11 +196,11 @@ public class RetryerBlockingTest {
   @Test public void actionFailsWithUncheckedButRetryConfiguredForDifferentException()
       throws IOException {
     Retryer retryer = new Retryer()
-    .upon(IOException.class, asList(delay));
+        .upon(IOException.class, asList(delay));
     RuntimeException exception = new RuntimeException();
     when(action.run()).thenThrow(exception);
     assertException(RuntimeException.class, () -> retryer.retryBlockingly(action::run))
-    .isSameAs(exception);
+        .isSameAs(exception);
     assertThat(exception.getSuppressed()).isEmpty();
     verify(action).run();
     verify(delay, never()).beforeDelay(any());
@@ -175,13 +209,13 @@ public class RetryerBlockingTest {
 
   @Test public void exceptionFromBeforeDelayPropagated() throws IOException {
     Retryer retryer = new Retryer()
-    .upon(IOException.class, asList(delay));
+        .upon(IOException.class, asList(delay));
     RuntimeException unexpected = new RuntimeException();
     IOException exception = new IOException();
     when(action.run()).thenThrow(exception);
     Mockito.doThrow(unexpected).when(delay).beforeDelay(exception);
     assertException(RuntimeException.class, () -> retryer.retryBlockingly(action::run))
-    .isSameAs(unexpected);
+        .isSameAs(unexpected);
     assertThat(asList(unexpected.getSuppressed())).containsExactly(exception);
     verify(action).run();
     verify(delay).beforeDelay(exception);
@@ -190,13 +224,13 @@ public class RetryerBlockingTest {
 
   @Test public void exceptionFromAfterDelayPropgated() throws IOException, InterruptedException {
     Retryer retryer = new Retryer()
-    .upon(IOException.class, asList(delay));
+        .upon(IOException.class, asList(delay));
     RuntimeException unexpected = new RuntimeException();
     IOException exception = new IOException();
     when(action.run()).thenThrow(exception);
     Mockito.doThrow(unexpected).when(delay).afterDelay(exception);
     assertException(RuntimeException.class, () -> retryer.retryBlockingly(action::run))
-    .isSameAs(unexpected);
+        .isSameAs(unexpected);
     assertThat(asList(unexpected.getSuppressed())).containsExactly(exception);
     verify(action).run();
     PowerMockito.verifyStatic(only()); Thread.sleep(delay.duration().toMillis());
@@ -206,7 +240,7 @@ public class RetryerBlockingTest {
 
   @Test public void actionFailsThenSucceedsAfterRetry() throws IOException, InterruptedException {
     Retryer retryer = new Retryer()
-    .upon(IOException.class, asList(delay));
+        .upon(IOException.class, asList(delay));
     IOException exception = new IOException();
     when(action.run()).thenThrow(exception).thenReturn("fixed");
     assertThat(retryer.retryBlockingly(action::run)).isEqualTo("fixed");
@@ -219,7 +253,7 @@ public class RetryerBlockingTest {
   @Test public void actionFailsWithUncheckedThenSucceedsAfterRetry()
       throws IOException, InterruptedException {
     Retryer retryer = new Retryer()
-    .upon(RuntimeException.class, asList(delay));
+        .upon(RuntimeException.class, asList(delay));
     RuntimeException exception = new RuntimeException();
     when(action.run()).thenThrow(exception).thenReturn("fixed");
 
@@ -233,7 +267,7 @@ public class RetryerBlockingTest {
   @Test public void actionFailsWithErrorThenSucceedsAfterRetry()
       throws IOException, InterruptedException {
     Retryer retryer = new Retryer()
-    .upon(Error.class, asList(delay));
+        .upon(Error.class, asList(delay));
     Error exception = new Error();
     when(action.run()).thenThrow(exception).thenReturn("fixed");
 
@@ -247,15 +281,15 @@ public class RetryerBlockingTest {
   @Test public void actionFailsEvenAfterRetry()
       throws IOException, InterruptedException {
     Retryer retryer = new Retryer()
-    .upon(IOException.class, Delay.ofMillis(100).exponentialBackoff(10, 2));
+        .upon(IOException.class, Delay.ofMillis(100).exponentialBackoff(10, 2));
     IOException exception1 = new IOException();
     IOException exception2 = new IOException();
     IOException exception = new IOException();
     when(action.run())
-    .thenThrow(exception1).thenThrow(exception2).thenThrow(exception);
+        .thenThrow(exception1).thenThrow(exception2).thenThrow(exception);
 
     assertException(IOException.class, () -> retryer.retryBlockingly(action::run))
-    .isSameAs(exception);
+        .isSameAs(exception);
     assertThat(asList(exception.getSuppressed())).containsExactly(exception1, exception2).inOrder();
     verify(action, times(3)).run();
     PowerMockito.verifyStatic(); Thread.sleep(100);
@@ -265,14 +299,14 @@ public class RetryerBlockingTest {
   @Test public void sameExceptionNotAddedAsCause()
       throws IOException, InterruptedException {
     Retryer retryer = new Retryer()
-    .upon(IOException.class, Delay.ofMillis(100).exponentialBackoff(10, 2));
+        .upon(IOException.class, Delay.ofMillis(100).exponentialBackoff(10, 2));
     IOException exception1 = new IOException();
     IOException exception2 = new IOException();
     when(action.run())
-    .thenThrow(exception1).thenThrow(exception2).thenThrow(exception2);
+        .thenThrow(exception1).thenThrow(exception2).thenThrow(exception2);
 
     assertException(IOException.class, () -> retryer.retryBlockingly(action::run))
-    .isSameAs(exception2);
+        .isSameAs(exception2);
     assertThat(asList(exception2.getSuppressed())).containsExactly(exception1).inOrder();
     verify(action, times(3)).run();
     PowerMockito.verifyStatic(); Thread.sleep(100);
@@ -281,7 +315,7 @@ public class RetryerBlockingTest {
 
   @Test public void interruptedDuringRetry() throws IOException, InterruptedException {
     Retryer retryer = new Retryer()
-    .upon(IOException.class, Delay.ofMillis(100).exponentialBackoff(10, 1));
+        .upon(IOException.class, Delay.ofMillis(100).exponentialBackoff(10, 1));
     IOException exception = new IOException();
     when(action.run()).thenThrow(exception);
     PowerMockito.doThrow(new InterruptedException()).when(Thread.class); Thread.sleep(100);
@@ -289,7 +323,7 @@ public class RetryerBlockingTest {
     PowerMockito.doReturn(thread).when(Thread.class); Thread.currentThread();
 
     assertException(IOException.class, () -> retryer.retryBlockingly(action::run))
-    .isSameAs(exception);
+        .isSameAs(exception);
     assertThat(exception.getSuppressed()).isEmpty();
     verify(action).run();
     verify(thread).interrupt();
@@ -299,12 +333,12 @@ public class RetryerBlockingTest {
   @Test public void twoDifferentExceptionRulesRetriedToSuccess()
       throws IOException, InterruptedException {
     Retryer retryer = new Retryer()
-    .upon(IOException.class, asList(delay))
-    .upon(MyUncheckedException.class, asList(delay, delay));
+        .upon(IOException.class, asList(delay))
+        .upon(MyUncheckedException.class, asList(delay, delay));
     MyUncheckedException unchecked = new MyUncheckedException();
     IOException exception = new IOException();
     when(action.run())
-    .thenThrow(unchecked).thenThrow(exception).thenThrow(unchecked).thenReturn("fixed");
+        .thenThrow(unchecked).thenThrow(exception).thenThrow(unchecked).thenReturn("fixed");
     assertThat(retryer.retryBlockingly(action::run)).isEqualTo("fixed");
     verify(action, times(4)).run();
     PowerMockito.verifyStatic(times(3)); Thread.sleep(delay.duration().toMillis());
@@ -317,18 +351,18 @@ public class RetryerBlockingTest {
   @Test public void twoDifferentExceptionRulesRetrialFailed()
       throws IOException, InterruptedException {
     Retryer retryer = new Retryer()
-    .upon(IOException.class, asList(delay))
-    .upon(MyUncheckedException.class, asList(delay, delay));
+        .upon(IOException.class, asList(delay))
+        .upon(MyUncheckedException.class, asList(delay, delay));
     MyUncheckedException unchecked1 = new MyUncheckedException();
     IOException exception2 = new IOException();
     MyUncheckedException unchecked3 = new MyUncheckedException();
     IOException exception4 = new IOException();
     when(action.run())
-    .thenThrow(unchecked1).thenThrow(exception2).thenThrow(unchecked3).thenThrow(exception4);
+        .thenThrow(unchecked1).thenThrow(exception2).thenThrow(unchecked3).thenThrow(exception4);
     assertException(IOException.class, () -> retryer.retryBlockingly(action::run))
-    .isSameAs(exception4);
+        .isSameAs(exception4);
     assertThat(asList(exception4.getSuppressed()))
-    .containsExactly(unchecked1, exception2, unchecked3).inOrder();
+        .containsExactly(unchecked1, exception2, unchecked3).inOrder();
     verify(action, times(4)).run();
     PowerMockito.verifyStatic(times(3)); Thread.sleep(delay.duration().toMillis());
     verify(delay).beforeDelay(unchecked1);
@@ -342,11 +376,11 @@ public class RetryerBlockingTest {
   @Test public void returnValueAndExceptionRetryToSuccess()
       throws IOException, InterruptedException {
     Retryer.ForReturnValue<String> retryer = new Retryer()
-    .upon(IOException.class, asList(delay))
-    .uponReturn("bad", asList(delay, delay));
+        .upon(IOException.class, asList(delay))
+        .uponReturn("bad", asList(delay, delay));
     IOException exception = new IOException();
     when(action.run())
-    .thenReturn("bad").thenThrow(exception).thenReturn("bad").thenReturn("fixed");
+        .thenReturn("bad").thenThrow(exception).thenReturn("bad").thenReturn("fixed");
     assertThat(retryer.retryBlockingly(action::run)).isEqualTo("fixed");
     verify(action, times(4)).run();
     PowerMockito.verifyStatic(times(3)); Thread.sleep(delay.duration().toMillis());
@@ -359,12 +393,12 @@ public class RetryerBlockingTest {
   @Test public void returnValueAndExceptionRetryStillReturnsBad()
       throws IOException, InterruptedException {
     Retryer.ForReturnValue<String> retryer = new Retryer()
-    .upon(IOException.class, asList(delay))
-    .uponReturn("bad", asList(delay, delay));
+        .upon(IOException.class, asList(delay))
+        .uponReturn("bad", asList(delay, delay));
     IOException exception = new IOException();
     when(action.run())
-    .thenReturn("bad").thenThrow(exception).thenReturn("bad").thenReturn("bad")
-    .thenReturn("fixed");
+        .thenReturn("bad").thenThrow(exception).thenReturn("bad").thenReturn("bad")
+        .thenReturn("fixed");
     assertThat(retryer.retryBlockingly(action::run)).isEqualTo("bad");
     verify(action, times(4)).run();
     PowerMockito.verifyStatic(times(3)); Thread.sleep(delay.duration().toMillis());
@@ -377,15 +411,15 @@ public class RetryerBlockingTest {
   @Test public void returnValueAndExceptionRetryStillThrows()
       throws IOException, InterruptedException {
     Retryer.ForReturnValue<String> retryer = new Retryer()
-    .upon(IOException.class, asList(delay))
-    .uponReturn("bad", asList(delay, delay));
+        .upon(IOException.class, asList(delay))
+        .uponReturn("bad", asList(delay, delay));
     IOException exception1 = new IOException();
     IOException exception = new IOException();
     when(action.run())
-    .thenReturn("bad").thenThrow(exception1).thenReturn("bad").thenThrow(exception)
-    .thenReturn("fixed");
+        .thenReturn("bad").thenThrow(exception1).thenReturn("bad").thenThrow(exception)
+        .thenReturn("fixed");
     assertException(IOException.class, () -> retryer.retryBlockingly(action::run))
-    .isSameAs(exception);
+        .isSameAs(exception);
     assertThat(asList(exception.getSuppressed())).containsExactly(exception1);
     assertThat(exception.getCause()).isNull();
     assertThat(exception1.getSuppressed()).isEmpty();
@@ -406,6 +440,10 @@ public class RetryerBlockingTest {
 
   private interface Action {
     String run() throws IOException;
+  }
+
+  private interface Interruptible {
+    String compute() throws InterruptedException;
   }
 
   @SuppressWarnings("serial")

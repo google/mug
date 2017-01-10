@@ -15,7 +15,9 @@
 package org.mu.util;
 
 import static java.util.Objects.requireNonNull;
+import static org.mu.util.Utils.ifCancelled;
 import static org.mu.util.Utils.mapList;
+import static org.mu.util.Utils.propagateCancellation;
 import static org.mu.util.Utils.propagateIfUnchecked;
 
 import java.time.Clock;
@@ -26,11 +28,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -70,15 +74,21 @@ public final class Retryer {
   /**
    * Returns a new {@code Retryer} that uses {@code delays} when an exception is instance of
    * {@code exceptionType}.
+   *
+   * <p>{@link InterruptedException} is always considered a request to stop retrying. Calling
+   * {@code upon(InterruptedException.class, ...)} is illegal.
    */
   public final <E extends Throwable> Retryer upon(
       Class<E> exceptionType, List<? extends Delay<? super E>> delays) {
-    return new Retryer(plan.upon(exceptionType, delays));
+    return new Retryer(plan.upon(rejectInterruptedException(exceptionType), delays));
   }
 
   /**
    * Returns a new {@code Retryer} that uses {@code delays} when an exception is instance of
    * {@code exceptionType}.
+   *
+   * <p>{@link InterruptedException} is always considered a request to stop retrying. Calling
+   * {@code upon(InterruptedException.class, ...)} is illegal.
    */
   public final <E extends Throwable> Retryer upon(
       Class<E> exceptionType, Stream<? extends Delay<? super E>> delays) {
@@ -88,16 +98,22 @@ public final class Retryer {
   /**
    * Returns a new {@code Retryer} that uses {@code delays} when an exception is instance of
    * {@code exceptionType} and satisfies {@code condition}.
+   *
+   * <p>{@link InterruptedException} is always considered a request to stop retrying. Calling
+   * {@code upon(InterruptedException.class, ...)} is illegal.
    */
   public <E extends Throwable> Retryer upon(
       Class<E> exceptionType, Predicate<? super E> condition,
       List<? extends Delay<? super E>> delays) {
-    return new Retryer(plan.upon(exceptionType, condition, delays));
+    return new Retryer(plan.upon(rejectInterruptedException(exceptionType), condition, delays));
   }
 
   /**
    * Returns a new {@code Retryer} that uses {@code delays} when an exception is instance of
    * {@code exceptionType} and satisfies {@code condition}.
+   *
+   * <p>{@link InterruptedException} is always considered a request to stop retrying. Calling
+   * {@code upon(InterruptedException.class, ...)} is illegal.
    */
   public <E extends Throwable> Retryer upon(
       Class<E> exceptionType, Predicate<? super E> condition,
@@ -122,6 +138,7 @@ public final class Retryer {
         try {
           return supplier.get();
         } catch (Throwable e) {
+          if (e instanceof InterruptedException) throw e;
           exceptions.add(e);
           currentPlan = delay(e, currentPlan);
         }
@@ -146,6 +163,9 @@ public final class Retryer {
    *
    * <p>Retries are scheduled and performed by {@code executor}.
    *
+   * <p>Canceling the returned future object will cancel currently pending retry attempts. Same
+   * if {@code supplier} throws {@link InterruptedException}.
+   *
    * <p>NOTE that if {@code executor.shutdownNow()} is called, the returned {@link CompletionStage}
    * will never be done.
    */
@@ -166,6 +186,9 @@ public final class Retryer {
    * need to deal with them in one place.
    *
    * <p>Retries are scheduled and performed by {@code executor}.
+   *
+   * <p>Canceling the returned future object will cancel currently pending retry attempts. Same
+   * if {@code supplier} throws {@link InterruptedException}.
    *
    * <p>NOTE that if {@code executor.shutdownNow()} is called, the returned {@link CompletionStage}
    * will never be done.
@@ -265,6 +288,9 @@ public final class Retryer {
      *
      * <p>Retries are scheduled and performed by {@code executor}.
      *
+     * <p>Canceling the returned future object will cancel currently pending retry attempts. Same
+     * if {@code supplier} throws {@link InterruptedException}.
+     *
      * <p>NOTE that if {@code executor.shutdownNow()} is called, the returned
      * {@link CompletionStage} will never be done.
      */
@@ -284,6 +310,9 @@ public final class Retryer {
      * need to deal with them in one place.
      *
      * <p>Retries are scheduled and performed by {@code executor}.
+     *
+     * <p>Canceling the returned future object will cancel currently pending retry attempts. Same
+     * if {@code supplier} throws {@link InterruptedException}.
      *
      * <p>NOTE that if {@code executor.shutdownNow()} is called, the returned
      * {@link CompletionStage} will never be done.
@@ -329,8 +358,10 @@ public final class Retryer {
       static <T, E extends Throwable> CompletionStage<T> unwrapAsync(
           CheckedSupplier<? extends CompletionStage<T>, E> supplier) throws E {
         CompletionStage<T> stage = unwrap(supplier);
-        return Maybe.catchException(ThrownReturn.class, stage)
+        CompletionStage<T> outer = Maybe.catchException(ThrownReturn.class, stage)
             .thenApply(maybe -> maybe.<RuntimeException>orElse(ThrownReturn::unsafeGet));
+        propagateCancellation(outer, stage);
+        return outer;
       }
 
       /** Exception cannot be parameterized. But we essentially use it as ThrownReturn<T>. */
@@ -548,15 +579,16 @@ public final class Retryer {
     }
 
     final void asynchronously(
-        E event, Failable continuation, Consumer<? super Throwable> exceptionHandler,
-        ScheduledExecutorService executor) {
+        E event, Failable retry, ScheduledExecutorService executor, CompletableFuture<?> result) {
       beforeDelay(event);
       Failable afterDelay = () -> {
         afterDelay(event);
-        continuation.run();
+        retry.run();
       };
-      executor.schedule(
-          () -> afterDelay.run(exceptionHandler), duration().toMillis(), TimeUnit.MILLISECONDS);
+      ScheduledFuture<?> scheduled = executor.schedule(
+          () -> afterDelay.run(result::completeExceptionally),
+          duration().toMillis(), TimeUnit.MILLISECONDS);
+      ifCancelled(result, canceled -> {scheduled.cancel(true);});
     }
 
     /**
@@ -612,29 +644,38 @@ public final class Retryer {
   private <T> void invokeWithRetry(
       CheckedSupplier<? extends CompletionStage<T>, ?> supplier,
       ScheduledExecutorService retryExecutor,
-      CompletableFuture<T> result) {
+      CompletableFuture<T> future) {
+    if (future.isDone()) return;  // like, canceled before retrying.
     try {
       CompletionStage<T> stage = supplier.get();
       stage.handle((v, e) -> {
-        if (e == null) result.complete(v);
-        else scheduleRetry(getInterestedException(e), retryExecutor, supplier, result);
+        if (e == null) future.complete(v);
+        else scheduleRetry(getInterestedException(e), retryExecutor, supplier, future);
         return null;
       });
     } catch (RuntimeException e) {
-      retryIfCovered(e, retryExecutor, supplier, result);
+      retryIfCovered(e, retryExecutor, supplier, future);
     } catch (Error e) {
-      retryIfCovered(e, retryExecutor, supplier, result);
+      retryIfCovered(e, retryExecutor, supplier, future);
     } catch (Throwable e) {
-      scheduleRetry(e, retryExecutor, supplier, result);
+      if (e instanceof InterruptedException) {
+        CancellationException cancelled = new CancellationException();
+        cancelled.initCause(e);
+        Thread.currentThread().interrupt();
+        // Don't even attempt to retry, even if user explicitly asked to retry on Exception
+        // This is because we treat InterruptedException specially as a signal to stop.
+        throw cancelled;
+      }
+      scheduleRetry(e, retryExecutor, supplier, future);
     }
   }
 
   private <E extends Throwable, T> void retryIfCovered(
       E e, ScheduledExecutorService retryExecutor,
-      CheckedSupplier<? extends CompletionStage<T>, ?> supplier, CompletableFuture<T> result)
+      CheckedSupplier<? extends CompletionStage<T>, ?> supplier, CompletableFuture<T> future)
           throws E {
     if (plan.covers(e)) {
-      scheduleRetry(e, retryExecutor, supplier, result);
+      scheduleRetry(e, retryExecutor, supplier, future);
     } else {
       throw e;
     }
@@ -642,25 +683,33 @@ public final class Retryer {
 
   private <T> void scheduleRetry(
       Throwable e, ScheduledExecutorService retryExecutor,
-      CheckedSupplier<? extends CompletionStage<T>, ?> supplier, CompletableFuture<T> result) {
-    Maybe<ExceptionPlan.Execution<Delay<?>>, ?> maybeRetry = plan.execute(e);
+      CheckedSupplier<? extends CompletionStage<T>, ?> supplier, CompletableFuture<T> future) {
     try {
+      Maybe<ExceptionPlan.Execution<Delay<?>>, ?> maybeRetry = plan.execute(e);
       maybeRetry.ifPresent(execution -> {
-        result.exceptionally(x -> {
+        future.exceptionally(x -> {
           addSuppressedTo(x, e);
           return null;
         });
+        if (future.isDone()) return;  // like, canceled immediately before scheduling.
         @SuppressWarnings("unchecked")  // delay came from upon(), which enforces <? super E>.
         Delay<Throwable> delay = (Delay<Throwable>) execution.strategy();
         Retryer nextRound = new Retryer(execution.remainingExceptionPlan());
-        Failable retry = () -> nextRound.invokeWithRetry(supplier, retryExecutor, result);
-        delay.asynchronously(e, retry, result::completeExceptionally, retryExecutor);
+        Failable retry = () -> nextRound.invokeWithRetry(supplier, retryExecutor, future);
+        delay.asynchronously(e, retry, retryExecutor, future);
       });
-      maybeRetry.catching(result::completeExceptionally);
+      maybeRetry.catching(future::completeExceptionally);
     } catch (Throwable unexpected) {
       addSuppressedTo(unexpected, e);
       throw unexpected;
     }
+  }
+
+  private static <E extends Throwable> Class<E> rejectInterruptedException(Class<E> exceptionType) {
+    if (InterruptedException.class.isAssignableFrom(exceptionType)) {
+      throw new IllegalArgumentException("Cannot retry on InterruptedException.");
+    }
+    return exceptionType;
   }
 
   private static void addSuppressedTo(Throwable exception, Throwable suppressed) {

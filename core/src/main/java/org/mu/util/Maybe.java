@@ -95,7 +95,12 @@ public abstract class Maybe<T, E extends Throwable> {
     return new Success<>(value);
   }
 
-  /** Creates an exceptional {@code Maybe} for {@code exception}. */
+  /**
+   * Creates an exceptional {@code Maybe} for {@code exception}.
+   *
+   * <p>If {@code exception} is an {@link InterruptedException}, the current thread is
+   * re-interrupted as a standard practice to avoid swallowing the interruption signal.
+   */
   public static <T, E extends Throwable> Maybe<T, E> except(E exception) {
     return new Failure<>(exception);
   }
@@ -110,7 +115,13 @@ public abstract class Maybe<T, E extends Throwable> {
    */
   public abstract <T2> Maybe<T2, E> flatMap(Function<? super T, Maybe<T2, E>> function);
 
-  /** Returns the encapsulated value or throw exception. */
+  /**
+   * Returns the encapsulated value or throw exception.
+   *
+   * <p>If {@link InterruptedException} is thrown, the current thread's {@link Thread#interrupted()}
+   * bit is cleared because it's what most code expects when they catch an
+   * {@code InterruptedException}.
+   */
   public abstract T get() throws E;
 
   /** Returns true unless this is exceptional. */
@@ -316,8 +327,8 @@ public abstract class Maybe<T, E extends Throwable> {
           future.complete(Maybe.of(v));
         } else {
           unwrapFutureException(exceptionType, e)
-          .map(cause -> future.complete(Maybe.except(cause)))
-          .orElseGet(() -> future.completeExceptionally(e));
+              .map(cause -> future.complete(Maybe.except(cause)))
+              .orElseGet(() -> future.completeExceptionally(e));
         }
       } catch (Throwable x) {  // Just in case there was a bug. Don't hang the thread.
         if (x != e) x.addSuppressed(e);
@@ -421,6 +432,9 @@ public abstract class Maybe<T, E extends Throwable> {
 
     Failure(E exception) {
       this.exception = requireNonNull(exception);
+      if (exception instanceof InterruptedException) {
+        Thread.currentThread().interrupt();
+      }
     }
 
     @Override public <T2> Maybe<T2, E> map(Function<? super T, ? extends T2> f) {
@@ -434,6 +448,9 @@ public abstract class Maybe<T, E extends Throwable> {
     }
 
     @Override public T get() throws E {
+      if (exception instanceof InterruptedException) {
+        Thread.interrupted();
+      }
       throw exception;
     }
 
