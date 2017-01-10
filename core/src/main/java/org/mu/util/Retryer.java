@@ -74,6 +74,9 @@ public final class Retryer {
   /**
    * Returns a new {@code Retryer} that uses {@code delays} when an exception is instance of
    * {@code exceptionType}.
+   *
+   * <p>{@link InterruptedException} is always considered a request to stop retrying. Calling
+   * {@code upon(InterruptedException.class, ...)} is illegal.
    */
   public final <E extends Throwable> Retryer upon(
       Class<E> exceptionType, List<? extends Delay<? super E>> delays) {
@@ -83,6 +86,9 @@ public final class Retryer {
   /**
    * Returns a new {@code Retryer} that uses {@code delays} when an exception is instance of
    * {@code exceptionType}.
+   *
+   * <p>{@link InterruptedException} is always considered a request to stop retrying. Calling
+   * {@code upon(InterruptedException.class, ...)} is illegal.
    */
   public final <E extends Throwable> Retryer upon(
       Class<E> exceptionType, Stream<? extends Delay<? super E>> delays) {
@@ -92,6 +98,9 @@ public final class Retryer {
   /**
    * Returns a new {@code Retryer} that uses {@code delays} when an exception is instance of
    * {@code exceptionType} and satisfies {@code condition}.
+   *
+   * <p>{@link InterruptedException} is always considered a request to stop retrying. Calling
+   * {@code upon(InterruptedException.class, ...)} is illegal.
    */
   public <E extends Throwable> Retryer upon(
       Class<E> exceptionType, Predicate<? super E> condition,
@@ -102,6 +111,9 @@ public final class Retryer {
   /**
    * Returns a new {@code Retryer} that uses {@code delays} when an exception is instance of
    * {@code exceptionType} and satisfies {@code condition}.
+   *
+   * <p>{@link InterruptedException} is always considered a request to stop retrying. Calling
+   * {@code upon(InterruptedException.class, ...)} is illegal.
    */
   public <E extends Throwable> Retryer upon(
       Class<E> exceptionType, Predicate<? super E> condition,
@@ -649,6 +661,8 @@ public final class Retryer {
         CancellationException cancelled = new CancellationException();
         cancelled.initCause(e);
         Thread.currentThread().interrupt();
+        // Don't even attempt to retry, even if user explicitly asked to retry on Exception
+        // This is because we treat InterruptedException specially as a signal to stop.
         throw cancelled;
       }
       scheduleRetry(e, retryExecutor, supplier, future);
