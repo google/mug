@@ -138,6 +138,7 @@ public final class Retryer {
         try {
           return supplier.get();
         } catch (Throwable e) {
+          if (e instanceof InterruptedException) throw e;
           exceptions.add(e);
           currentPlan = delay(e, currentPlan);
         }

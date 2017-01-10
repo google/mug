@@ -47,6 +47,7 @@ import com.google.common.truth.Truth;
 public class RetryerBlockingTest {
 
   @Mock private Action action;
+  @Mock private Interruptible interruptible;
   private final Delay<Object> delay = Mockito.spy(new DelayForMock<>(Duration.ofMillis(100)));
 
   @Before public void setUpMocks() {
@@ -133,8 +134,41 @@ public class RetryerBlockingTest {
 
   @Test public void noRetryIfActionSucceedsFirstTime() throws IOException {
     when(action.run()).thenReturn("good");
-    new Retryer().retryBlockingly(action::run);
+    assertThat(new Retryer().retryBlockingly(action::run)).isEqualTo("good");
     verify(action).run();
+  }
+
+  @Test public void notIntrrupted() throws InterruptedException {
+    when(interruptible.compute()).thenReturn("good");
+    new Retryer().retryBlockingly(interruptible::compute);
+    verify(interruptible).compute();
+  }
+
+  @Test public void interruptedExceptionNotRetried()
+      throws InterruptedException {
+    Retryer retryer = new Retryer().upon(Exception.class, asList(delay));
+    InterruptedException exception = new InterruptedException();
+    when(interruptible.compute()).thenThrow(exception);
+    assertException(
+            InterruptedException.class, () -> retryer.retryBlockingly(interruptible::compute))
+        .isSameAs(exception);
+    assertThat(exception.getSuppressed()).isEmpty();
+    verify(delay, never()).beforeDelay(any());
+    verify(delay, never()).afterDelay(any());
+  }
+
+  @Test public void interruptedTheSecondTimeNotRetriedButCarriesSuppressed()
+      throws InterruptedException {
+    Retryer retryer = new Retryer().upon(Exception.class, asList(delay, delay));
+    RuntimeException exception1 = new RuntimeException();
+    InterruptedException exception = new InterruptedException();
+    when(interruptible.compute()).thenThrow(exception1).thenThrow(exception);
+    assertException(
+            InterruptedException.class, () -> retryer.retryBlockingly(interruptible::compute))
+        .isSameAs(exception);
+    assertThat(exception.getSuppressed()).asList().containsExactly(exception1);
+    verify(delay).beforeDelay(exception1);
+    verify(delay).afterDelay(exception1);
   }
 
   @Test public void actionFailsButRetryNotConfigured() throws IOException {
@@ -406,6 +440,10 @@ public class RetryerBlockingTest {
 
   private interface Action {
     String run() throws IOException;
+  }
+
+  private interface Interruptible {
+    String compute() throws InterruptedException;
   }
 
   @SuppressWarnings("serial")
