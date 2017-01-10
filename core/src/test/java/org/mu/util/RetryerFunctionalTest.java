@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.Semaphore;
 
@@ -194,6 +195,23 @@ public class RetryerFunctionalTest {
     assertThat(cancelled.getCause()).isInstanceOf(InterruptedException.class);
     assertThat(cancelled.getSuppressed()).asList().hasSize(1);
     assertThat(cancelled.getSuppressed()[0]).isSameAs(exception);
+  }
+
+  @Test public void interruptedDuringReturnValueRetryRetry()
+      throws InterruptedException, IOException {
+    Retryer.ForReturnValue<String> forReturnValue =
+        retryer.uponReturn("bad", asList(Delay.ofMillis(0), Delay.ofMillis(0)));
+    when(blockedAction.result()).thenReturn("bad").thenReturn("fixed");
+    CompletionStage<String> stage =
+        forReturnValue.retry(blockedAction::blockOnSecondTime, executor);
+    blockedAction.retryStarted.await();
+    blockedAction.interrupt();
+    // Sadly cancellation from inner future doesn't propagate to outer.
+    ExecutionException exception =
+        assertThrows(ExecutionException.class, () -> stage.toCompletableFuture().get());
+    assertThat(exception.getCause()).isInstanceOf(CancellationException.class);
+    assertThat(exception.getCause().getCause()).isInstanceOf(InterruptedException.class);
+    assertThat(exception.getCause().getSuppressed()).asList().isEmpty();
   }
 
   private <E extends Throwable> void upon(
