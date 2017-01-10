@@ -376,7 +376,7 @@ public class RetryerTest {
     Mockito.doThrow(unexpected).when(delay).beforeDelay(Matchers.<Throwable>any());
     assertException(RuntimeException.class, () -> retry(action::run))
         .isSameAs(unexpected);
-    assertThat(asList(unexpected.getSuppressed())).containsExactly(exception);
+    assertThat(unexpected.getSuppressed()).asList().containsExactly(exception);
     verify(action).run();
     verify(delay).beforeDelay(exception);
     verify(delay, never()).afterDelay(exception);
@@ -393,7 +393,7 @@ public class RetryerTest {
     assertPending(stage);
     elapse(Duration.ofSeconds(1));
     assertCauseOf(ExecutionException.class, stage).isSameAs(unexpected);
-    assertThat(asList(unexpected.getSuppressed())).containsExactly(exception);
+    assertThat(unexpected.getSuppressed()).asList().containsExactly(exception);
     verify(action).run();
     verify(delay).beforeDelay(exception);
     verify(delay).afterDelay(exception);
@@ -409,7 +409,7 @@ public class RetryerTest {
         .when(executor).schedule(any(Runnable.class), any(long.class), any(TimeUnit.class));
     assertException(RejectedExecutionException.class, () -> retry(action::run))
         .isSameAs(unexpected);
-    assertThat(asList(unexpected.getSuppressed())).containsExactly(exception);
+    assertThat(unexpected.getSuppressed()).asList().containsExactly(exception);
     verify(action).run();
     verify(delay).beforeDelay(exception);
     verify(delay, never()).afterDelay(exception);
@@ -440,7 +440,7 @@ public class RetryerTest {
     IOException exception = new IOException();
     result.completeExceptionally(exception);
     CancellationException cancelled = assertCancelled(stage);
-    assertThat(asList(cancelled.getSuppressed())).containsExactly(exception);
+    assertThat(cancelled.getSuppressed()).asList().containsExactly(exception);
     verify(action).runAsync();
     verify(executor, never()).schedule(any(Runnable.class), any(long.class), any(TimeUnit.class));
     verify(delay, never()).beforeDelay(exception);
@@ -458,7 +458,7 @@ public class RetryerTest {
     assertThat(scheduledFutures).hasSize(1);
     verify(scheduledFutures.get(0)).cancel(true);
     CancellationException cancelled = assertCancelled(stage);
-    assertThat(asList(cancelled.getSuppressed())).containsExactly(exception);
+    assertThat(cancelled.getSuppressed()).asList().containsExactly(exception);
     verify(action).run();
     verify(delay).beforeDelay(exception);
 
@@ -519,7 +519,7 @@ public class RetryerTest {
     assertPending(stage);
     elapse(Duration.ofSeconds(1));
     assertCauseOf(ExecutionException.class, stage).isSameAs(exception);
-    assertThat(asList(exception.getSuppressed())).containsExactly(firstException);
+    assertThat(exception.getSuppressed()).asList().containsExactly(firstException);
     verify(action, times(2)).run();
     verify(delay).beforeDelay(firstException);
     verify(delay).afterDelay(firstException);
@@ -539,7 +539,7 @@ public class RetryerTest {
     assertPending(stage);
     elapse(Duration.ofSeconds(1));  // exceeds time
     assertCauseOf(ExecutionException.class, stage).isSameAs(exception);
-    assertThat(asList(exception.getSuppressed())).containsExactly(exception1);
+    assertThat(exception.getSuppressed()).asList().containsExactly(exception1);
     verify(action, times(3)).run();  // Retry twice.
   }
 
@@ -604,7 +604,7 @@ public class RetryerTest {
     assertPending(stage);
     elapse(4, Duration.ofSeconds(1));
     assertCauseOf(ExecutionException.class, stage).isSameAs(error4);
-    assertThat(asList(error4.getSuppressed())).containsExactly(exception1, error2, exception3);
+    assertThat(error4.getSuppressed()).asList().containsExactly(exception1, error2, exception3);
     assertThat(error4.getCause()).isNull();
     assertThat(exception3.getSuppressed()).isEmpty();
     assertThat(error2.getSuppressed()).isEmpty();
@@ -674,7 +674,7 @@ public class RetryerTest {
     assertPending(stage);
     elapse(4, Duration.ofSeconds(1));
     assertCauseOf(ExecutionException.class, stage).isSameAs(exception);
-    assertThat(asList(exception.getSuppressed())).containsExactly(exception1);
+    assertThat(exception.getSuppressed()).asList().containsExactly(exception1);
     verify(action, times(4)).run();
     verify(returnValueDelay, times(2)).beforeDelay("bad");
     verify(returnValueDelay, times(2)).afterDelay("bad");
@@ -747,7 +747,7 @@ public class RetryerTest {
     assertPending(stage);
     elapse(4, Duration.ofSeconds(1));
     assertCauseOf(ExecutionException.class, stage).isSameAs(exception);
-    assertThat(asList(exception.getSuppressed())).containsExactly(exception1);
+    assertThat(exception.getSuppressed()).asList().containsExactly(exception1);
     verify(action, times(4)).runAsync();
     verify(returnValueDelay, times(2)).beforeDelay("bad");
     verify(returnValueDelay, times(2)).afterDelay("bad");

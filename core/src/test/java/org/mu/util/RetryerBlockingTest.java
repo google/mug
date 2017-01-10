@@ -218,7 +218,7 @@ public class RetryerBlockingTest {
     Mockito.doThrow(unexpected).when(delay).beforeDelay(exception);
     assertException(RuntimeException.class, () -> retryer.retryBlockingly(action::run))
         .isSameAs(unexpected);
-    assertThat(asList(unexpected.getSuppressed())).containsExactly(exception);
+    assertThat(unexpected.getSuppressed()).asList().containsExactly(exception);
     verify(action).run();
     verify(delay).beforeDelay(exception);
     verify(delay, never()).afterDelay(exception);
@@ -233,7 +233,7 @@ public class RetryerBlockingTest {
     Mockito.doThrow(unexpected).when(delay).afterDelay(exception);
     assertException(RuntimeException.class, () -> retryer.retryBlockingly(action::run))
         .isSameAs(unexpected);
-    assertThat(asList(unexpected.getSuppressed())).containsExactly(exception);
+    assertThat(unexpected.getSuppressed()).asList().containsExactly(exception);
     verify(action).run();
     PowerMockito.verifyStatic(only()); Thread.sleep(delay.duration().toMillis());
     verify(delay).beforeDelay(exception);
@@ -292,7 +292,7 @@ public class RetryerBlockingTest {
 
     assertException(IOException.class, () -> retryer.retryBlockingly(action::run))
         .isSameAs(exception);
-    assertThat(asList(exception.getSuppressed())).containsExactly(exception1, exception2).inOrder();
+    assertThat(exception.getSuppressed()).asList().containsExactly(exception1, exception2).inOrder();
     verify(action, times(3)).run();
     PowerMockito.verifyStatic(); Thread.sleep(100);
     PowerMockito.verifyStatic(); Thread.sleep(1000);
@@ -309,7 +309,7 @@ public class RetryerBlockingTest {
 
     assertException(IOException.class, () -> retryer.retryBlockingly(action::run))
         .isSameAs(exception2);
-    assertThat(asList(exception2.getSuppressed())).containsExactly(exception1).inOrder();
+    assertThat(exception2.getSuppressed()).asList().containsExactly(exception1).inOrder();
     verify(action, times(3)).run();
     PowerMockito.verifyStatic(); Thread.sleep(100);
     PowerMockito.verifyStatic(); Thread.sleep(1000);
@@ -363,7 +363,7 @@ public class RetryerBlockingTest {
         .thenThrow(unchecked1).thenThrow(exception2).thenThrow(unchecked3).thenThrow(exception4);
     assertException(IOException.class, () -> retryer.retryBlockingly(action::run))
         .isSameAs(exception4);
-    assertThat(asList(exception4.getSuppressed()))
+    assertThat(exception4.getSuppressed()).asList()
         .containsExactly(unchecked1, exception2, unchecked3).inOrder();
     verify(action, times(4)).run();
     PowerMockito.verifyStatic(times(3)); Thread.sleep(delay.duration().toMillis());
@@ -422,7 +422,7 @@ public class RetryerBlockingTest {
         .thenReturn("fixed");
     assertException(IOException.class, () -> retryer.retryBlockingly(action::run))
         .isSameAs(exception);
-    assertThat(asList(exception.getSuppressed())).containsExactly(exception1);
+    assertThat(exception.getSuppressed()).asList().containsExactly(exception1);
     assertThat(exception.getCause()).isNull();
     assertThat(exception1.getSuppressed()).isEmpty();
     assertThat(exception1.getCause()).isNull();
