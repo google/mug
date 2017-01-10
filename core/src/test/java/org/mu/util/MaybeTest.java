@@ -29,6 +29,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -64,6 +65,14 @@ public class MaybeTest {
     MyException exception = new MyException("test");
     Maybe<?, MyException> maybe = Maybe.except(exception);
     assertException(MyException.class, maybe::get).isSameAs(exception);
+  }
+
+  @Test public void testGet_interruptedException() throws Throwable {
+    Maybe<?, InterruptedException> maybe = Maybe.except(new InterruptedException());
+    assertThat(Thread.interrupted()).isTrue();
+    Thread.currentThread().interrupt();
+    assertThrows(InterruptedException.class, maybe::get);
+    assertThat(Thread.interrupted()).isFalse();
   }
 
   @Test public void testGetOrThrow_success() throws Throwable {
@@ -200,6 +209,17 @@ public class MaybeTest {
     Stream<Maybe<String, MyException>> stream =
         Stream.of("hello", "friend").map(Maybe.wrap(this::raise));
     assertThrows(MyException.class, () -> Maybe.collect(stream));
+  }
+
+  @Test public void testStream_interrupted() {
+    Stream<Maybe<String, InterruptedException>> stream =
+        Stream.of(1, 2).map(Maybe.wrap(x -> hibernate()));
+    Thread.currentThread().interrupt();
+    try {
+      assertThrows(InterruptedException.class, () -> Maybe.collect(stream));
+    } finally {
+      assertThat(Thread.interrupted()).isFalse();
+    }
   }
 
   @Test public void testStream_uncheckedExceptionNotCaptured() {
@@ -408,7 +428,8 @@ public class MaybeTest {
 
   @Test public void wrapFuture_futureBecomesUnexpectedFailure() throws Exception {
     CompletableFuture<String> future = new CompletableFuture<>();
-    CompletionStage<Maybe<String, MyException>> stage = Maybe.catchException(MyException.class, future);
+    CompletionStage<Maybe<String, MyException>> stage =
+        Maybe.catchException(MyException.class, future);
     assertPending(stage);
     RuntimeException exception = new RuntimeException("test");
     future.completeExceptionally(exception);
@@ -460,6 +481,11 @@ public class MaybeTest {
       Class<? extends Throwable> exceptionType, Executable executable) {
     Throwable thrown = Assertions.assertThrows(exceptionType, executable);
     return Truth.assertThat(thrown);
+  }
+
+  private static String hibernate() throws InterruptedException {
+    new CountDownLatch(1).await();
+    throw new AssertionError("can't reach here");
   }
 
   @SuppressWarnings("serial")

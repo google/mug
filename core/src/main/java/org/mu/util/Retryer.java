@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
@@ -76,7 +77,7 @@ public final class Retryer {
    */
   public final <E extends Throwable> Retryer upon(
       Class<E> exceptionType, List<? extends Delay<? super E>> delays) {
-    return new Retryer(plan.upon(exceptionType, delays));
+    return new Retryer(plan.upon(rejectInterruptedException(exceptionType), delays));
   }
 
   /**
@@ -95,7 +96,7 @@ public final class Retryer {
   public <E extends Throwable> Retryer upon(
       Class<E> exceptionType, Predicate<? super E> condition,
       List<? extends Delay<? super E>> delays) {
-    return new Retryer(plan.upon(exceptionType, condition, delays));
+    return new Retryer(plan.upon(rejectInterruptedException(exceptionType), condition, delays));
   }
 
   /**
@@ -149,6 +150,9 @@ public final class Retryer {
    *
    * <p>Retries are scheduled and performed by {@code executor}.
    *
+   * <p>Canceling the returned future object will cancel currently pending retry attempts. Same
+   * if {@code supplier} throws {@link InterruptedException}.
+   *
    * <p>NOTE that if {@code executor.shutdownNow()} is called, the returned {@link CompletionStage}
    * will never be done.
    */
@@ -169,6 +173,9 @@ public final class Retryer {
    * need to deal with them in one place.
    *
    * <p>Retries are scheduled and performed by {@code executor}.
+   *
+   * <p>Canceling the returned future object will cancel currently pending retry attempts. Same
+   * if {@code supplier} throws {@link InterruptedException}.
    *
    * <p>NOTE that if {@code executor.shutdownNow()} is called, the returned {@link CompletionStage}
    * will never be done.
@@ -268,6 +275,9 @@ public final class Retryer {
      *
      * <p>Retries are scheduled and performed by {@code executor}.
      *
+     * <p>Canceling the returned future object will cancel currently pending retry attempts. Same
+     * if {@code supplier} throws {@link InterruptedException}.
+     *
      * <p>NOTE that if {@code executor.shutdownNow()} is called, the returned
      * {@link CompletionStage} will never be done.
      */
@@ -287,6 +297,9 @@ public final class Retryer {
      * need to deal with them in one place.
      *
      * <p>Retries are scheduled and performed by {@code executor}.
+     *
+     * <p>Canceling the returned future object will cancel currently pending retry attempts. Same
+     * if {@code supplier} throws {@link InterruptedException}.
      *
      * <p>NOTE that if {@code executor.shutdownNow()} is called, the returned
      * {@link CompletionStage} will never be done.
@@ -632,6 +645,12 @@ public final class Retryer {
     } catch (Error e) {
       retryIfCovered(e, retryExecutor, supplier, future);
     } catch (Throwable e) {
+      if (e instanceof InterruptedException) {
+        CancellationException cancelled = new CancellationException();
+        cancelled.initCause(e);
+        Thread.currentThread().interrupt();
+        throw cancelled;
+      }
       scheduleRetry(e, retryExecutor, supplier, future);
     }
   }
@@ -669,6 +688,13 @@ public final class Retryer {
       addSuppressedTo(unexpected, e);
       throw unexpected;
     }
+  }
+
+  private static <E extends Throwable> Class<E> rejectInterruptedException(Class<E> exceptionType) {
+    if (InterruptedException.class.isAssignableFrom(exceptionType)) {
+      throw new IllegalArgumentException("Cannot retry on InterruptedException.");
+    }
+    return exceptionType;
   }
 
   private static void addSuppressedTo(Throwable exception, Throwable suppressed) {

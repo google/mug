@@ -29,8 +29,9 @@ final class FutureAssertions {
     CompletableFuture<?> future = stage.toCompletableFuture();
     assertThat(future.isDone()).isTrue();
     assertThat(future.isCompletedExceptionally()).isTrue();
+    CancellationException cancelled = assertThrows(CancellationException.class, future::get);
     assertThat(future.isCancelled()).isTrue();
-    return assertThrows(CancellationException.class, future::get);
+    return cancelled;
   }
 
   static Subject<?, Object> assertCompleted(CompletionStage<?> stage)

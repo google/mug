@@ -29,7 +29,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static org.mu.util.FutureAssertions.assertAfterCompleted;
 import static org.mu.util.FutureAssertions.assertCancelled;
 import static org.mu.util.FutureAssertions.assertCauseOf;
 import static org.mu.util.FutureAssertions.assertCompleted;
@@ -52,7 +51,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
@@ -87,6 +85,23 @@ public class RetryerTest {
 
   @After public void noMoreInteractions() {
     Mockito.verifyNoMoreInteractions(action);
+  }
+
+  @Test public void cannotRetryOnInterruptedException() {
+    assertThrows(IllegalArgumentException.class, () -> upon(InterruptedException.class, asList()));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> retryer.upon(InterruptedException.class, e -> false, asList()));
+  }
+
+  @Test public void cannotRetryOnSubtypeOfInterruptedException() {
+    @SuppressWarnings("serial")
+    class MyInterruptedException extends InterruptedException {}
+    assertThrows(
+        IllegalArgumentException.class, () -> upon(MyInterruptedException.class, asList()));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> retryer.upon(MyInterruptedException.class, e -> false, asList()));
   }
 
   @Test public void expectedReturnValueFirstTime() throws Exception {
@@ -209,7 +224,7 @@ public class RetryerTest {
   }
 
   @Test public void returnValueRetriedButCancelled() throws Exception {
-    Delay<String> delay = spy(ofSeconds(1));
+    Delay<String> delay = spy(ofSeconds(0));
     Retryer.ForReturnValue<String> forReturnValue = retryer.uponReturn("bad", asList(delay));
     when(action.run()).thenReturn("bad").thenReturn("fixed");
     CompletionStage<String> stage = forReturnValue.retry(action::run, executor);
@@ -266,52 +281,6 @@ public class RetryerTest {
     elapse(Duration.ofSeconds(1));  // exceeds deadline
     assertCompleted(stage).isEqualTo("bad");
     verify(action, times(3)).run();  // Retry twice.
-  }
-
-  @Test public void returnValueRetryBlockinglyForReal() throws Exception {
-    Delay<String> delay = Delay.ofMillis(3);
-    Retryer.ForReturnValue<String> forReturnValue = retryer.uponReturn("bad", asList(delay));
-    when(action.run()).thenReturn("bad").thenReturn("fixed");
-    assertThat(forReturnValue.retryBlockingly(action::run)).isEqualTo("fixed");
-    verify(action, times(2)).run();
-  }
-
-  @Test public void returnValueRetryBlockinglyWithZeroDelayIsOkayWithJdk() throws Exception {
-    Delay<String> delay = spy(ofSeconds(0));
-    Retryer.ForReturnValue<String> forReturnValue = retryer.uponReturn("bad", asList(delay));
-    when(action.run()).thenReturn("bad").thenReturn("fixed");
-    assertThat(forReturnValue.retryBlockingly(action::run)).isEqualTo("fixed");
-    verify(action, times(2)).run();
-    verify(delay).beforeDelay("bad");
-    verify(delay).afterDelay("bad");
-  }
-
-  @Test public void returnValueRetryForReal() throws Exception {
-    ScheduledThreadPoolExecutor realExecutor = new ScheduledThreadPoolExecutor(1);
-    try {
-      Delay<String> delay = Delay.ofMillis(1);
-      Retryer.ForReturnValue<String> forReturnValue = retryer.uponReturn("bad", asList(delay));
-      when(action.run()).thenReturn("bad").thenReturn("fixed");
-      assertAfterCompleted(forReturnValue.retry(action::run, realExecutor)).isEqualTo("fixed");
-      verify(action, times(2)).run();
-    } finally {
-      realExecutor.shutdown();
-    }
-  }
-
-  @Test public void returnValueRetryWithZeroDelayIsOkayWithJdk() throws Exception {
-    ScheduledThreadPoolExecutor realExecutor = new ScheduledThreadPoolExecutor(1);
-    try {
-      Delay<String> delay = spy(ofSeconds(0));
-      Retryer.ForReturnValue<String> forReturnValue = retryer.uponReturn("bad", asList(delay));
-      when(action.run()).thenReturn("bad").thenReturn("fixed");
-      assertAfterCompleted(forReturnValue.retry(action::run, realExecutor)).isEqualTo("fixed");
-      verify(action, times(2)).run();
-      verify(delay).beforeDelay("bad");
-      verify(delay).afterDelay("bad");
-    } finally {
-      realExecutor.shutdown();
-    }
   }
 
   @Test public void returnValueAsyncRetriedToSuccess() throws Exception {
@@ -572,56 +541,6 @@ public class RetryerTest {
     assertCauseOf(ExecutionException.class, stage).isSameAs(exception);
     assertThat(asList(exception.getSuppressed())).containsExactly(exception1);
     verify(action, times(3)).run();  // Retry twice.
-  }
-
-  @Test public void retryBlockinglyForReal() throws Exception {
-    Delay<Throwable> delay = Delay.ofMillis(1);
-    upon(IOException.class, asList(delay));
-    IOException exception = new IOException();
-    when(action.run()).thenThrow(exception).thenReturn("fixed");
-    assertThat(retryer.retryBlockingly(action::run)).isEqualTo("fixed");
-    verify(action, times(2)).run();
-  }
-
-  @Test public void retryBlockinglyWithZeroDelayIsOkayWithJdk() throws Exception {
-    Delay<Throwable> delay = spy(ofSeconds(0));
-    upon(IOException.class, asList(delay));
-    IOException exception = new IOException();
-    when(action.run()).thenThrow(exception).thenReturn("fixed");
-    assertThat(retryer.retryBlockingly(action::run)).isEqualTo("fixed");
-    verify(action, times(2)).run();
-    verify(delay).beforeDelay(exception);
-    verify(delay).afterDelay(exception);
-  }
-
-  @Test public void retryForReal() throws Exception {
-    ScheduledThreadPoolExecutor realExecutor = new ScheduledThreadPoolExecutor(1);
-    try {
-      Delay<Throwable> delay = Delay.ofMillis(2);
-      upon(IOException.class, asList(delay));
-      IOException exception = new IOException();
-      when(action.run()).thenThrow(exception).thenReturn("fixed");
-      assertAfterCompleted(retryer.retry(action::run, realExecutor)).isEqualTo("fixed");
-      verify(action, times(2)).run();
-    } finally {
-      realExecutor.shutdown();
-    }
-  }
-
-  @Test public void retryWithZeroDelayIsOkayWithJdk() throws Exception {
-    ScheduledThreadPoolExecutor realExecutor = new ScheduledThreadPoolExecutor(1);
-    try {
-      Delay<Throwable> delay = spy(ofSeconds(0));
-      upon(IOException.class, asList(delay));
-      IOException exception = new IOException();
-      when(action.run()).thenThrow(exception).thenReturn("fixed");
-      assertAfterCompleted(retryer.retry(action::run, realExecutor)).isEqualTo("fixed");
-      verify(action, times(2)).run();
-      verify(delay).beforeDelay(exception);
-      verify(delay).afterDelay(exception);
-    } finally {
-      realExecutor.shutdown();
-    }
   }
 
   @Test public void asyncExceptionRetriedToSuccess() throws Exception {
