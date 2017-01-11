@@ -45,6 +45,8 @@ import org.mu.function.CheckedBiFunction;
 import org.mu.function.CheckedFunction;
 import org.mu.function.CheckedSupplier;
 
+import com.google.common.testing.ClassSanityTester;
+import com.google.common.testing.EqualsTester;
 import com.google.common.truth.IterableSubject;
 import com.google.common.truth.ThrowableSubject;
 import com.google.common.truth.Truth;
@@ -89,27 +91,23 @@ public class MaybeTest {
   @Test public void testMap_success() {
     Maybe<Integer, MyException> maybe = Maybe.of(1);
     assertThat(maybe.map(Object::toString)).isEqualTo(Maybe.of("1"));
-    assertThrows(NullPointerException.class, () -> maybe.map(null));
   }
 
   @Test public void testMap_failure() {
     MyException exception = new MyException("test");
     Maybe<?, MyException> maybe = Maybe.except(exception).map(Object::toString);
     assertException(MyException.class, maybe::get).isSameAs(exception);
-    assertThrows(NullPointerException.class, () -> maybe.map(null));
   }
 
   @Test public void testFlatMap_success() {
     Maybe<Integer, MyException> maybe = Maybe.of(1);
     assertThat(maybe.flatMap(o -> Maybe.of(o.toString()))).isEqualTo(Maybe.of("1"));
-    assertThrows(NullPointerException.class, () -> maybe.flatMap(null));
   }
 
   @Test public void testFlatMap_failure() {
     MyException exception = new MyException("test");
     Maybe<?, MyException> maybe = Maybe.except(exception).flatMap(o -> Maybe.of(o.toString()));
     assertException(MyException.class, maybe::get).isSameAs(exception);
-    assertThrows(NullPointerException.class, () -> maybe.flatMap(null));
   }
 
   @Test public void testIsPresent() {
@@ -121,28 +119,23 @@ public class MaybeTest {
     AtomicInteger succeeded = new AtomicInteger();
     Maybe.of(100).ifPresent(i -> succeeded.set(i));
     assertThat(succeeded.get()).isEqualTo(100);
-    assertThrows(NullPointerException.class, () -> Maybe.of(0).ifPresent(null));
   }
 
   @Test public void testIfPresent_failure() {
     AtomicBoolean succeeded = new AtomicBoolean();
     Maybe.except(new Exception()).ifPresent(i -> succeeded.set(true));
     assertThat(succeeded.get()).isFalse();
-    assertThrows(NullPointerException.class, () -> Maybe.except(new Exception()).ifPresent(null));
   }
 
   @Test public void testOrElse() {
     assertThat(Maybe.of("good").orElse(Throwable::getMessage)).isEqualTo("good");
     assertThat(Maybe.except(new Exception("bad")).orElse(Throwable::getMessage)).isEqualTo("bad");
-    assertThrows(NullPointerException.class, () -> Maybe.of("good").orElse(null));
-    assertThrows(NullPointerException.class, () -> Maybe.except(new Exception()).orElse(null));
   }
 
   @Test public void testCatching_success() {
     AtomicReference<Throwable> failed = new AtomicReference<>();
     Maybe.of(100).catching(e -> {failed.set(e);});
     assertThat(failed.get()).isNull();
-    assertThrows(NullPointerException.class, () -> Maybe.of(0).catching(null));
   }
 
   @Test public void testCatching_failure() {
@@ -150,32 +143,11 @@ public class MaybeTest {
     AtomicReference<Throwable> failed = new AtomicReference<>();
     Maybe.except(exception).catching(e -> {failed.set(e);});
     assertThat(failed.get()).isSameAs(exception);
-    assertThrows(NullPointerException.class, () -> Maybe.except(exception).catching(null));
   }
 
-  @Test public void testEqualsAndHashCode() {
-    Maybe<?, ?> fail1 = Maybe.except(new MyException("bad"));
-    Maybe<?, ?> fail2 = Maybe.except(new Exception());
-    Maybe<?, ?> nil = Maybe.of(null);
-    assertThat(Maybe.of("hello")).isEqualTo(Maybe.of("hello"));
-    assertThat(Maybe.of("hello").hashCode()).isEqualTo(Maybe.of("hello").hashCode());
-    assertThat(Maybe.of("hello")).isNotEqualTo(Maybe.of("world"));
-    assertThat(Maybe.of("hello")).isNotEqualTo(fail1);
-    assertThat(Maybe.of("hello")).isNotEqualTo(null);
-    assertThat(Maybe.of("hello")).isNotEqualTo(nil);
-    assertThat(nil).isEqualTo(nil);
-    assertThat(nil.hashCode()).isEqualTo(Maybe.of(null).hashCode());
-    assertThat(nil).isNotEqualTo(Maybe.of("hello"));
-    assertThat(nil).isNotEqualTo(fail1);
-    assertThat(fail1).isNotEqualTo(nil);
-    assertThat(fail1).isEqualTo(fail1);
-    assertThat(fail1.hashCode()).isEqualTo(fail1.hashCode());
-    assertThat(fail1).isNotEqualTo(fail2);
-    assertThat(fail1).isNotEqualTo(Maybe.of("hello"));
-    assertThat(fail1).isNotEqualTo(null);
-  }
-
-  @Test public void testNulls() {
+  @Test public void testNulls_staticMethods() {
+    // Can't use straight ClassSanityTester.testNulls() because Maybe.of() accepts nulls.
+    // And we don't have @Nullable due to 0-dependency policy.
     assertThrows(NullPointerException.class, () -> Maybe.except(null));
     assertThrows(NullPointerException.class, () -> Maybe.wrap((CheckedSupplier<?, ?>) null));
     assertThrows(
@@ -197,7 +169,23 @@ public class MaybeTest {
         NullPointerException.class,
         () -> Maybe.wrap((CheckedBiFunction<?, ?, ?, Exception>) null, Exception.class));
     assertThrows(NullPointerException.class, () -> Maybe.byValue(null));
-    assertThrows(NullPointerException.class, () -> Maybe.of(1).orElseThrow(null));
+  }
+
+  @Test public void testNulls_instanceMethods() throws Exception {
+    new ClassSanityTester()
+        .forAllPublicStaticMethods(Maybe.class)
+        .testNulls();
+  }
+
+  @Test public void testEquals() {
+    Exception exception = new Exception();
+    new EqualsTester()
+        .addEqualityGroup(Maybe.of(1), Maybe.of(1))
+        .addEqualityGroup(Maybe.of(null), Maybe.of(null))
+        .addEqualityGroup(Maybe.of(2))
+        .addEqualityGroup(Maybe.except(exception), Maybe.except(exception))
+        .addEqualityGroup(Maybe.except(new RuntimeException()))
+        .testEquals();
   }
 
   @Test public void testStream_success() throws MyException {

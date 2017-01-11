@@ -35,6 +35,7 @@ import static org.mu.util.FutureAssertions.assertCompleted;
 import static org.mu.util.FutureAssertions.assertPending;
 
 import java.io.IOException;
+import java.lang.reflect.Proxy;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -68,6 +69,9 @@ import org.mockito.Spy;
 import org.mu.function.CheckedSupplier;
 import org.mu.util.Retryer.Delay;
 
+import com.google.common.testing.ClassSanityTester;
+import com.google.common.testing.EqualsTester;
+import com.google.common.testing.NullPointerTester;
 import com.google.common.truth.ThrowableSubject;
 
 @RunWith(JUnit4.class)
@@ -796,41 +800,25 @@ public class RetryerTest {
   }
 
   @Test public void testNulls() {
-    assertThrows(NullPointerException.class, () -> new Retryer().retry(null, executor));
-    assertThrows(NullPointerException.class, () -> new Retryer().retry(action::run, null));
-    assertThrows(NullPointerException.class, () -> new Retryer().retryBlockingly(null));
-    assertThrows(NullPointerException.class, () -> new Retryer().retryAsync(null, executor));
-    assertThrows(
-        NullPointerException.class, () -> new Retryer().retryAsync(action::runAsync, null));
-    assertThrows(NullPointerException.class, () -> new Retryer().upon(null, asList()));
-    assertThrows(
-        NullPointerException.class,
-        () -> new Retryer().upon(Exception.class, (List<Delay<Object>>) null));
-    assertThrows(NullPointerException.class, () -> new Retryer().uponReturn(null, asList()));
-    assertThrows(
-        NullPointerException.class, () -> new Retryer().uponReturn("", (List<Delay<String>>) null));
-    assertThrows(
-        NullPointerException.class,
-        () -> new Retryer().ifReturns(r -> true, (List<Delay<String>>) null));
-    assertThrows(NullPointerException.class, () -> new Retryer().ifReturns(null, asList()));
+    Stream<?> statelessStream = (Stream<?>) Proxy.newProxyInstance(
+          RetryerTest.class.getClassLoader(), new Class<?>[] {Stream.class},
+          (p, method, args) -> method.invoke(Stream.of(), args));
+    new ClassSanityTester()
+        .setDefault(Stream.class, statelessStream)
+        .testNulls(Retryer.class);
   }
 
   @Test public void testForReturnValue_nulls() {
-    assertThrows(
-        NullPointerException.class, () -> new Retryer().uponReturn((String) null, asList()));
-    Retryer.ForReturnValue<String> retryBad = new Retryer().uponReturn("bad", asList());
-    assertThrows(NullPointerException.class, () -> retryBad.retry(null, executor));
-    assertThrows(NullPointerException.class, () -> retryBad.retry(action::run, null));
-    assertThrows(NullPointerException.class, () -> retryBad.retryBlockingly(null));
-    assertThrows(NullPointerException.class, () -> retryBad.retryAsync(null, executor));
-    assertThrows(NullPointerException.class, () -> retryBad.retryAsync(action::runAsync, null));
+    new NullPointerTester()
+        .testAllPublicInstanceMethods(new Retryer().uponReturn("bad", asList()));
   }
 
   @Test public void testDelay_nulls() {
+    new NullPointerTester().testAllPublicStaticMethods(Delay.class);
+    // beforeDelay() and afterDelay() allow nulls, so we can't use automated test.
     assertThrows(NullPointerException.class, () -> ofDays(1).timed(null));
     assertThrows(
         NullPointerException.class, () -> ofDays(1).timed(asList(), null));
-    assertThrows(NullPointerException.class, () -> Delay.of(null));
     assertThrows(NullPointerException.class, () -> Delay.ofMillis(1).forEvents(null));
   }
 
@@ -899,13 +887,13 @@ public class RetryerTest {
   }
 
   @Test public void testDelay_equals() {
-    Delay<?> one = Delay.ofMillis(1);
-    assertThat(one).isEqualTo(one);
-    assertThat(one).isEqualTo(Delay.ofMillis(1));
-    assertThat(one).isNotEqualTo(Delay.ofMillis(2));
-    assertThat(one).isNotEqualTo(Duration.ofMillis(1));
-    assertThat(one).isNotEqualTo(null);
-    assertThat(one.hashCode()).isEqualTo(Delay.ofMillis(1).hashCode());
+    new EqualsTester()
+        .addEqualityGroup(
+            Delay.ofMillis(1000),
+            Delay.of(Duration.ofMillis(1000)),
+            Delay.of(Duration.ofSeconds(1)))
+        .addEqualityGroup(Delay.ofMillis(2))
+        .testEquals();
   }
 
   @Test public void testDelay_compareTo() {

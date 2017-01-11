@@ -19,11 +19,11 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.util.function.Predicate;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+
+import com.google.common.testing.ClassSanityTester;
 
 @RunWith(JUnit4.class)
 public class ExceptionPlanTest {
@@ -108,25 +108,7 @@ public class ExceptionPlanTest {
   }
 
   @Test public void testNulls() {
-    Class<Throwable> nullType = null;
-    Predicate<Object> nullCondition = null;
-    assertThrows(NullPointerException.class, () -> new ExceptionPlan<>().upon(nullType, asList()));
-    assertThrows(
-        NullPointerException.class, () -> new ExceptionPlan<>().upon(Exception.class, null));
-    assertThrows(
-        NullPointerException.class,
-        () -> new ExceptionPlan<>().upon(nullType, x -> true, asList()));
-    assertThrows(
-        NullPointerException.class,
-        () -> new ExceptionPlan<>().upon(Exception.class, nullCondition, asList()));
-    assertThrows(
-        NullPointerException.class,
-        () -> new ExceptionPlan<>().upon(nullCondition, asList()));
-    assertThrows(
-        NullPointerException.class, () -> new ExceptionPlan<>().upon(x -> true, null));
-    assertThrows(
-        NullPointerException.class,
-        () -> new ExceptionPlan<>().upon(Exception.class, x -> true, null));
+    new ClassSanityTester().testNulls(ExceptionPlan.class);
   }
 
   @SuppressWarnings("serial")

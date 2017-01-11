@@ -56,18 +56,20 @@ final class Utils {
   }
 
   /** Propagates {@code exception} if it's unchecked, or else return it as is. */
-  static <E extends Throwable> E propagateIfUnchecked(E e) {
-    if (e instanceof RuntimeException) {
-      throw (RuntimeException) e;
-    } else if (e instanceof Error) {
-      throw (Error) e;
+  static <E extends Throwable> E propagateIfUnchecked(E exception) {
+    requireNonNull(exception);
+    if (exception instanceof RuntimeException) {
+      throw (RuntimeException) exception;
+    } else if (exception instanceof Error) {
+      throw (Error) exception;
     } else {
-      return e;
+      return exception;
     }
   }
 
   static CompletionStage<?> ifCancelled(
       CompletionStage<?> stage, Consumer<? super CancellationException> action) {
+    requireNonNull(action);
     return stage.exceptionally(e -> {
       cast(e, CancellationException.class).ifPresent(action);
       return null;
@@ -77,6 +79,7 @@ final class Utils {
   /** Propagates cancellation from {@code outer} to {@code inner}. */
   static <T> CompletionStage<T> propagateCancellation(
       CompletionStage<T> outer, CompletionStage<?> inner) {
+    requireNonNull(inner);
     ifCancelled(outer, e -> {
       // Even if this isn't supported, the worst is that we don't propagate cancellation.
       // But that's fine because without a Future we cannot propagate anyway.

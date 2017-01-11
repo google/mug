@@ -119,6 +119,7 @@ final class ExceptionPlan<T> {
 
   /** Returns {@code true} if {@code exception} is covered in this plan. */
   public boolean covers(Throwable exception) {
+    requireNonNull(exception);
     return rules.stream().anyMatch(rule -> rule.appliesTo(exception));
   }
 
