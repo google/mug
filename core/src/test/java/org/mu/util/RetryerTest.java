@@ -931,7 +931,7 @@ public class RetryerTest {
   }
 
   @Test public void testDelay_forEvents() {
-    Delay<String> delay = spy(new DelayForMock<String>(Duration.ofDays(1)));
+    Delay<String> delay = spy(new SpyableDelay<String>(Duration.ofDays(1)));
     Delay<Integer> mapped = delay.forEvents(Object::toString);
     assertThat(mapped).isEqualTo(delay);
     mapped.beforeDelay(123);
@@ -988,11 +988,11 @@ public class RetryerTest {
   }
 
   private static <E> Delay<E> ofSeconds(long seconds) {
-    return new DelayForMock<>(Duration.ofSeconds(seconds));
+    return new SpyableDelay<>(Duration.ofSeconds(seconds));
   }
 
   private static <E> Delay<E> ofDays(long days) {
-    return new DelayForMock<>(Duration.ofDays(days));
+    return new SpyableDelay<>(Duration.ofDays(days));
   }
 
   private <E extends Throwable> void upon(

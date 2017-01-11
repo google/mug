@@ -179,7 +179,7 @@ public class RetryerFunctionalTest {
     CancellationException cancelled = assertThrows(
         CancellationException.class, () -> forReturnValue.retry(this::hibernate, executor));
     assertThat(cancelled.getCause()).isInstanceOf(InterruptedException.class);
-    assertThat(cancelled.getSuppressed()).asList().isEmpty();
+    assertThat(cancelled.getSuppressed()).isEmpty();
     assertThat(Thread.interrupted()).isTrue();
   }
 
@@ -193,8 +193,7 @@ public class RetryerFunctionalTest {
     CancellationException cancelled =
         assertThrows(CancellationException.class, () -> stage.toCompletableFuture().get());
     assertThat(cancelled.getCause()).isInstanceOf(InterruptedException.class);
-    assertThat(cancelled.getSuppressed()).asList().hasSize(1);
-    assertThat(cancelled.getSuppressed()[0]).isSameAs(exception);
+    assertThat(cancelled.getSuppressed()).asList().containsExactly(exception);
   }
 
   @Test public void interruptedDuringReturnValueRetryRetry()
@@ -211,7 +210,7 @@ public class RetryerFunctionalTest {
         assertThrows(ExecutionException.class, () -> stage.toCompletableFuture().get());
     assertThat(exception.getCause()).isInstanceOf(CancellationException.class);
     assertThat(exception.getCause().getCause()).isInstanceOf(InterruptedException.class);
-    assertThat(exception.getCause().getSuppressed()).asList().isEmpty();
+    assertThat(exception.getCause().getSuppressed()).isEmpty();
   }
 
   private <E extends Throwable> void upon(
@@ -220,7 +219,7 @@ public class RetryerFunctionalTest {
   }
 
   private static <E> Delay<E> ofSeconds(long seconds) {
-    return new DelayForMock<>(Duration.ofSeconds(seconds));
+    return new SpyableDelay<>(Duration.ofSeconds(seconds));
   }
 
   private String hibernate() throws InterruptedException {

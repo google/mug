@@ -48,7 +48,7 @@ public class RetryerBlockingTest {
 
   @Mock private Action action;
   @Mock private Interruptible interruptible;
-  private final Delay<Object> delay = Mockito.spy(new DelayForMock<>(Duration.ofMillis(100)));
+  private final Delay<Object> delay = Mockito.spy(new SpyableDelay<>(Duration.ofMillis(100)));
 
   @Before public void setUpMocks() {
     MockitoAnnotations.initMocks(this);

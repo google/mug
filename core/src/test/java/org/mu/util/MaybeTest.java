@@ -411,8 +411,7 @@ public class MaybeTest {
     CompletionStage<String> stage = future.handle((v, e) -> {
       throw new CompletionException(e);
     });
-    assertCauseOf(ExecutionException.class, stage)
-        .isSameAs(exception);
+    assertCauseOf(ExecutionException.class, stage).isSameAs(exception);
   }
 
   @Test public void testCompletionStage_exceptionally_wraps() throws Exception {
@@ -422,8 +421,7 @@ public class MaybeTest {
     CompletionStage<String> stage = future.exceptionally(e -> {
       throw new CompletionException(e);
     });
-    assertCauseOf(ExecutionException.class, stage)
-        .isSameAs(exception);
+    assertCauseOf(ExecutionException.class, stage).isSameAs(exception);
   }
 
   @Test public void wrapFuture_futureBecomesUnexpectedFailure() throws Exception {
