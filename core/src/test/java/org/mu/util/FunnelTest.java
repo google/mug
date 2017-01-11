@@ -33,6 +33,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import com.google.common.testing.ClassSanityTester;
+import com.google.common.testing.NullPointerTester;
 
 @RunWith(JUnit4.class)
 public final class FunnelTest {
@@ -49,6 +50,7 @@ public final class FunnelTest {
 
   @Test public void testNulls() {
     new ClassSanityTester().testNulls(Funnel.class);
+    new NullPointerTester().testAllPublicInstanceMethods(new Funnel<String>().through(batch::send));
   }
 
   @Test public void singleElementFunnel() {
