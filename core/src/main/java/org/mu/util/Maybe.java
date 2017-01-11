@@ -320,6 +320,7 @@ public abstract class Maybe<T, E extends Throwable> {
    */
   public static <T, E extends Throwable> CompletionStage<Maybe<T, E>> catchException(
       Class<E> exceptionType, CompletionStage<T> stage) {
+    requireNonNull(exceptionType);
     CompletableFuture<Maybe<T, E>> future = new CompletableFuture<>();
     stage.handle((v, e) -> {
       try {

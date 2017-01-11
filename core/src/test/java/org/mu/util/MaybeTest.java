@@ -24,6 +24,7 @@ import static org.mu.util.FutureAssertions.assertCompleted;
 import static org.mu.util.FutureAssertions.assertPending;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -41,12 +42,10 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.mu.function.CheckedBiFunction;
-import org.mu.function.CheckedFunction;
-import org.mu.function.CheckedSupplier;
 
 import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.EqualsTester;
+import com.google.common.testing.NullPointerTester;
 import com.google.common.truth.IterableSubject;
 import com.google.common.truth.ThrowableSubject;
 import com.google.common.truth.Truth;
@@ -146,29 +145,12 @@ public class MaybeTest {
   }
 
   @Test public void testNulls_staticMethods() {
-    // Can't use straight ClassSanityTester.testNulls() because Maybe.of() accepts nulls.
-    // And we don't have @Nullable due to 0-dependency policy.
-    assertThrows(NullPointerException.class, () -> Maybe.except(null));
-    assertThrows(NullPointerException.class, () -> Maybe.wrap((CheckedSupplier<?, ?>) null));
-    assertThrows(
-        NullPointerException.class,
-        () -> Maybe.wrap((CheckedSupplier<?, RuntimeException>) null, RuntimeException.class));
-    assertThrows(
-        NullPointerException.class, () -> Maybe.wrap(() -> justReturn("good"), null));
-    assertThrows(NullPointerException.class, () -> Maybe.wrap((CheckedFunction<?, ?, ?>) null));
-    assertThrows(
-        NullPointerException.class,
-        () -> Maybe.wrap((CheckedFunction<?, ?, RuntimeException>) null, RuntimeException.class));
-    assertThrows(NullPointerException.class, () -> Maybe.wrap(this::justReturn, null));
-    assertThrows(
-        NullPointerException.class, () -> Maybe.wrap((CheckedBiFunction<?, ?, ?, ?>) null));
-    assertThrows(
-        NullPointerException.class,
-        () -> Maybe.wrap((String a, String b) -> justReturn(a + b), null));
-    assertThrows(
-        NullPointerException.class,
-        () -> Maybe.wrap((CheckedBiFunction<?, ?, ?, Exception>) null, Exception.class));
-    assertThrows(NullPointerException.class, () -> Maybe.byValue(null));
+    for (Method method : Maybe.class.getMethods()) {
+      if (method.isSynthetic()) continue;
+      if (method.getName().equals("of")) continue;
+      if (method.getName().equals("equals")) continue;
+      new NullPointerTester().testMethod(Maybe.of(null), method);
+    }
   }
 
   @Test public void testNulls_instanceMethods() throws Exception {

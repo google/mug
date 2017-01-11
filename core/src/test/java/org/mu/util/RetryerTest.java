@@ -815,11 +815,9 @@ public class RetryerTest {
 
   @Test public void testDelay_nulls() {
     new NullPointerTester().testAllPublicStaticMethods(Delay.class);
-    // beforeDelay() and afterDelay() allow nulls, so we can't use automated test.
-    assertThrows(NullPointerException.class, () -> ofDays(1).timed(null));
-    assertThrows(
-        NullPointerException.class, () -> ofDays(1).timed(asList(), null));
-    assertThrows(NullPointerException.class, () -> Delay.ofMillis(1).forEvents(null));
+    new NullPointerTester()
+        .setDefault(Clock.class, Clock.systemUTC())
+        .testAllPublicInstanceMethods(new ExceptionDelay());
   }
 
   @Test public void testDelay_multiplied() {
@@ -860,7 +858,6 @@ public class RetryerTest {
   }
 
   @Test public void testDelay_randomized_invalid() {
-    assertThrows(NullPointerException.class, () -> ofDays(1).randomized(null, 1));
     assertThrows(IllegalArgumentException.class, () -> ofDays(1).randomized(new Random(), -0.1));
     assertThrows(IllegalArgumentException.class, () -> ofDays(1).randomized(new Random(), 1.1));
   }
@@ -1108,6 +1105,21 @@ public class RetryerTest {
   private static final class MyError extends Error {
     MyError(String message) {
       super(message);
+    }
+  }
+
+  private static final class ExceptionDelay extends Delay<Throwable> {
+
+    @Override public Duration duration() {
+      return Duration.ofMillis(1);
+    }
+
+    @Override public void beforeDelay(Throwable exception) {
+      requireNonNull(exception);
+    }
+
+    @Override public void afterDelay(Throwable exception) {
+      requireNonNull(exception);
     }
   }
 }

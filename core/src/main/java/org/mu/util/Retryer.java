@@ -513,6 +513,7 @@ public final class Retryer {
      *        delay randomly ranges from 0x to 2x.
      */
     public final Delay<E> randomized(Random random, double randomness) {
+      requireNonNull(random);
       if (randomness < 0 || randomness > 1) {
         throw new IllegalArgumentException("Randomness must be in range of [0, 1]: " + randomness);
       }
