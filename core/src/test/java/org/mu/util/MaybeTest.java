@@ -37,6 +37,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
+import javassist.Modifier;
+
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.function.Executable;
@@ -148,8 +150,9 @@ public class MaybeTest {
     for (Method method : Maybe.class.getMethods()) {
       if (method.isSynthetic()) continue;
       if (method.getName().equals("of")) continue;
-      if (method.getName().equals("equals")) continue;
-      new NullPointerTester().testMethod(Maybe.of(null), method);
+      if (Modifier.isStatic(method.getModifiers())) {
+        new NullPointerTester().testMethod(null, method);
+      }
     }
   }
 
