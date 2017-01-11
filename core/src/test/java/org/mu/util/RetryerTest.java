@@ -1040,7 +1040,6 @@ public class RetryerTest {
   }
 
   abstract class FakeScheduledExecutorService implements ScheduledExecutorService {
-
     private List<Schedule> schedules = new ArrayList<>();
 
     void tick() {
@@ -1109,7 +1108,6 @@ public class RetryerTest {
   }
 
   private static final class ExceptionDelay extends Delay<Throwable> {
-
     @Override public Duration duration() {
       return Duration.ofMillis(1);
     }
