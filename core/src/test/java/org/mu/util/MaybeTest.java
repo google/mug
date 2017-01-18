@@ -506,12 +506,14 @@ public class MaybeTest {
     }
   }
 
+  @SuppressWarnings("serial")
   private static class ExceptionWithBadSerialization extends Exception {
     private Object writeReplace() {
       return new RuntimeException();
     }
   }
 
+  @SuppressWarnings("serial")
   private static class ExceptionWithCustomSerialization extends Exception {
     private Object writeReplace() {
       return new ExceptionWithCustomSerialization() {};
