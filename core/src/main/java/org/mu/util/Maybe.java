@@ -27,7 +27,6 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Array;
 import java.util.Collections;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -519,17 +518,10 @@ public abstract class Maybe<T, E extends Throwable> {
   /** Do not serialize cause, suppressed or stack trace. */
   private static final class ExceptionBareboneSerializer extends ObjectOutputStream {
     private final Throwable exception;
-    private final IdentityHashMap<Object, Object> doNotSerialize = new IdentityHashMap<>();
 
     private ExceptionBareboneSerializer(Throwable exception, OutputStream out) throws IOException {
       super(out);
       this.exception = exception;
-      for (Throwable e : exception.getSuppressed()) {
-        doNotSerialize.put(e, e);
-      }
-      for (StackTraceElement element : exception.getStackTrace()) {
-        doNotSerialize.put(element, element);
-      }
       enableReplaceObject(true);
     }
 
@@ -556,17 +548,20 @@ public abstract class Maybe<T, E extends Throwable> {
     private Object replaceArrayOrList(Object obj) throws IOException {
       if (obj instanceof Object[]) {
         Object[] arr = (Object[]) obj;
-        if (arr.length > 0 && doNotSerialize.containsKey(arr[0])) {
+        if (Stream.of(arr).anyMatch(e -> shouldNotSerialize(e))) {
           return Array.newInstance(arr.getClass().getComponentType(), 0);
         }
       }
       if (obj instanceof List<?>) {
-        List<?> list = (List<?>) obj;
-        if (!list.isEmpty() && doNotSerialize.containsKey(list.get(0))) {
+        if (((List<?>) obj).stream().anyMatch(e -> shouldNotSerialize(e))) {
           return Collections.emptyList();
         }
       }
       return super.replaceObject(obj);
+    }
+
+    private static boolean shouldNotSerialize(Object obj) {
+      return obj instanceof StackTraceElement || obj instanceof Throwable;
     }
   }
 }
