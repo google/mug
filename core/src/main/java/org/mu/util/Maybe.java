@@ -498,8 +498,7 @@ public abstract class Maybe<T, E extends Throwable> {
   private static <E extends Throwable> E defaultWrapException(E exception) {
     if (exception instanceof InterruptedException) {
       Thread.interrupted();
-      // Exceptions don't support type parameters, so raw type check is safe.
-      @SuppressWarnings("unchecked")
+      @SuppressWarnings("unchecked")  // Exceptions are always raw types.
       E interrupted = (E) new InterruptedException();
       return interrupted;
     }
@@ -509,7 +508,6 @@ public abstract class Maybe<T, E extends Throwable> {
       wrapper.initCause(exception);
       return wrapper;
     } catch (Exception e) {
-      // Not able to wrap, just return the original
       logger.log(Level.WARNING, "Cannot wrap " + exception.getClass(), e);
       return exception;
     }
