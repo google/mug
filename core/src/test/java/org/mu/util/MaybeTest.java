@@ -92,7 +92,8 @@ public class MaybeTest {
     Maybe<?, InterruptedException> maybe = Maybe.except(new InterruptedException());
     assertThat(Thread.interrupted()).isTrue();
     Thread.currentThread().interrupt();
-    assertThrows(InterruptedException.class, maybe::get);
+    InterruptedException interrupted = assertThrows(InterruptedException.class, maybe::get);
+    assertThat(interrupted.getCause()).isNull();
     assertThat(Thread.interrupted()).isFalse();
   }
 
