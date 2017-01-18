@@ -630,7 +630,7 @@ public final class Retryer {
 
   private static <E extends Throwable> ExceptionPlan<Delay<?>> delay(
       E exception, ExceptionPlan<Delay<?>> plan) throws E {
-    ExceptionPlan.Execution<Delay<?>> execution = plan.execute(exception).get();
+    ExceptionPlan.Execution<Delay<?>> execution = plan.execute(exception).orElseThrow(e -> e);
     @SuppressWarnings("unchecked")  // Applicable delays were from upon(), enforcing <? super E>
     Delay<? super E> delay = (Delay<? super E>) execution.strategy();
     try {

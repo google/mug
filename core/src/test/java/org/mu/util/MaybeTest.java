@@ -40,8 +40,6 @@ import java.util.stream.Stream;
 import javassist.Modifier;
 
 import org.junit.Test;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.function.Executable;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
@@ -49,8 +47,6 @@ import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.EqualsTester;
 import com.google.common.testing.NullPointerTester;
 import com.google.common.truth.IterableSubject;
-import com.google.common.truth.ThrowableSubject;
-import com.google.common.truth.Truth;
 
 @RunWith(JUnit4.class)
 public class MaybeTest {
@@ -67,7 +63,29 @@ public class MaybeTest {
   @Test public void testGet_failure() throws Throwable {
     MyException exception = new MyException("test");
     Maybe<?, MyException> maybe = Maybe.except(exception);
-    assertException(MyException.class, maybe::get).isSameAs(exception);
+    MyException thrown = assertThrows(MyException.class, maybe::get);
+    assertThat(thrown.getCause()).isSameAs(exception);
+    assertThat(thrown.getSuppressed()).isEmpty();
+  }
+
+  @Test public void testGet_failureWithCause() throws Throwable {
+    MyException exception = new MyException("test");
+    Exception cause = new RuntimeException();
+    exception.initCause(cause);
+    Maybe<?, MyException> maybe = Maybe.except(exception);
+    MyException thrown = assertThrows(MyException.class, maybe::get);
+    assertThat(thrown.getCause()).isSameAs(exception);
+    assertThat(thrown.getSuppressed()).isEmpty();
+  }
+
+  @Test public void testGet_failureWithSuppressed() throws Throwable {
+    MyException exception = new MyException("test");
+    Exception suppressed = new RuntimeException();
+    exception.addSuppressed(suppressed);
+    Maybe<?, MyException> maybe = Maybe.except(exception);
+    MyException thrown = assertThrows(MyException.class, maybe::get);
+    assertThat(thrown.getCause()).isSameAs(exception);
+    assertThat(thrown.getSuppressed()).isEmpty();
   }
 
   @Test public void testGet_interruptedException() throws Throwable {
@@ -94,10 +112,12 @@ public class MaybeTest {
     assertThat(maybe.map(Object::toString)).isEqualTo(Maybe.of("1"));
   }
 
-  @Test public void testMap_failure() {
+  @Test public void testMap_failure() throws Throwable {
     MyException exception = new MyException("test");
     Maybe<?, MyException> maybe = Maybe.except(exception).map(Object::toString);
-    assertException(MyException.class, maybe::get).isSameAs(exception);
+    MyException thrown = assertThrows(MyException.class, maybe::get);
+    assertThat(thrown.getCause()).isSameAs(exception);
+    assertThat(thrown.getSuppressed()).isEmpty();
   }
 
   @Test public void testFlatMap_success() {
@@ -105,10 +125,12 @@ public class MaybeTest {
     assertThat(maybe.flatMap(o -> Maybe.of(o.toString()))).isEqualTo(Maybe.of("1"));
   }
 
-  @Test public void testFlatMap_failure() {
+  @Test public void testFlatMap_failure() throws Throwable {
     MyException exception = new MyException("test");
     Maybe<?, MyException> maybe = Maybe.except(exception).flatMap(o -> Maybe.of(o.toString()));
-    assertException(MyException.class, maybe::get).isSameAs(exception);
+    MyException thrown = assertThrows(MyException.class, maybe::get);
+    assertThat(thrown.getCause()).isSameAs(exception);
+    assertThat(thrown.getSuppressed()).isEmpty();
   }
 
   @Test public void testIsPresent() {
@@ -446,12 +468,6 @@ public class MaybeTest {
   private static <T, E extends Throwable> IterableSubject assertStream(
       Stream<Maybe<T, E>> stream) throws E {
     return assertThat(Maybe.collect(stream));
-  }
-
-  private static ThrowableSubject assertException(
-      Class<? extends Throwable> exceptionType, Executable executable) {
-    Throwable thrown = Assertions.assertThrows(exceptionType, executable);
-    return Truth.assertThat(thrown);
   }
 
   private static String hibernate() throws InterruptedException {

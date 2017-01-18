@@ -19,6 +19,15 @@ import static java.util.Objects.requireNonNull;
 import static org.mu.util.Utils.cast;
 import static org.mu.util.Utils.propagateIfUnchecked;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.lang.reflect.Array;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -31,6 +40,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -85,6 +96,7 @@ import org.mu.function.CheckedSupplier;
  * }</pre>
  */
 public abstract class Maybe<T, E extends Throwable> {
+  private static final Logger logger = Logger.getLogger(Maybe.class.getName());
 
   /**
    * Creates a {@code Maybe} for {@code value}.
@@ -116,13 +128,26 @@ public abstract class Maybe<T, E extends Throwable> {
   public abstract <T2> Maybe<T2, E> flatMap(Function<? super T, Maybe<T2, E>> function);
 
   /**
-   * Returns the encapsulated value or throw exception.
+   * Returns the encapsulated value or throws exception.
+   *
+   * <p>If {@code this} encapsulates an exception, a wrapper instance of type {@code E} is thrown
+   * to capture the stack trace of the code that called {@code get()}.
+   * Although, since there isn't a generic way to wrap exception, serialization is
+   * used to create the wrapper. In case the exception doesn't support serialization it will be
+   * thrown as is. Consider to use {@link #orElseThrow} to more reliably wrap the exception.
+   *
+   * <p>In the more rare case where throwing the original exception is required, use {@code
+   * orElseThrow(e -> e)}.
    *
    * <p>If {@link InterruptedException} is thrown, the current thread's {@link Thread#interrupted()}
    * bit is cleared because it's what most code expects when they catch an
    * {@code InterruptedException}.
+   *
+   * <p>No exception wrapping is attempted for {@code InterruptedException}.
    */
-  public abstract T get() throws E;
+  public final T get() throws E {
+    return orElseThrow(Maybe::defaultWrapException);
+  }
 
   /** Returns true unless this is exceptional. */
   public abstract boolean isPresent();
@@ -131,24 +156,20 @@ public abstract class Maybe<T, E extends Throwable> {
   public abstract void ifPresent(Consumer<? super T> consumer);
 
   /** Either returns the encapsulated value, or translates exception using {@code function}. */
-  public abstract <X extends Throwable> T orElse(CheckedFunction<? super E, ? extends T, X> f)
-      throws X;
+  public abstract <X extends Throwable> T orElse(
+      CheckedFunction<? super E, ? extends T, X> function) throws X;
 
   /**
-   * Either returns success value, or throw exception created by {@code exceptionSupplier}.
-   * The original causal exception of type {@code E} is set as cause of the thrown exception of type
-   * {@code X}.
+   * Either returns success value, or throws exception created by {@code exceptionWrapper}.
    *
-   * <p>This is useful when the encapsulated exception may be from a different thread (like the case
-   * of {@link #catchException}. Directly propagating exception from a different thread can result
-   * in confusing stack trace.
+   * <p>It's strongly recommended for {@code exceptionWrapper} to wrap the original exception as
+   * the cause.
    */
-  public final <X extends Throwable> T orElseThrow(Supplier<X> exceptionSupplier) throws X {
-    requireNonNull(exceptionSupplier);
+  public final <X extends Throwable> T orElseThrow(Function<? super E, X> exceptionWrapper)
+      throws X {
+    requireNonNull(exceptionWrapper);
     return orElse(e -> {
-      X wrapper = exceptionSupplier.get();
-      wrapper.initCause(e);
-      throw wrapper;
+      throw exceptionWrapper.apply(e);
     });
   }
 
@@ -393,10 +414,6 @@ public abstract class Maybe<T, E extends Throwable> {
       return f.apply(value);
     }
 
-    @Override public T get() {
-      return value;
-    }
-
     @Override public boolean isPresent() {
       return true;
     }
@@ -448,13 +465,6 @@ public abstract class Maybe<T, E extends Throwable> {
       return except(exception);
     }
 
-    @Override public T get() throws E {
-      if (exception instanceof InterruptedException) {
-        Thread.interrupted();
-      }
-      throw exception;
-    }
-
     @Override public boolean isPresent() {
       return false;
     }
@@ -482,6 +492,87 @@ public abstract class Maybe<T, E extends Throwable> {
         return exception.equals(that.exception);
       }
       return false;
+    }
+  }
+
+  private static <E extends Throwable> E defaultWrapException(E exception) {
+    if (exception instanceof InterruptedException) {
+      Thread.interrupted();
+      // Exceptions don't support type parameters, so raw type check is safe.
+      @SuppressWarnings("unchecked")
+      E interrupted = (E) new InterruptedException();
+      return interrupted;
+    }
+    return bestEffortWrap(exception);
+  }
+
+  private static <E extends Throwable> E bestEffortWrap(E exception) {
+    try {
+      // Strictly, this could be unsafe if the exception implements serialization poorly
+      // such that it could reserialize to a different type.
+      // When this happens, the exception will likely escape the catch() statements meant to catch
+      // it and bubble up to the top level exception handling code.
+      @SuppressWarnings("unchecked")
+      E copy = (E) reserializeAsSuppressed(exception);
+      return copy;
+    } catch (Exception e) {
+      // Not able to wrap, just return the original
+      logger.log(Level.WARNING, "Cannot wrap " + exception.getClass(), e);
+      return exception;
+    }
+  }
+
+  private static Throwable reserializeAsSuppressed(Throwable exception)
+      throws IOException, ClassNotFoundException {
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    try (ObjectOutputStream serializer = new ExceptionBareboneSerializer(exception, out)) {
+      serializer.writeObject(exception);
+    }
+    ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(out.toByteArray()));
+    Throwable copy = (Throwable) in.readObject();
+    copy.initCause(exception);
+    copy.fillInStackTrace();
+    return copy;
+  }
+
+  /** Do not serialize cause, suppressed or stack trace. */
+  private static final class ExceptionBareboneSerializer extends ObjectOutputStream {
+    private final Throwable exception;
+    private final IdentityHashMap<Object, Object> doNotSerialize = new IdentityHashMap<>();
+
+    ExceptionBareboneSerializer(Throwable exception, OutputStream out) throws IOException {
+      super(out);
+      this.exception = exception;
+      for (Throwable e : exception.getSuppressed()) {
+        doNotSerialize.put(e, e);
+      }
+      for (StackTraceElement element : exception.getStackTrace()) {
+        doNotSerialize.put(element, element);
+      }
+      enableReplaceObject(true);
+    }
+
+    @Override protected Object replaceObject(Object obj) throws IOException {
+      if (obj == exception.getCause()) {
+        return exception;
+      }
+      return replaceArrayOrList(obj);
+    }
+
+    private Object replaceArrayOrList(Object obj) throws IOException {
+      if (obj instanceof Object[]) {
+        Object[] arr = (Object[]) obj;
+        if (arr.length > 0 && doNotSerialize.containsKey(arr[0])) {
+          return Array.newInstance(arr.getClass().getComponentType(), 0);
+        }
+      }
+      if (obj instanceof List<?>) {
+        List<?> list = (List<?>) obj;
+        if (!list.isEmpty() && doNotSerialize.containsKey(list.get(0))) {
+          return Collections.emptyList();
+        }
+      }
+      return super.replaceObject(obj);
     }
   }
 }
