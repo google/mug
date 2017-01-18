@@ -530,10 +530,9 @@ public abstract class Maybe<T, E extends Throwable> {
         serializer.writeObject(exception);
       }
       ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(out.toByteArray()));
-      Throwable deserialized = (Throwable) in.readObject();
       @SuppressWarnings("unchecked")  // Exceptions are always raw types.
-      E result = (E) exception.getClass().cast(deserialized);
-      return result;
+      E deserialized = (E) exception.getClass().cast(in.readObject());
+      return deserialized;
     }
 
     @Override protected Object replaceObject(Object obj) throws IOException {
