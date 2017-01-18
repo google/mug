@@ -513,6 +513,7 @@ public final class Retryer {
      *        delay randomly ranges from 0x to 2x.
      */
     public final Delay<E> randomized(Random random, double randomness) {
+      requireNonNull(random);
       if (randomness < 0 || randomness > 1) {
         throw new IllegalArgumentException("Randomness must be in range of [0, 1]: " + randomness);
       }
@@ -629,7 +630,7 @@ public final class Retryer {
 
   private static <E extends Throwable> ExceptionPlan<Delay<?>> delay(
       E exception, ExceptionPlan<Delay<?>> plan) throws E {
-    ExceptionPlan.Execution<Delay<?>> execution = plan.execute(exception).get();
+    ExceptionPlan.Execution<Delay<?>> execution = plan.execute(exception).orElseThrow(e -> e);
     @SuppressWarnings("unchecked")  // Applicable delays were from upon(), enforcing <? super E>
     Delay<? super E> delay = (Delay<? super E>) execution.strategy();
     try {

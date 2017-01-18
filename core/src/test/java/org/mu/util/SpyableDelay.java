@@ -22,10 +22,10 @@ import org.mu.util.Retryer.Delay;
  * Looks like Mockito is having trouble to spy Delay.of(), which returns an anonymous class
  * that happens to be final.
  */
-class DelayForMock<E> extends Delay<E> {
+class SpyableDelay<E> extends Delay<E> {
   private final Duration duration;
 
-  DelayForMock(Duration duration) {
+  SpyableDelay(Duration duration) {
     this.duration = duration;
   }
 

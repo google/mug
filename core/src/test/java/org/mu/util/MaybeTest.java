@@ -24,6 +24,7 @@ import static org.mu.util.FutureAssertions.assertCompleted;
 import static org.mu.util.FutureAssertions.assertPending;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -36,18 +37,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
+import javassist.Modifier;
+
 import org.junit.Test;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.function.Executable;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.mu.function.CheckedBiFunction;
-import org.mu.function.CheckedFunction;
-import org.mu.function.CheckedSupplier;
 
+import com.google.common.testing.ClassSanityTester;
+import com.google.common.testing.EqualsTester;
+import com.google.common.testing.NullPointerTester;
 import com.google.common.truth.IterableSubject;
-import com.google.common.truth.ThrowableSubject;
-import com.google.common.truth.Truth;
 
 @RunWith(JUnit4.class)
 public class MaybeTest {
@@ -64,7 +63,29 @@ public class MaybeTest {
   @Test public void testGet_failure() throws Throwable {
     MyException exception = new MyException("test");
     Maybe<?, MyException> maybe = Maybe.except(exception);
-    assertException(MyException.class, maybe::get).isSameAs(exception);
+    MyException thrown = assertThrows(MyException.class, maybe::get);
+    assertThat(thrown.getCause()).isSameAs(exception);
+    assertThat(thrown.getSuppressed()).isEmpty();
+  }
+
+  @Test public void testGet_failureWithCause() throws Throwable {
+    MyException exception = new MyException("test");
+    Exception cause = new RuntimeException();
+    exception.initCause(cause);
+    Maybe<?, MyException> maybe = Maybe.except(exception);
+    MyException thrown = assertThrows(MyException.class, maybe::get);
+    assertThat(thrown.getCause()).isSameAs(exception);
+    assertThat(thrown.getSuppressed()).isEmpty();
+  }
+
+  @Test public void testGet_failureWithSuppressed() throws Throwable {
+    MyException exception = new MyException("test");
+    Exception suppressed = new RuntimeException();
+    exception.addSuppressed(suppressed);
+    Maybe<?, MyException> maybe = Maybe.except(exception);
+    MyException thrown = assertThrows(MyException.class, maybe::get);
+    assertThat(thrown.getCause()).isSameAs(exception);
+    assertThat(thrown.getSuppressed()).isEmpty();
   }
 
   @Test public void testGet_interruptedException() throws Throwable {
@@ -89,27 +110,27 @@ public class MaybeTest {
   @Test public void testMap_success() {
     Maybe<Integer, MyException> maybe = Maybe.of(1);
     assertThat(maybe.map(Object::toString)).isEqualTo(Maybe.of("1"));
-    assertThrows(NullPointerException.class, () -> maybe.map(null));
   }
 
-  @Test public void testMap_failure() {
+  @Test public void testMap_failure() throws Throwable {
     MyException exception = new MyException("test");
     Maybe<?, MyException> maybe = Maybe.except(exception).map(Object::toString);
-    assertException(MyException.class, maybe::get).isSameAs(exception);
-    assertThrows(NullPointerException.class, () -> maybe.map(null));
+    MyException thrown = assertThrows(MyException.class, maybe::get);
+    assertThat(thrown.getCause()).isSameAs(exception);
+    assertThat(thrown.getSuppressed()).isEmpty();
   }
 
   @Test public void testFlatMap_success() {
     Maybe<Integer, MyException> maybe = Maybe.of(1);
     assertThat(maybe.flatMap(o -> Maybe.of(o.toString()))).isEqualTo(Maybe.of("1"));
-    assertThrows(NullPointerException.class, () -> maybe.flatMap(null));
   }
 
-  @Test public void testFlatMap_failure() {
+  @Test public void testFlatMap_failure() throws Throwable {
     MyException exception = new MyException("test");
     Maybe<?, MyException> maybe = Maybe.except(exception).flatMap(o -> Maybe.of(o.toString()));
-    assertException(MyException.class, maybe::get).isSameAs(exception);
-    assertThrows(NullPointerException.class, () -> maybe.flatMap(null));
+    MyException thrown = assertThrows(MyException.class, maybe::get);
+    assertThat(thrown.getCause()).isSameAs(exception);
+    assertThat(thrown.getSuppressed()).isEmpty();
   }
 
   @Test public void testIsPresent() {
@@ -121,28 +142,23 @@ public class MaybeTest {
     AtomicInteger succeeded = new AtomicInteger();
     Maybe.of(100).ifPresent(i -> succeeded.set(i));
     assertThat(succeeded.get()).isEqualTo(100);
-    assertThrows(NullPointerException.class, () -> Maybe.of(0).ifPresent(null));
   }
 
   @Test public void testIfPresent_failure() {
     AtomicBoolean succeeded = new AtomicBoolean();
     Maybe.except(new Exception()).ifPresent(i -> succeeded.set(true));
     assertThat(succeeded.get()).isFalse();
-    assertThrows(NullPointerException.class, () -> Maybe.except(new Exception()).ifPresent(null));
   }
 
   @Test public void testOrElse() {
     assertThat(Maybe.of("good").orElse(Throwable::getMessage)).isEqualTo("good");
     assertThat(Maybe.except(new Exception("bad")).orElse(Throwable::getMessage)).isEqualTo("bad");
-    assertThrows(NullPointerException.class, () -> Maybe.of("good").orElse(null));
-    assertThrows(NullPointerException.class, () -> Maybe.except(new Exception()).orElse(null));
   }
 
   @Test public void testCatching_success() {
     AtomicReference<Throwable> failed = new AtomicReference<>();
     Maybe.of(100).catching(e -> {failed.set(e);});
     assertThat(failed.get()).isNull();
-    assertThrows(NullPointerException.class, () -> Maybe.of(0).catching(null));
   }
 
   @Test public void testCatching_failure() {
@@ -150,54 +166,33 @@ public class MaybeTest {
     AtomicReference<Throwable> failed = new AtomicReference<>();
     Maybe.except(exception).catching(e -> {failed.set(e);});
     assertThat(failed.get()).isSameAs(exception);
-    assertThrows(NullPointerException.class, () -> Maybe.except(exception).catching(null));
   }
 
-  @Test public void testEqualsAndHashCode() {
-    Maybe<?, ?> fail1 = Maybe.except(new MyException("bad"));
-    Maybe<?, ?> fail2 = Maybe.except(new Exception());
-    Maybe<?, ?> nil = Maybe.of(null);
-    assertThat(Maybe.of("hello")).isEqualTo(Maybe.of("hello"));
-    assertThat(Maybe.of("hello").hashCode()).isEqualTo(Maybe.of("hello").hashCode());
-    assertThat(Maybe.of("hello")).isNotEqualTo(Maybe.of("world"));
-    assertThat(Maybe.of("hello")).isNotEqualTo(fail1);
-    assertThat(Maybe.of("hello")).isNotEqualTo(null);
-    assertThat(Maybe.of("hello")).isNotEqualTo(nil);
-    assertThat(nil).isEqualTo(nil);
-    assertThat(nil.hashCode()).isEqualTo(Maybe.of(null).hashCode());
-    assertThat(nil).isNotEqualTo(Maybe.of("hello"));
-    assertThat(nil).isNotEqualTo(fail1);
-    assertThat(fail1).isNotEqualTo(nil);
-    assertThat(fail1).isEqualTo(fail1);
-    assertThat(fail1.hashCode()).isEqualTo(fail1.hashCode());
-    assertThat(fail1).isNotEqualTo(fail2);
-    assertThat(fail1).isNotEqualTo(Maybe.of("hello"));
-    assertThat(fail1).isNotEqualTo(null);
+  @Test public void testNulls_staticMethods() {
+    for (Method method : Maybe.class.getMethods()) {
+      if (method.isSynthetic()) continue;
+      if (method.getName().equals("of")) continue;
+      if (Modifier.isStatic(method.getModifiers())) {
+        new NullPointerTester().testMethod(null, method);
+      }
+    }
   }
 
-  @Test public void testNulls() {
-    assertThrows(NullPointerException.class, () -> Maybe.except(null));
-    assertThrows(NullPointerException.class, () -> Maybe.wrap((CheckedSupplier<?, ?>) null));
-    assertThrows(
-        NullPointerException.class,
-        () -> Maybe.wrap((CheckedSupplier<?, RuntimeException>) null, RuntimeException.class));
-    assertThrows(
-        NullPointerException.class, () -> Maybe.wrap(() -> justReturn("good"), null));
-    assertThrows(NullPointerException.class, () -> Maybe.wrap((CheckedFunction<?, ?, ?>) null));
-    assertThrows(
-        NullPointerException.class,
-        () -> Maybe.wrap((CheckedFunction<?, ?, RuntimeException>) null, RuntimeException.class));
-    assertThrows(NullPointerException.class, () -> Maybe.wrap(this::justReturn, null));
-    assertThrows(
-        NullPointerException.class, () -> Maybe.wrap((CheckedBiFunction<?, ?, ?, ?>) null));
-    assertThrows(
-        NullPointerException.class,
-        () -> Maybe.wrap((String a, String b) -> justReturn(a + b), null));
-    assertThrows(
-        NullPointerException.class,
-        () -> Maybe.wrap((CheckedBiFunction<?, ?, ?, Exception>) null, Exception.class));
-    assertThrows(NullPointerException.class, () -> Maybe.byValue(null));
-    assertThrows(NullPointerException.class, () -> Maybe.of(1).orElseThrow(null));
+  @Test public void testNulls_instanceMethods() throws Exception {
+    new ClassSanityTester()
+        .forAllPublicStaticMethods(Maybe.class)
+        .testNulls();
+  }
+
+  @Test public void testEquals() {
+    Exception exception = new Exception();
+    new EqualsTester()
+        .addEqualityGroup(Maybe.of(1), Maybe.of(1))
+        .addEqualityGroup(Maybe.of(null), Maybe.of(null))
+        .addEqualityGroup(Maybe.of(2))
+        .addEqualityGroup(Maybe.except(exception), Maybe.except(exception))
+        .addEqualityGroup(Maybe.except(new RuntimeException()))
+        .testEquals();
   }
 
   @Test public void testStream_success() throws MyException {
@@ -411,8 +406,7 @@ public class MaybeTest {
     CompletionStage<String> stage = future.handle((v, e) -> {
       throw new CompletionException(e);
     });
-    assertCauseOf(ExecutionException.class, stage)
-        .isSameAs(exception);
+    assertCauseOf(ExecutionException.class, stage).isSameAs(exception);
   }
 
   @Test public void testCompletionStage_exceptionally_wraps() throws Exception {
@@ -422,8 +416,7 @@ public class MaybeTest {
     CompletionStage<String> stage = future.exceptionally(e -> {
       throw new CompletionException(e);
     });
-    assertCauseOf(ExecutionException.class, stage)
-        .isSameAs(exception);
+    assertCauseOf(ExecutionException.class, stage).isSameAs(exception);
   }
 
   @Test public void wrapFuture_futureBecomesUnexpectedFailure() throws Exception {
@@ -475,12 +468,6 @@ public class MaybeTest {
   private static <T, E extends Throwable> IterableSubject assertStream(
       Stream<Maybe<T, E>> stream) throws E {
     return assertThat(Maybe.collect(stream));
-  }
-
-  private static ThrowableSubject assertException(
-      Class<? extends Throwable> exceptionType, Executable executable) {
-    Throwable thrown = Assertions.assertThrows(exceptionType, executable);
-    return Truth.assertThat(thrown);
   }
 
   private static String hibernate() throws InterruptedException {

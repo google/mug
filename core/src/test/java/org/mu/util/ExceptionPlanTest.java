@@ -19,11 +19,11 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.util.function.Predicate;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+
+import com.google.common.testing.ClassSanityTester;
 
 @RunWith(JUnit4.class)
 public class ExceptionPlanTest {
@@ -31,21 +31,21 @@ public class ExceptionPlanTest {
     ExceptionPlan<String> plan = new ExceptionPlan<>();
     MyError error = new MyError();
     Maybe<ExceptionPlan.Execution<String>, MyError> maybe = plan.execute(error);
-    assertSame(error, assertThrows(MyError.class, maybe::get));
+    assertSame(error, assertThrows(MyError.class, () -> maybe.orElseThrow(e -> e)));
   }
 
   @Test public void emptyPlan_uncheckedPropagation() {
     ExceptionPlan<String> plan = new ExceptionPlan<>();
     RuntimeException exception = new RuntimeException("test");
     Maybe<ExceptionPlan.Execution<String>, RuntimeException> maybe = plan.execute(exception);
-    assertSame(exception, assertThrows(RuntimeException.class, maybe::get));
+    assertSame(exception, assertThrows(RuntimeException.class, () -> maybe.orElseThrow(e -> e)));
   }
 
   @Test public void emptyPlan_checkedPropagation() {
     ExceptionPlan<String> plan = new ExceptionPlan<>();
     Exception exception = new Exception("test");
     Maybe<ExceptionPlan.Execution<String>, Exception> maybe = plan.execute(exception);
-    assertSame(exception, assertThrows(Exception.class, maybe::get));
+    assertSame(exception, assertThrows(Exception.class, () -> maybe.orElseThrow(e -> e)));
   }
 
   @Test public void planWithZeroStrategies() {
@@ -53,7 +53,7 @@ public class ExceptionPlanTest {
         .upon(Exception.class, asList());
     Exception exception = new Exception("test");
     Maybe<ExceptionPlan.Execution<String>, Exception> maybe = plan.execute(exception);
-    assertSame(exception, assertThrows(Exception.class, maybe::get));
+    assertSame(exception, assertThrows(Exception.class, () -> maybe.orElseThrow(e -> e)));
   }
 
   @Test public void planWithStrategies() throws Exception {
@@ -66,7 +66,7 @@ public class ExceptionPlanTest {
     assertThat(execution.strategy()).isEqualTo("report");
     Maybe<ExceptionPlan.Execution<String>, Exception> maybe =
         execution.remainingExceptionPlan().execute(exception);
-    assertSame(exception, assertThrows(Exception.class, maybe::get));
+    assertSame(exception, assertThrows(Exception.class, () -> maybe.orElseThrow(e -> e)));
   }
 
   @Test public void planWithPartiallyOverlappingRules() throws Exception {
@@ -78,7 +78,7 @@ public class ExceptionPlanTest {
     assertThat(execution.strategy()).isEqualTo("report");
     Maybe<ExceptionPlan.Execution<String>, Exception> maybe =
         execution.remainingExceptionPlan().execute(myException);
-    assertSame(myException, assertThrows(MyException.class, maybe::get));
+    assertSame(myException, assertThrows(MyException.class, () -> maybe.orElseThrow(e -> e)));
     assertThat(plan.execute(new Exception("test")).get().strategy()).isEqualTo("report");
   }
 
@@ -87,7 +87,7 @@ public class ExceptionPlanTest {
         .upon(Exception.class, e -> "recoverable".equals(e.getMessage()), asList("recover"))
         .upon(Exception.class, asList("report"));
     MyError error = new MyError();
-    assertSame(error, assertThrows(MyError.class, () -> plan.execute(error).get()));
+    assertSame(error, assertThrows(MyError.class, () -> plan.execute(error).orElseThrow(e -> e)));
 
     ExceptionPlan.Execution<String> execution = plan.execute(new Exception("recoverable")).get();
     assertThat(execution.strategy()).isEqualTo("recover");
@@ -100,7 +100,7 @@ public class ExceptionPlanTest {
         .upon(e -> "recoverable".equals(e.getMessage()), asList("recover"))
         .upon(Exception.class, asList("report"));
     MyError error = new MyError();
-    assertSame(error, assertThrows(MyError.class, () -> plan.execute(error).get()));
+    assertSame(error, assertThrows(MyError.class, () -> plan.execute(error).orElseThrow(e -> e)));
     ExceptionPlan.Execution<String> execution = plan.execute(new Exception("recoverable")).get();
     assertThat(execution.strategy()).isEqualTo("recover");
     execution = plan.execute(new Exception("bad")).get();
@@ -108,25 +108,7 @@ public class ExceptionPlanTest {
   }
 
   @Test public void testNulls() {
-    Class<Throwable> nullType = null;
-    Predicate<Object> nullCondition = null;
-    assertThrows(NullPointerException.class, () -> new ExceptionPlan<>().upon(nullType, asList()));
-    assertThrows(
-        NullPointerException.class, () -> new ExceptionPlan<>().upon(Exception.class, null));
-    assertThrows(
-        NullPointerException.class,
-        () -> new ExceptionPlan<>().upon(nullType, x -> true, asList()));
-    assertThrows(
-        NullPointerException.class,
-        () -> new ExceptionPlan<>().upon(Exception.class, nullCondition, asList()));
-    assertThrows(
-        NullPointerException.class,
-        () -> new ExceptionPlan<>().upon(nullCondition, asList()));
-    assertThrows(
-        NullPointerException.class, () -> new ExceptionPlan<>().upon(x -> true, null));
-    assertThrows(
-        NullPointerException.class,
-        () -> new ExceptionPlan<>().upon(Exception.class, x -> true, null));
+    new ClassSanityTester().testNulls(ExceptionPlan.class);
   }
 
   @SuppressWarnings("serial")

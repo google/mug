@@ -32,6 +32,9 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
+import com.google.common.testing.ClassSanityTester;
+import com.google.common.testing.NullPointerTester;
+
 @RunWith(JUnit4.class)
 public final class FunnelTest {
   private final Funnel<String> funnel = new Funnel<>();
@@ -45,24 +48,9 @@ public final class FunnelTest {
     assertThat(funnel.run()).isEmpty();
   }
 
-  @Test public void rejectsNullElement() {
-    assertThrows(NullPointerException.class, () -> funnel.add(null));
-  }
-
-  @Test public void batchRejectsNullElement() {
-    assertThrows(NullPointerException.class, () -> funnel.through(batch::send).accept(null));
-    assertThrows(
-        NullPointerException.class, () -> funnel.through(batch::send).accept(null, x -> x));
-    Consumer<String> nullEffect = null;
-    Function<String, String> nullConversion = null;
-    assertThrows(
-        NullPointerException.class, () -> funnel.through(batch::send).accept("", nullEffect));
-    assertThrows(
-        NullPointerException.class, () -> funnel.through(batch::send).accept("", nullConversion));
-  }
-
-  @Test public void rejectsNullBatchConverter() {
-    assertThrows(NullPointerException.class, () -> funnel.through(null));
+  @Test public void testNulls() {
+    new ClassSanityTester().testNulls(Funnel.class);
+    new NullPointerTester().testAllPublicInstanceMethods(new Funnel<String>().through(batch::send));
   }
 
   @Test public void singleElementFunnel() {

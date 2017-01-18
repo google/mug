@@ -24,6 +24,7 @@ import static org.mockito.Mockito.when;
 import static org.mu.util.FutureAssertions.assertCauseOf;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -32,6 +33,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Test;
 import org.mockito.Mockito;
+
+import com.google.common.testing.NullPointerTester;
 
 public class UtilsTest {
 
@@ -43,14 +46,12 @@ public class UtilsTest {
     assertThat(Utils.mapList(asList(1, 2), Object::toString)).containsExactly("1", "2").inOrder();
   }
 
-  @Test public void testMapList_nulls() {
-    assertThrows(NullPointerException.class, () -> Utils.mapList(null, v -> v));
-    assertThrows(NullPointerException.class, () -> Utils.mapList(asList(), null));
-  }
-
-  @Test public void testTyped_nulls() {
-    assertThrows(NullPointerException.class, () -> Utils.typed(null, x -> true));
-    assertThrows(NullPointerException.class, () -> Utils.typed(String.class, null));
+  @Test public void testNulls() {
+    for (Method method : Utils.class.getDeclaredMethods()) {
+      if (method.isSynthetic()) continue;
+      if (method.getName().equals("cast")) continue;
+      new NullPointerTester().testMethod(null, method);
+    }
   }
 
   @Test public void testTyped_notOfType() {
