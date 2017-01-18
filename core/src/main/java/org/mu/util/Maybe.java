@@ -504,18 +504,16 @@ public abstract class Maybe<T, E extends Throwable> {
       E interrupted = (E) new InterruptedException();
       return interrupted;
     }
-    return bestEffortWrap(exception);
-  }
-
-  private static <E extends Throwable> E bestEffortWrap(E exception) {
     try {
       // Strictly, this could be unsafe if the exception implements serialization poorly
       // such that it could reserialize to a different type.
       // When this happens, the exception will likely escape the catch() statements meant to catch
       // it and bubble up to the top level exception handling code.
       @SuppressWarnings("unchecked")
-      E copy = (E) reserializeAsSuppressed(exception);
-      return copy;
+      E wrapper = (E) ExceptionBareboneSerializer.reserialize(exception);
+      wrapper.fillInStackTrace();
+      wrapper.initCause(exception);
+      return wrapper;
     } catch (Exception e) {
       // Not able to wrap, just return the original
       logger.log(Level.WARNING, "Cannot wrap " + exception.getClass(), e);
@@ -523,27 +521,12 @@ public abstract class Maybe<T, E extends Throwable> {
     }
   }
 
-  private static Throwable reserializeAsSuppressed(Throwable exception)
-      throws IOException, ClassNotFoundException {
-    ByteArrayOutputStream out = new ByteArrayOutputStream();
-    try (ObjectOutputStream serializer = new ExceptionBareboneSerializer(exception, out)) {
-      serializer.writeObject(exception);
-    }
-    ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(out.toByteArray()));
-    Throwable copy = (Throwable) in.readObject();
-    if (copy.getStackTrace().length > 0) throw new AssertionError("Faulty serialization");
-    if (copy.getSuppressed().length > 0) throw new AssertionError("Faulty serialization");
-    copy.initCause(exception);
-    copy.fillInStackTrace();
-    return copy;
-  }
-
   /** Do not serialize cause, suppressed or stack trace. */
   private static final class ExceptionBareboneSerializer extends ObjectOutputStream {
     private final Throwable exception;
     private final IdentityHashMap<Object, Object> doNotSerialize = new IdentityHashMap<>();
 
-    ExceptionBareboneSerializer(Throwable exception, OutputStream out) throws IOException {
+    private ExceptionBareboneSerializer(Throwable exception, OutputStream out) throws IOException {
       super(out);
       this.exception = exception;
       for (Throwable e : exception.getSuppressed()) {
@@ -553,6 +536,19 @@ public abstract class Maybe<T, E extends Throwable> {
         doNotSerialize.put(element, element);
       }
       enableReplaceObject(true);
+    }
+
+    static Throwable reserialize(Throwable exception)
+        throws IOException, ClassNotFoundException {
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      try (ObjectOutputStream serializer = new ExceptionBareboneSerializer(exception, out)) {
+        serializer.writeObject(exception);
+      }
+      ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(out.toByteArray()));
+      Throwable deserialized = (Throwable) in.readObject();
+      if (deserialized.getStackTrace().length > 0) throw new AssertionError("Faulty serialization");
+      if (deserialized.getSuppressed().length > 0) throw new AssertionError("Faulty serialization");
+      return deserialized;
     }
 
     @Override protected Object replaceObject(Object obj) throws IOException {
