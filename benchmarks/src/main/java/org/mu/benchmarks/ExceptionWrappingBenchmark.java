@@ -6,6 +6,7 @@ import java.util.concurrent.CompletableFuture;
 import org.mu.util.Maybe;
 
 import com.google.caliper.Benchmark;
+import com.google.common.testing.SerializableTester;
 import com.google.common.util.concurrent.Futures;
 
 public class ExceptionWrappingBenchmark {
@@ -26,8 +27,6 @@ public class ExceptionWrappingBenchmark {
   @Benchmark
   void maybeGet(int n) {
     IOException exception = new IOException();
-    CompletableFuture<?> future = new CompletableFuture<>();
-    future.completeExceptionally(exception);
     for (int i = 0; i < n; i++) {
       try {
         Maybe.except(exception).get();
@@ -37,10 +36,24 @@ public class ExceptionWrappingBenchmark {
   }
 
   @Benchmark
+  void reserializeException(int n) {
+    IOException exception = new IOException();
+    for (int i = 0; i < n; i++) {
+      SerializableTester.reserialize(exception);
+    }
+  }
+
+  @Benchmark
+  void reserializeString(int n) {
+    String string = new String("abc");
+    for (int i = 0; i < n; i++) {
+      SerializableTester.reserialize(string);
+    }
+  }
+
+  @Benchmark
   void manualWrapper(int n) {
     IOException exception = new IOException();
-    CompletableFuture<?> future = new CompletableFuture<>();
-    future.completeExceptionally(exception);
     for (int i = 0; i < n; i++) {
       try {
         Maybe.except(exception).orElseThrow(IOException::new);
@@ -52,8 +65,6 @@ public class ExceptionWrappingBenchmark {
   @Benchmark
   void noWrapper(int n) {
     IOException exception = new IOException();
-    CompletableFuture<?> future = new CompletableFuture<>();
-    future.completeExceptionally(exception);
     for (int i = 0; i < n; i++) {
       try {
         Maybe.except(exception).orElseThrow(e -> e);
