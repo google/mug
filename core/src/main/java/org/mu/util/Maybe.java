@@ -130,13 +130,13 @@ public abstract class Maybe<T, E extends Throwable> {
   /**
    * Returns the encapsulated value or throws exception.
    *
-   * <p>If {@code this} encapsulates an exception, a wrapper instance of type {@code E} is thrown
-   * to capture the stack trace of the code that called {@code get()}.
-   * Although, since there isn't a generic way to wrap exception, serialization is
-   * used to create the wrapper. In case the exception doesn't support serialization it will be
-   * thrown as is. Consider to use {@link #orElseThrow} to more reliably wrap the exception.
+   * <p>If {@code this} encapsulates an exception, a wrapper exception of type {@code E} is thrown
+   * to capture the caller's stack trace with the original exception as the cause.
+   * Since there isn't a generic way to wrap exceptions, the wrapper will be created through
+   * serialization. Serialization failure will result in the original exception being thrown as is.
+   * Consider to use {@link #orElseThrow} to more reliably wrap the exception.
    *
-   * <p>In the more rare case where throwing the original exception is required, use {@code
+   * <p>In the more rare cases where throwing the original exception is required, use {@code
    * orElseThrow(e -> e)}.
    *
    * <p>If {@link InterruptedException} is thrown, the current thread's {@link Thread#interrupted()}
