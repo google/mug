@@ -134,7 +134,8 @@ public abstract class Maybe<T, E extends Throwable> {
    * to capture the caller's stack trace with the original exception as the cause.
    * Since there isn't a generic way to wrap exceptions, the wrapper will be created through
    * serialization. Serialization failure will result in the original exception being thrown as is.
-   * Consider to use {@link #orElseThrow} to more reliably wrap the exception.
+   * Consider to use {@link #orElseThrow orElseThrow()} to more reliably wrap
+   * exceptions, for example: {@code orElseThrow(IOException::new)}.
    *
    * <p>In the more rare cases where throwing the original exception is required, use {@code
    * orElseThrow(e -> e)}.
