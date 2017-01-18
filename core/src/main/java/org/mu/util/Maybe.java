@@ -531,6 +531,8 @@ public abstract class Maybe<T, E extends Throwable> {
     }
     ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(out.toByteArray()));
     Throwable copy = (Throwable) in.readObject();
+    if (copy.getStackTrace().length > 0) throw new AssertionError("Faulty serialization");
+    if (copy.getSuppressed().length > 0) throw new AssertionError("Faulty serialization");
     copy.initCause(exception);
     copy.fillInStackTrace();
     return copy;
