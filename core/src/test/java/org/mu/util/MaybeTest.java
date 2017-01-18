@@ -96,6 +96,22 @@ public class MaybeTest {
     assertThat(Thread.interrupted()).isFalse();
   }
 
+  @Test public void testGet_exceptionCannotBeDeserialized() throws Throwable {
+    ExceptionWithBadSerialization exception = new ExceptionWithBadSerialization();
+    Maybe<?, ExceptionWithBadSerialization> maybe = Maybe.except(exception);
+    ExceptionWithBadSerialization thrown =
+        assertThrows(ExceptionWithBadSerialization.class, maybe::get);
+    assertThat(thrown).isSameAs(exception);
+  }
+
+  @Test public void testGet_exceptionSerializedToSubtype() throws Throwable {
+    ExceptionWithCustomSerialization exception = new ExceptionWithCustomSerialization();
+    Maybe<?, ExceptionWithCustomSerialization> maybe = Maybe.except(exception);
+    ExceptionWithCustomSerialization thrown =
+        assertThrows(ExceptionWithCustomSerialization.class, maybe::get);
+    assertThat(thrown.getCause()).isSameAs(exception);
+  }
+
   @Test public void testGetOrThrow_success() throws Throwable {
     assertThat(Maybe.of("test").orElseThrow(IOException::new)).isEqualTo("test");
   }
@@ -486,6 +502,18 @@ public class MaybeTest {
   private static class MyUncheckedException extends RuntimeException {
     MyUncheckedException(String message) {
       super(message);
+    }
+  }
+
+  private static class ExceptionWithBadSerialization extends Exception {
+    private Object writeReplace() {
+      return new RuntimeException();
+    }
+  }
+
+  private static class ExceptionWithCustomSerialization extends Exception {
+    private Object writeReplace() {
+      return new ExceptionWithCustomSerialization() {};
     }
   }
 }

@@ -505,12 +505,7 @@ public abstract class Maybe<T, E extends Throwable> {
       return interrupted;
     }
     try {
-      // Strictly, this could be unsafe if the exception implements serialization poorly
-      // such that it could reserialize to a different type.
-      // When this happens, the exception will likely escape the catch() statements meant to catch
-      // it and bubble up to the top level exception handling code.
-      @SuppressWarnings("unchecked")
-      E wrapper = (E) ExceptionBareboneSerializer.reserialize(exception);
+      E wrapper = ExceptionBareboneSerializer.reserialize(exception);
       wrapper.fillInStackTrace();
       wrapper.initCause(exception);
       return wrapper;
@@ -538,7 +533,7 @@ public abstract class Maybe<T, E extends Throwable> {
       enableReplaceObject(true);
     }
 
-    static Throwable reserialize(Throwable exception)
+    static <E extends Throwable> E reserialize(E exception)
         throws IOException, ClassNotFoundException {
       ByteArrayOutputStream out = new ByteArrayOutputStream();
       try (ObjectOutputStream serializer = new ExceptionBareboneSerializer(exception, out)) {
@@ -546,9 +541,9 @@ public abstract class Maybe<T, E extends Throwable> {
       }
       ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(out.toByteArray()));
       Throwable deserialized = (Throwable) in.readObject();
-      if (deserialized.getStackTrace().length > 0) throw new AssertionError("Faulty serialization");
-      if (deserialized.getSuppressed().length > 0) throw new AssertionError("Faulty serialization");
-      return deserialized;
+      @SuppressWarnings("unchecked")  // Exceptions are always raw types.
+      E result = (E) exception.getClass().cast(deserialized);
+      return result;
     }
 
     @Override protected Object replaceObject(Object obj) throws IOException {
