@@ -110,6 +110,16 @@ public abstract class Maybe<T, E extends Throwable> {
    */
   public abstract <T2> Maybe<T2, E> flatMap(Function<? super T, Maybe<T2, E>> function);
 
+  /** Returns true unless this is exceptional. */
+  public abstract boolean isPresent();
+
+  /** Applies {@code consumer} if {@code this} is present. */
+  public abstract void ifPresent(Consumer<? super T> consumer);
+
+  /** Either returns the encapsulated value, or translates exception using {@code function}. */
+  public abstract <X extends Throwable> T orElse(
+      CheckedFunction<? super E, ? extends T, X> function) throws X;
+
   /**
    * Returns the encapsulated value or throws exception.
    *
@@ -133,16 +143,6 @@ public abstract class Maybe<T, E extends Throwable> {
   public final T orElseThrow() throws E {
     return orElseThrow(Maybe::defaultWrapException);
   }
-
-  /** Returns true unless this is exceptional. */
-  public abstract boolean isPresent();
-
-  /** Applies {@code consumer} if {@code this} is present. */
-  public abstract void ifPresent(Consumer<? super T> consumer);
-
-  /** Either returns the encapsulated value, or translates exception using {@code function}. */
-  public abstract <X extends Throwable> T orElse(
-      CheckedFunction<? super E, ? extends T, X> function) throws X;
 
   /**
    * Either returns success value, or throws exception created by {@code exceptionWrapper}.
