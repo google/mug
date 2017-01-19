@@ -59,7 +59,7 @@ import org.mu.function.CheckedSupplier;
  *     Stream<Maybe<byte[], ?>> stream = files.stream()
  *         .map(Maybe.wrap(Files::toByteArray));
  *     List<byte[]> list = new ArrayList<>();
- *     for (Maybe<byte[], ?> maybe : Iterate.through(stream)) {
+ *     for (Maybe<byte[], ?> maybe : Iterate.once(stream)) {
  *       list.add(maybe.orElseThrow(IOException::new));
  *     }
  *     return list;
@@ -75,7 +75,7 @@ import org.mu.function.CheckedSupplier;
  *     Stream<Maybe<Job, IOException>> stream = pendingJobIds.stream()
  *         .map(Maybe.wrap(this::fetchJob))
  *         .filter(Maybe.byValue(Job::isPending));
- *     for (Maybe<Job, ?> maybe : Iterate.through(stream)) {
+ *     for (Maybe<Job, ?> maybe : Iterate.once(stream)) {
  *       maybe.orElseThrow(IOException::new).runJob();
  *     }
  *   }
