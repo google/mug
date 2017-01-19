@@ -125,8 +125,10 @@ public abstract class Maybe<T, E extends Throwable> {
    *
    * <p>If {@code this} encapsulates an exception, a wrapper exception of type {@code E} is thrown
    * to capture the caller's stack trace with the original exception as the cause.
-   * Since there isn't a generic way to wrap exceptions, the wrapper will be created through
-   * serialization. Serialization failure will result in the original exception being thrown as is.
+   *
+   * <p>By default, the wrapper exception is created through serialization to ensure exception
+   * type and state transparency to the caller code. But, serialization is inefficient and not all
+   * exceptions support it. When serialization fails, the original exception will be thrown as is.
    *
    * <p>Consider to use {@link #orElseThrow(Function)} to more efficiently and more reliably wrap
    * exceptions, for example: {@code orElseThrow(IOException::new)}.
