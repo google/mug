@@ -22,7 +22,7 @@ public final class Iterate {
   /**
    * With due care, iterates through {@code stream} <em>only once</em>. It's strongly recommended
    * to keep it restricted to the scope of a single {@code for} loop because the returned {@code
-   * Iterable}'s {@link Iterable#iterator iterator()} method cannot be called more than once.
+   * Iterable}'s {@link Iterable#iterator() iterator()} method cannot be called more than once.
    *
    * <pre>{@code
    *   for (Foo foo : Iterate.once(stream)) {
