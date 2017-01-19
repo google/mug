@@ -60,9 +60,9 @@ public class ExceptionPlanTest {
     ExceptionPlan<String> plan = new ExceptionPlan<String>()
         .upon(Exception.class, asList("retry", "report"));
     Exception exception = new Exception("test");
-    ExceptionPlan.Execution<String> execution = plan.execute(exception).get();
+    ExceptionPlan.Execution<String> execution = plan.execute(exception).orElseThrow();
     assertThat(execution.strategy()).isEqualTo("retry");
-    execution = execution.remainingExceptionPlan().execute(exception).get();
+    execution = execution.remainingExceptionPlan().execute(exception).orElseThrow();
     assertThat(execution.strategy()).isEqualTo("report");
     Maybe<ExceptionPlan.Execution<String>, Exception> maybe =
         execution.remainingExceptionPlan().execute(exception);
@@ -74,12 +74,12 @@ public class ExceptionPlanTest {
         .upon(MyException.class, asList("report"))
         .upon(Exception.class, asList("report", "report"));
     MyException myException = new MyException();
-    ExceptionPlan.Execution<String> execution = plan.execute(myException).get();
+    ExceptionPlan.Execution<String> execution = plan.execute(myException).orElseThrow();
     assertThat(execution.strategy()).isEqualTo("report");
     Maybe<ExceptionPlan.Execution<String>, Exception> maybe =
         execution.remainingExceptionPlan().execute(myException);
     assertSame(myException, assertThrows(MyException.class, () -> maybe.orElseThrow(e -> e)));
-    assertThat(plan.execute(new Exception("test")).get().strategy()).isEqualTo("report");
+    assertThat(plan.execute(new Exception("test")).orElseThrow().strategy()).isEqualTo("report");
   }
 
   @Test public void withTypedPredicate() throws Exception {
@@ -89,9 +89,10 @@ public class ExceptionPlanTest {
     MyError error = new MyError();
     assertSame(error, assertThrows(MyError.class, () -> plan.execute(error).orElseThrow(e -> e)));
 
-    ExceptionPlan.Execution<String> execution = plan.execute(new Exception("recoverable")).get();
+    ExceptionPlan.Execution<String> execution =
+        plan.execute(new Exception("recoverable")).orElseThrow();
     assertThat(execution.strategy()).isEqualTo("recover");
-    execution = plan.execute(new Exception("bad")).get();
+    execution = plan.execute(new Exception("bad")).orElseThrow();
     assertThat(execution.strategy()).isEqualTo("report");
   }
 
@@ -101,9 +102,10 @@ public class ExceptionPlanTest {
         .upon(Exception.class, asList("report"));
     MyError error = new MyError();
     assertSame(error, assertThrows(MyError.class, () -> plan.execute(error).orElseThrow(e -> e)));
-    ExceptionPlan.Execution<String> execution = plan.execute(new Exception("recoverable")).get();
+    ExceptionPlan.Execution<String> execution =
+        plan.execute(new Exception("recoverable")).orElseThrow();
     assertThat(execution.strategy()).isEqualTo("recover");
-    execution = plan.execute(new Exception("bad")).get();
+    execution = plan.execute(new Exception("bad")).orElseThrow();
     assertThat(execution.strategy()).isEqualTo("report");
   }
 

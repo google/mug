@@ -53,72 +53,72 @@ import com.google.common.truth.IterableSubject;
 public class MaybeTest {
 
   @Test public void testOfNull() throws Throwable {
-    assertThat(Maybe.of(null).get()).isEqualTo(null);
+    assertThat(Maybe.of(null).orElseThrow()).isEqualTo(null);
     assertThat(Maybe.of(null).toString()).isEqualTo("null");
   }
 
-  @Test public void testGet_success() throws Throwable {
-    assertThat(Maybe.of("test").get()).isEqualTo("test");
+  @Test public void testOrElseThrow_success() throws Throwable {
+    assertThat(Maybe.of("test").orElseThrow()).isEqualTo("test");
   }
 
-  @Test public void testGet_failure() throws Throwable {
+  @Test public void testOrElseThrow_failure() throws Throwable {
     MyException exception = new MyException("test");
     Maybe<?, MyException> maybe = Maybe.except(exception);
-    MyException thrown = assertThrows(MyException.class, maybe::get);
+    MyException thrown = assertThrows(MyException.class, maybe::orElseThrow);
     assertThat(thrown.getCause()).isSameAs(exception);
     assertThat(thrown.getSuppressed()).isEmpty();
   }
 
-  @Test public void testGet_failureWithCause() throws Throwable {
+  @Test public void testOrElseThrow_failureWithCause() throws Throwable {
     MyException exception = new MyException("test");
     Exception cause = new RuntimeException();
     exception.initCause(cause);
     Maybe<?, MyException> maybe = Maybe.except(exception);
-    MyException thrown = assertThrows(MyException.class, maybe::get);
+    MyException thrown = assertThrows(MyException.class, maybe::orElseThrow);
     assertThat(thrown.getCause()).isSameAs(exception);
     assertThat(thrown.getSuppressed()).isEmpty();
   }
 
-  @Test public void testGet_failureWithSuppressed() throws Throwable {
+  @Test public void testOrElseThrow_failureWithSuppressed() throws Throwable {
     MyException exception = new MyException("test");
     Exception suppressed = new RuntimeException();
     exception.addSuppressed(suppressed);
     Maybe<?, MyException> maybe = Maybe.except(exception);
-    MyException thrown = assertThrows(MyException.class, maybe::get);
+    MyException thrown = assertThrows(MyException.class, maybe::orElseThrow);
     assertThat(thrown.getCause()).isSameAs(exception);
     assertThat(thrown.getSuppressed()).isEmpty();
   }
 
-  @Test public void testGet_interruptedException() throws Throwable {
+  @Test public void testOrElseThrow_interruptedException() throws Throwable {
     Maybe<?, InterruptedException> maybe = Maybe.except(new InterruptedException());
     assertThat(Thread.interrupted()).isTrue();
     Thread.currentThread().interrupt();
-    InterruptedException interrupted = assertThrows(InterruptedException.class, maybe::get);
+    InterruptedException interrupted = assertThrows(InterruptedException.class, maybe::orElseThrow);
     assertThat(interrupted.getCause()).isNull();
     assertThat(Thread.interrupted()).isFalse();
   }
 
-  @Test public void testGet_exceptionCannotBeDeserialized() throws Throwable {
+  @Test public void testOrElseThrow_exceptionCannotBeDeserialized() throws Throwable {
     ExceptionWithBadSerialization exception = new ExceptionWithBadSerialization();
     Maybe<?, ExceptionWithBadSerialization> maybe = Maybe.except(exception);
     ExceptionWithBadSerialization thrown =
-        assertThrows(ExceptionWithBadSerialization.class, maybe::get);
+        assertThrows(ExceptionWithBadSerialization.class, maybe::orElseThrow);
     assertThat(thrown).isSameAs(exception);
   }
 
-  @Test public void testGet_exceptionSerializedToSubtype() throws Throwable {
+  @Test public void testOrElseThrow_exceptionSerializedToSubtype() throws Throwable {
     ExceptionWithCustomSerialization exception = new ExceptionWithCustomSerialization();
     Maybe<?, ExceptionWithCustomSerialization> maybe = Maybe.except(exception);
     ExceptionWithCustomSerialization thrown =
-        assertThrows(ExceptionWithCustomSerialization.class, maybe::get);
+        assertThrows(ExceptionWithCustomSerialization.class, maybe::orElseThrow);
     assertThat(thrown.getCause()).isSameAs(exception);
   }
 
-  @Test public void testGetOrThrow_success() throws Throwable {
+  @Test public void testOrElseThrow_explicitException_success() throws Throwable {
     assertThat(Maybe.of("test").orElseThrow(IOException::new)).isEqualTo("test");
   }
 
-  @Test public void testGetOrThrow_failure() throws Throwable {
+  @Test public void testOrElseThrow_explicitException_failure() throws Throwable {
     MyException exception = new MyException("test");
     Maybe<?, MyException> maybe = Maybe.except(exception);
     IOException thrown = assertThrows(IOException.class, () -> maybe.orElseThrow(IOException::new));
@@ -133,7 +133,7 @@ public class MaybeTest {
   @Test public void testMap_failure() throws Throwable {
     MyException exception = new MyException("test");
     Maybe<?, MyException> maybe = Maybe.except(exception).map(Object::toString);
-    MyException thrown = assertThrows(MyException.class, maybe::get);
+    MyException thrown = assertThrows(MyException.class, maybe::orElseThrow);
     assertThat(thrown.getCause()).isSameAs(exception);
     assertThat(thrown.getSuppressed()).isEmpty();
   }
@@ -146,7 +146,7 @@ public class MaybeTest {
   @Test public void testFlatMap_failure() throws Throwable {
     MyException exception = new MyException("test");
     Maybe<?, MyException> maybe = Maybe.except(exception).flatMap(o -> Maybe.of(o.toString()));
-    MyException thrown = assertThrows(MyException.class, maybe::get);
+    MyException thrown = assertThrows(MyException.class, maybe::orElseThrow);
     assertThat(thrown.getCause()).isSameAs(exception);
     assertThat(thrown.getSuppressed()).isEmpty();
   }
@@ -258,7 +258,7 @@ public class MaybeTest {
   @Test public void testStream_generateFailure() {
     Maybe<String, MyException> maybe =
         Stream.generate(Maybe.wrap(() -> raise("bad"))).findFirst().get();
-    assertThat(assertThrows(MyException.class, maybe::get).getMessage()).isEqualTo("bad");
+    assertThat(assertThrows(MyException.class, maybe::orElseThrow).getMessage()).isEqualTo("bad");
   }
 
   @Test public void testFilterByValue_successValueFiltered() throws MyException {
@@ -274,9 +274,9 @@ public class MaybeTest {
         .filter(Maybe.byValue(s -> false))
         .collect(toList());
     assertThat(maybes).hasSize(2);
-    assertThat(assertThrows(MyException.class, () -> maybes.get(0).get()).getMessage())
+    assertThat(assertThrows(MyException.class, () -> maybes.get(0).orElseThrow()).getMessage())
         .isEqualTo("hello");
-    assertThat(assertThrows(MyException.class, () -> maybes.get(1).get()).getMessage())
+    assertThat(assertThrows(MyException.class, () -> maybes.get(1).orElseThrow()).getMessage())
         .isEqualTo("friend");
   }
 
@@ -491,7 +491,7 @@ public class MaybeTest {
   private static <T, E extends Throwable> List<T> collect(Stream<Maybe<T, E>> stream) throws E {
     List<T> list = new ArrayList<>();
     for (Maybe<T, E> maybe : Iterate.through(stream)) {
-      list.add(maybe.get());
+      list.add(maybe.orElseThrow());
     }
     return list;
   }
