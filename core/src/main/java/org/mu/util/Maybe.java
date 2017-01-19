@@ -50,9 +50,9 @@ import org.mu.function.CheckedSupplier;
 /**
  * Class that wraps checked exceptions and tunnels them through stream operations or future graphs.
  *
- * <p>The idea is to wrap checked exceptions inside Stream<Maybe<T, E>>, then {@code map()},
- * {@code flatMap()} and {@code filter()} away through normal stream operations
- * and unwrap/collect at the end. Exception is only thrown at the "collecting" step.
+ * <p>The idea is to wrap checked exceptions inside {@code Stream<Maybe<T, E>>}, then {@code map()},
+ * {@code flatMap()} and {@code filter()} away through normal stream operations.
+ * Exception is only thrown during terminal operations.
  * For example, the following code fetches and runs pending jobs using a stream of {@code Maybe}:
  *
  * <pre>{@code
@@ -68,7 +68,9 @@ import org.mu.function.CheckedSupplier;
  *   }
  * }</pre>
  *
- * The next example handles exception type safely in asynchronous code: <pre>{@code
+ * When it comes to futures, the following asynchronous code example handles exceptions type safely
+ * using {@link #catchException Maybe.catchException()}:
+ * <pre>{@code
  *   CompletionStage<User> assumeAnonymousIfNotAuthenticated(CompletionStage<User> stage) {
  *     CompletionStage<Maybe<User, AuthenticationException>> authenticated =
  *         Maybe.catchException(AuthenticationException.class, stage);
@@ -300,10 +302,8 @@ public abstract class Maybe<T, E extends Throwable> {
    * {@code exceptionType}, that exception is caught and wrapped inside a {@link Maybe} to complete
    * the wrapper stage normally.
    *
-   * <p>This is useful if the code is interested in recovering from its own exception while not
-   * wanting to mess with other types. Neither of {@link CompletionStage#exceptionally} and
-   * {@link CompletionStage#handle} methods allow selective exception recovery because you can't
-   * re-throw the {@code Throwable} unless it's unchecked.
+   * <p>This is useful if the asynchronous code is interested in recovering from its own exception
+   * without having to deal with other exception types.
    */
   public static <T, E extends Throwable> CompletionStage<Maybe<T, E>> catchException(
       Class<E> exceptionType, CompletionStage<T> stage) {
