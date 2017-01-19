@@ -41,8 +41,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.mu.function.CheckedBiFunction;
@@ -58,9 +56,13 @@ import org.mu.function.CheckedSupplier;
  *
  * <pre>{@code
  *   static List<byte[]> readFiles(Collection<File> files) throws IOException {
- *     Stream<Maybe<byte[], IOException>> stream = files.stream()
+ *     Stream<Maybe<byte[], ?>> stream = files.stream()
  *         .map(Maybe.wrap(Files::toByteArray));
- *     return Maybe.collect(stream);  // IOException throws here.
+ *     List<byte[]> list = new ArrayList<>();
+ *     for (Maybe<byte[], ?> maybe : Iterate.through(stream)) {
+ *       list.add(maybe.orElseThrow(IOException::new));
+ *     }
+ *     return list;
  *   }
  * }</pre>
  *
@@ -69,11 +71,13 @@ import org.mu.function.CheckedSupplier;
  * <pre>{@code
  *   private Job fetchJob(long jobId) throws IOException;
  *
- *   List<Job> getPendingJobs() throws IOException {
+ *   void runPendingJobs() throws IOException {
  *     Stream<Maybe<Job, IOException>> stream = pendingJobIds.stream()
  *         .map(Maybe.wrap(this::fetchJob))
  *         .filter(Maybe.byValue(Job::isPending));
- *     return Maybe.collect(stream);
+ *     for (Maybe<Job, ?> maybe : Iterate.through(stream)) {
+ *       maybe.orElseThrow(IOException::new).runJob();
+ *     }
  *   }
  * }</pre>
  *
@@ -184,22 +188,6 @@ public abstract class Maybe<T, E extends Throwable> {
       handler.accept(e);
       return Stream.empty();
     });
-  }
-
-  /** Unwraps a stream of Maybe and throws exception if any represents exception. */
-  public static <T, E extends Throwable> List<T> collect(Stream<Maybe<T, E>> stream) throws E {
-    return collect(stream, Collectors.toList());
-  }
-
-  /** Unwraps a stream of Maybe and throws exception if any represents exception. */
-  public static <T, E extends Throwable, A, R> R collect(
-      Stream<Maybe<T, E>> stream, Collector<? super T, A, R> collector) throws E {
-    A container = collector.supplier().get();
-    Iterable<Maybe<T, E>> iterable = stream::iterator;
-    for (Maybe<T, E> maybe : iterable) {
-      collector.accumulator().accept(container, maybe.get());
-    }
-    return collector.finisher().apply(container);
   }
 
   /**

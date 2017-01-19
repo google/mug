@@ -25,6 +25,7 @@ import static org.mu.util.FutureAssertions.assertPending;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -220,7 +221,7 @@ public class MaybeTest {
   @Test public void testStream_exception() {
     Stream<Maybe<String, MyException>> stream =
         Stream.of("hello", "friend").map(Maybe.wrap(this::raise));
-    assertThrows(MyException.class, () -> Maybe.collect(stream));
+    assertThrows(MyException.class, () -> collect(stream));
   }
 
   @Test public void testStream_interrupted() {
@@ -228,7 +229,7 @@ public class MaybeTest {
         Stream.of(1, 2).map(Maybe.wrap(x -> hibernate()));
     Thread.currentThread().interrupt();
     try {
-      assertThrows(InterruptedException.class, () -> Maybe.collect(stream));
+      assertThrows(InterruptedException.class, () -> collect(stream));
     } finally {
       assertThat(Thread.interrupted()).isFalse();
     }
@@ -484,7 +485,15 @@ public class MaybeTest {
 
   private static <T, E extends Throwable> IterableSubject assertStream(
       Stream<Maybe<T, E>> stream) throws E {
-    return assertThat(Maybe.collect(stream));
+    return assertThat(collect(stream));
+  }
+
+  private static <T, E extends Throwable> List<T> collect(Stream<Maybe<T, E>> stream) throws E {
+    List<T> list = new ArrayList<>();
+    for (Maybe<T, E> maybe : Iterate.through(stream)) {
+      list.add(maybe.get());
+    }
+    return list;
   }
 
   private static String hibernate() throws InterruptedException {
