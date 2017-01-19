@@ -174,21 +174,6 @@ for (Maybe<byte[], IOException>> maybe : Iterate.once(stream)) {
 }
 return contents;
 ```
-And what if you want to log and swallow?
-
-```java
-private <T> Stream<T> logAndSwallow(Maybe<T> maybe) {
-  return maybe.catching(logger::warn);
-}
-
-List<String> getJobNames() {
-  return pendingJobIds.stream()
-      .map(Maybe.wrap(this::fetchJob))
-      .flatMap(this::logAndSwallow)
-      .map(Job::getName)
-      .collect(Collectors.toList());
-}
-```
 
 #### Futures
 
