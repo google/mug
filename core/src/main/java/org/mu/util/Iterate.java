@@ -19,7 +19,7 @@ import java.util.stream.Stream;
 /**
  * WARNING: you should never see a variable or parameter of this type; nor should an instance of it
  * be passed to any method that expects {@link Iterable}. The sole use case this class aims for
- * is to be able to fluently write a {@code for()} loop through a {@link Stream}.
+ * is to be able to fluently write {@code for()} loops through a {@link Stream}.
  *
  * <p>The {@code Iterable} returned by {@link #through} is single-use-only!
  */

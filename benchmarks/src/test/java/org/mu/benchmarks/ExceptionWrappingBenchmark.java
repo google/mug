@@ -29,7 +29,7 @@ public class ExceptionWrappingBenchmark {
     IOException exception = new IOException();
     for (int i = 0; i < n; i++) {
       try {
-        Maybe.except(exception).get();
+        Maybe.except(exception).orElseThrow();
         throw new AssertionError();
       } catch (IOException expected) {}
     }

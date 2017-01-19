@@ -161,12 +161,16 @@ return files.stream()
    .collect(toList());
 ```
 
-The code can remain mostly as is by using `Maybe`:
+`Maybe` can be used to wrap the checked exception through the stream operations:
 
 ```java
-Stream<Maybe<byte[], IOException>> contents = files.stream()
+Stream<Maybe<byte[], IOException>> stream = files.stream()
     .map(Maybe.wrap(Files::toByteArray));
-return Maybe.collect(contents);
+List<byte[]> contents = new ArrayList<>();
+for (Maybe<byte[], IOException>> maybe : Iterate.through(stream)) {
+  contents.add(maybe.orElseThrow());
+}
+return contents;
 ```
 And what if you want to log and swallow?
 
@@ -218,17 +222,9 @@ CompletionStage<User> assumeAnonymousIfNotAuthenticated(CompletionStage<User> st
   return authenticated.thenApply(maybe -> maybe.orElse(e -> new AnonymousUser()));
 }
 ```
-One caveat with using `Future<Maybe<>>` is about stack trace. When the future completes and you are ready to let the encapsulated exception propagate, consider to use `orElseThrow()`:
-```java
-Future<Maybe<User, AuthenticationException>> future = ...;
-User user = future.get().orElseThrow(AuthenticationException::new);
-```
-`orElseThrow()` will throw a new exception with the encapsulated exception (which may have been thrown by a different thread) as the cause.
-
-This is because seeing stack trace from a different thread can be very confusing when debugging a production problem.
 
 #### Conceptually, what is `Maybe`?
-* An (otherwise) Java Optional that tells the reason of absence.
+* An (otherwise) Java Optional parameterized by the exception type.
 * A computation result that could have failed with expected exception.
 * Helps with awkward situations in Java where checked exception isn't the sweet spot.
 
