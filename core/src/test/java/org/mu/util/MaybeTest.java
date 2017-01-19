@@ -25,6 +25,7 @@ import static org.mu.util.FutureAssertions.assertPending;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -92,8 +93,25 @@ public class MaybeTest {
     Maybe<?, InterruptedException> maybe = Maybe.except(new InterruptedException());
     assertThat(Thread.interrupted()).isTrue();
     Thread.currentThread().interrupt();
-    assertThrows(InterruptedException.class, maybe::get);
+    InterruptedException interrupted = assertThrows(InterruptedException.class, maybe::get);
+    assertThat(interrupted.getCause()).isNull();
     assertThat(Thread.interrupted()).isFalse();
+  }
+
+  @Test public void testGet_exceptionCannotBeDeserialized() throws Throwable {
+    ExceptionWithBadSerialization exception = new ExceptionWithBadSerialization();
+    Maybe<?, ExceptionWithBadSerialization> maybe = Maybe.except(exception);
+    ExceptionWithBadSerialization thrown =
+        assertThrows(ExceptionWithBadSerialization.class, maybe::get);
+    assertThat(thrown).isSameAs(exception);
+  }
+
+  @Test public void testGet_exceptionSerializedToSubtype() throws Throwable {
+    ExceptionWithCustomSerialization exception = new ExceptionWithCustomSerialization();
+    Maybe<?, ExceptionWithCustomSerialization> maybe = Maybe.except(exception);
+    ExceptionWithCustomSerialization thrown =
+        assertThrows(ExceptionWithCustomSerialization.class, maybe::get);
+    assertThat(thrown.getCause()).isSameAs(exception);
   }
 
   @Test public void testGetOrThrow_success() throws Throwable {
@@ -203,7 +221,7 @@ public class MaybeTest {
   @Test public void testStream_exception() {
     Stream<Maybe<String, MyException>> stream =
         Stream.of("hello", "friend").map(Maybe.wrap(this::raise));
-    assertThrows(MyException.class, () -> Maybe.collect(stream));
+    assertThrows(MyException.class, () -> collect(stream));
   }
 
   @Test public void testStream_interrupted() {
@@ -211,7 +229,7 @@ public class MaybeTest {
         Stream.of(1, 2).map(Maybe.wrap(x -> hibernate()));
     Thread.currentThread().interrupt();
     try {
-      assertThrows(InterruptedException.class, () -> Maybe.collect(stream));
+      assertThrows(InterruptedException.class, () -> collect(stream));
     } finally {
       assertThat(Thread.interrupted()).isFalse();
     }
@@ -467,7 +485,15 @@ public class MaybeTest {
 
   private static <T, E extends Throwable> IterableSubject assertStream(
       Stream<Maybe<T, E>> stream) throws E {
-    return assertThat(Maybe.collect(stream));
+    return assertThat(collect(stream));
+  }
+
+  private static <T, E extends Throwable> List<T> collect(Stream<Maybe<T, E>> stream) throws E {
+    List<T> list = new ArrayList<>();
+    for (Maybe<T, E> maybe : Iterate.through(stream)) {
+      list.add(maybe.get());
+    }
+    return list;
   }
 
   private static String hibernate() throws InterruptedException {
@@ -486,6 +512,20 @@ public class MaybeTest {
   private static class MyUncheckedException extends RuntimeException {
     MyUncheckedException(String message) {
       super(message);
+    }
+  }
+
+  @SuppressWarnings("serial")
+  private static class ExceptionWithBadSerialization extends Exception {
+    private Object writeReplace() {
+      return new RuntimeException();
+    }
+  }
+
+  @SuppressWarnings("serial")
+  private static class ExceptionWithCustomSerialization extends Exception {
+    private Object writeReplace() {
+      return new ExceptionWithCustomSerialization() {};
     }
   }
 }

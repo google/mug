@@ -27,7 +27,6 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Array;
 import java.util.Collections;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -42,8 +41,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.mu.function.CheckedBiFunction;
@@ -59,9 +56,13 @@ import org.mu.function.CheckedSupplier;
  *
  * <pre>{@code
  *   static List<byte[]> readFiles(Collection<File> files) throws IOException {
- *     Stream<Maybe<byte[], IOException>> stream = files.stream()
+ *     Stream<Maybe<byte[], ?>> stream = files.stream()
  *         .map(Maybe.wrap(Files::toByteArray));
- *     return Maybe.collect(stream);  // IOException throws here.
+ *     List<byte[]> list = new ArrayList<>();
+ *     for (Maybe<byte[], ?> maybe : Iterate.through(stream)) {
+ *       list.add(maybe.orElseThrow(IOException::new));
+ *     }
+ *     return list;
  *   }
  * }</pre>
  *
@@ -70,11 +71,13 @@ import org.mu.function.CheckedSupplier;
  * <pre>{@code
  *   private Job fetchJob(long jobId) throws IOException;
  *
- *   List<Job> getPendingJobs() throws IOException {
+ *   void runPendingJobs() throws IOException {
  *     Stream<Maybe<Job, IOException>> stream = pendingJobIds.stream()
  *         .map(Maybe.wrap(this::fetchJob))
  *         .filter(Maybe.byValue(Job::isPending));
- *     return Maybe.collect(stream);
+ *     for (Maybe<Job, ?> maybe : Iterate.through(stream)) {
+ *       maybe.orElseThrow(IOException::new).runJob();
+ *     }
  *   }
  * }</pre>
  *
@@ -134,7 +137,7 @@ public abstract class Maybe<T, E extends Throwable> {
    * to capture the caller's stack trace with the original exception as the cause.
    * Since there isn't a generic way to wrap exceptions, the wrapper will be created through
    * serialization. Serialization failure will result in the original exception being thrown as is.
-   * Consider to use {@link #orElseThrow orElseThrow()} to more reliably wrap
+   * Consider to use {@link #orElseThrow orElseThrow()} to more efficiently and more reliably wrap
    * exceptions, for example: {@code orElseThrow(IOException::new)}.
    *
    * <p>In the more rare cases where throwing the original exception is required, use {@code
@@ -185,22 +188,6 @@ public abstract class Maybe<T, E extends Throwable> {
       handler.accept(e);
       return Stream.empty();
     });
-  }
-
-  /** Unwraps a stream of Maybe and throws exception if any represents exception. */
-  public static <T, E extends Throwable> List<T> collect(Stream<Maybe<T, E>> stream) throws E {
-    return collect(stream, Collectors.toList());
-  }
-
-  /** Unwraps a stream of Maybe and throws exception if any represents exception. */
-  public static <T, E extends Throwable, A, R> R collect(
-      Stream<Maybe<T, E>> stream, Collector<? super T, A, R> collector) throws E {
-    A container = collector.supplier().get();
-    Iterable<Maybe<T, E>> iterable = stream::iterator;
-    for (Maybe<T, E> maybe : iterable) {
-      collector.accumulator().accept(container, maybe.get());
-    }
-    return collector.finisher().apply(container);
   }
 
   /**
@@ -499,58 +486,41 @@ public abstract class Maybe<T, E extends Throwable> {
   private static <E extends Throwable> E defaultWrapException(E exception) {
     if (exception instanceof InterruptedException) {
       Thread.interrupted();
-      // Exceptions don't support type parameters, so raw type check is safe.
-      @SuppressWarnings("unchecked")
+      @SuppressWarnings("unchecked")  // Exceptions are always raw types.
       E interrupted = (E) new InterruptedException();
       return interrupted;
     }
-    return bestEffortWrap(exception);
-  }
-
-  private static <E extends Throwable> E bestEffortWrap(E exception) {
     try {
-      // Strictly, this could be unsafe if the exception implements serialization poorly
-      // such that it could reserialize to a different type.
-      // When this happens, the exception will likely escape the catch() statements meant to catch
-      // it and bubble up to the top level exception handling code.
-      @SuppressWarnings("unchecked")
-      E copy = (E) reserializeAsSuppressed(exception);
-      return copy;
+      E wrapper = ExceptionBareboneSerializer.reserialize(exception);
+      wrapper.fillInStackTrace();
+      wrapper.initCause(exception);
+      return wrapper;
     } catch (Exception e) {
-      // Not able to wrap, just return the original
       logger.log(Level.WARNING, "Cannot wrap " + exception.getClass(), e);
       return exception;
     }
   }
 
-  private static Throwable reserializeAsSuppressed(Throwable exception)
-      throws IOException, ClassNotFoundException {
-    ByteArrayOutputStream out = new ByteArrayOutputStream();
-    try (ObjectOutputStream serializer = new ExceptionBareboneSerializer(exception, out)) {
-      serializer.writeObject(exception);
-    }
-    ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(out.toByteArray()));
-    Throwable copy = (Throwable) in.readObject();
-    copy.initCause(exception);
-    copy.fillInStackTrace();
-    return copy;
-  }
-
   /** Do not serialize cause, suppressed or stack trace. */
   private static final class ExceptionBareboneSerializer extends ObjectOutputStream {
     private final Throwable exception;
-    private final IdentityHashMap<Object, Object> doNotSerialize = new IdentityHashMap<>();
 
-    ExceptionBareboneSerializer(Throwable exception, OutputStream out) throws IOException {
+    private ExceptionBareboneSerializer(Throwable exception, OutputStream out) throws IOException {
       super(out);
       this.exception = exception;
-      for (Throwable e : exception.getSuppressed()) {
-        doNotSerialize.put(e, e);
-      }
-      for (StackTraceElement element : exception.getStackTrace()) {
-        doNotSerialize.put(element, element);
-      }
       enableReplaceObject(true);
+    }
+
+    static <E extends Throwable> E reserialize(E exception)
+        throws IOException, ClassNotFoundException {
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      try (ObjectOutputStream serializer = new ExceptionBareboneSerializer(exception, out)) {
+        serializer.writeObject(exception);
+      }
+      ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(out.toByteArray()));
+      @SuppressWarnings("unchecked")  // Exceptions are always raw types.
+      E deserialized = (E) exception.getClass().cast(in.readObject());
+      return deserialized;
     }
 
     @Override protected Object replaceObject(Object obj) throws IOException {
@@ -563,17 +533,20 @@ public abstract class Maybe<T, E extends Throwable> {
     private Object replaceArrayOrList(Object obj) throws IOException {
       if (obj instanceof Object[]) {
         Object[] arr = (Object[]) obj;
-        if (arr.length > 0 && doNotSerialize.containsKey(arr[0])) {
+        if (Stream.of(arr).anyMatch(e -> shouldNotSerialize(e))) {
           return Array.newInstance(arr.getClass().getComponentType(), 0);
         }
       }
       if (obj instanceof List<?>) {
-        List<?> list = (List<?>) obj;
-        if (!list.isEmpty() && doNotSerialize.containsKey(list.get(0))) {
+        if (((List<?>) obj).stream().anyMatch(e -> shouldNotSerialize(e))) {
           return Collections.emptyList();
         }
       }
       return super.replaceObject(obj);
+    }
+
+    private static boolean shouldNotSerialize(Object obj) {
+      return obj instanceof StackTraceElement || obj instanceof Throwable;
     }
   }
 }
