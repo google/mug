@@ -302,8 +302,8 @@ public abstract class Maybe<T, E extends Throwable> {
    * {@code exceptionType}, that exception is caught and wrapped inside a {@link Maybe} to complete
    * the wrapper stage normally.
    *
-   * <p>This is useful if the code is interested in recovering from its own exception without
-   * having to deal with other exception types.
+   * <p>This is useful if the asynchronous code is interested in recovering from its own exception
+   * without having to deal with other exception types.
    */
   public static <T, E extends Throwable> CompletionStage<Maybe<T, E>> catchException(
       Class<E> exceptionType, CompletionStage<T> stage) {
