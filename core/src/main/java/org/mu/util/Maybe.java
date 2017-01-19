@@ -50,7 +50,7 @@ import org.mu.function.CheckedSupplier;
 /**
  * Class that wraps checked exceptions and tunnels them through stream operations or future graphs.
  *
- * <p>The idea is to wrap checked exceptions inside {@code Stream<Maybe<T, E>>}, rhwn {@code map()},
+ * <p>The idea is to wrap checked exceptions inside {@code Stream<Maybe<T, E>>}, then {@code map()},
  * {@code flatMap()} and {@code filter()} away through normal stream operations.
  * Exception is only thrown during terminal operations.
  * For example, the following code fetches and runs pending jobs using a stream of {@code Maybe}:
