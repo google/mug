@@ -68,7 +68,9 @@ import org.mu.function.CheckedSupplier;
  *   }
  * }</pre>
  *
- * The next example handles exception type safely in asynchronous code: <pre>{@code
+ * When it comes to futures, the following asynchronous code handles exceptions type safely using
+ * {@link #catchException}:
+ * <pre>{@code
  *   CompletionStage<User> assumeAnonymousIfNotAuthenticated(CompletionStage<User> stage) {
  *     CompletionStage<Maybe<User, AuthenticationException>> authenticated =
  *         Maybe.catchException(AuthenticationException.class, stage);
