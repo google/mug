@@ -5,6 +5,10 @@ core/.classpath
 
 core/.project
 
+benchmarks/.classpath
+
+benchmarks/.project
+
 core/.settings/org.eclipse.jdt.core.prefs
 
 *.prefs
