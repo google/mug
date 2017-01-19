@@ -303,9 +303,7 @@ public abstract class Maybe<T, E extends Throwable> {
    * the wrapper stage normally.
    *
    * <p>This is useful if the code is interested in recovering from its own exception while not
-   * wanting to mess with other types. Neither of {@link CompletionStage#exceptionally} and
-   * {@link CompletionStage#handle} methods allow selective exception recovery because you can't
-   * re-throw the {@code Throwable} unless it's unchecked.
+   * tampering with other exception types.
    */
   public static <T, E extends Throwable> CompletionStage<Maybe<T, E>> catchException(
       Class<E> exceptionType, CompletionStage<T> stage) {
