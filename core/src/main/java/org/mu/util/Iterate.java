@@ -14,27 +14,51 @@
  *****************************************************************************/
 package org.mu.util;
 
+import static java.util.Objects.requireNonNull;
+
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-/**
- * WARNING: you should never see a variable or parameter of this type; nor should an instance of it
- * be passed to any method that expects {@link Iterable}. The sole use case this class aims for
- * is to be able to fluently write {@code for()} loops through a {@link Stream}.
- *
- * <p>The {@code Iterable} returned by {@link #through} is single-use-only!
- */
-public interface Iterate<T> extends Iterable<T> {
+/** Helpers to make it easier to iterate over {@link Stream}s. */
+public final class Iterate {
 
   /**
-   * Iterates through {@code stream}. For example:
+   * Iterates through {@code streamProvider}. For example:
    *
    * <pre>{@code
-   *   for (Foo foo : Iterate.through(fooStream)) {
+   *   for (Foo foo : Iterate.over(() -> foos.stream().map(...))) {
+   *     ...
+   *   }
+   * }</pre>
+   *
+   * With due care, this can also be used to iterate through an existing stream instance,
+   * as long as it's restricted to the scope of a single {@code for} loop:
+   *
+   * <pre>{@code
+   *   for (Foo foo : Iterate.over(() -> stream)) {
    *     ...
    *   }
    * }</pre>
    */
-  static <T> Iterate<T> through(Stream<T> stream) {
+  public static <T> Iterable<T> over(Supplier<? extends Stream<T>> streamSupplier) {
+    requireNonNull(streamSupplier);
+    return () -> streamSupplier.get().iterator();
+  }
+
+  /**
+   * With due care, this can also be used to iterate through an existing stream instance,
+   * as long as it's restricted to the scope of a single {@code for} loop:
+   *
+   * <pre>{@code
+   *   for (Foo foo : Iterate.once(stream)) {
+   *     ...
+   *   }
+   * }</pre>
+   * <p>The {@code Iterable} returned is single-use-only!
+   */
+  public static <T> Iterable<T> once(Stream<T> stream) {
     return stream::iterator;
   }
+
+  private Iterate() {}
 }
