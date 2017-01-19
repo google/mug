@@ -158,6 +158,7 @@ For a stream operation that would have looked like this if checked exception wer
 ```java
 return files.stream()
    .map(Files::toByteArray)
+   .filter(b -> b.length > 0)
    .collect(toList());
 ```
 
@@ -165,7 +166,8 @@ return files.stream()
 
 ```java
 Stream<Maybe<byte[], IOException>> stream = files.stream()
-    .map(Maybe.wrap(Files::toByteArray));
+    .map(Maybe.wrap(Files::toByteArray))
+    .filter(Maybe.byValue(b -> b.length > 0));
 List<byte[]> contents = new ArrayList<>();
 for (Maybe<byte[], IOException>> maybe : Iterate.once(stream)) {
   contents.add(maybe.orElseThrow());
