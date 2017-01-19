@@ -97,6 +97,15 @@ import org.mu.function.CheckedSupplier;
  *         .collect(Collectors.toList());
  *   }
  * }</pre>
+ *
+ * A {@code Maybe} can also be used to tunnel exceptions in future graphs type safely.
+ * For example: <pre>{@code
+ *   CompletionStage<User> assumeAnonymousIfNotAuthenticated(CompletionStage<User> stage) {
+ *     CompletionStage<Maybe<User, AuthenticationException>> authenticated =
+ *         Maybe.catchException(AuthenticationException.class, stage);
+ *     return authenticated.thenApply(maybe -> maybe.orElse(e -> new AnonymousUser()));
+ *   }
+ * }</pre>
  */
 public abstract class Maybe<T, E extends Throwable> {
   private static final Logger logger = Logger.getLogger(Maybe.class.getName());
