@@ -167,8 +167,7 @@ public abstract class Maybe<T, E extends Throwable> {
   /**
    * Either returns success value, or throws exception created by {@code exceptionWrapper}.
    *
-   * <p>It's strongly recommended for {@code exceptionWrapper} to wrap the original exception as
-   * the cause.
+   * <p>It's recommended for {@code exceptionWrapper} to wrap the original exception as the cause.
    */
   public final <X extends Throwable> T orElseThrow(Function<? super E, X> exceptionWrapper)
       throws X {

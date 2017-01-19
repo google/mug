@@ -46,15 +46,14 @@ public final class Iterate {
   }
 
   /**
-   * With due care, this can also be used to iterate through an existing stream instance,
-   * as long as it's restricted to the scope of a single {@code for} loop:
+   * With due care, iterate through {@code stream} <em>once only</em>. It's strongly recommended
+   * to keep it restricted to the scope of a single {@code for} loop:
    *
    * <pre>{@code
    *   for (Foo foo : Iterate.once(stream)) {
    *     ...
    *   }
    * }</pre>
-   * <p>The {@code Iterable} returned is single-use-only!
    */
   public static <T> Iterable<T> once(Stream<T> stream) {
     return stream::iterator;
