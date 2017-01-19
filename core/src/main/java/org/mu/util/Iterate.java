@@ -14,39 +14,13 @@
  *****************************************************************************/
 package org.mu.util;
 
-import static java.util.Objects.requireNonNull;
-
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /** Helpers to make it easier to iterate over {@link Stream}s. */
 public final class Iterate {
 
   /**
-   * Iterates through {@code streamProvider}. For example:
-   *
-   * <pre>{@code
-   *   for (Foo foo : Iterate.over(() -> foos.stream().map(...))) {
-   *     ...
-   *   }
-   * }</pre>
-   *
-   * With due care, this can also be used to iterate through an existing stream instance,
-   * as long as it's restricted to the scope of a single {@code for} loop:
-   *
-   * <pre>{@code
-   *   for (Foo foo : Iterate.over(() -> stream)) {
-   *     ...
-   *   }
-   * }</pre>
-   */
-  public static <T> Iterable<T> over(Supplier<? extends Stream<T>> streamSupplier) {
-    requireNonNull(streamSupplier);
-    return () -> streamSupplier.get().iterator();
-  }
-
-  /**
-   * With due care, iterate through {@code stream} <em>once only</em>. It's strongly recommended
+   * With due care, iterates through {@code stream} <em>once only</em>. It's strongly recommended
    * to keep it restricted to the scope of a single {@code for} loop:
    *
    * <pre>{@code
