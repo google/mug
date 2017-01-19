@@ -48,31 +48,18 @@ import org.mu.function.CheckedFunction;
 import org.mu.function.CheckedSupplier;
 
 /**
- * Class that wraps checked exceptions and tunnel them through stream operations.
+ * Class that wraps checked exceptions and tunnels them through stream operations or future graphs.
  *
- * <p>The idea is to wrap checked exceptions inside Stream<Maybe<T, E>>, then map(), flatMap(),
- * filter() away through normal stream operations, and only unwrap/collect at the end. Exception is
- * only thrown at the "collecting" step. For example:
- *
- * <pre>{@code
- *   static List<byte[]> readFiles(Collection<File> files) throws IOException {
- *     Stream<Maybe<byte[], ?>> stream = files.stream()
- *         .map(Maybe.wrap(Files::toByteArray));
- *     List<byte[]> list = new ArrayList<>();
- *     for (Maybe<byte[], ?> maybe : Iterate.once(stream)) {
- *       list.add(maybe.orElseThrow(IOException::new));
- *     }
- *     return list;
- *   }
- * }</pre>
- *
- * A longer stream chain example:
+ * <p>The idea is to wrap checked exceptions inside Stream<Maybe<T, E>>, then {@code map()},
+ * {@code flatMap()} and {@code filter()} away through normal stream operations
+ * and unwrap/collect at the end. Exception is only thrown at the "collecting" step.
+ * For example, the following code fetches and runs pending jobs using a stream of {@code Maybe}:
  *
  * <pre>{@code
  *   private Job fetchJob(long jobId) throws IOException;
  *
  *   void runPendingJobs() throws IOException {
- *     Stream<Maybe<Job, IOException>> stream = pendingJobIds.stream()
+ *     Stream<Maybe<Job, IOException>> stream = activeJobIds.stream()
  *         .map(Maybe.wrap(this::fetchJob))
  *         .filter(Maybe.byValue(Job::isPending));
  *     for (Maybe<Job, ?> maybe : Iterate.once(stream)) {
@@ -81,25 +68,7 @@ import org.mu.function.CheckedSupplier;
  *   }
  * }</pre>
  *
- * To log and swallow exceptions:
- *
- * <pre>{@code
- *   private <T> Stream<T> logAndSwallow(Maybe<T> maybe) {
- *     return maybe.catching(logger::warn);
- *   }
- *
- *   List<String> getPendingJobNames() {
- *     return pendingJobIds.stream()
- *         .map(Maybe.wrap(this::fetchJob))
- *         .flatMap(this::logAndSwallow)
- *         .filter(Job::isPending)
- *         .map(Job::getName)
- *         .collect(Collectors.toList());
- *   }
- * }</pre>
- *
- * A {@code Maybe} can also be used to tunnel exceptions in future graphs type safely.
- * For example: <pre>{@code
+ * The next example handles exception type safely in asynchronous code: <pre>{@code
  *   CompletionStage<User> assumeAnonymousIfNotAuthenticated(CompletionStage<User> stage) {
  *     CompletionStage<Maybe<User, AuthenticationException>> authenticated =
  *         Maybe.catchException(AuthenticationException.class, stage);
