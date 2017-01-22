@@ -228,7 +228,7 @@ CompletionStage<User> assumeAnonymousIfNotAuthenticated(CompletionStage<User> st
 
 #### The problem
 
-Ever needed to convert a list of objects? It's trivial:
+The following code converts a list of object:
 
 ```java
 List<Result> convert(List<Input> inputs) {
@@ -240,9 +240,9 @@ List<Result> convert(List<Input> inputs) {
 }
 ```
 
-Normally such API has the contract that the order of results are in the same order as the inputs.
+Intuitively, the contract is that the order of results are in the same order as the inputs.
 
-Well. what if Input can be of two different kinds, and one kind needs to be converted through a remote service? Pretty straight-forward too:
+Now assume the input can be of two different kinds, with one kind to be converted through a remote service. Like this:
 
 ```java
 List<Result> convert(List<Input> inputs) {
@@ -258,7 +258,7 @@ List<Result> convert(List<Input> inputs) {
 }
 ```
 
-In reality though, most remote services are expensive and could use batching as an optimization. Can you batch the ones needing remote conversion and convert them in one remote call?
+In reality, most remote services are expensive and could use batching as an optimization. How do you batch the ones needing remote conversion and convert them in one remote call?
 
 Perhaps this?
 
@@ -273,24 +273,24 @@ List<Result> convert(List<Input> inputs) {
       local.add(convertInput(input));
     }
   }
-  List<Result> remote = remoteService.convertInputs(needRemote);
+  List<Result> remote = remoteService.batchConvert(needRemote);
   return concat(local, remote);
 }
 ```
 
-Close. Except it breaks the ordering of inputs. The caller no longer knows which result is for which input.
+Close. Except it breaks the ordering of results. The caller no longer knows which result is for which input.
 
 Tl;Dr: maintaining the encounter order while dispatching objects to batches requires careful juggling of the indices and messes up the code rather quickly.
 
 #### The tool
 
-Funnel is a simple library to stop the bleeding:
+Funnel is a simple class designed for this use case:
 
 ```java
 List<Result> convert(List<Input> inputs) {
   Funnel<Result> funnel = new Funnel<>();
   Funnel.Batch<Input, Result> remoteBatch =
-      funnel.through(remoteService::convertInputs);
+      funnel.through(remoteService::batchConvert);
   for (Input input : inputs) {
     if (input.needsRemoteConversion()) {
       remoteBatch.accept(input);
@@ -301,6 +301,4 @@ List<Result> convert(List<Input> inputs) {
   return funnel.run();
 }
 ```
-All the code has to do is to define the batch with ```funnel.through()``` and then inputs can be added to the batch without breaking encounter order.
-
-What happens if there are 3 kinds of inputs and two kinds require two different batch conversions? Funnel supports arbitrary number of batches. Just define them with ```through()``` and ```through()```.
+That is, define the batches with ```funnel.through()``` and then inputs can flow through arbitrary number of batch conversions. Conversion results flow out of the funnel in the same order as inputs entered the funnel. 
