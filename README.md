@@ -228,7 +228,7 @@ CompletionStage<User> assumeAnonymousIfNotAuthenticated(CompletionStage<User> st
 
 #### The problem
 
-The following code converts a list of object:
+The following code converts a list of objects:
 
 ```java
 List<Result> convert(List<Input> inputs) {
@@ -289,8 +289,7 @@ Funnel is a simple class designed for this use case:
 ```java
 List<Result> convert(List<Input> inputs) {
   Funnel<Result> funnel = new Funnel<>();
-  Funnel.Batch<Input, Result> remoteBatch =
-      funnel.through(remoteService::batchConvert);
+  Funnel.Batch<Input, Result> remoteBatch = funnel.through(remoteService::batchConvert);
   for (Input input : inputs) {
     if (input.needsRemoteConversion()) {
       remoteBatch.accept(input);
