@@ -120,7 +120,7 @@ return new Retryer()
     .retry(this::sendRpcRequest, executor);
 ```
 
-Or, to also get access to the retry attempt number, which is also the list's index, here's an example:
+Or, to get access to the retry attempt number, which is also the list's index, here's an example:
 ```java
 class RpcDelay extends Delay<RpcException> {
   RpcDelay(int attempt, Duration duration) {...}
@@ -136,7 +136,7 @@ List<Delay<?>> delays = Delay.ofMillis(10).fibonacci(...);
 return new Retryer()
     .upon(RpcException.class,
           IntStream.range(0, delays.size())
-              .mapToObj(i -> new RpcDelayWithIndex(i, delays.get(i).duration())))
+              .mapToObj(i -> new RpcDelay(i, delays.get(i).duration())))
     .retry(...);
 ```
 
