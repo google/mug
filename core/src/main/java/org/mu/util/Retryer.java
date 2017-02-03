@@ -259,7 +259,7 @@ public final class Retryer {
       this.retryer = retryer.upon(
           ThrownReturn.class,
           // Safe because it's essentially ThrownReturn<T> and Delay<? super T>.
-          mapList(delays, (Delay<? super T> d) -> d.forEvents(ThrownReturn::unsafeGet)));
+          mapList(delays, (Delay<? super T> d) -> d.forEvents(ThrownReturn::<T>unsafeGet)));
     }
 
     /**
