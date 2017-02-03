@@ -1,5 +1,5 @@
 # μ
-A few Java 8 util classes ([javadoc](http://fluentfuture.github.io/mu/apidocs/)) for some, with 0 dependencies.
+A few Java 8 util classes ([javadoc](http://fluentfuture.github.io/mu/apidocs/)), with 0 dependencies.
 
 ![](https://travis-ci.org/fluentfuture/mu.svg?branch=master)
 
