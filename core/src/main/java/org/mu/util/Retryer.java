@@ -259,7 +259,7 @@ public final class Retryer {
       this.retryer = retryer.upon(
           ThrownReturn.class,
           // Safe because it's essentially ThrownReturn<T> and Delay<? super T>.
-          mapList(delays, d -> d.forEvents(ThrownReturn::<T>unsafeGet)));
+          mapList(delays, d -> d.<ThrownReturn>forEvents(ThrownReturn::<T>unsafeGet)));
     }
 
     /**
@@ -594,7 +594,7 @@ public final class Retryer {
 
     /**
      * Returns an adapter of {@code this} as type {@code F}, which uses {@code eventTranslator} to
-     * translate events to type {@code E} before accepting them.
+     * translate events from type {@code F} to type {@code E} before accepting them.
      */
     final <F> Delay<F> forEvents(Function<? super F, ? extends E> eventTranslator) {
       requireNonNull(eventTranslator);
