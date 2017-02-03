@@ -171,8 +171,7 @@ public final class Retryer {
    */
   public <T> CompletionStage<T> retry(
       CheckedSupplier<T, ?> supplier, ScheduledExecutorService executor) {
-    return retryAsync(
-        supplier.<CompletionStage<T>>map(CompletableFuture::completedFuture), executor);
+    return retryAsync(supplier.map(CompletableFuture::completedFuture), executor);
   }
 
   /**
@@ -259,7 +258,7 @@ public final class Retryer {
       this.retryer = retryer.upon(
           ThrownReturn.class,
           // Safe because it's essentially ThrownReturn<T> and Delay<? super T>.
-          mapList(delays, d -> d.<ThrownReturn>forEvents(ThrownReturn::<T>unsafeGet)));
+          mapList(delays, d -> d.forEvents(ThrownReturn::unsafeGet)));
     }
 
     /**
@@ -359,7 +358,7 @@ public final class Retryer {
           CheckedSupplier<? extends CompletionStage<T>, E> supplier) throws E {
         CompletionStage<T> stage = unwrap(supplier);
         CompletionStage<T> outer = Maybe.catchException(ThrownReturn.class, stage)
-            .thenApply(maybe -> maybe.<RuntimeException>orElse(ThrownReturn::unsafeGet));
+            .thenApply(maybe -> maybe.orElse(ThrownReturn::unsafeGet));
         propagateCancellation(outer, stage);
         return outer;
       }
@@ -594,9 +593,9 @@ public final class Retryer {
 
     /**
      * Returns an adapter of {@code this} as type {@code F}, which uses {@code eventTranslator} to
-     * translate events from type {@code F} to type {@code E} before accepting them.
+     * translate events to type {@code E} before accepting them.
      */
-    final <F> Delay<F> forEvents(Function<? super F, ? extends E> eventTranslator) {
+    final <F> Delay<F> forEvents(Function<F, ? extends E> eventTranslator) {
       requireNonNull(eventTranslator);
       Delay<E> delegate = this;
       return new Delay<F>() {

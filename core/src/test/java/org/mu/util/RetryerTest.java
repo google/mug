@@ -92,22 +92,20 @@ public class RetryerTest {
   }
 
   @Test public void cannotRetryOnInterruptedException() {
-    Delay<Throwable> delay = ofSeconds(1);
-    assertThrows(IllegalArgumentException.class, () -> upon(InterruptedException.class, asList(delay)));
+    assertThrows(IllegalArgumentException.class, () -> upon(InterruptedException.class, asList()));
     assertThrows(
         IllegalArgumentException.class,
-        () -> retryer.upon(InterruptedException.class, e -> false, asList(delay)));
+        () -> retryer.upon(InterruptedException.class, e -> false, asList()));
   }
 
   @Test public void cannotRetryOnSubtypeOfInterruptedException() {
     @SuppressWarnings("serial")
     class MyInterruptedException extends InterruptedException {}
-    Delay<Throwable> delay = ofSeconds(1);
     assertThrows(
-        IllegalArgumentException.class, () -> upon(MyInterruptedException.class, asList(delay)));
+        IllegalArgumentException.class, () -> upon(MyInterruptedException.class, asList()));
     assertThrows(
         IllegalArgumentException.class,
-        () -> retryer.upon(MyInterruptedException.class, e -> false, asList(delay)));
+        () -> retryer.upon(MyInterruptedException.class, e -> false, asList()));
   }
 
   @Test public void expectedReturnValueFirstTime() throws Exception {
