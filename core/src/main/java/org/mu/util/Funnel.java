@@ -64,19 +64,18 @@ public final class Funnel<T> {
    * @param <F> batch input element type
    * @param <T> batch output element type
    */
-  public static final class Batch<F, T> {
+  public static final class Batch<F, T> implements Consumer<F> {
     private final Funnel<T> funnel;
     private final Function<? super List<F>, ? extends Collection<? extends T>> converter;
     private final List<Indexed<F, T>> indexedSources = new ArrayList<>();
 
-    Batch(
-        Funnel<T> funnel, Function<? super List<F>, ? extends Collection<? extends T>> converter) {
+    Batch(Funnel<T> funnel, Function<? super List<F>, ? extends Collection<? extends T>> converter) {
       this.funnel = funnel;
       this.converter = requireNonNull(converter);
     }
 
     /** Adds {@code source} to be converted. */
-    public void accept(F source) {
+    @Override public void accept(F source) {
       accept(source, v -> v);
     }
 
@@ -105,9 +104,7 @@ public final class Funnel<T> {
       if (indexedSources.isEmpty()) {
         return;
       }
-      List<F> params = indexedSources.stream()
-          .map(i -> i.value)
-          .collect(toList());
+      List<F> params = indexedSources.stream().map(i -> i.value).collect(toList());
       List<T> results = new ArrayList<>(converter.apply(params));
       if (params.size() != results.size()) {
         throw new IllegalStateException(
@@ -115,8 +112,7 @@ public final class Funnel<T> {
                 + params + ", but got " + results + " of size " + results.size() + ".");
       }
       for (int i = 0; i < indexedSources.size(); i++) {
-        Indexed<F, T> source = indexedSources.get(i);
-        output.set(source.index, source.converter.apply(results.get(i)));
+        indexedSources.get(i).setAtIndex(results.get(i), output);
       }
     }
   }
@@ -150,14 +146,18 @@ public final class Funnel<T> {
   }
 
   private static final class Indexed<F, T> {
-    final int index;
+    private final int index;
     final F value;
-    final Function<? super T, ? extends T> converter;
+    private final Function<? super T, ? extends T> converter;
 
     Indexed(int index, F value, Function<? super T, ? extends T> converter) {
       this.index = index;
       this.value = requireNonNull(value);
       this.converter = requireNonNull(converter);
+    }
+
+    void setAtIndex(T from, List<? super T> to) {
+      to.set(index, converter.apply(from));
     }
   }
 }
