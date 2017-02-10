@@ -40,7 +40,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -171,8 +170,7 @@ public final class Retryer {
    */
   public <T> CompletionStage<T> retry(
       CheckedSupplier<T, ?> supplier, ScheduledExecutorService executor) {
-    return retryAsync(
-        supplier.<CompletionStage<T>>map(CompletableFuture::completedFuture), executor);
+    return retryAsync(supplier.map(CompletableFuture::completedFuture), executor);
   }
 
   /**
@@ -218,8 +216,7 @@ public final class Retryer {
    */
   public <T> ForReturnValue<T> ifReturns(
       Predicate<T> condition, Stream<? extends Delay<? super T>> delays) {
-    List<? extends Delay<? super T>> delayList = copyOf(delays);
-    return ifReturns(condition, delayList);
+    return ifReturns(condition, copyOf(delays));
   }
 
   /**
@@ -259,7 +256,7 @@ public final class Retryer {
       this.retryer = retryer.upon(
           ThrownReturn.class,
           // Safe because it's essentially ThrownReturn<T> and Delay<? super T>.
-          mapList(delays, (Delay<? super T> d) -> d.forEvents(ThrownReturn::unsafeGet)));
+          mapList(delays, d -> d.forEvents(ThrownReturn::unsafeGet)));
     }
 
     /**
@@ -273,8 +270,7 @@ public final class Retryer {
      */
     public <R extends T, E extends Throwable> R retryBlockingly(
         CheckedSupplier<R, E> supplier) throws E {
-      CheckedSupplier<R, E> wrapped = () -> retryer.retryBlockingly(supplier.map(this::wrap));
-      return ThrownReturn.unwrap(wrapped);
+      return ThrownReturn.<R, E>unwrap(() -> retryer.retryBlockingly(supplier.map(this::wrap)));
     }
 
     /**
@@ -359,7 +355,7 @@ public final class Retryer {
           CheckedSupplier<? extends CompletionStage<T>, E> supplier) throws E {
         CompletionStage<T> stage = unwrap(supplier);
         CompletionStage<T> outer = Maybe.catchException(ThrownReturn.class, stage)
-            .thenApply(maybe -> maybe.<RuntimeException>orElse(ThrownReturn::unsafeGet));
+            .thenApply(maybe -> maybe.orElse(ThrownReturn::unsafeGet));
         propagateCancellation(outer, stage);
         return outer;
       }
@@ -729,8 +725,7 @@ public final class Retryer {
 
   private static <T> List<T> copyOf(Stream<? extends T> stream) {
     // Collectors.toList() doesn't guarantee thread-safety.
-    Collector<T, ?, ArrayList<T>> collector = Collectors.toCollection(ArrayList::new);
-    return stream.collect(collector);
+    return stream.collect(Collectors.toCollection(ArrayList::new));
   }
 
   private static int checkSize(int size) {

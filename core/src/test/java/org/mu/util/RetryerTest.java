@@ -131,7 +131,7 @@ public class RetryerTest {
   @Test public void nullReturnValueRetried() throws Exception {
     Delay<String> delay = spy(ofSeconds(1));
     Retryer.ForReturnValue<String> forReturnValue =
-        retryer.<String>ifReturns(r -> r == null, asList(delay));
+        retryer.ifReturns(r -> r == null, asList(delay));
     when(action.run()).thenReturn(null).thenReturn("fixed");
     CompletionStage<String> stage = forReturnValue.retry(action::run, executor);
     assertPending(stage);
