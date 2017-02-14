@@ -1,3 +1,5 @@
+Disclaimer: This is not an official Google product.
+
 # μ
 A few Java 8 util classes ([javadoc](http://google.github.io/mu/apidocs/index.html)), with 0 dependencies.
 
