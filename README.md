@@ -1,5 +1,5 @@
 # μ
-A few Java 8 util classes ([javadoc](http://google.github.io/mu/apidocs/)), with 0 dependencies.
+A few Java 8 util classes ([javadoc](http://google.github.io/mu/apidocs/index.html)), with 0 dependencies.
 
 ![](https://travis-ci.org/google/mu.svg?branch=master)
 
