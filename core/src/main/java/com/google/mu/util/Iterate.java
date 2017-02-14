@@ -14,7 +14,11 @@
  *****************************************************************************/
 package com.google.mu.util;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.stream.Stream;
+
+import com.google.mu.function.CheckedConsumer;
 
 /** Helper to make it easier to iterate through {@link Stream}s. */
 public final class Iterate {
@@ -32,6 +36,24 @@ public final class Iterate {
    */
   public static <T> Iterable<T> once(Stream<T> stream) {
     return stream::iterator;
+  }
+
+  /**
+   * Iterates through {@code stream} sequentially and passes each element to {@code consumer}
+   * with exceptions propagated. For example: 
+   *
+   * <pre>{@code
+   *   void writeAll(Stream<?> stream, ObjectOutput out) throws IOException {
+   *     Iterate.through(stream, out::writeObject);
+   *   }
+   * }</pre>
+   */
+  public static <T, E extends Throwable> void through(
+      Stream<? extends T> stream, CheckedConsumer<? super T, E> consumer) throws E {
+    requireNonNull(consumer);
+    for (T element : once(stream)) {
+      consumer.accept(element);
+    }
   }
 
   private Iterate() {}

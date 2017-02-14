@@ -492,9 +492,7 @@ public class MaybeTest {
 
   private static <T, E extends Throwable> List<T> collect(Stream<Maybe<T, E>> stream) throws E {
     List<T> list = new ArrayList<>();
-    for (Maybe<T, E> maybe : Iterate.once(stream)) {
-      list.add(maybe.orElseThrow());
-    }
+    Iterate.through(stream, m -> list.add(m.orElseThrow()));
     return list;
   }
 

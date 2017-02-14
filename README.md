@@ -173,9 +173,7 @@ Stream<Maybe<byte[], IOException>> stream = files.stream()
     .map(Maybe.wrap(Files::toByteArray))
     .filter(byValue(b -> b.length > 0));
 List<byte[]> contents = new ArrayList<>();
-for (Maybe<byte[], IOException>> maybe : Iterate.once(stream)) {
-  contents.add(maybe.orElseThrow());
-}
+Iterate.through(stream, m -> contents.add(m.orElseThrow()));
 return contents;
 ```
 

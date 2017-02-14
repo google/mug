@@ -236,8 +236,8 @@ public class RetryerFunctionalTest {
     private volatile Thread blockingThread = null;
 
     final String blockOnSecondTime() throws InterruptedException, IOException {
-      retryStarted.countDown();
       blockingThread = Thread.currentThread();
+      retryStarted.countDown();
       blockOnSecondTime.acquire();
       readyToRetry.countDown();
       return result();
