@@ -3,6 +3,11 @@ package com.google.mu.function;
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.Objects.requireNonNull;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -15,9 +20,9 @@ import com.google.mu.function.CheckedSupplier;
 @RunWith(JUnit4.class)
 public class FunctionsTest {
 
-  @Test public void testCheckedSupplier_map() throws Throwable {
+  @Test public void testCheckedSupplier_andThen() throws Throwable {
     CheckedSupplier<?, ?> supplier = () -> 1;
-    assertThat(supplier.map(Object::toString).get()).isEqualTo("1");
+    assertThat(supplier.andThen(Object::toString).get()).isEqualTo("1");
   }
 
   @Test public void testCheckedSupplier_nulls() throws Throwable {
@@ -25,9 +30,9 @@ public class FunctionsTest {
     new NullPointerTester().testAllPublicInstanceMethods(supplier);
   }
 
-  @Test public void testCheckedFunction_map() throws Throwable {
-    CheckedFunction<Object, ?, ?> function = x -> 1;
-    assertThat(function.map(Object::toString).apply("x")).isEqualTo("1");
+  @Test public void testCheckedFunction_andThen() throws Throwable {
+    CheckedFunction<Object, ?, IOException> function = x -> 1;
+    assertThat(function.andThen(Object::toString).apply("x")).isEqualTo("1");
   }
 
   @Test public void testCheckedFunction_nulls() throws Throwable {
@@ -38,9 +43,9 @@ public class FunctionsTest {
     new NullPointerTester().testAllPublicInstanceMethods(function);
   }
 
-  @Test public void testCheckedBiFunction_map() throws Throwable {
+  @Test public void testCheckedBiFunction_andThen() throws Throwable {
     CheckedBiFunction<Object, Object, ?, ?> function = (a, b) -> 1;
-    assertThat(function.map(Object::toString).apply("x", "y")).isEqualTo("1");
+    assertThat(function.andThen(Object::toString).apply("x", "y")).isEqualTo("1");
   }
 
   @Test public void testCheckedBiFunction_nulls() throws Throwable {
@@ -50,5 +55,17 @@ public class FunctionsTest {
       return 1;
     };
     new NullPointerTester().testAllPublicInstanceMethods(function);
+  }
+
+  @Test public void testCheckedConsumer_andThen() throws Throwable {
+    List<String> outputs = new ArrayList<>();
+    CheckedConsumer<Object, IOException> consumer = i -> outputs.add("1: " + i);
+    consumer.andThen(i -> outputs.add("2: " + i)).accept("x");
+    assertThat(outputs).containsExactly("1: x", "2: x");
+  }
+
+  @Test public void testCheckedConsumer_nulls() throws Throwable {
+    CheckedConsumer<Object, IOException> consumer = Objects::requireNonNull;
+    new NullPointerTester().testAllPublicInstanceMethods(consumer);
   }
 }

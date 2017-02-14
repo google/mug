@@ -170,7 +170,7 @@ public final class Retryer {
    */
   public <T> CompletionStage<T> retry(
       CheckedSupplier<T, ?> supplier, ScheduledExecutorService executor) {
-    return retryAsync(supplier.map(CompletableFuture::completedFuture), executor);
+    return retryAsync(supplier.andThen(CompletableFuture::completedFuture), executor);
   }
 
   /**
@@ -270,7 +270,7 @@ public final class Retryer {
      */
     public <R extends T, E extends Throwable> R retryBlockingly(
         CheckedSupplier<R, E> supplier) throws E {
-      return ThrownReturn.<R, E>unwrap(() -> retryer.retryBlockingly(supplier.map(this::wrap)));
+      return ThrownReturn.<R, E>unwrap(() -> retryer.retryBlockingly(supplier.andThen(this::wrap)));
     }
 
     /**
@@ -293,7 +293,7 @@ public final class Retryer {
     public <R extends T, E extends Throwable> CompletionStage<R> retry(
         CheckedSupplier<? extends R, E> supplier,
         ScheduledExecutorService retryExecutor) {
-      return ThrownReturn.unwrapAsync(() -> retryer.retry(supplier.map(this::wrap), retryExecutor));
+      return ThrownReturn.unwrapAsync(() -> retryer.retry(supplier.andThen(this::wrap), retryExecutor));
     }
 
     /**

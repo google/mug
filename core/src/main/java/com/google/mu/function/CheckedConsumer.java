@@ -15,7 +15,21 @@
  *****************************************************************************/
 package com.google.mu.function;
 
+import static java.util.Objects.requireNonNull;
+
 /** A consumer that can throw checked exceptions. */
 public interface CheckedConsumer<T, E extends Throwable> {
   void accept(T input) throws E;
+
+  /**
+   * Returns a new {@code CheckedConsumer} that also passes the input to {@code that}.
+   * For example: {@code out::writeObject.andThen(logger::info).accept("message")}.
+   */
+  default CheckedConsumer<T, E> andThen(CheckedConsumer<? super T, E> that) {
+    requireNonNull(that);
+    return input -> {
+      accept(input);
+      that.accept(input);
+    };
+  }
 }

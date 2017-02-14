@@ -24,9 +24,9 @@ public interface CheckedBiFunction<A, B, T, E extends Throwable> {
 
   /**
    * Returns a new {@code CheckedBiFunction} that maps the return value using {@code mapper}.
-   * For example: {@code ((a, b) -> a + b).map(Object::toString).apply(1, 2) => "3"}.
+   * For example: {@code ((a, b) -> a + b).andThen(Object::toString).apply(1, 2) => "3"}.
    */
-  default <R> CheckedBiFunction<A, B, R, E> map(
+  default <R> CheckedBiFunction<A, B, R, E> andThen(
       CheckedFunction<? super T, ? extends R, ? extends E> mapper) {
     requireNonNull(mapper);
     return (a, b) -> mapper.apply(apply(a, b));
