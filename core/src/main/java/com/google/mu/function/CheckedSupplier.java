@@ -24,9 +24,9 @@ public interface CheckedSupplier<T, E extends Throwable> {
 
   /**
    * Returns a new {@code CheckedSupplier} that maps the return value using {@code mapper}.
-   * For example: {@code (x -> 1).map(Object::toString).get() => "1"}.
+   * For example: {@code (x -> 1).andThen(Object::toString).get() => "1"}.
    */
-  default <R> CheckedSupplier<R, E> map(
+  default <R> CheckedSupplier<R, E> andThen(
       CheckedFunction<? super T, ? extends R, ? extends E> mapper) {
     requireNonNull(mapper);
     return () -> mapper.apply(get());

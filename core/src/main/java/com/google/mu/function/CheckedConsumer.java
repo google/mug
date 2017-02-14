@@ -17,18 +17,19 @@ package com.google.mu.function;
 
 import static java.util.Objects.requireNonNull;
 
-/** A binary function that can throw checked exceptions. */
-@FunctionalInterface
-public interface CheckedBiFunction<A, B, T, E extends Throwable> {
-  T apply(A a, B b) throws E;
+/** A consumer that can throw checked exceptions. */
+public interface CheckedConsumer<T, E extends Throwable> {
+  void accept(T input) throws E;
 
   /**
-   * Returns a new {@code CheckedBiFunction} that maps the return value using {@code mapper}.
-   * For example: {@code ((a, b) -> a + b).andThen(Object::toString).apply(1, 2) => "3"}.
+   * Returns a new {@code CheckedConsumer} that also passes the input to {@code that}.
+   * For example: {@code out::writeObject.andThen(logger::info).accept("message")}.
    */
-  default <R> CheckedBiFunction<A, B, R, E> andThen(
-      CheckedFunction<? super T, ? extends R, ? extends E> mapper) {
-    requireNonNull(mapper);
-    return (a, b) -> mapper.apply(apply(a, b));
+  default CheckedConsumer<T, E> andThen(CheckedConsumer<? super T, E> that) {
+    requireNonNull(that);
+    return input -> {
+      accept(input);
+      that.accept(input);
+    };
   }
 }

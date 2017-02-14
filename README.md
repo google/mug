@@ -1,5 +1,7 @@
+Disclaimer: This is not an official Google product.
+
 # μ
-A few Java 8 util classes ([javadoc](http://google.github.io/mu/apidocs/)), with 0 dependencies.
+A few Java 8 util classes ([javadoc](http://google.github.io/mu/apidocs/index.html)), with 0 dependencies.
 
 ![](https://travis-ci.org/google/mu.svg?branch=master)
 
@@ -14,7 +16,7 @@ Add the following to pom.xml:
   </dependency>
 ```
 
-## [Retryer](https://google.github.io/mu/apidocs/org/mu/util/Retryer.html)
+## [Retryer](https://google.github.io/mu/apidocs/com/google/mu/util/Retryer.html)
 
 * Retry blockingly or _async_
 * Configurable and _extensible_ backoff strategies
@@ -146,7 +148,7 @@ If the method succeeds after retry, the exceptions are by default logged. As sho
 
 If the method fails after retry, the exceptions can also be accessed programmatically through `exception.getSuppressed()`.
 
-## [Maybe](https://google.github.io/mu/apidocs/org/mu/util/Maybe.html)
+## [Maybe](https://google.github.io/mu/apidocs/com/google/mu/util/Maybe.html)
 
 Represents a value that may have failed with an exception.
 Tunnels checked exceptions through streams or futures.
@@ -171,9 +173,7 @@ Stream<Maybe<byte[], IOException>> stream = files.stream()
     .map(Maybe.wrap(Files::toByteArray))
     .filter(byValue(b -> b.length > 0));
 List<byte[]> contents = new ArrayList<>();
-for (Maybe<byte[], IOException>> maybe : Iterate.once(stream)) {
-  contents.add(maybe.orElseThrow());
-}
+Iterate.through(stream, m -> contents.add(m.orElseThrow()));
 return contents;
 ```
 
@@ -224,7 +224,7 @@ CompletionStage<User> assumeAnonymousIfNotAuthenticated(CompletionStage<User> st
 * It's not designed to write code more "functional" just because you can. Use it where it helps.
 
 
-## [Funnel](https://google.github.io/mu/apidocs/org/mu/util/Funnel.html)
+## [Funnel](https://google.github.io/mu/apidocs/com/google/mu/util/Funnel.html)
 
 #### The problem
 

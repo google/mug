@@ -24,9 +24,9 @@ public interface CheckedFunction<F, T, E extends Throwable> {
 
   /**
    * Returns a new {@code CheckedFunction} that maps the return value using {@code mapper}.
-   * For example: {@code (x -> x).map(Object::toString).apply(1) => "1"}.
+   * For example: {@code (x -> x).andThen(Object::toString).apply(1) => "1"}.
    */
-  default <R> CheckedFunction<F, R, E> map(
+  default <R> CheckedFunction<F, R, E> andThen(
       CheckedFunction<? super T, ? extends R, ? extends E> mapper) {
     requireNonNull(mapper);
     return f -> mapper.apply(apply(f));
