@@ -1,7 +1,7 @@
 Disclaimer: This is not an official Google product.
 
-# μ
-A few Java 8 util classes ([javadoc](http://google.github.io/mu/apidocs/index.html)), with 0 dependencies.
+# Mug
+A small Java 8 library ([javadoc](http://google.github.io/mu/apidocs/index.html)), with 0 deps.
 
 ![](https://travis-ci.org/google/mu.svg?branch=master)
 
@@ -10,9 +10,9 @@ A few Java 8 util classes ([javadoc](http://google.github.io/mu/apidocs/index.ht
 Add the following to pom.xml:
 ```
   <dependency>
-    <groupId>com.google.mu</groupId>
+    <groupId>com.google.mug</groupId>
     <artifactId>mu</artifactId>
-    <version>1.4</version>
+    <version>1.0</version>
   </dependency>
 ```
 
