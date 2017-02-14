@@ -10,9 +10,9 @@ A few Java 8 util classes ([javadoc](http://google.github.io/mu/apidocs/index.ht
 Add the following to pom.xml:
 ```
   <dependency>
-    <groupId>com.google.mu</groupId>
-    <artifactId>mu</artifactId>
-    <version>1.4</version>
+    <groupId>com.google.mug</groupId>
+    <artifactId>mug</artifactId>
+    <version>1.0</version>
   </dependency>
 ```
 
