@@ -1,20 +1,20 @@
 # μ
-A few Java 8 util classes ([javadoc](http://fluentfuture.github.io/mu/apidocs/)), with 0 dependencies.
+A few Java 8 util classes ([javadoc](http://google.github.io/mu/apidocs/)), with 0 dependencies.
 
-![](https://travis-ci.org/fluentfuture/mu.svg?branch=master)
+![](https://travis-ci.org/google/mu.svg?branch=master)
 
 ## Maven
 
 Add the following to pom.xml:
 ```
   <dependency>
-    <groupId>com.github.fluentfuture</groupId>
+    <groupId>com.google.mu</groupId>
     <artifactId>mu</artifactId>
     <version>1.4</version>
   </dependency>
 ```
 
-## [Retryer](https://fluentfuture.github.io/mu/apidocs/org/mu/util/Retryer.html)
+## [Retryer](https://google.github.io/mu/apidocs/org/mu/util/Retryer.html)
 
 * Retry blockingly or _async_
 * Configurable and _extensible_ backoff strategies
@@ -146,7 +146,7 @@ If the method succeeds after retry, the exceptions are by default logged. As sho
 
 If the method fails after retry, the exceptions can also be accessed programmatically through `exception.getSuppressed()`.
 
-## [Maybe](https://fluentfuture.github.io/mu/apidocs/org/mu/util/Maybe.html)
+## [Maybe](https://google.github.io/mu/apidocs/org/mu/util/Maybe.html)
 
 Represents a value that may have failed with an exception.
 Tunnels checked exceptions through streams or futures.
@@ -224,7 +224,7 @@ CompletionStage<User> assumeAnonymousIfNotAuthenticated(CompletionStage<User> st
 * It's not designed to write code more "functional" just because you can. Use it where it helps.
 
 
-## [Funnel](https://fluentfuture.github.io/mu/apidocs/org/mu/util/Funnel.html)
+## [Funnel](https://google.github.io/mu/apidocs/org/mu/util/Funnel.html)
 
 #### The problem
 
