@@ -1,7 +1,7 @@
 Disclaimer: This is not an official Google product.
 
-# μ
-A few Java 8 util classes ([javadoc](http://google.github.io/mu/apidocs/index.html)), with 0 dependencies.
+# Mug
+A small Java 8 utility library ([javadoc](http://google.github.io/mu/apidocs/index.html)), with 0 deps.
 
 ![](https://travis-ci.org/google/mu.svg?branch=master)
 
