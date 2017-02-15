@@ -19,6 +19,7 @@ import static com.google.mu.util.Utils.mapList;
 import static com.google.mu.util.Utils.propagateCancellation;
 import static com.google.mu.util.Utils.propagateIfUnchecked;
 import static java.util.Objects.requireNonNull;
+import static java.util.function.Function.identity;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -624,7 +625,7 @@ public final class Retryer {
 
   private static <E extends Throwable> ExceptionPlan<Delay<?>> delay(
       E exception, ExceptionPlan<Delay<?>> plan) throws E {
-    ExceptionPlan.Execution<Delay<?>> execution = plan.execute(exception).orElseThrow(e -> e);
+    ExceptionPlan.Execution<Delay<?>> execution = plan.execute(exception).orElseThrow(identity());
     @SuppressWarnings("unchecked")  // Applicable delays were from upon(), enforcing <? super E>
     Delay<? super E> delay = (Delay<? super E>) execution.strategy();
     try {

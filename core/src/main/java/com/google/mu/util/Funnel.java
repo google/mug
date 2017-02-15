@@ -56,7 +56,7 @@ public final class Funnel<T> {
 
   private int size = 0;
   private final List<Batch<?, T>> batches = new ArrayList<>();
-  private final Batch<T, T> passthrough = through(x -> x);
+  private final Batch<T, T> passthrough = through(Function.identity());
 
   /**
    * Holds the elements to be converted through a single batch conversion.
@@ -76,7 +76,7 @@ public final class Funnel<T> {
 
     /** Adds {@code source} to be converted. */
     @Override public void accept(F source) {
-      accept(source, v -> v);
+      accept(source, Function.identity());
     }
 
     /**
