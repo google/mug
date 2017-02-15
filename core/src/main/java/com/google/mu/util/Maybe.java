@@ -151,8 +151,7 @@ public abstract class Maybe<T, E extends Throwable> {
    *
    * <p>It's recommended for {@code exceptionWrapper} to wrap the original exception as the cause.
    */
-  public final T orElseThrow(Function<? super E, ? extends E> exceptionWrapper)
-      throws E {
+  public final T orElseThrow(Function<? super E, ? extends E> exceptionWrapper) throws E {
     requireNonNull(exceptionWrapper);
     return orElse(e -> {
       throw exceptionWrapper.apply(e);
