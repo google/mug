@@ -167,10 +167,11 @@ return files.stream()
 `Maybe` can be used to wrap the checked exception through the stream operations:
 
 ```java
-import static org.mu.Maybe.byValue;
+import static com.google.mu.util.Maybe.byValue;
+import static com.google.mu.util.Maybe.maybe;
 
 Stream<Maybe<byte[], IOException>> stream = files.stream()
-    .map(Maybe.wrap(Files::toByteArray))
+    .map(maybe(Files::toByteArray))
     .filter(byValue(b -> b.length > 0));
 List<byte[]> contents = new ArrayList<>();
 Iterate.through(stream, m -> contents.add(m.orElseThrow()));

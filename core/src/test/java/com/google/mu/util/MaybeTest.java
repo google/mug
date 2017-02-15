@@ -216,19 +216,19 @@ public class MaybeTest {
   }
 
   @Test public void testStream_success() throws MyException {
-    assertStream(Stream.of("hello", "friend").map(Maybe.wrap(this::justReturn)))
+    assertStream(Stream.of("hello", "friend").map(Maybe.maybe(this::justReturn)))
         .containsExactly("hello", "friend").inOrder();
   }
 
   @Test public void testStream_exception() {
     Stream<Maybe<String, MyException>> stream =
-        Stream.of("hello", "friend").map(Maybe.wrap(this::raise));
+        Stream.of("hello", "friend").map(Maybe.maybe(this::raise));
     assertThrows(MyException.class, () -> collect(stream));
   }
 
   @Test public void testStream_interrupted() {
     Stream<Maybe<String, InterruptedException>> stream =
-        Stream.of(1, 2).map(Maybe.wrap(x -> hibernate()));
+        Stream.of(1, 2).map(Maybe.maybe(x -> hibernate()));
     Thread.currentThread().interrupt();
     try {
       assertThrows(InterruptedException.class, () -> collect(stream));
@@ -239,40 +239,40 @@ public class MaybeTest {
 
   @Test public void testStream_uncheckedExceptionNotCaptured() {
     Stream<String> stream = Stream.of("hello", "friend")
-        .map(Maybe.wrap(this::raiseUnchecked))
+        .map(Maybe.maybe(this::raiseUnchecked))
         .flatMap(m -> m.catching(e -> {}));
     assertThrows(RuntimeException.class, () -> stream.collect(toList()));
   }
 
   @Test public void testStream_swallowException() {
     assertThat(Stream.of("hello", "friend")
-        .map(Maybe.wrap(this::raise))
+        .map(Maybe.maybe(this::raise))
         .flatMap(m -> m.catching(e -> {}))
         .collect(toList()))
         .isEmpty();
   }
 
   @Test public void testStream_generateSuccess() {
-    assertThat(Stream.generate(Maybe.wrap(() -> justReturn("good"))).findFirst().get())
+    assertThat(Stream.generate(Maybe.maybe(() -> justReturn("good"))).findFirst().get())
         .isEqualTo(Maybe.of("good"));
   }
 
   @Test public void testStream_generateFailure() {
     Maybe<String, MyException> maybe =
-        Stream.generate(Maybe.wrap(() -> raise("bad"))).findFirst().get();
+        Stream.generate(Maybe.maybe(() -> raise("bad"))).findFirst().get();
     assertThat(assertThrows(MyException.class, maybe::orElseThrow).getMessage()).isEqualTo("bad");
   }
 
   @Test public void testFilterByValue_successValueFiltered() throws MyException {
     assertStream(Stream.of("hello", "friend")
-        .map(Maybe.wrap(this::justReturn))
+        .map(Maybe.maybe(this::justReturn))
         .filter(Maybe.byValue("hello"::equals)))
         .containsExactly("hello");
   }
 
   @Test public void testFilterByValue_failuresNotFiltered() {
     List<Maybe<String, MyException>> maybes = Stream.of("hello", "friend")
-        .map(Maybe.wrap(this::raise))
+        .map(Maybe.maybe(this::raise))
         .filter(Maybe.byValue(s -> false))
         .collect(toList());
     assertThat(maybes).hasSize(2);
