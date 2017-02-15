@@ -25,7 +25,7 @@ Add the following to pom.xml:
 
 #### To retry blockingly
 
-Blocking the thread for retry isn't always a good idea at server side. It is however simple and being able to propagate exceptions directly up the call stack is nice:
+Blocking the thread for retry isn't always a good idea at server side. It is however simple and being able to propagate exceptions directly up the call stack is convenient:
 ```java
 Account fetchAccountWithRetry() throws IOException {
   return new Retryer()
