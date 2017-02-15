@@ -736,8 +736,7 @@ public final class Retryer {
     return index;
   }
 
-  @FunctionalInterface
-  private interface Failable {
+  @FunctionalInterface private interface Failable {
     void run() throws Throwable;
 
     default void run(Consumer<? super Throwable> exceptionHandler) {
