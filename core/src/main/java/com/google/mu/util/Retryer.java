@@ -240,7 +240,6 @@ public final class Retryer {
    */
   public <T> ForReturnValue<T> uponReturn(
       T returnValue, List<? extends Delay<? super T>> delays) {
-    requireNonNull(returnValue);
     return ifReturns(returnValue::equals, delays);
   }
 
