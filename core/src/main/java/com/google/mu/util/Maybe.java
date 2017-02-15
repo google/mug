@@ -62,9 +62,7 @@ import com.google.mu.function.CheckedSupplier;
  *     Stream<Maybe<Job, IOException>> stream = activeJobIds.stream()
  *         .map(Maybe.wrap(this::fetchJob))
  *         .filter(Maybe.byValue(Job::isPending));
- *     for (Maybe<Job, ?> maybe : Iterate.once(stream)) {
- *       maybe.orElseThrow(IOException::new).runJob();
- *     }
+ *     Iterate.through(stream, m -> m.orElseThrow(IOException::new).runJob());
  *   }
  * }</pre>
  *
