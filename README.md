@@ -3,7 +3,7 @@ Disclaimer: This is not an official Google product.
 # Mµg
 A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/index.html)), with 0 deps.
 
-![](https://travis-ci.org/google/mu.svg?branch=master)
+![](https://travis-ci.org/google/mug.svg?branch=master)
 
 ## Maven
 
