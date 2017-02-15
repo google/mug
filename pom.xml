@@ -9,7 +9,7 @@
 
   <description>Extra Lambda Utilities</description>
 
-  <url>http://github.com/google/mu</url>
+  <url>http://github.com/google/mug</url>
 
   <distributionManagement>
     <repository>
@@ -32,9 +32,9 @@
   </licenses>
 
   <scm>
-    <url>http://github.com/google/mu</url>
-    <connection>scm:git:git@github.com:google/mu.git</connection>
-    <developerConnection>scm:git:git@github.com:google/mu.git</developerConnection>
+    <url>http://github.com/google/mug</url>
+    <connection>scm:git:git@github.com:google/mug.git</connection>
+    <developerConnection>scm:git:git@github.com:google/mug.git</developerConnection>
     <tag>mug-root-1.1</tag>
   </scm>
 

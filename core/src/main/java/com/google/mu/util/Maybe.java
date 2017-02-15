@@ -62,9 +62,7 @@ import com.google.mu.function.CheckedSupplier;
  *     Stream<Maybe<Job, IOException>> stream = activeJobIds.stream()
  *         .map(Maybe.wrap(this::fetchJob))
  *         .filter(Maybe.byValue(Job::isPending));
- *     for (Maybe<Job, ?> maybe : Iterate.once(stream)) {
- *       maybe.orElseThrow(IOException::new).runJob();
- *     }
+ *     Iterate.through(stream, m -> m.orElseThrow(IOException::new).runJob());
  *   }
  * }</pre>
  *
@@ -151,8 +149,7 @@ public abstract class Maybe<T, E extends Throwable> {
    *
    * <p>It's recommended for {@code exceptionWrapper} to wrap the original exception as the cause.
    */
-  public final T orElseThrow(Function<? super E, ? extends E> exceptionWrapper)
-      throws E {
+  public final T orElseThrow(Function<? super E, ? extends E> exceptionWrapper) throws E {
     requireNonNull(exceptionWrapper);
     return orElse(e -> {
       throw exceptionWrapper.apply(e);
