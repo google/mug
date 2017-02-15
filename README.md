@@ -1,7 +1,7 @@
 Disclaimer: This is not an official Google product.
 
 # Mug
-A small Java 8 utility library ([javadoc](http://google.github.io/mug/apidocs/index.html)), with 0 deps.
+A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/index.html)), with 0 deps.
 
 ![](https://travis-ci.org/google/mu.svg?branch=master)
 
