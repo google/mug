@@ -1,7 +1,7 @@
 Disclaimer: This is not an official Google product.
 
 # Mug
-A small Java 8 utility library ([javadoc](http://google.github.io/mu/apidocs/index.html)), with 0 deps.
+A small Java 8 utility library ([javadoc](http://google.github.io/mug/apidocs/index.html)), with 0 deps.
 
 ![](https://travis-ci.org/google/mu.svg?branch=master)
 
@@ -16,7 +16,7 @@ Add the following to pom.xml:
   </dependency>
 ```
 
-## [Retryer](https://google.github.io/mu/apidocs/com/google/mu/util/Retryer.html)
+## [Retryer](https://google.github.io/mug/apidocs/com/google/mu/util/Retryer.html)
 
 * Retry blockingly or _async_
 * Configurable and _extensible_ backoff strategies
@@ -148,7 +148,7 @@ If the method succeeds after retry, the exceptions are by default logged. As sho
 
 If the method fails after retry, the exceptions can also be accessed programmatically through `exception.getSuppressed()`.
 
-## [Maybe](https://google.github.io/mu/apidocs/com/google/mu/util/Maybe.html)
+## [Maybe](https://google.github.io/mug/apidocs/com/google/mu/util/Maybe.html)
 
 Represents a value that may have failed with an exception.
 Tunnels checked exceptions through streams or futures.
@@ -224,7 +224,7 @@ CompletionStage<User> assumeAnonymousIfNotAuthenticated(CompletionStage<User> st
 * It's not designed to write code more "functional" just because you can. Use it where it helps.
 
 
-## [Funnel](https://google.github.io/mu/apidocs/com/google/mu/util/Funnel.html)
+## [Funnel](https://google.github.io/mug/apidocs/com/google/mu/util/Funnel.html)
 
 #### The problem
 
