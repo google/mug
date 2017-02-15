@@ -60,8 +60,8 @@ import com.google.mu.function.CheckedSupplier;
  *
  *   void runPendingJobs() throws IOException {
  *     Stream<Maybe<Job, IOException>> stream = activeJobIds.stream()
- *         .map(Maybe.wrap(this::fetchJob))
- *         .filter(Maybe.byValue(Job::isPending));
+ *         .map(maybe(this::fetchJob))
+ *         .filter(byValue(Job::isPending));
  *     Iterate.through(stream, m -> m.orElseThrow(IOException::new).runJob());
  *   }
  * }</pre>
@@ -184,7 +184,7 @@ public abstract class Maybe<T, E extends Throwable> {
    *
    * <p>Unchecked exceptions will be immediately propagated without being wrapped.
    */
-  public static <T, E extends Throwable> Supplier<Maybe<T, E>> wrap(
+  public static <T, E extends Throwable> Supplier<Maybe<T, E>> maybe(
       CheckedSupplier<T, E> supplier) {
     requireNonNull(supplier);
     return () -> getChecked(supplier);
@@ -195,7 +195,7 @@ public abstract class Maybe<T, E extends Throwable> {
    *
    * <p>Unchecked exceptions will be immediately propagated without being wrapped.
    */
-  public static <F, T, E extends Throwable> Function<F, Maybe<T, E>> wrap(
+  public static <F, T, E extends Throwable> Function<F, Maybe<T, E>> maybe(
       CheckedFunction<F, T, E> function) {
     requireNonNull(function);
     return from -> getChecked(()->function.apply(from));
@@ -206,7 +206,7 @@ public abstract class Maybe<T, E extends Throwable> {
    *
    * <p>Unchecked exceptions will be immediately propagated without being wrapped.
    */
-  public static <A, B, T, E extends Throwable> BiFunction<A, B, Maybe<T, E>> wrap(
+  public static <A, B, T, E extends Throwable> BiFunction<A, B, Maybe<T, E>> maybe(
       CheckedBiFunction<A, B, T, E> function) {
     requireNonNull(function);
     return (a, b) -> getChecked(()->function.apply(a, b));
@@ -215,7 +215,7 @@ public abstract class Maybe<T, E extends Throwable> {
   /**
    * Wraps {@code supplier} to be used for a stream of Maybe.
    *
-   * <p>Normally one should use {@link #wrap(CheckedSupplier)} unless {@code E} is an unchecked
+   * <p>Normally one should use {@link #maybe(CheckedSupplier)} unless {@code E} is an unchecked
    * exception type.
    *
    * <p>For GWT code, wrap the supplier manually, as in:
@@ -233,7 +233,7 @@ public abstract class Maybe<T, E extends Throwable> {
    *   }
    * }</pre>
    */
-  public static <T, E extends Throwable> Supplier<Maybe<T, E>> wrap(
+  public static <T, E extends Throwable> Supplier<Maybe<T, E>> maybe(
       CheckedSupplier<T, E> supplier, Class<E> exceptionType) {
     requireNonNull(supplier);
     requireNonNull(exceptionType);
@@ -243,7 +243,7 @@ public abstract class Maybe<T, E extends Throwable> {
   /**
    * Wraps {@code function} to be used for a stream of Maybe.
    *
-   * <p>Normally one should use {@link #wrap(CheckedFunction)} unless {@code E} is an unchecked
+   * <p>Normally one should use {@link #maybe(CheckedFunction)} unless {@code E} is an unchecked
    * exception type.
    *
    * <p>For GWT code, wrap the function manually, as in:
@@ -261,7 +261,7 @@ public abstract class Maybe<T, E extends Throwable> {
    *   }
    * }</pre>
    */
-  public static <F, T, E extends Throwable> Function<F, Maybe<T, E>> wrap(
+  public static <F, T, E extends Throwable> Function<F, Maybe<T, E>> maybe(
       CheckedFunction<F, T, E> function, Class<E> exceptionType) {
     requireNonNull(function);
     requireNonNull(exceptionType);
@@ -271,7 +271,7 @@ public abstract class Maybe<T, E extends Throwable> {
   /**
    * Wraps {@code function} to be used for a stream of Maybe.
    *
-   * <p>Normally one should use {@link #wrap(CheckedBiFunction)} unless {@code E} is an unchecked
+   * <p>Normally one should use {@link #maybe(CheckedBiFunction)} unless {@code E} is an unchecked
    * exception type.
    *
    * <p>For GWT code, wrap the function manually, as in:
@@ -289,7 +289,7 @@ public abstract class Maybe<T, E extends Throwable> {
    *   }
    * }</pre>
    */
-  public static <A, B, T, E extends Throwable> BiFunction<A, B, Maybe<T, E>> wrap(
+  public static <A, B, T, E extends Throwable> BiFunction<A, B, Maybe<T, E>> maybe(
       CheckedBiFunction<A, B, T, E> function, Class<E> exceptionType) {
     requireNonNull(function);
     requireNonNull(exceptionType);

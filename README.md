@@ -42,7 +42,7 @@ Add the following to pom.xml:
 
 #### To retry blockingly
 
-Blocking the thread for retry isn't always a good idea at server side. It is however simple and being able to propagate exceptions directly up the call stack is nice:
+Blocking the thread for retry isn't always a good idea at server side. It is however simple and being able to propagate exceptions directly up the call stack is convenient:
 ```java
 Account fetchAccountWithRetry() throws IOException {
   return new Retryer()
@@ -184,10 +184,11 @@ return files.stream()
 `Maybe` can be used to wrap the checked exception through the stream operations:
 
 ```java
-import static org.mu.Maybe.byValue;
+import static com.google.mu.util.Maybe.byValue;
+import static com.google.mu.util.Maybe.maybe;
 
 Stream<Maybe<byte[], IOException>> stream = files.stream()
-    .map(Maybe.wrap(Files::toByteArray))
+    .map(maybe(Files::toByteArray))
     .filter(byValue(b -> b.length > 0));
 List<byte[]> contents = new ArrayList<>();
 Iterate.through(stream, m -> contents.add(m.orElseThrow()));

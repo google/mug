@@ -18,6 +18,7 @@ package com.google.mu.function;
 import static java.util.Objects.requireNonNull;
 
 /** A consumer that can throw checked exceptions. */
+@FunctionalInterface
 public interface CheckedConsumer<T, E extends Throwable> {
   void accept(T input) throws E;
 
