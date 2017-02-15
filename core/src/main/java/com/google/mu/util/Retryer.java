@@ -27,6 +27,7 @@ import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -222,8 +223,7 @@ public final class Retryer {
   /**
    * Returns a new object that retries if the function returns {@code returnValue}.
    *
-   * @param returnValue The return value that triggers retry. Must not be {@code null}.
-   *        To retry for null return value, use {@code r -> r == null}.
+   * @param returnValue The nullable return value that triggers retry
    * @param delays specify the backoffs between retries
    */
   public <T> ForReturnValue<T> uponReturn(
@@ -234,14 +234,12 @@ public final class Retryer {
   /**
    * Returns a new object that retries if the function returns {@code returnValue}.
    *
-   * @param returnValue The return value that triggers retry. Must not be {@code null}.
-   *        To retry for null return value, use {@code r -> r == null}.
+   * @param returnValue The nullable return value that triggers retry
    * @param delays specify the backoffs between retries
    */
   public <T> ForReturnValue<T> uponReturn(
       T returnValue, List<? extends Delay<? super T>> delays) {
-    requireNonNull(returnValue);
-    return ifReturns(returnValue::equals, delays);
+    return ifReturns(r -> Objects.equals(r, returnValue), delays);
   }
 
   /** Retries based on return values. */

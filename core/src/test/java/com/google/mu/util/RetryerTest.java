@@ -67,12 +67,10 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
-import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.EqualsTester;
 import com.google.common.testing.NullPointerTester;
 import com.google.common.truth.ThrowableSubject;
 import com.google.mu.function.CheckedSupplier;
-import com.google.mu.util.Retryer;
 import com.google.mu.util.Retryer.Delay;
 
 @RunWith(JUnit4.class)
@@ -131,8 +129,7 @@ public class RetryerTest {
 
   @Test public void nullReturnValueRetried() throws Exception {
     Delay<String> delay = spy(ofSeconds(1));
-    Retryer.ForReturnValue<String> forReturnValue =
-        retryer.ifReturns(r -> r == null, asList(delay));
+    Retryer.ForReturnValue<String> forReturnValue = retryer.uponReturn(null, asList(delay));
     when(action.run()).thenReturn(null).thenReturn("fixed");
     CompletionStage<String> stage = forReturnValue.retry(action::run, executor);
     assertPending(stage);
@@ -800,13 +797,15 @@ public class RetryerTest {
     assertThrows(IndexOutOfBoundsException.class, () -> timed.get(1));
   }
 
-  @Test public void testNulls() {
+  @Test public void testNulls() throws Exception {
     Stream<?> statelessStream = (Stream<?>) Proxy.newProxyInstance(
           RetryerTest.class.getClassLoader(), new Class<?>[] {Stream.class},
           (p, method, args) -> method.invoke(Stream.of(), args));
-    new ClassSanityTester()
+    new NullPointerTester()
         .setDefault(Stream.class, statelessStream)
-        .testNulls(Retryer.class);
+        .ignore(Retryer.class.getMethod("uponReturn", Object.class, Stream.class))
+        .ignore(Retryer.class.getMethod("uponReturn", Object.class, List.class))
+        .testAllPublicInstanceMethods(new Retryer());
   }
 
   @Test public void testForReturnValue_nulls() {
