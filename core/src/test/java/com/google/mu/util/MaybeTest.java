@@ -123,7 +123,7 @@ public class MaybeTest {
   @Test public void testOrElseThrow_explicitException_failure() throws Throwable {
     MyException exception = new MyException("test");
     Maybe<?, MyException> maybe = Maybe.except(exception);
-    IOException thrown = assertThrows(IOException.class, () -> maybe.orElseThrow(IOException::new));
+    MyException thrown = assertThrows(MyException.class, () -> maybe.orElseThrow(MyException::new));
     assertSame(exception, thrown.getCause());
   }
 
@@ -505,6 +505,10 @@ public class MaybeTest {
   private static class MyException extends Exception {
     MyException(String message) {
       super(message);
+    }
+
+    MyException(Throwable cause) {
+      super(cause);
     }
   }
 

@@ -1,7 +1,11 @@
 Disclaimer: This is not an official Google product.
 
 # Mug
+<<<<<<< HEAD
 A small Java 8 library ([javadoc](http://google.github.io/mu/apidocs/index.html)), with 0 deps.
+=======
+A small Java 8 utility library ([javadoc](http://google.github.io/mu/apidocs/index.html)), with 0 deps.
+>>>>>>> master
 
 ![](https://travis-ci.org/google/mu.svg?branch=master)
 
@@ -11,7 +15,11 @@ Add the following to pom.xml:
 ```
   <dependency>
     <groupId>com.google.mug</groupId>
+<<<<<<< HEAD
     <artifactId>mu</artifactId>
+=======
+    <artifactId>mug</artifactId>
+>>>>>>> master
     <version>1.0</version>
   </dependency>
 ```
