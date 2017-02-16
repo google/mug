@@ -44,6 +44,7 @@ import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import com.google.mu.function.CheckedBiFunction;
+import com.google.mu.function.CheckedConsumer;
 import com.google.mu.function.CheckedFunction;
 import com.google.mu.function.CheckedSupplier;
 
@@ -161,7 +162,8 @@ public abstract class Maybe<T, E extends Throwable> {
    * {@code Stream}. This is specially useful in a {@link Stream} chain to handle and then ignore
    * exceptional results.
    */
-  public final Stream<T> catching(Consumer<? super E> handler) {
+  public final <X extends Throwable> Stream<T> catching(
+      CheckedConsumer<? super E, ? extends X> handler) throws X {
     requireNonNull(handler);
     return map(Stream::of).orElse(e -> {
       handler.accept(e);
