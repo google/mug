@@ -4,7 +4,7 @@ Disclaimer: This is not an official Google product.
 A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/index.html)), with 0 deps. ![](https://travis-ci.org/google/mug.svg?branch=master)
 
 * [Retryer](#retryer) retries.
-* [Iterate](#iterate) iterates over `Stream`s in the presence checked exceptions.
+* [Iterate](#iterate) iterates over `Stream`s in the presence of checked exceptions.
 * [Maybe](#maybe) tunnels checked exceptions through streams or futures.
 * [Funnel](#funnel) flows objects through batch conversions in FIFO order.
 * Functional interfaces that allow checked exceptions.
