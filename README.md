@@ -3,10 +3,10 @@ Disclaimer: This is not an official Google product.
 # MµG
 A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/index.html)), with 0 deps. ![](https://travis-ci.org/google/mug.svg?branch=master)
 
-* [Retryer](#retryer)
-* [Iterate](#iterate)
-* [Maybe](#maybe)
-* [Funnel](#funnel)
+* [Retryer](#retryer) retries.
+* [Iterate](#iterate) iterates through `Stream`.
+* [Maybe](#maybe) tunnels checked exceptions through streams or futures.
+* [Funnel](#funnel) dispatches objects to batches in encounter order.
 
 ## Maven
 
