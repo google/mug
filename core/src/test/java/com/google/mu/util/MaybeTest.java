@@ -220,9 +220,20 @@ public class MaybeTest {
         .containsExactly("hello", "friend").inOrder();
   }
 
+  @Test public void testStreamFlatMap_success() throws MyException {
+    assertStream(Stream.of("hello", "friend").flatMap(Maybe.maybeStream(this::streamOf)))
+        .containsExactly("hello", "friend").inOrder();
+  }
+
   @Test public void testStream_exception() {
     Stream<Maybe<String, MyException>> stream =
         Stream.of("hello", "friend").map(Maybe.maybe(this::raise));
+    assertThrows(MyException.class, () -> collect(stream));
+  }
+
+  @Test public void testStreamFlatMap_exception() {
+    Stream<Maybe<String, MyException>> stream =
+        Stream.of("hello", "friend").flatMap(Maybe.maybeStream(this::raiseForStream));
     assertThrows(MyException.class, () -> collect(stream));
   }
 
@@ -475,6 +486,10 @@ public class MaybeTest {
     throw new MyException(s);
   }
 
+  private Stream<String> raiseForStream(String s) throws MyException {
+    throw new MyException(s);
+  }
+
   @SuppressWarnings("unused")  // Signature needed for Maybe.wrap()
   private String raiseUnchecked(String s) throws MyException {
     throw new RuntimeException(s);
@@ -483,6 +498,11 @@ public class MaybeTest {
   @SuppressWarnings("unused")  // Signature needed for Maybe.wrap()
   private String justReturn(String s) throws MyException {
     return s;
+  }
+
+  @SuppressWarnings("unused")  // Signature needed for Maybe.wrap()
+  private Stream<String> streamOf(String s) throws MyException {
+    return Stream.of(s);
   }
 
   private static <T, E extends Throwable> IterableSubject assertStream(
