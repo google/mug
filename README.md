@@ -4,9 +4,9 @@ Disclaimer: This is not an official Google product.
 A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/index.html)), with 0 deps. ![](https://travis-ci.org/google/mug.svg?branch=master)
 
 * [Retryer](#retryer) retries.
-* [Iterate](#iterate) iterates through `Stream`.
+* [Iterate](#iterate) iterates through `Stream`s.
 * [Maybe](#maybe) tunnels checked exceptions through streams or futures.
-* [Funnel](#funnel) dispatches objects to batches in encounter order.
+* [Funnel](#funnel) dispatches objects through batches in encounter order.
 
 ## Maven
 
