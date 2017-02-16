@@ -5,6 +5,11 @@ A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/
 
 ![](https://travis-ci.org/google/mug.svg?branch=master)
 
+* [Retryer](#retryer)
+* [Iterate](#iterate)
+* [Maybe](#maybe)
+* [Funnel](#funnel)
+
 ## Maven
 
 Add the following to pom.xml:
