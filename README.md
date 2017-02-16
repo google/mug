@@ -148,6 +148,16 @@ If the method succeeds after retry, the exceptions are by default logged. As sho
 
 If the method fails after retry, the exceptions can also be accessed programmatically through `exception.getSuppressed()`.
 
+## [Iterate](https://google.github.io/mug/apidocs/com/google/mu/util/Iterate.html)
+
+If you have a Java 8 `Stream` of objects to write to an `ObjectOutputStream`, you won't be able to use `forEach` because `writeObject()` throws `IOException`. You can use `Iterate` instead:
+
+```java
+Stream<?> stream = ...;
+ObjectOutput out = ...;
+Iterate.through(stream, out::writeObject);
+```
+
 ## [Maybe](https://google.github.io/mug/apidocs/com/google/mu/util/Maybe.html)
 
 Represents a value that may have failed with an exception.
@@ -302,13 +312,3 @@ List<Result> convert(List<Input> inputs) {
 }
 ```
 That is, define the batches with ```funnel.through()``` and then inputs can flow through arbitrary number of batch conversions. Conversion results flow out of the funnel in the same order as inputs entered the funnel. 
-
-## [Iterate](https://google.github.io/mug/apidocs/com/google/mu/util/Iterate.html)
-
-If you have a Java 8 `Stream` of objects to write to an `ObjectOutputStream`, you won't be able to use `forEach` because `writeObject()` throws `IOException`. You can use `Iterate` instead:
-
-```java
-Stream<?> stream = ...;
-ObjectOutput out = ...;
-Iterate.through(stream, out::writeObject);
-```
