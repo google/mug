@@ -192,8 +192,8 @@ public abstract class Maybe<T, E extends Throwable> {
   }
 
   /**
-   * Wraps {@code supplier} that returns {@code Stream<T>} to one that return
-   * {@code Stream<Maybe<T, E>>} with exception wrapped.
+   * Wraps {@code supplier} that returns {@code Stream<T>} to one that returns
+   * {@code Stream<Maybe<T, E>>} with exceptions of type {@code E} wrapped.
    *
    * <p>Useful to be passed to {@link Stream#flatMap}.
    *
@@ -217,8 +217,8 @@ public abstract class Maybe<T, E extends Throwable> {
   }
 
   /**
-   * Wraps {@code function} that returns {@code Stream<T>} to one that return
-   * {@code Stream<Maybe<T, E>>} with exception wrapped.
+   * Wraps {@code function} that returns {@code Stream<T>} to one that returns
+   * {@code Stream<Maybe<T, E>>} with exceptions of type {@code E} wrapped.
    *
    * <p>Useful to be passed to {@link Stream#flatMap}.
    *
@@ -242,8 +242,8 @@ public abstract class Maybe<T, E extends Throwable> {
   }
 
   /**
-   * Wraps {@code function} that returns {@code Stream<T>} to one that return
-   * {@code Stream<Maybe<T, E>>} with exception wrapped.
+   * Wraps {@code function} that returns {@code Stream<T>} to one that returns
+   * {@code Stream<Maybe<T, E>>} with exceptions of type {@code E} wrapped.
    *
    * <p>Useful to be passed to {@link Stream#flatMap}.
    *
@@ -284,7 +284,7 @@ public abstract class Maybe<T, E extends Throwable> {
   }
 
   /**
-   * Wraps {@code supplier} that returns {@code Stream<T>} to oen that returns
+   * Wraps {@code supplier} that returns {@code Stream<T>} to one that returns
    * {@code Stream<Maybe<T, E>>} with exceptions of type {@code E} wrapped.
    */
   public static <T, E extends Throwable> Supplier<Stream<Maybe<T, E>>> maybeStream(
@@ -323,7 +323,7 @@ public abstract class Maybe<T, E extends Throwable> {
   }
 
   /**
-   * Wraps {@code function} that returns {@code Stream<T>} to oen that returns
+   * Wraps {@code function} that returns {@code Stream<T>} to one that returns
    * {@code Stream<Maybe<T, E>>} with exceptions of type {@code E} wrapped.
    */
   public static <F, T, E extends Throwable> Function<F, Stream<Maybe<T, E>>> maybeStream(
@@ -363,7 +363,7 @@ public abstract class Maybe<T, E extends Throwable> {
   }
 
   /**
-   * Wraps {@code function} that returns {@code Stream<T>} to oen that returns
+   * Wraps {@code function} that returns {@code Stream<T>} to one that returns
    * {@code Stream<Maybe<T, E>>} with exceptions of type {@code E} wrapped.
    */
   public static <A, B, T, E extends Throwable> BiFunction<A, B, Stream<Maybe<T, E>>> maybeStream(
@@ -382,7 +382,7 @@ public abstract class Maybe<T, E extends Throwable> {
    * without having to deal with other exception types.
    */
   public static <T, E extends Throwable> CompletionStage<Maybe<T, E>> catchException(
-      Class<E> exceptionType, CompletionStage<T> stage) {
+      Class<E> exceptionType, CompletionStage<? extends T> stage) {
     requireNonNull(exceptionType);
     CompletableFuture<Maybe<T, E>> future = new CompletableFuture<>();
     stage.handle((v, e) -> {
