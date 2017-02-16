@@ -174,7 +174,8 @@ public abstract class Maybe<T, E extends Throwable> {
    * matches any {@code Maybe} with a matching value, as well as any exceptional {@code Maybe} so
    * as not to accidentally swallow exceptions.
    */
-  public static <T, E extends Throwable> Predicate<Maybe<T, E>> byValue(Predicate<T> condition) {
+  public static <T, E extends Throwable> Predicate<Maybe<T, E>> byValue(
+      Predicate<? super T> condition) {
     requireNonNull(condition);
     return maybe -> maybe.map(condition::test).orElse(e -> true);
   }
@@ -185,9 +186,23 @@ public abstract class Maybe<T, E extends Throwable> {
    * <p>Unchecked exceptions will be immediately propagated without being wrapped.
    */
   public static <T, E extends Throwable> Supplier<Maybe<T, E>> maybe(
-      CheckedSupplier<T, E> supplier) {
+      CheckedSupplier<? extends T, ? extends E> supplier) {
     requireNonNull(supplier);
     return () -> getChecked(supplier);
+  }
+
+  /**
+   * Wraps {@code supplier} that returns {@code Stream<T>} to one that return
+   * {@code Stream<Maybe<T, E>>} with exception wrapped.
+   *
+   * <p>Useful to be passed to {@link Stream#flatMap}.
+   *
+   * <p>Unchecked exceptions will be immediately propagated without being wrapped.
+   */
+  public static <T, E extends Throwable> Supplier<Stream<Maybe<T, E>>> maybeStream(
+      CheckedSupplier<? extends Stream<? extends T>, E> supplier) {
+    Supplier<Maybe<Stream<? extends T>, E>> wrapped = maybe(supplier);
+    return () -> maybeStream(wrapped.get());
   }
 
   /**
@@ -196,9 +211,23 @@ public abstract class Maybe<T, E extends Throwable> {
    * <p>Unchecked exceptions will be immediately propagated without being wrapped.
    */
   public static <F, T, E extends Throwable> Function<F, Maybe<T, E>> maybe(
-      CheckedFunction<F, T, E> function) {
+      CheckedFunction<? super F, ? extends T, E> function) {
     requireNonNull(function);
     return from -> getChecked(()->function.apply(from));
+  }
+
+  /**
+   * Wraps {@code function} that returns {@code Stream<T>} to one that return
+   * {@code Stream<Maybe<T, E>>} with exception wrapped.
+   *
+   * <p>Useful to be passed to {@link Stream#flatMap}.
+   *
+   * <p>Unchecked exceptions will be immediately propagated without being wrapped.
+   */
+  public static <F, T, E extends Throwable> Function<F, Stream<Maybe<T, E>>> maybeStream(
+      CheckedFunction<? super F, ? extends Stream<? extends T>, E> function) {
+    Function<F, Maybe<Stream<? extends T>, E>> wrapped = maybe(function);
+    return wrapped.andThen(Maybe::maybeStream);
   }
 
   /**
@@ -207,9 +236,23 @@ public abstract class Maybe<T, E extends Throwable> {
    * <p>Unchecked exceptions will be immediately propagated without being wrapped.
    */
   public static <A, B, T, E extends Throwable> BiFunction<A, B, Maybe<T, E>> maybe(
-      CheckedBiFunction<A, B, T, E> function) {
+      CheckedBiFunction<? super A, ? super B, ? extends T, ? extends E> function) {
     requireNonNull(function);
     return (a, b) -> getChecked(()->function.apply(a, b));
+  }
+
+  /**
+   * Wraps {@code function} that returns {@code Stream<T>} to one that return
+   * {@code Stream<Maybe<T, E>>} with exception wrapped.
+   *
+   * <p>Useful to be passed to {@link Stream#flatMap}.
+   *
+   * <p>Unchecked exceptions will be immediately propagated without being wrapped.
+   */
+  public static <A, B, T, E extends Throwable> BiFunction<A, B, Stream<Maybe<T, E>>> maybeStream(
+      CheckedBiFunction<? super A, ? super B, ? extends Stream<? extends T>, ? extends E> function) {
+    BiFunction<A, B, Maybe<Stream<? extends T>, E>> wrapped = maybe(function);
+    return wrapped.andThen(Maybe::maybeStream);
   }
 
   /**
@@ -234,10 +277,21 @@ public abstract class Maybe<T, E extends Throwable> {
    * }</pre>
    */
   public static <T, E extends Throwable> Supplier<Maybe<T, E>> maybe(
-      CheckedSupplier<T, E> supplier, Class<E> exceptionType) {
+      CheckedSupplier<? extends T, ? extends E> supplier, Class<E> exceptionType) {
     requireNonNull(supplier);
     requireNonNull(exceptionType);
     return () -> get(supplier, exceptionType);
+  }
+
+  /**
+   * Wraps {@code supplier} that returns {@code Stream<T>} to oen that returns
+   * {@code Stream<Maybe<T, E>>} with exceptions of type {@code E} wrapped.
+   */
+  public static <T, E extends Throwable> Supplier<Stream<Maybe<T, E>>> maybeStream(
+      CheckedSupplier<? extends Stream<? extends T>, ? extends E> supplier,
+      Class<E> exceptionType) {
+    Supplier<Maybe<Stream<? extends T>, E>> wrapped = maybe(supplier, exceptionType);
+    return () -> maybeStream(wrapped.get());
   }
 
   /**
@@ -262,10 +316,21 @@ public abstract class Maybe<T, E extends Throwable> {
    * }</pre>
    */
   public static <F, T, E extends Throwable> Function<F, Maybe<T, E>> maybe(
-      CheckedFunction<F, T, E> function, Class<E> exceptionType) {
+      CheckedFunction<? super F, ? extends T, ? extends E> function, Class<E> exceptionType) {
     requireNonNull(function);
     requireNonNull(exceptionType);
     return from -> get(() -> function.apply(from), exceptionType);
+  }
+
+  /**
+   * Wraps {@code function} that returns {@code Stream<T>} to oen that returns
+   * {@code Stream<Maybe<T, E>>} with exceptions of type {@code E} wrapped.
+   */
+  public static <F, T, E extends Throwable> Function<F, Stream<Maybe<T, E>>> maybeStream(
+      CheckedFunction<? super F, ? extends Stream<? extends T>, ? extends E> function,
+      Class<E> exceptionType) {
+    Function<F, Maybe<Stream<? extends T>, E>> wrapped = maybe(function, exceptionType);
+    return wrapped.andThen(Maybe::maybeStream);
   }
 
   /**
@@ -290,10 +355,22 @@ public abstract class Maybe<T, E extends Throwable> {
    * }</pre>
    */
   public static <A, B, T, E extends Throwable> BiFunction<A, B, Maybe<T, E>> maybe(
-      CheckedBiFunction<A, B, T, E> function, Class<E> exceptionType) {
+      CheckedBiFunction<? super A, ? super B, ? extends T, ? extends E> function,
+      Class<E> exceptionType) {
     requireNonNull(function);
     requireNonNull(exceptionType);
     return (a, b) -> get(() -> function.apply(a, b), exceptionType);
+  }
+
+  /**
+   * Wraps {@code function} that returns {@code Stream<T>} to oen that returns
+   * {@code Stream<Maybe<T, E>>} with exceptions of type {@code E} wrapped.
+   */
+  public static <A, B, T, E extends Throwable> BiFunction<A, B, Stream<Maybe<T, E>>> maybeStream(
+      CheckedBiFunction<? super A, ? super B, ? extends Stream<? extends T>, ? extends E> function,
+      Class<E> exceptionType) {
+    BiFunction<A, B, Maybe<Stream<? extends T>, E>> wrapped = maybe(function, exceptionType);
+    return wrapped.andThen(Maybe::maybeStream);
   }
 
   /**
@@ -340,7 +417,7 @@ public abstract class Maybe<T, E extends Throwable> {
 
   // TODO: Add Checked* interfaces for all other java.util.function interfaces such as IntSupplier.
   private static <T, E extends Throwable> Maybe<T, E> get(
-      CheckedSupplier<T, E> supplier, Class<E> exceptionType) {
+      CheckedSupplier<? extends T, ? extends E> supplier, Class<E> exceptionType) {
     try {
       return of(supplier.get());
     } catch (Throwable e) {
@@ -350,7 +427,8 @@ public abstract class Maybe<T, E extends Throwable> {
     }
   }
 
-  private static <T, E extends Throwable> Maybe<T, E> getChecked(CheckedSupplier<T, E> supplier) {
+  private static <T, E extends Throwable> Maybe<T, E> getChecked(
+      CheckedSupplier<? extends T, ? extends E> supplier) {
     try {
       return of(supplier.get());
     } catch (Throwable e) {
@@ -359,6 +437,12 @@ public abstract class Maybe<T, E extends Throwable> {
       E exception = (E) propagateIfUnchecked(e);
       return except(exception);
     }
+  }
+
+  /** Adapts a {@code Maybe<Stream<T>, E>} to {@code Stream<Maybe<T, E>}. */
+  private static <T, E extends Throwable> Stream<Maybe<T, E>> maybeStream(
+      Maybe<? extends Stream<? extends T>, ? extends E> maybeStream) {
+    return maybeStream.map(s -> s.map(Maybe::<T, E>of)).orElse(e -> Stream.of(except(e)));
   }
 
   /** No subclasses! */
