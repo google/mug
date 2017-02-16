@@ -7,6 +7,7 @@ A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/
 * [Iterate](#iterate) iterates over `Stream`s.
 * [Maybe](#maybe) tunnels checked exceptions through streams or futures.
 * [Funnel](#funnel) flows objects through batch conversions in FIFO order.
+* Functional interfaces that allow checked exceptions.
 
 ## Maven
 
