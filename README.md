@@ -154,6 +154,7 @@ If the method fails after retry, the exceptions can also be accessed programmati
 
 ## [Iterate](https://google.github.io/mug/apidocs/com/google/mu/util/Iterate.html)
 
+Java 8 `Stream` API provides `forEach()` to iterate over a stream, but only if you don't have to throw checked exceptions.
 If you have a Java 8 `Stream` of objects to write to an `ObjectOutputStream`, you won't be able to use `forEach` because `writeObject()` throws `IOException`. You can use `Iterate` instead:
 
 ```java
