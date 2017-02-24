@@ -14,13 +14,27 @@
  *****************************************************************************/
 package com.google.mu.util;
 
+import static com.google.common.truth.Truth.assertThat;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
+
 import org.junit.Test;
 
 import com.google.common.testing.NullPointerTester;
-import com.google.mu.util.Iterate;
 
 public class IterateTest {
+
   @Test public void testNulls() {
     new NullPointerTester().testAllPublicStaticMethods(Iterate.class);
   }
+
+  @Test public void testThrough() {
+    List<String> to = new ArrayList<>();
+    Iterate.through(Stream.of(1, 2).map(Object::toString), to::add);
+    assertThat(to).containsExactly("1", "2");
+  }
+
+  // TODO: Test close() being called. (but Mockito is having trouble to spy streams)
 }
