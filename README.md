@@ -12,11 +12,19 @@ A small Java 8 utility library ([javadoc](http://google.github.io/mu/apidocs/ind
 # Mµg
 =======
 # MµG
+<<<<<<< HEAD
 >>>>>>> master
 A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/index.html)), with 0 deps.
 >>>>>>> master
+=======
+A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/index.html)), with 0 deps. ![](https://travis-ci.org/google/mug.svg?branch=master)
+>>>>>>> master
 
-![](https://travis-ci.org/google/mug.svg?branch=master)
+* [Retryer](#retryer) retries.
+* [Iterate](#iterate) iterates over `Stream`s in the presence of checked exceptions.
+* [Maybe](#maybe) tunnels checked exceptions through streams or futures.
+* [Funnel](#funnel) flows objects through batch conversions in FIFO order.
+* Functional interfaces that allow checked exceptions.
 
 ## Maven
 
@@ -164,6 +172,20 @@ return new Retryer()
 If the method succeeds after retry, the exceptions are by default logged. As shown above, one can override `beforeDelay()` and `afterDelay()` to change or suppress the loggging.
 
 If the method fails after retry, the exceptions can also be accessed programmatically through `exception.getSuppressed()`.
+
+## [Iterate](https://google.github.io/mug/apidocs/com/google/mu/util/Iterate.html)
+
+Java 8 `Stream` API provides `forEach()` to iterate over a stream, but only if you don't have to throw checked exceptions.
+
+If you have a stream of objects to write to an `ObjectOutputStream`, you won't be able to use `forEach` because `writeObject()` throws `IOException`.
+
+For cases like this, one can either use `iterator()` with a plain old `hasNext()` and `next()` loop, or can use `Iterate` in simpler syntax:
+
+```java
+Stream<?> stream = ...;
+ObjectOutput out = ...;
+Iterate.through(stream, out::writeObject);
+```
 
 ## [Maybe](https://google.github.io/mug/apidocs/com/google/mu/util/Maybe.html)
 
