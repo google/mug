@@ -38,7 +38,6 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
@@ -183,28 +182,35 @@ public abstract class Maybe<T, E extends Throwable> {
   }
 
   /**
-   * Wraps {@code supplier} to be used for a stream of Maybe.
+   * Invokes {@code supplier} and wraps the returned object or thrown exception in a
+   * {@code Maybe<T, E>}.
    *
    * <p>Unchecked exceptions will be immediately propagated without being wrapped.
    */
-  public static <T, E extends Throwable> Supplier<Maybe<T, E>> maybe(
+  public static <T, E extends Throwable> Maybe<T, E> maybe(
       CheckedSupplier<? extends T, ? extends E> supplier) {
     requireNonNull(supplier);
-    return () -> getChecked(supplier);
+    try {
+      return of(supplier.get());
+    } catch (Throwable e) {
+      // CheckedSupplier<T, E> can only throw unchecked or E.
+      @SuppressWarnings("unchecked")
+      E exception = (E) propagateIfUnchecked(e);
+      return except(exception);
+    }
   }
 
   /**
-   * Wraps {@code supplier} that returns {@code Stream<T>} to one that returns
-   * {@code Stream<Maybe<T, E>>} with exceptions of type {@code E} wrapped.
+   * Invokes {@code supplier} and wraps the returned {@code Stream<T>} or thrown exception into a
+   * stream of {@code Maybe<T, E>}.
    *
    * <p>Useful to be passed to {@link Stream#flatMap}.
    *
    * <p>Unchecked exceptions will be immediately propagated without being wrapped.
    */
-  public static <T, E extends Throwable> Supplier<Stream<Maybe<T, E>>> maybeStream(
+  public static <T, E extends Throwable> Stream<Maybe<T, E>> maybeStream(
       CheckedSupplier<? extends Stream<? extends T>, E> supplier) {
-    Supplier<Maybe<Stream<? extends T>, E>> wrapped = maybe(supplier);
-    return () -> maybeStream(wrapped.get());
+    return maybe(supplier).map(s -> s.map(Maybe::<T, E>of)).orElse(e -> Stream.of(except(e)));
   }
 
   /**
@@ -215,7 +221,7 @@ public abstract class Maybe<T, E extends Throwable> {
   public static <F, T, E extends Throwable> Function<F, Maybe<T, E>> maybe(
       CheckedFunction<? super F, ? extends T, E> function) {
     requireNonNull(function);
-    return from -> getChecked(()->function.apply(from));
+    return from -> maybe(()->function.apply(from));
   }
 
   /**
@@ -240,7 +246,7 @@ public abstract class Maybe<T, E extends Throwable> {
   public static <A, B, T, E extends Throwable> BiFunction<A, B, Maybe<T, E>> maybe(
       CheckedBiFunction<? super A, ? super B, ? extends T, ? extends E> function) {
     requireNonNull(function);
-    return (a, b) -> getChecked(()->function.apply(a, b));
+    return (a, b) -> maybe(()->function.apply(a, b));
   }
 
   /**
@@ -266,34 +272,37 @@ public abstract class Maybe<T, E extends Throwable> {
    * <p>For GWT code, wrap the supplier manually, as in:
    *
    * <pre>{@code
-   *   private static <T> Supplier<Maybe<T, FooException>> foo(
+   *   private static <T> Maybe<T, FooException> foo(
    *       CheckedSupplier<T, FooException> supplier) {
-   *     return () -> {
-   *       try {
-   *         return Maybe.of(supplier.get());
-   *       } catch (FooException e) {
-   *         return Maybe.except(e);
-   *       }
-   *     };
+   *     try {
+   *       return Maybe.of(supplier.get());
+   *     } catch (FooException e) {
+   *       return Maybe.except(e);
+   *     }
    *   }
    * }</pre>
    */
-  public static <T, E extends Throwable> Supplier<Maybe<T, E>> maybe(
+  public static <T, E extends Throwable> Maybe<T, E> maybe(
       CheckedSupplier<? extends T, ? extends E> supplier, Class<E> exceptionType) {
     requireNonNull(supplier);
     requireNonNull(exceptionType);
-    return () -> get(supplier, exceptionType);
+    try {
+      return of(supplier.get());
+    } catch (Throwable e) {
+      return cast(e, exceptionType)
+          .map(Maybe::<T, E>except)
+          .orElseThrow(() -> new AssertionError(propagateIfUnchecked(e)));
+    }
   }
 
   /**
-   * Wraps {@code supplier} that returns {@code Stream<T>} to one that returns
-   * {@code Stream<Maybe<T, E>>} with exceptions of type {@code E} wrapped.
+   * Invokes {@code supplier} and wraps the returned {@code Stream<T>} or thrown exception into a
+   * stream of {@code Maybe<T, E>}.
    */
-  public static <T, E extends Throwable> Supplier<Stream<Maybe<T, E>>> maybeStream(
+  public static <T, E extends Throwable> Stream<Maybe<T, E>> maybeStream(
       CheckedSupplier<? extends Stream<? extends T>, ? extends E> supplier,
       Class<E> exceptionType) {
-    Supplier<Maybe<Stream<? extends T>, E>> wrapped = maybe(supplier, exceptionType);
-    return () -> maybeStream(wrapped.get());
+    return maybeStream(maybe(supplier, exceptionType));
   }
 
   /**
@@ -321,7 +330,7 @@ public abstract class Maybe<T, E extends Throwable> {
       CheckedFunction<? super F, ? extends T, ? extends E> function, Class<E> exceptionType) {
     requireNonNull(function);
     requireNonNull(exceptionType);
-    return from -> get(() -> function.apply(from), exceptionType);
+    return from -> maybe(() -> function.apply(from), exceptionType);
   }
 
   /**
@@ -361,7 +370,7 @@ public abstract class Maybe<T, E extends Throwable> {
       Class<E> exceptionType) {
     requireNonNull(function);
     requireNonNull(exceptionType);
-    return (a, b) -> get(() -> function.apply(a, b), exceptionType);
+    return (a, b) -> maybe(() -> function.apply(a, b), exceptionType);
   }
 
   /**
@@ -414,30 +423,6 @@ public abstract class Maybe<T, E extends Throwable> {
       if (!(e instanceof ExecutionException || e instanceof CompletionException)) {
         return Optional.empty();
       }
-    }
-  }
-
-  // TODO: Add Checked* interfaces for all other java.util.function interfaces such as IntSupplier.
-  private static <T, E extends Throwable> Maybe<T, E> get(
-      CheckedSupplier<? extends T, ? extends E> supplier, Class<E> exceptionType) {
-    try {
-      return of(supplier.get());
-    } catch (Throwable e) {
-      return cast(e, exceptionType)
-          .map(Maybe::<T, E>except)
-          .orElseThrow(() -> new AssertionError(propagateIfUnchecked(e)));
-    }
-  }
-
-  private static <T, E extends Throwable> Maybe<T, E> getChecked(
-      CheckedSupplier<? extends T, ? extends E> supplier) {
-    try {
-      return of(supplier.get());
-    } catch (Throwable e) {
-      // CheckedSupplier<T, E> can only throw unchecked or E.
-      @SuppressWarnings("unchecked")
-      E exception = (E) propagateIfUnchecked(e);
-      return except(exception);
     }
   }
 

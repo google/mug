@@ -264,13 +264,13 @@ public class MaybeTest {
   }
 
   @Test public void testStream_generateSuccess() {
-    assertThat(Stream.generate(Maybe.maybe(() -> justReturn("good"))).findFirst().get())
+    assertThat(Stream.generate(() -> Maybe.maybe(() -> justReturn("good"))).findFirst().get())
         .isEqualTo(Maybe.of("good"));
   }
 
   @Test public void testStream_generateFailure() {
     Maybe<String, MyException> maybe =
-        Stream.generate(Maybe.maybe(() -> raise("bad"))).findFirst().get();
+        Stream.generate(() -> Maybe.maybe(() -> raise("bad"))).findFirst().get();
     assertThat(assertThrows(MyException.class, maybe::orElseThrow).getMessage()).isEqualTo("bad");
   }
 
