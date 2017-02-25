@@ -66,16 +66,12 @@ public final class Iterate {
    *     Iterate.through(stream, out::writeObject);
    *   }
    * }</pre>
-   *
-   * <p>{@code stream} is closed before this method returns.
    */
   public static <T, E extends Throwable> void through(
       Stream<? extends T> stream, CheckedConsumer<? super T, E> consumer) throws E {
     requireNonNull(consumer);
-    try (Stream<? extends T> closeable = stream) {
-      for (T element : once(closeable)) {
-        consumer.accept(element);
-      }
+    for (T element : once(stream)) {
+      consumer.accept(element);
     }
   }
 
