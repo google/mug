@@ -112,8 +112,8 @@ public abstract class Maybe<T, E extends Throwable> {
   /** Returns true unless this is exceptional. */
   public abstract boolean isPresent();
 
-  /** Applies {@code consumer} if {@code this} is present. */
-  public abstract void ifPresent(Consumer<? super T> consumer);
+  /** Applies {@code consumer} if {@code this} is present. Returns {@code this}. */
+  public abstract Maybe<T, E> ifPresent(Consumer<? super T> consumer);
 
   /** Either returns the encapsulated value, or translates exception using {@code function}. */
   public abstract <X extends Throwable> T orElse(
@@ -469,8 +469,9 @@ public abstract class Maybe<T, E extends Throwable> {
       return true;
     }
 
-    @Override public void ifPresent(Consumer<? super T> consumer) {
+    @Override public Maybe<T, E> ifPresent(Consumer<? super T> consumer) {
       consumer.accept(value);
+      return this;
     }
 
     @Override public <X extends Throwable> T orElse(CheckedFunction<? super E, ? extends T, X> f)
@@ -520,8 +521,9 @@ public abstract class Maybe<T, E extends Throwable> {
       return false;
     }
 
-    @Override public void ifPresent(Consumer<? super T> consumer) {
+    @Override public Maybe<T, E> ifPresent(Consumer<? super T> consumer) {
       requireNonNull(consumer);
+      return this;
     }
 
     @Override public <X extends Throwable> T orElse(CheckedFunction<? super E, ? extends T, X> f)
