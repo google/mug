@@ -191,15 +191,15 @@ public final class Parallelizer {
       throws TimeoutException, InterruptedException {
     requireNonNull(timeUnit);
     if (timeout <= 0) throw new IllegalArgumentException("timeout = " + timeout);
-    TaskQueue inflight = new TaskQueue();
+    Flight flight = new Flight();
     try {
       for (Runnable task : Iterate.once(tasks)) {
-        inflight.acquirePermit(timeout, timeUnit);
-        inflight.fly(task);
+        flight.checkIn(timeout, timeUnit);
+        flight.board(task);
       }
-      inflight.await(timeout, timeUnit);
+      flight.land(timeout, timeUnit);
     } catch (Throwable e) {
-      inflight.cancel();
+      flight.cancel();
       throw e;
     }
   }
@@ -211,15 +211,15 @@ public final class Parallelizer {
    * the tasks to respond to cancellation).
    */
   public void parallelizeUninterruptibly(Stream<? extends Runnable> tasks) {
-    TaskQueue inflight = new TaskQueue();
+    Flight flight = new Flight();
     try {
       for (Runnable task : Iterate.once(tasks)) {
-        inflight.acquirePermitUninterruptibly();
-        inflight.fly(task);
+        flight.checkInUninterruptibly();
+        flight.board(task);
       }
-      inflight.awaitUninterruptibly();
+      flight.landUninterruptibly();
     } catch (Throwable e) {
-      inflight.cancel();
+      flight.cancel();
       throw e;
     }
   }
@@ -229,56 +229,49 @@ public final class Parallelizer {
     return inputs.map(input -> () -> consumer.accept(input));
   }
 
-  private final class TaskQueue {
+  private final class Flight {
     // fairness is irrelevant here since only the main thread ever calls acquire().
     private final Semaphore semaphore = new Semaphore(maxInFlight);
-    private final BoundedBuffer<Future<?>> inflight = new BoundedBuffer<>(maxInFlight);
-    private volatile ConcurrentLinkedQueue<Throwable> exceptions = new ConcurrentLinkedQueue<>();
+    private final BoundedBuffer<Future<?>> onboard = new BoundedBuffer<>(maxInFlight);
+    private volatile ConcurrentLinkedQueue<Throwable> thrown = new ConcurrentLinkedQueue<>();
   
-    void acquirePermit(long timeout, TimeUnit timeUnit)
+    void checkIn(long timeout, TimeUnit timeUnit)
         throws InterruptedException, TimeoutException, UncheckedExecutionException {
-      propagateTaskExceptions();
+      propagateExceptions();
       boolean acquired = semaphore.tryAcquire(timeout, timeUnit);
-      propagateTaskExceptions();
+      propagateExceptions();
       if (!acquired) throw new TimeoutException();
     }
   
-    void acquirePermitUninterruptibly() throws UncheckedExecutionException {
-      propagateTaskExceptions();
+    void checkInUninterruptibly() throws UncheckedExecutionException {
+      propagateExceptions();
       semaphore.acquireUninterruptibly();
-      propagateTaskExceptions();
+      propagateExceptions();
     }
 
-    /**
-     * Submits {@code task}. But have been called after either {@link #acquirePermit} or
-     * {@link #acquirePermitUninterruptibly}.
-     */
-    void fly(Runnable task) {
-      inflight.add(executor.submit(() -> runTask(task)));
+    void board(Runnable task) {
+      onboard.add(executor.submit(() -> fly(task)));
     }
 
-    /** Waits for all tasks to be done. */
-    void await(long timeout, TimeUnit timeUnit)
+    void land(long timeout, TimeUnit timeUnit)
         throws InterruptedException, TimeoutException, UncheckedExecutionException {
-      for (int i = 0; i < maxInFlight; i++) acquirePermit(timeout, timeUnit);
+      for (int i = 0; i < maxInFlight; i++) checkIn(timeout, timeUnit);
     }
 
-    /** Waits for all tasks to be done. */
-    void awaitUninterruptibly() throws UncheckedExecutionException {
-      for (int i = 0; i < maxInFlight; i++) acquirePermitUninterruptibly();
+    void landUninterruptibly() throws UncheckedExecutionException {
+      for (int i = 0; i < maxInFlight; i++) checkInUninterruptibly();
     }
 
-    /** Cancels all in-flight tasks. */
     void cancel() {
       // When we cancel a scheduled-but-not-executed task, we'll leave the semaphore unreleased.
       // But it's okay because the only time we cancel is when we are aborting the whole pipeline
       // and nothing will use the semaphore after that.
-      inflight.asList().stream().forEach(f -> f.cancel(true));
+      onboard.asList().stream().forEach(f -> f.cancel(true));
     }
 
     /** If any task has thrown, propagate all task exceptions. */
-    private void propagateTaskExceptions() {
-      ConcurrentLinkedQueue<Throwable> toPropagate = exceptions;
+    private void propagateExceptions() {
+      ConcurrentLinkedQueue<Throwable> toPropagate = thrown;
       UncheckedExecutionException executionException = null;
       for (Throwable exception : toPropagate) {
         if (executionException == null) {
@@ -288,17 +281,17 @@ public final class Parallelizer {
         }
       }
       if (executionException != null) {
-        exceptions = null;
+        thrown = null;
         throw executionException;
       }
     }
   
     /** WARNING: called by task threads! */
-    private void runTask(Runnable task) {
+    private void fly(Runnable task) {
       try {
         task.run();
       } catch (Throwable e) {
-        ConcurrentLinkedQueue<Throwable> toPropagate = exceptions;
+        ConcurrentLinkedQueue<Throwable> toPropagate = thrown;
         if (toPropagate == null) {
           // The main thread propagates exceptions as soon as any task fails.
           // If a task did not respond in time and yet fails afterwards, the main thread has
