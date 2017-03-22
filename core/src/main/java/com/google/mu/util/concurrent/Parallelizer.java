@@ -125,7 +125,6 @@ public final class Parallelizer {
    */
   public <T> void parallelize(Stream<? extends T> inputs, Consumer<? super T> consumer)
       throws InterruptedException {
-    requireNonNull(consumer);
     parallelize(forAll(inputs, consumer));
   }
 
@@ -143,7 +142,6 @@ public final class Parallelizer {
   public <T> void parallelize(
       Stream<? extends T> inputs, Consumer<? super T> consumer, long timeout, TimeUnit timeUnit)
       throws TimeoutException, InterruptedException {
-    requireNonNull(consumer);
     parallelize(forAll(inputs, consumer), timeout, timeUnit);
   }
 
@@ -157,7 +155,6 @@ public final class Parallelizer {
    */
   public <T> void parallelizeUninterruptibly(
       Stream<? extends T> inputs, Consumer<? super T> consumer) {
-    requireNonNull(consumer);
     parallelizeUninterruptibly(forAll(inputs, consumer));
   }
 
