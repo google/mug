@@ -2,24 +2,14 @@ package com.google.mu.util.concurrent;
 
 import static java.util.Objects.requireNonNull;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
@@ -218,75 +208,6 @@ public final class Parallelizer {
   }
 
   /**
-   * Calls {@link Supplier#get} in parallel against {@code suppliers}.
-   * This method blocks until either all suppliers have finished, or any exception is thrown,
-   * upon which all pending tasks are canceled (but the method returns without waiting for
-   * the tasks to respond to cancellation).
-   *
-   * <p>The {@code suppliers} stream is consumed only in the calling thread in iteration order.
-   *
-   * <p>Unlike {@link #parallelize}, supplier results are held in memory so it won't work for
-   * very large streams.
-   *
-   * @throws InterruptedException if the thread is interrupted while waiting.
-   * @throws TimeoutException if timeout exceeded while waiting.
-   */
-  public <T> Stream<T> parallelGet(Stream<? extends Supplier<? extends T>> suppliers)
-      throws InterruptedException {
-    try {
-      return parallelGet(suppliers, Long.MAX_VALUE, TimeUnit.MILLISECONDS);
-    } catch (TimeoutException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  /**
-   * Calls {@link Supplier#get} in parallel against {@code suppliers}.
-   * This method blocks until either all suppliers have finished, or any exception is thrown,
-   * upon which all pending tasks are canceled (but the method returns without waiting for
-   * the tasks to respond to cancellation).
-   *
-   * <p>The {@code suppliers} stream is consumed only in the calling thread in iteration order.
-   *
-   * <p>Unlike {@link #parallelize}, supplier results are held in memory so it won't work for
-   * very large streams.
-   *
-   * @throws InterruptedException if the thread is interrupted while waiting.
-   * @throws TimeoutException if timeout exceeded while waiting.
-   */
-  public <T> Stream<T> parallelGet(
-      Stream<? extends Supplier<? extends T>> suppliers, long timeout, TimeUnit timeUnit)
-      throws TimeoutException, InterruptedException {
-    ConcurrentLinkedQueue<Indexed<T>> results = new ConcurrentLinkedQueue<>();
-    parallelize(
-        Indexed.from(suppliers), supplier -> results.add(supplier.map(Supplier::get)),
-        timeout, timeUnit);
-    return Indexed.values(results);
-  }
-
-  /**
-   * Calls {@link Supplier#get} in parallel against {@code suppliers}, uninterruptibly.
-   * This method blocks until either all suppliers have finished, or any exception is thrown,
-   * upon which all pending tasks are canceled (but the method returns without waiting for
-   * the tasks to respond to cancellation).
-   *
-   * <p>The {@code suppliers} stream is consumed only in the calling thread in iteration order.
-   *
-   * <p>Unlike {@link #parallelize}, supplier results are held in memory so it won't work for
-   * very large streams.
-   *
-   * @throws InterruptedException if the thread is interrupted while waiting.
-   * @throws TimeoutException if timeout exceeded while waiting.
-   */
-  public <T> Stream<T> parallelGetUninterruptibly(
-      Stream<? extends Supplier<? extends T>> suppliers) {
-    ConcurrentLinkedQueue<Indexed<T>> results = new ConcurrentLinkedQueue<>();
-    parallelizeUninterruptibly(
-        Indexed.from(suppliers), supplier -> results.add(supplier.map(Supplier::get)));
-    return Indexed.values(results);
-  }
-
-  /**
    * Runs {@code tasks} in parallel.
    * This method blocks until either all tasks have finished, or any exception is thrown,
    * upon which all pending tasks are canceled (but the method returns without waiting for
@@ -352,6 +273,9 @@ public final class Parallelizer {
 
     /** Cancels all in-flight tasks. */
     void cancel() {
+      // When we cancel a scheduled-but-not-executed task, we'll leave the semaphore unreleased.
+      // But it's okay because the only time we cancel is when we are aborting the whole pipeline
+      // and nothing will use the semaphore after that.
       inflight.asList().stream().forEach(f -> f.cancel(true));
     }
 
@@ -399,34 +323,5 @@ public final class Parallelizer {
       super(cause);
     }
     private static final long serialVersionUID = 1L;
-  }
-
-  private static final class Indexed<T> implements Comparable<Indexed<T>>{
-    private final int index;
-    private final T value;
-
-    Indexed(int index, T value) {
-      this.index = index;
-      this.value = value;
-    }
-
-    static <T> Stream<Indexed<T>> from(Stream<T> stream) {
-      AtomicInteger index = new AtomicInteger();
-      return stream.map(v -> new Indexed<>(index.getAndIncrement(), v));
-    }
-
-    static <T> Stream<T> values(Collection<Indexed<T>> indexed) {
-      List<Indexed<T>> sorted = new ArrayList<>(indexed);
-      Collections.sort(sorted);
-      return sorted.stream().map(i -> i.value);
-    }
-
-    <R> Indexed<R> map(Function<? super T, ? extends R> mapper) {
-      return new Indexed<>(index, mapper.apply(value));
-    }
-
-    @Override public int compareTo(Indexed<T> that) {
-      return Integer.compare(index, that.index);
-    }
   }
 }
