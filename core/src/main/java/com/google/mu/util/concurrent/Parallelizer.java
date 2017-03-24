@@ -275,13 +275,11 @@ public final class Parallelizer {
 
     void land(long timeout, TimeUnit timeUnit)
         throws InterruptedException, TimeoutException, UncheckedExecutionException {
-      freeze();
-      for (int i = 0; i < onboard.size(); i++) checkIn(timeout, timeUnit);
+      for (int i = freeze(); i > 0; i--) checkIn(timeout, timeUnit);
     }
 
     void landUninterruptibly() throws UncheckedExecutionException {
-      freeze();
-      for (int i = 0; i < onboard.size(); i++) checkInUninterruptibly();
+      for (int i = freeze(); i > 0; i--) checkInUninterruptibly();
     }
 
     void cancel() {
@@ -308,10 +306,8 @@ public final class Parallelizer {
       }
     }
 
-    private void freeze() {
-      if (!semaphore.tryAcquire(maxInFlight - onboard.size())) {
-        throw new IllegalStateException();
-      }
+    private int freeze() {
+      return maxInFlight - semaphore.drainPermits();
     }
   }
 
