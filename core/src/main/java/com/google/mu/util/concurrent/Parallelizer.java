@@ -140,9 +140,9 @@ public final class Parallelizer {
    * @throws TimeoutException if the configured timeout is exceeded while waiting.
    */
   public <T> void parallelize(
-      Stream<? extends T> inputs, Consumer<? super T> consumer, long timeout, TimeUnit timeUnit)
+      Stream<? extends T> inputs, Consumer<? super T> consumer, long taskTimeout, TimeUnit timeUnit)
       throws TimeoutException, InterruptedException {
-    parallelize(forAll(inputs, consumer), timeout, timeUnit);
+    parallelize(forAll(inputs, consumer), taskTimeout, timeUnit);
   }
 
   /**
@@ -187,17 +187,17 @@ public final class Parallelizer {
    * @throws InterruptedException if the thread is interrupted while waiting.
    * @throws TimeoutException if timeout exceeded while waiting.
    */
-  public void parallelize(Stream<? extends Runnable> tasks, long timeout, TimeUnit timeUnit)
+  public void parallelize(Stream<? extends Runnable> tasks, long taskTimeout, TimeUnit timeUnit)
       throws TimeoutException, InterruptedException {
     requireNonNull(timeUnit);
-    if (timeout <= 0) throw new IllegalArgumentException("timeout = " + timeout);
+    if (taskTimeout <= 0) throw new IllegalArgumentException("timeout = " + taskTimeout);
     Flight flight = new Flight();
     try {
       for (Runnable task : Iterate.once(tasks)) {
-        flight.checkIn(timeout, timeUnit);
+        flight.checkIn(taskTimeout, timeUnit);
         flight.board(task);
       }
-      flight.land(timeout, timeUnit);
+      flight.land(taskTimeout, timeUnit);
     } catch (Throwable e) {
       flight.cancel();
       throw e;
@@ -250,7 +250,27 @@ public final class Parallelizer {
     }
 
     void board(Runnable task) {
-      onboard.add(executor.submit(() -> fly(task)));
+      requireNonNull(task);
+      onboard.add(executor.submit(() -> {
+        try {
+          task.run();
+        } catch (Throwable e) {
+          ConcurrentLinkedQueue<Throwable> toPropagate = thrown;
+          if (toPropagate == null) {
+            // The main thread propagates exceptions as soon as any task fails.
+            // If a task did not respond in time and yet fails afterwards, the main thread has
+            // already thrown and nothing will propagate this exception.
+            // So just log it as best effort.
+            logger.log(Level.WARNING, "Orphan task failure", e);
+          } else {
+            // Upon race condition, the exception may be added while the main thread is propagating.
+            // It's ok though since the best we could have done is logging.
+            toPropagate.add(e);
+          }
+        } finally {
+          semaphore.release();
+        }
+      }));
     }
 
     void land(long timeout, TimeUnit timeUnit)
@@ -283,26 +303,6 @@ public final class Parallelizer {
       if (executionException != null) {
         thrown = null;
         throw executionException;
-      }
-    }
-  
-    /** WARNING: called by task threads! */
-    private void fly(Runnable task) {
-      try {
-        task.run();
-      } catch (Throwable e) {
-        ConcurrentLinkedQueue<Throwable> toPropagate = thrown;
-        if (toPropagate == null) {
-          // The main thread propagates exceptions as soon as any task fails.
-          // If a task did not respond in time and yet fails afterwards, the main thread has
-          // already thrown and nothing will propagate this exception.
-          // So just log it as best effort.
-          logger.log(Level.WARNING, "Orphan task failure", e);
-        } else {
-          toPropagate.add(e);
-        }
-      } finally {
-        semaphore.release();
       }
     }
   }

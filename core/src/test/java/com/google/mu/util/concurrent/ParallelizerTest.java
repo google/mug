@@ -3,12 +3,14 @@ package com.google.mu.util.concurrent;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.util.concurrent.Parallelizer.forAll;
 import static java.util.Arrays.asList;
-import static java.util.stream.Collectors.toList;
+import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.Duration;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
@@ -22,10 +24,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.Verifier;
@@ -33,7 +33,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import com.google.common.collect.Lists;
 import com.google.common.truth.IterableSubject;
 import com.google.mu.util.concurrent.Parallelizer.UncheckedExecutionException;
 
@@ -67,84 +66,78 @@ public class ParallelizerTest {
     maxInFlight = 1;
     List<Integer> numbers = asList(1, 2, 3, 4, 5, 6, 7, 8, 9);
     parallelize(numbers.stream(), this::translateToString);
-    assertThat(translated).containsExactlyEntriesIn(numbers.stream()
-        .collect(Collectors.toMap(n -> n, Object::toString)));
+    assertThat(translated).containsExactlyEntriesIn(mapToString(numbers));
   }
 
-  @Test public void testTranslateStrings() throws Exception {
+  @Test public void testFastTasks() throws Exception {
     List<Integer> numbers = asList(1, 2, 3, 4, 5, 6, 7, 8, 9);
     parallelize(numbers.stream(), this::translateToString);
-    assertThat(translated).containsExactlyEntriesIn(numbers.stream()
-        .collect(Collectors.toMap(n -> n, Object::toString)));
+    assertThat(translated).containsExactlyEntriesIn(mapToString(numbers));
+  }
+
+  @Test public void testSlowTasks() throws Exception {
+    List<Integer> numbers = asList(1, 2, 3, 4, 5);
+    parallelize(numbers.stream(), delayed(Duration.ofMillis(2), this::translateToString));
+    assertThat(translated).containsExactlyEntriesIn(mapToString(numbers));
   }
 
   @Test public void testTaskExceptionDismissesPendingTasks() {
     maxInFlight = 2;
-    List<Integer> numbers = asList(1, 2, -1, -1, 5, 6, 7);
     UncheckedExecutionException exception = assertThrows(
         UncheckedExecutionException.class,
-        () -> parallelize(limit(numbers.stream(), this::translatePositiveNumberToString, 4)));
-    assertThat(exception.getCause().getMessage()).contains("-1");
+        () -> parallelize(Stream.of(
+            // With maxInflight=2, at least one will print, even if a fail() task races it.
+            () -> translateToString(1), () -> translateToString(1),
+            () -> fail("foobar"), () -> fail("foobar"),  // both should fail
+            () -> translateToString(5))));  // should be dismissed
+    assertThat(exception.getCause().getMessage()).contains("foobar");
     assertThat(translated).containsEntry(1, "1");
-    assertThat(translated).containsEntry(2, "2");
     assertThat(translated).doesNotContainKey(5);
-    assertThat(translated).doesNotContainKey(6);
-    assertThat(translated).doesNotContainKey(7);
   }
 
   @Test public void testTaskExceptionCancelsInFlightTasks() throws InterruptedException {
     maxInFlight = 2;
-    // One of the two negatives will fail, canceling the other.
-    List<Integer> numbers = asList(1, 2, -1, -1, 5, 6, 7);
     UncheckedExecutionException exception = assertThrows(
         UncheckedExecutionException.class,
-        () -> parallelize(limit(numbers.stream(), this::translatePositiveNumberToString, 3)));
-    assertThat(exception.getCause().getMessage()).contains("-1");
+        () -> parallelize(serialTasks(
+            () -> translateToString(1),  // should print
+            () -> blockFor(2), // Will be interrupted
+            () -> fail("foobar"),  // kills the pipeline
+            () -> translateToString(4))));  // should be dismissed
+    assertThat(exception.getCause().getMessage()).contains("foobar");
+    shutdownAndAssertInterruptedKeys().containsExactly(2);
     assertThat(translated).containsEntry(1, "1");
-    assertThat(translated).containsEntry(2, "2");
-    assertThat(translated).doesNotContainKey(-1);
-    assertThat(translated).doesNotContainKey(-2);
-    assertThat(translated).doesNotContainKey(5);
-    assertThat(translated).doesNotContainKey(6);
-    assertThat(translated).doesNotContainKey(7);
-    assertInterruptedKeys().containsExactly(-1);
+    assertThat(translated).doesNotContainKey(4);
   }
 
   @Test public void testSubmissionTimeoutCancelsInFlightTasks() throws InterruptedException {
-    Assume.assumeTrue(mode == Mode.INTERRUPTIBLY);
+    assumeTrue(mode == Mode.INTERRUPTIBLY);
     maxInFlight = 2;
-    // Only 1 and 2 will be translated, 3 and 4 will be interrupted, 5 and 6 will never get there.
-    // 3 will not schedule until either 1 or 2 finishes.
-    List<Integer> numbers = asList(1, 2, 3, 4, 5, 6);
+    timeout = Duration.ofMillis(1);
     assertThrows(
         TimeoutException.class,
-        () -> parallelize(limit(numbers.stream(), this::translateToString, 2)));
-    assertThat(translated).containsEntry(1, "1");
-    assertThat(translated).containsEntry(2, "2");
+        () -> parallelize(serialTasks(
+            () -> blockFor(1), // Will be interrupted
+            () -> blockFor(2), // Will be interrupted
+            () -> translateToString(3))));  // Times out
+    shutdownAndAssertInterruptedKeys().containsExactly(1, 2);
     assertThat(translated).doesNotContainKey(3);
-    assertThat(translated).doesNotContainKey(4);
-    assertThat(translated).doesNotContainKey(5);
-    assertThat(translated).doesNotContainKey(6);
-    assertInterruptedKeys().containsExactly(3, 4);
   }
 
   @Test public void testAwaitTimeoutCancelsInFlightTasks() throws InterruptedException {
-    Assume.assumeTrue(mode == Mode.INTERRUPTIBLY);
+    assumeTrue(mode == Mode.INTERRUPTIBLY);
     maxInFlight = 2;
-    // Only 1 and 2 will be translated, 3 and 4 will be interrupted, 5 and 6 will never get there.
-    List<Integer> numbers = asList(1, 2, 3, 4);
+    timeout = Duration.ofMillis(1);
     assertThrows(
         TimeoutException.class,
-        () -> parallelize(limit(numbers.stream(), this::translateToString, 2)));
-    assertThat(translated).containsEntry(1, "1");
-    assertThat(translated).containsEntry(2, "2");
-    assertThat(translated).doesNotContainKey(3);
-    assertThat(translated).doesNotContainKey(4);
-    assertInterruptedKeys().containsExactly(3, 4);
+        () -> parallelize(serialTasks(
+            () -> blockFor(1), // Will be interrupted
+            () -> blockFor(2)))); // Will be interrupted
+    shutdownAndAssertInterruptedKeys().containsExactly(1, 2);
   }
 
   @Test public void testUninterruptible() throws InterruptedException {
-    Assume.assumeTrue(mode == Mode.UNINTERRUPTIBLY);
+    assumeTrue(mode == Mode.UNINTERRUPTIBLY);
     maxInFlight = 2;
     List<Integer> numbers = asList(1, 2, 3, 4, 5);
     CountDownLatch allowTranslation = new CountDownLatch(1);
@@ -169,12 +162,11 @@ public class ParallelizerTest {
     allowTranslation.countDown();
     thread.join();
     // Even interrupted, all numbers should be printed.
-    assertThat(translated).containsExactlyEntriesIn(numbers.stream()
-        .collect(Collectors.toMap(n -> n, Object::toString)));
+    assertThat(translated).containsExactlyEntriesIn(mapToString(numbers));
   }
 
   @Test public void testInterruptible() throws InterruptedException {
-    Assume.assumeTrue(mode == Mode.INTERRUPTIBLY);
+    assumeTrue(mode == Mode.INTERRUPTIBLY);
     maxInFlight = 2;
     List<Integer> numbers = asList(1, 2, 3, 4);
     CountDownLatch inflight = new CountDownLatch(maxInFlight);
@@ -209,38 +201,25 @@ public class ParallelizerTest {
     assertThat(paralllelizationInterrupted.get()).isTrue();
   }
 
-  @Test public void testMemoryLeak() throws Exception {
-    AtomicInteger processed = new AtomicInteger();
-    parallelize(
-        IntStream.range(0, 5000).parallel().boxed()
-            .map(i -> Collections.nCopies(i, i))
-            .map(l -> l.toString()),
-        (String s) -> {
-          assertThat(s).doesNotContain("nosuchstring");
-          processed.incrementAndGet();
-        });
-    assertThat(processed.get()).isEqualTo(5000);
-  }
-
   private void translateToString(int i) {
     translated.put(i, Integer.toString(i));
   }
 
-  private void translatePositiveNumberToString(int i) {
-    assertThat(i).isGreaterThan(0);
-    translated.put(i, Integer.toString(i));
+  private static <K> Map<K, String> mapToString(Collection<K> keys) {
+    return keys.stream().collect(Collectors.toMap(k -> k, Object::toString));
   }
 
+  /** Keeps track of active threads and makes sure it doesn't exceed {@link #maxInFlight}. */
   private void runTask(Runnable task) {
     try {
       try {
         assertThat(activeThreads.incrementAndGet()).isAtMost(maxInFlight);
       } catch (Throwable e) {
         thrown.add(e);
+        return;
       }
       task.run();
-    }
-    finally {
+    } finally {
       activeThreads.decrementAndGet();
     }
   }
@@ -256,49 +235,40 @@ public class ParallelizerTest {
         new Parallelizer(threadPool, maxInFlight), tasks, this::runTask, timeout);
   }
 
-  private <T> Stream<Runnable> limit(
-      Stream<? extends T> inputs, Consumer<? super T> consumer, int maxElements) {
-    Semaphore semaphore = new Semaphore(maxElements);
-    return grouped(inputs.map(input -> () -> {
-      System.out.println("Blocking for " + input);
+  private void blockFor(Object key) {
+    try {
+      new CountDownLatch(1).await();
+    } catch (InterruptedException e) {
+      interrupted.add(key);
+    }
+  }
+
+  // Returns a consumer that delegates to {@code consumer} after {@code delay}. */
+  private static <T> Consumer<T> delayed(Duration delay, Consumer<T> consumer) {
+    return input -> {
       try {
-        semaphore.acquire();
+        Thread.sleep(delay.toMillis());
       } catch (InterruptedException e) {
-        interrupted.add(input);
-        Thread.currentThread().interrupt();
-        System.out.println("Task interrupted");
         return;
       }
-      System.out.println("Proceeding for " + input);
       consumer.accept(input);
-      System.out.println("Done for " + input);
-    }), maxInFlight);
+    };
   }
 
-  private static Stream<Runnable> grouped(Stream<? extends Runnable> tasks, int groupSize) {
-    return Lists.partition(tasks.collect(toList()), groupSize).stream()
-        .flatMap(group -> {
-          // For each group, no member returns until all have checked in.
-          // This allows us to hold the flight tickets until every member have arrived,
-          // precluding a later task from taking away the "limit"
-          // intended for a slow-poke that hadn't started yet.
-          CountDownLatch latch = new CountDownLatch(group.size());
-          return group.stream().map(task -> () -> {
-            latch.countDown();
-            try {
-              task.run();
-            } finally {
-              try {
-                latch.await();
-              } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-              }
-            }
-          });
-        });
+  // Creates a task stream such that a task has to be started first before tasks after it can be
+  // taken out of the stream. Helps to ensure in-flight status for tasks where we care.
+  private static Stream<Runnable> serialTasks(Runnable... tasks) {
+    Semaphore semaphore = new Semaphore(1);
+    return asList(tasks).stream().map(task -> {
+      semaphore.acquireUninterruptibly();
+      return () -> {
+        semaphore.release();
+        task.run();
+      };
+    });
   }
 
-  private IterableSubject assertInterruptedKeys() throws InterruptedException {
+  private IterableSubject shutdownAndAssertInterruptedKeys() throws InterruptedException {
     shutdownThreadPool();  // Allow left-over threads to respond to interruptions.
     return assertThat(interrupted);
   }

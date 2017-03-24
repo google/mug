@@ -41,5 +41,17 @@ public class ParallelizerPreconditionsTest {
 
   @Test public void testNulls() {
     new ClassSanityTester().testNulls(Parallelizer.class);
+    Parallelizer parallelizer = new Parallelizer(threadPool, 1);
+    assertThrows(
+        NullPointerException.class,
+        () -> parallelizer.parallelize(nullTasks(), 1, TimeUnit.MILLISECONDS));
+    assertThrows(NullPointerException.class, () -> parallelizer.parallelize(nullTasks()));
+    assertThrows(
+        NullPointerException.class, () -> parallelizer.parallelizeUninterruptibly(nullTasks()));
+  }
+
+  private static Stream<Runnable> nullTasks() {
+    Runnable task = null;
+    return Stream.of(task);
   }
 }
