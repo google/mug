@@ -81,6 +81,13 @@ public class ParallelizerTest {
     assertThat(translated).containsExactlyEntriesIn(mapToString(numbers));
   }
 
+  @Test public void testLargeMaxInFlight() throws Exception {
+    maxInFlight = Integer.MAX_VALUE;
+    List<Integer> numbers = asList(1, 2, 3);
+    parallelize(numbers.stream(), this::translateToString);
+    assertThat(translated).containsExactlyEntriesIn(mapToString(numbers));
+  }
+
   @Test public void testTaskExceptionDismissesPendingTasks() {
     maxInFlight = 2;
     UncheckedExecutionException exception = assertThrows(

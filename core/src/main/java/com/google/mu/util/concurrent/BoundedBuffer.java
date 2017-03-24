@@ -33,9 +33,13 @@ final class BoundedBuffer<T> {
       }
 
       @Override public int size() {
-        return Math.min(total, capacity);
+        return BoundedBuffer.this.size();
       }
     };
+  }
+
+  int size() {
+    return Math.min(total, capacity);
   }
 
   private int underlyingIndex(int index) {
