@@ -282,6 +282,7 @@ public final class Parallelizer {
         }
       });
       onboard.put(done, future);  // C
+      checkInFlight();
       // A <: B, C <: D <: E
       // if B <: C => A <: C => done == true => put() <= remove()
       // if C <: B => put() <= remove()
@@ -304,6 +305,11 @@ public final class Parallelizer {
       // But it's okay because the only time we cancel is when we are aborting the whole pipeline
       // and nothing will use the semaphore after that.
       onboard.values().stream().forEach(f -> f.cancel(true));
+    }
+
+    private void checkInFlight() {
+      int inflight = onboard.size();
+      if (inflight > maxInFlight) throw new IllegalStateException("inflight = " + inflight);
     }
 
     /** If any task has thrown, propagate all task exceptions. */
