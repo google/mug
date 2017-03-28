@@ -2,13 +2,17 @@ package com.google.mu.util.concurrent;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -232,7 +236,7 @@ public final class Parallelizer {
   private final class Flight {
     // fairness is irrelevant here since only the main thread ever calls acquire().
     private final Semaphore semaphore = new Semaphore(maxInFlight);
-    private final BoundedBuffer<Future<?>> onboard = new BoundedBuffer<>(maxInFlight);
+    private final ConcurrentMap<Future<?>, Future<?>> onboard = new ConcurrentHashMap<>();
     private volatile ConcurrentLinkedQueue<Throwable> thrown = new ConcurrentLinkedQueue<>();
   
     void checkIn(long timeout, TimeUnit timeUnit)
@@ -251,7 +255,9 @@ public final class Parallelizer {
 
     void board(Runnable task) {
       requireNonNull(task);
-      onboard.add(executor.submit(() -> {
+      AtomicReference<Future<?>> pending = new AtomicReference<>();
+      AtomicBoolean isDone = new AtomicBoolean();
+      Future<?> future = executor.submit(() -> {
         try {
           task.run();
         } catch (Throwable e) {
@@ -269,8 +275,15 @@ public final class Parallelizer {
           }
         } finally {
           semaphore.release();
+          isDone.set(true);  // critial point A
+          onboard.remove(pending.get());
         }
-      }));
+      });
+      pending.set(future);
+      onboard.put(future, future);
+      // if isDone = true, put() happens-before remove() in this thread.
+      // if isDone = false, put() happens-before critical point A.
+      if (isDone.get()) onboard.remove(future);
     }
 
     void land(long timeout, TimeUnit timeUnit)
@@ -286,7 +299,7 @@ public final class Parallelizer {
       // When we cancel a scheduled-but-not-executed task, we'll leave the semaphore unreleased.
       // But it's okay because the only time we cancel is when we are aborting the whole pipeline
       // and nothing will use the semaphore after that.
-      onboard.asList().stream().forEach(f -> f.cancel(true));
+      onboard.values().stream().forEach(f -> f.cancel(true));
     }
 
     /** If any task has thrown, propagate all task exceptions. */
