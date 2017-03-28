@@ -12,7 +12,6 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -255,12 +254,16 @@ public final class Parallelizer {
 
     void board(Runnable task) {
       requireNonNull(task);
-      AtomicReference<Future<?>> pending = new AtomicReference<>();
-      AtomicBoolean isDone = new AtomicBoolean();
+      AtomicBoolean done = new AtomicBoolean();
       // We use '<:' to denote happens-before throughout the comments.
       Future<?> future = executor.submit(() -> {
         try {
-          task.run();
+          try {
+            task.run();
+          } finally {
+            done.set(true);  // A
+            onboard.remove(done);  // B
+          }
         } catch (Throwable e) {
           ConcurrentLinkedQueue<Throwable> toPropagate = thrown;
           if (toPropagate == null) {
@@ -276,17 +279,14 @@ public final class Parallelizer {
           }
         } finally {
           semaphore.release();
-          isDone.set(true);  // A
-          onboard.remove(pending);  // B
         }
       });
-      pending.set(future);  // C
-      onboard.put(pending, future);  // D
-      // A <: B, C <: D <: E <: F
-      // if isDone = true => A <: E && D <: F => put() < remove()
-      // if isDone = false => E <: A => C <: D <: A <: B =>  D <: B => put() < remove()
-      if (isDone.get()) {  // E
-        onboard.remove(pending);  // F if A <: E
+      onboard.put(done, future);  // C
+      // A <: B, C <: D <: E
+      // if B <: C => A <: C => done == true => put() <= remove()
+      // if C <: B => put() <= remove()
+      if (done.get()) {  // D
+        onboard.remove(done);  // E
       }
     }
 
