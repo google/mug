@@ -236,7 +236,7 @@ public final class Parallelizer {
   private final class Flight {
     // fairness is irrelevant here since only the main thread ever calls acquire().
     private final Semaphore semaphore = new Semaphore(maxInFlight);
-    private final ConcurrentMap<Future<?>, Future<?>> onboard = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Object, Future<?>> onboard = new ConcurrentHashMap<>();
     private volatile ConcurrentLinkedQueue<Throwable> thrown = new ConcurrentLinkedQueue<>();
   
     void checkIn(long timeout, TimeUnit timeUnit)
@@ -257,6 +257,7 @@ public final class Parallelizer {
       requireNonNull(task);
       AtomicReference<Future<?>> pending = new AtomicReference<>();
       AtomicBoolean isDone = new AtomicBoolean();
+      // We use '<:' to denote happens-before throughout the comments.
       Future<?> future = executor.submit(() -> {
         try {
           task.run();
@@ -275,15 +276,18 @@ public final class Parallelizer {
           }
         } finally {
           semaphore.release();
-          isDone.set(true);  // critial point A
-          onboard.remove(pending.get());
+          isDone.set(true);  // A
+          onboard.remove(pending);  // B
         }
       });
-      pending.set(future);
-      onboard.put(future, future);
-      // if isDone = true, put() happens-before remove() in this thread.
-      // if isDone = false, put() happens-before critical point A.
-      if (isDone.get()) onboard.remove(future);
+      pending.set(future);  // C
+      onboard.put(pending, future);  // D
+      // A <: B, C <: D <: E <: F
+      // if isDone = true => A <: E && D <: F => put() < remove()
+      // if isDone = false => E <: A => C <: D <: A <: B =>  D <: B && C <: B => put() < remove()
+      if (isDone.get()) {  // E
+        onboard.remove(pending);  // F if A <: E
+      }
     }
 
     void land(long timeout, TimeUnit timeUnit)
