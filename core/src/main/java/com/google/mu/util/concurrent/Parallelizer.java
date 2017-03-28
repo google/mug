@@ -284,7 +284,7 @@ public final class Parallelizer {
       onboard.put(pending, future);  // D
       // A <: B, C <: D <: E <: F
       // if isDone = true => A <: E && D <: F => put() < remove()
-      // if isDone = false => E <: A => C <: D <: A <: B =>  D <: B && C <: B => put() < remove()
+      // if isDone = false => E <: A => C <: D <: A <: B =>  D <: B => put() < remove()
       if (isDone.get()) {  // E
         onboard.remove(pending);  // F if A <: E
       }
