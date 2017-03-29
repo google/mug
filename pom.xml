@@ -14,7 +14,7 @@
   <distributionManagement>
     <repository>
       <id>sonatype-nexus-staging</id>
-	  <name>Sonatype Nexus release repository</name>
+      <name>Sonatype Nexus release repository</name>
       <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
     </repository>
     <snapshotRepository>
@@ -61,9 +61,9 @@
 
     <dependencies>
       <dependency>
-        <groupId>org.junit.platform</groupId>
-        <artifactId>junit-platform-runner</artifactId>
-        <version>1.0.0-M3</version>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>4.12</version>
         <scope>test</scope>
       </dependency>
 
@@ -91,7 +91,7 @@
       <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava-testlib</artifactId>
-        <version>20.0</version>
+        <version>21.0</version>
         <scope>test</scope>
       </dependency>
 
