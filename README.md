@@ -1,24 +1,7 @@
 Disclaimer: This is not an official Google product.
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-# Mug
-<<<<<<< HEAD
-A small Java 8 library ([javadoc](http://google.github.io/mu/apidocs/index.html)), with 0 deps.
-=======
-A small Java 8 utility library ([javadoc](http://google.github.io/mu/apidocs/index.html)), with 0 deps.
->>>>>>> master
-=======
-# Mµg
-=======
 # MµG
-<<<<<<< HEAD
->>>>>>> master
-A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/index.html)), with 0 deps.
->>>>>>> master
-=======
 A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/index.html)), with 0 deps. ![](https://travis-ci.org/google/mug.svg?branch=master)
->>>>>>> master
 
 * [Retryer](#retryer) retries.
 * [Iterate](#iterate) iterates over `Stream`s in the presence of checked exceptions or control flow.
@@ -32,11 +15,7 @@ Add the following to pom.xml:
 ```
   <dependency>
     <groupId>com.google.mug</groupId>
-<<<<<<< HEAD
-    <artifactId>mu</artifactId>
-=======
     <artifactId>mug</artifactId>
->>>>>>> master
     <version>1.0</version>
   </dependency>
 ```
