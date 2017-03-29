@@ -249,7 +249,7 @@ public final class Parallelizer {
     void board(Runnable task) {
       requireNonNull(task);
       AtomicBoolean done = new AtomicBoolean();
-      // We use '<:' to denote happens-before throughout the comments.
+      // Use '<:' to denote happens-before throughout this method body.
       Future<?> future = executor.submit(() -> {
         try {
           try {
@@ -278,8 +278,9 @@ public final class Parallelizer {
       onboard.put(done, future);  // C
       checkInFlight();
       // A <: B, C <: D <: E
-      // if B <: C => A <: C => done == true => put() <= remove()
-      // if C <: B => put() <= remove()
+      // if B <: C => A <: C => done == true => put() <: remove()
+      // if C <: B => put() <: remove()
+      // remove() could be executed more than once, but it's idempotent.
       if (done.get()) {  // D
         onboard.remove(done);  // E
       }
