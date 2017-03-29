@@ -116,10 +116,9 @@ public final class Parallelizer {
   }
 
   /**
-   * Consumes {@code inputs} in parallel.
-   * This method blocks until either all tasks have finished, or any exception is thrown,
-   * upon which all pending tasks are canceled (but the method returns without waiting for
-   * the tasks to respond to cancellation).
+   * Runs {@code consumer} for {@code inputs} in parallel and blocks until either all tasks have
+   * finished, or any exception is thrown upon which all pending tasks are canceled
+   * (but the method returns without waiting for the tasks to respond to cancellation).
    *
    * <p>The {@code inputs} stream is consumed only in the calling thread in iteration order.
    *
@@ -132,10 +131,9 @@ public final class Parallelizer {
   }
 
   /**
-   * Consumes {@code inputs} in parallel.
-   * This method blocks until either all tasks have finished, or any exception is thrown,
-   * upon which all pending tasks are canceled (but the method returns without waiting for
-   * the tasks to respond to cancellation).
+   * Runs {@code consumer} for {@code inputs} in parallel and blocks until either all tasks have
+   * finished, timeout is triggered, or any exception is thrown upon which all pending tasks are
+   * canceled (but the method returns without waiting for the tasks to respond to cancellation).
    *
    * <p>The {@code inputs} stream is consumed only in the calling thread in iteration order.
    *
@@ -149,10 +147,9 @@ public final class Parallelizer {
   }
 
   /**
-   * Consumes {@code inputs} in parallel.
-   * This method blocks until either all tasks have finished, or any exception is thrown,
-   * upon which all pending tasks are canceled (but the method returns without waiting for
-   * the tasks to respond to cancellation).
+   * Runs {@code consumer} for {@code inputs} in parallel and blocks uninterruptibly until
+   * either all tasks have finished, or any exception is thrown upon which all pending tasks are
+   * canceled (but the method returns without waiting for the tasks to respond to cancellation).
    *
    * <p>The {@code inputs} stream is consumed only in the calling thread in iteration order.
    */
@@ -162,10 +159,9 @@ public final class Parallelizer {
   }
 
   /**
-   * Runs {@code tasks} in parallel.
-   * This method blocks until either all tasks have finished, or any exception is thrown,
-   * upon which all pending tasks are canceled (but the method returns without waiting for
-   * the tasks to respond to cancellation).
+   * Runs {@code tasks} in parallel and blocks until either all tasks have finished,
+   * or any exception is thrown upon which all pending tasks are canceled
+   * (but the method returns without waiting for the tasks to respond to cancellation).
    *
    * <p>The {@code tasks} stream is consumed only in the calling thread in iteration order.
    *
@@ -180,10 +176,9 @@ public final class Parallelizer {
   }
 
   /**
-   * Runs {@code tasks} in parallel.
-   * This method blocks until either all tasks have finished, or any exception is thrown,
-   * upon which all pending tasks are canceled (but the method returns without waiting for
-   * the tasks to respond to cancellation).
+   * Runs {@code tasks} in parallel and blocks uninterruptibly until either all tasks have finished,
+   * timeout is triggered, or any exception is thrown upon which all pending tasks are canceled
+   * (but the method returns without waiting for the tasks to respond to cancellation).
    *
    * <p>The {@code tasks} stream is consumed only in the calling thread in iteration order.
    *
@@ -208,10 +203,9 @@ public final class Parallelizer {
   }
 
   /**
-   * Runs {@code tasks} in parallel.
-   * This method blocks until either all tasks have finished, or any exception is thrown,
-   * upon which all pending tasks are canceled (but the method returns without waiting for
-   * the tasks to respond to cancellation).
+   * Runs {@code tasks} in parallel and blocks uninterruptibly until either all tasks have finished,
+   * or any exception is thrown upon which all pending tasks are canceled
+   * (but the method returns without waiting for the tasks to respond to cancellation).
    */
   public void parallelizeUninterruptibly(Stream<? extends Runnable> tasks) {
     Flight flight = new Flight();
