@@ -343,11 +343,11 @@ pictures.parallel().forEach(this::upload);
 ```
 
 Differences are:
-1. Works with an existing `ExecutorService`.
-2. Supports max number of in-flight tasks.
-3. The input stream can be thread **unsafe**.
-4. Exceptions from a worker thread are wrapped so that stack trace of the main thread is captured.
-5. Upon failure, already-running worker threads are interrupted.
+* Works with an existing `ExecutorService`.
+* Supports max number of in-flight tasks.
+* The input stream can be thread **unsafe**.
+* Exceptions from a worker thread are wrapped so that stack trace of the main thread is captured.
+* Upon failure, already-running worker threads are interrupted.
 
 Note that the above example will terminate if any picture fails to upload. If for example `upload()` throws `IOException` and an `IOException` should not terminate the batch upload, the exception needs to be caught and handled:
 ```java
