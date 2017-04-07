@@ -324,7 +324,7 @@ That is, define the batches with ```funnel.through()``` and then inputs can flow
 
 ## [Parallelizer](https://google.github.io/mug/apidocs/com/google/mu/util/concurrent/Parallelizer.html)
 
-Runs a (large) pipeline of tasks in parallel with max number of in-flight tasks.
+Runs a (large) pipeline of tasks in parallel while limiting the number of in-flight tasks.
 
 For example, the following snippet uploads a large number of pictures in parallel:
 ```java
