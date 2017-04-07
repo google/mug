@@ -342,14 +342,18 @@ What it does is pretty similar to parallel streams:
 pictures.parallel().forEach(this::upload);
 ```
 
-Differences are:
+Some major shopping-list differences:
 * Works with any existing `ExecutorService`.
 * Supports in-flight tasks limit.
 * Thread **unsafe** input streams or `Iterator`s are okay.
 * Upon failure, all pending tasks are canceled.
 * Exceptions from worker threads are wrapped so that stack trace isn't misleading.
 
-The above example will terminate if any picture fails to upload. If for example `upload()` throws `IOException` and an `IOException` should not terminate the batch upload, the exception needs to be caught and handled:
+But fundamentally:
+* Parallel streams are best when CPU is the bottle-neck. JDK has built-in magic to optimally use the available cores so why manually tune anything?
+* Parallelizer is for parallelizing tasks where IO or external services are the bottleneck.
+
+Note that the above example will terminate if any picture fails to upload. If for example `upload()` throws `IOException` and an `IOException` should not terminate the batch upload, the exception needs to be caught and handled:
 ```java
   new Parallelizer(threadPool, threads)
       .parallelize(pictures, pic -> {
