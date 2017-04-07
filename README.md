@@ -7,6 +7,7 @@ A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/
 * [Iterate](#iterate) iterates over `Stream`s in the presence of checked exceptions or control flow.
 * [Maybe](#maybe) tunnels checked exceptions through streams or futures.
 * [Funnel](#funnel) flows objects through batch conversions in FIFO order.
+* [Parallelizer](#parallelizer) Runs a pipeline of tasks in parallel while limiting the number of in-flight tasks.
 * Functional interfaces that allow checked exceptions.
 
 ## Maven
@@ -320,3 +321,48 @@ List<Result> convert(List<Input> inputs) {
 }
 ```
 That is, define the batches with ```funnel.through()``` and then inputs can flow through arbitrary number of batch conversions. Conversion results flow out of the funnel in the same order as inputs entered the funnel. 
+
+## [Parallelizer](https://google.github.io/mug/apidocs/com/google/mu/util/concurrent/Parallelizer.html)
+
+Runs a (large) pipeline of tasks in parallel while limiting the number of in-flight tasks.
+
+For example, the following snippet uploads a large number of pictures in parallel:
+```java
+ExecutorService threadPool = Executors.newFixedThreadPool(threads);
+try {
+  new Parallelizer(threadPool, threads)
+      .parallelize(pictures, this::upload);
+} finally {
+  threadPool.shutdownNow();
+}
+```
+
+What it does is pretty similar to parallel streams:
+```java
+pictures.parallel().forEach(this::upload);
+```
+
+Differences are:
+* Works with any existing `ExecutorService`.
+* Supports in-flight tasks limit.
+* Thread **unsafe** input streams (such as `Iterator`s) are okay.
+* Upon failure, all pending tasks are canceled.
+* Exceptions from worker threads are wrapped so that stack trace isn't misleading.
+
+The above example will terminate if any picture fails to upload. If for example `upload()` throws `IOException` and an `IOException` should not terminate the batch upload, the exception needs to be caught and handled:
+```java
+  new Parallelizer(threadPool, threads)
+      .parallelize(pictures, pic -> {
+        try {
+          upload(pic);
+        } catch (IOException e) {
+          log(e);
+        }
+      });
+```
+
+To work with plain old `Iterator`s, use `StreamSupport` to wrap it as a stream:
+```java
+new Parallelizer(...)
+    .parallelizer(StreamSupport.stream(picturesIterator, false), this::upload);
+```
