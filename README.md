@@ -337,6 +337,18 @@ try {
 }
 ```
 
+Note that this code will terminate if any picture fails to upload. If `upload()` throws `IOException` and an `IOException` should not terminate the batch upload, the exception needs to be caught and handled:
+```java
+  new Parallelizer(threadPool, numThreads)
+      .parallelize(pictures, pic -> {
+        try {
+          upload(pic);
+        } catch (IOException e) {
+          log(e);
+        }
+      });
+```
+
 #### Why not parallel stream?
 
 Like:
@@ -354,18 +366,6 @@ Some major shopping-list differences:
 But fundamentally:
 * Parallel streams are best when CPU is the bottle-neck. JDK has built-in magic to optimally use the available cores so why manually tune anything?
 * Parallelizer is for parallelizing tasks where IO or external services are the bottleneck.
-
-Note that the above example will terminate if any picture fails to upload. If for example `upload()` throws `IOException` and an `IOException` should not terminate the batch upload, the exception needs to be caught and handled:
-```java
-  new Parallelizer(threadPool, numThreads)
-      .parallelize(pictures, pic -> {
-        try {
-          upload(pic);
-        } catch (IOException e) {
-          log(e);
-        }
-      });
-```
 
 #### Why not just submitting to a fixed thread pool?
 
