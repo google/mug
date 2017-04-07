@@ -309,6 +309,25 @@ public class ParallelizerTest {
         parallelizer.parallelizeUninterruptibly(inputs, consumer);
       }
     },
+    INTERRUPTIBLY_FOR_ITERATOR {
+      @Override <T> void run(
+          Parallelizer parallelizer,
+          Stream<? extends T> inputs, Consumer<? super T> consumer,
+          Duration timeout)
+          throws TimeoutException, InterruptedException {
+        parallelizer.parallelize(
+            inputs.iterator(), consumer, timeout.toMillis(), TimeUnit.MILLISECONDS);
+      }
+    },
+    UNINTERRUPTIBLY_FOR_ITERATOR {
+      @Override <T> void run(
+          Parallelizer parallelizer,
+          Stream<? extends T> inputs,
+          Consumer<? super T> consumer,
+          Duration timeout) {
+        parallelizer.parallelizeUninterruptibly(inputs.iterator(), consumer);
+      }
+    },
     ;
 
     abstract <T> void run(
