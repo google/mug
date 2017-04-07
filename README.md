@@ -328,16 +328,18 @@ Runs a (large) pipeline of tasks in parallel while limiting the number of in-fli
 
 For example, the following snippet uploads a large number of pictures in parallel:
 ```java
-ExecutorService threadPool = Executors.newFixedThreadPool(threads);
+ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
 try {
-  new Parallelizer(threadPool, threads)
+  new Parallelizer(threadPool, numThreads)
       .parallelize(pictures, this::upload);
 } finally {
   threadPool.shutdownNow();
 }
 ```
 
-What it does is pretty similar to parallel streams:
+#### Why not parallel stream?
+
+Like:
 ```java
 pictures.parallel().forEach(this::upload);
 ```
@@ -355,7 +357,7 @@ But fundamentally:
 
 Note that the above example will terminate if any picture fails to upload. If for example `upload()` throws `IOException` and an `IOException` should not terminate the batch upload, the exception needs to be caught and handled:
 ```java
-  new Parallelizer(threadPool, threads)
+  new Parallelizer(threadPool, numThreads)
       .parallelize(pictures, pic -> {
         try {
           upload(pic);
@@ -364,3 +366,21 @@ Note that the above example will terminate if any picture fails to upload. If fo
         }
       });
 ```
+
+#### Why not just submitting to a fixed thread pool?
+
+Like:
+```java
+ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
+try {
+  pictures.forEach(pic -> threadPool.submit(() -> upload(pic)));
+  threadPool.shutdown();
+  threadPool.awaitTermination(100, SECONDS);
+} finally {
+  threadPool.shutdownNow();
+}
+```
+
+1. The thread pool queues all pending tasks. If the input stream is too large to fit in memory, you'll get an `OutOfMemoryError`.
+2. The above code doesn't handle exceptions. Exceptions (including `NullPointerException`, `OutOfMemoryError`) are silently swallowed (but may print stack trace). In order to handle the exceptions, the `Future` objects need to be stored in a list and then `Future#get()` needs to be called on every future object after all tasks have been submitted to the executor.
+3. Tasks submitted to an executor are independent. One task failing doesn't automatically terminate the pipeline. Depending on the use case, this may or may not be what we want.
