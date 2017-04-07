@@ -344,7 +344,7 @@ pictures.parallel().forEach(this::upload);
 
 Differences are:
 * Works with an existing `ExecutorService`.
-* Supports max number of in-flight tasks.
+* Supports in-flight tasks limit.
 * The input stream can be thread **unsafe**.
 * Exceptions from a worker thread are wrapped so that stack trace of the main thread is captured.
 * Upon failure, already-running worker threads are interrupted.
