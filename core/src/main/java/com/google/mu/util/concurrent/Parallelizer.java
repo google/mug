@@ -2,6 +2,8 @@ package com.google.mu.util.concurrent;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Iterator;
+import java.util.Spliterators;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
@@ -16,6 +18,7 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import com.google.mu.util.Iterate;
 
@@ -122,6 +125,8 @@ public final class Parallelizer {
    *
    * <p>The {@code inputs} stream is consumed only in the calling thread in iteration order.
    *
+   * @param inputs the inputs to be passed to {@code consumer}
+   * @param consumer to be parallelized
    * @throws InterruptedException if the thread is interrupted while waiting.
    * @throws TimeoutException if the configured timeout is exceeded while waiting.
    */
@@ -132,18 +137,61 @@ public final class Parallelizer {
 
   /**
    * Runs {@code consumer} for {@code inputs} in parallel and blocks until either all tasks have
+   * finished, or any exception is thrown upon which all pending tasks are canceled
+   * (but the method returns without waiting for the tasks to respond to cancellation).
+   *
+   * <p>The {@code inputs} stream is consumed only in the calling thread in iteration order.
+   *
+   * @param inputs the inputs to be passed to {@code consumer}
+   * @param consumer to be parallelized
+   * @throws InterruptedException if the thread is interrupted while waiting.
+   * @throws TimeoutException if the configured timeout is exceeded while waiting.
+   */
+  public <T> void parallelize(Iterator<? extends T> inputs, Consumer<? super T> consumer)
+      throws InterruptedException {
+    parallelize(stream(inputs), consumer);
+  }
+
+  /**
+   * Runs {@code consumer} for {@code inputs} in parallel and blocks until either all tasks have
    * finished, timeout is triggered, or any exception is thrown upon which all pending tasks are
    * canceled (but the method returns without waiting for the tasks to respond to cancellation).
    *
    * <p>The {@code inputs} stream is consumed only in the calling thread in iteration order.
    *
+   * @param inputs the inputs to be passed to {@code consumer}
+   * @param consumer to be parallelized
+   * @param heartbeatTimeout at least one task needs to complete every {@code heartbeatTimeout}.
+   * @param timeUnit the unit of {@code heartbeatTimeout}
    * @throws InterruptedException if the thread is interrupted while waiting.
    * @throws TimeoutException if the configured timeout is exceeded while waiting.
    */
   public <T> void parallelize(
-      Stream<? extends T> inputs, Consumer<? super T> consumer, long taskTimeout, TimeUnit timeUnit)
+      Stream<? extends T> inputs, Consumer<? super T> consumer,
+      long heartbeatTimeout, TimeUnit timeUnit)
       throws TimeoutException, InterruptedException {
-    parallelize(forAll(inputs, consumer), taskTimeout, timeUnit);
+    parallelize(forAll(inputs, consumer), heartbeatTimeout, timeUnit);
+  }
+
+  /**
+   * Runs {@code consumer} for {@code inputs} in parallel and blocks until either all tasks have
+   * finished, timeout is triggered, or any exception is thrown upon which all pending tasks are
+   * canceled (but the method returns without waiting for the tasks to respond to cancellation).
+   *
+   * <p>The {@code inputs} stream is consumed only in the calling thread in iteration order.
+   *
+   * @param inputs the inputs to be passed to {@code consumer}
+   * @param consumer to be parallelized
+   * @param heartbeatTimeout at least one task needs to complete every {@code heartbeatTimeout}.
+   * @param timeUnit the unit of {@code heartbeatTimeout}
+   * @throws InterruptedException if the thread is interrupted while waiting.
+   * @throws TimeoutException if the configured timeout is exceeded while waiting.
+   */
+  public <T> void parallelize(
+      Iterator<? extends T> inputs, Consumer<? super T> consumer,
+      long heartbeatTimeout, TimeUnit timeUnit)
+      throws TimeoutException, InterruptedException {
+    parallelize(stream(inputs), consumer, heartbeatTimeout, timeUnit);
   }
 
   /**
@@ -152,10 +200,28 @@ public final class Parallelizer {
    * canceled (but the method returns without waiting for the tasks to respond to cancellation).
    *
    * <p>The {@code inputs} stream is consumed only in the calling thread in iteration order.
+   *
+   * @param inputs the inputs to be passed to {@code consumer}
+   * @param consumer to be parallelized
    */
   public <T> void parallelizeUninterruptibly(
       Stream<? extends T> inputs, Consumer<? super T> consumer) {
     parallelizeUninterruptibly(forAll(inputs, consumer));
+  }
+
+  /**
+   * Runs {@code consumer} for {@code inputs} in parallel and blocks uninterruptibly until
+   * either all tasks have finished, or any exception is thrown upon which all pending tasks are
+   * canceled (but the method returns without waiting for the tasks to respond to cancellation).
+   *
+   * <p>The {@code inputs} stream is consumed only in the calling thread in iteration order.
+   *
+   * @param inputs the inputs to be passed to {@code consumer}
+   * @param consumer to be parallelized
+   */
+  public <T> void parallelizeUninterruptibly(
+      Iterator<? extends T> inputs, Consumer<? super T> consumer) {
+    parallelizeUninterruptibly(stream(inputs), consumer);
   }
 
   /**
@@ -182,20 +248,24 @@ public final class Parallelizer {
    *
    * <p>The {@code tasks} stream is consumed only in the calling thread in iteration order.
    *
+   * @param tasks the tasks to be parallelized
+   * @param heartbeatTimeout at least one task needs to complete every {@code heartbeatTimeout}.
+   * @param timeUnit the unit of {@code heartbeatTimeout}
    * @throws InterruptedException if the thread is interrupted while waiting.
    * @throws TimeoutException if timeout exceeded while waiting.
    */
-  public void parallelize(Stream<? extends Runnable> tasks, long taskTimeout, TimeUnit timeUnit)
+  public void parallelize(
+      Stream<? extends Runnable> tasks, long heartbeatTimeout, TimeUnit timeUnit)
       throws TimeoutException, InterruptedException {
     requireNonNull(timeUnit);
-    if (taskTimeout <= 0) throw new IllegalArgumentException("timeout = " + taskTimeout);
+    if (heartbeatTimeout <= 0) throw new IllegalArgumentException("timeout = " + heartbeatTimeout);
     Flight flight = new Flight();
     try {
       for (Runnable task : Iterate.once(tasks)) {
-        flight.checkIn(taskTimeout, timeUnit);
+        flight.checkIn(heartbeatTimeout, timeUnit);
         flight.board(task);
       }
-      flight.land(taskTimeout, timeUnit);
+      flight.land(heartbeatTimeout, timeUnit);
     } catch (Throwable e) {
       flight.cancel();
       throw e;
@@ -335,5 +405,9 @@ public final class Parallelizer {
       super(cause);
     }
     private static final long serialVersionUID = 1L;
+  }
+
+  private static <T> Stream<T> stream(Iterator<? extends T> it) {
+    return StreamSupport.stream(Spliterators.spliteratorUnknownSize(it, 0), false);
   }
 }
