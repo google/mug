@@ -128,7 +128,6 @@ public final class Parallelizer {
    * @param inputs the inputs to be passed to {@code consumer}
    * @param consumer to be parallelized
    * @throws InterruptedException if the thread is interrupted while waiting.
-   * @throws TimeoutException if the configured timeout is exceeded while waiting.
    */
   public <T> void parallelize(Stream<? extends T> inputs, Consumer<? super T> consumer)
       throws InterruptedException {
@@ -145,7 +144,6 @@ public final class Parallelizer {
    * @param inputs the inputs to be passed to {@code consumer}
    * @param consumer to be parallelized
    * @throws InterruptedException if the thread is interrupted while waiting.
-   * @throws TimeoutException if the configured timeout is exceeded while waiting.
    */
   public <T> void parallelize(Iterator<? extends T> inputs, Consumer<? super T> consumer)
       throws InterruptedException {
