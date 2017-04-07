@@ -345,16 +345,16 @@ pictures.parallel().forEach(this::upload);
 Differences are:
 * Works with an existing `ExecutorService`.
 * Supports in-flight tasks limit.
-* The input stream can be thread **unsafe**.
-* Exceptions from a worker thread are wrapped so that stack trace of the main thread is captured.
-* Upon failure, already-running worker threads are interrupted.
+* Thread **unsafe** input stream is okay.
+* Exceptions from worker threads are wrapped so that stack trace isn't misleading.
+* Upon failure, all pending tasks are canceled.
 
 Note that the above example will terminate if any picture fails to upload. If for example `upload()` throws `IOException` and an `IOException` should not terminate the batch upload, the exception needs to be caught and handled:
 ```java
   new Parallelizer(threadPool, threads)
-      .parallelize(pictures, p -> {
+      .parallelize(pictures, pic -> {
         try {
-          upload(p);
+          upload(pic);
         } catch (IOException e) {
           log(e);
         }
