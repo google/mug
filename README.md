@@ -345,7 +345,7 @@ pictures.parallel().forEach(this::upload);
 Differences are:
 * Works with any existing `ExecutorService`.
 * Supports in-flight tasks limit.
-* Thread **unsafe** input streams (such as `Iterator`s) are okay.
+* Thread **unsafe** input streams or `Iterator`s are okay.
 * Upon failure, all pending tasks are canceled.
 * Exceptions from worker threads are wrapped so that stack trace isn't misleading.
 
@@ -359,10 +359,4 @@ The above example will terminate if any picture fails to upload. If for example 
           log(e);
         }
       });
-```
-
-To work with plain old `Iterator`s, use `StreamSupport` to wrap it as a stream:
-```java
-new Parallelizer(...)
-    .parallelizer(StreamSupport.stream(picturesIterator, false), this::upload);
 ```
