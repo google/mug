@@ -361,7 +361,7 @@ The above example will terminate if any picture fails to upload. If for example 
       });
 ```
 
-To work with plain old java `Iterator`s, use `StreamSupport` to wrap it as a stream:
+To work with plain old `Iterator`s, use `StreamSupport` to wrap it as a stream:
 ```java
 new Parallelizer(...)
     .parallelizer(StreamSupport.stream(picturesIterator, false), this::upload);
