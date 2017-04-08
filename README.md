@@ -358,7 +358,7 @@ pictures.parallel().forEach(this::upload);
 
 Some major shopping-list differences:
 * Parallelizer works with any existing `ExecutorService`.
-* Parallelizer supports in-flight tasks limit.
+* Parallelizer supports an in-flight tasks limit.
 * Thread **unsafe** input streams or `Iterator`s are okay.
 * Upon failure, all pending tasks are canceled.
 * Exceptions from worker threads are wrapped so that stack trace isn't misleading.
