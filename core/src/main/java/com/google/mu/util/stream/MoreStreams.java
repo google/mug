@@ -1,4 +1,4 @@
-package com.google.mu.util;
+package com.google.mu.util.stream;
 
 import static java.util.Objects.requireNonNull;
 
