@@ -77,5 +77,6 @@ public class MoreStreamsTest {
 
   @Test public void testNulls() throws Exception {
     new ClassSanityTester().testNulls(MoreStreams.class);
+    new ClassSanityTester().forAllPublicStaticMethods(MoreStreams.class).testNulls();
   }
 }

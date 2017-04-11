@@ -53,6 +53,7 @@ public final class MoreStreams {
     }
 
     @Override public boolean tryAdvance(Consumer<? super List<T>> action) {
+      requireNonNull(action);
       List<T> chunk = new ArrayList<>(chunkSize());
       for (int i = 0; i < maxSize && underlying.tryAdvance(chunk::add); i++) {}
       if (chunk.isEmpty()) return false;
