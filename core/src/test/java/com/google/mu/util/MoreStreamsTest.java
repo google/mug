@@ -6,8 +6,10 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.Assume.assumeTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.List;
 import java.util.Spliterator;
 import java.util.TreeSet;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.junit.Test;
@@ -18,6 +20,15 @@ import com.google.common.testing.ClassSanityTester;
 
 @RunWith(JUnit4.class)
 public class MoreStreamsTest {
+
+  @Test public void parallelStream() {
+    assertThat(MoreStreams.dice(IntStream.range(1, 8).boxed().parallel(), 2)
+            .flatMap(List::stream).collect(toList()))
+        .containsExactly(1, 2, 3, 4, 5, 6, 7);
+    assertThat(MoreStreams.dice(IntStream.range(1, 6).boxed(), 2).parallel()
+        .flatMap(List::stream).collect(toList()))
+    .containsExactly(1, 2, 3, 4, 5);
+  }
 
   @Test public void diceSpliteratorIsNonNull() {
     Spliterator<?> spliterator = asList(1).spliterator();
