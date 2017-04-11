@@ -21,13 +21,18 @@ public final class MoreStreams {
    * sub streams before being diced into smaller chunks, which then will result in more than one
    * chunks with less than {@code maxSize} elements.
    *
+   * <p>This is an <a href="https://docs.oracle.com/javase/8/docs/api/java/util/stream/package-summary.html#StreamOps">
+   * intermediary operation</a>.
+   *
    * @param stream the source stream to be diced
    * @param maxSize the maximum size for each chunk
    * @return Stream of diced chunks each being a list of size up to {@code maxSize}
    * @throws IllegalStateException if {@code maxSize <= 0}
    */
   public static <T> Stream<List<T>> dice(Stream<? extends T> stream, int maxSize) {
-    return StreamSupport.stream(dice(stream.spliterator(), maxSize), stream.isParallel());
+    if (maxSize <= 0) throw new IllegalArgumentException();
+    return StreamSupport.stream(
+        () -> dice(stream.spliterator(), maxSize), Spliterator.NONNULL, stream.isParallel());
   }
 
   /**
@@ -39,6 +44,7 @@ public final class MoreStreams {
    * @throws IllegalStateException if {@code maxSize <= 0}
    */
   public static <T> Spliterator<List<T>> dice(Spliterator<? extends T> spliterator, int maxSize) {
+    if (maxSize <= 0) throw new IllegalArgumentException();
     return new DicedSpliterator<T>(spliterator, maxSize);
   }
 
@@ -49,7 +55,6 @@ public final class MoreStreams {
     DicedSpliterator(Spliterator<? extends T> underlying, int maxSize) {
       this.underlying = requireNonNull(underlying);
       this.maxSize = maxSize;
-      if (maxSize <= 0) throw new IllegalArgumentException();
     }
 
     @Override public boolean tryAdvance(Consumer<? super List<T>> action) {
@@ -76,8 +81,7 @@ public final class MoreStreams {
     }
 
     @Override public int characteristics() {
-      return (underlying.characteristics() | Spliterator.NONNULL)
-          & ((-1) ^ Spliterator.SORTED ^ Spliterator.SIZED ^ Spliterator.SUBSIZED);
+      return Spliterator.NONNULL;
     }
 
     private int chunkSize() {

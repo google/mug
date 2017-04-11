@@ -48,6 +48,11 @@ public class MoreStreamsParameterizedTest {
         .isEmpty();
   }
 
+  @Test public void spliteratorAndStreamHaveEqualCharacteristics() {
+    assertThat(MoreStreams.dice(kind.natural(1), 2).spliterator().characteristics())
+        .isEqualTo(MoreStreams.dice(kind.natural(1).spliterator(), 2).characteristics());
+  }
+
   private enum StreamKind {
     DEFAULT  {
       @Override Stream<Integer> natural(int numbers) {
