@@ -5,6 +5,7 @@ import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.TreeSet;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -51,6 +52,11 @@ public class MoreStreamsParameterizedTest {
   @Test public void spliteratorAndStreamHaveEqualCharacteristics() {
     assertThat(MoreStreams.dice(kind.natural(1), 2).spliterator().characteristics())
         .isEqualTo(MoreStreams.dice(kind.natural(1).spliterator(), 2).characteristics());
+  }
+
+  @Test public void intermediaryOperation() {
+    assertThat(MoreStreams.dice(kind.natural(3), 2).flatMap(List::stream).collect(toList()))
+        .containsExactly(1, 2, 3).inOrder();
   }
 
   private enum StreamKind {
