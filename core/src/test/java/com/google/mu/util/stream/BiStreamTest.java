@@ -303,7 +303,7 @@ public class BiStreamTest {
     Stream<?> stream = Stream.of("a");
     AtomicBoolean closed = new AtomicBoolean();
     stream.onClose(() -> closed.set(true));
-    try (BiStream<?, ?> indexed = BiStream.indexed(stream)) {}
+    try (BiStream<?, ?> indexed = BiStream.indexed(stream).distinct()) {}
     assertThat(closed.get()).isTrue();
   }
 
