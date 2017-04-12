@@ -44,6 +44,14 @@ import com.google.mu.function.CheckedBiConsumer;
  * require {@link Object#equals} (except for {@link #distinct}).
  * Technically a key-value pair is nothing but two arbitrary objects.
  *
+ * <p>This "key-value" metaphor doesn't always make sense in the problem domain. For example,
+ * you may be looking at a pair of doctor and patient; neither is a "key" therefore using methods
+ * like {@link #filterKeys filterKeys()} may introduce noise to the code. It may improve
+ * readability in such cases to avoid these {@code *Keys()}, {@code *Values()} convenience methods
+ * and prefer the pair-wise methods. Like, instead of {@code
+ * doctorsAndPatients.filterKeys(Doctor::isInNetwork)},
+ * consider to use {@code doctorsAndPatients.filter((doctor, patient) -> doctor.isInNetwork())}.
+ *
  * <p>Keys and values are allowed to be null.
  */
 public final class BiStream<K, V> implements AutoCloseable {
@@ -111,9 +119,10 @@ public final class BiStream<K, V> implements AutoCloseable {
    */
   public static <K, V> BiStream<K, V> pairUp(
       Stream<? extends K> keys, Stream<? extends V> values) {
-    return from(StreamSupport.stream(
-        () -> new PairedUpSpliterator<>(keys.spliterator(), values.spliterator()),
-        Spliterator.NONNULL, keys.isParallel() || values.isParallel()));
+    Stream<Map.Entry<K, V>> paired = StreamSupport.stream(
+            () -> new PairedUpSpliterator<>(keys.spliterator(), values.spliterator()),
+            Spliterator.NONNULL, keys.isParallel() || values.isParallel());
+    return from(paired.onClose(keys::close).onClose(values::close));
   }
 
   /**

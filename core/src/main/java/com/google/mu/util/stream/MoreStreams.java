@@ -99,8 +99,9 @@ public final class MoreStreams {
    */
   public static <T> Stream<List<T>> dice(Stream<? extends T> stream, int maxSize) {
     if (maxSize <= 0) throw new IllegalArgumentException();
-    return StreamSupport.stream(
+    Stream<List<T>> diced = StreamSupport.stream(
         () -> dice(stream.spliterator(), maxSize), Spliterator.NONNULL, stream.isParallel());
+    return diced.onClose(stream::close);
   }
 
   /**

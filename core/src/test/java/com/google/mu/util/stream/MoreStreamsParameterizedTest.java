@@ -21,6 +21,7 @@ import static java.util.stream.Collectors.toList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -73,6 +74,14 @@ public class MoreStreamsParameterizedTest {
   @Test public void intermediaryOperation() {
     assertThat(MoreStreams.dice(kind.natural(3), 2).flatMap(List::stream).collect(toList()))
         .containsExactly(1, 2, 3).inOrder();
+  }
+
+  @Test public void close() {
+    Stream<?> stream = kind.natural(0);
+    AtomicBoolean closed = new AtomicBoolean();
+    stream.onClose(() -> closed.set(true));
+    try (Stream<?> diced = MoreStreams.dice(stream, 1)) {}
+    assertThat(closed.get()).isTrue();
   }
 
   private enum StreamKind {
