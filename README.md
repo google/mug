@@ -33,7 +33,7 @@ BiStream.indexed(inputs.stream())
     .forEach((i, v) -> System.out.println(i + ": " + v));
 ```
 
-Or, convert and copy to a pre-sized output list:
+or to convert and copy to a pre-sized output list:
 ```java
 List<String> outputs = Arrays.asList(new String[inputs.size()]);
 BiStream.indexed(inputs.stream())
