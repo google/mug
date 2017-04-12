@@ -5,6 +5,7 @@ import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -78,9 +79,9 @@ public class BiStreamTest {
         .inOrder();
   }
 
-  @Test public void testFlatMap() {
+  @Test public void testFlatMap2() {
     assertKeyValues(
-        BiStream.of("one", 1).flatMap((k, v) -> BiStream.of(k, v * 10, k, v * 11)))
+        BiStream.of("one", 1).flatMap2((k, v) -> BiStream.of(k, v * 10, k, v * 11)))
         .containsExactlyEntriesIn(ImmutableMultimap.of("one", 10, "one", 11))
         .inOrder();
   }
@@ -222,6 +223,12 @@ public class BiStreamTest {
   @Test public void testMap() {
     assertStream(BiStream.of(1, 2, 3, 4).map((k, v) -> k * 10 + v))
         .containsExactly(12, 34)
+        .inOrder();
+  }
+
+  @Test public void testFlatMap() {
+    assertStream(BiStream.of(1, 2, 3, 4).flatMap((k, n) -> Collections.nCopies(n, k).stream()))
+        .containsExactly(1, 1, 3, 3, 3, 3)
         .inOrder();
   }
 

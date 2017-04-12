@@ -118,12 +118,16 @@ public final class BiStream<K, V> implements AutoCloseable {
 
   /** Maps the pair to a new object of type {@code T}. */
   public <T> Stream<T> map(BiFunction<? super K, ? super V, ? extends T> mapper) {
-    requireNonNull(mapper);
-    return underlying.map(kv -> mapper.apply(kv.getKey(), kv.getValue()));
+    return underlying.map(forEntries(mapper));
+  }
+
+  /** Maps a single pair to zero or more objects of type {@code T}. */
+  public <T> Stream<T> flatMap(BiFunction<? super K, ? super V, ? extends Stream<T>> mapper) {
+    return underlying.flatMap(forEntries(mapper));
   }
 
   /** Maps a single pair to zero or more pairs in another {@code BiStream}. */
-  public <K2, V2> BiStream<K2, V2> flatMap(
+  public <K2, V2> BiStream<K2, V2> flatMap2(
       BiFunction<? super K, ? super V, ? extends BiStream<? extends K2, ? extends V2>> mapper) {
     requireNonNull(mapper);
     return from(underlying.flatMap(kv -> mapper.apply(kv.getKey(), kv.getValue()).underlying));
@@ -139,8 +143,7 @@ public final class BiStream<K, V> implements AutoCloseable {
   }
 
   /** Maps each key to another key of type {@code K2}. */
-  public <K2> BiStream<K2, V> mapKeys(
-      BiFunction<? super K, ? super V, ? extends K2> keyMapper) {
+  public <K2> BiStream<K2, V> mapKeys(BiFunction<? super K, ? super V, ? extends K2> keyMapper) {
     requireNonNull(keyMapper);
     return map2((k, v) -> kv(keyMapper.apply(k, v), v));
   }
@@ -155,7 +158,7 @@ public final class BiStream<K, V> implements AutoCloseable {
   public <K2> BiStream<K2, V> flatMapKeys(
       BiFunction<? super K, ? super V, ? extends Stream<? extends K2>> keyMapper) {
     requireNonNull(keyMapper);
-    return flatMap((k, v) -> from(keyMapper.apply(k, v).map(k2 -> kv(k2, v))));
+    return flatMap2((k, v) -> from(keyMapper.apply(k, v).map(k2 -> kv(k2, v))));
   }
 
   /** Maps each key to zero or more keys of type {@code K2}. */
@@ -182,7 +185,7 @@ public final class BiStream<K, V> implements AutoCloseable {
   public <V2> BiStream<K, V2> flatMapValues(
       BiFunction<? super K, ? super V, ? extends Stream<? extends V2>> valueMapper) {
     requireNonNull(valueMapper);
-    return flatMap((k, v) -> from(valueMapper.apply(k, v).map(v2 -> kv(k, v2))));
+    return flatMap2((k, v) -> from(valueMapper.apply(k, v).map(v2 -> kv(k, v2))));
   }
 
   /** Maps each value to zero ore more values of type {@code V2}. */
@@ -194,8 +197,7 @@ public final class BiStream<K, V> implements AutoCloseable {
 
   /** Peeks each pair. */
   public BiStream<K, V> peek(BiConsumer<? super K, ? super V> peeker) {
-    requireNonNull(peeker);
-    return from(underlying.peek(kv -> peeker.accept(kv.getKey(), kv.getValue())));
+    return from(underlying.peek(forEntries(peeker)));
   }
 
   /** Peeks keys. */
@@ -358,11 +360,17 @@ public final class BiStream<K, V> implements AutoCloseable {
 
   private <K2, V2> BiStream<K2, V2> map2(
       BiFunction<? super K, ? super V, ? extends Map.Entry<? extends K2, ? extends V2>> mapper) {
-    return from(underlying.map(kv -> mapper.apply(kv.getKey(), kv.getValue())));
+    return from(underlying.map(forEntries(mapper)));
   }
 
   private static <K, V> Map.Entry<K, V> kv(K key, V value) {
     return new AbstractMap.SimpleEntry<>(key, value);
+  }
+
+  private static <K, V, T> Function<Map.Entry<? extends K, ? extends V>, T> forEntries(
+      BiFunction<? super K, ? super V, ? extends T> function) {
+    requireNonNull(function);
+    return kv -> function.apply(kv.getKey(), kv.getValue());
   }
 
   private static <K, V> Predicate<Map.Entry<? extends K, ? extends V>> forEntries(
