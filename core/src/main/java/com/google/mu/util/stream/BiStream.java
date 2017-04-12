@@ -111,9 +111,10 @@ public final class BiStream<K, V> implements AutoCloseable {
    */
   public static <K, V> BiStream<K, V> pairUp(
       Stream<? extends K> keys, Stream<? extends V> values) {
-    return from(StreamSupport.stream(
-        () -> new PairedUpSpliterator<>(keys.spliterator(), values.spliterator()),
-        Spliterator.NONNULL, keys.isParallel() || values.isParallel()));
+    Stream<Map.Entry<K, V>> paired = StreamSupport.stream(
+            () -> new PairedUpSpliterator<>(keys.spliterator(), values.spliterator()),
+            Spliterator.NONNULL, keys.isParallel() || values.isParallel());
+    return from(paired.onClose(keys::close).onClose(values::close));
   }
 
   /**

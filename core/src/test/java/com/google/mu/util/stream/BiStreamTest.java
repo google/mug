@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
@@ -280,10 +281,30 @@ public class BiStreamTest {
         .isEqualTo(2);
   }
 
+  @Test public void testPairUp_close() {
+    Stream<?> left = Stream.of("a");
+    Stream<?> right = Stream.of(1);
+    AtomicBoolean leftClosed = new AtomicBoolean();
+    AtomicBoolean rightClosed = new AtomicBoolean();
+    left.onClose(() -> leftClosed.set(true));
+    right.onClose(() -> rightClosed.set(true));
+    try (BiStream<?, ?> stream = BiStream.pairUp(left, right)) {}
+    assertThat(leftClosed.get()).isTrue();
+    assertThat(rightClosed.get()).isTrue();
+  }
+
   @Test public void testIndexed() {
     List<String> elements = asList(new String[2]);
     BiStream.indexed(Stream.of("a", "b")).forEach(elements::set);
     assertThat(elements).containsExactly("a", "b").inOrder();
+  }
+
+  @Test public void testIndexed_close() {
+    Stream<?> stream = Stream.of("a");
+    AtomicBoolean closed = new AtomicBoolean();
+    stream.onClose(() -> closed.set(true));
+    try (BiStream<?, ?> indexed = BiStream.indexed(stream)) {}
+    assertThat(closed.get()).isTrue();
   }
 
   @Test public void testLimit() {
