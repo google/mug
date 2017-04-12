@@ -44,6 +44,13 @@ import com.google.mu.function.CheckedBiConsumer;
  * require {@link Object#equals} (except for {@link #distinct}).
  * Technically a key-value pair is nothing but two arbitrary objects.
  *
+ * <p>This "key-value" metaphor doesn't always make sense in the problem domain. For example,
+ * you may be looking at a pair of doctor and patient; neither is a "key" therefore using methods
+ * like {@link #mapKeys mapKeys} may introduce noise to the code. It may improve readability
+ * in such cases to avoid these {@code *Keys()}, {@code *Values()} convenience methods and prefer
+ * the pair-wise methods. Like, instead of {@code doctorsAndPatients.mapKeys(Doctor::getName)},
+ * consider to use {@code doctorsAndPatients.map((doctor, patient) -> doctor.getName())}.
+ *
  * <p>Keys and values are allowed to be null.
  */
 public final class BiStream<K, V> implements AutoCloseable {
