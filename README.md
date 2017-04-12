@@ -3,6 +3,7 @@ Disclaimer: This is not an official Google product.
 # MµG
 A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/index.html)), with 0 deps. ![](https://travis-ci.org/google/mug.svg?branch=master)
 
+* [Stream utilities](#stream-utilities).
 * [Retryer](#retryer) retries.
 * [Iterate](#iterate) iterates over `Stream`s in the presence of checked exceptions or control flow.
 * [Maybe](#maybe) tunnels checked exceptions through streams or futures.
@@ -19,6 +20,44 @@ Add the following to pom.xml:
     <artifactId>mug</artifactId>
     <version>1.0</version>
   </dependency>
+```
+
+## Stream Utilities
+
+#### [BiStream](https://google.github.io/mug/apidocs/com/google/mu/util/stream/BiStream.html) streams pairs of objects.
+
+**Example 1: to iterate over a stream with indices:**
+
+```java
+BiStream.indexed(inputs.stream())
+    .forEach((i, v) -> System.out.println(i + ": " + v));
+```
+
+or to convert and copy to a pre-sized output list:
+```java
+List<String> outputs = Arrays.asList(new String[inputs.size()]);
+BiStream.indexed(inputs.stream())
+    .peek((i, v) -> System.out.println(i + ": " + v))
+    .mapValues(Object::toString)
+    .forEach(outputs::set);
+```
+
+**Example 2: to combine two streams:**
+
+```java
+BiStream.pairUp(requests, responses)
+    .map(RequestAndResponseLog::new);
+```
+
+#### [MoreStreams](https://google.github.io/mug/apidocs/com/google/mu/util/stream/MoreStreams.html)
+
+**To split a stream into smaller-size chunks (batches):**
+
+```java
+int batchSize = 5;
+MoreStreams.dice(requests, batchSize)
+    .map(BatchRequest::new)
+    .forEach(batchClient::sendBatchRequest);
 ```
 
 ## [Retryer](https://google.github.io/mug/apidocs/com/google/mu/util/Retryer.html)

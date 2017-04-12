@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.util.FutureAssertions.assertCauseOf;
 import static com.google.mu.util.FutureAssertions.assertCompleted;
 import static com.google.mu.util.FutureAssertions.assertPending;
+import static com.google.mu.util.stream.MoreStreams.iterateThrough;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertSame;
@@ -46,8 +47,6 @@ import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.EqualsTester;
 import com.google.common.testing.NullPointerTester;
 import com.google.common.truth.IterableSubject;
-import com.google.mu.util.Iterate;
-import com.google.mu.util.Maybe;
 
 import javassist.Modifier;
 
@@ -512,7 +511,7 @@ public class MaybeTest {
 
   private static <T, E extends Throwable> List<T> collect(Stream<Maybe<T, E>> stream) throws E {
     List<T> list = new ArrayList<>();
-    Iterate.through(stream, m -> list.add(m.orElseThrow()));
+    iterateThrough(stream, m -> list.add(m.orElseThrow()));
     return list;
   }
 
