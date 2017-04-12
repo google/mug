@@ -18,7 +18,19 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-/** A {@code Stream}-like object making it easier to handle pair of objects. */
+import com.google.mu.function.CheckedBiConsumer;
+import com.google.mu.util.Iterate;
+
+/**
+ * A {@code Stream}-like object making it easier to handle pair of objects.
+ *
+ * <p>Throughout this class, "key-value" metaphor is adopted for method names and type names.
+ * This naming convention however does not imply uniqueness for the {@code <K>} type nor is it
+ * required to implement {@link Object#equals} (except for {@link #distinct}).
+ * Technically a key-value pair is nothing but two arbitrary objects.
+ *
+ * <p>Keys and values are allowed to be null.
+ */
 public final class BiStream<K, V> implements AutoCloseable {
   final Stream<? extends Map.Entry<? extends K, ? extends V>> underlying;
 
@@ -191,6 +203,16 @@ public final class BiStream<K, V> implements AutoCloseable {
     return filter(forValues(predicate));
   }
 
+  /** Returns a new stream with {@code that} appended. */
+  public BiStream<K, V> append(BiStream<? extends K, ? extends V> that) {
+    return from(Stream.concat(underlying, that.underlying));
+  }
+
+  /** Returns a new stream with {@code key} and {@code value} appended. */
+  public BiStream<K, V> append(K key, V value) {
+    return append(of(key, value));
+  }
+
   /** Returns the key stream. */
   public Stream<K> keys() {
     return underlying.map(Map.Entry::getKey);
@@ -199,6 +221,13 @@ public final class BiStream<K, V> implements AutoCloseable {
   /** Returns the value stream. */
   public Stream<V> values() {
     return underlying.map(Map.Entry::getValue);
+  }
+
+  /** Iterates through each pair sequentially. */
+  public <E extends Throwable> void forEachSequentially(
+      CheckedBiConsumer<? super K, ? super V, E> consumer) throws E {
+    requireNonNull(consumer);
+    Iterate.through(underlying, kv -> consumer.accept(kv.getKey(), kv.getValue()));
   }
 
   /** Iterates over each pair. */

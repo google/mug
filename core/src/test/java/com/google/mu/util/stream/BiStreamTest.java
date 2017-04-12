@@ -4,9 +4,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -19,7 +17,6 @@ import org.junit.runners.JUnit4;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
-import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.NullPointerTester;
 import com.google.common.truth.IterableSubject;
 import com.google.common.truth.MultimapSubject;
@@ -124,6 +121,15 @@ public class BiStreamTest {
         .inOrder();
   }
 
+  @Test public void testAppend() {
+    assertKeyValues(BiStream.of("one", 1).append(BiStream.of("two", 2, "three", 3)))
+        .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1, "two", 2, "three", 3))
+        .inOrder();
+    assertKeyValues(BiStream.of("one", 1).append("two", 2).append("three", 3))
+        .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1, "two", 2, "three", 3))
+        .inOrder();
+  }
+
   @Test public void testPeek() {
     AtomicInteger sum = new AtomicInteger();
     assertKeyValues(BiStream.of(1, 2, 3, 4).peek((k, v) -> sum.addAndGet(k + v)))
@@ -197,6 +203,18 @@ public class BiStreamTest {
     assertThat(sum.get()).isEqualTo(10);
   }
 
+  @Test public void testForEachOrdered() {
+    List<Integer> list = new ArrayList<>();
+    BiStream.of(1, 2, 3, 4).forEachOrdered((k, v) -> {list.add(k); list.add(v);});
+    assertThat(list).containsExactly(1, 2, 3, 4).inOrder();
+  }
+
+  @Test public void testForEachSequentially() {
+    List<Integer> list = new ArrayList<>();
+    BiStream.of(1, 2, 3, 4).forEachSequentially((k, v) -> {list.add(k); list.add(v);});
+    assertThat(list).containsExactly(1, 2, 3, 4).inOrder();
+  }
+
   @Test public void testCount() {
     assertThat(BiStream.of(1, 2, 3, 4).count()).isEqualTo(2);
   }
@@ -241,12 +259,6 @@ public class BiStreamTest {
         .isEqualTo(2);
   }
 
-  @Test public void testForEachOrdered() {
-    List<Integer> list = new ArrayList<>();
-    BiStream.of(1, 2, 3, 4).forEachOrdered((k, v) -> {list.add(k); list.add(v);});
-    assertThat(list).containsExactly(1, 2, 3, 4).inOrder();
-  }
-
   @Test public void testLimit() {
     assertKeyValues(BiStream.of("one", 1, "two", 2, "three", 3).limit(2))
         .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1, "two", 2))
@@ -288,7 +300,8 @@ public class BiStreamTest {
   @Test public void testNulls() {
     NullPointerTester tester = new NullPointerTester();
     asList(BiStream.class.getDeclaredMethods()).stream()
-        .filter(m -> m.getName().equals("of"))
+        .filter(m -> m.getName().equals("of")
+            || m.getName().equals("append") && m.getParameterTypes().length == 2)
         .forEach(tester::ignore);
     tester.testAllPublicStaticMethods(BiStream.class);
     tester.testAllPublicInstanceMethods(BiStream.empty());
