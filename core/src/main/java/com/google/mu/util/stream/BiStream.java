@@ -22,7 +22,7 @@ import com.google.mu.function.CheckedBiConsumer;
 import com.google.mu.util.Iterate;
 
 /**
- * A {@code Stream}-like object making it easier to handle pair of objects.
+ * A {@code Stream}-like object making it easier to handle pairs of objects.
  *
  * <p>Throughout this class, "key-value" metaphor is adopted for method names and type names.
  * This naming convention however does not imply uniqueness for the {@code <K>} type nor is it
