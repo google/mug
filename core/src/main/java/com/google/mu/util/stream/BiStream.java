@@ -120,7 +120,6 @@ public final class BiStream<K, V> implements AutoCloseable {
    *     .map((x, y) -> x + ":" + y)
    * }</pre>
    * will return a stream equivalent to {@code Stream.of("a:1", "b:2")}.
-   *
    */
   public static <K, V> BiStream<K, V> pairUp(
       Stream<? extends K> keys, Stream<? extends V> values) {
