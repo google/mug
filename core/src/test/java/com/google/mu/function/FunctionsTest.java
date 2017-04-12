@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -66,6 +67,21 @@ public class FunctionsTest {
 
   @Test public void testCheckedConsumer_nulls() throws Throwable {
     CheckedConsumer<Object, IOException> consumer = Objects::requireNonNull;
+    new NullPointerTester().testAllPublicInstanceMethods(consumer);
+  }
+
+  @Test public void testCheckedBiConsumer_andThen() throws Throwable {
+    AtomicInteger sum = new AtomicInteger();
+    CheckedBiConsumer<Integer, Integer, Throwable> consumer = (a, b) -> sum.addAndGet(a + b);
+    consumer.andThen(consumer).accept(1, 2);
+    assertThat(sum.get()).isEqualTo(6);
+  }
+
+  @Test public void testCheckedBiConsumer_nulls() throws Throwable {
+    CheckedBiConsumer<Object, Object, ?> consumer = (a, b) -> {
+      requireNonNull(a);
+      requireNonNull(b);
+    };
     new NullPointerTester().testAllPublicInstanceMethods(consumer);
   }
 }

@@ -3,6 +3,7 @@ package com.google.mu.util.concurrent;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Iterator;
+import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -406,6 +407,7 @@ public final class Parallelizer {
   }
 
   private static <T> Stream<T> stream(Iterator<? extends T> it) {
-    return StreamSupport.stream(Spliterators.spliteratorUnknownSize(it, 0), false);
+    return StreamSupport.stream(
+        Spliterators.spliteratorUnknownSize(it, Spliterator.ORDERED), false);
   }
 }
