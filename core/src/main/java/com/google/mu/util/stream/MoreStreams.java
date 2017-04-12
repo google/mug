@@ -54,9 +54,9 @@ public final class MoreStreams {
    * except using this API eliminates the need for a named variable that escapes the scope of the
    * for-each loop. And code is more readable too.
    *
-   * <p>Note that {@link #through through()} should be preferred whenever possible due to the
-   * caveats mentioned above. This method is still useful when the for-each loop body needs to use
-   * control flows such as {@code break} or {@code return}.
+   * <p>Note that {@link #iterateThrough iterateThrough()} should be preferred whenever possible
+   * due to the caveats mentioned above. This method is still useful when the loop body needs to
+   * use control flows such as {@code break} or {@code return}.
    */
   public static <T> Iterable<T> iterateOnce(Stream<T> stream) {
     return stream::iterator;
