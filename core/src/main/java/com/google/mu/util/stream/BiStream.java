@@ -40,8 +40,8 @@ import com.google.mu.function.CheckedBiConsumer;
  * A {@code Stream}-like object making it easier to handle pairs of objects.
  *
  * <p>Throughout this class, "key-value" metaphor is adopted for method names and type names.
- * This naming convention however does not imply uniqueness for the {@code <K>} type nor does it
- * require {@link Object#equals} (except for {@link #distinct}).
+ * This naming convention however does not imply uniqueness in terms of type {@code <K>} nor does
+ * it require {@link Object#equals} (except for {@link #distinct}).
  * Technically a key-value pair is nothing but two arbitrary objects.
  *
  * <p>This "key-value" metaphor doesn't always make sense in the problem domain. For example,
@@ -372,6 +372,14 @@ public final class BiStream<K, V> implements AutoCloseable {
     /** Puts a new pair of {@code key} and {@code value}. */
     public Builder<K, V> put(K key, V value) {
       entries.add(kv(key, value));
+      return this;
+    }
+
+    /** Puts all key-value pairs from {@code map} into this builder. */
+    public Builder<K, V> putAll(Map<? extends K, ? extends V> map) {
+      for (Map.Entry<? extends K, ? extends V> entry : map.entrySet()) {
+        entries.add(kv(entry.getKey(), entry.getValue()));
+      }
       return this;
     }
 
