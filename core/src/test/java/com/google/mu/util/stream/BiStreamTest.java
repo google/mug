@@ -259,6 +259,12 @@ public class BiStreamTest {
         .isEqualTo(2);
   }
 
+  @Test public void testIndexed() {
+    List<String> elements = asList(new String[2]);
+    BiStream.indexed(Stream.of("a", "b")).forEach(elements::set);
+    assertThat(elements).containsExactly("a", "b").inOrder();
+  }
+
   @Test public void testLimit() {
     assertKeyValues(BiStream.of("one", 1, "two", 2, "three", 3).limit(2))
         .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1, "two", 2))
