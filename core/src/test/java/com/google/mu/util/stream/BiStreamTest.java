@@ -247,9 +247,54 @@ public class BiStreamTest {
         .inOrder();
   }
 
+  @Test public void testMapToInt() {
+    assertStream(BiStream.of(1, 2, 3, 4).mapToInt((k, v) -> k * 10 + v).boxed())
+        .containsExactly(12, 34)
+        .inOrder();
+  }
+
+  @Test public void testMapToLong() {
+    assertStream(BiStream.of(1, 2, 3, 4).mapToLong((k, v) -> k * 10 + v).boxed())
+        .containsExactly(12L, 34L)
+        .inOrder();
+  }
+
+  @Test public void testMapToDouble() {
+    assertStream(BiStream.of(1, 2, 3, 4).mapToDouble((k, v) -> k * 10 + v).boxed())
+        .containsExactly(12D, 34D)
+        .inOrder();
+  }
+
   @Test public void testFlatMap() {
     assertStream(BiStream.of(1, 2, 3, 4).flatMap((k, n) -> Collections.nCopies(n, k).stream()))
         .containsExactly(1, 1, 3, 3, 3, 3)
+        .inOrder();
+  }
+
+  @Test public void testFlatMapToInt() {
+    assertStream(
+            BiStream.of(1, 2, 3, 4)
+                .flatMapToInt((k, n) -> Collections.nCopies(n, k).stream().mapToInt(i -> i))
+                .boxed())
+        .containsExactly(1, 1, 3, 3, 3, 3)
+        .inOrder();
+  }
+
+  @Test public void testFlatMapToLong() {
+    assertStream(
+            BiStream.of(1, 2, 3, 4)
+                .flatMapToLong((k, n) -> Collections.nCopies(n, k).stream().mapToLong(i -> i))
+                .boxed())
+        .containsExactly(1L, 1L, 3L, 3L, 3L, 3L)
+        .inOrder();
+  }
+
+  @Test public void testFlatMapToDouble() {
+    assertStream(
+            BiStream.of(1, 2, 3, 4)
+                .flatMapToDouble((k, n) -> Collections.nCopies(n, k).stream().mapToDouble(i -> i))
+                .boxed())
+        .containsExactly(1D, 1D, 3D, 3D, 3D, 3D)
         .inOrder();
   }
 

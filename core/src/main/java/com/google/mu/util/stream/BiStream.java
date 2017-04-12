@@ -30,7 +30,12 @@ import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.ToDoubleBiFunction;
+import java.util.function.ToIntBiFunction;
+import java.util.function.ToLongBiFunction;
+import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -144,9 +149,42 @@ public final class BiStream<K, V> implements AutoCloseable {
     return underlying.map(forEntries(mapper));
   }
 
+  /** Maps each pair to an {@code int}. */
+  public IntStream mapToInt(ToIntBiFunction<? super K, ? super V> mapper) {
+    requireNonNull(mapper);
+    return underlying.mapToInt(kv -> mapper.applyAsInt(kv.getKey(), kv.getValue()));
+  }
+
+  /** Maps each pair to a {@code long}. */
+  public LongStream mapToLong(ToLongBiFunction<? super K, ? super V> mapper) {
+    requireNonNull(mapper);
+    return underlying.mapToLong(kv -> mapper.applyAsLong(kv.getKey(), kv.getValue()));
+  }
+
+  /** Maps each pair to a {@code double}. */
+  public DoubleStream mapToDouble(ToDoubleBiFunction<? super K, ? super V> mapper) {
+    requireNonNull(mapper);
+    return underlying.mapToDouble(kv -> mapper.applyAsDouble(kv.getKey(), kv.getValue()));
+  }
+
   /** Maps a single pair to zero or more objects of type {@code T}. */
   public <T> Stream<T> flatMap(BiFunction<? super K, ? super V, ? extends Stream<T>> mapper) {
     return underlying.flatMap(forEntries(mapper));
+  }
+
+  /** Maps a single pair to zero or more {@code int}s. */
+  public IntStream flatMapToInt(BiFunction<? super K, ? super V, ? extends IntStream> mapper) {
+    return underlying.flatMapToInt(forEntries(mapper));
+  }
+
+  /** Maps a single pair to zero or more {@code long}s. */
+  public LongStream flatMapToLong(BiFunction<? super K, ? super V, ? extends LongStream> mapper) {
+    return underlying.flatMapToLong(forEntries(mapper));
+  }
+
+  /** Maps a single pair to zero or more {@code double}s. */
+  public DoubleStream flatMapToDouble(BiFunction<? super K, ? super V, ? extends DoubleStream> mapper) {
+    return underlying.flatMapToDouble(forEntries(mapper));
   }
 
   /** Maps a single pair to zero or more pairs in another {@code BiStream}. */
