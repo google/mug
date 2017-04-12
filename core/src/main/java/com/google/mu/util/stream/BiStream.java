@@ -261,7 +261,10 @@ public final class BiStream<K, V> implements AutoCloseable {
     return underlying.map(Map.Entry::getValue);
   }
 
-  /** Iterates through each pair sequentially. */
+  /**
+   * Iterates through each pair sequentially.
+   * {@code consumer} is allowed to throw a checked exception.
+   */
   public <E extends Throwable> void forEachSequentially(
       CheckedBiConsumer<? super K, ? super V, E> consumer) throws E {
     requireNonNull(consumer);
