@@ -46,10 +46,11 @@ import com.google.mu.function.CheckedBiConsumer;
  *
  * <p>This "key-value" metaphor doesn't always make sense in the problem domain. For example,
  * you may be looking at a pair of doctor and patient; neither is a "key" therefore using methods
- * like {@link #mapKeys mapKeys} may introduce noise to the code. It may improve readability
- * in such cases to avoid these {@code *Keys()}, {@code *Values()} convenience methods and prefer
- * the pair-wise methods. Like, instead of {@code doctorsAndPatients.mapKeys(Doctor::getName)},
- * consider to use {@code doctorsAndPatients.map((doctor, patient) -> doctor.getName())}.
+ * like {@link #filterKeys filterKeys()} may introduce noise to the code. It may improve
+ * readability in such cases to avoid these {@code *Keys()}, {@code *Values()} convenience methods
+ * and prefer the pair-wise methods. Like, instead of {@code
+ * doctorsAndPatients.filterKeys(Doctor::isInNetwork)},
+ * consider to use {@code doctorsAndPatients.filter((doctor, patient) -> doctor.isInNetwork())}.
  *
  * <p>Keys and values are allowed to be null.
  */
