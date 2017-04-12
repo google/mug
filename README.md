@@ -3,7 +3,7 @@ Disclaimer: This is not an official Google product.
 # MµG
 A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/index.html)), with 0 deps. ![](https://travis-ci.org/google/mug.svg?branch=master)
 
-* [Stream Utilities](#stream-utilities).
+* [Stream utilities](#stream-utilities).
 * [Retryer](#retryer) retries.
 * [Iterate](#iterate) iterates over `Stream`s in the presence of checked exceptions or control flow.
 * [Maybe](#maybe) tunnels checked exceptions through streams or futures.
