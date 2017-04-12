@@ -1,5 +1,20 @@
+/*****************************************************************************
+ * ------------------------------------------------------------------------- *
+ * Licensed under the Apache License, Version 2.0 (the "License");           *
+ * you may not use this file except in compliance with the License.          *
+ * You may obtain a copy of the License at                                   *
+ *                                                                           *
+ * http://www.apache.org/licenses/LICENSE-2.0                                *
+ *                                                                           *
+ * Unless required by applicable law or agreed to in writing, software       *
+ * distributed under the License is distributed on an "AS IS" BASIS,         *
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+ * See the License for the specific language governing permissions and       *
+ * limitations under the License.                                            *
+ *****************************************************************************/
 package com.google.mu.util.concurrent;
 
+import static com.google.mu.util.stream.MoreStreams.iterateOnce;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Iterator;
@@ -20,8 +35,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
-import com.google.mu.util.Iterate;
 
 /**
  * Utility for running a (large) stream of tasks in parallel while limiting the maximum number of
@@ -260,7 +273,7 @@ public final class Parallelizer {
     if (heartbeatTimeout <= 0) throw new IllegalArgumentException("timeout = " + heartbeatTimeout);
     Flight flight = new Flight();
     try {
-      for (Runnable task : Iterate.once(tasks)) {
+      for (Runnable task : iterateOnce(tasks)) {
         flight.checkIn(heartbeatTimeout, timeUnit);
         flight.board(task);
       }
@@ -279,7 +292,7 @@ public final class Parallelizer {
   public void parallelizeUninterruptibly(Stream<? extends Runnable> tasks) {
     Flight flight = new Flight();
     try {
-      for (Runnable task : Iterate.once(tasks)) {
+      for (Runnable task : iterateOnce(tasks)) {
         flight.checkInUninterruptibly();
         flight.board(task);
       }

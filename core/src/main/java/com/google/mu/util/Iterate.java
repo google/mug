@@ -14,65 +14,25 @@
  *****************************************************************************/
 package com.google.mu.util;
 
-import static java.util.Objects.requireNonNull;
-
 import java.util.stream.Stream;
 
 import com.google.mu.function.CheckedConsumer;
+import com.google.mu.util.stream.MoreStreams;
 
-/** Helper to make it easier to iterate through {@link Stream}s. */
+@Deprecated
 public final class Iterate {
 
-  /**
-   * Iterates through {@code stream} <em>only once</em>. It's strongly recommended
-   * to avoid assigning the return value to a variable or passing it to any other method because
-   * the returned {@code Iterable}'s {@link Iterable#iterator iterator()} method can only be called
-   * once. Instead, always use it together with a for-each loop, as in:
-   *
-   * <pre>{@code
-   *   for (Foo foo : Iterate.once(stream)) {
-   *     ...
-   *     if (...) continue;
-   *     if (...) break;
-   *     ...
-   *   }
-   * }</pre>
-   *
-   * The above is equivalent to manually doing:
-   *
-   * <pre>{@code
-   *   Iterable<Foo> foos = stream::iterator;
-   *   for (Foo foo : foos) {
-   *     ...
-   *   }
-   * }</pre>
-   * except using this API eliminates the need for a named variable that escapes the scope of the
-   * for-each loop. And code is more readable too.
-   *
-   * <p>Note that {@link #through through()} should be preferred whenever possible due to the
-   * caveats mentioned above. This method is still useful when the for-each loop body needs to use
-   * control flows such as {@code break} or {@code return}.
-   */
+  /** @deprecated Moved to {@link MoreStreams#iterateOnce}. */
+  @Deprecated
   public static <T> Iterable<T> once(Stream<T> stream) {
-    return stream::iterator;
+    return MoreStreams.iterateOnce(stream);
   }
 
-  /**
-   * Iterates through {@code stream} sequentially and passes each element to {@code consumer}
-   * with exceptions propagated. For example: 
-   *
-   * <pre>{@code
-   *   void writeAll(Stream<?> stream, ObjectOutput out) throws IOException {
-   *     Iterate.through(stream, out::writeObject);
-   *   }
-   * }</pre>
-   */
+  /** @deprecated Moved to {@link MoreStreams#iterateThrough}. */
+  @Deprecated
   public static <T, E extends Throwable> void through(
       Stream<? extends T> stream, CheckedConsumer<? super T, E> consumer) throws E {
-    requireNonNull(consumer);
-    for (T element : once(stream)) {
-      consumer.accept(element);
-    }
+    MoreStreams.iterateThrough(stream, consumer);
   }
 
   private Iterate() {}
