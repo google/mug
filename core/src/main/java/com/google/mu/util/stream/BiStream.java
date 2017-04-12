@@ -203,9 +203,9 @@ public final class BiStream<K, V> implements AutoCloseable {
     return filter(forValues(predicate));
   }
 
-  /** Returns a new stream with {@code that} appended. */
-  public BiStream<K, V> append(BiStream<? extends K, ? extends V> that) {
-    return from(Stream.concat(underlying, that.underlying));
+  /** Returns a new stream with {@code suffix} appended. */
+  public BiStream<K, V> append(BiStream<? extends K, ? extends V> suffix) {
+    return from(Stream.concat(underlying, suffix.underlying));
   }
 
   /** Returns a new stream with {@code key} and {@code value} appended. */
