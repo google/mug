@@ -25,8 +25,8 @@ import com.google.mu.util.Iterate;
  * A {@code Stream}-like object making it easier to handle pairs of objects.
  *
  * <p>Throughout this class, "key-value" metaphor is adopted for method names and type names.
- * This naming convention however does not imply uniqueness for the {@code <K>} type nor is it
- * required to implement {@link Object#equals} (except for {@link #distinct}).
+ * This naming convention however does not imply uniqueness for the {@code <K>} type nor does it
+ * require {@link Object#equals} (except for {@link #distinct}).
  * Technically a key-value pair is nothing but two arbitrary objects.
  *
  * <p>Keys and values are allowed to be null.
