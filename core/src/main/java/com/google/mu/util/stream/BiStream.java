@@ -15,6 +15,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -86,12 +87,33 @@ public final class BiStream<K, V> implements AutoCloseable {
    * Pairs up {@code keys} and {@code values} in order.
    * If one streams is longer than the other, the extra elements in the longer stream are
    * silently ignored.
+   *
+   * <p>For example:   <pre>{@code
+   * BiStream.pairUp(Stream.of("a", "b", "c"), Stream.of(1, 2))
+   *     .map((x, y) -> x + ":" + y)
+   * }</pre>
+   * will return a stream equivalent to {@code Stream.of("a:1", "b:2")}.
+   *
    */
   public static <K, V> BiStream<K, V> pairUp(
       Stream<? extends K> keys, Stream<? extends V> values) {
     return from(StreamSupport.stream(
         () -> new PairedUpSpliterator<>(keys.spliterator(), values.spliterator()),
         Spliterator.NONNULL, keys.isParallel() || values.isParallel()));
+  }
+
+  /**
+   * Returns a {@link BiStream} where each element in {@code values} is mapped to its
+   * corresponding 0-based index. For example, the following code transforms a list
+   * of inputs into a pre-sized output list:   <pre>{@code
+   * List<T> output = ...;
+   * BiStream.indexed(inputs.stream())
+   *     .mapValues(this::convertInput)
+   *     .forEach(output::set);
+   * }</pre>
+   */
+  public static <V> BiStream<Integer, V> indexed(Stream<? extends V> values) {
+    return pairUp(IntStream.iterate(0, i -> i + 1).boxed(), values);
   }
 
   /** Maps the pair to a new object of type {@code T}. */
