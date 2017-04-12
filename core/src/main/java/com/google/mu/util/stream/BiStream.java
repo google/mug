@@ -103,7 +103,7 @@ public final class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Returns a {@link BiStream} where each element in {@code values} is mapped to its
+   * Returns a {@link BiStream} where each element in {@code values} is keyed by its
    * corresponding 0-based index. For example, the following code transforms a list
    * of inputs into a pre-sized output list:   <pre>{@code
    * List<T> output = ...;
