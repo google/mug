@@ -5,7 +5,6 @@ A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/
 
 * [Stream utilities](#stream-utilities).
 * [Retryer](#retryer) retries.
-* [Iterate](#iterate) iterates over `Stream`s in the presence of checked exceptions or control flow.
 * [Maybe](#maybe) tunnels checked exceptions through streams or futures.
 * [Funnel](#funnel) flows objects through batch conversions in FIFO order.
 * [Parallelizer](#parallelizer) Runs a pipeline of tasks in parallel while limiting the number of in-flight tasks.
@@ -51,13 +50,34 @@ BiStream.pairUp(requests, responses)
 
 #### [MoreStreams](https://google.github.io/mug/apidocs/com/google/mu/util/stream/MoreStreams.html)
 
-**To split a stream into smaller-size chunks (batches):**
+**Example 1: to split a stream into smaller-size chunks (batches):**
 
 ```java
 int batchSize = 5;
 MoreStreams.dice(requests, batchSize)
     .map(BatchRequest::new)
     .forEach(batchClient::sendBatchRequest);
+```
+
+**Example 2: to iterate over `Stream`s in the presence of checked exceptions or control flow:**
+
+The `Stream` API provides `forEach()` to iterate over a stream, if you don't have to throw checked exceptions.
+
+When checked exception is in the way, or if you need control flow (`continue`, `return` etc.), `iterateThrough()` and `iterateOnce()` can help. The following code uses `iterateThrough()` to write objects into an `ObjectOutputStream`, with  `IOException` propagated:
+
+```java
+Stream<?> stream = ...;
+ObjectOutput out = ...;
+iterateThrough(stream, out::writeObject);
+```
+
+with control flow:
+```java
+for (Object obj : iterateOnce(stream)) {
+  if (...) continue;
+  else if (...) return;
+  out.writeObject(obj);
+}
 ```
 
 ## [Retryer](https://google.github.io/mug/apidocs/com/google/mu/util/Retryer.html)
@@ -191,20 +211,6 @@ return new Retryer()
 If the method succeeds after retry, the exceptions are by default logged. As shown above, one can override `beforeDelay()` and `afterDelay()` to change or suppress the loggging.
 
 If the method fails after retry, the exceptions can also be accessed programmatically through `exception.getSuppressed()`.
-
-## [Iterate](https://google.github.io/mug/apidocs/com/google/mu/util/Iterate.html)
-
-Java 8 `Stream` API provides `forEach()` to iterate over a stream, but only if you don't have to throw checked exceptions.
-
-If you have a stream of objects to write to an `ObjectOutputStream`, you won't be able to use `forEach` because `writeObject()` throws `IOException`.
-
-For cases like this, one can either use `iterator()` with a plain old `hasNext()` and `next()` loop, or can use `Iterate` in simpler syntax:
-
-```java
-Stream<?> stream = ...;
-ObjectOutput out = ...;
-Iterate.through(stream, out::writeObject);
-```
 
 ## [Maybe](https://google.github.io/mug/apidocs/com/google/mu/util/Maybe.html)
 
