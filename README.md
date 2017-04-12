@@ -24,7 +24,7 @@ Add the following to pom.xml:
 
 ## Stream Utilities
 
-#### [BiStream](https://google.github.io/mug/apidocs/com/google/mu/util/stream/BiStream.html) handles pairs of objects.
+#### [BiStream](https://google.github.io/mug/apidocs/com/google/mu/util/stream/BiStream.html) streams pairs of objects.
 
 **Example 1: to iterate over a stream with indices:**
 
