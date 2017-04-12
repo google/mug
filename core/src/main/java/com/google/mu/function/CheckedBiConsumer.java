@@ -2,7 +2,7 @@ package com.google.mu.function;
 
 import static java.util.Objects.requireNonNull;
 
-/** A binary function that can throw checked exceptions. */
+/** A binary consumer that can throw checked exceptions. */
 @FunctionalInterface
 public interface CheckedBiConsumer<A, B, E extends Throwable> {
   void accept(A a, B b) throws E;
