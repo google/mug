@@ -304,48 +304,48 @@ public class BiStreamTest {
         .inOrder();
   }
 
-  @Test public void testPairUp_leftIsShorter() {
-    assertKeyValues(BiStream.pairUp(Stream.of("a", "b"), Stream.of(1, 2, 3)))
+  @Test public void testZip_leftIsShorter() {
+    assertKeyValues(BiStream.zip(Stream.of("a", "b"), Stream.of(1, 2, 3)))
         .containsExactlyEntriesIn(ImmutableMultimap.of("a", 1, "b", 2));
   }
 
-  @Test public void testPairUp_leftIsEmpty() {
-    assertKeyValues(BiStream.pairUp(Stream.empty(), Stream.of(1, 2, 3))).isEmpty();
+  @Test public void testZip_leftIsEmpty() {
+    assertKeyValues(BiStream.zip(Stream.empty(), Stream.of(1, 2, 3))).isEmpty();
   }
 
-  @Test public void testPairUp_rightIsEmpty() {
-    assertKeyValues(BiStream.pairUp(Stream.of(1, 2, 3), Stream.empty())).isEmpty();
+  @Test public void testZip_rightIsEmpty() {
+    assertKeyValues(BiStream.zip(Stream.of(1, 2, 3), Stream.empty())).isEmpty();
   }
 
-  @Test public void testPairUp_bothAreEmpty() {
-    assertKeyValues(BiStream.pairUp(Stream.empty(), Stream.empty())).isEmpty();
+  @Test public void testZip_bothAreEmpty() {
+    assertKeyValues(BiStream.zip(Stream.empty(), Stream.empty())).isEmpty();
   }
 
-  @Test public void testPairUp_rightIsShorter() {
-    assertKeyValues(BiStream.pairUp(Stream.of("a", "b", "c"), Stream.of(1, 2)))
+  @Test public void testZip_rightIsShorter() {
+    assertKeyValues(BiStream.zip(Stream.of("a", "b", "c"), Stream.of(1, 2)))
         .containsExactlyEntriesIn(ImmutableMultimap.of("a", 1, "b", 2));
   }
 
-  @Test public void testPairUp_equalSize() {
-    assertKeyValues(BiStream.pairUp(Stream.of("a", "b"), Stream.of(1, 2)))
+  @Test public void testZip_equalSize() {
+    assertKeyValues(BiStream.zip(Stream.of("a", "b"), Stream.of(1, 2)))
         .containsExactlyEntriesIn(ImmutableMultimap.of("a", 1, "b", 2));
   }
 
-  @Test public void testPairUp_estimatedSize() {
+  @Test public void testZip_estimatedSize() {
     assertThat(
-            BiStream.pairUp(Stream.of("a", "b"), Stream.of(1, 2, 3))
+            BiStream.zip(Stream.of("a", "b"), Stream.of(1, 2, 3))
                 .keys().spliterator().estimateSize())
         .isEqualTo(2);
   }
 
-  @Test public void testPairUp_close() {
+  @Test public void testZip_close() {
     Stream<?> left = Stream.of("a");
     Stream<?> right = Stream.of(1);
     AtomicBoolean leftClosed = new AtomicBoolean();
     AtomicBoolean rightClosed = new AtomicBoolean();
     left.onClose(() -> leftClosed.set(true));
     right.onClose(() -> rightClosed.set(true));
-    try (BiStream<?, ?> stream = BiStream.pairUp(left, right)) {}
+    try (BiStream<?, ?> stream = BiStream.zip(left, right)) {}
     assertThat(leftClosed.get()).isTrue();
     assertThat(rightClosed.get()).isTrue();
   }
