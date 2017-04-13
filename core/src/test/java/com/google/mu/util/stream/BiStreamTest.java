@@ -166,22 +166,6 @@ public class BiStreamTest {
     assertThat(sum.get()).isEqualTo(10);
   }
 
-  @Test public void testPeekKeys() {
-    AtomicInteger sum = new AtomicInteger();
-    assertKeyValues(BiStream.of(1, 2, 3, 4).peekKeys(sum::addAndGet))
-        .containsExactlyEntriesIn(ImmutableMultimap.of(1, 2, 3, 4))
-        .inOrder();
-    assertThat(sum.get()).isEqualTo(4);
-  }
-
-  @Test public void testPeekValues() {
-    AtomicInteger sum = new AtomicInteger();
-    assertKeyValues(BiStream.of(1, 2, 3, 4).peekValues(sum::addAndGet))
-        .containsExactlyEntriesIn(ImmutableMultimap.of(1, 2, 3, 4))
-        .inOrder();
-    assertThat(sum.get()).isEqualTo(6);
-  }
-
   @Test public void testAllMatch() {
     assertThat(BiStream.of("one", 1, "two", 2).allMatch((k, v) -> k.equals("one") && v == 1))
         .isFalse();

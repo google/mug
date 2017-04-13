@@ -272,18 +272,6 @@ public final class BiStream<K, V> implements AutoCloseable {
     return from(underlying.peek(forEntries(peeker)));
   }
 
-  /** Peeks keys. */
-  public BiStream<K, V> peekKeys(Consumer<? super K> peeker) {
-    requireNonNull(peeker);
-    return peek((k, v) -> peeker.accept(k));
-  }
-
-  /** Peeks values. */
-  public BiStream<K, V> peekValues(Consumer<? super V> peeker) {
-    requireNonNull(peeker);
-    return peek((k, v) -> peeker.accept(v));
-  }
-
   /** Filter using {@code predicate}. */
   public BiStream<K, V> filter(BiPredicate<? super K, ? super V> predicate) {
     return from(underlying.filter(forEntries(predicate)));
