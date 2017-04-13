@@ -100,7 +100,7 @@ public final class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Wraps {@code stream} as a {@link BiStream}. User will typically chain
+   * Wraps {@code stream} as a {@link BiStream}. Users will typically chain
    * {@link #mapKeys mapKeys()} or {@link #mapValues mapValues()}. For example:   <pre>{@code
    * BiStream<UserId, Profile> profilesByUserId = biStream(users.stream())
    *     .mapKeys(User::getId)
