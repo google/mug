@@ -99,6 +99,18 @@ public final class BiStream<K, V> implements AutoCloseable {
         kv(key1, value1), kv(key2, value2), kv(key3, value3), kv(key4, value4), kv(key5, value5)));
   }
 
+  /**
+   * Wraps {@code stream} as a {@link BiStream}. User will typically chain
+   * {@link #mapKeys mapKeys()} or {@link #mapValues mapValues()}. For example:   <pre>{@code
+   * BiStream<UserId, Profile> profilesByUserId = biStream(users.stream())
+   *     .mapKeys(User::getId)
+   *     .mapValues(User::getProfile);
+   * }</pre>
+   */
+  public static <T> BiStream<T, T> biStream(Stream<? extends T> stream) {
+    return from(stream.map(t -> kv(t, t)));
+  }
+
   /** Wraps {@code entries} in a {@code BiStream}. */
   public static <K, V> BiStream<K, V> from(
       Stream<? extends Map.Entry<? extends K, ? extends V>> entries) {
@@ -120,7 +132,6 @@ public final class BiStream<K, V> implements AutoCloseable {
    *     .map((x, y) -> x + ":" + y)
    * }</pre>
    * will return a stream equivalent to {@code Stream.of("a:1", "b:2")}.
-   *
    */
   public static <K, V> BiStream<K, V> pairUp(
       Stream<? extends K> keys, Stream<? extends V> values) {
