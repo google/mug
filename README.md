@@ -46,7 +46,7 @@ BiStream.indexed(inputs.stream())
 **Example 2: to combine two streams:**
 
 ```java
-BiStream.pairUp(requests, responses)
+BiStream.zip(requests, responses)
     .map(RequestAndResponseLog::new);
 ```
 
