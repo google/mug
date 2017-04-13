@@ -123,17 +123,17 @@ public final class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Pairs up {@code keys} and {@code values} in order.
+   * Zips up {@code keys} and {@code values} into a {@code BiStream} in order.
    * If one streams is longer than the other, the extra elements in the longer stream are
    * silently ignored.
    *
    * <p>For example:   <pre>{@code
-   * BiStream.pairUp(Stream.of("a", "b", "c"), Stream.of(1, 2))
+   * BiStream.zip(Stream.of("a", "b", "c"), Stream.of(1, 2))
    *     .map((x, y) -> x + ":" + y)
    * }</pre>
    * will return a stream equivalent to {@code Stream.of("a:1", "b:2")}.
    */
-  public static <K, V> BiStream<K, V> pairUp(
+  public static <K, V> BiStream<K, V> zip(
       Stream<? extends K> keys, Stream<? extends V> values) {
     Stream<Map.Entry<K, V>> paired = StreamSupport.stream(
             () -> new PairedUpSpliterator<>(keys.spliterator(), values.spliterator()),
@@ -152,7 +152,7 @@ public final class BiStream<K, V> implements AutoCloseable {
    * }</pre>
    */
   public static <V> BiStream<Integer, V> indexed(Stream<? extends V> values) {
-    return pairUp(IntStream.iterate(0, i -> i + 1).boxed(), values);
+    return zip(IntStream.iterate(0, i -> i + 1).boxed(), values);
   }
 
   /** Maps the pair to a new object of type {@code T}. */
