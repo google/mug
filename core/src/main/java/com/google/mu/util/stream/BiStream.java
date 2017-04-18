@@ -18,9 +18,7 @@ import static com.google.mu.util.stream.MoreStreams.iterateThrough;
 import static java.util.Objects.requireNonNull;
 
 import java.util.AbstractMap;
-import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Spliterator;
@@ -404,7 +402,7 @@ public final class BiStream<K, V> implements AutoCloseable {
 
   /** Builds {@link BiStream}. */
   public static final class Builder<K, V> {
-    private final List<Map.Entry<K, V>> entries = new ArrayList<>();
+    private final Stream.Builder<Map.Entry<K, V>> entries = Stream.builder();
 
     /** Puts a new pair of {@code key} and {@code value}. */
     public Builder<K, V> put(K key, V value) {
@@ -425,7 +423,7 @@ public final class BiStream<K, V> implements AutoCloseable {
      * at the time {@code build()} is invoked.
      */
     public BiStream<K, V> build() {
-      return from(new ArrayList<>(entries).stream());
+      return from(entries.build());
     }
   }
 
