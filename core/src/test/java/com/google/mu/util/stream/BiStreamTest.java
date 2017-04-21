@@ -195,6 +195,16 @@ public class BiStreamTest {
     assertStream(BiStream.of("one", 1, "two", 2).values()).containsExactly(1, 2).inOrder();
   }
 
+  @Test public void testToMap() {
+    assertThat(BiStream.of("one", 1, "two", 2).toMap())
+        .containsExactly("one", 1, "two", 2);
+  }
+
+  @Test public void testToConcurrentMap() {
+    assertThat(BiStream.of("one", 1, "two", 2).toConcurrentMap())
+        .containsExactly("one", 1, "two", 2);
+  }
+
   @Test public void testParallel() {
     assertThat(BiStream.of("one", 1, "two", 2).parallel().isParellel()).isTrue();
     assertThat(BiStream.of("one", 1, "two", 2).parallel().keys().isParallel()).isTrue();

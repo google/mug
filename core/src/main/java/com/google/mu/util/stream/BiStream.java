@@ -22,6 +22,7 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Spliterator;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
@@ -31,6 +32,7 @@ import java.util.function.Predicate;
 import java.util.function.ToDoubleBiFunction;
 import java.util.function.ToIntBiFunction;
 import java.util.function.ToLongBiFunction;
+import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -303,6 +305,26 @@ public final class BiStream<K, V> implements AutoCloseable {
   /** Returns the value stream. */
   public Stream<V> values() {
     return underlying.map(Map.Entry::getValue);
+  }
+
+  /**
+   * Collects the stream into a {@code Map<K, V>}.
+   * Duplicate keys results in {@link IllegalStateException}.
+   *
+   * @since 1.2
+   */
+  public Map<K, V> toMap() {
+    return underlying.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+  }
+
+  /**
+   * Collects the stream into a {@code ConcurrentMap<K, V>}.
+   * Duplicate keys results in {@link IllegalStateException}.
+   *
+   * @since 1.2
+   */
+  public ConcurrentMap<K, V> toConcurrentMap() {
+    return underlying.collect(Collectors.toConcurrentMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   /**
