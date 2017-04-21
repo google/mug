@@ -11,6 +11,7 @@ import java.util.stream.Collector;
  * @param <K> the key type
  * @param <V> the value type
  * @param <R> the result type
+ * @since 1.2
  */
 @FunctionalInterface
 public interface BiCollector<K, V, R> {

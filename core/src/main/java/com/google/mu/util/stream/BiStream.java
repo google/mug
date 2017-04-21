@@ -58,6 +58,8 @@ import com.google.mu.function.CheckedBiConsumer;
  * consider to use {@code doctorsAndPatients.filter((doctor, patient) -> doctor.isInNetwork())}.
  *
  * <p>Keys and values are allowed to be null.
+ *
+ * @since 1.1
  */
 public final class BiStream<K, V> implements AutoCloseable {
   final Stream<? extends Map.Entry<? extends K, ? extends V>> underlying;

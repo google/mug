@@ -25,7 +25,11 @@ import java.util.stream.StreamSupport;
 
 import com.google.mu.function.CheckedConsumer;
 
-/** Static utilities pertaining to {@link Stream} in addition to relevant utilities in Jdk and Guava. */
+/**
+ * Static utilities pertaining to {@link Stream} in addition to relevant utilities in Jdk and Guava.
+ *
+ * @since 1.1
+ */
 public final class MoreStreams {
 
   /**
