@@ -19,7 +19,7 @@ public interface BiCollector<K, V, R> {
    * which when mapped through {@code keyFunction} and {@code valueFunction} to key-value pairs,
    * will collect into an object of type {@code R}.
    */
-  <T> Collector<T, ?, R> collector(
+  <T> Collector<T, ?, ? extends R> collector(
       Function<? super T, ? extends K> keyFunction,
       Function<? super T, ? extends V> valueFunction);
 }

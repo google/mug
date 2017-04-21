@@ -316,7 +316,7 @@ public final class BiStream<K, V> implements AutoCloseable {
   public Map<K, V> toMap() {
     // TODO: inlining toMap works in Eclipse but not in the current javac compiler.
     BiCollector<K, V, Map<K, V>> collector = Collectors::toMap;
-    return collect(collector);
+    return collect(Collectors::toMap);
   }
 
   /**
