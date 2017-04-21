@@ -110,6 +110,8 @@ import java.util.stream.StreamSupport;
  *     The above code doesn't always fail fast.
  * <li>Putting all {@code Future} objects into a List will run out of memory for large streams.
  * </ul>
+ *
+ * @since 1.1
  */
 public final class Parallelizer {
 
