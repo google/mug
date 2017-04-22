@@ -20,6 +20,10 @@ public interface BiCollector<K, V, R> {
    * and {@code valueMapper} and subsequently collecting the key-value pairs with this
    * {@code BiCollector}.
    */
-  <T> Collector<T, ?, R> asCollector(
-      Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper);
+  // Deliberately avoid wildcards for keyMapper and valueMapper, because we don't expect
+  // users to call this method. Instead, users will typically provide lambda or
+  // method references matching this signature.
+  // Signatures with or without wildcards should both match.
+  // In other words, this signature optimizes flexibility for implementors, not callers.
+  <T> Collector<T, ?, R> asCollector(Function<T, K> keyMapper, Function<T, V> valueMapper);
 }

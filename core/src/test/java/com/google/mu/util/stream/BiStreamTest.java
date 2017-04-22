@@ -24,6 +24,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import org.junit.Test;
@@ -203,6 +205,20 @@ public class BiStreamTest {
   @Test public void testToConcurrentMap() {
     assertThat(BiStream.of("one", 1, "two", 2).toConcurrentMap())
         .containsExactly("one", 1, "two", 2);
+  }
+
+  @Test public void testCollect() {
+    BiCollector<String, Integer, ImmutableMap<String, Integer>> collector =
+        ImmutableMap::toImmutableMap;
+    assertThat(BiStream.of("one", 1, "two", 2).collect(collector))
+        .containsExactly("one", 1, "two", 2);
+  }
+
+  @Test public void testCollect_toImmutableListMultimapWithInflexibleMapperTypes() {
+    BiCollector<String, Integer, ImmutableListMultimap<String, Integer>> collector =
+        BiStreamTest::toImmutableMultimap;
+    assertThat(BiStream.of("one", 1, "one", 10, "two", 2).collect(collector))
+        .containsExactlyEntriesIn(ImmutableListMultimap.of("one", 1, "one", 10, "two", 2));
   }
 
   @Test public void testParallel() {
@@ -414,5 +430,12 @@ public class BiStreamTest {
 
   private static <K, V> IterableSubject assertStream(Stream<?> stream) {
     return assertThat(stream.collect(toList()));
+  }
+
+  // Intentionally declare the parameter types without wildcards, to make sure
+  // BiCollector can still work with such naive method references.
+  private static <T, K, V> Collector<T, ?, ImmutableListMultimap<K, V>> toImmutableMultimap(
+      Function<T, K> keyMapper, Function<T, V> valueMapper) {
+    return ImmutableListMultimap.toImmutableListMultimap(keyMapper, valueMapper);
   }
 }
