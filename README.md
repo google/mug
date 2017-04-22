@@ -50,6 +50,15 @@ BiStream.zip(requests, responses)
     .map(RequestAndResponseLog::new);
 ```
 
+**Example 3: to fluently build a Map:**
+
+```java
+Map<DoctorId, Patient> patientsByDoctorId = BiStream.zip(doctors, patients)
+    .filter((doctor, patient) -> patient.likes(doctor))
+    .mapKeys(Doctor::getId)
+    .toMap();
+```
+
 #### [MoreStreams](https://google.github.io/mug/apidocs/com/google/mu/util/stream/MoreStreams.html)
 
 **Example 1: to split a stream into smaller-size chunks (batches):**
