@@ -59,6 +59,15 @@ Map<DoctorId, Patient> patientsByDoctorId = BiStream.zip(doctors, patients)
     .toMap();
 ```
 
+**Example 4: to fluently build Guava ImmutableListMultimap:**
+
+```java
+ImmutableListMultimap<ZipCode, Address> addressesByZipCode = biStream(addresses)
+    .mapKeys(Address::getZipCode)
+    .<ImmutableListMultimap<ZipCode, Address>>collect(
+        ImmutableListMultimap::toImmutableListMultimap);
+```
+
 #### [MoreStreams](https://google.github.io/mug/apidocs/com/google/mu/util/stream/MoreStreams.html)
 
 **Example 1: to split a stream into smaller-size chunks (batches):**
