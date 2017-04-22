@@ -16,11 +16,10 @@ import java.util.stream.Collector;
 @FunctionalInterface
 public interface BiCollector<K, V, R> {
   /**
-   * Adapts to a {@code Collector<T, ? R>}, by mapping the inputs through {@code keyFunction}
-   * and {@code valueFunction} and subsequently collecting the key-value pairs with this
+   * Adapts to a {@code Collector<T, ? R>}, by mapping the inputs through {@code keyMapper}
+   * and {@code valueMapper} and subsequently collecting the key-value pairs with this
    * {@code BiCollector}.
    */
   <T> Collector<T, ?, R> asCollector(
-      Function<? super T, ? extends K> keyFunction,
-      Function<? super T, ? extends V> valueFunction);
+      Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper);
 }

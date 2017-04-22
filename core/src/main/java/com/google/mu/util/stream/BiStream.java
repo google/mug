@@ -313,6 +313,8 @@ public final class BiStream<K, V> implements AutoCloseable {
    * Collects the stream into a {@code Map<K, V>}.
    * Duplicate keys results in {@link IllegalStateException}.
    *
+   * <p>Equivalent to {@code collect(Collectors::toMap)}.
+   *
    * @since 1.2
    */
   public Map<K, V> toMap() {
@@ -324,6 +326,8 @@ public final class BiStream<K, V> implements AutoCloseable {
   /**
    * Collects the stream into a {@code ConcurrentMap<K, V>}.
    * Duplicate keys results in {@link IllegalStateException}.
+   *
+   * <p>Equivalent to {@code collect(Collectors::toConcurrentMap)}.
    *
    * @since 1.2
    */
