@@ -316,7 +316,7 @@ public final class BiStream<K, V> implements AutoCloseable {
    * @since 1.2
    */
   public Map<K, V> toMap() {
-    // TODO: inlining toMap works in Eclipse but not in the current javac compiler.
+    // TODO: collect(Collectors::toMap) compiles in Eclipse but not in current javac.
     BiCollector<K, V, Map<K, V>> collector = Collectors::toMap;
     return collect(collector);
   }
@@ -328,9 +328,8 @@ public final class BiStream<K, V> implements AutoCloseable {
    * @since 1.2
    */
   public ConcurrentMap<K, V> toConcurrentMap() {
-    // TODO: inlining toConcurrentMap works in Eclipse but not in the current javac compiler.
-    BiCollector<? super K, ? super V, ? extends ConcurrentMap<K, V>> collector =
-        Collectors::toConcurrentMap;
+    // TODO: collect(Collectors::toConcurrentMap) compiles in Eclipse but not in current javac.
+    BiCollector<K, V, ConcurrentMap<K, V>> collector = Collectors::toConcurrentMap;
     return collect(collector);
   }
 
@@ -340,7 +339,7 @@ public final class BiStream<K, V> implements AutoCloseable {
    * @since 1.2
    */
   public <R> R collect(BiCollector<? super K, ? super V, ? extends R> collector) {
-    return underlying.collect(collector.collector(Map.Entry::getKey, Map.Entry::getValue));
+    return underlying.collect(collector.asCollector(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   /**
