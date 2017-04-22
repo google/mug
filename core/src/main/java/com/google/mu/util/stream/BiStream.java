@@ -339,7 +339,7 @@ public final class BiStream<K, V> implements AutoCloseable {
    * @since 1.2
    */
   public <R> R collect(BiCollector<? super K, ? super V, ? extends R> collector) {
-    return underlying.collect(collector.collector(Map.Entry::getKey, Map.Entry::getValue));
+    return underlying.collect(collector.asCollector(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   /**
