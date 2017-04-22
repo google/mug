@@ -5,7 +5,8 @@ import java.util.stream.Collector;
 
 /**
  * A collector passed to {@link BiStream#collect}. For example:  <pre>{@code
- *   Map<String, Integer> map = BiStream.of("a", 1).collect(Collectors::toMap);
+ *   BiCollector<String, Integer, Map<String, Integer>> collector = Collectors::toMap;
+ *   Map<String, Integer> map = BiStream.of("a", 1).collect(collector);
  * }</pre>
  *
  * @param <K> the key type
@@ -25,5 +26,6 @@ public interface BiCollector<K, V, R> {
   // method references matching this signature.
   // Signatures with or without wildcards should both match.
   // In other words, this signature optimizes flexibility for implementors, not callers.
-  <T> Collector<T, ?, R> asCollector(Function<T, K> keyMapper, Function<T, V> valueMapper);
+  <T> Collector<T, ?, ? extends R> asCollector(
+      Function<T, K> keyMapper, Function<T, V> valueMapper);
 }

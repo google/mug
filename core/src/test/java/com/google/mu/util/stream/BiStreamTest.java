@@ -208,16 +208,14 @@ public class BiStreamTest {
   }
 
   @Test public void testCollect() {
-    BiCollector<String, Integer, ImmutableMap<String, Integer>> collector =
-        ImmutableMap::toImmutableMap;
-    assertThat(BiStream.of("one", 1, "two", 2).collect(collector))
+    assertThat(BiStream.of("one", 1, "two", 2)
+            .<ImmutableMap<String, Integer>>collect(ImmutableMap::toImmutableMap))
         .containsExactly("one", 1, "two", 2);
   }
 
   @Test public void testCollect_toImmutableListMultimapWithInflexibleMapperTypes() {
-    BiCollector<String, Integer, ImmutableListMultimap<String, Integer>> collector =
-        BiStreamTest::toImmutableMultimap;
-    assertThat(BiStream.of("one", 1, "one", 10, "two", 2).collect(collector))
+    assertThat(BiStream.of("one", 1, "one", 10, "two", 2)
+            .<ImmutableMultimap<String, Integer>>collect(BiStreamTest::toImmutableMultimap))
         .containsExactlyEntriesIn(ImmutableListMultimap.of("one", 1, "one", 10, "two", 2));
   }
 
