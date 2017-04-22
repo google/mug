@@ -5,7 +5,8 @@ import java.util.stream.Collector;
 
 /**
  * A collector passed to {@link BiStream#collect}. For example:  <pre>{@code
- *   Map<String, Integer> map = BiStream.of("a", 1).collect(Collectors::toMap);
+ *   BiCollector<String, Integer, Map<String, Integer>> collector = Collectors::toMap;
+ *   Map<String, Integer> map = BiStream.of("a", 1).collect(collector);
  * }</pre>
  *
  * @param <K> the key type
