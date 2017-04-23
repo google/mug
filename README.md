@@ -64,8 +64,7 @@ Map<DoctorId, Patient> patientsByDoctorId = BiStream.zip(doctors, patients)
 ```java
 ImmutableListMultimap<ZipCode, Address> addressesByZipCode = biStream(addresses)
     .mapKeys(Address::getZipCode)
-    .<ImmutableListMultimap<ZipCode, Address>>collect(
-        ImmutableListMultimap::toImmutableListMultimap);
+    .collect(ImmutableListMultimap::toImmutableListMultimap);
 ```
 
 #### [MoreStreams](https://google.github.io/mug/apidocs/com/google/mu/util/stream/MoreStreams.html)
