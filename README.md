@@ -3,7 +3,7 @@ Disclaimer: This is not an official Google product.
 # MµG
 A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/index.html)), with 0 deps. ![](https://travis-ci.org/google/mug.svg?branch=master)
 
-* [Stream utilities](#stream-utilities).
+* [Stream utils](#stream-utilities).
 * [Retryer](#retryer) retries.
 * [Maybe](#maybe) tunnels checked exceptions through streams or futures.
 * [Funnel](#funnel) flows objects through batch conversions in FIFO order.
@@ -34,15 +34,6 @@ BiStream.indexed(inputs.stream())
     .forEach((i, v) -> System.out.println(i + ": " + v));
 ```
 
-or to convert and copy to a pre-sized output list:
-```java
-List<String> outputs = Arrays.asList(new String[inputs.size()]);
-BiStream.indexed(inputs.stream())
-    .peek((i, v) -> System.out.println(i + ": " + v))
-    .mapValues(Object::toString)
-    .forEach(outputs::set);
-```
-
 **Example 2: to combine two streams:**
 
 ```java
@@ -50,7 +41,7 @@ BiStream.zip(requests, responses)
     .map(RequestAndResponseLog::new);
 ```
 
-**Example 3: to fluently build a Map:**
+**Example 3: to build a Map fluently:**
 
 ```java
 Map<DoctorId, Patient> patientsByDoctorId = BiStream.zip(doctors, patients)
@@ -59,7 +50,7 @@ Map<DoctorId, Patient> patientsByDoctorId = BiStream.zip(doctors, patients)
     .toMap();
 ```
 
-**Example 4: to fluently build Guava ImmutableListMultimap:**
+**Example 4: to build Guava ImmutableListMultimap fluently:**
 
 ```java
 ImmutableListMultimap<ZipCode, Address> addressesByZipCode = biStream(addresses)
