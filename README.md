@@ -3,7 +3,7 @@ Disclaimer: This is not an official Google product.
 # MµG
 A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/index.html)), with 0 deps. ![](https://travis-ci.org/google/mug.svg?branch=master)
 
-* [Stream utils](#stream-utilities).
+* [Stream utils](#stream-utilities) ([BiStream](#bistream-streams-pairs-of-objects), [MoreStreams](#morestreams)).
 * [Retryer](#retryer) retries.
 * [Maybe](#maybe) tunnels checked exceptions through streams or futures.
 * [Funnel](#funnel) flows objects through batch conversions in FIFO order.
@@ -21,7 +21,7 @@ Add the following to pom.xml:
   </dependency>
 ```
 
-## Stream Utilities
+## Stream utils
 
 #### [BiStream](https://google.github.io/mug/apidocs/com/google/mu/util/stream/BiStream.html) streams pairs of objects.
 
