@@ -107,14 +107,20 @@ public class BiCollectionTest {
         .inOrder();
   }
 
-  @Test public void testBuilder_put() {
-    assertKeyValues(new BiCollection.Builder<>().put("one", 1).build())
+  @Test public void testBuilder_add() {
+    assertKeyValues(new BiCollection.Builder<>().add("one", 1).build())
         .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1))
         .inOrder();
   }
 
-  @Test public void testBuilder_putAll() {
-    assertKeyValues(new BiCollection.Builder<>().putAll(ImmutableMap.of("one", 1)).build())
+  @Test public void testBuilder_addAllFromMap() {
+    assertKeyValues(new BiCollection.Builder<>().addAll(ImmutableMap.of("one", 1)).build())
+        .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1))
+        .inOrder();
+  }
+
+  @Test public void testBuilder_addAllFromBiCollection() {
+    assertKeyValues(new BiCollection.Builder<>().addAll(BiCollection.of("one", 1)).build())
         .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1))
         .inOrder();
   }
