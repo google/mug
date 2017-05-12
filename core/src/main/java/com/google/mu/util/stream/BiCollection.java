@@ -16,6 +16,11 @@ import java.util.stream.Collectors;
  * A re-streamable collection of pairs. Suitable when the pairs aren't logically a {@code Map}
  * or {@code Multimap}.
  *
+ * <p>This class is thread-safe if the underlying collection is thread-safe. For example:
+ * {@code BiStream.zip(dtos, domains).toBiCollection()} doesn't guarantee thread safety, whereas
+ * {@code BiStream.zip(dtos, domains).toBiCollection(ImmutableList::toImmutableList)} is guaranteed
+ * to be immutable and thread safe.
+ *
  * @since 1.3
  */
 public final class BiCollection<L, R> {
