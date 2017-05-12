@@ -4,8 +4,10 @@ import static com.google.mu.util.stream.BiStream.kv;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
@@ -120,5 +122,41 @@ public final class BiCollection<L, R> {
   /** Streams over this {@code BiCollection}. */
   public BiStream<L, R> stream() {
     return new BiStream<>(entries.stream());
+  }
+
+  /**
+   * Builds {@link BiCollection}.
+   *
+   * @since 1.3
+   */
+  public static final class Builder<L, R> {
+    private final List<Map.Entry<L, R>> pairs = new ArrayList<>();
+
+    /** Puts a new pair of {@code left} and {@code right}. */
+    public Builder<L, R> put(L left, R right) {
+      pairs.add(kv(left, right));
+      return this;
+    }
+
+    /** Puts all key-value pairs from {@code map} into this builder. */
+    public Builder<L, R> putAll(Map<? extends L, ? extends R> map) {
+      return putAll(map.entrySet());
+    }
+
+    /** Puts all key-value pairs from {@code entries} into this builder. */
+    public Builder<L, R> putAll(Collection<? extends Map.Entry<? extends L, ? extends R>> entries) {
+      for (Map.Entry<? extends L, ? extends R> entry : entries) {
+        pairs.add(kv(entry.getKey(), entry.getValue()));
+      }
+      return this;
+    }
+
+    /**
+     * Returns a new {@link BiCollection} encapsulating the snapshot of pairs in this builder
+     * at the time {@code build()} is invoked.
+     */
+    public BiCollection<L, R> build() {
+      return from(new ArrayList<>(pairs));
+    }
   }
 }

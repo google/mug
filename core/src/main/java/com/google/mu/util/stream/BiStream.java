@@ -471,21 +471,24 @@ public final class BiStream<K, V> implements AutoCloseable {
     underlying.close();
   }
 
-  /** Builds {@link BiStream}. */
+  /**
+   * Builds {@link BiStream}.
+   *
+   * @deprecated Use {@link BiCollection.Builder} instead.
+   */
+  @Deprecated
   public static final class Builder<K, V> {
-    private final Stream.Builder<Map.Entry<K, V>> entries = Stream.builder();
+    private final BiCollection.Builder<K, V> entries = new BiCollection.Builder<>();
 
     /** Puts a new pair of {@code key} and {@code value}. */
     public Builder<K, V> put(K key, V value) {
-      entries.add(kv(key, value));
+      entries.put(key, value);
       return this;
     }
 
     /** Puts all key-value pairs from {@code map} into this builder. */
     public Builder<K, V> putAll(Map<? extends K, ? extends V> map) {
-      for (Map.Entry<? extends K, ? extends V> entry : map.entrySet()) {
-        entries.add(kv(entry.getKey(), entry.getValue()));
-      }
+      entries.putAll(map);
       return this;
     }
 
@@ -494,7 +497,7 @@ public final class BiStream<K, V> implements AutoCloseable {
      * at the time {@code build()} is invoked.
      */
     public BiStream<K, V> build() {
-      return from(entries.build());
+      return entries.build().stream();
     }
   }
 
