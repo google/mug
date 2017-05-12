@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
  *   BiStream.zip(dtos, domains).toBiCollection(ImmutableList::toImmutableList)
  * }</pre> is guaranteed to be immutable and thread safe.
  *
- * @since 1.3
+ * @since 1.4
  */
 public final class BiCollection<L, R> {
 
@@ -144,7 +144,7 @@ public final class BiCollection<L, R> {
   /**
    * Builds {@link BiCollection}.
    *
-   * @since 1.3
+   * @since 1.4
    */
   public static final class Builder<L, R> {
     private final List<Map.Entry<L, R>> pairs = new ArrayList<>();

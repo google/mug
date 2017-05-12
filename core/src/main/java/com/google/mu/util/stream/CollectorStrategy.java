@@ -23,6 +23,8 @@ import java.util.stream.Collector;
  * {@code theApi(Collectors::toList)} or {@code theApi(ImmutableList::toImmutableList)}.
  *
  * <p>This allows users to control mutability and thread-safety etc.
+ *
+ * @since 1.4
  */
 @FunctionalInterface
 public interface CollectorStrategy {
