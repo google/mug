@@ -77,8 +77,8 @@ public final class BiCollection<L, R> {
    * Returns a {@code Collector} that extracts the pairs from the input stream,
    * and then collects them into a {@code BiCollection}.
    *
-   * @param leftFunction function to extract the first element of each pair
-   * @param rightFunction function to extract the second element of each pair
+   * @param leftFunction extracts the first element of each pair
+   * @param rightFunction extracts the second element of each pair
    * @param collectorStrategy determines the kind of collection to use. For example:
    *        {@code Collectors::toList} or {@code ImmutableList::toImmutableList}.
    */
@@ -98,8 +98,8 @@ public final class BiCollection<L, R> {
    * Returns a {@code Collector} that extracts the pairs from the input stream,
    * and then collects them into a {@code BiCollection}.
    *
-   * @param leftFunction function to extract the first element of each pair
-   * @param rightFunction function to extract the second element of each pair
+   * @param leftFunction extracts the first element of each pair
+   * @param rightFunction extracts the second element of each pair
    */
   public static <T, L, R> Collector<T, ?, BiCollection<L, R>> toBiCollection(
       Function<? super T, ? extends L> leftFunction,
