@@ -399,6 +399,12 @@ public class BiStreamTest {
         .inOrder();
   }
 
+  @Test public void testInverse() {
+    assertKeyValues(BiStream.of("a", 1).inverse())
+        .containsExactlyEntriesIn(ImmutableMultimap.of(1, "a"))
+        .inOrder();
+  }
+
   @Test public void toBiCollectionWithoutCollectorStrategy() {
     BiCollection<String, Integer> biCollection = BiStream.of("a", 1).toBiCollection();
     assertKeyValues(biCollection.stream())
