@@ -3,7 +3,7 @@ Disclaimer: This is not an official Google product.
 # MµG
 A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/index.html)), with 0 deps. ![](https://travis-ci.org/google/mug.svg?branch=master)
 
-* [Stream utilities](#stream-utilities).
+* Stream utils ([BiStream](#bistream-streams-pairs-of-objects), [MoreStreams](#morestreams)).
 * [Retryer](#retryer) retries.
 * [Maybe](#maybe) tunnels checked exceptions through streams or futures.
 * [Funnel](#funnel) flows objects through batch conversions in FIFO order.
@@ -17,11 +17,11 @@ Add the following to pom.xml:
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug</artifactId>
-    <version>1.0</version>
+    <version>1.2</version>
   </dependency>
 ```
 
-## Stream Utilities
+## Stream utils
 
 #### [BiStream](https://google.github.io/mug/apidocs/com/google/mu/util/stream/BiStream.html) streams pairs of objects.
 
@@ -34,15 +34,6 @@ BiStream.indexed(inputs.stream())
     .forEach((i, v) -> System.out.println(i + ": " + v));
 ```
 
-or to convert and copy to a pre-sized output list:
-```java
-List<String> outputs = Arrays.asList(new String[inputs.size()]);
-BiStream.indexed(inputs.stream())
-    .peek((i, v) -> System.out.println(i + ": " + v))
-    .mapValues(Object::toString)
-    .forEach(outputs::set);
-```
-
 **Example 2: to combine two streams:**
 
 ```java
@@ -50,13 +41,21 @@ BiStream.zip(requests, responses)
     .map(RequestAndResponseLog::new);
 ```
 
-**Example 3: to fluently build a Map:**
+**Example 3: to build a Map fluently:**
 
 ```java
 Map<DoctorId, Patient> patientsByDoctorId = BiStream.zip(doctors, patients)
     .filter((doctor, patient) -> patient.likes(doctor))
     .mapKeys(Doctor::getId)
     .toMap();
+```
+
+**Example 4: to build Guava ImmutableListMultimap fluently:**
+
+```java
+ImmutableListMultimap<ZipCode, Address> addressesByZipCode = biStream(addresses)
+    .mapKeys(Address::getZipCode)
+    .collect(ImmutableListMultimap::toImmutableListMultimap);
 ```
 
 #### [MoreStreams](https://google.github.io/mug/apidocs/com/google/mu/util/stream/MoreStreams.html)

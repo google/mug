@@ -18,6 +18,7 @@ import static com.google.mu.util.stream.MoreStreams.iterateThrough;
 import static java.util.Objects.requireNonNull;
 
 import java.util.AbstractMap;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -64,7 +65,7 @@ import com.google.mu.function.CheckedBiConsumer;
 public final class BiStream<K, V> implements AutoCloseable {
   final Stream<? extends Map.Entry<? extends K, ? extends V>> underlying;
 
-  private BiStream(Stream<? extends Entry<? extends K, ? extends V>> underlying) {
+  BiStream(Stream<? extends Entry<? extends K, ? extends V>> underlying) {
     this.underlying = requireNonNull(underlying);
   }
 
@@ -110,16 +111,26 @@ public final class BiStream<K, V> implements AutoCloseable {
    * }</pre>
    */
   public static <T> BiStream<T, T> biStream(Stream<? extends T> stream) {
-    return from(stream.map(t -> kv(t, t)));
+    return new BiStream<>(stream.map(t -> kv(t, t)));
   }
 
-  /** Wraps {@code entries} in a {@code BiStream}. */
+  /**
+   * Wraps {@code entries} in a {@code BiStream}.
+   *
+   * @deprecated Use {@link BiCollection#from(Collection)} instead.
+   */
+  @Deprecated
   public static <K, V> BiStream<K, V> from(
       Stream<? extends Map.Entry<? extends K, ? extends V>> entries) {
     return new BiStream<>(entries);
   }
 
-  /** Wraps entries from {@code map} in a {@code BiStream}. */
+  /**
+   * Wraps entries from {@code map} in a {@code BiStream}.
+   *
+   * @deprecated Use {@link BiCollection#from(Map)} instead.
+   */
+  @Deprecated
   public static <K, V> BiStream<K, V> from(Map<? extends K, ? extends V> map) {
     return from(map.entrySet().stream());
   }
@@ -345,6 +356,27 @@ public final class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
+   * Collects into a {@code BiCollection} using {@code collectorStrategy}
+   * with all elements in this stream.
+   * 
+   * @since 1.3
+   */
+  public BiCollection<K, V> toBiCollection(CollectorStrategy collectorStrategy) {
+    Collection<? extends Map.Entry<? extends K, ? extends V>> entries =
+        underlying.collect(collectorStrategy.collector());
+    return BiCollection.from(entries);
+  }
+
+  /**
+   * Collects into a {@code BiCollection} with all elements in this stream.
+   * 
+   * @since 1.3
+   */
+  public BiCollection<K, V> toBiCollection() {
+    return toBiCollection(Collectors::toList);
+  }
+
+  /**
    * Iterates through each pair sequentially.
    * {@code consumer} is allowed to throw a checked exception.
    */
@@ -471,7 +503,7 @@ public final class BiStream<K, V> implements AutoCloseable {
     return from(underlying.map(forEntries(mapper)));
   }
 
-  private static <K, V> Map.Entry<K, V> kv(K key, V value) {
+  static <K, V> Map.Entry<K, V> kv(K key, V value) {
     return new AbstractMap.SimpleEntry<>(key, value);
   }
 
@@ -522,7 +554,7 @@ public final class BiStream<K, V> implements AutoCloseable {
 
     @Override public boolean tryAdvance(Consumer<? super Map.Entry<K, V>> action) {
       requireNonNull(action);
-      KV<K, V> kv = new KV<>();
+      KeyAndValue<K, V> kv = new KeyAndValue<>();
       boolean advanced = keys.tryAdvance(k -> kv.key = k) && values.tryAdvance(v -> kv.value = v);
       if (advanced) action.accept(kv(kv.key, kv.value));
       return advanced;
@@ -541,7 +573,7 @@ public final class BiStream<K, V> implements AutoCloseable {
     }
   }
 
-  private static final class KV<K, V> {
+  private static final class KeyAndValue<K, V> {
     K key;
     V value;
   }

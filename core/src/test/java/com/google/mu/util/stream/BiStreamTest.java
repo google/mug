@@ -32,6 +32,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
@@ -85,7 +86,7 @@ public class BiStreamTest {
   }
 
   @Test public void testFromMap() {
-    assertKeyValues(BiStream.from(ImmutableMap.of("one", 1)))
+    assertKeyValues(BiCollection.from(ImmutableMap.of("one", 1)).stream())
         .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1))
         .inOrder();
   }
@@ -410,6 +411,27 @@ public class BiStreamTest {
         .inOrder();
   }
 
+  @Test public void toBiCollectionWithoutCollectorStrategy() {
+    BiCollection<String, Integer> biCollection = BiStream.of("a", 1).toBiCollection();
+    assertKeyValues(biCollection.stream())
+        .containsExactlyEntriesIn(ImmutableMultimap.of("a", 1))
+        .inOrder();
+    assertKeyValues(biCollection.stream())
+        .containsExactlyEntriesIn(ImmutableMultimap.of("a", 1))
+        .inOrder();
+  }
+
+  @Test public void toBiCollectionWithCollectorStrategy() {
+    BiCollection<String, Integer> biCollection = BiStream.of("a", 1)
+        .toBiCollection(ImmutableList::toImmutableList);
+    assertKeyValues(biCollection.stream())
+        .containsExactlyEntriesIn(ImmutableMultimap.of("a", 1))
+        .inOrder();
+    assertKeyValues(biCollection.stream())
+        .containsExactlyEntriesIn(ImmutableMultimap.of("a", 1))
+        .inOrder();
+  }
+
   @Test public void testNulls() {
     NullPointerTester tester = new NullPointerTester();
     asList(BiStream.class.getDeclaredMethods()).stream()
@@ -421,9 +443,9 @@ public class BiStreamTest {
   }
 
   private static <K, V> MultimapSubject assertKeyValues(BiStream<K, V> stream) {
-    ImmutableListMultimap.Builder<K, V> builder = ImmutableListMultimap.builder();
-    stream.forEachOrdered(builder::put);
-    return assertThat(builder.build());
+    ImmutableListMultimap<K, V> multimap = stream
+        .<ImmutableListMultimap<K, V>>collect(ImmutableListMultimap::toImmutableListMultimap);
+    return assertThat(multimap);
   }
 
   private static <K, V> IterableSubject assertStream(Stream<?> stream) {
