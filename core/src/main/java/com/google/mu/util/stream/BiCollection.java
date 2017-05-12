@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
  * <p>This class is thread-safe if the underlying collection is thread-safe. For example:
  * <pre>  {@code
  *   BiStream.zip(dtos, domains).toBiCollection()
- * }</pre> doesn't guarantee thread safety, whereas
+ * }</pre> doesn't guarantee thread safety; whereas
  * <pre>  {@code
  *   BiStream.zip(dtos, domains).toBiCollection(ImmutableList::toImmutableList)
  * }</pre> is guaranteed to be immutable and thread safe.
