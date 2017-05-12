@@ -144,10 +144,12 @@ public final class BiCollection<L, R> {
     return new BiStream<>(entries.stream());
   }
 
+  /** @since 1.5 */
   @Override public int hashCode() {
     return entries.hashCode();
   }
 
+  /** @since 1.5 */
   @Override public boolean equals(Object obj) {
     if (obj instanceof BiCollection<?, ?>) {
       BiCollection<?, ?> that = (BiCollection<?, ?>) obj;
@@ -156,6 +158,7 @@ public final class BiCollection<L, R> {
     return false;
   }
 
+  /** @since 1.5 */
   @Override public String toString() {
     return entries.toString();
   }
