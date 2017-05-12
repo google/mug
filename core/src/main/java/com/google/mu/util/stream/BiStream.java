@@ -484,13 +484,13 @@ public final class BiStream<K, V> implements AutoCloseable {
 
     /** Puts a new pair of {@code key} and {@code value}. */
     public Builder<K, V> put(K key, V value) {
-      entries.put(key, value);
+      entries.add(key, value);
       return this;
     }
 
     /** Puts all key-value pairs from {@code map} into this builder. */
     public Builder<K, V> putAll(Map<? extends K, ? extends V> map) {
-      entries.putAll(map);
+      entries.addAll(map);
       return this;
     }
 
