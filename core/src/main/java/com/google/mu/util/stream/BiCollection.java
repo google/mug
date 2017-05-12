@@ -44,6 +44,8 @@ import java.util.stream.Collectors;
  */
 public final class BiCollection<L, R> {
 
+  private static final BiCollection<?, ?> EMPTY = from(Collections.emptyList());
+
   private final Collection<? extends Map.Entry<? extends L, ? extends R>> entries;
 
   private BiCollection(Collection<? extends Entry<? extends L, ? extends R>> underlying) {
@@ -51,8 +53,9 @@ public final class BiCollection<L, R> {
   }
 
   /** Returns an empty {@code BiCollection}. */
+  @SuppressWarnings("unchecked")
   public static <L, R> BiCollection<L, R> of() {
-    return from(Collections.emptyList());
+    return (BiCollection<L, R>) EMPTY;
   }
 
   /** Returns a {@code BiCollection} for {@code left} and {@code right}. */
@@ -139,6 +142,25 @@ public final class BiCollection<L, R> {
   /** Streams over this {@code BiCollection}. */
   public BiStream<L, R> stream() {
     return new BiStream<>(entries.stream());
+  }
+
+  /** @since 1.5 */
+  @Override public int hashCode() {
+    return entries.hashCode();
+  }
+
+  /** @since 1.5 */
+  @Override public boolean equals(Object obj) {
+    if (obj instanceof BiCollection<?, ?>) {
+      BiCollection<?, ?> that = (BiCollection<?, ?>) obj;
+      return entries.equals(that.entries);
+    }
+    return false;
+  }
+
+  /** @since 1.5 */
+  @Override public String toString() {
+    return entries.toString();
   }
 
   /**

@@ -28,6 +28,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
+import com.google.common.testing.EqualsTester;
 import com.google.common.testing.NullPointerTester;
 import com.google.common.truth.MultimapSubject;
 
@@ -36,6 +37,7 @@ public class BiCollectionTest {
 
   @Test public void empty() {
     assertKeyValues(BiCollection.of()).isEmpty();
+    assertThat(BiCollection.of()).isSameAs(BiCollection.of());
   }
 
   @Test public void onePair() {
@@ -132,6 +134,20 @@ public class BiCollectionTest {
         .forEach(tester::ignore);
     tester.testAllPublicStaticMethods(BiCollection.class);
     tester.testAllPublicInstanceMethods(BiCollection.of());
+  }
+
+  @Test public void testEquals() {
+    new EqualsTester()
+        .addEqualityGroup(BiCollection.of(), BiCollection.of())
+        .addEqualityGroup(BiCollection.of("a", 1), BiCollection.of("a", 1))
+        .addEqualityGroup(BiCollection.of("a", 1, "a", 1))
+        .testEquals();
+  }
+
+  @Test public void testToString() {
+    assertThat(BiCollection.of().toString()).isEqualTo("[]");
+    assertThat(BiCollection.of("a", 1).toString()).isEqualTo("[a=1]");
+    assertThat(BiCollection.of("a", 1, "b", 2).toString()).isEqualTo("[a=1, b=2]");
   }
 
   private static <K, V> MultimapSubject assertKeyValues(BiCollection<K, V> collection) {
