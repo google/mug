@@ -321,6 +321,15 @@ public final class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
+   * Returns an inverse view of this stream with keys and values swapped.
+   *
+   * @since 1.5
+   */
+  public BiStream<V, K> inverse() {
+    return map2((k, v) -> kv(v, k));
+  }
+
+  /**
    * Collects the stream into a {@code Map<K, V>}.
    * Duplicate keys results in {@link IllegalStateException}.
    *
