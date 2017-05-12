@@ -13,6 +13,7 @@ import org.junit.runners.JUnit4;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.testing.NullPointerTester;
 import com.google.common.truth.MultimapSubject;
 
@@ -89,6 +90,18 @@ public class BiCollectionTest {
             Map.Entry::getKey, Map.Entry::getValue, ImmutableList::toImmutableList));
     assertKeyValues(biCollection)
         .containsExactlyEntriesIn(ImmutableListMultimap.of(1, "one", 2, "two"))
+        .inOrder();
+  }
+
+  @Test public void testBuilder_put() {
+    assertKeyValues(new BiCollection.Builder<>().put("one", 1).build())
+        .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1))
+        .inOrder();
+  }
+
+  @Test public void testBuilder_putAll() {
+    assertKeyValues(new BiCollection.Builder<>().putAll(ImmutableMap.of("one", 1)).build())
+        .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1))
         .inOrder();
   }
 

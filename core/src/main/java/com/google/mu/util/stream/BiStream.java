@@ -357,7 +357,9 @@ public final class BiStream<K, V> implements AutoCloseable {
 
   /**
    * Collects into a {@code BiCollection} using {@code collectorStrategy}
-   * with all elements in this stream.
+   * with all elements in this stream. For example: <pre>  {@code
+   *   stream.toBiCollection(ImmutableList::toImmutableList)
+   * }</pre>
    * 
    * @since 1.3
    */
