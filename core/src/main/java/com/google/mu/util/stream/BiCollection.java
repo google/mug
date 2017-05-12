@@ -19,9 +19,12 @@ import java.util.stream.Collectors;
  * or {@code Multimap}.
  *
  * <p>This class is thread-safe if the underlying collection is thread-safe. For example:
- * {@code BiStream.zip(dtos, domains).toBiCollection()} doesn't guarantee thread safety, whereas
- * {@code BiStream.zip(dtos, domains).toBiCollection(ImmutableList::toImmutableList)} is guaranteed
- * to be immutable and thread safe.
+ * <pre>  {@code
+ *   BiStream.zip(dtos, domains).toBiCollection()
+ * }</pre> doesn't guarantee thread safety, whereas
+ * <pre>  {@code
+ *   BiStream.zip(dtos, domains).toBiCollection(ImmutableList::toImmutableList)
+ * }</pre> is guaranteed to be immutable and thread safe.
  *
  * @since 1.3
  */
