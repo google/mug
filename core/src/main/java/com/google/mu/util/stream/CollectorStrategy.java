@@ -7,6 +7,8 @@ import java.util.stream.Collector;
  * APIs that need to parameterize the type of collections to use for internal element types
  * can accept a {@code CollectorStrategy} as parameter. For example:
  * {@code theApi(Collectors::toList)} or {@code theApi(ImmutableList::toImmutableList)}.
+ *
+ * <p>This allows users to control mutability and thread-safety etc.
  */
 @FunctionalInterface
 public interface CollectorStrategy {
