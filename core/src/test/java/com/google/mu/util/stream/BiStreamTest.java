@@ -14,6 +14,7 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
@@ -26,6 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collector;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.junit.Test;
@@ -424,6 +426,17 @@ public class BiStreamTest {
     assertKeyValues(biCollection.stream())
         .containsExactlyEntriesIn(ImmutableMultimap.of("a", 1))
         .inOrder();
+  }
+
+  @Test public void testIndicesCached() {
+    int max = 100;
+    ImmutableList<Integer> indices1 =
+        BiStream.indexed(Collections.nCopies(max, "x").stream()).keys().collect(toImmutableList());
+    ImmutableList<Integer> indices2 =
+        BiStream.indexed(Collections.nCopies(max, "x").stream()).keys().collect(toImmutableList());
+    IntStream.range(0, max).forEach(index -> {
+      assertThat(indices1.get(index)).isSameAs(indices2.get(index));
+    });
   }
 
   @Test public void testNulls() {

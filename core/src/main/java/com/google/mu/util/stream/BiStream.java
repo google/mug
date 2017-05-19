@@ -151,7 +151,7 @@ public final class BiStream<K, V> implements AutoCloseable {
     Stream<Map.Entry<K, V>> paired = StreamSupport.stream(
             () -> new PairedUpSpliterator<>(keys.spliterator(), values.spliterator()),
             Spliterator.NONNULL, keys.isParallel() || values.isParallel());
-    return from(paired.onClose(keys::close).onClose(values::close));
+    return new BiStream<>(paired.onClose(keys::close).onClose(values::close));
   }
 
   /**
@@ -163,6 +163,9 @@ public final class BiStream<K, V> implements AutoCloseable {
    *     .mapValues(this::convertInput)
    *     .forEach(output::set);
    * }</pre>
+   *
+   * <p>Because Java runtime typically caches {@code Integer} instances for the range of
+   * {@code [0, 128]}, auto-boxing cost is negligible for small streams.
    */
   public static <V> BiStream<Integer, V> indexed(Stream<? extends V> values) {
     return zip(IntStream.iterate(0, i -> i + 1).boxed(), values);
@@ -560,6 +563,8 @@ public final class BiStream<K, V> implements AutoCloseable {
   private static final class PairedUpSpliterator<K, V> implements Spliterator<Map.Entry<K, V>> {
     private final Spliterator<? extends K> keys;
     private final Spliterator<? extends V> values;
+    private final Temp<K> currentKey = new Temp<>();
+    private final Temp<V> currentValue = new Temp<>();
   
     PairedUpSpliterator(Spliterator<? extends K> keys, Spliterator<? extends V> values) {
       this.keys = requireNonNull(keys);
@@ -568,9 +573,8 @@ public final class BiStream<K, V> implements AutoCloseable {
 
     @Override public boolean tryAdvance(Consumer<? super Map.Entry<K, V>> action) {
       requireNonNull(action);
-      KeyAndValue<K, V> kv = new KeyAndValue<>();
-      boolean advanced = keys.tryAdvance(k -> kv.key = k) && values.tryAdvance(v -> kv.value = v);
-      if (advanced) action.accept(kv(kv.key, kv.value));
+      boolean advanced = keys.tryAdvance(currentKey) && values.tryAdvance(currentValue);
+      if (advanced) action.accept(kv(currentKey.data, currentValue.data));
       return advanced;
     }
 
@@ -587,8 +591,11 @@ public final class BiStream<K, V> implements AutoCloseable {
     }
   }
 
-  private static final class KeyAndValue<K, V> {
-    K key;
-    V value;
+  private static final class Temp<T> implements Consumer<T> {
+    T data;
+
+    @Override public void accept(T v) {
+      this.data = v;
+    }
   }
 }
