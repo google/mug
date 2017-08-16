@@ -18,10 +18,12 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.util.concurrent.Parallelizer.forAll;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +42,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.Verifier;
@@ -48,23 +51,21 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import com.google.common.truth.IterableSubject;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.mu.util.concurrent.Parallelizer.UncheckedExecutionException;
 
 @RunWith(Parameterized.class)
 public class ParallelizerTest {
 
   private final Mode mode;
-  private final ExecutorService threadPool = Executors.newCachedThreadPool();
+  private final Threading threading;
+  private ExecutorService threadPool;
   private volatile int maxInFlight = 3;
   private Duration timeout = Duration.ofMillis(10);
   private final AtomicInteger activeThreads = new AtomicInteger();
   private final ConcurrentMap<Integer, String> translated = new ConcurrentHashMap<>();
   private final ConcurrentLinkedQueue<Throwable> thrown = new ConcurrentLinkedQueue<>();
   private final ConcurrentLinkedQueue<Object> interrupted = new ConcurrentLinkedQueue<>();
-
-  public ParallelizerTest(Mode mode) {
-    this.mode = mode;
-  }
 
   @Rule public final Verifier verifyTaskAssertions = new Verifier() {
     @Override protected void verify() throws Throwable {
@@ -75,6 +76,15 @@ public class ParallelizerTest {
       assertThat(activeThreads.get()).isEqualTo(0);
     }
   };
+
+  public ParallelizerTest(Mode mode, Threading threading) {
+    this.mode = mode;
+    this.threading = threading;
+  }
+
+  @Before public void initializeThreadPool() {
+    threadPool = threading.newExecutorService();
+  }
 
   @Test public void testOneInFlight() throws Exception {
     maxInFlight = 1;
@@ -117,6 +127,7 @@ public class ParallelizerTest {
   }
 
   @Test public void testTaskExceptionCancelsInFlightTasks() throws InterruptedException {
+    assumeFalse(threading == Threading.DIRECT);
     maxInFlight = 2;
     UncheckedExecutionException exception = assertThrows(
         UncheckedExecutionException.class,
@@ -132,6 +143,7 @@ public class ParallelizerTest {
   }
 
   @Test public void testSubmissionTimeoutCancelsInFlightTasks() throws InterruptedException {
+    assumeFalse(threading == Threading.DIRECT);
     assumeTrue(mode == Mode.INTERRUPTIBLY);
     maxInFlight = 2;
     timeout = Duration.ofMillis(1);
@@ -146,6 +158,7 @@ public class ParallelizerTest {
   }
 
   @Test public void testAwaitTimeoutCancelsInFlightTasks() throws InterruptedException {
+    assumeFalse(threading == Threading.DIRECT);
     assumeTrue(mode == Mode.INTERRUPTIBLY);
     maxInFlight = 2;
     timeout = Duration.ofMillis(1);
@@ -158,6 +171,7 @@ public class ParallelizerTest {
   }
 
   @Test public void testUninterruptible() throws InterruptedException {
+    assumeFalse(threading == Threading.DIRECT);
     assumeTrue(mode == Mode.UNINTERRUPTIBLY);
     maxInFlight = 2;
     List<Integer> numbers = asList(1, 2, 3, 4, 5);
@@ -187,6 +201,7 @@ public class ParallelizerTest {
   }
 
   @Test public void testInterruptible() throws InterruptedException {
+    assumeFalse(threading == Threading.DIRECT);
     assumeTrue(mode == Mode.INTERRUPTIBLY);
     maxInFlight = 2;
     List<Integer> numbers = asList(1, 2, 3, 4);
@@ -220,6 +235,22 @@ public class ParallelizerTest {
     assertThat(translated).doesNotContainKey(3);
     assertThat(translated).doesNotContainKey(4);
     assertThat(paralllelizationInterrupted.get()).isTrue();
+  }
+
+  @Test public void testErrorPropagated() {
+    Error error = new Error();
+    UncheckedExecutionException exception = assertThrows(
+        UncheckedExecutionException.class,
+        () -> parallelize(Stream.of(() -> raise(error))));
+    assertThat(exception.getCause()).isSameAs(error);
+  }
+
+  @Test public void testExceptionPropagated() {
+    RuntimeException exception = new RuntimeException();
+    UncheckedExecutionException caught = assertThrows(
+        UncheckedExecutionException.class,
+        () -> parallelize(Stream.of(() -> raise(exception))));
+    assertThat(caught.getCause()).isSameAs(exception);
   }
 
   private void translateToString(int i) {
@@ -299,9 +330,19 @@ public class ParallelizerTest {
     threadPool.awaitTermination(1, TimeUnit.SECONDS);
   }
 
-  @Parameters(name = "{index}: {0}")
-  public static Mode[] data() {
-    return Mode.values();
+  private static <E extends Throwable> void raise(E throwable) throws E {
+    throw throwable;
+  }
+
+  @Parameters(name = "{index}: {0}/{1}")
+  public static Object[][] data() {
+    List<Object[]> groups = new ArrayList<>();
+    for (Mode mode : Mode.values()) {
+      for (Threading threading : Threading.values()) {
+        groups.add(new Object[] {mode, threading});
+      }
+    }
+    return groups.toArray(new Object[0][]);
   }
 
   private enum Mode {
@@ -350,5 +391,25 @@ public class ParallelizerTest {
         Consumer<? super T> consumer,
         Duration timeout)
         throws TimeoutException, InterruptedException;
+  }
+
+  private enum Threading {
+    DIRECT {
+      @Override ExecutorService newExecutorService() {
+        return MoreExecutors.newDirectExecutorService();
+      }
+    },
+    CACHED_THREAD_POOL {
+      @Override ExecutorService newExecutorService() {
+        return Executors.newCachedThreadPool();
+      }
+    },
+    FIXED_THREAD_POOL {
+      @Override ExecutorService newExecutorService() {
+        return Executors.newFixedThreadPool(10);
+      }
+    },
+    ;
+    abstract ExecutorService newExecutorService();
   }
 }

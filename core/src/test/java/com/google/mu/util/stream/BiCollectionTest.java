@@ -140,6 +140,8 @@ public class BiCollectionTest {
     new EqualsTester()
         .addEqualityGroup(BiCollection.of(), BiCollection.of())
         .addEqualityGroup(BiCollection.of("a", 1), BiCollection.of("a", 1))
+        .addEqualityGroup(BiCollection.of("a", 2))
+        .addEqualityGroup(BiCollection.of("b", 1))
         .addEqualityGroup(BiCollection.of("a", 1, "a", 1))
         .testEquals();
   }
