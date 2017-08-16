@@ -63,17 +63,8 @@ import java.util.stream.StreamSupport;
  *     <li>Use {@code Parallelizer} if setting max concurrency is important.
  *     <li>Or else use parallel streams.
  *     </ul>
- * <li>Parallel streams are for running mass <em>computations</em> concurrently. The framework
- *     can parallelize the inputs, the {@code map()} calls, the {@code filter()} calls, or
- *     all of them. This comes with a requirement that the input stream must be safe to read
- *     from multiple threads. On the other hand, {@code Parallelizer} is for parallelizing
- *     <em>side-effects</em> encapsulated in the {@link Runnable} or {@link Consumer}.
- *     The input stream is always read from the calling thread so it doesn't have to be
- *     thread safe. <ul>
- *     <li>Use {@code Parallelizer} if the input stream isn't thread safe
- *         (and is too large to be copied into a thread-safe collection}.
- *     <li>Use parallel streams otherwise.
- *     </ul>
+ * <li>Parallel streams are for CPU-bound computations; while {@code Parallelizer} deals with
+ *     IO-bound operations.
  * <li>{@link #parallelize} can be interrupted, and can time out;
  *     parallel streams are uninterruptible.
  * <li>When a task throws, {@code Parallelizer} dismisses pending tasks, and cancels all in-flight
@@ -409,6 +400,7 @@ public final class Parallelizer {
     }
 
     private int freeze() {
+      propagateExceptions();
       return maxInFlight - semaphore.drainPermits();
     }
   }
