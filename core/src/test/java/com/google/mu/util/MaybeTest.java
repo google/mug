@@ -66,8 +66,7 @@ public class MaybeTest {
     MyException exception = new MyException("test");
     Maybe<?, MyException> maybe = Maybe.except(exception);
     MyException thrown = assertThrows(MyException.class, maybe::orElseThrow);
-    assertThat(thrown.getCause()).isSameAs(exception);
-    assertThat(thrown.getSuppressed()).isEmpty();
+    assertThat(thrown).isSameAs(exception);
   }
 
   @Test public void testOrElseThrow_failureWithCause() throws Throwable {
@@ -76,18 +75,7 @@ public class MaybeTest {
     exception.initCause(cause);
     Maybe<?, MyException> maybe = Maybe.except(exception);
     MyException thrown = assertThrows(MyException.class, maybe::orElseThrow);
-    assertThat(thrown.getCause()).isSameAs(exception);
-    assertThat(thrown.getSuppressed()).isEmpty();
-  }
-
-  @Test public void testOrElseThrow_failureWithSuppressed() throws Throwable {
-    MyException exception = new MyException("test");
-    Exception suppressed = new RuntimeException();
-    exception.addSuppressed(suppressed);
-    Maybe<?, MyException> maybe = Maybe.except(exception);
-    MyException thrown = assertThrows(MyException.class, maybe::orElseThrow);
-    assertThat(thrown.getCause()).isSameAs(exception);
-    assertThat(thrown.getSuppressed()).isEmpty();
+    assertThat(thrown).isSameAs(exception);
   }
 
   @Test public void testOrElseThrow_interruptedException() throws Throwable {
@@ -97,22 +85,6 @@ public class MaybeTest {
     InterruptedException interrupted = assertThrows(InterruptedException.class, maybe::orElseThrow);
     assertThat(interrupted.getCause()).isNull();
     assertThat(Thread.interrupted()).isFalse();
-  }
-
-  @Test public void testOrElseThrow_exceptionCannotBeDeserialized() throws Throwable {
-    ExceptionWithBadSerialization exception = new ExceptionWithBadSerialization();
-    Maybe<?, ExceptionWithBadSerialization> maybe = Maybe.except(exception);
-    ExceptionWithBadSerialization thrown =
-        assertThrows(ExceptionWithBadSerialization.class, maybe::orElseThrow);
-    assertThat(thrown).isSameAs(exception);
-  }
-
-  @Test public void testOrElseThrow_exceptionSerializedToSubtype() throws Throwable {
-    ExceptionWithCustomSerialization exception = new ExceptionWithCustomSerialization();
-    Maybe<?, ExceptionWithCustomSerialization> maybe = Maybe.except(exception);
-    ExceptionWithCustomSerialization thrown =
-        assertThrows(ExceptionWithCustomSerialization.class, maybe::orElseThrow);
-    assertThat(thrown.getCause()).isSameAs(exception);
   }
 
   @Test public void testOrElseThrow_explicitException_success() throws Throwable {
@@ -135,8 +107,7 @@ public class MaybeTest {
     MyException exception = new MyException("test");
     Maybe<?, MyException> maybe = Maybe.except(exception).map(Object::toString);
     MyException thrown = assertThrows(MyException.class, maybe::orElseThrow);
-    assertThat(thrown.getCause()).isSameAs(exception);
-    assertThat(thrown.getSuppressed()).isEmpty();
+    assertThat(thrown).isSameAs(exception);
   }
 
   @Test public void testFlatMap_success() {
@@ -148,7 +119,7 @@ public class MaybeTest {
     MyException exception = new MyException("test");
     Maybe<?, MyException> maybe = Maybe.except(exception).flatMap(o -> Maybe.of(o.toString()));
     MyException thrown = assertThrows(MyException.class, maybe::orElseThrow);
-    assertThat(thrown.getCause()).isSameAs(exception);
+    assertThat(thrown).isSameAs(exception);
     assertThat(thrown.getSuppressed()).isEmpty();
   }
 
@@ -535,20 +506,6 @@ public class MaybeTest {
   private static class MyUncheckedException extends RuntimeException {
     MyUncheckedException(String message) {
       super(message);
-    }
-  }
-
-  @SuppressWarnings("serial")
-  private static class ExceptionWithBadSerialization extends Exception {
-    private Object writeReplace() {
-      return new RuntimeException();
-    }
-  }
-
-  @SuppressWarnings("serial")
-  private static class ExceptionWithCustomSerialization extends Exception {
-    private Object writeReplace() {
-      return new ExceptionWithCustomSerialization() {};
     }
   }
 }
