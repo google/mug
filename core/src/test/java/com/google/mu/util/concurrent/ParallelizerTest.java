@@ -166,8 +166,8 @@ public class ParallelizerTest {
         TimeoutException.class,
         () -> parallelize(serialTasks(
             () -> blockFor(1), // Will be interrupted
-            () -> blockFor(2)))); // Will be interrupted
-    shutdownAndAssertInterruptedKeys().containsExactly(1, 2);
+            () -> blockFor(2)))); // Might be interrupted
+    shutdownAndAssertInterruptedKeys().contains(1);
   }
 
   @Test public void testUninterruptible() throws InterruptedException {
