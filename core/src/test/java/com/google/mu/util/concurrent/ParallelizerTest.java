@@ -167,7 +167,7 @@ public class ParallelizerTest {
         () -> parallelize(serialTasks(
             () -> blockFor(1), // Will be interrupted
             () -> blockFor(2)))); // Might be interrupted
-    shutdownAndAssertInterruptedKeys().containsExactly(1);
+    shutdownAndAssertInterruptedKeys().contains(1);
   }
 
   @Test public void testUninterruptible() throws InterruptedException {
