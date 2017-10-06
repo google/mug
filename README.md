@@ -419,8 +419,8 @@ Some major shopping-list differences:
 * Exceptions from worker threads are wrapped so that stack trace isn't misleading.
 
 But fundamentally:
-* Parallel streams are best when CPU is the bottle-neck. JDK has built-in magic to optimally use the available cores so why manually tune anything?
-* Parallelizer is for parallelizing tasks where IO or external services are the bottleneck.
+* Parallel streams are for CPU-bound tasks. JDK has built-in magic to optimally use the available cores.
+* Parallelizer is for IO-bound tasks.
 
 #### Why not just submitting to a fixed thread pool?
 
