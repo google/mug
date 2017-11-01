@@ -521,7 +521,7 @@ public final class BiStream<K, V> implements AutoCloseable {
   }
 
   static <K, V> Map.Entry<K, V> kv(K key, V value) {
-    return new AbstractMap.SimpleEntry<>(key, value);
+    return new AbstractMap.SimpleImmutableEntry<>(key, value);
   }
 
   private static <K, V, T> Function<Map.Entry<? extends K, ? extends V>, T> forEntries(
