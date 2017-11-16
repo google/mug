@@ -58,6 +58,16 @@ ImmutableListMultimap<ZipCode, Address> addressesByZipCode = biStream(addresses)
     .collect(ImmutableListMultimap::toImmutableListMultimap);
 ```
 
+**Example 5: to iterate through a Map more concisely:**
+
+```java
+BiStream.from(addressMap).forEach((zip, address) -> {
+  ...
+});
+```
+
+
+
 #### [MoreStreams](https://google.github.io/mug/apidocs/com/google/mu/util/stream/MoreStreams.html)
 
 **Example 1: to split a stream into smaller-size chunks (batches):**
