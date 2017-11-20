@@ -58,6 +58,16 @@ ImmutableListMultimap<ZipCode, Address> addressesByZipCode = biStream(addresses)
     .collect(ImmutableListMultimap::toImmutableListMultimap);
 ```
 
+**Example 5: to iterate through a Map more concisely:**
+
+```java
+BiStream.from(addressMap).forEach((zip, address) -> {
+  ...
+});
+```
+
+
+
 #### [MoreStreams](https://google.github.io/mug/apidocs/com/google/mu/util/stream/MoreStreams.html)
 
 **Example 1: to split a stream into smaller-size chunks (batches):**
@@ -419,8 +429,8 @@ Some major shopping-list differences:
 * Exceptions from worker threads are wrapped so that stack trace isn't misleading.
 
 But fundamentally:
-* Parallel streams are best when CPU is the bottle-neck. JDK has built-in magic to optimally use the available cores so why manually tune anything?
-* Parallelizer is for parallelizing tasks where IO or external services are the bottleneck.
+* Parallel streams are for CPU-bound tasks. JDK has built-in magic to optimally use the available cores.
+* Parallelizer is for IO-bound tasks.
 
 #### Why not just submitting to a fixed thread pool?
 

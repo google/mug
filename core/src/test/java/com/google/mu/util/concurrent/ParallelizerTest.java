@@ -61,7 +61,7 @@ public class ParallelizerTest {
   private final Threading threading;
   private ExecutorService threadPool;
   private volatile int maxInFlight = 3;
-  private Duration timeout = Duration.ofMillis(10);
+  private Duration timeout = Duration.ofMillis(20);
   private final AtomicInteger activeThreads = new AtomicInteger();
   private final ConcurrentMap<Integer, String> translated = new ConcurrentHashMap<>();
   private final ConcurrentLinkedQueue<Throwable> thrown = new ConcurrentLinkedQueue<>();
