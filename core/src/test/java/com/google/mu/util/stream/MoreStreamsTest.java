@@ -14,6 +14,7 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
@@ -31,6 +32,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.NullPointerTester;
@@ -101,6 +103,14 @@ public class MoreStreamsTest {
   @Test public void flattenWithLeadingInfiniteStream() throws Exception {
     Stream<Integer> flattened =
         MoreStreams.flatten(Stream.of(Stream.iterate(1, i -> i + 1), Stream.of(100)));
+    assertThat(flattened.limit(5).collect(toList()))
+        .containsExactly(1, 2, 3, 4, 5).inOrder();
+  }
+
+  @Test public void flattenWithInfiniteOuterStream() throws Exception {
+    Stream<List<Integer>> infinite = Stream.iterate(
+        ImmutableList.of(1), l -> l.stream().map(i -> i + 1).collect(toImmutableList()));
+    Stream<Integer> flattened = MoreStreams.flatten(infinite.map(l -> l.stream()));
     assertThat(flattened.limit(5).collect(toList()))
         .containsExactly(1, 2, 3, 4, 5).inOrder();
   }
