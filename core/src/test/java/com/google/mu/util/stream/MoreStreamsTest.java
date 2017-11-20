@@ -27,7 +27,6 @@ import java.util.TreeSet;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -50,11 +49,77 @@ public class MoreStreamsTest {
         .containsExactly(100, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 1);
   }
 
-  // Infinite stream not supported, yet.
-  @Ignore @Test public void generateInfiniteStream() throws Exception {
+  @Test public void generateInfiniteStream() throws Exception {
     Stream<Integer> generated = MoreStreams.generate(1, i -> Stream.of(i + 1));
-    assertThat(Iterables.limit(MoreStreams.iterateOnce(generated), 2))
+    assertThat(generated.limit(10).collect(toList()))
         .containsExactly(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+  }
+
+  @Test public void generateInfiniteStreamWithGuavaIterablesLimit() throws Exception {
+    Stream<Integer> generated = MoreStreams.generate(1, i -> Stream.of(i + 1));
+    assertThat(Iterables.limit(MoreStreams.iterateOnce(generated), 5))
+        .containsExactly(1, 2, 3, 4, 5);
+  }
+
+  @Test public void flattenEmptyStream() throws Exception {
+    Stream<Integer> flattened = MoreStreams.flatten(Stream.empty());
+    assertThat(flattened.collect(toList())).isEmpty();
+  }
+
+  @Test public void flattenEmptyInnerStream() throws Exception {
+    Stream<Integer> flattened = MoreStreams.flatten(Stream.of(Stream.empty()));
+    assertThat(flattened.collect(toList())).isEmpty();
+  }
+
+  @Test public void flattenSingleElement() throws Exception {
+    Stream<Integer> flattened = MoreStreams.flatten(Stream.of(Stream.of(1)));
+    assertThat(flattened.collect(toList())).containsExactly(1);
+  }
+
+  @Test public void flattenTwoElementsFromSingleBlock() throws Exception {
+    Stream<Integer> flattened = MoreStreams.flatten(Stream.of(Stream.of(1, 2)));
+    assertThat(flattened.collect(toList())).containsExactly(1, 2).inOrder();
+  }
+
+  @Test public void flattenTwoElementsFromTwoBlocks() throws Exception {
+    Stream<Integer> flattened = MoreStreams.flatten(Stream.of(Stream.of(1), Stream.of(2)));
+    assertThat(flattened.collect(toList())).containsExactly(1, 2).inOrder();
+  }
+
+  @Test public void flattenMultipleElements() throws Exception {
+    Stream<Integer> flattened = MoreStreams.flatten(Stream.of(Stream.of(1, 2), Stream.of(3, 4)));
+    assertThat(flattened.collect(toList())).containsExactly(1, 2, 3, 4).inOrder();
+  }
+
+  @Test public void flattenWithTrailingInfiniteStream() throws Exception {
+    Stream<Integer> flattened =
+        MoreStreams.flatten(Stream.of(Stream.of(1), Stream.iterate(2, i -> i + 1)));
+    assertThat(flattened.limit(5).collect(toList()))
+        .containsExactly(1, 2, 3, 4, 5).inOrder();
+  }
+
+  @Test public void flattenWithLeadingInfiniteStream() throws Exception {
+    Stream<Integer> flattened =
+        MoreStreams.flatten(Stream.of(Stream.iterate(1, i -> i + 1), Stream.of(100)));
+    assertThat(flattened.limit(5).collect(toList()))
+        .containsExactly(1, 2, 3, 4, 5).inOrder();
+  }
+
+  @Test public void flattenOrderedStream() throws Exception {
+    Stream<Integer> flattened = MoreStreams.flatten(Stream.of(Stream.of(1, 2), Stream.of(3)));
+    assertThat(flattened.spliterator().characteristics()).isEqualTo(Spliterator.ORDERED);
+  }
+
+  @Test public void flattenUnorderedStream() throws Exception {
+    Stream<Integer> flattened =
+        MoreStreams.flatten(Stream.of(Stream.of(1, 2), Stream.of(3)).unordered());
+    assertThat(flattened.spliterator().characteristics()).isEqualTo(0);
+  }
+
+  @Test public void flattenReturnsSequentialStream() throws Exception {
+    Stream<Integer> flattened = MoreStreams.flatten(Stream.of(Stream.of(1, 2), Stream.of(3)).parallel());
+    assertThat(flattened.isParallel()).isFalse();
+    assertThat(flattened.spliterator().characteristics()).isEqualTo(Spliterator.ORDERED);
   }
 
   @Test public void diceParallelStream() {
