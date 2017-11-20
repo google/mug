@@ -122,6 +122,14 @@ public class MoreStreamsTest {
     assertThat(flattened.spliterator().characteristics()).isEqualTo(Spliterator.ORDERED);
   }
 
+  @Test public void flattenWithLeadingInfiniteStream_runInParallel() throws Exception {
+    Stream<Integer> flattened =
+        MoreStreams.flatten(Stream.of(Stream.iterate(1, i -> i + 1), Stream.of(100)));
+    assertThat(flattened.parallel().limit(10).collect(toList()))
+        .containsExactlyElementsIn(IntStream.range(1,  11).boxed().collect(toList()))
+        .inOrder();
+  }
+
   @Test public void diceParallelStream() {
     assertThat(MoreStreams.dice(IntStream.range(1, 8).boxed().parallel(), 2)
             .flatMap(List::stream).collect(toList()))

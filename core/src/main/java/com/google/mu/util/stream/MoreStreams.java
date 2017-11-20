@@ -214,12 +214,6 @@ public final class MoreStreams {
       this.blocks = requireNonNull(blocks);
     }
 
-    private FlattenedSpliterator(
-        Spliterator<? extends Stream<? extends T>> blocks, Spliterator<? extends T> currentBlock) {
-      this.blocks = requireNonNull(blocks);
-      this.currentBlock = currentBlock;
-    }
-
     @Override public boolean tryAdvance(Consumer<? super T> action) {
       requireNonNull(action);
       if (currentBlock == null && !tryAdvanceBlock()) {
@@ -231,8 +225,7 @@ public final class MoreStreams {
     }
 
     @Override public Spliterator<T> trySplit() {
-      Spliterator<? extends Stream<? extends T>> split = blocks.trySplit();
-      return split == null ? null : new FlattenedSpliterator<T>(split, currentBlock);
+      return null;
     }
 
     @Override public long estimateSize() {
