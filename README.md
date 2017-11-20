@@ -100,6 +100,17 @@ for (Object obj : iterateOnce(stream)) {
 }
 ```
 
+**Example 3: to generate a (potentially infinite) stream iteratively:**
+```java
+// Returns next round of elements, or empty to stop generating.
+private Stream<T> nextValues(T currentValue) {
+  ...
+}
+
+Stream<T> stream = MoreStreams.generate(seed, this::nextValues);
+```
+
+
 ## [Retryer](https://google.github.io/mug/apidocs/com/google/mu/util/Retryer.html)
 
 * Retry blockingly or _async_
