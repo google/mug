@@ -105,29 +105,16 @@ public class MoreStreamsTest {
         .containsExactly(1, 2, 3, 4, 5).inOrder();
   }
 
-  @Test public void flattenOrderedStream() throws Exception {
-    Stream<Integer> flattened = MoreStreams.flatten(Stream.of(Stream.of(1, 2), Stream.of(3)));
-    assertThat(flattened.spliterator().characteristics()).isEqualTo(Spliterator.ORDERED);
-  }
-
-  @Test public void flattenUnorderedStream() throws Exception {
-    Stream<Integer> flattened =
-        MoreStreams.flatten(Stream.of(Stream.of(1, 2), Stream.of(3)).unordered());
-    assertThat(flattened.spliterator().characteristics()).isEqualTo(0);
-  }
-
   @Test public void flattenReturnsSequentialStream() throws Exception {
     Stream<Integer> flattened = MoreStreams.flatten(Stream.of(Stream.of(1, 2), Stream.of(3)).parallel());
     assertThat(flattened.isParallel()).isFalse();
-    assertThat(flattened.spliterator().characteristics()).isEqualTo(Spliterator.ORDERED);
   }
 
   @Test public void flattenWithLeadingInfiniteStream_runInParallel() throws Exception {
     Stream<Integer> flattened =
         MoreStreams.flatten(Stream.of(Stream.iterate(1, i -> i + 1), Stream.of(100)));
-    assertThat(flattened.parallel().limit(10).collect(toList()))
-        .containsExactlyElementsIn(IntStream.range(1,  11).boxed().collect(toList()))
-        .inOrder();
+    assertThat(flattened.parallel().limit(1000).collect(toList()))
+        .hasSize(1000);
   }
 
   @Test public void diceParallelStream() {

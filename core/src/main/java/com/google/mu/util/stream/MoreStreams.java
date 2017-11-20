@@ -48,7 +48,8 @@ public final class MoreStreams {
   }
 
   /**
-   * Flattens {@code streamOfStream} and returns a sequential stream of the nested elements.
+   * Flattens {@code streamOfStream} and returns an unordered sequential stream of the nested
+   * elements.
    *
    * <p>Logically, {@code stream.flatMap(fanOut)} is equivalent to
    * {@code MoreStreams.flatten(stream.map(fanOut))}.
@@ -60,7 +61,9 @@ public final class MoreStreams {
    * @since 1.9
    */
   public static <T> Stream<T> flatten(Stream<? extends Stream<? extends T>> streamOfStream) {
-    return StreamSupport.stream(new FlattenedSpliterator<>(streamOfStream.spliterator()), false);
+    requireNonNull(streamOfStream);
+    return StreamSupport.stream(
+        () -> new FlattenedSpliterator<>(streamOfStream.spliterator()), 0, false);
   }
 
   /**
@@ -214,18 +217,28 @@ public final class MoreStreams {
       this.blocks = requireNonNull(blocks);
     }
 
+    private FlattenedSpliterator(
+        Spliterator<? extends Stream<? extends T>> blocks, Spliterator<? extends T> currentBlock) {
+      this.blocks = requireNonNull(blocks);
+      this.currentBlock = currentBlock;
+    }
+
     @Override public boolean tryAdvance(Consumer<? super T> action) {
       requireNonNull(action);
       if (currentBlock == null && !tryAdvanceBlock()) {
         return false;
       }
       boolean advanced = false;
-      while (!(advanced = currentBlock.tryAdvance(action)) && tryAdvanceBlock()) {}
+      while ((!(advanced = currentBlock.tryAdvance(action))) && tryAdvanceBlock()) {}
       return advanced;
     }
 
     @Override public Spliterator<T> trySplit() {
-      return null;
+      Spliterator<? extends Stream<? extends T>> split = blocks.trySplit();
+      if (split == null) return null;
+      Spliterator<T> result = new FlattenedSpliterator<T>(split, currentBlock);
+      currentBlock = null;
+      return result;
     }
 
     @Override public long estimateSize() {
@@ -237,7 +250,11 @@ public final class MoreStreams {
     }
 
     @Override public int characteristics() {
-      return Spliterator.ORDERED & blocks.characteristics();
+      // While we maintain encounter order as long as 'blocks' does, returning an ordered stream
+      // (which can be infinite) could surprise users when the user does things like
+      // "parallel().limit(n)". It's sufficient for normal use cases to respect encounter order
+      // without reporting order-ness.
+      return 0;
     }
 
     private boolean tryAdvanceBlock() {
