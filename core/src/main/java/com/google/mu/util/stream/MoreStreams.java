@@ -219,9 +219,9 @@ public final class MoreStreams {
       if (currentBlock == null && !tryAdvanceBlock()) {
         return false;
       }
-      boolean ok = false;
-      while (!(ok = currentBlock.tryAdvance(action)) && tryAdvanceBlock()) {}
-      return ok;
+      boolean advanced = false;
+      while (!(advanced = currentBlock.tryAdvance(action)) && tryAdvanceBlock()) {}
+      return advanced;
     }
 
     @Override public Spliterator<T> trySplit() {
