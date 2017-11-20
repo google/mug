@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Spliterator;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -31,6 +32,19 @@ import com.google.mu.function.CheckedConsumer;
  * @since 1.1
  */
 public final class MoreStreams {
+
+  /**
+   * Returns a Stream produced by iterative application of {@code step} to the initial
+   * {@code seed}, producing a Stream consisting of seed, elements of step(seed),
+   * elements of step(x) for each x in step(seed), etc.
+   */
+  public static <T> Stream<T> generate(
+      T seed, Function<? super T, ? extends Stream<? extends T>> step) {
+    // flatMap() here won't honor short-circuiting such as limit(), because it internally
+    // uses forEach() on the passed-in stream. See https://bugs.openjdk.java.net/browse/JDK-8075939
+    // This means generate() cannot support infinite stream.
+    return Stream.concat(Stream.of(seed), step.apply(seed).flatMap(n -> generate(n, step)));
+  }
 
   /**
    * Iterates through {@code stream} <em>only once</em>. It's strongly recommended
@@ -102,6 +116,7 @@ public final class MoreStreams {
    * @throws IllegalStateException if {@code maxSize <= 0}
    */
   public static <T> Stream<List<T>> dice(Stream<? extends T> stream, int maxSize) {
+    requireNonNull(stream);
     if (maxSize <= 0) throw new IllegalArgumentException();
     Stream<List<T>> diced = StreamSupport.stream(
         () -> dice(stream.spliterator(), maxSize), Spliterator.NONNULL, stream.isParallel());
@@ -117,6 +132,7 @@ public final class MoreStreams {
    * @throws IllegalStateException if {@code maxSize <= 0}
    */
   public static <T> Spliterator<List<T>> dice(Spliterator<? extends T> spliterator, int maxSize) {
+    requireNonNull(spliterator);
     if (maxSize <= 0) throw new IllegalArgumentException();
     return new DicedSpliterator<T>(spliterator, maxSize);
   }

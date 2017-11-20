@@ -27,16 +27,37 @@ import java.util.TreeSet;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import com.google.common.collect.Iterables;
 import com.google.common.testing.ClassSanityTester;
+import com.google.common.testing.NullPointerTester;
 
 @RunWith(JUnit4.class)
 public class MoreStreamsTest {
 
-  @Test public void parallelStream() {
+  @Test public void generateSingleElementStream() {
+    assertThat(MoreStreams.generate(1, x -> Stream.empty()).collect(toList()))
+        .containsExactly(1);
+  }
+
+  @Test public void generateFanIn() throws Exception {
+    assertThat(MoreStreams.generate(100, i -> IntStream.rangeClosed(1, i / 10).boxed())
+            .collect(toList()))
+        .containsExactly(100, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 1);
+  }
+
+  // Infinite stream not supported, yet.
+  @Ignore @Test public void generateInfiniteStream() throws Exception {
+    Stream<Integer> generated = MoreStreams.generate(1, i -> Stream.of(i + 1));
+    assertThat(Iterables.limit(MoreStreams.iterateOnce(generated), 2))
+        .containsExactly(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+  }
+
+  @Test public void diceParallelStream() {
     assertThat(MoreStreams.dice(IntStream.range(1, 8).boxed().parallel(), 2)
             .flatMap(List::stream).collect(toList()))
         .containsExactly(1, 2, 3, 4, 5, 6, 7);
@@ -108,7 +129,11 @@ public class MoreStreamsTest {
   }
 
   @Test public void testNulls() throws Exception {
-    new ClassSanityTester().testNulls(MoreStreams.class);
+    NullPointerTester tester = new NullPointerTester();
+    asList(BiCollection.class.getDeclaredMethods()).stream()
+        .filter(m -> m.getName().equals("generate"))
+        .forEach(tester::ignore);
+    tester.testAllPublicStaticMethods(MoreStreams.class);
     new ClassSanityTester().forAllPublicStaticMethods(MoreStreams.class).testNulls();
   }
 }
