@@ -38,6 +38,17 @@ public final class MoreStreams {
    * {@code seed}, producing a Stream consisting of seed, elements of step(seed),
    * elements of step(x) for each x in step(seed), etc.
    *
+   * <p>While {@code Stream.generate(supplier)} can be used to generate infinite streams,
+   * it's not as easy to generate a <em>finite</em> stream unless the size can be pre-determined.
+   * This method can be used to generate finite streams: just return an empty stream when the
+   * {@code step} determines that there's no more elements to be generated.
+   *
+   * <p>At every step, 0, 1 or more elements can be generated into the resulting stream.
+   * As discussed above, returning an empty stream leads to eventual termination of the stream;
+   * returning 1-element stream is equivalent to {@code Stream.generate(supplier)};
+   * while returning more than one elements allows a single element to fan out to multiple
+   * elements.
+   *
    * @since 1.9
    */
   public static <T> Stream<T> generate(

@@ -100,7 +100,7 @@ for (Object obj : iterateOnce(stream)) {
 }
 ```
 
-**Example 3: to generate a (potentially infinite) stream iteratively:**
+**Example 3: to generate a stream (that can be finite) iteratively:**
 ```java
 // Returns next round of elements, or empty to stop generating.
 private Stream<T> nextValues(T currentValue) {
