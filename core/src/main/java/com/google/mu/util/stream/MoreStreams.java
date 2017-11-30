@@ -38,6 +38,17 @@ public final class MoreStreams {
    * {@code seed}, producing a Stream consisting of seed, elements of step(seed),
    * elements of step(x) for each x in step(seed), etc.
    *
+   * <p>While {@code Stream.generate(supplier)} can be used to generate infinite streams,
+   * it's not as easy to generate a <em>finite</em> stream unless the size can be pre-determined.
+   * This method can be used to generate finite streams: just return an empty stream when the
+   * {@code step} determines that there's no more elements to be generated.
+   *
+   * <p>At every step, 0, 1 or more elements can be generated into the resulting stream.
+   * As discussed above, returning an empty stream leads to eventual termination of the stream;
+   * returning 1-element stream is equivalent to {@code Stream.generate(supplier)};
+   * while returning more than one elements allows a single element to fan out to multiple
+   * elements.
+   *
    * @since 1.9
    */
   public static <T> Stream<T> generate(
@@ -48,7 +59,8 @@ public final class MoreStreams {
   }
 
   /**
-   * Flattens {@code streamOfStream} and returns a sequential stream of the nested elements.
+   * Flattens {@code streamOfStream} and returns an unordered sequential stream of the nested
+   * elements.
    *
    * <p>Logically, {@code stream.flatMap(fanOut)} is equivalent to
    * {@code MoreStreams.flatten(stream.map(fanOut))}.
@@ -60,7 +72,9 @@ public final class MoreStreams {
    * @since 1.9
    */
   public static <T> Stream<T> flatten(Stream<? extends Stream<? extends T>> streamOfStream) {
-    return StreamSupport.stream(new FlattenedSpliterator<>(streamOfStream.spliterator()), false);
+    requireNonNull(streamOfStream);
+    return StreamSupport.stream(
+        () -> new FlattenedSpliterator<>(streamOfStream.spliterator()), 0, false);
   }
 
   /**
@@ -225,14 +239,17 @@ public final class MoreStreams {
       if (currentBlock == null && !tryAdvanceBlock()) {
         return false;
       }
-      boolean ok = false;
-      while (!(ok = currentBlock.tryAdvance(action)) && tryAdvanceBlock()) {}
-      return ok;
+      boolean advanced = false;
+      while ((!(advanced = currentBlock.tryAdvance(action))) && tryAdvanceBlock()) {}
+      return advanced;
     }
 
     @Override public Spliterator<T> trySplit() {
       Spliterator<? extends Stream<? extends T>> split = blocks.trySplit();
-      return split == null ? null : new FlattenedSpliterator<T>(split, currentBlock);
+      if (split == null) return null;
+      Spliterator<T> result = new FlattenedSpliterator<T>(split, currentBlock);
+      currentBlock = null;
+      return result;
     }
 
     @Override public long estimateSize() {
@@ -244,7 +261,11 @@ public final class MoreStreams {
     }
 
     @Override public int characteristics() {
-      return Spliterator.ORDERED & blocks.characteristics();
+      // While we maintain encounter order as long as 'blocks' does, returning an ordered stream
+      // (which can be infinite) could surprise users when the user does things like
+      // "parallel().limit(n)". It's sufficient for normal use cases to respect encounter order
+      // without reporting order-ness.
+      return 0;
     }
 
     private boolean tryAdvanceBlock() {
