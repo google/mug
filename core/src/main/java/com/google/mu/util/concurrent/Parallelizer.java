@@ -461,8 +461,9 @@ public final class Parallelizer {
     }
 
     private int freeze() {
+      int remaining = maxInFlight - semaphore.drainPermits();
       propagateExceptions();
-      return maxInFlight - semaphore.drainPermits();
+      return remaining;
     }
   }
 
