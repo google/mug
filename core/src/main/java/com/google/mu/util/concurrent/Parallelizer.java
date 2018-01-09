@@ -409,7 +409,6 @@ public final class Parallelizer {
           semaphore.release();
         }
       });
-      propagateExceptions();
       onboard.put(done, future);  // C
       checkInFlight();
       // A <: B, C <: D <: E
@@ -419,6 +418,7 @@ public final class Parallelizer {
       if (done.get()) {  // D
         onboard.remove(done);  // E
       }
+      propagateExceptions();
     }
 
     void land(long timeout, TimeUnit timeUnit)
