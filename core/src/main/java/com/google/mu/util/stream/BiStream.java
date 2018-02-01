@@ -160,6 +160,8 @@ public final class BiStream<K, V> implements AutoCloseable {
    * return {@code [{1, 2}, {2, 3}, {3, 4}].
    *
    * <p>Empty stream is returned if {@code elements} is empty or contains a single element.
+   *
+   * @since 1.10
    */
   public static <T> BiStream<T, T> adjacencies(Stream<? extends T> elements) {
     Stream<Map.Entry<T, T>> pairs = StreamSupport.stream(
