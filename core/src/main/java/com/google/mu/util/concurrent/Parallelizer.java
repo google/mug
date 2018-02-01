@@ -370,14 +370,12 @@ public final class Parallelizer {
   
     void checkIn(long timeout, TimeUnit timeUnit)
         throws InterruptedException, TimeoutException, UncheckedExecutionException {
-      propagateExceptions();
       boolean acquired = semaphore.tryAcquire(timeout, timeUnit);
       propagateExceptions();
       if (!acquired) throw new TimeoutException();
     }
   
     void checkInUninterruptibly() throws UncheckedExecutionException {
-      propagateExceptions();
       semaphore.acquireUninterruptibly();
       propagateExceptions();
     }
@@ -420,6 +418,7 @@ public final class Parallelizer {
       if (done.get()) {  // D
         onboard.remove(done);  // E
       }
+      propagateExceptions();
     }
 
     void land(long timeout, TimeUnit timeUnit)
@@ -461,8 +460,9 @@ public final class Parallelizer {
     }
 
     private int freeze() {
+      int remaining = maxInFlight - semaphore.drainPermits();
       propagateExceptions();
-      return maxInFlight - semaphore.drainPermits();
+      return remaining;
     }
   }
 

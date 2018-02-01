@@ -349,6 +349,51 @@ public class BiStreamTest {
     assertThat(rightClosed.get()).isTrue();
   }
 
+  @Test public void testAdjacencies_emptyStream() {
+    assertKeyValues(BiStream.adjacencies(Stream.empty()))
+        .isEmpty();
+  }
+
+  @Test public void testAdjacencies_oneElement() {
+    assertKeyValues(BiStream.adjacencies(Stream.of("a")))
+        .isEmpty();
+  }
+
+  @Test public void testAdjacencies_multipleElements() {
+    assertKeyValues(BiStream.adjacencies(Stream.of("a", "b")))
+        .containsExactlyEntriesIn(ImmutableMultimap.of("a", "b"));
+    assertKeyValues(BiStream.adjacencies(Stream.of("a", "b", "c")))
+        .containsExactlyEntriesIn(ImmutableMultimap.of("a", "b", "b", "c"));
+    assertKeyValues(BiStream.adjacencies(Stream.of("a", "b", "c", "d")))
+        .containsExactlyEntriesIn(ImmutableMultimap.of("a", "b", "b", "c", "c", "d"));
+  }
+
+  @Test public void testAdjacencies_infiniteStream() {
+    assertKeyValues(BiStream.adjacencies(Stream.iterate(1, i -> i + 1)).limit(3))
+        .containsExactlyEntriesIn(ImmutableMultimap.of(1, 2, 2, 3, 3, 4));
+  }
+
+  @Test public void testAdjacencies_estimatedSize() {
+    assertThat(BiStream.adjacencies(Stream.of(1, 2, 3, 4)).keys().spliterator().estimateSize())
+        .isEqualTo(4);
+  }
+
+  @Test public void testAdjacencies_close() {
+    Stream<?> elements = Stream.of(1);
+    AtomicBoolean closed = new AtomicBoolean();
+    elements.onClose(() -> closed.set(true));
+    try (BiStream<?, ?> stream = BiStream.adjacencies(elements)) {}
+    assertThat(closed.get()).isTrue();
+  }
+
+  @Test public void testAdjacencies_parallelStream() {
+    Stream<Integer> parallel = Stream.iterate(1, i -> i + 1).limit(1000).parallel();
+    BiStream<Integer, Integer> adjacencies = BiStream.adjacencies(parallel);
+    assertThat(adjacencies.isParellel()).isFalse();
+    assertKeyValues(adjacencies.limit(5))
+        .containsExactlyEntriesIn(ImmutableMultimap.of(1, 2, 2, 3, 3, 4, 4, 5, 5, 6));
+  }
+
   @Test public void testIndexed() {
     List<String> elements = asList(new String[2]);
     BiStream.indexed(Stream.of("a", "b")).forEach(elements::set);

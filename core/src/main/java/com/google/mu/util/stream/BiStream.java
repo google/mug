@@ -155,6 +155,19 @@ public final class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
+   * Returns a sequential {@code BiStream} with every adjacent pairs in {@code elements} streamed
+   * in the same order as {@code elements}. For example {@code adjacencies([1, 2, 3, 4])} will
+   * return {@code [{1, 2}, {2, 3}, {3, 4}].
+   *
+   * <p>Empty stream is returned if {@code elements} is empty or contains a single element.
+   */
+  public static <E> BiStream<E, E> adjacencies(Stream<? extends E> elements) {
+    Stream<Map.Entry<E, E>> pairs = StreamSupport.stream(
+        () -> new AdjacentSpliterator<>(elements.spliterator()), Spliterator.NONNULL, false);
+    return new BiStream<>(pairs.onClose(elements::close));
+  }
+
+  /**
    * Returns a {@link BiStream} where each element in {@code values} is keyed by its
    * corresponding 0-based index. For example, the following code transforms a list
    * of inputs into a pre-sized output list:   <pre>{@code
@@ -584,6 +597,40 @@ public final class BiStream<K, V> implements AutoCloseable {
 
     @Override public long estimateSize() {
       return Math.min(keys.estimateSize(), values.estimateSize());
+    }
+
+    @Override public int characteristics() {
+      return Spliterator.NONNULL;
+    }
+  }
+
+  private static final class AdjacentSpliterator<E> implements Spliterator<Map.Entry<E, E>> {
+    private final Spliterator<? extends E> elements;
+    private boolean hasPrevious;
+    private final Temp<E> temp = new Temp<>();
+  
+    AdjacentSpliterator(Spliterator<? extends E> elements) {
+      this.elements = requireNonNull(elements);
+    }
+
+    @Override public boolean tryAdvance(Consumer<? super Map.Entry<E, E>> action) {
+      requireNonNull(action);
+      if (!hasPrevious) {
+        if (!elements.tryAdvance(temp)) return false;
+        hasPrevious = true;
+      }
+      E left = temp.data;
+      if (!elements.tryAdvance(temp)) return false;
+      action.accept(kv(left, temp.data));
+      return true;
+    }
+
+    @Override public Spliterator<Map.Entry<E, E>> trySplit() {
+      return null;
+    }
+
+    @Override public long estimateSize() {
+      return elements.estimateSize();
     }
 
     @Override public int characteristics() {
