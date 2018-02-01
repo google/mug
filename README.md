@@ -17,7 +17,7 @@ Add the following to pom.xml:
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug</artifactId>
-    <version>1.8</version>
+    <version>1.9</version>
   </dependency>
 ```
 
