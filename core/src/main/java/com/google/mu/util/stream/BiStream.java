@@ -161,8 +161,8 @@ public final class BiStream<K, V> implements AutoCloseable {
    *
    * <p>Empty stream is returned if {@code elements} is empty or contains a single element.
    */
-  public static <E> BiStream<E, E> adjacencies(Stream<? extends E> elements) {
-    Stream<Map.Entry<E, E>> pairs = StreamSupport.stream(
+  public static <T> BiStream<T, T> adjacencies(Stream<? extends T> elements) {
+    Stream<Map.Entry<T, T>> pairs = StreamSupport.stream(
         () -> new AdjacentSpliterator<>(elements.spliterator()), Spliterator.NONNULL, false);
     return new BiStream<>(pairs.onClose(elements::close));
   }
