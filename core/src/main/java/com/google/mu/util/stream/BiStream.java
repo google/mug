@@ -155,17 +155,17 @@ public final class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Returns a sequential {@code BiStream} with every adjacent pairs in {@code elements} streamed
-   * in the same order as {@code elements}. For example {@code adjacencies([1, 2, 3, 4])} will
-   * return {@code [{1, 2}, {2, 3}, {3, 4}].
+   * Returns a sequential {@code BiStream} with every neighboring pairs in {@code elements}
+   * streamed in the same order as {@code elements}. For example {@code neighbors([1, 2, 3, 4])}
+   * will return {@code [{1, 2}, {2, 3}, {3, 4}].
    *
    * <p>Empty stream is returned if {@code elements} is empty or contains a single element.
    *
    * @since 1.10
    */
-  public static <T> BiStream<T, T> adjacencies(Stream<? extends T> elements) {
+  public static <T> BiStream<T, T> neighbors(Stream<? extends T> elements) {
     Stream<Map.Entry<T, T>> pairs = StreamSupport.stream(
-        () -> new AdjacentSpliterator<>(elements.spliterator()), Spliterator.NONNULL, false);
+        () -> new NeighborSpliterator<>(elements.spliterator()), Spliterator.NONNULL, false);
     return new BiStream<>(pairs.onClose(elements::close));
   }
 
@@ -606,12 +606,12 @@ public final class BiStream<K, V> implements AutoCloseable {
     }
   }
 
-  private static final class AdjacentSpliterator<E> implements Spliterator<Map.Entry<E, E>> {
+  private static final class NeighborSpliterator<E> implements Spliterator<Map.Entry<E, E>> {
     private final Spliterator<? extends E> elements;
     private boolean hasPrevious;
     private final Temp<E> temp = new Temp<>();
   
-    AdjacentSpliterator(Spliterator<? extends E> elements) {
+    NeighborSpliterator(Spliterator<? extends E> elements) {
       this.elements = requireNonNull(elements);
     }
 
