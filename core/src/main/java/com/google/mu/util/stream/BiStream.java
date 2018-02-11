@@ -114,25 +114,9 @@ public final class BiStream<K, V> implements AutoCloseable {
     return new BiStream<>(stream.map(t -> kv(t, t)));
   }
 
-  /**
-   * Wraps {@code entries} in a {@code BiStream}.
-   *
-   * @deprecated Use {@link BiCollection#from(Collection)} instead.
-   */
-  @Deprecated
-  public static <K, V> BiStream<K, V> from(
+  private static <K, V> BiStream<K, V> from(
       Stream<? extends Map.Entry<? extends K, ? extends V>> entries) {
     return new BiStream<>(entries);
-  }
-
-  /**
-   * Wraps entries from {@code map} in a {@code BiStream}.
-   *
-   * @deprecated Use {@link BiCollection#from(Map)} instead.
-   */
-  @Deprecated
-  public static <K, V> BiStream<K, V> from(Map<? extends K, ? extends V> map) {
-    return from(map.entrySet().stream());
   }
 
   /**
@@ -498,36 +482,6 @@ public final class BiStream<K, V> implements AutoCloseable {
   /** Closes this stream, if any. */
   @Override public void close() {
     underlying.close();
-  }
-
-  /**
-   * Builds {@link BiStream}.
-   *
-   * @deprecated Use {@link BiCollection.Builder} instead.
-   */
-  @Deprecated
-  public static final class Builder<K, V> {
-    private final BiCollection.Builder<K, V> entries = new BiCollection.Builder<>();
-
-    /** Puts a new pair of {@code key} and {@code value}. */
-    public Builder<K, V> put(K key, V value) {
-      entries.add(key, value);
-      return this;
-    }
-
-    /** Puts all key-value pairs from {@code map} into this builder. */
-    public Builder<K, V> putAll(Map<? extends K, ? extends V> map) {
-      entries.addAll(map);
-      return this;
-    }
-
-    /**
-     * Returns a new {@link BiStream} encapsulating the snapshot of pairs in this builder
-     * at the time {@code build()} is invoked.
-     */
-    public BiStream<K, V> build() {
-      return entries.build().stream();
-    }
   }
 
   private <K2, V2> BiStream<K2, V2> map2(
