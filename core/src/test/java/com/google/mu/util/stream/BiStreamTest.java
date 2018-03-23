@@ -75,6 +75,12 @@ public class BiStreamTest {
         .inOrder();
   }
 
+  @Test public void testBiStreamWithKeyAndValueFunctions() {
+    assertKeyValues(BiStream.biStream(Stream.of(1, 2), Object::toString, v -> v))
+        .containsExactlyEntriesIn(ImmutableMultimap.of("1", 1, "2", 2))
+        .inOrder();
+  }
+
   @Test public void testFromMap() {
     assertKeyValues(BiCollection.from(ImmutableMap.of("one", 1)).stream())
         .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1))

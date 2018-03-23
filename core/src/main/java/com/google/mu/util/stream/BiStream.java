@@ -109,9 +109,27 @@ public final class BiStream<K, V> implements AutoCloseable {
    *     .mapKeys(User::getId)
    *     .mapValues(User::getProfile);
    * }</pre>
+   * Alternatively:   <pre>{@code
+   * BiStream<UserId, Profile> profilesByUserId =
+   *     biStream(users.stream(), User::getId, User::getProfile);
+   * }</pre>
    */
   public static <T> BiStream<T, T> biStream(Stream<? extends T> stream) {
     return new BiStream<>(stream.map(t -> kv(t, t)));
+  }
+
+  /**
+   * Wraps {@code stream} as a {@link BiStream} with keys and values computed using {@code toKey}
+   * and {@code toValue}.
+   *
+   * @since 1.11
+   */
+  public static <T, K, V> BiStream<K, V> biStream(
+      Stream<? extends T> stream,
+      Function<? super T, ? extends K> toKey, Function<? super T, ? extends V> toValue) {
+    requireNonNull(toKey);
+    requireNonNull(toValue);
+    return new BiStream<>(stream.map(t -> kv(toKey.apply(t), toValue.apply(t))));
   }
 
   private static <K, V> BiStream<K, V> from(
