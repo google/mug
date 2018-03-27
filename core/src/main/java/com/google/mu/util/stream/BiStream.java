@@ -149,10 +149,10 @@ public final class BiStream<K, V> implements AutoCloseable {
    */
   public static <K, V> BiStream<K, V> zip(
       Stream<? extends K> keys, Stream<? extends V> values) {
-    Stream<Map.Entry<K, V>> paired = StreamSupport.stream(
-            () -> new PairedUpSpliterator<>(keys.spliterator(), values.spliterator()),
+    Stream<Map.Entry<K, V>> zipped = StreamSupport.stream(
+            () -> new Zipliterator<>(keys.spliterator(), values.spliterator()),
             Spliterator.NONNULL, keys.isParallel() || values.isParallel());
-    return new BiStream<>(paired.onClose(keys::close).onClose(values::close));
+    return new BiStream<>(zipped.onClose(keys::close).onClose(values::close));
   }
 
   /**
@@ -543,12 +543,12 @@ public final class BiStream<K, V> implements AutoCloseable {
     return Comparator.comparing(Map.Entry::getValue, ordering);
   }
 
-  private static final class PairedUpSpliterator<K, V> implements Spliterator<Map.Entry<K, V>> {
+  private static final class Zipliterator<K, V> implements Spliterator<Map.Entry<K, V>> {
     private final Spliterator<? extends K> keys;
     private final Spliterator<? extends V> values;
-    private final CurrentPair<K, V> current = new CurrentPair<>();
+    private final CurrentKeyValue<K, V> current = new CurrentKeyValue<>();
   
-    PairedUpSpliterator(Spliterator<? extends K> keys, Spliterator<? extends V> values) {
+    Zipliterator(Spliterator<? extends K> keys, Spliterator<? extends V> values) {
       this.keys = requireNonNull(keys);
       this.values = requireNonNull(values);
     }
@@ -572,7 +572,7 @@ public final class BiStream<K, V> implements AutoCloseable {
       return Spliterator.NONNULL;
     }
 
-    private static final class CurrentPair<K, V> extends TempEntry<K, V> {
+    private static final class CurrentKeyValue<K, V> extends TempEntry<K, V> {
       final Consumer<K> setKey = k -> { this.key = k; };
       final Consumer<V> setValue = v -> { this.value = v; };
     }
@@ -604,14 +604,15 @@ public final class BiStream<K, V> implements AutoCloseable {
     }
 
     @Override public boolean tryAdvance(Consumer<? super Entry<K, V>> action) {
-      boolean success = from.tryAdvance(current);
-      if (success) action.accept(current);
-      return success;
+      requireNonNull(action);
+      boolean advanced = from.tryAdvance(current);
+      if (advanced) action.accept(current);
+      return advanced;
     }
 
     @Override public Spliterator<Entry<K, V>> trySplit() {
-      Spliterator<? extends F> split = from.trySplit();
-      return split == null ? null : new EntrySpliterator<F, K, V>(split, toKey, toValue);
+      return MoreStreams.splitThenWrap(
+          from, split -> new EntrySpliterator<>(split, toKey, toValue));
     }
 
     @Override public long estimateSize() {
@@ -640,9 +641,9 @@ public final class BiStream<K, V> implements AutoCloseable {
 
     @Override public boolean tryAdvance(Consumer<? super Map.Entry<E, E>> action) {
       requireNonNull(action);
-      boolean success = current.next();
-      if (success) action.accept(current);
-      return success;
+      boolean advanced = current.tryAdvance();
+      if (advanced) action.accept(current);
+      return advanced;
     }
 
     @Override public Spliterator<Map.Entry<E, E>> trySplit() {
@@ -666,7 +667,7 @@ public final class BiStream<K, V> implements AutoCloseable {
         this.hasNeighbor = true;
       }
 
-      boolean next() {
+      boolean tryAdvance() {
         return hasNeighbor
             ? elements.tryAdvance(this)
             : elements.tryAdvance(this) && elements.tryAdvance(this);
