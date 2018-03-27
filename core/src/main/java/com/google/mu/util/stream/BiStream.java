@@ -129,7 +129,9 @@ public final class BiStream<K, V> implements AutoCloseable {
   public static <T, K, V> BiStream<K, V> biStream(
       Stream<? extends T> stream,
       Function<? super T, ? extends K> toKey, Function<? super T, ? extends V> toValue) {
-    return new BiStream<>(EntrySpliterator.entryStream(stream, toKey, toValue));
+    return new BiStream<>(stream.isParallel()
+        ? stream.map(e -> kv(toKey.apply(e), toValue.apply(e)))
+        : EntrySpliterator.entryStream(stream, toKey, toValue));
   }
 
   /**
@@ -577,14 +579,14 @@ public final class BiStream<K, V> implements AutoCloseable {
     private final Spliterator<? extends F> from;
     private final Function<? super F, ? extends K> toKey;
     private final Function<? super F, ? extends V> toValue;
-    private CurrentEntry current = new CurrentEntry();
+    private final CurrentEntry current = new CurrentEntry();
 
     static <T, K, V> Stream<Map.Entry<K, V>> entryStream(
         Stream<? extends T> stream,
         Function<? super T, ? extends K> toKey, Function<? super T, ? extends V> toValue) {
       requireNonNull(toKey);
       requireNonNull(toValue);
-      return mapBySpliterator(stream, it -> new EntrySpliterator<>(it, toKey, toValue));
+      return mapBySpliterator(stream.sequential(), it -> new EntrySpliterator<>(it, toKey, toValue));
     }
 
     private EntrySpliterator(
@@ -607,7 +609,7 @@ public final class BiStream<K, V> implements AutoCloseable {
     }
 
     @Override public Spliterator<Entry<K, V>> trySplit() {
-      return null;
+      return null;  // CurrentEntry is mutable and is only good for single-thread.
     }
 
     @Override public long estimateSize() {
@@ -671,8 +673,8 @@ public final class BiStream<K, V> implements AutoCloseable {
   }
 
   private static abstract class TempEntry<K, V> implements Map.Entry<K, V> {
-    K key;
-    V value;
+    volatile K key;
+    volatile V value;
 
     @Override public K getKey() {
       return key;
