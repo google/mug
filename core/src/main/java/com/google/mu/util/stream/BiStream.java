@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Spliterator;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiConsumer;
@@ -115,7 +116,7 @@ public final class BiStream<K, V> implements AutoCloseable {
    * }</pre>
    */
   public static <T> BiStream<T, T> biStream(Stream<? extends T> stream) {
-    return new BiStream<>(stream.map(t -> kv(t, t)));
+    return biStream(stream, Function.identity(), Function.identity());
   }
 
   /**
@@ -127,9 +128,7 @@ public final class BiStream<K, V> implements AutoCloseable {
   public static <T, K, V> BiStream<K, V> biStream(
       Stream<? extends T> stream,
       Function<? super T, ? extends K> toKey, Function<? super T, ? extends V> toValue) {
-    requireNonNull(toKey);
-    requireNonNull(toValue);
-    return new BiStream<>(stream.map(t -> kv(toKey.apply(t), toValue.apply(t))));
+    return from(EntrySpliterator.entryStream(stream, toKey, toValue));
   }
 
   private static <K, V> BiStream<K, V> from(
@@ -244,19 +243,21 @@ public final class BiStream<K, V> implements AutoCloseable {
       BiFunction<? super K, ? super V, ? extends V2> valueMapper) {
     requireNonNull(keyMapper);
     requireNonNull(valueMapper);
-    return map2((k, v) -> kv(keyMapper.apply(k, v), valueMapper.apply(k, v)));
+    return from(EntrySpliterator.entryStream(
+        underlying,
+        e -> keyMapper.apply(e.getKey(), e.getValue()),
+        e -> valueMapper.apply(e.getKey(),  e.getValue())));
   }
 
   /** Maps each key to another key of type {@code K2}. */
   public <K2> BiStream<K2, V> mapKeys(BiFunction<? super K, ? super V, ? extends K2> keyMapper) {
-    requireNonNull(keyMapper);
-    return map2((k, v) -> kv(keyMapper.apply(k, v), v));
+    return map(keyMapper, (k, v) -> v);
   }
 
   /** Maps each key to another key of type {@code K2}. */
   public <K2> BiStream<K2, V> mapKeys(Function<? super K, ? extends K2> keyMapper) {
     requireNonNull(keyMapper);
-    return map2((k, v) -> kv(keyMapper.apply(k), v));
+    return mapKeys((k, v) -> keyMapper.apply(k));
   }
 
   /** Maps each key to zero or more keys of type {@code K2}. */
@@ -276,14 +277,13 @@ public final class BiStream<K, V> implements AutoCloseable {
   /** Maps each value to another value of type {@code V2}. */
   public <V2> BiStream<K, V2> mapValues(
       BiFunction<? super K, ? super V, ? extends V2> valueMapper) {
-    requireNonNull(valueMapper);
-    return map2((k, v) -> kv(k, valueMapper.apply(k, v)));
+    return map((k, v) -> k, valueMapper);
   }
 
   /** Maps each value to another value of type {@code V2}. */
   public <V2> BiStream<K, V2> mapValues(Function<? super V, ? extends V2> valueMapper) {
     requireNonNull(valueMapper);
-    return map2((k, v) -> kv(k, valueMapper.apply(v)));
+    return mapValues((k, v) -> valueMapper.apply(v));
   }
 
   /** Maps each value to zero ore more values of type {@code V2}. */
@@ -346,7 +346,7 @@ public final class BiStream<K, V> implements AutoCloseable {
    * @since 1.5
    */
   public BiStream<V, K> inverse() {
-    return map2((k, v) -> kv(v, k));
+    return map((k, v) -> v, (k, v) -> k);
   }
 
   /**
@@ -502,11 +502,6 @@ public final class BiStream<K, V> implements AutoCloseable {
     underlying.close();
   }
 
-  private <K2, V2> BiStream<K2, V2> map2(
-      BiFunction<? super K, ? super V, ? extends Map.Entry<? extends K2, ? extends V2>> mapper) {
-    return from(underlying.map(forEntries(mapper)));
-  }
-
   static <K, V> Map.Entry<K, V> kv(K key, V value) {
     return new AbstractMap.SimpleImmutableEntry<>(key, value);
   }
@@ -550,8 +545,7 @@ public final class BiStream<K, V> implements AutoCloseable {
   private static final class PairedUpSpliterator<K, V> implements Spliterator<Map.Entry<K, V>> {
     private final Spliterator<? extends K> keys;
     private final Spliterator<? extends V> values;
-    private final Temp<K> currentKey = new Temp<>();
-    private final Temp<V> currentValue = new Temp<>();
+    private final CurrentPair<K, V> current = new CurrentPair<>();
   
     PairedUpSpliterator(Spliterator<? extends K> keys, Spliterator<? extends V> values) {
       this.keys = requireNonNull(keys);
@@ -560,8 +554,8 @@ public final class BiStream<K, V> implements AutoCloseable {
 
     @Override public boolean tryAdvance(Consumer<? super Map.Entry<K, V>> action) {
       requireNonNull(action);
-      boolean advanced = keys.tryAdvance(currentKey) && values.tryAdvance(currentValue);
-      if (advanced) action.accept(kv(currentKey.data, currentValue.data));
+      boolean advanced = keys.tryAdvance(current.setKey) && values.tryAdvance(current.setValue);
+      if (advanced) action.accept(current);
       return advanced;
     }
 
@@ -576,12 +570,68 @@ public final class BiStream<K, V> implements AutoCloseable {
     @Override public int characteristics() {
       return Spliterator.NONNULL;
     }
+
+    private static final class CurrentPair<K, V> extends TempEntry<K, V> {
+      final Consumer<K> setKey = k -> { this.key = k; };
+      final Consumer<V> setValue = v -> { this.value = v; };
+    }
+  }
+
+  private static final class EntrySpliterator<F, K, V> implements Spliterator<Map.Entry<K, V>> {
+    private final Spliterator<? extends F> from;
+    private final Function<? super F, ? extends K> toKey;
+    private final Function<? super F, ? extends V> toValue;
+    private final CurrentEntry currentEntry = new CurrentEntry();
+
+    static <T, K, V> Stream<Map.Entry<K, V>> entryStream(
+        Stream<? extends T> stream,
+        Function<? super T, ? extends K> toKey, Function<? super T, ? extends V> toValue) {
+      requireNonNull(stream);
+      requireNonNull(toKey);
+      requireNonNull(toValue);
+      return StreamSupport.stream(
+          () -> new EntrySpliterator<>(stream.spliterator(), toKey, toValue), Spliterator.NONNULL, false);
+    }
+
+    private EntrySpliterator(
+        Spliterator<? extends F> from,
+        Function<? super F, ? extends K> toKey,  Function<? super F, ? extends V> toValue) {
+      this.from = requireNonNull(from);
+      this.toKey = requireNonNull(toKey);
+      this.toValue = requireNonNull(toValue);
+    }
+
+    @Override public boolean tryAdvance(Consumer<? super Entry<K, V>> action) {
+      if (!from.tryAdvance(currentEntry)) return false;
+      action.accept(currentEntry);
+      return true;
+    }
+
+    @Override public Spliterator<Entry<K, V>> trySplit() {
+      Spliterator<? extends F> split = from.trySplit();
+      return split == null ? null : new EntrySpliterator<F, K, V>(split, toKey, toValue);
+    }
+
+    @Override public long estimateSize() {
+      return from.estimateSize();
+    }
+
+    @Override public int characteristics() {
+      return Spliterator.NONNULL;
+    }
+
+    private final class CurrentEntry extends TempEntry<K, V> implements Consumer<F> {
+      @Override public void accept(F source) {
+        key = toKey.apply(source);
+        value = toValue.apply(source);
+      }
+    }
   }
 
   private static final class NeighborSpliterator<E> implements Spliterator<Map.Entry<E, E>> {
     private final Spliterator<? extends E> elements;
     private boolean hasPrevious;
-    private final Temp<E> temp = new Temp<>();
+    private final CurrentNeighbors<E> current = new CurrentNeighbors<>();
   
     NeighborSpliterator(Spliterator<? extends E> elements) {
       this.elements = requireNonNull(elements);
@@ -590,12 +640,11 @@ public final class BiStream<K, V> implements AutoCloseable {
     @Override public boolean tryAdvance(Consumer<? super Map.Entry<E, E>> action) {
       requireNonNull(action);
       if (!hasPrevious) {
-        if (!elements.tryAdvance(temp)) return false;
+        if (!elements.tryAdvance(current)) return false;
         hasPrevious = true;
       }
-      E left = temp.data;
-      if (!elements.tryAdvance(temp)) return false;
-      action.accept(kv(left, temp.data));
+      if (!elements.tryAdvance(current)) return false;
+      action.accept(current);
       return true;
     }
 
@@ -610,13 +659,41 @@ public final class BiStream<K, V> implements AutoCloseable {
     @Override public int characteristics() {
       return Spliterator.NONNULL;
     }
+
+    private static final class CurrentNeighbors<E> extends TempEntry<E, E> implements Consumer<E> {
+      @Override public void accept(E v) {
+        this.key = this.value;
+        this.value = v;
+      }
+    }
   }
 
-  private static final class Temp<T> implements Consumer<T> {
-    T data;
+  private static abstract class TempEntry<K, V> implements Map.Entry<K, V> {
+    K key;
+    V value;
 
-    @Override public void accept(T v) {
-      this.data = v;
+    @Override public K getKey() {
+      return key;
+    }
+
+    @Override public V getValue() {
+      return value;
+    }
+
+    @Override public V setValue(V value) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override public int hashCode() {
+      return Objects.hash(key, value);
+    }
+
+    @Override public boolean equals(Object obj) {
+      if (obj instanceof Map.Entry<?, ?>) {
+        Map.Entry<?, ?> that = (Map.Entry<?, ?>) obj;
+        return Objects.equals(key, that.getKey()) && Objects.equals(value, that.getValue());
+      }
+      return false;
     }
   }
 }

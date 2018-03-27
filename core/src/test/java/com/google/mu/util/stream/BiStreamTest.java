@@ -105,6 +105,13 @@ public class BiStreamTest {
         .inOrder();
   }
 
+  @Test public void testMapValues_parallel() {
+    Stream<Integer> source = Stream.iterate(1, i -> i + 1).limit(1000);
+    assertKeyValues(BiStream.biStream(source.parallel()).mapValues(Object::toString))
+        .containsExactlyEntriesIn(
+            Stream.iterate(1, i -> i + 1).limit(1000).collect(toImmutableMultimap(i -> i, Object::toString)));
+  }
+
   @Test public void testFlatMap2() {
     assertKeyValues(
         BiStream.of("one", 1).flatMap2((k, v) -> BiStream.of(k, v * 10, k, v * 11)))
