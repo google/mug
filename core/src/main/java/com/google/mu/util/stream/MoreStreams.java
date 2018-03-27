@@ -72,7 +72,7 @@ public final class MoreStreams {
    * @since 1.9
    */
   public static <T> Stream<T> flatten(Stream<? extends Stream<? extends T>> streamOfStream) {
-    return mapBySpliterator(streamOfStream, 0, FlattenedSpliterator<T>::new).sequential();
+    return mapBySpliterator(streamOfStream.sequential(), 0, FlattenedSpliterator<T>::new);
   }
 
   /**
@@ -147,7 +147,8 @@ public final class MoreStreams {
   public static <T> Stream<List<T>> dice(Stream<? extends T> stream, int maxSize) {
     requireNonNull(stream);
     if (maxSize <= 0) throw new IllegalArgumentException();
-    return mapBySpliterator(stream, (Spliterator<? extends T> it) -> dice(it, maxSize));
+    return mapBySpliterator(
+        stream, Spliterator.NONNULL, (Spliterator<? extends T> it) -> dice(it, maxSize));
   }
 
   /**
@@ -165,14 +166,8 @@ public final class MoreStreams {
   }
 
   static <F, T> Stream<T> mapBySpliterator(
-      Stream<? extends F> stream,
-      Function<? super Spliterator<? extends F>, ? extends Spliterator<T>> mapper) {
-    return mapBySpliterator(stream, Spliterator.NONNULL, mapper);
-  }
-
-  static <F, T> Stream<T> mapBySpliterator(
-      Stream<? extends F> stream, int characteristics,
-      Function<? super Spliterator<? extends F>, ? extends Spliterator<T>> mapper) {
+      Stream<F> stream, int characteristics,
+      Function<? super Spliterator<F>, ? extends Spliterator<T>> mapper) {
     requireNonNull(mapper);
     Stream<T> mapped = StreamSupport.stream(
         () -> mapper.apply(stream.spliterator()), characteristics, stream.isParallel());
@@ -181,9 +176,8 @@ public final class MoreStreams {
   }
 
   private static <F, T> T splitThenWrap(
-      Spliterator<? extends F> from,
-      Function<? super Spliterator<? extends F>, ? extends T> wrapper) {
-    Spliterator<? extends F> split = from.trySplit();
+      Spliterator<F> from, Function<? super Spliterator<F>, ? extends T> wrapper) {
+    Spliterator<F> split = from.trySplit();
     return split == null ? null : wrapper.apply(split);
   }
 

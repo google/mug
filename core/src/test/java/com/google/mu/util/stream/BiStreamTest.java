@@ -432,7 +432,6 @@ public class BiStreamTest {
   @Test public void testNeighbors_parallelStream() {
     Stream<Integer> parallel = Stream.iterate(1, i -> i + 1).limit(6).parallel();
     BiStream<Integer, Integer> neighbors = BiStream.neighbors(parallel);
-    assertThat(neighbors.isParellel()).isTrue();
     assertKeyValues(neighbors)
         .containsExactlyEntriesIn(ImmutableMultimap.of(1, 2, 2, 3, 3, 4, 4, 5, 5, 6));
   }

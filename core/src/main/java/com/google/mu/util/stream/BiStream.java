@@ -15,7 +15,6 @@
 package com.google.mu.util.stream;
 
 import static com.google.mu.util.stream.MoreStreams.iterateThrough;
-import static com.google.mu.util.stream.MoreStreams.mapBySpliterator;
 import static java.util.Objects.requireNonNull;
 
 import java.util.AbstractMap;
@@ -129,9 +128,12 @@ public final class BiStream<K, V> implements AutoCloseable {
   public static <T, K, V> BiStream<K, V> biStream(
       Stream<? extends T> stream,
       Function<? super T, ? extends K> toKey, Function<? super T, ? extends V> toValue) {
+    requireNonNull(toKey);
+    requireNonNull(toValue);
     return new BiStream<>(stream.isParallel()
         ? stream.map(e -> kv(toKey.apply(e), toValue.apply(e)))
-        : EntrySpliterator.entryStream(stream, toKey, toValue));
+        : NonConcurrentEntrySpliterator.entryStream(
+            stream, it -> new EntrySpliterator<>(it, toKey, toValue)));
   }
 
   /**
@@ -163,7 +165,8 @@ public final class BiStream<K, V> implements AutoCloseable {
    * @since 1.10
    */
   public static <T> BiStream<T, T> neighbors(Stream<? extends T> elements) {
-    return new BiStream<>(mapBySpliterator(elements, it -> new NeighborSpliterator<>(it)));
+    return new BiStream<>(
+        NonConcurrentEntrySpliterator.entryStream(elements, it -> new NeighborSpliterator<>(it)));
   }
 
   /**
@@ -540,7 +543,7 @@ public final class BiStream<K, V> implements AutoCloseable {
     return Comparator.comparing(Map.Entry::getValue, ordering);
   }
 
-  private static final class Zipliterator<K, V> implements Spliterator<Map.Entry<K, V>> {
+  private static final class Zipliterator<K, V> extends NonConcurrentEntrySpliterator<K, V> {
     private final Spliterator<? extends K> keys;
     private final Spliterator<? extends V> values;
     private final CurrentKeyValue<K, V> current = new CurrentKeyValue<>();
@@ -557,16 +560,8 @@ public final class BiStream<K, V> implements AutoCloseable {
       return advanced;
     }
 
-    @Override public Spliterator<Map.Entry<K, V>> trySplit() {
-      return null;
-    }
-
     @Override public long estimateSize() {
       return Math.min(keys.estimateSize(), values.estimateSize());
-    }
-
-    @Override public int characteristics() {
-      return Spliterator.NONNULL;
     }
 
     private static final class CurrentKeyValue<K, V> extends TempEntry<K, V> {
@@ -575,21 +570,13 @@ public final class BiStream<K, V> implements AutoCloseable {
     }
   }
 
-  private static final class EntrySpliterator<F, K, V> implements Spliterator<Map.Entry<K, V>> {
+  private static final class EntrySpliterator<F, K, V> extends NonConcurrentEntrySpliterator<K, V> {
     private final Spliterator<? extends F> from;
     private final Function<? super F, ? extends K> toKey;
     private final Function<? super F, ? extends V> toValue;
     private final CurrentEntry current = new CurrentEntry();
 
-    static <T, K, V> Stream<Map.Entry<K, V>> entryStream(
-        Stream<? extends T> stream,
-        Function<? super T, ? extends K> toKey, Function<? super T, ? extends V> toValue) {
-      requireNonNull(toKey);
-      requireNonNull(toValue);
-      return mapBySpliterator(stream.sequential(), it -> new EntrySpliterator<>(it, toKey, toValue));
-    }
-
-    private EntrySpliterator(
+    EntrySpliterator(
         Spliterator<? extends F> from,
         Function<? super F, ? extends K> toKey, Function<? super F, ? extends V> toValue) {
       this.from = requireNonNull(from);
@@ -608,16 +595,8 @@ public final class BiStream<K, V> implements AutoCloseable {
       while (from.tryAdvance(current)) action.accept(current);
     }
 
-    @Override public Spliterator<Entry<K, V>> trySplit() {
-      return null;  // CurrentEntry is mutable and is only good for single-thread.
-    }
-
     @Override public long estimateSize() {
       return from.estimateSize();
-    }
-
-    @Override public int characteristics() {
-      return Spliterator.NONNULL;
     }
 
     private final class CurrentEntry extends TempEntry<K, V> implements Consumer<F> {
@@ -628,7 +607,7 @@ public final class BiStream<K, V> implements AutoCloseable {
     }
   }
 
-  private static final class NeighborSpliterator<E> implements Spliterator<Map.Entry<E, E>> {
+  private static final class NeighborSpliterator<E> extends NonConcurrentEntrySpliterator<E, E> {
     private final Spliterator<? extends E> elements;
     private final CurrentNeighbors current = new CurrentNeighbors();
   
@@ -643,16 +622,8 @@ public final class BiStream<K, V> implements AutoCloseable {
       return advanced;
     }
 
-    @Override public Spliterator<Map.Entry<E, E>> trySplit() {
-      return null;
-    }
-
     @Override public long estimateSize() {
       return elements.estimateSize();
-    }
-
-    @Override public int characteristics() {
-      return Spliterator.NONNULL;
     }
 
     private final class CurrentNeighbors extends TempEntry<E, E> implements Consumer<E> {
@@ -669,6 +640,24 @@ public final class BiStream<K, V> implements AutoCloseable {
             ? elements.tryAdvance(this)
             : elements.tryAdvance(this) && elements.tryAdvance(this);
       }
+    }
+  }
+
+  private static abstract class NonConcurrentEntrySpliterator<K, V>
+      implements Spliterator<Map.Entry<K, V>> {
+
+    static <F, K, V> Stream<Map.Entry<K, V>> entryStream(
+        Stream<F> stream,
+        Function<? super Spliterator<F>, ? extends NonConcurrentEntrySpliterator<K, V>> wrapper) {
+      return MoreStreams.mapBySpliterator(stream.sequential(), Spliterator.NONNULL, wrapper);
+    }
+
+    @Override public final int characteristics() {
+      return Spliterator.NONNULL;
+    }
+
+    @Override public final Spliterator<Map.Entry<K, V>> trySplit() {
+      return null;
     }
   }
 
