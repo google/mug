@@ -582,7 +582,7 @@ public final class BiStream<K, V> implements AutoCloseable {
     private final Spliterator<? extends F> from;
     private final Function<? super F, ? extends K> toKey;
     private final Function<? super F, ? extends V> toValue;
-    private final CurrentEntry currentEntry = new CurrentEntry();
+    private final CurrentEntry current = new CurrentEntry();
 
     static <T, K, V> Stream<Map.Entry<K, V>> entryStream(
         Stream<? extends T> stream,
@@ -604,9 +604,9 @@ public final class BiStream<K, V> implements AutoCloseable {
     }
 
     @Override public boolean tryAdvance(Consumer<? super Entry<K, V>> action) {
-      if (!from.tryAdvance(currentEntry)) return false;
-      action.accept(currentEntry);
-      return true;
+      boolean success = from.tryAdvance(current);
+      if (success) action.accept(current);
+      return success;
     }
 
     @Override public Spliterator<Entry<K, V>> trySplit() {
@@ -632,8 +632,7 @@ public final class BiStream<K, V> implements AutoCloseable {
 
   private static final class NeighborSpliterator<E> implements Spliterator<Map.Entry<E, E>> {
     private final Spliterator<? extends E> elements;
-    private boolean hasPrevious;
-    private final CurrentNeighbors<E> current = new CurrentNeighbors<>();
+    private final CurrentNeighbors current = new CurrentNeighbors();
   
     NeighborSpliterator(Spliterator<? extends E> elements) {
       this.elements = requireNonNull(elements);
@@ -641,13 +640,9 @@ public final class BiStream<K, V> implements AutoCloseable {
 
     @Override public boolean tryAdvance(Consumer<? super Map.Entry<E, E>> action) {
       requireNonNull(action);
-      if (!hasPrevious) {
-        if (!elements.tryAdvance(current)) return false;
-        hasPrevious = true;
-      }
-      if (!elements.tryAdvance(current)) return false;
-      action.accept(current);
-      return true;
+      boolean success = current.next();
+      if (success) action.accept(current);
+      return success;
     }
 
     @Override public Spliterator<Map.Entry<E, E>> trySplit() {
@@ -662,10 +657,19 @@ public final class BiStream<K, V> implements AutoCloseable {
       return Spliterator.NONNULL;
     }
 
-    private static final class CurrentNeighbors<E> extends TempEntry<E, E> implements Consumer<E> {
+    private final class CurrentNeighbors extends TempEntry<E, E> implements Consumer<E> {
+      private boolean hasNeighbor;
+
       @Override public void accept(E v) {
         this.key = this.value;
         this.value = v;
+        this.hasNeighbor = true;
+      }
+
+      boolean next() {
+        return hasNeighbor
+            ? elements.tryAdvance(this)
+            : elements.tryAdvance(this) && elements.tryAdvance(this);
       }
     }
   }
