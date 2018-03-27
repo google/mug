@@ -226,7 +226,8 @@ public final class BiStream<K, V> implements AutoCloseable {
   }
 
   /** Maps a single pair to zero or more {@code double}s. */
-  public DoubleStream flatMapToDouble(BiFunction<? super K, ? super V, ? extends DoubleStream> mapper) {
+  public DoubleStream flatMapToDouble(
+      BiFunction<? super K, ? super V, ? extends DoubleStream> mapper) {
     return underlying.flatMapToDouble(forEntries(mapper));
   }
 
@@ -590,7 +591,8 @@ public final class BiStream<K, V> implements AutoCloseable {
       requireNonNull(toKey);
       requireNonNull(toValue);
       return StreamSupport.stream(
-          () -> new EntrySpliterator<>(stream.spliterator(), toKey, toValue), Spliterator.NONNULL, false);
+          () -> new EntrySpliterator<>(stream.spliterator(), toKey, toValue),
+          Spliterator.NONNULL, false);
     }
 
     private EntrySpliterator(
