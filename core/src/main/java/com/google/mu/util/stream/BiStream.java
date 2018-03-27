@@ -243,10 +243,10 @@ public final class BiStream<K, V> implements AutoCloseable {
       BiFunction<? super K, ? super V, ? extends V2> valueMapper) {
     requireNonNull(keyMapper);
     requireNonNull(valueMapper);
-    return from(EntrySpliterator.entryStream(
+    return biStream(
         underlying,
         e -> keyMapper.apply(e.getKey(), e.getValue()),
-        e -> valueMapper.apply(e.getKey(),  e.getValue())));
+        e -> valueMapper.apply(e.getKey(),  e.getValue()));
   }
 
   /** Maps each key to another key of type {@code K2}. */
