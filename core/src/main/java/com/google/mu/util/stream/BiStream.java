@@ -15,6 +15,7 @@
 package com.google.mu.util.stream;
 
 import static com.google.mu.util.stream.MoreStreams.iterateThrough;
+import static com.google.mu.util.stream.MoreStreams.mapBySpliterator;
 import static java.util.Objects.requireNonNull;
 
 import java.util.AbstractMap;
@@ -72,34 +73,34 @@ public final class BiStream<K, V> implements AutoCloseable {
 
   /** Returns an empty stream. */
   public static <K, V> BiStream<K, V> empty() {
-    return from(Stream.empty());
+    return new BiStream<>(Stream.empty());
   }
 
   /** Returns a stream for {@code key} and {@code value}. */
   public static <K, V> BiStream<K, V> of(K key, V value) {
-    return from(Stream.of(kv(key, value)));
+    return new BiStream<>(Stream.of(kv(key, value)));
   }
 
   /** Returns a stream for two pairs. */
   public static <K, V> BiStream<K, V> of(K key1, V value1, K key2, V value2) {
-    return from(Stream.of(kv(key1, value1), kv(key2, value2)));
+    return new BiStream<>(Stream.of(kv(key1, value1), kv(key2, value2)));
   }
 
   /** Returns a stream for three pairs. */
   public static <K, V> BiStream<K, V> of(K key1, V value1, K key2, V value2, K key3, V value3) {
-    return from(Stream.of(kv(key1, value1), kv(key2, value2), kv(key3, value3)));
+    return new BiStream<>(Stream.of(kv(key1, value1), kv(key2, value2), kv(key3, value3)));
   }
 
   /** Returns a stream for four pairs. */
   public static <K, V> BiStream<K, V> of(
       K key1, V value1, K key2, V value2, K key3, V value3, K key4, V value4) {
-    return from(Stream.of(kv(key1, value1), kv(key2, value2), kv(key3, value3), kv(key4, value4)));
+    return new BiStream<>(Stream.of(kv(key1, value1), kv(key2, value2), kv(key3, value3), kv(key4, value4)));
   }
 
   /** Returns a stream for five pairs. */
   public static <K, V> BiStream<K, V> of(
       K key1, V value1, K key2, V value2, K key3, V value3, K key4, V value4, K key5, V value5) {
-    return from(Stream.of(
+    return new BiStream<>(Stream.of(
         kv(key1, value1), kv(key2, value2), kv(key3, value3), kv(key4, value4), kv(key5, value5)));
   }
 
@@ -128,12 +129,7 @@ public final class BiStream<K, V> implements AutoCloseable {
   public static <T, K, V> BiStream<K, V> biStream(
       Stream<? extends T> stream,
       Function<? super T, ? extends K> toKey, Function<? super T, ? extends V> toValue) {
-    return from(EntrySpliterator.entryStream(stream, toKey, toValue));
-  }
-
-  private static <K, V> BiStream<K, V> from(
-      Stream<? extends Map.Entry<? extends K, ? extends V>> entries) {
-    return new BiStream<>(entries);
+    return new BiStream<>(EntrySpliterator.entryStream(stream, toKey, toValue));
   }
 
   /**
@@ -165,9 +161,7 @@ public final class BiStream<K, V> implements AutoCloseable {
    * @since 1.10
    */
   public static <T> BiStream<T, T> neighbors(Stream<? extends T> elements) {
-    Stream<Map.Entry<T, T>> pairs = StreamSupport.stream(
-        () -> new NeighborSpliterator<>(elements.spliterator()), Spliterator.NONNULL, false);
-    return new BiStream<>(pairs.onClose(elements::close));
+    return new BiStream<>(mapBySpliterator(elements, it -> new NeighborSpliterator<>(it)));
   }
 
   /**
@@ -235,7 +229,8 @@ public final class BiStream<K, V> implements AutoCloseable {
   public <K2, V2> BiStream<K2, V2> flatMap2(
       BiFunction<? super K, ? super V, ? extends BiStream<? extends K2, ? extends V2>> mapper) {
     requireNonNull(mapper);
-    return from(underlying.flatMap(kv -> mapper.apply(kv.getKey(), kv.getValue()).underlying));
+    return new BiStream<>(
+        underlying.flatMap(kv -> mapper.apply(kv.getKey(), kv.getValue()).underlying));
   }
 
   /** Maps the pair to a new pair of type {@code K2} and {@code V2}. */
@@ -247,7 +242,7 @@ public final class BiStream<K, V> implements AutoCloseable {
     return biStream(
         underlying,
         e -> keyMapper.apply(e.getKey(), e.getValue()),
-        e -> valueMapper.apply(e.getKey(),  e.getValue()));
+        e -> valueMapper.apply(e.getKey(), e.getValue()));
   }
 
   /** Maps each key to another key of type {@code K2}. */
@@ -265,7 +260,7 @@ public final class BiStream<K, V> implements AutoCloseable {
   public <K2> BiStream<K2, V> flatMapKeys(
       BiFunction<? super K, ? super V, ? extends Stream<? extends K2>> keyMapper) {
     requireNonNull(keyMapper);
-    return flatMap2((k, v) -> from(keyMapper.apply(k, v).map(k2 -> kv(k2, v))));
+    return flatMap2((k, v) -> new BiStream<>(keyMapper.apply(k, v).map(k2 -> kv(k2, v))));
   }
 
   /** Maps each key to zero or more keys of type {@code K2}. */
@@ -291,7 +286,7 @@ public final class BiStream<K, V> implements AutoCloseable {
   public <V2> BiStream<K, V2> flatMapValues(
       BiFunction<? super K, ? super V, ? extends Stream<? extends V2>> valueMapper) {
     requireNonNull(valueMapper);
-    return flatMap2((k, v) -> from(valueMapper.apply(k, v).map(v2 -> kv(k, v2))));
+    return flatMap2((k, v) -> new BiStream<>(valueMapper.apply(k, v).map(v2 -> kv(k, v2))));
   }
 
   /** Maps each value to zero ore more values of type {@code V2}. */
@@ -303,12 +298,12 @@ public final class BiStream<K, V> implements AutoCloseable {
 
   /** Peeks each pair. */
   public BiStream<K, V> peek(BiConsumer<? super K, ? super V> peeker) {
-    return from(underlying.peek(forEntries(peeker)));
+    return new BiStream<>(underlying.peek(forEntries(peeker)));
   }
 
   /** Filter using {@code predicate}. */
   public BiStream<K, V> filter(BiPredicate<? super K, ? super V> predicate) {
-    return from(underlying.filter(forEntries(predicate)));
+    return new BiStream<>(underlying.filter(forEntries(predicate)));
   }
 
   /** Filter keys using {@code predicate}. */
@@ -323,7 +318,7 @@ public final class BiStream<K, V> implements AutoCloseable {
 
   /** Returns a new stream with {@code suffix} appended. */
   public BiStream<K, V> append(BiStream<? extends K, ? extends V> suffix) {
-    return from(Stream.concat(underlying, suffix.underlying));
+    return new BiStream<>(Stream.concat(underlying, suffix.underlying));
   }
 
   /** Returns a new stream with {@code key} and {@code value} appended. */
@@ -445,27 +440,27 @@ public final class BiStream<K, V> implements AutoCloseable {
 
   /** Limit the number of pairs. */
   public BiStream<K, V> limit(int num) {
-    return from(underlying.limit(num));
+    return new BiStream<>(underlying.limit(num));
   }
 
   /** Skips the first {@code n} pairs. */
   public BiStream<K, V> skip(int n) {
-    return from(underlying.skip(n));
+    return new BiStream<>(underlying.skip(n));
   }
 
   /** Keep only distinct pairs. */
   public BiStream<K, V> distinct() {
-    return from(underlying.distinct());
+    return new BiStream<>(underlying.distinct());
   }
 
   /** Returns an instance forcing parallel computation. */
   public BiStream<K, V> parallel() {
-    return from(underlying.parallel());
+    return new BiStream<>(underlying.parallel());
   }
 
   /** Returns an instance forcing sequential computation. */
   public BiStream<K, V> sequential() {
-    return from(underlying.sequential());
+    return new BiStream<>(underlying.sequential());
   }
 
   /** Returns a sorted stream based on {@code keyOrdering} and {@code valueOrdering}. */
@@ -475,17 +470,17 @@ public final class BiStream<K, V> implements AutoCloseable {
         Comparator.comparing(Map.Entry::getKey, keyOrdering);
     Comparator<Map.Entry<? extends K, ? extends V>> byValue =
         Comparator.comparing(Map.Entry::getValue, valueOrdering);
-    return from(underlying.sorted(byKey.thenComparing(byValue)));
+    return new BiStream<>(underlying.sorted(byKey.thenComparing(byValue)));
   }
 
   /** Returns an instance with keys sorted according to {@code order}. */
   public BiStream<K, V> sortedByKeys(Comparator<? super K> ordering) {
-    return from(underlying.sorted(forKeys(ordering)));
+    return new BiStream<>(underlying.sorted(forKeys(ordering)));
   }
 
   /** Returns an instance with values sorted according to {@code order}. */
   public BiStream<K, V> sortedByValues(Comparator<? super V> ordering) {
-    return from(underlying.sorted(forValues(ordering)));
+    return new BiStream<>(underlying.sorted(forValues(ordering)));
   }
 
   /** Returns the number of pairs in this stream. */
@@ -582,22 +577,19 @@ public final class BiStream<K, V> implements AutoCloseable {
     private final Spliterator<? extends F> from;
     private final Function<? super F, ? extends K> toKey;
     private final Function<? super F, ? extends V> toValue;
-    private final CurrentEntry current = new CurrentEntry();
+    private CurrentEntry current = new CurrentEntry();
 
     static <T, K, V> Stream<Map.Entry<K, V>> entryStream(
         Stream<? extends T> stream,
         Function<? super T, ? extends K> toKey, Function<? super T, ? extends V> toValue) {
-      requireNonNull(stream);
       requireNonNull(toKey);
       requireNonNull(toValue);
-      return StreamSupport.stream(
-          () -> new EntrySpliterator<>(stream.spliterator(), toKey, toValue),
-          Spliterator.NONNULL, false);
+      return mapBySpliterator(stream, it -> new EntrySpliterator<>(it, toKey, toValue));
     }
 
     private EntrySpliterator(
         Spliterator<? extends F> from,
-        Function<? super F, ? extends K> toKey,  Function<? super F, ? extends V> toValue) {
+        Function<? super F, ? extends K> toKey, Function<? super F, ? extends V> toValue) {
       this.from = requireNonNull(from);
       this.toKey = requireNonNull(toKey);
       this.toValue = requireNonNull(toValue);
@@ -610,9 +602,12 @@ public final class BiStream<K, V> implements AutoCloseable {
       return advanced;
     }
 
+    @Override public void forEachRemaining(Consumer<? super Entry<K, V>> action) {
+      while (from.tryAdvance(current)) action.accept(current);
+    }
+
     @Override public Spliterator<Entry<K, V>> trySplit() {
-      return MoreStreams.splitThenWrap(
-          from, split -> new EntrySpliterator<>(split, toKey, toValue));
+      return null;
     }
 
     @Override public long estimateSize() {

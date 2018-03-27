@@ -72,9 +72,7 @@ public final class MoreStreams {
    * @since 1.9
    */
   public static <T> Stream<T> flatten(Stream<? extends Stream<? extends T>> streamOfStream) {
-    requireNonNull(streamOfStream);
-    return StreamSupport.stream(
-        () -> new FlattenedSpliterator<>(streamOfStream.spliterator()), 0, false);
+    return mapBySpliterator(streamOfStream, 0, FlattenedSpliterator<T>::new).sequential();
   }
 
   /**
@@ -149,9 +147,7 @@ public final class MoreStreams {
   public static <T> Stream<List<T>> dice(Stream<? extends T> stream, int maxSize) {
     requireNonNull(stream);
     if (maxSize <= 0) throw new IllegalArgumentException();
-    Stream<List<T>> diced = StreamSupport.stream(
-        () -> dice(stream.spliterator(), maxSize), Spliterator.NONNULL, stream.isParallel());
-    return diced.onClose(stream::close);
+    return mapBySpliterator(stream, (Spliterator<? extends T> it) -> dice(it, maxSize));
   }
 
   /**
@@ -168,7 +164,23 @@ public final class MoreStreams {
     return new DicedSpliterator<T>(spliterator, maxSize);
   }
 
-  static <F, T> T splitThenWrap(
+  static <F, T> Stream<T> mapBySpliterator(
+      Stream<? extends F> stream,
+      Function<? super Spliterator<? extends F>, ? extends Spliterator<T>> mapper) {
+    return mapBySpliterator(stream, Spliterator.NONNULL, mapper);
+  }
+
+  static <F, T> Stream<T> mapBySpliterator(
+      Stream<? extends F> stream, int characteristics,
+      Function<? super Spliterator<? extends F>, ? extends Spliterator<T>> mapper) {
+    requireNonNull(mapper);
+    Stream<T> mapped = StreamSupport.stream(
+        () -> mapper.apply(stream.spliterator()), characteristics, stream.isParallel());
+    mapped.onClose(stream::close);
+    return mapped;
+  }
+
+  private static <F, T> T splitThenWrap(
       Spliterator<? extends F> from,
       Function<? super Spliterator<? extends F>, ? extends T> wrapper) {
     Spliterator<? extends F> split = from.trySplit();
