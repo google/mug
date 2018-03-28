@@ -66,6 +66,19 @@ BiStream.from(addressMap).forEach((zip, address) -> {
 });
 ```
 
+**Example 6: to process every pairs of adjacent elements in a stream:**
+
+```java
+BiStream.neighbors(events).forEach((prev, next) -> {
+  ...
+});
+```
+
+**Example 7: to turn a `Stream<Pair<K, V>>` to `BiStream<K, V>`:**
+
+```java
+BiStream<K, V> stream = biStream(pairs, Pair::getKey, Pair::getValue);
+```
 
 
 #### [MoreStreams](https://google.github.io/mug/apidocs/com/google/mu/util/stream/MoreStreams.html)
