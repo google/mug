@@ -133,7 +133,7 @@ public final class BiStream<K, V> implements AutoCloseable {
     return new BiStream<>(stream.isParallel()
         ? stream.map(e -> kv(toKey.apply(e), toValue.apply(e)))
         : AbstractEntryCursor.entryStream(
-            stream, it -> new EntrySpliterator<>(it, toKey, toValue)));
+            stream, it -> new KeyValueSpliterator<>(it, toKey, toValue)));
   }
 
   /**
@@ -553,7 +553,7 @@ public final class BiStream<K, V> implements AutoCloseable {
       this.values = requireNonNull(values);
     }
 
-    @Override TempEntry<K, V> current() {
+    @Override AbstractCurrentEntry<K, V> current() {
       return current;
     }
 
@@ -561,7 +561,7 @@ public final class BiStream<K, V> implements AutoCloseable {
       return Math.min(keys.estimateSize(), values.estimateSize());
     }
 
-    private final class CurrentKeyValue extends TempEntry<K, V> {
+    private final class CurrentKeyValue extends AbstractCurrentEntry<K, V> {
       private final Consumer<K> setKey = k -> { this.key = k; };
       private final Consumer<V> setValue = v -> { this.value = v; };
   
@@ -571,13 +571,13 @@ public final class BiStream<K, V> implements AutoCloseable {
     }
   }
 
-  private static final class EntrySpliterator<F, K, V> extends AbstractEntryCursor<K, V> {
+  private static final class KeyValueSpliterator<F, K, V> extends AbstractEntryCursor<K, V> {
     private final Spliterator<? extends F> from;
     private final Function<? super F, ? extends K> toKey;
     private final Function<? super F, ? extends V> toValue;
     private final CurrentEntry current = new CurrentEntry();
 
-    EntrySpliterator(
+    KeyValueSpliterator(
         Spliterator<? extends F> from,
         Function<? super F, ? extends K> toKey, Function<? super F, ? extends V> toValue) {
       this.from = requireNonNull(from);
@@ -585,7 +585,7 @@ public final class BiStream<K, V> implements AutoCloseable {
       this.toValue = requireNonNull(toValue);
     }
 
-    @Override TempEntry<K, V> current() {
+    @Override AbstractCurrentEntry<K, V> current() {
       return current;
     }
 
@@ -593,7 +593,7 @@ public final class BiStream<K, V> implements AutoCloseable {
       return from.estimateSize();
     }
 
-    private final class CurrentEntry extends TempEntry<K, V> implements Consumer<F> {
+    private final class CurrentEntry extends AbstractCurrentEntry<K, V> implements Consumer<F> {
       @Override public void accept(F source) {
         key = toKey.apply(source);
         value = toValue.apply(source);
@@ -613,7 +613,7 @@ public final class BiStream<K, V> implements AutoCloseable {
       this.elements = requireNonNull(elements);
     }
 
-    @Override TempEntry<E, E> current() {
+    @Override AbstractCurrentEntry<E, E> current() {
       return current;
     }
 
@@ -621,7 +621,7 @@ public final class BiStream<K, V> implements AutoCloseable {
       return elements.estimateSize();
     }
 
-    private final class CurrentNeighbors extends TempEntry<E, E> implements Consumer<E> {
+    private final class CurrentNeighbors extends AbstractCurrentEntry<E, E> implements Consumer<E> {
       private boolean hasNeighbor;
 
       @Override public void accept(E v) {
@@ -656,24 +656,25 @@ public final class BiStream<K, V> implements AutoCloseable {
 
     @Override public final boolean tryAdvance(Consumer<? super Entry<K, V>> action) {
       requireNonNull(action);
-      TempEntry<K, V> current = current();
+      AbstractCurrentEntry<K, V> current = current();
       boolean advanced = current.moveNext();
       if (advanced) action.accept(current);
       return advanced;
     }
 
     @Override public final void forEachRemaining(Consumer<? super Entry<K, V>> action) {
-      TempEntry<K, V> current = current();
+      AbstractCurrentEntry<K, V> current = current();
       while (current.moveNext()) action.accept(current);
     }
 
-    abstract TempEntry<K, V> current();
+    abstract AbstractCurrentEntry<K, V> current();
   }
 
-  private static abstract class TempEntry<K, V> implements Map.Entry<K, V> {
+  private static abstract class AbstractCurrentEntry<K, V> implements Map.Entry<K, V> {
     K key;
     V value;
 
+    /** Moves to the next entry, or return {@code false} if can't move. */
     abstract boolean moveNext();
 
     @Override public K getKey() {
