@@ -265,7 +265,7 @@ public final class BiStream<K, V> implements AutoCloseable {
   public <K2> BiStream<K2, V> flatMapKeys(
       BiFunction<? super K, ? super V, ? extends Stream<? extends K2>> keyMapper) {
     requireNonNull(keyMapper);
-    return flatMap2((k, v) -> new BiStream<>(keyMapper.apply(k, v).map(k2 -> kv(k2, v))));
+    return flatMap2((k, v) -> biStream(keyMapper.apply(k, v), Function.identity(), k2 -> v));
   }
 
   /** Maps each key to zero or more keys of type {@code K2}. */
@@ -291,7 +291,7 @@ public final class BiStream<K, V> implements AutoCloseable {
   public <V2> BiStream<K, V2> flatMapValues(
       BiFunction<? super K, ? super V, ? extends Stream<? extends V2>> valueMapper) {
     requireNonNull(valueMapper);
-    return flatMap2((k, v) -> new BiStream<>(valueMapper.apply(k, v).map(v2 -> kv(k, v2))));
+    return flatMap2((k, v) -> biStream(valueMapper.apply(k, v), v2 -> k, Function.identity()));
   }
 
   /** Maps each value to zero ore more values of type {@code V2}. */
