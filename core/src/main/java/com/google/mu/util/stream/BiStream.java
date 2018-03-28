@@ -671,8 +671,8 @@ public final class BiStream<K, V> implements AutoCloseable {
   }
 
   private static abstract class TempEntry<K, V> implements Map.Entry<K, V> {
-    volatile K key;
-    volatile V value;
+    K key;
+    V value;
 
     abstract boolean moveNext();
 
