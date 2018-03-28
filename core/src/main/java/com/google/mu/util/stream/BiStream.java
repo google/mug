@@ -16,6 +16,7 @@ package com.google.mu.util.stream;
 
 import static com.google.mu.util.stream.MoreStreams.iterateThrough;
 import static java.util.Objects.requireNonNull;
+import static java.util.function.Function.identity;
 
 import java.util.AbstractMap;
 import java.util.Collection;
@@ -116,7 +117,7 @@ public final class BiStream<K, V> implements AutoCloseable {
    * }</pre>
    */
   public static <T> BiStream<T, T> biStream(Stream<? extends T> stream) {
-    return biStream(stream, Function.identity(), Function.identity());
+    return biStream(stream, identity(), identity());
   }
 
   /**
@@ -265,7 +266,7 @@ public final class BiStream<K, V> implements AutoCloseable {
   public <K2> BiStream<K2, V> flatMapKeys(
       BiFunction<? super K, ? super V, ? extends Stream<? extends K2>> keyMapper) {
     requireNonNull(keyMapper);
-    return flatMap2((k, v) -> biStream(keyMapper.apply(k, v), Function.identity(), k2 -> v));
+    return flatMap2((k, v) -> biStream(keyMapper.apply(k, v), identity(), k2 -> v));
   }
 
   /** Maps each key to zero or more keys of type {@code K2}. */
@@ -291,7 +292,7 @@ public final class BiStream<K, V> implements AutoCloseable {
   public <V2> BiStream<K, V2> flatMapValues(
       BiFunction<? super K, ? super V, ? extends Stream<? extends V2>> valueMapper) {
     requireNonNull(valueMapper);
-    return flatMap2((k, v) -> biStream(valueMapper.apply(k, v), v2 -> k, Function.identity()));
+    return flatMap2((k, v) -> biStream(valueMapper.apply(k, v), v2 -> k, identity()));
   }
 
   /** Maps each value to zero ore more values of type {@code V2}. */
