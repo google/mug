@@ -132,7 +132,7 @@ public final class BiStream<K, V> implements AutoCloseable {
     requireNonNull(toValue);
     return new BiStream<>(stream.isParallel()
         ? stream.map(e -> kv(toKey.apply(e), toValue.apply(e)))
-        : NonConcurrentEntrySpliterator.entryStream(
+        : AbstractEntryCursor.entryStream(
             stream, it -> new EntrySpliterator<>(it, toKey, toValue)));
   }
 
@@ -166,7 +166,7 @@ public final class BiStream<K, V> implements AutoCloseable {
    */
   public static <T> BiStream<T, T> neighbors(Stream<? extends T> elements) {
     return new BiStream<>(
-        NonConcurrentEntrySpliterator.entryStream(elements, it -> new NeighborSpliterator<>(it)));
+        AbstractEntryCursor.entryStream(elements, it -> new NeighborSpliterator<>(it)));
   }
 
   /**
@@ -543,34 +543,35 @@ public final class BiStream<K, V> implements AutoCloseable {
     return Comparator.comparing(Map.Entry::getValue, ordering);
   }
 
-  private static final class Zipliterator<K, V> extends NonConcurrentEntrySpliterator<K, V> {
+  private static final class Zipliterator<K, V> extends AbstractEntryCursor<K, V> {
     private final Spliterator<? extends K> keys;
     private final Spliterator<? extends V> values;
-    private final CurrentKeyValue<K, V> current = new CurrentKeyValue<>();
+    private final CurrentKeyValue current = new CurrentKeyValue();
   
     Zipliterator(Spliterator<? extends K> keys, Spliterator<? extends V> values) {
       this.keys = requireNonNull(keys);
       this.values = requireNonNull(values);
     }
 
-    @Override public boolean tryAdvance(Consumer<? super Map.Entry<K, V>> action) {
-      requireNonNull(action);
-      boolean advanced = keys.tryAdvance(current.setKey) && values.tryAdvance(current.setValue);
-      if (advanced) action.accept(current);
-      return advanced;
+    @Override TempEntry<K, V> current() {
+      return current;
     }
 
     @Override public long estimateSize() {
       return Math.min(keys.estimateSize(), values.estimateSize());
     }
 
-    private static final class CurrentKeyValue<K, V> extends TempEntry<K, V> {
-      final Consumer<K> setKey = k -> { this.key = k; };
-      final Consumer<V> setValue = v -> { this.value = v; };
+    private final class CurrentKeyValue extends TempEntry<K, V> {
+      private final Consumer<K> setKey = k -> { this.key = k; };
+      private final Consumer<V> setValue = v -> { this.value = v; };
+  
+      @Override boolean moveNext() {
+        return keys.tryAdvance(setKey) && values.tryAdvance(setValue);
+      }
     }
   }
 
-  private static final class EntrySpliterator<F, K, V> extends NonConcurrentEntrySpliterator<K, V> {
+  private static final class EntrySpliterator<F, K, V> extends AbstractEntryCursor<K, V> {
     private final Spliterator<? extends F> from;
     private final Function<? super F, ? extends K> toKey;
     private final Function<? super F, ? extends V> toValue;
@@ -584,15 +585,8 @@ public final class BiStream<K, V> implements AutoCloseable {
       this.toValue = requireNonNull(toValue);
     }
 
-    @Override public boolean tryAdvance(Consumer<? super Entry<K, V>> action) {
-      requireNonNull(action);
-      boolean advanced = from.tryAdvance(current);
-      if (advanced) action.accept(current);
-      return advanced;
-    }
-
-    @Override public void forEachRemaining(Consumer<? super Entry<K, V>> action) {
-      while (from.tryAdvance(current)) action.accept(current);
+    @Override TempEntry<K, V> current() {
+      return current;
     }
 
     @Override public long estimateSize() {
@@ -604,10 +598,14 @@ public final class BiStream<K, V> implements AutoCloseable {
         key = toKey.apply(source);
         value = toValue.apply(source);
       }
+ 
+      @Override boolean moveNext() {
+        return from.tryAdvance(this);
+      }
     }
   }
 
-  private static final class NeighborSpliterator<E> extends NonConcurrentEntrySpliterator<E, E> {
+  private static final class NeighborSpliterator<E> extends AbstractEntryCursor<E, E> {
     private final Spliterator<? extends E> elements;
     private final CurrentNeighbors current = new CurrentNeighbors();
   
@@ -615,11 +613,8 @@ public final class BiStream<K, V> implements AutoCloseable {
       this.elements = requireNonNull(elements);
     }
 
-    @Override public boolean tryAdvance(Consumer<? super Map.Entry<E, E>> action) {
-      requireNonNull(action);
-      boolean advanced = current.tryAdvance();
-      if (advanced) action.accept(current);
-      return advanced;
+    @Override TempEntry<E, E> current() {
+      return current;
     }
 
     @Override public long estimateSize() {
@@ -635,7 +630,7 @@ public final class BiStream<K, V> implements AutoCloseable {
         this.hasNeighbor = true;
       }
 
-      boolean tryAdvance() {
+      @Override boolean moveNext() {
         return hasNeighbor
             ? elements.tryAdvance(this)
             : elements.tryAdvance(this) && elements.tryAdvance(this);
@@ -643,12 +638,11 @@ public final class BiStream<K, V> implements AutoCloseable {
     }
   }
 
-  private static abstract class NonConcurrentEntrySpliterator<K, V>
-      implements Spliterator<Map.Entry<K, V>> {
+  private static abstract class AbstractEntryCursor<K, V> implements Spliterator<Map.Entry<K, V>> {
 
     static <F, K, V> Stream<Map.Entry<K, V>> entryStream(
         Stream<F> stream,
-        Function<? super Spliterator<F>, ? extends NonConcurrentEntrySpliterator<K, V>> wrapper) {
+        Function<? super Spliterator<F>, ? extends AbstractEntryCursor<K, V>> wrapper) {
       return MoreStreams.mapBySpliterator(stream.sequential(), Spliterator.NONNULL, wrapper);
     }
 
@@ -659,11 +653,28 @@ public final class BiStream<K, V> implements AutoCloseable {
     @Override public final Spliterator<Map.Entry<K, V>> trySplit() {
       return null;
     }
+
+    @Override public final boolean tryAdvance(Consumer<? super Entry<K, V>> action) {
+      requireNonNull(action);
+      TempEntry<K, V> current = current();
+      boolean advanced = current.moveNext();
+      if (advanced) action.accept(current);
+      return advanced;
+    }
+
+    @Override public final void forEachRemaining(Consumer<? super Entry<K, V>> action) {
+      TempEntry<K, V> current = current();
+      while (current.moveNext()) action.accept(current);
+    }
+
+    abstract TempEntry<K, V> current();
   }
 
   private static abstract class TempEntry<K, V> implements Map.Entry<K, V> {
     volatile K key;
     volatile V value;
+
+    abstract boolean moveNext();
 
     @Override public K getKey() {
       return key;
