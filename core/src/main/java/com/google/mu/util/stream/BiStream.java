@@ -664,6 +664,7 @@ public final class BiStream<K, V> implements AutoCloseable {
     }
 
     @Override public final void forEachRemaining(Consumer<? super Entry<K, V>> action) {
+      requireNonNull(action);
       AbstractCurrentEntry<K, V> current = current();
       while (current.moveNext()) action.accept(current);
     }
