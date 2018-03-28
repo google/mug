@@ -176,8 +176,8 @@ public final class MoreStreams {
 
   private static <F, T> T splitThenWrap(
       Spliterator<F> from, Function<? super Spliterator<F>, ? extends T> wrapper) {
-    Spliterator<F> split = from.trySplit();
-    return split == null ? null : wrapper.apply(split);
+    Spliterator<F> it = from.trySplit();
+    return it == null ? null : wrapper.apply(it);
   }
 
   private static final class DicedSpliterator<T> implements Spliterator<List<T>> {
@@ -199,7 +199,7 @@ public final class MoreStreams {
     }
 
     @Override public Spliterator<List<T>> trySplit() {
-      return splitThenWrap(underlying, split -> new DicedSpliterator<>(split, maxSize));
+      return splitThenWrap(underlying, it -> new DicedSpliterator<>(it, maxSize));
     }
 
     @Override public long estimateSize() {
@@ -256,8 +256,8 @@ public final class MoreStreams {
     }
 
     @Override public Spliterator<T> trySplit() {
-      return splitThenWrap(blocks, split -> {
-        Spliterator<T> result = new FlattenedSpliterator<>(split, currentBlock);
+      return splitThenWrap(blocks, it -> {
+        Spliterator<T> result = new FlattenedSpliterator<>(it, currentBlock);
         currentBlock = null;
         return result;
       });
