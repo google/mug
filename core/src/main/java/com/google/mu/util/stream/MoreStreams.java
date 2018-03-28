@@ -147,8 +147,7 @@ public final class MoreStreams {
   public static <T> Stream<List<T>> dice(Stream<? extends T> stream, int maxSize) {
     requireNonNull(stream);
     if (maxSize <= 0) throw new IllegalArgumentException();
-    return mapBySpliterator(
-        stream, Spliterator.NONNULL, (Spliterator<? extends T> it) -> dice(it, maxSize));
+    return mapBySpliterator(stream, Spliterator.NONNULL, it -> dice(it, maxSize));
   }
 
   /**
