@@ -685,23 +685,23 @@ public final class BiStream<K, V> implements AutoCloseable {
     /** Moves to the next entry, or return {@code false} if can't move. */
     abstract boolean moveNext();
 
-    @Override public K getKey() {
+    @Override public final K getKey() {
       return key;
     }
 
-    @Override public V getValue() {
+    @Override public final V getValue() {
       return value;
     }
 
-    @Override public V setValue(V value) {
+    @Override public final V setValue(V value) {
       throw new UnsupportedOperationException();
     }
 
-    @Override public int hashCode() {
+    @Override public final int hashCode() {
       return Objects.hash(key, value);
     }
 
-    @Override public boolean equals(Object obj) {
+    @Override public final boolean equals(Object obj) {
       if (obj instanceof Map.Entry<?, ?>) {
         Map.Entry<?, ?> that = (Map.Entry<?, ?>) obj;
         return Objects.equals(key, that.getKey()) && Objects.equals(value, that.getValue());
