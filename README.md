@@ -61,6 +61,7 @@ ImmutableListMultimap<ZipCode, Address> addressesByZipCode = biStream(addresses)
 **Example 5: to iterate through a Map more concisely:**
 
 ```java
+// BiCollection.from() creates a view over addressMap. DOES NOT COPY.
 BiCollection.from(addressMap).stream().forEach((zip, address) -> {
   ...
 });
