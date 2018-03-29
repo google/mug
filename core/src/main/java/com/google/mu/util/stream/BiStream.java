@@ -698,7 +698,7 @@ public final class BiStream<K, V> implements AutoCloseable {
     }
 
     @Override public final int hashCode() {
-      return Objects.hash(key, value);
+      return Objects.hashCode(key) * 31 + Objects.hashCode(value);
     }
 
     @Override public final boolean equals(Object obj) {
