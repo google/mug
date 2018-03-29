@@ -152,7 +152,7 @@ public final class BiStream<K, V> implements AutoCloseable {
       Stream<? extends K> keys, Stream<? extends V> values) {
     Stream<Map.Entry<K, V>> zipped = StreamSupport.stream(
             () -> new Zipliterator<>(keys.spliterator(), values.spliterator()),
-            Spliterator.NONNULL, keys.isParallel() || values.isParallel());
+            Spliterator.NONNULL, false);
     return new BiStream<>(zipped.onClose(keys::close).onClose(values::close));
   }
 
