@@ -72,9 +72,7 @@ public final class MoreStreams {
    * @since 1.9
    */
   public static <T> Stream<T> flatten(Stream<? extends Stream<? extends T>> streamOfStream) {
-    requireNonNull(streamOfStream);
-    return StreamSupport.stream(
-        () -> new FlattenedSpliterator<>(streamOfStream.spliterator()), 0, false);
+    return mapBySpliterator(streamOfStream.sequential(), 0, FlattenedSpliterator<T>::new);
   }
 
   /**
@@ -149,9 +147,7 @@ public final class MoreStreams {
   public static <T> Stream<List<T>> dice(Stream<? extends T> stream, int maxSize) {
     requireNonNull(stream);
     if (maxSize <= 0) throw new IllegalArgumentException();
-    Stream<List<T>> diced = StreamSupport.stream(
-        () -> dice(stream.spliterator(), maxSize), Spliterator.NONNULL, stream.isParallel());
-    return diced.onClose(stream::close);
+    return mapBySpliterator(stream, Spliterator.NONNULL, it -> dice(it, maxSize));
   }
 
   /**
@@ -166,6 +162,22 @@ public final class MoreStreams {
     requireNonNull(spliterator);
     if (maxSize <= 0) throw new IllegalArgumentException();
     return new DicedSpliterator<T>(spliterator, maxSize);
+  }
+
+  static <F, T> Stream<T> mapBySpliterator(
+      Stream<F> stream, int characteristics,
+      Function<? super Spliterator<F>, ? extends Spliterator<T>> mapper) {
+    requireNonNull(mapper);
+    Stream<T> mapped = StreamSupport.stream(
+        () -> mapper.apply(stream.spliterator()), characteristics, stream.isParallel());
+    mapped.onClose(stream::close);
+    return mapped;
+  }
+
+  private static <F, T> T splitThenWrap(
+      Spliterator<F> from, Function<? super Spliterator<F>, ? extends T> wrapper) {
+    Spliterator<F> it = from.trySplit();
+    return it == null ? null : wrapper.apply(it);
   }
 
   private static final class DicedSpliterator<T> implements Spliterator<List<T>> {
@@ -187,8 +199,7 @@ public final class MoreStreams {
     }
 
     @Override public Spliterator<List<T>> trySplit() {
-      Spliterator<? extends T> split = underlying.trySplit();
-      return split == null ? null : new DicedSpliterator<T>(split, maxSize);
+      return splitThenWrap(underlying, it -> new DicedSpliterator<>(it, maxSize));
     }
 
     @Override public long estimateSize() {
@@ -245,11 +256,11 @@ public final class MoreStreams {
     }
 
     @Override public Spliterator<T> trySplit() {
-      Spliterator<? extends Stream<? extends T>> split = blocks.trySplit();
-      if (split == null) return null;
-      Spliterator<T> result = new FlattenedSpliterator<T>(split, currentBlock);
-      currentBlock = null;
-      return result;
+      return splitThenWrap(blocks, it -> {
+        Spliterator<T> result = new FlattenedSpliterator<>(it, currentBlock);
+        currentBlock = null;
+        return result;
+      });
     }
 
     @Override public long estimateSize() {

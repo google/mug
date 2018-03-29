@@ -29,7 +29,8 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 /**
- * A re-streamable collection of pairs. Suitable when the pairs aren't logically a {@code Map}
+ * {@code BiCollection} to {@link BiStream} is like {@code Iterable} to {@code Iterator}:
+ * a re-streamable collection of pairs. Suitable when the pairs aren't logically a {@code Map}
  * or {@code Multimap}.
  *
  * <p>This class is thread-safe if the underlying collection is thread-safe. For example:

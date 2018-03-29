@@ -34,10 +34,13 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.LinkedListMultimap;
+import com.google.common.collect.Multimap;
 import com.google.common.testing.NullPointerTester;
 import com.google.common.truth.IterableSubject;
 import com.google.common.truth.MultimapSubject;
@@ -73,10 +76,16 @@ public class BiStreamTest {
     assertKeyValues(BiStream.biStream(Stream.of(1, 2)).mapKeys(Object::toString))
         .containsExactlyEntriesIn(ImmutableMultimap.of("1", 1, "2", 2))
         .inOrder();
+    assertKeyValues(BiStream.biStream(Stream.of(1, 2).parallel()).mapKeys(Object::toString))
+        .containsExactlyEntriesIn(ImmutableMultimap.of("1", 1, "2", 2))
+        .inOrder();
   }
 
   @Test public void testBiStreamWithKeyAndValueFunctions() {
     assertKeyValues(BiStream.biStream(Stream.of(1, 2), Object::toString, v -> v))
+        .containsExactlyEntriesIn(ImmutableMultimap.of("1", 1, "2", 2))
+        .inOrder();
+    assertKeyValues(BiStream.biStream(Stream.of(1, 2).parallel(), Object::toString, v -> v))
         .containsExactlyEntriesIn(ImmutableMultimap.of("1", 1, "2", 2))
         .inOrder();
   }
@@ -103,6 +112,40 @@ public class BiStreamTest {
     assertKeyValues(BiStream.of("one", 1).mapValues(v -> v * 10))
         .containsExactlyEntriesIn(ImmutableMultimap.of("one", 10))
         .inOrder();
+  }
+
+  @Test public void testMapValues_parallel() {
+    Stream<Integer> source = Stream.iterate(1, i -> i + 1).limit(1000);
+    assertKeyValues(BiStream.biStream(source.parallel()).mapValues(Object::toString))
+        .containsExactlyEntriesIn(
+            Stream.iterate(1, i -> i + 1).limit(1000).collect(toImmutableMultimap(i -> i, Object::toString)));
+  }
+
+  @Test public void testMapValues_parallel_distinct() {
+    Stream<Integer> source = Stream.iterate(1, i -> i + 1).limit(1000).map(i -> i / 2);
+    assertKeyValues(BiStream.biStream(source.parallel()).mapValues(Object::toString).distinct())
+        .containsExactlyEntriesIn(
+            Stream.iterate(0, i -> i + 1).limit(501).collect(toImmutableMultimap(i -> i, Object::toString)));
+  }
+
+  @Test public void testDistinct_byKey() {
+    BiStream<Integer, ?> distinct =
+        BiStream.biStream(Stream.of(1, 1, 2, 2, 3)).mapValues(x -> null).distinct();
+    Multimap<Integer, Object> expected = ArrayListMultimap.create();
+    expected.put(1, null);
+    expected.put(2, null);
+    expected.put(3, null);
+    assertKeyValues(distinct).containsExactlyEntriesIn(expected);
+  }
+
+  @Test public void testDistinct_byValue() {
+    BiStream<?, Integer> distinct =
+        BiStream.biStream(Stream.of(1, 1, 2, 2, 3)).mapKeys(k -> null).distinct();
+    Multimap<Integer, Object> expected = ArrayListMultimap.create();
+    expected.put(null, 1);
+    expected.put(null, 2);
+    expected.put(null, 3);
+    assertKeyValues(distinct).containsExactlyEntriesIn(expected);
   }
 
   @Test public void testFlatMap2() {
@@ -393,10 +436,9 @@ public class BiStreamTest {
   }
 
   @Test public void testNeighbors_parallelStream() {
-    Stream<Integer> parallel = Stream.iterate(1, i -> i + 1).limit(1000).parallel();
+    Stream<Integer> parallel = Stream.iterate(1, i -> i + 1).limit(6).parallel();
     BiStream<Integer, Integer> neighbors = BiStream.neighbors(parallel);
-    assertThat(neighbors.isParellel()).isFalse();
-    assertKeyValues(neighbors.limit(5))
+    assertKeyValues(neighbors)
         .containsExactlyEntriesIn(ImmutableMultimap.of(1, 2, 2, 3, 3, 4, 4, 5, 5, 6));
   }
 
@@ -501,8 +543,7 @@ public class BiStreamTest {
   }
 
   private static <K, V> MultimapSubject assertKeyValues(BiStream<K, V> stream) {
-    ImmutableListMultimap<K, V> multimap = stream
-        .<ImmutableListMultimap<K, V>>collect(ImmutableListMultimap::toImmutableListMultimap);
+    Multimap<K, V> multimap = stream.<Multimap<K, V>>collect(BiStreamTest::toLinkedListMultimap);
     return assertThat(multimap);
   }
 
@@ -515,5 +556,16 @@ public class BiStreamTest {
   private static <T, K, V> Collector<T, ?, ImmutableListMultimap<K, V>> toImmutableMultimap(
       Function<T, K> keyMapper, Function<T, V> valueMapper) {
     return ImmutableListMultimap.toImmutableListMultimap(keyMapper, valueMapper);
+  }
+
+  private static <T, K, V> Collector<T, ?, LinkedListMultimap<K, V>> toLinkedListMultimap(
+      Function<? super T, ? extends K> toKey, Function<? super T, ? extends V> toValue) {
+    return Collector.of(
+        LinkedListMultimap::create,
+        (m, e) -> m.put(toKey.apply(e), toValue.apply(e)),
+        (m1, m2) -> {
+          m1.putAll(m2);
+          return m1;
+        });
   }
 }

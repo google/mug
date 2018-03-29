@@ -3,7 +3,7 @@ Disclaimer: This is not an official Google product.
 # MµG
 A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/index.html)), with 0 deps. ![](https://travis-ci.org/google/mug.svg?branch=master)
 
-* Stream utils ([BiStream](#bistream-streams-pairs-of-objects), [MoreStreams](#morestreams)).
+* Stream utilities ([BiStream](#bistream-streams-pairs-of-objects), [MoreStreams](#morestreams)).
 * [Retryer](#retryer) retries.
 * [Maybe](#maybe) tunnels checked exceptions through streams or futures.
 * [Funnel](#funnel) flows objects through batch conversions in FIFO order.
@@ -17,11 +17,11 @@ Add the following to pom.xml:
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug</artifactId>
-    <version>1.10</version>
+    <version>1.11</version>
   </dependency>
 ```
 
-## Stream utils
+## Stream
 
 #### [BiStream](https://google.github.io/mug/apidocs/com/google/mu/util/stream/BiStream.html) streams pairs of objects.
 
@@ -61,11 +61,25 @@ ImmutableListMultimap<ZipCode, Address> addressesByZipCode = biStream(addresses)
 **Example 5: to iterate through a Map more concisely:**
 
 ```java
-BiStream.from(addressMap).forEach((zip, address) -> {
+// BiCollection.from() creates a view over addressMap. DOES NOT COPY.
+BiCollection.from(addressMap).stream().forEach((zip, address) -> {
   ...
 });
 ```
 
+**Example 6: to process every pairs of adjacent elements in a stream:**
+
+```java
+BiStream.neighbors(events).forEach((prev, next) -> {
+  ...
+});
+```
+
+**Example 7: to turn a `Stream<Pair<K, V>>` to `BiStream<K, V>`:**
+
+```java
+BiStream<K, V> stream = biStream(pairs, Pair::getKey, Pair::getValue);
+```
 
 
 #### [MoreStreams](https://google.github.io/mug/apidocs/com/google/mu/util/stream/MoreStreams.html)
