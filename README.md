@@ -83,7 +83,7 @@ BiStream<K, V> stream = biStream(pairs, Pair::getKey, Pair::getValue);
 
 **Q: Why not `Map<Foo, Bar>` or `Multimap<Foo, Bar>`?**
 
-A: Sometimes Foo and Bar are just an arbitrary pair of objects, with no key-value relationship. Or you may not trust `Foo#equals()` and `hashCode()`.
+A: Sometimes Foo and Bar are just an arbitrary pair of objects, with no key-value relationship. Or you may not trust `Foo#equals()` and `hashCode()`. Instead, drop-in replace your `Stream<Pair<Foo, Bar>>`/`List<Pair<Foo, Bar>>` with `BiStream<Foo, Bar>`/`BiCollection<Foo, Bar>` to get better readability.
 
 **Q: Why not `Stream<FooAndBar>`?**
 
