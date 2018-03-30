@@ -87,7 +87,7 @@ A: Sometimes Foo and Bar are just an arbitrary pair of objects, with no key-valu
 
 **Q: Why not `Stream<FooAndBar>`?**
 
-A: When you already have a proper domain object, sure. But you might find it cumbersome to define a bunch of FooAndBar, PatioChairAndKichenSink one-off classes.
+A: When you already have a proper domain object, sure. But you might find it cumbersome to define a bunch of FooAndBar, PatioChairAndKitchenSink one-off classes.
 
 **Q: Why not `Stream<Pair<Foo, Bar>>`?**
 
