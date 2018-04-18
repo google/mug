@@ -133,7 +133,7 @@ public final class BiStream<K, V> implements AutoCloseable {
     requireNonNull(toValue);
     return new BiStream<>(stream.isParallel()
         ? stream.map(e -> kv(toKey.apply(e), toValue.apply(e)))
-        : AbstractEntryCursor.entryStream(
+        : EphemeralEntrySpliterator.entryStream(
             stream, it -> new KeyValueSpliterator<>(it, toKey, toValue)));
   }
 
@@ -152,7 +152,7 @@ public final class BiStream<K, V> implements AutoCloseable {
       Stream<? extends K> keys, Stream<? extends V> values) {
     Stream<Map.Entry<K, V>> zipped = StreamSupport.stream(
             () -> new Zipliterator<>(keys.spliterator(), values.spliterator()),
-            Spliterator.NONNULL, keys.isParallel() || values.isParallel());
+            Spliterator.NONNULL, false);
     return new BiStream<>(zipped.onClose(keys::close).onClose(values::close));
   }
 
@@ -167,7 +167,7 @@ public final class BiStream<K, V> implements AutoCloseable {
    */
   public static <T> BiStream<T, T> neighbors(Stream<? extends T> elements) {
     return new BiStream<>(
-        AbstractEntryCursor.entryStream(elements, it -> new NeighborSpliterator<>(it)));
+        EphemeralEntrySpliterator.entryStream(elements, it -> new NeighborSpliterator<>(it)));
   }
 
   /**
@@ -393,7 +393,9 @@ public final class BiStream<K, V> implements AutoCloseable {
    * }</pre>
    * 
    * @since 1.3
+   * @deprecated Use {@link #toBiCollection()} instead.
    */
+  @Deprecated
   public BiCollection<K, V> toBiCollection(CollectorStrategy collectorStrategy) {
     Collection<? extends Map.Entry<? extends K, ? extends V>> entries =
         underlying.collect(collectorStrategy.collector());
@@ -544,7 +546,7 @@ public final class BiStream<K, V> implements AutoCloseable {
     return Comparator.comparing(Map.Entry::getValue, ordering);
   }
 
-  private static final class Zipliterator<K, V> extends AbstractEntryCursor<K, V> {
+  private static final class Zipliterator<K, V> extends EphemeralEntrySpliterator<K, V> {
     private final Spliterator<? extends K> keys;
     private final Spliterator<? extends V> values;
     private final CurrentKeyValue current = new CurrentKeyValue();
@@ -554,7 +556,7 @@ public final class BiStream<K, V> implements AutoCloseable {
       this.values = requireNonNull(values);
     }
 
-    @Override AbstractCurrentEntry<K, V> current() {
+    @Override EphemeralEntry<K, V> current() {
       return current;
     }
 
@@ -562,7 +564,7 @@ public final class BiStream<K, V> implements AutoCloseable {
       return Math.min(keys.estimateSize(), values.estimateSize());
     }
 
-    private final class CurrentKeyValue extends AbstractCurrentEntry<K, V> {
+    private final class CurrentKeyValue extends EphemeralEntry<K, V> {
       private final Consumer<K> setKey = k -> { this.key = k; };
       private final Consumer<V> setValue = v -> { this.value = v; };
   
@@ -572,7 +574,7 @@ public final class BiStream<K, V> implements AutoCloseable {
     }
   }
 
-  private static final class KeyValueSpliterator<F, K, V> extends AbstractEntryCursor<K, V> {
+  private static final class KeyValueSpliterator<F, K, V> extends EphemeralEntrySpliterator<K, V> {
     private final Spliterator<? extends F> from;
     private final Function<? super F, ? extends K> toKey;
     private final Function<? super F, ? extends V> toValue;
@@ -586,7 +588,7 @@ public final class BiStream<K, V> implements AutoCloseable {
       this.toValue = requireNonNull(toValue);
     }
 
-    @Override AbstractCurrentEntry<K, V> current() {
+    @Override EphemeralEntry<K, V> current() {
       return current;
     }
 
@@ -594,7 +596,7 @@ public final class BiStream<K, V> implements AutoCloseable {
       return from.estimateSize();
     }
 
-    private final class CurrentEntry extends AbstractCurrentEntry<K, V> implements Consumer<F> {
+    private final class CurrentEntry extends EphemeralEntry<K, V> implements Consumer<F> {
       @Override public void accept(F source) {
         key = toKey.apply(source);
         value = toValue.apply(source);
@@ -606,7 +608,7 @@ public final class BiStream<K, V> implements AutoCloseable {
     }
   }
 
-  private static final class NeighborSpliterator<E> extends AbstractEntryCursor<E, E> {
+  private static final class NeighborSpliterator<E> extends EphemeralEntrySpliterator<E, E> {
     private final Spliterator<? extends E> elements;
     private final CurrentNeighbors current = new CurrentNeighbors();
   
@@ -614,7 +616,7 @@ public final class BiStream<K, V> implements AutoCloseable {
       this.elements = requireNonNull(elements);
     }
 
-    @Override AbstractCurrentEntry<E, E> current() {
+    @Override EphemeralEntry<E, E> current() {
       return current;
     }
 
@@ -622,7 +624,7 @@ public final class BiStream<K, V> implements AutoCloseable {
       return elements.estimateSize();
     }
 
-    private final class CurrentNeighbors extends AbstractCurrentEntry<E, E> implements Consumer<E> {
+    private final class CurrentNeighbors extends EphemeralEntry<E, E> implements Consumer<E> {
       private boolean hasNeighbor;
 
       @Override public void accept(E v) {
@@ -639,11 +641,17 @@ public final class BiStream<K, V> implements AutoCloseable {
     }
   }
 
-  private static abstract class AbstractEntryCursor<K, V> implements Spliterator<Map.Entry<K, V>> {
+  /**
+   * Spliterator of {@link EphemeralEntry}. Because the {@link Map.Entry} objects are ephemeral,
+   * i.e. entry key-values change upon moving to the next entry, they aren't safe to be consumed
+   * concurrently, only sequential streams are safe and {@link #trySplit} should not split.
+   */
+  private static abstract class EphemeralEntrySpliterator<K, V>
+      implements Spliterator<Map.Entry<K, V>> {
 
     static <F, K, V> Stream<Map.Entry<K, V>> entryStream(
         Stream<F> stream,
-        Function<? super Spliterator<F>, ? extends AbstractEntryCursor<K, V>> wrapper) {
+        Function<? super Spliterator<F>, ? extends EphemeralEntrySpliterator<K, V>> wrapper) {
       return MoreStreams.mapBySpliterator(stream.sequential(), Spliterator.NONNULL, wrapper);
     }
 
@@ -657,7 +665,7 @@ public final class BiStream<K, V> implements AutoCloseable {
 
     @Override public final boolean tryAdvance(Consumer<? super Entry<K, V>> action) {
       requireNonNull(action);
-      AbstractCurrentEntry<K, V> current = current();
+      EphemeralEntry<K, V> current = current();
       boolean advanced = current.moveNext();
       if (advanced) action.accept(current);
       return advanced;
@@ -665,37 +673,37 @@ public final class BiStream<K, V> implements AutoCloseable {
 
     @Override public final void forEachRemaining(Consumer<? super Entry<K, V>> action) {
       requireNonNull(action);
-      AbstractCurrentEntry<K, V> current = current();
+      EphemeralEntry<K, V> current = current();
       while (current.moveNext()) action.accept(current);
     }
 
-    abstract AbstractCurrentEntry<K, V> current();
+    abstract EphemeralEntry<K, V> current();
   }
 
-  private static abstract class AbstractCurrentEntry<K, V> implements Map.Entry<K, V> {
+  private static abstract class EphemeralEntry<K, V> implements Map.Entry<K, V> {
     K key;
     V value;
 
     /** Moves to the next entry, or return {@code false} if can't move. */
     abstract boolean moveNext();
 
-    @Override public K getKey() {
+    @Override public final K getKey() {
       return key;
     }
 
-    @Override public V getValue() {
+    @Override public final V getValue() {
       return value;
     }
 
-    @Override public V setValue(V value) {
+    @Override public final V setValue(V value) {
       throw new UnsupportedOperationException();
     }
 
-    @Override public int hashCode() {
-      return Objects.hash(key, value);
+    @Override public final int hashCode() {
+      return Objects.hashCode(key) * 31 + Objects.hashCode(value);
     }
 
-    @Override public boolean equals(Object obj) {
+    @Override public final boolean equals(Object obj) {
       if (obj instanceof Map.Entry<?, ?>) {
         Map.Entry<?, ?> that = (Map.Entry<?, ?>) obj;
         return Objects.equals(key, that.getKey()) && Objects.equals(value, that.getValue());

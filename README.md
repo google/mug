@@ -81,6 +81,18 @@ BiStream.neighbors(events).forEach((prev, next) -> {
 BiStream<K, V> stream = biStream(pairs, Pair::getKey, Pair::getValue);
 ```
 
+**Q: Why not `Map<Foo, Bar>` or `Multimap<Foo, Bar>`?**
+
+A: Sometimes Foo and Bar are just an arbitrary pair of objects, with no key-value relationship. Or you may not trust `Foo#equals()` and `hashCode()`. Instead, drop-in replace your `Stream<Pair<Foo, Bar>>`/`List<Pair<Foo, Bar>>` with `BiStream<Foo, Bar>`/`BiCollection<Foo, Bar>` to get better readability.
+
+**Q: Why not `Stream<FooAndBar>`?**
+
+A: When you already have a proper domain object, sure. But you might find it cumbersome to define a bunch of FooAndBar, PatioChairAndKitchenSink one-off classes.
+
+**Q: Why not `Stream<Pair<Foo, Bar>>`?**
+
+A: It's distracting to read code littered with opaque method names like `getFirst()` and `getSecond()`. It's also less efficient because you end up creating lots of temporary Pair objects.
+
 
 #### [MoreStreams](https://google.github.io/mug/apidocs/com/google/mu/util/stream/MoreStreams.html)
 
@@ -190,7 +202,7 @@ new Retryer()
 
 #### Backoffs are just `List<Delay>`
 
-`exponentialBackoff()`, `fibonacci()`, `timed()` and `randomized()` are provided out of the box for convenience purpose only. But at the end of the day, backoffs are just old-school boring `List`s. You can create the List in any way you are used to. For example, there isn't a `uniformDelay()` in this library, because there is already `Collections.nCopies(n, delay)`.
+`exponentialBackoff()`, `fibonacci()`, `timed()` and `randomized()` are provided out of the box for convenience purpose only. But at the end of the day, backoffs are just old-school boring `List`s. This makes the backoff strategies extensible. You can create the List in any way you are used to, using any Java library. For example, there isn't a `uniformDelay()` in this library, because there is already `Collections.nCopies(n, delay)`.
 
 Or, to concatenate two different backoff strategies together (first uniform and then exponential), the Java 8 Stream API has a good tool for the job:
 ```java

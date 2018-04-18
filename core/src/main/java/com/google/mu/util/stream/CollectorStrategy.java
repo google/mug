@@ -26,6 +26,7 @@ import java.util.stream.Collector;
  *
  * @since 1.4
  */
+@Deprecated
 @FunctionalInterface
 public interface CollectorStrategy {
   <T> Collector<T, ?, ? extends Collection<? extends T>> collector();
