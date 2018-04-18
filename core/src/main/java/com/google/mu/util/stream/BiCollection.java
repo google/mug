@@ -97,7 +97,7 @@ public final class BiCollection<L, R> {
    * Wraps entries in {@code map} as a {@code BiCollection}. Note that the returned
    * {@code BiCollection} is a view of the input map entries.
    *
-   * @deprecated Use {@code BiStream.from(map)} to get a {@code BiStream}
+   * @deprecated Use {@code BiStream.from(map)} to get a {@link BiStream}
    *             or {@code BiCollection.from(map.entrySet())}.
    */
   @Deprecated
