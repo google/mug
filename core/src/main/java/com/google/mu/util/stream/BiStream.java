@@ -105,6 +105,15 @@ public final class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
+   * Returns a stream over entries in {@code map}.
+   *
+   * @since 1.12
+   */
+  public static <K, V> BiStream<K, V> from(Map<? extends K, ? extends V> map) {
+    return new BiStream<>(map.entrySet().stream());
+  }
+
+  /**
    * Wraps {@code stream} as a {@link BiStream}. Users will typically chain
    * {@link #mapKeys mapKeys()} or {@link #mapValues mapValues()}. For example:   <pre>{@code
    * BiStream<UserId, Profile> profilesByUserId = biStream(users.stream())
