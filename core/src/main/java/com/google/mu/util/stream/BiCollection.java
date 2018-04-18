@@ -109,7 +109,9 @@ public final class BiCollection<L, R> {
    * @param rightFunction extracts the second element of each pair
    * @param collectorStrategy determines the kind of collection to use. For example:
    *        {@code Collectors::toList} or {@code ImmutableList::toImmutableList}.
+   * @deprecated Use {@link #toBiCollection(Function, Function)} instead.
    */
+  @Deprecated
   public static <T, L, R> Collector<T, ?, BiCollection<L, R>> toBiCollection(
       Function<? super T, ? extends L> leftFunction,
       Function<? super T, ? extends R> rightFunction,

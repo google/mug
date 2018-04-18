@@ -393,7 +393,9 @@ public final class BiStream<K, V> implements AutoCloseable {
    * }</pre>
    * 
    * @since 1.3
+   * @deprecated Use {@link #toBiCollection()} instead.
    */
+  @Deprecated
   public BiCollection<K, V> toBiCollection(CollectorStrategy collectorStrategy) {
     Collection<? extends Map.Entry<? extends K, ? extends V>> entries =
         underlying.collect(collectorStrategy.collector());
