@@ -58,16 +58,7 @@ ImmutableListMultimap<ZipCode, Address> addressesByZipCode = biStream(addresses)
     .collect(ImmutableListMultimap::toImmutableListMultimap);
 ```
 
-**Example 5: to iterate through a Map more concisely:**
-
-```java
-// BiCollection.from() creates a view over addressMap. DOES NOT COPY.
-BiCollection.from(addressMap).stream().forEach((zip, address) -> {
-  ...
-});
-```
-
-**Example 6: to process every pairs of adjacent elements in a stream:**
+**Example 5: to process every pairs of adjacent elements in a stream:**
 
 ```java
 BiStream.neighbors(events).forEach((prev, next) -> {
@@ -75,7 +66,7 @@ BiStream.neighbors(events).forEach((prev, next) -> {
 });
 ```
 
-**Example 7: to turn a `Stream<Pair<K, V>>` to `BiStream<K, V>`:**
+**Example 6: to turn a `Stream<Pair<K, V>>` to `BiStream<K, V>`:**
 
 ```java
 BiStream<K, V> stream = biStream(pairs, Pair::getKey, Pair::getValue);
