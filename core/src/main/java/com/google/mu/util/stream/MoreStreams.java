@@ -183,6 +183,8 @@ public final class MoreStreams {
    *       .collect(mergingValues((a, b) -> a + b));
    * }</pre>
    *
+   * <p>Use {@link #uniqueValues} if duplicate keys isn't possible.
+   *
    * @since 1.13
    */
   public static <K, V> Collector<Map<K, V>, ?, Map<K, V>> mergingValues(
@@ -202,6 +204,8 @@ public final class MoreStreams {
    *       .map(Department::getFacultyMap)
    *       .collect(uniqueValues());
    * }</pre>
+   *
+   * <p>Use {@link #mergingValues} if there are duplicate keys.
    *
    * @since 1.13
    */
