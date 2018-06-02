@@ -127,6 +127,19 @@ private Stream<T> nextValues(T currentValue) {
 Stream<T> stream = MoreStreams.generate(seed, this::nextValues);
 ```
 
+**Example 4: to merge maps:**
+```java
+interface Page {
+  Map<Day, Long> getTrafficHistogram();
+}
+
+List<Page> pages = ...;
+
+// Merges traffic histogram across all web pages of the web site
+Map<Day, Long> siteTrafficHistogram = pages.stream()
+    .map(Page::getTrafficHistogram)
+    .collect(mergingValues((a, b) -> a + b));
+```
 
 ## [Retryer](https://google.github.io/mug/apidocs/com/google/mu/util/Retryer.html)
 
