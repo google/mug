@@ -18,9 +18,14 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Spliterator;
+import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -162,6 +167,55 @@ public final class MoreStreams {
     requireNonNull(spliterator);
     if (maxSize <= 0) throw new IllegalArgumentException();
     return new DicedSpliterator<T>(spliterator, maxSize);
+  }
+
+  /**
+   * Returns a collector that collects/merges {@link Map} instances by key, using {@code valueMerger}
+   * to merge values mapped to the same key. For example: 
+   *
+   * <pre>{@code
+   *   interface Page {
+   *     Map<Day, Long> getTrafficHistogram();
+   *   }
+   *
+   *   Map<Day, Long> totalTrafficHistogram = pages.stream()
+   *       .map(Page::getTrafficHistogram)
+   *       .collect(mergingValues((a, b) -> a + b));
+   * }</pre>
+   */
+  public static <K, V> Collector<Map<K, V>, ?, Map<K, V>> mergingValues(
+      BinaryOperator<V> valueMerger) {
+    requireNonNull(valueMerger);
+    return collectingEach(
+        m -> m.entrySet().stream(),
+        Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, valueMerger));
+  }
+
+  /**
+   * Returns a collector that collects {@link Map} entries into a combined map. Duplicate keys cause {@link
+   * IllegalStateException}. For example: 
+   *
+   * <pre>{@code
+   *   Map<FacultyId, Account> allFaculties = departments.stream()
+   *       .map(Department::getFacultyMap)
+   *       .collect(uniqueValues());
+   * }</pre>
+   */
+  public static <K, V> Collector<Map<K, V>, ?, Map<K, V>> uniqueValues() {
+    return collectingEach(
+        m -> m.entrySet().stream(), Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+  }
+
+  private static <F, T, A, R> Collector<F, A, R> collectingEach(
+      Function<? super F, ? extends Stream<? extends T>> toStream,
+      Collector<T, A, R> collector) {
+    BiConsumer<A, T> accumulator = collector.accumulator();
+    return Collector.of(
+        collector.supplier(),
+        (a, f) -> toStream.apply(f).forEachOrdered(v -> accumulator.accept(a, v)),
+        collector.combiner(),
+        collector.finisher(),
+        collector.characteristics().toArray(new Collector.Characteristics[0]));
   }
 
   static <F, T> Stream<T> mapBySpliterator(
