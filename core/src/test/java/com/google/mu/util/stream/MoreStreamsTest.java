@@ -16,6 +16,8 @@ package com.google.mu.util.stream;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.mu.util.stream.MoreStreams.mergingValues;
+import static com.google.mu.util.stream.MoreStreams.uniqueValues;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assume.assumeTrue;
@@ -23,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Spliterator;
 import java.util.TreeSet;
 import java.util.stream.IntStream;
@@ -33,6 +36,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.NullPointerTester;
@@ -198,6 +202,69 @@ public class MoreStreamsTest {
     assertThat(to).containsExactly("1", "2");
   }
 
+  @Test public void mergingValues_emptyMaps() {
+    ImmutableList<Translation> translations =
+        ImmutableList.of(new Translation(ImmutableMap.of()), new Translation(ImmutableMap.of()));
+    Map<Integer, String> merged = translations.stream()
+        .map(Translation::dictionary)
+        .collect(mergingValues((a, b) -> a + "," + b));
+    assertThat(merged).isEmpty();
+  }
+
+  @Test public void mergingValues_uniqueValues() {
+    ImmutableList<Translation> translations = ImmutableList.of(
+        new Translation(ImmutableMap.of(1, "one")), new Translation(ImmutableMap.of(2, "two")));
+    Map<Integer, String> merged = translations.stream()
+        .map(Translation::dictionary)
+        .collect(mergingValues((a, b) -> a + "," + b));
+    assertThat(merged)
+        .containsExactly(1, "one", 2, "two")
+        .inOrder();
+  }
+
+  @Test public void mergingValues_duplicateValues() {
+    ImmutableList<Translation> translations = ImmutableList.of(
+        new Translation(ImmutableMap.of(1, "one")),
+        new Translation(ImmutableMap.of(2, "two", 1, "1")));
+    Map<Integer, String> merged = translations.stream()
+        .map(Translation::dictionary)
+        .collect(mergingValues((a, b) -> a + "," + b));
+    assertThat(merged)
+        .containsExactly(1, "one,1", 2, "two")
+        .inOrder();
+  }
+
+  @Test public void uniqueValues_emptyMaps() {
+    ImmutableList<Translation> translations =
+        ImmutableList.of(new Translation(ImmutableMap.of()), new Translation(ImmutableMap.of()));
+    Map<Integer, String> merged = translations.stream()
+        .map(Translation::dictionary)
+        .collect(uniqueValues());
+    assertThat(merged).isEmpty();
+  }
+
+  @Test public void uniqueValues_unique() {
+    ImmutableList<Translation> translations = ImmutableList.of(
+        new Translation(ImmutableMap.of(1, "one")), new Translation(ImmutableMap.of(2, "two")));
+    Map<Integer, String> merged = translations.stream()
+        .map(Translation::dictionary)
+        .collect(uniqueValues());
+    assertThat(merged)
+        .containsExactly(1, "one", 2, "two")
+        .inOrder();
+  }
+
+  @Test public void uniqueValues_withDuplicates() {
+    ImmutableList<Translation> translations = ImmutableList.of(
+        new Translation(ImmutableMap.of(1, "one")),
+        new Translation(ImmutableMap.of(2, "two", 1, "1")));
+    assertThrows(
+        IllegalStateException.class,
+        () -> translations.stream()
+            .map(Translation::dictionary)
+            .collect(uniqueValues()));
+  }
+
   @Test public void testNulls() throws Exception {
     NullPointerTester tester = new NullPointerTester();
     asList(BiCollection.class.getDeclaredMethods()).stream()
@@ -205,5 +272,17 @@ public class MoreStreamsTest {
         .forEach(tester::ignore);
     tester.testAllPublicStaticMethods(MoreStreams.class);
     new ClassSanityTester().forAllPublicStaticMethods(MoreStreams.class).testNulls();
+  }
+
+  private static class Translation {
+    private final ImmutableMap<Integer, String> dictionary;
+
+    Translation(ImmutableMap<Integer, String> dictionary) {
+      this.dictionary = dictionary;
+    }
+
+    ImmutableMap<Integer, String> dictionary() {
+      return dictionary;
+    }
   }
 }
