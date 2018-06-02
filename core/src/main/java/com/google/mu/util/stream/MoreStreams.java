@@ -183,7 +183,7 @@ public final class MoreStreams {
    *       .collect(mergingValues((a, b) -> a + b));
    * }</pre>
    *
-   * <p>Use {@link #uniqueKeys} if duplicate keys isn't possible.
+   * <p>Use {@link #uniqueKeys} if the keys are guaranteed to be unique.
    *
    * @since 1.13
    */
