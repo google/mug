@@ -135,7 +135,7 @@ interface Page {
 
 List<Page> pages = ...;
 
-// Merges traffic histogram across all web pages of the web site
+// Merge traffic histogram across all pages of the web site
 Map<Day, Long> siteTrafficHistogram = pages.stream()
     .map(Page::getTrafficHistogram)
     .collect(mergingValues((a, b) -> a + b));
