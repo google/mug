@@ -171,7 +171,7 @@ public final class MoreStreams {
 
   /**
    * Returns a collector that collects/merges {@link Map} instances by key, using {@code valueMerger}
-   * to merge values mapped to the same key. For example: 
+   * to merge values that are mapped to the same key. For example: 
    *
    * <pre>{@code
    *   interface Page {
