@@ -182,6 +182,8 @@ public final class MoreStreams {
    *       .map(Page::getTrafficHistogram)
    *       .collect(mergingValues((a, b) -> a + b));
    * }</pre>
+   *
+   * @since 1.13
    */
   public static <K, V> Collector<Map<K, V>, ?, Map<K, V>> mergingValues(
       BinaryOperator<V> valueMerger) {
@@ -200,6 +202,8 @@ public final class MoreStreams {
    *       .map(Department::getFacultyMap)
    *       .collect(uniqueValues());
    * }</pre>
+   *
+   * @since 1.13
    */
   public static <K, V> Collector<Map<K, V>, ?, Map<K, V>> uniqueValues() {
     return collectingEach(
