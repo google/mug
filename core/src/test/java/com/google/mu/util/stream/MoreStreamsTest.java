@@ -17,7 +17,7 @@ package com.google.mu.util.stream;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.util.stream.MoreStreams.mergingValues;
-import static com.google.mu.util.stream.MoreStreams.uniqueValues;
+import static com.google.mu.util.stream.MoreStreams.uniqueKeys;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assume.assumeTrue;
@@ -211,7 +211,7 @@ public class MoreStreamsTest {
     assertThat(merged).isEmpty();
   }
 
-  @Test public void mergingValues_uniqueValues() {
+  @Test public void mergingValues_uniqueKeys() {
     ImmutableList<Translation> translations = ImmutableList.of(
         new Translation(ImmutableMap.of(1, "one")), new Translation(ImmutableMap.of(2, "two")));
     Map<Integer, String> merged = translations.stream()
@@ -234,27 +234,27 @@ public class MoreStreamsTest {
         .inOrder();
   }
 
-  @Test public void uniqueValues_emptyMaps() {
+  @Test public void uniqueKeys_emptyMaps() {
     ImmutableList<Translation> translations =
         ImmutableList.of(new Translation(ImmutableMap.of()), new Translation(ImmutableMap.of()));
     Map<Integer, String> merged = translations.stream()
         .map(Translation::dictionary)
-        .collect(uniqueValues());
+        .collect(uniqueKeys());
     assertThat(merged).isEmpty();
   }
 
-  @Test public void uniqueValues_unique() {
+  @Test public void uniqueKeys_unique() {
     ImmutableList<Translation> translations = ImmutableList.of(
         new Translation(ImmutableMap.of(1, "one")), new Translation(ImmutableMap.of(2, "two")));
     Map<Integer, String> merged = translations.stream()
         .map(Translation::dictionary)
-        .collect(uniqueValues());
+        .collect(uniqueKeys());
     assertThat(merged)
         .containsExactly(1, "one", 2, "two")
         .inOrder();
   }
 
-  @Test public void uniqueValues_withDuplicates() {
+  @Test public void uniqueKeys_withDuplicates() {
     ImmutableList<Translation> translations = ImmutableList.of(
         new Translation(ImmutableMap.of(1, "one")),
         new Translation(ImmutableMap.of(2, "two", 1, "1")));
@@ -262,7 +262,7 @@ public class MoreStreamsTest {
         IllegalStateException.class,
         () -> translations.stream()
             .map(Translation::dictionary)
-            .collect(uniqueValues()));
+            .collect(uniqueKeys()));
   }
 
   @Test public void testNulls() throws Exception {
