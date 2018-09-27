@@ -140,10 +140,7 @@ public final class BiStream<K, V> implements AutoCloseable {
       Function<? super T, ? extends K> toKey, Function<? super T, ? extends V> toValue) {
     requireNonNull(toKey);
     requireNonNull(toValue);
-    return new BiStream<>(stream.isParallel()
-        ? stream.map(e -> kv(toKey.apply(e), toValue.apply(e)))
-        : EphemeralEntrySpliterator.entryStream(
-            stream, it -> new KeyValueSpliterator<>(it, toKey, toValue)));
+    return new BiStream<>(stream.map(e -> kv(toKey.apply(e), toValue.apply(e))));
   }
 
   /**
@@ -159,10 +156,10 @@ public final class BiStream<K, V> implements AutoCloseable {
    */
   public static <K, V> BiStream<K, V> zip(
       Stream<? extends K> keys, Stream<? extends V> values) {
-    Stream<Map.Entry<K, V>> zipped = StreamSupport.stream(
-            () -> new Zipliterator<>(keys.spliterator(), values.spliterator()),
-            Spliterator.NONNULL, false);
-    return new BiStream<>(zipped.onClose(keys::close).onClose(values::close));
+    Stream<Map.Entry<K, V>> paired = StreamSupport.stream(
+            () -> new PairedUpSpliterator<>(keys.spliterator(), values.spliterator()),
+            Spliterator.NONNULL, keys.isParallel() || values.isParallel());
+    return new BiStream<>(paired.onClose(keys::close).onClose(values::close));
   }
 
   /**
@@ -175,8 +172,9 @@ public final class BiStream<K, V> implements AutoCloseable {
    * @since 1.10
    */
   public static <T> BiStream<T, T> neighbors(Stream<? extends T> elements) {
-    return new BiStream<>(
-        EphemeralEntrySpliterator.entryStream(elements, it -> new NeighborSpliterator<>(it)));
+    Stream<Map.Entry<T, T>> pairs = StreamSupport.stream(
+        () -> new NeighborSpliterator<>(elements.spliterator()), Spliterator.NONNULL, false);
+    return new BiStream<>(pairs.onClose(elements::close));
   }
 
   /**
@@ -400,7 +398,7 @@ public final class BiStream<K, V> implements AutoCloseable {
    * with all elements in this stream. For example: <pre>  {@code
    *   stream.toBiCollection(ImmutableList::toImmutableList)
    * }</pre>
-   * 
+   *
    * @since 1.3
    * @deprecated Use {@link #toBiCollection()} instead.
    */
@@ -413,7 +411,7 @@ public final class BiStream<K, V> implements AutoCloseable {
 
   /**
    * Collects into a {@code BiCollection} with all elements in this stream.
-   * 
+   *
    * @since 1.3
    */
   public BiCollection<K, V> toBiCollection() {
@@ -555,146 +553,84 @@ public final class BiStream<K, V> implements AutoCloseable {
     return Comparator.comparing(Map.Entry::getValue, ordering);
   }
 
-  private static final class Zipliterator<K, V> extends EphemeralEntrySpliterator<K, V> {
-    private final Spliterator<? extends K> keys;
-    private final Spliterator<? extends V> values;
-    private final CurrentKeyValue current = new CurrentKeyValue();
-  
-    Zipliterator(Spliterator<? extends K> keys, Spliterator<? extends V> values) {
-      this.keys = requireNonNull(keys);
-      this.values = requireNonNull(values);
-    }
-
-    @Override EphemeralEntry<K, V> current() {
-      return current;
-    }
-
-    @Override public long estimateSize() {
-      return Math.min(keys.estimateSize(), values.estimateSize());
-    }
-
-    private final class CurrentKeyValue extends EphemeralEntry<K, V> {
-      private final Consumer<K> setKey = k -> { this.key = k; };
-      private final Consumer<V> setValue = v -> { this.value = v; };
-  
-      @Override boolean moveNext() {
-        return keys.tryAdvance(setKey) && values.tryAdvance(setValue);
-      }
-    }
-  }
-
-  private static final class KeyValueSpliterator<F, K, V> extends EphemeralEntrySpliterator<K, V> {
-    private final Spliterator<? extends F> from;
-    private final Function<? super F, ? extends K> toKey;
-    private final Function<? super F, ? extends V> toValue;
-    private final CurrentEntry current = new CurrentEntry();
-
-    KeyValueSpliterator(
-        Spliterator<? extends F> from,
-        Function<? super F, ? extends K> toKey, Function<? super F, ? extends V> toValue) {
-      this.from = requireNonNull(from);
-      this.toKey = requireNonNull(toKey);
-      this.toValue = requireNonNull(toValue);
-    }
-
-    @Override EphemeralEntry<K, V> current() {
-      return current;
-    }
-
-    @Override public long estimateSize() {
-      return from.estimateSize();
-    }
-
-    private final class CurrentEntry extends EphemeralEntry<K, V> implements Consumer<F> {
-      @Override public void accept(F source) {
-        key = toKey.apply(source);
-        value = toValue.apply(source);
-      }
- 
-      @Override boolean moveNext() {
-        return from.tryAdvance(this);
-      }
-    }
-  }
-
-  private static final class NeighborSpliterator<E> extends EphemeralEntrySpliterator<E, E> {
+  private static final class NeighborSpliterator<E> implements Spliterator<Map.Entry<E, E>> {
     private final Spliterator<? extends E> elements;
-    private final CurrentNeighbors current = new CurrentNeighbors();
-  
+    private boolean hasPrevious;
+    private final CurrentNeighbors<E> current = new CurrentNeighbors<>();
+
     NeighborSpliterator(Spliterator<? extends E> elements) {
       this.elements = requireNonNull(elements);
     }
 
-    @Override EphemeralEntry<E, E> current() {
-      return current;
+    @Override public boolean tryAdvance(Consumer<? super Map.Entry<E, E>> action) {
+      requireNonNull(action);
+      if (!hasPrevious) {
+        if (!elements.tryAdvance(current)) return false;
+        hasPrevious = true;
+      }
+      if (!elements.tryAdvance(current)) return false;
+      action.accept(current);
+      return true;
+    }
+
+    @Override public Spliterator<Map.Entry<E, E>> trySplit() {
+      return null;
     }
 
     @Override public long estimateSize() {
       return elements.estimateSize();
     }
 
-    private final class CurrentNeighbors extends EphemeralEntry<E, E> implements Consumer<E> {
-      private boolean hasNeighbor;
+    @Override public int characteristics() {
+      return Spliterator.NONNULL;
+    }
 
+    private static final class CurrentNeighbors<E> extends EphemeralEntry<E, E> implements Consumer<E> {
       @Override public void accept(E v) {
         this.key = this.value;
         this.value = v;
-        this.hasNeighbor = true;
-      }
-
-      @Override boolean moveNext() {
-        return hasNeighbor
-            ? elements.tryAdvance(this)
-            : elements.tryAdvance(this) && elements.tryAdvance(this);
       }
     }
   }
 
-  /**
-   * Spliterator of {@link EphemeralEntry}. Because the {@link Map.Entry} objects are ephemeral,
-   * i.e. entry key-values change upon moving to the next entry, they aren't safe to be consumed
-   * concurrently, only sequential streams are safe and {@link #trySplit} should not split.
-   */
-  private static abstract class EphemeralEntrySpliterator<K, V>
-      implements Spliterator<Map.Entry<K, V>> {
+  private static final class PairedUpSpliterator<K, V> implements Spliterator<Map.Entry<K, V>> {
+    private final Spliterator<? extends K> keys;
+    private final Spliterator<? extends V> values;
+    private final CurrentPair<K, V> current = new CurrentPair<>();
 
-    static <F, K, V> Stream<Map.Entry<K, V>> entryStream(
-        Stream<F> stream,
-        Function<? super Spliterator<F>, ? extends EphemeralEntrySpliterator<K, V>> wrapper) {
-      return MoreStreams.mapBySpliterator(stream.sequential(), Spliterator.NONNULL, wrapper);
+    PairedUpSpliterator(Spliterator<? extends K> keys, Spliterator<? extends V> values) {
+      this.keys = requireNonNull(keys);
+      this.values = requireNonNull(values);
     }
 
-    @Override public final int characteristics() {
-      return Spliterator.NONNULL;
-    }
-
-    @Override public final Spliterator<Map.Entry<K, V>> trySplit() {
-      return null;
-    }
-
-    @Override public final boolean tryAdvance(Consumer<? super Entry<K, V>> action) {
+    @Override public boolean tryAdvance(Consumer<? super Map.Entry<K, V>> action) {
       requireNonNull(action);
-      EphemeralEntry<K, V> current = current();
-      boolean advanced = current.moveNext();
+      boolean advanced = keys.tryAdvance(current.setKey) && values.tryAdvance(current.setValue);
       if (advanced) action.accept(current);
       return advanced;
     }
 
-    @Override public final void forEachRemaining(Consumer<? super Entry<K, V>> action) {
-      requireNonNull(action);
-      EphemeralEntry<K, V> current = current();
-      while (current.moveNext()) action.accept(current);
+    @Override public Spliterator<Map.Entry<K, V>> trySplit() {
+      return null;
     }
 
-    abstract EphemeralEntry<K, V> current();
+    @Override public long estimateSize() {
+      return Math.min(keys.estimateSize(), values.estimateSize());
+    }
+
+    @Override public int characteristics() {
+      return Spliterator.NONNULL;
+    }
+
+    private static final class CurrentPair<K, V> extends EphemeralEntry<K, V> {
+      final Consumer<K> setKey = k -> { this.key = k; };
+      final Consumer<V> setValue = v -> { this.value = v; };
+    }
   }
 
   private static abstract class EphemeralEntry<K, V> implements Map.Entry<K, V> {
     K key;
     V value;
-
-    /** Moves to the next entry, or return {@code false} if can't move. */
-    abstract boolean moveNext();
 
     @Override public final K getKey() {
       return key;

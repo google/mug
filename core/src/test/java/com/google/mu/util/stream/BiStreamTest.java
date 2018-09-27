@@ -545,7 +545,7 @@ public class BiStreamTest {
     tester.testAllPublicInstanceMethods(BiStream.empty());
   }
 
-  private static <K, V> MultimapSubject assertKeyValues(BiStream<K, V> stream) {
+  static <K, V> MultimapSubject assertKeyValues(BiStream<K, V> stream) {
     Multimap<K, V> multimap = stream.<Multimap<K, V>>collect(BiStreamTest::toLinkedListMultimap);
     return assertThat(multimap);
   }
