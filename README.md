@@ -4,6 +4,7 @@ Disclaimer: This is not an official Google product.
 A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/index.html)), with 0 deps. ![](https://travis-ci.org/google/mug.svg?branch=master)
 
 * Stream utilities ([BiStream](#bistream-streams-pairs-of-objects), [MoreStreams](#morestreams)).
+* [Optionals](#optionals) with some extra utilities around java.util.Optional.
 * [Retryer](#retryer) retries.
 * [Maybe](#maybe) tunnels checked exceptions through streams or futures.
 * [Funnel](#funnel) flows objects through batch conversions in FIFO order.
@@ -140,6 +141,20 @@ Map<Day, Long> siteTrafficHistogram = pages.stream()
     .map(Page::getTrafficHistogram)
     .collect(mergingValues((a, b) -> a + b));
 ```
+
+## Optionals
+
+**Example 1: to run code when two Optional instances are both present:**
+```java
+Optionals.ifPresent(optionalDoctor, optionalPatient, Patient::seeDoctor);
+```
+
+**Example 2: to combine two Optional instances into a single one:**
+```java
+Optionals.map(optionalHusband, optionalWife, Couple::new);
+```
+
+All Optionals utilites propagate checked exception from the the lambda/method references.
 
 ## [Retryer](https://google.github.io/mug/apidocs/com/google/mu/util/Retryer.html)
 
