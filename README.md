@@ -151,7 +151,7 @@ Optionals.ifPresent(optionalDoctor, optionalPatient, Patient::seeDoctor);
 
 **Example 2: to combine two Optional instances into a single one:**
 ```java
-Optionals.map(optionalHusband, optionalWife, Couple::new);
+Optional<Couple> couple = Optionals.map(optionalHusband, optionalWife, Couple::new);
 ```
 
 All Optionals utilites propagate checked exception from the the lambda/method references.
