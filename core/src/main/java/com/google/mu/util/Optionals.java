@@ -16,9 +16,6 @@ import com.google.mu.function.CheckedConsumer;
 public final class Optionals {
 
   /**
-<<<<<<< HEAD
-   * Invokes {@code consumer} if both {@code left} and {@code right} are present.
-=======
    * Invokes {@code consumer} if {@code optional} is present. Returns a {@code Premise}
    * object to allow {@link Premise#orElse orElse()} and friends to be chained. For example: <pre>
    *   ifPresent(optionalStory, Story::tell).orElse(() -> print("no story"));
@@ -29,7 +26,6 @@ public final class Optionals {
    *     somewhat more natural.
    * <li>{@code orElse()} is chained fluently, compared to {@link Optional#ifPresentOrElse}.
    * </ol>
->>>>>>> master
    */
   public static <T, E extends Throwable> Premise ifPresent(
       Optional<T> optional, CheckedConsumer<? super T, E> consumer) throws E {
