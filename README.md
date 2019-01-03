@@ -157,7 +157,7 @@ Optionals.ifPresent(optionalDoctor, optionalPatient, Patient::seeDoctor);
 **Example 3: or else run a fallback code block:**
 ```java
 Optionals.ifPresent(optionalDoctor, optionalPatient, Patient::seeDoctor)
-    .orElse(() -> log("nothing happend"));
+    .orElse(() -> log("nothing happened"));
 ```
 
 All Optionals utilites propagate checked exception from the the lambda/method references.
