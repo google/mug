@@ -11,7 +11,7 @@ import com.google.mu.function.CheckedConsumer;
 /**
  * Utilities pertaining to {@link Optional}.
  *
- * @since 1.13
+ * @since 1.14
  */
 public final class Optionals {
 
