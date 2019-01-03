@@ -14,9 +14,9 @@ import com.google.mu.function.CheckedSupplier;
  * @since 1.14
  */
 public interface Premise {
-  /** Runs {@code block} if {@code this} premise doesn't hold. */
-  <E extends Throwable> void orElse(CheckedRunnable<E> block) throws E;
-
   /** Evaluates {@code alternative} if {@code this} premise doesn't hold. */
   <E extends Throwable> Premise or(CheckedSupplier<? extends Premise, E> alternative) throws E;
+
+  /** Runs {@code block} if {@code this} premise doesn't hold. */
+  <E extends Throwable> void orElse(CheckedRunnable<E> block) throws E;
 }
