@@ -5,7 +5,7 @@ import com.google.mu.function.CheckedSupplier;
 
 /**
  * Result of a previously evaluated condition. Used to fluently chain API calls like
- * {@code Optionals.ifElse()}. For example: <pre>
+ * {@code Optionals.ifPresent()}. For example: <pre>
  *   ifPresent(getStory(), Story::tell)
  *       .or(() -> ifPresent(getJoke(), Joke::tell))
  *       .orElse(() -> print("no story"));
