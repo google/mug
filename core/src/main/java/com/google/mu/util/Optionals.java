@@ -21,8 +21,9 @@ public final class Optionals {
    *   ifPresent(optionalStory, Story::tell).orElse(() -> print("no story"));
    * </pre>
    *
-   * <p>This method is very similar to JDK {@link Optional#ifPresent} with 3 differences: <ol>
+   * <p>This method is very similar to JDK {@link Optional#ifPresent} with a few differences: <ol>
    * <li>{@code orElse()} is chained fluently, compared to {@link Optional#ifPresentOrElse}.
+   * <li>Propagates checked exceptions from the {@code consumer}.
    * <li>{@code ifPresent(optionalStory, Story::tell)} begins the statement with "if", which may read
    *     somewhat more natural.
    * <li>Syntax is consistent across one-Optional and two-Optional {@code ifPresent()} overloads.
