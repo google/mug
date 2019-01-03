@@ -19,10 +19,6 @@ enum Conditional implements Premise {
       requireNonNull(alternative);
       return this;
     }
-    @Override public Premise or(Premise alternative) {
-      requireNonNull(alternative);
-      return this;
-    }
   },
   FALSE {
     @Override public <E extends Throwable> void orElse(CheckedRunnable<E> block) throws E {
@@ -31,9 +27,6 @@ enum Conditional implements Premise {
     @Override public <E extends Throwable> Premise or(CheckedSupplier<? extends Premise, E> alternative)
         throws E {
       return alternative.get();
-    }
-    @Override public Premise or(Premise alternative) {
-      return requireNonNull(alternative);
     }
   }
 }
