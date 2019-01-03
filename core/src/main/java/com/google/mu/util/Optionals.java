@@ -22,7 +22,7 @@ public final class Optionals {
    * </pre>
    *
    * <p>This method is very similar to JDK {@link Optional#ifPresent} with two differences: <ol>
-   * <li>{@code ifPresent(optionalStory, Story::tell)} reads with "if" at the beginning, which may read
+   * <li>{@code ifPresent(optionalStory, Story::tell)} begins the statement with "if", which may read
    *     somewhat more natural.
    * <li>{@code orElse()} is chained fluently, compared to {@link Optional#ifPresentOrElse}.
    * </ol>
