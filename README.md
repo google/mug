@@ -154,7 +154,7 @@ Optional<Couple> couple = Optionals.map(optionalHusband, optionalWife, Couple::n
 Optionals.ifPresent(optionalDoctor, optionalPatient, Patient::seeDoctor);
 ```
 
-**Example 3: or else run a fallback block of code:**
+**Example 3: or else run a fallback code block:**
 ```java
 Optionals.ifPresent(optionalDoctor, optionalPatient, Patient::seeDoctor)
     .orElse(() -> log("nothing happend"));
