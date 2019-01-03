@@ -18,15 +18,16 @@ public final class Optionals {
   /**
    * Invokes {@code consumer} if {@code optional} is present. Returns a {@code Premise}
    * object to allow {@link Premise#orElse orElse()} and friends to be chained. For example: <pre>
-   *   ifPresent(optionalStory, Story::tell).orElse(() -> print("no story"));
+   *   ifPresent(findStory(), Story::tell)
+   *       .orElse(() -> print("no story"));
    * </pre>
    *
    * <p>This method is very similar to JDK {@link Optional#ifPresent} with a few differences: <ol>
    * <li>{@code orElse()} is chained fluently, compared to {@link Optional#ifPresentOrElse}.
    * <li>Propagates checked exceptions from the {@code consumer}.
-   * <li>{@code ifPresent(optionalStory, Story::tell)} begins the statement with "if", which may read
-   *     somewhat more natural.
    * <li>Syntax is consistent across one-Optional and two-Optional {@code ifPresent()} overloads.
+   * <li>{@code ifPresent(findStory(), Story::tell)} begins the statement with "if", which may read
+   *     somewhat closer to regular {@code if} statements.
    * </ol>
    */
   public static <T, E extends Throwable> Premise ifPresent(
@@ -44,7 +45,8 @@ public final class Optionals {
   /**
    * Invokes {@code consumer} if both {@code left} and {@code right} are present. Returns a {@code Premise}
    * object to allow {@link Premise#orElse orElse()} and friends to be chained. For example: <pre>
-   *   ifPresent(when, where, Story::tell).orElse(() -> print("no story"));
+   *   ifPresent(when, where, Story::tell)
+   *       .orElse(() -> print("no story"));
    * </pre>
    */
   public static <A, B, E extends Throwable> Premise ifPresent(
