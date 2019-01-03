@@ -8,7 +8,7 @@ import com.google.mu.function.CheckedSupplier;
  * {@code Optionals.ifPresent()}. For example: <pre>
  *   ifPresent(getStory(), Story::tell)
  *       .or(() -> ifPresent(getJoke(), Joke::tell))
- *       .orElse(() -> print("no story"));
+ *       .orElse(() -> print("can't tell"));
  * </pre>
  *
  * @since 1.14
