@@ -19,7 +19,4 @@ public interface Premise {
 
   /** Evaluates {@code alternative} if {@code this} premise doesn't hold. */
   <E extends Throwable> Premise or(CheckedSupplier<? extends Premise, E> alternative) throws E;
-
-  /** Returns a {@code Premise} that holds if either {@code this} or {@code that} does. */
-  Premise or(Premise alternative);
 }

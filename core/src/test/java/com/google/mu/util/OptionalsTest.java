@@ -39,28 +39,12 @@ public class OptionalsTest {
     verify(otherwise, never()).run();
   }
 
-  @Test public void ifPresent_or_firstIsAbsent_secondIsPresent() {
-    ifPresent(Optional.empty(), consumer::accept)
-        .or(ifPresent(Optional.of("left"), Optional.of("right"), action::run))
-        .orElse(otherwise::run);
-    verify(consumer, never()).accept(any());
-    verify(otherwise, never()).run();
-  }
-
   @Test public void ifPresent_or_firstIsAbsent_secondSupplierIsAbsent() {
     ifPresent(Optional.empty(), consumer::accept)
         .or(() -> ifPresent(Optional.empty(), Optional.of("right"), action::run))
         .orElse(otherwise::run);
     verify(consumer, never()).accept(any());
     verify(action, never()).run(any(), any());
-    verify(otherwise).run();
-  }
-
-  @Test public void ifPresent_or_firstIsAbsent_secondIsAbsent() {
-    ifPresent(Optional.empty(), consumer::accept)
-        .or(ifPresent(Optional.empty(), Optional.of("right"), action::run))
-        .orElse(otherwise::run);
-    verify(consumer, never()).accept(any());
     verify(otherwise).run();
   }
 
@@ -73,28 +57,12 @@ public class OptionalsTest {
     verify(otherwise, never()).run();
   }
 
-  @Test public void ifPresent_or_firstIsPresent_secondIsAbsent() {
-    ifPresent(Optional.of("foo"), consumer::accept)
-        .or(ifPresent(Optional.empty(), Optional.of("right"), action::run))
-        .orElse(otherwise::run);
-    verify(consumer).accept("foo");
-    verify(otherwise, never()).run();
-  }
-
   @Test public void ifPresent_or_firstIsPresent_secondSupplierIsPresent() {
     ifPresent(Optional.of("foo"), consumer::accept)
         .or(() -> ifPresent(Optional.of("left"), Optional.of("right"), action::run))
         .orElse(otherwise::run);
     verify(consumer).accept("foo");
     verify(action, never()).run(any(), any());
-    verify(otherwise, never()).run();
-  }
-
-  @Test public void ifPresent_or_firstIsPresent_secondIsPresent() {
-    ifPresent(Optional.of("foo"), consumer::accept)
-        .or(ifPresent(Optional.of("left"), Optional.of("right"), action::run))
-        .orElse(otherwise::run);
-    verify(consumer).accept("foo");
     verify(otherwise, never()).run();
   }
 

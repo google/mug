@@ -144,14 +144,20 @@ Map<Day, Long> siteTrafficHistogram = pages.stream()
 
 ## Optionals
 
-**Example 1: to run code when two Optional instances are both present:**
+**Example 1: to combine two Optional instances into a single one:**
+```java
+Optional<Couple> couple = Optionals.map(optionalHusband, optionalWife, Couple::new);
+```
+
+**Example 2: to run code when two Optional instances are both present:**
 ```java
 Optionals.ifPresent(optionalDoctor, optionalPatient, Patient::seeDoctor);
 ```
 
-**Example 2: to combine two Optional instances into a single one:**
+**Example 3: or else run a fallback code block:**
 ```java
-Optional<Couple> couple = Optionals.map(optionalHusband, optionalWife, Couple::new);
+Optionals.ifPresent(optionalDoctor, optionalPatient, Patient::seeDoctor)
+    .orElse(() -> log("nothing happened"));
 ```
 
 All Optionals utilites propagate checked exception from the the lambda/method references.
