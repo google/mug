@@ -4,7 +4,7 @@ Disclaimer: This is not an official Google product.
 A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/index.html)), with 0 deps. ![](https://travis-ci.org/google/mug.svg?branch=master)
 
 * Stream utilities ([BiStream](#bistream-streams-pairs-of-objects), [MoreStreams](#morestreams)).
-* [Optionals](#optionals) with some extra utilities around java.util.Optional.
+* [Optionals](#optionals) provides extra utilities for java.util.Optional.
 * [Retryer](#retryer) retries.
 * [Maybe](#maybe) tunnels checked exceptions through streams or futures.
 * [Funnel](#funnel) flows objects through batch conversions in FIFO order.
