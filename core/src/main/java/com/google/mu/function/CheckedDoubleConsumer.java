@@ -4,6 +4,8 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * A double-value consumer that can throw checked exceptions.
+ *
+ * @since 1.14
  */
 @FunctionalInterface
 public interface CheckedDoubleConsumer<E extends Throwable> {
