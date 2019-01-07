@@ -32,7 +32,8 @@ public final class Optionals {
    *
    * <p>This method is very similar to JDK {@link OptionalInt#ifPresent} with a few differences: <ol>
    * <li>{@code orElse()} is chained fluently, compared to {@link OptionalInt#ifPresentOrElse}.
-   * <li>{@link #or} allows chaining arbitrary number of alternative options on arbitrary optional types.
+   * <li>{@link Premise#or} allows chaining arbitrary number of alternative options on arbitrary optional
+   *     types.
    * <li>Propagates checked exceptions from the {@code consumer}.
    * <li>Syntax is consistent across one-Optional and two-Optional {@code ifPresent()} overloads.
    * <li>{@code ifPresent(findId(), System.out::print)} begins the statement with "if", which may read
@@ -62,7 +63,8 @@ public final class Optionals {
    *
    * <p>This method is very similar to JDK {@link OptionalLong#ifPresent} with a few differences: <ol>
    * <li>{@code orElse()} is chained fluently, compared to {@link OptionalLong#ifPresentOrElse}.
-   * <li>{@link #or} allows chaining arbitrary number of alternative options on arbitrary optional types.
+   * <li>{@link Premise#or} allows chaining arbitrary number of alternative options on arbitrary optional
+   *     types.
    * <li>Propagates checked exceptions from the {@code consumer}.
    * <li>Syntax is consistent across one-Optional and two-Optional {@code ifPresent()} overloads.
    * <li>{@code ifPresent(findId(), System.out::print)} begins the statement with "if", which may read
@@ -92,7 +94,8 @@ public final class Optionals {
    *
    * <p>This method is very similar to JDK {@link OptionalDouble#ifPresent} with a few differences: <ol>
    * <li>{@code orElse()} is chained fluently, compared to {@link OptionalDouble#ifPresentOrElse}.
-   * <li>{@link #or} allows chaining arbitrary number of alternative options on arbitrary optional types.
+   * <li>{@link Premise#or} allows chaining arbitrary number of alternative options on arbitrary optional
+   *     types.
    * <li>Propagates checked exceptions from the {@code consumer}.
    * <li>Syntax is consistent across one-Optional and two-Optional {@code ifPresent()} overloads.
    * <li>{@code ifPresent(findMileage(), System.out::print)} begins the statement with "if", which may read
@@ -122,7 +125,8 @@ public final class Optionals {
    *
    * <p>This method is very similar to JDK {@link Optional#ifPresent} with a few differences: <ol>
    * <li>{@code orElse()} is chained fluently, compared to {@link Optional#ifPresentOrElse}.
-   * <li>{@link #or} allows chaining arbitrary number of alternative options on arbitrary optional types.
+   * <li>{@link Premise#or} allows chaining arbitrary number of alternative options on arbitrary optional
+   *     types.
    * <li>Propagates checked exceptions from the {@code consumer}.
    * <li>Syntax is consistent across one-Optional and two-Optional {@code ifPresent()} overloads.
    * <li>{@code ifPresent(findStory(), Story::tell)} begins the statement with "if", which may read
