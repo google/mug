@@ -10,8 +10,8 @@ public interface CheckedDoubleConsumer<E extends Throwable> {
   void accept(double input) throws E;
 
   /**
-   * Returns a new {@code CheckedIntConsumer} that also passes the input to {@code that}.
-   * For example: {@code out::writeInt.andThen(logger::logInt).accept(123)}.
+   * Returns a new {@code CheckedDoubleConsumer} that also passes the input to {@code that}.
+   * For example: {@code out::writeDouble.andThen(logger::logDouble).accept(123D)}.
    */
   default CheckedDoubleConsumer<E> andThen(CheckedDoubleConsumer<E> that) {
     requireNonNull(that);

@@ -10,8 +10,8 @@ public interface CheckedLongConsumer<E extends Throwable> {
   void accept(long input) throws E;
 
   /**
-   * Returns a new {@code CheckedIntConsumer} that also passes the input to {@code that}.
-   * For example: {@code out::writeInt.andThen(logger::logInt).accept(123)}.
+   * Returns a new {@code CheckedLongConsumer} that also passes the input to {@code that}.
+   * For example: {@code out::writeLong.andThen(logger::logLong).accept(123L)}.
    */
   default CheckedLongConsumer<E> andThen(CheckedLongConsumer<E> that) {
     requireNonNull(that);
