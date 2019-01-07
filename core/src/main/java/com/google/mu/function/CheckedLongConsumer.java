@@ -4,6 +4,8 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * A 64-bit long consumer that can throw checked exceptions.
+ *
+ * @since 1.14
  */
 @FunctionalInterface
 public interface CheckedLongConsumer<E extends Throwable> {
