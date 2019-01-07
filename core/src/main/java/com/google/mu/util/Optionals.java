@@ -25,11 +25,14 @@ public final class Optionals {
    * Invokes {@code consumer} if {@code optional} is present. Returns a {@code Premise}
    * object to allow {@link Premise#orElse orElse()} and friends to be chained. For example: <pre>
    *   ifPresent(findId(), System.out::print)
-   *       .orElse(() -> System.out.print("id not found"));
+   *       .or(() -> ifPresent(findName(), System.out::print))
+   *       .or(() -> ifPresent(findCreditCardNumber(), System.out::print))
+   *       .orElse(() -> System.out.print("no identity found"));
    * </pre>
    *
    * <p>This method is very similar to JDK {@link OptionalInt#ifPresent} with a few differences: <ol>
    * <li>{@code orElse()} is chained fluently, compared to {@link OptionalInt#ifPresentOrElse}.
+   * <li>{@link #or} allows chaining arbitrary number of alternative options on arbitrary optional types.
    * <li>Propagates checked exceptions from the {@code consumer}.
    * <li>Syntax is consistent across one-Optional and two-Optional {@code ifPresent()} overloads.
    * <li>{@code ifPresent(findId(), System.out::print)} begins the statement with "if", which may read
@@ -52,11 +55,14 @@ public final class Optionals {
    * Invokes {@code consumer} if {@code optional} is present. Returns a {@code Premise}
    * object to allow {@link Premise#orElse orElse()} and friends to be chained. For example: <pre>
    *   ifPresent(findId(), System.out::print)
+   *       .or(() -> ifPresent(findName(), System.out::print))
+   *       .or(() -> ifPresent(findCreditCardNumber(), System.out::print))
    *       .orElse(() -> System.out.print("id not found"));
    * </pre>
    *
    * <p>This method is very similar to JDK {@link OptionalLong#ifPresent} with a few differences: <ol>
    * <li>{@code orElse()} is chained fluently, compared to {@link OptionalLong#ifPresentOrElse}.
+   * <li>{@link #or} allows chaining arbitrary number of alternative options on arbitrary optional types.
    * <li>Propagates checked exceptions from the {@code consumer}.
    * <li>Syntax is consistent across one-Optional and two-Optional {@code ifPresent()} overloads.
    * <li>{@code ifPresent(findId(), System.out::print)} begins the statement with "if", which may read
@@ -79,11 +85,14 @@ public final class Optionals {
    * Invokes {@code consumer} if {@code optional} is present. Returns a {@code Premise}
    * object to allow {@link Premise#orElse orElse()} and friends to be chained. For example: <pre>
    *   ifPresent(findMileage(), System.out::print)
+   *       .or(() -> ifPresent(findName(), System.out::print))
+   *       .or(() -> ifPresent(findCreditCardNumber(), System.out::print))
    *       .orElse(() -> System.out.print("id mileage found"));
    * </pre>
    *
    * <p>This method is very similar to JDK {@link OptionalDouble#ifPresent} with a few differences: <ol>
    * <li>{@code orElse()} is chained fluently, compared to {@link OptionalDouble#ifPresentOrElse}.
+   * <li>{@link #or} allows chaining arbitrary number of alternative options on arbitrary optional types.
    * <li>Propagates checked exceptions from the {@code consumer}.
    * <li>Syntax is consistent across one-Optional and two-Optional {@code ifPresent()} overloads.
    * <li>{@code ifPresent(findMileage(), System.out::print)} begins the statement with "if", which may read
@@ -106,11 +115,14 @@ public final class Optionals {
    * Invokes {@code consumer} if {@code optional} is present. Returns a {@code Premise}
    * object to allow {@link Premise#orElse orElse()} and friends to be chained. For example: <pre>
    *   ifPresent(findStory(), Story::tell)
-   *       .orElse(() -> print("no story"));
+   *       .or(() -> ifPresent(findGame(), Game::play))
+   *       .or(() -> ifPresent(findMovie(), Movie::watch))
+   *       .orElse(() -> print("Nothing to do"));
    * </pre>
    *
    * <p>This method is very similar to JDK {@link Optional#ifPresent} with a few differences: <ol>
    * <li>{@code orElse()} is chained fluently, compared to {@link Optional#ifPresentOrElse}.
+   * <li>{@link #or} allows chaining arbitrary number of alternative options on arbitrary optional types.
    * <li>Propagates checked exceptions from the {@code consumer}.
    * <li>Syntax is consistent across one-Optional and two-Optional {@code ifPresent()} overloads.
    * <li>{@code ifPresent(findStory(), Story::tell)} begins the statement with "if", which may read
