@@ -84,6 +84,42 @@ public class FunctionsTest {
     new NullPointerTester().testAllPublicInstanceMethods(consumer);
   }
 
+  @Test public void testCheckedIntConsumer_andThen() throws Throwable {
+    List<String> outputs = new ArrayList<>();
+    CheckedIntConsumer<IOException> consumer = i -> outputs.add("a: " + i);
+    consumer.andThen(i -> outputs.add("b: " + i)).accept(1);
+    assertThat(outputs).containsExactly("a: 1", "b: 1");
+  }
+
+  @Test public void testCheckedIntConsumer_nulls() throws Throwable {
+    CheckedIntConsumer<IOException> consumer = i -> {};
+    new NullPointerTester().testAllPublicInstanceMethods(consumer);
+  }
+
+  @Test public void testCheckedLongConsumer_andThen() throws Throwable {
+    List<String> outputs = new ArrayList<>();
+    CheckedLongConsumer<IOException> consumer = i -> outputs.add("a: " + i);
+    consumer.andThen(i -> outputs.add("b: " + i)).accept(1);
+    assertThat(outputs).containsExactly("a: 1", "b: 1");
+  }
+
+  @Test public void testCheckedLongConsumer_nulls() throws Throwable {
+    CheckedLongConsumer<IOException> consumer = i -> {};
+    new NullPointerTester().testAllPublicInstanceMethods(consumer);
+  }
+
+  @Test public void testCheckedDoubleConsumer_andThen() throws Throwable {
+    List<String> outputs = new ArrayList<>();
+    CheckedDoubleConsumer<IOException> consumer = i -> outputs.add("a: " + i);
+    consumer.andThen(i -> outputs.add("b: " + i)).accept(1);
+    assertThat(outputs).containsExactly("a: 1.0", "b: 1.0");
+  }
+
+  @Test public void testCheckedDoubleConsumer_nulls() throws Throwable {
+    CheckedDoubleConsumer<IOException> consumer = i -> {};
+    new NullPointerTester().testAllPublicInstanceMethods(consumer);
+  }
+
   @Test public void testCheckedBiConsumer_andThen() throws Throwable {
     AtomicInteger sum = new AtomicInteger();
     CheckedBiConsumer<Integer, Integer, Throwable> consumer = (a, b) -> sum.addAndGet(a + b);

@@ -8,6 +8,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 import java.util.function.Consumer;
 
 import org.junit.Before;
@@ -66,14 +69,60 @@ public class OptionalsTest {
     verify(otherwise, never()).run();
   }
 
-  @Test public void ifPresent_optionalIsEmpty() {
-    ifPresent(Optional.empty(), consumer::accept);
+  @Test public void ifPresent_optionalIntIsEmpty() {
+    ifPresent(OptionalInt.empty(), consumer::accept)
+        .orElse(otherwise::run);
     verify(consumer, never()).accept(any());
+    verify(otherwise).run();
+  }
+
+  @Test public void ifPresent_optionalIntIsPresent() {
+    ifPresent(OptionalInt.of(123), consumer::accept)
+        .orElse(otherwise::run);
+    verify(consumer).accept(123);
+    verify(otherwise, never()).run();
+  }
+
+  @Test public void ifPresent_optionalLongIsEmpty() {
+    ifPresent(OptionalLong.empty(), consumer::accept)
+        .orElse(otherwise::run);
+    verify(consumer, never()).accept(any());
+    verify(otherwise).run();
+  }
+
+  @Test public void ifPresent_optionalLongIsPresent() {
+    ifPresent(OptionalLong.of(123), consumer::accept)
+        .orElse(otherwise::run);
+    verify(consumer).accept(123L);
+    verify(otherwise, never()).run();
+  }
+
+  @Test public void ifPresent_optionalDoubleIsEmpty() {
+    ifPresent(OptionalDouble.empty(), consumer::accept)
+        .orElse(otherwise::run);
+    verify(consumer, never()).accept(any());
+    verify(otherwise).run();
+  }
+
+  @Test public void ifPresent_optionalDoubleIsPresent() {
+    ifPresent(OptionalDouble.of(123), consumer::accept)
+        .orElse(otherwise::run);
+    verify(consumer).accept(123D);
+    verify(otherwise, never()).run();
+  }
+
+  @Test public void ifPresent_optionalIsEmpty() {
+    ifPresent(Optional.empty(), consumer::accept)
+        .orElse(otherwise::run);
+    verify(consumer, never()).accept(any());
+    verify(otherwise).run();
   }
 
   @Test public void ifPresent_optionalIsPresent() {
-    ifPresent(Optional.of("foo"), consumer::accept);
+    ifPresent(Optional.of("foo"), consumer::accept)
+        .orElse(otherwise::run);
     verify(consumer).accept("foo");
+    verify(otherwise, never()).run();
   }
 
   @Test public void ifPresent_leftIsEmpty() {
@@ -139,15 +188,27 @@ public class OptionalsTest {
   @Test public void testNulls() throws Exception {
     new NullPointerTester()
         .setDefault(Optional.class, Optional.empty())
+        .setDefault(OptionalInt.class, OptionalInt.empty())
+        .setDefault(OptionalLong.class, OptionalLong.empty())
+        .setDefault(OptionalDouble.class, OptionalDouble.empty())
         .testAllPublicStaticMethods(Optionals.class);
     new NullPointerTester()
         .setDefault(Optional.class, Optional.of("foo"))
+        .setDefault(OptionalInt.class, OptionalInt.of(123))
+        .setDefault(OptionalLong.class, OptionalLong.of(123))
+        .setDefault(OptionalDouble.class, OptionalDouble.of(123))
         .testAllPublicStaticMethods(Optionals.class);
     new ClassSanityTester()
         .setDefault(Optional.class, Optional.empty())
+        .setDefault(OptionalInt.class, OptionalInt.empty())
+        .setDefault(OptionalLong.class, OptionalLong.empty())
+        .setDefault(OptionalDouble.class, OptionalDouble.empty())
         .forAllPublicStaticMethods(Optionals.class).testNulls();
     new ClassSanityTester()
         .setDefault(Optional.class, Optional.of("foo"))
+        .setDefault(OptionalInt.class, OptionalInt.of(123))
+        .setDefault(OptionalLong.class, OptionalLong.of(123))
+        .setDefault(OptionalDouble.class, OptionalDouble.of(123))
         .forAllPublicStaticMethods(Optionals.class).testNulls();
   }
   
