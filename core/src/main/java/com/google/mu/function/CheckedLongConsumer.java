@@ -3,7 +3,7 @@ package com.google.mu.function;
 import static java.util.Objects.requireNonNull;
 
 /**
- * An 64-bit long consumer that can throw checked exceptions.
+ * A 64-bit long consumer that can throw checked exceptions.
  */
 @FunctionalInterface
 public interface CheckedLongConsumer<E extends Throwable> {
