@@ -3,7 +3,7 @@ package com.google.mu.function;
 import static java.util.Objects.requireNonNull;
 
 /**
- * An double consumer that can throw checked exceptions.
+ * A double-value consumer that can throw checked exceptions.
  */
 @FunctionalInterface
 public interface CheckedDoubleConsumer<E extends Throwable> {
