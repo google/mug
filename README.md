@@ -156,12 +156,14 @@ Optionals.ifPresent(findTeacher(), findStudent(), Teacher::teach);
 
 **Example 3: or else run a fallback code block:**
 ```java
+static import com.google.mu.util.Optionals.ifPresent;
+
 Optional<Teacher> teacher = findTeacher(...);
 Optional<Student> student = findStudent(...);
-Optionals.ifPresent(teacher, student, Teacher::teach)  // teach if both present
-    .or(() -> teacher.ifPresent(Teacher::workOut))     // teacher work out if present
-    .or(() -> student.ifPresent(Student::doHomework))  // student do homework if present
-    .orElse(() -> log("no teacher. no student"));      // or else log
+ifPresent(teacher, student, Teacher::teach)             // teach if both present
+    .or(() -> ifPresent(teacher, Teacher::workOut))     // teacher work out if present
+    .or(() -> ifPresent(student, Student::doHomework))  // student do homework if present
+    .orElse(() -> log("no teacher. no student"));       // or else log
 ```
 
 All Optionals utilites propagate checked exception from the the lambda/method references.
