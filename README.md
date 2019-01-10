@@ -79,7 +79,7 @@ A: Sometimes Foo and Bar are just an arbitrary pair of objects, with no key-valu
 
 **Q: Why not `Stream<FooAndBar>`?**
 
-A: When you already have a proper domain object, sure. But you might find it cumbersome to define a bunch of FooAndBar, PatioChairAndKitchenSink one-off classes.
+A: When you already have a proper domain object, sure. But you might find it cumbersome to define a bunch of FooAndBar, PatioChairAndKitchenSink one-off classes especially if the relationship between the two types is only relevant in the local code context.
 
 **Q: Why not `Stream<Pair<Foo, Bar>>`?**
 
@@ -151,14 +151,16 @@ Optional<Couple> couple = Optionals.map(optionalHusband, optionalWife, Couple::n
 
 **Example 2: to run code when two Optional instances are both present:**
 ```java
-Optionals.ifPresent(optionalTeacher, optionalStudent, Teacher::teach);
+Optionals.ifPresent(findTeacher(), findStudent(), Teacher::teach);
 ```
 
 **Example 3: or else run a fallback code block:**
 ```java
-Optionals.ifPresent(optionalTeacher, optionalStudent, Teacher::teach)  // teach if both present
-    .or(() -> optionalTeacher.ifPresent(Teacher::workOut)) // teacher work out if present
-    .or(() -> optionalStudent.ifPresent(Student::doHomework))  // student do homework if present
+Optional<Teacher> teacher = findTeacher(...);
+Optional<Student> student = findStudent(...);
+Optionals.ifPresent(teacher, student, Teacher::teach)  // teach if both present
+    .or(() -> teacher.ifPresent(Teacher::workOut)) // teacher work out if present
+    .or(() -> student.ifPresent(Student::doHomework))  // student do homework if present
     .orElse(() -> log("no teacher. no student"));  // or else log
 ```
 
