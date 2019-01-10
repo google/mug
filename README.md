@@ -151,13 +151,15 @@ Optional<Couple> couple = Optionals.map(optionalHusband, optionalWife, Couple::n
 
 **Example 2: to run code when two Optional instances are both present:**
 ```java
-Optionals.ifPresent(optionalDoctor, optionalPatient, Patient::seeDoctor);
+Optionals.ifPresent(optionalTeacher, optionalStudent, Teacher::teach);
 ```
 
 **Example 3: or else run a fallback code block:**
 ```java
-Optionals.ifPresent(optionalDoctor, optionalPatient, Patient::seeDoctor)
-    .orElse(() -> log("nothing happened"));
+Optionals.ifPresent(optionalTeacher, optionalStudent, Teacher::teach)  // teach if both present
+    .or(() -> optionalTeacher.ifPresent(Teacher::workOut)) // teacher work out if present
+    .or(() -> optionalStudent.ifPresent(Student::doHomework))  // student do homework if present
+    .orElse(() -> log("no teacher. no student"));  // or else log
 ```
 
 All Optionals utilites propagate checked exception from the the lambda/method references.
