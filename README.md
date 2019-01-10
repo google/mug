@@ -83,7 +83,7 @@ A: When you already have a proper domain object, sure. But you might find it cum
 
 **Q: Why not `Stream<Pair<Foo, Bar>>`?**
 
-A: It's distracting to read code littered with opaque method names like `getFirst()` and `getSecond()`. It's also less efficient because you end up creating lots of temporary Pair objects.
+A: It's distracting to read code littered with opaque method names like `getFirst()` and `getSecond()`.
 
 
 #### [MoreStreams](https://google.github.io/mug/apidocs/com/google/mu/util/stream/MoreStreams.html)
