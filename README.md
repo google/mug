@@ -79,11 +79,11 @@ A: Sometimes Foo and Bar are just an arbitrary pair of objects, with no key-valu
 
 **Q: Why not `Stream<FooAndBar>`?**
 
-A: When you already have a proper domain object, sure. But you might find it cumbersome to define a bunch of FooAndBar, PatioChairAndKitchenSink one-off classes.
+A: When you already have a proper domain object, sure. But you might find it cumbersome to define a bunch of FooAndBar, PatioChairAndKitchenSink one-off classes especially if the relationship between the two types is only relevant in the local code context.
 
 **Q: Why not `Stream<Pair<Foo, Bar>>`?**
 
-A: It's distracting to read code littered with opaque method names like `getFirst()` and `getSecond()`. It's also less efficient because you end up creating lots of temporary Pair objects.
+A: It's distracting to read code littered with opaque method names like `getFirst()` and `getSecond()`.
 
 
 #### [MoreStreams](https://google.github.io/mug/apidocs/com/google/mu/util/stream/MoreStreams.html)
@@ -151,13 +151,19 @@ Optional<Couple> couple = Optionals.map(optionalHusband, optionalWife, Couple::n
 
 **Example 2: to run code when two Optional instances are both present:**
 ```java
-Optionals.ifPresent(optionalDoctor, optionalPatient, Patient::seeDoctor);
+Optionals.ifPresent(findTeacher(), findStudent(), Teacher::teach);
 ```
 
 **Example 3: or else run a fallback code block:**
 ```java
-Optionals.ifPresent(optionalDoctor, optionalPatient, Patient::seeDoctor)
-    .orElse(() -> log("nothing happened"));
+static import com.google.mu.util.Optionals.ifPresent;
+
+Optional<Teacher> teacher = findTeacher(...);
+Optional<Student> student = findStudent(...);
+ifPresent(teacher, student, Teacher::teach)             // teach if both present
+    .or(() -> ifPresent(teacher, Teacher::workOut))     // teacher work out if present
+    .or(() -> ifPresent(student, Student::doHomework))  // student do homework if present
+    .orElse(() -> log("no teacher. no student"));       // or else log
 ```
 
 All Optionals utilites propagate checked exception from the the lambda/method references.
