@@ -175,7 +175,7 @@ All Optionals utilites propagate checked exception from the the lambda/method re
 ```java
 String httpStripped = Substring.prefix("http://")
     .in(uri)
-    .map(Substring::chop)
+    .map(Substring::remove)
     .orElse(uri);
 ```
 
@@ -185,7 +185,7 @@ static import com.google.mu.util.Substring.prefix;
 
 String httpStripped = prefix("http://").or(prefix("https://"))
     .in(uri)
-    .map(Substring::chop)
+    .map(Substring::remove)
     .orElse(uri);
 ```
 
