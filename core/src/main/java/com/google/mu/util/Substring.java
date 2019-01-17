@@ -84,6 +84,19 @@ public final class Substring {
     return str -> substring(str, str.indexOf(snippet), snippet.length());
   }
 
+  /** Returns a {@code Pattern} that matches the first occurrence of {@code regexPattern}. */
+  public static Pattern first(java.util.regex.Pattern regexPattern) {
+    requireNonNull(regexPattern);
+    return str -> {
+      java.util.regex.Matcher matcher = regexPattern.matcher(str);
+      if (matcher.find()) {
+        return Optional.of(new Substring(str, matcher.start(), matcher.end()));
+      } else {
+        return Optional.empty();
+      }
+    };
+  }
+
   /** Returns a {@code Pattern} that matches the last occurrence of {@code c}. */
   public static Pattern last(char c) {
     return str -> substring(str, str.lastIndexOf(c), 1);
