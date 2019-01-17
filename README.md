@@ -181,7 +181,9 @@ String httpStripped = Substring.prefix("http://")
 
 **Example 2: strip off a one of two prefixes if either exists:**
 ```java
-String httpStripped = Substring.prefix("http://").or(Substring.prefix("https://"))
+static import com.google.mu.util.Substring.prefix;
+
+String httpStripped = prefix("http://").or(prefix("https://"))
     .in(uri)
     .map(Substring::chop)
     .orElse(uri);
