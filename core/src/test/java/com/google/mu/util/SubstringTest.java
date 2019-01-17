@@ -158,6 +158,19 @@ public class SubstringTest {
     assertThat(match.get().toString()).isEqualTo("foo");
   }
 
+  @Test public void regex_matchesPrefixWithStartingAnchor() {
+    Optional<Substring> match = Substring.regex("^.*oo").in("foobar");
+    assertThat(match).isPresent();
+    assertThat(match.get().before()).isEmpty();
+    assertThat(match.get().after()).isEqualTo("bar");
+    assertThat(match.get().remove()).isEqualTo("bar");
+    assertThat(match.get().toString()).isEqualTo("foo");
+  }
+
+  @Test public void regex_doesNotMatchPrefixDueToStartingAnchor() {
+    assertThat(Substring.regex("^oob.").in("foobar")).isEmpty();
+  }
+
   @Test public void regex_matchesPostfix() {
     Optional<Substring> match = Substring.regex("b.*").in("foobar");
     assertThat(match).isPresent();
@@ -165,6 +178,19 @@ public class SubstringTest {
     assertThat(match.get().after()).isEmpty();
     assertThat(match.get().remove()).isEqualTo("foo");
     assertThat(match.get().toString()).isEqualTo("bar");
+  }
+
+  @Test public void regex_matchesPostfixWithEndingAnchor() {
+    Optional<Substring> match = Substring.regex("b.*$").in("foobar");
+    assertThat(match).isPresent();
+    assertThat(match.get().before()).isEqualTo("foo");
+    assertThat(match.get().after()).isEmpty();
+    assertThat(match.get().remove()).isEqualTo("foo");
+    assertThat(match.get().toString()).isEqualTo("bar");
+  }
+
+  @Test public void regex_doesNotMatchPostfixDueToEndingAnchor() {
+    assertThat(Substring.regex("b.$").in("foobar")).isEmpty();
   }
 
   @Test public void regex_matchesInTheMiddle() {
