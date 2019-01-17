@@ -5,27 +5,42 @@ import static java.util.Objects.requireNonNull;
 import java.util.Optional;
 
 /**
- * Represents a substring found in an enclosing string.
+ * A substring inside a string, providing access to the substrings around it.
  * 
- * For example, to strip off the "http://" prefix from a uri string if existent: <pre>
- * return Substring.prefix("http://")
- *     .in(uri)
- *     .map(Substring::chop)
- *     .orElse(uri);
+ * <p>For example, to strip off the "http://" prefix from a uri string if existent: <pre>
+ *   static String stripHttp(String uri) {
+ *     return Substring.prefix("http://")
+ *         .in(uri)
+ *         .map(Substring::chop)
+ *         .orElse(uri);
+ *   }
  * </pre>
  *
  * To strip off either "http://" or "https://" prefix: <pre>
- * return prefix("http://").or(prefix("https://"))
- *     .in(uri)
- *     .map(Substring::chop)
- *     .orElse(uri);
+ *   static import com.google.mu.util.Substring.prefix;
+ * 
+ *   static String stripHttpOrHttps(String uri) {
+ *     return prefix("http://").or(prefix("https://"))
+ *         .in(uri)
+ *         .map(Substring::chop)
+ *         .orElse(uri);
+ *   }
  * </pre>
  *
- * To strip off the suffix at and after the last "_" character from a string: <pre>
- * return Substring.last('_')
- *     .in(string)
- *     .map(Substring::before)
- *     .orElse(string);
+ * To strip off the suffix at and after the last "_" character: <pre>
+ *   static String beforeLastUnderscore(String str) {
+ *     return Substring.last('_')
+ *         .in(str)
+ *         .map(Substring::before)
+ *         .orElse(str);
+ *   }
+ * </pre>
+ *
+ * To extract the 'name' and 'value' from texts in the format of "name:value": <pre>
+ *   String str = ...;
+ *   Substring colon = Substring.first(':').in(str).orElseThrow(BadFormatException::new);
+ *   String name = colon.before();
+ *   String value = colon.after();
  * </pre>
  *
  * @since 1.2
