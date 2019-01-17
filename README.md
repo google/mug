@@ -5,6 +5,7 @@ A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/
 
 * Stream utilities ([BiStream](#bistream-streams-pairs-of-objects), [MoreStreams](#morestreams)).
 * [Optionals](#optionals) provides extra utilities for java.util.Optional.
+* [Substring](#substring) does string slicing.
 * [Retryer](#retryer) retries.
 * [Maybe](#maybe) tunnels checked exceptions through streams or futures.
 * [Funnel](#funnel) flows objects through batch conversions in FIFO order.
@@ -79,11 +80,11 @@ A: Sometimes Foo and Bar are just an arbitrary pair of objects, with no key-valu
 
 **Q: Why not `Stream<FooAndBar>`?**
 
-A: When you already have a proper domain object, sure. But you might find it cumbersome to define a bunch of FooAndBar, PatioChairAndKitchenSink one-off classes.
+A: When you already have a proper domain object, sure. But you might find it cumbersome to define a bunch of FooAndBar, PatioChairAndKitchenSink one-off classes especially if the relationship between the two types is only relevant in the local code context.
 
 **Q: Why not `Stream<Pair<Foo, Bar>>`?**
 
-A: It's distracting to read code littered with opaque method names like `getFirst()` and `getSecond()`. It's also less efficient because you end up creating lots of temporary Pair objects.
+A: It's distracting to read code littered with opaque method names like `getFirst()` and `getSecond()`.
 
 
 #### [MoreStreams](https://google.github.io/mug/apidocs/com/google/mu/util/stream/MoreStreams.html)
@@ -151,16 +152,55 @@ Optional<Couple> couple = Optionals.map(optionalHusband, optionalWife, Couple::n
 
 **Example 2: to run code when two Optional instances are both present:**
 ```java
-Optionals.ifPresent(optionalDoctor, optionalPatient, Patient::seeDoctor);
+Optionals.ifPresent(findTeacher(), findStudent(), Teacher::teach);
 ```
 
 **Example 3: or else run a fallback code block:**
 ```java
-Optionals.ifPresent(optionalDoctor, optionalPatient, Patient::seeDoctor)
-    .orElse(() -> log("nothing happened"));
+static import com.google.mu.util.Optionals.ifPresent;
+
+Optional<Teacher> teacher = findTeacher(...);
+Optional<Student> student = findStudent(...);
+ifPresent(teacher, student, Teacher::teach)             // teach if both present
+    .or(() -> ifPresent(teacher, Teacher::workOut))     // teacher work out if present
+    .or(() -> ifPresent(student, Student::doHomework))  // student do homework if present
+    .orElse(() -> log("no teacher. no student"));       // or else log
 ```
 
 All Optionals utilites propagate checked exception from the the lambda/method references.
+
+## Substring
+
+**Example 1: strip off a prefix if existent:**
+```java
+String httpStripped = Substring.prefix("http://")
+    .in(uri)
+    .map(Substring::chop)
+    .orElse(uri);
+```
+
+**Example 2: strip off a one of two prefixes if either exists:**
+```java
+String httpStripped = Substring.prefix("http://").or(Substring.prefix("https://"))
+    .in(uri)
+    .map(Substring::chop)
+    .orElse(uri);
+```
+
+**Example 3: strip off the suffix at and after the last "_" character:**
+```java
+Substring.last('_')
+    .in(str)
+    .map(Substring::before)
+    .orElse(str);
+```
+
+**Example 4: extract name and value from a string in the format of "name:value":**
+```java
+Substring colon = Substring.first(':').in(nameValue).orElseThrow(...);
+String name = colon.before();
+String value = colon.after();
+```
 
 ## [Retryer](https://google.github.io/mug/apidocs/com/google/mu/util/Retryer.html)
 

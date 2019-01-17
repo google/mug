@@ -14,6 +14,7 @@ public class SubstringTest {
 
   @Test public void prefix_noMatch() {
     assertThat(Substring.prefix("foo").in("notfoo")).isEmpty();
+    assertThat(Substring.prefix("foo").in("")).isEmpty();
   }
 
   @Test public void prefix_matchesFullString() {
@@ -45,6 +46,7 @@ public class SubstringTest {
 
   @Test public void suffix_noMatch() {
     assertThat(Substring.suffix("foo").in("foonot")).isEmpty();
+    assertThat(Substring.suffix("foo").in("")).isEmpty();
   }
 
   @Test public void suffix_matchesFullString() {
@@ -76,6 +78,7 @@ public class SubstringTest {
 
   @Test public void firstSnippet_noMatch() {
     assertThat(Substring.first("foo").in("bar")).isEmpty();
+    assertThat(Substring.first("foo").in("")).isEmpty();
   }
 
   @Test public void firstSnippet_matchesFullString() {
@@ -134,6 +137,7 @@ public class SubstringTest {
 
   @Test public void lastSnippet_noMatch() {
     assertThat(Substring.last("foo").in("bar")).isEmpty();
+    assertThat(Substring.last("foo").in("")).isEmpty();
   }
 
   @Test public void lastSnippet_matchesFullString() {
@@ -192,6 +196,7 @@ public class SubstringTest {
 
   @Test public void firstChar_noMatch() {
     assertThat(Substring.first('f').in("bar")).isEmpty();
+    assertThat(Substring.first('f').in("")).isEmpty();
   }
 
   @Test public void firstChar_matchesFullString() {
@@ -232,6 +237,7 @@ public class SubstringTest {
 
   @Test public void lastChar_noMatch() {
     assertThat(Substring.last('f').in("bar")).isEmpty();
+    assertThat(Substring.last('f').in("")).isEmpty();
   }
 
   @Test public void lastChar_matchesFullString() {
