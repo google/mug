@@ -135,6 +135,65 @@ public class SubstringTest {
     assertThat(match.get().toString()).isEqualTo("bar");
   }
 
+  @Test public void firstRegex_noMatch() {
+    assertThat(Substring.first(java.util.regex.Pattern.compile(".*x")).in("bar")).isEmpty();
+    assertThat(Substring.first(java.util.regex.Pattern.compile(".*x")).in("")).isEmpty();
+  }
+
+  @Test public void firstRegex_matchesFullString() {
+    Optional<Substring> match = Substring.first(java.util.regex.Pattern.compile(".*oo")).in("foo");
+    assertThat(match).isPresent();
+    assertThat(match.get().before()).isEmpty();
+    assertThat(match.get().after()).isEmpty();
+    assertThat(match.get().chop()).isEmpty();
+    assertThat(match.get().toString()).isEqualTo("foo");
+  }
+
+  @Test public void firstRegex_matchesPrefix() {
+    Optional<Substring> match = Substring.first(java.util.regex.Pattern.compile(".*oo")).in("foobar");
+    assertThat(match).isPresent();
+    assertThat(match.get().before()).isEmpty();
+    assertThat(match.get().after()).isEqualTo("bar");
+    assertThat(match.get().chop()).isEqualTo("bar");
+    assertThat(match.get().toString()).isEqualTo("foo");
+  }
+
+  @Test public void firstRegex_matchesPostfix() {
+    Optional<Substring> match = Substring.first(java.util.regex.Pattern.compile("b.*")).in("foobar");
+    assertThat(match).isPresent();
+    assertThat(match.get().before()).isEqualTo("foo");
+    assertThat(match.get().after()).isEmpty();
+    assertThat(match.get().chop()).isEqualTo("foo");
+    assertThat(match.get().toString()).isEqualTo("bar");
+  }
+
+  @Test public void firstRegex_matchesInTheMiddle() {
+    Optional<Substring> match = Substring.first(java.util.regex.Pattern.compile(".ar")).in("foobarbaz");
+    assertThat(match).isPresent();
+    assertThat(match.get().before()).isEqualTo("foo");
+    assertThat(match.get().after()).isEqualTo("baz");
+    assertThat(match.get().chop()).isEqualTo("foobaz");
+    assertThat(match.get().toString()).isEqualTo("bar");
+  }
+
+  @Test public void firstRegex_emptySnippet() {
+    Optional<Substring> match = Substring.first(java.util.regex.Pattern.compile("")).in("foo");
+    assertThat(match).isPresent();
+    assertThat(match.get().before()).isEmpty();
+    assertThat(match.get().after()).isEqualTo("foo");
+    assertThat(match.get().chop()).isEqualTo("foo");
+    assertThat(match.get().toString()).isEmpty();
+  }
+
+  @Test public void firstRegex_matchesFirstOccurrence() {
+    Optional<Substring> match = Substring.first(java.util.regex.Pattern.compile(".ar")).in("foobarbarbaz");
+    assertThat(match).isPresent();
+    assertThat(match.get().before()).isEqualTo("foo");
+    assertThat(match.get().after()).isEqualTo("barbaz");
+    assertThat(match.get().chop()).isEqualTo("foobarbaz");
+    assertThat(match.get().toString()).isEqualTo("bar");
+  }
+
   @Test public void lastSnippet_noMatch() {
     assertThat(Substring.last("foo").in("bar")).isEmpty();
     assertThat(Substring.last("foo").in("")).isEmpty();
