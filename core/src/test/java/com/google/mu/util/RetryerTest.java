@@ -959,9 +959,9 @@ public class RetryerTest {
     results.add(1L);
     for (int i = 2; i < 93; i++) {
       long f = Math.round(Retryer.fib(i));
-      assertThat(f).named("fibonacci(%s)", i).isLessThan(Long.MAX_VALUE);
-      assertThat((double) f).named("fibonacci(%s)", i)
-      .isWithin(f / 1000).of(results.get(i - 2).doubleValue() + results.get(i - 1).doubleValue());
+      assertThat(f).isLessThan(Long.MAX_VALUE);
+      assertThat((double) f)
+          .isWithin(f / 1000).of(results.get(i - 2).doubleValue() + results.get(i - 1).doubleValue());
       results.add(f);
     }
   }
