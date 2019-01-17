@@ -22,7 +22,7 @@ public class SubstringTest {
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEmpty();
     assertThat(match.get().after()).isEmpty();
-    assertThat(match.get().chop()).isEmpty();
+    assertThat(match.get().remove()).isEmpty();
     assertThat(match.get().toString()).isEqualTo("foo");
   }
 
@@ -31,7 +31,7 @@ public class SubstringTest {
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEmpty();
     assertThat(match.get().after()).isEqualTo("bar");
-    assertThat(match.get().chop()).isEqualTo("bar");
+    assertThat(match.get().remove()).isEqualTo("bar");
     assertThat(match.get().toString()).isEqualTo("foo");
   }
 
@@ -40,7 +40,7 @@ public class SubstringTest {
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEmpty();
     assertThat(match.get().after()).isEqualTo("foo");
-    assertThat(match.get().chop()).isEqualTo("foo");
+    assertThat(match.get().remove()).isEqualTo("foo");
     assertThat(match.get().toString()).isEmpty();
   }
 
@@ -54,7 +54,7 @@ public class SubstringTest {
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEmpty();
     assertThat(match.get().after()).isEmpty();
-    assertThat(match.get().chop()).isEmpty();
+    assertThat(match.get().remove()).isEmpty();
     assertThat(match.get().toString()).isEqualTo("foo");
   }
 
@@ -63,7 +63,7 @@ public class SubstringTest {
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEqualTo("foo");
     assertThat(match.get().after()).isEmpty();
-    assertThat(match.get().chop()).isEqualTo("foo");
+    assertThat(match.get().remove()).isEqualTo("foo");
     assertThat(match.get().toString()).isEqualTo("bar");
   }
 
@@ -72,7 +72,7 @@ public class SubstringTest {
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEqualTo("foo");
     assertThat(match.get().after()).isEmpty();
-    assertThat(match.get().chop()).isEqualTo("foo");
+    assertThat(match.get().remove()).isEqualTo("foo");
     assertThat(match.get().toString()).isEmpty();
   }
 
@@ -86,7 +86,7 @@ public class SubstringTest {
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEmpty();
     assertThat(match.get().after()).isEmpty();
-    assertThat(match.get().chop()).isEmpty();
+    assertThat(match.get().remove()).isEmpty();
     assertThat(match.get().toString()).isEqualTo("foo");
   }
 
@@ -95,7 +95,7 @@ public class SubstringTest {
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEmpty();
     assertThat(match.get().after()).isEqualTo("bar");
-    assertThat(match.get().chop()).isEqualTo("bar");
+    assertThat(match.get().remove()).isEqualTo("bar");
     assertThat(match.get().toString()).isEqualTo("foo");
   }
 
@@ -104,7 +104,7 @@ public class SubstringTest {
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEqualTo("foo");
     assertThat(match.get().after()).isEmpty();
-    assertThat(match.get().chop()).isEqualTo("foo");
+    assertThat(match.get().remove()).isEqualTo("foo");
     assertThat(match.get().toString()).isEqualTo("bar");
   }
 
@@ -113,7 +113,7 @@ public class SubstringTest {
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEqualTo("foo");
     assertThat(match.get().after()).isEqualTo("baz");
-    assertThat(match.get().chop()).isEqualTo("foobaz");
+    assertThat(match.get().remove()).isEqualTo("foobaz");
     assertThat(match.get().toString()).isEqualTo("bar");
   }
 
@@ -122,7 +122,7 @@ public class SubstringTest {
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEmpty();
     assertThat(match.get().after()).isEqualTo("foo");
-    assertThat(match.get().chop()).isEqualTo("foo");
+    assertThat(match.get().remove()).isEqualTo("foo");
     assertThat(match.get().toString()).isEmpty();
   }
 
@@ -131,7 +131,7 @@ public class SubstringTest {
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEqualTo("foo");
     assertThat(match.get().after()).isEqualTo("barbaz");
-    assertThat(match.get().chop()).isEqualTo("foobarbaz");
+    assertThat(match.get().remove()).isEqualTo("foobarbaz");
     assertThat(match.get().toString()).isEqualTo("bar");
   }
 
@@ -145,7 +145,7 @@ public class SubstringTest {
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEmpty();
     assertThat(match.get().after()).isEmpty();
-    assertThat(match.get().chop()).isEmpty();
+    assertThat(match.get().remove()).isEmpty();
     assertThat(match.get().toString()).isEqualTo("foo");
   }
 
@@ -154,7 +154,7 @@ public class SubstringTest {
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEmpty();
     assertThat(match.get().after()).isEqualTo("bar");
-    assertThat(match.get().chop()).isEqualTo("bar");
+    assertThat(match.get().remove()).isEqualTo("bar");
     assertThat(match.get().toString()).isEqualTo("foo");
   }
 
@@ -163,7 +163,7 @@ public class SubstringTest {
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEqualTo("foo");
     assertThat(match.get().after()).isEmpty();
-    assertThat(match.get().chop()).isEqualTo("foo");
+    assertThat(match.get().remove()).isEqualTo("foo");
     assertThat(match.get().toString()).isEqualTo("bar");
   }
 
@@ -172,7 +172,7 @@ public class SubstringTest {
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEqualTo("foo");
     assertThat(match.get().after()).isEqualTo("baz");
-    assertThat(match.get().chop()).isEqualTo("foobaz");
+    assertThat(match.get().remove()).isEqualTo("foobaz");
     assertThat(match.get().toString()).isEqualTo("bar");
   }
 
@@ -181,7 +181,7 @@ public class SubstringTest {
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEmpty();
     assertThat(match.get().after()).isEqualTo("foo");
-    assertThat(match.get().chop()).isEqualTo("foo");
+    assertThat(match.get().remove()).isEqualTo("foo");
     assertThat(match.get().toString()).isEmpty();
   }
 
@@ -190,7 +190,7 @@ public class SubstringTest {
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEqualTo("foo");
     assertThat(match.get().after()).isEqualTo("barbaz");
-    assertThat(match.get().chop()).isEqualTo("foobarbaz");
+    assertThat(match.get().remove()).isEqualTo("foobarbaz");
     assertThat(match.get().toString()).isEqualTo("bar");
   }
 
@@ -204,7 +204,7 @@ public class SubstringTest {
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEmpty();
     assertThat(match.get().after()).isEmpty();
-    assertThat(match.get().chop()).isEmpty();
+    assertThat(match.get().remove()).isEmpty();
     assertThat(match.get().toString()).isEqualTo("foo");
   }
 
@@ -213,7 +213,7 @@ public class SubstringTest {
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEmpty();
     assertThat(match.get().after()).isEqualTo("bar");
-    assertThat(match.get().chop()).isEqualTo("bar");
+    assertThat(match.get().remove()).isEqualTo("bar");
     assertThat(match.get().toString()).isEqualTo("foo");
   }
 
@@ -222,7 +222,7 @@ public class SubstringTest {
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEqualTo("foo");
     assertThat(match.get().after()).isEmpty();
-    assertThat(match.get().chop()).isEqualTo("foo");
+    assertThat(match.get().remove()).isEqualTo("foo");
     assertThat(match.get().toString()).isEqualTo("bar");
   }
 
@@ -231,7 +231,7 @@ public class SubstringTest {
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEqualTo("foo");
     assertThat(match.get().after()).isEqualTo("baz");
-    assertThat(match.get().chop()).isEqualTo("foobaz");
+    assertThat(match.get().remove()).isEqualTo("foobaz");
     assertThat(match.get().toString()).isEqualTo("bar");
   }
 
@@ -240,7 +240,7 @@ public class SubstringTest {
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEqualTo("foobar");
     assertThat(match.get().after()).isEqualTo("baz");
-    assertThat(match.get().chop()).isEqualTo("foobarbaz");
+    assertThat(match.get().remove()).isEqualTo("foobarbaz");
     assertThat(match.get().toString()).isEqualTo("bar");
   }
 
@@ -249,7 +249,7 @@ public class SubstringTest {
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEqualTo("foo");
     assertThat(match.get().after()).isEmpty();
-    assertThat(match.get().chop()).isEqualTo("foo");
+    assertThat(match.get().remove()).isEqualTo("foo");
     assertThat(match.get().toString()).isEmpty();
   }
 
@@ -263,7 +263,7 @@ public class SubstringTest {
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEmpty();
     assertThat(match.get().after()).isEmpty();
-    assertThat(match.get().chop()).isEmpty();
+    assertThat(match.get().remove()).isEmpty();
     assertThat(match.get().toString()).isEqualTo("f");
   }
 
@@ -272,7 +272,7 @@ public class SubstringTest {
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEmpty();
     assertThat(match.get().after()).isEqualTo("oobar");
-    assertThat(match.get().chop()).isEqualTo("oobar");
+    assertThat(match.get().remove()).isEqualTo("oobar");
     assertThat(match.get().toString()).isEqualTo("f");
   }
 
@@ -281,7 +281,7 @@ public class SubstringTest {
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEqualTo("fooba");
     assertThat(match.get().after()).isEmpty();
-    assertThat(match.get().chop()).isEqualTo("fooba");
+    assertThat(match.get().remove()).isEqualTo("fooba");
     assertThat(match.get().toString()).isEqualTo("r");
   }
 
@@ -290,7 +290,7 @@ public class SubstringTest {
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEqualTo("foo");
     assertThat(match.get().after()).isEqualTo("arbarbaz");
-    assertThat(match.get().chop()).isEqualTo("fooarbarbaz");
+    assertThat(match.get().remove()).isEqualTo("fooarbarbaz");
     assertThat(match.get().toString()).isEqualTo("b");
   }
 
@@ -304,7 +304,7 @@ public class SubstringTest {
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEmpty();
     assertThat(match.get().after()).isEmpty();
-    assertThat(match.get().chop()).isEmpty();
+    assertThat(match.get().remove()).isEmpty();
     assertThat(match.get().toString()).isEqualTo("f");
   }
 
@@ -313,7 +313,7 @@ public class SubstringTest {
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEmpty();
     assertThat(match.get().after()).isEqualTo("oobar");
-    assertThat(match.get().chop()).isEqualTo("oobar");
+    assertThat(match.get().remove()).isEqualTo("oobar");
     assertThat(match.get().toString()).isEqualTo("f");
   }
 
@@ -322,7 +322,7 @@ public class SubstringTest {
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEqualTo("fooba");
     assertThat(match.get().after()).isEmpty();
-    assertThat(match.get().chop()).isEqualTo("fooba");
+    assertThat(match.get().remove()).isEqualTo("fooba");
     assertThat(match.get().toString()).isEqualTo("r");
   }
 
@@ -331,7 +331,7 @@ public class SubstringTest {
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEqualTo("foobar");
     assertThat(match.get().after()).isEqualTo("az");
-    assertThat(match.get().chop()).isEqualTo("foobaraz");
+    assertThat(match.get().remove()).isEqualTo("foobaraz");
     assertThat(match.get().toString()).isEqualTo("b");
   }
 
@@ -341,7 +341,7 @@ public class SubstringTest {
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEmpty();
     assertThat(match.get().after()).isEqualTo("ar");
-    assertThat(match.get().chop()).isEqualTo("ar");
+    assertThat(match.get().remove()).isEqualTo("ar");
     assertThat(match.get().toString()).isEqualTo("b");
   }
 
@@ -351,7 +351,7 @@ public class SubstringTest {
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEmpty();
     assertThat(match.get().after()).isEmpty();
-    assertThat(match.get().chop()).isEmpty();
+    assertThat(match.get().remove()).isEmpty();
     assertThat(match.get().toString()).isEqualTo("foo");
   }
 

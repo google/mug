@@ -6,13 +6,13 @@ import java.util.Optional;
 
 /**
  * A substring inside a string, providing easy access to substrings around it ({@link #before before()},
- * {@link #after after()} or with the substring itself {@link #chop chopped}).
+ * {@link #after after()} or with the substring itself {@link #remove removed}).
  * 
  * <p>For example, to strip off the "http://" prefix from a uri string if existent: <pre>
  *   static String stripHttp(String uri) {
  *     return Substring.prefix("http://")
  *         .in(uri)
- *         .map(Substring::chop)
+ *         .map(Substring::remove)
  *         .orElse(uri);
  *   }
  * </pre>
@@ -23,7 +23,7 @@ import java.util.Optional;
  *   static String stripHttpOrHttps(String uri) {
  *     return prefix("http://").or(prefix("https://"))
  *         .in(uri)
- *         .map(Substring::chop)
+ *         .map(Substring::remove)
  *         .orElse(uri);
  *   }
  * </pre>
@@ -123,8 +123,8 @@ public final class Substring {
     return context.substring(endIndex);
   }
 
-  /** Returns a new string with the substring chopped off. */
-  public String chop() {
+  /** Returns a new string with the substring removed. */
+  public String remove() {
     if (endIndex == context.length()) {
       return before();
     } else if (startIndex == 0) {
