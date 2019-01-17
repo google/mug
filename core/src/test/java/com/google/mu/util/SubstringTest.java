@@ -335,6 +335,11 @@ public class SubstringTest {
     assertThat(match.get().toString()).isEqualTo("b");
   }
 
+  @Test public void removeFrom() {
+    assertThat(Substring.first('f').removeFrom("bar")).isEqualTo("bar");
+    assertThat(Substring.first('f').removeFrom("foo")).isEqualTo("oo");
+  }
+
   @Test public void or_firstMatcherMatches() {
     Optional<Substring> match =
         Substring.first('b').or(Substring.first("foo")).in("bar");

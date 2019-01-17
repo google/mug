@@ -10,10 +10,7 @@ import java.util.Optional;
  * 
  * <p>For example, to strip off the "http://" prefix from a uri string if existent: <pre>
  *   static String stripHttp(String uri) {
- *     return Substring.prefix("http://")
- *         .in(uri)
- *         .map(Substring::remove)
- *         .orElse(uri);
+ *     return Substring.prefix("http://").removeFrom(uri);
  *   }
  * </pre>
  *
@@ -21,10 +18,7 @@ import java.util.Optional;
  *   static import com.google.mu.util.Substring.prefix;
  * 
  *   static String stripHttpOrHttps(String uri) {
- *     return prefix("http://").or(prefix("https://"))
- *         .in(uri)
- *         .map(Substring::remove)
- *         .orElse(uri);
+ *     return prefix("http://").or(prefix("https://")).removeFrom(uri);
  *   }
  * </pre>
  *
@@ -144,6 +138,14 @@ public final class Substring {
 
     /** Finds the substring in {@code string} or returns {@code empty()} if not found. */
     Optional<Substring> in(String string);
+
+    /**
+     * Returns a new string with the substring matched by {@code this} removed, or returns
+     * {@code string} as is.
+     */
+    default String removeFrom(String string) {
+      return in(string).map(Substring::remove).orElse(string);
+    }
 
     /**
      * Returns a {@code Pattern} that fall backs to using {@code that} if {@code this} fails to
