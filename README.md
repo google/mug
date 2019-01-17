@@ -5,6 +5,7 @@ A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/
 
 * Stream utilities ([BiStream](#bistream-streams-pairs-of-objects), [MoreStreams](#morestreams)).
 * [Optionals](#optionals) provides extra utilities for java.util.Optional.
+* [Substring](#substring) does string slicing.
 * [Retryer](#retryer) retries.
 * [Maybe](#maybe) tunnels checked exceptions through streams or futures.
 * [Funnel](#funnel) flows objects through batch conversions in FIFO order.
@@ -167,6 +168,39 @@ ifPresent(teacher, student, Teacher::teach)             // teach if both present
 ```
 
 All Optionals utilites propagate checked exception from the the lambda/method references.
+
+## Substring
+
+**Example 1: strip off a prefix if existent:**
+```java
+String httpStripped = Substring.prefix("http://")
+    .in(uri)
+    .map(Substring::chop)
+    .orElse(uri);
+```
+
+**Example 2: strip off a one of two prefixes if either exists:**
+```java
+String httpStripped = Substring.prefix("http://").or(Substring.prefix("https://"))
+    .in(uri)
+    .map(Substring::chop)
+    .orElse(uri);
+```
+
+**Example 3: strip off the suffix at and after the last "_" character:**
+```java
+Substring.last('_')
+    .in(str)
+    .map(Substring::before)
+    .orElse(str);
+```
+
+**Example 4: extract name and value from a string in the format of "name:value":**
+```java
+Substring colon = Substring.first(':').in(nameValue).orElseThrow(...);
+String name = colon.before();
+String value = colon.after();
+```
 
 ## [Retryer](https://google.github.io/mug/apidocs/com/google/mu/util/Retryer.html)
 
