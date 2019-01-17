@@ -173,20 +173,14 @@ All Optionals utilites propagate checked exception from the the lambda/method re
 
 **Example 1: strip off a prefix if existent:**
 ```java
-String httpStripped = Substring.prefix("http://")
-    .in(uri)
-    .map(Substring::remove)
-    .orElse(uri);
+String httpStripped = Substring.prefix("http://").removeFrom(uri);
 ```
 
 **Example 2: strip off either of two potential prefixes:**
 ```java
 static import com.google.mu.util.Substring.prefix;
 
-String httpStripped = prefix("http://").or(prefix("https://"))
-    .in(uri)
-    .map(Substring::remove)
-    .orElse(uri);
+String httpStripped = prefix("http://").or(prefix("https://")).removeFrom(uri);
 ```
 
 **Example 3: strip off the suffix at and after the last "_" character:**
