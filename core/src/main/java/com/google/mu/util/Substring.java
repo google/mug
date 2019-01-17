@@ -5,7 +5,8 @@ import static java.util.Objects.requireNonNull;
 import java.util.Optional;
 
 /**
- * A substring inside a string, providing access to the substrings around it.
+ * A substring inside a string, providing easy access to substrings around it ({@link #before before()},
+ * {@link #after after()} or with the substring itself {@link #chop chopped}).
  * 
  * <p>For example, to strip off the "http://" prefix from a uri string if existent: <pre>
  *   static String stripHttp(String uri) {
@@ -56,40 +57,40 @@ public final class Substring {
     this.endIndex = endIndex;
   }
 
-  /** Returns a {@code Matcher} that matches strings starting with {@code prefix}. */
-  public static Matcher prefix(String prefix) {
+  /** Returns a {@code Pattern} that matches strings starting with {@code prefix}. */
+  public static Pattern prefix(String prefix) {
     requireNonNull(prefix);
     return str -> str.startsWith(prefix)
         ? Optional.of(new Substring(str, 0, prefix.length()))
         : Optional.empty();
   }
 
-  /** Returns a {@code Matcher} that matches strings ending with {@code suffix}. */
-  public static Matcher suffix(String suffix) {
+  /** Returns a {@code Pattern} that matches strings ending with {@code suffix}. */
+  public static Pattern suffix(String suffix) {
     requireNonNull(suffix);
     return str -> str.endsWith(suffix)
         ? Optional.of(new Substring(str, str.length() - suffix.length(), str.length()))
         : Optional.empty();
   }
 
-  /** Returns a {@code Matcher} that matches the first occurrence of {@code c}. */
-  public static Matcher first(char c) {
+  /** Returns a {@code Pattern} that matches the first occurrence of {@code c}. */
+  public static Pattern first(char c) {
     return str -> substring(str, str.indexOf(c), 1);
   }
 
-  /** Returns a {@code Matcher} that matches the first occurrence of {@code snippet}. */
-  public static Matcher first(String snippet) {
+  /** Returns a {@code Pattern} that matches the first occurrence of {@code snippet}. */
+  public static Pattern first(String snippet) {
     requireNonNull(snippet);
     return str -> substring(str, str.indexOf(snippet), snippet.length());
   }
 
-  /** Returns a {@code Matcher} that matches the last occurrence of {@code c}. */
-  public static Matcher last(char c) {
+  /** Returns a {@code Pattern} that matches the last occurrence of {@code c}. */
+  public static Pattern last(char c) {
     return str -> substring(str, str.lastIndexOf(c), 1);
   }
 
-  /** Returns a {@code Matcher} that matches the last occurrence of {@code snippet}. */
-  public static Matcher last(String snippet) {
+  /** Returns a {@code Pattern} that matches the last occurrence of {@code snippet}. */
+  public static Pattern last(String snippet) {
     requireNonNull(snippet);
     return str -> substring(str, str.lastIndexOf(snippet), snippet.length());
   }
@@ -121,16 +122,16 @@ public final class Substring {
   }
 
   /** A substring pattern that can be matched against a string to find substrings. */
-  public interface Matcher {
+  public interface Pattern {
 
     /** Finds the substring in {@code string} or returns {@code empty()} if not found. */
     Optional<Substring> in(String string);
 
     /**
-     * Returns a {@code Matcher} that fall backs to using {@code that} if {@code this} fails to
+     * Returns a {@code Pattern} that fall backs to using {@code that} if {@code this} fails to
      * match.
      */
-    default Matcher or(Matcher that) {
+    default Pattern or(Pattern that) {
       requireNonNull(that);
       return str -> {
         Optional<Substring> substring = in(str);
