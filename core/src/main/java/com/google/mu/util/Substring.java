@@ -85,7 +85,7 @@ public final class Substring {
   }
 
   /** Returns a {@code Pattern} that matches the first occurrence of {@code regexPattern}. */
-  public static Pattern first(java.util.regex.Pattern regexPattern) {
+  public static Pattern regex(java.util.regex.Pattern regexPattern) {
     requireNonNull(regexPattern);
     return str -> {
       java.util.regex.Matcher matcher = regexPattern.matcher(str);
@@ -95,6 +95,11 @@ public final class Substring {
         return Optional.empty();
       }
     };
+  }
+
+  /** Returns a {@code Pattern} that matches the first occurrence of {@code regexPattern}. */
+  public static Pattern regex(String regexPattern) {
+    return regex(java.util.regex.Pattern.compile(regexPattern));
   }
 
   /** Returns a {@code Pattern} that matches the last occurrence of {@code c}. */

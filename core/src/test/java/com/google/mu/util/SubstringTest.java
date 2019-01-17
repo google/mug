@@ -135,13 +135,13 @@ public class SubstringTest {
     assertThat(match.get().toString()).isEqualTo("bar");
   }
 
-  @Test public void firstRegex_noMatch() {
-    assertThat(Substring.first(java.util.regex.Pattern.compile(".*x")).in("bar")).isEmpty();
-    assertThat(Substring.first(java.util.regex.Pattern.compile(".*x")).in("")).isEmpty();
+  @Test public void regex_noMatch() {
+    assertThat(Substring.regex(".*x").in("bar")).isEmpty();
+    assertThat(Substring.regex(".*x").in("")).isEmpty();
   }
 
-  @Test public void firstRegex_matchesFullString() {
-    Optional<Substring> match = Substring.first(java.util.regex.Pattern.compile(".*oo")).in("foo");
+  @Test public void regex_matchesFullString() {
+    Optional<Substring> match = Substring.regex(".*oo").in("foo");
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEmpty();
     assertThat(match.get().after()).isEmpty();
@@ -149,8 +149,8 @@ public class SubstringTest {
     assertThat(match.get().toString()).isEqualTo("foo");
   }
 
-  @Test public void firstRegex_matchesPrefix() {
-    Optional<Substring> match = Substring.first(java.util.regex.Pattern.compile(".*oo")).in("foobar");
+  @Test public void regex_matchesPrefix() {
+    Optional<Substring> match = Substring.regex(".*oo").in("foobar");
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEmpty();
     assertThat(match.get().after()).isEqualTo("bar");
@@ -158,8 +158,8 @@ public class SubstringTest {
     assertThat(match.get().toString()).isEqualTo("foo");
   }
 
-  @Test public void firstRegex_matchesPostfix() {
-    Optional<Substring> match = Substring.first(java.util.regex.Pattern.compile("b.*")).in("foobar");
+  @Test public void regex_matchesPostfix() {
+    Optional<Substring> match = Substring.regex("b.*").in("foobar");
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEqualTo("foo");
     assertThat(match.get().after()).isEmpty();
@@ -167,8 +167,8 @@ public class SubstringTest {
     assertThat(match.get().toString()).isEqualTo("bar");
   }
 
-  @Test public void firstRegex_matchesInTheMiddle() {
-    Optional<Substring> match = Substring.first(java.util.regex.Pattern.compile(".ar")).in("foobarbaz");
+  @Test public void regex_matchesInTheMiddle() {
+    Optional<Substring> match = Substring.regex(".ar").in("foobarbaz");
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEqualTo("foo");
     assertThat(match.get().after()).isEqualTo("baz");
@@ -176,8 +176,8 @@ public class SubstringTest {
     assertThat(match.get().toString()).isEqualTo("bar");
   }
 
-  @Test public void firstRegex_emptySnippet() {
-    Optional<Substring> match = Substring.first(java.util.regex.Pattern.compile("")).in("foo");
+  @Test public void regex_emptySnippet() {
+    Optional<Substring> match = Substring.regex("").in("foo");
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEmpty();
     assertThat(match.get().after()).isEqualTo("foo");
@@ -185,8 +185,8 @@ public class SubstringTest {
     assertThat(match.get().toString()).isEmpty();
   }
 
-  @Test public void firstRegex_matchesFirstOccurrence() {
-    Optional<Substring> match = Substring.first(java.util.regex.Pattern.compile(".ar")).in("foobarbarbaz");
+  @Test public void regex_matchesFirstOccurrence() {
+    Optional<Substring> match = Substring.regex(".ar").in("foobarbarbaz");
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEqualTo("foo");
     assertThat(match.get().after()).isEqualTo("barbaz");
