@@ -145,12 +145,12 @@ public final class Substring {
     }
   }
 
-  /** Returns a new string with {@this} substring replaced by {@code replacement}. */
+  /** Returns a new string with {@code this} substring replaced by {@code replacement}. */
   public String replaceWith(char replacement) {
     return before() + replacement + after();
   }
 
-  /** Returns a new string with {@this} substring replaced by {@code replacement}. */
+  /** Returns a new string with {@code this} substring replaced by {@code replacement}. */
   public String replaceWith(String replacement) {
     return before() + replacement + after();
   }
