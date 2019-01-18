@@ -344,6 +344,10 @@ public class SubstringTest {
     assertThat(match.get().toString()).isEqualTo("foobarbaz");
   }
 
+  @Test public void regexGroup_negativeGroup() {
+    assertThrows(IllegalArgumentException.class, () -> Substring.regexGroup(".", -1));
+  }
+
   @Test public void regexGroup_invalidGroupIndex() {
     Substring.Pattern pattern = Substring.regexGroup("f(o.)(ba.)", 3);
     assertThrows(IndexOutOfBoundsException.class, () -> pattern.in("foobarbaz"));

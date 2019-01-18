@@ -123,6 +123,7 @@ public final class Substring {
    */
   public static Pattern regexGroup(java.util.regex.Pattern regexPattern, int group) {
     requireNonNull(regexPattern);
+    if (group < 0) throw new IllegalArgumentException("group cannot be negative: " + group);
     return (SerializablePattern) str -> {
       java.util.regex.Matcher matcher = regexPattern.matcher(str);
       if (matcher.find()) {
