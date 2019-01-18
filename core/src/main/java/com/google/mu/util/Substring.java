@@ -2,6 +2,7 @@ package com.google.mu.util;
 
 import static java.util.Objects.requireNonNull;
 
+import java.io.Serializable;
 import java.util.Optional;
 
 /**
@@ -31,6 +32,12 @@ import java.util.Optional;
  *   }
  * </pre>
  *
+ * To replace trailing "//" with "/": <pre>
+ *   static String fixTrailingSlash(String str) {
+ *     return Substring.suffix("//").replaceFrom(str, '/');
+ *   }
+ * </pre>
+ *
  * To extract the 'name' and 'value' from texts in the format of "name:value": <pre>
  *   String str = ...;
  *   Substring colon = Substring.first(':').in(str).orElseThrow(BadFormatException::new);
@@ -51,10 +58,20 @@ public final class Substring {
     this.endIndex = endIndex;
   }
 
+  /** Returns a {@link Pattern} that never matches any substring. */
+  public static Pattern none() {
+    return Constants.NONE;
+  }
+
+  /** Returns a {@link Pattern} that matches all strings entirely. */
+  public static Pattern all() {
+    return Constants.ALL;
+  }
+
   /** Returns a {@code Pattern} that matches strings starting with {@code prefix}. */
   public static Pattern prefix(String prefix) {
     requireNonNull(prefix);
-    return str -> str.startsWith(prefix)
+    return (SerializablePattern) str -> str.startsWith(prefix)
         ? Optional.of(new Substring(str, 0, prefix.length()))
         : Optional.empty();
   }
@@ -62,26 +79,26 @@ public final class Substring {
   /** Returns a {@code Pattern} that matches strings ending with {@code suffix}. */
   public static Pattern suffix(String suffix) {
     requireNonNull(suffix);
-    return str -> str.endsWith(suffix)
+    return (SerializablePattern) str -> str.endsWith(suffix)
         ? Optional.of(new Substring(str, str.length() - suffix.length(), str.length()))
         : Optional.empty();
   }
 
   /** Returns a {@code Pattern} that matches the first occurrence of {@code c}. */
   public static Pattern first(char c) {
-    return str -> substring(str, str.indexOf(c), 1);
+    return (SerializablePattern) str -> substring(str, str.indexOf(c), 1);
   }
 
   /** Returns a {@code Pattern} that matches the first occurrence of {@code snippet}. */
   public static Pattern first(String snippet) {
     requireNonNull(snippet);
-    return str -> substring(str, str.indexOf(snippet), snippet.length());
+    return (SerializablePattern) str -> substring(str, str.indexOf(snippet), snippet.length());
   }
 
   /** Returns a {@code Pattern} that matches the first occurrence of {@code regexPattern}. */
   public static Pattern regex(java.util.regex.Pattern regexPattern) {
     requireNonNull(regexPattern);
-    return str -> {
+    return (SerializablePattern) str -> {
       java.util.regex.Matcher matcher = regexPattern.matcher(str);
       if (matcher.find()) {
         return Optional.of(new Substring(str, matcher.start(), matcher.end()));
@@ -98,13 +115,13 @@ public final class Substring {
 
   /** Returns a {@code Pattern} that matches the last occurrence of {@code c}. */
   public static Pattern last(char c) {
-    return str -> substring(str, str.lastIndexOf(c), 1);
+    return (SerializablePattern) str -> substring(str, str.lastIndexOf(c), 1);
   }
 
   /** Returns a {@code Pattern} that matches the last occurrence of {@code snippet}. */
   public static Pattern last(String snippet) {
     requireNonNull(snippet);
-    return str -> substring(str, str.lastIndexOf(snippet), snippet.length());
+    return (SerializablePattern) str -> substring(str, str.lastIndexOf(snippet), snippet.length());
   }
 
   /** Returns part before this substring. */
@@ -128,9 +145,42 @@ public final class Substring {
     }
   }
 
+  /** Returns a new string with {@this} substring replaced by {@code replacement}. */
+  public String replaceWith(char replacement) {
+    return before() + replacement + after();
+  }
+
+  /** Returns a new string with {@this} substring replaced by {@code replacement}. */
+  public String replaceWith(String replacement) {
+    return before() + replacement + after();
+  }
+
+  /** Returns the starting index of this substring in the containing string. */
+  public int index() {
+    return startIndex;
+  }
+
+  /** Returns the length of this substring. */
+  public int length() {
+    return endIndex - startIndex;
+  }
+
   /** Returns this substring. */
   @Override public String toString() {
     return context.substring(startIndex, endIndex);
+  }
+
+  @Override public int hashCode() {
+    return context.hashCode();
+  }
+
+  /** Two {@code Substring} instances are equal if they are the same sub sequences of equal strings. */
+  @Override public boolean equals(Object obj) {
+    if (obj instanceof Substring) {
+      Substring that = (Substring) obj;
+      return startIndex == that.startIndex && endIndex == that.endIndex && context.equals(that.context);
+    }
+    return false;
   }
 
   /** A substring pattern that can be matched against a string to find substrings. */
@@ -140,11 +190,27 @@ public final class Substring {
     Optional<Substring> in(String string);
 
     /**
-     * Returns a new string with the substring matched by {@code this} removed, or returns
-     * {@code string} as is.
+     * Returns a new string with the substring matched by {@code this} removed. Returns {@code string} as is
+     * if a substring is not found.
      */
     default String removeFrom(String string) {
       return in(string).map(Substring::remove).orElse(string);
+    }
+
+    /**
+     * Returns a new string with the substring matched by {@code this} replaced by {@code replacement}.
+     * Returns {@code string} as is if a substring is not found.
+     */
+    default String replaceFrom(String string, char replacement) {
+      return in(string).map(sub -> sub.replaceWith(replacement)).orElse(string);
+    }
+
+    /**
+     * Returns a new string with the substring matched by {@code this} replaced by {@code replacement}.
+     * Returns {@code string} as is if a substring is not found.
+     */
+    default String replaceFrom(String string, String replacement) {
+      return in(string).map(sub -> sub.replaceWith(replacement)).orElse(string);
     }
 
     /**
@@ -159,8 +225,24 @@ public final class Substring {
       };
     }
   }
-
+  
   private static Optional<Substring> substring(String str, int index, int length) {
     return index >= 0 ? Optional.of(new Substring(str, index, index + length)) : Optional.empty();
   }
+
+  private enum Constants implements Pattern {
+    NONE {
+      @Override public Optional<Substring> in(String s) {
+        requireNonNull(s);
+        return Optional.empty();
+      }
+    },
+    ALL {
+      @Override public Optional<Substring> in(String s) {
+        return Optional.of(new Substring(s, 0, s.length()));
+      }
+    }
+  }
+
+  private interface SerializablePattern extends Pattern, Serializable {}
 }
