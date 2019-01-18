@@ -183,7 +183,13 @@ static import com.google.mu.util.Substring.prefix;
 String httpStripped = prefix("http://").or(prefix("https://")).removeFrom(uri);
 ```
 
-**Example 3: strip off the suffix at and after the last "_" character:**
+**Example 3: replace trailing "//" with "/" :**
+```java
+Substring.suffix("//").replaceFrom(path, "/");
+```
+
+
+**Example 4: strip off the suffix at and after the last "_" character:**
 ```java
 Substring.last('_')
     .in(str)
@@ -191,7 +197,7 @@ Substring.last('_')
     .orElse(str);
 ```
 
-**Example 4: extract name and value from a string in the format of "name:value":**
+**Example 5: extract name and value from a string in the format of "name:value":**
 ```java
 Substring colon = Substring.first(':').in(nameValue).orElseThrow(...);
 String name = colon.before();
