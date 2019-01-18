@@ -5,6 +5,7 @@ import static com.google.common.truth.Truth8.assertThat;
 
 import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.EqualsTester;
+import com.google.common.testing.NullPointerTester;
 
 import java.util.Optional;
 import org.junit.Test;
@@ -565,6 +566,7 @@ public class SubstringTest {
   }
 
   @Test public void testNulls() throws Exception {
+    new NullPointerTester().testAllPublicInstanceMethods(Substring.all().in("foobar").get());
     new ClassSanityTester().testNulls(Substring.class);
     new ClassSanityTester().forAllPublicStaticMethods(Substring.class).testNulls();
   }

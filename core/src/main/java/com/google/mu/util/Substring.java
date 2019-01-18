@@ -5,9 +5,11 @@ import static java.util.Objects.requireNonNull;
 import java.io.Serializable;
 import java.util.Optional;
 
+
 /**
  * A substring inside a string, providing easy access to substrings around it ({@link #before before()},
- * {@link #after after()} or with the substring itself {@link #remove removed}).
+ * {@link #after after()} or with the substring itself {@link #remove removed}, {@link #replaceWith replaced}
+ * etc.).
  * 
  * <p>For example, to strip off the "http://" prefix from a uri string if existent: <pre>
  *   static String stripHttp(String uri) {
@@ -151,7 +153,8 @@ public final class Substring {
   }
 
   /** Returns a new string with {@code this} substring replaced by {@code replacement}. */
-  public String replaceWith(String replacement) {
+  public String replaceWith(CharSequence replacement) {
+    requireNonNull(replacement);
     return before() + replacement + after();
   }
 
@@ -209,7 +212,8 @@ public final class Substring {
      * Returns a new string with the substring matched by {@code this} replaced by {@code replacement}.
      * Returns {@code string} as is if a substring is not found.
      */
-    default String replaceFrom(String string, String replacement) {
+    default String replaceFrom(String string, CharSequence replacement) {
+      requireNonNull(replacement);
       return in(string).map(sub -> sub.replaceWith(replacement)).orElse(string);
     }
 
