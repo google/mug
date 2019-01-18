@@ -185,7 +185,7 @@ String httpStripped = prefix("http://").or(prefix("https://")).removeFrom(uri);
 
 **Example 3: replace trailing "//" with "/" :**
 ```java
-Substring.suffix("//").replaceFrom(path, '/');
+Substring.suffix("//").replaceFrom(path, "/");
 ```
 
 
