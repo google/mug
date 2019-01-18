@@ -115,6 +115,34 @@ public final class Substring {
     return regex(java.util.regex.Pattern.compile(regexPattern));
   }
 
+  /**
+   * Returns a {@code Pattern} that matches capturing {@code group} of {@code regexPattern}.
+   *
+   * <p>The returned {@code Pattern} will throw {@link IndexOutOfBoundsException} when matching against
+   *  a string that doesn't have the given {@code group}.
+   */
+  public static Pattern regexGroup(java.util.regex.Pattern regexPattern, int group) {
+    requireNonNull(regexPattern);
+    return (SerializablePattern) str -> {
+      java.util.regex.Matcher matcher = regexPattern.matcher(str);
+      if (matcher.find()) {
+        return Optional.of(new Substring(str, matcher.start(group), matcher.end(group)));
+      } else {
+        return Optional.empty();
+      }
+    };
+  }
+
+  /**
+   * Returns a {@code Pattern} that matches capturing {@code group} of {@code regexPattern}.
+   *
+   * <p>The returned {@code Pattern} will throw {@link IndexOutOfBoundsException} when matching against
+   *  a string that doesn't have the given {@code group}.
+   */
+  public static Pattern regexGroup(String regexPattern, int group) {
+    return regexGroup(java.util.regex.Pattern.compile(regexPattern), group);
+  }
+
   /** Returns a {@code Pattern} that matches the last occurrence of {@code c}. */
   public static Pattern last(char c) {
     return (SerializablePattern) str -> substring(str, str.lastIndexOf(c), 1);
