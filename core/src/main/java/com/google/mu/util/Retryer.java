@@ -47,7 +47,7 @@ import java.util.stream.Stream;
 
 import com.google.mu.function.CheckedSupplier;
 
-/** @deprecated Please use {@link com.google.mu.util.concurrent.Retryer} instead. */
+/** @deprecated Moved to {@link com.google.mu.util.concurrent.Retryer com.google.mu.util.concurrent}. */
 public final class Retryer {
 
   private static final Logger logger = Logger.getLogger(Retryer.class.getName());
@@ -234,7 +234,7 @@ public final class Retryer {
     return ifReturns(r -> Objects.equals(r, returnValue), delays);
   }
 
-  /** @deprecated please use {@link com.google.mu.util.concurrent.Retryer.ForReturnValue}. */
+  /** @deprecated Moved to {@link com.google.mu.util.concurrent.Retryer.ForReturnValue com.google.mu.util.concurrent}. */
   @Deprecated public static final class ForReturnValue<T> {
     private final Retryer retryer;
     private final Predicate<? super T> condition;
@@ -358,7 +358,7 @@ public final class Retryer {
     }
   }
 
-  /** @deprecated please use {@link com.google.mu.util.concurrent.Retryer.ForReturnValue}. */
+  /** @deprecated Moved to {@link com.google.mu.util.concurrent.Retryer.Delay com.google.mu.util.concurrent}. */
   @Deprecated public static abstract class Delay<E> implements Comparable<Delay<E>> {
 
     /** Returns the delay interval. */
