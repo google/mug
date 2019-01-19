@@ -24,9 +24,9 @@ import java.util.Optional;
  *   }
  * </pre>
  *
- * To strip off the suffix at and after the last "_" character: <pre>
- *   static String beforeLastUnderscore(String str) {
- *     return Substring.last('_').andAfter().removeFrom(str);
+ * To strip off the suffix starting with a dash (-) character: <pre>
+ *   static String stripDashSuffix(String str) {
+ *     return Substring.last('-').andAfter().removeFrom(str);
  *   }
  * </pre>
  *
