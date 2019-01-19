@@ -183,25 +183,25 @@ static import com.google.mu.util.Substring.prefix;
 String httpStripped = prefix("http://").or(prefix("https://")).removeFrom(uri);
 ```
 
-**Example 3: replace trailing "//" with "/" :**
+**Example 3: split a string in the format of "name=value" into `name` and `value`:**
+```java
+Substring eq = Substring.first('=').in(nameValue).orElseThrow(...);
+String name = eq.before();
+String value = eq.after();
+```
+
+**Example 4: replace trailing "//" with "/" :**
 ```java
 Substring.suffix("//").replaceFrom(path, "/");
 ```
 
 
-**Example 4: strip off the suffix at and after the last "_" character:**
+**Example 5: strip off the suffix at and after the last "_" character:**
 ```java
 Substring.last('_')
     .in(str)
     .map(Substring::before)
     .orElse(str);
-```
-
-**Example 5: split a string in the format of "name=value" into `name` and `value`:**
-```java
-Substring eq = Substring.first('=').in(nameValue).orElseThrow(...);
-String name = eq.before();
-String value = eq.after();
 ```
 
 **Example 6: extract a substring using regex :**
