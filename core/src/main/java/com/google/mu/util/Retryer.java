@@ -234,8 +234,8 @@ public final class Retryer {
     return ifReturns(r -> Objects.equals(r, returnValue), delays);
   }
 
-  /** Retries based on return values. */
-  public static final class ForReturnValue<T> {
+  /** @deprecated please use {@link com.google.mu.util.concurrent.Retryer.ForReturnValue}. */
+  @Deprecated public static final class ForReturnValue<T> {
     private final Retryer retryer;
     private final Predicate<? super T> condition;
 
@@ -358,8 +358,8 @@ public final class Retryer {
     }
   }
 
-  /** Represents a delay upon an event of type {@code E} prior to the retry attempt. */
-  public static abstract class Delay<E> implements Comparable<Delay<E>> {
+  /** @deprecated please use {@link com.google.mu.util.concurrent.Retryer.ForReturnValue}. */
+  @Deprecated public static abstract class Delay<E> implements Comparable<Delay<E>> {
 
     /** Returns the delay interval. */
     public abstract Duration duration();
