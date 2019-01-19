@@ -176,7 +176,7 @@ All Optionals utilites propagate checked exception from the the lambda/method re
 String httpStripped = Substring.prefix("http://").removeFrom(uri);
 ```
 
-**Example 2: strip off the scheme prefix from a uri:**
+**Example 2: strip off any scheme prefix from a uri:**
 ```java
 String schemeStripped = Substring.first("://").andBefore().removeFrom(uri);
 ```
