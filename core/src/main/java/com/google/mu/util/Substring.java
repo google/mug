@@ -168,12 +168,32 @@ public final class Substring {
     return (SerializablePattern) str -> substring(str, str.lastIndexOf(snippet), snippet.length());
   }
 
-  /** Returns part before this substring. */
+  /**
+   * Returns part before this substring.
+   *
+   * <p>{@link #before} and {@link #after} are almost always used together to split a string into
+   * two parts. Prefer to using {@link Pattern#andBefore} if you are trying to find a prefix ending
+   * with a pattern, like: <pre>
+   *   String schemeStripped = Substring.first("://").andBefore().removeFrom(uri);
+   * </pre> or using {@link Pattern#andAfter} to find a suffix starting with a pattern: <pre>
+   *   String commentRemoved = Substring.first("//").andAfter().removeFrom(line);
+   * </pre>
+   */
   public String before() {
     return context.substring(0, startIndex);
   }
 
-  /** Returns part after this substring. */
+  /**
+   * Returns part after this substring.
+   *
+   * <p>{@link #before} and {@link #after} are almost always used together to split a string into
+   * two parts. Prefer to using {@link Pattern#andBefore} if you are trying to find a prefix ending
+   * with a pattern, like: <pre>
+   *   String schemeStripped = Substring.first("://").andBefore().removeFrom(uri);
+   * </pre> or using {@link Pattern#andAfter} to find a suffix starting with a pattern: <pre>
+   *   String commentRemoved = Substring.first("//").andAfter().removeFrom(line);
+   * </pre>
+   */
   public String after() {
     return context.substring(endIndex);
   }
