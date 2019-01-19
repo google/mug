@@ -295,7 +295,7 @@ public final class Substring {
      */
     default Pattern or(Pattern that) {
       requireNonNull(that);
-      return str -> {
+      return (SerializablePattern) str -> {
         Optional<Substring> substring = in(str);
         return substring.isPresent() ? substring : that.in(str);
       };

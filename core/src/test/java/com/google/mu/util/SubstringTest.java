@@ -660,6 +660,5 @@ public class SubstringTest {
         .addEqualityGroup(Substring.suffix("").in("foo"))
         .addEqualityGroup(Substring.prefix("").in("foobar"))
         .testEquals();
-        
   }
 }
