@@ -97,12 +97,27 @@ public final class Substring {
     return (SerializablePattern) str -> substring(str, str.indexOf(snippet), snippet.length());
   }
 
-  /** Returns a {@code Pattern} that matches the first occurrence of {@code regexPattern}. */
+  /**
+   * Returns a {@code Pattern} that matches the first occurrence of {@code regexPattern}.
+   *
+   * <p>Note that unlike {@code str.replaceFirst(regexPattern, replacement)},
+   * {@code regex(regexPattern).replaceFrom(str, replacement)} treats the {@code replacement} as literal
+   * string with no special handling of backslash (\) and dollar sign ($).
+   */
   public static Pattern regex(java.util.regex.Pattern regexPattern) {
     return regexGroup(regexPattern, 0);
   }
 
-  /** Returns a {@code Pattern} that matches the first occurrence of {@code regexPattern}. */
+  /**
+   * Returns a {@code Pattern} that matches the first occurrence of {@code regexPattern}.
+   *
+   * <p>Note that unlike {@code str.replaceFirst(regexPattern, replacement)},
+   * {@code regex(regexPattern).replaceFrom(str, replacement)} treats the {@code replacement} as literal
+   * string with no special handling of backslash (\) and dollar sign ($).
+   *
+   * <p>Because this method internally compiles {@code regexPattern}, it's more efficient to reuse the
+   * returned {@link Pattern} object than calling {@code regex(regexPattern)} repetitively.
+   */
   public static Pattern regex(String regexPattern) {
     return regex(java.util.regex.Pattern.compile(regexPattern));
   }
