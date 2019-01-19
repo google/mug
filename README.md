@@ -204,6 +204,14 @@ String name = colon.before();
 String value = colon.after();
 ```
 
+**Example 6: extract a substring using regex :**
+```java
+String quoted = Substring.regexGroup("'(.*?)'", 1)
+    .in(str)
+    .orElseThrow(...)
+    .toString();
+```
+
 ## [Retryer](https://google.github.io/mug/apidocs/com/google/mu/util/Retryer.html)
 
 * Retry blockingly or _async_
