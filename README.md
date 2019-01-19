@@ -206,7 +206,7 @@ String value = colon.after();
 
 **Example 6: extract a substring using regex :**
 ```java
-String quoted = Substring.regexGroup("'(.*?)'", 1)
+String quoted = Substring.regexGroup("'(.*)'", 1)
     .in(str)
     .orElseThrow(...)
     .toString();
