@@ -88,11 +88,27 @@ public final class Substring {
         : Optional.empty();
   }
 
+  /** Returns a {@code Pattern} that matches strings starting with {@code prefix}. */
+  public static Pattern prefix(char prefix) {
+    requireNonNull(prefix);
+    return (SerializablePattern) str -> str.length() > 0 && str.charAt(0) == prefix
+        ? Optional.of(new Substring(str, 0, 1))
+        : Optional.empty();
+  }
+
   /** Returns a {@code Pattern} that matches strings ending with {@code suffix}. */
   public static Pattern suffix(String suffix) {
     requireNonNull(suffix);
     return (SerializablePattern) str -> str.endsWith(suffix)
         ? Optional.of(new Substring(str, str.length() - suffix.length(), str.length()))
+        : Optional.empty();
+  }
+
+  /** Returns a {@code Pattern} that matches strings ending with {@code suffix}. */
+  public static Pattern suffix(char suffix) {
+    requireNonNull(suffix);
+    return (SerializablePattern) str -> str.length() > 0 && str.charAt(str.length() - 1) == suffix
+        ? Optional.of(new Substring(str, str.length() - 1, str.length()))
         : Optional.empty();
   }
 

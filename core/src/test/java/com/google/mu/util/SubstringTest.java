@@ -60,6 +60,37 @@ public class SubstringTest {
     assertThat(match.get().toString()).isEmpty();
   }
 
+  @Test public void charPrefix_noMatch() {
+    assertThat(Substring.prefix('f').in("notfoo")).isEmpty();
+    assertThat(Substring.prefix('f').in("")).isEmpty();
+  }
+
+  @Test public void charPrefix_matchesFullString() {
+    Optional<Substring> match = Substring.prefix('f').in("f");
+    assertThat(match).isPresent();
+    assertThat(match.get().before()).isEmpty();
+    assertThat(match.get().after()).isEmpty();
+    assertThat(match.get().remove()).isEmpty();
+    assertThat(match.get().replaceWith('b')).isEqualTo("b");
+    assertThat(match.get().replaceWith("bar")).isEqualTo("bar");
+    assertThat(match.get().index()).isEqualTo(0);
+    assertThat(match.get().length()).isEqualTo(1);
+    assertThat(match.get().toString()).isEqualTo("f");
+  }
+
+  @Test public void charPrefix_matchesPrefix() {
+    Optional<Substring> match = Substring.prefix("f").in("fbar");
+    assertThat(match).isPresent();
+    assertThat(match.get().before()).isEmpty();
+    assertThat(match.get().after()).isEqualTo("bar");
+    assertThat(match.get().remove()).isEqualTo("bar");
+    assertThat(match.get().replaceWith('a')).isEqualTo("abar");
+    assertThat(match.get().replaceWith("at")).isEqualTo("atbar");
+    assertThat(match.get().index()).isEqualTo(0);
+    assertThat(match.get().length()).isEqualTo(1);
+    assertThat(match.get().toString()).isEqualTo("f");
+  }
+
   @Test public void suffix_noMatch() {
     assertThat(Substring.suffix("foo").in("foonot")).isEmpty();
     assertThat(Substring.suffix("foo").in("")).isEmpty();
@@ -102,6 +133,37 @@ public class SubstringTest {
     assertThat(match.get().index()).isEqualTo(3);
     assertThat(match.get().length()).isEqualTo(0);
     assertThat(match.get().toString()).isEmpty();
+  }
+
+  @Test public void charSuffix_noMatch() {
+    assertThat(Substring.suffix('f').in("foo")).isEmpty();
+    assertThat(Substring.suffix('f').in("")).isEmpty();
+  }
+
+  @Test public void charSuffix_matchesFullString() {
+    Optional<Substring> match = Substring.suffix('f').in("f");
+    assertThat(match).isPresent();
+    assertThat(match.get().before()).isEmpty();
+    assertThat(match.get().after()).isEmpty();
+    assertThat(match.get().remove()).isEmpty();
+    assertThat(match.get().replaceWith('b')).isEqualTo("b");
+    assertThat(match.get().replaceWith("bar")).isEqualTo("bar");
+    assertThat(match.get().index()).isEqualTo(0);
+    assertThat(match.get().length()).isEqualTo(1);
+    assertThat(match.get().toString()).isEqualTo("f");
+  }
+
+  @Test public void charSuffix_matchesPostfix() {
+    Optional<Substring> match = Substring.suffix('r').in("bar");
+    assertThat(match).isPresent();
+    assertThat(match.get().before()).isEqualTo("ba");
+    assertThat(match.get().after()).isEmpty();
+    assertThat(match.get().remove()).isEqualTo("ba");
+    assertThat(match.get().replaceWith('c')).isEqualTo("bac");
+    assertThat(match.get().replaceWith("car")).isEqualTo("bacar");
+    assertThat(match.get().index()).isEqualTo(2);
+    assertThat(match.get().length()).isEqualTo(1);
+    assertThat(match.get().toString()).isEqualTo("r");
   }
 
   @Test public void firstSnippet_noMatch() {
