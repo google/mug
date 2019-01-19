@@ -99,15 +99,7 @@ public final class Substring {
 
   /** Returns a {@code Pattern} that matches the first occurrence of {@code regexPattern}. */
   public static Pattern regex(java.util.regex.Pattern regexPattern) {
-    requireNonNull(regexPattern);
-    return (SerializablePattern) str -> {
-      java.util.regex.Matcher matcher = regexPattern.matcher(str);
-      if (matcher.find()) {
-        return Optional.of(new Substring(str, matcher.start(), matcher.end()));
-      } else {
-        return Optional.empty();
-      }
-    };
+    return regexGroup(regexPattern, 0);
   }
 
   /** Returns a {@code Pattern} that matches the first occurrence of {@code regexPattern}. */
