@@ -197,11 +197,11 @@ Substring.last('_')
     .orElse(str);
 ```
 
-**Example 5: extract name and value from a string in the format of "name:value":**
+**Example 5: split a string in the format of "name=value" into `name` and `value`:**
 ```java
-Substring colon = Substring.first(':').in(nameValue).orElseThrow(...);
-String name = colon.before();
-String value = colon.after();
+Substring eq = Substring.first('=').in(nameValue).orElseThrow(...);
+String name = eq.before();
+String value = eq.after();
 ```
 
 **Example 6: extract a substring using regex :**
