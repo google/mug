@@ -176,11 +176,9 @@ All Optionals utilites propagate checked exception from the the lambda/method re
 String httpStripped = Substring.prefix("http://").removeFrom(uri);
 ```
 
-**Example 2: strip off either of two potential prefixes:**
+**Example 2: strip off any scheme prefix from a uri:**
 ```java
-static import com.google.mu.util.Substring.prefix;
-
-String httpStripped = prefix("http://").or(prefix("https://")).removeFrom(uri);
+String schemeStripped = Substring.first("://").andBefore().removeFrom(uri);
 ```
 
 **Example 3: split a string in the format of "name=value" into `name` and `value`:**
