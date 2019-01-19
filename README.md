@@ -196,9 +196,9 @@ Substring.suffix("//").replaceFrom(path, "/");
 ```
 
 
-**Example 5: strip off the suffix at and after the last "_" character:**
+**Example 5: strip off the suffix starting with a dash (-) character :**
 ```java
-Substring.last('_').andAfter().removeFrom(str);
+Substring.last('-').andAfter().removeFrom(str);
 ```
 
 **Example 6: extract a substring using regex :**
