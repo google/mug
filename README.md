@@ -183,13 +183,20 @@ static import com.google.mu.util.Substring.prefix;
 String httpStripped = prefix("http://").or(prefix("https://")).removeFrom(uri);
 ```
 
-**Example 3: replace trailing "//" with "/" :**
+**Example 3: split a string in the format of "name=value" into `name` and `value`:**
+```java
+Substring eq = Substring.first('=').in(nameValue).orElseThrow(...);
+String name = eq.before();
+String value = eq.after();
+```
+
+**Example 4: replace trailing "//" with "/" :**
 ```java
 Substring.suffix("//").replaceFrom(path, "/");
 ```
 
 
-**Example 4: strip off the suffix at and after the last "_" character:**
+**Example 5: strip off the suffix at and after the last "_" character:**
 ```java
 Substring.last('_')
     .in(str)
@@ -197,11 +204,12 @@ Substring.last('_')
     .orElse(str);
 ```
 
-**Example 5: extract name and value from a string in the format of "name:value":**
+**Example 6: extract a substring using regex :**
 ```java
-Substring colon = Substring.first(':').in(nameValue).orElseThrow(...);
-String name = colon.before();
-String value = colon.after();
+String quoted = Substring.regexGroup("'(.*)'", 1)
+    .in(str)
+    .orElseThrow(...)
+    .toString();
 ```
 
 ## [Retryer](https://google.github.io/mug/apidocs/com/google/mu/util/Retryer.html)

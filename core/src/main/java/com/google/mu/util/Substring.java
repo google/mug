@@ -203,12 +203,12 @@ public final class Substring {
    * enclosing string.
    */
   Substring andBefore() {
-	return new Substring(context, 0, endIndex);
+	  return new Substring(context, 0, endIndex);
   }
 
   /** Returns a new {@code Substring} instance that extends to the end of the enclosing string. */
   Substring andAfter() {
-	return new Substring(context, startIndex, context.length());
+	  return new Substring(context, startIndex, context.length());
   }
 
   /** Returns a new string with the substring removed. */
