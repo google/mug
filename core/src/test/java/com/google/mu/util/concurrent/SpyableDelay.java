@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.util;
+package com.google.mu.util.concurrent;
 
 import java.time.Duration;
 
-import com.google.mu.util.Retryer.Delay;
+import com.google.mu.util.concurrent.Retryer.Delay;
 
 /**
  * Looks like Mockito is having trouble to spy Delay.of(), which returns an anonymous class

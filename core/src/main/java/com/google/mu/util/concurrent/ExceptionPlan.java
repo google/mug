@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.util;
+package com.google.mu.util.concurrent;
 
-import static com.google.mu.util.Utils.typed;
+import static com.google.mu.util.concurrent.Utils.typed;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
@@ -24,10 +24,35 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 
-import com.google.mu.util.Retryer.Delay;
+import com.google.mu.util.Maybe;
+import com.google.mu.util.concurrent.Retryer.Delay;
 
-/** @deprecated since 1.2. */
-@Deprecated
+/**
+ * Configures an abstract plan based on exceptions.
+ *
+ * This class is immutable.
+ *
+ * Each exceptional rule is configured with a list of abstract strategies.
+ * Users are expected to use the continuation returned by {@link #execute} upon any exception.
+ *
+ * The returned {@link Execution} includes both the current strategy for the exception in
+ * question, and a new {@code ExeceptionPlan} object for upcoming exceptions in the same logical
+ * group (such as exceptions thrown by the same method invocation in a retry).
+ *
+ * <p>For {@link Retryer}, {@code T} can be {@link Delay} between retries. But any strategy types
+ * work too.
+ *
+ * <p>Strategies specified through {@link #upon} are picked with
+ * respect to the order they are added. Think of them as a bunch of
+ * {@code if ... else if ...}. That is, <em>always specify the more specific exception first</em>.
+ * The following code is wrong because the {@code IOException} strategies will always be
+ * overshadowed by the {@code Exception} strategies.
+ * <pre>{@code
+ * ExceptionPlan<Duration> = new ExceptionPlan<Duration>()
+ *     .upon(Exception.class, exponentialBackoff(...))
+ *     .upon(IOException.class, uniformDelay(...));
+ * }</pre>
+ */
 final class ExceptionPlan<T> {
 
   private final List<Rule<T>> rules;

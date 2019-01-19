@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.util;
+package com.google.mu.util.concurrent;
 
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.Arrays.asList;
@@ -40,8 +40,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.google.common.truth.ThrowableSubject;
 import com.google.common.truth.Truth;
-import com.google.mu.util.Retryer;
-import com.google.mu.util.Retryer.Delay;
+import com.google.mu.util.concurrent.Retryer.Delay;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({Thread.class, Retryer.Delay.class})

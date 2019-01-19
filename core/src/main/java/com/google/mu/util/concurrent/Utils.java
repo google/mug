@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.util;
+package com.google.mu.util.concurrent;
 
 import static java.util.Objects.requireNonNull;
 
@@ -25,8 +25,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-/** @deprecated Use {@link com.google.mu.util.concurrent.Utils} instead. */
-@Deprecated
+/** Some relatively trivial re-invented wheels as cost of 0-dependency. */
 final class Utils {
   /** Only need it because we don't have Guava Lists.transform(). */
   static <F, T> List<T> mapList(List<F> list, Function<? super F, ? extends T> mapper) {

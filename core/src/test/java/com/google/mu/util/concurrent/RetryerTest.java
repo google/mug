@@ -12,13 +12,13 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.util;
+package com.google.mu.util.concurrent;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.mu.util.FutureAssertions.assertCancelled;
-import static com.google.mu.util.FutureAssertions.assertCauseOf;
-import static com.google.mu.util.FutureAssertions.assertCompleted;
-import static com.google.mu.util.FutureAssertions.assertPending;
+import static com.google.mu.util.concurrent.FutureAssertions.assertCancelled;
+import static com.google.mu.util.concurrent.FutureAssertions.assertCauseOf;
+import static com.google.mu.util.concurrent.FutureAssertions.assertCompleted;
+import static com.google.mu.util.concurrent.FutureAssertions.assertPending;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.CompletableFuture.completedFuture;
@@ -71,7 +71,7 @@ import com.google.common.testing.EqualsTester;
 import com.google.common.testing.NullPointerTester;
 import com.google.common.truth.ThrowableSubject;
 import com.google.mu.function.CheckedSupplier;
-import com.google.mu.util.Retryer.Delay;
+import com.google.mu.util.concurrent.Retryer.Delay;
 
 @RunWith(JUnit4.class)
 public class RetryerTest {

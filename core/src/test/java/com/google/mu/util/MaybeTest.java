@@ -15,9 +15,9 @@
 package com.google.mu.util;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.mu.util.FutureAssertions.assertCauseOf;
-import static com.google.mu.util.FutureAssertions.assertCompleted;
-import static com.google.mu.util.FutureAssertions.assertPending;
+import static com.google.mu.util.concurrent.FutureAssertions.assertCauseOf;
+import static com.google.mu.util.concurrent.FutureAssertions.assertCompleted;
+import static com.google.mu.util.concurrent.FutureAssertions.assertPending;
 import static com.google.mu.util.stream.MoreStreams.iterateThrough;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.stream.Collectors.toList;
@@ -47,6 +47,7 @@ import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.EqualsTester;
 import com.google.common.testing.NullPointerTester;
 import com.google.common.truth.IterableSubject;
+import com.google.mu.util.Maybe;
 
 import javassist.Modifier;
 

@@ -12,12 +12,12 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.util;
+package com.google.mu.util.concurrent;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.mu.util.FutureAssertions.assertAfterCompleted;
-import static com.google.mu.util.FutureAssertions.assertCancelled;
-import static com.google.mu.util.FutureAssertions.assertPending;
+import static com.google.mu.util.concurrent.FutureAssertions.assertAfterCompleted;
+import static com.google.mu.util.concurrent.FutureAssertions.assertCancelled;
+import static com.google.mu.util.concurrent.FutureAssertions.assertPending;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Matchers.any;
@@ -44,8 +44,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
-import com.google.mu.util.Retryer;
-import com.google.mu.util.Retryer.Delay;
+import com.google.mu.util.concurrent.Retryer.Delay;
 
 /** These tests run against real executor and real {@link Thread}. */
 public class RetryerFunctionalTest {

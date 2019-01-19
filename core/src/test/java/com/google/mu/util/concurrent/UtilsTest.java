@@ -12,10 +12,10 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.util;
+package com.google.mu.util.concurrent;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.mu.util.FutureAssertions.assertCauseOf;
+import static com.google.mu.util.concurrent.FutureAssertions.assertCauseOf;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Matchers.any;
@@ -35,7 +35,6 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import com.google.common.testing.NullPointerTester;
-import com.google.mu.util.Utils;
 
 public class UtilsTest {
 

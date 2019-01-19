@@ -12,12 +12,12 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.util;
+package com.google.mu.util.concurrent;
 
-import static com.google.mu.util.Utils.ifCancelled;
-import static com.google.mu.util.Utils.mapList;
-import static com.google.mu.util.Utils.propagateCancellation;
-import static com.google.mu.util.Utils.propagateIfUnchecked;
+import static com.google.mu.util.concurrent.Utils.ifCancelled;
+import static com.google.mu.util.concurrent.Utils.mapList;
+import static com.google.mu.util.concurrent.Utils.propagateCancellation;
+import static com.google.mu.util.concurrent.Utils.propagateIfUnchecked;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
 
@@ -46,8 +46,20 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.mu.function.CheckedSupplier;
+import com.google.mu.util.Maybe;
 
-/** @deprecated Please use {@link com.google.mu.util.concurrent.Retryer} instead. */
+/**
+ * Immutable object that retries actions upon exceptions.
+ *
+ * <p>Backoff intervals are configured through chaining {@link #upon upon()} calls. It's critical
+ * to use the new {@code Retryer} instances returned by {@code upon()}. Just remember
+ * {@code Retryer} is <em>immutable</em>.
+ *
+ * <p>If the retried operation still fails after retry, the previous exceptions can be accessed
+ * through {@link Throwable#getSuppressed()}.
+ *
+ * @since 1.2
+ */
 public final class Retryer {
 
   private static final Logger logger = Logger.getLogger(Retryer.class.getName());

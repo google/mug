@@ -1,4 +1,4 @@
-package com.google.mu.util;
+package com.google.mu.util.concurrent;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -14,9 +14,9 @@ import com.google.common.truth.Subject;
 import com.google.common.truth.ThrowableSubject;
 
 /** Some common assertions for {@link CompletableFuture}, while Truth doesn't have them yet. */
-final class FutureAssertions {
+public final class FutureAssertions {
 
-  static ThrowableSubject assertCauseOf(
+  public static ThrowableSubject assertCauseOf(
       Class<? extends Throwable> exceptionType, CompletionStage<?> stage) {
     CompletableFuture<?> future = stage.toCompletableFuture();
     Throwable thrown = Assertions.assertThrows(exceptionType, future::get);
@@ -25,7 +25,7 @@ final class FutureAssertions {
     return assertThat(thrown.getCause());
   }
 
-  static CancellationException assertCancelled(CompletionStage<?> stage) {
+  public static CancellationException assertCancelled(CompletionStage<?> stage) {
     CompletableFuture<?> future = stage.toCompletableFuture();
     assertThat(future.isDone()).isTrue();
     assertThat(future.isCompletedExceptionally()).isTrue();
@@ -34,7 +34,7 @@ final class FutureAssertions {
     return cancelled;
   }
 
-  static Subject<?, Object> assertCompleted(CompletionStage<?> stage)
+  public static Subject<?, Object> assertCompleted(CompletionStage<?> stage)
       throws InterruptedException, ExecutionException {
     assertThat(stage.toCompletableFuture().isDone()).isTrue();
     Object result = stage.toCompletableFuture().get();
@@ -43,7 +43,7 @@ final class FutureAssertions {
     return assertThat(result);
   }
 
-  static Subject<?, Object> assertAfterCompleted(CompletionStage<?> stage)
+  public static Subject<?, Object> assertAfterCompleted(CompletionStage<?> stage)
       throws InterruptedException, ExecutionException {
     Object result = stage.toCompletableFuture().get();
     assertThat(stage.toCompletableFuture().isDone()).isTrue();
@@ -52,7 +52,7 @@ final class FutureAssertions {
     return assertThat(result);
   }
 
-  static void assertPending(CompletionStage<?> stage) {
+  public static void assertPending(CompletionStage<?> stage) {
     assertThat(stage.toCompletableFuture().isDone()).isFalse();
     assertThat(stage.toCompletableFuture().isCancelled()).isFalse();
     assertThat(stage.toCompletableFuture().isCompletedExceptionally()).isFalse();
