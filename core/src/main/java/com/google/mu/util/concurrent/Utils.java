@@ -55,18 +55,6 @@ final class Utils {
     return type.isInstance(object) ? Optional.of(type.cast(object)) : Optional.empty();
   }
 
-  /** Propagates {@code exception} if it's unchecked, or else return it as is. */
-  static <E extends Throwable> E propagateIfUnchecked(E exception) {
-    requireNonNull(exception);
-    if (exception instanceof RuntimeException) {
-      throw (RuntimeException) exception;
-    } else if (exception instanceof Error) {
-      throw (Error) exception;
-    } else {
-      return exception;
-    }
-  }
-
   static CompletionStage<?> ifCancelled(
       CompletionStage<?> stage, Consumer<? super CancellationException> action) {
     requireNonNull(action);

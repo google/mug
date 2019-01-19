@@ -17,7 +17,6 @@ package com.google.mu.util.concurrent;
 import static com.google.mu.util.concurrent.Utils.ifCancelled;
 import static com.google.mu.util.concurrent.Utils.mapList;
 import static com.google.mu.util.concurrent.Utils.propagateCancellation;
-import static com.google.mu.util.concurrent.Utils.propagateIfUnchecked;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
 
@@ -58,7 +57,7 @@ import com.google.mu.util.Maybe;
  * <p>If the retried operation still fails after retry, the previous exceptions can be accessed
  * through {@link Throwable#getSuppressed()}.
  *
- * @since 1.2
+ * @since 2.0
  */
 public final class Retryer {
 
@@ -738,6 +737,16 @@ public final class Retryer {
   private static int checkIndex(int index, int size) {
     if (index < 0 || index >= size) throw new IndexOutOfBoundsException("Invalid index: " + index);
     return index;
+  }
+
+  private static <E extends Throwable> E propagateIfUnchecked(E exception) {
+    if (exception instanceof RuntimeException) {
+      throw (RuntimeException) exception;
+    } else if (exception instanceof Error) {
+      throw (Error) exception;
+    } else {
+      return exception;
+    }
   }
 
   @FunctionalInterface private interface Failable {

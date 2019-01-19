@@ -15,8 +15,6 @@
  *****************************************************************************/
 package com.google.mu.util;
 
-import static com.google.mu.util.Utils.cast;
-import static com.google.mu.util.Utils.propagateIfUnchecked;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Objects;
@@ -270,9 +268,10 @@ public abstract class Maybe<T, E extends Throwable> {
     try {
       return of(supplier.get());
     } catch (Throwable e) {
-      return cast(e, exceptionType)
-          .map(Maybe::<T, E>except)
-          .orElseThrow(() -> new AssertionError(propagateIfUnchecked(e)));
+      if (exceptionType.isInstance(e)) {
+        return except(exceptionType.cast(e));
+      }
+      throw new AssertionError(propagateIfUnchecked(e));
     }
   }
 
@@ -418,6 +417,16 @@ public abstract class Maybe<T, E extends Throwable> {
       Thread.interrupted();
     }
     return exception;
+  }
+
+  private static <E extends Throwable> E propagateIfUnchecked(E exception) {
+    if (exception instanceof RuntimeException) {
+      throw (RuntimeException) exception;
+    } else if (exception instanceof Error) {
+      throw (Error) exception;
+    } else {
+      return exception;
+    }
   }
 
   /** No subclasses! */

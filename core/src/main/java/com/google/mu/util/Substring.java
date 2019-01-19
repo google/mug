@@ -57,7 +57,7 @@ import java.util.Optional;
  *   String value = colon.after();
  * </pre>
  *
- * @since 1.2
+ * @since 2.0
  */
 public final class Substring {
   private final String context;
