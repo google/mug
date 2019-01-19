@@ -624,6 +624,30 @@ public class SubstringTest {
   @Test public void testSerializable() throws Exception {
     new ClassSanityTester().forAllPublicStaticMethods(Substring.class).testSerializable();
   }
+
+  @Test public void andBefore_noMatch() {
+    assertThat(Substring.first("://").andBefore().in("abc")).isEmpty();
+  }
+
+  @Test public void andBefore_matchAtPrefix() {
+    assertThat(Substring.first("://").andBefore().removeFrom("://foo")).isEqualTo("foo");
+  }
+
+  @Test public void andBefore_matchInTheMiddle() {
+    assertThat(Substring.first("://").andBefore().removeFrom("http://foo")).isEqualTo("foo");
+  }
+
+  @Test public void andAfter_noMatch() {
+    assertThat(Substring.first("//").andAfter().in("abc")).isEmpty();
+  }
+
+  @Test public void andAfter_matchAtSuffix() {
+    assertThat(Substring.first("//").andAfter().removeFrom("foo//")).isEqualTo("foo");
+  }
+
+  @Test public void andAfter_matchInTheMiddle() {
+    assertThat(Substring.first("//").andAfter().removeFrom("foo // bar")).isEqualTo("foo ");
+  }
   
   @Test public void testEquals() {
     new EqualsTester()

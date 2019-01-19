@@ -178,6 +178,19 @@ public final class Substring {
     return context.substring(endIndex);
   }
 
+  /**
+   * Returns a new {@code Substring} instance that extends to the beginning of the
+   * enclosing string.
+   */
+  Substring andBefore() {
+	return new Substring(context, 0, endIndex);
+  }
+
+  /** Returns a new {@code Substring} instance that extends to the end of the enclosing string. */
+  Substring andAfter() {
+	return new Substring(context, startIndex, context.length());
+  }
+
   /** Returns a new string with the substring removed. */
   public String remove() {
     if (endIndex == context.length()) {
@@ -269,6 +282,26 @@ public final class Substring {
         Optional<Substring> substring = in(str);
         return substring.isPresent() ? substring : that.in(str);
       };
+    }
+
+    /**
+     * Returns a new {@code Pattern} that will match strings using {@code this} and then extend
+     * the match to the beginning of the string. For example: <pre>
+     * String schemeStripped = Substring.first("://").andBefore().removeFrom(uri);
+     * </pre>
+     */
+    default Pattern andBefore() {
+      return (SerializablePattern) str -> in(str).map(Substring::andBefore);
+    }
+
+    /**
+     * Returns a new {@code Pattern} that will match strings using {@code this} and then extend
+     * the match to the end of the string. For example: <pre>
+     * String commentRemoved = Substring.first("//").andAfter().removeFrom(line);
+     * </pre>
+     */
+    default Pattern andAfter() {
+      return (SerializablePattern) str -> in(str).map(Substring::andAfter);
     }
   }
   
