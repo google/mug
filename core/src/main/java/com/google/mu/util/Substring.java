@@ -100,9 +100,9 @@ public final class Substring {
   /**
    * Returns a {@code Pattern} that matches the first occurrence of {@code regexPattern}.
    *
-   * <p>Note that unlike {@code str.replaceFirst(regexPattern, replacement)},
-   * {@code regex(regexPattern).replaceFrom(str, replacement)} treats the {@code replacement} as literal
-   * string with no special handling of backslash (\) and dollar sign ($).
+   * <p>Unlike {@code str.replaceFirst(regexPattern, replacement)},
+   * <pre>regex(regexPattern).replaceFrom(str, replacement)</pre> treats the {@code replacement} as a literal
+   * string with no special handling of backslash (\) and dollar sign ($) characters.
    */
   public static Pattern regex(java.util.regex.Pattern regexPattern) {
     return regexGroup(regexPattern, 0);
@@ -111,9 +111,9 @@ public final class Substring {
   /**
    * Returns a {@code Pattern} that matches the first occurrence of {@code regexPattern}.
    *
-   * <p>Note that unlike {@code str.replaceFirst(regexPattern, replacement)},
-   * {@code regex(regexPattern).replaceFrom(str, replacement)} treats the {@code replacement} as literal
-   * string with no special handling of backslash (\) and dollar sign ($).
+   * <p>Unlike {@code str.replaceFirst(regexPattern, replacement)},
+   * <pre>regex(regexPattern).replaceFrom(str, replacement)</pre> treats the {@code replacement} as a literal
+   * string with no special handling of backslash (\) and dollar sign ($) characters.
    *
    * <p>Because this method internally compiles {@code regexPattern}, it's more efficient to reuse the
    * returned {@link Pattern} object than calling {@code regex(regexPattern)} repetitively.
@@ -125,8 +125,8 @@ public final class Substring {
   /**
    * Returns a {@code Pattern} that matches capturing {@code group} of {@code regexPattern}.
    *
-   * <p>The returned {@code Pattern} will throw {@link IndexOutOfBoundsException} when matching against
-   *  a string that doesn't have the given {@code group}.
+   * <p>The returned {@code Pattern} will throw {@link IndexOutOfBoundsException} when matched against
+   * strings without the target {@code group}.
    */
   public static Pattern regexGroup(java.util.regex.Pattern regexPattern, int group) {
     requireNonNull(regexPattern);
@@ -144,8 +144,15 @@ public final class Substring {
   /**
    * Returns a {@code Pattern} that matches capturing {@code group} of {@code regexPattern}.
    *
-   * <p>The returned {@code Pattern} will throw {@link IndexOutOfBoundsException} when matching against
-   *  a string that doesn't have the given {@code group}.
+   * <p>Unlike {@code str.replaceFirst(regexPattern, replacement)},
+   * <pre>regexGroup(regexPattern, group).replaceFrom(str, replacement)</pre> treats the {@code replacement}
+   * as a literal string with no special handling of backslash (\) and dollar sign ($) characters.
+   *
+   * <p>Because this method internally compiles {@code regexPattern}, it's more efficient to reuse the
+   * returned {@link Pattern} object than calling {@code regexGroup(regexPattern, group)} repetitively.
+   *
+   * <p>The returned {@code Pattern} will throw {@link IndexOutOfBoundsException} when matched against
+   * strings without the target {@code group}.
    */
   public static Pattern regexGroup(String regexPattern, int group) {
     return regexGroup(java.util.regex.Pattern.compile(regexPattern), group);
