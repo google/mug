@@ -5,7 +5,6 @@ import static java.util.Objects.requireNonNull;
 import java.io.Serializable;
 import java.util.Optional;
 
-
 /**
  * A substring inside a string, providing easy access to substrings around it ({@link #before before()},
  * {@link #after after()} or with the substring itself {@link #remove removed}, {@link #replaceWith replaced}
