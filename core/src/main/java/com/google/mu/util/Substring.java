@@ -302,8 +302,8 @@ public final class Substring {
     }
 
     /**
-     * Returns a new {@code Pattern} that will match strings using {@code this} and then extend
-     * the match to the beginning of the string. For example: <pre>
+     * Returns a new {@code Pattern} that will match strings using {@code this} pattern and then
+     * extend the matched substring to the beginning of the string. For example: <pre>
      * String schemeStripped = Substring.first("://").andBefore().removeFrom(uri);
      * </pre>
      */
@@ -312,8 +312,8 @@ public final class Substring {
     }
 
     /**
-     * Returns a new {@code Pattern} that will match strings using {@code this} and then extend
-     * the match to the end of the string. For example: <pre>
+     * Returns a new {@code Pattern} that will match strings using {@code this} pattern and then
+     * extend the matched substring to the end of the string. For example: <pre>
      * String commentRemoved = Substring.first("//").andAfter().removeFrom(line);
      * </pre>
      */
