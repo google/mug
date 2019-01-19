@@ -94,9 +94,6 @@ public class BiStreamTest {
     assertKeyValues(BiStream.from(ImmutableMap.of("one", 1)))
         .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1))
         .inOrder();
-    assertKeyValues(BiCollection.from(ImmutableMap.of("one", 1)).stream())
-        .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1))
-        .inOrder();
   }
 
   @Test public void testMapKeys() {
@@ -505,17 +502,6 @@ public class BiStreamTest {
 
   @Test public void toBiCollectionWithoutCollectorStrategy() {
     BiCollection<String, Integer> biCollection = BiStream.of("a", 1).toBiCollection();
-    assertKeyValues(biCollection.stream())
-        .containsExactlyEntriesIn(ImmutableMultimap.of("a", 1))
-        .inOrder();
-    assertKeyValues(biCollection.stream())
-        .containsExactlyEntriesIn(ImmutableMultimap.of("a", 1))
-        .inOrder();
-  }
-
-  @Test public void toBiCollectionWithCollectorStrategy() {
-    BiCollection<String, Integer> biCollection = BiStream.of("a", 1)
-        .toBiCollection(ImmutableList::toImmutableList);
     assertKeyValues(biCollection.stream())
         .containsExactlyEntriesIn(ImmutableMultimap.of("a", 1))
         .inOrder();

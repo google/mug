@@ -394,28 +394,14 @@ public final class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Collects into a {@code BiCollection} using {@code collectorStrategy}
-   * with all elements in this stream. For example: <pre>  {@code
-   *   stream.toBiCollection(ImmutableList::toImmutableList)
-   * }</pre>
-   *
-   * @since 1.3
-   * @deprecated Use {@link #toBiCollection()} instead.
-   */
-  @Deprecated
-  public BiCollection<K, V> toBiCollection(CollectorStrategy collectorStrategy) {
-    Collection<? extends Map.Entry<? extends K, ? extends V>> entries =
-        underlying.collect(collectorStrategy.collector());
-    return BiCollection.from(entries);
-  }
-
-  /**
    * Collects into a {@code BiCollection} with all elements in this stream.
    *
-   * @since 1.3
+   * @since 1.13
    */
   public BiCollection<K, V> toBiCollection() {
-    return toBiCollection(Collectors::toList);
+    Collection<? extends Map.Entry<? extends K, ? extends V>> entries =
+        underlying.collect(Collectors.toList());
+    return BiCollection.from(entries);
   }
 
   /**

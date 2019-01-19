@@ -24,7 +24,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
@@ -82,28 +81,11 @@ public class BiCollectionTest {
         .inOrder();
   }
 
-  @Test public void fromMap() {
-    assertKeyValues(BiCollection.from(ImmutableMap.of(1, "one", 2, "two")))
-        .containsExactlyEntriesIn(ImmutableListMultimap.of(1, "one", 2, "two"))
-        .inOrder();
-  }
-
   @Test public void toBiCollectionWithoutCollectorStrategy() {
     BiCollection<Integer, String> biCollection = ImmutableMap.of(1, "one", 2, "two")
         .entrySet()
         .stream()
         .collect(toBiCollection(Map.Entry::getKey, Map.Entry::getValue));
-    assertKeyValues(biCollection)
-        .containsExactlyEntriesIn(ImmutableListMultimap.of(1, "one", 2, "two"))
-        .inOrder();
-  }
-
-  @Test public void toBiCollectionWithCollectorStrategy() {
-    BiCollection<Integer, String> biCollection = ImmutableMap.of(1, "one", 2, "two")
-        .entrySet()
-        .stream()
-        .collect(toBiCollection(
-            Map.Entry::getKey, Map.Entry::getValue, ImmutableList::toImmutableList));
     assertKeyValues(biCollection)
         .containsExactlyEntriesIn(ImmutableListMultimap.of(1, "one", 2, "two"))
         .inOrder();
