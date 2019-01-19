@@ -26,10 +26,7 @@ import java.util.Optional;
  *
  * To strip off the suffix at and after the last "_" character: <pre>
  *   static String beforeLastUnderscore(String str) {
- *     return Substring.last('_')
- *         .in(str)
- *         .map(Substring::before)
- *         .orElse(str);
+ *     return Substring.last('_').andAfter().removeFrom(str);
  *   }
  * </pre>
  *
