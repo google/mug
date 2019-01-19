@@ -207,7 +207,7 @@ String quoted = Substring.regexGroup("'(.*)'", 1)
     .toString();
 ```
 
-## [Retryer](https://google.github.io/mug/apidocs/com/google/mu/util/Retryer.html)
+## [Retryer](https://google.github.io/mug/apidocs/com/google/mu/util/concurrent/Retryer.html)
 
 * Retry blockingly or _async_
 * Configurable and _extensible_ backoff strategies
