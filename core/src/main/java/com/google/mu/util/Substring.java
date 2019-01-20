@@ -276,12 +276,12 @@ public final class Substring {
   }
 
   /** Returns a new {@code Substring} instance covering part to the left of this substring. */
-  Substring left() {
+  Substring moveLeft() {
     return new Substring(context, 0, startIndex);
   }
 
   /** Returns a new {@code Substring} instance covering part to the right of this substring. */
-  Substring right() {
+  Substring moveRight() {
     return new Substring(context, endIndex, context.length());
   }
 
@@ -289,12 +289,12 @@ public final class Substring {
    * Returns a new {@code Substring} instance that extends to the beginning of the
    * enclosing string.
    */
-  Substring withLeft() {
+  Substring includeLeft() {
     return new Substring(context, 0, endIndex);
   }
 
   /** Returns a new {@code Substring} instance that extends to the end of the enclosing string. */
-  Substring withRight() {
+  Substring includeRight() {
     return new Substring(context, startIndex, context.length());
   }
 
@@ -348,7 +348,7 @@ public final class Substring {
      * </pre>
      */
     default Pattern before() {
-      return (SerializablePattern) str -> in(str).map(Substring::left);
+      return (SerializablePattern) str -> in(str).map(Substring::moveLeft);
     }
 
     /**
@@ -358,7 +358,7 @@ public final class Substring {
      * </pre>
      */
     default Pattern after() {
-      return (SerializablePattern) str -> in(str).map(Substring::right);
+      return (SerializablePattern) str -> in(str).map(Substring::moveRight);
     }
 
     /**
@@ -368,7 +368,7 @@ public final class Substring {
      * </pre>
      */
     default Pattern andBefore() {
-      return (SerializablePattern) str -> in(str).map(Substring::withLeft);
+      return (SerializablePattern) str -> in(str).map(Substring::includeLeft);
     }
 
     /**
@@ -378,7 +378,7 @@ public final class Substring {
      * </pre>
      */
     default Pattern andAfter() {
-      return (SerializablePattern) str -> in(str).map(Substring::withRight);
+      return (SerializablePattern) str -> in(str).map(Substring::includeRight);
     }
   }
   
