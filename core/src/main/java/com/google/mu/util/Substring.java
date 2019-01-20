@@ -276,22 +276,22 @@ public final class Substring {
   }
 
   /** Returns a new {@code Substring} instance covering part to the left of this substring. */
-  Substring moveLeft() {
+  Substring before() {
     return new Substring(context, 0, startIndex);
   }
 
   /** Returns a new {@code Substring} instance covering part to the right of this substring. */
-  Substring moveRight() {
+  Substring after() {
     return new Substring(context, endIndex, context.length());
   }
 
   /** Returns a new {@code Substring} instance that extends to the beginning of the enclosing string. */
-  Substring includeLeft() {
+  Substring andBefore() {
     return new Substring(context, 0, endIndex);
   }
 
   /** Returns a new {@code Substring} instance that extends to the end of the enclosing string. */
-  Substring includeRight() {
+  Substring andAfter() {
     return new Substring(context, startIndex, context.length());
   }
 
@@ -345,7 +345,7 @@ public final class Substring {
      * </pre>
      */
     default Pattern before() {
-      return (SerializablePattern) str -> in(str).map(Substring::moveLeft);
+      return (SerializablePattern) str -> in(str).map(Substring::before);
     }
 
     /**
@@ -355,7 +355,7 @@ public final class Substring {
      * </pre>
      */
     default Pattern after() {
-      return (SerializablePattern) str -> in(str).map(Substring::moveRight);
+      return (SerializablePattern) str -> in(str).map(Substring::after);
     }
 
     /**
@@ -365,7 +365,7 @@ public final class Substring {
      * </pre>
      */
     default Pattern andBefore() {
-      return (SerializablePattern) str -> in(str).map(Substring::includeLeft);
+      return (SerializablePattern) str -> in(str).map(Substring::andBefore);
     }
 
     /**
@@ -375,7 +375,7 @@ public final class Substring {
      * </pre>
      */
     default Pattern andAfter() {
-      return (SerializablePattern) str -> in(str).map(Substring::includeRight);
+      return (SerializablePattern) str -> in(str).map(Substring::andAfter);
     }
   }
   
