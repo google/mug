@@ -20,9 +20,9 @@ import java.io.Serializable;
 import java.util.Optional;
 
 /**
- * A substring inside a string, providing easy access to substrings around it ({@link #before before()},
- * {@link #after after()} or with the substring itself {@link #remove removed}, {@link #replaceWith replaced}
- * etc.).
+ * A substring inside a string, providing easy access to substrings around it
+ * ({@link #getBefore before}, {@link #getAfter after} or with the substring itself
+ * {@link #remove removed}, {@link #replaceWith replaced} etc.).
  * 
  * <p>For example, to strip off the "http://" prefix from a uri string if existent: <pre>
  *   static String stripHttp(String uri) {
@@ -53,8 +53,8 @@ import java.util.Optional;
  * To extract the 'name' and 'value' from texts in the format of "name:value": <pre>
  *   String str = ...;
  *   Substring colon = Substring.first(':').in(str).orElseThrow(BadFormatException::new);
- *   String name = colon.before();
- *   String value = colon.after();
+ *   String name = colon.getBefore();
+ *   String value = colon.getAfter();
  * </pre>
  *
  * @since 2.0
@@ -198,53 +198,53 @@ public final class Substring {
   /**
    * Returns part before this substring.
    *
-   * <p>{@link #before} and {@link #after} are almost always used together to split a string into
-   * two parts. Prefer using {@link Pattern#andBefore} if you are trying to find a prefix ending
+   * <p>{@link #getBefore} and {@link #getAfter} are almost always used together to split a string
+   * into two parts. Prefer using {@link Pattern#andBefore} if you are trying to find a prefix ending
    * with a pattern, like: <pre>
    *   String schemeStripped = Substring.first("://").andBefore().removeFrom(uri);
    * </pre> or using {@link Pattern#andAfter} to find a suffix starting with a pattern: <pre>
    *   String commentRemoved = Substring.first("//").andAfter().removeFrom(line);
    * </pre>
    */
-  public String before() {
+  public String getBefore() {
     return context.substring(0, startIndex);
   }
 
   /**
    * Returns part after this substring.
    *
-   * <p>{@link #before} and {@link #after} are almost always used together to split a string into
-   * two parts. Prefer using {@link Pattern#andBefore} if you are trying to find a prefix ending
+   * <p>{@link #getBefore} and {@link #getAfter} are almost always used together to split a string
+   * into two parts. Prefer using {@link Pattern#andBefore} if you are trying to find a prefix ending
    * with a pattern, like: <pre>
    *   String schemeStripped = Substring.first("://").andBefore().removeFrom(uri);
    * </pre> or using {@link Pattern#andAfter} to find a suffix starting with a pattern: <pre>
    *   String commentRemoved = Substring.first("//").andAfter().removeFrom(line);
    * </pre>
    */
-  public String after() {
+  public String getAfter() {
     return context.substring(endIndex);
   }
 
   /** Returns a new string with the substring removed. */
   public String remove() {
     if (endIndex == context.length()) {
-      return before();
+      return getBefore();
     } else if (startIndex == 0) {
-      return after();
+      return getAfter();
     } else {
-      return before() + after();
+      return getBefore() + getAfter();
     }
   }
 
   /** Returns a new string with {@code this} substring replaced by {@code replacement}. */
   public String replaceWith(char replacement) {
-    return before() + replacement + after();
+    return getBefore() + replacement + getAfter();
   }
 
   /** Returns a new string with {@code this} substring replaced by {@code replacement}. */
   public String replaceWith(CharSequence replacement) {
     requireNonNull(replacement);
-    return before() + replacement + after();
+    return getBefore() + replacement + getAfter();
   }
 
   /** Returns the starting index of this substring in the containing string. */

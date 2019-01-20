@@ -24,8 +24,8 @@ public class SubstringTest {
   @Test public void prefix_matchesFullString() {
     Optional<Substring> match = Substring.prefix("foo").in("foo");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEmpty();
-    assertThat(match.get().after()).isEmpty();
+    assertThat(match.get().getBefore()).isEmpty();
+    assertThat(match.get().getAfter()).isEmpty();
     assertThat(match.get().remove()).isEmpty();
     assertThat(match.get().replaceWith('b')).isEqualTo("b");
     assertThat(match.get().replaceWith("bar")).isEqualTo("bar");
@@ -37,8 +37,8 @@ public class SubstringTest {
   @Test public void prefix_matchesPrefix() {
     Optional<Substring> match = Substring.prefix("foo").in("foobar");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEmpty();
-    assertThat(match.get().after()).isEqualTo("bar");
+    assertThat(match.get().getBefore()).isEmpty();
+    assertThat(match.get().getAfter()).isEqualTo("bar");
     assertThat(match.get().remove()).isEqualTo("bar");
     assertThat(match.get().replaceWith('a')).isEqualTo("abar");
     assertThat(match.get().replaceWith("at")).isEqualTo("atbar");
@@ -50,8 +50,8 @@ public class SubstringTest {
   @Test public void prefix_emptyPrefix() {
     Optional<Substring> match = Substring.prefix("").in("foo");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEmpty();
-    assertThat(match.get().after()).isEqualTo("foo");
+    assertThat(match.get().getBefore()).isEmpty();
+    assertThat(match.get().getAfter()).isEqualTo("foo");
     assertThat(match.get().remove()).isEqualTo("foo");
     assertThat(match.get().replaceWith('b')).isEqualTo("bfoo");
     assertThat(match.get().replaceWith("bar")).isEqualTo("barfoo");
@@ -68,8 +68,8 @@ public class SubstringTest {
   @Test public void charPrefix_matchesFullString() {
     Optional<Substring> match = Substring.prefix('f').in("f");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEmpty();
-    assertThat(match.get().after()).isEmpty();
+    assertThat(match.get().getBefore()).isEmpty();
+    assertThat(match.get().getAfter()).isEmpty();
     assertThat(match.get().remove()).isEmpty();
     assertThat(match.get().replaceWith('b')).isEqualTo("b");
     assertThat(match.get().replaceWith("bar")).isEqualTo("bar");
@@ -81,8 +81,8 @@ public class SubstringTest {
   @Test public void charPrefix_matchesPrefix() {
     Optional<Substring> match = Substring.prefix("f").in("fbar");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEmpty();
-    assertThat(match.get().after()).isEqualTo("bar");
+    assertThat(match.get().getBefore()).isEmpty();
+    assertThat(match.get().getAfter()).isEqualTo("bar");
     assertThat(match.get().remove()).isEqualTo("bar");
     assertThat(match.get().replaceWith('a')).isEqualTo("abar");
     assertThat(match.get().replaceWith("at")).isEqualTo("atbar");
@@ -99,8 +99,8 @@ public class SubstringTest {
   @Test public void suffix_matchesFullString() {
     Optional<Substring> match = Substring.suffix("foo").in("foo");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEmpty();
-    assertThat(match.get().after()).isEmpty();
+    assertThat(match.get().getBefore()).isEmpty();
+    assertThat(match.get().getAfter()).isEmpty();
     assertThat(match.get().remove()).isEmpty();
     assertThat(match.get().replaceWith('b')).isEqualTo("b");
     assertThat(match.get().replaceWith("bar")).isEqualTo("bar");
@@ -112,8 +112,8 @@ public class SubstringTest {
   @Test public void suffix_matchesPostfix() {
     Optional<Substring> match = Substring.suffix("bar").in("foobar");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEqualTo("foo");
-    assertThat(match.get().after()).isEmpty();
+    assertThat(match.get().getBefore()).isEqualTo("foo");
+    assertThat(match.get().getAfter()).isEmpty();
     assertThat(match.get().remove()).isEqualTo("foo");
     assertThat(match.get().replaceWith('c')).isEqualTo("fooc");
     assertThat(match.get().replaceWith("car")).isEqualTo("foocar");
@@ -125,8 +125,8 @@ public class SubstringTest {
   @Test public void suffix_emptyPrefix() {
     Optional<Substring> match = Substring.suffix("").in("foo");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEqualTo("foo");
-    assertThat(match.get().after()).isEmpty();
+    assertThat(match.get().getBefore()).isEqualTo("foo");
+    assertThat(match.get().getAfter()).isEmpty();
     assertThat(match.get().remove()).isEqualTo("foo");
     assertThat(match.get().replaceWith('b')).isEqualTo("foob");
     assertThat(match.get().replaceWith("bar")).isEqualTo("foobar");
@@ -143,8 +143,8 @@ public class SubstringTest {
   @Test public void charSuffix_matchesFullString() {
     Optional<Substring> match = Substring.suffix('f').in("f");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEmpty();
-    assertThat(match.get().after()).isEmpty();
+    assertThat(match.get().getBefore()).isEmpty();
+    assertThat(match.get().getAfter()).isEmpty();
     assertThat(match.get().remove()).isEmpty();
     assertThat(match.get().replaceWith('b')).isEqualTo("b");
     assertThat(match.get().replaceWith("bar")).isEqualTo("bar");
@@ -156,8 +156,8 @@ public class SubstringTest {
   @Test public void charSuffix_matchesPostfix() {
     Optional<Substring> match = Substring.suffix('r').in("bar");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEqualTo("ba");
-    assertThat(match.get().after()).isEmpty();
+    assertThat(match.get().getBefore()).isEqualTo("ba");
+    assertThat(match.get().getAfter()).isEmpty();
     assertThat(match.get().remove()).isEqualTo("ba");
     assertThat(match.get().replaceWith('c')).isEqualTo("bac");
     assertThat(match.get().replaceWith("car")).isEqualTo("bacar");
@@ -174,8 +174,8 @@ public class SubstringTest {
   @Test public void firstSnippet_matchesFullString() {
     Optional<Substring> match = Substring.first("foo").in("foo");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEmpty();
-    assertThat(match.get().after()).isEmpty();
+    assertThat(match.get().getBefore()).isEmpty();
+    assertThat(match.get().getAfter()).isEmpty();
     assertThat(match.get().remove()).isEmpty();
     assertThat(match.get().replaceWith('b')).isEqualTo("b");
     assertThat(match.get().replaceWith("bar")).isEqualTo("bar");
@@ -187,8 +187,8 @@ public class SubstringTest {
   @Test public void firstSnippet_matchesPrefix() {
     Optional<Substring> match = Substring.first("foo").in("foobar");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEmpty();
-    assertThat(match.get().after()).isEqualTo("bar");
+    assertThat(match.get().getBefore()).isEmpty();
+    assertThat(match.get().getAfter()).isEqualTo("bar");
     assertThat(match.get().remove()).isEqualTo("bar");
     assertThat(match.get().replaceWith('c')).isEqualTo("cbar");
     assertThat(match.get().replaceWith("car")).isEqualTo("carbar");
@@ -200,8 +200,8 @@ public class SubstringTest {
   @Test public void firstSnippet_matchesPostfix() {
     Optional<Substring> match = Substring.first("bar").in("foobar");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEqualTo("foo");
-    assertThat(match.get().after()).isEmpty();
+    assertThat(match.get().getBefore()).isEqualTo("foo");
+    assertThat(match.get().getAfter()).isEmpty();
     assertThat(match.get().remove()).isEqualTo("foo");
     assertThat(match.get().replaceWith('c')).isEqualTo("fooc");
     assertThat(match.get().replaceWith("car")).isEqualTo("foocar");
@@ -213,8 +213,8 @@ public class SubstringTest {
   @Test public void firstSnippet_matchesInTheMiddle() {
     Optional<Substring> match = Substring.first("bar").in("foobarbaz");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEqualTo("foo");
-    assertThat(match.get().after()).isEqualTo("baz");
+    assertThat(match.get().getBefore()).isEqualTo("foo");
+    assertThat(match.get().getAfter()).isEqualTo("baz");
     assertThat(match.get().remove()).isEqualTo("foobaz");
     assertThat(match.get().replaceWith('c')).isEqualTo("foocbaz");
     assertThat(match.get().replaceWith("car")).isEqualTo("foocarbaz");
@@ -226,8 +226,8 @@ public class SubstringTest {
   @Test public void firstSnippet_emptySnippet() {
     Optional<Substring> match = Substring.first("").in("foo");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEmpty();
-    assertThat(match.get().after()).isEqualTo("foo");
+    assertThat(match.get().getBefore()).isEmpty();
+    assertThat(match.get().getAfter()).isEqualTo("foo");
     assertThat(match.get().remove()).isEqualTo("foo");
     assertThat(match.get().replaceWith('b')).isEqualTo("bfoo");
     assertThat(match.get().replaceWith("bar")).isEqualTo("barfoo");
@@ -239,8 +239,8 @@ public class SubstringTest {
   @Test public void firstSnippet_matchesFirstOccurrence() {
     Optional<Substring> match = Substring.first("bar").in("foobarbarbaz");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEqualTo("foo");
-    assertThat(match.get().after()).isEqualTo("barbaz");
+    assertThat(match.get().getBefore()).isEqualTo("foo");
+    assertThat(match.get().getAfter()).isEqualTo("barbaz");
     assertThat(match.get().remove()).isEqualTo("foobarbaz");
     assertThat(match.get().replaceWith('c')).isEqualTo("foocbarbaz");
     assertThat(match.get().replaceWith("car")).isEqualTo("foocarbarbaz");
@@ -257,8 +257,8 @@ public class SubstringTest {
   @Test public void regex_matchesFullString() {
     Optional<Substring> match = Substring.regex(".*oo").in("foo");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEmpty();
-    assertThat(match.get().after()).isEmpty();
+    assertThat(match.get().getBefore()).isEmpty();
+    assertThat(match.get().getAfter()).isEmpty();
     assertThat(match.get().remove()).isEmpty();
     assertThat(match.get().replaceWith('b')).isEqualTo("b");
     assertThat(match.get().replaceWith("bar")).isEqualTo("bar");
@@ -270,8 +270,8 @@ public class SubstringTest {
   @Test public void regex_matchesPrefix() {
     Optional<Substring> match = Substring.regex(".*oo").in("foobar");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEmpty();
-    assertThat(match.get().after()).isEqualTo("bar");
+    assertThat(match.get().getBefore()).isEmpty();
+    assertThat(match.get().getAfter()).isEqualTo("bar");
     assertThat(match.get().remove()).isEqualTo("bar");
     assertThat(match.get().replaceWith('c')).isEqualTo("cbar");
     assertThat(match.get().replaceWith("car")).isEqualTo("carbar");
@@ -283,8 +283,8 @@ public class SubstringTest {
   @Test public void regex_matchesPrefixWithStartingAnchor() {
     Optional<Substring> match = Substring.regex("^.*oo").in("foobar");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEmpty();
-    assertThat(match.get().after()).isEqualTo("bar");
+    assertThat(match.get().getBefore()).isEmpty();
+    assertThat(match.get().getAfter()).isEqualTo("bar");
     assertThat(match.get().remove()).isEqualTo("bar");
     assertThat(match.get().replaceWith('c')).isEqualTo("cbar");
     assertThat(match.get().replaceWith("car")).isEqualTo("carbar");
@@ -300,8 +300,8 @@ public class SubstringTest {
   @Test public void regex_matchesPostfix() {
     Optional<Substring> match = Substring.regex("b.*").in("foobar");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEqualTo("foo");
-    assertThat(match.get().after()).isEmpty();
+    assertThat(match.get().getBefore()).isEqualTo("foo");
+    assertThat(match.get().getAfter()).isEmpty();
     assertThat(match.get().remove()).isEqualTo("foo");
     assertThat(match.get().replaceWith('c')).isEqualTo("fooc");
     assertThat(match.get().replaceWith("car")).isEqualTo("foocar");
@@ -313,8 +313,8 @@ public class SubstringTest {
   @Test public void regex_matchesPostfixWithEndingAnchor() {
     Optional<Substring> match = Substring.regex("b.*$").in("foobar");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEqualTo("foo");
-    assertThat(match.get().after()).isEmpty();
+    assertThat(match.get().getBefore()).isEqualTo("foo");
+    assertThat(match.get().getAfter()).isEmpty();
     assertThat(match.get().remove()).isEqualTo("foo");
     assertThat(match.get().replaceWith('c')).isEqualTo("fooc");
     assertThat(match.get().replaceWith("car")).isEqualTo("foocar");
@@ -330,8 +330,8 @@ public class SubstringTest {
   @Test public void regex_matchesInTheMiddle() {
     Optional<Substring> match = Substring.regex(".ar").in("foobarbaz");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEqualTo("foo");
-    assertThat(match.get().after()).isEqualTo("baz");
+    assertThat(match.get().getBefore()).isEqualTo("foo");
+    assertThat(match.get().getAfter()).isEqualTo("baz");
     assertThat(match.get().remove()).isEqualTo("foobaz");
     assertThat(match.get().replaceWith('c')).isEqualTo("foocbaz");
     assertThat(match.get().replaceWith("car")).isEqualTo("foocarbaz");
@@ -343,8 +343,8 @@ public class SubstringTest {
   @Test public void regex_emptySnippet() {
     Optional<Substring> match = Substring.regex("").in("foo");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEmpty();
-    assertThat(match.get().after()).isEqualTo("foo");
+    assertThat(match.get().getBefore()).isEmpty();
+    assertThat(match.get().getAfter()).isEqualTo("foo");
     assertThat(match.get().remove()).isEqualTo("foo");
     assertThat(match.get().replaceWith('b')).isEqualTo("bfoo");
     assertThat(match.get().replaceWith("bar")).isEqualTo("barfoo");
@@ -356,8 +356,8 @@ public class SubstringTest {
   @Test public void regex_matchesFirstOccurrence() {
     Optional<Substring> match = Substring.regex(".ar").in("foobarbarbaz");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEqualTo("foo");
-    assertThat(match.get().after()).isEqualTo("barbaz");
+    assertThat(match.get().getBefore()).isEqualTo("foo");
+    assertThat(match.get().getAfter()).isEqualTo("barbaz");
     assertThat(match.get().remove()).isEqualTo("foobarbaz");
     assertThat(match.get().replaceWith('c')).isEqualTo("foocbarbaz");
     assertThat(match.get().replaceWith("car")).isEqualTo("foocarbarbaz");
@@ -375,7 +375,7 @@ public class SubstringTest {
 
   @Test public void regexGroup_matchesFirstGroup() {
     Optional<Substring> match = Substring.regexGroup("(f.)b.*", 1).in("fobar");
-    assertThat(match.get().after()).isEqualTo("bar");
+    assertThat(match.get().getAfter()).isEqualTo("bar");
     assertThat(match.get().remove()).isEqualTo("bar");
     assertThat(match.get().replaceWith('c')).isEqualTo("cbar");
     assertThat(match.get().replaceWith("car")).isEqualTo("carbar");
@@ -386,7 +386,7 @@ public class SubstringTest {
 
   @Test public void regexGroup_matchesSecondGroup() {
     Optional<Substring> match = Substring.regexGroup("f(o.)(ba.)", 2).in("foobarbaz");
-    assertThat(match.get().after()).isEqualTo("baz");
+    assertThat(match.get().getAfter()).isEqualTo("baz");
     assertThat(match.get().remove()).isEqualTo("foobaz");
     assertThat(match.get().replaceWith('c')).isEqualTo("foocbaz");
     assertThat(match.get().replaceWith("car")).isEqualTo("foocarbaz");
@@ -397,7 +397,7 @@ public class SubstringTest {
 
   @Test public void regexGroup_group0() {
     Optional<Substring> match = Substring.regexGroup("f(o.)(ba.).*", 0).in("foobarbaz");
-    assertThat(match.get().after()).isEmpty();
+    assertThat(match.get().getAfter()).isEmpty();
     assertThat(match.get().remove()).isEmpty();
     assertThat(match.get().replaceWith('c')).isEqualTo("c");
     assertThat(match.get().replaceWith("car")).isEqualTo("car");
@@ -423,8 +423,8 @@ public class SubstringTest {
   @Test public void lastSnippet_matchesFullString() {
     Optional<Substring> match = Substring.last("foo").in("foo");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEmpty();
-    assertThat(match.get().after()).isEmpty();
+    assertThat(match.get().getBefore()).isEmpty();
+    assertThat(match.get().getAfter()).isEmpty();
     assertThat(match.get().remove()).isEmpty();
     assertThat(match.get().replaceWith('b')).isEqualTo("b");
     assertThat(match.get().replaceWith("bar")).isEqualTo("bar");
@@ -436,8 +436,8 @@ public class SubstringTest {
   @Test public void lastSnippet_matchesPrefix() {
     Optional<Substring> match = Substring.last("foo").in("foobar");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEmpty();
-    assertThat(match.get().after()).isEqualTo("bar");
+    assertThat(match.get().getBefore()).isEmpty();
+    assertThat(match.get().getAfter()).isEqualTo("bar");
     assertThat(match.get().remove()).isEqualTo("bar");
     assertThat(match.get().replaceWith('c')).isEqualTo("cbar");
     assertThat(match.get().replaceWith("car")).isEqualTo("carbar");
@@ -449,8 +449,8 @@ public class SubstringTest {
   @Test public void lastSnippet_matchesPostfix() {
     Optional<Substring> match = Substring.last("bar").in("foobar");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEqualTo("foo");
-    assertThat(match.get().after()).isEmpty();
+    assertThat(match.get().getBefore()).isEqualTo("foo");
+    assertThat(match.get().getAfter()).isEmpty();
     assertThat(match.get().remove()).isEqualTo("foo");
     assertThat(match.get().replaceWith('c')).isEqualTo("fooc");
     assertThat(match.get().replaceWith("car")).isEqualTo("foocar");
@@ -462,8 +462,8 @@ public class SubstringTest {
   @Test public void lastSnippet_matchesInTheMiddle() {
     Optional<Substring> match = Substring.last("bar").in("foobarbaz");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEqualTo("foo");
-    assertThat(match.get().after()).isEqualTo("baz");
+    assertThat(match.get().getBefore()).isEqualTo("foo");
+    assertThat(match.get().getAfter()).isEqualTo("baz");
     assertThat(match.get().remove()).isEqualTo("foobaz");
     assertThat(match.get().replaceWith('c')).isEqualTo("foocbaz");
     assertThat(match.get().replaceWith("car")).isEqualTo("foocarbaz");
@@ -475,8 +475,8 @@ public class SubstringTest {
   @Test public void lastSnippet_matchesLastOccurrence() {
     Optional<Substring> match = Substring.last("bar").in("foobarbarbaz");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEqualTo("foobar");
-    assertThat(match.get().after()).isEqualTo("baz");
+    assertThat(match.get().getBefore()).isEqualTo("foobar");
+    assertThat(match.get().getAfter()).isEqualTo("baz");
     assertThat(match.get().remove()).isEqualTo("foobarbaz");
     assertThat(match.get().replaceWith('c')).isEqualTo("foobarcbaz");
     assertThat(match.get().replaceWith("car")).isEqualTo("foobarcarbaz");
@@ -488,8 +488,8 @@ public class SubstringTest {
   @Test public void lastSnippet_emptySnippet() {
     Optional<Substring> match = Substring.last("").in("foo");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEqualTo("foo");
-    assertThat(match.get().after()).isEmpty();
+    assertThat(match.get().getBefore()).isEqualTo("foo");
+    assertThat(match.get().getAfter()).isEmpty();
     assertThat(match.get().remove()).isEqualTo("foo");
     assertThat(match.get().replaceWith('b')).isEqualTo("foob");
     assertThat(match.get().replaceWith("bar")).isEqualTo("foobar");
@@ -506,8 +506,8 @@ public class SubstringTest {
   @Test public void firstChar_matchesFullString() {
     Optional<Substring> match = Substring.first('f').in("f");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEmpty();
-    assertThat(match.get().after()).isEmpty();
+    assertThat(match.get().getBefore()).isEmpty();
+    assertThat(match.get().getAfter()).isEmpty();
     assertThat(match.get().remove()).isEmpty();
     assertThat(match.get().replaceWith('b')).isEqualTo("b");
     assertThat(match.get().replaceWith("bar")).isEqualTo("bar");
@@ -519,8 +519,8 @@ public class SubstringTest {
   @Test public void firstChar_matchesPrefix() {
     Optional<Substring> match = Substring.first('f').in("foobar");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEmpty();
-    assertThat(match.get().after()).isEqualTo("oobar");
+    assertThat(match.get().getBefore()).isEmpty();
+    assertThat(match.get().getAfter()).isEqualTo("oobar");
     assertThat(match.get().remove()).isEqualTo("oobar");
     assertThat(match.get().replaceWith('c')).isEqualTo("coobar");
     assertThat(match.get().replaceWith("car")).isEqualTo("caroobar");
@@ -532,8 +532,8 @@ public class SubstringTest {
   @Test public void firstChar_matchesPostfix() {
     Optional<Substring> match = Substring.first('r').in("foobar");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEqualTo("fooba");
-    assertThat(match.get().after()).isEmpty();
+    assertThat(match.get().getBefore()).isEqualTo("fooba");
+    assertThat(match.get().getAfter()).isEmpty();
     assertThat(match.get().remove()).isEqualTo("fooba");
     assertThat(match.get().replaceWith('c')).isEqualTo("foobac");
     assertThat(match.get().replaceWith("car")).isEqualTo("foobacar");
@@ -545,8 +545,8 @@ public class SubstringTest {
   @Test public void firstChar_matchesFirstOccurrence() {
     Optional<Substring> match = Substring.first('b').in("foobarbarbaz");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEqualTo("foo");
-    assertThat(match.get().after()).isEqualTo("arbarbaz");
+    assertThat(match.get().getBefore()).isEqualTo("foo");
+    assertThat(match.get().getAfter()).isEqualTo("arbarbaz");
     assertThat(match.get().remove()).isEqualTo("fooarbarbaz");
     assertThat(match.get().replaceWith('c')).isEqualTo("foocarbarbaz");
     assertThat(match.get().replaceWith("coo")).isEqualTo("foocooarbarbaz");
@@ -563,8 +563,8 @@ public class SubstringTest {
   @Test public void lastChar_matchesFullString() {
     Optional<Substring> match = Substring.last('f').in("f");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEmpty();
-    assertThat(match.get().after()).isEmpty();
+    assertThat(match.get().getBefore()).isEmpty();
+    assertThat(match.get().getAfter()).isEmpty();
     assertThat(match.get().remove()).isEmpty();
     assertThat(match.get().replaceWith('b')).isEqualTo("b");
     assertThat(match.get().replaceWith("bar")).isEqualTo("bar");
@@ -576,8 +576,8 @@ public class SubstringTest {
   @Test public void lastChar_matchesPrefix() {
     Optional<Substring> match = Substring.last('f').in("foobar");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEmpty();
-    assertThat(match.get().after()).isEqualTo("oobar");
+    assertThat(match.get().getBefore()).isEmpty();
+    assertThat(match.get().getAfter()).isEqualTo("oobar");
     assertThat(match.get().remove()).isEqualTo("oobar");
     assertThat(match.get().replaceWith('c')).isEqualTo("coobar");
     assertThat(match.get().replaceWith("car")).isEqualTo("caroobar");
@@ -589,8 +589,8 @@ public class SubstringTest {
   @Test public void lastChar_matchesPostfix() {
     Optional<Substring> match = Substring.last('r').in("foobar");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEqualTo("fooba");
-    assertThat(match.get().after()).isEmpty();
+    assertThat(match.get().getBefore()).isEqualTo("fooba");
+    assertThat(match.get().getAfter()).isEmpty();
     assertThat(match.get().remove()).isEqualTo("fooba");
     assertThat(match.get().replaceWith('c')).isEqualTo("foobac");
     assertThat(match.get().replaceWith("car")).isEqualTo("foobacar");
@@ -602,8 +602,8 @@ public class SubstringTest {
   @Test public void lastChar_matchesLastOccurrence() {
     Optional<Substring> match = Substring.last('b').in("foobarbaz");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEqualTo("foobar");
-    assertThat(match.get().after()).isEqualTo("az");
+    assertThat(match.get().getBefore()).isEqualTo("foobar");
+    assertThat(match.get().getAfter()).isEqualTo("az");
     assertThat(match.get().remove()).isEqualTo("foobaraz");
     assertThat(match.get().replaceWith('c')).isEqualTo("foobarcaz");
     assertThat(match.get().replaceWith("car")).isEqualTo("foobarcaraz");
@@ -634,8 +634,8 @@ public class SubstringTest {
     Optional<Substring> match =
         Substring.first('b').or(Substring.first("foo")).in("bar");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEmpty();
-    assertThat(match.get().after()).isEqualTo("ar");
+    assertThat(match.get().getBefore()).isEmpty();
+    assertThat(match.get().getAfter()).isEqualTo("ar");
     assertThat(match.get().remove()).isEqualTo("ar");
     assertThat(match.get().replaceWith('c')).isEqualTo("car");
     assertThat(match.get().replaceWith("coo")).isEqualTo("cooar");
@@ -648,8 +648,8 @@ public class SubstringTest {
     Optional<Substring> match =
         Substring.first('b').or(Substring.first("foo")).in("foo");
     assertThat(match).isPresent();
-    assertThat(match.get().before()).isEmpty();
-    assertThat(match.get().after()).isEmpty();
+    assertThat(match.get().getBefore()).isEmpty();
+    assertThat(match.get().getAfter()).isEmpty();
     assertThat(match.get().remove()).isEmpty();
     assertThat(match.get().replaceWith('b')).isEqualTo("b");
     assertThat(match.get().replaceWith("bar")).isEqualTo("bar");
