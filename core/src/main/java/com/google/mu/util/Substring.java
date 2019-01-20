@@ -225,19 +225,6 @@ public final class Substring {
     return context.substring(endIndex);
   }
 
-  /**
-   * Returns a new {@code Substring} instance that extends to the beginning of the
-   * enclosing string.
-   */
-  Substring andBefore() {
-    return new Substring(context, 0, endIndex);
-  }
-
-  /** Returns a new {@code Substring} instance that extends to the end of the enclosing string. */
-  Substring andAfter() {
-    return new Substring(context, startIndex, context.length());
-  }
-
   /** Returns a new string with the substring removed. */
   public String remove() {
     if (endIndex == context.length()) {
@@ -288,6 +275,29 @@ public final class Substring {
     return false;
   }
 
+  /** Returns a new {@code Substring} instance covering part to the left of this substring. */
+  Substring left() {
+    return new Substring(context, 0, startIndex);
+  }
+
+  /** Returns a new {@code Substring} instance covering part to the right of this substring. */
+  Substring right() {
+    return new Substring(context, endIndex, context.length());
+  }
+
+  /**
+   * Returns a new {@code Substring} instance that extends to the beginning of the
+   * enclosing string.
+   */
+  Substring withLeft() {
+    return new Substring(context, 0, endIndex);
+  }
+
+  /** Returns a new {@code Substring} instance that extends to the end of the enclosing string. */
+  Substring withRight() {
+    return new Substring(context, startIndex, context.length());
+  }
+
   /** A substring pattern that can be matched against a string to find substrings. */
   public interface Pattern {
 
@@ -333,22 +343,42 @@ public final class Substring {
 
     /**
      * Returns a new {@code Pattern} that will match strings using {@code this} pattern and then
+     * cover the range before the matched substring. For example: <pre>
+     *   String startFromDoubleSlash = Substring.first("//").before().removeFrom(uri);
+     * </pre>
+     */
+    default Pattern before() {
+      return (SerializablePattern) str -> in(str).map(Substring::left);
+    }
+
+    /**
+     * Returns a new {@code Pattern} that will match strings using {@code this} pattern and then
+     * cover the range after the matched substring. For example: <pre>
+     *   String endWithPeriod = Substring.last(".").after().removeFrom(line);
+     * </pre>
+     */
+    default Pattern after() {
+      return (SerializablePattern) str -> in(str).map(Substring::right);
+    }
+
+    /**
+     * Returns a new {@code Pattern} that will match strings using {@code this} pattern and then
      * extend the matched substring to the beginning of the string. For example: <pre>
-     * String schemeStripped = Substring.first("://").andBefore().removeFrom(uri);
+     *   String schemeStripped = Substring.first("://").andBefore().removeFrom(uri);
      * </pre>
      */
     default Pattern andBefore() {
-      return (SerializablePattern) str -> in(str).map(Substring::andBefore);
+      return (SerializablePattern) str -> in(str).map(Substring::withLeft);
     }
 
     /**
      * Returns a new {@code Pattern} that will match strings using {@code this} pattern and then
      * extend the matched substring to the end of the string. For example: <pre>
-     * String commentRemoved = Substring.first("//").andAfter().removeFrom(line);
+     *   String commentRemoved = Substring.first("//").andAfter().removeFrom(line);
      * </pre>
      */
     default Pattern andAfter() {
-      return (SerializablePattern) str -> in(str).map(Substring::andAfter);
+      return (SerializablePattern) str -> in(str).map(Substring::withRight);
     }
   }
   

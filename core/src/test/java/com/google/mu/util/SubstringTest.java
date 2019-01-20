@@ -710,6 +710,30 @@ public class SubstringTest {
   @Test public void andAfter_matchInTheMiddle() {
     assertThat(Substring.first("//").andAfter().removeFrom("foo // bar")).isEqualTo("foo ");
   }
+
+  @Test public void before_noMatch() {
+    assertThat(Substring.first("://").before().in("abc")).isEmpty();
+  }
+
+  @Test public void before_matchAtPrefix() {
+    assertThat(Substring.first("//").before().removeFrom("//foo")).isEqualTo("//foo");
+  }
+
+  @Test public void before_matchInTheMiddle() {
+    assertThat(Substring.first("//").before().removeFrom("http://foo")).isEqualTo("//foo");
+  }
+
+  @Test public void after_noMatch() {
+    assertThat(Substring.first("//").after().in("abc")).isEmpty();
+  }
+
+  @Test public void after_matchAtSuffix() {
+    assertThat(Substring.last('.').after().removeFrom("foo.")).isEqualTo("foo.");
+  }
+
+  @Test public void after_matchInTheMiddle() {
+    assertThat(Substring.last('.').after().removeFrom("foo. bar")).isEqualTo("foo.");
+  }
   
   @Test public void testEquals() {
     new EqualsTester()
