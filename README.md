@@ -184,8 +184,8 @@ String schemeStripped = Substring.first("://").andBefore().removeFrom(uri);
 **Example 3: split a string in the format of "name=value" into `name` and `value`:**
 ```java
 Substring eq = Substring.first('=').in(nameValue).orElseThrow(...);
-String name = eq.before();
-String value = eq.after();
+String name = eq.getBefore();
+String value = eq.getAfter();
 ```
 
 **Example 4: replace trailing "//" with "/" :**
