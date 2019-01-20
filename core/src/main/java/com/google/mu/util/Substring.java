@@ -199,7 +199,7 @@ public final class Substring {
    * Returns part before this substring.
    *
    * <p>{@link #before} and {@link #after} are almost always used together to split a string into
-   * two parts. Prefer to using {@link Pattern#andBefore} if you are trying to find a prefix ending
+   * two parts. Prefer using {@link Pattern#andBefore} if you are trying to find a prefix ending
    * with a pattern, like: <pre>
    *   String schemeStripped = Substring.first("://").andBefore().removeFrom(uri);
    * </pre> or using {@link Pattern#andAfter} to find a suffix starting with a pattern: <pre>
@@ -214,7 +214,7 @@ public final class Substring {
    * Returns part after this substring.
    *
    * <p>{@link #before} and {@link #after} are almost always used together to split a string into
-   * two parts. Prefer to using {@link Pattern#andBefore} if you are trying to find a prefix ending
+   * two parts. Prefer using {@link Pattern#andBefore} if you are trying to find a prefix ending
    * with a pattern, like: <pre>
    *   String schemeStripped = Substring.first("://").andBefore().removeFrom(uri);
    * </pre> or using {@link Pattern#andAfter} to find a suffix starting with a pattern: <pre>
