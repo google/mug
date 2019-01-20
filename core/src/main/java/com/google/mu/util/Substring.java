@@ -285,10 +285,7 @@ public final class Substring {
     return new Substring(context, endIndex, context.length());
   }
 
-  /**
-   * Returns a new {@code Substring} instance that extends to the beginning of the
-   * enclosing string.
-   */
+  /** Returns a new {@code Substring} instance that extends to the beginning of the enclosing string. */
   Substring includeLeft() {
     return new Substring(context, 0, endIndex);
   }
