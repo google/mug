@@ -248,7 +248,7 @@ public final class Substring {
   }
 
   /** Returns the starting index of this substring in the containing string. */
-  public int index() {
+  public int getIndex() {
     return startIndex;
   }
 

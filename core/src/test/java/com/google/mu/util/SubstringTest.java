@@ -29,7 +29,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEmpty();
     assertThat(match.get().replaceWith('b')).isEqualTo("b");
     assertThat(match.get().replaceWith("bar")).isEqualTo("bar");
-    assertThat(match.get().index()).isEqualTo(0);
+    assertThat(match.get().getIndex()).isEqualTo(0);
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("foo");
   }
@@ -42,7 +42,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEqualTo("bar");
     assertThat(match.get().replaceWith('a')).isEqualTo("abar");
     assertThat(match.get().replaceWith("at")).isEqualTo("atbar");
-    assertThat(match.get().index()).isEqualTo(0);
+    assertThat(match.get().getIndex()).isEqualTo(0);
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("foo");
   }
@@ -55,7 +55,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEqualTo("foo");
     assertThat(match.get().replaceWith('b')).isEqualTo("bfoo");
     assertThat(match.get().replaceWith("bar")).isEqualTo("barfoo");
-    assertThat(match.get().index()).isEqualTo(0);
+    assertThat(match.get().getIndex()).isEqualTo(0);
     assertThat(match.get().length()).isEqualTo(0);
     assertThat(match.get().toString()).isEmpty();
   }
@@ -73,7 +73,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEmpty();
     assertThat(match.get().replaceWith('b')).isEqualTo("b");
     assertThat(match.get().replaceWith("bar")).isEqualTo("bar");
-    assertThat(match.get().index()).isEqualTo(0);
+    assertThat(match.get().getIndex()).isEqualTo(0);
     assertThat(match.get().length()).isEqualTo(1);
     assertThat(match.get().toString()).isEqualTo("f");
   }
@@ -86,7 +86,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEqualTo("bar");
     assertThat(match.get().replaceWith('a')).isEqualTo("abar");
     assertThat(match.get().replaceWith("at")).isEqualTo("atbar");
-    assertThat(match.get().index()).isEqualTo(0);
+    assertThat(match.get().getIndex()).isEqualTo(0);
     assertThat(match.get().length()).isEqualTo(1);
     assertThat(match.get().toString()).isEqualTo("f");
   }
@@ -104,7 +104,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEmpty();
     assertThat(match.get().replaceWith('b')).isEqualTo("b");
     assertThat(match.get().replaceWith("bar")).isEqualTo("bar");
-    assertThat(match.get().index()).isEqualTo(0);
+    assertThat(match.get().getIndex()).isEqualTo(0);
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("foo");
   }
@@ -117,7 +117,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEqualTo("foo");
     assertThat(match.get().replaceWith('c')).isEqualTo("fooc");
     assertThat(match.get().replaceWith("car")).isEqualTo("foocar");
-    assertThat(match.get().index()).isEqualTo(3);
+    assertThat(match.get().getIndex()).isEqualTo(3);
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("bar");
   }
@@ -130,7 +130,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEqualTo("foo");
     assertThat(match.get().replaceWith('b')).isEqualTo("foob");
     assertThat(match.get().replaceWith("bar")).isEqualTo("foobar");
-    assertThat(match.get().index()).isEqualTo(3);
+    assertThat(match.get().getIndex()).isEqualTo(3);
     assertThat(match.get().length()).isEqualTo(0);
     assertThat(match.get().toString()).isEmpty();
   }
@@ -148,7 +148,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEmpty();
     assertThat(match.get().replaceWith('b')).isEqualTo("b");
     assertThat(match.get().replaceWith("bar")).isEqualTo("bar");
-    assertThat(match.get().index()).isEqualTo(0);
+    assertThat(match.get().getIndex()).isEqualTo(0);
     assertThat(match.get().length()).isEqualTo(1);
     assertThat(match.get().toString()).isEqualTo("f");
   }
@@ -161,7 +161,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEqualTo("ba");
     assertThat(match.get().replaceWith('c')).isEqualTo("bac");
     assertThat(match.get().replaceWith("car")).isEqualTo("bacar");
-    assertThat(match.get().index()).isEqualTo(2);
+    assertThat(match.get().getIndex()).isEqualTo(2);
     assertThat(match.get().length()).isEqualTo(1);
     assertThat(match.get().toString()).isEqualTo("r");
   }
@@ -179,7 +179,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEmpty();
     assertThat(match.get().replaceWith('b')).isEqualTo("b");
     assertThat(match.get().replaceWith("bar")).isEqualTo("bar");
-    assertThat(match.get().index()).isEqualTo(0);
+    assertThat(match.get().getIndex()).isEqualTo(0);
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("foo");
   }
@@ -192,7 +192,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEqualTo("bar");
     assertThat(match.get().replaceWith('c')).isEqualTo("cbar");
     assertThat(match.get().replaceWith("car")).isEqualTo("carbar");
-    assertThat(match.get().index()).isEqualTo(0);
+    assertThat(match.get().getIndex()).isEqualTo(0);
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("foo");
   }
@@ -205,7 +205,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEqualTo("foo");
     assertThat(match.get().replaceWith('c')).isEqualTo("fooc");
     assertThat(match.get().replaceWith("car")).isEqualTo("foocar");
-    assertThat(match.get().index()).isEqualTo(3);
+    assertThat(match.get().getIndex()).isEqualTo(3);
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("bar");
   }
@@ -218,7 +218,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEqualTo("foobaz");
     assertThat(match.get().replaceWith('c')).isEqualTo("foocbaz");
     assertThat(match.get().replaceWith("car")).isEqualTo("foocarbaz");
-    assertThat(match.get().index()).isEqualTo(3);
+    assertThat(match.get().getIndex()).isEqualTo(3);
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("bar");
   }
@@ -231,7 +231,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEqualTo("foo");
     assertThat(match.get().replaceWith('b')).isEqualTo("bfoo");
     assertThat(match.get().replaceWith("bar")).isEqualTo("barfoo");
-    assertThat(match.get().index()).isEqualTo(0);
+    assertThat(match.get().getIndex()).isEqualTo(0);
     assertThat(match.get().length()).isEqualTo(0);
     assertThat(match.get().toString()).isEmpty();
   }
@@ -244,7 +244,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEqualTo("foobarbaz");
     assertThat(match.get().replaceWith('c')).isEqualTo("foocbarbaz");
     assertThat(match.get().replaceWith("car")).isEqualTo("foocarbarbaz");
-    assertThat(match.get().index()).isEqualTo(3);
+    assertThat(match.get().getIndex()).isEqualTo(3);
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("bar");
   }
@@ -262,7 +262,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEmpty();
     assertThat(match.get().replaceWith('b')).isEqualTo("b");
     assertThat(match.get().replaceWith("bar")).isEqualTo("bar");
-    assertThat(match.get().index()).isEqualTo(0);
+    assertThat(match.get().getIndex()).isEqualTo(0);
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("foo");
   }
@@ -275,7 +275,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEqualTo("bar");
     assertThat(match.get().replaceWith('c')).isEqualTo("cbar");
     assertThat(match.get().replaceWith("car")).isEqualTo("carbar");
-    assertThat(match.get().index()).isEqualTo(0);
+    assertThat(match.get().getIndex()).isEqualTo(0);
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("foo");
   }
@@ -288,7 +288,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEqualTo("bar");
     assertThat(match.get().replaceWith('c')).isEqualTo("cbar");
     assertThat(match.get().replaceWith("car")).isEqualTo("carbar");
-    assertThat(match.get().index()).isEqualTo(0);
+    assertThat(match.get().getIndex()).isEqualTo(0);
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("foo");
   }
@@ -305,7 +305,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEqualTo("foo");
     assertThat(match.get().replaceWith('c')).isEqualTo("fooc");
     assertThat(match.get().replaceWith("car")).isEqualTo("foocar");
-    assertThat(match.get().index()).isEqualTo(3);
+    assertThat(match.get().getIndex()).isEqualTo(3);
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("bar");
   }
@@ -318,7 +318,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEqualTo("foo");
     assertThat(match.get().replaceWith('c')).isEqualTo("fooc");
     assertThat(match.get().replaceWith("car")).isEqualTo("foocar");
-    assertThat(match.get().index()).isEqualTo(3);
+    assertThat(match.get().getIndex()).isEqualTo(3);
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("bar");
   }
@@ -335,7 +335,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEqualTo("foobaz");
     assertThat(match.get().replaceWith('c')).isEqualTo("foocbaz");
     assertThat(match.get().replaceWith("car")).isEqualTo("foocarbaz");
-    assertThat(match.get().index()).isEqualTo(3);
+    assertThat(match.get().getIndex()).isEqualTo(3);
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("bar");
   }
@@ -348,7 +348,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEqualTo("foo");
     assertThat(match.get().replaceWith('b')).isEqualTo("bfoo");
     assertThat(match.get().replaceWith("bar")).isEqualTo("barfoo");
-    assertThat(match.get().index()).isEqualTo(0);
+    assertThat(match.get().getIndex()).isEqualTo(0);
     assertThat(match.get().length()).isEqualTo(0);
     assertThat(match.get().toString()).isEmpty();
   }
@@ -361,7 +361,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEqualTo("foobarbaz");
     assertThat(match.get().replaceWith('c')).isEqualTo("foocbarbaz");
     assertThat(match.get().replaceWith("car")).isEqualTo("foocarbarbaz");
-    assertThat(match.get().index()).isEqualTo(3);
+    assertThat(match.get().getIndex()).isEqualTo(3);
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("bar");
   }
@@ -379,7 +379,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEqualTo("bar");
     assertThat(match.get().replaceWith('c')).isEqualTo("cbar");
     assertThat(match.get().replaceWith("car")).isEqualTo("carbar");
-    assertThat(match.get().index()).isEqualTo(0);
+    assertThat(match.get().getIndex()).isEqualTo(0);
     assertThat(match.get().length()).isEqualTo(2);
     assertThat(match.get().toString()).isEqualTo("fo");
   }
@@ -390,7 +390,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEqualTo("foobaz");
     assertThat(match.get().replaceWith('c')).isEqualTo("foocbaz");
     assertThat(match.get().replaceWith("car")).isEqualTo("foocarbaz");
-    assertThat(match.get().index()).isEqualTo(3);
+    assertThat(match.get().getIndex()).isEqualTo(3);
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("bar");
   }
@@ -401,7 +401,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEmpty();
     assertThat(match.get().replaceWith('c')).isEqualTo("c");
     assertThat(match.get().replaceWith("car")).isEqualTo("car");
-    assertThat(match.get().index()).isEqualTo(0);
+    assertThat(match.get().getIndex()).isEqualTo(0);
     assertThat(match.get().length()).isEqualTo(9);
     assertThat(match.get().toString()).isEqualTo("foobarbaz");
   }
@@ -428,7 +428,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEmpty();
     assertThat(match.get().replaceWith('b')).isEqualTo("b");
     assertThat(match.get().replaceWith("bar")).isEqualTo("bar");
-    assertThat(match.get().index()).isEqualTo(0);
+    assertThat(match.get().getIndex()).isEqualTo(0);
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("foo");
   }
@@ -441,7 +441,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEqualTo("bar");
     assertThat(match.get().replaceWith('c')).isEqualTo("cbar");
     assertThat(match.get().replaceWith("car")).isEqualTo("carbar");
-    assertThat(match.get().index()).isEqualTo(0);
+    assertThat(match.get().getIndex()).isEqualTo(0);
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("foo");
   }
@@ -454,7 +454,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEqualTo("foo");
     assertThat(match.get().replaceWith('c')).isEqualTo("fooc");
     assertThat(match.get().replaceWith("car")).isEqualTo("foocar");
-    assertThat(match.get().index()).isEqualTo(3);
+    assertThat(match.get().getIndex()).isEqualTo(3);
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("bar");
   }
@@ -467,7 +467,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEqualTo("foobaz");
     assertThat(match.get().replaceWith('c')).isEqualTo("foocbaz");
     assertThat(match.get().replaceWith("car")).isEqualTo("foocarbaz");
-    assertThat(match.get().index()).isEqualTo(3);
+    assertThat(match.get().getIndex()).isEqualTo(3);
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("bar");
   }
@@ -480,7 +480,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEqualTo("foobarbaz");
     assertThat(match.get().replaceWith('c')).isEqualTo("foobarcbaz");
     assertThat(match.get().replaceWith("car")).isEqualTo("foobarcarbaz");
-    assertThat(match.get().index()).isEqualTo(6);
+    assertThat(match.get().getIndex()).isEqualTo(6);
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("bar");
   }
@@ -493,7 +493,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEqualTo("foo");
     assertThat(match.get().replaceWith('b')).isEqualTo("foob");
     assertThat(match.get().replaceWith("bar")).isEqualTo("foobar");
-    assertThat(match.get().index()).isEqualTo(3);
+    assertThat(match.get().getIndex()).isEqualTo(3);
     assertThat(match.get().length()).isEqualTo(0);
     assertThat(match.get().toString()).isEmpty();
   }
@@ -511,7 +511,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEmpty();
     assertThat(match.get().replaceWith('b')).isEqualTo("b");
     assertThat(match.get().replaceWith("bar")).isEqualTo("bar");
-    assertThat(match.get().index()).isEqualTo(0);
+    assertThat(match.get().getIndex()).isEqualTo(0);
     assertThat(match.get().length()).isEqualTo(1);
     assertThat(match.get().toString()).isEqualTo("f");
   }
@@ -524,7 +524,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEqualTo("oobar");
     assertThat(match.get().replaceWith('c')).isEqualTo("coobar");
     assertThat(match.get().replaceWith("car")).isEqualTo("caroobar");
-    assertThat(match.get().index()).isEqualTo(0);
+    assertThat(match.get().getIndex()).isEqualTo(0);
     assertThat(match.get().length()).isEqualTo(1);
     assertThat(match.get().toString()).isEqualTo("f");
   }
@@ -537,7 +537,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEqualTo("fooba");
     assertThat(match.get().replaceWith('c')).isEqualTo("foobac");
     assertThat(match.get().replaceWith("car")).isEqualTo("foobacar");
-    assertThat(match.get().index()).isEqualTo(5);
+    assertThat(match.get().getIndex()).isEqualTo(5);
     assertThat(match.get().length()).isEqualTo(1);
     assertThat(match.get().toString()).isEqualTo("r");
   }
@@ -550,7 +550,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEqualTo("fooarbarbaz");
     assertThat(match.get().replaceWith('c')).isEqualTo("foocarbarbaz");
     assertThat(match.get().replaceWith("coo")).isEqualTo("foocooarbarbaz");
-    assertThat(match.get().index()).isEqualTo(3);
+    assertThat(match.get().getIndex()).isEqualTo(3);
     assertThat(match.get().length()).isEqualTo(1);
     assertThat(match.get().toString()).isEqualTo("b");
   }
@@ -568,7 +568,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEmpty();
     assertThat(match.get().replaceWith('b')).isEqualTo("b");
     assertThat(match.get().replaceWith("bar")).isEqualTo("bar");
-    assertThat(match.get().index()).isEqualTo(0);
+    assertThat(match.get().getIndex()).isEqualTo(0);
     assertThat(match.get().length()).isEqualTo(1);
     assertThat(match.get().toString()).isEqualTo("f");
   }
@@ -581,7 +581,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEqualTo("oobar");
     assertThat(match.get().replaceWith('c')).isEqualTo("coobar");
     assertThat(match.get().replaceWith("car")).isEqualTo("caroobar");
-    assertThat(match.get().index()).isEqualTo(0);
+    assertThat(match.get().getIndex()).isEqualTo(0);
     assertThat(match.get().length()).isEqualTo(1);
     assertThat(match.get().toString()).isEqualTo("f");
   }
@@ -594,7 +594,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEqualTo("fooba");
     assertThat(match.get().replaceWith('c')).isEqualTo("foobac");
     assertThat(match.get().replaceWith("car")).isEqualTo("foobacar");
-    assertThat(match.get().index()).isEqualTo(5);
+    assertThat(match.get().getIndex()).isEqualTo(5);
     assertThat(match.get().length()).isEqualTo(1);
     assertThat(match.get().toString()).isEqualTo("r");
   }
@@ -607,7 +607,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEqualTo("foobaraz");
     assertThat(match.get().replaceWith('c')).isEqualTo("foobarcaz");
     assertThat(match.get().replaceWith("car")).isEqualTo("foobarcaraz");
-    assertThat(match.get().index()).isEqualTo(6);
+    assertThat(match.get().getIndex()).isEqualTo(6);
     assertThat(match.get().length()).isEqualTo(1);
     assertThat(match.get().toString()).isEqualTo("b");
   }
@@ -639,7 +639,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEqualTo("ar");
     assertThat(match.get().replaceWith('c')).isEqualTo("car");
     assertThat(match.get().replaceWith("coo")).isEqualTo("cooar");
-    assertThat(match.get().index()).isEqualTo(0);
+    assertThat(match.get().getIndex()).isEqualTo(0);
     assertThat(match.get().length()).isEqualTo(1);
     assertThat(match.get().toString()).isEqualTo("b");
   }
@@ -653,7 +653,7 @@ public class SubstringTest {
     assertThat(match.get().remove()).isEmpty();
     assertThat(match.get().replaceWith('b')).isEqualTo("b");
     assertThat(match.get().replaceWith("bar")).isEqualTo("bar");
-    assertThat(match.get().index()).isEqualTo(0);
+    assertThat(match.get().getIndex()).isEqualTo(0);
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("foo");
   }
