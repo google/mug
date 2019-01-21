@@ -664,21 +664,21 @@ public class SubstringTest {
   }
 
   @Test public void none() {
-    assertThat(Substring.none().in("foo")).isEmpty();
-    assertThat(Substring.none().removeFrom("foo")).isEqualTo("foo");
-    assertThat(Substring.none().replaceFrom("foo", 'x')).isEqualTo("foo");
-    assertThat(Substring.none().replaceFrom("foo", "xyz")).isEqualTo("foo");
+    assertThat(Substring.NONE.in("foo")).isEmpty();
+    assertThat(Substring.NONE.removeFrom("foo")).isEqualTo("foo");
+    assertThat(Substring.NONE.replaceFrom("foo", 'x')).isEqualTo("foo");
+    assertThat(Substring.NONE.replaceFrom("foo", "xyz")).isEqualTo("foo");
   }
 
   @Test public void all() {
-    assertThat(Substring.all().in("foo").get().toString()).isEqualTo("foo");
-    assertThat(Substring.all().removeFrom("foo")).isEmpty();
-    assertThat(Substring.all().replaceFrom("foo", 'x')).isEqualTo("x");
-    assertThat(Substring.all().replaceFrom("foo", "xyz")).isEqualTo("xyz");
+    assertThat(Substring.ALL.in("foo").get().toString()).isEqualTo("foo");
+    assertThat(Substring.ALL.removeFrom("foo")).isEmpty();
+    assertThat(Substring.ALL.replaceFrom("foo", 'x')).isEqualTo("x");
+    assertThat(Substring.ALL.replaceFrom("foo", "xyz")).isEqualTo("xyz");
   }
 
   @Test public void testNulls() throws Exception {
-    new NullPointerTester().testAllPublicInstanceMethods(Substring.all().in("foobar").get());
+    new NullPointerTester().testAllPublicInstanceMethods(Substring.ALL.in("foobar").get());
     new ClassSanityTester().testNulls(Substring.class);
     new ClassSanityTester().forAllPublicStaticMethods(Substring.class).testNulls();
   }
@@ -737,8 +737,8 @@ public class SubstringTest {
   
   @Test public void testEquals() {
     new EqualsTester()
-        .addEqualityGroup(Substring.all().in("foo"), Substring.all().in("foo"))
-        .addEqualityGroup(Substring.all().in("bar"))
+        .addEqualityGroup(Substring.ALL.in("foo"), Substring.ALL.in("foo"))
+        .addEqualityGroup(Substring.ALL.in("bar"))
         .addEqualityGroup(Substring.suffix("bar").in("foobar"), Substring.suffix("bar").in("foobar"))
         .addEqualityGroup(Substring.prefix("bar").in("barfoo"))
         .addEqualityGroup(Substring.prefix("ba").in("barfoo"))

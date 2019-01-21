@@ -18,6 +18,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.io.Serializable;
 import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * A substring inside a string, providing easy access to substrings around it
@@ -60,6 +61,30 @@ import java.util.Optional;
  * @since 2.0
  */
 public final class Substring {
+
+  /** {@link Pattern} that never matches any substring. */
+  public static final Pattern NONE = new Pattern() {
+    private static final long serialVersionUID = 1L;
+    @Override public Substring match(String s) {
+      requireNonNull(s);
+      return null;
+    }
+    @Override public String toString() {
+      return "NONE";
+    }
+  };
+
+  /** {@link Pattern} that matches all strings entirely. */
+  public static final Pattern ALL = new Pattern() {
+    private static final long serialVersionUID = 1L;
+    @Override public Substring match(String s) {
+      return new Substring(s, 0, s.length());
+    }
+    @Override public String toString() {
+      return "ALL";
+    }
+  };
+
   private final String context;
   private final int startIndex;
   private final int endIndex;
@@ -70,57 +95,73 @@ public final class Substring {
     this.endIndex = endIndex;
   }
 
-  /** Returns a {@link Pattern} that never matches any substring. */
-  public static Pattern none() {
-    return Constants.NONE;
-  }
-
-  /** Returns a {@link Pattern} that matches all strings entirely. */
-  public static Pattern all() {
-    return Constants.ALL;
-  }
-
   /** Returns a {@code Pattern} that matches strings starting with {@code prefix}. */
   public static Pattern prefix(String prefix) {
     requireNonNull(prefix);
-    return (SerializablePattern) str -> str.startsWith(prefix)
-        ? Optional.of(new Substring(str, 0, prefix.length()))
-        : Optional.empty();
+    return new Pattern() {
+      private static final long serialVersionUID = 1L;
+      @Override Substring match(String str) {
+        return str.startsWith(prefix) ? new Substring(str, 0, prefix.length()) : null;
+      }
+    };
   }
 
   /** Returns a {@code Pattern} that matches strings starting with {@code prefix}. */
   public static Pattern prefix(char prefix) {
     requireNonNull(prefix);
-    return (SerializablePattern) str -> str.length() > 0 && str.charAt(0) == prefix
-        ? Optional.of(new Substring(str, 0, 1))
-        : Optional.empty();
+    return new Pattern() {
+      private static final long serialVersionUID = 1L;
+      @Override Substring match(String str) {
+        return str.length() > 0 && str.charAt(0) == prefix ? new Substring(str, 0, 1) : null;
+      }
+    };
   }
 
   /** Returns a {@code Pattern} that matches strings ending with {@code suffix}. */
   public static Pattern suffix(String suffix) {
     requireNonNull(suffix);
-    return (SerializablePattern) str -> str.endsWith(suffix)
-        ? Optional.of(new Substring(str, str.length() - suffix.length(), str.length()))
-        : Optional.empty();
+    return new Pattern() {
+      private static final long serialVersionUID = 1L;
+      @Override Substring match(String str) {
+        return str.endsWith(suffix)
+            ? new Substring(str, str.length() - suffix.length(), str.length())
+            : null;
+      }
+    };
   }
 
   /** Returns a {@code Pattern} that matches strings ending with {@code suffix}. */
   public static Pattern suffix(char suffix) {
     requireNonNull(suffix);
-    return (SerializablePattern) str -> str.length() > 0 && str.charAt(str.length() - 1) == suffix
-        ? Optional.of(new Substring(str, str.length() - 1, str.length()))
-        : Optional.empty();
+    return new Pattern() {
+      private static final long serialVersionUID = 1L;
+      @Override Substring match(String str) {
+        return str.length() > 0 && str.charAt(str.length() - 1) == suffix
+            ? new Substring(str, str.length() - 1, str.length())
+            : null;
+      }
+    };
   }
 
   /** Returns a {@code Pattern} that matches the first occurrence of {@code c}. */
   public static Pattern first(char c) {
-    return (SerializablePattern) str -> substring(str, str.indexOf(c), 1);
+    return new Pattern() {
+      private static final long serialVersionUID = 1L;
+      @Override Substring match(String str) {
+        return substring(str, str.indexOf(c), 1);
+      }
+    };
   }
 
   /** Returns a {@code Pattern} that matches the first occurrence of {@code snippet}. */
   public static Pattern first(String snippet) {
     requireNonNull(snippet);
-    return (SerializablePattern) str -> substring(str, str.indexOf(snippet), snippet.length());
+    return new Pattern() {
+      private static final long serialVersionUID = 1L;
+      @Override Substring match(String str) {
+        return substring(str, str.indexOf(snippet), snippet.length());
+      }
+    };
   }
 
   /**
@@ -157,12 +198,15 @@ public final class Substring {
   public static Pattern regexGroup(java.util.regex.Pattern regexPattern, int group) {
     requireNonNull(regexPattern);
     if (group < 0) throw new IllegalArgumentException("group cannot be negative: " + group);
-    return (SerializablePattern) str -> {
-      java.util.regex.Matcher matcher = regexPattern.matcher(str);
-      if (matcher.find()) {
-        return Optional.of(new Substring(str, matcher.start(group), matcher.end(group)));
-      } else {
-        return Optional.empty();
+    return new Pattern() {
+      private static final long serialVersionUID = 1L;
+      @Override Substring match(String str) {
+        java.util.regex.Matcher matcher = regexPattern.matcher(str);
+        if (matcher.find()) {
+          return new Substring(str, matcher.start(group), matcher.end(group));
+        } else {
+          return null;
+        }
       }
     };
   }
@@ -186,13 +230,23 @@ public final class Substring {
 
   /** Returns a {@code Pattern} that matches the last occurrence of {@code c}. */
   public static Pattern last(char c) {
-    return (SerializablePattern) str -> substring(str, str.lastIndexOf(c), 1);
+    return new Pattern() {
+      private static final long serialVersionUID = 1L;
+      @Override Substring match(String str) {
+        return substring(str, str.lastIndexOf(c), 1);
+      }
+    };
   }
 
   /** Returns a {@code Pattern} that matches the last occurrence of {@code snippet}. */
   public static Pattern last(String snippet) {
     requireNonNull(snippet);
-    return (SerializablePattern) str -> substring(str, str.lastIndexOf(snippet), snippet.length());
+    return new Pattern() {
+      private static final long serialVersionUID = 1L;
+      @Override Substring match(String str) {
+        return substring(str, str.lastIndexOf(snippet), snippet.length());
+      }
+    };
   }
 
   /**
@@ -296,45 +350,58 @@ public final class Substring {
   }
 
   /** A substring pattern that can be matched against a string to find substrings. */
-  public interface Pattern {
+  public static abstract class Pattern implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+    /** Matches against {@code string} and returns null if not found. */
+    abstract Substring match(String string);
 
     /** Finds the substring in {@code string} or returns {@code empty()} if not found. */
-    Optional<Substring> in(String string);
+    public final Optional<Substring> in(String string) {
+      return Optional.ofNullable(match(string));
+    }
 
     /**
      * Returns a new string with the substring matched by {@code this} removed. Returns {@code string} as is
      * if a substring is not found.
      */
-    default String removeFrom(String string) {
-      return in(string).map(Substring::remove).orElse(string);
+    public final String removeFrom(String string) {
+      Substring substring = match(string);
+      return substring == null ? string : substring.remove();
     }
 
     /**
      * Returns a new string with the substring matched by {@code this} replaced by {@code replacement}.
      * Returns {@code string} as is if a substring is not found.
      */
-    default String replaceFrom(String string, char replacement) {
-      return in(string).map(sub -> sub.replaceWith(replacement)).orElse(string);
+    public final String replaceFrom(String string, char replacement) {
+      Substring substring = match(string);
+      return substring == null ? string : substring.replaceWith(replacement);
     }
 
     /**
      * Returns a new string with the substring matched by {@code this} replaced by {@code replacement}.
      * Returns {@code string} as is if a substring is not found.
      */
-    default String replaceFrom(String string, CharSequence replacement) {
+    public final String replaceFrom(String string, CharSequence replacement) {
       requireNonNull(replacement);
-      return in(string).map(sub -> sub.replaceWith(replacement)).orElse(string);
+      Substring substring = match(string);
+      return substring == null ? string : substring.replaceWith(replacement);
     }
 
     /**
      * Returns a {@code Pattern} that fall backs to using {@code that} if {@code this} fails to
      * match.
      */
-    default Pattern or(Pattern that) {
+    public final Pattern or(Pattern that) {
       requireNonNull(that);
-      return (SerializablePattern) str -> {
-        Optional<Substring> substring = in(str);
-        return substring.isPresent() ? substring : that.in(str);
+      Pattern base = this;
+      return new Pattern() {
+        private static final long serialVersionUID = 1L;
+        @Override Substring match(String str) {
+          Substring substring = base.match(str);
+          return substring == null ? that.match(str) : substring;
+        }
       };
     }
 
@@ -344,8 +411,8 @@ public final class Substring {
      *   String startFromDoubleSlash = Substring.first("//").before().removeFrom(uri);
      * </pre>
      */
-    default Pattern before() {
-      return (SerializablePattern) str -> in(str).map(Substring::before);
+    public final Pattern before() {
+      return then(Substring::before);
     }
 
     /**
@@ -354,8 +421,8 @@ public final class Substring {
      *   String endWithPeriod = Substring.last(".").after().removeFrom(line);
      * </pre>
      */
-    default Pattern after() {
-      return (SerializablePattern) str -> in(str).map(Substring::after);
+    public final Pattern after() {
+      return then(Substring::after);
     }
 
     /**
@@ -364,8 +431,8 @@ public final class Substring {
      *   String schemeStripped = Substring.first("://").andBefore().removeFrom(uri);
      * </pre>
      */
-    default Pattern andBefore() {
-      return (SerializablePattern) str -> in(str).map(Substring::andBefore);
+    public final Pattern andBefore() {
+      return then(Substring::andBefore);
     }
 
     /**
@@ -374,28 +441,25 @@ public final class Substring {
      *   String commentRemoved = Substring.first("//").andAfter().removeFrom(line);
      * </pre>
      */
-    default Pattern andAfter() {
-      return (SerializablePattern) str -> in(str).map(Substring::andAfter);
+    public final Pattern andAfter() {
+      return then(Substring::andAfter);
     }
+
+    private Pattern then(Mapper mapper) {
+      Pattern base = this;
+      return new Pattern() {
+        private static final long serialVersionUID = 1L;
+        @Override Substring match(String str) {
+          Substring substring = base.match(str);
+          return substring == null ? null : mapper.apply(substring);
+        }
+      };
+    }
+
+    private interface Mapper extends Function<Substring, Substring>, Serializable {}
   }
   
-  private static Optional<Substring> substring(String str, int index, int length) {
-    return index >= 0 ? Optional.of(new Substring(str, index, index + length)) : Optional.empty();
+  private static Substring substring(String str, int index, int length) {
+    return index >= 0 ? new Substring(str, index, index + length) : null;
   }
-
-  private enum Constants implements Pattern {
-    NONE {
-      @Override public Optional<Substring> in(String s) {
-        requireNonNull(s);
-        return Optional.empty();
-      }
-    },
-    ALL {
-      @Override public Optional<Substring> in(String s) {
-        return Optional.of(new Substring(s, 0, s.length()));
-      }
-    }
-  }
-
-  private interface SerializablePattern extends Pattern, Serializable {}
 }
