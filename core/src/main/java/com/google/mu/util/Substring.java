@@ -60,7 +60,7 @@ import java.util.function.Function;
  *
  * @since 2.0
  */
-public final class Substring {
+public final class Substring implements CharSequence {
 
   /** {@link Pattern} that never matches any substring. */
   public static final Pattern NONE = new Pattern() {
@@ -93,6 +93,11 @@ public final class Substring {
     this.context = context;
     this.startIndex = startIndex;
     this.endIndex = endIndex;
+  }
+
+  /** Returns a {@link Substring} instance wrapping {@code string} from beginning to end. */
+  public static Substring of(String string) {
+    return new Substring(string, 0, string.length());
   }
 
   /** Returns a {@code Pattern} that matches strings starting with {@code prefix}. */
@@ -301,14 +306,56 @@ public final class Substring {
     return getBefore() + replacement + getAfter();
   }
 
+  public boolean startsWith(char c) {
+    return length() > 0 && charAt(0) == c;
+  }
+
+  public boolean endsWith(char c) {
+    int length = length();
+    return length > 0 && charAt(length - 1) == c;
+  }
+  
+  public boolean startsWith(CharSequence prefix) {
+    int prefixLength = prefix.length();
+    if (length() < prefixLength) return false;
+    for (int i = 0; i < prefixLength; i++) {
+      if (charAt(i) != prefix.charAt(i)) {
+        return false;
+      }
+    }
+    return true;
+  }
+  
+  public boolean endsWith(CharSequence suffix) {
+    int suffixLength = suffix.length();
+    if (length() < suffixLength) return false;
+    for (int i = suffixLength - 1; i >= 0; i--) {
+      if (charAt(i) != suffix.charAt(i)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   /** Returns the starting index of this substring in the containing string. */
   public int getIndex() {
     return startIndex;
   }
 
   /** Returns the length of this substring. */
-  public int length() {
+  @Override public int length() {
     return endIndex - startIndex;
+  }
+
+  @Override public char charAt(int index) {
+    return context.charAt(startIndex + checkIndex(index));
+  }
+
+  @Override public Substring subSequence(int start, int end) {
+    if (checkIndex(start) > checkIndex(end)) {
+      throw new IndexOutOfBoundsException("Invalid index: " + start + " > " + end);
+    }
+    return new Substring(context, startIndex + start, startIndex + end);
   }
 
   /** Returns this substring. */
@@ -457,6 +504,13 @@ public final class Substring {
     }
 
     private interface Mapper extends Function<Substring, Substring>, Serializable {}
+  }
+
+  private int checkIndex(int index) {
+    if (index < 0 || index >= length()) {
+      throw new IndexOutOfBoundsException("index out of substring range: " + index);
+    }
+    return index;
   }
   
   private static Substring substring(String str, int index, int length) {

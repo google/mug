@@ -684,7 +684,9 @@ public class SubstringTest {
   }
 
   @Test public void testSerializable() throws Exception {
-    new ClassSanityTester().forAllPublicStaticMethods(Substring.class).testSerializable();
+    new ClassSanityTester().forAllPublicStaticMethods(Substring.class)
+        .thatReturn(Substring.Pattern.class)
+        .testSerializable();
   }
 
   @Test public void andBefore_noMatch() {
