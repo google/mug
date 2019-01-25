@@ -166,7 +166,7 @@ public final class Substring implements CharSequence {
     return new Pattern() {
       private static final long serialVersionUID = 1L;
       @Override Substring match(String str) {
-        return substring(str, str.indexOf(c), 1);
+        return substringOrNull(str, str.indexOf(c), 1);
       }
     };
   }
@@ -177,7 +177,7 @@ public final class Substring implements CharSequence {
     return new Pattern() {
       private static final long serialVersionUID = 1L;
       @Override Substring match(String str) {
-        return substring(str, str.indexOf(snippet), snippet.length());
+        return substringOrNull(str, str.indexOf(snippet), snippet.length());
       }
     };
   }
@@ -251,7 +251,7 @@ public final class Substring implements CharSequence {
     return new Pattern() {
       private static final long serialVersionUID = 1L;
       @Override Substring match(String str) {
-        return substring(str, str.lastIndexOf(c), 1);
+        return substringOrNull(str, str.lastIndexOf(c), 1);
       }
     };
   }
@@ -262,7 +262,7 @@ public final class Substring implements CharSequence {
     return new Pattern() {
       private static final long serialVersionUID = 1L;
       @Override Substring match(String str) {
-        return substring(str, str.lastIndexOf(snippet), snippet.length());
+        return substringOrNull(str, str.lastIndexOf(snippet), snippet.length());
       }
     };
   }
@@ -511,7 +511,7 @@ public final class Substring implements CharSequence {
     private interface Mapper extends Function<Substring, Substring>, Serializable {}
   }
   
-  private static Substring substring(String str, int index, int length) {
+  private static Substring substringOrNull(String str, int index, int length) {
     return index >= 0 ? new Substring(str, index, index + length) : null;
   }
 }
