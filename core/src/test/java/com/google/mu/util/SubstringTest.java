@@ -822,6 +822,7 @@ public class SubstringTest {
     assertThat(sub2.toString()).isEqualTo("");
     assertThat(sub2.before().toString()).isEmpty();
     assertThat(sub2.after().toString()).isEqualTo("r");
+    assertThat(sub2.getIndex()).isEqualTo(0);
   }
 
   @Test public void subSequenceOfSubSequence_usedInRegexMatcher() {
