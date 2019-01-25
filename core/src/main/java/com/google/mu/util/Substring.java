@@ -321,7 +321,7 @@ public final class Substring implements CharSequence {
 
   /** Returns the starting index of this substring in the containing string. */
   public int getIndex() {
-    return startIndex;
+    return startIndex - contextStartIndex;
   }
 
   /** Returns the length of this substring. */
