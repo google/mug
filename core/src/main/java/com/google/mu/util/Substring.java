@@ -301,7 +301,7 @@ public final class Substring implements CharSequence {
   public String remove() {
     if (endIndex == contextEndIndex) {
       return getBefore();
-    } else if (startIndex == 0) {
+    } else if (startIndex == contextStartIndex) {
       return getAfter();
     } else {
       return getBefore() + getAfter();
