@@ -60,7 +60,7 @@ import java.util.function.Function;
  *
  * @since 2.0
  */
-public final class Substring {
+public final class Substring implements CharSequence {
 
   /** {@link Pattern} that never matches any substring. */
   public static final Pattern NONE = new Pattern() {
@@ -78,7 +78,7 @@ public final class Substring {
   public static final Pattern ALL = new Pattern() {
     private static final long serialVersionUID = 1L;
     @Override public Substring match(String s) {
-      return new Substring(s, 0, s.length());
+      return of(s);
     }
     @Override public String toString() {
       return "ALL";
@@ -88,11 +88,25 @@ public final class Substring {
   private final String context;
   private final int startIndex;
   private final int endIndex;
+  private final int contextStartIndex;
+  private final int contextEndIndex;
 
-  private Substring(String context, int startIndex, int endIndex) {
+  private Substring(
+      String context, int startIndex, int endIndex, int contextStartIndex, int contextEndIndex) {
     this.context = context;
     this.startIndex = startIndex;
     this.endIndex = endIndex;
+    this.contextStartIndex = contextStartIndex;
+    this.contextEndIndex = contextEndIndex;
+  }
+
+  private Substring(String context, int startIndex, int endIndex) {
+    this(context, startIndex, endIndex, 0, context.length());
+  }
+
+  /** Returns a {@link Substring} instance wrapping {@code string} from beginning to end. */
+  public static Substring of(String string) {
+    return new Substring(string, 0, string.length());
   }
 
   /** Returns a {@code Pattern} that matches strings starting with {@code prefix}. */
@@ -101,7 +115,7 @@ public final class Substring {
     return new Pattern() {
       private static final long serialVersionUID = 1L;
       @Override Substring match(String str) {
-        return str.startsWith(prefix) ? new Substring(str, 0, prefix.length()) : null;
+        return str.startsWith(prefix) ? new Substring(str, 0, prefix.length())  : null;
       }
     };
   }
@@ -261,7 +275,7 @@ public final class Substring {
    * </pre>
    */
   public String getBefore() {
-    return context.substring(0, startIndex);
+    return context.substring(contextStartIndex, startIndex);
   }
 
   /**
@@ -276,12 +290,12 @@ public final class Substring {
    * </pre>
    */
   public String getAfter() {
-    return context.substring(endIndex);
+    return context.substring(endIndex, contextEndIndex);
   }
 
   /** Returns a new string with the substring removed. */
   public String remove() {
-    if (endIndex == context.length()) {
+    if (endIndex == contextEndIndex) {
       return getBefore();
     } else if (startIndex == 0) {
       return getAfter();
@@ -307,8 +321,27 @@ public final class Substring {
   }
 
   /** Returns the length of this substring. */
-  public int length() {
+  @Override public int length() {
     return endIndex - startIndex;
+  }
+
+  /**
+   * Returns the character at {@code index} relative to the {@link #getIndex starting index}
+   * of this substring.
+   */
+  @Override public char charAt(int index) {
+    return context.charAt(startIndex + checkIndex(index));
+  }
+
+  /**
+   * Returns a substring of this substring. {@code start} and {@code end} are relative to the
+   * {@link #getIndex starting index} of {@code this}.
+   */
+  @Override public Substring subSequence(int start, int end) {
+    if (checkIndex(start) > checkEndIndex(end)) {
+      throw new IndexOutOfBoundsException("Invalid index: " + start + " > " + end);
+    }
+    return new Substring(context, startIndex + start, startIndex + end, startIndex, endIndex);
   }
 
   /** Returns this substring. */
@@ -331,22 +364,22 @@ public final class Substring {
 
   /** Returns a new {@code Substring} instance covering part to the left of this substring. */
   Substring before() {
-    return new Substring(context, 0, startIndex);
+    return new Substring(context, contextStartIndex, startIndex, contextStartIndex, contextEndIndex);
   }
 
   /** Returns a new {@code Substring} instance covering part to the right of this substring. */
   Substring after() {
-    return new Substring(context, endIndex, context.length());
+    return new Substring(context, endIndex, contextEndIndex, contextStartIndex, contextEndIndex);
   }
 
   /** Returns a new {@code Substring} instance that extends to the beginning of the enclosing string. */
   Substring andBefore() {
-    return new Substring(context, 0, endIndex);
+    return new Substring(context, contextStartIndex, endIndex, contextStartIndex, contextEndIndex);
   }
 
   /** Returns a new {@code Substring} instance that extends to the end of the enclosing string. */
   Substring andAfter() {
-    return new Substring(context, startIndex, context.length());
+    return new Substring(context, startIndex, contextEndIndex, contextStartIndex, contextEndIndex);
   }
 
   /** A substring pattern that can be matched against a string to find substrings. */
@@ -457,6 +490,20 @@ public final class Substring {
     }
 
     private interface Mapper extends Function<Substring, Substring>, Serializable {}
+  }
+
+  private int checkIndex(int index) {
+    if (index < 0 || index >= length()) {
+      throw new IndexOutOfBoundsException("index out of substring range: " + index);
+    }
+    return index;
+  }
+
+  private int checkEndIndex(int index) {
+    if (index < 0 || index > length()) {
+      throw new IndexOutOfBoundsException("index out of substring range: " + index);
+    }
+    return index;
   }
   
   private static Substring substring(String str, int index, int length) {
