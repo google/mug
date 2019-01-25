@@ -821,6 +821,12 @@ public class SubstringTest {
     assertThat(sub2.after().toString()).isEqualTo("r");
   }
 
+  @Test public void subSequenceOfSubSequence_usedInRegexMatcher() {
+    Substring sub = Substring.of("(foo123]").subSequence(0, 7).subSequence(1, 7);
+    assertThat(java.util.regex.Pattern.compile("^((\\w){3})((\\d){3})$").matcher(sub).replaceAll("$3$1"))
+        .isEqualTo("123foo");
+  }
+
   @Test public void emptySubSequence_atEnd() {
     Substring sub = Substring.of("bar").subSequence(3, 3);
     assertThat(sub.toString()).isEmpty();
