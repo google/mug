@@ -383,22 +383,22 @@ public final class Substring implements CharSequence {
 
   /** Returns a new {@code Substring} instance covering part to the left of this substring. */
   Substring before() {
-    return new Substring(context, contextStartIndex, startIndex, contextStartIndex, contextEndIndex);
+    return move(contextStartIndex, startIndex);
   }
 
   /** Returns a new {@code Substring} instance covering part to the right of this substring. */
   Substring after() {
-    return new Substring(context, endIndex, contextEndIndex, contextStartIndex, contextEndIndex);
+    return move(endIndex, contextEndIndex);
   }
 
   /** Returns a new {@code Substring} instance that extends to the beginning of the enclosing string. */
   Substring andBefore() {
-    return new Substring(context, contextStartIndex, endIndex, contextStartIndex, contextEndIndex);
+    return move(contextStartIndex, endIndex);
   }
 
   /** Returns a new {@code Substring} instance that extends to the end of the enclosing string. */
   Substring andAfter() {
-    return new Substring(context, startIndex, contextEndIndex, contextStartIndex, contextEndIndex);
+    return move(startIndex, contextEndIndex);
   }
 
   /** A substring pattern that can be matched against a string to find substrings. */
@@ -509,6 +509,10 @@ public final class Substring implements CharSequence {
     }
 
     private interface Mapper extends Function<Substring, Substring>, Serializable {}
+  }
+
+  private Substring move(int newStart, int newEnd) {
+    return new Substring(context, newStart, newEnd, contextStartIndex, contextEndIndex);
   }
   
   private static Substring substringOrNull(String str, int index, int length) {
