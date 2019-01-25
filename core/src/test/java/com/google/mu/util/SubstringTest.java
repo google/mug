@@ -680,11 +680,14 @@ public class SubstringTest {
   @Test public void testNulls() throws Exception {
     new NullPointerTester().testAllPublicInstanceMethods(Substring.ALL.in("foobar").get());
     new ClassSanityTester().testNulls(Substring.class);
-    new ClassSanityTester().forAllPublicStaticMethods(Substring.class).testNulls();
+    new ClassSanityTester()
+        .setDefault(Substring.class, Substring.of(""))
+        .forAllPublicStaticMethods(Substring.class).testNulls();
   }
 
   @Test public void testSerializable() throws Exception {
-    new ClassSanityTester().forAllPublicStaticMethods(Substring.class)
+    new ClassSanityTester()
+        .forAllPublicStaticMethods(Substring.class)
         .thatReturn(Substring.Pattern.class)
         .testSerializable();
   }
@@ -735,6 +738,89 @@ public class SubstringTest {
 
   @Test public void after_matchInTheMiddle() {
     assertThat(Substring.last('.').after().removeFrom("foo. bar")).isEqualTo("foo.");
+  }
+
+  @Test public void trivialSubstring() {
+    Substring substring = Substring.of("bar");
+    assertThat(substring.toString()).isEqualTo("bar");
+    assertThat(substring.getIndex()).isEqualTo(0);
+    assertThat(substring.length()).isEqualTo(3);
+    assertThat(substring.remove()).isEmpty();
+    assertThat(substring.getBefore()).isEmpty();
+    assertThat(substring.getAfter()).isEmpty();
+    assertThat(substring.charAt(0)).isEqualTo('b');
+    assertThat(substring.charAt(1)).isEqualTo('a');
+    assertThat(substring.charAt(2)).isEqualTo('r');
+  }
+
+  @Test public void charAt_fullSubstring_invalidIndex() {
+    Substring full = Substring.of("bar");
+    assertThrows(IndexOutOfBoundsException.class, () -> full.charAt(-1));
+    assertThrows(IndexOutOfBoundsException.class, () -> full.charAt(3));
+  }
+
+  @Test public void charAt_partialSubstring_invalidIndex() {
+    Substring sub = Substring.of("bar").subSequence(1, 2);
+    assertThrows(IndexOutOfBoundsException.class, () -> sub.charAt(-1));
+    assertThrows(IndexOutOfBoundsException.class, () -> sub.charAt(1));
+  }
+
+  @Test public void charAt_validIndex() {
+    Substring sub = Substring.of("bar").subSequence(1, 3);
+    assertThat(sub.charAt(0)).isEqualTo('a');
+    assertThat(sub.charAt(1)).isEqualTo('r');
+  }
+
+  @Test public void subSequence_invalidIndex() {
+    Substring full = Substring.of("bar");
+    assertThrows(IndexOutOfBoundsException.class, () -> full.subSequence(-1, 1));
+    assertThrows(IndexOutOfBoundsException.class, () -> full.subSequence(0, 4));
+    assertThrows(IndexOutOfBoundsException.class, () -> full.subSequence(1, 0));
+    Substring sub = full.subSequence(1, 2);
+    assertThrows(IndexOutOfBoundsException.class, () -> sub.subSequence(-1, 0));
+    assertThrows(IndexOutOfBoundsException.class, () -> sub.subSequence(0, 2));
+    assertThrows(IndexOutOfBoundsException.class, () -> sub.subSequence(1, 0));
+  }
+
+  @Test public void subSequence_emptySubSequence() {
+    Substring full = Substring.of("bar");
+    assertThat(full.subSequence(0, 0).toString()).isEmpty();
+    assertThat(full.subSequence(1, 1).toString()).isEmpty();
+    assertThat(full.subSequence(2, 2).toString()).isEmpty();
+  }
+
+  @Test public void subSequence_fullSubSequence() {
+    Substring full = Substring.of("bar").subSequence(0, 3);
+    assertThat(full.charAt(0)).isEqualTo('b');
+    assertThat(full.charAt(1)).isEqualTo('a');
+    assertThat(full.charAt(2)).isEqualTo('r');
+    assertThat(full.toString()).isEqualTo("bar");
+    assertThat(full.length()).isEqualTo(3);
+    assertThat(full.getIndex()).isEqualTo(0);
+  }
+
+  @Test public void subSequence_partialSubSequence() {
+    Substring full = Substring.of("bar").subSequence(1, 2);
+    assertThat(full.charAt(0)).isEqualTo('a');
+    assertThat(full.toString()).isEqualTo("a");
+    assertThat(full.length()).isEqualTo(1);
+    assertThat(full.getIndex()).isEqualTo(1);
+  }
+
+  @Test public void subSequenceOfSubSequence() {
+    Substring sub = Substring.of("barak").subSequence(1, 3).subSequence(1, 2);
+    assertThat(sub.charAt(0)).isEqualTo('r');
+    assertThat(sub.toString()).isEqualTo("r");
+    assertThat(sub.length()).isEqualTo(1);
+    assertThat(sub.getIndex()).isEqualTo(2);
+    assertThat(sub.getBefore()).isEqualTo("a");
+    assertThat(sub.getAfter()).isEmpty();
+    assertThat(sub.before().remove()).isEqualTo("r");
+    assertThat(sub.after().remove()).isEqualTo("ar");
+    Substring sub2 = sub.subSequence(0, 0);
+    assertThat(sub2.toString()).isEqualTo("");
+    assertThat(sub2.before().toString()).isEmpty();
+    assertThat(sub2.after().toString()).isEqualTo("r");
   }
   
   @Test public void testEquals() {

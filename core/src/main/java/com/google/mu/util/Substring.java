@@ -65,7 +65,7 @@ public final class Substring implements CharSequence {
   /** {@link Pattern} that never matches any substring. */
   public static final Pattern NONE = new Pattern() {
     private static final long serialVersionUID = 1L;
-    @Override public Substring match(String s) {
+    @Override public Substring match(Substring s) {
       requireNonNull(s);
       return null;
     }
@@ -77,8 +77,8 @@ public final class Substring implements CharSequence {
   /** {@link Pattern} that matches all strings entirely. */
   public static final Pattern ALL = new Pattern() {
     private static final long serialVersionUID = 1L;
-    @Override public Substring match(String s) {
-      return new Substring(s, 0, s.length());
+    @Override public Substring match(Substring s) {
+      return s;
     }
     @Override public String toString() {
       return "ALL";
@@ -88,11 +88,20 @@ public final class Substring implements CharSequence {
   private final String context;
   private final int startIndex;
   private final int endIndex;
+  private final int contextStartIndex;
+  private final int contextEndIndex;
 
-  private Substring(String context, int startIndex, int endIndex) {
+  private Substring(
+      String context, int startIndex, int endIndex, int contextStartIndex, int contextEndIndex) {
     this.context = context;
     this.startIndex = startIndex;
     this.endIndex = endIndex;
+    this.contextStartIndex = contextStartIndex;
+    this.contextEndIndex = contextEndIndex;
+  }
+
+  private Substring(String context, int startIndex, int endIndex) {
+    this(context, startIndex, endIndex, 0, context.length());
   }
 
   /** Returns a {@link Substring} instance wrapping {@code string} from beginning to end. */
@@ -105,8 +114,8 @@ public final class Substring implements CharSequence {
     requireNonNull(prefix);
     return new Pattern() {
       private static final long serialVersionUID = 1L;
-      @Override Substring match(String str) {
-        return str.startsWith(prefix) ? new Substring(str, 0, prefix.length()) : null;
+      @Override Substring match(Substring str) {
+        return str.startsWith(prefix) ? str.subSequence(0, prefix.length())  : null;
       }
     };
   }
@@ -116,8 +125,8 @@ public final class Substring implements CharSequence {
     requireNonNull(prefix);
     return new Pattern() {
       private static final long serialVersionUID = 1L;
-      @Override Substring match(String str) {
-        return str.length() > 0 && str.charAt(0) == prefix ? new Substring(str, 0, 1) : null;
+      @Override Substring match(Substring str) {
+        return str.startsWith(prefix) ? str.subSequence(0, 1) : null;
       }
     };
   }
@@ -127,9 +136,9 @@ public final class Substring implements CharSequence {
     requireNonNull(suffix);
     return new Pattern() {
       private static final long serialVersionUID = 1L;
-      @Override Substring match(String str) {
+      @Override Substring match(Substring str) {
         return str.endsWith(suffix)
-            ? new Substring(str, str.length() - suffix.length(), str.length())
+            ? str.subSequence(str.length() - suffix.length(), str.length())
             : null;
       }
     };
@@ -140,9 +149,9 @@ public final class Substring implements CharSequence {
     requireNonNull(suffix);
     return new Pattern() {
       private static final long serialVersionUID = 1L;
-      @Override Substring match(String str) {
-        return str.length() > 0 && str.charAt(str.length() - 1) == suffix
-            ? new Substring(str, str.length() - 1, str.length())
+      @Override Substring match(Substring str) {
+        return str.endsWith(suffix)
+            ? str.subSequence(str.length() - 1, str.length())
             : null;
       }
     };
@@ -152,8 +161,8 @@ public final class Substring implements CharSequence {
   public static Pattern first(char c) {
     return new Pattern() {
       private static final long serialVersionUID = 1L;
-      @Override Substring match(String str) {
-        return substring(str, str.indexOf(c), 1);
+      @Override Substring match(Substring str) {
+        return str.sliceOrNull(str.indexOf(c), 1);
       }
     };
   }
@@ -163,8 +172,8 @@ public final class Substring implements CharSequence {
     requireNonNull(snippet);
     return new Pattern() {
       private static final long serialVersionUID = 1L;
-      @Override Substring match(String str) {
-        return substring(str, str.indexOf(snippet), snippet.length());
+      @Override Substring match(Substring str) {
+        return str.sliceOrNull(str.indexOf(snippet), snippet.length());
       }
     };
   }
@@ -205,10 +214,10 @@ public final class Substring implements CharSequence {
     if (group < 0) throw new IllegalArgumentException("group cannot be negative: " + group);
     return new Pattern() {
       private static final long serialVersionUID = 1L;
-      @Override Substring match(String str) {
+      @Override Substring match(Substring str) {
         java.util.regex.Matcher matcher = regexPattern.matcher(str);
         if (matcher.find()) {
-          return new Substring(str, matcher.start(group), matcher.end(group));
+          return str.subSequence(matcher.start(group), matcher.end(group));
         } else {
           return null;
         }
@@ -237,8 +246,8 @@ public final class Substring implements CharSequence {
   public static Pattern last(char c) {
     return new Pattern() {
       private static final long serialVersionUID = 1L;
-      @Override Substring match(String str) {
-        return substring(str, str.lastIndexOf(c), 1);
+      @Override Substring match(Substring str) {
+        return str.sliceOrNull(str.lastIndexOf(c), 1);
       }
     };
   }
@@ -248,8 +257,8 @@ public final class Substring implements CharSequence {
     requireNonNull(snippet);
     return new Pattern() {
       private static final long serialVersionUID = 1L;
-      @Override Substring match(String str) {
-        return substring(str, str.lastIndexOf(snippet), snippet.length());
+      @Override Substring match(Substring str) {
+        return str.sliceOrNull(str.lastIndexOf(snippet), snippet.length());
       }
     };
   }
@@ -266,7 +275,7 @@ public final class Substring implements CharSequence {
    * </pre>
    */
   public String getBefore() {
-    return context.substring(0, startIndex);
+    return context.substring(contextStartIndex, startIndex);
   }
 
   /**
@@ -281,12 +290,12 @@ public final class Substring implements CharSequence {
    * </pre>
    */
   public String getAfter() {
-    return context.substring(endIndex);
+    return context.substring(endIndex, contextEndIndex);
   }
 
   /** Returns a new string with the substring removed. */
   public String remove() {
-    if (endIndex == context.length()) {
+    if (endIndex == contextEndIndex) {
       return getBefore();
     } else if (startIndex == 0) {
       return getAfter();
@@ -306,37 +315,6 @@ public final class Substring implements CharSequence {
     return getBefore() + replacement + getAfter();
   }
 
-  public boolean startsWith(char c) {
-    return length() > 0 && charAt(0) == c;
-  }
-
-  public boolean endsWith(char c) {
-    int length = length();
-    return length > 0 && charAt(length - 1) == c;
-  }
-  
-  public boolean startsWith(CharSequence prefix) {
-    int prefixLength = prefix.length();
-    if (length() < prefixLength) return false;
-    for (int i = 0; i < prefixLength; i++) {
-      if (charAt(i) != prefix.charAt(i)) {
-        return false;
-      }
-    }
-    return true;
-  }
-  
-  public boolean endsWith(CharSequence suffix) {
-    int suffixLength = suffix.length();
-    if (length() < suffixLength) return false;
-    for (int i = suffixLength - 1; i >= 0; i--) {
-      if (charAt(i) != suffix.charAt(i)) {
-        return false;
-      }
-    }
-    return true;
-  }
-
   /** Returns the starting index of this substring in the containing string. */
   public int getIndex() {
     return startIndex;
@@ -347,15 +325,21 @@ public final class Substring implements CharSequence {
     return endIndex - startIndex;
   }
 
+  /**
+   * Returns the character at {@code index} relative to the {@link #getIndex starting index}
+   * of this substring.
+   */
   @Override public char charAt(int index) {
     return context.charAt(startIndex + checkIndex(index));
   }
 
+  /**
+   * Returns a substring of this substring. {@code start} and {@code end} are relative to the
+   * {@link #getIndex starting index} of {@code this}.
+   */
   @Override public Substring subSequence(int start, int end) {
-    if (checkIndex(start) > checkIndex(end)) {
-      throw new IndexOutOfBoundsException("Invalid index: " + start + " > " + end);
-    }
-    return new Substring(context, startIndex + start, startIndex + end);
+    checkRange(start, end);
+    return new Substring(context, startIndex + start, startIndex + end, startIndex, endIndex);
   }
 
   /** Returns this substring. */
@@ -378,33 +362,103 @@ public final class Substring implements CharSequence {
 
   /** Returns a new {@code Substring} instance covering part to the left of this substring. */
   Substring before() {
-    return new Substring(context, 0, startIndex);
+    return new Substring(context, contextStartIndex, startIndex, contextStartIndex, contextEndIndex);
   }
 
   /** Returns a new {@code Substring} instance covering part to the right of this substring. */
   Substring after() {
-    return new Substring(context, endIndex, context.length());
+    return new Substring(context, endIndex, contextEndIndex, contextStartIndex, contextEndIndex);
   }
 
   /** Returns a new {@code Substring} instance that extends to the beginning of the enclosing string. */
   Substring andBefore() {
-    return new Substring(context, 0, endIndex);
+    return new Substring(context, contextStartIndex, endIndex, contextStartIndex, contextEndIndex);
   }
 
   /** Returns a new {@code Substring} instance that extends to the end of the enclosing string. */
   Substring andAfter() {
-    return new Substring(context, startIndex, context.length());
+    return new Substring(context, startIndex, contextEndIndex, contextStartIndex, contextEndIndex);
+  }
+
+  private boolean startsWith(char c) {
+    return length() > 0 && charAt(0) == c;
+  }
+
+  private boolean endsWith(char c) {
+    int length = length();
+    return length > 0 && charAt(length - 1) == c;
+  }
+  
+  private boolean startsWith(CharSequence prefix) {
+    int prefixLength = prefix.length();
+    if (length() < prefixLength) return false;
+    for (int i = 0; i < prefixLength; i++) {
+      if (charAt(i) != prefix.charAt(i)) {
+        return false;
+      }
+    }
+    return true;
+  }
+  
+  private boolean endsWith(CharSequence suffix) {
+    int suffixLength = suffix.length();
+    if (length() < suffixLength) return false;
+    for (int i = suffixLength - 1; i >= 0; i--) {
+      if (charAt(length() - suffixLength + i) != suffix.charAt(i)) {
+        return false;
+      }
+    }
+    return true;
+  }
+  
+  private int indexOf(char c) {
+    for (int i = 0; i < length(); i++) {
+      if (charAt(i) == c) return i;
+    }
+    return -1;
+  }
+  
+  private int lastIndexOf(char c) {
+    for (int i = length() - 1; i >= 0; i--) {
+      if (charAt(i) == c) return i;
+    }
+    return -1;
+  }
+  
+  private int indexOf(String s) {
+    if (length() < s.length()) return -1;
+    int originalIndex = context.indexOf(s, startIndex);
+    if (originalIndex < startIndex || originalIndex > endIndex - s.length()) return -1;
+    return originalIndex - startIndex;
+  }
+  
+  private int lastIndexOf(String s) {
+    if (length() < s.length()) return -1;
+    int originalIndex = context.lastIndexOf(s, endIndex);
+    if (originalIndex < startIndex) return -1;
+    return originalIndex - startIndex;
   }
 
   /** A substring pattern that can be matched against a string to find substrings. */
   public static abstract class Pattern implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    /** Matches against {@code string} and returns null if not found. */
-    abstract Substring match(String string);
+    /** Matches against {@code substring} and returns null if not found. */
+    abstract Substring match(Substring substring);
 
     /** Finds the substring in {@code string} or returns {@code empty()} if not found. */
     public final Optional<Substring> in(String string) {
+      return in(of(string));
+    }
+
+    /**
+     * Finds the substring in {@code string} or returns {@code empty()} if not found.
+     *
+     * <p>{@code pattern.in(substring)} is functionally equivalent to
+     * {@code pattern.in(substring.toString())}, except that it can operate on a {@link Substring}
+     * instance without requiring a copy.
+     */
+    public final Optional<Substring> in(Substring string) {
       return Optional.ofNullable(match(string));
     }
 
@@ -413,8 +467,7 @@ public final class Substring implements CharSequence {
      * if a substring is not found.
      */
     public final String removeFrom(String string) {
-      Substring substring = match(string);
-      return substring == null ? string : substring.remove();
+      return removeFrom(of(string));
     }
 
     /**
@@ -422,8 +475,7 @@ public final class Substring implements CharSequence {
      * Returns {@code string} as is if a substring is not found.
      */
     public final String replaceFrom(String string, char replacement) {
-      Substring substring = match(string);
-      return substring == null ? string : substring.replaceWith(replacement);
+      return replaceFrom(of(string), replacement);
     }
 
     /**
@@ -431,9 +483,35 @@ public final class Substring implements CharSequence {
      * Returns {@code string} as is if a substring is not found.
      */
     public final String replaceFrom(String string, CharSequence replacement) {
+      return replaceFrom(of(string), replacement);
+    }
+
+    /**
+     * Returns a new string with the substring matched by {@code this} removed. Returns {@code string} as is
+     * if a substring is not found.
+     */
+    public final String removeFrom(Substring string) {
+      Substring substring = match(string);
+      return substring == null ? string.toString() : substring.remove();
+    }
+
+    /**
+     * Returns a new string with the substring matched by {@code this} replaced by {@code replacement}.
+     * Returns {@code string} as is if a substring is not found.
+     */
+    public final String replaceFrom(Substring string, char replacement) {
+      Substring substring = match(string);
+      return substring == null ? string.toString() : substring.replaceWith(replacement);
+    }
+
+    /**
+     * Returns a new string with the substring matched by {@code this} replaced by {@code replacement}.
+     * Returns {@code string} as is if a substring is not found.
+     */
+    public final String replaceFrom(Substring string, CharSequence replacement) {
       requireNonNull(replacement);
       Substring substring = match(string);
-      return substring == null ? string : substring.replaceWith(replacement);
+      return substring == null ? string.toString() : substring.replaceWith(replacement);
     }
 
     /**
@@ -445,7 +523,7 @@ public final class Substring implements CharSequence {
       Pattern base = this;
       return new Pattern() {
         private static final long serialVersionUID = 1L;
-        @Override Substring match(String str) {
+        @Override Substring match(Substring str) {
           Substring substring = base.match(str);
           return substring == null ? that.match(str) : substring;
         }
@@ -496,7 +574,7 @@ public final class Substring implements CharSequence {
       Pattern base = this;
       return new Pattern() {
         private static final long serialVersionUID = 1L;
-        @Override Substring match(String str) {
+        @Override Substring match(Substring str) {
           Substring substring = base.match(str);
           return substring == null ? null : mapper.apply(substring);
         }
@@ -512,8 +590,20 @@ public final class Substring implements CharSequence {
     }
     return index;
   }
+
+  private void checkRange(int begin, int end) {
+    if (begin < 0) {
+      throw new IndexOutOfBoundsException("index out of substring range: " + begin);
+    }
+    if (end < 0 || end > length()) {
+      throw new IndexOutOfBoundsException("index out of substring range: " + end);
+    }
+    if (begin > end) {
+      throw new IndexOutOfBoundsException("Invalid index: " + begin + " > " + end);
+    }
+  }
   
-  private static Substring substring(String str, int index, int length) {
-    return index >= 0 ? new Substring(str, index, index + length) : null;
+  private Substring sliceOrNull(int index, int length) {
+    return index >= 0 ? subSequence(index, index + length) : null;
   }
 }
