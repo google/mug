@@ -104,7 +104,11 @@ public final class Substring implements CharSequence {
     this(context, startIndex, endIndex, 0, context.length());
   }
 
-  /** Returns a {@link Substring} instance wrapping {@code string} from beginning to end. */
+  /**
+   * Returns a {@link Substring} instance wrapping {@code string} from beginning to end.
+   *
+   * @since 2.1
+   */
   public static Substring of(String string) {
     return new Substring(string, 0, string.length());
   }
@@ -328,6 +332,8 @@ public final class Substring implements CharSequence {
   /**
    * Returns the character at {@code index} relative to the {@link #getIndex starting index}
    * of this substring.
+   *
+   * @since 2.1
    */
   @Override public char charAt(int index) {
     if (index < 0 || index >= length()) {
@@ -339,6 +345,8 @@ public final class Substring implements CharSequence {
   /**
    * Returns a substring of this substring. {@code begin} and {@code end} are relative to the
    * {@link #getIndex starting index} of {@code this}.
+   *
+   * @since 2.1
    */
   @Override public Substring subSequence(int begin, int end) {
     if (begin < 0) {
