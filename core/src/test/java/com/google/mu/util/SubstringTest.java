@@ -822,6 +822,33 @@ public class SubstringTest {
     assertThat(sub2.before().toString()).isEmpty();
     assertThat(sub2.after().toString()).isEqualTo("r");
   }
+
+  @Test public void subSequenceOfSubSequence_usedInRegexMatcher() {
+    Substring sub = Substring.of("(foo123]").subSequence(0, 7).subSequence(1, 7);
+    assertThat(java.util.regex.Pattern.compile("^((\\w){3})((\\d){3})$").matcher(sub).replaceAll("$3$1"))
+        .isEqualTo("123foo");
+  }
+
+  @Test public void emptySubSequence_atEnd() {
+    Substring sub = Substring.of("bar").subSequence(3, 3);
+    assertThat(sub.toString()).isEmpty();
+    assertThat(sub.before().toString()).isEqualTo("bar");
+    assertThat(sub.after().toString()).isEmpty();
+  }
+
+  @Test public void emptySubSequence_atBeginning() {
+    Substring sub = Substring.of("bar").subSequence(0, 0);
+    assertThat(sub.toString()).isEmpty();
+    assertThat(sub.before().toString()).isEmpty();
+    assertThat(sub.after().toString()).isEqualTo("bar");
+  }
+
+  @Test public void emptySubSequence_inTheMiddle() {
+    Substring sub = Substring.of("bar").subSequence(1, 1);
+    assertThat(sub.toString()).isEmpty();
+    assertThat(sub.before().toString()).isEqualTo("b");
+    assertThat(sub.after().toString()).isEqualTo("ar");
+  }
   
   @Test public void testEquals() {
     new EqualsTester()

@@ -104,7 +104,11 @@ public final class Substring implements CharSequence {
     this(context, startIndex, endIndex, 0, context.length());
   }
 
-  /** Returns a {@link Substring} instance wrapping {@code string} from beginning to end. */
+  /**
+   * Returns a {@link Substring} instance wrapping {@code string} from beginning to end.
+   *
+   * @since 2.1
+   */
   public static Substring of(String string) {
     return new Substring(string, 0, string.length());
   }
@@ -328,18 +332,33 @@ public final class Substring implements CharSequence {
   /**
    * Returns the character at {@code index} relative to the {@link #getIndex starting index}
    * of this substring.
+   *
+   * @since 2.1
    */
   @Override public char charAt(int index) {
-    return context.charAt(startIndex + checkIndex(index));
+    if (index < 0 || index >= length()) {
+      throw new IndexOutOfBoundsException("index out of substring range: " + index);
+    }
+    return context.charAt(startIndex + index);
   }
 
   /**
-   * Returns a substring of this substring. {@code start} and {@code end} are relative to the
+   * Returns a substring of this substring. {@code begin} and {@code end} are relative to the
    * {@link #getIndex starting index} of {@code this}.
+   *
+   * @since 2.1
    */
-  @Override public Substring subSequence(int start, int end) {
-    checkRange(start, end);
-    return new Substring(context, startIndex + start, startIndex + end, startIndex, endIndex);
+  @Override public Substring subSequence(int begin, int end) {
+    if (begin < 0) {
+      throw new IndexOutOfBoundsException("index out of substring range: " + begin);
+    }
+    if (end < 0 || end > length()) {
+      throw new IndexOutOfBoundsException("index out of substring range: " + end);
+    }
+    if (begin > end) {
+      throw new IndexOutOfBoundsException("Invalid index: " + begin + " > " + end);
+    }
+    return new Substring(context, startIndex + begin, startIndex + end, startIndex, endIndex);
   }
 
   /** Returns this substring. */
@@ -582,25 +601,6 @@ public final class Substring implements CharSequence {
     }
 
     private interface Mapper extends Function<Substring, Substring>, Serializable {}
-  }
-
-  private int checkIndex(int index) {
-    if (index < 0 || index >= length()) {
-      throw new IndexOutOfBoundsException("index out of substring range: " + index);
-    }
-    return index;
-  }
-
-  private void checkRange(int begin, int end) {
-    if (begin < 0) {
-      throw new IndexOutOfBoundsException("index out of substring range: " + begin);
-    }
-    if (end < 0 || end > length()) {
-      throw new IndexOutOfBoundsException("index out of substring range: " + end);
-    }
-    if (begin > end) {
-      throw new IndexOutOfBoundsException("Invalid index: " + begin + " > " + end);
-    }
   }
   
   private Substring sliceOrNull(int index, int length) {
