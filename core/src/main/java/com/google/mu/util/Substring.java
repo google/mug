@@ -321,7 +321,7 @@ public final class Substring implements CharSequence {
 
   /** Returns the starting index of this substring in the containing string. */
   public int getIndex() {
-    return startIndex;
+    return startIndex - contextStartIndex;
   }
 
   /** Returns the length of this substring. */
@@ -604,7 +604,7 @@ public final class Substring implements CharSequence {
 
     private interface Mapper extends Function<Substring, Substring>, Serializable {}
   }
-  
+
   private Substring sliceOrNull(int index, int length) {
     return index >= 0 ? subSequence(index, index + length) : null;
   }

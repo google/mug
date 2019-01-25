@@ -813,7 +813,7 @@ public class SubstringTest {
     assertThat(sub.charAt(0)).isEqualTo('r');
     assertThat(sub.toString()).isEqualTo("r");
     assertThat(sub.length()).isEqualTo(1);
-    assertThat(sub.getIndex()).isEqualTo(2);
+    assertThat(sub.getIndex()).isEqualTo(1);
     assertThat(sub.getBefore()).isEqualTo("a");
     assertThat(sub.getAfter()).isEmpty();
     assertThat(sub.before().remove()).isEqualTo("r");
