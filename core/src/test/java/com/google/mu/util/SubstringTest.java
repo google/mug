@@ -855,12 +855,14 @@ public class SubstringTest {
     new EqualsTester()
         .addEqualityGroup(Substring.ALL.in("foo"), Substring.ALL.in("foo"))
         .addEqualityGroup(Substring.ALL.in("bar"))
-        .addEqualityGroup(Substring.suffix("bar").in("foobar"), Substring.suffix("bar").in("foobar"))
+        .addEqualityGroup(
+            Substring.suffix("bar").in("foobar"),
+            Substring.suffix("bar").in("foobar"))
         .addEqualityGroup(Substring.prefix("bar").in("barfoo"))
         .addEqualityGroup(Substring.prefix("ba").in("barfoo"))
         .addEqualityGroup(
-            Substring.prefix("ba").in(Substring.of("barfoo").subSequence(0, 5)).get(),
-            Substring.of("barfoo").subSequence(0, 5).subSequence(0, 2))
+            Substring.prefix("ba").in(Substring.of("barfoo").subSequence(0, 5)),
+            Optional.of(Substring.of("barfoo").subSequence(0, 5).subSequence(0, 2)))
         .addEqualityGroup(Substring.suffix("bar").in(Substring.of("foobar").subSequence(1, 6)))
         .addEqualityGroup(Substring.prefix("").in("foo"))
         .addEqualityGroup(Substring.suffix("").in("foo"))
