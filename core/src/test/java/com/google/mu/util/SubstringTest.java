@@ -680,7 +680,10 @@ public class SubstringTest {
   @Test public void testNulls() throws Exception {
     new NullPointerTester().testAllPublicInstanceMethods(Substring.ALL.in("foobar").get());
     new ClassSanityTester().testNulls(Substring.class);
-    new ClassSanityTester().forAllPublicStaticMethods(Substring.class).testNulls();
+    new ClassSanityTester()
+        .setDefault(Substring.class, Substring.of(""))
+        .forAllPublicStaticMethods(Substring.class)
+        .testNulls();
   }
 
   @Test public void testSerializable() throws Exception {
@@ -852,9 +855,15 @@ public class SubstringTest {
     new EqualsTester()
         .addEqualityGroup(Substring.ALL.in("foo"), Substring.ALL.in("foo"))
         .addEqualityGroup(Substring.ALL.in("bar"))
-        .addEqualityGroup(Substring.suffix("bar").in("foobar"), Substring.suffix("bar").in("foobar"))
+        .addEqualityGroup(
+            Substring.suffix("bar").in("foobar"),
+            Substring.suffix("bar").in("foobar"))
         .addEqualityGroup(Substring.prefix("bar").in("barfoo"))
         .addEqualityGroup(Substring.prefix("ba").in("barfoo"))
+        .addEqualityGroup(
+            Optional.of(Substring.of("barfoo").subSequence(0, 5).subSequence(0, 4).subSequence(0, 2)),
+            Optional.of(Substring.of("barfoo").subSequence(0, 4).subSequence(0, 2)))
+        .addEqualityGroup(Optional.of(Substring.of("foobar").subSequence(1, 6).subSequence(2, 5)))
         .addEqualityGroup(Substring.prefix("").in("foo"))
         .addEqualityGroup(Substring.suffix("").in("foo"))
         .addEqualityGroup(Substring.prefix("").in("foobar"))

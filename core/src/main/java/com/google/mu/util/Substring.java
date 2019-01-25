@@ -374,7 +374,9 @@ public final class Substring implements CharSequence {
   @Override public boolean equals(Object obj) {
     if (obj instanceof Substring) {
       Substring that = (Substring) obj;
-      return startIndex == that.startIndex && endIndex == that.endIndex && context.equals(that.context);
+      return startIndex == that.startIndex && endIndex == that.endIndex
+          && contextStartIndex == that.contextStartIndex && contextEndIndex == that.contextEndIndex
+          && context.equals(that.context);
     }
     return false;
   }
