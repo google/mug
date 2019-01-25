@@ -330,18 +330,27 @@ public final class Substring implements CharSequence {
    * of this substring.
    */
   @Override public char charAt(int index) {
-    return context.charAt(startIndex + checkIndex(index));
+    if (index < 0 || index >= length()) {
+      throw new IndexOutOfBoundsException("index out of substring range: " + index);
+    }
+    return context.charAt(startIndex + index);
   }
 
   /**
-   * Returns a substring of this substring. {@code start} and {@code end} are relative to the
+   * Returns a substring of this substring. {@code begin} and {@code end} are relative to the
    * {@link #getIndex starting index} of {@code this}.
    */
-  @Override public Substring subSequence(int start, int end) {
-    if (checkIndex(start) > checkEndIndex(end)) {
-      throw new IndexOutOfBoundsException("Invalid index: " + start + " > " + end);
+  @Override public Substring subSequence(int begin, int end) {
+    if (begin < 0) {
+      throw new IndexOutOfBoundsException("index out of substring range: " + begin);
     }
-    return new Substring(context, startIndex + start, startIndex + end, startIndex, endIndex);
+    if (end < 0 || end > length()) {
+      throw new IndexOutOfBoundsException("index out of substring range: " + end);
+    }
+    if (begin > end) {
+      throw new IndexOutOfBoundsException("Invalid index: " + begin + " > " + end);
+    }
+    return new Substring(context, startIndex + begin, startIndex + end, startIndex, endIndex);
   }
 
   /** Returns this substring. */
@@ -490,20 +499,6 @@ public final class Substring implements CharSequence {
     }
 
     private interface Mapper extends Function<Substring, Substring>, Serializable {}
-  }
-
-  private int checkIndex(int index) {
-    if (index < 0 || index >= length()) {
-      throw new IndexOutOfBoundsException("index out of substring range: " + index);
-    }
-    return index;
-  }
-
-  private int checkEndIndex(int index) {
-    if (index < 0 || index > length()) {
-      throw new IndexOutOfBoundsException("index out of substring range: " + index);
-    }
-    return index;
   }
   
   private static Substring substring(String str, int index, int length) {
