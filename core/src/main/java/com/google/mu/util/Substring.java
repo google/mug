@@ -406,13 +406,46 @@ public final class Substring {
     }
 
     /**
+     * Returns a {@code Pattern} that will pass the matched substring to {@code inner}
+     * to extract a substring inside the matched substring. For example the following
+     * will match the substring enclosed by a pair of asterisk (*) characters. <pre>
+     *   Substring.Pattern enclosed = Substring.first('*').after()
+     *       .then(Substring.first('*').before());
+     * </pre>
+     *
+     * <p>An alternative is to use {@link #regexGroup}. The above example can be implemented using:
+     * <pre>
+     *   Substring.Pattern enclosed = Substring.regexGroup("\\*(.*?)\\*", 1);
+     * </pre>
+     *
+     * @since 2.1
+     */
+    public final Pattern then(Pattern inner) {
+      requireNonNull(inner);
+      Pattern outer = this;
+      return new Pattern() {
+        private static final long serialVersionUID = 1L;
+        @Override Substring match(String str) {
+          Substring outerMatch = outer.match(str);
+          if (outerMatch == null) return null;
+          // TODO: should we match against substring directly without copying?
+          int offset = outerMatch.startIndex;
+          Substring innerMatch = inner.match(outerMatch.toString());
+          return innerMatch == null
+              ? null
+              : new Substring(str, offset + innerMatch.startIndex, offset + innerMatch.endIndex);
+        }
+      };
+    }
+
+    /**
      * Returns a new {@code Pattern} that will match strings using {@code this} pattern and then
      * cover the range before the matched substring. For example: <pre>
      *   String startFromDoubleSlash = Substring.first("//").before().removeFrom(uri);
      * </pre>
      */
     public final Pattern before() {
-      return then(Substring::before);
+      return map(Substring::before);
     }
 
     /**
@@ -422,7 +455,7 @@ public final class Substring {
      * </pre>
      */
     public final Pattern after() {
-      return then(Substring::after);
+      return map(Substring::after);
     }
 
     /**
@@ -432,7 +465,7 @@ public final class Substring {
      * </pre>
      */
     public final Pattern andBefore() {
-      return then(Substring::andBefore);
+      return map(Substring::andBefore);
     }
 
     /**
@@ -442,10 +475,10 @@ public final class Substring {
      * </pre>
      */
     public final Pattern andAfter() {
-      return then(Substring::andAfter);
+      return map(Substring::andAfter);
     }
 
-    private Pattern then(Mapper mapper) {
+    private Pattern map(Mapper mapper) {
       Pattern base = this;
       return new Pattern() {
         private static final long serialVersionUID = 1L;

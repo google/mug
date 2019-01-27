@@ -734,6 +734,32 @@ public class SubstringTest {
   @Test public void after_matchInTheMiddle() {
     assertThat(Substring.last('.').after().removeFrom("foo. bar")).isEqualTo("foo.");
   }
+
+  @Test public void then_outerDoesNotMatch() {
+    Substring.Pattern pattern = Substring.first('(').after().then(Substring.last(')').before());
+    assertThat(pattern.in("abc)")).isEmpty();
+  }
+
+  @Test public void then_innerDoesNotMatch() {
+    Substring.Pattern pattern = Substring.first('(').after().then(Substring.last(')').before());
+    assertThat(pattern.in("(abc")).isEmpty();
+  }
+
+  @Test public void then_innerDoesNotMatchAfterOuterMatched() {
+    Substring.Pattern pattern = Substring.first('*').after().then(Substring.last('*').before());
+    assertThat(pattern.in("a*bc")).isEmpty();
+  }
+
+  @Test public void then_bothInnerAndOuterMatched() {
+    Substring.Pattern pattern = Substring.first('*').after().then(Substring.last('*').before());
+    Substring substring = pattern.in("*foo*").get();
+    assertThat(substring.toString()).isEqualTo("foo");
+    assertThat(substring.getBefore()).isEqualTo("*");
+    assertThat(substring.getAfter()).isEqualTo("*");
+    assertThat(substring.remove()).isEqualTo("**");
+    assertThat(substring.getIndex()).isEqualTo(1);
+    assertThat(substring.length()).isEqualTo(3);
+  }
   
   @Test public void testEquals() {
     new EqualsTester()
