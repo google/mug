@@ -752,11 +752,11 @@ public class SubstringTest {
 
   @Test public void then_bothInnerAndOuterMatched() {
     Substring.Pattern pattern = Substring.first('*').after().then(Substring.last('*').before());
-    Substring substring = pattern.in("*foo*").get();
+    Substring substring = pattern.in("*foo*bar").get();
     assertThat(substring.toString()).isEqualTo("foo");
     assertThat(substring.getBefore()).isEqualTo("*");
-    assertThat(substring.getAfter()).isEqualTo("*");
-    assertThat(substring.remove()).isEqualTo("**");
+    assertThat(substring.getAfter()).isEqualTo("*bar");
+    assertThat(substring.remove()).isEqualTo("**bar");
     assertThat(substring.getIndex()).isEqualTo(1);
     assertThat(substring.length()).isEqualTo(3);
   }

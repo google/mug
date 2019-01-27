@@ -148,7 +148,7 @@ public final class Substring {
     return new Pattern() {
       private static final long serialVersionUID = 1L;
       @Override Substring match(String str) {
-        return substring(str, str.indexOf(c), 1);
+        return substringIfValidIndex(str, str.indexOf(c), 1);
       }
     };
   }
@@ -159,7 +159,7 @@ public final class Substring {
     return new Pattern() {
       private static final long serialVersionUID = 1L;
       @Override Substring match(String str) {
-        return substring(str, str.indexOf(snippet), snippet.length());
+        return substringIfValidIndex(str, str.indexOf(snippet), snippet.length());
       }
     };
   }
@@ -233,7 +233,7 @@ public final class Substring {
     return new Pattern() {
       private static final long serialVersionUID = 1L;
       @Override Substring match(String str) {
-        return substring(str, str.lastIndexOf(c), 1);
+        return substringIfValidIndex(str, str.lastIndexOf(c), 1);
       }
     };
   }
@@ -244,7 +244,7 @@ public final class Substring {
     return new Pattern() {
       private static final long serialVersionUID = 1L;
       @Override Substring match(String str) {
-        return substring(str, str.lastIndexOf(snippet), snippet.length());
+        return substringIfValidIndex(str, str.lastIndexOf(snippet), snippet.length());
       }
     };
   }
@@ -324,7 +324,8 @@ public final class Substring {
   @Override public boolean equals(Object obj) {
     if (obj instanceof Substring) {
       Substring that = (Substring) obj;
-      return startIndex == that.startIndex && endIndex == that.endIndex && context.equals(that.context);
+      return startIndex == that.startIndex && endIndex == that.endIndex
+          && context.equals(that.context);
     }
     return false;
   }
@@ -492,7 +493,7 @@ public final class Substring {
     private interface Mapper extends Function<Substring, Substring>, Serializable {}
   }
   
-  private static Substring substring(String str, int index, int length) {
+  private static Substring substringIfValidIndex(String str, int index, int length) {
     return index >= 0 ? new Substring(str, index, index + length) : null;
   }
 }
