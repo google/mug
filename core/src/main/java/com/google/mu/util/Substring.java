@@ -41,7 +41,7 @@ import java.util.function.Function;
  *
  * To strip off the suffix starting with a dash (-) character: <pre>
  *   static String stripDashSuffix(String str) {
- *     return Substring.last('-').andAfter().removeFrom(str);
+ *     return Substring.from(last('-')).removeFrom(str);
  *   }
  * </pre>
  *
@@ -250,14 +250,77 @@ public final class Substring {
   }
 
   /**
+   * Returns a {@code Pattern} that covers the substring before {@code delimiter}.
+   * For example: <pre>
+   *   String startFromDoubleSlash = Substring.before(first("//")).removeFrom(uri);
+   * </pre>
+   *
+   * @since 2.1
+   */
+  public static Pattern before(Pattern delimiter) {
+    return delimiter.map(Substring::sequenceBefore);
+  }
+
+  /**
+   * Returns a {@code Pattern} that covers the substring after {@code delimiter}.
+   * For example: <pre>
+   *   String endWithPeriod = Substring.after(last(".")).removeFrom(line);
+   * </pre>
+   *
+   * @since 2.1
+   */
+  public static Pattern after(Pattern delimiter) {
+    return delimiter.map(Substring::sequenceAfter);
+  }
+  
+  /**
+   * Returns a {@code Pattern} that will match from {@code staringPoint} to the end of the input
+   * string. For example: <pre>
+   *   String commentRemoved = Substring.from(first("//")).removeFrom(line);
+   * </pre>
+   *
+   * @since 2.1
+   */
+  public static Pattern from(Pattern startingPoint) {
+    return startingPoint.map(Substring::andAfter);
+  }
+
+  /**
+   * Returns a {@code Pattern} that will match from the beginning of the input string up to
+   * {@code endingPoint} <em>inclusively</em>. For example: <pre>
+   *   String schemeStripped = Substring.upTo(first("://")).removeFrom(uri);
+   * </pre>
+   *
+   * @since 2.1
+   */
+  public static Pattern upTo(Pattern endingPoint) {
+    return endingPoint.map(Substring::andBefore);
+  }
+
+  /**
+   * Returns a {@code Pattern} that will match the substring between {@code open} and {@code close}.
+   * For example: <pre>
+   *   String quoted = Substring.between(first('('), first(')'))
+   *       .in(input)
+   *       .orElseThrow(...)
+   *       .toString();
+   * </pre>
+   *
+   * @since 2.1
+   */
+  public static Pattern between(Pattern open, Pattern close) {
+    return before(close).within(after(open));
+  }
+
+  /**
    * Returns part before this substring.
    *
    * <p>{@link #getBefore} and {@link #getAfter} are almost always used together to split a string
-   * into two parts. Prefer using {@link Pattern#andBefore} if you are trying to find a prefix ending
+   * into two parts. Prefer using {@link #upTo} if you are trying to find a prefix ending
    * with a pattern, like: <pre>
-   *   String schemeStripped = Substring.first("://").andBefore().removeFrom(uri);
-   * </pre> or using {@link Pattern#andAfter} to find a suffix starting with a pattern: <pre>
-   *   String commentRemoved = Substring.first("//").andAfter().removeFrom(line);
+   *   String schemeStripped = Substring.upTo(first("://")).removeFrom(uri);
+   * </pre> or using {@link #from} to find a suffix starting with a pattern: <pre>
+   *   String commentRemoved = Substring.from(first("//")).removeFrom(line);
    * </pre>
    */
   public String getBefore() {
@@ -268,11 +331,11 @@ public final class Substring {
    * Returns part after this substring.
    *
    * <p>{@link #getBefore} and {@link #getAfter} are almost always used together to split a string
-   * into two parts. Prefer using {@link Pattern#andBefore} if you are trying to find a prefix ending
+   * into two parts. Prefer using {@link Pattern#upTo} if you are trying to find a prefix ending
    * with a pattern, like: <pre>
-   *   String schemeStripped = Substring.first("://").andBefore().removeFrom(uri);
-   * </pre> or using {@link Pattern#andAfter} to find a suffix starting with a pattern: <pre>
-   *   String commentRemoved = Substring.first("//").andAfter().removeFrom(line);
+   *   String schemeStripped = Substring.upTo(first("://")).removeFrom(uri);
+   * </pre> or using {@link Pattern#from} to find a suffix starting with a pattern: <pre>
+   *   String commentRemoved = Substring.from(first("//")).removeFrom(line);
    * </pre>
    */
   public String getAfter() {
@@ -331,12 +394,12 @@ public final class Substring {
   }
 
   /** Returns a new {@code Substring} instance covering part to the left of this substring. */
-  Substring before() {
+  Substring sequenceBefore() {
     return new Substring(context, 0, startIndex);
   }
 
   /** Returns a new {@code Substring} instance covering part to the right of this substring. */
-  Substring after() {
+  Substring sequenceAfter() {
     return new Substring(context, endIndex, context.length());
   }
 
@@ -350,12 +413,33 @@ public final class Substring {
     return new Substring(context, startIndex, context.length());
   }
 
+  Substring subSequence(int begin, int end) {
+    if (begin < 0) {
+      throw new IndexOutOfBoundsException("Invalid index: " + begin);
+    }
+    if (begin > end) {
+      throw new IndexOutOfBoundsException("Invalid index: " + begin + " > " + end);
+    }
+    if (end > length()) {
+      throw new IndexOutOfBoundsException("Invalid index: " + end);
+    }
+    return new Substring(context, startIndex + begin, startIndex + end);
+  }
+
   /** A substring pattern that can be matched against a string to find substrings. */
   public static abstract class Pattern implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /** Matches against {@code string} and returns null if not found. */
     abstract Substring match(String string);
+    
+    final Substring match(Substring substring) {
+      // TODO: should we match against substring directly without copying?
+      Substring innerMatch = match(substring.toString());
+      return innerMatch == null
+          ? null
+          : substring.subSequence(innerMatch.startIndex, innerMatch.endIndex);
+    }
 
     /** Finds the substring in {@code string} or returns {@code empty()} if not found. */
     public final Optional<Substring> in(String string) {
@@ -406,77 +490,37 @@ public final class Substring {
       };
     }
 
-    /**
-     * Returns a {@code Pattern} that will pass the matched substring to {@code inner}
-     * to extract a substring inside the matched substring. For example the following
-     * will match the substring enclosed by a pair of asterisk (*) characters. <pre>
-     *   Substring.Pattern enclosed = Substring.first('*').after()
-     *       .then(Substring.first('*').before());
-     * </pre>
-     *
-     * <p>An alternative is to use {@link #regexGroup}. The above example can be implemented using:
-     * <pre>
-     *   Substring.Pattern enclosed = Substring.regexGroup("\\*(.*?)\\*", 1);
-     * </pre>
-     *
-     * @since 2.1
-     */
-    public final Pattern then(Pattern inner) {
-      requireNonNull(inner);
-      Pattern outer = this;
+    /** @deprecated Use {@link Substring#before}. */
+    @Deprecated public final Pattern before() {
+      return Substring.before(this);
+    }
+
+    /** @deprecated Use {@link Substring#after}. */
+    @Deprecated public final Pattern after() {
+      return Substring.after(this);
+    }
+
+    /** @deprecated Use {@link Substring#upTo}. */
+    @Deprecated public final Pattern andBefore() {
+      return Substring.upTo(this);
+    }
+
+    /** @deprecated Use {@link Substring#from}. */
+    @Deprecated public final Pattern andAfter() {
+      return Substring.from(this);
+    }
+
+    /** Returns a {@code Pattern} that matches within {@code scope}. */
+    final Pattern within(Pattern scope) {
+      requireNonNull(scope);
+      Pattern inner = this;
       return new Pattern() {
         private static final long serialVersionUID = 1L;
         @Override Substring match(String str) {
-          Substring outerMatch = outer.match(str);
-          if (outerMatch == null) return null;
-          // TODO: should we match against substring directly without copying?
-          int offset = outerMatch.startIndex;
-          Substring innerMatch = inner.match(outerMatch.toString());
-          return innerMatch == null
-              ? null
-              : new Substring(str, offset + innerMatch.startIndex, offset + innerMatch.endIndex);
+          Substring outerMatch = scope.match(str);
+          return outerMatch == null ? null : inner.match(outerMatch);
         }
       };
-    }
-
-    /**
-     * Returns a new {@code Pattern} that will match strings using {@code this} pattern and then
-     * cover the range before the matched substring. For example: <pre>
-     *   String startFromDoubleSlash = Substring.first("//").before().removeFrom(uri);
-     * </pre>
-     */
-    public final Pattern before() {
-      return map(Substring::before);
-    }
-
-    /**
-     * Returns a new {@code Pattern} that will match strings using {@code this} pattern and then
-     * cover the range after the matched substring. For example: <pre>
-     *   String endWithPeriod = Substring.last(".").after().removeFrom(line);
-     * </pre>
-     */
-    public final Pattern after() {
-      return map(Substring::after);
-    }
-
-    /**
-     * Returns a new {@code Pattern} that will match strings using {@code this} pattern and then
-     * extend the matched substring to the beginning of the string. For example: <pre>
-     *   String schemeStripped = Substring.first("://").andBefore().removeFrom(uri);
-     * </pre>
-     */
-    public final Pattern andBefore() {
-      return map(Substring::andBefore);
-    }
-
-    /**
-     * Returns a new {@code Pattern} that will match strings using {@code this} pattern and then
-     * extend the matched substring to the end of the string. For example: <pre>
-     *   String commentRemoved = Substring.first("//").andAfter().removeFrom(line);
-     * </pre>
-     */
-    public final Pattern andAfter() {
-      return map(Substring::andAfter);
     }
 
     private Pattern map(Mapper mapper) {
