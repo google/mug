@@ -178,7 +178,7 @@ String httpStripped = Substring.prefix("http://").removeFrom(uri);
 
 **Example 2: strip off any scheme prefix from a uri:**
 ```java
-String schemeStripped = Substring.first("://").andBefore().removeFrom(uri);
+String schemeStripped = Substring.upTo(first("://")).removeFrom(uri);
 ```
 
 **Example 3: split a string in the format of "name=value" into `name` and `value`:**
@@ -196,7 +196,7 @@ Substring.suffix("//").replaceFrom(path, "/");
 
 **Example 5: strip off the suffix starting with a dash (-) character :**
 ```java
-Substring.last('-').andAfter().removeFrom(str);
+Substring.from(last('-')).removeFrom(str);
 ```
 
 **Example 6: extract a substring using regex :**
