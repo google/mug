@@ -533,7 +533,7 @@ public final class Substring {
     }
 
     /**
-     * Returns a {@code Pattern} that matches within {@code scope}.
+     * Returns a modified {@code Pattern} of {@code this} that matches within {@code scope}.
      *
      * @since 2.1
      */
