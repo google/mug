@@ -309,7 +309,19 @@ public final class Substring {
    * @since 2.1
    */
   public static Pattern between(Pattern open, Pattern close) {
-    return before(close).within(after(open));
+    requireNonNull(open);
+    requireNonNull(close);
+    return new Pattern() {
+      private static final long serialVersionUID = 1L;
+      @Override Substring match(String str) {
+        Substring left = open.match(str);
+        if (left == null) return null;
+        Substring right = close.match(str);
+        if (right == null) return null;
+        if (left.endIndex > right.startIndex) return null;
+        return new Substring(str, left.endIndex, right.startIndex);
+      }
+    };
   }
 
   /**

@@ -754,12 +754,20 @@ public class SubstringTest {
     assertThat(match.length()).isEqualTo(3);
   }
 
-  @Test public void between_matchedByEqualDelimiters() {
-    Substring match = Substring.between(first('-'), first('-')).in("foo-bar-baz").get();
+  @Test public void between_matchedByEqualDelimitersUsingWithin() {
+    Substring.Pattern delimiter = first('-');
+    Substring match = Substring.between(delimiter, delimiter.within(Substring.after(delimiter)))
+        .in("foo-bar-baz").get();
     assertThat(match.toString()).isEqualTo("bar");
     assertThat(match.getBefore()).isEqualTo("foo-");
     assertThat(match.getAfter()).isEqualTo("-baz");
     assertThat(match.length()).isEqualTo(3);
+  }
+
+  @Test public void between_nothingBetweenFirstChar() {
+    Substring.Pattern delimiter = first('-');
+    assertThat(Substring.between(delimiter, delimiter).in("foo-bar-baz"))
+        .isEmpty();
   }
 
   @Test public void between_matchedFully() {
