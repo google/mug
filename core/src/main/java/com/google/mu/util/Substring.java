@@ -532,8 +532,12 @@ public final class Substring {
       return within(Substring.between(open, close));
     }
 
-    /** Returns a {@code Pattern} that matches within {@code scope}. */
-    final Pattern within(Pattern scope) {
+    /**
+     * Returns a {@code Pattern} that matches within {@code scope}.
+     *
+     * @since 2.1
+     */
+    public final Pattern within(Pattern scope) {
       requireNonNull(scope);
       Pattern inner = this;
       return new Pattern() {
