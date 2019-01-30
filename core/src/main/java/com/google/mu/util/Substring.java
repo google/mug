@@ -62,7 +62,7 @@ import java.util.function.Function;
  */
 public final class Substring {
 
-  /** {@link Pattern} that never matches any substring. */
+  /** {@code Pattern} that never matches any substring. */
   public static final Pattern NONE = new Pattern() {
     private static final long serialVersionUID = 1L;
     @Override public Substring match(String s) {
@@ -74,7 +74,7 @@ public final class Substring {
     }
   };
 
-  /** {@link Pattern} that matches all strings entirely. */
+  /** {@code Pattern} that matches all strings entirely. */
   public static final Pattern ALL = new Pattern() {
     private static final long serialVersionUID = 1L;
     @Override public Substring match(String s) {
@@ -82,6 +82,36 @@ public final class Substring {
     }
     @Override public String toString() {
       return "ALL";
+    }
+  };
+
+  /**
+   * {@code Pattern} that matches the empty substring at the beginning of the input string.
+   *
+   * @since 2.1
+   */
+  public static final Pattern BEGINNING = new Pattern() {
+    private static final long serialVersionUID = 1L;
+    @Override public Substring match(String s) {
+      return new Substring(s, 0, 0);
+    }
+    @Override public String toString() {
+      return "BEGINNING";
+    }
+  };
+
+  /**
+   * {@code Pattern} that matches the empty substring at the end of the input string.
+   *
+   * @since 2.1
+   */
+  public static final Pattern END = new Pattern() {
+    private static final long serialVersionUID = 1L;
+    @Override public Substring match(String s) {
+      return new Substring(s, s.length(), s.length());
+    }
+    @Override public String toString() {
+      return "END";
     }
   };
 
@@ -436,6 +466,16 @@ public final class Substring {
     /** Finds the substring in {@code string} or returns {@code empty()} if not found. */
     public final Optional<Substring> in(String string) {
       return Optional.ofNullable(match(string));
+    }
+
+    /**
+     * Finds the substring in {@code string} or returns {@code empty()} if not found.
+     * {@code pattern.from(str)} is equivalent to {@code pattern.in(str).map(Object::toString)}.
+     *
+     * @since 2.1
+     */
+    public final Optional<String> from(String string) {
+      return in(string).map(Object::toString);
     }
 
     /**

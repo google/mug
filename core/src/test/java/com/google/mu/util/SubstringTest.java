@@ -681,6 +681,22 @@ public class SubstringTest {
     assertThat(Substring.ALL.replaceFrom("foo", "xyz")).isEqualTo("xyz");
   }
 
+  @Test public void beginning() {
+    assertThat(Substring.BEGINNING.from("foo")).hasValue("");
+    assertThat(Substring.BEGINNING.removeFrom("foo")).isEqualTo("foo");
+    assertThat(Substring.BEGINNING.replaceFrom("foo", "begin ")).isEqualTo("begin foo");
+    assertThat(Substring.BEGINNING.in("foo").get().getBefore()).isEmpty();
+    assertThat(Substring.BEGINNING.in("foo").get().getAfter()).isEqualTo("foo");
+  }
+
+  @Test public void end() {
+    assertThat(Substring.END.from("foo")).hasValue("");
+    assertThat(Substring.END.removeFrom("foo")).isEqualTo("foo");
+    assertThat(Substring.END.replaceFrom("foo", " end")).isEqualTo("foo end");
+    assertThat(Substring.END.in("foo").get().getBefore()).isEqualTo("foo");
+    assertThat(Substring.END.in("foo").get().getAfter()).isEmpty();
+  }
+
   @Test public void testNulls() throws Exception {
     new NullPointerTester().testAllPublicInstanceMethods(Substring.ALL.in("foobar").get());
     new ClassSanityTester()
@@ -1001,6 +1017,14 @@ public class SubstringTest {
     assertThat(substring.remove()).isEqualTo("**bar");
     assertThat(substring.getIndex()).isEqualTo(1);
     assertThat(substring.length()).isEqualTo(3);
+  }
+
+  @Test public void patternFrom_noMatch() {
+    assertThat(Substring.NONE.from("")).isEmpty();
+  }
+
+  @Test public void patternFrom_match() {
+    assertThat(Substring.first("bar").from("foo bar")).hasValue("bar");
   }
   
   @Test public void testEquals() {
