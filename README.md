@@ -207,6 +207,14 @@ String quoted = Substring.regexGroup("'(.*)'", 1)
     .toString();
 ```
 
+**Example 7: find the substring between the first "{" and the last "}" :**
+```java
+String block = Substring.between(first('{'), last('}'))
+    .in(source)
+    .orElseThrow(...)
+    .toString();
+```
+
 ## [Retryer](https://google.github.io/mug/apidocs/com/google/mu/util/concurrent/Retryer.html)
 
 * Retry blockingly or _async_
