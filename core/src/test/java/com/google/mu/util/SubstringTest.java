@@ -754,14 +754,32 @@ public class SubstringTest {
     assertThat(match.length()).isEqualTo(3);
   }
 
-  @Test public void between_matchedByEqualDelimitersUsingWithin() {
+  @Test public void between_matchedBySameFirstCharUsingWithin() {
     Substring.Pattern delimiter = first('-');
-    Substring match = Substring.between(delimiter, delimiter.within(Substring.after(delimiter)))
-        .in("foo-bar-baz").get();
+    Substring match = Substring.between(delimiter, delimiter.after(delimiter))
+        .in("foo-bar-baz-").get();
     assertThat(match.toString()).isEqualTo("bar");
     assertThat(match.getBefore()).isEqualTo("foo-");
+    assertThat(match.getAfter()).isEqualTo("-baz-");
+    assertThat(match.length()).isEqualTo(3);
+  }
+
+  @Test public void between_matchedBySameLastCharUsingWithin() {
+    Substring.Pattern delimiter = last('-');
+    Substring match = Substring.between(delimiter.before(delimiter), delimiter)
+        .in("-foo-bar-baz").get();
+    assertThat(match.toString()).isEqualTo("bar");
+    assertThat(match.getBefore()).isEqualTo("-foo-");
     assertThat(match.getAfter()).isEqualTo("-baz");
     assertThat(match.length()).isEqualTo(3);
+  }
+
+  @Test public void between_emptyMatch() {
+    Substring match = Substring.between(last('<'), last('>')).in("foo<>baz").get();
+    assertThat(match.toString()).isEmpty();
+    assertThat(match.getBefore()).isEqualTo("foo<");
+    assertThat(match.getAfter()).isEqualTo(">baz");
+    assertThat(match.length()).isEqualTo(0);
   }
 
   @Test public void between_nothingBetweenFirstChar() {
@@ -831,6 +849,90 @@ public class SubstringTest {
 
   @Test public void between_matchesNone() {
     assertThat(Substring.between(first('<'), first('>')).in("foo")).isEmpty();
+  }
+
+  @Test public void patternAfterPattern_delimiterNotFound() {
+    assertThat(last(')').after(first('(')).in("abc)")).isEmpty();
+  }
+
+  @Test public void patternAfterPattern_patternNotAfterDelimiter() {
+    assertThat(last(')').after(first('(')).in("abc)(")).isEmpty();
+  }
+
+  @Test public void patternAfterPattern_patternNotFound() {
+    assertThat(last(')').after(first('(')).in("(abc")).isEmpty();
+  }
+
+  @Test public void patternAfterPattern_matched() {
+    Substring sub = first(')').after(first('(')).in("().").get();
+    assertThat(sub.toString()).isEqualTo(")");
+    assertThat(sub.getBefore()).isEqualTo("(");
+    assertThat(sub.getAfter()).isEqualTo(".");
+  }
+
+  @Test public void patternBeforeAndAfter() {
+    Substring sub = Substring.first('?').before(first('>')).after(first('<'))
+        .in("?:<how are you?>;?").get();
+    assertThat(sub.toString()).isEqualTo("?");
+    assertThat(sub.getBefore()).isEqualTo("?:<how are you");
+    assertThat(sub.getAfter()).isEqualTo(">;?");
+  }
+
+  @Test public void patternBeforeAndAfter_notBefore() {
+    assertThat(Substring.first('?').before(first('>')).after(first('<')).in("?:<how are you>?;?"))
+        .isEmpty();
+  }
+
+  @Test public void patternBeforeAndAfter_notAfter() {
+    assertThat(Substring.first('?').before(first('>')).after(first('<')).in("?:how are you?<>;?"))
+        .isEmpty();
+  }
+
+  @Test public void patternBeforeAndAfter_patternNotFound() {
+    assertThat(Substring.first('?').before(first('>')).after(first('<')).in("<how are you>"))
+        .isEmpty();
+  }
+
+  @Test public void patternBetween() {
+    Substring sub = Substring.first('?').between (first('<'), first('>'))
+        .in("?:<how are you?>;?").get();
+    assertThat(sub.toString()).isEqualTo("?");
+    assertThat(sub.getBefore()).isEqualTo("?:<how are you");
+    assertThat(sub.getAfter()).isEqualTo(">;?");
+  }
+
+  @Test public void patternBetween_notBefore() {
+    assertThat(Substring.first('?').between(first('<'), first('>')).in("?:<how are you>?;?"))
+        .isEmpty();
+  }
+
+  @Test public void patternBetween_notAfter() {
+    assertThat(Substring.first('?').between(first('<'), first('>')).in("?:how are you?<>;?"))
+        .isEmpty();
+  }
+
+  @Test public void patternBetween_patternNotFound() {
+    assertThat(Substring.first('?').between(first('<'), first('>')).in("<how are you>"))
+        .isEmpty();
+  }
+
+  @Test public void patternBeforePattern_delimiterNotFound() {
+    assertThat(first('a').before(first('.')).in("a")).isEmpty();
+  }
+
+  @Test public void patternBeforePattern_patternNotBeforeDelimiter() {
+    assertThat(first('a').before(first('.')).in(".a")).isEmpty();
+  }
+
+  @Test public void patternBeforePattern_patternNotFound() {
+    assertThat(first('a').before(first('.')).in(".")).isEmpty();
+  }
+
+  @Test public void patternBeforePattern_matched() {
+    Substring sub = first('a').before(first('.')).in("(a.)").get();
+    assertThat(sub.toString()).isEqualTo("a");
+    assertThat(sub.getBefore()).isEqualTo("(");
+    assertThat(sub.getAfter()).isEqualTo(".)");
   }
 
   @Test public void within_outerDoesNotMatch() {

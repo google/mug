@@ -502,24 +502,34 @@ public final class Substring {
       };
     }
 
-    /** @deprecated Use {@link Substring#before}. */
-    @Deprecated public final Pattern before() {
-      return Substring.before(this);
+    /**
+     * Returns a modified {@code Pattern} of {@code this} scoped within the substring
+     * before {@code delimiter}.
+     *
+     * @since 2.1
+     */
+    public final Pattern before(Pattern delimiter) {
+      return within(Substring.before(delimiter));
     }
 
-    /** @deprecated Use {@link Substring#after}. */
-    @Deprecated public final Pattern after() {
-      return Substring.after(this);
+    /**
+     * Returns a modified {@code Pattern} of {@code this} scoped within the substring
+     * following {@code delimiter}.
+     *
+     * @since 2.1
+     */
+    public final Pattern after(Pattern delimiter) {
+      return within(Substring.after(delimiter));
     }
 
-    /** @deprecated Use {@link Substring#upTo}. */
-    @Deprecated public final Pattern andBefore() {
-      return Substring.upTo(this);
-    }
-
-    /** @deprecated Use {@link Substring#from}. */
-    @Deprecated public final Pattern andAfter() {
-      return Substring.from(this);
+    /**
+     * Returns a modified {@code Pattern} of {@code this} scoped between {@code open}
+     * and {@code close}.
+     *
+     * @since 2.1
+     */
+    public final Pattern between(Pattern open, Pattern close) {
+      return within(Substring.between(open, close));
     }
 
     /** Returns a {@code Pattern} that matches within {@code scope}. */
@@ -544,6 +554,26 @@ public final class Substring {
           return substring == null ? null : mapper.apply(substring);
         }
       };
+    }
+
+    /** @deprecated Use {@link Substring#before}. */
+    @Deprecated public final Pattern before() {
+      return Substring.before(this);
+    }
+
+    /** @deprecated Use {@link Substring#after}. */
+    @Deprecated public final Pattern after() {
+      return Substring.after(this);
+    }
+
+    /** @deprecated Use {@link Substring#upTo}. */
+    @Deprecated public final Pattern andBefore() {
+      return Substring.upTo(this);
+    }
+
+    /** @deprecated Use {@link Substring#from}. */
+    @Deprecated public final Pattern andAfter() {
+      return Substring.from(this);
     }
 
     private interface Mapper extends Function<Substring, Substring>, Serializable {}
