@@ -209,7 +209,7 @@ String quoted = Substring.regexGroup("'(.*)'", 1)
 
 **Example 7: find the substring between the first "{" and the last "}" :**
 ```java
-String block = Substring.between(first('{'), last('}'))
+String body = Substring.between(first('{'), last('}'))
     .in(source)
     .orElseThrow(...)
     .toString();
