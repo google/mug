@@ -206,7 +206,7 @@ String quoted = Substring.regexGroup("'(.*?)'", 1)
     .orElseThrow(...);
 ```
 
-**Example 7: find the substring between the first "{" and the last "}" :**
+**Example 7: find the substring between the first and last curly braces ({) :**
 ```java
 String body = Substring.between(first('{'), last('}'))
     .from(source)
