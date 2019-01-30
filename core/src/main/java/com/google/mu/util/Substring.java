@@ -258,7 +258,7 @@ public final class Substring {
    * @since 2.1
    */
   public static Pattern before(Pattern delimiter) {
-    return delimiter.map(Substring::sequenceBefore);
+    return delimiter.map(Substring::preceding);
   }
 
   /**
@@ -270,7 +270,7 @@ public final class Substring {
    * @since 2.1
    */
   public static Pattern after(Pattern delimiter) {
-    return delimiter.map(Substring::sequenceAfter);
+    return delimiter.map(Substring::following);
   }
   
   /**
@@ -282,7 +282,7 @@ public final class Substring {
    * @since 2.1
    */
   public static Pattern from(Pattern startingPoint) {
-    return startingPoint.map(Substring::andAfter);
+    return startingPoint.map(Substring::toEnd);
   }
 
   /**
@@ -294,7 +294,7 @@ public final class Substring {
    * @since 2.1
    */
   public static Pattern upTo(Pattern endingPoint) {
-    return endingPoint.map(Substring::andBefore);
+    return endingPoint.map(Substring::fromBeginning);
   }
 
   /**
@@ -403,26 +403,6 @@ public final class Substring {
           && context.equals(that.context);
     }
     return false;
-  }
-
-  /** Returns a new {@code Substring} instance covering part to the left of this substring. */
-  Substring sequenceBefore() {
-    return new Substring(context, 0, startIndex);
-  }
-
-  /** Returns a new {@code Substring} instance covering part to the right of this substring. */
-  Substring sequenceAfter() {
-    return new Substring(context, endIndex, context.length());
-  }
-
-  /** Returns a new {@code Substring} instance that extends to the beginning of the enclosing string. */
-  Substring andBefore() {
-    return new Substring(context, 0, endIndex);
-  }
-
-  /** Returns a new {@code Substring} instance that extends to the end of the enclosing string. */
-  Substring andAfter() {
-    return new Substring(context, startIndex, context.length());
   }
 
   Substring subSequence(int begin, int end) {
@@ -591,7 +571,23 @@ public final class Substring {
 
     private interface Mapper extends Function<Substring, Substring>, Serializable {}
   }
-  
+
+  private Substring preceding() {
+    return new Substring(context, 0, startIndex);
+  }
+
+  private Substring following() {
+    return new Substring(context, endIndex, context.length());
+  }
+
+  private Substring fromBeginning() {
+    return new Substring(context, 0, endIndex);
+  }
+
+  private Substring toEnd() {
+    return new Substring(context, startIndex, context.length());
+  }
+
   private static Substring substringIfValidIndex(String str, int index, int length) {
     return index >= 0 ? new Substring(str, index, index + length) : null;
   }
