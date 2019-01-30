@@ -526,8 +526,9 @@ public final class Substring {
 
     /**
      * Returns a modified {@code Pattern} of {@code this} scoped between {@code open}
-     * and {@code close}. For example: {@code first('=').between(first('<'), first('>'))}
-     * finds the equals (=) character between a pair of parenthesis.
+     * and {@code close}. For example: <pre>
+     *   first('=').between(first('('), first(')'))
+     * </pre> finds the equals (=) character between a pair of parenthesis.
      *
      * @since 2.1
      */
@@ -537,8 +538,11 @@ public final class Substring {
 
     /**
      * Returns a modified {@code Pattern} of {@code this} that matches within {@code scope}.
-     * For example {@code first('=').between(first('<'), first('>'))} is equivalent to
-     * {@code first('=').within(Substring.between(first('<'), first('>')))}.
+     * For example: <pre>
+     *   first('=').between(first('('), first(')'))}
+     * </pre> is equivalent to <pre>
+     *   first('=').within(Substring.between(first('('), first(')')))
+     * </pre>
      *
      * @since 2.1
      */
