@@ -331,9 +331,8 @@ public final class Substring {
    * Returns a {@code Pattern} that will match the substring between {@code open} and {@code close}.
    * For example: <pre>
    *   String quoted = Substring.between(first('('), first(')'))
-   *       .in(input)
-   *       .orElseThrow(...)
-   *       .toString();
+   *       .from(input)
+   *       .orElseThrow(...);
    * </pre>
    *
    * @since 2.1
