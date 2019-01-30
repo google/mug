@@ -826,6 +826,7 @@ public class SubstringTest {
 
   @Test public void between_closeIsBeforeOpen() {
     assertThat(Substring.between(first('<'), first('>')).in(">foo<")).isEmpty();
+    assertThat(Substring.between(first('<'), first('>')).in(">foo<>")).isEmpty();
   }
 
   @Test public void between_matchesNone() {
