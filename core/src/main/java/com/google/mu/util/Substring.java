@@ -504,7 +504,8 @@ public final class Substring {
 
     /**
      * Returns a modified {@code Pattern} of {@code this} scoped within the substring
-     * before {@code delimiter}.
+     * before {@code delimiter}. For example: {@code last('/').before(last('/'))} essentially
+     * finds the second last slash (/) character.
      *
      * @since 2.1
      */
@@ -514,7 +515,8 @@ public final class Substring {
 
     /**
      * Returns a modified {@code Pattern} of {@code this} scoped within the substring
-     * following {@code delimiter}.
+     * following {@code delimiter}. For example: {@code first('/').after(first('/'))} essentially
+     * finds the second slash (/) character.
      *
      * @since 2.1
      */
@@ -524,7 +526,8 @@ public final class Substring {
 
     /**
      * Returns a modified {@code Pattern} of {@code this} scoped between {@code open}
-     * and {@code close}.
+     * and {@code close}. For example: {@code first('=').between(first('<'), first('>'))}
+     * finds the equals (=) character between a pair of parenthesis.
      *
      * @since 2.1
      */
@@ -534,6 +537,8 @@ public final class Substring {
 
     /**
      * Returns a modified {@code Pattern} of {@code this} that matches within {@code scope}.
+     * For example {@code first('=').between(first('<'), first('>'))} is equivalent to
+     * {@code first('=').within(Substring.between(first('<'), first('>')))}.
      *
      * @since 2.1
      */
