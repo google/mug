@@ -558,7 +558,7 @@ public final class Substring {
     /**
      * Returns a modified {@code Pattern} of {@code this} that matches within {@code scope}.
      * For example: <pre>
-     *   first('=').between(first('('), first(')'))}
+     *   first('=').between(first('('), first(')'))
      * </pre> is equivalent to <pre>
      *   first('=').within(Substring.between(first('('), first(')')))
      * </pre>
