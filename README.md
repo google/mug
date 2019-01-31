@@ -201,18 +201,16 @@ Substring.from(last('-')).removeFrom(str);
 
 **Example 6: extract a substring using regex :**
 ```java
-String quoted = Substring.regexGroup("'(.*)'", 1)
-    .in(str)
-    .orElseThrow(...)
-    .toString();
+String quoted = Substring.regexGroup("'(.*?)'", 1)
+    .from(str)
+    .orElseThrow(...);
 ```
 
-**Example 7: find the substring between the first "{" and the last "}" :**
+**Example 7: find the substring between the first and last curly braces ({) :**
 ```java
 String body = Substring.between(first('{'), last('}'))
-    .in(source)
-    .orElseThrow(...)
-    .toString();
+    .from(source)
+    .orElseThrow(...);
 ```
 
 ## [Retryer](https://google.github.io/mug/apidocs/com/google/mu/util/concurrent/Retryer.html)
