@@ -588,26 +588,6 @@ public final class Substring {
       };
     }
 
-    /** @deprecated Use {@link Substring#before}. */
-    @Deprecated public final Pattern before() {
-      return Substring.before(this);
-    }
-
-    /** @deprecated Use {@link Substring#after}. */
-    @Deprecated public final Pattern after() {
-      return Substring.after(this);
-    }
-
-    /** @deprecated Use {@link Substring#upTo}. */
-    @Deprecated public final Pattern andBefore() {
-      return Substring.upTo(this);
-    }
-
-    /** @deprecated Use {@link Substring#from}. */
-    @Deprecated public final Pattern andAfter() {
-      return Substring.from(this);
-    }
-
     private interface Mapper extends Function<Substring, Substring>, Serializable {}
   }
 
