@@ -227,7 +227,7 @@ public final class Substring {
    */
   public static Pattern regexGroup(java.util.regex.Pattern regexPattern, int group) {
     requireNonNull(regexPattern);
-    if (group < 0 || group > regexPattern.matcher("").groupCount()) {
+    if (group < 0 || group > 0 && group > regexPattern.matcher("").groupCount()) {
       throw new IndexOutOfBoundsException("Capturing group " + group + " doesn't exist.");
     }
     return new Pattern() {
