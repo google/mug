@@ -222,12 +222,14 @@ public final class Substring {
   /**
    * Returns a {@code Pattern} that matches capturing {@code group} of {@code regexPattern}.
    *
-   * <p>The returned {@code Pattern} will throw {@link IndexOutOfBoundsException} when matched against
-   * strings without the target {@code group}.
+   * @throws IndexOutOfBoundsException if {@code group} is negative or exceeds the number of
+   *         capturing groups in {@code regexPattern}.
    */
   public static Pattern regexGroup(java.util.regex.Pattern regexPattern, int group) {
     requireNonNull(regexPattern);
-    if (group < 0) throw new IllegalArgumentException("group cannot be negative: " + group);
+    if (group < 0 || regexPattern.matcher("").groupCount() < group) {
+      throw new IndexOutOfBoundsException("Capturing group " + group + " doesn't exist.");
+    }
     return new Pattern() {
       private static final long serialVersionUID = 1L;
       @Override Substring match(String str) {
@@ -251,8 +253,8 @@ public final class Substring {
    * <p>Because this method internally compiles {@code regexPattern}, it's more efficient to reuse the
    * returned {@link Pattern} object than calling {@code regexGroup(regexPattern, group)} repetitively.
    *
-   * <p>The returned {@code Pattern} will throw {@link IndexOutOfBoundsException} when matched against
-   * strings without the target {@code group}.
+   * @throws IndexOutOfBoundsException if {@code group} is negative or exceeds the number of
+   *         capturing groups in {@code regexPattern}.
    */
   public static Pattern regexGroup(String regexPattern, int group) {
     return regexGroup(java.util.regex.Pattern.compile(regexPattern), group);

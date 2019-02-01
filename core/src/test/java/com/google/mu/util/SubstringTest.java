@@ -371,10 +371,10 @@ public class SubstringTest {
   }
 
   @Test public void regexGroup_noMatch() {
-    assertThat(Substring.regexGroup(".*x", 1).in("bar")).isEmpty();
+    assertThat(Substring.regexGroup("(.*)x", 1).in("bar")).isEmpty();
     assertThat(Substring.regexGroup("(.*x)", 1).in("bar")).isEmpty();
     assertThat(Substring.regexGroup(".*(x)", 1).in("bar")).isEmpty();
-    assertThat(Substring.regexGroup(".*x", 1).in("")).isEmpty();
+    assertThat(Substring.regexGroup("(.*x)", 1).in("")).isEmpty();
   }
 
   @Test public void regexGroup_matchesFirstGroup() {
@@ -411,12 +411,11 @@ public class SubstringTest {
   }
 
   @Test public void regexGroup_negativeGroup() {
-    assertThrows(IllegalArgumentException.class, () -> Substring.regexGroup(".", -1));
+    assertThrows(IndexOutOfBoundsException.class, () -> Substring.regexGroup(".", -1));
   }
 
   @Test public void regexGroup_invalidGroupIndex() {
-    Substring.Pattern pattern = Substring.regexGroup("f(o.)(ba.)", 3);
-    assertThrows(IndexOutOfBoundsException.class, () -> pattern.in("foobarbaz"));
+    assertThrows(IndexOutOfBoundsException.class, () -> Substring.regexGroup("f(o.)(ba.)", 3));
   }
 
   @Test public void lastSnippet_noMatch() {
@@ -699,17 +698,14 @@ public class SubstringTest {
 
   @Test public void testNulls() throws Exception {
     new NullPointerTester().testAllPublicInstanceMethods(Substring.ALL.in("foobar").get());
-    new ClassSanityTester()
-        .setDefault(Substring.Pattern.class, Substring.ALL)
+    newClassSanityTester()
         .testNulls(Substring.class);
-    new ClassSanityTester()
-        .setDefault(Substring.Pattern.class, Substring.ALL)
+    newClassSanityTester()
         .forAllPublicStaticMethods(Substring.class).testNulls();
   }
 
   @Test public void testSerializable() throws Exception {
-    new ClassSanityTester()
-        .setDefault(Substring.Pattern.class, Substring.ALL)
+    newClassSanityTester()
         .forAllPublicStaticMethods(Substring.class)
         .testSerializable();
   }
@@ -1038,5 +1034,11 @@ public class SubstringTest {
         .addEqualityGroup(suffix("").in("foo"))
         .addEqualityGroup(prefix("").in("foobar"))
         .testEquals();
+  }
+
+  private static ClassSanityTester newClassSanityTester() {
+    return new ClassSanityTester()
+        .setDefault(int.class, 0)
+        .setDefault(Substring.Pattern.class, Substring.ALL);
   }
 }
