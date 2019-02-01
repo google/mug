@@ -222,13 +222,8 @@ public final class Substring {
   /**
    * Returns a {@code Pattern} that matches capturing {@code group} of {@code regexPattern}.
    *
-<<<<<<< HEAD
-   * @throws {@link IndexOutOfBoundsException} if {@code group} is negative or exceeds the number
-   *         of capturing groups in {@code regexPattern}.
-=======
    * @throws IndexOutOfBoundsException if {@code group} is negative or exceeds the number of
    *         capturing groups in {@code regexPattern}.
->>>>>>> master
    */
   public static Pattern regexGroup(java.util.regex.Pattern regexPattern, int group) {
     requireNonNull(regexPattern);
