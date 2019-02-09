@@ -138,7 +138,6 @@ public final class Substring {
 
   /** Returns a {@code Pattern} that matches strings starting with {@code prefix}. */
   public static Pattern prefix(char prefix) {
-    requireNonNull(prefix);
     return new Pattern() {
       private static final long serialVersionUID = 1L;
       @Override Substring match(String str) {
@@ -162,7 +161,6 @@ public final class Substring {
 
   /** Returns a {@code Pattern} that matches strings ending with {@code suffix}. */
   public static Pattern suffix(char suffix) {
-    requireNonNull(suffix);
     return new Pattern() {
       private static final long serialVersionUID = 1L;
       @Override Substring match(String str) {
