@@ -18,7 +18,6 @@ import static java.util.Objects.requireNonNull;
 
 import java.io.Serializable;
 import java.util.Optional;
-import java.util.function.Function;
 
 /**
  * A substring inside a string, providing easy access to substrings around it
@@ -583,12 +582,14 @@ public final class Substring {
         private static final long serialVersionUID = 1L;
         @Override Substring match(String str) {
           Substring substring = base.match(str);
-          return substring == null ? null : mapper.apply(substring);
+          return substring == null ? null : mapper.map(substring);
         }
       };
     }
 
-    private interface Mapper extends Function<Substring, Substring>, Serializable {}
+    private interface Mapper extends Serializable {
+      Substring map(Substring substring);
+    }
   }
 
   private Substring preceding() {
