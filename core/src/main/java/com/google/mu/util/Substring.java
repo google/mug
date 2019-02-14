@@ -125,8 +125,8 @@ public final class Substring {
   public static Pattern prefix(String prefix) {
     requireNonNull(prefix);
     return new Pattern() {
-      @Override Match match(String str) {
-        return str.startsWith(prefix) ? new Match(str, 0, prefix.length()) : null;
+      @Override Match match(String input) {
+        return input.startsWith(prefix) ? new Match(input, 0, prefix.length()) : null;
       }
     };
   }
@@ -134,8 +134,8 @@ public final class Substring {
   /** Returns a {@code Pattern} that matches strings starting with {@code prefix}. */
   public static Pattern prefix(char prefix) {
     return new Pattern() {
-      @Override Match match(String str) {
-        return str.length() > 0 && str.charAt(0) == prefix ? new Match(str, 0, 1) : null;
+      @Override Match match(String input) {
+        return input.length() > 0 && input.charAt(0) == prefix ? new Match(input, 0, 1) : null;
       }
     };
   }
@@ -144,9 +144,9 @@ public final class Substring {
   public static Pattern suffix(String suffix) {
     requireNonNull(suffix);
     return new Pattern() {
-      @Override Match match(String str) {
-        return str.endsWith(suffix)
-            ? new Match(str, str.length() - suffix.length(), str.length())
+      @Override Match match(String input) {
+        return input.endsWith(suffix)
+            ? new Match(input, input.length() - suffix.length(), input.length())
             : null;
       }
     };
@@ -155,9 +155,9 @@ public final class Substring {
   /** Returns a {@code Pattern} that matches strings ending with {@code suffix}. */
   public static Pattern suffix(char suffix) {
     return new Pattern() {
-      @Override Match match(String str) {
-        return str.length() > 0 && str.charAt(str.length() - 1) == suffix
-            ? new Match(str, str.length() - 1, str.length())
+      @Override Match match(String input) {
+        return input.length() > 0 && input.charAt(input.length() - 1) == suffix
+            ? new Match(input, input.length() - 1, input.length())
             : null;
       }
     };
@@ -166,18 +166,18 @@ public final class Substring {
   /** Returns a {@code Pattern} that matches the first occurrence of {@code c}. */
   public static Pattern first(char c) {
     return new Pattern() {
-      @Override Match match(String str) {
-        return matchIfValidIndex(str, str.indexOf(c), 1);
+      @Override Match match(String input) {
+        return matchIfValidIndex(input, input.indexOf(c), 1);
       }
     };
   }
 
-  /** Returns a {@code Pattern} that matches the first occurrence of {@code snippet}. */
-  public static Pattern first(String snippet) {
-    requireNonNull(snippet);
+  /** Returns a {@code Pattern} that matches the first occurrence of {@code str}. */
+  public static Pattern first(String str) {
+    requireNonNull(str);
     return new Pattern() {
-      @Override Match match(String str) {
-        return matchIfValidIndex(str, str.indexOf(snippet), snippet.length());
+      @Override Match match(String input) {
+        return matchIfValidIndex(input, input.indexOf(str), str.length());
       }
     };
   }
@@ -185,18 +185,18 @@ public final class Substring {
   /** Returns a {@code Pattern} that matches the last occurrence of {@code c}. */
   public static Pattern last(char c) {
     return new Pattern() {
-      @Override Match match(String str) {
-        return matchIfValidIndex(str, str.lastIndexOf(c), 1);
+      @Override Match match(String input) {
+        return matchIfValidIndex(input, input.lastIndexOf(c), 1);
       }
     };
   }
 
-  /** Returns a {@code Pattern} that matches the last occurrence of {@code snippet}. */
-  public static Pattern last(String snippet) {
-    requireNonNull(snippet);
+  /** Returns a {@code Pattern} that matches the last occurrence of {@code str}. */
+  public static Pattern last(String str) {
+    requireNonNull(str);
     return new Pattern() {
-      @Override Match match(String str) {
-        return matchIfValidIndex(str, str.lastIndexOf(snippet), snippet.length());
+      @Override Match match(String input) {
+        return matchIfValidIndex(input, input.lastIndexOf(str), str.length());
       }
     };
   }
@@ -219,8 +219,9 @@ public final class Substring {
    * <pre>regex(regexPattern).replaceFrom(str, replacement)</pre> treats the {@code replacement} as a literal
    * string with no special handling of backslash (\) and dollar sign ($) characters.
    *
-   * <p>Because this method internally compiles {@code regexPattern}, it's more efficient to reuse the
-   * returned {@link Pattern} object than calling {@code regex(regexPattern)} repetitively.
+   * <p>Because this method must compile {@code regexPattern}, you should store and re-use
+   * the returned {@link Pattern} object rather than calling {@code regex(regexPattern)}
+   * repeatedly.
    */
   public static Pattern regex(String regexPattern) {
     return regex(java.util.regex.Pattern.compile(regexPattern));
@@ -238,9 +239,9 @@ public final class Substring {
       throw new IndexOutOfBoundsException("Capturing group " + group + " doesn't exist.");
     }
     return new Pattern() {
-      @Override Match match(String str) {
-        java.util.regex.Matcher matcher = regexPattern.matcher(str);
-        return matcher.find() ? new Match(str, matcher.start(group), matcher.end(group)) : null;
+      @Override Match match(String input) {
+        java.util.regex.Matcher matcher = regexPattern.matcher(input);
+        return matcher.find() ? new Match(input, matcher.start(group), matcher.end(group)) : null;
       }
     };
   }
@@ -324,13 +325,13 @@ public final class Substring {
     requireNonNull(open);
     requireNonNull(close);
     return new Pattern() {
-      @Override Match match(String str) {
-        Match left = open.match(str);
+      @Override Match match(String input) {
+        Match left = open.match(input);
         if (left == null) return null;
-        Match right = close.match(str);
+        Match right = close.match(input);
         if (right == null) return null;
         if (left.endIndex > right.startIndex) return null;
-        return new Match(str, left.endIndex, right.startIndex);
+        return new Match(input, left.endIndex, right.startIndex);
       }
     };
   }
@@ -338,7 +339,7 @@ public final class Substring {
   /** A substring pattern that can be matched against a string to find substrings. */
   public static abstract class Pattern {
     /** Matches against {@code string} and returns null if not found. */
-    abstract Match match(String string);
+    abstract Match match(String input);
     
     final Match match(Match match) {
       // TODO: should we match against substring directly without copying?
@@ -408,9 +409,9 @@ public final class Substring {
       requireNonNull(that);
       Pattern base = this;
       return new Pattern() {
-        @Override Match match(String str) {
-          Match match = base.match(str);
-          return match == null ? that.match(str) : match;
+        @Override Match match(String input) {
+          Match match = base.match(input);
+          return match == null ? that.match(input) : match;
         }
       };
     }
@@ -463,8 +464,8 @@ public final class Substring {
       requireNonNull(scope);
       Pattern inner = this;
       return new Pattern() {
-        @Override Match match(String str) {
-          Match outerMatch = scope.match(str);
+        @Override Match match(String input) {
+          Match outerMatch = scope.match(input);
           return outerMatch == null ? null : inner.match(outerMatch);
         }
       };
@@ -473,8 +474,8 @@ public final class Substring {
     private Pattern map(UnaryOperator<Match> mapper) {
       Pattern base = this;
       return new Pattern() {
-        @Override Match match(String str) {
-          Match match = base.match(str);
+        @Override Match match(String input) {
+          Match match = base.match(input);
           return match == null ? null : mapper.apply(match);
         }
       };
@@ -609,7 +610,7 @@ public final class Substring {
     }
   }
 
-  private static Match matchIfValidIndex(String str, int index, int length) {
-    return index >= 0 ? new Match(str, index, index + length) : null;
+  private static Match matchIfValidIndex(String input, int index, int length) {
+    return index >= 0 ? new Match(input, index, index + length) : null;
   }
 }
