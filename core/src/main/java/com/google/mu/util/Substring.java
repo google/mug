@@ -578,6 +578,19 @@ public final class Substring {
     @Override public String toString() {
       return context.substring(startIndex, endIndex);
     }
+  
+    Match subSequence(int begin, int end) {
+      if (begin < 0) {
+        throw new IndexOutOfBoundsException("Invalid index: " + begin);
+      }
+      if (begin > end) {
+        throw new IndexOutOfBoundsException("Invalid index: " + begin + " > " + end);
+      }
+      if (end > length()) {
+        throw new IndexOutOfBoundsException("Invalid index: " + end);
+      }
+      return new Match(context, startIndex + begin, startIndex + end);
+    }
 
     private Match preceding() {
       return new Match(context, 0, startIndex);
@@ -593,19 +606,6 @@ public final class Substring {
 
     private Match toEnd() {
       return new Match(context, startIndex, context.length());
-    }
-  
-    Match subSequence(int begin, int end) {
-      if (begin < 0) {
-        throw new IndexOutOfBoundsException("Invalid index: " + begin);
-      }
-      if (begin > end) {
-        throw new IndexOutOfBoundsException("Invalid index: " + begin + " > " + end);
-      }
-      if (end > length()) {
-        throw new IndexOutOfBoundsException("Invalid index: " + end);
-      }
-      return new Match(context, startIndex + begin, startIndex + end);
     }
   }
 
