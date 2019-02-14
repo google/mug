@@ -182,6 +182,25 @@ public final class Substring {
     };
   }
 
+  /** Returns a {@code Pattern} that matches the last occurrence of {@code c}. */
+  public static Pattern last(char c) {
+    return new Pattern() {
+      @Override Match match(String str) {
+        return matchIfValidIndex(str, str.lastIndexOf(c), 1);
+      }
+    };
+  }
+
+  /** Returns a {@code Pattern} that matches the last occurrence of {@code snippet}. */
+  public static Pattern last(String snippet) {
+    requireNonNull(snippet);
+    return new Pattern() {
+      @Override Match match(String str) {
+        return matchIfValidIndex(str, str.lastIndexOf(snippet), snippet.length());
+      }
+    };
+  }
+
   /**
    * Returns a {@code Pattern} that matches the first occurrence of {@code regexPattern}.
    *
@@ -242,24 +261,29 @@ public final class Substring {
   public static Pattern regexGroup(String regexPattern, int group) {
     return regexGroup(java.util.regex.Pattern.compile(regexPattern), group);
   }
-
-  /** Returns a {@code Pattern} that matches the last occurrence of {@code c}. */
-  public static Pattern last(char c) {
-    return new Pattern() {
-      @Override Match match(String str) {
-        return matchIfValidIndex(str, str.lastIndexOf(c), 1);
-      }
-    };
+  
+  /**
+   * Returns a {@code Pattern} that will match from {@code staringPoint} to the end of the input
+   * string. For example: <pre>
+   *   String commentRemoved = Substring.from(first("//")).removeFrom(line);
+   * </pre>
+   *
+   * @since 2.1
+   */
+  public static Pattern from(Pattern startingPoint) {
+    return startingPoint.map(Match::toEnd);
   }
 
-  /** Returns a {@code Pattern} that matches the last occurrence of {@code snippet}. */
-  public static Pattern last(String snippet) {
-    requireNonNull(snippet);
-    return new Pattern() {
-      @Override Match match(String str) {
-        return matchIfValidIndex(str, str.lastIndexOf(snippet), snippet.length());
-      }
-    };
+  /**
+   * Returns a {@code Pattern} that will match from the beginning of the input string up to
+   * {@code endingPoint} <em>inclusively</em>. For example: <pre>
+   *   String schemeStripped = Substring.upTo(first("://")).removeFrom(uri);
+   * </pre>
+   *
+   * @since 2.1
+   */
+  public static Pattern upTo(Pattern endingPoint) {
+    return endingPoint.map(Match::fromBeginning);
   }
 
   /**
@@ -284,30 +308,6 @@ public final class Substring {
    */
   public static Pattern after(Pattern delimiter) {
     return delimiter.map(Match::following);
-  }
-  
-  /**
-   * Returns a {@code Pattern} that will match from {@code staringPoint} to the end of the input
-   * string. For example: <pre>
-   *   String commentRemoved = Substring.from(first("//")).removeFrom(line);
-   * </pre>
-   *
-   * @since 2.1
-   */
-  public static Pattern from(Pattern startingPoint) {
-    return startingPoint.map(Match::toEnd);
-  }
-
-  /**
-   * Returns a {@code Pattern} that will match from the beginning of the input string up to
-   * {@code endingPoint} <em>inclusively</em>. For example: <pre>
-   *   String schemeStripped = Substring.upTo(first("://")).removeFrom(uri);
-   * </pre>
-   *
-   * @since 2.1
-   */
-  public static Pattern upTo(Pattern endingPoint) {
-    return endingPoint.map(Match::fromBeginning);
   }
 
   /**
@@ -348,14 +348,23 @@ public final class Substring {
           : match.subSequence(innerMatch.startIndex, innerMatch.endIndex);
     }
 
-    /** Finds the substring in {@code string} or returns {@code empty()} if not found. */
+    /**
+     * Finds the substring in {@code string} or returns {@code empty()} if not found.
+     *
+     * <p>This is useful if you need to call {@link Match} methods like {@link Match#remove},
+     * {@link Match#getBefore} etc. If you just need the matched substring itself, prefer to use
+     * {@link #from} instead.
+     */
     public final Optional<Match> in(String string) {
       return Optional.ofNullable(match(string));
     }
 
     /**
-     * Finds the substring in {@code string} or returns {@code empty()} if not found.
-     * {@code pattern.from(str)} is equivalent to {@code pattern.in(str).map(Object::toString)}.
+     * Finds the substring in {@code string} or returns {@code empty()} if not found. {@code
+     * pattern.from(str)} is equivalent to {@code pattern.in(str).map(Object::toString)}.
+     *
+     * <p>This is useful if you only need the matched substring itself. Use {@link #in} if you need
+     * to call {@link Match} methods like {@link Match#remove}, {@link Match#getBefore} etc.
      *
      * @since 2.1
      */
