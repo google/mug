@@ -16,6 +16,7 @@ package com.google.mu.util;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
 
@@ -182,6 +183,40 @@ public final class Substring {
     };
   }
 
+  /**
+   * Returns a {@code Pattern} that matches the first occurrence of {@code regexPattern}.
+   *
+   * <p>Unlike {@code str.replaceFirst(regexPattern, replacement)},
+   * <pre>first(regexPattern).replaceFrom(str, replacement)</pre> treats the {@code replacement} as a literal
+   * string with no special handling of backslash (\) and dollar sign ($) characters.
+   *
+   * @since 2.2
+   */
+  public static Pattern first(java.util.regex.Pattern regexPattern) {
+    return first(regexPattern, 0);
+  }
+
+  /**
+   * Returns a {@code Pattern} that matches capturing {@code group} of {@code regexPattern}.
+   *
+   * @throws IndexOutOfBoundsException if {@code group} is negative or exceeds the number of
+   *         capturing groups in {@code regexPattern}.
+   *
+   * @since 2.2
+   */
+  public static Pattern first(java.util.regex.Pattern regexPattern, int group) {
+    requireNonNull(regexPattern);
+    if (group < 0 || group > 0 && group > regexPattern.matcher("").groupCount()) {
+      throw new IndexOutOfBoundsException("Capturing group " + group + " doesn't exist.");
+    }
+    return new Pattern() {
+      @Override Match match(String input) {
+        java.util.regex.Matcher matcher = regexPattern.matcher(input);
+        return matcher.find() ? new Match(input, matcher.start(group), matcher.end(group)) : null;
+      }
+    };
+  }
+
   /** Returns a {@code Pattern} that matches the last occurrence of {@code c}. */
   public static Pattern last(char c) {
     return new Pattern() {
@@ -207,9 +242,11 @@ public final class Substring {
    * <p>Unlike {@code str.replaceFirst(regexPattern, replacement)},
    * <pre>regex(regexPattern).replaceFrom(str, replacement)</pre> treats the {@code replacement} as a literal
    * string with no special handling of backslash (\) and dollar sign ($) characters.
+   *
+   * @deprecated Use {@link #first(java.util.regex.Pattern)} instead.
    */
-  public static Pattern regex(java.util.regex.Pattern regexPattern) {
-    return regexGroup(regexPattern, 0);
+  @Deprecated public static Pattern regex(java.util.regex.Pattern regexPattern) {
+    return first(regexPattern);
   }
 
   /**
@@ -222,9 +259,11 @@ public final class Substring {
    * <p>Because this method must compile {@code regexPattern}, you should store and re-use
    * the returned {@link Pattern} object rather than calling {@code regex(regexPattern)}
    * repeatedly.
+   *
+   * @deprecated Use {@link #first(java.util.regex.Pattern)} instead.
    */
-  public static Pattern regex(String regexPattern) {
-    return regex(java.util.regex.Pattern.compile(regexPattern));
+  @Deprecated public static Pattern regex(String regexPattern) {
+    return first(java.util.regex.Pattern.compile(regexPattern));
   }
 
   /**
@@ -232,18 +271,10 @@ public final class Substring {
    *
    * @throws IndexOutOfBoundsException if {@code group} is negative or exceeds the number of
    *         capturing groups in {@code regexPattern}.
+   * @deprecated Use {@link #first(java.util.regex.Pattern)} instead.
    */
-  public static Pattern regexGroup(java.util.regex.Pattern regexPattern, int group) {
-    requireNonNull(regexPattern);
-    if (group < 0 || group > 0 && group > regexPattern.matcher("").groupCount()) {
-      throw new IndexOutOfBoundsException("Capturing group " + group + " doesn't exist.");
-    }
-    return new Pattern() {
-      @Override Match match(String input) {
-        java.util.regex.Matcher matcher = regexPattern.matcher(input);
-        return matcher.find() ? new Match(input, matcher.start(group), matcher.end(group)) : null;
-      }
-    };
+  @Deprecated public static Pattern regexGroup(java.util.regex.Pattern regexPattern, int group) {
+    return first(regexPattern, group);
   }
 
   /**
@@ -258,9 +289,10 @@ public final class Substring {
    *
    * @throws IndexOutOfBoundsException if {@code group} is negative or exceeds the number of
    *         capturing groups in {@code regexPattern}.
+   * @deprecated Use {@link #first(java.util.regex.Pattern, int)} instead.
    */
-  public static Pattern regexGroup(String regexPattern, int group) {
-    return regexGroup(java.util.regex.Pattern.compile(regexPattern), group);
+  @Deprecated public static Pattern regexGroup(String regexPattern, int group) {
+    return first(java.util.regex.Pattern.compile(regexPattern), group);
   }
   
   /**
@@ -269,21 +301,24 @@ public final class Substring {
    *   String commentRemoved = Substring.from(first("//")).removeFrom(line);
    * </pre>
    *
-   * @since 2.1
+   * @deprecated Use {@link Pattern#toEnd} instead.
    */
-  public static Pattern from(Pattern startingPoint) {
-    return startingPoint.map(Match::toEnd);
+  @Deprecated public static Pattern from(Pattern startingPoint) {
+    return startingPoint.toEnd();
   }
 
   /**
    * Returns a {@code Pattern} that will match from the beginning of the input string up to
    * {@code endingPoint} <em>inclusively</em>. For example: <pre>
-   *   String schemeStripped = Substring.upTo(first("://")).removeFrom(uri);
+   *   String schemeStripped = Substring.upToIncluding(first("://")).removeFrom(uri);
    * </pre>
    *
-   * @since 2.1
+   * <p>To match from the start of {@code pattern} to the end of the original string, use
+   * {@link Pattern#toEnd} instead.
+   *
+   * @since 2.2
    */
-  public static Pattern upTo(Pattern endingPoint) {
+  public static Pattern upToIncluding(Pattern endingPoint) {
     return endingPoint.map(Match::fromBeginning);
   }
 
@@ -370,7 +405,7 @@ public final class Substring {
      * @since 2.1
      */
     public final Optional<String> from(String string) {
-      return in(string).map(Object::toString);
+      return Optional.ofNullable(Objects.toString(match(string), null));
     }
 
     /**
@@ -414,6 +449,21 @@ public final class Substring {
           return match == null ? that.match(input) : match;
         }
       };
+    }
+
+    /**
+     * Returns a {@code Pattern} that will match from {@code staringPoint} to the end of the input
+     * string. For example: <pre>
+     *   String commentRemoved = first("//").toEnd().removeFrom(line);
+     * </pre>
+     *
+     * <p>To match from the beginning of the input string to the end of a pattern, use
+     * {@link Substring#upToIncluding} instead.
+     *
+     * @since 2.2
+     */
+    public final Pattern toEnd() {
+      return map(Match::toEnd);
     }
 
     /**
