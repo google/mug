@@ -759,16 +759,6 @@ public class SubstringTest {
     assertThat(match.length()).isEqualTo(3);
   }
 
-  @Test public void between_matchedBySameFirstCharUsingWithin() {
-    Substring.Pattern delimiter = first('-');
-    Substring.Match match = Substring.between(delimiter, delimiter.after(delimiter))
-        .in("foo-bar-baz-").get();
-    assertThat(match.toString()).isEqualTo("bar");
-    assertThat(match.getBefore()).isEqualTo("foo-");
-    assertThat(match.getAfter()).isEqualTo("-baz-");
-    assertThat(match.length()).isEqualTo(3);
-  }
-
   @Test public void between_matchedBySameLastCharUsingWithin() {
     Substring.Pattern delimiter = last('-');
     Substring.Match match = Substring.between(delimiter.before(delimiter), delimiter)
@@ -787,10 +777,13 @@ public class SubstringTest {
     assertThat(match.length()).isEqualTo(0);
   }
 
-  @Test public void between_nothingBetweenFirstChar() {
+  @Test public void between_consecutiveFirstChar() {
     Substring.Pattern delimiter = first('-');
-    assertThat(Substring.between(delimiter, delimiter).in("foo-bar-baz"))
-        .isEmpty();
+    Substring.Match match = Substring.between(delimiter, delimiter).in("foo-bar-baz").get();
+    assertThat(match.toString()).isEqualTo("bar");
+    assertThat(match.getBefore()).isEqualTo("foo-");
+    assertThat(match.getAfter()).isEqualTo("-baz");
+    assertThat(match.length()).isEqualTo(3);
   }
 
   @Test public void between_matchedFully() {
@@ -849,7 +842,7 @@ public class SubstringTest {
 
   @Test public void between_closeIsBeforeOpen() {
     assertThat(Substring.between(first('<'), first('>')).in(">foo<")).isEmpty();
-    assertThat(Substring.between(first('<'), first('>')).in(">foo<>")).isEmpty();
+    assertThat(Substring.between(first('<'), first('>')).from(">foo<bar>")).hasValue("bar");;
   }
 
   @Test public void between_matchesNone() {

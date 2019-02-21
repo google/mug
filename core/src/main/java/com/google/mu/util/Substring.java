@@ -363,10 +363,9 @@ public final class Substring {
       @Override Match match(String input) {
         Match left = open.match(input);
         if (left == null) return null;
-        Match right = close.match(input);
+        Match right = close.match(input.substring(left.endIndex));
         if (right == null) return null;
-        if (left.endIndex > right.startIndex) return null;
-        return new Match(input, left.endIndex, right.startIndex);
+        return new Match(input, left.endIndex, left.endIndex + right.startIndex);
       }
     };
   }
