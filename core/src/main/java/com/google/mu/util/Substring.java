@@ -236,73 +236,27 @@ public final class Substring {
     };
   }
 
-  /**
-   * Returns a {@code Pattern} that matches the first occurrence of {@code regexPattern}.
-   *
-   * <p>Unlike {@code str.replaceFirst(regexPattern, replacement)},
-   * <pre>regex(regexPattern).replaceFrom(str, replacement)</pre> treats the {@code replacement} as a literal
-   * string with no special handling of backslash (\) and dollar sign ($) characters.
-   *
-   * @deprecated Use {@link #first(java.util.regex.Pattern)} instead.
-   */
+  /** @deprecated Use {@link #first(java.util.regex.Pattern)} instead. */
   @Deprecated public static Pattern regex(java.util.regex.Pattern regexPattern) {
     return first(regexPattern);
   }
 
-  /**
-   * Returns a {@code Pattern} that matches the first occurrence of {@code regexPattern}.
-   *
-   * <p>Unlike {@code str.replaceFirst(regexPattern, replacement)},
-   * <pre>regex(regexPattern).replaceFrom(str, replacement)</pre> treats the {@code replacement} as a literal
-   * string with no special handling of backslash (\) and dollar sign ($) characters.
-   *
-   * <p>Because this method must compile {@code regexPattern}, you should store and re-use
-   * the returned {@link Pattern} object rather than calling {@code regex(regexPattern)}
-   * repeatedly.
-   *
-   * @deprecated Use {@link #first(java.util.regex.Pattern)} instead.
-   */
+  /** @deprecated Use {@link #first(java.util.regex.Pattern)} instead. */
   @Deprecated public static Pattern regex(String regexPattern) {
     return first(java.util.regex.Pattern.compile(regexPattern));
   }
 
-  /**
-   * Returns a {@code Pattern} that matches capturing {@code group} of {@code regexPattern}.
-   *
-   * @throws IndexOutOfBoundsException if {@code group} is negative or exceeds the number of
-   *         capturing groups in {@code regexPattern}.
-   * @deprecated Use {@link #first(java.util.regex.Pattern)} instead.
-   */
+  /** @deprecated Use {@link #first(java.util.regex.Pattern)} instead. */
   @Deprecated public static Pattern regexGroup(java.util.regex.Pattern regexPattern, int group) {
     return first(regexPattern, group);
   }
 
-  /**
-   * Returns a {@code Pattern} that matches capturing {@code group} of {@code regexPattern}.
-   *
-   * <p>Unlike {@code str.replaceFirst(regexPattern, replacement)},
-   * <pre>regexGroup(regexPattern, group).replaceFrom(str, replacement)</pre> treats the {@code replacement}
-   * as a literal string with no special handling of backslash (\) and dollar sign ($) characters.
-   *
-   * <p>Because this method internally compiles {@code regexPattern}, it's more efficient to reuse the
-   * returned {@link Pattern} object than calling {@code regexGroup(regexPattern, group)} repetitively.
-   *
-   * @throws IndexOutOfBoundsException if {@code group} is negative or exceeds the number of
-   *         capturing groups in {@code regexPattern}.
-   * @deprecated Use {@link #first(java.util.regex.Pattern, int)} instead.
-   */
+  /** @deprecated Use {@link #first(java.util.regex.Pattern, int)} instead. */
   @Deprecated public static Pattern regexGroup(String regexPattern, int group) {
     return first(java.util.regex.Pattern.compile(regexPattern), group);
   }
   
-  /**
-   * Returns a {@code Pattern} that will match from {@code staringPoint} to the end of the input
-   * string. For example: <pre>
-   *   String commentRemoved = Substring.from(first("//")).removeFrom(line);
-   * </pre>
-   *
-   * @deprecated Use {@link Pattern#toEnd} instead.
-   */
+  /** @deprecated Use {@link Pattern#toEnd} instead. */
   @Deprecated public static Pattern from(Pattern startingPoint) {
     return startingPoint.toEnd();
   }
