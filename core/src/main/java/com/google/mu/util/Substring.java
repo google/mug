@@ -48,7 +48,7 @@ import java.util.function.UnaryOperator;
  *
  * <pre>
  *   static String stripDashSuffix(String str) {
- *     return Substring.from(last('-')).removeFrom(str);
+ *     return last('-').toEnd().removeFrom(str);
  *   }
  * </pre>
  *
