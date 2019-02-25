@@ -21,12 +21,11 @@ import java.util.Optional;
 import java.util.function.UnaryOperator;
 
 /**
- * Utilities to create patterns that can match a single substring in an input string.
- * After applying the pattern to a matching string, the matched substring can be
- * {@link Pattern#from extracted}, {@link Pattern#removeFrom removed}, {@link Pattern#replaceFrom
- * replaced}, or used to divide the original string in two.
+ * Utilities for creating patterns that attempt to match a substring in an input string. The matched
+ * substring can be {@link Pattern#from extracted}, {@link Pattern#removeFrom removed}, {@link
+ * Pattern#replaceFrom replaced}, or used to divide the input string into parts.
  *
- * <p>For example, to strip off the "http://" prefix from a uri string if existent:
+ * <p>For example, to strip off the "http://" prefix from a uri string if present:
  *
  * <pre>
  *   static String stripHttp(String uri) {
@@ -34,17 +33,17 @@ import java.util.function.UnaryOperator;
  *   }
  * </pre>
  *
- * To strip off either "http://" or "https://" prefix:
+ * To strip off either an "http://" or "https://" prefix if present:
  *
  * <pre>
- *   static import com.google.mu.util.Substring.prefix;
+ *   static import com.google.common.labs.base.Substring.prefix;
  *
  *   static String stripHttpOrHttps(String uri) {
  *     return prefix("http://").or(prefix("https://")).removeFrom(uri);
  *   }
  * </pre>
  *
- * To strip off the suffix starting with a dash (-) character:
+ * To strip off a suffix starting with a dash (-) character:
  *
  * <pre>
  *   static String stripDashSuffix(String str) {
@@ -52,7 +51,7 @@ import java.util.function.UnaryOperator;
  *   }
  * </pre>
  *
- * To replace trailing "//" with "/":
+ * To replace a trailing "//" with "/":
  *
  * <pre>
  *   static String fixTrailingSlash(String str) {
@@ -60,7 +59,7 @@ import java.util.function.UnaryOperator;
  *   }
  * </pre>
  *
- * To extract the 'name' and 'value' from texts in the format of "name:value":
+ * To extract the 'name' and 'value' from an input string in the format of "name:value":
  *
  * <pre>
  *   String str = ...;
@@ -262,9 +261,13 @@ public final class Substring {
   }
 
   /**
-   * Returns a {@code Pattern} that will match from the beginning of the input string up to
-   * {@code endingPoint} <em>inclusively</em>. For example: <pre>
-   *   String schemeStripped = Substring.upToIncluding(first("://")).removeFrom(uri);
+   * Returns a {@code Pattern} that will match from the beginning of the original string up to
+   * the substring matched by {@code pattern} <em>inclusively</em>. For example:
+   *
+   * <pre>
+   *   String uri = "http://google.com";
+   *   String schemeStripped = upToIncluding(first("://")).removeFrom(uri);
+   *   assertThat(schemeStripped).isEqualTo("google.com");
    * </pre>
    *
    * <p>To match from the start of {@code pattern} to the end of the original string, use
@@ -277,9 +280,19 @@ public final class Substring {
   }
 
   /**
-   * Returns a {@code Pattern} that covers the substring before {@code delimiter}.
-   * For example: <pre>
-   *   String startFromDoubleSlash = Substring.before(first("//")).removeFrom(uri);
+   * Returns a {@code Pattern} that will match the substring between {@code open} and {@code close}.
+   * For example the following pattern finds the link text in markdown syntax:
+   * <pre>
+   *   private static final Substring.Pattern DEPOT_PATH =
+   *       Substring.between(first("//depot/"), last('/'));
+   *   String path = DEPOT_PATH.from("//depot/google3/foo/bar/baz.txt").get();
+   *   assertThat(path).isEqualTo("google3/foo/bar");
+   * </pre>
+   *
+   * <p>Note that the {@code close} pattern is matched against the substring after the end of
+   * {@code open}. For example: <pre>
+   *   String dir1 = Substring.between(first('/'), first('/')).from("/usr/home/abc").get();
+   *   assertThat(dir1).isEqualTo("usr");
    * </pre>
    *
    * @since 2.1
@@ -289,9 +302,12 @@ public final class Substring {
   }
 
   /**
-   * Returns a {@code Pattern} that covers the substring after {@code delimiter}.
-   * For example: <pre>
-   *   String endWithPeriod = Substring.after(last(".")).removeFrom(line);
+   * Returns a {@code Pattern} that covers the substring after {@code delimiter}. For example:
+   *
+   * <pre>
+   *   String file = "/home/path/file.txt";
+   *   String ext = Substring.after(last('.')).from(file).orElseThrow(...);
+   *   assertThat(ext).isEqualTo("txt");
    * </pre>
    *
    * @since 2.1
@@ -338,10 +354,11 @@ public final class Substring {
     }
 
     /**
-     * Finds the substring in {@code string} or returns {@code empty()} if not found.
+     * Matches this pattern against {@code string}, returning a {@code Match} if successful, or
+     * {@code empty()} otherwise.
      *
-     * <p>This is useful if you need to call {@link Match} methods like {@link Match#remove},
-     * {@link Match#getBefore} etc. If you just need the matched substring itself, prefer to use
+     * <p>This is useful if you need to call {@link Match} methods, like {@link Match#remove} or
+     * {@link Match#getBefore}. If you just need the matched substring itself, prefer to use
      * {@link #from} instead.
      */
     public final Optional<Match> in(String string) {
@@ -349,11 +366,12 @@ public final class Substring {
     }
 
     /**
-     * Finds the substring in {@code string} or returns {@code empty()} if not found. {@code
-     * pattern.from(str)} is equivalent to {@code pattern.in(str).map(Object::toString)}.
+     * Matches this pattern against {@code string}, returning the matched substring if successful,
+     * or {@code empty()} otherwise. {@code pattern.from(str)} is equivalent to
+     * {@code pattern.in(str).map(Object::toString)}.
      *
      * <p>This is useful if you only need the matched substring itself. Use {@link #in} if you need
-     * to call {@link Match} methods like {@link Match#remove}, {@link Match#getBefore} etc.
+     * to call {@link Match} methods, like {@link Match#remove} or {@link Match#getBefore}.
      *
      * @since 2.1
      */
@@ -362,8 +380,8 @@ public final class Substring {
     }
 
     /**
-     * Returns a new string with the substring matched by {@code this} removed. Returns {@code string} as is
-     * if a substring is not found.
+     * Matches this pattern against {@code string}, and returns a copy with the matched substring
+     * removed if successful. Otherwise, returns {@code string} unchanged.
      */
     public final String removeFrom(String string) {
       Match match = match(string);
@@ -371,8 +389,8 @@ public final class Substring {
     }
 
     /**
-     * Returns a new string with the substring matched by {@code this} replaced by {@code replacement}.
-     * Returns {@code string} as is if a substring is not found.
+     * Returns a new string with the substring matched by {@code this} replaced by {@code
+     * replacement}. Returns {@code string} as-is if a substring is not found.
      */
     public final String replaceFrom(String string, char replacement) {
       Match match = match(string);
@@ -380,8 +398,8 @@ public final class Substring {
     }
 
     /**
-     * Returns a new string with the substring matched by {@code this} replaced by {@code replacement}.
-     * Returns {@code string} as is if a substring is not found.
+     * Returns a new string with the substring matched by {@code this} replaced by {@code
+     * replacement}. Returns {@code string} as-is if a substring is not found.
      */
     public final String replaceFrom(String string, CharSequence replacement) {
       requireNonNull(replacement);
@@ -405,9 +423,13 @@ public final class Substring {
     }
 
     /**
-     * Returns a {@code Pattern} that will match from {@code staringPoint} to the end of the input
-     * string. For example: <pre>
-     *   String commentRemoved = first("//").toEnd().removeFrom(line);
+     * Returns a {@code Pattern} that will match from the substring matched by {@code this} to the
+     * end of the input string. For example:
+     *
+     * <pre>
+     *   String line = "return foo; // some comment...";
+     *   String commentRemoved = first("//").toEnd().removeFrom(line).trim();
+     *   assertThat(commentRemoved).isEqualTo("return foo;");
      * </pre>
      *
      * <p>To match from the beginning of the input string to the end of a pattern, use
@@ -486,13 +508,14 @@ public final class Substring {
   }
 
   /**
-   * A matched substring inside a string, providing easy access to substrings around it
-   * ({@link #getBefore before}, {@link #getAfter after} or with the matched substring itself
-   * {@link #remove removed}, {@link #replaceWith replaced} etc.).
+   * The result of successfully matching a {@link Pattern} against a string, providing access to the
+   * {@link #toString matched substring}, to the parts of the string {@link #before before} and
+   * {@link #after after} it, and to copies with the matched substring {@link #remove removed} or
+   * {@link #replaceWith replaced}.
    *
-   * <em>Note:</em> a {@link Match} is a view of the original string and holds a strong
+   * <p><em>Note:</em> a {@link Match} is a view of the original string and holds a strong
    * reference to the original string. It's advisable to construct and use a {@code Match} object
-   * within the scope of a method. Holding onto a {@code Match} object has the same risk of leaking
+   * within the scope of a method; holding onto a {@code Match} object has the same risk of leaking
    * memory as holding onto the string it was produced from.
    *
    * @since 2.2
@@ -513,7 +536,7 @@ public final class Substring {
      *
      * <p>{@link #getBefore} and {@link #getAfter} are almost always used together to split a string
      * into two parts. If you just need the substring before the match, you might want to use
-     * {@code Substring.before(pattern)} instead because the pattern logic is encoded entirely in
+     * {@code Substring.before(pattern)} instead, because the pattern logic is encoded entirely in
      * the {@link Pattern} object. For example: <pre>
      *   private static final Substring.Pattern DIRECTORY = Substring.before(last("/"));
      * </pre>
@@ -527,7 +550,7 @@ public final class Substring {
      *
      * <p>{@link #getBefore} and {@link #getAfter} are almost always used together to split a string
      * into two parts. If you just need the substring after the match, you might want to use
-     * {@code Substring.after(pattern)} instead because the pattern logic is encoded entirely in
+     * {@code Substring.after(pattern)} instead, because the pattern logic is encoded entirely in
      * the {@link Pattern} object. For example: <pre>
      *   private static final Substring.Pattern LINE_COMMENT = Substring.after(first("//"));
      * </pre>

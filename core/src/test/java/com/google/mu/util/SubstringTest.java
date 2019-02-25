@@ -12,6 +12,8 @@ import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.NullPointerTester;
 
 import java.util.Optional;
+import java.util.regex.Pattern;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -845,10 +847,108 @@ public class SubstringTest {
     assertThat(Substring.between(first('<'), first('>')).from(">foo<bar>")).hasValue("bar");;
   }
 
+  @Test public void between_closeUsesBefore() {
+    Substring.Pattern open = first("-");
+    Substring.Pattern close = Substring.before(first("-"));
+    Substring.Match match = Substring.between(open, close)
+        .in("-foo-").get();
+    assertThat(match.toString()).isEmpty();
+    assertThat(match.getBefore()).isEqualTo("-");
+    assertThat(match.getAfter()).isEqualTo("foo-");
+    assertThat(match.length()).isEqualTo(0);
+  }
+
+  @Test public void between_closeUsesUpToIncluding() {
+    Substring.Match match = Substring.between(first("-"), Substring.upToIncluding(first("-")))
+        .in("-foo-").get();
+    assertThat(match.toString()).isEmpty();
+    assertThat(match.getBefore()).isEqualTo("-");
+    assertThat(match.getAfter()).isEqualTo("foo-");
+    assertThat(match.length()).isEqualTo(0);
+  }
+
+  @Test public void between_closeBeforeOpenDoesNotCount() {
+    Substring.Match match = Substring.between(first('<'), first('>')).in("><foo>").get();
+    assertThat(match.toString()).isEqualTo("foo");
+    assertThat(match.getBefore()).isEqualTo("><");
+    assertThat(match.getAfter()).isEqualTo(">");
+    assertThat(match.length()).isEqualTo(3);
+  }
+
+  @Test public void between_closeUsesRegex() {
+    Substring.Match match = Substring.between(first("-"), first(Pattern.compile(".*-")))
+        .in("-foo-").get();
+    assertThat(match.toString()).isEmpty();
+    assertThat(match.getBefore()).isEqualTo("-");
+    assertThat(match.getAfter()).isEqualTo("foo-");
+    assertThat(match.length()).isEqualTo(0);
+  }
+
+  @Test public void between_closeOverlapsWithOpen() {
+    assertThat(Substring.between(first("abc"), last("cde")).in("abcde")).isEmpty();
+    assertThat(Substring.between(first("abc"), last('c')).in("abc")).isEmpty();
+    assertThat(Substring.between(first("abc"), suffix("cde")).in("abcde")).isEmpty();
+    assertThat(Substring.between(first("abc"), suffix('c')).in("abc")).isEmpty();
+    assertThat(Substring.between(first("abc"), prefix("a")).in("abc")).isEmpty();
+    assertThat(Substring.between(first("abc"), prefix('a')).in("abc")).isEmpty();
+    assertThat(Substring.between(first("abc"), first("a")).in("abc")).isEmpty();
+    assertThat(Substring.between(first("abc"), first('a')).in("abc")).isEmpty();
+  }
+
+  @Test public void between_betweenInsideBetween() {
+    Substring.Match match = Substring
+        .between(first("-"), Substring.between(first(""), first('-')))
+        .in("-foo-").get();
+    assertThat(match.toString()).isEmpty();
+    assertThat(match.getBefore()).isEqualTo("-");
+    assertThat(match.getAfter()).isEqualTo("foo-");
+    assertThat(match.length()).isEqualTo(0);
+  }
+
   @Test public void between_matchesNone() {
     assertThat(Substring.between(first('<'), first('>')).in("foo")).isEmpty();
   }
 
+
+  @Test public void between_emptyOpen() {
+    Substring.Match match = Substring.between(first(""), first(", ")).in("foo, bar").get();
+    assertThat(match.toString()).isEqualTo("foo");
+    assertThat(match.getBefore()).isEmpty();
+    assertThat(match.getAfter()).isEqualTo(", bar");
+    assertThat(match.length()).isEqualTo(3);
+  }
+
+  @Test public void between_emptyClose() {
+    Substring.Match match = Substring.between(first(":"), first("")).in("foo:bar").get();
+    assertThat(match.toString()).isEmpty();
+    assertThat(match.getBefore()).isEqualTo("foo:");
+    assertThat(match.getAfter()).isEqualTo("bar");
+    assertThat(match.length()).isEqualTo(0);
+  }
+
+  @Test public void between_emptyOpenAndClose() {
+    Substring.Match match = Substring.between(first(""), first("")).in("foo").get();
+    assertThat(match.toString()).isEmpty();
+    assertThat(match.getBefore()).isEmpty();
+    assertThat(match.getAfter()).isEqualTo("foo");
+    assertThat(match.length()).isEqualTo(0);
+  }
+
+  @Test public void between_openAndCloseAreEqual() {
+    Substring.Match match = Substring.between(first("-"), first("-")).in("foo-bar-baz-duh").get();
+    assertThat(match.toString()).isEqualTo("bar");
+    assertThat(match.getBefore()).isEqualTo("foo-");
+    assertThat(match.getAfter()).isEqualTo("-baz-duh");
+    assertThat(match.length()).isEqualTo(3);
+  }
+
+  @Test public void between_closeBeforeOpenIgnored() {
+    Substring.Match match = Substring.between(first("<"), first(">")).in(">foo<bar>").get();
+    assertThat(match.toString()).isEqualTo("bar");
+    assertThat(match.getBefore()).isEqualTo(">foo<");
+    assertThat(match.getAfter()).isEqualTo(">");
+    assertThat(match.length()).isEqualTo(3);
+  }
   @Test public void patternAfterPattern_delimiterNotFound() {
     assertThat(last(')').after(first('(')).in("abc)")).isEmpty();
   }
