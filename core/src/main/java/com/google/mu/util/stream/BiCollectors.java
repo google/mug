@@ -82,9 +82,9 @@ public final class BiCollectors {
    * flattens each (employee, task) entry to collect the sum of task hours per employee:
    *
    * <pre>{@code
-   * ImmutableMap<Employee, Integer> employeeTotalTaskHours = projects.stream()
+   * Map<Employee, Integer> employeeTotalTaskHours = projects.stream()
    *   .map(Project::getTaskAssignmentsMap)  // stream of Map<Employee, Task>
-   *   .collect(flatteningMaps(toImmutableMap(summingInt(Task::getHours))));
+   *   .collect(flatteningMaps(toMap(summingInt(Task::getHours))));
    * }</pre>
    */
   public static <K, V, R> Collector<Map<K, V>, ?, R> flatteningMaps(
