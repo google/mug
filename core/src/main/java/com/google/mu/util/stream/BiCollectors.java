@@ -70,7 +70,8 @@ public final class BiCollectors {
       @Override public <E> Collector<E, ?, Map<K, V>> bisecting(
           Function<E, K> toKey, Function<E, V1> toValue) {
         return Collectors.collectingAndThen(
-            Collectors.groupingBy(toKey, LinkedHashMap::new, Collectors.mapping(toValue, valueCollector)),
+            Collectors.groupingBy(
+                toKey, LinkedHashMap::new, Collectors.mapping(toValue, valueCollector)),
             Collections::unmodifiableMap);
       }
     };
@@ -89,27 +90,8 @@ public final class BiCollectors {
    */
   public static <K, V, R> Collector<Map<K, V>, ?, R> flatteningMaps(
       BiCollector<? super K, ? super V, R> downstream) {
-    return Collectors.mapping(Map::entrySet, flatteningEntries(downstream));
-  }
-
-  private static <K, V, R> Collector<Collection<Map.Entry<K, V>>, ?, R> flatteningEntries(
-      BiCollector<? super K, ? super V, R> downstream) {
-    return fromEntries(downstream.bisecting(Map.Entry::getKey, Map.Entry::getValue));
-  }
-
-  private static <K, V, A, R> Collector<Collection<Map.Entry<K, V>>, A, R> fromEntries(
-      Collector<Map.Entry<K, V>, A, R> collector) {
-    BiConsumer<A, Map.Entry<K, V>> accumulator = collector.accumulator();
-    return Collector.of(
-        collector.supplier(),
-        (a, entries) -> {
-          for (Map.Entry<K, V> entry : entries) {
-            accumulator.accept(a, entry);
-          }
-        },
-        collector.combiner(),
-        collector.finisher(),
-        collector.characteristics().toArray(new Characteristics[0]));
+    return Collectors.flatMapping(
+        m -> m.entrySet().stream(), downstream.bisecting(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   private BiCollectors() {}
