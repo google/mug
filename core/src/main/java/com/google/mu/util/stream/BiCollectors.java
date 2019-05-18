@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 /**
  * Common utilities pertaining to {@link BiCollector}.
  *
- * @since 2.3
+ * @since 3.0
  */
 public final class BiCollectors {
 
@@ -75,22 +75,6 @@ public final class BiCollectors {
             Collections::unmodifiableMap);
       }
     };
-  }
-
-  /**
-   * Returns a {@link Collector} that will flatten the map entries from the input {@code Map}s and
-   * pass each key-value pair to {@code downstream} collector. For example, the following code
-   * flattens each (employee, task) entry to collect the sum of task hours per employee:
-   *
-   * <pre>{@code
-   * Map<Employee, Integer> employeeTotalTaskHours = projects.stream()
-   *   .map(Project::getTaskAssignmentsMap)  // stream of Map<Employee, Task>
-   *   .collect(flattening(toMap(summingInt(Task::getHours))));
-   * }</pre>
-   */
-  public static <K, V, R> Collector<Map<K, V>, ?, R> flattening(
-      BiCollector<? super K, ? super V, R> downstream) {
-    return flattening(Map::entrySet, downstream);
   }
 
   /**

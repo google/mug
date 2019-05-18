@@ -59,7 +59,7 @@ public class BiCollectorsTest {
   @Test public void testCollectMapEntriesToCount() {
     Map<String, Long> collected =
         Stream.of(ImmutableMap.of("foo", 1), ImmutableMap.of("foo", 2))
-            .collect(flattening(toMap(counting())));
+            .collect(flattening(Map::entrySet, toMap(counting())));
     assertThat(collected).containsExactly("foo", 2L);
   }
 

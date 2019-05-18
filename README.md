@@ -69,7 +69,7 @@ import static java.util.stream.Collectors.summingInt;
 
 ImmutableMap<EmployeeId, Integer> workerHours = projects.stream()
     .map(Project::getTaskAssignments)  // stream of Map<WorkerId, Task>
-    .collect(flattening(toMap(summingInt(Task::getHours))));
+    .collect(flattening(Map::entrySet, toMap(summingInt(Task::getHours))));
 ```
 
 **Example 6: to turn a `Collection<Pair<K, V>>` to `BiStream<K, V>`:**
