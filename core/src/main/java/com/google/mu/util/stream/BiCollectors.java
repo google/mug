@@ -85,7 +85,7 @@ public final class BiCollectors {
    * <pre>{@code
    * Map<Employee, Integer> employeeTotalTaskHours = projects.stream()
    *   .map(Project::getTaskAssignmentsMap)  // stream of Map<Employee, Task>
-   *   .collect(flatteningMaps(toMap(summingInt(Task::getHours))));
+   *   .collect(flattening(toMap(summingInt(Task::getHours))));
    * }</pre>
    */
   public static <K, V, R> Collector<Map<K, V>, ?, R> flattening(
