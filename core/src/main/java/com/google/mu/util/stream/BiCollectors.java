@@ -90,8 +90,27 @@ public final class BiCollectors {
    */
   public static <K, V, R> Collector<Map<K, V>, ?, R> flattening(
       BiCollector<? super K, ? super V, R> downstream) {
+    return flattening(Map::entrySet, downstream);
+  }
+
+  /**
+   * Returns a {@link Collector} that will flatten the map entries derived from the
+   * input elements using {@code toEntries} function and then pass each key-value pair to
+   * {@code downstream} collector. For example, the following code flattens each (employee, task)
+   * entry to collect the sum of task hours per employee:
+   *
+   * <pre>{@code
+   * Map<Employee, Integer> employeeTotalTaskHours = projects.stream()
+   *   .map(Project::getTaskAssignmentsMultimap)  // stream of Multimap<Employee, Task>
+   *   .collect(flattening(Multimap::entries, toMap(summingInt(Task::getHours))));
+   * }</pre>
+   */
+  public static <E, K, V, R> Collector<E, ?, R> flattening(
+      Function<? super E, ? extends Collection<Map.Entry<K, V>>> toEntries,
+      BiCollector<? super K, ? super V, R> downstream) {
     return Collectors.flatMapping(
-        m -> m.entrySet().stream(), downstream.bisecting(Map.Entry::getKey, Map.Entry::getValue));
+        toEntries.andThen(Collection::stream),
+        downstream.bisecting(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   private BiCollectors() {}
