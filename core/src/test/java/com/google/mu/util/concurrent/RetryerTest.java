@@ -909,9 +909,9 @@ public class RetryerTest {
   }
 
   @Test public void testDelay_invalid() {
-    assertThrows(ArithmeticException.class, () -> ofDays(Long.MAX_VALUE));
+    assertThrows(RuntimeException.class, () -> ofDays(Long.MAX_VALUE));
     assertThrows(IllegalArgumentException.class, () -> Delay.ofMillis(-1));
-    assertThrows(ArithmeticException.class, () -> Delay.ofMillis(Long.MIN_VALUE));
+    assertThrows(RuntimeException.class, () -> Delay.ofMillis(Long.MIN_VALUE));
     assertThrows(IllegalArgumentException.class, () -> Delay.of(Duration.ofDays(-1)));
   }
 

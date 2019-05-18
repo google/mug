@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Spliterator;
-import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
@@ -125,6 +124,7 @@ public final class BiStream<K, V> implements AutoCloseable {
    *     biStream(users.stream(), User::getId, User::getProfile);
    * }</pre>
    */
+  @Deprecated
   public static <T> BiStream<T, T> biStream(Stream<? extends T> stream) {
     return biStream(stream, identity(), identity());
   }
@@ -135,6 +135,7 @@ public final class BiStream<K, V> implements AutoCloseable {
    *
    * @since 1.11
    */
+  @Deprecated
   public static <T, K, V> BiStream<K, V> biStream(
       Stream<? extends T> stream,
       Function<? super T, ? extends K> toKey, Function<? super T, ? extends V> toValue) {
@@ -367,21 +368,7 @@ public final class BiStream<K, V> implements AutoCloseable {
    * @since 1.2
    */
   public Map<K, V> toMap() {
-    // TODO: collect(Collectors::toMap) compiles in Eclipse but not in current javac.
-    return this.<Map<K, V>>collect(Collectors::toMap);
-  }
-
-  /**
-   * Collects the stream into a {@code ConcurrentMap<K, V>}.
-   * Duplicate keys results in {@link IllegalStateException}.
-   *
-   * <p>Equivalent to {@code collect(Collectors::toConcurrentMap)}.
-   *
-   * @since 1.2
-   */
-  public ConcurrentMap<K, V> toConcurrentMap() {
-    // TODO: collect(Collectors::toConcurrentMap) compiles in Eclipse but not in current javac.
-    return this.<ConcurrentMap<K, V>>collect(Collectors::toConcurrentMap);
+    return collect(Collectors::toMap);
   }
 
   /**
