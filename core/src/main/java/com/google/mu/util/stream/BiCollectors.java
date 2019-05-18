@@ -79,7 +79,7 @@ public final class BiCollectors {
 
   /**
    * Returns a {@link Collector} that will flatten the map entries derived from the
-   * input elements using {@code toEntries} function and then pass each key-value pair to
+   * input elements using {@code getEntries} function and then pass each key-value pair to
    * {@code downstream} collector. For example, the following code flattens each (employee, task)
    * entry to collect the sum of task hours per employee:
    *
@@ -90,10 +90,10 @@ public final class BiCollectors {
    * }</pre>
    */
   public static <E, K, V, R> Collector<E, ?, R> flattening(
-      Function<? super E, ? extends Collection<? extends Map.Entry<K, V>>> toEntries,
+      Function<? super E, ? extends Collection<? extends Map.Entry<K, V>>> getEntries,
       BiCollector<? super K, ? super V, R> downstream) {
     return Collectors.flatMapping(
-        toEntries.andThen(Collection::stream),
+        getEntries.andThen(Collection::stream),
         downstream.bisecting(Map.Entry::getKey, Map.Entry::getValue));
   }
 
