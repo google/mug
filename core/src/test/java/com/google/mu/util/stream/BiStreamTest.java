@@ -481,14 +481,6 @@ public class BiStreamTest {
     assertThat(all).containsExactly(1, "one", 2, "two", 3, "three").inOrder();
   }
 
-  @Test public void testZip_parallel() {
-    BiStream<?, ?> zipped =
-        BiStream.zip(Stream.iterate(1, i -> i + 1), Stream.of("o", "t", "t", "f", "f", "s"));
-    assertParallel(zipped.mapToObj((i, s) -> i + ":" + s).parallel())
-        .containsExactly("1:o", "2:t", "3:t", "4:f", "5:f", "6:s")
-        .inOrder();
-  }
-
   @Test public void testZip_leftIsParallel_isSequential() {
     BiStream<?, ?> zipped =
         BiStream.zip(Stream.iterate(1, i -> i + 1).parallel(), Stream.of("one", "two", "three"));
@@ -519,20 +511,6 @@ public class BiStreamTest {
           m1.putAll(m2);
           return m1;
         });
-  }
-
-  private static IterableSubject assertParallel(Stream<?> stream) {
-    assertThat(stream.isParallel()).isTrue();
-    ConcurrentMap<Long, Object> threads = new ConcurrentHashMap<>();
-    List<?> list =
-        stream
-            .peek(
-                v -> {
-                  threads.put(Thread.currentThread().getId(), v);
-                })
-            .collect(toList());
-    assertThat(threads.size()).isGreaterThan(1);
-    return assertThat(list);
   }
 
   private static IterableSubject assertSequential(Stream<?> stream) {
