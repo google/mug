@@ -22,7 +22,7 @@ import java.util.stream.Collector;
  * "things".
  *
  * <p>{@code BiCollector} is usually passed to {@link BiStream#collect}. For example, to collect the
- * input pairs to a {@link ConcurrentMap}:
+ * input pairs to a {@code ConcurrentMap}:
  *
  * <pre>{@code
  * ConcurrentMap<String, Integer> map = BiStream.of("a", 1).collect(Collectors::toConcurrentMap);

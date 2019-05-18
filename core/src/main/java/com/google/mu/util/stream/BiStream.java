@@ -93,25 +93,24 @@ public abstract class BiStream<K, V> {
    * Returns a {@code BiStream} of two pairs, containing the supplied keys and
    * values.
    */
-  public static <K, V> BiStream<K, V> of(K key1, V value1, K key2, V value2) {
-    return from(Stream.of(kv(key1, value1), kv(key2, value2)));
+  public static <K, V> BiStream<K, V> of(K k1, V v1, K k2, V v2) {
+    return from(Stream.of(kv(k1, v1), kv(k2, v2)));
   }
 
   /**
    * Returns a {@code BiStream} of three pairs, containing the supplied keys and
    * values.
    */
-  public static <K, V> BiStream<K, V> of(K key1, V value1, K key2, V value2, K key3, V value3) {
-    return from(Stream.of(kv(key1, value1), kv(key2, value2), kv(key3, value3)));
+  public static <K, V> BiStream<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3) {
+    return from(Stream.of(kv(k1, v1), kv(k2, v2), kv(k3, v3)));
   }
 
   /**
    * Returns a {@code BiStream} of four pairs, containing the supplied keys and
    * values.
    */
-  public static <K, V> BiStream<K, V> of(
-      K key1, V value1, K key2, V value2, K key3, V value3, K key4, V value4) {
-    return from(Stream.of(kv(key1, value1), kv(key2, value2), kv(key3, value3), kv(key4, value4)));
+  public static <K, V> BiStream<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4) {
+    return from(Stream.of(kv(k1, v1), kv(k2, v2), kv(k3, v3), kv(k4, v4)));
   }
 
   /**
@@ -119,8 +118,8 @@ public abstract class BiStream<K, V> {
    * values.
    */
   public static <K, V> BiStream<K, V> of(
-      K key1, V value1, K key2, V value2, K key3, V value3, K key4, V value4, K key5, V value5) {
-    return from(Stream.of(kv(key1, value1), kv(key2, value2), kv(key3, value3), kv(key4, value4), kv(key5, value5)));
+      K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5) {
+    return from(Stream.of(kv(k1, v1), kv(k2, v2), kv(k3, v3), kv(k4, v4), kv(k5, v5)));
   }
 
   /**
@@ -186,7 +185,8 @@ public abstract class BiStream<K, V> {
    * Returns a {@code BiStream} of {@code elements}, each transformed to a pair of
    * values with {@code toKey} and {@toValue}.
    */
-  public static <T, K, V> BiStream<K, V> from(Collection<T> elements, Function<? super T, ? extends K> toKey,
+  public static <T, K, V> BiStream<K, V> from(
+      Collection<T> elements, Function<? super T, ? extends K> toKey,
       Function<? super T, ? extends V> toValue) {
     return from(elements.stream(), toKey, toValue);
   }
@@ -195,8 +195,9 @@ public abstract class BiStream<K, V> {
    * Returns a {@code BiStream} of the elements from {@code stream}, each
    * transformed to a pair of values with {@code toKey} and {@toValue}.
    */
-  public static <T, K, V> BiStream<K, V> from(Stream<T> stream, Function<? super T, ? extends K> toKey,
-      Function<? super T, ? extends V> toValue) {
+  public static <T, K, V> BiStream<K, V> from(
+      Stream<T> stream,
+      Function<? super T, ? extends K> toKey, Function<? super T, ? extends V> toValue) {
     return new GenericEntryStream<>(stream, toKey, toValue);
   }
 
@@ -242,10 +243,6 @@ public abstract class BiStream<K, V> {
   /**
    * Returns a {@code Stream} consisting of the results of applying {@code mapper}
    * to each pair in this {@code BiStream}.
-   *
-   * <p>
-   * To simply collect mapped pairs to a list or set, use {@link #toList} or
-   * {@link #toSet}.
    */
   public abstract <T> Stream<T> mapToObj(BiFunction<? super K, ? super V, ? extends T> mapper);
 
@@ -344,12 +341,9 @@ public abstract class BiStream<K, V> {
    * {@code BiStream}. For example the following code snippet repeats each pair in
    * a {@code BiStream} for 3 times:
    *
-   * <pre>
-   * {
-   *   &#64;code
+   * <pre>{@code
    *   BiStream<K, V> repeated = stream.flatMap((k, v) -> BiStream.of(k, v, k, v, k, v));
-   * }
-   * </pre>
+   * }</pre>
    *
    * <p>
    * If a mapped stream is null, an empty stream is used instead.
@@ -558,12 +552,9 @@ public abstract class BiStream<K, V> {
    * Returns an object of type {@code R} that is the result of collecting the
    * pairs in this stream using {@code collector}. For example:
    *
-   * <pre>
-   * {
-   *   &#64;code
+   * <pre>{@code
    *   ConcurrentMap<String, Integer> map = BiStream.of("a", 1).collect(Collectors::toConcurrentMap);
-   * }
-   * </pre>
+   * }</pre>
    */
   public abstract <R> R collect(BiCollector<? super K, ? super V, R> collector);
 

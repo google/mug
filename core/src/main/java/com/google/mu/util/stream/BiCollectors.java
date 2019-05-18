@@ -50,8 +50,8 @@ public final class BiCollectors {
   }
 
   /**
-   * Returns a {@link BiCollector} that collects the key-value pairs into an {@link ImmutableMap}
-   * using {@code valueCollector} to collect values of identical keys into a final value of type
+   * Returns a {@link BiCollector} that collects the key-value pairs into a {@code Map} using
+   * {@code valueCollector} to collect values of identical keys into a final value of type
    * {@code V}.
    *
    * <p>For example, the following calculates total population per state from city demographic data:
