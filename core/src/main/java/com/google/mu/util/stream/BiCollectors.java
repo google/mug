@@ -90,7 +90,7 @@ public final class BiCollectors {
    * }</pre>
    */
   public static <E, K, V, R> Collector<E, ?, R> flattening(
-      Function<? super E, ? extends Collection<Map.Entry<K, V>>> toEntries,
+      Function<? super E, ? extends Collection<? extends Map.Entry<K, V>>> toEntries,
       BiCollector<? super K, ? super V, R> downstream) {
     return Collectors.flatMapping(
         toEntries.andThen(Collection::stream),
