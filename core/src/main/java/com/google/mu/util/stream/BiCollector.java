@@ -18,28 +18,45 @@ import java.util.function.Function;
 import java.util.stream.Collector;
 
 /**
- * A collector passed to {@link BiStream#collect}. For example:  <pre>{@code
- *   BiCollector<String, Integer, Map<String, Integer>> collector = Collectors::toMap;
- *   Map<String, Integer> map = BiStream.of("a", 1).collect(collector);
+ * Logically, a {@code BiCollector} collects "pairs of things", just as a {@link Collector} collects
+ * "things".
+ *
+ * <p>{@code BiCollector} is usually passed to {@link BiStream#collect}. For example, to collect the
+ * input pairs to a {@link ConcurrentMap}:
+ *
+ * <pre>{@code
+ * ConcurrentMap<String, Integer> map = BiStream.of("a", 1).collect(Collectors::toConcurrentMap);
+ * }</pre>
+ *
+ * <p>In addition, {@code BiCollector} can be used to directly collect a stream of "pair-wise" data
+ * structures, such as from {@code Stream<Map>}:
+ *
+ * <pre>{@code
+ * import static com.google.mu.util.stream.BiCollectors.flatteningMaps;
+ * import static com.google.mu.util.stream.BiCollectors.toMap;
+ * import static java util.stream.Collectors.summingInt;
+ *
+ * ImmutableMap<Employee, Integer> employeeTotalTaskHours = projects.stream()
+ *   .map(Project::getTaskAssignmentsMap)  // stream of Map<Employee, Task>
+ *   .collect(flatteningMaps(toMap(summingInt(Task::getHours))));
  * }</pre>
  *
  * @param <K> the key type
  * @param <V> the value type
  * @param <R> the result type
- * @since 1.2
  */
 @FunctionalInterface
 public interface BiCollector<K, V, R> {
   /**
-   * Adapts to a {@code Collector<T, ? R>}, by mapping the inputs through {@code keyMapper}
-   * and {@code valueMapper} and subsequently collecting the key-value pairs with this
-   * {@code BiCollector}.
+   * Returns a {@code Collector} that will first bisect the input elements using {@code toKey} and
+   * {@code toValue} and subsequently collect the bisected parts through this {@code BiCollector}.
+   *
+   * @param <E> used to abstract away the underlying pair/entry type used by {@link BiStream}.
    */
-  // Deliberately avoid wildcards for keyMapper and valueMapper, because we don't expect
-  // users to call this method. Instead, users will typically provide lambda or
-  // method references matching this signature.
+  // Deliberately avoid wildcards for toKey and toValue, because we don't expect
+  // users to call this method. Instead, users will typically provide method references matching
+  // this signature.
   // Signatures with or without wildcards should both match.
   // In other words, this signature optimizes flexibility for implementors, not callers.
-  <T> Collector<T, ?, ? extends R> asCollector(
-      Function<T, K> keyMapper, Function<T, V> valueMapper);
+  <E> Collector<E, ?, R> bisecting(Function<E, K> toKey, Function<E, V> toValue);
 }

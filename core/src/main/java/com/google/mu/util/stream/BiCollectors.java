@@ -1,0 +1,116 @@
+package com.google.mu.util.stream;
+
+import static java.util.Objects.requireNonNull;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.stream.Collector;
+import java.util.stream.Collector.Characteristics;
+import java.util.stream.Collectors;
+
+/**
+ * Common utilities pertaining to {@link BiCollector}.
+ *
+ * @since 2.3
+ */
+public final class BiCollectors {
+
+  /**
+   * Returns a {@link BiCollector} that collects the key-value pairs into a {@link Map}.
+   *
+   * <p>Entries are collected in encounter order.
+   */
+  public static <K, V> BiCollector<K, V, Map<K, V>> toMap() {
+    return toMap((a, b) -> {
+      throw new IllegalArgumentException("Duplicate values encountered");
+    });
+  }
+
+  /**
+   * Returns a {@link BiCollector} that collects the key-value pairs into a {@link Map}
+   * using {@code valueMerger} to merge values of duplicate keys.
+   *
+   * <p>Entries are collected in encounter order.
+   */
+  public static <K, V> BiCollector<K, V, Map<K, V>> toMap(BinaryOperator<V> valueMerger) {
+    requireNonNull(valueMerger);
+    return new BiCollector<K, V, Map<K, V>>() {
+      @Override public <E> Collector<E, ?, Map<K, V>> bisecting(
+          Function<E, K> toKey, Function<E, V> toValue) {
+        return Collectors.collectingAndThen(
+            Collectors.toMap(toKey, toValue, valueMerger, LinkedHashMap::new),
+            Collections::unmodifiableMap);
+      }
+    };
+  }
+
+  /**
+   * Returns a {@link BiCollector} that collects the key-value pairs into an {@link ImmutableMap}
+   * using {@code valueCollector} to collect values of identical keys into a final value of type
+   * {@code V}.
+   *
+   * <p>For example, the following calculates total population per state from city demographic data:
+   *
+   * <pre>{@code
+   * Map<StateId, Integer> statePopulations = BiStream.from(cityToDemographicDataMap)
+   *     .mapKeys(City::getState)
+   *     .collect(toMap(summingInt(DemographicData::getPopulation)));
+   * }</pre>
+   *
+   * <p>Entries are collected in encounter order.
+   */
+  public static <K, V1, V> BiCollector<K, V1, Map<K, V>> toMap(Collector<V1, ?, V> valueCollector) {
+    requireNonNull(valueCollector);
+    return new BiCollector<K, V1, Map<K, V>>() {
+      @Override public <E> Collector<E, ?, Map<K, V>> bisecting(
+          Function<E, K> toKey, Function<E, V1> toValue) {
+        return Collectors.collectingAndThen(
+            Collectors.groupingBy(toKey, LinkedHashMap::new, Collectors.mapping(toValue, valueCollector)),
+            Collections::unmodifiableMap);
+      }
+    };
+  }
+
+  /**
+   * Returns a {@link Collector} that will flatten the map entries from the input {@code Map}s and
+   * pass each key-value pair to {@code downstream} collector. For example, the following code
+   * flattens each (employee, task) entry to collect the sum of task hours per employee:
+   *
+   * <pre>{@code
+   * ImmutableMap<Employee, Integer> employeeTotalTaskHours = projects.stream()
+   *   .map(Project::getTaskAssignmentsMap)  // stream of Map<Employee, Task>
+   *   .collect(flatteningMaps(toImmutableMap(summingInt(Task::getHours))));
+   * }</pre>
+   */
+  public static <K, V, R> Collector<Map<K, V>, ?, R> flatteningMaps(
+      BiCollector<? super K, ? super V, R> downstream) {
+    return Collectors.mapping(Map::entrySet, flatteningEntries(downstream));
+  }
+
+  private static <K, V, R> Collector<Collection<Map.Entry<K, V>>, ?, R> flatteningEntries(
+      BiCollector<? super K, ? super V, R> downstream) {
+    return fromEntries(downstream.bisecting(Map.Entry::getKey, Map.Entry::getValue));
+  }
+
+  private static <K, V, A, R> Collector<Collection<Map.Entry<K, V>>, A, R> fromEntries(
+      Collector<Map.Entry<K, V>, A, R> collector) {
+    BiConsumer<A, Map.Entry<K, V>> accumulator = collector.accumulator();
+    return Collector.of(
+        collector.supplier(),
+        (a, entries) -> {
+          for (Map.Entry<K, V> entry : entries) {
+            accumulator.accept(a, entry);
+          }
+        },
+        collector.combiner(),
+        collector.finisher(),
+        collector.characteristics().toArray(new Characteristics[0]));
+  }
+
+  private BiCollectors() {}
+}
