@@ -483,9 +483,9 @@ public class BiStreamTest {
 
   @Test public void testZip_parallel() {
     BiStream<?, ?> zipped =
-        BiStream.zip(Stream.iterate(1, i -> i + 1), Stream.of("one", "two", "three"));
+        BiStream.zip(Stream.iterate(1, i -> i + 1), Stream.of("o", "t", "t", "f", "f", "s"));
     assertParallel(zipped.mapToObj((i, s) -> i + ":" + s).parallel())
-        .containsExactly("1:one", "2:two", "3:three")
+        .containsExactly("1:o", "2:t", "3:t", "4:f", "5:f", "6:s")
         .inOrder();
   }
 

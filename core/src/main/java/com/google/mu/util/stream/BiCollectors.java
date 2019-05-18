@@ -88,7 +88,7 @@ public final class BiCollectors {
    *   .collect(flatteningMaps(toMap(summingInt(Task::getHours))));
    * }</pre>
    */
-  public static <K, V, R> Collector<Map<K, V>, ?, R> flatteningMaps(
+  public static <K, V, R> Collector<Map<K, V>, ?, R> flattening(
       BiCollector<? super K, ? super V, R> downstream) {
     return Collectors.flatMapping(
         m -> m.entrySet().stream(), downstream.bisecting(Map.Entry::getKey, Map.Entry::getValue));
