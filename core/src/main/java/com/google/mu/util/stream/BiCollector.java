@@ -32,13 +32,13 @@ import java.util.stream.Collector;
  * structures, such as from {@code Stream<Map>}:
  *
  * <pre>{@code
- * import static com.google.mu.util.stream.BiCollectors.flatteningMaps;
+ * import static com.google.mu.util.stream.BiCollectors.flattening;
  * import static com.google.mu.util.stream.BiCollectors.toMap;
  * import static java util.stream.Collectors.summingInt;
  *
  * ImmutableMap<Employee, Integer> employeeTotalTaskHours = projects.stream()
  *   .map(Project::getTaskAssignmentsMap)  // stream of Map<Employee, Task>
- *   .collect(flatteningMaps(toMap(summingInt(Task::getHours))));
+ *   .collect(flattening(Map::entrySet, toMap(summingInt(Task::getHours))));
  * }</pre>
  *
  * @param <K> the key type
