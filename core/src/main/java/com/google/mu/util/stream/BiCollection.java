@@ -47,9 +47,9 @@ public final class BiCollection<L, R> {
 
   private static final BiCollection<?, ?> EMPTY = from(Collections.emptyList());
 
-  private final Collection<? extends Map.Entry<? extends L, ? extends R>> entries;
+  private final Collection<? extends Map.Entry<L, R>> entries;
 
-  private BiCollection(Collection<? extends Entry<? extends L, ? extends R>> underlying) {
+  private BiCollection(Collection<? extends Entry<L, R>> underlying) {
     this.entries = requireNonNull(underlying);
   }
 
@@ -88,8 +88,7 @@ public final class BiCollection<L, R> {
   }
 
   /** Wraps {@code entries} in a {@code BiCollection}. */
-  public static <L, R> BiCollection<L, R> from(
-      Collection<? extends Map.Entry<? extends L, ? extends R>> entries) {
+  public static <L, R> BiCollection<L, R> from(Collection<Map.Entry<L, R>> entries) {
     return new BiCollection<>(entries);
   }
 
@@ -106,7 +105,7 @@ public final class BiCollection<L, R> {
     requireNonNull(leftFunction);
     requireNonNull(rightFunction);
     Function<T, Map.Entry<L, R>> toEntry = x -> kv(leftFunction.apply(x), rightFunction.apply(x));
-    Collector<T, ?, ? extends Collection<? extends Map.Entry<? extends L, ? extends R>>> entryCollector =
+    Collector<T, ?, ? extends Collection<Map.Entry<L, R>>> entryCollector =
         Collectors.mapping(toEntry, Collectors.toList());
     return Collectors.collectingAndThen(entryCollector, BiCollection::from);
   }
@@ -118,7 +117,7 @@ public final class BiCollection<L, R> {
 
   /** Streams over this {@code BiCollection}. */
   public BiStream<L, R> stream() {
-    return new BiStream<>(entries.stream());
+    return BiStream.from(entries.stream());
   }
 
   /** @since 1.5 */

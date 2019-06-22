@@ -296,7 +296,6 @@ public final class Parallelizer {
    *
    * @param tasks the tasks to be parallelized
    * @param heartbeatTimeout at least one task needs to complete every {@code heartbeatTimeout}.
-   * @param timeUnit the unit of {@code heartbeatTimeout}
    * @throws InterruptedException if the thread is interrupted while waiting.
    * @throws TimeoutException if timeout exceeded while waiting.
    */

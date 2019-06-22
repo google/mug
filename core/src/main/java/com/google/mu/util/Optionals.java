@@ -37,12 +37,14 @@ public final class Optionals {
 
   /**
    * Invokes {@code consumer} if {@code optional} is present. Returns a {@code Premise}
-   * object to allow {@link Premise#orElse orElse()} and friends to be chained. For example: <pre>
+   * object to allow {@link Premise#orElse orElse()} and friends to be chained. For example:
+   * 
+   * <pre>{@code
    *   ifPresent(findId(), System.out::print)
    *       .or(() -> ifPresent(findName(), System.out::print))
    *       .or(() -> ifPresent(findCreditCardNumber(), System.out::print))
    *       .orElse(() -> System.out.print("no identity found"));
-   * </pre>
+   * }</pre>
    *
    * <p>This method is very similar to JDK {@link OptionalInt#ifPresent} with a few differences: <ol>
    * <li>{@link Premise#orElse orElse()} is chained fluently, compared to {@link OptionalInt#ifPresentOrElse}.
@@ -68,12 +70,14 @@ public final class Optionals {
 
   /**
    * Invokes {@code consumer} if {@code optional} is present. Returns a {@code Premise}
-   * object to allow {@link Premise#orElse orElse()} and friends to be chained. For example: <pre>
+   * object to allow {@link Premise#orElse orElse()} and friends to be chained. For example:
+   *
+   * <pre>{@code
    *   ifPresent(findId(), System.out::print)
    *       .or(() -> ifPresent(findName(), System.out::print))
    *       .or(() -> ifPresent(findCreditCardNumber(), System.out::print))
    *       .orElse(() -> System.out.print("id not found"));
-   * </pre>
+   * }</pre>
    *
    * <p>This method is very similar to JDK {@link OptionalLong#ifPresent} with a few differences: <ol>
    * <li>{@link Premise#orElse orElse()} is chained fluently, compared to {@link OptionalLong#ifPresentOrElse}.
@@ -99,12 +103,14 @@ public final class Optionals {
 
   /**
    * Invokes {@code consumer} if {@code optional} is present. Returns a {@code Premise}
-   * object to allow {@link Premise#orElse orElse()} and friends to be chained. For example: <pre>
+   * object to allow {@link Premise#orElse orElse()} and friends to be chained. For example:
+   *
+   * <pre>{@code
    *   ifPresent(findMileage(), System.out::print)
    *       .or(() -> ifPresent(findName(), System.out::print))
    *       .or(() -> ifPresent(findCreditCardNumber(), System.out::print))
    *       .orElse(() -> System.out.print("id mileage found"));
-   * </pre>
+   * }</pre>
    *
    * <p>This method is very similar to JDK {@link OptionalDouble#ifPresent} with a few differences: <ol>
    * <li>{@link Premise#orElse orElse()} is chained fluently, compared to {@link OptionalDouble#ifPresentOrElse}.
@@ -130,12 +136,14 @@ public final class Optionals {
 
   /**
    * Invokes {@code consumer} if {@code optional} is present. Returns a {@code Premise}
-   * object to allow {@link Premise#orElse orElse()} and friends to be chained. For example: <pre>
+   * object to allow {@link Premise#orElse orElse()} and friends to be chained. For example:
+   *
+   * <pre>{@code
    *   ifPresent(findStory(), Story::tell)
    *       .or(() -> ifPresent(findGame(), Game::play))
    *       .or(() -> ifPresent(findMovie(), Movie::watch))
    *       .orElse(() -> print("Nothing to do"));
-   * </pre>
+   * }</pre>
    *
    * <p>This method is very similar to JDK {@link Optional#ifPresent} with a few differences: <ol>
    * <li>{@link Premise#orElse orElse()} is chained fluently, compared to {@link Optional#ifPresentOrElse}.
@@ -161,10 +169,12 @@ public final class Optionals {
 
   /**
    * Invokes {@code consumer} if both {@code left} and {@code right} are present. Returns a {@code Premise}
-   * object to allow {@link Premise#orElse orElse()} and friends to be chained. For example: <pre>
+   * object to allow {@link Premise#orElse orElse()} and friends to be chained. For example:
+   *
+   * <pre>{@code
    *   ifPresent(when, where, Story::tell)
    *       .orElse(() -> print("no story"));
-   * </pre>
+   * }</pre>
    */
   public static <A, B, E extends Throwable> Premise ifPresent(
       Optional<A> left, Optional<B> right, CheckedBiConsumer<? super A, ? super B, E> consumer)

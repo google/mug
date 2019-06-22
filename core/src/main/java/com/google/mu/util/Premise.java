@@ -19,11 +19,13 @@ import com.google.mu.function.CheckedSupplier;
 
 /**
  * Result of a previously evaluated condition. Used to fluently chain API calls like
- * {@code Optionals.ifPresent()}. For example: <pre>
+ * {@code Optionals.ifPresent()}. For example:
+ *
+ * <pre>{@code
  *   ifPresent(getStory(), Story::tell)
  *       .or(() -> ifPresent(getJoke(), Joke::tell))
  *       .orElse(() -> print("can't tell"));
- * </pre>
+ * }</pre>
  *
  * @since 1.14
  */

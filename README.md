@@ -19,7 +19,7 @@ Add the following to pom.xml:
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug</artifactId>
-    <version>2.1</version>
+    <version>2.2</version>
   </dependency>
 ```
 
@@ -40,7 +40,7 @@ BiStream.indexed(inputs.stream())
 
 ```java
 BiStream.zip(requests, responses)
-    .map(RequestAndResponseLog::new);
+    .mapToObj(RequestAndResponseLog::new);
 ```
 
 **Example 3: to build a Map fluently:**
@@ -49,29 +49,33 @@ BiStream.zip(requests, responses)
 Map<DoctorId, Patient> patientsByDoctorId = BiStream.zip(doctors, patients)
     .filter((doctor, patient) -> patient.likes(doctor))
     .mapKeys(Doctor::getId)
-    .toMap();
+    .collect(toMap());
 ```
 
 **Example 4: to build Guava ImmutableListMultimap fluently:**
 
 ```java
-ImmutableListMultimap<ZipCode, Address> addressesByZipCode = biStream(addresses)
+ImmutableListMultimap<ZipCode, Address> addressesByZipCode = BiStream.from(addresses)
     .mapKeys(Address::getZipCode)
     .collect(ImmutableListMultimap::toImmutableListMultimap);
 ```
 
-**Example 5: to process every pairs of adjacent elements in a stream:**
+**Example 5: to calculate total work hours per worker:**
 
 ```java
-BiStream.neighbors(events).forEach((prev, next) -> {
-  ...
-});
+import static com.google.mu.util.stream.BiCollectors.flattening;
+import static com.google.mu.util.stream.BiCollectors.toMap;
+import static java.util.stream.Collectors.summingInt;
+
+ImmutableMap<EmployeeId, Integer> workerHours = projects.stream()
+    .map(Project::getTaskAssignments)  // stream of Map<WorkerId, Task>
+    .collect(flattening(Map::entrySet, toMap(summingInt(Task::getHours))));
 ```
 
-**Example 6: to turn a `Stream<Pair<K, V>>` to `BiStream<K, V>`:**
+**Example 6: to turn a `Collection<Pair<K, V>>` to `BiStream<K, V>`:**
 
 ```java
-BiStream<K, V> stream = biStream(pairs, Pair::getKey, Pair::getValue);
+BiStream<K, V> stream = RiStream.from(pairs, Pair::getKey, Pair::getValue);
 ```
 
 **Q: Why not `Map<Foo, Bar>` or `Multimap<Foo, Bar>`?**
@@ -178,12 +182,12 @@ String httpStripped = Substring.prefix("http://").removeFrom(uri);
 
 **Example 2: strip off any scheme prefix from a uri:**
 ```java
-String schemeStripped = Substring.upTo(first("://")).removeFrom(uri);
+String schemeStripped = Substring.upToIncluding(first("://")).removeFrom(uri);
 ```
 
 **Example 3: split a string in the format of "name=value" into `name` and `value`:**
 ```java
-Substring op = Substring.first('=').in(nameValue).orElseThrow(...);
+Substring.Match op = Substring.first('=').in(nameValue).orElseThrow(...);
 String name = op.getBefore();
 String value = op.getAfter();
 ```
@@ -196,12 +200,12 @@ Substring.suffix("//").replaceFrom(path, "/");
 
 **Example 5: strip off the suffix starting with a dash (-) character :**
 ```java
-Substring.from(last('-')).removeFrom(str);
+last('-').toEnd().removeFrom(str);
 ```
 
 **Example 6: extract a substring using regex :**
 ```java
-String quoted = Substring.regexGroup("'(.*?)'", 1)
+String quoted = Substring.first(Pattern.compile("'(.*?)'"), 1)
     .from(str)
     .orElseThrow(...);
 ```
