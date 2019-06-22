@@ -32,7 +32,7 @@ This class closely mirrors Jdk `Stream` API (the few extra methods of "its own" 
 **Example 1: to iterate over a stream with indices:**
 
 ```java
-BiStream.indexed(inputs.stream())
+BiStream.zip(MoreStreams.index(), inputs)
     .forEach((i, v) -> System.out.println(i + ": " + v));
 ```
 
@@ -63,13 +63,13 @@ ImmutableListMultimap<ZipCode, Address> addressesByZipCode = BiStream.from(addre
 **Example 5: to calculate total work hours per worker:**
 
 ```java
-import static com.google.mu.util.stream.BiCollectors.flattening;
 import static com.google.mu.util.stream.BiCollectors.toMap;
+import static com.google.mu.util.stream.BiStream.concatenating;
 import static java.util.stream.Collectors.summingInt;
 
 ImmutableMap<EmployeeId, Integer> workerHours = projects.stream()
-    .map(Project::getTaskAssignments)  // stream of Map<WorkerId, Task>
-    .collect(flattening(Map::entrySet, toMap(summingInt(Task::getHours))));
+    .collect(concatenating(proj -> BiStream.from(Project::getTaskAssignments())))
+    .collect(toMap(summingInt(Task::getHours)));
 ```
 
 **Example 6: to turn a `Collection<Pair<K, V>>` to `BiStream<K, V>`:**
