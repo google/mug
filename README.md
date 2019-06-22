@@ -29,11 +29,12 @@ Add the following to pom.xml:
 
 This class closely mirrors Jdk `Stream` API (the few extra methods of "its own" are very straight-forward). If you are familiar with Jdk stream, learning curve is minimal.
 
-**Example 1: to iterate over a stream with indices:**
+**Example 1: to concatenate `Map`s:**
 
 ```java
-BiStream.zip(MoreStreams.index().boxed(), inputs)
-    .forEach((i, v) -> System.out.println(i + ": " + v));
+import static com.google.mu.util.stream.BiStream.concat;
+
+Map<AccountId, Account> allAccounts = concat(primaryAccouunts, secondaryAccounts).toMap();
 ```
 
 **Example 2: to combine two streams:**
@@ -60,16 +61,17 @@ ImmutableListMultimap<ZipCode, Address> addressesByZipCode = BiStream.from(addre
     .collect(ImmutableListMultimap::toImmutableListMultimap);
 ```
 
-**Example 5: to calculate total work hours per worker:**
+**Example 5: to apply grouping over `Map` entries:**
 
 ```java
 import static com.google.mu.util.stream.BiCollectors.toMap;
-import static com.google.mu.util.stream.BiStream.concatenating;
+import static com.google.mu.util.stream.BiStream.groupingValuesFrom;
 import static java.util.stream.Collectors.summingInt;
 
-ImmutableMap<EmployeeId, Integer> workerHours = projects.stream()
-    .collect(concatenating(proj -> BiStream.from(Project::getTaskAssignments())))
-    .collect(toMap(summingInt(Task::getHours)));
+Map<EmployeeId, Integer> workerHours = projects.stream()
+    .map(Project::getTaskAssignments)  // Stream<Map<EmployeeId, Task>>
+    .collect(groupingValuesFrom(Map::entrySet, summingInt(Task::getHours)))
+    .toMap();
 ```
 
 **Example 6: to turn a `Collection<Pair<K, V>>` to `BiStream<K, V>`:**
