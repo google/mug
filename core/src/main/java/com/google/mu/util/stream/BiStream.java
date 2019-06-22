@@ -277,8 +277,7 @@ public abstract class BiStream<K, V> {
    * encounter order. For example:
    *
    * <pre>{@code
-   * Map<AccountId, Account> allAccounts =
-   *     concat(primaryAccounts, secondaryAccounts).toMap();
+   * Map<AccountId, Account> allAccounts = concat(primaryAccounts, secondaryAccounts).toMap();
    * }</pre>
    */
   @SafeVarargs
