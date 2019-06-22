@@ -729,8 +729,6 @@ public abstract class BiStream<K, V> {
   /**
    * Returns an {@link ImmutableMap} that is the result of collecting the pairs in this stream. If a
    * duplicate key is encountered, throws an {@link IllegalArgumentException}.
-   *
-   * @throws NullPointerException if any pair in this stream has a key or value that is null
    */
   public final Map<K, V> toMap() {
     return collect(BiCollectors.toMap());
