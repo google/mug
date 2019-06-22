@@ -730,7 +730,7 @@ public abstract class BiStream<K, V> {
    * Returns an object of type {@code R} that is the result of collecting the pairs in this stream
    * using {@code collector}.
    *
-   * <p>For less common result types, any {@code Collector}-returning factory method can be directly
+   * <p>Please note that any {@code Collector}-returning factory method can be directly
    * "method referenced" as {@link BiCollector} if it accepts two {@code Function} parameters
    * corresponding to the "key" and the "value" parts respectively. For example: {@code
    * collect(Collectors::toConcurrentMap)}, {@code
