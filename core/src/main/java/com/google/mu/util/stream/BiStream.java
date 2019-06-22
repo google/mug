@@ -89,27 +89,22 @@ import java.util.stream.Stream;
 public abstract class BiStream<K, V> {
   /**
    * Returns a {@code Collector} that groups the input elements by {@code keyFunction} and collects
-   * the values mapping to the same key into an {@link ImmutableList}. Similar but different from
+   * the values mapping to the same key into a {@link List}. Similar but different from
    * {@link Collectors#groupingBy(Function)}, this method collects the groups into {@link #BiStream}
    * instead, allowing fluent method chaining. For example:
    *
    * <pre>{@code
-   * Map<EmployeeId, ImmutableList<Task>> employeesWithMultipleTasks = tasks.stream()
+   * Map<EmployeeId, List<Task>> employeesWithMultipleTasks = tasks.stream()
    *     .collect(BiStream.groupingBy(Task::assignedTo))
    *     .filterValues(tasks -> tasks.size() > 1)
    *     .toMap();
    * }</pre>
    *
    * Even if you don't need to chain more methods, using this collector allows you to fluently
-   * collect the results into the desired container type. For example {@link #toMap} collects to the
-   * most popular {@code ImmutableMap}; or {@code collect(Collectors::toConcurrentMap)} if
-   * concurrency is needed.
+   * collect the results into the desired container type. For example {@link #toMap} collects to an
+   * immutable {@code Map}; or {@code collect(Collectors::toConcurrentMap)} if concurrency is needed.
    *
    * <p>Entries are collected in encounter order.
-   *
-   * <p>Because values are collected into {@code ImmutableList}, which disallows nulls, if you have
-   * null values, use {@link #groupingBy(Function, Collector)} instead. For example: {@code
-   * collect(BiStream.groupingBy(keyFunction, Collectors.toList()))}.
    */
   public static <T, K> Collector<T, ?, BiStream<K, List<T>>> groupingBy(
       Function<? super T, ? extends K> keyFunction) {
@@ -132,9 +127,9 @@ public abstract class BiStream<K, V> {
    * }</pre>
    *
    * Even if you don't need to chain more methods, using this collector allows you to fluently
-   * collect the results into the desired container type. For example {@link #toMap} collects to the
-   * most popular {@code ImmutableMap}; or you could supply {@code
-   * collect(ImmutableBiMap::toImmutableBiMap)} if {@code BiMap} is needed.
+   * collect the results into the desired container type. For example {@link #toMap} collects to an
+   * immutable {@code Map}; or you could supply {@code collect(ImmutableBiMap::toImmutableBiMap)}
+   * if {@code BiMap} is needed.
    *
    * <p>Entries are collected in encounter order.
    */
@@ -168,7 +163,7 @@ public abstract class BiStream<K, V> {
    * to the same key using {@code valueCollector}. For example:
    *
    * <pre>{@code
-   * Map<EmployeeId, ImmutableList<Task>> employeesWithMultipleTasks = projects.stream()
+   * Map<EmployeeId, List<Task>> employeesWithMultipleTasks = projects.stream()
    *     .map(Project::getTaskAssignments)  // Stream<Map<EmployeeId, Task>>
    *     .collect(groupingValuesFrom(Map::entrySet))
    *     .filterValues(tasks -> tasks.size() > 1)
@@ -178,7 +173,7 @@ public abstract class BiStream<K, V> {
    * <p>This idiom is applicable even if {@code getTaskAssignments()} returns {@link Multimap}:
    *
    * <pre>{@code
-   * Map<EmployeeId, ImmutableList<Task>> employeesWithMultipleTasks = projects.stream()
+   * Map<EmployeeId, List<Task>> employeesWithMultipleTasks = projects.stream()
    *     .map(Project::getTaskAssignments)  // Stream<Multimap<EmployeeId, Task>>
    *     .collect(groupingValuesFrom(Map::entrySet))
    *     .filterValues(tasks -> tasks.size() > 1)
@@ -186,10 +181,6 @@ public abstract class BiStream<K, V> {
    * }</pre>
    *
    * <p>Entries are collected in encounter order.
-   *
-   * <p>Because values are collected into {@code ImmutableList}, which disallows nulls, if you have
-   * null values, use {@link #groupingBy(Function, Collector)} instead. For example: {@code
-   * collect(groupingValuesFrom(Multimap::entries, Collectors.toList()))}.
    */
   public static <T, K, V> Collector<T, ?, BiStream<K, List<V>>> groupingValuesFrom(
       Function<? super T, ? extends Collection<Map.Entry<K, V>>> entrySource) {
@@ -233,7 +224,8 @@ public abstract class BiStream<K, V> {
    * <pre>{@code
    * ImmutableList<QuarterlyReport> allQuarterlyReports = quarters.stream()
    *     .collect(crossJoining(departments))
-   *     .toList(QuarterlyReport::new);
+   *     .mapToObj(QuarterlyReport::new)
+   *     .collect(toImmutableList());
    * }</pre>
    *
    * <p>The input elements are repeated once per element from {@code right}. For example: {@code [1,
@@ -727,7 +719,7 @@ public abstract class BiStream<K, V> {
   }
 
   /**
-   * Returns an {@link ImmutableMap} that is the result of collecting the pairs in this stream. If a
+   * Returns an immutable {@link Map} that is the result of collecting the pairs in this stream. If a
    * duplicate key is encountered, throws an {@link IllegalArgumentException}.
    */
   public final Map<K, V> toMap() {
@@ -743,8 +735,7 @@ public abstract class BiStream<K, V> {
    * corresponding to the "key" and the "value" parts respectively. For example: {@code
    * collect(Collectors::toConcurrentMap)}, {@code
    * collect(ImmutableSetMultimap::toImmutableSetMultimap)}, {@code
-   * collect(Maps::toImmutableEnumMap)}, {@code collect(ImmutableBiMap::toImmutableBiMap)} and
-   * {@code collect(MoreCollectors::toImmutableMapIgnoringDuplicates)}.
+   * collect(Maps::toImmutableEnumMap)}, {@code collect(ImmutableBiMap::toImmutableBiMap)}.
    *
    * <p>In addition, check out {@link BiCollectors} for some other useful {@link BiCollector}
    * implementations.
