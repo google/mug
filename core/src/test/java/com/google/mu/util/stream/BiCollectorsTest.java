@@ -1,16 +1,12 @@
 package com.google.mu.util.stream;
 
-import static com.google.mu.util.stream.BiCollectors.flattening;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.common.truth.Truth.assertThat;
-import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.summingInt;
 
 import java.util.Map;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import java.util.stream.Stream;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -19,7 +15,7 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class BiCollectorsTest {
 
-  @Test public void testToImmutableMap_valuesCollected() {
+  @Test public void testToMap_valuesCollected() {
     ImmutableList<Town> towns =
         ImmutableList.of(new Town("WA", 100), new Town("WA", 50), new Town("IL", 200));
     assertThat(
@@ -29,7 +25,7 @@ public class BiCollectorsTest {
         .inOrder();
   }
 
-  @Test public void testToImmutableMap_keyEncounterOrderRetainedThroughValueCollector() {
+  @Test public void testToMap_keyEncounterOrderRetainedThroughValueCollector() {
     ImmutableList<Town> towns =
         ImmutableList.of(
             new Town("WA", 1),
@@ -48,7 +44,7 @@ public class BiCollectorsTest {
         .inOrder();
   }
 
-  @Test public void testToImmutableMap_empty() {
+  @Test public void testToMap_empty() {
     ImmutableList<Town> towns = ImmutableList.of();
     assertThat(
             BiStream.from(towns, Town::getState, town -> town)
@@ -56,11 +52,9 @@ public class BiCollectorsTest {
         .isEmpty();
   }
 
-  @Test public void testCollectMapEntriesToCount() {
-    Map<String, Long> collected =
-        Stream.of(ImmutableMap.of("foo", 1), ImmutableMap.of("foo", 2))
-            .collect(flattening(Map::entrySet, toMap(counting())));
-    assertThat(collected).containsExactly("foo", 2L);
+  @Test public void testToImmutableMap_covariance() {
+    Map<Object, String> map = BiStream.of(1, "one").collect(toMap());
+    assertThat(map).containsExactly(1, "one");
   }
 
   private static final class Town {

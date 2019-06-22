@@ -22,24 +22,19 @@ import java.util.stream.Collector;
  * "things".
  *
  * <p>{@code BiCollector} is usually passed to {@link BiStream#collect}. For example, to collect the
- * input pairs to a {@code ConcurrentMap}:
+ * input pairs to a {@link ConcurrentMap}:
  *
  * <pre>{@code
  * ConcurrentMap<String, Integer> map = BiStream.of("a", 1).collect(Collectors::toConcurrentMap);
  * }</pre>
  *
- * <p>In addition, {@code BiCollector} can be used to directly collect a stream of "pair-wise" data
- * structures, such as from {@code Stream<Map>}:
- *
- * <pre>{@code
- * import static com.google.mu.util.stream.BiCollectors.flattening;
- * import static com.google.mu.util.stream.BiCollectors.toMap;
- * import static java util.stream.Collectors.summingInt;
- *
- * ImmutableMap<Employee, Integer> employeeTotalTaskHours = projects.stream()
- *   .map(Project::getTaskAssignmentsMap)  // stream of Map<Employee, Task>
- *   .collect(flattening(Map::entrySet, toMap(summingInt(Task::getHours))));
- * }</pre>
+ * <p>In addition to the common {@BiCollector} implementations provided by {@link BiCollectors},
+ * many {@code Collector}-returning factory methods can be directly "method referenced" as {@code
+ * BiCollector} if the method accepts two {@code Function} parameters corresponding to "key" and
+ * "value" respectively. For example: {@code Collectors::toConcurrentMap}, {@code
+ * ImmutableSetMultimap::toImmutableSetMultimap}, {@code Maps::toImmutableEnumMap}, {@code
+ * ImmutableBiMap::toImmutableBiMap} and {@code MoreCollectors::toImmutableMapIgnoringDuplicates}
+ * etc.
  *
  * @param <K> the key type
  * @param <V> the value type
@@ -60,3 +55,4 @@ public interface BiCollector<K, V, R> {
   // In other words, this signature optimizes flexibility for implementors, not callers.
   <E> Collector<E, ?, R> bisecting(Function<E, K> toKey, Function<E, V> toValue);
 }
+

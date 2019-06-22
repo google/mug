@@ -14,9 +14,12 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
+import static java.util.Comparator.comparing;
 import static java.util.Objects.requireNonNull;
 import static java.util.Spliterator.ORDERED;
 import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.collectingAndThen;
+import static  java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.doubleStream;
 import static java.util.stream.StreamSupport.intStream;
 import static java.util.stream.StreamSupport.longStream;
@@ -25,6 +28,8 @@ import static java.util.stream.StreamSupport.stream;
 import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Spliterator;
 import java.util.Spliterators.AbstractDoubleSpliterator;
@@ -44,136 +49,311 @@ import java.util.function.ToDoubleBiFunction;
 import java.util.function.ToIntBiFunction;
 import java.util.function.ToLongBiFunction;
 import java.util.stream.Collector;
+import java.util.stream.Collector.Characteristics;
+import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 /**
- * A {@code Stream}-like object making it easier to handle pairs of objects.
+ * A class similar to {@link Stream}, but operating over a sequence of pairs of objects.
  *
- * <p>
- * Throughout this class, "key-value" metaphor is adopted for method names and
- * type names. This naming convention however does not imply uniqueness in terms
- * of type {@code <K>} nor does it require {@link Object#equals} (except for
- * {@link #distinct}). Technically a key-value pair is nothing but two arbitrary
- * objects.
+ * <p>Note: For ease of reference, this class uses 'key' and 'value' to refer to each of the two
+ * parts of each pair in the sequence. However, both 'key' and 'value' can be any object of the
+ * appropriate type, or null. There is no implication that keys or key-value pairs are unique, or
+ * that keys can be compared for equality. You may equivalently read them as 'left' and 'right', or
+ * 'first' and 'second'.
  *
- * <p>
- * This "key-value" metaphor doesn't always make sense in the problem domain.
- * For example, you may be looking at a pair of doctor and patient; neither is a
- * "key" therefore using methods like {@link #filterKeys filterKeys()} may
- * introduce noise to the code. It may improve readability in such cases to
- * avoid these {@code *Keys()}, {@code *Values()} convenience methods and prefer
- * the pair-wise methods. Like, instead of {@code
- * doctorsAndPatients.filterKeys(Doctor::isInNetwork)}, consider to use
- * {@code doctorsAndPatients.filter((doctor, patient) -> doctor.isInNetwork())}.
+ * <p>If the contents of the stream aren't identifiably 'keys' or 'values', and the methods with
+ * 'key' or 'value' in their name are distracting, consider using the pair-wise operations. For
+ * instance, instead of:
  *
- * <p>
- * Keys and values are allowed to be null.
+ * <pre>{@code
+ * BiStream.from(cities.stream(), City::population, City::latitude)
+ *     .filterKeys(p -> p > 10000);
+ * }</pre>
  *
- * @since 1.1
+ * you might use:
+ *
+ * <pre>{@code
+ * BiStream.from(cities.stream(), City::population, City::latitude)
+ *     .filter((population, lat) -> population > 10000);
+ * }</pre>
+ *
+ * <p>Keys and values are allowed to be null by default unless explicitly documented otherwise.
+ *
+ * <p>Some methods (e.g. {@code mapKeys()}) come in two versions, one taking {@link BiFunction}
+ * (which will receive both key and value) and another taking {@link Function} (which in this case
+ * will receive only the key) . They operate equivalently otherwise.
  */
 public abstract class BiStream<K, V> {
+  /**
+   * Returns a {@code Collector} that groups the input elements by {@code keyFunction} and collects
+   * the values mapping to the same key into an {@link ImmutableList}. Similar but different from
+   * {@link Collectors#groupingBy(Function)}, this method collects the groups into {@link #BiStream}
+   * instead, allowing fluent method chaining. For example:
+   *
+   * <pre>{@code
+   * ImmtableMap<EmployeeId, ImmutableList<Task>> employeesWithMultipleTasks = tasks.stream()
+   *     .collect(BiStream.groupingBy(Task::assignedTo))
+   *     .filterValues(tasks -> tasks.size() > 1)
+   *     .toMap();
+   * }</pre>
+   *
+   * Even if you don't need to chain more methods, using this collector allows you to fluently
+   * collect the results into the desired container type. For example {@link #toMap} collects to the
+   * most popular {@code ImmutableMap}; or {@code collect(Collectors::toConcurrentMap)} if
+   * concurrency is needed.
+   *
+   * <p>Entries are collected in encounter order.
+   *
+   * <p>Because values are collected into {@code ImmutableList}, which disallows nulls, if you have
+   * null values, use {@link #groupingBy(Function, Collector)} instead. For example: {@code
+   * collect(BiStream.groupingBy(keyFunction, Collectors.toList()))}.
+   */
+  public static <T, K> Collector<T, ?, BiStream<K, List<T>>> groupingBy(
+      Function<? super T, ? extends K> keyFunction) {
+    return groupingBy(keyFunction, Collectors.toList());
+  }
+
+  /**
+   * Returns a {@code Collector} that groups the input elements by {@code keyFunction} and collects
+   * the values mapping to the same key using {@code valueCollector}. Similar but different from
+   * {@link Collectors#groupingBy(Function, Collector)}, this method collects the groups into {@link
+   * #BiStream} instead, allowing fluent method chaining. For example:
+   *
+   * <pre>{@code
+   * ImmtableMap<EmployeeId, Integer> topTenEmployeesByWorkHour = projects.stream()
+   *     .flatMap(project -> project.getMembers().stream())  // Stream<TeamMember>
+   *     .collect(BiStream.groupingBy(TeamMember::employeeId, summingInt(TeamMember::hours)))
+   *     .sortedByValues(Comparator.reverseOrder())
+   *     .limit(10)
+   *     .toMap();
+   * }</pre>
+   *
+   * Even if you don't need to chain more methods, using this collector allows you to fluently
+   * collect the results into the desired container type. For example {@link #toMap} collects to the
+   * most popular {@code ImmutableMap}; or you could supply {@code
+   * collect(ImmutableBiMap::toImmutableBiMap)} if {@code BiMap} is needed.
+   *
+   * <p>Entries are collected in encounter order.
+   */
+  public static <T, K, V> Collector<T, ?, BiStream<K, V>> groupingBy(
+      Function<? super T, ? extends K> keyFunction, Collector<? super T, ?, V> valueCollector) {
+    Collector<T, ?, Map<K, V>> grouping =
+        Collectors.groupingBy(keyFunction, LinkedHashMap::new, valueCollector);
+    return collectingAndThen(grouping, BiStream::from);
+  }
+
+  /**
+   * Returns a {@code Collector} that concatenates {@code BiStream} objects derived from the input
+   * elements using the given {@code toBiStream} function.
+   *
+   * <p>For example:
+   *
+   * <pre>{@code
+   * ImmtableMap<EmployeeId, Task> billableTaskAssignments = projects.stream()
+   *     .collect(concatenating(p -> BiStream.from(p.getTaskAssignments())))
+   *     .filterValues(Task::billable)
+   *     .toMap();
+   * }</pre>
+   */
+  public static <T, K, V> Collector<T, ?, BiStream<K, V>> concatenating(
+      Function<? super T, ? extends BiStream<? extends K, ? extends V>> toBiStream) {
+    return collectingAndThen(toList(), list -> concat(list.stream().map(toBiStream)));
+  }
+
+  /**
+   * Returns a {@code Collector} that groups {@link Map.Entry#getValue map values} that are mapped
+   * to the same key using {@code valueCollector}. For example:
+   *
+   * <pre>{@code
+   * ImmtableMap<EmployeeId, ImmutableList<Task>> employeesWithMultipleTasks = projects.stream()
+   *     .map(Project::getTaskAssignments)  // Stream<Map<EmployeeId, Task>>
+   *     .collect(groupingValuesFrom(Map::entrySet))
+   *     .filterValues(tasks -> tasks.size() > 1)
+   *     .toMap();
+   * }</pre>
+   *
+   * <p>This idiom is applicable even if {@code getTaskAssignments()} returns {@link Multimap}:
+   *
+   * <pre>{@code
+   * ImmtableMap<EmployeeId, ImmutableList<Task>> employeesWithMultipleTasks = projects.stream()
+   *     .map(Project::getTaskAssignments)  // Stream<Multimap<EmployeeId, Task>>
+   *     .collect(groupingValuesFrom(Map::entrySet))
+   *     .filterValues(tasks -> tasks.size() > 1)
+   *     .toMap();
+   * }</pre>
+   *
+   * <p>Entries are collected in encounter order.
+   *
+   * <p>Because values are collected into {@code ImmutableList}, which disallows nulls, if you have
+   * null values, use {@link #groupingBy(Function, Collector)} instead. For example: {@code
+   * collect(groupingValuesFrom(Multimap::entries, Collectors.toList()))}.
+   */
+  public static <T, K, V> Collector<T, ?, BiStream<K, List<V>>> groupingValuesFrom(
+      Function<? super T, ? extends Collection<Map.Entry<K, V>>> entrySource) {
+    return groupingValuesFrom(entrySource, toList());
+  }
+
+  /**
+   * Returns a {@code Collector} that groups {@link Map.Entry#getValue map values} that are mapped
+   * to the same key using {@code valueCollector}. For example:
+   *
+   * <pre>{@code
+   * ImmtableMap<EmployeeId, Integer> employeeWorkHours = projects.stream()
+   *     .map(Project::getTaskAssignments)  // Stream<Map<EmployeeId, Task>>
+   *     .collect(groupingValuesFrom(Map::entrySet, summingInt(Task::hours)))
+   *     .toMap();
+   * }</pre>
+   *
+   * <p>This idiom is applicable even if {@code getTaskAssignments()} returns {@link Multimap}:
+   *
+   * <pre>{@code
+   * ImmtableMap<EmployeeId, Integer> employeeWorkHours = projects.stream()
+   *     .map(Project::getTaskAssignments)  // Stream<Multimap<EmployeeId, Task>>
+   *     .collect(groupingValuesFrom(Multimap::entries, summingInt(Task::hours)))
+   *     .toMap();
+   * }</pre>
+   *
+   * <p>Entries are collected in encounter order.
+   */
+  public static <T, K, V, R> Collector<T, ?, BiStream<K, R>> groupingValuesFrom(
+      Function<? super T, ? extends Collection<Map.Entry<K, V>>> entrySource,
+      Collector<? super V, ?, R> valueCollector) {
+    return flatMapping(
+        requireNonNull(entrySource),
+        groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, valueCollector)));
+  }
+
+  /**
+   * Returns a {@code Collector} that will pair each input element with each element from {@code
+   * right} into a new {@code BiStream}. For example:
+   *
+   * <pre>{@code
+   * ImmutableList<QuarterlyReport> allQuarterlyReports = quarters.stream()
+   *     .collect(crossJoining(departments))
+   *     .toList(QuarterlyReport::new);
+   * }</pre>
+   *
+   * <p>The input elements are repeated once per element from {@code right}. For example: {@code [1,
+   * 2, 3].collect(crossJoining([a, b]))} will generate {@code [{1, a}, {2, a}, {3, a}, {1, b}, {2,
+   * b}, {3, b}]}.
+   *
+   * <p>The returned {@code BiStream} takes {@code O(n)} space where {@code n} is the size of the
+   * input elements. The "cross-joining" with the {@code right} stream is computed on-the-fly with
+   * {@code O(1)} memory cost.
+   */
+  public static <L, R> Collector<L, ?, BiStream<L, R>> crossJoining(Stream<R> right) {
+    requireNonNull(right);
+    return collectingAndThen(
+        toList(),
+        left ->
+            // If `right` is infinite, even limit(1) will result in infinite loop otherwise.
+            left.isEmpty() ? empty() : concat(right.map(r -> from(left, identity(), l -> r))));
+  }
 
   /** Returns an empty {@code BiStream}. */
   public static <K, V> BiStream<K, V> empty() {
     return from(Stream.empty());
   }
 
-  /**
-   * Returns a {@code BiStream} of a single pair containing {@code key} and
-   * {@code value}.
-   */
+  /** Returns a {@code BiStream} of a single pair containing {@code key} and {@code value}. */
   public static <K, V> BiStream<K, V> of(K key, V value) {
     return from(Stream.of(kv(key, value)));
   }
 
-  /**
-   * Returns a {@code BiStream} of two pairs, containing the supplied keys and
-   * values.
-   */
-  public static <K, V> BiStream<K, V> of(K k1, V v1, K k2, V v2) {
-    return from(Stream.of(kv(k1, v1), kv(k2, v2)));
-  }
-
-  /**
-   * Returns a {@code BiStream} of three pairs, containing the supplied keys and
-   * values.
-   */
-  public static <K, V> BiStream<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3) {
-    return from(Stream.of(kv(k1, v1), kv(k2, v2), kv(k3, v3)));
-  }
-
-  /**
-   * Returns a {@code BiStream} of four pairs, containing the supplied keys and
-   * values.
-   */
-  public static <K, V> BiStream<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4) {
-    return from(Stream.of(kv(k1, v1), kv(k2, v2), kv(k3, v3), kv(k4, v4)));
-  }
-
-  /**
-   * Returns a {@code BiStream} of five pairs, containing the supplied keys and
-   * values.
-   */
+  /** Returns a {@code BiStream} of two pairs, containing the supplied keys and values. */
   public static <K, V> BiStream<K, V> of(
-      K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5) {
-    return from(Stream.of(kv(k1, v1), kv(k2, v2), kv(k3, v3), kv(k4, v4), kv(k5, v5)));
+      K key1, V value1, K key2, V value2) {
+    return from(Stream.of(kv(key1, value1), kv(key2, value2)));
+  }
+
+  /** Returns a {@code BiStream} of three pairs, containing the supplied keys and values. */
+  public static <K, V> BiStream<K, V> of(
+      K key1,
+      V value1,
+      K key2,
+      V value2,
+      K key3,
+      V value3) {
+    return from(Stream.of(kv(key1, value1), kv(key2, value2), kv(key3, value3)));
   }
 
   /**
-   * Returns a {@code BiStream} in which the first element in {@code left} is
-   * paired with the first element in {@code right}; the second paired with the
-   * corresponding second and the third with the corresponding third etc. For
-   * example: {@code BiStream.zip(asList(1, 2, 3), asList("one",
+   * Returns a {@code BiStream} of the entries from {@code m1}, {@code m2} then {@code rest} in
+   * encounter order. For example:
+   *
+   * <pre>{@code
+   * ImmtableMap<AccountId, Account> allAccounts =
+   *     concat(primaryAccounts, secondaryAccounts).toMap();
+   * }</pre>
+   */
+  @SafeVarargs
+  public static <K, V> BiStream<K, V> concat(
+      Map<? extends K, ? extends V> m1,
+      Map<? extends K, ? extends V> m2,
+      Map<? extends K, ? extends V>... rest) {
+    Stream.Builder<Map<? extends K, ? extends V>> builder = Stream.builder();
+    builder.add(requireNonNull(m1)).add(requireNonNull(m2));
+    for (Map<? extends K, ? extends V> m : rest) {
+      builder.add(requireNonNull(m));
+    }
+    return concat(builder.build().map(BiStream::from));
+  }
+
+  /** Returns a {@code BiStream} of pairs from {@code biStreams} concatenated in encounter order. */
+  public static <K, V> BiStream<K, V> concat(
+      Stream<? extends BiStream<? extends K, ? extends V>> biStreams) {
+    return from(biStreams.flatMap(BiStream::mapToEntry));
+  }
+
+  /**
+   * Returns a {@code BiStream} in which the first element in {@code left} is paired with the first
+   * element in {@code right}; the second paired with the corresponding second and the third with
+   * the corresponding third etc. For example: {@code BiStream.zip(asList(1, 2, 3), asList("one",
    * "two"))} will return {@code BiStream.of(1, "one", 2, "two")}.
    *
-   * <p>
-   * The resulting stream will only be as long as the shorter of the two
-   * iterables; if one is longer, its extra elements will be ignored.
+   * <p>The resulting stream will only be as long as the shorter of the two iterables; if one is
+   * longer, its extra elements will be ignored.
    */
   public static <L, R> BiStream<L, R> zip(Collection<L> left, Collection<R> right) {
     return zip(left.stream(), right.stream());
   }
 
   /**
-   * Returns a {@code BiStream} in which the first element in {@code left} is
-   * paired with the first element in {@code right}; the second paired with the
-   * corresponding second and the third with the corresponding third etc. For
-   * example: {@code BiStream.zip(Stream.of(1, 2, 3),
-   * Stream.of("one", "two"))} will return
-   * {@code BiStream.of(1, "one", 2, "two")}.
+   * Returns a {@code BiStream} in which the first element in {@code left} is paired with the first
+   * element in {@code right}; the second paired with the corresponding second and the third with
+   * the corresponding third etc. For example: {@code BiStream.zip(Stream.of(1, 2, 3),
+   * Stream.of("one", "two"))} will return {@code BiStream.of(1, "one", 2, "two")}.
    *
-   * <p>
-   * The resulting stream will only be as long as the shorter of the two input
-   * streams; if one stream is longer, its extra elements will be ignored.
+   * <p>The resulting stream will only be as long as the shorter of the two input streams; if one
+   * stream is longer, its extra elements will be ignored.
    *
-   * <p>
-   * The resulting stream by default runs sequentially regardless of the input
-   * streams. This is because the implementation is not <a href=
-   * "http://gee.cs.oswego.edu/dl/html/StreamParallelGuidance.html">efficiently
-   * splittable</a>. and may not perform well if run in parallel.
+   * <p>The resulting stream by default runs sequentially regardless of the input streams. This is
+   * because the implementation is not <a
+   * href="http://gee.cs.oswego.edu/dl/html/StreamParallelGuidance.html">efficiently splittable</a>.
+   * and may not perform well if run in parallel.
    */
   public static <L, R> BiStream<L, R> zip(Stream<L> left, Stream<R> right) {
     return new ZippingStream<>(left, right);
   }
 
   /**
-   * Returns a {@link BiStream} where each element in {@code values} is keyed by its
-   * corresponding 0-based index. For example, the following code transforms a list
-   * of inputs into a pre-sized output list:   <pre>{@code
-   * List<T> output = ...;
-   * BiStream.indexed(inputs.stream())
-   *     .mapValues(this::convertInput)
-   *     .forEach(output::set);
-   * }</pre>
+   * Short-hand for {@code from(elements, identity(), identity())}. Typically followed by {@link
+   * #mapKeys} or {@link #mapValues}. For example:
    *
-   * <p>Because Java runtime typically caches {@code Integer} instances for the range of
-   * {@code [0, 128]}, auto-boxing cost is negligible for small streams.
+   * <pre>{@code
+   * static import com.google.common.labs.collect.BiStream.biStream;
+   *
+   * ImmutableMap<EmployeeId, Employee> employeesById = biStream(employees)
+   *     .mapKeys(Employee::id)
+   *     .toMap();
+   * }</pre>
    */
-  public static <V> BiStream<Integer, V> indexed(Stream<V> values) {
-    return zip(IntStream.iterate(0, i -> i + 1).boxed(), values);
+  public static <T> BiStream<T, T> biStream(Collection<T> elements) {
+    return from(elements, identity(), identity());
   }
 
   /** Returns a {@code BiStream} of the entries in {@code map}. */
@@ -182,40 +362,46 @@ public abstract class BiStream<K, V> {
   }
 
   /**
-   * Returns a {@code BiStream} of {@code elements}, each transformed to a pair of
-   * values with {@code toKey} and {@toValue}.
+   * Returns a {@code BiStream} of {@code elements}, each transformed to a pair of values with
+   * {@code toKey} and {@toValue}.
    */
   public static <T, K, V> BiStream<K, V> from(
-      Collection<T> elements, Function<? super T, ? extends K> toKey,
+      Collection<T> elements,
+      Function<? super T, ? extends K> toKey,
       Function<? super T, ? extends V> toValue) {
     return from(elements.stream(), toKey, toValue);
   }
 
   /**
-   * Returns a {@code BiStream} of the elements from {@code stream}, each
-   * transformed to a pair of values with {@code toKey} and {@toValue}.
+   * Returns a {@code BiStream} of the elements from {@code stream}, each transformed to a pair of
+   * values with {@code toKey} and {@toValue}.
    */
   public static <T, K, V> BiStream<K, V> from(
       Stream<T> stream,
-      Function<? super T, ? extends K> toKey, Function<? super T, ? extends V> toValue) {
+      Function<? super T, ? extends K> toKey,
+      Function<? super T, ? extends V> toValue) {
     return new GenericEntryStream<>(stream, toKey, toValue);
   }
 
-  static <K, V, E extends Map.Entry<? extends K, ? extends V>> BiStream<K, V> from(Stream<E> entryStream) {
+  static <K, V, E extends Map.Entry<? extends K, ? extends V>> BiStream<K, V> from(
+      Stream<E> entryStream) {
     return new GenericEntryStream<E, K, V>(entryStream, Map.Entry::getKey, Map.Entry::getValue) {
       @Override
-      public <K2, V2> BiStream<K2, V2> map(BiFunction<? super K, ? super V, ? extends K2> keyMapper,
+      public <K2, V2> BiStream<K2, V2> map(
+          BiFunction<? super K, ? super V, ? extends K2> keyMapper,
           BiFunction<? super K, ? super V, ? extends V2> valueMapper) {
         return from(entryStream, forEntry(keyMapper), forEntry(valueMapper));
       }
 
       @Override
-      public <K2> BiStream<K2, V> mapKeys(BiFunction<? super K, ? super V, ? extends K2> keyMapper) {
+      public <K2> BiStream<K2, V> mapKeys(
+          BiFunction<? super K, ? super V, ? extends K2> keyMapper) {
         return from(entryStream, forEntry(keyMapper), Map.Entry::getValue);
       }
 
       @Override
-      public <V2> BiStream<K, V2> mapValues(BiFunction<? super K, ? super V, ? extends V2> valueMapper) {
+      public <V2> BiStream<K, V2> mapValues(
+          BiFunction<? super K, ? super V, ? extends V2> valueMapper) {
         return from(entryStream, Map.Entry::getKey, forEntry(valueMapper));
       }
 
@@ -241,17 +427,19 @@ public abstract class BiStream<K, V> {
   }
 
   /**
-   * Returns a {@code Stream} consisting of the results of applying {@code mapper}
-   * to each pair in this {@code BiStream}.
+   * Returns a {@code Stream} consisting of the results of applying {@code mapper} to each pair in
+   * this {@code BiStream}.
+   *
+   * <p>To simply collect mapped pairs to a list or set, use {@link #toList} or {@link #toSet}.
    */
   public abstract <T> Stream<T> mapToObj(BiFunction<? super K, ? super V, ? extends T> mapper);
 
   /**
-   * Returns a {@code BiStream} consisting of the results of applying
-   * {@code keyMapper} and {@code
+   * Returns a {@code BiStream} consisting of the results of applying {@code keyMapper} and {@code
    * valueMapper} to the pairs in this {@code BiStream}.
    */
-  public <K2, V2> BiStream<K2, V2> map(BiFunction<? super K, ? super V, ? extends K2> keyMapper,
+  public <K2, V2> BiStream<K2, V2> map(
+      BiFunction<? super K, ? super V, ? extends K2> keyMapper,
       BiFunction<? super K, ? super V, ? extends V2> valueMapper) {
     requireNonNull(keyMapper);
     requireNonNull(valueMapper);
@@ -259,27 +447,26 @@ public abstract class BiStream<K, V> {
   }
 
   /**
-   * Returns a {@link DoubleStream} consisting of the results of applying
-   * {@code mapper} to the pairs in this {@code BiStream}.
+   * Returns a {@link DoubleStream} consisting of the results of applying {@code mapper} to the
+   * pairs in this {@code BiStream}.
    */
   public abstract DoubleStream mapToDouble(ToDoubleBiFunction<? super K, ? super V> mapper);
 
   /**
-   * Returns an {@link IntStream} consisting of the results of applying
-   * {@code mapper} to the pairs in this {@code BiStream}.
+   * Returns an {@link IntStream} consisting of the results of applying {@code mapper} to the pairs
+   * in this {@code BiStream}.
    */
   public abstract IntStream mapToInt(ToIntBiFunction<? super K, ? super V> mapper);
 
   /**
-   * Returns a {@link LongStream} consisting of the results of applying
-   * {@code mapper} to the pairs in this {@code BiStream}.
+   * Returns a {@link LongStream} consisting of the results of applying {@code mapper} to the pairs
+   * in this {@code BiStream}.
    */
   public abstract LongStream mapToLong(ToLongBiFunction<? super K, ? super V> mapper);
 
   /**
-   * Returns a {@code BiStream} of pairs whose keys are the result of applying
-   * {@code keyMapper} to the key of each pair in this {@code BiStream}, and whose
-   * values are unchanged.
+   * Returns a {@code BiStream} of pairs whose keys are the result of applying {@code keyMapper} to
+   * the key of each pair in this {@code BiStream}, and whose values are unchanged.
    */
   public <K2> BiStream<K2, V> mapKeys(BiFunction<? super K, ? super V, ? extends K2> keyMapper) {
     return map(keyMapper, (k, v) -> v);
@@ -289,7 +476,8 @@ public abstract class BiStream<K, V> {
   public abstract <K2> BiStream<K2, V> mapKeys(Function<? super K, ? extends K2> keyMapper);
 
   /** Maps each value to another value of type {@code V2}. */
-  public <V2> BiStream<K, V2> mapValues(BiFunction<? super K, ? super V, ? extends V2> valueMapper) {
+  public <V2> BiStream<K, V2> mapValues(
+      BiFunction<? super K, ? super V, ? extends V2> valueMapper) {
     return map((k, v) -> k, valueMapper);
   }
 
@@ -299,54 +487,52 @@ public abstract class BiStream<K, V> {
   /**
    * Maps a single pair to zero or more objects of type {@code T}.
    *
-   * <p>
-   * If a mapped stream is null, an empty stream is used instead.
+   * <p>If a mapped stream is null, an empty stream is used instead.
    */
-  public final <T> Stream<T> flatMapToObj(BiFunction<? super K, ? super V, ? extends Stream<? extends T>> mapper) {
+  public final <T> Stream<T> flatMapToObj(
+      BiFunction<? super K, ? super V, ? extends Stream<? extends T>> mapper) {
     return mapToObj(mapper).flatMap(identity());
   }
 
   /**
    * Maps a single pair to zero or more {@code double}s.
    *
-   * <p>
-   * If a mapped stream is null, an empty stream is used instead.
+   * <p>If a mapped stream is null, an empty stream is used instead.
    */
-  public final DoubleStream flatMapToDouble(BiFunction<? super K, ? super V, ? extends DoubleStream> mapper) {
+  public final DoubleStream flatMapToDouble(
+      BiFunction<? super K, ? super V, ? extends DoubleStream> mapper) {
     return mapToObj(mapper).flatMapToDouble(identity());
   }
 
   /**
    * Maps a single pair to zero or more {@code int}s.
    *
-   * <p>
-   * If a mapped stream is null, an empty stream is used instead.
+   * <p>If a mapped stream is null, an empty stream is used instead.
    */
-  public final IntStream flatMapToInt(BiFunction<? super K, ? super V, ? extends IntStream> mapper) {
+  public final IntStream flatMapToInt(
+      BiFunction<? super K, ? super V, ? extends IntStream> mapper) {
     return mapToObj(mapper).flatMapToInt(identity());
   }
 
   /**
    * Maps a single pair to zero or more {@code long}s.
    *
-   * <p>
-   * If a mapped stream is null, an empty stream is used instead.
+   * <p>If a mapped stream is null, an empty stream is used instead.
    */
-  public final LongStream flatMapToLong(BiFunction<? super K, ? super V, ? extends LongStream> mapper) {
+  public final LongStream flatMapToLong(
+      BiFunction<? super K, ? super V, ? extends LongStream> mapper) {
     return mapToObj(mapper).flatMapToLong(identity());
   }
 
   /**
-   * Maps each pair in this stream to zero or more pairs in another
-   * {@code BiStream}. For example the following code snippet repeats each pair in
-   * a {@code BiStream} for 3 times:
+   * Maps each pair in this stream to zero or more pairs in another {@code BiStream}. For example
+   * the following code snippet repeats each pair in a {@code BiStream} for 3 times:
    *
    * <pre>{@code
-   *   BiStream<K, V> repeated = stream.flatMap((k, v) -> BiStream.of(k, v, k, v, k, v));
+   * BiStream<K, V> repeated = stream.flatMap((k, v) -> BiStream.of(k, v, k, v, k, v));
    * }</pre>
    *
-   * <p>
-   * If a mapped stream is null, an empty stream is used instead.
+   * <p>If a mapped stream is null, an empty stream is used instead.
    */
   public final <K2, V2> BiStream<K2, V2> flatMap(
       BiFunction<? super K, ? super V, ? extends BiStream<? extends K2, ? extends V2>> mapper) {
@@ -356,23 +542,23 @@ public abstract class BiStream<K, V> {
   /**
    * Maps each key to zero or more keys of type {@code K2}.
    *
-   * <p>
-   * If a mapped stream is null, an empty stream is used instead.
+   * <p>If a mapped stream is null, an empty stream is used instead.
    */
   public final <K2> BiStream<K2, V> flatMapKeys(
       BiFunction<? super K, ? super V, ? extends Stream<? extends K2>> keyMapper) {
     requireNonNull(keyMapper);
-    return from(this.<Map.Entry<K2, V>>flatMapToObj( // j2cl compiler needs help with type inference
-        (k, v) -> nullToEmpty(keyMapper.apply(k, v)).map(k2 -> kv(k2, v))));
+    return from(
+        this.<Map.Entry<K2, V>>flatMapToObj( // j2cl compiler needs help with type inference
+            (k, v) -> nullToEmpty(keyMapper.apply(k, v)).map(k2 -> kv(k2, v))));
   }
 
   /**
    * Maps each key to zero or more keys of type {@code K2}.
    *
-   * <p>
-   * If a mapped stream is null, an empty stream is used instead.
+   * <p>If a mapped stream is null, an empty stream is used instead.
    */
-  public final <K2> BiStream<K2, V> flatMapKeys(Function<? super K, ? extends Stream<? extends K2>> keyMapper) {
+  public final <K2> BiStream<K2, V> flatMapKeys(
+      Function<? super K, ? extends Stream<? extends K2>> keyMapper) {
     requireNonNull(keyMapper);
     return flatMapKeys((k, v) -> keyMapper.apply(k));
   }
@@ -380,30 +566,29 @@ public abstract class BiStream<K, V> {
   /**
    * Maps each value to zero or more values of type {@code V2}.
    *
-   * <p>
-   * If a mapped stream is null, an empty stream is used instead.
+   * <p>If a mapped stream is null, an empty stream is used instead.
    */
   public final <V2> BiStream<K, V2> flatMapValues(
       BiFunction<? super K, ? super V, ? extends Stream<? extends V2>> valueMapper) {
     requireNonNull(valueMapper);
-    return from(this.<Map.Entry<K, V2>>flatMapToObj( // j2cl compiler needs help with type inference
-        (k, v) -> nullToEmpty(valueMapper.apply(k, v)).map(v2 -> kv(k, v2))));
+    return from(
+        this.<Map.Entry<K, V2>>flatMapToObj( // j2cl compiler needs help with type inference
+            (k, v) -> nullToEmpty(valueMapper.apply(k, v)).map(v2 -> kv(k, v2))));
   }
 
   /**
    * Maps each value to zero or more values of type {@code V2}.
    *
-   * <p>
-   * If a mapped stream is null, an empty stream is used instead.
+   * <p>If a mapped stream is null, an empty stream is used instead.
    */
-  public final <V2> BiStream<K, V2> flatMapValues(Function<? super V, ? extends Stream<? extends V2>> valueMapper) {
+  public final <V2> BiStream<K, V2> flatMapValues(
+      Function<? super V, ? extends Stream<? extends V2>> valueMapper) {
     requireNonNull(valueMapper);
     return flatMapValues((k, v) -> valueMapper.apply(v));
   }
 
   /**
-   * Returns a {@code BiStream} consisting of the pairs of this stream,
-   * additionally invoking {@code
+   * Returns a {@code BiStream} consisting of the pairs of this stream, additionally invoking {@code
    * action} on each pair as pairs are consumed from the resulting stream.
    */
   public final BiStream<K, V> peek(BiConsumer<? super K, ? super V> action) {
@@ -430,50 +615,42 @@ public abstract class BiStream<K, V> {
   }
 
   /**
-   * Returns a {@code BiStream} consisting of the pairs in this stream, followed
-   * by the pairs in {@code other}.
+   * Returns a {@code BiStream} consisting of the pairs in this stream, followed by the pairs in
+   * {@code other}.
    *
-   * @implNote This method is implemented using {@link Stream#concat}; therefore,
-   *           the same warnings about deeply-nested combined streams also apply
-   *           to this method. In particular, avoid calling this method in a loop
-   *           to combine many streams together.
+   * @implNote This method is implemented using {@link Stream#concat}; therefore, the same warnings
+   *     about deeply-nested combined streams also apply to this method. In particular, avoid
+   *     calling this method in a loop to combine many streams together.
    */
   public final BiStream<K, V> append(BiStream<? extends K, ? extends V> other) {
     return from(Stream.concat(mapToEntry(), other.mapToEntry()));
   }
 
   /**
-   * Returns a {@code BiStream} consisting of the pairs in this stream, followed
-   * by the pair of {@code key} and {@code value}.
+   * Returns a {@code BiStream} consisting of the pairs in this stream, followed by the pair of
+   * {@code key} and {@code value}.
    *
-   * @implNote This method is implemented using {@link Stream#concat}; therefore,
-   *           the same warnings about deeply-nested combined streams also apply
-   *           to this method. In particular, avoid calling this method in a loop
-   *           to combine many streams together.
+   * @implNote This method is implemented using {@link Stream#concat}; therefore, the same warnings
+   *     about deeply-nested combined streams also apply to this method. In particular, avoid
+   *     calling this method in a loop to combine many streams together.
    */
   public final BiStream<K, V> append(K key, V value) {
     return append(of(key, value));
   }
 
-  /**
-   * Returns a {@code Stream} consisting of only the keys from each pair in this
-   * stream.
-   */
+  /** Returns a {@code Stream} consisting of only the keys from each pair in this stream. */
   public final Stream<K> keys() {
     return mapToObj((k, v) -> k);
   }
 
-  /**
-   * Returns a {@code Stream} consisting of only the values from each pair in this
-   * stream.
-   */
+  /** Returns a {@code Stream} consisting of only the values from each pair in this stream. */
   public final Stream<V> values() {
     return mapToObj((k, v) -> v);
   }
 
   /**
-   * Returns a {@code BiStream} where each pair is a pair from this stream with
-   * the key and value swapped.
+   * Returns a {@code BiStream} where each pair is a pair from this stream with the key and value
+   * swapped.
    */
   public abstract BiStream<V, K> inverse();
 
@@ -495,39 +672,41 @@ public abstract class BiStream<K, V> {
   }
 
   /**
-   * Returns a {@code BiStream} consisting of the only the first {@code maxSize}
-   * pairs of this stream.
+   * Returns a {@code BiStream} consisting of the only the first {@code maxSize} pairs of this
+   * stream.
    */
   public abstract BiStream<K, V> limit(int maxSize);
 
   /**
-   * Returns a {@code BiStream} consisting of the remaining pairs from this
-   * stream, after discarding the first {@code n} pairs.
+   * Returns a {@code BiStream} consisting of the remaining pairs from this stream, after discarding
+   * the first {@code n} pairs.
    */
   public abstract BiStream<K, V> skip(int n);
 
   /**
-   * Returns a {@code BiStream} consisting of only the distinct pairs (according
-   * to {@code
+   * Returns a {@code BiStream} consisting of only the distinct pairs (according to {@code
    * Object.equals(Object)} for both key and value).
    */
   public final BiStream<K, V> distinct() {
     return from(mapToEntry().distinct());
   }
 
-  /** Returns a sorted stream based on {@code keyOrdering} and {@code valueOrdering}. */
-  public BiStream<K, V> sorted(
-      Comparator<? super K> keyOrdering, Comparator<? super V> valueOrdering) {
+  /**
+   * Returns a {@code BiStream} consisting of the pairs in this stream, in the order produced by
+   * applying {@code comparator} on the keys of each pair.
+   */
+  public final BiStream<K, V> sorted(
+      Comparator<? super K> keyComparator, Comparator<? super V> valueComparator) {
     Comparator<Map.Entry<? extends K, ? extends V>> byKey =
-        Comparator.comparing(Map.Entry::getKey, keyOrdering);
+        comparing(Map.Entry::getKey, keyComparator);
     Comparator<Map.Entry<? extends K, ? extends V>> byValue =
-        Comparator.comparing(Map.Entry::getValue, valueOrdering);
+        comparing(Map.Entry::getValue, valueComparator);
     return from(mapToEntry().sorted(byKey.thenComparing(byValue)));
   }
 
   /**
-   * Returns a {@code BiStream} consisting of the pairs in this stream, in the
-   * order produced by applying {@code comparator} on the keys of each pair.
+   * Returns a {@code BiStream} consisting of the pairs in this stream, in the order produced by
+   * applying {@code comparator} on the keys of each pair.
    */
   public final BiStream<K, V> sortedByKeys(Comparator<? super K> comparator) {
     requireNonNull(comparator);
@@ -535,8 +714,8 @@ public abstract class BiStream<K, V> {
   }
 
   /**
-   * Returns a {@code BiStream} consisting of the pairs in this stream, in the
-   * order produced by applying {@code comparator} on the values of each pair.
+   * Returns a {@code BiStream} consisting of the pairs in this stream, in the order produced by
+   * applying {@code comparator} on the values of each pair.
    */
   public final BiStream<K, V> sortedByValues(Comparator<? super V> comparator) {
     requireNonNull(comparator);
@@ -549,12 +728,32 @@ public abstract class BiStream<K, V> {
   }
 
   /**
-   * Returns an object of type {@code R} that is the result of collecting the
-   * pairs in this stream using {@code collector}. For example:
+   * Returns an {@link ImmutableMap} that is the result of collecting the pairs in this stream. If a
+   * duplicate key is encountered, throws an {@link IllegalArgumentException}.
    *
-   * <pre>{@code
-   *   ConcurrentMap<String, Integer> map = BiStream.of("a", 1).collect(Collectors::toConcurrentMap);
-   * }</pre>
+   * @throws NullPointerException if any pair in this stream has a key or value that is null
+   */
+  public final Map<K, V> toMap() {
+    return collect(BiCollectors.toMap());
+  }
+
+  /**
+   * Returns an object of type {@code R} that is the result of collecting the pairs in this stream
+   * using {@code collector}.
+   *
+   * <p>For the most common result types, you should prefer to use the shortcut methods {@link
+   * #toMap}, {@link #toListMultimap} or {@link #toSetMultimap}.
+   *
+   * <p>For less common result types, any {@code Collector}-returning factory method can be directly
+   * "method referenced" as {@link BiCollector} if it accepts two {@code Function} parameters
+   * corresponding to the "key" and the "value" parts respectively. For example: {@code
+   * collect(Collectors::toConcurrentMap)}, {@code
+   * collect(ImmutableSetMultimap::toImmutableSetMultimap)}, {@code
+   * collect(Maps::toImmutableEnumMap)}, {@code collect(ImmutableBiMap::toImmutableBiMap)} and
+   * {@code collect(MoreCollectors::toImmutableMapIgnoringDuplicates)}.
+   *
+   * <p>In addition, check out {@link BiCollectors} for some other useful {@link BiCollector}
+   * implementations.
    */
   public abstract <R> R collect(BiCollector<? super K, ? super V, R> collector);
 
@@ -566,28 +765,39 @@ public abstract class BiStream<K, V> {
     return stream == null ? Stream.empty() : stream;
   }
 
+  // TODO: switch to Java 9 Collectors.flatMapping() when we can.
+  private static <T, E, A, R> Collector<T, A, R> flatMapping(
+      Function<? super T, ? extends Collection<? extends E>> mapper, Collector<E, A, R> collector) {
+    BiConsumer<A, E> accumulator = collector.accumulator();
+    return Collector.of(
+        collector.supplier(),
+        (a, input) -> {
+          for (E entry : mapper.apply(input)) {
+            accumulator.accept(a, entry);
+          }
+        },
+        collector.combiner(),
+        collector.finisher(),
+        collector.characteristics().toArray(new Characteristics[0]));
+  }
+
   /**
-   * An implementation that operates on a generic entry type {@code <E>} using two
-   * functions to extract the 'key' and 'value' from each entry.
+   * An implementation that operates on a generic entry type {@code <E>} using two functions to
+   * extract the 'key' and 'value' from each entry.
    *
-   * <p>
-   * Because the {@code toKey} and {@code toValue} functions could be arbitrary
-   * custom functions that are expensive or even with side-effects, it is strictly
-   * guaranteed that for any single entry in the stream, each function is invoked
-   * exactly once. 1
-   * <p>
-   * Common methods like {@link #mapKeys(Function)}, {@link #mapValues(Function)},
-   * {@link #keys}, {@link #values}, {@link #forEach} etc. can avoid allocating
-   * intermediary {@link Map.Entry} instances by either invoking {@code toKey} and
-   * {@code toValue} then using the results directly, or composing the functions
-   * to be invoked later.
+   * <p>Because the {@code toKey} and {@code toValue} functions could be arbitrary custom functions
+   * that are expensive or even with side-effects, it is strictly guaranteed that for any single
+   * entry in the stream, each function is invoked exactly once.
    *
-   * <p>
-   * Doing so isn't always feasible. For example {@link #filter} and {@link #peek}
-   * both need to evaluate the entry by invoking {@code toKey} and {@code toValue}
-   * and the return values need to be stored to avoid invoking the functions
-   * again. For these cases, the stream will be degeneralized into
-   * {@code Stream<Map.Entry<K, V>>} so as to guarantee the "at-most-once"
+   * <p>Common methods like {@link #mapKeys(Function)}, {@link #mapValues(Function)}, {@link #keys},
+   * {@link #values}, {@link #forEach} etc. can avoid allocating intermediary {@link Map.Entry}
+   * instances by either invoking {@code toKey} and {@code toValue} then using the results directly,
+   * or composing the functions to be invoked later.
+   *
+   * <p>Doing so isn't always feasible. For example {@link #filter} and {@link #peek} both need to
+   * evaluate the entry by invoking {@code toKey} and {@code toValue} and the return values need to
+   * be stored to avoid invoking the functions again. For these cases, the stream will be
+   * degeneralized into {@code Stream<Map.Entry<K, V>>} so as to guarantee the "at-most-once"
    * semantic.
    */
   private static class GenericEntryStream<E, K, V> extends BiStream<K, V> {
@@ -595,7 +805,9 @@ public abstract class BiStream<K, V> {
     private final Function<? super E, ? extends K> toKey;
     private final Function<? super E, ? extends V> toValue;
 
-    GenericEntryStream(Stream<E> underlying, Function<? super E, ? extends K> toKey,
+    GenericEntryStream(
+        Stream<E> underlying,
+        Function<? super E, ? extends K> toKey,
         Function<? super E, ? extends V> toValue) {
       this.underlying = requireNonNull(underlying);
       this.toKey = requireNonNull(toKey);
@@ -697,28 +909,32 @@ public abstract class BiStream<K, V> {
     @Override
     public <T> Stream<T> mapToObj(BiFunction<? super K, ? super V, ? extends T> mapper) {
       requireNonNull(mapper);
-      return stream(() -> new Spliteration().<T>ofObj(mapper), ORDERED, /* parallel= */ false).onClose(left::close)
+      return stream(() -> new Spliteration().<T>ofObj(mapper), ORDERED, /*parallel=*/ false)
+          .onClose(left::close)
           .onClose(right::close);
     }
 
     @Override
     public DoubleStream mapToDouble(ToDoubleBiFunction<? super K, ? super V> mapper) {
       requireNonNull(mapper);
-      return doubleStream(() -> new Spliteration().ofDouble(mapper), ORDERED, /* parallel= */ false)
-          .onClose(left::close).onClose(right::close);
+      return doubleStream(() -> new Spliteration().ofDouble(mapper), ORDERED, /*parallel=*/ false)
+          .onClose(left::close)
+          .onClose(right::close);
     }
 
     @Override
     public IntStream mapToInt(ToIntBiFunction<? super K, ? super V> mapper) {
       requireNonNull(mapper);
-      return intStream(() -> new Spliteration().ofInt(mapper), ORDERED, /* parallel= */ false).onClose(left::close)
+      return intStream(() -> new Spliteration().ofInt(mapper), ORDERED, /*parallel=*/ false)
+          .onClose(left::close)
           .onClose(right::close);
     }
 
     @Override
     public LongStream mapToLong(ToLongBiFunction<? super K, ? super V> mapper) {
       requireNonNull(mapper);
-      return longStream(() -> new Spliteration().ofLong(mapper), ORDERED, /* parallel= */ false).onClose(left::close)
+      return longStream(() -> new Spliteration().ofLong(mapper), ORDERED, /*parallel=*/ false)
+          .onClose(left::close)
           .onClose(right::close);
     }
 
@@ -783,9 +999,8 @@ public abstract class BiStream<K, V> {
       private final Spliterator<V> rightIt = right.spliterator();
 
       /**
-       * Returns {@code dominatingResult} if {@code predicate} evaluates to
-       * {@code dominatingResult} for any pair, or else returns
-       * {@code !dominatingResult}.
+       * Returns {@code dominatingResult} if {@code predicate} evaluates to {@code dominatingResult}
+       * for any pair, or else returns {@code !dominatingResult}.
        */
       boolean any(boolean dominatingResult, BiPredicate<? super K, ? super V> predicate) {
         while (advance()) {
@@ -815,7 +1030,8 @@ public abstract class BiStream<K, V> {
         return new AbstractIntSpliterator(estimateSize(), ORDERED) {
           @Override
           public boolean tryAdvance(IntConsumer consumer) {
-            return advance() && emit(mapper.applyAsInt(currentLeft.value, currentRight.value), consumer);
+            return advance()
+                && emit(mapper.applyAsInt(currentLeft.value, currentRight.value), consumer);
           }
         };
       }
@@ -824,7 +1040,8 @@ public abstract class BiStream<K, V> {
         return new AbstractLongSpliterator(estimateSize(), ORDERED) {
           @Override
           public boolean tryAdvance(LongConsumer consumer) {
-            return advance() && emit(mapper.applyAsLong(currentLeft.value, currentRight.value), consumer);
+            return advance()
+                && emit(mapper.applyAsLong(currentLeft.value, currentRight.value), consumer);
           }
         };
       }
@@ -833,7 +1050,8 @@ public abstract class BiStream<K, V> {
         return new AbstractDoubleSpliterator(estimateSize(), ORDERED) {
           @Override
           public boolean tryAdvance(DoubleConsumer consumer) {
-            return advance() && emit(mapper.applyAsDouble(currentLeft.value, currentRight.value), consumer);
+            return advance()
+                && emit(mapper.applyAsDouble(currentLeft.value, currentRight.value), consumer);
           }
         };
       }
@@ -842,10 +1060,7 @@ public abstract class BiStream<K, V> {
         return collectWith(collector.bisecting(x -> currentLeft.value, x -> currentRight.value));
       }
 
-      /**
-       * {@code collector} internally reads from {@link #currentLeft} and
-       * {@link #currentRight}.
-       */
+      /** {@code collector} internally reads from {@link #currentLeft} and {@link #currentRight}. */
       private <A, R> R collectWith(Collector<Void, A, R> collector) {
         A container = collector.supplier().get();
         BiConsumer<A, Void> accumulator = collector.accumulator();

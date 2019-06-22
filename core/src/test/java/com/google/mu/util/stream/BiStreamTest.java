@@ -5,7 +5,9 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static java.util.Arrays.asList;
+import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -17,6 +19,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -494,6 +497,86 @@ public class BiStreamTest {
         BiStream.zip(Stream.iterate(1, i -> i + 1), Stream.of("one", "two", "three").parallel());
     assertSequential(zipped.mapToObj((i, s) -> i + ":" + s))
         .containsExactly("1:one", "2:two", "3:three")
+        .inOrder();
+  }
+
+  @Test public void testGroupingBy() {
+    Map<Integer, List<Integer>> groups =
+        Stream.of(0, 1, 2).collect(BiStream.groupingBy(n -> n / 2)).toMap();
+    assertThat(groups).containsExactly(0, ImmutableList.of(0, 1), 1, ImmutableList.of(2)).inOrder();
+  }
+
+  @Test public void testGroupingBy_withCollector() {
+    Map<String, Long> groups =
+        Stream.of(1, 1, 2, 3, 3)
+            .collect(BiStream.groupingBy(Object::toString, Collectors.counting()))
+            .toMap();
+    assertThat(groups).containsExactly("1", 2L, "2", 1L, "3", 2L).inOrder();
+  }
+
+  @Test public void testGroupingValuesFrom() {
+    Map<Integer, List<String>> groups =
+        Stream.of(ImmutableMap.of(1, "one"), ImmutableMap.of(2, "two", 1, "uno"))
+            .collect(BiStream.groupingValuesFrom(Map::entrySet))
+            .toMap();
+    assertThat(groups).containsExactly(1, asList("one", "uno"), 2, asList("two")).inOrder();
+  }
+
+  @Test public void testGroupingValuesFrom_withCollector() {
+    Map<Integer, Long> groups =
+        Stream.of(ImmutableMap.of(1, "one"), ImmutableMap.of(2, "two", 1, "uno"))
+            .collect(BiStream.groupingValuesFrom(Map::entrySet, Collectors.counting()))
+            .toMap();
+    assertThat(groups).containsExactly(1, 2L, 2, 1L).inOrder();
+  }
+
+  @Test public void testConcatMap() {
+    assertThat(BiStream.concat(ImmutableMap.of(1, "one"), ImmutableMap.of(2, "two")).toMap())
+        .containsExactly(1, "one", 2, "two")
+        .inOrder();
+    assertThat(
+            BiStream.concat(
+                    ImmutableMap.of(1, "one"),
+                    ImmutableMap.of(2, "two"),
+                    ImmutableMap.of(3, "three"))
+                .toMap())
+        .containsExactly(1, "one", 2, "two", 3, "three")
+        .inOrder();
+  }
+
+  @Test public void testConcatMap_nullNotAllowed() {
+    Map<?, ?> third = null;
+    assertThrows(
+        NullPointerException.class,
+        () -> BiStream.concat(ImmutableMap.of(), ImmutableMap.of(), third));
+  }
+
+  @Test public void testConcatStreamOfBiStreams() {
+    assertThat(BiStream.concat(Stream.of(BiStream.of(1, "one"), BiStream.of(2, "two"))).toMap())
+        .containsExactly(1, "one", 2, "two")
+        .inOrder();
+  }
+
+  @Test public void testConcatenating_emptyStream() {
+    assertThat(
+            Stream.<ImmutableMap<Integer, String>>empty()
+                .collect(BiStream.concatenating(BiStream::from))
+                .toMap())
+        .isEmpty();
+  }
+
+  @Test public void testConcatenating_nestedBiStreamsNotConsumed() {
+    BiStream<Integer, String> nested = BiStream.of(1, "one");
+    assertThat(Stream.of(nested).collect(BiStream.concatenating(identity()))).isNotNull();
+    assertKeyValues(nested).containsExactly(1, "one").inOrder();
+  }
+
+  @Test public void testConcatenating() {
+    assertThat(
+            Stream.of(ImmutableMap.of(1, "one"), ImmutableMap.of(2, "two"))
+                .collect(BiStream.concatenating(BiStream::from))
+                .toMap())
+        .containsExactly(1, "one", 2, "two")
         .inOrder();
   }
 
