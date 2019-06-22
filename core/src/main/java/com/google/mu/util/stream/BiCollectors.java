@@ -17,11 +17,7 @@ import java.util.stream.Collectors;
 /**
  * Common utilities pertaining to {@link BiCollector}.
  *
- * <p>Note that if you are looking to collect a {@link BiStream} to some of the most common result
- * types, be aware that methods like {@link BiStream#toMap}, {@link BiStream#toSetMultimap} are more
- * concise and convenient to use than equivalent {@code collect()} calls.
- *
- * <p>And don't forget that you can directly "method reference" a {@code Collector}-returning
+ * <p>Don't forget that you can directly "method reference" a {@code Collector}-returning
  * factory method as a {@code BiCollector} as long as it accepts two {@code Function} parameters
  * corresponding to the "key" and the "value" parts respectively. For example: {@code
  * collect(Collectors::toMap)}, {@code collect(ImmutableBiMap::toImmutableBiMap)}.

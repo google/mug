@@ -94,7 +94,7 @@ public abstract class BiStream<K, V> {
    * instead, allowing fluent method chaining. For example:
    *
    * <pre>{@code
-   * ImmtableMap<EmployeeId, ImmutableList<Task>> employeesWithMultipleTasks = tasks.stream()
+   * Map<EmployeeId, ImmutableList<Task>> employeesWithMultipleTasks = tasks.stream()
    *     .collect(BiStream.groupingBy(Task::assignedTo))
    *     .filterValues(tasks -> tasks.size() > 1)
    *     .toMap();
@@ -123,7 +123,7 @@ public abstract class BiStream<K, V> {
    * #BiStream} instead, allowing fluent method chaining. For example:
    *
    * <pre>{@code
-   * ImmtableMap<EmployeeId, Integer> topTenEmployeesByWorkHour = projects.stream()
+   * Map<EmployeeId, Integer> topTenEmployeesByWorkHour = projects.stream()
    *     .flatMap(project -> project.getMembers().stream())  // Stream<TeamMember>
    *     .collect(BiStream.groupingBy(TeamMember::employeeId, summingInt(TeamMember::hours)))
    *     .sortedByValues(Comparator.reverseOrder())
@@ -152,7 +152,7 @@ public abstract class BiStream<K, V> {
    * <p>For example:
    *
    * <pre>{@code
-   * ImmtableMap<EmployeeId, Task> billableTaskAssignments = projects.stream()
+   * Map<EmployeeId, Task> billableTaskAssignments = projects.stream()
    *     .collect(concatenating(p -> BiStream.from(p.getTaskAssignments())))
    *     .filterValues(Task::billable)
    *     .toMap();
@@ -168,7 +168,7 @@ public abstract class BiStream<K, V> {
    * to the same key using {@code valueCollector}. For example:
    *
    * <pre>{@code
-   * ImmtableMap<EmployeeId, ImmutableList<Task>> employeesWithMultipleTasks = projects.stream()
+   * Map<EmployeeId, ImmutableList<Task>> employeesWithMultipleTasks = projects.stream()
    *     .map(Project::getTaskAssignments)  // Stream<Map<EmployeeId, Task>>
    *     .collect(groupingValuesFrom(Map::entrySet))
    *     .filterValues(tasks -> tasks.size() > 1)
@@ -178,7 +178,7 @@ public abstract class BiStream<K, V> {
    * <p>This idiom is applicable even if {@code getTaskAssignments()} returns {@link Multimap}:
    *
    * <pre>{@code
-   * ImmtableMap<EmployeeId, ImmutableList<Task>> employeesWithMultipleTasks = projects.stream()
+   * Map<EmployeeId, ImmutableList<Task>> employeesWithMultipleTasks = projects.stream()
    *     .map(Project::getTaskAssignments)  // Stream<Multimap<EmployeeId, Task>>
    *     .collect(groupingValuesFrom(Map::entrySet))
    *     .filterValues(tasks -> tasks.size() > 1)
@@ -201,7 +201,7 @@ public abstract class BiStream<K, V> {
    * to the same key using {@code valueCollector}. For example:
    *
    * <pre>{@code
-   * ImmtableMap<EmployeeId, Integer> employeeWorkHours = projects.stream()
+   * Map<EmployeeId, Integer> employeeWorkHours = projects.stream()
    *     .map(Project::getTaskAssignments)  // Stream<Map<EmployeeId, Task>>
    *     .collect(groupingValuesFrom(Map::entrySet, summingInt(Task::hours)))
    *     .toMap();
@@ -210,7 +210,7 @@ public abstract class BiStream<K, V> {
    * <p>This idiom is applicable even if {@code getTaskAssignments()} returns {@link Multimap}:
    *
    * <pre>{@code
-   * ImmtableMap<EmployeeId, Integer> employeeWorkHours = projects.stream()
+   * Map<EmployeeId, Integer> employeeWorkHours = projects.stream()
    *     .map(Project::getTaskAssignments)  // Stream<Multimap<EmployeeId, Task>>
    *     .collect(groupingValuesFrom(Multimap::entries, summingInt(Task::hours)))
    *     .toMap();
@@ -285,7 +285,7 @@ public abstract class BiStream<K, V> {
    * encounter order. For example:
    *
    * <pre>{@code
-   * ImmtableMap<AccountId, Account> allAccounts =
+   * Map<AccountId, Account> allAccounts =
    *     concat(primaryAccounts, secondaryAccounts).toMap();
    * }</pre>
    */
@@ -346,7 +346,7 @@ public abstract class BiStream<K, V> {
    * <pre>{@code
    * static import com.google.common.labs.collect.BiStream.biStream;
    *
-   * ImmutableMap<EmployeeId, Employee> employeesById = biStream(employees)
+   * Map<EmployeeId, Employee> employeesById = biStream(employees)
    *     .mapKeys(Employee::id)
    *     .toMap();
    * }</pre>
@@ -739,9 +739,6 @@ public abstract class BiStream<K, V> {
   /**
    * Returns an object of type {@code R} that is the result of collecting the pairs in this stream
    * using {@code collector}.
-   *
-   * <p>For the most common result types, you should prefer to use the shortcut methods {@link
-   * #toMap}, {@link #toListMultimap} or {@link #toSetMultimap}.
    *
    * <p>For less common result types, any {@code Collector}-returning factory method can be directly
    * "method referenced" as {@link BiCollector} if it accepts two {@code Function} parameters
