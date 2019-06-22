@@ -32,7 +32,7 @@ This class closely mirrors Jdk `Stream` API (the few extra methods of "its own" 
 **Example 1: to iterate over a stream with indices:**
 
 ```java
-BiStream.zip(MoreStreams.index(), inputs)
+BiStream.zip(MoreStreams.index().boxed(), inputs)
     .forEach((i, v) -> System.out.println(i + ": " + v));
 ```
 
