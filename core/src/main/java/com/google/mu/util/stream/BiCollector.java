@@ -19,22 +19,20 @@ import java.util.stream.Collector;
 
 /**
  * Logically, a {@code BiCollector} collects "pairs of things", just as a {@link Collector} collects
- * "things".
  *
  * <p>{@code BiCollector} is usually passed to {@link BiStream#collect}. For example, to collect the
- * input pairs to a {@link ConcurrentMap}:
+ * input pairs to a {@code ConcurrentMap}:
  *
  * <pre>{@code
  * ConcurrentMap<String, Integer> map = BiStream.of("a", 1).collect(Collectors::toConcurrentMap);
  * }</pre>
  *
- * <p>In addition to the common {@BiCollector} implementations provided by {@link BiCollectors},
+ * <p>In addition to the common implementations provided by {@link BiCollectors},
  * many {@code Collector}-returning factory methods can be directly "method referenced" as {@code
  * BiCollector} if the method accepts two {@code Function} parameters corresponding to "key" and
  * "value" respectively. For example: {@code Collectors::toConcurrentMap}, {@code
- * ImmutableSetMultimap::toImmutableSetMultimap}, {@code Maps::toImmutableEnumMap}, {@code
- * ImmutableBiMap::toImmutableBiMap} and {@code MoreCollectors::toImmutableMapIgnoringDuplicates}
- * etc.
+ * ImmutableSetMultimap::toImmutableSetMultimap}, {@code Maps::toImmutableEnumMap} and {@code
+ * ImmutableBiMap::toImmutableBiMap} etc.
  *
  * @param <K> the key type
  * @param <V> the value type

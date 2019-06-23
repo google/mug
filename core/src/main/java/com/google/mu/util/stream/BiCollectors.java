@@ -17,11 +17,7 @@ import java.util.stream.Collectors;
 /**
  * Common utilities pertaining to {@link BiCollector}.
  *
- * <p>Note that if you are looking to collect a {@link BiStream} to some of the most common result
- * types, be aware that methods like {@link BiStream#toMap}, {@link BiStream#toSetMultimap} are more
- * concise and convenient to use than equivalent {@code collect()} calls.
- *
- * <p>And don't forget that you can directly "method reference" a {@code Collector}-returning
+ * <p>Don't forget that you can directly "method reference" a {@code Collector}-returning
  * factory method as a {@code BiCollector} as long as it accepts two {@code Function} parameters
  * corresponding to the "key" and the "value" parts respectively. For example: {@code
  * collect(Collectors::toMap)}, {@code collect(ImmutableBiMap::toImmutableBiMap)}.
@@ -31,20 +27,18 @@ import java.util.stream.Collectors;
 public final class BiCollectors {
 
   /**
-   * Returns a {@link BiCollector} that collects the key-value pairs into an {@link ImmutableMap}.
+   * Returns a {@link BiCollector} that collects the key-value pairs into an immutable {@link Map}.
    *
    * <p>Normally calling {@code biStream.toMap()} is more convenient but for example when you've got
-   * a {@code BiStream<K, LinkedList<V>>} and need to collect it into {@code ImmutableMap<K,
-   * List<V>>}, you'll need to call {@code collect(toImmutableMap())} instead of {@code toMap()}.
-   * Similarly, call {@code collect(ImmutableListMultimap::toImmutableListMultimap)} instead of
-   * {@code toListMultimap()} to work around type variance.
+   * a {@code BiStream<K, LinkedList<V>>} and need to collect it into {@code Map<K, List<V>>},
+   * you'll need to call {@code collect(toMap())} instead of {@link BiStream#toMap()}.
    */
   public static <K, V> BiCollector<K, V, Map<K, V>> toMap() {
     return Collectors::toMap;
   }
 
   /**
-   * Returns a {@link BiCollector} that collects the key-value pairs into an {@link ImmutableMap}
+   * Returns a {@link BiCollector} that collects the key-value pairs into an immutable {@link Map}
    * using {@code valueMerger} to merge values of duplicate keys.
    */
   public static <K, V> BiCollector<K, V, Map<K, V>> toMap(
@@ -60,15 +54,15 @@ public final class BiCollectors {
   }
 
   /**
-   * Returns a {@link BiCollector} that collects the key-value pairs into an {@link ImmutableMap}
+   * Returns a {@link BiCollector} that collects the key-value pairs into an immutable {@link Map}
    * using {@code valueCollector} to collect values of identical keys into a final value of type
    * {@code V}.
    *
    * <p>For example, the following calculates total population per state from city demographic data:
    *
    * <pre>{@code
-   * ImmutableMap<StateId, Integer> statePopulations = BiStream.from(cities, City::getState, c -> c)
-   *     .collect(toImmutableMap(summingInt(City::getPopulation)));
+   *  Map<StateId, Integer> statePopulations = BiStream.from(cities, City::getState, c -> c)
+   *     .collect(toMap(summingInt(City::getPopulation)));
    * }</pre>
    *
    * <p>Entries are collected in encounter order.

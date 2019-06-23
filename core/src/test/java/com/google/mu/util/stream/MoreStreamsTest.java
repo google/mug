@@ -16,6 +16,7 @@ package com.google.mu.util.stream;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.stream.MoreStreams.mergingValues;
 import static com.google.mu.util.stream.MoreStreams.uniqueKeys;
 import static java.util.Arrays.asList;
@@ -263,6 +264,10 @@ public class MoreStreamsTest {
         () -> translations.stream()
             .map(Translation::dictionary)
             .collect(uniqueKeys()));
+  }
+
+  @Test public void testIndex() {
+    assertThat(MoreStreams.index().limit(3)).containsExactly(0, 1, 2).inOrder();
   }
 
   @Test public void testNulls() throws Exception {

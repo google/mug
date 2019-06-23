@@ -26,6 +26,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -212,6 +213,15 @@ public final class MoreStreams {
   public static <K, V> Collector<Map<K, V>, ?, Map<K, V>> uniqueKeys() {
     return collectingEach(
         m -> m.entrySet().stream(), Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+  }
+
+  /**
+   * Returns an infinite {@link IntStream} starting from {@code 0}.
+   *
+   * @since 3.0
+   */
+  public static IntStream index() {
+    return IntStream.iterate(0, i -> i + 1);
   }
 
   private static <F, T, A, R> Collector<F, A, R> collectingEach(
