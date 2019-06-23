@@ -1,0 +1,22 @@
+-encoding
+'UTF-8'
+-protected
+-sourcepath
+'/Users/benyu/mug/core/src/main/java'
+-author
+-bottom
+'Copyright &#169; 2019. All rights reserved.'
+-charset
+'UTF-8'
+-d
+'/Users/benyu/mug/core/target/site/apidocs'
+-docencoding
+'UTF-8'
+-doctitle
+'core 3.0-SNAPSHOT API'
+-stylesheetfile
+'/Users/benyu/mug/javadoc-stylesheet.css'
+-use
+-version
+-windowtitle
+'core 3.0-SNAPSHOT API'
