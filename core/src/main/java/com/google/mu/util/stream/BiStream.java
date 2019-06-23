@@ -105,6 +105,8 @@ public abstract class BiStream<K, V> {
    * immutable {@code Map}; or {@code collect(Collectors::toConcurrentMap)} if concurrency is needed.
    *
    * <p>Entries are collected in encounter order.
+   *
+   * @since 3.0
    */
   public static <T, K> Collector<T, ?, BiStream<K, List<T>>> groupingBy(
       Function<? super T, ? extends K> keyFunction) {
@@ -132,6 +134,8 @@ public abstract class BiStream<K, V> {
    * if {@code BiMap} is needed.
    *
    * <p>Entries are collected in encounter order.
+   *
+   * @since 3.0
    */
   public static <T, K, V> Collector<T, ?, BiStream<K, V>> groupingBy(
       Function<? super T, ? extends K> keyFunction, Collector<? super T, ?, V> valueCollector) {
@@ -152,6 +156,8 @@ public abstract class BiStream<K, V> {
    *     .filterValues(Task::billable)
    *     .toMap();
    * }</pre>
+   *
+   * @since 3.0
    */
   public static <T, K, V> Collector<T, ?, BiStream<K, V>> concatenating(
       Function<? super T, ? extends BiStream<? extends K, ? extends V>> toBiStream) {
@@ -170,17 +176,19 @@ public abstract class BiStream<K, V> {
    *     .toMap();
    * }</pre>
    *
-   * <p>This idiom is applicable even if {@code getTaskAssignments()} returns {@link Multimap}:
+   * <p>This idiom is applicable even if {@code getTaskAssignments()} returns {@code Multimap}:
    *
    * <pre>{@code
    * Map<EmployeeId, List<Task>> employeesWithMultipleTasks = projects.stream()
    *     .map(Project::getTaskAssignments)  // Stream<Multimap<EmployeeId, Task>>
-   *     .collect(groupingValuesFrom(Map::entrySet))
+   *     .collect(groupingValuesFrom(Multimap::entries))
    *     .filterValues(tasks -> tasks.size() > 1)
    *     .toMap();
    * }</pre>
    *
    * <p>Entries are collected in encounter order.
+   *
+   * @since 3.0
    */
   public static <T, K, V> Collector<T, ?, BiStream<K, List<V>>> groupingValuesFrom(
       Function<? super T, ? extends Collection<Map.Entry<K, V>>> entrySource) {
@@ -198,7 +206,7 @@ public abstract class BiStream<K, V> {
    *     .toMap();
    * }</pre>
    *
-   * <p>This idiom is applicable even if {@code getTaskAssignments()} returns {@link Multimap}:
+   * <p>This idiom is applicable even if {@code getTaskAssignments()} returns {@code Multimap}:
    *
    * <pre>{@code
    * Map<EmployeeId, Integer> employeeWorkHours = projects.stream()
@@ -208,6 +216,8 @@ public abstract class BiStream<K, V> {
    * }</pre>
    *
    * <p>Entries are collected in encounter order.
+   *
+   * @since 3.0
    */
   public static <T, K, V, R> Collector<T, ?, BiStream<K, R>> groupingValuesFrom(
       Function<? super T, ? extends Collection<Map.Entry<K, V>>> entrySource,
@@ -235,6 +245,8 @@ public abstract class BiStream<K, V> {
    * <p>The returned {@code BiStream} takes {@code O(n)} space where {@code n} is the size of the
    * input elements. The "cross-joining" with the {@code right} stream is computed on-the-fly with
    * {@code O(1)} memory cost.
+   *
+   * @since 3.0
    */
   public static <L, R> Collector<L, ?, BiStream<L, R>> crossJoining(Stream<R> right) {
     requireNonNull(right);
@@ -279,6 +291,8 @@ public abstract class BiStream<K, V> {
    * <pre>{@code
    * Map<AccountId, Account> allAccounts = concat(primaryAccounts, secondaryAccounts).toMap();
    * }</pre>
+   *
+   * @since 3.0
    */
   @SafeVarargs
   public static <K, V> BiStream<K, V> concat(
@@ -293,7 +307,11 @@ public abstract class BiStream<K, V> {
     return concat(builder.build().map(BiStream::from));
   }
 
-  /** Returns a {@code BiStream} of pairs from {@code biStreams} concatenated in encounter order. */
+  /**
+   * Returns a {@code BiStream} of pairs from {@code biStreams} concatenated in encounter order.
+   *
+   * @since 3.0
+   */
   public static <K, V> BiStream<K, V> concat(
       Stream<? extends BiStream<? extends K, ? extends V>> biStreams) {
     return from(biStreams.flatMap(BiStream::mapToEntry));
@@ -307,6 +325,8 @@ public abstract class BiStream<K, V> {
    *
    * <p>The resulting stream will only be as long as the shorter of the two iterables; if one is
    * longer, its extra elements will be ignored.
+   *
+   * @since 3.0
    */
   public static <L, R> BiStream<L, R> zip(Collection<L> left, Collection<R> right) {
     return zip(left.stream(), right.stream());
@@ -341,6 +361,8 @@ public abstract class BiStream<K, V> {
    *     .mapKeys(Employee::id)
    *     .toMap();
    * }</pre>
+   *
+   * @since 3.0
    */
   public static <T> BiStream<T, T> biStream(Collection<T> elements) {
     return from(elements, identity(), identity());
@@ -353,7 +375,7 @@ public abstract class BiStream<K, V> {
 
   /**
    * Returns a {@code BiStream} of {@code elements}, each transformed to a pair of values with
-   * {@code toKey} and {@toValue}.
+   * {@code toKey} and {@code toValue}.
    */
   public static <T, K, V> BiStream<K, V> from(
       Collection<T> elements,
@@ -364,7 +386,7 @@ public abstract class BiStream<K, V> {
 
   /**
    * Returns a {@code BiStream} of the elements from {@code stream}, each transformed to a pair of
-   * values with {@code toKey} and {@toValue}.
+   * values with {@code toKey} and {@code toValue}.
    */
   public static <T, K, V> BiStream<K, V> from(
       Stream<T> stream,
@@ -419,8 +441,6 @@ public abstract class BiStream<K, V> {
   /**
    * Returns a {@code Stream} consisting of the results of applying {@code mapper} to each pair in
    * this {@code BiStream}.
-   *
-   * <p>To simply collect mapped pairs to a list or set, use {@link #toList} or {@link #toSet}.
    */
   public abstract <T> Stream<T> mapToObj(BiFunction<? super K, ? super V, ? extends T> mapper);
 
