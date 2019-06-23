@@ -703,7 +703,8 @@ public abstract class BiStream<K, V> {
 
   /**
    * Returns a {@code BiStream} consisting of the pairs in this stream, in the order produced by
-   * applying {@code comparator} on the keys of each pair.
+   * applying {@code keyComparator} on the keys of each pair, and then for equal keys,
+   * applying {@code valueComparator} on the values of each pair.
    */
   public final BiStream<K, V> sorted(
       Comparator<? super K> keyComparator, Comparator<? super V> valueComparator) {
