@@ -105,14 +105,14 @@
       <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava-testlib</artifactId>
-        <version>27.01</version>
+        <version>28.0-jre</version>
         <scope>test</scope>
       </dependency>
 
       <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
-        <version>27.01</version>
+        <version>28.0-jre</version>
         <scope>test</scope>
       </dependency>
 
