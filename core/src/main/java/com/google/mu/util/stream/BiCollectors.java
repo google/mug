@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
  * <p>Don't forget that you can directly "method reference" a {@code Collector}-returning
  * factory method as a {@code BiCollector} as long as it accepts two {@code Function} parameters
  * corresponding to the "key" and the "value" parts respectively. For example: {@code
- * collect(Collectors::toMap)}, {@code collect(ImmutableBiMap::toImmutableBiMap)}.
+ * collect(ImmutableMap::toImmutableMap)}, {@code collect(Collectors::toConcurrentMap)}.
  *
  * @since 3.0
  */
