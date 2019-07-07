@@ -50,6 +50,7 @@
   <modules>
     <module>core</module>
     <module>benchmarks</module>
+    <module>examples</module>
   </modules>
 
   <properties>
