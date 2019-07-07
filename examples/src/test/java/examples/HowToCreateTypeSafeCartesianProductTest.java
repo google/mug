@@ -29,9 +29,10 @@ public class HowToCreateTypeSafeCartesianProductTest {
   @Test public void how_to_use_cartesian_product_with_infinite_stream() {
     Stream<String> testSpecs = Stream.of("testMap", "testReduce");
     IntStream inputSizes = IntStream.iterate(1, s -> s * 2);
-    Stream<String> testCases = testSpecs  // testSpecs must no be infinite because collect() is eager.
-        .collect(crossJoining(inputSizes.boxed()))
-        .mapToObj((spec, inputSize) -> spec + " using input size " + inputSize);
+    Stream<String> testCases =
+        testSpecs  // testSpecs must _not_ be infinite because collect() is eager.
+            .collect(crossJoining(inputSizes.boxed()))  // inputSizes is infinite!
+            .mapToObj((spec, inputSize) -> spec + " using input size " + inputSize);
 
     // While testCases is an infinite stream, you can later pick an input size.
     assertThat(testCases.limit(4).collect(toList()))
