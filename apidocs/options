@@ -13,10 +13,10 @@
 -docencoding
 'UTF-8'
 -doctitle
-'core 3.0-SNAPSHOT API'
+'core 3.1-SNAPSHOT API'
 -stylesheetfile
 '/Users/benyu/mug/javadoc-stylesheet.css'
 -use
 -version
 -windowtitle
-'core 3.0-SNAPSHOT API'
+'core 3.1-SNAPSHOT API'
