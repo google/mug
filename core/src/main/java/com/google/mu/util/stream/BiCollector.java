@@ -19,6 +19,7 @@ import java.util.stream.Collector;
 
 /**
  * Logically, a {@code BiCollector} collects "pairs of things", just as a {@link Collector} collects
+ * "things".
  *
  * <p>{@code BiCollector} is usually passed to {@link BiStream#collect}. For example, to collect the
  * input pairs to a {@code ConcurrentMap}:

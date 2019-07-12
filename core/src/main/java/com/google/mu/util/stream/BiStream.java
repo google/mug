@@ -1102,4 +1102,6 @@ public abstract class BiStream<K, V> {
       }
     }
   }
+
+  private BiStream() {}
 }
