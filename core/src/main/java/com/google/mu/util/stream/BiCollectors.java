@@ -32,6 +32,12 @@ import java.util.stream.Collectors;
  * corresponding to the "key" and the "value" parts respectively. For example: {@code
  * collect(ImmutableMap::toImmutableMap)}, {@code collect(Collectors::toConcurrentMap)}.
  *
+ * <p>Most of the factory methods in this class are deliberately named after their {@code Collector}
+ * counterparts. This is a <em>feature</em>. Static imports can be overloaded by method arity, so
+ * you already static import, for example, {@code Collectors.toMap}, simply adding {@code static import
+ * com.google.mu.util.stream.BiCollectors.toMap} will allow both the {@code BiCollector} and the
+ * {@code Collector} to be used in the same file without ambiguity or confusion.
+ *
  * @since 3.0
  */
 public final class BiCollectors {
