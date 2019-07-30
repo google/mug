@@ -26,10 +26,6 @@ import java.util.stream.Collectors;
 
 /**
  * Common utilities pertaining to {@link BiCollector}.
- */
-
-/**
- * Common utilities pertaining to {@link BiCollector}.
  *
  * <p>Don't forget that you can directly "method reference" a {@code Collector}-returning
  * factory method as a {@code BiCollector} as long as it accepts two {@code Function} parameters
