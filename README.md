@@ -16,15 +16,15 @@ A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/
 
 Add the following to pom.xml:
 ```
-	<repository>
-		<id>jitpack.io</id>
-		<url>https://jitpack.io</url>
-	</repository>
-  <dependency>
-		<groupId>com.github.bihu1</groupId>
-		<artifactId>mug</artifactId>
-		<version>mug-root-3.3</version>
-	</dependency>
+<repository>
+	<id>jitpack.io</id>
+	<url>https://jitpack.io</url>
+</repository>
+<dependency>
+	<groupId>com.github.bihu1</groupId>
+	<artifactId>mug</artifactId>
+	<version>mug-root-3.3</version>
+</dependency>
 ```
 
 ## Stream
