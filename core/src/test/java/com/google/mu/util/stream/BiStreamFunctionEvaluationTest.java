@@ -14,27 +14,22 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
-import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth8.assertThat;
-
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.truth.MultimapSubject;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.function.Function;
-import java.util.stream.Collector;
-import java.util.stream.DoubleStream;
-import java.util.stream.IntStream;
-import java.util.stream.LongStream;
-import java.util.stream.Stream;
-
+import junit.framework.TestCase;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import junit.framework.TestCase;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.*;
+
+import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 
 /**
  * Tests to ensure {@link BiStream#from(Stream, Function, Function)} maintains the invariant that
@@ -367,12 +362,17 @@ public final class BiStreamFunctionEvaluationTest extends TestCase {
     };
   }
 
-  private static MultimapSubject assertKeyValues(BiStream<?, ?> stream) {
-    Multimap<?, ?> multimap = stream.collect(BiStreamFunctionEvaluationTest::toLinkedListMultimap);
+  private static<K,V> MultimapSubject assertKeyValues(BiStream<K, V> stream) {
+    Multimap<?, ?> multimap = stream.collect(new BiCollector<K, V, Multimap<K, V>>() {
+      @Override
+      public <E> Collector<E, ?, Multimap<K, V>> bisecting(Function<E, K> toKey, Function<E, V> toValue) {
+        return BiStreamFunctionEvaluationTest.toLinkedListMultimap(toKey,toValue);
+      }
+    });
     return assertThat(multimap);
   }
 
-  private static <T, K, V> Collector<T, ?, LinkedListMultimap<K, V>> toLinkedListMultimap(
+  public static <T, K, V> Collector<T, ?, Multimap<K, V>> toLinkedListMultimap(
       Function<? super T, ? extends K> toKey, Function<? super T, ? extends V> toValue) {
     return Collector.of(
         LinkedListMultimap::create,

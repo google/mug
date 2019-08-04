@@ -14,46 +14,21 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
+import java.util.*;
+import java.util.Spliterators.AbstractDoubleSpliterator;
+import java.util.Spliterators.AbstractIntSpliterator;
+import java.util.Spliterators.AbstractLongSpliterator;
+import java.util.Spliterators.AbstractSpliterator;
+import java.util.function.*;
+import java.util.stream.*;
+
 import static java.util.Comparator.comparing;
 import static java.util.Objects.requireNonNull;
 import static java.util.Spliterator.ORDERED;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.collectingAndThen;
-import static  java.util.stream.Collectors.toList;
-import static java.util.stream.StreamSupport.doubleStream;
-import static java.util.stream.StreamSupport.intStream;
-import static java.util.stream.StreamSupport.longStream;
-import static java.util.stream.StreamSupport.stream;
-
-import java.util.AbstractMap;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Spliterator;
-import java.util.Spliterators.AbstractDoubleSpliterator;
-import java.util.Spliterators.AbstractIntSpliterator;
-import java.util.Spliterators.AbstractLongSpliterator;
-import java.util.Spliterators.AbstractSpliterator;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.BiPredicate;
-import java.util.function.Consumer;
-import java.util.function.DoubleConsumer;
-import java.util.function.Function;
-import java.util.function.IntConsumer;
-import java.util.function.LongConsumer;
-import java.util.function.Predicate;
-import java.util.function.ToDoubleBiFunction;
-import java.util.function.ToIntBiFunction;
-import java.util.function.ToLongBiFunction;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
-import java.util.stream.DoubleStream;
-import java.util.stream.IntStream;
-import java.util.stream.LongStream;
-import java.util.stream.Stream;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.StreamSupport.*;
 
 /**
  * A class similar to {@link Stream}, but operating over a sequence of pairs of objects.
@@ -222,11 +197,23 @@ public abstract class BiStream<K, V> {
   public static <T, K, V, R> Collector<T, ?, BiStream<K, R>> groupingValuesFrom(
       Function<? super T, ? extends Collection<Map.Entry<K, V>>> entrySource,
       Collector<? super V, ?, R> valueCollector) {
-    return Collectors.flatMapping(
-        requireNonNull(entrySource.andThen(Collection::stream)),
+    return flatMapping(
+         (Function<? super T, ? extends Stream<? extends Map.Entry<K,V>>>) requireNonNull(entrySource.andThen(Collection::stream)),
         groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, valueCollector)));
   }
 
+  private static <T,U,A,R> Collector<T,?,R> flatMapping(
+      Function<? super T,? extends Stream<? extends U>> mapper,
+      Collector<? super U,A,R> downstream) {
+
+    BiConsumer<A, ? super U> acc = downstream.accumulator();
+    return Collector.of(downstream.supplier(),
+        (a, t) -> { try(Stream<? extends U> s=mapper.apply(t)) {
+          if(s!=null) s.forEachOrdered(u -> acc.accept(a, u));
+        }},
+        downstream.combiner(), downstream.finisher(),
+        downstream.characteristics().toArray(new Collector.Characteristics[0]));
+  }
   /**
    * Returns a {@code Collector} that will pair each input element with each element from {@code
    * right} into a new {@code BiStream}. For example:
