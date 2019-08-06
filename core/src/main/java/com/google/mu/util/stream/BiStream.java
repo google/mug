@@ -202,6 +202,7 @@ public abstract class BiStream<K, V> {
         groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, valueCollector)));
   }
 
+  //https://stackoverflow.com/questions/39130122/java-8-nested-multi-level-group-by/39131049#39131049
   private static <T,U,A,R> Collector<T,?,R> flatMapping(
       Function<? super T,? extends Stream<? extends U>> mapper,
       Collector<? super U,A,R> downstream) {
