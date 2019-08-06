@@ -16,11 +16,11 @@ A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/
 
 Add the following to pom.xml:
 ```
-<dependency>
-   <groupId>com.google.mug</groupId>
-   <artifactId>mug</artifactId>
-   <version>3.0</version>
-</dependency>
+  <dependency>
+    <groupId>com.google.mug</groupId>
+    <artifactId>mug</artifactId>
+    <version>3.0</version>
+  </dependency>
 ```
 
 ## Stream
