@@ -1,24 +1,26 @@
 package examples;
 
+import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Multimap;
+import com.google.mu.util.stream.BiCollector;
+import com.google.mu.util.stream.BiStream;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collector;
+import java.util.stream.Stream;
+
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.util.stream.BiStream.groupingBy;
 import static com.google.mu.util.stream.BiStream.groupingValuesFrom;
 import static java.util.Arrays.asList;
-
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Stream;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-
-import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Multimap;
-import com.google.mu.util.stream.BiStream;
 
 /** Some examples to show fluent grouping using {@link BiStream}. */
 @RunWith(JUnit4.class)
@@ -27,7 +29,12 @@ public class HowToDoGroupingFluentlyTest {
   @Test public void how_to_fluently_group_elements_into_guava_collections() {
     Map<Integer, ImmutableSet<Integer>> byLeastSignificantDigit = Stream.of(1, 2, 11, 32)
         .collect(groupingBy(n -> n % 10, toImmutableSet()))
-        .collect(ImmutableMap::toImmutableMap);
+        .collect(new BiCollector<Integer, ImmutableSet<Integer>, ImmutableMap<Integer, ImmutableSet<Integer>>>() {
+          @Override
+          public <E> Collector<E, ?, ImmutableMap<Integer, ImmutableSet<Integer>>> bisecting(Function<E, Integer> toKey, Function<E, ImmutableSet<Integer>> toValue) {
+            return ImmutableMap.toImmutableMap(toKey,toValue);
+          }
+        });
     assertThat(byLeastSignificantDigit)
         .containsExactly(1, ImmutableSet.of(1, 11), 2, ImmutableSet.of(2, 32));
   }
