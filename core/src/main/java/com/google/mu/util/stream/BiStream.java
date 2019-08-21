@@ -21,6 +21,7 @@ import java.util.Spliterators.AbstractLongSpliterator;
 import java.util.Spliterators.AbstractSpliterator;
 import java.util.function.*;
 import java.util.stream.*;
+import java.util.stream.Collector.Characteristics;
 
 import static java.util.Comparator.comparing;
 import static java.util.Objects.requireNonNull;
@@ -198,23 +199,10 @@ public abstract class BiStream<K, V> {
       Function<? super T, ? extends Collection<Map.Entry<K, V>>> entrySource,
       Collector<? super V, ?, R> valueCollector) {
     return flatMapping(
-         (Function<? super T, ? extends Stream<? extends Map.Entry<K,V>>>) requireNonNull(entrySource.andThen(Collection::stream)),
+        requireNonNull(entrySource),
         groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, valueCollector)));
   }
 
-  //https://stackoverflow.com/questions/39130122/java-8-nested-multi-level-group-by/39131049#39131049
-  private static <T,U,A,R> Collector<T,?,R> flatMapping(
-      Function<? super T,? extends Stream<? extends U>> mapper,
-      Collector<? super U,A,R> downstream) {
-
-    BiConsumer<A, ? super U> acc = downstream.accumulator();
-    return Collector.of(downstream.supplier(),
-        (a, t) -> { try(Stream<? extends U> s=mapper.apply(t)) {
-          if(s!=null) s.forEachOrdered(u -> acc.accept(a, u));
-        }},
-        downstream.combiner(), downstream.finisher(),
-        downstream.characteristics().toArray(new Collector.Characteristics[0]));
-  }
   /**
    * Returns a {@code Collector} that will pair each input element with each element from {@code
    * right} into a new {@code BiStream}. For example:
@@ -1089,6 +1077,22 @@ public abstract class BiStream<K, V> {
         this.value = value;
       }
     }
+  }
+
+  // TODO: switch to Java 9 Collectors.flatMapping() when we can.
+  private static <T, E, A, R> Collector<T, A, R> flatMapping(
+      Function<? super T, ? extends Collection<? extends E>> mapper, Collector<E, A, R> collector) {
+    BiConsumer<A, E> accumulator = collector.accumulator();
+    return Collector.of(
+        collector.supplier(),
+        (a, input) -> {
+          for (E entry : mapper.apply(input)) {
+            accumulator.accept(a, entry);
+          }
+        },
+        collector.combiner(),
+        collector.finisher(),
+        collector.characteristics().toArray(new Characteristics[0]));
   }
 
   private BiStream() {}
