@@ -233,6 +233,19 @@ public abstract class BiStream<K, V> {
             left.isEmpty() ? empty() : concat(right.map(r -> from(left, identity(), l -> r))));
   }
 
+  /**
+   * Returns a {@code Collector} that accumulates every neighboring pair of elements into a new
+   * {@code BiStream}. For example {@code Stream.of(1, 2, 3, 4).collect(toAdjacentPairs())} will
+   * return {@code [{1, 2}, {2, 3}, {3, 4}]}.
+   *
+   * <p>If the input has 0 or 1 elements than the output is an empty {@code BiStream}. Otherwise the
+   * length of the output {@code BiStream} is one less than the length of the input.
+   */
+  public static <T> Collector<T, ?, BiStream<T, T>> toAdjacentPairs() {
+    return Collectors.collectingAndThen(
+        Collectors.toList(), list -> zip(list.stream(), list.stream().skip(1)));
+  }
+
   /** Returns an empty {@code BiStream}. */
   public static <K, V> BiStream<K, V> empty() {
     return from(Stream.empty());
