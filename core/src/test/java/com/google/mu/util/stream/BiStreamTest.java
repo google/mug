@@ -14,28 +14,44 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
-import com.google.common.collect.*;
-import com.google.common.truth.IterableSubject;
-import com.google.common.truth.MultimapSubject;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
-import java.util.stream.*;
-
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.stream.BiCollectors.toMap;
+import static com.google.mu.util.stream.BiStream.crossJoining;
+import static com.google.mu.util.stream.BiStream.toAdjacentPairs;
 import static java.util.Arrays.asList;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
+import java.util.stream.Stream;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.LinkedListMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.truth.IterableSubject;
+import com.google.common.truth.MultimapSubject;
 
 @RunWith(JUnit4.class)
 public class BiStreamTest {
@@ -578,6 +594,66 @@ public class BiStreamTest {
                 .toMap())
         .containsExactly(1, "one", 2, "two")
         .inOrder();
+  }
+
+  @Test public void testCrossJoining() {
+    assertKeyValues(Stream.of(1, null, 2).collect(crossJoining(Stream.of("foo", null))))
+        .containsExactly(1, "foo", null, "foo", 2, "foo", 1, null, null, null, 2, null)
+        .inOrder();
+  }
+
+  @Test public void testCrossJoining_emptyLeft() {
+    assertKeyValues(Stream.empty().collect(crossJoining(Stream.of("foo", "bar")))).isEmpty();
+  }
+
+  @Test public void testCrossJoining_emptyRight() {
+    assertKeyValues(Stream.of(1, 2).collect(crossJoining(Stream.empty()))).isEmpty();
+  }
+
+  @Test public void testCrossJoining_infiniteRight_thenLimit() {
+    assertKeyValues(
+            Stream.empty().collect(crossJoining(IntStream.iterate(0, i -> i + 1).boxed())).limit(2))
+        .isEmpty();
+    assertKeyValues(
+            Stream.of("foo", "bar")
+                .collect(crossJoining(IntStream.iterate(0, i -> i + 1).boxed()))
+                .limit(4))
+        .containsExactly("foo", 0, "bar", 0, "foo", 1, "bar", 1)
+        .inOrder();
+  }
+
+  @Test public void testToAdjacentPairs_empty() {
+    Stream<String> stream = Stream.of().collect(toAdjacentPairs()).mapToObj((a, b) -> a + ":" + b);
+    assertThat(stream).isEmpty();
+  }
+
+  @Test public void testToAdjacentPairs_oneElement() {
+    Stream<String> stream = Stream.of(1).collect(toAdjacentPairs()).mapToObj((a, b) -> a + ":" + b);
+    assertThat(stream).isEmpty();
+  }
+
+  @Test public void testToAdjacentPairs_twoElements() {
+    Stream<String> stream =
+        Stream.of(1, 2).collect(toAdjacentPairs()).mapToObj((a, b) -> a + ":" + b);
+    assertThat(stream).containsExactly("1:2").inOrder();
+  }
+
+  @Test public void testToAdjacentPairs_threeElements() {
+    Stream<String> stream =
+        Stream.of(1, 2, 3).collect(toAdjacentPairs()).mapToObj((a, b) -> a + ":" + b);
+    assertThat(stream).containsExactly("1:2", "2:3").inOrder();
+  }
+
+  @Test public void testToAdjacentPairs_fourElements() {
+    Stream<String> stream =
+        Stream.of(1, 2, 3, 4).collect(toAdjacentPairs()).mapToObj((a, b) -> a + ":" + b);
+    assertThat(stream).containsExactly("1:2", "2:3", "3:4").inOrder();
+  }
+
+  @Test public void testToAdjacentPairs_nullPadding() {
+    Stream<String> stream =
+        Stream.of(null, 1, 2, 3, null).collect(toAdjacentPairs()).mapToObj((a, b) -> a + ":" + b);
+    assertThat(stream).containsExactly("null:1", "1:2", "2:3", "3:null").inOrder();
   }
 
   static<K,V> MultimapSubject assertKeyValues(BiStream<K, V> stream) {
