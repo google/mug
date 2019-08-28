@@ -133,11 +133,7 @@ public final class Substring {
 
   /** Returns a {@code Pattern} that matches strings starting with {@code prefix}. */
   public static Pattern prefix(char prefix) {
-    return new Pattern() {
-      @Override Match match(String input) {
-        return input.length() > 0 && input.charAt(0) == prefix ? new Match(input, 0, 1) : null;
-      }
-    };
+    return prefix(Character.toString(prefix));
   }
 
   /** Returns a {@code Pattern} that matches strings ending with {@code suffix}. */
@@ -154,13 +150,7 @@ public final class Substring {
 
   /** Returns a {@code Pattern} that matches strings ending with {@code suffix}. */
   public static Pattern suffix(char suffix) {
-    return new Pattern() {
-      @Override Match match(String input) {
-        return input.length() > 0 && input.charAt(input.length() - 1) == suffix
-            ? new Match(input, input.length() - 1, input.length())
-            : null;
-      }
-    };
+    return suffix(Character.toString(suffix));
   }
 
   /** Returns a {@code Pattern} that matches the first occurrence of {@code c}. */
@@ -388,13 +378,10 @@ public final class Substring {
       return match == null ? string : match.remove();
     }
 
-    /**
-     * Returns a new string with the substring matched by {@code this} replaced by {@code
-     * replacement}. Returns {@code string} as-is if a substring is not found.
-     */
+    /** @deprecated Use {@link #replaceFrom(String, CharSequence)} instead. */
+    @Deprecated
     public final String replaceFrom(String string, char replacement) {
-      Match match = match(string);
-      return match == null ? string : match.replaceWith(replacement);
+      return replaceFrom(string, Character.toString(replacement));
     }
 
     /**
@@ -574,12 +561,10 @@ public final class Substring {
       }
     }
 
-    /**
-     * Returns a copy of the original string with the matching substring replaced with
-     * {@code replacement}.
-     */
+    /** @deprecated Use {@link #replaceWith(CharSequence)} instead. */
+    @Deprecated
     public String replaceWith(char replacement) {
-      return getBefore() + replacement + getAfter();
+      return replaceWith(Character.toString(replacement));
     }
 
     /**
