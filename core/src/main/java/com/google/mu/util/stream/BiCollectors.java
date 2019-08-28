@@ -26,15 +26,17 @@ import java.util.stream.Collectors;
 
 /**
  * Common utilities pertaining to {@link BiCollector}.
- */
-
-/**
- * Common utilities pertaining to {@link BiCollector}.
  *
  * <p>Don't forget that you can directly "method reference" a {@code Collector}-returning
  * factory method as a {@code BiCollector} as long as it accepts two {@code Function} parameters
  * corresponding to the "key" and the "value" parts respectively. For example: {@code
  * collect(ImmutableMap::toImmutableMap)}, {@code collect(Collectors::toConcurrentMap)}.
+ *
+ * <p>Most of the factory methods in this class are deliberately named after their {@code Collector}
+ * counterparts. This is a <em>feature</em>. Static imports can be overloaded by method arity, so
+ * you already static import, for example, {@code Collectors.toMap}, simply adding {@code static import
+ * com.google.mu.util.stream.BiCollectors.toMap} will allow both the {@code BiCollector} and the
+ * {@code Collector} to be used in the same file without ambiguity or confusion.
  *
  * @since 3.0
  */

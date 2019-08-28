@@ -1,19 +1,21 @@
 package examples;
 
-import static com.google.common.truth.Truth.assertThat;
-import static com.google.mu.util.stream.BiStream.concat;
-import static com.google.mu.util.stream.BiStream.concatenating;
-
-import java.util.Map;
-import java.util.stream.Stream;
-
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSetMultimap;
+import com.google.mu.util.stream.BiCollector;
+import com.google.mu.util.stream.BiStream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSetMultimap;
-import com.google.mu.util.stream.BiStream;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collector;
+import java.util.stream.Stream;
+
+import static com.google.common.truth.Truth.assertThat;
+import static com.google.mu.util.stream.BiStream.concat;
+import static com.google.mu.util.stream.BiStream.concatenating;
 
 /** Some examples to show how to easily concatenate {@code Map}s and {@code Multimap}s. */
 @RunWith(JUnit4.class)
@@ -30,7 +32,12 @@ public class HowToConcatenateMapsTest {
     ImmutableMap<Integer, String> english = ImmutableMap.of(1, "one", 2, "two");
     ImmutableMap<Integer, String> spanish = ImmutableMap.of(1, "uno", 2, "dos");
     ImmutableSetMultimap<Integer, String> combined = concat(english, spanish)
-        .collect(ImmutableSetMultimap::toImmutableSetMultimap);
+        .collect(new BiCollector<Integer, String, ImmutableSetMultimap<Integer, String>>() {
+          @Override
+          public <E> Collector<E, ?, ImmutableSetMultimap<Integer, String>> bisecting(Function<E, Integer> toKey, Function<E, String> toValue) {
+            return ImmutableSetMultimap.toImmutableSetMultimap(toKey,toValue);
+          }
+        });
     assertThat(combined).containsExactly(1, "one", 1, "uno", 2, "two", 2, "dos");
   }
 

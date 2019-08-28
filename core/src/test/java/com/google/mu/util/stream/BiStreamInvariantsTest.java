@@ -14,38 +14,26 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.mu.util.stream.BiCollectors.toMap;
-import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth8.assertThat;
-import static java.util.Arrays.asList;
-import static java.util.function.Function.identity;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.LinkedListMultimap;
-import com.google.common.collect.ListMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.MultimapBuilder;
-import com.google.common.collect.Sets;
+import com.google.common.collect.*;
 import com.google.common.truth.MultimapSubject;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
-import java.util.stream.Collector;
-import java.util.stream.Stream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
+
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.stream.Collector;
+import java.util.stream.Stream;
+
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
+import static com.google.mu.util.stream.BiCollectors.toMap;
+import static java.util.Arrays.asList;
+import static java.util.function.Function.identity;
 
 @RunWith(Parameterized.class)
 public class BiStreamInvariantsTest {
@@ -303,7 +291,12 @@ public class BiStreamInvariantsTest {
   @Test
   public void collect_toImmutableListMultimapWithInflexibleMapperTypes() {
     ImmutableListMultimap<String, Integer> multimap =
-        of("one", 1, "one", 10, "two", 2).collect(BiStreamInvariantsTest::toImmutableMultimap);
+        of("one", 1, "one", 10, "two", 2).collect(new BiCollector<String, Integer, ImmutableListMultimap<String, Integer>>() {
+          @Override
+          public <E> Collector<E, ?, ImmutableListMultimap<String, Integer>> bisecting(Function<E, String> toKey, Function<E, Integer> toValue) {
+            return BiStreamInvariantsTest.toImmutableMultimap(toKey,toValue);
+          }
+        });
     assertThat(multimap)
         .containsExactlyEntriesIn(ImmutableListMultimap.of("one", 1, "one", 10, "two", 2));
   }
@@ -495,19 +488,24 @@ public class BiStreamInvariantsTest {
     return variant.wrap(factory.newBiStream(k1, v1, k2, v2, k3, v3));
   }
 
-  static MultimapSubject assertKeyValues(BiStream<?, ?> stream) {
-    Multimap<?, ?> multimap = stream.collect(BiStreamInvariantsTest::toLinkedListMultimap);
+  static<K, V> MultimapSubject assertKeyValues(BiStream<K, V> stream) {
+    Multimap<?, ?> multimap = stream.collect(new BiCollector<K, V, Multimap<K,V>>() {
+      @Override
+      public <E> Collector<E, ?, Multimap<K, V>> bisecting(Function<E, K> toKey, Function<E, V> toValue) {
+        return BiStreamInvariantsTest.toLinkedListMultimap(toKey,toValue);
+      }
+    });
     return assertThat(multimap);
   }
 
   // Intentionally declare the parameter types without wildcards, to make sure
   // BiCollector can still work with such naive method references.
-  private static <T, K, V> Collector<T, ?, ImmutableListMultimap<K, V>> toImmutableMultimap(
+  public static <T, K, V> Collector<T, ?, ImmutableListMultimap<K, V>> toImmutableMultimap(
       Function<T, K> keyMapper, Function<T, V> valueMapper) {
     return ImmutableListMultimap.toImmutableListMultimap(keyMapper, valueMapper);
   }
 
-  private static <T, K, V> Collector<T, ?, LinkedListMultimap<K, V>> toLinkedListMultimap(
+  private static <T, K, V> Collector<T, ?, Multimap<K, V>> toLinkedListMultimap(
       Function<? super T, ? extends K> toKey, Function<? super T, ? extends V> toValue) {
     return Collector.of(
         LinkedListMultimap::create,

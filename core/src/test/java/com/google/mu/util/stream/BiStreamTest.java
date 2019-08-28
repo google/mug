@@ -14,6 +14,20 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
+import com.google.common.collect.*;
+import com.google.common.truth.IterableSubject;
+import com.google.common.truth.MultimapSubject;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
+import java.util.stream.*;
+
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
@@ -22,34 +36,6 @@ import static java.util.Arrays.asList;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
-import java.util.stream.DoubleStream;
-import java.util.stream.IntStream;
-import java.util.stream.LongStream;
-import java.util.stream.Stream;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.LinkedListMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.truth.IterableSubject;
-import com.google.common.truth.MultimapSubject;
 
 @RunWith(JUnit4.class)
 public class BiStreamTest {
@@ -594,12 +580,17 @@ public class BiStreamTest {
         .inOrder();
   }
 
-  static MultimapSubject assertKeyValues(BiStream<?, ?> stream) {
-    Multimap<?, ?> multimap = stream.collect(BiStreamTest::toLinkedListMultimap);
+  static<K,V> MultimapSubject assertKeyValues(BiStream<K, V> stream) {
+    Multimap<?, ?> multimap = stream.collect(new BiCollector<K, V, Multimap<K, V>>() {
+      @Override
+      public <E> Collector<E, ?, Multimap<K, V>> bisecting(Function<E, K> toKey, Function<E, V> toValue) {
+        return BiStreamTest.toLinkedListMultimap(toKey,toValue);
+      }
+    });
     return assertThat(multimap);
   }
 
-  private static <T, K, V> Collector<T, ?, LinkedListMultimap<K, V>> toLinkedListMultimap(
+  public static <T, K, V> Collector<T, ?, Multimap<K, V>> toLinkedListMultimap(
       Function<? super T, ? extends K> toKey, Function<? super T, ? extends V> toValue) {
     return Collector.of(
         LinkedListMultimap::create,
