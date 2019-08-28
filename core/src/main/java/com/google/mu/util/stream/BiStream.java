@@ -240,6 +240,8 @@ public abstract class BiStream<K, V> {
    *
    * <p>If the input has 0 or 1 elements than the output is an empty {@code BiStream}. Otherwise the
    * length of the output {@code BiStream} is one less than the length of the input.
+   *
+   * @since 3.2
    */
   public static <T> Collector<T, ?, BiStream<T, T>> toAdjacentPairs() {
     return Collectors.collectingAndThen(
