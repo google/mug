@@ -430,8 +430,8 @@ public final class Substring {
     }
 
     /**
-     * @deprecated Replace {@code foo.before(bar).from(input)} with
-     * {@code before(bar).from(input).map(foo::from)}.
+     * @deprecated Replace {@code foo.before(delim).from(input)} with
+     * {@code before(delim).from(input).map(foo::from)}.
      */
     @Deprecated
     public final Pattern before(Pattern delimiter) {
@@ -439,8 +439,8 @@ public final class Substring {
     }
 
     /**
-     * @deprecated Replace {@code foo.after(bar).from(input)} with
-     * {@code after(bar).from(input).map(foo::from)}.
+     * @deprecated Replace {@code foo.after(delim).from(input)} with
+     * {@code after(delim).from(input).map(foo::from)}.
      */
     @Deprecated
     public final Pattern after(Pattern delimiter) {
@@ -448,7 +448,7 @@ public final class Substring {
     }
 
     /**
-     * @deprecated Replace {@code foo.after(x, y).from(input)} with
+     * @deprecated Replace {@code foo.between(x, y).from(input)} with
      * {@code between(x, y).from(input).map(foo::from)}.
      */
     @Deprecated
