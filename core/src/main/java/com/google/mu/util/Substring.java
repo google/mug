@@ -84,6 +84,7 @@ public final class Substring {
   };
 
   /** {@code Pattern} that matches all strings entirely. */
+  @Deprecated
   public static final Pattern ALL = new Pattern() {
     @Override public Match match(String s) {
       return new Match(s, 0, s.length());
