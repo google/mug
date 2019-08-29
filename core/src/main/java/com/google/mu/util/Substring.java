@@ -429,49 +429,37 @@ public final class Substring {
     }
 
     /**
-     * Returns a modified {@code Pattern} of {@code this} scoped within the substring
-     * before {@code delimiter}. For example: {@code last('/').before(last('/'))} essentially
-     * finds the second last slash (/) character.
-     *
-     * @since 2.1
+     * @deprecated Replace {@code foo.before(bar).from(input)} with
+     * {@code before(bar).from(input).map(foo::from)}.
      */
+    @Deprecated
     public final Pattern before(Pattern delimiter) {
       return within(Substring.before(delimiter));
     }
 
     /**
-     * Returns a modified {@code Pattern} of {@code this} scoped within the substring
-     * following {@code delimiter}. For example: {@code first('/').after(first('/'))} essentially
-     * finds the second slash (/) character.
-     *
-     * @since 2.1
+     * @deprecated Replace {@code foo.after(bar).from(input)} with
+     * {@code after(bar).from(input).map(foo::from)}.
      */
+    @Deprecated
     public final Pattern after(Pattern delimiter) {
       return within(Substring.after(delimiter));
     }
 
     /**
-     * Returns a modified {@code Pattern} of {@code this} scoped between {@code open}
-     * and {@code close}. For example: <pre>
-     *   first('=').between(first('{'), last('}'))
-     * </pre> finds the equals (=) character between the first and the last curly braces.
-     *
-     * @since 2.1
+     * @deprecated Replace {@code foo.after(x, y).from(input)} with
+     * {@code between(x, y).from(input).map(foo::from)}.
      */
+    @Deprecated
     public final Pattern between(Pattern open, Pattern close) {
       return within(Substring.between(open, close));
     }
 
     /**
-     * Returns a modified {@code Pattern} of {@code this} that matches within {@code scope}.
-     * For example: <pre>
-     *   first('=').between(first('{'), first('}'))
-     * </pre> is equivalent to <pre>
-     *   first('=').within(Substring.between(first('{'), first('}')))
-     * </pre>
-     *
-     * @since 2.1
+     * @deprecated Replace {@code foo.within(scope).from(input)} with
+     * {@code scope.from(input).map(foo::from)}.
      */
+    @Deprecated
     public final Pattern within(Pattern scope) {
       requireNonNull(scope);
       Pattern inner = this;

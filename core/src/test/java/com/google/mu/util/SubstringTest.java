@@ -1048,6 +1048,17 @@ public class SubstringTest {
     assertThat(pattern.in("a*bc")).isEmpty();
   }
 
+  @Test public void within_bothInnerAndOuterMatched() {
+    Substring.Pattern pattern = Substring.before(last('*')).within(Substring.after(first('*')));
+    Substring.Match substring = pattern.in("*foo*bar").get();
+    assertThat(substring.toString()).isEqualTo("foo");
+    assertThat(substring.getBefore()).isEqualTo("*");
+    assertThat(substring.getAfter()).isEqualTo("*bar");
+    assertThat(substring.remove()).isEqualTo("**bar");
+    assertThat(substring.getIndex()).isEqualTo(1);
+    assertThat(substring.length()).isEqualTo(3);
+  }
+
   @Test public void subSequence_negativeBeginIndex() {
     Substring.Match sub = Substring.ALL.in("foo").get();
     assertThrows(IndexOutOfBoundsException.class, () -> sub.subSequence(-1, 1));
@@ -1088,17 +1099,6 @@ public class SubstringTest {
     assertThat(sub.getIndex()).isEqualTo(1);
     assertThat(sub.getBefore()).isEqualTo("f");
     assertThat(sub.getAfter()).isEqualTo("ool");
-  }
-
-  @Test public void within_bothInnerAndOuterMatched() {
-    Substring.Pattern pattern = Substring.before(last('*')).within(Substring.after(first('*')));
-    Substring.Match substring = pattern.in("*foo*bar").get();
-    assertThat(substring.toString()).isEqualTo("foo");
-    assertThat(substring.getBefore()).isEqualTo("*");
-    assertThat(substring.getAfter()).isEqualTo("*bar");
-    assertThat(substring.remove()).isEqualTo("**bar");
-    assertThat(substring.getIndex()).isEqualTo(1);
-    assertThat(substring.length()).isEqualTo(3);
   }
 
   @Test public void patternFrom_noMatch() {

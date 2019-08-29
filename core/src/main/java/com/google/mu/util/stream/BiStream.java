@@ -238,7 +238,7 @@ public abstract class BiStream<K, V> {
    * {@code BiStream}. For example {@code Stream.of(1, 2, 3, 4).collect(toAdjacentPairs())} will
    * return {@code [{1, 2}, {2, 3}, {3, 4}]}.
    *
-   * <p>If the input has 0 or 1 elements than the output is an empty {@code BiStream}. Otherwise the
+   * <p>If the input has 0 or 1 elements then the output is an empty {@code BiStream}. Otherwise the
    * length of the output {@code BiStream} is one less than the length of the input.
    *
    * @since 3.2
