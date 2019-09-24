@@ -68,17 +68,21 @@ public final class MoreStreams {
    * Flattens {@code streamOfStream} and returns an unordered sequential stream of the nested
    * elements.
    *
-   * <p>Logically, {@code stream.flatMap(fanOut)} is equivalent to
-   * {@code MoreStreams.flatten(stream.map(fanOut))}.
-   * Due to this <a href="https://bugs.openjdk.java.net/browse/JDK-8075939">JDK bug</a>,
-   * {@code flatMap()} uses {@code forEach()} internally and doesn't support short-circuiting for
-   * the passed-in stream. {@code flatten()} supports short-circuiting and can be used to
-   * flatten infinite streams.
+   * <p>This function was introduced to overcome the
+   * <a href="https://bugs.openjdk.java.net/browse/JDK-8075939">JDK bug</a>, in which  {@code flatMap()}
+   * didn't support short-circuiting on it's stream.
    *
+   * <p>The original {@code flatten()} implementation supported short-circuiting and could be used to flatten infinite
+   * streams. The function now simply redirects the call to {@code flatMap(Function.identity())} method on the stream
+   * after the <a href="https://bugs.openjdk.java.net/browse/JDK-8075939">JDK bug</a> was fixed and backported to
+   * jdk8u222.
+   *
+   * @deprecated use {@code stream().flatMap(Function.identity())} instead
    * @since 1.9
+   *
    */
   public static <T> Stream<T> flatten(Stream<? extends Stream<? extends T>> streamOfStream) {
-    return mapBySpliterator(streamOfStream.sequential(), 0, FlattenedSpliterator<T>::new);
+    return streamOfStream.sequential().flatMap(Function.identity());
   }
 
   /**
