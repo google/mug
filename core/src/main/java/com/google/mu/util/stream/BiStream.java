@@ -698,7 +698,7 @@ public abstract class BiStream<K, V> {
    *
    * @since 3.2
    */
-  public final <K2> BiStream<K2, List<V>> groupBy(Function<? super K, ? extends K2> classifier) {
+  public final <G> BiStream<G, List<V>> groupBy(Function<? super K, ? extends G> classifier) {
     return groupBy(classifier, toList());
   }
 
@@ -709,10 +709,21 @@ public abstract class BiStream<K, V> {
    *
    * @since 3.2
    */
-  public final <K2, V2> BiStream<K2, V2> groupBy(
-      Function<? super K, ? extends K2> classifier, Collector<? super V, ?, V2> groupCollector) {
+  public final <G, R> BiStream<G, R> groupBy(
+      Function<? super K, ? extends G> classifier, Collector<? super V, ?, R> groupCollector) {
     requireNonNull(classifier);
     return groupBy((k, v) -> classifier.apply(k), BiCollector.zipping((k, v) -> v, groupCollector));
+  }
+
+  /**
+   * Groups entries in {@code this} stream by {@code classifier}. If two entries map to the same key
+   * according to {@code classifier}, they are collected into the same {@link BiCollection}.
+   *
+   * @since 3.2
+   */
+  public final <G> BiStream<G, BiCollection<K, V>> groupBy(
+      BiFunction<? super K, ? super V, ? extends G> classifier) {
+    return groupBy(classifier, BiCollection::toBiCollection);
   }
 
   /**
@@ -729,13 +740,13 @@ public abstract class BiStream<K, V> {
    *
    * @since 3.2
    */
-  public final <K2, V2> BiStream<K2, V2> groupBy(
-      BiFunction<? super K, ? super V, ? extends K2> classifier,
-      BiCollector<? super K, ? super V, V2> groupCollector) {
+  public final <G, R> BiStream<G, R> groupBy(
+      BiFunction<? super K, ? super V, ? extends G> classifier,
+      BiCollector<? super K, ? super V, R> groupCollector) {
     requireNonNull(classifier);
     requireNonNull(groupCollector);
-    return collect(new BiCollector<K, V, BiStream<K2, V2>>() {
-      @Override public <E> Collector<E, ?, BiStream<K2, V2>> bisecting(
+    return collect(new BiCollector<K, V, BiStream<G, R>>() {
+      @Override public <E> Collector<E, ?, BiStream<G, R>> bisecting(
           Function<E, K> toKey, Function<E, V> toValue) {
         return groupingBy(
             e -> classifier.apply(toKey.apply(e), toValue.apply(e)),
