@@ -289,7 +289,7 @@ public abstract class BiStream<K, V> {
    * Returns a {@code Collector} that splits each input element as a pair and collects them into a
    * {@link BiStream}.
    *
-   * <p>Note that it's more efficient to use {@link BiStream.from(stream, toKey, toValue)} than
+   * <p>Note that it's more efficient to use {@code BiStream.from(stream, toKey, toValue)} than
    * {@code stream.collect(toBiStream(toKey, toValue))}. The latter is intended to be used in the
    * middle of a long stream pipeline, when performance isn't critical.
    *
