@@ -14,8 +14,12 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
+import static java.util.Objects.requireNonNull;
+
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 /**
  * Logically, a {@code BiCollector} collects "pairs of things", just as a {@link Collector} collects
@@ -53,5 +57,20 @@ public interface BiCollector<K, V, R> {
   // Signatures with or without wildcards should both match.
   // In other words, this signature optimizes flexibility for implementors, not callers.
   <E> Collector<E, ?, R> bisecting(Function<E, K> toKey, Function<E, V> toValue);
+
+  /**
+   * Returns a {@link BiCollector} that first zips the input pair using {@code zipper} and then collects the
+   * results using {@code collector}.
+   */
+  static <K, V, T, R> BiCollector<K, V, R> zipping(
+      BiFunction<? super K, ? super V, ? extends T> zipper, Collector<? super T, ?, R> collector) {
+    requireNonNull(zipper);
+    requireNonNull(collector);
+    return new BiCollector<K, V, R>() {
+      @Override public <E> Collector<E, ?, R> bisecting(Function<E, K> toKey, Function<E, V> toValue) {
+        return Collectors.mapping(e -> zipper.apply(toKey.apply(e), toValue.apply(e)), collector);
+      }
+    };
+  }
 }
 
