@@ -78,9 +78,6 @@ public final class Substring {
       requireNonNull(s);
       return null;
     }
-    @Override public String toString() {
-      return "NONE";
-    }
   };
 
   /** {@code Pattern} that matches all strings entirely. */
@@ -88,9 +85,6 @@ public final class Substring {
   public static final Pattern ALL = new Pattern() {
     @Override public Match match(String s) {
       return new Match(s, 0, s.length());
-    }
-    @Override public String toString() {
-      return "ALL";
     }
   };
 
@@ -103,9 +97,6 @@ public final class Substring {
     @Override public Match match(String s) {
       return new Match(s, 0, 0);
     }
-    @Override public String toString() {
-      return "BEGINNING";
-    }
   };
 
   /**
@@ -116,9 +107,6 @@ public final class Substring {
   public static final Pattern END = new Pattern() {
     @Override public Match match(String s) {
       return new Match(s, s.length(), s.length());
-    }
-    @Override public String toString() {
-      return "END";
     }
   };
 

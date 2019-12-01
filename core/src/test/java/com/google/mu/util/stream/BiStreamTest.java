@@ -48,6 +48,7 @@ import org.junit.runners.JUnit4;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.truth.IterableSubject;
@@ -654,6 +655,32 @@ public class BiStreamTest {
     Stream<String> stream =
         Stream.of(null, 1, 2, 3, null).collect(toAdjacentPairs()).mapToObj((a, b) -> a + ":" + b);
     assertThat(stream).containsExactly("null:1", "1:2", "2:3", "3:null").inOrder();
+  }
+
+  @Test public void testGroupBy_empty() {
+    assertKeyValues(BiStream.empty().groupBy(Object::toString)).isEmpty();
+  }
+
+  @Test public void testGroupBy_singleEntry() {
+    assertKeyValues(BiStream.of(1, "one").groupBy(Object::toString))
+        .containsExactly("1", ImmutableList.of("one"));
+  }
+
+  @Test public void testGroupBy_distinctEntries() {
+    assertKeyValues(BiStream.of(1, "one", 2, "two").groupBy(Object::toString))
+        .containsExactly("1", ImmutableList.of("one"), "2", ImmutableList.of("two"));
+  }
+
+  @Test public void testGroupBy_multipleValuesGrouped() {
+    assertKeyValues(BiStream.of(1, "one", 1L, "uno").groupBy(Object::toString))
+        .containsExactly("1", ImmutableList.of("one", "uno"));
+  }
+
+  @Test public void testGroupBy_groupedByDiff() {
+    assertKeyValues(
+            BiStream.of(1, 3, 2, 4, 11, 111)
+                .groupBy((a, b) -> b - a, ImmutableSetMultimap::toImmutableSetMultimap))
+        .containsExactly(2, ImmutableSetMultimap.of(1, 3, 2, 4), 100, ImmutableSetMultimap.of(11, 111));
   }
 
   static<K,V> MultimapSubject assertKeyValues(BiStream<K, V> stream) {

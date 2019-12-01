@@ -693,6 +693,52 @@ public abstract class BiStream<K, V> {
   }
 
   /**
+   * Groups entries in {@code this} stream by {@code classifier}. If two entries map to the same key
+   * according to {@code classifier}, their values are collected into a list.
+   */
+  public final <K2> BiStream<K2, List<V>> groupBy(Function<? super K, ? extends K2> classifier) {
+    return groupBy(classifier, toList());
+  }
+
+  /**
+   * Groups entries in {@code this} stream by {@code classifier}. If two entries map to the same key
+   * according to {@code classifier}, their values are collected into the same group using {@code
+   * groupCollector}.
+   */
+  public final <K2, V2> BiStream<K2, V2> groupBy(
+      Function<? super K, ? extends K2> classifier, Collector<? super V, ?, V2> groupCollector) {
+    requireNonNull(classifier);
+    return groupBy((k, v) -> classifier.apply(k), BiCollector.zipping((k, v) -> v, groupCollector));
+  }
+
+  /**
+   * Groups entries in {@code this} stream by {@code classifier}. If two entries map to the same key
+   * according to {@code classifier}, they are collected into the same group using {@code groupCollector}.
+   *
+   * <p>Useful for grouping entries by some binary relationship. For example, the following code groups
+   * {@code [begin, end)} endpoints by their distance: <pre>{@code
+   *   ImmutableMap<Integer, ImmtableSetMultimap<Integer, Integer>> endpointsByDistance =
+   *       BiStream.from(endpoints)
+   *           .groupBy((begin, end) -> end - begin, ImmutableSetMultimap::toImmutableSetMultimap)
+   *           .collect(ImmutableMap::toImmutableMap);
+   * }</pre>
+   */
+  public final <K2, V2> BiStream<K2, V2> groupBy(
+      BiFunction<? super K, ? super V, ? extends K2> classifier,
+      BiCollector<? super K, ? super V, V2> groupCollector) {
+    requireNonNull(classifier);
+    requireNonNull(groupCollector);
+    return collect(new BiCollector<K, V, BiStream<K2, V2>>() {
+      @Override public <E> Collector<E, ?, BiStream<K2, V2>> bisecting(
+          Function<E, K> toKey, Function<E, V> toValue) {
+        return groupingBy(
+            e -> classifier.apply(toKey.apply(e), toValue.apply(e)),
+            groupCollector.bisecting(toKey::apply, toValue::apply));
+      }
+    });
+  }
+
+  /**
    * Returns a {@code BiStream} consisting of the pairs in this stream, in the order produced by
    * applying {@code keyComparator} on the keys of each pair, and then for equal keys,
    * applying {@code valueComparator} on the values of each pair.
