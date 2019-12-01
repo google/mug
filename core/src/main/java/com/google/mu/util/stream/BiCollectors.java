@@ -98,5 +98,10 @@ public final class BiCollectors {
     };
   }
 
+  /** Returns a counting {@link BiCollector} that counts the number of input entries. */
+  public static <K, V> BiCollector<K, V, Long> counting() {
+    return BiCollector.zipping((k, v) -> k, Collectors.counting());
+  }
+
   private BiCollectors() {}
 }

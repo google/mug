@@ -71,6 +71,10 @@ public class BiCollectorsTest {
     assertThat(map).containsExactly(1, "one");
   }
 
+  @Test public void testCounting() {
+    assertThat(BiStream.of(1, "one", 2, "two").collect(BiCollectors.counting())).isEqualTo(2L);
+  }
+
   private static final class Town {
     private final String state;
     private final int population;

@@ -531,6 +531,14 @@ public class BiStreamTest {
     assertThat(groups).containsExactly("1", 2L, "2", 1L, "3", 2L).inOrder();
   }
 
+  @Test public void testGroupingByConcurrent_withCollector() {
+    Map<String, Long> groups =
+        Stream.of(1, 1, 2, 3, 3)
+            .collect(BiStream.groupingByConcurrent(Object::toString, Collectors.counting()))
+            .toMap();
+    assertThat(groups).containsExactly("1", 2L, "2", 1L, "3", 2L);
+  }
+
   @Test public void testGroupingValuesFrom() {
     Map<Integer, List<String>> groups =
         Stream.of(ImmutableMap.of(1, "one"), ImmutableMap.of(2, "two", 1, "uno"))
@@ -680,6 +688,32 @@ public class BiStreamTest {
     assertKeyValues(
             BiStream.of(1, 3, 2, 4, 11, 111)
                 .groupBy((a, b) -> b - a, ImmutableSetMultimap::toImmutableSetMultimap))
+        .containsExactly(2, ImmutableSetMultimap.of(1, 3, 2, 4), 100, ImmutableSetMultimap.of(11, 111));
+  }
+
+  @Test public void testGroupByConcurrent_empty() {
+    assertKeyValues(BiStream.empty().groupByConcurrent(Object::toString, toImmutableList())).isEmpty();
+  }
+
+  @Test public void testGroupByConcurrent_singleEntry() {
+    assertKeyValues(BiStream.of(1, "one").groupByConcurrent(Object::toString, toImmutableList()))
+        .containsExactly("1", ImmutableList.of("one"));
+  }
+
+  @Test public void testGroupByConcurrent_distinctEntries() {
+    assertKeyValues(BiStream.of(1, "one", 2, "two").groupByConcurrent(Object::toString, toList()))
+        .containsExactly("1", ImmutableList.of("one"), "2", ImmutableList.of("two"));
+  }
+
+  @Test public void testGroupByConcurrent_multipleValuesGrouped() {
+    assertKeyValues(BiStream.of(1, "one", 1L, "uno").groupByConcurrent(Object::toString, toList()))
+        .containsExactly("1", ImmutableList.of("one", "uno"));
+  }
+
+  @Test public void testGroupByConcurrent_groupedByDiff() {
+    assertKeyValues(
+            BiStream.of(1, 3, 2, 4, 11, 111)
+                .groupByConcurrent((a, b) -> b - a, ImmutableSetMultimap::toImmutableSetMultimap))
         .containsExactly(2, ImmutableSetMultimap.of(1, 3, 2, 4), 100, ImmutableSetMultimap.of(11, 111));
   }
 

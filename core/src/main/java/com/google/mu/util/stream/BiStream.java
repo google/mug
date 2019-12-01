@@ -19,6 +19,7 @@ import java.util.Spliterators.AbstractDoubleSpliterator;
 import java.util.Spliterators.AbstractIntSpliterator;
 import java.util.Spliterators.AbstractLongSpliterator;
 import java.util.Spliterators.AbstractSpliterator;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.*;
 import java.util.stream.*;
 import java.util.stream.Collector.Characteristics;
@@ -154,6 +155,32 @@ public abstract class BiStream<K, V> {
       Function<? super T, ? extends K> keyFunction, Collector<? super T, ?, V> valueCollector) {
     Collector<T, ?, Map<K, V>> grouping =
         Collectors.groupingBy(keyFunction, LinkedHashMap::new, valueCollector);
+    return collectingAndThen(grouping, BiStream::from);
+  }
+
+  /**
+   * Returns a {@code Collector} that concurrently groups the input elements by {@code keyFunction} and collects
+   * the values mapping to the same key using {@code valueCollector}. Similar but different from
+   * {@link Collectors#groupingBy(Function, Collector)}, this method collects the groups into {@link
+   * #BiStream} instead, allowing fluent method chaining. For example:
+   *
+   * <pre>{@code
+   * Map<EmployeeId, Integer> topTenEmployeesByWorkHour = projects.stream()
+   *     .flatMap(project -> project.getMembers().stream())  // Stream<TeamMember>
+   *     .collect(BiStream.groupingByConcurrent(TeamMember::employeeId, summingInt(TeamMember::hours)))
+   *     .sortedByValues(Comparator.reverseOrder())
+   *     .limit(10)
+   *     .toMap();
+   * }</pre>
+   *
+   * <p>Entries are collected concurrently and unordered.
+   *
+   * @since 3.2
+   */
+  public static <T, K, V> Collector<T, ?, BiStream<K, V>> groupingByConcurrent(
+      Function<? super T, ? extends K> keyFunction, Collector<? super T, ?, V> valueCollector) {
+    Collector<T, ?, ConcurrentMap<K, V>> grouping =
+        Collectors.groupingByConcurrent(keyFunction, valueCollector);
     return collectingAndThen(grouping, BiStream::from);
   }
 
@@ -805,6 +832,59 @@ public abstract class BiStream<K, V> {
       @Override public <E> Collector<E, ?, BiStream<G, R>> bisecting(
           Function<E, K> toKey, Function<E, V> toValue) {
         return groupingBy(
+            e -> classifier.apply(toKey.apply(e), toValue.apply(e)),
+            groupCollector.bisecting(toKey::apply, toValue::apply));
+      }
+    });
+  }
+
+  /**
+   * Concurrently groups entries in {@code this} stream by {@code classifier}. If two entries map to the same key
+   * according to {@code classifier}, their values are collected into the same group using {@code
+   * groupCollector}.
+   *
+   * @since 3.2
+   */
+  public final <G, R> BiStream<G, R> groupByConcurrent(
+      Function<? super K, ? extends G> classifier, Collector<? super V, ?, R> groupCollector) {
+    requireNonNull(classifier);
+    return groupByConcurrent((k, v) -> classifier.apply(k), BiCollector.zipping((k, v) -> v, groupCollector));
+  }
+
+  /**
+   * Concurrently groups entries in {@code this} stream by {@code classifier}. If two entries map to the same key
+   * according to {@code classifier}, they are collected into the same inner {@link BiStream}.
+   *
+   * @since 3.2
+   */
+  public final <G> BiStream<G, BiStream<K, V>> groupByConcurrent(
+      BiFunction<? super K, ? super V, ? extends G> classifier) {
+    return groupByConcurrent(classifier, BiStream::toBiStream);
+  }
+
+  /**
+   * Concurrently groups entries in {@code this} stream by {@code classifier}. If two entries map to the same key
+   * according to {@code classifier}, they are collected into the same group using {@code groupCollector}.
+   *
+   * <p>Useful for grouping entries by some binary relationship. For example, the following code groups
+   * {@code [begin, end)} endpoints by their distance: <pre>{@code
+   *   ImmutableMap<Integer, ImmtableSetMultimap<Integer, Integer>> endpointsByDistance =
+   *       BiStream.from(endpoints)
+   *           .groupByConcurrent((begin, end) -> end - begin, ImmutableSetMultimap::toImmutableSetMultimap)
+   *           .collect(ImmutableMap::toImmutableMap);
+   * }</pre>
+   *
+   * @since 3.2
+   */
+  public final <G, R> BiStream<G, R> groupByConcurrent(
+      BiFunction<? super K, ? super V, ? extends G> classifier,
+      BiCollector<? super K, ? super V, R> groupCollector) {
+    requireNonNull(classifier);
+    requireNonNull(groupCollector);
+    return collect(new BiCollector<K, V, BiStream<G, R>>() {
+      @Override public <E> Collector<E, ?, BiStream<G, R>> bisecting(
+          Function<E, K> toKey, Function<E, V> toValue) {
+        return groupingByConcurrent(
             e -> classifier.apply(toKey.apply(e), toValue.apply(e)),
             groupCollector.bisecting(toKey::apply, toValue::apply));
       }
