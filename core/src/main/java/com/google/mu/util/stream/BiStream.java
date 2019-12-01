@@ -64,6 +64,43 @@ import static java.util.stream.StreamSupport.*;
  */
 public abstract class BiStream<K, V> {
   /**
+   * Builder for {@link BiStream}. Similar to {@link Stream.Builder}, entries may not be added after
+   * {@link #build} is called.
+   *
+   * @since 3.2
+   */
+  public static final class Builder<K, V> {
+    private final Stream.Builder<K> keys = Stream.builder();
+    private final Stream.Builder<V> values = Stream.builder();
+
+    Builder() {}
+
+    public Builder<K, V> add(K key, V value) {
+      keys.add(key);
+      values.add(value);
+      return this;
+    }
+
+    public BiStream<K, V> build() {
+      return zip(keys.build(), values.build());
+    }
+
+    Builder<K, V> addAll(Builder<? extends K, ? extends V> other) {
+      other.build().forEach(this::add);
+      return this;
+    }
+  }
+
+  /**
+   * Returns a new {@link Builder}.
+   *
+   * @since 3.2
+   */
+  public static <K, V> Builder<K, V> builder() {
+    return new Builder<>();
+  }
+
+  /**
    * Returns a {@code Collector} that groups the input elements by {@code keyFunction} and collects
    * the values mapping to the same key into a {@link List}. Similar but different from
    * {@link Collectors#groupingBy(Function)}, this method collects the groups into {@link #BiStream}
@@ -246,6 +283,25 @@ public abstract class BiStream<K, V> {
   public static <T> Collector<T, ?, BiStream<T, T>> toAdjacentPairs() {
     return Collectors.collectingAndThen(
         Collectors.toList(), list -> zip(list.stream(), list.stream().skip(1)));
+  }
+
+  /**
+   * Returns a {@code Collector} that splits each input element as a pair and collects them into a
+   * {@link BiStream}.
+   *
+   * <p>Note that it's more efficient to use {@link BiStream.from(stream, toKey, toValue)} than
+   * {@code stream.collect(toBiStream(toKey, toValue))}. The latter is intended to be used in the
+   * middle of a long stream pipeline, when performance isn't critical.
+   *
+   * @since 3.2
+   */
+  public static <E, K, V> Collector<E, ?, BiStream<K, V>> toBiStream(
+      Function<? super E, ? extends K> toKey, Function<? super E, ? extends V> toValue) {
+    return Collector.of(
+        BiStream.Builder<K, V>::new,
+        (builder, input) -> builder.add(toKey.apply(input), toValue.apply(input)),
+        BiStream.Builder::addAll,
+        BiStream.Builder::build);
   }
 
   /** Returns an empty {@code BiStream}. */
@@ -717,13 +773,13 @@ public abstract class BiStream<K, V> {
 
   /**
    * Groups entries in {@code this} stream by {@code classifier}. If two entries map to the same key
-   * according to {@code classifier}, they are collected into the same {@link BiCollection}.
+   * according to {@code classifier}, they are collected into the same inner {@link BiStream}.
    *
    * @since 3.2
    */
-  public final <G> BiStream<G, BiCollection<K, V>> groupBy(
+  public final <G> BiStream<G, BiStream<K, V>> groupBy(
       BiFunction<? super K, ? super V, ? extends G> classifier) {
-    return groupBy(classifier, BiCollection::toBiCollection);
+    return groupBy(classifier, BiStream::toBiStream);
   }
 
   /**
