@@ -683,6 +683,12 @@ public class BiStreamTest {
         .containsExactly(2, ImmutableSetMultimap.of(1, 3, 2, 4), 100, ImmutableSetMultimap.of(11, 111));
   }
 
+  @Test public void testBuilder_cannotAddAfterBuild() {
+    BiStream.Builder<String, String> builder = BiStream.builder();
+    assertKeyValues(builder.build()).isEmpty();
+    assertThrows(IllegalStateException.class, () -> builder.add("foo", "bar"));
+  }
+
   static<K,V> MultimapSubject assertKeyValues(BiStream<K, V> stream) {
     Multimap<?, ?> multimap = stream.collect(new BiCollector<K, V, Multimap<K, V>>() {
       @Override

@@ -560,6 +560,27 @@ public class BiStreamInvariantsTest {
         return BiStream.of(k1, v1, k2, v2, k3, v3);
       }
     },
+    FROM_BUILDER {
+      @Override
+      <K, V> BiStream<K, V> newBiStream() {
+        return BiStream.<K, V>builder().build();
+      }
+
+      @Override
+      <K, V> BiStream<K, V> newBiStream(K key, V value) {
+        return BiStream.<K, V>builder().add(key, value).build();
+      }
+
+      @Override
+      <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2) {
+        return BiStream.<K, V>builder().add(k1, v1).add(k2, v2).build();
+      }
+
+      @Override
+      <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2, K k3, V v3) {
+        return BiStream.<K, V>builder().add(k1, v1).add(k2, v2).add(k3, v3).build();
+      }
+    },
     FROM_GENERIC_ENTRY_STREAM {
       @Override
       <K, V> BiStream<K, V> newBiStream() {
