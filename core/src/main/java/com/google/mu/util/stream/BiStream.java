@@ -695,6 +695,8 @@ public abstract class BiStream<K, V> {
   /**
    * Groups entries in {@code this} stream by {@code classifier}. If two entries map to the same key
    * according to {@code classifier}, their values are collected into a list.
+   *
+   * @since 3.2
    */
   public final <K2> BiStream<K2, List<V>> groupBy(Function<? super K, ? extends K2> classifier) {
     return groupBy(classifier, toList());
@@ -704,6 +706,8 @@ public abstract class BiStream<K, V> {
    * Groups entries in {@code this} stream by {@code classifier}. If two entries map to the same key
    * according to {@code classifier}, their values are collected into the same group using {@code
    * groupCollector}.
+   *
+   * @since 3.2
    */
   public final <K2, V2> BiStream<K2, V2> groupBy(
       Function<? super K, ? extends K2> classifier, Collector<? super V, ?, V2> groupCollector) {
@@ -722,6 +726,8 @@ public abstract class BiStream<K, V> {
    *           .groupBy((begin, end) -> end - begin, ImmutableSetMultimap::toImmutableSetMultimap)
    *           .collect(ImmutableMap::toImmutableMap);
    * }</pre>
+   *
+   * @since 3.2
    */
   public final <K2, V2> BiStream<K2, V2> groupBy(
       BiFunction<? super K, ? super V, ? extends K2> classifier,

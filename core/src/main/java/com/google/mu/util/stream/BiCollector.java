@@ -61,6 +61,8 @@ public interface BiCollector<K, V, R> {
   /**
    * Returns a {@link BiCollector} that first zips the input pair using {@code zipper} and then collects the
    * results using {@code collector}.
+   *
+   * @since 3.2
    */
   static <K, V, T, R> BiCollector<K, V, R> zipping(
       BiFunction<? super K, ? super V, ? extends T> zipper, Collector<? super T, ?, R> collector) {
