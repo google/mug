@@ -665,58 +665,6 @@ public class BiStreamTest {
     assertThat(stream).containsExactly("null:1", "1:2", "2:3", "3:null").inOrder();
   }
 
-  @Test public void testGroupBy_empty() {
-    assertKeyValues(BiStream.empty().groupBy(Object::toString)).isEmpty();
-  }
-
-  @Test public void testGroupBy_singleEntry() {
-    assertKeyValues(BiStream.of(1, "one").groupBy(Object::toString))
-        .containsExactly("1", ImmutableList.of("one"));
-  }
-
-  @Test public void testGroupBy_distinctEntries() {
-    assertKeyValues(BiStream.of(1, "one", 2, "two").groupBy(Object::toString))
-        .containsExactly("1", ImmutableList.of("one"), "2", ImmutableList.of("two"));
-  }
-
-  @Test public void testGroupBy_multipleValuesGrouped() {
-    assertKeyValues(BiStream.of(1, "one", 1L, "uno").groupBy(Object::toString))
-        .containsExactly("1", ImmutableList.of("one", "uno"));
-  }
-
-  @Test public void testGroupBy_groupedByDiff() {
-    assertKeyValues(
-            BiStream.of(1, 3, 2, 4, 11, 111)
-                .groupBy((a, b) -> b - a, ImmutableSetMultimap::toImmutableSetMultimap))
-        .containsExactly(2, ImmutableSetMultimap.of(1, 3, 2, 4), 100, ImmutableSetMultimap.of(11, 111));
-  }
-
-  @Test public void testGroupByConcurrent_empty() {
-    assertKeyValues(BiStream.empty().groupByConcurrent(Object::toString, toImmutableList())).isEmpty();
-  }
-
-  @Test public void testGroupByConcurrent_singleEntry() {
-    assertKeyValues(BiStream.of(1, "one").groupByConcurrent(Object::toString, toImmutableList()))
-        .containsExactly("1", ImmutableList.of("one"));
-  }
-
-  @Test public void testGroupByConcurrent_distinctEntries() {
-    assertKeyValues(BiStream.of(1, "one", 2, "two").groupByConcurrent(Object::toString, toList()))
-        .containsExactly("1", ImmutableList.of("one"), "2", ImmutableList.of("two"));
-  }
-
-  @Test public void testGroupByConcurrent_multipleValuesGrouped() {
-    assertKeyValues(BiStream.of(1, "one", 1L, "uno").groupByConcurrent(Object::toString, toList()))
-        .containsExactly("1", ImmutableList.of("one", "uno"));
-  }
-
-  @Test public void testGroupByConcurrent_groupedByDiff() {
-    assertKeyValues(
-            BiStream.of(1, 3, 2, 4, 11, 111)
-                .groupByConcurrent((a, b) -> b - a, ImmutableSetMultimap::toImmutableSetMultimap))
-        .containsExactly(2, ImmutableSetMultimap.of(1, 3, 2, 4), 100, ImmutableSetMultimap.of(11, 111));
-  }
-
   @Test public void testBuilder_cannotAddAfterBuild() {
     BiStream.Builder<String, String> builder = BiStream.builder();
     assertKeyValues(builder.build()).isEmpty();

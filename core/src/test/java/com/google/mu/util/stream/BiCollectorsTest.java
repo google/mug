@@ -14,13 +14,19 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
+import static com.google.mu.util.stream.BiCollectors.groupingBy;
+import static com.google.mu.util.stream.BiCollectors.toConcurrentMap;
 import static com.google.mu.util.stream.BiCollectors.toMap;
+import static com.google.mu.util.stream.BiStreamTest.assertKeyValues;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.stream.Collectors.summingInt;
+import static java.util.stream.Collectors.toList;
 
 import java.util.Map;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSetMultimap;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -73,6 +79,52 @@ public class BiCollectorsTest {
 
   @Test public void testCounting() {
     assertThat(BiStream.of(1, "one", 2, "two").collect(BiCollectors.counting())).isEqualTo(2L);
+  }
+
+  @Test public void testGroupingBy_empty() {
+    assertKeyValues(BiStream.empty().collect(groupingBy(Object::toString, toList()))).isEmpty();
+  }
+
+  @Test public void testGroupingBy_singleEntry() {
+    assertKeyValues(BiStream.of(1, "one").collect(groupingBy(Object::toString, toList())))
+        .containsExactly("1", ImmutableList.of("one"));
+  }
+
+  @Test public void testGroupingBy_distinctEntries() {
+    assertKeyValues(BiStream.of(1, "one", 2, "two").collect(groupingBy(Object::toString, toList())))
+        .containsExactly("1", ImmutableList.of("one"), "2", ImmutableList.of("two"));
+  }
+
+  @Test public void testGroupingBy_multipleValuesGrouped() {
+    assertKeyValues(BiStream.of(1, "one", 1L, "uno").collect(groupingBy(Object::toString, toList())))
+        .containsExactly("1", ImmutableList.of("one", "uno"));
+  }
+
+  @Test public void testGroupingBy_groupedByDiff() {
+    assertKeyValues(
+            BiStream.of(1, 3, 2, 4, 11, 111)
+                .collect(groupingBy((a, b) -> b - a, ImmutableSetMultimap::toImmutableSetMultimap)))
+        .containsExactly(2, ImmutableSetMultimap.of(1, 3, 2, 4), 100, ImmutableSetMultimap.of(11, 111));
+  }
+
+  @Test public void testToConcurrentMap_empty() {
+    assertThat(BiStream.empty().collect(toConcurrentMap(Object::toString, toImmutableList())))
+        .isEmpty();
+  }
+
+  @Test public void testToConcurrentMap_singleEntry() {
+    assertThat(BiStream.of(1, "one").collect(toConcurrentMap(Object::toString, toImmutableList())))
+        .containsExactly("1", ImmutableList.of("one"));
+  }
+
+  @Test public void testToConcurrentMap_distinctEntries() {
+    assertThat(BiStream.of(1, "one", 2, "two").collect(toConcurrentMap(Object::toString, toList())))
+        .containsExactly("1", ImmutableList.of("one"), "2", ImmutableList.of("two"));
+  }
+
+  @Test public void testToConcurrentMap_multipleValuesGrouped() {
+    assertThat(BiStream.of(1, "one", 1L, "uno").collect(toConcurrentMap(Object::toString, toList())))
+        .containsExactly("1", ImmutableList.of("one", "uno"));
   }
 
   private static final class Town {
