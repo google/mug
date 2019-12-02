@@ -15,10 +15,13 @@
 package com.google.mu.util.stream;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.function.Function.identity;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
+import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.stream.Collector;
@@ -70,6 +73,30 @@ public final class BiCollectors {
   }
 
   /**
+   * Returns a {@link BiCollector} that collects the input entries into an {@link ImmutableMap}. The
+   * map keys are calculated using {@code keyFunction}. Values mapped to the same key are collected
+   * using {@code valueCollector}.
+   *
+   * @since 3.2
+   */
+  public static <K, V, G, R> BiCollector<K, V, Map<G, R>> toMap(
+      Function<? super K, ? extends G> keyFunction,
+      Collector<? super V, ?, ? extends R> valueCollector) {
+    requireNonNull(valueCollector);
+    return new BiCollector<K, V, Map<G, R>>() {
+      @Override
+      public <E> Collector<E, ?, Map<G, R>> bisecting(
+          Function<E, K> toKey, Function<E, V> toValue) {
+        return Collectors.collectingAndThen(
+            Collectors.groupingBy(
+                toKey.andThen(keyFunction),
+                LinkedHashMap::new, Collectors.mapping(toValue, valueCollector)),
+            Collections::unmodifiableMap);
+      }
+    };
+  }
+
+  /**
    * Returns a {@link BiCollector} that collects the key-value pairs into an immutable {@link Map}
    * using {@code valueCollector} to collect values of identical keys into a final value of type
    * {@code V}.
@@ -85,22 +112,142 @@ public final class BiCollectors {
    */
   public static <K, V1, V> BiCollector<K, V1, Map<K, V>> toMap(
       Collector<V1, ?, V> valueCollector) {
+    return toMap(identity(), valueCollector);
+  }
+
+  /**
+   * Returns a {@link BiCollector} that collects the input entries into a {@link ConcurrentMap}. The
+   * map keys are calculated using {@code keyFunction}. Values mapped to the same key are collected
+   * using {@code valueCollector}.
+   *
+   * @since 3.2
+   */
+  public static <K, V, G, R> BiCollector<K, V, ConcurrentMap<G, R>> toConcurrentMap(
+      Function<? super K, ? extends G> keyFunction,
+      Collector<? super V, ?, R> valueCollector) {
     requireNonNull(valueCollector);
-    return new BiCollector<K, V1, Map<K, V>>() {
+    return new BiCollector<K, V, ConcurrentMap<G, R>>() {
       @Override
-      public <E> Collector<E, ?, Map<K, V>> bisecting(
-          Function<E, K> toKey, Function<E, V1> toValue) {
-        return Collectors.collectingAndThen(
-            Collectors.groupingBy(
-                toKey, LinkedHashMap::new, Collectors.mapping(toValue, valueCollector)),
-            Collections::unmodifiableMap);
+      public <E> Collector<E, ?, ConcurrentMap<G, R>> bisecting(
+          Function<E, K> toKey, Function<E, V> toValue) {
+        return Collectors.groupingByConcurrent(
+                toKey.andThen(keyFunction),
+                Collectors.mapping(toValue, valueCollector));
       }
     };
   }
 
-  /** Returns a counting {@link BiCollector} that counts the number of input entries. */
+  /**
+   * Returns a {@link BiCollector} that collects the key-value pairs into a {@link ConcurrentMap}
+   * using {@code valueCollector} to collect values of identical keys into a final value of type
+   * {@code V}.
+   *
+   * <p>For example, the following calculates total population per state from city demographic data:
+   *
+   * <pre>{@code
+   *  Map<StateId, Integer> statePopulations = BiStream.from(cities, City::getState, c -> c)
+   *     .collect(toMap(summingInt(City::getPopulation)));
+   * }</pre>
+   *
+   * <p>Entries are collected in concurrently, unordered.
+   *
+   * @since 3.2
+   */
+  public static <K, V1, V> BiCollector<K, V1, ConcurrentMap<K, V>> toConcurrentMap(
+      Collector<V1, ?, V> valueCollector) {
+    return toConcurrentMap(identity(), valueCollector);
+  }
+
+  /**
+   * Returns a counting {@link BiCollector} that counts the number of input entries.
+   *
+   * @since 3.2
+   */
   public static <K, V> BiCollector<K, V, Long> counting() {
     return BiCollector.zipping((k, v) -> k, Collectors.counting());
+  }
+
+  /**
+   * Groups input entries by {@code classifier} and collects entries belonging to the same group
+   * using {@code groupCollector}.
+   *
+   * <p>Useful for grouping entries by some binary relationship. For example, the following code groups
+   * {@code [begin, end)} endpoints by their distance: <pre>{@code
+   *   ImmutableMap<Integer, ImmtableSetMultimap<Integer, Integer>> endpointsByDistance =
+   *       BiStream.from(endpoints)
+   *           .collect(
+   *               groupingBy((begin, end) -> end - begin, ImmutableSetMultimap::toImmutableSetMultimap))
+   *           .collect(ImmutableMap::toImmutableMap);
+   * }</pre>
+   *
+   * @since 3.2
+   */
+  public static <K, V, G, R> BiCollector<K, V, BiStream<G, R>> groupingBy(
+      BiFunction<? super K, ? super V, ? extends G> classifier,
+      BiCollector<? super K, ? super V, R> groupCollector) {
+    requireNonNull(classifier);
+    requireNonNull(groupCollector);
+    return new BiCollector<K, V, BiStream<G, R>>() {
+      @Override
+      public <E> Collector<E, ?, BiStream<G, R>> bisecting(
+          Function<E, K> toKey, Function<E, V> toValue) {
+        return BiStream.groupingBy(
+            e -> classifier.apply(toKey.apply(e), toValue.apply(e)),
+            groupCollector.bisecting(toKey::apply, toValue::apply));
+      }
+    };
+  }
+
+  /**
+   * Groups input entries by {@code classifier} and collects entries belonging to the same group
+   * using {@code groupCollector}.
+   *
+   * <p>For example, the following code creates a {@code row -> column -> sum} two-level map:
+   * <pre>{@code
+   *   Map<Coordinate, Integer> cells = ...;
+   *   ImmutableMap<Integer, Map<Integer, Value>> cellValuesByRowAndColumn =
+   *       BiStream.from(cells)
+   *           .collect(
+   *               groupingBy(Coordinate::row, toMap(Coordinate::column, summingInt(Integer::intValue)))
+   *           .collect(ImmutableMap::toImmutableMap);
+   * }</pre>
+   *
+   * @since 3.2
+   */
+  public static <K, V, G, R> BiCollector<K, V, BiStream<G, R>> groupingBy(
+      Function<? super K, ? extends G> classifier,
+      BiCollector<? super K, ? super V, R> groupCollector) {
+    requireNonNull(classifier);
+    return groupingBy((k, v) -> classifier.apply(k), groupCollector);
+  }
+
+  /**
+   * Groups input entries by {@code classifier} and collects values belonging to the same group
+   * using {@code groupCollector}.
+   *
+   * @since 3.2
+   */
+  public static <K, V, G, R> BiCollector<K, V, BiStream<G, R>> groupingBy(
+      Function<? super K, ? extends G> classifier,
+      Collector<? super V, ?, R> groupCollector) {
+    return groupingBy(classifier, BiCollector.zipping((k, v) -> v, groupCollector));
+  }
+
+  /**
+   * Returns a {@link BiCollector} that maps the result of {@code collector} using {@code finisher}.
+   *
+   * @since 3.2
+   */
+  public static <K, V, T, R> BiCollector<K, V, R> collectingAndThen(
+      BiCollector<K, V, T> collector, Function<? super T, ? extends R> finisher) {
+    requireNonNull(collector);
+    requireNonNull(finisher);
+    return new BiCollector<K, V, R>() {
+      @Override
+      public <E> Collector<E, ?, R> bisecting(Function<E, K> toKey, Function<E, V> toValue) {
+        return Collectors.collectingAndThen(collector.bisecting(toKey, toValue), finisher::apply);
+      }
+    };
   }
 
   private BiCollectors() {}
