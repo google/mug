@@ -149,7 +149,7 @@ public final class BiCollectors {
    *     .collect(toMap(summingInt(City::getPopulation)));
    * }</pre>
    *
-   * <p>Entries are collected in encounter order.
+   * <p>Entries are collected in concurrently, unordered.
    *
    * @since 3.2
    */
