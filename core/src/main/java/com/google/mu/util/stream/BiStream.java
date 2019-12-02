@@ -159,32 +159,6 @@ public abstract class BiStream<K, V> {
   }
 
   /**
-   * Returns a {@code Collector} that concurrently groups the input elements by {@code keyFunction} and collects
-   * the values mapping to the same key using {@code valueCollector}. Similar but different from
-   * {@link Collectors#groupingBy(Function, Collector)}, this method collects the groups into {@link
-   * #BiStream} instead, allowing fluent method chaining. For example:
-   *
-   * <pre>{@code
-   * Map<EmployeeId, Integer> topTenEmployeesByWorkHour = projects.stream()
-   *     .flatMap(project -> project.getMembers().stream())  // Stream<TeamMember>
-   *     .collect(BiStream.groupingByConcurrent(TeamMember::employeeId, summingInt(TeamMember::hours)))
-   *     .sortedByValues(Comparator.reverseOrder())
-   *     .limit(10)
-   *     .toMap();
-   * }</pre>
-   *
-   * <p>Entries are collected concurrently and unordered.
-   *
-   * @since 3.2
-   */
-  public static <T, K, V> Collector<T, ?, BiStream<K, V>> groupingByConcurrent(
-      Function<? super T, ? extends K> keyFunction, Collector<? super T, ?, V> valueCollector) {
-    Collector<T, ?, ConcurrentMap<K, V>> grouping =
-        Collectors.groupingByConcurrent(keyFunction, valueCollector);
-    return collectingAndThen(grouping, BiStream::from);
-  }
-
-  /**
    * Returns a {@code Collector} that concatenates {@code BiStream} objects derived from the input
    * elements using the given {@code toBiStream} function.
    *
