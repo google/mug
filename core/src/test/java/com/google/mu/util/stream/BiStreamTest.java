@@ -531,14 +531,6 @@ public class BiStreamTest {
     assertThat(groups).containsExactly("1", 2L, "2", 1L, "3", 2L).inOrder();
   }
 
-  @Test public void testGroupingByConcurrent_withCollector() {
-    Map<String, Long> groups =
-        Stream.of(1, 1, 2, 3, 3)
-            .collect(BiStream.groupingByConcurrent(Object::toString, Collectors.counting()))
-            .toMap();
-    assertThat(groups).containsExactly("1", 2L, "2", 1L, "3", 2L);
-  }
-
   @Test public void testGroupingValuesFrom() {
     Map<Integer, List<String>> groups =
         Stream.of(ImmutableMap.of(1, "one"), ImmutableMap.of(2, "two", 1, "uno"))
