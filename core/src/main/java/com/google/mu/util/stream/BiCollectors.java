@@ -15,12 +15,10 @@
 package com.google.mu.util.stream;
 
 import static java.util.Objects.requireNonNull;
-import static java.util.function.Function.identity;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
@@ -44,7 +42,6 @@ import java.util.stream.Collectors;
  * @since 3.0
  */
 public final class BiCollectors {
-
   /**
    * Returns a {@link BiCollector} that collects the key-value pairs into an immutable {@link Map}.
    *
@@ -60,38 +57,13 @@ public final class BiCollectors {
    * Returns a {@link BiCollector} that collects the key-value pairs into an immutable {@link Map}
    * using {@code valueMerger} to merge values of duplicate keys.
    */
-  public static <K, V> BiCollector<K, V, Map<K, V>> toMap(
-      BinaryOperator<V> valueMerger) {
+  public static <K, V> BiCollector<K, V, Map<K, V>> toMap(BinaryOperator<V> valueMerger) {
     requireNonNull(valueMerger);
     return new BiCollector<K, V, Map<K, V>>() {
       @Override
       public <E> Collector<E, ?, Map<K, V>> bisecting(
           Function<E, K> toKey, Function<E, V> toValue) {
         return Collectors.toMap(toKey, toValue, valueMerger);
-      }
-    };
-  }
-
-  /**
-   * Returns a {@link BiCollector} that collects the input entries into an {@link ImmutableMap}. The
-   * map keys are calculated using {@code keyFunction}. Values mapped to the same key are collected
-   * using {@code valueCollector}.
-   *
-   * @since 3.2
-   */
-  public static <K, V, G, R> BiCollector<K, V, Map<G, R>> toMap(
-      Function<? super K, ? extends G> keyFunction,
-      Collector<? super V, ?, ? extends R> valueCollector) {
-    requireNonNull(valueCollector);
-    return new BiCollector<K, V, Map<G, R>>() {
-      @Override
-      public <E> Collector<E, ?, Map<G, R>> bisecting(
-          Function<E, K> toKey, Function<E, V> toValue) {
-        return Collectors.collectingAndThen(
-            Collectors.groupingBy(
-                toKey.andThen(keyFunction),
-                LinkedHashMap::new, Collectors.mapping(toValue, valueCollector)),
-            Collections::unmodifiableMap);
       }
     };
   }
@@ -110,52 +82,19 @@ public final class BiCollectors {
    *
    * <p>Entries are collected in encounter order.
    */
-  public static <K, V1, V> BiCollector<K, V1, Map<K, V>> toMap(
-      Collector<V1, ?, V> valueCollector) {
-    return toMap(identity(), valueCollector);
-  }
-
-  /**
-   * Returns a {@link BiCollector} that collects the input entries into a {@link ConcurrentMap}. The
-   * map keys are calculated using {@code keyFunction}. Values mapped to the same key are collected
-   * using {@code valueCollector}.
-   *
-   * @since 3.2
-   */
-  public static <K, V, G, R> BiCollector<K, V, ConcurrentMap<G, R>> toConcurrentMap(
-      Function<? super K, ? extends G> keyFunction,
-      Collector<? super V, ?, R> valueCollector) {
+  public static <K, V1, V> BiCollector<K, V1, Map<K, V>> toMap(Collector<V1, ?, V> valueCollector) {
     requireNonNull(valueCollector);
-    return new BiCollector<K, V, ConcurrentMap<G, R>>() {
+    return new BiCollector<K, V1, Map<K, V>>() {
       @Override
-      public <E> Collector<E, ?, ConcurrentMap<G, R>> bisecting(
-          Function<E, K> toKey, Function<E, V> toValue) {
-        return Collectors.groupingByConcurrent(
-                toKey.andThen(keyFunction),
-                Collectors.mapping(toValue, valueCollector));
+      public <E> Collector<E, ?, Map<K, V>> bisecting(
+          Function<E, K> toKey, Function<E, V1> toValue) {
+        return Collectors.collectingAndThen(
+            Collectors.groupingBy(
+                toKey,
+                LinkedHashMap::new, Collectors.mapping(toValue, valueCollector)),
+            Collections::unmodifiableMap);
       }
     };
-  }
-
-  /**
-   * Returns a {@link BiCollector} that collects the key-value pairs into a {@link ConcurrentMap}
-   * using {@code valueCollector} to collect values of identical keys into a final value of type
-   * {@code V}.
-   *
-   * <p>For example, the following calculates total population per state from city demographic data:
-   *
-   * <pre>{@code
-   *  Map<StateId, Integer> statePopulations = BiStream.from(cities, City::getState, c -> c)
-   *     .collect(toMap(summingInt(City::getPopulation)));
-   * }</pre>
-   *
-   * <p>Entries are collected in concurrently, unordered.
-   *
-   * @since 3.2
-   */
-  public static <K, V1, V> BiCollector<K, V1, ConcurrentMap<K, V>> toConcurrentMap(
-      Collector<V1, ?, V> valueCollector) {
-    return toConcurrentMap(identity(), valueCollector);
   }
 
   /**
@@ -164,7 +103,7 @@ public final class BiCollectors {
    * @since 3.2
    */
   public static <K, V> BiCollector<K, V, Long> counting() {
-    return BiCollector.zipping((k, v) -> k, Collectors.counting());
+    return mapping((k, v) -> k, Collectors.counting());
   }
 
   /**
@@ -230,7 +169,7 @@ public final class BiCollectors {
   public static <K, V, G, R> BiCollector<K, V, BiStream<G, R>> groupingBy(
       Function<? super K, ? extends G> classifier,
       Collector<? super V, ?, R> groupCollector) {
-    return groupingBy(classifier, BiCollector.zipping((k, v) -> v, groupCollector));
+    return groupingBy(classifier, mapping((k, v) -> v, groupCollector));
   }
 
   /**
@@ -246,6 +185,23 @@ public final class BiCollectors {
       @Override
       public <E> Collector<E, ?, R> bisecting(Function<E, K> toKey, Function<E, V> toValue) {
         return Collectors.collectingAndThen(collector.bisecting(toKey, toValue), finisher::apply);
+      }
+    };
+  }
+
+  /**
+   * Returns a {@link BiCollector} that first maps the input pair using {@code mapper} and then collects the
+   * results using {@code collector}.
+   *
+   * @since 3.2
+   */
+  public static <K, V, T, R> BiCollector<K, V, R> mapping(
+      BiFunction<? super K, ? super V, ? extends T> mapper, Collector<? super T, ?, R> collector) {
+    requireNonNull(mapper);
+    requireNonNull(collector);
+    return new BiCollector<K, V, R>() {
+      @Override public <E> Collector<E, ?, R> bisecting(Function<E, K> toKey, Function<E, V> toValue) {
+        return Collectors.mapping(e -> mapper.apply(toKey.apply(e), toValue.apply(e)), collector);
       }
     };
   }
