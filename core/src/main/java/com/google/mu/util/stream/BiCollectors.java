@@ -17,11 +17,17 @@ package com.google.mu.util.stream;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Collections;
+import java.util.DoubleSummaryStatistics;
+import java.util.IntSummaryStatistics;
 import java.util.LinkedHashMap;
+import java.util.LongSummaryStatistics;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
+import java.util.function.ToDoubleBiFunction;
+import java.util.function.ToIntBiFunction;
+import java.util.function.ToLongBiFunction;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -104,6 +110,180 @@ public final class BiCollectors {
    */
   public static <K, V> BiCollector<K, V, Long> counting() {
     return mapping((k, v) -> k, Collectors.counting());
+  }
+
+  /**
+   * Returns a {@link BiCollector} that produces the sum of an integer-valued
+   * function applied to the input pair.  If no input entries are present,
+   * the result is 0.
+   *
+   * @since 3.2
+   */
+  public static <K, V> BiCollector<K, V, Integer> summingInt(
+      ToIntBiFunction<? super K, ? super V> mapper) {
+    requireNonNull(mapper);
+    return new BiCollector<K, V, Integer>() {
+      @Override
+      public <E> Collector<E, ?, Integer> bisecting(
+          Function<E, K> toKey, Function<E, V> toValue) {
+        return Collectors.summingInt(e -> mapper.applyAsInt(toKey.apply(e), toValue.apply(e)));
+      }
+    };
+  }
+
+  /**
+   * Returns a {@link BiCollector} that produces the sum of a long-valued
+   * function applied to the input pair.  If no input entries are present,
+   * the result is 0.
+   *
+   * @since 3.2
+   */
+  public static <K, V> BiCollector<K, V, Long> summingLong(
+      ToLongBiFunction<? super K, ? super V> mapper) {
+    requireNonNull(mapper);
+    return new BiCollector<K, V, Long>() {
+      @Override
+      public <E> Collector<E, ?, Long> bisecting(
+          Function<E, K> toKey, Function<E, V> toValue) {
+        return Collectors.summingLong(e -> mapper.applyAsLong(toKey.apply(e), toValue.apply(e)));
+      }
+    };
+  }
+
+  /**
+   * Returns a {@link BiCollector} that produces the sum of a double-valued
+   * function applied to the input pair.  If no input entries are present,
+   * the result is 0.
+   *
+   * @since 3.2
+   */
+  public static <K, V> BiCollector<K, V, Double> summingDouble(
+      ToDoubleBiFunction<? super K, ? super V> mapper) {
+    requireNonNull(mapper);
+    return new BiCollector<K, V, Double>() {
+      @Override
+      public <E> Collector<E, ?, Double> bisecting(
+          Function<E, K> toKey, Function<E, V> toValue) {
+        return Collectors.summingDouble(e -> mapper.applyAsDouble(toKey.apply(e), toValue.apply(e)));
+      }
+    };
+  }
+
+  /**
+   * Returns a {@link BiCollector} that produces the arithmetic mean of an integer-valued
+   * function applied to the input pair.  If no input entries are present,
+   * the result is 0.
+   *
+   * @since 3.2
+   */
+  public static <K, V> BiCollector<K, V, Double> averagingInt(
+      ToIntBiFunction<? super K, ? super V> mapper) {
+    requireNonNull(mapper);
+    return new BiCollector<K, V, Double>() {
+      @Override
+      public <E> Collector<E, ?, Double> bisecting(
+          Function<E, K> toKey, Function<E, V> toValue) {
+        return Collectors.averagingInt(e -> mapper.applyAsInt(toKey.apply(e), toValue.apply(e)));
+      }
+    };
+  }
+
+  /**
+   * Returns a {@link BiCollector} that produces the arithmetic mean of an long-valued
+   * function applied to the input pair.  If no input entries are present,
+   * the result is 0.
+   *
+   * @since 3.2
+   */
+  public static <K, V> BiCollector<K, V, Double> averagingLong(
+      ToLongBiFunction<? super K, ? super V> mapper) {
+    requireNonNull(mapper);
+    return new BiCollector<K, V, Double>() {
+      @Override
+      public <E> Collector<E, ?, Double> bisecting(
+          Function<E, K> toKey, Function<E, V> toValue) {
+        return Collectors.averagingLong(e -> mapper.applyAsLong(toKey.apply(e), toValue.apply(e)));
+      }
+    };
+  }
+
+  /**
+   * Returns a {@link BiCollector} that produces the arithmetic mean of an double-valued
+   * function applied to the input pair.  If no input entries are present,
+   * the result is 0.
+   *
+   * @since 3.2
+   */
+  public static <K, V> BiCollector<K, V, Double> averagingDouble(
+      ToDoubleBiFunction<? super K, ? super V> mapper) {
+    requireNonNull(mapper);
+    return new BiCollector<K, V, Double>() {
+      @Override
+      public <E> Collector<E, ?, Double> bisecting(
+          Function<E, K> toKey, Function<E, V> toValue) {
+        return Collectors.averagingDouble(e -> mapper.applyAsDouble(toKey.apply(e), toValue.apply(e)));
+      }
+    };
+  }
+
+  /**
+   * Returns a {@link BiCollector} which applies an {@code int}-producing
+   * mapping function to each input pair, and returns summary statistics
+   * for the resulting values.
+   *
+   *
+   * @since 3.2
+   */
+  public static <K, V> BiCollector<K, V, IntSummaryStatistics> summarizingInt(
+      ToIntBiFunction<? super K, ? super V> mapper) {
+    requireNonNull(mapper);
+    return new BiCollector<K, V, IntSummaryStatistics>() {
+      @Override
+      public <E> Collector<E, ?, IntSummaryStatistics> bisecting(
+          Function<E, K> toKey, Function<E, V> toValue) {
+        return Collectors.summarizingInt(e -> mapper.applyAsInt(toKey.apply(e), toValue.apply(e)));
+      }
+    };
+  }
+
+  /**
+   * Returns a {@link BiCollector} which applies an {@code long}-producing
+   * mapping function to each input pair, and returns summary statistics
+   * for the resulting values.
+   *
+   *
+   * @since 3.2
+   */
+  public static <K, V> BiCollector<K, V, LongSummaryStatistics> summarizingLong(
+      ToLongBiFunction<? super K, ? super V> mapper) {
+    requireNonNull(mapper);
+    return new BiCollector<K, V, LongSummaryStatistics>() {
+      @Override
+      public <E> Collector<E, ?, LongSummaryStatistics> bisecting(
+          Function<E, K> toKey, Function<E, V> toValue) {
+        return Collectors.summarizingLong(e -> mapper.applyAsLong(toKey.apply(e), toValue.apply(e)));
+      }
+    };
+  }
+
+  /**
+   * Returns a {@link BiCollector} which applies an {@code double}-producing
+   * mapping function to each input pair, and returns summary statistics
+   * for the resulting values.
+   *
+   *
+   * @since 3.2
+   */
+  public static <K, V> BiCollector<K, V, DoubleSummaryStatistics> summarizingDouble(
+      ToDoubleBiFunction<? super K, ? super V> mapper) {
+    requireNonNull(mapper);
+    return new BiCollector<K, V, DoubleSummaryStatistics>() {
+      @Override
+      public <E> Collector<E, ?, DoubleSummaryStatistics> bisecting(
+          Function<E, K> toKey, Function<E, V> toValue) {
+        return Collectors.summarizingDouble(e -> mapper.applyAsDouble(toKey.apply(e), toValue.apply(e)));
+      }
+    };
   }
 
   /**

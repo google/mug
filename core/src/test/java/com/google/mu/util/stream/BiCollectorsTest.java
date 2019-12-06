@@ -79,6 +79,48 @@ public class BiCollectorsTest {
     assertThat(BiStream.of(1, "one", 2, "two").collect(BiCollectors.counting())).isEqualTo(2L);
   }
 
+  @Test public void testSummingInt() {
+    assertThat(BiStream.of(1, 10, 2, 20).collect(BiCollectors.summingInt((a, b) -> a + b))).isEqualTo(33);
+  }
+
+  @Test public void testSummingLong() {
+    assertThat(BiStream.of(1L, 10, 2L, 20).collect(BiCollectors.summingLong((a, b) -> a + b))).isEqualTo(33L);
+  }
+
+  @Test public void testSummingDouble() {
+    assertThat(BiStream.of(1, 10D, 2, 20D).collect(BiCollectors.summingDouble((a, b) -> a + b))).isEqualTo(33D);
+  }
+
+  @Test public void testAveragingInt() {
+    assertThat(BiStream.of(1, 3, 2, 4).collect(BiCollectors.averagingInt((Integer a, Integer b) -> a + b)))
+        .isEqualTo(5D);
+  }
+
+  @Test public void testAveragingLong() {
+    assertThat(BiStream.of(1L, 3, 2L, 4).collect(BiCollectors.averagingLong((Long a, Integer b) -> a + b)))
+        .isEqualTo(5D);
+  }
+
+  @Test public void testAveragingDouble() {
+    assertThat(BiStream.of(1L, 3, 2L, 4).collect(BiCollectors.averagingDouble((Long a, Integer b) -> a + b)))
+        .isEqualTo(5D);
+  }
+
+  @Test public void testSummarizingInt() {
+    assertThat(BiStream.of(1, 10, 2, 20).collect(BiCollectors.summarizingInt((a, b) -> a + b)).getMin())
+        .isEqualTo(11);
+  }
+
+  @Test public void testSummarizingLong() {
+    assertThat(BiStream.of(1, 10, 2, 20).collect(BiCollectors.summarizingLong((a, b) -> a + b)).getMin())
+        .isEqualTo(11L);
+  }
+
+  @Test public void testSummarizingDouble() {
+    assertThat(BiStream.of(1, 10, 2, 20).collect(BiCollectors.summarizingDouble((a, b) -> a + b)).getMin())
+        .isEqualTo(11D);
+  }
+
   @Test public void testGroupingBy_empty() {
     assertKeyValues(BiStream.empty().collect(groupingBy(Object::toString, toList()))).isEmpty();
   }
