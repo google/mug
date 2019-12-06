@@ -189,7 +189,7 @@ public final class BiCollectors {
   }
 
   /**
-   * Returns a {@link BiCollector} that produces the arithmetic mean of an long-valued
+   * Returns a {@link BiCollector} that produces the arithmetic mean of a long-valued
    * function applied to the input pair.  If no input entries are present,
    * the result is 0.
    *
@@ -208,7 +208,7 @@ public final class BiCollectors {
   }
 
   /**
-   * Returns a {@link BiCollector} that produces the arithmetic mean of an double-valued
+   * Returns a {@link BiCollector} that produces the arithmetic mean of a double-valued
    * function applied to the input pair.  If no input entries are present,
    * the result is 0.
    *
