@@ -288,15 +288,17 @@ public final class BiCollectors {
 
   /**
    * Groups input entries by {@code classifier} and collects entries belonging to the same group
-   * using {@code groupCollector}.
+   * using {@code groupCollector}. For example, the following code splits a phone book by area code:
    *
-   * <p>Useful for grouping entries by some binary relationship. For example, the following code groups
-   * {@code [begin, end)} endpoints by their distance: <pre>{@code
-   *   ImmutableMap<Integer, ImmtableSetMultimap<Integer, Integer>> endpointsByDistance =
-   *       BiStream.from(endpoints)
-   *           .collect(
-   *               groupingBy((begin, end) -> end - begin, ImmutableSetMultimap::toImmutableSetMultimap))
-   *           .collect(ImmutableMap::toImmutableMap);
+   * <pre>{@code
+   * Multimap<Address, PhoneNumber> phoneBook = ...;
+   * ImmutableMap<AreaCode, ImmutableSetMultimap<Address, PhoneNumber>> phoneBooksByAreaCode =
+   *     BiStream.from(phoneBook)
+   *         .collect(
+   *             groupingBy(
+   *                 (addr, phone) -> phone.areaCode(),
+   *                 ImmutableSetMultimap::toImmutableSetMultimap))
+   *         .collect(ImmutableMap::toImmutableMap);
    * }</pre>
    *
    * @since 3.2
@@ -319,16 +321,14 @@ public final class BiCollectors {
 
   /**
    * Groups input entries by {@code classifier} and collects entries belonging to the same group
-   * using {@code groupCollector}.
+   * using {@code groupCollector}. For example, the following code splits a phone book by city:
    *
-   * <p>For example, the following code creates a {@code row -> column -> sum} two-level map:
    * <pre>{@code
-   *   Map<Coordinate, Integer> cells = ...;
-   *   ImmutableMap<Integer, Map<Integer, Value>> cellValuesByRowAndColumn =
-   *       BiStream.from(cells)
-   *           .collect(
-   *               groupingBy(Coordinate::row, toMap(Coordinate::column, summingInt(Integer::intValue)))
-   *           .collect(ImmutableMap::toImmutableMap);
+   * Multimap<Address, PhoneNumber> phoneBook = ...;
+   * ImmutableMap<City, ImmutableSetMultimap<Address, PhoneNumber>> phoneBooksByCity =
+   *     BiStream.from(phoneBook)
+   *         .collect(groupingBy(Address::city, ImmutableSetMultimap::toImmutableSetMultimap))
+   *         .collect(ImmutableMap::toImmutableMap);
    * }</pre>
    *
    * @since 3.2
