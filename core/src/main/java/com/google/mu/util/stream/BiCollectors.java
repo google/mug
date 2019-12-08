@@ -342,7 +342,17 @@ public final class BiCollectors {
 
   /**
    * Groups input entries by {@code classifier} and collects values belonging to the same group
-   * using {@code groupCollector}.
+   * using {@code groupCollector}. For example, the following code collects unique area codes for
+   * each state:
+   *
+   * <pre>{@code
+   * Multimap<Address, PhoneNumber> phoneBook = ...;
+   * ImmutableMap<State, ImmutableSet<AreaCode>> areaCodesByState =
+   *     BiStream.from(phoneBook)
+   *         .mapValues(PhoneNumber::areaCode)
+   *         .collect(groupingBy(Address::state, toImmutableSet()))
+   *         .collect(ImmutableMap::toImmutableMap);
+   * }</pre>
    *
    * @since 3.2
    */
