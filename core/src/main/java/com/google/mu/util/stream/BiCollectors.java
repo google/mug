@@ -292,7 +292,7 @@ public final class BiCollectors {
    *
    * <pre>{@code
    * Multimap<Address, PhoneNumber> phoneBook = ...;
-   * ImmutableMap<AreaCode, ImmutableSetMultimap<Address, PhoneNumber>> phoneBooksByAreaCode =
+   * ImmutableMap<AreaCode, ImmutableSetMultimap<Address, PhoneNumber>> areaPhoneBooks =
    *     BiStream.from(phoneBook)
    *         .collect(
    *             groupingBy(
@@ -325,7 +325,7 @@ public final class BiCollectors {
    *
    * <pre>{@code
    * Multimap<Address, PhoneNumber> phoneBook = ...;
-   * ImmutableMap<City, ImmutableSetMultimap<Address, PhoneNumber>> phoneBooksByCity =
+   * ImmutableMap<City, ImmutableSetMultimap<Address, PhoneNumber>> cityPhoneBooks =
    *     BiStream.from(phoneBook)
    *         .collect(groupingBy(Address::city, ImmutableSetMultimap::toImmutableSetMultimap))
    *         .collect(ImmutableMap::toImmutableMap);
@@ -347,7 +347,7 @@ public final class BiCollectors {
    *
    * <pre>{@code
    * Multimap<Address, PhoneNumber> phoneBook = ...;
-   * ImmutableMap<State, ImmutableSet<AreaCode>> areaCodesByState =
+   * ImmutableMap<State, ImmutableSet<AreaCode>> stateAreaCodes =
    *     BiStream.from(phoneBook)
    *         .mapValues(PhoneNumber::areaCode)
    *         .collect(groupingBy(Address::state, toImmutableSet()))
