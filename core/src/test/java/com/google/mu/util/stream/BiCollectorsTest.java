@@ -79,6 +79,38 @@ public class BiCollectorsTest {
     assertThat(BiStream.of(1, "one", 2, "two").collect(BiCollectors.counting())).isEqualTo(2L);
   }
 
+  @Test public void testCountingDistinct_distinctEntries() {
+    assertThat(BiStream.of(1, "one", 2, "two").collect(BiCollectors.countingDistinct()))
+        .isEqualTo(2);
+    assertThat(BiStream.of(1, "one", 1, "uno").collect(BiCollectors.countingDistinct()))
+        .isEqualTo(2);
+    assertThat(BiStream.of(1, "one", 2, "one").collect(BiCollectors.countingDistinct()))
+        .isEqualTo(2);
+  }
+
+  @Test public void testCountingDistinct_duplicateEntries() {
+    assertThat(BiStream.of(1, "one", 1, "one").collect(BiCollectors.countingDistinct()))
+        .isEqualTo(1);
+  }
+
+  @Test public void testCountingDistinct_duplicateEntries_withNulls() {
+    assertThat(BiStream.of(1, null, 1, null).collect(BiCollectors.countingDistinct()))
+        .isEqualTo(1);
+    assertThat(BiStream.of(null, null, null, null).collect(BiCollectors.countingDistinct()))
+        .isEqualTo(1);
+    assertThat(BiStream.of(null, "one", null, "one").collect(BiCollectors.countingDistinct()))
+        .isEqualTo(1);
+  }
+
+  @Test public void testCountingDistinct_distinctEntries_withNulls() {
+    assertThat(BiStream.of(1, "one", 1, null).collect(BiCollectors.countingDistinct()))
+        .isEqualTo(2);
+    assertThat(BiStream.of(1, "one", null, "one").collect(BiCollectors.countingDistinct()))
+        .isEqualTo(2);
+    assertThat(BiStream.of(1, "one", null, null).collect(BiCollectors.countingDistinct()))
+        .isEqualTo(2);
+  }
+
   @Test public void testSummingInt() {
     assertThat(BiStream.of(1, 10, 2, 20).collect(BiCollectors.summingInt((a, b) -> a + b))).isEqualTo(33);
   }
