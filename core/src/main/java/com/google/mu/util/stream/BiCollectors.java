@@ -119,7 +119,7 @@ public final class BiCollectors {
    * according to {@link Object#equals} for both keys and values.
    *
    * <p>Unlike {@link #counting}, this collector should not be used on very large (for example,
-   * larger than {@code Integer.MAX_VALUE} streams because it internally needs to keep track of
+   * larger than {@code Integer.MAX_VALUE}) streams because it internally needs to keep track of
    * all distinct entries in memory.
    *
    * @since 3.2
