@@ -45,6 +45,14 @@ public interface BiCollector<K, V, R> {
    * Returns a {@code Collector} that will first bisect the input elements using {@code toKey} and
    * {@code toValue} and subsequently collect the bisected parts through this {@code BiCollector}.
    *
+   * @param toKey
+   *        The function to read the key from the input entry. May be applied multiple times.
+   *        Because input entries could be ephemeral like {@link java.util.Map.Entry},
+   *        applying the function on a previous input entry has undefined result.
+   * @param toValue
+   *        The function to read the value from the input entry. May be applied multiple times.
+   *        Because input entries could be ephemeral like {@link java.util.Map.Entry},
+   *        applying the function on a previous input entry has undefined result.
    * @param <E> used to abstract away the underlying pair/entry type used by {@link BiStream}.
    */
   // Deliberately avoid wildcards for toKey and toValue, because we don't expect
