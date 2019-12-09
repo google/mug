@@ -16,12 +16,14 @@ package com.google.mu.util.stream;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.DoubleSummaryStatistics;
 import java.util.IntSummaryStatistics;
 import java.util.LinkedHashMap;
 import java.util.LongSummaryStatistics;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
@@ -110,6 +112,22 @@ public final class BiCollectors {
    */
   public static <K, V> BiCollector<K, V, Long> counting() {
     return mapping((k, v) -> k, Collectors.counting());
+  }
+
+  /**
+   * Returns a counting {@link BiCollector} that counts the number of distinct input entries
+   * according to {@link Object#equals} for both keys and values.
+   *
+   * <p>Unlike {@link #counting}, this collector should not be used on very large (for example,
+   * larger than {@code Integer.MAX_VALUE} streams because it internally needs to keep track of
+   * all distinct entries in memory.
+   *
+   * @since 3.2
+   */
+  public static <K, V> BiCollector<K, V, Integer> countingDistinct() {
+    return mapping(
+        AbstractMap.SimpleImmutableEntry::new,
+        Collectors.collectingAndThen(Collectors.toSet(), Set::size));
   }
 
   /**
