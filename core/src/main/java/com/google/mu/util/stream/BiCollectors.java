@@ -14,6 +14,7 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
+import static com.google.mu.util.stream.BiStream.flatMapping;
 import static java.util.Objects.requireNonNull;
 
 import java.util.AbstractMap;
@@ -412,6 +413,28 @@ public final class BiCollectors {
         return Collectors.mapping(e -> mapper.apply(toKey.apply(e), toValue.apply(e)), collector);
       }
     };
+  }
+
+  /**
+   * Returns a {@link Collector} that flattens the entries of the input {@link BiStream} to be
+   * collected by {@code biCollector}. For example, the result of cascading {@link #groupingBy}
+   * can be in turn flattened using the following code:
+   *
+   * <pre>{@code
+   * Multimap<Address, PhoneNumber> phoneBook = ...;
+   * Map<State, Map<City, Set<PhoneNumber>>> stateCityPhoneBooks =
+   *     BiStream.from(phoneBook)
+   *         .collect(groupingBy(Address::state, groupingBy(Address::city, toSet())))
+   *         .collect(toMap(flattening(toMap())));
+   * }</pre>
+   *
+   * @since 3.2
+   */
+  public static <K, V, R> Collector<BiStream<K, V>, ?, R> flattening(
+      BiCollector<? super K, ? super V, R> biCollector) {
+    return flatMapping(
+        biStream -> biStream.mapToEntry(),
+        biCollector.bisecting(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   private BiCollectors() {}
