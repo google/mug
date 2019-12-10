@@ -71,7 +71,7 @@ import static java.util.stream.Collectors.summingInt;
 Map<EmployeeId, Integer> workerHours = projects.stream()
     .map(Project::getTaskAssignments)  // Stream<Map<Employee, Task>>
     .collect(concatenating(BiStream::from))
-    .collect(groupingBy(Employee::id, summingInt(Task::hours)))
+    .collect(groupingBy(Employee::id, summingInt(Task::hours))))
     .toMap();
 ```
 
