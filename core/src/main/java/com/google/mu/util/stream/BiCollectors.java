@@ -381,6 +381,35 @@ public final class BiCollectors {
   }
 
   /**
+   * Groups input pairs by {@code classifier} and reduces values belonging to the same group using
+   * {@code groupReducer}. For example, the following code calculates total household income for
+   * each state:
+   *
+   * <pre>{@code
+   * Map<Address, Household> households = ...;
+   * ImmutableMap<State, Money> stateHouseholdIncomes =
+   *     BiStream.from(households)
+   *         .mapValues(Household::income)
+   *         .collect(groupingBy(Address::state, Money::add))
+   *         .toMap();
+   * }</pre>
+   *
+   * @since 3.3
+   */
+  public static <K, V, G> BiCollector<K, V, BiStream<G, V>> groupingBy(
+      Function<? super K, ? extends G> classifier, BinaryOperator<V> groupReducer) {
+    requireNonNull(classifier);
+    requireNonNull(groupReducer);
+    return new BiCollector<K, V, BiStream<G, V>>() {
+      @Override
+      public <E> Collector<E, ?, BiStream<G, V>> bisecting(
+          Function<E, K> toKey, Function<E, V> toValue) {
+        return BiStream.groupingBy(toKey.andThen(classifier), toValue, groupReducer);
+      }
+    };
+  }
+
+  /**
    * Returns a {@link BiCollector} that maps the result of {@code collector} using {@code finisher}.
    *
    * @since 3.2

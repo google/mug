@@ -179,6 +179,30 @@ public class BiCollectorsTest {
         .containsExactly(2, ImmutableSetMultimap.of(1, 3, 2, 4), 100, ImmutableSetMultimap.of(11, 111));
   }
 
+  @Test public void testGroupingBy_withReducer_empty() {
+    BiStream<String, Integer> salaries = BiStream.empty();
+    assertKeyValues(salaries.collect(groupingBy(s -> s.charAt(0), Integer::sum))).isEmpty();
+  }
+
+  @Test public void testGroupingBy_withReducer_singleEntry() {
+    BiStream<String, Integer> salaries = BiStream.of("Joe", 100);
+    assertKeyValues(salaries.collect(groupingBy(s -> s.charAt(0), Integer::sum)))
+        .containsExactly('J', 100);
+  }
+
+  @Test public void testGroupingBy_withReducer_twoEntriesSameGroup() {
+    BiStream<String, Integer> salaries = BiStream.of("Joe", 100, "John", 200);
+    assertKeyValues(salaries.collect(groupingBy(s -> s.charAt(0), Integer::sum)))
+        .containsExactly('J', 300);
+  }
+
+  @Test public void testGroupingBy_withReducer_twoEntriesDifferentGroups() {
+    BiStream<String, Integer> salaries = BiStream.of("Joe", 100, "Tom", 200);
+    assertKeyValues(salaries.collect(groupingBy(s -> s.charAt(0), Integer::sum)))
+        .containsExactly('J', 100, 'T', 200)
+        .inOrder();
+  }
+
   private static final class Town {
     private final String state;
     private final int population;

@@ -101,6 +101,48 @@ public abstract class BiStream<K, V> {
   }
 
   /**
+   * Returns a {@code Collector} that groups the input elements by {@code classifier} and reduces
+   * the values mapping to the same key using {@code reducer}.
+   *
+   * <pre>{@code
+   * ImmutableMap<CurrencyCode, Money> expenseByCurrency = expenses.stream()
+   *     .collect(groupingBy(Money::currencyCode, Money::add))
+   *     .toMap();
+   * }</pre>
+   *
+   * <p>Entries are collected in encounter order.
+   *
+   * @since 3.3
+   */
+  public static <K, V> Collector<V, ?, BiStream<K, V>> groupingBy(
+      Function<? super V, ? extends K> classifier, BinaryOperator<V> reducer) {
+    return groupingBy(classifier, collectingAndThen(Collectors.reducing(reducer), Optional::get));
+  }
+
+  /**
+   * Returns a {@code Collector} that groups the input elements by {@code classifier} and reduces
+   * the values mapping to the same key using {@code mapper} then {@code reducer}.
+   *
+   * <pre>{@code
+   * ImmutableMap<State, Money> householdIncomeByState = households.stream()
+   *     .collect(groupingBy(Household::state, Household::income, Money::add))
+   *     .toMap();
+   * }</pre>
+   *
+   * <p>Entries are collected in encounter order.
+   *
+   * @since 3.3
+   */
+  public static <T, K, V> Collector<T, ?, BiStream<K, V>> groupingBy(
+      Function<? super T, ? extends K> classifier,
+      Function<? super T, ? extends V> mapper,
+      BinaryOperator<V> reducer) {
+    return groupingBy(
+        classifier,
+        Collectors.mapping(mapper, collectingAndThen(Collectors.reducing(reducer), Optional::get)));
+  }
+
+  /**
    * Returns a {@code Collector} that groups the input elements by {@code keyFunction} and collects
    * the values mapping to the same key into a {@link List}. Similar but different from
    * {@link Collectors#groupingBy(Function)}, this method collects the groups into {@link #BiStream}
