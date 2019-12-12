@@ -143,7 +143,7 @@ public abstract class BiStream<K, V> {
   }
 
   /**
-   * Returns a {@code Collector} that groups the input elements by {@code keyFunction} and collects
+   * Returns a {@code Collector} that groups the input elements by {@code classifier} and collects
    * the values mapping to the same key into a {@link List}. Similar but different from
    * {@link Collectors#groupingBy(Function)}, this method collects the groups into {@link #BiStream}
    * instead, allowing fluent method chaining. For example:
@@ -164,12 +164,12 @@ public abstract class BiStream<K, V> {
    * @since 3.0
    */
   public static <T, K> Collector<T, ?, BiStream<K, List<T>>> groupingBy(
-      Function<? super T, ? extends K> keyFunction) {
-    return groupingBy(keyFunction, Collectors.toList());
+      Function<? super T, ? extends K> classifier) {
+    return groupingBy(classifier, Collectors.toList());
   }
 
   /**
-   * Returns a {@code Collector} that groups the input elements by {@code keyFunction} and collects
+   * Returns a {@code Collector} that groups the input elements by {@code classifier} and collects
    * the values mapping to the same key using {@code valueCollector}. Similar but different from
    * {@link Collectors#groupingBy(Function, Collector)}, this method collects the groups into {@link
    * #BiStream} instead, allowing fluent method chaining. For example:
@@ -193,9 +193,9 @@ public abstract class BiStream<K, V> {
    * @since 3.0
    */
   public static <T, K, V> Collector<T, ?, BiStream<K, V>> groupingBy(
-      Function<? super T, ? extends K> keyFunction, Collector<? super T, ?, V> valueCollector) {
+      Function<? super T, ? extends K> classifier, Collector<? super T, ?, V> valueCollector) {
     Collector<T, ?, Map<K, V>> grouping =
-        Collectors.groupingBy(keyFunction, LinkedHashMap::new, valueCollector);
+        Collectors.groupingBy(classifier, LinkedHashMap::new, valueCollector);
     return collectingAndThen(grouping, BiStream::from);
   }
 
