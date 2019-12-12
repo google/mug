@@ -19,7 +19,7 @@ Add the following to pom.xml:
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug</artifactId>
-    <version>3.1</version>
+    <version>3.2</version>
   </dependency>
 ```
 
@@ -64,13 +64,14 @@ ImmutableListMultimap<ZipCode, Address> addressesByZipCode = BiStream.from(addre
 **Example 5: to apply grouping over `Map` entries:**
 
 ```java
-import static com.google.mu.util.stream.BiCollectors.toMap;
-import static com.google.mu.util.stream.BiStream.groupingValuesFrom;
+import static com.google.mu.util.stream.BiCollectors.groupngBy;
+import static com.google.mu.util.stream.BiStream.concatenating;
 import static java.util.stream.Collectors.summingInt;
 
 Map<EmployeeId, Integer> workerHours = projects.stream()
-    .map(Project::getTaskAssignments)  // Stream<Map<EmployeeId, Task>>
-    .collect(groupingValuesFrom(Map::entrySet, summingInt(Task::getHours)))
+    .map(Project::getTaskAssignments)  // Stream<Map<Employee, Task>>
+    .collect(concatenating(BiStream::from))
+    .collect(groupingBy(Employee::id, summingInt(Task::hours))))
     .toMap();
 ```
 

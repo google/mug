@@ -48,7 +48,6 @@ import org.junit.runners.JUnit4;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.truth.IterableSubject;
@@ -529,6 +528,63 @@ public class BiStreamTest {
             .collect(BiStream.groupingBy(Object::toString, Collectors.counting()))
             .toMap();
     assertThat(groups).containsExactly("1", 2L, "2", 1L, "3", 2L).inOrder();
+  }
+
+  @Test public void testGroupingBy_withReducer_empty() {
+    Stream<String> inputs = Stream.empty();
+    assertThat(inputs.collect(BiStream.groupingBy(s -> s.charAt(0), String::concat)).toMap())
+        .isEmpty();
+  }
+
+  @Test public void testGroupingBy_withReducer_singleElement() {
+    Stream<String> inputs = Stream.of("foo");
+    assertThat(inputs.collect(BiStream.groupingBy(s -> s.charAt(0), String::concat)).toMap())
+        .containsExactly('f', "foo");
+  }
+
+  @Test public void testGroupingBy_withReducer_twoElementsSameGroup() {
+    Stream<String> inputs = Stream.of("foo", "fun");
+    assertThat(inputs.collect(BiStream.groupingBy(s -> s.charAt(0), String::concat)).toMap())
+        .containsExactly('f', "foofun");
+  }
+
+  @Test public void testGroupingBy_withReducer_twoElementsDifferentGroups() {
+    Stream<String> inputs = Stream.of("foo", "blah");
+    assertThat(inputs.collect(BiStream.groupingBy(s -> s.charAt(0), String::concat)).toMap())
+        .containsExactly('f', "foo", 'b', "blah");
+  }
+
+  @Test public void testGroupingBy_withMapperAndReducer_empty() {
+    Stream<String> inputs = Stream.empty();
+    assertKeyValues(
+            inputs
+                .collect(BiStream.groupingBy(s -> s.charAt(0), String::length, Integer::sum)))
+        .isEmpty();
+  }
+
+  @Test public void testGroupingBy_withMapperAndReducer_singleElement() {
+    Stream<String> inputs = Stream.of("foo");
+    assertKeyValues(
+            inputs
+                .collect(BiStream.groupingBy(s -> s.charAt(0), String::length, Integer::sum)))
+        .containsExactly('f', 3);
+  }
+
+  @Test public void testGroupingBy_withMapperAndReducer_twoElementsSameGroup() {
+    Stream<String> inputs = Stream.of("foo", "feed");
+    assertKeyValues(
+            inputs
+                .collect(BiStream.groupingBy(s -> s.charAt(0), String::length, Integer::sum)))
+        .containsExactly('f', 7);
+  }
+
+  @Test public void testGroupingBy_withMapperAndReducer_twoElementsDifferentGroups() {
+    Stream<String> inputs = Stream.of("foo", "blah");
+    assertKeyValues(
+            inputs
+                .collect(BiStream.groupingBy(s -> s.charAt(0), String::length, Integer::sum)))
+        .containsExactly('f', 3, 'b', 4)
+        .inOrder();
   }
 
   @Test public void testGroupingValuesFrom() {
