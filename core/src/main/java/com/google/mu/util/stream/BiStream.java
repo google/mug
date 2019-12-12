@@ -107,7 +107,7 @@ public abstract class BiStream<K, V> {
    * <pre>{@code
    * ImmutableMap<CurrencyCode, Money> expenseByCurrency = expenses.stream()
    *     .collect(groupingBy(Money::currencyCode, Money::add))
-   *     .toMap();
+   *     .collect(ImmutableMap::toImmutableMap);
    * }</pre>
    *
    * <p>Entries are collected in encounter order.
@@ -126,7 +126,7 @@ public abstract class BiStream<K, V> {
    * <pre>{@code
    * ImmutableMap<State, Money> householdIncomeByState = households.stream()
    *     .collect(groupingBy(Household::state, Household::income, Money::add))
-   *     .toMap();
+   *     .collect(ImmutableMap::toImmutableMap);
    * }</pre>
    *
    * <p>Entries are collected in encounter order.

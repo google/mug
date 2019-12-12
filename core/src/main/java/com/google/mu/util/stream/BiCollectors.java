@@ -391,7 +391,7 @@ public final class BiCollectors {
    *     BiStream.from(households)
    *         .mapValues(Household::income)
    *         .collect(groupingBy(Address::state, Money::add))
-   *         .toMap();
+   *         .collect(ImmutableMap::toImmutableMap);
    * }</pre>
    *
    * @since 3.3
