@@ -80,14 +80,6 @@ public final class Substring {
     }
   };
 
-  /** {@code Pattern} that matches all strings entirely. */
-  @Deprecated
-  public static final Pattern ALL = new Pattern() {
-    @Override public Match match(String s) {
-      return new Match(s, 0, s.length());
-    }
-  };
-
   /**
    * {@code Pattern} that matches the empty substring at the beginning of the input string.
    *
@@ -95,6 +87,7 @@ public final class Substring {
    */
   public static final Pattern BEGINNING = new Pattern() {
     @Override public Match match(String s) {
+      requireNonNull(s);
       return new Match(s, 0, 0);
     }
   };
@@ -212,31 +205,6 @@ public final class Substring {
         return matchIfValidIndex(input, input.lastIndexOf(str), str.length());
       }
     };
-  }
-
-  /** @deprecated Use {@link #first(java.util.regex.Pattern)} instead. */
-  @Deprecated public static Pattern regex(java.util.regex.Pattern regexPattern) {
-    return first(regexPattern);
-  }
-
-  /** @deprecated Use {@link #first(java.util.regex.Pattern)} instead. */
-  @Deprecated public static Pattern regex(String regexPattern) {
-    return first(java.util.regex.Pattern.compile(regexPattern));
-  }
-
-  /** @deprecated Use {@link #first(java.util.regex.Pattern)} instead. */
-  @Deprecated public static Pattern regexGroup(java.util.regex.Pattern regexPattern, int group) {
-    return first(regexPattern, group);
-  }
-
-  /** @deprecated Use {@link #first(java.util.regex.Pattern, int)} instead. */
-  @Deprecated public static Pattern regexGroup(String regexPattern, int group) {
-    return first(java.util.regex.Pattern.compile(regexPattern), group);
-  }
-  
-  /** @deprecated Use {@link Pattern#toEnd} instead. */
-  @Deprecated public static Pattern from(Pattern startingPoint) {
-    return startingPoint.toEnd();
   }
 
   /**
@@ -367,12 +335,6 @@ public final class Substring {
       return match == null ? string : match.remove();
     }
 
-    /** @deprecated Use {@link #replaceFrom(String, CharSequence)} instead. */
-    @Deprecated
-    public final String replaceFrom(String string, char replacement) {
-      return replaceFrom(string, Character.toString(replacement));
-    }
-
     /**
      * Returns a new string with the substring matched by {@code this} replaced by {@code
      * replacement}. Returns {@code string} as-is if a substring is not found.
@@ -415,49 +377,6 @@ public final class Substring {
      */
     public final Pattern toEnd() {
       return map(Match::toEnd);
-    }
-
-    /**
-     * @deprecated Replace {@code foo.before(delim).from(input)} with
-     * {@code before(delim).from(input).map(foo::from)}.
-     */
-    @Deprecated
-    public final Pattern before(Pattern delimiter) {
-      return within(Substring.before(delimiter));
-    }
-
-    /**
-     * @deprecated Replace {@code foo.after(delim).from(input)} with
-     * {@code after(delim).from(input).map(foo::from)}.
-     */
-    @Deprecated
-    public final Pattern after(Pattern delimiter) {
-      return within(Substring.after(delimiter));
-    }
-
-    /**
-     * @deprecated Replace {@code foo.between(x, y).from(input)} with
-     * {@code between(x, y).from(input).map(foo::from)}.
-     */
-    @Deprecated
-    public final Pattern between(Pattern open, Pattern close) {
-      return within(Substring.between(open, close));
-    }
-
-    /**
-     * @deprecated Replace {@code foo.within(scope).from(input)} with
-     * {@code scope.from(input).map(foo::from)}.
-     */
-    @Deprecated
-    public final Pattern within(Pattern scope) {
-      requireNonNull(scope);
-      Pattern inner = this;
-      return new Pattern() {
-        @Override Match match(String input) {
-          Match outerMatch = scope.match(input);
-          return outerMatch == null ? null : inner.match(outerMatch);
-        }
-      };
     }
 
     private Pattern map(UnaryOperator<Match> mapper) {
@@ -536,12 +455,6 @@ public final class Substring {
       } else {
         return getBefore() + getAfter();
       }
-    }
-
-    /** @deprecated Use {@link #replaceWith(CharSequence)} instead. */
-    @Deprecated
-    public String replaceWith(char replacement) {
-      return replaceWith(Character.toString(replacement));
     }
 
     /**
