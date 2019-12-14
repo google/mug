@@ -259,7 +259,7 @@ public abstract class BiStream<K, V> {
    *     .toMap();
    * }</pre>
    *
-   * <p>This idiom is applicable even if {@code getTaskAssignments()} returns {@code Multimap}:
+   * <p>This idiom is applicable even if {@code payments()} returns {@code Multimap}:
    *
    * <pre>{@code
    * Map<Account, Money> employeeWorkHours = projects.stream()
