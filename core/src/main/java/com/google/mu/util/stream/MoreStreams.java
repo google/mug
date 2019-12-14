@@ -169,7 +169,7 @@ public final class MoreStreams {
     return new DicedSpliterator<T>(spliterator, maxSize);
   }
 
-  /** @deprecated Use {@link BiStream#groupingValuesFrom(Function, BinaryOperator) instead. */
+  /** @deprecated Use {@link BiStream#groupingValuesFrom(Function, BinaryOperator)} instead. */
   @Deprecated
   public static <K, V> Collector<Map<K, V>, ?, Map<K, V>> mergingValues(
       BinaryOperator<V> valueMerger) {
