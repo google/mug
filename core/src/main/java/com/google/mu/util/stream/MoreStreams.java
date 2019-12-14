@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Spliterator;
-import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -170,30 +169,12 @@ public final class MoreStreams {
     return new DicedSpliterator<T>(spliterator, maxSize);
   }
 
-  /**
-   * Returns a collector that collects/merges {@link Map} instances by key, using {@code valueMerger}
-   * to merge values that are mapped to the same key. For example: 
-   *
-   * <pre>{@code
-   *   interface Page {
-   *     Map<Day, Long> getTrafficHistogram();
-   *   }
-   *
-   *   Map<Day, Long> totalTrafficHistogram = pages.stream()
-   *       .map(Page::getTrafficHistogram)
-   *       .collect(mergingValues((a, b) -> a + b));
-   * }</pre>
-   *
-   * <p>Use {@link #uniqueKeys} if the keys are guaranteed to be unique.
-   *
-   * @since 1.13
-   */
+  /** @deprecated Use {@link BiStream#groupingValuesFrom(Function, BinaryOperator) instead. */
+  @Deprecated
   public static <K, V> Collector<Map<K, V>, ?, Map<K, V>> mergingValues(
       BinaryOperator<V> valueMerger) {
-    requireNonNull(valueMerger);
-    return collectingEach(
-        m -> m.entrySet().stream(),
-        Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, valueMerger));
+    return Collectors.collectingAndThen(
+        BiStream.groupingValuesFrom(Map::entrySet, valueMerger), BiStream::toMap);
   }
 
   /**
@@ -211,8 +192,11 @@ public final class MoreStreams {
    * @since 1.13
    */
   public static <K, V> Collector<Map<K, V>, ?, Map<K, V>> uniqueKeys() {
-    return collectingEach(
-        m -> m.entrySet().stream(), Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    return Collectors.collectingAndThen(
+        BiStream.groupingValuesFrom(Map::entrySet,  (a, b) -> {
+          throw new IllegalStateException("Duplicate keys not allowed.");
+        }),
+        BiStream::toMap);
   }
 
   /**
@@ -222,18 +206,6 @@ public final class MoreStreams {
    */
   public static IntStream index() {
     return IntStream.iterate(0, i -> i + 1);
-  }
-
-  private static <F, T, A, R> Collector<F, A, R> collectingEach(
-      Function<? super F, ? extends Stream<? extends T>> toStream,
-      Collector<T, A, R> collector) {
-    BiConsumer<A, T> accumulator = collector.accumulator();
-    return Collector.of(
-        collector.supplier(),
-        (a, f) -> toStream.apply(f).forEachOrdered(v -> accumulator.accept(a, v)),
-        collector.combiner(),
-        collector.finisher(),
-        collector.characteristics().toArray(new Collector.Characteristics[0]));
   }
 
   static <F, T> Stream<T> mapBySpliterator(

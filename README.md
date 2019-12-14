@@ -61,7 +61,18 @@ ImmutableListMultimap<ZipCode, Address> addressesByZipCode = BiStream.from(addre
     .collect(ImmutableListMultimap::toImmutableListMultimap);
 ```
 
-**Example 5: to apply grouping over `Map` entries:**
+**Example 5: to split a `Map` into sub-maps:**
+
+```java
+import static com.google.mu.util.stream.BiCollectors.groupngBy;
+
+Map<Address, PhoneNumber> phonebooks = ...;
+Map<State, Map<Address, PhoneNumber>> statePhonebooks = BiStream.from(phonebooks)
+    .collect(groupingBy(Address::state, Collectors::toMap))
+    .toMap();
+```
+
+**Example 6: to apply grouping over `Map` entries:**
 
 ```java
 import static com.google.mu.util.stream.BiCollectors.groupngBy;
@@ -75,7 +86,7 @@ Map<EmployeeId, Integer> workerHours = projects.stream()
     .toMap();
 ```
 
-**Example 6: to turn a `Collection<Pair<K, V>>` to `BiStream<K, V>`:**
+**Example 7: to turn a `Collection<Pair<K, V>>` to `BiStream<K, V>`:**
 
 ```java
 BiStream<K, V> stream = RiStream.from(pairs, Pair::getKey, Pair::getValue);
