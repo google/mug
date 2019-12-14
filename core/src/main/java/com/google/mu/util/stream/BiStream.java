@@ -116,7 +116,7 @@ public abstract class BiStream<K, V> {
    */
   public static <K, V> Collector<V, ?, BiStream<K, V>> groupingBy(
       Function<? super V, ? extends K> classifier, BinaryOperator<V> reducer) {
-    return groupingBy(classifier, collectingAndThen(Collectors.reducing(reducer), Optional::get));
+    return groupingBy(classifier, combining(reducer));
   }
 
   /**
@@ -137,9 +137,7 @@ public abstract class BiStream<K, V> {
       Function<? super T, ? extends K> classifier,
       Function<? super T, ? extends V> mapper,
       BinaryOperator<V> reducer) {
-    return groupingBy(
-        classifier,
-        Collectors.mapping(mapper, collectingAndThen(Collectors.reducing(reducer), Optional::get)));
+    return groupingBy(classifier, Collectors.mapping(mapper, combining(reducer)));
   }
 
   /**
@@ -248,6 +246,36 @@ public abstract class BiStream<K, V> {
   public static <T, K, V> Collector<T, ?, BiStream<K, List<V>>> groupingValuesFrom(
       Function<? super T, ? extends Collection<Map.Entry<K, V>>> entrySource) {
     return groupingValuesFrom(entrySource, toList());
+  }
+
+  /**
+   * Returns a {@code Collector} that reduces {@link Map.Entry#getValue map values} that are mapped
+   * to the same key using {@code valueReducer}. For example:
+   *
+   * <pre>{@code
+   * Map<Account, Money> employeeWorkHours = projects.stream()
+   *     .map(Project::payments)  // Stream<Map<Account, Money>>
+   *     .collect(groupingValuesFrom(Map::entrySet, Money::add))
+   *     .toMap();
+   * }</pre>
+   *
+   * <p>This idiom is applicable even if {@code getTaskAssignments()} returns {@code Multimap}:
+   *
+   * <pre>{@code
+   * Map<Account, Money> employeeWorkHours = projects.stream()
+   *     .map(Project::payments)  // Stream<Multimap<Account, Money>>
+   *     .collect(groupingValuesFrom(Multimap::entries, Money::add))
+   *     .toMap();
+   * }</pre>
+   *
+   * <p>Entries are collected in encounter order.
+   *
+   * @since 3.3
+   */
+  public static <T, K, V> Collector<T, ?, BiStream<K, V>> groupingValuesFrom(
+      Function<? super T, ? extends Collection<Map.Entry<K, V>>> entrySource,
+      BinaryOperator<V> valueReducer) {
+    return groupingValuesFrom(entrySource, combining(valueReducer));
   }
 
   /**
@@ -858,6 +886,10 @@ public abstract class BiStream<K, V> {
 
   static <K, V> Map.Entry<K, V> kv(K key, V value) {
     return new AbstractMap.SimpleImmutableEntry<>(key, value);
+  }
+
+  private static <T> Collector<T, ?, T> combining(BinaryOperator<T> combiner) {
+    return collectingAndThen(Collectors.reducing(requireNonNull(combiner)), Optional::get);
   }
 
   private static <T> Stream<T> nullToEmpty(Stream<T> stream) {

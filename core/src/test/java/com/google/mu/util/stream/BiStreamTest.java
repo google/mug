@@ -603,6 +603,14 @@ public class BiStreamTest {
     assertThat(groups).containsExactly(1, 2L, 2, 1L).inOrder();
   }
 
+  @Test public void testGroupingValuesFrom_withReducer() {
+    Map<Integer, String> groups =
+        Stream.of(ImmutableMap.of(1, "one"), ImmutableMap.of(2, "two", 1, "uno"))
+            .collect(BiStream.groupingValuesFrom(Map::entrySet, String::concat))
+            .toMap();
+    assertThat(groups).containsExactly(1, "oneuno", 2, "two").inOrder();
+  }
+
   @Test public void testConcatMap() {
     assertThat(BiStream.concat(ImmutableMap.of(1, "one"), ImmutableMap.of(2, "two")).toMap())
         .containsExactly(1, "one", 2, "two")
