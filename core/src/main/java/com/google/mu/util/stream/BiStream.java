@@ -253,7 +253,7 @@ public abstract class BiStream<K, V> {
    * to the same key using {@code valueReducer}. For example:
    *
    * <pre>{@code
-   * Map<Account, Money> employeeWorkHours = projects.stream()
+   * Map<Account, Money> totalPayouts = projects.stream()
    *     .map(Project::payments)  // Stream<Map<Account, Money>>
    *     .collect(groupingValuesFrom(Map::entrySet, Money::add))
    *     .toMap();
@@ -262,7 +262,7 @@ public abstract class BiStream<K, V> {
    * <p>This idiom is applicable even if {@code payments()} returns {@code Multimap}:
    *
    * <pre>{@code
-   * Map<Account, Money> employeeWorkHours = projects.stream()
+   * Map<Account, Money> totalPayouts = projects.stream()
    *     .map(Project::payments)  // Stream<Multimap<Account, Money>>
    *     .collect(groupingValuesFrom(Multimap::entries, Money::add))
    *     .toMap();
