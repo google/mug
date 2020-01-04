@@ -306,7 +306,7 @@ public abstract class BiStream<K, V> {
       Function<? super T, ? extends Collection<Map.Entry<K, V>>> entrySource,
       Collector<? super V, ?, R> valueCollector) {
     return flatMapping(
-        requireNonNull(entrySource),
+        entrySource.andThen(Collection::stream),
         groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, valueCollector)));
   }
 
@@ -1226,16 +1226,12 @@ public abstract class BiStream<K, V> {
   }
 
   // TODO: switch to Java 9 Collectors.flatMapping() when we can.
-  private static <T, E, A, R> Collector<T, A, R> flatMapping(
-      Function<? super T, ? extends Collection<? extends E>> mapper, Collector<E, A, R> collector) {
+  static <T, E, A, R> Collector<T, A, R> flatMapping(
+      Function<? super T, ? extends Stream<? extends E>> mapper, Collector<E, A, R> collector) {
     BiConsumer<A, E> accumulator = collector.accumulator();
     return Collector.of(
         collector.supplier(),
-        (a, input) -> {
-          for (E entry : mapper.apply(input)) {
-            accumulator.accept(a, entry);
-          }
-        },
+        (a, input) -> mapper.apply(input).forEachOrdered(e -> accumulator.accept(a, e)),
         collector.combiner(),
         collector.finisher(),
         collector.characteristics().toArray(new Characteristics[0]));
