@@ -411,7 +411,8 @@ public final class BiCollectors {
   }
 
   /**
-   * Returns a {@link BiCollector} that maps the result of {@code upstream} collector using {@code finisher}.
+   * Returns a {@link BiCollector} that maps the result of {@code upstream} collector using
+   * {@code finisher}.
    *
    * @since 3.2
    */
@@ -445,8 +446,8 @@ public final class BiCollectors {
   }
 
   /**
-   * Returns a {@link BiCollector} that first flattens the input pair using {@code flattener} and then collects the
-   * results using {@code downstream} collector.
+   * Returns a {@link BiCollector} that first flattens the input pair using {@code flattener}
+   * and then collects the results using {@code downstream} collector.
    *
    * <p>For example, you may use several levels of {@code groupingBy()} to aggregate metrics along a
    * few dimensions, and then flatten them into a histogram. This could be done using {@code
@@ -469,7 +470,8 @@ public final class BiCollectors {
    *
    * It works. But if you need to do this kind of histogram creation along different dimensions
    * repetitively, the {@code flatMapToObj() + mapToObj()} boilerplate becomes tiring to read and
-   * write. Instead, you could use {@code BiCollectors.flatMapping()} to encapsulate and reuse the boilerplate:
+   * write. Instead, you could use {@code BiCollectors.flatMapping()} to encapsulate and reuse the
+   * boilerplate:
    *
    * <pre>{@code
    * import static com.google.mu.util.stream.BiStream.groupingBy;
@@ -498,7 +500,8 @@ public final class BiCollectors {
    * @since 3.4
    */
   public static <K, V, T, R> BiCollector<K, V, R> flatMapping(
-      BiFunction<? super K, ? super V, ? extends Stream<? extends T>> flattener, Collector<T, ?, R> downstream) {
+      BiFunction<? super K, ? super V, ? extends Stream<? extends T>> flattener,
+      Collector<T, ?, R> downstream) {
     requireNonNull(flattener);
     requireNonNull(downstream);
     return new BiCollector<K, V, R>() {
@@ -509,8 +512,8 @@ public final class BiCollectors {
   }
 
   /**
-   * Returns a {@link BiCollector} that first flattens the input pair using {@code flattener} and then collects the
-   * result pairs using {@code downstream} collector.
+   * Returns a {@link BiCollector} that first flattens the input pair using {@code flattener}
+   * and then collects the result pairs using {@code downstream} collector.
    *
    * @since 3.4
    */
