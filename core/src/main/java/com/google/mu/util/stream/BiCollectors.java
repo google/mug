@@ -453,7 +453,7 @@ public final class BiCollectors {
    * BiStream#flatMapToObj}, like:
    *
    * <pre>{@code
-   * import static com.google.common.labs.collect.BiStream.groupingBy;
+   * import static com.google.mu.util.stream.BiStream.groupingBy;
    *
    *   ImmutableList<HistogramBucket> histogram = events.stream()
    *       .collect(groupingBy(Event::cell, groupingBy(Event::hour, counting())))
@@ -472,7 +472,7 @@ public final class BiCollectors {
    * write. Instead, you could use {@link #flatMapping} to encapsulate and reuse the boilerplate:
    *
    * <pre>{@code
-   * import static com.google.common.labs.collect.BiStream.groupingBy;
+   * import static com.google.mu.util.stream.BiStream.groupingBy;
    *
    *   ImmutableList<HistogramBucket> byCell = events.stream()
    *       .collect(groupingBy(Event::cell, groupingBy(Event::hour, counting())))
