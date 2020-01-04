@@ -472,8 +472,7 @@ public final class BiCollectors {
       BiCollector<K1, V1, R> collector) {
     Collector<Map.Entry<? extends K1, ? extends V1>, ?, R> downstream =
         collector.bisecting(Map.Entry::getKey, Map.Entry::getValue);
-    return flatMapping(
-        flattener.andThen(BiStream::mapToEntry), downstream);
+    return flatMapping(flattener.andThen(BiStream::mapToEntry), downstream);
   }
 
   private BiCollectors() {}
