@@ -448,6 +448,53 @@ public final class BiCollectors {
    * Returns a {@link BiCollector} that first flattens the input pair using {@code flattener} and then collects the
    * results using {@code collector}.
    *
+   * <p>For example, you may use several levels of {@code groupingBy()} to aggregate metrics along a
+   * few dimensions, and then flatten them into a histogram. This could be done using {@code
+   * BiStream#flatMapToObj}, like:
+   *
+   * <pre>{@code
+   * import static com.google.common.labs.collect.BiStream.groupingBy;
+   *
+   *   ImmutableList<HistogramBucket> histogram = events.stream()
+   *       .collect(groupingBy(Event::cell, groupingBy(Event::hour, counting())))
+   *       .flatMapToObj((cell, cellEvents) ->
+   *           cellEvents.mapToObj((hour, count) ->
+   *               HistogramBucket.newBuilder()
+   *                   .addDimension(cell)
+   *                   .addDimension(hour)
+   *                   .setCount(count)
+   *                   .build()))
+   *       .collect(toImmutableList());
+   * }</pre>
+   *
+   * This works, but if you need to do this kind of histogram creation along different dimensions
+   * repetitively, the {@code flatMapToObj() + mapToObj()} boilerplate becomes tiring to read and
+   * write. Instead, you could use {@link #flatMapping} to encapsulate and reuse the boilerplate:
+   *
+   * <pre>{@code
+   * import static com.google.common.labs.collect.BiStream.groupingBy;
+   *
+   *   ImmutableList<HistogramBucket> byCell = events.stream()
+   *       .collect(groupingBy(Event::cell, groupingBy(Event::hour, counting())))
+   *       .collect(toHistogram());
+   *
+   *   ImmutableList<HistogramBucket> byPeerUser = events.stream()
+   *       .collect(groupingBy(Event::peerUser, groupingBy(Event::hour, counting())))
+   *       .collect(toHistogram());
+   *
+   *   private static BiCollector<Object, BiStream<?, Long>, List<HistogramBucket>> toHistogram() {
+   *     return BiCollectors.flatMapping(
+   *         (d1, events) ->
+   *               events.mapToObj((d2, count) ->
+   *                   HistogramBucket.newBuilder()
+   *                       .addDimension(d1)
+   *                       .addDimension(d2)
+   *                       .setCount(count)
+   *                       .build()),
+   *         .collect(List());
+   *   }
+   * }</pre>
+   *
    * @since 3.4
    */
   public static <K, V, T, R> BiCollector<K, V, R> flatMapping(
