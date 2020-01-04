@@ -18,12 +18,17 @@ import static com.google.mu.util.stream.BiCollectors.groupingBy;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.BiStreamTest.assertKeyValues;
 import static com.google.common.truth.Truth.assertThat;
+import static java.util.Collections.nCopies;
+import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.summingInt;
 import static java.util.stream.Collectors.toList;
 
 import java.util.Map;
+import java.util.function.Function;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 
 import org.junit.Test;
@@ -200,6 +205,31 @@ public class BiCollectorsTest {
     BiStream<String, Integer> salaries = BiStream.of("Joe", 100, "Tom", 200);
     assertKeyValues(salaries.collect(groupingBy(s -> s.charAt(0), Integer::sum)))
         .containsExactly('J', 100, 'T', 200)
+        .inOrder();
+  }
+
+  @Test public void testMapping() {
+    BiStream<String, Integer> salaries = BiStream.of("Joe", 100, "Tom", 200);
+    assertThat(salaries.collect(BiCollectors.mapping((k, v) -> k + ":" + v, toList())))
+        .containsExactly("Joe:100", "Tom:200")
+        .inOrder();
+  }
+
+  @Test public void testFlatMapping_toStream() {
+    BiStream<String, Integer> salaries = BiStream.of("Joe", 1, "Tom", 2);
+    assertThat(salaries.collect(BiCollectors.flatMapping((k, c) -> nCopies(c, k).stream(), toList())))
+        .containsExactly("Joe", "Tom", "Tom")
+        .inOrder();
+  }
+
+  @Test public void testFlatMapping_toBiStream() {
+    BiStream<String, Integer> salaries = BiStream.of("Joe", 1, "Tom", 2);
+    ImmutableListMultimap<String, Integer> result = salaries.collect(
+        BiCollectors.flatMapping(
+            (k, c) -> BiStream.from(nCopies(c, k), identity(), unused -> c),
+            ImmutableListMultimap::toImmutableListMultimap));
+    assertThat(result)
+        .containsExactly("Joe", 1, "Tom", 2, "Tom", 2)
         .inOrder();
   }
 

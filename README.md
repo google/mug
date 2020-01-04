@@ -19,7 +19,7 @@ Add the following to pom.xml:
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug</artifactId>
-    <version>3.2</version>
+    <version>3.3</version>
   </dependency>
 ```
 
@@ -64,7 +64,7 @@ ImmutableListMultimap<ZipCode, Address> addressesByZipCode = BiStream.from(addre
 **Example 5: to split a `Map` into sub-maps:**
 
 ```java
-import static com.google.mu.util.stream.BiCollectors.groupngBy;
+import static com.google.mu.util.stream.BiCollectors.groupingBy;
 
 Map<Address, PhoneNumber> phonebooks = ...;
 Map<State, Map<Address, PhoneNumber>> statePhonebooks = BiStream.from(phonebooks)
@@ -72,10 +72,21 @@ Map<State, Map<Address, PhoneNumber>> statePhonebooks = BiStream.from(phonebooks
     .toMap();
 ```
 
-**Example 6: to apply grouping over `Map` entries:**
+**Example 6: to merge `Map` entries:**
 
 ```java
-import static com.google.mu.util.stream.BiCollectors.groupngBy;
+import static com.google.mu.util.stream.BiStream.groupingValuesFrom;
+
+Map<Account, Money> totalPayouts = projects.stream()
+    .map(Project::payments)  // Stream<Map<Account, Money>>
+    .collect(groupingValuesFrom(Map::entrySet, Money::add))
+    .toMap();
+```
+
+**Example 7: to apply grouping over `Map` entries:**
+
+```java
+import static com.google.mu.util.stream.BiCollectors.groupingBy;
 import static com.google.mu.util.stream.BiStream.concatenating;
 import static java.util.stream.Collectors.summingInt;
 
@@ -86,7 +97,7 @@ Map<EmployeeId, Integer> workerHours = projects.stream()
     .toMap();
 ```
 
-**Example 7: to turn a `Collection<Pair<K, V>>` to `BiStream<K, V>`:**
+**Example 8: to turn a `Collection<Pair<K, V>>` to `BiStream<K, V>`:**
 
 ```java
 BiStream<K, V> stream = RiStream.from(pairs, Pair::getKey, Pair::getValue);

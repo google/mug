@@ -116,7 +116,7 @@ public abstract class BiStream<K, V> {
    */
   public static <K, V> Collector<V, ?, BiStream<K, V>> groupingBy(
       Function<? super V, ? extends K> classifier, BinaryOperator<V> reducer) {
-    return groupingBy(classifier, combining(reducer));
+    return groupingBy(classifier, reducingGroupMembers(reducer));
   }
 
   /**
@@ -137,7 +137,7 @@ public abstract class BiStream<K, V> {
       Function<? super T, ? extends K> classifier,
       Function<? super T, ? extends V> mapper,
       BinaryOperator<V> reducer) {
-    return groupingBy(classifier, Collectors.mapping(mapper, combining(reducer)));
+    return groupingBy(classifier, Collectors.mapping(mapper, reducingGroupMembers(reducer)));
   }
 
   /**
@@ -275,7 +275,7 @@ public abstract class BiStream<K, V> {
   public static <T, K, V> Collector<T, ?, BiStream<K, V>> groupingValuesFrom(
       Function<? super T, ? extends Collection<Map.Entry<K, V>>> entrySource,
       BinaryOperator<V> valueReducer) {
-    return groupingValuesFrom(entrySource, combining(valueReducer));
+    return groupingValuesFrom(entrySource, reducingGroupMembers(valueReducer));
   }
 
   /**
@@ -306,7 +306,7 @@ public abstract class BiStream<K, V> {
       Function<? super T, ? extends Collection<Map.Entry<K, V>>> entrySource,
       Collector<? super V, ?, R> valueCollector) {
     return flatMapping(
-        requireNonNull(entrySource),
+        entrySource.andThen(Collection::stream),
         groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, valueCollector)));
   }
 
@@ -888,8 +888,9 @@ public abstract class BiStream<K, V> {
     return new AbstractMap.SimpleImmutableEntry<>(key, value);
   }
 
-  private static <T> Collector<T, ?, T> combining(BinaryOperator<T> combiner) {
-    return collectingAndThen(Collectors.reducing(requireNonNull(combiner)), Optional::get);
+  /** A group has at least 1 member, with 2nd+ members incrementally reduced by {@code reducer}. */
+  private static <T> Collector<T, ?, T> reducingGroupMembers(BinaryOperator<T> reducer) {
+    return collectingAndThen(Collectors.reducing(requireNonNull(reducer)), Optional::get);
   }
 
   private static <T> Stream<T> nullToEmpty(Stream<T> stream) {
@@ -1225,16 +1226,12 @@ public abstract class BiStream<K, V> {
   }
 
   // TODO: switch to Java 9 Collectors.flatMapping() when we can.
-  private static <T, E, A, R> Collector<T, A, R> flatMapping(
-      Function<? super T, ? extends Collection<? extends E>> mapper, Collector<E, A, R> collector) {
+  static <T, E, A, R> Collector<T, A, R> flatMapping(
+      Function<? super T, ? extends Stream<? extends E>> mapper, Collector<E, A, R> collector) {
     BiConsumer<A, E> accumulator = collector.accumulator();
     return Collector.of(
         collector.supplier(),
-        (a, input) -> {
-          for (E entry : mapper.apply(input)) {
-            accumulator.accept(a, entry);
-          }
-        },
+        (a, input) -> mapper.apply(input).forEachOrdered(e -> accumulator.accept(a, e)),
         collector.combiner(),
         collector.finisher(),
         collector.characteristics().toArray(new Characteristics[0]));

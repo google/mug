@@ -32,6 +32,7 @@ import java.util.function.ToIntBiFunction;
 import java.util.function.ToLongBiFunction;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Common utilities pertaining to {@link BiCollector}.
@@ -441,6 +442,38 @@ public final class BiCollectors {
         return Collectors.mapping(e -> mapper.apply(toKey.apply(e), toValue.apply(e)), collector);
       }
     };
+  }
+
+  /**
+   * Returns a {@link BiCollector} that first flattens the input pair using {@code flattener} and then collects the
+   * results using {@code collector}.
+   *
+   * @since 3.4
+   */
+  public static <K, V, T, R> BiCollector<K, V, R> flatMapping(
+      BiFunction<? super K, ? super V, ? extends Stream<? extends T>> flattener, Collector<T, ?, R> collector) {
+    requireNonNull(flattener);
+    requireNonNull(collector);
+    return new BiCollector<K, V, R>() {
+      @Override public <E> Collector<E, ?, R> bisecting(Function<E, K> toKey, Function<E, V> toValue) {
+        return BiStream.flatMapping(e -> flattener.apply(toKey.apply(e), toValue.apply(e)), collector);
+      }
+    };
+  }
+
+  /**
+   * Returns a {@link BiCollector} that first flattens the input pair using {@code flattener} and then collects the
+   * result pairs using {@code collector}.
+   *
+   * @since 3.4
+   */
+  public static <K, V, K1, V1, R> BiCollector<K, V, R> flatMapping(
+      BiFunction<? super K, ? super V, ? extends BiStream<? extends K1, ? extends V1>> flattener,
+      BiCollector<K1, V1, R> collector) {
+    Collector<Map.Entry<? extends K1, ? extends V1>, ?, R> downstream =
+        collector.bisecting(Map.Entry::getKey, Map.Entry::getValue);
+    return flatMapping(
+        flattener.andThen(BiStream::mapToEntry), downstream);
   }
 
   private BiCollectors() {}
