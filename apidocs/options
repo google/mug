@@ -5,7 +5,7 @@
 '/Users/benyu/mug/core/src/main/java'
 -author
 -bottom
-'Copyright &#169; 2019. All rights reserved.'
+'Copyright &#169; 2020. All rights reserved.'
 -charset
 'UTF-8'
 -d
@@ -13,7 +13,7 @@
 -docencoding
 'UTF-8'
 -doctitle
-'core 3.3-SNAPSHOT API'
+'core 3.4-SNAPSHOT API'
 -linkoffline
 'https://docs.oracle.com/javase/8/docs/api' '/Users/benyu/mug/core/target/javadoc-bundle-options'
 -stylesheetfile
@@ -21,4 +21,4 @@
 -use
 -version
 -windowtitle
-'core 3.3-SNAPSHOT API'
+'core 3.4-SNAPSHOT API'
