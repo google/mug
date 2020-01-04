@@ -474,11 +474,11 @@ public final class BiCollectors {
    * <pre>{@code
    * import static com.google.mu.util.stream.BiStream.groupingBy;
    *
-   *   List<HistogramBucket> byCell = events.stream()
+   *   List<HistogramBucket> byCellHourly = events.stream()
    *       .collect(groupingBy(Event::cell, groupingBy(Event::hour, counting())))
    *       .collect(toHistogram());
    *
-   *   List<HistogramBucket> byUser = events.stream()
+   *   List<HistogramBucket> byUserHourly = events.stream()
    *       .collect(groupingBy(Event::user, groupingBy(Event::hour, counting())))
    *       .collect(toHistogram());
    *
