@@ -455,7 +455,7 @@ public final class BiCollectors {
    * <pre>{@code
    * import static com.google.mu.util.stream.BiStream.groupingBy;
    *
-   *   ImmutableList<HistogramBucket> histogram = events.stream()
+   *   List<HistogramBucket> histogram = events.stream()
    *       .collect(groupingBy(Event::cell, groupingBy(Event::hour, counting())))
    *       .flatMapToObj((cell, cellEvents) ->
    *           cellEvents.mapToObj((hour, count) ->
@@ -464,7 +464,7 @@ public final class BiCollectors {
    *                   .addDimension(hour)
    *                   .setCount(count)
    *                   .build()))
-   *       .collect(toImmutableList());
+   *       .collect(toList());
    * }</pre>
    *
    * It works. But if you need to do this kind of histogram creation along different dimensions
@@ -474,11 +474,11 @@ public final class BiCollectors {
    * <pre>{@code
    * import static com.google.mu.util.stream.BiStream.groupingBy;
    *
-   *   ImmutableList<HistogramBucket> byCell = events.stream()
+   *   List<HistogramBucket> byCell = events.stream()
    *       .collect(groupingBy(Event::cell, groupingBy(Event::hour, counting())))
    *       .collect(toHistogram());
    *
-   *   ImmutableList<HistogramBucket> byUser = events.stream()
+   *   List<HistogramBucket> byUser = events.stream()
    *       .collect(groupingBy(Event::user, groupingBy(Event::hour, counting())))
    *       .collect(toHistogram());
    *
