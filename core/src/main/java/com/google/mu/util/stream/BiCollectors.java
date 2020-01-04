@@ -478,8 +478,8 @@ public final class BiCollectors {
    *       .collect(groupingBy(Event::cell, groupingBy(Event::hour, counting())))
    *       .collect(toHistogram());
    *
-   *   ImmutableList<HistogramBucket> byPeerUser = events.stream()
-   *       .collect(groupingBy(Event::peerUser, groupingBy(Event::hour, counting())))
+   *   ImmutableList<HistogramBucket> byUser = events.stream()
+   *       .collect(groupingBy(Event::user, groupingBy(Event::hour, counting())))
    *       .collect(toHistogram());
    *
    *   private static BiCollector<Object, BiStream<?, Long>, List<HistogramBucket>> toHistogram() {
