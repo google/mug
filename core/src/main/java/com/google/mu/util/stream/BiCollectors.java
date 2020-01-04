@@ -411,42 +411,43 @@ public final class BiCollectors {
   }
 
   /**
-   * Returns a {@link BiCollector} that maps the result of {@code collector} using {@code finisher}.
+   * Returns a {@link BiCollector} that maps the result of {@code upstream} collector using
+   * {@code finisher}.
    *
    * @since 3.2
    */
   public static <K, V, T, R> BiCollector<K, V, R> collectingAndThen(
-      BiCollector<K, V, T> collector, Function<? super T, ? extends R> finisher) {
-    requireNonNull(collector);
+      BiCollector<K, V, T> upstream, Function<? super T, ? extends R> finisher) {
+    requireNonNull(upstream);
     requireNonNull(finisher);
     return new BiCollector<K, V, R>() {
       @Override
       public <E> Collector<E, ?, R> bisecting(Function<E, K> toKey, Function<E, V> toValue) {
-        return Collectors.collectingAndThen(collector.bisecting(toKey, toValue), finisher::apply);
+        return Collectors.collectingAndThen(upstream.bisecting(toKey, toValue), finisher::apply);
       }
     };
   }
 
   /**
    * Returns a {@link BiCollector} that first maps the input pair using {@code mapper} and then collects the
-   * results using {@code collector}.
+   * results using {@code downstream} collector.
    *
    * @since 3.2
    */
   public static <K, V, T, R> BiCollector<K, V, R> mapping(
-      BiFunction<? super K, ? super V, ? extends T> mapper, Collector<? super T, ?, R> collector) {
+      BiFunction<? super K, ? super V, ? extends T> mapper, Collector<? super T, ?, R> downstream) {
     requireNonNull(mapper);
-    requireNonNull(collector);
+    requireNonNull(downstream);
     return new BiCollector<K, V, R>() {
       @Override public <E> Collector<E, ?, R> bisecting(Function<E, K> toKey, Function<E, V> toValue) {
-        return Collectors.mapping(e -> mapper.apply(toKey.apply(e), toValue.apply(e)), collector);
+        return Collectors.mapping(e -> mapper.apply(toKey.apply(e), toValue.apply(e)), downstream);
       }
     };
   }
 
   /**
-   * Returns a {@link BiCollector} that first flattens the input pair using {@code flattener} and then collects the
-   * results using {@code collector}.
+   * Returns a {@link BiCollector} that first flattens the input pair using {@code flattener}
+   * and then collects the results using {@code downstream} collector.
    *
    * <p>For example, you may use several levels of {@code groupingBy()} to aggregate metrics along a
    * few dimensions, and then flatten them into a histogram. This could be done using {@code
@@ -469,7 +470,8 @@ public final class BiCollectors {
    *
    * It works. But if you need to do this kind of histogram creation along different dimensions
    * repetitively, the {@code flatMapToObj() + mapToObj()} boilerplate becomes tiring to read and
-   * write. Instead, you could use {@code BiCollectors.flatMapping()} to encapsulate and reuse the boilerplate:
+   * write. Instead, you could use {@code BiCollectors.flatMapping()} to encapsulate and reuse the
+   * boilerplate:
    *
    * <pre>{@code
    * import static com.google.mu.util.stream.BiStream.groupingBy;
@@ -498,28 +500,29 @@ public final class BiCollectors {
    * @since 3.4
    */
   public static <K, V, T, R> BiCollector<K, V, R> flatMapping(
-      BiFunction<? super K, ? super V, ? extends Stream<? extends T>> flattener, Collector<T, ?, R> collector) {
+      BiFunction<? super K, ? super V, ? extends Stream<? extends T>> flattener,
+      Collector<T, ?, R> downstream) {
     requireNonNull(flattener);
-    requireNonNull(collector);
+    requireNonNull(downstream);
     return new BiCollector<K, V, R>() {
       @Override public <E> Collector<E, ?, R> bisecting(Function<E, K> toKey, Function<E, V> toValue) {
-        return BiStream.flatMapping(e -> flattener.apply(toKey.apply(e), toValue.apply(e)), collector);
+        return BiStream.flatMapping(e -> flattener.apply(toKey.apply(e), toValue.apply(e)), downstream);
       }
     };
   }
 
   /**
-   * Returns a {@link BiCollector} that first flattens the input pair using {@code flattener} and then collects the
-   * result pairs using {@code collector}.
+   * Returns a {@link BiCollector} that first flattens the input pair using {@code flattener}
+   * and then collects the result pairs using {@code downstream} collector.
    *
    * @since 3.4
    */
   public static <K, V, K1, V1, R> BiCollector<K, V, R> flatMapping(
       BiFunction<? super K, ? super V, ? extends BiStream<? extends K1, ? extends V1>> flattener,
-      BiCollector<K1, V1, R> collector) {
-    Collector<Map.Entry<? extends K1, ? extends V1>, ?, R> downstream =
-        collector.bisecting(Map.Entry::getKey, Map.Entry::getValue);
-    return flatMapping(flattener.andThen(BiStream::mapToEntry), downstream);
+      BiCollector<K1, V1, R> downstream) {
+    Collector<Map.Entry<? extends K1, ? extends V1>, ?, R> collector =
+        downstream.bisecting(Map.Entry::getKey, Map.Entry::getValue);
+    return flatMapping(flattener.andThen(BiStream::mapToEntry), collector);
   }
 
   private BiCollectors() {}
