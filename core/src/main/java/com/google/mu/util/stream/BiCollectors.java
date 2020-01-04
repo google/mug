@@ -469,7 +469,7 @@ public final class BiCollectors {
    *
    * It works. But if you need to do this kind of histogram creation along different dimensions
    * repetitively, the {@code flatMapToObj() + mapToObj()} boilerplate becomes tiring to read and
-   * write. Instead, you could use {@link #flatMapping} to encapsulate and reuse the boilerplate:
+   * write. Instead, you could use {@code BiCollectors.flatMapping()} to encapsulate and reuse the boilerplate:
    *
    * <pre>{@code
    * import static com.google.mu.util.stream.BiStream.groupingBy;
