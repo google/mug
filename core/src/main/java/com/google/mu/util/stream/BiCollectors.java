@@ -469,7 +469,7 @@ public final class BiCollectors {
    * }</pre>
    *
    * It works. But if you need to do this kind of histogram creation along different dimensions
-   * repetitively, the {@code flatMapToObj() + mapToObj()} boilerplate becomes tiring to read and
+   * repetitively, the {@code flatMapToObj() + mapToObj()} boilerplate becomes tiresome to read and
    * write. Instead, you could use {@code BiCollectors.flatMapping()} to encapsulate and reuse the
    * boilerplate:
    *
