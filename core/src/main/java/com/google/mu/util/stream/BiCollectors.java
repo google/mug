@@ -520,9 +520,10 @@ public final class BiCollectors {
   public static <K, V, K1, V1, R> BiCollector<K, V, R> flatMapping(
       BiFunction<? super K, ? super V, ? extends BiStream<? extends K1, ? extends V1>> flattener,
       BiCollector<K1, V1, R> downstream) {
-    Collector<Map.Entry<? extends K1, ? extends V1>, ?, R> collector =
-        downstream.bisecting(Map.Entry::getKey, Map.Entry::getValue);
-    return flatMapping(flattener.andThen(BiStream::mapToEntry), collector);
+    return flatMapping(
+        flattener.andThen(BiStream::mapToEntry),
+        downstream.<Map.Entry<? extends K1, ? extends V1>>bisecting(
+            Map.Entry::getKey, Map.Entry::getValue));
   }
 
   private BiCollectors() {}
