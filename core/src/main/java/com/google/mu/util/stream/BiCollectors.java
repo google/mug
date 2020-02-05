@@ -339,27 +339,6 @@ public final class BiCollectors {
   }
 
   /**
-   * Groups input entries by {@code classifier} and collects entries belonging to the same group
-   * using {@code groupCollector}. For example, the following code splits a phone book by city:
-   *
-   * <pre>{@code
-   * Multimap<Address, PhoneNumber> phoneBook = ...;
-   * ImmutableMap<City, ImmutableSetMultimap<Address, PhoneNumber>> cityPhoneBooks =
-   *     BiStream.from(phoneBook)
-   *         .collect(groupingBy(Address::city, ImmutableSetMultimap::toImmutableSetMultimap))
-   *         .collect(ImmutableMap::toImmutableMap);
-   * }</pre>
-   *
-   * @since 3.2
-   */
-  public static <K, V, G, R> BiCollector<K, V, BiStream<G, R>> groupingBy(
-      Function<? super K, ? extends G> classifier,
-      BiCollector<? super K, ? super V, R> groupCollector) {
-    requireNonNull(classifier);
-    return groupingBy((k, v) -> classifier.apply(k), groupCollector);
-  }
-
-  /**
    * Groups input entries by {@code classifier} and collects values belonging to the same group
    * using {@code groupCollector}. For example, the following code collects unique area codes for
    * each state:
@@ -378,7 +357,8 @@ public final class BiCollectors {
   public static <K, V, G, R> BiCollector<K, V, BiStream<G, R>> groupingBy(
       Function<? super K, ? extends G> classifier,
       Collector<? super V, ?, R> groupCollector) {
-    return groupingBy(classifier, mapping((k, v) -> v, groupCollector));
+    requireNonNull(classifier);
+    return groupingBy((k, v) -> classifier.apply(k), mapping((k, v) -> v, groupCollector));
   }
 
   /**
@@ -469,7 +449,7 @@ public final class BiCollectors {
    * }</pre>
    *
    * It works. But if you need to do this kind of histogram creation along different dimensions
-   * repetitively, the {@code flatMapToObj() + mapToObj()} boilerplate becomes tiring to read and
+   * repetitively, the {@code flatMapToObj() + mapToObj()} boilerplate becomes tiresome to read and
    * write. Instead, you could use {@code BiCollectors.flatMapping()} to encapsulate and reuse the
    * boilerplate:
    *
@@ -520,9 +500,9 @@ public final class BiCollectors {
   public static <K, V, K1, V1, R> BiCollector<K, V, R> flatMapping(
       BiFunction<? super K, ? super V, ? extends BiStream<? extends K1, ? extends V1>> flattener,
       BiCollector<K1, V1, R> downstream) {
-    Collector<Map.Entry<? extends K1, ? extends V1>, ?, R> collector =
-        downstream.bisecting(Map.Entry::getKey, Map.Entry::getValue);
-    return flatMapping(flattener.andThen(BiStream::mapToEntry), collector);
+    return flatMapping(
+        flattener.andThen(BiStream::mapToEntry),
+        downstream.<Map.Entry<? extends K1, ? extends V1>>bisecting(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   private BiCollectors() {}

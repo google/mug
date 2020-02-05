@@ -186,7 +186,7 @@ public class BiCollectorsTest {
 
   @Test public void testGroupingBy_withReducer_empty() {
     BiStream<String, Integer> salaries = BiStream.empty();
-    assertKeyValues(salaries.collect(groupingBy(s -> s.charAt(0), Integer::sum))).isEmpty();
+    assertKeyValues(salaries.collect(groupingBy(s -> s.charAt(0), (a, b) -> a + b))).isEmpty();
   }
 
   @Test public void testGroupingBy_withReducer_singleEntry() {
