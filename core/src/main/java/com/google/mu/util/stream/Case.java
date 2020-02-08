@@ -44,13 +44,14 @@ import java.util.stream.Collector;
  */
 public final class Case {
   /** If the collection must have only one element. */
-  public static <T, R> Collector<T, ?, R> only(Function<? super T, ? extends R> onlyOne) {
-    return switching(when(onlyOne));
+  public static <T, R> Collector<T, ?, R> only(Function<? super T, ? extends R> oneElement) {
+    return collectingAndThen(toTinyContainer(), c -> c.only(oneElement));
   }
 
   /** If the collection must have only two elements. */
-  public static <T, R> Collector<T, ?, R> only(BiFunction<? super T, ? super T, ? extends R> onlyTwo) {
-    return switching(when(onlyTwo));
+  public static <T, R> Collector<T, ?, R> only(
+      BiFunction<? super T, ? super T, ? extends R> twoElements) {
+    return collectingAndThen(toTinyContainer(), c -> c.only(twoElements));
   }
 
   /** If the collection may have zero element. */
@@ -86,7 +87,7 @@ public final class Case {
             .filter(Optional::isPresent)
             .findFirst()
             .flatMap(identity())
-            .orElseThrow(() -> new IllegalArgumentException("Unexpected input size = " + input.size())));
+            .orElseThrow(() -> unexpectedSize(input.size())));
   }
 
   /** Stores up to 2 elements. */
@@ -131,6 +132,18 @@ public final class Case {
     <R> Optional<R> when(BiFunction<? super T, ? super T, ? extends R> then) {
       return size == 2 ? Optional.of(then.apply(first, second)) : Optional.empty();
     }
+
+    <R> R only(Function<? super T, ? extends R> oneElement) {
+      return when(oneElement).orElseThrow(() -> unexpectedSize(size));
+    }
+
+    <R> R only(BiFunction<? super T, ? super T, ? extends R> twoElements) {
+      return when(twoElements).orElseThrow(() -> unexpectedSize(size));
+    }
+  }
+
+  private static IllegalArgumentException unexpectedSize(int size) {
+    return new IllegalArgumentException("Unexpected input size = " + size);
   }
 
   private Case() {}

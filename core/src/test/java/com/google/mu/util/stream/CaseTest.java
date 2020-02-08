@@ -39,14 +39,20 @@ public final class CaseTest {
   public void only_oneElement() {
     String result = Stream.of("foo").collect(only(s -> s + "bar"));
     assertThat(result).isEqualTo("foobar");
-    assertThrows(IllegalArgumentException.class, () -> Stream.of(1, 2).collect(only(i -> i + 1)));
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class, () -> Stream.of(1, 2, 3).collect(only(i -> i + 1)));
+    assertThat(thrown).hasMessageThat().contains("size = 3");
   }
 
   @Test
   public void only_twoElements() {
     int result = Stream.of(2, 3).collect(only((a, b) -> a * b));
     assertThat(result).isEqualTo(6);
-    assertThrows(IllegalArgumentException.class, () -> Stream.of(1).collect(only((a, b) -> a * b)));
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class, () -> Stream.of(1).collect(only((a, b) -> a * b)));
+    assertThat(thrown).hasMessageThat().contains("size = 1");
   }
 
   @Test
