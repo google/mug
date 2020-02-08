@@ -1,7 +1,8 @@
 package com.google.mu.util.stream;
 
 import static com.google.mu.util.stream.Case.TinyContainer.toTinyContainer;
-import static com.google.mu.util.stream.Case.only;
+import static com.google.mu.util.stream.Case.onlyElement;
+import static com.google.mu.util.stream.Case.onlyElements;
 import static com.google.mu.util.stream.Case.switching;
 import static com.google.mu.util.stream.Case.when;
 import static com.google.common.truth.Truth.assertThat;
@@ -37,21 +38,21 @@ public final class CaseTest {
 
   @Test
   public void only_oneElement() {
-    String result = Stream.of("foo").collect(only(s -> s + "bar"));
-    assertThat(result).isEqualTo("foobar");
+    String result = Stream.of("foo").collect(onlyElement());
+    assertThat(result).isEqualTo("foo");
     IllegalArgumentException thrown =
         assertThrows(
-            IllegalArgumentException.class, () -> Stream.of(1, 2, 3).collect(only(i -> i + 1)));
+            IllegalArgumentException.class, () -> Stream.of(1, 2, 3).collect(onlyElement()));
     assertThat(thrown).hasMessageThat().contains("size = 3");
   }
 
   @Test
   public void only_twoElements() {
-    int result = Stream.of(2, 3).collect(only((a, b) -> a * b));
+    int result = Stream.of(2, 3).collect(onlyElements((a, b) -> a * b));
     assertThat(result).isEqualTo(6);
     IllegalArgumentException thrown =
         assertThrows(
-            IllegalArgumentException.class, () -> Stream.of(1).collect(only((a, b) -> a * b)));
+            IllegalArgumentException.class, () -> Stream.of(1).collect(onlyElements((a, b) -> a * b)));
     assertThat(thrown).hasMessageThat().contains("size = 1");
   }
 

@@ -21,7 +21,7 @@ import java.util.stream.Collector;
  * <p>For example, if the input collection must have only 2 elements:
  *
  * <pre>{@code
- * Foo result = input.stream().collect(only((a, b) -> ...));
+ * Foo result = input.stream().collect(onlyElements((a, b) -> ...));
  * }</pre>
  *
  * <p>Or, if the input may or may not have two elements:
@@ -44,12 +44,12 @@ import java.util.stream.Collector;
  */
 public final class Case {
   /** If the collection must have only one element. */
-  public static <T, R> Collector<T, ?, R> only(Function<? super T, ? extends R> oneElement) {
-    return collectingAndThen(toTinyContainer(), c -> c.only(oneElement));
+  public static <T> Collector<T, ?, T> onlyElement() {
+    return collectingAndThen(toTinyContainer(), TinyContainer::onlyOne);
   }
 
   /** If the collection must have only two elements. */
-  public static <T, R> Collector<T, ?, R> only(
+  public static <T, R> Collector<T, ?, R> onlyElements(
       BiFunction<? super T, ? super T, ? extends R> twoElements) {
     return collectingAndThen(toTinyContainer(), c -> c.only(twoElements));
   }
@@ -133,8 +133,8 @@ public final class Case {
       return size == 2 ? Optional.of(then.apply(first, second)) : Optional.empty();
     }
 
-    <R> R only(Function<? super T, ? extends R> oneElement) {
-      return when(oneElement).orElseThrow(() -> unexpectedSize(size));
+    T onlyOne() {
+      return when(identity()).orElseThrow(() -> unexpectedSize(size));
     }
 
     <R> R only(BiFunction<? super T, ? super T, ? extends R> twoElements) {
