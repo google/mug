@@ -178,7 +178,7 @@ public final class MoreStreams {
    *       .collect(uniqueKeys());
    * }</pre>
    *
-   * <p>Use {@link #mergingValues} if there are duplicate keys.
+   * <p>Use {@link BiStream#groupingValuesFrom} if there are duplicate keys.
    *
    * @since 1.13
    */
