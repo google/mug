@@ -78,7 +78,7 @@ public final class Case {
   }
 
   /**
-   * A collector that wraps the result of applying {@code onlyOne} in an {@code Optional}
+   * A collector that wraps the result of applying the {@code onlyOne} function in an {@code Optional}
    * when the input has only one element; or else returns {@code Optional.empty()}. For example:
    *
    * <pre>{@code
@@ -92,7 +92,7 @@ public final class Case {
   }
 
   /**
-   * A collector that wraps the result of applying {@code onlyTwo} in an {@code Optional}
+   * A collector that wraps the result of applying the {@code onlyTwo} function in an {@code Optional}
    * when the input has only two elements; or else returns {@code Optional.empty()}. For example:
    *
    * <pre>{@code
