@@ -97,7 +97,7 @@ public final class Case {
    *
    * <pre>{@code
    *   return nameParts.stream()
-   *       .collect(when((namespace, name) -> new QualifiedName(namespace, name))
+   *       .collect(when(QualifiedName::new))  // (namespace, name) ->
    *       .orElseThrow(() -> new SyntaxException(...));
    * }</pre>
    */
@@ -113,9 +113,9 @@ public final class Case {
    * <pre>{@code
    *   Name name = nameParts.stream()
    *       .collect(switching(
-   *           when(QualifiedName::new),  // (namespace, name) ->
+   *           when(QualifiedName::new),    // (namespace, name) ->
    *           when(UnqualifiedName::new),  // (name) ->
-   *           when(Anonymous::new)));  // () ->
+   *           when(Anonymous::new)));      // () ->
    * }</pre>
    */
   @SafeVarargs
