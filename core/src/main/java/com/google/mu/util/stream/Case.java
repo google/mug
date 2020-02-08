@@ -95,6 +95,10 @@ public final class Case {
     private T second;
     private int size = 0;
 
+    static <T> Collector<T, ?, TinyContainer<T>> toTinyContainer() {
+      return Collector.of(TinyContainer::new, TinyContainer::add, TinyContainer::addAll);
+    }
+
     void add(T value) {
       if (size == 0) {
         first = value;
@@ -126,10 +130,6 @@ public final class Case {
 
     <R> Optional<R> when(BiFunction<? super T, ? super T, ? extends R> then) {
       return size == 2 ? Optional.of(then.apply(first, second)) : Optional.empty();
-    }
-
-    static <T> Collector<T, ?, TinyContainer<T>> toTinyContainer() {
-      return Collector.of(TinyContainer::new, TinyContainer::add, TinyContainer::addAll);
     }
   }
 
