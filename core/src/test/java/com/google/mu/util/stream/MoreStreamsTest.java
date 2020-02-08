@@ -17,7 +17,7 @@ package com.google.mu.util.stream;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static com.google.mu.util.stream.MoreStreams.mergingValues;
+import static com.google.mu.util.stream.BiStream.groupingValuesFrom;
 import static com.google.mu.util.stream.MoreStreams.uniqueKeys;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
@@ -208,7 +208,8 @@ public class MoreStreamsTest {
         ImmutableList.of(new Translation(ImmutableMap.of()), new Translation(ImmutableMap.of()));
     Map<Integer, String> merged = translations.stream()
         .map(Translation::dictionary)
-        .collect(mergingValues((a, b) -> a + "," + b));
+        .collect(groupingValuesFrom(Map::entrySet, (a, b) -> a + "," + b))
+        .collect(ImmutableMap::toImmutableMap);
     assertThat(merged).isEmpty();
   }
 
@@ -217,7 +218,8 @@ public class MoreStreamsTest {
         new Translation(ImmutableMap.of(1, "one")), new Translation(ImmutableMap.of(2, "two")));
     Map<Integer, String> merged = translations.stream()
         .map(Translation::dictionary)
-        .collect(mergingValues((a, b) -> a + "," + b));
+        .collect(groupingValuesFrom(Map::entrySet, (a, b) -> a + "," + b))
+        .collect(ImmutableMap::toImmutableMap);
     assertThat(merged)
         .containsExactly(1, "one", 2, "two")
         .inOrder();
@@ -229,7 +231,8 @@ public class MoreStreamsTest {
         new Translation(ImmutableMap.of(2, "two", 1, "1")));
     Map<Integer, String> merged = translations.stream()
         .map(Translation::dictionary)
-        .collect(mergingValues((a, b) -> a + "," + b));
+        .collect(groupingValuesFrom(Map::entrySet, (a, b) -> a + "," + b))
+        .collect(ImmutableMap::toImmutableMap);
     assertThat(merged)
         .containsExactly(1, "one,1", 2, "two")
         .inOrder();

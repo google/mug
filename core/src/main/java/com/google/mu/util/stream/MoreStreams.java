@@ -168,14 +168,6 @@ public final class MoreStreams {
     return new DicedSpliterator<T>(spliterator, maxSize);
   }
 
-  /** @deprecated Use {@link BiStream#groupingValuesFrom(Function, BinaryOperator)} instead. */
-  @Deprecated
-  public static <K, V> Collector<Map<K, V>, ?, Map<K, V>> mergingValues(
-      BinaryOperator<V> valueMerger) {
-    return Collectors.collectingAndThen(
-        BiStream.groupingValuesFrom(Map::entrySet, valueMerger), BiStream::toMap);
-  }
-
   /**
    * Returns a collector that collects {@link Map} entries into a combined map. Duplicate keys cause {@link
    * IllegalStateException}. For example: 
