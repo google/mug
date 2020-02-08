@@ -125,12 +125,12 @@ public final class Case {
       return size;
     }
 
-    <R> Optional<R> when(Function<? super T, ? extends R> then) {
-      return size == 1 ? Optional.of(then.apply(first)) : Optional.empty();
+    <R> Optional<R> when(Function<? super T, ? extends R> oneElement) {
+      return size == 1 ? Optional.of(oneElement.apply(first)) : Optional.empty();
     }
 
-    <R> Optional<R> when(BiFunction<? super T, ? super T, ? extends R> then) {
-      return size == 2 ? Optional.of(then.apply(first, second)) : Optional.empty();
+    <R> Optional<R> when(BiFunction<? super T, ? super T, ? extends R> twoElements) {
+      return size == 2 ? Optional.of(twoElements.apply(first, second)) : Optional.empty();
     }
 
     T onlyOne() {
