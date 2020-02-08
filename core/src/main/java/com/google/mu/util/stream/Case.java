@@ -33,12 +33,11 @@ import java.util.stream.Collector;
  * <p>Or, if the input could have zero, one or two elements:
  *
  * <pre>{@code
- * Foo result = input.stream()
- *     .collect(
- *         switching(
- *             when(() -> ...),
- *             when(a -> ...),
- *             when((a, b) -> ...)));
+ * Foo result = input.stream().collect(
+ *     switching(
+ *         when(() -> ...),
+ *         when(a -> ...),
+ *         when((a, b) -> ...)));
  * }</pre>
  *
  * @since 3.6
