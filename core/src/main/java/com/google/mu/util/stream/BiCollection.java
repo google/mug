@@ -33,14 +33,6 @@ import java.util.stream.Collectors;
  * a re-streamable collection of pairs. Suitable when the pairs aren't logically a {@code Map}
  * or {@code Multimap}.
  *
- * <p>This class is thread-safe if the underlying collection is thread-safe. For example:
- * <pre>  {@code
- *   BiStream.zip(dtos, domains).toBiCollection()
- * }</pre> doesn't guarantee thread safety; whereas
- * <pre>  {@code
- *   BiStream.zip(dtos, domains).toBiCollection(ImmutableList::toImmutableList)
- * }</pre> is guaranteed to be immutable and thread safe.
- *
  * @since 1.4
  */
 public final class BiCollection<L, R> {
@@ -61,33 +53,39 @@ public final class BiCollection<L, R> {
 
   /** Returns a {@code BiCollection} for {@code left} and {@code right}. */
   public static <L, R> BiCollection<L, R> of(L left, R right) {
-    return from(asList(kv(left, right)));
+    return new BiCollection<>(asList(kv(left, right)));
   }
 
   /** Returns a {@code BiCollection} for two pairs. */
   public static <L, R> BiCollection<L, R> of(L left1, R right1, L left2, R right2) {
-    return from(asList(kv(left1, right1), kv(left2, right2)));
+    return new BiCollection<>(asList(kv(left1, right1), kv(left2, right2)));
   }
 
   /** Returns a {@code BiCollection} for three pairs. */
   public static <L, R> BiCollection<L, R> of(L left1, R right1, L left2, R right2, L left3, R right3) {
-    return from(asList(kv(left1, right1), kv(left2, right2), kv(left3, right3)));
+    return new BiCollection<>(asList(kv(left1, right1), kv(left2, right2), kv(left3, right3)));
   }
 
   /** Returns a {@code BiCollection} for four pairs. */
   public static <L, R> BiCollection<L, R> of(
       L left1, R right1, L left2, R right2, L left3, R right3, L left4, R right4) {
-    return from(asList(kv(left1, right1), kv(left2, right2), kv(left3, right3), kv(left4, right4)));
+    return new BiCollection<>(
+        asList(kv(left1, right1), kv(left2, right2), kv(left3, right3), kv(left4, right4)));
   }
 
   /** Returns a {@code BiCollection} for five pairs. */
   public static <L, R> BiCollection<L, R> of(
       L left1, R right1, L left2, R right2, L left3, R right3, L left4, R right4, L left5, R right5) {
-    return from(asList(
+    return new BiCollection<>(asList(
         kv(left1, right1), kv(left2, right2), kv(left3, right3), kv(left4, right4), kv(left5, right5)));
   }
 
-  /** Wraps {@code entries} in a {@code BiCollection}. */
+  /**
+   * Wraps {@code entries} in a {@code BiCollection}.
+   *
+   * @deprecated Use {@link BiStream#from} instead.
+   */
+  @Deprecated
   public static <L, R> BiCollection<L, R> from(Collection<Map.Entry<L, R>> entries) {
     return new BiCollection<>(entries);
   }
@@ -139,11 +137,8 @@ public final class BiCollection<L, R> {
     return entries.toString();
   }
 
-  /**
-   * Builds {@link BiCollection}.
-   *
-   * @since 1.4
-   */
+  /** @deprecated Use {@link BiStream#builder()} with {@code BiCollection::toBiCollection}. */
+  @Deprecated
   public static final class Builder<L, R> {
     private final List<Map.Entry<L, R>> pairs = new ArrayList<>();
 
@@ -172,10 +167,8 @@ public final class BiCollection<L, R> {
       return this;
     }
 
-    /**
-     * Returns a new {@link BiCollection} encapsulating the snapshot of pairs in this builder
-     * at the time {@code build()} is invoked.
-     */
+    /** @deprecated Use {@link BiStream#builder} instead. */
+    @Deprecated
     public BiCollection<L, R> build() {
       return from(new ArrayList<>(pairs));
     }
