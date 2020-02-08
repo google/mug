@@ -129,12 +129,7 @@ public final class Case {
     }
 
     static <T> Collector<T, ?, TinyContainer<T>> toTinyContainer() {
-      return Collector.of(
-          TinyContainer::new,
-          TinyContainer::add,
-          TinyContainer::addAll,
-          identity(),
-          Collector.Characteristics.IDENTITY_FINISH);
+      return Collector.of(TinyContainer::new, TinyContainer::add, TinyContainer::addAll);
     }
   }
 
