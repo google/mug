@@ -37,7 +37,6 @@ import com.google.mu.function.CheckedConsumer;
  * @since 1.1
  */
 public final class MoreStreams {
-
   /**
    * Returns a Stream produced by iterative application of {@code step} to the initial
    * {@code seed}, producing a Stream consisting of seed, elements of step(seed),
@@ -167,14 +166,6 @@ public final class MoreStreams {
     requireNonNull(spliterator);
     if (maxSize <= 0) throw new IllegalArgumentException();
     return new DicedSpliterator<T>(spliterator, maxSize);
-  }
-
-  /** @deprecated Use {@link BiStream#groupingValuesFrom(Function, BinaryOperator)} instead. */
-  @Deprecated
-  public static <K, V> Collector<Map<K, V>, ?, Map<K, V>> mergingValues(
-      BinaryOperator<V> valueMerger) {
-    return Collectors.collectingAndThen(
-        BiStream.groupingValuesFrom(Map::entrySet, valueMerger), BiStream::toMap);
   }
 
   /**

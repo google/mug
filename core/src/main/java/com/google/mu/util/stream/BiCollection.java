@@ -18,10 +18,8 @@ import static com.google.mu.util.stream.BiStream.kv;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
@@ -36,8 +34,7 @@ import java.util.stream.Collectors;
  * @since 1.4
  */
 public final class BiCollection<L, R> {
-
-  private static final BiCollection<?, ?> EMPTY = from(Collections.emptyList());
+  private static final BiCollection<?, ?> EMPTY = new BiCollection<>(Collections.emptyList());
 
   private final Collection<? extends Map.Entry<L, R>> entries;
 
@@ -81,16 +78,6 @@ public final class BiCollection<L, R> {
   }
 
   /**
-   * Wraps {@code entries} in a {@code BiCollection}.
-   *
-   * @deprecated Use {@link BiStream#from} instead.
-   */
-  @Deprecated
-  public static <L, R> BiCollection<L, R> from(Collection<Map.Entry<L, R>> entries) {
-    return new BiCollection<>(entries);
-  }
-
-  /**
    * Returns a {@code Collector} that extracts the pairs from the input stream,
    * and then collects them into a {@code BiCollection}.
    *
@@ -105,7 +92,7 @@ public final class BiCollection<L, R> {
     Function<T, Map.Entry<L, R>> toEntry = x -> kv(leftFunction.apply(x), rightFunction.apply(x));
     Collector<T, ?, ? extends Collection<Map.Entry<L, R>>> entryCollector =
         Collectors.mapping(toEntry, Collectors.toList());
-    return Collectors.collectingAndThen(entryCollector, BiCollection::from);
+    return Collectors.collectingAndThen(entryCollector, BiCollection::new);
   }
 
   /** Returns the size of the collection. */
@@ -135,42 +122,5 @@ public final class BiCollection<L, R> {
   /** @since 1.5 */
   @Override public String toString() {
     return entries.toString();
-  }
-
-  /** @deprecated Use {@link BiStream#builder()} with {@code BiCollection::toBiCollection}. */
-  @Deprecated
-  public static final class Builder<L, R> {
-    private final List<Map.Entry<L, R>> pairs = new ArrayList<>();
-
-    /** Adds a new pair of {@code left} and {@code right}. */
-    public Builder<L, R> add(L left, R right) {
-      pairs.add(kv(left, right));
-      return this;
-    }
-
-    /** Adds all key-value pairs from {@code map} into this builder. */
-    public Builder<L, R> addAll(Map<? extends L, ? extends R> map) {
-      return addAll(map.entrySet());
-    }
-
-    /** Adds all key-value pairs from {@code entries} into this builder. */
-    public Builder<L, R> addAll(Collection<? extends Map.Entry<? extends L, ? extends R>> entries) {
-      for (Map.Entry<? extends L, ? extends R> entry : entries) {
-        pairs.add(kv(entry.getKey(), entry.getValue()));
-      }
-      return this;
-    }
-
-    /** Adds all key-value pairs from {@code entries} into this builder. */
-    public Builder<L, R> addAll(BiCollection<? extends L, ? extends R> entries) {
-      entries.stream().forEachOrdered(this::add);
-      return this;
-    }
-
-    /** @deprecated Use {@link BiStream#builder} instead. */
-    @Deprecated
-    public BiCollection<L, R> build() {
-      return from(new ArrayList<>(pairs));
-    }
   }
 }

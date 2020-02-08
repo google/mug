@@ -75,12 +75,6 @@ public class BiCollectionTest {
         .inOrder();
   }
 
-  @Test public void fromEntries() {
-    assertKeyValues(BiCollection.from(ImmutableListMultimap.of(1, "one", 2, "two").entries()))
-        .containsExactlyEntriesIn(ImmutableListMultimap.of(1, "one", 2, "two"))
-        .inOrder();
-  }
-
   @Test public void toBiCollectionWithoutCollectorStrategy() {
     BiCollection<Integer, String> biCollection = ImmutableMap.of(1, "one", 2, "two")
         .entrySet()
@@ -92,19 +86,7 @@ public class BiCollectionTest {
   }
 
   @Test public void testBuilder_add() {
-    assertKeyValues(new BiCollection.Builder<>().add("one", 1).build())
-        .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1))
-        .inOrder();
-  }
-
-  @Test public void testBuilder_addAllFromMap() {
-    assertKeyValues(new BiCollection.Builder<>().addAll(ImmutableMap.of("one", 1)).build())
-        .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1))
-        .inOrder();
-  }
-
-  @Test public void testBuilder_addAllFromBiCollection() {
-    assertKeyValues(new BiCollection.Builder<>().addAll(BiCollection.of("one", 1)).build())
+    assertKeyValues(BiStream.builder().add("one", 1).build().collect(BiCollection::toBiCollection))
         .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1))
         .inOrder();
   }
