@@ -81,7 +81,7 @@ public final class Case {
     List<Collector<? super T, ?, ? extends Optional<? extends R>>> caseList =
         Arrays.stream(cases).peek(Objects::requireNonNull).collect(toList());
     return collectingAndThen(
-        toList(),
+        toList(),  // can't use toTinyContainer() because `cases` could need more than 2 elements.
         input -> caseList.stream()
             .map(c -> input.stream().collect(c))
             .filter(Optional::isPresent)
