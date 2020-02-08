@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
  */
 public final class BiCollection<L, R> {
 
-  private static final BiCollection<?, ?> EMPTY = from(Collections.emptyList());
+  private static final BiCollection<?, ?> EMPTY = new BiCollection<>(Collections.emptyList());
 
   private final Collection<? extends Map.Entry<L, R>> entries;
 
