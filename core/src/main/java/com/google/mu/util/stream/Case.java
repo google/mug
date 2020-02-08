@@ -43,29 +43,64 @@ import java.util.stream.Collector;
  * @since 3.6
  */
 public final class Case {
-  /** If the collection must have only one element. */
+  /**
+   * A collector that collects the only element from the input,
+   * or else throws {@link IllegalArgumentException}. 
+   */
   public static <T> Collector<T, ?, T> onlyElement() {
     return collectingAndThen(toTinyContainer(), TinyContainer::onlyOne);
   }
 
-  /** If the collection must have only two elements. */
+  /**
+   * A collector that collects the only two elements from the input and returns the
+   * result of applying the given {@code twoElements} function.
+   *
+   * <p>The returned collector throws {@link IllegalArgumentException} otherwise.
+   */
   public static <T, R> Collector<T, ?, R> onlyElements(
       BiFunction<? super T, ? super T, ? extends R> twoElements) {
     return collectingAndThen(toTinyContainer(), c -> c.only(twoElements));
   }
 
-  /** If the collection may have zero element. */
+  /**
+   * A collector that wraps the result of {@code noElement.get()} in an {@code Optional}
+   * when the input is empty; or else returns {@code Optional.empty()}. For example:
+   *
+   * <pre>{@code
+   *   return usageErrors.stream()
+   *       .collect(when(() -> OK))
+   *       .orElseThrow(() -> new UsageErrorException(usageErrors));
+   * }</pre>
+   */
   public static <R> Collector<Object, ?, Optional<R>> when(Supplier<? extends R> noElement) {
     return collectingAndThen(
         counting(), c -> c == 0 ? Optional.of(noElement.get()) : Optional.empty());
   }
 
-  /** If the collection may have one element. */
+  /**
+   * A collector that wraps the result of applying {@code onlyOne} in an {@code Optional}
+   * when the input has only one element; or else returns {@code Optional.empty()}. For example:
+   *
+   * <pre>{@code
+   *   return shards.stream()
+   *       .collect(when(shard -> shard))
+   *       .orElseGet(() -> flatten(shards));
+   * }</pre>
+   */
   public static <T, R> Collector<T, ?, Optional<R>> when(Function<? super T, ? extends R> onlyOne) {
     return collectingAndThen(toTinyContainer(), c -> c.when(onlyOne));
   }
 
-  /** If the collection may have two elements. */
+  /**
+   * A collector that wraps the result of applying {@code onlyOne} in an {@code Optional}
+   * when the input has only one element; or else returns {@code Optional.empty()}. For example:
+   *
+   * <pre>{@code
+   *   return nameParts.stream()
+   *       .collect(when((namespace, name) -> new QualifiedName(namespace, name))
+   *       .orElseThrow(() -> new SyntaxException(...));
+   * }</pre>
+   */
   public static <T, R> Collector<T, ?, Optional<R>> when(
       BiFunction<? super T, ? super T, ? extends R> onlyTwo) {
     return collectingAndThen(toTinyContainer(), c -> c.when(onlyTwo));
@@ -73,7 +108,15 @@ public final class Case {
 
   /**
    * Combines multiple {@code Optional-}returning collector cases, to collect to the first non-empty
-   * result.
+   * result. For example:
+   *
+   * <pre>{@code
+   *   Name name = nameParts.stream()
+   *       .collect(switching(
+   *           when(QualifiedName::new),  // (namespace, name) ->
+   *           when(UnqualifiedName::new),  // (name) ->
+   *           when(Anonymous::new)));  // () ->
+   * }</pre>
    */
   @SafeVarargs
   public static <T, R> Collector<T, ?, R> switching(
