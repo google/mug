@@ -37,7 +37,6 @@ import com.google.mu.function.CheckedConsumer;
  * @since 1.1
  */
 public final class MoreStreams {
-
   /**
    * Returns a Stream produced by iterative application of {@code step} to the initial
    * {@code seed}, producing a Stream consisting of seed, elements of step(seed),
