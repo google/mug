@@ -53,29 +53,30 @@ public final class BiCollection<L, R> {
 
   /** Returns a {@code BiCollection} for {@code left} and {@code right}. */
   public static <L, R> BiCollection<L, R> of(L left, R right) {
-    return from(asList(kv(left, right)));
+    return new BiCollection<>(asList(kv(left, right)));
   }
 
   /** Returns a {@code BiCollection} for two pairs. */
   public static <L, R> BiCollection<L, R> of(L left1, R right1, L left2, R right2) {
-    return from(asList(kv(left1, right1), kv(left2, right2)));
+    return new BiCollection<>(asList(kv(left1, right1), kv(left2, right2)));
   }
 
   /** Returns a {@code BiCollection} for three pairs. */
   public static <L, R> BiCollection<L, R> of(L left1, R right1, L left2, R right2, L left3, R right3) {
-    return from(asList(kv(left1, right1), kv(left2, right2), kv(left3, right3)));
+    return new BiCollection<>(asList(kv(left1, right1), kv(left2, right2), kv(left3, right3)));
   }
 
   /** Returns a {@code BiCollection} for four pairs. */
   public static <L, R> BiCollection<L, R> of(
       L left1, R right1, L left2, R right2, L left3, R right3, L left4, R right4) {
-    return from(asList(kv(left1, right1), kv(left2, right2), kv(left3, right3), kv(left4, right4)));
+    return new BiCollection<>(
+        asList(kv(left1, right1), kv(left2, right2), kv(left3, right3), kv(left4, right4)));
   }
 
   /** Returns a {@code BiCollection} for five pairs. */
   public static <L, R> BiCollection<L, R> of(
       L left1, R right1, L left2, R right2, L left3, R right3, L left4, R right4, L left5, R right5) {
-    return from(asList(
+    return new BiCollection<>(asList(
         kv(left1, right1), kv(left2, right2), kv(left3, right3), kv(left4, right4), kv(left5, right5)));
   }
 
