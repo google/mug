@@ -89,7 +89,7 @@ public final class Case {
             .orElseThrow(() -> new IllegalArgumentException("Unexpected input size = " + input.size())));
   }
 
-  // Stores up to 2 elements.
+  /** Stores up to 2 elements. */
   static final class TinyContainer<T> {
     private T first;
     private T second;
