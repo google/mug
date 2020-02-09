@@ -186,7 +186,7 @@ public final class Case {
   }
 
   private static IllegalArgumentException unexpectedSize(int size) {
-    return new IllegalArgumentException("Unexpected input size = " + size);
+    return new IllegalArgumentException("Unexpected input size: " + size);
   }
 
   private Case() {}

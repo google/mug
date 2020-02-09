@@ -43,7 +43,7 @@ public final class CaseTest {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class, () -> Stream.of(1, 2, 3).collect(onlyElement()));
-    assertThat(thrown).hasMessageThat().contains("size = 3");
+    assertThat(thrown).hasMessageThat().contains("size: 3");
   }
 
   @Test
@@ -53,7 +53,7 @@ public final class CaseTest {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class, () -> Stream.of(1).collect(onlyElements((a, b) -> a * b)));
-    assertThat(thrown).hasMessageThat().contains("size = 1");
+    assertThat(thrown).hasMessageThat().contains("size: 1");
   }
 
   @Test
@@ -74,7 +74,7 @@ public final class CaseTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> Stream.of(1, 2, 3).collect(switching(when((a, b) -> a + b), when(a -> a))));
-    assertThat(thrown).hasMessageThat().contains("size = 3");
+    assertThat(thrown).hasMessageThat().contains("size: 3");
   }
 
   @Test
