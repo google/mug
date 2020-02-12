@@ -1,6 +1,7 @@
 package com.google.mu.util.stream;
 
 import static com.google.mu.util.stream.Case.TinyContainer.toTinyContainer;
+import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.counting;
@@ -11,7 +12,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 
@@ -52,58 +55,99 @@ public final class Case {
   }
 
   /**
-   * A collector that collects the only two elements from the input and returns the
-   * result of applying the given {@code twoElements} function.
+   * A collector that collects the only two elements from the input and returns the result of
+   * applying the given {@code twoElements} function.
    *
    * <p>The returned collector throws {@link IllegalArgumentException} otherwise.
    */
   public static <T, R> Collector<T, ?, R> onlyElements(
       BiFunction<? super T, ? super T, ? extends R> twoElements) {
+    requireNonNull(twoElements);
     return collectingAndThen(toTinyContainer(), c -> c.only(twoElements));
   }
 
   /**
-   * A collector that wraps the result of {@code noElement.get()} in an {@code Optional}
-   * when the input is empty; or else returns {@code Optional.empty()}. For example:
+   * A collector that wraps the result of {@code noElement.get()} in an {@code Optional} when the
+   * input is empty; or else returns {@code Optional.empty()}. For example:
    *
    * <pre>{@code
-   *   return usageErrors.stream()
-   *       .collect(when(() -> OK))
-   *       .orElseThrow(() -> new UsageErrorException(usageErrors));
+   * return usageErrors.stream()
+   *     .collect(when(() -> OK))
+   *     .orElseThrow(() -> new UsageErrorException(usageErrors));
    * }</pre>
    */
   public static <R> Collector<Object, ?, Optional<R>> when(Supplier<? extends R> noElement) {
+    requireNonNull(noElement);
     return collectingAndThen(
         counting(), c -> c == 0 ? Optional.of(noElement.get()) : Optional.empty());
   }
 
   /**
-   * A collector that wraps the result of applying the {@code onlyOne} function in an {@code Optional}
-   * when the input has only one element; or else returns {@code Optional.empty()}. For example:
+   * A collector that wraps the result of applying the {@code onlyOne} function in an {@code
+   * Optional} when the input has only one element; or else returns {@code Optional.empty()}. For
+   * example:
    *
    * <pre>{@code
-   *   return shards.stream()
-   *       .collect(when(shard -> shard))
-   *       .orElseGet(() -> flatten(shards));
+   * return shards.stream()
+   *     .collect(when(shard -> shard))
+   *     .orElseGet(() -> flatten(shards));
    * }</pre>
    */
   public static <T, R> Collector<T, ?, Optional<R>> when(Function<? super T, ? extends R> onlyOne) {
-    return collectingAndThen(toTinyContainer(), c -> c.when(onlyOne));
+    return when(x -> true, onlyOne);
   }
 
   /**
-   * A collector that wraps the result of applying the {@code onlyTwo} function in an {@code Optional}
-   * when the input has only two elements; or else returns {@code Optional.empty()}. For example:
+   * A collector that wraps the result of applying the {@code onlyOne} function in an {@code
+   * Optional} when the input has only one element and it satisfies {@code condition} in terms of
+   * {@link Predicate#test}; or else returns {@code Optional.empty()}. For example:
    *
    * <pre>{@code
-   *   return nameParts.stream()
-   *       .collect(when(QualifiedName::new))  // (namespace, name) ->
-   *       .orElseThrow(() -> new SyntaxException(...));
+   * return statuses.stream()
+   *     .collect(when(OK::equals, s -> result))
+   *     .orElseThrow(...);
+   * }</pre>
+   */
+  public static <T, R> Collector<T, ?, Optional<R>> when(
+      Predicate<? super T> condition, Function<? super T, ? extends R> onlyOne) {
+    requireNonNull(condition);
+    requireNonNull(onlyOne);
+    return collectingAndThen(toTinyContainer(), c -> c.when(condition, onlyOne));
+  }
+
+  /**
+   * A collector that wraps the result of applying the {@code onlyTwo} function in an {@code
+   * Optional} when the input has only two elements; or else returns {@code Optional.empty()}. For
+   * example:
+   *
+   * <pre>{@code
+   * return nameParts.stream()
+   *     .collect(when(QualifiedName::new))  // (namespace, name) ->
+   *     .orElseThrow(() -> new SyntaxException(...));
    * }</pre>
    */
   public static <T, R> Collector<T, ?, Optional<R>> when(
       BiFunction<? super T, ? super T, ? extends R> onlyTwo) {
-    return collectingAndThen(toTinyContainer(), c -> c.when(onlyTwo));
+    return when((x, y) -> true, onlyTwo);
+  }
+
+  /**
+   * A collector that wraps the result of applying the {@code onlyTwo} function in an {@code
+   * Optional} when the input has only two elements and the two elements satify {@code condition} in
+   * terms of {@link BiPredicate#test}; or else returns {@code Optional.empty()}. For example:
+   *
+   * <pre>{@code
+   * return nameParts.stream()
+   *     .collect(when((namespace, name) -> !invalid.contains(namespace), QualifiedName::new))
+   *     .orElseThrow(() -> new SyntaxException(...));
+   * }</pre>
+   */
+  public static <T, R> Collector<T, ?, Optional<R>> when(
+      BiPredicate<? super T, ? super T> condition,
+      BiFunction<? super T, ? super T, ? extends R> onlyTwo) {
+    requireNonNull(condition);
+    requireNonNull(onlyTwo);
+    return collectingAndThen(toTinyContainer(), c -> c.when(condition, onlyTwo));
   }
 
   /**
@@ -111,11 +155,12 @@ public final class Case {
    * result. For example:
    *
    * <pre>{@code
-   *   Name name = nameParts.stream()
-   *       .collect(switching(
-   *           when(QualifiedName::new),    // (namespace, name) ->
-   *           when(UnqualifiedName::new),  // (name) ->
-   *           when(Anonymous::new)));      // () ->
+   * Name name = nameParts.stream()
+   *     .collect(switching(
+   *         when(QualifiedName::new),                // (namespace, name) ->
+   *         when(keywords::contains, Keyword::new),  // (keyword) ->
+   *         when(UnqualifiedName::)                  // (name) ->
+   *         when(Anonymous::new)));                  // () ->
    * }</pre>
    */
   @SafeVarargs
@@ -124,16 +169,17 @@ public final class Case {
     List<Collector<? super T, ?, ? extends Optional<? extends R>>> caseList =
         Arrays.stream(cases).peek(Objects::requireNonNull).collect(toList());
     return collectingAndThen(
-        toList(),  // can't use toTinyContainer() because `cases` could need more than 2 elements.
-        input -> caseList.stream()
-            .map(c -> input.stream().collect(c))
-            .filter(Optional::isPresent)
-            .findFirst()
-            .flatMap(identity())
-            .orElseThrow(() -> unexpectedSize(input.size())));
+        toList(),
+        input ->
+            caseList.stream()
+                .map(c -> input.stream().collect(c))
+                .filter(Optional::isPresent)
+                .findFirst()
+                .flatMap(identity())
+                .orElseThrow(() -> unexpectedSize(input.size())));
   }
 
-  /** Stores up to 2 elements. */
+  /** Stores up to 2 elements with zero dynamic memory allocation. */
   static final class TinyContainer<T> {
     private T first;
     private T second;
@@ -152,6 +198,7 @@ public final class Case {
       size++;
     }
 
+    // Hate to write this code! But a combiner is upon us whether we want parallel or not.
     TinyContainer<T> addAll(TinyContainer<? extends T> that) {
       int newSize = size + that.size;
       if (that.size > 0) {
@@ -168,20 +215,27 @@ public final class Case {
       return size;
     }
 
-    <R> Optional<R> when(Function<? super T, ? extends R> oneElement) {
-      return size == 1 ? Optional.of(oneElement.apply(first)) : Optional.empty();
+    <R> Optional<R> when(
+        Predicate<? super T> condition, Function<? super T, ? extends R> oneElement) {
+      return size == 1 && condition.test(first)
+          ? Optional.of(oneElement.apply(first))
+          : Optional.empty();
     }
 
-    <R> Optional<R> when(BiFunction<? super T, ? super T, ? extends R> twoElements) {
-      return size == 2 ? Optional.of(twoElements.apply(first, second)) : Optional.empty();
-    }
-
-    T onlyOne() {
-      return when(identity()).orElseThrow(() -> unexpectedSize(size));
+    <R> Optional<R> when(
+        BiPredicate<? super T, ? super T> condition,
+        BiFunction<? super T, ? super T, ? extends R> twoElements) {
+      return size == 2 && condition.test(first, second)
+          ? Optional.of(twoElements.apply(first, second))
+          : Optional.empty();
     }
 
     <R> R only(BiFunction<? super T, ? super T, ? extends R> twoElements) {
-      return when(twoElements).orElseThrow(() -> unexpectedSize(size));
+      return when((x, y) -> true, twoElements).orElseThrow(() -> unexpectedSize(size));
+    }
+
+    T onlyOne() {
+      return when(x -> true, identity()).orElseThrow(() -> unexpectedSize(size));
     }
   }
 

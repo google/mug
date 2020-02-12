@@ -28,12 +28,16 @@ public final class CaseTest {
   public void when_oneElement() {
     assertThat(Stream.of(1).collect(when(i -> i + 1))).hasValue(2);
     assertThat(Stream.of(1, 2).collect(when(i -> i + 1))).isEmpty();
+    assertThat(Stream.of(1).collect(when(x -> x == 1, i -> i + 1))).hasValue(2);
+    assertThat(Stream.of(1).collect(when(x -> x == 2, i -> i + 1))).isEmpty();
   }
 
   @Test
   public void when_twoElements() {
     assertThat(Stream.of(2, 3).collect(when((a, b) -> a * b))).hasValue(6);
     assertThat(Stream.of(2, 3, 4).collect(when((a, b) -> a * b))).isEmpty();
+    assertThat(Stream.of(2, 3).collect(when((x, y) -> x < y, (a, b) -> a * b))).hasValue(6);
+    assertThat(Stream.of(2, 3).collect(when((x, y) -> x > y, (a, b) -> a * b))).isEmpty();
   }
 
   @Test
@@ -84,13 +88,14 @@ public final class CaseTest {
 
   @Test
   public void toTinyContainer_oneElement() {
-    assertThat(Stream.of("foo").collect(toTinyContainer()).when("got:"::concat))
+    assertThat(Stream.of("foo").collect(toTinyContainer()).when(x -> true, "got:"::concat))
         .hasValue("got:foo");
   }
 
   @Test
   public void toTinyContainer_twoElements() {
-    assertThat(Stream.of(2, 3).collect(toTinyContainer()).when(Integer::max)).hasValue(3);
+    assertThat(Stream.of(2, 3).collect(toTinyContainer()).when((x, y) -> true, Integer::max))
+        .hasValue(3);
   }
 
   @Test
@@ -107,9 +112,9 @@ public final class CaseTest {
   @Test
   public void tinyContainer_addAll_fromOneElement() {
     TinyContainer<String> source = Stream.of("foo").collect(toTinyContainer());
-    assertThat(Stream.empty().collect(toTinyContainer()).addAll(source).when(identity()))
+    assertThat(Stream.empty().collect(toTinyContainer()).addAll(source).when(x -> true, identity()))
         .hasValue("foo");
-    assertThat(Stream.of("bar").collect(toTinyContainer()).addAll(source).when((a, b) -> a + b))
+    assertThat(Stream.of("bar").collect(toTinyContainer()).addAll(source).when((x, y) -> true, (a, b) -> a + b))
         .hasValue("barfoo");
     assertThat(Stream.of("a", "b").collect(toTinyContainer()).addAll(source).size())
         .isEqualTo(3);
@@ -120,7 +125,7 @@ public final class CaseTest {
   @Test
   public void tinyContainer_addAll_fromTwoElements() {
     TinyContainer<String> source = Stream.of("a", "b").collect(toTinyContainer());
-    assertThat(Stream.<String>empty().collect(toTinyContainer()).addAll(source).when((a, b) -> a + b))
+    assertThat(Stream.<String>empty().collect(toTinyContainer()).addAll(source).when((x, y) -> true, (a, b) -> a + b))
         .hasValue("ab");
     assertThat(Stream.of("c").collect(toTinyContainer()).addAll(source).size())
         .isEqualTo(3);
