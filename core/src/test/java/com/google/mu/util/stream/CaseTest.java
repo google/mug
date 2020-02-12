@@ -10,6 +10,7 @@ import static com.google.common.truth.Truth8.assertThat;
 import static java.util.function.Function.identity;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.common.testing.NullPointerTester;
 import com.google.mu.util.stream.Case.TinyContainer;
 import java.util.stream.Stream;
 import org.junit.Test;
@@ -146,5 +147,10 @@ public final class CaseTest {
         .isEqualTo(5);
     assertThat(Stream.of("c", "d", "e").collect(toTinyContainer()).addAll(source).size())
         .isEqualTo(6);
+  }
+
+  @Test
+  public void nullChecks() {
+    new NullPointerTester().testAllPublicStaticMethods(Case.class);
   }
 }
