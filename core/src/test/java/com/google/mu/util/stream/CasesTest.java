@@ -1,24 +1,24 @@
 package com.google.mu.util.stream;
 
-import static com.google.mu.util.stream.Case.TinyContainer.toTinyContainer;
-import static com.google.mu.util.stream.Case.onlyElement;
-import static com.google.mu.util.stream.Case.onlyElements;
-import static com.google.mu.util.stream.Case.switching;
-import static com.google.mu.util.stream.Case.when;
+import static com.google.mu.util.stream.Cases.TinyContainer.toTinyContainer;
+import static com.google.mu.util.stream.Cases.onlyElement;
+import static com.google.mu.util.stream.Cases.onlyElements;
+import static com.google.mu.util.stream.Cases.switching;
+import static com.google.mu.util.stream.Cases.when;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static java.util.function.Function.identity;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.testing.NullPointerTester;
-import com.google.mu.util.stream.Case.TinyContainer;
+import com.google.mu.util.stream.Cases.TinyContainer;
 import java.util.stream.Stream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-public final class CaseTest {
+public final class CasesTest {
   @Test
   public void when_zeroElement() {
     assertThat(Stream.of(1).collect(when(() -> "zero"))).isEmpty();
@@ -151,6 +151,6 @@ public final class CaseTest {
 
   @Test
   public void nullChecks() {
-    new NullPointerTester().testAllPublicStaticMethods(Case.class);
+    new NullPointerTester().testAllPublicStaticMethods(Cases.class);
   }
 }
