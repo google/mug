@@ -33,7 +33,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collector;
 
 /**
- * Collectors for short streams with arity-based overloads.
+ * Collectors for short streams with 0, 1 or 2 elements using a {@link Supplier}, {@link Function}
+ * or {@link BiFunction} respectively.
  *
  * <p>For example, if the input collection must have only 2 elements:
  *
