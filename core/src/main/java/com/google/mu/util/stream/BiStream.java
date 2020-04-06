@@ -376,7 +376,7 @@ public abstract class BiStream<K, V> {
    * {@code BiStream}.
    *
    * <p>Note that it's more efficient to use {@code biStream(stream)} than
-   * {@code stream.collect(toBiStream(toKey, toValue))}. The latter is intended to be used in the
+   * {@code stream.collect(toBiStream())}. The latter is intended to be used in the
    * middle of a long stream pipeline, when performance isn't critical.
    *
    * @since 3.6
