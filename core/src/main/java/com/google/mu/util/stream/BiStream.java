@@ -163,7 +163,7 @@ public abstract class BiStream<K, V> {
    */
   public static <T, K> Collector<T, ?, BiStream<K, List<T>>> groupingBy(
       Function<? super T, ? extends K> classifier) {
-    return groupingBy(classifier, Collectors.toList());
+    return groupingBy(classifier, toList());
   }
 
   /**
@@ -214,7 +214,7 @@ public abstract class BiStream<K, V> {
    */
   public static <T, K, V> Collector<T, ?, BiStream<K, V>> concatenating(
       Function<? super T, ? extends BiStream<? extends K, ? extends V>> toBiStream) {
-    return collectingAndThen(toList(), list -> concat(list.stream().map(toBiStream)));
+    return collectingAndThen(copying(), copy -> concat(copy.map(toBiStream)));
   }
 
   /**
@@ -351,15 +351,14 @@ public abstract class BiStream<K, V> {
    * @since 3.2
    */
   public static <T> Collector<T, ?, BiStream<T, T>> toAdjacentPairs() {
-    return Collectors.collectingAndThen(
-        Collectors.toList(), list -> zip(list.stream(), list.stream().skip(1)));
+    return collectingAndThen(toList(), list -> zip(list.stream(), list.stream().skip(1)));
   }
 
   /**
    * Returns a {@code Collector} that splits each input element as a pair and collects them into a
    * {@link BiStream}.
    *
-   * <p>Note that it's more efficient to use {@code BiStream.from(stream, toKey, toValue)} than
+   * <p>Note that it's more efficient to use {@code BiStream.(stream, toKey, toValue)} than
    * {@code stream.collect(toBiStream(toKey, toValue))}. The latter is intended to be used in the
    * middle of a long stream pipeline, when performance isn't critical.
    *
@@ -367,11 +366,23 @@ public abstract class BiStream<K, V> {
    */
   public static <E, K, V> Collector<E, ?, BiStream<K, V>> toBiStream(
       Function<? super E, ? extends K> toKey, Function<? super E, ? extends V> toValue) {
-    return Collector.of(
-        BiStream.Builder<K, V>::new,
-        (builder, input) -> builder.add(toKey.apply(input), toValue.apply(input)),
-        BiStream.Builder::addAll,
-        BiStream.Builder::build);
+    requireNonNull(toKey);
+    requireNonNull(toValue);
+    return collectingAndThen(copying(), copy -> from(copy, toKey, toValue));
+  }
+
+  /**
+   * Returns a {@code Collector} that copies each input element as a pair of itself into an equivalent
+   * {@code BiStream}.
+   *
+   * <p>Note that it's more efficient to use {@code biStream(stream)} than
+   * {@code stream.collect(toBiStream(toKey, toValue))}. The latter is intended to be used in the
+   * middle of a long stream pipeline, when performance isn't critical.
+   *
+   * @since 3.6
+   */
+  public static <T> Collector<T, ?, BiStream<T, T>> toBiStream() {
+    return toBiStream(identity(), identity());
   }
 
   /** Returns an empty {@code BiStream}. */
@@ -1223,6 +1234,18 @@ public abstract class BiStream<K, V> {
         this.value = value;
       }
     }
+  }
+
+  /** Copying input elements into another stream. */
+  private static <T> Collector<T, ?, Stream<T>> copying() {
+    return Collector.of(
+        Stream::<T>builder,
+        Stream.Builder::add,
+        (b1, b2) -> {
+          b2.build().forEachOrdered(b1::add);
+          return b1;
+        },
+        Stream.Builder::build);
   }
 
   // TODO: switch to Java 9 Collectors.flatMapping() when we can.
