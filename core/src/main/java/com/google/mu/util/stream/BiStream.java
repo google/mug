@@ -214,7 +214,7 @@ public abstract class BiStream<K, V> {
    */
   public static <T, K, V> Collector<T, ?, BiStream<K, V>> concatenating(
       Function<? super T, ? extends BiStream<? extends K, ? extends V>> toBiStream) {
-    return collectingAndThen(copying(), copy -> concat(copy.map(toBiStream)));
+    return collectingAndThen(toStream(), copy -> concat(copy.map(toBiStream)));
   }
 
   /**
@@ -368,7 +368,7 @@ public abstract class BiStream<K, V> {
       Function<? super E, ? extends K> toKey, Function<? super E, ? extends V> toValue) {
     requireNonNull(toKey);
     requireNonNull(toValue);
-    return collectingAndThen(copying(), copy -> from(copy, toKey, toValue));
+    return collectingAndThen(toStream(), copy -> from(copy, toKey, toValue));
   }
 
   /**
@@ -1237,7 +1237,7 @@ public abstract class BiStream<K, V> {
   }
 
   /** Copying input elements into another stream. */
-  private static <T> Collector<T, ?, Stream<T>> copying() {
+  private static <T> Collector<T, ?, Stream<T>> toStream() {
     return Collector.of(
         Stream::<T>builder,
         Stream.Builder::add,
