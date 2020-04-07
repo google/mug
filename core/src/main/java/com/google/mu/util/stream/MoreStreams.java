@@ -198,6 +198,16 @@ public final class MoreStreams {
     return IntStream.iterate(0, i -> i + 1);
   }
 
+  /**
+   * Returns a collector that first copies all input elements into a new {@code Stream} and then
+   * passes the stream to {@code toSink} function, which translates it to the final result.
+   *
+   * @since 3.6
+   */
+  public static <T, R> Collector<T, ?, R> copying(Function<Stream<T>, R> toSink) {
+    return Collectors.collectingAndThen(toStream(), toSink);
+  }
+
   static <F, T> Stream<T> mapBySpliterator(
       Stream<F> stream, int characteristics,
       Function<? super Spliterator<F>, ? extends Spliterator<T>> mapper) {
@@ -206,6 +216,18 @@ public final class MoreStreams {
         () -> mapper.apply(stream.spliterator()), characteristics, stream.isParallel());
     mapped.onClose(stream::close);
     return mapped;
+  }
+
+  /** Copying input elements into another stream. */
+  private static <T> Collector<T, ?, Stream<T>> toStream() {
+    return Collector.of(
+        Stream::<T>builder,
+        Stream.Builder::add,
+        (b1, b2) -> {
+          b2.build().forEachOrdered(b1::add);
+          return b1;
+        },
+        Stream.Builder::build);
   }
 
   private static <F, T> T splitThenWrap(
