@@ -84,11 +84,6 @@ public abstract class BiStream<K, V> {
     public BiStream<K, V> build() {
       return zip(keys.build(), values.build());
     }
-
-    Builder<K, V> addAll(Builder<? extends K, ? extends V> other) {
-      other.build().forEach(this::add);
-      return this;
-    }
   }
 
   /**
@@ -214,7 +209,7 @@ public abstract class BiStream<K, V> {
    */
   public static <T, K, V> Collector<T, ?, BiStream<K, V>> concatenating(
       Function<? super T, ? extends BiStream<? extends K, ? extends V>> toBiStream) {
-    return collectingAndThen(copying(), copy -> concat(copy.map(toBiStream)));
+    return MoreStreams.copying(copy -> concat(copy.map(toBiStream)));
   }
 
   /**
@@ -368,7 +363,7 @@ public abstract class BiStream<K, V> {
       Function<? super E, ? extends K> toKey, Function<? super E, ? extends V> toValue) {
     requireNonNull(toKey);
     requireNonNull(toValue);
-    return collectingAndThen(copying(), copy -> from(copy, toKey, toValue));
+    return MoreStreams.copying(copy -> from(copy, toKey, toValue));
   }
 
   /**
@@ -1234,18 +1229,6 @@ public abstract class BiStream<K, V> {
         this.value = value;
       }
     }
-  }
-
-  /** Copying input elements into another stream. */
-  private static <T> Collector<T, ?, Stream<T>> copying() {
-    return Collector.of(
-        Stream::<T>builder,
-        Stream.Builder::add,
-        (b1, b2) -> {
-          b2.build().forEachOrdered(b1::add);
-          return b1;
-        },
-        Stream.Builder::build);
   }
 
   // TODO: switch to Java 9 Collectors.flatMapping() when we can.
