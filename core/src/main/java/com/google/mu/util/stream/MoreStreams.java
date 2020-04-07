@@ -204,7 +204,7 @@ public final class MoreStreams {
    *
    * @since 3.6
    */
-  public static <T, R> Collector<T, ?, R> copying(Function<Stream<T>, R> toSink) {
+  static <T, R> Collector<T, ?, R> copying(Function<Stream<T>, R> toSink) {
     return Collectors.collectingAndThen(toStream(), toSink);
   }
 
