@@ -206,9 +206,8 @@ public final class MoreStreams {
    *
    * <p>To get a finite stream, use {@code indexesFrom(...).limit(size)}.
    *
-   * <p>While {@code indexesFrom(0)} will eventually incur boxing cost for every integer,
-   * the JVM typically pre-caches small {@code Integer} instances so that for small streams,
-   * the boxing cost is negligible.
+   * <p>Note that while {@code indexesFrom(0)} will eventually incur boxing cost for every integer,
+   * the JVM typically pre-caches small {@code Integer} instances (by default up to 127).
    *
    * @since 3.7
    */
