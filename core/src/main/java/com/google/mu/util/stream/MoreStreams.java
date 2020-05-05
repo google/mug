@@ -184,7 +184,7 @@ public final class MoreStreams {
   public static <K, V> Collector<Map<K, V>, ?, Map<K, V>> uniqueKeys() {
     return Collectors.collectingAndThen(
         BiStream.groupingValuesFrom(Map::entrySet,  (a, b) -> {
-          throw new IllegalStateException("Duplicate keys not allowed.");
+          throw new IllegalStateException("Duplicate keys not allowed: " + a);
         }),
         BiStream::toMap);
   }
@@ -192,10 +192,27 @@ public final class MoreStreams {
   /**
    * Returns an infinite {@link IntStream} starting from {@code 0}.
    *
-   * @since 3.0
+   * @deprecated Use {@link #indexesFrom}.
    */
+  @Deprecated
   public static IntStream index() {
     return IntStream.iterate(0, i -> i + 1);
+  }
+
+  /**
+   * Returns an infinite {@link Stream} starting from {@code firstIndex}.
+   * Can be used together with {@link BiStream#zip} to iterate over a stream with index.
+   * For example: {@code zip(indexesFrom(0), values)}.
+   *
+   * <p>To get a finite stream, use {@code indexesFrom(...).limit(size)}.
+   *
+   * <p>Note that while {@code indexesFrom(0)} will eventually incur boxing cost for every integer,
+   * the JVM typically pre-caches small {@code Integer} instances (by default up to 127).
+   *
+   * @since 3.7
+   */
+  public static Stream<Integer> indexesFrom(int firstIndex) {
+    return IntStream.iterate(firstIndex, i -> i + 1).boxed();
   }
 
   /**

@@ -273,6 +273,10 @@ public class MoreStreamsTest {
     assertThat(MoreStreams.index().limit(3)).containsExactly(0, 1, 2).inOrder();
   }
 
+  @Test public void testIndexesFrom() {
+    assertThat(MoreStreams.indexesFrom(1).limit(3)).containsExactly(1, 2, 3).inOrder();
+  }
+
   @Test public void testNulls() throws Exception {
     NullPointerTester tester = new NullPointerTester();
     asList(BiCollection.class.getDeclaredMethods()).stream()
