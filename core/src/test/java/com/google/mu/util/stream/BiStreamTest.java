@@ -20,6 +20,7 @@ import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.BiStream.crossJoining;
 import static com.google.mu.util.stream.BiStream.toAdjacentPairs;
+import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static java.util.Arrays.asList;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
@@ -100,18 +101,17 @@ public class BiStreamTest {
   }
 
   @Test public void testZip_infiniteWithFinite() {
-    assertKeyValues(BiStream.zip(Stream.iterate(1, i -> i + 1), Stream.of("one")))
+    assertKeyValues(BiStream.zip(indexesFrom(1), Stream.of("one")))
         .containsExactly(1, "one");
   }
 
   @Test public void testZip_finiteWithInfinite() {
-    assertKeyValues(BiStream.zip(Stream.of("one"), Stream.iterate(1, i -> i + 1)))
+    assertKeyValues(BiStream.zip(Stream.of("one"), indexesFrom(1)))
         .containsExactly("one", 1);
   }
 
   @Test public void testZip_infiniteWithInfinite() {
-    assertKeyValues(
-            BiStream.zip(Stream.iterate(1, i -> i + 1), Stream.iterate(2, i -> i + 1)).limit(3))
+    assertKeyValues(BiStream.zip(indexesFrom(1), indexesFrom(2)).limit(3))
         .containsExactly(1, 2, 2, 3, 3, 4)
         .inOrder();
   }
@@ -373,7 +373,7 @@ public class BiStreamTest {
   @Test public void testZip_skip_finiteWithInfinite() {
     assertKeyValues(BiStream.zip(Stream.of(1, 2, 4), Stream.iterate(10, i -> i * 2)).skip(1))
         .containsExactly(2, 20, 4, 40);
-    assertKeyValues(BiStream.zip(Stream.iterate(1, i -> i + 1), Stream.of(10, 20)).skip(1))
+    assertKeyValues(BiStream.zip(indexesFrom(1), Stream.of(10, 20)).skip(1))
         .containsExactly(2, 20);
   }
 
@@ -388,9 +388,9 @@ public class BiStreamTest {
   }
 
   @Test public void testZip_limit_finiteWithInfinite() {
-    assertKeyValues(BiStream.zip(Stream.iterate(1, i -> i + 1), Stream.of(10, 20, 30, 40)).limit(2))
+    assertKeyValues(BiStream.zip(indexesFrom(1), Stream.of(10, 20, 30, 40)).limit(2))
         .containsExactly(1, 10, 2, 20);
-    assertKeyValues(BiStream.zip(Stream.of(10, 20, 30, 40), Stream.iterate(1, i -> i + 1)).limit(2))
+    assertKeyValues(BiStream.zip(Stream.of(10, 20, 30, 40), indexesFrom(1)).limit(2))
         .containsExactly(10, 1, 20, 2);
   }
 
@@ -398,7 +398,7 @@ public class BiStreamTest {
     assertThat(BiStream.zip(asList(1, 2, 3, 4), asList("one", "two", "three"))
             .collect(toMap()))
         .containsExactly(1, "one", 2, "two", 3, "three");
-    assertThat(BiStream.zip(Stream.iterate(1, i -> i + 1), Stream.of("one", "two")).collect(toMap()))
+    assertThat(BiStream.zip(indexesFrom(1), Stream.of("one", "two")).collect(toMap()))
         .containsExactly(1, "one", 2, "two");
     assertThat(
             BiStream.zip(asList(1, 2, 3, 4).parallelStream(), Stream.of("one", "two", "three"))
@@ -418,39 +418,38 @@ public class BiStreamTest {
 
   @Test public void testZip_forEach_leftIsEmpty() {
     Map<Object, Object> all = new LinkedHashMap<>();
-    BiStream.zip(Stream.empty(), Stream.iterate(1, i -> i + 1)).forEach(all::put);
+    BiStream.zip(Stream.empty(), indexesFrom(1)).forEach(all::put);
     assertThat(all).isEmpty();
   }
 
   @Test public void testZip_forEach_rightIsEmpty() {
     Map<Object, Object> all = new LinkedHashMap<>();
-    BiStream.zip(Stream.iterate(1, i -> i + 1), Stream.empty()).forEach(all::put);
+    BiStream.zip(indexesFrom(1), Stream.empty()).forEach(all::put);
     assertThat(all).isEmpty();
   }
 
   @Test public void testZip_forEach_leftIsShorter() {
     Map<Object, Object> all = new LinkedHashMap<>();
-    BiStream.zip(Stream.of("one", "two"), Stream.iterate(1, i -> i + 1)).forEach(all::put);
+    BiStream.zip(Stream.of("one", "two"), indexesFrom(1)).forEach(all::put);
     assertThat(all).containsExactly("one", 1, "two", 2).inOrder();
   }
 
   @Test public void testZip_forEach_rightIsShorter() {
     Map<Object, Object> all = new LinkedHashMap<>();
-    BiStream.zip(Stream.iterate(1, i -> i + 1), Stream.of("one", "two")).forEach(all::put);
+    BiStream.zip(indexesFrom(1), Stream.of("one", "two")).forEach(all::put);
     assertThat(all).containsExactly(1, "one", 2, "two").inOrder();
   }
 
   @Test public void testZip_forEach_leftAndRightSameSize() {
     Map<Object, Object> all = new LinkedHashMap<>();
-    BiStream.zip(Stream.iterate(1, i -> i + 1).limit(3), Stream.iterate(11, i -> i + 1).limit(3))
+    BiStream.zip(indexesFrom(1).limit(3), indexesFrom(11).limit(3))
         .forEach(all::put);
     assertThat(all).containsExactly(1, 11, 2, 12, 3, 13).inOrder();
   }
 
   @Test public void testZip_forEach_parallel() {
     ConcurrentMap<Object, Object> all = new ConcurrentHashMap<>();
-    BiStream.zip(
-            Stream.iterate(1, i -> i + 1).parallel(), Stream.of("one", "two", "three").parallel())
+    BiStream.zip(indexesFrom(1).parallel(), Stream.of("one", "two", "three").parallel())
         .forEach(all::put);
     assertThat(all).containsExactly(1, "one", 2, "two", 3, "three");
   }
@@ -463,46 +462,45 @@ public class BiStreamTest {
 
   @Test public void testZip_forEachOrdered_leftIsEmpty() {
     Map<Object, Object> all = new LinkedHashMap<>();
-    BiStream.zip(Stream.empty(), Stream.iterate(1, i -> i + 1)).forEachOrdered(all::put);
+    BiStream.zip(Stream.empty(), indexesFrom(1)).forEachOrdered(all::put);
     assertThat(all).isEmpty();
   }
 
   @Test public void testZip_forEachOrdered_rightIsEmpty() {
     Map<Object, Object> all = new LinkedHashMap<>();
-    BiStream.zip(Stream.iterate(1, i -> i + 1), Stream.empty()).forEachOrdered(all::put);
+    BiStream.zip(indexesFrom(1), Stream.empty()).forEachOrdered(all::put);
     assertThat(all).isEmpty();
   }
 
   @Test public void testZip_forEachOrdered_leftIsShorter() {
     Map<Object, Object> all = new LinkedHashMap<>();
-    BiStream.zip(Stream.of("one", "two"), Stream.iterate(1, i -> i + 1)).forEachOrdered(all::put);
+    BiStream.zip(Stream.of("one", "two"), indexesFrom(1)).forEachOrdered(all::put);
     assertThat(all).containsExactly("one", 1, "two", 2).inOrder();
   }
 
   @Test public void testZip_forEachOrdered_rightIsShorter() {
     Map<Object, Object> all = new LinkedHashMap<>();
-    BiStream.zip(Stream.iterate(1, i -> i + 1), Stream.of("one", "two")).forEachOrdered(all::put);
+    BiStream.zip(indexesFrom(1), Stream.of("one", "two")).forEachOrdered(all::put);
     assertThat(all).containsExactly(1, "one", 2, "two").inOrder();
   }
 
   @Test public void testZip_forEachOrdered_leftAndRightSameSize() {
     Map<Object, Object> all = new LinkedHashMap<>();
-    BiStream.zip(Stream.iterate(1, i -> i + 1).limit(3), Stream.iterate(11, i -> i + 1).limit(3))
+    BiStream.zip(indexesFrom(1).limit(3), indexesFrom(11).limit(3))
         .forEachOrdered(all::put);
     assertThat(all).containsExactly(1, 11, 2, 12, 3, 13).inOrder();
   }
 
   @Test public void testZip_forEachOrdered_parallel() {
     Map<Object, Object> all = Collections.synchronizedMap(new LinkedHashMap<>());
-    BiStream.zip(
-            Stream.iterate(1, i -> i + 1).parallel(), Stream.of("one", "two", "three").parallel())
+    BiStream.zip(indexesFrom(1).parallel(), Stream.of("one", "two", "three").parallel())
         .forEachOrdered(all::put);
     assertThat(all).containsExactly(1, "one", 2, "two", 3, "three").inOrder();
   }
 
   @Test public void testZip_leftIsParallel_isSequential() {
     BiStream<?, ?> zipped =
-        BiStream.zip(Stream.iterate(1, i -> i + 1).parallel(), Stream.of("one", "two", "three"));
+        BiStream.zip(indexesFrom(1).parallel(), Stream.of("one", "two", "three"));
     assertSequential(zipped.mapToObj((i, s) -> i + ":" + s))
         .containsExactly("1:one", "2:two", "3:three")
         .inOrder();
@@ -510,7 +508,7 @@ public class BiStreamTest {
 
   @Test public void testZip_rightIsParallel_isSequential() {
     BiStream<?, ?> zipped =
-        BiStream.zip(Stream.iterate(1, i -> i + 1), Stream.of("one", "two", "three").parallel());
+        BiStream.zip(indexesFrom(1), Stream.of("one", "two", "three").parallel());
     assertSequential(zipped.mapToObj((i, s) -> i + ":" + s))
         .containsExactly("1:one", "2:two", "3:three")
         .inOrder();
@@ -676,12 +674,11 @@ public class BiStreamTest {
   }
 
   @Test public void testCrossJoining_infiniteRight_thenLimit() {
-    assertKeyValues(
-            Stream.empty().collect(crossJoining(IntStream.iterate(0, i -> i + 1).boxed())).limit(2))
+    assertKeyValues(Stream.empty().collect(crossJoining(indexesFrom(0))).limit(2))
         .isEmpty();
     assertKeyValues(
             Stream.of("foo", "bar")
-                .collect(crossJoining(IntStream.iterate(0, i -> i + 1).boxed()))
+                .collect(crossJoining(indexesFrom(0)))
                 .limit(4))
         .containsExactly("foo", 0, "bar", 0, "foo", 1, "bar", 1)
         .inOrder();
