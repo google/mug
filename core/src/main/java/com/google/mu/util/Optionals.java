@@ -42,6 +42,7 @@ public final class Optionals {
    * <p>Example: {@code Optional<Double> avg = optionally(count > 0, () -> sum / count);}
    *
    * @throws NullPointerException if {@code supplier} is null
+   * @since 3.7
    */
   public static <T, E extends Throwable> Optional<T> optionally(
       boolean condition, CheckedSupplier<? extends T, E> supplier) throws E {
@@ -54,6 +55,8 @@ public final class Optionals {
    * not null, or else is {@code empty()}.
    *
    * <p>Example: {@code Optional<Foo> foo = optional(input.hasFoo(), input.getFoo());}
+   *
+   * @since 3.7
    */
   public static <T> Optional<T> optional(boolean condition, T value) {
     return condition ? Optional.ofNullable(value) : Optional.empty();
