@@ -37,7 +37,7 @@ import com.google.mu.function.CheckedSupplier;
 public final class Optionals {
   /**
    * Returns an Optional that wraps the nullable result from {@code supplier} if {@code condition}
-   * is true, or else is {@code empty()}.
+   * is true, or else {@code empty()}.
    *
    * <p>Example: {@code Optional<Double> avg = optionally(count > 0, () -> sum / count);}
    *
@@ -52,7 +52,7 @@ public final class Optionals {
 
   /**
    * Returns an Optional that wraps {@code value} if {@code condition} is true and {@code value} is
-   * not null, or else is {@code empty()}.
+   * not null, or else {@code empty()}.
    *
    * <p>Example: {@code Optional<Foo> foo = optional(input.hasFoo(), input.getFoo());}
    *
