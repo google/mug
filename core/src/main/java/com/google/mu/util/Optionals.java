@@ -27,6 +27,7 @@ import com.google.mu.function.CheckedConsumer;
 import com.google.mu.function.CheckedDoubleConsumer;
 import com.google.mu.function.CheckedIntConsumer;
 import com.google.mu.function.CheckedLongConsumer;
+import com.google.mu.function.CheckedSupplier;
 
 /**
  * Utilities pertaining to {@link Optional}.
@@ -34,6 +35,32 @@ import com.google.mu.function.CheckedLongConsumer;
  * @since 1.14
  */
 public final class Optionals {
+  /**
+   * Returns an Optional that wraps the nullable result from {@code supplier} if {@code condition}
+   * is true, or else is {@code empty()}.
+   *
+   * <p>Example: {@code Optional<Double> avg = optionally(count > 0, () -> sum / count);}
+   *
+   * @throws NullPointerException if {@code supplier} is null
+   * @since 3.7
+   */
+  public static <T, E extends Throwable> Optional<T> optionally(
+      boolean condition, CheckedSupplier<? extends T, E> supplier) throws E {
+    requireNonNull(supplier);
+    return condition ? Optional.ofNullable(supplier.get()) : Optional.empty();
+  }
+
+  /**
+   * Returns an Optional that wraps {@code value} if {@code condition} is true and {@code value} is
+   * not null, or else is {@code empty()}.
+   *
+   * <p>Example: {@code Optional<Foo> foo = optional(input.hasFoo(), input.getFoo());}
+   *
+   * @since 3.7
+   */
+  public static <T> Optional<T> optional(boolean condition, T value) {
+    return condition ? Optional.ofNullable(value) : Optional.empty();
+  }
 
   /**
    * Invokes {@code consumer} if {@code optional} is present. Returns a {@code Premise}
