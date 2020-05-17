@@ -1,7 +1,10 @@
 package com.google.mu.util;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.Optionals.ifPresent;
+import static com.google.mu.util.Optionals.optional;
+import static com.google.mu.util.Optionals.optionally;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.never;
@@ -31,6 +34,43 @@ public class OptionalsTest {
 
   @Before public void setUpMocks() {
     MockitoAnnotations.initMocks(this);
+  }
+
+  @Test
+  public void optionally_empty() {
+    assertThat(
+            optionally(
+                false,
+                () -> {
+                  throw new AssertionError();
+                }))
+        .isEmpty();
+  }
+
+  @Test
+  public void optionally_supplierReturnsNull() {
+    assertThat(optionally(true, () -> null)).isEmpty();
+  }
+
+  @Test
+  public void optionally_notEmpty() {
+    assertThat(optionally(true, () -> "v")).hasValue("v");
+  }
+
+  @Test
+  public void optional_empty() {
+    assertThat(optional(false, "whatever")).isEmpty();
+    assertThat(optional(false, null)).isEmpty();
+  }
+
+  @Test
+  public void optional_nullValueIsTranslatedToEmpty() {
+    assertThat(optional(true, null)).isEmpty();
+  }
+
+  @Test
+  public void optional_notEmpty() {
+    assertThat(optional(true, "v")).hasValue("v");
   }
 
   @Test public void ifPresent_or_firstIsAbsent_secondSupplierIsPresent() {
@@ -191,12 +231,14 @@ public class OptionalsTest {
         .setDefault(OptionalInt.class, OptionalInt.empty())
         .setDefault(OptionalLong.class, OptionalLong.empty())
         .setDefault(OptionalDouble.class, OptionalDouble.empty())
+        .ignore(Optionals.class.getMethod("optional", boolean.class, Object.class))
         .testAllPublicStaticMethods(Optionals.class);
     new NullPointerTester()
         .setDefault(Optional.class, Optional.of("foo"))
         .setDefault(OptionalInt.class, OptionalInt.of(123))
         .setDefault(OptionalLong.class, OptionalLong.of(123))
         .setDefault(OptionalDouble.class, OptionalDouble.of(123))
+        .ignore(Optionals.class.getMethod("optional", boolean.class, Object.class))
         .testAllPublicStaticMethods(Optionals.class);
     new ClassSanityTester()
         .setDefault(Optional.class, Optional.empty())
