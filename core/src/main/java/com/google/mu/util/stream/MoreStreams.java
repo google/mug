@@ -17,15 +17,13 @@ package com.google.mu.util.stream;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
-import java.util.Deque;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Queue;
 import java.util.Spliterator;
 import java.util.Spliterators;
-import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collector;
@@ -222,98 +220,49 @@ public final class MoreStreams {
   }
 
   /**
-   * Returns a lazy stream of elements from {@code queue} in first-in-first-out order.
-   * Each stream element upon consumed is immediately {@link Queue#remove removed} from the queue.
-   * The stream terminates as soon as the queue becomes empty.
+   * Returns a (potentially) infinite stream of {@code collection} until {@code collection} becomes
+   * empty.
    *
-   * <p>The consumer code of the returned stream may modify the underlying queue through adding or
-   * removing elements.
+   * <p>The returned stream can be terminated by removing elements from the underlying collection
+   * while the stream is being iterated.
    *
-   * <p>Can be used to simplify the following common idiom of iterating and consuming queue:
+   * <p>If for example you have a repetitive boilerplate to drain elements from stacks:
+   * 
    * <pre>{@code
-   *   while (!queue.isEmpty()) {
-   *     T element = queue.remove();
+   * while (!candidates.isEmpty()) {
+   *   Candidate candidate = candidates.pop();
+   *   if (candidate.isEligible()) {]
    *     ...
    *   }
+   * }
    * }</pre>
-   * to:
+   *
+   * It can be extracted as a stream for improved readability and reusing code:
+   *
    * <pre>{@code
-   *   removingFrom(queue).forEachOrdered(...);
+   * Stream<Candidate> drainCandidates(Deque<Candidate> candidates) {
+   *   return whileNotEmpty(candidates)
+   *       .map(Deque::pop)
+   *       .filter(Candidate::isEligible);
+   * }
    * }</pre>
    *
-   * @since 3.8
+   * <p>Using this stream API also makes it less prone to human errors such as forgetting the {@code
+   * !} operator in the imperative {@code while(!collection.isEmpty())} boilerplate.
    */
-  public static <T> Stream<T> removingFrom(Queue<T> queue) {
-    return streamingUntil(Stream.generate(queue::remove), queue::isEmpty);
-  }
-
-  /**
-   * Returns a lazy stream of elements from {@code stack} in first-in-last-out order.
-   * Each stream element upon consumed is immediately {@link Deque#pop popped} from the stack.
-   * The stream terminates as soon as the stack becomes empty.
-   *
-   * <p>The consumer code of the returned stream may modify the underlying stack through adding or
-   * removing elements.
-   *
-   * <p>Can be used to simplify the following common idiom of iterating and consuming stack:
-   * <pre>{@code
-   *   while (!stack.isEmpty()) {
-   *     T element = stack.pop();
-   *     ...
-   *   }
-   * }</pre>
-   * to:
-   * <pre>{@code
-   *   poppingFrom(stack).forEachOrdered(...);
-   * }</pre>
-   *
-   * @since 3.8
-   */
-  public static <T> Stream<T> poppingFrom(Deque<T> stack) {
-    return streamingUntil(Stream.generate(stack::pop), stack::isEmpty);
-  }
-
-  /**
-   * Wraps {@code stream} such that it will early-terminate as soon as {@code terminalCondition}
-   * evaluates to true. Side-effect is expected between the consumption the stream elements and
-   * the evaluation of {@code terminalCondition}. Particularly, {@code terminalCondition} is
-   * evaluated once and only once immediately before consuming each stream element.
-   *
-   * @since 3.8
-   */
-  public static <T> Stream<T> streamingUntil(
-      Stream<T> stream, BooleanSupplier terminalCondition) {
-    requireNonNull(stream);
-    requireNonNull(terminalCondition);
+  public static <C extends Collection<?>> Stream<C> whileNotEmpty(C collection) {
+    requireNonNull(collection);
     return StreamSupport.stream(
-        () -> Spliterators.spliteratorUnknownSize(
-            iteratingUntil(stream.iterator(), terminalCondition), 0),
-        0, false);
-  }
-  
-  private static <T> Iterator<T> iteratingUntil(
-      Iterator<T> it, BooleanSupplier terminalCondition) {
-    requireNonNull(it);
-    requireNonNull(terminalCondition);
-    return new Iterator<T>() {
-      boolean peeked = false;
-      boolean hasNext = false;
-      @Override
-      public boolean hasNext() {
-        if (peeked) return hasNext;
-        hasNext = !terminalCondition.getAsBoolean() && it.hasNext();
-        peeked = true;
-        return hasNext;
-      }
-
-      @Override
-      public T next() {
-        if (!hasNext()) throw new NoSuchElementException();
-        T next = it.next();
-        peeked = false;
-        return next;
-      }
-    };
+        Spliterators.spliteratorUnknownSize(
+        new Iterator<C>() {
+          @Override public boolean hasNext() {
+            return !collection.isEmpty();
+          }
+          @Override public C next() {
+            if (collection.isEmpty()) throw new NoSuchElementException("Collection is empty.");
+            return collection;
+          }
+        }, 0), false);
   }
 
   /**
