@@ -229,7 +229,7 @@ public final class MoreStreams {
    * <p>The consumer code of the returned stream may modify the underlying queue through adding or
    * removing elements.
    *
-   * <p>Can be used simplify the following common idiom of iterating and consuming queue:
+   * <p>Can be used to simplify the following common idiom of iterating and consuming queue:
    * <pre>{@code
    *   while (!queue.isEmpty()) {
    *     T element = queue.remove();
