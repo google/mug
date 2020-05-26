@@ -17,9 +17,15 @@ package com.google.mu.util.stream;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
+import java.util.Deque;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Queue;
 import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collector;
@@ -213,6 +219,109 @@ public final class MoreStreams {
    */
   public static Stream<Integer> indexesFrom(int firstIndex) {
     return IntStream.iterate(firstIndex, i -> i + 1).boxed();
+  }
+
+  /**
+   * Returns a stream of elements from {@code queue} in first-in-first-out order.
+   * Each element being streamed is immediately {@link Queue#remove removed} from the queue,
+   * until the queue is empty. The consumer code of the returned stream may modify
+   * the underlying queue such as adding or removing elements.
+   *
+   * <p>This is useful to simplify the following common idiom of iterating and consuming queue:
+   * <pre>{@code
+   *   while (!queue.isEmpty()) {
+   *     T element = queue.remove();
+   *     ...
+   *     if (...) queue.add(...);
+   *   }
+   * }</pre>
+   * to:
+   * <pre>{@code
+   *   removingFrom(queue)
+   *       .forEachOrdered(v -> {
+   *           if (...) queue.add(...);
+   *       });
+   *   }
+   * }</pre>
+   *
+   * @since 3.8
+   */
+  public static <T> Stream<T> removingFrom(Queue<T> queue) {
+    return streamingUntil(Stream.generate(queue::remove), queue::isEmpty);
+  }
+
+  /**
+   * Returns a stream of elements from {@code stack} in first-in-last-out order.
+   * Each element being streamed is immediately {@link Deque#pop popped} from the stack,
+   * until the stack is empty. The consumer code of the returned stream may modify
+   * the underlying such as adding or removing elements.
+   *
+   * <p>This is useful to simplify the following common idiom of iterating and consuming stack:
+   * <pre>{@code
+   *   while (!stack.isEmpty()) {
+   *     T element = stack.pop();
+   *     ...
+   *     if (...) stack.push(...);
+   *   }
+   * }</pre>
+   * to:
+   * <pre>{@code
+   *   poppingFrom(stack)
+   *       .forEachOrdered(v -> {
+   *           if (...) stack.push(...);
+   *       });
+   *   }
+   * }</pre>
+   *
+   * @since 3.8
+   */
+  public static <T> Stream<T> poppingFrom(Deque<T> stack) {
+    return streamingUntil(Stream.generate(stack::pop), stack::isEmpty);
+  }
+
+  /**
+   * Wraps {@code stream} such that it will early-terminate as soon as {@code terminnalCondition}
+   * evaluates to true. Side-effect is expected between consumption the stream elements and
+   * evaluation of {@code terminalCondition}. Particularly, {@code terminalCondition} will
+   * be evaluated once and only once immediately before consuming a stream element.
+   *
+   * @since 3.8
+   */
+  public static <T> Stream<T> streamingUntil(
+      Stream<T> stream, BooleanSupplier terminalCondition) {
+    requireNonNull(stream);
+    requireNonNull(terminalCondition);
+    return StreamSupport.stream(
+        () -> Spliterators.spliteratorUnknownSize(
+            iteratingUntil(stream.iterator(), terminalCondition), 0),
+        0, false);
+  }
+  
+  private static <T> Iterator<T> iteratingUntil(
+      Iterator<T> it, BooleanSupplier terminalCondition) {
+    requireNonNull(it);
+    requireNonNull(terminalCondition);
+    return new Iterator<T>() {
+      boolean peeked = false;
+      boolean hasNext = false;
+      @Override
+      public boolean hasNext() {
+        if (peeked) return hasNext;
+        hasNext = !terminalCondition.getAsBoolean() && it.hasNext();
+        peeked = true;
+        return hasNext;
+      }
+
+      @Override
+      public T next() {
+        if (!hasNext()) {
+          throw new NoSuchElementException("terminal condition");
+        }
+        T next = it.next();
+        peeked = false;
+        return next;
+      }
+    };
   }
 
   /**

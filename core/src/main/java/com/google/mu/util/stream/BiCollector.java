@@ -42,7 +42,7 @@ import java.util.stream.Collector;
 @FunctionalInterface
 public interface BiCollector<K, V, R> {
   /**
-   * Returns a {@code Collector} that will first bisect the input elements using {@code toKey} and
+   * Returns a {@code Collector} that will first split the input elements using {@code toKey} and
    * {@code toValue} and subsequently collect the bisected parts through this {@code BiCollector}.
    *
    * @param toKey
@@ -62,6 +62,6 @@ public interface BiCollector<K, V, R> {
   // this signature.
   // Signatures with or without wildcards should both match.
   // In other words, this signature optimizes flexibility for implementors, not callers.
-  <E> Collector<E, ?, R> bisecting(Function<E, K> toKey, Function<E, V> toValue);
+  <E> Collector<E, ?, R> splitting(Function<E, K> toKey, Function<E, V> toValue);
 }
 
