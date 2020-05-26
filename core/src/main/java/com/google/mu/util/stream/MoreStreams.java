@@ -252,6 +252,8 @@ public final class MoreStreams {
    *
    * <p>Using this stream API also makes it less prone to human errors such as forgetting the {@code
    * !} operator in the imperative {@code while(!collection.isEmpty())} boilerplate.
+   *
+   * @since 3.8
    */
   public static <C extends Collection<?>> Stream<C> whileNotEmpty(C collection) {
     requireNonNull(collection);
