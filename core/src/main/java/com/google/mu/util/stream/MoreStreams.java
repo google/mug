@@ -222,26 +222,23 @@ public final class MoreStreams {
   }
 
   /**
-   * Returns a stream of elements from {@code queue} in first-in-first-out order.
-   * Each element being streamed is immediately {@link Queue#remove removed} from the queue,
-   * until the queue is empty. The consumer code of the returned stream may modify
-   * the underlying queue such as adding or removing elements.
+   * Returns a lazy stream of elements from {@code queue} in first-in-first-out order.
+   * Each stream element upon consumed is immediately {@link Queue#remove removed} from the queue.
+   * The stream terminates as soon as the queue becomes empty.
    *
-   * <p>This is useful to simplify the following common idiom of iterating and consuming queue:
+   * <p>The consumer code of the returned stream may modify the underlying queue through adding or
+   * removing elements.
+   *
+   * <p>Can be used simplify the following common idiom of iterating and consuming queue:
    * <pre>{@code
    *   while (!queue.isEmpty()) {
    *     T element = queue.remove();
    *     ...
-   *     if (...) queue.add(...);
    *   }
    * }</pre>
    * to:
    * <pre>{@code
-   *   removingFrom(queue)
-   *       .forEachOrdered(v -> {
-   *           if (...) queue.add(...);
-   *       });
-   *   }
+   *   removingFrom(queue).forEachOrdered(...);
    * }</pre>
    *
    * @since 3.8
@@ -251,26 +248,23 @@ public final class MoreStreams {
   }
 
   /**
-   * Returns a stream of elements from {@code stack} in first-in-last-out order.
-   * Each element being streamed is immediately {@link Deque#pop popped} from the stack,
-   * until the stack is empty. The consumer code of the returned stream may modify
-   * the underlying such as adding or removing elements.
+   * Returns a lazy stream of elements from {@code stack} in first-in-last-out order.
+   * Each stream element upon consumed is immediately {@link Deque#pop popped} from the stack.
+   * The stream terminates as soon as the stack becomes empty.
    *
-   * <p>This is useful to simplify the following common idiom of iterating and consuming stack:
+   * <p>The consumer code of the returned stream may modify the underlying stack through adding or
+   * removing elements.
+   *
+   * <p>Can be used to simplify the following common idiom of iterating and consuming stack:
    * <pre>{@code
    *   while (!stack.isEmpty()) {
    *     T element = stack.pop();
    *     ...
-   *     if (...) stack.push(...);
    *   }
    * }</pre>
    * to:
    * <pre>{@code
-   *   poppingFrom(stack)
-   *       .forEachOrdered(v -> {
-   *           if (...) stack.push(...);
-   *       });
-   *   }
+   *   poppingFrom(stack).forEachOrdered(...);
    * }</pre>
    *
    * @since 3.8
