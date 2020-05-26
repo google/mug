@@ -274,7 +274,7 @@ public final class MoreStreams {
   }
 
   /**
-   * Wraps {@code stream} such that it will early-terminate as soon as {@code terminnalCondition}
+   * Wraps {@code stream} such that it will early-terminate as soon as {@code terminalCondition}
    * evaluates to true. Side-effect is expected between consumption the stream elements and
    * evaluation of {@code terminalCondition}. Particularly, {@code terminalCondition} will
    * be evaluated once and only once immediately before consuming a stream element.
