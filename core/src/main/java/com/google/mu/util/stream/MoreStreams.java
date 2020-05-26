@@ -314,9 +314,7 @@ public final class MoreStreams {
 
       @Override
       public T next() {
-        if (!hasNext()) {
-          throw new NoSuchElementException("terminal condition");
-        }
+        if (!hasNext()) throw new NoSuchElementException();
         T next = it.next();
         peeked = false;
         return next;
