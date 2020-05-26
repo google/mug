@@ -50,6 +50,21 @@ public final class MoreStreams {
    * This method can be used to generate finite streams: just return an empty stream when the
    * {@code step} determines that there's no more elements to be generated.
    *
+   * <p>A typical group of use cases are BFS traversal algorithms.
+   * For example, to stream the tree nodes in BFS order: <pre>{@code
+   *   Stream<Node> bfs(Node root) {
+   *     return generate(root, node -> node.children().stream());
+   *   }
+   * }</pre>
+   *
+   * A BFS 2-D grid traversal algorithm: <pre>{@code
+   *   Stream<Cell> bfs(Cell startingCell) {
+   *     Set<Cell> visited = new HashSet<>();
+   *     visited.add(startingCell);
+   *     return generate(startingCell, c -> c.neighbors().filter(visited::add));
+   *   }
+   * }</pre>
+   *
    * <p>At every step, 0, 1 or more elements can be generated into the resulting stream.
    * As discussed above, returning an empty stream leads to eventual termination of the stream;
    * returning 1-element stream is equivalent to {@code Stream.generate(supplier)};
