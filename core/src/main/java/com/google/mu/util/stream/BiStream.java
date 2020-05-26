@@ -1010,7 +1010,7 @@ public abstract class BiStream<K, V> {
 
     @Override
     public final <R> R collect(BiCollector<? super K, ? super V, R> collector) {
-      return underlying.collect(collector.bisecting(toKey::apply, toValue::apply));
+      return underlying.collect(collector.splitting(toKey::apply, toValue::apply));
     }
 
     final <T> Function<E, T> forEntry(BiFunction<? super K, ? super V, T> function) {
@@ -1179,7 +1179,7 @@ public abstract class BiStream<K, V> {
       }
 
       <R> R collectWith(BiCollector<? super K, ? super V, R> collector) {
-        return collectWith(collector.bisecting(x -> currentLeft.value, x -> currentRight.value));
+        return collectWith(collector.splitting(x -> currentLeft.value, x -> currentRight.value));
       }
 
       /** {@code collector} internally reads from {@link #currentLeft} and {@link #currentRight}. */

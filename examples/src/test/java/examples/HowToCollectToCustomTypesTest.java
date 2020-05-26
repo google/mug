@@ -23,7 +23,7 @@ public class HowToCollectToCustomTypesTest {
     BiStream<String, Integer> biStream = BiStream.of("one", 1, "two", 2);
     ImmutableMap<String, Integer> map = biStream.collect(new BiCollector<String, Integer, ImmutableMap<String, Integer>>() {
       @Override
-      public <E> Collector<E, ?, ImmutableMap<String, Integer>> bisecting(Function<E, String> toKey, Function<E, Integer> toValue) {
+      public <E> Collector<E, ?, ImmutableMap<String, Integer>> splitting(Function<E, String> toKey, Function<E, Integer> toValue) {
         return ImmutableMap.toImmutableMap(toKey,toValue);
       }
     });
@@ -35,7 +35,7 @@ public class HowToCollectToCustomTypesTest {
     ImmutableListMultimap<String, Integer> map =
         biStream.collect(new BiCollector<String, Integer, ImmutableListMultimap<String, Integer>>() {
           @Override
-          public <E> Collector<E, ?, ImmutableListMultimap<String, Integer>> bisecting(Function<E, String> toKey, Function<E, Integer> toValue) {
+          public <E> Collector<E, ?, ImmutableListMultimap<String, Integer>> splitting(Function<E, String> toKey, Function<E, Integer> toValue) {
             return ImmutableListMultimap.toImmutableListMultimap(toKey,toValue);
           }
         });
@@ -48,7 +48,7 @@ public class HowToCollectToCustomTypesTest {
     ImmutableRangeMap<Integer, String> map =
         biStream.collect(new BiCollector<Range<Integer>, String, ImmutableRangeMap<Integer, String>>() {
           @Override
-          public <E> Collector<E, ?, ImmutableRangeMap<Integer, String>> bisecting(Function<E, Range<Integer>> toKey, Function<E, String> toValue) {
+          public <E> Collector<E, ?, ImmutableRangeMap<Integer, String>> splitting(Function<E, Range<Integer>> toKey, Function<E, String> toValue) {
             return ImmutableRangeMap.toImmutableRangeMap(toKey,toValue);
           }
         });

@@ -31,7 +31,7 @@ public class HowToDoGroupingFluentlyTest {
         .collect(groupingBy(n -> n % 10, toImmutableSet()))
         .collect(new BiCollector<Integer, ImmutableSet<Integer>, ImmutableMap<Integer, ImmutableSet<Integer>>>() {
           @Override
-          public <E> Collector<E, ?, ImmutableMap<Integer, ImmutableSet<Integer>>> bisecting(Function<E, Integer> toKey, Function<E, ImmutableSet<Integer>> toValue) {
+          public <E> Collector<E, ?, ImmutableMap<Integer, ImmutableSet<Integer>>> splitting(Function<E, Integer> toKey, Function<E, ImmutableSet<Integer>> toValue) {
             return ImmutableMap.toImmutableMap(toKey,toValue);
           }
         });

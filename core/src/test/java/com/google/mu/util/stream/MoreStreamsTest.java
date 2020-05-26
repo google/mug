@@ -24,11 +24,15 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.Assume.assumeTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Spliterator;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -269,12 +273,103 @@ public class MoreStreamsTest {
             .collect(uniqueKeys()));
   }
 
-  @Test public void testIndex() {
-    assertThat(MoreStreams.index().limit(3)).containsExactly(0, 1, 2).inOrder();
-  }
-
   @Test public void testIndexesFrom() {
     assertThat(MoreStreams.indexesFrom(1).limit(3)).containsExactly(1, 2, 3).inOrder();
+  }
+  
+  @Test public void removingFromQueue_empty() {
+    Queue<String> queue = new ArrayDeque<>();
+    assertThat(MoreStreams.removingFrom(queue)).isEmpty();
+    assertThat(queue).isEmpty();
+  }
+  
+  @Test public void removingFromQueue_noConcurrentModification() {
+    Queue<String> queue = new ArrayDeque<>();
+    queue.add("one");
+    queue.add("two");
+    assertThat(MoreStreams.removingFrom(queue))
+        .containsExactly("one", "two").inOrder();
+    assertThat(queue).isEmpty();
+  }
+  
+  @Test public void removingFromQueue_modificationUnderneath() {
+    Queue<String> queue = new ArrayDeque<>();
+    Stream<String> stream = MoreStreams.removingFrom(queue);
+    queue.add("one");
+    queue.add("two");
+    assertThat(stream).containsExactly("one", "two").inOrder();
+    assertThat(queue).isEmpty();
+  }
+  
+  @Test public void removingFromQueue_modificationWhileStreaming() {
+    Queue<String> queue = new ArrayDeque<>();
+    queue.add("one");
+    assertThat(
+            MoreStreams.removingFrom(queue)
+                .peek(v -> {
+                  if (v.equals("one")) queue.add("two");
+                }))
+        .containsExactly("one", "two").inOrder();
+    assertThat(queue).isEmpty();
+  }
+  
+  @Test public void removingFromQueue_parallel() {
+    Queue<Integer> queue = new ArrayDeque<>();
+    MoreStreams.indexesFrom(1).limit(100).forEach(queue::add);
+    assertThat(MoreStreams.removingFrom(queue).parallel())
+        .containsExactlyElementsIn(MoreStreams.indexesFrom(1).limit(100).collect(toList()));
+    assertThat(queue).isEmpty();
+  }
+  
+  @Test public void poppingFromStack_empty() {
+    Deque<String> stack = new ArrayDeque<>();
+    assertThat(MoreStreams.poppingFrom(stack)).isEmpty();
+    assertThat(stack).isEmpty();
+  }
+  
+  @Test public void poppingFromStack_noConcurrentModification() {
+    Deque<String> stack = new ArrayDeque<>();
+    stack.push("one");
+    stack.push("two");
+    assertThat(MoreStreams.poppingFrom(stack))
+        .containsExactly("two", "one").inOrder();
+    assertThat(stack).isEmpty();
+  }
+  
+  @Test public void poppingFromStack_modificationUnderneath() {
+    Deque<String> stack = new ArrayDeque<>();
+    Stream<String> stream = MoreStreams.poppingFrom(stack);
+    stack.push("one");
+    stack.push("two");
+    assertThat(stream).containsExactly("two", "one").inOrder();
+    assertThat(stack).isEmpty();
+  }
+  
+  @Test public void poppingFromStack_modificationWhileStreaming() {
+    Deque<String> stack = new ArrayDeque<>();
+    stack.push("one");
+    assertThat(
+            MoreStreams.poppingFrom(stack)
+                .peek(v -> {
+                  if (v.equals("one")) stack.push("two");
+                }))
+        .containsExactly("one", "two").inOrder();
+    assertThat(stack).isEmpty();
+  }
+  
+  @Test public void poppingFromStack_parallel() {
+    Deque<Integer> stack = new ArrayDeque<>();
+    MoreStreams.indexesFrom(1).limit(100).forEach(stack::push);
+    assertThat(MoreStreams.poppingFrom(stack).parallel())
+        .containsExactlyElementsIn(MoreStreams.indexesFrom(1).limit(100).collect(toList()));
+    assertThat(stack).isEmpty();
+  }
+  
+  @Test public void streamingUntil_conditionWithSideEffect() {
+    AtomicInteger counter = new AtomicInteger();
+    Stream<Integer> stream = MoreStreams.streamingUntil(
+        MoreStreams.indexesFrom(11), () -> counter.getAndIncrement() >= 5);
+    assertThat(stream).containsExactly(11, 12, 13, 14, 15);
   }
 
   @Test public void testNulls() throws Exception {

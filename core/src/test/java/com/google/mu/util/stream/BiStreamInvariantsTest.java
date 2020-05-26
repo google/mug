@@ -293,7 +293,7 @@ public class BiStreamInvariantsTest {
     ImmutableListMultimap<String, Integer> multimap =
         of("one", 1, "one", 10, "two", 2).collect(new BiCollector<String, Integer, ImmutableListMultimap<String, Integer>>() {
           @Override
-          public <E> Collector<E, ?, ImmutableListMultimap<String, Integer>> bisecting(Function<E, String> toKey, Function<E, Integer> toValue) {
+          public <E> Collector<E, ?, ImmutableListMultimap<String, Integer>> splitting(Function<E, String> toKey, Function<E, Integer> toValue) {
             return BiStreamInvariantsTest.toImmutableMultimap(toKey,toValue);
           }
         });
@@ -491,7 +491,7 @@ public class BiStreamInvariantsTest {
   static<K, V> MultimapSubject assertKeyValues(BiStream<K, V> stream) {
     Multimap<?, ?> multimap = stream.collect(new BiCollector<K, V, Multimap<K,V>>() {
       @Override
-      public <E> Collector<E, ?, Multimap<K, V>> bisecting(Function<E, K> toKey, Function<E, V> toValue) {
+      public <E> Collector<E, ?, Multimap<K, V>> splitting(Function<E, K> toKey, Function<E, V> toValue) {
         return BiStreamInvariantsTest.toLinkedListMultimap(toKey,toValue);
       }
     });
