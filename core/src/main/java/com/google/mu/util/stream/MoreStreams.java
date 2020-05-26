@@ -267,7 +267,7 @@ public final class MoreStreams {
             if (collection.isEmpty()) throw new NoSuchElementException("Collection is empty.");
             return collection;
           }
-        }, 0), false);
+        }, Spliterator.NONNULL), false);
   }
 
   /**
