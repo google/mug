@@ -226,7 +226,10 @@ public final class MoreStreams {
    * <p>The returned stream can be terminated by removing elements from the underlying collection
    * while the stream is being iterated.
    *
-   * <p>If for example you have a repetitive boilerplate to drain elements from stacks:
+   * <p>While arguably it's a style difference between the imperative {@code while
+   * (!stack.isEmpty())} and the functional {@code whileNotEmpty(stack)}, The stream API offers
+   * advantage in terms of abstraction and code reuse. If for example you have a repetitive
+   * boilerplate to drain elements from stacks:
    * 
    * <pre>{@code
    * while (!candidates.isEmpty()) {
@@ -237,7 +240,7 @@ public final class MoreStreams {
    * }
    * }</pre>
    *
-   * It can be extracted as a stream for improved readability and reusing code:
+   * It can be extracted into a reusable method for abstraction and improved readability:
    *
    * <pre>{@code
    * Stream<Candidate> drainCandidates(Deque<Candidate> candidates) {
