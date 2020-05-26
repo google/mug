@@ -20,6 +20,7 @@ import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.stream.BiStream.groupingValuesFrom;
 import static com.google.mu.util.stream.MoreStreams.uniqueKeys;
 import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assume.assumeTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -314,8 +315,9 @@ public class MoreStreamsTest {
   }
   
   @Test public void removingFromQueue_parallel() {
-    Queue<Integer> queue = new ArrayDeque<>();
-    MoreStreams.indexesFrom(1).limit(100).forEach(queue::add);
+    Queue<Integer> queue = MoreStreams.indexesFrom(1)
+        .limit(100)
+        .collect(toCollection(ArrayDeque::new));
     assertThat(MoreStreams.removingFrom(queue).parallel())
         .containsExactlyElementsIn(MoreStreams.indexesFrom(1).limit(100).collect(toList()));
     assertThat(queue).isEmpty();
