@@ -193,7 +193,15 @@ ifPresent(teacher, student, Teacher::teach)             // teach if both present
     .orElse(() -> log("no teacher. no student"));       // or else log
 ```
 
+**Example 4: wrap a value in Optional if it exists:**
+```java
+static import com.google.mu.util.Optionals.optional;
+
+Optional<String> id = optional(request.hasId(), request.getId());
+```
+
 All Optionals utilites propagate checked exception from the the lambda/method references.
+
 
 ## Substring
 
