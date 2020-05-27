@@ -61,11 +61,7 @@ public final class MoreStreams {
    * 
    * It's functionally equivalent to the following common imperative code: <pre>{@code
    *   List<Node> bfs(Node root) {
-<<<<<<< HEAD
-   *     List<Node> result = new ArrayList<();
-=======
    *     List<Node> result = new ArrayList<>();
->>>>>>> master
    *     Queue<Node> queue = new ArrayDeque<>();
    *     queue.add(root);
    *     while (!queue.isEmpty()) {
