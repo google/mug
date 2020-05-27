@@ -3,6 +3,8 @@ package com.google.mu.util;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.Optionals.ifPresent;
+import static com.google.mu.util.Optionals.flatMapBoth;
+import static com.google.mu.util.Optionals.mapBoth;
 import static com.google.mu.util.Optionals.optional;
 import static com.google.mu.util.Optionals.optionally;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -181,34 +183,34 @@ public class OptionalsTest {
   }
 
   @Test public void map_leftIsEmpty() {
-    assertThat(Optionals.map(Optional.empty(), Optional.of("bar"), action::run)).isEqualTo(Optional.empty());
+    assertThat(mapBoth(Optional.empty(), Optional.of("bar"), action::run)).isEqualTo(Optional.empty());
     verify(action, never()).run(any(), any());
   }
 
   @Test public void map_rightIsEmpty() {
-    assertThat(Optionals.map(Optional.of("foo"), Optional.empty(), action::run)).isEqualTo(Optional.empty());
+    assertThat(mapBoth(Optional.of("foo"), Optional.empty(), action::run)).isEqualTo(Optional.empty());
     verify(action, never()).run(any(), any());
   }
 
   @Test public void map_bothArePresent_mapperReturnsNull() {
-    assertThat(Optionals.map(Optional.of("foo"), Optional.empty(), (a, b) -> null))
+    assertThat(mapBoth(Optional.of("foo"), Optional.empty(), (a, b) -> null))
         .isEqualTo(Optional.empty());
   }
 
   @Test public void map_bothArePresent_mapperReturnsNonNull() {
-    assertThat(Optionals.map(Optional.of("foo"), Optional.of("bar"), (a, b) -> a + b))
+    assertThat(mapBoth(Optional.of("foo"), Optional.of("bar"), (a, b) -> a + b))
         .isEqualTo(Optional.of("foobar"));
   }
 
   @Test public void flatMap_leftIsEmpty() {
-    assertThat(Optionals.flatMap(
+    assertThat(flatMapBoth(
              Optional.empty(), Optional.of("bar"),(a, b) -> Optional.of(action.run(a, b))))
         .isEqualTo(Optional.empty());
     verify(action, never()).run(any(), any());
   }
 
   @Test public void flatMap_rightIsEmpty() {
-    assertThat(Optionals.flatMap(
+    assertThat(flatMapBoth(
              Optional.of("foo"), Optional.empty(),(a, b) -> Optional.of(action.run(a, b))))
         .isEqualTo(Optional.empty());
     verify(action, never()).run(any(), any());
@@ -217,11 +219,11 @@ public class OptionalsTest {
   @Test public void flatMap_bothPresent_mapperReturnsNull() {
     assertThrows(
         NullPointerException.class,
-        () -> Optionals.flatMap(Optional.of("foo"), Optional.of("bar"), (a, b) -> null));
+        () -> flatMapBoth(Optional.of("foo"), Optional.of("bar"), (a, b) -> null));
   }
 
   @Test public void flatMap_bothPresent_mapperReturnsNonNull() {
-    assertThat(Optionals.flatMap(Optional.of("foo"), Optional.of("bar"), (a, b) -> Optional.of(a + b)))
+    assertThat(flatMapBoth(Optional.of("foo"), Optional.of("bar"), (a, b) -> Optional.of(a + b)))
         .isEqualTo(Optional.of("foobar"));
   }
 
