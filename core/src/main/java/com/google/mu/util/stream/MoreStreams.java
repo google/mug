@@ -61,7 +61,11 @@ public final class MoreStreams {
    * 
    * It's functionally equivalent to the following common imperative code: <pre>{@code
    *   List<Node> bfs(Node root) {
+<<<<<<< HEAD
    *     List<Node> result = new ArrayList<();
+=======
+   *     List<Node> result = new ArrayList<>();
+>>>>>>> master
    *     Queue<Node> queue = new ArrayDeque<>();
    *     queue.add(root);
    *     while (!queue.isEmpty()) {
@@ -260,10 +264,10 @@ public final class MoreStreams {
    * <p>The returned stream can be terminated by removing elements from the underlying collection
    * while the stream is being iterated.
    *
-   * <p>While arguably it's a style difference between the imperative {@code while
-   * (!stack.isEmpty())} and the functional {@code whileNotEmpty(stack)}, The stream API offers
-   * advantage in terms of abstraction and code reuse. If for example you have a repetitive
-   * boilerplate to drain elements from stacks:
+   * <p>Arguably it's a matter of style difference between the imperative {@code
+   * while(!stack.isEmpty())} and the functional {@code whileNotEmpty(stack)}. Although,
+   * the latter does offer advantage in terms of abstraction and code reuse. If for example you
+   * have a repetitive boilerplate to drain elements from stacks:
    * 
    * <pre>{@code
    * while (!candidates.isEmpty()) {
