@@ -58,6 +58,20 @@ public final class MoreStreams {
    *     return generate(root, node -> node.children().stream());
    *   }
    * }</pre>
+   * 
+   * It's functionally equivalent to the following common imperative code: <pre>{@code
+   *   List<Node> bfs(Node root) {
+   *     List<Node> output = new ArrayList<();
+   *     Queue<Node> queue = new ArrayDeque<>();
+   *     queue.add(root);
+   *     while (!queue.isEmpty()) {
+   *       Node node = queue.remove();
+   *       output.add(node);
+   *       queue.addAll(node.children());
+   *     }
+   *     return output;
+   *   }
+   * }</pre>
    *
    * A BFS 2-D grid traversal algorithm: <pre>{@code
    *   Stream<Cell> bfs(Cell startingCell) {
