@@ -217,12 +217,43 @@ public final class Optionals {
     }
   }
 
+  /** @deprecated Use {@link #mapBoth} instead. */
+  @Deprecated
+  public static <A, B, R, E extends Throwable> Optional<R> map(
+      Optional<A> left, Optional<B> right, CheckedBiFunction<? super A, ? super B, ? extends R, E> mapper)
+      throws E {
+    requireNonNull(left);
+    requireNonNull(right);
+    requireNonNull(mapper);
+    if (left.isPresent() && right.isPresent()) {
+      return Optional.ofNullable(mapper.apply(left.get(), right.get()));
+    }
+    return Optional.empty();
+  }
+
+  /** @deprecated Use {@link #flatMapBoth} instead. */
+  @Deprecated
+  public static <A, B, R, E extends Throwable> Optional<R> flatMap(
+      Optional<A> left, Optional<B> right,
+      CheckedBiFunction<? super A, ? super B, ? extends Optional<R>, E> mapper)
+      throws E {
+    requireNonNull(left);
+    requireNonNull(right);
+    requireNonNull(mapper);
+    if (left.isPresent() && right.isPresent()) {
+      return requireNonNull(mapper.apply(left.get(), right.get()));
+    }
+    return Optional.empty();
+  }
+
   /**
    * Maps {@code left} and {@code right} using {@code mapper} if both are present.
    * Returns an {@link Optional} wrapping the result of {@code mapper} if non-null, or else returns
    * {@code Optional.empty()}.
+   *
+   * @since 3.8
    */
-  public static <A, B, R, E extends Throwable> Optional<R> map(
+  public static <A, B, R, E extends Throwable> Optional<R> mapBoth(
       Optional<A> left, Optional<B> right, CheckedBiFunction<? super A, ? super B, ? extends R, E> mapper)
       throws E {
     requireNonNull(left);
@@ -240,8 +271,9 @@ public final class Optionals {
    * is empty.
    *
    * @throws NullPointerException if {@code mapper} returns null
+   * @since 3.8
    */
-  public static <A, B, R, E extends Throwable> Optional<R> flatMap(
+  public static <A, B, R, E extends Throwable> Optional<R> flatMapBoth(
       Optional<A> left, Optional<B> right,
       CheckedBiFunction<? super A, ? super B, ? extends Optional<R>, E> mapper)
       throws E {
