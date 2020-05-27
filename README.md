@@ -148,14 +148,10 @@ for (Object obj : iterateOnce(stream)) {
 }
 ```
 
-**Example 3: to generate a stream (that can be finite) iteratively:**
+**Example 3: to generate a BFS stream:**
 ```java
-// Returns next round of elements, or empty to stop generating.
-private Stream<T> nextValues(T currentValue) {
-  ...
-}
-
-Stream<T> stream = MoreStreams.generate(seed, this::nextValues);
+Stream<V> bfs = MoreStreams.generate(root, node -> node.children().stream())
+    .map(Node::value);
 ```
 
 **Example 4: to merge maps:**
