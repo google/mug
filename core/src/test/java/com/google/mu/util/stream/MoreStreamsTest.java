@@ -55,6 +55,11 @@ public class MoreStreamsTest {
         .containsExactly(1);
   }
 
+  @Test public void generate_functionReturnsNull() {
+    assertThat(MoreStreams.generate(1, x -> null).collect(toList()))
+        .containsExactly(1);
+  }
+
   @Test public void generateFanIn() throws Exception {
     assertThat(MoreStreams.generate(100, i -> IntStream.rangeClosed(1, i / 10).boxed())
             .collect(toList()))

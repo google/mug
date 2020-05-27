@@ -44,6 +44,8 @@ public final class MoreStreams {
    * Returns a Stream produced by iterative application of {@code step} to the initial
    * {@code seed}, producing a Stream consisting of seed, elements of step(seed),
    * elements of step(x) for each x in step(seed), etc.
+   * (If the result stream returned by the {@code step} function is null an empty stream is used,
+   * instead.)
    *
    * <p>While {@code Stream.generate(supplier)} can be used to generate infinite streams,
    * it's not as easy to generate a <em>finite</em> stream unless the size can be pre-determined.
@@ -75,9 +77,12 @@ public final class MoreStreams {
    */
   public static <T> Stream<T> generate(
       T seed, Function<? super T, ? extends Stream<? extends T>> step) {
+    Stream<? extends T> fanout = step.apply(seed);
     // flatMap() here won't honor short-circuiting such as limit(), because it internally
     // uses forEach() on the passed-in stream. See https://bugs.openjdk.java.net/browse/JDK-8075939
-    return Stream.concat(Stream.of(seed), flatten(step.apply(seed).map(n -> generate(n, step))));
+    return fanout == null
+        ? Stream.of(seed)
+        : Stream.concat(Stream.of(seed), flatten(fanout.map(n -> generate(n, step))));
   }
 
   /**
@@ -249,7 +254,7 @@ public final class MoreStreams {
    * <pre>{@code
    * while (!candidates.isEmpty()) {
    *   Candidate candidate = candidates.pop();
-   *   if (candidate.isEligible()) {]
+   *   if (candidate.isEligible()) {
    *     ...
    *   }
    * }
