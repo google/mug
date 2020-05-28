@@ -72,10 +72,10 @@ public final class ShortestPaths {
               .filterKeys(n -> !done.contains(n))
               .filter((n, d) -> {
                 Vertex<N> pending = vertices.get(n);
-                return pending == null || v.farther(d) < pending.distance();
+                return pending == null || v.extend(d) < pending.distance();
               })
               .forEach((n, d) -> {
-                Vertex<N> shorter = new Vertex<N>(n, v, v.farther(d));
+                Vertex<N> shorter = new Vertex<N>(n, v, v.extend(d));
                 vertices.put(n, shorter);
                 queue.add(shorter);
               });
@@ -113,7 +113,7 @@ public final class ShortestPaths {
       this(node, null, 0);
     }
  
-    long farther(long delta) {
+    long extend(long delta) {
       if (delta < 0) {
         throw new IllegalArgumentException("Distance cannot be negative: " + delta);
       }
