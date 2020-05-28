@@ -33,7 +33,7 @@ import java.util.stream.Stream;
 import com.google.mu.util.stream.BiStream;
 
 /**
- * The Dijkstra shortest path algorithm implemented as a lazy, on-the-fly stream,
+ * The Dijkstra shortest path algorithm implemented as a lazy, computed-on-the-fly stream,
  * using Mug utilities.
  *
  * @since 3.8
@@ -44,7 +44,7 @@ public final class ShortestPaths {
    * adjacent nodes and their direct distances from the node returned by the {@code
    * adjacentNodesDiscoverer} function.
    *
-   * <p>The {@code adjacentNodesDiscoverer} function is called on-demand as the returned stream is
+   * <p>The {@code adjacentNodesDiscoverer} function is called on-the-fly as the returned stream is
    * being iterated.
    *
    * <p>{@code originalNode} will correspond to the first element in the returned stream, with
