@@ -284,6 +284,9 @@ public final class MoreStreams {
    * }
    * }</pre>
    *
+   * See {@link com.google.mu.util.algo.ShortestPaths} for how {@code whileNotEmpty()} can be used
+   * to build reusable, lazily-evaluated Dijkstra shortest-path algorithm.
+   *
    * <p>Using this stream API also makes it less prone to human errors such as forgetting the {@code
    * !} operator in the imperative {@code while(!collection.isEmpty())} boilerplate.
    *

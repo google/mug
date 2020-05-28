@@ -51,6 +51,8 @@ public final class ShortestPaths {
    *
    * <p>{@code originalNode} will correspond to the first element in the returned stream, with
    * {@link Path#distance} equal to {@code 0}, followed by the next closest node, etc.
+   *
+   * @param <N> The node type. Must implement {@link Object#equals} and {@link Object#hashCode}.
    */
   public static <N> Stream<Path<N>> shortestPaths(
       N originalNode, Function<N, BiStream<N, Long>> adjacentNodesDiscoverer) {
@@ -66,22 +68,14 @@ public final class ShortestPaths {
         .filter(v -> done.add(v.to()))
         .peek(v -> {
           adjacentNodesDiscoverer.apply(v.to())
-              .peek((n, d) -> {
-                requireNonNull(n);
-                if (d < 0) {
-                  throw new IllegalArgumentException("Distance cannot be negative: " + d);
-                }
-                if (v.distance() + d < 0) {
-                  throw new ArithmeticException("Distance overflow: " + v.distance() + " + " + d);
-                }
-              })
+              .peek((n, d) -> requireNonNull(n))
               .filterKeys(n -> !done.contains(n))
               .filter((n, d) -> {
                 Vertex<N> pending = vertices.get(n);
-                return pending == null || v.distance() + d < pending.distance();
+                return pending == null || v.farther(d) < pending.distance();
               })
               .forEach((n, d) -> {
-                Vertex<N> shorter = new Vertex<N>(n, v, v.distance() + d);
+                Vertex<N> shorter = new Vertex<N>(n, v, v.farther(d));
                 vertices.put(n, shorter);
                 queue.add(shorter);
               });
@@ -117,6 +111,17 @@ public final class ShortestPaths {
     
     Vertex(N node) {
       this(node, null, 0);
+    }
+ 
+    long farther(long delta) {
+      if (delta < 0) {
+        throw new IllegalArgumentException("Distance cannot be negative: " + delta);
+      }
+      long farther = distance + delta;
+      if (farther < 0) {
+        throw new ArithmeticException("Distance overflow: " + distance + " + " + delta);
+      }
+      return farther;
     }
 
     @Override public N to() {
