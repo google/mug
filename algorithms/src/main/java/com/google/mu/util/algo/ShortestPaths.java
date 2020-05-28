@@ -17,6 +17,7 @@ package com.google.mu.util.algo;
 import static com.google.mu.util.stream.MoreStreams.whileNotEmpty;
 import static java.util.Comparator.comparingLong;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,7 +28,6 @@ import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.mu.util.stream.BiStream;
@@ -115,11 +115,11 @@ public final class ShortestPaths {
         nodes.add(v);
       }
       Collections.reverse(nodes);
-      return BiStream.from(nodes, v -> v.node, v -> v.distance);
+      return BiStream.from(nodes, Path::to, Path::distance);
     }
     
     @Override public String toString() {
-      return nodes().keys().map(Object::toString).collect(Collectors.joining("->"));
+      return nodes().keys().map(Object::toString).collect(joining("->"));
     }
  
     long extend(long delta) {
