@@ -17,7 +17,6 @@ package com.google.mu.util.algo;
 import static com.google.mu.util.stream.MoreStreams.whileNotEmpty;
 import static java.util.Comparator.comparingLong;
 import static java.util.Objects.requireNonNull;
-import static java.util.function.Function.identity;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -58,59 +57,70 @@ public final class ShortestPaths {
       N originalNode, Function<N, BiStream<N, Long>> adjacentNodesDiscoverer) {
     requireNonNull(originalNode);
     requireNonNull(adjacentNodesDiscoverer);
-    Map<N, Vertex<N>> vertices = new HashMap<>();
+    Map<N, Path<N>> seen = new HashMap<>();
     Set<N> done = new HashSet<>();
-    PriorityQueue<Vertex<N>> queue = new PriorityQueue<>(comparingLong(Vertex::distance));
-    Vertex<N> v0 = new Vertex<>(originalNode);
-    queue.add(v0);
+    PriorityQueue<Path<N>> queue = new PriorityQueue<>(comparingLong(Path::distance));
+    Path<N> p0 = new Path<>(originalNode);
+    queue.add(p0);
     return whileNotEmpty(queue)
         .map(PriorityQueue::remove)
-        .filter(v -> done.add(v.to()))
-        .peek(v -> {
-          adjacentNodesDiscoverer.apply(v.to())
-              .peek((n, d) -> requireNonNull(n))
-              .filterKeys(n -> !done.contains(n))
-              .filter((n, d) -> {
-                Vertex<N> pending = vertices.get(n);
-                return pending == null || v.extend(d) < pending.distance();
-              })
-              .forEach((n, d) -> {
-                Vertex<N> shorter = new Vertex<N>(n, v, v.extend(d));
-                vertices.put(n, shorter);
-                queue.add(shorter);
-              });
-        })
-        .map(identity());
+        .filter(p -> done.add(p.to()))
+        .peek(p ->
+            adjacentNodesDiscoverer.apply(p.to())
+                .peek((n, d) -> requireNonNull(n))
+                .filterKeys(n -> !done.contains(n))
+                .filter((n, d) -> {
+                  Path<N> pending = seen.get(n);
+                  return pending == null || p.extend(d) < pending.distance();
+                })
+                .forEach((n, d) -> {
+                  Path<N> shorter = new Path<N>(n, p, p.extend(d));
+                  seen.put(n, shorter);
+                  queue.add(shorter);
+                }));
   }
 
   /** The path from the original node to a destination node. */
-  public interface Path<N> {
-    /** returns the last node of the path. */
-    N to();
-    
-    /** Returns the total distance of this path. */
-    long distance();
-
-    /**
-     * Returns all nodes from the original node along this path, with the <em>cumulative</em>
-     * distances from the original node up to each node in the stream, respectively.
-     */
-    BiStream<N, Long> nodes();
-  }
-  
-  private static final class Vertex<N> implements Path<N> {
+  public static final class Path<N> {
     private final N node;
-    private final Vertex<N> predecessor;
+    private final Path<N> predecessor;
     private final long distance;
     
-    Vertex(N node, Vertex<N> predecessor, long distance) {
+    Path(N node, Path<N> predecessor, long distance) {
       this.node = node;
       this.predecessor = predecessor;
       this.distance = distance;
     }
     
-    Vertex(N node) {
+    Path(N node) {
       this(node, null, 0);
+    }
+
+    /** returns the last node of the path. */
+    public N to() {
+      return node;
+    }
+    
+    /** Returns the total distance of this path. */
+    public long distance() {
+      return distance;
+    }
+
+    /**
+     * Returns all nodes from the original node along this path, with the <em>cumulative</em>
+     * distances from the original node up to each node in the stream, respectively.
+     */
+    public BiStream<N, Long> nodes() {
+      List<Path<N>> nodes = new ArrayList<>();
+      for (Path<N> v = this; v != null; v = v.predecessor) {
+        nodes.add(v);
+      }
+      Collections.reverse(nodes);
+      return BiStream.from(nodes, v -> v.node, v -> v.distance);
+    }
+    
+    @Override public String toString() {
+      return nodes().keys().map(Object::toString).collect(Collectors.joining("->"));
     }
  
     long extend(long delta) {
@@ -122,27 +132,6 @@ public final class ShortestPaths {
         throw new ArithmeticException("Distance overflow: " + distance + " + " + delta);
       }
       return farther;
-    }
-
-    @Override public N to() {
-      return node;
-    }
-    
-    @Override public long distance() {
-      return distance;
-    }
-    
-    @Override public BiStream<N, Long> nodes() {
-      List<Vertex<N>> nodes = new ArrayList<>();
-      for (Vertex<N> v = this; v != null; v = v.predecessor) {
-        nodes.add(v);
-      }
-      Collections.reverse(nodes);
-      return BiStream.from(nodes, v -> v.node, v -> v.distance);
-    }
-    
-    @Override public String toString() {
-      return nodes().keys().map(Object::toString).collect(Collectors.joining("->"));
     }
   }
 
