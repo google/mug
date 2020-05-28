@@ -73,7 +73,7 @@ public final class ShortestPaths {
                   return pending == null || p.extend(d) < pending.distance();
                 })
                 .forEach((n, d) -> {
-                  Path<N> shorter = new Path<N>(n, p, p.extend(d));
+                  Path<N> shorter = new Path<>(n, p, p.extend(d));
                   seen.put(n, shorter);
                   queue.add(shorter);
                 }));
