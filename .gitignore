@@ -4,6 +4,8 @@ build.properties
 core/.classpath
 
 core/.project
+algorithms/.classpath
+algorithms/.project
 benchmarks/.classpath
 benchmarks/.project
 

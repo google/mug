@@ -173,7 +173,7 @@ Map<Day, Long> siteTrafficHistogram = pages.stream()
 
 **Example 1: to combine two Optional instances into a single one:**
 ```java
-Optional<Couple> couple = Optionals.map(optionalHusband, optionalWife, Couple::new);
+Optional<Couple> couple = Optionals.mapBoth(optionalHusband, optionalWife, Couple::new);
 ```
 
 **Example 2: to run code when two Optional instances are both present:**
