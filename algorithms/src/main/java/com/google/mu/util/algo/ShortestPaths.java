@@ -39,7 +39,6 @@ import com.google.mu.util.stream.BiStream;
  * @since 3.8
  */
 public final class ShortestPaths {
- 
   /**
    * Returns the lazy stream of shortest paths starting from {@code originalNode}, with each node's
    * adjacent nodes and their direct distances from the node returned by the {@code
