@@ -1,24 +1,28 @@
+-classpath
+'/Users/benyu/.m2/repository/com/google/mug/mug/3.8-SNAPSHOT/mug-3.8-SNAPSHOT.jar'
 -encoding
 'UTF-8'
 -protected
 -sourcepath
-'/Users/benyu/mug/core/src/main/java'
+'/Users/benyu/mug/algorithms/src/main/java'
 -author
 -bottom
 'Copyright &#169; 2020. All rights reserved.'
 -charset
 'UTF-8'
 -d
-'/Users/benyu/mug/core/target/site/apidocs'
+'/Users/benyu/mug/algorithms/target/site/apidocs'
 -docencoding
 'UTF-8'
 -doctitle
-'core 3.8-SNAPSHOT API'
+'algorithms 3.8-SNAPSHOT API'
 -linkoffline
-'https://docs.oracle.com/javase/8/docs/api' '/Users/benyu/mug/core/target/javadoc-bundle-options'
+'https://docs.oracle.com/javase/8/docs/api' '/Users/benyu/mug/algorithms/target/javadoc-bundle-options'
+-linkoffline
+'http://github.com/google/mug/mug/apidocs' '/Users/benyu/mug/core/target/site/apidocs'
 -stylesheetfile
 '/Users/benyu/mug/javadoc-stylesheet.css'
 -use
 -version
 -windowtitle
-'core 3.8-SNAPSHOT API'
+'algorithms 3.8-SNAPSHOT API'
