@@ -62,7 +62,7 @@ public final class ShortestPaths {
   /**
    * Returns the lazy stream of shortest paths starting from {@code originalNode}.
    *
-   * <p>The {@code adjacentNodesFinder} function is called on-the-fly to find the direct neighbors
+   * <p>The {@code findAdjacentNodes} function is called on-the-fly to find the direct neighbors
    * of the current node. It returns a {@code BiStream} with these direct neighbor nodes and their
    * distances from the current node, respectively.
    *
@@ -72,9 +72,9 @@ public final class ShortestPaths {
    * @param <N> The node type. Must implement {@link Object#equals} and {@link Object#hashCode}.
    */
   public static <N> Stream<Path<N>> shortestPathsFrom(
-      N originalNode, Function<N, BiStream<N, Double>> adjacentNodesFinder) {
+      N originalNode, Function<N, BiStream<N, Double>> findAdjacentNodes) {
     requireNonNull(originalNode);
-    requireNonNull(adjacentNodesFinder);
+    requireNonNull(findAdjacentNodes);
     Map<N, Path<N>> seen = new HashMap<>();
     Set<N> done = new HashSet<>();
     PriorityQueue<Path<N>> queue = new PriorityQueue<>(comparingDouble(Path::distance));
@@ -84,7 +84,7 @@ public final class ShortestPaths {
         .map(PriorityQueue::remove)
         .filter(path -> done.add(path.to()))
         .peek(path ->
-            adjacentNodesFinder.apply(path.to())
+            findAdjacentNodes.apply(path.to())
                 .forEachOrdered((neighbor, distance) -> {
                   requireNonNull(neighbor);
                   if (distance < 0) {
