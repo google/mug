@@ -254,7 +254,7 @@ public final class MoreStreams {
   }
 
   /**
-   * Returns a (potentially) infinite stream of {@code collection} until {@code collection} becomes
+   * Returns a (potentially infinite) stream of {@code collection} until {@code collection} becomes
    * empty.
    *
    * <p>The returned stream can be terminated by removing elements from the underlying collection
