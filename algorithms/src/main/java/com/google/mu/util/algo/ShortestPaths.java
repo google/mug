@@ -36,8 +36,11 @@ import com.google.mu.util.stream.BiStream;
  * The Dijkstra shortest path algorithm implemented as a lazy, incrementally-computed stream,
  * using Mug utilities.
  *
- * <p>Compared to traditional imperative loop-based algorithms, this approach supports more
- * flexible use cases. For example, to find 3 nearest Sushi restaurants: <pre>{@code
+ * <p>Compared to traditional imperative implementations, this incremental algorithm supports more
+ * flexible use cases that'd otherwise require either full traversal of the graph (which can be
+ * large), or copying and tweaking the implementation code for each individual use case.
+ * 
+ * <p>For example, without traversing the entire map, find 3 nearest Sushi restaurants: <pre>{@code
  *   List<Location> sushiPlaces = shortestPaths(myLocation, Location::locationsAroundMe)
  *       .map(Path::to)
  *       .filter(this::isSushiRestaurant)
@@ -45,9 +48,9 @@ import com.google.mu.util.stream.BiStream;
  *       .collect(toList());
  * }</pre>
  *
- * Or, to find all gas stations within 5 miles: <pre>{@code
+ * Or, find all gas stations within 5 miles: <pre>{@code
  *   List<Location> gasStations = shortestPaths(myLocation, Location::locationsAroundMe)
- *       .takeWhile(p -> p.distance() <= 5)
+ *       .takeWhile(path -> path.distance() <= 5)
  *       .map(Path::to)
  *       .filter(this::isGasStation)
  *       .collect(toList());
@@ -57,12 +60,11 @@ import com.google.mu.util.stream.BiStream;
  */
 public final class ShortestPaths {
   /**
-   * Returns the lazy stream of shortest paths starting from {@code originalNode}, with each node's
-   * adjacent nodes and their direct distances from the node returned by the {@code
-   * adjacentNodesDiscoverer} function.
+   * Returns the lazy stream of shortest paths starting from {@code originalNode}.
    *
-   * <p>The {@code adjacentNodesDiscoverer} function is called on-the-fly as the returned stream is
-   * being iterated.
+   * <p>The {@code adjacentNodesFinder} function is called on-the-fly to find the direct neighbors
+   * of the current node. It returns a {@code BiStream} with these direct neighbor nodes and their
+   * distances from the current node, respectively.
    *
    * <p>{@code originalNode} will correspond to the first element in the returned stream, with
    * {@link Path#distance} equal to {@code 0}, followed by the next closest node, etc.
@@ -70,9 +72,9 @@ public final class ShortestPaths {
    * @param <N> The node type. Must implement {@link Object#equals} and {@link Object#hashCode}.
    */
   public static <N> Stream<Path<N>> shortestPaths(
-      N originalNode, Function<N, BiStream<N, Double>> adjacentNodesDiscoverer) {
+      N originalNode, Function<N, BiStream<N, Double>> adjacentNodesFinder) {
     requireNonNull(originalNode);
-    requireNonNull(adjacentNodesDiscoverer);
+    requireNonNull(adjacentNodesFinder);
     Map<N, Path<N>> seen = new HashMap<>();
     Set<N> done = new HashSet<>();
     PriorityQueue<Path<N>> queue = new PriorityQueue<>(comparingDouble(Path::distance));
@@ -80,16 +82,19 @@ public final class ShortestPaths {
     queue.add(p0);
     return whileNotEmpty(queue)
         .map(PriorityQueue::remove)
-        .filter(p -> done.add(p.to()))
-        .peek(p ->
-            adjacentNodesDiscoverer.apply(p.to())
-                .forEachOrdered((n, d) -> {
-                  if (done.contains(requireNonNull(n))) return;
-                  double newDistance = p.extend(d);
-                  Path<?> pending = seen.get(n);
-                  if (pending == null || newDistance < pending.distance()) {
-                    Path<N> shorter = new Path<>(n, p, newDistance);
-                    seen.put(n, shorter);
+        .filter(path -> done.add(path.to()))
+        .peek(path ->
+            adjacentNodesFinder.apply(path.to())
+                .forEachOrdered((neighbor, distance) -> {
+                  requireNonNull(neighbor);
+                  if (distance < 0) {
+                    throw new IllegalArgumentException("Distance cannot be negative: " + distance);
+                  }
+                  if (done.contains(neighbor)) return;
+                  Path<?> known = seen.get(neighbor);
+                  if (known == null || path.distance() + distance < known.distance()) {
+                    Path<N> shorter = path.extendTo(neighbor, distance);
+                    seen.put(neighbor, shorter);
                     queue.add(shorter);
                   }
                 }));
@@ -101,14 +106,14 @@ public final class ShortestPaths {
     private final Path<N> predecessor;
     private final double distance;
     
+    Path(N node) {
+      this(node, null, 0);
+    }
+    
     Path(N node, Path<N> predecessor, double distance) {
       this.node = node;
       this.predecessor = predecessor;
       this.distance = distance;
-    }
-    
-    Path(N node) {
-      this(node, null, 0);
     }
 
     /** returns the last node of the path. */
@@ -138,11 +143,8 @@ public final class ShortestPaths {
       return nodes().keys().map(Object::toString).collect(joining("->"));
     }
  
-    double extend(double delta) {
-      if (delta < 0) {
-        throw new IllegalArgumentException("Distance cannot be negative: " + delta);
-      }
-      return distance + delta;
+    Path<N> extendTo(N nextNode, double d) {
+      return new Path<>(nextNode, this, distance + d);
     }
   }
 
