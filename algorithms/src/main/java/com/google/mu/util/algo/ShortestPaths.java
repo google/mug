@@ -69,7 +69,7 @@ public final class ShortestPaths {
                 .forEachOrdered((n, d) -> {
                   if (done.contains(requireNonNull(n))) return;
                   long newDistance = p.extend(d);
-                  Path<N> pending = seen.get(n);
+                  Path<?> pending = seen.get(n);
                   if (pending == null || newDistance < pending.distance()) {
                     Path<N> shorter = new Path<>(n, p, newDistance);
                     seen.put(n, shorter);
