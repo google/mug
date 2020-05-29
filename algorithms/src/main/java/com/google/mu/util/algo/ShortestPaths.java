@@ -78,8 +78,7 @@ public final class ShortestPaths {
     Map<N, Path<N>> seen = new HashMap<>();
     Set<N> done = new HashSet<>();
     PriorityQueue<Path<N>> queue = new PriorityQueue<>(comparingDouble(Path::distance));
-    Path<N> p0 = new Path<>(originalNode);
-    queue.add(p0);
+    queue.add(new Path<>(originalNode));
     return whileNotEmpty(queue)
         .map(PriorityQueue::remove)
         .filter(path -> done.add(path.to()))
