@@ -37,11 +37,12 @@ import com.google.mu.util.stream.BiStream;
  * using Mug utilities.
  *
  * <p>Compared to traditional imperative loop-based algorithms, this approach supports more
- * flexible use cases. For example, to find the nearest Sushi restaurant: <pre>{@code
- *   Optional<Location> sushiPlace = shortestPaths(myLocation, Location::locationsAroundMe)
+ * flexible use cases. For example, to find 3 nearest Sushi restaurants: <pre>{@code
+ *   List<Location> sushiPlaces = shortestPaths(myLocation, Location::locationsAroundMe)
  *       .map(Path::to)
  *       .filter(this::isSushiRestaurant)
- *       .findFirst();
+ *       .limit(3)
+ *       .collect(toList());
  * }</pre>
  *
  * Or, to find all gas stations within 5 miles: <pre>{@code
