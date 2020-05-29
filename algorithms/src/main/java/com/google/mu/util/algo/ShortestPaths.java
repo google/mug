@@ -66,16 +66,15 @@ public final class ShortestPaths {
         .filter(p -> done.add(p.to()))
         .peek(p ->
             adjacentNodesDiscoverer.apply(p.to())
-                .peek((n, d) -> requireNonNull(n))
-                .filterKeys(n -> !done.contains(n))
-                .filter((n, d) -> {
+                .forEachOrdered((n, d) -> {
+                  if (done.contains(requireNonNull(n))) return;
+                  long newDistance = p.extend(d);
                   Path<N> pending = seen.get(n);
-                  return pending == null || p.extend(d) < pending.distance();
-                })
-                .forEach((n, d) -> {
-                  Path<N> shorter = new Path<>(n, p, p.extend(d));
-                  seen.put(n, shorter);
-                  queue.add(shorter);
+                  if (pending == null || newDistance < pending.distance()) {
+                    Path<N> shorter = new Path<>(n, p, newDistance);
+                    seen.put(n, shorter);
+                    queue.add(shorter);
+                  }
                 }));
   }
 
