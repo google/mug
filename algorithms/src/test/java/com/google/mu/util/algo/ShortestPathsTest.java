@@ -15,7 +15,7 @@
 package com.google.mu.util.algo;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.mu.util.algo.ShortestPaths.shortestPaths;
+import static com.google.mu.util.algo.ShortestPaths.shortestPathsFrom;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -42,7 +42,7 @@ public class ShortestPathsTest {
 
   @Test public void oneNode() {
     graph.addNode("root");
-    List<ShortestPaths.Path<String>> paths = shortestPaths("root", this::neighbors).collect(toList());
+    List<ShortestPaths.Path<String>> paths = shortestPathsFrom("root", this::neighbors).collect(toList());
     assertThat(paths).hasSize(1);
     assertThat(paths.get(0).distance()).isEqualTo(0D);
     assertThat(paths.get(0).nodes().toMap()).isEqualTo(ImmutableMap.of("root", 0D));
@@ -50,7 +50,7 @@ public class ShortestPathsTest {
 
   @Test public void twoNodes() {
     addEdge("foo", "bar", 10);
-    List<Path<String>> paths = shortestPaths("foo", this::neighbors).collect(toList());
+    List<Path<String>> paths = shortestPathsFrom("foo", this::neighbors).collect(toList());
     assertThat(paths).hasSize(2);
     assertThat(paths.get(0).distance()).isEqualTo(0D);
     assertThat(paths.get(0).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0D));
@@ -61,7 +61,7 @@ public class ShortestPathsTest {
   @Test public void threeNodesList() {
     addEdge("foo", "bar", 10);
     addEdge("bar", "baz", 5);
-    List<Path<String>> paths = shortestPaths("foo", this::neighbors).collect(toList());
+    List<Path<String>> paths = shortestPathsFrom("foo", this::neighbors).collect(toList());
     assertThat(paths).hasSize(3);
     assertThat(paths.get(0).distance()).isEqualTo(0D);
     assertThat(paths.get(0).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0D));
@@ -75,7 +75,7 @@ public class ShortestPathsTest {
     addEdge("foo", "bar", 10);
     addEdge("bar", "baz", 5);
     addEdge("baz", "foo", 12);
-    List<Path<String>> paths = shortestPaths("foo", this::neighbors).collect(toList());
+    List<Path<String>> paths = shortestPathsFrom("foo", this::neighbors).collect(toList());
     assertThat(paths).hasSize(3);
     assertThat(paths.get(0).distance()).isEqualTo(0D);
     assertThat(paths.get(0).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0D));
@@ -89,7 +89,7 @@ public class ShortestPathsTest {
     addEdge("foo", "bar", 10);
     addEdge("bar", "baz", 0);
     addEdge("baz", "foo", 12);
-    List<Path<String>> paths = shortestPaths("foo", this::neighbors).collect(toList());
+    List<Path<String>> paths = shortestPathsFrom("foo", this::neighbors).collect(toList());
     assertThat(paths).hasSize(3);
     assertThat(paths.get(0).distance()).isEqualTo(0D);
     assertThat(paths.get(0).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0D));
@@ -104,13 +104,13 @@ public class ShortestPathsTest {
     addEdge("foo", "bar", -1);
     assertThrows(
         IllegalArgumentException.class,
-        () -> shortestPaths("foo", this::neighbors).collect(toList()));
+        () -> shortestPathsFrom("foo", this::neighbors).collect(toList()));
   }
 
   @Test public void distanceOverflowDetected() {
     addEdge("foo", "bar", 10);
     addEdge("bar", "baz", Double.MAX_VALUE);
-    List<Path<String>> paths = shortestPaths("foo", this::neighbors).collect(toList());
+    List<Path<String>> paths = shortestPathsFrom("foo", this::neighbors).collect(toList());
     assertThat(paths).hasSize(3);
     assertThat(paths.get(0).distance()).isEqualTo(0D);
     assertThat(paths.get(0).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0D));
@@ -130,7 +130,7 @@ public class ShortestPathsTest {
     addEdge("c", "d", 11);
     addEdge("d", "e", 6);
     addEdge("5", "6", 9);
-    assertThat(shortestPaths("a", this::neighbors).map(Object::toString).collect(toList()))
+    assertThat(shortestPathsFrom("a", this::neighbors).map(Object::toString).collect(toList()))
         .containsExactly("a", "a->b", "a->c", "a->c->f", "a->c->d", "a->c->d->e");
   }
 
