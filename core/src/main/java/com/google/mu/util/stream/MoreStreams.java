@@ -287,7 +287,7 @@ public final class MoreStreams {
    * In addition, the algorithm becomes lazy and incrementally computed. See
    * <a href="https://github.com/google/mug/blob/master/algorithms/src/main/java/com/google/mu/util/algo/ShortestPaths.java">
    * shortestPaths()</a> utility for an example how {@code whileNotEmpty()} can be used to build
-   * reusable, lazily-evaluated Dijkstra shortest-path algorithm.
+   * reusable, incremental Dijkstra shortest-path algorithm.
    *
    * <p>Using this stream API also makes it less prone to human errors such as forgetting the {@code
    * !} operator in the imperative {@code while(!collection.isEmpty())} boilerplate.
