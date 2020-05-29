@@ -36,8 +36,11 @@ import com.google.mu.util.stream.BiStream;
  * The Dijkstra shortest path algorithm implemented as a lazy, incrementally-computed stream,
  * using Mug utilities.
  *
- * <p>Compared to traditional imperative loop-based algorithms, this approach supports more
- * flexible use cases. For example, to find 3 nearest Sushi restaurants: <pre>{@code
+ * <p>Compared to traditional imperative implementations, this incremental algorithm supports more
+ * flexible use cases that'd otherwise require either full traversal of the graph (which can be
+ * large), or copying and tweaking the implementation code for each individual use case.
+ * 
+ * <p>For example, without traversing the entire map, find 3 nearest Sushi restaurants: <pre>{@code
  *   List<Location> sushiPlaces = shortestPaths(myLocation, Location::locationsAroundMe)
  *       .map(Path::to)
  *       .filter(this::isSushiRestaurant)
@@ -45,7 +48,7 @@ import com.google.mu.util.stream.BiStream;
  *       .collect(toList());
  * }</pre>
  *
- * Or, to find all gas stations within 5 miles: <pre>{@code
+ * Or, find all gas stations within 5 miles: <pre>{@code
  *   List<Location> gasStations = shortestPaths(myLocation, Location::locationsAroundMe)
  *       .takeWhile(p -> p.distance() <= 5)
  *       .map(Path::to)
