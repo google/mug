@@ -82,15 +82,15 @@ public final class ShortestPaths {
     queue.add(p0);
     return whileNotEmpty(queue)
         .map(PriorityQueue::remove)
-        .filter(p -> done.add(p.to()))
-        .peek(p ->
-            adjacentNodesFinder.apply(p.to())
+        .filter(path -> done.add(path.to()))
+        .peek(path ->
+            adjacentNodesFinder.apply(path.to())
                 .forEachOrdered((n, d) -> {
                   if (done.contains(requireNonNull(n))) return;
-                  double newDistance = p.extend(d);
+                  double newDistance = path.extend(d);
                   Path<?> pending = seen.get(n);
                   if (pending == null || newDistance < pending.distance()) {
-                    Path<N> shorter = new Path<>(n, p, newDistance);
+                    Path<N> shorter = new Path<>(n, path, newDistance);
                     seen.put(n, shorter);
                     queue.add(shorter);
                   }
