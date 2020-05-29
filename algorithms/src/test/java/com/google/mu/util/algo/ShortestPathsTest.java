@@ -38,24 +38,24 @@ import com.google.mu.util.stream.BiStream;
 @RunWith(JUnit4.class)
 public class ShortestPathsTest {
   private final MutableGraph<String> graph = GraphBuilder.undirected().<String>build();
-  private final Map<String, Long> distances = new HashMap<>();
+  private final Map<String, Double> distances = new HashMap<>();
 
   @Test public void oneNode() {
     graph.addNode("root");
     List<ShortestPaths.Path<String>> paths = shortestPaths("root", this::neighbors).collect(toList());
     assertThat(paths).hasSize(1);
-    assertThat(paths.get(0).distance()).isEqualTo(0);
-    assertThat(paths.get(0).nodes().toMap()).isEqualTo(ImmutableMap.of("root", 0L));
+    assertThat(paths.get(0).distance()).isEqualTo(0D);
+    assertThat(paths.get(0).nodes().toMap()).isEqualTo(ImmutableMap.of("root", 0D));
   }
 
   @Test public void twoNodes() {
     addEdge("foo", "bar", 10);
     List<Path<String>> paths = shortestPaths("foo", this::neighbors).collect(toList());
     assertThat(paths).hasSize(2);
-    assertThat(paths.get(0).distance()).isEqualTo(0);
-    assertThat(paths.get(0).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0L));
-    assertThat(paths.get(1).distance()).isEqualTo(10);
-    assertThat(paths.get(1).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0L, "bar", 10L));
+    assertThat(paths.get(0).distance()).isEqualTo(0D);
+    assertThat(paths.get(0).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0D));
+    assertThat(paths.get(1).distance()).isEqualTo(10D);
+    assertThat(paths.get(1).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0D, "bar", 10D));
   }
 
   @Test public void threeNodesList() {
@@ -63,12 +63,12 @@ public class ShortestPathsTest {
     addEdge("bar", "baz", 5);
     List<Path<String>> paths = shortestPaths("foo", this::neighbors).collect(toList());
     assertThat(paths).hasSize(3);
-    assertThat(paths.get(0).distance()).isEqualTo(0);
-    assertThat(paths.get(0).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0L));
-    assertThat(paths.get(1).distance()).isEqualTo(10);
-    assertThat(paths.get(1).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0L, "bar", 10L));
-    assertThat(paths.get(2).distance()).isEqualTo(15);
-    assertThat(paths.get(2).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0L, "bar", 10L, "baz", 15L));
+    assertThat(paths.get(0).distance()).isEqualTo(0D);
+    assertThat(paths.get(0).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0D));
+    assertThat(paths.get(1).distance()).isEqualTo(10D);
+    assertThat(paths.get(1).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0D, "bar", 10D));
+    assertThat(paths.get(2).distance()).isEqualTo(15D);
+    assertThat(paths.get(2).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0D, "bar", 10D, "baz", 15D));
   }
 
   @Test public void threeNodesCycle() {
@@ -77,12 +77,12 @@ public class ShortestPathsTest {
     addEdge("baz", "foo", 12);
     List<Path<String>> paths = shortestPaths("foo", this::neighbors).collect(toList());
     assertThat(paths).hasSize(3);
-    assertThat(paths.get(0).distance()).isEqualTo(0);
-    assertThat(paths.get(0).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0L));
-    assertThat(paths.get(1).distance()).isEqualTo(10);
-    assertThat(paths.get(1).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0L, "bar", 10L));
-    assertThat(paths.get(2).distance()).isEqualTo(12);
-    assertThat(paths.get(2).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0L, "baz", 12L));
+    assertThat(paths.get(0).distance()).isEqualTo(0D);
+    assertThat(paths.get(0).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0D));
+    assertThat(paths.get(1).distance()).isEqualTo(10D);
+    assertThat(paths.get(1).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0D, "bar", 10D));
+    assertThat(paths.get(2).distance()).isEqualTo(12D);
+    assertThat(paths.get(2).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0D, "baz", 12D));
   }
 
   @Test public void zeroDistance() {
@@ -91,13 +91,13 @@ public class ShortestPathsTest {
     addEdge("baz", "foo", 12);
     List<Path<String>> paths = shortestPaths("foo", this::neighbors).collect(toList());
     assertThat(paths).hasSize(3);
-    assertThat(paths.get(0).distance()).isEqualTo(0);
-    assertThat(paths.get(0).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0L));
-    assertThat(paths.get(1).distance()).isEqualTo(10);
-    assertThat(paths.get(1).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0L, "bar", 10L));
-    assertThat(paths.get(2).distance()).isEqualTo(10);
+    assertThat(paths.get(0).distance()).isEqualTo(0D);
+    assertThat(paths.get(0).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0D));
+    assertThat(paths.get(1).distance()).isEqualTo(10D);
+    assertThat(paths.get(1).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0D, "bar", 10D));
+    assertThat(paths.get(2).distance()).isEqualTo(10D);
     assertThat(paths.get(2).nodes().toMap())
-        .isEqualTo(ImmutableMap.of("foo", 0L, "bar", 10L, "baz", 10L));
+        .isEqualTo(ImmutableMap.of("foo", 0D, "bar", 10D, "baz", 10D));
   }
 
   @Test public void negativeDistanceDisallowed() {
@@ -109,10 +109,15 @@ public class ShortestPathsTest {
 
   @Test public void distanceOverflowDetected() {
     addEdge("foo", "bar", 10);
-    addEdge("bar", "baz", Long.MAX_VALUE);
-    assertThrows(
-        ArithmeticException.class,
-        () -> shortestPaths("foo", this::neighbors).collect(toList()));
+    addEdge("bar", "baz", Double.MAX_VALUE);
+    List<Path<String>> paths = shortestPaths("foo", this::neighbors).collect(toList());
+    assertThat(paths).hasSize(3);
+    assertThat(paths.get(0).distance()).isEqualTo(0D);
+    assertThat(paths.get(0).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0D));
+    assertThat(paths.get(1).distance()).isEqualTo(10D);
+    assertThat(paths.get(1).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0D, "bar", 10D));
+    assertThat(paths.get(2).distance()).isEqualTo(Double.MAX_VALUE);
+    assertThat(paths.get(2).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0D, "bar", 10D, "baz", Double.MAX_VALUE));
   }
 
   @Test public void wikipedia() {
@@ -133,17 +138,17 @@ public class ShortestPathsTest {
     new NullPointerTester().testAllPublicStaticMethods(ShortestPaths.class);
   }
   
-  private BiStream<String, Long> neighbors(String node) {
+  private BiStream<String, Double> neighbors(String node) {
     return biStream(graph.adjacentNodes(node)).mapValues(a -> edgeDistance(node, a));
   }
   
-  private void addEdge(String from, String to, long distance) {
+  private void addEdge(String from, String to, double distance) {
     graph.putEdge(from, to);
     assertThat(distances.put(edge(from, to), distance)).isNull();
     assertThat(distances.put(edge(to, from), distance)).isNull();
   }
   
-  private long edgeDistance(String from, String to) {
+  private double edgeDistance(String from, String to) {
     return distances.get(edge(from, to));
   }
   
