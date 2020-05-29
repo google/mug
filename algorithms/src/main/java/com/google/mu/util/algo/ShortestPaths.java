@@ -60,12 +60,11 @@ import com.google.mu.util.stream.BiStream;
  */
 public final class ShortestPaths {
   /**
-   * Returns the lazy stream of shortest paths starting from {@code originalNode}, with each node's
-   * adjacent nodes and their direct distances from the node returned by the {@code
-   * adjacentNodesFinder} function.
+   * Returns the lazy stream of shortest paths starting from {@code originalNode}.
    *
-   * <p>The {@code adjacentNodesFinder} function is called on-the-fly as the returned stream is
-   * being iterated.
+   * <p>The {@code adjacentNodesFinder} function is called on-the-fly to find the direct neighbors
+   * of the current node. It returns a {@code BiStream} with these direct neighbor nodes and their
+   * distances from the current node, respectively.
    *
    * <p>{@code originalNode} will correspond to the first element in the returned stream, with
    * {@link Path#distance} equal to {@code 0}, followed by the next closest node, etc.
