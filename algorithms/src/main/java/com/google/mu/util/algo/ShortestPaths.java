@@ -86,11 +86,14 @@ public final class ShortestPaths {
         .peek(path ->
             adjacentNodesFinder.apply(path.to())
                 .forEachOrdered((neighbor, distance) -> {
-                  if (done.contains(requireNonNull(neighbor))) return;
-                  double newDistance = path.extend(distance);
-                  Path<?> pending = seen.get(neighbor);
-                  if (pending == null || newDistance < pending.distance()) {
-                    Path<N> shorter = new Path<>(neighbor, path, newDistance);
+                  requireNonNull(neighbor);
+                  if (distance < 0) {
+                    throw new IllegalArgumentException("Distance cannot be negative: " + distance);
+                  }
+                  if (done.contains(neighbor)) return;
+                  Path<?> known = seen.get(neighbor);
+                  if (known == null || path.distance() + distance < known.distance()) {
+                    Path<N> shorter = path.extendTo(neighbor, distance);
                     seen.put(neighbor, shorter);
                     queue.add(shorter);
                   }
@@ -103,14 +106,14 @@ public final class ShortestPaths {
     private final Path<N> predecessor;
     private final double distance;
     
+    Path(N node) {
+      this(node, null, 0);
+    }
+    
     Path(N node, Path<N> predecessor, double distance) {
       this.node = node;
       this.predecessor = predecessor;
       this.distance = distance;
-    }
-    
-    Path(N node) {
-      this(node, null, 0);
     }
 
     /** returns the last node of the path. */
@@ -140,11 +143,8 @@ public final class ShortestPaths {
       return nodes().keys().map(Object::toString).collect(joining("->"));
     }
  
-    double extend(double delta) {
-      if (delta < 0) {
-        throw new IllegalArgumentException("Distance cannot be negative: " + delta);
-      }
-      return distance + delta;
+    Path<N> extendTo(N nextNode, double d) {
+      return new Path<>(nextNode, this, distance + d);
     }
   }
 
