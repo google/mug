@@ -15,7 +15,7 @@
 package com.google.mu.util.algo;
 
 import static com.google.mu.util.stream.MoreStreams.whileNotEmpty;
-import static java.util.Comparator.comparingLong;
+import static java.util.Comparator.comparingDouble;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 
@@ -33,8 +33,24 @@ import java.util.stream.Stream;
 import com.google.mu.util.stream.BiStream;
 
 /**
- * The Dijkstra shortest path algorithm implemented as a lazy, computed-on-the-fly stream,
+ * The Dijkstra shortest path algorithm implemented as a lazy, incrementally-computed stream,
  * using Mug utilities.
+ *
+ * <p>Compared to traditional imperative loop-based algorithms, this approach supports more
+ * flexible use cases. For example, to find the nearest Sushi restaurant: <pre>{@code
+ *   Optional<Location> sushiPlace = shortestPaths(myLocation, Location::locationsAroundMe)
+ *       .map(Path::to)
+ *       .filter(this::isSushiRestaurant)
+ *       .findFirst();
+ * }</pre>
+ *
+ * Or, to find all gas stations within 5 miles: <pre>{@code
+ *   List<Location> gasStations = shortestPaths(myLocation, Location::locationsAroundMe)
+ *       .takeWhile(p -> p.distance() <= 5)
+ *       .map(Path::to)
+ *       .filter(this::isGasStation)
+ *       .collect(toList());
+ * }</pre>
  *
  * @since 3.8
  */
@@ -53,12 +69,12 @@ public final class ShortestPaths {
    * @param <N> The node type. Must implement {@link Object#equals} and {@link Object#hashCode}.
    */
   public static <N> Stream<Path<N>> shortestPaths(
-      N originalNode, Function<N, BiStream<N, Long>> adjacentNodesDiscoverer) {
+      N originalNode, Function<N, BiStream<N, Double>> adjacentNodesDiscoverer) {
     requireNonNull(originalNode);
     requireNonNull(adjacentNodesDiscoverer);
     Map<N, Path<N>> seen = new HashMap<>();
     Set<N> done = new HashSet<>();
-    PriorityQueue<Path<N>> queue = new PriorityQueue<>(comparingLong(Path::distance));
+    PriorityQueue<Path<N>> queue = new PriorityQueue<>(comparingDouble(Path::distance));
     Path<N> p0 = new Path<>(originalNode);
     queue.add(p0);
     return whileNotEmpty(queue)
@@ -68,7 +84,7 @@ public final class ShortestPaths {
             adjacentNodesDiscoverer.apply(p.to())
                 .forEachOrdered((n, d) -> {
                   if (done.contains(requireNonNull(n))) return;
-                  long newDistance = p.extend(d);
+                  double newDistance = p.extend(d);
                   Path<?> pending = seen.get(n);
                   if (pending == null || newDistance < pending.distance()) {
                     Path<N> shorter = new Path<>(n, p, newDistance);
@@ -82,9 +98,9 @@ public final class ShortestPaths {
   public static final class Path<N> {
     private final N node;
     private final Path<N> predecessor;
-    private final long distance;
+    private final double distance;
     
-    Path(N node, Path<N> predecessor, long distance) {
+    Path(N node, Path<N> predecessor, double distance) {
       this.node = node;
       this.predecessor = predecessor;
       this.distance = distance;
@@ -100,7 +116,7 @@ public final class ShortestPaths {
     }
     
     /** Returns the total distance of this path. */
-    public long distance() {
+    public double distance() {
       return distance;
     }
 
@@ -108,7 +124,7 @@ public final class ShortestPaths {
      * Returns all nodes from the original node along this path, with the <em>cumulative</em>
      * distances from the original node up to each node in the stream, respectively.
      */
-    public BiStream<N, Long> nodes() {
+    public BiStream<N, Double> nodes() {
       List<Path<N>> nodes = new ArrayList<>();
       for (Path<N> v = this; v != null; v = v.predecessor) {
         nodes.add(v);
@@ -121,15 +137,11 @@ public final class ShortestPaths {
       return nodes().keys().map(Object::toString).collect(joining("->"));
     }
  
-    long extend(long delta) {
+    double extend(double delta) {
       if (delta < 0) {
         throw new IllegalArgumentException("Distance cannot be negative: " + delta);
       }
-      long farther = distance + delta;
-      if (farther < 0) {
-        throw new ArithmeticException("Distance overflow: " + distance + " + " + delta);
-      }
-      return farther;
+      return distance + delta;
     }
   }
 
