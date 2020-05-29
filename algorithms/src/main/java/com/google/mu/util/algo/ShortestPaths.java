@@ -50,7 +50,7 @@ import com.google.mu.util.stream.BiStream;
  *
  * Or, find all gas stations within 5 miles: <pre>{@code
  *   List<Location> gasStations = shortestPaths(myLocation, Location::locationsAroundMe)
- *       .takeWhile(p -> p.distance() <= 5)
+ *       .takeWhile(path -> path.distance() <= 5)
  *       .map(Path::to)
  *       .filter(this::isGasStation)
  *       .collect(toList());
@@ -62,9 +62,9 @@ public final class ShortestPaths {
   /**
    * Returns the lazy stream of shortest paths starting from {@code originalNode}, with each node's
    * adjacent nodes and their direct distances from the node returned by the {@code
-   * adjacentNodesDiscoverer} function.
+   * adjacentNodesFinder} function.
    *
-   * <p>The {@code adjacentNodesDiscoverer} function is called on-the-fly as the returned stream is
+   * <p>The {@code adjacentNodesFinder} function is called on-the-fly as the returned stream is
    * being iterated.
    *
    * <p>{@code originalNode} will correspond to the first element in the returned stream, with
@@ -73,9 +73,9 @@ public final class ShortestPaths {
    * @param <N> The node type. Must implement {@link Object#equals} and {@link Object#hashCode}.
    */
   public static <N> Stream<Path<N>> shortestPaths(
-      N originalNode, Function<N, BiStream<N, Double>> adjacentNodesDiscoverer) {
+      N originalNode, Function<N, BiStream<N, Double>> adjacentNodesFinder) {
     requireNonNull(originalNode);
-    requireNonNull(adjacentNodesDiscoverer);
+    requireNonNull(adjacentNodesFinder);
     Map<N, Path<N>> seen = new HashMap<>();
     Set<N> done = new HashSet<>();
     PriorityQueue<Path<N>> queue = new PriorityQueue<>(comparingDouble(Path::distance));
@@ -85,7 +85,7 @@ public final class ShortestPaths {
         .map(PriorityQueue::remove)
         .filter(p -> done.add(p.to()))
         .peek(p ->
-            adjacentNodesDiscoverer.apply(p.to())
+            adjacentNodesFinder.apply(p.to())
                 .forEachOrdered((n, d) -> {
                   if (done.contains(requireNonNull(n))) return;
                   double newDistance = p.extend(d);
