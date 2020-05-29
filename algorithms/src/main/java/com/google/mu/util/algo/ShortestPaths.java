@@ -41,7 +41,7 @@ import com.google.mu.util.stream.BiStream;
  * large), or copying and tweaking the implementation code for each individual use case.
  * 
  * <p>For example, without traversing the entire map, find 3 nearest Sushi restaurants: <pre>{@code
- *   List<Location> sushiPlaces = shortestPaths(myLocation, Location::locationsAroundMe)
+ *   List<Location> sushiPlaces = shortestPathsFrom(myLocation, Location::locationsAroundMe)
  *       .map(Path::to)
  *       .filter(this::isSushiRestaurant)
  *       .limit(3)
@@ -49,7 +49,7 @@ import com.google.mu.util.stream.BiStream;
  * }</pre>
  *
  * Or, find all gas stations within 5 miles: <pre>{@code
- *   List<Location> gasStations = shortestPaths(myLocation, Location::locationsAroundMe)
+ *   List<Location> gasStations = shortestPathsFrom(myLocation, Location::locationsAroundMe)
  *       .takeWhile(path -> path.distance() <= 5)
  *       .map(Path::to)
  *       .filter(this::isGasStation)
@@ -71,7 +71,7 @@ public final class ShortestPaths {
    *
    * @param <N> The node type. Must implement {@link Object#equals} and {@link Object#hashCode}.
    */
-  public static <N> Stream<Path<N>> shortestPaths(
+  public static <N> Stream<Path<N>> shortestPathsFrom(
       N originalNode, Function<N, BiStream<N, Double>> adjacentNodesFinder) {
     requireNonNull(originalNode);
     requireNonNull(adjacentNodesFinder);
