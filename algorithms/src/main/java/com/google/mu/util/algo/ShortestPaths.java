@@ -85,13 +85,13 @@ public final class ShortestPaths {
         .filter(path -> done.add(path.to()))
         .peek(path ->
             adjacentNodesFinder.apply(path.to())
-                .forEachOrdered((n, d) -> {
-                  if (done.contains(requireNonNull(n))) return;
-                  double newDistance = path.extend(d);
-                  Path<?> pending = seen.get(n);
+                .forEachOrdered((neighbor, distance) -> {
+                  if (done.contains(requireNonNull(neighbor))) return;
+                  double newDistance = path.extend(distance);
+                  Path<?> pending = seen.get(neighbor);
                   if (pending == null || newDistance < pending.distance()) {
-                    Path<N> shorter = new Path<>(n, path, newDistance);
-                    seen.put(n, shorter);
+                    Path<N> shorter = new Path<>(neighbor, path, newDistance);
+                    seen.put(neighbor, shorter);
                     queue.add(shorter);
                   }
                 }));
