@@ -103,7 +103,7 @@ public final class ShortestPath<N> {
                 }));
   }
   
-  ShortestPath(N node) {
+  private ShortestPath(N node) {
     this(node, null, 0);
   }
   
