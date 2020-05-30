@@ -133,7 +133,7 @@ public final class ShortestPaths {
      * Returns all nodes from the starting node along this path, with the <em>cumulative</em>
      * distances from the starting node up to each node in the stream, respectively.
      */
-    public BiStream<N, Double> nodes() {
+    public BiStream<N, Double> stream() {
       List<Path<N>> nodes = new ArrayList<>();
       for (Path<N> p = this; p != null; p = p.predecessor) {
         nodes.add(p);
@@ -143,7 +143,7 @@ public final class ShortestPaths {
     }
     
     @Override public String toString() {
-      return nodes().keys().map(Object::toString).collect(joining("->"));
+      return stream().keys().map(Object::toString).collect(joining("->"));
     }
  
     Path<N> extendTo(N nextNode, double d) {
