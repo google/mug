@@ -60,25 +60,25 @@ import com.google.mu.util.stream.BiStream;
  */
 public final class ShortestPaths {
   /**
-   * Returns the lazy stream of shortest paths starting from {@code originalNode}.
+   * Returns a lazy stream of shortest paths starting from {@code startingNode}.
    *
    * <p>The {@code findAdjacentNodes} function is called on-the-fly to find the direct neighbors
    * of the current node. It returns a {@code BiStream} with these direct neighbor nodes and their
    * distances from the current node, respectively.
    *
-   * <p>{@code originalNode} will correspond to the first element in the returned stream, with
+   * <p>{@code startingNode} will correspond to the first element in the returned stream, with
    * {@link Path#distance} equal to {@code 0}, followed by the next closest node, etc.
    *
    * @param <N> The node type. Must implement {@link Object#equals} and {@link Object#hashCode}.
    */
   public static <N> Stream<Path<N>> shortestPathsFrom(
-      N originalNode, Function<N, BiStream<N, Double>> findAdjacentNodes) {
-    requireNonNull(originalNode);
+      N startingNode, Function<N, BiStream<N, Double>> findAdjacentNodes) {
+    requireNonNull(startingNode);
     requireNonNull(findAdjacentNodes);
     Map<N, Path<N>> seen = new HashMap<>();
     Set<N> done = new HashSet<>();
     PriorityQueue<Path<N>> queue = new PriorityQueue<>(comparingDouble(Path::distance));
-    queue.add(new Path<>(originalNode));
+    queue.add(new Path<>(startingNode));
     return whileNotEmpty(queue)
         .map(PriorityQueue::remove)
         .filter(path -> done.add(path.to()))
@@ -99,7 +99,7 @@ public final class ShortestPaths {
                 }));
   }
 
-  /** The path from the original node to a destination node. */
+  /** The path from the starting node to a destination node. */
   public static final class Path<N> {
     private final N node;
     private final Path<N> predecessor;
@@ -109,30 +109,34 @@ public final class ShortestPaths {
       this(node, null, 0);
     }
     
-    Path(N node, Path<N> predecessor, double distance) {
+    private Path(N node, Path<N> predecessor, double distance) {
       this.node = node;
       this.predecessor = predecessor;
       this.distance = distance;
     }
 
-    /** returns the last node of the path. */
+    /** returns the last node of this path. */
     public N to() {
       return node;
     }
     
-    /** Returns the total distance of this path. */
+    /**
+     * Returns the distance between the starting node and the {@link #to last node} of this path.
+     * Zero for the first path in the stream returned by {@link ShortestPaths#shortestPathsFrom},
+     * in which case {@link #to} will return the starting node.
+     */
     public double distance() {
       return distance;
     }
 
     /**
-     * Returns all nodes from the original node along this path, with the <em>cumulative</em>
-     * distances from the original node up to each node in the stream, respectively.
+     * Returns all nodes from the starting node along this path, with the <em>cumulative</em>
+     * distances from the starting node up to each node in the stream, respectively.
      */
     public BiStream<N, Double> nodes() {
       List<Path<N>> nodes = new ArrayList<>();
-      for (Path<N> v = this; v != null; v = v.predecessor) {
-        nodes.add(v);
+      for (Path<N> p = this; p != null; p = p.predecessor) {
+        nodes.add(p);
       }
       Collections.reverse(nodes);
       return BiStream.from(nodes, Path::to, Path::distance);
