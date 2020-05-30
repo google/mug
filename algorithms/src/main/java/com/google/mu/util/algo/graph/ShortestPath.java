@@ -42,7 +42,7 @@ import com.google.mu.util.stream.BiStream;
  * 
  * <p>For example, without traversing the entire map, find 3 nearest Sushi restaurants: <pre>{@code
  *   List<Location> sushiPlaces = shortestPathsFrom(myLocation, Location::locationsAroundMe)
- *       .map(Path::to)
+ *       .map(ShortestPath::to)
  *       .filter(this::isSushiRestaurant)
  *       .limit(3)
  *       .collect(toList());
@@ -51,14 +51,18 @@ import com.google.mu.util.stream.BiStream;
  * Or, find all gas stations within 5 miles: <pre>{@code
  *   List<Location> gasStations = shortestPathsFrom(myLocation, Location::locationsAroundMe)
  *       .takeWhile(path -> path.distance() <= 5)
- *       .map(Path::to)
+ *       .map(ShortestPath::to)
  *       .filter(this::isGasStation)
  *       .collect(toList());
  * }</pre>
  *
  * @since 3.8
  */
-public final class ShortestPaths {
+public final class ShortestPath<N> {
+  private final N node;
+  private final ShortestPath<N> predecessor;
+  private final double distance;
+  
   /**
    * Returns a lazy stream of shortest paths starting from {@code startingNode}.
    *
@@ -67,18 +71,18 @@ public final class ShortestPaths {
    * neighbor nodes and their distances from the passed-in current node, respectively.
    *
    * <p>{@code startingNode} will correspond to the first element in the returned stream, with
-   * {@link Path#distance} equal to {@code 0}, followed by the next closest node, etc.
+   * {@link ShortestPath#distance} equal to {@code 0}, followed by the next closest node, etc.
    *
    * @param <N> The node type. Must implement {@link Object#equals} and {@link Object#hashCode}.
    */
-  public static <N> Stream<Path<N>> shortestPathsFrom(
+  public static <N> Stream<ShortestPath<N>> shortestPathsFrom(
       N startingNode, Function<N, BiStream<N, Double>> findAdjacentNodes) {
     requireNonNull(startingNode);
     requireNonNull(findAdjacentNodes);
-    Map<N, Path<N>> seen = new HashMap<>();
+    Map<N, ShortestPath<N>> seen = new HashMap<>();
     Set<N> done = new HashSet<>();
-    PriorityQueue<Path<N>> queue = new PriorityQueue<>(comparingDouble(Path::distance));
-    queue.add(new Path<>(startingNode));
+    PriorityQueue<ShortestPath<N>> queue = new PriorityQueue<>(comparingDouble(ShortestPath::distance));
+    queue.add(new ShortestPath<>(startingNode));
     return whileNotEmpty(queue)
         .map(PriorityQueue::remove)
         .filter(path -> done.add(path.to()))
@@ -90,66 +94,57 @@ public final class ShortestPaths {
                     throw new IllegalArgumentException("Distance cannot be negative: " + distance);
                   }
                   if (done.contains(neighbor)) return;
-                  Path<?> old = seen.get(neighbor);
+                  ShortestPath<?> old = seen.get(neighbor);
                   if (old == null || path.distance() + distance < old.distance()) {
-                    Path<N> shorter = path.extendTo(neighbor, distance);
+                    ShortestPath<N> shorter = path.extendTo(neighbor, distance);
                     seen.put(neighbor, shorter);
                     queue.add(shorter);
                   }
                 }));
   }
-
-  /** The path from the starting node to a destination node. */
-  public static final class Path<N> {
-    private final N node;
-    private final Path<N> predecessor;
-    private final double distance;
-    
-    Path(N node) {
-      this(node, null, 0);
-    }
-    
-    private Path(N node, Path<N> predecessor, double distance) {
-      this.node = node;
-      this.predecessor = predecessor;
-      this.distance = distance;
-    }
-
-    /** returns the last node of this path. */
-    public N to() {
-      return node;
-    }
-    
-    /**
-     * Returns the distance between the starting node and the {@link #to last node} of this path.
-     * Zero for the first path in the stream returned by {@link ShortestPaths#shortestPathsFrom},
-     * in which case {@link #to} will return the starting node.
-     */
-    public double distance() {
-      return distance;
-    }
-
-    /**
-     * Returns all nodes from the starting node along this path, with the <em>cumulative</em>
-     * distances from the starting node up to each node in the stream, respectively.
-     */
-    public BiStream<N, Double> stream() {
-      List<Path<N>> nodes = new ArrayList<>();
-      for (Path<N> p = this; p != null; p = p.predecessor) {
-        nodes.add(p);
-      }
-      Collections.reverse(nodes);
-      return BiStream.from(nodes, Path::to, Path::distance);
-    }
-    
-    @Override public String toString() {
-      return stream().keys().map(Object::toString).collect(joining("->"));
-    }
- 
-    Path<N> extendTo(N nextNode, double d) {
-      return new Path<>(nextNode, this, distance + d);
-    }
+  
+  ShortestPath(N node) {
+    this(node, null, 0);
+  }
+  
+  private ShortestPath(N node, ShortestPath<N> predecessor, double distance) {
+    this.node = node;
+    this.predecessor = predecessor;
+    this.distance = distance;
   }
 
-  private ShortestPaths() {}
+  /** returns the last node of this path. */
+  public N to() {
+    return node;
+  }
+  
+  /**
+   * Returns the distance between the starting node and the {@link #to last node} of this path.
+   * Zero for the first path in the stream returned by {@link ShortestPath#shortestPathsFrom},
+   * in which case {@link #to} will return the starting node.
+   */
+  public double distance() {
+    return distance;
+  }
+
+  /**
+   * Returns all nodes from the starting node along this path, with the <em>cumulative</em>
+   * distances from the starting node up to each node in the stream, respectively.
+   */
+  public BiStream<N, Double> stream() {
+    List<ShortestPath<N>> nodes = new ArrayList<>();
+    for (ShortestPath<N> p = this; p != null; p = p.predecessor) {
+      nodes.add(p);
+    }
+    Collections.reverse(nodes);
+    return BiStream.from(nodes, ShortestPath::to, ShortestPath::distance);
+  }
+  
+  @Override public String toString() {
+    return stream().keys().map(Object::toString).collect(joining("->"));
+  }
+
+  ShortestPath<N> extendTo(N nextNode, double d) {
+    return new ShortestPath<>(nextNode, this, distance + d);
+  }
 }
