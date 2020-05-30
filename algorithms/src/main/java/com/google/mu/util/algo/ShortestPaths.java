@@ -63,8 +63,8 @@ public final class ShortestPaths {
    * Returns a lazy stream of shortest paths starting from {@code startingNode}.
    *
    * <p>The {@code findAdjacentNodes} function is called on-the-fly to find the direct neighbors
-   * of the current node. It returns a {@code BiStream} with these direct neighbor nodes and their
-   * distances from the current node, respectively.
+   * of the current node. This function is expected to return a {@code BiStream} with these direct
+   * neighbor nodes and their distances from the passed-in current node, respectively.
    *
    * <p>{@code startingNode} will correspond to the first element in the returned stream, with
    * {@link Path#distance} equal to {@code 0}, followed by the next closest node, etc.
@@ -90,8 +90,8 @@ public final class ShortestPaths {
                     throw new IllegalArgumentException("Distance cannot be negative: " + distance);
                   }
                   if (done.contains(neighbor)) return;
-                  Path<?> known = seen.get(neighbor);
-                  if (known == null || path.distance() + distance < known.distance()) {
+                  Path<?> old = seen.get(neighbor);
+                  if (old == null || path.distance() + distance < old.distance()) {
                     Path<N> shorter = path.extendTo(neighbor, distance);
                     seen.put(neighbor, shorter);
                     queue.add(shorter);
