@@ -81,7 +81,8 @@ public final class ShortestPath<N> {
    * @param <N> The node type. Must implement {@link Object#equals} and {@link Object#hashCode}.
    */
   public static <N> Stream<ShortestPath<N>> shortestPathsFrom(
-      N startingNode, Function<N, BiStream<N, Double>> findAdjacentNodes) {
+      N startingNode,
+      Function<? super N, ? extends BiStream<? extends N, Double>> findAdjacentNodes) {
     requireNonNull(startingNode);
     requireNonNull(findAdjacentNodes);
     PriorityQueue<ShortestPath<N>> queue = new PriorityQueue<>(comparingDouble(ShortestPath::distance));
@@ -123,7 +124,7 @@ public final class ShortestPath<N> {
    * @param <N> The node type. Must implement {@link Object#equals} and {@link Object#hashCode}.
    */
   public static <N> Stream<ShortestPath<N>> unweightedShortestPathsFrom(
-      N startingNode, Function<N, Stream<N>> findAdjacentNodes) {
+      N startingNode, Function<? super N, ? extends Stream<? extends N>> findAdjacentNodes) {
     requireNonNull(startingNode);
     requireNonNull(findAdjacentNodes);
     Queue<ShortestPath<N>> queue = new ArrayDeque<>();
