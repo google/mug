@@ -12,10 +12,10 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.util.algo;
+package com.google.mu.util.algo.graph;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.mu.util.algo.ShortestPaths.shortestPathsFrom;
+import static com.google.mu.util.algo.graph.ShortestPaths.shortestPathsFrom;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -32,7 +32,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
 import com.google.common.testing.NullPointerTester;
-import com.google.mu.util.algo.ShortestPaths.Path;
+import com.google.mu.util.algo.graph.ShortestPaths;
+import com.google.mu.util.algo.graph.ShortestPaths.Path;
 import com.google.mu.util.stream.BiStream;
 
 @RunWith(JUnit4.class)
@@ -45,7 +46,7 @@ public class ShortestPathsTest {
     List<ShortestPaths.Path<String>> paths = shortestPathsFrom("root", this::neighbors).collect(toList());
     assertThat(paths).hasSize(1);
     assertThat(paths.get(0).distance()).isEqualTo(0D);
-    assertThat(paths.get(0).nodes().toMap()).isEqualTo(ImmutableMap.of("root", 0D));
+    assertThat(paths.get(0).stream().toMap()).isEqualTo(ImmutableMap.of("root", 0D));
   }
 
   @Test public void twoNodes() {
@@ -53,9 +54,9 @@ public class ShortestPathsTest {
     List<Path<String>> paths = shortestPathsFrom("foo", this::neighbors).collect(toList());
     assertThat(paths).hasSize(2);
     assertThat(paths.get(0).distance()).isEqualTo(0D);
-    assertThat(paths.get(0).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0D));
+    assertThat(paths.get(0).stream().toMap()).isEqualTo(ImmutableMap.of("foo", 0D));
     assertThat(paths.get(1).distance()).isEqualTo(10D);
-    assertThat(paths.get(1).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0D, "bar", 10D));
+    assertThat(paths.get(1).stream().toMap()).isEqualTo(ImmutableMap.of("foo", 0D, "bar", 10D));
   }
 
   @Test public void threeNodesList() {
@@ -64,11 +65,11 @@ public class ShortestPathsTest {
     List<Path<String>> paths = shortestPathsFrom("foo", this::neighbors).collect(toList());
     assertThat(paths).hasSize(3);
     assertThat(paths.get(0).distance()).isEqualTo(0D);
-    assertThat(paths.get(0).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0D));
+    assertThat(paths.get(0).stream().toMap()).isEqualTo(ImmutableMap.of("foo", 0D));
     assertThat(paths.get(1).distance()).isEqualTo(10D);
-    assertThat(paths.get(1).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0D, "bar", 10D));
+    assertThat(paths.get(1).stream().toMap()).isEqualTo(ImmutableMap.of("foo", 0D, "bar", 10D));
     assertThat(paths.get(2).distance()).isEqualTo(15D);
-    assertThat(paths.get(2).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0D, "bar", 10D, "baz", 15D));
+    assertThat(paths.get(2).stream().toMap()).isEqualTo(ImmutableMap.of("foo", 0D, "bar", 10D, "baz", 15D));
   }
 
   @Test public void threeNodesCycle() {
@@ -78,11 +79,11 @@ public class ShortestPathsTest {
     List<Path<String>> paths = shortestPathsFrom("foo", this::neighbors).collect(toList());
     assertThat(paths).hasSize(3);
     assertThat(paths.get(0).distance()).isEqualTo(0D);
-    assertThat(paths.get(0).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0D));
+    assertThat(paths.get(0).stream().toMap()).isEqualTo(ImmutableMap.of("foo", 0D));
     assertThat(paths.get(1).distance()).isEqualTo(10D);
-    assertThat(paths.get(1).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0D, "bar", 10D));
+    assertThat(paths.get(1).stream().toMap()).isEqualTo(ImmutableMap.of("foo", 0D, "bar", 10D));
     assertThat(paths.get(2).distance()).isEqualTo(12D);
-    assertThat(paths.get(2).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0D, "baz", 12D));
+    assertThat(paths.get(2).stream().toMap()).isEqualTo(ImmutableMap.of("foo", 0D, "baz", 12D));
   }
 
   @Test public void zeroDistance() {
@@ -92,11 +93,11 @@ public class ShortestPathsTest {
     List<Path<String>> paths = shortestPathsFrom("foo", this::neighbors).collect(toList());
     assertThat(paths).hasSize(3);
     assertThat(paths.get(0).distance()).isEqualTo(0D);
-    assertThat(paths.get(0).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0D));
+    assertThat(paths.get(0).stream().toMap()).isEqualTo(ImmutableMap.of("foo", 0D));
     assertThat(paths.get(1).distance()).isEqualTo(10D);
-    assertThat(paths.get(1).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0D, "bar", 10D));
+    assertThat(paths.get(1).stream().toMap()).isEqualTo(ImmutableMap.of("foo", 0D, "bar", 10D));
     assertThat(paths.get(2).distance()).isEqualTo(10D);
-    assertThat(paths.get(2).nodes().toMap())
+    assertThat(paths.get(2).stream().toMap())
         .isEqualTo(ImmutableMap.of("foo", 0D, "bar", 10D, "baz", 10D));
   }
 
@@ -113,11 +114,11 @@ public class ShortestPathsTest {
     List<Path<String>> paths = shortestPathsFrom("foo", this::neighbors).collect(toList());
     assertThat(paths).hasSize(3);
     assertThat(paths.get(0).distance()).isEqualTo(0D);
-    assertThat(paths.get(0).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0D));
+    assertThat(paths.get(0).stream().toMap()).isEqualTo(ImmutableMap.of("foo", 0D));
     assertThat(paths.get(1).distance()).isEqualTo(10D);
-    assertThat(paths.get(1).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0D, "bar", 10D));
+    assertThat(paths.get(1).stream().toMap()).isEqualTo(ImmutableMap.of("foo", 0D, "bar", 10D));
     assertThat(paths.get(2).distance()).isEqualTo(Double.MAX_VALUE);
-    assertThat(paths.get(2).nodes().toMap()).isEqualTo(ImmutableMap.of("foo", 0D, "bar", 10D, "baz", Double.MAX_VALUE));
+    assertThat(paths.get(2).stream().toMap()).isEqualTo(ImmutableMap.of("foo", 0D, "bar", 10D, "baz", Double.MAX_VALUE));
   }
 
   @Test public void wikipedia() {
