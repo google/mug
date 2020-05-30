@@ -56,6 +56,7 @@ import com.google.mu.util.stream.BiStream;
  *       .collect(toList());
  * }</pre>
  *
+ * @param <N> the type of graph nodes
  * @since 3.8
  */
 public final class ShortestPath<N> {
