@@ -12,10 +12,10 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.util.algo;
+package com.google.mu.util.algo.graph;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.mu.util.algo.ShortestPaths.shortestPathsFrom;
+import static com.google.mu.util.algo.graph.ShortestPaths.shortestPathsFrom;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -32,7 +32,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
 import com.google.common.testing.NullPointerTester;
-import com.google.mu.util.algo.ShortestPaths.Path;
+import com.google.mu.util.algo.graph.ShortestPaths;
+import com.google.mu.util.algo.graph.ShortestPaths.Path;
 import com.google.mu.util.stream.BiStream;
 
 @RunWith(JUnit4.class)

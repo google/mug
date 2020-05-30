@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.util.algo;
+package com.google.mu.util.algo.graph;
 
 import static com.google.mu.util.stream.MoreStreams.whileNotEmpty;
 import static java.util.Comparator.comparingDouble;
