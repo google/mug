@@ -15,17 +15,21 @@
 package com.google.mu.util.algo.graph;
 
 import static com.google.mu.util.stream.MoreStreams.whileNotEmpty;
+import static java.util.Arrays.asList;
 import static java.util.Comparator.comparingDouble;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -80,10 +84,10 @@ public final class ShortestPath<N> {
       N startingNode, Function<N, BiStream<N, Double>> findAdjacentNodes) {
     requireNonNull(startingNode);
     requireNonNull(findAdjacentNodes);
-    Map<N, ShortestPath<N>> seen = new HashMap<>();
-    Set<N> done = new HashSet<>();
     PriorityQueue<ShortestPath<N>> queue = new PriorityQueue<>(comparingDouble(ShortestPath::distance));
     queue.add(new ShortestPath<>(startingNode));
+    Map<N, ShortestPath<N>> seen = new HashMap<>();
+    Set<N> done = new HashSet<>();
     return whileNotEmpty(queue)
         .map(PriorityQueue::remove)
         .filter(path -> done.add(path.to()))
@@ -102,6 +106,37 @@ public final class ShortestPath<N> {
                     queue.add(shorter);
                   }
                 }));
+  }
+  
+  /**
+   * Returns a lazy stream of unweighted shortest paths starting from {@code startingNode}.
+   *
+   * <p>The {@code findAdjacentNodes} function is called on-the-fly to find the direct neighbors
+   * of the current node.
+   *
+   * <p>{@code startingNode} will correspond to the first element in the returned stream, with
+   * {@link ShortestPath#distance} equal to {@code 0}, followed by its adjacent nodes, etc.
+   * 
+   * <p>In the returned stream of {@code ShortestPath} objects, {@link #distance} will be in terms
+   * of number of nodes, with the adjacent nodes of the starting node returning 1.
+   *
+   * @param <N> The node type. Must implement {@link Object#equals} and {@link Object#hashCode}.
+   */
+  public static <N> Stream<ShortestPath<N>> unweightedShortestPathsFrom(
+      N startingNode, Function<N, Stream<N>> findAdjacentNodes) {
+    requireNonNull(startingNode);
+    requireNonNull(findAdjacentNodes);
+    Queue<ShortestPath<N>> queue = new ArrayDeque<>();
+    queue.add(new ShortestPath<>(startingNode));
+    Set<N> seen = new HashSet<>(asList(startingNode));
+    return whileNotEmpty(queue)
+        .map(Queue::remove)
+        .peek(path ->
+            findAdjacentNodes.apply(path.to())
+                .peek(Objects::requireNonNull)
+                .filter(seen::add)
+                .map(neighbor -> path.extendTo(neighbor, 1))
+                .forEachOrdered(queue::add));
   }
   
   private ShortestPath(N node) {
