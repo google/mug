@@ -97,27 +97,29 @@ import java.util.stream.StreamSupport;
  * <li><b>Memory Concern</b>
  *     <ul>
  *     <li>The thread pool queues all pending tasks. For large streams (like reading hundreds
- *         of thousands of task input data from a file), it can run out of memory quickly, especially
- *         if the sub task executions are slower than the input being enqueued (like calling RPCs).
- *      <li>Storing all the future objects in a list may also use up too much memory for large number of
- *          sub tasks.
+ *         of thousands of task input data from a file), it can run out of memory quickly.
+ *      <li>Storing all the future objects in a list may also use up too much memory for large
+ *          number of sub tasks.
  *     </ul>
  * <li><b>Exception Handling</b>
  *     <ul>
- *     <li>Executors treat submitted tasks as independent. One task may fail and the other tasks won't
- *         be affected. But if sub tasks are co-dependent (as in Java parallel streams where one
- *         exception aborts the whole pipeline), aborting the pipeling of sub tasks requires complex
- *         concurrent logic to coordinate between the sub tasks and the executor in order to dismiss
- *         pending sub tasks and also to cancel sub tasks that are already running.
- *         Otherwise, when an exception is thrown from a sub task, the other left-over sub tasks will
- *         continue to run, some may even hang indefinitely.
+ *     <li>Executors treat submitted tasks as independent. One task may fail and the other tasks
+ *         won't be affected. But if sub tasks are co-dependent (as in Java parallel streams),
+ *         you'll want to abort the whole parallel pipeline upon any critical exception.
+ *         
+ *         <br>Aborting a parallel pipeline requires complex concurrent logic to coordinate between
+ *         the sub tasks and the executor in order to dismiss pending sub tasks and also to cancel
+ *         sub tasks that are already running. Otherwise, when an exception is thrown from a sub
+ *         task, the other left-over sub tasks will continue to run, some may even hang
+ *         indefinitely.
  *     <li>You may resort to shutting down the executor to achieve similar result (cancelling the
  *         left-over sub tasks). But even knowing whether a sub task has failed isn't trivial.
- *         The above code example uses {@link Future#get}, but it won't help if a sub task submitted
- *         earlier is still running or being blocked, while a later-submitted sub task has failed.
- *     <li>And, {@code ExecutorService}s are often set up centrally and shared among different classes
- *         and components in the application. You may not have the option to your own thread pool that
- *         you can create and shut down.
+ *         The above code example uses {@link Future#get}, but it won't help if a sub task
+ *         submitted earlier is still running or being blocked, while a later-submitted sub task
+ *         has failed.
+ *     <li>And, {@code ExecutorService}s are often set up centrally and shared among different
+ *         classes and components in the application. You may not have the option to create and
+ *         shut down a thread pool of your own.
  *     </ul>
  * </ul>
  *
