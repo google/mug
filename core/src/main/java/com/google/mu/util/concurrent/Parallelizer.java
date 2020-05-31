@@ -126,6 +126,9 @@ import java.util.stream.StreamSupport;
  *     </ul>
  * </ul>
  *
+ * <p>Stream parameters used in this class are always consumed in the calling thread and don't have
+ * to be thread safe.
+ *
  * @since 1.1
  */
 public final class Parallelizer {
