@@ -6,10 +6,10 @@ A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/
 * Stream utilities ([BiStream](#bistream-streams-pairs-of-objects), [MoreStreams](#morestreams)).
 * [Optionals](#optionals) provides extra utilities for java.util.Optional.
 * [Substring](#substring) does string slicing.
+* [Parallelizer](#parallelizer) An _Executor-friendly_, _interruptible_ alternative to parallel streams.
 * [Retryer](#retryer) retries.
 * [Maybe](#maybe) tunnels checked exceptions through streams or futures.
 * [Funnel](#funnel) flows objects through batch conversions in FIFO order.
-* [Parallelizer](#parallelizer) An _Executor-friendly_, _interruptible_ alternative to parallel streams.
 * Functional interfaces that allow checked exceptions.
 
 ## Maven
