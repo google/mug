@@ -6,10 +6,10 @@ A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/
 * Stream utilities ([BiStream](#bistream-streams-pairs-of-objects), [MoreStreams](#morestreams)).
 * [Optionals](#optionals) provides extra utilities for java.util.Optional.
 * [Substring](#substring) does string slicing.
+* [Parallelizer](#parallelizer) An _Executor-friendly_, _interruptible_ alternative to parallel streams.
 * [Retryer](#retryer) retries.
 * [Maybe](#maybe) tunnels checked exceptions through streams or futures.
 * [Funnel](#funnel) flows objects through batch conversions in FIFO order.
-* [Parallelizer](#parallelizer) Runs a pipeline of tasks in parallel while limiting the number of in-flight tasks.
 * Functional interfaces that allow checked exceptions.
 
 ## Maven
@@ -536,7 +536,9 @@ That is, define the batches with ```funnel.through()``` and then inputs can flow
 
 ## [Parallelizer](https://google.github.io/mug/apidocs/com/google/mu/util/concurrent/Parallelizer.html)
 
-Runs a (large) pipeline of tasks in parallel while limiting the number of in-flight tasks.
+An _Executor-friendly_, _interruptible_ alternative to parallel streams.
+
+Designed for running a (large) pipeline of _IO-bound_ (as opposed to CPU-bound) sub tasks in parallel, while limiting max concurrency.
 
 For example, the following snippet uploads a large number of pictures in parallel:
 ```java
