@@ -16,12 +16,14 @@ package com.google.mu.util.stream;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Queue;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.Consumer;
@@ -91,12 +93,17 @@ public final class MoreStreams {
    */
   public static <T> Stream<T> generate(
       T seed, Function<? super T, ? extends Stream<? extends T>> step) {
-    Stream<? extends T> fanout = step.apply(seed);
-    // flatMap() here won't honor short-circuiting such as limit(), because it internally
-    // uses forEach() on the passed-in stream. See https://bugs.openjdk.java.net/browse/JDK-8075939
-    return fanout == null
-        ? Stream.of(seed)
-        : Stream.concat(Stream.of(seed), flatten(fanout.map(n -> generate(n, step))));
+    requireNonNull(step);
+    Queue<T> queue = new ArrayDeque<>();
+    queue.add(seed);
+    return whileNotEmpty(queue)
+        .map(Queue::remove)
+        .peek(v -> {
+          Stream<? extends T> fanout = step.apply(v);
+          if (fanout != null) {
+            fanout.forEach(queue::add);
+          }
+        });
   }
 
   /**
