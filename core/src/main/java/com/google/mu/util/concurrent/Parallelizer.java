@@ -80,7 +80,7 @@ import java.util.stream.StreamSupport;
  *   try {
  *     List<Future<?>> futures = userData
  *         .filter(...)
-           .map(() -> pool.submit(() -> userService.save(data)))
+ *         .map(() -> pool.submit(() -> userService.save(data)))
  *         .collect(toList());
  *     for (Future<?> future : futures) {
  *       future.get();
@@ -92,10 +92,11 @@ import java.util.stream.StreamSupport;
  *
  * Some differences for consideration:<ul>
  * <li>The thread pool queues all pending tasks. For large streams (like reading hundreds
- *     of thousands of task input data from a file), it can run out of memory.
+ *     of thousands of task input data from a file), it can run out of memory quickly, especially
+ *     if the sub task executions are slower than the input being enqueued (like calling RPCs).
  * <li>Storing all the future objects in a list may also use up too much memory for large number of
  *     sub tasks.
- * <li>Executors treat tasks as independent with task failures possibly logged-and-swallowed.
+ * <li>Executors treat tasks as independent with task failures often logged-and-swallowed.
  *     If you want fail-fast upon a sub task failure (so you can catch bugs and unexpected
  *     problems), using Parallelizer is more suitable.
  * <li>{@code ExecutorService}s are often set up centrally and shared among different classes and
