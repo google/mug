@@ -41,8 +41,7 @@ import java.util.stream.StreamSupport;
  * An <em>{@code Executor}-friendly</em>, <em>interruptible</em> alternative to parallel streams.
  *
  * <p>Designed for <em>IO-bound</em> (as opposed to CPU-bound) use cases, this utility allows
- * running a (large) stream of IO-bound sub-tasks in parallel while limiting the maximum number
- * of concurrency.
+ * running a (large) stream of IO-bound sub-tasks in parallel while limiting the max concurrency.
  *
  * <p>For example, the following code saves a stream of {@code UserData} in parallel with at most
  * 3 concurrent RPC calls at the same time: <pre>  {@code
@@ -51,7 +50,7 @@ import java.util.stream.StreamSupport;
  * }</pre>
  *
  * <p>Like parallel streams (and unlike executors), these sub-tasks are considered integral parts
- * of one logical task. Failure of any sub-task fails (and cancels) the entire task, automatically.
+ * of one logical task. Failure of any sub-task aborts the entire task, automatically.
  * If a certain exception is not fatal, the sub-task should catch and handle it.
  *
  * <p>How does it stack against parallel stream itself?
@@ -95,25 +94,31 @@ import java.util.stream.StreamSupport;
  * }</pre>
  *
  * Some differences for consideration:<ul>
- * <li>The thread pool queues all pending tasks. For large streams (like reading hundreds
- *     of thousands of task input data from a file), it can run out of memory quickly, especially
- *     if the sub task executions are slower than the input being enqueued (like calling RPCs).
- * <li>Storing all the future objects in a list may also use up too much memory for large number of
- *     sub tasks.
- * <li>Executors treat submitted tasks as independent. One task may fail and the other tasks won't
- *     be affected. But if sub tasks are co-dependent (as in Java parallel streams where one
- *     exception aborts the whole pipeline), aborting the pipeling of sub tasks requires complex
- *     concurrent logic to coordinate between the sub tasks and the executor in order to dismiss
- *     pending sub tasks and also to cancel sub tasks that are already running.
- *     Otherwise, when an exception is thrown from a sub task, the other left-over sub tasks will
- *     continue to run, some may even hang indefinitely.
- * <li>You may resort to shutting down the executor to achieve similar result (cancelling the
- *     left-over sub tasks). But even knowing whether a sub task has failed isn't trivial.
- *     The above code example uses {@link Future#get}, but it won't help if a sub task submitted
- *     earlier is still running or being blocked, while a later-submitted sub task has failed.
- * <li>And, {@code ExecutorService}s are often set up centrally and shared among different classes
- *     and components in the application. You may not have the option to your own thread pool that
- *     you can create and shut down.
+ * <li><b>Memory Concern</b>
+ *     <ul>
+ *     <li>The thread pool queues all pending tasks. For large streams (like reading hundreds
+ *         of thousands of task input data from a file), it can run out of memory quickly, especially
+ *         if the sub task executions are slower than the input being enqueued (like calling RPCs).
+ *      <li>Storing all the future objects in a list may also use up too much memory for large number of
+ *          sub tasks.
+ *     <ul>
+ * <li><b>Exception Handling</b>
+ *     <ul>
+ *     <li>Executors treat submitted tasks as independent. One task may fail and the other tasks won't
+ *         be affected. But if sub tasks are co-dependent (as in Java parallel streams where one
+ *         exception aborts the whole pipeline), aborting the pipeling of sub tasks requires complex
+ *         concurrent logic to coordinate between the sub tasks and the executor in order to dismiss
+ *         pending sub tasks and also to cancel sub tasks that are already running.
+ *         Otherwise, when an exception is thrown from a sub task, the other left-over sub tasks will
+ *         continue to run, some may even hang indefinitely.
+ *     <li>You may resort to shutting down the executor to achieve similar result (cancelling the
+ *         left-over sub tasks). But even knowing whether a sub task has failed isn't trivial.
+ *         The above code example uses {@link Future#get}, but it won't help if a sub task submitted
+ *         earlier is still running or being blocked, while a later-submitted sub task has failed.
+ *     <li>And, {@code ExecutorService}s are often set up centrally and shared among different classes
+ *         and components in the application. You may not have the option to your own thread pool that
+ *         you can create and shut down.
+ *     </ul>
  * </ul>
  *
  * @since 1.1
