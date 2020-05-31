@@ -40,7 +40,7 @@ import java.util.stream.StreamSupport;
 /**
  * An <em>{@code Executor}-friendly</em>, <em>interruptible</em> alternative to parallel streams.
  *
- * <p>Designed for <em>IO-bound</em>(as opposed to CPU-bound) use cases, this utility allows
+ * <p>Designed for <em>IO-bound</em> (as opposed to CPU-bound) use cases, this utility allows
  * running a (large) stream of IO-bound sub-tasks in parallel while limiting the maximum number
  * of concurrency.
  *
