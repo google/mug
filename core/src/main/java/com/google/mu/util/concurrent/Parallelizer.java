@@ -38,32 +38,29 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
- * Utility for running a (large) stream of tasks in parallel while limiting the maximum number of
- * in-flight tasks.
+ * Utility for running a (large) stream of sub-tasks in parallel while limiting the maximum number
+ * of concurrent tasks.
  *
  * <p>For example, the following code saves a stream of {@code UserData} in parallel with at most
- * 3 in-flight remote service calls at the same time: <pre>  {@code
+ * 3 concurrent RPC calls at the same time: <pre>  {@code
  *   new Parallelizer(executor, 3)
  *       .parallelize(userDataStream.filter(UserData::isModified), userService::save);
  * }</pre>
  *
- * It's worth noting that the above code looks similar to built-in parallel stream:
+ * <p>Like parallel streams (and unlike executors), these sub-tasks are considered integral parts
+ * of one logical task. Failure of any sub-task fails (and cancels) the entire task, automatically.
+ * If a certain exception is not fatal, the sub-task should catch it and handle it.
+ *
+ * <p>The parallel stream counterpart to the above example use case may look like:
  * <pre>  {@code
  *   userDataStream.filter(UserData::isModified).parallel().forEach(userService::save);
  * }</pre>
  *
- * Both get the job done, with a few differences: <ul>
+ * A few key differences: <ul>
  * <li>A parallel stream doesn't use arbitrary {@link ExecutorService}. It by default uses
  *     either the enclosing {@link ForkJoinPool} or the common {@code ForkJoinPool} instance.
- *     <ul>
- *     <li>Use {@code Parallelizer} if you wish to use a shared ExecutorService.
- *     <li>Use parallel streams otherwise.
- *     </ul>
  * <li>By running in a dedicated {@link ForkJoinPool}, a parallel stream can take a custom target
- *     concurrency, but it's not guaranteed to be <em>max</em> concurrency. <ul>
- *     <li>Use {@code Parallelizer} if setting max concurrency is important.
- *     <li>Or else use parallel streams.
- *     </ul>
+ *     concurrency, but it's not guaranteed to be <em>max</em> concurrency.
  * <li>Parallel streams are for CPU-bound computations; while {@code Parallelizer} deals with
  *     IO-bound operations.
  * <li>{@link #parallelize} can be interrupted, and can time out;
@@ -71,20 +68,20 @@ import java.util.stream.StreamSupport;
  * <li>When a task throws, {@code Parallelizer} dismisses pending tasks, and cancels all in-flight
  *     tasks (it's up to the user code to properly handle thread interruptions).
  *     So if a worker thread is waiting on some resource, it'll be interrupted without hanging
- *     the thread forever (arguably only a problem when parallelizing side-effects). <ul>
- *     <li>Use {@code Parallelizer} if you use a shared {@code ExecutorService} and want
- *         tasks to be interrupted upon failures.
- *     <li>Use parallel streams otherwise.
- *     </ul>
+ *     the thread forever.
  * <li>{@code Parallelizer} wraps exceptions thrown by the worker threads, making stack trace
  *     clearer.
  * </ul>
  *
- * <p>Another relevant comparison is with using {@link ExecutorService#submit} manually.
- * For example, it seems relatively straight-forward to do: <pre>  {@code
+ * <p>And how do you choose between {@code Parallelizer} and {@link ExecutorService}?
+ * Could you use something like the following instead?
+ * <pre>  {@code
  *   ExecutorService pool = Executors.newFixedThreadPool(3);
  *   try {
- *     List<Future<?>> futures = tasks.map(pool::submit).collect(toList());
+ *     List<Future<?>> futures = userData
+ *         .filter(...)
+           .map(() -> pool.submit(() -> userService.save(data)))
+ *         .collect(toList());
  *     for (Future<?> future : futures) {
  *       future.get();
  *     }
@@ -92,15 +89,18 @@ import java.util.stream.StreamSupport;
  *     pool.shutdownNow();
  *   }
  * }</pre>
- * While the above code appears to do most of the stuff, it doesn't satisfy all the requirements.
- * Namely: <ul>
- * <li>Fixed thread pool still queues all pending tasks. For large streams, it will run out of
- *     memory.
- * <li>When using a shared {@code ExecutorService} instance, creating a dedicated
- *     {@code fixedThreadPool()} isn't an option anyway.
- * <li>Like built-in {@code Stream}s, we want fail-fast when any task throws.
- *     The above code doesn't always fail fast.
- * <li>Putting all {@code Future} objects into a List will run out of memory for large streams.
+ *
+ * Some differences for consideration:<ul>
+ * <li>The thread pool queues all pending tasks. For large streams (like reading hundreds
+ *     of thousands of task input data from a file), it can run out of memory.
+ * <li>Storing all the future objects in a list may also use up too much memory for large number of
+ *     sub tasks.
+ * <li>Executors treat tasks as independent with task failures possibly logged-and-swallowed.
+ *     If you want fail-fast upon a sub task failure (so you can catch bugs and unexpected
+ *     problems), using Parallelizer is more suitable.
+ * <li>{@code ExecutorService}s are often set up centrally and shared among different classes and
+ *     components in the application. You may not have the option to your own thread pool that
+ *     you can create and shut down.
  * </ul>
  *
  * @since 1.1

@@ -16,6 +16,7 @@ package com.google.mu.util.algo.graph;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.util.algo.graph.ShortestPath.shortestPathsFrom;
+import static com.google.mu.util.algo.graph.ShortestPath.unweightedShortestPathsFrom;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -135,6 +136,56 @@ public class ShortestPathTest {
     addEdge("5", "6", 9);
     assertThat(shortestPathsFrom("a", this::neighbors).map(Object::toString).collect(toList()))
         .containsExactly("a", "a->b", "a->c", "a->c->f", "a->c->d", "a->c->d->e");
+  }
+
+  @Test public void unnweighted_oneNode() {
+    graph.addNode("root");
+    List<ShortestPath<String>> paths =
+        unweightedShortestPathsFrom("root", n -> graph.adjacentNodes(n).stream()).collect(toList());
+    assertThat(paths).hasSize(1);
+    assertThat(paths.get(0).distance()).isEqualTo(0D);
+    assertThat(paths.get(0).stream().toMap()).isEqualTo(ImmutableMap.of("root", 0D));
+  }
+
+  @Test public void unweighted_twoNodes() {
+    graph.putEdge("foo", "bar");
+    List<ShortestPath<String>> paths =
+        unweightedShortestPathsFrom("foo", n -> graph.adjacentNodes(n).stream()).collect(toList());
+    assertThat(paths).hasSize(2);
+    assertThat(paths.get(0).distance()).isEqualTo(0D);
+    assertThat(paths.get(0).stream().toMap()).isEqualTo(ImmutableMap.of("foo", 0D));
+    assertThat(paths.get(1).distance()).isEqualTo(1D);
+    assertThat(paths.get(1).stream().toMap()).isEqualTo(ImmutableMap.of("foo", 0D, "bar", 1D));
+  }
+
+  @Test public void unweighted_threeNodesList() {
+    graph.putEdge("foo", "bar");
+    graph.putEdge("bar", "baz");
+    List<ShortestPath<String>> paths =
+        unweightedShortestPathsFrom("foo", n -> graph.adjacentNodes(n).stream()).collect(toList());
+    assertThat(paths).hasSize(3);
+    assertThat(paths.get(0).distance()).isEqualTo(0D);
+    assertThat(paths.get(0).stream().toMap()).isEqualTo(ImmutableMap.of("foo", 0D));
+    assertThat(paths.get(1).distance()).isEqualTo(1D);
+    assertThat(paths.get(1).stream().toMap()).isEqualTo(ImmutableMap.of("foo", 0D, "bar", 1D));
+    assertThat(paths.get(2).distance()).isEqualTo(2D);
+    assertThat(paths.get(2).stream().toMap())
+        .isEqualTo(ImmutableMap.of("foo", 0D, "bar", 1D, "baz", 2D));
+  }
+
+  @Test public void unweighted_threeNodesCycle() {
+    graph.putEdge("foo", "bar");
+    graph.putEdge("bar", "baz");
+    graph.putEdge("baz", "foo");
+    List<ShortestPath<String>> paths =
+        unweightedShortestPathsFrom("foo", n -> graph.adjacentNodes(n).stream()).collect(toList());
+    assertThat(paths).hasSize(3);
+    assertThat(paths.get(0).distance()).isEqualTo(0D);
+    assertThat(paths.get(0).stream().toMap()).isEqualTo(ImmutableMap.of("foo", 0D));
+    assertThat(paths.get(1).distance()).isEqualTo(1D);
+    assertThat(paths.get(1).stream().toMap()).isEqualTo(ImmutableMap.of("foo", 0D, "bar", 1D));
+    assertThat(paths.get(2).distance()).isEqualTo(1D);
+    assertThat(paths.get(2).stream().toMap()).isEqualTo(ImmutableMap.of("foo", 0D, "baz", 1D));
   }
 
   @Test public void testNulls() throws Exception {
