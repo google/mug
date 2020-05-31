@@ -106,8 +106,9 @@ import java.util.stream.StreamSupport;
  *     <li>Executors treat submitted tasks as independent. One task may fail and the other tasks
  *         won't be affected.
  *
- *         <p>But if sub tasks are co-dependent (as in Java parallel streams), you'll want to
- *         abort the whole parallel pipeline upon any critical exception.
+ *         <p>But for co-dependent sub tasks that were parallelized only for performance reasons
+ *         (as in parallel streams), you'll want to abort the whole parallel pipeline upon any
+ *         critical exception, the same as if they were run sequentially.
  *
  *         <p>Aborting a parallel pipeline requires complex concurrent logic to coordinate between
  *         the sub tasks and the executor in order to dismiss pending sub tasks and also to cancel
