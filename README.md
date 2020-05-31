@@ -536,7 +536,9 @@ That is, define the batches with ```funnel.through()``` and then inputs can flow
 
 ## [Parallelizer](https://google.github.io/mug/apidocs/com/google/mu/util/concurrent/Parallelizer.html)
 
-Runs a (large) pipeline of tasks in parallel while limiting the number of in-flight tasks.
+An _Executor-friendly_, _interruptible_ alternative to parallel streams.
+
+Designed for running a (large) pipeline of _IO-bound_ (as opposed to CPU-bound) sub tasks in parallel, while limiting max concurrency.
 
 For example, the following snippet uploads a large number of pictures in parallel:
 ```java
