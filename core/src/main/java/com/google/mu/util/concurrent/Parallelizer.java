@@ -101,7 +101,7 @@ import java.util.stream.StreamSupport;
  *         if the sub task executions are slower than the input being enqueued (like calling RPCs).
  *      <li>Storing all the future objects in a list may also use up too much memory for large number of
  *          sub tasks.
- *     <ul>
+ *     </ul>
  * <li><b>Exception Handling</b>
  *     <ul>
  *     <li>Executors treat submitted tasks as independent. One task may fail and the other tasks won't
