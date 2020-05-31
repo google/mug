@@ -1,5 +1,5 @@
 -classpath
-'/Users/benyu/.m2/repository/com/google/mug/mug/3.8-SNAPSHOT/mug-3.8-SNAPSHOT.jar'
+'/Users/benyu/.m2/repository/com/google/mug/mug/3.9-SNAPSHOT/mug-3.9-SNAPSHOT.jar'
 -encoding
 'UTF-8'
 -protected
@@ -15,7 +15,7 @@
 -docencoding
 'UTF-8'
 -doctitle
-'algorithms 3.8-SNAPSHOT API'
+'algorithms 3.9-SNAPSHOT API'
 -linkoffline
 'https://docs.oracle.com/javase/8/docs/api' '/Users/benyu/mug/algorithms/target/javadoc-bundle-options'
 -linkoffline
@@ -25,4 +25,4 @@
 -use
 -version
 -windowtitle
-'algorithms 3.8-SNAPSHOT API'
+'algorithms 3.9-SNAPSHOT API'
