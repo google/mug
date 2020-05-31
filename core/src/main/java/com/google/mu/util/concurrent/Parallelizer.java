@@ -66,7 +66,7 @@ import java.util.stream.StreamSupport;
  *     concurrency, but it's not guaranteed to be <em>max</em> concurrency.
  * <li>Parallel streams are for CPU-bound computations; while {@code Parallelizer} deals with
  *     IO-bound operations.
- * <li>{@link #parallelize} can be interrupted, and can time out;
+ * <li>{@link #parallelize parallelize()} can be interrupted, and can time out;
  *     parallel streams are uninterruptible.
  * <li>When a task throws, {@code Parallelizer} dismisses pending tasks, and cancels all in-flight
  *     tasks (it's up to the user code to properly handle thread interruptions).
