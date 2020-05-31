@@ -407,7 +407,7 @@ public final class MoreStreams {
     }
 
     private FlattenedSpliterator(
-        Spliterator<? extends Stream<? extends T>> blocks, Spliterator<? extends T> currentBlock) {
+        Spliterator<? extends T> currentBlock, Spliterator<? extends Stream<? extends T>> blocks) {
       this.blocks = requireNonNull(blocks);
       this.currentBlock = currentBlock;
     }
@@ -424,7 +424,7 @@ public final class MoreStreams {
 
     @Override public Spliterator<T> trySplit() {
       return splitThenWrap(blocks, it -> {
-        Spliterator<T> result = new FlattenedSpliterator<>(it, currentBlock);
+        Spliterator<T> result = new FlattenedSpliterator<>(currentBlock, it);
         currentBlock = null;
         return result;
       });
