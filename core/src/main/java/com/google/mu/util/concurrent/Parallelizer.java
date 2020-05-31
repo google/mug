@@ -116,8 +116,7 @@ import java.util.stream.StreamSupport;
  *         indefinitely.
  *     <li>You may resort to shutting down the executor to achieve similar result (cancelling the
  *         left-over sub tasks). Although even knowing whether a sub task has failed isn't trivial.
- *         
- *         <p>The above code example uses {@link Future#get}, but it won't help if a sub task
+ *         The above code example uses {@link Future#get}, but it won't help if a sub task
  *         submitted earlier is still running or being blocked, while a later-submitted sub task
  *         has failed.
  *     <li>And, {@code ExecutorService}s are often set up centrally and shared among different
