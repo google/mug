@@ -101,7 +101,7 @@ import java.util.stream.StreamSupport;
  *      <li>Storing all the future objects in a list may also use up too much memory for large
  *          number of sub tasks.
  *     </ul>
- * <li><b>Fail Fast and Exception Handling</b>
+ * <li><b>Exception Handling (and fail fast)</b>
  *     <ul>
  *     <li>Executors treat submitted tasks as independent. One task may fail and the other tasks
  *         won't be affected.
