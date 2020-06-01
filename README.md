@@ -5,7 +5,7 @@ A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/
 
 * Stream utilities ([BiStream](#bistream-streams-pairs-of-objects), [MoreStreams](#morestreams)).
 * [Optionals](#optionals) provides extra utilities for Optional: `optional(name.length() > 0, name)`
-* [Substring](#substring) finds a substring in a string: `after(first("@")).from(email)`
+* [Substring](#substring) finds a substring in a string: `String user = first('@').toEnd().removeFrom(email)`
 * [Parallelizer](#parallelizer) An _Executor-friendly_, _interruptible_ alternative to parallel streams.
 * [Retryer](#retryer) retries.
 * [Maybe](#maybe) tunnels checked exceptions through streams or futures.
