@@ -95,7 +95,7 @@ public final class ShortestPath<N> {
             findAdjacentNodes.apply(path.to())
                 .forEachOrdered((neighbor, distance) -> {
                   requireNonNull(neighbor);
-                  checkNotNegative("distance", distance);
+                  checkNotNegative(distance, "distance");
                   if (done.contains(neighbor)) return;
                   ShortestPath<?> old = seen.get(neighbor);
                   if (old == null || path.distance() + distance < old.distance()) {
@@ -178,7 +178,7 @@ public final class ShortestPath<N> {
     return new ShortestPath<>(nextNode, this, distance + d);
   }
 
-  private static void checkNotNegative(String name, double value) {
+  private static void checkNotNegative(double value, String name) {
     if (value < 0) {
       throw new IllegalArgumentException(name + " cannot be negative: " + value);
     }
