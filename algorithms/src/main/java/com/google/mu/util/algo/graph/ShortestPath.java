@@ -151,7 +151,7 @@ public final class ShortestPath<N> {
   }
   
   /**
-   * Returns the distance between the starting node and the {@link #to last node} of this path.
+   * Returns the non-negative distance between the starting node and the {@link #to last node} of this path.
    * Zero for the first path in the stream returned by {@link ShortestPath#shortestPathsFrom},
    * in which case {@link #to} will return the starting node.
    */
