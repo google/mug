@@ -14,6 +14,7 @@
  *****************************************************************************/
 package com.google.mu.util.algo.graph;
 
+import static com.google.mu.util.stream.MoreStreams.generate;
 import static com.google.mu.util.stream.MoreStreams.whileNotEmpty;
 import static java.util.Arrays.asList;
 import static java.util.Comparator.comparingDouble;
@@ -127,17 +128,13 @@ public final class ShortestPath<N> {
       N startingNode, Function<? super N, ? extends Stream<? extends N>> findAdjacentNodes) {
     requireNonNull(startingNode);
     requireNonNull(findAdjacentNodes);
-    Queue<ShortestPath<N>> queue = new ArrayDeque<>();
-    queue.add(new ShortestPath<>(startingNode));
     Set<N> seen = new HashSet<>(asList(startingNode));
-    return whileNotEmpty(queue)
-        .map(Queue::remove)
-        .peek(path ->
-            findAdjacentNodes.apply(path.to())
-                .peek(Objects::requireNonNull)
-                .filter(seen::add)
-                .map(neighbor -> path.extendTo(neighbor, 1))
-                .forEachOrdered(queue::add));
+    return generate(
+        new ShortestPath<>(startingNode),
+        path -> findAdjacentNodes.apply(path.to())
+            .peek(Objects::requireNonNull)
+            .filter(seen::add)
+            .map(n -> path.extendTo(n, 1)));
   }
   
   private ShortestPath(N node) {
