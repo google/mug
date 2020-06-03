@@ -282,13 +282,13 @@ public class MoreStreamsTest {
   @Test public void testIndexesFrom() {
     assertThat(indexesFrom(1).limit(3)).containsExactly(1, 2, 3).inOrder();
   }
-  
+
   @Test public void removingFromQueue_empty() {
     Queue<String> queue = new ArrayDeque<>();
     assertThat(whileNotEmpty(queue).map(Queue::remove)).isEmpty();
     assertThat(queue).isEmpty();
   }
-  
+
   @Test public void removingFromQueue_noConcurrentModification() {
     Queue<String> queue = new ArrayDeque<>();
     queue.add("one");
@@ -297,7 +297,7 @@ public class MoreStreamsTest {
         .containsExactly("one", "two").inOrder();
     assertThat(queue).isEmpty();
   }
-  
+
   @Test public void removingFromQueue_modificationUnderneath() {
     Queue<String> queue = new ArrayDeque<>();
     Stream<String> stream = whileNotEmpty(queue).map(Queue::remove);
@@ -306,7 +306,7 @@ public class MoreStreamsTest {
     assertThat(stream).containsExactly("one", "two").inOrder();
     assertThat(queue).isEmpty();
   }
-  
+
   @Test public void removingFromQueue_modificationWhileStreaming() {
     Queue<String> queue = new ArrayDeque<>();
     queue.add("one");
@@ -319,13 +319,13 @@ public class MoreStreamsTest {
         .containsExactly("one", "two").inOrder();
     assertThat(queue).isEmpty();
   }
-  
+
   @Test public void poppingFromStack_empty() {
     Deque<String> stack = new ArrayDeque<>();
     assertThat(whileNotEmpty(stack).map(Deque::pop)).isEmpty();
     assertThat(stack).isEmpty();
   }
-  
+
   @Test public void poppingFromStack_noConcurrentModification() {
     Deque<String> stack = new ArrayDeque<>();
     stack.push("one");
@@ -334,7 +334,7 @@ public class MoreStreamsTest {
         .containsExactly("two", "one").inOrder();
     assertThat(stack).isEmpty();
   }
-  
+
   @Test public void poppingFromStack_modificationUnderneath() {
     Deque<String> stack = new ArrayDeque<>();
     Stream<String> stream = whileNotEmpty(stack).map(Deque::pop);
@@ -343,7 +343,7 @@ public class MoreStreamsTest {
     assertThat(stream).containsExactly("two", "one").inOrder();
     assertThat(stack).isEmpty();
   }
-  
+
   @Test public void poppingFromStack_modificationWhileStreaming() {
     Deque<String> stack = new ArrayDeque<>();
     stack.push("one");
@@ -359,7 +359,7 @@ public class MoreStreamsTest {
 
   @Test public void testNulls() throws Exception {
     NullPointerTester tester = new NullPointerTester();
-    asList(BiCollection.class.getDeclaredMethods()).stream()
+    asList(MoreStreams.class.getDeclaredMethods()).stream()
         .filter(m -> m.getName().equals("generate"))
         .forEach(tester::ignore);
     tester.testAllPublicStaticMethods(MoreStreams.class);

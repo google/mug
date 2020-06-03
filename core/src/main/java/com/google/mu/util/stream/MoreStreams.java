@@ -60,7 +60,7 @@ public final class MoreStreams {
    *     return generate(root, node -> node.children().stream());
    *   }
    * }</pre>
-   * 
+   *
    * It's functionally equivalent to the following common imperative code: <pre>{@code
    *   List<Node> bfs(Node root) {
    *     List<Node> result = new ArrayList<>();
@@ -94,16 +94,18 @@ public final class MoreStreams {
   public static <T> Stream<T> generate(
       T seed, Function<? super T, ? extends Stream<? extends T>> step) {
     requireNonNull(step);
-    Queue<T> queue = new ArrayDeque<>();
-    queue.add(seed);
+    Queue<Stream<? extends T>> queue = new ArrayDeque<>();
+    queue.add(Stream.of(seed));
     return whileNotEmpty(queue)
         .map(Queue::remove)
-        .peek(v -> {
-          Stream<? extends T> fanout = step.apply(v);
-          if (fanout != null) {
-            fanout.forEach(queue::add);
-          }
-        });
+        .map(seeds -> seeds.peek(
+            v -> {
+              Stream<? extends T> fanout = step.apply(v);
+              if (fanout != null) {
+                queue.add(fanout);
+              }
+            }))
+        .flatMap(Function.identity());
   }
 
   /**
@@ -159,7 +161,7 @@ public final class MoreStreams {
 
   /**
    * Iterates through {@code stream} sequentially and passes each element to {@code consumer}
-   * with exceptions propagated. For example: 
+   * with exceptions propagated. For example:
    *
    * <pre>{@code
    *   void writeAll(Stream<?> stream, ObjectOutput out) throws IOException {
@@ -214,7 +216,7 @@ public final class MoreStreams {
 
   /**
    * Returns a collector that collects {@link Map} entries into a combined map. Duplicate keys cause {@link
-   * IllegalStateException}. For example: 
+   * IllegalStateException}. For example:
    *
    * <pre>{@code
    *   Map<FacultyId, Account> allFaculties = departments.stream()
@@ -271,7 +273,7 @@ public final class MoreStreams {
    * while(!stack.isEmpty())} and the functional {@code whileNotEmpty(stack)}. Although,
    * the latter does offer advantage in terms of abstraction and code reuse. If for example you
    * have a repetitive boilerplate to drain elements from stacks:
-   * 
+   *
    * <pre>{@code
    * while (!candidates.isEmpty()) {
    *   Candidate candidate = candidates.pop();
