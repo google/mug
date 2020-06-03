@@ -51,8 +51,11 @@ public class TraversalTest {
   public void preOrder_depthFirst() {
     graph.putEdge("foo", "bar");
     graph.putEdge("foo", "baz");
+    graph.putEdge("foo", "cat");
+    graph.putEdge("cat", "run");
     graph.putEdge("bar", "dog");
-    assertThat(preOrder("foo").collect(toList())).containsExactly("foo", "bar", "dog", "baz")
+    graph.putEdge("bar", "cat");
+    assertThat(preOrder("foo").collect(toList())).containsExactly("foo", "bar", "dog", "cat", "run", "baz")
         .inOrder();
   }
 
