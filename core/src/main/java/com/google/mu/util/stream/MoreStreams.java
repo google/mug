@@ -93,9 +93,15 @@ public final class MoreStreams {
    */
   public static <T> Stream<T> generate(
       T seed, Function<? super T, ? extends Stream<? extends T>> step) {
+    return flatIterate(Stream.of(seed), step);
+  }
+
+  static <T> Stream<T> flatIterate(
+      Stream<T> initial, Function<? super T, ? extends Stream<? extends T>> step) {
+    requireNonNull(initial);
     requireNonNull(step);
     Queue<Stream<? extends T>> queue = new ArrayDeque<>();
-    queue.add(Stream.of(seed));
+    queue.add(initial);
     return whileNotEmpty(queue)
         .map(Queue::remove)
         .flatMap(seeds -> seeds.peek(
