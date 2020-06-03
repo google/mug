@@ -15,7 +15,6 @@
 package com.google.mu.util.stream;
 
 import static java.util.Objects.requireNonNull;
-import static java.util.function.Function.identity;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -99,14 +98,13 @@ public final class MoreStreams {
     queue.add(Stream.of(seed));
     return whileNotEmpty(queue)
         .map(Queue::remove)
-        .map(seeds -> seeds.peek(
+        .flatMap(seeds -> seeds.peek(
             v -> {
               Stream<? extends T> fanout = step.apply(v);
               if (fanout != null) {
                 queue.add(fanout);
               }
-            }))
-        .flatMap(identity());
+            }));
   }
 
   /**
