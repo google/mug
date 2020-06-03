@@ -141,8 +141,8 @@ public final class Traversal {
         return next(successors);
       }
 
-      private T next(Spliterator<? extends T> successors) {
-        while (successors.tryAdvance(DepthFirst.this)) {
+      private T next(Spliterator<? extends T> spliterator) {
+        while (spliterator.tryAdvance(DepthFirst.this)) {
           if (seen.add(advancedResult)) return advancedResult;
         }
         return null;
