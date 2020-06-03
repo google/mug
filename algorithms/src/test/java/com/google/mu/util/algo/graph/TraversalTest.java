@@ -23,6 +23,7 @@ import org.junit.Test;
 
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
+import com.google.common.testing.NullPointerTester;
 
 public class TraversalTest {
   private final MutableGraph<String> graph = GraphBuilder.undirected().<String>build();
@@ -83,11 +84,47 @@ public class TraversalTest {
         .inOrder();
   }
 
+  @Test
+  public void breadthFirst_noChildren() {
+    graph.addNode("root");
+    assertThat(bfs("root").collect(toList())).containsExactly("root");
+  }
+
+  @Test
+  public void breadthFirst_oneEdge() {
+    graph.putEdge("foo", "bar");
+    assertThat(bfs("foo").collect(toList())).containsExactly("foo", "bar").inOrder();
+  }
+
+  @Test
+  public void breadthFirst_twoEdges() {
+    graph.putEdge("foo", "bar");
+    graph.putEdge("bar", "baz");
+    assertThat(bfs("foo").collect(toList())).containsExactly("foo", "bar", "baz").inOrder();
+  }
+
+  @Test
+  public void breadthFirst_breadthFirst() {
+    graph.putEdge("foo", "bar");
+    graph.putEdge("foo", "baz");
+    graph.putEdge("bar", "dog");
+    assertThat(bfs("foo").collect(toList())).containsExactly("foo", "bar", "baz", "dog")
+        .inOrder();
+  }
+
+  @Test public void testNulls() throws Exception {
+    new NullPointerTester().testAllPublicStaticMethods(Traversal.class);
+  }
+
   private Stream<String> preOrder(String firstNode) {
     return Traversal.preOrderFrom(firstNode, n -> graph.adjacentNodes(n).stream());
   }
 
   private Stream<String> postOrder(String firstNode) {
     return Traversal.postOrderFrom(firstNode, n -> graph.adjacentNodes(n).stream());
+  }
+
+  private Stream<String> bfs(String firstNode) {
+    return Traversal.breadthFirstFrom(firstNode, n -> graph.adjacentNodes(n).stream());
   }
 }

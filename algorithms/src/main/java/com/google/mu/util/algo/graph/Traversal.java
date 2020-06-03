@@ -15,24 +15,22 @@
 package com.google.mu.util.algo.graph;
 
 import static com.google.mu.util.stream.MoreStreams.flatten;
+import static com.google.mu.util.stream.MoreStreams.generate;
 import static com.google.mu.util.stream.MoreStreams.whileNotEmpty;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import com.google.mu.util.stream.MoreStreams;
-
 /**
  * Implements genertic graph traversal algorithms ({@link #preOrderFrom pre-order},
  * and {@link #postOrderFrom post-order}).
- *
- * <p>Only depth-first because {@link MoreStreams#generate} is trivially breadth-first.
  *
  * @since 3.9
  */
@@ -43,20 +41,35 @@ public abstract class Traversal<T> {
 
   /**
    * Starts from {@code initial} and traverse depth first in pre-order by
-   * using {@code getChildren} function iteratively.
+   * using {@code getSuccessors} function iteratively.
    */
   public static <T> Stream<T> preOrderFrom(
-      T initial, Function<? super T, ? extends Stream<? extends T>> getChildren) {
-    return new PreOrder<>(getChildren).startingFrom(requireNonNull(initial));
+      T initial, Function<? super T, ? extends Stream<? extends T>> getSuccessors) {
+    return new PreOrder<>(getSuccessors).startingFrom(initial);
   }
 
   /**
    * Starts from {@code initial} and traverse depth first in post-order by
-   * using {@code getChildren} function iteratively.
+   * using {@code getSuccessors} function iteratively.
    */
   public static <T> Stream<T> postOrderFrom(
-      T initial, Function<? super T, ? extends Stream<? extends T>> getChildren) {
-    return new PostOrder<>(getChildren).startingFrom(initial);
+      T initial, Function<? super T, ? extends Stream<? extends T>> getSuccessors) {
+    return new PostOrder<>(getSuccessors).startingFrom(initial);
+  }
+
+  /**
+   * Starts from {@code initial} and traverse breadth first by using {@code getSuccessors}
+   * function iteratively.
+   */
+  public static <T> Stream<T> breadthFirstFrom(
+      T initial, Function<? super T, ? extends Stream<? extends T>> getSuccessors) {
+    requireNonNull(initial);
+    requireNonNull(getSuccessors);
+    Set<T> seen = new HashSet<>();
+    seen.add(initial);
+    return generate(
+        initial,
+        n -> getSuccessors.apply(n).peek(Objects::requireNonNull).filter(seen::add));
   }
 
   final Stream<T> startingFrom(T node) {
@@ -67,10 +80,10 @@ public abstract class Traversal<T> {
 
   private static final class PreOrder<T> extends Traversal<T> {
     private final Queue<Stream<? extends T>> queue = new ArrayDeque<>();
-    private final Function<? super T, ? extends Stream<? extends T>> getChildren;
+    private final Function<? super T, ? extends Stream<? extends T>> getSuccessors;
 
-    PreOrder(Function<? super T, ? extends Stream<? extends T>> getChildren) {
-      this.getChildren = requireNonNull(getChildren);
+    PreOrder(Function<? super T, ? extends Stream<? extends T>> getSuccessors) {
+      this.getSuccessors = requireNonNull(getSuccessors);
     }
 
     @Override Stream<T> traverse(T node) {
@@ -81,16 +94,16 @@ public abstract class Traversal<T> {
     }
 
     private void enqueueChildren(T node) {
-      queue.add(flatten(getChildren.apply(node).map(this::startingFrom)));
+      queue.add(flatten(getSuccessors.apply(node).map(this::startingFrom)));
     }
   }
 
   private static final class PostOrder<T> extends Traversal<T> {
     private final Deque<T> stack = new ArrayDeque<>();
-    private final Function<? super T, ? extends Stream<? extends T>> getChildren;
+    private final Function<? super T, ? extends Stream<? extends T>> getSuccessors;
 
-    PostOrder(Function<? super T, ? extends Stream<? extends T>> getChildren) {
-      this.getChildren = requireNonNull(getChildren);
+    PostOrder(Function<? super T, ? extends Stream<? extends T>> getSuccessors) {
+      this.getSuccessors = requireNonNull(getSuccessors);
     }
 
     @Override Stream<T> traverse(T node) {
@@ -100,7 +113,7 @@ public abstract class Traversal<T> {
 
     private Stream<T> postOrder(T node) {
       return Stream.concat(
-          flatten(getChildren.apply(node).map(this::startingFrom)),
+          flatten(getSuccessors.apply(node).map(this::startingFrom)),
           Stream.of(node));
     }
   }
