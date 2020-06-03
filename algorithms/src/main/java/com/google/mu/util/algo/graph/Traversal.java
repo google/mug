@@ -14,7 +14,6 @@
  *****************************************************************************/
 package com.google.mu.util.algo.graph;
 
-import static com.google.mu.util.stream.MoreStreams.flatten;
 import static com.google.mu.util.stream.MoreStreams.generate;
 import static com.google.mu.util.stream.MoreStreams.whileNotEmpty;
 import static java.util.Objects.requireNonNull;
@@ -93,7 +92,7 @@ public final class Traversal {
     }
 
     private void enqueueSuccessors(T node) {
-      queue.add(flatten(findSuccessors.apply(node).map(this::startingFrom)));
+      queue.add(findSuccessors.apply(node).flatMap(this::startingFrom));
     }
   }
 
