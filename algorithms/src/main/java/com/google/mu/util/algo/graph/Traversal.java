@@ -94,18 +94,4 @@ public final class Traversal {
                     .flatMap(c -> postOrderFrom(stack, getChildren, seen)),
                 Stream.of(seed)));
   }
-
-  public static <T> Stream<T> preOrderFrom(
-      Stream<? extends T> initial,
-      Function<? super T, ? extends Stream<? extends T>> getChildren) {
-    requireNonNull(initial);
-    requireNonNull(getChildren);
-    Deque<Stream<? extends T>> stack = new ArrayDeque<>();
-    Set<T> seen = new HashSet<>();
-    stack.push(initial);
-    return whileNotEmpty(stack)
-        .map(Deque::pop)
-        .peek(seeds -> seeds.map(getChildren).peek(Objects::requireNonNull).forEach(stack::push))
-        .flatMap(seeds -> seeds.filter(seen::add));
-  }
 }
