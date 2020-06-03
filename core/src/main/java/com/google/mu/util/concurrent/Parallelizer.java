@@ -115,6 +115,9 @@ import java.util.stream.StreamSupport;
  *         sub tasks that are already running. Otherwise, when an exception is thrown from a sub
  *         task, the other left-over sub tasks will continue to run, some may even hang
  *         indefinitely.
+ *     <li>Automatic cancellation propagation. When {@link #parallelize parallelize()} is
+ *         interrupted, all running tasks will be automatically canceled; all pending tasks
+ *         automatically dismissed.
  *     <li>You may resort to shutting down the executor to achieve similar result (cancelling the
  *         left-over sub tasks). Although even knowing whether a sub task has failed isn't trivial.
  *         The above code example uses {@link Future#get}, but it won't help if a sub task
