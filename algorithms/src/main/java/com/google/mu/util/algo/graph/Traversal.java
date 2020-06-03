@@ -60,11 +60,7 @@ public abstract class Traversal<T> {
   }
 
   final Stream<T> startingFrom(T node) {
-    requireNonNull(node);
-    if (!seen.add(node)) {
-      return Stream.empty();
-    }
-    return traverse(node);
+    return seen.add(requireNonNull(node)) ? traverse(node) : Stream.empty();
   }
 
   abstract Stream<T> traverse(T node);
