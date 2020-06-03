@@ -89,10 +89,10 @@ public final class Traversal {
       queue.add(Stream.of(node));
       return whileNotEmpty(queue)
           .map(Queue::remove)
-          .flatMap(nodes -> nodes.peek(this::enqueueChildren));
+          .flatMap(nodes -> nodes.peek(this::enqueueSuccessors));
     }
 
-    private void enqueueChildren(T node) {
+    private void enqueueSuccessors(T node) {
       queue.add(flatten(getSuccessors.apply(node).map(this::startingFrom)));
     }
   }
