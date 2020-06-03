@@ -41,44 +41,44 @@ import java.util.stream.Stream;
 public final class Traversal {
   /**
    * Starts from {@code initial} and traverse depth first in pre-order by
-   * using {@code getSuccessors} function iteratively.
+   * using {@code findSuccessors} function iteratively.
    */
   public static <T> Stream<T> preOrderFrom(
-      T initial, Function<? super T, ? extends Stream<? extends T>> getSuccessors) {
-    return new PreOrder<T>(getSuccessors).startingFrom(initial);
+      T initial, Function<? super T, ? extends Stream<? extends T>> findSuccessors) {
+    return new PreOrder<T>(findSuccessors).startingFrom(initial);
   }
 
   /**
    * Starts from {@code initial} and traverse depth first in post-order by
-   * using {@code getSuccessors} function iteratively.
+   * using {@code findSuccessors} function iteratively.
    */
   public static <T> Stream<T> postOrderFrom(
-      T initial, Function<? super T, ? extends Stream<? extends T>> getSuccessors) {
-    return new PostOrder<>(getSuccessors).startingFrom(initial);
+      T initial, Function<? super T, ? extends Stream<? extends T>> findSuccessors) {
+    return new PostOrder<>(findSuccessors).startingFrom(initial);
   }
 
   /**
-   * Starts from {@code initial} and traverse breadth first by using {@code getSuccessors}
+   * Starts from {@code initial} and traverse breadth first by using {@code findSuccessors}
    * function iteratively.
    */
   public static <T> Stream<T> breadthFirstFrom(
-      T initial, Function<? super T, ? extends Stream<? extends T>> getSuccessors) {
+      T initial, Function<? super T, ? extends Stream<? extends T>> findSuccessors) {
     requireNonNull(initial);
-    requireNonNull(getSuccessors);
+    requireNonNull(findSuccessors);
     Set<T> seen = new HashSet<>();
     seen.add(initial);
     return generate(
         initial,
-        n -> getSuccessors.apply(n).peek(Objects::requireNonNull).filter(seen::add));
+        n -> findSuccessors.apply(n).peek(Objects::requireNonNull).filter(seen::add));
   }
 
   private static final class PreOrder<T> {
     private final Queue<Stream<? extends T>> queue = new ArrayDeque<>();
-    private final Function<? super T, ? extends Stream<? extends T>> getSuccessors;
+    private final Function<? super T, ? extends Stream<? extends T>> findSuccessors;
     private final Set<T> seen = new HashSet<>();
 
-    private PreOrder(Function<? super T, ? extends Stream<? extends T>> getSuccessors) {
-      this.getSuccessors = requireNonNull(getSuccessors);
+    private PreOrder(Function<? super T, ? extends Stream<? extends T>> findSuccessors) {
+      this.findSuccessors = requireNonNull(findSuccessors);
     }
 
     Stream<T> startingFrom(T node) {
@@ -93,18 +93,18 @@ public final class Traversal {
     }
 
     private void enqueueSuccessors(T node) {
-      queue.add(flatten(getSuccessors.apply(node).map(this::startingFrom)));
+      queue.add(flatten(findSuccessors.apply(node).map(this::startingFrom)));
     }
   }
 
   private static final class PostOrder<T> implements Consumer<T> {
-    private final Function<? super T, ? extends Stream<? extends T>> getSuccessors;
+    private final Function<? super T, ? extends Stream<? extends T>> findSuccessors;
     private final Deque<Family> stack = new ArrayDeque<>();
     private final Set<T> seen = new HashSet<>();
     private T advancedResult;
 
-    PostOrder(Function<? super T, ? extends Stream<? extends T>> getSuccessors) {
-      this.getSuccessors = requireNonNull(getSuccessors);
+    PostOrder(Function<? super T, ? extends Stream<? extends T>> findSuccessors) {
+      this.findSuccessors = requireNonNull(findSuccessors);
     }
 
     Stream<T> startingFrom(T node) {
@@ -125,7 +125,7 @@ public final class Traversal {
 
       Family(T head) {
         this.head = head;
-        this.successors = getSuccessors.apply(head).spliterator();
+        this.successors = findSuccessors.apply(head).spliterator();
       }
 
       T removeFirst() {
