@@ -128,7 +128,7 @@ public final class Traversal {
       }
 
       T removeFirst() {
-        for (Family family = this;;) {
+        for (Family family = this; ;) {
           if (family.successors.tryAdvance(PostOrder.this)) {
             if (seen.add(advancedResult)) {
               stack.push(family);
