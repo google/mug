@@ -20,7 +20,6 @@ import static com.google.mu.util.stream.MoreStreams.whileNotEmpty;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Queue;
@@ -54,7 +53,14 @@ public abstract class Traversal<T> {
    */
   public static <T> Stream<T> postOrderFrom(
       T initial, Function<? super T, ? extends Stream<? extends T>> getSuccessors) {
-    return new PostOrder<>(getSuccessors).startingFrom(initial);
+    requireNonNull(getSuccessors);
+    return new Traversal<T>() {
+      @Override Stream<T> traverse(T node) {
+        return Stream.concat(
+            flatten(getSuccessors.apply(node).map(this::startingFrom)),
+            Stream.of(node));
+      }
+    }.startingFrom(initial);
   }
 
   /**
@@ -95,26 +101,6 @@ public abstract class Traversal<T> {
 
     private void enqueueChildren(T node) {
       queue.add(flatten(getSuccessors.apply(node).map(this::startingFrom)));
-    }
-  }
-
-  private static final class PostOrder<T> extends Traversal<T> {
-    private final Deque<T> stack = new ArrayDeque<>();
-    private final Function<? super T, ? extends Stream<? extends T>> getSuccessors;
-
-    PostOrder(Function<? super T, ? extends Stream<? extends T>> getSuccessors) {
-      this.getSuccessors = requireNonNull(getSuccessors);
-    }
-
-    @Override Stream<T> traverse(T node) {
-      stack.push(node);
-      return whileNotEmpty(stack).map(Deque::pop).flatMap(this::postOrder);
-    }
-
-    private Stream<T> postOrder(T node) {
-      return Stream.concat(
-          flatten(getSuccessors.apply(node).map(this::startingFrom)),
-          Stream.of(node));
     }
   }
 }
