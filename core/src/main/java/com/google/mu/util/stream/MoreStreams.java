@@ -15,6 +15,7 @@
 package com.google.mu.util.stream;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.function.Function.identity;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -105,7 +106,7 @@ public final class MoreStreams {
                 queue.add(fanout);
               }
             }))
-        .flatMap(Function.identity());
+        .flatMap(identity());
   }
 
   /**
