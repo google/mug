@@ -34,7 +34,7 @@ import java.util.stream.Stream;
  * Implements generic graph traversal algorithms ({@link #preOrderFrom pre-order},
  * and {@link #postOrderFrom post-order}).
  *
- * <p>None of these streams can be run in parallel.
+ * <p>None of these streams are safe to run in parallel.
  *
  * @since 3.9
  */
