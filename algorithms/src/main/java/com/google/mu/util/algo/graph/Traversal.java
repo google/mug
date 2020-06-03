@@ -100,7 +100,8 @@ public abstract class Traversal<T> {
 
     private Stream<T> postOrder(T node) {
       return Stream.concat(
-          flatten(getChildren.apply(node).map(this::startingFrom)), Stream.of(node));
+          flatten(getChildren.apply(node).map(this::startingFrom)),
+          Stream.of(node));
     }
   }
 }
