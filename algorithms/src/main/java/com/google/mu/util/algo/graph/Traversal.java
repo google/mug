@@ -28,7 +28,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
- * Implements genertic graph traversal algorithms ({@link #preOrderFrom pre-order},
+ * Implements generic graph traversal algorithms ({@link #preOrderFrom pre-order},
  * and {@link #postOrderFrom post-order}).
  *
  * @since 3.9
