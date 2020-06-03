@@ -22,9 +22,9 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.Objects;
-import java.util.Queue;
 import java.util.Set;
 import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -44,7 +44,8 @@ public final class Traversal {
    */
   public static <T> Stream<T> preOrderFrom(
       T initial, Function<? super T, ? extends Stream<? extends T>> findSuccessors) {
-    return new PreOrder<T>(findSuccessors).startingFrom(initial);
+    //return new PreOrder<T>(findSuccessors).startingFrom(initial);
+    return new DepthFirst<>(findSuccessors).preOrder(initial);
   }
 
   /**
@@ -53,7 +54,7 @@ public final class Traversal {
    */
   public static <T> Stream<T> postOrderFrom(
       T initial, Function<? super T, ? extends Stream<? extends T>> findSuccessors) {
-    return new PostOrder<>(findSuccessors).startingFrom(initial);
+    return new DepthFirst<>(findSuccessors).postOrder(initial);
   }
 
   /**
@@ -71,73 +72,80 @@ public final class Traversal {
         n -> findSuccessors.apply(n).peek(Objects::requireNonNull).filter(seen::add));
   }
 
-  private static final class PreOrder<T> {
-    private final Queue<Stream<? extends T>> queue = new ArrayDeque<>();
+  private static final class DepthFirst<T> implements Consumer<T> {
     private final Function<? super T, ? extends Stream<? extends T>> findSuccessors;
-    private final Set<T> seen = new HashSet<>();
-
-    private PreOrder(Function<? super T, ? extends Stream<? extends T>> findSuccessors) {
-      this.findSuccessors = requireNonNull(findSuccessors);
-    }
-
-    Stream<T> startingFrom(T node) {
-      return seen.add(requireNonNull(node)) ? traverse(node) : null;
-    }
-
-    private Stream<T> traverse(T node) {
-      queue.add(Stream.of(node));
-      return whileNotEmpty(queue)
-          .map(Queue::remove)
-          .flatMap(nodes -> nodes.peek(this::enqueueSuccessors));
-    }
-
-    private void enqueueSuccessors(T node) {
-      queue.add(findSuccessors.apply(node).flatMap(this::startingFrom));
-    }
-  }
-
-  private static final class PostOrder<T> implements Consumer<T> {
-    private final Function<? super T, ? extends Stream<? extends T>> findSuccessors;
-    private final Deque<Family> stack = new ArrayDeque<>();
+    private final Deque<Group> stack = new ArrayDeque<>();
     private final Set<T> seen = new HashSet<>();
     private T advancedResult;
 
-    PostOrder(Function<? super T, ? extends Stream<? extends T>> findSuccessors) {
+    DepthFirst(Function<? super T, ? extends Stream<? extends T>> findSuccessors) {
       this.findSuccessors = requireNonNull(findSuccessors);
     }
 
-    Stream<T> startingFrom(T node) {
-      stack.push(new Family(node));
+    Stream<T> preOrder(T node) {
+      stack.push(new Group(node, Spliterators.emptySpliterator()));
       seen.add(node);
       return whileNotEmpty(stack)
           .map(Deque::pop)
-          .map(Family::removeFirst);
+          .map(Group::removeInPreOrder);
+    }
+
+    Stream<T> postOrder(T node) {
+      stack.push(new Group(node));
+      seen.add(node);
+      return whileNotEmpty(stack)
+          .map(Deque::pop)
+          .map(Group::removeInPostOrder);
     }
 
     @Override public void accept(T value) {
-      this.advancedResult = value;
+      this.advancedResult = requireNonNull(value);
     }
 
-    private final class Family {
-      private final T head;
+    private final class Group {
+      private final T first;
       private final Spliterator<? extends T> successors;
 
-      Family(T head) {
-        this.head = head;
-        this.successors = findSuccessors.apply(head).spliterator();
+      Group(T head) {
+        this(head, findSuccessors.apply(head).spliterator());
       }
 
-      T removeFirst() {
-        for (Family family = this; ;) {
-          if (family.successors.tryAdvance(PostOrder.this)) {
-            if (seen.add(advancedResult)) {
-              stack.push(family);
-              family = new Family(advancedResult);
-            }
-          } else {
-            return family.head;
-          }
+      Group(T first, Spliterator<? extends T> successors) {
+        this.first = requireNonNull(first);
+        this.successors = requireNonNull(successors);
+      }
+
+      T removeInPostOrder() {
+        for (Group family = this; ;) {
+          if (family.nextSuccessor() == null) return family.first;
+          stack.push(family);
+          family = new Group(advancedResult);
         }
+      }
+
+      T removeInPreOrder() {
+        T nextPeer = nextSuccessor();
+        if (nextPeer != null) {
+          stack.push(new Group(nextPeer, successors));
+        }
+        Spliterator<? extends T> sons = findSuccessors.apply(first).spliterator();
+        T firstSon = next(sons);
+        if (firstSon != null) {
+          stack.push(new Group(firstSon, sons));
+        }
+        return first;
+      }
+
+      /** next successor or null if no more. */
+      private T nextSuccessor() {
+        return next(successors);
+      }
+
+      private T next(Spliterator<? extends T> successors) {
+        while (successors.tryAdvance(DepthFirst.this)) {
+          if (seen.add(advancedResult)) return advancedResult;
+        }
+        return null;
       }
     }
   }
