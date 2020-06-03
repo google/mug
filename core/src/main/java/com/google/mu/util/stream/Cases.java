@@ -187,10 +187,9 @@ public final class Cases {
         toList(),
         input ->
             caseList.stream()
-                .map(c -> input.stream().collect(c))
-                .filter(Optional::isPresent)
+                .map(c -> input.stream().collect(c).orElse(null))
+                .filter(v -> v != null)
                 .findFirst()
-                .flatMap(identity())
                 .orElseThrow(() -> unexpectedSize(input.size())));
   }
 

@@ -51,7 +51,7 @@ import java.util.stream.StreamSupport;
  *
  * <p>Like parallel streams (and unlike executors), these sub-tasks are considered integral parts
  * of one logical task. Failure of any sub-task aborts the entire task, automatically.
- * If a certain exception is not fatal, the sub-task should catch and handle it.
+ * If an exception isn't fatal, the sub-task should catch and handle it.
  *
  * <p>How does it stack against parallel stream itself?
  * The parallel stream counterpart to the above example use case may look like:
@@ -115,6 +115,9 @@ import java.util.stream.StreamSupport;
  *         sub tasks that are already running. Otherwise, when an exception is thrown from a sub
  *         task, the other left-over sub tasks will continue to run, some may even hang
  *         indefinitely.
+ *     <li>Automatic cancellation propagation. When {@link #parallelize parallelize()} is
+ *         interrupted, all running tasks will be automatically canceled; all pending tasks
+ *         automatically dismissed.
  *     <li>You may resort to shutting down the executor to achieve similar result (cancelling the
  *         left-over sub tasks). Although even knowing whether a sub task has failed isn't trivial.
  *         The above code example uses {@link Future#get}, but it won't help if a sub task
@@ -459,7 +462,7 @@ public final class Parallelizer {
       // When we cancel a scheduled-but-not-executed task, we'll leave the semaphore unreleased.
       // But it's okay because the only time we cancel is when we are aborting the whole pipeline
       // and nothing will use the semaphore after that.
-      onboard.values().stream().forEach(f -> f.cancel(true));
+      onboard.values().forEach(f -> f.cancel(true));
     }
 
     private void checkInFlight() {

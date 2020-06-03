@@ -14,13 +14,13 @@
  *****************************************************************************/
 package com.google.mu.util.algo.graph;
 
+import static com.google.mu.util.stream.MoreStreams.generate;
 import static com.google.mu.util.stream.MoreStreams.whileNotEmpty;
 import static java.util.Arrays.asList;
 import static java.util.Comparator.comparingDouble;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.PriorityQueue;
-import java.util.Queue;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -43,7 +42,7 @@ import com.google.mu.util.stream.BiStream;
  * <p>Compared to traditional imperative implementations, this incremental algorithm supports more
  * flexible use cases that'd otherwise require either full traversal of the graph (which can be
  * large), or copying and tweaking the implementation code for each individual use case.
- * 
+ *
  * <p>For example, without traversing the entire map, find 3 nearest Sushi restaurants: <pre>{@code
  *   List<Location> sushiPlaces = shortestPathsFrom(myLocation, Location::locationsAroundMe)
  *       .map(ShortestPath::to)
@@ -67,7 +66,7 @@ public final class ShortestPath<N> {
   private final N node;
   private final ShortestPath<N> predecessor;
   private final double distance;
-  
+
   /**
    * Returns a lazy stream of shortest paths starting from {@code startingNode}.
    *
@@ -96,9 +95,7 @@ public final class ShortestPath<N> {
             findAdjacentNodes.apply(path.to())
                 .forEachOrdered((neighbor, distance) -> {
                   requireNonNull(neighbor);
-                  if (distance < 0) {
-                    throw new IllegalArgumentException("Distance cannot be negative: " + distance);
-                  }
+                  checkNotNegative(distance, "distance");
                   if (done.contains(neighbor)) return;
                   ShortestPath<?> old = seen.get(neighbor);
                   if (old == null || path.distance() + distance < old.distance()) {
@@ -108,7 +105,7 @@ public final class ShortestPath<N> {
                   }
                 }));
   }
-  
+
   /**
    * Returns a lazy stream of unweighted shortest paths starting from {@code startingNode}.
    *
@@ -117,7 +114,7 @@ public final class ShortestPath<N> {
    *
    * <p>{@code startingNode} will correspond to the first element in the returned stream, with
    * {@link ShortestPath#distance} equal to {@code 0}, followed by its adjacent nodes, etc.
-   * 
+   *
    * <p>In the returned stream of {@code ShortestPath} objects, {@link #distance} will be in terms
    * of number of nodes, with the adjacent nodes of the starting node returning 1.
    *
@@ -127,23 +124,19 @@ public final class ShortestPath<N> {
       N startingNode, Function<? super N, ? extends Stream<? extends N>> findAdjacentNodes) {
     requireNonNull(startingNode);
     requireNonNull(findAdjacentNodes);
-    Queue<ShortestPath<N>> queue = new ArrayDeque<>();
-    queue.add(new ShortestPath<>(startingNode));
     Set<N> seen = new HashSet<>(asList(startingNode));
-    return whileNotEmpty(queue)
-        .map(Queue::remove)
-        .peek(path ->
-            findAdjacentNodes.apply(path.to())
-                .peek(Objects::requireNonNull)
-                .filter(seen::add)
-                .map(neighbor -> path.extendTo(neighbor, 1))
-                .forEachOrdered(queue::add));
+    return generate(
+        new ShortestPath<>(startingNode),
+        path -> findAdjacentNodes.apply(path.to())
+            .peek(Objects::requireNonNull)
+            .filter(seen::add)
+            .map(n -> path.extendTo(n, 1)));
   }
-  
+
   private ShortestPath(N node) {
     this(node, null, 0);
   }
-  
+
   private ShortestPath(N node, ShortestPath<N> predecessor, double distance) {
     this.node = node;
     this.predecessor = predecessor;
@@ -154,9 +147,9 @@ public final class ShortestPath<N> {
   public N to() {
     return node;
   }
-  
+
   /**
-   * Returns the distance between the starting node and the {@link #to last node} of this path.
+   * Returns the non-negative distance between the starting node and the {@link #to last node} of this path.
    * Zero for the first path in the stream returned by {@link ShortestPath#shortestPathsFrom},
    * in which case {@link #to} will return the starting node.
    */
@@ -176,12 +169,18 @@ public final class ShortestPath<N> {
     Collections.reverse(nodes);
     return BiStream.from(nodes, ShortestPath::to, ShortestPath::distance);
   }
-  
+
   @Override public String toString() {
     return stream().keys().map(Object::toString).collect(joining("->"));
   }
 
   private ShortestPath<N> extendTo(N nextNode, double d) {
     return new ShortestPath<>(nextNode, this, distance + d);
+  }
+
+  private static void checkNotNegative(double value, String name) {
+    if (value < 0) {
+      throw new IllegalArgumentException(name + " cannot be negative: " + value);
+    }
   }
 }
