@@ -81,7 +81,7 @@ public final class Traversal {
     }
 
     Stream<T> startingFrom(T node) {
-      return seen.add(requireNonNull(node)) ? traverse(node) : Stream.empty();
+      return seen.add(requireNonNull(node)) ? traverse(node) : null;
     }
 
     private Stream<T> traverse(T node) {
