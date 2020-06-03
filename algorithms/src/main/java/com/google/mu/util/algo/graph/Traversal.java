@@ -14,14 +14,14 @@
  *****************************************************************************/
 package com.google.mu.util.algo.graph;
 
-import static com.google.mu.util.stream.MoreStreams.generate;
+import static com.google.mu.util.stream.MoreStreams.flatten;
 import static com.google.mu.util.stream.MoreStreams.whileNotEmpty;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;
-import java.util.Objects;
+import java.util.Queue;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -36,20 +36,18 @@ import com.google.mu.util.stream.MoreStreams;
  *
  * @since 3.9
  */
-public final class Traversal {
+public abstract class Traversal<T> {
+  private final Set<T> seen = new HashSet<>();
+
+  Traversal() {}
 
   /**
    * Starts from {@code initial} and traverse depth first in pre-order by
    * using {@code getChildren} function iteratively.
    */
   public static <T> Stream<T> preOrderFrom(
-      T initial,
-      Function<? super T, ? extends Stream<? extends T>> getChildren) {
-    requireNonNull(initial);
-    requireNonNull(getChildren);
-    Set<T> seen = new HashSet<>();
-    seen.add(initial);
-    return preOrderFrom(initial, getChildren, seen);
+      T initial, Function<? super T, ? extends Stream<? extends T>> getChildren) {
+    return new PreOrder<>(getChildren).startingFrom(requireNonNull(initial));
   }
 
   /**
@@ -57,41 +55,56 @@ public final class Traversal {
    * using {@code getChildren} function iteratively.
    */
   public static <T> Stream<T> postOrderFrom(
-      T initial,
-      Function<? super T, ? extends Stream<? extends T>> getChildren) {
-    requireNonNull(initial);
-    requireNonNull(getChildren);
-    Set<T> seen = new HashSet<>();
-    seen.add(initial);
-    Deque<T> stack = new ArrayDeque<>(seen);
-    return postOrderFrom(stack, getChildren, seen);
+      T initial, Function<? super T, ? extends Stream<? extends T>> getChildren) {
+    return new PostOrder<>(getChildren).startingFrom(initial);
   }
 
-  private static <T> Stream<T> preOrderFrom(
-      T initial,
-      Function<? super T, ? extends Stream<? extends T>> getChildren,
-      Set<T> seen) {
-    return generate(
-        initial,
-        n -> getChildren.apply(n)
-            .peek(Objects::requireNonNull)
-            .filter(seen::add)
-            .flatMap(child -> preOrderFrom(child, getChildren, seen)));
+  final Stream<T> startingFrom(T node) {
+    requireNonNull(node);
+    if (!seen.add(node)) {
+      return Stream.empty();
+    }
+    return traverse(node);
   }
 
-  private static <T> Stream<T> postOrderFrom(
-      Deque<T> stack,
-      Function<? super T, ? extends Stream<? extends T>> getChildren,
-      Set<T> seen) {
-    return whileNotEmpty(stack)
-        .map(Deque::pop)
-        .flatMap(seed ->
-            Stream.concat(
-                getChildren.apply(seed)
-                    .peek(Objects::requireNonNull)
-                    .filter(seen::add)
-                    .peek(stack::push)
-                    .flatMap(c -> postOrderFrom(stack, getChildren, seen)),
-                Stream.of(seed)));
+  abstract Stream<T> traverse(T node);
+
+  private static final class PreOrder<T> extends Traversal<T> {
+    private final Queue<Stream<? extends T>> queue = new ArrayDeque<>();
+    private final Function<? super T, ? extends Stream<? extends T>> getChildren;
+
+    PreOrder(Function<? super T, ? extends Stream<? extends T>> getChildren) {
+      this.getChildren = requireNonNull(getChildren);
+    }
+
+    @Override Stream<T> traverse(T node) {
+      queue.add(Stream.of(node));
+      return whileNotEmpty(queue)
+          .map(Queue::remove)
+          .flatMap(nodes -> nodes.peek(this::enqueueChildren));
+    }
+
+    private void enqueueChildren(T node) {
+      queue.add(flatten(getChildren.apply(node).map(this::startingFrom)));
+    }
+  }
+
+  private static final class PostOrder<T> extends Traversal<T> {
+    private final Deque<T> stack = new ArrayDeque<>();
+    private final Function<? super T, ? extends Stream<? extends T>> getChildren;
+
+    PostOrder(Function<? super T, ? extends Stream<? extends T>> getChildren) {
+      this.getChildren = requireNonNull(getChildren);
+    }
+
+    @Override Stream<T> traverse(T node) {
+      stack.push(node);
+      return whileNotEmpty(stack).map(Deque::pop).flatMap(this::postOrder);
+    }
+
+    private Stream<T> postOrder(T node) {
+      return Stream.concat(
+          flatten(getChildren.apply(node).map(this::startingFrom)), Stream.of(node));
+    }
   }
 }
