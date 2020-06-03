@@ -44,7 +44,20 @@ public abstract class Traversal<T> {
    */
   public static <T> Stream<T> preOrderFrom(
       T initial, Function<? super T, ? extends Stream<? extends T>> getSuccessors) {
-    return new PreOrder<>(getSuccessors).startingFrom(initial);
+    requireNonNull(getSuccessors);
+    Queue<Stream<? extends T>> queue = new ArrayDeque<>();
+    return new Traversal<T>() {
+      @Override Stream<T> traverse(T node) {
+        queue.add(Stream.of(node));
+        return whileNotEmpty(queue)
+            .map(Queue::remove)
+            .flatMap(nodes -> nodes.peek(this::enqueueChildren));
+      }
+
+      private void enqueueChildren(T node) {
+        queue.add(flatten(getSuccessors.apply(node).map(this::startingFrom)));
+      }
+    }.startingFrom(initial);
   }
 
   /**
@@ -83,24 +96,4 @@ public abstract class Traversal<T> {
   }
 
   abstract Stream<T> traverse(T node);
-
-  private static final class PreOrder<T> extends Traversal<T> {
-    private final Queue<Stream<? extends T>> queue = new ArrayDeque<>();
-    private final Function<? super T, ? extends Stream<? extends T>> getSuccessors;
-
-    PreOrder(Function<? super T, ? extends Stream<? extends T>> getSuccessors) {
-      this.getSuccessors = requireNonNull(getSuccessors);
-    }
-
-    @Override Stream<T> traverse(T node) {
-      queue.add(Stream.of(node));
-      return whileNotEmpty(queue)
-          .map(Queue::remove)
-          .flatMap(nodes -> nodes.peek(this::enqueueChildren));
-    }
-
-    private void enqueueChildren(T node) {
-      queue.add(flatten(getSuccessors.apply(node).map(this::startingFrom)));
-    }
-  }
 }
