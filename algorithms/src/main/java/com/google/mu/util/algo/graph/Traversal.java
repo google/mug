@@ -20,10 +20,13 @@ import static com.google.mu.util.stream.MoreStreams.whileNotEmpty;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
+import java.util.Spliterator;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -31,33 +34,18 @@ import java.util.stream.Stream;
  * Implements generic graph traversal algorithms ({@link #preOrderFrom pre-order},
  * and {@link #postOrderFrom post-order}).
  *
+ * <p>None of these streams can be run in parallel.
+ *
  * @since 3.9
  */
-public abstract class Traversal<T> {
-  private final Set<T> seen = new HashSet<>();
-
-  Traversal() {}
-
+public final class Traversal {
   /**
    * Starts from {@code initial} and traverse depth first in pre-order by
    * using {@code getSuccessors} function iteratively.
    */
   public static <T> Stream<T> preOrderFrom(
       T initial, Function<? super T, ? extends Stream<? extends T>> getSuccessors) {
-    requireNonNull(getSuccessors);
-    Queue<Stream<? extends T>> queue = new ArrayDeque<>();
-    return new Traversal<T>() {
-      @Override Stream<T> traverse(T node) {
-        queue.add(Stream.of(node));
-        return whileNotEmpty(queue)
-            .map(Queue::remove)
-            .flatMap(nodes -> nodes.peek(this::enqueueChildren));
-      }
-
-      private void enqueueChildren(T node) {
-        queue.add(flatten(getSuccessors.apply(node).map(this::startingFrom)));
-      }
-    }.startingFrom(initial);
+    return new PreOrder<T>(getSuccessors).startingFrom(initial);
   }
 
   /**
@@ -66,14 +54,7 @@ public abstract class Traversal<T> {
    */
   public static <T> Stream<T> postOrderFrom(
       T initial, Function<? super T, ? extends Stream<? extends T>> getSuccessors) {
-    requireNonNull(getSuccessors);
-    return new Traversal<T>() {
-      @Override Stream<T> traverse(T node) {
-        return Stream.concat(
-            flatten(getSuccessors.apply(node).map(this::startingFrom)),
-            Stream.of(node));
-      }
-    }.startingFrom(initial);
+    return new PostOrder<>(getSuccessors).startingFrom(initial);
   }
 
   /**
@@ -91,9 +72,76 @@ public abstract class Traversal<T> {
         n -> getSuccessors.apply(n).peek(Objects::requireNonNull).filter(seen::add));
   }
 
-  final Stream<T> startingFrom(T node) {
-    return seen.add(requireNonNull(node)) ? traverse(node) : Stream.empty();
+  private static final class PreOrder<T> {
+    private final Queue<Stream<? extends T>> queue = new ArrayDeque<>();
+    private final Function<? super T, ? extends Stream<? extends T>> getSuccessors;
+    private final Set<T> seen = new HashSet<>();
+
+    private PreOrder(Function<? super T, ? extends Stream<? extends T>> getSuccessors) {
+      this.getSuccessors = requireNonNull(getSuccessors);
+    }
+
+    final Stream<T> startingFrom(T node) {
+      return seen.add(requireNonNull(node)) ? traverse(node) : Stream.empty();
+    }
+
+    private Stream<T> traverse(T node) {
+      queue.add(Stream.of(node));
+      return whileNotEmpty(queue)
+          .map(Queue::remove)
+          .flatMap(nodes -> nodes.peek(this::enqueueChildren));
+    }
+
+    private void enqueueChildren(T node) {
+      queue.add(flatten(getSuccessors.apply(node).map(this::startingFrom)));
+    }
   }
 
-  abstract Stream<T> traverse(T node);
+  private static final class PostOrder<T> implements Consumer<T> {
+    private final Function<? super T, ? extends Stream<? extends T>> getSuccessors;
+    private final Deque<Family> stack = new ArrayDeque<>();
+    private final Set<T> seen = new HashSet<>();
+    private T advancedResult;
+
+    PostOrder(Function<? super T, ? extends Stream<? extends T>> getSuccessors) {
+      this.getSuccessors = requireNonNull(getSuccessors);
+    }
+
+    Stream<T> startingFrom(T node) {
+      stack.push(new Family(node));
+      seen.add(node);
+      return whileNotEmpty(stack)
+          .map(Deque::pop)
+          .map(Family::removeFirst);
+    }
+
+    @Override public void accept(T value) {
+      this.advancedResult = value;
+    }
+
+    private final class Family {
+      private final T head;
+      private final Spliterator<? extends T> successors;
+
+      Family(T head) {
+        this.head = head;
+        this.successors = getSuccessors.apply(head).spliterator();
+      }
+
+      T removeFirst() {
+        for (Family family = this;;) {
+          if (family.successors.tryAdvance(PostOrder.this)) {
+            if (seen.add(advancedResult)) {
+              stack.push(family);
+              family = new Family(advancedResult);
+            }
+          } else {
+            return family.head;
+          }
+        }
+      }
+    }
+  }
+
+  private Traversal() {}
 }
