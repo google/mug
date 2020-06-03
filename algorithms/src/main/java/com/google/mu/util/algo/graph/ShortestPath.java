@@ -59,6 +59,8 @@ import com.google.mu.util.stream.BiStream;
  *       .collect(toList());
  * }</pre>
  *
+ * <p>The streams returned by this class are <strong>not safe</strong> to run in parallel.
+ *
  * @param <N> the type of graph nodes
  * @since 3.8
  */
