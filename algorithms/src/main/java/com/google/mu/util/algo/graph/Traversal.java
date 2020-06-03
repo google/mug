@@ -81,7 +81,7 @@ public final class Traversal {
       this.getSuccessors = requireNonNull(getSuccessors);
     }
 
-    final Stream<T> startingFrom(T node) {
+    Stream<T> startingFrom(T node) {
       return seen.add(requireNonNull(node)) ? traverse(node) : Stream.empty();
     }
 
