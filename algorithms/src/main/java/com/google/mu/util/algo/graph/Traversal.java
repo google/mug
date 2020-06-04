@@ -116,9 +116,10 @@ public final class Traversal {
     private T removeInPostOrder(Deque<Family> stack) {
       for (Family family = stack.pop();;) {
         if (family.successors.tryAdvance(this)) {
-          if (seen.add(advancedResult)) {
+          T next = advancedResult;
+          if (seen.add(next)) {
             stack.push(family);
-            family = new Family(advancedResult);
+            family = new Family(next);
           }
         } else {
           return family.head;
