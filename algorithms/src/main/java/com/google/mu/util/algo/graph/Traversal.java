@@ -40,6 +40,10 @@ public final class Traversal {
   /**
    * Starts from {@code initial} and traverse depth first in pre-order by
    * using {@code findSuccessors} function iteratively.
+   *
+   * <p>The returned stream may be infinite if the graph has infinite depth or infinite breadth,
+   * or both. The stream can still be short-circuited to consume a limited number of nodes during
+   * traversal.
    */
   public static <T> Stream<T> preOrderFrom(
       T initial, Function<? super T, ? extends Stream<? extends T>> findSuccessors) {
@@ -49,6 +53,13 @@ public final class Traversal {
   /**
    * Starts from {@code initial} and traverse depth first in post-order by
    * using {@code findSuccessors} function iteratively.
+   *
+   * <p>The returned stream may be infinite if the graph has infinite breadth.
+   * The stream can still be short-circuited to consume a limited number of nodes during
+   * traversal.
+   *
+   * <p>The stream may result in infinite loop when it traversing through a node with infinite
+   * depth.
    */
   public static <T> Stream<T> postOrderFrom(
       T initial, Function<? super T, ? extends Stream<? extends T>> findSuccessors) {
@@ -58,6 +69,10 @@ public final class Traversal {
   /**
    * Starts from {@code initial} and traverse breadth first by using {@code findSuccessors}
    * function iteratively.
+   *
+   * <p>The returned stream may be infinite if the graph has infinite depth or infinite breadth,
+   * or both. The stream can still be short-circuited to consume a limited number of nodes during
+   * traversal.
    */
   public static <T> Stream<T> breadthFirstFrom(
       T initial, Function<? super T, ? extends Stream<? extends T>> findSuccessors) {
