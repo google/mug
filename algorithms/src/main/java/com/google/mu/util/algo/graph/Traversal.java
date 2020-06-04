@@ -95,6 +95,7 @@ public final class Traversal {
       queue.add(findSuccessors.apply(node).flatMap(this::startingFrom));
     }
   }
+
   private static final class PostOrder<T> implements Consumer<T> {
     private final Function<? super T, ? extends Stream<? extends T>> findSuccessors;
     private final Deque<Family> stack = new ArrayDeque<>();
