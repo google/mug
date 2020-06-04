@@ -101,10 +101,10 @@ public class TraversalTest {
   @Test
   public void postOrder_infinite() {
     Map<Integer, Stream<Integer>> infiniteWidth =
-        ImmutableMap.of(1, indexesFrom(2), 2, Stream.of(3, 4), 3, Stream.of(4, 5), 4, Stream.empty(), 5, Stream.empty());
+        ImmutableMap.of(1, indexesFrom(2), 2, Stream.of(3, 4), 3, Stream.of(4, 5), 5, Stream.empty());
     Stream<Integer> stream = Traversal.postOrderFrom(1, infiniteWidth::get);
-    assertThat(stream.limit(4).collect(toList()))
-        .containsExactly(4, 5, 3, 2)
+    assertThat(stream.limit(6).collect(toList()))
+        .containsExactly(4, 5, 3, 2, 6, 7)
         .inOrder();
   }
 

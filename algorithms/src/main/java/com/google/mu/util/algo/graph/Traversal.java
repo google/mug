@@ -82,7 +82,11 @@ public final class Traversal {
     seen.add(initial);
     return generate(
         initial,
-        n -> findSuccessors.apply(n).peek(Objects::requireNonNull).filter(seen::add));
+        n -> {
+          Stream<? extends T> successors = findSuccessors.apply(n);
+          if (successors == null) return null;
+          return successors.peek(Objects::requireNonNull).filter(seen::add);
+        });
   }
 
   private static final class DepthFirst<T> implements Consumer<T> {
@@ -112,7 +116,8 @@ public final class Traversal {
         while (top.tryAdvance(this)) {
           T next = advancedResult;
           if (seen.add(next)) {
-            stack.push(findSuccessors.apply(next).spliterator());
+            Stream<? extends T> successors = findSuccessors.apply(next);
+            if (successors != null) stack.push(successors.spliterator());
             return next;
           }
         }
@@ -129,26 +134,35 @@ public final class Traversal {
     }
 
     private T removeInPostOrder(Deque<Family> stack) {
-      for (Family family = stack.pop();;) {
-        if (family.successors.tryAdvance(this)) {
-          T next = advancedResult;
-          if (seen.add(next)) {
-            stack.push(family);
-            family = new Family(next);
-          }
-        } else {
+      for (Family family = stack.getFirst();;) {
+        T next = family.next();
+        if (next == null) {
+          stack.pop();
           return family.head;
+        } else {
+          if (seen.add(next)) {
+            family = new Family(next);
+            stack.push(family);
+          }
         }
       }
     }
 
     private final class Family {
       final T head;
-      final Spliterator<? extends T> successors;
+      private Spliterator<? extends T> successors;
 
       Family(T head) {
         this.head = head;
-        this.successors = findSuccessors.apply(head).spliterator();
+      }
+
+      T next() {
+        if (successors == null) {
+          Stream<? extends T> children = findSuccessors.apply(head);
+          if (children == null) return null;
+          successors = children.spliterator();
+        }
+        return successors.tryAdvance(DepthFirst.this) ? advancedResult : null;
       }
     }
   }
