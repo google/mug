@@ -43,7 +43,7 @@ public final class Traversal {
    */
   public static <T> Stream<T> preOrderFrom(
       T initial, Function<? super T, ? extends Stream<? extends T>> findSuccessors) {
-    return new PreOrderStack<>(findSuccessors).startingFrom(requireNonNull(initial));
+    return new PreOrder<>(findSuccessors).startingFrom(requireNonNull(initial));
   }
 
   /**
@@ -70,12 +70,12 @@ public final class Traversal {
         n -> findSuccessors.apply(n).peek(Objects::requireNonNull).filter(seen::add));
   }
 
-  private static final class PreOrderStack<T> implements Consumer<T> {
+  private static final class PreOrder<T> implements Consumer<T> {
     private final Function<? super T, ? extends Stream<? extends T>> findSuccessors;
     private final Set<T> seen = new HashSet<>();
     private T advancedResult;
 
-    private PreOrderStack(Function<? super T, ? extends Stream<? extends T>> findSuccessors) {
+    private PreOrder(Function<? super T, ? extends Stream<? extends T>> findSuccessors) {
       this.findSuccessors = requireNonNull(findSuccessors);
     }
 
