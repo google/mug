@@ -98,10 +98,6 @@ public final class Traversal {
       this.findSuccessors = requireNonNull(findSuccessors);
     }
 
-    @Override public void accept(T value) {
-      this.advancedResult = requireNonNull(value);
-    }
-
     Stream<T> preOrder(T node) {
       Deque<Spliterator<? extends T>> stack = new ArrayDeque<>();
       stack.add(Stream.of(node).spliterator());
@@ -146,6 +142,10 @@ public final class Traversal {
           }
         }
       }
+    }
+
+    @Override public void accept(T value) {
+      this.advancedResult = requireNonNull(value);
     }
 
     private final class Family {

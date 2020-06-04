@@ -50,16 +50,15 @@ public class TraversalTest {
     assertThat(preOrder("foo").collect(toList())).containsExactly("foo", "bar", "baz").inOrder();
   }
 
-  @Test
-  public void preOrder_depthFirst() {
+  public void testPreOrder_depthFirst() {
     graph.putEdge("foo", "bar");
     graph.putEdge("foo", "baz");
     graph.putEdge("foo", "cat");
     graph.putEdge("cat", "run");
     graph.putEdge("bar", "dog");
     graph.putEdge("bar", "cat");
-    assertThat(preOrder("foo").collect(toList())).containsExactly("foo", "bar", "dog", "cat", "run", "baz")
-        .inOrder();
+    assertThat(preOrder("foo").collect(toList()))
+        .containsExactly("foo", "bar", "cat", "run", "dog", "baz").inOrder();
   }
 
   @Test
@@ -149,14 +148,14 @@ public class TraversalTest {
   }
 
   private Stream<String> preOrder(String firstNode) {
-    return Traversal.preOrderFrom(firstNode, n -> graph.adjacentNodes(n).stream());
+    return Traversal.preOrderFrom(firstNode, n -> graph.adjacentNodes(n).stream().sorted());
   }
 
   private Stream<String> postOrder(String firstNode) {
-    return Traversal.postOrderFrom(firstNode, n -> graph.adjacentNodes(n).stream());
+    return Traversal.postOrderFrom(firstNode, n -> graph.adjacentNodes(n).stream().sorted());
   }
 
   private Stream<String> bfs(String firstNode) {
-    return Traversal.breadthFirstFrom(firstNode, n -> graph.adjacentNodes(n).stream());
+    return Traversal.breadthFirstFrom(firstNode, n -> graph.adjacentNodes(n).stream().sorted());
   }
 }
