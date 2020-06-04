@@ -98,9 +98,9 @@ public final class Traversal {
       this.findSuccessors = requireNonNull(findSuccessors);
     }
 
-    Stream<T> preOrder(T node) {
+    Stream<T> preOrder(T initial) {
       Deque<Spliterator<? extends T>> stack = new ArrayDeque<>();
-      stack.add(Stream.of(node).spliterator());
+      stack.add(Stream.of(initial).spliterator());
       return whileNotEmpty(stack)
           .map(this::removeInPreOrder)
           .filter(n -> n != null);
@@ -122,23 +122,23 @@ public final class Traversal {
       return null;  // no more element
     }
 
-    Stream<T> postOrder(T node) {
-      Deque<Family> stack = new ArrayDeque<>();
-      stack.push(new Family(node));
-      seen.add(node);
+    Stream<T> postOrder(T initial) {
+      Deque<Node> stack = new ArrayDeque<>();
+      stack.push(new Node(initial));
+      seen.add(initial);
       return whileNotEmpty(stack).map(this::removeInPostOrder);
     }
 
-    private T removeInPostOrder(Deque<Family> stack) {
-      for (Family family = stack.getFirst();;) {
-        T next = family.next();
+    private T removeInPostOrder(Deque<Node> stack) {
+      for (Node node = stack.getFirst();;) {
+        T next = node.next();
         if (next == null) {
           stack.pop();
-          return family.head;
+          return node.head;
         } else {
           if (seen.add(next)) {
-            family = new Family(next);
-            stack.push(family);
+            node = new Node(next);
+            stack.push(node);
           }
         }
       }
@@ -148,11 +148,11 @@ public final class Traversal {
       this.advancedResult = requireNonNull(value);
     }
 
-    private final class Family {
+    private final class Node {
       final T head;
       private Spliterator<? extends T> successors;
 
-      Family(T head) {
+      Node(T head) {
         this.head = head;
       }
 
