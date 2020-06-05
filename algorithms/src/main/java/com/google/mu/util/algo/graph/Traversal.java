@@ -170,11 +170,11 @@ public class Traversal<T> {
 
     /** Reused for both depth-first pre-order and breadth-first. */
     private Stream<T> startingFrom(
-        Spliterator<? extends T> initials, InsertionOrder successorInsertionOrder) {
+        Spliterator<? extends T> initials, InsertionOrder nodeInsertionOrder) {
       Deque<Spliterator<? extends T>> deque = new ArrayDeque<>();
-      successorInsertionOrder.insertInto(deque, initials);
+      nodeInsertionOrder.insertInto(deque, initials);
       return whileNotEmpty(deque)
-          .map(d -> removeFrom(d, successorInsertionOrder))
+          .map(d -> removeFrom(d, nodeInsertionOrder))
           .filter(n -> n != null);
     }
 
