@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.util.algo.graph;
+package com.google.mu.util.stream;
 
 import static com.google.mu.util.stream.MoreStreams.whileNotEmpty;
 import static java.util.Objects.requireNonNull;
@@ -28,18 +28,18 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
- * Implements generic graph traversal algorithms ({@link #preOrderFrom pre-order},
- * and {@link #postOrderFrom post-order}).
+ * Implements generic graph and tree traversal algorithms ({@link #preOrderFrom pre-order},
+ * and {@link #postOrderFrom post-order}) as lazily evaluated streams, allowing infinite-size
+ * graphs.
  *
  * <p>None of these streams are safe to run in parallel.
  *
  * @since 3.9
  */
-
-public class Traversal<T> {
+public class Walker<T> {
   private final Function<? super T, ? extends Stream<? extends T>> findSuccessors;
 
-  Traversal(Function<? super T, ? extends Stream<? extends T>> findSuccessors) {
+  Walker(Function<? super T, ? extends Stream<? extends T>> findSuccessors) {
     this.findSuccessors = requireNonNull(findSuccessors);
   }
 
@@ -50,9 +50,9 @@ public class Traversal<T> {
    * <p>The returned object is idempotent, stateless and immutable as long as {@code getChildren} is
    * idempotent, stateless and immutable.
    */
-  public static <T> Traversal<T> forTree(
+  public static <T> Walker<T> forTree(
       Function<? super T, ? extends Stream<? extends T>> getChildren) {
-    return new Traversal<T>(getChildren);
+    return new Walker<T>(getChildren);
   }
 
   /**
@@ -67,10 +67,10 @@ public class Traversal<T> {
    * <p>Because the {@code Traversal} object keeps memory of traversal history, the memory usage is
    * linear to the number of traversed nodes.
    */
-  public static <T> Traversal<T> forGraph(
+  public static <T> Walker<T> forGraph(
       Function<? super T, ? extends Stream<? extends T>> findSuccessors) {
     Set<T> traversed = new HashSet<>();
-    return new Traversal<T>(findSuccessors) {
+    return new Walker<T>(findSuccessors) {
       @Override boolean visit(T node) {
         return traversed.add(node);
       }
@@ -78,15 +78,16 @@ public class Traversal<T> {
   }
 
   /**
-   * Starts from {@code initial} and traverse depth first in pre-order by using {@code
+   * Starts from {@code initials} and traverse depth first in pre-order by using {@code
    * findSuccessors} function iteratively.
    *
    * <p>The returned stream may be infinite if the graph has infinite depth or infinite breadth, or
    * both. The stream can still be short-circuited to consume a limited number of nodes during
    * traversal.
    */
-  public final Stream<T> preOrderFrom(T initial) {
-    return preOrderFrom(nonNullStream(initial));
+  @SafeVarargs
+  public final Stream<T> preOrderFrom(T... initials) {
+    return preOrderFrom(nonNullStream(initials));
   }
 
   /**
@@ -97,11 +98,11 @@ public class Traversal<T> {
    * traversal.
    */
   public final Stream<T> preOrderFrom(Stream<? extends T> initials) {
-    return new Walker().preOrder(initials.spliterator());
+    return new Traversal().preOrder(initials.spliterator());
   }
 
   /**
-   * Starts from {@code initial} and traverse depth first in post-order.
+   * Starts from {@code initials} and traverse depth first in post-order.
    *
    * <p>The returned stream may be infinite if the graph has infinite breadth. The stream can still
    * be short-circuited to consume a limited number of nodes during traversal.
@@ -109,8 +110,9 @@ public class Traversal<T> {
    * <p>The stream may result in infinite loop when it traversing through a node with infinite
    * depth.
    */
-  public final Stream<T> postOrderFrom(T initial) {
-    return postOrderFrom(nonNullStream(initial));
+  @SafeVarargs
+  public final Stream<T> postOrderFrom(T... initials) {
+    return postOrderFrom(nonNullStream(initials));
   }
 
   /**
@@ -123,18 +125,19 @@ public class Traversal<T> {
    * depth.
    */
   public final Stream<T> postOrderFrom(Stream<? extends T> initials) {
-    return new Walker().postOrder(initials.spliterator());
+    return new Traversal().postOrder(initials.spliterator());
   }
 
   /**
-   * Starts from {@code initial} and traverse in breadth-first order.
+   * Starts from {@code initials} and traverse in breadth-first order.
    *
    * <p>The returned stream may be infinite if the graph has infinite depth or infinite breadth, or
    * both. The stream can still be short-circuited to consume a limited number of nodes during
    * traversal.
    */
-  public final Stream<T> breadthFirstFrom(T initial) {
-    return breadthFirstFrom(nonNullStream(initial));
+  @SafeVarargs
+  public final Stream<T> breadthFirstFrom(T... initials) {
+    return breadthFirstFrom(nonNullStream(initials));
   }
 
   /**
@@ -145,7 +148,7 @@ public class Traversal<T> {
    * traversal.
    */
   public final Stream<T> breadthFirstFrom(Stream<? extends T> initials) {
-    return new Walker().breadthFirst(initials.spliterator());
+    return new Traversal().breadthFirst(initials.spliterator());
   }
 
   /** Is this node okay to visit? */
@@ -153,11 +156,11 @@ public class Traversal<T> {
     return true;
   }
 
-  private final class Walker implements Consumer<T> {
-    private T advancedResult;
+  private final class Traversal implements Consumer<T> {
+    private T visited;
 
     @Override public void accept(T value) {
-      this.advancedResult = requireNonNull(value);
+      this.visited = requireNonNull(value);
     }
 
     Stream<T> breadthFirst(Spliterator<? extends T> initials) {
@@ -187,8 +190,8 @@ public class Traversal<T> {
     private T removeFromTop(
         Deque<Spliterator<? extends T>> deque, InsertionOrder successorInsertionOrder) {
       do {
-        if (advanceToNext(deque.getFirst())) {
-          T next = advancedResult;
+        if (visitNext(deque.getFirst())) {
+          T next = visited;
           Stream<? extends T> successors = findSuccessors.apply(next);
           if (successors != null) {
             successorInsertionOrder.insertInto(deque, successors.spliterator());
@@ -213,9 +216,9 @@ public class Traversal<T> {
       }
     }
 
-    private boolean advanceToNext(Spliterator<? extends T> spliterator) {
+    private boolean visitNext(Spliterator<? extends T> spliterator) {
       while (spliterator.tryAdvance(this)) {
-        if (visit(advancedResult)) {
+        if (visit(visited)) {
           return true;
         }
       }
@@ -245,13 +248,18 @@ public class Traversal<T> {
           }
           successors = children.spliterator();
         }
-        return advanceToNext(successors) ? advancedResult : null;
+        return visitNext(successors) ? visited : null;
       }
     }
   }
 
-  private static <T> Stream<T> nonNullStream(T value) {
-    return Stream.of(requireNonNull(value));
+  @SafeVarargs
+  private static <T> Stream<T> nonNullStream(T... values) {
+    Stream.Builder<T> builder = Stream.builder();
+    for (T value : values) {
+      builder.add(requireNonNull(value));
+    }
+    return builder.build();
   }
 
   private interface InsertionOrder {
