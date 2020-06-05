@@ -189,13 +189,9 @@ public class Traversal<T> {
 
     private T removeFromTop(
         Deque<Spliterator<? extends T>> deque, InsertionOrder successorInsertionOrder) {
-      while (!deque.isEmpty()) {
-        Spliterator<? extends T> top = deque.getFirst();
-        while (top.tryAdvance(this)) {
+      do {
+        if (advanceToNext(deque.getFirst())) {
           T next = advancedResult;
-          if (!visit(next)) {
-            continue;
-          }
           Stream<? extends T> successors = findSuccessors.apply(next);
           if (successors != null) {
             successorInsertionOrder.insertInto(deque, successors.spliterator());
@@ -203,7 +199,7 @@ public class Traversal<T> {
           return next;
         }
         deque.removeFirst();
-      }
+      } while (!deque.isEmpty());
       return null; // no more element
     }
 
@@ -218,6 +214,15 @@ public class Traversal<T> {
           stack.push(node);
         }
       }
+    }
+
+    private boolean advanceToNext(Spliterator<? extends T> spliterator) {
+      while (spliterator.tryAdvance(this)) {
+        if (visit(advancedResult)) {
+          return true;
+        }
+      }
+      return false;
     }
 
     private final class PostOrderNode {
@@ -243,12 +248,7 @@ public class Traversal<T> {
           }
           successors = children.spliterator();
         }
-        while (successors.tryAdvance(Traverser.this)) {
-          if (visit(advancedResult)) {
-            return advancedResult;
-          }
-        }
-        return null;
+        return advanceToNext(successors) ? advancedResult : null;
       }
     }
   }
