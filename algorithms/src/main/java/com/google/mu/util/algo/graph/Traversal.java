@@ -69,10 +69,10 @@ public class Traversal<T> {
    */
   public static <T> Traversal<T> forGraph(
       Function<? super T, ? extends Stream<? extends T>> findSuccessors) {
-    Set<T> seen = new HashSet<>();
+    Set<T> traversed = new HashSet<>();
     return new Traversal<T>(findSuccessors) {
       @Override boolean visit(T node) {
-        return seen.add(node);
+        return traversed.add(node);
       }
     };
   }
