@@ -49,6 +49,9 @@ public class Walker<T> {
    *
    * <p>The returned object is idempotent, stateless and immutable as long as {@code getChildren} is
    * idempotent, stateless and immutable.
+   *
+   * <p>WARNING: the returned {@code Walker} can generate infinite cycles if {@code getChildren}
+   * behaves like a graph with cycles (for example any undirected graph).
    */
   public static <T> Walker<T> forTree(
       Function<? super T, ? extends Stream<? extends T>> getChildren) {
