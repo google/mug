@@ -20,6 +20,7 @@ import static java.util.Objects.requireNonNull;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;
+import java.util.Queue;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.function.Consumer;
@@ -160,27 +161,25 @@ public class Traversal<T> {
     }
 
     Stream<T> breadthFirst(Spliterator<? extends T> initials) {
-      Deque<Spliterator<? extends T>> queue = new ArrayDeque<>();
-      queue.add(initials);
-      return whileNotEmpty(queue).map(this::removeBreadthFirst).filter(n -> n != null);
-    }
-
-    private T removeBreadthFirst(Deque<Spliterator<? extends T>> queue) {
-      return removeFrom(queue, queue::add);
+      return traversing(initials, Queue::add);
     }
 
     Stream<T> preOrder(Spliterator<? extends T> initials) {
-      Deque<Spliterator<? extends T>> stack = new ArrayDeque<>();
-      stack.push(initials);
-      return whileNotEmpty(stack).map(this::removeInPreOrder).filter(n -> n != null);
+      return traversing(initials, Deque::push);
     }
 
-    private T removeInPreOrder(Deque<Spliterator<? extends T>> stack) {
-      return removeFrom(stack, stack::push);
+    /** Reused for both depth-first pre-order and breadth-first. */
+    private Stream<T> traversing(
+        Spliterator<? extends T> initials, InsertionOrder successorInsertionOrder) {
+      Deque<Spliterator<? extends T>> deque = new ArrayDeque<>();
+      successorInsertionOrder.insertInto(deque, initials);
+      return whileNotEmpty(deque)
+          .map(q -> removeFrom(q, successorInsertionOrder))
+          .filter(n -> n != null);
     }
 
     private T removeFrom(
-        Deque<Spliterator<? extends T>> deque, Consumer<Spliterator<? extends T>> gotSuccessor) {
+        Deque<Spliterator<? extends T>> deque, InsertionOrder successorInsertionOrder) {
       while (!deque.isEmpty()) {
         Spliterator<? extends T> top = deque.getFirst();
         while (top.tryAdvance(this)) {
@@ -190,7 +189,7 @@ public class Traversal<T> {
           }
           Stream<? extends T> successors = findSuccessors.apply(next);
           if (successors != null) {
-            gotSuccessor.accept(successors.spliterator());
+            successorInsertionOrder.insertInto(deque, successors.spliterator());
           }
           return next;
         }
@@ -253,5 +252,9 @@ public class Traversal<T> {
 
   private static <T> Stream<T> nonNullStream(T value) {
     return Stream.of(requireNonNull(value));
+  }
+
+  private interface InsertionOrder {
+    <T> void insertInto(Deque<T> deque, T value);
   }
 }
