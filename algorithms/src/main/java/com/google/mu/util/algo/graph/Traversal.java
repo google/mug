@@ -36,66 +36,54 @@ import java.util.stream.Stream;
  *
  * @since 3.9
  */
-public abstract class Traversal<T> {
+
+public class Traversal<T> {
+  private final Function<? super T, ? extends Stream<? extends T>> findSuccessors;
+
+  Traversal(Function<? super T, ? extends Stream<? extends T>> findSuccessors) {
+    this.findSuccessors = requireNonNull(findSuccessors);
+  }
+
   /**
-   * Returns a {@code Traversal} object assuming tree structure (no cycles),
-   * using {@code getChildren} to find children of any given tree node.
+   * Returns a {@code Traversal} object assuming tree structure (no cycles), using {@code
+   * getChildren} to find children of any given tree node.
    *
-   * <p>The returned object is idempotent, stateless and immutable as long as
-   * {@code getChildren} is idempotent, stateless and immutable.
+   * <p>The returned object is idempotent, stateless and immutable as long as {@code getChildren} is
+   * idempotent, stateless and immutable.
    */
   public static <T> Traversal<T> forTree(
       Function<? super T, ? extends Stream<? extends T>> getChildren) {
-    requireNonNull(getChildren);
-    return new Traversal<T>() {
-      @Override Stream<? extends T> findSuccessors(T node) {
-        return enforcingNonNulls(getChildren.apply(node));
-      }
-    };
+    return new Traversal<T>(getChildren);
   }
 
   /**
-   * Returns a {@code Traversal} object assuming graph structure (with cycles),
-   * using {@code findSuccessors} to find successor nodes of any given graph node.
+   * Returns a {@code Traversal} object assuming graph structure (with cycles), using {@code
+   * findSuccessors} to find successor nodes of any given graph node.
    *
-   * <p>The returned object remembers which nodes have been traversed,
-   * thus if you call for example {@link #preOrderFrom} again, already visited nodes will be
-   * skipped. This is useful if you need to imperatively and dynamically decide which node to
-   * traverse. If you'd rather re-traverse everything, recreate the {@code Traversal} object again.
+   * <p>The returned object remembers which nodes have been traversed, thus if you call for example
+   * {@link #preOrderFrom} again, already visited nodes will be skipped. This is useful if you need
+   * to imperatively and dynamically decide which node to traverse. If you'd rather re-traverse
+   * everything, recreate the {@code Traversal} object again.
    *
-   * <p>Because the {@code Traversal} object keeps memory of traversal history,
-   * the memory usage is linear to the number of traversed nodes.
+   * <p>Because the {@code Traversal} object keeps memory of traversal history, the memory usage is
+   * linear to the number of traversed nodes.
    */
   public static <T> Traversal<T> forGraph(
       Function<? super T, ? extends Stream<? extends T>> findSuccessors) {
-    requireNonNull(findSuccessors);
     Set<T> seen = new HashSet<>();
-    return new Traversal<T>() {
-      @Override Stream<? extends T> findSuccessors(T node) {
-        Stream<? extends T> successors = enforcingNonNulls(findSuccessors.apply(node));
-        return successors == null ? null : successors.filter(seen::add);
-      }
-
-      @Override public Stream<T> preOrderFrom(Stream<? extends T> initials) {
-        return super.preOrderFrom(initials.filter(seen::add));
-      }
-
-      public Stream<T> postOrderFrom(Stream<? extends T> initials) {
-        return super.postOrderFrom(initials.filter(seen::add));
-      }
-
-      public Stream<T> breadthFirstFrom(Stream<? extends T> initials) {
-        return super.breadthFirstFrom(initials.filter(seen::add));
+    return new Traversal<T>(findSuccessors) {
+      @Override boolean visit(T node) {
+        return seen.add(node);
       }
     };
   }
 
   /**
-   * Starts from {@code initial} and traverse depth first in pre-order by
-   * using {@code findSuccessors} function iteratively.
+   * Starts from {@code initial} and traverse depth first in pre-order by using {@code
+   * findSuccessors} function iteratively.
    *
-   * <p>The returned stream may be infinite if the graph has infinite depth or infinite breadth,
-   * or both. The stream can still be short-circuited to consume a limited number of nodes during
+   * <p>The returned stream may be infinite if the graph has infinite depth or infinite breadth, or
+   * both. The stream can still be short-circuited to consume a limited number of nodes during
    * traversal.
    */
   public final Stream<T> preOrderFrom(T initial) {
@@ -105,20 +93,19 @@ public abstract class Traversal<T> {
   /**
    * Starts from {@code initials} and traverse depth first in pre-order.
    *
-   * <p>The returned stream may be infinite if the graph has infinite depth or infinite breadth,
-   * or both. The stream can still be short-circuited to consume a limited number of nodes during
+   * <p>The returned stream may be infinite if the graph has infinite depth or infinite breadth, or
+   * both. The stream can still be short-circuited to consume a limited number of nodes during
    * traversal.
    */
-  public Stream<T> preOrderFrom(Stream<? extends T> initials) {
-    return new DepthFirst().preOrder(enforcingNonNulls(initials));
+  public final Stream<T> preOrderFrom(Stream<? extends T> initials) {
+    return new DepthFirst().preOrder(initials.spliterator());
   }
 
   /**
    * Starts from {@code initial} and traverse depth first in post-order.
    *
-   * <p>The returned stream may be infinite if the graph has infinite breadth.
-   * The stream can still be short-circuited to consume a limited number of nodes during
-   * traversal.
+   * <p>The returned stream may be infinite if the graph has infinite breadth. The stream can still
+   * be short-circuited to consume a limited number of nodes during traversal.
    *
    * <p>The stream may result in infinite loop when it traversing through a node with infinite
    * depth.
@@ -130,22 +117,21 @@ public abstract class Traversal<T> {
   /**
    * Starts from {@code initials} and traverse depth first in post-order.
    *
-   * <p>The returned stream may be infinite if the graph has infinite breadth.
-   * The stream can still be short-circuited to consume a limited number of nodes during
-   * traversal.
+   * <p>The returned stream may be infinite if the graph has infinite breadth. The stream can still
+   * be short-circuited to consume a limited number of nodes during traversal.
    *
    * <p>The stream may result in infinite loop when it traversing through a node with infinite
    * depth.
    */
-  public Stream<T> postOrderFrom(Stream<? extends T> initials) {
-    return new DepthFirst().postOrder(enforcingNonNulls(initials));
+  public final Stream<T> postOrderFrom(Stream<? extends T> initials) {
+    return new DepthFirst().postOrder(initials.spliterator());
   }
 
   /**
    * Starts from {@code initial} and traverse in breadth-first order.
    *
-   * <p>The returned stream may be infinite if the graph has infinite depth or infinite breadth,
-   * or both. The stream can still be short-circuited to consume a limited number of nodes during
+   * <p>The returned stream may be infinite if the graph has infinite depth or infinite breadth, or
+   * both. The stream can still be short-circuited to consume a limited number of nodes during
    * traversal.
    */
   public final Stream<T> breadthFirstFrom(T initial) {
@@ -155,38 +141,40 @@ public abstract class Traversal<T> {
   /**
    * Starts from {@code initials} and traverse in breadth-first order.
    *
-   * <p>The returned stream may be infinite if the graph has infinite depth or infinite breadth,
-   * or both. The stream can still be short-circuited to consume a limited number of nodes during
+   * <p>The returned stream may be infinite if the graph has infinite depth or infinite breadth, or
+   * both. The stream can still be short-circuited to consume a limited number of nodes during
    * traversal.
    */
-  public Stream<T> breadthFirstFrom(Stream<? extends T> initials) {
+  public final Stream<T> breadthFirstFrom(Stream<? extends T> initials) {
     Queue<Stream<? extends T>> queue = new ArrayDeque<>();
-    queue.add(enforcingNonNulls(initials));
+    queue.add(initials);
     return whileNotEmpty(queue)
         .map(Queue::remove)
-        .flatMap(seeds -> seeds.peek(
-            v -> {
-              Stream<? extends T> successors = findSuccessors(v);
-              if (successors != null) {
-                queue.add(successors);
-              }
-            }));
+        .flatMap(
+            seeds ->
+                seeds
+                    .peek(Objects::requireNonNull)
+                    .filter(this::visit)
+                    .peek(
+                        v -> {
+                          Stream<? extends T> successors = findSuccessors.apply(v);
+                          if (successors != null) {
+                            queue.add(successors);
+                          }
+                        }));
   }
 
-  /**
-   * Returns the stream of successors to {@code node}.
-   * If there are no successors, either null or empty stream may be returned.
-   *
-   * @param node The node whose successors should be returned. Never null.
-   */
-  abstract Stream<? extends T> findSuccessors(T node);
+  /** Is this node okay to visit? */
+  boolean visit(T node) {
+    return true;
+  }
 
   private final class DepthFirst implements Consumer<T> {
     private T advancedResult;
 
-    Stream<T> preOrder(Stream<? extends T> initials) {
+    Stream<T> preOrder(Spliterator<? extends T> initials) {
       Deque<Spliterator<? extends T>> stack = new ArrayDeque<>();
-      stack.add(initials.spliterator());
+      stack.add(initials);
       return whileNotEmpty(stack).map(this::removeInPreOrder).filter(n -> n != null);
     }
 
@@ -195,23 +183,28 @@ public abstract class Traversal<T> {
         Spliterator<? extends T> top = stack.getFirst();
         while (top.tryAdvance(this)) {
           T next = advancedResult;
-          Stream<? extends T> successors = findSuccessors(next);
-          if (successors != null) stack.push(successors.spliterator());
+          if (!visit(next)) {
+            continue;
+          }
+          Stream<? extends T> successors = findSuccessors.apply(next);
+          if (successors != null) {
+            stack.push(successors.spliterator());
+          }
           return next;
         }
         stack.pop();
       }
-      return null;  // no more element
+      return null; // no more element
     }
 
-    Stream<T> postOrder(Stream<? extends T> initials) {
+    Stream<T> postOrder(Spliterator<? extends T> initials) {
       Deque<Node> stack = new ArrayDeque<>();
       stack.push(new Node(initials));
       return whileNotEmpty(stack).map(this::removeInPostOrder).filter(n -> n != null);
     }
 
     private T removeInPostOrder(Deque<Node> stack) {
-      for (Node node = stack.getFirst();;) {
+      for (Node node = stack.getFirst(); ; ) {
         T next = node.next();
         if (next == null) {
           stack.pop();
@@ -235,20 +228,27 @@ public abstract class Traversal<T> {
         this.head = head;
       }
 
-      Node(Stream<? extends T> initials) {
-        this.head = null;  // special sentinel to be filtered
-        this.successors =  initials.spliterator();
+      Node(Spliterator<? extends T> initials) {
+        // special sentinel to be filtered.
+        // Because successors is non-null so we'll never call findSuccessors(head).
+        this.head = null;
+        this.successors = initials;
       }
 
       T next() {
         if (successors == null) {
-          Stream<? extends T> children = findSuccessors(head);
+          Stream<? extends T> children = findSuccessors.apply(head);
           if (children == null) {
             return null;
           }
           successors = children.spliterator();
         }
-        return successors.tryAdvance(DepthFirst.this) ? advancedResult : null;
+        while (successors.tryAdvance(DepthFirst.this)) {
+          if (visit(advancedResult)) {
+            return advancedResult;
+          }
+        }
+        return null;
       }
     }
   }
@@ -256,10 +256,4 @@ public abstract class Traversal<T> {
   private static <T> Stream<T> nonNullStream(T value) {
     return Stream.of(requireNonNull(value));
   }
-
-  private static <F, T> Stream<? extends T> enforcingNonNulls(Stream<? extends T> stream) {
-    return stream == null ? null : stream.peek(Objects::requireNonNull);
-  }
-
-  Traversal() {}
 }

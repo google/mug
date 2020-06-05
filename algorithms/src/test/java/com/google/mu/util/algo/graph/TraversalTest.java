@@ -18,7 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static java.util.stream.Collectors.toList;
 
-import java.util.Map;
 import java.util.stream.Stream;
 
 import org.junit.Test;
@@ -100,7 +99,7 @@ public class TraversalTest {
 
   @Test
   public void postOrder_infinite() {
-    Map<Integer, Stream<Integer>> infiniteWidth =
+    ImmutableMap<Integer, Stream<Integer>> infiniteWidth =
         ImmutableMap.of(1, indexesFrom(2), 2, Stream.of(3, 4), 3, Stream.of(4, 5), 5, Stream.empty());
     Stream<Integer> stream = Traversal.forGraph(infiniteWidth::get).postOrderFrom(1);
     assertThat(stream.limit(6).collect(toList()))
