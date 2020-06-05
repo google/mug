@@ -174,10 +174,7 @@ public class Traversal<T> {
       return whileNotEmpty(stack).map(this::removeFromBottom).filter(n -> n != null);
     }
 
-    /**
-     * Consuming nodes from top to bottom.
-     * Reused for both depth-first pre-order and breadth-first.
-     */
+    /** Consuming nodes from top to bottom, for both depth-first pre-order and breadth-first. */
     private Stream<T> topDown(
         Spliterator<? extends T> initials, InsertionOrder nodeInsertionOrder) {
       Deque<Spliterator<? extends T>> deque = new ArrayDeque<>();
