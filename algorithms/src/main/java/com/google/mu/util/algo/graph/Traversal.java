@@ -20,8 +20,6 @@ import static java.util.Objects.requireNonNull;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;
-import java.util.Objects;
-import java.util.Queue;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.function.Consumer;
@@ -98,7 +96,7 @@ public class Traversal<T> {
    * traversal.
    */
   public final Stream<T> preOrderFrom(Stream<? extends T> initials) {
-    return new DepthFirst().preOrder(initials.spliterator());
+    return new Traverser().preOrder(initials.spliterator());
   }
 
   /**
@@ -124,7 +122,7 @@ public class Traversal<T> {
    * depth.
    */
   public final Stream<T> postOrderFrom(Stream<? extends T> initials) {
-    return new DepthFirst().postOrder(initials.spliterator());
+    return new Traverser().postOrder(initials.spliterator());
   }
 
   /**
@@ -146,22 +144,7 @@ public class Traversal<T> {
    * traversal.
    */
   public final Stream<T> breadthFirstFrom(Stream<? extends T> initials) {
-    Queue<Stream<? extends T>> queue = new ArrayDeque<>();
-    queue.add(initials);
-    return whileNotEmpty(queue)
-        .map(Queue::remove)
-        .flatMap(
-            seeds ->
-                seeds
-                    .peek(Objects::requireNonNull)
-                    .filter(this::visit)
-                    .peek(
-                        v -> {
-                          Stream<? extends T> successors = findSuccessors.apply(v);
-                          if (successors != null) {
-                            queue.add(successors);
-                          }
-                        }));
+    return new Traverser().breadthFirst(initials.spliterator());
   }
 
   /** Is this node okay to visit? */
@@ -169,18 +152,37 @@ public class Traversal<T> {
     return true;
   }
 
-  private final class DepthFirst implements Consumer<T> {
+  private final class Traverser implements Consumer<T> {
     private T advancedResult;
+
+    @Override public void accept(T value) {
+      this.advancedResult = requireNonNull(value);
+    }
+
+    Stream<T> breadthFirst(Spliterator<? extends T> initials) {
+      Deque<Spliterator<? extends T>> queue = new ArrayDeque<>();
+      queue.add(initials);
+      return whileNotEmpty(queue).map(this::removeBreadthFirst).filter(n -> n != null);
+    }
+
+    private T removeBreadthFirst(Deque<Spliterator<? extends T>> queue) {
+      return removeFrom(queue, queue::add);
+    }
 
     Stream<T> preOrder(Spliterator<? extends T> initials) {
       Deque<Spliterator<? extends T>> stack = new ArrayDeque<>();
-      stack.add(initials);
+      stack.push(initials);
       return whileNotEmpty(stack).map(this::removeInPreOrder).filter(n -> n != null);
     }
 
     private T removeInPreOrder(Deque<Spliterator<? extends T>> stack) {
-      while (!stack.isEmpty()) {
-        Spliterator<? extends T> top = stack.getFirst();
+      return removeFrom(stack, stack::push);
+    }
+
+    private T removeFrom(
+        Deque<Spliterator<? extends T>> deque, Consumer<Spliterator<? extends T>> gotSuccessor) {
+      while (!deque.isEmpty()) {
+        Spliterator<? extends T> top = deque.getFirst();
         while (top.tryAdvance(this)) {
           T next = advancedResult;
           if (!visit(next)) {
@@ -188,47 +190,43 @@ public class Traversal<T> {
           }
           Stream<? extends T> successors = findSuccessors.apply(next);
           if (successors != null) {
-            stack.push(successors.spliterator());
+            gotSuccessor.accept(successors.spliterator());
           }
           return next;
         }
-        stack.pop();
+        deque.remove();
       }
       return null; // no more element
     }
 
     Stream<T> postOrder(Spliterator<? extends T> initials) {
-      Deque<Node> stack = new ArrayDeque<>();
-      stack.push(new Node(initials));
+      Deque<PostOrderNode> stack = new ArrayDeque<>();
+      stack.push(new PostOrderNode(initials));
       return whileNotEmpty(stack).map(this::removeInPostOrder).filter(n -> n != null);
     }
 
-    private T removeInPostOrder(Deque<Node> stack) {
-      for (Node node = stack.getFirst(); ; ) {
+    private T removeInPostOrder(Deque<PostOrderNode> stack) {
+      for (PostOrderNode node = stack.getFirst(); ; ) {
         T next = node.next();
         if (next == null) {
           stack.pop();
           return node.head;
         } else {
-          node = new Node(next);
+          node = new PostOrderNode(next);
           stack.push(node);
         }
       }
     }
 
-    @Override public void accept(T value) {
-      this.advancedResult = requireNonNull(value);
-    }
-
-    private final class Node {
+    private final class PostOrderNode {
       final T head;
       private Spliterator<? extends T> successors;
 
-      Node(T head) {
+      PostOrderNode(T head) {
         this.head = head;
       }
 
-      Node(Spliterator<? extends T> initials) {
+      PostOrderNode(Spliterator<? extends T> initials) {
         // special sentinel to be filtered.
         // Because successors is non-null so we'll never call findSuccessors(head).
         this.head = null;
@@ -243,7 +241,7 @@ public class Traversal<T> {
           }
           successors = children.spliterator();
         }
-        while (successors.tryAdvance(DepthFirst.this)) {
+        while (successors.tryAdvance(Traverser.this)) {
           if (visit(advancedResult)) {
             return advancedResult;
           }

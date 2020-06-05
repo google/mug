@@ -27,6 +27,7 @@ import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
 import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.NullPointerTester;
+import com.google.mu.util.stream.MoreStreams;
 
 public class TraversalTest {
   private final MutableGraph<String> graph = GraphBuilder.undirected().<String>build();
@@ -62,8 +63,16 @@ public class TraversalTest {
   }
 
   @Test
-  public void preOrder_infinite() {
+  public void preOrder_infiniteBreadth() {
     Stream<Integer> stream = Traversal.<Integer>forGraph(n -> indexesFrom(n + 1)).preOrderFrom(1);
+    assertThat(stream.limit(4).collect(toList()))
+        .containsExactly(1, 2, 3, 4)
+        .inOrder();
+  }
+
+  @Test
+  public void preOrder_infiniteDepth() {
+    Stream<Integer> stream = Traversal.<Integer>forGraph(n -> Stream.of(n + 1, n + 2)).preOrderFrom(1);
     assertThat(stream.limit(4).collect(toList()))
         .containsExactly(1, 2, 3, 4)
         .inOrder();
@@ -98,10 +107,10 @@ public class TraversalTest {
   }
 
   @Test
-  public void postOrder_infinite() {
-    ImmutableMap<Integer, Stream<Integer>> infiniteWidth =
+  public void postOrder_infiniteBreadth() {
+    ImmutableMap<Integer, Stream<Integer>> infiniteBreadth =
         ImmutableMap.of(1, indexesFrom(2), 2, Stream.of(3, 4), 3, Stream.of(4, 5), 5, Stream.empty());
-    Stream<Integer> stream = Traversal.forGraph(infiniteWidth::get).postOrderFrom(1);
+    Stream<Integer> stream = Traversal.forGraph(infiniteBreadth::get).postOrderFrom(1);
     assertThat(stream.limit(6).collect(toList()))
         .containsExactly(4, 5, 3, 2, 6, 7)
         .inOrder();
@@ -136,12 +145,19 @@ public class TraversalTest {
   }
 
   @Test
-  public void breadthFirst_infinite() {
+  public void breadthFirst_infiniteDepth() {
     Stream<Integer> stream =
         Traversal.<Integer>forGraph(n -> Stream.of(n + 1, n + 2)).breadthFirstFrom(1);
     assertThat(stream.limit(6).collect(toList()))
         .containsExactly(1, 2, 3, 4, 5, 6)
         .inOrder();
+  }
+
+  @Test
+  public void breadthFirst_infiniteBreadth() {
+    Stream<Integer> stream =
+        Traversal.forGraph(MoreStreams::indexesFrom).breadthFirstFrom(1);
+    assertThat(stream.limit(6).collect(toList())).containsExactly(1, 2, 3, 4, 5, 6).inOrder();
   }
 
   @Test public void testNulls() throws Exception {
