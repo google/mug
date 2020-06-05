@@ -174,7 +174,7 @@ public class Traversal<T> {
       Deque<Spliterator<? extends T>> deque = new ArrayDeque<>();
       successorInsertionOrder.insertInto(deque, initials);
       return whileNotEmpty(deque)
-          .map(q -> removeFrom(q, successorInsertionOrder))
+          .map(d -> removeFrom(d, successorInsertionOrder))
           .filter(n -> n != null);
     }
 
