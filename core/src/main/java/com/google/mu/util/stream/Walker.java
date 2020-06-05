@@ -29,8 +29,8 @@ import java.util.stream.Stream;
 
 /**
  * Implements generic graph and tree traversal algorithms ({@link #preOrderFrom pre-order},
- * and {@link #postOrderFrom post-order}) as lazily evaluated streams, allowing infinite-size
- * graphs.
+ * {@link #postOrderFrom post-order} and {@link #breadthFirstFrom breadth-first}) as lazily
+ * evaluated streams, allowing infinite-size graphs.
  *
  * <p>None of these streams are safe to run in parallel.
  *
