@@ -161,24 +161,30 @@ public class Traversal<T> {
     }
 
     Stream<T> breadthFirst(Spliterator<? extends T> initials) {
-      return startingFrom(initials, Queue::add);
+      return topDown(initials, Queue::add);
     }
 
     Stream<T> preOrder(Spliterator<? extends T> initials) {
-      return startingFrom(initials, Deque::push);
+      return topDown(initials, Deque::push);
+    }
+
+    Stream<T> postOrder(Spliterator<? extends T> initials) {
+      Deque<PostOrderNode> stack = new ArrayDeque<>();
+      stack.push(new PostOrderNode(initials));
+      return whileNotEmpty(stack).map(this::removeFromBottom).filter(n -> n != null);
     }
 
     /** Reused for both depth-first pre-order and breadth-first. */
-    private Stream<T> startingFrom(
+    private Stream<T> topDown(
         Spliterator<? extends T> initials, InsertionOrder nodeInsertionOrder) {
       Deque<Spliterator<? extends T>> deque = new ArrayDeque<>();
       nodeInsertionOrder.insertInto(deque, initials);
       return whileNotEmpty(deque)
-          .map(d -> removeFrom(d, nodeInsertionOrder))
+          .map(d -> removeFromTop(d, nodeInsertionOrder))
           .filter(n -> n != null);
     }
 
-    private T removeFrom(
+    private T removeFromTop(
         Deque<Spliterator<? extends T>> deque, InsertionOrder successorInsertionOrder) {
       while (!deque.isEmpty()) {
         Spliterator<? extends T> top = deque.getFirst();
@@ -198,13 +204,7 @@ public class Traversal<T> {
       return null; // no more element
     }
 
-    Stream<T> postOrder(Spliterator<? extends T> initials) {
-      Deque<PostOrderNode> stack = new ArrayDeque<>();
-      stack.push(new PostOrderNode(initials));
-      return whileNotEmpty(stack).map(this::removeInPostOrder).filter(n -> n != null);
-    }
-
-    private T removeInPostOrder(Deque<PostOrderNode> stack) {
+    private T removeFromBottom(Deque<PostOrderNode> stack) {
       for (PostOrderNode node = stack.getFirst(); ; ) {
         T next = node.next();
         if (next == null) {
