@@ -26,6 +26,7 @@ import org.junit.Test;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
+import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.NullPointerTester;
 
 public class TraversalTest {
@@ -63,7 +64,7 @@ public class TraversalTest {
 
   @Test
   public void preOrder_infinite() {
-    Stream<Integer> stream = Traversal.preOrderFrom(1, n -> indexesFrom(n + 1));
+    Stream<Integer> stream = Traversal.<Integer>forGraph(n -> indexesFrom(n + 1)).preOrderFrom(1);
     assertThat(stream.limit(4).collect(toList()))
         .containsExactly(1, 2, 3, 4)
         .inOrder();
@@ -101,7 +102,7 @@ public class TraversalTest {
   public void postOrder_infinite() {
     Map<Integer, Stream<Integer>> infiniteWidth =
         ImmutableMap.of(1, indexesFrom(2), 2, Stream.of(3, 4), 3, Stream.of(4, 5), 5, Stream.empty());
-    Stream<Integer> stream = Traversal.postOrderFrom(1, infiniteWidth::get);
+    Stream<Integer> stream = Traversal.forGraph(infiniteWidth::get).postOrderFrom(1);
     assertThat(stream.limit(6).collect(toList()))
         .containsExactly(4, 5, 3, 2, 6, 7)
         .inOrder();
@@ -137,7 +138,8 @@ public class TraversalTest {
 
   @Test
   public void breadthFirst_infinite() {
-    Stream<Integer> stream = Traversal.breadthFirstFrom(1, n -> Stream.of(n + 1, n + 2));
+    Stream<Integer> stream =
+        Traversal.<Integer>forGraph(n -> Stream.of(n + 1, n + 2)).breadthFirstFrom(1);
     assertThat(stream.limit(6).collect(toList()))
         .containsExactly(1, 2, 3, 4, 5, 6)
         .inOrder();
@@ -145,17 +147,21 @@ public class TraversalTest {
 
   @Test public void testNulls() throws Exception {
     new NullPointerTester().testAllPublicStaticMethods(Traversal.class);
+    new ClassSanityTester().forAllPublicStaticMethods(Traversal.class).testNulls();
   }
 
   private Stream<String> preOrder(String firstNode) {
-    return Traversal.preOrderFrom(firstNode, n -> graph.adjacentNodes(n).stream().sorted());
+    return Traversal.<String>forGraph(n -> graph.adjacentNodes(n).stream().sorted())
+        .preOrderFrom(firstNode);
   }
 
   private Stream<String> postOrder(String firstNode) {
-    return Traversal.postOrderFrom(firstNode, n -> graph.adjacentNodes(n).stream().sorted());
+    return Traversal.<String>forGraph(n -> graph.adjacentNodes(n).stream().sorted())
+        .postOrderFrom(firstNode);
   }
 
   private Stream<String> bfs(String firstNode) {
-    return Traversal.breadthFirstFrom(firstNode, n -> graph.adjacentNodes(n).stream().sorted());
+    return Traversal.<String>forGraph(n -> graph.adjacentNodes(n).stream().sorted())
+        .breadthFirstFrom(firstNode);
   }
 }
