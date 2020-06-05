@@ -161,15 +161,15 @@ public class Traversal<T> {
     }
 
     Stream<T> breadthFirst(Spliterator<? extends T> initials) {
-      return traversing(initials, Queue::add);
+      return startingFrom(initials, Queue::add);
     }
 
     Stream<T> preOrder(Spliterator<? extends T> initials) {
-      return traversing(initials, Deque::push);
+      return startingFrom(initials, Deque::push);
     }
 
     /** Reused for both depth-first pre-order and breadth-first. */
-    private Stream<T> traversing(
+    private Stream<T> startingFrom(
         Spliterator<? extends T> initials, InsertionOrder successorInsertionOrder) {
       Deque<Spliterator<? extends T>> deque = new ArrayDeque<>();
       successorInsertionOrder.insertInto(deque, initials);
@@ -193,7 +193,7 @@ public class Traversal<T> {
           }
           return next;
         }
-        deque.remove();
+        deque.removeFirst();
       }
       return null; // no more element
     }
