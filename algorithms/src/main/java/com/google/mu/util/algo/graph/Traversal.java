@@ -97,7 +97,7 @@ public class Traversal<T> {
    * traversal.
    */
   public final Stream<T> preOrderFrom(Stream<? extends T> initials) {
-    return new Traverser().preOrder(initials.spliterator());
+    return new Walker().preOrder(initials.spliterator());
   }
 
   /**
@@ -123,7 +123,7 @@ public class Traversal<T> {
    * depth.
    */
   public final Stream<T> postOrderFrom(Stream<? extends T> initials) {
-    return new Traverser().postOrder(initials.spliterator());
+    return new Walker().postOrder(initials.spliterator());
   }
 
   /**
@@ -145,7 +145,7 @@ public class Traversal<T> {
    * traversal.
    */
   public final Stream<T> breadthFirstFrom(Stream<? extends T> initials) {
-    return new Traverser().breadthFirst(initials.spliterator());
+    return new Walker().breadthFirst(initials.spliterator());
   }
 
   /** Is this node okay to visit? */
@@ -153,7 +153,7 @@ public class Traversal<T> {
     return true;
   }
 
-  private final class Traverser implements Consumer<T> {
+  private final class Walker implements Consumer<T> {
     private T advancedResult;
 
     @Override public void accept(T value) {
