@@ -40,7 +40,7 @@ public final class Walker<T> {
   private final Function<? super T, ? extends Stream<? extends T>> findSuccessors;
   private final Predicate<? super T> tracker;
 
-  Walker(
+  private Walker(
       Function<? super T, ? extends Stream<? extends T>> findSuccessors,
       Predicate<? super T> tracker) {
     this.findSuccessors = requireNonNull(findSuccessors);
