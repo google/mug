@@ -74,7 +74,7 @@ public class Walker<T> {
    * // Now the two teams collaborate while raiding, no room is traversed twice...
    * }</pre>
    *
-   * In the normal case though, you'd likely always want to start from the beginning, in which case,
+   * In the normal case though, you'd likely always want to start clean, in which case,
    * just recreate the {@code Walker} object.
    *
    * <p>Because the {@code Traversal} object keeps memory of traversal history, the memory usage is
