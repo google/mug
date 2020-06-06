@@ -21,10 +21,10 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.Queue;
-import java.util.Set;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
@@ -36,11 +36,15 @@ import java.util.stream.Stream;
  *
  * @since 3.9
  */
-public class Walker<T> {
+public final class Walker<T> {
   private final Function<? super T, ? extends Stream<? extends T>> findSuccessors;
+  private final Predicate<? super T> tracker;
 
-  Walker(Function<? super T, ? extends Stream<? extends T>> findSuccessors) {
+  Walker(
+      Function<? super T, ? extends Stream<? extends T>> findSuccessors,
+      Predicate<? super T> tracker) {
     this.findSuccessors = requireNonNull(findSuccessors);
+    this.tracker = requireNonNull(tracker);
   }
 
   /**
@@ -55,7 +59,7 @@ public class Walker<T> {
    */
   public static <T> Walker<T> newTreeWalker(
       Function<? super T, ? extends Stream<? extends T>> getChildren) {
-    return new Walker<T>(getChildren);
+    return newWalker(getChildren, n -> true);
   }
 
   /**
@@ -82,12 +86,37 @@ public class Walker<T> {
    */
   public static <T> Walker<T> newGraphWalker(
       Function<? super T, ? extends Stream<? extends T>> findSuccessors) {
-    Set<T> traversed = new HashSet<>();
-    return new Walker<T>(findSuccessors) {
-      @Override boolean visit(T node) {
-        return traversed.add(node);
-      }
-    };
+    return newWalker(findSuccessors, new HashSet<>()::add);
+  }
+
+  /**
+   * Similar to {@link #newGraphWalker(Function)}, returns a {@code Walker} that can be used to
+   * traverse a graph of nodes. {@code tracker} is used to track every node being traversed. When
+   * {@code Walker} is about to traverse a node, {@code tracker.test(node)} will be called and the
+   * node will be skipped if false is returned.
+   *
+   * <p>This is useful for custom node tracking. For example, the caller could use a {@link
+   * java.util.TreeSet} or some {@code EquivalenceSet} to compare nodes using custom equality or
+   * equivalence; or, use a {@link java.util.ConcurrentHashMap} if multiple threads need to walk the
+   * same graph concurrently and collaboratively:
+   *
+   * <pre>{@code
+   * Walker<Room> concurrentWalker =
+   *     Walker.newWalker(buildingMap, ConcurrentHashMap.newKeySet()::add);
+   *
+   * // thread 1:
+   * Stream<Room> shield = concurrentWalker.preOrderFrom(roof);
+   * // iterate through rooms raided by the SHIELD agents.
+   *
+   * // thread 2:
+   * Stream<Room> avengers = concurrentWalker.breadthFirstFrom(mainEntrance);
+   * // iterate through rooms raided by Avengers.
+   * }</pre>
+   */
+  public static <T> Walker<T> newWalker(
+      Function<? super T, ? extends Stream<? extends T>> findSuccessors,
+      Predicate<? super T> tracker) {
+    return new Walker<>(findSuccessors, tracker);
   }
 
   /**
@@ -164,11 +193,6 @@ public class Walker<T> {
     return new Traversal().breadthFirst(initials.spliterator());
   }
 
-  /** Is this node okay to visit? */
-  boolean visit(T node) {
-    return true;
-  }
-
   private final class Traversal implements Consumer<T> {
     private T visited;
 
@@ -231,7 +255,7 @@ public class Walker<T> {
 
     private boolean visitNext(Spliterator<? extends T> spliterator) {
       while (spliterator.tryAdvance(this)) {
-        if (visit(visited)) {
+        if (tracker.test(visited)) {
           return true;
         }
       }
