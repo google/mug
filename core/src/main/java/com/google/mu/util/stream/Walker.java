@@ -20,7 +20,7 @@ import static java.util.Objects.requireNonNull;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;
-import java.util.Queue;
+import java.util.Objects;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -40,7 +40,7 @@ public final class Walker<T> {
   private final Function<? super T, ? extends Stream<? extends T>> findSuccessors;
   private final Predicate<? super T> tracker;
 
-  Walker(
+  private Walker(
       Function<? super T, ? extends Stream<? extends T>> findSuccessors,
       Predicate<? super T> tracker) {
     this.findSuccessors = requireNonNull(findSuccessors);
@@ -54,8 +54,13 @@ public final class Walker<T> {
    * <p>The returned object is idempotent, stateless and immutable as long as {@code getChildren} is
    * idempotent, stateless and immutable.
    *
+<<<<<<< HEAD
    * <p>WARNING: the returned {@code Walker} can generate infinite cycles if {@code getChildren}
    * behaves like a graph with cycles (for example any undirected graph).
+=======
+   * @param getChildren Function to get the child nodes for a given node.
+   *        No children if empty stream or null is returned,
+>>>>>>> master
    */
   public static <T> Walker<T> newTreeWalker(
       Function<? super T, ? extends Stream<? extends T>> getChildren) {
@@ -83,6 +88,9 @@ public final class Walker<T> {
    *
    * <p>Because the {@code Traversal} object keeps memory of traversal history, the memory usage is
    * linear to the number of traversed nodes.
+   *
+   * @param findSuccessors Function to get the successor nodes for a given node.
+   *        No successor if empty stream or null is returned,
    */
   public static <T> Walker<T> newGraphWalker(
       Function<? super T, ? extends Stream<? extends T>> findSuccessors) {
@@ -112,6 +120,11 @@ public final class Walker<T> {
    * Stream<Room> avengers = concurrentWalker.breadthFirstFrom(mainEntrance);
    * // iterate through rooms raided by Avengers.
    * }</pre>
+   *
+   * @param findSuccessors Function to get the successor nodes for a given node.
+   *        No successor if empty stream or null is returned,
+   * @param tracker Tracks each node being visited during traversal. Returns false if the node
+   *        should be skipped for traversal (for example because it has already been traversed).
    */
   public static <T> Walker<T> newWalker(
       Function<? super T, ? extends Stream<? extends T>> findSuccessors,
@@ -140,7 +153,7 @@ public final class Walker<T> {
    * traversal.
    */
   public final Stream<T> preOrderFrom(Stream<? extends T> initials) {
-    return new Traversal().preOrder(initials.spliterator());
+    return new Traversal().preOrder(initials);
   }
 
   /**
@@ -167,7 +180,7 @@ public final class Walker<T> {
    * depth.
    */
   public final Stream<T> postOrderFrom(Stream<? extends T> initials) {
-    return new Traversal().postOrder(initials.spliterator());
+    return new Traversal().postOrder(initials);
   }
 
   /**
@@ -190,65 +203,67 @@ public final class Walker<T> {
    * traversal.
    */
   public final Stream<T> breadthFirstFrom(Stream<? extends T> initials) {
-    return new Traversal().breadthFirst(initials.spliterator());
+    return new Traversal().breadthFirst(initials);
   }
 
   private final class Traversal implements Consumer<T> {
+    private final Deque<Spliterator<? extends T>> horizon = new ArrayDeque<>();
     private T visited;
 
-    @Override public void accept(T value) {
+    @Override
+    public void accept(T value) {
       this.visited = requireNonNull(value);
     }
 
-    Stream<T> breadthFirst(Spliterator<? extends T> initials) {
-      return topDown(initials, Queue::add);
+    Stream<T> breadthFirst(Stream<? extends T> initials) {
+      horizon.add(initials.spliterator());
+      return topDown(Deque::add);
     }
 
-    Stream<T> preOrder(Spliterator<? extends T> initials) {
-      return topDown(initials, Deque::push);
+    Stream<T> preOrder(Stream<? extends T> initials) {
+      horizon.push(initials.spliterator());
+      return topDown(Deque::push);
     }
 
-    Stream<T> postOrder(Spliterator<? extends T> initials) {
-      Deque<PostOrderNode> stack = new ArrayDeque<>();
-      stack.push(new PostOrderNode(initials));
-      return whileNotEmpty(stack).map(this::removeFromBottom).filter(n -> n != null);
+    Stream<T> postOrder(Stream<? extends T> initials) {
+      horizon.push(initials.spliterator());
+      Deque<T> post = new ArrayDeque<>();
+      return whileNotEmpty(horizon).map(h -> removeFromBottom(post)).filter(Objects::nonNull);
     }
 
-    /** Consuming nodes from top to bottom, for both depth-first pre-order and breadth-first. */
-    private Stream<T> topDown(
-        Spliterator<? extends T> initials, InsertionOrder nodeInsertionOrder) {
-      Deque<Spliterator<? extends T>> deque = new ArrayDeque<>();
-      nodeInsertionOrder.insertInto(deque, initials);
-      return whileNotEmpty(deque)
-          .map(d -> removeFromTop(d, nodeInsertionOrder))
-          .filter(n -> n != null);
+    private Stream<T> topDown(InsertionOrder order) {
+      return whileNotEmpty(horizon).map(h -> removeFromTop(order)).filter(Objects::nonNull);
     }
 
-    private T removeFromTop(
-        Deque<Spliterator<? extends T>> deque, InsertionOrder successorInsertionOrder) {
+    private T removeFromTop(InsertionOrder traversalOrder) {
       do {
-        if (visitNext(deque.getFirst())) {
+        if (visitNext(horizon.getFirst())) {
           T next = visited;
           Stream<? extends T> successors = findSuccessors.apply(next);
           if (successors != null) {
-            successorInsertionOrder.insertInto(deque, successors.spliterator());
+            traversalOrder.insertInto(horizon, successors.spliterator());
           }
           return next;
         }
-        deque.removeFirst();
-      } while (!deque.isEmpty());
+        horizon.removeFirst();
+      } while (!horizon.isEmpty());
       return null; // no more element
     }
 
-    private T removeFromBottom(Deque<PostOrderNode> stack) {
-      for (PostOrderNode node = stack.getFirst(); ; ) {
-        T next = node.next();
-        if (next == null) {
-          stack.pop();
-          return node.head;
+    private T removeFromBottom(Deque<T> postStack) {
+      for (Spliterator<? extends T> peers = horizon.getFirst(); ; ) {
+        if (visitNext(peers)) {
+          T next = visited;
+          Stream<? extends T> successors = findSuccessors.apply(next);
+          if (successors == null) {
+            return next;
+          }
+          peers = successors.spliterator();
+          horizon.push(peers);
+          postStack.push(next);
         } else {
-          node = new PostOrderNode(next);
-          stack.push(node);
+          horizon.pop();
+          return postStack.pollFirst();
         }
       }
     }
@@ -260,33 +275,6 @@ public final class Walker<T> {
         }
       }
       return false;
-    }
-
-    private final class PostOrderNode {
-      final T head;
-      private Spliterator<? extends T> successors;
-
-      PostOrderNode(T head) {
-        this.head = head;
-      }
-
-      PostOrderNode(Spliterator<? extends T> initials) {
-        // special sentinel to be filtered.
-        // Because successors is non-null so we'll never call findSuccessors(head).
-        this.head = null;
-        this.successors = initials;
-      }
-
-      T next() {
-        if (successors == null) {
-          Stream<? extends T> children = findSuccessors.apply(head);
-          if (children == null) {
-            return null;
-          }
-          successors = children.spliterator();
-        }
-        return visitNext(successors) ? visited : null;
-      }
     }
   }
 
