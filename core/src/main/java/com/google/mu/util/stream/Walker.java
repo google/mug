@@ -206,8 +206,8 @@ public final class Walker<T> {
     }
 
     Stream<T> postOrder(Spliterator<? extends T> initials) {
-      Deque<PostOrderNode> stack = new ArrayDeque<>();
-      stack.push(new PostOrderNode(initials));
+      Deque<PostOrderNode<T>> stack = new ArrayDeque<>();
+      stack.push(new PostOrderNode<>(initials));
       return whileNotEmpty(stack).map(this::removeFromBottom).filter(n -> n != null);
     }
 
@@ -237,17 +237,28 @@ public final class Walker<T> {
       return null; // no more element
     }
 
-    private T removeFromBottom(Deque<PostOrderNode> stack) {
-      for (PostOrderNode node = stack.getFirst(); ; ) {
-        T next = node.next();
+    private T removeFromBottom(Deque<PostOrderNode<T>> stack) {
+      for (PostOrderNode<T> node = stack.getFirst(); ; ) {
+        T next = visitNextInPostOrder(node);
         if (next == null) {
           stack.pop();
           return node.head;
         } else {
-          node = new PostOrderNode(next);
+          node = new PostOrderNode<>(next);
           stack.push(node);
         }
       }
+    }
+
+    private T visitNextInPostOrder(PostOrderNode<T> node) {
+      if (node.successors == null) {
+        Stream<? extends T> children = findSuccessors.apply(node.head);
+        if (children == null) {
+          return null;
+        }
+        node.successors = children.spliterator();
+      }
+      return visitNext(node.successors) ? visited : null;
     }
 
     private boolean visitNext(Spliterator<? extends T> spliterator) {
@@ -258,32 +269,21 @@ public final class Walker<T> {
       }
       return false;
     }
+  }
 
-    private final class PostOrderNode {
-      final T head;
-      private Spliterator<? extends T> successors;
+  private static final class PostOrderNode<T> {
+    final T head;
+    Spliterator<? extends T> successors;
 
-      PostOrderNode(T head) {
-        this.head = head;
-      }
+    PostOrderNode(T head) {
+      this.head = head;
+    }
 
-      PostOrderNode(Spliterator<? extends T> initials) {
-        // special sentinel to be filtered.
-        // Because successors is non-null so we'll never call findSuccessors(head).
-        this.head = null;
-        this.successors = initials;
-      }
-
-      T next() {
-        if (successors == null) {
-          Stream<? extends T> children = findSuccessors.apply(head);
-          if (children == null) {
-            return null;
-          }
-          successors = children.spliterator();
-        }
-        return visitNext(successors) ? visited : null;
-      }
+    PostOrderNode(Spliterator<? extends T> initials) {
+      // special sentinel to be filtered.
+      // Because successors is non-null so we'll never call findSuccessors(head).
+      this.head = null;
+      this.successors = initials;
     }
   }
 
