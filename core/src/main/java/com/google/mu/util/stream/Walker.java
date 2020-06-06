@@ -20,7 +20,7 @@ import static java.util.Objects.requireNonNull;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;
-import java.util.Queue;
+import java.util.Objects;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -191,74 +191,61 @@ public final class Walker<T> {
   }
 
   private final class Traversal implements Consumer<T> {
+    private final Deque<Spliterator<? extends T>> horizon = new ArrayDeque<>();
     private T visited;
 
-    @Override public void accept(T value) {
+    @Override
+    public void accept(T value) {
       this.visited = requireNonNull(value);
     }
 
     Stream<T> breadthFirst(Spliterator<? extends T> initials) {
-      return topDown(initials, Queue::add);
+      horizon.add(initials);
+      return whileNotEmpty(horizon).map(h -> removeFromTop(Deque::add)).filter(Objects::nonNull);
     }
 
     Stream<T> preOrder(Spliterator<? extends T> initials) {
-      return topDown(initials, Deque::push);
+      horizon.push(initials);
+      return whileNotEmpty(horizon).map(h -> removeFromTop(Deque::push)).filter(Objects::nonNull);
     }
 
     Stream<T> postOrder(Spliterator<? extends T> initials) {
-      Deque<PostOrderNode<T>> stack = new ArrayDeque<>();
-      stack.push(new PostOrderNode<>(initials));
-      return whileNotEmpty(stack).map(this::removeFromBottom).filter(n -> n != null);
+      horizon.push(initials);
+      Deque<T> post = new ArrayDeque<>();
+      return whileNotEmpty(horizon).map(h -> removeFromBottom(post)).filter(Objects::nonNull);
     }
 
-    /** Consuming nodes from top to bottom, for both depth-first pre-order and breadth-first. */
-    private Stream<T> topDown(
-        Spliterator<? extends T> initials, InsertionOrder nodeInsertionOrder) {
-      Deque<Spliterator<? extends T>> deque = new ArrayDeque<>();
-      nodeInsertionOrder.insertInto(deque, initials);
-      return whileNotEmpty(deque)
-          .map(d -> removeFromTop(d, nodeInsertionOrder))
-          .filter(n -> n != null);
-    }
-
-    private T removeFromTop(
-        Deque<Spliterator<? extends T>> deque, InsertionOrder successorInsertionOrder) {
+    private T removeFromTop(InsertionOrder traversalOrder) {
       do {
-        if (visitNext(deque.getFirst())) {
+        if (visitNext(horizon.getFirst())) {
           T next = visited;
           Stream<? extends T> successors = findSuccessors.apply(next);
           if (successors != null) {
-            successorInsertionOrder.insertInto(deque, successors.spliterator());
+            traversalOrder.insertInto(horizon, successors.spliterator());
           }
           return next;
         }
-        deque.removeFirst();
-      } while (!deque.isEmpty());
+        horizon.removeFirst();
+      } while (!horizon.isEmpty());
       return null; // no more element
     }
 
-    private T removeFromBottom(Deque<PostOrderNode<T>> stack) {
-      for (PostOrderNode<T> node = stack.getFirst(); ; ) {
-        T next = visitNextInPostOrder(node);
-        if (next == null) {
-          stack.pop();
-          return node.head;
+    private T removeFromBottom(Deque<T> postStack) {
+      for (Spliterator<? extends T> peers = horizon.getFirst(); ; ) {
+        if (visitNext(peers)) {
+          T next = visited;
+          Stream<? extends T> children = findSuccessors.apply(next);
+          if (children == null) {
+            return next;
+          }
+          peers = children.spliterator();
+          horizon.push(peers);
+          postStack.push(next);
         } else {
-          node = new PostOrderNode<>(next);
-          stack.push(node);
+          horizon.pop();
+          return postStack.pollFirst();
         }
       }
-    }
-
-    private T visitNextInPostOrder(PostOrderNode<T> node) {
-      if (node.successors == null) {
-        Stream<? extends T> children = findSuccessors.apply(node.head);
-        if (children == null) {
-          return null;
-        }
-        node.successors = children.spliterator();
-      }
-      return visitNext(node.successors) ? visited : null;
     }
 
     private boolean visitNext(Spliterator<? extends T> spliterator) {
@@ -268,22 +255,6 @@ public final class Walker<T> {
         }
       }
       return false;
-    }
-  }
-
-  private static final class PostOrderNode<T> {
-    final T head;
-    Spliterator<? extends T> successors;
-
-    PostOrderNode(T head) {
-      this.head = head;
-    }
-
-    PostOrderNode(Spliterator<? extends T> initials) {
-      // special sentinel to be filtered.
-      // Because successors is non-null so we'll never call findSuccessors(head).
-      this.head = null;
-      this.successors = initials;
     }
   }
 
