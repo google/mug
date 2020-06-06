@@ -201,18 +201,22 @@ public final class Walker<T> {
 
     Stream<T> breadthFirst(Spliterator<? extends T> initials) {
       horizon.add(initials);
-      return whileNotEmpty(horizon).map(h -> removeFromTop(Deque::add)).filter(Objects::nonNull);
+      return topDown(Deque::add);
     }
 
     Stream<T> preOrder(Spliterator<? extends T> initials) {
       horizon.push(initials);
-      return whileNotEmpty(horizon).map(h -> removeFromTop(Deque::push)).filter(Objects::nonNull);
+      return topDown(Deque::push);
     }
 
     Stream<T> postOrder(Spliterator<? extends T> initials) {
       horizon.push(initials);
       Deque<T> post = new ArrayDeque<>();
       return whileNotEmpty(horizon).map(h -> removeFromBottom(post)).filter(Objects::nonNull);
+    }
+
+    private Stream<T> topDown(InsertionOrder order) {
+      return whileNotEmpty(horizon).map(h -> removeFromTop(order)).filter(Objects::nonNull);
     }
 
     private T removeFromTop(InsertionOrder traversalOrder) {
