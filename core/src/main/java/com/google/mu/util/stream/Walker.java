@@ -137,7 +137,7 @@ public final class Walker<T> {
    * traversal.
    */
   public final Stream<T> preOrderFrom(Stream<? extends T> initials) {
-    return new Traversal().preOrder(initials.spliterator());
+    return new Traversal().preOrder(initials);
   }
 
   /**
@@ -164,7 +164,7 @@ public final class Walker<T> {
    * depth.
    */
   public final Stream<T> postOrderFrom(Stream<? extends T> initials) {
-    return new Traversal().postOrder(initials.spliterator());
+    return new Traversal().postOrder(initials);
   }
 
   /**
@@ -187,7 +187,7 @@ public final class Walker<T> {
    * traversal.
    */
   public final Stream<T> breadthFirstFrom(Stream<? extends T> initials) {
-    return new Traversal().breadthFirst(initials.spliterator());
+    return new Traversal().breadthFirst(initials);
   }
 
   private final class Traversal implements Consumer<T> {
@@ -199,18 +199,18 @@ public final class Walker<T> {
       this.visited = requireNonNull(value);
     }
 
-    Stream<T> breadthFirst(Spliterator<? extends T> initials) {
-      horizon.add(initials);
+    Stream<T> breadthFirst(Stream<? extends T> initials) {
+      horizon.add(initials.spliterator());
       return topDown(Deque::add);
     }
 
-    Stream<T> preOrder(Spliterator<? extends T> initials) {
-      horizon.push(initials);
+    Stream<T> preOrder(Stream<? extends T> initials) {
+      horizon.push(initials.spliterator());
       return topDown(Deque::push);
     }
 
-    Stream<T> postOrder(Spliterator<? extends T> initials) {
-      horizon.push(initials);
+    Stream<T> postOrder(Stream<? extends T> initials) {
+      horizon.push(initials.spliterator());
       Deque<T> post = new ArrayDeque<>();
       return whileNotEmpty(horizon).map(h -> removeFromBottom(post)).filter(Objects::nonNull);
     }
