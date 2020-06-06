@@ -50,7 +50,7 @@ public class Walker<T> {
    * <p>The returned object is idempotent, stateless and immutable as long as {@code getChildren} is
    * idempotent, stateless and immutable.
    */
-  public static <T> Walker<T> forTree(
+  public static <T> Walker<T> newTreeWalker(
       Function<? super T, ? extends Stream<? extends T>> getChildren) {
     return new Walker<T>(getChildren);
   }
@@ -61,13 +61,23 @@ public class Walker<T> {
    *
    * <p>The returned object remembers which nodes have been traversed, thus if you call for example
    * {@link #preOrderFrom} again, already visited nodes will be skipped. This is useful if you need
-   * to imperatively and dynamically decide which node to traverse. If you'd rather re-traverse
-   * everything, recreate the {@code Traversal} object again.
+   * to imperatively and dynamically decide which node to traverse. For example, the SHIELD and
+   * Avengers may need to collaborately raid a building from multiple entry points:
+   *
+   * <pre>{@code
+   * Walker<Room> walker = Walker.newGraphWalker(buildingMap);
+   * Stream<Room> shield = walker.preOrderFrom(roof);
+   * Stream<Room> avengers = walker.breadthFirstFrom(mainEntrance);
+   * // Now the two teams collaborate while raiding, no room is traversed twice...
+   * }</pre>
+   *
+   * In the normal case though, you'd likely always want to start from the beginning, in which case,
+   * just recreate the {@code Walker} object.
    *
    * <p>Because the {@code Traversal} object keeps memory of traversal history, the memory usage is
    * linear to the number of traversed nodes.
    */
-  public static <T> Walker<T> forGraph(
+  public static <T> Walker<T> newGraphWalker(
       Function<? super T, ? extends Stream<? extends T>> findSuccessors) {
     Set<T> traversed = new HashSet<>();
     return new Walker<T>(findSuccessors) {

@@ -132,13 +132,13 @@ public class WalkerTest {
 
   @Test
   public void preOrder_graph_infiniteDepth() {
-    Walker<Integer> walker = Walker.forGraph(n -> Stream.of(n, n + 1, n + 2));
+    Walker<Integer> walker = Walker.newGraphWalker(n -> Stream.of(n, n + 1, n + 2));
     assertThat(walker.preOrderFrom(1).limit(4)).containsExactly(1, 2, 3, 4).inOrder();
   }
 
   @Test
   public void preOrder_tree_infiniteDepth() {
-    Walker<Integer> walker = Walker.forTree(n -> Stream.of(n, n + 1, n + 2));
+    Walker<Integer> walker = Walker.newTreeWalker(n -> Stream.of(n, n + 1, n + 2));
     assertThat(walker.preOrderFrom(1).limit(4)).containsExactly(1, 1, 1, 1).inOrder();
   }
 
@@ -201,7 +201,7 @@ public class WalkerTest {
   public void postOrder_graph_infiniteBreadth() {
     ImmutableMap<Integer, Stream<Integer>> infiniteBreadth =
         ImmutableMap.of(1, indexesFrom(2), 2, Stream.of(3, 4), 3, Stream.of(4, 5));
-    Walker<Integer> walker = Walker.forGraph(infiniteBreadth::get);
+    Walker<Integer> walker = Walker.newGraphWalker(infiniteBreadth::get);
     assertThat(walker.postOrderFrom(1).limit(6)).containsExactly(4, 5, 3, 2, 6, 7).inOrder();
   }
 
@@ -210,7 +210,7 @@ public class WalkerTest {
     ImmutableMap<Integer, Streamer<Integer>> infiniteBreadth =
         ImmutableMap.of(
             1, () -> indexesFrom(2), 2, asList(30, 40, 50)::stream, 30, asList(40, 50)::stream);
-    Walker<Integer> walker = Walker.forTree(n -> findSuccessors(infiniteBreadth, n).stream());
+    Walker<Integer> walker = Walker.newTreeWalker(n -> findSuccessors(infiniteBreadth, n).stream());
     assertThat(walker.postOrderFrom(1).limit(8))
         .containsExactly(40, 50, 30, 40, 50, 2, 3, 4)
         .inOrder();
@@ -275,25 +275,25 @@ public class WalkerTest {
 
   @Test
   public void breadthFirst_graph_infiniteDepth() {
-    Walker<Integer> walker = Walker.forGraph(n -> Stream.of(n + 1, n + 2));
+    Walker<Integer> walker = Walker.newGraphWalker(n -> Stream.of(n + 1, n + 2));
     assertThat(walker.breadthFirstFrom(1).limit(6)).containsExactly(1, 2, 3, 4, 5, 6).inOrder();
   }
 
   @Test
   public void breadthFirst_tree_infiniteDepth() {
-    Walker<Integer> walker = Walker.forTree(n -> Stream.of(n + 1, n + 2));
+    Walker<Integer> walker = Walker.newTreeWalker(n -> Stream.of(n + 1, n + 2));
     assertThat(walker.breadthFirstFrom(1).limit(6)).containsExactly(1, 2, 3, 3, 4, 4).inOrder();
   }
 
   @Test
   public void breadthFirst_graph_infiniteBreadth() {
-    Walker<Integer> walker = Walker.forGraph(MoreStreams::indexesFrom);
+    Walker<Integer> walker = Walker.newGraphWalker(MoreStreams::indexesFrom);
     assertThat(walker.breadthFirstFrom(1).limit(6)).containsExactly(1, 2, 3, 4, 5, 6).inOrder();
   }
 
   @Test
   public void breadthFirst_tree_infiniteBreadth() {
-    Walker<Integer> walker = Walker.forTree(MoreStreams::indexesFrom);
+    Walker<Integer> walker = Walker.newTreeWalker(MoreStreams::indexesFrom);
     assertThat(walker.breadthFirstFrom(1).limit(6)).containsExactly(1, 1, 2, 3, 4, 5).inOrder();
   }
 
@@ -325,7 +325,7 @@ public class WalkerTest {
 
       @Override
       <N> Walker<N> newWalker(Function<? super N, ? extends Stream<? extends N>> findSuccessors) {
-        return Walker.forGraph(findSuccessors);
+        return Walker.newGraphWalker(findSuccessors);
       }
     },
     TREE {
@@ -336,7 +336,7 @@ public class WalkerTest {
 
       @Override
       <N> Walker<N> newWalker(Function<? super N, ? extends Stream<? extends N>> findSuccessors) {
-        return Walker.forTree(findSuccessors);
+        return Walker.newTreeWalker(findSuccessors);
       }
     },
     ;
