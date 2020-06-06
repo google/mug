@@ -234,11 +234,11 @@ public final class Walker<T> {
       for (Spliterator<? extends T> peers = horizon.getFirst(); ; ) {
         if (visitNext(peers)) {
           T next = visited;
-          Stream<? extends T> children = findSuccessors.apply(next);
-          if (children == null) {
+          Stream<? extends T> successors = findSuccessors.apply(next);
+          if (successors == null) {
             return next;
           }
-          peers = children.spliterator();
+          peers = successors.spliterator();
           horizon.push(peers);
           postStack.push(next);
         } else {
