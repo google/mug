@@ -53,6 +53,9 @@ public final class Walker<T> {
    *
    * <p>The returned object is idempotent, stateless and immutable as long as {@code getChildren} is
    * idempotent, stateless and immutable.
+   *
+   * @param getChildren Function to get the child nodes for a given node.
+   *        No children if empty stream or null is returned,
    */
   public static <T> Walker<T> newTreeWalker(
       Function<? super T, ? extends Stream<? extends T>> getChildren) {
@@ -80,6 +83,9 @@ public final class Walker<T> {
    *
    * <p>Because the {@code Traversal} object keeps memory of traversal history, the memory usage is
    * linear to the number of traversed nodes.
+   *
+   * @param findSuccessors Function to get the successor nodes for a given node.
+   *        No successor if empty stream or null is returned,
    */
   public static <T> Walker<T> newGraphWalker(
       Function<? super T, ? extends Stream<? extends T>> findSuccessors) {
@@ -109,6 +115,11 @@ public final class Walker<T> {
    * Stream<Room> avengers = concurrentWalker.breadthFirstFrom(mainEntrance);
    * // iterate through rooms raided by Avengers.
    * }</pre>
+   *
+   * @param findSuccessors Function to get the successor nodes for a given node.
+   *        No successor if empty stream or null is returned,
+   * @param tracker Tracks each node being visited during traversal. Returns false if the node
+   *        should be skipped for traversal (for example because it has already been traversed).
    */
   public static <T> Walker<T> newWalker(
       Function<? super T, ? extends Stream<? extends T>> findSuccessors,
