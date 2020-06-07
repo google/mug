@@ -144,7 +144,7 @@ public final class Walker<T> {
    */
   @SafeVarargs
   public final Stream<T> preOrderFrom(T... initials) {
-    return preOrderFrom(nonNullList(initials));
+    return new Traversal().preOrder(nonNullList(initials));
   }
 
   /**
@@ -169,7 +169,7 @@ public final class Walker<T> {
    */
   @SafeVarargs
   public final Stream<T> postOrderFrom(T... initials) {
-    return postOrderFrom(nonNullList(initials));
+    return new Traversal().postOrder(nonNullList(initials));
   }
 
   /**
@@ -194,7 +194,7 @@ public final class Walker<T> {
    */
   @SafeVarargs
   public final Stream<T> breadthFirstFrom(T... initials) {
-    return breadthFirstFrom(nonNullList(initials));
+    return new Traversal().breadthFirst(nonNullList(initials));
   }
 
   /**
@@ -247,7 +247,6 @@ public final class Walker<T> {
           }
           return next;
         }
-        horizon.removeFirst();
       } while (!horizon.isEmpty());
       return null; // no more element
     }
@@ -262,7 +261,6 @@ public final class Walker<T> {
         horizon.push(successors.spliterator());
         postStack.push(next);
       }
-      horizon.pop();
       return postStack.pollFirst();
     }
 
@@ -273,6 +271,7 @@ public final class Walker<T> {
           return true;
         }
       }
+      horizon.removeFirst();
       return false;
     }
   }
