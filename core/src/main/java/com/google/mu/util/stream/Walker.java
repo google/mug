@@ -141,7 +141,7 @@ public final class Walker<T> {
    */
   @SafeVarargs
   public final Stream<T> preOrderFrom(T... initials) {
-    return preOrderFrom(nonNullList(initials));
+    return new Traversal().preOrder(nonNullList(initials));
   }
 
   /**
@@ -166,7 +166,7 @@ public final class Walker<T> {
    */
   @SafeVarargs
   public final Stream<T> postOrderFrom(T... initials) {
-    return postOrderFrom(nonNullList(initials));
+    return new Traversal().postOrder(nonNullList(initials));
   }
 
   /**
@@ -191,7 +191,7 @@ public final class Walker<T> {
    */
   @SafeVarargs
   public final Stream<T> breadthFirstFrom(T... initials) {
-    return breadthFirstFrom(nonNullList(initials));
+    return new Traversal().breadthFirst(nonNullList(initials));
   }
 
   /**
