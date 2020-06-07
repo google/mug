@@ -21,6 +21,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.Objects;
+import java.util.Queue;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -212,7 +213,7 @@ public final class Walker<T> {
 
     Stream<T> breadthFirst(Stream<? extends T> initials) {
       horizon.add(initials.spliterator());
-      return topDown(Deque::add);
+      return topDown(Queue::add);
     }
 
     Stream<T> preOrder(Stream<? extends T> initials) {
@@ -246,20 +247,17 @@ public final class Walker<T> {
     }
 
     private T removeFromBottom(Deque<T> postStack) {
-      for (; ; ) {
-        if (visitNext()) {
-          T next = visited;
-          Stream<? extends T> successors = findSuccessors.apply(next);
-          if (successors == null) {
-            return next;
-          }
-          horizon.push(successors.spliterator());
-          postStack.push(next);
-        } else {
-          horizon.pop();
-          return postStack.pollFirst();
+      while (visitNext()) {
+        T next = visited;
+        Stream<? extends T> successors = findSuccessors.apply(next);
+        if (successors == null) {
+          return next;
         }
+        horizon.push(successors.spliterator());
+        postStack.push(next);
       }
+      horizon.pop();
+      return postStack.pollFirst();
     }
 
     private boolean visitNext() {
