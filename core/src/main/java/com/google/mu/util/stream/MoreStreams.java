@@ -19,13 +19,11 @@ import static java.util.Objects.requireNonNull;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.Spliterator;
-import java.util.Spliterators;
+import java.util.Spliterators.AbstractSpliterator;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collector;
@@ -307,16 +305,13 @@ public final class MoreStreams {
   public static <C extends Collection<?>> Stream<C> whileNotEmpty(C collection) {
     requireNonNull(collection);
     return StreamSupport.stream(
-        Spliterators.spliteratorUnknownSize(
-        new Iterator<C>() {
-          @Override public boolean hasNext() {
-            return !collection.isEmpty();
+        new AbstractSpliterator<C>(Long.MAX_VALUE, Spliterator.NONNULL) {
+          @Override public boolean tryAdvance(Consumer<? super C> action) {
+            if (collection.isEmpty()) return false;
+            action.accept(collection);
+            return true;
           }
-          @Override public C next() {
-            if (collection.isEmpty()) throw new NoSuchElementException("Collection is empty.");
-            return collection;
-          }
-        }, Spliterator.NONNULL), false);
+        }, false);
   }
 
   /**
