@@ -127,6 +127,8 @@ public final class Walker<T> {
    *        No successor if empty stream or null is returned,
    * @param tracker Tracks each node being visited during traversal. Returns false if the node
    *        should be skipped for traversal (for example because it has already been traversed).
+   *        Despite being a {@link Predicate}, the tracker typically carries side-effects like
+   *        storing the tracked node in a set ({@code set::add} will do).
    */
   public static <T> Walker<T> newWalker(
       Function<? super T, ? extends Stream<? extends T>> findSuccessors,
@@ -135,7 +137,7 @@ public final class Walker<T> {
   }
 
   /**
-   * Starts from {@code initials} and traverse depth first in pre-order by using {@code
+   * Starts from {@code startNodes} and traverse depth first in pre-order by using {@code
    * findSuccessors} function iteratively.
    *
    * <p>The returned stream may be infinite if the graph has infinite depth or infinite breadth, or
@@ -143,23 +145,23 @@ public final class Walker<T> {
    * traversal.
    */
   @SafeVarargs
-  public final Stream<T> preOrderFrom(T... initials) {
-    return new Traversal().preOrder(nonNullList(initials));
+  public final Stream<T> preOrderFrom(T... startNodes) {
+    return new Traversal().preOrder(nonNullList(startNodes));
   }
 
   /**
-   * Starts from {@code initials} and traverse depth first in pre-order.
+   * Starts from {@code startNodes} and traverse depth first in pre-order.
    *
    * <p>The returned stream may be infinite if the graph has infinite depth or infinite breadth, or
    * both. The stream can still be short-circuited to consume a limited number of nodes during
    * traversal.
    */
-  public final Stream<T> preOrderFrom(Iterable<? extends T> initials) {
-    return new Traversal().preOrder(initials);
+  public final Stream<T> preOrderFrom(Iterable<? extends T> startNodes) {
+    return new Traversal().preOrder(startNodes);
   }
 
   /**
-   * Starts from {@code initials} and traverse depth first in post-order.
+   * Starts from {@code startNodes} and traverse depth first in post-order.
    *
    * <p>The returned stream may be infinite if the graph has infinite breadth. The stream can still
    * be short-circuited to consume a limited number of nodes during traversal.
@@ -168,12 +170,12 @@ public final class Walker<T> {
    * depth.
    */
   @SafeVarargs
-  public final Stream<T> postOrderFrom(T... initials) {
-    return new Traversal().postOrder(nonNullList(initials));
+  public final Stream<T> postOrderFrom(T... startNodes) {
+    return new Traversal().postOrder(nonNullList(startNodes));
   }
 
   /**
-   * Starts from {@code initials} and traverse depth first in post-order.
+   * Starts from {@code startNodes} and traverse depth first in post-order.
    *
    * <p>The returned stream may be infinite if the graph has infinite breadth. The stream can still
    * be short-circuited to consume a limited number of nodes during traversal.
@@ -181,31 +183,31 @@ public final class Walker<T> {
    * <p>The stream may result in infinite loop when it traversing through a node with infinite
    * depth.
    */
-  public final Stream<T> postOrderFrom(Iterable<? extends T> initials) {
-    return new Traversal().postOrder(initials);
+  public final Stream<T> postOrderFrom(Iterable<? extends T> startNodes) {
+    return new Traversal().postOrder(startNodes);
   }
 
   /**
-   * Starts from {@code initials} and traverse in breadth-first order.
+   * Starts from {@code startNodes} and traverse in breadth-first order.
    *
    * <p>The returned stream may be infinite if the graph has infinite depth or infinite breadth, or
    * both. The stream can still be short-circuited to consume a limited number of nodes during
    * traversal.
    */
   @SafeVarargs
-  public final Stream<T> breadthFirstFrom(T... initials) {
-    return new Traversal().breadthFirst(nonNullList(initials));
+  public final Stream<T> breadthFirstFrom(T... startNodes) {
+    return new Traversal().breadthFirst(nonNullList(startNodes));
   }
 
   /**
-   * Starts from {@code initials} and traverse in breadth-first order.
+   * Starts from {@code startNodes} and traverse in breadth-first order.
    *
    * <p>The returned stream may be infinite if the graph has infinite depth or infinite breadth, or
    * both. The stream can still be short-circuited to consume a limited number of nodes during
    * traversal.
    */
-  public final Stream<T> breadthFirstFrom(Iterable<? extends T> initials) {
-    return new Traversal().breadthFirst(initials);
+  public final Stream<T> breadthFirstFrom(Iterable<? extends T> startNodes) {
+    return new Traversal().breadthFirst(startNodes);
   }
 
   private final class Traversal implements Consumer<T> {
@@ -217,20 +219,20 @@ public final class Walker<T> {
       this.visited = requireNonNull(value);
     }
 
-    Stream<T> breadthFirst(Iterable<? extends T> initials) {
-      horizon.add(initials.spliterator());
+    Stream<T> breadthFirst(Iterable<? extends T> startNodes) {
+      horizon.add(startNodes.spliterator());
       return topDown(Queue::add);
     }
 
-    Stream<T> preOrder(Iterable<? extends T> initials) {
-      horizon.push(initials.spliterator());
+    Stream<T> preOrder(Iterable<? extends T> startNodes) {
+      horizon.push(startNodes.spliterator());
       return topDown(Deque::push);
     }
 
-    Stream<T> postOrder(Iterable<? extends T> initials) {
-      horizon.push(initials.spliterator());
-      Deque<T> post = new ArrayDeque<>();
-      return whileNotEmpty(horizon).map(h -> removeFromBottom(post)).filter(Objects::nonNull);
+    Stream<T> postOrder(Iterable<? extends T> startNodes) {
+      horizon.push(startNodes.spliterator());
+      Deque<T> roots = new ArrayDeque<>();
+      return whileNotEmpty(horizon).map(h -> removeFromBottom(roots)).filter(Objects::nonNull);
     }
 
     private Stream<T> topDown(InsertionOrder order) {
@@ -251,7 +253,7 @@ public final class Walker<T> {
       return null; // no more element
     }
 
-    private T removeFromBottom(Deque<T> postStack) {
+    private T removeFromBottom(Deque<T> roots) {
       while (visitNext()) {
         T next = visited;
         Stream<? extends T> successors = findSuccessors.apply(next);
@@ -259,9 +261,9 @@ public final class Walker<T> {
           return next;
         }
         horizon.push(successors.spliterator());
-        postStack.push(next);
+        roots.push(next);
       }
-      return postStack.pollFirst();
+      return roots.pollFirst();
     }
 
     private boolean visitNext() {
