@@ -120,6 +120,12 @@ public final class Walker<T> {
    * // iterate through rooms raided by Avengers.
    * }</pre>
    *
+   * <p>In the case of walking a very large graph with more nodes than can fit in memory, it's
+   * conceivable to use {@link com.google.common.hash.BloomFilter#put Bloom filter} to track visited
+   * nodes, as long as you are okay with probabilistically missing a fraction of the graph nodes due
+   * to Bloom filter's inherent false-positive rates. Because Bloom filters have zero
+   * false-negatives, it's guaranteed that the walker will never walk in cycles.
+   *
    * @param findSuccessors Function to get the successor nodes for a given node.
    *        No successor if empty stream or null is returned,
    * @param tracker Tracks each node being visited during traversal. Returns false if the node
