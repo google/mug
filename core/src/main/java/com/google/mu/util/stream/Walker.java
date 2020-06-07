@@ -53,17 +53,17 @@ public final class Walker<T> {
 
   /**
    * Returns a {@code Traversal} object assuming tree structure (no cycles), using {@code
-   * getChildren} to find children of any given tree node.
+   * findChildren} to find children of any given tree node.
    *
-   * <p>The returned object is idempotent, stateless and immutable as long as {@code getChildren} is
+   * <p>The returned object is idempotent, stateless and immutable as long as {@code findChildren} is
    * idempotent, stateless and immutable.
    *
-   * @param getChildren Function to get the child nodes for a given node.
+   * @param findChildren Function to get the child nodes for a given node.
    *        No children if empty stream or null is returned,
    */
   public static <T> Walker<T> newTreeWalker(
-      Function<? super T, ? extends Stream<? extends T>> getChildren) {
-    return newWalker(getChildren, n -> true);
+      Function<? super T, ? extends Stream<? extends T>> findChildren) {
+    return newWalker(findChildren, n -> true);
   }
 
   /**
