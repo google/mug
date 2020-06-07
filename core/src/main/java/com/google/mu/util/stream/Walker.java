@@ -82,7 +82,10 @@ public final class Walker<T> {
    * Walker<Room> walker = Walker.newGraphWalker(buildingMap);
    * Stream<Room> shield = walker.preOrderFrom(roof);
    * Stream<Room> avengers = walker.breadthFirstFrom(mainEntrance);
+   *
    * // Now the two teams collaborate while raiding, no room is traversed twice...
+   * BiStream.zip(shield, avengers)
+   *     .forEachOrdered((raidedByShield, raidedByAvengers) -> ...);
    * }</pre>
    *
    * In the normal case though, you'd likely always want to start clean, in which case,
@@ -143,7 +146,7 @@ public final class Walker<T> {
   }
 
   /**
-   * Starts from {@code startNodes} and traverse depth first in pre-order by using {@code
+   * Starts from {@code startNodes} and walks depth first in pre-order by using {@code
    * findSuccessors} function iteratively.
    *
    * <p>The returned stream may be infinite if the graph has infinite depth or infinite breadth, or
@@ -156,7 +159,7 @@ public final class Walker<T> {
   }
 
   /**
-   * Starts from {@code startNodes} and traverse depth first in pre-order.
+   * Starts from {@code startNodes} and walks depth first in pre-order.
    *
    * <p>The returned stream may be infinite if the graph has infinite depth or infinite breadth, or
    * both. The stream can still be short-circuited to consume a limited number of nodes during
@@ -167,7 +170,7 @@ public final class Walker<T> {
   }
 
   /**
-   * Starts from {@code startNodes} and traverse depth first in post-order.
+   * Starts from {@code startNodes} and walks depth first in post-order.
    *
    * <p>The returned stream may be infinite if the graph has infinite breadth. The stream can still
    * be short-circuited to consume a limited number of nodes during traversal.
@@ -181,7 +184,7 @@ public final class Walker<T> {
   }
 
   /**
-   * Starts from {@code startNodes} and traverse depth first in post-order.
+   * Starts from {@code startNodes} and walks depth first in post-order.
    *
    * <p>The returned stream may be infinite if the graph has infinite breadth. The stream can still
    * be short-circuited to consume a limited number of nodes during traversal.
@@ -194,7 +197,7 @@ public final class Walker<T> {
   }
 
   /**
-   * Starts from {@code startNodes} and traverse in breadth-first order.
+   * Starts from {@code startNodes} and walks in breadth-first order.
    *
    * <p>The returned stream may be infinite if the graph has infinite depth or infinite breadth, or
    * both. The stream can still be short-circuited to consume a limited number of nodes during
@@ -206,7 +209,7 @@ public final class Walker<T> {
   }
 
   /**
-   * Starts from {@code startNodes} and traverse in breadth-first order.
+   * Starts from {@code startNodes} and walks in breadth-first order.
    *
    * <p>The returned stream may be infinite if the graph has infinite depth or infinite breadth, or
    * both. The stream can still be short-circuited to consume a limited number of nodes during
