@@ -244,7 +244,6 @@ public final class Walker<T> {
           }
           return next;
         }
-        horizon.removeFirst();
       } while (!horizon.isEmpty());
       return null; // no more element
     }
@@ -259,7 +258,6 @@ public final class Walker<T> {
         horizon.push(successors.spliterator());
         postStack.push(next);
       }
-      horizon.pop();
       return postStack.pollFirst();
     }
 
@@ -270,6 +268,7 @@ public final class Walker<T> {
           return true;
         }
       }
+      horizon.removeFirst();
       return false;
     }
   }
