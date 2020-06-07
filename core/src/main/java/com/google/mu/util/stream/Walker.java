@@ -16,10 +16,13 @@ package com.google.mu.util.stream;
 
 import static com.google.mu.util.stream.MoreStreams.whileNotEmpty;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Spliterator;
@@ -138,7 +141,7 @@ public final class Walker<T> {
    */
   @SafeVarargs
   public final Stream<T> preOrderFrom(T... initials) {
-    return preOrderFrom(nonNullStream(initials));
+    return preOrderFrom(nonNullList(initials));
   }
 
   /**
@@ -148,7 +151,7 @@ public final class Walker<T> {
    * both. The stream can still be short-circuited to consume a limited number of nodes during
    * traversal.
    */
-  public final Stream<T> preOrderFrom(Stream<? extends T> initials) {
+  public final Stream<T> preOrderFrom(Iterable<? extends T> initials) {
     return new Traversal().preOrder(initials);
   }
 
@@ -163,7 +166,7 @@ public final class Walker<T> {
    */
   @SafeVarargs
   public final Stream<T> postOrderFrom(T... initials) {
-    return postOrderFrom(nonNullStream(initials));
+    return postOrderFrom(nonNullList(initials));
   }
 
   /**
@@ -175,7 +178,7 @@ public final class Walker<T> {
    * <p>The stream may result in infinite loop when it traversing through a node with infinite
    * depth.
    */
-  public final Stream<T> postOrderFrom(Stream<? extends T> initials) {
+  public final Stream<T> postOrderFrom(Iterable<? extends T> initials) {
     return new Traversal().postOrder(initials);
   }
 
@@ -188,7 +191,7 @@ public final class Walker<T> {
    */
   @SafeVarargs
   public final Stream<T> breadthFirstFrom(T... initials) {
-    return breadthFirstFrom(nonNullStream(initials));
+    return breadthFirstFrom(nonNullList(initials));
   }
 
   /**
@@ -198,7 +201,7 @@ public final class Walker<T> {
    * both. The stream can still be short-circuited to consume a limited number of nodes during
    * traversal.
    */
-  public final Stream<T> breadthFirstFrom(Stream<? extends T> initials) {
+  public final Stream<T> breadthFirstFrom(Iterable<? extends T> initials) {
     return new Traversal().breadthFirst(initials);
   }
 
@@ -211,17 +214,17 @@ public final class Walker<T> {
       this.visited = requireNonNull(value);
     }
 
-    Stream<T> breadthFirst(Stream<? extends T> initials) {
+    Stream<T> breadthFirst(Iterable<? extends T> initials) {
       horizon.add(initials.spliterator());
       return topDown(Queue::add);
     }
 
-    Stream<T> preOrder(Stream<? extends T> initials) {
+    Stream<T> preOrder(Iterable<? extends T> initials) {
       horizon.push(initials.spliterator());
       return topDown(Deque::push);
     }
 
-    Stream<T> postOrder(Stream<? extends T> initials) {
+    Stream<T> postOrder(Iterable<? extends T> initials) {
       horizon.push(initials.spliterator());
       Deque<T> post = new ArrayDeque<>();
       return whileNotEmpty(horizon).map(h -> removeFromBottom(post)).filter(Objects::nonNull);
@@ -272,12 +275,8 @@ public final class Walker<T> {
   }
 
   @SafeVarargs
-  private static <T> Stream<T> nonNullStream(T... values) {
-    Stream.Builder<T> builder = Stream.builder();
-    for (T value : values) {
-      builder.add(requireNonNull(value));
-    }
-    return builder.build();
+  private static <T> List<T> nonNullList(T... values) {
+    return Arrays.stream(values).peek(Objects::requireNonNull).collect(toList());
   }
 
   private interface InsertionOrder {
