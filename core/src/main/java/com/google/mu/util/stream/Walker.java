@@ -232,7 +232,7 @@ public final class Walker<T> {
 
     private T removeFromTop(InsertionOrder traversalOrder) {
       do {
-        if (visitNext(horizon.getFirst())) {
+        if (visitNext()) {
           T next = visited;
           Stream<? extends T> successors = findSuccessors.apply(next);
           if (successors != null) {
@@ -246,15 +246,14 @@ public final class Walker<T> {
     }
 
     private T removeFromBottom(Deque<T> postStack) {
-      for (Spliterator<? extends T> peers = horizon.getFirst(); ; ) {
-        if (visitNext(peers)) {
+      for (; ; ) {
+        if (visitNext()) {
           T next = visited;
           Stream<? extends T> successors = findSuccessors.apply(next);
           if (successors == null) {
             return next;
           }
-          peers = successors.spliterator();
-          horizon.push(peers);
+          horizon.push(successors.spliterator());
           postStack.push(next);
         } else {
           horizon.pop();
@@ -263,8 +262,9 @@ public final class Walker<T> {
       }
     }
 
-    private boolean visitNext(Spliterator<? extends T> spliterator) {
-      while (spliterator.tryAdvance(this)) {
+    private boolean visitNext() {
+      Spliterator<? extends T> top = horizon.getFirst();
+      while (top.tryAdvance(this)) {
         if (tracker.test(visited)) {
           return true;
         }
