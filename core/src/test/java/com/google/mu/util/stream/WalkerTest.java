@@ -44,6 +44,12 @@ public class WalkerTest {
   }
 
   @Test
+  public void preOrder_emptyStartNodes() {
+    Walker<String> walker = dataType.newWalker(ImmutableListMultimap.of("foo", "bar"));
+    assertThat(walker.preOrderFrom(ImmutableList.of())).isEmpty();
+  }
+
+  @Test
   public void preOrder_oneEdge() {
     Walker<String> walker = dataType.newWalker(ImmutableListMultimap.of("foo", "bar"));
     assertThat(walker.preOrderFrom("foo")).containsExactly("foo", "bar").inOrder();
@@ -148,6 +154,12 @@ public class WalkerTest {
   }
 
   @Test
+  public void postOrder_emptyStartNodes() {
+    Walker<String> walker = dataType.newWalker(ImmutableListMultimap.of("foo", "bar"));
+    assertThat(walker.postOrderFrom(ImmutableList.of())).isEmpty();
+  }
+
+  @Test
   public void postOrder_oneEdge() {
     Walker<String> walker = dataType.newWalker(ImmutableListMultimap.of("foo", "bar"));
     assertThat(walker.postOrderFrom("foo")).containsExactly("bar", "foo").inOrder();
@@ -219,6 +231,12 @@ public class WalkerTest {
   @Test
   public void breadthFirst_noChildren() {
     assertThat(dataType.newWalker().breadthFirstFrom("foo")).containsExactly("foo");
+  }
+
+  @Test
+  public void breadthFirst_emptyStartNodes() {
+    Walker<String> walker = dataType.newWalker(ImmutableListMultimap.of("foo", "bar"));
+    assertThat(walker.breadthFirstFrom(ImmutableList.of())).isEmpty();
   }
 
   @Test
