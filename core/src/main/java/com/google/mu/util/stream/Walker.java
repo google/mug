@@ -226,8 +226,8 @@ public final class Walker<T> {
 
     Stream<T> postOrder(Iterable<? extends T> initials) {
       horizon.push(initials.spliterator());
-      Deque<T> post = new ArrayDeque<>();
-      return whileNotEmpty(horizon).map(h -> removeFromBottom(post)).filter(Objects::nonNull);
+      Deque<T> roots = new ArrayDeque<>();
+      return whileNotEmpty(horizon).map(h -> removeFromBottom(roots)).filter(Objects::nonNull);
     }
 
     private Stream<T> topDown(InsertionOrder order) {
@@ -248,7 +248,7 @@ public final class Walker<T> {
       return null; // no more element
     }
 
-    private T removeFromBottom(Deque<T> postStack) {
+    private T removeFromBottom(Deque<T> roots) {
       while (visitNext()) {
         T next = visited;
         Stream<? extends T> successors = findSuccessors.apply(next);
@@ -256,9 +256,9 @@ public final class Walker<T> {
           return next;
         }
         horizon.push(successors.spliterator());
-        postStack.push(next);
+        roots.push(next);
       }
-      return postStack.pollFirst();
+      return roots.pollFirst();
     }
 
     private boolean visitNext() {
