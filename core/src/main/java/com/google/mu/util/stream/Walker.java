@@ -58,6 +58,9 @@ public final class Walker<T> {
    * <p>The returned object is idempotent, stateless and immutable as long as {@code findChildren} is
    * idempotent, stateless and immutable.
    *
+   * <p>WARNING: the returned {@code Walker} can generate infinite cycles if {@code getChildren}
+   * behaves like a graph with cycles (for example any undirected graph).
+   *
    * @param findChildren Function to get the child nodes for a given node.
    *        No children if empty stream or null is returned,
    */
