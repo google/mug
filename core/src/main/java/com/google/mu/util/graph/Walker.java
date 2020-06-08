@@ -14,7 +14,7 @@
  *****************************************************************************/
 package com.google.mu.util.graph;
 
-import static com.google.mu.util.graph.ShortestPath.shortestCyclesFrom;
+import static com.google.mu.util.graph.ShortestPath.unweightedShortestCyclesFrom;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static com.google.mu.util.stream.MoreStreams.whileNotEmpty;
 import static java.util.Objects.requireNonNull;
@@ -230,16 +230,12 @@ public final class Walker<T> {
         .filter(Object::equals)  // when the hare runs past tortoise, we have a cycle.
         .keys()
         .findFirst()
-        .map(cyclic -> shortestCyclesFrom(cyclic, n -> asUnweighted(findSuccessors.apply(n))))
+        .map(cyclic -> unweightedShortestCyclesFrom(cyclic, findSuccessors))
         .orElse(Stream.empty())  // cycles or empty.
         .findFirst()
         .map(ShortestPath::stream)
         .map(BiStream::keys)
         .orElse(Stream.empty());  // first cycle's stream of nodes, or empty.
-  }
-
-  private static <T> BiStream<T, Double> asUnweighted(Stream<? extends T> successors) {
-    return successors == null ? null : BiStream.from(successors, Function.identity(), n -> 1D);
   }
 
   private static final class Traversal<T> implements Consumer<T> {

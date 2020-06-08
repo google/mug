@@ -140,7 +140,7 @@ public class ShortestPathTest {
   @Test public void unnweighted_oneNode() {
     graph.addNode("root");
     List<ShortestPath<String>> paths =
-        unweightedShortestPathsFrom("root", n -> graph.adjacentNodes(n).stream()).collect(toList());
+        unweightedShortestPathsFrom("root", n -> graph.successors(n).stream()).collect(toList());
     assertThat(paths).hasSize(1);
     assertThat(paths.get(0).distance()).isEqualTo(0D);
     assertThat(paths.get(0).stream().toMap()).isEqualTo(ImmutableMap.of("root", 0D));
@@ -149,7 +149,7 @@ public class ShortestPathTest {
   @Test public void unweighted_twoNodes() {
     graph.putEdge("foo", "bar");
     List<ShortestPath<String>> paths =
-        unweightedShortestPathsFrom("foo", n -> graph.adjacentNodes(n).stream()).collect(toList());
+        unweightedShortestPathsFrom("foo", n -> graph.successors(n).stream()).collect(toList());
     assertThat(paths).hasSize(2);
     assertThat(paths.get(0).distance()).isEqualTo(0D);
     assertThat(paths.get(0).stream().toMap()).isEqualTo(ImmutableMap.of("foo", 0D));
@@ -161,7 +161,7 @@ public class ShortestPathTest {
     graph.putEdge("foo", "bar");
     graph.putEdge("bar", "baz");
     List<ShortestPath<String>> paths =
-        unweightedShortestPathsFrom("foo", n -> graph.adjacentNodes(n).stream()).collect(toList());
+        unweightedShortestPathsFrom("foo", n -> graph.successors(n).stream()).collect(toList());
     assertThat(paths).hasSize(3);
     assertThat(paths.get(0).distance()).isEqualTo(0D);
     assertThat(paths.get(0).stream().toMap()).isEqualTo(ImmutableMap.of("foo", 0D));
@@ -177,7 +177,7 @@ public class ShortestPathTest {
     graph.putEdge("bar", "baz");
     graph.putEdge("baz", "foo");
     List<ShortestPath<String>> paths =
-        unweightedShortestPathsFrom("foo", n -> graph.adjacentNodes(n).stream()).collect(toList());
+        unweightedShortestPathsFrom("foo", n -> graph.successors(n).stream()).collect(toList());
     assertThat(paths).hasSize(3);
     assertThat(paths.get(0).distance()).isEqualTo(0D);
     assertThat(paths.get(0).stream().toMap()).isEqualTo(ImmutableMap.of("foo", 0D));
@@ -192,7 +192,7 @@ public class ShortestPathTest {
   }
 
   private BiStream<String, Double> neighbors(String node) {
-    return biStream(graph.adjacentNodes(node)).mapValues(a -> edgeDistance(node, a));
+    return biStream(graph.successors(node)).mapValues(a -> edgeDistance(node, a));
   }
 
   private void addEdge(String from, String to, double distance) {
