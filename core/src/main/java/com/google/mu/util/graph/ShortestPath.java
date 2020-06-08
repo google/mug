@@ -147,7 +147,7 @@ public final class ShortestPath<N> {
    * in the unweighted graph structure as observed by {@code findSuccessors}.
    *
    * <p>These paths are in ascending order of cycle length. For example, if the graph has two
-   * distinct cycles: {@code A -> B -> A -> B -> ...} and {@code A -> B -> C -> A -> B ->  ...},
+   * distinct cycles: {@code A -> B -> A -> B ->...} and {@code A -> B -> C -> A -> B -> ...},
    * the returned stream will have two paths: {@code A -> B -> A} and {@code A -> B -> C -> A}.
    *
    * <p>If no cycle is found, {@link Stream#empty()} is returned.
