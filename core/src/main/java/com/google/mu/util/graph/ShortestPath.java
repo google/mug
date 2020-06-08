@@ -112,28 +112,6 @@ public final class ShortestPath<N> {
   }
 
   /**
-   * Returns a lazy stream of cyclic paths starting and ending at {@code startNode},
-   * in the graph structure as observed by {@code findSuccessors}.
-   *
-   * <p>These paths are in ascending order of cycle length.
-   *
-   * <p>If no cycle is found, {@link Stream#empty()} is returned.
-   *
-   * @param startNode the node that these cycles must start and end at.
-   * @param findSuccessors The function to find successors of each graph node.
-   *        This function is expected to be deterministic and idempotent.
-   */
-  public static <N> Stream<ShortestPath<N>> shortestCyclesFrom(
-      N startNode,
-      Function<? super N, ? extends BiStream<? extends N, Double>> findSuccessors) {
-    return shortestPathsFrom(startNode, findSuccessors)
-        .map(path -> findClosestOrNull(findSuccessors.apply(path.to()), startNode)
-            .map(d -> path.extendTo(startNode, d))
-            .orElse(null))
-        .filter(Objects::nonNull);
-  }
-
-  /**
    * Returns a lazy stream of unweighted shortest paths starting from {@code startNode}.
    *
    * <p>The {@code findSuccessors} function is called on-the-fly to find the direct neighbors
