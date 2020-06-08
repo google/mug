@@ -39,8 +39,7 @@ import java.util.stream.Stream;
 import com.google.mu.util.stream.BiStream;
 
 /**
- * The Dijkstra shortest path algorithm implemented as a lazy, incrementally-computed stream,
- * using Mug utilities.
+ * The Dijkstra shortest path algorithm implemented as a lazy, incrementally-computed stream.
  *
  * <p>Compared to traditional imperative implementations, this incremental algorithm supports more
  * flexible use cases that'd otherwise require either full traversal of the graph (which can be
