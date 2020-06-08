@@ -39,8 +39,7 @@ import java.util.stream.Stream;
 import com.google.mu.util.stream.BiStream;
 
 /**
- * The Dijkstra shortest path algorithm implemented as a lazy, incrementally-computed stream,
- * using Mug utilities.
+ * The Dijkstra shortest path algorithm implemented as a lazy, incrementally-computed stream.
  *
  * <p>Compared to traditional imperative implementations, this incremental algorithm supports more
  * flexible use cases that'd otherwise require either full traversal of the graph (which can be
@@ -206,7 +205,7 @@ public final class ShortestPath<N> {
     return stream().keys().map(Object::toString).collect(joining("->"));
   }
 
-  ShortestPath<N> extendTo(N nextNode, double d) {
+  private ShortestPath<N> extendTo(N nextNode, double d) {
     return new ShortestPath<>(nextNode, this, distance + d);
   }
 
@@ -220,12 +219,6 @@ public final class ShortestPath<N> {
     return stream == null
         ? Optional.empty()
         : stream.filter(key::equals).sorted().findFirst().map(identity());
-  }
-
-  private static <K, V> Optional<V> findClosestOrNull(BiStream<? extends K, V> stream, K key) {
-    return stream == null
-        ? Optional.empty()
-        : stream.filterKeys(key::equals).values().sorted().findFirst();
   }
 
   private static <K, V> void forEachPairOrNull(
