@@ -74,7 +74,7 @@ public final class ShortestPath<N> {
   /**
    * Returns a lazy stream of shortest paths starting from {@code startNode}.
    *
-   * <p>The {@code findSuccessors} function is called on-the-fly to find the direct neighbors
+   * <p>The {@code findSuccessors} function is called on-the-fly to find the successors
    * of the current node. This function is expected to return a {@code BiStream} with these direct
    * neighbor nodes and their distances from the passed-in current node, respectively.
    *
@@ -113,14 +113,14 @@ public final class ShortestPath<N> {
   /**
    * Returns a lazy stream of unweighted shortest paths starting from {@code startNode}.
    *
-   * <p>The {@code findSuccessors} function is called on-the-fly to find the direct neighbors
-   * of the current node.
+   * <p>The {@code findSuccessors} function is called on-the-fly to find the successors of the
+   * current node.
    *
    * <p>{@code startNode} will correspond to the first element in the returned stream, with
-   * {@link ShortestPath#distance} equal to {@code 0}, followed by its adjacent nodes, etc.
+   * {@link ShortestPath#distance} equal to {@code 0}, followed by its successor nodes, etc.
    *
    * <p>In the returned stream of {@code ShortestPath} objects, {@link #distance} will be in terms
-   * of number of nodes, with the adjacent nodes of the starting node returning 1.
+   * of number of nodes, with the successor nodes of the starting node returning 1.
    *
    * @param <N> The node type. Must implement {@link Object#equals} and {@link Object#hashCode}.
    */
@@ -182,9 +182,9 @@ public final class ShortestPath<N> {
   }
 
   /**
-   * Returns the non-negative distance between the starting node and the {@link #to last node} of this path.
-   * Zero for the first path in the stream returned by {@link ShortestPath#shortestPathsFrom},
-   * in which case {@link #to} will return the starting node.
+   * Returns the non-negative distance between the starting node and the {@link #to last node} of
+   * this path. Zero for the first path in the stream returned by {@link
+   * ShortestPath#shortestPathsFrom}, in which case {@link #to} will return the starting node.
    */
   public double distance() {
     return distance;
