@@ -45,10 +45,10 @@ import com.google.mu.util.stream.BiStream;
  *
  * @since 3.9
  */
-public final class Walker<T> {
-  private final Supplier<Traversal<T>> newTraversal;
+public final class Walker<N> {
+  private final Supplier<Traversal<N>> newTraversal;
 
-  Walker(Supplier<Traversal<T>> newTraversal) {
+  Walker(Supplier<Traversal<N>> newTraversal) {
     this.newTraversal = newTraversal;
   }
 
@@ -65,8 +65,8 @@ public final class Walker<T> {
    * @param findChildren Function to get the child nodes for a given node.
    *        No children if empty stream or null is returned,
    */
-  public static <T> Walker<T> inTree(
-      Function<? super T, ? extends Stream<? extends T>> findChildren) {
+  public static <N> Walker<N> inTree(
+      Function<? super N, ? extends Stream<? extends N>> findChildren) {
     return inGraph(findChildren, n -> true);
   }
 
@@ -80,8 +80,8 @@ public final class Walker<T> {
    * @param findSuccessors Function to get the successor nodes for a given node.
    *        No successor if empty stream or null is returned,
    */
-  public static <T> Walker<T> inGraph(
-      Function<? super T, ? extends Stream<? extends T>> findSuccessors) {
+  public static <N> Walker<N> inGraph(
+      Function<? super N, ? extends Stream<? extends N>> findSuccessors) {
     requireNonNull(findSuccessors);
     return new Walker<>(() -> new Traversal<>(findSuccessors, new HashSet<>()::add));
   }
@@ -123,9 +123,9 @@ public final class Walker<T> {
    *        Despite being a {@link Predicate}, the tracker typically carries side-effects like
    *        storing the tracked node in a set ({@code set::add} will do).
    */
-  public static <T> Walker<T> inGraph(
-      Function<? super T, ? extends Stream<? extends T>> findSuccessors,
-      Predicate<? super T> tracker) {
+  public static <N> Walker<N> inGraph(
+      Function<? super N, ? extends Stream<? extends N>> findSuccessors,
+      Predicate<? super N> tracker) {
     requireNonNull(findSuccessors);
     requireNonNull(tracker);
     return new Walker<>(() -> new Traversal<>(findSuccessors, tracker));
@@ -140,7 +140,7 @@ public final class Walker<T> {
    * traversal.
    */
   @SafeVarargs
-  public final Stream<T> preOrderFrom(T... startNodes) {
+  public final Stream<N> preOrderFrom(N... startNodes) {
     return newTraversal.get().preOrder(nonNullList(startNodes));
   }
 
@@ -151,7 +151,7 @@ public final class Walker<T> {
    * both. The stream can still be short-circuited to consume a limited number of nodes during
    * traversal.
    */
-  public final Stream<T> preOrderFrom(Iterable<? extends T> startNodes) {
+  public final Stream<N> preOrderFrom(Iterable<? extends N> startNodes) {
     return newTraversal.get().preOrder(startNodes);
   }
 
@@ -165,7 +165,7 @@ public final class Walker<T> {
    * depth.
    */
   @SafeVarargs
-  public final Stream<T> postOrderFrom(T... startNodes) {
+  public final Stream<N> postOrderFrom(N... startNodes) {
     return newTraversal.get().postOrder(nonNullList(startNodes));
   }
 
@@ -178,7 +178,7 @@ public final class Walker<T> {
    * <p>The stream may result in infinite loop when it traversing through a node with infinite
    * depth.
    */
-  public final Stream<T> postOrderFrom(Iterable<? extends T> startNodes) {
+  public final Stream<N> postOrderFrom(Iterable<? extends N> startNodes) {
     return newTraversal.get().postOrder(startNodes);
   }
 
@@ -190,7 +190,7 @@ public final class Walker<T> {
    * traversal.
    */
   @SafeVarargs
-  public final Stream<T> breadthFirstFrom(T... startNodes) {
+  public final Stream<N> breadthFirstFrom(N... startNodes) {
     return newTraversal.get().breadthFirst(nonNullList(startNodes));
   }
 
@@ -201,7 +201,7 @@ public final class Walker<T> {
    * both. The stream can still be short-circuited to consume a limited number of nodes during
    * traversal.
    */
-  public final Stream<T> breadthFirstFrom(Iterable<? extends T> startNodes) {
+  public final Stream<N> breadthFirstFrom(Iterable<? extends N> startNodes) {
     return newTraversal.get().breadthFirst(startNodes);
   }
 
@@ -219,11 +219,11 @@ public final class Walker<T> {
    * @return a stream of a detected cycle starting and ending at the same node, if there is any;
    *         or else {@link Stream#empty}.
    */
-  public static <T> Stream<T> detectCycleInGraph(
-      Function<? super T, ? extends Stream<? extends T>> findSuccessors, T startNode) {
-    Walker<T> walker = inTree(findSuccessors);
-    Stream<T> slower = walker.preOrderFrom(startNode);
-    Stream<T> faster = BiStream.zip(indexesFrom(0), walker.preOrderFrom(startNode))
+  public static <N> Stream<N> detectCycleInGraph(
+      Function<? super N, ? extends Stream<? extends N>> findSuccessors, N startNode) {
+    Walker<N> walker = inTree(findSuccessors);
+    Stream<N> slower = walker.preOrderFrom(startNode);
+    Stream<N> faster = BiStream.zip(indexesFrom(0), walker.preOrderFrom(startNode))
         .filterKeys(i -> i % 2 == 1)
         .values();
     return BiStream.zip(slower, faster)
@@ -238,49 +238,49 @@ public final class Walker<T> {
         .orElse(Stream.empty());  // first cycle's stream of nodes, or empty.
   }
 
-  private static final class Traversal<T> implements Consumer<T> {
-    private final Function<? super T, ? extends Stream<? extends T>> findSuccessors;
-    private final Predicate<? super T> tracker;
-    private final Deque<Spliterator<? extends T>> horizon = new ArrayDeque<>();
-    private T visited;
+  private static final class Traversal<N> implements Consumer<N> {
+    private final Function<? super N, ? extends Stream<? extends N>> findSuccessors;
+    private final Predicate<? super N> tracker;
+    private final Deque<Spliterator<? extends N>> horizon = new ArrayDeque<>();
+    private N visited;
 
     Traversal(
-        Function<? super T, ? extends Stream<? extends T>> findSuccessors,
-        Predicate<? super T> tracker) {
+        Function<? super N, ? extends Stream<? extends N>> findSuccessors,
+        Predicate<? super N> tracker) {
       this.findSuccessors = findSuccessors;
       this.tracker = tracker;
     }
 
     @Override
-    public void accept(T value) {
+    public void accept(N value) {
       this.visited = requireNonNull(value);
     }
 
-    Stream<T> breadthFirst(Iterable<? extends T> startNodes) {
+    Stream<N> breadthFirst(Iterable<? extends N> startNodes) {
       horizon.add(startNodes.spliterator());
       return topDown(Queue::add);
     }
 
-    Stream<T> preOrder(Iterable<? extends T> startNodes) {
+    Stream<N> preOrder(Iterable<? extends N> startNodes) {
       horizon.push(startNodes.spliterator());
       return topDown(Deque::push);
     }
 
-    Stream<T> postOrder(Iterable<? extends T> startNodes) {
+    Stream<N> postOrder(Iterable<? extends N> startNodes) {
       horizon.push(startNodes.spliterator());
-      Deque<T> roots = new ArrayDeque<>();
+      Deque<N> roots = new ArrayDeque<>();
       return whileNotEmpty(horizon).map(h -> removeFromBottom(roots)).filter(Objects::nonNull);
     }
 
-    private Stream<T> topDown(InsertionOrder order) {
+    private Stream<N> topDown(InsertionOrder order) {
       return whileNotEmpty(horizon).map(h -> removeFromTop(order)).filter(Objects::nonNull);
     }
 
-    private T removeFromTop(InsertionOrder traversalOrder) {
+    private N removeFromTop(InsertionOrder traversalOrder) {
       do {
         if (visitNext()) {
-          T next = visited;
-          Stream<? extends T> successors = findSuccessors.apply(next);
+          N next = visited;
+          Stream<? extends N> successors = findSuccessors.apply(next);
           if (successors != null) {
             traversalOrder.insertInto(horizon, successors.spliterator());
           }
@@ -290,10 +290,10 @@ public final class Walker<T> {
       return null; // no more element
     }
 
-    private T removeFromBottom(Deque<T> roots) {
+    private N removeFromBottom(Deque<N> roots) {
       while (visitNext()) {
-        T next = visited;
-        Stream<? extends T> successors = findSuccessors.apply(next);
+        N next = visited;
+        Stream<? extends N> successors = findSuccessors.apply(next);
         if (successors == null) {
           return next;
         }
@@ -304,7 +304,7 @@ public final class Walker<T> {
     }
 
     private boolean visitNext() {
-      Spliterator<? extends T> top = horizon.getFirst();
+      Spliterator<? extends N> top = horizon.getFirst();
       while (top.tryAdvance(this)) {
         if (tracker.test(visited)) {
           return true;
@@ -316,11 +316,11 @@ public final class Walker<T> {
   }
 
   @SafeVarargs
-  private static <T> List<T> nonNullList(T... values) {
+  private static <N> List<N> nonNullList(N... values) {
     return Arrays.stream(values).peek(Objects::requireNonNull).collect(toList());
   }
 
   private interface InsertionOrder {
-    <T> void insertInto(Deque<T> deque, T value);
+    <N> void insertInto(Deque<N> deque, N value);
   }
 }
