@@ -206,7 +206,7 @@ public final class ShortestPath<N> {
     return stream().keys().map(Object::toString).collect(joining("->"));
   }
 
-  ShortestPath<N> extendTo(N nextNode, double d) {
+  private ShortestPath<N> extendTo(N nextNode, double d) {
     return new ShortestPath<>(nextNode, this, distance + d);
   }
 
