@@ -323,6 +323,12 @@ public class WalkerTest {
   }
 
   @Test
+  public void detectCycle_trivialCycle() {
+    assertThat(Walker.detectCycle("root", Stream::of).get().limit(3))
+        .containsExactly("root", "root", "root");
+  }
+
+  @Test
   public void detectCycle_oneUndirectedEdge() {
     Stream<String> cycle =
         detectCycle(toUndirectedGraph(ImmutableListMultimap.of("foo", "bar")), "foo").get();
@@ -408,10 +414,6 @@ public class WalkerTest {
     MutableGraph<N> graph = GraphBuilder.directed().<N>build();
     BiStream.from(edges.asMap()).flatMapValues(Collection::stream).forEach(graph::putEdge);
     return graph;
-  }
-
-  private static <N> Graph<N> toUndirectedGraph(Map<N, ? extends Collection<? extends N>> edges) {
-    return toUndirectedGraph(toMultimap(edges));
   }
 
   private static <N> Graph<N> toDirectedGraph(Map<N, ? extends Collection<? extends N>> edges) {
