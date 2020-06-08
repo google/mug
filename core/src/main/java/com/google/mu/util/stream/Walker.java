@@ -72,24 +72,7 @@ public final class Walker<T> {
    * Returns a {@code Walker} to walk the graph structure (possibly with cycles) as observed by
    * the {@code findSuccessors} function, which finds successors of any given graph node.
    *
-<<<<<<< HEAD
-   * <pre>{@code
-   * Walker<Room> walker = Walker.newGraphWalker(buildingMap);
-   * Stream<Room> shield = walker.preOrderFrom(roof);
-   * Stream<Room> avengers = walker.breadthFirstFrom(mainEntrance);
-   *
-   * // Now the two teams collaborate while raiding, no room is traversed twice...
-   * BiStream.zip(shield, avengers)
-   *     .forEachOrdered((raidedByShield, raidedByAvengers) -> ...);
-   * }</pre>
-   *
-   * In the normal case though, you'd likely always want to start clean, in which case,
-   * just recreate the {@code Walker} object.
-   *
-   * <p>Because the {@code Traversal} object keeps memory of traversal history, the memory usage is
-=======
    * <p>Because the traversal needs to remember which node(s) have been traversed, memory usage is
->>>>>>> master
    * linear to the number of traversed nodes.
    *
    * @param findSuccessors Function to get the successor nodes for a given node.
