@@ -222,12 +222,6 @@ public final class ShortestPath<N> {
         : stream.filter(key::equals).sorted().findFirst().map(identity());
   }
 
-  private static <K, V> Optional<V> findClosestOrNull(BiStream<? extends K, V> stream, K key) {
-    return stream == null
-        ? Optional.empty()
-        : stream.filterKeys(key::equals).values().sorted().findFirst();
-  }
-
   private static <K, V> void forEachPairOrNull(
       BiStream<? extends K, ? extends V> stream, BiConsumer<? super K, ? super V> consumer) {
     if (stream != null) stream.forEachOrdered(consumer);
