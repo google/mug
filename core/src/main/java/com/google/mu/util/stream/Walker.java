@@ -61,8 +61,10 @@ public final class Walker<T> {
    * numbers for instance).
    *
    * @param startNode the node to start walking the graph.
-   * @param findSuccessors The function used to find successors of any given node. This function
-   *        is expected to be idempotent or else the returned cycle will be incorrect.
+   * @param findSuccessors The function to find successors of any given node. This function is
+   *        expected to be deterministic and idempotent or else the returned stream may not
+   *        correctly represent the cycle (though you can still use the returned {@code Optional}
+   *        as a boolean signal for whether any cycle exists).
    * @return an infinite stream of the nodes forming a detected cycle if there is any, or else
    *         {@link Optional#empty}.
    */
