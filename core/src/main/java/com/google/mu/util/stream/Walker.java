@@ -60,7 +60,7 @@ public final class Walker<T> {
    * <p>This method will hang if the given graph is infinite without cycle (the sequence of natural
    * numbers for instance).
    *
-   * @oaram startNode the node to start walking the graph
+   * @param startNode the node to start walking the graph.
    * @param findSuccessors The function used to find successors of any given node. This function
    *        is expected to be idempotent or else the returned cycle will be incorrect.
    * @return an infinite stream of the nodes forming a detected cycle if there is any, or else
