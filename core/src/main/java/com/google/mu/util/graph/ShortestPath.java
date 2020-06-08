@@ -126,7 +126,7 @@ public final class ShortestPath<N> {
       N startNode,
       Function<? super N, ? extends BiStream<? extends N, Double>> findSuccessors) {
     return shortestPathsFrom(startNode, findSuccessors)
-        .map(path -> findFirst(findSuccessors.apply(path.to()), startNode)
+        .map(path -> findFirstOrNull(findSuccessors.apply(path.to()), startNode)
             .map(d -> path.extendTo(startNode, d))
             .orElse(null))
         .filter(Objects::nonNull);
@@ -210,7 +210,7 @@ public final class ShortestPath<N> {
     }
   }
 
-  private static <K, V> Optional<V> findFirst(BiStream<? extends K, V> stream, K key) {
+  private static <K, V> Optional<V> findFirstOrNull(BiStream<? extends K, V> stream, K key) {
     return stream == null
         ? Optional.empty()
         : stream.filterKeys(key::equals).values().findFirst();
