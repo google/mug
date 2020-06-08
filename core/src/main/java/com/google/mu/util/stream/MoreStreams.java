@@ -291,7 +291,7 @@ public final class MoreStreams {
    * }</pre>
    *
    * In addition, the algorithm becomes lazy and incrementally computed. See
-   * <a href="https://github.com/google/mug/blob/master/algorithms/src/main/java/com/google/mu/util/algo/graph/ShortestPath.java">
+   * <a href="https://github.com/google/mug/blob/master/core/src/main/java/com/google/mu/util/graph/ShortestPath.java">
    * shortestPathsFrom()</a> utility for an example how {@code whileNotEmpty()} can be used to build
    * reusable, incremental Dijkstra shortest-path algorithm.
    *

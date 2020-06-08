@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.util.stream;
+package com.google.mu.util.graph;
 
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
@@ -20,7 +20,6 @@ import static java.util.Arrays.asList;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -35,6 +34,8 @@ import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
 import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.NullPointerTester;
+import com.google.mu.util.stream.BiStream;
+import com.google.mu.util.stream.MoreStreams;
 
 public class WalkerTest {
   // TODO: figure out parameterized test like @ParameterizedTestRunner
@@ -324,15 +325,15 @@ public class WalkerTest {
 
   @Test
   public void detectCycle_trivialCycle() {
-    assertThat(Walker.detectCycleInGraph(Stream::of, "root").get().limit(3))
-        .containsExactly("root", "root", "root");
+    assertThat(Walker.detectCycleInGraph(Stream::of, "root"))
+        .containsExactly("root", "root");
   }
 
   @Test
   public void detectCycle_oneUndirectedEdge() {
     Stream<String> cycle =
-        detectCycle(toUndirectedGraph(ImmutableListMultimap.of("foo", "bar")), "foo").get();
-    assertThat(cycle.limit(4)).containsExactly("foo", "bar", "foo", "bar");
+        detectCycle(toUndirectedGraph(ImmutableListMultimap.of("foo", "bar")), "foo");
+    assertThat(cycle).containsAllOf("foo", "bar");
   }
 
   @Test
@@ -352,16 +353,16 @@ public class WalkerTest {
   public void detectCycle_threeDirectedEdges_withCycle() {
     Graph<String> graph =
         toDirectedGraph(ImmutableListMultimap.of("foo", "bar", "bar", "baz", "baz", "foo"));
-    Stream<String> cycle = detectCycle(graph, "foo").get();
-    assertThat(cycle.limit(6)).containsExactly("foo", "bar", "baz", "foo", "bar", "baz");
+    Stream<String> cycle = detectCycle(graph, "foo");
+    assertThat(cycle).containsAllOf("foo", "bar", "baz");
   }
 
   @Test
   public void detectCycle_innerDirectedEdges_withCycle() {
     Graph<String> graph = toDirectedGraph(
         ImmutableListMultimap.of("foo", "bar", "bar", "baz", "baz", "zoo", "zoo", "bar"));
-    Stream<String> cycle = detectCycle(graph, "foo").get();
-    assertThat(cycle.limit(3)).containsExactly("bar", "baz", "zoo");
+    Stream<String> cycle = detectCycle(graph, "foo");
+    assertThat(cycle).containsAllOf("bar", "baz", "zoo");
   }
 
   @Test
@@ -379,8 +380,8 @@ public class WalkerTest {
         "baz", asList("zoo"),
         "tea", asList("zoo"),
         "zoo", asList("foo")));
-    Stream<String> cycle = detectCycle(graph, "bar").get();
-    assertThat(cycle.limit(4)).containsAllOf("foo", "bar", "zoo");
+    Stream<String> cycle = detectCycle(graph, "bar");
+    assertThat(cycle).containsAllOf("foo", "bar", "zoo");
   }
 
   @Test
@@ -400,7 +401,7 @@ public class WalkerTest {
     return edges.getOrDefault(node, noSuccessors);
   }
 
-  private static <N> Optional<Stream<N>> detectCycle(Graph<N> graph, N startNode) {
+  private static <N> Stream<N> detectCycle(Graph<N> graph, N startNode) {
     return Walker.detectCycleInGraph((N n) -> graph.successors(n).stream(), startNode);
   }
 
