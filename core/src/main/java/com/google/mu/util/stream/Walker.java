@@ -54,8 +54,8 @@ public final class Walker<T> {
   }
 
   /**
-   * Detects whether the graph structure as exhibited by {@code findSuccessors} function has
-   * cycles by starting from {@code startNode}.
+   * Detects whether the graph structure as observed by the {@code findSuccessors} function has
+   * cycles, by walking from {@code startNode}.
    *
    * <p>This method will hang if the given graph is infinite without cycle (the sequence of natural
    * numbers for instance).
