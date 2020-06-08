@@ -230,9 +230,7 @@ public final class Walker<N> {
         .filter(Object::equals)  // when the hare runs past tortoise, we have a cycle.
         .keys()
         .findFirst()
-        .map(cyclic -> unweightedShortestCyclesFrom(cyclic, findSuccessors))
-        .orElse(Stream.empty())  // cycles or empty.
-        .findFirst()
+        .flatMap(cyclic -> unweightedShortestCyclesFrom(cyclic, findSuccessors).findFirst())
         .map(ShortestPath::stream)
         .map(BiStream::keys)
         .orElse(Stream.empty());  // first cycle's stream of nodes, or empty.
