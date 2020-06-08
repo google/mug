@@ -12,8 +12,9 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.util.stream;
+package com.google.mu.util.graph;
 
+import static com.google.mu.util.graph.ShortestPath.shortestCyclesFrom;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static com.google.mu.util.stream.MoreStreams.whileNotEmpty;
 import static java.util.Objects.requireNonNull;
@@ -25,7 +26,6 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Queue;
 import java.util.Spliterator;
 import java.util.function.Consumer;
@@ -33,6 +33,8 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+
+import com.google.mu.util.stream.BiStream;
 
 /**
  * Implements generic graph and tree traversal algorithms ({@link #preOrderFrom pre-order},
@@ -214,10 +216,10 @@ public final class Walker<T> {
    *        expected to be deterministic and idempotent.
    * @param startNode the node to start walking the graph.
    *
-   * @return an infinite stream of the nodes forming a detected cycle if there is any, or else
-   *         {@link Optional#empty}.
+   * @return a stream of a detected cycle starting and ending at the same node, if there is any;
+   *         or else {@link Stream#empty}.
    */
-  public static <T> Optional<Stream<T>> detectCycleInGraph(
+  public static <T> Stream<T> detectCycleInGraph(
       Function<? super T, ? extends Stream<? extends T>> findSuccessors, T startNode) {
     Walker<T> walker = inTree(findSuccessors);
     Stream<T> slower = walker.preOrderFrom(startNode);
@@ -228,7 +230,16 @@ public final class Walker<T> {
         .filter(Object::equals)
         .keys()
         .findFirst()
-        .map(walker::preOrderFrom);
+        .map(cyclic -> shortestCyclesFrom(cyclic, n -> asUnweighted(findSuccessors.apply(n))))
+        .orElse(Stream.empty())
+        .findFirst()
+        .map(ShortestPath::stream)
+        .map(BiStream::keys)
+        .orElse(Stream.empty());
+  }
+
+  private static <T> BiStream<T, Double> asUnweighted(Stream<? extends T> successors) {
+    return successors == null ? null : BiStream.from(successors, Function.identity(), n -> 1D);
   }
 
   private static final class Traversal<T> implements Consumer<T> {

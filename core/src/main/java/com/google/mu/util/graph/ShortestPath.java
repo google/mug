@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.util.algo.graph;
+package com.google.mu.util.graph;
 
 import static com.google.mu.util.stream.MoreStreams.generate;
 import static com.google.mu.util.stream.MoreStreams.whileNotEmpty;
@@ -28,8 +28,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -62,7 +64,7 @@ import com.google.mu.util.stream.BiStream;
  * <p>The streams returned by this class are <strong>not safe</strong> to run in parallel.
  *
  * @param <N> the type of graph nodes
- * @since 3.8
+ * @since 3.9
  */
 public final class ShortestPath<N> {
   private final N node;
@@ -70,32 +72,32 @@ public final class ShortestPath<N> {
   private final double distance;
 
   /**
-   * Returns a lazy stream of shortest paths starting from {@code startingNode}.
+   * Returns a lazy stream of shortest paths starting from {@code startNode}.
    *
    * <p>The {@code findAdjacentNodes} function is called on-the-fly to find the direct neighbors
    * of the current node. This function is expected to return a {@code BiStream} with these direct
    * neighbor nodes and their distances from the passed-in current node, respectively.
    *
-   * <p>{@code startingNode} will correspond to the first element in the returned stream, with
+   * <p>{@code startNode} will correspond to the first element in the returned stream, with
    * {@link ShortestPath#distance} equal to {@code 0}, followed by the next closest node, etc.
    *
    * @param <N> The node type. Must implement {@link Object#equals} and {@link Object#hashCode}.
    */
   public static <N> Stream<ShortestPath<N>> shortestPathsFrom(
-      N startingNode,
-      Function<? super N, ? extends BiStream<? extends N, Double>> findAdjacentNodes) {
-    requireNonNull(startingNode);
-    requireNonNull(findAdjacentNodes);
+      N startNode,
+      Function<? super N, ? extends BiStream<? extends N, Double>> findSuccessors) {
+    requireNonNull(startNode);
+    requireNonNull(findSuccessors);
     PriorityQueue<ShortestPath<N>> queue = new PriorityQueue<>(comparingDouble(ShortestPath::distance));
-    queue.add(new ShortestPath<>(startingNode));
+    queue.add(new ShortestPath<>(startNode));
     Map<N, ShortestPath<N>> seen = new HashMap<>();
     Set<N> done = new HashSet<>();
     return whileNotEmpty(queue)
         .map(PriorityQueue::remove)
         .filter(path -> done.add(path.to()))
-        .peek(path ->
-            findAdjacentNodes.apply(path.to())
-                .forEachOrdered((neighbor, distance) -> {
+        .peek(path -> forEachPairOrNull(
+                findSuccessors.apply(path.to()),
+                (neighbor, distance) -> {
                   requireNonNull(neighbor);
                   checkNotNegative(distance, "distance");
                   if (done.contains(neighbor)) return;
@@ -109,12 +111,34 @@ public final class ShortestPath<N> {
   }
 
   /**
-   * Returns a lazy stream of unweighted shortest paths starting from {@code startingNode}.
+   * Returns a lazy stream of cyclic paths starting and ending at {@code startNode},
+   * in the graph structure as observed by {@code findSuccessors}.
+   *
+   * <p>These paths are in ascending order of cycle length.
+   *
+   * <p>If no cycle is found, {@link Stream#empty()} is returned.
+   *
+   * @param startNode the node that these cycles must start and end at.
+   * @param findSuccessors The function to find successors of each graph node.
+   *        This function is expected to be deterministic and idempotent.
+   */
+  public static <N> Stream<ShortestPath<N>> shortestCyclesFrom(
+      N startNode,
+      Function<? super N, ? extends BiStream<? extends N, Double>> findSuccessors) {
+    return shortestPathsFrom(startNode, findSuccessors)
+        .map(path -> findFirst(findSuccessors.apply(path.to()), startNode)
+            .map(d -> path.extendTo(startNode, d))
+            .orElse(null))
+        .filter(Objects::nonNull);
+  }
+
+  /**
+   * Returns a lazy stream of unweighted shortest paths starting from {@code startNode}.
    *
    * <p>The {@code findAdjacentNodes} function is called on-the-fly to find the direct neighbors
    * of the current node.
    *
-   * <p>{@code startingNode} will correspond to the first element in the returned stream, with
+   * <p>{@code startNode} will correspond to the first element in the returned stream, with
    * {@link ShortestPath#distance} equal to {@code 0}, followed by its adjacent nodes, etc.
    *
    * <p>In the returned stream of {@code ShortestPath} objects, {@link #distance} will be in terms
@@ -123,12 +147,12 @@ public final class ShortestPath<N> {
    * @param <N> The node type. Must implement {@link Object#equals} and {@link Object#hashCode}.
    */
   public static <N> Stream<ShortestPath<N>> unweightedShortestPathsFrom(
-      N startingNode, Function<? super N, ? extends Stream<? extends N>> findAdjacentNodes) {
-    requireNonNull(startingNode);
+      N startNode, Function<? super N, ? extends Stream<? extends N>> findAdjacentNodes) {
+    requireNonNull(startNode);
     requireNonNull(findAdjacentNodes);
-    Set<N> seen = new HashSet<>(asList(startingNode));
+    Set<N> seen = new HashSet<>(asList(startNode));
     return generate(
-        new ShortestPath<>(startingNode),
+        new ShortestPath<>(startNode),
         path -> findAdjacentNodes.apply(path.to())
             .peek(Objects::requireNonNull)
             .filter(seen::add)
@@ -176,7 +200,7 @@ public final class ShortestPath<N> {
     return stream().keys().map(Object::toString).collect(joining("->"));
   }
 
-  private ShortestPath<N> extendTo(N nextNode, double d) {
+  ShortestPath<N> extendTo(N nextNode, double d) {
     return new ShortestPath<>(nextNode, this, distance + d);
   }
 
@@ -184,5 +208,16 @@ public final class ShortestPath<N> {
     if (value < 0) {
       throw new IllegalArgumentException(name + " cannot be negative: " + value);
     }
+  }
+
+  private static <K, V> Optional<V> findFirst(BiStream<? extends K, V> stream, K key) {
+    return stream == null
+        ? Optional.empty()
+        : stream.filterKeys(key::equals).values().findFirst();
+  }
+
+  private static <K, V> void forEachPairOrNull(
+      BiStream<? extends K, ? extends V> stream, BiConsumer<? super K, ? super V> consumer) {
+    if (stream != null) stream.forEachOrdered(consumer);
   }
 }

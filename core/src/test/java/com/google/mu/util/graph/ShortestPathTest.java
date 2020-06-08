@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.util.algo.graph;
+package com.google.mu.util.graph;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.mu.util.algo.graph.ShortestPath.shortestPathsFrom;
-import static com.google.mu.util.algo.graph.ShortestPath.unweightedShortestPathsFrom;
+import static com.google.mu.util.graph.ShortestPath.shortestPathsFrom;
+import static com.google.mu.util.graph.ShortestPath.unweightedShortestPathsFrom;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -33,7 +33,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
 import com.google.common.testing.NullPointerTester;
-import com.google.mu.util.algo.graph.ShortestPath;
 import com.google.mu.util.stream.BiStream;
 
 @RunWith(JUnit4.class)
@@ -191,21 +190,21 @@ public class ShortestPathTest {
   @Test public void testNulls() throws Exception {
     new NullPointerTester().testAllPublicStaticMethods(ShortestPath.class);
   }
-  
+
   private BiStream<String, Double> neighbors(String node) {
     return biStream(graph.adjacentNodes(node)).mapValues(a -> edgeDistance(node, a));
   }
-  
+
   private void addEdge(String from, String to, double distance) {
     graph.putEdge(from, to);
     assertThat(distances.put(edge(from, to), distance)).isNull();
     assertThat(distances.put(edge(to, from), distance)).isNull();
   }
-  
+
   private double edgeDistance(String from, String to) {
     return distances.get(edge(from, to));
   }
-  
+
   private static String edge(String from, String to) {
     return from + " -> " + to;
   }
