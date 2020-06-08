@@ -20,6 +20,7 @@ import static java.util.Arrays.asList;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -29,6 +30,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
+import com.google.common.graph.Graph;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
 import com.google.common.testing.ClassSanityTester;
@@ -316,6 +318,66 @@ public class WalkerTest {
   }
 
   @Test
+  public void detectCycle_noChildren() {
+    assertThat(Walker.detectCycle("root", n -> null)).isEmpty();
+  }
+
+  @Test
+  public void detectCycle_oneUndirectedEdge() {
+    Stream<String> cycle =
+        detectCycle(toUndirectedGraph(ImmutableListMultimap.of("foo", "bar")), "foo").get();
+    assertThat(cycle.limit(4)).containsExactly("foo", "bar", "foo", "bar");
+  }
+
+  @Test
+  public void detectCycle_oneDirectedEdge() {
+    assertThat(detectCycle(toDirectedGraph(ImmutableListMultimap.of("foo", "bar")), "foo"))
+        .isEmpty();
+  }
+
+  @Test
+  public void detectCycle_twoDirectedEdges_noCycle() {
+    assertThat(detectCycle(toDirectedGraph(
+            ImmutableListMultimap.of("foo", "bar", "bar", "baz")), "foo"))
+        .isEmpty();
+  }
+
+  @Test
+  public void detectCycle_threeDirectedEdges_withCycle() {
+    Graph<String> graph =
+        toDirectedGraph(ImmutableListMultimap.of("foo", "bar", "bar", "baz", "baz", "foo"));
+    Stream<String> cycle = detectCycle(graph, "foo").get();
+    assertThat(cycle.limit(6)).containsExactly("foo", "bar", "baz", "foo", "bar", "baz");
+  }
+
+  @Test
+  public void detectCycle_innerDirectedEdges_withCycle() {
+    Graph<String> graph = toDirectedGraph(
+        ImmutableListMultimap.of("foo", "bar", "bar", "baz", "baz", "zoo", "zoo", "bar"));
+    Stream<String> cycle = detectCycle(graph, "foo").get();
+    assertThat(cycle.limit(3)).containsExactly("bar", "baz", "zoo");
+  }
+
+  @Test
+  public void detectCycle_dag_noCycle() {
+    Graph<String> graph = toDirectedGraph(ImmutableListMultimap.of(
+        "foo", "bar", "bar", "baz", "baz", "zoo", "bar", "tea", "tea", "zoo"));
+    assertThat(detectCycle(graph, "foo")).isEmpty();
+  }
+
+  @Test
+  public void detectCycle_diamondCycle() {
+    Graph<String> graph = toDirectedGraph(ImmutableMap.of(
+        "foo", asList("bar"),
+        "bar", asList("baz", "tea"),
+        "baz", asList("zoo"),
+        "tea", asList("zoo"),
+        "zoo", asList("foo")));
+    Stream<String> cycle = detectCycle(graph, "bar").get();
+    assertThat(cycle.limit(4)).containsAllOf("foo", "bar", "zoo");
+  }
+
+  @Test
   public void staticMethods_nullCheck() throws Exception {
     new NullPointerTester().testAllPublicStaticMethods(Walker.class);
     new ClassSanityTester().forAllPublicStaticMethods(Walker.class).testNulls();
@@ -332,12 +394,42 @@ public class WalkerTest {
     return edges.getOrDefault(node, noSuccessors);
   }
 
+  private static <N> Optional<Stream<N>> detectCycle(Graph<N> graph, N startNode) {
+    return Walker.detectCycle(startNode, (N n) -> graph.successors(n).stream());
+  }
+
+  private static <N> Graph<N> toUndirectedGraph(Multimap<N, N> edges) {
+    MutableGraph<N> graph = GraphBuilder.undirected().<N>build();
+    BiStream.from(edges.asMap()).flatMapValues(Collection::stream).forEach(graph::putEdge);
+    return graph;
+  }
+
+  private static <N> Graph<N> toDirectedGraph(Multimap<N, N> edges) {
+    MutableGraph<N> graph = GraphBuilder.directed().<N>build();
+    BiStream.from(edges.asMap()).flatMapValues(Collection::stream).forEach(graph::putEdge);
+    return graph;
+  }
+
+  private static <N> Graph<N> toUndirectedGraph(Map<N, ? extends Collection<? extends N>> edges) {
+    return toUndirectedGraph(toMultimap(edges));
+  }
+
+  private static <N> Graph<N> toDirectedGraph(Map<N, ? extends Collection<? extends N>> edges) {
+    return toDirectedGraph(toMultimap(edges));
+  }
+
+  private static <N> ImmutableListMultimap<N, N> toMultimap(
+      Map<N, ? extends Collection<? extends N>> map) {
+    return BiStream.from(map)
+            .flatMapValues(Collection::stream)
+            .collect(ImmutableListMultimap::toImmutableListMultimap);
+  }
+
   private enum DataType {
     GRAPH {
       @Override
       <N> Walker<N> newWalker(Multimap<N, N> edges) {
-        MutableGraph<N> graph = GraphBuilder.undirected().<N>build();
-        BiStream.from(edges.asMap()).flatMapValues(Collection::stream).forEach(graph::putEdge);
+        Graph<N> graph = toUndirectedGraph(edges);
         return newWalker((N n) -> graph.adjacentNodes(n).stream().sorted());
       }
 
@@ -362,11 +454,7 @@ public class WalkerTest {
     abstract <N> Walker<N> newWalker(Multimap<N, N> edges);
 
     final <N> Walker<N> newWalker(Map<N, ? extends Collection<? extends N>> edges) {
-      Multimap<N, N> multimap =
-          BiStream.from(edges)
-              .flatMapValues(Collection::stream)
-              .collect(ImmutableListMultimap::toImmutableListMultimap);
-      return newWalker(multimap);
+      return newWalker(toMultimap(edges));
     }
 
     abstract <N> Walker<N> newWalker(

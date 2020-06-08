@@ -14,6 +14,7 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
+import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static com.google.mu.util.stream.MoreStreams.whileNotEmpty;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
@@ -24,6 +25,7 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.Spliterator;
 import java.util.function.Consumer;
@@ -49,6 +51,33 @@ public final class Walker<T> {
       Predicate<? super T> tracker) {
     this.findSuccessors = requireNonNull(findSuccessors);
     this.tracker = requireNonNull(tracker);
+  }
+
+  /**
+   * Detects whether the graph structure as exhibited by {@code findSuccessors} function has
+   * cycles by starting from {@code startNode}.
+   *
+   * <p>This method will hang if the given graph is infinite without cycle (the sequence of natural
+   * numbers for instance).
+   *
+   * @oaram startNode the node to start walking the graph
+   * @param findSuccessors The function used to find successors of any given node. This function
+   *        is expected to be idempotent or else the returned cycle will be incorrect.
+   * @return an infinite stream of the nodes forming a detected cycle if there is any, or else
+   *         {@link Optional#empty}.
+   */
+  public static <T> Optional<Stream<T>> detectCycle(
+      T startNode, Function<? super T, ? extends Stream<? extends T>> findSuccessors) {
+    Walker<T> walker = newTreeWalker(findSuccessors);
+    Stream<T> slower = walker.preOrderFrom(startNode);
+    Stream<T> faster = BiStream.zip(indexesFrom(0), walker.preOrderFrom(startNode))
+        .filterKeys(i -> i % 2 == 1)
+        .values();
+    return BiStream.zip(slower, faster)
+        .filter(Object::equals)
+        .keys()
+        .findFirst()
+        .map(walker::preOrderFrom);
   }
 
   /**
@@ -131,6 +160,10 @@ public final class Walker<T> {
    * nodes, as long as you are okay with probabilistically missing a fraction of the graph nodes due
    * to Bloom filter's inherent false-positive rates. Because Bloom filters have zero
    * false-negatives, it's guaranteed that the walker will never walk in cycles.
+   *
+   * <p>Alternatively, instead of returning false, one can also throw an exception in the tracker
+   * for any already-traversed node, as a means to check that a data structure is a tree as opposed
+   * to a graph.
    *
    * @param findSuccessors Function to get the successor nodes for a given node.
    *        No successor if empty stream or null is returned,
