@@ -238,7 +238,8 @@ public final class Walker<T> {
     private T visited;
 
     Traversal(
-        Function<? super T, ? extends Stream<? extends T>> findSuccessors, Predicate<? super T> tracker) {
+        Function<? super T, ? extends Stream<? extends T>> findSuccessors,
+        Predicate<? super T> tracker) {
       this.findSuccessors = findSuccessors;
       this.tracker = tracker;
     }
