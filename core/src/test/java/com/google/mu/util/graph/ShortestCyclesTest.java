@@ -17,7 +17,8 @@ import com.google.mu.util.stream.BiStream;
 
 @RunWith(JUnit4.class)
 public class ShortestCyclesTest {
-  private final MutableGraph<String> graph = GraphBuilder.directed().<String>build();
+  private final MutableGraph<String> graph =
+      GraphBuilder.directed().allowsSelfLoops(true).<String>build();
 
   @Test public void unnweighted_oneNode() {
     graph.addNode("root");
@@ -45,6 +46,19 @@ public class ShortestCyclesTest {
     assertThat(unweightedShortestCyclesFrom(
             "foo", n -> graph.successors(n).stream()).map(Object::toString))
         .containsExactly("foo->bar->baz->foo");
+  }
+
+  @Test public void unweighted_multipleCycles() {
+    graph.putEdge("foo", "foo");
+    graph.putEdge("foo", "bar");
+    graph.putEdge("bar", "baz");
+    graph.putEdge("baz", "foo");
+    graph.putEdge("baz", "zoo");
+    graph.putEdge("zoo", "foo");
+    assertThat(unweightedShortestCyclesFrom(
+            "foo", n -> graph.successors(n).stream()).map(Object::toString))
+        .containsExactly("foo->foo", "foo->bar->baz->foo", "foo->bar->baz->zoo->foo")
+        .inOrder();
   }
 
   static<K,V> MultimapSubject assertKeyValues(BiStream<K, V> stream) {
