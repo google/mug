@@ -19,7 +19,6 @@ import static com.google.mu.util.stream.MoreStreams.whileNotEmpty;
 import static java.util.Arrays.asList;
 import static java.util.Comparator.comparingDouble;
 import static java.util.Objects.requireNonNull;
-import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.joining;
 
 import java.util.ArrayList;
@@ -29,7 +28,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -95,7 +93,8 @@ public final class ShortestPath<N> {
     return whileNotEmpty(queue)
         .map(PriorityQueue::remove)
         .filter(path -> done.add(path.to()))
-        .peek(path -> forEachPairOrNull(
+        .peek(path ->
+            forEachPairOrNull(
                 findSuccessors.apply(path.to()),
                 (neighbor, distance) -> {
                   requireNonNull(neighbor);
@@ -131,15 +130,11 @@ public final class ShortestPath<N> {
     Set<N> seen = new HashSet<>(asList(startNode));
     return generate(
         new ShortestPath<>(startNode),
-        path -> {
-          Stream<? extends N> successors = findSuccessors.apply(path.to());
-          return successors == null
-              ? null
-              : successors
-                  .peek(Objects::requireNonNull)
-                  .filter(seen::add)
-                  .map(n -> path.extendTo(n, 1));
-        });
+        path ->
+            nullSafe(findSuccessors.apply(path.to()))
+                .peek(Objects::requireNonNull)
+                .filter(seen::add)
+                .map(n -> path.extendTo(n, 1)));
   }
 
   /**
@@ -160,8 +155,10 @@ public final class ShortestPath<N> {
       N startNode,
       Function<? super N, ? extends Stream<? extends N>> findSuccessors) {
     return unweightedShortestPathsFrom(startNode, findSuccessors)
-        .map(path -> findFirstOrNull(findSuccessors.apply(path.to()), startNode)
+        .<ShortestPath<N>>map(path -> nullSafe(findSuccessors.apply(path.to()))
+            .filter(startNode::equals)
             .map(d -> path.extendTo(startNode, 1))
+            .findFirst()
             .orElse(null))
         .filter(Objects::nonNull);
   }
@@ -217,10 +214,8 @@ public final class ShortestPath<N> {
     }
   }
 
-  private static <T> Optional<T> findFirstOrNull(Stream<? extends T> stream, T key) {
-    return stream == null
-        ? Optional.empty()
-        : stream.filter(key::equals).sorted().findFirst().map(identity());
+  private static <T> Stream<T> nullSafe(Stream<T> stream) {
+    return stream == null ? Stream.empty() : stream;
   }
 
   private static <K, V> void forEachPairOrNull(
