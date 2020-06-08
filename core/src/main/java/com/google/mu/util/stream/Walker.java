@@ -54,8 +54,9 @@ public final class Walker<T> {
   }
 
   /**
-   * Detects whether the graph structure as observed by the {@code findSuccessors} function has
-   * cycles, by walking from {@code startNode}.
+   * Floyd's <a href="https://en.wikipedia.org/wiki/Cycle_detection#Floyd's_Tortoise_and_Hare">
+   * Tortoise and Hare</a> algorithm. Detects whether the graph structure as observed by the
+   * {@code findSuccessors} function has cycles, by walking from {@code startNode}.
    *
    * <p>This method will hang if the given graph is infinite without cycle (the sequence of natural
    * numbers for instance).
