@@ -227,15 +227,15 @@ public final class Walker<T> {
         .filterKeys(i -> i % 2 == 1)
         .values();
     return BiStream.zip(slower, faster)
-        .filter(Object::equals)
+        .filter(Object::equals)  // when the hare runs past tortoise, we have a cycle.
         .keys()
         .findFirst()
         .map(cyclic -> shortestCyclesFrom(cyclic, n -> asUnweighted(findSuccessors.apply(n))))
-        .orElse(Stream.empty())
+        .orElse(Stream.empty())  // cycles or empty.
         .findFirst()
         .map(ShortestPath::stream)
         .map(BiStream::keys)
-        .orElse(Stream.empty());
+        .orElse(Stream.empty());  // first cycle's stream of nodes, or empty.
   }
 
   private static <T> BiStream<T, Double> asUnweighted(Stream<? extends T> successors) {
