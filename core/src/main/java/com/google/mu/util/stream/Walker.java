@@ -31,6 +31,7 @@ import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
@@ -43,47 +44,15 @@ import java.util.stream.Stream;
  * @since 3.9
  */
 public final class Walker<T> {
-  private final Function<? super T, ? extends Stream<? extends T>> findSuccessors;
-  private final Predicate<? super T> tracker;
+  private final Supplier<Traversal<T>> newTraversal;
 
-  private Walker(
-      Function<? super T, ? extends Stream<? extends T>> findSuccessors,
-      Predicate<? super T> tracker) {
-    this.findSuccessors = requireNonNull(findSuccessors);
-    this.tracker = requireNonNull(tracker);
+  Walker(Supplier<Traversal<T>> newTraversal) {
+    this.newTraversal = newTraversal;
   }
 
   /**
-   * Floyd's <a href="https://en.wikipedia.org/wiki/Cycle_detection#Floyd's_Tortoise_and_Hare">
-   * Tortoise and Hare</a> algorithm. Detects whether the graph structure as observed by the
-   * {@code findSuccessors} function has cycles, by walking from {@code startNode}.
-   *
-   * <p>This method will hang if the given graph is infinite without cycle (the sequence of natural
-   * numbers for instance).
-   *
-   * @param startNode the node to start walking the graph.
-   * @param findSuccessors The function to find successors of any given node. This function is
-   *        expected to be deterministic and idempotent.
-   * @return an infinite stream of the nodes forming a detected cycle if there is any, or else
-   *         {@link Optional#empty}.
-   */
-  public static <T> Optional<Stream<T>> detectCycle(
-      T startNode, Function<? super T, ? extends Stream<? extends T>> findSuccessors) {
-    Walker<T> walker = newTreeWalker(findSuccessors);
-    Stream<T> slower = walker.preOrderFrom(startNode);
-    Stream<T> faster = BiStream.zip(indexesFrom(0), walker.preOrderFrom(startNode))
-        .filterKeys(i -> i % 2 == 1)
-        .values();
-    return BiStream.zip(slower, faster)
-        .filter(Object::equals)
-        .keys()
-        .findFirst()
-        .map(walker::preOrderFrom);
-  }
-
-  /**
-   * Returns a {@code Traversal} object assuming tree structure (no cycles), using {@code
-   * findChildren} to find children of any given tree node.
+   * Returns a {@code Walker} to walk the tree structure (no cycles) as observed by the {@code
+   * findChildren} function, which finds children of any given tree node.
    *
    * <p>The returned object is idempotent, stateless and immutable as long as {@code findChildren} is
    * idempotent, stateless and immutable.
@@ -94,20 +63,16 @@ public final class Walker<T> {
    * @param findChildren Function to get the child nodes for a given node.
    *        No children if empty stream or null is returned,
    */
-  public static <T> Walker<T> newTreeWalker(
+  public static <T> Walker<T> inTree(
       Function<? super T, ? extends Stream<? extends T>> findChildren) {
-    return newWalker(findChildren, n -> true);
+    return inGraph(findChildren, n -> true);
   }
 
   /**
-   * Returns a {@code Traversal} object assuming graph structure (with cycles), using {@code
-   * findSuccessors} to find successor nodes of any given graph node.
+   * Returns a {@code Walker} to walk the graph structure (possibly with cycles) as observed by
+   * the {@code findSuccessors} function, which finds successors of any given graph node.
    *
-   * <p>The returned object remembers which nodes have been traversed, thus if you call for example
-   * {@link #preOrderFrom} again, already visited nodes will be skipped. This is useful if you need
-   * to imperatively and dynamically decide which node to traverse. For example, the SHIELD and
-   * Avengers may need to collaborately raid a building from multiple entry points:
-   *
+<<<<<<< HEAD
    * <pre>{@code
    * Walker<Room> walker = Walker.newGraphWalker(buildingMap);
    * Stream<Room> shield = walker.preOrderFrom(roof);
@@ -122,30 +87,34 @@ public final class Walker<T> {
    * just recreate the {@code Walker} object.
    *
    * <p>Because the {@code Traversal} object keeps memory of traversal history, the memory usage is
+=======
+   * <p>Because the traversal needs to remember which node(s) have been traversed, memory usage is
+>>>>>>> master
    * linear to the number of traversed nodes.
    *
    * @param findSuccessors Function to get the successor nodes for a given node.
    *        No successor if empty stream or null is returned,
    */
-  public static <T> Walker<T> newGraphWalker(
+  public static <T> Walker<T> inGraph(
       Function<? super T, ? extends Stream<? extends T>> findSuccessors) {
-    return newWalker(findSuccessors, new HashSet<>()::add);
+    requireNonNull(findSuccessors);
+    return new Walker<>(() -> new Traversal<>(findSuccessors, new HashSet<>()::add));
   }
 
   /**
-   * Similar to {@link #newGraphWalker(Function)}, returns a {@code Walker} that can be used to
+   * Similar to {@link #inGraph(Function)}, returns a {@code Walker} that can be used to
    * traverse a graph of nodes. {@code tracker} is used to track every node being traversed. When
    * {@code Walker} is about to traverse a node, {@code tracker.test(node)} will be called and the
    * node will be skipped if false is returned.
    *
    * <p>This is useful for custom node tracking. For example, the caller could use a {@link
-   * java.util.TreeSet} or some {@code EquivalenceSet} to compare nodes using custom equality or
+   * java.util.TreeSet} or some functional equivalence to compare nodes using custom equality or
    * equivalence; or, use a {@link java.util.ConcurrentHashMap} if multiple threads need to walk the
    * same graph concurrently and collaboratively:
    *
    * <pre>{@code
    * Walker<Room> concurrentWalker =
-   *     Walker.newWalker(buildingMap, ConcurrentHashMap.newKeySet()::add);
+   *     Walker.inGraph(buildingMap, ConcurrentHashMap.newKeySet()::add);
    *
    * // thread 1:
    * Stream<Room> shield = concurrentWalker.preOrderFrom(roof);
@@ -162,10 +131,6 @@ public final class Walker<T> {
    * to Bloom filter's inherent false-positive rates. Because Bloom filters have zero
    * false-negatives, it's guaranteed that the walker will never walk in cycles.
    *
-   * <p>Alternatively, instead of returning false, one can also throw an exception in the tracker
-   * for any already-traversed node, as a means to check that a data structure is a tree as opposed
-   * to a graph.
-   *
    * @param findSuccessors Function to get the successor nodes for a given node.
    *        No successor if empty stream or null is returned,
    * @param tracker Tracks each node being visited during traversal. Returns false if the node
@@ -173,10 +138,12 @@ public final class Walker<T> {
    *        Despite being a {@link Predicate}, the tracker typically carries side-effects like
    *        storing the tracked node in a set ({@code set::add} will do).
    */
-  public static <T> Walker<T> newWalker(
+  public static <T> Walker<T> inGraph(
       Function<? super T, ? extends Stream<? extends T>> findSuccessors,
       Predicate<? super T> tracker) {
-    return new Walker<>(findSuccessors, tracker);
+    requireNonNull(findSuccessors);
+    requireNonNull(tracker);
+    return new Walker<>(() -> new Traversal<>(findSuccessors, tracker));
   }
 
   /**
@@ -189,7 +156,7 @@ public final class Walker<T> {
    */
   @SafeVarargs
   public final Stream<T> preOrderFrom(T... startNodes) {
-    return new Traversal().preOrder(nonNullList(startNodes));
+    return newTraversal.get().preOrder(nonNullList(startNodes));
   }
 
   /**
@@ -200,7 +167,7 @@ public final class Walker<T> {
    * traversal.
    */
   public final Stream<T> preOrderFrom(Iterable<? extends T> startNodes) {
-    return new Traversal().preOrder(startNodes);
+    return newTraversal.get().preOrder(startNodes);
   }
 
   /**
@@ -214,7 +181,7 @@ public final class Walker<T> {
    */
   @SafeVarargs
   public final Stream<T> postOrderFrom(T... startNodes) {
-    return new Traversal().postOrder(nonNullList(startNodes));
+    return newTraversal.get().postOrder(nonNullList(startNodes));
   }
 
   /**
@@ -227,7 +194,7 @@ public final class Walker<T> {
    * depth.
    */
   public final Stream<T> postOrderFrom(Iterable<? extends T> startNodes) {
-    return new Traversal().postOrder(startNodes);
+    return newTraversal.get().postOrder(startNodes);
   }
 
   /**
@@ -239,7 +206,7 @@ public final class Walker<T> {
    */
   @SafeVarargs
   public final Stream<T> breadthFirstFrom(T... startNodes) {
-    return new Traversal().breadthFirst(nonNullList(startNodes));
+    return newTraversal.get().breadthFirst(nonNullList(startNodes));
   }
 
   /**
@@ -250,12 +217,48 @@ public final class Walker<T> {
    * traversal.
    */
   public final Stream<T> breadthFirstFrom(Iterable<? extends T> startNodes) {
-    return new Traversal().breadthFirst(startNodes);
+    return newTraversal.get().breadthFirst(startNodes);
   }
 
-  private final class Traversal implements Consumer<T> {
+  /**
+   * Floyd's <a href="https://en.wikipedia.org/wiki/Cycle_detection#Floyd's_Tortoise_and_Hare">
+   * Tortoise and Hare</a> algorithm. Detects whether the graph structure as observed by the
+   * {@code findSuccessors} function has cycles, by walking from {@code startNode}.
+   *
+   * <p>This method will hang if the given graph is infinite without cycle (the sequence of natural
+   * numbers for instance).
+   * @param findSuccessors The function to find successors of any given node. This function is
+   *        expected to be deterministic and idempotent.
+   * @param startNode the node to start walking the graph.
+   *
+   * @return an infinite stream of the nodes forming a detected cycle if there is any, or else
+   *         {@link Optional#empty}.
+   */
+  public static <T> Optional<Stream<T>> detectCycleInGraph(
+      Function<? super T, ? extends Stream<? extends T>> findSuccessors, T startNode) {
+    Walker<T> walker = inTree(findSuccessors);
+    Stream<T> slower = walker.preOrderFrom(startNode);
+    Stream<T> faster = BiStream.zip(indexesFrom(0), walker.preOrderFrom(startNode))
+        .filterKeys(i -> i % 2 == 1)
+        .values();
+    return BiStream.zip(slower, faster)
+        .filter(Object::equals)
+        .keys()
+        .findFirst()
+        .map(walker::preOrderFrom);
+  }
+
+  private static final class Traversal<T> implements Consumer<T> {
+    private final Function<? super T, ? extends Stream<? extends T>> findSuccessors;
+    private final Predicate<? super T> tracker;
     private final Deque<Spliterator<? extends T>> horizon = new ArrayDeque<>();
     private T visited;
+
+    Traversal(
+        Function<? super T, ? extends Stream<? extends T>> findSuccessors, Predicate<? super T> tracker) {
+      this.findSuccessors = findSuccessors;
+      this.tracker = tracker;
+    }
 
     @Override
     public void accept(T value) {
