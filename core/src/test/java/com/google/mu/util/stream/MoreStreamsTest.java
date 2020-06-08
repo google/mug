@@ -281,6 +281,8 @@ public class MoreStreamsTest {
 
   @Test public void testIndexesFrom() {
     assertThat(indexesFrom(1).limit(3)).containsExactly(1, 2, 3).inOrder();
+    assertThat(indexesFrom(Integer.MAX_VALUE).limit(3))
+        .containsExactly(Integer.MAX_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE + 1).inOrder();
   }
 
   @Test public void removingFromQueue_empty() {
