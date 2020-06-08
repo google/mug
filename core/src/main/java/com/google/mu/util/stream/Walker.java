@@ -119,11 +119,11 @@ public final class Walker<T> {
    *
    * // thread 1:
    * Stream<Room> shield = concurrentWalker.preOrderFrom(roof);
-   * // iterate through rooms raided by the SHIELD agents.
+   * shield.forEachOrdered(room -> ...);
    *
    * // thread 2:
    * Stream<Room> avengers = concurrentWalker.breadthFirstFrom(mainEntrance);
-   * // iterate through rooms raided by Avengers.
+   * avengers.forEachOrdered(room -> ...);
    * }</pre>
    *
    * <p>In the case of walking a very large graph with more nodes than can fit in memory, it's
