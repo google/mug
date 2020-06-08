@@ -3,6 +3,7 @@ package com.google.mu.util.graph;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.graph.ShortestPath.shortestCyclesFrom;
+import static com.google.mu.util.graph.ShortestPath.unweightedShortestCyclesFrom;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -85,6 +86,34 @@ public class ShortestCyclesTest {
     addEdge("5", "6", 9);
     assertThat(shortestCyclesFrom("a", this::neighbors).map(Object::toString).collect(toList()))
         .containsExactly("a->c->d->e->a");
+  }
+
+  @Test public void unnweighted_oneNode() {
+    graph.addNode("root");
+    assertThat(unweightedShortestCyclesFrom("root", n -> graph.successors(n).stream()))
+        .isEmpty();
+  }
+
+  @Test public void unweighted_twoNodes() {
+    graph.putEdge("foo", "bar");
+    assertThat(unweightedShortestCyclesFrom("foo", n -> graph.successors(n).stream()))
+        .isEmpty();
+  }
+
+  @Test public void unweighted_threeNodesList() {
+    graph.putEdge("foo", "bar");
+    graph.putEdge("bar", "baz");
+    assertThat(unweightedShortestCyclesFrom("foo", n -> graph.successors(n).stream()))
+        .isEmpty();
+  }
+
+  @Test public void unweighted_threeNodesCycle() {
+    graph.putEdge("foo", "bar");
+    graph.putEdge("bar", "baz");
+    graph.putEdge("baz", "foo");
+    assertThat(unweightedShortestCyclesFrom(
+            "foo", n -> graph.successors(n).stream()).map(Object::toString))
+        .containsExactly("foo->bar->baz->foo");
   }
 
   private BiStream<String, Double> neighbors(String node) {

@@ -19,6 +19,7 @@ import static com.google.mu.util.stream.MoreStreams.whileNotEmpty;
 import static java.util.Arrays.asList;
 import static java.util.Comparator.comparingDouble;
 import static java.util.Objects.requireNonNull;
+import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.joining;
 
 import java.util.ArrayList;
@@ -74,7 +75,7 @@ public final class ShortestPath<N> {
   /**
    * Returns a lazy stream of shortest paths starting from {@code startNode}.
    *
-   * <p>The {@code findAdjacentNodes} function is called on-the-fly to find the direct neighbors
+   * <p>The {@code findSuccessors} function is called on-the-fly to find the direct neighbors
    * of the current node. This function is expected to return a {@code BiStream} with these direct
    * neighbor nodes and their distances from the passed-in current node, respectively.
    *
@@ -126,7 +127,7 @@ public final class ShortestPath<N> {
       N startNode,
       Function<? super N, ? extends BiStream<? extends N, Double>> findSuccessors) {
     return shortestPathsFrom(startNode, findSuccessors)
-        .map(path -> findFirst(findSuccessors.apply(path.to()), startNode)
+        .map(path -> findClosestOrNull(findSuccessors.apply(path.to()), startNode)
             .map(d -> path.extendTo(startNode, d))
             .orElse(null))
         .filter(Objects::nonNull);
@@ -135,7 +136,7 @@ public final class ShortestPath<N> {
   /**
    * Returns a lazy stream of unweighted shortest paths starting from {@code startNode}.
    *
-   * <p>The {@code findAdjacentNodes} function is called on-the-fly to find the direct neighbors
+   * <p>The {@code findSuccessors} function is called on-the-fly to find the direct neighbors
    * of the current node.
    *
    * <p>{@code startNode} will correspond to the first element in the returned stream, with
@@ -147,16 +148,43 @@ public final class ShortestPath<N> {
    * @param <N> The node type. Must implement {@link Object#equals} and {@link Object#hashCode}.
    */
   public static <N> Stream<ShortestPath<N>> unweightedShortestPathsFrom(
-      N startNode, Function<? super N, ? extends Stream<? extends N>> findAdjacentNodes) {
+      N startNode, Function<? super N, ? extends Stream<? extends N>> findSuccessors) {
     requireNonNull(startNode);
-    requireNonNull(findAdjacentNodes);
+    requireNonNull(findSuccessors);
     Set<N> seen = new HashSet<>(asList(startNode));
     return generate(
         new ShortestPath<>(startNode),
-        path -> findAdjacentNodes.apply(path.to())
-            .peek(Objects::requireNonNull)
-            .filter(seen::add)
-            .map(n -> path.extendTo(n, 1)));
+        path -> {
+          Stream<? extends N> successors = findSuccessors.apply(path.to());
+          return successors == null
+              ? null
+              : successors
+                  .peek(Objects::requireNonNull)
+                  .filter(seen::add)
+                  .map(n -> path.extendTo(n, 1));
+        });
+  }
+
+  /**
+   * Returns a lazy stream of unweighted cyclic paths starting and ending at {@code startNode},
+   * in the unweighted graph structure as observed by {@code findSuccessors}.
+   *
+   * <p>These paths are in ascending order of cycle length.
+   *
+   * <p>If no cycle is found, {@link Stream#empty()} is returned.
+   *
+   * @param startNode the node that these cycles must start and end at.
+   * @param findSuccessors The function to find successors of each graph node.
+   *        This function is expected to be deterministic and idempotent.
+   */
+  public static <N> Stream<ShortestPath<N>> unweightedShortestCyclesFrom(
+      N startNode,
+      Function<? super N, ? extends Stream<? extends N>> findSuccessors) {
+    return unweightedShortestPathsFrom(startNode, findSuccessors)
+        .map(path -> findFirstOrNull(findSuccessors.apply(path.to()), startNode)
+            .map(d -> path.extendTo(startNode, 1))
+            .orElse(null))
+        .filter(Objects::nonNull);
   }
 
   private ShortestPath(N node) {
@@ -210,10 +238,16 @@ public final class ShortestPath<N> {
     }
   }
 
-  private static <K, V> Optional<V> findFirst(BiStream<? extends K, V> stream, K key) {
+  private static <T> Optional<T> findFirstOrNull(Stream<? extends T> stream, T key) {
     return stream == null
         ? Optional.empty()
-        : stream.filterKeys(key::equals).values().findFirst();
+        : stream.filter(key::equals).sorted().findFirst().map(identity());
+  }
+
+  private static <K, V> Optional<V> findClosestOrNull(BiStream<? extends K, V> stream, K key) {
+    return stream == null
+        ? Optional.empty()
+        : stream.filterKeys(key::equals).values().sorted().findFirst();
   }
 
   private static <K, V> void forEachPairOrNull(
