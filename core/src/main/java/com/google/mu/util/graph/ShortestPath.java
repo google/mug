@@ -130,11 +130,10 @@ public final class ShortestPath<N> {
     Set<N> seen = new HashSet<>(asList(startNode));
     return generate(
         new ShortestPath<>(startNode),
-        path ->
-            nullSafe(findSuccessors.apply(path.to()))
-                .peek(Objects::requireNonNull)
-                .filter(seen::add)
-                .map(n -> path.extendTo(n, 1)));
+        path -> nullSafe(findSuccessors.apply(path.to()))
+            .peek(Objects::requireNonNull)
+            .filter(seen::add)
+            .map(n -> path.extendTo(n, 1)));
   }
 
   /**
