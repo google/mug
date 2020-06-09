@@ -87,7 +87,7 @@ public final class CycleDetector<N> {
         if (newNode) {
           stack.add(node);
         } else if (stack.contains(node)) {
-          cyclic.compareAndSet(null, node);
+          cyclic.compareAndSet(null, node);  // stick to the first finding
         }
         return newNode;
       }
