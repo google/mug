@@ -136,32 +136,6 @@ public final class ShortestPath<N> {
             .map(n -> path.extendTo(n, 1)));
   }
 
-  /**
-   * Returns a lazy stream of unweighted cyclic paths starting and ending at {@code startNode},
-   * in the unweighted graph structure as observed by {@code findSuccessors}.
-   *
-   * <p>These paths are in ascending order of cycle length. For example, if the graph has two
-   * distinct cycles: {@code A -> B -> A -> B ->...} and {@code A -> B -> C -> A -> B ->...},
-   * the returned stream will have two paths: {@code A -> B -> A} and {@code A -> B -> C -> A}.
-   *
-   * <p>If no cycle is found, {@link Stream#empty()} is returned.
-   *
-   * @param startNode the node that these cycles must start and end at.
-   * @param findSuccessors The function to find successors of each graph node.
-   *        This function is expected to be deterministic and idempotent.
-   */
-  public static <N> Stream<ShortestPath<N>> unweightedShortestCyclesFrom(
-      N startNode,
-      Function<? super N, ? extends Stream<? extends N>> findSuccessors) {
-    return unweightedShortestPathsFrom(startNode, findSuccessors)
-        .<ShortestPath<N>>map(path -> nullSafe(findSuccessors.apply(path.to()))
-            .filter(startNode::equals)
-            .map(d -> path.extendTo(startNode, 1))
-            .findFirst()
-            .orElse(null))
-        .filter(Objects::nonNull);
-  }
-
   private ShortestPath(N node) {
     this(node, null, 0);
   }
