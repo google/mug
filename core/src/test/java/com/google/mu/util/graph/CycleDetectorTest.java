@@ -116,7 +116,8 @@ public class CycleDetectorTest {
   }
 
   private static <N> Stream<N> detectCycle(Graph<N> graph, N... startNodes) {
-    return CycleDetector.forGraph((N n) -> graph.successors(n).stream()).detectCycleFrom(startNodes);
+    return CycleDetector.forGraph((N n) -> graph.successors(n).stream())
+        .detectCycleFrom(startNodes);
   }
 
   private static <N> Graph<N> toUndirectedGraph(Multimap<N, N> edges) {
