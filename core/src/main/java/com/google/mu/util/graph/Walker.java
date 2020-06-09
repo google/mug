@@ -212,15 +212,14 @@ public final class Walker<N> {
    *
    * <p>This method will hang if the given graph is infinite without cycle (the sequence of natural
    * numbers for instance).
+   * @param startNode the node to start walking the graph.
    * @param findSuccessors The function to find successors of any given node. This function is
    *        expected to be deterministic and idempotent.
-   * @param startNode the node to start walking the graph.
-   *
-   * @return a stream of a detected cycle starting and ending at the same node, if there is any;
-   *         or else {@link Stream#empty}.
+   * @return the stream of nodes along the detected cycle starting and ending at the same node,
+   *         if there is any; or else {@link Stream#empty}.
    */
-  public static <N> Stream<N> detectCycleInGraph(
-      Function<? super N, ? extends Stream<? extends N>> findSuccessors, N startNode) {
+  public static <N> Stream<N> detectCycleFrom(
+      N startNode, Function<? super N, ? extends Stream<? extends N>> findSuccessors) {
     Walker<N> walker = inTree(findSuccessors);
     Stream<N> slower = walker.preOrderFrom(startNode);
     Stream<N> faster = BiStream.zip(indexesFrom(0), walker.preOrderFrom(startNode))

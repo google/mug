@@ -320,12 +320,12 @@ public class WalkerTest {
 
   @Test
   public void detectCycle_noChildren() {
-    assertThat(Walker.detectCycleInGraph(n -> null, "root")).isEmpty();
+    assertThat(Walker.detectCycleFrom("root", n -> null)).isEmpty();
   }
 
   @Test
   public void detectCycle_trivialCycle() {
-    assertThat(Walker.detectCycleInGraph(Stream::of, "root"))
+    assertThat(Walker.detectCycleFrom("root", Stream::of))
         .containsExactly("root", "root");
   }
 
@@ -402,7 +402,7 @@ public class WalkerTest {
   }
 
   private static <N> Stream<N> detectCycle(Graph<N> graph, N startNode) {
-    return Walker.detectCycleInGraph((N n) -> graph.successors(n).stream(), startNode);
+    return Walker.detectCycleFrom(startNode, (N n) -> graph.successors(n).stream());
   }
 
   private static <N> Graph<N> toUndirectedGraph(Multimap<N, N> edges) {
