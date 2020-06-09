@@ -209,11 +209,13 @@ public final class Walker<N> {
    *
    * <p>This method will hang if the given graph is infinite without cycle (the sequence of natural
    * numbers for instance).
+   *
    * @param startNode the node to start walking the graph.
-   * @param findSuccessors The function to find successors of any given node. This function is
-   *        expected to be deterministic and idempotent.
-   * @return the stream of nodes along the detected cycle starting and ending at the same node,
-   *         if there is any; or else {@link Stream#empty}.
+   * @param findSuccessors the function to find successors of any given node.
+   * @return The stream of nodes starting from {@code startNode} ending with nodes along a cyclic
+   *         path. The last node will also be the starting point of the cycle.
+   *         That is, if {@code A} and {@code B} form a cycle, the stream ends with
+   *         {@code A -> B -> A}. If there is no cycle, {@link Stream#empty} is returned.
    */
   public static <N> Stream<N> detectCycleFrom(
       N startNode, Function<? super N, ? extends Stream<? extends N>> findSuccessors) {
