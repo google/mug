@@ -47,7 +47,7 @@ public final class CycleDetector<N> {
   }
 
   /**
-   * Walking from {@code startNodes}, to detect if the graph has any cycle.
+   * Walking from {@code startNodes}, detects if the graph has any cycle.
    *
    * <p>This method will hang if the given graph is infinite without cycle (the sequence of natural
    * numbers for instance).
@@ -65,7 +65,7 @@ public final class CycleDetector<N> {
   }
 
   /**
-   * Walking from {@code startNodes}, to detect if the graph has any cycle.
+   * Walking from {@code startNodes}, detects if the graph has any cycle.
    *
    * <p>This method will hang if the given graph is infinite without cycle (the sequence of natural
    * numbers for instance).
