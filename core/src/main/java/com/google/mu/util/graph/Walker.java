@@ -231,7 +231,7 @@ public final class Walker<N> {
         .filter(n -> cyclic.get() != null)
         .findFirst()
         .map(last -> Stream.concat(tracked.stream(), Stream.of(last, cyclic.get())))
-        .orElse(Stream.empty());  // first cycle's stream of nodes, or empty
+        .orElse(Stream.empty());
   }
 
   private static final class Traversal<N> implements Consumer<N> {
