@@ -54,10 +54,10 @@ public final class CycleDetector<N> {
    *
    * @param startNode the node to start walking the graph.
    * @param findSuccessors the function to find successors of any given node.
-   * @return The stream of nodes starting from {@code startNode} ending with nodes along a cyclic
-   *         path. The last node will also be the starting point of the cycle.
-   *         That is, if {@code A} and {@code B} form a cycle, the stream ends with
-   *         {@code A -> B -> A}. If there is no cycle, {@link Stream#empty} is returned.
+   * @return The stream of nodes starting from the first of {@code startNodes} that leads to a
+   *         cycle, ending with nodes along a cyclic path. The last node will also be the starting
+   *         point of the cycle. That is, if {@code A} and {@code B} form a cycle, the stream ends
+   *         with {@code A -> B -> A}. If there is no cycle, {@link Stream#empty} is returned.
    */
   @SafeVarargs
   public final Stream<N> detectCycleFrom(N... startNodes) {
@@ -70,12 +70,12 @@ public final class CycleDetector<N> {
    * <p>This method will hang if the given graph is infinite without cycle (the sequence of natural
    * numbers for instance).
    *
-   * @param startNode the node to start walking the graph.
+   * @param startNodes the nodes to start walking the graph.
    * @param findSuccessors the function to find successors of any given node.
-   * @return The stream of nodes starting from {@code startNode} ending with nodes along a cyclic
-   *         path. The last node will also be the starting point of the cycle.
-   *         That is, if {@code A} and {@code B} form a cycle, the stream ends with
-   *         {@code A -> B -> A}. If there is no cycle, {@link Stream#empty} is returned.
+   * @return The stream of nodes starting from the first of {@code startNodes} that leads to a
+   *         cycle, ending with nodes along a cyclic path. The last node will also be the starting
+   *         point of the cycle. That is, if {@code A} and {@code B} form a cycle, the stream ends
+   *         with {@code A -> B -> A}. If there is no cycle, {@link Stream#empty} is returned.
    */
   public Stream<N> detectCycleFrom(Iterable<? extends N> startNodes) {
     AtomicReference<N> cyclic = new AtomicReference<>();
