@@ -207,8 +207,8 @@ public final class Walker<N> {
   }
 
   /**
-   * Detects whether the graph structure as observed by the
-   * {@code findSuccessors} function has cycles, by walking from {@code startNode}.
+   * Detects whether the graph structure as observed by the {@code findSuccessors} function has
+   * cycles, by walking from {@code startNode}.
    *
    * <p>This method will hang if the given graph is infinite without cycle (the sequence of natural
    * numbers for instance).
@@ -225,7 +225,7 @@ public final class Walker<N> {
     Walker<N> walker = inGraph(findSuccessors, new Predicate<N>() {
       @Override public boolean test(N node) {
         if (tracked.add(node)) return true;
-        cyclic.set(node);
+        cyclic.compareAndSet(null, node);  //. stick to the first cyclic.
         return false;
       }
     });
