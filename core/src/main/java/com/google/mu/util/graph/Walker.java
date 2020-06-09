@@ -15,7 +15,6 @@
 package com.google.mu.util.graph;
 
 import static com.google.mu.util.graph.ShortestPath.unweightedShortestCyclesFrom;
-import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static com.google.mu.util.stream.MoreStreams.whileNotEmpty;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
@@ -27,7 +26,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
+import java.util.Set;
 import java.util.Spliterator;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -206,8 +207,7 @@ public final class Walker<N> {
   }
 
   /**
-   * Floyd's <a href="https://en.wikipedia.org/wiki/Cycle_detection#Floyd's_Tortoise_and_Hare">
-   * Tortoise and Hare</a> algorithm. Detects whether the graph structure as observed by the
+   * Detects whether the graph structure as observed by the
    * {@code findSuccessors} function has cycles, by walking from {@code startNode}.
    *
    * <p>This method will hang if the given graph is infinite without cycle (the sequence of natural
@@ -220,19 +220,23 @@ public final class Walker<N> {
    */
   public static <N> Stream<N> detectCycleFrom(
       N startNode, Function<? super N, ? extends Stream<? extends N>> findSuccessors) {
-    Walker<N> walker = inTree(findSuccessors);
-    Stream<N> slower = walker.preOrderFrom(startNode);
-    Stream<N> faster = BiStream.zip(indexesFrom(0), walker.preOrderFrom(startNode))
-        .filterKeys(i -> i % 2 == 1)
-        .values();
-    return BiStream.zip(slower, faster)
-        .filter(Object::equals)  // when the hare runs past tortoise, we have a cycle.
-        .keys()
+    AtomicReference<N> cyclic = new AtomicReference<>();
+    Set<N> tracked = new HashSet<>();
+    Walker<N> walker = inGraph(findSuccessors, new Predicate<N>() {
+      @Override public boolean test(N node) {
+        if (tracked.add(node)) return true;
+        cyclic.set(node);
+        return false;
+      }
+    });
+    return walker.postOrderFrom(startNode)
+        .peek(tracked::remove)
+        .filter(n -> cyclic.get() != null)
         .findFirst()
-        .flatMap(cyclic -> unweightedShortestCyclesFrom(cyclic, findSuccessors).findFirst())
+        .flatMap(n -> unweightedShortestCyclesFrom(cyclic.get(), findSuccessors).findFirst())
         .map(ShortestPath::stream)
         .map(BiStream::keys)
-        .orElse(Stream.empty());  // first cycle's stream of nodes, or empty.
+        .orElse(Stream.empty());  // first cycle's stream of nodes, or empty
   }
 
   private static final class Traversal<N> implements Consumer<N> {
