@@ -26,6 +26,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
+import java.util.Set;
 import java.util.Spliterator;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -220,19 +221,26 @@ public final class Walker<N> {
   public static <N> Stream<N> detectCycleFrom(
       N startNode, Function<? super N, ? extends Stream<? extends N>> findSuccessors) {
     AtomicReference<N> cyclic = new AtomicReference<>();
-    LinkedHashSet<N> tracked = new LinkedHashSet<>();
+    Set<N> seen = new HashSet<>();
+    LinkedHashSet<N> stack = new LinkedHashSet<>();
     Walker<N> walker = inGraph(findSuccessors, new Predicate<N>() {
       @Override public boolean test(N node) {
-        if (tracked.add(node)) return true;
-        cyclic.compareAndSet(null, node);  // stick to the first cyclic.
-        return false;
+        if (seen.add(node)) {
+          stack.add(node);
+          return true;
+        } else {
+          if (stack.contains(node)) {
+            cyclic.compareAndSet(null, node);
+          }
+          return false;
+        }
       }
     });
     return walker.postOrderFrom(startNode)
-        .peek(tracked::remove)
+        .peek(stack::remove)
         .filter(n -> cyclic.get() != null)
         .findFirst()
-        .map(last -> Stream.concat(tracked.stream(), Stream.of(last, cyclic.get())))
+        .map(last -> Stream.concat(stack.stream(), Stream.of(last, cyclic.get())))
         .orElse(Stream.empty());
   }
 
