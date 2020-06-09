@@ -224,7 +224,7 @@ public final class Walker<N> {
     Walker<N> walker = inGraph(findSuccessors, new Predicate<N>() {
       @Override public boolean test(N node) {
         if (tracked.add(node)) return true;
-        cyclic.compareAndSet(null, node);  //. stick to the first cyclic.
+        cyclic.compareAndSet(null, node);  // stick to the first cyclic.
         return false;
       }
     });
