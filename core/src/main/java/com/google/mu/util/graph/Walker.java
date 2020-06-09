@@ -22,12 +22,10 @@ import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Spliterator;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -203,39 +201,6 @@ public final class Walker<N> {
     return newTraversal.get().breadthFirst(startNodes);
   }
 
-  /**
-   * Detects whether the graph structure as observed by the {@code findSuccessors} function has
-   * cycles, by walking from {@code startNode}.
-   *
-   * <p>This method will hang if the given graph is infinite without cycle (the sequence of natural
-   * numbers for instance).
-   *
-   * @param startNode the node to start walking the graph.
-   * @param findSuccessors the function to find successors of any given node.
-   * @return The stream of nodes starting from {@code startNode} ending with nodes along a cyclic
-   *         path. The last node will also be the starting point of the cycle.
-   *         That is, if {@code A} and {@code B} form a cycle, the stream ends with
-   *         {@code A -> B -> A}. If there is no cycle, {@link Stream#empty} is returned.
-   */
-  public static <N> Stream<N> detectCycleFrom(
-      N startNode, Function<? super N, ? extends Stream<? extends N>> findSuccessors) {
-    AtomicReference<N> cyclic = new AtomicReference<>();
-    LinkedHashSet<N> tracked = new LinkedHashSet<>();
-    Walker<N> walker = inGraph(findSuccessors, new Predicate<N>() {
-      @Override public boolean test(N node) {
-        if (tracked.add(node)) return true;
-        cyclic.compareAndSet(null, node);  //. stick to the first cyclic.
-        return false;
-      }
-    });
-    return walker.postOrderFrom(startNode)
-        .peek(tracked::remove)
-        .filter(n -> cyclic.get() != null)
-        .findFirst()
-        .map(last -> Stream.concat(tracked.stream(), Stream.of(last, cyclic.get())))
-        .orElse(Stream.empty());
-  }
-
   private static final class Traversal<N> implements Consumer<N> {
     private final Function<? super N, ? extends Stream<? extends N>> findSuccessors;
     private final Predicate<? super N> tracker;
@@ -314,7 +279,7 @@ public final class Walker<N> {
   }
 
   @SafeVarargs
-  private static <N> List<N> nonNullList(N... values) {
+  static <N> List<N> nonNullList(N... values) {
     return Arrays.stream(values).peek(Objects::requireNonNull).collect(toList());
   }
 
