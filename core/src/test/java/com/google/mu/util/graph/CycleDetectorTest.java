@@ -88,6 +88,22 @@ public class CycleDetectorTest {
   }
 
   @Test
+  public void detectCycle_noStartingNodes() {
+    assertThat(detectCycle(toUndirectedGraph(ImmutableListMultimap.of("foo", "bar"))))
+        .isEmpty();
+  }
+
+  @Test
+  public void detectCycle_multipleStartingNodes() {
+    Graph<String> graph = toDirectedGraph(
+        ImmutableListMultimap.of("a", "b", "foo", "bar", "bar", "baz", "baz", "foo"));
+    assertThat(detectCycle(graph, "a", "foo")).containsExactly("foo", "bar", "baz", "foo")
+        .inOrder();
+    assertThat(detectCycle(graph, "foo", "a")).containsExactly("foo", "bar", "baz", "foo")
+        .inOrder();
+  }
+
+  @Test
   public void staticMethods_nullCheck() throws Exception {
     new NullPointerTester().testAllPublicStaticMethods(CycleDetector.class);
     new ClassSanityTester().forAllPublicStaticMethods(CycleDetector.class).testNulls();
@@ -99,8 +115,8 @@ public class CycleDetectorTest {
     new NullPointerTester().testAllPublicInstanceMethods(CycleDetector.forGraph(n -> null));
   }
 
-  private static <N> Stream<N> detectCycle(Graph<N> graph, N startNode) {
-    return CycleDetector.forGraph((N n) -> graph.successors(n).stream()).detectCycleFrom(startNode);
+  private static <N> Stream<N> detectCycle(Graph<N> graph, N... startNodes) {
+    return CycleDetector.forGraph((N n) -> graph.successors(n).stream()).detectCycleFrom(startNodes);
   }
 
   private static <N> Graph<N> toUndirectedGraph(Multimap<N, N> edges) {
