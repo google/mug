@@ -225,15 +225,13 @@ public final class Walker<N> {
     LinkedHashSet<N> stack = new LinkedHashSet<>();
     Walker<N> walker = inGraph(findSuccessors, new Predicate<N>() {
       @Override public boolean test(N node) {
-        if (seen.add(node)) {
+        boolean newNode = seen.add(node);
+        if (newNode) {
           stack.add(node);
-          return true;
-        } else {
-          if (stack.contains(node)) {
-            cyclic.compareAndSet(null, node);
-          }
-          return false;
+        } else if (stack.contains(node)) {
+          cyclic.compareAndSet(null, node);
         }
+        return newNode;
       }
     });
     return walker.postOrderFrom(startNode)
