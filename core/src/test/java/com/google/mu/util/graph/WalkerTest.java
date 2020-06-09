@@ -29,6 +29,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
+import com.google.common.graph.ElementOrder;
 import com.google.common.graph.Graph;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
@@ -333,7 +334,7 @@ public class WalkerTest {
   public void detectCycle_oneUndirectedEdge() {
     Stream<String> cycle =
         detectCycle(toUndirectedGraph(ImmutableListMultimap.of("foo", "bar")), "foo");
-    assertThat(cycle).containsAllOf("foo", "bar");
+    assertThat(cycle).containsExactly("foo", "bar", "foo").inOrder();
   }
 
   @Test
@@ -354,7 +355,7 @@ public class WalkerTest {
     Graph<String> graph =
         toDirectedGraph(ImmutableListMultimap.of("foo", "bar", "bar", "baz", "baz", "foo"));
     Stream<String> cycle = detectCycle(graph, "foo");
-    assertThat(cycle).containsAllOf("foo", "bar", "baz");
+    assertThat(cycle).containsExactly("foo", "bar", "baz", "foo").inOrder();
   }
 
   @Test
@@ -362,7 +363,7 @@ public class WalkerTest {
     Graph<String> graph = toDirectedGraph(
         ImmutableListMultimap.of("foo", "bar", "bar", "baz", "baz", "zoo", "zoo", "bar"));
     Stream<String> cycle = detectCycle(graph, "foo");
-    assertThat(cycle).containsAllOf("bar", "baz", "zoo");
+    assertThat(cycle).containsExactly("foo", "bar", "baz", "zoo", "bar").inOrder();
   }
 
   @Test
@@ -381,7 +382,7 @@ public class WalkerTest {
         "tea", asList("zoo"),
         "zoo", asList("foo")));
     Stream<String> cycle = detectCycle(graph, "bar");
-    assertThat(cycle).containsAllOf("foo", "bar", "zoo");
+    assertThat(cycle).containsExactly("bar", "baz", "zoo", "foo", "bar").inOrder();
   }
 
   @Test
@@ -412,7 +413,8 @@ public class WalkerTest {
   }
 
   private static <N> Graph<N> toDirectedGraph(Multimap<N, N> edges) {
-    MutableGraph<N> graph = GraphBuilder.directed().<N>build();
+    MutableGraph<N> graph =
+        GraphBuilder.directed().incidentEdgeOrder(ElementOrder.stable()).<N>build();
     BiStream.from(edges.asMap()).flatMapValues(Collection::stream).forEach(graph::putEdge);
     return graph;
   }
