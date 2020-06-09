@@ -14,7 +14,6 @@
  *****************************************************************************/
 package com.google.mu.util.graph;
 
-import static com.google.mu.util.graph.ShortestPath.unweightedShortestCyclesFrom;
 import static com.google.mu.util.stream.MoreStreams.whileNotEmpty;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
@@ -23,10 +22,10 @@ import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
-import java.util.Set;
 import java.util.Spliterator;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -34,8 +33,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-
-import com.google.mu.util.stream.BiStream;
 
 /**
  * Implements generic graph and tree traversal algorithms ({@link #preOrderFrom pre-order},
@@ -221,7 +218,7 @@ public final class Walker<N> {
   public static <N> Stream<N> detectCycleFrom(
       N startNode, Function<? super N, ? extends Stream<? extends N>> findSuccessors) {
     AtomicReference<N> cyclic = new AtomicReference<>();
-    Set<N> tracked = new HashSet<>();
+    LinkedHashSet<N> tracked = new LinkedHashSet<>();
     Walker<N> walker = inGraph(findSuccessors, new Predicate<N>() {
       @Override public boolean test(N node) {
         if (tracked.add(node)) return true;
@@ -233,9 +230,7 @@ public final class Walker<N> {
         .peek(tracked::remove)
         .filter(n -> cyclic.get() != null)
         .findFirst()
-        .flatMap(n -> unweightedShortestCyclesFrom(cyclic.get(), findSuccessors).findFirst())
-        .map(ShortestPath::stream)
-        .map(BiStream::keys)
+        .map(last -> Stream.concat(tracked.stream(), Stream.of(last, cyclic.get())))
         .orElse(Stream.empty());  // first cycle's stream of nodes, or empty
   }
 
