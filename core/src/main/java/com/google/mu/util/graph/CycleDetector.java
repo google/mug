@@ -34,6 +34,8 @@ import java.util.stream.Stream;
 /**
  * Utility to detect cycles in graphs.
  *
+ * <p>Note that streams returned by this class are not safe to run in parallel mode.
+ *
  * @since 3.9
  */
 public final class CycleDetector<N> {
