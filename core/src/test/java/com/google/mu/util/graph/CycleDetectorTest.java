@@ -25,12 +25,12 @@ import com.google.mu.util.stream.BiStream;
 public class CycleDetectorTest {
   @Test
   public void detectCycle_noChildren() {
-    assertThat(CycleDetector.forGraph(n -> null).detectCyclesFrom("root")).isEmpty();
+    assertThat(CycleDetector.forGraph(n -> null).cyclesFrom("root")).isEmpty();
   }
 
   @Test
   public void detectCycle_trivialCycle() {
-    assertThat(CycleDetector.forGraph(Stream::of).detectCyclesFrom("root"))
+    assertThat(CycleDetector.forGraph(Stream::of).cyclesFrom("root"))
         .containsExactly(asList("root", "root"));
   }
 
@@ -150,13 +150,13 @@ public class CycleDetectorTest {
   @SafeVarargs
   private static <N> List<N> detectCycle(Graph<N> graph, N... startNodes) {
     return CycleDetector.forGraph((N n) -> graph.successors(n).stream())
-        .detectCyclesFrom(startNodes).findFirst().get();
+        .cyclesFrom(startNodes).findFirst().get();
   }
 
   @SafeVarargs
   private static <N> Stream<List<N>> detectCycles(Graph<N> graph, N... startNodes) {
     return CycleDetector.forGraph((N n) -> graph.successors(n).stream())
-        .detectCyclesFrom(asList(startNodes));
+        .cyclesFrom(asList(startNodes));
   }
 
   private static <N> Graph<N> toUndirectedGraph(Multimap<N, N> edges) {
