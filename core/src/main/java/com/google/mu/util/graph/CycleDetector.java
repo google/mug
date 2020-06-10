@@ -53,7 +53,12 @@ public final class CycleDetector<N> {
   }
 
   /**
-   * Walking from {@code startNodes}, detects all simple cycles in the graph topology.
+   * Returns a lazy stream of simple cycles in the graph topology.
+   *
+   * <p>Note that if the graph is infinite with no cycles (for example, the sequence of
+   * natural numbers), this method can still return the lazy stream quickly, but attempting to
+   * iterate through the stream will cause the program to hang while the stream traverses through
+   * the infinite graph.
    *
    * @param startNodes the nodes to start walking the graph.
    * @return A lazy stream of cycles each starting from one of {@code startNodes} that leads to the
@@ -62,12 +67,17 @@ public final class CycleDetector<N> {
    *         with {@code A -> B -> A}. If there is no cycle, {@link Stream#empty} is returned.
    */
   @SafeVarargs
-  public final Stream<List<N>> detectCyclesFrom(N... startNodes) {
-    return detectCyclesFrom(nonNullList(startNodes));
+  public final Stream<List<N>> cyclesFrom(N... startNodes) {
+    return cyclesFrom(nonNullList(startNodes));
   }
 
   /**
-   * Walking from {@code startNodes}, detects all simple cycles in the graph topology.
+   * Returns a lazy stream of simple cycles in the graph topology.
+   *
+   * <p>Note that if the graph is infinite with no cycles (for example, the sequence of
+   * natural numbers), this method can still return the lazy stream quickly, but attempting to
+   * iterate through the stream will cause the program to hang while the stream traverses through
+   * the infinite graph.
    *
    * @param startNodes the nodes to start walking the graph.
    * @return A lazy stream of cycles each starting from one of {@code startNodes} that leads to the
@@ -75,7 +85,7 @@ public final class CycleDetector<N> {
    *         point of the cycle. That is, if {@code A} and {@code B} form a cycle, the stream ends
    *         with {@code A -> B -> A}. If there is no cycle, {@link Stream#empty} is returned.
    */
-  public Stream<List<N>> detectCyclesFrom(Iterable<? extends N> startNodes) {
+  public Stream<List<N>> cyclesFrom(Iterable<? extends N> startNodes) {
     AtomicReference<N> cyclic = new AtomicReference<>();
     Deque<N> enclosingCycles = new ArrayDeque<>();
     Set<N> blocked = new HashSet<>();  // Always a superset of `currentPath`.
