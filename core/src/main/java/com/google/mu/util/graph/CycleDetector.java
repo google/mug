@@ -15,16 +15,21 @@
 package com.google.mu.util.graph;
 
 import static com.google.mu.util.graph.Walker.nonNullList;
+import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayDeque;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -55,13 +60,13 @@ public final class CycleDetector<N> {
    * numbers for instance).
    *
    * @param startNode the node to start walking the graph.
-   * @return The stream of nodes starting from the first of {@code startNodes} that leads to a
-   *         cycle, ending with nodes along a cyclic path. The last node will also be the starting
+   * @return The immutable list of nodes starting from the first of {@code startNodes} that leads to
+   *         a cycle, ending with nodes along a cyclic path. The last node will also be the starting
    *         point of the cycle. That is, if {@code A} and {@code B} form a cycle, the stream ends
    *         with {@code A -> B -> A}. If there is no cycle, {@link Stream#empty} is returned.
    */
   @SafeVarargs
-  public final Stream<N> detectCycleFrom(N... startNodes) {
+  public final List<N> detectCycleFrom(N... startNodes) {
     return detectCycleFrom(nonNullList(startNodes));
   }
 
@@ -72,13 +77,13 @@ public final class CycleDetector<N> {
    * numbers for instance).
    *
    * @param startNodes the nodes to start walking the graph.
-   * @return The stream of nodes starting from the first of {@code startNodes} that leads to a
-   *         cycle, ending with nodes along a cyclic path. The last node will also be the starting
+   * @return The immutable list of nodes starting from the first of {@code startNodes} that leads to
+   *         a cycle, ending with nodes along a cyclic path. The last node will also be the starting
    *         point of the cycle. That is, if {@code A} and {@code B} form a cycle, the stream ends
    *         with {@code A -> B -> A}. If there is no cycle, {@link Stream#empty} is returned.
    */
-  public Stream<N> detectCycleFrom(Iterable<? extends N> startNodes) {
-    return detectCyclesFrom(startNodes).findFirst().orElse(Stream.empty());
+  public List<N> detectCycleFrom(Iterable<? extends N> startNodes) {
+    return detectCyclesFrom(startNodes).findFirst().orElse(emptyList());
   }
 
   /**
@@ -91,7 +96,7 @@ public final class CycleDetector<N> {
    *         with {@code A -> B -> A}. If there is no cycle, {@link Stream#empty} is returned.
    */
   @SafeVarargs
-  public final Stream<Stream<N>> detectCyclesFrom(N... startNodes) {
+  public final Stream<List<N>> detectCyclesFrom(N... startNodes) {
     return detectCyclesFrom(nonNullList(startNodes));
   }
 
@@ -104,18 +109,18 @@ public final class CycleDetector<N> {
    *         point of the cycle. That is, if {@code A} and {@code B} form a cycle, the stream ends
    *         with {@code A -> B -> A}. If there is no cycle, {@link Stream#empty} is returned.
    */
-  public Stream<Stream<N>> detectCyclesFrom(Iterable<? extends N> startNodes) {
+  public Stream<List<N>> detectCyclesFrom(Iterable<? extends N> startNodes) {
     AtomicReference<N> cyclic = new AtomicReference<>();
     Deque<N> enclosingCycles = new ArrayDeque<>();
-    Set<N> deadEnds = new HashSet<>();  // Always a superset of `currentPath`.
+    Set<N> blocked = new HashSet<>();  // Always a superset of `currentPath`.
     LinkedHashSet<N> currentPath = new LinkedHashSet<>();
     Walker<N> walker = Walker.inGraph(findSuccessors, new Predicate<N>() {
       @Override public boolean test(N node) {
-        boolean newNode = deadEnds.add(node);
+        boolean newNode = blocked.add(node);
         if (newNode) {
           currentPath.add(node);
-        } else if (currentPath.contains(node)) {  // A cycle's found!
-          cyclic.compareAndSet(null, node);
+        } else if (currentPath.contains(node) && cyclic.compareAndSet(null, node)) {
+          // A cycle's found!
           enclosingCycles.push(node);
         }
         return newNode;
@@ -125,18 +130,24 @@ public final class CycleDetector<N> {
         .peek(n -> {
           currentPath.remove(n);
           if (n.equals(enclosingCycles.peek())) {
-            // exiting a cycle.
+            // Exiting a cycle.
             // In case of a self-cycle, we immediately pop it because nothing is enclosed.
             // `cyclic` still points to this cyclic node for the later map() call to use.
             enclosingCycles.pop();
           }
           if (!enclosingCycles.isEmpty()) {
             // If we are in a cycle, we want to come back in again in case it forms another cycle
-            // from a different path. Otherwise, keep it as a dead end.
-            deadEnds.remove(n);
+            // from a different path. Otherwise, it's proved to be a dead end.
+            blocked.remove(n);
           }
         })
         .filter(n -> cyclic.get() != null)
-        .map(last -> Stream.concat(currentPath.stream(), Stream.of(last, cyclic.getAndSet(null))));
+        .map(last ->
+            Stream.concat(currentPath.stream(), Stream.of(last, cyclic.getAndSet(null)))
+                .collect(toImmutableList()));
+  }
+
+  private static <T> Collector<T, ?, List<T>> toImmutableList() {
+    return Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList);
   }
 }

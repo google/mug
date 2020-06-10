@@ -1,16 +1,16 @@
 package com.google.mu.util.graph;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static java.util.Arrays.asList;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
 import org.junit.Test;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
@@ -36,7 +36,7 @@ public class CycleDetectorTest {
 
   @Test
   public void detectCycle_oneUndirectedEdge() {
-    Stream<String> cycle =
+    List<String> cycle =
         detectCycle(toUndirectedGraph(ImmutableListMultimap.of("foo", "bar")), "foo");
     assertThat(cycle).containsExactly("foo", "bar", "foo").inOrder();
   }
@@ -58,16 +58,16 @@ public class CycleDetectorTest {
   public void detectCycle_threeDirectedEdges_withCycle() {
     Graph<String> graph =
         toDirectedGraph(ImmutableListMultimap.of("foo", "bar", "bar", "baz", "baz", "foo"));
-    Stream<String> cycle = detectCycle(graph, "foo");
-    assertThat(cycle).containsExactly("foo", "bar", "baz", "foo").inOrder();
+    assertThat(detectCycle(graph, "foo"))
+        .containsExactly("foo", "bar", "baz", "foo").inOrder();
   }
 
   @Test
   public void detectCycle_innerDirectedEdges_withCycle() {
     Graph<String> graph = toDirectedGraph(
         ImmutableListMultimap.of("foo", "bar", "bar", "baz", "baz", "zoo", "zoo", "bar"));
-    Stream<String> cycle = detectCycle(graph, "foo");
-    assertThat(cycle).containsExactly("foo", "bar", "baz", "zoo", "bar").inOrder();
+    assertThat(detectCycle(graph, "foo"))
+        .containsExactly("foo", "bar", "baz", "zoo", "bar").inOrder();
   }
 
   @Test
@@ -85,8 +85,8 @@ public class CycleDetectorTest {
         "baz", asList("zoo"),
         "tea", asList("zoo"),
         "zoo", asList("foo")));
-    Stream<String> cycle = detectCycle(graph, "bar");
-    assertThat(cycle).containsExactly("bar", "baz", "zoo", "foo", "bar").inOrder();
+    assertThat(detectCycle(graph, "bar"))
+        .containsExactly("bar", "baz", "zoo", "foo", "bar").inOrder();
   }
 
   @Test
@@ -148,16 +148,15 @@ public class CycleDetectorTest {
   }
 
   @SafeVarargs
-  private static <N> Stream<N> detectCycle(Graph<N> graph, N... startNodes) {
+  private static <N> List<N> detectCycle(Graph<N> graph, N... startNodes) {
     return CycleDetector.forGraph((N n) -> graph.successors(n).stream())
         .detectCycleFrom(startNodes);
   }
 
   @SafeVarargs
-  private static <N> Stream<ImmutableList<N>> detectCycles(Graph<N> graph, N... startNodes) {
+  private static <N> Stream<List<N>> detectCycles(Graph<N> graph, N... startNodes) {
     return CycleDetector.forGraph((N n) -> graph.successors(n).stream())
-        .detectCyclesFrom(asList(startNodes))
-        .map(nodes -> nodes.collect(toImmutableList()));
+        .detectCyclesFrom(asList(startNodes));
   }
 
   private static <N> Graph<N> toUndirectedGraph(Multimap<N, N> edges) {
