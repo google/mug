@@ -114,8 +114,8 @@ public final class CycleDetector<N> {
         boolean newNode = blocked.add(node);
         if (newNode) {
           currentPath.add(node);
-        } else if (currentPath.contains(node)) {  // A cycle's found!
-          cyclic.compareAndSet(null, node);
+        } else if (currentPath.contains(node) && cyclic.compareAndSet(null, node)) {
+          // A cycle's found!
           enclosingCycles.push(node);
         }
         return newNode;
