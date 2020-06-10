@@ -15,7 +15,6 @@
 package com.google.mu.util.graph;
 
 import static com.google.mu.util.graph.Walker.nonNullList;
-import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayDeque;
@@ -51,39 +50,6 @@ public final class CycleDetector<N> {
   public static <N> CycleDetector<N> forGraph(
       Function<? super N, ? extends Stream<? extends N>> findSuccessors) {
     return new CycleDetector<>(findSuccessors);
-  }
-
-  /**
-   * Walking from {@code startNodes}, detects if the graph has any cycle.
-   *
-   * <p>This method will hang if the given graph is infinite without cycle (the sequence of natural
-   * numbers for instance).
-   *
-   * @param startNode the node to start walking the graph.
-   * @return The immutable list of nodes starting from the first of {@code startNodes} that leads to
-   *         a cycle, ending with nodes along a cyclic path. The last node will also be the starting
-   *         point of the cycle. That is, if {@code A} and {@code B} form a cycle, the stream ends
-   *         with {@code A -> B -> A}. If there is no cycle, {@link Stream#empty} is returned.
-   */
-  @SafeVarargs
-  public final List<N> detectCycleFrom(N... startNodes) {
-    return detectCycleFrom(nonNullList(startNodes));
-  }
-
-  /**
-   * Walking from {@code startNodes}, detects if the graph has any cycle.
-   *
-   * <p>This method will hang if the given graph is infinite without cycle (the sequence of natural
-   * numbers for instance).
-   *
-   * @param startNodes the nodes to start walking the graph.
-   * @return The immutable list of nodes starting from the first of {@code startNodes} that leads to
-   *         a cycle, ending with nodes along a cyclic path. The last node will also be the starting
-   *         point of the cycle. That is, if {@code A} and {@code B} form a cycle, the stream ends
-   *         with {@code A -> B -> A}. If there is no cycle, {@link Stream#empty} is returned.
-   */
-  public List<N> detectCycleFrom(Iterable<? extends N> startNodes) {
-    return detectCyclesFrom(startNodes).findFirst().orElse(emptyList());
   }
 
   /**

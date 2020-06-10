@@ -25,13 +25,13 @@ import com.google.mu.util.stream.BiStream;
 public class CycleDetectorTest {
   @Test
   public void detectCycle_noChildren() {
-    assertThat(CycleDetector.forGraph(n -> null).detectCycleFrom("root")).isEmpty();
+    assertThat(CycleDetector.forGraph(n -> null).detectCyclesFrom("root")).isEmpty();
   }
 
   @Test
   public void detectCycle_trivialCycle() {
-    assertThat(CycleDetector.forGraph(Stream::of).detectCycleFrom("root"))
-        .containsExactly("root", "root");
+    assertThat(CycleDetector.forGraph(Stream::of).detectCyclesFrom("root"))
+        .containsExactly(asList("root", "root"));
   }
 
   @Test
@@ -43,13 +43,13 @@ public class CycleDetectorTest {
 
   @Test
   public void detectCycle_oneDirectedEdge() {
-    assertThat(detectCycle(toDirectedGraph(ImmutableListMultimap.of("foo", "bar")), "foo"))
+    assertThat(detectCycles(toDirectedGraph(ImmutableListMultimap.of("foo", "bar")), "foo"))
         .isEmpty();
   }
 
   @Test
   public void detectCycle_twoDirectedEdges_noCycle() {
-    assertThat(detectCycle(toDirectedGraph(
+    assertThat(detectCycles(toDirectedGraph(
             ImmutableListMultimap.of("foo", "bar", "bar", "baz")), "foo"))
         .isEmpty();
   }
@@ -74,7 +74,7 @@ public class CycleDetectorTest {
   public void detectCycle_dag_noCycle() {
     Graph<String> graph = toDirectedGraph(ImmutableListMultimap.of(
         "foo", "bar", "bar", "baz", "baz", "zoo", "bar", "tea", "tea", "zoo"));
-    assertThat(detectCycle(graph, "foo")).isEmpty();
+    assertThat(detectCycles(graph, "foo")).isEmpty();
   }
 
   @Test
@@ -91,7 +91,7 @@ public class CycleDetectorTest {
 
   @Test
   public void detectCycle_noStartingNodes() {
-    assertThat(detectCycle(toUndirectedGraph(ImmutableListMultimap.of("foo", "bar"))))
+    assertThat(detectCycles(toUndirectedGraph(ImmutableListMultimap.of("foo", "bar"))))
         .isEmpty();
   }
 
@@ -150,7 +150,7 @@ public class CycleDetectorTest {
   @SafeVarargs
   private static <N> List<N> detectCycle(Graph<N> graph, N... startNodes) {
     return CycleDetector.forGraph((N n) -> graph.successors(n).stream())
-        .detectCycleFrom(startNodes);
+        .detectCyclesFrom(startNodes).findFirst().get();
   }
 
   @SafeVarargs
