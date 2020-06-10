@@ -1,11 +1,9 @@
 package com.google.mu.util.graph;
 
-import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static java.util.Arrays.asList;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -25,31 +23,31 @@ import com.google.mu.util.stream.BiStream;
 public class CycleDetectorTest {
   @Test
   public void detectCycle_noChildren() {
-    assertThat(CycleDetector.forGraph(n -> null).cyclesFrom("root")).isEmpty();
+    assertThat(CycleDetector.forGraph(n -> null).detectCycleFrom("root")).isEmpty();
   }
 
   @Test
   public void detectCycle_trivialCycle() {
-    assertThat(CycleDetector.forGraph(Stream::of).cyclesFrom("root"))
-        .containsExactly(asList("root", "root"));
+    assertThat(CycleDetector.forGraph(Stream::of).detectCycleFrom("root").get())
+        .containsExactly("root", "root");
   }
 
   @Test
   public void detectCycle_oneUndirectedEdge() {
-    List<String> cycle =
+    Stream<String> cycle =
         detectCycle(toUndirectedGraph(ImmutableListMultimap.of("foo", "bar")), "foo");
     assertThat(cycle).containsExactly("foo", "bar", "foo").inOrder();
   }
 
   @Test
   public void detectCycle_oneDirectedEdge() {
-    assertThat(detectCycles(toDirectedGraph(ImmutableListMultimap.of("foo", "bar")), "foo"))
+    assertThat(detectCycle(toDirectedGraph(ImmutableListMultimap.of("foo", "bar")), "foo"))
         .isEmpty();
   }
 
   @Test
   public void detectCycle_twoDirectedEdges_noCycle() {
-    assertThat(detectCycles(toDirectedGraph(
+    assertThat(detectCycle(toDirectedGraph(
             ImmutableListMultimap.of("foo", "bar", "bar", "baz")), "foo"))
         .isEmpty();
   }
@@ -74,7 +72,7 @@ public class CycleDetectorTest {
   public void detectCycle_dag_noCycle() {
     Graph<String> graph = toDirectedGraph(ImmutableListMultimap.of(
         "foo", "bar", "bar", "baz", "baz", "zoo", "bar", "tea", "tea", "zoo"));
-    assertThat(detectCycles(graph, "foo")).isEmpty();
+    assertThat(detectCycle(graph, "foo")).isEmpty();
   }
 
   @Test
@@ -91,7 +89,7 @@ public class CycleDetectorTest {
 
   @Test
   public void detectCycle_noStartingNodes() {
-    assertThat(detectCycles(toUndirectedGraph(ImmutableListMultimap.of("foo", "bar"))))
+    assertThat(detectCycle(toUndirectedGraph(ImmutableListMultimap.of("foo", "bar"))))
         .isEmpty();
   }
 
@@ -103,36 +101,6 @@ public class CycleDetectorTest {
         .inOrder();
     assertThat(detectCycle(graph, "foo", "a")).containsExactly("foo", "bar", "baz", "foo")
         .inOrder();
-  }
-
-  @Test
-  public void detectCycles_diamondCycle() {
-    Graph<String> graph = toDirectedGraph(ImmutableMap.of(
-        "foo", asList("bar"),
-        "bar", asList("baz", "tea"),
-        "baz", asList("zoo"),
-        "tea", asList("zoo"),
-        "zoo", asList("foo")));
-    assertThat(detectCycles(graph, "bar"))
-        .containsExactly(
-            asList("bar", "baz", "zoo", "foo", "bar"),
-            asList("bar", "tea", "zoo", "foo", "bar")).inOrder();
-  }
-
-  @Test
-  public void detectCycles_nestedCycles() {
-    Graph<String> graph = toDirectedGraph(ImmutableMap.of(
-        "foo", asList("bar"),
-        "bar", asList("baz", "tea", "space"),
-        "baz", asList("zoo", "space"),
-        "tea", asList("zoo"),
-        "zoo", asList("foo", "tea")));
-    assertThat(detectCycles(graph, "bar"))
-        .containsExactly(
-            asList("bar", "baz", "zoo", "foo", "bar"),
-            asList("bar", "baz", "zoo", "tea", "zoo"),
-            asList("bar", "tea", "zoo", "foo", "bar"),
-            asList("bar", "tea", "zoo", "tea")).inOrder();
   }
 
   @Test
@@ -148,15 +116,10 @@ public class CycleDetectorTest {
   }
 
   @SafeVarargs
-  private static <N> List<N> detectCycle(Graph<N> graph, N... startNodes) {
+  private static <N> Stream<N> detectCycle(Graph<N> graph, N... startNodes) {
     return CycleDetector.forGraph((N n) -> graph.successors(n).stream())
-        .cyclesFrom(startNodes).findFirst().get();
-  }
-
-  @SafeVarargs
-  private static <N> Stream<List<N>> detectCycles(Graph<N> graph, N... startNodes) {
-    return CycleDetector.forGraph((N n) -> graph.successors(n).stream())
-        .cyclesFrom(asList(startNodes));
+        .detectCycleFrom(startNodes)
+        .orElse(Stream.empty());
   }
 
   private static <N> Graph<N> toUndirectedGraph(Multimap<N, N> edges) {

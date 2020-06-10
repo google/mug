@@ -17,24 +17,17 @@ package com.google.mu.util.graph;
 import static com.google.mu.util.graph.Walker.nonNullList;
 import static java.util.Objects.requireNonNull;
 
-import java.util.ArrayDeque;
-import java.util.Collections;
-import java.util.Deque;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
  * Utility to detect cycles in graphs.
- *
- * <p>Note that streams returned by this class are not safe to run in parallel mode.
  *
  * @since 3.9
  */
@@ -55,77 +48,54 @@ public final class CycleDetector<N> {
   }
 
   /**
-   * Returns a lazy stream of simple cycles in the graph topology.
+   * Walking from {@code startNodes}, detects if the graph has any cycle.
    *
-   * <p>Note that if the graph is infinite with no cycles (for example, the sequence of
-   * natural numbers), this method can still return the lazy stream quickly, but attempting to
-   * iterate through the stream will cause the program to hang while the stream traverses through
-   * the infinite graph.
+   * <p>This method will hang if the given graph is infinite without cycle (the sequence of natural
+   * numbers for instance).
    *
-   * @param startNodes the nodes to start walking the graph.
-   * @return A lazy stream of cycles each starting from one of {@code startNodes} that leads to the
-   *         cycle, ending with nodes along the cyclic path. The last node will also be the starting
+   * @param startNode the node to start walking the graph.
+   * @return The stream of nodes starting from the first of {@code startNodes} that leads to a
+   *         cycle, ending with nodes along a cyclic path. The last node will also be the starting
    *         point of the cycle. That is, if {@code A} and {@code B} form a cycle, the stream ends
-   *         with {@code A -> B -> A}. If there is no cycle, {@link Stream#empty} is returned.
+   *         with {@code A -> B -> A}. If there is no cycle, {@link Optional#empty} is returned.
    */
   @SafeVarargs
-  public final Stream<List<N>> cyclesFrom(N... startNodes) {
-    return cyclesFrom(nonNullList(startNodes));
+  public final Optional<Stream<N>> detectCycleFrom(N... startNodes) {
+    return detectCycleFrom(nonNullList(startNodes));
   }
 
   /**
-   * Returns a lazy stream of simple cycles in the graph topology.
+   * Walking from {@code startNodes}, detects if the graph has any cycle.
    *
-   * <p>Note that if the graph is infinite with no cycles (for example, the sequence of
-   * natural numbers), this method can still return the lazy stream quickly, but attempting to
-   * iterate through the stream will cause the program to hang while the stream traverses through
-   * the infinite graph.
+   * <p>This method will hang if the given graph is infinite with no cycles (the sequence of natural
+   * numbers for instance).
    *
    * @param startNodes the nodes to start walking the graph.
-   * @return A lazy stream of cycles each starting from one of {@code startNodes} that leads to the
-   *         cycle, ending with nodes along the cyclic path. The last node will also be the starting
+   * @return The stream of nodes starting from the first of {@code startNodes} that leads to a
+   *         cycle, ending with nodes along a cyclic path. The last node will also be the starting
    *         point of the cycle. That is, if {@code A} and {@code B} form a cycle, the stream ends
-   *         with {@code A -> B -> A}. If there is no cycle, {@link Stream#empty} is returned.
+   *         with {@code A -> B -> A}. If there is no cycle, {@link Optional#empty} is returned.
    */
-  public Stream<List<N>> cyclesFrom(Iterable<? extends N> startNodes) {
+  public Optional<Stream<N>> detectCycleFrom(Iterable<? extends N> startNodes) {
     AtomicReference<N> cyclic = new AtomicReference<>();
-    Deque<N> enclosingCycles = new ArrayDeque<>();
-    Set<N> blocked = new HashSet<>();  // Always a superset of `currentPath`.
+    Set<N> seen = new HashSet<>();  // Always a superset of `currentPath`.
     LinkedHashSet<N> currentPath = new LinkedHashSet<>();
     Walker<N> walker = Walker.inGraph(findSuccessors, new Predicate<N>() {
       @Override public boolean test(N node) {
-        boolean newNode = blocked.add(node);
+        boolean newNode = seen.add(node);
         if (newNode) {
           currentPath.add(node);
-        } else if (currentPath.contains(node) && cyclic.compareAndSet(null, node)) {
+        } else if (currentPath.contains(node)) {
           // A cycle's found!
-          enclosingCycles.push(node);
+          cyclic.compareAndSet(null, node);
         }
         return newNode;
       }
     });
     return walker.postOrderFrom(startNodes)
-        .peek(n -> {
-          currentPath.remove(n);
-          if (n.equals(enclosingCycles.peek())) {
-            // Exiting a cycle.
-            // In case of a self-cycle, we immediately pop it because nothing is enclosed.
-            // `cyclic` still points to this cyclic node for the later map() call to use.
-            enclosingCycles.pop();
-          }
-          if (!enclosingCycles.isEmpty()) {
-            // If we are in a cycle, we want to come back in again in case it forms another cycle
-            // from a different path. Otherwise, it's proved to be a dead end.
-            blocked.remove(n);
-          }
-        })
+        .peek(currentPath::remove)
         .filter(n -> cyclic.get() != null)
-        .map(last ->
-            Stream.concat(currentPath.stream(), Stream.of(last, cyclic.getAndSet(null)))
-                .collect(toImmutableList()));
-  }
-
-  private static <T> Collector<T, ?, List<T>> toImmutableList() {
-    return Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList);
+        .findFirst()
+        .map(last -> Stream.concat(currentPath.stream(), Stream.of(last, cyclic.getAndSet(null))));
   }
 }
