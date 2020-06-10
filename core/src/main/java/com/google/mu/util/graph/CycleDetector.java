@@ -125,14 +125,14 @@ public final class CycleDetector<N> {
         .peek(n -> {
           currentPath.remove(n);
           if (n.equals(enclosingCycles.peek())) {
-            // exiting a cycle.
+            // Exiting a cycle.
             // In case of a self-cycle, we immediately pop it because nothing is enclosed.
             // `cyclic` still points to this cyclic node for the later map() call to use.
             enclosingCycles.pop();
           }
           if (!enclosingCycles.isEmpty()) {
             // If we are in a cycle, we want to come back in again in case it forms another cycle
-            // from a different path. Otherwise, keep it as a dead end.
+            // from a different path. Otherwise, it's proved to be a dead end.
             deadEnds.remove(n);
           }
         })
