@@ -107,11 +107,11 @@ public final class CycleDetector<N> {
   public Stream<Stream<N>> detectCyclesFrom(Iterable<? extends N> startNodes) {
     AtomicReference<N> cyclic = new AtomicReference<>();
     Deque<N> enclosingCycles = new ArrayDeque<>();
-    Set<N> deadEnds = new HashSet<>();  // Always a superset of `currentPath`.
+    Set<N> blocked = new HashSet<>();  // Always a superset of `currentPath`.
     LinkedHashSet<N> currentPath = new LinkedHashSet<>();
     Walker<N> walker = Walker.inGraph(findSuccessors, new Predicate<N>() {
       @Override public boolean test(N node) {
-        boolean newNode = deadEnds.add(node);
+        boolean newNode = blocked.add(node);
         if (newNode) {
           currentPath.add(node);
         } else if (currentPath.contains(node)) {  // A cycle's found!
@@ -133,7 +133,7 @@ public final class CycleDetector<N> {
           if (!enclosingCycles.isEmpty()) {
             // If we are in a cycle, we want to come back in again in case it forms another cycle
             // from a different path. Otherwise, it's proved to be a dead end.
-            deadEnds.remove(n);
+            blocked.remove(n);
           }
         })
         .filter(n -> cyclic.get() != null)
