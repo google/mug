@@ -38,7 +38,7 @@ public final class CycleDetector<N> {
   }
 
   /**
-   * Returns a {@code CycleDetector} for the graph structure as observed by the
+   * Returns a {@code CycleDetector} for the graph topology as observed by the
    * {@code findSuccessors} function.
    */
   public static <N> CycleDetector<N> forGraph(
@@ -87,7 +87,7 @@ public final class CycleDetector<N> {
         if (newNode) {
           stack.add(node);
         } else if (stack.contains(node)) {
-          cyclic.compareAndSet(null, node);
+          cyclic.compareAndSet(null, node);  // stick to the first finding
         }
         return newNode;
       }

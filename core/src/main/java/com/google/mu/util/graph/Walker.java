@@ -49,7 +49,7 @@ public final class Walker<N> {
   }
 
   /**
-   * Returns a {@code Walker} to walk the tree structure (no cycles) as observed by the {@code
+   * Returns a {@code Walker} to walk the tree topology (no cycles) as observed by the {@code
    * findChildren} function, which finds children of any given tree node.
    *
    * <p>The returned object is idempotent, stateless and immutable as long as {@code findChildren} is
@@ -67,7 +67,7 @@ public final class Walker<N> {
   }
 
   /**
-   * Returns a {@code Walker} to walk the graph structure (possibly with cycles) as observed by
+   * Returns a {@code Walker} to walk the graph topology (possibly with cycles) as observed by
    * the {@code findSuccessors} function, which finds successors of any given graph node.
    *
    * <p>Because the traversal needs to remember which node(s) have been traversed, memory usage is

@@ -115,6 +115,7 @@ public class CycleDetectorTest {
     new NullPointerTester().testAllPublicInstanceMethods(CycleDetector.forGraph(n -> null));
   }
 
+  @SafeVarargs
   private static <N> Stream<N> detectCycle(Graph<N> graph, N... startNodes) {
     return CycleDetector.forGraph((N n) -> graph.successors(n).stream())
         .detectCycleFrom(startNodes);
