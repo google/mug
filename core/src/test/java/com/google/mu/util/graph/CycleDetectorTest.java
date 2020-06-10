@@ -1,5 +1,6 @@
 package com.google.mu.util.graph;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth8.assertThat;
 import static java.util.Arrays.asList;
 
@@ -9,6 +10,7 @@ import java.util.stream.Stream;
 
 import org.junit.Test;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
@@ -104,6 +106,36 @@ public class CycleDetectorTest {
   }
 
   @Test
+  public void detectCycles_diamondCycle() {
+    Graph<String> graph = toDirectedGraph(ImmutableMap.of(
+        "foo", asList("bar"),
+        "bar", asList("baz", "tea"),
+        "baz", asList("zoo"),
+        "tea", asList("zoo"),
+        "zoo", asList("foo")));
+    assertThat(detectCycles(graph, "bar"))
+        .containsExactly(
+            asList("bar", "baz", "zoo", "foo", "bar"),
+            asList("bar", "tea", "zoo", "foo", "bar")).inOrder();
+  }
+
+  @Test
+  public void detectCycles_nestedCycles() {
+    Graph<String> graph = toDirectedGraph(ImmutableMap.of(
+        "foo", asList("bar"),
+        "bar", asList("baz", "tea", "space"),
+        "baz", asList("zoo", "space"),
+        "tea", asList("zoo"),
+        "zoo", asList("foo", "tea")));
+    assertThat(detectCycles(graph, "bar"))
+        .containsExactly(
+            asList("bar", "baz", "zoo", "foo", "bar"),
+            asList("bar", "baz", "zoo", "tea", "zoo"),
+            asList("bar", "tea", "zoo", "foo", "bar"),
+            asList("bar", "tea", "zoo", "tea")).inOrder();
+  }
+
+  @Test
   public void staticMethods_nullCheck() throws Exception {
     new NullPointerTester().testAllPublicStaticMethods(CycleDetector.class);
     new ClassSanityTester().forAllPublicStaticMethods(CycleDetector.class).testNulls();
@@ -119,6 +151,13 @@ public class CycleDetectorTest {
   private static <N> Stream<N> detectCycle(Graph<N> graph, N... startNodes) {
     return CycleDetector.forGraph((N n) -> graph.successors(n).stream())
         .detectCycleFrom(startNodes);
+  }
+
+  @SafeVarargs
+  private static <N> Stream<ImmutableList<N>> detectCycles(Graph<N> graph, N... startNodes) {
+    return CycleDetector.forGraph((N n) -> graph.successors(n).stream())
+        .detectCyclesFrom(asList(startNodes))
+        .map(nodes -> nodes.collect(toImmutableList()));
   }
 
   private static <N> Graph<N> toUndirectedGraph(Multimap<N, N> edges) {
