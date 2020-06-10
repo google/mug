@@ -107,16 +107,21 @@ public final class CycleDetector<N> {
     return walker.postOrderFrom(startNodes)
         .peek(n -> {
           currentPath.remove(n);
+          System.out.println("Printing " + n);
           if (n.equals(enclosingCycles.peek())) {
             // Exiting a cycle.
             // In case of a self-cycle, we immediately pop it because nothing is enclosed.
             // `cyclic` still points to this cyclic node for the later map() call to use.
+            System.out.println("Exiting cycle: " + n);
             enclosingCycles.pop();
           }
           if (!enclosingCycles.isEmpty()) {
             // If we are in a cycle, we want to come back in again in case it forms another cycle
             // from a different path. Otherwise, it's proved to be a dead end.
+            System.out.println("In cycle, do not block: " + n);
             blocked.remove(n);
+          } else {
+            System.out.println("Out of cycle cycle, block: " + n);
           }
         })
         .filter(n -> cyclic.get() != null)

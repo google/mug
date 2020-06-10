@@ -136,6 +136,63 @@ public class CycleDetectorTest {
   }
 
   @Test
+  public void detectCycles_fromDifferentNodesOfSameCycle() {
+    Graph<String> graph = toDirectedGraph(ImmutableMap.of(
+        "a", asList("b"),
+        "b", asList("c"),
+        "c", asList("a")));
+    assertThat(detectCycles(graph, "a", "b", "c"))
+        .containsExactly(asList("a", "b", "c", "a")).inOrder();
+  }
+
+  @Test
+  public void detectCycles_differentStartingPointsLeadingToSameCycle() {
+    Graph<String> graph = toDirectedGraph(ImmutableMap.of(
+        "foo", asList("c", "b"),
+        "bar", asList("a"),
+        "a", asList("b"),
+        "b", asList("c"),
+        "c", asList("a")));
+    assertThat(detectCycles(graph, "foo", "bar"))
+        .containsExactly(asList("foo", "c", "a", "b", "c")).inOrder();
+  }
+
+  @Test
+  public void detectCycles_differentStartingPointsLeadingToNestedCycle() {
+    Graph<String> graph = toDirectedGraph(ImmutableMap.of(
+        "foo", asList("c", "b"),
+        "bar", asList("a"),
+        "a", asList("b"),
+        "b", asList("c"),
+        "c", asList("a", "b")));
+    assertThat(detectCycles(graph, "foo", "bar"))
+        .containsExactly(asList("foo", "c", "a", "b", "c")).inOrder();
+  }
+
+  @Test
+  public void detectCycles_differentPathsLeadingToSameCycle() {
+    Graph<String> graph = toDirectedGraph(ImmutableMap.of(
+        "root", asList("foo", "bar"),
+        "foo", asList("c", "b"),
+        "bar", asList("a"),
+        "a", asList("c"),
+        "c", asList("a")));
+    assertThat(detectCycles(graph, "root"))
+        .containsExactly(asList("root", "foo", "c", "a", "c")).inOrder();
+  }
+
+  @Test
+  public void detectCycles_differentPathsLeadingToSameSelfCycle() {
+    Graph<String> graph = toDirectedGraph(ImmutableMap.of(
+        "root", asList("foo", "bar"),
+        "foo", asList("c", "a"),
+        "bar", asList("a"),
+        "a", asList("a")));
+    assertThat(detectCycles(graph, "root"))
+        .containsExactly(asList("root", "foo", "a", "a")).inOrder();
+  }
+
+  @Test
   public void staticMethods_nullCheck() throws Exception {
     new NullPointerTester().testAllPublicStaticMethods(CycleDetector.class);
     new ClassSanityTester().forAllPublicStaticMethods(CycleDetector.class).testNulls();
@@ -166,8 +223,10 @@ public class CycleDetectorTest {
   }
 
   private static <N> Graph<N> toDirectedGraph(Multimap<N, N> edges) {
-    MutableGraph<N> graph =
-        GraphBuilder.directed().incidentEdgeOrder(ElementOrder.stable()).<N>build();
+    MutableGraph<N> graph = GraphBuilder.directed()
+        .allowsSelfLoops(true)
+        .incidentEdgeOrder(ElementOrder.stable())
+        .<N>build();
     BiStream.from(edges.asMap()).flatMapValues(Collection::stream).forEach(graph::putEdge);
     return graph;
   }
