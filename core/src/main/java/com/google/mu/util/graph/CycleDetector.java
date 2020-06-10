@@ -38,7 +38,7 @@ public final class CycleDetector<N> {
   }
 
   /**
-   * Returns a {@code CycleDetector} for the graph structure as observed by the
+   * Returns a {@code CycleDetector} for the graph topology as observed by the
    * {@code findSuccessors} function.
    */
   public static <N> CycleDetector<N> forGraph(
