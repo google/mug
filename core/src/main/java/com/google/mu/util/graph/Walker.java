@@ -14,7 +14,7 @@
  *****************************************************************************/
 package com.google.mu.util.graph;
 
-import static com.google.mu.util.stream.MoreStreams.whileNotEmpty;
+import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
@@ -232,13 +232,14 @@ public final class Walker<N> {
     Stream<N> postOrder(Iterable<? extends N> startNodes) {
       horizon.push(startNodes.spliterator());
       Deque<N> roots = new ArrayDeque<>();
-      return whileNotEmpty(horizon).map(h -> removeFromBottom(roots)).filter(Objects::nonNull);
+      return whileNotNull(() -> removeFromBottom(roots));
     }
 
     private Stream<N> topDown(InsertionOrder order) {
-      return whileNotEmpty(horizon).map(h -> removeFromTop(order)).filter(Objects::nonNull);
+      return whileNotNull(() -> removeFromTop(order));
     }
 
+    /** Removes an element from top, or null if no more. */
     private N removeFromTop(InsertionOrder traversalOrder) {
       do {
         if (visitNext()) {
@@ -253,6 +254,7 @@ public final class Walker<N> {
       return null; // no more element
     }
 
+    /** Removes an element from bottom, or null if no more. */
     private N removeFromBottom(Deque<N> roots) {
       while (visitNext()) {
         N next = visited;
