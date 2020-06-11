@@ -41,11 +41,12 @@ import java.util.stream.Stream;
  * appraised treasure value:
  *
  * <pre>{@code
- * double totalTreasureValue = Walker.inGraph((Island i) -> nearbyIslands(i).stream())
- *     .preOrderFrom(homeIsland)
- *     .filter(Island::hasTreasure)
- *     .map(Island::getTreasure)
- *     .collect(summingDouble(market::appraiseValue));
+ * double totalTreasureValue =
+ *     Walker.inGraph((Island i) -> nearbyIslands(i).stream())
+ *         .preOrderFrom(homeIsland)
+ *         .filter(Island::hasTreasure)
+ *         .map(Island::getTreasure)
+ *         .collect(summingDouble(market::appraiseValue));
  * }</pre>
  *
  * <p>None of these streams are safe to run in parallel.
