@@ -59,7 +59,7 @@ import com.google.mu.util.stream.BiStream;
  * <p>The streams returned by this class are <strong>not safe</strong> to run in parallel.
  *
  * @param <N> the type of graph nodes
- * @since 3.9
+ * @since 4.0
  */
 public final class ShortestPath<N> {
   private final N node;
