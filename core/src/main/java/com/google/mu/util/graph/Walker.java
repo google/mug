@@ -242,7 +242,7 @@ public final class Walker<N> {
           horizon.push(successors.spliterator());
           roots.push(next);
         }
-        return roots.pollFirst();
+        return roots.poll();
       });
     }
 

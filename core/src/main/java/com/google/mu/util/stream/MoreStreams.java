@@ -301,9 +301,8 @@ public final class MoreStreams {
    * return whileNotNull(() -> hasData ? data : null);
    * }</pre>
    *
-   * The only case you'd still need to resort to implementing {@code AbstractSpliterator} or
-   * {@link java.util.Iterator} directly is if null is a valid element, which is usually discouraged
-   * anyway.
+   * You may still need to implement {@code AbstractSpliterator} or {@link java.util.Iterator}
+   * directly if null is a valid element (usually discouraged though).
    *
    * <p>If you have an imperative loop over a mutable queue or stack:
    *
