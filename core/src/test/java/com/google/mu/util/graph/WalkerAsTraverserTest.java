@@ -683,7 +683,6 @@ public class WalkerAsTraverserTest {
   }
 
   @Test
-  @SuppressWarnings("CheckReturnValue")
   public void forTree_acceptsDirectedGraph() {
     MutableGraph<String> graph = GraphBuilder.directed().build();
     graph.putEdge("a", "b");
@@ -692,7 +691,6 @@ public class WalkerAsTraverserTest {
   }
 
   @Test
-  @SuppressWarnings("CheckReturnValue")
   public void forTree_acceptsDirectedValueGraph() {
     MutableValueGraph<String, Integer> valueGraph = ValueGraphBuilder.directed().build();
     valueGraph.putEdgeValue("a", "b", 11);
@@ -701,7 +699,6 @@ public class WalkerAsTraverserTest {
   }
 
   @Test
-  @SuppressWarnings("CheckReturnValue")
   public void forTree_acceptsDirectedNetwork() {
     MutableNetwork<String, Integer> network = NetworkBuilder.directed().build();
     network.addEdge("a", "b", 11);
