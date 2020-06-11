@@ -307,7 +307,7 @@ public final class MoreStreams {
    * discouraged, they are mainly a problem for users who have to remember to deal with them.
    * The stream returned by {@code whileNotNull()} on the other hand is guaranteed to never include
    * nulls that users have to worry about. If you already have an {@code Optional} from a method
-   * return value, use {@code whileNotNull(() -> optionalReturningMethod().orElse(null))}.
+   * return value, you can use {@code whileNotNull(() -> optionalReturningMethod().orElse(null))}.
    *
    * <p>One may still need to implement {@code AbstractSpliterator} or {@link java.util.Iterator}
    * directly if null is a valid element (usually discouraged though).
