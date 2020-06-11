@@ -35,11 +35,15 @@ import java.util.stream.Stream;
 /**
  * Implements generic graph and tree traversal algorithms ({@link #preOrderFrom pre-order},
  * {@link #postOrderFrom post-order} and {@link #breadthFirstFrom breadth-first}) as lazily
- * evaluated streams, allowing infinite-size graphs. For example:
+ * evaluated streams, allowing infinite-size graphs. The following example code explores all islands
+ * for treasure and calculate the total appraised treasure value:
  *
  * <pre>{@code
- * Walker<Room> walker = Walker.inGraph(n -> graph.successors(n).stream());
- * walker.preOrderFrom(entryPoint).forEachOrdered(...);
+ * double totalTreasureValue = Walker.inGraph((Island i) -> nearbyIslands(i).stream())
+ *     .preOrderFrom(homeIsland)
+ *     .filter(Island::hasTreasure)
+ *     .map(Island::getTreasure)
+ *     .collect(summingDouble(market::appraiseValue));
  * }</pre>
  *
  * <p>None of these streams are safe to run in parallel.
