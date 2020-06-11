@@ -66,10 +66,10 @@ public final class Walker<N> {
    *
    * <p>{@code inTree()} is more efficient than {@link #inGraph inGraph()} because it doesn't need
    * to remember nodes that are already visited. On the other hand, the returned {@code Walker} can
-   * walk in cycles if the {@code findChildren} function unexpectedly represent a cyclic graph.
+   * walk in cycles if the {@code findChildren} function unexpectedly represents a cyclic graph.
    * If you need to guard against cycles just in case, you can use {@link
-   * inGraph(Function, Predicate) inGraph() with a custom node tracker} to check for the
-   * critical precondition:
+   * inGraph(Function, Predicate) inGraph()} with a custom node tracker to check for the critical
+   * precondition:
    *
    * <pre>{@code
    * Set<N> visited = new HashSet<>();
