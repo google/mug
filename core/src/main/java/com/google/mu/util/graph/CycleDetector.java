@@ -29,7 +29,7 @@ import java.util.stream.Stream;
 /**
  * Utility to detect cycles in graphs.
  *
- * @since 3.9
+ * @since 4.0
  */
 public final class CycleDetector<N> {
   private final Function<? super N, ? extends Stream<? extends N>> findSuccessors;

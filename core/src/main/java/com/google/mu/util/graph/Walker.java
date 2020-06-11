@@ -39,7 +39,7 @@ import java.util.stream.Stream;
  *
  * <p>None of these streams are safe to run in parallel.
  *
- * @since 3.9
+ * @since 4.0
  */
 public final class Walker<N> {
   private final Supplier<Traversal<N>> newTraversal;
