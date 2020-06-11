@@ -85,8 +85,7 @@ public final class CycleDetector<N> {
         boolean newNode = seen.add(node);
         if (newNode) {
           currentPath.add(node);
-        } else if (currentPath.contains(node)) {
-          // A cycle's found!
+        } else if (currentPath.contains(node)) {  // A cycle's found!
           cyclic.compareAndSet(null, node);
         }
         return newNode;

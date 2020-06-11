@@ -14,9 +14,7 @@
  *****************************************************************************/
 package com.google.mu.util.graph;
 
-import static com.google.mu.util.stream.MoreStreams.generate;
 import static com.google.mu.util.stream.MoreStreams.whileNotEmpty;
-import static java.util.Arrays.asList;
 import static java.util.Comparator.comparingDouble;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
@@ -27,7 +25,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -73,8 +70,9 @@ public final class ShortestPath<N> {
    * Returns a lazy stream of shortest paths starting from {@code startNode}.
    *
    * <p>The {@code findSuccessors} function is called on-the-fly to find the successors
-   * of the current node. This function is expected to return a {@code BiStream} with these direct
-   * neighbor nodes and their distances from the passed-in current node, respectively.
+   * of the current node. It's is expected to return a {@code BiStream} with these direct
+   * neighbor nodes and their distances from the passed-in current node, respectively; null or
+   * empty stream if there are no successors.
    *
    * <p>{@code startNode} will correspond to the first element in the returned stream, with
    * {@link ShortestPath#distance} equal to {@code 0}, followed by the next closest node, etc.
@@ -86,25 +84,26 @@ public final class ShortestPath<N> {
       Function<? super N, ? extends BiStream<? extends N, Double>> findSuccessors) {
     requireNonNull(startNode);
     requireNonNull(findSuccessors);
-    PriorityQueue<ShortestPath<N>> queue = new PriorityQueue<>(comparingDouble(ShortestPath::distance));
-    queue.add(new ShortestPath<>(startNode));
+    PriorityQueue<ShortestPath<N>> horizon =
+        new PriorityQueue<>(comparingDouble(ShortestPath::distance));
+    horizon.add(new ShortestPath<>(startNode));
     Map<N, ShortestPath<N>> seen = new HashMap<>();
-    Set<N> done = new HashSet<>();
-    return whileNotEmpty(queue)
+    Set<N> settled = new HashSet<>();
+    return whileNotEmpty(horizon)
         .map(PriorityQueue::remove)
-        .filter(path -> done.add(path.to()))
+        .filter(path -> settled.add(path.to()))
         .peek(path ->
             forEachPairOrNull(
                 findSuccessors.apply(path.to()),
                 (neighbor, distance) -> {
                   requireNonNull(neighbor);
                   checkNotNegative(distance, "distance");
-                  if (done.contains(neighbor)) return;
+                  if (settled.contains(neighbor)) return;
                   ShortestPath<?> old = seen.get(neighbor);
                   if (old == null || path.distance() + distance < old.distance()) {
                     ShortestPath<N> shorter = path.extendTo(neighbor, distance);
                     seen.put(neighbor, shorter);
-                    queue.add(shorter);
+                    horizon.add(shorter);
                   }
                 }));
   }
@@ -113,7 +112,7 @@ public final class ShortestPath<N> {
    * Returns a lazy stream of unweighted shortest paths starting from {@code startNode}.
    *
    * <p>The {@code findSuccessors} function is called on-the-fly to find the successors of the
-   * current node.
+   * current node. It may return Null or empty stream when there are no successors.
    *
    * <p>{@code startNode} will correspond to the first element in the returned stream, with
    * {@link ShortestPath#distance} equal to {@code 0}, followed by its successor nodes, etc.
@@ -127,13 +126,11 @@ public final class ShortestPath<N> {
       N startNode, Function<? super N, ? extends Stream<? extends N>> findSuccessors) {
     requireNonNull(startNode);
     requireNonNull(findSuccessors);
-    Set<N> seen = new HashSet<>(asList(startNode));
-    return generate(
-        new ShortestPath<>(startNode),
-        path -> nullSafe(findSuccessors.apply(path.to()))
-            .peek(Objects::requireNonNull)
-            .filter(seen::add)
-            .map(n -> path.extendTo(n, 1)));
+    Set<N> seen = new HashSet<>();
+    Walker<ShortestPath<N>> walker = Walker.inGraph(
+        path -> mapOrNull(findSuccessors.apply(path.to()), n -> path.extendTo(n, 1)),
+        path -> seen.add(path.to()));
+    return walker.breadthFirstFrom(new ShortestPath<>(startNode));
   }
 
   private ShortestPath(N node) {
@@ -141,7 +138,7 @@ public final class ShortestPath<N> {
   }
 
   private ShortestPath(N node, ShortestPath<N> predecessor, double distance) {
-    this.node = node;
+    this.node = requireNonNull(node);
     this.predecessor = predecessor;
     this.distance = distance;
   }
@@ -187,8 +184,9 @@ public final class ShortestPath<N> {
     }
   }
 
-  private static <T> Stream<T> nullSafe(Stream<T> stream) {
-    return stream == null ? Stream.empty() : stream;
+  private static <F, T> Stream<T> mapOrNull(
+      Stream<? extends F> stream, Function<? super F, ? extends T> mapper) {
+    return stream == null ? null : stream.map(mapper);
   }
 
   private static <K, V> void forEachPairOrNull(
