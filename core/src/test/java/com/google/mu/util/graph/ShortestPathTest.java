@@ -40,6 +40,14 @@ public class ShortestPathTest {
   private final MutableGraph<String> graph = GraphBuilder.undirected().<String>build();
   private final Map<String, Double> distances = new HashMap<>();
 
+  @Test public void nullSuccessors() {
+    graph.addNode("root");
+    List<ShortestPath<String>> paths = shortestPathsFrom("root", n -> null).collect(toList());
+    assertThat(paths).hasSize(1);
+    assertThat(paths.get(0).distance()).isEqualTo(0D);
+    assertThat(paths.get(0).stream().toMap()).isEqualTo(ImmutableMap.of("root", 0D));
+  }
+
   @Test public void oneNode() {
     graph.addNode("root");
     List<ShortestPath<String>> paths =
@@ -135,6 +143,14 @@ public class ShortestPathTest {
     addEdge("5", "6", 9);
     assertThat(shortestPathsFrom("a", this::neighbors).map(Object::toString).collect(toList()))
         .containsExactly("a", "a->b", "a->c", "a->c->f", "a->c->d", "a->c->d->e");
+  }
+
+  @Test public void unnweighted_nullSuccessors() {
+    graph.addNode("root");
+    List<ShortestPath<String>> paths = unweightedShortestPathsFrom("root", n -> null).collect(toList());
+    assertThat(paths).hasSize(1);
+    assertThat(paths.get(0).distance()).isEqualTo(0D);
+    assertThat(paths.get(0).stream().toMap()).isEqualTo(ImmutableMap.of("root", 0D));
   }
 
   @Test public void unnweighted_oneNode() {

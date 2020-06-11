@@ -21,6 +21,7 @@ import static com.google.mu.util.stream.BiStream.groupingValuesFrom;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static com.google.mu.util.stream.MoreStreams.uniqueKeys;
 import static com.google.mu.util.stream.MoreStreams.whileNotEmpty;
+import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assume.assumeTrue;
@@ -357,6 +358,18 @@ public class MoreStreamsTest {
                 }))
         .containsExactly("one", "two").inOrder();
     assertThat(stack).isEmpty();
+  }
+
+  @Test public void whileNotNull_null() {
+    assertThat(whileNotNull(new ArrayDeque<>()::poll)).isEmpty();
+  }
+
+  @Test public void whileNotNull_notNull() {
+    Deque<String> stack = new ArrayDeque<>();
+    stack.push("one");
+    stack.push("two");
+    assertThat(whileNotNull(stack::poll))
+        .containsExactly("two", "one").inOrder();
   }
 
   @Test public void testNulls() throws Exception {
