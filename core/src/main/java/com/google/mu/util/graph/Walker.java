@@ -110,7 +110,7 @@ public final class Walker<N> {
    * Similar to {@link #inGraph(Function)}, returns a {@code Walker} that can be used to
    * traverse a graph of nodes. {@code tracker} is used to track every node being traversed. When
    * {@code Walker} is about to traverse a node, {@code tracker.test(node)} will be called and the
-   * node (with its edges) will be skipped if false is returned.
+   * node (together with its edges) will be skipped if false is returned.
    *
    * <p>This is useful for custom node tracking. For example, the caller could use a {@link
    * java.util.TreeSet} or some functional equivalence to compare nodes using custom equality or
@@ -131,7 +131,7 @@ public final class Walker<N> {
    * }</pre>
    *
    * <p>In the case of walking a very large graph with more nodes than can fit in memory, it's
-   * conceivable to use {@link com.google.common.hash.BloomFilter#put Bloom filter} to track visited
+   * conceivable to use {@link com.google.common.hash.BloomFilter#put BloomFilter} to track visited
    * nodes, as long as you are okay with probabilistically missing a fraction of the graph nodes due
    * to Bloom filter's inherent false-positive rates. Because Bloom filters have zero
    * false-negatives, it's guaranteed that the walker will never walk in cycles.
@@ -139,9 +139,10 @@ public final class Walker<N> {
    * @param findSuccessors Function to get the successor nodes for a given node.
    *        No successor if empty stream or null is returned,
    * @param tracker Tracks each node being visited during traversal. Returns false if the node
-   *        should be skipped for traversal (for example because it has already been traversed).
-   *        Despite being a {@link Predicate}, the tracker typically carries side-effects like
-   *        storing the tracked node in a set ({@code set::add} will do).
+   *        and its edges should be skipped for traversal (for example because it has already been
+   *        traversed). Despite being a {@link Predicate}, the tracker usually carries
+   *        side-effects like storing the tracked nodes in a set ({@code set::add},
+   *        {@code bloomFilter::put} etc. will do).
    */
   public static <N> Walker<N> inGraph(
       Function<? super N, ? extends Stream<? extends N>> findSuccessors,
