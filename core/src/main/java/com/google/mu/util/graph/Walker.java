@@ -37,8 +37,8 @@ import java.util.stream.Stream;
  * {@link #postOrderFrom post-order} and {@link #breadthFirstFrom breadth-first}) as lazily
  * evaluated streams, allowing infinite-size graphs.
  *
- * <p>The following example code explores all islands for treasure and calculate the total appraised
- * treasure value:
+ * <p>The following example code explores all islands for treasure and calculates the total
+ * appraised treasure value:
  *
  * <pre>{@code
  * double totalTreasureValue = Walker.inGraph((Island i) -> nearbyIslands(i).stream())
