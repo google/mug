@@ -35,7 +35,12 @@ import java.util.stream.Stream;
 /**
  * Implements generic graph and tree traversal algorithms ({@link #preOrderFrom pre-order},
  * {@link #postOrderFrom post-order} and {@link #breadthFirstFrom breadth-first}) as lazily
- * evaluated streams, allowing infinite-size graphs.
+ * evaluated streams, allowing infinite-size graphs. For example:
+ *
+ * <pre>{@code
+ * Walker<Room> walker = Walker.inGraph(n -> graph.successors(n).stream());
+ * walker.preOrderFrom(entryPoint).forEachOrdered(...);
+ * }</pre>
  *
  * <p>None of these streams are safe to run in parallel.
  *

@@ -27,7 +27,13 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
- * Utility to detect cycles in graphs.
+ * Utility to detect cycles in graphs. For example:
+ *
+ * <pre>{@code
+ * CycleDetector<String> cycleDetector = CycleDetector.forGraph(n -> graph.successors(n).stream());
+ * cycleDetector.detectCycleFrom(entryPoint)
+ *     .ifPresent(cyclic -> logger.log("cyclic path: " + cyclic.collect(joining("->"))));
+ * }</pre>
  *
  * @since 4.0
  */
