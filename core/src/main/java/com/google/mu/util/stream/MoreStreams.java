@@ -310,7 +310,7 @@ public final class MoreStreams {
    * <pre>{@code
    * while (!queue.isEmpty()) {
    *   int num = queue.poll();
-   *   if (...) {
+   *   if (someCondition) {
    *     ...
    *   }
    * }
@@ -319,8 +319,7 @@ public final class MoreStreams {
    * it can be turned into a stream using {@code whileNotNull()}:
    *
    * <pre>{@code
-   * whileNotNull(queue::poll)
-   *    .filter(...)
+   * whileNotNull(queue::poll).filter(someCondition)
    *    ...
    * }</pre>
    *
