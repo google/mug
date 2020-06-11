@@ -70,8 +70,9 @@ public final class ShortestPath<N> {
    * Returns a lazy stream of shortest paths starting from {@code startNode}.
    *
    * <p>The {@code findSuccessors} function is called on-the-fly to find the successors
-   * of the current node. This function is expected to return a {@code BiStream} with these direct
-   * neighbor nodes and their distances from the passed-in current node, respectively.
+   * of the current node. It's is expected to return a {@code BiStream} with these direct
+   * neighbor nodes and their distances from the passed-in current node, respectively; null or
+   * empty stream if there are no successors.
    *
    * <p>{@code startNode} will correspond to the first element in the returned stream, with
    * {@link ShortestPath#distance} equal to {@code 0}, followed by the next closest node, etc.
@@ -111,7 +112,7 @@ public final class ShortestPath<N> {
    * Returns a lazy stream of unweighted shortest paths starting from {@code startNode}.
    *
    * <p>The {@code findSuccessors} function is called on-the-fly to find the successors of the
-   * current node.
+   * current node. It may return Null or empty stream when there are no successors.
    *
    * <p>{@code startNode} will correspond to the first element in the returned stream, with
    * {@link ShortestPath#distance} equal to {@code 0}, followed by its successor nodes, etc.
