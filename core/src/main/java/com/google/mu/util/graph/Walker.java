@@ -232,38 +232,34 @@ public final class Walker<N> {
     Stream<N> postOrder(Iterable<? extends N> startNodes) {
       horizon.push(startNodes.spliterator());
       Deque<N> roots = new ArrayDeque<>();
-      return whileNotNull(() -> removeFromBottomOrNull(roots));
+      return whileNotNull(() -> {
+        while (visitNext()) {
+          N next = visited;
+          Stream<? extends N> successors = findSuccessors.apply(next);
+          if (successors == null) {
+            return next;
+          }
+          horizon.push(successors.spliterator());
+          roots.push(next);
+        }
+        return roots.poll();
+      });
     }
 
     private Stream<N> topDown(InsertionOrder order) {
-      return whileNotNull(() -> removeFromTopOrNull(order));
-    }
-
-    private N removeFromTopOrNull(InsertionOrder traversalOrder) {
-      do {
-        if (visitNext()) {
-          N next = visited;
-          Stream<? extends N> successors = findSuccessors.apply(next);
-          if (successors != null) {
-            traversalOrder.insertInto(horizon, successors.spliterator());
+      return whileNotNull(() -> {
+        do {
+          if (visitNext()) {
+            N next = visited;
+            Stream<? extends N> successors = findSuccessors.apply(next);
+            if (successors != null) {
+              order.insertInto(horizon, successors.spliterator());
+            }
+            return next;
           }
-          return next;
-        }
-      } while (!horizon.isEmpty());
-      return null; // no more element
-    }
-
-    private N removeFromBottomOrNull(Deque<N> roots) {
-      while (visitNext()) {
-        N next = visited;
-        Stream<? extends N> successors = findSuccessors.apply(next);
-        if (successors == null) {
-          return next;
-        }
-        horizon.push(successors.spliterator());
-        roots.push(next);
-      }
-      return roots.pollFirst();
+        } while (!horizon.isEmpty());
+        return null; // no more element
+      });
     }
 
     private boolean visitNext() {
