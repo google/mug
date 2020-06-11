@@ -110,7 +110,7 @@ public final class Walker<N> {
    * Similar to {@link #inGraph(Function)}, returns a {@code Walker} that can be used to
    * traverse a graph of nodes. {@code tracker} is used to track every node being traversed. When
    * {@code Walker} is about to traverse a node, {@code tracker.test(node)} will be called and the
-   * node will be skipped if false is returned.
+   * node (with its edges) will be skipped if false is returned.
    *
    * <p>This is useful for custom node tracking. For example, the caller could use a {@link
    * java.util.TreeSet} or some functional equivalence to compare nodes using custom equality or
