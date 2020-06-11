@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.Spliterator;
 import java.util.Spliterators.AbstractSpliterator;
@@ -301,7 +302,14 @@ public final class MoreStreams {
    * return whileNotNull(() -> hasData ? data : null);
    * }</pre>
    *
-   * You may still need to implement {@code AbstractSpliterator} or {@link java.util.Iterator}
+   * <p>Why null? Why not {@code Optional}? Wrapping every generated element of a stream in an
+   * {@link Optional} carries considerable allocation cost. Also, while nulls are in general
+   * discouraged, they are mainly a problem for users who have to remember to deal with them.
+   * The stream returned by {@code whileNotNull()} on the other hand is guaranteed to never include
+   * nulls that users have to worry about. If you already have an {@code Optional} from a method
+   * return value, use {@code whileNotNull(() -> optionalReturningMethod().orElse(null))}.
+   *
+   * <p>One may still need to implement {@code AbstractSpliterator} or {@link java.util.Iterator}
    * directly if null is a valid element (usually discouraged though).
    *
    * <p>If you have an imperative loop over a mutable queue or stack:
@@ -318,8 +326,7 @@ public final class MoreStreams {
    * it can be turned into a stream using {@code whileNotNull()}:
    *
    * <pre>{@code
-   * whileNotNull(queue::poll).filter(someCondition)
-   *    ...
+   * whileNotNull(queue::poll).filter(someCondition)...
    * }</pre>
    *
    * @since 4.1
