@@ -160,6 +160,11 @@ public final class ShortestPath<N> {
   /**
    * Returns all nodes from the starting node along this path, with the <em>cumulative</em>
    * distances from the starting node up to each node in the stream, respectively.
+   *
+   * <p>Note that while the stream of {@code ShortestPath} objects are lazy, calling this method
+   * will incur {@code O(N)} cost of copying all the nodes along this path into a stream. So you
+   * should only do this for the path you care about. And if you need to access the nodes on this
+   * path repetitively, collect the nodes into a collection first.
    */
   public BiStream<N, Double> stream() {
     List<ShortestPath<N>> nodes = new ArrayList<>();

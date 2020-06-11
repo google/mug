@@ -10,6 +10,7 @@ A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/
 * [Substring](#substring) finds a substring in a string:  
     `String user = first('@').toEnd().removeFrom(email);`
 * [Parallelizer](#parallelizer) An _Executor-friendly_, _interruptible_ alternative to parallel streams.
+* Graph utilities ([Walker](https://google.github.io/mug/apidocs/com/google/mu/util/graph/Walker.html), [CycleDetector](https://google.github.io/mug/apidocs/com/google/mu/util/graph/CycleDetector.html), [ShortestPath](https://google.github.io/mug/apidocs/com/google/mu/util/graph/ShortestPath.html))
 * [Retryer](#retryer) retries.
 * [Maybe](#maybe) tunnels checked exceptions through streams or futures.
 * [Funnel](#funnel) flows objects through batch conversions in FIFO order.
@@ -22,7 +23,7 @@ Add the following to pom.xml:
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug</artifactId>
-    <version>3.8</version>
+    <version>4.0</version>
   </dependency>
 ```
 
