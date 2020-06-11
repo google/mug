@@ -64,11 +64,22 @@ public final class Walker<N> {
    * Returns a {@code Walker} to walk the tree topology (no cycles) as observed by the {@code
    * findChildren} function, which finds children of any given tree node.
    *
+   * <p>{@code inTree()} is more efficient than {@link #inGraph} because it doesn't need to remember
+   * nodes that are already visited. On the other hand, the returned {@code Walker} can walk in
+   * cycles if the {@code findChildren} function turns out to represent a cyclic graph. If you need
+   * to guard against cycles just in case, you can use {@code inGraph(Function, Predicate) inGraph()
+   * with a custom tracker} to check for the precondition:
+   *
+   * <pre>{@code
+   * Set<N> visited = new HashSet<>();
+   * Walker<N> walker = Walker.inGraph(successorFunction, n -> {
+   *   checkArgument(visited.add(n), "Node with multiple parents: %s", n);
+   *   return true;
+   * });
+   * }</pre>
+   *
    * <p>The returned object is idempotent, stateless and immutable as long as {@code findChildren} is
    * idempotent, stateless and immutable.
-   *
-   * <p>WARNING: the returned {@code Walker} can walk in cycles if {@code findChildren} turns out
-   * cyclic (like, any undirected graph).
    *
    * @param findChildren Function to get the child nodes for a given node.
    *        No children if empty stream or null is returned,
