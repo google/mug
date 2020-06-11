@@ -232,15 +232,14 @@ public final class Walker<N> {
     Stream<N> postOrder(Iterable<? extends N> startNodes) {
       horizon.push(startNodes.spliterator());
       Deque<N> roots = new ArrayDeque<>();
-      return whileNotNull(() -> removeFromBottom(roots));
+      return whileNotNull(() -> removeFromBottomOrNull(roots));
     }
 
     private Stream<N> topDown(InsertionOrder order) {
-      return whileNotNull(() -> removeFromTop(order));
+      return whileNotNull(() -> removeFromTopOrNull(order));
     }
 
-    /** Removes an element from top, or null if no more. */
-    private N removeFromTop(InsertionOrder traversalOrder) {
+    private N removeFromTopOrNull(InsertionOrder traversalOrder) {
       do {
         if (visitNext()) {
           N next = visited;
@@ -254,8 +253,7 @@ public final class Walker<N> {
       return null; // no more element
     }
 
-    /** Removes an element from bottom, or null if no more. */
-    private N removeFromBottom(Deque<N> roots) {
+    private N removeFromBottomOrNull(Deque<N> roots) {
       while (visitNext()) {
         N next = visited;
         Stream<? extends N> successors = findSuccessors.apply(next);
