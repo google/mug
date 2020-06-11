@@ -95,8 +95,7 @@ public final class MoreStreams {
     requireNonNull(step);
     Queue<Stream<? extends T>> queue = new ArrayDeque<>();
     queue.add(Stream.of(seed));
-    return whileNotEmpty(queue)
-        .map(Queue::remove)
+    return whileNotNull(queue::poll)
         .flatMap(seeds -> seeds.peek(
             v -> {
               Stream<? extends T> fanout = step.apply(v);
@@ -311,7 +310,7 @@ public final class MoreStreams {
    * <pre>{@code
    * while (!queue.isEmpty()) {
    *   int num = queue.poll();
-   *   if (...) {
+   *   if (someCondition) {
    *     ...
    *   }
    * }
@@ -320,8 +319,7 @@ public final class MoreStreams {
    * it can be turned into a stream using {@code whileNotNull()}:
    *
    * <pre>{@code
-   * whileNotNull(queue::poll)
-   *    .filter(...)
+   * whileNotNull(queue::poll).filter(someCondition)
    *    ...
    * }</pre>
    *
