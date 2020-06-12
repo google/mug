@@ -119,6 +119,26 @@ public class SelectionTest {
   }
 
   @Test
+  public void allIfEmpty_nonEmpty() {
+    assertThat(allIfEmpty(asList("foo", "bar")).limited().get())
+        .containsExactly("foo", "bar")
+        .inOrder();
+    assertThat(allIfEmpty(asList("foo", "bar")).has("foo")).isTrue();
+    assertThat(allIfEmpty(asList("foo", "bar")).has("bar")).isTrue();
+    assertThat(allIfEmpty(asList("foo", "bar")).has("zoo")).isFalse();
+  }
+
+  @Test
+  public void allIfEmpty_withDuplicates() {
+    assertThat(allIfEmpty(asList("foo", "bar", "foo")).limited().get())
+        .containsExactly("foo", "bar")
+        .inOrder();
+    assertThat(allIfEmpty(asList("foo", "bar", "foo")).has("foo")).isTrue();
+    assertThat(allIfEmpty(asList("foo", "bar", "foo")).has("bar")).isTrue();
+    assertThat(allIfEmpty(asList("foo", "bar", "foo")).has("zoo")).isFalse();
+  }
+
+  @Test
   public void nullChecks() throws Exception {
     new NullPointerTester()
         .ignore(Selection.class.getMethod("allIfEmpty", Iterable.class))
@@ -163,7 +183,8 @@ public class SelectionTest {
             only("foo", "bar"),
             only("foo", "bar", "bar"),
             only("bar").union(only("foo")),
-            allIfEmpty(asList("bar", "foo")))
+            allIfEmpty(asList("bar", "foo")),
+            allIfEmpty(asList("foo", "bar", "foo")))
         .testEquals();
   }
 }
