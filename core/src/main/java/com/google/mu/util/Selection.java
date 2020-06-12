@@ -148,4 +148,10 @@ public interface Selection<T> {
   @Override boolean equals(Object obj);
 
   @Override int hashCode();
+
+  /**
+   * Returns "ALL" if {@link #all unlimited}, or else returns the string representation of the set
+   * of the explicit choices, such as "[dog, cat]" for {@code only("dog", "cat")}.
+   */
+  @Override String toString();
 }
