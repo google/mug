@@ -107,6 +107,18 @@ public interface Selection<T> {
   /**
    * Returns the limited choices if this selection is a {@link #only limited} instance; {@code
    * Optional.empty()} for {@link #all unlimited} instances.
+   *
+   * <p>Note that {@code limited()} returning {@code Optional.empty()} vs. returning
+   * {@code Optional.of(emptySet())} have completely different semantics: the former means the
+   * selection is <em>unlimited</em> (or, has no limit); while the latter indicates that the
+   * selection has zero choices, i.e., {@link #none}.
+   *
+   * <p>The caller uses this method to optionally handle explicit choices, for example:
+   *
+   * <pre>{@code
+   *   Selection<Region> requestedRegions = ...;
+   *   requestedRegions.limited().ifPesent(this::checkValidRegions);
+   * }</pre>
    */
   Optional<Set<T>> limited();
 
