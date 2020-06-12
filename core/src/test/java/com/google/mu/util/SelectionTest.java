@@ -34,7 +34,6 @@ import org.junit.runners.JUnit4;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.EqualsTester;
-import com.google.common.testing.NullPointerTester;
 
 @RunWith(JUnit4.class)
 public class SelectionTest {
@@ -107,12 +106,6 @@ public class SelectionTest {
   }
 
   @Test
-  public void nonEmptyOrAll_null() {
-    assertThat(nonEmptyOrAll(null).limited()).isEmpty();
-    assertThat(nonEmptyOrAll(null).has("foo")).isTrue();
-  }
-
-  @Test
   public void nonEmptyOrAll_empty() {
     assertThat(nonEmptyOrAll(asList()).limited()).isEmpty();
     assertThat(nonEmptyOrAll(asList()).has("foo")).isTrue();
@@ -140,9 +133,7 @@ public class SelectionTest {
 
   @Test
   public void nullChecks() throws Exception {
-    new NullPointerTester()
-        .ignore(Selection.class.getMethod("nonEmptyOrAll", Iterable.class))
-        .testAllPublicStaticMethods(Selection.class);
+    new ClassSanityTester().testNulls(Selection.class);
     new ClassSanityTester().forAllPublicStaticMethods(Selection.class).testNulls();
   }
 
@@ -157,7 +148,6 @@ public class SelectionTest {
             all().union(only("foo")),
             only("foo").union(all()),
             all().intersect(all()),
-            nonEmptyOrAll(null),
             nonEmptyOrAll(asList()))
         .addEqualityGroup(
             none(),
