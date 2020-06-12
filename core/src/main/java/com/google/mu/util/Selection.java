@@ -72,7 +72,7 @@ import java.util.stream.Collector;
  * Selection} type provides access to the explicitly selected choices via the {@link #limited}
  * method. It also implements {@link #equals}, {@link #hashCode} and {@link #toString} sensibly.
  *
- * <p>Nulls are prohibited throughout this class unless specifically documented otherwise.
+ * <p>Nulls are prohibited throughout this class.
  *
  * @since 4.1
  */
@@ -96,14 +96,11 @@ public interface Selection<T> {
   }
 
   /**
-   * Converts to {@code Selection} from legacy code where null or an empty {@code Iterable} means
-   * <b>all</b>. After converted to {@code Selection}, user code no longer need special handling of
-   * the <em>empty</em> or <em>null</em> case.
+   * Converts to {@code Selection} from legacy code where an empty {@code Iterable} means <b>all</b>.
+   * After converted to {@code Selection}, user code no longer need special handling of the
+   * <em>empty</em> case.
    */
   static <T> Selection<T> nonEmptyOrAll(Iterable<? extends T> choices) {
-    if (choices == null) {
-      return all();
-    }
     Iterator<? extends T> it = choices.iterator();
     return it.hasNext()
         ? whileNotNull(() -> it.hasNext() ? requireNonNull(it.next()) : null).collect(toSelection())
