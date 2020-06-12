@@ -28,7 +28,7 @@ import java.util.stream.Collector;
  * unlimited} selections.
  *
  * <p>Useful when you need to disambiguate and enforce correct handling of the
- * <b>implicitly selected all</b> concept, in replacement of the common and error-prone
+ * <b>implicitly selected all</b> concept, in replacement of the common and error prone
  * <em>empty-means-all</em> hack. That is, instead of adding (or forgetting to add) special
  * handling like:
  *
@@ -39,7 +39,7 @@ import java.util.stream.Collector;
  *   }
  * }</pre>
  *
- * Use {@code Selection} to write intuitive code that's hard to get wrong:
+ * Use {@code Selection} so you code is intuitive and hard to get wrong:
  *
  * <pre>{@code
  *   Selection<Sting> choices = getChoices();
@@ -48,9 +48,10 @@ import java.util.stream.Collector;
  *   }
  * }</pre>
  *
- * <p>While an unlimited selection is conceptually close to a trivially-true predicate,
- * this interface provides access to the explicitly selected choices via the {@link #limited}
- * method.
+ * <p>While an unlimited selection is conceptually close to a trivially-true predicate, the {@code
+ * Selection} type provides access to the explicitly selected choices via the {@link #limited}
+ * method. It also implements {@link Object#equals}, {@link Object#hashCode} and {@link
+ * Object#toString} sensibly.
  *
  * <p>Nulls are prohibited throughout this class.
  *
