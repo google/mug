@@ -39,7 +39,7 @@ import java.util.stream.Collector;
  *   }
  * }</pre>
  *
- * Use {@code Selection} so you code is intuitive and hard to get wrong:
+ * Use {@code Selection} so your code is intuitive and hard to get wrong:
  *
  * <pre>{@code
  *   Selection<Sting> choices = getChoices();
