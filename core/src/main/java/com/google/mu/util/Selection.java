@@ -113,7 +113,7 @@ public interface Selection<T> {
    * selection is <em>unlimited</em> (or, has no limit); while the latter indicates that the
    * selection has zero choices, i.e., {@link #none}.
    *
-   * <p>The caller uses this method to optionally handle explicit choices, for example:
+   * <p>The caller can use this method to optionally handle explicit choices, for example:
    *
    * <pre>{@code
    *   Selection<Region> requestedRegions = ...;
@@ -133,4 +133,20 @@ public interface Selection<T> {
 
   /** Returns a union of this selection and the elements from {@code set}. */
   Selection<T> union(Set<? extends T> set);
+
+  /**
+   * Returns true if {@code obj} is an equivalent {@code Selection} instance.
+   * Specifically:
+   * <ul>
+   * <li>{@link #all unlimited} is always equal to itself, while never equal to any
+   *     {@link #only limited} selections (even if the limited selection includes all known
+   *     choices).
+   * <li>Two limited selections are equal if they represent equal set of explicit choices.
+   *     The set order doesn't matter, that is, {@code [a, b]} is considered to be equal to
+   *     {@code [b, a]}.
+   * </ul>
+   */
+  @Override boolean equals(Object obj);
+
+  @Override int hashCode();
 }
