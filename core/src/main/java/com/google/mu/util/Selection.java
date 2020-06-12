@@ -52,14 +52,14 @@ import java.util.stream.Collector;
  * }</pre>
  *
  * <p>To gradually migrate from legacy code where empty sets need to be special handled all over,
- * use {@code Selection.nonEmptyOrAll(set)} to convert to a {@code Selection} object:
+ * use {@link #nonEmptyOrAll Selection.nonEmptyOrAll(set)} to convert to a {@code Selection} object:
  *
  * <pre>{@code
- *   public class FoodDeliverer {
+ *   public class FoodDeliveryService {
  *     private final Selection<Driver> eligibleDrivers;
  *
  *     // Too much code churn to change this signature.
- *     public FoodDeliverer(Set<Driver> eligibleDrivers) {
+ *     public FoodDeliveryService(Set<Driver> eligibleDrivers) {
  *       // But we can migrate internal implementation to using Selection:
  *       this.eligibleDrivers = Selection.nonEmptyOrAll(eligibleDrivers);
  *     }
