@@ -19,7 +19,6 @@ import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.reducing;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collector;
@@ -30,7 +29,24 @@ import java.util.stream.Collector;
  *
  * <p>Useful when you need to disambiguate and enforce correct handling of the
  * <b>implicitly selected all</b> concept, in replacement of the common and error-prone
- * <em>empty-means-all</em> hack.
+ * <em>empty-means-all</em> hack. That is, instead of adding (or forgetting to add) special
+ * handling like:
+ *
+ * <pre>{@code
+ *   Set<Sting> choices = getChoices();
+ *   if (choices.isEmpty() || choices.contains("foo")) {
+ *     // foo is selected.
+ *   }
+ * }</pre>
+ *
+ * Use {@code Selection} to write intuitive code that's hard to get wrong:
+ *
+ * <pre>{@code
+ *   Selection<Sting> choices = getChoices();
+ *   if (choices.has("foo")) {
+ *     // foo is selected.
+ *   }
+ * }</pre>
  *
  * <p>While an unlimited selection is conceptually close to a trivially-true predicate,
  * this interface provides access to the explicitly selected choices via the {@link #limited}
@@ -48,8 +64,9 @@ public interface Selection<T> {
   }
 
   /** Returns an empty selection. */
+  @SuppressWarnings("unchecked")
   static <T> Selection<T> none() {
-    return new Selections.Limited<>(Collections.emptySet());
+    return (Selection<T>) Selections.NONE;
   }
 
   /** Returns a selection of {@code choices}. Null is not allowed. */
