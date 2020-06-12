@@ -99,6 +99,9 @@ public interface Selection<T> {
    * Converts to {@code Selection} from legacy code where an empty {@code Iterable} means <b>all</b>.
    * After converted to {@code Selection}, user code no longer need special handling of the
    * <em>empty</em> case.
+   *
+   * <p>This method is mainly for migrating legacy code. If you have a set where empty just means
+   * "none", you can use {@link #toSelection set.stream().collect(toSelection())} instead.
    */
   static <T> Selection<T> nonEmptyOrAll(Iterable<? extends T> choices) {
     Iterator<? extends T> it = choices.iterator();
