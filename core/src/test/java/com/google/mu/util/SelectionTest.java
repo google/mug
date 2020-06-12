@@ -17,7 +17,7 @@ package com.google.mu.util;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.Selection.all;
-import static com.google.mu.util.Selection.allIfEmpty;
+import static com.google.mu.util.Selection.nonEmptyOrAll;
 import static com.google.mu.util.Selection.none;
 import static com.google.mu.util.Selection.only;
 import static com.google.mu.util.Selection.toIntersection;
@@ -107,41 +107,41 @@ public class SelectionTest {
   }
 
   @Test
-  public void allIfEmpty_null() {
-    assertThat(allIfEmpty(null).limited()).isEmpty();
-    assertThat(allIfEmpty(null).has("foo")).isTrue();
+  public void nonEmptyOrAll_null() {
+    assertThat(nonEmptyOrAll(null).limited()).isEmpty();
+    assertThat(nonEmptyOrAll(null).has("foo")).isTrue();
   }
 
   @Test
-  public void allIfEmpty_empty() {
-    assertThat(allIfEmpty(asList()).limited()).isEmpty();
-    assertThat(allIfEmpty(asList()).has("foo")).isTrue();
+  public void nonEmptyOrAll_empty() {
+    assertThat(nonEmptyOrAll(asList()).limited()).isEmpty();
+    assertThat(nonEmptyOrAll(asList()).has("foo")).isTrue();
   }
 
   @Test
-  public void allIfEmpty_nonEmpty() {
-    assertThat(allIfEmpty(asList("foo", "bar")).limited().get())
+  public void nonEmptyOrAll_nonEmpty() {
+    assertThat(nonEmptyOrAll(asList("foo", "bar")).limited().get())
         .containsExactly("foo", "bar")
         .inOrder();
-    assertThat(allIfEmpty(asList("foo", "bar")).has("foo")).isTrue();
-    assertThat(allIfEmpty(asList("foo", "bar")).has("bar")).isTrue();
-    assertThat(allIfEmpty(asList("foo", "bar")).has("zoo")).isFalse();
+    assertThat(nonEmptyOrAll(asList("foo", "bar")).has("foo")).isTrue();
+    assertThat(nonEmptyOrAll(asList("foo", "bar")).has("bar")).isTrue();
+    assertThat(nonEmptyOrAll(asList("foo", "bar")).has("zoo")).isFalse();
   }
 
   @Test
-  public void allIfEmpty_withDuplicates() {
-    assertThat(allIfEmpty(asList("foo", "bar", "foo")).limited().get())
+  public void nonEmptyOrAll_withDuplicates() {
+    assertThat(nonEmptyOrAll(asList("foo", "bar", "foo")).limited().get())
         .containsExactly("foo", "bar")
         .inOrder();
-    assertThat(allIfEmpty(asList("foo", "bar", "foo")).has("foo")).isTrue();
-    assertThat(allIfEmpty(asList("foo", "bar", "foo")).has("bar")).isTrue();
-    assertThat(allIfEmpty(asList("foo", "bar", "foo")).has("zoo")).isFalse();
+    assertThat(nonEmptyOrAll(asList("foo", "bar", "foo")).has("foo")).isTrue();
+    assertThat(nonEmptyOrAll(asList("foo", "bar", "foo")).has("bar")).isTrue();
+    assertThat(nonEmptyOrAll(asList("foo", "bar", "foo")).has("zoo")).isFalse();
   }
 
   @Test
   public void nullChecks() throws Exception {
     new NullPointerTester()
-        .ignore(Selection.class.getMethod("allIfEmpty", Iterable.class))
+        .ignore(Selection.class.getMethod("nonEmptyOrAll", Iterable.class))
         .testAllPublicStaticMethods(Selection.class);
     new ClassSanityTester().forAllPublicStaticMethods(Selection.class).testNulls();
   }
@@ -157,8 +157,8 @@ public class SelectionTest {
             all().union(only("foo")),
             only("foo").union(all()),
             all().intersect(all()),
-            allIfEmpty(null),
-            allIfEmpty(asList()))
+            nonEmptyOrAll(null),
+            nonEmptyOrAll(asList()))
         .addEqualityGroup(
             none(),
             only(),
@@ -178,13 +178,13 @@ public class SelectionTest {
             Stream.of("foo", "foo").collect(toSelection()),
             Stream.of(only("foo", "bar"), only("foo")).collect(toIntersection()),
             Stream.of(only("foo"), Selection.<String>none()).collect(toUnion()),
-            allIfEmpty(asList("foo")))
+            nonEmptyOrAll(asList("foo")))
         .addEqualityGroup(
             only("foo", "bar"),
             only("foo", "bar", "bar"),
             only("bar").union(only("foo")),
-            allIfEmpty(asList("bar", "foo")),
-            allIfEmpty(asList("foo", "bar", "foo")))
+            nonEmptyOrAll(asList("bar", "foo")),
+            nonEmptyOrAll(asList("foo", "bar", "foo")))
         .testEquals();
   }
 }
