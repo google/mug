@@ -72,7 +72,7 @@ import java.util.stream.Collector;
  * Selection} type provides access to the explicitly selected choices via the {@link #limited}
  * method. It also implements {@link #equals}, {@link #hashCode} and {@link #toString} sensibly.
  *
- * <p>Nulls are prohibited throughout this class.
+ * <p>Nulls are prohibited throughout this class unless specifically documented otherwise.
  *
  * @since 4.1
  */
