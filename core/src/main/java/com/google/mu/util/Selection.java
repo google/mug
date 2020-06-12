@@ -58,7 +58,7 @@ import java.util.stream.Collector;
  *   public class FoodDeliveryService {
  *     private final Selection<Driver> eligibleDrivers;
  *
- *     // Too much code churn to change this signature.
+ *     // Too much code churn to change this public constructor signature.
  *     public FoodDeliveryService(Set<Driver> eligibleDrivers) {
  *       // But we can migrate internal implementation to using Selection:
  *       this.eligibleDrivers = Selection.nonEmptyOrAll(eligibleDrivers);
