@@ -35,6 +35,8 @@ import java.util.stream.Collector;
  * <p>While an unlimited selection is conceptually close to a trivially-true predicate,
  * this interface provides access to the explicitly selected choices via the {@link #limited}
  * method.
+ *
+ * @since 4.1
  */
 public interface Selection<T> {
   /** Returns an unlimited selection of all (unspecified) choices. */
