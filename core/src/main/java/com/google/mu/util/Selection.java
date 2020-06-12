@@ -51,6 +51,23 @@ import java.util.stream.Collector;
  *   }
  * }</pre>
  *
+ * <p>To gradually migrate from legacy code where empty sets need to be special handled all over,
+ * use {@code Selection.nonEmptyOrAll(set)} to convert to a {@code Selection} object:
+ *
+ * <pre>{@code
+ *   public class FoodDeliverer {
+ *     private final Selection<Driver> eligibleDrivers;
+ *
+ *     // Too much code churn to change this signature.
+ *     public FoodDeliverer(Set<Driver> eligibleDrivers) {
+ *       // But we can migrate internal implementation to using Selection:
+ *       this.eligibleDrivers = Selection.nonEmptyOrAll(eligibleDrivers);
+ *     }
+ *
+ *     ...
+ *   }
+ * }</pre>
+ *
  * <p>While an unlimited selection is conceptually close to a trivially-true predicate, the {@code
  * Selection} type provides access to the explicitly selected choices via the {@link #limited}
  * method. It also implements {@link #equals}, {@link #hashCode} and {@link #toString} sensibly.
@@ -79,11 +96,11 @@ public interface Selection<T> {
   }
 
   /**
-   * Converts from legacy code where null or an empty {@code Iterable} means <em>all</em> to {@code
-   * Selection}. After converted, user code of the {@code Selection} no longer need special handling
-   * of the <em>empty</em> or <em>null</em> case.
+   * Converts to {@code Selection} from legacy code where null or an empty {@code Iterable} means
+   * <b>all</b>. After converted to {@code Selection}, user code no longer need special handling of
+   * the <em>empty</em> or <em>null</em> case.
    */
-  static <T> Selection<T> allIfEmpty(Iterable<? extends T> choices) {
+  static <T> Selection<T> nonEmptyOrAll(Iterable<? extends T> choices) {
     if (choices == null) {
       return all();
     }
