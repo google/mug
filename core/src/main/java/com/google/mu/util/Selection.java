@@ -50,8 +50,7 @@ import java.util.stream.Collector;
  *
  * <p>While an unlimited selection is conceptually close to a trivially-true predicate, the {@code
  * Selection} type provides access to the explicitly selected choices via the {@link #limited}
- * method. It also implements {@link Object#equals}, {@link Object#hashCode} and {@link
- * Object#toString} sensibly.
+ * method. It also implements {@link #equals}, {@link #hashCode} and {@link #toString} sensibly.
  *
  * <p>Nulls are prohibited throughout this class.
  *
