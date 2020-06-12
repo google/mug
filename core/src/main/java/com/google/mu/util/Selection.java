@@ -15,10 +15,13 @@
 package com.google.mu.util;
 
 import static com.google.mu.util.InternalCollectors.toImmutableSet;
+import static com.google.mu.util.stream.MoreStreams.whileNotNull;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.reducing;
 
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collector;
@@ -75,9 +78,24 @@ public interface Selection<T> {
     return Arrays.stream(choices).collect(toSelection());
   }
 
+  /**
+   * Converts from legacy code where null or an empty {@code Iterable} means <em>all</em> to {@code
+   * Selection}. After converted, user code of the {@code Selection} no longer need special handling
+   * of the <em>empty</em> or <em>null</em> case.
+   */
+  static <T> Selection<T> allIfEmpty(Iterable<? extends T> choices) {
+    if (choices == null) {
+      return all();
+    }
+    Iterator<? extends T> it = choices.iterator();
+    return it.hasNext()
+        ? whileNotNull(() -> it.hasNext() ? requireNonNull(it.next()) : null).collect(toSelection())
+        : all();
+  }
+
   /** Returns a collector that collects input elements into a limited selection. */
   static <T> Collector<T, ?, Selection<T>> toSelection() {
-    return collectingAndThen(toImmutableSet(), Selections.Limited::new);
+    return collectingAndThen(toImmutableSet(), Selections::explicit);
   }
 
   /** Returns a collector that intersects the input selections. */
