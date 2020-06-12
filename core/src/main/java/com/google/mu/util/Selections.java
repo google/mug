@@ -14,11 +14,10 @@
  *****************************************************************************/
 package com.google.mu.util;
 
-import static com.google.mu.util.InternalCollectors.toImmutableSet;
+import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableSet;
 import static java.util.Objects.requireNonNull;
 
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -48,8 +47,8 @@ enum Selections implements Selection<Object> {
     }
 
     @Override
-    public Limited<Object> intersect(Set<?> set) {
-      return new Limited<>(set.stream().collect(toImmutableSet()));
+    public Selection<Object> intersect(Set<?> set) {
+      return set.stream().collect(Selection.toSelection());
     }
 
     @Override
@@ -64,11 +63,57 @@ enum Selections implements Selection<Object> {
       return this;
     }
   },
+  NONE {
+    @Override
+    public boolean has(Object candidate) {
+      requireNonNull(candidate);
+      return false;
+    }
+
+    @Override
+    public boolean isEmpty() {
+      return true;
+    }
+
+    @Override
+    public Optional<Set<Object>> limited() {
+      return Optional.of(emptySet());
+    }
+
+    @Override
+    public Selection<Object> intersect(Selection<Object> that) {
+      requireNonNull(that);
+      return this;
+    }
+
+    @Override
+    public Selection<Object> intersect(Set<?> set) {
+      requireNonNull(set);
+      return this;
+    }
+
+    @Override
+    public Selection<Object> union(Selection<Object> that) {
+      return requireNonNull(that);
+    }
+
+    @Override
+    public Selection<Object> union(Set<?> set) {
+      return set.stream().collect(Selection.toSelection());
+    }
+
+    @Override
+    public String toString() {
+      return "[]";
+    }
+  },
   ;
 
-  static final Selection<Object> NONE = new Selections.Limited<>(Collections.emptySet());
+  static <T> Selection<T> explicit(Set<T> set) {
+    return set.isEmpty() ? Selection.none() : new Limited<T>(set);
+  }
 
-  static final class Limited<T> implements Selection<T> {
+  private static final class Limited<T> implements Selection<T> {
     private final Set<T> choices;
 
     Limited(Set<T> choices) {
@@ -91,13 +136,13 @@ enum Selections implements Selection<Object> {
     }
 
     @Override
-    public Limited<T> intersect(Selection<T> that) {
+    public Selection<T> intersect(Selection<T> that) {
       return that.limited().map(this::intersect).orElse(this);
     }
 
     @Override
-    public Limited<T> intersect(Set<? extends T> set) {
-      return new Limited<>(setIntersection(choices, set));
+    public Selection<T> intersect(Set<? extends T> set) {
+      return explicit(setIntersection(choices, set));
     }
 
     @Override
@@ -107,7 +152,7 @@ enum Selections implements Selection<Object> {
 
     @Override
     public Selection<T> union(Set<? extends T> set) {
-      return new Limited<>(setUnion(choices, set));
+      return explicit(setUnion(choices, set));
     }
 
     @Override

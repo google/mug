@@ -77,7 +77,7 @@ public interface Selection<T> {
 
   /** Returns a collector that collects input elements into a limited selection. */
   static <T> Collector<T, ?, Selection<T>> toSelection() {
-    return collectingAndThen(toImmutableSet(), Selections.Limited::new);
+    return collectingAndThen(toImmutableSet(), Selections::explicit);
   }
 
   /** Returns a collector that intersects the input selections. */
