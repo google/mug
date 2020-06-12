@@ -151,7 +151,7 @@ public interface Selection<T> {
 
   /**
    * Returns {@code "ALL"} if {@link #all unlimited}, or else returns the string representation of
-   * the set of the explicit choices. That is, {@code only("dog", "cat").toString()} returns
+   * the set of the explicit choices. That is, {@code only("dog", "cat").toString()} will return
    * {@code "[dog, cat]"}.
    */
   @Override String toString();
