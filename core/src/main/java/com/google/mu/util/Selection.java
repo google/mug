@@ -52,7 +52,7 @@ import java.util.stream.Collector;
  * }</pre>
  *
  * <p>To gradually migrate from legacy code where empty sets need to be special handled all over,
- * use {@link #nonEmptyOrAll Selection.nonEmptyOrAll(set)} to convert to a {@code Selection} object:
+ * use {@link #nonEmptyOrAll nonEmptyOrAll(set)} to convert to a {@code Selection} object:
  *
  * <pre>{@code
  *   public class FoodDeliveryService {
