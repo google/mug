@@ -128,9 +128,9 @@ public final class Walker<N> {
    * avengers.forEachOrdered(room -> System.out.println("Raided by Avengers: " + room);
    * }</pre>
    *
-   * <p>Or, nodes can be tracked by functional equivalence. Imagine in a pirate treasure hunt,
-   * we start from an island and scavenge from island to island. Considering the islands as nodes,
-   * we can use {@code Walker} to scavenge like:
+   * <p>Or, nodes can be tracked by functional equivalence. What gives?
+   * Imagine in a pirate treasure hunt, we start from an island and scavenge from island to island.
+   * Considering the islands as nodes, we can use any traversal strategy. Say, we picked pre-order:
    *
    * <pre>{@code
    * Optional<Island> treasureIsland =
