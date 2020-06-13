@@ -42,7 +42,7 @@ import java.util.stream.Stream;
  *
  * <pre>{@code
  * Optional<Island> treasureIsland =
- *     Walker.inGraph((Island i) -> nearbyIslands(i).stream())
+ *     Walker.inGraph(Island::nearbyIslands)
  *         .preOrderFrom(homeIsland)
  *         .filter(Island::hasTreasure)
  *         .findFirst();
