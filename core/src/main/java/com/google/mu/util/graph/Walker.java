@@ -142,7 +142,7 @@ public final class Walker<N> {
    *
    * That gives us the treasure island. But what if upon finding the treasure island, we also want
    * to make our own treasure map? It requires not just finding the island, but also recording
-   * how we got there. We can start by defining a class to encode the route:
+   * how we got there. To do this, we can start by defining a class to encode the route:
    *
    * <pre>{@code
    * class Route {
