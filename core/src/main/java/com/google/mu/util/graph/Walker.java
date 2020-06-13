@@ -129,14 +129,14 @@ public final class Walker<N> {
    * }</pre>
    *
    * <p>Or, nodes can be tracked by functional equivalence. Imagine in a pirate treasure hunt,
-   * We start from an island and scavenge from island to island. Considering the islands as nodes,
+   * we start from an island and scavenge from island to island. Considering the islands as nodes,
    * we can use {@code Walker} to scavenge like:
    *
    * <pre>{@code
    * Optional<Island> treasureIsland =
    *     Walker.inGraph(island -> nearbyIslands(island))
-   *         .preOrderFrom(currentIsland)
-   *         .filter(island -> hasTreasure(island))
+   *         .preOrderFrom(startIsland)
+   *         .filter(Island::hasTreasure)
    *         .findFirst();
    * }</pre>
    *
@@ -149,6 +149,7 @@ public final class Walker<N> {
    *   private final Island island;
    *   private final Route predecessor;
    *
+   *   // End of the route.
    *   Island end() {
    *     return island;
    *   }
@@ -171,11 +172,11 @@ public final class Walker<N> {
    * <pre>{@code
    * Map<Island> searched = new HashMap<>();
    * Walker<Route> walker = Walker.inGraph(
-   *     route -> nearbyIslands(route.end()).stream().map(route::extendTo),
+   *     route -> nearbyIslands(route.end()).map(route::extendTo),
    *     route -> searched.add(route.end()));  // track by Route::end
    * Optional<Route> treasureIslandRoute = walker
-   *     .preOrderFrom(new Route(currentIsland))
-   *     .filter(route -> hasTreasure(route.end()))
+   *     .preOrderFrom(new Route(startIsland))
+   *     .filter(route -> route.end().hasTreasure())
    *     .findFirst();
    * }</pre>
    *
