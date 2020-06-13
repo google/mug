@@ -112,10 +112,8 @@ public final class Walker<N> {
    * {@code Walker} is about to traverse a node, {@code tracker.test(node)} will be called and the
    * node (together with its edges) will be skipped if false is returned.
    *
-   * <p>This is useful for custom node tracking. For example, the caller could use a {@link
-   * java.util.TreeSet} or some functional equivalence to compare nodes using custom equality or
-   * equivalence; or, use a {@link java.util.ConcurrentHashMap} if multiple threads need to walk the
-   * same graph concurrently and collaboratively:
+   * <p>This is useful for custom node tracking. For example, using a {@code ConcurrentHashMap},
+   * multiple threads can traverse a large graph concurrently and collaboratively:
    *
    * <pre>{@code
    * Walker<Room> concurrentWalker =
@@ -123,11 +121,62 @@ public final class Walker<N> {
    *
    * // thread 1:
    * Stream<Room> shield = concurrentWalker.preOrderFrom(roof);
-   * shield.forEachOrdered(room -> ...);
+   * shield.forEachOrdered(room -> System.out.println("Raided by SHIELD from roof: " + room);
    *
    * // thread 2:
    * Stream<Room> avengers = concurrentWalker.breadthFirstFrom(mainEntrance);
-   * avengers.forEachOrdered(room -> ...);
+   * avengers.forEachOrdered(room -> System.out.println("Raided by Avengers: " + room);
+   * }</pre>
+   *
+   * <p>Or, nodes can be tracked by functional equivalence. Imagine in a pirate treasure hunt,
+   * We start from an island and scavenge from island to island. Considering the islands as nodes,
+   * we can use {@code Walker} to scavenge like:
+   *
+   * <pre>{@code
+   * Optional<Island> treasureIsland =
+   *     Walker.inGraph(island -> nearbyIslands(island))
+   *         .preOrderFrom(currentIsland)
+   *         .filter(island -> hasTreasure(island))
+   *         .findFirst();
+   * }</pre>
+   *
+   * That gives us the treasure island. But what if upon finding the treasure island, we want to
+   * also make our own treasure map? It requires not just finding the island, but also recording
+   * how we got there. We can start by defining a class to encode the route:
+   *
+   * <pre>{@code
+   * class Route {
+   *   private final Island island;
+   *   private final Route predecessor;
+   *
+   *   Island end() {
+   *     return island;
+   *   }
+   *
+   *   // Returns a new Route with this Route as the predecessor.
+   *   Route extendTo(Island newIsland) {
+   *     return new Route(newIsland, this);
+   *   }
+   *
+   *   List<Island> islands() {
+   *     // follow the `predecessor` chain to return all islands along the route.
+   *   }
+   * }
+   * }</pre>
+   *
+   * And then we can modify the {@code Walker} code to traverse through a stream of {@code Route}
+   * objects in place of islands. The only trick is to use functional equivalence so that the
+   * {@code Walker} still knows which islands have already been searched:
+   *
+   * <pre>{@code
+   * Map<Island> searched = new HashMap<>();
+   * Walker<Route> walker = Walker.inGraph(
+   *     route -> nearbyIslands(route.end()).stream().map(route::extendTo),
+   *     route -> searched.add(route.end()));  // track by Route::end
+   * Optional<Route> treasureIslandRoute = walker
+   *     .preOrderFrom(new Route(currentIsland))
+   *     .filter(route -> hasTreasure(route.end()))
+   *     .findFirst();
    * }</pre>
    *
    * <p>In the case of walking a very large graph with more nodes than can fit in memory, it's
