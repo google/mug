@@ -170,9 +170,9 @@ public final class Walker<N> {
    * }</pre>
    *
    * And then we can modify the treasure hunt code to walk through a stream of {@code Route}
-   * objects in place of islands. The caveat is that Route doesn't define {@code equals} --
-   * even if it did, it'd be recursive and not what we need anyway (because we care about
-   * unique islands, not unique routes).
+   * objects in place of islands. A caveat is that Route doesn't define {@code equals} ---
+   * even if it did, it'd be recursive and not what we need anyway (we care about unique islands,
+   * not unique routes).
    *
    * <p>Long story short, the trick is to use functional equivalence so that the {@code Walker}
    * still knows which islands have already been searched:
