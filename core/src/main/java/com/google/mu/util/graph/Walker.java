@@ -134,7 +134,7 @@ public final class Walker<N> {
    *
    * <pre>{@code
    * Optional<Island> treasureIsland =
-   *     Walker.inGraph(island -> nearbyIslands(island))
+   *     Walker.inGraph(Island::nearbyIslands)
    *         .preOrderFrom(startIsland)
    *         .filter(Island::hasTreasure)
    *         .findFirst();
@@ -159,25 +159,27 @@ public final class Walker<N> {
    *     return new Route(newIsland, this);
    *   }
    *
+   *   Stream<Route> nearbyRoutes() {
+   *     return island.nearbyIslands().map(this::extendTo);
+   *   }
+   *
    *   List<Island> islands() {
    *     // follow the `predecessor` chain to return all islands along the route.
    *   }
    * }
    * }</pre>
    *
-   * And then we can modify the {@code Walker} code to traverse through a stream of {@code Route}
+   * And then we can modify the treasure hunt code to traverse through a stream of {@code Route}
    * objects in place of islands. The only trick is to use functional equivalence so that the
    * {@code Walker} still knows which islands have already been searched:
    *
    * <pre>{@code
    * Map<Island> searched = new HashMap<>();
-   * Walker<Route> walker = Walker.inGraph(
-   *     route -> nearbyIslands(route.end()).map(route::extendTo),
-   *     route -> searched.add(route.end()));  // track by Route::end
-   * Optional<Route> treasureIslandRoute = walker
-   *     .preOrderFrom(new Route(startIsland))
-   *     .filter(route -> route.end().hasTreasure())
-   *     .findFirst();
+   * Optional<Route> treasureIslandRoute =
+   *     Walker.inGraph(Route::nearbyRoutes, route -> searched.add(route.end()))
+   *         .preOrderFrom(new Route(startIsland))
+   *         .filter(route -> route.end().hasTreasure())
+   *         .findFirst();
    * }</pre>
    *
    * <p>In the case of walking a very large graph with more nodes than can fit in memory, it's
