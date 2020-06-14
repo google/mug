@@ -183,9 +183,7 @@ public final class ShortestPath<N> {
   }
 
   private static void checkNotNegative(double value, String name) {
-    if (value < 0) {
-      throw new IllegalArgumentException(name + " cannot be negative: " + value);
-    }
+    if (value < 0) throw new IllegalArgumentException(name + " cannot be negative: " + value);
   }
 
   private static <F, T> Stream<T> mapOrNull(
