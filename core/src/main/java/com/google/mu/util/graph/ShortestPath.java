@@ -97,7 +97,6 @@ public final class ShortestPath<N> {
                 (neighbor, distance) -> {
                   requireNonNull(neighbor);
                   checkNotNegative(distance, "distance");
-                  if (settled.contains(neighbor)) return;
                   ShortestPath<?> old = seen.get(neighbor);
                   if (old == null || path.distance() + distance < old.distance()) {
                     ShortestPath<N> shorter = path.extendTo(neighbor, distance);

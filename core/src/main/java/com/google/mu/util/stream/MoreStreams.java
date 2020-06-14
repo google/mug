@@ -235,16 +235,6 @@ public final class MoreStreams {
   }
 
   /**
-   * Returns an infinite {@link IntStream} starting from {@code 0}.
-   *
-   * @deprecated Use {@link #indexesFrom}.
-   */
-  @Deprecated
-  public static IntStream index() {
-    return IntStream.iterate(0, i -> i + 1);
-  }
-
-  /**
    * Returns an infinite {@link Stream} starting from {@code firstIndex}.
    * Can be used together with {@link BiStream#zip} to iterate over a stream with index.
    * For example: {@code zip(indexesFrom(0), values)}.
