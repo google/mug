@@ -37,8 +37,7 @@ import java.util.stream.Stream;
  * {@link #postOrderFrom post-order} and {@link #breadthFirstFrom breadth-first}) as lazily
  * evaluated streams, allowing infinite-size graphs.
  *
- * <p>The following example code explores all islands for treasure and calculates the total
- * appraised treasure value:
+ * <p>The following example code explores all islands to find the treasure island:
  *
  * <pre>{@code
  * Optional<Island> treasureIsland =
@@ -55,7 +54,7 @@ import java.util.stream.Stream;
 public final class Walker<N> {
   private final Supplier<Traversal<N>> newTraversal;
 
-  Walker(Supplier<Traversal<N>> newTraversal) {
+  private Walker(Supplier<Traversal<N>> newTraversal) {
     this.newTraversal = newTraversal;
   }
 
@@ -237,8 +236,7 @@ public final class Walker<N> {
    * <p>The returned stream may be infinite if the graph has infinite breadth. The stream can still
    * be short-circuited to consume a limited number of nodes during traversal.
    *
-   * <p>The stream may result in infinite loop when it traversing through a node with infinite
-   * depth.
+   * <p>The stream may result in infinite loop when traversing through a node with infinite depth.
    */
   @SafeVarargs
   public final Stream<N> postOrderFrom(N... startNodes) {
@@ -251,8 +249,7 @@ public final class Walker<N> {
    * <p>The returned stream may be infinite if the graph has infinite breadth. The stream can still
    * be short-circuited to consume a limited number of nodes during traversal.
    *
-   * <p>The stream may result in infinite loop when it traversing through a node with infinite
-   * depth.
+   * <p>The stream may result in infinite loop when traversing through a node with infinite depth.
    */
   public final Stream<N> postOrderFrom(Iterable<? extends N> startNodes) {
     return newTraversal.get().postOrder(startNodes);
@@ -316,9 +313,7 @@ public final class Walker<N> {
         while (visitNext()) {
           N next = visited;
           Stream<? extends N> successors = findSuccessors.apply(next);
-          if (successors == null) {
-            return next;
-          }
+          if (successors == null) return next;
           horizon.push(successors.spliterator());
           roots.push(next);
         }
@@ -332,9 +327,7 @@ public final class Walker<N> {
           if (visitNext()) {
             N next = visited;
             Stream<? extends N> successors = findSuccessors.apply(next);
-            if (successors != null) {
-              order.insertInto(horizon, successors.spliterator());
-            }
+            if (successors != null) order.insertInto(horizon, successors.spliterator());
             return next;
           }
         } while (!horizon.isEmpty());
@@ -345,9 +338,7 @@ public final class Walker<N> {
     private boolean visitNext() {
       Spliterator<? extends N> top = horizon.getFirst();
       while (top.tryAdvance(this)) {
-        if (tracker.test(visited)) {
-          return true;
-        }
+        if (tracker.test(visited)) return true;
       }
       horizon.removeFirst();
       return false;
