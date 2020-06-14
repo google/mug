@@ -47,7 +47,9 @@ import java.util.stream.Stream;
  *         .findFirst();
  * }</pre>
  *
- * <p>None of these streams are safe to run in parallel.
+ * <p>None of these streams are safe to run in parallel. Although, multiple threads could traverse
+ * the same graph collaboratively by sharing a concurrent node tracker. See
+ * {@link #inGraph(Function, Predicate) inGraph(findSuccessors, nodeTracker)} for details.
  *
  * @since 4.0
  */
