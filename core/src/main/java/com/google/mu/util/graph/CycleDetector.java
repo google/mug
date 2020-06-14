@@ -35,6 +35,18 @@ import java.util.stream.Stream;
  *     .ifPresent(cyclic -> logger.log("cyclic path: " + cyclic.collect(joining("->"))));
  * }</pre>
  *
+ * In the following cyclic graph, if starting from node {@code a}, the detected cyclic path will
+ * be: {@code a -> b -> c -> e -> b}, with {@code b -> c -> e -> b} being the cycle, and
+ * {@code a -> b} the prefix path leading to the cycle.
+ *
+ * <pre>{@code
+ * a -> b -> c -> d
+ *      ^  /
+ *      | /
+ *      |/
+ *      e
+ * }</pre>
+ *
  * @since 4.0
  */
 public final class CycleDetector<N> {
