@@ -15,13 +15,11 @@
 package com.google.mu.util;
 
 import static com.google.mu.util.InternalCollectors.toImmutableSet;
-import static com.google.mu.util.stream.MoreStreams.whileNotNull;
-import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.reducing;
 
 import java.util.Arrays;
-import java.util.Iterator;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collector;
@@ -96,7 +94,7 @@ public interface Selection<T> {
   }
 
   /**
-   * Converts to {@code Selection} from legacy code where an empty {@code Iterable} means <b>all</b>.
+   * Converts to {@code Selection} from legacy code where an empty collection means <b>all</b>.
    * After converted to {@code Selection}, user code no longer need special handling of the
    * <em>empty</em> case.
    *
@@ -104,11 +102,8 @@ public interface Selection<T> {
    * "none" with no special handling needed, you should use {@link #toSelection
    * set.stream().collect(toSelection())} instead.
    */
-  static <T> Selection<T> nonEmptyOrAll(Iterable<? extends T> choices) {
-    Iterator<? extends T> it = choices.iterator();
-    return it.hasNext()
-        ? whileNotNull(() -> it.hasNext() ? requireNonNull(it.next()) : null).collect(toSelection())
-        : all();
+  static <T> Selection<T> nonEmptyOrAll(Collection<? extends T> choices) {
+    return choices.isEmpty() ? all() : choices.stream().collect(toSelection());
   }
 
   /** Returns a collector that collects input elements into a limited selection. */
