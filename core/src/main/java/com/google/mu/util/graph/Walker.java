@@ -54,10 +54,10 @@ import java.util.stream.Stream;
  * @since 4.0
  */
 public final class Walker<N> {
-  private final Supplier<Traversal<N>> newTraversal;
+  private final Supplier<Walk<N>> newWalk;
 
-  private Walker(Supplier<Traversal<N>> newTraversal) {
-    this.newTraversal = newTraversal;
+  private Walker(Supplier<Walk<N>> newWalk) {
+    this.newWalk = newWalk;
   }
 
   /**
@@ -103,7 +103,7 @@ public final class Walker<N> {
   public static <N> Walker<N> inGraph(
       Function<? super N, ? extends Stream<? extends N>> findSuccessors) {
     requireNonNull(findSuccessors);
-    return new Walker<>(() -> new Traversal<>(findSuccessors, new HashSet<>()::add));
+    return new Walker<>(() -> new Walk<>(findSuccessors, new HashSet<>()::add));
   }
 
   /**
@@ -205,7 +205,7 @@ public final class Walker<N> {
       Predicate<? super N> tracker) {
     requireNonNull(findSuccessors);
     requireNonNull(tracker);
-    return new Walker<>(() -> new Traversal<>(findSuccessors, tracker));
+    return new Walker<>(() -> new Walk<>(findSuccessors, tracker));
   }
 
   /**
@@ -218,7 +218,7 @@ public final class Walker<N> {
    */
   @SafeVarargs
   public final Stream<N> preOrderFrom(N... startNodes) {
-    return newTraversal.get().preOrder(nonNullList(startNodes));
+    return newWalk.get().preOrder(nonNullList(startNodes));
   }
 
   /**
@@ -229,7 +229,7 @@ public final class Walker<N> {
    * traversal.
    */
   public final Stream<N> preOrderFrom(Iterable<? extends N> startNodes) {
-    return newTraversal.get().preOrder(startNodes);
+    return newWalk.get().preOrder(startNodes);
   }
 
   /**
@@ -242,7 +242,7 @@ public final class Walker<N> {
    */
   @SafeVarargs
   public final Stream<N> postOrderFrom(N... startNodes) {
-    return newTraversal.get().postOrder(nonNullList(startNodes));
+    return newWalk.get().postOrder(nonNullList(startNodes));
   }
 
   /**
@@ -254,7 +254,7 @@ public final class Walker<N> {
    * <p>The stream may result in infinite loop when traversing through a node with infinite depth.
    */
   public final Stream<N> postOrderFrom(Iterable<? extends N> startNodes) {
-    return newTraversal.get().postOrder(startNodes);
+    return newWalk.get().postOrder(startNodes);
   }
 
   /**
@@ -266,7 +266,7 @@ public final class Walker<N> {
    */
   @SafeVarargs
   public final Stream<N> breadthFirstFrom(N... startNodes) {
-    return newTraversal.get().breadthFirst(nonNullList(startNodes));
+    return newWalk.get().breadthFirst(nonNullList(startNodes));
   }
 
   /**
@@ -277,16 +277,16 @@ public final class Walker<N> {
    * traversal.
    */
   public final Stream<N> breadthFirstFrom(Iterable<? extends N> startNodes) {
-    return newTraversal.get().breadthFirst(startNodes);
+    return newWalk.get().breadthFirst(startNodes);
   }
 
-  private static final class Traversal<N> implements Consumer<N> {
+  private static final class Walk<N> implements Consumer<N> {
     private final Function<? super N, ? extends Stream<? extends N>> findSuccessors;
     private final Predicate<? super N> tracker;
     private final Deque<Spliterator<? extends N>> horizon = new ArrayDeque<>();
     private N visited;
 
-    Traversal(
+    Walk(
         Function<? super N, ? extends Stream<? extends N>> findSuccessors,
         Predicate<? super N> tracker) {
       this.findSuccessors = findSuccessors;
