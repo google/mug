@@ -1,27 +1,35 @@
 
-build.properties
-
-core/.classpath
-
-core/.project
-algorithms/.classpath
-algorithms/.project
-benchmarks/.classpath
-benchmarks/.project
-
-.idea/
-*.iml
-
-core/.settings/org.eclipse.jdt.core.prefs
-
 *.prefs
-
 *.log
-
 *.releaseBackup
-
 *.pub
-
 *.properties
 
-target/checkout/
+
+### Eclipse  ###
+target/
+.settings/
+.classpath
+.project
+mvnw
+mvnw.cmd
+.mvn/
+
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+
+### VS Code ###
+.vscode/
+
