@@ -178,7 +178,7 @@ public final class Walker<N> {
    * still knows which islands have already been searched:
    *
    * <pre>{@code
-   * Map<Island> searched = new HashMap<>();
+   * Set<Island> searched = new HashSet<>();
    * Optional<Route> treasureIslandRoute =
    *     Walker.inGraph(Route::nearbyRoutes, route -> searched.add(route.end()))
    *         .preOrderFrom(new Route(startIsland))
