@@ -65,7 +65,7 @@ public final class Optionals {
   /**
    * Invokes {@code consumer} if {@code optional} is present. Returns a {@code Premise}
    * object to allow {@link Premise#orElse orElse()} and friends to be chained. For example:
-   * 
+   *
    * <pre>{@code
    *   ifPresent(findId(), System.out::print)
    *       .or(() -> ifPresent(findName(), System.out::print))
@@ -257,22 +257,5 @@ public final class Optionals {
     return Optional.empty();
   }
 
-  /** @deprecated Use {@link #mapBoth} instead. */
-  @Deprecated
-  public static <A, B, R, E extends Throwable> Optional<R> map(
-      Optional<A> left, Optional<B> right, CheckedBiFunction<? super A, ? super B, ? extends R, E> mapper)
-      throws E {
-    return mapBoth(left, right, mapper);
-  }
-
-  /** @deprecated Use {@link #flatMapBoth} instead. */
-  @Deprecated
-  public static <A, B, R, E extends Throwable> Optional<R> flatMap(
-      Optional<A> left, Optional<B> right,
-      CheckedBiFunction<? super A, ? super B, ? extends Optional<R>, E> mapper)
-      throws E {
-    return flatMapBoth(left, right, mapper);
-  }
-  
   private Optionals() {}
 }
