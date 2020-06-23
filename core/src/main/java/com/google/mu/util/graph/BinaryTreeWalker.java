@@ -147,10 +147,8 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
       //    the node and its left-most descendants are pushed onto the `leftPath` stack.
       for (N right = null;
           traverse(right) || traverse(roots.poll());
-          right = getRight.apply(leftPath.getFirst())) {
-        int top = leftPath.size() - 1;
-        if (ready.get(top)) return leftPath.pop();
-        ready.set(top);
+          right = getRight.apply(leftPath.getFirst()), ready.set(leftPath.size() - 1)) {
+        if (ready.get(leftPath.size() - 1)) return leftPath.pop();
       }
       return null;
     }
