@@ -112,15 +112,13 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
       // 1. Each time we return the top of the `leftPath` stack.
       // 2. Before a node is returned, its right child is set to be traversed next.
       // 3. When either a root or `nextToTraverse` begins to be traversed,
-      //    the node and its left-most descendants are pushed into the `leftPath` stack.
-      for (; ;) {
-        if (traverse(right) || traverse(roots.poll())) {
-          N node = leftPath.remove();
-          right = getRight.apply(node);
-          return node;
-        }
-        return null;
+      //    the node and its left-most descendants are pushed onto the `leftPath` stack.
+      if (traverse(right) || traverse(roots.poll())) {
+        N node = leftPath.remove();
+        right = getRight.apply(node);
+        return node;
       }
+      return null;
     }
 
     private boolean traverse(final N node) {
@@ -146,7 +144,7 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
       // 3. If not ready, traverse the right child.
       // 4. when stack is empty, traverse the next root.
       // 5. When either a root or `nextToTraverse` begins to be traversed,
-      //    the node and its left-most descendants are pushed into the `leftPath` stack.
+      //    the node and its left-most descendants are pushed onto the `leftPath` stack.
       for (N right = null;
           traverse(right) || traverse(roots.poll());
           right = getRight.apply(leftPath.getFirst())) {
