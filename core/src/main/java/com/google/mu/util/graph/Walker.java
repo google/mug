@@ -14,22 +14,16 @@
  *****************************************************************************/
 package com.google.mu.util.graph;
 
-import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
-import java.util.ArrayDeque;
 import java.util.Arrays;
-import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Queue;
-import java.util.Spliterator;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 /**
@@ -51,13 +45,26 @@ import java.util.stream.Stream;
  * the same graph collaboratively by sharing a concurrent node tracker. See
  * {@link #inGraph(Function, Predicate) inGraph(findSuccessors, nodeTracker)} for details.
  *
+ * <p>For binary trees, use {@link #inBinaryTree inBinaryTree(Tree::left, Tree::right)}.
+ *
  * @since 4.0
  */
-public final class Walker<N> {
-  private final Supplier<Walk<N>> newWalk;
+public abstract class Walker<N> {
 
-  private Walker(Supplier<Walk<N>> newWalk) {
-    this.newWalk = newWalk;
+  Walker() {}
+
+  /**
+   * Returns a {@code BinaryTreeWalker} for walking in the binary tree topology
+   * as observed by {@code getLeft} and {@code getRight} functions. Both functions
+   * return null to indicate that there is no left or right child.
+   *
+   * <p>It's guaranteed that for any given node, {@code getLeft} and {@code getRight}
+   * are called lazily, only when the left or the right child is traversed. They are called at
+   * most once for each node.
+   */
+  public static <N> BinaryTreeWalker<N> inBinaryTree(
+      UnaryOperator<N> getLeft, UnaryOperator<N> getRight) {
+    return new BinaryTreeWalker<>(getLeft, getRight);
   }
 
   /**
@@ -103,7 +110,7 @@ public final class Walker<N> {
   public static <N> Walker<N> inGraph(
       Function<? super N, ? extends Stream<? extends N>> findSuccessors) {
     requireNonNull(findSuccessors);
-    return new Walker<>(() -> new Walk<>(findSuccessors, new HashSet<>()::add));
+    return new GraphWalker<>(() -> new GraphWalker.Walk<>(findSuccessors, new HashSet<>()::add));
   }
 
   /**
@@ -205,154 +212,76 @@ public final class Walker<N> {
       Predicate<? super N> tracker) {
     requireNonNull(findSuccessors);
     requireNonNull(tracker);
-    return new Walker<>(() -> new Walk<>(findSuccessors, tracker));
-  }
-
-  /**
-   * Starts from {@code startNodes} and walks depth first in pre-order by using {@code
-   * findSuccessors} function iteratively.
-   *
-   * <p>The returned stream may be infinite if the graph has infinite depth or infinite breadth, or
-   * both. The stream can still be short-circuited to consume a limited number of nodes during
-   * traversal.
-   */
-  @SafeVarargs
-  public final Stream<N> preOrderFrom(N... startNodes) {
-    return newWalk.get().preOrder(nonNullList(startNodes));
+    return new GraphWalker<>(() -> new GraphWalker.Walk<>(findSuccessors, tracker));
   }
 
   /**
    * Starts from {@code startNodes} and walks depth first in pre-order.
    *
-   * <p>The returned stream may be infinite if the graph has infinite depth or infinite breadth, or
-   * both. The stream can still be short-circuited to consume a limited number of nodes during
-   * traversal.
+   * <p>The returned stream may be infinite if the graph or tree has infinite depth or infinite
+   * breadth, or both. The stream can still be short-circuited to consume a limited number of nodes
+   * during traversal.
    */
-  public final Stream<N> preOrderFrom(Iterable<? extends N> startNodes) {
-    return newWalk.get().preOrder(startNodes);
+  @SafeVarargs
+  public final Stream<N> preOrderFrom(N... startNodes) {
+    return preOrderFrom(nonNullList(startNodes));
   }
+
+  /**
+   * Starts from {@code startNodes} and walks depth first in pre-order.
+   *
+   * <p>The returned stream may be infinite if the graph or tree has infinite depth or infinite
+   * breadth, or both. The stream can still be short-circuited to consume a limited number of
+   * nodes during traversal.
+   */
+  public abstract Stream<N> preOrderFrom(Iterable<? extends N> startNodes);
 
   /**
    * Starts from {@code startNodes} and walks depth first in post-order.
    *
-   * <p>The returned stream may be infinite if the graph has infinite breadth. The stream can still
-   * be short-circuited to consume a limited number of nodes during traversal.
+   * <p>The returned stream may be infinite if the graph or tree has infinite breadth. The stream
+   * can still be short-circuited to consume a limited number of nodes during traversal.
    *
    * <p>The stream may result in infinite loop when traversing through a node with infinite depth.
    */
   @SafeVarargs
   public final Stream<N> postOrderFrom(N... startNodes) {
-    return newWalk.get().postOrder(nonNullList(startNodes));
+    return postOrderFrom(nonNullList(startNodes));
   }
 
   /**
    * Starts from {@code startNodes} and walks depth first in post-order.
    *
-   * <p>The returned stream may be infinite if the graph has infinite breadth. The stream can still
-   * be short-circuited to consume a limited number of nodes during traversal.
+   * <p>The returned stream may be infinite if the graph or tree has infinite breadth. The stream
+   * can still be short-circuited to consume a limited number of nodes during traversal.
    *
    * <p>The stream may result in infinite loop when traversing through a node with infinite depth.
    */
-  public final Stream<N> postOrderFrom(Iterable<? extends N> startNodes) {
-    return newWalk.get().postOrder(startNodes);
-  }
+  public abstract Stream<N> postOrderFrom(Iterable<? extends N> startNodes);
 
   /**
    * Starts from {@code startNodes} and walks in breadth-first order.
    *
-   * <p>The returned stream may be infinite if the graph has infinite depth or infinite breadth, or
-   * both. The stream can still be short-circuited to consume a limited number of nodes during
-   * traversal.
+   * <p>The returned stream may be infinite if the graph or tree has infinite depth or infinite
+   * breadth, or both. The stream can still be short-circuited to consume a limited number of
+   * nodes during traversal.
    */
   @SafeVarargs
   public final Stream<N> breadthFirstFrom(N... startNodes) {
-    return newWalk.get().breadthFirst(nonNullList(startNodes));
+    return breadthFirstFrom(nonNullList(startNodes));
   }
 
   /**
    * Starts from {@code startNodes} and walks in breadth-first order.
    *
-   * <p>The returned stream may be infinite if the graph has infinite depth or infinite breadth, or
-   * both. The stream can still be short-circuited to consume a limited number of nodes during
-   * traversal.
+   * <p>The returned stream may be infinite if the graph or tree has infinite depth or infinite
+   * breadth, or both. The stream can still be short-circuited to consume a limited number of
+   * nodes during traversal.
    */
-  public final Stream<N> breadthFirstFrom(Iterable<? extends N> startNodes) {
-    return newWalk.get().breadthFirst(startNodes);
-  }
-
-  private static final class Walk<N> implements Consumer<N> {
-    private final Function<? super N, ? extends Stream<? extends N>> findSuccessors;
-    private final Predicate<? super N> tracker;
-    private final Deque<Spliterator<? extends N>> horizon = new ArrayDeque<>();
-    private N visited;
-
-    Walk(
-        Function<? super N, ? extends Stream<? extends N>> findSuccessors,
-        Predicate<? super N> tracker) {
-      this.findSuccessors = findSuccessors;
-      this.tracker = tracker;
-    }
-
-    @Override
-    public void accept(N value) {
-      this.visited = requireNonNull(value);
-    }
-
-    Stream<N> breadthFirst(Iterable<? extends N> startNodes) {
-      horizon.add(startNodes.spliterator());
-      return topDown(Queue::add);
-    }
-
-    Stream<N> preOrder(Iterable<? extends N> startNodes) {
-      horizon.push(startNodes.spliterator());
-      return topDown(Deque::push);
-    }
-
-    Stream<N> postOrder(Iterable<? extends N> startNodes) {
-      horizon.push(startNodes.spliterator());
-      Deque<N> roots = new ArrayDeque<>();
-      return whileNotNull(() -> {
-        while (visitNext()) {
-          N next = visited;
-          Stream<? extends N> successors = findSuccessors.apply(next);
-          if (successors == null) return next;
-          horizon.push(successors.spliterator());
-          roots.push(next);
-        }
-        return roots.poll();
-      });
-    }
-
-    private Stream<N> topDown(InsertionOrder order) {
-      return whileNotNull(() -> {
-        do {
-          if (visitNext()) {
-            N next = visited;
-            Stream<? extends N> successors = findSuccessors.apply(next);
-            if (successors != null) order.insertInto(horizon, successors.spliterator());
-            return next;
-          }
-        } while (!horizon.isEmpty());
-        return null; // no more element
-      });
-    }
-
-    private boolean visitNext() {
-      Spliterator<? extends N> top = horizon.getFirst();
-      while (top.tryAdvance(this)) {
-        if (tracker.test(visited)) return true;
-      }
-      horizon.removeFirst();
-      return false;
-    }
-  }
+  public abstract Stream<N> breadthFirstFrom(Iterable<? extends N> startNodes);
 
   @SafeVarargs
   static <N> List<N> nonNullList(N... values) {
     return Arrays.stream(values).peek(Objects::requireNonNull).collect(toList());
-  }
-
-  private interface InsertionOrder {
-    <N> void insertInto(Deque<N> deque, N value);
   }
 }
