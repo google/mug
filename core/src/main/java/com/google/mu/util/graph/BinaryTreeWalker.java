@@ -27,6 +27,7 @@ import java.util.stream.Stream;
 
 /**
  * Walker for binary tree topology.
+ * Created by {@link Walker#inBinaryTree Walker.inBinaryTree(Tree::left, Tree::right)}.
  *
  * <p>Supports {@link #inOrderFrom in-order} traversal.
  *
