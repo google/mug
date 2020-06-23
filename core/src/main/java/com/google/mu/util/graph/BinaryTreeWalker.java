@@ -14,66 +14,58 @@
  *****************************************************************************/
 package com.google.mu.util.graph;
 
-import static com.google.mu.util.stream.MoreStreams.whileNotEmpty;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
+import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayDeque;
 import java.util.BitSet;
 import java.util.Deque;
+import java.util.Queue;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 /**
  * Walker for binary tree topology.
  *
- * <p>More efficient than {@link Walker} for binary trees, and supports
- * {@link #inOrderFrom in-order} traversal.
- *
- * <p>Null nodes are treated as empty tree.
+ * <p>Supports {@link #inOrderFrom in-order} traversal.
  *
  * @param <N> the tree node type
  * @since 4.2
  */
-public final class BinaryTreeWalker<N> {
+public final class BinaryTreeWalker<N> extends Walker<N> {
   private final UnaryOperator<N> getLeft;
   private final UnaryOperator<N> getRight;
 
-  private BinaryTreeWalker(UnaryOperator<N> getLeft, UnaryOperator<N> getRight) {
+  BinaryTreeWalker(UnaryOperator<N> getLeft, UnaryOperator<N> getRight) {
     this.getLeft = requireNonNull(getLeft);
     this.getRight = requireNonNull(getRight);
   }
 
   /**
-   * Returns a {@code BinaryTreeTraverser} for traversing in the binary tree topology
-   * as observed by {@code getLeft} and {@code getRight} functions. Both functions
-   * return null to indicate that there is no left or right child.
-   *
-   * <p>It's guaranteed that for any given node, {@code getLeft} and {@code getRight}
-   * are called at most once.
+   * Returns a lazy stream for in-order traversal from {@code roots}.
+   * Empty stream is returned if {@code roots} is empty.
    */
-  public static <N> BinaryTreeWalker<N> inTree(
-      UnaryOperator<N> getLeft, UnaryOperator<N> getRight) {
-    return new BinaryTreeWalker<>(getLeft, getRight);
+  @SafeVarargs
+  public final Stream<N> inOrderFrom(N... roots) {
+    return inOrderFrom(asList(roots));
   }
 
   /**
-   * Returns a lazy stream for in-order traversal from {@code root}. Empty stream is returned if
-   * {@code root} is null.
+   * Returns a lazy stream for in-order traversal from {@code roots}.
+   * Empty stream is returned if {@code roots} is empty.
    */
-  public Stream<N> inOrderFrom(N root) {
-    if (root == null) return Stream.empty();
-    return new InOrder().add(root).stream();
+  public Stream<N> inOrderFrom(Iterable<? extends N> roots) {
+    return whileNotNull(new InOrder(roots)::nextOrNull);
   }
 
   /**
-   * Returns a lazy stream for pre-order traversal from {@code root}. Empty stream is returned if
-   * {@code root} is null.
+   * Returns a lazy stream for pre-order traversal from {@code roots}.
+   * Empty stream is returned if {@code roots} is empty.
    */
-  public Stream<N> preOrderFrom(N root) {
-    if (root == null) return Stream.empty();
-    Deque<N> horizon = new ArrayDeque<>();
-    horizon.push(root);
+  @Override
+  public final Stream<N> preOrderFrom(Iterable<? extends N> roots) {
+    Deque<N> horizon = toDeque(roots);
     return whileNotNull(horizon::poll)
         .peek(n -> {
           N left = getLeft.apply(n);
@@ -84,22 +76,19 @@ public final class BinaryTreeWalker<N> {
   }
 
   /**
-   * Returns a lazy stream for post-order traversal from {@code root}. Empty stream is returned if
-   * {@code root} is null.
+   * Returns a lazy stream for post-order traversal from {@code root}.
+   * Empty stream is returned if {@code roots} is empty.
    */
-  public Stream<N> postOrderFrom(N root) {
-    if (root == null) return Stream.empty();
-    return new PostOrder().add(root).stream();
+  public final Stream<N> postOrderFrom(Iterable<? extends N> roots) {
+    return whileNotNull(new PostOrder(roots)::nextOrNull);
   }
 
   /**
-   * Returns a lazy stream for breadth-first traversal from {@code root}. Empty stream is returned
-   * if {@code root} is null.
+   * Returns a lazy stream for breadth-first traversal from {@code root}.
+   * Empty stream is returned if {@code roots} is empty.
    */
-  public Stream<N> breadthFirstFrom(N root) {
-    if (root == null) return Stream.empty();
-    Deque<N> horizon = new ArrayDeque<>();
-    horizon.add(root);
+  public final Stream<N> breadthFirstFrom(Iterable<? extends N> roots) {
+    Queue<N> horizon = toDeque(roots);
     return whileNotNull(horizon::poll)
         .peek(n -> {
           N left = getLeft.apply(n);
@@ -110,50 +99,75 @@ public final class BinaryTreeWalker<N> {
   }
 
   private final class InOrder {
-    private final Deque<N> horizon = new ArrayDeque<>();
+    private final Queue<N> roots;
+    private final Deque<N> leftPath = new ArrayDeque<>();
+    private N right;  // if set, we traverse it in the next step.
 
-    InOrder add(N root) {
-      for (N n = root; n != null; n = getLeft.apply(n)) {
-        horizon.push(n);
+    InOrder(Iterable<? extends N> roots) {
+      this.roots = toDeque(roots);
+    }
+
+    N nextOrNull() {
+      // 1. Each time we return the top of the `leftPath` stack.
+      // 2. Before a node is returned, its right child is set to be traversed next.
+      // 3. When either a root or `nextToTraverse` begins to be traversed,
+      //    the node and its left-most descendants are pushed into the `leftPath` stack.
+      for (; ;) {
+        if (traverse(right) || traverse(roots.poll())) {
+          N node = leftPath.remove();
+          right = getRight.apply(node);
+          return node;
+        }
+        return null;
       }
-      return this;
     }
 
-    private void exploreRight(N node) {
-      N right = getRight.apply(node);
-      if (right != null) add(right);
-    }
-
-    Stream<N> stream() {
-      return whileNotNull(horizon::poll).peek(this::exploreRight);
+    private boolean traverse(final N node) {
+      for (N n = node; n != null; n = getLeft.apply(n)) {
+        leftPath.push(n);
+      }
+      return !leftPath.isEmpty();
     }
   };
 
   private final class PostOrder {
-    private final Deque<N> horizon = new ArrayDeque<>();
+    private final Queue<N> roots;
+    private final Deque<N> leftPath = new ArrayDeque<>();
     private final BitSet ready = new BitSet();
 
-    PostOrder add(N root) {
-      for (N n = root; n != null; n = getLeft.apply(n)) {
-        ready.clear(horizon.size());
-        horizon.push(n);
-      }
-      return this;
+    PostOrder(Iterable<? extends N> roots) {
+      this.roots = toDeque(roots);
     }
 
-    private N remove() {
-      for (; ;) {
-        if (ready.get(horizon.size() - 1)) {
-          return horizon.pop();
-        }
-        ready.set(horizon.size() - 1);
-        N right = getRight.apply(horizon.getFirst());
-        if (right != null) add(right);
+    N nextOrNull() {
+      // 1. Keep extra `ready` state to remember whether a node's right child has been traversed.
+      // 2. If the top of `leftPath` stack is `ready`, it's returned.
+      // 3. If not ready, traverse the right child.
+      // 4. when stack is empty, traverse the next root.
+      // 5. When either a root or `nextToTraverse` begins to be traversed,
+      //    the node and its left-most descendants are pushed into the `leftPath` stack.
+      for (N right = null;
+          traverse(right) || traverse(roots.poll());
+          right = getRight.apply(leftPath.getFirst())) {
+        int top = leftPath.size() - 1;
+        if (ready.get(top)) return leftPath.pop();
+        ready.set(top);
       }
+      return null;
     }
 
-    Stream<N> stream() {
-      return whileNotEmpty(horizon).map(u -> remove());
+    private boolean traverse(final N node) {
+      for (N n = node; n != null; n = getLeft.apply(n)) {
+        ready.clear(leftPath.size());
+        leftPath.push(n);
+      }
+      return !leftPath.isEmpty();
     }
+  }
+
+  private static <N> Deque<N> toDeque(Iterable<? extends N> nodes) {
+    Deque<N> deque = new ArrayDeque<>();
+    for (N node : nodes) deque.add(node);
+    return deque;
   }
 }
