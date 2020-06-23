@@ -61,6 +61,8 @@ public abstract class Walker<N> {
    * <p>It's guaranteed that for any given node, {@code getLeft} and {@code getRight}
    * are called lazily, only when the left or the right child is traversed. They are called at
    * most once for each node.
+   *
+   * @since 4.2
    */
   public static <N> BinaryTreeWalker<N> inBinaryTree(
       UnaryOperator<N> getLeft, UnaryOperator<N> getRight) {
