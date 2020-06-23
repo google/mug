@@ -47,8 +47,7 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
    * Returns a lazy stream for in-order traversal from {@code roots}.
    * Empty stream is returned if {@code roots} is empty.
    */
-  @SafeVarargs
-  public final Stream<N> inOrderFrom(N... roots) {
+  @SafeVarargs public final Stream<N> inOrderFrom(N... roots) {
     return inOrderFrom(asList(roots));
   }
 
@@ -64,8 +63,7 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
    * Returns a lazy stream for pre-order traversal from {@code roots}.
    * Empty stream is returned if {@code roots} is empty.
    */
-  @Override
-  public final Stream<N> preOrderFrom(Iterable<? extends N> roots) {
+  @Override public final Stream<N> preOrderFrom(Iterable<? extends N> roots) {
     Deque<N> horizon = toDeque(roots);
     return whileNotNull(horizon::poll)
         .peek(n -> {

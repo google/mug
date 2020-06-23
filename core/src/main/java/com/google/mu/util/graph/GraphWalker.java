@@ -34,7 +34,7 @@ final class GraphWalker<N> extends Walker<N> {
     this.newWalk = newWalk;
   }
 
-  public Stream<N> preOrderFrom(Iterable<? extends N> startNodes) {
+  @Override public Stream<N> preOrderFrom(Iterable<? extends N> startNodes) {
     return newWalk.get().preOrder(startNodes);
   }
 
@@ -46,7 +46,7 @@ final class GraphWalker<N> extends Walker<N> {
    *
    * <p>The stream may result in infinite loop when traversing through a node with infinite depth.
    */
-  public Stream<N> postOrderFrom(Iterable<? extends N> startNodes) {
+  @Override public Stream<N> postOrderFrom(Iterable<? extends N> startNodes) {
     return newWalk.get().postOrder(startNodes);
   }
 
@@ -57,7 +57,7 @@ final class GraphWalker<N> extends Walker<N> {
    * both. The stream can still be short-circuited to consume a limited number of nodes during
    * traversal.
    */
-  public final Stream<N> breadthFirstFrom(Iterable<? extends N> startNodes) {
+  @Override public final Stream<N> breadthFirstFrom(Iterable<? extends N> startNodes) {
     return newWalk.get().breadthFirst(startNodes);
   }
 
@@ -74,8 +74,7 @@ final class GraphWalker<N> extends Walker<N> {
       this.tracker = tracker;
     }
 
-    @Override
-    public void accept(N value) {
+    @Override public void accept(N value) {
       this.visited = requireNonNull(value);
     }
 
