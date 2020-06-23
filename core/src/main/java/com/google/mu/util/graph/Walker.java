@@ -51,6 +51,8 @@ import java.util.stream.Stream;
  * the same graph collaboratively by sharing a concurrent node tracker. See
  * {@link #inGraph(Function, Predicate) inGraph(findSuccessors, nodeTracker)} for details.
  *
+ * <p>For binary trees, prefer to use {@link BinaryTreeWalker}.
+ *
  * @since 4.0
  */
 public final class Walker<N> {
