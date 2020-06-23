@@ -33,6 +33,7 @@ import java.util.stream.Stream;
  * <p>Null nodes are treated as empty tree.
  *
  * @param <N> the tree node type
+ * @since 4.2
  */
 public final class BinaryTreeWalker<N> {
   private final UnaryOperator<N> getLeft;
@@ -89,6 +90,23 @@ public final class BinaryTreeWalker<N> {
   public Stream<N> postOrderFrom(N root) {
     if (root == null) return Stream.empty();
     return new PostOrder().add(root).stream();
+  }
+
+  /**
+   * Returns a lazy stream for breadth-first traversal from {@code root}. Empty stream is returned
+   * if {@code root} is null.
+   */
+  public Stream<N> breadthFirstFrom(N root) {
+    if (root == null) return Stream.empty();
+    Deque<N> horizon = new ArrayDeque<>();
+    horizon.add(root);
+    return whileNotNull(horizon::poll)
+        .peek(n -> {
+          N left = getLeft.apply(n);
+          N right = getRight.apply(n);
+          if (left != null) horizon.add(left);
+          if (right != null) horizon.add(right);
+        });
   }
 
   private final class InOrder {

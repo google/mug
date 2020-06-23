@@ -105,6 +105,12 @@ public class BinaryTreeWalkerTest {
   }
 
   @Test
+  public void postOrder_singleNode() {
+    assertThat(BinaryTree.traverser().postOrderFrom(new BinaryTree("foo")).map(BinaryTree::toString))
+        .containsExactly("foo");
+  }
+
+  @Test
   public void postOrder_leftNodeIsNull() {
     BinaryTree tree = new BinaryTree("foo").setRight("right");
     assertThat(BinaryTree.traverser().postOrderFrom(tree).map(BinaryTree::toString))
@@ -131,6 +137,48 @@ public class BinaryTreeWalkerTest {
             .setRight("i"));
     assertThat(BinaryTree.traverser().postOrderFrom(tree).map(BinaryTree::toString))
         .containsExactly("c", "e", "d", "b", "h", "g", "i", "f", "a")
+        .inOrder();
+  }
+
+  @Test
+  public void breadthFirst_nullTree() {
+    assertThat(BinaryTree.traverser().breadthFirstFrom(null)).isEmpty();
+  }
+
+  @Test
+  public void breadthFirst_singleNode() {
+    BinaryTree tree = new BinaryTree("foo");
+    assertThat(BinaryTree.traverser().breadthFirstFrom(tree).map(BinaryTree::toString))
+        .containsExactly("foo");
+  }
+
+  @Test
+  public void breadthFirst_leftNodeIsNull() {
+    BinaryTree tree = new BinaryTree("foo").setRight("right");
+    assertThat(BinaryTree.traverser().breadthFirstFrom(tree).map(BinaryTree::toString))
+        .containsExactly("foo", "right")
+        .inOrder();
+  }
+
+  @Test
+  public void breadthFirst_rightNodeIsNull() {
+    BinaryTree tree = new BinaryTree("foo").setLeft("left");
+    assertThat(BinaryTree.traverser().breadthFirstFrom(tree).map(BinaryTree::toString))
+        .containsExactly("foo", "left")
+        .inOrder();
+  }
+
+  @Test
+  public void breadthFirst_deep() {
+    BinaryTree tree = new BinaryTree("a")
+        .setLeft(new BinaryTree("b")
+            .setLeft("c")
+            .setRight(new BinaryTree("d").setLeft("e")))
+        .setRight(new BinaryTree("f")
+            .setLeft(new BinaryTree("g").setRight("h"))
+            .setRight("i"));
+    assertThat(BinaryTree.traverser().breadthFirstFrom(tree).map(BinaryTree::toString))
+        .containsExactly("a", "b", "f", "c", "d", "g", "i", "e", "h")
         .inOrder();
   }
 
