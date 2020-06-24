@@ -114,6 +114,9 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
       //    the node and its left-most descendants are pushed onto the `leftPath` stack.
       if (hasNextAsOf(right) || hasNextAsOf(roots.poll())) {
         N node = leftPath.remove();
+        // Store right child in a field rather than expanding its left path immediately,
+        // this way we avoid calling getRight until necessary. Expanding lazily allows us to be
+        // short-circuitable in case the right node has infinite depth.
         right = getRight.apply(node);
         return node;
       }
@@ -149,7 +152,7 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
           right = getRight.apply(leftPath.getFirst()), ready.set(leftPath.size() - 1)) {
         // We could have just compared the previously returned node with the current top.right,
         // if we could depend on a concrete binary tree data structure, where the right child
-        // is a referentially transparent field. But it'd be extra contractual burden to carry.
+        // is an idempotent field. But it'd be extra contractual burden to carry.
         // Using a BitSet emulates that, with minimal overhead.
         if (ready.get(leftPath.size() - 1)) return leftPath.pop();
       }
