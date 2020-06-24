@@ -113,7 +113,7 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
       // 4. When either a root or `right` begins to be traversed,
       //    the node and its left-most descendants are pushed onto the `leftPath` stack.
       if (hasNextAsOf(right) || hasNextAsOf(roots.poll())) {
-        N node = leftPath.remove();
+        N node = leftPath.pop();
         // Store right child in a field rather than expanding its left path immediately,
         // this way we avoid calling getRight until necessary. Expanding lazily allows us to be
         // short-circuitable in case the right node has infinite depth.
