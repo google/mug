@@ -117,7 +117,15 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
    * collect the nodes into a list in reverse-post-order, followed by {@code Collections.reverse()}.
    */
   public Stream<N> reversePostOrderFrom(Iterable<? extends N> roots) {
-    return inBinaryTree(getRight, getLeft).preOrderFrom(roots);
+    Deque<N> horizon = new ArrayDeque<>();
+    for (N root : roots) horizon.push(root);
+    return whileNotNull(horizon::poll)
+        .peek(n -> {
+          N left = getLeft.apply(n);
+          N right = getRight.apply(n);
+          if (left != null) horizon.push(left);
+          if (right != null) horizon.push(right);
+        });
   }
 
   /**
