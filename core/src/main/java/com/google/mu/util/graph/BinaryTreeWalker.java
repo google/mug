@@ -20,6 +20,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayDeque;
 import java.util.BitSet;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.Queue;
 import java.util.function.UnaryOperator;
@@ -29,7 +30,9 @@ import java.util.stream.Stream;
  * Walker for binary tree topology.
  * Use {@link Walker#inBinaryTree Walker.inBinaryTree(Tree::left, Tree::right)} to create.
  *
- * <p>Supports {@link #inOrderFrom in-order} traversal.
+ * <p>Besides {@link #preOrderFrom pre-order}, {@link #postOrderFrom post-order} and {@link
+ * #breadthFirstFrom breadth-first} traversals, also supports {@link #inOrderFrom in-order}
+ * and {@link #reversePostOrderFrom reverse-post-order}.
  *
  * @param <N> the tree node type
  * @since 4.2
@@ -83,6 +86,46 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
   }
 
   /**
+   * Starts from {@code roots} and walks depth first in reverse-post-order (exact opposite of
+   * post-order, but not pre-order).
+   *
+   * <p>Unlike {@link postOrderFrom}, the tree is allowed to have infinite depth, in which case the
+   * returned stream will also be infinite, but can be short-circuited to consume a limited number
+   * of nodes during traversal.
+   *
+   * <p<For small or medium sized in-memory trees, it's more efficient to first collect the nodes
+   * into a list in reverse-post-order, followed by {@link Collections#reverse} than using the
+   * equivalent {@code postOrderFrom()}.
+   */
+  @SafeVarargs public final Stream<N> reversePostOrderFrom(N... roots) {
+    return reversePostOrderFrom(asList(roots));
+  }
+
+  /**
+   * Starts from {@code roots} and walks depth first in reverse-post-order (exact opposite of
+   * post-order, but not pre-order).
+   *
+   * <p>Unlike {@link postOrderFrom}, the tree is allowed to have infinite depth, in which case the
+   * returned stream will also be infinite, but can be short-circuited to consume a limited number
+   * of nodes during traversal.
+   *
+   * <p<For small or medium sized in-memory trees, it's more efficient to first collect the nodes
+   * into a list in reverse-post-order, followed by {@link Collections#reverse} than using the
+   * equivalent {@code postOrderFrom()}.
+   */
+  public Stream<N> reversePostOrderFrom(Iterable<? extends N> roots) {
+    Deque<N> horizon = new ArrayDeque<>();
+    for (N root : roots) horizon.push(root);
+    return whileNotNull(horizon::poll)
+        .peek(n -> {
+          N left = getLeft.apply(n);
+          N right = getRight.apply(n);
+          if (left != null) horizon.push(left);
+          if (right != null) horizon.push(right);
+        });
+  }
+
+  /**
    * Returns a lazy stream for breadth-first traversal from {@code root}.
    * Empty stream is returned if {@code roots} is empty.
    */
@@ -113,7 +156,7 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
       // 4. When either a root or `right` begins to be traversed,
       //    the node and its left-most descendants are pushed onto the `leftPath` stack.
       if (hasNextAsOf(right) || hasNextAsOf(roots.poll())) {
-        N node = leftPath.remove();
+        N node = leftPath.pop();
         // Store right child in a field rather than expanding its left path immediately,
         // this way we avoid calling getRight until necessary. Expanding lazily allows us to be
         // short-circuitable in case the right node has infinite depth.

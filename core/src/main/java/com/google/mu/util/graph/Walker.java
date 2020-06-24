@@ -50,7 +50,6 @@ import java.util.stream.Stream;
  * @since 4.0
  */
 public abstract class Walker<N> {
-
   Walker() {}
 
   /**
@@ -112,7 +111,11 @@ public abstract class Walker<N> {
   public static <N> Walker<N> inGraph(
       Function<? super N, ? extends Stream<? extends N>> findSuccessors) {
     requireNonNull(findSuccessors);
-    return new GraphWalker<>(() -> new GraphWalker.Walk<>(findSuccessors, new HashSet<>()::add));
+    return new GraphWalker<N>() {
+      @Override Walk<N> start() {
+        return new Walk<>(findSuccessors, new HashSet<>()::add);
+      }
+    };
   }
 
   /**
@@ -214,7 +217,11 @@ public abstract class Walker<N> {
       Predicate<? super N> tracker) {
     requireNonNull(findSuccessors);
     requireNonNull(tracker);
-    return new GraphWalker<>(() -> new GraphWalker.Walk<>(findSuccessors, tracker));
+    return new GraphWalker<N>() {
+      @Override Walk<N> start() {
+        return new Walk<>(findSuccessors, tracker);
+      }
+    };
   }
 
   /**
