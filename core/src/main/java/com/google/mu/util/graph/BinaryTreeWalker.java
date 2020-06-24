@@ -19,8 +19,11 @@ import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.Collections;
 import java.util.Deque;
+import java.util.List;
 import java.util.Queue;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
@@ -117,15 +120,7 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
    * collect the nodes into a list in reverse-post-order, followed by {@code Collections.reverse()}.
    */
   public Stream<N> reversePostOrderFrom(Iterable<? extends N> roots) {
-    Deque<N> horizon = new ArrayDeque<>();
-    for (N root : roots) horizon.push(root);
-    return whileNotNull(horizon::poll)
-        .peek(n -> {
-          N left = getLeft.apply(n);
-          N right = getRight.apply(n);
-          if (left != null) horizon.push(left);
-          if (right != null) horizon.push(right);
-        });
+    return inBinaryTree(getRight, getLeft).preOrderFrom(reverse(roots));
   }
 
   /**
@@ -218,5 +213,14 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
     Deque<N> deque = new ArrayDeque<>();
     for (N node : nodes) deque.add(node);
     return deque;
+  }
+
+  private static <N> List<N> reverse(Iterable<? extends N> nodes) {
+    List<N> list = new ArrayList<>();
+    for (N node : nodes) {
+      list.add(node);
+    }
+    Collections.reverse(list);
+    return list;
   }
 }
