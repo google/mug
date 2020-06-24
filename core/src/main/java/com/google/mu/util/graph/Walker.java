@@ -224,8 +224,7 @@ public abstract class Walker<N> {
    * breadth, or both. The stream can still be short-circuited to consume a limited number of nodes
    * during traversal.
    */
-  @SafeVarargs
-  public final Stream<N> preOrderFrom(N... startNodes) {
+  @SafeVarargs public final Stream<N> preOrderFrom(N... startNodes) {
     return preOrderFrom(nonNullList(startNodes));
   }
 
@@ -246,8 +245,7 @@ public abstract class Walker<N> {
    *
    * <p>The stream may result in infinite loop when traversing through a node with infinite depth.
    */
-  @SafeVarargs
-  public final Stream<N> postOrderFrom(N... startNodes) {
+  @SafeVarargs public final Stream<N> postOrderFrom(N... startNodes) {
     return postOrderFrom(nonNullList(startNodes));
   }
 
@@ -268,8 +266,7 @@ public abstract class Walker<N> {
    * breadth, or both. The stream can still be short-circuited to consume a limited number of
    * nodes during traversal.
    */
-  @SafeVarargs
-  public final Stream<N> breadthFirstFrom(N... startNodes) {
+  @SafeVarargs public final Stream<N> breadthFirstFrom(N... startNodes) {
     return breadthFirstFrom(nonNullList(startNodes));
   }
 
@@ -282,8 +279,7 @@ public abstract class Walker<N> {
    */
   public abstract Stream<N> breadthFirstFrom(Iterable<? extends N> startNodes);
 
-  @SafeVarargs
-  static <N> List<N> nonNullList(N... values) {
+  @SafeVarargs static <N> List<N> nonNullList(N... values) {
     return Arrays.stream(values).peek(Objects::requireNonNull).collect(toList());
   }
 }

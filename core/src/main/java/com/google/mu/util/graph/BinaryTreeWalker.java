@@ -27,7 +27,7 @@ import java.util.stream.Stream;
 
 /**
  * Walker for binary tree topology.
- * Created by {@link Walker#inBinaryTree Walker.inBinaryTree(Tree::left, Tree::right)}.
+ * Use {@link Walker#inBinaryTree Walker.inBinaryTree(Tree::left, Tree::right)} to create.
  *
  * <p>Supports {@link #inOrderFrom in-order} traversal.
  *
@@ -47,8 +47,7 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
    * Returns a lazy stream for in-order traversal from {@code roots}.
    * Empty stream is returned if {@code roots} is empty.
    */
-  @SafeVarargs
-  public final Stream<N> inOrderFrom(N... roots) {
+  @SafeVarargs public final Stream<N> inOrderFrom(N... roots) {
     return inOrderFrom(asList(roots));
   }
 
@@ -64,8 +63,7 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
    * Returns a lazy stream for pre-order traversal from {@code roots}.
    * Empty stream is returned if {@code roots} is empty.
    */
-  @Override
-  public final Stream<N> preOrderFrom(Iterable<? extends N> roots) {
+  @Override public Stream<N> preOrderFrom(Iterable<? extends N> roots) {
     Deque<N> horizon = toDeque(roots);
     return whileNotNull(horizon::poll)
         .peek(n -> {
@@ -80,7 +78,7 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
    * Returns a lazy stream for post-order traversal from {@code root}.
    * Empty stream is returned if {@code roots} is empty.
    */
-  public final Stream<N> postOrderFrom(Iterable<? extends N> roots) {
+  public Stream<N> postOrderFrom(Iterable<? extends N> roots) {
     return whileNotNull(new PostOrder(roots)::nextOrNull);
   }
 
@@ -88,7 +86,7 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
    * Returns a lazy stream for breadth-first traversal from {@code root}.
    * Empty stream is returned if {@code roots} is empty.
    */
-  public final Stream<N> breadthFirstFrom(Iterable<? extends N> roots) {
+  public Stream<N> breadthFirstFrom(Iterable<? extends N> roots) {
     Queue<N> horizon = toDeque(roots);
     return whileNotNull(horizon::poll)
         .peek(n -> {
@@ -111,19 +109,21 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
     N nextOrNull() {
       // 1. Each time we return the top of the `leftPath` stack.
       // 2. Before a node is returned, its right child is set to be traversed next.
-      // 3. When either a root or `nextToTraverse` begins to be traversed,
-      //    the node and its left-most descendants are pushed into the `leftPath` stack.
-      for (; ;) {
-        if (traverse(right) || traverse(roots.poll())) {
-          N node = leftPath.remove();
-          right = getRight.apply(node);
-          return node;
-        }
-        return null;
+      // 3. when stack is empty, traverse the next root.
+      // 4. When either a root or `right` begins to be traversed,
+      //    the node and its left-most descendants are pushed onto the `leftPath` stack.
+      if (hasNextAsOf(right) || hasNextAsOf(roots.poll())) {
+        N node = leftPath.remove();
+        // Store right child in a field rather than expanding its left path immediately,
+        // this way we avoid calling getRight until necessary. Expanding lazily allows us to be
+        // short-circuitable in case the right node has infinite depth.
+        right = getRight.apply(node);
+        return node;
       }
+      return null;
     }
 
-    private boolean traverse(final N node) {
+    private boolean hasNextAsOf(final N node) {
       for (N n = node; n != null; n = getLeft.apply(n)) {
         leftPath.push(n);
       }
@@ -145,19 +145,21 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
       // 2. If the top of `leftPath` stack is `ready`, it's returned.
       // 3. If not ready, traverse the right child.
       // 4. when stack is empty, traverse the next root.
-      // 5. When either a root or `nextToTraverse` begins to be traversed,
-      //    the node and its left-most descendants are pushed into the `leftPath` stack.
+      // 5. When either a root or `right` begins to be traversed,
+      //    the node and its left-most descendants are pushed onto the `leftPath` stack.
       for (N right = null;
-          traverse(right) || traverse(roots.poll());
-          right = getRight.apply(leftPath.getFirst())) {
-        int top = leftPath.size() - 1;
-        if (ready.get(top)) return leftPath.pop();
-        ready.set(top);
+          hasNextAsOf(right) || hasNextAsOf(roots.poll());
+          right = getRight.apply(leftPath.getFirst()), ready.set(leftPath.size() - 1)) {
+        // We could have just compared the previously returned node with the current top.right,
+        // if we could depend on a concrete binary tree data structure, where the right child
+        // is an idempotent field. But it'd be extra contractual burden to carry.
+        // Using a BitSet accomplishes the post order, with minimal overhead.
+        if (ready.get(leftPath.size() - 1)) return leftPath.pop();
       }
       return null;
     }
 
-    private boolean traverse(final N node) {
+    private boolean hasNextAsOf(final N node) {
       for (N n = node; n != null; n = getLeft.apply(n)) {
         ready.clear(leftPath.size());
         leftPath.push(n);
