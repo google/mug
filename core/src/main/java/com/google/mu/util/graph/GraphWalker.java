@@ -24,42 +24,22 @@ import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-final class GraphWalker<N> extends Walker<N> {
-  private final Supplier<Walk<N>> newWalk;
-
-  GraphWalker(Supplier<Walk<N>> newWalk) {
-    this.newWalk = newWalk;
-  }
-
+abstract class GraphWalker<N> extends Walker<N> {
   @Override public Stream<N> preOrderFrom(Iterable<? extends N> startNodes) {
-    return newWalk.get().preOrder(startNodes);
+    return start().preOrder(startNodes);
   }
 
-  /**
-   * Starts from {@code startNodes} and walks depth first in post-order.
-   *
-   * <p>The returned stream may be infinite if the graph has infinite breadth. The stream can still
-   * be short-circuited to consume a limited number of nodes during traversal.
-   *
-   * <p>The stream may result in infinite loop when traversing through a node with infinite depth.
-   */
   @Override public Stream<N> postOrderFrom(Iterable<? extends N> startNodes) {
-    return newWalk.get().postOrder(startNodes);
+    return start().postOrder(startNodes);
   }
 
-  /**
-   * Starts from {@code startNodes} and walks in breadth-first order.
-   *
-   * <p>The returned stream may be infinite if the graph has infinite depth or infinite breadth, or
-   * both. The stream can still be short-circuited to consume a limited number of nodes during
-   * traversal.
-   */
   @Override public final Stream<N> breadthFirstFrom(Iterable<? extends N> startNodes) {
-    return newWalk.get().breadthFirst(startNodes);
+    return start().breadthFirst(startNodes);
   }
+
+  abstract Walk<N> start();
 
   static final class Walk<N> implements Consumer<N> {
     private final Function<? super N, ? extends Stream<? extends N>> findSuccessors;
