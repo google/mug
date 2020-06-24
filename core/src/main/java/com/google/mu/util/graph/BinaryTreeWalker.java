@@ -218,7 +218,7 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
   private static <N> List<N> reverse(Iterable<? extends N> nodes) {
     List<N> list = new ArrayList<>();
     for (N node : nodes) {
-      list.add(node);
+      list.add(requireNonNull(node));
     }
     Collections.reverse(list);
     return list;
