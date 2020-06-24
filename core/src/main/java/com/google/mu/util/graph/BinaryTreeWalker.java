@@ -27,7 +27,7 @@ import java.util.stream.Stream;
 
 /**
  * Walker for binary tree topology.
- * Created by {@link Walker#inBinaryTree Walker.inBinaryTree(Tree::left, Tree::right)}.
+ * Use {@link Walker#inBinaryTree Walker.inBinaryTree(Tree::left, Tree::right)} to create.
  *
  * <p>Supports {@link #inOrderFrom in-order} traversal.
  *
@@ -63,7 +63,7 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
    * Returns a lazy stream for pre-order traversal from {@code roots}.
    * Empty stream is returned if {@code roots} is empty.
    */
-  @Override public final Stream<N> preOrderFrom(Iterable<? extends N> roots) {
+  @Override public Stream<N> preOrderFrom(Iterable<? extends N> roots) {
     Deque<N> horizon = toDeque(roots);
     return whileNotNull(horizon::poll)
         .peek(n -> {
@@ -78,7 +78,7 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
    * Returns a lazy stream for post-order traversal from {@code root}.
    * Empty stream is returned if {@code roots} is empty.
    */
-  public final Stream<N> postOrderFrom(Iterable<? extends N> roots) {
+  public Stream<N> postOrderFrom(Iterable<? extends N> roots) {
     return whileNotNull(new PostOrder(roots)::nextOrNull);
   }
 
@@ -86,7 +86,7 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
    * Returns a lazy stream for breadth-first traversal from {@code root}.
    * Empty stream is returned if {@code roots} is empty.
    */
-  public final Stream<N> breadthFirstFrom(Iterable<? extends N> roots) {
+  public Stream<N> breadthFirstFrom(Iterable<? extends N> roots) {
     Queue<N> horizon = toDeque(roots);
     return whileNotNull(horizon::poll)
         .peek(n -> {
@@ -153,7 +153,7 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
         // We could have just compared the previously returned node with the current top.right,
         // if we could depend on a concrete binary tree data structure, where the right child
         // is an idempotent field. But it'd be extra contractual burden to carry.
-        // Using a BitSet emulates that, with minimal overhead.
+        // Using a BitSet accomplishes the post order, with minimal overhead.
         if (ready.get(leftPath.size() - 1)) return leftPath.pop();
       }
       return null;
