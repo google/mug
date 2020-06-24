@@ -20,7 +20,6 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayDeque;
 import java.util.BitSet;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.Queue;
 import java.util.function.UnaryOperator;
@@ -99,7 +98,7 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
    *
    * <p>While the traversal order is the exact opposite of {@link #postOrderFrom post-order},
    * for small or medium sized in-memory trees, it's equivalent and more efficient to first
-   * collect the nodes into a list in reverse-post-order, followed by {@link Collections#reverse}.
+   * collect the nodes into a list in reverse-post-order, followed by {@code Collections.reverse()}.
    */
   @SafeVarargs public final Stream<N> reversePostOrderFrom(N... roots) {
     return reversePostOrderFrom(asList(roots));
@@ -115,7 +114,7 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
    *
    * <p>While the traversal order is the exact opposite of {@link #postOrderFrom post-order},
    * for small or medium sized in-memory trees, it's equivalent and more efficient to first
-   * collect the nodes into a list in reverse-post-order, followed by {@link Collections#reverse}.
+   * collect the nodes into a list in reverse-post-order, followed by {@code Collections.reverse()}.
    */
   public Stream<N> reversePostOrderFrom(Iterable<? extends N> roots) {
     Deque<N> horizon = new ArrayDeque<>();
