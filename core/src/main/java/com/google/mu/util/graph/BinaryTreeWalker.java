@@ -109,9 +109,10 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
     N nextOrNull() {
       // 1. Each time we return the top of the `leftPath` stack.
       // 2. Before a node is returned, its right child is set to be traversed next.
-      // 3. When either a root or `nextToTraverse` begins to be traversed,
+      // 3. when stack is empty, traverse the next root.
+      // 4. When either a root or `right` begins to be traversed,
       //    the node and its left-most descendants are pushed onto the `leftPath` stack.
-      if (hasNext(right) || hasNext(roots.poll())) {
+      if (hasNextAsOf(right) || hasNextAsOf(roots.poll())) {
         N node = leftPath.remove();
         right = getRight.apply(node);
         return node;
@@ -119,8 +120,8 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
       return null;
     }
 
-    private boolean hasNext(final N traversee) {
-      for (N n = traversee; n != null; n = getLeft.apply(n)) {
+    private boolean hasNextAsOf(final N node) {
+      for (N n = node; n != null; n = getLeft.apply(n)) {
         leftPath.push(n);
       }
       return !leftPath.isEmpty();
@@ -141,18 +142,18 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
       // 2. If the top of `leftPath` stack is `ready`, it's returned.
       // 3. If not ready, traverse the right child.
       // 4. when stack is empty, traverse the next root.
-      // 5. When either a root or `nextToTraverse` begins to be traversed,
+      // 5. When either a root or `right` begins to be traversed,
       //    the node and its left-most descendants are pushed onto the `leftPath` stack.
       for (N right = null;
-          hasNext(right) || hasNext(roots.poll());
+          hasNextAsOf(right) || hasNextAsOf(roots.poll());
           right = getRight.apply(leftPath.getFirst()), ready.set(leftPath.size() - 1)) {
         if (ready.get(leftPath.size() - 1)) return leftPath.pop();
       }
       return null;
     }
 
-    private boolean hasNext(final N traversee) {
-      for (N n = traversee; n != null; n = getLeft.apply(n)) {
+    private boolean hasNextAsOf(final N node) {
+      for (N n = node; n != null; n = getLeft.apply(n)) {
         ready.clear(leftPath.size());
         leftPath.push(n);
       }
