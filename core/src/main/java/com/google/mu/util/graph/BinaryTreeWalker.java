@@ -147,6 +147,10 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
       for (N right = null;
           hasNextAsOf(right) || hasNextAsOf(roots.poll());
           right = getRight.apply(leftPath.getFirst()), ready.set(leftPath.size() - 1)) {
+        // We could have just compared the previously returned node with the current top.right,
+        // if we could depend on a concrete binary tree data structure, where the right child
+        // is a referentially transparent field. But it'd be extra contractual burden to carry.
+        // Using a BitSet emulates that, with minimal overhead.
         if (ready.get(leftPath.size() - 1)) return leftPath.pop();
       }
       return null;
