@@ -80,6 +80,10 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
   /**
    * Returns a lazy stream for post-order traversal from {@code root}.
    * Empty stream is returned if {@code roots} is empty.
+   *
+   * <p>For small or medium sized in-memory trees, it's equivalent and more efficient to first
+   * collect the nodes into a list in {@link #reversePostOrderFrom reverse-post-order},
+   * followed by {@code Collections.reverse()}.
    */
   public Stream<N> postOrderFrom(Iterable<? extends N> roots) {
     return whileNotNull(new PostOrder(roots)::nextOrNull);
@@ -93,9 +97,9 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
    * returned stream will also be infinite, but can be short-circuited to consume a limited number
    * of nodes during traversal.
    *
-   * <p<For small or medium sized in-memory trees, it's more efficient to first collect the nodes
-   * into a list in reverse-post-order, followed by {@link Collections#reverse} than using the
-   * equivalent {@code postOrderFrom()}.
+   * <p>While the traversal order is the exact opposite of {@link #postOrderFrom post-order},
+   * for small or medium sized in-memory trees, it's equivalent and more efficient to first
+   * collect the nodes into a list in reverse-post-order, followed by {@link Collections#reverse}.
    */
   @SafeVarargs public final Stream<N> reversePostOrderFrom(N... roots) {
     return reversePostOrderFrom(asList(roots));
@@ -109,9 +113,9 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
    * returned stream will also be infinite, but can be short-circuited to consume a limited number
    * of nodes during traversal.
    *
-   * <p<For small or medium sized in-memory trees, it's more efficient to first collect the nodes
-   * into a list in reverse-post-order, followed by {@link Collections#reverse} than using the
-   * equivalent {@code postOrderFrom()}.
+   * <p>While the traversal order is the exact opposite of {@link #postOrderFrom post-order},
+   * for small or medium sized in-memory trees, it's equivalent and more efficient to first
+   * collect the nodes into a list in reverse-post-order, followed by {@link Collections#reverse}.
    */
   public Stream<N> reversePostOrderFrom(Iterable<? extends N> roots) {
     Deque<N> horizon = new ArrayDeque<>();
