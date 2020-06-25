@@ -238,7 +238,7 @@ public final class MoreStreams {
 
   /**
    * Returns a collector that collects input elements into a list, which is then modified by the
-   * {@code arranger} function before being wrapped as an immutable list.
+   * {@code arranger} function before being wrapped as an <em>immutable</em> list.
    * List elements are not allowed to be null.
    *
    * <p>Example usages: <ul>
