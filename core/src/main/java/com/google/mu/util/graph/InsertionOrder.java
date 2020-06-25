@@ -16,6 +16,7 @@ package com.google.mu.util.graph;
 
 import java.util.Deque;
 
+/** {@code Queue::add} for FIFO and {@code Deque::push} for FILO. */
 interface InsertionOrder {
   <N> void insertInto(Deque<N> deque, N value);
 }
