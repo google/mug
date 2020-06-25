@@ -245,7 +245,8 @@ public abstract class Walker<N> {
   public abstract Stream<N> preOrderFrom(Iterable<? extends N> startNodes);
 
   /**
-   * Starts from {@code startNodes} and walks depth first in post-order.
+   * Starts from {@code startNodes} and walks depth first in post-order
+   * (the reverse of a topological sort).
    *
    * <p>The returned stream may be infinite if the graph or tree has infinite breadth. The stream
    * can still be short-circuited to consume a limited number of nodes during traversal.
@@ -258,6 +259,7 @@ public abstract class Walker<N> {
 
   /**
    * Starts from {@code startNodes} and walks depth first in post-order.
+   * (the reverse of a topological sort).
    *
    * <p>The returned stream may be infinite if the graph or tree has infinite breadth. The stream
    * can still be short-circuited to consume a limited number of nodes during traversal.
