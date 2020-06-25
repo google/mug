@@ -66,12 +66,22 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
    *
    * <p>For small or medium sized in-memory trees, it's equivalent and more efficient to first
    * collect the nodes into a list in "reverse post order", and then use {@code
-   * Collections.reverse()}, as in: <pre>{@code
+   * Collections.reverse()}, as in:
+   * <pre>{@code
    *   List<Node> nodes =
    *       Walker.inBinaryTree(Tree::right, Tree::left)    // 1. flip left to right
    *           .preOrderFrom(root)                         // 2. pre-order
    *           .collect(toCollection(ArrayList::new));     // 3. in reverse-post-order
    *   Collections.reverse(nodes);                         // 4. reverse to get post-order
+   * }</pre>
+   *
+   * Or, use the {@link com.google.mu.util.stream.MoreStreams#toListAndThen toListAndThen()}
+   * collector to do it in one-liner:
+   * <pre>{@code
+   *   List<Node> nodes =
+   *       Walker.inBinaryTree(Tree::right, Tree::left)
+   *           .preOrderFrom(root)
+   *           .collect(toListAndThen(Collections::reverse));
    * }</pre>
    */
   public Stream<N> postOrderFrom(Iterable<? extends N> roots) {
