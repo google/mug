@@ -106,8 +106,4 @@ abstract class GraphWalker<N> extends Walker<N> {
       return false;
     }
   }
-
-  private interface InsertionOrder {
-    <N> void insertInto(Deque<N> deque, N value);
-  }
 }

@@ -45,19 +45,11 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
   }
 
   /**
-   * Returns a lazy stream for in-order traversal from {@code roots}.
+   * Returns a lazy stream for breadth-first traversal from {@code root}.
    * Empty stream is returned if {@code roots} is empty.
    */
-  @SafeVarargs public final Stream<N> inOrderFrom(N... roots) {
-    return inOrderFrom(asList(roots));
-  }
-
-  /**
-   * Returns a lazy stream for in-order traversal from {@code roots}.
-   * Empty stream is returned if {@code roots} is empty.
-   */
-  public Stream<N> inOrderFrom(Iterable<? extends N> roots) {
-    return whileNotNull(new InOrder(roots)::nextOrNull);
+  public Stream<N> breadthFirstFrom(Iterable<? extends N> roots) {
+    return topDown(roots, Queue::add);
   }
 
   /**
@@ -65,14 +57,7 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
    * Empty stream is returned if {@code roots} is empty.
    */
   @Override public Stream<N> preOrderFrom(Iterable<? extends N> roots) {
-    Deque<N> horizon = toDeque(roots);
-    return whileNotNull(horizon::poll)
-        .peek(n -> {
-          N left = getLeft.apply(n);
-          N right = getRight.apply(n);
-          if (right != null) horizon.push(right);
-          if (left != null) horizon.push(left);
-        });
+    return inBinaryTree(getRight, getLeft).topDown(roots, Deque::push);
   }
 
   /**
@@ -93,17 +78,29 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
   }
 
   /**
-   * Returns a lazy stream for breadth-first traversal from {@code root}.
+   * Returns a lazy stream for in-order traversal from {@code roots}.
    * Empty stream is returned if {@code roots} is empty.
    */
-  public Stream<N> breadthFirstFrom(Iterable<? extends N> roots) {
-    Queue<N> horizon = toDeque(roots);
+  @SafeVarargs public final Stream<N> inOrderFrom(N... roots) {
+    return inOrderFrom(asList(roots));
+  }
+
+  /**
+   * Returns a lazy stream for in-order traversal from {@code roots}.
+   * Empty stream is returned if {@code roots} is empty.
+   */
+  public Stream<N> inOrderFrom(Iterable<? extends N> roots) {
+    return whileNotNull(new InOrder(roots)::nextOrNull);
+  }
+
+  private Stream<N> topDown(Iterable<? extends N> roots, InsertionOrder order) {
+    Deque<N> horizon = toDeque(roots);
     return whileNotNull(horizon::poll)
         .peek(n -> {
           N left = getLeft.apply(n);
           N right = getRight.apply(n);
-          if (left != null) horizon.add(left);
-          if (right != null) horizon.add(right);
+          if (left != null) order.insertInto(horizon, left);
+          if (right != null) order.insertInto(horizon, right);
         });
   }
 
