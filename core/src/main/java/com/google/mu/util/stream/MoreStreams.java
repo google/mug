@@ -238,7 +238,7 @@ public final class MoreStreams {
 
   /**
    * Returns a collector that collects input elements into a list, which is then modified by the
-   * {@code preparer} function before being wrapped as an immutable list.
+   * {@code arranger} function before being wrapped as an immutable list.
    * List elements are not allowed to be null.
    *
    * <p>Example usages: <ul>
@@ -249,12 +249,12 @@ public final class MoreStreams {
    *
    * @since 4.2
    */
-  public static <T> Collector<T, ?, List<T>> toListAndThen(Consumer<? super List<T>> preparer) {
-    requireNonNull(preparer);
+  public static <T> Collector<T, ?, List<T>> toListAndThen(Consumer<? super List<T>> arranger) {
+    requireNonNull(arranger);
     Collector<T, ?, List<T>> rejectingNulls =
         Collectors.mapping(Objects::requireNonNull, Collectors.toCollection(ArrayList::new));
     return Collectors.collectingAndThen(rejectingNulls, list -> {
-      preparer.accept(list);
+      arranger.accept(list);
       return Collections.unmodifiableList(list);
     });
   }
