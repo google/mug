@@ -258,7 +258,7 @@ public abstract class Walker<N> {
   }
 
   /**
-   * Starts from {@code startNodes} and walks depth first in post-order.
+   * Starts from {@code startNodes} and walks depth first in post-order
    * (the reverse of a topological sort).
    *
    * <p>The returned stream may be infinite if the graph or tree has infinite breadth. The stream
