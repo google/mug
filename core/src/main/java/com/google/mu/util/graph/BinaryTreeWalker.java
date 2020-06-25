@@ -45,6 +45,40 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
   }
 
   /**
+   * Returns a lazy stream for breadth-first traversal from {@code root}.
+   * Empty stream is returned if {@code roots} is empty.
+   */
+  public Stream<N> breadthFirstFrom(Iterable<? extends N> roots) {
+    return topDown(roots, Queue::add);
+  }
+
+  /**
+   * Returns a lazy stream for pre-order traversal from {@code roots}.
+   * Empty stream is returned if {@code roots} is empty.
+   */
+  @Override public Stream<N> preOrderFrom(Iterable<? extends N> roots) {
+    return inBinaryTree(getRight, getLeft).topDown(roots, Deque::push);
+  }
+
+  /**
+   * Returns a lazy stream for post-order traversal from {@code root}.
+   * Empty stream is returned if {@code roots} is empty.
+   *
+   * <p>For small or medium sized in-memory trees, it's equivalent and more efficient to first
+   * collect the nodes into a list in "reverse post order", and then use {@code
+   * Collections.reverse()}, as in: <pre>{@code
+   *   List<Node> nodes =
+   *       Walker.inBinaryTree(Tree::right, Tree::left)    // 1. flip left to right
+   *           .preOrderFrom(root)                         // 2. pre-order
+   *           .collect(toCollection(ArrayList::new));     // 3. in reverse-post-order
+   *   Collections.reverse(nodes);                         // 4. reverse to get post-order
+   * }</pre>
+   */
+  public Stream<N> postOrderFrom(Iterable<? extends N> roots) {
+    return whileNotNull(new PostOrder(roots)::nextOrNull);
+  }
+
+  /**
    * Returns a lazy stream for in-order traversal from {@code roots}.
    * Empty stream is returned if {@code roots} is empty.
    */
@@ -60,50 +94,14 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
     return whileNotNull(new InOrder(roots)::nextOrNull);
   }
 
-  /**
-   * Returns a lazy stream for pre-order traversal from {@code roots}.
-   * Empty stream is returned if {@code roots} is empty.
-   */
-  @Override public Stream<N> preOrderFrom(Iterable<? extends N> roots) {
+  private Stream<N> topDown(Iterable<? extends N> roots, InsertionOrder order) {
     Deque<N> horizon = toDeque(roots);
     return whileNotNull(horizon::poll)
         .peek(n -> {
           N left = getLeft.apply(n);
           N right = getRight.apply(n);
-          if (right != null) horizon.push(right);
-          if (left != null) horizon.push(left);
-        });
-  }
-
-  /**
-   * Returns a lazy stream for post-order traversal from {@code root}.
-   * Empty stream is returned if {@code roots} is empty.
-   *
-   * <p>For small or medium sized in-memory trees, it's equivalent and more efficient to first
-   * collect the nodes into a list in "reverse post order", and then use {@code
-   * Collections.reverse()}, as in: <pre>{@code
-   *   List<Node> nodes = Walker.inBinaryTree(Tree::right, Tree::left)  // Flip left and right
-   *       .preOrderFrom(root)
-   *       .collect(toCollection(ArrayList::new));
-   *   Collections.reverse(nodes);
-   * }</pre>
-   */
-  public Stream<N> postOrderFrom(Iterable<? extends N> roots) {
-    return whileNotNull(new PostOrder(roots)::nextOrNull);
-  }
-
-  /**
-   * Returns a lazy stream for breadth-first traversal from {@code root}.
-   * Empty stream is returned if {@code roots} is empty.
-   */
-  public Stream<N> breadthFirstFrom(Iterable<? extends N> roots) {
-    Queue<N> horizon = toDeque(roots);
-    return whileNotNull(horizon::poll)
-        .peek(n -> {
-          N left = getLeft.apply(n);
-          N right = getRight.apply(n);
-          if (left != null) horizon.add(left);
-          if (right != null) horizon.add(right);
+          if (left != null) order.insertInto(horizon, left);
+          if (right != null) order.insertInto(horizon, right);
         });
   }
 
