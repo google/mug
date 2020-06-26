@@ -33,7 +33,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
- * Walker for graph topology. Use {@link Walker#iinGraph} to create.
+ * Walker for graph topology. Use {@link Walker#inGraph} to create.
  *
  * <p>Besides {@link #preOrderFrom pre-order}, {@link #postOrderFrom post-order} and {@link
  * #breadthFirstFrom breadth-first} traversals, also supports  {@link #topologicalOrderFrom} and
@@ -114,7 +114,7 @@ public abstract class GraphWalker<N> extends Walker<N> {
   }
 
   /**
-   * Full traverses the graph by starting from {@code startNodes}, and returns the immutable list of
+   * Fully traverses the graph by starting from {@code startNodes}, and returns the immutable list of
    * nodes in topological order.
    *
    * @param startNodes the entry point nodes to start traversing the graph.
@@ -126,7 +126,7 @@ public abstract class GraphWalker<N> extends Walker<N> {
   }
 
   /**
-   * Full traverses the graph by starting from {@code startNodes}, and returns the immutable list of
+   * Fully traverses the graph by starting from {@code startNodes}, and returns the immutable list of
    * nodes in topological order.
    *
    * @param startNodes the entry point nodes to start traversing the graph.
