@@ -36,8 +36,8 @@ import java.util.stream.Stream;
  * Walker for graph topology. Use {@link Walker#inGraph Walker.inGraph()} to create.
  *
  * <p>Besides {@link #preOrderFrom pre-order}, {@link #postOrderFrom post-order} and {@link
- * #breadthFirstFrom breadth-first} traversals, also supports  {@link #topologicalOrderFrom} and
- * {@link #detectCycleFrom}.
+ * #breadthFirstFrom breadth-first} traversals, also supports {@link #topologicalOrderFrom
+ * topologicalOrderFrom()} and {@link #detectCycleFrom detectCycleFrom()}.
  *
  * @param <N> the graph node type
  * @since 4.3
