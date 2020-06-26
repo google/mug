@@ -114,7 +114,7 @@ public abstract class GraphWalker<N> extends Walker<N> {
   }
 
   /**
-   * Fully traverses the graph by starting from {@code startNodes}, and returns the immutable list of
+   * Fully traverses the graph by starting from {@code startNodes}, and returns an immutable list of
    * nodes in topological order.
    *
    * @param startNodes the entry point nodes to start traversing the graph.
@@ -126,7 +126,7 @@ public abstract class GraphWalker<N> extends Walker<N> {
   }
 
   /**
-   * Fully traverses the graph by starting from {@code startNodes}, and returns the immutable list of
+   * Fully traverses the graph by starting from {@code startNodes}, and returns an immutable list of
    * nodes in topological order.
    *
    * @param startNodes the entry point nodes to start traversing the graph.
