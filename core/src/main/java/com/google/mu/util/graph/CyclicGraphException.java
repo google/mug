@@ -18,7 +18,7 @@ public final class CyclicGraphException extends IllegalArgumentException {
     this.cyclicPath = cyclicPath;
   }
 
-  /** Returns the cyclic path end the last node being the entry point of the cycle. */
+  /** Returns the cyclic path with the last node being the entry point of the cycle. */
   public final List<?> cyclicPath() {
     return cyclicPath;
   }

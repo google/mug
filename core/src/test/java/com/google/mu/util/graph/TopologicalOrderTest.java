@@ -19,6 +19,12 @@ import com.google.mu.util.stream.BiStream;
 
 public class TopologicalOrderTest {
   @Test
+  public void topologicalOrder_noStartNode() {
+    GraphWalker<String> walker = Walker.inGraph(Stream::of);
+    assertThat(walker.topologicalOrderFrom()).isEmpty();
+  }
+
+  @Test
   public void topologicalOrder_noChildren() {
     assertThat(Walker.inGraph(n -> null).topologicalOrderFrom("root"))
         .containsExactly("root");
