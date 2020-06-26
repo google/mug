@@ -37,12 +37,12 @@ import com.google.mu.util.stream.BiStream;
 public class CycleDetectorTest {
   @Test
   public void detectCycle_noChildren() {
-    assertThat(CycleDetector.forGraph(n -> null).detectCycleFrom("root")).isEmpty();
+    assertThat(Walker.inGraph(n -> null).detectCycleFrom("root")).isEmpty();
   }
 
   @Test
   public void detectCycle_trivialCycle() {
-    assertThat(CycleDetector.forGraph(Stream::of).detectCycleFrom("root").get())
+    assertThat(Walker.inGraph(Stream::of).detectCycleFrom("root").get())
         .containsExactly("root", "root");
   }
 
@@ -126,12 +126,12 @@ public class CycleDetectorTest {
   @Test
   public void instanceMethods_nullCheck()
       throws Exception {
-    new NullPointerTester().testAllPublicInstanceMethods(CycleDetector.forGraph(n -> null));
+    new NullPointerTester().testAllPublicInstanceMethods(Walker.inGraph(n -> null));
   }
 
   @SafeVarargs
   private static <N> Stream<N> detectCycle(Graph<N> graph, N... startNodes) {
-    return CycleDetector.forGraph((N n) -> graph.successors(n).stream())
+    return Walker.inGraph((N n) -> graph.successors(n).stream())
         .detectCycleFrom(startNodes)
         .orElse(Stream.empty());
   }

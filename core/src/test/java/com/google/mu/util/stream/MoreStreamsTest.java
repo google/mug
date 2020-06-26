@@ -382,7 +382,7 @@ public class MoreStreamsTest {
   @Test public void toListAndThen_nullRejected() {
     assertThrows(
         NullPointerException.class,
-        () -> Stream.of(null).collect(toListAndThen(Collections::reverse)));
+        () -> Stream.of(1, null).collect(toListAndThen(Collections::reverse)));
   }
 
   @Test public void toListAndThen_immutable() {

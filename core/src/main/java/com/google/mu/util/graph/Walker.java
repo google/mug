@@ -108,7 +108,7 @@ public abstract class Walker<N> {
    * @param findSuccessors Function to get the successor nodes for a given node.
    *        No successor if empty stream or null is returned,
    */
-  public static <N> Walker<N> inGraph(
+  public static <N> GraphWalker<N> inGraph(
       Function<? super N, ? extends Stream<? extends N>> findSuccessors) {
     requireNonNull(findSuccessors);
     return new GraphWalker<N>() {
@@ -212,7 +212,7 @@ public abstract class Walker<N> {
    *        side-effects like storing the tracked nodes in a set ({@code set::add},
    *        {@code bloomFilter::put} etc. will do).
    */
-  public static <N> Walker<N> inGraph(
+  public static <N> GraphWalker<N> inGraph(
       Function<? super N, ? extends Stream<? extends N>> findSuccessors,
       Predicate<? super N> tracker) {
     requireNonNull(findSuccessors);
