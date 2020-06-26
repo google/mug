@@ -14,29 +14,127 @@
  *****************************************************************************/
 package com.google.mu.util.graph;
 
+import static com.google.mu.util.stream.MoreStreams.toListAndThen;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayDeque;
+import java.util.Collections;
 import java.util.Deque;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.Spliterator;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-abstract class GraphWalker<N> extends Walker<N> {
-  @Override public Stream<N> preOrderFrom(Iterable<? extends N> startNodes) {
+/**
+ * Walker for graph topology. Use {@link Walker#iinGraph} to create.
+ *
+ * <p>Besides {@link #preOrderFrom pre-order}, {@link #postOrderFrom post-order} and {@link
+ * #breadthFirstFrom breadth-first} traversals, also supports  {@link #topologicalOrderFrom} and
+ * {@link #detectCycleFrom}.
+ *
+ * @param <N> the graph node type
+ * @since 4.3
+ */
+public abstract class GraphWalker<N> extends Walker<N> {
+  @Override public final Stream<N> preOrderFrom(Iterable<? extends N> startNodes) {
     return start().preOrder(startNodes);
   }
 
-  @Override public Stream<N> postOrderFrom(Iterable<? extends N> startNodes) {
+  @Override public final Stream<N> postOrderFrom(Iterable<? extends N> startNodes) {
     return start().postOrder(startNodes);
   }
 
   @Override public final Stream<N> breadthFirstFrom(Iterable<? extends N> startNodes) {
     return start().breadthFirst(startNodes);
+  }
+
+  /**
+   * Walking from {@code startNodes}, detects if the graph has any cycle.
+   *
+   * <p>In the following cyclic graph, if starting from node {@code a}, the detected cyclic path
+   * will be: {@code a -> b -> c -> e -> b}, with {@code b -> c -> e -> b} being the cycle, and
+   * {@code a -> b} the prefix path leading to the cycle.
+   *
+   * <pre>{@code
+   * a -> b -> c -> d
+   *      ^  /
+   *      | /
+   *      |/
+   *      e
+   * }</pre>
+   *
+   * <p>This method will hang if the given graph is infinite without cycle (the sequence of natural
+   * numbers for instance).
+   *
+   * @param startNodes the entry point nodes to start walking the graph.
+   * @return The stream of nodes starting from the first of {@code startNodes} that leads to a
+   *         cycle, ending with nodes along a cyclic path. The last node will also be the starting
+   *         point of the cycle. That is, if {@code A} and {@code B} form a cycle, the stream ends
+   *         with {@code A -> B -> A}. If there is no cycle, {@link Optional#empty} is returned.
+   * @since 4.3
+   */
+  @SafeVarargs public final Optional<Stream<N>> detectCycleFrom(N... startNodes) {
+    return detectCycleFrom(nonNullList(startNodes));
+  }
+
+  /**
+   * Walking from {@code startNodes}, detects if the graph has any cycle.
+   *
+   * <p>In the following cyclic graph, if starting from node {@code a}, the detected cyclic path
+   * will be: {@code a -> b -> c -> e -> b}, with {@code b -> c -> e -> b} being the cycle, and
+   * {@code a -> b} the prefix path leading to the cycle.
+   *
+   * <pre>{@code
+   * a -> b -> c -> d
+   *      ^  /
+   *      | /
+   *      |/
+   *      e
+   * }</pre>
+   *
+   * <p>This method will hang if the given graph is infinite with no cycles (the sequence of natural
+   * numbers for instance).
+   *
+   * @param startNodes the entry point nodes to start walking the graph.
+   * @return The stream of nodes starting from the first of {@code startNodes} that leads to a
+   *         cycle, ending with nodes along a cyclic path. The last node will also be the starting
+   *         point of the cycle. That is, if {@code A} and {@code B} form a cycle, the stream ends
+   *         with {@code A -> B -> A}. If there is no cycle, {@link Optional#empty} is returned.
+   * @since 4.3
+   */
+  public final Optional<Stream<N>> detectCycleFrom(Iterable<? extends N> startNodes) {
+    return start().detectCycle(startNodes);
+  }
+
+  /**
+   * Full traverses the graph by starting from {@code startNodes}, and returns the immutable list of
+   * nodes in topological order.
+   *
+   * @param startNodes the entry point nodes to start traversing the graph.
+   * @throws CyclicGraphException if the graph has cycles.
+   * @since 4.3
+   */
+  @SafeVarargs public final List<N> topologicalOrderFrom(N... startNodes) {
+    return topologicalOrderFrom(nonNullList(startNodes));
+  }
+
+  /**
+   * Full traverses the graph by starting from {@code startNodes}, and returns the immutable list of
+   * nodes in topological order.
+   *
+   * @param startNodes the entry point nodes to start traversing the graph.
+   * @throws CyclicGraphException if the graph has cycles.
+   * @since 4.3
+   */
+  public final List<N> topologicalOrderFrom(Iterable<? extends N> startNodes) {
+    return start().topologicalOrder(startNodes);
   }
 
   abstract Walk<N> start();
@@ -52,6 +150,28 @@ abstract class GraphWalker<N> extends Walker<N> {
         Predicate<? super N> tracker) {
       this.findSuccessors = findSuccessors;
       this.tracker = tracker;
+    }
+
+    private Walk<N> withTracker(Predicate<? super N> newTracker) {
+      return new Walk<>(findSuccessors, newTracker);
+    }
+
+    Optional<Stream<N>> detectCycle(Iterable<? extends N> startNodes) {
+      AtomicReference<N> cyclic = new AtomicReference<>();
+      CycleDetectingTracker detector = new CycleDetectingTracker();
+      return detector.start(startNodes, n -> cyclic.compareAndSet(null, n))
+          .filter(n -> cyclic.get() != null)
+          .findFirst()
+          .map(last ->
+              Stream.concat(detector.currentPath(), Stream.of(last, cyclic.getAndSet(null))));
+    }
+
+    List<N> topologicalOrder(Iterable<? extends N> startNodes) {
+      CycleDetectingTracker detector = new CycleDetectingTracker();
+      return detector.start(startNodes, n -> {
+        throw new CyclicGraphException(
+            detector.currentPath().collect(toListAndThen(l -> l.add(n))));
+      }).collect(toListAndThen(Collections::reverse));
     }
 
     @Override public void accept(N value) {
@@ -104,6 +224,27 @@ abstract class GraphWalker<N> extends Walker<N> {
       }
       horizon.removeFirst();
       return false;
+    }
+
+    private final class CycleDetectingTracker {
+      private LinkedHashSet<N> currentPath = new LinkedHashSet<>();
+
+      Stream<N> start(Iterable<? extends N> startNodes, Consumer<N> cyclicNodeHandler) {
+        Walk<N> tracked = withTracker(node -> {
+          boolean newNode = tracker.test(node);
+          if (newNode) {
+            currentPath.add(node);
+          } else if (currentPath.contains(node)) {
+            cyclicNodeHandler.accept(node);
+          }
+          return newNode;
+        });
+        return tracked.postOrder(startNodes).peek(currentPath::remove);
+      }
+
+      Stream<N> currentPath() {
+        return currentPath.stream();
+      }
     }
   }
 }
