@@ -154,28 +154,6 @@ public abstract class GraphWalker<N> extends Walker<N> {
       this.tracker = tracker;
     }
 
-    private Walk<N> withTracker(Predicate<? super N> newTracker) {
-      return new Walk<>(findSuccessors, newTracker);
-    }
-
-    Optional<Stream<N>> detectCycle(Iterable<? extends N> startNodes) {
-      AtomicReference<N> cyclic = new AtomicReference<>();
-      CycleDetectingTracker detector = new CycleDetectingTracker();
-      return detector.start(startNodes, n -> cyclic.compareAndSet(null, n))
-          .filter(n -> cyclic.get() != null)
-          .findFirst()
-          .map(last ->
-              Stream.concat(detector.currentPath(), Stream.of(last, cyclic.getAndSet(null))));
-    }
-
-    List<N> topologicalOrder(Iterable<? extends N> startNodes) {
-      CycleDetectingTracker detector = new CycleDetectingTracker();
-      return detector.start(startNodes, n -> {
-        throw new CyclicGraphException(
-            detector.currentPath().collect(toListAndThen(l -> l.add(n))));
-      }).collect(toListAndThen(Collections::reverse));
-    }
-
     @Override public void accept(N value) {
       this.visited = requireNonNull(value);
     }
@@ -228,20 +206,40 @@ public abstract class GraphWalker<N> extends Walker<N> {
       return false;
     }
 
-    private final class CycleDetectingTracker {
-      private LinkedHashSet<N> currentPath = new LinkedHashSet<>();
+    List<N> topologicalOrder(Iterable<? extends N> startNodes) {
+      CycleTracker cycleDetector = new CycleTracker();
+      return cycleDetector.startPostOrder(startNodes, n -> {
+        throw new CyclicGraphException(
+            cycleDetector.currentPath().collect(toListAndThen(l -> l.add(n))));
+      }).collect(toListAndThen(Collections::reverse));
+    }
 
-      Stream<N> start(Iterable<? extends N> startNodes, Consumer<N> cyclicNodeHandler) {
-        Walk<N> tracked = withTracker(node -> {
-          boolean newNode = tracker.test(node);
-          if (newNode) {
-            currentPath.add(node);
-          } else if (currentPath.contains(node)) {
-            cyclicNodeHandler.accept(node);
-          }
-          return newNode;
-        });
-        return tracked.postOrder(startNodes).peek(currentPath::remove);
+    Optional<Stream<N>> detectCycle(Iterable<? extends N> startNodes) {
+      AtomicReference<N> cyclic = new AtomicReference<>();
+      CycleTracker detector = new CycleTracker();
+      return detector.startPostOrder(startNodes, n -> cyclic.compareAndSet(null, n))
+          .filter(n -> cyclic.get() != null)
+          .findFirst()
+          .map(last ->
+              Stream.concat(detector.currentPath(), Stream.of(last, cyclic.getAndSet(null))));
+    }
+
+    private final class CycleTracker {
+      private final LinkedHashSet<N> currentPath = new LinkedHashSet<>();
+
+      Stream<N> startPostOrder(Iterable<? extends N> startNodes, Consumer<N> foundCycle) {
+        Walk<N> walk = new Walk<>(
+            findSuccessors,
+            node -> {
+              boolean newNode = tracker.test(node);
+              if (newNode) {
+                currentPath.add(node);
+              } else if (currentPath.contains(node)) {
+                foundCycle.accept(node);
+              }
+              return newNode;
+            });
+        return walk.postOrder(startNodes).peek(currentPath::remove);
       }
 
       Stream<N> currentPath() {
