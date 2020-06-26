@@ -115,7 +115,9 @@ public abstract class GraphWalker<N> extends Walker<N> {
 
   /**
    * Fully traverses the graph by starting from {@code startNodes}, and returns an immutable list of
-   * nodes in topological order. Unlike the other {@code Walker} utilities, this method is not lazy:
+   * nodes in topological order.
+   *
+   * <p>Unlike the other {@code Walker} utilities, this method is not lazy:
    * it has to traverse the entire graph in order to figure out the topological order.
    *
    * @param startNodes the entry point nodes to start traversing the graph.
@@ -128,7 +130,9 @@ public abstract class GraphWalker<N> extends Walker<N> {
 
   /**
    * Fully traverses the graph by starting from {@code startNodes}, and returns an immutable list of
-   * nodes in topological order. Unlike the other {@code Walker} utilities, this method is not lazy:
+   * nodes in topological order.
+   *
+   * <p>Unlike the other {@code Walker} utilities, this method is not lazy:
    * it has to traverse the entire graph in order to figure out the topological order.
    *
    * @param startNodes the entry point nodes to start traversing the graph.
