@@ -33,7 +33,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
- * Walker for graph topology ({@link Walker#inGraph Walker.inGraph()}).
+ * Walker for graph topology (see {@link Walker#inGraph Walker.inGraph()}).
  *
  * <p>Besides {@link #preOrderFrom pre-order}, {@link #postOrderFrom post-order} and {@link
  * #breadthFirstFrom breadth-first} traversals, also supports {@link #topologicalOrderFrom
