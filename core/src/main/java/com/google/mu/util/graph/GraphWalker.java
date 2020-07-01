@@ -40,7 +40,8 @@ import java.util.stream.Stream;
  *
  * <p>Besides {@link #preOrderFrom pre-order}, {@link #postOrderFrom post-order} and {@link
  * #breadthFirstFrom breadth-first} traversals, also supports {@link #topologicalOrderFrom
- * topologicalOrderFrom()} and {@link #detectCycleFrom detectCycleFrom()}.
+ * topologicalOrderFrom()}, {@link #detectCycleFrom detectCycleFrom()} and
+ * {@link #stronglyConnectedComponentsFrom stronglyConnectedComponentsFrom()}.
  *
  * @param <N> the graph node type
  * @since 4.3
