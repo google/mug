@@ -212,7 +212,7 @@ public abstract class GraphWalker<N> extends Walker<N> {
       return postOrder(startNodes, new ArrayDeque<>());
     }
 
-    Stream<N> postOrder(Iterable<? extends N> startNodes, Deque<N> roots) {
+    private Stream<N> postOrder(Iterable<? extends N> startNodes, Deque<N> roots) {
       horizon.push(startNodes.spliterator());
       return whileNotNull(() -> {
         while (visitNext()) {
