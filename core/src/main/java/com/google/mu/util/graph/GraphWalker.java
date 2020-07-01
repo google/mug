@@ -152,10 +152,11 @@ public abstract class GraphWalker<N> extends Walker<N> {
    * <a href="https://en.wikipedia.org/wiki/Strongly_connected_component">strongly
    * connected components</a> found in the graph.
    *
-   * <p>Implements the <a href="https://en.wikipedia.org/wiki/Path-based_strong_component_algorithm">
-   * path-based strong component algorithm</a> in linear time ({@code O(V + E)}).
+   * <p>Implements the <a href="https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm">
+   * Tarjan algorithm</a> in linear time ({@code O(V + E)}).
    *
    * @param startNodes the entry point nodes to start traversing the graph.
+   * @return a stream of lists each being a strongly connected component, in depth-first post order.
    * @since 4.4
    */
   @SafeVarargs public final Stream<List<N>> stronglyConnectedComponentsFrom(N... startNodes) {
@@ -167,10 +168,11 @@ public abstract class GraphWalker<N> extends Walker<N> {
    * <a href="https://en.wikipedia.org/wiki/Strongly_connected_component">strongly
    * connected components</a> found in the graph.
    *
-   * <p>Implements the <a href="https://en.wikipedia.org/wiki/Path-based_strong_component_algorithm">
-   * path-based strong component algorithm</a> in linear time ({@code O(V + E)}).
+   * <p>Implements the <a href="https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm">
+   * Tarjan algorithm</a> in linear time ({@code O(V + E)}).
    *
    * @param startNodes the entry point nodes to start traversing the graph.
+   * @return a stream of lists each being a strongly connected component, in depth-first post order.
    * @since 4.4
    */
   public final Stream<List<N>> stronglyConnectedComponentsFrom(Iterable<? extends N> startNodes) {
@@ -207,8 +209,11 @@ public abstract class GraphWalker<N> extends Walker<N> {
     }
 
     Stream<N> postOrder(Iterable<? extends N> startNodes) {
+      return postOrder(startNodes, new ArrayDeque<>());
+    }
+
+    Stream<N> postOrder(Iterable<? extends N> startNodes, Deque<N> roots) {
       horizon.push(startNodes.spliterator());
-      Deque<N> roots = new ArrayDeque<>();
       return whileNotNull(() -> {
         while (visitNext()) {
           N next = visited;
@@ -287,16 +292,16 @@ public abstract class GraphWalker<N> extends Walker<N> {
 
     final class StronglyConnected {
       private long index;
-      private final Map<N, Indexed<N>> lookup = new HashMap<>();
-      private final Deque<Indexed<N>> path = new ArrayDeque<>();
-      private final Deque<Indexed<N>> connected = new ArrayDeque<>();
+      private final Deque<N> roots = new ArrayDeque<>();
+      private final Map<N, Tarjan<N>> path = new HashMap<>();
+      private final Deque<Tarjan<N>> connected = new ArrayDeque<>();
 
       Stream<List<N>> componentsFrom(Iterable<? extends N> startNodes) {
         return new Walk<>(findSuccessors, this::track)
-            .postOrder(startNodes)
-            .map(lookup::remove)
-            .filter(n -> n == path.getFirst())
-            .map(n -> popConnected());
+            .postOrder(startNodes, roots)
+            .map(path::remove)
+            .filter(Tarjan::isComponentRoot)
+            .map(this::connectedFrom);
       }
 
       private boolean track(N node) {
@@ -304,45 +309,59 @@ public abstract class GraphWalker<N> extends Walker<N> {
           push(node);
           return true;
         } else {
-          Indexed<N> back = lookup.get(node);
+          Tarjan<N> back = path.get(node);
           if (back != null) {
-            while (path.getFirst().index > back.index) {
-              path.pop();
-            }
+            top().cycleDetected(back);
           }
           return false;
         }
       }
 
-      private void push(N node) {
-        Indexed<N> indexed = new Indexed<>(node, ++index);
-        lookup.put(node, indexed);
-        connected.push(indexed);
-        path.push(indexed);
+      private Tarjan<N> top() {
+        return path.get(roots.peek());
       }
 
-      private List<N> popConnected() {
-        Indexed<N> root = path.pop();
+      private void push(N node) {
+        Tarjan<N> indexed = new Tarjan<>(top(), node, ++index);
+        path.put(node, indexed);
+        connected.push(indexed);
+      }
+
+      private List<N> connectedFrom(Tarjan<N> root) {
         List<N> list = new ArrayList<>();
         for (; ;) {
-          Indexed<N> node = connected.pop();
+          Tarjan<N> node = connected.pop();
           list.add(node.payload);
           if (node == root) {
-            Collections.reverse(list);
-            return Collections.unmodifiableList(list);
+            return list;
           }
         }
       }
     }
   }
 
-  private static final class Indexed<N> {
+  private static final class Tarjan<N> {
     final long index;
     final N payload;
+    private final Tarjan<N> parent;
+    private long lowlink;
 
-    Indexed(N payload, long index) {
+    Tarjan(Tarjan<N> parent, N payload, long index) {
+      this.parent = parent;
       this.payload = payload;
       this.index = index;
+      this.lowlink = index;
+    }
+
+    boolean isComponentRoot() {
+      if (parent != null) {
+        parent.lowlink = Math.min(parent.lowlink, lowlink);
+      }
+      return lowlink == index;
+    }
+
+    void cycleDetected(Tarjan<N> back) {
+      this.lowlink = Math.min(lowlink, back.index);
     }
   }
 }

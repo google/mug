@@ -48,7 +48,7 @@ public class StronglyConnectedComponentsTest {
   public void stronglyConnectedComponents_twoUndirectedEdges() {
     Graph<String> graph = toUndirectedGraph(ImmutableListMultimap.of("foo", "bar", "bar", "baz"));
     assertThat(stronglyConnectedFrom(graph, "foo"))
-        .containsExactly(asList("foo", "bar", "baz"));
+        .containsExactly(asList("baz", "bar", "foo"));
   }
 
   @Test
@@ -70,14 +70,14 @@ public class StronglyConnectedComponentsTest {
   public void stronglyConnectedComponents_oneUndirectedEdge() {
     Graph<String> graph = toUndirectedGraph(ImmutableListMultimap.of("foo", "bar"));
     assertThat(stronglyConnectedFrom(graph, "foo"))
-        .containsExactly(asList("foo", "bar"));
+        .containsExactly(asList("bar", "foo"));
   }
 
   @Test
   public void stronglyConnectedComponents_twoUndirectedConnectedEdges() {
     Graph<String> graph = toUndirectedGraph(ImmutableListMultimap.of("foo", "bar", "bar", "baz"));
     assertThat(stronglyConnectedFrom(graph, "foo"))
-        .containsExactly(asList("foo", "bar", "baz"));
+        .containsExactly(asList("baz", "bar", "foo"));
   }
 
   @Test
@@ -85,7 +85,7 @@ public class StronglyConnectedComponentsTest {
     Graph<String> graph =
         toDirectedGraph(ImmutableListMultimap.of("foo", "bar", "bar", "baz", "baz", "foo"));
     assertThat(stronglyConnectedFrom(graph, "foo"))
-        .containsExactly(asList("foo", "bar", "baz"));
+        .containsExactly(asList("baz", "bar", "foo"));
   }
 
   @Test
@@ -93,7 +93,7 @@ public class StronglyConnectedComponentsTest {
     Graph<String> graph = toDirectedGraph(
         ImmutableListMultimap.of("foo", "bar", "bar", "baz", "baz", "foo", "foo", "zoo"));
     assertThat(stronglyConnectedFrom(graph, "foo"))
-        .containsExactly(asList("foo", "bar", "baz"), asList("zoo"));
+        .containsExactly(asList("baz", "bar", "foo"), asList("zoo"));
   }
 
   @Test
@@ -116,14 +116,14 @@ public class StronglyConnectedComponentsTest {
         .putEdge("h", "g")
         .build();
     assertThat(stronglyConnectedFrom(graph, "a"))
-        .containsExactly(asList("a", "b", "e"), asList("g", "f"), asList("c", "d", "h"));
+        .containsExactly(asList("e", "b", "a"), asList("f", "g"), asList("h", "d", "c"));
   }
   @Test
   public void stronglyConnectedComponents_multipleStartNodes() {
     Graph<String> graph = toDirectedGraph(
         ImmutableListMultimap.of("foo", "bar", "bar", "baz", "baz", "foo", "foo", "zoo", "dog", "cat"));
     assertThat(stronglyConnectedFrom(graph, "zoo", "foo", "dog"))
-        .containsExactly(asList("foo", "bar", "baz"), asList("zoo"), asList("dog"), asList("cat"));
+        .containsExactly(asList("baz", "bar", "foo"), asList("zoo"), asList("dog"), asList("cat"));
   }
 
   @SafeVarargs
