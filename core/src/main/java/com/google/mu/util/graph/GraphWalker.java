@@ -341,8 +341,8 @@ public abstract class GraphWalker<N> extends Walker<N> {
   }
 
   private static final class Tarjan<N> {
-    final long index;
     final N payload;
+    private final long index;
     private final Tarjan<N> parent;
     private long lowlink;
 
