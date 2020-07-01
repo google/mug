@@ -19,10 +19,13 @@ import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Spliterator;
@@ -143,6 +146,36 @@ public abstract class GraphWalker<N> extends Walker<N> {
     return start().topologicalOrder(startNodes);
   }
 
+  /**
+   * Walks the graph by starting from {@code startNodes}, and returns a lazy stream of
+   * <a href="https://en.wikipedia.org/wiki/Strongly_connected_component">strongly
+   * connected components</a> found in the graph.
+   *
+   * <p>Implements the <a href="https://en.wikipedia.org/wiki/Path-based_strong_component_algorithm">
+   * path-based strong component algorithm</a> in linear time ({@code O(V + E)}).
+   *
+   * @param startNodes the entry point nodes to start traversing the graph.
+   * @since 4.4
+   */
+  @SafeVarargs public final Stream<List<N>> stronglyConnectedComponentsFrom(N... startNodes) {
+    return stronglyConnectedComponentsFrom(nonNullList(startNodes));
+  }
+
+  /**
+   * Walks the graph by starting from {@code startNodes}, and returns a lazy stream of
+   * <a href="https://en.wikipedia.org/wiki/Strongly_connected_component">strongly
+   * connected components</a> found in the graph.
+   *
+   * <p>Implements the <a href="https://en.wikipedia.org/wiki/Path-based_strong_component_algorithm">
+   * path-based strong component algorithm</a> in linear time ({@code O(V + E)}).
+   *
+   * @param startNodes the entry point nodes to start traversing the graph.
+   * @since 4.4
+   */
+  public final Stream<List<N>> stronglyConnectedComponentsFrom(Iterable<? extends N> startNodes) {
+    return start().new StronglyConnected().componentsFrom(startNodes);
+  }
+
   abstract Walk<N> start();
 
   static final class Walk<N> implements Consumer<N> {
@@ -249,6 +282,66 @@ public abstract class GraphWalker<N> extends Walker<N> {
       Stream<N> currentPath() {
         return currentPath.stream();
       }
+    }
+
+    final class StronglyConnected {
+      private long index;
+      private final Map<N, Indexed<N>> lookup = new HashMap<>();
+      private final Deque<Indexed<N>> path = new ArrayDeque<>();
+      private final Deque<Indexed<N>> connected = new ArrayDeque<>();
+
+      Stream<List<N>> componentsFrom(Iterable<? extends N> startNodes) {
+        return new Walk<>(findSuccessors, this::track)
+            .postOrder(startNodes)
+            .map(lookup::remove)
+            .filter(n -> n == path.getFirst())
+            .map(n -> popConnected());
+      }
+
+      private boolean track(N node) {
+        if (tracker.test(node)) {
+          push(node);
+          return true;
+        } else {
+          Indexed<N> back = lookup.get(node);
+          if (back != null) {
+            while (path.getFirst().index > back.index) {
+              path.pop();
+            }
+          }
+          return false;
+        }
+      }
+
+      private void push(N node) {
+        Indexed<N> indexed = new Indexed<>(node, ++index);
+        lookup.put(node, indexed);
+        connected.push(indexed);
+        path.push(indexed);
+      }
+
+      private List<N> popConnected() {
+        Indexed<N> root = path.pop();
+        List<N> list = new ArrayList<>();
+        for (; ;) {
+          Indexed<N> node = connected.pop();
+          list.add(node.payload);
+          if (node == root) {
+            Collections.reverse(list);
+            return Collections.unmodifiableList(list);
+          }
+        }
+      }
+    }
+  }
+
+  private static final class Indexed<N> {
+    final long index;
+    final N payload;
+
+    Indexed(N payload, long index) {
+      this.payload = payload;
+      this.index = index;
     }
   }
 }
