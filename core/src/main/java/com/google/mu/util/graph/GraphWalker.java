@@ -293,13 +293,13 @@ public abstract class GraphWalker<N> extends Walker<N> {
     final class StronglyConnected {
       private long index;
       private final Deque<N> roots = new ArrayDeque<>();
-      private final Map<N, Tarjan<N>> path = new HashMap<>();
+      private final Map<N, Tarjan<N>> currentPath = new HashMap<>();
       private final Deque<Tarjan<N>> connected = new ArrayDeque<>();
 
       Stream<List<N>> componentsFrom(Iterable<? extends N> startNodes) {
         return new Walk<>(findSuccessors, this::track)
             .postOrder(startNodes, roots)
-            .map(path::remove)
+            .map(currentPath::remove)
             .filter(Tarjan::isComponentRoot)
             .map(this::connectedFrom);
       }
@@ -309,7 +309,7 @@ public abstract class GraphWalker<N> extends Walker<N> {
           push(node);
           return true;
         } else {
-          Tarjan<N> back = path.get(node);
+          Tarjan<N> back = currentPath.get(node);
           if (back != null) {
             top().cycleDetected(back);
           }
@@ -318,12 +318,12 @@ public abstract class GraphWalker<N> extends Walker<N> {
       }
 
       private Tarjan<N> top() {
-        return path.get(roots.peek());
+        return currentPath.get(roots.peek());
       }
 
       private void push(N node) {
         Tarjan<N> indexed = new Tarjan<>(top(), node, ++index);
-        path.put(node, indexed);
+        currentPath.put(node, indexed);
         connected.push(indexed);
       }
 
