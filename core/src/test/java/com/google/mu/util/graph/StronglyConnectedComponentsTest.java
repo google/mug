@@ -61,7 +61,7 @@ public class StronglyConnectedComponentsTest {
 
   @Test
   public void stronglyConnectedComponents_trivialCycle() {
-    GraphWalker<String> walker = Walker.inGraph(Stream::of);
+    GraphWalker<String> walker = Walker.inGraph(n -> Stream.of(new String(n)));
     assertThat(walker.stronglyConnectedComponentsFrom("foo"))
         .containsExactly(asList("foo"));
   }
