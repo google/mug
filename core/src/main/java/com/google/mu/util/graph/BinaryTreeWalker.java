@@ -26,8 +26,8 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 /**
- * Walker for binary tree topology.
- * Use {@link Walker#inBinaryTree Walker.inBinaryTree(Tree::left, Tree::right)} to create.
+ * Walker for binary tree topology, returned by {@link
+ * Walker#inBinaryTree Walker.inBinaryTree(Tree::left, Tree::right)}.
  *
  * <p>Besides {@link #preOrderFrom pre-order}, {@link #postOrderFrom post-order} and {@link
  * #breadthFirstFrom breadth-first} traversals, also supports {@link #inOrderFrom in-order}.
