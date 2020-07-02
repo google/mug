@@ -107,12 +107,12 @@ public class Iteration<T> {
   private final Deque<Object> stackFrame = new ArrayDeque<>();
 
   /** Yields {@code element} to the result stream. */
-  public final T yield(T element) {
+  public final Iteration<T> yield(T element) {
     if (element instanceof Continuation) {
       throw new IllegalArgumentException("Do not stream Continuation objects");
     }
     stackFrame.add(element);
-    return element;
+    return this;
   }
 
   /**
