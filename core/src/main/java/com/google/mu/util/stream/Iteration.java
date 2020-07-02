@@ -21,34 +21,72 @@ import java.util.Deque;
 import java.util.stream.Stream;
 
 /**
- * Helper class to transform imperative loops into iterative streams intuitively, using
- * {@link #yield}. While not required, users are expected to create a subclass and then
+ * Transforms imperative loops into iterative streams, using {@link #yield}.
+ * While not required, users are expected to create a subclass and then
  * be able to call {@code yield()} as if it were a keyword.
  *
- * <p>For example, post-order traversing a binary tree recursively may look like:
+ * <p>For example, in-order traversing a binary tree recursively may look like:
  * <pre>{@code
- * void postOrder(Tree<T> tree) {
+ * void inOrder(Tree<T> tree) {
  *   if (tree == null) return;
- *   postOrder(tree.left);
- *   postOrder(tree.right);
+ *   inOrder(tree.left);
  *   System.out.println(tree.value);
+ *   inOrder(tree.right);
  * }
  * }</pre>
  *
- * Using {@code Iteration}, the above code can be straight-forwardly transformed to an iterative
- * stream:
+ * Using {@code Iteration}, the above code can be intuitively transformed to iterative stream:
  * <pre>{@code
- * class TreeIteration<T> extends Iteration<T> {
- *   TreeIteration<T> postOrder(Tree<T> tree) {
+ * class DepthFirst<T> extends Iteration<T> {
+ *   DepthFirst<T> inOrder(Tree<T> tree) {
  *     if (tree == null) return this;
- *     yield(() -> postOrder(tree.left));
- *     yield(() -> postOrder(tree.right));
+ *     yield(() -> inOrder(tree.left));
  *     yield(tree.value);
+ *     yield(() -> inOrder(tree.right));
  *   }
  * }
  *
- * static <T> Stream<T> postOrder(Tree<T> root) {
- *   return new TreeIteration<>().postOrder(root).stream();
+ * static <T> Stream<T> inOrderFrom(Tree<T> root) {
+ *   return new DepthFirst<>().inOrder(root).stream();
+ * }
+ * }</pre>
+ *
+ * <p>Similarly, the following recursive graph post-order traversal code:
+ * <pre>{@code
+ * class Traverser<N> {
+ *   private final Set<N> visited = new HashSet<>();
+ *
+ *   void postOrder(N node) {
+ *     if (!visited.add(node)) {
+ *       return;
+ *     }
+ *     for (N successor : node.getSuccessors()) {
+ *       postOrder(successor);
+ *     }
+ *     System.out.println("node: " + node);
+ *   }
+ * }
+ * }</pre>
+ *
+ * can be transformed to an iterative stream using:
+ * <pre>{@code
+ * class DepthFirst<N> extends Iteration<N> {
+ *   private final Set<N> visited = new HashSet<>();
+ *
+ *   DepthFirst<N> postOrder(N node) {
+ *     if (!visited.add(node)) {
+ *       return this;
+ *     }
+ *     for (N successor : node.getSuccessors()) {
+ *       yield(() -> postOrder(successor));
+ *     }
+ *     yield(node);
+ *     return this;
+ *   }
+ * }
+ *
+ * static <N> Stream<N> postOrderFrom(N node) {
+ *   return new DepthFirst<>().postOrder(node).stream();
  * }
  * }</pre>
  *
