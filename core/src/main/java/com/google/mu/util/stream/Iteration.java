@@ -137,6 +137,7 @@ public class Iteration<T> {
    * during graph traversal), the subsequent code also needs to be yielded to be able to observe
    * the expected state change.
    */
+  @FunctionalInterface
   public interface Continuation {
     /** Runs the continuation. It will be called at most once throughout the stream. */
     void run();
