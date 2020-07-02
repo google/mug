@@ -301,7 +301,7 @@ public abstract class GraphWalker<N> extends Walker<N> {
             .postOrder(startNodes, roots)
             .map(currentPath::remove)
             .filter(Tarjan::isComponentRoot)
-            .map(this::connectedFrom);
+            .map(this::toConnectedComponent);
       }
 
       private boolean track(N node) {
@@ -310,9 +310,7 @@ public abstract class GraphWalker<N> extends Walker<N> {
           return true;
         } else {
           Tarjan<N> back = currentPath.get(node);
-          if (back != null) {
-            top().cycleDetected(back);
-          }
+          if (back != null) top().uponBackEdge(back);
           return false;
         }
       }
@@ -327,7 +325,7 @@ public abstract class GraphWalker<N> extends Walker<N> {
         connected.push(indexed);
       }
 
-      private List<N> connectedFrom(Tarjan<N> root) {
+      private List<N> toConnectedComponent(Tarjan<N> root) {
         List<N> list = new ArrayList<>();
         for (; ;) {
           Tarjan<N> node = connected.pop();
@@ -360,7 +358,7 @@ public abstract class GraphWalker<N> extends Walker<N> {
       return lowlink == index;
     }
 
-    void cycleDetected(Tarjan<N> back) {
+    void uponBackEdge(Tarjan<N> back) {
       this.lowlink = Math.min(lowlink, back.index);
     }
   }
