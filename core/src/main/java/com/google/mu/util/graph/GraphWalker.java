@@ -155,8 +155,16 @@ public abstract class GraphWalker<N> extends Walker<N> {
    * <p>Implements the <a href="https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm">
    * Tarjan algorithm</a> in linear time ({@code O(V + E)}).
    *
+   * <p>The strongly connected components (represented by the list of nodes in each component)
+   * are returned in a lazy stream, in depth-first post order. If you need topological order from
+   * the start nodes, convert it using: <pre>{@code
+   *   List<List<N>> components = Walker.inGraph(...)
+   *       .stronglyConnectedComponentsFrom(...)
+   *       .peek(Collections::reverse)                      // reverse order within each component
+   *       .collect(toListAndThen(Collections::reverse));   // reverse order of the components
+   * }</pre>
+   *
    * @param startNodes the entry point nodes to start traversing the graph.
-   * @return a stream of lists each being a strongly connected component, in depth-first post order.
    * @since 4.4
    */
   @SafeVarargs public final Stream<List<N>> stronglyConnectedComponentsFrom(N... startNodes) {
@@ -171,8 +179,16 @@ public abstract class GraphWalker<N> extends Walker<N> {
    * <p>Implements the <a href="https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm">
    * Tarjan algorithm</a> in linear time ({@code O(V + E)}).
    *
+   * <p>The strongly connected components (represented by the list of nodes in each component)
+   * are returned in a lazy stream, in depth-first post order. If you need topological order from
+   * the start nodes, convert it using: <pre>{@code
+   *   List<List<N>> components = Walker.inGraph(...)
+   *       .stronglyConnectedComponentsFrom(...)
+   *       .peek(Collections::reverse)                      // reverse order within each component
+   *       .collect(toListAndThen(Collections::reverse));   // reverse order of the components
+   * }</pre>
+   *
    * @param startNodes the entry point nodes to start traversing the graph.
-   * @return a stream of lists each being a strongly connected component, in depth-first post order.
    * @since 4.4
    */
   public final Stream<List<N>> stronglyConnectedComponentsFrom(Iterable<? extends N> startNodes) {
@@ -212,7 +228,7 @@ public abstract class GraphWalker<N> extends Walker<N> {
       return postOrder(startNodes, new ArrayDeque<>());
     }
 
-    Stream<N> postOrder(Iterable<? extends N> startNodes, Deque<N> roots) {
+    private Stream<N> postOrder(Iterable<? extends N> startNodes, Deque<N> roots) {
       horizon.push(startNodes.spliterator());
       return whileNotNull(() -> {
         while (visitNext()) {
@@ -293,15 +309,15 @@ public abstract class GraphWalker<N> extends Walker<N> {
     final class StronglyConnected {
       private long index;
       private final Deque<N> roots = new ArrayDeque<>();
-      private final Map<N, Tarjan<N>> path = new HashMap<>();
+      private final Map<N, Tarjan<N>> currentPath = new HashMap<>();
       private final Deque<Tarjan<N>> connected = new ArrayDeque<>();
 
       Stream<List<N>> componentsFrom(Iterable<? extends N> startNodes) {
         return new Walk<>(findSuccessors, this::track)
             .postOrder(startNodes, roots)
-            .map(path::remove)
+            .map(currentPath::remove)
             .filter(Tarjan::isComponentRoot)
-            .map(this::connectedFrom);
+            .map(this::toConnectedComponent);
       }
 
       private boolean track(N node) {
@@ -309,25 +325,23 @@ public abstract class GraphWalker<N> extends Walker<N> {
           push(node);
           return true;
         } else {
-          Tarjan<N> back = path.get(node);
-          if (back != null) {
-            top().cycleDetected(back);
-          }
+          Tarjan<N> back = currentPath.get(node);
+          if (back != null) top().uponBackEdge(back);
           return false;
         }
       }
 
       private Tarjan<N> top() {
-        return path.get(roots.peek());
+        return currentPath.get(roots.peek());
       }
 
       private void push(N node) {
         Tarjan<N> indexed = new Tarjan<>(top(), node, ++index);
-        path.put(node, indexed);
+        currentPath.put(node, indexed);
         connected.push(indexed);
       }
 
-      private List<N> connectedFrom(Tarjan<N> root) {
+      private List<N> toConnectedComponent(Tarjan<N> root) {
         List<N> list = new ArrayList<>();
         for (; ;) {
           Tarjan<N> node = connected.pop();
@@ -341,8 +355,8 @@ public abstract class GraphWalker<N> extends Walker<N> {
   }
 
   private static final class Tarjan<N> {
-    final long index;
     final N payload;
+    private final long index;
     private final Tarjan<N> parent;
     private long lowlink;
 
@@ -360,7 +374,7 @@ public abstract class GraphWalker<N> extends Walker<N> {
       return lowlink == index;
     }
 
-    void cycleDetected(Tarjan<N> back) {
+    void uponBackEdge(Tarjan<N> back) {
       this.lowlink = Math.min(lowlink, back.index);
     }
   }
