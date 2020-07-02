@@ -23,7 +23,7 @@ import java.util.stream.Stream;
 /**
  * {@link #yield yield()} elements imperatively into a lazy stream.
  *
- * <p>While not required, users are expected to create a subclass and then
+ * <p>While not required, users are encouraged to create a subclass and then
  * be able to call {@code yield()} as if it were a keyword.
  *
  * <p>For example, in-order traversing a binary tree recursively may look like:
@@ -137,6 +137,7 @@ public class Iteration<T> {
    * during graph traversal), the subsequent code also needs to be yielded to be able to observe
    * the expected state change.
    */
+  @FunctionalInterface
   public interface Continuation {
     /** Runs the continuation. It will be called at most once throughout the stream. */
     void run();
