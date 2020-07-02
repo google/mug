@@ -95,6 +95,8 @@ import java.util.stream.Stream;
  * any <em>side-effects</em> should be wrapped inside the {@code Continuation} passed to
  * {@code yield].
  *
+ * <p>This class and the generated streams are stateful and not safe to be used in multi-threads.
+ *
  * <p>Nulls are not allowed.
  *
  * @since 4.4
