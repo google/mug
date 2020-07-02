@@ -30,7 +30,6 @@ import com.google.common.graph.ElementOrder;
 import com.google.common.graph.Graph;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
-import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.NullPointerTester;
 import com.google.mu.util.stream.BiStream;
 
@@ -115,12 +114,6 @@ public class CycleDetectorTest {
         .inOrder();
     assertThat(detectCycle(graph, "foo", "a")).containsExactly("foo", "bar", "baz", "foo")
         .inOrder();
-  }
-
-  @Test
-  public void staticMethods_nullCheck() throws Exception {
-    new NullPointerTester().testAllPublicStaticMethods(CycleDetector.class);
-    new ClassSanityTester().forAllPublicStaticMethods(CycleDetector.class).testNulls();
   }
 
   @Test
