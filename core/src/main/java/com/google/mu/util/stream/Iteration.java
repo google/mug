@@ -93,7 +93,7 @@ import java.util.stream.Stream;
  *
  * <p>Keep in mind that, unlike {@code return} or {@code System.out.println()}, {@code yield()}
  * is lazy and does not evaluate until the stream iterates over it. So it's critical that
- * all <em>side effects</em> should be wrapped inside {@code Continuation} objects passed to
+ * <em>all side effects</em> should be wrapped inside {@code Continuation} objects passed to
  * {@code yield()}.
  *
  * <p>This class and the generated streams are stateful and not safe to be used in multi-threads.
