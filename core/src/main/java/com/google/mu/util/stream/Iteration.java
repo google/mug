@@ -23,7 +23,7 @@ import java.util.stream.Stream;
 /**
  * {@link #yield yield()} elements imperatively into a lazy stream.
  *
- * <p>While not required, users are expected to create a subclass and then
+ * <p>While not required, users are encouraged to create a subclass and then
  * be able to call {@code yield()} as if it were a keyword.
  *
  * <p>For example, in-order traversing a binary tree recursively may look like:
