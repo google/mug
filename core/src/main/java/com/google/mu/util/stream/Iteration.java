@@ -21,8 +21,9 @@ import java.util.Deque;
 import java.util.stream.Stream;
 
 /**
- * Transforms imperative loops into iterative streams, using {@link #yield}.
- * While not required, users are expected to create a subclass and then
+ * {@link #yield yield()} elements imperatively into a lazy stream.
+ *
+ * <p>While not required, users are expected to create a subclass and then
  * be able to call {@code yield()} as if it were a keyword.
  *
  * <p>For example, in-order traversing a binary tree recursively may look like:
@@ -90,10 +91,10 @@ import java.util.stream.Stream;
  * }
  * }</pre>
  *
- * <p>Unlike {@code return} or {@code System.out.println()}, keep in mind that {@code yield()}
+ * <p>Keep in mind that, unlike {@code return} or {@code System.out.println()}, {@code yield()}
  * is lazy and does not evaluate until the stream iterates over it. So it's critical that
- * any <em>side-effects</em> should be wrapped inside the {@code Continuation} passed to
- * {@code yield].
+ * all <em>side effects</em> should be wrapped inside {@code Continuation} objects passed to
+ * {@code yield()}.
  *
  * <p>This class and the generated streams are stateful and not safe to be used in multi-threads.
  *
