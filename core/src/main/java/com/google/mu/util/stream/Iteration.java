@@ -124,7 +124,7 @@ public class Iteration<T> {
     return this;
   }
 
-  /** Returns the stream that iterates through the {@link #yield(Object} yielded} elements. */
+  /** Returns the stream that iterates through the {@link #yield yielded} elements. */
   public final Stream<T> stream() {
     return whileNotNull(this::next);
   }
