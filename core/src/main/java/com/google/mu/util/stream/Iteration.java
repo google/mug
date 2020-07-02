@@ -147,8 +147,7 @@ public class Iteration<T> {
       while (!stackFrame.isEmpty()) {
         stack.push(stackFrame.removeLast());
       }
-      if (stack.isEmpty()) return null;
-      Object top = stack.pop();
+      Object top = stack.pollFirst();
       if (top instanceof Continuation) {
         ((Continuation) top).run();
       } else {
