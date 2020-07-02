@@ -155,8 +155,16 @@ public abstract class GraphWalker<N> extends Walker<N> {
    * <p>Implements the <a href="https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm">
    * Tarjan algorithm</a> in linear time ({@code O(V + E)}).
    *
+   * <p>The strongly connected components (represented by the list of nodes in each component)
+   * are returned in a lazy stream, in depth-first post order. If you need topological order from
+   * the start nodes, convert it using: <pre>{@code
+   *   List<List<N>> components = Walker.inGraph(...)
+   *       .stronglyConnectedComponentsFrom(...)
+   *       .peek(Collections::reverse)                      // reverse order within each component
+   *       .collect(toListAndThen(Collections::reverse));   // reverse order of the components
+   * }</pre>
+   *
    * @param startNodes the entry point nodes to start traversing the graph.
-   * @return a stream of lists each being a strongly connected component, in depth-first post order.
    * @since 4.4
    */
   @SafeVarargs public final Stream<List<N>> stronglyConnectedComponentsFrom(N... startNodes) {
@@ -171,8 +179,16 @@ public abstract class GraphWalker<N> extends Walker<N> {
    * <p>Implements the <a href="https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm">
    * Tarjan algorithm</a> in linear time ({@code O(V + E)}).
    *
+   * <p>The strongly connected components (represented by the list of nodes in each component)
+   * are returned in a lazy stream, in depth-first post order. If you need topological order from
+   * the start nodes, convert it using: <pre>{@code
+   *   List<List<N>> components = Walker.inGraph(...)
+   *       .stronglyConnectedComponentsFrom(...)
+   *       .peek(Collections::reverse)                      // reverse order within each component
+   *       .collect(toListAndThen(Collections::reverse));   // reverse order of the components
+   * }</pre>
+   *
    * @param startNodes the entry point nodes to start traversing the graph.
-   * @return a stream of lists each being a strongly connected component, in depth-first post order.
    * @since 4.4
    */
   public final Stream<List<N>> stronglyConnectedComponentsFrom(Iterable<? extends N> startNodes) {
