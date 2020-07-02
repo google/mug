@@ -111,7 +111,7 @@ public class Iteration<T> {
     if (element instanceof Continuation) {
       throw new IllegalArgumentException("Do not stream Continuation objects");
     }
-    stackFrame.add(element);
+    stackFrame.push(element);
     return this;
   }
 
@@ -120,7 +120,7 @@ public class Iteration<T> {
    * wrapped in {@code continuation}.
    */
   public final Iteration<T> yield(Continuation continuation) {
-    stackFrame.add(continuation);
+    stackFrame.push(continuation);
     return this;
   }
 
@@ -146,7 +146,7 @@ public class Iteration<T> {
   private T next() {
     for (; ;) {
       while (!stackFrame.isEmpty()) {
-        stack.push(stackFrame.removeLast());
+        stack.push(stackFrame.pop());
       }
       Object top = stack.pollFirst();
       if (top instanceof Continuation) {
