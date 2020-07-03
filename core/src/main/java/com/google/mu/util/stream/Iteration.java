@@ -37,7 +37,7 @@ import java.util.stream.Stream;
  * a non-goal for this library to solve the already-solved problem.
  *
  * <p>There's however a group of use cases not well supported by the Java Stream library: recursive
- * iteration. Imagine if you have a recursive binary tree traversal algorithm:
+ * algorithms. Imagine if you have a recursive binary tree traversal algorithm:
  *
  * <pre>{@code
  * void inOrder(Tree<T> tree) {
