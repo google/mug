@@ -14,7 +14,7 @@ import com.google.mu.util.stream.Iteration.Continuation;
 public class BiIteration<L, R> {
   private final Iteration<Map.Entry<L, R>> iteration = new Iteration<>();
 
-  /** Yields {@code key}  and {@code value} pair to the result stream. */
+  /** Yields {@code left} and {@code right} pair to the result {@code BiStream}. */
   public final BiIteration<L, R> yield(L left, R right) {
     iteration.yield(
         new AbstractMap.SimpleImmutableEntry<>(requireNonNull(left), requireNonNull(right)));
