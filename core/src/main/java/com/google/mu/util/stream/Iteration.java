@@ -29,7 +29,7 @@ import java.util.stream.Stream;
  * for (int i = 0; ; i++) {
  *   yield(i);
  * }
- * }</pre>.
+ * }</pre>
  *
  * For this kind of use cases, Java 8 and above have opted to answer with the Stream library.
  * One can use {@code IntStream.iterate(0, i -> i + 1)} or {@code MoreStreams.indexesFrom(0)} etc.
