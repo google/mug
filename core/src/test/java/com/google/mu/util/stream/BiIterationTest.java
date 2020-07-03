@@ -1,6 +1,7 @@
 package com.google.mu.util.stream;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.Test;
 
@@ -18,6 +19,12 @@ public class BiIterationTest {
     assertThat(binarySearchTrials(new int[] {10, 20, 30, 40, 50, 60, 70, 80, 90}, 35))
       .containsExactly(0, 8, 0, 3, 2, 3, 3, 3)
       .inOrder();
+  }
+
+  @Test public void oneTimeIteration() {
+    BiIteration<String, String> iteration = new BiIteration<>();
+    iteration.stream();
+    assertThrows(IllegalStateException.class, iteration::stream);
   }
 
   @Test public void testNulls() {

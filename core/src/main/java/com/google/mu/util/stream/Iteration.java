@@ -151,6 +151,7 @@ import java.util.stream.Stream;
 public class Iteration<T> {
   private final Deque<Object> stack = new ArrayDeque<>();
   private final Deque<Object> stackFrame = new ArrayDeque<>(8);
+  private boolean streamed;
 
   /** Yields {@code element} to the result stream. */
   public final Iteration<T> yield(T element) {
@@ -170,8 +171,19 @@ public class Iteration<T> {
     return this;
   }
 
-  /** Returns the stream that iterates through the {@link #yield yielded} elements. */
+  /**
+   * Returns the stream that iterates through the {@link #yield yielded} elements.
+   *
+   * <p>Because an {@code Iteration} instance is stateful and mutable, {@code stream()} can be
+   * called at most once per instance.
+   *
+   * @throws IllegalStateException if {@code stream()} has already been called.
+   */
   public final Stream<T> stream() {
+    if (streamed) {
+      throw new IllegalStateException("This Iteration object is already being streamed.");
+    }
+    streamed = true;
     return whileNotNull(this::next);
   }
 

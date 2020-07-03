@@ -30,7 +30,14 @@ public class BiIteration<L, R> {
     return this;
   }
 
-  /** Returns the {@code BiStreram} that iterates through the {@link #yield yielded} pairs. */
+  /**
+   * Returns the {@code BiStreram} that iterates through the {@link #yield yielded} pairs.
+   *
+   * <p>Because a {@code BiIteration} instance is stateful and mutable, {@code stream()} can be
+   * called at most once per instance.
+   *
+   * @throws IllegalStateException if {@code stream()} has already been called.
+   */
   public final BiStream<L, R> stream() {
     return BiStream.from(iteration.stream());
   }
