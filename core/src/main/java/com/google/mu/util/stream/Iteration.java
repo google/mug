@@ -112,8 +112,8 @@ import java.util.stream.Stream;
  * the target is found or the array has been fully examined:
  *
  * <pre>{@code
- * class IterativeBinarySearch extends Iteration<Integer> {
- *   IterativeBinarySearch search(int[] arr, int low, int high, int target) {
+ * class BinarySearch extends Iteration<Integer> {
+ *   BinarySearch search(int[] arr, int low, int high, int target) {
  *     if (low > high) {
  *       return this;
  *     }
@@ -129,7 +129,7 @@ import java.util.stream.Stream;
  * }
  *
  * static Stream<Integer> binarySearchTrials(int[] arr, int target) {
- *   return new IterativeBinarySearch().search(arr, 0, arr.length - 1, target).stream();
+ *   return new BinarySearch().search(arr, 0, arr.length - 1, target).stream();
  * }
  * }</pre>
  *
