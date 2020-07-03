@@ -118,7 +118,7 @@ import java.util.stream.Stream;
  *       return this;
  *     }
  *     int mid = (low + high) / 2;
- *     yield(arr[mid]);  // yield the guess (or the final result).
+ *     yield(arr[mid]);               // yield the trial.
  *     if (arr[mid] < target) {
  *       yield(() -> search(arr, mid + 1, high, target));
  *     } else if (arr[mid] > target) {
