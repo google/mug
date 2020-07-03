@@ -23,7 +23,7 @@ Add the following to pom.xml:
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug</artifactId>
-    <version>4.3</version>
+    <version>4.4</version>
   </dependency>
 ```
 
