@@ -175,7 +175,7 @@ Map<Day, Long> siteTrafficHistogram = pages.stream()
 
 #### [yield](https://google.github.io/mug/apidocs/com/google/mu/util/stream/Iteration.html)
 
-**Example: turn your recursive algorithm into a Stream:
+**Example: turn your recursive algorithm into a Stream:**
 
 ```java
 class DepthFirst<N> extends Iteration<N> {
