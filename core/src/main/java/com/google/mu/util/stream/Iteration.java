@@ -36,8 +36,8 @@ import java.util.stream.Stream;
  * can use {@code IntStream.iterate(0, i -> i + 1)} or {@code MoreStreams.indexesFrom(0)} etc. It's
  * a non-goal for this library to solve the already-solved problem.
  *
- * <p>There's however a group of use cases not well supported by the Java Stream library: recursive
- * algorithms. Imagine if you have a recursive binary tree traversal algorithm:
+ * <p>The Stream library however doesn't have support to make recursive algorithms iterative.
+ * Imagine if you have a recursive binary tree traversal algorithm:
  *
  * <pre>{@code
  * void inOrder(Tree<T> tree) {
@@ -48,8 +48,8 @@ import java.util.stream.Stream;
  * }
  * }</pre>
  *
- * The JDK offers no trivial Stream alternative should you need to provide iterative API or even to
- * allow infinite streams. The {@code Iteration} class is designed to fill the gap by intuitively
+ * How do you provide an iterative API or even support infinite streams (users can still
+ * short-circuit)? The {@code Iteration} class is designed to fill the gap by intuitively
  * transforming such recursive algorithms to iterative (potentially infinite) streams:
  *
  * <pre>{@code
