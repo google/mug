@@ -106,7 +106,7 @@ import java.util.stream.Stream;
  * }</pre>
  *
  * <p>Another potential use case may be to enhance the JDK {@link Stream#iterate} API with a
- * terminal condition. For example, in binary search, we can generate a stream of "trials"
+ * terminal condition. For example, in a binary search, we can generate a stream of "trials"
  * until the target is found or the array has been fully examined:
  * <pre>{@code
  * class IterativeBinarySearch extends Iteration<Integer> {
@@ -129,6 +129,9 @@ import java.util.stream.Stream;
  *   return new IterativeBinarySearch().search(arr, 0, arr.length - 1, target).stream();
  * }
  * }</pre>
+ *
+ * Calling {@code binarySearchTrials([1, 2, 3, 4, 5, 6, 7, 8. 9], 8)} will generate a stream of
+ * {@code [5, 7, 8]} each being an element examined during the binary search, in order.
  *
  * <p>While not required, users are encouraged to create a subclass and then be able to call {@code
  * yield()} as if it were a keyword.
