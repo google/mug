@@ -175,7 +175,7 @@ Map<Day, Long> siteTrafficHistogram = pages.stream()
 
 #### [yield](https://google.github.io/mug/apidocs/com/google/mu/util/stream/Iteration.html)
 
-**Example: turn your recursive algorithm into a Stream (without using threads):**
+**Example 1: turn your recursive algorithm into a Stream (without using threads):**
 
 ```java
 class DepthFirst<N> extends Iteration<N> {
@@ -193,6 +193,33 @@ class DepthFirst<N> extends Iteration<N> {
 }
 
 Stream<N> postOrder = new DepthFirst<N>().postOrder(root).stream();
+```
+
+**Example 2: show me how my binary search algorithm finds the target:**
+
+```java
+class BinarySearch extends Iteration<Integer> {
+ BinarySearch search(int[] arr, int low, int high, int target) {
+   if (low > high) {
+     return this;
+   }
+   int mid = (low + high) / 2;
+   yield(arr[mid]);
+   if (arr[mid] < target) {
+     yield(() -> search(arr, mid + 1, high, target));
+   } else if (arr[mid] > target) {
+     yield(() -> search(arr, low, mid - 1, target));
+   }
+   return this;
+ }
+}
+
+static Stream<Integer> binarySearchTrials(int[] arr, int target) {
+ return new BinarySearch().search(arr, 0, arr.length - 1, target).stream();
+}
+
+binarySearchTrials([1, 2, 3, 4, 5, 6, 7, 8, 9], 8)
+    => [5, 7, 8]  // First tried 5, then 7, finally 8.
 ```
 
 ## Optionals
