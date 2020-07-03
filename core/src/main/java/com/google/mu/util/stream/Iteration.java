@@ -31,7 +31,7 @@ import java.util.stream.Stream;
  * }
  * }</pre>.
  *
- * <br>For this kind of use cases, Java 8 and above have opted to answer with the Stream library.
+ * For this kind of use cases, Java 8 and above have opted to answer with the Stream library.
  * One can use {@code IntStream.iterate(0, i -> i + 1)} or {@code MoreStreams.indexesFrom(0)} etc.
  * It's a non-goal for this library to solve the already-solved problem.
  *
