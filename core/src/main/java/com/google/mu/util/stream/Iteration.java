@@ -58,13 +58,12 @@ import java.util.stream.Stream;
  *   private final Set<N> visited = new HashSet<>();
  *
  *   void postOrder(N node) {
- *     if (!visited.add(node)) {
- *       return;
+ *     if (visited.add(node)) {
+ *       for (N successor : node.getSuccessors()) {
+ *         postOrder(successor);
+ *        }
+ *       System.out.println("node: " + node);
  *     }
- *     for (N successor : node.getSuccessors()) {
- *       postOrder(successor);
- *     }
- *     System.out.println("node: " + node);
  *   }
  * }
  * }</pre>
@@ -75,13 +74,12 @@ import java.util.stream.Stream;
  *   private final Set<N> visited = new HashSet<>();
  *
  *   DepthFirst<N> postOrder(N node) {
- *     if (!visited.add(node)) {
- *       return this;
+ *     if (visited.add(node)) {
+ *       for (N successor : node.getSuccessors()) {
+ *         yield(() -> postOrder(successor));
+ *       }
+ *       yield(node);
  *     }
- *     for (N successor : node.getSuccessors()) {
- *       yield(() -> postOrder(successor));
- *     }
- *     yield(node);
  *     return this;
  *   }
  * }
