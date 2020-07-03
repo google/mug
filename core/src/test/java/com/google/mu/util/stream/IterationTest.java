@@ -16,6 +16,7 @@ package com.google.mu.util.stream;
 
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.stream.IterationTest.Tree.tree;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.stream.Stream;
 
@@ -67,6 +68,13 @@ public class IterationTest {
     assertThat(postOrderFrom(tree))
         .containsExactly("c", "e", "d", "b", "h", "g", "i", "f", "a")
         .inOrder();
+  }
+
+  @Test
+  public void oneTimeIteration() {
+    DepthFirst<String> iteration = new DepthFirst<>();
+    iteration.stream();
+    assertThrows(IllegalStateException.class, iteration::stream);
   }
 
   @Test
