@@ -23,10 +23,15 @@ import java.util.stream.Stream;
 /**
  * {@link #yield yield()} elements imperatively into a lazy stream.
  *
- * <p>While not required, users are encouraged to create a subclass and then
- * be able to call {@code yield()} as if it were a keyword.
+ * <p>First and foremost, why "yield"? A C#-style yield return requires compiler support to be able
+ * to create iterators or streams through imperative loops like {@code for (int i = 0; ; i++)
+ * yield(i);}. For this kind of use cases, Java has opted to using the Stream library: {@code
+ * IntStream.iterate(0, i -> i + 1)}, or {@code MoreStreams.indexesFrom(0)}. It's a non-goal for
+ * this library to solve the already-solved problem.
  *
- * <p>For example, in-order traversing a binary tree recursively may look like:
+ * <p>There's however a group of use cases not well supported by the Java Stream library: recursive
+ * iteration. Imagine if you have a recursive code traversing a binary tree:
+ *
  * <pre>{@code
  * void inOrder(Tree<T> tree) {
  *   if (tree == null) return;
@@ -36,7 +41,10 @@ import java.util.stream.Stream;
  * }
  * }</pre>
  *
- * Using {@code Iteration}, the above code can be intuitively transformed to iterative stream:
+ * The JDK offers no trivial Stream alternative should you need to provide iterative access or even
+ * infinite stream. The {@code Iteration} class is designed to fill the gap by intuitively
+ * transforming such recursive code to iterative (potentially infinite) stream:
+ *
  * <pre>{@code
  * class DepthFirst<T> extends Iteration<T> {
  *   DepthFirst<T> inOrder(Tree<T> tree) {
@@ -53,6 +61,7 @@ import java.util.stream.Stream;
  * }</pre>
  *
  * <p>Similarly, the following recursive graph post-order traversal code:
+ *
  * <pre>{@code
  * class Traverser<N> {
  *   private final Set<N> visited = new HashSet<>();
@@ -69,6 +78,7 @@ import java.util.stream.Stream;
  * }</pre>
  *
  * can be transformed to an iterative stream using:
+ *
  * <pre>{@code
  * class DepthFirst<N> extends Iteration<N> {
  *   private final Set<N> visited = new HashSet<>();
@@ -89,10 +99,12 @@ import java.util.stream.Stream;
  * }
  * }</pre>
  *
- * <p>Keep in mind that, unlike {@code return} or {@code System.out.println()}, {@code yield()}
- * is lazy and does not evaluate until the stream iterates over it. So it's critical that
- * <em>all side effects</em> should be wrapped inside {@code Continuation} objects passed to
- * {@code yield()}.
+ * <p>While not required, users are encouraged to create a subclass and then be able to call {@code
+ * yield()} as if it were a keyword.
+ *
+ * <p>Keep in mind that, unlike {@code return} or {@code System.out.println()}, {@code yield()} is
+ * lazy and does not evaluate until the stream iterates over it. So it's critical that <em>all side
+ * effects</em> should be wrapped inside {@code Continuation} objects passed to {@code yield()}.
  *
  * <p>This class and the generated streams are stateful and not safe to be used in multi-threads.
  *
