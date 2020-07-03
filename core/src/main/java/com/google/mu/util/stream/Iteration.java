@@ -21,7 +21,7 @@ import java.util.Deque;
 import java.util.stream.Stream;
 
 /**
- * {@link #yield yield()} elements imperatively into a lazy stream.
+ * Iteratively {@link #yield yield()} elements into a lazy stream.
  *
  * <p>First and foremost, why "yield"? A C#-style yield return requires compiler support to be able
  * to create iterators or streams through imperative loops like {@code for (int i = 0; ; i++)
