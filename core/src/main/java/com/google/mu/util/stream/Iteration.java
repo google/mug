@@ -25,9 +25,12 @@ import java.util.stream.Stream;
  *
  * <p>First and foremost, why "yield"? A C#-style yield return requires compiler support to be able
  * to create iterators or streams through imperative loops like:
- * <pre>{@code for (int i = 0; ; i++) yield(i);}</pre>.
+ * <pre>{@code
+ * for (int i = 0; ; i++) {
+ *   yield(i);
+ * }</pre>.
  *
- * <b>For this kind of use cases, Java 8 and above have opted to answer with the Stream library.
+ * <br>For this kind of use cases, Java 8 and above have opted to answer with the Stream library.
  * One can use {@code IntStream.iterate(0, i -> i + 1)} or {@code MoreStreams.indexesFrom(0)} etc.
  * It's a non-goal for this library to solve the already-solved problem.
  *
