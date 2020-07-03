@@ -18,6 +18,7 @@ import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
 /**
@@ -111,8 +112,8 @@ import java.util.stream.Stream;
  * the target is found or the array has been fully examined:
  *
  * <pre>{@code
- * class IterativeBinarySearch extends Iteration<Integer> {
- *   IterativeBinarySearch search(int[] arr, int low, int high, int target) {
+ * class BinarySearch extends Iteration<Integer> {
+ *   BinarySearch search(int[] arr, int low, int high, int target) {
  *     if (low > high) {
  *       return this;
  *     }
@@ -128,7 +129,7 @@ import java.util.stream.Stream;
  * }
  *
  * static Stream<Integer> binarySearchTrials(int[] arr, int target) {
- *   return new IterativeBinarySearch().search(arr, 0, arr.length - 1, target).stream();
+ *   return new BinarySearch().search(arr, 0, arr.length - 1, target).stream();
  * }
  * }</pre>
  *
@@ -155,7 +156,7 @@ import java.util.stream.Stream;
 public class Iteration<T> {
   private final Deque<Object> stack = new ArrayDeque<>();
   private final Deque<Object> stackFrame = new ArrayDeque<>(8);
-  private boolean streamed;
+  private final AtomicBoolean streamed = new AtomicBoolean();
 
   /** Yields {@code element} to the result stream. */
   public final Iteration<T> yield(T element) {
@@ -184,10 +185,9 @@ public class Iteration<T> {
    * @throws IllegalStateException if {@code stream()} has already been called.
    */
   public final Stream<T> stream() {
-    if (streamed) {
-      throw new IllegalStateException("This Iteration object is already being streamed.");
+    if (streamed.getAndSet(true)) {
+      throw new IllegalStateException("Iteration already streamed.");
     }
-    streamed = true;
     return whileNotNull(this::next);
   }
 
