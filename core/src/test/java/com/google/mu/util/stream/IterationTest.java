@@ -21,7 +21,7 @@ import java.util.stream.Stream;
 
 import org.junit.Test;
 
-import com.google.common.testing.NullPointerTester;
+import com.google.common.testing.ClassSanityTester;
 
 public class IterationTest {
   @Test
@@ -71,7 +71,7 @@ public class IterationTest {
 
   @Test
   public void nullChecks() {
-    new NullPointerTester().testAllPublicInstanceMethods(new Iteration<>());
+    new ClassSanityTester().testNulls(Iteration.class);
   }
 
   private static <T> Stream<T> preOrderFrom(Tree<T> tree) {
@@ -224,10 +224,16 @@ public class IterationTest {
     }
   }
 
-  @Test public void binarySearchStream() {
+  @Test public void binarySearchTrials() {
     assertThat(binarySearchTrials(new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9}, 8))
         .containsExactly(5, 7, 8)
         .inOrder();
+    assertThat(binarySearchTrials(new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9}, 1))
+      .containsExactly(5, 2, 1)
+      .inOrder();
+    assertThat(binarySearchTrials(new int[] {10, 20, 30, 40, 50, 60, 70, 80, 90}, 35))
+      .containsExactly(50, 20, 30, 40)
+      .inOrder();
   }
 
   private static final class IterativeBinarySearch extends Iteration<Integer> {
