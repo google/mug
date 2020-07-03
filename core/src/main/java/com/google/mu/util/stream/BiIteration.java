@@ -14,7 +14,7 @@ import com.google.mu.util.stream.Iteration.Continuation;
 public class BiIteration<L, R> {
   private final Iteration<Map.Entry<L, R>> iteration = new Iteration<>();
 
-  /** Yields {@code left} and {@code right} pair to the result {@code BiStream}. */
+  /** Yields the pair of {@code left} and {@code right} to the result {@code BiStream}. */
   public final BiIteration<L, R> yield(L left, R right) {
     iteration.yield(
         new AbstractMap.SimpleImmutableEntry<>(requireNonNull(left), requireNonNull(right)));
@@ -22,8 +22,8 @@ public class BiIteration<L, R> {
   }
 
   /**
-   * Yields to the stream a recursive iteration or lazy side-effect
-   * wrapped in {@code continuation}.
+   * Yields to the result {@code BiStream} a recursive iteration or lazy side-effect wrapped in
+   * {@code continuation}.
    */
   public final BiIteration<L, R> yield(Continuation continuation) {
     iteration.yield(continuation);
