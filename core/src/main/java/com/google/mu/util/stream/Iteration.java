@@ -28,6 +28,7 @@ import java.util.stream.Stream;
  * <pre>{@code
  * for (int i = 0; ; i++) {
  *   yield(i);
+ * }
  * }</pre>.
  *
  * <br>For this kind of use cases, Java 8 and above have opted to answer with the Stream library.
