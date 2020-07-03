@@ -70,7 +70,7 @@ import java.util.stream.Stream;
  * <p>Similarly, the following recursive graph post-order traversal code:
  *
  * <pre>{@code
- * class Traverser<N> {
+ * class DepthFirst<N> {
  *   private final Set<N> visited = new HashSet<>();
  *
  *   void postOrder(N node) {
