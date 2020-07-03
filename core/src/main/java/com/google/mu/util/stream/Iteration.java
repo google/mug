@@ -142,6 +142,10 @@ import java.util.stream.Stream;
  * lazy and does not evaluate until the stream iterates over it. So it's critical that <em>all side
  * effects</em> should be wrapped inside {@code Continuation} objects passed to {@code yield()}.
  *
+ * <p>On the other hand, unlike C#'s "yield return" keyword, {@code yield()} is a normal Java method
+ * and doesn't "return" the control to the Stream caller. Laziness is achieved by wrapping code
+ * block inside the {@code Continuation} lambda.
+ *
  * <p>This class and the generated streams are stateful and not safe to be used in multi-threads.
  *
  * <p>Nulls are not allowed.
