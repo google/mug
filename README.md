@@ -3,7 +3,7 @@ Disclaimer: This is not an official Google product.
 # Mug
 A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/index.html)), with 0 deps. ![](https://travis-ci.org/google/mug.svg?branch=master)
 
-* Stream utilities ([BiStream](#bistream-streams-pairs-of-objects), [MoreStreams](#morestreams)):  
+* Stream utilities ([BiStream](#bistream-streams-pairs-of-objects), [MoreStreams](#morestreams), [yield()](#yield)):  
     `histogram = zip(times, counts).toMap();`
 * [Optionals](#optionals) provides extra utilities for Optional:  
     `optional(id.length() > 0, id)`
@@ -171,6 +171,28 @@ Map<Day, Long> siteTrafficHistogram = pages.stream()
     .map(Page::getTrafficHistogram)
     .collect(groupingValuesFrom(Map::entrySet, (a, b) -> a + b))
     .toMap();
+```
+
+#### [yield](https://google.github.io/mug/apidocs/com/google/mu/util/stream/Iteration.html)
+
+**Example: turn your recursive algorithm into a Stream:
+
+```java
+class DepthFirst<N> extends Iteration<N> {
+  private final Set<N> visited = new HashSet<>();
+  
+  DepthFirst<N> postOrder(N node) {
+    if (visited.add(node)) {
+      for (N successor : node.successors()) {
+        yield(() -> postOrder(successor));
+      }
+      yield(node);
+    }
+    return this;
+  }
+}
+
+Stream<N> postOrder = new DepthFirst<N>().postOrder(root).stream();
 ```
 
 ## Optionals
