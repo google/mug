@@ -58,13 +58,12 @@ import java.util.stream.Stream;
  *   private final Set<N> visited = new HashSet<>();
  *
  *   void postOrder(N node) {
- *     if (!visited.add(node)) {
- *       return;
+ *     if (visited.add(node)) {
+ *       for (N successor : node.getSuccessors()) {
+ *         postOrder(successor);
+ *        }
+ *       System.out.println("node: " + node);
  *     }
- *     for (N successor : node.getSuccessors()) {
- *       postOrder(successor);
- *     }
- *     System.out.println("node: " + node);
  *   }
  * }
  * }</pre>
@@ -75,13 +74,12 @@ import java.util.stream.Stream;
  *   private final Set<N> visited = new HashSet<>();
  *
  *   DepthFirst<N> postOrder(N node) {
- *     if (!visited.add(node)) {
- *       return this;
+ *     if (visited.add(node)) {
+ *       for (N successor : node.getSuccessors()) {
+ *         yield(() -> postOrder(successor));
+ *       }
+ *       yield(node);
  *     }
- *     for (N successor : node.getSuccessors()) {
- *       yield(() -> postOrder(successor));
- *     }
- *     yield(node);
  *     return this;
  *   }
  * }
@@ -104,14 +102,14 @@ import java.util.stream.Stream;
  */
 public class Iteration<T> {
   private final Deque<Object> stack = new ArrayDeque<>();
-  private final Deque<Object> stackFrame = new ArrayDeque<>();
+  private final Deque<Object> stackFrame = new ArrayDeque<>(8);
 
   /** Yields {@code element} to the result stream. */
   public final Iteration<T> yield(T element) {
     if (element instanceof Continuation) {
       throw new IllegalArgumentException("Do not stream Continuation objects");
     }
-    stackFrame.add(element);
+    stackFrame.push(element);
     return this;
   }
 
@@ -120,7 +118,7 @@ public class Iteration<T> {
    * wrapped in {@code continuation}.
    */
   public final Iteration<T> yield(Continuation continuation) {
-    stackFrame.add(continuation);
+    stackFrame.push(continuation);
     return this;
   }
 
@@ -146,7 +144,7 @@ public class Iteration<T> {
   private T next() {
     for (; ;) {
       while (!stackFrame.isEmpty()) {
-        stack.push(stackFrame.removeLast());
+        stack.push(stackFrame.pop());
       }
       Object top = stack.pollFirst();
       if (top instanceof Continuation) {
