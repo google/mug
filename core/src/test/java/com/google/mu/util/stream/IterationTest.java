@@ -223,4 +223,30 @@ public class IterationTest {
       return right;
     }
   }
+
+  @Test public void binarySearchStream() {
+    assertThat(binarySearchTrials(new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9}, 8))
+        .containsExactly(5, 7, 8)
+        .inOrder();
+  }
+
+  private static final class IterativeBinarySearch extends Iteration<Integer> {
+     IterativeBinarySearch search(int[] arr, int low, int high, int target) {
+       if (low > high) {
+         return this;
+       }
+       int mid = (low + high) / 2;
+       yield(arr[mid]);
+       if (arr[mid] < target) {
+         yield(() -> search(arr, mid + 1, high, target));
+       } else if (arr[mid] > target) {
+         yield(() -> search(arr, low, mid - 1, target));
+       }
+       return this;
+     }
+   }
+
+   static Stream<Integer> binarySearchTrials(int[] arr, int target) {
+     return new IterativeBinarySearch().search(arr, 0, arr.length - 1, target).stream();
+   }
 }
