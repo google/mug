@@ -24,10 +24,12 @@ import java.util.stream.Stream;
  * Iteratively {@link #yield yield()} elements into a lazy stream.
  *
  * <p>First and foremost, why "yield"? A C#-style yield return requires compiler support to be able
- * to create iterators or streams through imperative loops like {@code for (int i = 0; ; i++)
- * yield(i);}. For this kind of use cases, Java has opted to using the Stream library: {@code
- * IntStream.iterate(0, i -> i + 1)}, or {@code MoreStreams.indexesFrom(0)}. It's a non-goal for
- * this library to solve the already-solved problem.
+ * to create iterators or streams through imperative loops like:
+ * <pre>{@code for (int i = 0; ; i++) yield(i);}</pre>.
+ *
+ * <b>For this kind of use cases, Java 8 and above have opted to answer with the Stream library.
+ * One can use {@code IntStream.iterate(0, i -> i + 1)} or {@code MoreStreams.indexesFrom(0)} etc.
+ * It's a non-goal for this library to solve the already-solved problem.
  *
  * <p>There's however a group of use cases not well supported by the Java Stream library: recursive
  * iteration. Imagine if you have a recursive code traversing a binary tree:
