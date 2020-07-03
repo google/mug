@@ -104,7 +104,7 @@ import java.util.stream.Stream;
  */
 public class Iteration<T> {
   private final Deque<Object> stack = new ArrayDeque<>();
-  private final Deque<Object> stackFrame = new ArrayDeque<>();
+  private final Deque<Object> stackFrame = new ArrayDeque<>(8);
 
   /** Yields {@code element} to the result stream. */
   public final Iteration<T> yield(T element) {
