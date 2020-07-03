@@ -21,7 +21,7 @@ import java.util.stream.Stream;
 
 import org.junit.Test;
 
-import com.google.common.testing.NullPointerTester;
+import com.google.common.testing.ClassSanityTester;
 
 public class IterationTest {
   @Test
@@ -71,7 +71,7 @@ public class IterationTest {
 
   @Test
   public void nullChecks() {
-    new NullPointerTester().testAllPublicInstanceMethods(new Iteration<>());
+    new ClassSanityTester().testNulls(Iteration.class);
   }
 
   private static <T> Stream<T> preOrderFrom(Tree<T> tree) {
