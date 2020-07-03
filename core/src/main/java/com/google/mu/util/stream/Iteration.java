@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
 /**
- * Iteratively {@link #yield yield()} elements into a lazy stream.
+ * Iteratively (and recursively) {@link #yield yield()} elements into a lazy stream.
  *
  * <p>First and foremost, why "yield"? A C#-style yield return requires compiler support to be able
  * to create iterators or streams through imperative loops like:
