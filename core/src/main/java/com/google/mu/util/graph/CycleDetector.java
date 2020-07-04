@@ -17,38 +17,14 @@ package com.google.mu.util.graph;
 import static com.google.mu.util.graph.Walker.nonNullList;
 import static java.util.Objects.requireNonNull;
 
-import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
- * Utility to detect cycles in graphs. For example:
- *
- * <pre>{@code
- * CycleDetector.forGraph((String n) -> graph.successors(n).stream())
- *     .detectCycleFrom(entryPoint)
- *     .ifPresent(cyclic -> logger.log("cyclic path: " + cyclic.collect(joining("->"))));
- * }</pre>
- *
- * In the following cyclic graph, if starting from node {@code a}, the detected cyclic path will
- * be: {@code a -> b -> c -> e -> b}, with {@code b -> c -> e -> b} being the cycle, and
- * {@code a -> b} the prefix path leading to the cycle.
- *
- * <pre>{@code
- * a -> b -> c -> d
- *      ^  /
- *      | /
- *      |/
- *      e
- * }</pre>
- *
- * @since 4.0
+ * @deprecated Use {@link GraphWalker#detectCycleFrom} instead.
  */
+@Deprecated
 public final class CycleDetector<N> {
   private final Function<? super N, ? extends Stream<? extends N>> findSuccessors;
 
@@ -95,24 +71,6 @@ public final class CycleDetector<N> {
    *         with {@code A -> B -> A}. If there is no cycle, {@link Optional#empty} is returned.
    */
   public Optional<Stream<N>> detectCycleFrom(Iterable<? extends N> startNodes) {
-    AtomicReference<N> cyclic = new AtomicReference<>();
-    Set<N> seen = new HashSet<>();  // Always a superset of `currentPath`.
-    LinkedHashSet<N> currentPath = new LinkedHashSet<>();
-    Walker<N> walker = Walker.inGraph(findSuccessors, new Predicate<N>() {
-      @Override public boolean test(N node) {
-        boolean newNode = seen.add(node);
-        if (newNode) {
-          currentPath.add(node);
-        } else if (currentPath.contains(node)) {  // A cycle's found!
-          cyclic.compareAndSet(null, node);
-        }
-        return newNode;
-      }
-    });
-    return walker.postOrderFrom(startNodes)
-        .peek(currentPath::remove)
-        .filter(n -> cyclic.get() != null)
-        .findFirst()
-        .map(last -> Stream.concat(currentPath.stream(), Stream.of(last, cyclic.getAndSet(null))));
+    return Walker.inGraph(findSuccessors).detectCycleFrom(startNodes);
   }
 }

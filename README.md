@@ -3,14 +3,14 @@ Disclaimer: This is not an official Google product.
 # Mug
 A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/index.html)), with 0 deps. ![](https://travis-ci.org/google/mug.svg?branch=master)
 
-* Stream utilities ([BiStream](#bistream-streams-pairs-of-objects), [MoreStreams](#morestreams)):  
+* Stream utilities ([BiStream](#bistream-streams-pairs-of-objects), [MoreStreams](#morestreams), [Iteration](#iteration)):  
     `histogram = zip(times, counts).toMap();`
 * [Optionals](#optionals) provides extra utilities for Optional:  
     `optional(id.length() > 0, id)`
 * [Substring](#substring) finds a substring in a string:  
     `String user = first('@').toEnd().removeFrom(email);`
 * [Parallelizer](#parallelizer) An _Executor-friendly_, _interruptible_ alternative to parallel streams.
-* Graph utilities ([Walker](https://google.github.io/mug/apidocs/com/google/mu/util/graph/Walker.html), [CycleDetector](https://google.github.io/mug/apidocs/com/google/mu/util/graph/CycleDetector.html), [ShortestPath](https://google.github.io/mug/apidocs/com/google/mu/util/graph/ShortestPath.html))
+* Graph utilities ([Walker](https://google.github.io/mug/apidocs/com/google/mu/util/graph/Walker.html), [ShortestPath](https://google.github.io/mug/apidocs/com/google/mu/util/graph/ShortestPath.html))
 * [Retryer](#retryer) retries.
 * [Maybe](#maybe) tunnels checked exceptions through streams or futures.
 * [Funnel](#funnel) flows objects through batch conversions in FIFO order.
@@ -23,7 +23,7 @@ Add the following to pom.xml:
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug</artifactId>
-    <version>4.1</version>
+    <version>4.4</version>
   </dependency>
 ```
 
@@ -171,6 +171,42 @@ Map<Day, Long> siteTrafficHistogram = pages.stream()
     .map(Page::getTrafficHistogram)
     .collect(groupingValuesFrom(Map::entrySet, (a, b) -> a + b))
     .toMap();
+```
+
+#### [Iteration](https://google.github.io/mug/apidocs/com/google/mu/util/stream/Iteration.html)
+
+**Example 1: turn your recursive algorithm into a _lazy_ Stream:**
+
+```java
+class DepthFirst<N> extends Iteration<N> {
+  private final Set<N> visited = new HashSet<>();
+  
+  DepthFirst<N> postOrder(N node) {
+    if (visited.add(node)) {
+      for (N successor : node.successors()) {
+        yield(() -> postOrder(successor));
+      }
+      yield(node);
+    }
+    return this;
+  }
+}
+
+Stream<N> postOrder = new DepthFirst<N>().postOrder(root).stream();
+```
+
+**Example 2: implement Fibonacci sequence as a stream:**
+
+```java
+class Fibonacci extends Iteration<Long> {
+  Fibonacci from(long v0, long v1) {
+    yield(v0);
+    yield(() -> from(v1, v0 + v1));
+  }
+}
+
+Stream<Long> fibonacci = new Fibonacci().from(0, 1).stream();
+    => [0, 1, 2, 3, 5, 8, ...]
 ```
 
 ## Optionals

@@ -19,8 +19,10 @@ import static java.util.Objects.requireNonNull;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Spliterator;
@@ -232,6 +234,29 @@ public final class MoreStreams {
           throw new IllegalStateException("Duplicate keys not allowed: " + a);
         }),
         BiStream::toMap);
+  }
+
+  /**
+   * Returns a collector that collects input elements into a list, which is then arranged by the
+   * {@code arranger} function before being wrapped as <em>immutable</em> list result.
+   * List elements are not allowed to be null.
+   *
+   * <p>Example usages: <ul>
+   * <li>{@code stream.collect(toListAndThen(Collections::reverse))} to collect to reverse order.
+   * <li>{@code stream.collect(toListAndThen(Collections::shuffle))} to collect and shuffle.
+   * <li>{@code stream.collect(toListAndThen(Collections::sort))} to collect and sort.
+   * </ul>
+   *
+   * @since 4.2
+   */
+  public static <T> Collector<T, ?, List<T>> toListAndThen(Consumer<? super List<T>> arranger) {
+    requireNonNull(arranger);
+    Collector<T, ?, List<T>> rejectingNulls =
+        Collectors.mapping(Objects::requireNonNull, Collectors.toCollection(ArrayList::new));
+    return Collectors.collectingAndThen(rejectingNulls, list -> {
+      arranger.accept(list);
+      return Collections.unmodifiableList(list);
+    });
   }
 
   /**

@@ -4,11 +4,11 @@
   <parent>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-root</artifactId>
-    <version>4.2-SNAPSHOT</version>
+    <version>4.5-SNAPSHOT</version>
   </parent>
   <groupId>com.google.mug</groupId>
   <artifactId>algorithms</artifactId>
-  <version>4.2-SNAPSHOT</version>
+  <version>4.5-SNAPSHOT</version>
   <name>algorithms</name>
   <url>http://maven.apache.org</url>
   <properties>
@@ -41,6 +41,10 @@
       <artifactId>truth</artifactId>
       <scope>test</scope>
       <version>0.42</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.truth.extensions</groupId>
+      <artifactId>truth-java8-extension</artifactId>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>

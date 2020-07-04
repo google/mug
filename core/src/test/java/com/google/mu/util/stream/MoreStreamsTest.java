@@ -19,6 +19,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.stream.BiStream.groupingValuesFrom;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
+import static com.google.mu.util.stream.MoreStreams.toListAndThen;
 import static com.google.mu.util.stream.MoreStreams.uniqueKeys;
 import static com.google.mu.util.stream.MoreStreams.whileNotEmpty;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
@@ -29,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +52,6 @@ import com.google.common.testing.NullPointerTester;
 
 @RunWith(JUnit4.class)
 public class MoreStreamsTest {
-
   @Test public void generateSingleElementStream() {
     assertThat(MoreStreams.generate(1, x -> Stream.empty()).collect(toList()))
         .containsExactly(1);
@@ -370,6 +371,23 @@ public class MoreStreamsTest {
     stack.push("two");
     assertThat(whileNotNull(stack::poll))
         .containsExactly("two", "one").inOrder();
+  }
+
+  @Test public void toListAndThen_reversed() {
+    assertThat(Stream.of(1, 2, 3).collect(toListAndThen(Collections::reverse)))
+        .containsExactly(3, 2, 1)
+        .inOrder();
+  }
+
+  @Test public void toListAndThen_nullRejected() {
+    assertThrows(
+        NullPointerException.class,
+        () -> Stream.of(1, null).collect(toListAndThen(Collections::reverse)));
+  }
+
+  @Test public void toListAndThen_immutable() {
+    List<Integer> list = Stream.of(1, 2).collect(toListAndThen(Collections::reverse));
+    assertThrows(UnsupportedOperationException.class, list::clear);
   }
 
   @Test public void testNulls() throws Exception {
