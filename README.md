@@ -205,7 +205,7 @@ class Fibonacci extends Iteration<Long> {
   }
 }
 
-Stream<long> fibonacci = new Fibonacci().from(0, 1).stream();
+Stream<Long> fibonacci = new Fibonacci().from(0, 1).stream();
     => [0, 1, 2, 3, 5, 8, ...]
 ```
 
