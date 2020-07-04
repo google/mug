@@ -21,6 +21,7 @@ import static java.util.Objects.requireNonNull;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Queue;
+import java.util.function.BiConsumer;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
@@ -127,19 +128,30 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
 
   private final class DepthFirst extends Iteration<N> {
     void inOrder(N root) {
-      N left = getLeft.apply(root);
-      if (left != null) yield(() -> inOrder(left));
-      yield(root);
-      N right = getRight.apply(root);
-      if (right != null) yield(() -> inOrder(right));
+      bottomUp(root, (l, r) -> {
+        inOrder(l);
+        yield(root);
+        inOrder(r);
+      });
     }
 
     void postOrder(N root) {
-      N left = getLeft.apply(root);
-      if (left != null) yield(() -> postOrder(left));
-      N right = getRight.apply(root);
-      if (right != null) yield(() -> postOrder(right));
-      yield(root);
+      bottomUp(root, (l, r) -> {
+        postOrder(l);
+        postOrder(r);
+        yield(root);
+      });
+    }
+
+    private void bottomUp(N node, BiConsumer<? super N, ? super N> descend) {
+      if (node == null) return;
+      N left = getLeft.apply(node);
+      N right = getRight.apply(node);
+      if (left == null && right == null) {  // Minimize allocation for leaf nodes.
+        yield(node);
+      } else {
+        yield(() -> descend.accept(left, right));
+      }
     }
   }
 
