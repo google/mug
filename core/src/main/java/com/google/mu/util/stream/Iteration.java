@@ -105,7 +105,9 @@ import java.util.stream.Stream;
  * }</pre>
  *
  * <p>Another potential use case may be to enhance the JDK {@link Stream#iterate} API with a
- * terminal condition. For example, we can simulate the "guess the number" game using binary search:
+ * terminal condition. For example, we can simulate the <a
+ * href="https://www.khanacademy.org/computing/computer-science/algorithms/intro-to-algorithms/a/a-guessing-game">
+ * Guess the Number</a> game using binary search:
  *
  * <pre>{@code
  * class GuessTheNumber extends Iteration<Integer> {
