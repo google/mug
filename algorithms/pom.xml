@@ -43,6 +43,10 @@
       <version>0.42</version>
     </dependency>
     <dependency>
+      <groupId>com.google.truth.extensions</groupId>
+      <artifactId>truth-java8-extension</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.junit.jupiter</groupId>
       <scope>test</scope>
       <artifactId>junit-jupiter-api</artifactId>
