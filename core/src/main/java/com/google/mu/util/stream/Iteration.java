@@ -15,10 +15,13 @@
 package com.google.mu.util.stream;
 
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
@@ -175,6 +178,54 @@ public class Iteration<T> {
   public final Iteration<T> yield(Continuation continuation) {
     stackFrame.push(continuation);
     return this;
+  }
+
+  /**
+   * Yields to the stream the result of {@code computation}. Upon evaluation, also passes the
+   * computation result to {@code consumer}. Useful when the computation result of a recursive call
+   * is needed. For example, if you have a recursive algorithm to sum all node values of a tree:
+   *
+   * <pre>{@code
+   * int sumNodeValues(Tree tree) {
+   *   if (tree == null) return 0;
+   *   return tree.value + sumNodeValues(tree.left) + sumNodeValues(tree.right);
+   * }
+   * }</pre>
+   *
+   * It can be transformed to iterative stream as in:
+   *
+   * <pre>{@code
+   * class SumNodeValues extends Iteration<Integer> {
+   *   SumNodeValues sum(Tree tree, AtomicInteger result) {
+   *     if (tree == null) return this;
+   *     AtomicInteger leftSum = new AtomicInteger();
+   *     AtomicInteger rightSum = new AtomicInteger();
+   *     yield(() -> sum(tree.left, leftSum));
+   *     yield(() -> sum(tree.right, rightSum));
+   *     yield(() -> tree.value + leftSum.get() + rightSum.get(), result::set);
+   *     return this;
+   *   }
+   * }
+   *
+   * Stream<Integer> sums =
+   *     new SumNodeValues()
+   *         .sum((root: 1, left: 2, right: 3), new AtomicInteger())
+   *         .stream();
+   *
+   *     => [2, 3, 6]
+   * }</pre>
+   *
+   * @since 4.5
+   */
+  public final Iteration<T> yield(
+      Supplier<? extends T> computation, Consumer<? super T> consumer) {
+    requireNonNull(computation);
+    requireNonNull(consumer);
+    return yield(() -> {
+      T result = computation.get();
+      consumer.accept(result);
+      yield(result);
+    });
   }
 
   /**
