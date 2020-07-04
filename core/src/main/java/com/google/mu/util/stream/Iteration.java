@@ -100,7 +100,7 @@ import java.util.stream.Stream;
  *     yield(() -> from(v1, v0 + v1));
  *   }
  * }
- * Stream<Long> stream = new Fibonacci().from(0, 1).stream();
+ * Stream<Long> fibonacci = new Fibonacci().from(0, 1).stream();
  * }</pre>
  *
  * <p>Another potential use case may be to enhance the JDK {@link Stream#iterate} API with a
