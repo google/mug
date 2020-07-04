@@ -22,23 +22,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
 /**
- * Iteratively (and <em>recursively</em>) {@link #yield yield()} elements into a lazy stream.
+ * Transforms (eagerly evaluated) recursive algorithms into <em>lazy</em> streams.
  *
- * <p>First and foremost, why "yield"? A C#-style yield return requires compiler support to be able
- * to create iterators or streams through imperative loops like:
- *
- * <pre>{@code
- * for (int i = 0; ; i++) {
- *   yield(i);
- * }
- * }</pre>
- *
- * For this kind of use cases, Java 8 and above have opted to answer with the Stream library. One
- * can use {@code IntStream.iterate(0, i -> i + 1)} or {@code MoreStreams.indexesFrom(0)} etc. It's
- * a non-goal for this library to solve the already-solved problem.
- *
- * <p>The Stream library however doesn't have support to make recursive algorithms iterative.
- * Imagine if you have a recursive binary tree traversal algorithm:
+ * <p>Imagine if you have a recursive binary tree traversal algorithm:
  *
  * <pre>{@code
  * void inOrder(Tree<T> tree) {
@@ -49,9 +35,7 @@ import java.util.stream.Stream;
  * }
  * }</pre>
  *
- * How do you provide an iterative API or even support infinite streams (users can still
- * short-circuit)? The {@code Iteration} class is designed to fill the gap by intuitively
- * transforming such recursive algorithms to iterative (potentially infinite) streams:
+ * It can be intuitively transformed to a stream as in:
  *
  * <pre>{@code
  * class DepthFirst<T> extends Iteration<T> {
@@ -105,6 +89,18 @@ import java.util.stream.Stream;
  * static <N> Stream<N> postOrderFrom(N node) {
  *   return new DepthFirst<>().postOrder(node).stream();
  * }
+ * }</pre>
+ *
+ * <p>And how about Fibonacci sequence as a lazy stream?
+ *
+ * <pre>{@code
+ * class Fibonacci extends Iteration<Long> {
+ *   Fibonacci from(long v0, long v1) {
+ *     yield(v0);
+ *     yield(() -> from(v1, v0 + v1));
+ *   }
+ * }
+ * Stream<Long> stream = new Fibonacci().from(0, 1).stream();
  * }</pre>
  *
  * <p>Another potential use case may be to enhance the JDK {@link Stream#iterate} API with a
@@ -209,11 +205,13 @@ public class Iteration<T> {
   }
 
   private T next() {
-    for (; ;) {
-      while (!stackFrame.isEmpty()) {
-        stack.push(stackFrame.pop());
+    for (Object top = stackFrame.poll(); ; top = stackFrame.poll()) {
+      if (top == null) {
+        top = stack.poll();
+      } else if (!stackFrame.isEmpty()) {
+        stack.push(top);
+        continue;
       }
-      Object top = stack.pollFirst();
       if (top instanceof Continuation) {
         ((Continuation) top).run();
       } else {

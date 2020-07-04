@@ -4,7 +4,7 @@
   <groupId>com.google.mug</groupId>
   <artifactId>mug-root</artifactId>
   <packaging>pom</packaging>
-  <version>4.4-SNAPSHOT</version>
+  <version>4.5-SNAPSHOT</version>
 
   <name>mug-root</name>
 
@@ -239,6 +239,7 @@
         <executions>
           <!-- always deploy sources on Nexus -->
           <execution>
+            <id>attach-sources</id>
             <goals>
               <goal>jar</goal>
             </goals>
