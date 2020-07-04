@@ -120,7 +120,7 @@ import java.util.stream.Stream;
  *     yield(mid);               // yield the guess.
  *     if (mid < secret) {
  *       yield(() -> guess(mid + 1, high, secret));
- *     } else if (mid > number) {
+ *     } else if (mid > secret) {
  *       yield(() -> guess(low, mid - 1, secret));
  *     }
  *     return this;
