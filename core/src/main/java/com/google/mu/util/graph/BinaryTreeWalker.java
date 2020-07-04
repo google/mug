@@ -127,30 +127,41 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
   }
 
   private final class DepthFirst extends Iteration<N> {
-    void inOrder(N root) {
-      bottomUp(root, (l, r) -> {
-        inOrder(l);
-        yield(root);
-        inOrder(r);
-      });
-    }
-
-    void postOrder(N root) {
-      bottomUp(root, (l, r) -> {
-        postOrder(l);
-        postOrder(r);
-        yield(root);
-      });
-    }
-
-    private void bottomUp(N node, BiConsumer<? super N, ? super N> descend) {
-      if (node == null) return;
+    private void bottomUp(N node, BiConsumer<? super N, ? super N> order) {
       N left = getLeft.apply(node);
       N right = getRight.apply(node);
       if (left == null && right == null) {  // Minimize allocation for leaf nodes.
         yield(node);
       } else {
-        yield(() -> descend.accept(left, right));
+        yield(() -> order.accept(left, right));
+      }
+    }
+
+    void inOrder(N root) {
+      N left = getLeft.apply(root);
+      N right = getRight.apply(root);
+      if (left == null && right == null) {  // Minimize allocation for leaf nodes.
+        yield(root);
+      } else {
+        yield(() -> {
+          if (left != null) inOrder(left);
+          yield(root);
+          if (right != null) inOrder(right);
+        });
+      }
+    }
+
+    void postOrder(N root) {
+      N left = getLeft.apply(root);
+      N right = getRight.apply(root);
+      if (left == null && right == null) {  // Minimize allocation for leaf nodes.
+        yield(root);
+      } else {
+        yield(() -> {
+          if (left != null) postOrder(left);
+          if (right != null) postOrder(right);
+          yield(root);
+        });
       }
     }
   }
