@@ -175,7 +175,7 @@ Map<Day, Long> siteTrafficHistogram = pages.stream()
 
 #### [yield](https://google.github.io/mug/apidocs/com/google/mu/util/stream/Iteration.html)
 
-**Example 1: turn your recursive algorithm into a Stream (without using threads):**
+**Example 1: turn your recursive algorithm into a _lazy_ Stream:**
 
 ```java
 class DepthFirst<N> extends Iteration<N> {
@@ -195,31 +195,18 @@ class DepthFirst<N> extends Iteration<N> {
 Stream<N> postOrder = new DepthFirst<N>().postOrder(root).stream();
 ```
 
-**Example 2: show me how my binary search algorithm finds the target:**
+**Example 2: implement Fibonacci sequence as a stream:**
 
 ```java
-class BinarySearch extends Iteration<Integer> {
- BinarySearch search(int[] arr, int low, int high, int target) {
-   if (low > high) {
-     return this;
-   }
-   int mid = (low + high) / 2;
-   yield(arr[mid]);
-   if (arr[mid] < target) {
-     yield(() -> search(arr, mid + 1, high, target));
-   } else if (arr[mid] > target) {
-     yield(() -> search(arr, low, mid - 1, target));
-   }
-   return this;
- }
+class Fibonacci extends Iteration<Long> {
+  Fibonacci from(long v0, long v1) {
+    yield(v0);
+    yield(() -> from(v1, v0 + v1));
+  }
 }
 
-static Stream<Integer> binarySearchTrials(int[] arr, int target) {
- return new BinarySearch().search(arr, 0, arr.length - 1, target).stream();
-}
-
-binarySearchTrials([1, 2, 3, 4, 5, 6, 7, 8, 9], 8)
-    => [5, 7, 8]  // First tried 5, then 7, finally 8.
+Stream<long> fibonacci = new Fibonacci().from(0, 1).stream();
+    => [0, 1, 2, 3, 5, 8, ...]
 ```
 
 ## Optionals
