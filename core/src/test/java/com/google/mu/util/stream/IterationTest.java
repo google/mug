@@ -233,34 +233,34 @@ public class IterationTest {
   }
 
   @Test public void binarySearchTrials() {
-    assertThat(binarySearchTrials(new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9}, 8))
+    assertThat(guessTheNumber(9, 8))
         .containsExactly(5, 7, 8)
         .inOrder();
-    assertThat(binarySearchTrials(new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9}, 1))
+    assertThat(guessTheNumber(9, 1))
       .containsExactly(5, 2, 1)
       .inOrder();
-    assertThat(binarySearchTrials(new int[] {10, 20, 30, 40, 50, 60, 70, 80, 90}, 35))
-      .containsExactly(50, 20, 30, 40)
+    assertThat(guessTheNumber(100, 200))
+      .containsExactly(50, 75, 88, 94, 97, 99, 100)
       .inOrder();
   }
 
-  private static final class IterativeBinarySearch extends Iteration<Integer> {
-     IterativeBinarySearch search(int[] arr, int low, int high, int target) {
+  private static final class GuessTheNumber extends Iteration<Integer> {
+    GuessTheNumber guess(int low, int high, int number) {
        if (low > high) {
          return this;
        }
        int mid = (low + high) / 2;
-       yield(arr[mid]);
-       if (arr[mid] < target) {
-         yield(() -> search(arr, mid + 1, high, target));
-       } else if (arr[mid] > target) {
-         yield(() -> search(arr, low, mid - 1, target));
+       yield(mid);
+       if (mid < number) {
+         yield(() -> guess(mid + 1, high, number));
+       } else if (mid > number) {
+         yield(() -> guess(low, mid - 1, number));
        }
        return this;
      }
    }
 
-   static Stream<Integer> binarySearchTrials(int[] arr, int target) {
-     return new IterativeBinarySearch().search(arr, 0, arr.length - 1, target).stream();
+   static Stream<Integer> guessTheNumber(int max, int number) {
+     return new GuessTheNumber().guess(1, max, number).stream();
    }
 }
