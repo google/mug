@@ -105,33 +105,32 @@ import java.util.stream.Stream;
  * }</pre>
  *
  * <p>Another potential use case may be to enhance the JDK {@link Stream#iterate} API with a
- * terminal condition. For example, in a binary search, we can generate a stream of "trials" until
- * the target is found or the array has been fully examined:
+ * terminal condition. For example, we can simulate the "guess the number" game using binary search:
  *
  * <pre>{@code
- * class BinarySearch extends Iteration<Integer> {
- *   BinarySearch search(int[] arr, int low, int high, int target) {
+ * class GuessTheNumber extends Iteration<Integer> {
+ *   GuessTheNumber guess(int low, int high, int number) {
  *     if (low > high) {
  *       return this;
  *     }
  *     int mid = (low + high) / 2;
- *     yield(arr[mid]);               // yield the trial.
- *     if (arr[mid] < target) {
- *       yield(() -> search(arr, mid + 1, high, target));
- *     } else if (arr[mid] > target) {
- *       yield(() -> search(arr, low, mid - 1, target));
+ *     yield(mid);               // yield the guess.
+ *     if (guess < number) {
+ *       yield(() -> guess(mid + 1, high, number));
+ *     } else if (guess > number) {
+ *       yield(() -> guess(low, mid - 1, number));
  *     }
  *     return this;
  *   }
  * }
  *
- * static Stream<Integer> binarySearchTrials(int[] arr, int target) {
- *   return new BinarySearch().search(arr, 0, arr.length - 1, target).stream();
+ * static Stream<Integer> play(int max, int number) {
+ *   return new GuessTheNumber().guess(1, max, number).stream();
  * }
  * }</pre>
  *
- * Calling {@code binarySearchTrials([1, 2, 3, 4, 5, 6, 7, 8. 9], 8)} will generate a stream of
- * {@code [5, 7, 8]} each being an element examined during the binary search, in order.
+ * Calling {@code play(9, 8)} will generate a stream of {@code [5, 7, 8]} each being a guess during
+ * the binary search process, in order.
  *
  * <p>While not required, users are encouraged to create a subclass and then be able to call {@code
  * yield()} as if it were a keyword.
