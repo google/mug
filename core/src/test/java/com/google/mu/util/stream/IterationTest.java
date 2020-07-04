@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.stream.IterationTest.Tree.tree;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import org.junit.Test;
@@ -92,6 +93,28 @@ public class IterationTest {
 
   private static <T> Stream<T> postOrderFrom(Tree<T> tree) {
     return new DepthFirst<T>().postOrder(tree).stream();
+  }
+
+  @Test public void sumStream() {
+    assertThat(computeSum(tree(1))).containsExactly(1);
+    assertThat(computeSum(tree(1).setLeft(tree(2)).setRight(tree(3).setLeft(5))))
+        .containsExactly(2, 5, 8, 11)
+        .inOrder();
+  }
+
+  private static Stream<Integer> computeSum(Tree<Integer> tree) {
+    class SumNodes extends Iteration<Integer> {
+      SumNodes sum(Tree<Integer> tree, AtomicInteger result) {
+        if (tree == null) return this;
+        AtomicInteger fromLeft = new AtomicInteger();
+        AtomicInteger fromRight = new AtomicInteger();
+        yield(() -> sum(tree.left(), fromLeft));
+        yield(() -> sum(tree.right(), fromRight));
+        yield(() -> tree.value() + fromLeft.get() + fromRight.get(), result::set);
+        return this;
+      }
+    }
+    return new SumNodes().sum(tree, new AtomicInteger()).stream();
   }
 
   private static final class DepthFirst<T> extends Iteration<T> {
