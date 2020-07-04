@@ -107,35 +107,33 @@ import java.util.stream.Stream;
  * Stream<Long> fibonacci = new Fibonacci().from(0, 1).stream();
  * }</pre>
  *
- * <p>Another potential use case may be to enhance the JDK {@link Stream#iterate} API with a
- * terminal condition. For example, we can simulate the <a
+ * <p>Another potential use case is to enhance the JDK {@link Stream#iterate} API with a terminal
+ * condition. For example, we can simulate the <a
  * href="https://www.khanacademy.org/computing/computer-science/algorithms/intro-to-algorithms/a/a-guessing-game">
- * Guess the Number</a> game using binary search:
+ * Guess the Number</a> game by yielding our guesses every round until success:
  *
  * <pre>{@code
  * class GuessTheNumber extends Iteration<Integer> {
- *   GuessTheNumber guess(int low, int high, int number) {
- *     if (low > high) {
- *       return this;
- *     }
+ *   GuessTheNumber guess(int low, int high, int secret) {
+ *     if (low > high) return this;
  *     int mid = (low + high) / 2;
  *     yield(mid);               // yield the guess.
- *     if (guess < number) {
- *       yield(() -> guess(mid + 1, high, number));
- *     } else if (guess > number) {
- *       yield(() -> guess(low, mid - 1, number));
+ *     if (mid < secret) {
+ *       yield(() -> guess(mid + 1, high, secret));
+ *     } else if (mid > number) {
+ *       yield(() -> guess(low, mid - 1, secret));
  *     }
  *     return this;
  *   }
  * }
  *
- * static Stream<Integer> play(int max, int number) {
- *   return new GuessTheNumber().guess(1, max, number).stream();
+ * static Stream<Integer> play(int max, int secret) {
+ *   return new GuessTheNumber().guess(1, max, secret).stream();
  * }
  * }</pre>
  *
  * Calling {@code play(9, 8)} will generate a stream of {@code [5, 7, 8]} each being a guess during
- * the binary search process, in order.
+ * the game, in order.
  *
  * <p>While not required, users are encouraged to create a subclass and then be able to call {@code
  * yield()} as if it were a keyword.
