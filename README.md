@@ -3,7 +3,7 @@ Disclaimer: This is not an official Google product.
 # Mug
 A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/index.html)), with 0 deps. ![](https://travis-ci.org/google/mug.svg?branch=master)
 
-* Stream utilities ([BiStream](#bistream-streams-pairs-of-objects), [MoreStreams](#morestreams), [yield()](#yield)):  
+* Stream utilities ([BiStream](#bistream-streams-pairs-of-objects), [MoreStreams](#morestreams), [Iteration](#iteration)):  
     `histogram = zip(times, counts).toMap();`
 * [Optionals](#optionals) provides extra utilities for Optional:  
     `optional(id.length() > 0, id)`
@@ -173,9 +173,9 @@ Map<Day, Long> siteTrafficHistogram = pages.stream()
     .toMap();
 ```
 
-#### [yield](https://google.github.io/mug/apidocs/com/google/mu/util/stream/Iteration.html)
+#### [Iteration](https://google.github.io/mug/apidocs/com/google/mu/util/stream/Iteration.html)
 
-**Example 1: turn your recursive algorithm into a Stream (without using threads):**
+**Example 1: turn your recursive algorithm into a _lazy_ Stream:**
 
 ```java
 class DepthFirst<N> extends Iteration<N> {
@@ -195,31 +195,18 @@ class DepthFirst<N> extends Iteration<N> {
 Stream<N> postOrder = new DepthFirst<N>().postOrder(root).stream();
 ```
 
-**Example 2: show me how my binary search algorithm finds the target:**
+**Example 2: implement Fibonacci sequence as a stream:**
 
 ```java
-class BinarySearch extends Iteration<Integer> {
- BinarySearch search(int[] arr, int low, int high, int target) {
-   if (low > high) {
-     return this;
-   }
-   int mid = (low + high) / 2;
-   yield(arr[mid]);
-   if (arr[mid] < target) {
-     yield(() -> search(arr, mid + 1, high, target));
-   } else if (arr[mid] > target) {
-     yield(() -> search(arr, low, mid - 1, target));
-   }
-   return this;
- }
+class Fibonacci extends Iteration<Long> {
+  Fibonacci from(long v0, long v1) {
+    yield(v0);
+    yield(() -> from(v1, v0 + v1));
+  }
 }
 
-static Stream<Integer> binarySearchTrials(int[] arr, int target) {
- return new BinarySearch().search(arr, 0, arr.length - 1, target).stream();
-}
-
-binarySearchTrials([1, 2, 3, 4, 5, 6, 7, 8, 9], 8)
-    => [5, 7, 8]  // First tried 5, then 7, finally 8.
+Stream<Long> fibonacci = new Fibonacci().from(0, 1).stream();
+    => [0, 1, 2, 3, 5, 8, ...]
 ```
 
 ## Optionals
