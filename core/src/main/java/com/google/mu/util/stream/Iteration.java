@@ -98,6 +98,7 @@ import java.util.stream.Stream;
  *   Fibonacci from(long v0, long v1) {
  *     yield(v0);
  *     yield(() -> from(v1, v0 + v1));
+ *     return this;
  *   }
  * }
  * Stream<Long> fibonacci = new Fibonacci().from(0, 1).stream();
