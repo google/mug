@@ -3,7 +3,7 @@ Disclaimer: This is not an official Google product.
 # Mug
 A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/index.html)), with 0 deps. ![](https://travis-ci.org/google/mug.svg?branch=master)
 
-* Stream utilities ([BiStream](#bistream-streams-pairs-of-objects), [MoreStreams](#morestreams), [yield()](#yield)):  
+* Stream utilities ([BiStream](#bistream-streams-pairs-of-objects), [MoreStreams](#morestreams), [Iteration](#iteration)):  
     `histogram = zip(times, counts).toMap();`
 * [Optionals](#optionals) provides extra utilities for Optional:  
     `optional(id.length() > 0, id)`
@@ -173,7 +173,7 @@ Map<Day, Long> siteTrafficHistogram = pages.stream()
     .toMap();
 ```
 
-#### [yield](https://google.github.io/mug/apidocs/com/google/mu/util/stream/Iteration.html)
+#### [Iteration](https://google.github.io/mug/apidocs/com/google/mu/util/stream/Iteration.html)
 
 **Example 1: turn your recursive algorithm into a _lazy_ Stream:**
 
