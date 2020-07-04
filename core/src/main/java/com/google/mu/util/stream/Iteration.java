@@ -209,11 +209,13 @@ public class Iteration<T> {
   }
 
   private T next() {
-    for (; ;) {
-      while (!stackFrame.isEmpty()) {
-        stack.push(stackFrame.pop());
+    for (Object top = stackFrame.poll(); ; top = stackFrame.poll()) {
+      if (top == null) {
+        top = stack.poll();
+      } else if (!stackFrame.isEmpty()) {
+        stack.push(top);
+        continue;
       }
-      Object top = stack.pollFirst();
       if (top instanceof Continuation) {
         ((Continuation) top).run();
       } else {
