@@ -128,18 +128,30 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
   private final class DepthFirst extends Iteration<N> {
     void inOrder(N root) {
       N left = getLeft.apply(root);
-      if (left != null) yield(() -> inOrder(left));
-      yield(root);
       N right = getRight.apply(root);
-      if (right != null) yield(() -> inOrder(right));
+      if (left == null && right == null) {  // Minimize allocation for leaf nodes.
+        yield(root);
+      } else {
+        yield(() -> {
+          if (left != null) inOrder(left);
+          yield(root);
+          if (right != null) inOrder(right);
+        });
+      }
     }
 
     void postOrder(N root) {
       N left = getLeft.apply(root);
-      if (left != null) yield(() -> postOrder(left));
       N right = getRight.apply(root);
-      if (right != null) yield(() -> postOrder(right));
-      yield(root);
+      if (left == null && right == null) {  // Minimize allocation for leaf nodes.
+        yield(root);
+      } else {
+        yield(() -> {
+          if (left != null) postOrder(left);
+          if (right != null) postOrder(right);
+          yield(root);
+        });
+      }
     }
   }
 
