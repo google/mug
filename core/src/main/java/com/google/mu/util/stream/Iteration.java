@@ -165,8 +165,8 @@ import java.util.stream.Stream;
  *
  * <p>This class and the generated streams are stateful and not safe to be used in multi-threads.
  *
- * <p>Like most iterative algorithms, yielding is implemented using a stack. No threads or
- * synchronization is used.
+ * <p>Like most manual iterative adaptation of recursive algorithms, yielding is implemented using
+ * a stack. No threads or synchronization is used.
  *
  * <p>Nulls are not allowed.
  *
