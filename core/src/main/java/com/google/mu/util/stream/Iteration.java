@@ -65,12 +65,12 @@ import java.util.stream.Stream;
  * }
  * }</pre>
  *
- * This unfortunately doesn't scale, for two reasons: <ul>
+ * This unfortunately doesn't scale, for two reasons: <ol>
  * <li>The code will recursively call {@code inOrder()} all the way from the root node to the leaf
  *     node. If the tree is deep, you may run into stack overflow error.
  * <li>{@code flatMap()} was not lazy in JDK 8. While it was later fixed in JDK 10 and backported
  *     to JDK 8, the JDK 8 you use may not carry the fix.
- * </ul>
+ * </ol>
  *
  * <p>Similarly, the following recursive graph post-order traversal code:
  *
