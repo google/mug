@@ -6,7 +6,7 @@
       <version>4.5-SNAPSHOT</version>
       <relativePath>../pom.xml</relativePath>
   </parent>
-  <artifactId>mug</artifactId>
+  <artifactId>mug-core</artifactId>
   <packaging>jar</packaging>
 
   <name>core</name>

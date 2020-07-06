@@ -7,7 +7,7 @@
     <version>4.5-SNAPSHOT</version>
   </parent>
   <groupId>com.google.mug</groupId>
-  <artifactId>algorithms</artifactId>
+  <artifactId>mug-algorithms</artifactId>
   <version>4.5-SNAPSHOT</version>
   <name>algorithms</name>
   <url>http://maven.apache.org</url>
