@@ -20,7 +20,7 @@
 
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>mug</artifactId>
+      <artifactId>mug-core</artifactId>
       <version>${project.version}</version>
     </dependency>
 
