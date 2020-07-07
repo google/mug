@@ -38,7 +38,8 @@ import java.util.stream.Stream;
  * }
  * }</pre>
  *
- * It can be intuitively transformed to a stream as in:
+ * Instead of traversing eagerly and hard coding {@code System.out.println()}, it can be intuitively
+ * transformed to a lazy stream as in:
  *
  * <pre>{@code
  * class DepthFirst<T> extends Iteration<T> {
