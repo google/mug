@@ -290,12 +290,11 @@ public class Iteration<T> {
     Object top = stackFrame.poll();
     if (top == null) {
       return stack.poll();
-    } else {
-      for (Object second = stackFrame.poll(); second != null; second = stackFrame.poll()) {
-        stack.push(top);
-        top = second;
-      }
-      return top;
     }
+    for (Object second = stackFrame.poll(); second != null; second = stackFrame.poll()) {
+      stack.push(top);
+      top = second;
+    }
+    return top;
   }
 }
