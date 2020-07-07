@@ -274,13 +274,8 @@ public class Iteration<T> {
   }
 
   private T next() {
-    for (Object top = stackFrame.poll(); ; top = stackFrame.poll()) {
-      if (top == null) {
-        top = stack.poll();
-      } else if (!stackFrame.isEmpty()) {
-        stack.push(top);
-        continue;
-      }
+    for (; ;) {
+      Object top = pop();
       if (top instanceof Continuation) {
         ((Continuation) top).run();
       } else {
@@ -288,6 +283,19 @@ public class Iteration<T> {
         T element = (T) top;
         return element;
       }
+    }
+  }
+
+  private Object pop() {
+    Object top = stackFrame.poll();
+    if (top == null) {
+      return stack.poll();
+    } else {
+      for (Object second = stackFrame.poll(); second != null; second = stackFrame.poll()) {
+        stack.push(top);
+        top = second;
+      }
+      return top;
     }
   }
 }
