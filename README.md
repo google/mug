@@ -202,6 +202,7 @@ class Fibonacci extends Iteration<Long> {
   Fibonacci from(long v0, long v1) {
     yield(v0);
     yield(() -> from(v1, v0 + v1));
+    return this;
   }
 }
 
