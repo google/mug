@@ -44,15 +44,22 @@ public class BiIteration<L, R> {
     return this;
   }
 
+  /** @deprecated Use {@link #start} instead. */
+  @Deprecated
+  public final BiStream<L, R> stream() {
+    return start();
+  }
+
   /**
-   * Returns the {@code BiStreram} that iterates through the {@link #yield yielded} pairs.
+   * Starts iteration over the {@link #yield yielded} pairs.
    *
    * <p>Because a {@code BiIteration} instance is stateful and mutable, {@code stream()} can be
    * called at most once per instance.
    *
    * @throws IllegalStateException if {@code stream()} has already been called.
+   * @since 4.5
    */
-  public final BiStream<L, R> stream() {
-    return BiStream.from(iteration.stream());
+  public final BiStream<L, R> start() {
+    return BiStream.from(iteration.start());
   }
 }
