@@ -25,13 +25,12 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
- * An implementation of <em>lazy</em> streams for Java. {@link Iteration} is used to create an
- * iterable sequence that computes each value on-demand. Execution is paused after each value in the
- * sequence is "yielded", and resumes when the iterator requests the next value (similar to a <a
- * href="https://en.wikipedia.org/wiki/Generator_(computer_programming)">generator</a>).
+ * Transforms eager, recursive algorithms into <em>lazy</em> streams. {@link Iteration} is used to
+ * <a href="https://en.wikipedia.org/wiki/Generator_(computer_programming)">generate</a> a sequence
+ * that computes each value on-demand.
  *
- * <p>{@code Iteration} can be used to declare tail-recursive algorithms as iterations. The size of
- * the stack is O(1) and execution is deferred.
+ * <p>If transforming tail-recursive algorithms, the space requirement is O(1) and execution is
+ * deferred.
  *
  * <p>Imagine if you have a recursive binary tree traversal algorithm:
  *
