@@ -29,9 +29,6 @@ import java.util.stream.Stream;
  * <a href="https://en.wikipedia.org/wiki/Generator_(computer_programming)">generate</a> a sequence
  * that computes each value on-demand.
  *
- * <p>If transforming tail-recursive algorithms, the space requirement is O(1) and execution is
- * deferred.
- *
  * <p>Imagine if you have a recursive binary tree traversal algorithm:
  *
  * <pre>{@code
@@ -157,6 +154,9 @@ import java.util.stream.Stream;
  *
  * Calling {@code play(9, 8)} will generate a stream of {@code [5, 7, 8]} each being a guess during
  * the game, in order.
+ *
+ * <p>If transforming tail-recursive algorithms, the space requirement is O(1) and execution is
+ * deferred.
  *
  * <p>While not required, users are encouraged to create a subclass and then be able to call {@code
  * yield()} as if it were a keyword.
