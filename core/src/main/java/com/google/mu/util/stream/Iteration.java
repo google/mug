@@ -25,7 +25,9 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
- * Transforms (eagerly evaluated) recursive algorithms into <em>lazy</em> streams.
+ * Transforms eager, recursive algorithms into <em>lazy</em> streams. {@link Iteration} is used to
+ * <a href="https://en.wikipedia.org/wiki/Generator_(computer_programming)">generate</a> a sequence
+ * that computes each value on-demand.
  *
  * <p>Imagine if you have a recursive binary tree traversal algorithm:
  *
@@ -38,7 +40,8 @@ import java.util.stream.Stream;
  * }
  * }</pre>
  *
- * It can be intuitively transformed to a stream as in:
+ * Instead of traversing eagerly and hard coding {@code System.out.println()}, it can be intuitively
+ * transformed to a lazy stream as in:
  *
  * <pre>{@code
  * class DepthFirst<T> extends Iteration<T> {
@@ -51,7 +54,7 @@ import java.util.stream.Stream;
  * }
  *
  * static <T> Stream<T> inOrderFrom(Tree<T> root) {
- *   return new DepthFirst<>().inOrder(root).stream();
+ *   return new DepthFirst<>().inOrder(root).start();
  * }
  * }</pre>
  *
@@ -107,7 +110,7 @@ import java.util.stream.Stream;
  * }
  *
  * static <N> Stream<N> postOrderFrom(N node) {
- *   return new DepthFirst<>().postOrder(node).stream();
+ *   return new DepthFirst<>().postOrder(node).start();
  * }
  * }</pre>
  *
@@ -121,7 +124,7 @@ import java.util.stream.Stream;
  *     return this;
  *   }
  * }
- * Stream<Long> fibonacci = new Fibonacci().from(0, 1).stream();
+ * Stream<Long> fibonacci = new Fibonacci().from(0, 1).start();
  * }</pre>
  *
  * <p>Another potential use case is to enhance the JDK {@link Stream#iterate} API with a terminal
@@ -145,12 +148,15 @@ import java.util.stream.Stream;
  * }
  *
  * static Stream<Integer> play(int max, int secret) {
- *   return new GuessTheNumber().guess(1, max, secret).stream();
+ *   return new GuessTheNumber().guess(1, max, secret).start();
  * }
  * }</pre>
  *
  * Calling {@code play(9, 8)} will generate a stream of {@code [5, 7, 8]} each being a guess during
  * the game, in order.
+ *
+ * <p>If transforming tail-recursive algorithms, the space requirement is O(1) and execution is
+ * deferred.
  *
  * <p>While not required, users are encouraged to create a subclass and then be able to call {@code
  * yield()} as if it were a keyword.
@@ -159,11 +165,11 @@ import java.util.stream.Stream;
  * lazy and does not evaluate until the stream iterates over it. So it's critical that <em>all side
  * effects</em> should be wrapped inside {@code Continuation} objects passed to {@code yield()}.
  *
- * <p>On the other hand, unlike C#'s "yield return" keyword, {@code yield()} is a normal Java method
- * and doesn't "return" the control to the Stream caller. Laziness is achieved by wrapping code
- * block inside the {@code Continuation} lambda.
+ * <p>Unlike Python's yield statement or C#'s yield return, this {@code yield()} is a normal Java
+ * method. It doesn't "return" execution to the caller. Laziness is achieved by wrapping code block
+ * inside the {@code Continuation} lambda.
  *
- * <p>This class and the generated streams are stateful and not safe to be used in multi-threads.
+ * <p>This class is not threadsafe.
  *
  * <p>Like most manual iterative adaptation of recursive algorithms, yielding is implemented using
  * a stack. No threads or synchronization is used.
@@ -175,7 +181,7 @@ import java.util.stream.Stream;
 public class Iteration<T> {
   private final Deque<Object> stack = new ArrayDeque<>();
   private final Deque<Object> stackFrame = new ArrayDeque<>(8);
-  private final AtomicBoolean streamed = new AtomicBoolean();
+  private final AtomicBoolean started = new AtomicBoolean();
 
   /** Yields {@code element} to the result stream. */
   public final Iteration<T> yield(T element) {
@@ -225,7 +231,7 @@ public class Iteration<T> {
    * Stream<Integer> sums =
    *     new SumNodeValues()
    *         .sum((root: 1, left: 2, right: 3), new AtomicInteger())
-   *         .stream();
+   *         .start();
    *
    *     => [2, 3, 6]
    * }</pre>
@@ -243,17 +249,24 @@ public class Iteration<T> {
     });
   }
 
+  /** @deprecated Use {@link #start} instead. */
+  @Deprecated
+  public final Stream<T> stream() {
+    return start();
+  }
+
   /**
-   * Returns the stream that iterates through the {@link #yield yielded} elements.
+   * Starts iteration over the {@link #yield yielded} elements.
    *
-   * <p>Because an {@code Iteration} instance is stateful and mutable, {@code stream()} can be
+   * <p>Because an {@code Iteration} instance is stateful and mutable, {@code start()} can be
    * called at most once per instance.
    *
-   * @throws IllegalStateException if {@code stream()} has already been called.
+   * @throws IllegalStateException if {@code start()} has already been called.
+   * @since 4.5
    */
-  public final Stream<T> stream() {
-    if (streamed.getAndSet(true)) {
-      throw new IllegalStateException("Iteration already streamed.");
+  public final Stream<T> start() {
+    if (started.getAndSet(true)) {
+      throw new IllegalStateException("Iteration already started.");
     }
     return whileNotNull(this::next);
   }
@@ -273,13 +286,8 @@ public class Iteration<T> {
   }
 
   private T next() {
-    for (Object top = stackFrame.poll(); ; top = stackFrame.poll()) {
-      if (top == null) {
-        top = stack.poll();
-      } else if (!stackFrame.isEmpty()) {
-        stack.push(top);
-        continue;
-      }
+    for (; ;) {
+      Object top = poll();
       if (top instanceof Continuation) {
         ((Continuation) top).run();
       } else {
@@ -288,5 +296,17 @@ public class Iteration<T> {
         return element;
       }
     }
+  }
+
+  private Object poll() {
+    Object top = stackFrame.poll();
+    if (top == null) {
+      return stack.poll();
+    }
+    for (Object second = stackFrame.poll(); second != null; second = stackFrame.poll()) {
+      stack.push(top);
+      top = second;
+    }
+    return top;
   }
 }

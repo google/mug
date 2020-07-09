@@ -19,12 +19,11 @@ import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayDeque;
+import java.util.BitSet;
 import java.util.Deque;
 import java.util.Queue;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
-
-import com.google.mu.util.stream.Iteration;
 
 /**
  * Walker for binary tree topology (see {@link Walker#inBinaryTree Walker.inBinaryTree()}).
@@ -85,12 +84,7 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
    * }</pre>
    */
   public Stream<N> postOrderFrom(Iterable<? extends N> roots) {
-    DepthFirst iteration = new DepthFirst();
-    for (N root : roots) {
-      requireNonNull(root);
-      iteration.yield(() -> iteration.postOrder(root));
-    }
-    return iteration.stream();
+    return whileNotNull(new PostOrder(roots)::nextOrNull);
   }
 
   /**
@@ -106,12 +100,7 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
    * Empty stream is returned if {@code roots} is empty.
    */
   public Stream<N> inOrderFrom(Iterable<? extends N> roots) {
-    DepthFirst iteration = new DepthFirst();
-    for (N root : roots) {
-      requireNonNull(root);
-      iteration.yield(() -> iteration.inOrder(root));
-    }
-    return iteration.stream();
+    return whileNotNull(new InOrder(roots)::nextOrNull);
   }
 
   private Stream<N> topDown(Iterable<? extends N> roots, InsertionOrder order) {
@@ -125,33 +114,74 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
         });
   }
 
-  private final class DepthFirst extends Iteration<N> {
-    void inOrder(N root) {
-      N left = getLeft.apply(root);
-      N right = getRight.apply(root);
-      if (left == null && right == null) {  // Minimize allocation for leaf nodes.
-        yield(root);
-      } else {
-        yield(() -> {
-          if (left != null) inOrder(left);
-          yield(root);
-          if (right != null) inOrder(right);
-        });
-      }
+  private final class InOrder {
+    private final Queue<N> roots;
+    private final Deque<N> leftPath = new ArrayDeque<>();
+    private N right;  // if set, we traverse it in the next step.
+
+    InOrder(Iterable<? extends N> roots) {
+      this.roots = toDeque(roots);
     }
 
-    void postOrder(N root) {
-      N left = getLeft.apply(root);
-      N right = getRight.apply(root);
-      if (left == null && right == null) {  // Minimize allocation for leaf nodes.
-        yield(root);
-      } else {
-        yield(() -> {
-          if (left != null) postOrder(left);
-          if (right != null) postOrder(right);
-          yield(root);
-        });
+    N nextOrNull() {
+      // 1. Each time we return the top of the `leftPath` stack.
+      // 2. Before a node is returned, its right child is set to be traversed next.
+      // 3. when stack is empty, traverse the next root.
+      // 4. When either a root or `right` begins to be traversed,
+      //    the node and its left-most descendants are pushed onto the `leftPath` stack.
+      if (hasNextAsOf(right) || hasNextAsOf(roots.poll())) {
+        N node = leftPath.pop();
+        // Store right child in a field rather than expanding its left path immediately,
+        // this way we avoid calling getRight until necessary. Expanding lazily allows us to be
+        // short-circuitable in case the right node has infinite depth.
+        right = getRight.apply(node);
+        return node;
       }
+      return null;
+    }
+
+    private boolean hasNextAsOf(final N node) {
+      for (N n = node; n != null; n = getLeft.apply(n)) {
+        leftPath.push(n);
+      }
+      return !leftPath.isEmpty();
+    }
+  };
+
+  private final class PostOrder {
+    private final Queue<N> roots;
+    private final Deque<N> leftPath = new ArrayDeque<>();
+    private final BitSet ready = new BitSet();
+
+    PostOrder(Iterable<? extends N> roots) {
+      this.roots = toDeque(roots);
+    }
+
+    N nextOrNull() {
+      // 1. Keep extra `ready` state to remember whether a node's right child has been traversed.
+      // 2. If the top of `leftPath` stack is `ready`, it's returned.
+      // 3. If not ready, traverse the right child.
+      // 4. when stack is empty, traverse the next root.
+      // 5. When either a root or `right` begins to be traversed,
+      //    the node and its left-most descendants are pushed onto the `leftPath` stack.
+      for (N right = null;
+          hasNextAsOf(right) || hasNextAsOf(roots.poll());
+          right = getRight.apply(leftPath.getFirst()), ready.set(leftPath.size() - 1)) {
+        // We could have just compared the previously returned node with the current top.right,
+        // if we could depend on a concrete binary tree data structure, where the right child
+        // is an idempotent field. But it'd be extra contractual burden to carry.
+        // Using a BitSet accomplishes the post order, with minimal overhead.
+        if (ready.get(leftPath.size() - 1)) return leftPath.pop();
+      }
+      return null;
+    }
+
+    private boolean hasNextAsOf(final N node) {
+      for (N n = node; n != null; n = getLeft.apply(n)) {
+        ready.clear(leftPath.size());
+        leftPath.push(n);
+      }
+      return !leftPath.isEmpty();
     }
   }
 

@@ -37,8 +37,8 @@ public class BiIterationTest {
 
   @Test public void oneTimeIteration() {
     BiIteration<String, String> iteration = new BiIteration<>();
-    iteration.stream();
-    assertThrows(IllegalStateException.class, iteration::stream);
+    iteration.start();
+    assertThrows(IllegalStateException.class, iteration::start);
   }
 
   @Test public void testNulls() {
@@ -63,8 +63,7 @@ public class BiIterationTest {
 
    static ImmutableListMultimap<Integer, Integer> binarySearchTrials(int[] arr, int target) {
      return new IterativeBinarySearch()
-         .search(arr, 0, arr.length - 1, target)
-         .stream()
+     .search(arr, 0, arr.length - 1, target).start()
          .collect(ImmutableListMultimap::toImmutableListMultimap);
    }
 }
