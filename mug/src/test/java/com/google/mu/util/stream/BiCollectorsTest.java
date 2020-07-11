@@ -14,26 +14,24 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
+import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.util.stream.BiCollectors.groupingBy;
 import static com.google.mu.util.stream.BiCollectors.toMap;
+import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.BiStreamTest.assertKeyValues;
-import static com.google.common.truth.Truth.assertThat;
 import static java.util.Collections.nCopies;
-import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.summingInt;
 import static java.util.stream.Collectors.toList;
 
 import java.util.Map;
-import java.util.function.Function;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSetMultimap;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.ImmutableSetMultimap;
 
 @RunWith(JUnit4.class)
 public class BiCollectorsTest {
@@ -226,7 +224,7 @@ public class BiCollectorsTest {
     BiStream<String, Integer> salaries = BiStream.of("Joe", 1, "Tom", 2);
     ImmutableListMultimap<String, Integer> result = salaries.collect(
         BiCollectors.flatMapping(
-            (k, c) -> BiStream.from(nCopies(c, k), identity(), unused -> c),
+            (String k, Integer c) -> biStream(nCopies(c, k)).mapValues(u -> c),
             ImmutableListMultimap::toImmutableListMultimap));
     assertThat(result)
         .containsExactly("Joe", 1, "Tom", 2, "Tom", 2)
