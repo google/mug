@@ -25,9 +25,9 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
- * Transforms eager, recursive algorithms into <em>lazy</em> streams. {@link Iteration} is used to
- * <a href="https://en.wikipedia.org/wiki/Generator_(computer_programming)">generate</a> a sequence
- * that computes each value on-demand.
+ * Transforms eager, recursive algorithms into <em>lazy</em> streams. {@link #yield yield()} is used
+ * to <a href="https://en.wikipedia.org/wiki/Generator_(computer_programming)">generate</a> a
+ * sequence that computes each value on-demand.
  *
  * <p>Imagine if you have a recursive binary tree traversal algorithm:
  *
