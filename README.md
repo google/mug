@@ -192,7 +192,7 @@ class DepthFirst<N> extends Iteration<N> {
   }
 }
 
-Stream<N> postOrder = new DepthFirst<N>().postOrder(root).start();
+Stream<N> postOrder = new DepthFirst<N>().postOrder(root).iterate();
 ```
 
 **Example 2: implement Fibonacci sequence as a stream:**
@@ -206,7 +206,7 @@ class Fibonacci extends Iteration<Long> {
   }
 }
 
-Stream<Long> fibonacci = new Fibonacci().from(0, 1).start();
+Stream<Long> fibonacci = new Fibonacci().from(0, 1).iterate();
     => [0, 1, 2, 3, 5, 8, ...]
 ```
 
