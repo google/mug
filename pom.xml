@@ -49,10 +49,10 @@
   </developers>
 
   <modules>
-    <module>core</module>
-    <module>benchmarks</module>
-    <module>examples</module>
-    <module>algorithms</module>
+    <module>mug</module>
+    <module>mug-benchmarks</module>
+    <module>mug-examples</module>
+    <module>mug-algorithms</module> 
   </modules>
 
   <properties>
