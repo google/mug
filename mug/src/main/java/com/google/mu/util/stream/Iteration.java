@@ -53,9 +53,10 @@ import java.util.stream.Stream;
  *   }
  * }
  *
- * static <T> Stream<T> inOrderFrom(Tree<T> root) {
- *   return new DepthFirst<>().inOrder(root).iterate();
- * }
+ * new DepthFirst<>()
+ *     .inOrder(root)
+ *     .iterate()
+ *     .forEachOrdered(System.out::println);
  * }</pre>
  *
  * <p>One may ask why not use {@code flatMap()} like the following?
@@ -109,9 +110,10 @@ import java.util.stream.Stream;
  *   }
  * }
  *
- * static <N> Stream<N> postOrderFrom(N node) {
- *   return new DepthFirst<>().postOrder(node).iterate();
- * }
+ * new DepthFirst<>()
+ *     .postOrder(startNode)
+ *     .iterate()
+ *     .forEachOrdered(System.out::println);
  * }</pre>
  *
  * <p>And how about Fibonacci sequence as a lazy stream?
