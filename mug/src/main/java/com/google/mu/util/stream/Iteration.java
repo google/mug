@@ -54,7 +54,7 @@ import java.util.stream.Stream;
  * }
  *
  * static <T> Stream<T> inOrderFrom(Tree<T> root) {
- *   return new DepthFirst<>().inOrder(root).start();
+ *   return new DepthFirst<>().inOrder(root).iterate();
  * }
  * }</pre>
  *
@@ -110,7 +110,7 @@ import java.util.stream.Stream;
  * }
  *
  * static <N> Stream<N> postOrderFrom(N node) {
- *   return new DepthFirst<>().postOrder(node).start();
+ *   return new DepthFirst<>().postOrder(node).iterate();
  * }
  * }</pre>
  *
@@ -124,7 +124,7 @@ import java.util.stream.Stream;
  *     return this;
  *   }
  * }
- * Stream<Long> fibonacci = new Fibonacci().from(0, 1).start();
+ * Stream<Long> fibonacci = new Fibonacci().from(0, 1).iterate();
  * }</pre>
  *
  * <p>Another potential use case is to enhance the JDK {@link Stream#iterate} API with a terminal
@@ -148,7 +148,7 @@ import java.util.stream.Stream;
  * }
  *
  * static Stream<Integer> play(int max, int secret) {
- *   return new GuessTheNumber().guess(1, max, secret).start();
+ *   return new GuessTheNumber().guess(1, max, secret).iterate();
  * }
  * }</pre>
  *
@@ -169,10 +169,10 @@ import java.util.stream.Stream;
  * method. It doesn't "return" execution to the caller. Laziness is achieved by wrapping code block
  * inside the {@code Continuation} lambda.
  *
- * <p>This class is not threadsafe.
- *
  * <p>Like most manual iterative adaptation of recursive algorithms, yielding is implemented using
  * a stack. No threads or synchronization is used.
+ *
+ * <p>This class is not threadsafe.
  *
  * <p>Nulls are not allowed.
  *
@@ -231,7 +231,7 @@ public class Iteration<T> {
    * Stream<Integer> sums =
    *     new SumNodeValues()
    *         .sum((root: 1, left: 2, right: 3), new AtomicInteger())
-   *         .start();
+   *         .iterate();
    *
    *     => [2, 3, 6]
    * }</pre>
@@ -249,22 +249,22 @@ public class Iteration<T> {
     });
   }
 
-  /** @deprecated Use {@link #start} instead. */
+  /** @deprecated Use {@link #iterate} instead. */
   @Deprecated
   public final Stream<T> stream() {
-    return start();
+    return iterate();
   }
 
   /**
    * Starts iteration over the {@link #yield yielded} elements.
    *
-   * <p>Because an {@code Iteration} instance is stateful and mutable, {@code start()} can be
+   * <p>Because an {@code Iteration} instance is stateful and mutable, {@code iterate()} can be
    * called at most once per instance.
    *
-   * @throws IllegalStateException if {@code start()} has already been called.
+   * @throws IllegalStateException if {@code iterate()} has already been called.
    * @since 4.5
    */
-  public final Stream<T> start() {
+  public final Stream<T> iterate() {
     if (started.getAndSet(true)) {
       throw new IllegalStateException("Iteration already started.");
     }

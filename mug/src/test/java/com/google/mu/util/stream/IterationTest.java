@@ -28,7 +28,7 @@ import com.google.common.testing.ClassSanityTester;
 public class IterationTest {
   @Test
   public void iteration_empty() {
-    assertThat(new Iteration<Object>().start()).isEmpty();
+    assertThat(new Iteration<Object>().iterate()).isEmpty();
   }
 
   @Test
@@ -74,8 +74,8 @@ public class IterationTest {
   @Test
   public void oneTimeIteration() {
     DepthFirst<String> iteration = new DepthFirst<>();
-    iteration.start();
-    assertThrows(IllegalStateException.class, iteration::start);
+    iteration.iterate();
+    assertThrows(IllegalStateException.class, iteration::iterate);
   }
 
   @Test
@@ -84,15 +84,15 @@ public class IterationTest {
   }
 
   private static <T> Stream<T> preOrderFrom(Tree<T> tree) {
-    return new DepthFirst<T>().preOrder(tree).start();
+    return new DepthFirst<T>().preOrder(tree).iterate();
   }
 
   private static <T> Stream<T> inOrderFrom(Tree<T> tree) {
-    return new DepthFirst<T>().inOrder(tree).start();
+    return new DepthFirst<T>().inOrder(tree).iterate();
   }
 
   private static <T> Stream<T> postOrderFrom(Tree<T> tree) {
-    return new DepthFirst<T>().postOrder(tree).start();
+    return new DepthFirst<T>().postOrder(tree).iterate();
   }
 
   @Test public void sumStream() {
@@ -114,7 +114,7 @@ public class IterationTest {
         return this;
       }
     }
-    return new SumNodes().sum(tree, new AtomicInteger()).start();
+    return new SumNodes().sum(tree, new AtomicInteger()).iterate();
   }
 
   private static final class DepthFirst<T> extends Iteration<T> {
@@ -284,6 +284,6 @@ public class IterationTest {
    }
 
    static Stream<Integer> guessTheNumber(int max, int number) {
-     return new GuessTheNumber().guess(1, max, number).start();
+     return new GuessTheNumber().guess(1, max, number).iterate();
    }
 }

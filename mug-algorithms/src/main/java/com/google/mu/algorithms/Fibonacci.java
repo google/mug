@@ -24,8 +24,8 @@ import com.google.mu.util.stream.Iteration;
  * @since 4.5
  */
 public final class Fibonacci extends Iteration<Long> {
-  public static Stream<Long> iterate() {
-    return new Fibonacci().from(0L, 1L).stream();
+  public static Stream<Long> fibonacci() {
+    return new Fibonacci().from(0L, 1L).iterate();
   }
 
   private Fibonacci from(Long v1, Long v2) {
