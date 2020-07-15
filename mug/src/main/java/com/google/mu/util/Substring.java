@@ -64,8 +64,8 @@ import java.util.function.UnaryOperator;
  * <pre>
  *   String str = ...;
  *   Substring.Match colon = Substring.first(':').in(str).orElseThrow(BadFormatException::new);
- *   String name = colon.getBefore();
- *   String value = colon.getAfter();
+ *   String name = colon.before();
+ *   String value = colon.after();
  * </pre>
  *
  * @since 2.0
@@ -305,7 +305,7 @@ public final class Substring {
      * {@code empty()} otherwise.
      *
      * <p>This is useful if you need to call {@link Match} methods, like {@link Match#remove} or
-     * {@link Match#getBefore}. If you just need the matched substring itself, prefer to use
+     * {@link Match#before}. If you just need the matched substring itself, prefer to use
      * {@link #from} instead.
      */
     public final Optional<Match> in(String string) {
@@ -318,7 +318,7 @@ public final class Substring {
      * {@code pattern.in(str).map(Object::toString)}.
      *
      * <p>This is useful if you only need the matched substring itself. Use {@link #in} if you need
-     * to call {@link Match} methods, like {@link Match#remove} or {@link Match#getBefore}.
+     * to call {@link Match} methods, like {@link Match#remove} or {@link Match#before}.
      *
      * @since 2.1
      */
@@ -417,43 +417,59 @@ public final class Substring {
     /**
      * Returns the part of the original string before the matched substring.
      *
-     * <p>{@link #getBefore} and {@link #getAfter} are almost always used together to split a string
+     * <p>{@link #before} and {@link #after} are almost always used together to split a string
      * into two parts. If you just need the substring before the match, you might want to use
      * {@code Substring.before(pattern)} instead, because the pattern logic is encoded entirely in
      * the {@link Pattern} object. For example: <pre>
      *   private static final Substring.Pattern DIRECTORY = Substring.before(last("/"));
      * </pre>
+     *
+     * @since 4.6
      */
-    public String getBefore() {
+    public String before() {
       return context.substring(0, startIndex);
+    }
+
+    /** @deprecated Use {@link #before} instead. */
+    @Deprecated
+    public String getBefore() {
+      return before();
     }
 
     /**
      * Returns the part of the original string before the matched substring.
      *
-     * <p>{@link #getBefore} and {@link #getAfter} are almost always used together to split a string
+     * <p>{@link #before} and {@link #after} are almost always used together to split a string
      * into two parts. If you just need the substring after the match, you might want to use
      * {@code Substring.after(pattern)} instead, because the pattern logic is encoded entirely in
      * the {@link Pattern} object. For example: <pre>
      *   private static final Substring.Pattern LINE_COMMENT = Substring.after(first("//"));
      * </pre>
+     *
+     * @since 4.6
      */
-    public String getAfter() {
+    public String after() {
       return context.substring(endIndex);
+    }
+
+    /** @deprecated Use {@link #after} instead. */
+    @Deprecated
+    public String getAfter() {
+      return after();
     }
 
     /**
      * Returns a copy of the original string with the matched substring removed.
      *
-     * <p>This is equivalent to {@code match.getBefore() + match.getAfter()}.
+     * <p>This is equivalent to {@code match.before() + match.after()}.
      */
     public String remove() {
       if (endIndex == context.length()) {
-        return getBefore();
+        return before();
       } else if (startIndex == 0) {
-        return getAfter();
+        return after();
       } else {
-        return getBefore() + getAfter();
+        return before() + after();
       }
     }
 
@@ -463,12 +479,22 @@ public final class Substring {
      */
     public String replaceWith(CharSequence replacement) {
       requireNonNull(replacement);
-      return getBefore() + replacement + getAfter();
+      return before() + replacement + after();
     }
   
-    /** Returns the starting index of this substring in the containing string. */
-    public int getIndex() {
+    /**
+     * Returns the starting index of this substring in the containing string.
+     *
+     * @since 4.6
+     */
+    public int index() {
       return startIndex;
+    }
+  
+    /** @deprecated Use {@link #index} instead. */
+    @Deprecated
+    public int getIndex() {
+      return index();
     }
 
     /** Returns the length of the matched substring. */
