@@ -259,8 +259,8 @@ String schemeStripped = Substring.upToIncluding(first("://")).removeFrom(uri);
 **Example 3: split a string in the format of "name=value" into `name` and `value`:**
 ```java
 Substring.Match op = Substring.first('=').in(nameValue).orElseThrow(...);
-String name = op.getBefore();
-String value = op.getAfter();
+String name = op.before();
+String value = op.after();
 ```
 
 **Example 4: replace trailing "//" with "/" :**
