@@ -251,6 +251,17 @@ public class Iteration<T> {
     });
   }
 
+
+  /**
+   * Yields to the stream the lazily evaluated result of {@code computation}.
+   *
+   * @since 4.6
+   */
+  public final Iteration<T> yield(Supplier<? extends T> computation) {
+    requireNonNull(computation);
+    return yield(() -> yield(computation.get()));
+  }
+
   /** @deprecated Use {@link #iterate} instead. */
   @Deprecated
   public final Stream<T> stream() {
