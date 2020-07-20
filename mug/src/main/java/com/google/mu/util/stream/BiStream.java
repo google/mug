@@ -372,9 +372,7 @@ public abstract class BiStream<K, V> {
   public static <T, K, V, R> Collector<T, ?, BiStream<K, R>> groupingValuesFrom(
       Function<? super T, ? extends Collection<Map.Entry<K, V>>> entrySource,
       Collector<? super V, ?, R> valueCollector) {
-    return flatMapping(
-        entrySource.andThen(Collection::stream),
-        groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, valueCollector)));
+    return grouping(entrySource.andThen(entries -> from(entries.stream())), valueCollector);
   }
 
   /**
