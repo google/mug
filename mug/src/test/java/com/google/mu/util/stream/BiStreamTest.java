@@ -59,7 +59,6 @@ import com.google.common.truth.MultimapSubject;
 
 @RunWith(JUnit4.class)
 public class BiStreamTest {
-
   @Test public void testBiStreamWithKeyAndValueFunctions() {
     assertKeyValues(BiStream.from(Stream.of(1, 2), Object::toString, v -> v))
         .containsExactlyEntriesIn(ImmutableMultimap.of("1", 1, "2", 2))
@@ -604,26 +603,18 @@ public class BiStreamTest {
     assertThat(chars).containsExactly('a', 2, 'b', 3, 'c', 1).inOrder();
   }
 
-  @Test public void testGroupingValuesFrom() {
+  @Test public void testGroupingValuesFromMapEntries() {
     Map<Integer, List<String>> groups =
         Stream.of(ImmutableMap.of(1, "one"), ImmutableMap.of(2, "two", 1, "uno"))
-            .collect(BiStream.groupingValuesFrom(Map::entrySet))
+            .collect(BiStream.grouping(BiStream::from, toList()))
             .toMap();
     assertThat(groups).containsExactly(1, asList("one", "uno"), 2, asList("two")).inOrder();
   }
 
-  @Test public void testGroupingValuesFrom_withCollector() {
-    Map<Integer, Long> groups =
-        Stream.of(ImmutableMap.of(1, "one"), ImmutableMap.of(2, "two", 1, "uno"))
-            .collect(BiStream.groupingValuesFrom(Map::entrySet, Collectors.counting()))
-            .toMap();
-    assertThat(groups).containsExactly(1, 2L, 2, 1L).inOrder();
-  }
-
-  @Test public void testGroupingValuesFrom_withReducer() {
+  @Test public void testGroupingValuesFromMapEntries_withReducer() {
     Map<Integer, String> groups =
         Stream.of(ImmutableMap.of(1, "one"), ImmutableMap.of(2, "two", 1, "uno"))
-            .collect(BiStream.groupingValuesFrom(Map::entrySet, String::concat))
+            .collect(BiStream.grouping(BiStream::from, String::concat))
             .toMap();
     assertThat(groups).containsExactly(1, "oneuno", 2, "two").inOrder();
   }
