@@ -285,60 +285,20 @@ public abstract class BiStream<K, V> {
   }
 
   /**
-   * Returns a {@code Collector} that groups {@link Map.Entry#getValue map values} that are mapped
-   * to the same key using {@code valueCollector}. For example:
-   *
-   * <pre>{@code
-   * Map<EmployeeId, List<Task>> employeesWithMultipleTasks = projects.stream()
-   *     .map(Project::getTaskAssignments)  // Stream<Map<EmployeeId, Task>>
-   *     .collect(groupingValuesFrom(Map::entrySet))
-   *     .filterValues(tasks -> tasks.size() > 1)
-   *     .toMap();
-   * }</pre>
-   *
-   * <p>This idiom is applicable even if {@code getTaskAssignments()} returns {@code Multimap}:
-   *
-   * <pre>{@code
-   * Map<EmployeeId, List<Task>> employeesWithMultipleTasks = projects.stream()
-   *     .map(Project::getTaskAssignments)  // Stream<Multimap<EmployeeId, Task>>
-   *     .collect(groupingValuesFrom(Multimap::entries))
-   *     .filterValues(tasks -> tasks.size() > 1)
-   *     .toMap();
-   * }</pre>
-   *
-   * <p>Entries are collected in encounter order.
-   *
-   * @since 3.0
+   * @deprecated Use {@code grouping(BiStream::from, toList())}
+   *             in place of {@code groupingValuesFrom(Map::entrySet)}.
    */
+  @Deprecated
   public static <T, K, V> Collector<T, ?, BiStream<K, List<V>>> groupingValuesFrom(
       Function<? super T, ? extends Collection<Map.Entry<K, V>>> entrySource) {
     return groupingValuesFrom(entrySource, toList());
   }
 
   /**
-   * Returns a {@code Collector} that reduces {@link Map.Entry#getValue map values} that are mapped
-   * to the same key using {@code valueReducer}. For example:
-   *
-   * <pre>{@code
-   * Map<Account, Money> totalPayouts = projects.stream()
-   *     .map(Project::payments)  // Stream<Map<Account, Money>>
-   *     .collect(groupingValuesFrom(Map::entrySet, Money::add))
-   *     .toMap();
-   * }</pre>
-   *
-   * <p>This idiom is applicable even if {@code payments()} returns {@code Multimap}:
-   *
-   * <pre>{@code
-   * Map<Account, Money> totalPayouts = projects.stream()
-   *     .map(Project::payments)  // Stream<Multimap<Account, Money>>
-   *     .collect(groupingValuesFrom(Multimap::entries, Money::add))
-   *     .toMap();
-   * }</pre>
-   *
-   * <p>Entries are collected in encounter order.
-   *
-   * @since 3.3
+   * @deprecated Use {@code grouping(BiStream::from, reducer)}
+   *             in place of {@code groupingValuesFrom(Map::entrySet, reducer)}.
    */
+  @Deprecated
   public static <T, K, V> Collector<T, ?, BiStream<K, V>> groupingValuesFrom(
       Function<? super T, ? extends Collection<Map.Entry<K, V>>> entrySource,
       BinaryOperator<V> valueReducer) {
@@ -346,29 +306,10 @@ public abstract class BiStream<K, V> {
   }
 
   /**
-   * Returns a {@code Collector} that groups {@link Map.Entry#getValue map values} that are mapped
-   * to the same key using {@code valueCollector}. For example:
-   *
-   * <pre>{@code
-   * Map<EmployeeId, Integer> employeeWorkHours = projects.stream()
-   *     .map(Project::getTaskAssignments)  // Stream<Map<EmployeeId, Task>>
-   *     .collect(groupingValuesFrom(Map::entrySet, summingInt(Task::hours)))
-   *     .toMap();
-   * }</pre>
-   *
-   * <p>This idiom is applicable even if {@code getTaskAssignments()} returns {@code Multimap}:
-   *
-   * <pre>{@code
-   * Map<EmployeeId, Integer> employeeWorkHours = projects.stream()
-   *     .map(Project::getTaskAssignments)  // Stream<Multimap<EmployeeId, Task>>
-   *     .collect(groupingValuesFrom(Multimap::entries, summingInt(Task::hours)))
-   *     .toMap();
-   * }</pre>
-   *
-   * <p>Entries are collected in encounter order.
-   *
-   * @since 3.0
+   * @deprecated Use {@code grouping(BiStream::from, collector)}
+   *             in place of {@code groupingValuesFrom(Map::entrySet, collector)}.
    */
+  @Deprecated
   public static <T, K, V, R> Collector<T, ?, BiStream<K, R>> groupingValuesFrom(
       Function<? super T, ? extends Collection<Map.Entry<K, V>>> entrySource,
       Collector<? super V, ?, R> valueCollector) {
