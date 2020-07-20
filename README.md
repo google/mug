@@ -79,11 +79,11 @@ Map<State, Map<Address, PhoneNumber>> statePhonebooks = BiStream.from(phonebooks
 **Example 6: to merge `Map` entries:**
 
 ```java
-import static com.google.mu.util.stream.BiStream.groupingValuesFrom;
+import static com.google.mu.util.stream.BiStream.grouping;
 
 Map<Account, Money> totalPayouts = projects.stream()
     .map(Project::payments)  // Stream<Map<Account, Money>>
-    .collect(groupingValuesFrom(Map::entrySet, Money::add))
+    .collect(grouping(BiStream::from, Money::add))
     .toMap();
 ```
 
@@ -169,7 +169,7 @@ List<Page> pages = ...;
 // Merge traffic histogram across all pages of the web site
 Map<Day, Long> siteTrafficHistogram = pages.stream()
     .map(Page::getTrafficHistogram)
-    .collect(groupingValuesFrom(Map::entrySet, (a, b) -> a + b))
+    .collect(grouping(BiStream::from, (a, b) -> a + b))
     .toMap();
 ```
 
