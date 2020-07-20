@@ -1,14 +1,11 @@
 package examples;
 
-import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Multimap;
-import com.google.mu.util.stream.BiCollector;
-import com.google.mu.util.stream.BiStream;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static com.google.common.truth.Truth.assertThat;
+import static com.google.mu.util.stream.BiStream.grouping;
+import static com.google.mu.util.stream.BiStream.groupingBy;
+import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
 
 import java.util.List;
 import java.util.Map;
@@ -16,11 +13,14 @@ import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static com.google.common.truth.Truth.assertThat;
-import static com.google.mu.util.stream.BiStream.groupingBy;
-import static com.google.mu.util.stream.BiStream.groupingValuesFrom;
-import static java.util.Arrays.asList;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.mu.util.stream.BiCollector;
+import com.google.mu.util.stream.BiStream;
 
 /** Some examples to show fluent grouping using {@link BiStream}. */
 @RunWith(JUnit4.class)
@@ -52,18 +52,7 @@ public class HowToDoGroupingFluentlyTest {
         ImmutableMap.of(1, "one", 2, "two"),
         ImmutableMap.of(1, "uno", 2, "dos"));
     Map<Integer, List<String>> numberTranslations = numbers
-        .collect(groupingValuesFrom(Map::entrySet))
-        .toMap();
-    assertThat(numberTranslations)
-        .containsExactly(1, asList("one", "uno"), 2, asList("two", "dos"));
-  }
-
-  @Test public void how_to_concisely_group_multimap_entries() {
-    Stream<Multimap<Integer, String>> numbers = Stream.of(
-        ImmutableListMultimap.of(1, "one", 2, "two"),
-        ImmutableListMultimap.of(1, "uno", 2, "dos"));
-    Map<Integer, List<String>> numberTranslations = numbers
-        .collect(groupingValuesFrom(Multimap::entries))
+        .collect(grouping(BiStream::from, toList()))
         .toMap();
     assertThat(numberTranslations)
         .containsExactly(1, asList("one", "uno"), 2, asList("two", "dos"));
