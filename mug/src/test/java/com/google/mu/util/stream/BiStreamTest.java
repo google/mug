@@ -18,11 +18,14 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.stream.BiCollectors.toMap;
+import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.BiStream.crossJoining;
+import static com.google.mu.util.stream.BiStream.grouping;
 import static com.google.mu.util.stream.BiStream.toAdjacentPairs;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static java.util.Arrays.asList;
 import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.summingInt;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -585,6 +588,22 @@ public class BiStreamTest {
         .inOrder();
   }
 
+  @Test public void testGrouping_withReducer() {
+    ImmutableMap<Character, Integer> chars =
+        Stream.of("aba", "bbc")
+            .collect(grouping(s -> biStream(chars(s)).mapValues(c -> 1), Integer::sum))
+            .collect(ImmutableMap::toImmutableMap);
+    assertThat(chars).containsExactly('a', 2, 'b', 3, 'c', 1).inOrder();
+  }
+
+  @Test public void testGrouping_withCollector() {
+    ImmutableMap<Character, Integer> chars =
+        Stream.of("aba", "bbc")
+            .collect(grouping(s -> biStream(chars(s)).mapValues(c -> 1), summingInt(n -> n)))
+            .collect(ImmutableMap::toImmutableMap);
+    assertThat(chars).containsExactly('a', 2, 'b', 3, 'c', 1).inOrder();
+  }
+
   @Test public void testGroupingValuesFrom() {
     Map<Integer, List<String>> groups =
         Stream.of(ImmutableMap.of(1, "one"), ImmutableMap.of(2, "two", 1, "uno"))
@@ -757,5 +776,9 @@ public class BiStreamTest {
             .collect(toList());
     assertThat(threads).hasSize(1);
     return assertThat(list);
+  }
+
+  private static Stream<Character> chars(String s) {
+    return s.chars().mapToObj(c -> (char) c);
   }
 }

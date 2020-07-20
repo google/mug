@@ -14,22 +14,49 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
-import java.util.*;
-import java.util.Spliterators.AbstractDoubleSpliterator;
-import java.util.Spliterators.AbstractIntSpliterator;
-import java.util.Spliterators.AbstractLongSpliterator;
-import java.util.Spliterators.AbstractSpliterator;
-import java.util.function.*;
-import java.util.stream.*;
-import java.util.stream.Collector.Characteristics;
-
 import static java.util.Comparator.comparing;
 import static java.util.Objects.requireNonNull;
 import static java.util.Spliterator.ORDERED;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.StreamSupport.*;
+import static java.util.stream.StreamSupport.doubleStream;
+import static java.util.stream.StreamSupport.intStream;
+import static java.util.stream.StreamSupport.longStream;
+import static java.util.stream.StreamSupport.stream;
+
+import java.util.AbstractMap;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Spliterator;
+import java.util.Spliterators.AbstractDoubleSpliterator;
+import java.util.Spliterators.AbstractIntSpliterator;
+import java.util.Spliterators.AbstractLongSpliterator;
+import java.util.Spliterators.AbstractSpliterator;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
+import java.util.function.BinaryOperator;
+import java.util.function.Consumer;
+import java.util.function.DoubleConsumer;
+import java.util.function.Function;
+import java.util.function.IntConsumer;
+import java.util.function.LongConsumer;
+import java.util.function.Predicate;
+import java.util.function.ToDoubleBiFunction;
+import java.util.function.ToIntBiFunction;
+import java.util.function.ToLongBiFunction;
+import java.util.stream.Collector;
+import java.util.stream.Collector.Characteristics;
+import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 /**
  * A class similar to {@link Stream}, but operating over a sequence of pairs of objects.
@@ -190,6 +217,51 @@ public abstract class BiStream<K, V> {
     Collector<T, ?, Map<K, V>> grouping =
         Collectors.groupingBy(classifier, LinkedHashMap::new, valueCollector);
     return collectingAndThen(grouping, BiStream::from);
+  }
+
+  /**
+   * Returns a {@code Collector} that first fans out the input elements to multiple key-value pairs
+   * using {@code toKeyValues} function (whose {@code BiStream} return value corresponds to the key
+   * values), then groups and collects values mapped to the same key using {@code valueCollector}.
+   *
+   * <pre>{@code
+   * ImmutableMap<Instant, Integer> combinedHistogram = shards.stream()
+   *     .collect(grouping(Shard::histogramBiStream, Integer::sum))
+   *     .toMap();
+   * }</pre>
+   *
+   * <p>Entries are collected in encounter order.
+   *
+   * @since 4.6
+   */
+  public static <T, K, V, R> Collector<T, ?, BiStream<K, R>> grouping(
+      Function<? super T, ? extends BiStream<? extends K, ? extends V>> toKeyValues,
+      Collector<? super V, ?, R> valueCollector) {
+    requireNonNull(toKeyValues);
+    return flatMapping(
+        e -> toKeyValues.apply(e).mapToEntry(),
+        groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, valueCollector)));
+  }
+
+  /**
+   * Returns a {@code Collector} that first fans out the input elements to multiple key-value pairs
+   * using {@code toKeyValues} function (whose {@code BiStream} return value corresponds to the key
+   * values), then groups and reduces values mapped to the same key using {@code reducer}.
+   *
+   * <pre>{@code
+   * ImmutableMap<Instant, Long> eventOccurrences = shards.stream()
+   *     .collect(grouping(Shard::histogramBiStream, counting()))
+   *     .toMap();
+   * }</pre>
+   *
+   * <p>Entries are collected in encounter order.
+   *
+   * @since 4.6
+   */
+  public static <T, K, V> Collector<T, ?, BiStream<K, V>> grouping(
+      Function<? super T, ? extends BiStream<? extends K, ? extends V>> toKeyValues,
+      BinaryOperator<V> reducer) {
+    return grouping(toKeyValues, reducingGroupMembers(reducer));
   }
 
   /**
@@ -488,6 +560,24 @@ public abstract class BiStream<K, V> {
    * @since 3.0
    */
   public static <T> BiStream<T, T> biStream(Collection<T> elements) {
+    return from(elements, identity(), identity());
+  }
+
+  /**
+   * Short-hand for {@code from(elements, identity(), identity())}. Typically followed by {@link
+   * #mapKeys} or {@link #mapValues}. For example:
+   *
+   * <pre>{@code
+   * static import com.google.common.labs.collect.BiStream.biStream;
+   *
+   * Map<EmployeeId, Employee> employeesById = biStream(employees)
+   *     .mapKeys(Employee::id)
+   *     .toMap();
+   * }</pre>
+   *
+   * @since 3.6
+   */
+  public static <T> BiStream<T, T> biStream(Stream<T> elements) {
     return from(elements, identity(), identity());
   }
 
