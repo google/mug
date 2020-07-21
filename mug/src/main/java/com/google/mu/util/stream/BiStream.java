@@ -237,15 +237,15 @@ public abstract class BiStream<K, V> {
    * <p>Another common use case is if you have a stream of {@code Map} or {@code Multimap} that you
    * need to group by the keys, or if the input elements have a method that returns {@code Map} or
    * {@code Multimap}. This can be easily implemented using {@code BiStream::from}. For example, if
-   * we change the {@code histogram()} method's return type to {@code Multimap}, the above code may
+   * we change the {@code histogram()} method's return type to {@code Map}, the above code may
    * be rewritten as:
    *
    * <pre>{@code
    * interface Shard {
-   *   Multimap<Instant, Integer> histogram();
+   *   Map<Instant, Integer> histogram();
    * }
    *
-   * ImmutableMap<Instant, Long> eventCounts = shards.stream()
+   * Map<Instant, Long> eventCounts = shards.stream()
    *     .map(Shard::histogram)
    *     .collect(grouping(BiStream::from, counting()))
    *     .toMap();
@@ -290,7 +290,7 @@ public abstract class BiStream<K, V> {
    *   Map<Instant, Integer> histogram();
    * }
    *
-   * ImmutableMap<Instant, Integer> combinedHistogram = shards.stream()
+   * Map<Instant, Integer> combinedHistogram = shards.stream()
    *     .map(Shard::histogram)
    *     .collect(grouping(BiStream::from, Integer::sum))
    *     .toMap();
