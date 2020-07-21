@@ -225,8 +225,29 @@ public abstract class BiStream<K, V> {
    * values), then groups and collects values mapped to the same key using {@code valueCollector}.
    *
    * <pre>{@code
+   * interface Shard {
+   *   BiStream<Instant, Integer> histogram();
+   * }
+   *
    * ImmutableMap<Instant, Integer> combinedHistogram = shards.stream()
-   *     .collect(grouping(Shard::histogramBiStream, Integer::sum))
+   *     .collect(grouping(Shard::histogram, Integer::sum))
+   *     .toMap();
+   * }</pre>
+   *
+   * <p>Another common use case is if you have a stream of {@code Map} or {@code Multimap} that you
+   * need to group by the keys, or if the input elements have a method that returns {@code Map} or
+   * {@code Multimap}. This can be easily implemented using {@code BiStream::from}. For example, if
+   * we change the {@code histogram()} method's return type to {@code Multimap}, the above code may
+   * be rewritten as:
+   *
+   * <pre>{@code
+   * interface Shard {
+   *   Multimap<Instant, Integer> histogram();
+   * }
+   *
+   * ImmutableMap<Instant, Long> eventCounts = shards.stream()
+   *     .map(Shard::histogram)
+   *     .collect(grouping(BiStream::from, counting()))
    *     .toMap();
    * }</pre>
    *
@@ -249,8 +270,29 @@ public abstract class BiStream<K, V> {
    * values), then groups and reduces values mapped to the same key using {@code reducer}.
    *
    * <pre>{@code
-   * ImmutableMap<Instant, Long> eventOccurrences = shards.stream()
-   *     .collect(grouping(Shard::histogramBiStream, counting()))
+   * interface Shard {
+   *   BiStream<Instant, Integer> histogram();
+   * }
+   *
+   * ImmutableMap<Instant, Long> eventCounts = shards.stream()
+   *     .collect(grouping(Shard::histogram, counting()))
+   *     .toMap();
+   * }</pre>
+   *
+   * <p>Another common use case is if you have a stream of {@code Map} or {@code Multimap} that you
+   * need to group by the keys, or if the input elements have a method that returns {@code Map} or
+   * {@code Multimap}. This can be easily implemented using {@code BiStream::from}. For example, if
+   * we change the {@code histogram()} method's return type to {@code Map}, the above code may be
+   * rewritten as:
+   *
+   * <pre>{@code
+   * interface Shard {
+   *   Map<Instant, Integer> histogram();
+   * }
+   *
+   * ImmutableMap<Instant, Integer> combinedHistogram = shards.stream()
+   *     .map(Shard::histogram)
+   *     .collect(grouping(BiStream::from, Integer::sum))
    *     .toMap();
    * }</pre>
    *
