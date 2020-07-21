@@ -229,7 +229,7 @@ public abstract class BiStream<K, V> {
    *   BiStream<Instant, Integer> histogram();
    * }
    *
-   * ImmutableMap<Instant, Integer> combinedHistogram = shards.stream()
+   * Map<Instant, Integer> combinedHistogram = shards.stream()
    *     .collect(grouping(Shard::histogram, Integer::sum))
    *     .toMap();
    * }</pre>
@@ -274,7 +274,7 @@ public abstract class BiStream<K, V> {
    *   BiStream<Instant, Integer> histogram();
    * }
    *
-   * ImmutableMap<Instant, Long> eventCounts = shards.stream()
+   * Map<Instant, Long> eventCounts = shards.stream()
    *     .collect(grouping(Shard::histogram, counting()))
    *     .toMap();
    * }</pre>
