@@ -31,6 +31,7 @@ import org.junit.runners.JUnit4;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 
 @RunWith(JUnit4.class)
@@ -206,10 +207,19 @@ public class BiCollectorsTest {
         .inOrder();
   }
 
-  @Test public void testMapping() {
+  @Test public void testMapping_downstreamCollector() {
     BiStream<String, Integer> salaries = BiStream.of("Joe", 100, "Tom", 200);
     assertThat(salaries.collect(BiCollectors.mapping((k, v) -> k + ":" + v, toList())))
         .containsExactly("Joe:100", "Tom:200")
+        .inOrder();
+  }
+
+  @Test public void testMapping_downstreamBiCollector() {
+    BiStream<String, Integer> salaries = BiStream.of("Joe", 100, "Tom", 200);
+    BiCollector<String, Integer, ImmutableMap<Integer, String>> toReverseMap =
+        BiCollectors.mapping((k, v) -> v, (k, v) -> k, ImmutableMap::toImmutableMap);
+    assertThat(salaries.collect(toReverseMap))
+        .containsExactly(100, "Joe", 200, "Tom")
         .inOrder();
   }
 
