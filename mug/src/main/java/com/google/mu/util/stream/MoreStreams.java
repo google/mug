@@ -230,7 +230,7 @@ public final class MoreStreams {
    */
   public static <K, V> Collector<Map<K, V>, ?, Map<K, V>> uniqueKeys() {
     return Collectors.collectingAndThen(
-        BiStream.groupingValuesFrom(Map::entrySet,  (a, b) -> {
+        BiStream.<Map<K, V>, K, V>grouping(BiStream::from,  (a, b) -> {
           throw new IllegalStateException("Duplicate keys not allowed: " + a);
         }),
         BiStream::toMap);
