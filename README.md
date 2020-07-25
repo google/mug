@@ -79,26 +79,24 @@ Map<State, Map<Address, PhoneNumber>> statePhonebooks = BiStream.from(phonebooks
 **Example 6: to merge `Map` entries:**
 
 ```java
-import static com.google.mu.util.stream.BiStream.grouping;
+import static com.google.mu.util.stream.BiCollectors.toMap;
+import static com.google.mu.util.stream.MoreStreams.flatteningMaps;
 
 Map<Account, Money> totalPayouts = projects.stream()
     .map(Project::payments)  // Stream<Map<Account, Money>>
-    .collect(grouping(BiStream::from, Money::add))
-    .toMap();
+    .collect(flatteningMaps(toMap(Money::add)));
 ```
 
 **Example 7: to apply grouping over `Map` entries:**
 
 ```java
-import static com.google.mu.util.stream.BiCollectors.groupingBy;
-import static com.google.mu.util.stream.BiStream.concatenating;
+import static com.google.mu.util.stream.BiCollectors.toMap;
+import static com.google.mu.util.stream.MoreStreams.flatteningMaps;
 import static java.util.stream.Collectors.summingInt;
 
 Map<EmployeeId, Integer> workerHours = projects.stream()
     .map(Project::getTaskAssignments)  // Stream<Map<Employee, Task>>
-    .collect(concatenating(BiStream::from))
-    .collect(groupingBy(Employee::id, summingInt(Task::hours))))
-    .toMap();
+    .collect(flatteningMaps(toMap(summingInt(Task::hours))));
 ```
 
 **Example 8: to turn a `Collection<Pair<K, V>>` to `BiStream<K, V>`:**
