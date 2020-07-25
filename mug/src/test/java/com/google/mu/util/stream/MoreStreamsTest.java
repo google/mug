@@ -17,10 +17,11 @@ package com.google.mu.util.stream;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static com.google.mu.util.stream.BiStream.groupingValuesFrom;
+import static com.google.mu.util.stream.BiCollectors.toMap;
+import static com.google.mu.util.stream.BiStream.grouping;
+import static com.google.mu.util.stream.MoreStreams.flattening;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static com.google.mu.util.stream.MoreStreams.toListAndThen;
-import static com.google.mu.util.stream.MoreStreams.uniqueKeys;
 import static com.google.mu.util.stream.MoreStreams.whileNotEmpty;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Arrays.asList;
@@ -220,7 +221,7 @@ public class MoreStreamsTest {
         ImmutableList.of(new Translation(ImmutableMap.of()), new Translation(ImmutableMap.of()));
     Map<Integer, String> merged = translations.stream()
         .map(Translation::dictionary)
-        .collect(groupingValuesFrom(Map::entrySet, (a, b) -> a + "," + b))
+        .collect(grouping(BiStream::from, (a, b) -> a + "," + b))
         .collect(ImmutableMap::toImmutableMap);
     assertThat(merged).isEmpty();
   }
@@ -230,7 +231,7 @@ public class MoreStreamsTest {
         new Translation(ImmutableMap.of(1, "one")), new Translation(ImmutableMap.of(2, "two")));
     Map<Integer, String> merged = translations.stream()
         .map(Translation::dictionary)
-        .collect(groupingValuesFrom(Map::entrySet, (a, b) -> a + "," + b))
+        .collect(grouping(BiStream::from, (a, b) -> a + "," + b))
         .collect(ImmutableMap::toImmutableMap);
     assertThat(merged)
         .containsExactly(1, "one", 2, "two")
@@ -243,34 +244,34 @@ public class MoreStreamsTest {
         new Translation(ImmutableMap.of(2, "two", 1, "1")));
     Map<Integer, String> merged = translations.stream()
         .map(Translation::dictionary)
-        .collect(groupingValuesFrom(Map::entrySet, (a, b) -> a + "," + b))
+        .collect(grouping(BiStream::from, (a, b) -> a + "," + b))
         .collect(ImmutableMap::toImmutableMap);
     assertThat(merged)
         .containsExactly(1, "one,1", 2, "two")
         .inOrder();
   }
 
-  @Test public void uniqueKeys_emptyMaps() {
+  @Test public void flatteningToMap_emptyMaps() {
     ImmutableList<Translation> translations =
         ImmutableList.of(new Translation(ImmutableMap.of()), new Translation(ImmutableMap.of()));
     Map<Integer, String> merged = translations.stream()
         .map(Translation::dictionary)
-        .collect(uniqueKeys());
+        .collect(flattening(Map::entrySet, toMap()));
     assertThat(merged).isEmpty();
   }
 
-  @Test public void uniqueKeys_unique() {
+  @Test public void flatteningToMap_unique() {
     ImmutableList<Translation> translations = ImmutableList.of(
         new Translation(ImmutableMap.of(1, "one")), new Translation(ImmutableMap.of(2, "two")));
     Map<Integer, String> merged = translations.stream()
         .map(Translation::dictionary)
-        .collect(uniqueKeys());
+        .collect(flattening(Map::entrySet, toMap()));
     assertThat(merged)
         .containsExactly(1, "one", 2, "two")
         .inOrder();
   }
 
-  @Test public void uniqueKeys_withDuplicates() {
+  @Test public void flatteningToMap_withDuplicates() {
     ImmutableList<Translation> translations = ImmutableList.of(
         new Translation(ImmutableMap.of(1, "one")),
         new Translation(ImmutableMap.of(2, "two", 1, "1")));
@@ -278,7 +279,7 @@ public class MoreStreamsTest {
         IllegalStateException.class,
         () -> translations.stream()
             .map(Translation::dictionary)
-            .collect(uniqueKeys()));
+            .collect(flattening(Map::entrySet, toMap())));
   }
 
   @Test public void testIndexesFrom() {
