@@ -231,27 +231,15 @@ public abstract class BiStream<K, V> {
    *
    * Map<Instant, Integer> combinedHistogram = shards.stream()
    *     .collect(grouping(Shard::histogram, Integer::sum))
-   *     .toMap();
-   * }</pre>
-   *
-   * <p>Another common use case is if you have a stream of {@code Map} or {@code Multimap} that you
-   * need to group by the keys, or if the input elements have a method that returns {@code Map} or
-   * {@code Multimap}. This can be easily implemented using {@code BiStream::from}. For example, if
-   * we change the {@code histogram()} method's return type to {@code Map}, the above code may
-   * be rewritten as:
-   *
-   * <pre>{@code
-   * interface Shard {
-   *   Map<Instant, Integer> histogram();
-   * }
-   *
-   * Map<Instant, Long> eventCounts = shards.stream()
-   *     .map(Shard::histogram)
-   *     .collect(grouping(BiStream::from, counting()))
+   *     .filterValues(v -> v > 100)
    *     .toMap();
    * }</pre>
    *
    * <p>Entries are collected in encounter order.
+   *
+   * <p>If you need to flatten a stream of {@code Map}s or {@code Multimap}s without further
+   * chaining, consider to use the more convenient {@link MoreStreams#flatteningMaps} or {@link
+   * MoreStreams#flattening flattening(Multimap::entries)}.
    *
    * @since 4.6
    */
@@ -279,24 +267,11 @@ public abstract class BiStream<K, V> {
    *     .toMap();
    * }</pre>
    *
-   * <p>Another common use case is if you have a stream of {@code Map} or {@code Multimap} that you
-   * need to group by the keys, or if the input elements have a method that returns {@code Map} or
-   * {@code Multimap}. This can be easily implemented using {@code BiStream::from}. For example, if
-   * we change the {@code histogram()} method's return type to {@code Map}, the above code may be
-   * rewritten as:
-   *
-   * <pre>{@code
-   * interface Shard {
-   *   Map<Instant, Integer> histogram();
-   * }
-   *
-   * Map<Instant, Integer> combinedHistogram = shards.stream()
-   *     .map(Shard::histogram)
-   *     .collect(grouping(BiStream::from, Integer::sum))
-   *     .toMap();
-   * }</pre>
-   *
    * <p>Entries are collected in encounter order.
+   *
+   * <p>If you need to flatten a stream of {@code Map}s or {@code Multimap}s without further
+   * chaining, consider to use the more convenient {@link MoreStreams#flatteningMaps} or {@link
+   * MoreStreams#flattening flattening(Multimap::entries)}.
    *
    * @since 4.6
    */

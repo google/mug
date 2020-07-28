@@ -40,7 +40,8 @@ import java.util.stream.StreamSupport;
 import com.google.mu.function.CheckedConsumer;
 
 /**
- * Static utilities pertaining to {@link Stream} in addition to relevant utilities in Jdk and Guava.
+ * Static utilities pertaining to {@link Stream} and {@link Collector} in addition to relevant
+ * utilities in Jdk and Guava.
  *
  * @since 1.1
  */
@@ -222,9 +223,9 @@ public final class MoreStreams {
   }
 
   /**
-   * Returns a {@code Collector} that flattens the input objects using the
-   * {@code flattener} function, and then collects these flattened entries using the
-   * {@code downstream} {@code BiCollector}.
+   * Returns a {@code Collector} that flattens the input {@link Map} entries returned by the
+   * {@code flattener} function, and then collects these flattened entries using the {@code
+   * downstream} BiCollector.
    *
    * <p>Can be used to flatten a stream of maps:
    *
@@ -255,7 +256,7 @@ public final class MoreStreams {
 
   /**
    * Returns a {@code Collector} that flattens the input {@link Map} entries and collects them using
-   * the {@code downstream} {@code BiCollector}.
+   * the {@code downstream} BiCollector.
    *
    * <p>For example, you can flatten a list of multimaps:
    *
@@ -314,14 +315,11 @@ public final class MoreStreams {
   }
 
   /**
-   * Returns a (potentially infinite) stream of {@code collection} until {@code collection} becomes
-   * empty.
-   *
-   * <p>The returned stream can be terminated by removing elements from the underlying collection
-   * while the stream is being iterated.
-   *
-   * @since 3.8
+   * @deprecated Use {@code whileNotNull(queue::poll)} in place of {@code
+   * whileNotEmpty(queue).map(Queue::remove)}, and {@code whileNotNull(stack::poll)} in place of
+   * {@code whileNotEmpty(stack).map(Deque::poll)}.
    */
+  @Deprecated
   public static <C extends Collection<?>> Stream<C> whileNotEmpty(C collection) {
     requireNonNull(collection);
     return whileNotNull(() -> collection.isEmpty() ? null : collection);
@@ -402,8 +400,6 @@ public final class MoreStreams {
   /**
    * Returns a collector that first copies all input elements into a new {@code Stream} and then
    * passes the stream to {@code toSink} function, which translates it to the final result.
-   *
-   * @since 3.6
    */
   static <T, R> Collector<T, ?, R> copying(Function<Stream<T>, R> toSink) {
     return Collectors.collectingAndThen(toStream(), toSink);

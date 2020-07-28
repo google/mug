@@ -22,7 +22,6 @@ import static com.google.mu.util.stream.BiStream.grouping;
 import static com.google.mu.util.stream.MoreStreams.flattening;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static com.google.mu.util.stream.MoreStreams.toListAndThen;
-import static com.google.mu.util.stream.MoreStreams.whileNotEmpty;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
@@ -290,7 +289,7 @@ public class MoreStreamsTest {
 
   @Test public void removingFromQueue_empty() {
     Queue<String> queue = new ArrayDeque<>();
-    assertThat(whileNotEmpty(queue).map(Queue::remove)).isEmpty();
+    assertThat(whileNotNull(queue::poll)).isEmpty();
     assertThat(queue).isEmpty();
   }
 
@@ -298,14 +297,14 @@ public class MoreStreamsTest {
     Queue<String> queue = new ArrayDeque<>();
     queue.add("one");
     queue.add("two");
-    assertThat(whileNotEmpty(queue).map(Queue::remove))
+    assertThat(whileNotNull(queue::poll))
         .containsExactly("one", "two").inOrder();
     assertThat(queue).isEmpty();
   }
 
   @Test public void removingFromQueue_modificationUnderneath() {
     Queue<String> queue = new ArrayDeque<>();
-    Stream<String> stream = whileNotEmpty(queue).map(Queue::remove);
+    Stream<String> stream = whileNotNull(queue::poll);
     queue.add("one");
     queue.add("two");
     assertThat(stream).containsExactly("one", "two").inOrder();
@@ -316,8 +315,7 @@ public class MoreStreamsTest {
     Queue<String> queue = new ArrayDeque<>();
     queue.add("one");
     assertThat(
-            whileNotEmpty(queue)
-                .map(Queue::remove)
+            whileNotNull(queue::poll)
                 .peek(v -> {
                   if (v.equals("one")) queue.add("two");
                 }))
@@ -327,7 +325,7 @@ public class MoreStreamsTest {
 
   @Test public void poppingFromStack_empty() {
     Deque<String> stack = new ArrayDeque<>();
-    assertThat(whileNotEmpty(stack).map(Deque::pop)).isEmpty();
+    assertThat(whileNotNull(stack::poll)).isEmpty();
     assertThat(stack).isEmpty();
   }
 
@@ -335,14 +333,14 @@ public class MoreStreamsTest {
     Deque<String> stack = new ArrayDeque<>();
     stack.push("one");
     stack.push("two");
-    assertThat(whileNotEmpty(stack).map(Deque::pop))
+    assertThat(whileNotNull(stack::poll))
         .containsExactly("two", "one").inOrder();
     assertThat(stack).isEmpty();
   }
 
   @Test public void poppingFromStack_modificationUnderneath() {
     Deque<String> stack = new ArrayDeque<>();
-    Stream<String> stream = whileNotEmpty(stack).map(Deque::pop);
+    Stream<String> stream = whileNotNull(stack::poll);
     stack.push("one");
     stack.push("two");
     assertThat(stream).containsExactly("two", "one").inOrder();
@@ -353,8 +351,7 @@ public class MoreStreamsTest {
     Deque<String> stack = new ArrayDeque<>();
     stack.push("one");
     assertThat(
-            whileNotEmpty(stack)
-                .map(Deque::pop)
+            whileNotNull(stack::poll)
                 .peek(v -> {
                   if (v.equals("one")) stack.push("two");
                 }))
