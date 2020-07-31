@@ -77,7 +77,7 @@ import com.google.mu.util.stream.BiCollectors;
  *
  * <pre>{@code
  *   ImmutableListMultimap<String, String> tags = lines.stream()
- *       .collect(first(':').splittingTrimmed(ImmutableListMultimap::toImmutablelistmultimap));
+ *       .collect(first(':').splittingTrimmed(ImmutableListMultimap::toImmutableListMultimap));
  * }</pre>
  *
  * @since 2.0
