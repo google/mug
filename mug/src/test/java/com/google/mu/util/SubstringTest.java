@@ -8,19 +8,20 @@ import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.Substring.suffix;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.google.common.testing.ClassSanityTester;
-import com.google.common.testing.NullPointerTester;
-
 import java.util.Optional;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.testing.ClassSanityTester;
+import com.google.common.testing.NullPointerTester;
+
 @RunWith(JUnit4.class)
 public class SubstringTest {
-
   @Test public void prefix_noMatch() {
     assertThat(prefix("foo").in("notfoo")).isEmpty();
     assertThat(prefix("foo").in("")).isEmpty();
@@ -620,6 +621,28 @@ public class SubstringTest {
   @Test public void or_neitherMatches() {
     assertThat(first("bar").or(first("foo")).in("baz"))
         .isEmpty();
+  }
+
+  @Test
+  public void splitting() {
+    ImmutableListMultimap<String, String> tags =
+        Stream.of("name=joe", "name=bob", "gender:male")
+            .collect(
+                first('=')
+                    .or(first(':'))
+                    .splitting(ImmutableListMultimap::toImmutableListMultimap));
+    assertThat(tags).containsExactly("name", "joe", "name", "bob", "gender", "male");
+  }
+
+  @Test
+  public void splittingTrimmed() {
+    ImmutableListMultimap<String, String> tags =
+        Stream.of(" name=joe", "name = bob ", " gender: male ")
+            .collect(
+                first('=')
+                    .or(first(':'))
+                    .splittingTrimmed(ImmutableListMultimap::toImmutableListMultimap));
+    assertThat(tags).containsExactly("name", "joe", "name", "bob", "gender", "male");
   }
 
   @Test public void none() {

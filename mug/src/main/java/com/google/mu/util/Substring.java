@@ -19,6 +19,11 @@ import static java.util.Objects.requireNonNull;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+
+import com.google.mu.util.stream.BiCollector;
+import com.google.mu.util.stream.BiCollectors;
 
 /**
  * Utilities for creating patterns that attempt to match a substring in an input string. The matched
@@ -377,6 +382,42 @@ public final class Substring {
      */
     public final Pattern toEnd() {
       return map(Match::toEnd);
+    }
+
+    /**
+     * Returns a {@code Collector} that splits each string in a stream into two parts, with the
+     * matched substring as the separator. For example:
+     *
+     * <pre>{@code
+     * ImmutableSetMultimap<String, String> keyValues =
+     *     readLines(file, UTF_8).stream()
+     *         .collect(first(':').splitting(ImmutableSetMultimap::toImmutableSetMultimap));
+     * }</pre>
+     *
+     * @since 4.6
+     */
+    public final <T> Collector<String, ?, T> splitting(
+        BiCollector<? super String, ? super String, T> downstream) {
+      return Collectors.mapping(
+          s -> in(s).orElseThrow(() -> new IllegalArgumentException("Failed to split '" + s + "'.")),
+          downstream.splitting(Match::before, Match::after));
+    }
+
+    /**
+     * Returns a {@code Collector} that splits each string in a stream into two parts, with the
+     * matched substring as the separator, and each part trimmed. For example:
+     *
+     * <pre>{@code
+     * ImmutableSetMultimap<String, String> keyValues =
+     *     readLines(file, UTF_8).stream()
+     *         .collect(first(':').splittingTrimmed(ImmutableSetMultimap::toImmutableSetMultimap));
+     * }</pre>
+     *
+     * @since 4.6
+     */
+    public final <T> Collector<String, ?, T> splittingTrimmed(
+        BiCollector<? super String, ? super String, T> downstream) {
+      return splitting(BiCollectors.mapping((n, v) -> n.trim(), (n, v) -> v.trim(), downstream));
     }
 
     private Pattern map(UnaryOperator<Match> mapper) {
