@@ -303,14 +303,6 @@ public final class Substring {
   public static abstract class Pattern {
     /** Matches against {@code string} and returns null if not found. */
     abstract Match match(String input);
-    
-    final Match match(Match match) {
-      // TODO: should we match against substring directly without copying?
-      Match innerMatch = match(match.toString());
-      return innerMatch == null
-          ? null
-          : match.subSequence(innerMatch.startIndex, innerMatch.endIndex);
-    }
 
     /**
      * Matches this pattern against {@code string}, returning a {@code Match} if successful, or
@@ -451,7 +443,7 @@ public final class Substring {
    *
    * @since 2.2
    */
-  public static final class Match {
+  public static final class Match implements CharSequence {
     private final String context;
     private final int startIndex;
     private final int endIndex;
@@ -546,26 +538,34 @@ public final class Substring {
     }
 
     /** Returns the length of the matched substring. */
-    public int length() {
+    @Override public int length() {
       return endIndex - startIndex;
+    }
+
+    @Override
+    public char charAt(int i) {
+      if (i < 0 || i >= length()) {
+        throw new IndexOutOfBoundsException("Invalid index: " + i);
+      }
+      return context.charAt(startIndex + i);
+    }
+  
+    @Override public CharSequence subSequence(int begin, int end) {
+      if (begin < 0) {
+        throw new IndexOutOfBoundsException("Invalid index: " + begin);
+      }
+      if (end > length()) {
+        throw new IndexOutOfBoundsException("Invalid index: " + end);
+      }
+      if (begin > end) {
+        throw new IndexOutOfBoundsException("Invalid index: " + begin + " > " + end);
+      }
+      return new Match(context, startIndex + begin, startIndex + end);
     }
 
     /** Returns the matched substring. */
     @Override public String toString() {
       return context.substring(startIndex, endIndex);
-    }
-  
-    Match subSequence(int begin, int end) {
-      if (begin < 0) {
-        throw new IndexOutOfBoundsException("Invalid index: " + begin);
-      }
-      if (begin > end) {
-        throw new IndexOutOfBoundsException("Invalid index: " + begin + " > " + end);
-      }
-      if (end > length()) {
-        throw new IndexOutOfBoundsException("Invalid index: " + end);
-      }
-      return new Match(context, startIndex + begin, startIndex + end);
     }
 
     private Match preceding() {
