@@ -397,9 +397,7 @@ public final class Substring {
      */
     public final <T> Collector<String, ?, T> splitting(
         BiCollector<? super String, ? super String, T> downstream) {
-      return Collectors.mapping(
-          s -> in(s).orElseThrow(() -> new IllegalArgumentException("Failed to split '" + s + "'.")),
-          downstream.splitting(Match::before, Match::after));
+      return Collectors.mapping(this::doSplit, downstream.splitting(Match::before, Match::after));
     }
 
     /**
@@ -417,6 +415,14 @@ public final class Substring {
     public final <T> Collector<String, ?, T> splittingTrimmed(
         BiCollector<? super String, ? super String, T> downstream) {
       return splitting(BiCollectors.mapping((n, v) -> n.trim(), (n, v) -> v.trim(), downstream));
+    }
+
+    private Match doSplit(String s) {
+      Match match = match(s);
+      if (match == null) {
+        throw new IllegalArgumentException("Failed to split '" + s + "'.");
+      }
+      return match;
     }
 
     private Pattern map(UnaryOperator<Match> mapper) {
