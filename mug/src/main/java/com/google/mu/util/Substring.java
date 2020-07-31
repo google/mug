@@ -73,6 +73,13 @@ import com.google.mu.util.stream.BiCollectors;
  *   String value = colon.after();
  * </pre>
  *
+ * To split a stream of strings into key-value pairs:
+ *
+ * <pre>{@code
+ *   ImmutableListMultimap<String, String> tags = lines.stream()
+ *       .collect(first(':').splittingTrimmed(ImmutableListMultimap::toImmutablelistmultimap));
+ * }</pre>
+ *
  * @since 2.0
  */
 public final class Substring {
