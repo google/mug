@@ -413,7 +413,7 @@ public final class Substring {
      *
      * <pre>{@code
      * ImmutableSetMultimap<Key, Value> keyValues =
-     *     BiStream.zip(MoreStreams.indexFrom(1), readLines(file, UTF_8))
+     *     BiStream.zip(MoreStreams.indexFrom(1), readLines(file, UTF_8).stream())
      *         .mapValues(first(':')::in)
      *         .mapValues((line, m) ->
      *             m.orElseThrow(() -> new InvalidArgumentException("Invalid line at " + line)));
