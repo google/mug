@@ -406,10 +406,10 @@ public final class Substring {
      *         .mapValues(Value::of)
      *         .collect(ImmutableSetMultimap::toImmutableSetMultimap);
      * }</pre>
-     * 
-     * Or, use the {@link #in} method to operate on the {@link Match} objects, which also allows
-     * custom handling of the error of not finding the separator, as well as the ability to report
-     * the offending line number:
+     *
+     * For maximum flexibility, use the {@link #in} method to operate on the {@link Match} objects,
+     * which also allows custom handling of the error of not finding the separator, as well as the
+     * ability to report the offending line number:
      *
      * <pre>{@code
      * ImmutableSetMultimap<Key, Value> keyValues =
@@ -423,7 +423,7 @@ public final class Substring {
      * }</pre>
      * 
      * The latter approach is also more efficient because it doesn't need to copy the key value
-     * pairs into a temporary {@code BiStream},
+     * pairs into a temporary {@code BiStream}.
      *
      * @since 4.6
      */
