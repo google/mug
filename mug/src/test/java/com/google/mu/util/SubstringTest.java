@@ -19,6 +19,7 @@ import org.junit.runners.JUnit4;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.NullPointerTester;
+import com.google.mu.util.stream.BiStream;
 
 @RunWith(JUnit4.class)
 public class SubstringTest {
@@ -635,6 +636,20 @@ public class SubstringTest {
   }
 
   @Test
+  public void splitting_toBiStream() {
+    ImmutableListMultimap<String, String> tags =
+        Stream.of("name = joe", "name= bob", " gender:male")
+            .collect(
+                first('=')
+                    .or(first(':'))
+                    .splitting(BiStream::toBiStream))
+            .mapKeys(String::trim)
+            .mapValues(String::trim)
+            .collect(ImmutableListMultimap::toImmutableListMultimap);
+    assertThat(tags).containsExactly("name", "joe", "name", "bob", "gender", "male");
+  }
+
+  @Test
   public void splittingTrimmed() {
     ImmutableListMultimap<String, String> tags =
         Stream.of(" name=joe", "name = bob ", " gender: male ")
@@ -911,46 +926,109 @@ public class SubstringTest {
     assertThat(match.length()).isEqualTo(3);
   }
 
-  @Test public void subSequence_negativeBeginIndex() {
-    Substring.Match sub = Substring.BEGINNING.in("foo").get();
-    assertThrows(IndexOutOfBoundsException.class, () -> sub.subSequence(-1, 1));
+  @Test
+  public void matchAsCharSequence() {
+    CharSequence match = first(" >= ").in("foo >= bar").get();
+    assertThat(match.length()).isEqualTo(4);
+    assertThat(match.charAt(0)).isEqualTo(' ');
+    assertThat(match.charAt(1)).isEqualTo('>');
+    assertThat(match.charAt(2)).isEqualTo('=');
+    assertThat(match.charAt(3)).isEqualTo(' ');
+    assertThat(match.toString()).isEqualTo(" >= ");
+    assertThrows(IndexOutOfBoundsException.class, () -> match.charAt(-1));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.charAt(4));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.charAt(Integer.MAX_VALUE));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.charAt(Integer.MIN_VALUE));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.subSequence(-1, 1));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.subSequence(5, 5));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.subSequence(0, 5));
   }
 
-  @Test public void subSequence_beginIndexGreaterThanEndIndex() {
-    Substring.Match sub = Substring.BEGINNING.in("foo").get();
-    assertThrows(IndexOutOfBoundsException.class, () -> sub.subSequence(1, 0));
+  @Test
+  public void matchAsCharSequence_subSequence() {
+    CharSequence match = first(" >= ").in("foo >= bar").get().subSequence(1, 3);
+    assertThat(match.length()).isEqualTo(2);
+    assertThat(match.charAt(0)).isEqualTo('>');
+    assertThat(match.charAt(1)).isEqualTo('=');
+    assertThat(match.toString()).isEqualTo(">=");
+    assertThrows(IndexOutOfBoundsException.class, () -> match.charAt(-1));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.charAt(2));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.charAt(Integer.MAX_VALUE));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.charAt(Integer.MIN_VALUE));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.subSequence(-1, 1));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.subSequence(3, 3));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.subSequence(0, 3));
   }
 
-  @Test public void subSequence_endIndexGreaterThanLength() {
-    Substring.Match sub = Substring.first("foo").in("foo bar").get();
-    assertThrows(IndexOutOfBoundsException.class, () -> sub.subSequence(0, 4));
+  @Test
+  public void matchAsCharSequence_subSequence_emptyAtHead() {
+    CharSequence match = first(" >= ").in("foo >= bar").get().subSequence(0, 0);
+    assertThat(match.length()).isEqualTo(0);
+    assertThat(match.toString()).isEqualTo("");
+    assertThat(match.subSequence(0, 0).toString()).isEqualTo("");
+    assertThrows(IndexOutOfBoundsException.class, () -> match.charAt(0));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.charAt(Integer.MAX_VALUE));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.charAt(Integer.MIN_VALUE));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.subSequence(-1, 1));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.subSequence(0, 1));
   }
 
-  @Test public void subSequence_fullSequence() {
-    Substring.Match sub = Substring.first("foo").in("a foo b").get().subSequence(0, 3);
-    assertThat(sub.toString()).isEqualTo("foo");
-    assertThat(sub.length()).isEqualTo(3);
-    assertThat(sub.index()).isEqualTo(2);
-    assertThat(sub.before()).isEqualTo("a ");
-    assertThat(sub.after()).isEqualTo(" b");
+  @Test
+  public void matchAsCharSequence_subSequence_emptyInTheMiddle() {
+    CharSequence match = first(">=").in("foo >= bar").get().subSequence(1, 1);
+    assertThat(match.length()).isEqualTo(0);
+    assertThat(match.toString()).isEqualTo("");
+    assertThat(match.subSequence(0, 0).toString()).isEqualTo("");
+    assertThrows(IndexOutOfBoundsException.class, () -> match.charAt(0));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.charAt(Integer.MAX_VALUE));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.charAt(Integer.MIN_VALUE));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.subSequence(-1, 1));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.subSequence(0, 1));
   }
 
-  @Test public void subSequence_partialSequence() {
-    Substring.Match sub = Substring.first("fool").in("a fool b").get().subSequence(1, 3);
-    assertThat(sub.toString()).isEqualTo("oo");
-    assertThat(sub.length()).isEqualTo(2);
-    assertThat(sub.index()).isEqualTo(3);
-    assertThat(sub.before()).isEqualTo("a f");
-    assertThat(sub.after()).isEqualTo("l b");
+  @Test
+  public void matchAsCharSequence_subSequence_emptyAtEnd() {
+    CharSequence match = first(">=").in("foo >= bar").get().subSequence(2, 2);
+    assertThat(match.length()).isEqualTo(0);
+    assertThat(match.toString()).isEqualTo("");
+    assertThat(match.subSequence(0, 0).toString()).isEqualTo("");
+    assertThrows(IndexOutOfBoundsException.class, () -> match.charAt(0));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.charAt(Integer.MAX_VALUE));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.charAt(Integer.MIN_VALUE));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.subSequence(-1, 1));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.subSequence(0, 1));
   }
 
-  @Test public void subSequence_zeroLength() {
-    Substring.Match sub = Substring.first("fool").in("fool").get().subSequence(1, 1);
-    assertThat(sub.toString()).isEmpty();
-    assertThat(sub.length()).isEqualTo(0);
-    assertThat(sub.index()).isEqualTo(1);
-    assertThat(sub.before()).isEqualTo("f");
-    assertThat(sub.after()).isEqualTo("ool");
+  @Test
+  public void matchAsCharSequence_subSequence_full() {
+    CharSequence match = first(">=").in("foo >= bar").get().subSequence(0, 2);
+    assertThat(match.length()).isEqualTo(2);
+    assertThat(match.charAt(0)).isEqualTo('>');
+    assertThat(match.charAt(1)).isEqualTo('=');
+    assertThat(match.toString()).isEqualTo(">=");
+    assertThrows(IndexOutOfBoundsException.class, () -> match.charAt(-1));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.charAt(2));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.charAt(Integer.MAX_VALUE));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.charAt(Integer.MIN_VALUE));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.subSequence(-1, 1));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.subSequence(3, 3));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.subSequence(0, 3));
+  }
+
+  @Test
+  public void matchAsCharSequence_subSequence_partial() {
+    CharSequence match = first(" >= ").in("foo >= bar").get().subSequence(1, 3);
+    assertThat(match.length()).isEqualTo(2);
+    assertThat(match.charAt(0)).isEqualTo('>');
+    assertThat(match.charAt(1)).isEqualTo('=');
+    assertThat(match.toString()).isEqualTo(">=");
+    assertThrows(IndexOutOfBoundsException.class, () -> match.charAt(-1));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.charAt(2));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.charAt(Integer.MAX_VALUE));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.charAt(Integer.MIN_VALUE));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.subSequence(-1, 1));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.subSequence(3, 3));
+    assertThrows(IndexOutOfBoundsException.class, () -> match.subSequence(0, 3));
   }
 
   @Test public void patternFrom_noMatch() {
