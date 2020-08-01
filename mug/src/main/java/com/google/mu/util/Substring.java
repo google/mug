@@ -394,8 +394,8 @@ public final class Substring {
      * }</pre>
      *
      * <p>If you need to trim the key-value pairs, you can use {@link #splittingTrimmed}. For more
-     * flexible use cases, such as transforming the keys or values to another type, consider to
-     * collect the pairs into a {@code BiStream} first and then chain away:
+     * flexible use cases, such as transforming the keys or values to another type, one approach is
+     * to collect the pairs into a {@code BiStream} first and then chain away:
      *
      * <pre>{@code
      * ImmutableSetMultimap<Key, Value> keyValues =
@@ -407,8 +407,8 @@ public final class Substring {
      * }</pre>
      * 
      * Or, use the {@link #in} method to operate on the {@link Match} objects, which also allows
-     * custom handling of the case of not finding the separator, and the ability to report line
-     * number of the offending line:
+     * custom handling of the case of not finding the separator, as well as the ability to report
+     * the offending line number:
      *
      * <pre>{@code
      * ImmutableSetMultimap<Key, Value> keyValues =
