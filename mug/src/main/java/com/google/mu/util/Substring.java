@@ -408,7 +408,7 @@ public final class Substring {
      * }</pre>
      * 
      * Or, use the {@link #in} method to operate on the {@link Match} objects, which also allows
-     * custom handling of the case of not finding the separator, as well as the ability to report
+     * custom handling of the error of not finding the separator, as well as the ability to report
      * the offending line number:
      *
      * <pre>{@code
