@@ -19,6 +19,7 @@ import org.junit.runners.JUnit4;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.NullPointerTester;
+import com.google.mu.util.stream.BiStream;
 
 @RunWith(JUnit4.class)
 public class SubstringTest {
@@ -631,6 +632,20 @@ public class SubstringTest {
                 first('=')
                     .or(first(':'))
                     .splitting(ImmutableListMultimap::toImmutableListMultimap));
+    assertThat(tags).containsExactly("name", "joe", "name", "bob", "gender", "male");
+  }
+
+  @Test
+  public void splitting_toBiStream() {
+    ImmutableListMultimap<String, String> tags =
+        Stream.of("name = joe", "name= bob", " gender:male")
+            .collect(
+                first('=')
+                    .or(first(':'))
+                    .splitting(BiStream::toBiStream))
+            .mapKeys(String::trim)
+            .mapValues(String::trim)
+            .collect(ImmutableListMultimap::toImmutableListMultimap);
     assertThat(tags).containsExactly("name", "joe", "name", "bob", "gender", "male");
   }
 

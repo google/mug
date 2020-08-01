@@ -393,6 +393,37 @@ public final class Substring {
      *         .collect(first(':').splitting(ImmutableSetMultimap::toImmutableSetMultimap));
      * }</pre>
      *
+     * <p>If you need to trim the key-value pairs, you can use {@link #splittingTrimmed}. For more
+     * flexible use cases, such as transforming the keys or values to another type, consider to
+     * collect the pairs into a {@code BiStream} first and then chain away:
+     *
+     * <pre>{@code
+     * ImmutableSetMultimap<Key, Value> keyValues =
+     *     readLines(file, UTF_8).stream()
+     *         .collect(first(':').splitting(BiStream::toBiStream))
+     *         .mapKeys(Key::of)
+     *         .mapValues(Value::of)
+     *         .collect(ImmutableSetMultimap::toImmutableSetMultimap);
+     * }</pre>
+     * 
+     * Or, use the {@link #in} method to operate on the {@link Match} objects, which also allows
+     * custom handling of the case of not finding the separator, and the ability to report line
+     * number of the offending line:
+     *
+     * <pre>{@code
+     * ImmutableSetMultimap<Key, Value> keyValues =
+     *     BiStream.zip(MoreStreams.indexFrom(1), readLines(file, UTF_8))
+     *         .mapValues(first(':')::in)
+     *         .mapValues((line, m) ->
+     *             m.orElseThrow(() -> new InvalidArgumentException("Invalid line at " + line)));
+     *         .mapKeys((line, m) -> Key.of(m.before().trim()))
+     *         .mapValues(m -> Value.of(m.after().trim()))
+     *         .collect(ImmutableSetMultimap::toImmutableSetMultimap);
+     * }</pre>
+     * 
+     * The latter approach is also more efficient because it doesn't need to copy the key value
+     * pairs into a temporary {@code BiStream},
+     *
      * @since 4.6
      */
     public final <T> Collector<String, ?, T> splitting(
