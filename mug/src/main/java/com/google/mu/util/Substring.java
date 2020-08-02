@@ -394,9 +394,10 @@ public final class Substring {
      * }</pre>
      *
      * <p>If you need to trim the key-value pairs, you can use {@link #splittingTrimmed
-     * splittingTrimmed()}. For more flexible use cases, such as transforming the keys or values
-     * to another type, one approach is to collect the pairs into a {@code BiStream} first and
-     * then chain away:
+     * splittingTrimmed()}.
+     *
+     * <p>For more flexible use cases, such as transforming the keys or values to another type, one
+     * approach is to collect the pairs into a {@code BiStream} first and then chain away:
      *
      * <pre>{@code
      * ImmutableSetMultimap<Key, Value> keyValues =
@@ -424,6 +425,20 @@ public final class Substring {
      * 
      * The latter approach is also more efficient because it doesn't need to copy the key value
      * pairs into a temporary {@code BiStream}.
+     *
+     * <p>This method offers similar functionality to that of {@link
+     * com.google.common.base.Splitter.MapSplitter#split}, with a few differences:
+     *
+     * <ul>
+     *   <li>{@code MapSplitter} splits to a {@code Map}, while any arbitrary {@link BiCollector}
+     *       can be used with this method to collect to custom objects, including but not limited to
+     *       multimaps, {@code ImmutableBimap}, {@code BiStream} etc.
+     *   <li>{@code MapSplitter} disallows duplicate keys, while with this method it's up to the
+     *       passed-in {@code BiCollector} to reject or allow duplicate keys.
+     *   <li>{@code MapSplitter} requires exactly one occurrence of the separator; the returned
+     *       Collector allows more than one occurrences. {@code first('=').splitting()} can split
+     *       "--args=a=b,c=d" into "--args" and "a=b,c=d".
+     * </ul>
      *
      * @since 4.6
      */
