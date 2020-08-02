@@ -384,7 +384,7 @@ public final class Substring {
     }
 
     /**
-     * Returns a {@code Collector} that splits each string in a stream into two parts, with the
+     * Returns a {@code Collector} that splits each string from a stream into two parts, with the
      * matched substring as the separator. For example:
      *
      * <pre>{@code
@@ -449,8 +449,9 @@ public final class Substring {
     }
 
     /**
-     * Returns a {@code Collector} that splits each string in a stream into two parts, with the
-     * matched substring as the separator, and each part trimmed. For example:
+     * Similar to {@link #splitting}, returns a {@code Collector} that splits each string from a
+     * stream into two parts, with the matched substring as the separator, but, also with each part
+     * trimmed. For example:
      *
      * <pre>{@code
      * ImmutableSetMultimap<String, String> keyValues =
