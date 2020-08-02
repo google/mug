@@ -436,8 +436,9 @@ public final class Substring {
      *   <li>{@code MapSplitter} disallows duplicate keys, while with this method it's up to the
      *       passed-in {@code BiCollector} to reject or allow duplicate keys.
      *   <li>{@code MapSplitter} requires exactly one occurrence of the separator; the returned
-     *       Collector allows more than one occurrences. {@code first('=').splitting()} can split
-     *       "--args=a=b,c=d" into "--args" and "a=b,c=d".
+     *       Collector allows more than one occurrences. {@code first('=').splitting()} will split
+     *       "--args=a=b,c=d" into "--args" and "a=b,c=d"; and {@code last('.').splitting()} will
+     *       split "my.file.txt" into "my.file" and "txt".
      * </ul>
      *
      * @since 4.6
