@@ -394,9 +394,10 @@ public final class Substring {
      * }</pre>
      *
      * <p>If you need to trim the key-value pairs, you can use {@link #splittingTrimmed
-     * splittingTrimmed()}. For more flexible use cases, such as transforming the keys or values
-     * to another type, one approach is to collect the pairs into a {@code BiStream} first and
-     * then chain away:
+     * splittingTrimmed()}.
+     *
+     * <p>For more flexible use cases, such as transforming the keys or values to another type, one
+     * approach is to collect the pairs into a {@code BiStream} first and then chain away:
      *
      * <pre>{@code
      * ImmutableSetMultimap<Key, Value> keyValues =
