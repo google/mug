@@ -450,7 +450,7 @@ public final class Substring {
 
     /**
      * Similar to {@link #splitting}, returns a {@code Collector} that splits each string from a
-     * stream into two parts, with the matched substring as the separator, but, also with each part
+     * stream into two parts, with the matched substring as the separator, but also with each part
      * trimmed. For example:
      *
      * <pre>{@code
