@@ -407,9 +407,9 @@ public final class Substring {
      *         .collect(ImmutableSetMultimap::toImmutableSetMultimap);
      * }</pre>
      *
-     * For maximum flexibility, use the {@link #in} method to operate on the {@link Match} objects,
-     * which also allows custom handling of the error of not finding the separator, as well as the
-     * ability to report the offending line number:
+     * <p>Alternatively, use the {@link #in} method to operate on the {@link Match} objects, which
+     * also allows custom handling of the error of not finding the separator, as well as the ability
+     * to report the offending line number:
      *
      * <pre>{@code
      * ImmutableSetMultimap<Key, Value> keyValues =
