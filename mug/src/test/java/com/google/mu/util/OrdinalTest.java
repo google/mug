@@ -132,6 +132,13 @@ public class OrdinalTest {
     }
   }
 
+  @Test public void interning() {
+    assertThat(Ordinal.first()).isSameAs(Ordinal.first());
+    for (int i = 1; i < 100; i++) {
+      assertThat(Ordinal.of(i)).isSameAs(Ordinal.of(i));
+    }
+  }
+
   @Test public void fromIndex() {
     for (int i = 0; i < 1000; i++) {
       assertThat(Ordinal.fromIndex(i).toIndex()).isEqualTo(i);

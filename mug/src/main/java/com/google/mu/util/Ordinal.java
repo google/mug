@@ -30,13 +30,14 @@ import java.util.stream.Stream;
  */
 public final class Ordinal implements Comparable<Ordinal> {
   private static final Ordinal[] INTERNED = IntStream.iterate(1, n -> n + 1)
-      .limit(128)
+      .limit(100)
       .mapToObj(Ordinal::new)
       .toArray(Ordinal[]::new);
 
   private final int num;
   
   private Ordinal(int num) {
+    if (num <= 0) throw new IllegalArgumentException(num + " <= 0");
     this.num = num;
   }
 
@@ -51,13 +52,12 @@ public final class Ordinal implements Comparable<Ordinal> {
   }
   
   /**
-   * Returns instance corresponding to {@code num}. Small integer numbers in the range of {@code [1, 128]}
+   * Returns instance corresponding to {@code num}. Small integer numbers in the range of {@code [1, 100]}
    * are cached.
    *
    * @throws IllegalArgumentException if {@code num} is not positive.
    */
   public static Ordinal of(int num) {
-    if (num <= 0) throw new IllegalArgumentException(num + " <= 0");
     return num > 0 && num <= INTERNED.length ? INTERNED[num - 1] : new Ordinal(num);
   }
   
