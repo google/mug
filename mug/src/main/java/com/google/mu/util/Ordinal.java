@@ -39,6 +39,11 @@ public final class Ordinal implements Comparable<Ordinal> {
   private Ordinal(int num) {
     this.num = num;
   }
+
+  /** Returns the first ordinal. */
+  public static Ordinal first() {
+    return of(1);
+  }
   
   /**
    * Returns instance corresponding to {@code num}. Small integer numbers in the range of {@code [1, 128]}
@@ -63,7 +68,12 @@ public final class Ordinal implements Comparable<Ordinal> {
 
   /** Returns the infinite stream of natural ordinals starting from "1st". */
   public static Stream<Ordinal> natural() {
-    return IntStream.iterate(1, n -> n + 1).mapToObj(Ordinal::of);
+    return Stream.iterate(first(), Ordinal::next);
+  }
+
+  /** Returns the next ordinal. */
+  public Ordinal next() {
+    return of(num + 1);
   }
 
   /**
