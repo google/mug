@@ -52,8 +52,8 @@ public final class Ordinal implements Comparable<Ordinal> {
   }
   
   /**
-   * Returns instance corresponding to {@code num}. Small integer numbers in the range of {@code [1, 100]}
-   * are cached.
+   * Returns instance corresponding to {@code num}, which is 1-based.
+   * Small integer numbers in the range of {@code [1, 100]} are cached.
    *
    * @throws IllegalArgumentException if {@code num} is not positive.
    */
