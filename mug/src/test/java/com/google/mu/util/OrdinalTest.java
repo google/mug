@@ -17,6 +17,7 @@ package com.google.mu.util;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static java.util.stream.Collectors.toList;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,7 +34,7 @@ import com.google.common.testing.EqualsTester;
 public class OrdinalTest {
   @Test public void testEquals() {
     new EqualsTester()
-        .addEqualityGroup(Ordinal.of(0), Ordinal.of(0))
+        .addEqualityGroup(Ordinal.of(1), Ordinal.of(1))
         .addEqualityGroup(Ordinal.of(12), Ordinal.of(12))
         .addEqualityGroup(12)
         .testEquals();
@@ -57,7 +58,6 @@ public class OrdinalTest {
   }
 
   @Test public void singleDigit() {
-    assertThat(name(0)).isEqualTo("0th");
     assertThat(name(1)).isEqualTo("1st");
     assertThat(name(2)).isEqualTo("2nd");
     assertThat(name(3)).isEqualTo("3rd");
@@ -121,40 +121,19 @@ public class OrdinalTest {
     assertThat(name(129)).isEqualTo("129th");
   }
 
-  @Test public void negativeSingleDigit() {
-    assertThat(name(-1)).isEqualTo("-1st");
-    assertThat(name(-2)).isEqualTo("-2nd");
-    assertThat(name(-3)).isEqualTo("-3rd");
-    assertThat(name(-4)).isEqualTo("-4th");
-    assertThat(name(-5)).isEqualTo("-5th");
-  }
-
-  @Test public void negativeTeens() {
-    assertThat(name(-10)).isEqualTo("-10th");
-    assertThat(name(-11)).isEqualTo("-11th");
-    assertThat(name(-12)).isEqualTo("-12th");
-    assertThat(name(-13)).isEqualTo("-13th");
-    assertThat(name(-14)).isEqualTo("-14th");
-    assertThat(name(-15)).isEqualTo("-15th");
-  }
-
-  @Test public void negativeTweens() {
-    assertThat(name(-20)).isEqualTo("-20th");
-    assertThat(name(-21)).isEqualTo("-21st");
-    assertThat(name(-22)).isEqualTo("-22nd");
-    assertThat(name(-23)).isEqualTo("-23rd");
-    assertThat(name(-24)).isEqualTo("-24th");
-    assertThat(name(-25)).isEqualTo("-25th");
+  @Test public void invalidOrdinal() {
+    assertThrows(IllegalArgumentException.class, () -> Ordinal.of(0));
+    assertThrows(IllegalArgumentException.class, () -> Ordinal.of(-1));
   }
 
   @Test public void of() {
-    for (int i = -100; i < 1000; i++) {
+    for (int i = 1; i < 1000; i++) {
       assertThat(Ordinal.of(i).toIndex()).isEqualTo(i - 1);
     }
   }
 
   @Test public void fromIndex() {
-    for (int i = -100; i < 1000; i++) {
+    for (int i = 0; i < 1000; i++) {
       assertThat(Ordinal.fromIndex(i).toIndex()).isEqualTo(i);
     }
   }
@@ -168,10 +147,6 @@ public class OrdinalTest {
 
   @Test public void maxValue() {
     assertThat(name(Integer.MAX_VALUE)).isEqualTo(Integer.MAX_VALUE + "th");
-  }
-
-  @Test public void minValue() {
-    assertThat(name(Integer.MIN_VALUE)).isEqualTo(Integer.MIN_VALUE + "th");
   }
 
   private static String name(int n) {

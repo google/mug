@@ -43,14 +43,19 @@ public final class Ordinal implements Comparable<Ordinal> {
   /**
    * Returns instance corresponding to {@code num}. Small integer numbers in the range of {@code [1, 128]}
    * are cached.
+   *
+   * @throws IllegalArgumentException if {@code num} is not positive.
    */
   public static Ordinal of(int num) {
+    if (num <= 0) throw new IllegalArgumentException(num + " <= 0");
     return num > 0 && num <= INTERNED.length ? INTERNED[num - 1] : new Ordinal(num);
   }
   
   /**
    * Returns instance corresponding to the 0-based {@code index}. That is:
    * index {@code 0} corresponds to {@code "1st"} and index {@code 1} for {@code "2nd"} etc.
+   *
+   * @throws IllegalArgumentException if {@code num} is negative.
    */
   public static Ordinal fromIndex(int index) {
     return of(index + 1);
@@ -91,22 +96,16 @@ public final class Ordinal implements Comparable<Ordinal> {
   @Override public String toString() {
     switch (num % 100) {
       case 11:
-      case -11:
       case 12:
-      case -12:
       case 13:
-      case -13:
         return num + "th";
       default:
         switch (num % 10) {
           case 1:
-          case -1:
             return num + "st";
           case 2:
-          case -2:
             return num + "nd";
           case 3:
-          case -3:
             return num + "rd";
           default:
             return num + "th";
