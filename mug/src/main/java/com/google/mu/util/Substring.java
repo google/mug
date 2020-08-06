@@ -16,14 +16,17 @@ package com.google.mu.util;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.google.mu.util.stream.BiCollector;
 import com.google.mu.util.stream.BiCollectors;
+import com.google.mu.util.stream.BiStream;
 
 /**
  * Utilities for creating patterns that attempt to match a substring in an input string. The matched
@@ -381,6 +384,111 @@ public final class Substring {
      */
     public final Pattern toEnd() {
       return map(Match::toEnd);
+    }
+
+    /**
+     * Split each string from the {@code strings} stream into two parts, with the
+     * matched substring as the separator. For example:
+     *
+     * <pre>{@code
+     * ImmutableSetMultimap<Key, String> keyValues =
+     *     first(':')
+     *         .split(readLines(file, UTF_8))
+     *         .mapKeys(Key::new)
+     *         .collect(ImmutableSetMultimap::toImmutableSetMultimap);
+     * }</pre>
+     *
+     * <p>If you need to trim the key-value pairs, you can use {@link #splitTrimmed(Stream) splitTrimmed()}.
+     *
+     * <p>This method offers similar functionality to that of {@link
+     * com.google.common.base.Splitter.MapSplitter#split}, with a few differences:
+     *
+     * <ul>
+     *   <li>{@code MapSplitter} splits to a {@code Map}, while any arbitrary {@link BiCollector}
+     *       can be used with this method to collect to custom objects, including but not limited to
+     *       multimaps, {@code ImmutableBimap}, {@code BiStream} etc.
+     *   <li>{@code MapSplitter} disallows duplicate keys, while with this method it's up to the
+     *       passed-in {@code BiCollector} to reject or allow duplicate keys.
+     *   <li>{@code MapSplitter} requires exactly one occurrence of the separator; the returned
+     *       Collector allows more than one occurrences. {@code first('=').split()} will split
+     *       "--args=a=b,c=d" into "--args" and "a=b,c=d"; and {@code last('.').split()} will
+     *       split "my.file.txt" into "my.file" and "txt".
+     * </ul>
+     *
+     * @throws IllegalArgumentException if any string doesn't contain this separator pattern.
+     * @since 4.6
+     */
+    public final BiStream<String, String> split(Collection<String> strings) {
+      return split(strings.stream());
+    }
+
+    public final BiStream<String, String> split(Stream<String> strings) {
+      return split(strings, BiStream::toBiStream);
+    }
+
+    public final <T> T split(
+        Collection<String> strings, BiCollector<? super String, ? super String, T> downstream) {
+      return split(strings.stream(), downstream);
+    }
+
+    public final <T> T split(
+        Stream<String> strings, BiCollector<? super String, ? super String, T> downstream) {
+      return BiStream.zip(Ordinal.natural(), strings)
+          .mapValues((i, s) -> {
+            Match match = match(s);
+            if (match == null) {
+              throw new IllegalArgumentException("Failed to split (" + i + "): '" + s + "'");
+            }
+            return match;
+          })
+          .map((i, m) -> m.before(), (i, m) -> m.after())
+          .collect(downstream);
+    }
+
+    public final BiStream<String, String> splitTrimmed(Collection<String> strings) {
+      return splitTrimmed(strings.stream());
+    }
+
+    public final BiStream<String, String> splitTrimmed(Stream<String> strings) {
+      return splitTrimmed(strings, BiStream::toBiStream);
+    }
+
+    /**
+     * Similar to {@link #split}, returns a {@code Collector} that splits each string from a
+     * stream into two parts, with the matched substring as the separator, but also with each part
+     * trimmed. For example:
+     *
+     * <pre>{@code
+     * ImmutableSetMultimap<String, String> keyValues = first(':').split(
+     *     readLines(file, UTF_8),
+     *     ImmutableSetMultimap::toImmutableSetMultimap);
+     * }</pre>
+     *
+     * @throws IllegalArgumentException if a string doesn't contain this separator pattern.
+     * @since 4.6
+     */
+    public final <T> T splitTrimmed(
+        Stream<String> strings, BiCollector<? super String, ? super String, T> downstream) {
+      return split(strings, BiCollectors.mapping((n, v) -> n.trim(), (n, v) -> v.trim(), downstream));
+    }
+
+    /**
+     * Similar to {@link #split}, returns a {@code Collector} that splits each string from a
+     * stream into two parts, with the matched substring as the separator, but also with each part
+     * trimmed. For example:
+     *
+     * <pre>{@code
+     * ImmutableSetMultimap<String, String> keyValues = first(':').splitTrimmed(
+     *     readLines(file, UTF_8),
+     *     ImmutableSetMultimap::toImmutableSetMultimap);
+     * }</pre>
+     *
+     * @throws IllegalArgumentException if any string doesn't contain this separator pattern.
+     * @since 4.6
+     */
+    public final <T> T splitTrimmed(
+        Collection<String> strings, BiCollector<? super String, ? super String, T> downstream) {
+      return splitTrimmed(strings.stream(), downstream);
     }
 
     /**
