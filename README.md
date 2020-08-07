@@ -11,10 +11,6 @@ A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/
     `String user = first('@').toEnd().removeFrom(email);`
 * [Parallelizer](#parallelizer) An _Executor-friendly_, _interruptible_ alternative to parallel streams.
 * Graph utilities ([Walker](https://google.github.io/mug/apidocs/com/google/mu/util/graph/Walker.html), [ShortestPath](https://google.github.io/mug/apidocs/com/google/mu/util/graph/ShortestPath.html))
-* [Retryer](#retryer) retries.
-* [Maybe](#maybe) tunnels checked exceptions through streams or futures.
-* [Funnel](#funnel) flows objects through batch conversions in FIFO order.
-* Functional interfaces that allow checked exceptions.
 
 ## Maven
 
