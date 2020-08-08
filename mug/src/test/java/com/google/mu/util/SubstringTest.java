@@ -6,6 +6,7 @@ import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.last;
 import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.Substring.suffix;
+import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Optional;
@@ -19,7 +20,6 @@ import org.junit.runners.JUnit4;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.NullPointerTester;
-import com.google.mu.util.stream.BiStream;
 
 @RunWith(JUnit4.class)
 public class SubstringTest {
@@ -625,38 +625,47 @@ public class SubstringTest {
   }
 
   @Test
-  public void splitting() {
-    ImmutableListMultimap<String, String> tags =
-        Stream.of("name=joe", "name=bob", "gender:male")
-            .collect(
-                first('=')
-                    .or(first(':'))
-                    .splitting(ImmutableListMultimap::toImmutableListMultimap));
+  public void split_cannotSplit() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> first('=').split(asList("name=joe", "name=bob", "gender:male")));
+    assertThat(thrown).hasMessageThat().contains("gender:male");
+    assertThat(thrown).hasMessageThat().contains("3rd");
+  }
+
+  @Test
+  public void split() {
+    ImmutableListMultimap<String, String> tags = first('=').or(first(':'))
+        .split(
+            Stream.of("name=joe", "name=bob", "gender:male"),
+            ImmutableListMultimap::toImmutableListMultimap);
     assertThat(tags).containsExactly("name", "joe", "name", "bob", "gender", "male");
   }
 
   @Test
-  public void splitting_toBiStream() {
-    ImmutableListMultimap<String, String> tags =
-        Stream.of("name = joe", "name= bob", " gender:male")
-            .collect(
-                first('=')
-                    .or(first(':'))
-                    .splitting(BiStream::toBiStream))
-            .mapKeys(String::trim)
-            .mapValues(String::trim)
-            .collect(ImmutableListMultimap::toImmutableListMultimap);
+  public void split_toBiStream() {
+    ImmutableListMultimap<String, String> tags = first('=').or(first(':'))
+        .split(asList("name = joe", "name= bob", " gender:male"))
+        .mapKeys(String::trim)
+        .mapValues(String::trim)
+        .collect(ImmutableListMultimap::toImmutableListMultimap);
     assertThat(tags).containsExactly("name", "joe", "name", "bob", "gender", "male");
   }
 
   @Test
-  public void splittingTrimmed() {
-    ImmutableListMultimap<String, String> tags =
-        Stream.of(" name=joe", "name = bob ", " gender: male ")
-            .collect(
-                first('=')
-                    .or(first(':'))
-                    .splittingTrimmed(ImmutableListMultimap::toImmutableListMultimap));
+  public void splitThenTrim() {
+    ImmutableListMultimap<String, String> tags = first('=').or(first(':'))
+        .splitThenTrim(
+            Stream.of(" name=joe", "name = bob ", " gender: male "),
+            ImmutableListMultimap::toImmutableListMultimap);
+    assertThat(tags).containsExactly("name", "joe", "name", "bob", "gender", "male");
+  }
+
+  @Test
+  public void splitThenTrim_toBiStream() {
+    ImmutableListMultimap<String, String> tags = first('=').or(first(':'))
+        .splitThenTrim(asList(" name=joe", "name = bob ", " gender: male "))
+        .collect(ImmutableListMultimap::toImmutableListMultimap);
     assertThat(tags).containsExactly("name", "joe", "name", "bob", "gender", "male");
   }
 
