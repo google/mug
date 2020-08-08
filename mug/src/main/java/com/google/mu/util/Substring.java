@@ -429,9 +429,9 @@ public final class Substring {
      * For example:
      *
      * <pre>{@code
-     * ImmutableSetMultimap<Key, String> keyValues =
-     *     first(':')
-     *         .split(readLines(file, UTF_8), ImmutableSetMultimap::toImmutableSetMultimap);
+     * ImmutableSetMultimap<Key, String> keyValues = first(':').split(
+     *     Splitter.on('\n').splitToStream(content),
+     *     ImmutableSetMultimap::toImmutableSetMultimap);
      * }</pre>
      *
      * <p>If you need to trim the key-value pairs, use {@link #splitThenTrim(Stream, BiCollector)
@@ -480,7 +480,7 @@ public final class Substring {
      *
      * <pre>{@code
      * ImmutableSetMultimap<String, String> keyValues = first(':').splitThenTrim(
-     *     readLines(file, UTF_8),
+     *     Splitter.on('\n').splitToStream(content),
      *     ImmutableSetMultimap::toImmutableSetMultimap);
      * }</pre>
      *
