@@ -16,14 +16,15 @@ package com.google.mu.util;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.google.mu.util.stream.BiCollector;
 import com.google.mu.util.stream.BiCollectors;
+import com.google.mu.util.stream.BiStream;
 
 /**
  * Utilities for creating patterns that attempt to match a substring in an input string. The matched
@@ -384,94 +385,111 @@ public final class Substring {
     }
 
     /**
-     * Returns a {@code Collector} that splits each string from a stream into two parts, with the
-     * matched substring as the separator. For example:
+     * Split each string from {@code strings} into two parts, separated by the matched substring.
+     * For example:
      *
      * <pre>{@code
-     * ImmutableSetMultimap<String, String> keyValues =
-     *     readLines(file, UTF_8).stream()
-     *         .collect(first(':').splitting(ImmutableSetMultimap::toImmutableSetMultimap));
-     * }</pre>
-     *
-     * <p>If you need to trim the key-value pairs, you can use {@link #splittingTrimmed
-     * splittingTrimmed()}.
-     *
-     * <p>For more flexible use cases, such as transforming the keys or values to another type, one
-     * approach is to collect the pairs into a {@code BiStream} first and then chain away:
-     *
-     * <pre>{@code
-     * ImmutableSetMultimap<Key, Value> keyValues =
-     *     readLines(file, UTF_8).stream()
-     *         .collect(first(':').splitting(BiStream::toBiStream))
-     *         .mapKeys(Key::of)
-     *         .mapValues(Value::of)
+     * ImmutableSetMultimap<Key, String> keyValues =
+     *     first(':')
+     *         .split(readLines(file, UTF_8))
+     *         .mapKeys(Key::new)
      *         .collect(ImmutableSetMultimap::toImmutableSetMultimap);
      * }</pre>
      *
-     * <p>Alternatively, use the {@link #in} method to operate on the {@link Match} objects, which
-     * also allows custom handling of the error of not finding the separator, as well as the ability
-     * to report the offending line number:
-     *
-     * <pre>{@code
-     * ImmutableSetMultimap<Key, Value> keyValues =
-     *     BiStream.zip(MoreStreams.indexFrom(1), readLines(file, UTF_8).stream())
-     *         .mapValues(first(':')::in)
-     *         .mapValues((line, m) ->
-     *             m.orElseThrow(() -> new InvalidArgumentException("Invalid line at " + line)));
-     *         .mapKeys((line, m) -> Key.of(m.before().trim()))
-     *         .mapValues(m -> Value.of(m.after().trim()))
-     *         .collect(ImmutableSetMultimap::toImmutableSetMultimap);
-     * }</pre>
-     * 
-     * The latter approach is also more efficient because it doesn't need to copy the key value
-     * pairs into a temporary {@code BiStream}.
+     * <p>If you need to trim the key-value pairs, use {@link #splitThenTrim(Collection)
+     * splitThenTrim()} instead.
      *
      * <p>This method offers similar functionality to that of {@link
      * com.google.common.base.Splitter.MapSplitter#split}, with a few differences:
      *
      * <ul>
-     *   <li>{@code MapSplitter} splits to a {@code Map}, while any arbitrary {@link BiCollector}
-     *       can be used with this method to collect to custom objects, including but not limited to
-     *       multimaps, {@code ImmutableBimap}, {@code BiStream} etc.
+     *   <li>{@code MapSplitter} splits only to a {@code Map}, while through the returned
+     *       {@code BiStream} or the {@link #split(Stream, BiCollector)} overload, it's easy to
+     *       split to collections like {@code Multimap}, {@code BiMap} etc.
      *   <li>{@code MapSplitter} disallows duplicate keys, while with this method it's up to the
-     *       passed-in {@code BiCollector} to reject or allow duplicate keys.
-     *   <li>{@code MapSplitter} requires exactly one occurrence of the separator; the returned
-     *       Collector allows more than one occurrences. {@code first('=').splitting()} will split
-     *       "--args=a=b,c=d" into "--args" and "a=b,c=d"; and {@code last('.').splitting()} will
+     *       caller to reject or allow duplicate keys (i.e. {@code collect(toMap())} to reject
+     *       duplicate keys, or {@code collect(ImmutableListMultimap::toImmutableListMultimap)}
+     *       to allow duplicate keys.
+     *   <li>{@code MapSplitter} requires exactly one occurrence of the separator; {@code split()}
+     *       allows more than one occurrences. {@code first('=').split()} will split
+     *       "--args=a=b,c=d" into "--args" and "a=b,c=d"; and {@code last('.').split()} will
      *       split "my.file.txt" into "my.file" and "txt".
      * </ul>
      *
+     * @throws IllegalArgumentException if any string doesn't contain this separator pattern.
      * @since 4.6
      */
-    public final <T> Collector<String, ?, T> splitting(
-        BiCollector<? super String, ? super String, T> downstream) {
-      return Collectors.mapping(this::doSplit, downstream.splitting(Match::before, Match::after));
+    public final BiStream<String, String> split(Collection<String> strings) {
+      return split(strings.stream(), BiStream::toBiStream);
     }
 
     /**
-     * Similar to {@link #splitting}, returns a {@code Collector} that splits each string from a
-     * stream into two parts, with the matched substring as the separator, but also with each part
-     * trimmed. For example:
+     * Split each string from {@code strings} into two parts, separated by the matched
+     * substring, and then collect the split parts using {@code downstream} BiCollector.
+     * For example:
      *
      * <pre>{@code
-     * ImmutableSetMultimap<String, String> keyValues =
-     *     readLines(file, UTF_8).stream()
-     *         .collect(first(':').splittingTrimmed(ImmutableSetMultimap::toImmutableSetMultimap));
+     * ImmutableSetMultimap<Key, String> keyValues =
+     *     first(':')
+     *         .split(readLines(file, UTF_8), ImmutableSetMultimap::toImmutableSetMultimap);
      * }</pre>
      *
+     * <p>If you need to trim the key-value pairs, use {@link #splitThenTrim(Stream, BiCollector)
+     * splitThenTrim()} instead.
+     *
+     * @throws IllegalArgumentException if any string doesn't contain this separator pattern.
      * @since 4.6
      */
-    public final <T> Collector<String, ?, T> splittingTrimmed(
-        BiCollector<? super String, ? super String, T> downstream) {
-      return splitting(BiCollectors.mapping((n, v) -> n.trim(), (n, v) -> v.trim(), downstream));
+    public final <T> T split(
+        Stream<String> strings, BiCollector<? super String, ? super String, T> downstream) {
+      return BiStream.zip(Ordinal.natural(), strings)
+          .mapValues((i, s) -> {
+            Match match = match(s);
+            if (match == null) {
+              throw new IllegalArgumentException("Failed to split (" + i + ") string: '" + s + "'");
+            }
+            return match;
+          })
+          .map((i, m) -> m.before(), (i, m) -> m.after())
+          .collect(downstream);
     }
 
-    private Match doSplit(String s) {
-      Match match = match(s);
-      if (match == null) {
-        throw new IllegalArgumentException("Failed to split '" + s + "'.");
-      }
-      return match;
+    /**
+     * Similar to {@link #split(Collection)}, splits each string from {@code strings}.
+     * separated by the matched substring, and then trim the leading and trailing whitespaces
+     * from the split parts. For example:
+     *
+     * <pre>{@code
+     * ImmutableSetMultimap<Key, String> keyValues = first(':')
+     *     .splitThenTrim(readLines(file, UTF_8))
+     *     .mapKeys(Key::of)
+     *     .collect(ImmutableSetMultimap::toImmutableSetMultimap);
+     * }</pre>
+     *
+     * @throws IllegalArgumentException if any string doesn't contain this separator pattern.
+     * @since 4.6
+     */
+    public final BiStream<String, String> splitThenTrim(Collection<String> strings) {
+      return splitThenTrim(strings.stream(), BiStream::toBiStream);
+    }
+
+    /**
+     * Similar to {@link #split(Stream, downstream)}, splits each string from {@code strings}
+     * into two parts, separated by the matched substring, and then trim the leading and
+     * trailing whitespaces from the split parts. For example:
+     *
+     * <pre>{@code
+     * ImmutableSetMultimap<String, String> keyValues = first(':').splitThenTrim(
+     *     readLines(file, UTF_8),
+     *     ImmutableSetMultimap::toImmutableSetMultimap);
+     * }</pre>
+     *
+     * @throws IllegalArgumentException if any string doesn't contain this separator pattern.
+     * @since 4.6
+     */
+    public final <T> T splitThenTrim(
+        Stream<String> strings, BiCollector<? super String, ? super String, T> downstream) {
+      return split(strings, BiCollectors.mapping((n, v) -> n.trim(), (n, v) -> v.trim(), downstream));
     }
 
     private Pattern map(UnaryOperator<Match> mapper) {
@@ -576,7 +594,7 @@ public final class Substring {
       requireNonNull(replacement);
       return before() + replacement + after();
     }
-  
+
     /**
      * Returns the starting index of this substring in the containing string.
      *
@@ -585,7 +603,7 @@ public final class Substring {
     public int index() {
       return startIndex;
     }
-  
+
     /** @deprecated Use {@link #index} instead. */
     @Deprecated
     public int getIndex() {
@@ -604,7 +622,7 @@ public final class Substring {
       }
       return context.charAt(startIndex + i);
     }
-  
+
     @Override public CharSequence subSequence(int begin, int end) {
       if (begin < 0) {
         throw new IndexOutOfBoundsException("Invalid index: " + begin);
