@@ -18,10 +18,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
- * An {@code Ordinal} represents a 1-based ordinal number, used in natural languages such that the
- * first element is called the {@code "1st"} and the second called the {@code "2nd"} etc.
- *
- * <p>This class provides type-safe transition between 1-based Ordinal and 0-based indexes that are
+ * This class provides type-safe transition between 1-based Ordinal and 0-based indexes that are
  * commonly used to index arrays and lists. This is useful especially to translate between
  * end-user friendly numbers and machine-friendly index numbers, like for example, to report error
  * messages.
@@ -89,6 +86,7 @@ public final class Ordinal implements Comparable<Ordinal> {
     return of(num + 1);
   }
 
+  /** Compares to {@code that} according to natural order. */
   @Override public int compareTo(Ordinal that) {
     return Integer.compare(num, that.num);
   }
