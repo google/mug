@@ -82,7 +82,8 @@ import com.google.mu.util.stream.MoreStreams;
  *
  * <pre>{@code
  *   ImmutableListMultimap<String, String> tags = lines.stream()
- *       .collect(first(':').splittingTrimmed(ImmutableListMultimap::toImmutableListMultimap));
+ *       .collect(toBiStream((first(':')::splitThenTrim)))
+ *       .collect(ImmutableListMultimap::toImmutableListMultimap);
  * }</pre>
  *
  * @since 2.0
