@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -61,6 +62,15 @@ import com.google.common.truth.MultimapSubject;
 public class BiStreamTest {
   @Test public void testBiStreamWithKeyAndValueFunctions() {
     assertKeyValues(BiStream.from(Stream.of(1, 2), Object::toString, v -> v))
+        .containsExactlyEntriesIn(ImmutableMultimap.of("1", 1, "2", 2))
+        .inOrder();
+    assertKeyValues(BiStream.from(Stream.of(1, 2).parallel(), BiStreamTest::withToString))
+        .containsExactlyEntriesIn(ImmutableMultimap.of("1", 1, "2", 2))
+        .inOrder();
+  }
+
+  @Test public void testBiStreamWithDualValuedFunctions() {
+    assertKeyValues(BiStream.from(Stream.of(1, 2), BiStreamTest::withToString))
         .containsExactlyEntriesIn(ImmutableMultimap.of("1", 1, "2", 2))
         .inOrder();
     assertKeyValues(BiStream.from(Stream.of(1, 2).parallel(), Object::toString, v -> v))
@@ -771,5 +781,11 @@ public class BiStreamTest {
 
   private static Stream<Character> chars(String s) {
     return s.chars().mapToObj(c -> (char) c);
+  }
+
+  // T doesn't use wildcard to test that less-than-perfect method-ref can be used as
+  // DualValuedFunction.
+  private static <T, R> R withToString(T obj, BiFunction<? super String, ? super T, R> then) {
+    return then.apply(obj.toString(), obj);
   }
 }

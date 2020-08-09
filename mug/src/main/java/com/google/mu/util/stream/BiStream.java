@@ -58,6 +58,8 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
+import com.google.mu.function.DualValuedFunction;
+
 /**
  * A class similar to {@link Stream}, but operating over a sequence of pairs of objects.
  *
@@ -395,6 +397,22 @@ public abstract class BiStream<K, V> {
   }
 
   /**
+   * Returns a {@code Collector} that splits each input element into two values and collects them
+   * into a {@link BiStream}.
+   *
+   * <p>Note that it's more efficient to use {@code BiStream.(stream, mapper)} than
+   * {@code stream.collect(toBiStream(mapper))}. The latter is intended to be used in the
+   * middle of a long stream pipeline, when performance isn't critical.
+   *
+   * @since 4.6
+   */
+  public static <E, K, V> Collector<E, ?, BiStream<K, V>> toBiStream(
+      DualValuedFunction<? super E, ? extends K, ? extends V> mapper) {
+    requireNonNull(mapper);
+    return MoreStreams.copying(copy -> from(copy, mapper));
+  }
+
+  /**
    * Returns a {@code Collector} that copies each input element as a pair of itself into an equivalent
    * {@code BiStream}.
    *
@@ -562,6 +580,26 @@ public abstract class BiStream<K, V> {
       Function<? super T, ? extends K> toKey,
       Function<? super T, ? extends V> toValue) {
     return new GenericEntryStream<>(stream, toKey, toValue);
+  }
+
+  /**
+   * Returns a {@code BiStream} of the elements from {@code stream}, each transformed to a pair of
+   * values with {@code mapper} function.
+   */
+  public static <T, K, V> BiStream<K, V> from(
+      Collection<T> elements,
+      DualValuedFunction<? super T, ? extends K, ? extends V> mapper) {
+    return from(elements.stream(), mapper);
+  }
+
+  /**
+   * Returns a {@code BiStream} of the elements from {@code stream}, each transformed to a pair of
+   * values with {@code mapper} function.
+   */
+  public static <T, K, V> BiStream<K, V> from(
+      Stream<T> stream,
+      DualValuedFunction<? super T, ? extends K, ? extends V> mapper) {
+    return from(stream.map(mapper.andThen(BiStream::kv)));
   }
 
   static <K, V, E extends Map.Entry<? extends K, ? extends V>> BiStream<K, V> from(
