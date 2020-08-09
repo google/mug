@@ -391,9 +391,11 @@ public final class Substring {
      * <pre>{@code
      * import static com.google.mu.util.stream.MoreStreams.mapping;
      *
-     * Map<String, String> keyValues =
+     * ImmutableListMultimap<Key, String> keyValues =
      *     readLines(file, UTF_8).stream()
-     *         .collect(mapping(first('=')::split, BiCollectors.toMap());
+     *         .collect(toBiStream(first('=')::split))
+     *         .mapKeys(Key::of)
+     *         .collect(ImmutableListMultimap::toImmutableListMultimap);
      * }</pre>
      *
      * <p>If you need to trim the key-value pairs, use {@link #splitThenTrim} instead.
@@ -424,7 +426,7 @@ public final class Substring {
      *
      * Map<String, String> keyValues =
      *     readLines(file, UTF_8).stream()
-     *         .collect(mapping(first('=')::split, BiCollectors.toMap());
+     *         .collect(mapping(first('=')::splitThenTrim, BiCollectors.toMap());
      * }</pre>
      *
      * @throws IllegalArgumentException if this separator pattern isn't found in {@code string}.
