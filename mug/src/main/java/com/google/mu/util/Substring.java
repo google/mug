@@ -46,7 +46,7 @@ import com.google.mu.util.stream.MoreStreams;
  * To strip off either an "http://" or "https://" prefix if present:
  *
  * <pre>
- *   static import com.google.common.labs.base.Substring.prefix;
+ *   static import com.google.util.Substring.prefix;
  *
  *   static String stripHttpOrHttps(String uri) {
  *     return prefix("http://").or(prefix("https://")).removeFrom(uri);
