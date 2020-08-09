@@ -110,13 +110,11 @@ public final class Substring {
    */
   public static final Pattern BEGINNING =
       new Pattern() {
-        @Override
-        Match match(String str, int fromIndex) {
+        @Override Match match(String str, int fromIndex) {
           return new Match(str, fromIndex, 0);
         }
 
-        @Override
-        public String toString() {
+        @Override public String toString() {
           return "BEGINNING";
         }
       };
@@ -133,13 +131,11 @@ public final class Substring {
    */
   public static final Pattern END =
       new Pattern() {
-        @Override
-        Match match(String str, int fromIndex) {
+        @Override Match match(String str, int fromIndex) {
           return new Match(str, str.length(), 0);
         }
 
-        @Override
-        public String toString() {
+        @Override public String toString() {
           return "END";
         }
       };
@@ -147,13 +143,11 @@ public final class Substring {
   /** {@code Pattern} that matches the entire string. */
   private static final Pattern FULL =
       new Pattern() {
-        @Override
-        public Match match(String s, int fromIndex) {
+        @Override public Match match(String s, int fromIndex) {
           return new Match(s, fromIndex, s.length() - fromIndex);
         }
 
-        @Override
-        public String toString() {
+        @Override public String toString() {
           return "FULL";
         }
       };
@@ -223,14 +217,12 @@ public final class Substring {
       return first(str.charAt(0));
     }
     return new Pattern() {
-      @Override
-      Match match(String input, int fromIndex) {
+      @Override Match match(String input, int fromIndex) {
         int index = input.indexOf(str, fromIndex);
         return index >= 0 ? new Match(input, index, str.length()) : null;
       }
 
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return "first('" + str + "')";
       }
     };
@@ -239,14 +231,12 @@ public final class Substring {
   /** Returns a {@code Pattern} that matches the first occurrence of {@code character}. */
   public static Pattern first(char character) {
     return new Pattern() {
-      @Override
-      Match match(String input, int fromIndex) {
+      @Override Match match(String input, int fromIndex) {
         int index = input.indexOf(character, fromIndex);
         return index >= 0 ? new Match(input, index, 1) : null;
       }
 
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return "first(\'" + character + "\')";
       }
     };
@@ -289,8 +279,7 @@ public final class Substring {
       throw new IndexOutOfBoundsException("Capturing group " + group + " doesn't exist.");
     }
     return new Pattern() {
-      @Override
-      Match match(String input, int fromIndex) {
+      @Override Match match(String input, int fromIndex) {
         java.util.regex.Matcher matcher = regexPattern.matcher(input);
         if (matcher.find(fromIndex)) {
           int start = matcher.start(group);
@@ -299,8 +288,7 @@ public final class Substring {
         return null;
       }
 
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return "first(\"" + regexPattern + "\", " + group + ")";
       }
     };
@@ -317,8 +305,7 @@ public final class Substring {
             .peek(Objects::requireNonNull)
             .collect(toList());
     return new Pattern() {
-      @Override
-      Match match(String input, int fromIndex) {
+      @Override Match match(String input, int fromIndex) {
         int begin = -1;
         for (String stop : stops) {
           int index = input.indexOf(stop, fromIndex);
@@ -333,8 +320,7 @@ public final class Substring {
         return new Match(input, begin, fromIndex - begin);
       }
 
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return "spanningInOrder("
             + stops.stream().map(s -> "'" + s + "'").collect(joining(", "))
             + ")";
@@ -348,14 +334,12 @@ public final class Substring {
       return last(str.charAt(0));
     }
     return new Pattern() {
-      @Override
-      Match match(String input, int fromIndex) {
+      @Override Match match(String input, int fromIndex) {
         int index = input.lastIndexOf(str);
         return index >= fromIndex ? new Match(input, index, str.length()) : null;
       }
 
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return "last('" + str + "')";
       }
     };
@@ -364,14 +348,12 @@ public final class Substring {
   /** Returns a {@code Pattern} that matches the last occurrence of {@code character}. */
   public static Pattern last(char character) {
     return new Pattern() {
-      @Override
-      Match match(String input, int fromIndex) {
+      @Override Match match(String input, int fromIndex) {
         int index = input.lastIndexOf(character);
         return index >= fromIndex ? new Match(input, index, 1) : null;
       }
 
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return "last('" + character + "')";
       }
     };
@@ -389,8 +371,7 @@ public final class Substring {
   public static Pattern before(Pattern delimiter) {
     requireNonNull(delimiter);
     return new Pattern() {
-      @Override
-      Match match(String input, int fromIndex) {
+      @Override Match match(String input, int fromIndex) {
         Match match = delimiter.match(input, fromIndex);
         return match == null
             ? null
@@ -400,8 +381,7 @@ public final class Substring {
             : new Match(input, fromIndex, match.startIndex - fromIndex, match.succeedingIndex);
       }
 
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return "before(" + delimiter + ")";
       }
     };
@@ -419,14 +399,12 @@ public final class Substring {
   public static Pattern after(Pattern delimiter) {
     requireNonNull(delimiter);
     return new Pattern() {
-      @Override
-      Match match(String input, int fromIndex) {
+      @Override Match match(String input, int fromIndex) {
         Match match = delimiter.match(input, fromIndex);
         return match == null ? null : match.following();
       }
 
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return "after(" + delimiter + ")";
       }
     };
@@ -448,8 +426,7 @@ public final class Substring {
   public static Pattern upToIncluding(Pattern pattern) {
     requireNonNull(pattern);
     return new Pattern() {
-      @Override
-      Match match(String input, int fromIndex) {
+      @Override Match match(String input, int fromIndex) {
         Match match = pattern.match(input, fromIndex);
         return match == null
             ? null
@@ -457,8 +434,7 @@ public final class Substring {
             : new Match(input, fromIndex, match.endIndex - fromIndex, match.succeedingIndex);
       }
 
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return "upToIncluding(" + pattern + ")";
       }
     };
@@ -478,8 +454,7 @@ public final class Substring {
     requireNonNull(open);
     requireNonNull(close);
     return new Pattern() {
-      @Override
-      Match match(String input, int fromIndex) {
+      @Override Match match(String input, int fromIndex) {
         Match left = open.match(input, fromIndex);
         if (left == null) {
           return null;
@@ -494,8 +469,7 @@ public final class Substring {
             input, /*startIndex=*/ left.endIndex, /*length=*/ right.startIndex - left.endIndex);
       }
 
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return "between(" + open + ", " + close + ")";
       }
     };
@@ -549,8 +523,7 @@ public final class Substring {
             private final int end = input.length();
             private int nextIndex = 0;
 
-            @Override
-            public Match get() {
+            @Override public Match get() {
               if (nextIndex > end) {
                 return null;
               }
@@ -651,14 +624,12 @@ public final class Substring {
     public final Pattern toEnd() {
       Pattern base = this;
       return new Pattern() {
-        @Override
-        Match match(String input, int fromIndex) {
+        @Override Match match(String input, int fromIndex) {
           Match match = base.match(input, fromIndex);
           return match == null ? null : match.toEnd();
         }
 
-        @Override
-        public String toString() {
+        @Override public String toString() {
           return base + ".toEnd()";
         }
       };
@@ -709,14 +680,12 @@ public final class Substring {
       requireNonNull(that);
       Pattern base = this;
       return new Pattern() {
-        @Override
-        Match match(String input, int fromIndex) {
+        @Override Match match(String input, int fromIndex) {
           Match match = base.match(input, fromIndex);
           return match == null ? that.match(input, fromIndex) : match;
         }
 
-        @Override
-        public String toString() {
+        @Override public String toString() {
           return base + ".or(" + that + ")";
         }
       };
@@ -775,8 +744,7 @@ public final class Substring {
      * Do not depend on the string representation of Substring, except for subtypes {@link Prefix}
      * and {@link Suffix} that have an explicitly defined representation.
      */
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return super.toString();
     }
   }
@@ -793,16 +761,14 @@ public final class Substring {
       this.prefix = prefix;
     }
 
-    @Override
-    Match match(String input, int fromIndex) {
+    @Override Match match(String input, int fromIndex) {
       return input.startsWith(prefix, fromIndex)
           ? new Match(input, fromIndex, prefix.length())
           : null;
     }
 
     /** Returns this prefix string. */
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return prefix;
     }
   }
@@ -819,8 +785,7 @@ public final class Substring {
       this.suffix = suffix;
     }
 
-    @Override
-    Match match(String input, int fromIndex) {
+    @Override Match match(String input, int fromIndex) {
       int index = input.length() - suffix.length();
       return index >= fromIndex && input.endsWith(suffix)
           ? new Match(input, index, suffix.length())
@@ -828,8 +793,7 @@ public final class Substring {
     }
 
     /** Returns this suffix string. */
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return suffix;
     }
   }
@@ -951,8 +915,7 @@ public final class Substring {
     }
 
     /** Returns the length of the matched substring. */
-    @Override
-    public int length() {
+    @Override public int length() {
       return endIndex - startIndex;
     }
 
@@ -960,8 +923,7 @@ public final class Substring {
      * {@inheritDoc}
      * @since 4.6
      */
-    @Override
-    public char charAt(int i) {
+    @Override public char charAt(int i) {
       if (i < 0 || i >= length()) {
         throw new IndexOutOfBoundsException("Invalid index: " + i);
       }
@@ -972,8 +934,7 @@ public final class Substring {
      * {@inheritDoc}
      * @since 4.6
      */
-    @Override
-    public CharSequence subSequence(int begin, int end) {
+    @Override public CharSequence subSequence(int begin, int end) {
       if (begin < 0) {
         throw new IndexOutOfBoundsException("Invalid index: " + begin);
       }
@@ -987,8 +948,7 @@ public final class Substring {
     }
 
     /** Returns the matched substring. */
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return context.substring(startIndex, endIndex);
     }
 
