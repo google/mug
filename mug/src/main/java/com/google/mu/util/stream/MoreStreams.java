@@ -401,7 +401,13 @@ public final class MoreStreams {
 
   /**
    * Returns a {@code Collector} that maps each input into two values, which in turn are
-   * collected by the {@code downstream} BiCollector.
+   * collected by the {@code downstream} BiCollector. For example, the following code
+   * split a stream of strings into a map of key values:
+   *
+   * <pre>{@code
+   * Map<String, String> keyValues = Stream.of("name=joe", "age=10")
+   *     .collect(mapping(Substring.first('=')::splitThenTrim, BiCollectors.toMap()));
+   * }</pre>
    */
   public static <T, K, V, R> Collector<T, ?, R> mapping(
       DualValuedFunction<? super T, ? extends K, ? extends V> mapper,
