@@ -76,8 +76,9 @@ public class BiStreamTest {
     assertKeyValues(BiStream.from(Stream.of(1, 2), BiStreamTest::withToString))
         .containsExactlyEntriesIn(ImmutableMultimap.of("1", 1, "2", 2))
         .inOrder();
-    assertKeyValues(BiStream.from(Stream.of(1, 2).parallel(), Object::toString, v -> v))
-        .containsExactlyEntriesIn(ImmutableMultimap.of("1", 1, "2", 2))
+    assertThat(BiStream.from(asList("name=joe", "age=10"), Substring.first('=')::split)
+        .collect(toImmutableListMultimap()))
+        .containsExactly("name", "joe", "age", "10")
         .inOrder();
   }
 

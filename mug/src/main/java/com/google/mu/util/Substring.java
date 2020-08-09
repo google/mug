@@ -665,7 +665,8 @@ public final class Substring {
      *         .iterateIn(queryString)
      *         .filter(m -> m.length() > 0)
      *         .map(Match::toString)
-     *         .collect(first('=').splitting(toImmutableListMultimap()));
+     *         .collect(toBiStream(first('=')::split))
+     *         .collect(ImmutableListMultimap::toImmutableListMultimap);
      * }</pre>
      *
      * @since 4.6
