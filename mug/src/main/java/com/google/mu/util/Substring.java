@@ -657,11 +657,9 @@ public final class Substring {
      * '&' and '=' in a HTTP query string:
      *
      * <pre>{@code
-     * import static com.google.common.labs.collect.BiCollectors.toImmutableListMultimap;
-     *
+     * Substring.Pattern param = first('&').delimited();
      * ImmutableListMultimap<String, String> queryParams =
-     *     first('&')
-     *         .delimited()
+     *     param
      *         .iterateIn(queryString)
      *         .filter(m -> m.length() > 0)
      *         .map(Match::toString)
