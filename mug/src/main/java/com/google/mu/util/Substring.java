@@ -206,6 +206,8 @@ public final class Substring {
    *   assertThat(Substring.between(substring("/"), substring("/")).from("/usr/home/abc"))
    *       .hasValue("usr");
    * </pre>
+   *
+   * @since 4.6
    */
   public static Pattern substring(String str) {
     return first(str);
