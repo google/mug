@@ -408,6 +408,8 @@ public final class MoreStreams {
    * Map<String, String> keyValues = Stream.of("name=joe", "age=10")
    *     .collect(mapping(Substring.first('=')::splitThenTrim, BiCollectors.toMap()));
    * }</pre>
+   *
+   * @since 4.6
    */
   public static <T, K, V, R> Collector<T, ?, R> mapping(
       DualValuedFunction<? super T, ? extends K, ? extends V> mapper,
