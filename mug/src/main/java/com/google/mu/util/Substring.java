@@ -15,11 +15,20 @@
 package com.google.mu.util;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiFunction;
-import java.util.function.UnaryOperator;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+
+import com.google.mu.util.stream.MoreStreams;
 
 /**
  * Utilities for creating patterns that attempt to match a substring in an input string. The matched
@@ -82,82 +91,163 @@ public final class Substring {
 
   /** {@code Pattern} that never matches any substring. */
   public static final Pattern NONE = new Pattern() {
-    @Override public Match match(String s) {
+    @Override Match match(String s, int fromIndex) {
       requireNonNull(s);
       return null;
     }
+    @Override public String toString() {
+      return "NONE";
+    }
   };
-
   /**
    * {@code Pattern} that matches the empty substring at the beginning of the input string.
+   * Typically used to represent an optional delimiter. For example, the following pattern matches
+   * the substring after optional "header_name=":
    *
-   * @since 2.1
+   * <pre>
+   * static final Substring.Pattern VALUE = Substring.after(first('=').or(BEGINNING));
+   * </pre>
    */
-  public static final Pattern BEGINNING = new Pattern() {
-    @Override public Match match(String s) {
-      requireNonNull(s);
-      return new Match(s, 0, 0);
-    }
-  };
+  public static final Pattern BEGINNING =
+      new Pattern() {
+        @Override
+        Match match(String str, int fromIndex) {
+          return new Match(str, fromIndex, 0);
+        }
+
+        @Override
+        public String toString() {
+          return "BEGINNING";
+        }
+      };
 
   /**
-   * {@code Pattern} that matches the empty substring at the end of the input string.
+   * {@code Pattern} that matches the empty substring at the end of the input string. Typically used
+   * to represent an optional delimiter. For example, the following pattern matches the text between
+   * the first occurrence of the string "id=" and the end of that line, or the end of the string:
    *
-   * @since 2.1
+   * <pre>
+   * static final Substring.Pattern ID =
+   *     Substring.between(substring("id="), substring("\n").or(END));
+   * </pre>
    */
-  public static final Pattern END = new Pattern() {
-    @Override public Match match(String s) {
-      return new Match(s, s.length(), s.length());
-    }
-  };
+  public static final Pattern END =
+      new Pattern() {
+        @Override
+        Match match(String str, int fromIndex) {
+          return new Match(str, str.length(), 0);
+        }
 
-  /** Returns a {@code Pattern} that matches strings starting with {@code prefix}. */
-  public static Pattern prefix(String prefix) {
-    requireNonNull(prefix);
-    return new Pattern() {
-      @Override Match match(String input) {
-        return input.startsWith(prefix) ? new Match(input, 0, prefix.length()) : null;
-      }
-    };
+        @Override
+        public String toString() {
+          return "END";
+        }
+      };
+
+  /** {@code Pattern} that matches the entire string. */
+  private static final Pattern FULL =
+      new Pattern() {
+        @Override
+        public Match match(String s, int fromIndex) {
+          return new Match(s, fromIndex, s.length() - fromIndex);
+        }
+
+        @Override
+        public String toString() {
+          return "FULL";
+        }
+      };
+
+  /**
+   * Returns a {@code Prefix} pattern that matches strings starting with {@code prefix}.
+   *
+   * <p>Typically if you have a {@code String} constant representing a prefix, consider to declare a
+   * {@link Prefix} constant instead. The type is more explicit, and utilitiy methods like {@link
+   * Pattern#removeFrom}, {@link Pattern#from} are easier to discover and use.
+   */
+  public static Prefix prefix(String prefix) {
+    return new Prefix(requireNonNull(prefix));
   }
 
-  /** Returns a {@code Pattern} that matches strings starting with {@code prefix}. */
-  public static Pattern prefix(char prefix) {
-    return prefix(Character.toString(prefix));
+  /**
+   * Returns a {@code Prefix} pattern that matches strings starting with {@code prefix}.
+   *
+   * <p>Typically if you have a {@code char} constant representing a prefix, consider to declare a
+   * {@link Prefix} constant instead. The type is more explicit, and utilitiy methods like {@link
+   * Pattern#removeFrom}, {@link Pattern#from} are easier to discover and use.
+   */
+  public static Prefix prefix(char prefix) {
+    return new Prefix(Character.toString(prefix));
   }
 
-  /** Returns a {@code Pattern} that matches strings ending with {@code suffix}. */
-  public static Pattern suffix(String suffix) {
-    requireNonNull(suffix);
-    return new Pattern() {
-      @Override Match match(String input) {
-        return input.endsWith(suffix)
-            ? new Match(input, input.length() - suffix.length(), input.length())
-            : null;
-      }
-    };
+  /**
+   * Returns a {@code Suffix} pattern that matches strings ending with {@code suffix}.
+   *
+   * <p>Typically if you have a {@code String} constant representing a suffix, consider to declare a
+   * {@link Suffix} constant instead. The type is more explicit, and utilitiy methods like {@link
+   * Pattern#removeFrom}, {@link Pattern#from} are easier to discover and use.
+   */
+  public static Suffix suffix(String suffix) {
+    return new Suffix(requireNonNull(suffix));
   }
 
-  /** Returns a {@code Pattern} that matches strings ending with {@code suffix}. */
-  public static Pattern suffix(char suffix) {
-    return suffix(Character.toString(suffix));
+  /**
+   * Returns a {@code Suffix} pattern that matches strings ending with {@code suffix}.
+   *
+   * <p>Typically if you have a {@code char} constant representing a suffix, consider to declare a
+   * {@link Suffix} constant instead. The type is more explicit, and utilitiy methods like {@link
+   * Pattern#removeFrom}, {@link Pattern#from} are easier to discover and use.
+   */
+  public static Suffix suffix(char suffix) {
+    return new Suffix(Character.toString(suffix));
   }
 
-  /** Returns a {@code Pattern} that matches the first occurrence of {@code c}. */
-  public static Pattern first(char c) {
-    return new Pattern() {
-      @Override Match match(String input) {
-        return matchIfValidIndex(input, input.indexOf(c), 1);
-      }
-    };
+  /**
+   * Returns a {@code Pattern} that finds the (first) occurrence of {@code str}.
+   *
+   * <p>Note that when used together with {@link #between}, or {@link Pattern#iterateIn}, matching
+   * starts after the end of the previous match. For example:
+   *
+   * <pre>
+   *   assertThat(Substring.between(substring("/"), substring("/")).from("/usr/home/abc"))
+   *       .hasValue("usr");
+   * </pre>
+   */
+  public static Pattern substring(String str) {
+    return first(str);
   }
 
   /** Returns a {@code Pattern} that matches the first occurrence of {@code str}. */
   public static Pattern first(String str) {
-    requireNonNull(str);
+    if (str.length() == 1) {
+      return first(str.charAt(0));
+    }
     return new Pattern() {
-      @Override Match match(String input) {
-        return matchIfValidIndex(input, input.indexOf(str), str.length());
+      @Override
+      Match match(String input, int fromIndex) {
+        int index = input.indexOf(str, fromIndex);
+        return index >= 0 ? new Match(input, index, str.length()) : null;
+      }
+
+      @Override
+      public String toString() {
+        return "first('" + str + "')";
+      }
+    };
+  }
+
+  /** Returns a {@code Pattern} that matches the first occurrence of {@code character}. */
+  public static Pattern first(char character) {
+    return new Pattern() {
+      @Override
+      Match match(String input, int fromIndex) {
+        int index = input.indexOf(character, fromIndex);
+        return index >= 0 ? new Match(input, index, 1) : null;
+      }
+
+      @Override
+      public String toString() {
+        return "first(\'" + character + "\')";
       }
     };
   }
@@ -166,94 +256,155 @@ public final class Substring {
    * Returns a {@code Pattern} that matches the first occurrence of {@code regexPattern}.
    *
    * <p>Unlike {@code str.replaceFirst(regexPattern, replacement)},
-   * <pre>first(regexPattern).replaceFrom(str, replacement)</pre> treats the {@code replacement} as a literal
-   * string with no special handling of backslash (\) and dollar sign ($) characters.
    *
-   * @since 2.2
+   * <pre>first(regexPattern).replaceFrom(str, replacement)</pre>
+   *
+   * treats the {@code replacement} as a literal string, with no special handling of backslash (\)
+   * and dollar sign ($) characters.
    */
   public static Pattern first(java.util.regex.Pattern regexPattern) {
     return first(regexPattern, 0);
   }
 
   /**
-   * Returns a {@code Pattern} that matches capturing {@code group} of {@code regexPattern}.
+   * Returns a {@code Pattern} that matches the first occurrence of {@code regexPattern} and then
+   * selects the capturing group identified by {@code group}.
+   *
+   * <p>For example, the following pattern finds the shard number (12) from a string like {@code
+   * 12-of-99}:
+   *
+   * <pre>
+   *   import java.util.regex.Pattern;
+   *
+   *   private static final Substring.Pattern SHARD_NUMBER =
+   *       Substring.first(Pattern.compile("(\\d+)-of-\\d+"), 1);
+   * </pre>
    *
    * @throws IndexOutOfBoundsException if {@code group} is negative or exceeds the number of
-   *         capturing groups in {@code regexPattern}.
-   *
-   * @since 2.2
+   *     capturing groups in {@code regexPattern}.
    */
   public static Pattern first(java.util.regex.Pattern regexPattern, int group) {
     requireNonNull(regexPattern);
-    if (group < 0 || group > 0 && group > regexPattern.matcher("").groupCount()) {
+    if (group < 0 || (group > 0 && group > regexPattern.matcher("").groupCount())) {
       throw new IndexOutOfBoundsException("Capturing group " + group + " doesn't exist.");
     }
     return new Pattern() {
-      @Override Match match(String input) {
+      @Override
+      Match match(String input, int fromIndex) {
         java.util.regex.Matcher matcher = regexPattern.matcher(input);
-        return matcher.find() ? new Match(input, matcher.start(group), matcher.end(group)) : null;
+        if (matcher.find(fromIndex)) {
+          int start = matcher.start(group);
+          return new Match(input, start, matcher.end(group) - start, matcher.end());
+        }
+        return null;
+      }
+
+      @Override
+      public String toString() {
+        return "first(\"" + regexPattern + "\", " + group + ")";
       }
     };
   }
 
-  /** Returns a {@code Pattern} that matches the last occurrence of {@code c}. */
-  public static Pattern last(char c) {
+  /**
+   * Returns a {@code Pattern} that matches the first occurrence of {@code stop1}, followed by an
+   * occurrence of {@code stop2}, followed sequentially by occurrences of {@code moreStops} in
+   * order, including any characters between consecutive stops.
+   */
+  public static Pattern spanningInOrder(String stop1, String stop2, String... moreStops) {
+    List<String> stops =
+        Stream.concat(Stream.of(stop1, stop2), Arrays.stream(moreStops))
+            .peek(Objects::requireNonNull)
+            .collect(toList());
     return new Pattern() {
-      @Override Match match(String input) {
-        return matchIfValidIndex(input, input.lastIndexOf(c), 1);
+      @Override
+      Match match(String input, int fromIndex) {
+        int begin = -1;
+        for (String stop : stops) {
+          int index = input.indexOf(stop, fromIndex);
+          if (index < 0) {
+            return null;
+          }
+          if (begin == -1) {
+            begin = index;
+          }
+          fromIndex = index + stop.length();
+        }
+        return new Match(input, begin, fromIndex - begin);
+      }
+
+      @Override
+      public String toString() {
+        return "spanningInOrder("
+            + stops.stream().map(s -> "'" + s + "'").collect(joining(", "))
+            + ")";
       }
     };
   }
 
   /** Returns a {@code Pattern} that matches the last occurrence of {@code str}. */
   public static Pattern last(String str) {
-    requireNonNull(str);
+    if (str.length() == 1) {
+      return last(str.charAt(0));
+    }
     return new Pattern() {
-      @Override Match match(String input) {
-        return matchIfValidIndex(input, input.lastIndexOf(str), str.length());
+      @Override
+      Match match(String input, int fromIndex) {
+        int index = input.lastIndexOf(str);
+        return index >= fromIndex ? new Match(input, index, str.length()) : null;
+      }
+
+      @Override
+      public String toString() {
+        return "last('" + str + "')";
+      }
+    };
+  }
+
+  /** Returns a {@code Pattern} that matches the last occurrence of {@code character}. */
+  public static Pattern last(char character) {
+    return new Pattern() {
+      @Override
+      Match match(String input, int fromIndex) {
+        int index = input.lastIndexOf(character);
+        return index >= fromIndex ? new Match(input, index, 1) : null;
+      }
+
+      @Override
+      public String toString() {
+        return "last('" + character + "')";
       }
     };
   }
 
   /**
-   * Returns a {@code Pattern} that will match from the beginning of the original string up to
-   * the substring matched by {@code pattern} <em>inclusively</em>. For example:
+   * Returns a {@code Pattern} that covers the substring before {@code delimiter}. For example:
    *
    * <pre>
-   *   String uri = "http://google.com";
-   *   String schemeStripped = upToIncluding(first("://")).removeFrom(uri);
-   *   assertThat(schemeStripped).isEqualTo("google.com");
+   *   String file = "/home/path/file.txt";
+   *   String path = Substring.before(last('/')).from(file).orElseThrow(...);
+   *   assertThat(path).isEqualTo("/home/path");
    * </pre>
-   *
-   * <p>To match from the start of {@code pattern} to the end of the original string, use
-   * {@link Pattern#toEnd} instead.
-   *
-   * @since 2.2
-   */
-  public static Pattern upToIncluding(Pattern endingPoint) {
-    return endingPoint.map(Match::fromBeginning);
-  }
-
-  /**
-   * Returns a {@code Pattern} that will match the substring between {@code open} and {@code close}.
-   * For example the following pattern finds the link text in markdown syntax:
-   * <pre>
-   *   private static final Substring.Pattern DEPOT_PATH =
-   *       Substring.between(first("//depot/"), last('/'));
-   *   String path = DEPOT_PATH.from("//depot/google3/foo/bar/baz.txt").get();
-   *   assertThat(path).isEqualTo("google3/foo/bar");
-   * </pre>
-   *
-   * <p>Note that the {@code close} pattern is matched against the substring after the end of
-   * {@code open}. For example: <pre>
-   *   String dir1 = Substring.between(first('/'), first('/')).from("/usr/home/abc").get();
-   *   assertThat(dir1).isEqualTo("usr");
-   * </pre>
-   *
-   * @since 2.1
    */
   public static Pattern before(Pattern delimiter) {
-    return delimiter.map(Match::preceding);
+    requireNonNull(delimiter);
+    return new Pattern() {
+      @Override
+      Match match(String input, int fromIndex) {
+        Match match = delimiter.match(input, fromIndex);
+        return match == null
+            ? null
+            // For example when matching before(first("//")) against "http://", there should be
+            // only one iteration, which is "http:". If the next scan starts before //, we'd get
+            // an empty string match.
+            : new Match(input, fromIndex, match.startIndex - fromIndex, match.succeedingIndex);
+      }
+
+      @Override
+      public String toString() {
+        return "before(" + delimiter + ")";
+      }
+    };
   }
 
   /**
@@ -264,49 +415,101 @@ public final class Substring {
    *   String ext = Substring.after(last('.')).from(file).orElseThrow(...);
    *   assertThat(ext).isEqualTo("txt");
    * </pre>
-   *
-   * @since 2.1
    */
   public static Pattern after(Pattern delimiter) {
-    return delimiter.map(Match::following);
+    requireNonNull(delimiter);
+    return new Pattern() {
+      @Override
+      Match match(String input, int fromIndex) {
+        Match match = delimiter.match(input, fromIndex);
+        return match == null ? null : match.following();
+      }
+
+      @Override
+      public String toString() {
+        return "after(" + delimiter + ")";
+      }
+    };
+  }
+
+  /**
+   * Returns a {@code Pattern} that will match from the beginning of the original string up to the
+   * substring matched by {@code pattern} <em>inclusively</em>. For example:
+   *
+   * <pre>
+   *   String uri = "http://google.com";
+   *   String schemeStripped = upToIncluding(first("://")).removeFrom(uri);
+   *   assertThat(schemeStripped).isEqualTo("google.com");
+   * </pre>
+   *
+   * <p>To match from the start of {@code pattern} to the end of the original string, use {@link
+   * Pattern#toEnd} instead.
+   */
+  public static Pattern upToIncluding(Pattern pattern) {
+    requireNonNull(pattern);
+    return new Pattern() {
+      @Override
+      Match match(String input, int fromIndex) {
+        Match match = pattern.match(input, fromIndex);
+        return match == null
+            ? null
+            // Do not include the delimiter pattern in the next iteration.
+            : new Match(input, fromIndex, match.endIndex - fromIndex, match.succeedingIndex);
+      }
+
+      @Override
+      public String toString() {
+        return "upToIncluding(" + pattern + ")";
+      }
+    };
   }
 
   /**
    * Returns a {@code Pattern} that will match the substring between {@code open} and {@code close}.
-   * For example: <pre>
-   *   String quoted = Substring.between(first('('), first(')'))
-   *       .from(input)
-   *       .orElseThrow(...);
-   * </pre>
+   * For example the following pattern finds the link text in markdown syntax:
    *
-   * @since 2.1
+   * <pre>
+   *   private static final Substring.Pattern DEPOT_PATH =
+   *       Substring.between(first("//depot/"), last('/'));
+   *   assertThat(DEPOT_PATH.from("//depot/google3/foo/bar/baz.txt")).hasValue("google3/foo/bar");
+   * </pre>
    */
   public static Pattern between(Pattern open, Pattern close) {
     requireNonNull(open);
     requireNonNull(close);
     return new Pattern() {
-      @Override Match match(String input) {
-        Match left = open.match(input);
-        if (left == null) return null;
-        Match right = close.match(input.substring(left.endIndex));
-        if (right == null) return null;
-        return new Match(input, left.endIndex, left.endIndex + right.startIndex);
+      @Override
+      Match match(String input, int fromIndex) {
+        Match left = open.match(input, fromIndex);
+        if (left == null) {
+          return null;
+        }
+        Match right = close.match(input, left.endIndex);
+        if (right == null) {
+          return null;
+        }
+        return new Match(
+            // Include the closing delimiter in the next iteration. This allows delimiters in
+            // patterns like "/foo/bar/baz/" to be treated more intuitively.
+            input, /*startIndex=*/ left.endIndex, /*length=*/ right.startIndex - left.endIndex);
+      }
+
+      @Override
+      public String toString() {
+        return "between(" + open + ", " + close + ")";
       }
     };
   }
 
-  /** A substring pattern that can be matched against a string to find substrings. */
-  public static abstract class Pattern {
-    /** Matches against {@code string} and returns null if not found. */
-    abstract Match match(String input);
-
+  /** A pattern that can be matched against a string, finding a single substring from it. */
+  public abstract static class Pattern {
     /**
      * Matches this pattern against {@code string}, returning a {@code Match} if successful, or
      * {@code empty()} otherwise.
      *
      * <p>This is useful if you need to call {@link Match} methods, like {@link Match#remove} or
-     * {@link Match#before}. If you just need the matched substring itself, prefer to use
-     * {@link #from} instead.
+     * {@link Match#before}. If you just need the matched substring itself, prefer to use {@link
+     * #from} instead.
      */
     public final Optional<Match> in(String string) {
       return Optional.ofNullable(match(string));
@@ -314,16 +517,58 @@ public final class Substring {
 
     /**
      * Matches this pattern against {@code string}, returning the matched substring if successful,
-     * or {@code empty()} otherwise. {@code pattern.from(str)} is equivalent to
-     * {@code pattern.in(str).map(Object::toString)}.
+     * or {@code empty()} otherwise. {@code pattern.from(str)} is equivalent to {@code
+     * pattern.in(str).map(Object::toString)}.
      *
      * <p>This is useful if you only need the matched substring itself. Use {@link #in} if you need
      * to call {@link Match} methods, like {@link Match#remove} or {@link Match#before}.
-     *
-     * @since 2.1
      */
     public final Optional<String> from(String string) {
       return Optional.ofNullable(Objects.toString(match(string), null));
+    }
+
+    /**
+     * Applies this pattern against {@code string} and returns a stream of each iteration.
+     *
+     * <p>Iterations happen in strict character encounter order, from the beginning of the input
+     * string to the end, with no overlapping. When a match is found, the next iteration is
+     * guaranteed to be in the substring after the current match. For example, {@code
+     * between(substring("/"), substring("/")).iterateIn("/foo/bar/baz/")} will return {@code
+     * ["foo", "bar", "baz"]}. On the other hand, {@code after(last('/')).iterateIn("/foo/bar")}
+     * will only return "bar".
+     *
+     * <p>Pattern matching is lazy and doesn't start until the returned stream is consumed.
+     *
+     * <p>An empty stream is returned if this pattern has no matches in the {@code input} string.
+     *
+     * @since 4.6
+     */
+    public final Stream<Match> iterateIn(String input) {
+      return MoreStreams.whileNotNull(
+          new Supplier<Match>() {
+            private final int end = input.length();
+            private int nextIndex = 0;
+
+            @Override
+            public Match get() {
+              if (nextIndex > end) {
+                return null;
+              }
+              Match match = match(input, nextIndex);
+              if (match == null) {
+                return null;
+              }
+              if (match.endIndex == end) { // We've consumed the entire string.
+                nextIndex = Integer.MAX_VALUE;
+              } else if (match.succeedingIndex > nextIndex) {
+                nextIndex = match.succeedingIndex;
+              } else {
+                // instead of being stuck in infinite loop, consider this the end.
+                nextIndex = Integer.MAX_VALUE;
+              }
+              return match;
+            }
+          });
     }
 
     /**
@@ -333,6 +578,16 @@ public final class Substring {
     public final String removeFrom(String string) {
       Match match = match(string);
       return match == null ? string : match.remove();
+    }
+
+    /**
+     * Returns a new string with all {@link #iterateIn iterations} of {@code this} pattern removed.
+     * Returns {@code string} as is if no match is found.
+     *
+     * @since 4.6
+     */
+    public final String removeAllFrom(String string) {
+      return replaceAllFrom(string, m -> "");
     }
 
     /**
@@ -346,18 +601,38 @@ public final class Substring {
     }
 
     /**
-     * Returns a {@code Pattern} that fall backs to using {@code that} if {@code this} fails to
-     * match.
+     * Returns a new string with all {@link #iterateIn iterations} of {@code this} pattern replaced
+     * by applying {@code replacementFunction} for each match.
+     *
+     * <p>{@code replacementFunction} must not return null. Returns {@code string} as-is if no match
+     * is found.
+     *
+     * @since 4.6
      */
-    public final Pattern or(Pattern that) {
-      requireNonNull(that);
-      Pattern base = this;
-      return new Pattern() {
-        @Override Match match(String input) {
-          Match match = base.match(input);
-          return match == null ? that.match(input) : match;
+    public final String replaceAllFrom(
+        String string, Function<? super Match, ? extends CharSequence> replacementFunction) {
+      requireNonNull(replacementFunction);
+      Iterator<Match> matches = iterateIn(string).iterator();
+      if (!matches.hasNext()) {
+        return string;
+      }
+      // Add the chars between the previous and current match.
+      StringBuilder builder = new StringBuilder(string.length());
+      int index = 0;
+      do {
+        Match match = matches.next();
+        CharSequence replacement = replacementFunction.apply(match);
+        if (replacement == null) {
+          throw new NullPointerException("No replacement is returned for " + match);
         }
-      };
+        builder
+            .append(string, index, match.startIndex)
+            .append(replacement);
+        index = match.endIndex;
+      } while (matches.hasNext());
+
+      // Add the remaining chars
+      return builder.append(string, index, string.length()).toString();
     }
 
     /**
@@ -370,32 +645,89 @@ public final class Substring {
      *   assertThat(commentRemoved).isEqualTo("return foo;");
      * </pre>
      *
-     * <p>To match from the beginning of the input string to the end of a pattern, use
-     * {@link Substring#upToIncluding} instead.
-     *
-     * @since 2.2
+     * <p>To match from the beginning of the input string to the end of a pattern, use {@link
+     * Substring#upToIncluding} instead.
      */
     public final Pattern toEnd() {
-      return map(Match::toEnd);
+      Pattern base = this;
+      return new Pattern() {
+        @Override
+        Match match(String input, int fromIndex) {
+          Match match = base.match(input, fromIndex);
+          return match == null ? null : match.toEnd();
+        }
+
+        @Override
+        public String toString() {
+          return base + ".toEnd()";
+        }
+      };
     }
 
     /**
-     * Splits {@code string} into two parts that are separated by this separator pattern.
-     * For example:
+     * With {@code this} pattern as the delimiter, returns a {@code Pattern} that will match the
+     * substring delimited by it, or the entire string if the delimiter isn't found.
+     *
+     * <p>When combined with {@link #iterateIn}, the input string can be splitted by the delimiter
+     * represented by {@code this} pattern. The following example parses out all elements in a
+     * comma-delimited format:
+     *
+     * <pre>{@code
+     * Substring.Pattern csv = substring(",").delimited();
+     * Stream<String> elements = csv.iterateIn("foo,bar,baz");  // ["foo", "bar", "baz"]
+     * }</pre>
+     *
+     * It's almost equivalent to {@link com.google.common.base.Splitter#splitToStream}, except that
+     * the user can use the {@link Match} objects returned by {@code iterateIn(string)}, to access
+     * the indexes in the original string, or filter out unwanted matches before copying the
+     * characters into a {@code String} object. For example, to parse the parameters delimited by
+     * '&' and '=' in a HTTP query string:
+     *
+     * <pre>{@code
+     * import static com.google.common.labs.collect.BiCollectors.toImmutableListMultimap;
+     *
+     * ImmutableListMultimap<String, String> queryParams =
+     *     first('&')
+     *         .delimited()
+     *         .iterateIn(queryString)
+     *         .filter(m -> m.length() > 0)
+     *         .map(Match::toString)
+     *         .collect(first('=').splitting(toImmutableListMultimap()));
+     * }</pre>
+     *
+     * @since 4.6
+     */
+    public final Pattern delimited() {
+      return before(this).or(FULL);
+    }
+
+    /**
+     * Returns a {@code Pattern} that falls back to using {@code that} if {@code this} fails to
+     * match.
+     */
+    public final Pattern or(Pattern that) {
+      requireNonNull(that);
+      Pattern base = this;
+      return new Pattern() {
+        @Override
+        Match match(String input, int fromIndex) {
+          Match match = base.match(input, fromIndex);
+          return match == null ? that.match(input, fromIndex) : match;
+        }
+
+        @Override
+        public String toString() {
+          return base + ".or(" + that + ")";
+        }
+      };
+    }
+
+    /**
+     * Splits {@code string} into two parts that are separated by this separator pattern. For
+     * example:
      *
      * <pre>{@code
      * KeyValue keyValue = first('=').split("name=joe", KeyValue::new);
-     * }</pre>
-     *
-     * Or, when used to split a stream of strings:
-     * <pre>{@code
-     * import static com.google.mu.util.stream.MoreStreams.mapping;
-     *
-     * ImmutableListMultimap<Key, String> keyValues =
-     *     readLines(file, UTF_8).stream()
-     *         .collect(toBiStream(first('=')::split))
-     *         .mapKeys(Key::of)
-     *         .collect(ImmutableListMultimap::toImmutableListMultimap);
      * }</pre>
      *
      * <p>If you need to trim the key-value pairs, use {@link #splitThenTrim} instead.
@@ -405,11 +737,11 @@ public final class Substring {
      */
     public final <R> R split(String string, BiFunction<? super String, ? super String, R> joiner) {
       requireNonNull(joiner);
-      Match match = match(string);
-      if (match == null) {
-        throw new IllegalArgumentException("Failed to split : '" + string + "'");
+      Match separator = match(string);
+      if (separator == null) {
+        throw new IllegalArgumentException("Cannot split '" + string + "'" + " by " + this + ".");
       }
-      return joiner.apply(match.before(), match.after());
+      return joiner.apply(separator.before(), separator.after());
     }
 
     /**
@@ -417,16 +749,7 @@ public final class Substring {
      * leading and trailing whitespaces trimmed. For example:
      *
      * <pre>{@code
-     * KeyValue keyValue = first('=').split("name = joe ", KeyValue::new);
-     * }</pre>
-     *
-     * Or, when used to split a stream of strings:
-     * <pre>{@code
-     * import static com.google.mu.util.stream.MoreStreams.mapping;
-     *
-     * Map<String, String> keyValues =
-     *     readLines(file, UTF_8).stream()
-     *         .collect(mapping(first('=')::splitThenTrim, BiCollectors.toMap());
+     * KeyValue keyValue = first('=').splitThenTrim("name = joe ", KeyValue::new);
      * }</pre>
      *
      * @throws IllegalArgumentException if this separator pattern isn't found in {@code string}.
@@ -438,14 +761,76 @@ public final class Substring {
       return split(string, (l, r) -> joiner.apply(l.trim(), r.trim()));
     }
 
-    private Pattern map(UnaryOperator<Match> mapper) {
-      Pattern base = this;
-      return new Pattern() {
-        @Override Match match(String input) {
-          Match match = base.match(input);
-          return match == null ? null : mapper.apply(match);
-        }
-      };
+    /**
+     * Matches against {@code string} starting from {@code fromIndex}, and returns null if not
+     * found.
+     */
+    abstract Match match(String string, int fromIndex);
+
+    private Match match(String string) {
+      return match(string, 0);
+    }
+
+    /**
+     * Do not depend on the string representation of Substring, except for subtypes {@link Prefix}
+     * and {@link Suffix} that have an explicitly defined representation.
+     */
+    @Override
+    public String toString() {
+      return super.toString();
+    }
+  }
+
+  /**
+   * A string prefix pattern.
+   *
+   * @since 4.6
+   */
+  public static final class Prefix extends Pattern {
+    private final String prefix;
+
+    Prefix(String prefix) {
+      this.prefix = prefix;
+    }
+
+    @Override
+    Match match(String input, int fromIndex) {
+      return input.startsWith(prefix, fromIndex)
+          ? new Match(input, fromIndex, prefix.length())
+          : null;
+    }
+
+    /** Returns this prefix string. */
+    @Override
+    public String toString() {
+      return prefix;
+    }
+  }
+
+  /**
+   * A string suffix pattern.
+   *
+   * @since 4.6
+   */
+  public static final class Suffix extends Pattern {
+    private final String suffix;
+
+    Suffix(String suffix) {
+      this.suffix = suffix;
+    }
+
+    @Override
+    Match match(String input, int fromIndex) {
+      int index = input.length() - suffix.length();
+      return index >= fromIndex && input.endsWith(suffix)
+          ? new Match(input, index, suffix.length())
+          : null;
+    }
+
+    /** Returns this suffix string. */
+    @Override
+    public String toString() {
+      return suffix;
     }
   }
 
@@ -455,41 +840,52 @@ public final class Substring {
    * {@link #after after} it, and to copies with the matched substring {@link #remove removed} or
    * {@link #replaceWith replaced}.
    *
-   * <p><em>Note:</em> a {@link Match} is a view of the original string and holds a strong
-   * reference to the original string. It's advisable to construct and use a {@code Match} object
-   * within the scope of a method; holding onto a {@code Match} object has the same risk of leaking
-   * memory as holding onto the string it was produced from.
-   *
-   * @since 2.2
+   * <p><em>Note:</em> a {@link Match} is a view of the original string and holds a strong reference
+   * to the original string. It's advisable to construct and use a {@code Match} object within the
+   * scope of a method; holding onto a {@code Match} object has the same risk of leaking memory as
+   * holding onto the string it was produced from.
    */
   public static final class Match implements CharSequence {
     private final String context;
     private final int startIndex;
     private final int endIndex;
 
-    private Match(String context, int startIndex, int endIndex) {
+    /**
+     * While {@code endIndex} demarcates the matched substring, {@code succeedingIndex} points to
+     * the starting point to scan for the succeeding {@link Pattern#iterateIn iteration} of the same
+     * pattern. It's by default equal to {@code endIndex}, but for {@link Substring#before} and
+     * {@link Substring#upToIncluding}, {@code succeedingIndex} starts after the delimiters.
+     */
+    private final int succeedingIndex;
+
+    private Match(String context, int startIndex, int length) {
+      this(context, startIndex, length, startIndex + length);
+    }
+
+    private Match(String context, int startIndex, int length, int succeedingIndex) {
       this.context = context;
       this.startIndex = startIndex;
-      this.endIndex = endIndex;
+      this.endIndex = startIndex + length;
+      this.succeedingIndex = succeedingIndex;
     }
 
     /**
      * Returns the part of the original string before the matched substring.
      *
-     * <p>{@link #before} and {@link #after} are almost always used together to split a string
-     * into two parts. If you just need the substring before the match, you might want to use
-     * {@code Substring.before(pattern)} instead, because the pattern logic is encoded entirely in
-     * the {@link Pattern} object. For example: <pre>
+     * <p>{@link #before} and {@link #after} are almost always used together to split a string into
+     * two parts. If you just need the substring before the match, you might want to use {@code
+     * Substring.before(pattern)} instead, because the pattern logic is encoded entirely in the
+     * {@link Pattern} object. For example:
+     *
+     * <pre>
      *   private static final Substring.Pattern DIRECTORY = Substring.before(last("/"));
      * </pre>
-     *
-     * @since 4.6
      */
     public String before() {
       return context.substring(0, startIndex);
     }
 
-    /** @deprecated Use {@link #before} instead. */
+    /** Use {@link #before} instead. */
     @Deprecated
     public String getBefore() {
       return before();
@@ -498,23 +894,28 @@ public final class Substring {
     /**
      * Returns the part of the original string before the matched substring.
      *
-     * <p>{@link #before} and {@link #after} are almost always used together to split a string
-     * into two parts. If you just need the substring after the match, you might want to use
-     * {@code Substring.after(pattern)} instead, because the pattern logic is encoded entirely in
-     * the {@link Pattern} object. For example: <pre>
+     * <p>{@link #before} and {@link #after} are almost always used together to split a string into
+     * two parts. If you just need the substring after the match, you might want to use {@code
+     * Substring.after(pattern)} instead, because the pattern logic is encoded entirely in the
+     * {@link Pattern} object. For example:
+     *
+     * <pre>
      *   private static final Substring.Pattern LINE_COMMENT = Substring.after(first("//"));
      * </pre>
-     *
-     * @since 4.6
      */
     public String after() {
       return context.substring(endIndex);
     }
 
-    /** @deprecated Use {@link #after} instead. */
+    /** Use {@link #after} instead. */
     @Deprecated
     public String getAfter() {
       return after();
+    }
+
+    /** Return the full string being matched against. */
+    public String fullString() {
+      return context;
     }
 
     /**
@@ -523,6 +924,7 @@ public final class Substring {
      * <p>This is equivalent to {@code match.before() + match.after()}.
      */
     public String remove() {
+      // Minimize string concatenation.
       if (endIndex == context.length()) {
         return before();
       } else if (startIndex == 0) {
@@ -535,32 +937,29 @@ public final class Substring {
     /**
      * Returns a copy of the original string with the matched substring replaced with {@code
      * replacement}.
+     *
+     * <p>This is equivalent to {@code match.before() + replacement + match.after()}.
      */
     public String replaceWith(CharSequence replacement) {
       requireNonNull(replacement);
       return before() + replacement + after();
     }
 
-    /**
-     * Returns the starting index of this substring in the containing string.
-     *
-     * @since 4.6
-     */
+    /** Return 0-based index of this match in {@link #fullString}. */
     public int index() {
       return startIndex;
     }
 
-    /** @deprecated Use {@link #index} instead. */
-    @Deprecated
-    public int getIndex() {
-      return index();
-    }
-
     /** Returns the length of the matched substring. */
-    @Override public int length() {
+    @Override
+    public int length() {
       return endIndex - startIndex;
     }
 
+    /**
+     * {@inheritDoc}
+     * @since 4.6
+     */
     @Override
     public char charAt(int i) {
       if (i < 0 || i >= length()) {
@@ -569,7 +968,12 @@ public final class Substring {
       return context.charAt(startIndex + i);
     }
 
-    @Override public CharSequence subSequence(int begin, int end) {
+    /**
+     * {@inheritDoc}
+     * @since 4.6
+     */
+    @Override
+    public CharSequence subSequence(int begin, int end) {
       if (begin < 0) {
         throw new IndexOutOfBoundsException("Invalid index: " + begin);
       }
@@ -579,32 +983,27 @@ public final class Substring {
       if (begin > end) {
         throw new IndexOutOfBoundsException("Invalid index: " + begin + " > " + end);
       }
-      return new Match(context, startIndex + begin, startIndex + end);
+      return new Match(context, startIndex + begin, end - begin);
     }
 
     /** Returns the matched substring. */
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return context.substring(startIndex, endIndex);
     }
 
-    private Match preceding() {
+    Match preceding() {
       return new Match(context, 0, startIndex);
     }
 
-    private Match following() {
-      return new Match(context, endIndex, context.length());
-    }
-
-    private Match fromBeginning() {
-      return new Match(context, 0, endIndex);
+    Match following() {
+      return new Match(context, endIndex, context.length() - endIndex);
     }
 
     private Match toEnd() {
-      return new Match(context, startIndex, context.length());
+      return new Match(context, startIndex, context.length() - startIndex);
     }
   }
 
-  private static Match matchIfValidIndex(String input, int index, int length) {
-    return index >= 0 ? new Match(input, index, index + length) : null;
-  }
+  private Substring() {}
 }
