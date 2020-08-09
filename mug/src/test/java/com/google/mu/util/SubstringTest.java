@@ -6,18 +6,15 @@ import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.last;
 import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.Substring.suffix;
-import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Optional;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.NullPointerTester;
 
@@ -626,47 +623,31 @@ public class SubstringTest {
 
   @Test
   public void split_cannotSplit() {
-    IllegalArgumentException thrown = assertThrows(
-        IllegalArgumentException.class,
-        () -> first('=').split(asList("name=joe", "name=bob", "gender:male")));
-    assertThat(thrown).hasMessageThat().contains("gender:male");
-    assertThat(thrown).hasMessageThat().contains("3rd");
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class, () -> first('=').split("foo:bar", String::concat));
+    assertThat(thrown).hasMessageThat().contains("foo:bar");
   }
 
   @Test
-  public void split() {
-    ImmutableListMultimap<String, String> tags = first('=').or(first(':'))
-        .split(
-            Stream.of("name=joe", "name=bob", "gender:male"),
-            ImmutableListMultimap::toImmutableListMultimap);
-    assertThat(tags).containsExactly("name", "joe", "name", "bob", "gender", "male");
+  public void split_canSplit() {
+    assertThat(first('=').split(" foo=bar", (String k, String v) -> k)).isEqualTo(" foo");
+    assertThat(first('=').split("foo=bar ", (String k, String v) -> v)).isEqualTo("bar ");
   }
 
   @Test
-  public void split_toBiStream() {
-    ImmutableListMultimap<String, String> tags = first('=').or(first(':'))
-        .split(asList("name = joe", "name= bob", " gender:male"))
-        .mapKeys(String::trim)
-        .mapValues(String::trim)
-        .collect(ImmutableListMultimap::toImmutableListMultimap);
-    assertThat(tags).containsExactly("name", "joe", "name", "bob", "gender", "male");
+  public void splitThenTrim_cannotSplit() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> first('=').splitThenTrim("foo:bar", String::concat));
+    assertThat(thrown).hasMessageThat().contains("foo:bar");
   }
 
   @Test
-  public void splitThenTrim() {
-    ImmutableListMultimap<String, String> tags = first('=').or(first(':'))
-        .splitThenTrim(
-            Stream.of(" name=joe", "name = bob ", " gender: male "),
-            ImmutableListMultimap::toImmutableListMultimap);
-    assertThat(tags).containsExactly("name", "joe", "name", "bob", "gender", "male");
-  }
-
-  @Test
-  public void splitThenTrim_toBiStream() {
-    ImmutableListMultimap<String, String> tags = first('=').or(first(':'))
-        .splitThenTrim(asList(" name=joe", "name = bob ", " gender: male "))
-        .collect(ImmutableListMultimap::toImmutableListMultimap);
-    assertThat(tags).containsExactly("name", "joe", "name", "bob", "gender", "male");
+  public void splitThenTrim_canSplit() {
+    assertThat(first('=').splitThenTrim(" foo =bar", (String k, String v) -> k)).isEqualTo("foo");
+    assertThat(first('=').splitThenTrim("foo = bar ", (String k, String v) -> v)).isEqualTo("bar");
   }
 
   @Test public void none() {

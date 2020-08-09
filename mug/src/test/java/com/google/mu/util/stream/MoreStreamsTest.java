@@ -17,10 +17,12 @@ package com.google.mu.util.stream;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.BiStream.grouping;
 import static com.google.mu.util.stream.MoreStreams.flattening;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
+import static com.google.mu.util.stream.MoreStreams.mapping;
 import static com.google.mu.util.stream.MoreStreams.toListAndThen;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Arrays.asList;
@@ -45,6 +47,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.testing.ClassSanityTester;
@@ -281,6 +284,12 @@ public class MoreStreamsTest {
             .collect(flattening(Map::entrySet, toMap())));
   }
 
+  @Test public void mapping_dualValued() {
+    ImmutableListMultimap<String, String> params = Stream.of("name=joe", "age =10")
+        .collect(mapping(first('=')::splitThenTrim, toImmutableListMultimap()));
+    assertThat(params).containsExactly("name", "joe", "age", "10");
+  }
+
   @Test public void testIndexesFrom() {
     assertThat(indexesFrom(1).limit(3)).containsExactly(1, 2, 3).inOrder();
     assertThat(indexesFrom(Integer.MAX_VALUE).limit(3))
@@ -395,6 +404,10 @@ public class MoreStreamsTest {
         .forEach(tester::ignore);
     tester.testAllPublicStaticMethods(MoreStreams.class);
     new ClassSanityTester().forAllPublicStaticMethods(MoreStreams.class).testNulls();
+  }
+
+  private static <K, V> BiCollector<K, V, ImmutableListMultimap<K, V>> toImmutableListMultimap() {
+    return ImmutableListMultimap::toImmutableListMultimap;
   }
 
   private static class Translation {

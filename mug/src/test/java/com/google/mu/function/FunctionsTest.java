@@ -22,15 +22,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import com.google.common.testing.NullPointerTester;
-import com.google.mu.function.CheckedBiFunction;
-import com.google.mu.function.CheckedFunction;
-import com.google.mu.function.CheckedSupplier;
 
 @RunWith(JUnit4.class)
 public class FunctionsTest {
@@ -133,5 +131,22 @@ public class FunctionsTest {
       requireNonNull(b);
     };
     new NullPointerTester().testAllPublicInstanceMethods(consumer);
+  }
+
+  @Test public void testDualValuedFunction_andThen() throws Throwable {
+    DualValuedFunction<Object, Object, String> function = FunctionsTest::withToString;
+    assertThat(function.andThen((a, b) -> a).apply(1)).isEqualTo(1);
+    assertThat(function.andThen((a, b) -> b).apply(1)).isEqualTo("1");
+  }
+
+  @Test public <T> void testDualValuedFunction_nulls() throws Throwable {
+    DualValuedFunction<T, T, String> function = FunctionsTest::withToString;
+    new NullPointerTester().testAllPublicInstanceMethods(function);
+  }
+
+  // T doesn't use wildcard to test that less-than-perfect method-ref can be used as
+  // DualValuedFunction.
+  private static <T, R> R withToString(T obj, BiFunction<T, ? super String, R> then) {
+    return then.apply(obj, obj.toString());
   }
 }

@@ -17,6 +17,7 @@ package com.google.mu.util.stream;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static java.util.Objects.requireNonNull;
 
+import java.util.AbstractMap;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -38,6 +39,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import com.google.mu.function.CheckedConsumer;
+import com.google.mu.function.DualValuedFunction;
 
 /**
  * Static utilities pertaining to {@link Stream} and {@link Collector} in addition to relevant
@@ -234,7 +236,7 @@ public final class MoreStreams {
    *     .map(Project::getTaskAssignments)
    *     .collect(flattening(Map::entrySet, ImmutableMap::toImmutableMap)));
    * }</pre>
-   * 
+   *
    * or multimaps:
    *
    * <pre>{@code
@@ -395,6 +397,19 @@ public final class MoreStreams {
             return true;
           }
         }, false);
+  }
+
+  /**
+   * Returns a {@code Collector} that maps each input into two values, which in turn are
+   * collected by the {@code downstream} BiCollector.
+   */
+  public static <T, K, V, R> Collector<T, ?, R> mapping(
+      DualValuedFunction<? super T, ? extends K, ? extends V> mapper,
+      BiCollector<K, V, R> downstream) {
+    Function<? super T, Map.Entry<K, V>> toEntry =
+        mapper.andThen(AbstractMap.SimpleImmutableEntry::new);
+    return Collectors.mapping(
+        toEntry, downstream.splitting(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   /**
