@@ -81,8 +81,7 @@ import com.google.mu.util.stream.MoreStreams;
  * To split a stream of strings into key-value pairs:
  *
  * <pre>{@code
- *   ImmutableListMultimap<String, String> tags = lines.stream()
- *       .collect(toBiStream(first(':')::splitThenTrim))
+ *   ImmutableListMultimap<String, String> tags = BiStream.from(lines, first(':')::splitThenTrim)
  *       .collect(ImmutableListMultimap::toImmutableListMultimap);
  * }</pre>
  *
