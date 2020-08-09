@@ -402,7 +402,8 @@ public abstract class BiStream<K, V> {
    *
    * <pre>{@code
    * ImmutableSetMultimap<String, String> keyValues =
-   *     BiStream.from(lines, first('=')::splitThenTrim)
+   *     lines.stream()
+   *         .collect(toBiStream(first('=')::split))
    *         .collect(ImmutableSetMultimap::toImmutableSetMultimap);
    * }</pre>
    *
@@ -594,8 +595,7 @@ public abstract class BiStream<K, V> {
    *
    * <pre>{@code
    * ImmutableSetMultimap<String, String> keyValues =
-   *     lines.stream()
-   *         .collect(toBiStream(first('=')::split))
+   *     BiStream.from(lines, first('=')::splitThenTrim)
    *         .collect(ImmutableSetMultimap::toImmutableSetMultimap);
    * }</pre>
    *
