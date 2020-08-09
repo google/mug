@@ -22,6 +22,7 @@ import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.BiStream.crossJoining;
 import static com.google.mu.util.stream.BiStream.grouping;
 import static com.google.mu.util.stream.BiStream.toAdjacentPairs;
+import static com.google.mu.util.stream.BiStream.toBiStream;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static java.util.Arrays.asList;
 import static java.util.function.Function.identity;
@@ -51,12 +52,14 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.truth.IterableSubject;
 import com.google.common.truth.MultimapSubject;
+import com.google.mu.util.Substring;
 
 @RunWith(JUnit4.class)
 public class BiStreamTest {
@@ -526,6 +529,14 @@ public class BiStreamTest {
         .inOrder();
   }
 
+  @Test public void testToBiStreamFromSplit() {
+    assertThat(Stream.of("name=joe", "age=10")
+            .collect(toBiStream(Substring.first('=')::split))
+            .collect(toImmutableListMultimap()))
+        .containsExactly("name", "joe", "age", "10")
+        .inOrder();
+  }
+
   @Test public void testGroupingBy() {
     Map<Integer, List<Integer>> groups =
         Stream.of(0, 1, 2).collect(BiStream.groupingBy(n -> n / 2)).toMap();
@@ -787,5 +798,9 @@ public class BiStreamTest {
   // DualValuedFunction.
   private static <T, R> R withToString(T obj, BiFunction<? super String, ? super T, R> then) {
     return then.apply(obj.toString(), obj);
+  }
+
+  private static <K, V> BiCollector<K, V, ImmutableListMultimap<K, V>> toImmutableListMultimap() {
+    return ImmutableListMultimap::toImmutableListMultimap;
   }
 }
