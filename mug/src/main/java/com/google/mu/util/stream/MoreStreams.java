@@ -407,7 +407,7 @@ public final class MoreStreams {
    *
    * <pre>{@code
    * ImmutableSetMultimap<String, String> keyValues = Stream.of("name=joe", "age=10")
-   *     .collect(mapping(Substring.first('=')::splitThenTrim, toImmutableSetMultimap()));
+   *     .collect(mapping(Substring.first('=')::split, toImmutableSetMultimap()));
    * }</pre>
    *
    * @since 4.6
