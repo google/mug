@@ -400,13 +400,14 @@ public final class MoreStreams {
   }
 
   /**
-   * Returns a {@code Collector} that maps each input into two values, which in turn are
-   * collected by the {@code downstream} BiCollector. For example, the following code
-   * split a stream of strings into a map of key values:
+   * Analogous to {@link Collectors#mapping}, applies a mapping function to each input element
+   * before accumulation, except that the {@code mapper} function returns a <em>pair of
+   * elements</e>, which are then accumulated by a <em>BiCollector</em>. For example, the following
+   * code split a stream of strings into a map of key values:
    *
    * <pre>{@code
-   * Map<String, String> keyValues = Stream.of("name=joe", "age=10")
-   *     .collect(mapping(Substring.first('=')::splitThenTrim, BiCollectors.toMap()));
+   * ImmutableSetMultimap<String, String> keyValues = Stream.of("name=joe", "age=10")
+   *     .collect(mapping(Substring.first('=')::splitThenTrim, toImmutableSetMultimap()));
    * }</pre>
    *
    * @since 4.6
