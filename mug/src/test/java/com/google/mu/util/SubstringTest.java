@@ -1113,7 +1113,7 @@ public class SubstringTest {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class, () -> first('=').split("foo:bar", String::concat));
-    assertThat(thrown).hasMessageThat().isEqualTo("Cannot split 'foo:bar' by first('=').");
+    assertThat(thrown).hasMessageThat().isEqualTo("Pattern first('=') not found in 'foo:bar'.");
   }
 
   @Test
