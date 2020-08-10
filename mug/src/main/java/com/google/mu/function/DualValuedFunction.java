@@ -14,6 +14,8 @@
  *****************************************************************************/
 package com.google.mu.function;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -31,6 +33,8 @@ public interface DualValuedFunction<F, V1, V2> {
    * for example: <pre>{@code
    *   splitFunction.apply(string, KeyValue::new);
    * }</pre>
+   *
+   * @throws NullPointerException if {@code then} is null.
    */
   // No wildcard on V1, V2 to optimize flexibility for implementations (method-ref).
   <R> R apply(F input, BiFunction<V1, V2, R> then);
@@ -43,7 +47,8 @@ public interface DualValuedFunction<F, V1, V2> {
    * @throws NullPointerException if {@code after} is null.
    */
   default <R> Function<F, R> andThen(BiFunction<? super V1, ? super V2, ? extends R> after) {
-    BiFunction<V1, V2, R> then = after::apply;
+    @SuppressWarnings("unchecked")  // function is PECS, safe to cast.
+    BiFunction<V1, V2, R> then = (BiFunction<V1, V2, R>) requireNonNull(after);
     return input -> apply(input, then);
   }
 }
