@@ -402,8 +402,8 @@ public final class MoreStreams {
   /**
    * Analogous to {@link Collectors#mapping Collectors.mapping()}, applies a mapping function to
    * each input element before accumulation, except that the {@code mapper} function returns a
-   * <em>pair of elements</em>, which are then accumulated by a <em>BiCollector</em>. For example,
-   * the following code split a stream of strings into a map of key values:
+   * <em><b>pair of elements</b></em>, which are then accumulated by a <em>BiCollector</em>. For
+   * example, the following code split a stream of strings into a map of key values:
    *
    * <pre>{@code
    * ImmutableSetMultimap<String, String> keyValues = Stream.of("name=joe", "age=10")
