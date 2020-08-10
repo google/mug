@@ -33,6 +33,8 @@ public interface DualValuedFunction<F, V1, V2> {
    * for example: <pre>{@code
    *   splitFunction.apply(string, KeyValue::new);
    * }</pre>
+   *
+   * @throws NullPointerException if {@code then} is null.
    */
   // No wildcard on V1, V2 to optimize flexibility for implementations (method-ref).
   <R> R apply(F input, BiFunction<V1, V2, R> then);
