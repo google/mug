@@ -707,10 +707,7 @@ public final class Substring {
      */
     public final <R> R split(String string, BiFunction<? super String, ? super String, R> joiner) {
       requireNonNull(joiner);
-      Match separator = match(string);
-      if (separator == null) {
-        throw new IllegalArgumentException("Cannot split '" + string + "'" + " by " + this + ".");
-      }
+      Match separator = findIn(string);
       return joiner.apply(separator.before(), separator.after());
     }
 
@@ -728,7 +725,8 @@ public final class Substring {
     public final <R> R splitThenTrim(
         String string, BiFunction<? super String, ? super String, R> joiner) {
       requireNonNull(joiner);
-      return split(string, (l, r) -> joiner.apply(l.trim(), r.trim()));
+      Match separator = findIn(string);
+      return joiner.apply(separator.before().trim(), separator.after().trim());
     }
 
     /**
@@ -739,6 +737,14 @@ public final class Substring {
 
     private Match match(String string) {
       return match(string, 0);
+    }
+
+    private Match findIn(String s) {
+      Match match = match(s);
+      if (match == null) {
+        throw new IllegalArgumentException("Pattern " + this + " not found in '" + s + "'.");
+      }
+      return match;
     }
 
     /**
