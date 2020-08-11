@@ -141,14 +141,14 @@ public final class Substring {
       };
 
   /** {@code Pattern} that matches the entire string. */
-  private static final Pattern FULL =
+  private static final Pattern FULL_STRING =
       new Pattern() {
         @Override public Match match(String s, int fromIndex) {
           return new Match(s, fromIndex, s.length() - fromIndex);
         }
 
         @Override public String toString() {
-          return "FULL";
+          return "FULL_STRING";
         }
       };
 
@@ -651,26 +651,24 @@ public final class Substring {
      * }</pre>
      *
      * It's almost equivalent to {@link com.google.common.base.Splitter#splitToStream}, except that
-     * the user can use the {@link Match} objects returned by {@code iterateIn(string)}, to access
+     * the user can use the {@link Match} objects returned by {@code iterateIn(string)} to access
      * the indexes in the original string, or filter out unwanted matches before copying the
      * characters into a {@code String} object. For example, to parse the parameters delimited by
      * '&' and '=' in a HTTP query string:
      *
      * <pre>{@code
      * Substring.Pattern param = first('&').delimited();
-     * ImmutableListMultimap<String, String> queryParams =
-     *     param
-     *         .iterateIn(queryString)
-     *         .filter(m -> m.length() > 0)
-     *         .map(Match::toString)
-     *         .collect(toBiStream(first('=')::split))
-     *         .collect(ImmutableListMultimap::toImmutableListMultimap);
+     * ImmutableListMultimap<String, String> queryParams = param.iterateIn(queryString)
+     *     .filter(m -> m.length() > 0)
+     *     .map(Match::toString)
+     *     .collect(toBiStream(first('=')::split))
+     *     .collect(ImmutableListMultimap::toImmutableListMultimap);
      * }</pre>
      *
      * @since 4.6
      */
     public final Pattern delimited() {
-      return before(this).or(FULL);
+      return before(this).or(FULL_STRING);
     }
 
     /**
@@ -705,10 +703,10 @@ public final class Substring {
      * @throws IllegalArgumentException if this separator pattern isn't found in {@code string}.
      * @since 4.6
      */
-    public final <R> R split(String string, BiFunction<? super String, ? super String, R> joiner) {
-      requireNonNull(joiner);
+    public final <R> R split(String string, BiFunction<? super String, ? super String, R> combiner) {
+      requireNonNull(combiner);
       Match separator = findIn(string);
-      return joiner.apply(separator.before(), separator.after());
+      return combiner.apply(separator.before(), separator.after());
     }
 
     /**
@@ -719,14 +717,71 @@ public final class Substring {
      * KeyValue keyValue = first('=').splitThenTrim("name = joe ", KeyValue::new);
      * }</pre>
      *
+     * <p>If you are trying to parse a string to a key-value data structure ({@code Map}, {@code
+     * Multimap} etc.), you can use {@link com.google.common.base.Splitter.MapSplitter} though it's
+     * limited to {@code Map} and doesn't allow duplicate keys:
+     *
+     * <pre>{@code
+     * String toSplit = " x -> y, z-> a ";
+     * Splitter csv = Splitter.on(',');
+     * Map<String, String> result = csv
+     *     .trimResults()
+     *     .withKeyValueSeparator(Splitter.on("->"))
+     *     .split(toSplit);
+     * }</pre>
+     *
+     * Alternatively, use {@code Substring} to allow duplicate keys and to split into multimaps or
+     * other types:
+     *
+     * <pre>{@code
+     * String toSplit = " x -> y, z-> a, x -> t ";
+     * Substring.Pattern csv = first(',').delimited();
+     * ImmutableListMultimap<String, String> result = csv
+     *     .iterateIn(toSplit)
+     *     .collect(toBiStream(first("->")::splitThenTrim))
+     *     .collect(ImmutableListMultimap::toimmutableListMultimap);
+     * }</pre>
+     *
+     * The last two {@code collect()} calls in the above example can be reduced to one (because each
+     * {@code collect()} call is an {@code O(N)} operation), provided you don't need to chain other
+     * {@code BiStream} operations:
+     *
+     * <pre>{@code
+     * import static com.google.mu.util.stream.MoreStreams.mapping;
+     *
+     * // ...
+     * ImmutableListMultimap<String, String> result = csv
+     *     .iterateIn(toSplit)
+     *     .collect(mapping(first("->")::splitThenTrim, toimmutableListMultimap()));
+     * }</pre>
+     *
+     * <p>Note that both {@link #split split()} and {@link #splitThenTrim splitThenTrim()} throw
+     * {@code IllegalArgumentException} when the separator pattern isn't found in the string. If
+     * it's an expected condition and needs to be handled gracefully (like, throwing a custom
+     * exception with the line number in the error message), consider to use {@link #in in()} and
+     * then you can handle the absence case. The following example reports line number in the error
+     * message:
+     *
+     * <pre>{@code
+     * import com.google.mu.util.Ordinal;
+     *
+     * Substring.Pattern separator = first('=');
+     * ImmutableListMultimap<String, String> result = BiStream.zip(Ordinal.natural(), lines.stream())
+     *     .filterValues(s -> !isCommentOrBlank(s))
+     *     .mapValues((l, s) ->
+     *         separator.in(s).orElseThrow(() -> new BadInputException(l + " line: " + s)))
+     *     .map((l, match) -> match.before().trim(), (l, match) -> match.after().trim())
+     *     .collect(toimmutableListMultimap());
+     * }</pre>
+     *
      * @throws IllegalArgumentException if this separator pattern isn't found in {@code string}.
      * @since 4.6
      */
     public final <R> R splitThenTrim(
-        String string, BiFunction<? super String, ? super String, R> joiner) {
-      requireNonNull(joiner);
+        String string, BiFunction<? super String, ? super String, R> combiner) {
+      requireNonNull(combiner);
       Match separator = findIn(string);
-      return joiner.apply(separator.before().trim(), separator.after().trim());
+      return combiner.apply(separator.before().trim(), separator.after().trim());
     }
 
     private Match findIn(String s) {
@@ -931,8 +986,12 @@ public final class Substring {
      * @since 4.6
      */
     @Override public char charAt(int i) {
-      if (i < 0 || i >= length()) {
-        throw new IndexOutOfBoundsException("Invalid index: " + i);
+      if (i < 0) {
+        throw new IndexOutOfBoundsException("Invalid index (" + i + ") < 0");
+      }
+      if (i >= length()) {
+        throw new IndexOutOfBoundsException(
+            "Invalid index (" + i + ") >= length (" + length() + ")");
       }
       return context.charAt(startIndex + i);
     }
@@ -943,13 +1002,15 @@ public final class Substring {
      */
     @Override public CharSequence subSequence(int begin, int end) {
       if (begin < 0) {
-        throw new IndexOutOfBoundsException("Invalid index: " + begin);
+        throw new IndexOutOfBoundsException("Invalid index: begin (" + begin + ") < 0");
       }
       if (end > length()) {
-        throw new IndexOutOfBoundsException("Invalid index: " + end);
+        throw new IndexOutOfBoundsException(
+            "Invalid index: end (" + end + ") > length (" + length() + ")");
       }
       if (begin > end) {
-        throw new IndexOutOfBoundsException("Invalid index: " + begin + " > " + end);
+        throw new IndexOutOfBoundsException(
+            "Invalid index: begin (" + begin + ") > end (" + end + ")");
       }
       return new Match(context, startIndex + begin, end - begin);
     }
