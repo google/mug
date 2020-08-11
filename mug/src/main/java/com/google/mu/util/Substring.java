@@ -737,8 +737,7 @@ public final class Substring {
      * <pre>{@code
      * String toSplit = " x -> y, z-> a, x -> t ";
      * Substring.Pattern csv = first(',').delimited();
-     * ImmutableListMultimap<String, String> result = csv
-     *     .iterateIn(toSplit)
+     * ImmutableListMultimap<String, String> result = csv.iterateIn(toSplit)
      *     .collect(toBiStream(first("->")::splitThenTrim))
      *     .collect(ImmutableListMultimap::toimmutableListMultimap);
      * }</pre>
@@ -751,8 +750,7 @@ public final class Substring {
      * import static com.google.mu.util.stream.MoreStreams.mapping;
      *
      * // ...
-     * ImmutableListMultimap<String, String> result = csv
-     *     .iterateIn(toSplit)
+     * ImmutableListMultimap<String, String> result = csv.iterateIn(toSplit)
      *     .collect(mapping(first("->")::splitThenTrim, toimmutableListMultimap()));
      * }</pre>
      *
