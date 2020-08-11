@@ -703,17 +703,10 @@ public final class Substring {
      * @throws IllegalArgumentException if this separator pattern isn't found in {@code string}.
      * @since 4.6
      */
-<<<<<<< HEAD
-    public final <R> R split(String string, BiFunction<? super String, ? super String, R> joiner) {
-      requireNonNull(joiner);
-      Match separator = findIn(string);
-      return joiner.apply(separator.before(), separator.after());
-=======
     public final <R> R split(String string, BiFunction<? super String, ? super String, R> combiner) {
       requireNonNull(combiner);
       Match separator = findIn(string);
       return combiner.apply(separator.before(), separator.after());
->>>>>>> master
     }
 
     /**
@@ -785,12 +778,6 @@ public final class Substring {
      * @since 4.6
      */
     public final <R> R splitThenTrim(
-<<<<<<< HEAD
-        String string, BiFunction<? super String, ? super String, R> joiner) {
-      requireNonNull(joiner);
-      Match separator = findIn(string);
-      return joiner.apply(separator.before().trim(), separator.after().trim());
-=======
         String string, BiFunction<? super String, ? super String, R> combiner) {
       requireNonNull(combiner);
       Match separator = findIn(string);
@@ -803,7 +790,6 @@ public final class Substring {
         throw new IllegalArgumentException("Pattern " + this + " not found in '" + s + "'.");
       }
       return match;
->>>>>>> master
     }
 
     /**
@@ -814,14 +800,6 @@ public final class Substring {
 
     private Match match(String string) {
       return match(string, 0);
-    }
-
-    private Match findIn(String s) {
-      Match match = match(s);
-      if (match == null) {
-        throw new IllegalArgumentException("Pattern " + this + " not found in '" + s + "'.");
-      }
-      return match;
     }
 
     /**
