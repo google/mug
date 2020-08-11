@@ -698,7 +698,8 @@ public final class Substring {
      * KeyValue keyValue = first('=').split("name=joe", KeyValue::new);
      * }</pre>
      *
-     * <p>If you need to trim the key-value pairs, use {@link #splitThenTrim} instead.
+     * <p>If you need to trim the key-value pairs, use {@link #splitThenTrim splitThenTrim()}
+     * instead.
      *
      * @throws IllegalArgumentException if this separator pattern isn't found in {@code string}.
      * @since 4.6
