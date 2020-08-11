@@ -29,14 +29,31 @@ public interface DualValuedFunction<F, V1, V2> {
   /**
    * Invokes this function, passes the two results to {@code then} and returns the final result.
    *
-   * <p>Useful when the caller has some domain-specific object to create off of the two result,
-   * for example: <pre>{@code
-   *   splitFunction.apply(string, KeyValue::new);
+   * <p>Useful when the caller has some domain-specific object to create off of the two result, for
+   * example, {@link com.google.mu.util.Substring.Pattern#split} returns two results
+   * following this pattern:
+   *
+   * <pre>{@code
+   * first('=').split(string, (name, val) -> Var.newBuilder().setName(name).setValue(val).build());
+   * }</pre>
+   *
+   * The {@code split()} method (and its friend {@code splitThenTrim()}) can then be
+   * method-referenced as a {@code DualValuedFunction} and be used in a {@link
+   * com.google.mu.util.stream.BiStream} chain, like:
+   *
+   * <pre>{@code
+   * ImmutableSetMultimap<String, String> keyValues = lines.stream()
+   *     .map(String::trim)
+   *     .filter(l -> l.length() > 0)                     // not empty
+   *     .filter(l -> !l.startsWith("//"))                // not comment
+   *     .collect(toBiStream(first('=')::splitThenTrim))  // split each line to a key-value pair
+   *     .collect(ImmutableSetMultimap::toImmutableSetMultimap);
    * }</pre>
    *
    * @throws NullPointerException if {@code then} is null.
    */
-  // No wildcard on V1, V2 to optimize flexibility for implementations (method-ref).
+  // No wildcard on V1/V2 so that private methods not using PECS can still be referenced.
+  // Users should rarely need to call apply() directly.
   <R> R apply(F input, BiFunction<V1, V2, R> then);
 
   /**
