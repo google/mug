@@ -1109,43 +1109,43 @@ public class SubstringTest {
   }
 
   @Test
-  public void split() {
-    assertThat(first(',').split("foo")).containsExactly("foo");
-    assertThat(first(',').split("foo, bar")).containsExactly("foo", " bar");
-    assertThat(first(',').split("foo,")).containsExactly("foo", "");
-    assertThat(first(',').split("foo,bar, ")).containsExactly("foo", "bar", " ");
+  public void splitToStream() {
+    assertThat(first(',').splitToStream("foo")).containsExactly("foo");
+    assertThat(first(',').splitToStream("foo, bar")).containsExactly("foo", " bar");
+    assertThat(first(',').splitToStream("foo,")).containsExactly("foo", "");
+    assertThat(first(',').splitToStream("foo,bar, ")).containsExactly("foo", "bar", " ");
   }
 
   @Test
-  public void split_beginning() {
-    assertThat(BEGINNING.split("foo")).containsExactly("");
+  public void splitToStream_beginning() {
+    assertThat(BEGINNING.splitToStream("foo")).containsExactly("");
   }
 
   @Test
-  public void split_end() {
-    assertThat(END.split("foo")).containsExactly("foo");
+  public void splitToStream_end() {
+    assertThat(END.splitToStream("foo")).containsExactly("foo");
   }
 
   @Test
-  public void splitThenTrim() {
-    assertThat(first(',').splitThenTrim("foo ")).containsExactly("foo");
-    assertThat(first(',').splitThenTrim("foo, bar")).containsExactly("foo", "bar");
-    assertThat(first(',').splitThenTrim("foo,")).containsExactly("foo", "");
-    assertThat(first(',').splitThenTrim("foo,bar, ")).containsExactly("foo", "bar", "");
+  public void splitThenTrimToStream() {
+    assertThat(first(',').splitThenTrimToStream("foo ")).containsExactly("foo");
+    assertThat(first(',').splitThenTrimToStream("foo, bar")).containsExactly("foo", "bar");
+    assertThat(first(',').splitThenTrimToStream("foo,")).containsExactly("foo", "");
+    assertThat(first(',').splitThenTrimToStream("foo,bar, ")).containsExactly("foo", "bar", "");
   }
 
   @Test
-  public void splitThenTrim_beginning() {
-    assertThat(BEGINNING.splitThenTrim(" foo")).containsExactly("");
+  public void splitThenTrimToStream_beginning() {
+    assertThat(BEGINNING.splitThenTrimToStream(" foo")).containsExactly("");
   }
 
   @Test
-  public void splitThenTrim_end() {
-    assertThat(END.splitThenTrim(" foo ")).containsExactly("foo");
+  public void splitThenTrimToStream_end() {
+    assertThat(END.splitThenTrimToStream(" foo ")).containsExactly("foo");
   }
 
   @Test
-  public void split_intoTwoParts_cannotSplit() {
+  public void split_cannotSplit() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class, () -> first('=').split("foo:bar", String::concat));
@@ -1153,7 +1153,7 @@ public class SubstringTest {
   }
 
   @Test
-  public void split_intoTwoParts_canSplit() {
+  public void split_canSplit() {
     assertThat(first('=').split(" foo=bar", (String k, String v) -> k)).isEqualTo(" foo");
     assertThat(first('=').split("foo=bar ", (String k, String v) -> v)).isEqualTo("bar ");
   }

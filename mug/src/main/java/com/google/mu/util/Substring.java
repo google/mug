@@ -657,18 +657,6 @@ public final class Substring {
     }
 
     /**
-     * Returns a stream that will lazily split {@code string} into parts delimited by this pattern.
-     * If this pattern isn't found in {@code string}, the full string is returned.
-     *
-     * <p>If you need to trim the key-value pairs, use {@link #splitThenTrim(String)} instead.
-     *
-     * @since 4.6
-     */
-    public Stream<String> split(String string) {
-      return delimited().iterateIn(string).map(Match::toString);
-    }
-
-    /**
      * Splits {@code string} into two parts that are separated by this separator pattern. For
      * example:
      *
@@ -686,17 +674,6 @@ public final class Substring {
       requireNonNull(combiner);
       Match separator = findIn(string);
       return combiner.apply(separator.before(), separator.after());
-    }
-
-    /**
-     * Returns a stream that will lazily split {@code string} into parts delimited by this pattern,
-     * each with leading and trailing whitespaces trimmed. If this pattern isn't found in {@code
-     * string}, the full string is trimmed and returned.
-     *
-     * @since 4.6
-     */
-    public Stream<String> splitThenTrim(String string) {
-      return split(string).map(String::trim);
     }
 
     /**
@@ -770,6 +747,29 @@ public final class Substring {
       requireNonNull(combiner);
       Match separator = findIn(string);
       return combiner.apply(separator.before().trim(), separator.after().trim());
+    }
+
+    /**
+     * Returns a stream that will lazily split {@code string} into parts delimited by this pattern.
+     * If this pattern isn't found in {@code string}, the full string is returned.
+     *
+     * <p>If you need to trim the key-value pairs, use {@link #splitThenTrimToStream(String)} instead.
+     *
+     * @since 4.6
+     */
+    public Stream<String> splitToStream(String string) {
+      return delimited().iterateIn(string).map(Match::toString);
+    }
+
+    /**
+     * Returns a stream that will lazily split {@code string} into parts delimited by this pattern,
+     * each with leading and trailing whitespaces trimmed. If this pattern isn't found in {@code
+     * string}, the full string is trimmed and returned.
+     *
+     * @since 4.6
+     */
+    public Stream<String> splitThenTrimToStream(String string) {
+      return splitToStream(string).map(String::trim);
     }
 
     private Match findIn(String s) {
