@@ -656,8 +656,16 @@ public final class Substring {
       };
     }
 
+    /**
+     * Returns a stream that will lazily split {@code string} into parts delimited by this pattern.
+     * If this pattern isn't found in {@code string}, the full string is returned.
+     *
+     * <p>If you need to trim the key-value pairs, use {@link #splitThenTrim(String)} instead.
+     *
+     * @since 4.6
+     */
     public Stream<String> split(String string) {
-      return before(this).or(FULL_STRING).iterateIn(string).map(Match::toString);
+      return delimited().iterateIn(string).map(Match::toString);
     }
 
     /**
@@ -680,6 +688,13 @@ public final class Substring {
       return combiner.apply(separator.before(), separator.after());
     }
 
+    /**
+     * Returns a stream that will lazily split {@code string} into parts delimited by this pattern
+     * with leading and trailing whitespaces trimmed. If this pattern isn't found in {@code string},
+     * the full string is trimed and returned.
+     *
+     * @since 4.6
+     */
     public Stream<String> splitThenTrim(String string) {
       return split(string).map(String::trim);
     }
