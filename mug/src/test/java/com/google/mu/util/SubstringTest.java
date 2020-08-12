@@ -1109,7 +1109,23 @@ public class SubstringTest {
   }
 
   @Test
-  public void split_cannotSplit() {
+  public void split() {
+    assertThat(first(',').split("foo")).containsExactly("foo");
+    assertThat(first(',').split("foo, bar")).containsExactly("foo", " bar");
+    assertThat(first(',').split("foo,")).containsExactly("foo", "");
+    assertThat(first(',').split("foo,bar, ")).containsExactly("foo", "bar", " ");
+  }
+
+  @Test
+  public void splitThenTrim() {
+    assertThat(first(',').splitThenTrim("foo ")).containsExactly("foo");
+    assertThat(first(',').splitThenTrim("foo, bar")).containsExactly("foo", "bar");
+    assertThat(first(',').splitThenTrim("foo,")).containsExactly("foo", "");
+    assertThat(first(',').splitThenTrim("foo,bar, ")).containsExactly("foo", "bar", "");
+  }
+
+  @Test
+  public void split_intoTwoParts_cannotSplit() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class, () -> first('=').split("foo:bar", String::concat));
@@ -1117,13 +1133,13 @@ public class SubstringTest {
   }
 
   @Test
-  public void split_canSplit() {
+  public void split_intoTwoParts_canSplit() {
     assertThat(first('=').split(" foo=bar", (String k, String v) -> k)).isEqualTo(" foo");
     assertThat(first('=').split("foo=bar ", (String k, String v) -> v)).isEqualTo("bar ");
   }
 
   @Test
-  public void splitThenTrim_cannotSplit() {
+  public void splitThenTrim_intoTwoParts_cannotSplit() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -1132,7 +1148,7 @@ public class SubstringTest {
   }
 
   @Test
-  public void splitThenTrim_canSplit() {
+  public void splitThenTrim_intoTwoParts_canSplit() {
     assertThat(first('=').splitThenTrim(" foo =bar", (String k, String v) -> k)).isEqualTo("foo");
     assertThat(first('=').splitThenTrim("foo = bar ", (String k, String v) -> v)).isEqualTo("bar");
   }

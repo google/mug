@@ -638,40 +638,6 @@ public final class Substring {
     }
 
     /**
-     * With {@code this} pattern as the delimiter, returns a {@code Pattern} that will match the
-     * substring delimited by it, or the entire string if the delimiter isn't found.
-     *
-     * <p>When combined with {@link #iterateIn}, the input string can be splitted by the delimiter
-     * represented by {@code this} pattern. The following example parses out all elements in a
-     * comma-delimited format:
-     *
-     * <pre>{@code
-     * Substring.Pattern csv = substring(",").delimited();
-     * Stream<String> elements = csv.iterateIn("foo,bar,baz");  // ["foo", "bar", "baz"]
-     * }</pre>
-     *
-     * It's almost equivalent to {@link com.google.common.base.Splitter#splitToStream}, except that
-     * the user can use the {@link Match} objects returned by {@code iterateIn(string)} to access
-     * the indexes in the original string, or filter out unwanted matches before copying the
-     * characters into a {@code String} object. For example, to parse the parameters delimited by
-     * '&' and '=' in a HTTP query string:
-     *
-     * <pre>{@code
-     * Substring.Pattern param = first('&').delimited();
-     * ImmutableListMultimap<String, String> queryParams = param.iterateIn(queryString)
-     *     .filter(m -> m.length() > 0)
-     *     .map(Match::toString)
-     *     .collect(toBiStream(first('=')::split))
-     *     .collect(ImmutableListMultimap::toImmutableListMultimap);
-     * }</pre>
-     *
-     * @since 4.6
-     */
-    public final Pattern delimited() {
-      return before(this).or(FULL_STRING);
-    }
-
-    /**
      * Returns a {@code Pattern} that falls back to using {@code that} if {@code this} fails to
      * match.
      */
@@ -688,6 +654,10 @@ public final class Substring {
           return base + ".or(" + that + ")";
         }
       };
+    }
+
+    public Stream<String> split(String string) {
+      return before(this).or(FULL_STRING).iterateIn(string).map(Match::toString);
     }
 
     /**
@@ -708,6 +678,10 @@ public final class Substring {
       requireNonNull(combiner);
       Match separator = findIn(string);
       return combiner.apply(separator.before(), separator.after());
+    }
+
+    public Stream<String> splitThenTrim(String string) {
+      return split(string).map(String::trim);
     }
 
     /**
@@ -789,6 +763,14 @@ public final class Substring {
         throw new IllegalArgumentException("Pattern " + this + " not found in '" + s + "'.");
       }
       return match;
+    }
+
+    /**
+     * With {@code this} pattern as the delimiter, returns a {@code Pattern} that will match the
+     * substring delimited by it, or the entire string if the delimiter isn't found.
+     */
+    final Pattern delimited() {
+      return before(this).or(FULL_STRING);
     }
 
     /**
