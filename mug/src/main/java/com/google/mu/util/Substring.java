@@ -689,9 +689,9 @@ public final class Substring {
     }
 
     /**
-     * Returns a stream that will lazily split {@code string} into parts delimited by this pattern
-     * with leading and trailing whitespaces trimmed. If this pattern isn't found in {@code string},
-     * the full string is trimed and returned.
+     * Returns a stream that will lazily split {@code string} into parts delimited by this pattern,
+     * each with leading and trailing whitespaces trimmed. If this pattern isn't found in {@code
+     * string}, the full string is trimmed and returned.
      *
      * @since 4.6
      */
