@@ -1117,11 +1117,31 @@ public class SubstringTest {
   }
 
   @Test
+  public void split_beginning() {
+    assertThat(BEGINNING.split("foo")).containsExactly("");
+  }
+
+  @Test
+  public void split_end() {
+    assertThat(END.split("foo")).containsExactly("foo");
+  }
+
+  @Test
   public void splitThenTrim() {
     assertThat(first(',').splitThenTrim("foo ")).containsExactly("foo");
     assertThat(first(',').splitThenTrim("foo, bar")).containsExactly("foo", "bar");
     assertThat(first(',').splitThenTrim("foo,")).containsExactly("foo", "");
     assertThat(first(',').splitThenTrim("foo,bar, ")).containsExactly("foo", "bar", "");
+  }
+
+  @Test
+  public void splitThenTrim_beginning() {
+    assertThat(BEGINNING.splitThenTrim(" foo")).containsExactly("");
+  }
+
+  @Test
+  public void splitThenTrim_end() {
+    assertThat(END.splitThenTrim(" foo ")).containsExactly("foo");
   }
 
   @Test
