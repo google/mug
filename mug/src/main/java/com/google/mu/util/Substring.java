@@ -676,8 +676,8 @@ public final class Substring {
      * KeyValue keyValue = first('=').split("name=joe", KeyValue::new);
      * }</pre>
      *
-     * <p>If you need to trim the key-value pairs, use {@link #splitThenTrim splitThenTrim()}
-     * instead.
+     * <p>If you need to trim the key-value pairs, use {@link #splitThenTrim(String, BiFunction)
+     * splitThenTrim()} instead.
      *
      * @throws IllegalArgumentException if this separator pattern isn't found in {@code string}.
      * @since 4.6
@@ -743,12 +743,12 @@ public final class Substring {
      *     .collect(mapping(first("->")::splitThenTrim, toImmutableListMultimap()));
      * }</pre>
      *
-     * <p>Note that both {@link #split split()} and {@link #splitThenTrim splitThenTrim()} throw
-     * {@code IllegalArgumentException} when the separator pattern isn't found in the string. If
-     * it's an expected condition and needs to be handled gracefully (like, throwing a custom
-     * exception with the line number in the error message), consider to use {@link #in in()} and
-     * then you can handle the absence case. The following example reports line number in the error
-     * message:
+     * <p>Note that both {@link #split(String, BiFunction) split()} and {@link
+     * #splitThenTrim(String, BiFunction) splitThenTrim()} throw {@code IllegalArgumentException}
+     * when the separator pattern isn't found in the string. If it's an expected condition and needs
+     * to be handled gracefully (like, throwing a custom exception with the line number in the error
+     * message), consider to use {@link #in in()} and then you can handle the absence case. The
+     * following example reports line number in the error message:
      *
      * <pre>{@code
      * import com.google.mu.util.Ordinal;
