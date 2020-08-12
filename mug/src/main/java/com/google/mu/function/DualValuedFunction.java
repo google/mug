@@ -30,8 +30,8 @@ public interface DualValuedFunction<F, V1, V2> {
    * Invokes this function, passes the two results to {@code then} and returns the final result.
    *
    * <p>Useful when the caller has some domain-specific object to create off of the two result, for
-   * example, {@link com.google.mu.util.Substring.Pattern#split} returns two results
-   * following this pattern:
+   * example, {@link com.google.mu.util.Substring.Pattern#split(String, BiFunction)} returns two
+   * results following this pattern:
    *
    * <pre>{@code
    * first('=').split(string, (name, val) -> Var.newBuilder().setName(name).setValue(val).build());
