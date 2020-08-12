@@ -727,7 +727,7 @@ public final class Substring {
      * ImmutableListMultimap<String, String> result = first(',')
      *     .split(toSplit)
      *     .collect(toBiStream(first("->")::splitThenTrim))
-     *     .collect(ImmutableListMultimap::toimmutableListMultimap);
+     *     .collect(ImmutableListMultimap::toImmutableListMultimap);
      * }</pre>
      *
      * The last two {@code collect()} calls in the above example can be reduced to one (because each
@@ -740,7 +740,7 @@ public final class Substring {
      * // ...
      * ImmutableListMultimap<String, String> result = first(',')
      *     .split(toSplit)
-     *     .collect(mapping(first("->")::splitThenTrim, toimmutableListMultimap()));
+     *     .collect(mapping(first("->")::splitThenTrim, toImmutableListMultimap()));
      * }</pre>
      *
      * <p>Note that both {@link #split split()} and {@link #splitThenTrim splitThenTrim()} throw
@@ -759,7 +759,7 @@ public final class Substring {
      *     .mapValues((l, s) ->
      *         separator.in(s).orElseThrow(() -> new BadInputException(l + " line: " + s)))
      *     .map((l, match) -> match.before().trim(), (l, match) -> match.after().trim())
-     *     .collect(toimmutableListMultimap());
+     *     .collect(toImmutableListMultimap::toImmutableListMultimap);
      * }</pre>
      *
      * @throws IllegalArgumentException if this separator pattern isn't found in {@code string}.
