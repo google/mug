@@ -667,6 +667,8 @@ public final class Substring {
      * <p>If you need to trim the key-value pairs, use {@link #splitThenTrim(String, BiFunction)
      * splitThenTrim()} instead.
      *
+     * <p>To split a string into substrings delimited by a delimiter, use {@link #delimit} instead.
+     *
      * @throws IllegalArgumentException if this separator pattern isn't found in {@code string}.
      * @since 4.6
      */
@@ -738,6 +740,8 @@ public final class Substring {
      *     .map((l, match) -> match.before().trim(), (l, match) -> match.after().trim())
      *     .collect(toImmutableListMultimap::toImmutableListMultimap);
      * }</pre>
+     *
+     * <p>To split a string into substrings delimited by a delimiter, use {@link #delimit} instead.
      *
      * @throws IllegalArgumentException if this separator pattern isn't found in {@code string}.
      * @since 4.6
