@@ -665,9 +665,9 @@ public final class Substring {
      * }</pre>
      *
      * <p>If you need to trim the key-value pairs, use {@link #splitThenTrim(String, BiFunction)
-     * splitThenTrim()} instead.
+     * splitThenTrim()}.
      *
-     * <p>To split a string into substrings delimited by a delimiter, use {@link #delimit} instead.
+     * <p>To split a string into substrings delimited by a delimiter, use {@link #delimit}.
      *
      * @throws IllegalArgumentException if this separator pattern isn't found in {@code string}.
      * @since 4.6
@@ -741,7 +741,7 @@ public final class Substring {
      *     .collect(toImmutableListMultimap::toImmutableListMultimap);
      * }</pre>
      *
-     * <p>To split a string into substrings delimited by a delimiter, use {@link #delimit} instead.
+     * <p>To split a string into substrings delimited by a delimiter, use {@link #delimit}.
      *
      * @throws IllegalArgumentException if this separator pattern isn't found in {@code string}.
      * @since 4.6
