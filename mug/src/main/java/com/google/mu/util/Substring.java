@@ -704,7 +704,8 @@ public final class Substring {
      * <pre>{@code
      * String toSplit = " x -> y, z-> a, x -> t ";
      * ImmutableListMultimap<String, String> result = first(',')
-     *     .split(toSplit)
+     *     .delimit(toSplit)
+     *     .map(Match::toString)
      *     .collect(toBiStream(first("->")::splitThenTrim))
      *     .collect(ImmutableListMultimap::toImmutableListMultimap);
      * }</pre>
@@ -718,7 +719,8 @@ public final class Substring {
      *
      * // ...
      * ImmutableListMultimap<String, String> result = first(',')
-     *     .split(toSplit)
+     *     .delimit(toSplit)
+     *     .map(Match::toString)
      *     .collect(mapping(first("->")::splitThenTrim, toImmutableListMultimap()));
      * }</pre>
      *
