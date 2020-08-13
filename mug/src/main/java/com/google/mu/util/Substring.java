@@ -750,26 +750,17 @@ public final class Substring {
     }
 
     /**
-     * Returns a stream of substrings delimited by every {@link #iterateIn iteration} of this
-     * pattern. If this pattern isn't found in {@code string}, the full string is returned.
+     * Returns a stream of {@code Match} objects delimited by every {@link #iterateIn iteration} of
+     * this pattern. If this pattern isn't found in {@code string}, the full string is returned.
      *
-     * <p>If you need to trim the key-value pairs, use {@link #splitThenTrimToStream(String)} instead.
-     *
-     * @since 4.6
-     */
-    public Stream<String> splitToStream(String string) {
-      return delimited().iterateIn(string).map(Match::toString);
-    }
-
-    /**
-     * Returns a stream of substrings delimited by every {@link #iterateIn iteration} of this
-     * pattern, each with leading and trailing whitespaces trimmed. If this pattern isn't found in
-     * {@code string}, the full string is trimmed and returned.
+     * <p>Different from {@link #split(String, BiFunction) split()},
+     * {@code first('=').delimit("a=b=c")} results in a stream of {@code ["a", "b", "c"]};
+     * while {@code first('=').split("a=b=c", ...)} results in a pair of {@code ["a", "b=c"]}.
      *
      * @since 4.6
      */
-    public Stream<String> splitThenTrimToStream(String string) {
-      return splitToStream(string).map(String::trim);
+    public Stream<Match> delimit(String string) {
+      return before(this).or(FULL_STRING).iterateIn(string);
     }
 
     private Match findIn(String s) {
@@ -778,14 +769,6 @@ public final class Substring {
         throw new IllegalArgumentException("Pattern " + this + " not found in '" + s + "'.");
       }
       return match;
-    }
-
-    /**
-     * With {@code this} pattern as the delimiter, returns a {@code Pattern} that will match the
-     * substring delimited by it, or the entire string if the delimiter isn't found.
-     */
-    final Pattern delimited() {
-      return before(this).or(FULL_STRING);
     }
 
     /**
