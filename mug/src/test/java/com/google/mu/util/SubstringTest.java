@@ -27,6 +27,7 @@ import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.NullPointerTester;
+import com.google.mu.util.Substring.Match;
 
 @RunWith(JUnit4.class)
 public class SubstringTest {
@@ -1109,39 +1110,26 @@ public class SubstringTest {
   }
 
   @Test
-  public void splitToStream() {
-    assertThat(first(',').splitToStream("foo")).containsExactly("foo");
-    assertThat(first(',').splitToStream("foo, bar")).containsExactly("foo", " bar");
-    assertThat(first(',').splitToStream("foo,")).containsExactly("foo", "");
-    assertThat(first(',').splitToStream("foo,bar, ")).containsExactly("foo", "bar", " ");
+  public void delimit() {
+    assertThat(first(',').delimit("foo").map(Match::toString))
+        .containsExactly("foo");
+    assertThat(first(',').delimit("foo, bar").map(Match::toString))
+        .containsExactly("foo", " bar");
+    assertThat(first(',').delimit("foo,").map(Match::toString))
+        .containsExactly("foo", "");
+    assertThat(first(',').delimit("foo,bar, ").map(Match::toString))
+        .containsExactly("foo", "bar", " ");
   }
 
   @Test
-  public void splitToStream_beginning() {
-    assertThat(BEGINNING.splitToStream("foo")).containsExactly("");
+  public void delimit_beginning() {
+    assertThat(BEGINNING.delimit("foo").map(Match::toString))
+        .containsExactly("");
   }
 
   @Test
-  public void splitToStream_end() {
-    assertThat(END.splitToStream("foo")).containsExactly("foo");
-  }
-
-  @Test
-  public void splitThenTrimToStream() {
-    assertThat(first(',').splitThenTrimToStream("foo ")).containsExactly("foo");
-    assertThat(first(',').splitThenTrimToStream("foo, bar")).containsExactly("foo", "bar");
-    assertThat(first(',').splitThenTrimToStream("foo,")).containsExactly("foo", "");
-    assertThat(first(',').splitThenTrimToStream("foo,bar, ")).containsExactly("foo", "bar", "");
-  }
-
-  @Test
-  public void splitThenTrimToStream_beginning() {
-    assertThat(BEGINNING.splitThenTrimToStream(" foo")).containsExactly("");
-  }
-
-  @Test
-  public void splitThenTrimToStream_end() {
-    assertThat(END.splitThenTrimToStream(" foo ")).containsExactly("foo");
+  public void delimit_end() {
+    assertThat(END.delimit("foo").map(Match::toString)).containsExactly("foo");
   }
 
   @Test
@@ -1156,6 +1144,7 @@ public class SubstringTest {
   public void split_canSplit() {
     assertThat(first('=').split(" foo=bar", (String k, String v) -> k)).isEqualTo(" foo");
     assertThat(first('=').split("foo=bar ", (String k, String v) -> v)).isEqualTo("bar ");
+    assertThat(first('=').split(" foo=bar", (String k, String v) -> k)).isEqualTo(" foo");
   }
 
   @Test
@@ -1407,44 +1396,37 @@ public class SubstringTest {
   }
 
   @Test
-  public void delimited_toString() {
-    assertThat(first(";").delimited().toString()).contains("before(first(");
-  }
-
-  @Test
-  public void delimited_noMatch() {
-    assertThat(first("://").delimited().from("abc")).hasValue("abc");
-    assertThat(first("://").delimited().iterateIn("abc").map(Substring.Match::toString))
+  public void delimite_noMatch() {
+    assertThat(first("://").delimit("abc").map(Match::toString))
         .containsExactly("abc");
   }
 
   @Test
-  public void delimited_match() {
-    assertThat(first("//").delimited().from("//foo")).hasValue("");
-    assertThat(first("//").delimited().iterateIn("//foo").map(Substring.Match::toString))
+  public void delimit_match() {
+    assertThat(first("//").delimit("//foo").map(Match::toString))
         .containsExactly("", "foo");
-    assertThat(first("/").delimited().iterateIn("foo/bar").map(Substring.Match::toString))
+    assertThat(first("/").delimit("foo/bar").map(Match::toString))
         .containsExactly("foo", "bar");
-    assertThat(first("/").delimited().iterateIn("foo/bar/").map(Substring.Match::toString))
+    assertThat(first("/").delimit("foo/bar/").map(Match::toString))
         .containsExactly("foo", "bar", "");
   }
 
   @Test
-  public void delimited_byBetweenPattern() {
+  public void delimit_byBetweenPattern() {
     Substring.Pattern comment = Substring.between(before(first("/*")), after(first("*/")));
-    assertThat(comment.delimited().iterateIn("a").map(Substring.Match::toString))
+    assertThat(comment.delimit("a").map(Match::toString))
         .containsExactly("a")
         .inOrder();
-    assertThat(comment.delimited().iterateIn("a/*comment*/").map(Substring.Match::toString))
+    assertThat(comment.delimit("a/*comment*/").map(Match::toString))
         .containsExactly("a", "")
         .inOrder();
-    assertThat(comment.delimited().iterateIn("a/*comment*/b").map(Substring.Match::toString))
+    assertThat(comment.delimit("a/*comment*/b").map(Match::toString))
         .containsExactly("a", "b")
         .inOrder();
-    assertThat(comment.delimited().iterateIn("a/*c1*/b/*c2*/").map(Substring.Match::toString))
+    assertThat(comment.delimit("a/*c1*/b/*c2*/").map(Match::toString))
         .containsExactly("a", "b", "")
         .inOrder();
-    assertThat(comment.delimited().iterateIn("a/*c1*/b/*c2*/c").map(Substring.Match::toString))
+    assertThat(comment.delimit("a/*c1*/b/*c2*/c").map(Match::toString))
         .containsExactly("a", "b", "c")
         .inOrder();
   }
