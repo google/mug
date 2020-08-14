@@ -270,7 +270,7 @@ public final class MoreStreams {
    *
    * <p>To flatten a stream of multimaps, use {@link #flattening}.
    *
-   * @since 3.6
+   * @since 4.6
    */
   public static <K, V, R> Collector<Map<K, V>, ?, R> flatteningMaps(
       BiCollector<K, V, R> downstream) {
