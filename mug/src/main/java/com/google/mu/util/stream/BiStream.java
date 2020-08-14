@@ -14,22 +14,51 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
-import java.util.*;
-import java.util.Spliterators.AbstractDoubleSpliterator;
-import java.util.Spliterators.AbstractIntSpliterator;
-import java.util.Spliterators.AbstractLongSpliterator;
-import java.util.Spliterators.AbstractSpliterator;
-import java.util.function.*;
-import java.util.stream.*;
-import java.util.stream.Collector.Characteristics;
-
 import static java.util.Comparator.comparing;
 import static java.util.Objects.requireNonNull;
 import static java.util.Spliterator.ORDERED;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.StreamSupport.*;
+import static java.util.stream.StreamSupport.doubleStream;
+import static java.util.stream.StreamSupport.intStream;
+import static java.util.stream.StreamSupport.longStream;
+import static java.util.stream.StreamSupport.stream;
+
+import java.util.AbstractMap;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Spliterator;
+import java.util.Spliterators.AbstractDoubleSpliterator;
+import java.util.Spliterators.AbstractIntSpliterator;
+import java.util.Spliterators.AbstractLongSpliterator;
+import java.util.Spliterators.AbstractSpliterator;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
+import java.util.function.BinaryOperator;
+import java.util.function.Consumer;
+import java.util.function.DoubleConsumer;
+import java.util.function.Function;
+import java.util.function.IntConsumer;
+import java.util.function.LongConsumer;
+import java.util.function.Predicate;
+import java.util.function.ToDoubleBiFunction;
+import java.util.function.ToIntBiFunction;
+import java.util.function.ToLongBiFunction;
+import java.util.stream.Collector;
+import java.util.stream.Collector.Characteristics;
+import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
+import java.util.stream.Stream;
+
+import com.google.mu.function.DualValuedFunction;
 
 /**
  * A class similar to {@link Stream}, but operating over a sequence of pairs of objects.
@@ -193,6 +222,68 @@ public abstract class BiStream<K, V> {
   }
 
   /**
+   * Returns a {@code Collector} that first fans out the input elements to multiple key-value pairs
+   * using {@code toKeyValues} function (whose {@code BiStream} return value corresponds to the key
+   * values), then groups and collects values mapped to the same key using {@code valueCollector}.
+   *
+   * <pre>{@code
+   * interface Shard {
+   *   BiStream<Instant, Integer> histogram();
+   * }
+   *
+   * Map<Instant, Integer> combinedHistogram = shards.stream()
+   *     .collect(grouping(Shard::histogram, Integer::sum))
+   *     .filterValues(v -> v > 100)
+   *     .toMap();
+   * }</pre>
+   *
+   * <p>Entries are collected in encounter order.
+   *
+   * <p>If you need to flatten a stream of {@code Map}s or {@code Multimap}s without further
+   * chaining, consider to use the more convenient {@link MoreStreams#flatteningMaps} or {@link
+   * MoreStreams#flattening flattening(Multimap::entries)}.
+   *
+   * @since 4.6
+   */
+  public static <T, K, V, R> Collector<T, ?, BiStream<K, R>> grouping(
+      Function<? super T, ? extends BiStream<? extends K, ? extends V>> toKeyValues,
+      Collector<? super V, ?, R> valueCollector) {
+    requireNonNull(toKeyValues);
+    return flatMapping(
+        e -> toKeyValues.apply(e).mapToEntry(),
+        groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, valueCollector)));
+  }
+
+  /**
+   * Returns a {@code Collector} that first fans out the input elements to multiple key-value pairs
+   * using {@code toKeyValues} function (whose {@code BiStream} return value corresponds to the key
+   * values), then groups and reduces values mapped to the same key using {@code reducer}.
+   *
+   * <pre>{@code
+   * interface Shard {
+   *   BiStream<Instant, Integer> histogram();
+   * }
+   *
+   * Map<Instant, Long> eventCounts = shards.stream()
+   *     .collect(grouping(Shard::histogram, counting()))
+   *     .toMap();
+   * }</pre>
+   *
+   * <p>Entries are collected in encounter order.
+   *
+   * <p>If you need to flatten a stream of {@code Map}s or {@code Multimap}s without further
+   * chaining, consider to use the more convenient {@link MoreStreams#flatteningMaps} or {@link
+   * MoreStreams#flattening flattening(Multimap::entries)}.
+   *
+   * @since 4.6
+   */
+  public static <T, K, V> Collector<T, ?, BiStream<K, V>> grouping(
+      Function<? super T, ? extends BiStream<? extends K, ? extends V>> toKeyValues,
+      BinaryOperator<V> reducer) {
+    return grouping(toKeyValues, reducingGroupMembers(reducer));
+  }
+
+  /**
    * Returns a {@code Collector} that concatenates {@code BiStream} objects derived from the input
    * elements using the given {@code toBiStream} function.
    *
@@ -213,60 +304,20 @@ public abstract class BiStream<K, V> {
   }
 
   /**
-   * Returns a {@code Collector} that groups {@link Map.Entry#getValue map values} that are mapped
-   * to the same key using {@code valueCollector}. For example:
-   *
-   * <pre>{@code
-   * Map<EmployeeId, List<Task>> employeesWithMultipleTasks = projects.stream()
-   *     .map(Project::getTaskAssignments)  // Stream<Map<EmployeeId, Task>>
-   *     .collect(groupingValuesFrom(Map::entrySet))
-   *     .filterValues(tasks -> tasks.size() > 1)
-   *     .toMap();
-   * }</pre>
-   *
-   * <p>This idiom is applicable even if {@code getTaskAssignments()} returns {@code Multimap}:
-   *
-   * <pre>{@code
-   * Map<EmployeeId, List<Task>> employeesWithMultipleTasks = projects.stream()
-   *     .map(Project::getTaskAssignments)  // Stream<Multimap<EmployeeId, Task>>
-   *     .collect(groupingValuesFrom(Multimap::entries))
-   *     .filterValues(tasks -> tasks.size() > 1)
-   *     .toMap();
-   * }</pre>
-   *
-   * <p>Entries are collected in encounter order.
-   *
-   * @since 3.0
+   * @deprecated Use {@code grouping(BiStream::from, toList())}
+   *             in place of {@code groupingValuesFrom(Map::entrySet)}.
    */
+  @Deprecated
   public static <T, K, V> Collector<T, ?, BiStream<K, List<V>>> groupingValuesFrom(
       Function<? super T, ? extends Collection<Map.Entry<K, V>>> entrySource) {
     return groupingValuesFrom(entrySource, toList());
   }
 
   /**
-   * Returns a {@code Collector} that reduces {@link Map.Entry#getValue map values} that are mapped
-   * to the same key using {@code valueReducer}. For example:
-   *
-   * <pre>{@code
-   * Map<Account, Money> totalPayouts = projects.stream()
-   *     .map(Project::payments)  // Stream<Map<Account, Money>>
-   *     .collect(groupingValuesFrom(Map::entrySet, Money::add))
-   *     .toMap();
-   * }</pre>
-   *
-   * <p>This idiom is applicable even if {@code payments()} returns {@code Multimap}:
-   *
-   * <pre>{@code
-   * Map<Account, Money> totalPayouts = projects.stream()
-   *     .map(Project::payments)  // Stream<Multimap<Account, Money>>
-   *     .collect(groupingValuesFrom(Multimap::entries, Money::add))
-   *     .toMap();
-   * }</pre>
-   *
-   * <p>Entries are collected in encounter order.
-   *
-   * @since 3.3
+   * @deprecated Use {@code grouping(BiStream::from, reducer)}
+   *             in place of {@code groupingValuesFrom(Map::entrySet, reducer)}.
    */
+  @Deprecated
   public static <T, K, V> Collector<T, ?, BiStream<K, V>> groupingValuesFrom(
       Function<? super T, ? extends Collection<Map.Entry<K, V>>> entrySource,
       BinaryOperator<V> valueReducer) {
@@ -274,35 +325,14 @@ public abstract class BiStream<K, V> {
   }
 
   /**
-   * Returns a {@code Collector} that groups {@link Map.Entry#getValue map values} that are mapped
-   * to the same key using {@code valueCollector}. For example:
-   *
-   * <pre>{@code
-   * Map<EmployeeId, Integer> employeeWorkHours = projects.stream()
-   *     .map(Project::getTaskAssignments)  // Stream<Map<EmployeeId, Task>>
-   *     .collect(groupingValuesFrom(Map::entrySet, summingInt(Task::hours)))
-   *     .toMap();
-   * }</pre>
-   *
-   * <p>This idiom is applicable even if {@code getTaskAssignments()} returns {@code Multimap}:
-   *
-   * <pre>{@code
-   * Map<EmployeeId, Integer> employeeWorkHours = projects.stream()
-   *     .map(Project::getTaskAssignments)  // Stream<Multimap<EmployeeId, Task>>
-   *     .collect(groupingValuesFrom(Multimap::entries, summingInt(Task::hours)))
-   *     .toMap();
-   * }</pre>
-   *
-   * <p>Entries are collected in encounter order.
-   *
-   * @since 3.0
+   * @deprecated Use {@code grouping(BiStream::from, collector)}
+   *             in place of {@code groupingValuesFrom(Map::entrySet, collector)}.
    */
+  @Deprecated
   public static <T, K, V, R> Collector<T, ?, BiStream<K, R>> groupingValuesFrom(
       Function<? super T, ? extends Collection<Map.Entry<K, V>>> entrySource,
       Collector<? super V, ?, R> valueCollector) {
-    return flatMapping(
-        entrySource.andThen(Collection::stream),
-        groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, valueCollector)));
+    return grouping(entrySource.andThen(entries -> from(entries.stream())), valueCollector);
   }
 
   /**
@@ -364,6 +394,29 @@ public abstract class BiStream<K, V> {
     requireNonNull(toKey);
     requireNonNull(toValue);
     return MoreStreams.copying(copy -> from(copy, toKey, toValue));
+  }
+
+  /**
+   * Returns a {@code Collector} that splits each input element into two values and collects them
+   * into a {@link BiStream}.
+   *
+   * <pre>{@code
+   * ImmutableSetMultimap<String, String> keyValues =
+   *     lines.stream()
+   *         .collect(toBiStream(first('=')::split))
+   *         .collect(ImmutableSetMultimap::toImmutableSetMultimap);
+   * }</pre>
+   *
+   * <p>Note that it's more efficient to use {@code BiStream.from(stream, mapper)} than
+   * {@code stream.collect(toBiStream(mapper))}. The latter is intended to be used in the
+   * middle of a long stream pipeline, when performance isn't critical.
+   *
+   * @since 4.6
+   */
+  public static <E, K, V> Collector<E, ?, BiStream<K, V>> toBiStream(
+      DualValuedFunction<? super E, ? extends K, ? extends V> mapper) {
+    requireNonNull(mapper);
+    return MoreStreams.copying(copy -> from(copy, mapper));
   }
 
   /**
@@ -491,6 +544,24 @@ public abstract class BiStream<K, V> {
     return from(elements, identity(), identity());
   }
 
+  /**
+   * Short-hand for {@code from(elements, identity(), identity())}. Typically followed by {@link
+   * #mapKeys} or {@link #mapValues}. For example:
+   *
+   * <pre>{@code
+   * static import com.google.common.labs.collect.BiStream.biStream;
+   *
+   * Map<EmployeeId, Employee> employeesById = biStream(employees)
+   *     .mapKeys(Employee::id)
+   *     .toMap();
+   * }</pre>
+   *
+   * @since 3.6
+   */
+  public static <T> BiStream<T, T> biStream(Stream<T> elements) {
+    return from(elements, identity(), identity());
+  }
+
   /** Returns a {@code BiStream} of the entries in {@code map}. */
   public static <K, V> BiStream<K, V> from(Map<K, V> map) {
     return from(map.entrySet().stream());
@@ -516,6 +587,42 @@ public abstract class BiStream<K, V> {
       Function<? super T, ? extends K> toKey,
       Function<? super T, ? extends V> toValue) {
     return new GenericEntryStream<>(stream, toKey, toValue);
+  }
+
+  /**
+   * Returns a {@code BiStream} of the elements from {@code stream}, each transformed to a pair of
+   * values with {@code mapper} function.
+   *
+   * <pre>{@code
+   * ImmutableSetMultimap<String, String> keyValues =
+   *     BiStream.from(lines, first('=')::splitThenTrim)
+   *         .collect(ImmutableSetMultimap::toImmutableSetMultimap);
+   * }</pre>
+   *
+   * @since 4.6
+   */
+  public static <T, K, V> BiStream<K, V> from(
+      Collection<T> elements,
+      DualValuedFunction<? super T, ? extends K, ? extends V> mapper) {
+    return from(elements.stream(), mapper);
+  }
+
+  /**
+   * Returns a {@code BiStream} of the elements from {@code stream}, each transformed to a pair of
+   * values with {@code mapper} function.
+   *
+   * <pre>{@code
+   * ImmutableSetMultimap<String, String> keyValues =
+   *     BiStream.from(lines, first('=')::splitThenTrim)
+   *         .collect(ImmutableSetMultimap::toImmutableSetMultimap);
+   * }</pre>
+   *
+   * @since 4.6
+   */
+  public static <T, K, V> BiStream<K, V> from(
+      Stream<T> stream,
+      DualValuedFunction<? super T, ? extends K, ? extends V> mapper) {
+    return from(stream.map(mapper.andThen(BiStream::kv)));
   }
 
   static <K, V, E extends Map.Entry<? extends K, ? extends V>> BiStream<K, V> from(

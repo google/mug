@@ -32,6 +32,11 @@ public class IterationTest {
   }
 
   @Test
+  public void yield_eagerElements() {
+    assertThat(new Iteration<>().yield(1).yield(2).iterate()).containsExactly(1, 2).inOrder();
+  }
+
+  @Test
   public void preOrder_deep() {
     Tree<String> tree = tree("a")
         .setLeft(tree("b")

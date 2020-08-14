@@ -11,10 +11,6 @@ A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/
     `String user = first('@').toEnd().removeFrom(email);`
 * [Parallelizer](#parallelizer) An _Executor-friendly_, _interruptible_ alternative to parallel streams.
 * Graph utilities ([Walker](https://google.github.io/mug/apidocs/com/google/mu/util/graph/Walker.html), [ShortestPath](https://google.github.io/mug/apidocs/com/google/mu/util/graph/ShortestPath.html))
-* [Retryer](#retryer) retries.
-* [Maybe](#maybe) tunnels checked exceptions through streams or futures.
-* [Funnel](#funnel) flows objects through batch conversions in FIFO order.
-* Functional interfaces that allow checked exceptions.
 
 ## Maven
 
@@ -79,26 +75,24 @@ Map<State, Map<Address, PhoneNumber>> statePhonebooks = BiStream.from(phonebooks
 **Example 6: to merge `Map` entries:**
 
 ```java
-import static com.google.mu.util.stream.BiStream.groupingValuesFrom;
+import static com.google.mu.util.stream.BiCollectors.toMap;
+import static com.google.mu.util.stream.MoreStreams.flatteningMaps;
 
 Map<Account, Money> totalPayouts = projects.stream()
     .map(Project::payments)  // Stream<Map<Account, Money>>
-    .collect(groupingValuesFrom(Map::entrySet, Money::add))
-    .toMap();
+    .collect(flatteningMaps(toMap(Money::add)));
 ```
 
 **Example 7: to apply grouping over `Map` entries:**
 
 ```java
-import static com.google.mu.util.stream.BiCollectors.groupingBy;
-import static com.google.mu.util.stream.BiStream.concatenating;
+import static com.google.mu.util.stream.BiCollectors.toMap;
+import static com.google.mu.util.stream.MoreStreams.flatteningMaps;
 import static java.util.stream.Collectors.summingInt;
 
 Map<EmployeeId, Integer> workerHours = projects.stream()
     .map(Project::getTaskAssignments)  // Stream<Map<Employee, Task>>
-    .collect(concatenating(BiStream::from))
-    .collect(groupingBy(Employee::id, summingInt(Task::hours))))
-    .toMap();
+    .collect(flatteningMaps(toMap(summingInt(Task::hours))));
 ```
 
 **Example 8: to turn a `Collection<Pair<K, V>>` to `BiStream<K, V>`:**
@@ -169,7 +163,7 @@ List<Page> pages = ...;
 // Merge traffic histogram across all pages of the web site
 Map<Day, Long> siteTrafficHistogram = pages.stream()
     .map(Page::getTrafficHistogram)
-    .collect(groupingValuesFrom(Map::entrySet, (a, b) -> a + b))
+    .collect(grouping(BiStream::from, (a, b) -> a + b))
     .toMap();
 ```
 
@@ -259,8 +253,8 @@ String schemeStripped = Substring.upToIncluding(first("://")).removeFrom(uri);
 **Example 3: split a string in the format of "name=value" into `name` and `value`:**
 ```java
 Substring.Match op = Substring.first('=').in(nameValue).orElseThrow(...);
-String name = op.getBefore();
-String value = op.getAfter();
+String name = op.before();
+String value = op.after();
 ```
 
 **Example 4: replace trailing "//" with "/" :**

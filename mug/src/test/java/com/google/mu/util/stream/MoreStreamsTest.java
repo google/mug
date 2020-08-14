@@ -17,11 +17,13 @@ package com.google.mu.util.stream;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static com.google.mu.util.stream.BiStream.groupingValuesFrom;
+import static com.google.mu.util.Substring.first;
+import static com.google.mu.util.stream.BiCollectors.toMap;
+import static com.google.mu.util.stream.BiStream.grouping;
+import static com.google.mu.util.stream.MoreStreams.flattening;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
+import static com.google.mu.util.stream.MoreStreams.mapping;
 import static com.google.mu.util.stream.MoreStreams.toListAndThen;
-import static com.google.mu.util.stream.MoreStreams.uniqueKeys;
-import static com.google.mu.util.stream.MoreStreams.whileNotEmpty;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
@@ -45,6 +47,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.testing.ClassSanityTester;
@@ -220,7 +223,7 @@ public class MoreStreamsTest {
         ImmutableList.of(new Translation(ImmutableMap.of()), new Translation(ImmutableMap.of()));
     Map<Integer, String> merged = translations.stream()
         .map(Translation::dictionary)
-        .collect(groupingValuesFrom(Map::entrySet, (a, b) -> a + "," + b))
+        .collect(grouping(BiStream::from, (a, b) -> a + "," + b))
         .collect(ImmutableMap::toImmutableMap);
     assertThat(merged).isEmpty();
   }
@@ -230,7 +233,7 @@ public class MoreStreamsTest {
         new Translation(ImmutableMap.of(1, "one")), new Translation(ImmutableMap.of(2, "two")));
     Map<Integer, String> merged = translations.stream()
         .map(Translation::dictionary)
-        .collect(groupingValuesFrom(Map::entrySet, (a, b) -> a + "," + b))
+        .collect(grouping(BiStream::from, (a, b) -> a + "," + b))
         .collect(ImmutableMap::toImmutableMap);
     assertThat(merged)
         .containsExactly(1, "one", 2, "two")
@@ -243,34 +246,34 @@ public class MoreStreamsTest {
         new Translation(ImmutableMap.of(2, "two", 1, "1")));
     Map<Integer, String> merged = translations.stream()
         .map(Translation::dictionary)
-        .collect(groupingValuesFrom(Map::entrySet, (a, b) -> a + "," + b))
+        .collect(grouping(BiStream::from, (a, b) -> a + "," + b))
         .collect(ImmutableMap::toImmutableMap);
     assertThat(merged)
         .containsExactly(1, "one,1", 2, "two")
         .inOrder();
   }
 
-  @Test public void uniqueKeys_emptyMaps() {
+  @Test public void flatteningToMap_emptyMaps() {
     ImmutableList<Translation> translations =
         ImmutableList.of(new Translation(ImmutableMap.of()), new Translation(ImmutableMap.of()));
     Map<Integer, String> merged = translations.stream()
         .map(Translation::dictionary)
-        .collect(uniqueKeys());
+        .collect(flattening(Map::entrySet, toMap()));
     assertThat(merged).isEmpty();
   }
 
-  @Test public void uniqueKeys_unique() {
+  @Test public void flatteningToMap_unique() {
     ImmutableList<Translation> translations = ImmutableList.of(
         new Translation(ImmutableMap.of(1, "one")), new Translation(ImmutableMap.of(2, "two")));
     Map<Integer, String> merged = translations.stream()
         .map(Translation::dictionary)
-        .collect(uniqueKeys());
+        .collect(flattening(Map::entrySet, toMap()));
     assertThat(merged)
         .containsExactly(1, "one", 2, "two")
         .inOrder();
   }
 
-  @Test public void uniqueKeys_withDuplicates() {
+  @Test public void flatteningToMap_withDuplicates() {
     ImmutableList<Translation> translations = ImmutableList.of(
         new Translation(ImmutableMap.of(1, "one")),
         new Translation(ImmutableMap.of(2, "two", 1, "1")));
@@ -278,7 +281,13 @@ public class MoreStreamsTest {
         IllegalStateException.class,
         () -> translations.stream()
             .map(Translation::dictionary)
-            .collect(uniqueKeys()));
+            .collect(flattening(Map::entrySet, toMap())));
+  }
+
+  @Test public void mapping_dualValued() {
+    ImmutableListMultimap<String, String> params = Stream.of("name=joe", "age =10")
+        .collect(mapping(first('=')::splitThenTrim, toImmutableListMultimap()));
+    assertThat(params).containsExactly("name", "joe", "age", "10");
   }
 
   @Test public void testIndexesFrom() {
@@ -289,7 +298,7 @@ public class MoreStreamsTest {
 
   @Test public void removingFromQueue_empty() {
     Queue<String> queue = new ArrayDeque<>();
-    assertThat(whileNotEmpty(queue).map(Queue::remove)).isEmpty();
+    assertThat(whileNotNull(queue::poll)).isEmpty();
     assertThat(queue).isEmpty();
   }
 
@@ -297,14 +306,14 @@ public class MoreStreamsTest {
     Queue<String> queue = new ArrayDeque<>();
     queue.add("one");
     queue.add("two");
-    assertThat(whileNotEmpty(queue).map(Queue::remove))
+    assertThat(whileNotNull(queue::poll))
         .containsExactly("one", "two").inOrder();
     assertThat(queue).isEmpty();
   }
 
   @Test public void removingFromQueue_modificationUnderneath() {
     Queue<String> queue = new ArrayDeque<>();
-    Stream<String> stream = whileNotEmpty(queue).map(Queue::remove);
+    Stream<String> stream = whileNotNull(queue::poll);
     queue.add("one");
     queue.add("two");
     assertThat(stream).containsExactly("one", "two").inOrder();
@@ -315,8 +324,7 @@ public class MoreStreamsTest {
     Queue<String> queue = new ArrayDeque<>();
     queue.add("one");
     assertThat(
-            whileNotEmpty(queue)
-                .map(Queue::remove)
+            whileNotNull(queue::poll)
                 .peek(v -> {
                   if (v.equals("one")) queue.add("two");
                 }))
@@ -326,7 +334,7 @@ public class MoreStreamsTest {
 
   @Test public void poppingFromStack_empty() {
     Deque<String> stack = new ArrayDeque<>();
-    assertThat(whileNotEmpty(stack).map(Deque::pop)).isEmpty();
+    assertThat(whileNotNull(stack::poll)).isEmpty();
     assertThat(stack).isEmpty();
   }
 
@@ -334,14 +342,14 @@ public class MoreStreamsTest {
     Deque<String> stack = new ArrayDeque<>();
     stack.push("one");
     stack.push("two");
-    assertThat(whileNotEmpty(stack).map(Deque::pop))
+    assertThat(whileNotNull(stack::poll))
         .containsExactly("two", "one").inOrder();
     assertThat(stack).isEmpty();
   }
 
   @Test public void poppingFromStack_modificationUnderneath() {
     Deque<String> stack = new ArrayDeque<>();
-    Stream<String> stream = whileNotEmpty(stack).map(Deque::pop);
+    Stream<String> stream = whileNotNull(stack::poll);
     stack.push("one");
     stack.push("two");
     assertThat(stream).containsExactly("two", "one").inOrder();
@@ -352,8 +360,7 @@ public class MoreStreamsTest {
     Deque<String> stack = new ArrayDeque<>();
     stack.push("one");
     assertThat(
-            whileNotEmpty(stack)
-                .map(Deque::pop)
+            whileNotNull(stack::poll)
                 .peek(v -> {
                   if (v.equals("one")) stack.push("two");
                 }))
@@ -397,6 +404,10 @@ public class MoreStreamsTest {
         .forEach(tester::ignore);
     tester.testAllPublicStaticMethods(MoreStreams.class);
     new ClassSanityTester().forAllPublicStaticMethods(MoreStreams.class).testNulls();
+  }
+
+  private static <K, V> BiCollector<K, V, ImmutableListMultimap<K, V>> toImmutableListMultimap() {
+    return ImmutableListMultimap::toImmutableListMultimap;
   }
 
   private static class Translation {

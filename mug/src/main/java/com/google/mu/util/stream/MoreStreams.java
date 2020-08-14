@@ -14,8 +14,10 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
+import static com.google.mu.util.stream.BiCollectors.toMap;
 import static java.util.Objects.requireNonNull;
 
+import java.util.AbstractMap;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -37,9 +39,11 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import com.google.mu.function.CheckedConsumer;
+import com.google.mu.function.DualValuedFunction;
 
 /**
- * Static utilities pertaining to {@link Stream} in addition to relevant utilities in Jdk and Guava.
+ * Static utilities pertaining to {@link Stream} and {@link Collector} in addition to relevant
+ * utilities in Jdk and Guava.
  *
  * @since 1.1
  */
@@ -214,26 +218,63 @@ public final class MoreStreams {
     return new DicedSpliterator<T>(spliterator, maxSize);
   }
 
+  /** @deprecated Use {@code maps.collect(flattening(Map::entrySet, toMap())} instead. */
+  @Deprecated
+  public static <K, V> Collector<Map<K, V>, ?, Map<K, V>> uniqueKeys() {
+    return flattening(Map::entrySet, toMap());
+  }
+
   /**
-   * Returns a collector that collects {@link Map} entries into a combined map. Duplicate keys cause {@link
-   * IllegalStateException}. For example:
+   * Returns a {@code Collector} that flattens the input {@link Map} entries returned by the
+   * {@code flattener} function, and then collects these flattened entries using the {@code
+   * downstream} BiCollector.
+   *
+   * <p>Can be used to flatten a stream of maps:
    *
    * <pre>{@code
-   *   Map<FacultyId, Account> allFaculties = departments.stream()
-   *       .map(Department::getFacultyMap)
-   *       .collect(uniqueKeys());
+   * ImmutableMap<EmployeeId, Task> billableTaskAssignments = projects.stream()
+   *     .map(Project::getTaskAssignments)
+   *     .collect(flattening(Map::entrySet, ImmutableMap::toImmutableMap)));
    * }</pre>
    *
-   * <p>Use {@link BiStream#groupingValuesFrom} if there are duplicate keys.
+   * or multimaps:
    *
-   * @since 1.13
+   * <pre>{@code
+   * ImmutableSetMultimap<EmployeeId, Task> billableTaskAssignments = projects.stream()
+   *     .map(Project::getTaskAssignments)
+   *     .collect(flattening(Multimap::entries, ImmutableSetMultimap::toImmutableSetMultimap)));
+   * }</pre>
+   *
+   * @since 3.6
    */
-  public static <K, V> Collector<Map<K, V>, ?, Map<K, V>> uniqueKeys() {
-    return Collectors.collectingAndThen(
-        BiStream.groupingValuesFrom(Map::entrySet,  (a, b) -> {
-          throw new IllegalStateException("Duplicate keys not allowed: " + a);
-        }),
-        BiStream::toMap);
+  public static <T, K, V, R> Collector<T, ?, R> flattening(
+      Function<? super T, ? extends Collection<? extends Map.Entry<? extends K, ? extends V>>> flattener,
+      BiCollector<K, V, R> downstream) {
+    requireNonNull(flattener);
+    return BiStream.flatMapping(
+        e -> flattener.apply(e).stream(),
+        downstream.splitting(Map.Entry::getKey, Map.Entry::getValue));
+  }
+
+  /**
+   * Returns a {@code Collector} that flattens the input {@link Map} entries and collects them using
+   * the {@code downstream} BiCollector.
+   *
+   * <p>For example, you can flatten a list of multimaps:
+   *
+   * <pre>{@code
+   * ImmutableMap<EmployeeId, Task> billableTaskAssignments = projects.stream()
+   *     .map(Project::getTaskAssignments)
+   *     .collect(flatteningMaps(ImmutableMap::toImmutableMap)));
+   * }</pre>
+   *
+   * <p>To flatten a stream of multimaps, use {@link #flattening}.
+   *
+   * @since 3.6
+   */
+  public static <K, V, R> Collector<Map<K, V>, ?, R> flatteningMaps(
+      BiCollector<K, V, R> downstream) {
+    return flattening(Map::entrySet, downstream);
   }
 
   /**
@@ -276,14 +317,11 @@ public final class MoreStreams {
   }
 
   /**
-   * Returns a (potentially infinite) stream of {@code collection} until {@code collection} becomes
-   * empty.
-   *
-   * <p>The returned stream can be terminated by removing elements from the underlying collection
-   * while the stream is being iterated.
-   *
-   * @since 3.8
+   * @deprecated Use {@code whileNotNull(queue::poll)} in place of {@code
+   * whileNotEmpty(queue).map(Queue::remove)}, and {@code whileNotNull(stack::poll)} in place of
+   * {@code whileNotEmpty(stack).map(Deque::poll)}.
    */
+  @Deprecated
   public static <C extends Collection<?>> Stream<C> whileNotEmpty(C collection) {
     requireNonNull(collection);
     return whileNotNull(() -> collection.isEmpty() ? null : collection);
@@ -362,10 +400,30 @@ public final class MoreStreams {
   }
 
   /**
+   * Analogous to {@link Collectors#mapping Collectors.mapping()}, applies a mapping function to
+   * each input element before accumulation, except that the {@code mapper} function returns a
+   * <em><b>pair of elements</b></em>, which are then accumulated by a <em>BiCollector</em>. For
+   * example, the following code splits a stream of strings into a map of key values:
+   *
+   * <pre>{@code
+   * ImmutableSetMultimap<String, String> keyValues = Stream.of("name=joe", "age=10")
+   *     .collect(mapping(Substring.first('=')::split, toImmutableSetMultimap()));
+   * }</pre>
+   *
+   * @since 4.6
+   */
+  public static <T, K, V, R> Collector<T, ?, R> mapping(
+      DualValuedFunction<? super T, ? extends K, ? extends V> mapper,
+      BiCollector<K, V, R> downstream) {
+    Function<? super T, Map.Entry<K, V>> toEntry =
+        mapper.andThen(AbstractMap.SimpleImmutableEntry::new);
+    return Collectors.mapping(
+        toEntry, downstream.splitting(Map.Entry::getKey, Map.Entry::getValue));
+  }
+
+  /**
    * Returns a collector that first copies all input elements into a new {@code Stream} and then
    * passes the stream to {@code toSink} function, which translates it to the final result.
-   *
-   * @since 3.6
    */
   static <T, R> Collector<T, ?, R> copying(Function<Stream<T>, R> toSink) {
     return Collectors.collectingAndThen(toStream(), toSink);

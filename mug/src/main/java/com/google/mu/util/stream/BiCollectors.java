@@ -426,6 +426,28 @@ public final class BiCollectors {
   }
 
   /**
+   * Returns a {@link BiCollector} that first maps the input pair using {@code keyMapper} and {@code valueMapper}
+   * respectively, then collects the results using {@code downstream} collector.
+   *
+   * @since 3.6
+   */
+  public static <K, V, K1, V1, R> BiCollector<K, V, R> mapping(
+      BiFunction<? super K, ? super V, ? extends K1> keyMapper,
+      BiFunction<? super K, ? super V, ? extends V1> valueMapper,
+      BiCollector<? super K1, ? super V1, R> downstream) {
+    requireNonNull(keyMapper);
+    requireNonNull(valueMapper);
+    requireNonNull(downstream);
+    return new BiCollector<K, V, R>() {
+      @Override public <E> Collector<E, ?, R> splitting(Function<E, K> toKey, Function<E, V> toValue) {
+        return downstream.splitting(
+            e -> keyMapper.apply(toKey.apply(e), toValue.apply(e)),
+            e -> valueMapper.apply(toKey.apply(e), toValue.apply(e)));
+      }
+    };
+  }
+
+  /**
    * Returns a {@link BiCollector} that first flattens the input pair using {@code flattener}
    * and then collects the results using {@code downstream} collector.
    *

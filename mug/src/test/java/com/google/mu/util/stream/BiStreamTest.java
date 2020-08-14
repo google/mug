@@ -18,11 +18,15 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.stream.BiCollectors.toMap;
+import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.BiStream.crossJoining;
+import static com.google.mu.util.stream.BiStream.grouping;
 import static com.google.mu.util.stream.BiStream.toAdjacentPairs;
+import static com.google.mu.util.stream.BiStream.toBiStream;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static java.util.Arrays.asList;
 import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.summingInt;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -34,6 +38,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -47,22 +52,33 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.truth.IterableSubject;
 import com.google.common.truth.MultimapSubject;
+import com.google.mu.util.Substring;
 
 @RunWith(JUnit4.class)
 public class BiStreamTest {
-
   @Test public void testBiStreamWithKeyAndValueFunctions() {
     assertKeyValues(BiStream.from(Stream.of(1, 2), Object::toString, v -> v))
         .containsExactlyEntriesIn(ImmutableMultimap.of("1", 1, "2", 2))
         .inOrder();
-    assertKeyValues(BiStream.from(Stream.of(1, 2).parallel(), Object::toString, v -> v))
+    assertKeyValues(BiStream.from(Stream.of(1, 2).parallel(), BiStreamTest::withToString))
         .containsExactlyEntriesIn(ImmutableMultimap.of("1", 1, "2", 2))
+        .inOrder();
+  }
+
+  @Test public void testBiStreamWithDualValuedFunctions() {
+    assertKeyValues(BiStream.from(Stream.of(1, 2), BiStreamTest::withToString))
+        .containsExactlyEntriesIn(ImmutableMultimap.of("1", 1, "2", 2))
+        .inOrder();
+    assertThat(BiStream.from(asList("name=joe", "age=10"), Substring.first('=')::split)
+        .collect(toImmutableListMultimap()))
+        .containsExactly("name", "joe", "age", "10")
         .inOrder();
   }
 
@@ -514,6 +530,14 @@ public class BiStreamTest {
         .inOrder();
   }
 
+  @Test public void testToBiStreamFromSplit() {
+    assertThat(Stream.of("name=joe", "age=10")
+            .collect(toBiStream(Substring.first('=')::split))
+            .collect(toImmutableListMultimap()))
+        .containsExactly("name", "joe", "age", "10")
+        .inOrder();
+  }
+
   @Test public void testGroupingBy() {
     Map<Integer, List<Integer>> groups =
         Stream.of(0, 1, 2).collect(BiStream.groupingBy(n -> n / 2)).toMap();
@@ -585,26 +609,34 @@ public class BiStreamTest {
         .inOrder();
   }
 
-  @Test public void testGroupingValuesFrom() {
+  @Test public void testGrouping_withReducer() {
+    ImmutableMap<Character, Integer> chars =
+        Stream.of("aba", "bbc")
+            .collect(grouping(s -> biStream(chars(s)).mapValues(c -> 1), Integer::sum))
+            .collect(ImmutableMap::toImmutableMap);
+    assertThat(chars).containsExactly('a', 2, 'b', 3, 'c', 1).inOrder();
+  }
+
+  @Test public void testGrouping_withCollector() {
+    ImmutableMap<Character, Integer> chars =
+        Stream.of("aba", "bbc")
+            .collect(grouping(s -> biStream(chars(s)).mapValues(c -> 1), summingInt(n -> n)))
+            .collect(ImmutableMap::toImmutableMap);
+    assertThat(chars).containsExactly('a', 2, 'b', 3, 'c', 1).inOrder();
+  }
+
+  @Test public void testGroupingValuesFromMapEntries() {
     Map<Integer, List<String>> groups =
         Stream.of(ImmutableMap.of(1, "one"), ImmutableMap.of(2, "two", 1, "uno"))
-            .collect(BiStream.groupingValuesFrom(Map::entrySet))
+            .collect(BiStream.grouping(BiStream::from, toList()))
             .toMap();
     assertThat(groups).containsExactly(1, asList("one", "uno"), 2, asList("two")).inOrder();
   }
 
-  @Test public void testGroupingValuesFrom_withCollector() {
-    Map<Integer, Long> groups =
-        Stream.of(ImmutableMap.of(1, "one"), ImmutableMap.of(2, "two", 1, "uno"))
-            .collect(BiStream.groupingValuesFrom(Map::entrySet, Collectors.counting()))
-            .toMap();
-    assertThat(groups).containsExactly(1, 2L, 2, 1L).inOrder();
-  }
-
-  @Test public void testGroupingValuesFrom_withReducer() {
+  @Test public void testGroupingValuesFromMapEntries_withReducer() {
     Map<Integer, String> groups =
         Stream.of(ImmutableMap.of(1, "one"), ImmutableMap.of(2, "two", 1, "uno"))
-            .collect(BiStream.groupingValuesFrom(Map::entrySet, String::concat))
+            .collect(BiStream.grouping(BiStream::from, String::concat))
             .toMap();
     assertThat(groups).containsExactly(1, "oneuno", 2, "two").inOrder();
   }
@@ -757,5 +789,19 @@ public class BiStreamTest {
             .collect(toList());
     assertThat(threads).hasSize(1);
     return assertThat(list);
+  }
+
+  private static Stream<Character> chars(String s) {
+    return s.chars().mapToObj(c -> (char) c);
+  }
+
+  // T doesn't use wildcard to test that less-than-perfect method-ref can be used as
+  // DualValuedFunction.
+  private static <T, R> R withToString(T obj, BiFunction<? super String, ? super T, R> then) {
+    return then.apply(obj.toString(), obj);
+  }
+
+  private static <K, V> BiCollector<K, V, ImmutableListMultimap<K, V>> toImmutableListMultimap() {
+    return ImmutableListMultimap::toImmutableListMultimap;
   }
 }
