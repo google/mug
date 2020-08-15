@@ -47,7 +47,7 @@ public interface DualValuedFunction<F, T1, T2> {
    * first('=').split(string, (name, val) -> ...);
    * }</pre>
    *
-   * The {@code split()} method (and its friend {@code splitThenTrim()}) can then be
+   * The {@code split()} method (and its friend {@code splitThenTrim}) can then be
    * method-referenced as a {@code DualValuedFunction} and be used in a {@link
    * com.google.mu.util.stream.BiStream} chain, like:
    *
@@ -71,7 +71,7 @@ public interface DualValuedFunction<F, T1, T2> {
    * and then applies the {@code after} function to the pair of results. If evaluation of either
    * function throws an exception, it is propagated to the caller of the composed function.
    *
-   * @throws NullPointerException if {@code after} is null.
+   * @throws NullPointerException if the {@code after} function is null.
    */
   default <R> Function<F, R> andThen(BiFunction<? super T1, ? super T2, ? extends R> after) {
     @SuppressWarnings("unchecked")  // function is PECS, safe to cast.
