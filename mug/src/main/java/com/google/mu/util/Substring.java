@@ -547,6 +547,20 @@ public final class Substring {
     }
 
     /**
+     * Returns a stream of {@code Match} objects delimited by every {@link #iterateIn iteration} of
+     * this pattern. If this pattern isn't found in {@code string}, the full string is returned.
+     *
+     * <p>Different from {@link #split(String, BiFunction) split()},
+     * {@code first('=').delimit("a=b=c")} results in a stream of {@code ["a", "b", "c"]};
+     * while {@code first('=').split("a=b=c", ...)} results in a pair of {@code ["a", "b=c"]}.
+     *
+     * @since 4.6
+     */
+    public Stream<Match> delimit(String string) {
+      return before(this).or(FULL_STRING).iterateIn(string);
+    }
+
+    /**
      * Matches this pattern against {@code string}, and returns a copy with the matched substring
      * removed if successful. Otherwise, returns {@code string} unchanged.
      */
@@ -753,20 +767,6 @@ public final class Substring {
       requireNonNull(combiner);
       Match separator = findIn(string);
       return combiner.apply(separator.before().trim(), separator.after().trim());
-    }
-
-    /**
-     * Returns a stream of {@code Match} objects delimited by every {@link #iterateIn iteration} of
-     * this pattern. If this pattern isn't found in {@code string}, the full string is returned.
-     *
-     * <p>Different from {@link #split(String, BiFunction) split()},
-     * {@code first('=').delimit("a=b=c")} results in a stream of {@code ["a", "b", "c"]};
-     * while {@code first('=').split("a=b=c", ...)} results in a pair of {@code ["a", "b=c"]}.
-     *
-     * @since 4.6
-     */
-    public Stream<Match> delimit(String string) {
-      return before(this).or(FULL_STRING).iterateIn(string);
     }
 
     private Match findIn(String s) {

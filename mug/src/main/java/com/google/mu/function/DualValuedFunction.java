@@ -20,21 +20,31 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
- * A function with two results.
+ * A function with two result values.
+ *
+ * <p>Methods wishing to return two values should typically follow this pattern to take as parameter
+ * a custom {@link BiFunction} so that the caller can choose the appropriate result type without
+ * being forced to use {@code Pair} or {@code Map.Entry}.
+ *
+ * <p>See {@link java.util.stream.Collectors#teeing} in JDK 12 as an example.
+ *
+ * @param <F> the input type
+ * @param <T1> the first output type
+ * @param <T2> the second output type
  *
  * @since 4.6
  */
 @FunctionalInterface
-public interface DualValuedFunction<F, V1, V2> {
+public interface DualValuedFunction<F, T1, T2> {
   /**
-   * Invokes this function, passes the two results to {@code then} and returns the final result.
+   * With {@code input}, calls this function and passes the two result values to the {@code output}
+   * function (because Java has no built-in tuples).
    *
-   * <p>Useful when the caller has some domain-specific object to create off of the two result, for
-   * example, {@link com.google.mu.util.Substring.Pattern#split(String, BiFunction)} returns two
-   * results following this pattern:
+   * <p>An example is the {@link com.google.mu.util.Substring.Pattern#split(String, BiFunction)}
+   * method. Its callers can typically split a string like this:
    *
    * <pre>{@code
-   * first('=').split(string, (name, val) -> Var.newBuilder().setName(name).setValue(val).build());
+   * first('=').split(string, (name, val) -> ...);
    * }</pre>
    *
    * The {@code split()} method (and its friend {@code splitThenTrim()}) can then be
@@ -50,22 +60,22 @@ public interface DualValuedFunction<F, V1, V2> {
    *     .collect(ImmutableSetMultimap::toImmutableSetMultimap);
    * }</pre>
    *
-   * @throws NullPointerException if {@code then} is null.
+   * @throws NullPointerException if the {@code output} function is null.
    */
-  // No wildcard on V1/V2 so that private methods not using PECS can still be referenced.
+  // No wildcard on T1/T2 so that private methods not using PECS can still be referenced.
   // Users should rarely need to call apply() directly.
-  <R> R apply(F input, BiFunction<V1, V2, R> then);
+  <R> R apply(F input, BiFunction<T1, T2, R> output);
 
   /**
    * Returns a composed function that first applies this function to its input,
-   * and then applies the {@code after} function to the two results. If evaluation of either
+   * and then applies the {@code after} function to the pair of results. If evaluation of either
    * function throws an exception, it is propagated to the caller of the composed function.
    *
    * @throws NullPointerException if {@code after} is null.
    */
-  default <R> Function<F, R> andThen(BiFunction<? super V1, ? super V2, ? extends R> after) {
+  default <R> Function<F, R> andThen(BiFunction<? super T1, ? super T2, ? extends R> after) {
     @SuppressWarnings("unchecked")  // function is PECS, safe to cast.
-    BiFunction<V1, V2, R> then = (BiFunction<V1, V2, R>) requireNonNull(after);
+    BiFunction<T1, T2, R> then = (BiFunction<T1, T2, R>) requireNonNull(after);
     return input -> apply(input, then);
   }
 }
