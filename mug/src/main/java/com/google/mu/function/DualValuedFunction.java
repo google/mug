@@ -62,7 +62,7 @@ public interface DualValuedFunction<F, T1, T2> {
    *
    * @throws NullPointerException if the {@code output} function is null.
    */
-  // No wildcard on T1/T2 so that private methods not using PECS can still be referenced.
+  // No wildcard on T1/T2 so that methods following or not following PECS can both be referenced.
   // Users should rarely need to call apply() directly.
   <R> R apply(F input, BiFunction<T1, T2, R> output);
 
