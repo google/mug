@@ -129,7 +129,7 @@ public interface Selection<T> {
   }
 
   /**
-   * Returns a default parser, using {@code ','} as delimiter of elements.
+   * Returns the default parser, using {@code ','} as delimiter of elements.
    *
    * @since 4.7
    */
@@ -138,7 +138,8 @@ public interface Selection<T> {
   }
 
   /**
-   * Returns a default parser, using {@code delimiter} to delimit explicit elements.
+   * Returns a parser for {@code Selection}, using the {@code delimiter} character to delimit
+   * explicit selection elements.
    *
    * <p>Because {@code '*'} is used as special indicator of {@link #all}, it can't be used as
    * the delimiter.
@@ -150,7 +151,8 @@ public interface Selection<T> {
   }
 
   /**
-   * Returns a default parser, using {@code delimiter} to delimit explicit elements.
+   * Returns a parser for {@code Selection}, using the {@code delimiter} patter to delimit explicit
+   * selection elements.
    *
    * <p>Because {@code '*'} is used as special indicator of {@link #all}, it can't be used as
    * the delimiter.
