@@ -140,7 +140,7 @@ public interface Selection<T> {
   /**
    * Returns a default parser, using {@code delimiter} to delimit explicit elements.
    *
-   * <p>Because {@code '*'} is used as special indicator of {@link #all}, it shouldn't be used as
+   * <p>Because {@code '*'} is used as special indicator of {@link #all}, it can't be used as
    * the delimiter.
    *
    * @since 4.7
@@ -152,7 +152,7 @@ public interface Selection<T> {
   /**
    * Returns a default parser, using {@code delimiter} to delimit explicit elements.
    *
-   * <p>Because {@code '*'} is used as special indicator of {@link #all}, it shouldn't be used as
+   * <p>Because {@code '*'} is used as special indicator of {@link #all}, it can't be used as
    * the delimiter.
    *
    * @since 4.7
