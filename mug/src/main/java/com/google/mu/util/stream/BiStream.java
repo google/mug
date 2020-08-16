@@ -564,7 +564,17 @@ public abstract class BiStream<K, V> {
 
   /** Returns a {@code BiStream} of the entries in {@code map}. */
   public static <K, V> BiStream<K, V> from(Map<K, V> map) {
-    return from(map.entrySet().stream());
+    return from(map.entrySet());
+  }
+
+  /**
+   * Returns a {@code BiStream} of the key value pairs from {@code entries}.
+   * For example {@code BiStream.from(multimap.entries())}.
+   *
+   * @since 4.7
+   */
+  public static <K, V> BiStream<K, V> from(Collection<? extends Map.Entry<? extends K, ? extends V>> entries) {
+    return from(entries.stream());
   }
 
   /**
