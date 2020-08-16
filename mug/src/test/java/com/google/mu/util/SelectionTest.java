@@ -24,6 +24,7 @@ import static com.google.mu.util.Selection.toIntersection;
 import static com.google.mu.util.Selection.toSelection;
 import static com.google.mu.util.Selection.toUnion;
 import static java.util.Arrays.asList;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.stream.Stream;
 
@@ -132,9 +133,63 @@ public class SelectionTest {
   }
 
   @Test
+  public void parser_all() {
+    assertThat(Selection.parser().parse("*")).isEqualTo(Selection.all());
+  }
+
+  @Test
+  public void parser_empty() {
+    assertThat(Selection.parser().parse("")).isEqualTo(Selection.none());
+    assertThat(Selection.parser().parse("  ")).isEqualTo(Selection.none());
+  }
+
+  @Test
+  public void parser_oneElement() {
+    assertThat(Selection.parser().parse("foo")).isEqualTo(Selection.only("foo"));
+  }
+
+  @Test
+  public void parser_twoElements() {
+    assertThat(Selection.parser().parse("foo,bar")).isEqualTo(Selection.only("foo", "bar"));
+  }
+
+  @Test
+  public void parser_twoElementsWithWhitespacesTrimmed() {
+    assertThat(Selection.parser().parse("foo , bar")).isEqualTo(Selection.only("foo", "bar"));
+  }
+
+  @Test
+  public void parser_twoElementsWithEmptyElements() {
+    assertThat(Selection.parser().parse("foo ,")).isEqualTo(Selection.only("foo"));
+  }
+
+  @Test
+  public void delimitedByChar_withElementParser() {
+    assertThat(Selection.delimitedBy('|').parse("1 |0x2", Integer::decode))
+        .isEqualTo(Selection.only(1, 2));
+  }
+
+  @Test
+  public void delimitedByWhitespace_withElementParser() {
+    assertThat(Selection.delimitedBy(' ').parse("1  0x2 ", Integer::decode))
+        .isEqualTo(Selection.only(1, 2));
+  }
+
+  @Test
+  public void delimitedByStar() {
+    assertThrows(IllegalArgumentException.class, () -> Selection.delimitedBy('*'));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Selection.delimitedBy(Substring.first('*').or(Substring.last('/'))));
+  }
+
+  @Test
   public void nullChecks() throws Exception {
     new ClassSanityTester().testNulls(Selection.class);
-    new ClassSanityTester().forAllPublicStaticMethods(Selection.class).testNulls();
+    new ClassSanityTester()
+        .setDefault(Substring.Pattern.class, Substring.first('|'))
+        .forAllPublicStaticMethods(Selection.class)
+        .testNulls();
   }
 
   @Test

@@ -15,14 +15,21 @@
 package com.google.mu.util;
 
 import static com.google.mu.util.InternalCollectors.toImmutableSet;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.reducing;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collector;
+import java.util.stream.Collectors;
+
+import com.google.mu.function.CheckedFunction;
 
 /**
  * An immutable selection of choices supporting both {@link #only limited} and {@link #all
@@ -119,6 +126,94 @@ public interface Selection<T> {
   /** Returns a collector that unions the input selections. */
   static <T> Collector<Selection<T>, ?, Selection<T>> toUnion() {
     return reducing(none(), Selection::union);
+  }
+
+  /**
+   * Returns a default parser, using {@code ','} as delimiter of elements.
+   *
+   * @since 4.7
+   */
+  static Parser parser() {
+    return delimitedBy(',');
+  }
+
+  /**
+   * Returns a default parser, using {@code delimiter} to delimit explicit elements.
+   *
+   * <p>Because {@code '*'} is used as special indicator of {@link #all}, it shouldn't be used as
+   * the delimiter.
+   *
+   * @since 4.7
+   */
+  static Parser delimitedBy(char delimiter) {
+    return delimitedBy(Substring.first(delimiter));
+  }
+
+  /**
+   * Returns a default parser, using {@code delimiter} to delimit explicit elements.
+   *
+   * <p>Because {@code '*'} is used as special indicator of {@link #all}, it shouldn't be used as
+   * the delimiter.
+   *
+   * @since 4.7
+   */
+  static Parser delimitedBy(Substring.Pattern delimiter) {
+    return new Parser(delimiter);
+  }
+
+  /**
+   * Parser for {@link Selection}.
+   *
+   * @since 4.7
+   */
+  static final class Parser {
+    private final Substring.Pattern delimiter;
+
+    Parser(Substring.Pattern delimiter) {
+      if (delimiter.in("*").isPresent()) {
+        throw new IllegalArgumentException("Cannot use '*' as delimiter in a Selection.");
+      }
+      this.delimiter = delimiter;
+    }
+
+    /**
+     * Parses {@code string} into a {@link Selection} by treating the single
+     * {@code '*'} character as {@link Selection.all()}, and delegating to
+     * {@code elementParser} to parse each explicit selection element.
+     *
+     * <p>Leading and trailing whitespaces are trimmed. Empty and duplicate elements are ignored.
+     */
+    public <T, E extends Throwable> Selection<T> parse(
+        String string,
+        CheckedFunction<String, ? extends T, E> elementParser) throws E {
+      requireNonNull(elementParser);
+      string = string.trim();
+      if (string.isEmpty()) {
+        return none();
+      } else if (string.equals("*")) {
+        return all();
+      }
+      Set<String> parts = delimiter.delimit(string)
+          .map(Substring.Match::toString)
+          .map(String::trim)
+          .filter(s -> s.length() > 0)
+          .collect(Collectors.toCollection(LinkedHashSet::new));
+      List<T> elements = new ArrayList<>();
+      for (String part : parts) {
+        elements.add(elementParser.apply(part));
+      }
+      return elements.stream().collect(toSelection());
+    }
+
+    /**
+     * Parses {@code string} into a {@link Selection} of strings by treating the single
+     * {@code '*'} character as {@link Selection.all()}.
+     *
+     * <p>Leading and trailing whitespaces are trimmed. Empty and duplicate elements are ignored.
+     */
+    public Selection<String> parse(String string) {
+      return parse(string, s -> s);
+    }
   }
 
   /**
