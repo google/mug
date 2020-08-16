@@ -27,7 +27,7 @@ Add the following to pom.xml:
 
 #### [BiStream](https://google.github.io/mug/apidocs/com/google/mu/util/stream/BiStream.html) streams pairs of objects.
 
-This class closely mirrors Jdk `Stream` API (the few extra methods of "its own" are very straight-forward). If you are familiar with Jdk stream, learning curve is minimal.
+This class closely mirrors JDK `Stream` API (the few extra methods of "its own" are very straight-forward). If you are familiar with Jdk stream, learning curve is minimal.
 
 **Example 1: to concatenate `Map`s:**
 
