@@ -188,11 +188,9 @@ public interface Selection<T> {
     public <T, E extends Throwable> Selection<T> parse(
         String string,
         CheckedFunction<String, ? extends T, E> elementParser) throws E {
-      requireNonNull(elementParser);
       string = string.trim();
-      if (string.isEmpty()) {
-        return none();
-      } else if (string.equals("*")) {
+      requireNonNull(elementParser);
+      if (string.equals("*")) {
         return all();
       }
       Set<String> parts = delimiter.delimit(string)
