@@ -484,6 +484,29 @@ public abstract class BiStream<K, V> {
   }
 
   /**
+   * Returns a {@code BiStream} of the entries from {@code s1}, {@code s2} then {@code rest} in
+   * encounter order. For example:
+   *
+   * <pre>{@code
+   * Map<AccountId, Account> allAccounts = concat(primaryAccounts, secondaryAccounts).toMap();
+   * }</pre>
+   *
+   * @since 4.7
+   */
+  @SafeVarargs
+  public static <K, V> BiStream<K, V> concat(
+      BiStream<? extends K, ? extends V> s1,
+      BiStream<? extends K, ? extends V> s2,
+      BiStream<? extends K, ? extends V>... rest) {
+    Stream.Builder<BiStream<? extends K, ? extends V>> builder = Stream.builder();
+    builder.add(requireNonNull(s1)).add(requireNonNull(s2));
+    for (BiStream<? extends K, ? extends V> s : rest) {
+      builder.add(requireNonNull(s));
+    }
+    return concat(builder.build());
+  }
+
+  /**
    * Returns a {@code BiStream} of pairs from {@code biStreams} concatenated in encounter order.
    *
    * @since 3.0

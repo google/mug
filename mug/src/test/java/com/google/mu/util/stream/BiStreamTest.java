@@ -662,6 +662,27 @@ public class BiStreamTest {
         () -> BiStream.concat(ImmutableMap.of(), ImmutableMap.of(), third));
   }
 
+  @Test public void testConcatBiStream() {
+    assertThat(BiStream.concat(ImmutableMap.of(1, "one"), ImmutableMap.of(2, "two")).toMap())
+        .containsExactly(1, "one", 2, "two")
+        .inOrder();
+    assertThat(
+            BiStream.concat(
+                    BiStream.of(1, "one"),
+                    BiStream.of(2, "two"),
+                    BiStream.of(3, "three"))
+                .toMap())
+        .containsExactly(1, "one", 2, "two", 3, "three")
+        .inOrder();
+  }
+
+  @Test public void testConcatBiStream_nullNotAllowed() {
+    BiStream<?, ?> third = null;
+    assertThrows(
+        NullPointerException.class,
+        () -> BiStream.concat(BiStream.empty(), BiStream.empty(), third));
+  }
+
   @Test public void testConcatStreamOfBiStreams() {
     assertThat(BiStream.concat(Stream.of(BiStream.of(1, "one"), BiStream.of(2, "two"))).toMap())
         .containsExactly(1, "one", 2, "two")

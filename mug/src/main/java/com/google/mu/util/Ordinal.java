@@ -54,23 +54,23 @@ public final class Ordinal implements Comparable<Ordinal> {
   }
 
   /**
-   * Returns instance corresponding to {@code num}, which is 1-based.
+   * Returns instance corresponding to the {@code oneBased} number.
    * Small integer numbers in the range of {@code [1, 100]} are cached.
    *
    * @throws IllegalArgumentException if {@code num} is not positive.
    */
-  public static Ordinal of(int num) {
-    return num > 0 && num <= FIRST.length ? FIRST[num - 1] : new Ordinal(num);
+  public static Ordinal of(int oneBased) {
+    return oneBased > 0 && oneBased <= FIRST.length ? FIRST[oneBased - 1] : new Ordinal(oneBased);
   }
 
   /**
-   * Returns instance corresponding to the 0-based {@code index}. That is:
+   * Returns instance corresponding to the {@code zeroBased} index. That is:
    * index {@code 0} corresponds to {@code "1st"} and index {@code 1} for {@code "2nd"} etc.
    *
    * @throws IllegalArgumentException if {@code num} is negative.
    */
-  public static Ordinal fromIndex(int index) {
-    return of(index + 1);
+  public static Ordinal fromIndex(int zeroBased) {
+    return of(zeroBased + 1);
   }
 
   /**
