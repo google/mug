@@ -18,6 +18,7 @@ import static com.google.mu.util.InternalCollectors.toImmutableSet;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.reducing;
+import static java.util.stream.Collectors.toCollection;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,7 +28,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 import com.google.mu.function.CheckedFunction;
 
@@ -197,8 +197,8 @@ public interface Selection<T> {
           .map(Substring.Match::toString)
           .map(String::trim)
           .filter(s -> s.length() > 0)
-          .collect(Collectors.toCollection(LinkedHashSet::new));
-      List<T> elements = new ArrayList<>();
+          .collect(toCollection(LinkedHashSet::new));
+      List<T> elements = new ArrayList<>(parts.size());
       for (String part : parts) {
         elements.add(elementParser.apply(part));
       }
