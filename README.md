@@ -3,13 +3,13 @@ Disclaimer: This is not an official Google product.
 # Mug
 A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/index.html)), with 0 deps. ![](https://travis-ci.org/google/mug.svg?branch=master)
 
-* Stream utilities ([BiStream](#bistream-streams-pairs-of-objects), [MoreStreams](#morestreams), [Iteration](#iteration)):  
+* Stream utilities ([BiStream](https://github.com/google/mug/wiki/BiStream-Explained), [MoreStreams](#morestreams), [Iteration](https://github.com/google/mug/wiki/Iteration-Explained)):  
     `histogram = zip(times, counts).toMap();`
 * [Optionals](#optionals) provides extra utilities for Optional:  
     `optional(id.length() > 0, id)`
-* [Substring](#substring) finds a substring in a string:  
+* [Substring](https://github.com/google/mug/wiki/Substring-Explained) finds a substring in a string:  
     `String user = first('@').toEnd().removeFrom(email);`
-* [Parallelizer](#parallelizer) An _Executor-friendly_, _interruptible_ alternative to parallel streams.
+* [Parallelizer](https://github.com/google/mug/wiki/Parallelizer-Explained) An _Executor-friendly_, _interruptible_ alternative to parallel streams.
 * Graph utilities ([Walker](https://google.github.io/mug/apidocs/com/google/mu/util/graph/Walker.html), [ShortestPath](https://google.github.io/mug/apidocs/com/google/mu/util/graph/ShortestPath.html))
 
 ## Maven
@@ -27,7 +27,7 @@ Add the following to pom.xml:
 
 #### [BiStream](https://google.github.io/mug/apidocs/com/google/mu/util/stream/BiStream.html) streams pairs of objects.
 
-This class closely mirrors Jdk `Stream` API (the few extra methods of "its own" are very straight-forward). If you are familiar with Jdk stream, learning curve is minimal.
+This class closely mirrors JDK `Stream` API (the few extra methods of "its own" are very straight-forward). If you are familiar with Jdk stream, learning curve is minimal.
 
 **Example 1: to concatenate `Map`s:**
 
