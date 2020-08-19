@@ -53,8 +53,8 @@ import java.util.stream.Stream;
  *
  * <pre>{@code
  * Map<StudentId, Score> testResults = ...;
- * BiStream<Student, Score> studentsWithScore =
- *     BiStream.concat(students.stream().map(FluentLookup.in(testResults).findOrEmpty(Student::id)));
+ * BiStream<Student, Score> studentsWithScore = BiStream.concat(
+ *     students.stream().map(FluentLookup.in(testResults).matchByOrEmpty(Student::id)));
  * }</pre>
  *
  * Or, it can be composed with {@link BiStream#concatenating} to make syntax more fluent:
@@ -65,7 +65,7 @@ import java.util.stream.Stream;
  * Map<StudentId, Score> testResults = ...;
  * BiStream<Student, Score> studentsWithScore =
  *     students.stream()
- *         .collect(concatenating(FluentLookup.in(testResults).findOrEmpty(Student::id)));
+ *         .collect(concatenating(FluentLookup.in(testResults).matchByOrEmpty(Student::id)));
  * }</pre>
  *
  * @since 4.7
@@ -96,16 +96,26 @@ public final class FluentLookup<K, V> {
    * <pre>{@code
    * Map<StudentId, Score> testResults = ...;
    * BiStream<Student, Score> studentsWithScore = BiStream.concat(
-   *     students.stream().map(FluentLookup.in(testResults).findOrEmpty(Student::id)));
+   *     students.stream().map(FluentLookup.in(testResults).matchByOrEmpty(Student::id)));
    * }</pre>
    */
-  public final <T> Function<T, BiStream<T, V>> findOrEmpty(
+  public final <T> Function<T, BiStream<T, V>> matchByOrEmpty(
       Function<? super T, ? extends K> keyFunction) {
     requireNonNull(keyFunction);
     return input -> {
       V value = map.get(keyFunction.apply(input));
       return value == null ? BiStream.empty() : BiStream.of(input, value);
     };
+  }
+
+  /**
+   * Looks up the backing map for {@code key} and returns a singleton {@code BiStream} with the key
+   * and the matching value, or empty stream if not found. Useful as a method reference passed to
+   * {@link BiStream#concat(Stream)} or {@link BiStream#concatenating()}.
+   */
+  public final BiStream<K, V> matchOrEmpty(K key) {
+    V value = map.get(key) ;
+    return value == null ? BiStream.empty() : BiStream.of(key, value);
   }
 
   /**
