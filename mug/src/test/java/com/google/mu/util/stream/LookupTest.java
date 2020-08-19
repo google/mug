@@ -31,33 +31,34 @@ import com.google.common.testing.NullPointerTester;
 public class LookupTest {
   @Test public void notFoundInMap() {
     ImmutableMap<String, Integer> map = ImmutableMap.of("one", 1);
-    assertThat(Stream.of("two").flatMap(Lookup.in(map))).isEmpty();
+    assertThat(Stream.of("two").flatMap(Lookup.in(map)::findOrEmpty)).isEmpty();
   }
 
   @Test public void foundInMap() {
     ImmutableMap<String, Integer> map = ImmutableMap.of("one", 1);
-    assertThat(Stream.of("one").flatMap(Lookup.in(map))).containsExactly(1);
+    assertThat(Stream.of("one").flatMap(Lookup.in(map)::findOrEmpty)).containsExactly(1);
   }
 
   @Test public void by_keyNotFoundInMap() {
     ImmutableMap<String, Integer> map = ImmutableMap.of("one", 1);
     BiStream<Entry<String, String>, Integer> concatenated =
         Stream.of(Maps.immutableEntry("two", "dos"))
-            .collect(concatenating(Lookup.in(map).by(Map.Entry::getKey)));
+            .collect(concatenating(Lookup.in(map).findOrEmpty(Map.Entry::getKey)));
     assertThat(concatenated.toMap()).isEmpty();
   }
 
   @Test public void by_keyFoundInMap() {
     ImmutableMap<String, Integer> map = ImmutableMap.of("one", 1);
     BiStream<Map.Entry<String, String>, Integer> concatenated = BiStream.concat(
-        Stream.of(Maps.immutableEntry("two", "dos")).map(Lookup.in(map).by(Map.Entry::getKey)));
+        Stream.of(Maps.immutableEntry("two", "dos"))
+            .map(Lookup.in(map).findOrEmpty(Map.Entry::getKey)));
     assertThat(concatenated.toMap()).isEmpty();
   }
 
   @Test public void testNulls() throws Exception {
     new NullPointerTester().testAllPublicStaticMethods(Lookup.class);
     new NullPointerTester()
-        .ignore(Lookup.class.getMethod("apply", Object.class))
+        .ignore(Lookup.class.getMethod("findOrEmpty", Object.class))
         .testAllPublicInstanceMethods(Lookup.in(ImmutableMap.of()));
   }
 }
