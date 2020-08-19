@@ -47,9 +47,9 @@ import java.util.stream.Stream;
  * return Collectors.flatMapping(FluentLookup.in(map)::findOrEmpty, downstream);
  * }</pre>
  *
- * <p>In a slightly different variant, you may need to retain both the original element and the
- * looked-up result, you can keep them in a {@link BiStream} by using the {@link #by} method.
- * For example:
+ * <p>In a slightly different variant, you may need to call a function to get the lookup key,
+ * and then need to retain both the original element and the looked-up result. This can be done by
+ * storing the result pair in a {@link BiStream}. For example:
  *
  * <pre>{@code
  * Map<StudentId, Score> testResults = ...;
