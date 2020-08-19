@@ -36,7 +36,7 @@ import java.util.stream.Stream;
  * <pre>{@code
  * Map<K, V> map = ...;
  * collection.stream()
- *     .flatMap(Lookup.in(map))
+ *     .flatMap(Lookup.in(map)::findOrEmpty)
  *     ...;
  * }</pre>
  *
@@ -44,7 +44,7 @@ import java.util.stream.Stream;
  *
  * <pre>{@code
  * ImmutableMap<K, V> map = ...;
- * return Collectors.flatMapping(Lookup.in(map), downstream);
+ * return Collectors.flatMapping(Lookup.in(map)::findOrEmpty, downstream);
  * }</pre>
  *
  * <p>In a slightly different variant, you may need to retain both the original element and the
@@ -54,7 +54,7 @@ import java.util.stream.Stream;
  * <pre>{@code
  * Map<StudentId, Score> testResults = ...;
  * BiStream<Student, Score> studentsWithScore =
- *     BiStream.concat(students.stream().map(Lookup.in(testResults).by(Student::id)));
+ *     BiStream.concat(students.stream().map(Lookup.in(testResults).findOrEmpty(Student::id)));
  * }</pre>
  *
  * Or, it can be composed with {@link BiStream#concatenating} to make syntax more fluent:
@@ -65,12 +65,12 @@ import java.util.stream.Stream;
  * Map<StudentId, Score> testResults = ...;
  * BiStream<Student, Score> studentsWithScore =
  *     students.stream()
- *         .collect(concatenating(Lookup.in(testResults).by(Student::id)));
+ *         .collect(concatenating(Lookup.in(testResults).findOrEmpty(Student::id)));
  * }</pre>
  *
  * @since 4.7
  */
-public final class Lookup<K, V> implements Function<K, Stream<V>> {
+public final class Lookup<K, V> {
   private final Map<? extends K, ? extends V> map;
 
   private Lookup(Map<? extends K, ? extends V> map) {
@@ -95,10 +95,11 @@ public final class Lookup<K, V> implements Function<K, Stream<V>> {
    * <pre>{@code
    * Map<StudentId, Score> testResults = ...;
    * BiStream<Student, Score> studentsWithScore =
-   *     BiStream.concat(students.stream().map(Lookup.in(testResults).by(Student::id)));
+   *     BiStream.concat(students.stream().map(Lookup.in(testResults).findOrEmpty(Student::id)));
    * }</pre>
    */
-  public final <T> Function<T, BiStream<T, V>> by(Function<? super T, ? extends K> keyFunction) {
+  public final <T> Function<T, BiStream<T, V>> findOrEmpty(
+      Function<? super T, ? extends K> keyFunction) {
     requireNonNull(keyFunction);
     return input -> {
       V value = map.get(keyFunction.apply(input));
@@ -106,7 +107,11 @@ public final class Lookup<K, V> implements Function<K, Stream<V>> {
     };
   }
 
-  @Override public Stream<V> apply(K key) {
+  /**
+   * Looks up the backing map for {@code key} and returns a singleton stream with the value, or
+   * empty stream if not found. Useful as a method reference passed to {@code stream.flatMap()}.
+   */
+  public final Stream<V> findOrEmpty(K key) {
     V value = map.get(key) ;
     return value == null ? Stream.empty() : Stream.of(value);
   }
