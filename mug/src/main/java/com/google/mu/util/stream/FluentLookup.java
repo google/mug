@@ -86,7 +86,7 @@ public final class FluentLookup<K, V> {
   }
 
   /**
-   * Returns an function that for any given {@code input}, applies {@code keyFunction} and then
+   * Returns a function that for any given {@code input}, applies {@code keyFunction} and then
    * looks up the value mapped to the key from the backing {@code Map}.
    * If a value is found, the pair of {@code (input, looked-up-value)} is returned; otherwise empty.
    *
