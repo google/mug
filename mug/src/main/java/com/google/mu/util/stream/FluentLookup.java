@@ -31,12 +31,12 @@ import java.util.stream.Stream;
  *     ...;
  * }</pre>
  *
- * <p>Using {@code Lookup}, it can be simplified to:
+ * <p>Using {@code FluentLookup}, it can be simplified to:
  *
  * <pre>{@code
  * Map<K, V> map = ...;
  * collection.stream()
- *     .flatMap(Lookup.in(map)::findOrEmpty)
+ *     .flatMap(FluentLookup.in(map)::findOrEmpty)
  *     ...;
  * }</pre>
  *
@@ -44,7 +44,7 @@ import java.util.stream.Stream;
  *
  * <pre>{@code
  * ImmutableMap<K, V> map = ...;
- * return Collectors.flatMapping(Lookup.in(map)::findOrEmpty, downstream);
+ * return Collectors.flatMapping(FluentLookup.in(map)::findOrEmpty, downstream);
  * }</pre>
  *
  * <p>In a slightly different variant, you may need to retain both the original element and the
@@ -54,7 +54,7 @@ import java.util.stream.Stream;
  * <pre>{@code
  * Map<StudentId, Score> testResults = ...;
  * BiStream<Student, Score> studentsWithScore =
- *     BiStream.concat(students.stream().map(Lookup.in(testResults).findOrEmpty(Student::id)));
+ *     BiStream.concat(students.stream().map(FluentLookup.in(testResults).findOrEmpty(Student::id)));
  * }</pre>
  *
  * Or, it can be composed with {@link BiStream#concatenating} to make syntax more fluent:
@@ -65,15 +65,15 @@ import java.util.stream.Stream;
  * Map<StudentId, Score> testResults = ...;
  * BiStream<Student, Score> studentsWithScore =
  *     students.stream()
- *         .collect(concatenating(Lookup.in(testResults).findOrEmpty(Student::id)));
+ *         .collect(concatenating(FluentLookup.in(testResults).findOrEmpty(Student::id)));
  * }</pre>
  *
  * @since 4.7
  */
-public final class Lookup<K, V> {
+public final class FluentLookup<K, V> {
   private final Map<? extends K, ? extends V> map;
 
-  private Lookup(Map<? extends K, ? extends V> map) {
+  private FluentLookup(Map<? extends K, ? extends V> map) {
     this.map = requireNonNull(map);
   }
 
@@ -81,8 +81,8 @@ public final class Lookup<K, V> {
    * Returns an instance backed by {@code map}.
    * The returned instance can then be passed to {@link flatMap()} for a stream.
    */
-  public static <K, V> Lookup<K, V> in(Map<K, V> map) {
-    return new Lookup<>(map);
+  public static <K, V> FluentLookup<K, V> in(Map<K, V> map) {
+    return new FluentLookup<>(map);
   }
 
   /**
@@ -90,12 +90,13 @@ public final class Lookup<K, V> {
    * looks up the value mapped to the key from the backing {@code Map}.
    * If a value is found, the pair of {@code (input, looked-up-value)} is returned; otherwise empty.
    *
-   * <p>Can be composed with {@link BiStream#concat(Stream)} to create {@code BiStream}s:
+   * <p>Can be composed with {@link BiStream#concat(Stream)} or {@link BiStream#concatenating()}
+   * to create {@code BiStream}s:
    *
    * <pre>{@code
    * Map<StudentId, Score> testResults = ...;
-   * BiStream<Student, Score> studentsWithScore =
-   *     BiStream.concat(students.stream().map(Lookup.in(testResults).findOrEmpty(Student::id)));
+   * BiStream<Student, Score> studentsWithScore = BiStream.concat(
+   *     students.stream().map(FluentLookup.in(testResults).findOrEmpty(Student::id)));
    * }</pre>
    */
   public final <T> Function<T, BiStream<T, V>> findOrEmpty(
