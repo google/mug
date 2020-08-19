@@ -1123,13 +1123,17 @@ public class SubstringTest {
 
   @Test
   public void delimit_beginning() {
-    assertThat(BEGINNING.delimit("foo").map(Match::toString))
-        .containsExactly("");
+    assertThrows(IllegalStateException.class, () -> BEGINNING.delimit("foo"));
   }
 
   @Test
   public void delimit_end() {
-    assertThat(END.delimit("foo").map(Match::toString)).containsExactly("foo");
+    assertThrows(IllegalStateException.class, () -> END.delimit("foo"));
+  }
+
+  @Test
+  public void delimit_empty() {
+    assertThrows(IllegalStateException.class, () -> first("").delimit("foo"));
   }
 
   @Test
@@ -1874,6 +1878,8 @@ public class SubstringTest {
   private static ClassSanityTester newClassSanityTester() {
     return new ClassSanityTester()
         .setDefault(int.class, 0)
+        .setDefault(String.class, "sub")
+        .setDefault(Pattern.class, Pattern.compile("testpattern"))
         .setDefault(Substring.Pattern.class, prefix("foo"));
   }
 }

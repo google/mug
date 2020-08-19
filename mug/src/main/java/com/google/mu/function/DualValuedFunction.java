@@ -75,7 +75,7 @@ public interface DualValuedFunction<F, T1, T2> {
    */
   default <R> Function<F, R> andThen(BiFunction<? super T1, ? super T2, ? extends R> after) {
     @SuppressWarnings("unchecked")  // function is PECS, safe to cast.
-    BiFunction<T1, T2, R> then = (BiFunction<T1, T2, R>) requireNonNull(after);
-    return input -> apply(input, then);
+    BiFunction<T1, T2, R> output = (BiFunction<T1, T2, R>) requireNonNull(after);
+    return input -> apply(input, output);
   }
 }

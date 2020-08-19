@@ -17,7 +17,6 @@ import com.google.mu.util.stream.BiStream;
 /** Some examples to show use cases of {@link BiStream#zip}. */
 @RunWith(JUnit4.class)
 public class HowToZipPairwiseElementsTest {
-
   @Test public void how_to_handle_requests_and_corresponding_response_objects() {
     List<String> requests = asList("first request", "second request");
     List<String> responses = asList("first response", "second response");
