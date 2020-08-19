@@ -27,7 +27,7 @@ import java.util.stream.Stream;
  * Map<K, V> map = ...;
  * collection.stream()
  *     .map(map::get)
- *     .filter(v -. v != null)
+ *     .filter(v -> v != null)
  *     ...;
  * }</pre>
  *
