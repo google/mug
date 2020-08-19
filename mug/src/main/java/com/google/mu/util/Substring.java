@@ -557,6 +557,9 @@ public final class Substring {
      * @since 4.6
      */
     public Stream<Match> delimit(String string) {
+      if (match("") != null) {
+        throw new IllegalStateException("Pattern (" + this + ") cannot be used as delimiter.");
+      }
       return before(this).or(FULL_STRING).iterateIn(string);
     }
 
