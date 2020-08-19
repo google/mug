@@ -39,19 +39,33 @@ public class FluentLookupTest {
     assertThat(Stream.of("one").flatMap(FluentLookup.in(map)::findOrEmpty)).containsExactly(1);
   }
 
-  @Test public void by_keyNotFoundInMap() {
+  @Test public void match_keyNotFoundInMap() {
     ImmutableMap<String, Integer> map = ImmutableMap.of("one", 1);
-    BiStream<Entry<String, String>, Integer> concatenated =
-        Stream.of(Maps.immutableEntry("two", "dos"))
-            .collect(concatenating(FluentLookup.in(map).findOrEmpty(Map.Entry::getKey)));
+    BiStream<String, Integer> concatenated =
+        Stream.of("two").collect(concatenating(FluentLookup.in(map)::matchOrEmpty));
     assertThat(concatenated.toMap()).isEmpty();
   }
 
-  @Test public void by_keyFoundInMap() {
+  @Test public void match_keyFoundInMap() {
+    ImmutableMap<String, Integer> map = ImmutableMap.of("one", 1);
+    BiStream<String, Integer> concatenated =
+        Stream.of("one").collect(concatenating(FluentLookup.in(map)::matchOrEmpty));
+    assertThat(concatenated.toMap()).containsExactly("one", 1);
+  }
+
+  @Test public void matchBy_keyNotFoundInMap() {
+    ImmutableMap<String, Integer> map = ImmutableMap.of("one", 1);
+    BiStream<Entry<String, String>, Integer> concatenated =
+        Stream.of(Maps.immutableEntry("two", "dos"))
+            .collect(concatenating(FluentLookup.in(map).matchByOrEmpty(Map.Entry::getKey)));
+    assertThat(concatenated.toMap()).isEmpty();
+  }
+
+  @Test public void matchBy_keyFoundInMap() {
     ImmutableMap<String, Integer> map = ImmutableMap.of("one", 1);
     BiStream<Map.Entry<String, String>, Integer> concatenated = BiStream.concat(
         Stream.of(Maps.immutableEntry("two", "dos"))
-            .map(FluentLookup.in(map).findOrEmpty(Map.Entry::getKey)));
+            .map(FluentLookup.in(map).matchByOrEmpty(Map.Entry::getKey)));
     assertThat(concatenated.toMap()).isEmpty();
   }
 
@@ -59,6 +73,7 @@ public class FluentLookupTest {
     new NullPointerTester().testAllPublicStaticMethods(FluentLookup.class);
     new NullPointerTester()
         .ignore(FluentLookup.class.getMethod("findOrEmpty", Object.class))
+        .ignore(FluentLookup.class.getMethod("matchOrEmpty", Object.class))
         .testAllPublicInstanceMethods(FluentLookup.in(ImmutableMap.of()));
   }
 }
