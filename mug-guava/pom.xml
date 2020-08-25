@@ -9,9 +9,9 @@
   </parent>
   <groupId>com.google.mug</groupId>
   <artifactId>mug-guava</artifactId>
+  <packaging>jar</packaging>
   <version>4.7-SNAPSHOT</version>
   <name>mug-guava</name>
-  <url>http://maven.apache.org</url>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
