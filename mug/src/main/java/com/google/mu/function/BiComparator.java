@@ -187,7 +187,7 @@ public interface BiComparator<K, V> {
     };
   }
 
-  /*
+  /**
    * Returns negative if {@code (k1, v1) < (k2, v2)}; positive if {@code (k1, v1) > (k2, v2)};
    * otherwise 0.
    */
