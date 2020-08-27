@@ -25,7 +25,7 @@ import java.util.function.Function;
 @FunctionalInterface
 public interface BiComparator<K, V> {
   /**
-   * Returns a {@code BiComparator] that first transforms the pairs using {@code function} and then
+   * Returns a {@code BiComparator} that first transforms the pairs using {@code function} and then
    * compares the result of {@code function} using the given {@code ordering} comparator.
    */
   static <K, V, T> BiComparator<K, V> comparing(
@@ -36,7 +36,7 @@ public interface BiComparator<K, V> {
   }
 
   /**
-   * Returns a {@code BiComparator] that first transforms the pairs using {@code function} and then
+   * Returns a {@code BiComparator} that first transforms the pairs using {@code function} and then
    * compares the result of {@code function}.
    */
   static <K, V, T extends Comparable<T>> BiComparator<K, V> comparing(
@@ -45,7 +45,7 @@ public interface BiComparator<K, V> {
   }
 
   /**
-   * Returns a {@code BiComparator] that first transforms the key element of type {@code K} using
+   * Returns a {@code BiComparator} that first transforms the key element of type {@code K} using
    * {@code function} and then compares the result of {@code function}.
    */
   static <K, T extends Comparable<T>> BiComparator<K, Object> comparingKey(
@@ -54,7 +54,7 @@ public interface BiComparator<K, V> {
   }
 
   /**
-   * Returns a {@code BiComparator] that first transforms the key element of type {@code K} using
+   * Returns a {@code BiComparator} that first transforms the key element of type {@code K} using
    * {@code function} and then compares the result of {@code function} using the given
    * {@code ordering} comparator.
    */
@@ -64,14 +64,14 @@ public interface BiComparator<K, V> {
   }
 
   /**
-   * Returns a {@code BiComparator] that compares the pairs by the key element of type {@code K}.
+   * Returns a {@code BiComparator} that compares the pairs by the key element of type {@code K}.
    */
   static <K> BiComparator<K, Object> comparingKey(Comparator<? super K> ordering) {
     return comparing((k, v) -> k, ordering);
   }
 
   /**
-   * Returns a {@code BiComparator] that first transforms the value element of type {@code V} using
+   * Returns a {@code BiComparator} that first transforms the value element of type {@code V} using
    * {@code function} and then compares the result of {@code function}.
    */
   static <V, T extends Comparable<T>> BiComparator<Object, V> comparingValue(
@@ -80,7 +80,7 @@ public interface BiComparator<K, V> {
   }
 
   /**
-   * Returns a {@code BiComparator] that first transforms the value element of type {@code V} using
+   * Returns a {@code BiComparator} that first transforms the value element of type {@code V} using
    * {@code function} and then compares the result of {@code function} using the given
    * {@code ordering} comparator.
    */
@@ -90,14 +90,14 @@ public interface BiComparator<K, V> {
   }
 
   /**
-   * Returns a {@code BiComparator] that compares the pairs by the value element of type {@code V}.
+   * Returns a {@code BiComparator} that compares the pairs by the value element of type {@code V}.
    */
   static <V> BiComparator<Object, V> comparingValue(Comparator<? super V> ordering) {
     return comparing((k, v) -> v, ordering);
   }
 
   /**
-   * Returns a {@code BiComparator] that upon comparing two pairs, if {@code this} BiComparator
+   * Returns a {@code BiComparator} that upon comparing two pairs, if {@code this} BiComparator
    * returns 0 (tie), transforms the pairs using {@code function} to compare the results
    * for tie-break.
    */
@@ -107,7 +107,7 @@ public interface BiComparator<K, V> {
   }
 
   /**
-   * Returns a {@code BiComparator] that upon comparing two pairs, if {@code this} BiComparator
+   * Returns a {@code BiComparator} that upon comparing two pairs, if {@code this} BiComparator
    * returns 0 (tie), first transforms the pairs using {@code function} and then
    * compares the result of {@code function} using the given {@code ordering} comparator.
    */
@@ -117,8 +117,8 @@ public interface BiComparator<K, V> {
   }
 
   /**
-   * Returns a {@code BiComparator] that upon comparing two pairs, if {@code this} BiComparator
-   * returns 0 (tie), transforms the key elements of type {@code K} using {@code function]
+   * Returns a {@code BiComparator} that upon comparing two pairs, if {@code this} BiComparator
+   * returns 0 (tie), transforms the key elements of type {@code K} using {@code function}
    * and finally compares the transformed result for tie-break.
    */
   default <K2 extends K, T extends Comparable<T>> BiComparator<K2, V> thenComparingKey(
@@ -127,8 +127,8 @@ public interface BiComparator<K, V> {
   }
 
   /**
-   * Returns a {@code BiComparator] that upon comparing two pairs, if {@code this} BiComparator
-   * returns 0 (tie), transforms the key elements of type {@code K} using {@code function]
+   * Returns a {@code BiComparator} that upon comparing two pairs, if {@code this} BiComparator
+   * returns 0 (tie), transforms the key elements of type {@code K} using {@code function}
    * and finally delegates to the {@code secondary} comparator to break the tie.
    */
   default <K2 extends K, T> BiComparator<K2, V> thenComparingKey(
@@ -137,7 +137,7 @@ public interface BiComparator<K, V> {
   }
 
   /**
-   * Returns a {@code BiComparator] that upon comparing two pairs, if {@code this} BiComparator
+   * Returns a {@code BiComparator} that upon comparing two pairs, if {@code this} BiComparator
    * returns 0 (tie), delegates the key elements of type {@code K} to the {@code secondary}
    * comparator to break the tie.
    */
@@ -146,8 +146,8 @@ public interface BiComparator<K, V> {
   }
 
   /**
-   * Returns a {@code BiComparator] that upon comparing two pairs, if {@code this} BiComparator
-   * returns 0 (tie), transforms the value elements of type {@code V} using {@code function]
+   * Returns a {@code BiComparator} that upon comparing two pairs, if {@code this} BiComparator
+   * returns 0 (tie), transforms the value elements of type {@code V} using {@code function}
    * and finally compares the transformed result for tie-break.
    */
   default <V2 extends V, T extends Comparable<T>> BiComparator<K, V2> thenComparingValue(
@@ -156,8 +156,8 @@ public interface BiComparator<K, V> {
   }
 
   /**
-   * Returns a {@code BiComparator] that upon comparing two pairs, if {@code this} BiComparator
-   * returns 0 (tie), transforms the value elements of type {@code V} using {@code function]
+   * Returns a {@code BiComparator} that upon comparing two pairs, if {@code this} BiComparator
+   * returns 0 (tie), transforms the value elements of type {@code V} using {@code function}
    * and finally delegates to the {@code secondary} comparator to break the tie.
    */
   default <V2 extends V, T> BiComparator<K, V2> thenComparingValue(
@@ -166,7 +166,7 @@ public interface BiComparator<K, V> {
   }
 
   /**
-   * Returns a {@code BiComparator] that upon comparing two pairs, if {@code this} BiComparator
+   * Returns a {@code BiComparator} that upon comparing two pairs, if {@code this} BiComparator
    * returns 0 (tie), delegates the value elements of type {@code V} to the {@code secondary}
    * comparator to break the tie.
    */
@@ -175,7 +175,7 @@ public interface BiComparator<K, V> {
   }
 
   /**
-   * Returns a {@code BiComparator] that upon comparing two pairs, if {@code this} BiComparator
+   * Returns a {@code BiComparator} that upon comparing two pairs, if {@code this} BiComparator
    * returns 0 (tie), delegates to the {@code secondary} BiComparator to break the tie.
    */
   default <K2 extends K, V2 extends V, T> BiComparator<K2, V2> thenComparing(
