@@ -28,6 +28,8 @@ import java.util.function.Function;
  * parts of a pair respectively. However, both 'key' and 'value' can be of any type, or null.
  * There is no implication that the 'key' or 'value' must implement {@link Object#equals}.
  * You may equivalently read them as 'left' and 'right', or 'night' and 'day'.
+ *
+ * @since 4.7
  */
 @FunctionalInterface
 public interface BiComparator<K, V> {
