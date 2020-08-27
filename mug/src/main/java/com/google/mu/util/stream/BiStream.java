@@ -14,7 +14,7 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
-import static java.util.Comparator.comparing;
+import static com.google.mu.function.BiComparator.comparingKey;
 import static java.util.Objects.requireNonNull;
 import static java.util.Spliterator.ORDERED;
 import static java.util.function.Function.identity;
@@ -58,6 +58,7 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
+import com.google.mu.function.BiComparator;
 import com.google.mu.function.DualValuedFunction;
 
 /**
@@ -968,14 +969,13 @@ public abstract class BiStream<K, V> {
    * Returns a {@code BiStream} consisting of the pairs in this stream, in the order produced by
    * applying {@code keyComparator} on the keys of each pair, and then for equal keys,
    * applying {@code valueComparator} on the values of each pair.
+   *
+   * @deprecated Use {@link #sorted(BiComparator)} instead.
    */
+  @Deprecated
   public final BiStream<K, V> sorted(
       Comparator<? super K> keyComparator, Comparator<? super V> valueComparator) {
-    Comparator<Map.Entry<? extends K, ? extends V>> byKey =
-        comparing(Map.Entry::getKey, keyComparator);
-    Comparator<Map.Entry<? extends K, ? extends V>> byValue =
-        comparing(Map.Entry::getValue, valueComparator);
-    return from(mapToEntry().sorted(byKey.thenComparing(byValue)));
+    return sorted(comparingKey(keyComparator).thenComparingValue(valueComparator));
   }
 
   /**
@@ -994,6 +994,29 @@ public abstract class BiStream<K, V> {
   public final BiStream<K, V> sortedByValues(Comparator<? super V> comparator) {
     requireNonNull(comparator);
     return from(mapToEntry().sorted(Comparator.comparing(Map.Entry::getValue, comparator)));
+  }
+
+  /**
+   * Returns a {@code BiStream} consisting of the pairs in this stream, in the order produced by
+   * applying {@code ordering} BiComparator between each pair.
+   *
+   * <p>The following example first sorts by household income and then by address:
+   *
+   * <pre>{@code
+   * import static com.google.mu.function.BiComparator.comparingValue;
+   *
+   * Map<Address, Household> households = ...;
+   * List<Household> householdsByIncomeThenAddress =
+   *     BiStream.from(households)
+   *         .sorted(comparingValue(Household::income).thenComparingKey(naturalOrder()))
+   *         .values()
+   *         .collect(toList());
+   * }</pre>
+   *
+   * @since 4.7
+   */
+  public final BiStream<K, V> sorted(BiComparator<? super K, ? super V> ordering) {
+    return from(mapToEntry().sorted(ordering.asComparator(Map.Entry::getKey, Map.Entry::getValue)));
   }
 
   /** Returns the count of pairs in this stream. */
