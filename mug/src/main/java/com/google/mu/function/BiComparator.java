@@ -21,7 +21,14 @@ import java.util.Comparator;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-/** Similar to {@link java.util.Comparator}, but compares between two pairs of objects. */
+/**
+ * Similar to {@link java.util.Comparator}, but compares between two pairs of objects.
+ *
+ * <p>Note: For ease of reference, this interface uses 'key' and 'value' to refer to the two
+ * parts of a pair respectively. However, both 'key' and 'value' can be of any type, or null.
+ * There is no implication that the 'key' or 'value' must implement {@link Object#equals}.
+ * You may equivalently read them as 'left' and 'right', or 'night' and 'day'.
+ */
 @FunctionalInterface
 public interface BiComparator<K, V> {
   /**
