@@ -107,7 +107,7 @@ public interface BiComparator<K, V> {
 
   /**
    * Returns a {@code BiComparator} that upon comparing two pairs, if {@code this} BiComparator
-   * returns 0 (tie), delegates to the {@code secondary} BiComparator to break the tie.
+   * returns 0 (tie), delegates to the {@code secondary} BiComparator for tie-break.
    */
   default <K2 extends K, V2 extends V, T> BiComparator<K2, V2> then(
       BiComparator<? super K2, ? super V2> secondary) {
