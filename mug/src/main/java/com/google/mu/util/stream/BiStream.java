@@ -15,6 +15,7 @@
 package com.google.mu.util.stream;
 
 import static com.google.mu.function.BiComparator.comparingKey;
+import static com.google.mu.function.BiComparator.comparingValue;
 import static java.util.Objects.requireNonNull;
 import static java.util.Spliterator.ORDERED;
 import static java.util.function.Function.identity;
@@ -975,7 +976,7 @@ public abstract class BiStream<K, V> {
   @Deprecated
   public final BiStream<K, V> sorted(
       Comparator<? super K> keyComparator, Comparator<? super V> valueComparator) {
-    return sorted(comparingKey(keyComparator).thenComparingValue(valueComparator));
+    return sorted(comparingKey(keyComparator).then(comparingValue(valueComparator)));
   }
 
   /**
@@ -1003,12 +1004,13 @@ public abstract class BiStream<K, V> {
    * <p>The following example first sorts by household income and then by address:
    *
    * <pre>{@code
+   * import static com.google.mu.function.BiComparator.comparingKey;
    * import static com.google.mu.function.BiComparator.comparingValue;
    *
    * Map<Address, Household> households = ...;
    * List<Household> householdsByIncomeThenAddress =
    *     BiStream.from(households)
-   *         .sorted(comparingValue(Household::income).thenComparingKey(naturalOrder()))
+   *         .sorted(comparingValue(Household::income).then(comparingKey(naturalOrder()))
    *         .values()
    *         .collect(toList());
    * }</pre>

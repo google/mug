@@ -107,87 +107,9 @@ public interface BiComparator<K, V> {
 
   /**
    * Returns a {@code BiComparator} that upon comparing two pairs, if {@code this} BiComparator
-   * returns 0 (tie), transforms the pairs using {@code function} to compare the results
-   * for tie-break.
-   */
-  default <K2 extends K, V2 extends V, T extends Comparable<T>> BiComparator<K2, V2> thenComparing(
-      BiFunction<? super K2, ? super V2, ? extends T> function) {
-    return thenComparing(function, naturalOrder());
-  }
-
-  /**
-   * Returns a {@code BiComparator} that upon comparing two pairs, if {@code this} BiComparator
-   * returns 0 (tie), first transforms the pairs using {@code function} and then
-   * compares the result of {@code function} using the given {@code ordering} comparator.
-   */
-  default <K2 extends K, V2 extends V, T> BiComparator<K2, V2> thenComparing(
-      BiFunction<? super K2, ? super V2, ? extends T> function, Comparator<? super T> ordering) {
-    return thenComparing(comparing(function, ordering));
-  }
-
-  /**
-   * Returns a {@code BiComparator} that upon comparing two pairs, if {@code this} BiComparator
-   * returns 0 (tie), transforms the key element of type {@code K} using {@code function}
-   * and finally compares the transformed result for tie-break.
-   */
-  default <K2 extends K, T extends Comparable<T>> BiComparator<K2, V> thenComparingKey(
-      Function<? super K2, ? extends T> function) {
-    return thenComparingKey(function, naturalOrder());
-  }
-
-  /**
-   * Returns a {@code BiComparator} that upon comparing two pairs, if {@code this} BiComparator
-   * returns 0 (tie), transforms the key element of type {@code K} using {@code function}
-   * and finally delegates to the {@code secondary} comparator to break the tie.
-   */
-  default <K2 extends K, T> BiComparator<K2, V> thenComparingKey(
-      Function<? super K2, ? extends T> function, Comparator<? super T> secondary) {
-    return thenComparingKey(Comparator.comparing(function, secondary));
-  }
-
-  /**
-   * Returns a {@code BiComparator} that upon comparing two pairs, if {@code this} BiComparator
-   * returns 0 (tie), delegates the key element of type {@code K} to the {@code secondary}
-   * comparator to break the tie.
-   */
-  default <K2 extends K> BiComparator<K2, V> thenComparingKey(Comparator<? super K2> secondary) {
-    return thenComparing((k, v) -> k, secondary);
-  }
-
-  /**
-   * Returns a {@code BiComparator} that upon comparing two pairs, if {@code this} BiComparator
-   * returns 0 (tie), transforms the value element of type {@code V} using {@code function}
-   * and finally compares the transformed result for tie-break.
-   */
-  default <V2 extends V, T extends Comparable<T>> BiComparator<K, V2> thenComparingValue(
-      Function<? super V2, ? extends T> function) {
-    return thenComparingValue(function, naturalOrder());
-  }
-
-  /**
-   * Returns a {@code BiComparator} that upon comparing two pairs, if {@code this} BiComparator
-   * returns 0 (tie), transforms the value element of type {@code V} using {@code function}
-   * and finally delegates to the {@code secondary} comparator to break the tie.
-   */
-  default <V2 extends V, T> BiComparator<K, V2> thenComparingValue(
-      Function<? super V2, ? extends T> function, Comparator<? super T> secondary) {
-    return thenComparingValue(Comparator.comparing(function, secondary));
-  }
-
-  /**
-   * Returns a {@code BiComparator} that upon comparing two pairs, if {@code this} BiComparator
-   * returns 0 (tie), delegates the value element of type {@code V} to the {@code secondary}
-   * comparator to break the tie.
-   */
-  default <V2 extends V> BiComparator<K, V2> thenComparingValue(Comparator<? super V2> secondary) {
-    return thenComparing((k, v) -> v, secondary);
-  }
-
-  /**
-   * Returns a {@code BiComparator} that upon comparing two pairs, if {@code this} BiComparator
    * returns 0 (tie), delegates to the {@code secondary} BiComparator to break the tie.
    */
-  default <K2 extends K, V2 extends V, T> BiComparator<K2, V2> thenComparing(
+  default <K2 extends K, V2 extends V, T> BiComparator<K2, V2> then(
       BiComparator<? super K2, ? super V2> secondary) {
     requireNonNull(secondary);
     return (k1, v1, k2, v2) -> {
