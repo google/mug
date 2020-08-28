@@ -53,7 +53,7 @@ public class BiStreamCompoundTest {
     assertKeyValues(
             BiStream.of("b", 10, "a", 11, "a", 22)
                 .mapValues(Function.identity())
-                .sorted(comparingValue(Number::intValue).thenComparingKey(Object::toString)))
+                .sorted(comparingValue(Number::intValue).then(comparingKey(Object::toString))))
         .containsExactlyEntriesIn(ImmutableMultimap.of("b", 10, "a", 11, "a", 22))
         .inOrder();
   }
@@ -80,7 +80,7 @@ public class BiStreamCompoundTest {
     assertKeyValues(
             BiStream.of("b", 10, "a", 11, "a", 22)
                 .mapKeys(Function.identity())
-                .sorted(comparingKey(Object::toString).thenComparingValue(naturalOrder())))
+                .sorted(comparingKey(Object::toString).then(comparingValue(naturalOrder()))))
         .containsExactlyEntriesIn(ImmutableMultimap.of("a", 11, "a", 22, "b", 10))
         .inOrder();
   }
