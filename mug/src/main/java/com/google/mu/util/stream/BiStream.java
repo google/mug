@@ -776,6 +776,8 @@ public abstract class BiStream<K, V> {
    * }</pre>
    *
    * <p>Keys not found in {@code keyMap} (or mapped to null) are discarded.
+   *
+   * @since 4.7
    */
   public final <L> BiStream<L, V> innerJoinKeys(Map<? super K, L> keyMap) {
     return mapKeys(keyMap::get).filterKeys(Objects::nonNull);
