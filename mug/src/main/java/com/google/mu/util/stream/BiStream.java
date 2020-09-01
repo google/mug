@@ -761,6 +761,27 @@ public abstract class BiStream<K, V> {
   public abstract <V2> BiStream<K, V2> mapValues(Function<? super V, ? extends V2> valueMapper);
 
   /**
+   * Given {@code keyMap} that maps the keys of type {@code K} to elements of type {@code L},
+   * returns a {@code BiStream} of type {@code <L, V>}.
+   *
+   * <p>For example, if you need to turn a {@code Map<StudentId, Score>} to {@code
+   * BiStream<Student, Score>} by looking up the student id in a {@code Map<StudentId, Student>},
+   * you can do:
+   *
+   * <pre>{@code
+   * Map<StudentId, Score> scores = ...;
+   * BiStream.from(scores)
+   *     .innerJoinKeys(studentsMap)
+   *     ...;
+   * }</pre>
+   *
+   * <p>Keys not found in {@code foreignKeyMap} (or mapped to null values) are discarded.
+   */
+  public final <L> BiStream<L, V> innerJoinKeys(Map<? super K, L> keyMap) {
+    return mapKeys(keyMap::get).filterKeys(Objects::nonNull);
+  }
+
+  /**
    * Given {@code foreignKeyMap} that maps foreign keys of type {@code V} to result values of type
    * {@code R}, returns a {@code BiStream} of type {@code <K, R>}.
    *
