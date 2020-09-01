@@ -115,6 +115,18 @@ public class BiStreamInvariantsTest {
   }
 
   @Test
+  public void innerJoinKeys_found() {
+    assertKeyValues(BiStream.of("uno", 1, "dos", 2).innerJoinKeys(ImmutableMap.of("uno", "one")))
+        .containsExactly("one", 1)
+        .inOrder();
+  }
+
+  @Test
+  public void innerJoinKeys_notFound() {
+    assertKeyValues(BiStream.of("uno", 1).innerJoinKeys(ImmutableMap.of("tres", "san"))).isEmpty();
+  }
+
+  @Test
   public void innerJoinValues_found() {
     assertKeyValues(BiStream.of("uno", 1, "dos", 2).innerJoinValues(ImmutableMap.of(1, "one")))
         .containsExactly("uno", "one")
