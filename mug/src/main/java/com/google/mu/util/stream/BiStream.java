@@ -775,7 +775,7 @@ public abstract class BiStream<K, V> {
    *     ...;
    * }</pre>
    *
-   * <p>Keys not found in {@code foreignKeyMap} (or mapped to null values) are discarded.
+   * <p>Keys not found in {@code keyMap} (or mapped to null) are discarded.
    */
   public final <L> BiStream<L, V> innerJoinKeys(Map<? super K, L> keyMap) {
     return mapKeys(keyMap::get).filterKeys(Objects::nonNull);
@@ -796,7 +796,7 @@ public abstract class BiStream<K, V> {
    *     .collect(toImmutableSetMultimap());
    * }</pre>
    *
-   * <p>Foreign keys not found in {@code foreignKeyMap} (or mapped to null values) are discarded.
+   * <p>Foreign keys not found in {@code foreignKeyMap} (or mapped to null) are discarded.
    *
    * @since 4.7
    */
