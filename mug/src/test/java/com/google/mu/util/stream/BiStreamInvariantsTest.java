@@ -42,6 +42,7 @@ import org.junit.runners.Parameterized.Parameters;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.LinkedListMultimap;
@@ -111,6 +112,18 @@ public class BiStreamInvariantsTest {
     assertKeyValues(of("one", 1).mapValues(v -> null))
         .containsExactlyEntriesIn(keyValues("one", null))
         .inOrder();
+  }
+
+  @Test
+  public void innerJoinValues_found() {
+    assertKeyValues(BiStream.of("uno", 1, "dos", 2).innerJoinValues(ImmutableMap.of(1, "one")))
+        .containsExactly("uno", "one")
+        .inOrder();
+  }
+
+  @Test
+  public void innerJoinValues_notFound() {
+    assertKeyValues(BiStream.of("uno", 1).innerJoinValues(ImmutableMap.of(4, "four"))).isEmpty();
   }
 
   @Test

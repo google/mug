@@ -32,6 +32,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Spliterator;
 import java.util.Spliterators.AbstractDoubleSpliterator;
@@ -760,6 +761,18 @@ public abstract class BiStream<K, V> {
   public abstract <V2> BiStream<K, V2> mapValues(Function<? super V, ? extends V2> valueMapper);
 
   /**
+   * Given {@code foreignKeyMap} that maps foreign keys of type {@code V} to result values of type
+   * {@code R}, returns a {@code BiStream} of type {@code <K, R>}.
+   *
+   * <p>Foreign keys not found in {@code foreignKeyMap} are discarded.
+   *
+   * @since 4.7
+   */
+  public final <R> BiStream<K, R> innerJoinValues(Map<? super V, R> foreignKeyMap) {
+    return mapValues(foreignKeyMap::get).filterValues(Objects::nonNull);
+  }
+
+  /**
    * Maps a single pair to zero or more objects of type {@code T}.
    *
    * <p>If a mapped stream is null, an empty stream is used instead.
@@ -811,7 +824,7 @@ public abstract class BiStream<K, V> {
    */
   public final <K2, V2> BiStream<K2, V2> flatMap(
       BiFunction<? super K, ? super V, ? extends BiStream<? extends K2, ? extends V2>> mapper) {
-    return from(mapToObj(mapper).filter(s -> s != null).flatMap(BiStream::mapToEntry));
+    return from(mapToObj(mapper).filter(Objects::nonNull).flatMap(BiStream::mapToEntry));
   }
 
   /**
