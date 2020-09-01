@@ -762,9 +762,18 @@ public abstract class BiStream<K, V> {
 
   /**
    * Given {@code foreignKeyMap} that maps foreign keys of type {@code V} to result values of type
-   * {@code R}, returns a {@code BiStream} of type {@code <K, R>}.
+   * {@code R}, returns a {@code BiStream} of type {@code <K, R>}. For example, if you need to turn
+   * a {@code Multimap<ClassId, StudentId>} to {@code Multimap<ClassId, Student>} by looking up the
+   * student id in a {@code Map<StudentId, Student>}, you can do:
    *
-   * <p>Foreign keys not found in {@code foreignKeyMap} are discarded.
+   * <pre>{@code
+   * Multimap<ClassId, StudentId> registration = ...;
+   * ImmutableSetMultimap<ClassId, Student> classRoster = BiStream.from(registration)
+   *     .innerJoinValues(studentsMap)
+   *     .collect(toImmutableSetMultimap());
+   * }</pre>
+   *
+   * <p>Foreign keys not found in {@code foreignKeyMap} (or mapped to null values) are discarded.
    *
    * @since 4.7
    */
