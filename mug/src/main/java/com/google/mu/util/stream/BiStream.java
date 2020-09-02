@@ -840,8 +840,8 @@ public abstract class BiStream<K, V> {
   }
 
   /**
-   * Given {@code keyMap} that maps the keys of type {@code K} to elements of type {@code L},
-   * returns a {@code BiStream} of type {@code <L, V>}.
+   * Given {@code keyMap} that maps the keys of type {@code K} to elements of type {@code K2},
+   * returns a {@code BiStream} of type {@code <K2, V>}.
    *
    * <p>For example, if you need to turn a {@code Map<StudentId, Score>} to {@code
    * BiStream<Student, Score>} by looking up the student id in a {@code Map<StudentId, Student>},
@@ -858,7 +858,7 @@ public abstract class BiStream<K, V> {
    *
    * @since 4.7
    */
-  public final <L> BiStream<L, V> flatMapKeys(Map<? super K, L> keyMap) {
+  public final <K2> BiStream<K2, V> flatMapKeys(Map<? super K, K2> keyMap) {
     return mapKeys(keyMap::get).filterKeys(Objects::nonNull);
   }
 
@@ -887,8 +887,8 @@ public abstract class BiStream<K, V> {
   }
 
   /**
-   * Given {@code foreignKeyMap} that maps foreign keys of type {@code V} to result values of type
-   * {@code R}, returns a {@code BiStream} of type {@code <K, R>}.
+   * Given {@code valueMap} that maps values of type {@code V} to result values of type
+   * {@code V2}, returns a {@code BiStream} of type {@code <K, V2>}.
    *
    * <p>For example, if you need to turn a {@code Multimap<ClassId, StudentId>} to {@code
    * Multimap<ClassId, Student>} by looking up the student id in a {@code Map<StudentId, Student>},
@@ -901,12 +901,12 @@ public abstract class BiStream<K, V> {
    *     .collect(toImmutableSetMultimap());
    * }</pre>
    *
-   * <p>Foreign keys not found in {@code foreignKeyMap} (or mapped to null) are discarded.
+   * <p>Values not found in {@code valueMap} (or mapped to null) are discarded.
    *
    * @since 4.7
    */
-  public final <R> BiStream<K, R> flatMapValues(Map<? super V, R> foreignKeyMap) {
-    return mapValues(foreignKeyMap::get).filterValues(Objects::nonNull);
+  public final <V2> BiStream<K, V2> flatMapValues(Map<? super V, V2> valueMap) {
+    return mapValues(valueMap::get).filterValues(Objects::nonNull);
   }
 
   /**
