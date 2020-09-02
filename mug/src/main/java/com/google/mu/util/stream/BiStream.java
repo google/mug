@@ -883,7 +883,7 @@ public abstract class BiStream<K, V> {
    * Map<StudentId, Score> scores = ...;
    * BiStream.from(scores)
    *     .mapKeys(studentsMap::get)
-   *     .filterkeys(Objects::nonNull)
+   *     .filterKeys(Objects::nonNull)
    *     ...;
    * }</pre>
    *
