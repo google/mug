@@ -843,7 +843,9 @@ public abstract class BiStream<K, V> {
    * Given {@code keyMap} that maps the keys of type {@code K} to elements of type {@code K2},
    * returns a {@code BiStream} of type {@code <K2, V>}.
    *
-   * <p>For example, if you need to turn a {@code Map<StudentId, Score>} to {@code
+   * <p>Keys not found in {@code keyMap} (or mapped to null) are discarded.
+   *
+   * <p>For example, if you need to turn a {@code BiStream<StudentId, Score>} to {@code
    * BiStream<Student, Score>} by looking up the student id in a {@code Map<StudentId, Student>},
    * you can do:
    *
@@ -854,7 +856,36 @@ public abstract class BiStream<K, V> {
    *     ...;
    * }</pre>
    *
-   * <p>Keys not found in {@code keyMap} (or mapped to null) are discarded.
+   * <p>The above code is equivalent but more concise than any of the following variants:
+   *
+   * <pre>{@code
+   * Map<StudentId, Score> scores = ...;
+   * BiStream.from(scores)
+   *     .mapKeys(studentsMap::get)
+   *     .mapKeys(Optional::ofNullable)
+   *     .flatMapKeys(Streams::stream)
+   *     ...;
+   * }</pre>
+   *
+   * or:
+   *
+   * <pre>{@code
+   * Map<StudentId, Score> scores = ...;
+   * BiStream.from(scores)
+   *     .filterKeys(studentsMap::contains)
+   *     .mapKeys(studentsMap::get)
+   *     ...;
+   * }</pre>
+   *
+   * or:
+   *
+   * <pre>{@code
+   * Map<StudentId, Score> scores = ...;
+   * BiStream.from(scores)
+   *     .mapKeys(studentsMap::get)
+   *     .filterkeys(Objects::nonNull)
+   *     ...;
+   * }</pre>
    *
    * @since 4.7
    */
@@ -887,8 +918,10 @@ public abstract class BiStream<K, V> {
   }
 
   /**
-   * Given {@code valueMap} that maps values of type {@code V} to result values of type
-   * {@code V2}, returns a {@code BiStream} of type {@code <K, V2>}.
+   * Given {@code valueMap} that maps values of type {@code V} to result values of type {@code V2},
+   * returns a {@code BiStream} of type {@code <K, V2>}.
+   *
+   * <p>Values not found in {@code valueMap} (or mapped to null) are discarded.
    *
    * <p>For example, if you need to turn a {@code Multimap<ClassId, StudentId>} to {@code
    * Multimap<ClassId, Student>} by looking up the student id in a {@code Map<StudentId, Student>},
@@ -901,7 +934,36 @@ public abstract class BiStream<K, V> {
    *     .collect(toImmutableSetMultimap());
    * }</pre>
    *
-   * <p>Values not found in {@code valueMap} (or mapped to null) are discarded.
+   * <p>The above code is equivalent but more concise than any of the following variants:
+   *
+   * <pre>{@code
+   * Multimap<ClassId, StudentId> registration = ...;
+   * ImmutableSetMultimap<ClassId, Student> roster = BiStream.from(registration)
+   *     .mapValues(studentsMap::get)
+   *     .mapValues(Optional::ofNullable)
+   *     .flatMapValues(Streams::stream)
+   *     .collect(toImmutableSetMultimap());
+   * }</pre>
+   *
+   * or:
+   *
+   * <pre>{@code
+   * Multimap<ClassId, StudentId> registration = ...;
+   * ImmutableSetMultimap<ClassId, Student> roster = BiStream.from(registration)
+   *     .filterValues(studentsMap::contains)
+   *     .mapValues(studentsMap::get)
+   *     .collect(toImmutableSetMultimap());
+   * }</pre>
+   *
+   * or:
+   *
+   * <pre>{@code
+   * Multimap<ClassId, StudentId> registration = ...;
+   * ImmutableSetMultimap<ClassId, Student> roster = BiStream.from(registration)
+   *     .mapValues(studentsMap::get)
+   *     .filterValues(Objects::nonNull)
+   *     .collect(toImmutableSetMultimap());
+   * }</pre>
    *
    * @since 4.7
    */
