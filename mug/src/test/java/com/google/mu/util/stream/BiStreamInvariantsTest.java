@@ -115,30 +115,6 @@ public class BiStreamInvariantsTest {
   }
 
   @Test
-  public void innerJoinKeys_found() {
-    assertKeyValues(BiStream.of("uno", 1, "dos", 2).innerJoinKeys(ImmutableMap.of("uno", "one")))
-        .containsExactly("one", 1)
-        .inOrder();
-  }
-
-  @Test
-  public void innerJoinKeys_notFound() {
-    assertKeyValues(BiStream.of("uno", 1).innerJoinKeys(ImmutableMap.of("tres", "san"))).isEmpty();
-  }
-
-  @Test
-  public void innerJoinValues_found() {
-    assertKeyValues(BiStream.of("uno", 1, "dos", 2).innerJoinValues(ImmutableMap.of(1, "one")))
-        .containsExactly("uno", "one")
-        .inOrder();
-  }
-
-  @Test
-  public void innerJoinValues_notFound() {
-    assertKeyValues(BiStream.of("uno", 1).innerJoinValues(ImmutableMap.of(4, "four"))).isEmpty();
-  }
-
-  @Test
   public void distinct_byKey() {
     BiStream<Integer, ?> distinct =
         BiStream.from(Stream.of(1, 1, 2, 2, 3), k -> k, x -> null).distinct();
@@ -186,6 +162,18 @@ public class BiStreamInvariantsTest {
   }
 
   @Test
+  public void flatMapKeys_found() {
+    assertKeyValues(BiStream.of("uno", 1, "dos", 2).flatMapKeys(ImmutableMap.of("uno", "one")))
+        .containsExactly("one", 1)
+        .inOrder();
+  }
+
+  @Test
+  public void flatMapKeys_notFound() {
+    assertKeyValues(BiStream.of("uno", 1).flatMapKeys(ImmutableMap.of("tres", "san"))).isEmpty();
+  }
+
+  @Test
   public void flatMapValues() {
     assertKeyValues(of("one", 1).flatMapValues((k, v) -> Stream.of(k, v)))
         .containsExactlyEntriesIn(ImmutableMultimap.of("one", "one", "one", 1))
@@ -201,6 +189,18 @@ public class BiStreamInvariantsTest {
   @Test
   public void flatMapValues_mapperReturnsNull() {
     assertKeyValues(of(1, 2, 3, 4).flatMapValues(v -> null)).isEmpty();
+  }
+
+  @Test
+  public void flatMapValues_found() {
+    assertKeyValues(BiStream.of("uno", 1, "dos", 2).flatMapValues(ImmutableMap.of(1, "one")))
+        .containsExactly("uno", "one")
+        .inOrder();
+  }
+
+  @Test
+  public void flatMapValues_notFound() {
+    assertKeyValues(BiStream.of("uno", 1).flatMapValues(ImmutableMap.of(4, "four"))).isEmpty();
   }
 
   @Test

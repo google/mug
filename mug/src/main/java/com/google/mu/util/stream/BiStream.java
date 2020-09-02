@@ -761,52 +761,6 @@ public abstract class BiStream<K, V> {
   public abstract <V2> BiStream<K, V2> mapValues(Function<? super V, ? extends V2> valueMapper);
 
   /**
-   * Given {@code keyMap} that maps the keys of type {@code K} to elements of type {@code L},
-   * returns a {@code BiStream} of type {@code <L, V>}.
-   *
-   * <p>For example, if you need to turn a {@code Map<StudentId, Score>} to {@code
-   * BiStream<Student, Score>} by looking up the student id in a {@code Map<StudentId, Student>},
-   * you can do:
-   *
-   * <pre>{@code
-   * Map<StudentId, Score> scores = ...;
-   * BiStream.from(scores)
-   *     .innerJoinKeys(studentsMap)
-   *     ...;
-   * }</pre>
-   *
-   * <p>Keys not found in {@code keyMap} (or mapped to null) are discarded.
-   *
-   * @since 4.7
-   */
-  public final <L> BiStream<L, V> innerJoinKeys(Map<? super K, L> keyMap) {
-    return mapKeys(keyMap::get).filterKeys(Objects::nonNull);
-  }
-
-  /**
-   * Given {@code foreignKeyMap} that maps foreign keys of type {@code V} to result values of type
-   * {@code R}, returns a {@code BiStream} of type {@code <K, R>}.
-   *
-   * <p>For example, if you need to turn a {@code Multimap<ClassId, StudentId>} to {@code
-   * Multimap<ClassId, Student>} by looking up the student id in a {@code Map<StudentId, Student>},
-   * you can do:
-   *
-   * <pre>{@code
-   * Multimap<ClassId, StudentId> registration = ...;
-   * ImmutableSetMultimap<ClassId, Student> roster = BiStream.from(registration)
-   *     .innerJoinValues(studentsMap)
-   *     .collect(toImmutableSetMultimap());
-   * }</pre>
-   *
-   * <p>Foreign keys not found in {@code foreignKeyMap} (or mapped to null) are discarded.
-   *
-   * @since 4.7
-   */
-  public final <R> BiStream<K, R> innerJoinValues(Map<? super V, R> foreignKeyMap) {
-    return mapValues(foreignKeyMap::get).filterValues(Objects::nonNull);
-  }
-
-  /**
    * Maps a single pair to zero or more objects of type {@code T}.
    *
    * <p>If a mapped stream is null, an empty stream is used instead.
@@ -886,6 +840,29 @@ public abstract class BiStream<K, V> {
   }
 
   /**
+   * Given {@code keyMap} that maps the keys of type {@code K} to elements of type {@code L},
+   * returns a {@code BiStream} of type {@code <L, V>}.
+   *
+   * <p>For example, if you need to turn a {@code Map<StudentId, Score>} to {@code
+   * BiStream<Student, Score>} by looking up the student id in a {@code Map<StudentId, Student>},
+   * you can do:
+   *
+   * <pre>{@code
+   * Map<StudentId, Score> scores = ...;
+   * BiStream.from(scores)
+   *     .flatMapKeys(studentsMap)
+   *     ...;
+   * }</pre>
+   *
+   * <p>Keys not found in {@code keyMap} (or mapped to null) are discarded.
+   *
+   * @since 4.7
+   */
+  public final <L> BiStream<L, V> flatMapKeys(Map<? super K, L> keyMap) {
+    return mapKeys(keyMap::get).filterKeys(Objects::nonNull);
+  }
+
+  /**
    * Maps each value to zero or more values of type {@code V2}.
    *
    * <p>If a mapped stream is null, an empty stream is used instead.
@@ -907,6 +884,29 @@ public abstract class BiStream<K, V> {
       Function<? super V, ? extends Stream<? extends V2>> valueMapper) {
     requireNonNull(valueMapper);
     return flatMapValues((k, v) -> valueMapper.apply(v));
+  }
+
+  /**
+   * Given {@code foreignKeyMap} that maps foreign keys of type {@code V} to result values of type
+   * {@code R}, returns a {@code BiStream} of type {@code <K, R>}.
+   *
+   * <p>For example, if you need to turn a {@code Multimap<ClassId, StudentId>} to {@code
+   * Multimap<ClassId, Student>} by looking up the student id in a {@code Map<StudentId, Student>},
+   * you can do:
+   *
+   * <pre>{@code
+   * Multimap<ClassId, StudentId> registration = ...;
+   * ImmutableSetMultimap<ClassId, Student> roster = BiStream.from(registration)
+   *     .flatMapValues(studentsMap)
+   *     .collect(toImmutableSetMultimap());
+   * }</pre>
+   *
+   * <p>Foreign keys not found in {@code foreignKeyMap} (or mapped to null) are discarded.
+   *
+   * @since 4.7
+   */
+  public final <R> BiStream<K, R> flatMapValues(Map<? super V, R> foreignKeyMap) {
+    return mapValues(foreignKeyMap::get).filterValues(Objects::nonNull);
   }
 
   /**
