@@ -889,8 +889,8 @@ public abstract class BiStream<K, V> {
    *
    * @since 4.7
    */
-  public final <K2> BiStream<K2, V> flatMapKeys(Map<? super K, K2> keyMap) {
-    return mapKeys(keyMap::get).filterKeys(Objects::nonNull);
+  public final <K2> BiStream<K2, V> flatMapKeys(Map<? super K, ? extends K2> keyMap) {
+    return this.<K2>mapKeys(keyMap::get).filterKeys(Objects::nonNull);
   }
 
   /**
@@ -967,8 +967,8 @@ public abstract class BiStream<K, V> {
    *
    * @since 4.7
    */
-  public final <V2> BiStream<K, V2> flatMapValues(Map<? super V, V2> valueMap) {
-    return mapValues(valueMap::get).filterValues(Objects::nonNull);
+  public final <V2> BiStream<K, V2> flatMapValues(Map<? super V, ? extends V2> valueMap) {
+    return this.<V2>mapValues(valueMap::get).filterValues(Objects::nonNull);
   }
 
   /**
