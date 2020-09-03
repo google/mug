@@ -366,6 +366,18 @@ public class BiStreamInvariantsTest {
   }
 
   @Test
+  public void testMapToObjIfPresent_present() {
+    assertThat(of("one", 1, "two", 2).mapToObjIfPresent((k, v) -> Optional.of(k + ":" + v)))
+        .containsExactly("one:1", "two:2");
+  }
+
+  @Test
+  public void testMapToObjIfPresent_absent() {
+    assertThat(of("one", 1, "two", 2).mapToObjIfPresent((k, v) -> Optional.empty()))
+        .isEmpty();
+  }
+
+  @Test
   public void collectToMap() {
     assertThat(of("one", 1, "two", 2).collect(toMap())).containsExactly("one", 1, "two", 2);
   }

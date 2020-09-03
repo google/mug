@@ -711,6 +711,17 @@ public abstract class BiStream<K, V> {
   public abstract <T> Stream<T> mapToObj(BiFunction<? super K, ? super V, ? extends T> mapper);
 
   /**
+   * Returns a {@code Stream} consisting of the results of applying {@code mapper} to each pair in
+   * this {@code BiStream}. If {@code mapper} function returns empty, the pair is discarded.
+   *
+   * @since 4.7
+   */
+  public final <T> Stream<T> mapToObjIfPresent(
+      BiFunction<? super K, ? super V, ? extends Optional<? extends T>> mapper) {
+    return mapToObj(mapper).<T>map(BiStream::orElseNull).filter(Objects::nonNull);
+  }
+
+  /**
    * Returns a {@code BiStream} consisting of the results of applying {@code keyMapper} and {@code
    * valueMapper} to the pairs in this {@code BiStream}.
    */
