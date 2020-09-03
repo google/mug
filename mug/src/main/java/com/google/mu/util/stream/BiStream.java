@@ -734,6 +734,23 @@ public abstract class BiStream<K, V> {
   }
 
   /**
+   * Returns a {@code BiStream} consisting of the results of applying {@code keyMapper} and {@code
+   * valueMapper} to the pairs in this {@code BiStream}. If either {@code keyMapper} function or
+   * {@code valueMapper} function returns empty, the pair is discarded.
+   *
+   * @since 4.7
+   */
+  public <K2, V2> BiStream<K2, V2> mapIfPresent(
+      BiFunction<? super K, ? super V, ? extends Optional<? extends K2>> keyMapper,
+      BiFunction<? super K, ? super V, ? extends Optional<? extends V2>> valueMapper) {
+    return map(keyMapper, valueMapper)
+        .<K2>mapKeys(BiStream::orElseNull)
+        .filterKeys(Objects::nonNull)
+        .<V2>mapValues(BiStream::orElseNull)
+        .filterValues(Objects::nonNull);
+  }
+
+  /**
    * Returns a {@link DoubleStream} consisting of the results of applying {@code mapper} to the
    * pairs in this {@code BiStream}.
    */
