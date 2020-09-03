@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -162,15 +163,41 @@ public class BiStreamInvariantsTest {
   }
 
   @Test
-  public void flatMapKeys_found() {
-    assertKeyValues(BiStream.of("uno", 1, "dos", 2).flatMapKeys(ImmutableMap.of("uno", "one")))
+  public void mapKeysIfPresent_found() {
+    assertKeyValues(BiStream.of("uno", 1, "dos", 2).mapKeysIfPresent(ImmutableMap.of("uno", "one")))
         .containsExactly("one", 1)
         .inOrder();
   }
 
   @Test
-  public void flatMapKeys_notFound() {
-    assertKeyValues(BiStream.of("uno", 1).flatMapKeys(ImmutableMap.of("tres", "san"))).isEmpty();
+  public void mapKeysIfPresent_notFound() {
+    assertKeyValues(BiStream.of("uno", 1).mapKeysIfPresent(ImmutableMap.of("tres", "san"))).isEmpty();
+  }
+
+  @Test
+  public void mapKeysIfPresent_present() {
+    assertKeyValues(BiStream.of("uno", 1, "dos", 2).mapKeysIfPresent(k -> Optional.of("found:" + k)))
+        .containsExactly("found:uno", 1, "found:dos", 2)
+        .inOrder();
+  }
+
+  @Test
+  public void mapKeysIfPresent_absent() {
+    assertKeyValues(BiStream.of("uno", 1, "dos", 2).mapKeysIfPresent(k -> Optional.empty()))
+        .isEmpty();
+  }
+
+  @Test
+  public void mapKeysIfPresent_biFunction_present() {
+    assertKeyValues(BiStream.of("uno", 1, "dos", 2).mapKeysIfPresent((k, v) -> Optional.of(k + "->" + v)))
+        .containsExactly("uno->1", 1, "dos->2", 2)
+        .inOrder();
+  }
+
+  @Test
+  public void mapKeysIfPresent_biFunction_absent() {
+    assertKeyValues(BiStream.of("uno", 1, "dos", 2).mapKeysIfPresent((k, v) -> Optional.empty()))
+        .isEmpty();
   }
 
   @Test
@@ -192,15 +219,41 @@ public class BiStreamInvariantsTest {
   }
 
   @Test
-  public void flatMapValues_found() {
-    assertKeyValues(BiStream.of("uno", 1, "dos", 2).flatMapValues(ImmutableMap.of(1, "one")))
+  public void mapValuesIfPresent_found() {
+    assertKeyValues(BiStream.of("uno", 1, "dos", 2).mapValuesIfPresent(ImmutableMap.of(1, "one")))
         .containsExactly("uno", "one")
         .inOrder();
   }
 
   @Test
-  public void flatMapValues_notFound() {
-    assertKeyValues(BiStream.of("uno", 1).flatMapValues(ImmutableMap.of(4, "four"))).isEmpty();
+  public void mapValuesIfPresent_notFound() {
+    assertKeyValues(BiStream.of("uno", 1).mapValuesIfPresent(ImmutableMap.of(4, "four"))).isEmpty();
+  }
+
+  @Test
+  public void mapValuesIfPresent_present() {
+    assertKeyValues(BiStream.of("uno", 1, "dos", 2).mapValuesIfPresent(v -> Optional.of("found:" + v)))
+        .containsExactly("uno", "found:1", "dos", "found:2")
+        .inOrder();
+  }
+
+  @Test
+  public void mapValuesIfPresent_absent() {
+    assertKeyValues(BiStream.of("uno", 1, "dos", 2).mapValuesIfPresent(v -> Optional.empty()))
+        .isEmpty();
+  }
+
+  @Test
+  public void mapValuesIfPresent_biFunction_present() {
+    assertKeyValues(BiStream.of("uno", 1, "dos", 2).mapValuesIfPresent((k, v) -> Optional.of(k + "->" + v)))
+        .containsExactly("uno", "uno->1", "dos", "dos->2")
+        .inOrder();
+  }
+
+  @Test
+  public void mapValuesIfPresent_biFunction_absent() {
+    assertKeyValues(BiStream.of("uno", 1, "dos", 2).mapValuesIfPresent((k, v) -> Optional.empty()))
+        .isEmpty();
   }
 
   @Test

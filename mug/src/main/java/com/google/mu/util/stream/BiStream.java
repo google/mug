@@ -839,8 +839,9 @@ public abstract class BiStream<K, V> {
     return flatMapKeys((k, v) -> keyMapper.apply(k));
   }
 
+
   /**
-   * Given {@code keyMap} that maps the keys of type {@code K} to elements of type {@code K2},
+   * Given {@code keyMapping} that maps the keys of type {@code K} to elements of type {@code K2},
    * returns a {@code BiStream} of type {@code <K2, V>}.
    *
    * <p>Keys not found in {@code keyMap} (or mapped to null) are discarded.
@@ -852,11 +853,11 @@ public abstract class BiStream<K, V> {
    * <pre>{@code
    * Map<StudentId, Score> scores = ...;
    * BiStream.from(scores)
-   *     .flatMapKeys(studentsMap)
+   *     .mapKeysIfPresent(studentsMap)
    *     ...;
    * }</pre>
    *
-   * <p>The above code is equivalent but more concise than any of the following variants:
+   * <p>The above code is equivalent to the following variants:
    *
    * <pre>{@code
    * Map<StudentId, Score> scores = ...;
@@ -872,16 +873,6 @@ public abstract class BiStream<K, V> {
    * <pre>{@code
    * Map<StudentId, Score> scores = ...;
    * BiStream.from(scores)
-   *     .filterKeys(studentsMap::contains)
-   *     .mapKeys(studentsMap::get)
-   *     ...;
-   * }</pre>
-   *
-   * or:
-   *
-   * <pre>{@code
-   * Map<StudentId, Score> scores = ...;
-   * BiStream.from(scores)
    *     .mapKeys(studentsMap::get)
    *     .filterKeys(Objects::nonNull)
    *     ...;
@@ -889,8 +880,32 @@ public abstract class BiStream<K, V> {
    *
    * @since 4.7
    */
-  public final <K2> BiStream<K2, V> flatMapKeys(Map<? super K, ? extends K2> keyMap) {
-    return this.<K2>mapKeys(keyMap::get).filterKeys(Objects::nonNull);
+  public final <K2> BiStream<K2, V> mapKeysIfPresent(Map<? super K, ? extends K2> keyMapping) {
+    return this.<K2>mapKeys(keyMapping::get).filterKeys(Objects::nonNull);
+  }
+
+  /**
+   * Returns a {@code BiStream} of pairs whose keys are the result of applying {@code keyMapper} to
+   * the key of each pair in this {@code BiStream}, and whose values are unchanged. If {@code
+   * keyMapper} function returns empty, the pair is discarded.
+   *
+   * @since 4.7
+   */
+  public final <K2> BiStream<K2, V> mapKeysIfPresent(
+      Function<? super K, ? extends Optional<? extends K2>> keyMapper) {
+    return mapKeys(keyMapper).<K2>mapKeys(BiStream::orElseNull).filterKeys(Objects::nonNull);
+  }
+
+  /**
+   * Returns a {@code BiStream} of pairs whose keys are the result of applying {@code keyMapper} to
+   * each pair in this {@code BiStream}, and whose values are unchanged. If {@code keyMapper}
+   * function returns empty, the pair is discarded.
+   *
+   * @since 4.7
+   */
+  public final <K2> BiStream<K2, V> mapKeysIfPresent(
+      BiFunction<? super K, ? super V, ? extends Optional<? extends K2>> keyMapper) {
+    return mapKeys(keyMapper).<K2>mapKeys(BiStream::orElseNull).filterKeys(Objects::nonNull);
   }
 
   /**
@@ -918,8 +933,8 @@ public abstract class BiStream<K, V> {
   }
 
   /**
-   * Given {@code valueMap} that maps values of type {@code V} to result values of type {@code V2},
-   * returns a {@code BiStream} of type {@code <K, V2>}.
+   * Given {@code valueMapping} that maps values of type {@code V} to result values of type {@code
+   * V2}, returns a {@code BiStream} of type {@code <K, V2>}.
    *
    * <p>Values not found in {@code valueMap} (or mapped to null) are discarded.
    *
@@ -930,11 +945,11 @@ public abstract class BiStream<K, V> {
    * <pre>{@code
    * Multimap<ClassId, StudentId> registration = ...;
    * ImmutableSetMultimap<ClassId, Student> roster = BiStream.from(registration)
-   *     .flatMapValues(studentsMap)
+   *     .mapValuesIfPresent(studentsMap)
    *     .collect(toImmutableSetMultimap());
    * }</pre>
    *
-   * <p>The above code is equivalent but more concise than any of the following variants:
+   * <p>The above code is equivalent to the following variants:
    *
    * <pre>{@code
    * Multimap<ClassId, StudentId> registration = ...;
@@ -950,16 +965,6 @@ public abstract class BiStream<K, V> {
    * <pre>{@code
    * Multimap<ClassId, StudentId> registration = ...;
    * ImmutableSetMultimap<ClassId, Student> roster = BiStream.from(registration)
-   *     .filterValues(studentsMap::contains)
-   *     .mapValues(studentsMap::get)
-   *     .collect(toImmutableSetMultimap());
-   * }</pre>
-   *
-   * or:
-   *
-   * <pre>{@code
-   * Multimap<ClassId, StudentId> registration = ...;
-   * ImmutableSetMultimap<ClassId, Student> roster = BiStream.from(registration)
    *     .mapValues(studentsMap::get)
    *     .filterValues(Objects::nonNull)
    *     .collect(toImmutableSetMultimap());
@@ -967,8 +972,32 @@ public abstract class BiStream<K, V> {
    *
    * @since 4.7
    */
-  public final <V2> BiStream<K, V2> flatMapValues(Map<? super V, ? extends V2> valueMap) {
-    return this.<V2>mapValues(valueMap::get).filterValues(Objects::nonNull);
+  public final <V2> BiStream<K, V2> mapValuesIfPresent(Map<? super V, ? extends V2> valueMapping) {
+    return this.<V2>mapValues(valueMapping::get).filterValues(Objects::nonNull);
+  }
+
+  /**
+   * Returns a {@code BiStream} of pairs whose values are the result of applying {@code valueMapper}
+   * to the value of each pair in this {@code BiStream}, and whose keys are unchanged. If {@code
+   * valueMapper} function returns empty, the pair is discarded.
+   *
+   * @since 4.7
+   */
+  public final <V2> BiStream<K, V2> mapValuesIfPresent(
+      Function<? super V, ? extends Optional<? extends V2>> valueMapper) {
+    return mapValues(valueMapper).<V2>mapValues(BiStream::orElseNull).filterValues(Objects::nonNull);
+  }
+
+  /**
+   * Returns a {@code BiStream} of pairs whose values are the result of applying {@code valueMapper}
+   * to each pair in this {@code BiStream}, and whose keys are unchanged. If {@code valueMapper}
+   * function returns empty, the pair is discarded.
+   *
+   * @since 4.7
+   */
+  public final <V2> BiStream<K, V2> mapValuesIfPresent(
+      BiFunction<? super K, ? super V, ? extends Optional<? extends V2>> valueMapper) {
+    return mapValues(valueMapper).<V2>mapValues(BiStream::orElseNull).filterValues(Objects::nonNull);
   }
 
   /**
@@ -1175,6 +1204,10 @@ public abstract class BiStream<K, V> {
 
   private static <T> Stream<T> nullToEmpty(Stream<T> stream) {
     return stream == null ? Stream.empty() : stream;
+  }
+
+  private static <T> T orElseNull(Optional<T> optional) {
+    return optional.orElse(null);
   }
 
   /**
