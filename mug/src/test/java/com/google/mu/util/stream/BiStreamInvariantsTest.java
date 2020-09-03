@@ -439,6 +439,25 @@ public class BiStreamInvariantsTest {
   }
 
   @Test
+  public void map_present() {
+    assertKeyValues(of(1, "one", 2, "two").mapIfPresent((k, v) -> Optional.of(k + ":" + v), (k, v) -> Optional.of(v + ":" + k)))
+        .containsExactly("1:one", "one:1", "2:two", "two:2")
+        .inOrder();
+  }
+
+  @Test
+  public void map_firstAbsent() {
+    assertKeyValues(of(1, "one", 2, "two").mapIfPresent((k, v) -> Optional.empty(), (k, v) -> Optional.of(v + ":" + k)))
+        .isEmpty();
+  }
+
+  @Test
+  public void map_secondAbsent() {
+    assertKeyValues(of(1, "one", 2, "two").mapIfPresent((k, v) -> Optional.empty(), (k, v) -> Optional.empty()))
+        .isEmpty();
+  }
+
+  @Test
   public void mapToObj() {
     assertThat(of(1, 2, 3, 4).mapToObj((k, v) -> k * 10 + v)).containsExactly(12, 34).inOrder();
   }
