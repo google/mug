@@ -917,6 +917,17 @@ public abstract class BiStream<K, V> {
    * the key of each pair in this {@code BiStream}, and whose values are unchanged. If {@code
    * keyMapper} function returns empty, the pair is discarded.
    *
+   * <p>For example the following code counts the total number of unique patients per hospital, from
+   * doctors affiliated with the hospitals:
+   *
+   * <pre>{@code
+   * Map<Doctor, Patient> doctorAndPatients = ...;
+   * Map<Hospital, Long> hospitalPatientCounts =
+   *    BiStream.from(doctorAndPatients)
+   *        .mapKeysIfPresent(Doctor::optionalAffliatedHospital)
+   *        .collect(toImmutableMap(counting()));
+   * }</pre>
+   *
    * @since 4.7
    */
   public final <K2> BiStream<K2, V> mapKeysIfPresent(
@@ -1008,6 +1019,16 @@ public abstract class BiStream<K, V> {
    * Returns a {@code BiStream} of pairs whose values are the result of applying {@code valueMapper}
    * to the value of each pair in this {@code BiStream}, and whose keys are unchanged. If {@code
    * valueMapper} function returns empty, the pair is discarded.
+   *
+   * <p>For example the following code collects all unique insurance companies per doctor:
+   *
+   * <pre>{@code
+   * Map<Doctor, Patient> doctorAndPatients = ...;
+   * ImmutableSetMultimap<Doctor, InsuranceCompany> insurancesPerDoctor =
+   *    BiStream.from(doctorAndPatients)
+   *        .mapValuesIfPresent(Partient::optionalInsurarnce)
+   *        .collect(toImmutableSetMultimap());
+   * }</pre>
    *
    * @since 4.7
    */
