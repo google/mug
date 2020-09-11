@@ -207,6 +207,16 @@ public class SubstringTest {
   }
 
   @Test
+  public void prefix_addToIfAbsent_absent() {
+    assertThat(prefix("google3/").addToIfAbsent("java/com")).isEqualTo("google3/java/com");
+  }
+
+  @Test
+  public void prefix_addToIfAbsent_present() {
+    assertThat(prefix("google3/").addToIfAbsent("google3/java/com")).isEqualTo("google3/java/com");
+  }
+
+  @Test
   public void suffix_toString() {
     assertThat(suffix("foo").toString()).isEqualTo("foo");
   }
@@ -276,6 +286,18 @@ public class SubstringTest {
     assertThat(match.get().length()).isEqualTo(0);
     assertThat(match.get().toString()).isEmpty();
     assertThat(suffix("").iterateIn("foo").map(Object::toString)).containsExactly("");
+  }
+
+  @Test
+  public void suffix_addToIfAbsent_absent() {
+    assertThat(suffix(".").addToIfAbsent("a")).isEqualTo("a.");
+    assertThat(suffix('.').addToIfAbsent("foo")).isEqualTo("foo.");
+  }
+
+  @Test
+  public void suffix_addToIfAbsent_present() {
+    assertThat(suffix(".").addToIfAbsent("a.")).isEqualTo("a.");
+    assertThat(suffix('.').addToIfAbsent("foo.")).isEqualTo("foo.");
   }
 
   @Test

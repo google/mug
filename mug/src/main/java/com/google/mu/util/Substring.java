@@ -811,6 +811,16 @@ public final class Substring {
       this.prefix = prefix;
     }
 
+    /**
+     * If {@code string} has this prefix, return it as-is; otherwise, return it with this prefix
+     * prepended.
+     *
+     * @since 4.8
+     */
+    public String addToIfAbsent(String string) {
+      return string.startsWith(prefix) ? string : prefix + string;
+    }
+
     @Override Match match(String input, int fromIndex) {
       return input.startsWith(prefix, fromIndex)
           ? new Match(input, fromIndex, prefix.length())
@@ -833,6 +843,16 @@ public final class Substring {
 
     Suffix(String suffix) {
       this.suffix = suffix;
+    }
+
+    /**
+     * If {@code string} has this suffix, return it as-is; otherwise, return it with this suffix
+     * appended.
+     *
+     * @since 4.8
+     */
+    public String addToIfAbsent(String string) {
+      return string.endsWith(suffix) ? string : string + suffix;
     }
 
     @Override Match match(String input, int fromIndex) {
