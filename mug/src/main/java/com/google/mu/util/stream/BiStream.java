@@ -918,7 +918,7 @@ public abstract class BiStream<K, V> {
    * keyMapper} function returns empty, the pair is discarded.
    *
    * <p>For example the following code counts the total number of unique patients per hospital, from
-   * doctors affiliated with the hospitals:
+   * doctors' affiliated hospitals:
    *
    * <pre>{@code
    * Map<Doctor, Patient> doctorAndPatients = ...;
