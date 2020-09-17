@@ -218,10 +218,27 @@ public final class MoreStreams {
     return new DicedSpliterator<T>(spliterator, maxSize);
   }
 
-  /** @deprecated Use {@code maps.collect(flattening(Map::entrySet, toMap())} instead. */
+  /** @deprecated Use {@code maps.collect(flatteningMaps(toMap())} instead. */
   @Deprecated
   public static <K, V> Collector<Map<K, V>, ?, Map<K, V>> uniqueKeys() {
     return flattening(Map::entrySet, toMap());
+  }
+
+  /**
+   * Similar but slightly different than {@link Collectors#flatMapping}, returns a {@link Collector}
+   * that first flattens the input stream of <em>pairs</em> (as opposed to single elements) and then
+   * collects the flattened pairs with the {@code downstream} BiCollector.
+   *
+   * @since 4.8
+   */
+  public static <T, K, V, R> Collector<T, ?, R> flatMapping(
+      Function<? super T, ? extends BiStream<? extends K, ? extends V>> flattener,
+      BiCollector<K, V, R> downstream) {
+    return BiStream.flatMapping(
+        flattener.andThen(BiStream::mapToEntry),
+        downstream.splitting(
+            Map.Entry<? extends K, ? extends V>::getKey,
+            Map.Entry<? extends K, ? extends V>::getValue));
   }
 
   /**
@@ -250,10 +267,7 @@ public final class MoreStreams {
   public static <T, K, V, R> Collector<T, ?, R> flattening(
       Function<? super T, ? extends Collection<? extends Map.Entry<? extends K, ? extends V>>> flattener,
       BiCollector<K, V, R> downstream) {
-    requireNonNull(flattener);
-    return BiStream.flatMapping(
-        e -> flattener.apply(e).stream(),
-        downstream.splitting(Map.Entry::getKey, Map.Entry::getValue));
+    return flatMapping(flattener.andThen(BiStream::from), downstream);
   }
 
   /**
@@ -423,10 +437,10 @@ public final class MoreStreams {
 
   /**
    * Returns a collector that first copies all input elements into a new {@code Stream} and then
-   * passes the stream to {@code toSink} function, which translates it to the final result.
+   * passes the stream to the {@code finisher} function, which translates it to the final result.
    */
-  static <T, R> Collector<T, ?, R> copying(Function<Stream<T>, R> toSink) {
-    return Collectors.collectingAndThen(toStream(), toSink);
+  static <T, R> Collector<T, ?, R> streaming(Function<Stream<T>, R> finisher) {
+    return Collectors.collectingAndThen(toStream(), finisher);
   }
 
   static <F, T> Stream<T> mapBySpliterator(
