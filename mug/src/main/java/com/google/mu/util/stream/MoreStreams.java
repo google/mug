@@ -236,9 +236,8 @@ public final class MoreStreams {
       BiCollector<K, V, R> downstream) {
     return BiStream.flatMapping(
         flattener.andThen(BiStream::mapToEntry),
-        downstream.splitting(
-            Map.Entry<? extends K, ? extends V>::getKey,
-            Map.Entry<? extends K, ? extends V>::getValue));
+        downstream.<Map.Entry<? extends K, ? extends V>>splitting(
+            Map.Entry::getKey, Map.Entry::getValue));
   }
 
   /**
