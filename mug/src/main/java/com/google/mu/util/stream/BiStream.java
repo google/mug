@@ -16,6 +16,7 @@ package com.google.mu.util.stream;
 
 import static com.google.mu.function.BiComparator.comparingKey;
 import static com.google.mu.function.BiComparator.comparingValue;
+import static com.google.mu.util.stream.MoreStreams.streaming;
 import static java.util.Objects.requireNonNull;
 import static java.util.Spliterator.ORDERED;
 import static java.util.function.Function.identity;
@@ -225,29 +226,9 @@ public abstract class BiStream<K, V> {
   }
 
   /**
-   * Returns a {@code Collector} that first fans out the input elements to multiple key-value pairs
-   * using {@code toKeyValues} function (whose {@code BiStream} return value corresponds to the key
-   * values), then groups and collects values mapped to the same key using {@code valueCollector}.
-   *
-   * <pre>{@code
-   * interface Shard {
-   *   BiStream<Instant, Integer> histogram();
-   * }
-   *
-   * Map<Instant, Integer> combinedHistogram = shards.stream()
-   *     .collect(grouping(Shard::histogram, Integer::sum))
-   *     .filterValues(v -> v > 100)
-   *     .toMap();
-   * }</pre>
-   *
-   * <p>Entries are collected in encounter order.
-   *
-   * <p>If you need to flatten a stream of {@code Map}s or {@code Multimap}s without further
-   * chaining, consider to use the more convenient {@link MoreStreams#flatteningMaps} or {@link
-   * MoreStreams#flattening flattening(Multimap::entries)}.
-   *
-   * @since 4.6
+   * @deprecated Use {@code MoreStreams.flatMapping(toKeyValues, BiCollectors.groupingBy(k -> k, reducer))}.
    */
+  @Deprecated
   public static <T, K, V, R> Collector<T, ?, BiStream<K, R>> grouping(
       Function<? super T, ? extends BiStream<? extends K, ? extends V>> toKeyValues,
       Collector<? super V, ?, R> valueCollector) {
@@ -258,28 +239,9 @@ public abstract class BiStream<K, V> {
   }
 
   /**
-   * Returns a {@code Collector} that first fans out the input elements to multiple key-value pairs
-   * using {@code toKeyValues} function (whose {@code BiStream} return value corresponds to the key
-   * values), then groups and reduces values mapped to the same key using {@code reducer}.
-   *
-   * <pre>{@code
-   * interface Shard {
-   *   BiStream<Instant, Integer> histogram();
-   * }
-   *
-   * Map<Instant, Long> eventCounts = shards.stream()
-   *     .collect(grouping(Shard::histogram, counting()))
-   *     .toMap();
-   * }</pre>
-   *
-   * <p>Entries are collected in encounter order.
-   *
-   * <p>If you need to flatten a stream of {@code Map}s or {@code Multimap}s without further
-   * chaining, consider to use the more convenient {@link MoreStreams#flatteningMaps} or {@link
-   * MoreStreams#flattening flattening(Multimap::entries)}.
-   *
-   * @since 4.6
+   * @deprecated Use {@code MoreStreams.flatMapping(toKeyValues, BiCollectors.groupingBy(k -> k, reducer))}.
    */
+  @Deprecated
   public static <T, K, V> Collector<T, ?, BiStream<K, V>> grouping(
       Function<? super T, ? extends BiStream<? extends K, ? extends V>> toKeyValues,
       BinaryOperator<V> reducer) {
@@ -303,39 +265,7 @@ public abstract class BiStream<K, V> {
    */
   public static <T, K, V> Collector<T, ?, BiStream<K, V>> concatenating(
       Function<? super T, ? extends BiStream<? extends K, ? extends V>> toBiStream) {
-    return MoreStreams.copying(copy -> concat(copy.map(toBiStream)));
-  }
-
-  /**
-   * @deprecated Use {@code grouping(BiStream::from, toList())}
-   *             in place of {@code groupingValuesFrom(Map::entrySet)}.
-   */
-  @Deprecated
-  public static <T, K, V> Collector<T, ?, BiStream<K, List<V>>> groupingValuesFrom(
-      Function<? super T, ? extends Collection<Map.Entry<K, V>>> entrySource) {
-    return groupingValuesFrom(entrySource, toList());
-  }
-
-  /**
-   * @deprecated Use {@code grouping(BiStream::from, reducer)}
-   *             in place of {@code groupingValuesFrom(Map::entrySet, reducer)}.
-   */
-  @Deprecated
-  public static <T, K, V> Collector<T, ?, BiStream<K, V>> groupingValuesFrom(
-      Function<? super T, ? extends Collection<Map.Entry<K, V>>> entrySource,
-      BinaryOperator<V> valueReducer) {
-    return groupingValuesFrom(entrySource, reducingGroupMembers(valueReducer));
-  }
-
-  /**
-   * @deprecated Use {@code grouping(BiStream::from, collector)}
-   *             in place of {@code groupingValuesFrom(Map::entrySet, collector)}.
-   */
-  @Deprecated
-  public static <T, K, V, R> Collector<T, ?, BiStream<K, R>> groupingValuesFrom(
-      Function<? super T, ? extends Collection<Map.Entry<K, V>>> entrySource,
-      Collector<? super V, ?, R> valueCollector) {
-    return grouping(entrySource.andThen(entries -> from(entries.stream())), valueCollector);
+    return streaming(stream -> concat(stream.map(toBiStream)));
   }
 
   /**
@@ -396,7 +326,7 @@ public abstract class BiStream<K, V> {
       Function<? super E, ? extends K> toKey, Function<? super E, ? extends V> toValue) {
     requireNonNull(toKey);
     requireNonNull(toValue);
-    return MoreStreams.copying(copy -> from(copy, toKey, toValue));
+    return streaming(stream -> from(stream, toKey, toValue));
   }
 
   /**
@@ -419,7 +349,7 @@ public abstract class BiStream<K, V> {
   public static <E, K, V> Collector<E, ?, BiStream<K, V>> toBiStream(
       DualValuedFunction<? super E, ? extends K, ? extends V> mapper) {
     requireNonNull(mapper);
-    return MoreStreams.copying(copy -> from(copy, mapper));
+    return streaming(stream -> from(stream, mapper));
   }
 
   /**

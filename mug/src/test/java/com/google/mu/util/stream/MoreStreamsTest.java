@@ -18,8 +18,9 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.Substring.first;
+import static com.google.mu.util.stream.BiCollectors.groupingBy;
 import static com.google.mu.util.stream.BiCollectors.toMap;
-import static com.google.mu.util.stream.BiStream.grouping;
+import static com.google.mu.util.stream.MoreStreams.flatMapping;
 import static com.google.mu.util.stream.MoreStreams.flattening;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static com.google.mu.util.stream.MoreStreams.mapping;
@@ -223,7 +224,7 @@ public class MoreStreamsTest {
         ImmutableList.of(new Translation(ImmutableMap.of()), new Translation(ImmutableMap.of()));
     Map<Integer, String> merged = translations.stream()
         .map(Translation::dictionary)
-        .collect(grouping(BiStream::from, (a, b) -> a + "," + b))
+        .collect(flatMapping(BiStream::from, groupingBy(k -> k, (a, b) -> a + "," + b)))
         .collect(ImmutableMap::toImmutableMap);
     assertThat(merged).isEmpty();
   }
@@ -233,7 +234,7 @@ public class MoreStreamsTest {
         new Translation(ImmutableMap.of(1, "one")), new Translation(ImmutableMap.of(2, "two")));
     Map<Integer, String> merged = translations.stream()
         .map(Translation::dictionary)
-        .collect(grouping(BiStream::from, (a, b) -> a + "," + b))
+        .collect(flatMapping(BiStream::from, groupingBy(k -> k, (a, b) -> a + "," + b)))
         .collect(ImmutableMap::toImmutableMap);
     assertThat(merged)
         .containsExactly(1, "one", 2, "two")
@@ -246,7 +247,7 @@ public class MoreStreamsTest {
         new Translation(ImmutableMap.of(2, "two", 1, "1")));
     Map<Integer, String> merged = translations.stream()
         .map(Translation::dictionary)
-        .collect(grouping(BiStream::from, (a, b) -> a + "," + b))
+        .collect(flatMapping(BiStream::from, groupingBy(k -> k, (a, b) -> a + "," + b)))
         .collect(ImmutableMap::toImmutableMap);
     assertThat(merged)
         .containsExactly(1, "one,1", 2, "two")
