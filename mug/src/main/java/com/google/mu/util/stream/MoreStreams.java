@@ -236,34 +236,16 @@ public final class MoreStreams {
       BiCollector<K, V, R> downstream) {
     return BiStream.flatMapping(
         flattener.andThen(BiStream::mapToEntry),
-        downstream.splitting(
-            Map.Entry<? extends K, ? extends V>::getKey,
-            Map.Entry<? extends K, ? extends V>::getValue));
+        downstream.<Map.Entry<? extends K, ? extends V>>splitting(
+            Map.Entry::getKey, Map.Entry::getValue));
   }
 
   /**
-   * Returns a {@code Collector} that flattens the input {@link Map} entries returned by the
-   * {@code flattener} function, and then collects these flattened entries using the {@code
-   * downstream} BiCollector.
-   *
-   * <p>Can be used to flatten a stream of maps:
-   *
-   * <pre>{@code
-   * ImmutableMap<EmployeeId, Task> billableTaskAssignments = projects.stream()
-   *     .map(Project::getTaskAssignments)
-   *     .collect(flattening(Map::entrySet, ImmutableMap::toImmutableMap)));
-   * }</pre>
-   *
-   * or multimaps:
-   *
-   * <pre>{@code
-   * ImmutableSetMultimap<EmployeeId, Task> billableTaskAssignments = projects.stream()
-   *     .map(Project::getTaskAssignments)
-   *     .collect(flattening(Multimap::entries, ImmutableSetMultimap::toImmutableSetMultimap)));
-   * }</pre>
-   *
    * @since 3.6
+   * @deprecated If you need to flatten a stream of Multimap, use something like {@code
+   * flatMapping(m -> BiStream.from(m.asMap()), flatteningToImmutableSetMultimap())}.
    */
+  @Deprecated
   public static <T, K, V, R> Collector<T, ?, R> flattening(
       Function<? super T, ? extends Collection<? extends Map.Entry<? extends K, ? extends V>>> flattener,
       BiCollector<K, V, R> downstream) {
@@ -288,7 +270,7 @@ public final class MoreStreams {
    */
   public static <K, V, R> Collector<Map<K, V>, ?, R> flatteningMaps(
       BiCollector<K, V, R> downstream) {
-    return flattening(Map::entrySet, downstream);
+    return flatMapping(BiStream::from, downstream);
   }
 
   /**

@@ -224,7 +224,7 @@ public class MoreStreamsTest {
         ImmutableList.of(new Translation(ImmutableMap.of()), new Translation(ImmutableMap.of()));
     Map<Integer, String> merged = translations.stream()
         .map(Translation::dictionary)
-        .collect(flatMapping(BiStream::from, groupingBy(k -> k, (a, b) -> a + "," + b)))
+        .collect(flatMapping(BiStream::from, groupingBy((Integer k) -> k, (a, b) -> a + "," + b)))
         .collect(ImmutableMap::toImmutableMap);
     assertThat(merged).isEmpty();
   }
@@ -234,7 +234,7 @@ public class MoreStreamsTest {
         new Translation(ImmutableMap.of(1, "one")), new Translation(ImmutableMap.of(2, "two")));
     Map<Integer, String> merged = translations.stream()
         .map(Translation::dictionary)
-        .collect(flatMapping(BiStream::from, groupingBy(k -> k, (a, b) -> a + "," + b)))
+        .collect(flatMapping(BiStream::from, groupingBy((Integer k) -> k, (a, b) -> a + "," + b)))
         .collect(ImmutableMap::toImmutableMap);
     assertThat(merged)
         .containsExactly(1, "one", 2, "two")
@@ -247,7 +247,7 @@ public class MoreStreamsTest {
         new Translation(ImmutableMap.of(2, "two", 1, "1")));
     Map<Integer, String> merged = translations.stream()
         .map(Translation::dictionary)
-        .collect(flatMapping(BiStream::from, groupingBy(k -> k, (a, b) -> a + "," + b)))
+        .collect(flatMapping(BiStream::from, groupingBy((Integer k) -> k, (a, b) -> a + "," + b)))
         .collect(ImmutableMap::toImmutableMap);
     assertThat(merged)
         .containsExactly(1, "one,1", 2, "two")
