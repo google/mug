@@ -251,12 +251,6 @@ public class Iteration<T> {
     });
   }
 
-  /** @deprecated Use {@link #iterate} instead. */
-  @Deprecated
-  public final Stream<T> stream() {
-    return iterate();
-  }
-
   /**
    * Starts iteration over the {@link #yield yielded} elements.
    *

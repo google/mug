@@ -919,12 +919,6 @@ public final class Substring {
       return context.substring(0, startIndex);
     }
 
-    /** Use {@link #before} instead. */
-    @Deprecated
-    public String getBefore() {
-      return before();
-    }
-
     /**
      * Returns the part of the original string before the matched substring.
      *
@@ -939,12 +933,6 @@ public final class Substring {
      */
     public String after() {
       return context.substring(endIndex);
-    }
-
-    /** Use {@link #after} instead. */
-    @Deprecated
-    public String getAfter() {
-      return after();
     }
 
     /** Return the full string being matched against. */

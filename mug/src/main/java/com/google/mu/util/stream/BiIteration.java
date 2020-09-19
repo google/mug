@@ -44,12 +44,6 @@ public class BiIteration<L, R> {
     return this;
   }
 
-  /** @deprecated Use {@link #iterate} instead. */
-  @Deprecated
-  public final BiStream<L, R> stream() {
-    return iterate();
-  }
-
   /**
    * Starts iteration over the {@link #yield yielded} pairs.
    *
