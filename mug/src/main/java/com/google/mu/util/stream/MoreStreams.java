@@ -408,9 +408,6 @@ public final class MoreStreams {
           action.accept(e);
         });
       }
-      @Override public Spliterator<T> trySplit() {
-        return null;
-      }
     };
   }
 
