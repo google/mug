@@ -38,8 +38,10 @@ import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.Spliterator;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -401,9 +403,20 @@ public class MoreStreamsTest {
   @Test public void withSideEffect() {
     List<Integer> list = new ArrayList<>();
     Stream<Integer> stream = MoreStreams.withSideEffect(Stream.of(1, 3, 5), list::add);
+    assertThat(stream.isParallel()).isFalse();
     assertThat(list).isEmpty();
     assertThat(stream.skip(1).limit(1)).containsExactly(3);
-    assertThat(list).containsExactly(1, 3);
+    assertThat(list).containsExactly(1, 3).inOrder();;
+  }
+
+  @Test public void withSideEffect_parallel() {
+    ImmutableList<Integer> source = indexesFrom(1).limit(100).collect(toImmutableList());
+    Set<Integer> set = ConcurrentHashMap.newKeySet();
+    Stream<Integer> stream = MoreStreams.withSideEffect(source.stream(), set::add);
+    assertThat(stream.isParallel()).isFalse();
+    assertThat(set).isEmpty();
+    assertThat(stream.parallel()).containsExactlyElementsIn(source);
+    assertThat(set).containsExactlyElementsIn(source);
   }
 
   @Test public void testNulls() throws Exception {
