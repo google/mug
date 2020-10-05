@@ -15,6 +15,7 @@
 package com.google.mu.util.graph;
 
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
+import static com.google.mu.util.stream.MoreStreams.withSideEffect;
 import static java.util.Comparator.comparingDouble;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
@@ -89,9 +90,9 @@ public final class ShortestPath<N> {
     horizon.add(new ShortestPath<>(startNode));
     Map<N, ShortestPath<N>> seen = new HashMap<>();
     Set<N> settled = new HashSet<>();
-    return whileNotNull(horizon::poll)
-        .filter(path -> settled.add(path.to()))
-        .peek(path ->
+    return withSideEffect(
+        whileNotNull(horizon::poll).filter(path -> settled.add(path.to())),
+        path ->
             forEachPairOrNull(
                 findSuccessors.apply(path.to()),
                 (neighbor, distance) -> {

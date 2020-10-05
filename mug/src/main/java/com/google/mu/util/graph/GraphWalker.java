@@ -16,6 +16,7 @@ package com.google.mu.util.graph;
 
 import static com.google.mu.util.stream.MoreStreams.toListAndThen;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
+import static com.google.mu.util.stream.MoreStreams.withSideEffect;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayDeque;
@@ -298,7 +299,7 @@ public abstract class GraphWalker<N> extends Walker<N> {
               }
               return newNode;
             });
-        return walk.postOrder(startNodes).peek(currentPath::remove);
+        return withSideEffect(walk.postOrder(startNodes), currentPath::remove);
       }
 
       Stream<N> currentPath() {

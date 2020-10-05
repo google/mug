@@ -398,6 +398,14 @@ public class MoreStreamsTest {
     assertThrows(UnsupportedOperationException.class, list::clear);
   }
 
+  @Test public void withSideEffect() {
+    List<Integer> list = new ArrayList<>();
+    Stream<Integer> stream = MoreStreams.withSideEffect(Stream.of(1, 3, 5), list::add);
+    assertThat(list).isEmpty();
+    assertThat(stream.skip(1).limit(1)).containsExactly(3);
+    assertThat(list).containsExactly(1, 3);
+  }
+
   @Test public void testNulls() throws Exception {
     NullPointerTester tester = new NullPointerTester();
     asList(MoreStreams.class.getDeclaredMethods()).stream()

@@ -16,6 +16,11 @@ package com.google.mu.util.stream;
 
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static java.util.Objects.requireNonNull;
+import static java.util.Spliterator.DISTINCT;
+import static java.util.Spliterator.NONNULL;
+import static java.util.Spliterator.ORDERED;
+import static java.util.Spliterator.SORTED;
+import static java.util.Spliterator.SUBSIZED;
 
 import java.util.AbstractMap;
 import java.util.ArrayDeque;
@@ -380,6 +385,31 @@ public final class MoreStreams {
             if (element == null) return false;
             action.accept(element);
             return true;
+          }
+        }, false);
+  }
+
+  /**
+   * Returns a sequential stream with {@code sideEfect} attached on every element.
+   *
+   * <p>Unlike {@link Stream#peek}, which should only be used for debugging purpose,
+   * the side effect is guaranteed to be applied immediately before each output element, in the
+   * encounter order.
+   *
+   * @since 4.9
+   */
+  public static <T> Stream<T> withSideEffect(Stream<T> stream, Consumer<? super T> sideEffect) {
+    Spliterator<T> spliterator = stream.spliterator();
+    requireNonNull(sideEffect);
+    return StreamSupport.stream(
+        new AbstractSpliterator<T>(
+            spliterator.estimateSize(),
+            spliterator.characteristics() & (ORDERED | DISTINCT | NONNULL | SORTED | SUBSIZED)) {
+          @Override public boolean tryAdvance(Consumer<? super T> action) {
+            return spliterator.tryAdvance(e -> {
+              sideEffect.accept(e);
+              action.accept(e);
+            });
           }
         }, false);
   }
