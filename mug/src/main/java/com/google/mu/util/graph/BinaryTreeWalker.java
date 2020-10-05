@@ -15,6 +15,7 @@
 package com.google.mu.util.graph;
 
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
+import static com.google.mu.util.stream.MoreStreams.withSideEffect;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 
@@ -47,6 +48,7 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
    * Returns a lazy stream for breadth-first traversal from {@code root}.
    * Empty stream is returned if {@code roots} is empty.
    */
+  @Override
   public Stream<N> breadthFirstFrom(Iterable<? extends N> roots) {
     return topDown(roots, Queue::add);
   }
@@ -83,6 +85,7 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
    *           .collect(toListAndThen(Collections::reverse));
    * }</pre>
    */
+  @Override
   public Stream<N> postOrderFrom(Iterable<? extends N> roots) {
     return whileNotNull(new PostOrder(roots)::nextOrNull);
   }
@@ -105,8 +108,9 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
 
   private Stream<N> topDown(Iterable<? extends N> roots, InsertionOrder order) {
     Deque<N> horizon = toDeque(roots);
-    return whileNotNull(horizon::poll)
-        .peek(n -> {
+    return withSideEffect(
+        whileNotNull(horizon::poll),
+        n -> {
           N left = getLeft.apply(n);
           N right = getRight.apply(n);
           if (left != null) order.insertInto(horizon, left);

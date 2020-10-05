@@ -103,7 +103,8 @@ public final class MoreStreams {
     Queue<Stream<? extends T>> queue = new ArrayDeque<>();
     queue.add(Stream.of(seed));
     return whileNotNull(queue::poll)
-        .flatMap(seeds -> seeds.peek(
+        .flatMap(seeds -> withSideEffect(
+            seeds,
             v -> {
               Stream<? extends T> fanout = step.apply(v);
               if (fanout != null) {
