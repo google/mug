@@ -409,6 +409,21 @@ public class MoreStreamsTest {
     assertThat(list).containsExactly(1, 3).inOrder();;
   }
 
+  @Test public void withSideEffect_lateBinding() {
+    List<Integer> source = new ArrayList<>();
+    List<Integer> list = new ArrayList<>();
+    Stream<Integer> stream = MoreStreams.withSideEffect(source.stream(), list::add);
+    assertThat(stream.isParallel()).isFalse();
+    assertThat(list).isEmpty();
+
+    // now add to source
+    source.add(1);
+
+    // Change is reflected
+    assertThat(stream).containsExactly(1);
+    assertThat(list).containsExactly(1).inOrder();;
+  }
+
   @Test public void withSideEffect_parallel() {
     ImmutableList<Integer> source = indexesFrom(1).limit(100).collect(toImmutableList());
     Set<Integer> set = ConcurrentHashMap.newKeySet();

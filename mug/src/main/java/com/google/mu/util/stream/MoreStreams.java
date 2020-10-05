@@ -16,11 +16,6 @@ package com.google.mu.util.stream;
 
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static java.util.Objects.requireNonNull;
-import static java.util.Spliterator.DISTINCT;
-import static java.util.Spliterator.NONNULL;
-import static java.util.Spliterator.ORDERED;
-import static java.util.Spliterator.SORTED;
-import static java.util.Spliterator.SUBSIZED;
 
 import java.util.AbstractMap;
 import java.util.ArrayDeque;
@@ -399,19 +394,25 @@ public final class MoreStreams {
    * @since 4.9
    */
   public static <T> Stream<T> withSideEffect(Stream<T> stream, Consumer<? super T> sideEffect) {
-    Spliterator<T> spliterator = stream.spliterator();
+    requireNonNull(stream);
     requireNonNull(sideEffect);
-    return StreamSupport.stream(
-        new AbstractSpliterator<T>(
-            spliterator.estimateSize(),
-            spliterator.characteristics() & (ORDERED | DISTINCT | NONNULL | SORTED | SUBSIZED)) {
-          @Override public boolean tryAdvance(Consumer<? super T> action) {
-            return spliterator.tryAdvance(e -> {
-              sideEffect.accept(e);
-              action.accept(e);
-            });
-          }
-        }, false);
+    return StreamSupport.stream(() -> withSideEffect(stream.spliterator(), sideEffect), 0, false);
+  }
+
+  private static <T> Spliterator<T> withSideEffect(
+      Spliterator<T> spliterator, Consumer<? super T> sideEffect) {
+    return new AbstractSpliterator<T>(spliterator.estimateSize(), 0) {
+      @Override public boolean tryAdvance(Consumer<? super T> action) {
+        return spliterator.tryAdvance(e -> {
+          sideEffect.accept(e);
+          action.accept(e);
+        });
+      }
+      @Override public Spliterator<T> trySplit() {
+        Spliterator<T> split = spliterator.trySplit();
+        return split == null ? null : withSideEffect(split, sideEffect);
+      }
+    };
   }
 
   /**
