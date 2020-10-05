@@ -393,8 +393,8 @@ public final class MoreStreams {
    * Returns a sequential stream with {@code sideEfect} attached on every element.
    *
    * <p>Unlike {@link Stream#peek}, which should only be used for debugging purpose,
-   * the side effect is guaranteed to be applied immediately before each output element, in the
-   * encounter order.
+   * the side effect is guaranteed to be applied immediately before each output element,
+   * in encounter order.
    *
    * @since 4.9
    */
