@@ -103,7 +103,8 @@ public final class MoreStreams {
     Queue<Stream<? extends T>> queue = new ArrayDeque<>();
     queue.add(Stream.of(seed));
     return whileNotNull(queue::poll)
-        .flatMap(seeds -> seeds.peek(
+        .flatMap(seeds -> withSideEffect(
+            seeds,
             v -> {
               Stream<? extends T> fanout = step.apply(v);
               if (fanout != null) {
@@ -388,8 +389,7 @@ public final class MoreStreams {
    * Returns a sequential stream with {@code sideEfect} attached on every element.
    *
    * <p>Unlike {@link Stream#peek}, which should only be used for debugging purpose,
-   * the side effect is allowed to be interfering. The caller is still required to provide any
-   * necessary synchronization if the stream is to be consumed in parallel.
+   * the side effect is allowed to be interfering, and is guaranteed to be applied in encounter order.
    *
    * @since 4.9
    */
@@ -409,8 +409,7 @@ public final class MoreStreams {
         });
       }
       @Override public Spliterator<T> trySplit() {
-        Spliterator<T> split = spliterator.trySplit();
-        return split == null ? null : withSideEffect(split, sideEffect);
+        return null;
       }
     };
   }

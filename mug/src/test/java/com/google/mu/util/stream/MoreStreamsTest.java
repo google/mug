@@ -443,6 +443,16 @@ public class MoreStreamsTest {
     new ClassSanityTester().forAllPublicStaticMethods(MoreStreams.class).testNulls();
   }
 
+  @Test public void withSideEffectInOrder() {
+    int num = 10000;
+    ImmutableList<Integer> source =  indexesFrom(1).limit(num).collect(toImmutableList());
+    List<Integer> peeked = Collections.synchronizedList(new ArrayList<>());
+    List<Integer> result = Collections.synchronizedList(new ArrayList<>());
+    MoreStreams.withSideEffect(source.stream(), peeked::add).parallel().forEachOrdered(result::add);
+    assertThat(result).containsExactlyElementsIn(source).inOrder();
+    assertThat(peeked).containsExactlyElementsIn(source).inOrder();
+  }
+
   private static <K, V> BiCollector<K, V, ImmutableListMultimap<K, V>> toImmutableListMultimap() {
     return ImmutableListMultimap::toImmutableListMultimap;
   }
