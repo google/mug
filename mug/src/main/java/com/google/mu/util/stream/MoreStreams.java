@@ -389,7 +389,13 @@ public final class MoreStreams {
    * Returns a sequential stream with {@code sideEfect} attached on every element.
    *
    * <p>Unlike {@link Stream#peek}, which should only be used for debugging purpose,
-   * the side effect is allowed to be interfering, and is guaranteed to be applied in encounter order.
+   * the side effect is allowed to interfere with the source of the stream, and is
+   * guaranteed to be applied in encounter order.
+   *
+   * <p>If you have to resort to side effects, use this dedicated method instead of {@code peek()}
+   * or any other stream method. From the API specification, all methods defined by {@link Stream}
+   * are expected to be stateless, and should not cause or depend on side effects, because even for
+   * ordered, sequential streams, only the order of output is defined, not the order of evaluation.
    *
    * @since 4.9
    */

@@ -95,7 +95,7 @@ import com.google.mu.function.DualValuedFunction;
  * (which will receive both key and value) and another taking {@link Function} (which in this case
  * will receive only the key) . They operate equivalently otherwise.
  */
-public abstract class BiStream<K, V> {
+public abstract class BiStream<K, V> implements AutoCloseable {
   /**
    * Builder for {@link BiStream}. Similar to {@link Stream.Builder}, entries may not be added after
    * {@link #build} is called.
@@ -1172,6 +1172,13 @@ public abstract class BiStream<K, V> {
    */
   public abstract <R> R collect(BiCollector<? super K, ? super V, R> collector);
 
+  /**
+   * Closes any resources associated with this stream, tyipcally used in a try-with-resources
+   * statement.
+   */
+  @Override
+  public abstract void close();
+
   static <K, V> Map.Entry<K, V> kv(K key, V value) {
     return new AbstractMap.SimpleImmutableEntry<>(key, value);
   }
@@ -1299,6 +1306,11 @@ public abstract class BiStream<K, V> {
       return underlying.collect(collector.splitting(toKey::apply, toValue::apply));
     }
 
+    @Override
+    public final void close() {
+      underlying.close();
+    }
+
     final <T> Function<E, T> forEntry(BiFunction<? super K, ? super V, T> function) {
       requireNonNull(function);
       return e -> function.apply(toKey.apply(e), toValue.apply(e));
@@ -1398,6 +1410,13 @@ public abstract class BiStream<K, V> {
     public <R> R collect(BiCollector<? super K, ? super V, R> collector) {
       requireNonNull(collector);
       return new Spliteration().collectWith(collector);
+    }
+
+    @Override
+    public final void close() {
+      try (Stream<K> closeLeft = left) {
+        right.close();
+      }
     }
 
     private final class Spliteration {
