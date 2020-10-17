@@ -1191,6 +1191,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * <p>While {@link #collect(BiCollector)} may perform parallel reduction if the underlying
    * stream is parallel, this reduction is guaranteed to be sequential and single-threaded.
    *
+   * <p>Returns the populated {@code container} instance.
+   *
    * @since 4.9
    */
   public abstract <A> A collect(
