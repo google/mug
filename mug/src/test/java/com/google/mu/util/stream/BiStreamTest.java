@@ -746,19 +746,18 @@ public class BiStreamTest {
     ImmutableMap<String, Integer> result = BiStream.of("one", 1, "two", 2)
         .collect(
             ImmutableMap::<String, Integer>builder,
-            ImmutableMap.Builder::put,
-            ImmutableMap.Builder::build);
+            ImmutableMap.Builder::put)
+        .build();
     assertThat(result).containsExactly("one", 1, "two", 2);
   }
 
   @Test public void testCollect_concurrentBuilderReduction() {
     BiStream<String, Integer> parallel =
         BiStream.from(Stream.of(1, 2, 3, 4, 5).parallel(), Object::toString, identity());
-    ImmutableMap<String, Integer> result = parallel
+    ConcurrentMap<String, Integer> result = parallel
         .collect(
             ConcurrentHashMap<String, Integer>::new,
-            Map::put,
-            ImmutableMap::copyOf);
+            Map::put);
     assertThat(result).containsExactly("1", 1, "2", 2, "3", 3, "4", 4, "5", 5);
   }
 
