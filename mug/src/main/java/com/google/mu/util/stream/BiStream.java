@@ -1177,7 +1177,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   public abstract <R> R collect(BiCollector<? super K, ? super V, R> collector);
 
   /**
-   * Performs "builder" reduction, as in {@code
+   * Performs mutable reduction, as in {@code
    * collect(ImmutableMap::builder, ImmutableMap.Builder::put)}.
    *
    * <p>More realistically (since you'd likely use {@code collect(toImmutableMap())} instead for
