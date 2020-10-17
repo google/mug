@@ -50,6 +50,7 @@ import java.util.function.Function;
 import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.function.ToDoubleBiFunction;
 import java.util.function.ToIntBiFunction;
 import java.util.function.ToLongBiFunction;
@@ -95,7 +96,7 @@ import com.google.mu.function.DualValuedFunction;
  * (which will receive both key and value) and another taking {@link Function} (which in this case
  * will receive only the key) . They operate equivalently otherwise.
  */
-public abstract class BiStream<K, V> {
+public abstract class BiStream<K, V> implements AutoCloseable {
   /**
    * Builder for {@link BiStream}. Similar to {@link Stream.Builder}, entries may not be added after
    * {@link #build} is called.
@@ -1169,8 +1170,55 @@ public abstract class BiStream<K, V> {
    *
    * <p>In addition, check out {@link BiCollectors} for some other useful {@link BiCollector}
    * implementations.
+   *
+   * <p>Unlike {@link Stream#collect(Collector)}, this method is guaranteed to be sequential and
+   * single-threaded, hence the {@link Collector#combiner()} function is irrelevant.
    */
   public abstract <R> R collect(BiCollector<? super K, ? super V, R> collector);
+
+  /**
+   * Performs "builder" reduction, as in {@code
+   * collect(ImmutableMap::builder, ImmutableMap.Builder::put, ImmutableMap.Builder::build)}.
+   *
+   * <p>More realistically (since you'd likely use {@code collect(toImmutableMap())} instead for
+   * ImmutableMap), you could collect pairs into two repeated proto fields:
+   *
+   * <pre>{@code
+   *   BiStream.zip(shardRequests, shardResponses)
+   *       .filter(...)
+   *       .collect(
+   *           BatchResponse::newBuilder,
+   *           (builder, req, resp) -> builder.addShardRequest(req).addShardResponse(resp),
+   *           BatchResponse.Builder::build);
+   * }</pre>
+   *
+   * <p>While {@link #collect(BiCollector)} is always sequential, this reduction may be parallel
+   * if the underlying stream is parallel. For example:
+   *
+   * <pre>{@code
+   *   ImmutableMap<K, V> results =
+   *       biStream(experiments.parallel(), Experiment::featureId, Experiment::config)
+   *           .map(expensiveExperimentation)
+   *           .collect(ConcurrentHashMap::new, Map::put, ImmutableMap::copyOf);
+   * }</pre>
+   *
+   * @since 4.9
+   */
+  public final <B, R> R collect(
+      Supplier<B> builderSupplier,
+      BiAccumulator<B, ? super K, ? super V> accumulator,
+      Function<? super B, R> buildFunction) {
+    B builder = builderSupplier.get();
+    forEach(accumulator.into(builder));
+    return buildFunction.apply(builder);
+  }
+
+  /**
+   * Closes any resources associated with this stream, tyipcally used in a try-with-resources
+   * statement.
+   */
+  @Override
+  public abstract void close();
 
   static <K, V> Map.Entry<K, V> kv(K key, V value) {
     return new AbstractMap.SimpleImmutableEntry<>(key, value);
@@ -1299,6 +1347,11 @@ public abstract class BiStream<K, V> {
       return underlying.collect(collector.splitting(toKey::apply, toValue::apply));
     }
 
+    @Override
+    public final void close() {
+      underlying.close();
+    }
+
     final <T> Function<E, T> forEntry(BiFunction<? super K, ? super V, T> function) {
       requireNonNull(function);
       return e -> function.apply(toKey.apply(e), toValue.apply(e));
@@ -1398,6 +1451,13 @@ public abstract class BiStream<K, V> {
     public <R> R collect(BiCollector<? super K, ? super V, R> collector) {
       requireNonNull(collector);
       return new Spliteration().collectWith(collector);
+    }
+
+    @Override
+    public final void close() {
+      try (Stream<K> closeLeft = left) {
+        right.close();
+      }
     }
 
     private final class Spliteration {
