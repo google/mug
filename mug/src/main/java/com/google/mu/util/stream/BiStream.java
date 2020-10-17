@@ -1178,7 +1178,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
 
   /**
    * Performs "builder" reduction, as in {@code
-   * collect(ImmutableMap::builder, ImmutableMap.Builder::put, ImmutableMap.Builder::build)}.
+   * collect(ImmutableMap::builder, ImmutableMap.Builder::put)}.
    *
    * <p>More realistically (since you'd likely use {@code collect(toImmutableMap())} instead for
    * ImmutableMap), you could collect pairs into two repeated proto fields:
@@ -1188,29 +1188,29 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *       .filter(...)
    *       .collect(
    *           BatchResponse::newBuilder,
-   *           (builder, req, resp) -> builder.addShardRequest(req).addShardResponse(resp),
-   *           BatchResponse.Builder::build);
+   *           (builder, req, resp) -> builder.addShardRequest(req).addShardResponse(resp))
+   *       .build();
    * }</pre>
    *
    * <p>While {@link #collect(BiCollector)} is always sequential, this reduction may be parallel
    * if the underlying stream is parallel. For example:
    *
    * <pre>{@code
-   *   ImmutableMap<K, V> results =
+   *   ConcurrentMap<K, V> results =
    *       biStream(experiments.parallel(), Experiment::featureId, Experiment::config)
    *           .map(expensiveExperimentation)
-   *           .collect(ConcurrentHashMap::new, Map::put, ImmutableMap::copyOf);
+   *           .collect(ConcurrentHashMap::new, ConcurrentMap::putIfAbsent);
    * }</pre>
+   *
+   * In order to use parallel stream, make sure the {@code accumulator} function is thread safe.
    *
    * @since 4.9
    */
-  public final <B, R> R collect(
-      Supplier<B> builderSupplier,
-      BiAccumulator<B, ? super K, ? super V> accumulator,
-      Function<? super B, R> buildFunction) {
-    B builder = builderSupplier.get();
-    forEach(accumulator.into(builder));
-    return buildFunction.apply(builder);
+  public final <A> A collect(
+      Supplier<A> containerSupplier, BiAccumulator<? super A, ? super K, ? super V> accumulator) {
+    A container = containerSupplier.get();
+    forEach(accumulator.into(container));
+    return container;
   }
 
   /**
