@@ -50,6 +50,7 @@ import java.util.function.Function;
 import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.function.ToDoubleBiFunction;
 import java.util.function.ToIntBiFunction;
 import java.util.function.ToLongBiFunction;
@@ -1169,8 +1170,48 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *
    * <p>In addition, check out {@link BiCollectors} for some other useful {@link BiCollector}
    * implementations.
+   *
+   * <p>Unlike {@link Stream#collect(Collector)}, this method is guaranteed to be sequential and
+   * single-threaded, hence the {@link Collector#combiner()} function is irrelevant.
    */
   public abstract <R> R collect(BiCollector<? super K, ? super V, R> collector);
+
+  /**
+   * Performs "builder" reduction, as in {@code
+   * collect(ImmutableMap::builder, ImmutableMap.Builder::put, ImmutableMap.Builder::build)}.
+   *
+   * <p>More realistically (since you'd likely use {@code collect(toImmutableMap())} instead for
+   * ImmutableMap), you could collect pairs into two repeated proto fields:
+   *
+   * <pre>{@code
+   *   BiStream.zip(shardRequests, shardResponses)
+   *       .filter(...)
+   *       .collect(
+   *           BatchResponse::newBuilder,
+   *           (builder, req, resp) -> builder.addShardRequest(req).addShardResponse(resp),
+   *           BatchResponse.Builder::build);
+   * }</pre>
+   *
+   * <p>While {@link #collect(BiCollector)} is always sequential, this reduction may be parallel
+   * if the underlying stream is parallel. For example:
+   *
+   * <pre>{@code
+   *   ImmutableMap<K, V> results =
+   *       biStream(experiments.parallel(), Experiment::featureId, Experiment::config)
+   *           .map(expensiveExperimentation)
+   *           .collect(ConcurrentHashMap::new, Map::put, ImmutableMap::copyOf);
+   * }</pre>
+   *
+   * @since 4.9
+   */
+  public final <B, R> R collect(
+      Supplier<B> builderSupplier,
+      BiAccumulator<B, ? super K, ? super V> accumulator,
+      Function<? super B, R> buildFunction) {
+    B builder = builderSupplier.get();
+    forEach(accumulator.into(builder));
+    return buildFunction.apply(builder);
+  }
 
   /**
    * Closes any resources associated with this stream, tyipcally used in a try-with-resources

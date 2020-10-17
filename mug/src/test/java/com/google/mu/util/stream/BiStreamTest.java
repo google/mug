@@ -742,6 +742,26 @@ public class BiStreamTest {
     assertThrows(IllegalStateException.class, () -> builder.add("foo", "bar"));
   }
 
+  @Test public void testCollect_builderReduction() {
+    ImmutableMap<String, Integer> result = BiStream.of("one", 1, "two", 2)
+        .collect(
+            ImmutableMap::<String, Integer>builder,
+            ImmutableMap.Builder::put,
+            ImmutableMap.Builder::build);
+    assertThat(result).containsExactly("one", 1, "two", 2);
+  }
+
+  @Test public void testCollect_concurrentBuilderReduction() {
+    BiStream<String, Integer> parallel =
+        BiStream.from(Stream.of(1, 2, 3, 4, 5).parallel(), Object::toString, identity());
+    ImmutableMap<String, Integer> result = parallel
+        .collect(
+            ConcurrentHashMap<String, Integer>::new,
+            Map::put,
+            ImmutableMap::copyOf);
+    assertThat(result).containsExactly("1", 1, "2", 2, "3", 3, "4", 4, "5", 5);
+  }
+
   static<K,V> MultimapSubject assertKeyValues(BiStream<K, V> stream) {
     Multimap<?, ?> multimap = stream.collect(new BiCollector<K, V, Multimap<K, V>>() {
       @Override
