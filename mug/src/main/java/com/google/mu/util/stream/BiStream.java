@@ -50,7 +50,6 @@ import java.util.function.Function;
 import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.function.ToDoubleBiFunction;
 import java.util.function.ToIntBiFunction;
 import java.util.function.ToLongBiFunction;
@@ -1170,15 +1169,12 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *
    * <p>In addition, check out {@link BiCollectors} for some other useful {@link BiCollector}
    * implementations.
-   *
-   * <p>Unlike {@link Stream#collect(Collector)}, this method is guaranteed to be sequential and
-   * single-threaded, hence the {@link Collector#combiner()} function is never used.
    */
   public abstract <R> R collect(BiCollector<? super K, ? super V, R> collector);
 
   /**
-   * Performs mutable reduction, as in {@code
-   * collect(ImmutableMap::builder, ImmutableMap.Builder::put)}.
+   * Performs collction, as in {@code
+   * collect(ImmutableMap.builder(), ImmutableMap.Builder::put)}.
    *
    * <p>More realistically (since you'd likely use {@code collect(toImmutableMap())} instead for
    * ImmutableMap), you could collect pairs into two repeated proto fields:
@@ -1187,31 +1183,18 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *   BiStream.zip(shardRequests, shardResponses)
    *       .filter(...)
    *       .collect(
-   *           BatchResponse::newBuilder,
+   *           BatchResponse.newBuilder(),
    *           (builder, req, resp) -> builder.addShardRequest(req).addShardResponse(resp))
    *       .build();
    * }</pre>
    *
-   * <p>While {@link #collect(BiCollector)} is always sequential, this reduction may be parallel
-   * if the underlying stream is parallel. For example:
-   *
-   * <pre>{@code
-   *   ConcurrentMap<K, V> results =
-   *       biStream(experiments.parallel(), Experiment::featureId, Experiment::config)
-   *           .map(expensiveExperimentation)
-   *           .collect(ConcurrentHashMap::new, ConcurrentMap::putIfAbsent);
-   * }</pre>
-   *
-   * In order to use parallel stream, make sure the {@code accumulator} function is thread safe.
+   * <p>While {@link #collect(BiCollector)} may use parallel reduction if the underlying stream
+   * is parallel, this reduction is guaranteed to be sequential and single-threaded.
    *
    * @since 4.9
    */
-  public final <A> A collect(
-      Supplier<A> containerSupplier, BiAccumulator<? super A, ? super K, ? super V> accumulator) {
-    A container = containerSupplier.get();
-    forEach(accumulator.into(container));
-    return container;
-  }
+  public abstract <A> A collect(
+      A container, BiAccumulator<? super A, ? super K, ? super V> accumulator);
 
   /**
    * Closes any resources associated with this stream, tyipcally used in a try-with-resources
@@ -1348,6 +1331,15 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     }
 
     @Override
+    public final <A> A collect(A container, BiAccumulator<? super A, ? super K, ? super V> accumulator) {
+      requireNonNull(accumulator);
+      underlying
+          .sequential()
+          .forEachOrdered(e -> accumulator.accumulate(container, toKey.apply(e), toValue.apply(e)));
+      return container;
+    }
+
+    @Override
     public final void close() {
       underlying.close();
     }
@@ -1451,6 +1443,12 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     public <R> R collect(BiCollector<? super K, ? super V, R> collector) {
       requireNonNull(collector);
       return new Spliteration().collectWith(collector);
+    }
+
+    @Override
+    public final <A> A collect(A container, BiAccumulator<? super A, ? super K, ? super V> accumulator) {
+      forEach(accumulator.into(container));
+      return container;
     }
 
     @Override
