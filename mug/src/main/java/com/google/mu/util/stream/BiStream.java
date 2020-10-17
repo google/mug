@@ -1172,7 +1172,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * implementations.
    *
    * <p>Unlike {@link Stream#collect(Collector)}, this method is guaranteed to be sequential and
-   * single-threaded, hence the {@link Collector#combiner()} function is irrelevant.
+   * single-threaded, hence the {@link Collector#combiner()} function is never used.
    */
   public abstract <R> R collect(BiCollector<? super K, ? super V, R> collector);
 
