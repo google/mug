@@ -1209,7 +1209,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   public final <A> A collect(
       Supplier<A> containerSupplier, BiAccumulator<? super A, ? super K, ? super V> accumulator) {
     A container = containerSupplier.get();
-    forEach(accumulator.into(container));
+    forEachOrdered(accumulator.into(container));
     return container;
   }
 
