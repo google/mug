@@ -14,6 +14,8 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.function.BiConsumer;
 
 /** Interface modeling a builder funcction that accepts two parameters. */
@@ -24,6 +26,6 @@ public interface BiAccumulator<C, L, R> {
 
   /** Returns a {@link BiConsumer} that accumulates pairs into {@code container}. */
   default BiConsumer<L, R> into(C container) {
-    return (l, r) -> accumulate(container, l, r);
+    return (l, r) -> accumulate(requireNonNull(container), l, r);
   }
 }
