@@ -17,13 +17,11 @@ package com.google.mu.util.stream;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.stream.BiCollectors.groupingBy;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.MoreStreams.flatMapping;
 import static com.google.mu.util.stream.MoreStreams.flattening;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
-import static com.google.mu.util.stream.MoreStreams.mapping;
 import static com.google.mu.util.stream.MoreStreams.toListAndThen;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Arrays.asList;
@@ -285,12 +283,6 @@ public class MoreStreamsTest {
         () -> translations.stream()
             .map(Translation::dictionary)
             .collect(flattening(Map::entrySet, toMap())));
-  }
-
-  @Test public void mapping_dualValued() {
-    ImmutableListMultimap<String, String> params = Stream.of("name=joe", "age =10")
-        .collect(mapping(first('=')::splitThenTrim, toImmutableListMultimap()));
-    assertThat(params).containsExactly("name", "joe", "age", "10");
   }
 
   @Test public void testIndexesFrom() {

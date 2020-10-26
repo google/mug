@@ -1,4 +1,5 @@
 /*****************************************************************************
+ * Copyright (C) google.com                                                *
  * ------------------------------------------------------------------------- *
  * Licensed under the Apache License, Version 2.0 (the "License");           *
  * you may not use this file except in compliance with the License.          *
@@ -12,24 +13,10 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.util.stream;
+package com.google.mu.function;
 
-import static java.util.Objects.requireNonNull;
-
-import java.util.function.BiConsumer;
-
-/**
- * Interface modeling a builder funcction that accepts two parameters.
- *
- * @since 4.9
- */
+/** A binary predicate that can throw checked exceptions. */
 @FunctionalInterface
-public interface BiAccumulator<C, L, R> {
-  void accumulate(C container, L left, R right);
-
-
-  /** Returns a {@link BiConsumer} that accumulates pairs into {@code container}. */
-  default BiConsumer<L, R> into(C container) {
-    return (l, r) -> accumulate(requireNonNull(container), l, r);
-  }
+public interface CheckedBiPredicate<A, B, E extends Throwable> {
+  boolean test(A a, B b) throws E;
 }

@@ -1160,32 +1160,25 @@ public class SubstringTest {
 
   @Test
   public void split_cannotSplit() {
-    IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class, () -> first('=').split("foo:bar", String::concat));
-    assertThat(thrown).hasMessageThat().isEqualTo("Pattern first('=') not found in 'foo:bar'.");
+    assertThat(first('=').split("foo:bar")).isEqualTo(BiOptional.empty());
   }
 
   @Test
   public void split_canSplit() {
-    assertThat(first('=').split(" foo=bar", (String k, String v) -> k)).isEqualTo(" foo");
-    assertThat(first('=').split("foo=bar ", (String k, String v) -> v)).isEqualTo("bar ");
-    assertThat(first('=').split(" foo=bar", (String k, String v) -> k)).isEqualTo(" foo");
+    assertThat(first('=').split(" foo=bar").map((String k, String v) -> k)).hasValue(" foo");
+    assertThat(first('=').split("foo=bar ").map((String k, String v) -> v)).hasValue("bar ");
+    assertThat(first('=').split(" foo=bar").map((String k, String v) -> k)).hasValue(" foo");
   }
 
   @Test
   public void splitThenTrim_intoTwoParts_cannotSplit() {
-    IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> first('=').splitThenTrim("foo:bar", String::concat));
-    assertThat(thrown).hasMessageThat().contains("foo:bar");
+    assertThat(first('=').splitThenTrim("foo:bar")).isEqualTo(BiOptional.empty());
   }
 
   @Test
   public void splitThenTrim_intoTwoParts_canSplit() {
-    assertThat(first('=').splitThenTrim(" foo =bar", (String k, String v) -> k)).isEqualTo("foo");
-    assertThat(first('=').splitThenTrim("foo = bar ", (String k, String v) -> v)).isEqualTo("bar");
+    assertThat(first('=').splitThenTrim(" foo =bar").map((String k, String v) -> k)).hasValue("foo");
+    assertThat(first('=').splitThenTrim("foo = bar ").map((String k, String v) -> v)).hasValue("bar");
   }
 
   @Test

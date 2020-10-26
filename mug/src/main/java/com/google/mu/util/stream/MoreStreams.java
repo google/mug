@@ -429,7 +429,9 @@ public final class MoreStreams {
    * }</pre>
    *
    * @since 4.6
+   * @deprecated
    */
+  @Deprecated
   public static <T, K, V, R> Collector<T, ?, R> mapping(
       DualValuedFunction<? super T, ? extends K, ? extends V> mapper,
       BiCollector<K, V, R> downstream) {

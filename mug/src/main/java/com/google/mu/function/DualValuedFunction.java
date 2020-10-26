@@ -32,8 +32,9 @@ import java.util.function.Function;
  * @param <T1> the first output type
  * @param <T2> the second output type
  *
- * @since 4.6
+ * @deprecated
  */
+@Deprecated
 @FunctionalInterface
 public interface DualValuedFunction<F, T1, T2> {
   /**

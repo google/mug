@@ -218,6 +218,24 @@ public final class Optionals {
   }
 
   /**
+   * Runs {@code action} if the pair is present. Allows chaining multiple {@code BiOptional}
+   * and {@code Optional} together. For example:
+   * <pre>{@code
+   * ifPresent(both(firstName, lastName), (f, l) -> System.out.println(...))
+   *     .or(() -> ifPresent(firstName, f -> ...))
+   *     .or(() -> ifPresent(lastName, l -> ...))
+   *     .orElse(...);
+   * }</pre>
+   */
+  public static<A, B, E extends Throwable> Premise ifPresent(
+      BiOptional<A, B> optional, CheckedBiConsumer<? super A, ? super B, E> consumer) throws E{
+    requireNonNull(optional);
+    requireNonNull(consumer);
+    optional.ifPresent(consumer);
+    return optional.isPresent() ? Conditional.TRUE : Conditional.FALSE;
+  }
+
+  /**
    * Maps {@code left} and {@code right} using {@code mapper} if both are present.
    * Returns an {@link Optional} wrapping the result of {@code mapper} if non-null, or else returns
    * {@code Optional.empty()}.

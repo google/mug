@@ -63,6 +63,7 @@ import java.util.stream.Stream;
 
 import com.google.mu.function.BiComparator;
 import com.google.mu.function.DualValuedFunction;
+import com.google.mu.util.BiOptional;
 
 /**
  * A class similar to {@link Stream}, but operating over a sequence of pairs of objects.
@@ -345,7 +346,9 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * middle of a long stream pipeline, when performance isn't critical.
    *
    * @since 4.6
+   * @deprecated
    */
+  @Deprecated
   public static <E, K, V> Collector<E, ?, BiStream<K, V>> toBiStream(
       DualValuedFunction<? super E, ? extends K, ? extends V> mapper) {
     requireNonNull(mapper);
@@ -566,7 +569,9 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * }</pre>
    *
    * @since 4.6
+   * @deprecated
    */
+  @Deprecated
   public static <T, K, V> BiStream<K, V> from(
       Collection<T> elements,
       DualValuedFunction<? super T, ? extends K, ? extends V> mapper) {
@@ -669,7 +674,9 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * {@code valueMapper} function returns empty, the pair is discarded.
    *
    * @since 4.7
+   * @deprecated Use {@link #mapIfPresent(BiFunction) instead.
    */
+  @Deprecated
   public <K2, V2> BiStream<K2, V2> mapIfPresent(
       BiFunction<? super K, ? super V, ? extends Optional<? extends K2>> keyMapper,
       BiFunction<? super K, ? super V, ? extends Optional<? extends V2>> valueMapper) {
@@ -678,6 +685,21 @@ public abstract class BiStream<K, V> implements AutoCloseable {
         .filterKeys(Objects::nonNull)
         .<V2>mapValues(BiStream::orElseNull)
         .filterValues(Objects::nonNull);
+  }
+
+  /**
+   * Returns a {@code BiStream} consisting of the results of applying {@code keyMapper} and {@code
+   * valueMapper} to the pairs in this {@code BiStream}. If either {@code keyMapper} function or
+   * {@code valueMapper} function returns empty, the pair is discarded.
+   *
+   * @since 4.9
+   */
+  public <K2, V2> BiStream<K2, V2> mapIfPresent(
+      BiFunction<? super K, ? super V, ? extends BiOptional<? extends K2, ? extends V2>> mapper) {
+    return from(
+        mapToObj(mapper)
+            .filter(BiOptional::isPresent)
+            .map(optional -> optional.map(BiStream::kv).get()));
   }
 
   /**
@@ -1064,6 +1086,20 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
+   * Returns the first pair from this stream, or {@code BiOptional.empty()} if the stream is empty.
+   *
+   * @since 4.9
+   */
+  public abstract BiOptional<K, V> findFirst();
+
+  /**
+   * Returns any pair from this stream, or {@code BiOptional.empty()} if the stream is empty.
+   *
+   * @since 4.9
+   */
+  public abstract BiOptional<K, V> findAny();
+
+  /**
    * Returns a {@code BiStream} consisting of the only the first {@code maxSize} pairs of this
    * stream.
    */
@@ -1318,6 +1354,16 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     }
 
     @Override
+    public final BiOptional<K, V> findFirst() {
+      return BiOptional.from(underlying.findFirst(), toKey::apply, toValue::apply);
+    }
+
+    @Override
+    public final BiOptional<K, V> findAny() {
+      return BiOptional.from(underlying.findAny(), toKey::apply, toValue::apply);
+    }
+
+    @Override
     public BiStream<K, V> limit(int maxSize) {
       return from(underlying.limit(maxSize), toKey, toValue);
     }
@@ -1429,6 +1475,16 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     public boolean anyMatch(BiPredicate<? super K, ? super V> predicate) {
       requireNonNull(predicate);
       return new Spliteration().any(true, predicate); // any true means true
+    }
+
+    @Override
+    public final BiOptional<K, V> findFirst() {
+      return BiOptional.both(left.findFirst(), right.findFirst());
+    }
+
+    @Override
+    public final BiOptional<K, V> findAny() {
+      return BiOptional.both(left.findAny(), right.findAny());
     }
 
     @Override
