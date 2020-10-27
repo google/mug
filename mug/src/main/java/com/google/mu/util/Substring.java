@@ -679,7 +679,7 @@ public final class Substring {
      * example:
      *
      * <pre>{@code
-     * KeyValue keyValue = first('=').split("name=joe").join(KeyValue::new);
+     * Optional<KeyValue> keyValue = first('=').split("name=joe").join(KeyValue::new);
      * }</pre>
      *
      * <p>If you need to trim the key-value pairs, use {@link #splitThenTrim}.
@@ -699,7 +699,7 @@ public final class Substring {
      * leading and trailing whitespaces trimmed. For example:
      *
      * <pre>{@code
-     * KeyValue keyValue = first('=').splitThenTrim("name = joe ").join(KeyValue::new);
+     * Optional<KeyValue> keyValue = first('=').splitThenTrim("name = joe ").join(KeyValue::new);
      * }</pre>
      *
      * <p>If you are trying to parse a string to a key-value data structure ({@code Map}, {@code
