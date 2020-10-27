@@ -334,13 +334,6 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * Returns a {@code Collector} that splits each input element into two values and collects them
    * into a {@link BiStream}.
    *
-   * <pre>{@code
-   * ImmutableSetMultimap<String, String> keyValues =
-   *     lines.stream()
-   *         .collect(toBiStream(first('=')::split))
-   *         .collect(ImmutableSetMultimap::toImmutableSetMultimap);
-   * }</pre>
-   *
    * <p>Note that it's more efficient to use {@code BiStream.from(stream, mapper)} than
    * {@code stream.collect(toBiStream(mapper))}. The latter is intended to be used in the
    * middle of a long stream pipeline, when performance isn't critical.
@@ -562,12 +555,6 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * Returns a {@code BiStream} of the elements from {@code stream}, each transformed to a pair of
    * values with {@code mapper} function.
    *
-   * <pre>{@code
-   * ImmutableSetMultimap<String, String> keyValues =
-   *     BiStream.from(lines, first('=')::splitThenTrim)
-   *         .collect(ImmutableSetMultimap::toImmutableSetMultimap);
-   * }</pre>
-   *
    * @since 4.6
    * @deprecated
    */
@@ -581,12 +568,6 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   /**
    * Returns a {@code BiStream} of the elements from {@code stream}, each transformed to a pair of
    * values with {@code mapper} function.
-   *
-   * <pre>{@code
-   * ImmutableSetMultimap<String, String> keyValues =
-   *     BiStream.from(lines, first('=')::splitThenTrim)
-   *         .collect(ImmutableSetMultimap::toImmutableSetMultimap);
-   * }</pre>
    *
    * @since 4.6
    */
