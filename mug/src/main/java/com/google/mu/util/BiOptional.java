@@ -118,7 +118,10 @@ public abstract class BiOptional<A, B> {
   /** Returns true if the pair is present. */
   public abstract boolean isPresent();
 
-  /** Runs this instance if not empty, or else returns the result of {@code alternative} supplier. */
+  /**
+   * Returns this instance if not empty,
+   * or else returns the result of {@code alternative} supplier.
+   */
   public abstract <E extends Throwable> BiOptional<A, B> or(
       CheckedSupplier<? extends BiOptional<? extends A, ? extends B>, E> alternative) throws E;
 
