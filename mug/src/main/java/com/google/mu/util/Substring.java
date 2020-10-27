@@ -685,7 +685,7 @@ public final class Substring {
      * <p>To split a string into multiple substrings delimited by a delimiter, use {@link #delimit}.
      *
      * @throws IllegalArgumentException if this separator pattern isn't found in {@code string}.
-     * @since 4.9
+     * @since 5.0
      */
     public final BiOptional<String, String> split(String string) {
       Match match = match(string);
@@ -728,7 +728,7 @@ public final class Substring {
      * <p>To split a string into multiple substrings delimited by a delimiter, use {@link #delimit}.
      *
      * @throws IllegalArgumentException if this separator pattern isn't found in {@code string}.
-     * @since 4.9
+     * @since 5.0
      */
     public final BiOptional<String, String> splitThenTrim(String string) {
       Match match = match(string);

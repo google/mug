@@ -226,6 +226,8 @@ public final class Optionals {
    *     .or(() -> ifPresent(lastName, l -> ...))
    *     .orElse(...);
    * }</pre>
+   *
+   * @since 5.0
    */
   public static<A, B, E extends Throwable> Premise ifPresent(
       BiOptional<A, B> optional, CheckedBiConsumer<? super A, ? super B, E> consumer) throws E{

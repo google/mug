@@ -42,33 +42,56 @@ public class BiOptionalTest {
   }
 
   @Test
-  public void map_empty() {
-    assertThat(BiOptional.empty().map((a, b) -> "test")).isEmpty();
+  public void join_empty() {
+    assertThat(BiOptional.empty().join((a, b) -> "test")).isEmpty();
   }
 
   @Test
-  public void map_notEmpty() {
-    assertThat(BiOptional.of(1, 2).map((a, b) -> a + b)).hasValue(3);
+  public void join_notEmpty() {
+    assertThat(BiOptional.of(1, 2).join((a, b) -> a + b)).hasValue(3);
   }
 
   @Test
-  public void map_notEmptyMappedToNull() {
-    assertThat(BiOptional.of(1, 2).map((a, b) -> null)).isEmpty();
+  public void join_notEmptyMappedToNull() {
+    assertThat(BiOptional.of(1, 2).join((a, b) -> null)).isEmpty();
+  }
+
+  @Test
+  public void flatJoin_empty() {
+    assertThat(BiOptional.empty().flatJoin((a, b) -> Optional.of("test"))).isEmpty();
+  }
+
+  @Test
+  public void flatJoin_notEmptyMappedToEmpty() {
+    assertThat(BiOptional.of(1, 2).flatJoin((a, b) -> Optional.empty())).isEmpty();
+  }
+
+  @Test
+  public void flatJoin_notEmptyMappedToNonEmpty() {
+    assertThat(BiOptional.of(1, 2).flatJoin((a, b) -> Optional.of(a + b))).hasValue(3);
+  }
+
+  @Test
+  public void flatJoin_notEmptyMappedToNull() {
+    assertThrows(NullPointerException.class, () -> BiOptional.of(1, 2).flatJoin((a, b) -> null));
   }
 
   @Test
   public void flatMap_empty() {
-    assertThat(BiOptional.empty().flatMap((a, b) -> Optional.of("test"))).isEmpty();
+    assertThat(BiOptional.empty().flatMap((a, b) -> BiOptional.of(b, a)))
+        .isEqualTo(BiOptional.empty());
   }
 
   @Test
   public void flatMap_notEmptyMappedToEmpty() {
-    assertThat(BiOptional.of(1, 2).flatMap((a, b) -> Optional.empty())).isEmpty();
+    assertThat(BiOptional.of(1, 2).flatMap((a, b) -> BiOptional.empty()))
+        .isEqualTo(BiOptional.empty());
   }
 
   @Test
   public void flatMap_notEmptyMappedToNonEmpty() {
-    assertThat(BiOptional.of(1, 2).flatMap((a, b) -> Optional.of(a + b))).hasValue(3);
+    assertThat(BiOptional.of(1, 2).flatMap((a, b) -> BiOptional.of(b, a)))
+        .isEqualTo(BiOptional.of(2, 1));
   }
 
   @Test
@@ -89,6 +112,30 @@ public class BiOptionalTest {
   @Test
   public void filter_notEmptyFilteredIn() {
     assertThat(BiOptional.of(1, 2).filter((a, b) -> a < b)).isEqualTo(BiOptional.of(1, 2));
+  }
+
+  @Test
+  public void or_emptyOrEmpty() {
+    assertThat(BiOptional.empty().or(BiOptional::empty))
+        .isEqualTo(BiOptional.empty());
+  }
+
+  @Test
+  public void or_emptyOrNonEmpty() {
+    assertThat(BiOptional.empty().or(() -> BiOptional.of(1, "one")))
+        .isEqualTo(BiOptional.of(1, "one"));
+  }
+
+  @Test
+  public void or_nonEmptyOrEmpty() {
+    assertThat(BiOptional.of(1, "one").or(BiOptional::empty))
+        .isEqualTo(BiOptional.of(1, "one"));
+  }
+
+  @Test
+  public void or_nonEmptyOrNonEmpty() {
+    assertThat(BiOptional.of(1, "one").or(() -> BiOptional.of(2, "two")))
+        .isEqualTo(BiOptional.of(1, "one"));
   }
 
   @Test

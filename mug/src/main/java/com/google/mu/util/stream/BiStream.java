@@ -692,14 +692,14 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * valueMapper} to the pairs in this {@code BiStream}. If either {@code keyMapper} function or
    * {@code valueMapper} function returns empty, the pair is discarded.
    *
-   * @since 4.9
+   * @since 5.0
    */
   public <K2, V2> BiStream<K2, V2> mapIfPresent(
       BiFunction<? super K, ? super V, ? extends BiOptional<? extends K2, ? extends V2>> mapper) {
     return from(
         mapToObj(mapper)
             .filter(BiOptional::isPresent)
-            .map(optional -> optional.map(BiStream::kv).get()));
+            .map(optional -> optional.join(BiStream::kv).get()));
   }
 
   /**
@@ -1088,14 +1088,14 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   /**
    * Returns the first pair from this stream, or {@code BiOptional.empty()} if the stream is empty.
    *
-   * @since 4.9
+   * @since 5.0
    */
   public abstract BiOptional<K, V> findFirst();
 
   /**
    * Returns any pair from this stream, or {@code BiOptional.empty()} if the stream is empty.
    *
-   * @since 4.9
+   * @since 5.0
    */
   public abstract BiOptional<K, V> findAny();
 
@@ -1229,7 +1229,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *
    * <p>Returns the populated {@code container} instance.
    *
-   * @since 4.9
+   * @since 5.0
    */
   public abstract <A> A collect(
       A container, BiAccumulator<? super A, ? super K, ? super V> accumulator);

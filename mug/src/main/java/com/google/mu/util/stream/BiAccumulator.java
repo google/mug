@@ -21,7 +21,7 @@ import java.util.function.BiConsumer;
 /**
  * Interface modeling a builder funcction that accepts two parameters.
  *
- * @since 4.9
+ * @since 5.0
  */
 @FunctionalInterface
 public interface BiAccumulator<C, L, R> {
