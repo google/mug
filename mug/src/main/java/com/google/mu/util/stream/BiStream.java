@@ -674,7 +674,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * {@code valueMapper} function returns empty, the pair is discarded.
    *
    * @since 4.7
-   * @deprecated Use {@link #mapIfPresent(BiFunction) instead.
+   * @deprecated Use {@link #mapIfPresent(BiFunction)} instead.
    */
   @Deprecated
   public <K2, V2> BiStream<K2, V2> mapIfPresent(
@@ -688,9 +688,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Returns a {@code BiStream} consisting of the results of applying {@code keyMapper} and {@code
-   * valueMapper} to the pairs in this {@code BiStream}. If either {@code keyMapper} function or
-   * {@code valueMapper} function returns empty, the pair is discarded.
+   * Returns a {@code BiStream} consisting of the results of applying {@code mapper} function to
+   * the pairs in this {@code BiStream}. If {@code mapper} returns empty, the pair is discarded.
    *
    * @since 5.0
    */
