@@ -80,7 +80,9 @@ import com.google.mu.util.stream.MoreStreams;
  * To split a stream of strings into key-value pairs:
  *
  * <pre>{@code
- *   ImmutableListMultimap<String, String> tags = BiStream.from(lines, first(':')::splitThenTrim)
+ *   ImmutableListMultimap<String, String> tags = lines.stream()
+ *       .map(first(':')::splitThenTrim)
+ *       .collect(concatenating(BiOptional::stream))
  *       .collect(ImmutableListMultimap::toImmutableListMultimap);
  * }</pre>
  *
@@ -677,7 +679,7 @@ public final class Substring {
      * example:
      *
      * <pre>{@code
-     * KeyValue keyValue = first('=').split("name=joe").map(KeyValue::new);
+     * KeyValue keyValue = first('=').split("name=joe").join(KeyValue::new);
      * }</pre>
      *
      * <p>If you need to trim the key-value pairs, use {@link #splitThenTrim}.
@@ -697,7 +699,7 @@ public final class Substring {
      * leading and trailing whitespaces trimmed. For example:
      *
      * <pre>{@code
-     * KeyValue keyValue = first('=').splitThenTrim("name = joe ", KeyValue::new);
+     * KeyValue keyValue = first('=').splitThenTrim("name = joe ").join(KeyValue::new);
      * }</pre>
      *
      * <p>If you are trying to parse a string to a key-value data structure ({@code Map}, {@code
