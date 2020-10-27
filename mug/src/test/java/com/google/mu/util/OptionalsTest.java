@@ -2,13 +2,13 @@ package com.google.mu.util;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static com.google.mu.util.Optionals.ifPresent;
 import static com.google.mu.util.Optionals.flatMapBoth;
+import static com.google.mu.util.Optionals.ifPresent;
 import static com.google.mu.util.Optionals.mapBoth;
 import static com.google.mu.util.Optionals.optional;
 import static com.google.mu.util.Optionals.optionally;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -182,6 +182,16 @@ public class OptionalsTest {
     verify(action).run("foo", "bar");
   }
 
+  @Test public void ifPresent_biOptional_empty() {
+    assertThat(ifPresent(BiOptional.empty(), action::run)).isEqualTo(Conditional.FALSE);
+    verify(action, never()).run(any(), any());
+  }
+
+  @Test public void ifPresent_biOptional_notEmpty() {
+    assertThat(ifPresent(BiOptional.of("foo", "bar"), action::run)).isEqualTo(Conditional.TRUE);
+    verify(action).run("foo", "bar");
+  }
+
   @Test public void map_leftIsEmpty() {
     assertThat(mapBoth(Optional.empty(), Optional.of("bar"), action::run)).isEqualTo(Optional.empty());
     verify(action, never()).run(any(), any());
@@ -233,6 +243,7 @@ public class OptionalsTest {
         .setDefault(OptionalInt.class, OptionalInt.empty())
         .setDefault(OptionalLong.class, OptionalLong.empty())
         .setDefault(OptionalDouble.class, OptionalDouble.empty())
+        .setDefault(BiOptional.class, BiOptional.of(1, "one"))
         .ignore(Optionals.class.getMethod("optional", boolean.class, Object.class))
         .testAllPublicStaticMethods(Optionals.class);
     new NullPointerTester()
@@ -240,6 +251,7 @@ public class OptionalsTest {
         .setDefault(OptionalInt.class, OptionalInt.of(123))
         .setDefault(OptionalLong.class, OptionalLong.of(123))
         .setDefault(OptionalDouble.class, OptionalDouble.of(123))
+        .setDefault(BiOptional.class, BiOptional.of(1, "one"))
         .ignore(Optionals.class.getMethod("optional", boolean.class, Object.class))
         .testAllPublicStaticMethods(Optionals.class);
     new ClassSanityTester()
@@ -247,15 +259,17 @@ public class OptionalsTest {
         .setDefault(OptionalInt.class, OptionalInt.empty())
         .setDefault(OptionalLong.class, OptionalLong.empty())
         .setDefault(OptionalDouble.class, OptionalDouble.empty())
+        .setDefault(BiOptional.class, BiOptional.of(1, "one"))
         .forAllPublicStaticMethods(Optionals.class).testNulls();
     new ClassSanityTester()
         .setDefault(Optional.class, Optional.of("foo"))
         .setDefault(OptionalInt.class, OptionalInt.of(123))
         .setDefault(OptionalLong.class, OptionalLong.of(123))
         .setDefault(OptionalDouble.class, OptionalDouble.of(123))
+        .setDefault(BiOptional.class, BiOptional.of(1, "one"))
         .forAllPublicStaticMethods(Optionals.class).testNulls();
   }
-  
+
   private interface BiAction {
     Object run(Object left, Object right);
   }

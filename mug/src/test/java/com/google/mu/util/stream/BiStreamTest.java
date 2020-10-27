@@ -18,9 +18,9 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.stream.BiCollectors.toMap;
+import static com.google.mu.util.stream.BiStream.concatenating;
 import static com.google.mu.util.stream.BiStream.crossJoining;
 import static com.google.mu.util.stream.BiStream.toAdjacentPairs;
-import static com.google.mu.util.stream.BiStream.toBiStream;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static java.util.Arrays.asList;
 import static java.util.function.Function.identity;
@@ -56,6 +56,7 @@ import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.truth.IterableSubject;
 import com.google.common.truth.MultimapSubject;
+import com.google.mu.util.BiOptional;
 import com.google.mu.util.Substring;
 
 @RunWith(JUnit4.class)
@@ -73,7 +74,10 @@ public class BiStreamTest {
     assertKeyValues(BiStream.from(Stream.of(1, 2), BiStreamTest::withToString))
         .containsExactlyEntriesIn(ImmutableMultimap.of("1", 1, "2", 2))
         .inOrder();
-    assertThat(BiStream.from(asList("name=joe", "age=10"), Substring.first('=')::split)
+    assertThat(
+            BiStream.concat(Stream.of("name=joe", "age=10")
+                .map(Substring.first('=')::split)
+                .map(BiOptional::stream))
         .collect(toImmutableListMultimap()))
         .containsExactly("name", "joe", "age", "10")
         .inOrder();
@@ -364,6 +368,20 @@ public class BiStreamTest {
         .isFalse();
   }
 
+  @Test public void testZip_findAny() {
+    assertThat(BiStream.zip(ImmutableList.of(), ImmutableList.of()).findAny())
+        .isEqualTo(BiOptional.empty());
+    assertThat(BiStream.zip(ImmutableList.of(1), ImmutableList.of("one")).findAny())
+        .isEqualTo(BiOptional.of(1, "one"));
+  }
+
+  @Test public void testZip_findFirst() {
+    assertThat(BiStream.zip(ImmutableList.of(), ImmutableList.of()).findFirst())
+        .isEqualTo(BiOptional.empty());
+    assertThat(BiStream.zip(ImmutableList.of(1, 2), ImmutableList.of("one", "two")).findFirst())
+        .isEqualTo(BiOptional.of(1, "one"));
+  }
+
   @Test public void testZip_count() {
     assertThat(BiStream.zip(asList(1, 2), asList(10, 20, 30)).count()).isEqualTo(2);
     assertThat(BiStream.zip(asList(1, 2, 3), asList(10, 20)).count()).isEqualTo(2);
@@ -529,7 +547,8 @@ public class BiStreamTest {
 
   @Test public void testToBiStreamFromSplit() {
     assertThat(Stream.of("name=joe", "age=10")
-            .collect(toBiStream(Substring.first('=')::split))
+            .map(Substring.first('=')::split)
+            .collect(concatenating(BiOptional::stream))
             .collect(toImmutableListMultimap()))
         .containsExactly("name", "joe", "age", "10")
         .inOrder();

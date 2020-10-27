@@ -23,7 +23,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -550,7 +549,7 @@ public final class Substring {
      * Returns a stream of {@code Match} objects delimited by every {@link #iterateIn iteration} of
      * this pattern. If this pattern isn't found in {@code string}, the full string is returned.
      *
-     * <p>Different from {@link #split(String, BiFunction) split()},
+     * <p>Different from {@link #split},
      * {@code first('=').delimit("a=b=c")} results in a stream of {@code ["a", "b", "c"]};
      * while {@code first('=').split("a=b=c", ...)} results in a pair of {@code ["a", "b=c"]}.
      *
@@ -678,21 +677,19 @@ public final class Substring {
      * example:
      *
      * <pre>{@code
-     * KeyValue keyValue = first('=').split("name=joe", KeyValue::new);
+     * KeyValue keyValue = first('=').split("name=joe").map(KeyValue::new);
      * }</pre>
      *
-     * <p>If you need to trim the key-value pairs, use {@link #splitThenTrim(String, BiFunction)
-     * splitThenTrim()}.
+     * <p>If you need to trim the key-value pairs, use {@link #splitThenTrim}.
      *
      * <p>To split a string into multiple substrings delimited by a delimiter, use {@link #delimit}.
      *
      * @throws IllegalArgumentException if this separator pattern isn't found in {@code string}.
-     * @since 4.6
+     * @since 5.0
      */
-    public final <R> R split(String string, BiFunction<? super String, ? super String, R> combiner) {
-      requireNonNull(combiner);
-      Match separator = findIn(string);
-      return combiner.apply(separator.before(), separator.after());
+    public final BiOptional<String, String> split(String string) {
+      Match match = match(string);
+      return match == null ? BiOptional.empty() : BiOptional.of(match.before(), match.after());
     }
 
     /**
@@ -715,69 +712,29 @@ public final class Substring {
      *     .split(toSplit);
      * }</pre>
      *
-     * Alternatively, use {@code Substring} to allow duplicate keys and to split into multimaps or
-     * other types:
+     * Alternatively, you can use {@code Substring} to allow duplicate keys and to split into
+     * multimaps or other types:
      *
      * <pre>{@code
      * String toSplit = " x -> y, z-> a, x -> t ";
      * ImmutableListMultimap<String, String> result = first(',')
      *     .delimit(toSplit)
      *     .map(Match::toString)
-     *     .collect(toBiStream(first("->")::splitThenTrim))
+     *     .map(first("->")::splitThenTrim)
+     *     .collect(concatenating(BiOptional::stream))  // Or use BiStream.concat()
      *     .collect(ImmutableListMultimap::toImmutableListMultimap);
-     * }</pre>
-     *
-     * The last two {@code collect()} calls in the above example can be reduced to one (because each
-     * {@code collect()} call is an {@code O(N)} operation), provided you don't need to chain other
-     * {@code BiStream} operations:
-     *
-     * <pre>{@code
-     * import static com.google.mu.util.stream.MoreStreams.mapping;
-     *
-     * // ...
-     * ImmutableListMultimap<String, String> result = first(',')
-     *     .delimit(toSplit)
-     *     .map(Match::toString)
-     *     .collect(mapping(first("->")::splitThenTrim, toImmutableListMultimap()));
-     * }</pre>
-     *
-     * <p>Note that both {@link #split(String, BiFunction) split()} and {@link
-     * #splitThenTrim(String, BiFunction) splitThenTrim()} throw {@code IllegalArgumentException}
-     * when the separator pattern isn't found in the string. If it's an expected condition and needs
-     * to be handled gracefully (like, throwing a custom exception with the line number in the error
-     * message), consider to use {@link #in in()} and then you can handle the absence case. The
-     * following example reports line number in the error message:
-     *
-     * <pre>{@code
-     * import com.google.mu.util.Ordinal;
-     *
-     * Substring.Pattern separator = first('=');
-     * ImmutableListMultimap<String, String> result = BiStream.zip(Ordinal.natural(), lines.stream())
-     *     .filterValues(s -> !isCommentOrBlank(s))
-     *     .mapValues((l, s) ->
-     *         separator.in(s).orElseThrow(() -> new BadInputException(l + " line: " + s)))
-     *     .map((l, match) -> match.before().trim(), (l, match) -> match.after().trim())
-     *     .collect(toImmutableListMultimap::toImmutableListMultimap);
      * }</pre>
      *
      * <p>To split a string into multiple substrings delimited by a delimiter, use {@link #delimit}.
      *
      * @throws IllegalArgumentException if this separator pattern isn't found in {@code string}.
-     * @since 4.6
+     * @since 5.0
      */
-    public final <R> R splitThenTrim(
-        String string, BiFunction<? super String, ? super String, R> combiner) {
-      requireNonNull(combiner);
-      Match separator = findIn(string);
-      return combiner.apply(separator.before().trim(), separator.after().trim());
-    }
-
-    private Match findIn(String s) {
-      Match match = match(s);
-      if (match == null) {
-        throw new IllegalArgumentException("Pattern " + this + " not found in '" + s + "'.");
-      }
-      return match;
+    public final BiOptional<String, String> splitThenTrim(String string) {
+      Match match = match(string);
+      return match == null
+          ? BiOptional.empty()
+          : BiOptional.of(match.before().trim(), match.after().trim());
     }
 
     /**
