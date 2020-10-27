@@ -87,7 +87,7 @@ public abstract class BiOptional<A, B> {
    * returns empty.
    */
   public abstract <T, E extends Throwable> Optional<T> flatJoin(
-      CheckedBiFunction<? super A, ? super B, Optional<T>, E> mapper) throws E;
+      CheckedBiFunction<? super A, ? super B, ? extends Optional<? extends T>, E> mapper) throws E;
 
   /**
    * Maps the pair using the {@code mapper} function.
@@ -97,7 +97,8 @@ public abstract class BiOptional<A, B> {
    * returns empty.
    */
   public abstract <A2, B2, E extends Throwable> BiOptional<A2, B2> flatMap(
-      CheckedBiFunction<? super A, ? super B, BiOptional<A2, B2>, E> mapper) throws E;
+      CheckedBiFunction<? super A, ? super B, ? extends BiOptional<? extends A2, ? extends B2>, E> mapper)
+      throws E;
 
   /**
    * Returns this BiOptional object as is if the pair is present and matches
@@ -128,6 +129,16 @@ public abstract class BiOptional<A, B> {
   /** Returns a {@code BiStream} view of this BiOptional. */
   public abstract BiStream<A, B> stream();
 
+  @SuppressWarnings("unchecked")  // BiOptional is an immutable type.
+  static <A, B> BiOptional<A, B> covariant(BiOptional<? extends A, ? extends B> optional) {
+    return (BiOptional<A, B>) requireNonNull(optional);
+  }
+
+  @SuppressWarnings("unchecked")  // Optional is an immutable type.
+  static <T> Optional<T> covariant(Optional<? extends T> optional) {
+    return (Optional<T>) requireNonNull(optional);
+  }
+
   private static final BiOptional<Object, Object> EMPTY = new BiOptional<Object, Object>() {
     @Override
     public <T, E extends Throwable> Optional<T> join(
@@ -138,15 +149,14 @@ public abstract class BiOptional<A, B> {
 
     @Override
     public <T, E extends Throwable> Optional<T> flatJoin(
-        CheckedBiFunction<Object, Object, Optional<T>, E> mapper)
-        throws E {
+        CheckedBiFunction<Object, Object, ? extends Optional<? extends T>, E> mapper) throws E {
       requireNonNull(mapper);
       return Optional.empty();
     }
 
     @Override
     public <A2, B2, E extends Throwable> BiOptional<A2, B2> flatMap(
-        CheckedBiFunction<Object, Object, BiOptional<A2, B2>, E> mapper) throws E {
+        CheckedBiFunction<Object, Object, ? extends BiOptional<? extends A2, ? extends B2>, E> mapper) throws E {
       requireNonNull(mapper);
       return empty();
     }
@@ -159,10 +169,9 @@ public abstract class BiOptional<A, B> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")  // BiOptional is an immutable type.
     public <E extends Throwable> BiOptional<Object, Object> or(
         CheckedSupplier<? extends BiOptional<?, ?>, E> alternative) throws E {
-      return (BiOptional<Object, Object>) (alternative.get());
+      return covariant(alternative.get());
     }
 
     @Override
@@ -210,15 +219,16 @@ public abstract class BiOptional<A, B> {
 
     @Override
     public <T, E extends Throwable> Optional<T> flatJoin(
-        CheckedBiFunction<? super A, ? super B, Optional<T>, E> mapper)
+        CheckedBiFunction<? super A, ? super B, ? extends Optional<? extends T>, E> mapper)
         throws E {
-      return requireNonNull(mapper.apply(a, b));
+      return covariant(mapper.apply(a, b));
     }
 
     @Override
     public <A2, B2, E extends Throwable> BiOptional<A2, B2> flatMap(
-        CheckedBiFunction<? super A, ? super B, BiOptional<A2, B2>, E> mapper) throws E {
-      return requireNonNull(mapper.apply(a, b));
+        CheckedBiFunction<? super A, ? super B, ? extends BiOptional<? extends A2, ? extends B2>, E> mapper)
+            throws E {
+      return covariant(mapper.apply(a, b));
     }
 
     @Override
