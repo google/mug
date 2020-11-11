@@ -570,7 +570,9 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * values with {@code mapper} function.
    *
    * @since 4.6
+   * @deprecated
    */
+  @Deprecated
   public static <T, K, V> BiStream<K, V> from(
       Stream<T> stream,
       DualValuedFunction<? super T, ? extends K, ? extends V> mapper) {

@@ -108,7 +108,19 @@ public abstract class BiOptional<A, B> {
       CheckedBiPredicate<? super A, ? super B, E> predicate)
       throws E;
 
-  /** Returns true if the pair is present and matches {@code predicate}. */
+  /**
+   * Returns true if the pair is present and matches {@code predicate}. Prefer to use
+   *
+   * <pre>{@code
+   * if (optional.match((a, b) -> a > b)) {...}
+   * }</pre>
+   *
+   * as opposed to
+   *
+   * <pre>{@code
+   * if (optional.filter((a, b) -> a > b).isPresent()) {...}
+   * }</pre>
+   */
   public abstract <E extends Throwable> boolean match(
       CheckedBiPredicate<? super A, ? super B, E> predicate) throws E;
 
