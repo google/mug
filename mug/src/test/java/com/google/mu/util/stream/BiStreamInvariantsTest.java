@@ -319,6 +319,18 @@ public class BiStreamInvariantsTest {
   }
 
   @Test
+  public void findFirst() {
+    assertThat(of("one", 1, "two", 2).findFirst()).isEqualTo(BiOptional.of("one", 1));
+    assertThat(of().findFirst()).isEqualTo(BiOptional.empty());
+  }
+
+  @Test
+  public void findAny() {
+    assertThat(of("one", 1).findAny()).isEqualTo(BiOptional.of("one", 1));
+    assertThat(of().findAny()).isEqualTo(BiOptional.empty());
+  }
+
+  @Test
   public void keys() {
     assertThat(of("one", 1, "two", 2).keys()).containsExactly("one", "two").inOrder();
   }

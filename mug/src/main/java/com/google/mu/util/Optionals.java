@@ -233,8 +233,11 @@ public final class Optionals {
       BiOptional<A, B> optional, CheckedBiConsumer<? super A, ? super B, E> consumer) throws E{
     requireNonNull(optional);
     requireNonNull(consumer);
-    optional.ifPresent(consumer);
-    return optional.isPresent() ? Conditional.TRUE : Conditional.FALSE;
+    if (optional.isPresent()) {
+      consumer.accept(optional.map(Optionals::first).get(), optional.map(Optionals::second).get());
+      return Conditional.TRUE;
+    }
+    return Conditional.FALSE;
   }
 
   /**
@@ -243,7 +246,9 @@ public final class Optionals {
    * {@code Optional.empty()}.
    *
    * @since 3.8
+   * @deprecated Use {@link BiOptional#both} instead.
    */
+  @Deprecated
   public static <A, B, R, E extends Throwable> Optional<R> mapBoth(
       Optional<A> left, Optional<B> right, CheckedBiFunction<? super A, ? super B, ? extends R, E> mapper)
       throws E {
@@ -263,7 +268,9 @@ public final class Optionals {
    *
    * @throws NullPointerException if {@code mapper} returns null
    * @since 3.8
+   * @deprecated Use {@link BiOptional#both} instead.
    */
+  @Deprecated
   public static <A, B, R, E extends Throwable> Optional<R> flatMapBoth(
       Optional<A> left, Optional<B> right,
       CheckedBiFunction<? super A, ? super B, ? extends Optional<R>, E> mapper)
@@ -275,6 +282,14 @@ public final class Optionals {
       return requireNonNull(mapper.apply(left.get(), right.get()));
     }
     return Optional.empty();
+  }
+
+  private static <A, B> A first(A a, B b) {
+    return a;
+  }
+
+  private static <A, B> B second(A a, B b) {
+    return b;
   }
 
   private Optionals() {}

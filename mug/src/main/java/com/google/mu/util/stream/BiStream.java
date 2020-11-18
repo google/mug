@@ -660,7 +660,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * @deprecated Use {@link #mapIfPresent(BiFunction)} instead.
    */
   @Deprecated
-  public <K2, V2> BiStream<K2, V2> mapIfPresent(
+  public final <K2, V2> BiStream<K2, V2> mapIfPresent(
       BiFunction<? super K, ? super V, ? extends Optional<? extends K2>> keyMapper,
       BiFunction<? super K, ? super V, ? extends Optional<? extends V2>> valueMapper) {
     return map(keyMapper, valueMapper)
@@ -676,12 +676,12 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *
    * @since 5.0
    */
-  public <K2, V2> BiStream<K2, V2> mapIfPresent(
+  public final <K2, V2> BiStream<K2, V2> mapIfPresent(
       BiFunction<? super K, ? super V, ? extends BiOptional<? extends K2, ? extends V2>> mapper) {
     return from(
         mapToObj(mapper)
             .filter(BiOptional::isPresent)
-            .map(optional -> optional.join(BiStream::kv).get()));
+            .map(optional -> optional.map(BiStream::kv).get()));
   }
 
   /**
@@ -1337,12 +1337,12 @@ public abstract class BiStream<K, V> implements AutoCloseable {
 
     @Override
     public final BiOptional<K, V> findFirst() {
-      return BiOptional.from(underlying.findFirst(), toKey::apply, toValue::apply);
+      return BiOptional.from(underlying.findFirst()).map(toKey::apply, toValue::apply);
     }
 
     @Override
     public final BiOptional<K, V> findAny() {
-      return BiOptional.from(underlying.findAny(), toKey::apply, toValue::apply);
+      return BiOptional.from(underlying.findAny()).map(toKey::apply, toValue::apply);
     }
 
     @Override
