@@ -1165,9 +1165,9 @@ public class SubstringTest {
 
   @Test
   public void split_canSplit() {
-    assertThat(first('=').split(" foo=bar").join((String k, String v) -> k)).hasValue(" foo");
-    assertThat(first('=').split("foo=bar ").join((String k, String v) -> v)).hasValue("bar ");
-    assertThat(first('=').split(" foo=bar").join((String k, String v) -> k)).hasValue(" foo");
+    assertThat(first('=').split(" foo=bar").map((String k, String v) -> k)).hasValue(" foo");
+    assertThat(first('=').split("foo=bar ").map((String k, String v) -> v)).hasValue("bar ");
+    assertThat(first('=').split(" foo=bar").map((String k, String v) -> k)).hasValue(" foo");
   }
 
   @Test
@@ -1177,8 +1177,8 @@ public class SubstringTest {
 
   @Test
   public void splitThenTrim_intoTwoParts_canSplit() {
-    assertThat(first('=').splitThenTrim(" foo =bar").join((String k, String v) -> k)).hasValue("foo");
-    assertThat(first('=').splitThenTrim("foo = bar ").join((String k, String v) -> v)).hasValue("bar");
+    assertThat(first('=').splitThenTrim(" foo =bar").map((String k, String v) -> k)).hasValue("foo");
+    assertThat(first('=').splitThenTrim("foo = bar ").map((String k, String v) -> v)).hasValue("bar");
   }
 
   @Test

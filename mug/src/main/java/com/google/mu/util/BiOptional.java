@@ -18,34 +18,45 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
-import com.google.mu.function.CheckedBiConsumer;
-import com.google.mu.function.CheckedBiFunction;
-import com.google.mu.function.CheckedBiPredicate;
-import com.google.mu.function.CheckedFunction;
-import com.google.mu.function.CheckedSupplier;
 import com.google.mu.util.stream.BiStream;
 
 /**
- * An optional pair
+ * An optional pair of values; either the pair is present with both values, or is absent with no
+ * value.
+ *
+ * <p>This is essentially an {@code Optional<Pair>} that users can access through fluent methods
+ * like {@link #map}, {@link #filter}, {@link #or} instead of opaque names like
+ * {@code first}, {@code second}.
  *
  * @since 5.0
  */
 public abstract class BiOptional<A, B> {
-  /** Returns an empty (absent) instance. */
+  /** Returns an empty {@code BiOptional} instance. */
   @SuppressWarnings("unchecked") // EMPTY contains no A or B.
   public static <A, B> BiOptional<A, B> empty() {
     return (BiOptional<A, B>) EMPTY;
   }
 
-  /** Returns an instance wrapping non-null pair {@code (a, b)}. */
+  /**
+   * Returns a {@code BiOptional} containing the pair {@code (a, b)}.
+   *
+   * @throws NullPointerException if either {@code a} or {@code b} is null
+   */
   public static <A, B> BiOptional<A, B> of(A a, B b) {
     return new Present<>(a, b);
   }
 
   /**
-   * Returns an instance wrapping non-null pair {@code (a.get(), b.get())} if both
-   * are present, or else returns empty instance.
+   * If {@code a} and {@code b} are present, returns a {@code BiOptional} instance containing them;
+   * otherwise returns an empty {@code BiOptional}.
+   *
+   * @throws NullPointerException if {@code a} or {@code b} is null
    */
   public static <A, B> BiOptional<A, B> both(Optional<A> a, Optional<B> b) {
     requireNonNull(a);
@@ -54,164 +65,191 @@ public abstract class BiOptional<A, B> {
   }
 
   /**
-   * Returns BiOptional wrapping the results of applying the {@code toA} and {@code toB}
-   * functions on the valued wrapped in {@code optional} if it's present, or else returns
-   * {@link #empty}.
+   * If {@code optional} is present with value {@code v}, adapts it to {@code BiOptional} containing
+   * values {@code (v, v)}.
+   *
+   * @throws NullPointerException if {@code optional} is null.
    */
-  public static <T, A, B, E extends Throwable> BiOptional<A, B> from(
-      Optional<T> optional,
-      CheckedFunction<? super T, ? extends A, ? extends E> toA,
-      CheckedFunction<? super T, ? extends B, ? extends E> toB) throws E {
-    requireNonNull(toA);
-    requireNonNull(toB);
-    return optional.isPresent()
-        ? of(toA.apply(optional.get()), toB.apply(optional.get()))
-        : empty();
+  public static <T> BiOptional<T, T> from(Optional<T> optional) {
+    return optional.isPresent() ? of(optional.get(), optional.get()) : empty();
   }
 
   /**
-   * Joins the pair using the {@code mapper} function.
+   * If a pair of values is present, apply {@code mapper} to them, and if the result is non-null,
+   * return an {@code Optional} containing it. Otherwise return an empty {@code BiOptional}.
    *
-   * <p>
-   * Returns {@code Optional.empty()} if the pair is absent or if {@code mapper}
-   * returns null.
+   * @throws NullPointerException if {@code mapper} is null
    */
-  public abstract <T, E extends Throwable> Optional<T> join(
-      CheckedBiFunction<? super A, ? super B, ? extends T, E> mapper) throws E;
+  public abstract <T> Optional<T> map(BiFunction<? super A, ? super B, ? extends T> mapper);
 
   /**
-   * Joins the pair using the {@code mapper} function.
+   * If a pair of values is present, apply {@code aMapper} and {@code bMapper} to them, and if both
+   * results are non-null, return a new {@code BiOptional} instance containing the results.
+   * Otherwise return an empty {@code BiOptional}.
    *
-   * <p>
-   * Returns {@code Optional.empty()} if the pair is absent or if {@code mapper}
-   * returns empty.
+   * @throws NullPointerException if {@code aMapper} or {@code bMapper} is null
    */
-  public abstract <T, E extends Throwable> Optional<T> flatJoin(
-      CheckedBiFunction<? super A, ? super B, ? extends Optional<? extends T>, E> mapper) throws E;
+  public abstract <A2, B2> BiOptional<A2, B2> map(
+      BiFunction<? super A, ? super B, ? extends A2> aMapper,
+      BiFunction<? super A, ? super B, ? extends B2> bMapper);
 
   /**
-   * Maps the pair using the {@code mapper} function.
+   * If a pair of values is present, apply {@code aMapper} and {@code bMapper} to each respectively,
+   * and if both results are non-null, return a new {@code BiOptional} instance containing the
+   * results. Otherwise return an empty {@code BiOptional}.
    *
-   * <p>
-   * Returns {@code Optional.empty()} if the pair is absent or if {@code mapper}
-   * returns empty.
-   */
-  public abstract <A2, B2, E extends Throwable> BiOptional<A2, B2> flatMap(
-      CheckedBiFunction<? super A, ? super B, ? extends BiOptional<? extends A2, ? extends B2>, E> mapper)
-      throws E;
-
-  /**
-   * Returns this BiOptional object as is if the pair is present and matches
-   * {@code predicate}, or else returns {@link #empty}.
-   */
-  public abstract <E extends Throwable> BiOptional<A, B> filter(
-      CheckedBiPredicate<? super A, ? super B, E> predicate)
-      throws E;
-
-  /**
-   * Returns true if the pair is present and matches {@code predicate}. Prefer to use
+   * <p>The following example parses and evaluates a numeric comparison:
    *
    * <pre>{@code
-   * if (optional.match((a, b) -> a > b)) {...}
+   * if (Substring.first('=')
+   *     .splitThenTrim("10 = 20")
+   *     .map(Ints::tryParse, Ints::tryParse)
+   *     .filter((a, b) -> a.equals(b))
+   *     .isPresent()) {
+   *   // The two numbers are equal.
+   * }
    * }</pre>
    *
-   * as opposed to
+   * @throws NullPointerException if {@code aMapper} or {@code bMapper} is null
+   */
+  public abstract <A2, B2> BiOptional<A2, B2> map(
+      Function<? super A, ? extends A2> aMapper, Function<? super B, ? extends B2> bMapper);
+
+  /**
+   * If a pair of values is present, apply the {@code BiOptional}-bearing {@code mapper} to them,
+   * and return that result. Otherwise, return an empty {@code BiOptional}.
+   *
+   * @throws NullPointerException if {@code mapper} is null or returns a null result
+   */
+  public abstract <T> Optional<T> flatMap(
+      BiFunction<? super A, ? super B, ? extends Optional<? extends T>> mapper);
+
+  /**
+   * Maps the value contained in {@code optional} to a {@code BiOptional} using {@code mapper}, or
+   * else returns empty. For example, the following code uses {@link Substring#split} to split an
+   * optional string:
    *
    * <pre>{@code
-   * if (optional.filter((a, b) -> a > b).isPresent()) {...}
+   * Optional<KeyValue> keyValue =
+   *     BiOptional.flatMap(getOptionalInput(), Substring.first(':')::split)
+   *         .map(KeyValue::new);
    * }</pre>
+   *
+   * <p>Use this method to bridge from an {@code Optional} to {@code BiOptional} chain.
+   *
+   * @throws NullPointerException if {@code optional} or {@code mapper} is null, or if {@code
+   *     mapper} returns null.
    */
-  public abstract <E extends Throwable> boolean match(
-      CheckedBiPredicate<? super A, ? super B, E> predicate) throws E;
+  public static <T, A, B> BiOptional<A, B> flatMap(
+      Optional<T> optional,
+      Function<? super T, ? extends BiOptional<? extends A, ? extends B>> mapper) {
+    return optional.map(mapper).map(BiOptional::<A, B>covariant).orElse(empty());
+  }
 
-  /** Runs {@code consumer} if the pair is present. */
-  public abstract <E extends Throwable> void ifPresent(
-      CheckedBiConsumer<? super A, ? super B, E> consumer) throws E;
+  /**
+   * If a pair of values is present and matches {@code predicate}, return this {@code BiOptional
+   * instance}. Otherwise, return an empty {@code BiOptional}.
+   *
+   * @throws NullPointerException if {@code predicate} is null
+   */
+  public abstract BiOptional<A, B> filter(BiPredicate<? super A, ? super B> predicate);
 
-  /** Returns true if the pair is present. */
+  /**
+   * If a pair of values is present, invoke {@code consumer} with them. Otherwise, do nothing.
+   *
+   * @throws NullPointerException if consumer is null
+   */
+  public abstract void ifPresent(BiConsumer<? super A, ? super B> consumer);
+
+  /** Returns true if the pair of values is present. */
   public abstract boolean isPresent();
 
   /**
-   * Returns this instance if not empty,
-   * or else returns the result of {@code alternative} supplier.
+   * If a pair of values are present, return this {@code BiOptional} instance. Otherwise, returns a
+   * {@code BiOptional} produced by {@code alternative}.
    */
-  public abstract <E extends Throwable> BiOptional<A, B> or(
-      CheckedSupplier<? extends BiOptional<? extends A, ? extends B>, E> alternative) throws E;
+  public abstract BiOptional<A, B> or(
+      Supplier<? extends BiOptional<? extends A, ? extends B>> alternative);
 
   /** Returns a {@code BiStream} view of this BiOptional. */
   public abstract BiStream<A, B> stream();
 
-  @SuppressWarnings("unchecked")  // BiOptional is an immutable type.
+  // TODO(benyu): figure out a dependency story so that we can add:
+  //    public abstract BiStream<A, B> stream();
+
+  @SuppressWarnings("unchecked") // BiOptional is an immutable type.
   static <A, B> BiOptional<A, B> covariant(BiOptional<? extends A, ? extends B> optional) {
     return (BiOptional<A, B>) requireNonNull(optional);
   }
 
-  @SuppressWarnings("unchecked")  // Optional is an immutable type.
+  @SuppressWarnings("unchecked") // Optional is an immutable type.
   static <T> Optional<T> covariant(Optional<? extends T> optional) {
     return (Optional<T>) requireNonNull(optional);
   }
 
-  private static final BiOptional<Object, Object> EMPTY = new BiOptional<Object, Object>() {
-    @Override
-    public <T, E extends Throwable> Optional<T> join(
-        CheckedBiFunction<Object, Object, ? extends T, E> mapper) throws E {
-      requireNonNull(mapper);
-      return Optional.empty();
-    }
+  private static final BiOptional<Object, Object> EMPTY =
+      new BiOptional<Object, Object>() {
+        @Override
+        public <T> Optional<T> map(BiFunction<Object, Object, ? extends T> mapper) {
+          requireNonNull(mapper);
+          return Optional.empty();
+        }
 
-    @Override
-    public <T, E extends Throwable> Optional<T> flatJoin(
-        CheckedBiFunction<Object, Object, ? extends Optional<? extends T>, E> mapper) throws E {
-      requireNonNull(mapper);
-      return Optional.empty();
-    }
+        @Override
+        public <A2, B2> BiOptional<A2, B2> map(
+            BiFunction<Object, Object, ? extends A2> aMapper,
+            BiFunction<Object, Object, ? extends B2> bMapper) {
+          requireNonNull(aMapper);
+          requireNonNull(bMapper);
+          return empty();
+        }
 
-    @Override
-    public <A2, B2, E extends Throwable> BiOptional<A2, B2> flatMap(
-        CheckedBiFunction<Object, Object, ? extends BiOptional<? extends A2, ? extends B2>, E> mapper) throws E {
-      requireNonNull(mapper);
-      return empty();
-    }
+        @Override
+        public <A2, B2> BiOptional<A2, B2> map(
+            Function<Object, ? extends A2> aMapper, Function<Object, ? extends B2> bMapper) {
+          requireNonNull(aMapper);
+          requireNonNull(bMapper);
+          return empty();
+        }
 
-    @Override
-    public <E extends Throwable> BiOptional<Object, Object> filter(
-        CheckedBiPredicate<Object, Object, E> predicate) {
-      requireNonNull(predicate);
-      return this;
-    }
+        @Override
+        public <T> Optional<T> flatMap(
+            BiFunction<Object, Object, ? extends Optional<? extends T>> mapper) {
+          requireNonNull(mapper);
+          return Optional.empty();
+        }
 
-    @Override
-    public <E extends Throwable> BiOptional<Object, Object> or(
-        CheckedSupplier<? extends BiOptional<?, ?>, E> alternative) throws E {
-      return covariant(alternative.get());
-    }
+        @Override
+        public BiOptional<Object, Object> filter(BiPredicate<Object, Object> predicate) {
+          requireNonNull(predicate);
+          return this;
+        }
 
-    @Override
-    public <E extends Throwable> boolean match(CheckedBiPredicate<Object, Object, E> predicate) {
-      requireNonNull(predicate);
-      return false;
-    }
+        @Override
+        public BiOptional<Object, Object> or(Supplier<? extends BiOptional<?, ?>> alternative) {
+          return covariant(alternative.get());
+        }
 
-    @Override
-    public <E extends Throwable> void ifPresent(CheckedBiConsumer<Object, Object, E> consumer) {
-      requireNonNull(consumer);
-    }
+        @Override
+        public void ifPresent(BiConsumer<Object, Object> consumer) {
+          requireNonNull(consumer);
+        }
 
-    @Override
-    public boolean isPresent() {
-      return false;
-    }
+        @Override
+        public boolean isPresent() {
+          return false;
+        }
 
-    @Override
-    public BiStream<Object, Object> stream() {
-      return BiStream.empty();
-    }
+        @Override
+        public BiStream<Object, Object> stream() {
+          return BiStream.empty();
+        }
 
-    @Override
-    public String toString() {
-      return "empty()";
-    }
-  };
+        @Override
+        public String toString() {
+          return "empty()";
+        }
+      };
 
   private static final class Present<A, B> extends BiOptional<A, B> {
     private final A a;
@@ -223,49 +261,63 @@ public abstract class BiOptional<A, B> {
     }
 
     @Override
-    public <T, E extends Throwable> Optional<T> join(
-        CheckedBiFunction<? super A, ? super B, ? extends T, E> mapper)
-        throws E {
+    public <T> Optional<T> map(BiFunction<? super A, ? super B, ? extends T> mapper) {
       return Optional.ofNullable(mapper.apply(a, b));
     }
 
     @Override
-    public <T, E extends Throwable> Optional<T> flatJoin(
-        CheckedBiFunction<? super A, ? super B, ? extends Optional<? extends T>, E> mapper)
-        throws E {
+    public <A2, B2> BiOptional<A2, B2> map(
+        BiFunction<? super A, ? super B, ? extends A2> aMapper,
+        BiFunction<? super A, ? super B, ? extends B2> bMapper) {
+      requireNonNull(aMapper);
+      requireNonNull(bMapper);
+      A2 a2 = aMapper.apply(a, b);
+      if (a2 == null) {
+        return empty();
+      }
+      B2 b2 = bMapper.apply(a, b);
+      if (b2 == null) {
+        return empty();
+      }
+      return of(a2, b2);
+    }
+
+    @Override
+    public <A2, B2> BiOptional<A2, B2> map(
+        Function<? super A, ? extends A2> aMapper, Function<? super B, ? extends B2> bMapper) {
+      requireNonNull(aMapper);
+      requireNonNull(bMapper);
+      A2 a2 = aMapper.apply(a);
+      if (a2 == null) {
+        return empty();
+      }
+      B2 b2 = bMapper.apply(b);
+      if (b2 == null) {
+        return empty();
+      }
+      return of(a2, b2);
+    }
+
+    @Override
+    public <T> Optional<T> flatMap(
+        BiFunction<? super A, ? super B, ? extends Optional<? extends T>> mapper) {
       return covariant(mapper.apply(a, b));
     }
 
     @Override
-    public <A2, B2, E extends Throwable> BiOptional<A2, B2> flatMap(
-        CheckedBiFunction<? super A, ? super B, ? extends BiOptional<? extends A2, ? extends B2>, E> mapper)
-            throws E {
-      return covariant(mapper.apply(a, b));
+    public BiOptional<A, B> filter(BiPredicate<? super A, ? super B> predicate) {
+      return predicate.test(a, b) ? this : empty();
     }
 
     @Override
-    public <E extends Throwable> BiOptional<A, B> filter(
-        CheckedBiPredicate<? super A, ? super B, E> predicate)
-        throws E {
-      return match(predicate) ? this : empty();
-    }
-
-    @Override
-    public <E extends Throwable> BiOptional<A, B> or(
-        CheckedSupplier<? extends BiOptional<? extends A, ? extends B>, E> alternative) {
+    public BiOptional<A, B> or(
+        Supplier<? extends BiOptional<? extends A, ? extends B>> alternative) {
       requireNonNull(alternative);
       return this;
     }
 
     @Override
-    public <E extends Throwable> boolean match(
-        CheckedBiPredicate<? super A, ? super B, E> predicate) throws E {
-      return predicate.test(a, b);
-    }
-
-    @Override
-    public <E extends Throwable> void ifPresent(
-        CheckedBiConsumer<? super A, ? super B, E> consumer) throws E {
+    public void ifPresent(BiConsumer<? super A, ? super B> consumer) {
       consumer.accept(a, b);
     }
 
