@@ -174,9 +174,6 @@ public abstract class BiOptional<A, B> {
   /** Returns a {@code BiStream} view of this BiOptional. */
   public abstract BiStream<A, B> stream();
 
-  // TODO(benyu): figure out a dependency story so that we can add:
-  //    public abstract BiStream<A, B> stream();
-
   @SuppressWarnings("unchecked") // BiOptional is an immutable type.
   static <A, B> BiOptional<A, B> covariant(BiOptional<? extends A, ? extends B> optional) {
     return (BiOptional<A, B>) requireNonNull(optional);
