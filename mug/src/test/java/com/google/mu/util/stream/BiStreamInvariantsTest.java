@@ -321,6 +321,37 @@ public class BiStreamInvariantsTest {
   }
 
   @Test
+  public void findFirst() {
+    assertThat(of("one", 1, "two", 2).findFirst()).isEqualTo(BiOptional.of("one", 1));
+    assertThat(of().findFirst()).isEqualTo(BiOptional.empty());
+  }
+
+  @Test
+  public void findFirst_nullKeyThrowx() {
+    assertThrows(NullPointerException.class, of(null, 1, "two", 2)::findFirst);
+    assertThrows(NullPointerException.class, of("one", 1, "two", 2).mapKeys(k -> null)::findFirst);
+  }
+
+  @Test
+  public void findFirst_nullValueThrowx() {
+    assertThrows(NullPointerException.class, of("one", null, "two", 2)::findFirst);
+    assertThrows(
+        NullPointerException.class, of("one", 1, "two", 2).mapValues(v -> null)::findFirst);
+  }
+
+  @Test
+  public void findFirst_nullKeyMapsToNonNull() {
+    assertThat(of(null, 1, "two", 2).mapKeys(k -> Objects.toString(k)).findFirst())
+        .isEqualTo(BiOptional.of("null", 1));
+  }
+
+  @Test
+  public void findFirst_nullValueMapsToNonNull() {
+    assertThat(of("one", null, "two", 2).mapValues(v -> Objects.toString(v)).findFirst())
+        .isEqualTo(BiOptional.of("one", "null"));
+  }
+
+  @Test
   public void findAny() {
     assertThat(of("one", 1).findAny()).isEqualTo(BiOptional.of("one", 1));
     assertThat(of().findAny()).isEqualTo(BiOptional.empty());
