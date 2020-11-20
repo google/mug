@@ -500,8 +500,8 @@ public final class Substring {
      * <p>This is useful if you only need the matched substring itself. Use {@link #in} if you need
      * to call {@link Match} methods, like {@link Match#remove} or {@link Match#before}.
      */
-    public final Optional<String> from(String string) {
-      return Optional.ofNullable(Objects.toString(match(string), null));
+    public final Optional<String> from(CharSequence string) {
+      return Optional.ofNullable(Objects.toString(match(string.toString()), null));
     }
 
     /**
@@ -689,8 +689,8 @@ public final class Substring {
      * @throws IllegalArgumentException if this separator pattern isn't found in {@code string}.
      * @since 5.0
      */
-    public final BiOptional<String, String> split(String string) {
-      Match match = match(string);
+    public final BiOptional<String, String> split(CharSequence string) {
+      Match match = match(string.toString());
       return match == null ? BiOptional.empty() : BiOptional.of(match.before(), match.after());
     }
 
@@ -732,8 +732,8 @@ public final class Substring {
      * @throws IllegalArgumentException if this separator pattern isn't found in {@code string}.
      * @since 5.0
      */
-    public final BiOptional<String, String> splitThenTrim(String string) {
-      Match match = match(string);
+    public final BiOptional<String, String> splitThenTrim(CharSequence string) {
+      Match match = match(string.toString());
       return match == null
           ? BiOptional.empty()
           : BiOptional.of(match.before().trim(), match.after().trim());
