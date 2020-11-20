@@ -252,7 +252,7 @@ String schemeStripped = Substring.upToIncluding(first("://")).removeFrom(uri);
 
 **Example 3: split a string in the format of "name=value" into `name` and `value`:**
 ```java
-Substring.first('=').split("name=value", (name, value) -> ...);
+Substring.first('=').split("name=value").map((name, value) -> ...);
 ```
 
 **Example 4: replace trailing "//" with "/" :**
