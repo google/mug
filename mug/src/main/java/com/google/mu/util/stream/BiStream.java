@@ -1070,16 +1070,22 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   /**
    * Returns the first pair from this stream, or {@code BiOptional.empty()} if the stream is empty.
    *
+   * @throws NullPointerException if the chosen pair includes null
    * @since 5.0
    */
-  public abstract BiOptional<K, V> findFirst();
+  public final BiOptional<K, V> findFirst() {
+    return BiOptional.flatMap(mapToObj(BiOptional::of).findFirst(), identity());
+  }
 
   /**
    * Returns any pair from this stream, or {@code BiOptional.empty()} if the stream is empty.
    *
+   * @throws NullPointerException if the chosen pair includes null
    * @since 5.0
    */
-  public abstract BiOptional<K, V> findAny();
+  public final BiOptional<K, V> findAny() {
+    return BiOptional.flatMap(mapToObj(BiOptional::of).findAny(), identity());
+  }
 
   /**
    * Returns a {@code BiStream} consisting of the only the first {@code maxSize} pairs of this
@@ -1336,16 +1342,6 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     }
 
     @Override
-    public final BiOptional<K, V> findFirst() {
-      return BiOptional.from(underlying.findFirst()).map(toKey::apply, toValue::apply);
-    }
-
-    @Override
-    public final BiOptional<K, V> findAny() {
-      return BiOptional.from(underlying.findAny()).map(toKey::apply, toValue::apply);
-    }
-
-    @Override
     public BiStream<K, V> limit(int maxSize) {
       return from(underlying.limit(maxSize), toKey, toValue);
     }
@@ -1457,16 +1453,6 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     public boolean anyMatch(BiPredicate<? super K, ? super V> predicate) {
       requireNonNull(predicate);
       return new Spliteration().any(true, predicate); // any true means true
-    }
-
-    @Override
-    public final BiOptional<K, V> findFirst() {
-      return BiOptional.both(left.findFirst(), right.findFirst());
-    }
-
-    @Override
-    public final BiOptional<K, V> findAny() {
-      return BiOptional.both(left.findAny(), right.findAny());
     }
 
     @Override

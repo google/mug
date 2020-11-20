@@ -21,6 +21,7 @@ import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.BiStream.toBiStream;
 import static java.util.Arrays.asList;
 import static java.util.function.Function.identity;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,6 +29,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
@@ -325,9 +327,58 @@ public class BiStreamInvariantsTest {
   }
 
   @Test
+  public void findFirst_nullKeyThrowx() {
+    assertThrows(NullPointerException.class, of(null, 1, "two", 2)::findFirst);
+    assertThrows(NullPointerException.class, of("one", 1, "two", 2).mapKeys(k -> null)::findFirst);
+  }
+
+  @Test
+  public void findFirst_nullValueThrowx() {
+    assertThrows(NullPointerException.class, of("one", null, "two", 2)::findFirst);
+    assertThrows(
+        NullPointerException.class, of("one", 1, "two", 2).mapValues(v -> null)::findFirst);
+  }
+
+  @Test
+  public void findFirst_nullKeyMapsToNonNull() {
+    assertThat(of(null, 1, "two", 2).mapKeys(k -> Objects.toString(k)).findFirst())
+        .isEqualTo(BiOptional.of("null", 1));
+  }
+
+  @Test
+  public void findFirst_nullValueMapsToNonNull() {
+    assertThat(of("one", null, "two", 2).mapValues(v -> Objects.toString(v)).findFirst())
+        .isEqualTo(BiOptional.of("one", "null"));
+  }
+
+  @Test
   public void findAny() {
     assertThat(of("one", 1).findAny()).isEqualTo(BiOptional.of("one", 1));
     assertThat(of().findAny()).isEqualTo(BiOptional.empty());
+  }
+
+  @Test
+  public void findAny_nullKeyThrowx() {
+    assertThrows(NullPointerException.class, of(null, 1)::findAny);
+    assertThrows(NullPointerException.class, of("one", 1).mapKeys(k -> null)::findAny);
+  }
+
+  @Test
+  public void findAny_nullValueThrowx() {
+    assertThrows(NullPointerException.class, of("one", null)::findAny);
+    assertThrows(NullPointerException.class, of("one", 1).mapValues(v -> null)::findAny);
+  }
+
+  @Test
+  public void findAny_nullKeyMapsToNonNull() {
+    assertThat(of(null, 1).mapKeys(k -> Objects.toString(k)).findAny())
+        .isEqualTo(BiOptional.of("null", 1));
+  }
+
+  @Test
+  public void findAny_nullValueMapsToNonNull() {
+    assertThat(of("one", null).mapValues(v -> Objects.toString(v)).findAny())
+        .isEqualTo(BiOptional.of("one", "null"));
   }
 
   @Test
