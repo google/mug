@@ -19,7 +19,7 @@ Add the following to pom.xml:
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug</artifactId>
-    <version>4.8</version>
+    <version>5.0</version>
   </dependency>
 ```
 
