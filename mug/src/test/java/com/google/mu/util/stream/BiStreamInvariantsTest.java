@@ -262,22 +262,37 @@ public class BiStreamInvariantsTest {
   @Test
   public void filter() {
     assertKeyValues(of("one", 1, "two", "two").filter((k, v) -> k.equals(v)))
-        .containsExactlyEntriesIn(ImmutableMultimap.of("two", "two"))
-        .inOrder();
+        .containsExactlyEntriesIn(ImmutableMultimap.of("two", "two"));
   }
 
   @Test
   public void filterKeys() {
     assertKeyValues(of("one", 1, "two", 2).filterKeys("one"::equals))
-        .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1))
-        .inOrder();
+        .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1));
   }
 
   @Test
   public void filterValues() {
     assertKeyValues(of("one", 1, "two", 2).filterValues(v -> v == 2))
-        .containsExactlyEntriesIn(ImmutableMultimap.of("two", 2))
-        .inOrder();
+        .containsExactlyEntriesIn(ImmutableMultimap.of("two", 2));
+  }
+
+  @Test
+  public void removeIf() {
+    assertKeyValues(of("one", 1, "two", "two").removeIf((k, v) -> k.equals(v)))
+        .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1));
+  }
+
+  @Test
+  public void removeKeysIf() {
+    assertKeyValues(of("one", 1, "two", 2).removeKeysIf("one"::equals))
+        .containsExactlyEntriesIn(ImmutableMultimap.of("two", 2));
+  }
+
+  @Test
+  public void removeValuesIf() {
+    assertKeyValues(of("one", 1, "two", 2).removeValuesIf(v -> v == 2))
+        .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1));
   }
 
   @Test
@@ -1017,6 +1032,24 @@ public class BiStreamInvariantsTest {
       @Override
       <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
         return stream.filterValues(k -> true);
+      }
+    },
+    TRIVIAL_REMOVE {
+      @Override
+      <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
+        return stream.removeIf((k, v) -> false);
+      }
+    },
+    TRIVIAL_REMOVE_KEY {
+      @Override
+      <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
+        return stream.removeKeysIf(k -> false);
+      }
+    },
+    TRIVIAL_REMOVE_VALUE {
+      @Override
+      <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
+        return stream.removeValuesIf(k -> false);
       }
     },
     ;
