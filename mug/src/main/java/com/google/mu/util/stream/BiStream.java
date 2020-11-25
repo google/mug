@@ -1011,6 +1011,58 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
+   * Filter this stream to exclude pairs matching {@code predicate}.
+   *
+   * <p>Useful especially when it allows you to use method reference. For example:
+   *
+   * <pre>{@code
+   * tasks.stream()
+   *      .collect(crossJoining(Arrays.stream(MachineType.values()))
+   *      .removeIf(Worker::blacklistsMachine)
+   *      ...
+   * }</pre>
+   *
+   * @since 5.1
+   */
+  public final BiStream<K, V> removeIf(BiPredicate<? super K, ? super V> predicate) {
+    return filter(predicate.negate());
+  }
+
+  /**
+   * Filter this stream to exclude pairs whose key matches {@code predicate}.
+   *
+   * <p>Useful especially when it allows you to use method reference. For example:
+   *
+   * <pre>{@code
+   * BiStream.from(rosters)
+   *      .removeKeysIf(inactiveUserIds::contains)
+   *      ...
+   * }</pre>
+   *
+   * @since 5.1
+   */
+  public final BiStream<K, V> removeKeysIf(Predicate<? super K> predicate) {
+    return filterKeys(predicate.negate());
+  }
+
+  /**
+   * Filter this stream to exclude pairs whose value matches {@code predicate}.
+   *
+   * <p>Useful especially when it allows you to use method reference. For example:
+   *
+   * <pre>{@code
+   * BiStream.zip(userIds, userNames)
+   *      .removeValuesIf(String::isEmpty)
+   *      ...
+   * }</pre>
+   *
+   * @since 5.1
+   */
+  public final BiStream<K, V> removeValuesIf(Predicate<? super V> predicate) {
+    return filterValues(predicate.negate());
+  }
+
+  /**
    * Returns a {@code BiStream} consisting of the pairs in this stream, followed by the pairs in
    * {@code other}.
    *
