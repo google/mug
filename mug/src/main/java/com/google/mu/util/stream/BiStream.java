@@ -992,19 +992,34 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     return from(mapToEntry().peek(e -> action.accept(e.getKey(), e.getValue())));
   }
 
-  /** Filter this stream to only pairs matching {@code predicate}. */
+  /**
+   * Filter this stream to only pairs matching {@code predicate}.
+   *
+   * <p>Note that if you are passing in a lambda with the {@code !} operator, consider using {@link
+   * #skipIf} instead that might even allow you to use method reference.
+   */
   public final BiStream<K, V> filter(BiPredicate<? super K, ? super V> predicate) {
     requireNonNull(predicate);
     return from(mapToEntry().filter(kv -> predicate.test(kv.getKey(), kv.getValue())));
   }
 
-  /** Filter this stream to only pairs whose key matches {@code predicate}. */
+  /**
+   * Filter this stream to only pairs whose key matches {@code predicate}.
+   *
+   * <p>Note that if you are passing in a lambda with the {@code !} operator, consider using {@link
+   * #skipKeysIf} instead that might even allow you to use method reference.
+   */
   public final BiStream<K, V> filterKeys(Predicate<? super K> predicate) {
     requireNonNull(predicate);
     return filter((k, v) -> predicate.test(k));
   }
 
-  /** Filter this stream to only pairs whose value matches {@code predicate}. */
+  /**
+   * Filter this stream to only pairs whose value matches {@code predicate}.
+   *
+   * <p>Note that if you are passing in a lambda with the {@code !} operator, consider using {@link
+   * #skipValuesIf} instead that might even allow you to use method reference.
+   */
   public final BiStream<K, V> filterValues(Predicate<? super V> predicate) {
     requireNonNull(predicate);
     return filter((k, v) -> predicate.test(v));
@@ -1018,13 +1033,13 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * <pre>{@code
    * tasks.stream()
    *      .collect(crossJoining(Arrays.stream(MachineType.values()))
-   *      .removeIf(Worker::blacklistsMachine)
+   *      .skipIf(Worker::blacklistsMachine)
    *      ...
    * }</pre>
    *
    * @since 5.1
    */
-  public final BiStream<K, V> removeIf(BiPredicate<? super K, ? super V> predicate) {
+  public final BiStream<K, V> skipIf(BiPredicate<? super K, ? super V> predicate) {
     return filter(predicate.negate());
   }
 
@@ -1035,13 +1050,13 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *
    * <pre>{@code
    * BiStream.from(rosters)
-   *      .removeKeysIf(inactiveUserIds::contains)
+   *      .skipKeysIf(inactiveUserIds::contains)
    *      ...
    * }</pre>
    *
    * @since 5.1
    */
-  public final BiStream<K, V> removeKeysIf(Predicate<? super K> predicate) {
+  public final BiStream<K, V> skipKeysIf(Predicate<? super K> predicate) {
     return filterKeys(predicate.negate());
   }
 
@@ -1052,13 +1067,13 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *
    * <pre>{@code
    * BiStream.zip(userIds, userNames)
-   *      .removeValuesIf(String::isEmpty)
+   *      .skipValuesIf(String::isEmpty)
    *      ...
    * }</pre>
    *
    * @since 5.1
    */
-  public final BiStream<K, V> removeValuesIf(Predicate<? super V> predicate) {
+  public final BiStream<K, V> skipValuesIf(Predicate<? super V> predicate) {
     return filterValues(predicate.negate());
   }
 

@@ -278,20 +278,20 @@ public class BiStreamInvariantsTest {
   }
 
   @Test
-  public void removeIf() {
-    assertKeyValues(of("one", 1, "two", "two").removeIf((k, v) -> k.equals(v)))
+  public void skipIf() {
+    assertKeyValues(of("one", 1, "two", "two").skipIf((k, v) -> k.equals(v)))
         .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1));
   }
 
   @Test
-  public void removeKeysIf() {
-    assertKeyValues(of("one", 1, "two", 2).removeKeysIf("one"::equals))
+  public void skipKeysIf() {
+    assertKeyValues(of("one", 1, "two", 2).skipKeysIf("one"::equals))
         .containsExactlyEntriesIn(ImmutableMultimap.of("two", 2));
   }
 
   @Test
-  public void removeValuesIf() {
-    assertKeyValues(of("one", 1, "two", 2).removeValuesIf(v -> v == 2))
+  public void skipValuesIf() {
+    assertKeyValues(of("one", 1, "two", 2).skipValuesIf(v -> v == 2))
         .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1));
   }
 
@@ -1034,22 +1034,22 @@ public class BiStreamInvariantsTest {
         return stream.filterValues(k -> true);
       }
     },
-    TRIVIAL_REMOVE {
+    TRIVIAL_SKIP_IF {
       @Override
       <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
-        return stream.removeIf((k, v) -> false);
+        return stream.skipIf((k, v) -> false);
       }
     },
-    TRIVIAL_REMOVE_KEY {
+    TRIVIAL_SKIP_KEYS_IF {
       @Override
       <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
-        return stream.removeKeysIf(k -> false);
+        return stream.skipKeysIf(k -> false);
       }
     },
-    TRIVIAL_REMOVE_VALUE {
+    TRIVIAL_SKIP_VALUES_IF {
       @Override
       <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
-        return stream.removeValuesIf(k -> false);
+        return stream.skipValuesIf(k -> false);
       }
     },
     ;
