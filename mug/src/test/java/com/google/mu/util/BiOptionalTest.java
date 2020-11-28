@@ -244,6 +244,14 @@ public class BiOptionalTest {
   public void testOrElseThrow_notEmpty() {
     assertThat(BiOptional.of("foo", "bar").orElseThrow().combine(String::concat))
         .isEqualTo("foobar");
+    assertThat(BiOptional.of("foo", "bar").orElseThrow().filter(String::equals))
+        .isEqualTo(BiOptional.empty());
+    assertThat(BiOptional.of("foo", "foo").orElseThrow().filter(String::equals))
+        .isEqualTo(BiOptional.of("foo", "foo"));
+    assertThat(BiOptional.of("foo", "bar").orElseThrow().match(String::equals))
+        .isFalse();
+    assertThat(BiOptional.of("foo", "foo").orElseThrow().match(String::equals))
+        .isTrue();
   }
 
   @Test
