@@ -262,12 +262,12 @@ public final class MoreStreams {
    * Substring.first(',')
    *     .delimit("k1=v2,k2=v2")
    *     .map(s -> first('=').split(s).orElseThrow(...))
-   *     .collect(both(toImmutableSetMultimap()));
+   *     .collect(fromBoth(toImmutableSetMultimap()));
    * }</pre>
    *
    * @since 5.1
    */
-  public static <A, B, R> Collector<Both<A, B>, ?, R> both(
+  public static <A, B, R> Collector<Both<A, B>, ?, R> fromBoth(
       BiCollector<? super A, ? super B, R> downstream) {
     return Collectors.mapping(
         (Both<A, B> b) -> b.combine(AbstractMap.SimpleImmutableEntry::new),
