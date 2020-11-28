@@ -17,11 +17,13 @@ package com.google.mu.util.stream;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.stream.BiCollectors.groupingBy;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.MoreStreams.flatMapping;
 import static com.google.mu.util.stream.MoreStreams.flattening;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
+import static com.google.mu.util.stream.MoreStreams.mapping;
 import static com.google.mu.util.stream.MoreStreams.toListAndThen;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Arrays.asList;
@@ -40,6 +42,7 @@ import java.util.Set;
 import java.util.Spliterator;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -217,6 +220,14 @@ public class MoreStreamsTest {
     List<String> to = new ArrayList<>();
     MoreStreams.iterateThrough(Stream.of(1, 2).map(Object::toString), to::add);
     assertThat(to).containsExactly("1", "2");
+  }
+
+  @Test public void mappingFromPairs() {
+    String input = "k1=v1,k2=v2";
+    Map<String, String> kvs = first(',')
+        .delimit(input)
+        .collect(mapping(s -> first('=').split(s).orElseThrow(), Collectors::toMap));
+    assertThat(kvs).containsExactly("k1", "v1", "k2", "v2");
   }
 
   @Test public void mergingValues_emptyMaps() {

@@ -229,6 +229,24 @@ public class BiOptionalTest {
   }
 
   @Test
+  public void testOrElseThrow_npe() {
+    assertThrows(NullPointerException.class, () -> BiOptional.empty().orElseThrow(() -> null));
+  }
+
+  @Test
+  public void testOrElseThrow_empty() {
+    Exception e = new Exception("test");
+    Exception thrown = assertThrows(Exception.class, () -> BiOptional.empty().orElseThrow(() -> e));
+    assertThat(thrown).isSameAs(e);
+  }
+
+  @Test
+  public void testOrElseThrow_notEmpty() {
+    assertThat(BiOptional.of("foo", "bar").orElseThrow().combine(String::concat))
+        .isEqualTo("foobar");
+  }
+
+  @Test
   public void testNulls() {
     new NullPointerTester().testAllPublicStaticMethods(BiOptional.class);
     new NullPointerTester().testAllPublicInstanceMethods(BiOptional.empty());
