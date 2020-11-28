@@ -261,7 +261,7 @@ public final class MoreStreams {
    * <pre>{@code
    * Substring.first(',')
    *     .delimit("k1=v2,k2=v2")
-   *     .map( s -> first('=').split(s).orElseThrow(...))
+   *     .map(s -> first('=').split(s).orElseThrow(...))
    *     .collect(both(toImmutableSetMultimap()));
    * }</pre>
    *
