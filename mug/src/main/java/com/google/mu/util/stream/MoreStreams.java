@@ -40,6 +40,7 @@ import java.util.stream.StreamSupport;
 
 import com.google.mu.function.CheckedConsumer;
 import com.google.mu.function.DualValuedFunction;
+import com.google.mu.util.Both;
 
 /**
  * Static utilities pertaining to {@link Stream} and {@link Collector} in addition to relevant
@@ -223,6 +224,33 @@ public final class MoreStreams {
   @Deprecated
   public static <K, V> Collector<Map<K, V>, ?, Map<K, V>> uniqueKeys() {
     return flattening(Map::entrySet, toMap());
+  }
+
+  /**
+   * Analogous to {@link Collectors#mapping Collectors.mapping()}, applies a mapping function to
+   * each input element before accumulation, except that the {@code mapper} function returns a
+   * <em><b>pair of elements</b></em>, which are then accumulated by a <em>BiCollector</em>.
+   *
+   * <p>For example, you can parse key-value pairs in the form of "k1=v1,k2=v2" with:
+   *
+   * <pre>{@code
+   * Substring.first(',')
+   *     .delimit("k1=v2,k2=v2")
+   *     .collect(
+   *         mapping(
+   *             s -> first('=').split(s).orElseThrow(...),
+   *             toImmutableSetMultimap()));
+   * }</pre>
+   *
+   * @since 5.1
+   */
+  public static <T, A, B, R> Collector<T, ?, R> mapping(
+      Function<? super T, ? extends Both<? extends A, ? extends B>> mapper,
+      BiCollector<A, B, R> downstream) {
+    Function<? super T, Map.Entry<A, B>> toEntry =
+        mapper.andThen(b -> b.combine(AbstractMap.SimpleImmutableEntry::new));
+    return Collectors.mapping(
+        toEntry, downstream.splitting(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   /**

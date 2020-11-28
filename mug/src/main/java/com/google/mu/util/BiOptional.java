@@ -16,6 +16,7 @@ package com.google.mu.util;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
@@ -171,6 +172,21 @@ public abstract class BiOptional<A, B> {
   public abstract BiOptional<A, B> or(
       Supplier<? extends BiOptional<? extends A, ? extends B>> alternative);
 
+  /** Ensures that the pair must be present or else throws {@link NoSuchElementException}. */
+  public Both<A, B> orElseThrow() {
+    return orElseThrow(NoSuchElementException::new);
+  }
+
+  /**
+   * Ensures that the pair must be present or else throws the exception returned by
+   * {@code exceptionSupplier}.
+   *
+   * @throws NullPointerException if {@code exceptionSupplier} is null, or returns null.
+   * @throws E if the pair is absent.
+   */
+  public abstract <E extends Throwable> Both<A, B> orElseThrow(Supplier<E> exceptionSupplier)
+      throws E;
+
   /** Returns a {@code BiStream} view of this BiOptional. */
   public abstract BiStream<A, B> stream();
 
@@ -238,6 +254,12 @@ public abstract class BiOptional<A, B> {
         }
 
         @Override
+        public <E extends Throwable> Both<Object, Object> orElseThrow(Supplier<E> exceptionSupplier)
+            throws E {
+          throw exceptionSupplier.get();
+        }
+
+        @Override
         public BiStream<Object, Object> stream() {
           return BiStream.empty();
         }
@@ -248,7 +270,7 @@ public abstract class BiOptional<A, B> {
         }
       };
 
-  private static final class Present<A, B> extends BiOptional<A, B> {
+  private static final class Present<A, B> extends BiOptional<A, B> implements Both<A, B> {
     private final A a;
     private final B b;
 
@@ -307,6 +329,11 @@ public abstract class BiOptional<A, B> {
     }
 
     @Override
+    public boolean match(BiPredicate<? super A, ? super B> predicate) {
+      return predicate.test(a, b);
+    }
+
+    @Override
     public BiOptional<A, B> or(
         Supplier<? extends BiOptional<? extends A, ? extends B>> alternative) {
       requireNonNull(alternative);
@@ -321,6 +348,17 @@ public abstract class BiOptional<A, B> {
     @Override
     public boolean isPresent() {
       return true;
+    }
+
+    /**
+     * Ensures that the pair must be present or else throws the exception returned by
+     * {@code exceptionSupplier}.
+     */
+    @Override
+    public <E extends Throwable> Both<A, B> orElseThrow(Supplier<E> exceptionSupplier)
+        throws E {
+      requireNonNull(exceptionSupplier);
+      return this;
     }
 
     @Override
@@ -345,6 +383,11 @@ public abstract class BiOptional<A, B> {
     @Override
     public String toString() {
       return "of(" + a + ", " + b + ")";
+    }
+
+    @Override
+    public <T> T combine(BiFunction<? super A, ? super B, T> combiner) {
+      return combiner.apply(a, b);
     }
   }
 

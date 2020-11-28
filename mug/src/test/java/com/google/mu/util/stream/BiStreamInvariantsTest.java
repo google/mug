@@ -55,6 +55,7 @@ import com.google.common.collect.MultimapBuilder;
 import com.google.common.collect.Sets;
 import com.google.common.truth.MultimapSubject;
 import com.google.mu.util.BiOptional;
+import com.google.mu.util.Both;
 
 @RunWith(Parameterized.class)
 public class BiStreamInvariantsTest {
@@ -849,6 +850,35 @@ public class BiStreamInvariantsTest {
       <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2, K k3, V v3) {
         return keyValues(k1, v1, k2, v2, k3, v3).entries().stream()
             .collect(toBiStream(Map.Entry::getKey, Map.Entry::getValue));
+      }
+    },
+    FROM_PAIRS {
+      @Override
+      <K, V> BiStream<K, V> newBiStream() {
+        return BiStream.fromPairs(Stream.empty());
+      }
+
+      @Override
+      <K, V> BiStream<K, V> newBiStream(K key, V value) {
+        return BiStream.fromPairs(Stream.of(both(key, value)));
+      }
+
+      @Override
+      <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2) {
+        return BiStream.fromPairs(Stream.of(both(k1, v1), both(k2, v2)));
+      }
+
+      @Override
+      <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2, K k3, V v3) {
+        return BiStream.fromPairs(Stream.of(both(k1, v1), both(k2, v2), both(k3, v3)));
+      }
+
+      private <K, V> Both<K, V> both(K key, V value) {
+        return new Both<K, V>() {
+          @Override public <T> T combine(BiFunction<? super K, ? super V, T> f) {
+            return f.apply(key, value);
+          }
+        };
       }
     },
     FROM_DUAL_VALUED_FUNCTION {

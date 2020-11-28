@@ -64,6 +64,7 @@ import java.util.stream.Stream;
 import com.google.mu.function.BiComparator;
 import com.google.mu.function.DualValuedFunction;
 import com.google.mu.util.BiOptional;
+import com.google.mu.util.Both;
 
 /**
  * A class similar to {@link Stream}, but operating over a sequence of pairs of objects.
@@ -527,6 +528,16 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    */
   public static <K, V> BiStream<K, V> from(Collection<? extends Map.Entry<? extends K, ? extends V>> entries) {
     return from(entries.stream());
+  }
+
+  /**
+   * Returns a {@code BiStream} of the key value pairs from {@code entries}.
+   * For example {@code BiStream.from(multimap.entries())}.
+   *
+   * @since 5.1
+   */
+  public static <K, V> BiStream<K, V> fromPairs(Stream<? extends Both<? extends K, ? extends V>> pairs) {
+    return from(pairs.map(b -> b.combine(BiStream::kv)));
   }
 
   /**
