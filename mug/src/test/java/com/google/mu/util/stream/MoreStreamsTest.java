@@ -20,9 +20,9 @@ import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.stream.BiCollectors.groupingBy;
 import static com.google.mu.util.stream.BiCollectors.toMap;
-import static com.google.mu.util.stream.MoreStreams.fromBoth;
 import static com.google.mu.util.stream.MoreStreams.flatMapping;
 import static com.google.mu.util.stream.MoreStreams.flattening;
+import static com.google.mu.util.stream.MoreStreams.fromPairs;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static com.google.mu.util.stream.MoreStreams.mapping;
 import static com.google.mu.util.stream.MoreStreams.toListAndThen;
@@ -236,7 +236,7 @@ public class MoreStreamsTest {
     Map<String, String> kvs = first(',')
         .delimit(input)
         .map(s -> first('=').split(s).orElseThrow())
-        .collect(fromBoth(Collectors::toMap));
+        .collect(fromPairs(Collectors::toMap));
     assertThat(kvs).containsExactly("k1", "v1", "k2", "v2");
   }
 
