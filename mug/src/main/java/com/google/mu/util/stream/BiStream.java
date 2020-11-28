@@ -531,8 +531,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Returns a {@code BiStream} of the key value pairs from {@code entries}.
-   * For example {@code BiStream.from(multimap.entries())}.
+   * Returns a {@code BiStream} of the key value pairs from {@code pairs}.
    *
    * @since 5.1
    */
