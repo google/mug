@@ -254,6 +254,27 @@ public final class MoreStreams {
   }
 
   /**
+   * Collects the pairs of input elements using the {@code downstream} BiCollector.
+   *
+   * <p>For example, you can parse key-value pairs in the form of "k1=v1,k2=v2" with:
+   *
+   * <pre>{@code
+   * Substring.first(',')
+   *     .delimit("k1=v2,k2=v2")
+   *     .map( s -> first('=').split(s).orElseThrow(...))
+   *     .collect(both(toImmutableSetMultimap()));
+   * }</pre>
+   *
+   * @since 5.1
+   */
+  public static <A, B, R> Collector<Both<A, B>, ?, R> both(
+      BiCollector<? super A, ? super B, R> downstream) {
+    return Collectors.mapping(
+        (Both<A, B> b) -> b.combine(AbstractMap.SimpleImmutableEntry::new),
+        downstream.splitting(Map.Entry::getKey, Map.Entry::getValue));
+  }
+
+  /**
    * Similar but slightly different than {@link Collectors#flatMapping}, returns a {@link Collector}
    * that first flattens the input stream of <em>pairs</em> (as opposed to single elements) and then
    * collects the flattened pairs with the {@code downstream} BiCollector.
