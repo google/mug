@@ -267,7 +267,7 @@ public abstract class BiOptional<A, B> {
         public Both<Object, Object> orElse(Object a, Object b) {
           return new Both<Object, Object>() {
             @Override
-            public <T> T combine(BiFunction<Object, Object, T> function) {
+            public <T> T mapToObj(BiFunction<Object, Object, T> function) {
               return function.apply(a, b);
             }
           };
@@ -433,7 +433,7 @@ public abstract class BiOptional<A, B> {
     }
 
     @Override
-    public <T> T combine(BiFunction<? super A, ? super B, T> combiner) {
+    public <T> T mapToObj(BiFunction<? super A, ? super B, T> combiner) {
       return combiner.apply(a, b);
     }
   }

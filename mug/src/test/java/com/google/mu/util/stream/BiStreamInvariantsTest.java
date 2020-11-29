@@ -875,7 +875,7 @@ public class BiStreamInvariantsTest {
 
       private <K, V> Both<K, V> both(K key, V value) {
         return new Both<K, V>() {
-          @Override public <T> T combine(BiFunction<? super K, ? super V, T> f) {
+          @Override public <T> T mapToObj(BiFunction<? super K, ? super V, T> f) {
             return f.apply(key, value);
           }
         };
