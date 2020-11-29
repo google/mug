@@ -470,9 +470,7 @@ public final class MoreStreams {
    * <em><b>pair of elements</b></em>, which are then accumulated by a <em>BiCollector</em>.
    *
    * @since 4.6
-   * @deprecated
    */
-  @Deprecated
   public static <T, K, V, R> Collector<T, ?, R> mapping(
       DualValuedFunction<? super T, ? extends K, ? extends V> mapper,
       BiCollector<K, V, R> downstream) {

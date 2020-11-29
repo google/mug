@@ -855,22 +855,22 @@ public class BiStreamInvariantsTest {
     FROM_PAIRS {
       @Override
       <K, V> BiStream<K, V> newBiStream() {
-        return BiStream.fromPairs(Stream.empty());
+        return BiStream.from(Stream.<Both<K, V>>empty(), Both::mapToObj);
       }
 
       @Override
       <K, V> BiStream<K, V> newBiStream(K key, V value) {
-        return BiStream.fromPairs(Stream.of(both(key, value)));
+        return BiStream.from(Stream.of(both(key, value)), Both::mapToObj);
       }
 
       @Override
       <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2) {
-        return BiStream.fromPairs(Stream.of(both(k1, v1), both(k2, v2)));
+        return BiStream.from(Stream.of(both(k1, v1), both(k2, v2)), Both::mapToObj);
       }
 
       @Override
       <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2, K k3, V v3) {
-        return BiStream.fromPairs(Stream.of(both(k1, v1), both(k2, v2), both(k3, v3)));
+        return BiStream.from(Stream.of(both(k1, v1), both(k2, v2), both(k3, v3)), Both::mapToObj);
       }
 
       private <K, V> Both<K, V> both(K key, V value) {

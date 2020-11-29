@@ -27,10 +27,11 @@ public interface Both<A, B> {
    * <p>If you have a stream of {@code Both} objects, the following turns it into a {@code BiStream}:
    * <pre>{@code
    * BiStream<String, String> keyValues =
-   *     BiStream.fromPairs(
+   *     BiStream.from(
    *         first(',')
    *             .delimit("k1=v1,k2=v2")
-   *             .map(s -> first('=').split(s).orElseThrow(...)));
+   *             .map(s -> first('=').split(s).orElseThrow(...)),
+   *         Both::mapToObj);
    * }</pre>
    *
    * Or in a single chained expression:

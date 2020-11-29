@@ -64,7 +64,6 @@ import java.util.stream.Stream;
 import com.google.mu.function.BiComparator;
 import com.google.mu.function.DualValuedFunction;
 import com.google.mu.util.BiOptional;
-import com.google.mu.util.Both;
 
 /**
  * A class similar to {@link Stream}, but operating over a sequence of pairs of objects.
@@ -531,15 +530,6 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Returns a {@code BiStream} of the key value pairs from {@code pairs}.
-   *
-   * @since 5.1
-   */
-  public static <K, V> BiStream<K, V> fromPairs(Stream<? extends Both<? extends K, ? extends V>> pairs) {
-    return from(pairs, Both::mapToObj);
-  }
-
-  /**
    * Returns a {@code BiStream} of {@code elements}, each transformed to a pair of values with
    * {@code toKey} and {@code toValue}.
    */
@@ -566,9 +556,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * values with {@code mapper} function.
    *
    * @since 4.6
-   * @deprecated
    */
-  @Deprecated
   public static <T, K, V> BiStream<K, V> from(
       Collection<T> elements,
       DualValuedFunction<? super T, ? extends K, ? extends V> mapper) {
@@ -580,9 +568,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * values with {@code mapper} function.
    *
    * @since 4.6
-   * @deprecated
    */
-  @Deprecated
   public static <T, K, V> BiStream<K, V> from(
       Stream<T> stream,
       DualValuedFunction<? super T, ? extends K, ? extends V> mapper) {
