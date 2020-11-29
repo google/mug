@@ -2,6 +2,7 @@ package com.google.mu.util;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 
 import org.junit.Test;
@@ -23,6 +24,14 @@ public class BothTest {
   public void filter() {
     assertThat(both(1, 2).filter(Object::equals)).isEqualTo(BiOptional.empty());
     assertThat(both(1, 1).filter(Object::equals)).isEqualTo(BiOptional.of(1, 1));
+  }
+
+  @Test
+  public void peek() {
+    AtomicInteger effect = new AtomicInteger();
+    Both<Integer, Integer> b = both(1, 2);
+    assertThat(b.peek((x, y) -> effect.set(x + y))).isSameAs(b);
+    assertThat(effect.get()).isEqualTo(3);
   }
 
   @Test
