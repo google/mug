@@ -172,6 +172,14 @@ public abstract class BiOptional<A, B> {
   public abstract BiOptional<A, B> or(
       Supplier<? extends BiOptional<? extends A, ? extends B>> alternative);
 
+  /**
+   * Returns the current pair if present, or else returns {@code (a, b)}. {@code a} and {@code b}
+   * are allowed to be null.
+   *
+   * @since 5.1
+   */
+  public abstract Both<A, B> orElse(A a, B b);
+
   /** Ensures that the pair must be present or else throws {@link NoSuchElementException}. */
   public Both<A, B> orElseThrow() {
     return orElseThrow(NoSuchElementException::new);
@@ -241,6 +249,16 @@ public abstract class BiOptional<A, B> {
         @Override
         public BiOptional<Object, Object> or(Supplier<? extends BiOptional<?, ?>> alternative) {
           return covariant(alternative.get());
+        }
+
+        @Override
+        public Both<Object, Object> orElse(Object a, Object b) {
+          return new Both<Object, Object>() {
+            @Override
+            public <T> T combine(BiFunction<Object, Object, T> function) {
+              return function.apply(a, b);
+            }
+          };
         }
 
         @Override
@@ -337,6 +355,11 @@ public abstract class BiOptional<A, B> {
     public BiOptional<A, B> or(
         Supplier<? extends BiOptional<? extends A, ? extends B>> alternative) {
       requireNonNull(alternative);
+      return this;
+    }
+
+    @Override
+    public Both<A, B> orElse(A a, B b) {
       return this;
     }
 

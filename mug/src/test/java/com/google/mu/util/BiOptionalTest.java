@@ -229,6 +229,24 @@ public class BiOptionalTest {
   }
 
   @Test
+  public void testOrElse_empty() {
+    String result = BiOptional.empty().orElse("foo", "bar").combine((a, b) -> a + ":" + b);
+    assertThat(result).isEqualTo("foo:bar");
+  }
+
+  @Test
+  public void testOrElse_nonEmpty() {
+    int result = BiOptional.of(1, 2).orElse(30, 40).combine(Integer::sum);
+    assertThat(result).isEqualTo(3);
+  }
+
+  @Test
+  public void testOrElse_nullAlternatives() {
+    String result = BiOptional.empty().orElse(null, null).combine((a, b) -> a + ":" + b);
+    assertThat(result).isEqualTo("null:null");
+  }
+
+  @Test
   public void testOrElseThrow_npe() {
     assertThrows(NullPointerException.class, () -> BiOptional.empty().orElseThrow(() -> null));
   }
@@ -255,10 +273,10 @@ public class BiOptionalTest {
   }
 
   @Test
-  public void testNulls() {
+  public void testNulls() throws Exception {
     new NullPointerTester().testAllPublicStaticMethods(BiOptional.class);
-    new NullPointerTester().testAllPublicInstanceMethods(BiOptional.empty());
-    new NullPointerTester().testAllPublicInstanceMethods(BiOptional.of(1, "one"));
+    testNullChecks(BiOptional.empty());
+    testNullChecks(BiOptional.of(1, "one"));
   }
 
   @Test
@@ -271,5 +289,11 @@ public class BiOptionalTest {
         .addEqualityGroup(Optional.empty())
         .addEqualityGroup(Optional.of(1))
         .testEquals();
+  }
+
+  private static void testNullChecks(BiOptional<?, ?> optional) throws Exception {
+    new NullPointerTester()
+        .ignore(optional.getClass().getMethod("orElse", Object.class, Object.class))
+        .testAllPublicInstanceMethods(optional);
   }
 }
