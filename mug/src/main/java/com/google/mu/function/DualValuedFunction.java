@@ -22,9 +22,9 @@ import java.util.function.Function;
 /**
  * A function with two result values.
  *
- * <p>Methods wishing to return two values should typically follow this pattern to take as parameter
- * a custom {@link BiFunction} so that the caller can choose the appropriate result type without
- * being forced to use {@code Pair} or {@code Map.Entry}.
+ * <p>Methods wishing to return two values may take as parameter a {@link BiFunction} so that the
+ * caller can choose the appropriate result type without being forced to use {@code Pair} or
+ * {@code Map.Entry}.
  *
  * <p>See {@link java.util.stream.Collectors#teeing} in JDK 12 as an example.
  *
@@ -38,25 +38,9 @@ public interface DualValuedFunction<F, T1, T2> {
    * With {@code input}, calls this function and passes the two result values to the {@code output}
    * function (because Java has no built-in tuples).
    *
-   * <p>An example is the {@link com.google.mu.util.Substring.Pattern#split(String, BiFunction)}
-   * method. Its callers can typically split a string like this:
-   *
-   * <pre>{@code
-   * first('=').split(string, (name, val) -> ...);
-   * }</pre>
-   *
-   * The {@code split()} method (and its friend {@code splitThenTrim}) can then be
-   * method-referenced as a {@code DualValuedFunction} and be used in a {@link
-   * com.google.mu.util.stream.BiStream} chain, like:
-   *
-   * <pre>{@code
-   * ImmutableSetMultimap<String, String> keyValues = lines.stream()
-   *     .map(String::trim)
-   *     .filter(l -> l.length() > 0)                     // not empty
-   *     .filter(l -> !l.startsWith("//"))                // not comment
-   *     .collect(toBiStream(first('=')::splitThenTrim))  // split each line to a key-value pair
-   *     .collect(ImmutableSetMultimap::toImmutableSetMultimap);
-   * }</pre>
+   * <p>Examples include {@link java.util.stream.Collectors#teeing}, {@link
+   * com.google.mu.util.Both#mapToObj(BiFunction)} and {@link
+   * com.google.mu.util.BiOptional#map(BiFunction)}.
    *
    * @throws NullPointerException if the {@code output} function is null.
    */
