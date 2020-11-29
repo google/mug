@@ -173,7 +173,7 @@ public abstract class BiOptional<A, B> {
       Supplier<? extends BiOptional<? extends A, ? extends B>> alternative);
 
   /**
-   * Returns the current pair if present, or else returns {@code (a, b)}. {@code a} and {@code b}
+   * Returns the pair if present, or else returns {@code (a, b)}. {@code a} and {@code b}
    * are allowed to be null.
    *
    * @since 5.1
