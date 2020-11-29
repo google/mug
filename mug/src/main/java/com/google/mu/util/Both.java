@@ -15,7 +15,7 @@ import java.util.function.BiPredicate;
 @FunctionalInterface
 public interface Both<A, B> {
   /**
-   * Combines the pair together into a single object using the {@code mapper} function.
+   * Maps the pair into a single object using the {@code mapper} function.
    *
    * <p>For example: <pre>{@code
    * first('=')
