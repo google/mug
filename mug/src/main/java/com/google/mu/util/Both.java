@@ -15,11 +15,50 @@ import java.util.function.BiPredicate;
 @FunctionalInterface
 public interface Both<A, B> {
   /**
-   * Combines the pair of things with {@code combiner} function.
+   * Maps the pair using the {@code mapper} function.
    *
-   * @throws NullPointerException if {@code condition} is null
+   * <p>For example: <pre>{@code
+   * first('=')
+   *     .split("k=v")
+   *     .orElseThrow(...)
+   *     .combine(KeyValue::new):
+   * }</pre>
+   *
+   * <p>If you have a stream of {@code Both} objects, the following turns it into a {@code BiStream}:
+   * <pre>{@code
+   * BiStream<String, String> keyValues =
+   *     BiStream.fromPairs(
+   *         first(',')
+   *             .delimit("k1=v1,k2=v2")
+   *             .map(s -> first('=').split(s).orElseThrow(...)));
+   * }</pre>
+   *
+   * Or in a single chained expression:
+   * <pre>{@code
+   * import static com.google.mu.util.stream.BiStream.toBiStream;
+   *
+   * BiStream<String, String> keyValues =
+   *     first(',')
+   *         .delimit("k1=v1,k2=v2")
+   *         .map(s -> first('=').split(s).orElseThrow(...))
+   *         .collect(toBiStream(Both::combine));
+   * }</pre>
+   *
+   * <p>A stream of {@code Both} can also be collected using a {@code BiCollector}:
+   * <pre>{@code
+   * import static com.google.mu.util.stream.MoreStreams.fromPairs;
+   *
+   * ImmutableListMultimap<String, String> keyValues =
+   *     first(',')
+   *         .delimit("k1=v1,k2=v2")
+   *         .map(s -> first('=').split(s).orElseThrow(...))
+   *         .collect(fromPairs(toImmutableListMultimap()));
+   * }</pre>
+   *
+   *
+   * @throws NullPointerException if {@code mapper} is null
    */
-  <T> T combine(BiFunction<? super A, ? super B, T> combiner);
+  <T> T combine(BiFunction<? super A, ? super B, T> mapper);
 
   /**
    * If the pair {@link #match match()} {@code condition}, returns a {@link BiOptional} containing
