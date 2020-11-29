@@ -26,7 +26,8 @@ import java.util.function.Function;
  * caller can choose the appropriate result type without being forced to use {@code Pair} or
  * {@code Map.Entry}.
  *
- * <p>See the {@link java.util.stream.Collectors#teeing teeing()} method in JDK 12 as an example.
+ * <p>See the {@link java.util.stream.Collectors#teeing Collectors.teeing()} method in JDK 12 as an
+ * example.
  *
  * @param <F> the input type
  * @param <T1> the first output type
@@ -38,7 +39,7 @@ public interface DualValuedFunction<F, T1, T2> {
    * With {@code input}, calls this function and passes the two result values to the {@code output}
    * function (because Java has no built-in tuples).
    *
-   * <p>Examples include {@link java.util.stream.Collectors#teeing teeing()}, {@link
+   * <p>Examples include {@link java.util.stream.Collectors#teeing Collectors.teeing()}, {@link
    * com.google.mu.util.Both#mapToObj(BiFunction)} and {@link
    * com.google.mu.util.BiOptional#map(BiFunction)}.
    *
