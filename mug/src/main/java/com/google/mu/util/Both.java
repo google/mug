@@ -2,6 +2,7 @@ package com.google.mu.util;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 
@@ -38,5 +39,18 @@ public interface Both<A, B> {
    */
   default boolean match(BiPredicate<? super A, ? super B> condition) {
     return combine(condition::test);
+  }
+
+  /**
+   * Invokes {@code consumer} with the pair and returns this object as is.
+   *
+   * @throws NullPointerException if {@code consumer} is null
+   */
+  default Both<A, B> peek(BiConsumer<? super A, ? super B> consumer) {
+    requireNonNull(consumer);
+    return combine((a, b) -> {
+      consumer.accept(a, b);
+      return this;
+    });
   }
 }
