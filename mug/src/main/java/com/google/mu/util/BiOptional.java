@@ -156,6 +156,14 @@ public abstract class BiOptional<A, B> {
   public abstract BiOptional<A, B> filter(BiPredicate<? super A, ? super B> predicate);
 
   /**
+   * Invoke {@code consumer} with the pair if present. Returns this object as is.
+   *
+   * @throws NullPointerException if consumer is null
+   * @since 5.1
+   */
+  public abstract BiOptional<A, B> peek(BiConsumer<? super A, ? super B> consumer);
+
+  /**
    * If a pair of values is present, invoke {@code consumer} with them. Otherwise, do nothing.
    *
    * @throws NullPointerException if consumer is null
@@ -266,6 +274,12 @@ public abstract class BiOptional<A, B> {
         }
 
         @Override
+        public BiOptional<Object, Object> peek(BiConsumer<Object, Object> consumer) {
+          requireNonNull(consumer);
+          return this;
+        }
+
+        @Override
         public void ifPresent(BiConsumer<Object, Object> consumer) {
           requireNonNull(consumer);
         }
@@ -364,6 +378,12 @@ public abstract class BiOptional<A, B> {
 
     @Override
     public Both<A, B> orElse(A a, B b) {
+      return this;
+    }
+
+    @Override
+    public Present<A, B> peek(BiConsumer<? super A, ? super B> consumer) {
+      consumer.accept(a, b);
       return this;
     }
 

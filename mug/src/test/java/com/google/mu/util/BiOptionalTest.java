@@ -17,20 +17,33 @@ package com.google.mu.util;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static org.junit.Assert.assertThrows;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 import com.google.common.testing.EqualsTester;
 import com.google.common.testing.NullPointerTester;
 
 @RunWith(JUnit4.class)
 public class BiOptionalTest {
+  @Mock private BiConsumer<Object, Object> consumer;
+
+  @Before
+  public void initMocks() {
+    MockitoAnnotations.initMocks(this);
+  }
+
   @Test
   public void empty_toString() {
     assertThat(BiOptional.empty().toString()).isEqualTo("empty()");
@@ -89,6 +102,37 @@ public class BiOptionalTest {
   @Test
   public void filter_nonEmptyFilteredIn() {
     assertThat(BiOptional.of(1, 2).filter((a, b) -> a < b)).isEqualTo(BiOptional.of(1, 2));
+  }
+
+  @Test
+  public void peek_empty() {
+    assertThat(BiOptional.empty().peek(consumer)).isEqualTo(BiOptional.empty());
+    verifyZeroInteractions(consumer);
+  }
+
+  @Test
+  public void orElse_peek_empty() {
+    assertThat(
+            BiOptional.<String, String>empty()
+                .orElse("foo", "bar")
+                .peek(consumer)
+                .combine(String::concat))
+        .isEqualTo("foobar");
+    verify(consumer).accept("foo", "bar");
+  }
+
+  @Test
+  public void peek_nonEmpty() {
+    BiOptional<?, ?> optional = BiOptional.of("foo", "bar");
+    assertThat(optional.peek(consumer)).isSameAs(optional);
+    verify(consumer).accept("foo", "bar");
+  }
+
+  @Test
+  public void orElse_peek_nonEmpty() {
+    BiOptional<String, String> optional = BiOptional.of("foo", "bar");
+    assertThat(optional.orElse("x", null).peek(consumer)).isSameAs(optional);
+    verify(consumer).accept("foo", "bar");
   }
 
   @Test
