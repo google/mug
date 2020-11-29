@@ -180,7 +180,10 @@ public abstract class BiOptional<A, B> {
    */
   public abstract Both<A, B> orElse(A a, B b);
 
-  /** Ensures that the pair must be present or else throws {@link NoSuchElementException}. */
+  /**
+   * Ensures that the pair must be present or else throws {@link NoSuchElementException}.
+   * @since 5.1
+   */
   public Both<A, B> orElseThrow() {
     return orElseThrow(NoSuchElementException::new);
   }
@@ -191,6 +194,7 @@ public abstract class BiOptional<A, B> {
    *
    * @throws NullPointerException if {@code exceptionSupplier} is null, or returns null.
    * @throws E if the pair is absent.
+   * @since 5.1
    */
   public abstract <E extends Throwable> Both<A, B> orElseThrow(Supplier<E> exceptionSupplier)
       throws E;
