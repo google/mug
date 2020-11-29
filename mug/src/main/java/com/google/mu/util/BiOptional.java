@@ -156,7 +156,7 @@ public abstract class BiOptional<A, B> {
   public abstract BiOptional<A, B> filter(BiPredicate<? super A, ? super B> predicate);
 
   /**
-   * Invoke {@code consumer} with the pair if present. Returns this object as is.
+   * Invokes {@code consumer} with the pair if present and returns this object as is.
    *
    * @throws NullPointerException if consumer is null
    * @since 5.1
