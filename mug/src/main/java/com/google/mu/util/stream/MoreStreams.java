@@ -269,9 +269,7 @@ public final class MoreStreams {
    */
   public static <A, B, R> Collector<Both<A, B>, ?, R> fromPairs(
       BiCollector<? super A, ? super B, R> downstream) {
-    return Collectors.mapping(
-        (Both<A, B> b) -> b.combine(AbstractMap.SimpleImmutableEntry::new),
-        downstream.splitting(Map.Entry::getKey, Map.Entry::getValue));
+    return mapping(Both::combine, downstream);
   }
 
   /**
