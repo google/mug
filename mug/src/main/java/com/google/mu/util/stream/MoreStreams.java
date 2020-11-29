@@ -248,7 +248,7 @@ public final class MoreStreams {
       Function<? super T, ? extends Both<? extends A, ? extends B>> mapper,
       BiCollector<A, B, R> downstream) {
     Function<? super T, Map.Entry<A, B>> toEntry =
-        mapper.andThen(b -> b.combine(AbstractMap.SimpleImmutableEntry::new));
+        mapper.andThen(b -> b.mapToObj(AbstractMap.SimpleImmutableEntry::new));
     return Collectors.mapping(
         toEntry, downstream.splitting(Map.Entry::getKey, Map.Entry::getValue));
   }
@@ -269,7 +269,7 @@ public final class MoreStreams {
    */
   public static <A, B, R> Collector<Both<A, B>, ?, R> fromPairs(
       BiCollector<? super A, ? super B, R> downstream) {
-    return mapping(Both::combine, downstream);
+    return mapping(Both::mapToObj, downstream);
   }
 
   /**

@@ -15,13 +15,13 @@ import java.util.function.BiPredicate;
 @FunctionalInterface
 public interface Both<A, B> {
   /**
-   * Maps the pair using the {@code mapper} function.
+   * Combines the pair together into a single object using the {@code mapper} function.
    *
    * <p>For example: <pre>{@code
    * first('=')
    *     .split("k=v")
    *     .orElseThrow(...)
-   *     .combine(KeyValue::new):
+   *     .mapToObj(KeyValue::new):
    * }</pre>
    *
    * <p>If you have a stream of {@code Both} objects, the following turns it into a {@code BiStream}:
@@ -41,7 +41,7 @@ public interface Both<A, B> {
    *     first(',')
    *         .delimit("k1=v1,k2=v2")
    *         .map(s -> first('=').split(s).orElseThrow(...))
-   *         .collect(toBiStream(Both::combine));
+   *         .collect(toBiStream(Both::mapToObj));
    * }</pre>
    *
    * <p>A stream of {@code Both} can also be collected using a {@code BiCollector}:
@@ -58,7 +58,7 @@ public interface Both<A, B> {
    *
    * @throws NullPointerException if {@code mapper} is null
    */
-  <T> T combine(BiFunction<? super A, ? super B, T> mapper);
+  <T> T mapToObj(BiFunction<? super A, ? super B, T> mapper);
 
   /**
    * If the pair {@link #match match()} {@code condition}, returns a {@link BiOptional} containing
@@ -68,7 +68,7 @@ public interface Both<A, B> {
    */
   default BiOptional<A, B> filter(BiPredicate<? super A, ? super B> condition) {
     requireNonNull(condition);
-    return combine((a, b) -> condition.test(a, b) ? BiOptional.of(a, b) : BiOptional.empty());
+    return mapToObj((a, b) -> condition.test(a, b) ? BiOptional.of(a, b) : BiOptional.empty());
   }
 
   /**
@@ -77,7 +77,7 @@ public interface Both<A, B> {
    * @throws NullPointerException if {@code condition} is null
    */
   default boolean match(BiPredicate<? super A, ? super B> condition) {
-    return combine(condition::test);
+    return mapToObj(condition::test);
   }
 
   /**
@@ -87,7 +87,7 @@ public interface Both<A, B> {
    */
   default Both<A, B> peek(BiConsumer<? super A, ? super B> consumer) {
     requireNonNull(consumer);
-    return combine((a, b) -> {
+    return mapToObj((a, b) -> {
       consumer.accept(a, b);
       return this;
     });
