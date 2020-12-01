@@ -8,7 +8,46 @@ import java.util.function.BiPredicate;
 
 /**
  * Represents two unrelated or loosely-related things of type {@code A} and {@code B}.
- * Usually as a return type of a function that needs to return two things.
+ * Usually as a return type of a function that needs to return two things. For example:
+ *
+ * <pre>{@code
+ * first('=')
+ *     .split("k=v")
+ *     .orElseThrow(...)
+ *     .to(KeyValue::new):
+ * }</pre>
+ *
+ * <p>If you have a stream of {@code Both} objects, the following turns it into a {@code BiStream}:
+ * <pre>{@code
+ * BiStream<String, String> keyValues =
+ *     BiStream.from(
+ *         first(',')
+ *             .delimit("k1=v1,k2=v2")
+ *             .map(s -> first('=').split(s).orElseThrow(...)));
+ * }</pre>
+ *
+ * Or in a single chained expression:
+ * <pre>{@code
+ * import static com.google.mu.util.stream.BiStream.toBiStream;
+ *
+ * BiStream<String, String> keyValues =
+ *     first(',')
+ *         .delimit("k1=v1,k2=v2")
+ *         .collect(toBiStream(s -> first('=').split(s).orElseThrow(...)));
+ * }</pre>
+ *
+ * <p>A stream of {@code Both} can also be collected using a {@code BiCollector}:
+ * <pre>{@code
+ * import static com.google.mu.util.stream.MoreStreams.mapping;
+ *
+ * ImmutableListMultimap<String, String> keyValues =
+ *     first(',')
+ *         .delimit("k1=v1,k2=v2")
+ *         .collect(
+ *             mapping(
+ *                 s -> first('=').split(s).orElseThrow(...),
+ *                 toImmutableListMultimap()));
+ * }</pre>
  *
  * @since 5.1
  */
@@ -16,46 +55,6 @@ import java.util.function.BiPredicate;
 public interface Both<A, B> {
   /**
    * Maps the pair to a single object using the {@code mapper} function.
-   *
-   * <p>For example: <pre>{@code
-   * first('=')
-   *     .split("k=v")
-   *     .orElseThrow(...)
-   *     .to(KeyValue::new):
-   * }</pre>
-   *
-   * <p>If you have a stream of {@code Both} objects, the following turns it into a {@code BiStream}:
-   * <pre>{@code
-   * BiStream<String, String> keyValues =
-   *     BiStream.from(
-   *         first(',')
-   *             .delimit("k1=v1,k2=v2")
-   *             .map(s -> first('=').split(s).orElseThrow(...)));
-   * }</pre>
-   *
-   * Or in a single chained expression:
-   * <pre>{@code
-   * import static com.google.mu.util.stream.BiStream.toBiStream;
-   *
-   * BiStream<String, String> keyValues =
-   *     first(',')
-   *         .delimit("k1=v1,k2=v2")
-   *         .collect(toBiStream(s -> first('=').split(s).orElseThrow(...)));
-   * }</pre>
-   *
-   * <p>A stream of {@code Both} can also be collected using a {@code BiCollector}:
-   * <pre>{@code
-   * import static com.google.mu.util.stream.MoreStreams.mapping;
-   *
-   * ImmutableListMultimap<String, String> keyValues =
-   *     first(',')
-   *         .delimit("k1=v1,k2=v2")
-   *         .collect(
-   *             mapping(
-   *                 s -> first('=').split(s).orElseThrow(...),
-   *                 toImmutableListMultimap()));
-   * }</pre>
-   *
    *
    * @throws NullPointerException if {@code mapper} is null
    */
