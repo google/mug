@@ -54,6 +54,6 @@ public class BiIteration<L, R> {
    * @since 4.5
    */
   public final BiStream<L, R> iterate() {
-    return BiStream.from(iteration.iterate());
+    return BiStream.fromEntries(iteration.iterate());
   }
 }

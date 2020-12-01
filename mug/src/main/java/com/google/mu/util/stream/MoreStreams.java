@@ -248,28 +248,9 @@ public final class MoreStreams {
       Function<? super T, ? extends Both<? extends A, ? extends B>> mapper,
       BiCollector<A, B, R> downstream) {
     Function<? super T, Map.Entry<A, B>> toEntry =
-        mapper.andThen(b -> b.mapToObj(AbstractMap.SimpleImmutableEntry::new));
+        mapper.andThen(b -> b.to(AbstractMap.SimpleImmutableEntry::new));
     return Collectors.mapping(
         toEntry, downstream.splitting(Map.Entry::getKey, Map.Entry::getValue));
-  }
-
-  /**
-   * Collects the pairs of input elements using the {@code downstream} BiCollector.
-   *
-   * <p>For example, you can parse key-value pairs in the form of "k1=v1,k2=v2" with:
-   *
-   * <pre>{@code
-   * Substring.first(',')
-   *     .delimit("k1=v2,k2=v2")
-   *     .map(s -> first('=').split(s).orElseThrow(...))
-   *     .collect(fromPairs(toImmutableSetMultimap()));
-   * }</pre>
-   *
-   * @since 5.1
-   */
-  public static <A, B, R> Collector<Both<A, B>, ?, R> fromPairs(
-      BiCollector<? super A, ? super B, R> downstream) {
-    return mapping(Both::mapToObj, downstream);
   }
 
   /**
@@ -470,7 +451,9 @@ public final class MoreStreams {
    * <em><b>pair of elements</b></em>, which are then accumulated by a <em>BiCollector</em>.
    *
    * @since 4.6
+   * @deprecated Use {@link #mapping(Function, BiCollector)} instead.
    */
+  @Deprecated
   public static <T, K, V, R> Collector<T, ?, R> mapping(
       DualValuedFunction<? super T, ? extends K, ? extends V> mapper,
       BiCollector<K, V, R> downstream) {
