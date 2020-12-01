@@ -8,7 +8,8 @@ import java.util.function.BiPredicate;
 
 /**
  * Represents two unrelated or loosely-related things of type {@code A} and {@code B}.
- * Usually used as the return type of a function that needs to return two things. For example:
+ *
+ * <p>Usually used as the return type of a function that needs to return two things. For example:
  *
  * <pre>{@code
  * first('=')
