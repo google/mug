@@ -32,7 +32,9 @@ import java.util.function.Function;
  * @param <F> the input type
  * @param <T1> the first output type
  * @param <T2> the second output type
+ * @deprecated
  */
+@Deprecated
 @FunctionalInterface
 public interface DualValuedFunction<F, T1, T2> {
   /**
@@ -40,7 +42,7 @@ public interface DualValuedFunction<F, T1, T2> {
    * function (because Java has no built-in tuples).
    *
    * <p>Examples include {@link java.util.stream.Collectors#teeing Collectors.teeing()}, {@link
-   * com.google.mu.util.Both#mapToObj(BiFunction)} and {@link
+   * com.google.mu.util.Both#to(BiFunction)} and {@link
    * com.google.mu.util.BiOptional#map(BiFunction)}.
    *
    * @throws NullPointerException if the {@code output} function is null.

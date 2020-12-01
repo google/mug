@@ -15,13 +15,13 @@ import java.util.function.BiPredicate;
 @FunctionalInterface
 public interface Both<A, B> {
   /**
-   * Maps the pair into a single object using the {@code mapper} function.
+   * Maps the pair to a single object using the {@code mapper} function.
    *
    * <p>For example: <pre>{@code
    * first('=')
    *     .split("k=v")
    *     .orElseThrow(...)
-   *     .mapToObj(KeyValue::new):
+   *     .to(KeyValue::new):
    * }</pre>
    *
    * <p>If you have a stream of {@code Both} objects, the following turns it into a {@code BiStream}:
@@ -30,8 +30,7 @@ public interface Both<A, B> {
    *     BiStream.from(
    *         first(',')
    *             .delimit("k1=v1,k2=v2")
-   *             .map(s -> first('=').split(s).orElseThrow(...)),
-   *         Both::mapToObj);
+   *             .map(s -> first('=').split(s).orElseThrow(...)));
    * }</pre>
    *
    * Or in a single chained expression:
@@ -41,25 +40,26 @@ public interface Both<A, B> {
    * BiStream<String, String> keyValues =
    *     first(',')
    *         .delimit("k1=v1,k2=v2")
-   *         .map(s -> first('=').split(s).orElseThrow(...))
-   *         .collect(toBiStream(Both::mapToObj));
+   *         .collect(toBiStream(s -> first('=').split(s).orElseThrow(...)));
    * }</pre>
    *
    * <p>A stream of {@code Both} can also be collected using a {@code BiCollector}:
    * <pre>{@code
-   * import static com.google.mu.util.stream.MoreStreams.fromPairs;
+   * import static com.google.mu.util.stream.MoreStreams.mapping;
    *
    * ImmutableListMultimap<String, String> keyValues =
    *     first(',')
    *         .delimit("k1=v1,k2=v2")
-   *         .map(s -> first('=').split(s).orElseThrow(...))
-   *         .collect(fromPairs(toImmutableListMultimap()));
+   *         .collect(
+   *             mapping(
+   *                 s -> first('=').split(s).orElseThrow(...),
+   *                 toImmutableListMultimap()));
    * }</pre>
    *
    *
    * @throws NullPointerException if {@code mapper} is null
    */
-  <T> T mapToObj(BiFunction<? super A, ? super B, T> mapper);
+  <T> T to(BiFunction<? super A, ? super B, T> mapper);
 
   /**
    * If the pair {@link #match match()} {@code condition}, returns a {@link BiOptional} containing
@@ -69,7 +69,7 @@ public interface Both<A, B> {
    */
   default BiOptional<A, B> filter(BiPredicate<? super A, ? super B> condition) {
     requireNonNull(condition);
-    return mapToObj((a, b) -> condition.test(a, b) ? BiOptional.of(a, b) : BiOptional.empty());
+    return to((a, b) -> condition.test(a, b) ? BiOptional.of(a, b) : BiOptional.empty());
   }
 
   /**
@@ -78,7 +78,7 @@ public interface Both<A, B> {
    * @throws NullPointerException if {@code condition} is null
    */
   default boolean match(BiPredicate<? super A, ? super B> condition) {
-    return mapToObj(condition::test);
+    return to(condition::test);
   }
 
   /**
@@ -88,7 +88,7 @@ public interface Both<A, B> {
    */
   default Both<A, B> peek(BiConsumer<? super A, ? super B> consumer) {
     requireNonNull(consumer);
-    return mapToObj((a, b) -> {
+    return to((a, b) -> {
       consumer.accept(a, b);
       return this;
     });

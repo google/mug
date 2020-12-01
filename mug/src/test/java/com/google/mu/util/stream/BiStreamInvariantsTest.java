@@ -855,30 +855,22 @@ public class BiStreamInvariantsTest {
     FROM_PAIRS {
       @Override
       <K, V> BiStream<K, V> newBiStream() {
-        return BiStream.from(Stream.<Both<K, V>>empty(), Both::mapToObj);
+        return BiStream.from(Stream.<Both<K, V>>empty());
       }
 
       @Override
       <K, V> BiStream<K, V> newBiStream(K key, V value) {
-        return BiStream.from(Stream.of(both(key, value)), Both::mapToObj);
+        return BiStream.from(Stream.of(both(key, value)));
       }
 
       @Override
       <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2) {
-        return BiStream.from(Stream.of(both(k1, v1), both(k2, v2)), Both::mapToObj);
+        return BiStream.from(Stream.of(both(k1, v1), both(k2, v2)));
       }
 
       @Override
       <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2, K k3, V v3) {
-        return BiStream.from(Stream.of(both(k1, v1), both(k2, v2), both(k3, v3)), Both::mapToObj);
-      }
-
-      private <K, V> Both<K, V> both(K key, V value) {
-        return new Both<K, V>() {
-          @Override public <T> T mapToObj(BiFunction<? super K, ? super V, T> f) {
-            return f.apply(key, value);
-          }
-        };
+        return BiStream.from(Stream.of(both(k1, v1), both(k2, v2), both(k3, v3)));
       }
     },
     FROM_DUAL_VALUED_FUNCTION {
@@ -908,6 +900,35 @@ public class BiStreamInvariantsTest {
 
       private <K, V, R> R fromEntry(Map.Entry<K, V> entry, BiFunction<K, V, R> joiner) {
         return joiner.apply(entry.getKey(), entry.getValue());
+      }
+    },
+    COLLECTED_FROM_PAIRS {
+      @Override
+      <K, V> BiStream<K, V> newBiStream() {
+        return ImmutableListMultimap.<K, V>of().entries().stream()
+            .collect(toBiStream(this::fromEntry));
+      }
+
+      @Override
+      <K, V> BiStream<K, V> newBiStream(K key, V value) {
+        return keyValues(key, value).entries().stream()
+            .collect(toBiStream(this::fromEntry));
+      }
+
+      @Override
+      <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2) {
+        return keyValues(k1, v1, k2, v2).entries().stream()
+            .collect(toBiStream(this::fromEntry));
+      }
+
+      @Override
+      <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2, K k3, V v3) {
+        return keyValues(k1, v1, k2, v2, k3, v3).entries().stream()
+            .collect(toBiStream(this::fromEntry));
+      }
+
+      private <K, V> Both<K, V> fromEntry(Map.Entry<K, V> entry) {
+        return both(entry.getKey(), entry.getValue());
       }
     },
     COLLECTED_FROM_DUAL_VALUED_FUNCTION {
@@ -1007,7 +1028,7 @@ public class BiStreamInvariantsTest {
     PARALLEL_THEN_SEQUENTIAL {
       @Override
       <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
-        return BiStream.from(stream.mapToEntry().parallel().sequential());
+        return BiStream.fromEntries(stream.mapToEntry().parallel().sequential());
       }
     },
     INVERSE_OF_INVERSE {
@@ -1085,5 +1106,13 @@ public class BiStreamInvariantsTest {
     ;
 
     abstract <K, V> BiStream<K, V> wrap(BiStream<K, V> stream);
+  }
+
+  private static <K, V> Both<K, V> both(K key, V value) {
+    return new Both<K, V>() {
+      @Override public <T> T to(BiFunction<? super K, ? super V, T> f) {
+        return f.apply(key, value);
+      }
+    };
   }
 }

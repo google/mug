@@ -102,7 +102,7 @@ public final class BiCollection<L, R> {
 
   /** Streams over this {@code BiCollection}. */
   public BiStream<L, R> stream() {
-    return BiStream.from(entries.stream());
+    return BiStream.fromEntries(entries.stream());
   }
 
   /** @since 1.5 */
