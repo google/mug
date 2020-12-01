@@ -16,8 +16,8 @@ public class BothTest {
 
   @Test
   public void match() {
-    assertThat(both(1, 2).match(Object::equals)).isFalse();
-    assertThat(both(1, 1).match(Object::equals)).isTrue();
+    assertThat(both(1, 2).matches(Object::equals)).isFalse();
+    assertThat(both(1, 1).matches(Object::equals)).isTrue();
   }
 
   @Test

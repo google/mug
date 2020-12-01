@@ -62,7 +62,7 @@ public interface Both<A, B> {
   <T> T to(BiFunction<? super A, ? super B, T> mapper);
 
   /**
-   * If the pair {@link #match match()} {@code condition}, returns a {@link BiOptional} containing
+   * If the pair {@link #matches matches()} {@code condition}, returns a {@link BiOptional} containing
    * the pair, or else returns empty.
    *
    * @throws NullPointerException if {@code condition} is null
@@ -73,11 +73,11 @@ public interface Both<A, B> {
   }
 
   /**
-   * Returns true if the pair match {@code condition}.
+   * Returns true if the pair matches {@code condition}.
    *
    * @throws NullPointerException if {@code condition} is null
    */
-  default boolean match(BiPredicate<? super A, ? super B> condition) {
+  default boolean matches(BiPredicate<? super A, ? super B> condition) {
     return to(condition::test);
   }
 
