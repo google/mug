@@ -365,7 +365,7 @@ public abstract class BiOptional<A, B> {
     }
 
     @Override
-    public boolean match(BiPredicate<? super A, ? super B> predicate) {
+    public boolean matches(BiPredicate<? super A, ? super B> predicate) {
       return predicate.test(a, b);
     }
 

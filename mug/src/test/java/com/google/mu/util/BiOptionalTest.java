@@ -310,9 +310,9 @@ public class BiOptionalTest {
         .isEqualTo(BiOptional.empty());
     assertThat(BiOptional.of("foo", "foo").orElseThrow().filter(String::equals))
         .isEqualTo(BiOptional.of("foo", "foo"));
-    assertThat(BiOptional.of("foo", "bar").orElseThrow().match(String::equals))
+    assertThat(BiOptional.of("foo", "bar").orElseThrow().matches(String::equals))
         .isFalse();
-    assertThat(BiOptional.of("foo", "foo").orElseThrow().match(String::equals))
+    assertThat(BiOptional.of("foo", "foo").orElseThrow().matches(String::equals))
         .isTrue();
   }
 
