@@ -15,7 +15,7 @@ import java.util.function.BiPredicate;
  * first('=')
  *     .split("k=v")        // BiOptional<String, String>
  *     .orElseThrow(...)    // Both<String, String>
- *     .to(KeyValue::new):  // KeyValue
+ *     .to(KeyValue::new);  // KeyValue
  * }</pre>
  *
  * <p>If you have a stream of {@code Both} objects, the following turns it into a {@code BiStream}:
