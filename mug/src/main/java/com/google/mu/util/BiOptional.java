@@ -190,11 +190,10 @@ public abstract class BiOptional<A, B> {
 
   /**
    * Ensures that the pair must be present or else throws {@link NoSuchElementException}.
+   *
    * @since 5.1
    */
-  public Both<A, B> orElseThrow() {
-    return orElseThrow(NoSuchElementException::new);
-  }
+  public abstract Both<A, B> orElseThrow();
 
   /**
    * Ensures that the pair must be present or else throws the exception returned by
@@ -267,10 +266,21 @@ public abstract class BiOptional<A, B> {
         public Both<Object, Object> orElse(Object a, Object b) {
           return new Both<Object, Object>() {
             @Override
-            public <T> T to(BiFunction<Object, Object, T> function) {
+            public <T> T andThen(BiFunction<Object, Object, T> function) {
               return function.apply(a, b);
             }
           };
+        }
+
+        @Override
+        public Both<Object, Object> orElseThrow() {
+          throw new NoSuchElementException();
+        }
+
+        @Override
+        public <E extends Throwable> Both<Object, Object> orElseThrow(Supplier<E> exceptionSupplier)
+            throws E {
+          throw exceptionSupplier.get();
         }
 
         @Override
@@ -287,12 +297,6 @@ public abstract class BiOptional<A, B> {
         @Override
         public boolean isPresent() {
           return false;
-        }
-
-        @Override
-        public <E extends Throwable> Both<Object, Object> orElseThrow(Supplier<E> exceptionSupplier)
-            throws E {
-          throw exceptionSupplier.get();
         }
 
         @Override
@@ -382,6 +386,17 @@ public abstract class BiOptional<A, B> {
     }
 
     @Override
+    public Both<A, B> orElseThrow() {
+      return this;
+    }
+
+    @Override
+    public <E extends Throwable> Both<A, B> orElseThrow(Supplier<E> exceptionSupplier) {
+      requireNonNull(exceptionSupplier);
+      return this;
+    }
+
+    @Override
     public Present<A, B> peek(BiConsumer<? super A, ? super B> consumer) {
       consumer.accept(a, b);
       return this;
@@ -395,17 +410,6 @@ public abstract class BiOptional<A, B> {
     @Override
     public boolean isPresent() {
       return true;
-    }
-
-    /**
-     * Ensures that the pair must be present or else throws the exception returned by
-     * {@code exceptionSupplier}.
-     */
-    @Override
-    public <E extends Throwable> Both<A, B> orElseThrow(Supplier<E> exceptionSupplier)
-        throws E {
-      requireNonNull(exceptionSupplier);
-      return this;
     }
 
     @Override
@@ -433,7 +437,7 @@ public abstract class BiOptional<A, B> {
     }
 
     @Override
-    public <T> T to(BiFunction<? super A, ? super B, T> combiner) {
+    public <T> T andThen(BiFunction<? super A, ? super B, T> combiner) {
       return combiner.apply(a, b);
     }
   }
