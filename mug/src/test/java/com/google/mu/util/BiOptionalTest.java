@@ -116,7 +116,7 @@ public class BiOptionalTest {
             BiOptional.<String, String>empty()
                 .orElse("foo", "bar")
                 .peek(consumer)
-                .to(String::concat))
+                .andThen(String::concat))
         .isEqualTo("foobar");
     verify(consumer).accept("foo", "bar");
   }
@@ -274,19 +274,19 @@ public class BiOptionalTest {
 
   @Test
   public void testOrElse_empty() {
-    String result = BiOptional.empty().orElse("foo", "bar").to((a, b) -> a + ":" + b);
+    String result = BiOptional.empty().orElse("foo", "bar").andThen((a, b) -> a + ":" + b);
     assertThat(result).isEqualTo("foo:bar");
   }
 
   @Test
   public void testOrElse_nonEmpty() {
-    int result = BiOptional.of(1, 2).orElse(30, 40).to(Integer::sum);
+    int result = BiOptional.of(1, 2).orElse(30, 40).andThen(Integer::sum);
     assertThat(result).isEqualTo(3);
   }
 
   @Test
   public void testOrElse_nullAlternatives() {
-    String result = BiOptional.empty().orElse(null, null).to((a, b) -> a + ":" + b);
+    String result = BiOptional.empty().orElse(null, null).andThen((a, b) -> a + ":" + b);
     assertThat(result).isEqualTo("null:null");
   }
 
@@ -304,7 +304,7 @@ public class BiOptionalTest {
 
   @Test
   public void testOrElseThrow_notEmpty() {
-    assertThat(BiOptional.of("foo", "bar").orElseThrow().to(String::concat))
+    assertThat(BiOptional.of("foo", "bar").orElseThrow().andThen(String::concat))
         .isEqualTo("foobar");
     assertThat(BiOptional.of("foo", "bar").orElseThrow().filter(String::equals))
         .isEqualTo(BiOptional.empty());

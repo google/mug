@@ -13,7 +13,6 @@ import com.google.common.testing.NullPointerTester;
 
 @RunWith(JUnit4.class)
 public class BothTest {
-
   @Test
   public void match() {
     assertThat(both(1, 2).matches(Object::equals)).isFalse();

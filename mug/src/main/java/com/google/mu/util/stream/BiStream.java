@@ -575,7 +575,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    */
   public static <K, V> BiStream<K, V> from(
       Stream<? extends Both<? extends K, ? extends V>> pairs) {
-    return fromEntries(pairs.map(pair -> pair.to(BiStream::kv)));
+    return fromEntries(pairs.map(pair -> pair.andThen(BiStream::kv)));
   }
 
   /**

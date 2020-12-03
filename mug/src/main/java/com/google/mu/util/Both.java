@@ -13,9 +13,9 @@ import java.util.function.BiPredicate;
  *
  * <pre>{@code
  * first('=')
- *     .split("k=v")        // BiOptional<String, String>
- *     .orElseThrow(...)    // Both<String, String>
- *     .to(KeyValue::new);  // KeyValue
+ *     .split("k=v")             // BiOptional<String, String>
+ *     .orElseThrow(...)         // Both<String, String>
+ *     .andThen(KeyValue::new);  // KeyValue
  * }</pre>
  *
  * <p>If you have a stream of {@code Both} objects, the following turns it into a {@code BiStream}:
@@ -59,17 +59,20 @@ public interface Both<A, B> {
    *
    * @throws NullPointerException if {@code mapper} is null
    */
-  <T> T to(BiFunction<? super A, ? super B, T> mapper);
+  <T> T andThen(BiFunction<? super A, ? super B, T> mapper);
 
   /**
    * If the pair {@link #matches matches()} {@code condition}, returns a {@link BiOptional} containing
    * the pair, or else returns empty.
    *
-   * @throws NullPointerException if {@code condition} is null
+   * @throws NullPointerException if {@code condition} is null or if this pair contains null(s),
+   *     which also match {@code condition}. In other words, if this pair contains null(s), {@code
+   *     condition} must filter it out. If you need to check whether the pair contains null, use
+   *     {@link #matches} instead of {@code filter(condition).isPresent()}.
    */
   default BiOptional<A, B> filter(BiPredicate<? super A, ? super B> condition) {
     requireNonNull(condition);
-    return to((a, b) -> condition.test(a, b) ? BiOptional.of(a, b) : BiOptional.empty());
+    return andThen((a, b) -> condition.test(a, b) ? BiOptional.of(a, b) : BiOptional.empty());
   }
 
   /**
@@ -78,7 +81,7 @@ public interface Both<A, B> {
    * @throws NullPointerException if {@code condition} is null
    */
   default boolean matches(BiPredicate<? super A, ? super B> condition) {
-    return to(condition::test);
+    return andThen(condition::test);
   }
 
   /**
@@ -88,7 +91,7 @@ public interface Both<A, B> {
    */
   default Both<A, B> peek(BiConsumer<? super A, ? super B> consumer) {
     requireNonNull(consumer);
-    return to((a, b) -> {
+    return andThen((a, b) -> {
       consumer.accept(a, b);
       return this;
     });
