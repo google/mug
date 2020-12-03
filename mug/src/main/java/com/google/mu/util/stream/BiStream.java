@@ -575,7 +575,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    */
   public static <K, V> BiStream<K, V> from(
       Stream<? extends Both<? extends K, ? extends V>> pairs) {
-    return fromEntries(pairs.map(pair -> pair.andThen(BiStream::kv)));
+    return from(pairs, BiStream::left, BiStream::right);
   }
 
   /**
@@ -1693,6 +1693,14 @@ public abstract class BiStream<K, V> implements AutoCloseable {
         this.value = value;
       }
     }
+  }
+
+  static <T> T left(Both<T, ?> both) {
+    return both.andThen((l, r) -> l);
+  }
+
+  static <T> T right(Both<?, T> both) {
+    return both.andThen((l, r) -> r);
   }
 
   // TODO: switch to Java 9 Collectors.flatMapping() when we can.
