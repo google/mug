@@ -65,10 +65,8 @@ public interface Both<A, B> {
    * If the pair {@link #matches matches()} {@code condition}, returns a {@link BiOptional} containing
    * the pair, or else returns empty.
    *
-   * @throws NullPointerException if {@code condition} is null or if this pair contains null(s),
-   *     which also match {@code condition}. In other words, if this pair contains null(s), {@code
-   *     condition} must filter it out. If you need to check whether the pair contains null, use
-   *     {@link #matches} instead of {@code filter(condition).isPresent()}.
+   * @throws NullPointerException if {@code condition} is null, or if {@code condition} matches but
+   *     either value in this pair is null
    */
   default BiOptional<A, B> filter(BiPredicate<? super A, ? super B> condition) {
     requireNonNull(condition);
@@ -85,7 +83,7 @@ public interface Both<A, B> {
   }
 
   /**
-   * Invokes {@code consumer} with the pair and returns this object as is.
+   * Invokes {@code consumer} with this pair and returns this object as is.
    *
    * @throws NullPointerException if {@code consumer} is null
    */
