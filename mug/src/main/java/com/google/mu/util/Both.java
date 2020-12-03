@@ -55,7 +55,7 @@ import java.util.function.BiPredicate;
 @FunctionalInterface
 public interface Both<A, B> {
   /**
-   * Maps the pair to a single object using the {@code mapper} function.
+   * Applies the {@code mapper} function with this pair of two things as arguments.
    *
    * @throws NullPointerException if {@code mapper} is null
    */
