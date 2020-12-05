@@ -71,10 +71,10 @@ import com.google.mu.util.stream.MoreStreams;
  * To extract the 'name' and 'value' from an input string in the format of "name:value":
  *
  * <pre>
- *   String str = ...;
- *   Substring.Match colon = Substring.first(':').in(str).orElseThrow(BadFormatException::new);
- *   String name = colon.before();
- *   String value = colon.after();
+ *   Substring.first(':')
+ *       .split("name:joe")
+ *       .map(NameValue::new)
+ *       .orElseThrow(BadFormatException::new);
  * </pre>
  *
  * To split a stream of strings into key-value pairs:
@@ -197,19 +197,8 @@ public final class Substring {
     return new Suffix(Character.toString(suffix));
   }
 
-  /**
-   * Returns a {@code Pattern} that finds the (first) occurrence of {@code str}.
-   *
-   * <p>Note that when used together with {@link #between}, or {@link Pattern#iterateIn}, matching
-   * starts after the end of the previous match. For example:
-   *
-   * <pre>
-   *   assertThat(Substring.between(substring("/"), substring("/")).from("/usr/home/abc"))
-   *       .hasValue("usr");
-   * </pre>
-   *
-   * @since 4.6
-   */
+  /** @deprecated Use {@code first(str)} instead. */
+  @Deprecated
   public static Pattern substring(String str) {
     return first(str);
   }
@@ -505,63 +494,26 @@ public final class Substring {
     }
 
     /**
-     * Applies this pattern against {@code string} and returns a stream of each iteration.
+     * Returns a {@link RepeatingPattern} that applies this pattern repeatedly against the input
+     * string. That is, after each iteration, the pattern is applied again over the substring after
+     * the match, repeatedly until no match is found.
      *
-     * <p>Iterations happen in strict character encounter order, from the beginning of the input
-     * string to the end, with no overlapping. When a match is found, the next iteration is
-     * guaranteed to be in the substring after the current match. For example, {@code
-     * between(substring("/"), substring("/")).iterateIn("/foo/bar/baz/")} will return {@code
-     * ["foo", "bar", "baz"]}. On the other hand, {@code after(last('/')).iterateIn("/foo/bar")}
-     * will only return "bar".
-     *
-     * <p>Pattern matching is lazy and doesn't start until the returned stream is consumed.
-     *
-     * <p>An empty stream is returned if this pattern has no matches in the {@code input} string.
-     *
-     * @since 4.6
+     * @since 5.2
      */
-    public final Stream<Match> iterateIn(String input) {
-      return MoreStreams.whileNotNull(
-          new Supplier<Match>() {
-            private final int end = input.length();
-            private int nextIndex = 0;
-
-            @Override public Match get() {
-              if (nextIndex > end) {
-                return null;
-              }
-              Match match = match(input, nextIndex);
-              if (match == null) {
-                return null;
-              }
-              if (match.endIndex == end) { // We've consumed the entire string.
-                nextIndex = Integer.MAX_VALUE;
-              } else if (match.succeedingIndex > nextIndex) {
-                nextIndex = match.succeedingIndex;
-              } else {
-                // instead of being stuck in infinite loop, consider this the end.
-                nextIndex = Integer.MAX_VALUE;
-              }
-              return match;
-            }
-          });
+    public final RepeatingPattern repeatedly() {
+      return new RepeatingPattern(this);
     }
 
-    /**
-     * Returns a stream of {@code Match} objects delimited by every {@link #iterateIn iteration} of
-     * this pattern. If this pattern isn't found in {@code string}, the full string is returned.
-     *
-     * <p>Different from {@link #split},
-     * {@code first('=').delimit("a=b=c")} results in a stream of {@code ["a", "b", "c"]};
-     * while {@code first('=').split("a=b=c", ...)} results in a pair of {@code ["a", "b=c"]}.
-     *
-     * @since 4.6
-     */
+    /** @deprecated Use {@code repeatedly().in(inpuut)} instead. */
+    @Deprecated
+    public final Stream<Match> iterateIn(String input) {
+      return repeatedly().match(input);
+    }
+
+    /** @deprecated Use {@code repeatedly().split(string)} instead. */
+    @Deprecated
     public Stream<Match> delimit(String string) {
-      if (match("") != null) {
-        throw new IllegalStateException("Pattern (" + this + ") cannot be used as delimiter.");
-      }
-      return before(this).or(FULL_STRING).iterateIn(string);
+      return repeatedly().split(string);
     }
 
     /**
@@ -573,14 +525,10 @@ public final class Substring {
       return match == null ? string : match.remove();
     }
 
-    /**
-     * Returns a new string with all {@link #iterateIn iterations} of {@code this} pattern removed.
-     * Returns {@code string} as is if no match is found.
-     *
-     * @since 4.6
-     */
+    /** @deprecated Use {@code repeatedly().removeFrom(string)} instead. */
+    @Deprecated
     public final String removeAllFrom(String string) {
-      return replaceAllFrom(string, m -> "");
+      return repeatedly().removeFrom(string);
     }
 
     /**
@@ -593,39 +541,11 @@ public final class Substring {
       return match == null ? string : match.replaceWith(replacement);
     }
 
-    /**
-     * Returns a new string with all {@link #iterateIn iterations} of {@code this} pattern replaced
-     * by applying {@code replacementFunction} for each match.
-     *
-     * <p>{@code replacementFunction} must not return null. Returns {@code string} as-is if no match
-     * is found.
-     *
-     * @since 4.6
-     */
+    /** @deprecated Use {@code repeatedly().replaceFrom(string, replacementFunction)} instead. */
+    @Deprecated
     public final String replaceAllFrom(
         String string, Function<? super Match, ? extends CharSequence> replacementFunction) {
-      requireNonNull(replacementFunction);
-      Iterator<Match> matches = iterateIn(string).iterator();
-      if (!matches.hasNext()) {
-        return string;
-      }
-      // Add the chars between the previous and current match.
-      StringBuilder builder = new StringBuilder(string.length());
-      int index = 0;
-      do {
-        Match match = matches.next();
-        CharSequence replacement = replacementFunction.apply(match);
-        if (replacement == null) {
-          throw new NullPointerException("No replacement is returned for " + match);
-        }
-        builder
-            .append(string, index, match.startIndex)
-            .append(replacement);
-        index = match.endIndex;
-      } while (matches.hasNext());
-
-      // Add the remaining chars
-      return builder.append(string, index, string.length()).toString();
+      return repeatedly().replaceFrom(string, replacementFunction);
     }
 
     /**
@@ -755,6 +675,131 @@ public final class Substring {
      */
     @Override public String toString() {
       return super.toString();
+    }
+  }
+
+  /**
+   * A substring pattern to be applied repeatedly on the input string, each time over the remaining
+   * substring after the previous match.
+   *
+   * @since 5.2
+   */
+  public static final class RepeatingPattern {
+    private final Pattern repeatable;
+
+    RepeatingPattern(Pattern repeatable) {
+      this.repeatable = repeatable;
+    }
+
+    /**
+     * Applies this pattern against {@code string} and returns a stream of each iteration.
+     *
+     * <p>Iterations happen in strict character encounter order, from the beginning of the input
+     * string to the end, with no overlapping. When a match is found, the next iteration is
+     * guaranteed to be in the substring after the current match. For example, {@code
+     * between(first('/'), first('/')).repeatedly().match("/foo/bar/baz/")} will return {@code
+     * ["foo", "bar", "baz"]}. On the other hand, {@code
+     * after(last('/')).repeatedly().match("/foo/bar")} will only return "bar".
+     *
+     * <p>Pattern matching is lazy and doesn't start until the returned stream is consumed.
+     *
+     * <p>An empty stream is returned if this pattern has no matches in the {@code input} string.
+     */
+    public Stream<Match> match(String input) {
+      return MoreStreams.whileNotNull(
+          new Supplier<Match>() {
+            private final int end = input.length();
+            private int nextIndex = 0;
+
+            @Override
+            public Match get() {
+              if (nextIndex > end) {
+                return null;
+              }
+              Match match = repeatable.match(input, nextIndex);
+              if (match == null) {
+                return null;
+              }
+              if (match.endIndex == end) { // We've consumed the entire string.
+                nextIndex = Integer.MAX_VALUE;
+              } else if (match.succeedingIndex > nextIndex) {
+                nextIndex = match.succeedingIndex;
+              } else {
+                // instead of being stuck in infinite loop, consider this the end.
+                nextIndex = Integer.MAX_VALUE;
+              }
+              return match;
+            }
+          });
+    }
+
+    public Stream<String> from(CharSequence input) {
+      return match(input.toString()).map(Match::toString);
+    }
+
+    /**
+     * Returns a new string with all {@link #match matches} of this pattern removed. Returns {@code
+     * string} as is if no match is found.
+     */
+    public String removeFrom(String string) {
+      return replaceFrom(string, m -> "");
+    }
+
+    /**
+     * Returns a new string with all {@link #match matches} of this pattern replaced by applying
+     * {@code replacementFunction} for each match.
+     *
+     * <p>{@code replacementFunction} must not return null. Returns {@code string} as-is if no match
+     * is found.
+     */
+    public String replaceFrom(
+        String string, Function<? super Match, ? extends CharSequence> replacementFunction) {
+      requireNonNull(replacementFunction);
+      Iterator<Match> matches = match(string).iterator();
+      if (!matches.hasNext()) {
+        return string;
+      }
+      // Add the chars between the previous and current match.
+      StringBuilder builder = new StringBuilder(string.length());
+      int index = 0;
+      do {
+        Match match = matches.next();
+        CharSequence replacement = replacementFunction.apply(match);
+        if (replacement == null) {
+          throw new NullPointerException("No replacement is returned for " + match);
+        }
+        builder
+            .append(string, index, match.startIndex)
+            .append(replacement);
+        index = match.endIndex;
+      } while (matches.hasNext());
+
+      // Add the remaining chars
+      return builder.append(string, index, string.length()).toString();
+    }
+
+    /**
+     * Returns a stream of {@code Match} objects delimited by every match of this pattern. If this
+     * pattern isn't found in {@code string}, the full string is matched.
+     */
+    public Stream<Match> split(String string) {
+      if (repeatable.match("") != null) {
+        throw new IllegalStateException("Pattern (" + repeatable + ") cannot be used as delimiter.");
+      }
+      return new RepeatingPattern(before(repeatable).or(FULL_STRING)).match(string);
+    }
+
+    /**
+     * Returns a stream of substrings delimited by every match of this pattern. with whiitespaces
+     * trimmed.
+     */
+    public Stream<String> splitThenTrim(CharSequence string) {
+      return split(string.toString()).map(Match::toString).map(String::trim);
+    }
+
+    @Override
+    public String toString() {
+      return repeatable + ".repeatedly()";
     }
   }
 

@@ -197,15 +197,14 @@ public class GuavaCollectorsTest {
   @Test public void testToImmutableMap_fromPairs() {
     String input = "k1=v1,k2=v2";
     ImmutableMap<String, String> kvs =
-        first(',').delimit(input).collect(toImmutableMap(s -> first('=').split(s).orElseThrow()));
+        first(',').repeatedly().split(input).collect(toImmutableMap(s -> first('=').split(s).orElseThrow()));
     assertThat(kvs).containsExactly("k1", "v1", "k2", "v2").inOrder();
   }
 
   @Test public void testToImmutableListMultimap_fromPairs() {
     String input = "k1=v1,k2=v2,k2=v2";
     ImmutableListMultimap<String, String> kvs =
-        first(',')
-            .delimit(input)
+        first(',').repeatedly().split(input)
             .collect(toImmutableListMultimap(s -> first('=').split(s).orElseThrow()));
     assertThat(kvs).containsExactly("k1", "v1", "k2", "v2", "k2", "v2").inOrder();
   }
@@ -213,8 +212,7 @@ public class GuavaCollectorsTest {
   @Test public void testToImmutableSetMultimap_fromPairs() {
     String input = "k1=v1,k2=v2,k2=v3";
     ImmutableSetMultimap<String, String> kvs =
-        first(',')
-            .delimit(input)
+        first(',').repeatedly().split(input)
             .collect(toImmutableSetMultimap(s -> first('=').split(s).orElseThrow()));
     assertThat(kvs).containsExactly("k1", "v1", "k2", "v2", "k2", "v3").inOrder();
   }
@@ -222,8 +220,7 @@ public class GuavaCollectorsTest {
   @Test public void testToImmutableBiMap_fromPairs() {
     String input = "k1=v1,k2=v2";
     ImmutableBiMap<String, String> kvs =
-        first(',')
-            .delimit(input)
+        first(',').repeatedly().split(input)
             .collect(toImmutableBiMap(s -> first('=').split(s).orElseThrow()));
     assertThat(kvs).containsExactly("k1", "v1", "k2", "v2").inOrder();
   }
