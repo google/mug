@@ -80,10 +80,12 @@ import com.google.mu.util.stream.MoreStreams;
  * To split a stream of strings into key-value pairs:
  *
  * <pre>{@code
+ *   import static com.google.mu.util.stream.GuavaCollectors.toImmutableListMultimap;
+ *
  *   ImmutableListMultimap<String, String> tags = lines.stream()
- *       .map(first(':')::splitThenTrim)
- *       .collect(concatenating(BiOptional::stream))
- *       .collect(ImmutableListMultimap::toImmutableListMultimap);
+ *       .collect(
+ *           toImmutableListMultimap(
+ *               s -> first(':').splitThenTrim(s).orElseThrow(...)));
  * }</pre>
  *
  * @since 2.0
