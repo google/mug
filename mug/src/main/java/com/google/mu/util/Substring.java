@@ -504,7 +504,7 @@ public final class Substring {
       return new RepeatingPattern(this);
     }
 
-    /** @deprecated Use {@code repeatedly().in(inpuut)} instead. */
+    /** @deprecated Use {@code repeatedly().match(input)} instead. */
     @Deprecated
     public final Stream<Match> iterateIn(String input) {
       return repeatedly().match(input);
