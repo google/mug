@@ -224,8 +224,7 @@ public class MoreStreamsTest {
 
   @Test public void mappingFromPairs() {
     String input = "k1=v1,k2=v2";
-    Map<String, String> kvs = first(',')
-        .delimit(input)
+    Map<String, String> kvs = first(',').repeatedly().split(input)
         .collect(mapping(s -> first('=').split(s).orElseThrow(), Collectors::toMap));
     assertThat(kvs).containsExactly("k1", "v1", "k2", "v2");
   }

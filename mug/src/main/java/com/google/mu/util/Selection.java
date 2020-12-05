@@ -193,7 +193,7 @@ public interface Selection<T> {
       if (string.equals("*")) {
         return all();
       }
-      Set<String> parts = delimiter.delimit(string)
+      Set<String> parts = delimiter.repeatedly().split(string)
           .map(Substring.Match::toString)
           .map(String::trim)
           .filter(s -> s.length() > 0)
