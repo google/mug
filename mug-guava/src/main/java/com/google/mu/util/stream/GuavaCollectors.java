@@ -14,6 +14,7 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
+import static com.google.mu.util.stream.MoreStreams.mapping;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
 
@@ -35,6 +36,7 @@ import com.google.common.collect.ImmutableTable;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Tables;
+import com.google.mu.util.Both;
 
 /**
  * Guava-specific Collectors and BiCollectors.
@@ -232,7 +234,7 @@ public final class GuavaCollectors {
    * Returns a {@link BiCollector} that collects the key-value pairs into an {@link ImmutableBimap}.
    * Equivalent to {@code ImmutableBimap::toImmutableBimap}.
    */
-  public static <K, V> BiCollector<K, V, ImmutableBiMap<K, V>> toImmutableBimap() {
+  public static <K, V> BiCollector<K, V, ImmutableBiMap<K, V>> toImmutableBiMap() {
     return ImmutableBiMap::toImmutableBiMap;
   }
 
@@ -282,6 +284,49 @@ public final class GuavaCollectors {
             ImmutableTable.Builder::put,
             (builder, that) -> builder.putAll(that.build()),
             ImmutableTable.Builder::build));
+  }
+  /**
+   * Returns a collector that first maps each input into a key-value pair, and then collects them
+   * into a {@link ImmutableMap}.
+   *
+   * @since 5.1
+   */
+  public static <T, K, V> Collector<T, ?, ImmutableMap<K, V>> toImmutableMap(
+      Function<? super T, ? extends Both<? extends K, ? extends V>> mapper) {
+    return mapping(mapper, toImmutableMap());
+  }
+
+  /**
+   * Returns a collector that first maps each input into a key-value pair, and then collects them
+   * into a {@link ImmutableListMultimap}.
+   *
+   * @since 5.1
+   */
+  public static <T, K, V> Collector<T, ?, ImmutableListMultimap<K, V>> toImmutableListMultimap(
+      Function<? super T, ? extends Both<? extends K, ? extends V>> mapper) {
+    return mapping(mapper, toImmutableListMultimap());
+  }
+
+  /**
+   * Returns a collector that first maps each input into a key-value pair, and then collects them
+   * into a {@link ImmutableSetMultimap}.
+   *
+   * @since 5.1
+   */
+  public static <T, K, V> Collector<T, ?, ImmutableSetMultimap<K, V>> toImmutableSetMultimap(
+      Function<? super T, ? extends Both<? extends K, ? extends V>> mapper) {
+    return mapping(mapper, toImmutableSetMultimap());
+  }
+
+  /**
+   * Returns a collector that first maps each input into a key-value pair, and then collects them
+   * into a {@link ImmutableBiMap}.
+   *
+   * @since 5.1
+   */
+  public static <T, K, V> Collector<T, ?, ImmutableBiMap<K, V>> toImmutableBiMap(
+      Function<? super T, ? extends Both<? extends K, ? extends V>> mapper) {
+    return mapping(mapper, toImmutableBiMap());
   }
 
   private static <K, V, T, R> BiCollector<K, V, R> mappingValues(
