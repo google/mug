@@ -530,7 +530,7 @@ public final class Substring {
     /** @deprecated Use {@code repeatedly().removeFrom(string)} instead. */
     @Deprecated
     public final String removeAllFrom(String string) {
-      return repeatedly().removeFrom(string);
+      return repeatedly().removeAllFrom(string);
     }
 
     /**
@@ -547,7 +547,7 @@ public final class Substring {
     @Deprecated
     public final String replaceAllFrom(
         String string, Function<? super Match, ? extends CharSequence> replacementFunction) {
-      return repeatedly().replaceFrom(string, replacementFunction);
+      return repeatedly().replaceAllFrom(string, replacementFunction);
     }
 
     /**
@@ -743,8 +743,8 @@ public final class Substring {
      * Returns a new string with all {@link #match matches} of this pattern removed. Returns {@code
      * string} as is if no match is found.
      */
-    public String removeFrom(String string) {
-      return replaceFrom(string, m -> "");
+    public String removeAllFrom(String string) {
+      return replaceAllFrom(string, m -> "");
     }
 
     /**
@@ -754,7 +754,7 @@ public final class Substring {
      * <p>{@code replacementFunction} must not return null. Returns {@code string} as-is if no match
      * is found.
      */
-    public String replaceFrom(
+    public String replaceAllFrom(
         String string, Function<? super Match, ? extends CharSequence> replacementFunction) {
       requireNonNull(replacementFunction);
       Iterator<Match> matches = match(string).iterator();
