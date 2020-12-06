@@ -792,7 +792,7 @@ public final class Substring {
     }
 
     /**
-     * Returns a stream of substrings delimited by every match of this pattern. with whiitespaces
+     * Returns a stream of substrings delimited by every match of this pattern. with whitespaces
      * trimmed.
      */
     public Stream<String> splitThenTrim(CharSequence string) {
