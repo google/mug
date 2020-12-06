@@ -17,6 +17,7 @@ package com.google.mu.util.stream;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.BiStream.toBiStream;
 import static java.util.Arrays.asList;
@@ -515,6 +516,13 @@ public class BiStreamInvariantsTest {
   public void map() {
     assertKeyValues(of(1, "one", 2, "two").map((k, v) -> k + ":" + v, (k, v) -> v + ":" + k))
         .containsExactly("1:one", "one:1", "2:two", "two:2")
+        .inOrder();
+  }
+
+  @Test
+  public void map_toPair() {
+    assertKeyValues(of(1, "a:foo", 2, "b:bar").map((l, t) -> first(':').split(t).orElseThrow()))
+        .containsExactly("a", "foo", "b", "bar")
         .inOrder();
   }
 

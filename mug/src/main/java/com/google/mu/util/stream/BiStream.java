@@ -679,6 +679,31 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
+   * Returns a {@code BiStream} consisting of the result pairs of applying {@code mapper} to the
+   * pairs in this {@code BiStream}.
+   *
+   * <p>For example, the following code parses each line read from a file in the format of "key:
+   * value", and upon expected format, reports the line number:
+   *
+   * <pre>{@code
+   * import static com.google.mu.util.Substring.first;
+   *
+   * BiStream.zip(MoreStreams.indexesFrom(1), readLines().stream())
+   *     .map((lineNumber, line) ->
+   *         first(':')
+   *             .splitThenTrim(line)
+   *             .orElseThrow(() -> new IllegalArgumentException("line: " + lineNumber)))
+   *     ...;
+   * }</pre>
+   *
+   * @since 5.2
+   */
+  public final <K2, V2> BiStream<K2, V2> map(
+      BiFunction<? super K, ? super V, ? extends Both<? extends K2, ? extends V2>> mapper) {
+    return from(mapToObj(mapper));
+  }
+
+  /**
    * Returns a {@code BiStream} consisting of the results of applying {@code keyMapper} and {@code
    * valueMapper} to the pairs in this {@code BiStream}. If either {@code keyMapper} function or
    * {@code valueMapper} function returns empty, the pair is discarded.
