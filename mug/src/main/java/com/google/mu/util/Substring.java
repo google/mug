@@ -77,15 +77,19 @@ import com.google.mu.util.stream.MoreStreams;
  *       .orElseThrow(BadFormatException::new);
  * </pre>
  *
- * To split a stream of strings into key-value pairs:
+ * To parse key-value pairs:
  *
  * <pre>{@code
- *   import static com.google.mu.util.stream.GuavaCollectors.toImmutableListMultimap;
+ * import static com.google.common.labs.collect.MoreCollectors.toImmutableListMultimap;
  *
- *   ImmutableListMultimap<String, String> tags = lines.stream()
- *       .collect(
- *           toImmutableListMultimap(
- *               s -> first(':').splitThenTrim(s).orElseThrow(...)));
+ * ImmutableListMultimap<String, String> tags =
+ *     first(',')
+ *         .repeatedly()
+ *         .split("k1=v1,k2=v2")  // Split into ["k1=v1", "k2=v2"]
+ *         .collect(
+ *             toImmutableListMultimap(
+ *                 // Split "k1=v1" into (k1, v1) and "k2=v2" into (k2, v2)
+ *                 s -> first('=').splitThenTrim(s).orElseThrow(...)));
  * }</pre>
  *
  * @since 2.0
