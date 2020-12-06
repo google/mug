@@ -1043,27 +1043,27 @@ public class SubstringTest {
 
   @Test
   public void removeAllFrom_noMatch() {
-    assertThat(first('f').repeatedly().removeFrom("bar")).isEqualTo("bar");
+    assertThat(first('f').repeatedly().removeAllFrom("bar")).isEqualTo("bar");
   }
 
   @Test
   public void removeAllFrom_oneMatch() {
-    assertThat(first('f').repeatedly().removeFrom("foo")).isEqualTo("oo");
-    assertThat(first('f').repeatedly().removeFrom("afoo")).isEqualTo("aoo");
-    assertThat(first('f').repeatedly().removeFrom("oof")).isEqualTo("oo");
+    assertThat(first('f').repeatedly().removeAllFrom("foo")).isEqualTo("oo");
+    assertThat(first('f').repeatedly().removeAllFrom("afoo")).isEqualTo("aoo");
+    assertThat(first('f').repeatedly().removeAllFrom("oof")).isEqualTo("oo");
   }
 
   @Test
   public void removeAllFrom_twoMatches() {
-    assertThat(first('o').repeatedly().removeFrom("foo")).isEqualTo("f");
-    assertThat(first('o').repeatedly().removeFrom("ofo")).isEqualTo("f");
-    assertThat(first('o').repeatedly().removeFrom("oof")).isEqualTo("f");
+    assertThat(first('o').repeatedly().removeAllFrom("foo")).isEqualTo("f");
+    assertThat(first('o').repeatedly().removeAllFrom("ofo")).isEqualTo("f");
+    assertThat(first('o').repeatedly().removeAllFrom("oof")).isEqualTo("f");
   }
 
   @Test
   public void removeAllFrom_threeMatches() {
-    assertThat(first("x").repeatedly().removeFrom("fox x bxr")).isEqualTo("fo  br");
-    assertThat(first("x").repeatedly().removeFrom("xaxbxxxcxx")).isEqualTo("abc");
+    assertThat(first("x").repeatedly().removeAllFrom("fox x bxr")).isEqualTo("fo  br");
+    assertThat(first("x").repeatedly().removeAllFrom("xaxbxxxcxx")).isEqualTo("abc");
   }
 
   @Test
@@ -1082,28 +1082,28 @@ public class SubstringTest {
 
   @Test
   public void replaceAllFrom_noMatch() {
-    assertThat(first('f').repeatedly().replaceFrom("bar", (Function<? super Match, ? extends CharSequence>) m -> "x")).isEqualTo("bar");
-    assertThat(first('f').repeatedly().replaceFrom("bar", (Function<? super Match, ? extends CharSequence>) m -> "xyz")).isEqualTo("bar");
+    assertThat(first('f').repeatedly().replaceAllFrom("bar", (Function<? super Match, ? extends CharSequence>) m -> "x")).isEqualTo("bar");
+    assertThat(first('f').repeatedly().replaceAllFrom("bar", (Function<? super Match, ? extends CharSequence>) m -> "xyz")).isEqualTo("bar");
   }
 
   @Test
   public void replaceAllFrom_oneMatch() {
-    assertThat(first('f').repeatedly().replaceFrom("foo", (Function<? super Match, ? extends CharSequence>) m -> "xx")).isEqualTo("xxoo");
-    assertThat(first('f').repeatedly().replaceFrom("afoo", (Function<? super Match, ? extends CharSequence>) m -> "xx")).isEqualTo("axxoo");
-    assertThat(first('f').repeatedly().replaceFrom("oof", (Function<? super Match, ? extends CharSequence>) m -> "xx")).isEqualTo("ooxx");
+    assertThat(first('f').repeatedly().replaceAllFrom("foo", (Function<? super Match, ? extends CharSequence>) m -> "xx")).isEqualTo("xxoo");
+    assertThat(first('f').repeatedly().replaceAllFrom("afoo", (Function<? super Match, ? extends CharSequence>) m -> "xx")).isEqualTo("axxoo");
+    assertThat(first('f').repeatedly().replaceAllFrom("oof", (Function<? super Match, ? extends CharSequence>) m -> "xx")).isEqualTo("ooxx");
   }
 
   @Test
   public void replaceAllFrom_twoMatches() {
-    assertThat(first('o').repeatedly().replaceFrom("foo", (Function<? super Match, ? extends CharSequence>) m -> "xx")).isEqualTo("fxxxx");
-    assertThat(first('o').repeatedly().replaceFrom("ofo", (Function<? super Match, ? extends CharSequence>) m -> "xx")).isEqualTo("xxfxx");
-    assertThat(first('o').repeatedly().replaceFrom("oof", (Function<? super Match, ? extends CharSequence>) m -> "xx")).isEqualTo("xxxxf");
+    assertThat(first('o').repeatedly().replaceAllFrom("foo", (Function<? super Match, ? extends CharSequence>) m -> "xx")).isEqualTo("fxxxx");
+    assertThat(first('o').repeatedly().replaceAllFrom("ofo", (Function<? super Match, ? extends CharSequence>) m -> "xx")).isEqualTo("xxfxx");
+    assertThat(first('o').repeatedly().replaceAllFrom("oof", (Function<? super Match, ? extends CharSequence>) m -> "xx")).isEqualTo("xxxxf");
   }
 
   @Test
   public void replaceAllFrom_threeMatches() {
-    assertThat(first("x").repeatedly().replaceFrom("fox x bxr", (Function<? super Match, ? extends CharSequence>) m -> "yy")).isEqualTo("foyy yy byyr");
-    assertThat(first("x").repeatedly().replaceFrom("xaxbxxcx", (Function<? super Match, ? extends CharSequence>) m -> "yy")).isEqualTo("yyayybyyyycyy");
+    assertThat(first("x").repeatedly().replaceAllFrom("fox x bxr", (Function<? super Match, ? extends CharSequence>) m -> "yy")).isEqualTo("foyy yy byyr");
+    assertThat(first("x").repeatedly().replaceAllFrom("xaxbxxcx", (Function<? super Match, ? extends CharSequence>) m -> "yy")).isEqualTo("yyayybyyyycyy");
   }
 
   @Test
@@ -1111,7 +1111,7 @@ public class SubstringTest {
     Substring.Pattern placeholder = Substring.between(before(first('{')), after(first('}')));
     ImmutableMap<String, String> dictionary = ImmutableMap.of("{key}", "foo", "{value}", "bar");
     assertThat(
-            placeholder.repeatedly().replaceFrom("/{key}:{value}/", (Function<? super Match, ? extends CharSequence>) match -> dictionary.get(match.toString())))
+            placeholder.repeatedly().replaceAllFrom("/{key}:{value}/", (Function<? super Match, ? extends CharSequence>) match -> dictionary.get(match.toString())))
         .isEqualTo("/foo:bar/");
   }
 
@@ -1121,13 +1121,13 @@ public class SubstringTest {
     NullPointerException thrown =
         assertThrows(
             NullPointerException.class,
-            () -> placeholder.repeatedly().replaceFrom("{unknown}", (Function<? super Match, ? extends CharSequence>) match -> null));
+            () -> placeholder.repeatedly().replaceAllFrom("{unknown}", (Function<? super Match, ? extends CharSequence>) match -> null));
     assertThat(thrown).hasMessageThat().contains("{unknown}");
   }
 
   @Test
   public void replaceAllFrom_replacementFunctionReturnsNonEmpty() {
-    assertThat(Substring.first("var").repeatedly().replaceFrom("var=x", (Function<? super Match, ? extends CharSequence>) m -> "v")).isEqualTo("v=x");
+    assertThat(Substring.first("var").repeatedly().replaceAllFrom("var=x", (Function<? super Match, ? extends CharSequence>) m -> "v")).isEqualTo("v=x");
   }
 
   @Test
