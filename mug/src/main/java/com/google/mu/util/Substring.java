@@ -527,7 +527,7 @@ public final class Substring {
       return match == null ? string : match.remove();
     }
 
-    /** @deprecated Use {@code repeatedly().removeFrom(string)} instead. */
+    /** @deprecated Use {@code repeatedly().removeAllFrom(string)} instead. */
     @Deprecated
     public final String removeAllFrom(String string) {
       return repeatedly().removeAllFrom(string);
@@ -543,7 +543,7 @@ public final class Substring {
       return match == null ? string : match.replaceWith(replacement);
     }
 
-    /** @deprecated Use {@code repeatedly().replaceFrom(string, replacementFunction)} instead. */
+    /** @deprecated Use {@code repeatedly().replaceAllFrom(string, replacementFunction)} instead. */
     @Deprecated
     public final String replaceAllFrom(
         String string, Function<? super Match, ? extends CharSequence> replacementFunction) {
