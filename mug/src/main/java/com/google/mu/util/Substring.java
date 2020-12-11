@@ -25,6 +25,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
 import java.util.stream.Stream;
 
 import com.google.mu.util.stream.MoreStreams;
@@ -278,10 +279,13 @@ public final class Substring {
     }
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
-        java.util.regex.Matcher matcher = regexPattern.matcher(input);
-        if (matcher.find(fromIndex)) {
+        CharSequence remaining =
+            fromIndex == 0 ? input : new Match(input, fromIndex, input.length() - fromIndex);
+        Matcher matcher = regexPattern.matcher(remaining);
+        if (matcher.find()) {
           int start = matcher.start(group);
-          return new Match(input, start, matcher.end(group) - start, matcher.end());
+          return new Match(
+              input, fromIndex + start, matcher.end(group) - start, fromIndex + matcher.end());
         }
         return null;
       }
