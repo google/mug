@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 import com.google.mu.util.Both;
 
 /**
- * Static utilities pertaining to {@link Collector} in addition to relevant utilities in Jdk and Guava.
+ * Static utilities pertaining to {@link Collector} in addition to relevant utilities in JDK and Guava.
  *
  * @since 5.2
  */
