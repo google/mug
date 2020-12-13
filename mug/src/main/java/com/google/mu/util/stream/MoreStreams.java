@@ -41,7 +41,7 @@ import com.google.mu.function.DualValuedFunction;
 import com.google.mu.util.Both;
 
 /**
- * Static utilities pertaining to {@link Stream} in addition to relevant utilities in Jdk and Guava.
+ * Static utilities pertaining to {@link Stream} in addition to relevant utilities in JDK and Guava.
  *
  * @since 1.1
  */
