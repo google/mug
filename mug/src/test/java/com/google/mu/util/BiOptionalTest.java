@@ -332,6 +332,9 @@ public class BiOptionalTest {
         .addEqualityGroup(BiOptional.of(2, "one"))
         .addEqualityGroup(Optional.empty())
         .addEqualityGroup(Optional.of(1))
+        .addEqualityGroup(BiOptional.empty().orElse(null, null))
+        .addEqualityGroup(BiOptional.empty().orElse("foo", "bar"))
+        .addEqualityGroup(BiOptional.of("x", "y").orElse("foo", "bar"))
         .testEquals();
   }
 

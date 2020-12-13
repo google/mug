@@ -416,7 +416,7 @@ public abstract class BiOptional<A, B> {
     public boolean equals(Object obj) {
       if (obj instanceof Present<?, ?>) {
         Present<?, ?> that = (Present<?, ?>) obj;
-        return a.equals(that.a) && b.equals(that.b);
+        return Objects.equals(a, that.a) && Objects.equals(b, that.b);
       }
       return false;
     }
