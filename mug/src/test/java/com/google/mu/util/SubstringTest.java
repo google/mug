@@ -573,7 +573,7 @@ public class SubstringTest {
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("foo");
     assertThat(first(Pattern.compile("^.oo")).repeatedly().from("foodoobar"))
-        .containsExactly("foo");
+        .containsExactly("foo", "doo");
   }
 
   @Test

@@ -17,14 +17,7 @@ package com.google.mu.util.stream;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static com.google.mu.util.Substring.first;
-import static com.google.mu.util.stream.BiCollectors.groupingBy;
-import static com.google.mu.util.stream.BiCollectors.toMap;
-import static com.google.mu.util.stream.MoreStreams.flatMapping;
-import static com.google.mu.util.stream.MoreStreams.flattening;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
-import static com.google.mu.util.stream.MoreStreams.mapping;
-import static com.google.mu.util.stream.MoreStreams.toListAndThen;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
@@ -36,13 +29,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
-import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -51,8 +42,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.NullPointerTester;
@@ -222,79 +211,6 @@ public class MoreStreamsTest {
     assertThat(to).containsExactly("1", "2");
   }
 
-  @Test public void mappingFromPairs() {
-    String input = "k1=v1,k2=v2";
-    Map<String, String> kvs = first(',').repeatedly().split(input)
-        .collect(mapping(s -> first('=').split(s).orElseThrow(), Collectors::toMap));
-    assertThat(kvs).containsExactly("k1", "v1", "k2", "v2");
-  }
-
-  @Test public void mergingValues_emptyMaps() {
-    ImmutableList<Translation> translations =
-        ImmutableList.of(new Translation(ImmutableMap.of()), new Translation(ImmutableMap.of()));
-    Map<Integer, String> merged = translations.stream()
-        .map(Translation::dictionary)
-        .collect(flatMapping(BiStream::from, groupingBy((Integer k) -> k, (a, b) -> a + "," + b)))
-        .collect(ImmutableMap::toImmutableMap);
-    assertThat(merged).isEmpty();
-  }
-
-  @Test public void mergingValues_uniqueKeys() {
-    ImmutableList<Translation> translations = ImmutableList.of(
-        new Translation(ImmutableMap.of(1, "one")), new Translation(ImmutableMap.of(2, "two")));
-    Map<Integer, String> merged = translations.stream()
-        .map(Translation::dictionary)
-        .collect(flatMapping(BiStream::from, groupingBy((Integer k) -> k, (a, b) -> a + "," + b)))
-        .collect(ImmutableMap::toImmutableMap);
-    assertThat(merged)
-        .containsExactly(1, "one", 2, "two")
-        .inOrder();
-  }
-
-  @Test public void mergingValues_duplicateValues() {
-    ImmutableList<Translation> translations = ImmutableList.of(
-        new Translation(ImmutableMap.of(1, "one")),
-        new Translation(ImmutableMap.of(2, "two", 1, "1")));
-    Map<Integer, String> merged = translations.stream()
-        .map(Translation::dictionary)
-        .collect(flatMapping(BiStream::from, groupingBy((Integer k) -> k, (a, b) -> a + "," + b)))
-        .collect(ImmutableMap::toImmutableMap);
-    assertThat(merged)
-        .containsExactly(1, "one,1", 2, "two")
-        .inOrder();
-  }
-
-  @Test public void flatteningToMap_emptyMaps() {
-    ImmutableList<Translation> translations =
-        ImmutableList.of(new Translation(ImmutableMap.of()), new Translation(ImmutableMap.of()));
-    Map<Integer, String> merged = translations.stream()
-        .map(Translation::dictionary)
-        .collect(flattening(Map::entrySet, toMap()));
-    assertThat(merged).isEmpty();
-  }
-
-  @Test public void flatteningToMap_unique() {
-    ImmutableList<Translation> translations = ImmutableList.of(
-        new Translation(ImmutableMap.of(1, "one")), new Translation(ImmutableMap.of(2, "two")));
-    Map<Integer, String> merged = translations.stream()
-        .map(Translation::dictionary)
-        .collect(flattening(Map::entrySet, toMap()));
-    assertThat(merged)
-        .containsExactly(1, "one", 2, "two")
-        .inOrder();
-  }
-
-  @Test public void flatteningToMap_withDuplicates() {
-    ImmutableList<Translation> translations = ImmutableList.of(
-        new Translation(ImmutableMap.of(1, "one")),
-        new Translation(ImmutableMap.of(2, "two", 1, "1")));
-    assertThrows(
-        IllegalStateException.class,
-        () -> translations.stream()
-            .map(Translation::dictionary)
-            .collect(flattening(Map::entrySet, toMap())));
-  }
-
   @Test public void testIndexesFrom() {
     assertThat(indexesFrom(1).limit(3)).containsExactly(1, 2, 3).inOrder();
     assertThat(indexesFrom(Integer.MAX_VALUE).limit(3))
@@ -385,23 +301,6 @@ public class MoreStreamsTest {
         .containsExactly("two", "one").inOrder();
   }
 
-  @Test public void toListAndThen_reversed() {
-    assertThat(Stream.of(1, 2, 3).collect(toListAndThen(Collections::reverse)))
-        .containsExactly(3, 2, 1)
-        .inOrder();
-  }
-
-  @Test public void toListAndThen_nullRejected() {
-    assertThrows(
-        NullPointerException.class,
-        () -> Stream.of(1, null).collect(toListAndThen(Collections::reverse)));
-  }
-
-  @Test public void toListAndThen_immutable() {
-    List<Integer> list = Stream.of(1, 2).collect(toListAndThen(Collections::reverse));
-    assertThrows(UnsupportedOperationException.class, list::clear);
-  }
-
   @Test public void withSideEffect() {
     List<Integer> list = new ArrayList<>();
     Stream<Integer> stream = MoreStreams.withSideEffect(Stream.of(1, 3, 5), list::add);
@@ -453,21 +352,5 @@ public class MoreStreamsTest {
     MoreStreams.withSideEffect(source.stream(), peeked::add).parallel().forEachOrdered(result::add);
     assertThat(result).containsExactlyElementsIn(source).inOrder();
     assertThat(peeked).containsExactlyElementsIn(source).inOrder();
-  }
-
-  private static <K, V> BiCollector<K, V, ImmutableListMultimap<K, V>> toImmutableListMultimap() {
-    return ImmutableListMultimap::toImmutableListMultimap;
-  }
-
-  private static class Translation {
-    private final ImmutableMap<Integer, String> dictionary;
-
-    Translation(ImmutableMap<Integer, String> dictionary) {
-      this.dictionary = dictionary;
-    }
-
-    ImmutableMap<Integer, String> dictionary() {
-      return dictionary;
-    }
   }
 }

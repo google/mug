@@ -50,7 +50,7 @@ public abstract class BiOptional<A, B> {
    * @throws NullPointerException if either {@code a} or {@code b} is null
    */
   public static <A, B> BiOptional<A, B> of(A a, B b) {
-    return new Present<>(a, b);
+    return new Present<>(requireNonNull(a), requireNonNull(b));
   }
 
   /**
@@ -264,12 +264,7 @@ public abstract class BiOptional<A, B> {
 
         @Override
         public Both<Object, Object> orElse(Object a, Object b) {
-          return new Both<Object, Object>() {
-            @Override
-            public <T> T andThen(BiFunction<Object, Object, T> function) {
-              return function.apply(a, b);
-            }
-          };
+          return new Present<>(a, b);
         }
 
         @Override
@@ -315,8 +310,8 @@ public abstract class BiOptional<A, B> {
     private final B b;
 
     Present(A a, B b) {
-      this.a = requireNonNull(a);
-      this.b = requireNonNull(b);
+      this.a = a;
+      this.b = b;
     }
 
     @Override
@@ -421,7 +416,7 @@ public abstract class BiOptional<A, B> {
     public boolean equals(Object obj) {
       if (obj instanceof Present<?, ?>) {
         Present<?, ?> that = (Present<?, ?>) obj;
-        return a.equals(that.a) && b.equals(that.b);
+        return Objects.equals(a, that.a) && Objects.equals(b, that.b);
       }
       return false;
     }

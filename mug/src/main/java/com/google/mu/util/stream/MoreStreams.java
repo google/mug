@@ -21,10 +21,8 @@ import java.util.AbstractMap;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Spliterator;
@@ -43,8 +41,7 @@ import com.google.mu.function.DualValuedFunction;
 import com.google.mu.util.Both;
 
 /**
- * Static utilities pertaining to {@link Stream} and {@link Collector} in addition to relevant
- * utilities in Jdk and Guava.
+ * Static utilities pertaining to {@link Stream} in addition to relevant utilities in Jdk and Guava.
  *
  * @since 1.1
  */
@@ -223,7 +220,7 @@ public final class MoreStreams {
   /** @deprecated Use {@code maps.collect(flatteningMaps(toMap())} instead. */
   @Deprecated
   public static <K, V> Collector<Map<K, V>, ?, Map<K, V>> uniqueKeys() {
-    return flattening(Map::entrySet, toMap());
+    return MoreCollectors.flatteningMaps(toMap());
   }
 
   /**
@@ -243,12 +240,13 @@ public final class MoreStreams {
    * }</pre>
    *
    * @since 5.1
+   * @deprecated Moved to {@link MoreCollectors}.
    */
+  @Deprecated
   public static <T, A, B, R> Collector<T, ?, R> mapping(
       Function<? super T, ? extends Both<? extends A, ? extends B>> mapper,
       BiCollector<A, B, R> downstream) {
-    return Collectors.mapping(
-        requireNonNull(mapper), downstream.splitting(BiStream::left, BiStream::right));
+    return MoreCollectors.mapping(mapper, downstream);
   }
 
   /**
@@ -257,14 +255,13 @@ public final class MoreStreams {
    * collects the flattened pairs with the {@code downstream} BiCollector.
    *
    * @since 4.8
+   * @deprecated Moved to {@link MoreCollectors}.
    */
+  @Deprecated
   public static <T, K, V, R> Collector<T, ?, R> flatMapping(
       Function<? super T, ? extends BiStream<? extends K, ? extends V>> flattener,
       BiCollector<K, V, R> downstream) {
-    return BiStream.flatMapping(
-        flattener.andThen(BiStream::mapToEntry),
-        downstream.<Map.Entry<? extends K, ? extends V>>splitting(
-            Map.Entry::getKey, Map.Entry::getValue));
+    return MoreCollectors.flatMapping(flattener, downstream);
   }
 
   /**
@@ -294,7 +291,9 @@ public final class MoreStreams {
    * <p>To flatten a stream of multimaps, use {@link #flattening}.
    *
    * @since 4.6
+   * @deprecated Moved to {@link MoreCollectors}.
    */
+  @Deprecated
   public static <K, V, R> Collector<Map<K, V>, ?, R> flatteningMaps(
       BiCollector<K, V, R> downstream) {
     return flatMapping(BiStream::from, downstream);
@@ -312,15 +311,11 @@ public final class MoreStreams {
    * </ul>
    *
    * @since 4.2
+   * @deprecated Moved to {@link MoreCollectors}.
    */
+  @Deprecated
   public static <T> Collector<T, ?, List<T>> toListAndThen(Consumer<? super List<T>> arranger) {
-    requireNonNull(arranger);
-    Collector<T, ?, List<T>> rejectingNulls =
-        Collectors.mapping(Objects::requireNonNull, Collectors.toCollection(ArrayList::new));
-    return Collectors.collectingAndThen(rejectingNulls, list -> {
-      arranger.accept(list);
-      return Collections.unmodifiableList(list);
-    });
+    return MoreCollectors.toListAndThen(arranger);
   }
 
   /**

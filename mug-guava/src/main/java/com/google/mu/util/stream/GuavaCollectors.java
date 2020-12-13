@@ -14,7 +14,7 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
-import static com.google.mu.util.stream.MoreStreams.mapping;
+import static com.google.mu.util.stream.MoreCollectors.mapping;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
 
