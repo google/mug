@@ -33,6 +33,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
+import com.google.mu.util.BiOptional;
 
 @RunWith(JUnit4.class)
 public class BiCollectorsTest {
@@ -218,6 +219,17 @@ public class BiCollectorsTest {
     BiStream<String, Integer> salaries = BiStream.of("Joe", 100, "Tom", 200);
     BiCollector<String, Integer, ImmutableMap<Integer, String>> toReverseMap =
         BiCollectors.mapping((k, v) -> v, (k, v) -> k, ImmutableMap::toImmutableMap);
+    assertThat(salaries.collect(toReverseMap))
+        .containsExactly(100, "Joe", 200, "Tom")
+        .inOrder();
+  }
+
+  @Test public void testMapping_pairWise() {
+    BiStream<String, Integer> salaries = BiStream.of("Joe", 100, "Tom", 200);
+    BiCollector<String, Integer, ImmutableMap<Integer, String>> toReverseMap =
+        BiCollectors.mapping(
+            (k, v) -> BiOptional.of(v, k).orElseThrow(),
+            ImmutableMap::toImmutableMap);
     assertThat(salaries.collect(toReverseMap))
         .containsExactly(100, "Joe", 200, "Tom")
         .inOrder();
