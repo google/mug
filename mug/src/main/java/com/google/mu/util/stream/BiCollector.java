@@ -64,4 +64,3 @@ public interface BiCollector<K, V, R> {
   // In other words, this signature optimizes flexibility for implementors, not callers.
   <E> Collector<E, ?, R> splitting(Function<E, K> toKey, Function<E, V> toValue);
 }
-

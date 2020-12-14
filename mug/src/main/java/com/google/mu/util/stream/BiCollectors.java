@@ -34,6 +34,8 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.google.mu.util.Both;
+
 /**
  * Common utilities pertaining to {@link BiCollector}.
  *
@@ -443,6 +445,26 @@ public final class BiCollectors {
         return downstream.splitting(
             e -> keyMapper.apply(toKey.apply(e), toValue.apply(e)),
             e -> valueMapper.apply(toKey.apply(e), toValue.apply(e)));
+      }
+    };
+  }
+
+  /**
+   * Returns a {@link BiCollector} that first maps the input pair into another pair using {@code mapper}.
+   * and then collects the results using {@code downstream} collector.
+   *
+   * @since 5.2
+   */
+  public static <K, V, K1, V1, R> BiCollector<K, V, R> mapping(
+      BiFunction<? super K, ? super V, ? extends Both<? extends K1, ? extends V1>> mapper,
+      BiCollector<? super K1, ? super V1, R> downstream) {
+    requireNonNull(mapper);
+    requireNonNull(downstream);
+    return new BiCollector<K, V, R>() {
+      @Override public <E> Collector<E, ?, R> splitting(Function<E, K> toKey, Function<E, V> toValue) {
+        return Collectors.mapping(
+            e -> mapper.apply(toKey.apply(e), toValue.apply(e)),
+            downstream.splitting(BiStream::left, BiStream::right));
       }
     };
   }
