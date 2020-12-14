@@ -417,7 +417,7 @@ public final class BiCollectors {
    * @since 3.2
    */
   public static <K, V, T, R> BiCollector<K, V, R> mapping(
-      BiFunction<? super K, ? super V, ? extends T> mapper, Collector<? super T, ?, R> downstream) {
+      BiFunction<? super K, ? super V, ? extends T> mapper, Collector<T, ?, R> downstream) {
     requireNonNull(mapper);
     requireNonNull(downstream);
     return new BiCollector<K, V, R>() {
@@ -436,7 +436,7 @@ public final class BiCollectors {
   public static <K, V, K1, V1, R> BiCollector<K, V, R> mapping(
       BiFunction<? super K, ? super V, ? extends K1> keyMapper,
       BiFunction<? super K, ? super V, ? extends V1> valueMapper,
-      BiCollector<? super K1, ? super V1, R> downstream) {
+      BiCollector<K1, V1, R> downstream) {
     requireNonNull(keyMapper);
     requireNonNull(valueMapper);
     requireNonNull(downstream);
@@ -457,7 +457,7 @@ public final class BiCollectors {
    */
   public static <K, V, K1, V1, R> BiCollector<K, V, R> mapping(
       BiFunction<? super K, ? super V, ? extends Both<? extends K1, ? extends V1>> mapper,
-      BiCollector<? super K1, ? super V1, R> downstream) {
+      BiCollector<K1, V1, R> downstream) {
     requireNonNull(mapper);
     requireNonNull(downstream);
     return new BiCollector<K, V, R>() {
