@@ -23,7 +23,8 @@ import java.util.function.BiPredicate;
  * BiStream<String, String> keyValues =
  *     BiStream.from(
  *         first(',')
- *             .delimit("k1=v1,k2=v2")
+ *             .repeatedly()
+ *             .split("k1=v1,k2=v2,k3=v3")
  *             .map(s -> first('=').split(s).orElseThrow(...)));
  * }</pre>
  *
@@ -34,7 +35,7 @@ import java.util.function.BiPredicate;
  * BiStream<String, String> keyValues =
  *     first(',')
  *         .repeatedly()
- *         .split("k1=v1,k2=v2")
+ *         .split("k1=v1,k2=v2,k3=v3")
  *         .collect(toBiStream(s -> first('=').split(s).orElseThrow(...)));
  * }</pre>
  *
