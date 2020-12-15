@@ -33,7 +33,8 @@ import java.util.function.BiPredicate;
  *
  * BiStream<String, String> keyValues =
  *     first(',')
- *         .delimit("k1=v1,k2=v2")
+ *         .repeatedly()
+ *         .split("k1=v1,k2=v2")
  *         .collect(toBiStream(s -> first('=').split(s).orElseThrow(...)));
  * }</pre>
  *
@@ -43,7 +44,8 @@ import java.util.function.BiPredicate;
  *
  * ImmutableListMultimap<String, String> keyValues =
  *     first(',')
- *         .delimit("k1=v1,k2=v2")
+ *         .repeatedly()
+ *         .split("k1=v1,k2=v2,k3=v3")
  *         .collect(
  *             mapping(
  *                 s -> first('=').split(s).orElseThrow(...),

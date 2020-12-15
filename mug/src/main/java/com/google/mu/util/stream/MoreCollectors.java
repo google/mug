@@ -29,7 +29,8 @@ public final class MoreCollectors {
    *
    * <pre>{@code
    * Substring.first(',')
-   *     .delimit("k1=v2,k2=v2")
+   *     .repeatedly()
+   *     .split("k1=v2,k2=v2")
    *     .collect(
    *         mapping(
    *             s -> first('=').split(s).orElseThrow(...),
