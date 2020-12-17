@@ -611,11 +611,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
 
   /**
    * Similar to Unix's {@code uniq} command, groups repeating <em>adjacent</em> elements and
-<<<<<<< HEAD
-   * collects them using {@code neighborhoodCollector}.
-=======
    * collects them using {@code groupCollector}.
->>>>>>> master
    *
    * <p>This method is more memory-efficient because it only needs to keep the current rolling
    * group. But same as the Unix `uniq` command, it only groups adjacent elements. For SQL-style
@@ -632,11 +628,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   /**
    * Similar to Unix's {@code uniq} command, groups adjacent elements with repeating key
    * according to the {@code by} function. <em>Adjacent</em> elements belonging to the same group
-<<<<<<< HEAD
-   * are collected using {@code neighborhoodCollector}.
-=======
    * are collected using {@code groupCollector}.
->>>>>>> master
    *
    * <p>This method is more memory-efficient because it only needs to keep the current rolling
    * group. But same as the Unix `uniq` command, it only groups adjacent elements. For SQL-style
