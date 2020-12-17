@@ -625,7 +625,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Similar to Unix's {@code uniq} command, groups adjacent elements with the same key
+   * Similar to Unix's {@code uniq} command, groups adjacent elements with repeating key
    * according to the {@code toKey} function. Adjacent elements belonging to the same group
    * are collected using {@code neighborhoodCollector}.
    *
