@@ -610,8 +610,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Similar to Unix's {@code uniq} command, groups equal adjacent elements and collects them using
-   * {@code neighborhoodCollector}.
+   * Similar to Unix's {@code uniq} command, groups repeating adjacent elements and collects them
+   * using {@code neighborhoodCollector}.
    *
    * <p>This method is more memory-efficient because it only needs to keep the current rolling
    * group. But same as the Unix `uniq` command, it only groups adjacent elements. If you need
