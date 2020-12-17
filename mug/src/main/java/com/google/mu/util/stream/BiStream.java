@@ -614,8 +614,9 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * using {@code neighborhoodCollector}.
    *
    * <p>This method is more memory-efficient because it only needs to keep the current rolling
-   * group. But same as the Unix `uniq` command, it only groups adjacent elements. If you need
-   * SQL-style group-by regardless of adjacency, use {@link #groupingBy} instead.
+   * group. But same as the Unix `uniq` command, it only groups adjacent elements. For SQL-style
+   * group-by regardless of adjacency, use {@link #groupingBy(Function, Collector) groupingBy()}
+   * instead.
    *
    * @since 5.2
    */
@@ -630,8 +631,9 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * are collected using {@code neighborhoodCollector}.
    *
    * <p>This method is more memory-efficient because it only needs to keep the current rolling
-   * group. But same as the Unix `uniq` command, it only groups adjacent elements. If you need
-   * SQL-style group-by regardless of adjacency, use {@link #groupingBy} instead.
+   * group. But same as the Unix `uniq` command, it only groups adjacent elements. For SQL-style
+   * group-by regardless of adjacency, use {@link #groupingBy(Function, Collector) groupingBy()}
+   * instead.
    *
    * @since 5.2
    */
