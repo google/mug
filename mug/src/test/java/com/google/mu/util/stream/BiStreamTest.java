@@ -24,6 +24,7 @@ import static com.google.mu.util.stream.BiStream.toAdjacentPairs;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static java.util.Arrays.asList;
 import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -86,6 +87,45 @@ public class BiStreamTest {
   @Test public void testFromMap() {
     assertKeyValues(BiStream.from(ImmutableMap.of("one", 1)))
         .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1))
+        .inOrder();
+  }
+
+  @Test public void testUniq_emptyStream() {
+    assertKeyValues(BiStream.uniq(Stream.empty(), identity(), toList())).isEmpty();
+  }
+
+  @Test public void testUniq_singleElement() {
+    assertKeyValues(BiStream.uniq(Stream.of(1), Object::toString, toList()))
+        .containsExactly("1", asList(1));
+  }
+
+  @Test public void testUniq_twoElementsSameGroup() {
+    assertKeyValues(BiStream.uniq(Stream.of(1, "1"), Object::toString, toList()))
+        .containsExactly("1", asList(1, "1"))
+        .inOrder();
+  }
+
+  @Test public void testUniq_twoElementsDifferentGroups() {
+    assertKeyValues(BiStream.uniq(Stream.of(1, "2"), Object::toString, toList()))
+        .containsExactly("1", asList(1), "2", asList("2"))
+        .inOrder();
+  }
+
+  @Test public void testUniq_equalElementsNotAdjacent() {
+    assertKeyValues(BiStream.uniq(Stream.of(1, "2", 2, 1), Object::toString, toList()))
+        .containsExactly("1", asList(1), "2", asList("2", 2), "1", asList(1))
+        .inOrder();
+  }
+
+  @Test public void testUniq_multipleGroups() {
+    assertKeyValues(BiStream.uniq(Stream.of(1, "2", 2, "3", 3, 3), Object::toString, toList()))
+        .containsExactly("1", asList(1), "2", asList("2", 2), "3", asList("3", 3, 3))
+        .inOrder();
+  }
+
+  @Test public void testUniq_nullAsGroups() {
+    assertKeyValues(BiStream.uniq(Stream.of(null, null, "foo", "foo", "foo"), identity(), counting()))
+        .containsExactly(null, 2L, "foo", 3L)
         .inOrder();
   }
 
