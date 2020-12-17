@@ -91,7 +91,7 @@ public class BiStreamTest {
   }
 
   @Test public void testUniq_emptyStream() {
-    assertKeyValues(BiStream.uniq(Stream.empty(), identity(), toList())).isEmpty();
+    assertKeyValues(BiStream.uniq(Stream.empty(), toList())).isEmpty();
   }
 
   @Test public void testUniq_singleElement() {
@@ -124,7 +124,7 @@ public class BiStreamTest {
   }
 
   @Test public void testUniq_nullAsGroups() {
-    assertKeyValues(BiStream.uniq(Stream.of(null, null, "foo", "foo", "foo"), identity(), counting()))
+    assertKeyValues(BiStream.uniq(Stream.of(null, null, "foo", "foo", "foo"), counting()))
         .containsExactly(null, 2L, "foo", 3L)
         .inOrder();
   }
