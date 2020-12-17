@@ -50,6 +50,7 @@ import java.util.function.Function;
 import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.function.ToDoubleBiFunction;
 import java.util.function.ToIntBiFunction;
 import java.util.function.ToLongBiFunction;
@@ -60,6 +61,7 @@ import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import com.google.mu.function.BiComparator;
 import com.google.mu.function.DualValuedFunction;
@@ -98,6 +100,7 @@ import com.google.mu.util.Both;
  * will receive only the key) . They operate equivalently otherwise.
  */
 public abstract class BiStream<K, V> implements AutoCloseable {
+  private static final boolean NOT_PARALLEL = false;
   /**
    * Builder for {@link BiStream}. Similar to {@link Stream.Builder}, entries may not be added after
    * {@link #build} is called.
@@ -604,6 +607,79 @@ public abstract class BiStream<K, V> implements AutoCloseable {
       Stream<T> stream,
       DualValuedFunction<? super T, ? extends K, ? extends V> mapper) {
     return fromEntries(stream.map(mapper.andThen(BiStream::kv)));
+  }
+
+  /**
+   * Similar to Unix's {@code uniq} command, groups adjacent elements with the same key
+   * according to the {@code toKey} function. Adjacent elements belonging to the same group
+   * are collected using {@code neighborhoodCollector}.
+   *
+   * <p>This method is more memory-efficient because it only needs to keep the current rolling
+   * group. But same as the Unix `uniq` command, it only groups adjacent elements. If you need
+   * SQL-style group-by regardless of adjacency, use {@link #groupingBy} instead.
+   *
+   * @since 5.2
+   */
+  public static <K, T, A, R> BiStream<K, R> uniq(
+      Stream<T> stream,
+      Function<? super T, ? extends K> toKey,
+      Collector<? super T, A, R> neighborhoodCollector) {
+    requireNonNull(stream);
+    requireNonNull(toKey);
+    Supplier<A> newContainer = neighborhoodCollector.supplier();
+    BiConsumer<A, ? super T> accumulator = neighborhoodCollector.accumulator();
+    Function<A, R> finisher = neighborhoodCollector.finisher();
+    final int characteristics = Spliterator.NONNULL | Spliterator.ORDERED | Spliterator.DISTINCT;
+
+    class Buffer extends AbstractSpliterator<Map.Entry<K, R>> implements Consumer<T> {
+      private final Spliterator<? extends T> spliterator = stream.spliterator();
+      private K currentKey = null;
+      private A currentGroupContainer = null;
+      private Map.Entry<K, R> nextEntry = null;
+
+      Buffer() {
+        super(Long.MAX_VALUE, characteristics);
+      }
+
+      @Override
+      public boolean tryAdvance(Consumer<? super Map.Entry<K, R>> action) {
+        while (spliterator.tryAdvance(this)) {
+          if (nextEntry != null) {
+            action.accept(nextEntry);
+            nextEntry = null;
+            return true;
+          }
+        }
+        if (currentGroupContainer == null) {
+          return false;
+        }
+        Map.Entry<K, R> last = currentGroup();
+        currentGroupContainer = null;
+        action.accept(last);
+        return true;
+      }
+
+      @Override
+      public void accept(T element) {
+        K k = toKey.apply(element);
+        if (currentGroupContainer == null) {
+          // first element in the group
+          currentKey = k;
+          currentGroupContainer = requireNonNull(newContainer.get());
+        } else if (!Objects.equals(currentKey, k)){
+          // Flush the previous group; start a new group
+          nextEntry = currentGroup();
+          currentKey = k;
+          currentGroupContainer = newContainer.get();
+        }
+        accumulator.accept(currentGroupContainer, element);
+      }
+
+      private Map.Entry<K, R> currentGroup() {
+        return kv(currentKey, finisher.apply(currentGroupContainer));
+      }
+    };
+    return fromEntries(StreamSupport.stream(Buffer::new, characteristics, NOT_PARALLEL));
   }
 
   static <K, V, E extends Map.Entry<? extends K, ? extends V>> BiStream<K, V> fromEntries(
@@ -1507,7 +1583,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     @Override
     public <T> Stream<T> mapToObj(BiFunction<? super K, ? super V, ? extends T> mapper) {
       requireNonNull(mapper);
-      return stream(() -> new Spliteration().<T>ofObj(mapper), ORDERED, /*parallel=*/ false)
+      return stream(() -> new Spliteration().<T>ofObj(mapper), ORDERED, NOT_PARALLEL)
           .onClose(left::close)
           .onClose(right::close);
     }
@@ -1515,7 +1591,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     @Override
     public DoubleStream mapToDouble(ToDoubleBiFunction<? super K, ? super V> mapper) {
       requireNonNull(mapper);
-      return doubleStream(() -> new Spliteration().ofDouble(mapper), ORDERED, /*parallel=*/ false)
+      return doubleStream(() -> new Spliteration().ofDouble(mapper), ORDERED, NOT_PARALLEL)
           .onClose(left::close)
           .onClose(right::close);
     }
@@ -1523,7 +1599,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     @Override
     public IntStream mapToInt(ToIntBiFunction<? super K, ? super V> mapper) {
       requireNonNull(mapper);
-      return intStream(() -> new Spliteration().ofInt(mapper), ORDERED, /*parallel=*/ false)
+      return intStream(() -> new Spliteration().ofInt(mapper), ORDERED, NOT_PARALLEL)
           .onClose(left::close)
           .onClose(right::close);
     }
@@ -1531,7 +1607,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     @Override
     public LongStream mapToLong(ToLongBiFunction<? super K, ? super V> mapper) {
       requireNonNull(mapper);
-      return longStream(() -> new Spliteration().ofLong(mapper), ORDERED, /*parallel=*/ false)
+      return longStream(() -> new Spliteration().ofLong(mapper), ORDERED, NOT_PARALLEL)
           .onClose(left::close)
           .onClose(right::close);
     }
