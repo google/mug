@@ -619,14 +619,14 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *
    * @since 5.2
    */
-  public static <T, R> BiStream<T, R> uniq(
+  public static <T, R> BiStream<T, R> groupRepeating(
       Stream<T> stream, Collector<? super T, ?, R> neighborhoodCollector) {
-    return uniq(stream, identity(), neighborhoodCollector);
+    return groupRepeating(identity(), stream, neighborhoodCollector);
   }
 
   /**
    * Similar to Unix's {@code uniq} command, groups adjacent elements with repeating key
-   * according to the {@code toKey} function. Adjacent elements belonging to the same group
+   * according to the {@code by} function. Adjacent elements belonging to the same group
    * are collected using {@code neighborhoodCollector}.
    *
    * <p>This method is more memory-efficient because it only needs to keep the current rolling
@@ -635,12 +635,12 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *
    * @since 5.2
    */
-  public static <K, T, A, R> BiStream<K, R> uniq(
+  public static <K, T, A, R> BiStream<K, R> groupRepeating(
+      Function<? super T, ? extends K> by,
       Stream<T> stream,
-      Function<? super T, ? extends K> toKey,
       Collector<? super T, A, R> neighborhoodCollector) {
     requireNonNull(stream);
-    requireNonNull(toKey);
+    requireNonNull(by);
     Supplier<A> newContainer = neighborhoodCollector.supplier();
     BiConsumer<A, ? super T> accumulator = neighborhoodCollector.accumulator();
     Function<A, R> finisher = neighborhoodCollector.finisher();
@@ -676,7 +676,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
 
       @Override
       public void accept(T element) {
-        K k = toKey.apply(element);
+        K k = by.apply(element);
         if (currentGroupContainer == null) {
           // first element in the group
           currentKey = k;
