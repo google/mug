@@ -611,7 +611,11 @@ public abstract class BiStream<K, V> implements AutoCloseable {
 
   /**
    * Similar to Unix's {@code uniq} command, groups repeating <em>adjacent</em> elements and
+<<<<<<< HEAD
    * collects them using {@code neighborhoodCollector}.
+=======
+   * collects them using {@code groupCollector}.
+>>>>>>> master
    *
    * <p>This method is more memory-efficient because it only needs to keep the current rolling
    * group. But same as the Unix `uniq` command, it only groups adjacent elements. For SQL-style
@@ -621,14 +625,18 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * @since 5.2
    */
   public static <T, R> BiStream<T, R> groupRepeating(
-      Stream<T> stream, Collector<? super T, ?, R> neighborhoodCollector) {
-    return groupRepeating(identity(), stream, neighborhoodCollector);
+      Stream<T> stream, Collector<? super T, ?, R> groupCollector) {
+    return groupRepeating(identity(), stream, groupCollector);
   }
 
   /**
    * Similar to Unix's {@code uniq} command, groups adjacent elements with repeating key
    * according to the {@code by} function. <em>Adjacent</em> elements belonging to the same group
+<<<<<<< HEAD
    * are collected using {@code neighborhoodCollector}.
+=======
+   * are collected using {@code groupCollector}.
+>>>>>>> master
    *
    * <p>This method is more memory-efficient because it only needs to keep the current rolling
    * group. But same as the Unix `uniq` command, it only groups adjacent elements. For SQL-style
@@ -640,12 +648,12 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   public static <K, T, A, R> BiStream<K, R> groupRepeating(
       Function<? super T, ? extends K> by,
       Stream<T> stream,
-      Collector<? super T, A, R> neighborhoodCollector) {
+      Collector<? super T, A, R> groupCollector) {
     requireNonNull(stream);
     requireNonNull(by);
-    Supplier<A> newContainer = neighborhoodCollector.supplier();
-    BiConsumer<A, ? super T> accumulator = neighborhoodCollector.accumulator();
-    Function<A, R> finisher = neighborhoodCollector.finisher();
+    Supplier<A> newContainer = groupCollector.supplier();
+    BiConsumer<A, ? super T> accumulator = groupCollector.accumulator();
+    Function<A, R> finisher = groupCollector.finisher();
     final int characteristics = Spliterator.NONNULL | Spliterator.ORDERED | Spliterator.DISTINCT;
 
     class Buffer extends AbstractSpliterator<Map.Entry<K, R>> implements Consumer<T> {
