@@ -658,8 +658,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
         super(Long.MAX_VALUE, characteristics);
       }
 
-      @Override
-      public boolean tryAdvance(Consumer<? super Map.Entry<K, R>> action) {
+      @Override public boolean tryAdvance(Consumer<? super Map.Entry<K, R>> action) {
         while (spliterator.tryAdvance(this)) {
           if (nextEntry != null) {
             action.accept(nextEntry);
@@ -676,8 +675,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
         return true;
       }
 
-      @Override
-      public void accept(T element) {
+      @Override public void accept(T element) {
         K k = by.apply(element);
         if (currentGroupContainer == null) {
           // first element in the group
@@ -702,37 +700,31 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   static <K, V, E extends Map.Entry<? extends K, ? extends V>> BiStream<K, V> fromEntries(
       Stream<E> entryStream) {
     return new GenericEntryStream<E, K, V>(entryStream, Map.Entry::getKey, Map.Entry::getValue) {
-      @Override
-      public <K2, V2> BiStream<K2, V2> map(
+      @Override public <K2, V2> BiStream<K2, V2> map(
           BiFunction<? super K, ? super V, ? extends K2> keyMapper,
           BiFunction<? super K, ? super V, ? extends V2> valueMapper) {
         return from(entryStream, forEntry(keyMapper), forEntry(valueMapper));
       }
 
-      @Override
-      public <K2> BiStream<K2, V> mapKeys(
+      @Override public <K2> BiStream<K2, V> mapKeys(
           BiFunction<? super K, ? super V, ? extends K2> keyMapper) {
         return from(entryStream, forEntry(keyMapper), Map.Entry::getValue);
       }
 
-      @Override
-      public <V2> BiStream<K, V2> mapValues(
+      @Override public <V2> BiStream<K, V2> mapValues(
           BiFunction<? super K, ? super V, ? extends V2> valueMapper) {
         return from(entryStream, Map.Entry::getKey, forEntry(valueMapper));
       }
 
-      @Override
-      public BiStream<K, V> limit(int maxSize) { // Stick to this impl where mapToEntry() is cheap
+      @Override public BiStream<K, V> limit(int maxSize) { // Stick to this impl where mapToEntry() is cheap
         return fromEntries(entryStream.limit(maxSize));
       }
 
-      @Override
-      public BiStream<K, V> skip(int n) { // Stick to this impl where mapToEntry() is cheap
+      @Override public BiStream<K, V> skip(int n) { // Stick to this impl where mapToEntry() is cheap
         return fromEntries(entryStream.skip(n));
       }
 
-      @Override
-      Stream<E> mapToEntry() { // Reuse the same Entry objects. Don't allocate new ones
+      @Override Stream<E> mapToEntry() { // Reuse the same Entry objects. Don't allocate new ones
         return entryStream;
       }
     };
@@ -1438,8 +1430,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * Closes any resources associated with this stream, tyipcally used in a try-with-resources
    * statement.
    */
-  @Override
-  public abstract void close();
+  @Override public abstract void close();
 
   static <K, V> Map.Entry<K, V> kv(K key, V value) {
     return new AbstractMap.SimpleImmutableEntry<>(key, value);
@@ -1491,85 +1482,70 @@ public abstract class BiStream<K, V> implements AutoCloseable {
       this.toValue = requireNonNull(toValue);
     }
 
-    @Override
-    public final <T> Stream<T> mapToObj(BiFunction<? super K, ? super V, ? extends T> mapper) {
+    @Override public final <T> Stream<T> mapToObj(BiFunction<? super K, ? super V, ? extends T> mapper) {
       return underlying.map(forEntry(mapper));
     }
 
-    @Override
-    public final DoubleStream mapToDouble(ToDoubleBiFunction<? super K, ? super V> mapper) {
+    @Override public final DoubleStream mapToDouble(ToDoubleBiFunction<? super K, ? super V> mapper) {
       requireNonNull(mapper);
       return underlying.mapToDouble(e -> mapper.applyAsDouble(toKey.apply(e), toValue.apply(e)));
     }
 
-    @Override
-    public final IntStream mapToInt(ToIntBiFunction<? super K, ? super V> mapper) {
+    @Override public final IntStream mapToInt(ToIntBiFunction<? super K, ? super V> mapper) {
       requireNonNull(mapper);
       return underlying.mapToInt(e -> mapper.applyAsInt(toKey.apply(e), toValue.apply(e)));
     }
 
-    @Override
-    public final LongStream mapToLong(ToLongBiFunction<? super K, ? super V> mapper) {
+    @Override public final LongStream mapToLong(ToLongBiFunction<? super K, ? super V> mapper) {
       requireNonNull(mapper);
       return underlying.mapToLong(e -> mapper.applyAsLong(toKey.apply(e), toValue.apply(e)));
     }
 
-    @Override
-    public final <K2> BiStream<K2, V> mapKeys(Function<? super K, ? extends K2> keyMapper) {
+    @Override public final <K2> BiStream<K2, V> mapKeys(Function<? super K, ? extends K2> keyMapper) {
       return from(underlying, toKey.andThen(keyMapper), toValue);
     }
 
-    @Override
-    public final <V2> BiStream<K, V2> mapValues(Function<? super V, ? extends V2> valueMapper) {
+    @Override public final <V2> BiStream<K, V2> mapValues(Function<? super V, ? extends V2> valueMapper) {
       return from(underlying, toKey, toValue.andThen(valueMapper));
     }
 
-    @Override
-    public final BiStream<V, K> inverse() {
+    @Override public final BiStream<V, K> inverse() {
       return from(underlying, toValue, toKey);
     }
 
-    @Override
-    public final void forEach(BiConsumer<? super K, ? super V> action) {
+    @Override public final void forEach(BiConsumer<? super K, ? super V> action) {
       requireNonNull(action);
       underlying.forEach(e -> action.accept(toKey.apply(e), toValue.apply(e)));
     }
 
-    @Override
-    public final void forEachOrdered(BiConsumer<? super K, ? super V> action) {
+    @Override public final void forEachOrdered(BiConsumer<? super K, ? super V> action) {
       requireNonNull(action);
       underlying.forEachOrdered(e -> action.accept(toKey.apply(e), toValue.apply(e)));
     }
 
-    @Override
-    public final boolean allMatch(BiPredicate<? super K, ? super V> predicate) {
+    @Override public final boolean allMatch(BiPredicate<? super K, ? super V> predicate) {
       requireNonNull(predicate);
       return underlying.allMatch(e -> predicate.test(toKey.apply(e), toValue.apply(e)));
     }
 
-    @Override
-    public final boolean anyMatch(BiPredicate<? super K, ? super V> predicate) {
+    @Override public final boolean anyMatch(BiPredicate<? super K, ? super V> predicate) {
       requireNonNull(predicate);
       return underlying.anyMatch(e -> predicate.test(toKey.apply(e), toValue.apply(e)));
     }
 
-    @Override
-    public BiStream<K, V> limit(int maxSize) {
+    @Override public BiStream<K, V> limit(int maxSize) {
       return from(underlying.limit(maxSize), toKey, toValue);
     }
 
-    @Override
-    public BiStream<K, V> skip(int n) {
+    @Override public BiStream<K, V> skip(int n) {
       return from(underlying.skip(n), toKey, toValue);
     }
 
-    @Override
-    public final <R> R collect(BiCollector<? super K, ? super V, R> collector) {
+    @Override public final <R> R collect(BiCollector<? super K, ? super V, R> collector) {
       return underlying.collect(collector.splitting(toKey::apply, toValue::apply));
     }
 
-    @Override
-    public final <A> A collect(A container, BiAccumulator<? super A, ? super K, ? super V> accumulator) {
+    @Override public final <A> A collect(A container, BiAccumulator<? super A, ? super K, ? super V> accumulator) {
       requireNonNull(accumulator);
       underlying
           .sequential()
@@ -1577,8 +1553,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
       return container;
     }
 
-    @Override
-    public final void close() {
+    @Override public final void close() {
       underlying.close();
     }
 
@@ -1597,100 +1572,84 @@ public abstract class BiStream<K, V> implements AutoCloseable {
       this.right = requireNonNull(right);
     }
 
-    @Override
-    public <T> Stream<T> mapToObj(BiFunction<? super K, ? super V, ? extends T> mapper) {
+    @Override public <T> Stream<T> mapToObj(BiFunction<? super K, ? super V, ? extends T> mapper) {
       requireNonNull(mapper);
       return stream(() -> new Spliteration().<T>ofObj(mapper), ORDERED, NOT_PARALLEL)
           .onClose(left::close)
           .onClose(right::close);
     }
 
-    @Override
-    public DoubleStream mapToDouble(ToDoubleBiFunction<? super K, ? super V> mapper) {
+    @Override public DoubleStream mapToDouble(ToDoubleBiFunction<? super K, ? super V> mapper) {
       requireNonNull(mapper);
       return doubleStream(() -> new Spliteration().ofDouble(mapper), ORDERED, NOT_PARALLEL)
           .onClose(left::close)
           .onClose(right::close);
     }
 
-    @Override
-    public IntStream mapToInt(ToIntBiFunction<? super K, ? super V> mapper) {
+    @Override public IntStream mapToInt(ToIntBiFunction<? super K, ? super V> mapper) {
       requireNonNull(mapper);
       return intStream(() -> new Spliteration().ofInt(mapper), ORDERED, NOT_PARALLEL)
           .onClose(left::close)
           .onClose(right::close);
     }
 
-    @Override
-    public LongStream mapToLong(ToLongBiFunction<? super K, ? super V> mapper) {
+    @Override public LongStream mapToLong(ToLongBiFunction<? super K, ? super V> mapper) {
       requireNonNull(mapper);
       return longStream(() -> new Spliteration().ofLong(mapper), ORDERED, NOT_PARALLEL)
           .onClose(left::close)
           .onClose(right::close);
     }
 
-    @Override
-    public <K2> BiStream<K2, V> mapKeys(Function<? super K, ? extends K2> keyMapper) {
+    @Override public <K2> BiStream<K2, V> mapKeys(Function<? super K, ? extends K2> keyMapper) {
       return zip(left.map(keyMapper), right);
     }
 
-    @Override
-    public <V2> BiStream<K, V2> mapValues(Function<? super V, ? extends V2> valueMapper) {
+    @Override public <V2> BiStream<K, V2> mapValues(Function<? super V, ? extends V2> valueMapper) {
       return zip(left, right.map(valueMapper));
     }
 
-    @Override
-    public BiStream<V, K> inverse() {
+    @Override public BiStream<V, K> inverse() {
       return zip(right, left);
     }
 
-    @Override
-    public void forEach(BiConsumer<? super K, ? super V> action) {
+    @Override public void forEach(BiConsumer<? super K, ? super V> action) {
       forEachOrdered(action);
     }
 
-    @Override
-    public void forEachOrdered(BiConsumer<? super K, ? super V> action) {
+    @Override public void forEachOrdered(BiConsumer<? super K, ? super V> action) {
       requireNonNull(action);
       new Spliteration().forEach(action);
     }
 
-    @Override
-    public boolean allMatch(BiPredicate<? super K, ? super V> predicate) {
+    @Override public boolean allMatch(BiPredicate<? super K, ? super V> predicate) {
       requireNonNull(predicate);
       return new Spliteration().any(false, predicate); // any false means false
     }
 
-    @Override
-    public boolean anyMatch(BiPredicate<? super K, ? super V> predicate) {
+    @Override public boolean anyMatch(BiPredicate<? super K, ? super V> predicate) {
       requireNonNull(predicate);
       return new Spliteration().any(true, predicate); // any true means true
     }
 
-    @Override
-    public BiStream<K, V> limit(int maxSize) {
+    @Override public BiStream<K, V> limit(int maxSize) {
       return zip(left.limit(maxSize), right.limit(maxSize));
     }
 
-    @Override
-    public BiStream<K, V> skip(int n) {
+    @Override public BiStream<K, V> skip(int n) {
       return zip(left.skip(n), right.skip(n));
     }
 
-    @Override
-    public <R> R collect(BiCollector<? super K, ? super V, R> collector) {
+    @Override public <R> R collect(BiCollector<? super K, ? super V, R> collector) {
       requireNonNull(collector);
       return new Spliteration().collectWith(collector);
     }
 
-    @Override
-    public final <A> A collect(A container, BiAccumulator<? super A, ? super K, ? super V> accumulator) {
+    @Override public final <A> A collect(A container, BiAccumulator<? super A, ? super K, ? super V> accumulator) {
       forEach(accumulator.into(container));
       return container;
     }
 
-    @Override
-    public final void close() {
+    @Override public final void close() {
       try (Stream<K> closeLeft = left) {
         right.close();
       }
@@ -1723,8 +1682,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
 
       <T> Spliterator<T> ofObj(BiFunction<? super K, ? super V, ? extends T> mapper) {
         return new AbstractSpliterator<T>(estimateSize(), ORDERED) {
-          @Override
-          public boolean tryAdvance(Consumer<? super T> consumer) {
+          @Override public boolean tryAdvance(Consumer<? super T> consumer) {
             return advance() && emit(mapper.apply(currentLeft.value, currentRight.value), consumer);
           }
         };
@@ -1732,8 +1690,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
 
       Spliterator.OfInt ofInt(ToIntBiFunction<? super K, ? super V> mapper) {
         return new AbstractIntSpliterator(estimateSize(), ORDERED) {
-          @Override
-          public boolean tryAdvance(IntConsumer consumer) {
+          @Override public boolean tryAdvance(IntConsumer consumer) {
             return advance()
                 && emit(mapper.applyAsInt(currentLeft.value, currentRight.value), consumer);
           }
@@ -1742,8 +1699,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
 
       Spliterator.OfLong ofLong(ToLongBiFunction<? super K, ? super V> mapper) {
         return new AbstractLongSpliterator(estimateSize(), ORDERED) {
-          @Override
-          public boolean tryAdvance(LongConsumer consumer) {
+          @Override public boolean tryAdvance(LongConsumer consumer) {
             return advance()
                 && emit(mapper.applyAsLong(currentLeft.value, currentRight.value), consumer);
           }
@@ -1752,8 +1708,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
 
       Spliterator.OfDouble ofDouble(ToDoubleBiFunction<? super K, ? super V> mapper) {
         return new AbstractDoubleSpliterator(estimateSize(), ORDERED) {
-          @Override
-          public boolean tryAdvance(DoubleConsumer consumer) {
+          @Override public boolean tryAdvance(DoubleConsumer consumer) {
             return advance()
                 && emit(mapper.applyAsDouble(currentLeft.value, currentRight.value), consumer);
           }
@@ -1806,8 +1761,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     private static final class Temp<T> implements Consumer<T> {
       T value;
 
-      @Override
-      public void accept(T value) {
+      @Override public void accept(T value) {
         this.value = value;
       }
     }
