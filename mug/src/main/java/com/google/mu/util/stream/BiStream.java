@@ -610,42 +610,39 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Similar to Unix's {@code uniq} command, groups repeating <em>adjacent</em> elements and
-   * collects them using {@code groupCollector}.
+   * Returns a {@code BiStream} of the run-length encoded "runs", each covering a sequence of
+   * <em>consecutive</em> equal elements.
    *
-   * <p>This method is more memory-efficient because it only needs to keep the current rolling
-   * group. But same as the Unix `uniq` command, it only groups adjacent elements. For SQL-style
-   * group-by regardless of adjacency, use {@link #groupingBy(Function, Collector) groupingBy()}
-   * instead.
+   * <p>The {@code encoder} Collector is used to encode (collect) the elements of each "run".
+   *
+   * <p>For example, {@code runLengthEncode([a, a, b, b, b, a], counting())} will result in
+   * {@code [{a, 2}, {b, 3}, {a, 1}]}.
    *
    * @since 5.2
    */
-  public static <T, R> BiStream<T, R> groupRepeating(
-      Stream<T> stream, Collector<? super T, ?, R> groupCollector) {
-    return groupRepeating(identity(), stream, groupCollector);
+  public static <T, R> BiStream<T, R> runLengthEncode(
+      Stream<T> stream, Collector<? super T, ?, R> encoder) {
+    return runLengthEncode(stream, identity(), encoder);
   }
 
   /**
-   * Similar to Unix's {@code uniq} command, groups adjacent elements with repeating key
-   * according to the {@code by} function. <em>Adjacent</em> elements belonging to the same group
-   * are collected using {@code groupCollector}.
+   * Returns a {@code BiStream} of the run-length encoded "runs", each covering a sequence of
+   * <em>consecutive</em> elements with equal key according to the {@code by} function.
    *
-   * <p>This method is more memory-efficient because it only needs to keep the current rolling
-   * group. But same as the Unix `uniq` command, it only groups adjacent elements. For SQL-style
-   * group-by regardless of adjacency, use {@link #groupingBy(Function, Collector) groupingBy()}
-   * instead.
+   * <p>For example, {@code runLengthEncode([1, 3, 11, 12, 13, 5], n -> n / 10, toList())} will
+   * result in {@code [{0, [1, 3]}, {1, [11, 12, 13]}, {0, [5]}]}.
    *
    * @since 5.2
    */
-  public static <K, T, A, R> BiStream<K, R> groupRepeating(
-      Function<? super T, ? extends K> by,
+  public static <K, T, A, R> BiStream<K, R> runLengthEncode(
       Stream<T> stream,
-      Collector<? super T, A, R> groupCollector) {
+      Function<? super T, ? extends K> by,
+      Collector<? super T, A, R> encoder) {
     requireNonNull(stream);
     requireNonNull(by);
-    Supplier<A> newContainer = groupCollector.supplier();
-    BiConsumer<A, ? super T> accumulator = groupCollector.accumulator();
-    Function<A, R> finisher = groupCollector.finisher();
+    Supplier<A> newContainer = encoder.supplier();
+    BiConsumer<A, ? super T> accumulator = encoder.accumulator();
+    Function<A, R> finisher = encoder.finisher();
     final int characteristics = Spliterator.NONNULL | Spliterator.ORDERED | Spliterator.DISTINCT;
 
     class Buffer extends AbstractSpliterator<Map.Entry<K, R>> implements Consumer<T> {
