@@ -614,7 +614,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * {@code stream}.
    *
    * <p>The {@code runSummarizer} Collector is used to summarize the elements of each "run".
-   * For example, You can perform "Run-length encoding" by using {@code Collectors.counting()}.
+   * For example, You can perform "Run-length encoding" by using {@code Collectors.counting()}:
    * {@code consecutiveRunsFrom([a, a, b, b, b, a], counting())} will result in
    * {@code [{a, 2}, {b, 3}, {a, 1}]}.
    *
