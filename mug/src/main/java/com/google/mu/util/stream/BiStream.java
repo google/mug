@@ -21,6 +21,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.Spliterator.ORDERED;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.doubleStream;
 import static java.util.stream.StreamSupport.intStream;
@@ -613,17 +614,31 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * Returns a {@code BiStream} of the consecutive runs of equal elements from the input
    * {@code stream}.
    *
-   * <p>The {@code runSummarizer} Collector is used to summarize the elements of each "run".
-   * For example, You can perform "Run-length encoding" by using {@code Collectors.counting()}:
-   * {@code consecutiveRunsFrom([a, a, b, b, b, a], counting())} will result in
+   * <p>For example, {@code consecutiveRunsFrom([a, a, b, b, b, a])} will result in
    * {@code [{a, 2}, {b, 3}, {a, 1}]}.
+   *
+   * <p>Consecutive null elements will be grouped in a "run" with null as the key.
+   *
+   * @param stream the stream of input elements
+   * @since 5.3
+   */
+  public static <T> BiStream<T, Long> consecutiveRunsFrom(Stream<T> stream) {
+    return consecutiveRunsFrom(stream, identity(), counting());
+  }
+
+  /**
+   * Returns a {@code BiStream} of the consecutive runs of equal elements from the input
+   * {@code stream}.
    *
    * <p>Consecutive null elements will be grouped in a "run" with null as the key.
    *
    * @param stream the stream of input elements
    * @param runSummarizer collector to summarize elements of the same "run"
    * @since 5.2
+   * @deprecated Use {@link #consecutiveRunsFrom(Stream)} to do run-length encoding, or {@link
+   *     consecitiveRunsFrom(Stream, Function, Collector)}.
    */
+  @Deprecated
   public static <T, R> BiStream<T, R> consecutiveRunsFrom(
       Stream<T> stream, Collector<? super T, ?, R> runSummarizer) {
     return consecutiveRunsFrom(stream, identity(), runSummarizer);

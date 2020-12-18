@@ -24,7 +24,6 @@ import static com.google.mu.util.stream.BiStream.toAdjacentPairs;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static java.util.Arrays.asList;
 import static java.util.function.Function.identity;
-import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -91,7 +90,7 @@ public class BiStreamTest {
   }
 
   @Test public void testConsecutiveRunsFrom_emptyStream() {
-    assertKeyValues(BiStream.consecutiveRunsFrom(Stream.empty(), toList())).isEmpty();
+    assertKeyValues(BiStream.consecutiveRunsFrom(Stream.empty())).isEmpty();
   }
 
   @Test public void testConsecutiveRunsFrom_singleElement() {
@@ -106,7 +105,7 @@ public class BiStreamTest {
   }
 
   @Test public void testConsecutiveRunsFrom_singleRunManyElements() {
-    assertKeyValues(BiStream.consecutiveRunsFrom(Collections.nCopies(100, 'x').stream(), counting()))
+    assertKeyValues(BiStream.consecutiveRunsFrom(Collections.nCopies(100, 'x').stream()))
         .containsExactly('x', 100L);
   }
 
@@ -117,25 +116,25 @@ public class BiStreamTest {
   }
 
   @Test public void testConsecutiveRunsFrom_oneElementPerRun() {
-    assertKeyValues(BiStream.consecutiveRunsFrom(Stream.of(1, 2, 3, 4, 5), counting()))
+    assertKeyValues(BiStream.consecutiveRunsFrom(Stream.of(1, 2, 3, 4, 5)))
         .containsExactly(1, 1L, 2, 1L, 3, 1L, 4, 1L, 5, 1L)
         .inOrder();
   }
 
   @Test public void testConsecutiveRunsFrom_twoElementsPerRun() {
-    assertKeyValues(BiStream.consecutiveRunsFrom(Stream.of(1, 1, 2, 2, 3, 3, 2, 2, 1, 1), counting()))
+    assertKeyValues(BiStream.consecutiveRunsFrom(Stream.of(1, 1, 2, 2, 3, 3, 2, 2, 1, 1)))
         .containsExactly(1, 2L, 2, 2L, 3, 2L, 2, 2L, 1, 2L)
         .inOrder();
   }
 
   @Test public void testConsecutiveRunsFrom_threeElementsPerRun() {
-    assertKeyValues(BiStream.consecutiveRunsFrom(Stream.of(1, 1, 1, 2, 2, 2, 3, 3, 3, 2, 2, 2), counting()))
+    assertKeyValues(BiStream.consecutiveRunsFrom(Stream.of(1, 1, 1, 2, 2, 2, 3, 3, 3, 2, 2, 2)))
         .containsExactly(1, 3L, 2, 3L, 3, 3L, 2, 3L)
         .inOrder();
   }
 
   @Test public void testConsecutiveRunsFrom_alternatingElements() {
-    assertKeyValues(BiStream.consecutiveRunsFrom(Stream.of(1, 2, 1, 2, 1), counting()))
+    assertKeyValues(BiStream.consecutiveRunsFrom(Stream.of(1, 2, 1, 2, 1)))
         .containsExactly(1, 1L, 2, 1L, 1, 1L, 2, 1L, 1, 1L)
         .inOrder();
   }
@@ -153,13 +152,13 @@ public class BiStreamTest {
   }
 
   @Test public void testConsecutiveRunsFrom_longerRuns() {
-    assertKeyValues(BiStream.consecutiveRunsFrom(Stream.of('a', 'b', 'b', 'b', 'b', 'b'), counting()))
+    assertKeyValues(BiStream.consecutiveRunsFrom(Stream.of('a', 'b', 'b', 'b', 'b', 'b')))
         .containsExactly('a', 1L, 'b', 5L)
         .inOrder();
   }
 
   @Test public void testConsecutiveRunsFrom_nullAsRuns() {
-    assertKeyValues(BiStream.consecutiveRunsFrom(Stream.of(null, null, "foo", "foo", "foo"), counting()))
+    assertKeyValues(BiStream.consecutiveRunsFrom(Stream.of(null, null, "foo", "foo", "foo")))
         .containsExactly(null, 2L, "foo", 3L)
         .inOrder();
   }
