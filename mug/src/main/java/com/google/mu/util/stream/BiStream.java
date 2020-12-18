@@ -681,8 +681,9 @@ public abstract class BiStream<K, V> implements AutoCloseable {
         if (currentRun == null) {
           return false;
         }
-        finishRun();
-        currentRun = null;
+        // The last run.
+        stop();
+        currentRun = null;  // Be idempotent
         action.accept(completedRun);
         return true;
       }
@@ -690,22 +691,21 @@ public abstract class BiStream<K, V> implements AutoCloseable {
       @Override public void accept(T element) {
         K k = by.apply(element);
         if (currentRun == null) {
-          startNewRun(k);
+          start(k);
         } else if (!Objects.equals(currentKey, k)){
-          // Flush the previous group; start a new group
-          finishRun();
-          startNewRun(k);
+          stop();
+          start(k);
         }
         accumulator.accept(currentRun, element);
       }
 
-      private void finishRun() {
-        completedRun = kv(currentKey, finisher.apply(currentRun));
-      }
-
-      private void startNewRun(K key) {
+      private void start(K key) {
         currentRun = requireNonNull(newContainer.get());
         currentKey = key;
+      }
+
+      private void stop() {
+        completedRun = kv(currentKey, finisher.apply(currentRun));
       }
     };
     return fromEntries(StreamSupport.stream(Runner::new, characteristics, NOT_PARALLEL));
