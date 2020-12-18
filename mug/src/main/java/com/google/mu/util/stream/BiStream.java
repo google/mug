@@ -629,6 +629,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * Returns a {@code BiStream} of the run-length encoded "runs", each covering a sequence of
    * <em>consecutive</em> elements with equal key according to the {@code by} function.
    *
+   * <p>The {@code encoder} Collector is used to encode (collect) the elements of each "run".
+   *
    * <p>For example, {@code runLengthEncode([1, 3, 11, 12, 13, 5], n -> n / 10, toList())} will
    * result in {@code [{0, [1, 3]}, {1, [11, 12, 13]}, {0, [5]}]}.
    *
