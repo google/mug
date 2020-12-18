@@ -21,6 +21,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.Spliterator.ORDERED;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.doubleStream;
 import static java.util.stream.StreamSupport.intStream;
@@ -613,17 +614,31 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * Returns a {@code BiStream} of the consecutive runs of equal elements from the input
    * {@code stream}.
    *
-   * <p>The {@code runSummarizer} Collector is used to summarize the elements of each "run".
-   * For example, You can perform "Run-length encoding" by using {@code Collectors.counting()}.
-   * {@code consecutiveRunsFrom([a, a, b, b, b, a], counting())} will result in
+   * <p>For example, {@code consecutiveRunsFrom([a, a, b, b, b, a])} will result in
    * {@code [{a, 2}, {b, 3}, {a, 1}]}.
+   *
+   * <p>Consecutive null elements will be grouped in a "run" with null as the key.
+   *
+   * @param stream the stream of input elements
+   * @since 5.3
+   */
+  public static <T> BiStream<T, Long> consecutiveRunsFrom(Stream<T> stream) {
+    return consecutiveRunsFrom(stream, identity(), counting());
+  }
+
+  /**
+   * Returns a {@code BiStream} of the consecutive runs of equal elements from the input
+   * {@code stream}.
    *
    * <p>Consecutive null elements will be grouped in a "run" with null as the key.
    *
    * @param stream the stream of input elements
    * @param runSummarizer collector to summarize elements of the same "run"
    * @since 5.2
+   * @deprecated Use {@link #consecutiveRunsFrom(Stream)} to do run-length encoding, or {@link
+   *     consecitiveRunsFrom(Stream, Function, Collector)}.
    */
+  @Deprecated
   public static <T, R> BiStream<T, R> consecutiveRunsFrom(
       Stream<T> stream, Collector<? super T, ?, R> runSummarizer) {
     return consecutiveRunsFrom(stream, identity(), runSummarizer);
@@ -660,53 +675,55 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     Function<A, R> finisher = runSummarizer.finisher();
     final int characteristics = Spliterator.NONNULL | Spliterator.ORDERED | Spliterator.DISTINCT;
 
-    class Buffer extends AbstractSpliterator<Map.Entry<K, R>> implements Consumer<T> {
+    class Runner extends AbstractSpliterator<Map.Entry<K, R>> implements Consumer<T> {
       private final Spliterator<? extends T> spliterator = stream.spliterator();
       private K currentKey = null;
-      private A currentGroupContainer = null;
-      private Map.Entry<K, R> nextEntry = null;
+      private A currentRun = null;
+      private Map.Entry<K, R> completedRun = null;
 
-      Buffer() {
+      Runner() {
         super(Long.MAX_VALUE, characteristics);
       }
 
       @Override public boolean tryAdvance(Consumer<? super Map.Entry<K, R>> action) {
         while (spliterator.tryAdvance(this)) {
-          if (nextEntry != null) {
-            action.accept(nextEntry);
-            nextEntry = null;
+          if (completedRun != null) {
+            action.accept(completedRun);
+            completedRun = null;
             return true;
           }
         }
-        if (currentGroupContainer == null) {
+        if (currentRun == null) {
           return false;
         }
-        Map.Entry<K, R> last = currentGroup();
-        currentGroupContainer = null;
-        action.accept(last);
+        // The last run.
+        stop();
+        currentRun = null;  // Be idempotent
+        action.accept(completedRun);
         return true;
       }
 
       @Override public void accept(T element) {
         K k = by.apply(element);
-        if (currentGroupContainer == null) {
-          // first element in the group
-          currentKey = k;
-          currentGroupContainer = requireNonNull(newContainer.get());
+        if (currentRun == null) {
+          start(k);
         } else if (!Objects.equals(currentKey, k)){
-          // Flush the previous group; start a new group
-          nextEntry = currentGroup();
-          currentKey = k;
-          currentGroupContainer = newContainer.get();
+          stop();
+          start(k);
         }
-        accumulator.accept(currentGroupContainer, element);
+        accumulator.accept(currentRun, element);
       }
 
-      private Map.Entry<K, R> currentGroup() {
-        return kv(currentKey, finisher.apply(currentGroupContainer));
+      private void start(K key) {
+        currentRun = requireNonNull(newContainer.get());
+        currentKey = key;
+      }
+
+      private void stop() {
+        completedRun = kv(currentKey, finisher.apply(currentRun));
       }
     };
-    return fromEntries(StreamSupport.stream(Buffer::new, characteristics, NOT_PARALLEL));
+    return fromEntries(StreamSupport.stream(Runner::new, characteristics, NOT_PARALLEL));
   }
 
   static <K, V, E extends Map.Entry<? extends K, ? extends V>> BiStream<K, V> fromEntries(

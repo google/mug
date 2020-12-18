@@ -4,12 +4,12 @@
   <parent>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-root</artifactId>
-    <version>5.2-SNAPSHOT</version>
+    <version>5.3-SNAPSHOT</version>
   </parent>
   <groupId>com.google.mug</groupId>
   <artifactId>mug-guava</artifactId>
   <packaging>jar</packaging>
-  <version>5.2-SNAPSHOT</version>
+  <version>5.3-SNAPSHOT</version>
   <name>mug-guava</name>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
