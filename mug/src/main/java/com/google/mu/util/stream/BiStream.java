@@ -636,7 +636,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * @param runSummarizer collector to summarize elements of the same "run"
    * @since 5.2
    * @deprecated Use {@link #consecutiveRunsFrom(Stream)} for run-length encoding, or {@link
-   *     consecutiveRunsFrom(Stream, Function, Collector)}.
+   *     #consecutiveRunsFrom(Stream, Function, Collector)}.
    */
   @Deprecated
   public static <T, R> BiStream<T, R> consecutiveRunsFrom(
