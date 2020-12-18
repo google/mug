@@ -610,8 +610,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Returns a {@code BiStream} of the run-length encoded "runs", each covering a sequence of
-   * <em>consecutive</em> equal elements.
+   * Conceptually similar to Unix {@code uniq} command, returns a {@code BiStream} of the
+   * run-length encoded "runs", each covering a sequence of <em>consecutive</em> equal elements.
    *
    * <p>The {@code encoder} Collector is used to encode (collect) the elements of each "run".
    *
@@ -626,8 +626,9 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Returns a {@code BiStream} of the run-length encoded "runs", each covering a sequence of
-   * <em>consecutive</em> elements with equal key according to the {@code by} function.
+   * Conceptually similar to Unix {@code uniq} command, returns a {@code BiStream} of the
+   * run-length encoded "runs", each covering a sequence of <em>consecutive</em> elements with
+   * equal key according to the {@code by} function.
    *
    * <p>The {@code encoder} Collector is used to encode (collect) the elements of each "run".
    *
