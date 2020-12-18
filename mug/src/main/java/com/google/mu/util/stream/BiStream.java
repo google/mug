@@ -610,42 +610,54 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Conceptually similar to Unix {@code uniq} command, returns a {@code BiStream} of the
-   * run-length encoded "runs", each covering a sequence of <em>consecutive</em> equal elements.
+   * Returns a {@code BiStream} of the consecutive runs of equal elements from the input
+   * {@code stream}.
    *
-   * <p>The {@code encoder} Collector is used to encode (collect) the elements of each "run".
-   *
-   * <p>For example, {@code runLengthEncode([a, a, b, b, b, a], counting())} will result in
+   * <p>The {@code runSummarizer} Collector is used to summarize the elements of each "run".
+   * For example, You can perform "Run-length encoding" by using {@code Collectors.counting()}.
+   * {@code consecutiveRunsFrom([a, a, b, b, b, a], counting())} will result in
    * {@code [{a, 2}, {b, 3}, {a, 1}]}.
    *
+   * <p>Consecutive null elements will be grouped in a "run" with null as the key.
+   *
+   * @param stream the stream of input elements
+   * @param runSummarizer collector to summarize elements of the same "run"
    * @since 5.2
    */
-  public static <T, R> BiStream<T, R> runLengthEncode(
-      Stream<T> stream, Collector<? super T, ?, R> encoder) {
-    return runLengthEncode(stream, identity(), encoder);
+  public static <T, R> BiStream<T, R> consecutiveRunsFrom(
+      Stream<T> stream, Collector<? super T, ?, R> runSummarizer) {
+    return consecutiveRunsFrom(stream, identity(), runSummarizer);
   }
 
   /**
-   * Conceptually similar to Unix {@code uniq} command, returns a {@code BiStream} of the
-   * run-length encoded "runs", each covering a sequence of <em>consecutive</em> elements with
-   * equal key according to the {@code by} function.
+   * Returns a {@code BiStream} of the consecutive runs of elements from the input {@code stream}.
+   * Elements in the same consecutive run share the same "key" according to the {@code by} function.
    *
-   * <p>The {@code encoder} Collector is used to encode (collect) the elements of each "run".
+   * <p>The {@code runSummarizer} Collector is used to summarize the elements of each "run".
+   * For example you could use {@code Collectors.summarizingDouble()} to summarize stock price per
+   * day:
    *
-   * <p>For example, {@code runLengthEncode([1, 3, 11, 12, 13, 5], n -> n / 10, toList())} will
-   * result in {@code [{0, [1, 3]}, {1, [11, 12, 13]}, {0, [5]}]}.
+   * <pre>{@code
+   * consecutiveRunsFrom(stockPriceData, PriceDatum::day, summarizingDouble(PriceDatum::price)):
+   * }</pre>
    *
+   * <p>Null elements are allowed as long as the {@code by} function allows nulls. Consecutive
+   * elements with null keys will be grouped in a "run", the same as non-null keys.
+   *
+   * @param stream the stream of input elements
+   * @param by the function to compute the key of each element
+   * @param runSummarizer collector to summarize elements of the same "run"
    * @since 5.2
    */
-  public static <K, T, A, R> BiStream<K, R> runLengthEncode(
+  public static <K, T, A, R> BiStream<K, R> consecutiveRunsFrom(
       Stream<T> stream,
       Function<? super T, ? extends K> by,
-      Collector<? super T, A, R> encoder) {
+      Collector<? super T, A, R> runSummarizer) {
     requireNonNull(stream);
     requireNonNull(by);
-    Supplier<A> newContainer = encoder.supplier();
-    BiConsumer<A, ? super T> accumulator = encoder.accumulator();
-    Function<A, R> finisher = encoder.finisher();
+    Supplier<A> newContainer = runSummarizer.supplier();
+    BiConsumer<A, ? super T> accumulator = runSummarizer.accumulator();
+    Function<A, R> finisher = runSummarizer.finisher();
     final int characteristics = Spliterator.NONNULL | Spliterator.ORDERED | Spliterator.DISTINCT;
 
     class Buffer extends AbstractSpliterator<Map.Entry<K, R>> implements Consumer<T> {

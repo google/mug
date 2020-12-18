@@ -90,41 +90,41 @@ public class BiStreamTest {
         .inOrder();
   }
 
-  @Test public void testRunLengthEncode_emptyStream() {
-    assertKeyValues(BiStream.runLengthEncode(Stream.empty(), toList())).isEmpty();
+  @Test public void testConsecutiveRunsFrom_emptyStream() {
+    assertKeyValues(BiStream.consecutiveRunsFrom(Stream.empty(), toList())).isEmpty();
   }
 
-  @Test public void testRunLengthEncode_singleElement() {
-    assertKeyValues(BiStream.runLengthEncode(Stream.of(1), Object::toString, toList()))
+  @Test public void testConsecutiveRunsFrom_singleElement() {
+    assertKeyValues(BiStream.consecutiveRunsFrom(Stream.of(1), Object::toString, toList()))
         .containsExactly("1", asList(1));
   }
 
-  @Test public void testRunLengthEncode_twoElementsSameGroup() {
-    assertKeyValues(BiStream.runLengthEncode(Stream.of(1, "1"), Object::toString, toList()))
+  @Test public void testConsecutiveRunsFrom_twoElementsSameGroup() {
+    assertKeyValues(BiStream.consecutiveRunsFrom(Stream.of(1, "1"), Object::toString, toList()))
         .containsExactly("1", asList(1, "1"))
         .inOrder();
   }
 
-  @Test public void testRunLengthEncode_twoElementsDifferentGroups() {
-    assertKeyValues(BiStream.runLengthEncode(Stream.of(1, "2"), Object::toString, toList()))
+  @Test public void testConsecutiveRunsFrom_twoElementsDifferentGroups() {
+    assertKeyValues(BiStream.consecutiveRunsFrom(Stream.of(1, "2"), Object::toString, toList()))
         .containsExactly("1", asList(1), "2", asList("2"))
         .inOrder();
   }
 
-  @Test public void testRunLengthEncode_equalElementsNotAdjacent() {
-    assertKeyValues(BiStream.runLengthEncode(Stream.of(1, "2", 2, 1), Object::toString, toList()))
+  @Test public void testConsecutiveRunsFrom_equalElementsNotAdjacent() {
+    assertKeyValues(BiStream.consecutiveRunsFrom(Stream.of(1, "2", 2, 1), Object::toString, toList()))
         .containsExactly("1", asList(1), "2", asList("2", 2), "1", asList(1))
         .inOrder();
   }
 
-  @Test public void testRunLengthEncode_multipleGroups() {
-    assertKeyValues(BiStream.runLengthEncode(Stream.of(1, "2", 2, "3", 3, 3), Object::toString, toList()))
+  @Test public void testConsecutiveRunsFrom_multipleGroups() {
+    assertKeyValues(BiStream.consecutiveRunsFrom(Stream.of(1, "2", 2, "3", 3, 3), Object::toString, toList()))
         .containsExactly("1", asList(1), "2", asList("2", 2), "3", asList("3", 3, 3))
         .inOrder();
   }
 
-  @Test public void testRunLengthEncode_nullAsGroups() {
-    assertKeyValues(BiStream.runLengthEncode(Stream.of(null, null, "foo", "foo", "foo"), counting()))
+  @Test public void testConsecutiveRunsFrom_nullAsGroups() {
+    assertKeyValues(BiStream.consecutiveRunsFrom(Stream.of(null, null, "foo", "foo", "foo"), counting()))
         .containsExactly(null, 2L, "foo", 3L)
         .inOrder();
   }
