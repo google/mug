@@ -611,13 +611,13 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Returns a {@code BiStream} of the consecutive runs of equal elements from the input
-   * {@code stream}.
+   * Returns a {@code BiStream} of the consecutive runs of equal elements and their run-lengths from the
+   * input {@code stream}.
    *
    * <p>For example, {@code consecutiveRunsFrom([a, a, b, b, b, a])} will result in
    * {@code [{a, 2}, {b, 3}, {a, 1}]}.
    *
-   * <p>Consecutive null elements will be grouped in a "run" with null as the key.
+   * <p>Null elements are allowed.
    *
    * @param stream the stream of input elements
    * @since 5.3
@@ -653,6 +653,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * <pre>{@code
    * consecutiveRunsFrom(stockPriceData, PriceDatum::day, summarizingDouble(PriceDatum::price)):
    * }</pre>
+   *
+   * <p>For run-length encoding, use {@link #consecutiveRunsFrom(Stream)}.
    *
    * <p>Null elements are allowed as long as the {@code by} function allows nulls. Consecutive
    * elements with null keys will be grouped in a "run", the same as non-null keys.
