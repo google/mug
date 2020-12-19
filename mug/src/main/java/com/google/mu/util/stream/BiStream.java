@@ -656,8 +656,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *
    * <p>For run-length encoding, use {@link #consecutiveRunsFrom(Stream)}.
    *
-   * <p>Null elements are allowed as long as the {@code by} function allows nulls. Consecutive
-   * elements with null keys will be grouped in a "run", the same as non-null keys.
+   * <p>Null elements are allowed as long as the {@code by} function allows nulls.
    *
    * @param stream the stream of input elements
    * @param by the function to compute the key of each element
