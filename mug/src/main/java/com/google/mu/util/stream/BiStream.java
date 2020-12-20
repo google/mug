@@ -611,8 +611,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Returns a {@code BiStream} of the consecutive runs of equal elements and their run-lengths from the
-   * input {@code stream}.
+   * Returns a lazy {@code BiStream} of the consecutive runs of equal elements and their run-lengths
+   * from the input {@code stream}.
    *
    * <p>For example, {@code consecutiveRunsFrom([a, a, b, b, b, a])} will result in
    * {@code [{a, 2}, {b, 3}, {a, 1}]}.
@@ -643,7 +643,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Returns a {@code BiStream} of the consecutive runs of elements from the input {@code stream}.
+   * Returns a lazy {@code BiStream} of the consecutive runs of elements from the input {@code stream}.
    * Elements in the same consecutive run share the same "key" according to the {@code by} function.
    *
    * <p>The {@code runSummarizer} Collector is used to summarize the elements of each "run".
