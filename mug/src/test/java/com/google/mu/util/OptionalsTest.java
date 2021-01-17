@@ -7,10 +7,6 @@ import static com.google.mu.util.Optionals.ifPresent;
 import static com.google.mu.util.Optionals.mapBoth;
 import static com.google.mu.util.Optionals.optional;
 import static com.google.mu.util.Optionals.optionally;
-import static com.google.mu.util.Optionals.toOptional;
-import static com.google.mu.util.Optionals.toOptionalDouble;
-import static com.google.mu.util.Optionals.toOptionalInt;
-import static com.google.mu.util.Optionals.toOptionalLong;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -239,54 +235,6 @@ public class OptionalsTest {
   @Test public void flatMap_bothPresent_mapperReturnsNonNull() {
     assertThat(flatMapBoth(Optional.of("foo"), Optional.of("bar"), (a, b) -> Optional.of(a + b)))
         .isEqualTo(Optional.of("foobar"));
-  }
-
-  @Test public void collect_intToOptional() {
-    assertThat(Optionals.collect(OptionalInt.of(123), toOptional())).hasValue(123);
-  }
-
-  @Test public void collect_intAbsentToOptional() {
-    assertThat(Optionals.collect(OptionalInt.empty(), toOptional())).isEmpty();
-  }
-
-  @Test public void collect_longToOptional() {
-    assertThat(Optionals.collect(OptionalLong.of(123), toOptional())).hasValue(123L);
-  }
-
-  @Test public void collect_longAbsentToOptional() {
-    assertThat(Optionals.collect(OptionalLong.empty(), toOptional())).isEmpty();
-  }
-
-  @Test public void collect_doubleToOptional() {
-    assertThat(Optionals.collect(OptionalDouble.of(2), toOptional())).hasValue(2D);
-  }
-
-  @Test public void collect_doubleAbsentToOptional() {
-    assertThat(Optionals.collect(OptionalDouble.empty(), toOptional())).isEmpty();
-  }
-
-  @Test public void collect_integerToOptionalInt() {
-    assertThat(Optionals.collect(Optional.of(123), toOptionalInt())).hasValue(123);
-  }
-
-  @Test public void collect_integerAbsentToOptionalInt() {
-    assertThat(Optionals.collect(Optional.empty(), toOptionalInt())).isEmpty();
-  }
-
-  @Test public void collect_longToOptionalLong() {
-    assertThat(Optionals.collect(Optional.of(123L), toOptionalLong())).hasValue(123);
-  }
-
-  @Test public void collect_longAbsentToOptionalLong() {
-    assertThat(Optionals.collect(Optional.empty(), toOptionalLong())).isEmpty();
-  }
-
-  @Test public void collect_longToOptionalDouble() {
-    assertThat(Optionals.collect(Optional.of(2D), toOptionalDouble())).hasValue(2);
-  }
-
-  @Test public void collect_longAbsentToOptionalDouble() {
-    assertThat(Optionals.collect(Optional.empty(), toOptionalDouble())).isEmpty();
   }
 
   @Test public void testNulls() throws Exception {
