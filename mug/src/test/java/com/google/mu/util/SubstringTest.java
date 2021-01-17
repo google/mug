@@ -1164,17 +1164,17 @@ public class SubstringTest {
 
   @Test
   public void repeatedly_splitThenTrim_noMatch() {
-    assertThat(first("://").repeatedly().splitThenTrim("abc"))
+    assertThat(first("://").repeatedly().splitThenTrim("abc").map(Match::toString))
         .containsExactly("abc");
   }
 
   @Test
   public void repeatedly_splitThenTrim_match() {
-    assertThat(first("//").repeatedly().splitThenTrim("// foo"))
+    assertThat(first("//").repeatedly().splitThenTrim("// foo").map(Match::toString))
         .containsExactly("", "foo");
-    assertThat(first("/").repeatedly().splitThenTrim("foo / bar"))
+    assertThat(first("/").repeatedly().splitThenTrim("foo / bar").map(Match::toString))
         .containsExactly("foo", "bar");
-    assertThat(first("/").repeatedly().splitThenTrim(" foo/bar/"))
+    assertThat(first("/").repeatedly().splitThenTrim(" foo/bar/").map(Match::toString))
         .containsExactly("foo", "bar", "");
   }
 
