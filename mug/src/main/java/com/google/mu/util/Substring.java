@@ -791,6 +791,11 @@ public final class Substring {
     /**
      * Returns a stream of {@code Match} objects delimited by every match of this pattern. If this
      * pattern isn't found in {@code string}, the full string is matched.
+     *
+     * <p>The returned {@code Match} objects are cheap "views" of the matched substring sequences.
+     * Because {@code Match} implements {@code CharSequence}, the returned {@code Match} objects can
+     * be directly passed to {@code CharSequence}-accepting APIs such as Guava {@code CharMatcher}
+     * methods and {@link Pattern#split} etc.
      */
     public Stream<Match> split(String string) {
       if (repeatable.match("") != null) {
@@ -802,9 +807,14 @@ public final class Substring {
     /**
      * Returns a stream of substrings delimited by every match of this pattern. with whitespaces
      * trimmed.
+     *
+     * <p>The returned {@code Match} objects are cheap "views" of the matched substring sequences.
+     * Because {@code Match} implements {@code CharSequence}, the returned {@code Match} objects can
+     * be directly passed to {@code CharSequence}-accepting APIs such as Guava {@code CharMatcher}
+     * methods and {@link Pattern#split} etc.
      */
-    public Stream<String> splitThenTrim(CharSequence string) {
-      return split(string.toString()).map(Match::toString).map(String::trim);
+    public Stream<Match> splitThenTrim(String string) {
+      return split(string.toString()).map(Match::trim);
     }
 
     @Override
@@ -1036,6 +1046,26 @@ public final class Substring {
 
     Match following() {
       return new Match(context, endIndex, context.length() - endIndex);
+    }
+
+    Match trim() {
+      int left = startIndex;
+      int right = endIndex - 1;
+      while (left <= right) {
+        if (Character.isWhitespace(context.charAt(left))) {
+          left++;
+          continue;
+        }
+        if (Character.isWhitespace(context.charAt(right))) {
+          right--;
+          continue;
+        }
+        break;
+      }
+      int trimmedLength = right - left + 1;
+      return trimmedLength == length()
+          ? this
+          : new Match(context, left, trimmedLength, succeedingIndex);
     }
 
     private Match toEnd() {
