@@ -669,14 +669,14 @@ public abstract class BiStream<K, V> implements AutoCloseable {
       Collector<? super T, A, R> runSummarizer) {
     requireNonNull(stream);
     requireNonNull(by);
-    Supplier<A> newContainer = runSummarizer.supplier();
+    Supplier<A> newBuffer = runSummarizer.supplier();
     BiConsumer<A, ? super T> accumulator = runSummarizer.accumulator();
     Function<A, R> finisher = runSummarizer.finisher();
     final int characteristics = Spliterator.NONNULL | Spliterator.ORDERED | Spliterator.DISTINCT;
 
     class Runner extends AbstractSpliterator<Map.Entry<K, R>> implements Consumer<T> {
       private final Spliterator<? extends T> spliterator = stream.spliterator();
-      private K currentKey = null;
+      private K currentKey;
       private A currentRun = null;
       private Map.Entry<K, R> completedRun = null;
 
@@ -714,7 +714,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
       }
 
       private void start(K key) {
-        currentRun = requireNonNull(newContainer.get());
+        currentRun = requireNonNull(newBuffer.get());
         currentKey = key;
       }
 

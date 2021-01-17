@@ -144,6 +144,22 @@ public class FunctionsTest {
     new NullPointerTester().testAllPublicInstanceMethods(function);
   }
 
+  @Test public void testOptionalFunction_nulls() throws Throwable {
+    new NullPointerTester().testAllPublicStaticMethods(OptionalFunction.class);
+  }
+
+  @Test public void testOptionalIntFunction_nulls() throws Throwable {
+    new NullPointerTester().testAllPublicStaticMethods(OptionalIntFunction.class);
+  }
+
+  @Test public void testOptionalLongFunction_nulls() throws Throwable {
+    new NullPointerTester().testAllPublicStaticMethods(OptionalLongFunction.class);
+  }
+
+  @Test public void testOptionalDoubleFunction_nulls() throws Throwable {
+    new NullPointerTester().testAllPublicStaticMethods(OptionalDoubleFunction.class);
+  }
+
   // T doesn't use wildcard to test that less-than-perfect method-ref can be used as
   // DualValuedFunction.
   private static <T, R> R withToString(T obj, BiFunction<T, ? super String, R> then) {
