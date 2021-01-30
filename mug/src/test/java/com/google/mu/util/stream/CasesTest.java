@@ -3,7 +3,7 @@ package com.google.mu.util.stream;
 import static com.google.mu.util.stream.Cases.TinyContainer.toTinyContainer;
 import static com.google.mu.util.stream.Cases.onlyElement;
 import static com.google.mu.util.stream.Cases.onlyElements;
-import static com.google.mu.util.stream.Cases.switching;
+import static com.google.mu.util.stream.Cases.cases;
 import static com.google.mu.util.stream.Cases.when;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
@@ -62,23 +62,23 @@ public final class CasesTest {
   }
 
   @Test
-  public void switching_firstCaseMatch() {
-    String result = Stream.of("foo", "bar").collect(switching(when((a, b) -> a + b), when(a -> a)));
+  public void cases_firstCaseMatch() {
+    String result = Stream.of("foo", "bar").collect(cases(when((a, b) -> a + b), when(a -> a)));
     assertThat(result).isEqualTo("foobar");
   }
 
   @Test
-  public void switching_secondCaseMatch() {
-    String result = Stream.of("foo").collect(switching(when((a, b) -> a + b), when(a -> a)));
+  public void cases_secondCaseMatch() {
+    String result = Stream.of("foo").collect(cases(when((a, b) -> a + b), when(a -> a)));
     assertThat(result).isEqualTo("foo");
   }
 
   @Test
-  public void switching_noMatchingCase() {
+  public void cases_noMatchingCase() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> Stream.of(1, 2, 3).collect(switching(when((a, b) -> a + b), when(a -> a))));
+            () -> Stream.of(1, 2, 3).collect(cases(when((a, b) -> a + b), when(a -> a))));
     assertThat(thrown).hasMessageThat().contains("size: 3");
   }
 
