@@ -52,7 +52,7 @@ import java.util.stream.Collector;
  *
  * <pre>{@code
  * Foo result = input.stream().collect(
- *     switching(
+ *     cases(
  *         when(() -> ...),
  *         when(a -> ...),
  *         when((a, b) -> ...)));
@@ -171,11 +171,12 @@ public final class Cases {
    *
    * <pre>{@code
    * Name name = nameParts.stream()
-   *     .collect(cases(
-   *         when(QualifiedName::new),                // (namespace, name) ->
-   *         when(keywords::contains, Keyword::new),  // (keyword) ->
-   *         when(UnqualifiedName::)                  // (name) ->
-   *         when(Anonymous::new)));                  // () ->
+   *     .collect(
+   *         cases(
+   *             when(QualifiedName::new),                // (namespace, name) ->
+   *             when(keywords::contains, Keyword::new),  // (keyword) ->
+   *             when(UnqualifiedName::)                  // (name) ->
+   *             when(Anonymous::new)));                  // () ->
    * }</pre>
    *
    * @since 5.3
