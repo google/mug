@@ -175,7 +175,7 @@ public final class Cases {
    *         cases(
    *             when(QualifiedName::new),                // (namespace, name) ->
    *             when(keywords::contains, Keyword::new),  // (keyword) ->
-   *             when(UnqualifiedName::)                  // (name) ->
+   *             when(UnqualifiedName::new)               // (name) ->
    *             when(Anonymous::new)));                  // () ->
    * }</pre>
    *
