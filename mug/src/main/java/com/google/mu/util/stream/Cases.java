@@ -171,15 +171,17 @@ public final class Cases {
    *
    * <pre>{@code
    * Name name = nameParts.stream()
-   *     .collect(switching(
+   *     .collect(cases(
    *         when(QualifiedName::new),                // (namespace, name) ->
    *         when(keywords::contains, Keyword::new),  // (keyword) ->
    *         when(UnqualifiedName::)                  // (name) ->
    *         when(Anonymous::new)));                  // () ->
    * }</pre>
+   *
+   * @since 5.3
    */
   @SafeVarargs
-  public static <T, R> Collector<T, ?, R> switching(
+  public static <T, R> Collector<T, ?, R> cases(
       Collector<? super T, ?, ? extends Optional<? extends R>>... cases) {
     List<Collector<? super T, ?, ? extends Optional<? extends R>>> caseList =
         Arrays.stream(cases).peek(Objects::requireNonNull).collect(toList());
@@ -191,6 +193,16 @@ public final class Cases {
                 .filter(v -> v != null)
                 .findFirst()
                 .orElseThrow(() -> unexpectedSize(input.size())));
+  }
+
+  /**
+   * @deprecated Use {@link #cases} instead.
+   */
+  @Deprecated
+  @SafeVarargs
+  public static <T, R> Collector<T, ?, R> switching(
+      Collector<? super T, ?, ? extends Optional<? extends R>>... cases) {
+    return cases(cases);
   }
 
   /** Stores up to 2 elements with zero dynamic memory allocation. */
