@@ -256,6 +256,60 @@ public final class Substring {
   }
 
   /**
+   * Returns a repeating pattern representing all the top-level groups from {@code regexPattern}.
+   *
+   * <p>For example, {@code topLevelGroups(compile("(g+)(o+)")).from("ggooo")} will return
+   * {@code ["gg", "ooo"]}.
+   *
+   * <p>Nested capture groups are not taken into consideration. For example: {@code
+   * topLevelGroups(compile("((foo)+(bar)*)(zoo)")).from("foofoobarzoo")} will return
+   * {@code ["foofoobar", "zoo"]}.
+   *
+   * <p>Note that the top-level groups are statically determined by the {@code regexPattern}.
+   * Particularly, quantifiers on a capture group do not increase or decrease the number of captured
+   * groups. That is, when matching {@code "(foo)+"} against {@code "foofoofoo"}, there will only
+   * be one top-level group, with {@code "foo"} as the value.
+   *
+   * @since 5.3
+   */
+  public static RepeatingPattern topLevelGroups(java.util.regex.Pattern regexPattern) {
+    requireNonNull(regexPattern);
+    return new RepeatingPattern() {
+      @Override
+      public Stream<Match> match(String string) {
+        Matcher matcher = regexPattern.matcher(string);
+        if (!matcher.find()) return Stream.empty();
+        int groups = matcher.groupCount();
+        if (groups == 0) {
+          return Stream.of(new Match(string, matcher.start(), matcher.end() - matcher.start()));
+        } else {
+          return MoreStreams.whileNotNull(new Supplier<Match>() {
+            private int next = 0;
+            private int g = 1;
+
+            @Override public Match get() {
+              for (; g <= groups; g++) {
+                int start = matcher.start(g);
+                int end = matcher.end(g);
+                if (start >= next) {
+                  next = end;
+                  return new Match(string, start, end - start);
+                }
+              }
+              return null;
+            }
+          });
+        }
+      }
+
+      @Override
+      public String toString() {
+        return "topLevelGroups(" + regexPattern + ")";
+      }
+    };
+  }
+
+  /**
    * Returns a {@code Pattern} that matches the first occurrence of {@code regexPattern} and then
    * selects the capturing group identified by {@code group}.
    *
@@ -503,17 +557,6 @@ public final class Substring {
       return Optional.ofNullable(Objects.toString(match(string.toString()), null));
     }
 
-    /**
-     * Returns a {@link RepeatingPattern} that applies this pattern repeatedly against the input
-     * string. That is, after each iteration, the pattern is applied again over the substring after
-     * the match, repeatedly until no match is found.
-     *
-     * @since 5.2
-     */
-    public final RepeatingPattern repeatedly() {
-      return new RepeatingPattern(this);
-    }
-
     /** @deprecated Use {@code repeatedly().match(input)} instead. */
     @Deprecated
     public final Stream<Match> iterateIn(String input) {
@@ -670,6 +713,60 @@ public final class Substring {
     }
 
     /**
+     * Returns a {@link RepeatingPattern} that applies this pattern repeatedly against the input
+     * string. That is, after each iteration, the pattern is applied again over the substring after
+     * the match, repeatedly until no match is found.
+     *
+     * @since 5.2
+     */
+    public final RepeatingPattern repeatedly() {
+      Pattern repeatable = Pattern.this;
+      return new RepeatingPattern() {
+        @Override
+        public Stream<Match> match(String input) {
+          return MoreStreams.whileNotNull(
+              new Supplier<Match>() {
+                private final int end = input.length();
+                private int nextIndex = 0;
+
+                @Override
+                public Match get() {
+                  if (nextIndex > end) {
+                    return null;
+                  }
+                  Match match = repeatable.match(input, nextIndex);
+                  if (match == null) {
+                    return null;
+                  }
+                  if (match.endIndex == end) { // We've consumed the entire string.
+                    nextIndex = Integer.MAX_VALUE;
+                  } else if (match.succeedingIndex > nextIndex) {
+                    nextIndex = match.succeedingIndex;
+                  } else {
+                    // instead of being stuck in infinite loop, consider this the end.
+                    nextIndex = Integer.MAX_VALUE;
+                  }
+                  return match;
+                }
+              });
+        }
+
+        @Override
+        public Stream<Match> split(String string) {
+          if (repeatable.match("") != null) {
+            throw new IllegalStateException("Pattern (" + repeatable + ") cannot be used as delimiter.");
+          }
+          return super.split(string);
+        }
+
+        @Override
+        public String toString() {
+          return repeatable + ".repeatedly()";
+        }
+      };
+    }
+
+    /**
      * Matches against {@code string} starting from {@code fromIndex}, and returns null if not
      * found.
      */
@@ -683,7 +780,8 @@ public final class Substring {
      * Do not depend on the string representation of Substring, except for subtypes {@link Prefix}
      * and {@link Suffix} that have an explicitly defined representation.
      */
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return super.toString();
     }
   }
@@ -694,13 +792,7 @@ public final class Substring {
    *
    * @since 5.2
    */
-  public static final class RepeatingPattern {
-    private final Pattern repeatable;
-
-    RepeatingPattern(Pattern repeatable) {
-      this.repeatable = repeatable;
-    }
-
+  public abstract static class RepeatingPattern {
     /**
      * Applies this pattern against {@code string} and returns a stream of each iteration.
      *
@@ -715,33 +807,7 @@ public final class Substring {
      *
      * <p>An empty stream is returned if this pattern has no matches in the {@code input} string.
      */
-    public Stream<Match> match(String input) {
-      return MoreStreams.whileNotNull(
-          new Supplier<Match>() {
-            private final int end = input.length();
-            private int nextIndex = 0;
-
-            @Override
-            public Match get() {
-              if (nextIndex > end) {
-                return null;
-              }
-              Match match = repeatable.match(input, nextIndex);
-              if (match == null) {
-                return null;
-              }
-              if (match.endIndex == end) { // We've consumed the entire string.
-                nextIndex = Integer.MAX_VALUE;
-              } else if (match.succeedingIndex > nextIndex) {
-                nextIndex = match.succeedingIndex;
-              } else {
-                // instead of being stuck in infinite loop, consider this the end.
-                nextIndex = Integer.MAX_VALUE;
-              }
-              return match;
-            }
-          });
-    }
+    public abstract Stream<Match> match(String input);
 
     public Stream<String> from(CharSequence input) {
       return match(input.toString()).map(Match::toString);
@@ -794,33 +860,48 @@ public final class Substring {
      *
      * <p>The returned {@code Match} objects are cheap "views" of the matched substring sequences.
      * Because {@code Match} implements {@code CharSequence}, the returned {@code Match} objects can
-     * be directly passed to {@code CharSequence}-accepting APIs such as Guava {@code CharMatcher}
-     * methods and {@link Pattern#split} etc.
+     * be directly passed to {@code CharSequence}-accepting APIs such as {@link
+     * CharMatcher#trimFrom} and {@link Pattern#splitThenTrim} etc.
      */
     public Stream<Match> split(String string) {
-      if (repeatable.match("") != null) {
-        throw new IllegalStateException("Pattern (" + repeatable + ") cannot be used as delimiter.");
-      }
-      return new RepeatingPattern(before(repeatable).or(FULL_STRING)).match(string);
+      return MoreStreams.whileNotNull(
+          new Supplier<Match>() {
+            int next = 0;
+            Iterator<Match> it = match(string).iterator();
+
+            @Override
+            public Match get() {
+              if (it.hasNext()) {
+                Match delim = it.next();
+                Match result = new Match(string, next, delim.index() - next);
+                next = delim.endIndex;
+                return result;
+              }
+              if (next >= 0) {
+                Match result = new Match(string, next, string.length() - next);
+                next = -1;
+                return result;
+              } else {
+                return null;
+              }
+            }
+          });
     }
 
     /**
-     * Returns a stream of substrings delimited by every match of this pattern. with whitespaces
-     * trimmed.
+     * Returns a stream of {@code Match} objects delimited by every match of this pattern. with
+     * whitespaces trimmed.
      *
      * <p>The returned {@code Match} objects are cheap "views" of the matched substring sequences.
      * Because {@code Match} implements {@code CharSequence}, the returned {@code Match} objects can
-     * be directly passed to {@code CharSequence}-accepting APIs such as Guava {@code CharMatcher}
-     * methods and {@link Pattern#split} etc.
+     * be directly passed to {@code CharSequence}-accepting APIs such as {@link
+     * CharMatcher#trimFrom} and {@link Pattern#split} etc.
      */
     public Stream<Match> splitThenTrim(String string) {
-      return split(string.toString()).map(Match::trim);
+      return split(string).map(Match::trim);
     }
 
-    @Override
-    public String toString() {
-      return repeatable + ".repeatedly()";
-    }
+    RepeatingPattern() {}
   }
 
   /**
