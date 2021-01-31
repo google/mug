@@ -1887,6 +1887,36 @@ public class SubstringTest {
     assertThat(spanningInOrder("o", "bar", "car").in("foo bar cat")).isEmpty();
   }
 
+  @Test public void testRegexTopLevelGroups_noGroup() {
+    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("f+")).from("fff"))
+        .containsExactly("fff");
+  }
+
+  @Test public void testRegexTopLevelGroups_singleGroup() {
+    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)")).from("fffdef"))
+        .containsExactly("fff");
+  }
+
+  @Test public void testRegexTopLevelGroups_twoGroups() {
+    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)")).from("fffcde"))
+        .containsExactly("fff", "cde");
+  }
+
+  @Test public void testRegexTopLevelGroups_repeatingGroup() {
+    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("((f){2,3})")).from("fffcde"))
+        .containsExactly("fff");
+  }
+
+  @Test public void testRegexTopLevelGroups_nestedGroup() {
+    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("((ab)(cd)+)ef")).from("abcdcdef"))
+        .containsExactly("abcdcd");
+  }
+
+  @Test public void testRegexTopLevelGroups_noMatch() {
+    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("((ab)(cd)+)ef")).from("cdef"))
+        .isEmpty();
+  }
+
   @Test
   public void testNulls() throws Exception {
     new NullPointerTester().testAllPublicInstanceMethods(prefix("foo").in("foobar").get());
