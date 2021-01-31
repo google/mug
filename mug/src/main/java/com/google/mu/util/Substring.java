@@ -257,11 +257,12 @@ public final class Substring {
 
   /**
    * Returns a repeating pattern representing all the top-level groups from {@code regexPattern}.
+   * If {@code regexPattern} has no capture group, the entire pattern is considered the only group.
    *
    * <p>For example, {@code topLevelGroups(compile("(g+)(o+)")).from("ggooo")} will return
    * {@code ["gg", "ooo"]}.
    *
-   * <p>Nested capture groups are not taken into consideration. For example: {@code
+   * <p>Nested capture groups are not taken into account. For example: {@code
    * topLevelGroups(compile("((foo)+(bar)*)(zoo)")).from("foofoobarzoo")} will return
    * {@code ["foofoobar", "zoo"]}.
    *
