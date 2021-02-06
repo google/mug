@@ -4,7 +4,7 @@
   <groupId>com.google.mug</groupId>
   <artifactId>mug-root</artifactId>
   <packaging>pom</packaging>
-  <version>5.4-SNAPSHOT</version>
+  <version>5.3-SNAPSHOT</version>
 
   <name>mug-root</name>
 
