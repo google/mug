@@ -1,14 +1,14 @@
 package com.google.mu.util.patternmatch;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.mu.util.patternmatch.PatternMatcher.atLeast;
-import static com.google.mu.util.patternmatch.PatternMatcher.empty;
-import static com.google.mu.util.patternmatch.PatternMatcher.exactly;
-import static com.google.mu.util.patternmatch.PatternMatcher.firstElement;
-import static com.google.mu.util.patternmatch.PatternMatcher.lastElement;
-import static com.google.mu.util.patternmatch.PatternMatcher.match;
-import static com.google.mu.util.patternmatch.PatternMatcher.onlyElement;
-import static com.google.mu.util.patternmatch.PatternMatcher.when;
+import static com.google.mu.util.patternmatch.PatternMatchingCollector.atLeast;
+import static com.google.mu.util.patternmatch.PatternMatchingCollector.empty;
+import static com.google.mu.util.patternmatch.PatternMatchingCollector.exactly;
+import static com.google.mu.util.patternmatch.PatternMatchingCollector.firstElement;
+import static com.google.mu.util.patternmatch.PatternMatchingCollector.lastElement;
+import static com.google.mu.util.patternmatch.PatternMatchingCollector.match;
+import static com.google.mu.util.patternmatch.PatternMatchingCollector.onlyElement;
+import static com.google.mu.util.patternmatch.PatternMatchingCollector.when;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -21,7 +21,7 @@ import org.junit.runners.JUnit4;
 import com.google.common.testing.NullPointerTester;
 
 @RunWith(JUnit4.class)
-public class PatternMatcherTest {
+public class PatternMatchingCollectorTest {
   @Test public void testEmpty() {
     assertThat(match(asList(), empty(() -> "ok"))).isEqualTo("ok");
     assertThrows(IllegalArgumentException.class, () -> match(asList(1), empty(() -> "ok")));
@@ -347,6 +347,6 @@ public class PatternMatcherTest {
   }
 
   @Test public void testNulls() throws Exception {
-    new NullPointerTester().testAllPublicStaticMethods(PatternMatcher.class);
+    new NullPointerTester().testAllPublicStaticMethods(PatternMatchingCollector.class);
   }
 }
