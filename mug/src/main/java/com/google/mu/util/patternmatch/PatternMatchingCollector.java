@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
  * <p>A {@code PatternMatchingCollector} object can both be used as a {@link Collector} for a
  * stream, or as one of several possible patterns passed to the static {@link #match} method.
  * For example:
- * <pre{@code
+ * <pre>{@code
  *   Path path = match(
  *       pathComponents,
  *       exactly((parent, child) -> ...),
