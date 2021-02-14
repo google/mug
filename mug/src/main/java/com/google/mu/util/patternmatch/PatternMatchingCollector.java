@@ -70,13 +70,13 @@ public abstract class PatternMatchingCollector<T, R> implements Collector<T, Lis
 
   /**
    * Returns a {@code Collector} that will expand the input elements and transform them using the
-   * first from {@code patterns} that matches. If no pattern matches the input elements, an
+   * first from {@code patterns} that matches. If no pattern matches the input elements,
    * {@code IllegalArgumentException} is thrown.
    *
-   * <p>For example if a string could be in the form of "<resource_name>" with no qualifier,
-   * or in the form of "<project>.<resource_name>" with project as the qualifier, or in the form of
-   * "<project>.<location>.<resource_name>", with both project and location qualifiers, you can
-   * handle all 3 cases using:
+   * <p>For example if a string could be in the form of {@code <resource_name>} with no qualifier,
+   * or in the form of {@code <project>.<resource_name>} with project as the qualifier,
+   * or in the form of {@code <project>.<location>.<resource_name>}, with both project and
+   * location qualifiers, you can handle all 3 cases using:
    * <pre>{@code
    *    Substring.first('.').repeatedly().split(string)
    *        .collect(
@@ -95,7 +95,7 @@ public abstract class PatternMatchingCollector<T, R> implements Collector<T, Lis
 
   /**
    * Expands the input elements in {@code list} and transforms them using the
-   * first from {@code patterns} that matches. If no pattern matches the input elements, an
+   * first from {@code patterns} that matches. If no pattern matches the input elements,
    * {@code IllegalArgumentException} is thrown.
    *
    * <p>For example, to switch among multiple possible cases:
