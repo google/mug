@@ -16,6 +16,6 @@ package com.google.mu.util.patternmatch;
 
 /** A 3-arg function of the signature of {@code (T, T, T) -> R}. */
 @FunctionalInterface
-interface Ternary<T, R> {
+public interface Ternary<T, R> {
   R apply(T a, T b, T c);
 }

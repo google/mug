@@ -15,6 +15,6 @@
 package com.google.mu.util.patternmatch;
 
 /** A 4-arg function of the signature of {@code (T, T, T, T) -> R}. */
-interface Quarternary<T, R> {
+public interface Quarternary<T, R> {
   R apply(T a, T b, T c, T d);
 }

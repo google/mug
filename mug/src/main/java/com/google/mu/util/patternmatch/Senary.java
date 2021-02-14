@@ -15,6 +15,6 @@
 package com.google.mu.util.patternmatch;
 
 /** A 6-arg function of the signature of {@code (T, T, T, T, T, T) -> R}. */
-interface Senary<T, R> {
+public interface Senary<T, R> {
   R apply(T a, T b, T c, T d, T e, T f);
 }
