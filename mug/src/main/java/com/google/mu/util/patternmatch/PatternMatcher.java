@@ -140,7 +140,8 @@ public abstract class PatternMatcher<T, R> implements Collector<T, List<T>, R> {
 
   /**
    * Returns a {@code PatternMatcher} that matches when there are exactly one input element.
-   * The element will be the result of the matcher.
+   * The element will be the result of the matcher. For example, you can get the only element
+   * from a stream using {@code stream.collect(onlyElement())}.
    */
   @SuppressWarnings("unchecked")  // PaternMatcher<T> is immutable and covariant of T .
   public static <T> PatternMatcher<T, T> onlyElement() {
@@ -309,7 +310,8 @@ public abstract class PatternMatcher<T, R> implements Collector<T, List<T>, R> {
 
   /**
    * Returns a {@code PatternMatcher} that matches when there are at least one input element.
-   * The first element will be the result of the matcher.
+   * The first element will be the result of the matcher. For example, you can get the first
+   * element from a non-empty stream using {@code stream.collect(firstElement())}.
    */
   @SuppressWarnings("unchecked")  // PaternMatcher<T> is immutable and covariant of T .
   public static <T> PatternMatcher<T, T> firstElement() {
@@ -318,7 +320,8 @@ public abstract class PatternMatcher<T, R> implements Collector<T, List<T>, R> {
 
   /**
    * Returns a {@code PatternMatcher} that matches when there are at least one input element.
-   * The last element will be the result of the matcher.
+   * The last element will be the result of the matcher. For example, you can get the last
+   * element from a non-empty stream using {@code stream.collect(lastElement())}.
    */
   @SuppressWarnings("unchecked")  // PaternMatcher<T> is immutable and covariant of T .
   public static <T> PatternMatcher<T, T> lastElement() {
