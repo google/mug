@@ -4,6 +4,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.util.patternmatch.PatternMatcher.atLeast;
 import static com.google.mu.util.patternmatch.PatternMatcher.empty;
 import static com.google.mu.util.patternmatch.PatternMatcher.exactly;
+import static com.google.mu.util.patternmatch.PatternMatcher.firstElement;
 import static com.google.mu.util.patternmatch.PatternMatcher.match;
 import static com.google.mu.util.patternmatch.PatternMatcher.onlyElement;
 import static com.google.mu.util.patternmatch.PatternMatcher.when;
@@ -41,9 +42,16 @@ public class PatternMatcherTest {
 
   @Test public void testExactlyOneAsCollector() {
     assertThat(Stream.of("foo").collect(exactly("ok:"::concat))).isEqualTo("ok:foo");
-    assertThat(Stream.of("foo").collect(onlyElement())).isEqualTo("foo");
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> Stream.of(1, 2).collect(exactly(a -> "ok")));
+    assertThat(thrown.getMessage())
+        .isEqualTo("Input ([1, 2]) doesn't match pattern <exactly 1 element>.");
+  }
+
+  @Test public void testOnlyElement() {
+    assertThat(Stream.of("foo").collect(onlyElement())).isEqualTo("foo");
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> Stream.of(1, 2).collect(onlyElement()));
     assertThat(thrown.getMessage())
         .isEqualTo("Input ([1, 2]) doesn't match pattern <exactly 1 element>.");
   }
@@ -146,6 +154,13 @@ public class PatternMatcherTest {
   @Test public void testAtLeastOneElement() {
     assertThat(match(asList(1), atLeast(hd -> hd * 10)).intValue()).isEqualTo(10);
     assertThat(match(asList(1, 2, 3), atLeast(hd -> hd * 10)).intValue()).isEqualTo(10);
+    assertThrows(
+        IllegalArgumentException.class, () -> match(asList(), atLeast(hd -> hd)));
+  }
+
+  @Test public void testFirstElement() {
+    assertThat(match(asList(1), firstElement()).intValue()).isEqualTo(1);
+    assertThat(match(asList(1, 2, 3), firstElement()).intValue()).isEqualTo(1);
     assertThrows(
         IllegalArgumentException.class, () -> match(asList(), atLeast(hd -> hd)));
   }
