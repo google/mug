@@ -59,11 +59,13 @@ import java.util.stream.Collector;
  * }</pre>
  *
  * @since 3.6
+ * @deprecated Use {@link com.google.mu.util.patternmatch.PatternMatcher} instead.
  */
+@Deprecated
 public final class Cases {
   /**
    * A collector that collects the only element from the input,
-   * or else throws {@link IllegalArgumentException}. 
+   * or else throws {@link IllegalArgumentException}.
    */
   public static <T> Collector<T, ?, T> onlyElement() {
     return collectingAndThen(toTinyContainer(), TinyContainer::onlyOne);
