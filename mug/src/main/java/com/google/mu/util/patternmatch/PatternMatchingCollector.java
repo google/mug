@@ -19,7 +19,7 @@ import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -489,7 +489,7 @@ public abstract class PatternMatchingCollector<T, R> implements Collector<T, Lis
   }
 
   @Override public Set<Characteristics> characteristics() {
-    return new HashSet<>();
+    return Collections.emptySet();
   }
 
   @SafeVarargs
