@@ -33,7 +33,7 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 /**
- * Utility class to do functional pattern-matching on a list or a stream of input elements.
+ * Utility class to do functional pattern matching on a list or a stream of input elements.
  *
  * <p>A {@code PatternMatchingCollector} object can both be used as a {@link Collector} for a
  * stream, or as one of several possible patterns passed to the static {@link #match} method.
