@@ -59,6 +59,20 @@ import java.util.stream.Collectors;
  * @since 5.3
  */
 public abstract class PatternMatcher<T, R> implements Collector<T, List<T>, R> {
+  private static final PatternMatcher<Object, ?> ONLY_ELEMENT = exactly(Function.identity());
+  private static final PatternMatcher<Object, ?> FIRST_ELEMENT = atLeast(Function.identity());
+  private static final PatternMatcher<Object, Object> LAST_ELEMENT = new PatternMatcher<Object, Object>() {
+    @Override boolean matches(List<?> list) {
+      return list.size() >= 1;
+    }
+    @Override Object map(List<?> list) {
+      return list.get(list.size() - 1);
+    }
+    @Override public String toString() {
+      return "at least 1 element";
+    }
+  };
+
   abstract boolean matches(List<? extends T> list);
   abstract R map(List<? extends T> list);
 
@@ -125,8 +139,9 @@ public abstract class PatternMatcher<T, R> implements Collector<T, List<T>, R> {
   }
 
   /** Returns a {@code PatternMatcher} that matches when there are exactly one input element. */
+  @SuppressWarnings("unchecked")  // PaternMatcher<T> is immutable and covariant of T .
   public static <T> PatternMatcher<T, T> onlyElement() {
-    return exactly(Function.identity());
+    return (PatternMatcher<T, T>) ONLY_ELEMENT;
   }
 
   /**
@@ -287,6 +302,24 @@ public abstract class PatternMatcher<T, R> implements Collector<T, List<T>, R> {
         return "exactly 2 elements that satisfies " + condition;
       }
     };
+  }
+
+  /**
+   * Returns a {@code PatternMatcher} that matches when there are at least one input element.
+   * The first element will be the result of the matcher.
+   */
+  @SuppressWarnings("unchecked")  // PaternMatcher<T> is immutable and covariant of T .
+  public static <T> PatternMatcher<T, T> firstElement() {
+    return (PatternMatcher<T, T>) FIRST_ELEMENT;
+  }
+
+  /**
+   * Returns a {@code PatternMatcher} that matches when there are at least one input element.
+   * The last element will be the result of the matcher.
+   */
+  @SuppressWarnings("unchecked")  // PaternMatcher<T> is immutable and covariant of T .
+  public static <T> PatternMatcher<T, T> lastElement() {
+    return (PatternMatcher<T, T>) LAST_ELEMENT;
   }
 
   /**
