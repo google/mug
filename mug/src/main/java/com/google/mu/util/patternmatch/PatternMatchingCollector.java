@@ -19,7 +19,7 @@ import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -33,7 +33,7 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 /**
- * Utility class to do functional pattern-matching on a list or a stream of input elements.
+ * Utility class to do functional pattern matching on a list or a stream of input elements.
  *
  * <p>A {@code PatternMatchingCollector} object can both be used as a {@link Collector} for a
  * stream, or as one of several possible patterns passed to the static {@link #match} method.
@@ -489,7 +489,7 @@ public abstract class PatternMatchingCollector<T, R> implements Collector<T, Lis
   }
 
   @Override public Set<Characteristics> characteristics() {
-    return new HashSet<>();
+    return Collections.emptySet();
   }
 
   @SafeVarargs
