@@ -138,7 +138,10 @@ public abstract class PatternMatcher<T, R> implements Collector<T, List<T>, R> {
     };
   }
 
-  /** Returns a {@code PatternMatcher} that matches when there are exactly one input element. */
+  /**
+   * Returns a {@code PatternMatcher} that matches when there are exactly one input element.
+   * The element will be the result of the matcher.
+   */
   @SuppressWarnings("unchecked")  // PaternMatcher<T> is immutable and covariant of T .
   public static <T> PatternMatcher<T, T> onlyElement() {
     return (PatternMatcher<T, T>) ONLY_ELEMENT;
