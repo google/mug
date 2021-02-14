@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
  * Utility class to do functional pattern-matching on a list of input elements.
  *
  * <p>For example if you have a string that's known to be in the form of "<org>.<project>.<id>",
- * you can: <pre>{@code
+ * you can use a {@code PatternMatcher} object as a {@code Collector}: <pre>{@code
  *   Substring.first('.').repeatedly().split(string)
  *       .collect(exactly((org, project, id) -> ...));
  * }</pre>
