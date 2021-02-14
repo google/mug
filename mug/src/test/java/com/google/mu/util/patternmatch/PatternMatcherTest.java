@@ -5,6 +5,7 @@ import static com.google.mu.util.patternmatch.PatternMatcher.atLeast;
 import static com.google.mu.util.patternmatch.PatternMatcher.empty;
 import static com.google.mu.util.patternmatch.PatternMatcher.exactly;
 import static com.google.mu.util.patternmatch.PatternMatcher.firstElement;
+import static com.google.mu.util.patternmatch.PatternMatcher.lastElement;
 import static com.google.mu.util.patternmatch.PatternMatcher.match;
 import static com.google.mu.util.patternmatch.PatternMatcher.onlyElement;
 import static com.google.mu.util.patternmatch.PatternMatcher.when;
@@ -34,6 +35,15 @@ public class PatternMatcherTest {
         .isEqualTo("Input ([1]) doesn't match pattern <empty>.");
   }
 
+  @Test public void testOnlyElement() {
+    assertThat(onlyElement()).isSameAs(onlyElement());
+    assertThat(Stream.of("foo").collect(onlyElement())).isEqualTo("foo");
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> Stream.of(1, 2).collect(onlyElement()));
+    assertThat(thrown.getMessage())
+        .isEqualTo("Input ([1, 2]) doesn't match pattern <exactly 1 element>.");
+  }
+
   @Test public void testExactlyOneElement() {
     assertThat(match(asList(1), exactly(n -> n * 10)).intValue()).isEqualTo(10);
     assertThrows(IllegalArgumentException.class, () -> match(asList(), exactly(n -> "ok")));
@@ -44,14 +54,6 @@ public class PatternMatcherTest {
     assertThat(Stream.of("foo").collect(exactly("ok:"::concat))).isEqualTo("ok:foo");
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> Stream.of(1, 2).collect(exactly(a -> "ok")));
-    assertThat(thrown.getMessage())
-        .isEqualTo("Input ([1, 2]) doesn't match pattern <exactly 1 element>.");
-  }
-
-  @Test public void testOnlyElement() {
-    assertThat(Stream.of("foo").collect(onlyElement())).isEqualTo("foo");
-    IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> Stream.of(1, 2).collect(onlyElement()));
     assertThat(thrown.getMessage())
         .isEqualTo("Input ([1, 2]) doesn't match pattern <exactly 1 element>.");
   }
@@ -151,16 +153,25 @@ public class PatternMatcherTest {
         .isEqualTo("Input ([1, 2]) doesn't match pattern <exactly 6 elements>.");
   }
 
+  @Test public void testFirstElement() {
+    assertThat(firstElement()).isSameAs(firstElement());
+    assertThat(match(asList(1), firstElement()).intValue()).isEqualTo(1);
+    assertThat(match(asList(1, 2, 3), firstElement()).intValue()).isEqualTo(1);
+    assertThrows(
+        IllegalArgumentException.class, () -> match(asList(), firstElement()));
+  }
+
+  @Test public void testLastElement() {
+    assertThat(lastElement()).isSameAs(lastElement());
+    assertThat(match(asList(1), lastElement()).intValue()).isEqualTo(1);
+    assertThat(match(asList(1, 2, 3), lastElement()).intValue()).isEqualTo(3);
+    assertThrows(
+        IllegalArgumentException.class, () -> match(asList(), lastElement()));
+  }
+
   @Test public void testAtLeastOneElement() {
     assertThat(match(asList(1), atLeast(hd -> hd * 10)).intValue()).isEqualTo(10);
     assertThat(match(asList(1, 2, 3), atLeast(hd -> hd * 10)).intValue()).isEqualTo(10);
-    assertThrows(
-        IllegalArgumentException.class, () -> match(asList(), atLeast(hd -> hd)));
-  }
-
-  @Test public void testFirstElement() {
-    assertThat(match(asList(1), firstElement()).intValue()).isEqualTo(1);
-    assertThat(match(asList(1, 2, 3), firstElement()).intValue()).isEqualTo(1);
     assertThrows(
         IllegalArgumentException.class, () -> match(asList(), atLeast(hd -> hd)));
   }
