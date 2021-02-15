@@ -571,4 +571,6 @@ public abstract class MatchingCollector<T, R> implements Collector<T, List<T>, R
             + list.stream().limit(8).map(Object::toString).collect(Collectors.joining(", "))
             + ", ...])";
   }
+
+  private MatchingCollector() {}
 }
