@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
  * Utility class to do functional pattern matching on a list or a stream of input elements.
  *
  * <p>A {@code PatternMatchingCollector} object can both be used as a {@link Collector} for a
- * stream, or as one of several possible patterns passed to the static {@link #match} method.
+ * stream, or as one of several possible patterns passed to the static {@link #match match()} method.
  * For example:
  * <pre>{@code
  *   Path path = match(
@@ -460,7 +460,7 @@ public abstract class PatternMatchingCollector<T, R> implements Collector<T, Lis
 
   /**
    * Returns a {@code PatternMatchingCollector} that matches any input. Pass it in as the last parameter
-   * of the {@link #match} or {@link #matching} method to perform a catch-all default.
+   * of the {@link #match match()} or {@link #matching matching()} method to perform a catch-all default.
    *
    * <p>For example:
    *
