@@ -1,6 +1,7 @@
 package com.google.mu.util.patternmatch;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.patternmatch.PatternMatchingCollector.atLeast;
 import static com.google.mu.util.patternmatch.PatternMatchingCollector.empty;
 import static com.google.mu.util.patternmatch.PatternMatchingCollector.exactly;
@@ -330,6 +331,21 @@ public class PatternMatchingCollectorTest {
         IllegalArgumentException.class,
         () -> match(asList(1), when(a -> a > 2, a -> a * 10), when(a -> a > 2, a -> -a)));
   }
+
+  @Test public void testOrNot_patternMatches() {
+    assertThat(Stream.of(1, 3).collect(exactly(Integer::sum).orNot())).hasValue(4);
+  }
+
+  @Test public void testOrNot_patternDoesNotMatch() {
+    assertThat(Stream.of(1).collect(exactly(Integer::sum).orNot())).isEmpty();
+  }
+
+  @Test public void testOrNot_patternMatchesButMapsToNull() {
+    assertThrows(
+        NullPointerException.class,
+        () -> Stream.of(1, 3).collect(exactly((a, b) -> null).orNot()));
+  }
+
 
   @Test public void testShortListInErrorMessage() {
     IllegalArgumentException thrown =

@@ -21,6 +21,7 @@ import static java.util.stream.Collectors.toList;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -61,12 +62,6 @@ public abstract class PatternMatchingCollector<T, R> implements Collector<T, Lis
       return "at least 1 element";
     }
   };
-
-  abstract boolean matches(List<? extends T> list);
-  abstract R map(List<? extends T> list);
-
-  /** Returns the string representation of this pattern. */
-  @Override public abstract String toString();
 
   /**
    * Returns a {@code Collector} that will expand the input elements and transform them using the
@@ -462,6 +457,33 @@ public abstract class PatternMatchingCollector<T, R> implements Collector<T, Lis
       }
     };
   }
+
+  /**
+   * Returns a collector that optionally collects and wraps the non-null result of this collector
+   * inside an {@link Optional} object, provided the input pattern matches.
+   * If the input pattern doesn't match, it will collect to {@code Optional.empty()}.
+   *
+   * <p>For example, to handle the unexpected input case gracefully without throwing exception, you can:
+   *
+   * <pre>{@code
+   *   Optional<JobId> kv = ids.stream().collect(exactly(JobId::new).orNot());
+   * }</pre>
+   *
+   * <p>If this collector results in null, {@link NullPointerException} will be thrown.
+   */
+  public final Collector<T, ? ,Optional<R>> orNot() {
+    return Collectors.collectingAndThen(toList(), this::tryMatch);
+  }
+
+  abstract boolean matches(List<? extends T> list);
+  abstract R map(List<? extends T> list);
+
+  private Optional<R> tryMatch(List<? extends T> list) {
+    return matches(list) ? Optional.of(map(list)) : Optional.empty();
+  }
+
+  /** Returns the string representation of this pattern. */
+  @Override public abstract String toString();
 
   @Override public Supplier<List<T>> supplier() {
     return ArrayList::new;
