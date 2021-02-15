@@ -36,14 +36,35 @@ import java.util.stream.Collectors;
 /**
  * Utility class to perform functional pattern matching on a list or a stream of input elements.
  *
- * <p>A {@code MatchingCollector} object can both be used as a {@link Collector} for a
- * stream, or as one of several possible patterns passed to the static {@link #match match()} method.
+ * <p>A {@code MatchingCollector} object can be used as a {@link Collector} for a stream.
  * For example:
+ *
+ * <pre>{@code
+ *   stream.collect(exactly((a, b, c) -> ...);
+ * }</pre>
+ *
+ * Or as one of several possible patterns passed to the static {@link #matching matching()} method.
+ * For example:
+ * <pre>{@code
+ *   Path path = pathComponents.stream()
+ *       .filter(...)
+ *       .collect(
+ *           matching(
+ *               exactly((parent, child) -> ...),
+ *               exactly(fileName -> ...),
+ *               atLeast(root -> ...),
+ *               orElse(l -> ...));
+ * }</pre>
+ *
+ * In the above example, if you have a {@link List} instead of a stream, you can use the static
+ * {@link #match match()} method instead to avoid iterating through every list elements:
  * <pre>{@code
  *   Path path = match(
  *       pathComponents,
  *       exactly((parent, child) -> ...),
- *       exactly(directory -> ...));
+ *       exactly(fileName -> ...),
+ *       atLeast(root -> ...),
+ *       orElse(l -> ...));
  * }</pre>
  *
  * @since 5.3
