@@ -34,9 +34,9 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 /**
- * Utility class to do functional pattern matching on a list or a stream of input elements.
+ * Utility class to perform functional pattern matching on a list or a stream of input elements.
  *
- * <p>A {@code PatternMatchingCollector} object can both be used as a {@link Collector} for a
+ * <p>A {@code MatchingCollector} object can both be used as a {@link Collector} for a
  * stream, or as one of several possible patterns passed to the static {@link #match match()} method.
  * For example:
  * <pre>{@code
@@ -48,10 +48,10 @@ import java.util.stream.Collectors;
  *
  * @since 5.3
  */
-public abstract class PatternMatchingCollector<T, R> implements Collector<T, List<T>, R> {
-  private static final PatternMatchingCollector<Object, ?> ONLY_ELEMENT = exactly(Function.identity());
-  private static final PatternMatchingCollector<Object, ?> FIRST_ELEMENT = atLeast(Function.identity());
-  private static final PatternMatchingCollector<Object, Object> LAST_ELEMENT = new PatternMatchingCollector<Object, Object>() {
+public abstract class MatchingCollector<T, R> implements Collector<T, List<T>, R> {
+  private static final MatchingCollector<Object, ?> ONLY_ELEMENT = exactly(Function.identity());
+  private static final MatchingCollector<Object, ?> FIRST_ELEMENT = atLeast(Function.identity());
+  private static final MatchingCollector<Object, Object> LAST_ELEMENT = new MatchingCollector<Object, Object>() {
     @Override boolean matches(List<?> list) {
       return list.size() >= 1;
     }
@@ -83,8 +83,8 @@ public abstract class PatternMatchingCollector<T, R> implements Collector<T, Lis
    */
   @SafeVarargs
   public static <T, R> Collector<T, ?, R> matching(
-      PatternMatchingCollector<? super T, ? extends R>... patterns) {
-    List<PatternMatchingCollector<? super T, ? extends R>> patternsCopy = copyOf(patterns);
+      MatchingCollector<? super T, ? extends R>... patterns) {
+    List<MatchingCollector<? super T, ? extends R>> patternsCopy = copyOf(patterns);
     return collectingAndThen(toList(), list -> match(list, patternsCopy));
   }
 
@@ -104,14 +104,14 @@ public abstract class PatternMatchingCollector<T, R> implements Collector<T, Lis
    */
   @SafeVarargs
   public static <T, R> R match(
-      List<T> list, PatternMatchingCollector<? super T, ? extends R>... patterns) {
+      List<T> list, MatchingCollector<? super T, ? extends R>... patterns) {
     return match(list, copyOf(patterns));
   }
 
   private static <T, R> R match(
-      List<T> list, Iterable<? extends PatternMatchingCollector<? super T, ? extends R>> patterns) {
+      List<T> list, Iterable<? extends MatchingCollector<? super T, ? extends R>> patterns) {
     requireNonNull(list);
-    for (PatternMatchingCollector<? super T, ? extends R> pattern : patterns) {
+    for (MatchingCollector<? super T, ? extends R> pattern : patterns) {
       if (pattern.matches(list)) {
         return pattern.map(list);
       }
@@ -121,13 +121,13 @@ public abstract class PatternMatchingCollector<T, R> implements Collector<T, Lis
   }
 
   /**
-   * Returns a {@code PatternMatchingCollector} that matches when there are zero input elements,
+   * Returns a {@code MatchingCollector} that matches when there are zero input elements,
    * in which case, {@code supplier} is invoked whose return value is used as the pattern matching
    * result.
    */
-  public static <T, R> PatternMatchingCollector<T, R> empty(Supplier<? extends R> supplier) {
+  public static <T, R> MatchingCollector<T, R> empty(Supplier<? extends R> supplier) {
     requireNonNull(supplier);
-    return new PatternMatchingCollector<T, R>() {
+    return new MatchingCollector<T, R>() {
       @Override boolean matches(List<? extends T> list) {
         return list.isEmpty();
       }
@@ -141,24 +141,23 @@ public abstract class PatternMatchingCollector<T, R> implements Collector<T, Lis
   }
 
   /**
-   * Returns a {@code PatternMatchingCollector} that matches when there are exactly one input element.
+   * Returns a {@code MatchingCollector} that matches when there are exactly one input element.
    * The element will be the result of the matcher. For example, you can get the only element
    * from a stream using {@code stream.collect(onlyElement())}.
    */
-  @SuppressWarnings("unchecked")  // PaternMatcher<T> is immutable and covariant of T .
-  public static <T> PatternMatchingCollector<T, T> onlyElement() {
-    return (PatternMatchingCollector<T, T>) ONLY_ELEMENT;
+  @SuppressWarnings("unchecked")  // This collector takes any T and returns as is.
+  public static <T> MatchingCollector<T, T> onlyElement() {
+    return (MatchingCollector<T, T>) ONLY_ELEMENT;
   }
 
   /**
-   * Returns a {@code PatternMatchingCollector} that matches when there are exactly one input element,
+   * Returns a {@code MatchingCollector} that matches when there are exactly one input element,
    * which will be passed to {@code mapper} and the return value is used as the pattern matching
    * result.
    */
-  public static <T, R> PatternMatchingCollector<T, R> exactly(
-      Function<? super T, ? extends R> mapper) {
+  public static <T, R> MatchingCollector<T, R> exactly(Function<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
-    return new PatternMatchingCollector<T, R>() {
+    return new MatchingCollector<T, R>() {
       @Override boolean matches(List<? extends T> list) {
         return list.size() == 1;
       }
@@ -172,13 +171,13 @@ public abstract class PatternMatchingCollector<T, R> implements Collector<T, Lis
   }
 
   /**
-   * Returns a {@code PatternMatchingCollector} that matches when there are exactly two input elements,
+   * Returns a {@code MatchingCollector} that matches when there are exactly two input elements,
    * which will be passed to {@code mapper} and the return value will be the result.
    */
-  public static <T, R> PatternMatchingCollector<T, R> exactly(
+  public static <T, R> MatchingCollector<T, R> exactly(
       BiFunction<? super T, ? super T, ? extends R> mapper) {
     requireNonNull(mapper);
-    return new PatternMatchingCollector<T, R>() {
+    return new MatchingCollector<T, R>() {
       @Override boolean matches(List<? extends T> list) {
         return list.size() == 2;
       }
@@ -192,13 +191,12 @@ public abstract class PatternMatchingCollector<T, R> implements Collector<T, Lis
   }
 
   /**
-   * Returns a {@code PatternMatchingCollector} that matches when there are exactly three input elements,
+   * Returns a {@code MatchingCollector} that matches when there are exactly three input elements,
    * which will be passed to {@code mapper} and the return value will be the result.
    */
-  public static <T, R> PatternMatchingCollector<T, R> exactly(
-      Ternary<? super T, ? extends R> mapper) {
+  public static <T, R> MatchingCollector<T, R> exactly(Ternary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
-    return new PatternMatchingCollector<T, R>() {
+    return new MatchingCollector<T, R>() {
       @Override boolean matches(List<? extends T> list) {
         return list.size() == 3;
       }
@@ -212,13 +210,12 @@ public abstract class PatternMatchingCollector<T, R> implements Collector<T, Lis
   }
 
   /**
-   * Returns a {@code PatternMatchingCollector} that matches when there are exactly four input elements,
+   * Returns a {@code MatchingCollector} that matches when there are exactly four input elements,
    * which will be passed to {@code mapper} and the return value will be the result.
    */
-  public static <T, R> PatternMatchingCollector<T, R> exactly(
-      Quarternary<? super T, ? extends R> mapper) {
+  public static <T, R> MatchingCollector<T, R> exactly(Quarternary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
-    return new PatternMatchingCollector<T, R>() {
+    return new MatchingCollector<T, R>() {
       @Override boolean matches(List<? extends T> list) {
         return list.size() == 4;
       }
@@ -232,13 +229,12 @@ public abstract class PatternMatchingCollector<T, R> implements Collector<T, Lis
   }
 
   /**
-   * Returns a {@code PatternMatchingCollector} that matches when there are exactly five input elements,
+   * Returns a {@code MatchingCollector} that matches when there are exactly five input elements,
    * which will be passed to {@code mapper} and the return value will be the result.
    */
-  public static <T, R> PatternMatchingCollector<T, R> exactly(
-      Quinary<? super T, ? extends R> mapper) {
+  public static <T, R> MatchingCollector<T, R> exactly(Quinary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
-    return new PatternMatchingCollector<T, R>() {
+    return new MatchingCollector<T, R>() {
       @Override boolean matches(List<? extends T> list) {
         return list.size() == 5;
       }
@@ -252,13 +248,12 @@ public abstract class PatternMatchingCollector<T, R> implements Collector<T, Lis
   }
 
   /**
-   * Returns a {@code PatternMatchingCollector} that matches when there are exactly six input elements,
+   * Returns a {@code MatchingCollector} that matches when there are exactly six input elements,
    * which will be passed to {@code mapper} and the return value will be the result.
    */
-  public static <T, R> PatternMatchingCollector<T, R> exactly(
-      Senary<? super T, ? extends R> mapper) {
+  public static <T, R> MatchingCollector<T, R> exactly(Senary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
-    return new PatternMatchingCollector<T, R>() {
+    return new MatchingCollector<T, R>() {
       @Override boolean matches(List<? extends T> list) {
         return list.size() == 6;
       }
@@ -273,15 +268,15 @@ public abstract class PatternMatchingCollector<T, R> implements Collector<T, Lis
   }
 
   /**
-   * Returns a {@code PatternMatchingCollector} that matches when there are exactly one input elements
+   * Returns a {@code MatchingCollector} that matches when there are exactly one input elements
    * that satisfies {@code condition}. Upon match, the single element is passed to {@code mapper} and
    * the return value will be the result.
    */
-  public static <T, R> PatternMatchingCollector<T, R> when(
+  public static <T, R> MatchingCollector<T, R> when(
       Predicate<? super T> condition, Function<? super T, ? extends R> mapper) {
     requireNonNull(condition);
     requireNonNull(mapper);
-    return new PatternMatchingCollector<T, R>() {
+    return new MatchingCollector<T, R>() {
       @Override boolean matches(List<? extends T> list) {
         return list.size() == 1 && condition.test(list.get(0));
       }
@@ -295,16 +290,16 @@ public abstract class PatternMatchingCollector<T, R> implements Collector<T, Lis
   }
 
   /**
-   * Returns a {@code PatternMatchingCollector} that matches when there are exactly two input elements
+   * Returns a {@code MatchingCollector} that matches when there are exactly two input elements
    * that satisfy {@code condition}. Upon match, the two elements are passed to {@code mapper} and
    * the return value will be the result.
    */
-  public static <T, R> PatternMatchingCollector<T, R> when(
+  public static <T, R> MatchingCollector<T, R> when(
       BiPredicate<? super T, ? super T> condition,
       BiFunction<? super T, ? super T, ? extends R> mapper) {
     requireNonNull(condition);
     requireNonNull(mapper);
-    return new PatternMatchingCollector<T, R>() {
+    return new MatchingCollector<T, R>() {
       @Override boolean matches(List<? extends T> list) {
         return list.size() == 2 && condition.test(list.get(0), list.get(1));
       }
@@ -318,33 +313,32 @@ public abstract class PatternMatchingCollector<T, R> implements Collector<T, Lis
   }
 
   /**
-   * Returns a {@code PatternMatchingCollector} that matches when there are at least one input element.
+   * Returns a {@code MatchingCollector} that matches when there are at least one input element.
    * The first element will be the result of the matcher. For example, you can get the first
    * element from a non-empty stream using {@code stream.collect(firstElement())}.
    */
-  @SuppressWarnings("unchecked")  // PaternMatcher<T> is immutable and covariant of T .
-  public static <T> PatternMatchingCollector<T, T> firstElement() {
-    return (PatternMatchingCollector<T, T>) FIRST_ELEMENT;
+  @SuppressWarnings("unchecked")  // This collector takes any T and returns as is.
+  public static <T> MatchingCollector<T, T> firstElement() {
+    return (MatchingCollector<T, T>) FIRST_ELEMENT;
   }
 
   /**
-   * Returns a {@code PatternMatchingCollector} that matches when there are at least one input element.
+   * Returns a {@code MatchingCollector} that matches when there are at least one input element.
    * The last element will be the result of the matcher. For example, you can get the last
    * element from a non-empty stream using {@code stream.collect(lastElement())}.
    */
-  @SuppressWarnings("unchecked")  // PaternMatcher<T> is immutable and covariant of T .
-  public static <T> PatternMatchingCollector<T, T> lastElement() {
-    return (PatternMatchingCollector<T, T>) LAST_ELEMENT;
+  @SuppressWarnings("unchecked")  // This collector takes any T and returns as is.
+  public static <T> MatchingCollector<T, T> lastElement() {
+    return (MatchingCollector<T, T>) LAST_ELEMENT;
   }
 
   /**
-   * Returns a {@code PatternMatchingCollector} that matches when there are at least one input elements,
+   * Returns a {@code MatchingCollector} that matches when there are at least one input elements,
    * which will be passed to {@code mapper} and the return value will be the result.
    */
-  public static <T, R> PatternMatchingCollector<T, R> atLeast(
-      Function<? super T, ? extends R> mapper) {
+  public static <T, R> MatchingCollector<T, R> atLeast(Function<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
-    return new PatternMatchingCollector<T, R>() {
+    return new MatchingCollector<T, R>() {
       @Override boolean matches(List<? extends T> list) {
         return list.size() >= 1;
       }
@@ -358,13 +352,13 @@ public abstract class PatternMatchingCollector<T, R> implements Collector<T, Lis
   }
 
   /**
-   * Returns a {@code PatternMatchingCollector} that matches when there are at least two input elements,
+   * Returns a {@code MatchingCollector} that matches when there are at least two input elements,
    * which will be passed to {@code mapper} and the return value will be the result.
    */
-  public static <T, R> PatternMatchingCollector<T, R> atLeast(
+  public static <T, R> MatchingCollector<T, R> atLeast(
       BiFunction<? super T, ? super T, ? extends R> mapper) {
     requireNonNull(mapper);
-    return new PatternMatchingCollector<T, R>() {
+    return new MatchingCollector<T, R>() {
       @Override boolean matches(List<? extends T> list) {
         return list.size() >= 2;
       }
@@ -378,13 +372,12 @@ public abstract class PatternMatchingCollector<T, R> implements Collector<T, Lis
   }
 
   /**
-   * Returns a {@code PatternMatchingCollector} that matches when there are at least three input elements,
+   * Returns a {@code MatchingCollector} that matches when there are at least three input elements,
    * which will be passed to {@code mapper} and the return value will be the result.
    */
-  public static <T, R> PatternMatchingCollector<T, R> atLeast(
-      Ternary<? super T, ? extends R> mapper) {
+  public static <T, R> MatchingCollector<T, R> atLeast(Ternary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
-    return new PatternMatchingCollector<T, R>() {
+    return new MatchingCollector<T, R>() {
       @Override boolean matches(List<? extends T> list) {
         return list.size() >= 3;
       }
@@ -398,13 +391,12 @@ public abstract class PatternMatchingCollector<T, R> implements Collector<T, Lis
   }
 
   /**
-   * Returns a {@code PatternMatchingCollector} that matches when there are at least four input elements,
+   * Returns a {@code MatchingCollector} that matches when there are at least four input elements,
    * which will be passed to {@code mapper} and the return value will be the result.
    */
-  public static <T, R> PatternMatchingCollector<T, R> atLeast(
-      Quarternary<? super T, ? extends R> mapper) {
+  public static <T, R> MatchingCollector<T, R> atLeast(Quarternary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
-    return new PatternMatchingCollector<T, R>() {
+    return new MatchingCollector<T, R>() {
       @Override boolean matches(List<? extends T> list) {
         return list.size() >= 4;
       }
@@ -418,13 +410,12 @@ public abstract class PatternMatchingCollector<T, R> implements Collector<T, Lis
   }
 
   /**
-   * Returns a {@code PatternMatchingCollector} that matches when there are at least five input elements,
+   * Returns a {@code MatchingCollector} that matches when there are at least five input elements,
    * which will be passed to {@code mapper} and the return value will be the result.
    */
-  public static <T, R> PatternMatchingCollector<T, R> atLeast(
-      Quinary<? super T, ? extends R> mapper) {
+  public static <T, R> MatchingCollector<T, R> atLeast(Quinary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
-    return new PatternMatchingCollector<T, R>() {
+    return new MatchingCollector<T, R>() {
       @Override boolean matches(List<? extends T> list) {
         return list.size() >= 5;
       }
@@ -438,13 +429,12 @@ public abstract class PatternMatchingCollector<T, R> implements Collector<T, Lis
   }
 
   /**
-   * Returns a {@code PatternMatchingCollector} that matches when there are at least six input elements,
+   * Returns a {@code MatchingCollector} that matches when there are at least six input elements,
    * which will be passed to {@code mapper} and the return value will be the result.
    */
-  public static <T, R> PatternMatchingCollector<T, R> atLeast(
-      Senary<? super T, ? extends R> mapper) {
+  public static <T, R> MatchingCollector<T, R> atLeast(Senary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
-    return new PatternMatchingCollector<T, R>() {
+    return new MatchingCollector<T, R>() {
       @Override boolean matches(List<? extends T> list) {
         return list.size() >= 6;
       }
@@ -459,7 +449,7 @@ public abstract class PatternMatchingCollector<T, R> implements Collector<T, Lis
   }
 
   /**
-   * Returns a {@code PatternMatchingCollector} that matches any input. Pass it in as the last parameter
+   * Returns a {@code MatchingCollector} that matches any input. Pass it in as the last parameter
    * of the {@link #match match()} or {@link #matching matching()} method to perform a catch-all default.
    *
    * <p>For example:
@@ -472,10 +462,9 @@ public abstract class PatternMatchingCollector<T, R> implements Collector<T, Lis
    *     orElse(l -> ...));
    * }</pre>
    */
-  public static <T, R> PatternMatchingCollector<T, R> orElse(
-      Function<? super List<T>, ? extends R> mapper) {
+  public static <T, R> MatchingCollector<T, R> orElse(Function<? super List<T>, ? extends R> mapper) {
     requireNonNull(mapper);
-    return new PatternMatchingCollector<T, R>() {
+    return new MatchingCollector<T, R>() {
       @Override boolean matches(List<? extends T> list) {
         requireNonNull(list);
         return true;

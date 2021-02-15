@@ -1,17 +1,31 @@
+/*****************************************************************************
+ * ------------------------------------------------------------------------- *
+ * Licensed under the Apache License, Version 2.0 (the "License");           *
+ * you may not use this file except in compliance with the License.          *
+ * You may obtain a copy of the License at                                   *
+ *                                                                           *
+ * http://www.apache.org/licenses/LICENSE-2.0                                *
+ *                                                                           *
+ * Unless required by applicable law or agreed to in writing, software       *
+ * distributed under the License is distributed on an "AS IS" BASIS,         *
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+ * See the License for the specific language governing permissions and       *
+ * limitations under the License.                                            *
+ *****************************************************************************/
 package com.google.mu.util.patternmatch;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static com.google.mu.util.patternmatch.PatternMatchingCollector.atLeast;
-import static com.google.mu.util.patternmatch.PatternMatchingCollector.empty;
-import static com.google.mu.util.patternmatch.PatternMatchingCollector.exactly;
-import static com.google.mu.util.patternmatch.PatternMatchingCollector.firstElement;
-import static com.google.mu.util.patternmatch.PatternMatchingCollector.lastElement;
-import static com.google.mu.util.patternmatch.PatternMatchingCollector.match;
-import static com.google.mu.util.patternmatch.PatternMatchingCollector.matching;
-import static com.google.mu.util.patternmatch.PatternMatchingCollector.onlyElement;
-import static com.google.mu.util.patternmatch.PatternMatchingCollector.orElse;
-import static com.google.mu.util.patternmatch.PatternMatchingCollector.when;
+import static com.google.mu.util.patternmatch.MatchingCollector.atLeast;
+import static com.google.mu.util.patternmatch.MatchingCollector.empty;
+import static com.google.mu.util.patternmatch.MatchingCollector.exactly;
+import static com.google.mu.util.patternmatch.MatchingCollector.firstElement;
+import static com.google.mu.util.patternmatch.MatchingCollector.lastElement;
+import static com.google.mu.util.patternmatch.MatchingCollector.match;
+import static com.google.mu.util.patternmatch.MatchingCollector.matching;
+import static com.google.mu.util.patternmatch.MatchingCollector.onlyElement;
+import static com.google.mu.util.patternmatch.MatchingCollector.orElse;
+import static com.google.mu.util.patternmatch.MatchingCollector.when;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -25,7 +39,7 @@ import org.junit.runners.JUnit4;
 import com.google.common.testing.NullPointerTester;
 
 @RunWith(JUnit4.class)
-public class PatternMatchingCollectorTest {
+public class MatchingCollectorTest {
   @Test public void testEmpty() {
     assertThat(match(asList(), empty(() -> "ok"))).isEqualTo("ok");
     assertThrows(IllegalArgumentException.class, () -> match(asList(1), empty(() -> "ok")));
@@ -389,6 +403,6 @@ public class PatternMatchingCollectorTest {
   }
 
   @Test public void testNulls() throws Exception {
-    new NullPointerTester().testAllPublicStaticMethods(PatternMatchingCollector.class);
+    new NullPointerTester().testAllPublicStaticMethods(MatchingCollector.class);
   }
 }
