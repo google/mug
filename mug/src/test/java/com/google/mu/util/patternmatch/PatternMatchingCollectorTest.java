@@ -8,11 +8,14 @@ import static com.google.mu.util.patternmatch.PatternMatchingCollector.exactly;
 import static com.google.mu.util.patternmatch.PatternMatchingCollector.firstElement;
 import static com.google.mu.util.patternmatch.PatternMatchingCollector.lastElement;
 import static com.google.mu.util.patternmatch.PatternMatchingCollector.match;
+import static com.google.mu.util.patternmatch.PatternMatchingCollector.matching;
 import static com.google.mu.util.patternmatch.PatternMatchingCollector.onlyElement;
+import static com.google.mu.util.patternmatch.PatternMatchingCollector.orElse;
 import static com.google.mu.util.patternmatch.PatternMatchingCollector.when;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.List;
 import java.util.stream.Stream;
 
 import org.junit.Test;
@@ -330,6 +333,29 @@ public class PatternMatchingCollectorTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> match(asList(1), when(a -> a > 2, a -> a * 10), when(a -> a > 2, a -> -a)));
+  }
+
+  @Test public void testOrElse() {
+    String result = Stream.of(1, 3).collect(orElse(List::toString));
+    assertThat(result).isEqualTo("[1, 3]");
+  }
+
+  @Test public void testOrElseNotReached() {
+    String result = Stream.of(123)
+        .collect(
+            matching(
+                exactly(Object::toString),
+                orElse(List::toString)));
+    assertThat(result).isEqualTo("123");
+  }
+
+  @Test public void testOrElseAsCatchAll() {
+    String result = Stream.of(1, 3)
+        .collect(
+            matching(
+                exactly(Object::toString),
+                orElse(List::toString)));
+    assertThat(result).isEqualTo("[1, 3]");
   }
 
   @Test public void testOrNot_patternMatches() {

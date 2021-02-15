@@ -459,6 +459,37 @@ public abstract class PatternMatchingCollector<T, R> implements Collector<T, Lis
   }
 
   /**
+   * Returns a {@code PatternMatchingCollector} that matches any input. Pass it in as the last parameter
+   * of the {@link #match} or {@link #matching} method to perform a catch-all default.
+   *
+   * <p>For example:
+   *
+   * <pre>{@code
+   * match(
+   *     list,
+   *     exactly((a, b) -> ...),
+   *     atLeast((a, b, c) -> ...),
+   *     orElse(l -> ...));
+   * }</pre>
+   */
+  public static <T, R> PatternMatchingCollector<T, R> orElse(
+      Function<? super List<T>, ? extends R> mapper) {
+    requireNonNull(mapper);
+    return new PatternMatchingCollector<T, R>() {
+      @Override boolean matches(List<? extends T> list) {
+        requireNonNull(list);
+        return true;
+      }
+      @Override R map(List<? extends T> list) {
+        return mapper.apply(Collections.unmodifiableList(list));
+      }
+      @Override public String toString() {
+        return "default";
+      }
+    };
+  }
+
+  /**
    * Returns a collector that optionally collects and wraps the non-null result of this collector
    * inside an {@link Optional} object, provided the input pattern matches.
    * If the input pattern doesn't match, it will collect to {@code Optional.empty()}.
