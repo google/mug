@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
  * For example:
  *
  * <pre>{@code
- *   stream.collect(exactly((a, b, c) -> ...);
+ *   stream.collect(exactly((a, b, c) -> ...));
  * }</pre>
  *
  * Or as one of several possible patterns passed to the static {@link #matching matching()} method.
@@ -53,7 +53,7 @@ import java.util.stream.Collectors;
  *               exactly((parent, child) -> ...),
  *               exactly(fileName -> ...),
  *               atLeast(root -> ...),
- *               orElse(l -> ...));
+ *               orElse(l -> ...)));
  * }</pre>
  *
  * In the above example, if you have a {@link List} instead of a stream, you can use the static
