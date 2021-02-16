@@ -72,18 +72,15 @@ import java.util.stream.Collectors;
 public abstract class NaryCollector<T, R> implements Collector<T, List<T>, R> {
   private static final NaryCollector<Object, ?> ONLY_ELEMENT = exactly(Function.identity());
   private static final NaryCollector<Object, ?> FIRST_ELEMENT = atLeast(Function.identity());
-  private static final NaryCollector<Object, Object> LAST_ELEMENT = new NaryCollector<Object, Object>() {
-    @Override boolean matches(List<?> list) {
-      return list.size() >= 1;
-    }
+  private static final NaryCollector<Object, Object> LAST_ELEMENT = new MinArityCollector<Object, Object>() {
     @Override Object map(List<?> list) {
       return list.get(list.size() - 1);
     }
-    @Override public String toString() {
-      return "at least 1 element";
-    }
-    @Override BoundedBuffer<Object> newBuffer() {
+    @Override List<Object> newBuffer() {
       return BoundedBuffer.retainingLastElementOnly();
+    }
+    @Override int arity() {
+      return 1;
     }
   };
 
@@ -151,18 +148,15 @@ public abstract class NaryCollector<T, R> implements Collector<T, List<T>, R> {
    */
   public static <T, R> NaryCollector<T, R> empty(Supplier<? extends R> supplier) {
     requireNonNull(supplier);
-    return new NaryCollector<T, R>() {
-      @Override boolean matches(List<? extends T> list) {
-        return list.isEmpty();
-      }
+    return new ExactArityCollector<T, R>() {
       @Override R map(List<? extends T> list) {
         return supplier.get();
       }
       @Override public String toString() {
         return "empty";
       }
-      @Override List<T> newBuffer() {
-        return BoundedBuffer.retaining(1);
+      @Override int arity() {
+        return 0;
       }
     };
   }
@@ -184,18 +178,15 @@ public abstract class NaryCollector<T, R> implements Collector<T, List<T>, R> {
    */
   public static <T, R> NaryCollector<T, R> exactly(Function<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
-    return new NaryCollector<T, R>() {
-      @Override boolean matches(List<? extends T> list) {
-        return list.size() == 1;
-      }
+    return new ExactArityCollector<T, R>() {
       @Override R map(List<? extends T> list) {
         return mapper.apply(list.get(0));
       }
+      @Override int arity() {
+        return 1;
+      }
       @Override public String toString() {
         return "exactly 1 element";
-      }
-      @Override List<T> newBuffer() {
-        return BoundedBuffer.retaining(2);
       }
     };
   }
@@ -207,18 +198,12 @@ public abstract class NaryCollector<T, R> implements Collector<T, List<T>, R> {
   public static <T, R> NaryCollector<T, R> exactly(
       BiFunction<? super T, ? super T, ? extends R> mapper) {
     requireNonNull(mapper);
-    return new NaryCollector<T, R>() {
-      @Override boolean matches(List<? extends T> list) {
-        return list.size() == 2;
-      }
+    return new ExactArityCollector<T, R>() {
       @Override R map(List<? extends T> list) {
         return mapper.apply(list.get(0), list.get(1));
       }
-      @Override public String toString() {
-        return "exactly 2 elements";
-      }
-      @Override List<T> newBuffer() {
-        return BoundedBuffer.retaining(3);
+      @Override int arity() {
+        return 2;
       }
     };
   }
@@ -229,18 +214,12 @@ public abstract class NaryCollector<T, R> implements Collector<T, List<T>, R> {
    */
   public static <T, R> NaryCollector<T, R> exactly(Ternary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
-    return new NaryCollector<T, R>() {
-      @Override boolean matches(List<? extends T> list) {
-        return list.size() == 3;
-      }
+    return new ExactArityCollector<T, R>() {
       @Override R map(List<? extends T> list) {
         return mapper.apply(list.get(0), list.get(1), list.get(2));
       }
-      @Override public String toString() {
-        return "exactly 3 elements";
-      }
-      @Override List<T> newBuffer() {
-        return BoundedBuffer.retaining(4);
+      @Override int arity() {
+        return 3;
       }
     };
   }
@@ -251,18 +230,12 @@ public abstract class NaryCollector<T, R> implements Collector<T, List<T>, R> {
    */
   public static <T, R> NaryCollector<T, R> exactly(Quarternary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
-    return new NaryCollector<T, R>() {
-      @Override boolean matches(List<? extends T> list) {
-        return list.size() == 4;
-      }
+    return new ExactArityCollector<T, R>() {
       @Override R map(List<? extends T> list) {
         return mapper.apply(list.get(0), list.get(1), list.get(2), list.get(3));
       }
-      @Override public String toString() {
-        return "exactly 4 elements";
-      }
-      @Override List<T> newBuffer() {
-        return BoundedBuffer.retaining(5);
+      @Override int arity() {
+        return 4;
       }
     };
   }
@@ -273,18 +246,12 @@ public abstract class NaryCollector<T, R> implements Collector<T, List<T>, R> {
    */
   public static <T, R> NaryCollector<T, R> exactly(Quinary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
-    return new NaryCollector<T, R>() {
-      @Override boolean matches(List<? extends T> list) {
-        return list.size() == 5;
-      }
+    return new ExactArityCollector<T, R>() {
       @Override R map(List<? extends T> list) {
         return mapper.apply(list.get(0), list.get(1), list.get(2), list.get(3), list.get(4));
       }
-      @Override public String toString() {
-        return "exactly 5 elements";
-      }
-      @Override List<T> newBuffer() {
-        return BoundedBuffer.retaining(6);
+      @Override int arity() {
+        return 5;
       }
     };
   }
@@ -295,19 +262,13 @@ public abstract class NaryCollector<T, R> implements Collector<T, List<T>, R> {
    */
   public static <T, R> NaryCollector<T, R> exactly(Senary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
-    return new NaryCollector<T, R>() {
-      @Override boolean matches(List<? extends T> list) {
-        return list.size() == 6;
-      }
+    return new ExactArityCollector<T, R>() {
       @Override R map(List<? extends T> list) {
         return mapper.apply(
             list.get(0), list.get(1), list.get(2), list.get(3), list.get(4), list.get(5));
       }
-      @Override public String toString() {
-        return "exactly 6 elements";
-      }
-      @Override List<T> newBuffer() {
-        return BoundedBuffer.retaining(7);
+      @Override int arity() {
+        return 6;
       }
     };
   }
@@ -321,9 +282,9 @@ public abstract class NaryCollector<T, R> implements Collector<T, List<T>, R> {
       Predicate<? super T> condition, Function<? super T, ? extends R> mapper) {
     requireNonNull(condition);
     requireNonNull(mapper);
-    return new NaryCollector<T, R>() {
+    return new ExactArityCollector<T, R>() {
       @Override boolean matches(List<? extends T> list) {
-        return list.size() == 1 && condition.test(list.get(0));
+        return super.matches(list) && condition.test(list.get(0));
       }
       @Override R map(List<? extends T> list) {
         return mapper.apply(list.get(0));
@@ -331,8 +292,8 @@ public abstract class NaryCollector<T, R> implements Collector<T, List<T>, R> {
       @Override public String toString() {
         return "exactly 1 element that satisfies " + condition;
       }
-      @Override List<T> newBuffer() {
-        return BoundedBuffer.retaining(2);
+      @Override int arity() {
+        return 1;
       }
     };
   }
@@ -347,9 +308,9 @@ public abstract class NaryCollector<T, R> implements Collector<T, List<T>, R> {
       BiFunction<? super T, ? super T, ? extends R> mapper) {
     requireNonNull(condition);
     requireNonNull(mapper);
-    return new NaryCollector<T, R>() {
+    return new ExactArityCollector<T, R>() {
       @Override boolean matches(List<? extends T> list) {
-        return list.size() == 2 && condition.test(list.get(0), list.get(1));
+        return super.matches(list) && condition.test(list.get(0), list.get(1));
       }
       @Override R map(List<? extends T> list) {
         return mapper.apply(list.get(0), list.get(1));
@@ -357,8 +318,8 @@ public abstract class NaryCollector<T, R> implements Collector<T, List<T>, R> {
       @Override public String toString() {
         return "exactly 2 elements that satisfies " + condition;
       }
-      @Override List<T> newBuffer() {
-        return BoundedBuffer.retaining(3);
+      @Override int arity() {
+        return 2;
       }
     };
   }
@@ -389,18 +350,15 @@ public abstract class NaryCollector<T, R> implements Collector<T, List<T>, R> {
    */
   public static <T, R> NaryCollector<T, R> atLeast(Function<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
-    return new NaryCollector<T, R>() {
-      @Override boolean matches(List<? extends T> list) {
-        return list.size() >= 1;
-      }
+    return new MinArityCollector<T, R>() {
       @Override R map(List<? extends T> list) {
         return mapper.apply(list.get(0));
       }
+      @Override int arity() {
+        return 1;
+      }
       @Override public String toString() {
         return "at least 1 element";
-      }
-      @Override List<T> newBuffer() {
-        return BoundedBuffer.retaining(1);
       }
     };
   }
@@ -412,18 +370,12 @@ public abstract class NaryCollector<T, R> implements Collector<T, List<T>, R> {
   public static <T, R> NaryCollector<T, R> atLeast(
       BiFunction<? super T, ? super T, ? extends R> mapper) {
     requireNonNull(mapper);
-    return new NaryCollector<T, R>() {
-      @Override boolean matches(List<? extends T> list) {
-        return list.size() >= 2;
-      }
+    return new MinArityCollector<T, R>() {
       @Override R map(List<? extends T> list) {
         return mapper.apply(list.get(0), list.get(1));
       }
-      @Override public String toString() {
-        return "at least 2 elements";
-      }
-      @Override List<T> newBuffer() {
-        return BoundedBuffer.retaining(2);
+      @Override int arity() {
+        return 2;
       }
     };
   }
@@ -434,18 +386,12 @@ public abstract class NaryCollector<T, R> implements Collector<T, List<T>, R> {
    */
   public static <T, R> NaryCollector<T, R> atLeast(Ternary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
-    return new NaryCollector<T, R>() {
-      @Override boolean matches(List<? extends T> list) {
-        return list.size() >= 3;
-      }
+    return new MinArityCollector<T, R>() {
       @Override R map(List<? extends T> list) {
         return mapper.apply(list.get(0), list.get(1), list.get(2));
       }
-      @Override public String toString() {
-        return "at least 3 elements";
-      }
-      @Override List<T> newBuffer() {
-        return BoundedBuffer.retaining(3);
+      @Override int arity() {
+        return 3;
       }
     };
   }
@@ -456,18 +402,12 @@ public abstract class NaryCollector<T, R> implements Collector<T, List<T>, R> {
    */
   public static <T, R> NaryCollector<T, R> atLeast(Quarternary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
-    return new NaryCollector<T, R>() {
-      @Override boolean matches(List<? extends T> list) {
-        return list.size() >= 4;
-      }
+    return new MinArityCollector<T, R>() {
       @Override R map(List<? extends T> list) {
         return mapper.apply(list.get(0), list.get(1), list.get(2), list.get(3));
       }
-      @Override public String toString() {
-        return "at least 4 elements";
-      }
-      @Override List<T> newBuffer() {
-        return BoundedBuffer.retaining(4);
+      @Override int arity() {
+        return 4;
       }
     };
   }
@@ -478,18 +418,12 @@ public abstract class NaryCollector<T, R> implements Collector<T, List<T>, R> {
    */
   public static <T, R> NaryCollector<T, R> atLeast(Quinary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
-    return new NaryCollector<T, R>() {
-      @Override boolean matches(List<? extends T> list) {
-        return list.size() >= 5;
-      }
+    return new MinArityCollector<T, R>() {
       @Override R map(List<? extends T> list) {
         return mapper.apply(list.get(0), list.get(1), list.get(2), list.get(3), list.get(4));
       }
-      @Override public String toString() {
-        return "at least 5 elements";
-      }
-      @Override List<T> newBuffer() {
-        return BoundedBuffer.retaining(5);
+      @Override int arity() {
+        return 5;
       }
     };
   }
@@ -500,19 +434,13 @@ public abstract class NaryCollector<T, R> implements Collector<T, List<T>, R> {
    */
   public static <T, R> NaryCollector<T, R> atLeast(Senary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
-    return new NaryCollector<T, R>() {
-      @Override boolean matches(List<? extends T> list) {
-        return list.size() >= 6;
-      }
+    return new MinArityCollector<T, R>() {
       @Override R map(List<? extends T> list) {
         return mapper.apply(
             list.get(0), list.get(1), list.get(2), list.get(3), list.get(4), list.get(5));
       }
-      @Override public String toString() {
-        return "at least 6 elements";
-      }
-      @Override List<T> newBuffer() {
-        return BoundedBuffer.retaining(6);
+      @Override int arity() {
+        return 6;
       }
     };
   }
@@ -546,6 +474,9 @@ public abstract class NaryCollector<T, R> implements Collector<T, List<T>, R> {
       }
       @Override List<T> newBuffer() {
         return new ArrayList<>();
+      }
+      @Override int arity() {
+        return Integer.MAX_VALUE;
       }
     };
   }
@@ -585,6 +516,8 @@ public abstract class NaryCollector<T, R> implements Collector<T, List<T>, R> {
    */
   abstract List<T> newBuffer();
 
+  abstract int arity();
+
   private Optional<R> tryMatch(List<? extends T> list) {
     return matches(list) ? Optional.of(map(list)) : Optional.empty();
   }
@@ -592,22 +525,22 @@ public abstract class NaryCollector<T, R> implements Collector<T, List<T>, R> {
   /** Returns the string representation of this pattern. */
   @Override public abstract String toString();
 
-  @Override public Supplier<List<T>> supplier() {
-    return ArrayList::new;
+  @Override public final Supplier<List<T>> supplier() {
+    return this::newBuffer;
   }
 
-  @Override public BiConsumer<List<T>, T> accumulator() {
+  @Override public final BiConsumer<List<T>, T> accumulator() {
     return List::add;
   }
 
-  @Override public BinaryOperator<List<T>> combiner() {
+  @Override public final BinaryOperator<List<T>> combiner() {
     return (l1, l2) -> {
       l1.addAll(l2);
       return l1;
     };
   }
 
-  @Override public Function<List<T>, R> finisher() {
+  @Override public final Function<List<T>, R> finisher() {
     return l -> {
       if (matches(l)) {
         return map(l);
@@ -617,7 +550,7 @@ public abstract class NaryCollector<T, R> implements Collector<T, List<T>, R> {
     };
   }
 
-  @Override public Set<Characteristics> characteristics() {
+  @Override public final Set<Characteristics> characteristics() {
     return Collections.emptySet();
   }
 
@@ -636,6 +569,34 @@ public abstract class NaryCollector<T, R> implements Collector<T, List<T>, R> {
         : "of size = " + list.size() + " (["
             + list.stream().limit(8).map(Object::toString).collect(Collectors.joining(", "))
             + ", ...])";
+  }
+
+  private static abstract class ExactArityCollector<T, R> extends NaryCollector<T, R> {
+    @Override boolean matches(List<? extends T> list) {
+      return list.size() == arity();
+    }
+
+    @Override public String toString() {
+      return "exactly " + arity() + " elements";
+    }
+
+    @Override List<T> newBuffer() {
+      return BoundedBuffer.retaining(arity() + 1);
+    }
+  }
+
+  private static abstract class MinArityCollector<T, R> extends NaryCollector<T, R> {
+    @Override boolean matches(List<? extends T> list) {
+      return list.size() >= arity();
+    }
+
+    @Override public String toString() {
+      return "at least " + arity() + " elements";
+    }
+
+    @Override List<T> newBuffer() {
+      return BoundedBuffer.retaining(arity());
+    }
   }
 
   private NaryCollector() {}

@@ -14,6 +14,8 @@
  *****************************************************************************/
 package com.google.mu.util.patternmatch;
 
+import static java.util.stream.Collectors.joining;
+
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,21 +45,39 @@ abstract class BoundedBuffer<T> extends AbstractList<T> {
 
   static <T> BoundedBuffer<T> retaining(int maxSize) {
     return new BoundedBuffer<T>(maxSize) {
+      private boolean overflown = false;
+
       @Override public boolean add(T e) {
-        return !isFull() && underlying.add(e);
+        if (isFull()) {
+          overflown = true;
+          return false;
+        }
+        return underlying.add(e);
+      }
+
+      @Override public String toString() {
+        return overflown
+            ? "[" + underlying.stream().map(e -> e + ", ").collect(joining("")) + "...]"
+                : underlying.toString();
       }
     };
   }
 
   static <T> BoundedBuffer<T> retainingLastElementOnly() {
     return new BoundedBuffer<T>(1) {
+      private boolean overflown = false;
       @Override public boolean add(T e) {
         if (isFull()) {
+          overflown = true;
           underlying.set(0, e);
           return true;
         } else {
           return underlying.add(e);
         }
+      }
+
+      @Override public String toString() {
+        return overflown ? "[..., " + underlying.get(0) + "]" : underlying.toString();
       }
     };
   }

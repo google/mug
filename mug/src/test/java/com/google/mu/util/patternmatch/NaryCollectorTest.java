@@ -611,7 +611,7 @@ public class NaryCollectorTest {
         IllegalArgumentException.class,
         () -> Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).collect(exactly(a -> "ok")));
     assertThat(thrown.getMessage())
-        .isEqualTo("Input of size = 10 ([1, 2, 3, 4, 5, 6, 7, 8, ...]) doesn't match pattern <exactly 1 element>.");
+        .isEqualTo("Input ([1, 2, ...]) doesn't match pattern <exactly 1 element>.");
   }
 
   @Test public void testNulls() throws Exception {
