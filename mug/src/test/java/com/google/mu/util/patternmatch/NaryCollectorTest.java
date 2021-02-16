@@ -16,16 +16,16 @@ package com.google.mu.util.patternmatch;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static com.google.mu.util.patternmatch.MatchingCollector.atLeast;
-import static com.google.mu.util.patternmatch.MatchingCollector.empty;
-import static com.google.mu.util.patternmatch.MatchingCollector.exactly;
-import static com.google.mu.util.patternmatch.MatchingCollector.firstElement;
-import static com.google.mu.util.patternmatch.MatchingCollector.lastElement;
-import static com.google.mu.util.patternmatch.MatchingCollector.match;
-import static com.google.mu.util.patternmatch.MatchingCollector.matching;
-import static com.google.mu.util.patternmatch.MatchingCollector.onlyElement;
-import static com.google.mu.util.patternmatch.MatchingCollector.orElse;
-import static com.google.mu.util.patternmatch.MatchingCollector.when;
+import static com.google.mu.util.patternmatch.NaryCollector.atLeast;
+import static com.google.mu.util.patternmatch.NaryCollector.empty;
+import static com.google.mu.util.patternmatch.NaryCollector.exactly;
+import static com.google.mu.util.patternmatch.NaryCollector.firstElement;
+import static com.google.mu.util.patternmatch.NaryCollector.lastElement;
+import static com.google.mu.util.patternmatch.NaryCollector.match;
+import static com.google.mu.util.patternmatch.NaryCollector.matching;
+import static com.google.mu.util.patternmatch.NaryCollector.onlyElement;
+import static com.google.mu.util.patternmatch.NaryCollector.orElse;
+import static com.google.mu.util.patternmatch.NaryCollector.when;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -39,18 +39,23 @@ import org.junit.runners.JUnit4;
 import com.google.common.testing.NullPointerTester;
 
 @RunWith(JUnit4.class)
-public class MatchingCollectorTest {
+public class NaryCollectorTest {
   @Test public void testEmpty() {
     assertThat(match(asList(), empty(() -> "ok"))).isEqualTo("ok");
     assertThrows(IllegalArgumentException.class, () -> match(asList(1), empty(() -> "ok")));
   }
 
-  @Test public void testEmptyAsCollector() {
+  @Test public void testEmpty_asCollector() {
     assertThat(Stream.empty().collect(empty(() -> "ok"))).isEqualTo("ok");
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> Stream.of(1).collect(empty(() -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Input ([1]) doesn't match pattern <empty>.");
+  }
+
+  @Test public void testEmpty_orNot() {
+    assertThat(Stream.empty().collect(empty(() -> "ok").orNot())).hasValue("ok");
+    assertThat(Stream.of(1).collect(empty(() -> "ok").orNot())).isEmpty();
   }
 
   @Test public void testOnlyElement() {
@@ -62,18 +67,30 @@ public class MatchingCollectorTest {
         .isEqualTo("Input ([1, 2]) doesn't match pattern <exactly 1 element>.");
   }
 
+  @Test public void testOnlyElement_orNot() {
+    assertThat(Stream.of("foo").collect(onlyElement().orNot())).hasValue("foo");
+    assertThat(Stream.of(1, 2).collect(onlyElement().orNot())).isEmpty();
+    assertThat(Stream.empty().collect(onlyElement().orNot())).isEmpty();
+  }
+
   @Test public void testExactlyOneElement() {
     assertThat(match(asList(1), exactly(n -> n * 10)).intValue()).isEqualTo(10);
     assertThrows(IllegalArgumentException.class, () -> match(asList(), exactly(n -> "ok")));
     assertThrows(IllegalArgumentException.class, () -> match(asList(1, 2), exactly(n -> "ok")));
   }
 
-  @Test public void testExactlyOneAsCollector() {
+  @Test public void testExactlyOne_asCollector() {
     assertThat(Stream.of("foo").collect(exactly("ok:"::concat))).isEqualTo("ok:foo");
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> Stream.of(1, 2).collect(exactly(a -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Input ([1, 2]) doesn't match pattern <exactly 1 element>.");
+  }
+
+  @Test public void testExactlyOne_orNot() {
+    assertThat(Stream.of("foo").collect(exactly("ok:"::concat).orNot())).hasValue("ok:foo");
+    assertThat(Stream.of(1, 2).collect(exactly(a -> "ok").orNot())).isEmpty();
+    assertThat(Stream.empty().collect(exactly(a -> "ok").orNot())).isEmpty();
   }
 
   @Test public void testExactlyTwoElements() {
@@ -82,13 +99,19 @@ public class MatchingCollectorTest {
     assertThrows(IllegalArgumentException.class, () -> match(asList(1, 2, 3), exactly(Integer::sum)));
   }
 
-  @Test public void testExactlyTwoAsCollector() {
+  @Test public void testExactlyTwo_asCollector() {
     assertThat(Stream.of(1, 10).collect(exactly(Integer::sum)).intValue()).isEqualTo(11);
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
         () -> Stream.of(1, 2, 3).collect(exactly((a, b) -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Input ([1, 2, 3]) doesn't match pattern <exactly 2 elements>.");
+  }
+
+  @Test public void testExactlyTwo_orNot() {
+    assertThat(Stream.of(1, 10).collect(exactly(Integer::sum).orNot())).hasValue(11);
+    assertThat(Stream.of(1, 2, 3).collect(exactly((a, b) -> "ok").orNot())).isEmpty();
+    assertThat(Stream.of(1).collect(exactly((a, b) -> "ok").orNot())).isEmpty();
   }
 
   @Test public void testExactlyThreeElements() {
@@ -99,13 +122,21 @@ public class MatchingCollectorTest {
         () -> match(asList(1, 2, 3, 4), exactly((a, b, c) -> a + b + c)));
   }
 
-  @Test public void testExactlyThreeAsCollector() {
+  @Test public void testExactlyThree_asCollector() {
     assertThat(Stream.of(1, 3, 5).collect(exactly((a, b, c) -> a + b + c)).intValue()).isEqualTo(9);
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
         () -> Stream.of(1, 2).collect(exactly((a, b, c) -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Input ([1, 2]) doesn't match pattern <exactly 3 elements>.");
+  }
+
+  @Test public void testExactlyThree_orNot() {
+    assertThat(Stream.of(1, 3, 5).collect(exactly((Integer a, Integer b, Integer c) -> a + b + c).orNot()))
+        .hasValue(9);
+    assertThat(Stream.of(1, 3, 5, 7).collect(exactly((Integer a, Integer b, Integer c) -> a + b + c).orNot()))
+        .isEmpty();
+    assertThat(Stream.of(1, 2).collect(exactly((a, b, c) -> "ok").orNot())).isEmpty();
   }
 
   @Test public void testExactlyFourElements() {
@@ -119,7 +150,7 @@ public class MatchingCollectorTest {
         () -> match(asList(1, 2, 3, 4, 5), exactly((a, b, c, d) -> a + b + c)));
   }
 
-  @Test public void testExactlyFourAsCollector() {
+  @Test public void testExactlyFour_asCollector() {
     assertThat(Stream.of(1, 3, 5, 7).collect(exactly((a, b, c, d) -> a + b + c + d)).intValue())
         .isEqualTo(16);
     IllegalArgumentException thrown = assertThrows(
@@ -127,6 +158,18 @@ public class MatchingCollectorTest {
         () -> Stream.of(1, 2).collect(exactly((a, b, c, d) -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Input ([1, 2]) doesn't match pattern <exactly 4 elements>.");
+  }
+
+  @Test public void testExactlyFour_orNot() {
+    assertThat(
+            Stream.of(1, 3, 5, 7)
+                .collect(exactly((Integer a, Integer b, Integer c, Integer d) -> a + b + c + d).orNot()))
+        .hasValue(16);
+    assertThat(
+        Stream.of(1, 3, 5, 7, 9)
+            .collect(exactly((Integer a, Integer b, Integer c, Integer d) -> a + b + c + d).orNot()))
+        .isEmpty();
+    assertThat(Stream.of(1, 2, 3).collect(exactly((a, b, c, d) -> "ok").orNot())).isEmpty();
   }
 
   @Test public void testExactlyFiveElements() {
@@ -140,7 +183,7 @@ public class MatchingCollectorTest {
         () -> match(asList(1, 2, 3, 4, 5, 6), exactly((a, b, c, d, e) -> a + b + c + e)));
   }
 
-  @Test public void testExactlyFiveAsCollector() {
+  @Test public void testExactlyFive_asCollector() {
     assertThat(Stream.of(1, 3, 5, 7, 9).collect(exactly((a, b, c, d, e) -> a + b + c + d + e)).intValue())
         .isEqualTo(25);
     IllegalArgumentException thrown = assertThrows(
@@ -148,6 +191,18 @@ public class MatchingCollectorTest {
         () -> Stream.of(1, 2).collect(exactly((a, b, c, d, e) -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Input ([1, 2]) doesn't match pattern <exactly 5 elements>.");
+  }
+
+  @Test public void testExactlyFive_orNot() {
+    assertThat(
+            Stream.of(1, 3, 5, 7, 9)
+                .collect(exactly((Integer a, Integer b, Integer c, Integer d, Integer e) -> a + b + c + d + e).orNot()))
+        .hasValue(25);
+    assertThat(
+        Stream.of(1, 3, 5, 7, 9, 11)
+            .collect(exactly((Integer a, Integer b, Integer c, Integer d, Integer e) -> a + b + c + d + e).orNot()))
+        .isEmpty();
+    assertThat(Stream.of(1, 2, 3, 4).collect(exactly((a, b, c, d, e) -> "ok").orNot())).isEmpty();
   }
 
   @Test public void testExactlySixElements() {
@@ -161,7 +216,7 @@ public class MatchingCollectorTest {
         () -> match(asList(1, 2, 3, 4, 5, 6, 7), exactly((a, b, c, d, e, f) -> a + b + c + e + f)));
   }
 
-  @Test public void testExactlySixAsCollector() {
+  @Test public void testExactlySix_asCollector() {
     assertThat(Stream.of(1, 3, 5, 7, 9, 11).collect(exactly((a, b, c, d, e, f) -> a + b + c + d + e + f)).intValue())
         .isEqualTo(36);
     IllegalArgumentException thrown = assertThrows(
@@ -169,6 +224,21 @@ public class MatchingCollectorTest {
         () -> Stream.of(1, 2).collect(exactly((a, b, c, d, e, f) -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Input ([1, 2]) doesn't match pattern <exactly 6 elements>.");
+  }
+
+  @Test public void testExactlySix_orNot() {
+    assertThat(
+            Stream.of(1, 3, 5, 7, 9, 11)
+                .collect(exactly((Integer a, Integer b, Integer c, Integer d, Integer e, Integer f) -> a + b + c + d + e + f)
+                    .orNot()))
+        .hasValue(36);
+    assertThat(
+        Stream.of(1, 3, 5, 7, 9, 11, 13)
+            .collect(exactly((Integer a, Integer b, Integer c, Integer d, Integer e, Integer f) -> a + b + c + d + e + f)
+                .orNot()))
+        .isEmpty();
+    assertThat(Stream.of(1, 2, 3, 4, 5).collect(exactly((a, b, c, d, e, f) -> "ok").orNot()))
+        .isEmpty();
   }
 
   @Test public void testFirstElement() {
@@ -179,12 +249,38 @@ public class MatchingCollectorTest {
         IllegalArgumentException.class, () -> match(asList(), firstElement()));
   }
 
+  @Test public void testFirstElement_asCollector() {
+    assertThat(Stream.of(1).collect(firstElement()).intValue()).isEqualTo(1);
+    assertThat(Stream.of(1, 2, 3).collect(firstElement()).intValue()).isEqualTo(1);
+    assertThrows(
+        IllegalArgumentException.class, () -> Stream.empty().collect(firstElement()));
+  }
+
+  @Test public void testFirstElement_orNot() {
+    assertThat(Stream.of(1).collect(firstElement().orNot())).hasValue(1);
+    assertThat(Stream.of(1, 2, 3).collect(firstElement().orNot())).hasValue(1);
+    assertThat(Stream.empty().collect(firstElement().orNot())).isEmpty();
+  }
+
   @Test public void testLastElement() {
     assertThat(lastElement()).isSameAs(lastElement());
     assertThat(match(asList(1), lastElement()).intValue()).isEqualTo(1);
     assertThat(match(asList(1, 2, 3), lastElement()).intValue()).isEqualTo(3);
     assertThrows(
         IllegalArgumentException.class, () -> match(asList(), lastElement()));
+  }
+
+  @Test public void testLastElement_asCollector() {
+    assertThat(Stream.of(1).collect(lastElement()).intValue()).isEqualTo(1);
+    assertThat(Stream.of(1, 2, 3).collect(lastElement()).intValue()).isEqualTo(3);
+    assertThrows(
+        IllegalArgumentException.class, () -> Stream.empty().collect(lastElement()));
+  }
+
+  @Test public void testLastElement_orNot() {
+    assertThat(Stream.of(1).collect(lastElement().orNot())).hasValue(1);
+    assertThat(Stream.of(1, 2, 3).collect(lastElement().orNot())).hasValue(3);
+    assertThat(Stream.empty().collect(lastElement().orNot())).isEmpty();
   }
 
   @Test public void testAtLeastOneElement() {
@@ -194,7 +290,9 @@ public class MatchingCollectorTest {
         IllegalArgumentException.class, () -> match(asList(), atLeast(hd -> hd)));
   }
 
-  @Test public void testAtLeastOneAsCollector() {
+  @Test public void testAtLeastOne_asCollector() {
+    assertThat(Stream.of("foo").collect(atLeast("ok:"::concat)))
+        .isEqualTo("ok:foo");
     assertThat(Stream.of("foo", "bar").collect(atLeast("ok:"::concat)))
         .isEqualTo("ok:foo");
     IllegalArgumentException thrown = assertThrows(
@@ -202,6 +300,14 @@ public class MatchingCollectorTest {
         () -> Stream.empty().collect(atLeast(a -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Input ([]) doesn't match pattern <at least 1 element>.");
+  }
+
+  @Test public void testAtLeastOne_orNot() {
+    assertThat(Stream.of("foo").collect(atLeast("ok:"::concat).orNot()))
+        .hasValue("ok:foo");
+    assertThat(Stream.of("foo", "bar").collect(atLeast("ok:"::concat).orNot()))
+        .hasValue("ok:foo");
+    assertThat(Stream.empty().collect(atLeast(a -> "ok").orNot())).isEmpty();
   }
 
   @Test public void testAtLeastTwoElements() {
@@ -212,14 +318,24 @@ public class MatchingCollectorTest {
         () -> match(asList(1), atLeast((a, b) -> a + b)));
   }
 
-  @Test public void testAtLeastTwoAsCollector() {
+  @Test public void testAtLeastTwo_asCollector() {
     assertThat(Stream.of("foo", "bar").collect(atLeast(String::concat)))
+        .isEqualTo("foobar");
+    assertThat(Stream.of("foo", "bar", "baz").collect(atLeast(String::concat)))
         .isEqualTo("foobar");
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
         () -> Stream.empty().collect(atLeast((a, b) -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Input ([]) doesn't match pattern <at least 2 elements>.");
+  }
+
+  @Test public void testAtLeastTwo_orNot() {
+    assertThat(Stream.of("foo", "bar").collect(atLeast(String::concat).orNot()))
+        .hasValue("foobar");
+    assertThat(Stream.of("foo", "bar", "baz").collect(atLeast(String::concat).orNot()))
+        .hasValue("foobar");
+    assertThat(Stream.empty().collect(atLeast((a, b) -> "ok").orNot())).isEmpty();
   }
 
   @Test public void testAtLeastThreeElements() {
@@ -230,14 +346,25 @@ public class MatchingCollectorTest {
         () -> match(asList(1, 2), atLeast((a, b, c) -> a + b)));
   }
 
-  @Test public void testAtLeastThreeAsCollector() {
+  @Test public void testAtLeastThree_asCollector() {
     assertThat(Stream.of(1, 3, 5).collect(atLeast((a, b, c) -> a + b + c)).intValue())
+        .isEqualTo(9);
+    assertThat(Stream.of(1, 3, 5, 7).collect(atLeast((a, b, c) -> a + b + c)).intValue())
         .isEqualTo(9);
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
         () -> Stream.empty().collect(atLeast((a, b, c) -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Input ([]) doesn't match pattern <at least 3 elements>.");
+  }
+
+  @Test public void testAtLeastThree_orNot() {
+    assertThat(Stream.of(1, 3, 5).collect(atLeast((Integer a, Integer b, Integer c) -> a + b + c).orNot()))
+        .hasValue(9);
+    assertThat(Stream.of(1, 3, 5, 7).collect(atLeast((Integer a, Integer b, Integer c) -> a + b + c).orNot()))
+        .hasValue(9);
+    assertThat(Stream.empty().collect(atLeast((a, b, c) -> "ok").orNot())).isEmpty();
+    assertThat(Stream.of(1, 2).collect(atLeast((a, b, c) -> "ok").orNot())).isEmpty();
   }
 
   @Test public void testAtLeastFourElements() {
@@ -250,14 +377,25 @@ public class MatchingCollectorTest {
         () -> match(asList(1, 2, 3), atLeast((a, b, c, d) -> a + b)));
   }
 
-  @Test public void testAtLeastFourAsCollector() {
+  @Test public void testAtLeastFour_asCollector() {
     assertThat(Stream.of(1, 3, 5, 7).collect(atLeast((a, b, c, d) -> a + b + c + d)).intValue())
+        .isEqualTo(16);
+    assertThat(Stream.of(1, 3, 5, 7, 9).collect(atLeast((a, b, c, d) -> a + b + c + d)).intValue())
         .isEqualTo(16);
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
         () -> Stream.empty().collect(atLeast((a, b, c, d) -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Input ([]) doesn't match pattern <at least 4 elements>.");
+  }
+
+  @Test public void testAtLeastFour_orNot() {
+    assertThat(Stream.of(1, 3, 5, 7).collect(atLeast((Integer a, Integer b, Integer c, Integer d) -> a + b + c + d).orNot()))
+        .hasValue(16);
+    assertThat(Stream.of(1, 3, 5, 7, 9).collect(atLeast((Integer a, Integer b, Integer c, Integer d) -> a + b + c + d).orNot()))
+        .hasValue(16);
+    assertThat(Stream.empty().collect(atLeast((a, b, c, d) -> "ok").orNot())).isEmpty();
+    assertThat(Stream.of(1, 2, 3).collect(atLeast((a, b, c, d) -> "ok").orNot())).isEmpty();
   }
 
   @Test public void testAtLeastFiveElements() {
@@ -270,14 +408,29 @@ public class MatchingCollectorTest {
         () -> match(asList(1, 2, 3, 4), atLeast((a, b, c, d, e) -> a + b)));
   }
 
-  @Test public void testAtLeastFiveAsCollector() {
+  @Test public void testAtLeastFive_asCollector() {
     assertThat(Stream.of(1, 3, 5, 7, 9).collect(atLeast((a, b, c, d, e) -> a + b + c + d + e)).intValue())
+        .isEqualTo(25);
+    assertThat(Stream.of(1, 3, 5, 7, 9, 11).collect(atLeast((a, b, c, d, e) -> a + b + c + d + e)).intValue())
         .isEqualTo(25);
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
         () -> Stream.empty().collect(atLeast((a, b, c, d, e) -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Input ([]) doesn't match pattern <at least 5 elements>.");
+  }
+
+  @Test public void testAtLeastFive_orNot() {
+    assertThat(
+            Stream.of(1, 3, 5, 7, 9)
+                .collect(atLeast((Integer a, Integer b, Integer c, Integer d, Integer e) -> a + b + c + d + e).orNot()))
+        .hasValue(25);
+    assertThat(
+        Stream.of(1, 3, 5, 7, 9, 11)
+            .collect(atLeast((Integer a, Integer b, Integer c, Integer d, Integer e) -> a + b + c + d + e).orNot()))
+        .hasValue(25);
+    assertThat(Stream.empty().collect(atLeast((a, b, c, d, e) -> "ok").orNot())).isEmpty();
+    assertThat(Stream.of(1, 2, 3, 4).collect(atLeast((a, b, c, d, e) -> "ok").orNot())).isEmpty();
   }
 
   @Test public void testAtLeastSixElements() {
@@ -290,14 +443,29 @@ public class MatchingCollectorTest {
         () -> match(asList(1, 2, 3, 4, 5), atLeast((a, b, c, d, e, f) -> a + b)));
   }
 
-  @Test public void testAtLeastSixAsCollector() {
+  @Test public void testAtLeastSix_asCollector() {
     assertThat(Stream.of(1, 3, 5, 7, 9, 11).collect(atLeast((a, b, c, d, e, f) -> a + b + c + d + e + f)).intValue())
+        .isEqualTo(36);
+    assertThat(Stream.of(1, 3, 5, 7, 9, 11, 13).collect(atLeast((a, b, c, d, e, f) -> a + b + c + d + e + f)).intValue())
         .isEqualTo(36);
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
         () -> Stream.empty().collect(atLeast((a, b, c, d, e, f) -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Input ([]) doesn't match pattern <at least 6 elements>.");
+  }
+
+  @Test public void testAtLeastSix_orNot() {
+    assertThat(
+            Stream.of(1, 3, 5, 7, 9, 11)
+                .collect(atLeast((Integer a, Integer b, Integer c, Integer d, Integer e, Integer f) -> a + b + c + d + e + f).orNot()))
+        .hasValue(36);
+    assertThat(
+        Stream.of(1, 3, 5, 7, 9, 11, 13)
+            .collect(atLeast((Integer a, Integer b, Integer c, Integer d, Integer e, Integer f) -> a + b + c + d + e + f).orNot()))
+        .hasValue(36);
+    assertThat(Stream.empty().collect(atLeast((a, b, c, d, e, f) -> "ok").orNot())).isEmpty();
+    assertThat(Stream.of(1, 2, 3, 4, 5).collect(atLeast((a, b, c, d, e, f) -> "ok").orNot())).isEmpty();
   }
 
   @Test public void testOneElementWithCondition() {
@@ -313,6 +481,26 @@ public class MatchingCollectorTest {
         () -> match(asList(1), when(n -> false, a -> a)));
   }
 
+  @Test public void testOneElementWithCondition_asCollector() {
+    assertThat(Stream.of(1).collect(when(n -> n == 1, a -> a * 10)).intValue()).isEqualTo(10);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Stream.empty().collect(when(n -> true, a -> a)));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Stream.of(1, 2).collect(when(n -> true, a -> a)));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Stream.of(1).collect(when(n -> false, a -> a)));
+  }
+
+  @Test public void testOneElementWithCondition_orNot() {
+    assertThat(Stream.of(1).collect(when((Integer n) -> n == 1, a -> a * 10).orNot())).hasValue(10);
+    assertThat(Stream.empty().collect(when(n -> true, a -> a).orNot())).isEmpty();
+    assertThat(Stream.of(1, 2).collect(when(n -> true, a -> a).orNot())).isEmpty();
+    assertThat(Stream.of(1).collect(when(n -> false, a -> a).orNot())).isEmpty();
+  }
+
   @Test public void testTwoElementsWithCondition() {
     assertThat(match(asList(1, 3), when((a, b) -> a < b, (a, b) -> a + b)).intValue()).isEqualTo(4);
     assertThrows(
@@ -324,6 +512,30 @@ public class MatchingCollectorTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> match(asList(3, 1), when((a, b) -> a < b, (a, b) -> a + b)));
+  }
+
+  @Test public void testTwoElementsWithCondition_asCollector() {
+    assertThat(Stream.of(1, 3).collect(when((a, b) -> a < b, (a, b) -> a + b)).intValue()).isEqualTo(4);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Stream.of(1).collect(when((a, b) -> a < b, (a, b) -> a + b)));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Stream.of(1, 2, 3).collect(when((a, b) -> a < b, (a, b) -> a + b)));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Stream.of(3, 1).collect(when((a, b) -> a < b, (a, b) -> a + b)));
+  }
+
+  @Test public void testTwoElementsWithCondition_orNot() {
+    assertThat(Stream.of(1, 3).collect(when((Integer a, Integer b) -> a < b, (a, b) -> a + b).orNot()))
+        .hasValue(4);
+    assertThat(Stream.of(1).collect(when((Integer a, Integer b) -> a < b, (a, b) -> a + b).orNot()))
+        .isEmpty();
+    assertThat(Stream.of(1, 2, 3).collect(when((Integer a, Integer b) -> a < b, (a, b) -> a + b).orNot()))
+        .isEmpty();
+    assertThat(Stream.of(3, 1).collect(when((Integer a, Integer b) -> a < b, (a, b) -> a + b).orNot()))
+        .isEmpty();
   }
 
   @Test public void testMultipleCases_firstCaseMatches() {
@@ -403,6 +615,6 @@ public class MatchingCollectorTest {
   }
 
   @Test public void testNulls() throws Exception {
-    new NullPointerTester().testAllPublicStaticMethods(MatchingCollector.class);
+    new NullPointerTester().testAllPublicStaticMethods(NaryCollector.class);
   }
 }
