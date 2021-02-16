@@ -510,9 +510,6 @@ public abstract class NaryCollector<T, R> implements Collector<T, List<T>, R> {
    *
    * <p>Because the {@code orNot()} case is expected (not necessarily an error), this
    * allows implementations to use a fixed-size buffer to avoid consuming excessive memory.
-   *
-   * <p>Not used for {@code this} collector because we need the full list of elements and the size
-   * in the error message; plus the no-match case is "exceptional" (unlikely worth optimizing).
    */
   abstract List<T> newBuffer();
 
