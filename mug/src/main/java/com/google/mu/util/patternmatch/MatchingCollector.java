@@ -82,6 +82,9 @@ public abstract class MatchingCollector<T, R> implements Collector<T, List<T>, R
     @Override public String toString() {
       return "at least 1 element";
     }
+    @Override BoundedBuffer<Object> newBuffer() {
+      return BoundedBuffer.retainingLastElementOnly();
+    }
   };
 
   /**
@@ -158,6 +161,9 @@ public abstract class MatchingCollector<T, R> implements Collector<T, List<T>, R
       @Override public String toString() {
         return "empty";
       }
+      @Override List<T> newBuffer() {
+        return BoundedBuffer.retaining(1);
+      }
     };
   }
 
@@ -188,6 +194,9 @@ public abstract class MatchingCollector<T, R> implements Collector<T, List<T>, R
       @Override public String toString() {
         return "exactly 1 element";
       }
+      @Override List<T> newBuffer() {
+        return BoundedBuffer.retaining(2);
+      }
     };
   }
 
@@ -208,6 +217,9 @@ public abstract class MatchingCollector<T, R> implements Collector<T, List<T>, R
       @Override public String toString() {
         return "exactly 2 elements";
       }
+      @Override List<T> newBuffer() {
+        return BoundedBuffer.retaining(3);
+      }
     };
   }
 
@@ -226,6 +238,9 @@ public abstract class MatchingCollector<T, R> implements Collector<T, List<T>, R
       }
       @Override public String toString() {
         return "exactly 3 elements";
+      }
+      @Override List<T> newBuffer() {
+        return BoundedBuffer.retaining(4);
       }
     };
   }
@@ -246,6 +261,9 @@ public abstract class MatchingCollector<T, R> implements Collector<T, List<T>, R
       @Override public String toString() {
         return "exactly 4 elements";
       }
+      @Override List<T> newBuffer() {
+        return BoundedBuffer.retaining(5);
+      }
     };
   }
 
@@ -264,6 +282,9 @@ public abstract class MatchingCollector<T, R> implements Collector<T, List<T>, R
       }
       @Override public String toString() {
         return "exactly 5 elements";
+      }
+      @Override List<T> newBuffer() {
+        return BoundedBuffer.retaining(6);
       }
     };
   }
@@ -284,6 +305,9 @@ public abstract class MatchingCollector<T, R> implements Collector<T, List<T>, R
       }
       @Override public String toString() {
         return "exactly 6 elements";
+      }
+      @Override List<T> newBuffer() {
+        return BoundedBuffer.retaining(7);
       }
     };
   }
@@ -307,6 +331,9 @@ public abstract class MatchingCollector<T, R> implements Collector<T, List<T>, R
       @Override public String toString() {
         return "exactly 1 element that satisfies " + condition;
       }
+      @Override List<T> newBuffer() {
+        return BoundedBuffer.retaining(2);
+      }
     };
   }
 
@@ -329,6 +356,9 @@ public abstract class MatchingCollector<T, R> implements Collector<T, List<T>, R
       }
       @Override public String toString() {
         return "exactly 2 elements that satisfies " + condition;
+      }
+      @Override List<T> newBuffer() {
+        return BoundedBuffer.retaining(3);
       }
     };
   }
@@ -369,6 +399,9 @@ public abstract class MatchingCollector<T, R> implements Collector<T, List<T>, R
       @Override public String toString() {
         return "at least 1 element";
       }
+      @Override List<T> newBuffer() {
+        return BoundedBuffer.retaining(1);
+      }
     };
   }
 
@@ -389,6 +422,9 @@ public abstract class MatchingCollector<T, R> implements Collector<T, List<T>, R
       @Override public String toString() {
         return "at least 2 elements";
       }
+      @Override List<T> newBuffer() {
+        return BoundedBuffer.retaining(2);
+      }
     };
   }
 
@@ -407,6 +443,9 @@ public abstract class MatchingCollector<T, R> implements Collector<T, List<T>, R
       }
       @Override public String toString() {
         return "at least 3 elements";
+      }
+      @Override List<T> newBuffer() {
+        return BoundedBuffer.retaining(3);
       }
     };
   }
@@ -427,6 +466,9 @@ public abstract class MatchingCollector<T, R> implements Collector<T, List<T>, R
       @Override public String toString() {
         return "at least 4 elements";
       }
+      @Override List<T> newBuffer() {
+        return BoundedBuffer.retaining(4);
+      }
     };
   }
 
@@ -445,6 +487,9 @@ public abstract class MatchingCollector<T, R> implements Collector<T, List<T>, R
       }
       @Override public String toString() {
         return "at least 5 elements";
+      }
+      @Override List<T> newBuffer() {
+        return BoundedBuffer.retaining(5);
       }
     };
   }
@@ -465,6 +510,9 @@ public abstract class MatchingCollector<T, R> implements Collector<T, List<T>, R
       }
       @Override public String toString() {
         return "at least 6 elements";
+      }
+      @Override List<T> newBuffer() {
+        return BoundedBuffer.retaining(6);
       }
     };
   }
@@ -496,6 +544,9 @@ public abstract class MatchingCollector<T, R> implements Collector<T, List<T>, R
       @Override public String toString() {
         return "default";
       }
+      @Override List<T> newBuffer() {
+        return new ArrayList<>();
+      }
     };
   }
 
@@ -513,11 +564,26 @@ public abstract class MatchingCollector<T, R> implements Collector<T, List<T>, R
    * <p>If this collector results in null, {@link NullPointerException} will be thrown.
    */
   public final Collector<T, ? ,Optional<R>> orNot() {
-    return Collectors.collectingAndThen(toList(), this::tryMatch);
+    return Collector.of(
+        this::newBuffer,
+        List::add,
+        (l, r) -> {l.addAll(r); return l;},
+        this::tryMatch);
   }
 
   abstract boolean matches(List<? extends T> list);
   abstract R map(List<? extends T> list);
+
+  /**
+   * Returns the buffer to hold temporary elements for the {@link #orNot} collector.
+   *
+   * <p>Because the {@code orNot()} case is expected (not necessarily an error), this
+   * allows implementations to use a fixed-size buffer to avoid consuming excessive memory.
+   *
+   * <p>Not used for {@code this} collector because we need the full list of elements and the size
+   * in the error message; plus the no-match case is "exceptional" (unlikely worth optimizing).
+   */
+  abstract List<T> newBuffer();
 
   private Optional<R> tryMatch(List<? extends T> list) {
     return matches(list) ? Optional.of(map(list)) : Optional.empty();
