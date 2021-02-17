@@ -15,14 +15,20 @@
 package com.google.mu.util.stream;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.toList;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -33,7 +39,7 @@ import java.util.stream.Collectors;
  * <p>A {@code Case} object can be used as a {@link Collector} for a stream. For example:
  *
  * <pre>{@code
- * import static com.google.mu.util.stream.moreCollectors.exactly;
+ * import static com.google.mu.util.stream.MoreCollectors.exactly;
  *
  * stream.collect(exactly((a, b, c) -> ...));
  * }</pre>
@@ -42,11 +48,12 @@ import java.util.stream.Collectors;
  * For example:
  * <pre>{@code
  * import static com.google.mu.util.stream.moreCollectors.*;
+ * import static com.google.mu.util.stream.Case.orElse;
  *
  * Path path = pathComponents.stream()
  *     .filter(...)
  *     .collect(
- *         matching(
+ *         Case.matching(
  *             exactly((parent, child) -> ...),
  *             exactly(fileName -> ...),
  *             atLeast(root -> ...),
@@ -57,6 +64,7 @@ import java.util.stream.Collectors;
  * {@link #match match()} method instead to avoid iterating through every list elements:
  * <pre>{@code
  * import static com.google.mu.util.stream.moreCollectors.*;
+ * import static com.google.mu.util.stream.Case.orElse;
  *
  * Path path = Case.match(
  *     pathComponents,
@@ -69,6 +77,81 @@ import java.util.stream.Collectors;
  * @since 5.3
  */
 public abstract class Case<T, R> implements Collector<T, List<T>, R> {
+  /**
+   * Returns a {@code Case} that matches when there are exactly two input elements
+   * that satisfy {@code condition}. Upon match, the two elements are passed to {@code mapper} and
+   * the return value will be the result.
+   */
+  public static <T, R> Case<T, R> when(
+      BiPredicate<? super T, ? super T> condition,
+      BiFunction<? super T, ? super T, ? extends R> mapper) {
+    requireNonNull(condition);
+    requireNonNull(mapper);
+    return new ExactSize<T, R>() {
+      @Override boolean matches(List<? extends T> list) {
+        return super.matches(list) && condition.test(list.get(0), list.get(1));
+      }
+      @Override R map(List<? extends T> list) {
+        return mapper.apply(list.get(0), list.get(1));
+      }
+      @Override public String toString() {
+        return "exactly 2 elements that satisfies " + condition;
+      }
+      @Override int arity() {
+        return 2;
+      }
+    };
+  }
+
+  /**
+   * Returns a {@code Case} that matches when there are exactly one input elements
+   * that satisfies {@code condition}. Upon match, the single element is passed to {@code mapper} and
+   * the return value will be the result.
+   */
+  public static <T, R> Case<T, R> when(
+      Predicate<? super T> condition, Function<? super T, ? extends R> mapper) {
+    requireNonNull(condition);
+    requireNonNull(mapper);
+    return new ExactSize<T, R>() {
+      @Override boolean matches(List<? extends T> list) {
+        return super.matches(list) && condition.test(list.get(0));
+      }
+      @Override R map(List<? extends T> list) {
+        return mapper.apply(list.get(0));
+      }
+      @Override public String toString() {
+        return "exactly 1 element that satisfies " + condition;
+      }
+      @Override int arity() {
+        return 1;
+      }
+    };
+  }
+
+  /**
+   * Returns a {@code Collector} that will expand the input elements and transform them using the
+   * first from {@code patterns} that matches. If no pattern matches the input elements,
+   * {@code IllegalArgumentException} is thrown.
+   *
+   * <p>For example if a string could be in the form of {@code <resource_name>} with no qualifier,
+   * or in the form of {@code <project>.<resource_name>} with project as the qualifier,
+   * or in the form of {@code <project>.<location>.<resource_name>}, with both project and
+   * location qualifiers, you can handle all 3 cases using:
+   * <pre>{@code
+   *    Substring.first('.').repeatedly().split(string)
+   *        .collect(
+   *            matching(
+   *                exactly(resourceName -> ...),
+   *                exactly((project, resourceName) -> ...),
+   *                exactly(((project, location, resourceName) -> ...))));
+   * }</pre>
+   */
+  @SafeVarargs
+  public static <T, R> Collector<T, ?, R> matching(Case<? super T, ? extends R>... patterns) {
+    List<Case<? super T, ? extends R>> patternsCopy = Utils.copyOf(patterns);
+    return collectingAndThen(toList(), list -> match(list, patternsCopy));
+  }
+
   /**
    * Expands the input elements in {@code list} and transforms them using the
    * first from {@code patterns} that matches. If no pattern matches the input elements,
@@ -101,6 +184,42 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
     }
     throw new IllegalArgumentException(
         showShortList(list) + " matches no pattern from " + patterns + ".");
+  }
+
+  /**
+   * Returns a {@code Case} that matches any input. Pass it in as the last parameter
+   * of the {@link #match match()} or {@link MoreCollectors#matching matching()} method to perform a catch-all default.
+   *
+   * <p>For example:
+   *
+   * <pre>{@code
+   * match(
+   *     list,
+   *     exactly((a, b) -> ...),
+   *     atLeast((a, b, c) -> ...),
+   *     orElse(l -> ...));
+   * }</pre>
+   */
+  public static <T, R> Case<T, R> orElse(Function<? super List<T>, ? extends R> mapper) {
+    requireNonNull(mapper);
+    return new Case<T, R>() {
+      @Override boolean matches(List<? extends T> list) {
+        requireNonNull(list);
+        return true;
+      }
+      @Override R map(List<? extends T> list) {
+        return mapper.apply(Collections.unmodifiableList(list));
+      }
+      @Override public String toString() {
+        return "default";
+      }
+      @Override List<T> newBuffer() {
+        return new ArrayList<>();
+      }
+      @Override int arity() {
+        return Integer.MAX_VALUE;
+      }
+    };
   }
 
   /**
