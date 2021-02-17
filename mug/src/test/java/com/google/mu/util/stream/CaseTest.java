@@ -22,10 +22,7 @@ import static com.google.mu.util.stream.MoreCollectors.empty;
 import static com.google.mu.util.stream.MoreCollectors.exactly;
 import static com.google.mu.util.stream.MoreCollectors.firstElement;
 import static com.google.mu.util.stream.MoreCollectors.lastElement;
-import static com.google.mu.util.stream.MoreCollectors.matching;
 import static com.google.mu.util.stream.MoreCollectors.onlyElement;
-import static com.google.mu.util.stream.MoreCollectors.orElse;
-import static com.google.mu.util.stream.MoreCollectors.when;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -37,7 +34,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import com.google.common.testing.NullPointerTester;
-import com.google.mu.util.stream.Case;
 
 @RunWith(JUnit4.class)
 public class CaseTest {
@@ -470,72 +466,72 @@ public class CaseTest {
   }
 
   @Test public void testOneElementWithCondition() {
-    assertThat(match(asList(1), when(n -> n == 1, a -> a * 10)).intValue()).isEqualTo(10);
+    assertThat(match(asList(1), Case.when(n -> n == 1, a -> a * 10)).intValue()).isEqualTo(10);
     assertThrows(
         IllegalArgumentException.class,
-        () -> match(asList(), when(n -> true, a -> a)));
+        () -> match(asList(), Case.when(n -> true, a -> a)));
     assertThrows(
         IllegalArgumentException.class,
-        () -> match(asList(1, 2), when(n -> true, a -> a)));
+        () -> match(asList(1, 2), Case.when(n -> true, a -> a)));
     assertThrows(
         IllegalArgumentException.class,
-        () -> match(asList(1), when(n -> false, a -> a)));
+        () -> match(asList(1), Case.when(n -> false, a -> a)));
   }
 
   @Test public void testOneElementWithCondition_asCollector() {
-    assertThat(Stream.of(1).collect(when(n -> n == 1, a -> a * 10)).intValue()).isEqualTo(10);
+    assertThat(Stream.of(1).collect(Case.when(n -> n == 1, a -> a * 10)).intValue()).isEqualTo(10);
     assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.empty().collect(when(n -> true, a -> a)));
+        () -> Stream.empty().collect(Case.when(n -> true, a -> a)));
     assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.of(1, 2).collect(when(n -> true, a -> a)));
+        () -> Stream.of(1, 2).collect(Case.when(n -> true, a -> a)));
     assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.of(1).collect(when(n -> false, a -> a)));
+        () -> Stream.of(1).collect(Case.when(n -> false, a -> a)));
   }
 
   @Test public void testOneElementWithCondition_orNot() {
-    assertThat(Stream.of(1).collect(when((Integer n) -> n == 1, a -> a * 10).orNot())).hasValue(10);
-    assertThat(Stream.empty().collect(when(n -> true, a -> a).orNot())).isEmpty();
-    assertThat(Stream.of(1, 2).collect(when(n -> true, a -> a).orNot())).isEmpty();
-    assertThat(Stream.of(1).collect(when(n -> false, a -> a).orNot())).isEmpty();
+    assertThat(Stream.of(1).collect(Case.when((Integer n) -> n == 1, a -> a * 10).orNot())).hasValue(10);
+    assertThat(Stream.empty().collect(Case.when(n -> true, a -> a).orNot())).isEmpty();
+    assertThat(Stream.of(1, 2).collect(Case.when(n -> true, a -> a).orNot())).isEmpty();
+    assertThat(Stream.of(1).collect(Case.when(n -> false, a -> a).orNot())).isEmpty();
   }
 
   @Test public void testTwoElementsWithCondition() {
-    assertThat(match(asList(1, 3), when((a, b) -> a < b, (a, b) -> a + b)).intValue()).isEqualTo(4);
+    assertThat(match(asList(1, 3), Case.when((a, b) -> a < b, (a, b) -> a + b)).intValue()).isEqualTo(4);
     assertThrows(
         IllegalArgumentException.class,
-        () -> match(asList(1), when((a, b) -> a < b, (a, b) -> a + b)));
+        () -> match(asList(1), Case.when((a, b) -> a < b, (a, b) -> a + b)));
     assertThrows(
         IllegalArgumentException.class,
-        () -> match(asList(1, 2, 3), when((a, b) -> a < b, (a, b) -> a + b)));
+        () -> match(asList(1, 2, 3), Case.when((a, b) -> a < b, (a, b) -> a + b)));
     assertThrows(
         IllegalArgumentException.class,
-        () -> match(asList(3, 1), when((a, b) -> a < b, (a, b) -> a + b)));
+        () -> match(asList(3, 1), Case.when((a, b) -> a < b, (a, b) -> a + b)));
   }
 
   @Test public void testTwoElementsWithCondition_asCollector() {
-    assertThat(Stream.of(1, 3).collect(when((a, b) -> a < b, (a, b) -> a + b)).intValue()).isEqualTo(4);
+    assertThat(Stream.of(1, 3).collect(Case.when((a, b) -> a < b, (a, b) -> a + b)).intValue()).isEqualTo(4);
     assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.of(1).collect(when((a, b) -> a < b, (a, b) -> a + b)));
+        () -> Stream.of(1).collect(Case.when((a, b) -> a < b, (a, b) -> a + b)));
     assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.of(1, 2, 3).collect(when((a, b) -> a < b, (a, b) -> a + b)));
+        () -> Stream.of(1, 2, 3).collect(Case.when((a, b) -> a < b, (a, b) -> a + b)));
     assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.of(3, 1).collect(when((a, b) -> a < b, (a, b) -> a + b)));
+        () -> Stream.of(3, 1).collect(Case.when((a, b) -> a < b, (a, b) -> a + b)));
   }
 
   @Test public void testTwoElementsWithCondition_orNot() {
-    assertThat(Stream.of(1, 3).collect(when((Integer a, Integer b) -> a < b, (a, b) -> a + b).orNot()))
+    assertThat(Stream.of(1, 3).collect(Case.when((Integer a, Integer b) -> a < b, (a, b) -> a + b).orNot()))
         .hasValue(4);
-    assertThat(Stream.of(1).collect(when((Integer a, Integer b) -> a < b, (a, b) -> a + b).orNot()))
+    assertThat(Stream.of(1).collect(Case.when((Integer a, Integer b) -> a < b, (a, b) -> a + b).orNot()))
         .isEmpty();
-    assertThat(Stream.of(1, 2, 3).collect(when((Integer a, Integer b) -> a < b, (a, b) -> a + b).orNot()))
+    assertThat(Stream.of(1, 2, 3).collect(Case.when((Integer a, Integer b) -> a < b, (a, b) -> a + b).orNot()))
         .isEmpty();
-    assertThat(Stream.of(3, 1).collect(when((Integer a, Integer b) -> a < b, (a, b) -> a + b).orNot()))
+    assertThat(Stream.of(3, 1).collect(Case.when((Integer a, Integer b) -> a < b, (a, b) -> a + b).orNot()))
         .isEmpty();
   }
 
@@ -550,7 +546,7 @@ public class CaseTest {
   @Test public void testMultipleCases_secondCaseMatches() {
     int result = match(
         asList(1),
-        when(a -> a > 2, a -> a * 10),
+        Case.when(a -> a > 2, a -> a * 10),
         atLeast((a) -> -a));
     assertThat(result).isEqualTo(-1);
   }
@@ -559,29 +555,29 @@ public class CaseTest {
   public void testMultipleCases_fallthrough() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> match(asList(1), when(a -> a > 2, a -> a * 10), when(a -> a > 2, a -> -a)));
+        () -> match(asList(1), Case.when(a -> a > 2, a -> a * 10), Case.when(a -> a > 2, a -> -a)));
   }
 
   @Test public void testOrElse() {
-    String result = Stream.of(1, 3).collect(orElse(List::toString));
+    String result = Stream.of(1, 3).collect(Case.orElse(List::toString));
     assertThat(result).isEqualTo("[1, 3]");
   }
 
   @Test public void testOrElseNotReached() {
     String result = Stream.of(123)
         .collect(
-            matching(
+            Case.matching(
                 exactly(Object::toString),
-                orElse(List::toString)));
+                Case.orElse(List::toString)));
     assertThat(result).isEqualTo("123");
   }
 
   @Test public void testOrElseAsCatchAll() {
     String result = Stream.of(1, 3)
         .collect(
-            matching(
+            Case.matching(
                 exactly(Object::toString),
-                orElse(List::toString)));
+                Case.orElse(List::toString)));
     assertThat(result).isEqualTo("[1, 3]");
   }
 

@@ -1,8 +1,6 @@
 package com.google.mu.util.stream;
 
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -10,10 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiFunction;
-import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -120,30 +116,6 @@ public final class MoreCollectors {
       arranger.accept(list);
       return Collections.unmodifiableList(list);
     });
-  }
-
-  /**
-   * Returns a {@code Collector} that will expand the input elements and transform them using the
-   * first from {@code patterns} that matches. If no pattern matches the input elements,
-   * {@code IllegalArgumentException} is thrown.
-   *
-   * <p>For example if a string could be in the form of {@code <resource_name>} with no qualifier,
-   * or in the form of {@code <project>.<resource_name>} with project as the qualifier,
-   * or in the form of {@code <project>.<location>.<resource_name>}, with both project and
-   * location qualifiers, you can handle all 3 cases using:
-   * <pre>{@code
-   *    Substring.first('.').repeatedly().split(string)
-   *        .collect(
-   *            matching(
-   *                exactly(resourceName -> ...),
-   *                exactly((project, resourceName) -> ...),
-   *                exactly(((project, location, resourceName) -> ...))));
-   * }</pre>
-   */
-  @SafeVarargs
-  public static <T, R> Collector<T, ?, R> matching(Case<? super T, ? extends R>... patterns) {
-    List<Case<? super T, ? extends R>> patternsCopy = Utils.copyOf(patterns);
-    return collectingAndThen(toList(), list -> Case.match(list, patternsCopy));
   }
 
   /**
@@ -279,57 +251,6 @@ public final class MoreCollectors {
   }
 
   /**
-   * Returns a {@code Case} that matches when there are exactly one input elements
-   * that satisfies {@code condition}. Upon match, the single element is passed to {@code mapper} and
-   * the return value will be the result.
-   */
-  public static <T, R> Case<T, R> when(
-      Predicate<? super T> condition, Function<? super T, ? extends R> mapper) {
-    requireNonNull(condition);
-    requireNonNull(mapper);
-    return new Case.ExactSize<T, R>() {
-      @Override boolean matches(List<? extends T> list) {
-        return super.matches(list) && condition.test(list.get(0));
-      }
-      @Override R map(List<? extends T> list) {
-        return mapper.apply(list.get(0));
-      }
-      @Override public String toString() {
-        return "exactly 1 element that satisfies " + condition;
-      }
-      @Override int arity() {
-        return 1;
-      }
-    };
-  }
-
-  /**
-   * Returns a {@code Case} that matches when there are exactly two input elements
-   * that satisfy {@code condition}. Upon match, the two elements are passed to {@code mapper} and
-   * the return value will be the result.
-   */
-  public static <T, R> Case<T, R> when(
-      BiPredicate<? super T, ? super T> condition,
-      BiFunction<? super T, ? super T, ? extends R> mapper) {
-    requireNonNull(condition);
-    requireNonNull(mapper);
-    return new Case.ExactSize<T, R>() {
-      @Override boolean matches(List<? extends T> list) {
-        return super.matches(list) && condition.test(list.get(0), list.get(1));
-      }
-      @Override R map(List<? extends T> list) {
-        return mapper.apply(list.get(0), list.get(1));
-      }
-      @Override public String toString() {
-        return "exactly 2 elements that satisfies " + condition;
-      }
-      @Override int arity() {
-        return 2;
-      }
-    };
-  }
-
-  /**
    * Returns a {@code Case} that matches when there are at least one input element.
    * The first element will be the result of the matcher. For example, you can get the first
    * element from a non-empty stream using {@code stream.collect(firstElement())}.
@@ -446,42 +367,6 @@ public final class MoreCollectors {
       }
       @Override int arity() {
         return 6;
-      }
-    };
-  }
-
-  /**
-   * Returns a {@code Case} that matches any input. Pass it in as the last parameter
-   * of the {@link #match match()} or {@link #matching matching()} method to perform a catch-all default.
-   *
-   * <p>For example:
-   *
-   * <pre>{@code
-   * match(
-   *     list,
-   *     exactly((a, b) -> ...),
-   *     atLeast((a, b, c) -> ...),
-   *     orElse(l -> ...));
-   * }</pre>
-   */
-  public static <T, R> Case<T, R> orElse(Function<? super List<T>, ? extends R> mapper) {
-    requireNonNull(mapper);
-    return new Case<T, R>() {
-      @Override boolean matches(List<? extends T> list) {
-        requireNonNull(list);
-        return true;
-      }
-      @Override R map(List<? extends T> list) {
-        return mapper.apply(Collections.unmodifiableList(list));
-      }
-      @Override public String toString() {
-        return "default";
-      }
-      @Override List<T> newBuffer() {
-        return new ArrayList<>();
-      }
-      @Override int arity() {
-        return Integer.MAX_VALUE;
       }
     };
   }
