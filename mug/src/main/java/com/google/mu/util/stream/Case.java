@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
  * stream.collect(exactly((a, b, c) -> ...));
  * }</pre>
  *
- * Or as one of several possible patterns passed to the static {@link #matching matching()} method.
+ * Or as one of several possible cases passed to the static {@link #matching matching()} method.
  * For example:
  * <pre>{@code
  * import static com.google.mu.util.stream.MoreCollectors.*;
@@ -130,7 +130,7 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
 
   /**
    * Returns a {@code Collector} that will expand the input elements and transform them using the
-   * first from {@code patterns} that matches. If no pattern matches the input elements,
+   * first from {@code cases} that matches. If no case matches the input elements,
    * {@code IllegalArgumentException} is thrown.
    *
    * <p>For example if a string could be in the form of {@code <resource_name>} with no qualifier,
@@ -149,14 +149,14 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
    * }</pre>
    */
   @SafeVarargs
-  public static <T, R> Collector<T, ?, R> matching(Case<? super T, ? extends R>... patterns) {
-    List<Case<? super T, ? extends R>> patternsCopy = copyOf(patterns);
-    return collectingAndThen(toList(), list -> match(list, patternsCopy));
+  public static <T, R> Collector<T, ?, R> matching(Case<? super T, ? extends R>... cases) {
+    List<Case<? super T, ? extends R>> caseList = copyOf(cases);
+    return collectingAndThen(toList(), list -> match(list, caseList));
   }
 
   /**
    * Expands the input elements in {@code list} and transforms them using the
-   * first from {@code patterns} that matches. If no pattern matches the input elements,
+   * first from {@code cases} that matches. If no case matches the input elements,
    * {@code IllegalArgumentException} is thrown.
    *
    * <p>For example, to switch among multiple possible cases:
@@ -172,20 +172,20 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
    */
   @SafeVarargs
   public static <T, R> R match(
-      List<T> list, Case<? super T, ? extends R>... patterns) {
-    return match(list, copyOf(patterns));
+      List<T> list, Case<? super T, ? extends R>... cases) {
+    return match(list, copyOf(cases));
   }
 
   static <T, R> R match(
-      List<T> list, Iterable<? extends Case<? super T, ? extends R>> patterns) {
+      List<T> list, Iterable<? extends Case<? super T, ? extends R>> cases) {
     requireNonNull(list);
-    for (Case<? super T, ? extends R> pattern : patterns) {
+    for (Case<? super T, ? extends R> pattern : cases) {
       if (pattern.matches(list)) {
         return pattern.map(list);
       }
     }
     throw new IllegalArgumentException(
-        showShortList(list) + " matches no pattern from " + patterns + ".");
+        showShortList(list) + " matches no pattern from " + cases + ".");
   }
 
   /**
@@ -229,8 +229,8 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
 
   /**
    * Returns a collector that optionally collects and wraps the non-null result of this collector
-   * inside an {@link Optional} object, provided the input pattern matches.
-   * If the input pattern doesn't match, it will collect to {@code Optional.empty()}.
+   * inside an {@link Optional} object, provided the input pattern matches this {@code Case}.
+   * If the input case doesn't match, it will collect to {@code Optional.empty()}.
    *
    * <p>For example, to handle the unexpected input case gracefully without throwing exception, you can:
    *
@@ -267,7 +267,7 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
     return matches(list) ? Optional.of(map(list)) : Optional.empty();
   }
 
-  /** Returns the string representation of this pattern. */
+  /** Returns the string representation of this {@code Case}. */
   @Override public abstract String toString();
 
   @Override public final Supplier<List<T>> supplier() {
