@@ -59,7 +59,7 @@ import java.util.stream.Collector;
  * }</pre>
  *
  * @since 3.6
- * @deprecated Use {@link com.google.mu.util.patternmatch.NaryCollector} instead.
+ * @deprecated Use {@link Case} instead.
  */
 @Deprecated
 public final class Cases {

@@ -12,9 +12,9 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.util.patternmatch;
+package com.google.mu.function;
 
-/** A 4-arg function of the signature of {@code (T, T, T, T) -> R}. */
-public interface Quarternary<T, R> {
-  R apply(T a, T b, T c, T d);
+/** A 5-arg function of the signature of {@code (T, T, T, T, T) -> R}. */
+public interface Quinary<T, R> {
+  R apply(T a, T b, T c, T d, T e);
 }
