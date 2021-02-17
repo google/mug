@@ -47,7 +47,7 @@ import java.util.stream.Collectors;
  * Or as one of several possible patterns passed to the static {@link #matching matching()} method.
  * For example:
  * <pre>{@code
- * import static com.google.mu.util.stream.moreCollectors.*;
+ * import static com.google.mu.util.stream.MoreCollectors.*;
  * import static com.google.mu.util.stream.Case.orElse;
  *
  * Path path = pathComponents.stream()
@@ -63,7 +63,7 @@ import java.util.stream.Collectors;
  * In the above example, if you have a {@link List} instead of a stream, you can use the static
  * {@link #match match()} method instead to avoid iterating through every list elements:
  * <pre>{@code
- * import static com.google.mu.util.stream.moreCollectors.*;
+ * import static com.google.mu.util.stream.MoreCollectors.*;
  * import static com.google.mu.util.stream.Case.orElse;
  *
  * Path path = Case.match(
@@ -159,7 +159,7 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
    *
    * <p>For example, to switch among multiple possible cases:
    * <pre>{@code
-   * import static com.google.mu.util.stream.moreCollectors.*;
+   * import static com.google.mu.util.stream.MoreCollectors.*;
    *
    * Case.match(
    *     list,
@@ -230,7 +230,7 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
    * <p>For example, to handle the unexpected input case gracefully without throwing exception, you can:
    *
    * <pre>{@code
-   * import static com.google.mu.util.stream.moreCollectors.exactly;
+   * import static com.google.mu.util.stream.MoreCollectors.exactly;
    *
    * Optional<JobId> kv = ids.stream().collect(exactly(JobId::new).orNot());
    * }</pre>
