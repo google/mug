@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 /**
  * Utility class to perform n-ary functional pattern matching on a list or a stream of input elements.
  *
- * <p>A {@code Case} object can be used as a {@link Collector} for a stream. For example:
+ * <p>A {@code Case} object can be used as a stand-alone {@link Collector} for a stream. For example:
  *
  * <pre>{@code
  * import static com.google.mu.util.stream.MoreCollectors.exactly;
