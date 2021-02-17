@@ -138,12 +138,14 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
    * or in the form of {@code <project>.<location>.<resource_name>}, with both project and
    * location qualifiers, you can handle all 3 cases using:
    * <pre>{@code
-   *    Substring.first('.').repeatedly().split(string)
-   *        .collect(
-   *            matching(
-   *                exactly(resourceName -> ...),
-   *                exactly((project, resourceName) -> ...),
-   *                exactly(((project, location, resourceName) -> ...))));
+   * import static com.google.mu.util.stream.MoreCollectors.exactly;
+   *
+   * Substring.first('.').repeatedly().split(string)
+   *     .collect(
+   *         Case.matching(
+   *             exactly(resourceName -> ...),
+   *             exactly((project, resourceName) -> ...),
+   *             exactly(((project, location, resourceName) -> ...))));
    * }</pre>
    */
   @SafeVarargs
@@ -193,6 +195,9 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
    * <p>For example:
    *
    * <pre>{@code
+   * import static com.google.mu.util.stream.MoreCollectors.*;
+   * import static com.google.mu.util.stream.Case.orElse;
+   *
    * match(
    *     list,
    *     exactly((a, b) -> ...),
