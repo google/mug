@@ -150,7 +150,7 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
    */
   @SafeVarargs
   public static <T, R> Collector<T, ?, R> matching(Case<? super T, ? extends R>... patterns) {
-    List<Case<? super T, ? extends R>> patternsCopy = Utils.copyOf(patterns);
+    List<Case<? super T, ? extends R>> patternsCopy = copyOf(patterns);
     return collectingAndThen(toList(), list -> match(list, patternsCopy));
   }
 
@@ -173,7 +173,7 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
   @SafeVarargs
   public static <T, R> R match(
       List<T> list, Case<? super T, ? extends R>... patterns) {
-    return match(list, Utils.copyOf(patterns));
+    return match(list, copyOf(patterns));
   }
 
   static <T, R> R match(
@@ -333,6 +333,15 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
     @Override List<T> newBuffer() {
       return BoundedBuffer.retaining(arity());
     }
+  }
+
+  @SafeVarargs
+  private static <T> List<T> copyOf(T... values) {
+    List<T> copy = new ArrayList<>(values.length);
+    for (T v : values) {
+      copy.add(requireNonNull(v));
+    }
+    return copy;
   }
 
   Case() {}
