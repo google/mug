@@ -12,20 +12,20 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.util.patternmatch;
+package com.google.mu.util.stream;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static com.google.mu.util.patternmatch.NaryCollector.atLeast;
-import static com.google.mu.util.patternmatch.NaryCollector.empty;
-import static com.google.mu.util.patternmatch.NaryCollector.exactly;
-import static com.google.mu.util.patternmatch.NaryCollector.firstElement;
-import static com.google.mu.util.patternmatch.NaryCollector.lastElement;
-import static com.google.mu.util.patternmatch.NaryCollector.match;
-import static com.google.mu.util.patternmatch.NaryCollector.matching;
-import static com.google.mu.util.patternmatch.NaryCollector.onlyElement;
-import static com.google.mu.util.patternmatch.NaryCollector.orElse;
-import static com.google.mu.util.patternmatch.NaryCollector.when;
+import static com.google.mu.util.stream.Case.match;
+import static com.google.mu.util.stream.MoreCollectors.atLeast;
+import static com.google.mu.util.stream.MoreCollectors.empty;
+import static com.google.mu.util.stream.MoreCollectors.exactly;
+import static com.google.mu.util.stream.MoreCollectors.firstElement;
+import static com.google.mu.util.stream.MoreCollectors.lastElement;
+import static com.google.mu.util.stream.MoreCollectors.matching;
+import static com.google.mu.util.stream.MoreCollectors.onlyElement;
+import static com.google.mu.util.stream.MoreCollectors.orElse;
+import static com.google.mu.util.stream.MoreCollectors.when;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -37,9 +37,10 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import com.google.common.testing.NullPointerTester;
+import com.google.mu.util.stream.Case;
 
 @RunWith(JUnit4.class)
-public class NaryCollectorTest {
+public class CaseTest {
   @Test public void testEmpty() {
     assertThat(match(asList(), empty(() -> "ok"))).isEqualTo("ok");
     assertThrows(IllegalArgumentException.class, () -> match(asList(1), empty(() -> "ok")));
@@ -615,6 +616,6 @@ public class NaryCollectorTest {
   }
 
   @Test public void testNulls() throws Exception {
-    new NullPointerTester().testAllPublicStaticMethods(NaryCollector.class);
+    new NullPointerTester().testAllPublicStaticMethods(Case.class);
   }
 }

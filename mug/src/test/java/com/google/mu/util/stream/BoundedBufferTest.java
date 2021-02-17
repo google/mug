@@ -1,4 +1,4 @@
-package com.google.mu.util.patternmatch;
+package com.google.mu.util.stream;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -8,6 +8,8 @@ import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+
+import com.google.mu.util.stream.BoundedBuffer;
 
 @RunWith(JUnit4.class)
 public class BoundedBufferTest {

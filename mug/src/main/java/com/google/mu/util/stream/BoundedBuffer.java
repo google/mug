@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.util.patternmatch;
+package com.google.mu.util.stream;
 
 import static java.util.stream.Collectors.joining;
 
