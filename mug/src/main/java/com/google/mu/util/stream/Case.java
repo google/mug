@@ -228,6 +228,33 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
   }
 
   /**
+   * Returns a collector that optionally collects and wraps the non-null result of the
+   * {@code caseCollector} inside an {@link Optional} object, provided the input pattern
+   * matches the precondition of {@code caseCollector}.
+   * If the input case doesn't match, it will collect to {@code Optional.empty()}.
+   *
+   * <p>For example, to handle the unexpected input case gracefully without throwing exception, you can:
+   *
+   * <pre>{@code
+   * import static com.google.mu.util.stream.Case.maybe;
+   * import static com.google.mu.util.stream.MoreCollectors.exactly;
+   *
+   * Optional<JobId> jobId = ids.stream().collect(maybe(exactly(JobId::new)));
+   * }</pre>
+   *
+   * <p>If {@code caseCollector} results in null, {@link NullPointerException} will be thrown.
+   *
+   * <p>Usually, if you pass a method reference to one of the factory methods like {@link MoreCollectors#exactly},
+   * {@link MoreCollectors#atLeast}, it's more readable to use the {@link #orNot} method like {@code
+   * collect(exactly(JobId::new).orNot())}. But when you need to use a lambda, {@code orNot()} can defeat
+   * Java type inference, in which case, you can use this equivalent static method to work around the
+   * type inference limitation.
+   */
+  public static <T, R> Collector<T, ?, Optional<R>> maybe(Case<T, R> caseCollector) {
+    return caseCollector.orNot();
+  }
+
+  /**
    * Returns a collector that optionally collects and wraps the non-null result of this collector
    * inside an {@link Optional} object, provided the input pattern matches this {@code Case}.
    * If the input case doesn't match, it will collect to {@code Optional.empty()}.
@@ -241,8 +268,14 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
    * }</pre>
    *
    * <p>If this collector results in null, {@link NullPointerException} will be thrown.
+   *
+   * <p>If you run into compilation errors when using lambda like {@code
+   * collect(exactly((a, b) -> ...).orNot())}, it could be because Java type inference doesn't
+   * work for chained method invocations. In such case, you can use the equivalent static {@link
+   * #maybe} method as in {@code collect(maybe(exactly((a, b) -> ...)))}. This works around
+   * the Java type inference limitation.
    */
-  final Collector<T, ? ,Optional<R>> orNot() {
+  public final Collector<T, ? ,Optional<R>> orNot() {
     return Collector.of(
         this::newBuffer,
         List::add,

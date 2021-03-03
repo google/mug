@@ -22,7 +22,6 @@ import static com.google.mu.util.stream.MoreCollectors.empty;
 import static com.google.mu.util.stream.MoreCollectors.exactly;
 import static com.google.mu.util.stream.MoreCollectors.firstElement;
 import static com.google.mu.util.stream.MoreCollectors.lastElement;
-import static com.google.mu.util.stream.MoreCollectors.maybe;
 import static com.google.mu.util.stream.MoreCollectors.onlyElement;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -130,9 +129,9 @@ public class CaseTest {
   }
 
   @Test public void testExactlyThree_orNot() {
-    assertThat(Stream.of(1, 3, 5).collect(maybe(exactly((a, b, c) -> a + b + c))))
+    assertThat(Stream.of(1, 3, 5).collect(Case.maybe(exactly((a, b, c) -> a + b + c))))
         .hasValue(9);
-    assertThat(Stream.of(1, 3, 5, 7).collect(maybe(exactly((a, b, c) -> a + b + c))))
+    assertThat(Stream.of(1, 3, 5, 7).collect(Case.maybe(exactly((a, b, c) -> a + b + c))))
         .isEmpty();
     assertThat(Stream.of(1, 2).collect(exactly((a, b, c) -> "ok").orNot())).isEmpty();
   }
@@ -161,11 +160,11 @@ public class CaseTest {
   @Test public void testExactlyFour_orNot() {
     assertThat(
             Stream.of(1, 3, 5, 7)
-                .collect(maybe(exactly((a, b, c, d) -> a + b + c + d))))
+                .collect(Case.maybe(exactly((a, b, c, d) -> a + b + c + d))))
         .hasValue(16);
     assertThat(
         Stream.of(1, 3, 5, 7, 9)
-            .collect(maybe(exactly((a, b, c, d) -> a + b + c + d))))
+            .collect(Case.maybe(exactly((a, b, c, d) -> a + b + c + d))))
         .isEmpty();
     assertThat(Stream.of(1, 2, 3).collect(exactly((a, b, c, d) -> "ok").orNot())).isEmpty();
   }
@@ -194,11 +193,11 @@ public class CaseTest {
   @Test public void testExactlyFive_orNot() {
     assertThat(
             Stream.of(1, 3, 5, 7, 9)
-                .collect(maybe(exactly((a, b, c, d, e) -> a + b + c + d + e))))
+                .collect(Case.maybe(exactly((a, b, c, d, e) -> a + b + c + d + e))))
         .hasValue(25);
     assertThat(
         Stream.of(1, 3, 5, 7, 9, 11)
-            .collect(maybe(exactly((a, b, c, d, e) -> a + b + c + d + e))))
+            .collect(Case.maybe(exactly((a, b, c, d, e) -> a + b + c + d + e))))
         .isEmpty();
     assertThat(Stream.of(1, 2, 3, 4).collect(exactly((a, b, c, d, e) -> "ok").orNot())).isEmpty();
   }
@@ -227,11 +226,11 @@ public class CaseTest {
   @Test public void testExactlySix_orNot() {
     assertThat(
             Stream.of(1, 3, 5, 7, 9, 11)
-                .collect(maybe(exactly((a, b, c, d, e, f) -> a + b + c + d + e + f))))
+                .collect(Case.maybe(exactly((a, b, c, d, e, f) -> a + b + c + d + e + f))))
         .hasValue(36);
     assertThat(
         Stream.of(1, 3, 5, 7, 9, 11, 13)
-            .collect(maybe(exactly((a, b, c, d, e, f) -> a + b + c + d + e + f))))
+            .collect(Case.maybe(exactly((a, b, c, d, e, f) -> a + b + c + d + e + f))))
         .isEmpty();
     assertThat(Stream.of(1, 2, 3, 4, 5).collect(exactly((a, b, c, d, e, f) -> "ok").orNot()))
         .isEmpty();
@@ -355,7 +354,7 @@ public class CaseTest {
   }
 
   @Test public void testAtLeastThree_orNot() {
-    assertThat(Stream.of(1, 3, 5).collect(maybe(atLeast((a, b, c) -> a + b + c))))
+    assertThat(Stream.of(1, 3, 5).collect(Case.maybe(atLeast((a, b, c) -> a + b + c))))
         .hasValue(9);
     assertThat(Stream.of(1, 3, 5, 7).collect(atLeast((Integer a, Integer b, Integer c) -> a + b + c).orNot()))
         .hasValue(9);
@@ -386,9 +385,9 @@ public class CaseTest {
   }
 
   @Test public void testAtLeastFour_orNot() {
-    assertThat(Stream.of(1, 3, 5, 7).collect(maybe(atLeast((a, b, c, d) -> a + b + c + d))))
+    assertThat(Stream.of(1, 3, 5, 7).collect(Case.maybe(atLeast((a, b, c, d) -> a + b + c + d))))
         .hasValue(16);
-    assertThat(Stream.of(1, 3, 5, 7, 9).collect(maybe(atLeast((a, b, c, d) -> a + b + c + d))))
+    assertThat(Stream.of(1, 3, 5, 7, 9).collect(Case.maybe(atLeast((a, b, c, d) -> a + b + c + d))))
         .hasValue(16);
     assertThat(Stream.empty().collect(atLeast((a, b, c, d) -> "ok").orNot())).isEmpty();
     assertThat(Stream.of(1, 2, 3).collect(atLeast((a, b, c, d) -> "ok").orNot())).isEmpty();
@@ -419,11 +418,11 @@ public class CaseTest {
   @Test public void testAtLeastFive_orNot() {
     assertThat(
             Stream.of(1, 3, 5, 7, 9)
-                .collect(maybe(atLeast((a, b, c, d, e) -> a + b + c + d + e))))
+                .collect(Case.maybe(atLeast((a, b, c, d, e) -> a + b + c + d + e))))
         .hasValue(25);
     assertThat(
         Stream.of(1, 3, 5, 7, 9, 11)
-            .collect(maybe(atLeast((a, b, c, d, e) -> a + b + c + d + e))))
+            .collect(Case.maybe(atLeast((a, b, c, d, e) -> a + b + c + d + e))))
         .hasValue(25);
     assertThat(Stream.empty().collect(atLeast((a, b, c, d, e) -> "ok").orNot())).isEmpty();
     assertThat(Stream.of(1, 2, 3, 4).collect(atLeast((a, b, c, d, e) -> "ok").orNot())).isEmpty();
@@ -454,11 +453,11 @@ public class CaseTest {
   @Test public void testAtLeastSix_orNot() {
     assertThat(
             Stream.of(1, 3, 5, 7, 9, 11)
-                .collect(maybe(atLeast((a, b, c, d, e, f) -> a + b + c + d + e + f))))
+                .collect(Case.maybe(atLeast((a, b, c, d, e, f) -> a + b + c + d + e + f))))
         .hasValue(36);
     assertThat(
         Stream.of(1, 3, 5, 7, 9, 11, 13)
-            .collect(maybe(atLeast((a, b, c, d, e, f) -> a + b + c + d + e + f))))
+            .collect(Case.maybe(atLeast((a, b, c, d, e, f) -> a + b + c + d + e + f))))
         .hasValue(36);
     assertThat(Stream.empty().collect(atLeast((a, b, c, d, e, f) -> "ok").orNot())).isEmpty();
     assertThat(Stream.of(1, 2, 3, 4, 5).collect(atLeast((a, b, c, d, e, f) -> "ok").orNot())).isEmpty();
