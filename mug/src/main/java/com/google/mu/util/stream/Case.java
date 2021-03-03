@@ -250,7 +250,7 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
    * collect(exactly(JobId::new).orNot())
    * }</pre>
    *
-   * But when you need to use a lambda, {@code orNot()} can defeat Java type inference,
+   * But when you need to use a lambda, {@code orNot()} could defeat the Java type inferencer,
    * in which case, you can use this equivalent static method to work around the
    * type inference limitation.
    */
