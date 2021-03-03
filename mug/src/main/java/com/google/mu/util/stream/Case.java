@@ -244,10 +244,14 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
    *
    * <p>If {@code caseCollector} results in null, {@link NullPointerException} will be thrown.
    *
-   * <p>Usually, if you pass a method reference to one of the factory methods like {@link MoreCollectors#exactly},
-   * {@link MoreCollectors#atLeast}, it's more readable to use the {@link #orNot} method like {@code
-   * collect(exactly(JobId::new).orNot())}. But when you need to use a lambda, {@code orNot()} can defeat
-   * Java type inference, in which case, you can use this equivalent static method to work around the
+   * <p>Usually, if you pass a method reference to one of the factory methods like {@link
+   * MoreCollectors#exactly exactly()} or {@link MoreCollectors#atLeast atLeast()}, it's more
+   * readable to use the {@link #orNot} method like: <pre>{@code
+   * collect(exactly(JobId::new).orNot())
+   * }</pre>
+   *
+   * But when you need to use a lambda, {@code orNot()} can defeat Java type inference,
+   * in which case, you can use this equivalent static method to work around the
    * type inference limitation.
    */
   public static <T, R> Collector<T, ?, Optional<R>> maybe(Case<T, R> caseCollector) {
