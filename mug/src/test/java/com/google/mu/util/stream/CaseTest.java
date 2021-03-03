@@ -22,7 +22,6 @@ import static com.google.mu.util.stream.MoreCollectors.empty;
 import static com.google.mu.util.stream.MoreCollectors.exactly;
 import static com.google.mu.util.stream.MoreCollectors.firstElement;
 import static com.google.mu.util.stream.MoreCollectors.lastElement;
-import static com.google.mu.util.stream.MoreCollectors.maybe;
 import static com.google.mu.util.stream.MoreCollectors.onlyElement;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -35,7 +34,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import com.google.common.testing.NullPointerTester;
-import com.google.mu.util.stream.Case.maybe;
 
 @RunWith(JUnit4.class)
 public class CaseTest {
