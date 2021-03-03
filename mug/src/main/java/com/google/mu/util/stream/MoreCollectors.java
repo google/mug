@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -369,6 +370,27 @@ public final class MoreCollectors {
         return 6;
       }
     };
+  }
+
+  /**
+   * Returns a collector that optionally collects and wraps the non-null result of the
+   * {@code caseCollector} inside an {@link Optional} object, provided the input pattern
+   * matches the precondition of {@code caseCollector}.
+   * If the input case doesn't match, it will collect to {@code Optional.empty()}.
+   *
+   * <p>For example, to handle the unexpected input case gracefully without throwing exception, you can:
+   *
+   * <pre>{@code
+   * import static com.google.mu.util.stream.MoreCollectors.exactly;
+   * import static com.google.mu.util.stream.MoreCollectors.maybe;
+   *
+   * Optional<JobId> jobId = ids.stream().collect(maybe(exactly(JobId::new)));
+   * }</pre>
+   *
+   * <p>If {@code caseCollector} results in null, {@link NullPointerException} will be thrown.
+   */
+  public static <T, R> Collector<T, ?, Optional<R>> maybe(Case<T, R> caseCollector) {
+    return caseCollector.orNot();
   }
 
   private MoreCollectors() {}
