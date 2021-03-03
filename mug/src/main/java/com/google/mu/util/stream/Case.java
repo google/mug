@@ -242,7 +242,7 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
    *
    * <p>If this collector results in null, {@link NullPointerException} will be thrown.
    */
-  public final Collector<T, ? ,Optional<R>> orNot() {
+  final Collector<T, ? ,Optional<R>> orNot() {
     return Collector.of(
         this::newBuffer,
         List::add,
