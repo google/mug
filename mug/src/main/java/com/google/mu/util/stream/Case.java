@@ -58,7 +58,7 @@ import java.util.stream.Collectors;
  *             exactly(fileName -> ...)));
  * }</pre>
  *
- * In the above example, if you have a {@link List} that may or may not match these cases,
+ * In the above example, if you have a {@link List} that may or <em>may not</em> match these cases,
  * you can use the static {@link #match match()} method instead. It returns an {@link Optional}
  * object so that you can handle the "no match" case.
  * <pre>{@code
@@ -68,8 +68,7 @@ import java.util.stream.Collectors;
  *     pathComponents,
  *     exactly((parent, child) -> ...),
  *     exactly(fileName -> ...),
- *     atLeast(root -> ...),
- *     orElse(l -> ...));
+ *     atLeast(root -> ...));
  * }</pre>
  *
  * @since 5.3
