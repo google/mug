@@ -44,16 +44,16 @@ import java.util.stream.Collectors;
  * stream.collect(exactly((a, b, c) -> ...));
  * }</pre>
  *
- * Or as one of several possible cases passed to the static {@link #cases cases()} method.
+ * Or as one of several possible cases passed to the static {@link #switching switching()} method.
  * For example:
  * <pre>{@code
  * import static com.google.mu.util.stream.MoreCollectors.*;
- * import static com.google.mu.util.stream.Case.cases;
+ * import static com.google.mu.util.stream.Case.switching;
  *
  * Path path = pathComponents.stream()
  *     .filter(...)
  *     .collect(
- *         cases(
+ *         switching(
  *             exactly((parent, child) -> ...),
  *             exactly(fileName -> ...)));
  * }</pre>
@@ -74,6 +74,8 @@ import java.util.stream.Collectors;
  * @since 5.3
  */
 public abstract class Case<T, R> implements Collector<T, List<T>, R> {
+  private static final int MAX_CARDINALITY = 8;
+
   /**
    * Returns a {@code Case} that matches when there are exactly two input elements
    * that satisfy {@code condition}. Upon match, the two elements are passed to {@code mapper} and
@@ -136,18 +138,18 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
    * location qualifiers, you can handle all 3 cases using:
    * <pre>{@code
    * import static com.google.mu.util.stream.MoreCollectors.exactly;
-   * import static com.google.mu.util.stream.Case.cases;
+   * import static com.google.mu.util.stream.Case.switching;
    *
    * Substring.first('.').repeatedly().split(string)
    *     .collect(
-   *         cases(
+   *         switching(
    *             exactly(resourceName -> ...),
    *             exactly((project, resourceName) -> ...),
    *             exactly(((project, location, resourceName) -> ...))));
    * }</pre>
    */
   @SafeVarargs
-  public static <T, R> Collector<T, ?, R> cases(Case<? super T, ? extends R>... cases) {
+  public static <T, R> Collector<T, ?, R> switching(Case<? super T, ? extends R>... cases) {
     List<Case<? super T, ? extends R>> caseList = copyOf(cases);
     return collectingAndThen(
         toList(),
@@ -236,7 +238,7 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
   }
 
   private static String showShortList(List<?> list) {
-    return list.size() <= 8  // If small enough, just show it.
+    return list.size() <= MAX_CARDINALITY  // If small enough, just show it.
         ? "(" + list + ")"
         : "of size = " + list.size() + " (["
             + list.stream().limit(8).map(Object::toString).collect(Collectors.joining(", "))
