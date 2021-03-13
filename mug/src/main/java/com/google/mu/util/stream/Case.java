@@ -16,7 +16,6 @@ package com.google.mu.util.stream;
 
 import static java.util.Objects.requireNonNull;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -130,12 +129,10 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
   @SafeVarargs
   public static <T, R> Optional<R> match(
       List<T> list, Case<? super T, ? extends R>... cases) {
-    return match(list, copyOf(cases));
-  }
-
-  static <T, R> Optional<R> match(
-      List<T> list, Iterable<? extends Case<? super T, ? extends R>> cases) {
     requireNonNull(list);
+    for (Case<?, ?> pattern : cases) {
+      requireNonNull(pattern);
+    }
     for (Case<? super T, ? extends R> pattern : cases) {
       if (pattern.matches(list)) {
         return Optional.of(pattern.map(list));
@@ -222,15 +219,6 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
     @Override List<T> newBuffer() {
       return BoundedBuffer.atMost(arity());
     }
-  }
-
-  @SafeVarargs
-  private static <T> List<T> copyOf(T... values) {
-    List<T> copy = new ArrayList<>(values.length);
-    for (T v : values) {
-      copy.add(requireNonNull(v));
-    }
-    return copy;
   }
 
   Case() {}
