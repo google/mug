@@ -124,8 +124,7 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
    *     Case.match(
    *         list,
    *         exactly((a, b) -> ...),
-   *         atLeast((a, b, c) -> ...),
-   *         empty(() -> ...));
+   *         atLeast((a, b, c) -> ...));
    * }</pre>
    */
   @SafeVarargs
