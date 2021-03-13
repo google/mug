@@ -43,7 +43,7 @@ abstract class BoundedBuffer<T> extends AbstractList<T> {
     return size() >= maxSize;
   }
 
-  static <T> BoundedBuffer<T> retaining(int maxSize) {
+  static <T> BoundedBuffer<T> atMost(int maxSize) {
     return new BoundedBuffer<T>(maxSize) {
       private boolean overflown = false;
 

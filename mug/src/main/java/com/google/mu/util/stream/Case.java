@@ -44,29 +44,27 @@ import java.util.stream.Collectors;
  * stream.collect(exactly((a, b, c) -> ...));
  * }</pre>
  *
- * Or as one of several possible cases passed to the static {@link #matching matching()} method.
+ * Or as one of several possible cases passed to the static {@link #cases cases()} method.
  * For example:
  * <pre>{@code
  * import static com.google.mu.util.stream.MoreCollectors.*;
- * import static com.google.mu.util.stream.Case.orElse;
+ * import static com.google.mu.util.stream.Case.cases;
  *
  * Path path = pathComponents.stream()
  *     .filter(...)
  *     .collect(
- *         Case.matching(
+ *         cases(
  *             exactly((parent, child) -> ...),
- *             exactly(fileName -> ...),
- *             atLeast(root -> ...),
- *             orElse(l -> ...)));
+ *             exactly(fileName -> ...)));
  * }</pre>
  *
- * In the above example, if you have a {@link List} instead of a stream, you can use the static
- * {@link #match match()} method instead to avoid iterating through every list elements:
+ * In the above example, if you have a {@link List} that may or may not match these cases,
+ * you can use the static {@link #match match()} method instead. It returns an {@link Optional}
+ * object so that you can handle the "no match" case.
  * <pre>{@code
  * import static com.google.mu.util.stream.MoreCollectors.*;
- * import static com.google.mu.util.stream.Case.orElse;
  *
- * Path path = Case.match(
+ * Optional<Path> path = Case.match(
  *     pathComponents,
  *     exactly((parent, child) -> ...),
  *     exactly(fileName -> ...),
@@ -139,170 +137,72 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
    * location qualifiers, you can handle all 3 cases using:
    * <pre>{@code
    * import static com.google.mu.util.stream.MoreCollectors.exactly;
+   * import static com.google.mu.util.stream.Case.cases;
    *
    * Substring.first('.').repeatedly().split(string)
    *     .collect(
-   *         Case.matching(
+   *         cases(
    *             exactly(resourceName -> ...),
    *             exactly((project, resourceName) -> ...),
    *             exactly(((project, location, resourceName) -> ...))));
    * }</pre>
    */
   @SafeVarargs
-  public static <T, R> Collector<T, ?, R> matching(Case<? super T, ? extends R>... cases) {
+  public static <T, R> Collector<T, ?, R> cases(Case<? super T, ? extends R>... cases) {
     List<Case<? super T, ? extends R>> caseList = copyOf(cases);
-    return collectingAndThen(toList(), list -> match(list, caseList));
+    return collectingAndThen(
+        toList(),
+        list -> match(list, caseList)
+            .orElseThrow(() ->
+                new IllegalArgumentException(
+                        "Input " + showShortList(list) + " matches none of the expected cases.")));
   }
 
   /**
    * Expands the input elements in {@code list} and transforms them using the
    * first from {@code cases} that matches. If no case matches the input elements,
-   * {@code IllegalArgumentException} is thrown.
+   * {@code Optional.empty()} is returned.
    *
    * <p>For example, to switch among multiple possible cases:
    * <pre>{@code
    * import static com.google.mu.util.stream.MoreCollectors.*;
    *
-   * Case.match(
-   *     list,
-   *     exactly((a, b) -> ...),
-   *     atLeast((a, b, c) -> ...),
-   *     empty(() -> ...));
+   * Optional<R> result =
+   *     Case.match(
+   *         list,
+   *         exactly((a, b) -> ...),
+   *         atLeast((a, b, c) -> ...),
+   *         empty(() -> ...));
    * }</pre>
    */
   @SafeVarargs
-  public static <T, R> R match(
+  public static <T, R> Optional<R> match(
       List<T> list, Case<? super T, ? extends R>... cases) {
     return match(list, copyOf(cases));
   }
 
-  static <T, R> R match(
+  static <T, R> Optional<R> match(
       List<T> list, Iterable<? extends Case<? super T, ? extends R>> cases) {
     requireNonNull(list);
     for (Case<? super T, ? extends R> pattern : cases) {
       if (pattern.matches(list)) {
-        return pattern.map(list);
+        return Optional.of(pattern.map(list));
       }
     }
-    throw new IllegalArgumentException(
-        showShortList(list) + " matches no pattern from " + cases + ".");
-  }
-
-  /**
-   * Returns a {@code Case} that matches any input. Pass it in as the last parameter
-   * of the {@link #match match()} or {@link MoreCollectors#matching matching()} method to perform a catch-all default.
-   *
-   * <p>For example:
-   *
-   * <pre>{@code
-   * import static com.google.mu.util.stream.MoreCollectors.*;
-   * import static com.google.mu.util.stream.Case.orElse;
-   *
-   * match(
-   *     list,
-   *     exactly((a, b) -> ...),
-   *     atLeast((a, b, c) -> ...),
-   *     orElse(l -> ...));
-   * }</pre>
-   */
-  public static <T, R> Case<T, R> orElse(Function<? super List<T>, ? extends R> mapper) {
-    requireNonNull(mapper);
-    return new Case<T, R>() {
-      @Override boolean matches(List<? extends T> list) {
-        requireNonNull(list);
-        return true;
-      }
-      @Override R map(List<? extends T> list) {
-        return mapper.apply(Collections.unmodifiableList(list));
-      }
-      @Override public String toString() {
-        return "default";
-      }
-      @Override List<T> newBuffer() {
-        return new ArrayList<>();
-      }
-      @Override int arity() {
-        return Integer.MAX_VALUE;
-      }
-    };
-  }
-
-  /**
-   * Returns a collector that optionally collects and wraps the non-null result of the
-   * {@code caseCollector} inside an {@link Optional} object, provided the input pattern
-   * matches the precondition of {@code caseCollector}.
-   * If the input case doesn't match, it will collect to {@code Optional.empty()}.
-   *
-   * <p>For example, to handle the unexpected input case gracefully without throwing exception, you can:
-   *
-   * <pre>{@code
-   * import static com.google.mu.util.stream.Case.maybe;
-   * import static com.google.mu.util.stream.MoreCollectors.exactly;
-   *
-   * Optional<JobId> jobId = ids.stream().collect(maybe(exactly(JobId::new)));
-   * }</pre>
-   *
-   * <p>If {@code caseCollector} results in null, {@link NullPointerException} will be thrown.
-   *
-   * <p>Usually, if you pass a method reference to one of the factory methods like {@link
-   * MoreCollectors#exactly exactly()} or {@link MoreCollectors#atLeast atLeast()}, it's more
-   * readable to use the {@link #orNot} method like: <pre>{@code
-   * collect(exactly(JobId::new).orNot())
-   * }</pre>
-   *
-   * But when you need to use a lambda, {@code orNot()} could defeat the Java type inferencer,
-   * in which case, you can use this equivalent static method to work around the
-   * type inference limitation.
-   */
-  public static <T, R> Collector<T, ?, Optional<R>> maybe(Case<T, R> caseCollector) {
-    return caseCollector.orNot();
-  }
-
-  /**
-   * Returns a collector that optionally collects and wraps the non-null result of this collector
-   * inside an {@link Optional} object, provided the input pattern matches this {@code Case}.
-   * If the input case doesn't match, it will collect to {@code Optional.empty()}.
-   *
-   * <p>For example, to handle the unexpected input case gracefully without throwing exception, you can:
-   *
-   * <pre>{@code
-   * import static com.google.mu.util.stream.MoreCollectors.exactly;
-   *
-   * Optional<JobId> kv = ids.stream().collect(exactly(JobId::new).orNot());
-   * }</pre>
-   *
-   * <p>If this collector results in null, {@link NullPointerException} will be thrown.
-   *
-   * <p>If you run into compilation errors when using lambda like {@code
-   * collect(exactly((a, b) -> ...).orNot())}, it could be because Java type inference doesn't
-   * work for chained method invocations. In such case, you can use the equivalent static {@link
-   * #maybe} method as in {@code collect(maybe(exactly((a, b) -> ...)))}. This works around
-   * the Java type inference limitation.
-   */
-  public final Collector<T, ? ,Optional<R>> orNot() {
-    return Collector.of(
-        this::newBuffer,
-        List::add,
-        (l, r) -> {l.addAll(r); return l;},
-        this::tryMatch);
+    return Optional.empty();
   }
 
   abstract boolean matches(List<? extends T> list);
   abstract R map(List<? extends T> list);
 
   /**
-   * Returns the buffer to hold temporary elements for the {@link #orNot} collector.
+   * Returns the buffer to hold temporary elements.
    *
-   * <p>Because the {@code orNot()} case is expected (not necessarily an error), this
-   * allows implementations to use a fixed-size buffer to avoid consuming excessive memory.
+   * <p>The returned list fails fast if the number of input elements exceeds max siae.
    */
   abstract List<T> newBuffer();
 
   abstract int arity();
-
-  private Optional<R> tryMatch(List<? extends T> list) {
-    return matches(list) ? Optional.of(map(list)) : Optional.empty();
-  }
 
   /** Returns the string representation of this {@code Case}. */
   @Override public abstract String toString();
@@ -354,7 +254,7 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
     }
 
     @Override List<T> newBuffer() {
-      return BoundedBuffer.retaining(arity() + 1);
+      return BoundedBuffer.atMost(arity() + 1);
     }
   }
 
@@ -368,7 +268,7 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
     }
 
     @Override List<T> newBuffer() {
-      return BoundedBuffer.retaining(arity());
+      return BoundedBuffer.atMost(arity());
     }
   }
 
