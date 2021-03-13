@@ -15,8 +15,6 @@
 package com.google.mu.util.stream;
 
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -44,23 +42,9 @@ import java.util.stream.Collectors;
  * stream.collect(exactly((a, b, c) -> ...));
  * }</pre>
  *
- * Or as one of several possible cases passed to the static {@link #switching switching()} method.
+ * Or as one of several possible cases passed to the static {@link #match match()} method.
  * For example:
- * <pre>{@code
- * import static com.google.mu.util.stream.MoreCollectors.*;
- * import static com.google.mu.util.stream.Case.switching;
  *
- * Path path = pathComponents.stream()
- *     .filter(...)
- *     .collect(
- *         switching(
- *             exactly((parent, child) -> ...),
- *             exactly(fileName -> ...)));
- * }</pre>
- *
- * In the above example, if you have a {@link List} that may or <em>may not</em> match these cases,
- * you can use the static {@link #match match()} method instead. It returns an {@link Optional}
- * object so that you can handle the "no match" case.
  * <pre>{@code
  * import static com.google.mu.util.stream.MoreCollectors.*;
  *
@@ -125,38 +109,6 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
         return 1;
       }
     };
-  }
-
-  /**
-   * Returns a {@code Collector} that will expand the input elements and transform them using the
-   * first from {@code cases} that matches. If no case matches the input elements,
-   * {@code IllegalArgumentException} is thrown.
-   *
-   * <p>For example if a string could be in the form of {@code <resource_name>} with no qualifier,
-   * or in the form of {@code <project>.<resource_name>} with project as the qualifier,
-   * or in the form of {@code <project>.<location>.<resource_name>}, with both project and
-   * location qualifiers, you can handle all 3 cases using:
-   * <pre>{@code
-   * import static com.google.mu.util.stream.MoreCollectors.exactly;
-   * import static com.google.mu.util.stream.Case.switching;
-   *
-   * Substring.first('.').repeatedly().split(string)
-   *     .collect(
-   *         switching(
-   *             exactly(resourceName -> ...),
-   *             exactly((project, resourceName) -> ...),
-   *             exactly(((project, location, resourceName) -> ...))));
-   * }</pre>
-   */
-  @SafeVarargs
-  public static <T, R> Collector<T, ?, R> switching(Case<? super T, ? extends R>... cases) {
-    List<Case<? super T, ? extends R>> caseList = copyOf(cases);
-    return collectingAndThen(
-        toList(),
-        list -> match(list, caseList)
-            .orElseThrow(() ->
-                new IllegalArgumentException(
-                        "Input " + showShortList(list) + " matches none of the expected cases.")));
   }
 
   /**
