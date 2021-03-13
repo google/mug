@@ -9,16 +9,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import com.google.mu.util.stream.BoundedBuffer;
-
 @RunWith(JUnit4.class)
 public class BoundedBufferTest {
   @Test public void negativeMaxSize() {
-    assertThrows(IllegalArgumentException.class, () -> BoundedBuffer.retaining(-1));
+    assertThrows(IllegalArgumentException.class, () -> BoundedBuffer.atMost(-1));
   }
 
   @Test public void retainingZero() {
-    List<Integer> buffer = BoundedBuffer.retaining(0);
+    List<Integer> buffer = BoundedBuffer.atMost(0);
     assertThat(buffer).isEmpty();
     assertThat(buffer.toString()).isEqualTo("[]");
     assertThat(buffer.add(1)).isFalse();
@@ -27,12 +25,12 @@ public class BoundedBufferTest {
   }
 
   @Test public void retaining_empty() {
-    List<Integer> buffer = BoundedBuffer.retaining(1);
+    List<Integer> buffer = BoundedBuffer.atMost(1);
     assertThat(buffer).isEmpty();
   }
 
   @Test public void retainingOne() {
-    List<Integer> buffer = BoundedBuffer.retaining(1);
+    List<Integer> buffer = BoundedBuffer.atMost(1);
     assertThat(buffer).isEmpty();
     assertThat(buffer.toString()).isEqualTo("[]");
     assertThat(buffer.add(1)).isTrue();
@@ -44,7 +42,7 @@ public class BoundedBufferTest {
   }
 
   @Test public void retainingTwo() {
-    List<Integer> buffer = BoundedBuffer.retaining(2);
+    List<Integer> buffer = BoundedBuffer.atMost(2);
     assertThat(buffer).isEmpty();
     assertThat(buffer.toString()).isEqualTo("[]");
     assertThat(buffer.add(1)).isTrue();
