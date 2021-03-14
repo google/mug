@@ -109,6 +109,8 @@ public final class MoreCollectors {
    * Returns a {@code Case} that matches when there are exactly one input element.
    * The element will be the result of the matcher. For example, you can get the only element
    * from a stream using {@code stream.collect(onlyElement())}.
+   *
+   * @since 5.3
    */
   @SuppressWarnings("unchecked")  // This collector takes any T and returns as is.
   public static <T> Case<T, T> onlyElement() {
@@ -119,6 +121,8 @@ public final class MoreCollectors {
    * Returns a {@code Case} that matches when there are exactly one input element,
    * which will be passed to {@code mapper} and the return value is used as the pattern matching
    * result.
+   *
+   * @since 5.3
    */
   public static <T, R> Case<T, R> exactly(Function<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
@@ -138,6 +142,8 @@ public final class MoreCollectors {
   /**
    * Returns a {@code Case} that matches when there are exactly two input elements,
    * which will be passed to {@code mapper} and the return value will be the result.
+   *
+   * @since 5.3
    */
   public static <T, R> Case<T, R> exactly(
       BiFunction<? super T, ? super T, ? extends R> mapper) {
@@ -155,6 +161,8 @@ public final class MoreCollectors {
   /**
    * Returns a {@code Case} that matches when there are exactly three input elements,
    * which will be passed to {@code mapper} and the return value will be the result.
+   *
+   * @since 5.3
    */
   public static <T, R> Case<T, R> exactly(Ternary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
@@ -171,6 +179,8 @@ public final class MoreCollectors {
   /**
    * Returns a {@code Case} that matches when there are exactly four input elements,
    * which will be passed to {@code mapper} and the return value will be the result.
+   *
+   * @since 5.3
    */
   public static <T, R> Case<T, R> exactly(Quarternary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
@@ -187,6 +197,8 @@ public final class MoreCollectors {
   /**
    * Returns a {@code Case} that matches when there are exactly five input elements,
    * which will be passed to {@code mapper} and the return value will be the result.
+   *
+   * @since 5.3
    */
   public static <T, R> Case<T, R> exactly(Quinary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
@@ -203,6 +215,8 @@ public final class MoreCollectors {
   /**
    * Returns a {@code Case} that matches when there are exactly six input elements,
    * which will be passed to {@code mapper} and the return value will be the result.
+   *
+   * @since 5.3
    */
   public static <T, R> Case<T, R> exactly(Senary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
@@ -220,6 +234,8 @@ public final class MoreCollectors {
   /**
    * Returns a {@code Case} that matches when there are at least one input elements,
    * which will be passed to {@code mapper} and the return value will be the result.
+   *
+   * @since 5.3
    */
   public static <T, R> Case<T, R> atLeast(Function<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
@@ -239,6 +255,8 @@ public final class MoreCollectors {
   /**
    * Returns a {@code Case} that matches when there are at least two input elements,
    * which will be passed to {@code mapper} and the return value will be the result.
+   *
+   * @since 5.3
    */
   public static <T, R> Case<T, R> atLeast(
       BiFunction<? super T, ? super T, ? extends R> mapper) {
@@ -256,6 +274,8 @@ public final class MoreCollectors {
   /**
    * Returns a {@code Case} that matches when there are at least three input elements,
    * which will be passed to {@code mapper} and the return value will be the result.
+   *
+   * @since 5.3
    */
   public static <T, R> Case<T, R> atLeast(Ternary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
@@ -272,6 +292,8 @@ public final class MoreCollectors {
   /**
    * Returns a {@code Case} that matches when there are at least four input elements,
    * which will be passed to {@code mapper} and the return value will be the result.
+   *
+   * @since 5.3
    */
   public static <T, R> Case<T, R> atLeast(Quarternary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
@@ -288,6 +310,8 @@ public final class MoreCollectors {
   /**
    * Returns a {@code Case} that matches when there are at least five input elements,
    * which will be passed to {@code mapper} and the return value will be the result.
+   *
+   * @since 5.3
    */
   public static <T, R> Case<T, R> atLeast(Quinary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
@@ -304,6 +328,8 @@ public final class MoreCollectors {
   /**
    * Returns a {@code Case} that matches when there are at least six input elements,
    * which will be passed to {@code mapper} and the return value will be the result.
+   *
+   * @since 5.3
    */
   public static <T, R> Case<T, R> atLeast(Senary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
