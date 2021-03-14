@@ -25,7 +25,7 @@ import com.google.mu.util.Both;
  * @since 5.2
  */
 public final class MoreCollectors {
-  private static final Case<Object, ?> ONLY_ELEMENT = exactly(Function.identity());
+  private static final Case<Object, ?, ?> ONLY_ELEMENT = exactly(Function.identity());
 
   /**
    * Analogous to {@link Collectors#mapping Collectors.mapping()}, applies a mapping function to
@@ -113,8 +113,8 @@ public final class MoreCollectors {
    * @since 5.3
    */
   @SuppressWarnings("unchecked")  // This collector takes any T and returns as is.
-  public static <T> Case<T, T> onlyElement() {
-    return (Case<T, T>) ONLY_ELEMENT;
+  public static <T> Case<T, ?, T> onlyElement() {
+    return (Case<T, ?, T>) ONLY_ELEMENT;
   }
 
   /**
@@ -124,7 +124,7 @@ public final class MoreCollectors {
    *
    * @since 5.3
    */
-  public static <T, R> Case<T, R> exactly(Function<? super T, ? extends R> mapper) {
+  public static <T, R> Case<T, ?, R> exactly(Function<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new Case.ExactSize<T, R>() {
       @Override R map(List<? extends T> list) {
@@ -145,7 +145,7 @@ public final class MoreCollectors {
    *
    * @since 5.3
    */
-  public static <T, R> Case<T, R> exactly(
+  public static <T, R> Case<T, ?, R> exactly(
       BiFunction<? super T, ? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new Case.ExactSize<T, R>() {
@@ -164,7 +164,7 @@ public final class MoreCollectors {
    *
    * @since 5.3
    */
-  public static <T, R> Case<T, R> exactly(Ternary<? super T, ? extends R> mapper) {
+  public static <T, R> Case<T, ?, R> exactly(Ternary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new Case.ExactSize<T, R>() {
       @Override R map(List<? extends T> list) {
@@ -182,7 +182,7 @@ public final class MoreCollectors {
    *
    * @since 5.3
    */
-  public static <T, R> Case<T, R> exactly(Quarternary<? super T, ? extends R> mapper) {
+  public static <T, R> Case<T, ?, R> exactly(Quarternary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new Case.ExactSize<T, R>() {
       @Override R map(List<? extends T> list) {
@@ -200,7 +200,7 @@ public final class MoreCollectors {
    *
    * @since 5.3
    */
-  public static <T, R> Case<T, R> exactly(Quinary<? super T, ? extends R> mapper) {
+  public static <T, R> Case<T, ?, R> exactly(Quinary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new Case.ExactSize<T, R>() {
       @Override R map(List<? extends T> list) {
@@ -218,7 +218,7 @@ public final class MoreCollectors {
    *
    * @since 5.3
    */
-  public static <T, R> Case<T, R> exactly(Senary<? super T, ? extends R> mapper) {
+  public static <T, R> Case<T, ?, R> exactly(Senary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new Case.ExactSize<T, R>() {
       @Override R map(List<? extends T> list) {
@@ -237,7 +237,7 @@ public final class MoreCollectors {
    *
    * @since 5.3
    */
-  public static <T, R> Case<T, R> atLeast(Function<? super T, ? extends R> mapper) {
+  public static <T, R> Case<T, ?, R> atLeast(Function<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new Case.MinSize<T, R>() {
       @Override R map(List<? extends T> list) {
@@ -258,7 +258,7 @@ public final class MoreCollectors {
    *
    * @since 5.3
    */
-  public static <T, R> Case<T, R> atLeast(
+  public static <T, R> Case<T, ?, R> atLeast(
       BiFunction<? super T, ? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new Case.MinSize<T, R>() {
@@ -277,7 +277,7 @@ public final class MoreCollectors {
    *
    * @since 5.3
    */
-  public static <T, R> Case<T, R> atLeast(Ternary<? super T, ? extends R> mapper) {
+  public static <T, R> Case<T, ?, R> atLeast(Ternary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new Case.MinSize<T, R>() {
       @Override R map(List<? extends T> list) {
@@ -295,7 +295,7 @@ public final class MoreCollectors {
    *
    * @since 5.3
    */
-  public static <T, R> Case<T, R> atLeast(Quarternary<? super T, ? extends R> mapper) {
+  public static <T, R> Case<T, ?, R> atLeast(Quarternary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new Case.MinSize<T, R>() {
       @Override R map(List<? extends T> list) {
@@ -313,7 +313,7 @@ public final class MoreCollectors {
    *
    * @since 5.3
    */
-  public static <T, R> Case<T, R> atLeast(Quinary<? super T, ? extends R> mapper) {
+  public static <T, R> Case<T, ?, R> atLeast(Quinary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new Case.MinSize<T, R>() {
       @Override R map(List<? extends T> list) {
@@ -331,7 +331,7 @@ public final class MoreCollectors {
    *
    * @since 5.3
    */
-  public static <T, R> Case<T, R> atLeast(Senary<? super T, ? extends R> mapper) {
+  public static <T, R> Case<T, ?, R> atLeast(Senary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new Case.MinSize<T, R>() {
       @Override R map(List<? extends T> list) {

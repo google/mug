@@ -56,7 +56,7 @@ import java.util.stream.Collectors;
  *
  * @since 5.3
  */
-public abstract class Case<T, R> implements Collector<T, List<T>, R> {
+public abstract class Case<T, A, R> implements Collector<T, A, R> {
   private static final int MAX_CARDINALITY = 8;
 
   /**
@@ -77,12 +77,12 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
    */
   @SafeVarargs
   public static <T, R> Optional<R> match(
-      List<T> list, Case<? super T, ? extends R>... cases) {
+      List<T> list, Case<? super T, ?, ? extends R>... cases) {
     requireNonNull(list);
-    for (Case<?, ?> pattern : cases) {
+    for (Case<?, ?, ?> pattern : cases) {
       requireNonNull(pattern);
     }
-    for (Case<? super T, ? extends R> pattern : cases) {
+    for (Case<? super T, ?, ? extends R> pattern : cases) {
       if (pattern.matches(list)) {
         return Optional.of(pattern.map(list));
       }
@@ -95,7 +95,7 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
    * that satisfies {@code condition}. Upon match, the single element is passed to {@code mapper} and
    * the return value will be the result.
    */
-  public static <T, R> Case<T, R> when(
+  public static <T, R> Case<T, ?, R> when(
       Predicate<? super T> condition, Function<? super T, ? extends R> mapper) {
     requireNonNull(condition);
     requireNonNull(mapper);
@@ -120,7 +120,7 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
    * that satisfy {@code condition}. Upon match, the two elements are passed to {@code mapper} and
    * the return value will be the result.
    */
-  public static <T, R> Case<T, R> when(
+  public static <T, R> Case<T, ?, R> when(
       BiPredicate<? super T, ? super T> condition,
       BiFunction<? super T, ? super T, ? extends R> mapper) {
     requireNonNull(condition);
@@ -146,7 +146,7 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
    * in which case, {@code supplier} is invoked whose return value is used as the pattern matching
    * result.
    */
-  public static <T, R> Case<T, R> empty(Supplier<? extends R> supplier) {
+  public static <T, R> Case<T, ?, R> empty(Supplier<? extends R> supplier) {
     requireNonNull(supplier);
     return new ExactSize<T, R>() {
       @Override R map(List<? extends T> list) {
@@ -164,56 +164,44 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
   abstract boolean matches(List<? extends T> list);
   abstract R map(List<? extends T> list);
 
-  /**
-   * Returns the buffer to hold temporary elements.
-   *
-   * <p>The returned list fails fast if the number of input elements exceeds max siae.
-   */
-  abstract List<T> newBuffer();
-
-  abstract int arity();
-
   /** Returns the string representation of this {@code Case}. */
   @Override public abstract String toString();
 
-  @Override public final Supplier<List<T>> supplier() {
-    return this::newBuffer;
+  private static abstract class ShortListCase<T, R> extends Case<T, List<T>, R> {
+    @Override public final BiConsumer<List<T>, T> accumulator() {
+      return List::add;
+    }
+
+    @Override public final BinaryOperator<List<T>> combiner() {
+      return (l1, l2) -> {
+        return l1;
+      };
+    }
+
+    @Override public final Function<List<T>, R> finisher() {
+      return l -> {
+        if (matches(l)) {
+          return map(l);
+        }
+        throw new IllegalArgumentException(
+            "Input " + showShortList(l) + " doesn't match pattern <" + this + ">.");
+      };
+    }
+
+    @Override public final Set<Characteristics> characteristics() {
+      return Collections.emptySet();
+    }
+
+    private static String showShortList(List<?> list) {
+      return list.size() <= MAX_CARDINALITY  // If small enough, just show it.
+          ? "(" + list + ")"
+          : "of size = " + list.size() + " (["
+              + list.stream().limit(8).map(Object::toString).collect(Collectors.joining(", "))
+              + ", ...])";
+    }
   }
 
-  @Override public final BiConsumer<List<T>, T> accumulator() {
-    return List::add;
-  }
-
-  @Override public final BinaryOperator<List<T>> combiner() {
-    return (l1, l2) -> {
-      l1.addAll(l2);
-      return l1;
-    };
-  }
-
-  @Override public final Function<List<T>, R> finisher() {
-    return l -> {
-      if (matches(l)) {
-        return map(l);
-      }
-      throw new IllegalArgumentException(
-          "Input " + showShortList(l) + " doesn't match pattern <" + this + ">.");
-    };
-  }
-
-  @Override public final Set<Characteristics> characteristics() {
-    return Collections.emptySet();
-  }
-
-  private static String showShortList(List<?> list) {
-    return list.size() <= MAX_CARDINALITY  // If small enough, just show it.
-        ? "(" + list + ")"
-        : "of size = " + list.size() + " (["
-            + list.stream().limit(8).map(Object::toString).collect(Collectors.joining(", "))
-            + ", ...])";
-  }
-
-  static abstract class ExactSize<T, R> extends Case<T, R> {
+  static abstract class ExactSize<T, R> extends ShortListCase<T,  R> {
     @Override boolean matches(List<? extends T> list) {
       return list.size() == arity();
     }
@@ -222,12 +210,14 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
       return "exactly " + arity() + " elements";
     }
 
-    @Override List<T> newBuffer() {
-      return new BoundedBuffer<>(arity() + 1);
+    @Override public final Supplier<List<T>> supplier() {
+      return () -> new BoundedBuffer<>(arity() + 1);
     }
+
+    abstract int arity();
   }
 
-  static abstract class MinSize<T, R> extends Case<T, R> {
+  static abstract class MinSize<T, R> extends ShortListCase<T,  R> {
     @Override boolean matches(List<? extends T> list) {
       return list.size() >= arity();
     }
@@ -236,9 +226,11 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
       return "at least " + arity() + " elements";
     }
 
-    @Override List<T> newBuffer() {
-      return new BoundedBuffer<>(arity());
+    @Override public final Supplier<List<T>> supplier() {
+      return () -> new BoundedBuffer<>(arity());
     }
+
+    abstract int arity();
   }
 
   Case() {}
