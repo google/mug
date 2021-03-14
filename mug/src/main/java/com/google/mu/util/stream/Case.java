@@ -30,6 +30,11 @@ import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
+import com.google.mu.function.Quarternary;
+import com.google.mu.function.Quinary;
+import com.google.mu.function.Senary;
+import com.google.mu.function.Ternary;
+
 /**
  * Utility class to perform n-ary functional pattern matching on a list or a stream of input elements.
  *
@@ -88,6 +93,107 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
       }
     }
     return Optional.empty();
+  }
+
+  /**
+   * Returns a {@code Case} that matches when there are at least six input elements,
+   * which will be passed to {@code mapper} and the return value will be the result.
+   */
+  public static <T, R> Case<T, ?, R> atLeast(Senary<? super T, ? extends R> mapper) {
+    requireNonNull(mapper);
+    return new MinSize<T, R>() {
+      @Override R map(List<? extends T> list) {
+        return mapper.apply(
+            list.get(0), list.get(1), list.get(2), list.get(3), list.get(4), list.get(5));
+      }
+      @Override int arity() {
+        return 6;
+      }
+    };
+  }
+
+  /**
+   * Returns a {@code Case} that matches when there are at least five input elements,
+   * which will be passed to {@code mapper} and the return value will be the result.
+   */
+  public static <T, R> Case<T, ?, R> atLeast(Quinary<? super T, ? extends R> mapper) {
+    requireNonNull(mapper);
+    return new MinSize<T, R>() {
+      @Override R map(List<? extends T> list) {
+        return mapper.apply(list.get(0), list.get(1), list.get(2), list.get(3), list.get(4));
+      }
+      @Override int arity() {
+        return 5;
+      }
+    };
+  }
+
+  /**
+   * Returns a {@code Case} that matches when there are at least four input elements,
+   * which will be passed to {@code mapper} and the return value will be the result.
+   */
+  public static <T, R> Case<T, ?, R> atLeast(Quarternary<? super T, ? extends R> mapper) {
+    requireNonNull(mapper);
+    return new MinSize<T, R>() {
+      @Override R map(List<? extends T> list) {
+        return mapper.apply(list.get(0), list.get(1), list.get(2), list.get(3));
+      }
+      @Override int arity() {
+        return 4;
+      }
+    };
+  }
+
+  /**
+   * Returns a {@code Case} that matches when there are at least three input elements,
+   * which will be passed to {@code mapper} and the return value will be the result.
+   */
+  public static <T, R> Case<T, ?, R> atLeast(Ternary<? super T, ? extends R> mapper) {
+    requireNonNull(mapper);
+    return new MinSize<T, R>() {
+      @Override R map(List<? extends T> list) {
+        return mapper.apply(list.get(0), list.get(1), list.get(2));
+      }
+      @Override int arity() {
+        return 3;
+      }
+    };
+  }
+
+  /**
+   * Returns a {@code Case} that matches when there are at least two input elements,
+   * which will be passed to {@code mapper} and the return value will be the result.
+   */
+  public static <T, R> Case<T, ?, R> atLeast(
+      BiFunction<? super T, ? super T, ? extends R> mapper) {
+    requireNonNull(mapper);
+    return new MinSize<T, R>() {
+      @Override R map(List<? extends T> list) {
+        return mapper.apply(list.get(0), list.get(1));
+      }
+      @Override int arity() {
+        return 2;
+      }
+    };
+  }
+
+  /**
+   * Returns a {@code Case} that matches when there are at least one input elements,
+   * which will be passed to {@code mapper} and the return value will be the result.
+   */
+  public static <T, R> Case<T, ?, R> atLeast(Function<? super T, ? extends R> mapper) {
+    requireNonNull(mapper);
+    return new MinSize<T, R>() {
+      @Override R map(List<? extends T> list) {
+        return mapper.apply(list.get(0));
+      }
+      @Override int arity() {
+        return 1;
+      }
+      @Override public String toString() {
+        return "at least 1 element";
+      }
+    };
   }
 
   /**
@@ -217,7 +323,7 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
     abstract int arity();
   }
 
-  static abstract class MinSize<T, R> extends ShortListCase<T,  R> {
+  private static abstract class MinSize<T, R> extends ShortListCase<T,  R> {
     @Override boolean matches(List<? extends T> list) {
       return list.size() >= arity();
     }
