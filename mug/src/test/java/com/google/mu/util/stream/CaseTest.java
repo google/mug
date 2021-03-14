@@ -18,10 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.stream.Case.match;
 import static com.google.mu.util.stream.MoreCollectors.atLeast;
-import static com.google.mu.util.stream.MoreCollectors.empty;
 import static com.google.mu.util.stream.MoreCollectors.exactly;
-import static com.google.mu.util.stream.MoreCollectors.firstElement;
-import static com.google.mu.util.stream.MoreCollectors.lastElement;
 import static com.google.mu.util.stream.MoreCollectors.onlyElement;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -37,14 +34,14 @@ import com.google.common.testing.NullPointerTester;
 @RunWith(JUnit4.class)
 public class CaseTest {
   @Test public void testEmpty() {
-    assertThat(match(asList(), empty(() -> "ok"))).hasValue("ok");
-    assertThat(match(asList(1), empty(() -> "ok"))).isEmpty();
+    assertThat(match(asList(), Case.empty(() -> "ok"))).hasValue("ok");
+    assertThat(match(asList(1), Case.empty(() -> "ok"))).isEmpty();
   }
 
   @Test public void testEmpty_asCollector() {
-    assertThat(Stream.empty().collect(empty(() -> "ok"))).isEqualTo("ok");
+    assertThat(Stream.empty().collect(Case.empty(() -> "ok"))).isEqualTo("ok");
     IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> Stream.of(1).collect(empty(() -> "ok")));
+        assertThrows(IllegalArgumentException.class, () -> Stream.of(1).collect(Case.empty(() -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Input ([1]) doesn't match pattern <empty>.");
   }
@@ -154,34 +151,6 @@ public class CaseTest {
         () -> Stream.of(1, 2).collect(exactly((a, b, c, d, e, f) -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Input ([1, 2]) doesn't match pattern <exactly 6 elements>.");
-  }
-
-  @Test public void testFirstElement() {
-    assertThat(firstElement()).isSameAs(firstElement());
-    assertThat(match(asList(1), firstElement())).hasValue(1);
-    assertThat(match(asList(1, 2, 3), firstElement())).hasValue(1);
-    assertThat(match(asList(), firstElement())).isEmpty();
-  }
-
-  @Test public void testFirstElement_asCollector() {
-    assertThat(Stream.of(1).collect(firstElement()).intValue()).isEqualTo(1);
-    assertThat(Stream.of(1, 2, 3).collect(firstElement()).intValue()).isEqualTo(1);
-    assertThrows(
-        IllegalArgumentException.class, () -> Stream.empty().collect(firstElement()));
-  }
-
-  @Test public void testLastElement() {
-    assertThat(lastElement()).isSameAs(lastElement());
-    assertThat(match(asList(1), lastElement())).hasValue(1);
-    assertThat(match(asList(1, 2, 3), lastElement())).hasValue(3);
-    assertThat(match(asList(), lastElement())).isEmpty();
-  }
-
-  @Test public void testLastElement_asCollector() {
-    assertThat(Stream.of(1).collect(lastElement()).intValue()).isEqualTo(1);
-    assertThat(Stream.of(1, 2, 3).collect(lastElement()).intValue()).isEqualTo(3);
-    assertThrows(
-        IllegalArgumentException.class, () -> Stream.empty().collect(lastElement()));
   }
 
   @Test public void testAtLeastOneElement() {

@@ -16,7 +16,6 @@ package com.google.mu.util.stream;
 
 import static java.util.Objects.requireNonNull;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -61,29 +60,34 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
   private static final int MAX_CARDINALITY = 8;
 
   /**
-   * Returns a {@code Case} that matches when there are exactly two input elements
-   * that satisfy {@code condition}. Upon match, the two elements are passed to {@code mapper} and
-   * the return value will be the result.
+   * Expands the input elements in {@code list} and transforms them using the
+   * first from {@code cases} that matches. If no case matches the input elements,
+   * {@code Optional.empty()} is returned.
+   *
+   * <p>For example, to switch among multiple possible cases:
+   * <pre>{@code
+   * import static com.google.mu.util.stream.MoreCollectors.*;
+   *
+   * Optional<R> result =
+   *     Case.match(
+   *         list,
+   *         exactly((a, b) -> ...),
+   *         atLeast((a, b, c) -> ...));
+   * }</pre>
    */
-  public static <T, R> Case<T, R> when(
-      BiPredicate<? super T, ? super T> condition,
-      BiFunction<? super T, ? super T, ? extends R> mapper) {
-    requireNonNull(condition);
-    requireNonNull(mapper);
-    return new ExactSize<T, R>() {
-      @Override boolean matches(List<? extends T> list) {
-        return super.matches(list) && condition.test(list.get(0), list.get(1));
+  @SafeVarargs
+  public static <T, R> Optional<R> match(
+      List<T> list, Case<? super T, ? extends R>... cases) {
+    requireNonNull(list);
+    for (Case<?, ?> pattern : cases) {
+      requireNonNull(pattern);
+    }
+    for (Case<? super T, ? extends R> pattern : cases) {
+      if (pattern.matches(list)) {
+        return Optional.of(pattern.map(list));
       }
-      @Override R map(List<? extends T> list) {
-        return mapper.apply(list.get(0), list.get(1));
-      }
-      @Override public String toString() {
-        return "exactly 2 elements that satisfies " + condition;
-      }
-      @Override int arity() {
-        return 2;
-      }
-    };
+    }
+    return Optional.empty();
   }
 
   /**
@@ -112,36 +116,49 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
   }
 
   /**
-   * Expands the input elements in {@code list} and transforms them using the
-   * first from {@code cases} that matches. If no case matches the input elements,
-   * {@code Optional.empty()} is returned.
-   *
-   * <p>For example, to switch among multiple possible cases:
-   * <pre>{@code
-   * import static com.google.mu.util.stream.MoreCollectors.*;
-   *
-   * Optional<R> result =
-   *     Case.match(
-   *         list,
-   *         exactly((a, b) -> ...),
-   *         atLeast((a, b, c) -> ...));
-   * }</pre>
+   * Returns a {@code Case} that matches when there are exactly two input elements
+   * that satisfy {@code condition}. Upon match, the two elements are passed to {@code mapper} and
+   * the return value will be the result.
    */
-  @SafeVarargs
-  public static <T, R> Optional<R> match(
-      List<T> list, Case<? super T, ? extends R>... cases) {
-    return match(list, copyOf(cases));
+  public static <T, R> Case<T, R> when(
+      BiPredicate<? super T, ? super T> condition,
+      BiFunction<? super T, ? super T, ? extends R> mapper) {
+    requireNonNull(condition);
+    requireNonNull(mapper);
+    return new ExactSize<T, R>() {
+      @Override boolean matches(List<? extends T> list) {
+        return super.matches(list) && condition.test(list.get(0), list.get(1));
+      }
+      @Override R map(List<? extends T> list) {
+        return mapper.apply(list.get(0), list.get(1));
+      }
+      @Override public String toString() {
+        return "exactly 2 elements that satisfies " + condition;
+      }
+      @Override int arity() {
+        return 2;
+      }
+    };
   }
 
-  static <T, R> Optional<R> match(
-      List<T> list, Iterable<? extends Case<? super T, ? extends R>> cases) {
-    requireNonNull(list);
-    for (Case<? super T, ? extends R> pattern : cases) {
-      if (pattern.matches(list)) {
-        return Optional.of(pattern.map(list));
+  /**
+   * Returns a {@code Case} that matches when there are zero input elements,
+   * in which case, {@code supplier} is invoked whose return value is used as the pattern matching
+   * result.
+   */
+  public static <T, R> Case<T, R> empty(Supplier<? extends R> supplier) {
+    requireNonNull(supplier);
+    return new ExactSize<T, R>() {
+      @Override R map(List<? extends T> list) {
+        return supplier.get();
       }
-    }
-    return Optional.empty();
+      @Override public String toString() {
+        return "empty";
+      }
+      @Override int arity() {
+        return 0;
+      }
+    };
   }
 
   abstract boolean matches(List<? extends T> list);
@@ -206,7 +223,7 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
     }
 
     @Override List<T> newBuffer() {
-      return BoundedBuffer.atMost(arity() + 1);
+      return new BoundedBuffer<>(arity() + 1);
     }
   }
 
@@ -220,17 +237,8 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
     }
 
     @Override List<T> newBuffer() {
-      return BoundedBuffer.atMost(arity());
+      return new BoundedBuffer<>(arity());
     }
-  }
-
-  @SafeVarargs
-  private static <T> List<T> copyOf(T... values) {
-    List<T> copy = new ArrayList<>(values.length);
-    for (T v : values) {
-      copy.add(requireNonNull(v));
-    }
-    return copy;
   }
 
   Case() {}

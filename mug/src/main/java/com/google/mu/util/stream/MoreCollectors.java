@@ -10,7 +10,6 @@ import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -27,18 +26,6 @@ import com.google.mu.util.Both;
  */
 public final class MoreCollectors {
   private static final Case<Object, ?> ONLY_ELEMENT = exactly(Function.identity());
-  private static final Case<Object, ?> FIRST_ELEMENT = atLeast(Function.identity());
-  private static final Case<Object, Object> LAST_ELEMENT = new Case.MinSize<Object, Object>() {
-    @Override Object map(List<?> list) {
-      return list.get(list.size() - 1);
-    }
-    @Override List<Object> newBuffer() {
-      return BoundedBuffer.retainingLastElementOnly();
-    }
-    @Override int arity() {
-      return 1;
-    }
-  };
 
   /**
    * Analogous to {@link Collectors#mapping Collectors.mapping()}, applies a mapping function to
@@ -116,26 +103,6 @@ public final class MoreCollectors {
       arranger.accept(list);
       return Collections.unmodifiableList(list);
     });
-  }
-
-  /**
-   * Returns a {@code Case} that matches when there are zero input elements,
-   * in which case, {@code supplier} is invoked whose return value is used as the pattern matching
-   * result.
-   */
-  public static <T, R> Case<T, R> empty(Supplier<? extends R> supplier) {
-    requireNonNull(supplier);
-    return new Case.ExactSize<T, R>() {
-      @Override R map(List<? extends T> list) {
-        return supplier.get();
-      }
-      @Override public String toString() {
-        return "empty";
-      }
-      @Override int arity() {
-        return 0;
-      }
-    };
   }
 
   /**
@@ -248,26 +215,6 @@ public final class MoreCollectors {
         return 6;
       }
     };
-  }
-
-  /**
-   * Returns a {@code Case} that matches when there are at least one input element.
-   * The first element will be the result of the matcher. For example, you can get the first
-   * element from a non-empty stream using {@code stream.collect(firstElement())}.
-   */
-  @SuppressWarnings("unchecked")  // This collector takes any T and returns as is.
-  public static <T> Case<T, T> firstElement() {
-    return (Case<T, T>) FIRST_ELEMENT;
-  }
-
-  /**
-   * Returns a {@code Case} that matches when there are at least one input element.
-   * The last element will be the result of the matcher. For example, you can get the last
-   * element from a non-empty stream using {@code stream.collect(lastElement())}.
-   */
-  @SuppressWarnings("unchecked")  // This collector takes any T and returns as is.
-  public static <T> Case<T, T> lastElement() {
-    return (Case<T, T>) LAST_ELEMENT;
   }
 
   /**
