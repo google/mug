@@ -21,7 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** A buffer with bounded max size. */
-abstract class BoundedBuffer<T> extends AbstractList<T> {
+final class BoundedBuffer<T> extends AbstractList<T> {
+  private boolean overflown = false;
   private final int maxSize;
   final List<T> underlying;
 
@@ -43,42 +44,17 @@ abstract class BoundedBuffer<T> extends AbstractList<T> {
     return size() >= maxSize;
   }
 
-  static <T> BoundedBuffer<T> atMost(int maxSize) {
-    return new BoundedBuffer<T>(maxSize) {
-      private boolean overflown = false;
-
-      @Override public boolean add(T e) {
-        if (isFull()) {
-          overflown = true;
-          return false;
-        }
-        return underlying.add(e);
-      }
-
-      @Override public String toString() {
-        return overflown
-            ? "[" + underlying.stream().map(e -> e + ", ").collect(joining("")) + "...]"
-                : underlying.toString();
-      }
-    };
+  @Override public boolean add(T e) {
+    if (isFull()) {
+      overflown = true;
+      return false;
+    }
+    return underlying.add(e);
   }
 
-  static <T> BoundedBuffer<T> retainingLastElementOnly() {
-    return new BoundedBuffer<T>(1) {
-      private boolean overflown = false;
-      @Override public boolean add(T e) {
-        if (isFull()) {
-          overflown = true;
-          underlying.set(0, e);
-          return true;
-        } else {
-          return underlying.add(e);
-        }
-      }
-
-      @Override public String toString() {
-        return overflown ? "[..., " + underlying.get(0) + "]" : underlying.toString();
-      }
-    };
+  @Override public String toString() {
+    return overflown
+        ? "[" + underlying.stream().map(e -> e + ", ").collect(joining("")) + "...]"
+            : underlying.toString();
   }
 }

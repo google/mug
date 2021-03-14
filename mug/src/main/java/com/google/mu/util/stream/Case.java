@@ -60,57 +60,6 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
   private static final int MAX_CARDINALITY = 8;
 
   /**
-   * Returns a {@code Case} that matches when there are exactly two input elements
-   * that satisfy {@code condition}. Upon match, the two elements are passed to {@code mapper} and
-   * the return value will be the result.
-   */
-  public static <T, R> Case<T, R> when(
-      BiPredicate<? super T, ? super T> condition,
-      BiFunction<? super T, ? super T, ? extends R> mapper) {
-    requireNonNull(condition);
-    requireNonNull(mapper);
-    return new ExactSize<T, R>() {
-      @Override boolean matches(List<? extends T> list) {
-        return super.matches(list) && condition.test(list.get(0), list.get(1));
-      }
-      @Override R map(List<? extends T> list) {
-        return mapper.apply(list.get(0), list.get(1));
-      }
-      @Override public String toString() {
-        return "exactly 2 elements that satisfies " + condition;
-      }
-      @Override int arity() {
-        return 2;
-      }
-    };
-  }
-
-  /**
-   * Returns a {@code Case} that matches when there are exactly one input elements
-   * that satisfies {@code condition}. Upon match, the single element is passed to {@code mapper} and
-   * the return value will be the result.
-   */
-  public static <T, R> Case<T, R> when(
-      Predicate<? super T> condition, Function<? super T, ? extends R> mapper) {
-    requireNonNull(condition);
-    requireNonNull(mapper);
-    return new ExactSize<T, R>() {
-      @Override boolean matches(List<? extends T> list) {
-        return super.matches(list) && condition.test(list.get(0));
-      }
-      @Override R map(List<? extends T> list) {
-        return mapper.apply(list.get(0));
-      }
-      @Override public String toString() {
-        return "exactly 1 element that satisfies " + condition;
-      }
-      @Override int arity() {
-        return 1;
-      }
-    };
-  }
-
-  /**
    * Expands the input elements in {@code list} and transforms them using the
    * first from {@code cases} that matches. If no case matches the input elements,
    * {@code Optional.empty()} is returned.
@@ -139,6 +88,77 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
       }
     }
     return Optional.empty();
+  }
+
+  /**
+   * Returns a {@code Case} that matches when there are exactly one input elements
+   * that satisfies {@code condition}. Upon match, the single element is passed to {@code mapper} and
+   * the return value will be the result.
+   */
+  public static <T, R> Case<T, R> when(
+      Predicate<? super T> condition, Function<? super T, ? extends R> mapper) {
+    requireNonNull(condition);
+    requireNonNull(mapper);
+    return new ExactSize<T, R>() {
+      @Override boolean matches(List<? extends T> list) {
+        return super.matches(list) && condition.test(list.get(0));
+      }
+      @Override R map(List<? extends T> list) {
+        return mapper.apply(list.get(0));
+      }
+      @Override public String toString() {
+        return "exactly 1 element that satisfies " + condition;
+      }
+      @Override int arity() {
+        return 1;
+      }
+    };
+  }
+
+  /**
+   * Returns a {@code Case} that matches when there are exactly two input elements
+   * that satisfy {@code condition}. Upon match, the two elements are passed to {@code mapper} and
+   * the return value will be the result.
+   */
+  public static <T, R> Case<T, R> when(
+      BiPredicate<? super T, ? super T> condition,
+      BiFunction<? super T, ? super T, ? extends R> mapper) {
+    requireNonNull(condition);
+    requireNonNull(mapper);
+    return new ExactSize<T, R>() {
+      @Override boolean matches(List<? extends T> list) {
+        return super.matches(list) && condition.test(list.get(0), list.get(1));
+      }
+      @Override R map(List<? extends T> list) {
+        return mapper.apply(list.get(0), list.get(1));
+      }
+      @Override public String toString() {
+        return "exactly 2 elements that satisfies " + condition;
+      }
+      @Override int arity() {
+        return 2;
+      }
+    };
+  }
+
+  /**
+   * Returns a {@code Case} that matches when there are zero input elements,
+   * in which case, {@code supplier} is invoked whose return value is used as the pattern matching
+   * result.
+   */
+  public static <T, R> Case<T, R> empty(Supplier<? extends R> supplier) {
+    requireNonNull(supplier);
+    return new ExactSize<T, R>() {
+      @Override R map(List<? extends T> list) {
+        return supplier.get();
+      }
+      @Override public String toString() {
+        return "empty";
+      }
+      @Override int arity() {
+        return 0;
+      }
+    };
   }
 
   abstract boolean matches(List<? extends T> list);
@@ -203,7 +223,7 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
     }
 
     @Override List<T> newBuffer() {
-      return BoundedBuffer.atMost(arity() + 1);
+      return new BoundedBuffer<>(arity() + 1);
     }
   }
 
@@ -217,7 +237,7 @@ public abstract class Case<T, R> implements Collector<T, List<T>, R> {
     }
 
     @Override List<T> newBuffer() {
-      return BoundedBuffer.atMost(arity());
+      return new BoundedBuffer<>(arity());
     }
   }
 
