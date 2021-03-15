@@ -111,8 +111,11 @@ public final class MoreCollectors {
    * from a stream using {@code stream.collect(onlyElement())}.
    *
    * <p>If you need to handle the "not only one element" case, consider to use the {@link
-   * Case#match} method, which allows you to pass more than one possible cases, and returns
-   * {@code Optional.empty()} if none of the provided cases match.
+   * Case#match Case.match(List, Case...)} method, which allows you to pass more than one possible
+   * cases, and returns {@code Optional.empty()} if none of the provided cases match.
+   *
+   * <p>There are also non-exact cases such as {@link Case#atLeast(Function) atleast()} and friends,
+   * {@link Case#empty empty()} and {@link Case#when(Predicate, Function) when()} etc.
    *
    * @since 5.3
    */
