@@ -189,7 +189,7 @@ public final class MoreCollectors {
    * Case#match Case.match(List, Case...)} method, which allows you to pass more than one possible
    * cases, and returns {@code Optional.empty()} if none of the provided cases match.
    *
-   * <p>There are also non-exact cases such as {@link Case#atLeast(BiFunction) atleast()} and
+   * <p>There are also non-exact cases such as {@link Case#atLeast(Ternary) atleast()} and
    * friends, {@link Case#empty empty()} and {@link
    * Case#when(java.util.function.BiPredicate, BiFunction) when()} etc.
    *
@@ -215,7 +215,7 @@ public final class MoreCollectors {
    * Case#match Case.match(List, Case...)} method, which allows you to pass more than one possible
    * cases, and returns {@code Optional.empty()} if none of the provided cases match.
    *
-   * <p>There are also non-exact cases such as {@link Case#atLeast(BiFunction) atleast()} and
+   * <p>There are also non-exact cases such as {@link Case#atLeast(Quarternary) atleast()} and
    * friends, {@link Case#empty empty()} and {@link
    * Case#when(java.util.function.BiPredicate, BiFunction) when()} etc.
    *
@@ -241,7 +241,7 @@ public final class MoreCollectors {
    * Case#match Case.match(List, Case...)} method, which allows you to pass more than one possible
    * cases, and returns {@code Optional.empty()} if none of the provided cases match.
    *
-   * <p>There are also non-exact cases such as {@link Case#atLeast(BiFunction) atleast()} and
+   * <p>There are also non-exact cases such as {@link Case#atLeast(Quinary) atleast()} and
    * friends, {@link Case#empty empty()} and {@link
    * Case#when(java.util.function.BiPredicate, BiFunction) when()} etc.
    *
@@ -267,7 +267,7 @@ public final class MoreCollectors {
    * Case#match Case.match(List, Case...)} method, which allows you to pass more than one possible
    * cases, and returns {@code Optional.empty()} if none of the provided cases match.
    *
-   * <p>There are also non-exact cases such as {@link Case#atLeast(BiFunction) atleast()} and
+   * <p>There are also non-exact cases such as {@link Case#atLeast(Senary) atleast()} and
    * friends, {@link Case#empty empty()} and {@link
    * Case#when(java.util.function.BiPredicate, BiFunction) when()} etc.
    *
