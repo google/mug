@@ -112,7 +112,7 @@ public final class MoreCollectors {
    *
    * <p>If you need to handle the "not only one element" case, consider to use the {@link
    * Case#match} method, which allows you to pass more than one possible cases, and returns
-   * {@code Optional.empty()] if none of the provided cases match.
+   * {@code Optional.empty()} if none of the provided cases match.
    *
    * @since 5.3
    */
@@ -128,8 +128,8 @@ public final class MoreCollectors {
    * <p>Equivalent to {@code collectingAndThen(onlyElement(), mapper)}.
    *
    * <p>If you need to handle the "not only one element" case, consider to use the {@link
-   * Case#match} method, which allows you to pass more than one possible cases, and returns
-   * {@code Optional.empty()] if none of the provided cases match.
+   * Case#match Case.match(List, Case...)} method, which allows you to pass more than one possible
+   * cases, and returns {@code Optional.empty()} if none of the provided cases match.
    *
    * <p>There are also non-exact cases such as {@link Case#atLeast(Function) atleast()} and friends,
    * {@link Case#empty empty()} and {@link Case#when(Predicate, Function) when()} etc.
@@ -156,8 +156,8 @@ public final class MoreCollectors {
    * which will be passed to {@code mapper} and the return value will be the result.
    *
    * <p>If you need to handle the "not only two elements" case, consider to use the {@link
-   * Case#match} method, which allows you to pass more than one possible cases, and returns
-   * {@code Optional.empty()] if none of the provided cases match.
+   * Case#match Case.match(List, Case...)} method, which allows you to pass more than one possible
+   * cases, and returns {@code Optional.empty()} if none of the provided cases match.
    *
    * <p>There are also non-exact cases such as {@link Case#atLeast(BiFunction) atleast()} and
    * friends, {@link Case#empty empty()} and {@link
@@ -183,8 +183,8 @@ public final class MoreCollectors {
    * which will be passed to {@code mapper} and the return value will be the result.
    *
    * <p>If you need to handle the "not only three elements" case, consider to use the {@link
-   * Case#match} method, which allows you to pass more than one possible cases, and returns
-   * {@code Optional.empty()] if none of the provided cases match.
+   * Case#match Case.match(List, Case...)} method, which allows you to pass more than one possible
+   * cases, and returns {@code Optional.empty()} if none of the provided cases match.
    *
    * <p>There are also non-exact cases such as {@link Case#atLeast(BiFunction) atleast()} and
    * friends, {@link Case#empty empty()} and {@link
@@ -209,8 +209,8 @@ public final class MoreCollectors {
    * which will be passed to {@code mapper} and the return value will be the result.
    *
    * <p>If you need to handle the "not only four elements" case, consider to use the {@link
-   * Case#match} method, which allows you to pass more than one possible cases, and returns
-   * {@code Optional.empty()] if none of the provided cases match.
+   * Case#match Case.match(List, Case...)} method, which allows you to pass more than one possible
+   * cases, and returns {@code Optional.empty()} if none of the provided cases match.
    *
    * <p>There are also non-exact cases such as {@link Case#atLeast(BiFunction) atleast()} and
    * friends, {@link Case#empty empty()} and {@link
@@ -235,8 +235,8 @@ public final class MoreCollectors {
    * which will be passed to {@code mapper} and the return value will be the result.
    *
    * <p>If you need to handle the "not only five elements" case, consider to use the {@link
-   * Case#match} method, which allows you to pass more than one possible cases, and returns
-   * {@code Optional.empty()] if none of the provided cases match.
+   * Case#match Case.match(List, Case...)} method, which allows you to pass more than one possible
+   * cases, and returns {@code Optional.empty()} if none of the provided cases match.
    *
    * <p>There are also non-exact cases such as {@link Case#atLeast(BiFunction) atleast()} and
    * friends, {@link Case#empty empty()} and {@link
@@ -261,8 +261,8 @@ public final class MoreCollectors {
    * which will be passed to {@code mapper} and the return value will be the result.
    *
    * <p>If you need to handle the "not only six elements" case, consider to use the {@link
-   * Case#match} method, which allows you to pass more than one possible cases, and returns
-   * {@code Optional.empty()] if none of the provided cases match.
+   * Case#match Case.match(List, Case...)} method, which allows you to pass more than one possible
+   * cases, and returns {@code Optional.empty()} if none of the provided cases match.
    *
    * <p>There are also non-exact cases such as {@link Case#atLeast(BiFunction) atleast()} and
    * friends, {@link Case#empty empty()} and {@link
