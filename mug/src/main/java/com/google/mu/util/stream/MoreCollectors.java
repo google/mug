@@ -110,6 +110,10 @@ public final class MoreCollectors {
    * The element will be the result of the matcher. For example, you can get the only element
    * from a stream using {@code stream.collect(onlyElement())}.
    *
+   * <p>If you need to handle the "not only one element" case, consider to use the {@link
+   * Case#match} method, which allows you to pass more than one possible cases, and returns
+   * {@code Optional.empty()] if none of the provided cases match.
+   *
    * @since 5.3
    */
   @SuppressWarnings("unchecked")  // This collector takes any T and returns as is.
@@ -119,8 +123,16 @@ public final class MoreCollectors {
 
   /**
    * Returns a {@code Case} that matches when there are exactly one input element,
-   * which will be passed to {@code mapper} and the return value is used as the pattern matching
-   * result.
+   * which will be passed to {@code mapper} and the return value is used as the result.
+   *
+   * <p>Equivalent to {@code collectingAndThen(onlyElement(), mapper)}.
+   *
+   * <p>If you need to handle the "not only one element" case, consider to use the {@link
+   * Case#match} method, which allows you to pass more than one possible cases, and returns
+   * {@code Optional.empty()] if none of the provided cases match.
+   *
+   * <p>There are also non-exact cases such as {@link Case#atLeast(Function) atleast()} and friends,
+   * {@link Case#empty empty()} and {@link Case#when(Predicate, Function) when()} etc.
    *
    * @since 5.3
    */
@@ -143,6 +155,14 @@ public final class MoreCollectors {
    * Returns a {@code Case} that matches when there are exactly two input elements,
    * which will be passed to {@code mapper} and the return value will be the result.
    *
+   * <p>If you need to handle the "not only two elements" case, consider to use the {@link
+   * Case#match} method, which allows you to pass more than one possible cases, and returns
+   * {@code Optional.empty()] if none of the provided cases match.
+   *
+   * <p>There are also non-exact cases such as {@link Case#atLeast(BiFunction) atleast()} and
+   * friends, {@link Case#empty empty()} and {@link
+   * Case#when(java.util.function.BiPredicate, BiFunction) when()} etc.
+   *
    * @since 5.3
    */
   public static <T, R> Case<T, ?, R> exactly(
@@ -162,6 +182,14 @@ public final class MoreCollectors {
    * Returns a {@code Case} that matches when there are exactly three input elements,
    * which will be passed to {@code mapper} and the return value will be the result.
    *
+   * <p>If you need to handle the "not only three elements" case, consider to use the {@link
+   * Case#match} method, which allows you to pass more than one possible cases, and returns
+   * {@code Optional.empty()] if none of the provided cases match.
+   *
+   * <p>There are also non-exact cases such as {@link Case#atLeast(BiFunction) atleast()} and
+   * friends, {@link Case#empty empty()} and {@link
+   * Case#when(java.util.function.BiPredicate, BiFunction) when()} etc.
+   *
    * @since 5.3
    */
   public static <T, R> Case<T, ?, R> exactly(Ternary<? super T, ? extends R> mapper) {
@@ -179,6 +207,14 @@ public final class MoreCollectors {
   /**
    * Returns a {@code Case} that matches when there are exactly four input elements,
    * which will be passed to {@code mapper} and the return value will be the result.
+   *
+   * <p>If you need to handle the "not only four elements" case, consider to use the {@link
+   * Case#match} method, which allows you to pass more than one possible cases, and returns
+   * {@code Optional.empty()] if none of the provided cases match.
+   *
+   * <p>There are also non-exact cases such as {@link Case#atLeast(BiFunction) atleast()} and
+   * friends, {@link Case#empty empty()} and {@link
+   * Case#when(java.util.function.BiPredicate, BiFunction) when()} etc.
    *
    * @since 5.3
    */
@@ -198,6 +234,14 @@ public final class MoreCollectors {
    * Returns a {@code Case} that matches when there are exactly five input elements,
    * which will be passed to {@code mapper} and the return value will be the result.
    *
+   * <p>If you need to handle the "not only five elements" case, consider to use the {@link
+   * Case#match} method, which allows you to pass more than one possible cases, and returns
+   * {@code Optional.empty()] if none of the provided cases match.
+   *
+   * <p>There are also non-exact cases such as {@link Case#atLeast(BiFunction) atleast()} and
+   * friends, {@link Case#empty empty()} and {@link
+   * Case#when(java.util.function.BiPredicate, BiFunction) when()} etc.
+   *
    * @since 5.3
    */
   public static <T, R> Case<T, ?, R> exactly(Quinary<? super T, ? extends R> mapper) {
@@ -215,6 +259,14 @@ public final class MoreCollectors {
   /**
    * Returns a {@code Case} that matches when there are exactly six input elements,
    * which will be passed to {@code mapper} and the return value will be the result.
+   *
+   * <p>If you need to handle the "not only six elements" case, consider to use the {@link
+   * Case#match} method, which allows you to pass more than one possible cases, and returns
+   * {@code Optional.empty()] if none of the provided cases match.
+   *
+   * <p>There are also non-exact cases such as {@link Case#atLeast(BiFunction) atleast()} and
+   * friends, {@link Case#empty empty()} and {@link
+   * Case#when(java.util.function.BiPredicate, BiFunction) when()} etc.
    *
    * @since 5.3
    */
