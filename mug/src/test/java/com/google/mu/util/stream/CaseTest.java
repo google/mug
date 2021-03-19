@@ -386,22 +386,22 @@ public class CaseTest {
 
   @Test public void testOneElementWithCondition() {
     assertThat(findFrom(asList(1), MoreCollectors.onlyElementThat(n -> n == 1, a -> a * 10))).hasValue(10);
-    assertThat(findFrom(asList(), MoreCollectors.onlyElementThat(n -> true, a -> a))).isEmpty();
-    assertThat(findFrom(asList(1, 2), MoreCollectors.onlyElementThat(n -> true, a -> a))).isEmpty();
-    assertThat(findFrom(asList(1), MoreCollectors.onlyElementThat(n -> false, a -> a))).isEmpty();
+    assertThat(findFrom(asList(), MoreCollectors.onlyElementThat(n -> true))).isEmpty();
+    assertThat(findFrom(asList(1, 2), MoreCollectors.onlyElementThat(n -> true))).isEmpty();
+    assertThat(findFrom(asList(1), MoreCollectors.onlyElementThat(n -> false))).isEmpty();
   }
 
   @Test public void testOneElementWithCondition_asCollector() {
     assertThat(Stream.of(1).collect(MoreCollectors.onlyElementThat(n -> n == 1, a -> a * 10)).intValue()).isEqualTo(10);
     assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.empty().collect(MoreCollectors.onlyElementThat(n -> true, a -> a)));
+        () -> Stream.empty().collect(MoreCollectors.onlyElementThat(n -> true)));
     assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.of(1, 2).collect(MoreCollectors.onlyElementThat(n -> true, a -> a)));
+        () -> Stream.of(1, 2).collect(MoreCollectors.onlyElementThat(n -> true)));
     assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.of(1).collect(MoreCollectors.onlyElementThat(n -> false, a -> a)));
+        () -> Stream.of(1).collect(MoreCollectors.onlyElementThat(n -> false)));
   }
 
   @Test public void testTwoElementsWithCondition() {
