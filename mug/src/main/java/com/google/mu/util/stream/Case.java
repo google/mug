@@ -22,10 +22,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -43,26 +41,27 @@ import com.google.mu.function.Ternary;
  * <pre>{@code
  * import static com.google.mu.util.stream.MoreCollectors.exactly;
  *
- * stream.collect(exactly((a, b, c) -> ...));
+ * stream.collect(onlyElements((a, b, c) -> ...));
  * }</pre>
  *
- * Or as one of several possible cases passed to the static {@link #match match()} method.
+ * Or as one of several possible cases passed to the static {@link #findFrom findFrom()} method.
  * For example:
  *
  * <pre>{@code
  * import static com.google.mu.util.stream.MoreCollectors.*;
  *
- * Optional<Path> path = Case.match(
+ * Optional<Path> path = Case.findFrom(
  *     pathComponents,
- *     exactly((parent, child) -> ...),
- *     exactly(fileName -> ...),
- *     atLeast(root -> ...));
+ *     onlyElements((parent, child) -> ...),
+ *     onlyElements(fileName -> ...),
+ *     firstElements(root -> ...));
  * }</pre>
  *
  * @since 5.3
  */
 public abstract class Case<T, A, R> implements Collector<T, A, R> {
   private static final int MAX_CARDINALITY = 8;
+  private static final Case<Object, ?, ?> FIRST_ELEMENT = firstElement(Function.identity());
 
   /**
    * Expands the input elements in {@code list} and transforms them using the
@@ -74,14 +73,14 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
    * import static com.google.mu.util.stream.MoreCollectors.*;
    *
    * Optional<R> result =
-   *     Case.match(
+   *     Case.findFrom(
    *         list,
    *         exactly((a, b) -> ...),
-   *         atLeast((a, b, c) -> ...));
+   *         firstElements((a, b, c) -> ...));
    * }</pre>
    */
   @SafeVarargs
-  public static <T, R> Optional<R> match(
+  public static <T, R> Optional<R> findFrom(
       List<T> list, Case<? super T, ?, ? extends R>... cases) {
     requireNonNull(list);
     for (Case<?, ?, ?> pattern : cases) {
@@ -95,93 +94,17 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
     return Optional.empty();
   }
 
-  /**
-   * Returns a {@code Case} that matches when there are at least six input elements,
-   * which will be passed to {@code mapper} and the return value will be the result.
-   */
-  public static <T, R> Case<T, ?, R> atLeast(Senary<? super T, ? extends R> mapper) {
-    requireNonNull(mapper);
-    return new MinSize<T, R>() {
-      @Override R map(List<? extends T> list) {
-        return mapper.apply(
-            list.get(0), list.get(1), list.get(2), list.get(3), list.get(4), list.get(5));
-      }
-      @Override int arity() {
-        return 6;
-      }
-    };
-  }
-
-  /**
-   * Returns a {@code Case} that matches when there are at least five input elements,
-   * which will be passed to {@code mapper} and the return value will be the result.
-   */
-  public static <T, R> Case<T, ?, R> atLeast(Quinary<? super T, ? extends R> mapper) {
-    requireNonNull(mapper);
-    return new MinSize<T, R>() {
-      @Override R map(List<? extends T> list) {
-        return mapper.apply(list.get(0), list.get(1), list.get(2), list.get(3), list.get(4));
-      }
-      @Override int arity() {
-        return 5;
-      }
-    };
-  }
-
-  /**
-   * Returns a {@code Case} that matches when there are at least four input elements,
-   * which will be passed to {@code mapper} and the return value will be the result.
-   */
-  public static <T, R> Case<T, ?, R> atLeast(Quarternary<? super T, ? extends R> mapper) {
-    requireNonNull(mapper);
-    return new MinSize<T, R>() {
-      @Override R map(List<? extends T> list) {
-        return mapper.apply(list.get(0), list.get(1), list.get(2), list.get(3));
-      }
-      @Override int arity() {
-        return 4;
-      }
-    };
-  }
-
-  /**
-   * Returns a {@code Case} that matches when there are at least three input elements,
-   * which will be passed to {@code mapper} and the return value will be the result.
-   */
-  public static <T, R> Case<T, ?, R> atLeast(Ternary<? super T, ? extends R> mapper) {
-    requireNonNull(mapper);
-    return new MinSize<T, R>() {
-      @Override R map(List<? extends T> list) {
-        return mapper.apply(list.get(0), list.get(1), list.get(2));
-      }
-      @Override int arity() {
-        return 3;
-      }
-    };
-  }
-
-  /**
-   * Returns a {@code Case} that matches when there are at least two input elements,
-   * which will be passed to {@code mapper} and the return value will be the result.
-   */
-  public static <T, R> Case<T, ?, R> atLeast(
-      BiFunction<? super T, ? super T, ? extends R> mapper) {
-    requireNonNull(mapper);
-    return new MinSize<T, R>() {
-      @Override R map(List<? extends T> list) {
-        return mapper.apply(list.get(0), list.get(1));
-      }
-      @Override int arity() {
-        return 2;
-      }
-    };
+  /** Returns a {@code Case} that finds the first element from the input. */
+  @SuppressWarnings("unchecked")  // This Case takes any T and returns T.
+  public static <T> Case<T, ?, T> firstElement() {
+    return (Case<T, ?, T>) FIRST_ELEMENT;
   }
 
   /**
    * Returns a {@code Case} that matches when there are at least one input elements,
    * which will be passed to {@code mapper} and the return value will be the result.
    */
-  public static <T, R> Case<T, ?, R> atLeast(Function<? super T, ? extends R> mapper) {
+  public static <T, R> Case<T, ?, R> firstElement(Function<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new MinSize<T, R>() {
       @Override R map(List<? extends T> list) {
@@ -197,49 +120,15 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
   }
 
   /**
-   * Returns a {@code Case} that matches when there are exactly one input elements
-   * that satisfies {@code condition}. Upon match, the single element is passed to {@code mapper} and
-   * the return value will be the result.
+   * Returns a {@code Case} that matches when there are at least two input elements,
+   * which will be passed to {@code mapper} and the return value will be the result.
    */
-  public static <T, R> Case<T, ?, R> when(
-      Predicate<? super T> condition, Function<? super T, ? extends R> mapper) {
-    requireNonNull(condition);
-    requireNonNull(mapper);
-    return new ExactSize<T, R>() {
-      @Override boolean matches(List<? extends T> list) {
-        return super.matches(list) && condition.test(list.get(0));
-      }
-      @Override R map(List<? extends T> list) {
-        return mapper.apply(list.get(0));
-      }
-      @Override public String toString() {
-        return "exactly 1 element that satisfies " + condition;
-      }
-      @Override int arity() {
-        return 1;
-      }
-    };
-  }
-
-  /**
-   * Returns a {@code Case} that matches when there are exactly two input elements
-   * that satisfy {@code condition}. Upon match, the two elements are passed to {@code mapper} and
-   * the return value will be the result.
-   */
-  public static <T, R> Case<T, ?, R> when(
-      BiPredicate<? super T, ? super T> condition,
+  public static <T, R> Case<T, ?, R> firstElements(
       BiFunction<? super T, ? super T, ? extends R> mapper) {
-    requireNonNull(condition);
     requireNonNull(mapper);
-    return new ExactSize<T, R>() {
-      @Override boolean matches(List<? extends T> list) {
-        return super.matches(list) && condition.test(list.get(0), list.get(1));
-      }
+    return new MinSize<T, R>() {
       @Override R map(List<? extends T> list) {
         return mapper.apply(list.get(0), list.get(1));
-      }
-      @Override public String toString() {
-        return "exactly 2 elements that satisfies " + condition;
       }
       @Override int arity() {
         return 2;
@@ -247,6 +136,70 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
     };
   }
 
+  /**
+   * Returns a {@code Case} that matches when there are at least three input elements,
+   * which will be passed to {@code mapper} and the return value will be the result.
+   */
+  public static <T, R> Case<T, ?, R> firstElements(Ternary<? super T, ? extends R> mapper) {
+    requireNonNull(mapper);
+    return new MinSize<T, R>() {
+      @Override R map(List<? extends T> list) {
+        return mapper.apply(list.get(0), list.get(1), list.get(2));
+      }
+      @Override int arity() {
+        return 3;
+      }
+    };
+  }
+
+  /**
+   * Returns a {@code Case} that matches when there are at least four input elements,
+   * which will be passed to {@code mapper} and the return value will be the result.
+   */
+  public static <T, R> Case<T, ?, R> firstElements(Quarternary<? super T, ? extends R> mapper) {
+    requireNonNull(mapper);
+    return new MinSize<T, R>() {
+      @Override R map(List<? extends T> list) {
+        return mapper.apply(list.get(0), list.get(1), list.get(2), list.get(3));
+      }
+      @Override int arity() {
+        return 4;
+      }
+    };
+  }
+
+  /**
+   * Returns a {@code Case} that matches when there are at least five input elements,
+   * which will be passed to {@code mapper} and the return value will be the result.
+   */
+  public static <T, R> Case<T, ?, R> firstElements(Quinary<? super T, ? extends R> mapper) {
+    requireNonNull(mapper);
+    return new MinSize<T, R>() {
+      @Override R map(List<? extends T> list) {
+        return mapper.apply(list.get(0), list.get(1), list.get(2), list.get(3), list.get(4));
+      }
+      @Override int arity() {
+        return 5;
+      }
+    };
+  }
+
+  /**
+   * Returns a {@code Case} that matches when there are at least six input elements,
+   * which will be passed to {@code mapper} and the return value will be the result.
+   */
+  public static <T, R> Case<T, ?, R> firstElements(Senary<? super T, ? extends R> mapper) {
+    requireNonNull(mapper);
+    return new MinSize<T, R>() {
+      @Override R map(List<? extends T> list) {
+        return mapper.apply(
+            list.get(0), list.get(1), list.get(2), list.get(3), list.get(4), list.get(5));
+      }
+      @Override int arity() {
+        return 6;
+      }
+    };
+  }
   /**
    * Returns a {@code Case} that matches when there are zero input elements,
    * in which case, {@code supplier} is invoked whose return value is used as the pattern matching
@@ -313,7 +266,7 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
     }
 
     @Override public String toString() {
-      return "exactly " + arity() + " elements";
+      return "only " + arity() + " elements";
     }
 
     @Override public final Supplier<List<T>> supplier() {
