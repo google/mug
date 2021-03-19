@@ -8,8 +8,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -25,7 +27,7 @@ import com.google.mu.util.Both;
  * @since 5.2
  */
 public final class MoreCollectors {
-  private static final Case<Object, ?, ?> ONLY_ELEMENT = exactly(Function.identity());
+  private static final Case<Object, ?, ?> ONLY_ELEMENT = onlyElement(Function.identity());
 
   /**
    * Analogous to {@link Collectors#mapping Collectors.mapping()}, applies a mapping function to
@@ -106,16 +108,16 @@ public final class MoreCollectors {
   }
 
   /**
-   * Returns a {@code Case} that matches when there are exactly one input element.
+   * Returns a {@code Case} that matches when there are onlyElements one input element.
    * The element will be the result of the matcher. For example, you can get the only element
    * from a stream using {@code stream.collect(onlyElement())}.
    *
    * <p>If you need to handle the "not only one element" case, consider to use the {@link
-   * Case#match Case.match(List, Case...)} method, which allows you to pass more than one possible
+   * Case#findFrom Case.findFrom(List, Case...)} method, which allows you to pass more than one possible
    * cases, and returns {@code Optional.empty()} if none of the provided cases match.
    *
-   * <p>There are also non-exact cases such as {@link Case#atLeast(Function) atleast()} and friends,
-   * {@link Case#empty empty()} and {@link Case#when(Predicate, Function) when()} etc.
+   * <p>There are also conditional {@link #onlyElementThat(Predicate) onlyElementThat()},
+   * and non-exact cases such as {@link Case#firstElements(Function) firstElements()} and friends.
    *
    * @since 5.3
    */
@@ -125,21 +127,21 @@ public final class MoreCollectors {
   }
 
   /**
-   * Returns a {@code Case} that matches when there are exactly one input element,
+   * Returns a {@code Case} that matches when there are onlyElements one input element,
    * which will be passed to {@code mapper} and the return value is used as the result.
    *
    * <p>Equivalent to {@code collectingAndThen(onlyElement(), mapper)}.
    *
    * <p>If you need to handle the "not only one element" case, consider to use the {@link
-   * Case#match Case.match(List, Case...)} method, which allows you to pass more than one possible
+   * Case#findFrom Case.findFrom(List, Case...)} method, which allows you to pass more than one possible
    * cases, and returns {@code Optional.empty()} if none of the provided cases match.
    *
-   * <p>There are also non-exact cases such as {@link Case#atLeast(Function) atleast()} and friends,
-   * {@link Case#empty empty()} and {@link Case#when(Predicate, Function) when()} etc.
+   * <p>There are also conditional {@link #onlyElementThat(Predicate, Function) onlyElementThat()},
+   * and non-exact cases such as {@link Case#firstElements(Function) firstElements()} and friends.
    *
    * @since 5.3
    */
-  public static <T, R> Case<T, ?, R> exactly(Function<? super T, ? extends R> mapper) {
+  public static <T, R> Case<T, ?, R> onlyElement(Function<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new Case.ExactSize<T, R>() {
       @Override R map(List<? extends T> list) {
@@ -149,26 +151,62 @@ public final class MoreCollectors {
         return 1;
       }
       @Override public String toString() {
-        return "exactly 1 element";
+        return "only 1 element";
       }
     };
   }
 
   /**
-   * Returns a {@code Case} that matches when there are exactly two input elements,
-   * which will be passed to {@code mapper} and the return value will be the result.
-   *
-   * <p>If you need to handle the "not only two elements" case, consider to use the {@link
-   * Case#match Case.match(List, Case...)} method, which allows you to pass more than one possible
-   * cases, and returns {@code Optional.empty()} if none of the provided cases match.
-   *
-   * <p>There are also non-exact cases such as {@link Case#atLeast(BiFunction) atleast()} and
-   * friends, {@link Case#empty empty()} and {@link
-   * Case#when(java.util.function.BiPredicate, BiFunction) when()} etc.
+   * Returns a {@code Case} that matches when there are exactly one input elements
+   * that satisfies {@code condition}.
    *
    * @since 5.3
    */
-  public static <T, R> Case<T, ?, R> exactly(
+  public static <T> Case<T, ?, T> onlyElementThat(Predicate<? super T> condition) {
+    return onlyElementThat(condition, Function.identity());
+  }
+
+  /**
+   * Returns a {@code Case} that matches when there are exactly one input elements
+   * that satisfies {@code condition}. Upon match, the single element is passed to {@code mapper} and
+   * the return value will be the result.
+   *
+   * @since 5.3
+   */
+  public static <T, R> Case<T, ?, R> onlyElementThat(
+      Predicate<? super T> condition, Function<? super T, ? extends R> mapper) {
+    requireNonNull(condition);
+    requireNonNull(mapper);
+    return new Case.ExactSize<T, R>() {
+      @Override boolean matches(List<? extends T> list) {
+        return super.matches(list) && condition.test(list.get(0));
+      }
+      @Override R map(List<? extends T> list) {
+        return mapper.apply(list.get(0));
+      }
+      @Override public String toString() {
+        return "exactly 1 element that satisfies " + condition;
+      }
+      @Override int arity() {
+        return 1;
+      }
+    };
+  }
+
+  /**
+   * Returns a {@code Case} that matches when there are onlyElements two input elements,
+   * which will be passed to {@code mapper} and the return value will be the result.
+   *
+   * <p>If you need to handle the "not only two elements" case, consider to use the {@link
+   * Case#findFrom Case.findFrom(List, Case...)} method, which allows you to pass more than one possible
+   * cases, and returns {@code Optional.empty()} if none of the provided cases match.
+   *
+   * <p>There are also conditional {@link #onlyElementThat(BiPredicate, BiFunction) onlyElementThat()},
+   * and non-exact cases such as {@link Case#firstElements(Function) firstElements()} and friends.
+   *
+   * @since 5.3
+   */
+  public static <T, R> Case<T, ?, R> onlyElements(
       BiFunction<? super T, ? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new Case.ExactSize<T, R>() {
@@ -182,20 +220,47 @@ public final class MoreCollectors {
   }
 
   /**
-   * Returns a {@code Case} that matches when there are exactly three input elements,
-   * which will be passed to {@code mapper} and the return value will be the result.
-   *
-   * <p>If you need to handle the "not only three elements" case, consider to use the {@link
-   * Case#match Case.match(List, Case...)} method, which allows you to pass more than one possible
-   * cases, and returns {@code Optional.empty()} if none of the provided cases match.
-   *
-   * <p>There are also non-exact cases such as {@link Case#atLeast(Ternary) atleast()} and
-   * friends, {@link Case#empty empty()} and {@link
-   * Case#when(java.util.function.BiPredicate, BiFunction) when()} etc.
+   * Returns a {@code Case} that matches when there are exactly two input elements
+   * that satisfy {@code condition}. Upon match, the two elements are passed to {@code mapper} and
+   * the return value will be the result.
    *
    * @since 5.3
    */
-  public static <T, R> Case<T, ?, R> exactly(Ternary<? super T, ? extends R> mapper) {
+  public static <T, R> Case<T, ?, R> onlyElementsThat(
+      BiPredicate<? super T, ? super T> condition,
+      BiFunction<? super T, ? super T, ? extends R> mapper) {
+    requireNonNull(condition);
+    requireNonNull(mapper);
+    return new Case.ExactSize<T, R>() {
+      @Override boolean matches(List<? extends T> list) {
+        return super.matches(list) && condition.test(list.get(0), list.get(1));
+      }
+      @Override R map(List<? extends T> list) {
+        return mapper.apply(list.get(0), list.get(1));
+      }
+      @Override public String toString() {
+        return "exactly 2 elements that satisfies " + condition;
+      }
+      @Override int arity() {
+        return 2;
+      }
+    };
+  }
+
+  /**
+   * Returns a {@code Case} that matches when there are onlyElements three input elements,
+   * which will be passed to {@code mapper} and the return value will be the result.
+   *
+   * <p>If you need to handle the "not only three elements" case, consider to use the {@link
+   * Case#findFrom Case.findFrom(List, Case...)} method, which allows you to pass more than one possible
+   * cases, and returns {@code Optional.empty()} if none of the provided cases match.
+   *
+   * <p>There are also conditional {@link #onlyElementThat(BiPredicate, BiFunction) onlyElementThat()},
+   * and non-exact cases such as {@link Case#firstElements(Ternary) firstElements()} and friends.
+   *
+   * @since 5.3
+   */
+  public static <T, R> Case<T, ?, R> onlyElements(Ternary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new Case.ExactSize<T, R>() {
       @Override R map(List<? extends T> list) {
@@ -208,20 +273,19 @@ public final class MoreCollectors {
   }
 
   /**
-   * Returns a {@code Case} that matches when there are exactly four input elements,
+   * Returns a {@code Case} that matches when there are onlyElements four input elements,
    * which will be passed to {@code mapper} and the return value will be the result.
    *
    * <p>If you need to handle the "not only four elements" case, consider to use the {@link
-   * Case#match Case.match(List, Case...)} method, which allows you to pass more than one possible
+   * Case#findFrom Case.findFrom(List, Case...)} method, which allows you to pass more than one possible
    * cases, and returns {@code Optional.empty()} if none of the provided cases match.
    *
-   * <p>There are also non-exact cases such as {@link Case#atLeast(Quarternary) atleast()} and
-   * friends, {@link Case#empty empty()} and {@link
-   * Case#when(java.util.function.BiPredicate, BiFunction) when()} etc.
+   * <p>There are also conditional {@link #onlyElementThat(BiPredicate, BiFunction) onlyElementThat()},
+   * and non-exact cases such as {@link Case#firstElements(Quarternary) firstElements()} and friends.
    *
    * @since 5.3
    */
-  public static <T, R> Case<T, ?, R> exactly(Quarternary<? super T, ? extends R> mapper) {
+  public static <T, R> Case<T, ?, R> onlyElements(Quarternary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new Case.ExactSize<T, R>() {
       @Override R map(List<? extends T> list) {
@@ -234,20 +298,19 @@ public final class MoreCollectors {
   }
 
   /**
-   * Returns a {@code Case} that matches when there are exactly five input elements,
+   * Returns a {@code Case} that matches when there are onlyElements five input elements,
    * which will be passed to {@code mapper} and the return value will be the result.
    *
    * <p>If you need to handle the "not only five elements" case, consider to use the {@link
-   * Case#match Case.match(List, Case...)} method, which allows you to pass more than one possible
+   * Case#findFrom Case.findFrom(List, Case...)} method, which allows you to pass more than one possible
    * cases, and returns {@code Optional.empty()} if none of the provided cases match.
    *
-   * <p>There are also non-exact cases such as {@link Case#atLeast(Quinary) atleast()} and
-   * friends, {@link Case#empty empty()} and {@link
-   * Case#when(java.util.function.BiPredicate, BiFunction) when()} etc.
+   * <p>There are also conditional {@link #onlyElementThat(BiPredicate, BiFunction) onlyElementThat()},
+   * and non-exact cases such as {@link Case#firstElements(Quinary) firstElements()} and friends.
    *
    * @since 5.3
    */
-  public static <T, R> Case<T, ?, R> exactly(Quinary<? super T, ? extends R> mapper) {
+  public static <T, R> Case<T, ?, R> onlyElements(Quinary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new Case.ExactSize<T, R>() {
       @Override R map(List<? extends T> list) {
@@ -260,20 +323,19 @@ public final class MoreCollectors {
   }
 
   /**
-   * Returns a {@code Case} that matches when there are exactly six input elements,
+   * Returns a {@code Case} that matches when there are onlyElements six input elements,
    * which will be passed to {@code mapper} and the return value will be the result.
    *
    * <p>If you need to handle the "not only six elements" case, consider to use the {@link
-   * Case#match Case.match(List, Case...)} method, which allows you to pass more than one possible
+   * Case#findFrom Case.findFrom(List, Case...)} method, which allows you to pass more than one possible
    * cases, and returns {@code Optional.empty()} if none of the provided cases match.
    *
-   * <p>There are also non-exact cases such as {@link Case#atLeast(Senary) atleast()} and
-   * friends, {@link Case#empty empty()} and {@link
-   * Case#when(java.util.function.BiPredicate, BiFunction) when()} etc.
+   * <p>There are also conditional {@link #onlyElementThat(BiPredicate, BiFunction) onlyElementThat()},
+   * and non-exact cases such as {@link Case#firstElements(Senary) firstElements()} and friends.
    *
    * @since 5.3
    */
-  public static <T, R> Case<T, ?, R> exactly(Senary<? super T, ? extends R> mapper) {
+  public static <T, R> Case<T, ?, R> onlyElements(Senary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new Case.ExactSize<T, R>() {
       @Override R map(List<? extends T> list) {
