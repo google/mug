@@ -103,7 +103,7 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
    * Case.findFrom(list, firstElement())
    * }</pre> is equivalent to <pre>{@code
    * list.isEmpty() ? Optional.empty() : Optional.of(list.get(0))
-   * }.
+   * }</pre>
    */
   @SuppressWarnings("unchecked")  // This Case takes any T and returns T.
   public static <T> Case<T, ?, T> firstElement() {
