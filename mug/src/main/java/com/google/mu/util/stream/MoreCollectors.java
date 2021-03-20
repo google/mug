@@ -112,8 +112,8 @@ public final class MoreCollectors {
    * IllegalArgumentExceptioin. For example: {@code stream.collect(onlyElement())}.
    *
    * <p>You can also pass the returned {@code Case} collector to the {@link Case#findFrom} method,
-   * which returns {@code Optional<T>}, allowing you to handle the
-   * "what if there's zero or more than one elements?" case. For example:
+   * which returns {@code Optional<T>}, allowing you to handle the {@code size() != 1} case.
+   * For example:
    *
    * <pre>{@code
    * Optional<LogRecord> logRecord = findFrom(logRecords, onlyElement());
@@ -227,8 +227,7 @@ public final class MoreCollectors {
    * IllegalArgumentExceptioin is thrown.
    *
    * <p>You can also pass the returned {@code Case} collector to the {@link Case#findFrom} method,
-   * which returns {@code Optional<T>}, allowing you to handle the
-   * "what if there are fewer or more than two elements?" case. For example:
+   * which returns {@code Optional<T>}, allowing you to handle the {@code size() != 2} case. For example:
    *
    * <pre>{@code
    * Optional<LogRecord> logRecord = findFrom(
