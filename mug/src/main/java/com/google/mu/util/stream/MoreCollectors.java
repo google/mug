@@ -108,13 +108,26 @@ public final class MoreCollectors {
   }
 
   /**
-   * Returns a {@code Case} that matches when there are onlyElements one input element.
-   * The element will be the result of the matcher. For example, you can get the only element
-   * from a stream using {@code stream.collect(onlyElement())}.
+   * Returns a collector that collects to the only one element from the input, or else throws
+   * IllegalArgumentExceptioin. For example: {@code stream.collect(onlyElement())}.
    *
-   * <p>If you need to handle the "not only one element" case, consider to use the {@link
-   * Case#findFrom Case.findFrom(List, Case...)} method, which allows you to pass more than one possible
-   * cases, and returns {@code Optional.empty()} if none of the provided cases match.
+   * <p>You can also pass the returned {@code Case} collector to the {@link Case#findFrom} method,
+   * which returns {@code Optional<T>}, allowing you to handle the
+   * "what if there's zero or more than one elements?" case. For example:
+   *
+   * <pre>{@code
+   * Optional<LogRecord> logRecord = findFrom(logRecords, onlyElement());
+   * }</pre>
+   *
+   * <p>More than one cases can be passed to {@code findFrom()} when there are multiple possible
+   * cases. Say, if the list could contain one or two elements:
+   *
+   * <pre>{@code
+   * Optional<LogRecord> logRecord = findFrom(
+   *     logRecords,
+   *     onlyElement(),  // If there is only one record, use it as is.
+   *     onlyElements((online, offline) -> mergeLogRecords(online, offline)));
+   * }</pre>
    *
    * <p>There are also conditional {@link #onlyElementIf(Predicate) onlyElementIf()},
    * and non-exact cases such as {@link Case#firstElement(Function) firstElement()} and friends.
@@ -127,14 +140,21 @@ public final class MoreCollectors {
   }
 
   /**
-   * Returns a {@code Case} that matches when there are onlyElements one input element,
-   * which will be passed to {@code mapper} and the return value is used as the result.
+   * Returns a collector that collects the only one element from the input and transforms it
+   * using the {@code mapper} function. If there are fewer or more elements in the input,
+   * IllegalArgumentExceptioin is thrown.
    *
-   * <p>Equivalent to {@code collectingAndThen(onlyElement(), mapper)}.
+   * <p>Usually you want to use {@link #onlyElement()} instead to get the only element from the
+   * stream or list. This method is useful when you have multiple potential cases passed to the
+   * {@link Case#findFrom} method. For example, you may want to parse either a qualified
+   * resource name in the format of "foo.bar", or an unqualified name "bar":
    *
-   * <p>If you need to handle the "not only one element" case, consider to use the {@link
-   * Case#findFrom Case.findFrom(List, Case...)} method, which allows you to pass more than one possible
-   * cases, and returns {@code Optional.empty()} if none of the provided cases match.
+   * <pre>{@code
+   * Optional<ResourceName> resourceName = Case.findFrom(
+   *     Splitter.on('.').split(resourceNameString),
+   *     onlyElements((parent, name) -> ResourceName.qualified(parent, name)),
+   *     onlyElement(name -> ResourceName.unqualified(name)));
+   * }</pre>
    *
    * <p>There are also conditional {@link #onlyElementIf(Predicate, Function) onlyElementIf()},
    * and non-exact cases such as {@link Case#firstElement(Function) firstElement()} and friends.
@@ -160,6 +180,10 @@ public final class MoreCollectors {
    * Returns a {@code Case} that matches when there are exactly one input element,
    * and the element satisfies {@code condition}.
    *
+   * <p>This method is usually used as one of the multiple potential cases passed to
+   * the {@link Case#findFrom} method so that you can use a guard {@link Predicate} to
+   * constrain a particular case.
+   *
    * @since 5.3
    */
   public static <T> Case<T, ?, T> onlyElementIf(Predicate<? super T> condition) {
@@ -170,6 +194,10 @@ public final class MoreCollectors {
    * Returns a {@code Case} that matches when there are exactly one input element,
    * and the element satisfies {@code condition}. Upon match, the element is passed to
    * {@code mapper} and the return value will be the result.
+   *
+   * <p>This method is usually used as one of the multiple potential cases passed to
+   * the {@link Case#findFrom} method so that you can use a guard {@link Predicate} to
+   * constrain a particular case.
    *
    * @since 5.3
    */
@@ -194,15 +222,29 @@ public final class MoreCollectors {
   }
 
   /**
-   * Returns a {@code Case} that matches when there are onlyElements two input elements,
-   * which will be passed to {@code mapper} and the return value will be the result.
+   * Returns a collector that collects the only two elements from the input and transforms them
+   * using the {@code mapper} function. If there are fewer or more elements in the input,
+   * IllegalArgumentExceptioin is thrown.
    *
-   * <p>If you need to handle the "not only two elements" case, consider to use the {@link
-   * Case#findFrom Case.findFrom(List, Case...)} method, which allows you to pass more than one possible
-   * cases, and returns {@code Optional.empty()} if none of the provided cases match.
+   * <p>You can also pass the returned {@code Case} collector to the {@link Case#findFrom} method,
+   * which returns {@code Optional<T>}, allowing you to handle the
+   * "what if there are fewer or more than two elements?" case. For example:
    *
-   * <p>There are also conditional {@link #onlyElementsIf(BiPredicate, BiFunction) onlyElementsIf()},
-   * and non-exact cases such as {@link Case#firstElements(BiFunction) firstElements()} and friends.
+   * <pre>{@code
+   * Optional<LogRecord> logRecord = findFrom(
+   *     logRecords,
+   *     onlyElements((online, offline) -> mergeLogRecords(online, offline)));
+   * }</pre>
+   *
+   * <p>More than one cases can be passed to {@code findFrom()} when there are multiple possible
+   * cases. Say, if the list could contain one or two elements:
+   *
+   * <pre>{@code
+   * Optional<LogRecord> logRecord = findFrom(
+   *     logRecords,
+   *     onlyElement(),  // If there is only one record, use it as is.
+   *     onlyElements((online, offline) -> mergeLogRecords(online, offline)));
+   * }</pre>
    *
    * @since 5.3
    */
@@ -223,6 +265,10 @@ public final class MoreCollectors {
    * Returns a {@code Case} that matches when there are exactly two input elements,
    * and the two elements satisfy {@code condition}. Upon match, the two elements are passed to
    * {@code mapper} and the return value will be the result.
+   *
+   * <p>This method is usually used as one of the multiple potential cases passed to
+   * the {@link Case#findFrom} method so that you can use a guard {@link BiPredicate} to
+   * constrain a particular case.
    *
    * @since 5.3
    */
@@ -248,10 +294,11 @@ public final class MoreCollectors {
   }
 
   /**
-   * Returns a {@code Case} that matches when there are onlyElements three input elements,
-   * which will be passed to {@code mapper} and the return value will be the result.
+   * Returns a collector that collects the only three elements from the input and transforms them
+   * using the {@code mapper} function. If there are fewer or more elements in the input,
+   * IllegalArgumentExceptioin is thrown.
    *
-   * <p>If you need to handle the "not only three elements" case, consider to use the {@link
+   * <p>If you need to handle the {@code size() != 3} case, consider to use the {@link
    * Case#findFrom Case.findFrom(List, Case...)} method, which allows you to pass more than one possible
    * cases, and returns {@code Optional.empty()} if none of the provided cases match.
    *
@@ -273,10 +320,11 @@ public final class MoreCollectors {
   }
 
   /**
-   * Returns a {@code Case} that matches when there are onlyElements four input elements,
-   * which will be passed to {@code mapper} and the return value will be the result.
+   * Returns a collector that collects the only four elements from the input and transforms them
+   * using the {@code mapper} function. If there are fewer or more elements in the input,
+   * IllegalArgumentExceptioin is thrown.
    *
-   * <p>If you need to handle the "not only four elements" case, consider to use the {@link
+   * <p>If you need to handle the {@code size() != 4} case, consider to use the {@link
    * Case#findFrom Case.findFrom(List, Case...)} method, which allows you to pass more than one possible
    * cases, and returns {@code Optional.empty()} if none of the provided cases match.
    *
@@ -298,10 +346,11 @@ public final class MoreCollectors {
   }
 
   /**
-   * Returns a {@code Case} that matches when there are onlyElements five input elements,
-   * which will be passed to {@code mapper} and the return value will be the result.
+   * Returns a collector that collects the only five elements from the input and transforms them
+   * using the {@code mapper} function. If there are fewer or more elements in the input,
+   * IllegalArgumentExceptioin is thrown.
    *
-   * <p>If you need to handle the "not only five elements" case, consider to use the {@link
+   * <p>If you need to handle the {@code size() != 5} case, consider to use the {@link
    * Case#findFrom Case.findFrom(List, Case...)} method, which allows you to pass more than one possible
    * cases, and returns {@code Optional.empty()} if none of the provided cases match.
    *
@@ -323,10 +372,11 @@ public final class MoreCollectors {
   }
 
   /**
-   * Returns a {@code Case} that matches when there are onlyElements six input elements,
-   * which will be passed to {@code mapper} and the return value will be the result.
+   * Returns a collector that collects the only six elements from the input and transforms them
+   * using the {@code mapper} function. If there are fewer or more elements in the input,
+   * IllegalArgumentExceptioin is thrown.
    *
-   * <p>If you need to handle the "not only six elements" case, consider to use the {@link
+   * <p>If you need to handle the {@code size() != 6} case, consider to use the {@link
    * Case#findFrom Case.findFrom(List, Case...)} method, which allows you to pass more than one possible
    * cases, and returns {@code Optional.empty()} if none of the provided cases match.
    *
