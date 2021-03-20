@@ -110,10 +110,10 @@ public final class MoreCollectors {
   /**
    * Returns a collector that collects to the only one element from the input, or else throws
    * IllegalArgumentExceptioin. For example: {@code stream.collect(onlyElement())}.
-   *
-   * <p>You can also pass the returned {@code Case} collector to the {@link Case#findFrom} method,
-   * which returns {@code Optional<T>}, allowing you to handle the {@code size() != 1} case.
-   * For example:
+
+   * <p>You can also pass the returned {@code Case} collector to the {@link Case#findFrom
+   * Case.findFrom(List, Case...)} method, which returns {@code Optional<T>}, allowing you to
+   * handle the {@code size() != 1} case. For example:
    *
    * <pre>{@code
    * Optional<LogRecord> logRecord = findFrom(logRecords, onlyElement());
@@ -146,8 +146,8 @@ public final class MoreCollectors {
    *
    * <p>Usually you want to use {@link #onlyElement()} instead to get the only element from the
    * stream or list. This method is useful when you have multiple potential cases passed to the
-   * {@link Case#findFrom} method. For example, you may want to parse either a qualified
-   * resource name in the format of "foo.bar", or an unqualified name "bar":
+   * {@link Case#findFrom Case.findFrom(List, Case...)} method. For example, you may want to
+   * parse either a qualified resource name in the format of "foo.bar", or an unqualified name "bar":
    *
    * <pre>{@code
    * Optional<ResourceName> resourceName = Case.findFrom(
@@ -181,8 +181,8 @@ public final class MoreCollectors {
    * and the element satisfies {@code condition}.
    *
    * <p>This method is usually used as one of the multiple potential cases passed to
-   * the {@link Case#findFrom} method so that you can use a guard {@link Predicate} to
-   * constrain a particular case.
+   * the {@link Case#findFrom Case.findFrom(List, Case...)} method so that you can
+   * use a guard {@link Predicate} to constrain a particular case.
    *
    * @since 5.3
    */
@@ -196,8 +196,8 @@ public final class MoreCollectors {
    * {@code mapper} and the return value will be the result.
    *
    * <p>This method is usually used as one of the multiple potential cases passed to
-   * the {@link Case#findFrom} method so that you can use a guard {@link Predicate} to
-   * constrain a particular case.
+   * the {@link Case#findFrom Case.findFrom(List, Case...)} method so that you can
+   * use a guard {@link Predicate} to constrain a particular case.
    *
    * @since 5.3
    */
@@ -226,8 +226,10 @@ public final class MoreCollectors {
    * using the {@code mapper} function. If there are fewer or more elements in the input,
    * IllegalArgumentExceptioin is thrown.
    *
-   * <p>You can also pass the returned {@code Case} collector to the {@link Case#findFrom} method,
-   * which returns {@code Optional<T>}, allowing you to handle the {@code size() != 2} case. For example:
+   * <p>You can also pass the returned {@code Case} collector to the {@link
+   * Case#findFrom Case.findFrom(List, Case...)} method,
+   * which returns {@code Optional<T>}, allowing you to handle the {@code size() != 2} case.
+   * For example:
    *
    * <pre>{@code
    * Optional<LogRecord> logRecord = findFrom(
@@ -266,8 +268,8 @@ public final class MoreCollectors {
    * {@code mapper} and the return value will be the result.
    *
    * <p>This method is usually used as one of the multiple potential cases passed to
-   * the {@link Case#findFrom} method so that you can use a guard {@link BiPredicate} to
-   * constrain a particular case.
+   * the {@link Case#findFrom Case.findFrom(List, Case...)} method so that you can use a
+   * guard {@link BiPredicate} to constrain a particular case.
    *
    * @since 5.3
    */
