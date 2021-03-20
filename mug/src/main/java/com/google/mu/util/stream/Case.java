@@ -99,8 +99,11 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
   /**
    * Returns a {@code Case} that attempts to find the first element from the input.
    *
-   * <p>For example, {@code Case.findFrom(list, firstElement())} is equivalent to
-   * {@code list.isEmpty() ? Optional.empty() : Optional.of(list.get(0))}.
+   * <p>For example: <pre>{@code
+   * Case.findFrom(list, firstElement())
+   * }</pre> is equivalent to <pre>{@code
+   * list.isEmpty() ? Optional.empty() : Optional.of(list.get(0))
+   * }.
    */
   @SuppressWarnings("unchecked")  // This Case takes any T and returns T.
   public static <T> Case<T, ?, T> firstElement() {
@@ -170,7 +173,7 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
    * Case.findFrom(list, firstElements(String::concat))
    * }</pre>
    * is equivalent to <pre>{@code
-   * list.size() < 2 ? Optional.empty() : Optional.of(list.get(0) + list.get(1)
+   * list.size() < 2 ? Optional.empty() : Optional.of(list.get(0) + list.get(1))
    * }</pre>
    */
   public static <T, R> Case<T, ?, R> firstElements(
@@ -194,7 +197,7 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
    * Case.findFrom(list, firstElements((a, b, c) -> a + b + c
    * }</pre>
    * is equivalent to <pre>{@code
-   * list.size() < 3 ? Optional.empty() : Optional.of(list.get(0) + list.get(1) + list.get(2)
+   * list.size() < 3 ? Optional.empty() : Optional.of(list.get(0) + list.get(1) + list.get(2))
    * }</pre>
    */
   public static <T, R> Case<T, ?, R> firstElements(Ternary<? super T, ? extends R> mapper) {
@@ -218,7 +221,7 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
    * }</pre> is equivalent to <pre>{@code
    * list.size() < 4
    *     ? Optional.empty()
-   *     : Optional.of(list.get(0) + list.get(1) + list.get(2) + list.get(3)
+   *     : Optional.of(list.get(0) + list.get(1) + list.get(2) + list.get(3))
    * }</pre>
    */
   public static <T, R> Case<T, ?, R> firstElements(Quarternary<? super T, ? extends R> mapper) {
@@ -242,7 +245,7 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
    * }</pre> is equivalent to <pre>{@code
    * list.size() < 5
    *     ? Optional.empty()
-   *     : Optional.of(list.get(0) + list.get(1) + list.get(2) + list.get(3) + list.get(4)
+   *     : Optional.of(list.get(0) + list.get(1) + list.get(2) + list.get(3) + list.get(4))
    * }</pre>
    */
   public static <T, R> Case<T, ?, R> firstElements(Quinary<? super T, ? extends R> mapper) {
@@ -266,7 +269,7 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
    * }</pre> is equivalent to <pre>{@code
    * list.size() < 6
    *     ? Optional.empty()
-   *     : Optional.of(list.get(0) + list.get(1) + list.get(2) + list.get(3) + list.get(4) + list.get(5)
+   *     : Optional.of(list.get(0) + list.get(1) + list.get(2) + list.get(3) + list.get(4) + list.get(5))
    * }</pre>
    */
   public static <T, R> Case<T, ?, R> firstElements(Senary<? super T, ? extends R> mapper) {
