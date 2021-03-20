@@ -117,7 +117,7 @@ public final class MoreCollectors {
    * cases, and returns {@code Optional.empty()} if none of the provided cases match.
    *
    * <p>There are also conditional {@link #onlyElementIf(Predicate) onlyElementIf()},
-   * and non-exact cases such as {@link Case#firstElements(Function) firstElements()} and friends.
+   * and non-exact cases such as {@link Case#firstElement(Function) firstElement()} and friends.
    *
    * @since 5.3
    */
@@ -137,7 +137,7 @@ public final class MoreCollectors {
    * cases, and returns {@code Optional.empty()} if none of the provided cases match.
    *
    * <p>There are also conditional {@link #onlyElementIf(Predicate, Function) onlyElementIf()},
-   * and non-exact cases such as {@link Case#firstElements(Function) firstElements()} and friends.
+   * and non-exact cases such as {@link Case#firstElement(Function) firstElement()} and friends.
    *
    * @since 5.3
    */
