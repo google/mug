@@ -66,9 +66,9 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
   private static final Case<Object, ?, ?> FIRST_ELEMENT = firstElement(Function.identity());
 
   /**
-   * Expands the input elements in {@code list} and transforms them using the
-   * first from {@code cases} that matches. If no case matches the input elements,
-   * {@code Optional.empty()} is returned.
+   * Inspects the elements of {@code list} and transforms them using the first {@link Case} object
+   * in {@code cases} that matches. If no case matches the input elements, {@code Optional.empty()}
+   * is returned.
    *
    * <p>For example, to switch among multiple possible cases:
    * <pre>{@code
@@ -96,15 +96,24 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
     return Optional.empty();
   }
 
-  /** Returns a {@code Case} that finds the first element from the input. */
+  /**
+   * Returns a {@code Case} that attempts to find the first element from the input.
+   *
+   * <p>For example, {@code Case.findFrom(list, firstElement())} is equivalent to
+   * {@code list.isEmpty() ? Optional.empty() : Optional.of(list.get(0))}.
+   */
   @SuppressWarnings("unchecked")  // This Case takes any T and returns T.
   public static <T> Case<T, ?, T> firstElement() {
     return (Case<T, ?, T>) FIRST_ELEMENT;
   }
 
   /**
-   * Returns a {@code Case} that matches when there are at least one input elements,
-   * which will be passed to {@code mapper} and the return value will be the result.
+   * Returns a {@code Case} that attempts to find and transform the first element from the input
+   * using the {@code mapper} function.
+   *
+   * <p>Usually you want to use {@link #firstElement()} instead to get the first element from the
+   * stream or list. This method is useful when you have multiple potential cases passed to the
+   * {@link #findFrom} method.
    */
   public static <T, R> Case<T, ?, R> firstElement(Function<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
@@ -122,17 +131,16 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
   }
 
   /**
-   * Returns a {@code Case} that matches when there are at least one input elements,
-   * and the first element satisfies {@code condition}.
+   * Returns a {@code Case} that attempts to find the first input element,
+   * but only if the element satisfies {@code condition}.
    */
   public static <T> Case<T, ?, T> firstElementIf(Predicate<? super T> condition) {
     return firstElementIf(condition, Function.identity());
   }
 
   /**
-   * Returns a {@code Case} that matches when there are at least one input elements,
-   * and the first element satisfies {@code condition}.
-   * The first element will be passed to {@code mapper} and the return value will be the result.
+   * Returns a {@code Case} that attempts to find and transform the first input element,
+   * but only if the element satisfies {@code condition}.
    */
   public static <T, R> Case<T, ?, R> firstElementIf(
       Predicate<? super T> condition, Function<? super T, ? extends R> mapper) {
@@ -155,8 +163,11 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
   }
 
   /**
-   * Returns a {@code Case} that matches when there are at least two input elements,
-   * which will be passed to {@code mapper} and the return value will be the result.
+   * Returns a {@code Case} that attempts to find and transform the first two elements
+   * from the input using the {@code mapper} function.
+   *
+   * <p>For example, {@code Case.findFrom(list, firstElements(String::concat))} is equivalent to
+   * {@code list.size() < 2 ? Optional.empty() : Optional.of(list.get(0) + list.get(1)}.
    */
   public static <T, R> Case<T, ?, R> firstElements(
       BiFunction<? super T, ? super T, ? extends R> mapper) {
@@ -172,8 +183,11 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
   }
 
   /**
-   * Returns a {@code Case} that matches when there are at least three input elements,
-   * which will be passed to {@code mapper} and the return value will be the result.
+   * Returns a {@code Case} that attempts to find and transform the first three elements
+   * from the input using the {@code mapper} function.
+   *
+   * <p>For example, {@code Case.findFrom(list, firstElements((a, b, c) -> a + b + c} is equivalent to
+   * {@code list.size() < 3 ? Optional.empty() : Optional.of(list.get(0) + list.get(1) + list.get(2)}.
    */
   public static <T, R> Case<T, ?, R> firstElements(Ternary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
@@ -188,8 +202,16 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
   }
 
   /**
-   * Returns a {@code Case} that matches when there are at least four input elements,
-   * which will be passed to {@code mapper} and the return value will be the result.
+   * Returns a {@code Case} that attempts to find and transform the first four elements
+   * from the input using the {@code mapper} function.
+   *
+   * <p>For example, {@code Case.findFrom(list, firstElements((a, b, c, d) -> a + b + c + d}
+   * is equivalent to
+   * <pre>{@code
+   * list.size() < 4
+   *     ? Optional.empty()
+   *     : Optional.of(list.get(0) + list.get(1) + list.get(2) + list.get(3)
+   * }</pre>
    */
   public static <T, R> Case<T, ?, R> firstElements(Quarternary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
@@ -204,8 +226,16 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
   }
 
   /**
-   * Returns a {@code Case} that matches when there are at least five input elements,
-   * which will be passed to {@code mapper} and the return value will be the result.
+   * Returns a {@code Case} that attempts to find and transform the first five elements
+   * from the input using the {@code mapper} function.
+   *
+   * <p>For example, {@code Case.findFrom(list, firstElements((a, b, c, d, e) -> a + b + c + d + e}
+   * is equivalent to
+   * <pre>{@code
+   * list.size() < 5
+   *     ? Optional.empty()
+   *     : Optional.of(list.get(0) + list.get(1) + list.get(2) + list.get(3) + list.get(4)
+   * }</pre>
    */
   public static <T, R> Case<T, ?, R> firstElements(Quinary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
@@ -220,8 +250,17 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
   }
 
   /**
-   * Returns a {@code Case} that matches when there are at least six input elements,
-   * which will be passed to {@code mapper} and the return value will be the result.
+   * Returns a {@code Case} that attempts to find and transform the first six elements
+   * from the input using the {@code mapper} function.
+   *
+   * <p>For example, {@code
+   * Case.findFrom(list, firstElements((a, b, c, d, e, f) -> a + b + c + d + e + f}
+   * is equivalent to
+   * <pre>{@code
+   * list.size() < 6
+   *     ? Optional.empty()
+   *     : Optional.of(list.get(0) + list.get(1) + list.get(2) + list.get(3) + list.get(4) + list.get(5)
+   * }</pre>
    */
   public static <T, R> Case<T, ?, R> firstElements(Senary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
@@ -237,9 +276,8 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
   }
 
   /**
-   * Returns a {@code Case} that matches when there are at least two input elements,
-   * and the first two elements satisfy {@code condition}.
-   * The first two elements will be passed to {@code mapper} and the return value will be the result.
+   * Returns a {@code Case} that attempts to find and transform the first two input elements,
+   * but only if the two elements satisfy {@code condition}.
    */
   public static <T, R> Case<T, ?, R> firstElementsIf(
       BiPredicate<? super T, ? super T> condition,
@@ -264,8 +302,7 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
 
   /**
    * Returns a {@code Case} that matches when there are zero input elements,
-   * in which case, {@code supplier} is invoked whose return value is used as the pattern matching
-   * result.
+   * in which case, {@code supplier} is invoked whose return value is the result.
    */
   public static <T, R> Case<T, ?, R> empty(Supplier<? extends R> supplier) {
     requireNonNull(supplier);
