@@ -18,11 +18,13 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.stream.Case.findFrom;
 import static com.google.mu.util.stream.Case.firstElement;
+import static com.google.mu.util.stream.Case.firstElementIf;
 import static com.google.mu.util.stream.Case.firstElements;
+import static com.google.mu.util.stream.Case.firstElementsIf;
 import static com.google.mu.util.stream.MoreCollectors.onlyElement;
-import static com.google.mu.util.stream.MoreCollectors.onlyElementThat;
+import static com.google.mu.util.stream.MoreCollectors.onlyElementIf;
 import static com.google.mu.util.stream.MoreCollectors.onlyElements;
-import static com.google.mu.util.stream.MoreCollectors.onlyElementsThat;
+import static com.google.mu.util.stream.MoreCollectors.onlyElementsIf;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -157,115 +159,115 @@ public class CaseTest {
   }
 
   @Test public void testAtLeastOneElement() {
-    assertThat(findFrom(asList(1), Case.firstElement(hd -> hd * 10))).hasValue(10);
-    assertThat(findFrom(asList(1, 2, 3), Case.firstElement(hd -> hd * 10))).hasValue(10);
-    assertThat(findFrom(asList(), Case.firstElement(hd -> hd))).isEmpty();
+    assertThat(findFrom(asList(1), firstElement(hd -> hd * 10))).hasValue(10);
+    assertThat(findFrom(asList(1, 2, 3), firstElement(hd -> hd * 10))).hasValue(10);
+    assertThat(findFrom(asList(), firstElement(hd -> hd))).isEmpty();
   }
 
   @Test public void testAtLeastOne_asCollector() {
-    assertThat(Stream.of("foo").collect(Case.firstElement("ok:"::concat)))
+    assertThat(Stream.of("foo").collect(firstElement("ok:"::concat)))
         .isEqualTo("ok:foo");
-    assertThat(Stream.of("foo", "bar").collect(Case.firstElement("ok:"::concat)))
+    assertThat(Stream.of("foo", "bar").collect(firstElement("ok:"::concat)))
         .isEqualTo("ok:foo");
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.empty().collect(Case.firstElement(a -> "ok")));
+        () -> Stream.empty().collect(firstElement(a -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Input ([]) doesn't match pattern <at least 1 element>.");
   }
 
   @Test public void testAtLeastTwoElements() {
-    assertThat(findFrom(asList(1, 2), Case.firstElements((a, b) -> a + b))).hasValue(3);
-    assertThat(findFrom(asList(1, 3, 5), Case.firstElements((a, b) -> a + b))).hasValue(4);
-    assertThat(findFrom(asList(1), Case.firstElements((a, b) -> a + b))).isEmpty();
+    assertThat(findFrom(asList(1, 2), firstElements((a, b) -> a + b))).hasValue(3);
+    assertThat(findFrom(asList(1, 3, 5), firstElements((a, b) -> a + b))).hasValue(4);
+    assertThat(findFrom(asList(1), firstElements((a, b) -> a + b))).isEmpty();
   }
 
   @Test public void testAtLeastTwo_asCollector() {
-    assertThat(Stream.of("foo", "bar").collect(Case.firstElements(String::concat)))
+    assertThat(Stream.of("foo", "bar").collect(firstElements(String::concat)))
         .isEqualTo("foobar");
-    assertThat(Stream.of("foo", "bar", "baz").collect(Case.firstElements(String::concat)))
+    assertThat(Stream.of("foo", "bar", "baz").collect(firstElements(String::concat)))
         .isEqualTo("foobar");
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.empty().collect(Case.firstElements((a, b) -> "ok")));
+        () -> Stream.empty().collect(firstElements((a, b) -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Input ([]) doesn't match pattern <at least 2 elements>.");
   }
 
   @Test public void testAtLeastThreeElements() {
-    assertThat(findFrom(asList(1, 3, 5), Case.firstElements((a, b, c) -> a + b + c))).hasValue(9);
-    assertThat(findFrom(asList(1, 3, 5, 7), Case.firstElements((a, b, c) -> a + b + c))).hasValue(9);
-    assertThat(findFrom(asList(1, 2), Case.firstElements((a, b, c) -> a + b))).isEmpty();
+    assertThat(findFrom(asList(1, 3, 5), firstElements((a, b, c) -> a + b + c))).hasValue(9);
+    assertThat(findFrom(asList(1, 3, 5, 7), firstElements((a, b, c) -> a + b + c))).hasValue(9);
+    assertThat(findFrom(asList(1, 2), firstElements((a, b, c) -> a + b))).isEmpty();
   }
 
   @Test public void testAtLeastThree_asCollector() {
-    assertThat(Stream.of(1, 3, 5).collect(Case.firstElements((a, b, c) -> a + b + c)).intValue())
+    assertThat(Stream.of(1, 3, 5).collect(firstElements((a, b, c) -> a + b + c)).intValue())
         .isEqualTo(9);
-    assertThat(Stream.of(1, 3, 5, 7).collect(Case.firstElements((a, b, c) -> a + b + c)).intValue())
+    assertThat(Stream.of(1, 3, 5, 7).collect(firstElements((a, b, c) -> a + b + c)).intValue())
         .isEqualTo(9);
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.empty().collect(Case.firstElements((a, b, c) -> "ok")));
+        () -> Stream.empty().collect(firstElements((a, b, c) -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Input ([]) doesn't match pattern <at least 3 elements>.");
   }
 
   @Test public void testAtLeastFourElements() {
-    assertThat(findFrom(asList(1, 3, 5, 7), Case.firstElements((a, b, c, d) -> a + b + c + d)))
+    assertThat(findFrom(asList(1, 3, 5, 7), firstElements((a, b, c, d) -> a + b + c + d)))
         .hasValue(16);
-    assertThat(findFrom(asList(1, 3, 5, 7, 9), Case.firstElements((a, b, c, d) -> a + b + c + d)))
+    assertThat(findFrom(asList(1, 3, 5, 7, 9), firstElements((a, b, c, d) -> a + b + c + d)))
         .hasValue(16);
-    assertThat(findFrom(asList(1, 2, 3), Case.firstElements((a, b, c, d) -> a + b))).isEmpty();
+    assertThat(findFrom(asList(1, 2, 3), firstElements((a, b, c, d) -> a + b))).isEmpty();
   }
 
   @Test public void testAtLeastFour_asCollector() {
-    assertThat(Stream.of(1, 3, 5, 7).collect(Case.firstElements((a, b, c, d) -> a + b + c + d)).intValue())
+    assertThat(Stream.of(1, 3, 5, 7).collect(firstElements((a, b, c, d) -> a + b + c + d)).intValue())
         .isEqualTo(16);
-    assertThat(Stream.of(1, 3, 5, 7, 9).collect(Case.firstElements((a, b, c, d) -> a + b + c + d)).intValue())
+    assertThat(Stream.of(1, 3, 5, 7, 9).collect(firstElements((a, b, c, d) -> a + b + c + d)).intValue())
         .isEqualTo(16);
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.empty().collect(Case.firstElements((a, b, c, d) -> "ok")));
+        () -> Stream.empty().collect(firstElements((a, b, c, d) -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Input ([]) doesn't match pattern <at least 4 elements>.");
   }
 
   @Test public void testAtLeastFiveElements() {
-    assertThat(findFrom(asList(1, 3, 5, 7, 9), Case.firstElements((a, b, c, d, e) -> a + b + c + d + e)))
+    assertThat(findFrom(asList(1, 3, 5, 7, 9), firstElements((a, b, c, d, e) -> a + b + c + d + e)))
         .hasValue(25);
-    assertThat(findFrom(asList(1, 3, 5, 7, 9, 11), Case.firstElements((a, b, c, d, e) -> a + b + c + d + e)))
+    assertThat(findFrom(asList(1, 3, 5, 7, 9, 11), firstElements((a, b, c, d, e) -> a + b + c + d + e)))
         .hasValue(25);
-    assertThat(findFrom(asList(1, 2, 3, 4), Case.firstElements((a, b, c, d, e) -> a + b))).isEmpty();
+    assertThat(findFrom(asList(1, 2, 3, 4), firstElements((a, b, c, d, e) -> a + b))).isEmpty();
   }
 
   @Test public void testAtLeastFive_asCollector() {
-    assertThat(Stream.of(1, 3, 5, 7, 9).collect(Case.firstElements((a, b, c, d, e) -> a + b + c + d + e)).intValue())
+    assertThat(Stream.of(1, 3, 5, 7, 9).collect(firstElements((a, b, c, d, e) -> a + b + c + d + e)).intValue())
         .isEqualTo(25);
-    assertThat(Stream.of(1, 3, 5, 7, 9, 11).collect(Case.firstElements((a, b, c, d, e) -> a + b + c + d + e)).intValue())
+    assertThat(Stream.of(1, 3, 5, 7, 9, 11).collect(firstElements((a, b, c, d, e) -> a + b + c + d + e)).intValue())
         .isEqualTo(25);
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.empty().collect(Case.firstElements((a, b, c, d, e) -> "ok")));
+        () -> Stream.empty().collect(firstElements((a, b, c, d, e) -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Input ([]) doesn't match pattern <at least 5 elements>.");
   }
 
   @Test public void testAtLeastSixElements() {
-    assertThat(findFrom(asList(1, 3, 5, 7, 9, 11), Case.firstElements((a, b, c, d, e, f) -> a + b + c + d + e + f)))
+    assertThat(findFrom(asList(1, 3, 5, 7, 9, 11), firstElements((a, b, c, d, e, f) -> a + b + c + d + e + f)))
         .hasValue(36);
-    assertThat(findFrom(asList(1, 3, 5, 7, 9, 11, 13), Case.firstElements((a, b, c, d, e, f) -> a + b + c + d + e + f)))
+    assertThat(findFrom(asList(1, 3, 5, 7, 9, 11, 13), firstElements((a, b, c, d, e, f) -> a + b + c + d + e + f)))
         .hasValue(36);
-    assertThat(findFrom(asList(1, 2, 3, 4, 5), Case.firstElements((a, b, c, d, e, f) -> a + b))).isEmpty();
+    assertThat(findFrom(asList(1, 2, 3, 4, 5), firstElements((a, b, c, d, e, f) -> a + b))).isEmpty();
   }
 
   @Test public void testAtLeastSix_asCollector() {
-    assertThat(Stream.of(1, 3, 5, 7, 9, 11).collect(Case.firstElements((a, b, c, d, e, f) -> a + b + c + d + e + f)).intValue())
+    assertThat(Stream.of(1, 3, 5, 7, 9, 11).collect(firstElements((a, b, c, d, e, f) -> a + b + c + d + e + f)).intValue())
         .isEqualTo(36);
-    assertThat(Stream.of(1, 3, 5, 7, 9, 11, 13).collect(Case.firstElements((a, b, c, d, e, f) -> a + b + c + d + e + f)).intValue())
+    assertThat(Stream.of(1, 3, 5, 7, 9, 11, 13).collect(firstElements((a, b, c, d, e, f) -> a + b + c + d + e + f)).intValue())
         .isEqualTo(36);
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.empty().collect(Case.firstElements((a, b, c, d, e, f) -> "ok")));
+        () -> Stream.empty().collect(firstElements((a, b, c, d, e, f) -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Input ([]) doesn't match pattern <at least 6 elements>.");
   }
@@ -384,44 +386,85 @@ public class CaseTest {
         .isEqualTo("Input ([]) doesn't match pattern <at least 6 elements>.");
   }
 
-  @Test public void testOneElementWithCondition() {
-    assertThat(findFrom(asList(1), MoreCollectors.onlyElementThat(n -> n == 1, a -> a * 10))).hasValue(10);
-    assertThat(findFrom(asList(), MoreCollectors.onlyElementThat(n -> true, a -> a))).isEmpty();
-    assertThat(findFrom(asList(1, 2), MoreCollectors.onlyElementThat(n -> true, a -> a))).isEmpty();
-    assertThat(findFrom(asList(1), MoreCollectors.onlyElementThat(n -> false, a -> a))).isEmpty();
+  @Test public void testOnlyElementIf() {
+    assertThat(findFrom(asList(1), onlyElementIf(n -> n == 1, a -> a * 10))).hasValue(10);
+    assertThat(findFrom(asList(), onlyElementIf(n -> true))).isEmpty();
+    assertThat(findFrom(asList(1, 2), onlyElementIf(n -> true))).isEmpty();
+    assertThat(findFrom(asList(1), onlyElementIf(n -> false))).isEmpty();
   }
 
-  @Test public void testOneElementWithCondition_asCollector() {
-    assertThat(Stream.of(1).collect(MoreCollectors.onlyElementThat(n -> n == 1, a -> a * 10)).intValue()).isEqualTo(10);
+  @Test public void testOnlyElementIf_asCollector() {
+    assertThat(Stream.of(1).collect(onlyElementIf(n -> n == 1, a -> a * 10)).intValue())
+        .isEqualTo(10);
     assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.empty().collect(MoreCollectors.onlyElementThat(n -> true, a -> a)));
+        () -> Stream.empty().collect(onlyElementIf(n -> true)));
     assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.of(1, 2).collect(MoreCollectors.onlyElementThat(n -> true, a -> a)));
+        () -> Stream.of(1, 2).collect(onlyElementIf(n -> true)));
     assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.of(1).collect(MoreCollectors.onlyElementThat(n -> false, a -> a)));
+        () -> Stream.of(1).collect(onlyElementIf(n -> false)));
   }
 
-  @Test public void testTwoElementsWithCondition() {
-    assertThat(findFrom(asList(1, 3), onlyElementsThat((a, b) -> a < b, (a, b) -> a + b))).hasValue(4);
-    assertThat(findFrom(asList(1), onlyElementsThat((a, b) -> a < b, (a, b) -> a + b))).isEmpty();
-    assertThat(findFrom(asList(1, 2, 3), onlyElementsThat((a, b) -> a < b, (a, b) -> a + b))).isEmpty();
-    assertThat(findFrom(asList(3, 1), onlyElementsThat((a, b) -> a < b, (a, b) -> a + b))).isEmpty();
+  @Test public void testOnlyElementsIf() {
+    assertThat(findFrom(asList(1, 3), onlyElementsIf((a, b) -> a < b, (a, b) -> a + b))).hasValue(4);
+    assertThat(findFrom(asList(1), onlyElementsIf((a, b) -> a < b, (a, b) -> a + b))).isEmpty();
+    assertThat(findFrom(asList(1, 2, 3), onlyElementsIf((a, b) -> a < b, (a, b) -> a + b))).isEmpty();
+    assertThat(findFrom(asList(3, 1), onlyElementsIf((a, b) -> a < b, (a, b) -> a + b))).isEmpty();
   }
 
-  @Test public void testTwoElementsWithCondition_asCollector() {
-    assertThat(Stream.of(1, 3).collect(onlyElementsThat((a, b) -> a < b, (a, b) -> a + b)).intValue()).isEqualTo(4);
+  @Test public void testOnlyElementsIf_asCollector() {
+    assertThat(Stream.of(1, 3).collect(onlyElementsIf((a, b) -> a < b, (a, b) -> a + b)).intValue())
+        .isEqualTo(4);
     assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.of(1).collect(onlyElementsThat((a, b) -> a < b, (a, b) -> a + b)));
+        () -> Stream.of(1).collect(onlyElementsIf((a, b) -> a < b, (a, b) -> a + b)));
     assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.of(1, 2, 3).collect(onlyElementsThat((a, b) -> a < b, (a, b) -> a + b)));
+        () -> Stream.of(1, 2, 3).collect(onlyElementsIf((a, b) -> a < b, (a, b) -> a + b)));
     assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.of(3, 1).collect(onlyElementsThat((a, b) -> a < b, (a, b) -> a + b)));
+        () -> Stream.of(3, 1).collect(onlyElementsIf((a, b) -> a < b, (a, b) -> a + b)));
+  }
+
+  @Test public void testFirstElementIf() {
+    assertThat(findFrom(asList(1, 2), firstElementIf(n -> n == 1, a -> a * 10))).hasValue(10);
+    assertThat(findFrom(asList(1), firstElementIf(n -> true))).hasValue(1);
+    assertThat(findFrom(asList(), firstElementIf(n -> true))).isEmpty();
+    assertThat(findFrom(asList(1), firstElementIf(n -> false))).isEmpty();
+  }
+
+  @Test public void testFirstElementIf_asCollector() {
+    assertThat(Stream.of(1, 2).collect(firstElementIf(n -> n == 1, a -> a * 10)).intValue())
+        .isEqualTo(10);
+    assertThat(Stream.of(1).collect(firstElementIf(n -> n == 1)).intValue())
+        .isEqualTo(1);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Stream.empty().collect(firstElementIf(n -> true)));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Stream.of(1).collect(onlyElementIf(n -> false)));
+  }
+
+  @Test public void testFirstElementsIf() {
+    assertThat(findFrom(asList(1, 3), firstElementsIf((a, b) -> a < b, (a, b) -> a + b))).hasValue(4);
+    assertThat(findFrom(asList(1, 3, 5), firstElementsIf((a, b) -> a < b, (a, b) -> a + b))).hasValue(4);
+    assertThat(findFrom(asList(3, 1), firstElementsIf((a, b) -> a < b, (a, b) -> a + b))).isEmpty();
+  }
+
+  @Test public void testFirstElementsIf_asCollector() {
+    assertThat(Stream.of(1, 3).collect(firstElementsIf((a, b) -> a < b, (a, b) -> a + b)).intValue())
+        .isEqualTo(4);
+    assertThat(Stream.of(1, 3, 5).collect(firstElementsIf((a, b) -> a < b, (a, b) -> a + b)).intValue())
+        .isEqualTo(4);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Stream.of(1).collect(onlyElementsIf((a, b) -> true, (a, b) -> a + b)));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Stream.of(3, 1).collect(onlyElementsIf((a, b) -> a < b, (a, b) -> a + b)));
   }
 
   @Test public void testMultipleCases_firstCaseMatches() {
@@ -429,7 +472,7 @@ public class CaseTest {
         findFrom(
             asList(1),
             onlyElement(a -> a * 10),
-            Case.firstElement(a -> a)))
+            firstElement(a -> a)))
         .hasValue(10);
   }
 
@@ -437,21 +480,20 @@ public class CaseTest {
     assertThat(
         findFrom(
             asList(1),
-            onlyElementThat(a -> a > 2, a -> a * 10),
-            Case.firstElement((a) -> -a)))
+            onlyElementIf(a -> a > 2, a -> a * 10),
+            firstElement((a) -> -a)))
         .hasValue(-1);
   }
 
   @Test
   public void testMultipleCases_fallthrough() {
-    assertThat(findFrom(asList(1), onlyElementThat(a -> a > 2, a -> a * 10), onlyElementThat(a -> a > 2, a -> -a)))
+    assertThat(findFrom(asList(1), onlyElementIf(a -> a > 2, a -> a * 10), onlyElementIf(a -> a > 2, a -> -a)))
         .isEmpty();
   }
 
-
   @Test public void testShortListInErrorMessage() {
     IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> Stream.of(1).collect(Case.firstElements((a, b) -> "ok")));
+        assertThrows(IllegalArgumentException.class, () -> Stream.of(1).collect(firstElements((a, b) -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Input ([1]) doesn't match pattern <at least 2 elements>.");
   }
