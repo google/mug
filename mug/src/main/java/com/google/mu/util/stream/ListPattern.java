@@ -339,7 +339,7 @@ public abstract class ListPattern<T, A, R> implements Collector<T, A, R> {
   /** Returns the string representation of this {@code ListPattern}. */
   @Override public abstract String toString();
 
-  private static abstract class ShortListCase<T, R> extends ListPattern<T, List<T>, R> {
+  private static abstract class ShortListPattern<T, R> extends ListPattern<T, List<T>, R> {
     @Override public final BiConsumer<List<T>, T> accumulator() {
       return List::add;
     }
@@ -373,7 +373,7 @@ public abstract class ListPattern<T, A, R> implements Collector<T, A, R> {
     }
   }
 
-  static abstract class ExactSize<T, R> extends ShortListCase<T,  R> {
+  static abstract class ExactSize<T, R> extends ShortListPattern<T,  R> {
     @Override boolean matches(List<? extends T> list) {
       return list.size() == arity();
     }
@@ -389,7 +389,7 @@ public abstract class ListPattern<T, A, R> implements Collector<T, A, R> {
     abstract int arity();
   }
 
-  private static abstract class MinSize<T, R> extends ShortListCase<T,  R> {
+  private static abstract class MinSize<T, R> extends ShortListPattern<T,  R> {
     @Override boolean matches(List<? extends T> list) {
       return list.size() >= arity();
     }
