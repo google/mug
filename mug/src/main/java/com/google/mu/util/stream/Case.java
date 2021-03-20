@@ -22,8 +22,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -39,7 +41,7 @@ import com.google.mu.function.Ternary;
  * <p>A {@code Case} object can be used as a stand-alone {@link Collector} for a stream. For example:
  *
  * <pre>{@code
- * import static com.google.mu.util.stream.MoreCollectors.exactly;
+ * import static com.google.mu.util.stream.MoreCollectors.onlyElements;
  *
  * stream.collect(onlyElements((a, b, c) -> ...));
  * }</pre>
@@ -75,7 +77,7 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
    * Optional<R> result =
    *     Case.findFrom(
    *         list,
-   *         exactly((a, b) -> ...),
+   *         onlyElements((a, b) -> ...),
    *         firstElements((a, b, c) -> ...));
    * }</pre>
    */
@@ -115,6 +117,39 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
       }
       @Override public String toString() {
         return "at least 1 element";
+      }
+    };
+  }
+
+  /**
+   * Returns a {@code Case} that matches when there are at least one input elements,
+   * and the first element satisfies {@code condition}.
+   */
+  public static <T> Case<T, ?, T> firstElementIf(Predicate<? super T> condition) {
+    return firstElementIf(condition, Function.identity());
+  }
+
+  /**
+   * Returns a {@code Case} that matches when there are at least one input elements,
+   * and the first element satisfies {@code condition}.
+   * The first element will be passed to {@code mapper} and the return value will be the result.
+   */
+  public static <T, R> Case<T, ?, R> firstElementIf(
+      Predicate<? super T> condition, Function<? super T, ? extends R> mapper) {
+    requireNonNull(condition);
+    requireNonNull(mapper);
+    return new MinSize<T, R>() {
+      @Override boolean matches(List<? extends T> list) {
+        return super.matches(list) && condition.test(list.get(0));
+      }
+      @Override R map(List<? extends T> list) {
+        return mapper.apply(list.get(0));
+      }
+      @Override int arity() {
+        return 1;
+      }
+      @Override public String toString() {
+        return "the first element and it satisfies " + condition;
       }
     };
   }
@@ -200,6 +235,33 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
       }
     };
   }
+
+  /**
+   * Returns a {@code Case} that matches when there are at least two input elements,
+   * and the first two elements satisfy {@code condition}.
+   * The first two elements will be passed to {@code mapper} and the return value will be the result.
+   */
+  public static <T, R> Case<T, ?, R> firstElementsIf(
+      BiPredicate<? super T, ? super T> condition,
+      BiFunction<? super T, ? super T, ? extends R> mapper) {
+    requireNonNull(condition);
+    requireNonNull(mapper);
+    return new MinSize<T, R>() {
+      @Override boolean matches(List<? extends T> list) {
+        return super.matches(list) && condition.test(list.get(0), list.get(1));
+      }
+      @Override R map(List<? extends T> list) {
+        return mapper.apply(list.get(0), list.get(1));
+      }
+      @Override int arity() {
+        return 2;
+      }
+      @Override public String toString() {
+        return "the first two elements and they satisfy " + condition;
+      }
+    };
+  }
+
   /**
    * Returns a {@code Case} that matches when there are zero input elements,
    * in which case, {@code supplier} is invoked whose return value is used as the pattern matching

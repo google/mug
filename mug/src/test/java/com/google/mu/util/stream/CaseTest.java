@@ -18,11 +18,13 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.stream.Case.findFrom;
 import static com.google.mu.util.stream.Case.firstElement;
+import static com.google.mu.util.stream.Case.firstElementIf;
 import static com.google.mu.util.stream.Case.firstElements;
+import static com.google.mu.util.stream.Case.firstElementsIf;
 import static com.google.mu.util.stream.MoreCollectors.onlyElement;
-import static com.google.mu.util.stream.MoreCollectors.onlyElementThat;
+import static com.google.mu.util.stream.MoreCollectors.onlyElementIf;
 import static com.google.mu.util.stream.MoreCollectors.onlyElements;
-import static com.google.mu.util.stream.MoreCollectors.onlyElementsThat;
+import static com.google.mu.util.stream.MoreCollectors.onlyElementsIf;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -384,44 +386,85 @@ public class CaseTest {
         .isEqualTo("Input ([]) doesn't match pattern <at least 6 elements>.");
   }
 
-  @Test public void testOneElementWithCondition() {
-    assertThat(findFrom(asList(1), MoreCollectors.onlyElementThat(n -> n == 1, a -> a * 10))).hasValue(10);
-    assertThat(findFrom(asList(), MoreCollectors.onlyElementThat(n -> true))).isEmpty();
-    assertThat(findFrom(asList(1, 2), MoreCollectors.onlyElementThat(n -> true))).isEmpty();
-    assertThat(findFrom(asList(1), MoreCollectors.onlyElementThat(n -> false))).isEmpty();
+  @Test public void testOnlyElementIf() {
+    assertThat(findFrom(asList(1), onlyElementIf(n -> n == 1, a -> a * 10))).hasValue(10);
+    assertThat(findFrom(asList(), onlyElementIf(n -> true))).isEmpty();
+    assertThat(findFrom(asList(1, 2), onlyElementIf(n -> true))).isEmpty();
+    assertThat(findFrom(asList(1), onlyElementIf(n -> false))).isEmpty();
   }
 
-  @Test public void testOneElementWithCondition_asCollector() {
-    assertThat(Stream.of(1).collect(MoreCollectors.onlyElementThat(n -> n == 1, a -> a * 10)).intValue()).isEqualTo(10);
+  @Test public void testOnlyElementIf_asCollector() {
+    assertThat(Stream.of(1).collect(onlyElementIf(n -> n == 1, a -> a * 10)).intValue())
+        .isEqualTo(10);
     assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.empty().collect(MoreCollectors.onlyElementThat(n -> true)));
+        () -> Stream.empty().collect(onlyElementIf(n -> true)));
     assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.of(1, 2).collect(MoreCollectors.onlyElementThat(n -> true)));
+        () -> Stream.of(1, 2).collect(onlyElementIf(n -> true)));
     assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.of(1).collect(MoreCollectors.onlyElementThat(n -> false)));
+        () -> Stream.of(1).collect(onlyElementIf(n -> false)));
   }
 
-  @Test public void testTwoElementsWithCondition() {
-    assertThat(findFrom(asList(1, 3), onlyElementsThat((a, b) -> a < b, (a, b) -> a + b))).hasValue(4);
-    assertThat(findFrom(asList(1), onlyElementsThat((a, b) -> a < b, (a, b) -> a + b))).isEmpty();
-    assertThat(findFrom(asList(1, 2, 3), onlyElementsThat((a, b) -> a < b, (a, b) -> a + b))).isEmpty();
-    assertThat(findFrom(asList(3, 1), onlyElementsThat((a, b) -> a < b, (a, b) -> a + b))).isEmpty();
+  @Test public void testOnlyElementsIf() {
+    assertThat(findFrom(asList(1, 3), onlyElementsIf((a, b) -> a < b, (a, b) -> a + b))).hasValue(4);
+    assertThat(findFrom(asList(1), onlyElementsIf((a, b) -> a < b, (a, b) -> a + b))).isEmpty();
+    assertThat(findFrom(asList(1, 2, 3), onlyElementsIf((a, b) -> a < b, (a, b) -> a + b))).isEmpty();
+    assertThat(findFrom(asList(3, 1), onlyElementsIf((a, b) -> a < b, (a, b) -> a + b))).isEmpty();
   }
 
-  @Test public void testTwoElementsWithCondition_asCollector() {
-    assertThat(Stream.of(1, 3).collect(onlyElementsThat((a, b) -> a < b, (a, b) -> a + b)).intValue()).isEqualTo(4);
+  @Test public void testOnlyElementsIf_asCollector() {
+    assertThat(Stream.of(1, 3).collect(onlyElementsIf((a, b) -> a < b, (a, b) -> a + b)).intValue())
+        .isEqualTo(4);
     assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.of(1).collect(onlyElementsThat((a, b) -> a < b, (a, b) -> a + b)));
+        () -> Stream.of(1).collect(onlyElementsIf((a, b) -> a < b, (a, b) -> a + b)));
     assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.of(1, 2, 3).collect(onlyElementsThat((a, b) -> a < b, (a, b) -> a + b)));
+        () -> Stream.of(1, 2, 3).collect(onlyElementsIf((a, b) -> a < b, (a, b) -> a + b)));
     assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.of(3, 1).collect(onlyElementsThat((a, b) -> a < b, (a, b) -> a + b)));
+        () -> Stream.of(3, 1).collect(onlyElementsIf((a, b) -> a < b, (a, b) -> a + b)));
+  }
+
+  @Test public void testFirstElementIf() {
+    assertThat(findFrom(asList(1, 2), firstElementIf(n -> n == 1, a -> a * 10))).hasValue(10);
+    assertThat(findFrom(asList(1), firstElementIf(n -> true))).hasValue(1);
+    assertThat(findFrom(asList(), firstElementIf(n -> true))).isEmpty();
+    assertThat(findFrom(asList(1), firstElementIf(n -> false))).isEmpty();
+  }
+
+  @Test public void testFirstElementIf_asCollector() {
+    assertThat(Stream.of(1, 2).collect(firstElementIf(n -> n == 1, a -> a * 10)).intValue())
+        .isEqualTo(10);
+    assertThat(Stream.of(1).collect(firstElementIf(n -> n == 1)).intValue())
+        .isEqualTo(1);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Stream.empty().collect(firstElementIf(n -> true)));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Stream.of(1).collect(onlyElementIf(n -> false)));
+  }
+
+  @Test public void testFirstElementsIf() {
+    assertThat(findFrom(asList(1, 3), firstElementsIf((a, b) -> a < b, (a, b) -> a + b))).hasValue(4);
+    assertThat(findFrom(asList(1, 3, 5), firstElementsIf((a, b) -> a < b, (a, b) -> a + b))).hasValue(4);
+    assertThat(findFrom(asList(3, 1), firstElementsIf((a, b) -> a < b, (a, b) -> a + b))).isEmpty();
+  }
+
+  @Test public void testFirstElementsIf_asCollector() {
+    assertThat(Stream.of(1, 3).collect(firstElementsIf((a, b) -> a < b, (a, b) -> a + b)).intValue())
+        .isEqualTo(4);
+    assertThat(Stream.of(1, 3, 5).collect(firstElementsIf((a, b) -> a < b, (a, b) -> a + b)).intValue())
+        .isEqualTo(4);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Stream.of(1).collect(onlyElementsIf((a, b) -> true, (a, b) -> a + b)));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Stream.of(3, 1).collect(onlyElementsIf((a, b) -> a < b, (a, b) -> a + b)));
   }
 
   @Test public void testMultipleCases_firstCaseMatches() {
@@ -437,17 +480,16 @@ public class CaseTest {
     assertThat(
         findFrom(
             asList(1),
-            onlyElementThat(a -> a > 2, a -> a * 10),
+            onlyElementIf(a -> a > 2, a -> a * 10),
             firstElement((a) -> -a)))
         .hasValue(-1);
   }
 
   @Test
   public void testMultipleCases_fallthrough() {
-    assertThat(findFrom(asList(1), onlyElementThat(a -> a > 2, a -> a * 10), onlyElementThat(a -> a > 2, a -> -a)))
+    assertThat(findFrom(asList(1), onlyElementIf(a -> a > 2, a -> a * 10), onlyElementIf(a -> a > 2, a -> -a)))
         .isEmpty();
   }
-
 
   @Test public void testShortListInErrorMessage() {
     IllegalArgumentException thrown =
