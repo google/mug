@@ -157,8 +157,8 @@ public final class MoreCollectors {
   }
 
   /**
-   * Returns a {@code Case} that matches when there are exactly one input elements
-   * that satisfies {@code condition}.
+   * Returns a {@code Case} that matches when there are exactly one input element,
+   * and the element satisfies {@code condition}.
    *
    * @since 5.3
    */
@@ -167,9 +167,9 @@ public final class MoreCollectors {
   }
 
   /**
-   * Returns a {@code Case} that matches when there are exactly one input elements
-   * that satisfies {@code condition}. Upon match, the single element is passed to {@code mapper} and
-   * the return value will be the result.
+   * Returns a {@code Case} that matches when there are exactly one input element,
+   * and the element satisfies {@code condition}. Upon match, the element is passed to
+   * {@code mapper} and the return value will be the result.
    *
    * @since 5.3
    */
@@ -220,9 +220,9 @@ public final class MoreCollectors {
   }
 
   /**
-   * Returns a {@code Case} that matches when there are exactly two input elements
-   * that satisfy {@code condition}. Upon match, the two elements are passed to {@code mapper} and
-   * the return value will be the result.
+   * Returns a {@code Case} that matches when there are exactly two input elements,
+   * and the two elements satisfy {@code condition}. Upon match, the two elements are passed to
+   * {@code mapper} and the return value will be the result.
    *
    * @since 5.3
    */
