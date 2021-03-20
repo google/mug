@@ -59,7 +59,7 @@ import java.util.stream.Collector;
  * }</pre>
  *
  * @since 3.6
- * @deprecated Use {@link Case} instead.
+ * @deprecated Use {@link ListPattern} instead.
  */
 @Deprecated
 public final class Cases {

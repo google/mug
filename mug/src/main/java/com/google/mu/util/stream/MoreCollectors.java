@@ -27,7 +27,7 @@ import com.google.mu.util.Both;
  * @since 5.2
  */
 public final class MoreCollectors {
-  private static final Case<Object, ?, ?> ONLY_ELEMENT = onlyElement(Function.identity());
+  private static final ListPattern<Object, ?, ?> ONLY_ELEMENT = onlyElement(Function.identity());
 
   /**
    * Analogous to {@link Collectors#mapping Collectors.mapping()}, applies a mapping function to
@@ -111,16 +111,16 @@ public final class MoreCollectors {
    * Returns a collector that collects to the only one element from the input, or else throws
    * IllegalArgumentExceptioin. For example: {@code stream.collect(onlyElement())}.
 
-   * <p>You can also pass the returned {@code Case} collector to the {@link Case#findFrom
-   * Case.findFrom(List, Case...)} method, which returns {@code Optional<T>}, allowing you to
+   * <p>You can also pass the returned {@code ListPattern} collector to the {@link ListPattern#findFrom
+   * ListPattern.findFrom(List, ListPattern...)} method, which returns {@code Optional<T>}, allowing you to
    * handle the {@code size() != 1} case. For example:
    *
    * <pre>{@code
    * Optional<LogRecord> logRecord = findFrom(logRecords, onlyElement());
    * }</pre>
    *
-   * <p>More than one cases can be passed to {@code findFrom()} when there are multiple possible
-   * cases. Say, if the list could contain one or two elements:
+   * <p>More than one patterns can be passed to {@code findFrom()} when there are multiple possible
+   * patterns. Say, if the list could contain one or two elements:
    *
    * <pre>{@code
    * Optional<LogRecord> logRecord = findFrom(
@@ -130,13 +130,13 @@ public final class MoreCollectors {
    * }</pre>
    *
    * <p>There are also conditional {@link #onlyElementIf(Predicate) onlyElementIf()},
-   * and non-exact cases such as {@link Case#firstElement(Function) firstElement()} and friends.
+   * and non-exact patterns such as {@link ListPattern#firstElement(Function) firstElement()} and friends.
    *
    * @since 5.3
    */
   @SuppressWarnings("unchecked")  // This collector takes any T and returns as is.
-  public static <T> Case<T, ?, T> onlyElement() {
-    return (Case<T, ?, T>) ONLY_ELEMENT;
+  public static <T> ListPattern<T, ?, T> onlyElement() {
+    return (ListPattern<T, ?, T>) ONLY_ELEMENT;
   }
 
   /**
@@ -145,25 +145,26 @@ public final class MoreCollectors {
    * IllegalArgumentExceptioin is thrown.
    *
    * <p>Usually you want to use {@link #onlyElement()} instead to get the only element from the
-   * stream or list. This method is useful when you have multiple potential cases passed to the
-   * {@link Case#findFrom Case.findFrom(List, Case...)} method. For example, you may want to
-   * parse either a qualified resource name in the format of "foo.bar", or an unqualified name "bar":
+   * stream or list. This method is useful when you have multiple potential patterns passed to the
+   * {@link ListPattern#findFrom ListPattern.findFrom(List, ListPattern...)} method.
+   * For example, you may want to parse either a qualified resource name in the format of
+   * "foo.bar", or an unqualified name "bar":
    *
    * <pre>{@code
-   * Optional<ResourceName> resourceName = Case.findFrom(
+   * Optional<ResourceName> resourceName = ListPattern.findFrom(
    *     Splitter.on('.').split(resourceNameString),
    *     onlyElements((parent, name) -> ResourceName.qualified(parent, name)),
    *     onlyElement(name -> ResourceName.unqualified(name)));
    * }</pre>
    *
    * <p>There are also conditional {@link #onlyElementIf(Predicate, Function) onlyElementIf()},
-   * and non-exact cases such as {@link Case#firstElement(Function) firstElement()} and friends.
+   * and non-exact patterns such as {@link ListPattern#firstElement(Function) firstElement()} and friends.
    *
    * @since 5.3
    */
-  public static <T, R> Case<T, ?, R> onlyElement(Function<? super T, ? extends R> mapper) {
+  public static <T, R> ListPattern<T, ?, R> onlyElement(Function<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
-    return new Case.ExactSize<T, R>() {
+    return new ListPattern.ExactSize<T, R>() {
       @Override R map(List<? extends T> list) {
         return mapper.apply(list.get(0));
       }
@@ -177,46 +178,46 @@ public final class MoreCollectors {
   }
 
   /**
-   * Returns a {@code Case} that matches when there are exactly one input element,
+   * Returns a {@code ListPattern} that matches when there are exactly one input element,
    * and the element satisfies {@code condition}.
    *
-   * <p>This method is usually used as one of the multiple potential cases passed to
-   * the {@link Case#findFrom Case.findFrom(List, Case...)} method so that you can
+   * <p>This method is usually used as one of the multiple potential patterns passed to
+   * the {@link ListPattern#findFrom ListPattern.findFrom(List, ListPattern...)} method so that you can
    * use a guard {@link Predicate} to constrain a particular case.
    *
    * @since 5.3
    */
-  public static <T> Case<T, ?, T> onlyElementIf(Predicate<? super T> condition) {
+  public static <T> ListPattern<T, ?, T> onlyElementIf(Predicate<? super T> condition) {
     return onlyElementIf(condition, Function.identity());
   }
 
   /**
-   * Returns a {@code Case} that matches when there are exactly one input element,
+   * Returns a {@code ListPattern} that matches when there are exactly one input element,
    * and the element satisfies {@code condition}. Upon match, the element is passed to
    * {@code mapper} and the return value will be the result.
    *
-   * <p>This method is usually used as one of the multiple potential cases passed to
-   * the {@link Case#findFrom Case.findFrom(List, Case...)} method so that you can
+   * <p>This method is usually used as one of the multiple potential patterns passed to
+   * the {@link ListPattern#findFrom ListPattern.findFrom(List, ListPattern...)} method so that you can
    * use a guard {@link Predicate} to constrain a particular case.
    *
    * @since 5.3
    */
-  public static <T, R> Case<T, ?, R> onlyElementIf(
+  public static <T, R> ListPattern<T, ?, R> onlyElementIf(
       Predicate<? super T> condition, Function<? super T, ? extends R> mapper) {
     requireNonNull(condition);
     requireNonNull(mapper);
-    return new Case.ExactSize<T, R>() {
+    return new ListPattern.ExactSize<T, R>() {
       @Override boolean matches(List<? extends T> list) {
         return super.matches(list) && condition.test(list.get(0));
       }
       @Override R map(List<? extends T> list) {
         return mapper.apply(list.get(0));
       }
-      @Override public String toString() {
-        return "exactly 1 element and it satisfies " + condition;
-      }
       @Override int arity() {
         return 1;
+      }
+      @Override public String toString() {
+        return "exactly 1 element and it satisfies " + condition;
       }
     };
   }
@@ -226,8 +227,8 @@ public final class MoreCollectors {
    * using the {@code mapper} function. If there are fewer or more elements in the input,
    * IllegalArgumentExceptioin is thrown.
    *
-   * <p>You can also pass the returned {@code Case} collector to the {@link
-   * Case#findFrom Case.findFrom(List, Case...)} method,
+   * <p>You can also pass the returned {@code ListPattern} collector to the {@link
+   * ListPattern#findFrom ListPattern.findFrom(List, ListPattern...)} method,
    * which returns {@code Optional<T>}, allowing you to handle the {@code size() != 2} case.
    * For example:
    *
@@ -237,8 +238,8 @@ public final class MoreCollectors {
    *     onlyElements((online, offline) -> mergeLogRecords(online, offline)));
    * }</pre>
    *
-   * <p>More than one cases can be passed to {@code findFrom()} when there are multiple possible
-   * cases. Say, if the list could contain one or two elements:
+   * <p>More than one patterns can be passed to {@code findFrom()} when there are multiple possible
+   * patterns. Say, if the list could contain one or two elements:
    *
    * <pre>{@code
    * Optional<LogRecord> logRecord = findFrom(
@@ -249,10 +250,10 @@ public final class MoreCollectors {
    *
    * @since 5.3
    */
-  public static <T, R> Case<T, ?, R> onlyElements(
+  public static <T, R> ListPattern<T, ?, R> onlyElements(
       BiFunction<? super T, ? super T, ? extends R> mapper) {
     requireNonNull(mapper);
-    return new Case.ExactSize<T, R>() {
+    return new ListPattern.ExactSize<T, R>() {
       @Override R map(List<? extends T> list) {
         return mapper.apply(list.get(0), list.get(1));
       }
@@ -263,33 +264,33 @@ public final class MoreCollectors {
   }
 
   /**
-   * Returns a {@code Case} that matches when there are exactly two input elements,
+   * Returns a {@code ListPattern} that matches when there are exactly two input elements,
    * and the two elements satisfy {@code condition}. Upon match, the two elements are passed to
    * {@code mapper} and the return value will be the result.
    *
-   * <p>This method is usually used as one of the multiple potential cases passed to
-   * the {@link Case#findFrom Case.findFrom(List, Case...)} method so that you can use a
-   * guard {@link BiPredicate} to constrain a particular case.
+   * <p>This method is usually used as one of the multiple potential patterns passed to
+   * the {@link ListPattern#findFrom ListPattern.findFrom(List, ListPattern...)} method so that
+   * you can use a guard {@link BiPredicate} to constrain a particular case.
    *
    * @since 5.3
    */
-  public static <T, R> Case<T, ?, R> onlyElementsIf(
+  public static <T, R> ListPattern<T, ?, R> onlyElementsIf(
       BiPredicate<? super T, ? super T> condition,
       BiFunction<? super T, ? super T, ? extends R> mapper) {
     requireNonNull(condition);
     requireNonNull(mapper);
-    return new Case.ExactSize<T, R>() {
+    return new ListPattern.ExactSize<T, R>() {
       @Override boolean matches(List<? extends T> list) {
         return super.matches(list) && condition.test(list.get(0), list.get(1));
       }
       @Override R map(List<? extends T> list) {
         return mapper.apply(list.get(0), list.get(1));
       }
-      @Override public String toString() {
-        return "exactly 2 elements and they satisfy " + condition;
-      }
       @Override int arity() {
         return 2;
+      }
+      @Override public String toString() {
+        return "exactly 2 elements and they satisfy " + condition;
       }
     };
   }
@@ -300,17 +301,18 @@ public final class MoreCollectors {
    * IllegalArgumentExceptioin is thrown.
    *
    * <p>If you need to handle the {@code size() != 3} case, consider to use the {@link
-   * Case#findFrom Case.findFrom(List, Case...)} method, which allows you to pass more than one possible
-   * cases, and returns {@code Optional.empty()} if none of the provided cases match.
+   * ListPattern#findFrom ListPattern.findFrom(List, ListPattern...)} method, which allows you to pass
+   * more than one possible patterns, and returns {@code Optional.empty()} if none of the provided
+   * patterns match.
    *
    * <p>There are also conditional {@link #onlyElementsIf(BiPredicate, BiFunction) onlyElementsIf()},
-   * and non-exact cases such as {@link Case#firstElements(Ternary) firstElements()} and friends.
+   * and non-exact patterns such as {@link ListPattern#firstElements(Ternary) firstElements()} and friends.
    *
    * @since 5.3
    */
-  public static <T, R> Case<T, ?, R> onlyElements(Ternary<? super T, ? extends R> mapper) {
+  public static <T, R> ListPattern<T, ?, R> onlyElements(Ternary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
-    return new Case.ExactSize<T, R>() {
+    return new ListPattern.ExactSize<T, R>() {
       @Override R map(List<? extends T> list) {
         return mapper.apply(list.get(0), list.get(1), list.get(2));
       }
@@ -326,17 +328,19 @@ public final class MoreCollectors {
    * IllegalArgumentExceptioin is thrown.
    *
    * <p>If you need to handle the {@code size() != 4} case, consider to use the {@link
-   * Case#findFrom Case.findFrom(List, Case...)} method, which allows you to pass more than one possible
-   * cases, and returns {@code Optional.empty()} if none of the provided cases match.
+   * ListPattern#findFrom ListPattern.findFrom(List, ListPattern...)} method, which allows you to
+   * pass more than one possible patterns, and returns {@code Optional.empty()} if none of the
+   * provided patterns match.
    *
    * <p>There are also conditional {@link #onlyElementsIf(BiPredicate, BiFunction) onlyElementsIf()},
-   * and non-exact cases such as {@link Case#firstElements(Quarternary) firstElements()} and friends.
+   * and non-exact patterns such as {@link ListPattern#firstElements(Quarternary) firstElements()}
+   * and friends.
    *
    * @since 5.3
    */
-  public static <T, R> Case<T, ?, R> onlyElements(Quarternary<? super T, ? extends R> mapper) {
+  public static <T, R> ListPattern<T, ?, R> onlyElements(Quarternary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
-    return new Case.ExactSize<T, R>() {
+    return new ListPattern.ExactSize<T, R>() {
       @Override R map(List<? extends T> list) {
         return mapper.apply(list.get(0), list.get(1), list.get(2), list.get(3));
       }
@@ -352,17 +356,18 @@ public final class MoreCollectors {
    * IllegalArgumentExceptioin is thrown.
    *
    * <p>If you need to handle the {@code size() != 5} case, consider to use the {@link
-   * Case#findFrom Case.findFrom(List, Case...)} method, which allows you to pass more than one possible
-   * cases, and returns {@code Optional.empty()} if none of the provided cases match.
+   * ListPattern#findFrom ListPattern.findFrom(List, ListPattern...)} method, which allows you to
+   * pass more than one possible patterns, and returns {@code Optional.empty()} if none of the provided
+   * patterns match.
    *
    * <p>There are also conditional {@link #onlyElementsIf(BiPredicate, BiFunction) onlyElementsIf()},
-   * and non-exact cases such as {@link Case#firstElements(Quinary) firstElements()} and friends.
+   * and non-exact patterns such as {@link ListPattern#firstElements(Quinary) firstElements()} and friends.
    *
    * @since 5.3
    */
-  public static <T, R> Case<T, ?, R> onlyElements(Quinary<? super T, ? extends R> mapper) {
+  public static <T, R> ListPattern<T, ?, R> onlyElements(Quinary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
-    return new Case.ExactSize<T, R>() {
+    return new ListPattern.ExactSize<T, R>() {
       @Override R map(List<? extends T> list) {
         return mapper.apply(list.get(0), list.get(1), list.get(2), list.get(3), list.get(4));
       }
@@ -378,17 +383,18 @@ public final class MoreCollectors {
    * IllegalArgumentExceptioin is thrown.
    *
    * <p>If you need to handle the {@code size() != 6} case, consider to use the {@link
-   * Case#findFrom Case.findFrom(List, Case...)} method, which allows you to pass more than one possible
-   * cases, and returns {@code Optional.empty()} if none of the provided cases match.
+   * ListPattern#findFrom ListPattern.findFrom(List, ListPattern...)} method, which allows you to
+   * pass more than one possible patterns, and returns {@code Optional.empty()} if none of the
+   * provided patterns match.
    *
    * <p>There are also conditional {@link #onlyElementsIf(BiPredicate, BiFunction) onlyElementsIf()},
-   * and non-exact cases such as {@link Case#firstElements(Senary) firstElements()} and friends.
+   * and non-exact patterns such as {@link ListPattern#firstElements(Senary) firstElements()} and friends.
    *
    * @since 5.3
    */
-  public static <T, R> Case<T, ?, R> onlyElements(Senary<? super T, ? extends R> mapper) {
+  public static <T, R> ListPattern<T, ?, R> onlyElements(Senary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
-    return new Case.ExactSize<T, R>() {
+    return new ListPattern.ExactSize<T, R>() {
       @Override R map(List<? extends T> list) {
         return mapper.apply(
             list.get(0), list.get(1), list.get(2), list.get(3), list.get(4), list.get(5));

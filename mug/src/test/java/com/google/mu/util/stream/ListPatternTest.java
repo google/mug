@@ -16,11 +16,11 @@ package com.google.mu.util.stream;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static com.google.mu.util.stream.Case.findFrom;
-import static com.google.mu.util.stream.Case.firstElement;
-import static com.google.mu.util.stream.Case.firstElementIf;
-import static com.google.mu.util.stream.Case.firstElements;
-import static com.google.mu.util.stream.Case.firstElementsIf;
+import static com.google.mu.util.stream.ListPattern.findFrom;
+import static com.google.mu.util.stream.ListPattern.firstElement;
+import static com.google.mu.util.stream.ListPattern.firstElementIf;
+import static com.google.mu.util.stream.ListPattern.firstElements;
+import static com.google.mu.util.stream.ListPattern.firstElementsIf;
 import static com.google.mu.util.stream.MoreCollectors.onlyElement;
 import static com.google.mu.util.stream.MoreCollectors.onlyElementIf;
 import static com.google.mu.util.stream.MoreCollectors.onlyElements;
@@ -37,16 +37,16 @@ import org.junit.runners.JUnit4;
 import com.google.common.testing.NullPointerTester;
 
 @RunWith(JUnit4.class)
-public class CaseTest {
+public class ListPatternTest {
   @Test public void testEmpty() {
-    assertThat(findFrom(asList(), Case.empty(() -> "ok"))).hasValue("ok");
-    assertThat(findFrom(asList(1), Case.empty(() -> "ok"))).isEmpty();
+    assertThat(findFrom(asList(), ListPattern.empty(() -> "ok"))).hasValue("ok");
+    assertThat(findFrom(asList(1), ListPattern.empty(() -> "ok"))).isEmpty();
   }
 
   @Test public void testEmpty_asCollector() {
-    assertThat(Stream.empty().collect(Case.empty(() -> "ok"))).isEqualTo("ok");
+    assertThat(Stream.empty().collect(ListPattern.empty(() -> "ok"))).isEqualTo("ok");
     IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> Stream.of(1).collect(Case.empty(() -> "ok")));
+        assertThrows(IllegalArgumentException.class, () -> Stream.of(1).collect(ListPattern.empty(() -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Input ([1]) doesn't match pattern <empty>.");
   }
@@ -507,6 +507,6 @@ public class CaseTest {
   }
 
   @Test public void testNulls() throws Exception {
-    new NullPointerTester().testAllPublicStaticMethods(Case.class);
+    new NullPointerTester().testAllPublicStaticMethods(ListPattern.class);
   }
 }
