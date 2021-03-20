@@ -166,8 +166,12 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
    * Returns a {@code Case} that attempts to find and transform the first two elements
    * from the input using the {@code mapper} function.
    *
-   * <p>For example, {@code Case.findFrom(list, firstElements(String::concat))} is equivalent to
-   * {@code list.size() < 2 ? Optional.empty() : Optional.of(list.get(0) + list.get(1)}.
+   * <p>For example, <pre>{@code
+   * Case.findFrom(list, firstElements(String::concat))
+   * }</pre>
+   * is equivalent to <pre>{@code
+   * list.size() < 2 ? Optional.empty() : Optional.of(list.get(0) + list.get(1)
+   * }</pre>
    */
   public static <T, R> Case<T, ?, R> firstElements(
       BiFunction<? super T, ? super T, ? extends R> mapper) {
@@ -186,8 +190,12 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
    * Returns a {@code Case} that attempts to find and transform the first three elements
    * from the input using the {@code mapper} function.
    *
-   * <p>For example, {@code Case.findFrom(list, firstElements((a, b, c) -> a + b + c} is equivalent to
-   * {@code list.size() < 3 ? Optional.empty() : Optional.of(list.get(0) + list.get(1) + list.get(2)}.
+   * <p>For example, <pre>{@code
+   * Case.findFrom(list, firstElements((a, b, c) -> a + b + c
+   * }</pre>
+   * is equivalent to <pre>{@code
+   * list.size() < 3 ? Optional.empty() : Optional.of(list.get(0) + list.get(1) + list.get(2)
+   * }</pre>
    */
   public static <T, R> Case<T, ?, R> firstElements(Ternary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
@@ -205,9 +213,9 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
    * Returns a {@code Case} that attempts to find and transform the first four elements
    * from the input using the {@code mapper} function.
    *
-   * <p>For example, {@code Case.findFrom(list, firstElements((a, b, c, d) -> a + b + c + d}
-   * is equivalent to
-   * <pre>{@code
+   * <p>For example, <pre>{@code
+   * Case.findFrom(list, firstElements((a, b, c, d) -> a + b + c + d
+   * }</pre> is equivalent to <pre>{@code
    * list.size() < 4
    *     ? Optional.empty()
    *     : Optional.of(list.get(0) + list.get(1) + list.get(2) + list.get(3)
@@ -229,9 +237,9 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
    * Returns a {@code Case} that attempts to find and transform the first five elements
    * from the input using the {@code mapper} function.
    *
-   * <p>For example, {@code Case.findFrom(list, firstElements((a, b, c, d, e) -> a + b + c + d + e}
-   * is equivalent to
-   * <pre>{@code
+   * <p>For example, <pre>{@code
+   * Case.findFrom(list, firstElements((a, b, c, d, e) -> a + b + c + d + e
+   * }</pre> is equivalent to <pre>{@code
    * list.size() < 5
    *     ? Optional.empty()
    *     : Optional.of(list.get(0) + list.get(1) + list.get(2) + list.get(3) + list.get(4)
@@ -253,10 +261,9 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
    * Returns a {@code Case} that attempts to find and transform the first six elements
    * from the input using the {@code mapper} function.
    *
-   * <p>For example, {@code
-   * Case.findFrom(list, firstElements((a, b, c, d, e, f) -> a + b + c + d + e + f}
-   * is equivalent to
-   * <pre>{@code
+   * <p>For example, <pre>{@code
+   * Case.findFrom(list, firstElements((a, b, c, d, e, f) -> a + b + c + d + e + f
+   * }</pre> is equivalent to <pre>{@code
    * list.size() < 6
    *     ? Optional.empty()
    *     : Optional.of(list.get(0) + list.get(1) + list.get(2) + list.get(3) + list.get(4) + list.get(5)
