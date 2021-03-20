@@ -212,11 +212,11 @@ public final class MoreCollectors {
       @Override R map(List<? extends T> list) {
         return mapper.apply(list.get(0));
       }
-      @Override public String toString() {
-        return "exactly 1 element and it satisfies " + condition;
-      }
       @Override int arity() {
         return 1;
+      }
+      @Override public String toString() {
+        return "exactly 1 element and it satisfies " + condition;
       }
     };
   }
@@ -285,11 +285,11 @@ public final class MoreCollectors {
       @Override R map(List<? extends T> list) {
         return mapper.apply(list.get(0), list.get(1));
       }
-      @Override public String toString() {
-        return "exactly 2 elements and they satisfy " + condition;
-      }
       @Override int arity() {
         return 2;
+      }
+      @Override public String toString() {
+        return "exactly 2 elements and they satisfy " + condition;
       }
     };
   }

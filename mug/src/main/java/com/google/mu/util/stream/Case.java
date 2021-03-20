@@ -324,11 +324,11 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
       @Override R map(List<? extends T> list) {
         return supplier.get();
       }
-      @Override public String toString() {
-        return "empty";
-      }
       @Override int arity() {
         return 0;
+      }
+      @Override public String toString() {
+        return "empty";
       }
     };
   }
@@ -378,12 +378,12 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
       return list.size() == arity();
     }
 
-    @Override public String toString() {
-      return "only " + arity() + " elements";
-    }
-
     @Override public final Supplier<List<T>> supplier() {
       return () -> new BoundedBuffer<>(arity() + 1);
+    }
+
+    @Override public String toString() {
+      return "only " + arity() + " elements";
     }
 
     abstract int arity();
@@ -394,12 +394,12 @@ public abstract class Case<T, A, R> implements Collector<T, A, R> {
       return list.size() >= arity();
     }
 
-    @Override public String toString() {
-      return "at least " + arity() + " elements";
-    }
-
     @Override public final Supplier<List<T>> supplier() {
       return () -> new BoundedBuffer<>(arity());
+    }
+
+    @Override public String toString() {
+      return "at least " + arity() + " elements";
     }
 
     abstract int arity();
