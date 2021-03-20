@@ -116,7 +116,7 @@ public final class MoreCollectors {
    * Case#findFrom Case.findFrom(List, Case...)} method, which allows you to pass more than one possible
    * cases, and returns {@code Optional.empty()} if none of the provided cases match.
    *
-   * <p>There are also conditional {@link #onlyElementIf(Predicate) onlyElementThat()},
+   * <p>There are also conditional {@link #onlyElementIf(Predicate) onlyElementIf()},
    * and non-exact cases such as {@link Case#firstElements(Function) firstElements()} and friends.
    *
    * @since 5.3
@@ -136,7 +136,7 @@ public final class MoreCollectors {
    * Case#findFrom Case.findFrom(List, Case...)} method, which allows you to pass more than one possible
    * cases, and returns {@code Optional.empty()} if none of the provided cases match.
    *
-   * <p>There are also conditional {@link #onlyElementIf(Predicate, Function) onlyElementThat()},
+   * <p>There are also conditional {@link #onlyElementIf(Predicate, Function) onlyElementIf()},
    * and non-exact cases such as {@link Case#firstElements(Function) firstElements()} and friends.
    *
    * @since 5.3
@@ -201,7 +201,7 @@ public final class MoreCollectors {
    * Case#findFrom Case.findFrom(List, Case...)} method, which allows you to pass more than one possible
    * cases, and returns {@code Optional.empty()} if none of the provided cases match.
    *
-   * <p>There are also conditional {@link #onlyElementIf(BiPredicate, BiFunction) onlyElementThat()},
+   * <p>There are also conditional {@link #onlyElementIf(BiPredicate, BiFunction) onlyElementIf()},
    * and non-exact cases such as {@link Case#firstElements(Function) firstElements()} and friends.
    *
    * @since 5.3
@@ -255,7 +255,7 @@ public final class MoreCollectors {
    * Case#findFrom Case.findFrom(List, Case...)} method, which allows you to pass more than one possible
    * cases, and returns {@code Optional.empty()} if none of the provided cases match.
    *
-   * <p>There are also conditional {@link #onlyElementIf(BiPredicate, BiFunction) onlyElementThat()},
+   * <p>There are also conditional {@link #onlyElementIf(BiPredicate, BiFunction) onlyElementIf()},
    * and non-exact cases such as {@link Case#firstElements(Ternary) firstElements()} and friends.
    *
    * @since 5.3
@@ -280,7 +280,7 @@ public final class MoreCollectors {
    * Case#findFrom Case.findFrom(List, Case...)} method, which allows you to pass more than one possible
    * cases, and returns {@code Optional.empty()} if none of the provided cases match.
    *
-   * <p>There are also conditional {@link #onlyElementIf(BiPredicate, BiFunction) onlyElementThat()},
+   * <p>There are also conditional {@link #onlyElementIf(BiPredicate, BiFunction) onlyElementIf()},
    * and non-exact cases such as {@link Case#firstElements(Quarternary) firstElements()} and friends.
    *
    * @since 5.3
@@ -305,7 +305,7 @@ public final class MoreCollectors {
    * Case#findFrom Case.findFrom(List, Case...)} method, which allows you to pass more than one possible
    * cases, and returns {@code Optional.empty()} if none of the provided cases match.
    *
-   * <p>There are also conditional {@link #onlyElementIf(BiPredicate, BiFunction) onlyElementThat()},
+   * <p>There are also conditional {@link #onlyElementIf(BiPredicate, BiFunction) onlyElementIf()},
    * and non-exact cases such as {@link Case#firstElements(Quinary) firstElements()} and friends.
    *
    * @since 5.3
@@ -330,7 +330,7 @@ public final class MoreCollectors {
    * Case#findFrom Case.findFrom(List, Case...)} method, which allows you to pass more than one possible
    * cases, and returns {@code Optional.empty()} if none of the provided cases match.
    *
-   * <p>There are also conditional {@link #onlyElementIf(BiPredicate, BiFunction) onlyElementThat()},
+   * <p>There are also conditional {@link #onlyElementIf(BiPredicate, BiFunction) onlyElementIf()},
    * and non-exact cases such as {@link Case#firstElements(Senary) firstElements()} and friends.
    *
    * @since 5.3
