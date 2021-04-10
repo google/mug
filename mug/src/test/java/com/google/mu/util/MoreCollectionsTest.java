@@ -15,8 +15,8 @@
 package com.google.mu.util;
 
 import static com.google.common.truth.Truth8.assertThat;
-import static com.google.mu.util.MoreCollections.findFirst;
-import static com.google.mu.util.MoreCollections.findOnly;
+import static com.google.mu.util.MoreCollections.findFirstElements;
+import static com.google.mu.util.MoreCollections.findOnlyElements;
 import static java.util.Arrays.asList;
 
 import java.util.Collection;
@@ -36,75 +36,75 @@ public class MoreCollectionsTest {
   @TestParameter private CollectionType makeCollection;
 
   @Test public void testFindOnlyTwoElements() {
-    assertThat(findOnly(makeCollection.of(1, 10), Integer::sum)).hasValue(11);
-    assertThat(findOnly(makeCollection.of(1), Integer::sum)).isEmpty();
-    assertThat(findOnly(makeCollection.of(1, 2, 3), Integer::sum)).isEmpty();
+    assertThat(findOnlyElements(makeCollection.of(1, 10), Integer::sum)).hasValue(11);
+    assertThat(findOnlyElements(makeCollection.of(1), Integer::sum)).isEmpty();
+    assertThat(findOnlyElements(makeCollection.of(1, 2, 3), Integer::sum)).isEmpty();
   }
 
   @Test public void testFindOnlyThreeElements() {
-    assertThat(findOnly(makeCollection.of(1, 3, 5), (a, b, c) -> a + b + c)).hasValue(9);
-    assertThat(findOnly(makeCollection.of(1, 2), (a, b, c) -> a + b + c)).isEmpty();
-    assertThat(findOnly(makeCollection.of(1, 2, 3, 4), (a, b, c) -> a + b + c)).isEmpty();
+    assertThat(findOnlyElements(makeCollection.of(1, 3, 5), (a, b, c) -> a + b + c)).hasValue(9);
+    assertThat(findOnlyElements(makeCollection.of(1, 2), (a, b, c) -> a + b + c)).isEmpty();
+    assertThat(findOnlyElements(makeCollection.of(1, 2, 3, 4), (a, b, c) -> a + b + c)).isEmpty();
   }
 
   @Test public void testFindOnlyFourElements() {
-    assertThat(findOnly(makeCollection.of(1, 3, 5, 7), (a, b, c, d) -> a + b + c + d)).hasValue(16);
-    assertThat(findOnly(makeCollection.of(1, 2, 3), (a, b, c, d) -> a + b + c + d)).isEmpty();
-    assertThat(findOnly(makeCollection.of(1, 2, 3, 4, 5), (a, b, c, d) -> a + b + c)).isEmpty();
+    assertThat(findOnlyElements(makeCollection.of(1, 3, 5, 7), (a, b, c, d) -> a + b + c + d)).hasValue(16);
+    assertThat(findOnlyElements(makeCollection.of(1, 2, 3), (a, b, c, d) -> a + b + c + d)).isEmpty();
+    assertThat(findOnlyElements(makeCollection.of(1, 2, 3, 4, 5), (a, b, c, d) -> a + b + c)).isEmpty();
   }
 
   @Test public void testFindOnlyFiveElements() {
-    assertThat(findOnly(makeCollection.of(1, 3, 5, 7, 9), (a, b, c, d, e) -> a + b + c + d + e))
+    assertThat(findOnlyElements(makeCollection.of(1, 3, 5, 7, 9), (a, b, c, d, e) -> a + b + c + d + e))
         .hasValue(25);
-    assertThat(findOnly(makeCollection.of(1, 2, 3, 4), (a, b, c, d, e) -> a + b + c + d + e))
+    assertThat(findOnlyElements(makeCollection.of(1, 2, 3, 4), (a, b, c, d, e) -> a + b + c + d + e))
         .isEmpty();
-    assertThat(findOnly(makeCollection.of(1, 2, 3, 4, 5, 6), (a, b, c, d, e) -> a + b + c + e))
+    assertThat(findOnlyElements(makeCollection.of(1, 2, 3, 4, 5, 6), (a, b, c, d, e) -> a + b + c + e))
         .isEmpty();
   }
 
   @Test public void testFindOnlySixElements() {
-    assertThat(findOnly(makeCollection.of(1, 3, 5, 7, 9, 11), (a, b, c, d, e, f) -> a + b + c + d + e + f))
+    assertThat(findOnlyElements(makeCollection.of(1, 3, 5, 7, 9, 11), (a, b, c, d, e, f) -> a + b + c + d + e + f))
         .hasValue(36);
-    assertThat(findOnly(makeCollection.of(1, 2, 3, 4, 5), (a, b, c, d, e, f) -> a + b + c + d + e + f))
+    assertThat(findOnlyElements(makeCollection.of(1, 2, 3, 4, 5), (a, b, c, d, e, f) -> a + b + c + d + e + f))
         .isEmpty();
-    assertThat(findOnly(makeCollection.of(1, 2, 3, 4, 5, 6, 7), (a, b, c, d, e, f) -> a + b + c + e + f))
+    assertThat(findOnlyElements(makeCollection.of(1, 2, 3, 4, 5, 6, 7), (a, b, c, d, e, f) -> a + b + c + e + f))
         .isEmpty();
   }
 
   @Test public void testFindFirstTwoElements() {
-    assertThat(findFirst(makeCollection.of(1, 2), (a, b) -> a + b)).hasValue(3);
-    assertThat(findFirst(makeCollection.of(1, 3, 5), (a, b) -> a + b)).hasValue(4);
-    assertThat(findFirst(makeCollection.of(1), (a, b) -> a + b)).isEmpty();
+    assertThat(findFirstElements(makeCollection.of(1, 2), (a, b) -> a + b)).hasValue(3);
+    assertThat(findFirstElements(makeCollection.of(1, 3, 5), (a, b) -> a + b)).hasValue(4);
+    assertThat(findFirstElements(makeCollection.of(1), (a, b) -> a + b)).isEmpty();
   }
 
   @Test public void testFindFirstThreeElements() {
-    assertThat(findFirst(makeCollection.of(1, 3, 5), (a, b, c) -> a + b + c)).hasValue(9);
-    assertThat(findFirst(makeCollection.of(1, 3, 5, 7), (a, b, c) -> a + b + c)).hasValue(9);
-    assertThat(findFirst(makeCollection.of(1, 2), (a, b, c) -> a + b)).isEmpty();
+    assertThat(findFirstElements(makeCollection.of(1, 3, 5), (a, b, c) -> a + b + c)).hasValue(9);
+    assertThat(findFirstElements(makeCollection.of(1, 3, 5, 7), (a, b, c) -> a + b + c)).hasValue(9);
+    assertThat(findFirstElements(makeCollection.of(1, 2), (a, b, c) -> a + b)).isEmpty();
   }
 
   @Test public void testFindFirstFourElements() {
-    assertThat(findFirst(makeCollection.of(1, 3, 5, 7), (a, b, c, d) -> a + b + c + d))
+    assertThat(findFirstElements(makeCollection.of(1, 3, 5, 7), (a, b, c, d) -> a + b + c + d))
         .hasValue(16);
-    assertThat(findFirst(makeCollection.of(1, 3, 5, 7, 9), (a, b, c, d) -> a + b + c + d))
+    assertThat(findFirstElements(makeCollection.of(1, 3, 5, 7, 9), (a, b, c, d) -> a + b + c + d))
         .hasValue(16);
-    assertThat(findFirst(makeCollection.of(1, 2, 3), (a, b, c, d) -> a + b)).isEmpty();
+    assertThat(findFirstElements(makeCollection.of(1, 2, 3), (a, b, c, d) -> a + b)).isEmpty();
   }
 
   @Test public void testFindFirstFiveElements() {
-    assertThat(findFirst(makeCollection.of(1, 3, 5, 7, 9), (a, b, c, d, e) -> a + b + c + d + e))
+    assertThat(findFirstElements(makeCollection.of(1, 3, 5, 7, 9), (a, b, c, d, e) -> a + b + c + d + e))
         .hasValue(25);
-    assertThat(findFirst(makeCollection.of(1, 3, 5, 7, 9, 11), (a, b, c, d, e) -> a + b + c + d + e))
+    assertThat(findFirstElements(makeCollection.of(1, 3, 5, 7, 9, 11), (a, b, c, d, e) -> a + b + c + d + e))
         .hasValue(25);
-    assertThat(findFirst(makeCollection.of(1, 2, 3, 4), (a, b, c, d, e) -> a + b)).isEmpty();
+    assertThat(findFirstElements(makeCollection.of(1, 2, 3, 4), (a, b, c, d, e) -> a + b)).isEmpty();
   }
 
   @Test public void testFindFirstSixElements() {
-    assertThat(findFirst(makeCollection.of(1, 3, 5, 7, 9, 11), (a, b, c, d, e, f) -> a + b + c + d + e + f))
+    assertThat(findFirstElements(makeCollection.of(1, 3, 5, 7, 9, 11), (a, b, c, d, e, f) -> a + b + c + d + e + f))
         .hasValue(36);
-    assertThat(findFirst(makeCollection.of(1, 3, 5, 7, 9, 11, 13), (a, b, c, d, e, f) -> a + b + c + d + e + f))
+    assertThat(findFirstElements(makeCollection.of(1, 3, 5, 7, 9, 11, 13), (a, b, c, d, e, f) -> a + b + c + d + e + f))
         .hasValue(36);
-    assertThat(findFirst(makeCollection.of(1, 2, 3, 4, 5), (a, b, c, d, e, f) -> a + b)).isEmpty();
+    assertThat(findFirstElements(makeCollection.of(1, 2, 3, 4, 5), (a, b, c, d, e, f) -> a + b)).isEmpty();
   }
 
   @Test public void testNulls() throws Exception {
