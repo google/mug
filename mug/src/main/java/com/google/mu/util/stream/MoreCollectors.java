@@ -21,8 +21,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.BiFunction;
-import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collector;
@@ -33,6 +33,7 @@ import com.google.mu.function.Quinary;
 import com.google.mu.function.Senary;
 import com.google.mu.function.Ternary;
 import com.google.mu.util.Both;
+import com.google.mu.util.MoreLists;
 
 /**
  * Static utilities pertaining to {@link Collector} in addition to relevant utilities in JDK and Guava.
@@ -123,26 +124,9 @@ public final class MoreCollectors {
    * using the {@code mapper} function. If there are fewer or more elements in the input,
    * IllegalArgumentExceptioin is thrown.
    *
-   * <p>You can also pass the returned {@code ListPattern} collector to the {@link
-   * ShortListCollector#findFrom ListPattern.findFrom(List, ListPattern...)} method,
-   * which returns {@code Optional<T>}, allowing you to handle the {@code size() != 2} case.
-   * For example:
-   *
-   * <pre>{@code
-   * Optional<LogRecord> logRecord = findFrom(
-   *     logRecords,
-   *     onlyElements((online, offline) -> mergeLogRecords(online, offline)));
-   * }</pre>
-   *
-   * <p>More than one patterns can be passed to {@code findFrom()} when there are multiple possible
-   * patterns. Say, if the list could contain one or two elements:
-   *
-   * <pre>{@code
-   * Optional<LogRecord> logRecord = findFrom(
-   *     logRecords,
-   *     onlyElement(),  // If there is only one record, use it as is.
-   *     onlyElements((online, offline) -> mergeLogRecords(online, offline)));
-   * }</pre>
+   * <p>If you need to handle the {@code size() != 2} case, consider to use the {@link
+   * MoreLists#findOnly(java.util.List, BiFunction) MoreLists.findOnly()} method, which
+   * returns {@link Optional}.
    *
    * @since 5.3
    */
@@ -165,12 +149,8 @@ public final class MoreCollectors {
    * IllegalArgumentExceptioin is thrown.
    *
    * <p>If you need to handle the {@code size() != 3} case, consider to use the {@link
-   * ShortListCollector#findFrom ListPattern.findFrom(List, ListPattern...)} method, which allows you to pass
-   * more than one possible patterns, and returns {@code Optional.empty()} if none of the provided
-   * patterns match.
-   *
-   * <p>There are also conditional {@link #onlyElementsIf(BiPredicate, BiFunction) onlyElementsIf()},
-   * and non-exact patterns such as {@link ShortListCollector#firstElements(Ternary) firstElements()} and friends.
+   * MoreLists#findOnly(java.util.List, Ternary) MoreLists.findOnly()} method, which
+   * returns {@link Optional}.
    *
    * @since 5.3
    */
@@ -192,13 +172,8 @@ public final class MoreCollectors {
    * IllegalArgumentExceptioin is thrown.
    *
    * <p>If you need to handle the {@code size() != 4} case, consider to use the {@link
-   * ShortListCollector#findFrom ListPattern.findFrom(List, ListPattern...)} method, which allows you to
-   * pass more than one possible patterns, and returns {@code Optional.empty()} if none of the
-   * provided patterns match.
-   *
-   * <p>There are also conditional {@link #onlyElementsIf(BiPredicate, BiFunction) onlyElementsIf()},
-   * and non-exact patterns such as {@link ShortListCollector#firstElements(Quarternary) firstElements()}
-   * and friends.
+   * MoreLists#findOnly(java.util.List, Quarternary) MoreLists.findOnly()} method, which
+   * returns {@link Optional}.
    *
    * @since 5.3
    */
@@ -220,12 +195,8 @@ public final class MoreCollectors {
    * IllegalArgumentExceptioin is thrown.
    *
    * <p>If you need to handle the {@code size() != 5} case, consider to use the {@link
-   * ShortListCollector#findFrom ListPattern.findFrom(List, ListPattern...)} method, which allows you to
-   * pass more than one possible patterns, and returns {@code Optional.empty()} if none of the provided
-   * patterns match.
-   *
-   * <p>There are also conditional {@link #onlyElementsIf(BiPredicate, BiFunction) onlyElementsIf()},
-   * and non-exact patterns such as {@link ShortListCollector#firstElements(Quinary) firstElements()} and friends.
+   * MoreLists#findOnly(java.util.List, Quinary) MoreLists.findOnly()} method, which
+   * returns {@link Optional}.
    *
    * @since 5.3
    */
@@ -247,12 +218,8 @@ public final class MoreCollectors {
    * IllegalArgumentExceptioin is thrown.
    *
    * <p>If you need to handle the {@code size() != 6} case, consider to use the {@link
-   * ShortListCollector#findFrom ListPattern.findFrom(List, ListPattern...)} method, which allows you to
-   * pass more than one possible patterns, and returns {@code Optional.empty()} if none of the
-   * provided patterns match.
-   *
-   * <p>There are also conditional {@link #onlyElementsIf(BiPredicate, BiFunction) onlyElementsIf()},
-   * and non-exact patterns such as {@link ShortListCollector#firstElements(Senary) firstElements()} and friends.
+   * MoreLists#findOnly(java.util.List, Senary) MoreLists.findOnly()} method, which
+   * returns {@link Optional}.
    *
    * @since 5.3
    */
