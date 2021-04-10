@@ -28,7 +28,7 @@ public final class MoreCollections {
    * @throws NullPointerException if {@code collection} or {@code found} function is null, or if
    *     {@code found} function returns null.
    */
-  public static <T, R> Optional<R> findFirst(
+  public static <T, R> Optional<R> findFirstElements(
       Collection<T> collection, BiFunction<? super T, ? super T, ? extends R> found) {
     requireNonNull(found);
     if (collection.size() < 2) return Optional.empty();
@@ -48,7 +48,8 @@ public final class MoreCollections {
    * @throws NullPointerException if {@code collection} or {@code found} function is null, or if
    *     {@code found} function returns null.
    */
-  public static <T, R> Optional<R> findFirst(Collection<T> collection, Ternary<? super T, ? extends R> found) {
+  public static <T, R> Optional<R> findFirstElements(
+      Collection<T> collection, Ternary<? super T, ? extends R> found) {
     requireNonNull(found);
     if (collection.size() < 3) return Optional.empty();
     if (collection instanceof List && collection instanceof RandomAccess) {
@@ -67,7 +68,8 @@ public final class MoreCollections {
    * @throws NullPointerException if {@code collection} or {@code found} function is null, or if
    *     {@code found} function returns null.
    */
-  public static <T, R> Optional<R> findFirst(Collection<T> collection, Quarternary<? super T, ? extends R> found) {
+  public static <T, R> Optional<R> findFirstElements(
+      Collection<T> collection, Quarternary<? super T, ? extends R> found) {
     requireNonNull(found);
     if (collection.size() < 4) return Optional.empty();
     if (collection instanceof List && collection instanceof RandomAccess) {
@@ -86,7 +88,8 @@ public final class MoreCollections {
    * @throws NullPointerException if {@code collection} or {@code found} function is null, or if
    *     {@code found} function returns null.
    */
-  public static <T, R> Optional<R> findFirst(Collection<T> collection, Quinary<? super T, ? extends R> found) {
+  public static <T, R> Optional<R> findFirstElements(
+      Collection<T> collection, Quinary<? super T, ? extends R> found) {
     requireNonNull(found);
     if (collection.size() < 5) return Optional.empty();
     if (collection instanceof List && collection instanceof RandomAccess) {
@@ -105,7 +108,8 @@ public final class MoreCollections {
    * @throws NullPointerException if {@code collection} or {@code found} function is null, or if
    *     {@code found} function returns null.
    */
-  public static <T, R> Optional<R> findFirst(Collection<T> collection, Senary<? super T, ? extends R> found) {
+  public static <T, R> Optional<R> findFirstElements(
+      Collection<T> collection, Senary<? super T, ? extends R> found) {
     requireNonNull(found);
     if (collection.size() < 6) return Optional.empty();
     if (collection instanceof List && collection instanceof RandomAccess) {
@@ -124,7 +128,8 @@ public final class MoreCollections {
    * @throws NullPointerException if {@code collection} or {@code found} function is null, or if
    *     {@code found} function returns null.
    */
-  public static <T, R> Optional<R> findOnly(Collection<T> collection, BiFunction<? super T, ? super T, ? extends R> found) {
+  public static <T, R> Optional<R> findOnlyElements(
+      Collection<T> collection, BiFunction<? super T, ? super T, ? extends R> found) {
     requireNonNull(found);
     if (collection.size() != 2) return Optional.empty();
     if (collection instanceof List && collection instanceof RandomAccess) {
@@ -143,7 +148,8 @@ public final class MoreCollections {
    * @throws NullPointerException if {@code collection} or {@code found} function is null, or if
    *     {@code found} function returns null.
    */
-  public static <T, R> Optional<R> findOnly(Collection<T> collection, Ternary<? super T, ? extends R> found) {
+  public static <T, R> Optional<R> findOnlyElements(
+      Collection<T> collection, Ternary<? super T, ? extends R> found) {
     requireNonNull(found);
     if (collection.size() != 3) return Optional.empty();
     if (collection instanceof List && collection instanceof RandomAccess) {
@@ -162,7 +168,8 @@ public final class MoreCollections {
    * @throws NullPointerException if {@code collection} or {@code found} function is null, or if
    *     {@code found} function returns null.
    */
-  public static <T, R> Optional<R> findOnly(Collection<T> collection, Quarternary<? super T, ? extends R> found) {
+  public static <T, R> Optional<R> findOnlyElements(
+      Collection<T> collection, Quarternary<? super T, ? extends R> found) {
     requireNonNull(found);
     if (collection.size() != 4) return Optional.empty();
     if (collection instanceof List && collection instanceof RandomAccess) {
@@ -181,7 +188,8 @@ public final class MoreCollections {
    * @throws NullPointerException if {@code collection} or {@code found} function is null, or if
    *     {@code found} function returns null.
    */
-  public static <T, R> Optional<R> findOnly(Collection<T> collection, Quinary<? super T, ? extends R> found) {
+  public static <T, R> Optional<R> findOnlyElements(
+      Collection<T> collection, Quinary<? super T, ? extends R> found) {
     requireNonNull(found);
     if (collection.size() != 5) return Optional.empty();
     if (collection instanceof List && collection instanceof RandomAccess) {
@@ -200,7 +208,8 @@ public final class MoreCollections {
    * @throws NullPointerException if {@code collection} or {@code found} function is null, or if
    *     {@code found} function returns null.
    */
-  public static <T, R> Optional<R> findOnly(Collection<T> collection, Senary<? super T, ? extends R> found) {
+  public static <T, R> Optional<R> findOnlyElements(
+      Collection<T> collection, Senary<? super T, ? extends R> found) {
     requireNonNull(found);
     if (collection.size() != 6) return Optional.empty();
     if (collection instanceof List && collection instanceof RandomAccess) {

@@ -125,7 +125,8 @@ public final class MoreCollectors {
    * IllegalArgumentExceptioin is thrown.
    *
    * <p>To handle the {@code size() != 2} case, consider to use the {@link
-   * MoreCollections#findOnly(java.util.Collection, BiFunction) MoreCollections.findOnly()} method,
+   * MoreCollections#findOnlyElements(java.util.Collection, BiFunction)
+   * MoreCollections.findOnlyElements()} method,
    * which returns {@link Optional}.
    *
    * @since 5.3
@@ -149,7 +150,8 @@ public final class MoreCollectors {
    * IllegalArgumentExceptioin is thrown.
    *
    * <p>To handle the {@code size() != 3} case, consider to use the {@link
-   * MoreCollections#findOnly(java.util.Collection, Ternary) MoreCollections.findOnly()} method,
+   * MoreCollections#findOnlyElements(java.util.Collection, Ternary)
+   * MoreCollections.findOnlyElements()} method,
    * which returns {@link Optional}.
    *
    * @since 5.3
@@ -172,7 +174,8 @@ public final class MoreCollectors {
    * IllegalArgumentExceptioin is thrown.
    *
    * <p>To handle the {@code size() != 4} case, consider to use the {@link
-   * MoreCollections#findOnly(java.util.Collection, Quarternary) MoreCollections.findOnly()} method,
+   * MoreCollections#findOnlyElements(java.util.Collection, Quarternary)
+   * MoreCollections.findOnlyElements()} method,
    * which returns {@link Optional}.
    *
    * @since 5.3
@@ -195,7 +198,8 @@ public final class MoreCollectors {
    * IllegalArgumentExceptioin is thrown.
    *
    * <p>To handle the {@code size() != 5} case, consider to use the {@link
-   * MoreCollections#findOnly(java.util.Collection, Quinary) MoreCollections.findOnly()} method,
+   * MoreCollections#findOnlyElements(java.util.Collection, Quinary)
+   * MoreCollections.findOnlyElements()} method,
    * which returns {@link Optional}.
    *
    * @since 5.3
@@ -218,7 +222,8 @@ public final class MoreCollectors {
    * IllegalArgumentExceptioin is thrown.
    *
    * <p>To handle the {@code size() != 6} case, consider to use the {@link
-   * MoreCollections#findOnly(java.util.Collection, Senary) MoreCollections.findOnly()} method,
+   * MoreCollections#findOnlyElements(java.util.Collection, Senary)
+   * MoreCollections.findOnlyElements()} method,
    * which returns {@link Optional}.
    *
    * @since 5.3
