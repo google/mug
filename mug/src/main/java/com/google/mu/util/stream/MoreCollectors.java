@@ -33,7 +33,7 @@ import com.google.mu.function.Quinary;
 import com.google.mu.function.Senary;
 import com.google.mu.function.Ternary;
 import com.google.mu.util.Both;
-import com.google.mu.util.MoreLists;
+import com.google.mu.util.MoreCollections;
 
 /**
  * Static utilities pertaining to {@link Collector} in addition to relevant utilities in JDK and Guava.
@@ -125,7 +125,7 @@ public final class MoreCollectors {
    * IllegalArgumentExceptioin is thrown.
    *
    * <p>To handle the {@code size() != 2} case, consider to use the {@link
-   * MoreLists#findOnly(java.util.List, BiFunction) MoreLists.findOnly()} method, which
+   * MoreCollections#findOnly(java.util.Collection, BiFunction) MoreLists.findOnly()} method, which
    * returns {@link Optional}.
    *
    * @since 5.3
@@ -149,7 +149,7 @@ public final class MoreCollectors {
    * IllegalArgumentExceptioin is thrown.
    *
    * <p>To handle the {@code size() != 3} case, consider to use the {@link
-   * MoreLists#findOnly(java.util.List, Ternary) MoreLists.findOnly()} method, which
+   * MoreCollections#findOnly(java.util.Collection, Ternary) MoreLists.findOnly()} method, which
    * returns {@link Optional}.
    *
    * @since 5.3
@@ -172,7 +172,7 @@ public final class MoreCollectors {
    * IllegalArgumentExceptioin is thrown.
    *
    * <p>To handle the {@code size() != 4} case, consider to use the {@link
-   * MoreLists#findOnly(java.util.List, Quarternary) MoreLists.findOnly()} method, which
+   * MoreCollections#findOnly(java.util.Collection, Quarternary) MoreLists.findOnly()} method, which
    * returns {@link Optional}.
    *
    * @since 5.3
@@ -195,7 +195,7 @@ public final class MoreCollectors {
    * IllegalArgumentExceptioin is thrown.
    *
    * <p>To handle the {@code size() != 5} case, consider to use the {@link
-   * MoreLists#findOnly(java.util.List, Quinary) MoreLists.findOnly()} method, which
+   * MoreCollections#findOnly(java.util.Collection, Quinary) MoreLists.findOnly()} method, which
    * returns {@link Optional}.
    *
    * @since 5.3
@@ -218,7 +218,7 @@ public final class MoreCollectors {
    * IllegalArgumentExceptioin is thrown.
    *
    * <p>To handle the {@code size() != 6} case, consider to use the {@link
-   * MoreLists#findOnly(java.util.List, Senary) MoreLists.findOnly()} method, which
+   * MoreCollections#findOnly(java.util.Collection, Senary) MoreLists.findOnly()} method, which
    * returns {@link Optional}.
    *
    * @since 5.3

@@ -59,8 +59,8 @@ import java.util.stream.Collector;
  * }</pre>
  *
  * @since 3.6
- * @deprecated Use {@link com.google.mu.util.MoreLists#findFirst findFirst()} and/or {@link
- * com.google.mu.util.MoreLists#findOnly findOnly()} methods together with {@link Optional#or}
+ * @deprecated Use {@link com.google.mu.util.MoreCollections#findFirst findFirst()} and/or {@link
+ * com.google.mu.util.MoreCollections#findOnly findOnly()} methods together with {@link Optional#or}
  * instead.
  */
 @Deprecated
