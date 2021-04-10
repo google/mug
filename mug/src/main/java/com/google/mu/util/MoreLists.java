@@ -18,7 +18,7 @@ import com.google.mu.function.Ternary;
  */
 public final class MoreLists {
   /**
-   * If {@code list} has at least two elements, pass the first two elements to {@code found} function
+   * If {@code list} has at least two elements, passes the first two elements to {@code found} function
    * and returns the non-null result wrapped in an {@link Optional}, or else returns {@code
    * Optional.empty()}.
    *
@@ -31,7 +31,7 @@ public final class MoreLists {
   }
 
   /**
-   * If {@code list} has at least 3 elements, pass the first 3 elements to {@code found} function
+   * If {@code list} has at least 3 elements, passes the first 3 elements to {@code found} function
    * and returns the non-null result wrapped in an {@link Optional}, or else returns {@code
    * Optional.empty()}.
    *
@@ -46,7 +46,7 @@ public final class MoreLists {
   }
 
   /**
-   * If {@code list} has at least 4 elements, pass the first 4 elements to {@code found} function
+   * If {@code list} has at least 4 elements, passes the first 4 elements to {@code found} function
    * and returns the non-null result wrapped in an {@link Optional}, or else returns {@code
    * Optional.empty()}.
    *
@@ -61,7 +61,7 @@ public final class MoreLists {
   }
 
   /**
-   * If {@code list} has at least 5 elements, pass the first 5 elements to {@code found} function
+   * If {@code list} has at least 5 elements, passes the first 5 elements to {@code found} function
    * and returns the non-null result wrapped in an {@link Optional}, or else returns {@code
    * Optional.empty()}.
    *
@@ -76,7 +76,7 @@ public final class MoreLists {
   }
 
   /**
-   * If {@code list} has at least 6 elements, pass the first 6 elements to {@code found} function
+   * If {@code list} has at least 6 elements, passes the first 6 elements to {@code found} function
    * and returns the non-null result wrapped in an {@link Optional}, or else returns {@code
    * Optional.empty()}.
    *
@@ -90,7 +90,7 @@ public final class MoreLists {
         : Optional.empty();
   }
   /**
-   * If {@code list} has exactly two elements, pass the first two elements to {@code found} function
+   * If {@code list} has exactly two elements, passes the two elements to {@code found} function
    * and returns the non-null result wrapped in an {@link Optional}, or else returns {@code
    * Optional.empty()}.
    *
@@ -103,7 +103,7 @@ public final class MoreLists {
   }
 
   /**
-   * If {@code list} has exactly 3 elements, pass the first 3 elements to {@code found} function
+   * If {@code list} has exactly 3 elements, passes the 3 elements to {@code found} function
    * and returns the non-null result wrapped in an {@link Optional}, or else returns {@code
    * Optional.empty()}.
    *
@@ -118,7 +118,7 @@ public final class MoreLists {
   }
 
   /**
-   * If {@code list} has exactly 4 elements, pass the first 4 elements to {@code found} function
+   * If {@code list} has exactly 4 elements, passes the 4 elements to {@code found} function
    * and returns the non-null result wrapped in an {@link Optional}, or else returns {@code
    * Optional.empty()}.
    *
@@ -133,7 +133,7 @@ public final class MoreLists {
   }
 
   /**
-   * If {@code list} has exactly 5 elements, pass the first 5 elements to {@code found} function
+   * If {@code list} has exactly 5 elements, passes the 5 elements to {@code found} function
    * and returns the non-null result wrapped in an {@link Optional}, or else returns {@code
    * Optional.empty()}.
    *
@@ -148,7 +148,7 @@ public final class MoreLists {
   }
 
   /**
-   * If {@code list} has exactly 6 elements, pass the first 6 elements to {@code found} function
+   * If {@code list} has exactly 6 elements, passes the 6 elements to {@code found} function
    * and returns the non-null result wrapped in an {@link Optional}, or else returns {@code
    * Optional.empty()}.
    *
