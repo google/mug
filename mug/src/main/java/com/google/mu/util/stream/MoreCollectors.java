@@ -125,8 +125,8 @@ public final class MoreCollectors {
    * IllegalArgumentExceptioin is thrown.
    *
    * <p>To handle the {@code size() != 2} case, consider to use the {@link
-   * MoreCollections#findOnly(java.util.Collection, BiFunction) MoreLists.findOnly()} method, which
-   * returns {@link Optional}.
+   * MoreCollections#findOnly(java.util.Collection, BiFunction) MoreCollections.findOnly()} method,
+   * which returns {@link Optional}.
    *
    * @since 5.3
    */
@@ -149,8 +149,8 @@ public final class MoreCollectors {
    * IllegalArgumentExceptioin is thrown.
    *
    * <p>To handle the {@code size() != 3} case, consider to use the {@link
-   * MoreCollections#findOnly(java.util.Collection, Ternary) MoreLists.findOnly()} method, which
-   * returns {@link Optional}.
+   * MoreCollections#findOnly(java.util.Collection, Ternary) MoreCollections.findOnly()} method,
+   * which returns {@link Optional}.
    *
    * @since 5.3
    */
@@ -172,8 +172,8 @@ public final class MoreCollectors {
    * IllegalArgumentExceptioin is thrown.
    *
    * <p>To handle the {@code size() != 4} case, consider to use the {@link
-   * MoreCollections#findOnly(java.util.Collection, Quarternary) MoreLists.findOnly()} method, which
-   * returns {@link Optional}.
+   * MoreCollections#findOnly(java.util.Collection, Quarternary) MoreCollections.findOnly()} method,
+   * which returns {@link Optional}.
    *
    * @since 5.3
    */
@@ -195,8 +195,8 @@ public final class MoreCollectors {
    * IllegalArgumentExceptioin is thrown.
    *
    * <p>To handle the {@code size() != 5} case, consider to use the {@link
-   * MoreCollections#findOnly(java.util.Collection, Quinary) MoreLists.findOnly()} method, which
-   * returns {@link Optional}.
+   * MoreCollections#findOnly(java.util.Collection, Quinary) MoreCollections.findOnly()} method,
+   * which returns {@link Optional}.
    *
    * @since 5.3
    */
@@ -218,8 +218,8 @@ public final class MoreCollectors {
    * IllegalArgumentExceptioin is thrown.
    *
    * <p>To handle the {@code size() != 6} case, consider to use the {@link
-   * MoreCollections#findOnly(java.util.Collection, Senary) MoreLists.findOnly()} method, which
-   * returns {@link Optional}.
+   * MoreCollections#findOnly(java.util.Collection, Senary) MoreCollections.findOnly()} method,
+   * which returns {@link Optional}.
    *
    * @since 5.3
    */
