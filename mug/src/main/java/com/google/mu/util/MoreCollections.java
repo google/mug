@@ -124,7 +124,8 @@ public final class MoreCollections {
    * @throws NullPointerException if {@code collection} or {@code found} function is null, or if
    *     {@code found} function returns null.
    */
-  public static <T, R> Optional<R> findOnly(Collection<T> collection, BiFunction<? super T, ? super T, ? extends R> found) {
+  public static <T, R> Optional<R> findOnly(
+      Collection<T> collection, BiFunction<? super T, ? super T, ? extends R> found) {
     requireNonNull(found);
     if (collection.size() != 2) return Optional.empty();
     if (collection instanceof List && collection instanceof RandomAccess) {
