@@ -59,7 +59,9 @@ import java.util.stream.Collector;
  * }</pre>
  *
  * @since 3.6
- * @deprecated Use {@link ListPattern} instead.
+ * @deprecated Use {@link com.google.mu.util.MoreLists#findFirst findFirst()} and/or {@link
+ * com.google.mu.util.MoreLists#findOnly findOnly()} methods together with {@link Optional#or}
+ * instead.
  */
 @Deprecated
 public final class Cases {
