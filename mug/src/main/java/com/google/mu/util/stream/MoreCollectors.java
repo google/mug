@@ -124,7 +124,7 @@ public final class MoreCollectors {
    * using the {@code mapper} function. If there are fewer or more elements in the input,
    * IllegalArgumentExceptioin is thrown.
    *
-   * <p>If you need to handle the {@code size() != 2} case, consider to use the {@link
+   * <p>To handle the {@code size() != 2} case, consider to use the {@link
    * MoreLists#findOnly(java.util.List, BiFunction) MoreLists.findOnly()} method, which
    * returns {@link Optional}.
    *
@@ -148,7 +148,7 @@ public final class MoreCollectors {
    * using the {@code mapper} function. If there are fewer or more elements in the input,
    * IllegalArgumentExceptioin is thrown.
    *
-   * <p>If you need to handle the {@code size() != 3} case, consider to use the {@link
+   * <p>To handle the {@code size() != 3} case, consider to use the {@link
    * MoreLists#findOnly(java.util.List, Ternary) MoreLists.findOnly()} method, which
    * returns {@link Optional}.
    *
@@ -171,7 +171,7 @@ public final class MoreCollectors {
    * using the {@code mapper} function. If there are fewer or more elements in the input,
    * IllegalArgumentExceptioin is thrown.
    *
-   * <p>If you need to handle the {@code size() != 4} case, consider to use the {@link
+   * <p>To handle the {@code size() != 4} case, consider to use the {@link
    * MoreLists#findOnly(java.util.List, Quarternary) MoreLists.findOnly()} method, which
    * returns {@link Optional}.
    *
@@ -194,7 +194,7 @@ public final class MoreCollectors {
    * using the {@code mapper} function. If there are fewer or more elements in the input,
    * IllegalArgumentExceptioin is thrown.
    *
-   * <p>If you need to handle the {@code size() != 5} case, consider to use the {@link
+   * <p>To handle the {@code size() != 5} case, consider to use the {@link
    * MoreLists#findOnly(java.util.List, Quinary) MoreLists.findOnly()} method, which
    * returns {@link Optional}.
    *
@@ -217,7 +217,7 @@ public final class MoreCollectors {
    * using the {@code mapper} function. If there are fewer or more elements in the input,
    * IllegalArgumentExceptioin is thrown.
    *
-   * <p>If you need to handle the {@code size() != 6} case, consider to use the {@link
+   * <p>To handle the {@code size() != 6} case, consider to use the {@link
    * MoreLists#findOnly(java.util.List, Senary) MoreLists.findOnly()} method, which
    * returns {@link Optional}.
    *
