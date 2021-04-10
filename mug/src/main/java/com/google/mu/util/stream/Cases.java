@@ -59,9 +59,9 @@ import java.util.stream.Collector;
  * }</pre>
  *
  * @since 3.6
- * @deprecated Use {@link com.google.mu.util.MoreCollections#findFirst findFirst()} and/or {@link
- * com.google.mu.util.MoreCollections#findOnly findOnly()} methods together with {@link Optional#or}
- * instead.
+ * @deprecated Use {@link com.google.mu.util.MoreCollections#findFirstElements findFirstElements()}
+ * and/or {@link com.google.mu.util.MoreCollections#findOnlyElements findOnlyElements()} methods
+ * together with {@link Optional#or} instead.
  */
 @Deprecated
 public final class Cases {
