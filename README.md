@@ -337,8 +337,9 @@ For example, you may need to parse out the hour, minute and second from a string
 import static com.google.mu.util.stream.MoreCollectors.onlyElements;
 
 HourMinuteSecond result =
-    Substring.topLevelGroups(Pattern.compile("(\\d\\d):(\\d\\d):(\\d\\d)"))
-        .from("12:05:10")
+    Substring.first(':')
+        .repeatedly()
+        .split("12:05:10")
         .collect(onlyElements((h, m, s) -> new HourMinuteSecond(h, m, s));
 ```
 
