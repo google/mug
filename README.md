@@ -291,7 +291,7 @@ This has a few caveats:
 1. The code that checks the whiteliist is error prone. You'll need to remember to check the special case for an empty Set:
 
   ```java
-  if (allowedUsers.isEmpty() || allowedUsers.contanis(userId)) {
+  if (allowedUsers.isEmpty() || allowedUsers.contains(userId)) {
     ...;
   }
   ```
