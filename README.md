@@ -326,6 +326,23 @@ Optional<Result> result =
 ```
 
 
+## [MoreCollectors](https://google.github.io/mug/apidocs/com/google/mu/util/stream/MoreCollectors.html)
+
+In the above example, the short list may have 1, 2 or 3 elements. If you know the exact number of elements,
+you can use the `onlyElements()` Collector instead.
+
+For example, you may need to parse out the hour, minute and second from a string that looks like `12:05:10`:
+
+```java
+import static com.google.mu.util.stream.MoreCollectors.onlyElements;
+
+HourMinuteSecond result =
+    Substring.topLevelGroups(Pattern.compile("(\\d\\d):(\\d\\d):(\\d\\d)"))
+        .from("12:05:10")
+        .collect(onlyElements((h, m, s) -> new HourMinuteSecond(h, m, s));
+```
+
+
 ## [Retryer](https://google.github.io/mug/apidocs/com/google/mu/util/concurrent/Retryer.html)
 
 * Retry blockingly or _async_
