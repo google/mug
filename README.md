@@ -77,7 +77,7 @@ Map<State, Map<Address, PhoneNumber>> statePhonebooks = BiStream.from(phonebooks
 
 ```java
 import static com.google.mu.util.stream.BiCollectors.toMap;
-import static com.google.mu.util.stream.MoreStreams.flatteningMaps;
+import static com.google.mu.util.stream.MoreCollectors.flatteningMaps;
 
 Map<Account, Money> totalPayouts = projects.stream()
     .map(Project::payments)  // Stream<Map<Account, Money>>
@@ -88,7 +88,7 @@ Map<Account, Money> totalPayouts = projects.stream()
 
 ```java
 import static com.google.mu.util.stream.BiCollectors.toMap;
-import static com.google.mu.util.stream.MoreStreams.flatteningMaps;
+import static com.google.mu.util.stream.MoreCollectors.flatteningMaps;
 import static java.util.stream.Collectors.summingInt;
 
 Map<EmployeeId, Integer> workerHours = projects.stream()
