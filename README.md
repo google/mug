@@ -314,15 +314,15 @@ To use it in a flag, you can use the `Selection.parser()` which will accept the 
 Sometimes you may have a short list with elements representing structured data points. For example, if you are trying to parse a human name, which can either be first name only, or in the format of `firstName lastName`, or in addition with middle name, you can do:
 
 ```java
-import static com.google.mu.util.MoreCollections.findOnly;
+import static com.google.mu.util.MoreCollections.findOnlyElements;
 
 String fullName = ...;
 List<String> nameParts =
     Substring.first(' ').repeatdly().splitThenTrim(fullName).collect(toList());
 Optional<Result> result =
-    findOnly(nameParts, firstName -> ...)
-        .or(() -> findOnly(nameParts, (firstName, lastName) -> ...))
-        .or(() -> findOnly(nameParts, (firstName, middleName, lastName) -> ...));
+    findOnlyElements(nameParts, firstName -> ...)
+        .or(() -> findOnlyElements(nameParts, (firstName, lastName) -> ...))
+        .or(() -> findOnlyElements(nameParts, (firstName, middleName, lastName) -> ...));
 ```
 
 
