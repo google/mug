@@ -61,7 +61,8 @@ ImmutableListMultimap<ZipCode, Address> addressesByZipCode = BiStream.from(addre
     .collect(ImmutableListMultimap::toImmutableListMultimap);
 ```
 
-**Example 5: to split a `Map` into sub-maps:**
+**Example 5: to 
+a `Map` into sub-maps:**
 
 ```java
 import static com.google.mu.util.stream.BiCollectors.groupingBy;
@@ -318,7 +319,7 @@ import static com.google.mu.util.MoreCollections.findOnlyElements;
 
 String fullName = ...;
 List<String> nameParts =
-    Substring.first(' ').repeatdly().splitThenTrim(fullName).collect(toList());
+    Substring.first(' ').repeatedly().splitThenTrim(fullName).collect(toList());
 Optional<Result> result =
     findOnlyElements(nameParts, firstName -> ...)
         .or(() -> findOnlyElements(nameParts, (firstName, lastName) -> ...))
