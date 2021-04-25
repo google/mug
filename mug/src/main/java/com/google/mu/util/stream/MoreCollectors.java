@@ -14,7 +14,10 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
+import static java.lang.Math.max;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -120,6 +123,29 @@ public final class MoreCollectors {
   }
 
   /**
+   * Returns a collector that collects the only one element from the input and transforms it
+   * using the {@code mapper} function. If there are fewer or more elements in the input,
+   * IllegalArgumentExceptioin is thrown.
+   *
+   * <p>Can be used together with the other {@code onlyElements()} {@link ConditionalCollector}
+   * as one of the multiple cases passed to {@link #switching}.
+   *
+   * @since 5.4
+   */
+  public static <T, R> ConditionalCollector<T, ?, R> onlyElement(
+      Function<? super T, ? extends R> mapper) {
+    requireNonNull(mapper);
+    return new ShortListCollector<T, R>() {
+      @Override R reduce(List<? extends T> list) {
+        return mapper.apply(list.get(0));
+      }
+      @Override int arity() {
+        return 1;
+      }
+    };
+  }
+
+  /**
    * Returns a collector that collects the only two elements from the input and transforms them
    * using the {@code mapper} function. If there are fewer or more elements in the input,
    * IllegalArgumentExceptioin is thrown.
@@ -131,11 +157,11 @@ public final class MoreCollectors {
    *
    * @since 5.3
    */
-  public static <T, R> Collector<T, ?, R> onlyElements(
+  public static <T, R> ConditionalCollector<T, ?, R> onlyElements(
       BiFunction<? super T, ? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new ShortListCollector<T, R>() {
-      @Override R map(List<? extends T> list) {
+      @Override R reduce(List<? extends T> list) {
         return mapper.apply(list.get(0), list.get(1));
       }
       @Override int arity() {
@@ -156,10 +182,11 @@ public final class MoreCollectors {
    *
    * @since 5.3
    */
-  public static <T, R> Collector<T, ?, R> onlyElements(Ternary<? super T, ? extends R> mapper) {
+  public static <T, R> ConditionalCollector<T, ?, R> onlyElements(
+      Ternary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new ShortListCollector<T, R>() {
-      @Override R map(List<? extends T> list) {
+      @Override R reduce(List<? extends T> list) {
         return mapper.apply(list.get(0), list.get(1), list.get(2));
       }
       @Override int arity() {
@@ -180,10 +207,11 @@ public final class MoreCollectors {
    *
    * @since 5.3
    */
-  public static <T, R> Collector<T, ?, R> onlyElements(Quarternary<? super T, ? extends R> mapper) {
+  public static <T, R> ConditionalCollector<T, ?, R> onlyElements(
+      Quarternary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new ShortListCollector<T, R>() {
-      @Override R map(List<? extends T> list) {
+      @Override R reduce(List<? extends T> list) {
         return mapper.apply(list.get(0), list.get(1), list.get(2), list.get(3));
       }
       @Override int arity() {
@@ -204,10 +232,11 @@ public final class MoreCollectors {
    *
    * @since 5.3
    */
-  public static <T, R> Collector<T, ?, R> onlyElements(Quinary<? super T, ? extends R> mapper) {
+  public static <T, R> ConditionalCollector<T, ?, R> onlyElements(
+      Quinary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new ShortListCollector<T, R>() {
-      @Override R map(List<? extends T> list) {
+      @Override R reduce(List<? extends T> list) {
         return mapper.apply(list.get(0), list.get(1), list.get(2), list.get(3), list.get(4));
       }
       @Override int arity() {
@@ -228,10 +257,11 @@ public final class MoreCollectors {
    *
    * @since 5.3
    */
-  public static <T, R> Collector<T, ?, R> onlyElements(Senary<? super T, ? extends R> mapper) {
+  public static <T, R> ConditionalCollector<T, ?, R> onlyElements(
+      Senary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new ShortListCollector<T, R>() {
-      @Override R map(List<? extends T> list) {
+      @Override R reduce(List<? extends T> list) {
         return mapper.apply(
             list.get(0), list.get(1), list.get(2), list.get(3), list.get(4), list.get(5));
       }
@@ -239,6 +269,40 @@ public final class MoreCollectors {
         return 6;
       }
     };
+  }
+
+  /**
+   * Returns a {@link Collector} that will collect the input elements using the first of
+   * {@code [firstCase, moreCases...]} that matches the input elements.
+   *
+   * @since 5.4
+   */
+  @SafeVarargs
+  public static <T, R> Collector<T, ?, R> switching(
+      ConditionalCollector<T, ?, R> firstCase, ConditionalCollector<T, ?, R>... moreCases) {
+    List<ConditionalCollector<T, ?, R>> caseList = new ArrayList<>(1 + moreCases.length);
+    caseList.add(requireNonNull(firstCase));
+    for (ConditionalCollector<T, ?, R> c : moreCases) {
+      caseList.add(requireNonNull(c));
+    }
+    return switching(caseList);
+  }
+
+  private static <T, R> Collector<T, ?, R> switching(List<ConditionalCollector<T, ?, R>> cases) {
+    if (cases.size() == 1) {
+      return cases.get(0);
+    }
+    return collectingAndThen(toList(), list -> {
+      int elementsToShow = 1;
+      for (ConditionalCollector<T, ?, R> c : cases) {
+        if (c.appliesTo(list)) {
+          return c.reduce(list);
+        }
+        elementsToShow = max(elementsToShow, c.arity() + 1);
+      }
+      throw new IllegalArgumentException(
+          "Unexpected input elements " + ShortListCollector.showShortList(list, elementsToShow) + '.');
+    });
   }
 
   private MoreCollectors() {}
