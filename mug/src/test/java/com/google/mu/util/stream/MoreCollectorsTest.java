@@ -21,8 +21,11 @@ import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.MoreCollectors.flatMapping;
 import static com.google.mu.util.stream.MoreCollectors.flatteningMaps;
 import static com.google.mu.util.stream.MoreCollectors.mapping;
+import static com.google.mu.util.stream.MoreCollectors.onlyElement;
 import static com.google.mu.util.stream.MoreCollectors.onlyElements;
+import static com.google.mu.util.stream.MoreCollectors.switching;
 import static com.google.mu.util.stream.MoreCollectors.toListAndThen;
+import static java.util.function.Function.identity;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Collections;
@@ -137,7 +140,7 @@ public class MoreCollectorsTest {
         IllegalArgumentException.class,
         () -> Stream.of(1, 2, 3).collect(onlyElements((a, b) -> "ok")));
     assertThat(thrown.getMessage())
-        .isEqualTo("Not true that input ([1, 2, 3]) has 2 elements.");
+        .isEqualTo("Not true that input <[1, 2, 3]> has 2 elements.");
   }
 
   @Test public void testOnlyElements_Three() {
@@ -146,7 +149,7 @@ public class MoreCollectorsTest {
         IllegalArgumentException.class,
         () -> Stream.of(1, 2).collect(onlyElements((a, b, c) -> "ok")));
     assertThat(thrown.getMessage())
-        .isEqualTo("Not true that input ([1, 2]) has 3 elements.");
+        .isEqualTo("Not true that input <[1, 2]> has 3 elements.");
   }
 
   @Test public void testOnlyElements_Four() {
@@ -156,7 +159,7 @@ public class MoreCollectorsTest {
         IllegalArgumentException.class,
         () -> Stream.of(1, 2).collect(onlyElements((a, b, c, d) -> "ok")));
     assertThat(thrown.getMessage())
-        .isEqualTo("Not true that input ([1, 2]) has 4 elements.");
+        .isEqualTo("Not true that input <[1, 2]> has 4 elements.");
   }
 
   @Test public void testOnlyElements_Five() {
@@ -166,7 +169,7 @@ public class MoreCollectorsTest {
         IllegalArgumentException.class,
         () -> Stream.of(1, 2).collect(onlyElements((a, b, c, d, e) -> "ok")));
     assertThat(thrown.getMessage())
-        .isEqualTo("Not true that input ([1, 2]) has 5 elements.");
+        .isEqualTo("Not true that input <[1, 2]> has 5 elements.");
   }
 
   @Test public void testOnlyElements_Six() {
@@ -176,7 +179,7 @@ public class MoreCollectorsTest {
         IllegalArgumentException.class,
         () -> Stream.of(1, 2).collect(onlyElements((a, b, c, d, e, f) -> "ok")));
     assertThat(thrown.getMessage())
-        .isEqualTo("Not true that input ([1, 2]) has 6 elements.");
+        .isEqualTo("Not true that input <[1, 2]> has 6 elements.");
   }
 
   @Test public void testLongListInErrorMessage() {
@@ -184,11 +187,46 @@ public class MoreCollectorsTest {
         IllegalArgumentException.class,
         () -> Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).collect(onlyElements((a, b) -> "ok")));
     assertThat(thrown.getMessage())
-        .isEqualTo("Not true that input of size = 10 ([1, 2, 3, ...]) has 2 elements.");
+        .isEqualTo("Not true that input of size = 10 <[1, 2, 3, ...]> has 2 elements.");
+  }
+
+  @Test public void testSwitching_singleCaseApplies() {
+    int result = Stream.of(1).collect(switching(onlyElement(i -> i * 10)));
+    assertThat(result).isEqualTo(10);
+  }
+
+  @Test public void testSwitching_singleCaseNotApply() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> Stream.of(1, 2).collect(switching(onlyElement(a -> "ok"))));
+    assertThat(thrown.getMessage())
+        .isEqualTo("Not true that input <[1, 2]> has 1 elements.");
+  }
+
+  @Test public void testSwitching_twoCases_firstCaseApplies() {
+    String result =
+        Stream.of(1).collect(switching(onlyElement(i -> "one"), onlyElements((a, b) -> "two")));
+    assertThat(result).isEqualTo("one");
+  }
+
+  @Test public void testSwitching_twoCases_secondCaseApplies() {
+    String result =
+        Stream.of(1, 2).collect(switching(onlyElement(i -> "one"), onlyElements((a, b) -> "two")));
+    assertThat(result).isEqualTo("two");
+  }
+
+  @Test public void testSwitching_twoCases_neitherApplies() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> Stream.of(1, 2, 3, 4).collect(switching(onlyElement(a -> "one"), onlyElements((a, b) -> "two"))));
+    assertThat(thrown.getMessage())
+        .isEqualTo("Unexpected input elements of size = 4 <[1, 2, 3, ...]>.");
   }
 
   @Test public void testNulls() throws Exception {
-    new NullPointerTester().testAllPublicStaticMethods(MoreCollectors.class);
+    new NullPointerTester()
+        .setDefault(ConditionalCollector.class, MoreCollectors.onlyElement(identity()))
+        .testAllPublicStaticMethods(MoreCollectors.class);
   }
 
   private static class Translation {

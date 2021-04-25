@@ -22,7 +22,6 @@ import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 /**
@@ -30,10 +29,7 @@ import java.util.stream.Collectors;
  *
  * @since 5.3
  */
-abstract class ShortListCollector<T, R> implements Collector<T, List<T>, R> {
-  abstract int arity();
-  abstract R map(List<? extends T> list);
-
+abstract class ShortListCollector<T, R> extends ConditionalCollector<T, List<T>, R> {
   @Override public final BiConsumer<List<T>, T> accumulator() {
     return List::add;
   }
@@ -46,11 +42,9 @@ abstract class ShortListCollector<T, R> implements Collector<T, List<T>, R> {
 
   @Override public final Function<List<T>, R> finisher() {
     return l -> {
-      if (l.size() == arity()) {
-        return map(l);
-      }
+      if (appliesTo(l)) return reduce(l);
       throw new IllegalArgumentException(
-          "Not true that input " + showShortList(l) + " has " + this + ".");
+          "Not true that input " + showShortList(l, arity() + 1) + " has " + this + ".");
     };
   }
 
@@ -66,11 +60,11 @@ abstract class ShortListCollector<T, R> implements Collector<T, List<T>, R> {
     return arity() + " elements";
   }
 
-  private String showShortList(List<?> list) {
-    return list.size() <= arity() + 1  // If small enough, just show it.
-        ? "(" + list + ")"
-        : "of size = " + list.size() + " (["
-            + list.stream().limit(arity() + 1).map(Object::toString).collect(Collectors.joining(", "))
-            + ", ...])";
+  static String showShortList(List<?> list, int elementsToShow) {
+    return list.size() <= elementsToShow  // If small enough, just show it.
+        ? "<" + list + ">"
+        : "of size = " + list.size() + " <["
+            + list.stream().limit(elementsToShow).map(Object::toString).collect(Collectors.joining(", "))
+            + ", ...]>";
   }
 }
