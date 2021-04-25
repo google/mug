@@ -275,6 +275,23 @@ public final class MoreCollectors {
    * Returns a {@link Collector} that will collect the input elements using the first of
    * {@code [firstCase, moreCases...]} that matches the input elements.
    *
+   * <p>For example, you may have a table name that could be in one of several formats:
+   * <ul>
+   * <li>{@code database.schema.table};
+   * <li>{@code schema.table} in the current database;
+   * <li>{@code table} in the current database and current schema;
+   * </ul>
+   *
+   * To handle these different cases, you can do:
+   * <pre>{@code
+   *   Substring.first('.').repeatedly().split(tableName)
+   *       .collect(
+   *           switching(
+   *               onlyElements((db, schema, table) -> ...),
+   *               onlyElements((schema, table) -> ...),
+   *               onlyElement(table -> ...)));
+   * }</pre>
+   *
    * @since 5.4
    */
   @SafeVarargs
