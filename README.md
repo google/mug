@@ -19,7 +19,7 @@ Add the following to pom.xml:
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug</artifactId>
-    <version>5.2</version>
+    <version>5.3</version>
   </dependency>
 ```
 
@@ -61,7 +61,8 @@ ImmutableListMultimap<ZipCode, Address> addressesByZipCode = BiStream.from(addre
     .collect(ImmutableListMultimap::toImmutableListMultimap);
 ```
 
-**Example 5: to split a `Map` into sub-maps:**
+**Example 5: to 
+a `Map` into sub-maps:**
 
 ```java
 import static com.google.mu.util.stream.BiCollectors.groupingBy;
@@ -76,7 +77,7 @@ Map<State, Map<Address, PhoneNumber>> statePhonebooks = BiStream.from(phonebooks
 
 ```java
 import static com.google.mu.util.stream.BiCollectors.toMap;
-import static com.google.mu.util.stream.MoreStreams.flatteningMaps;
+import static com.google.mu.util.stream.MoreCollectors.flatteningMaps;
 
 Map<Account, Money> totalPayouts = projects.stream()
     .map(Project::payments)  // Stream<Map<Account, Money>>
@@ -87,7 +88,7 @@ Map<Account, Money> totalPayouts = projects.stream()
 
 ```java
 import static com.google.mu.util.stream.BiCollectors.toMap;
-import static com.google.mu.util.stream.MoreStreams.flatteningMaps;
+import static com.google.mu.util.stream.MoreCollectors.flatteningMaps;
 import static java.util.stream.Collectors.summingInt;
 
 Map<EmployeeId, Integer> workerHours = projects.stream()
@@ -280,6 +281,70 @@ String body = Substring.between(first('{'), last('}'))
     .orElseThrow(...);
 ```
 
+## [Selection](https://google.github.io/mug/apidocs/com/google/mu/util/Selection.html)
+
+Have you needed to specify a whitelist of things, while also needed to allow _all_ when the feature becomes ready for prime time?
+
+A common work-around is to use a `Set` to capture the whitelist, and then treat empty set as _all_.
+
+This has a few caveats:
+
+1. The code that checks the whiteliist is error prone. You'll need to remember to check the special case for an empty Set:
+
+  ```java
+  if (allowedUsers.isEmpty() || allowedUsers.contains(userId)) {
+    ...;
+  }
+  ```
+2. How do you disable it completely, blocking all users from this feature?
+3. Assume `allowedUsers` in the above example is a flag, it's not super clear to the staff configuring this flag about what it means when it's empty. When your system has a dozen components, each with its own flavor of whitelist, allowlist flags, it's easy to mis-understand and mis-configure.
+
+Instead, use `Selection` to differentiate and make explicit the *all* vs. *none* cases. Code checking against a `Selection` is straight-forward:
+
+```java
+if (allowedUsers.has(userId)) {
+  ...
+}
+```
+
+To use it in a flag, you can use the `Selection.parser()` which will accept the '\*' character as indication of accepting all, while setting it empty means to accept none. For example `--allowed_users=*`, `--allowed_users=joe,amy`.
+
+
+## [MoreCollections](https://google.github.io/mug/apidocs/com/google/mu/util/MoreCollections.html)
+
+Sometimes you may have a short list with elements representing structured data points. For example, if you are trying to parse a human name, which can either be first name only, or in the format of `firstName lastName`, or in addition with middle name, you can do:
+
+```java
+import static com.google.mu.util.MoreCollections.findOnlyElements;
+
+String fullName = ...;
+List<String> nameParts =
+    Substring.first(' ').repeatedly().splitThenTrim(fullName).collect(toList());
+Optional<Result> result =
+    findOnlyElements(nameParts, firstName -> ...)
+        .or(() -> findOnlyElements(nameParts, (firstName, lastName) -> ...))
+        .or(() -> findOnlyElements(nameParts, (firstName, middleName, lastName) -> ...));
+```
+
+
+## [MoreCollectors](https://google.github.io/mug/apidocs/com/google/mu/util/stream/MoreCollectors.html)
+
+In the above example, the short list may have 1, 2 or 3 elements. If you know the exact number of elements,
+you can use the `onlyElements()` Collector instead.
+
+For example, you may need to parse out the hour, minute and second from a string that looks like `12:05:10`:
+
+```java
+import static com.google.mu.util.stream.MoreCollectors.onlyElements;
+
+HourMinuteSecond result =
+    Substring.first(':')
+        .repeatedly()
+        .split("12:05:10")
+        .collect(onlyElements((h, m, s) -> new HourMinuteSecond(h, m, s));
+```
+
+
 ## [Retryer](https://google.github.io/mug/apidocs/com/google/mu/util/concurrent/Retryer.html)
 
 * Retry blockingly or _async_
@@ -411,83 +476,6 @@ return new Retryer()
 If the method succeeds after retry, the exceptions are by default logged. As shown above, one can override `beforeDelay()` and `afterDelay()` to change or suppress the logging.
 
 If the method fails after retry, the exceptions can also be accessed programmatically through `exception.getSuppressed()`.
-
-## [Maybe](https://google.github.io/mug/apidocs/com/google/mu/util/Maybe.html)
-
-Represents a value that may have failed with an exception.
-Tunnels checked exceptions through streams or futures.
-
-#### Streams
-
-For a stream operation that would have looked like this if checked exception weren't in the way:
-
-```java
-return files.stream()
-   .map(Files::toByteArray)
-   .filter(b -> b.length > 0)
-   .collect(toList());
-```
-
-`Maybe` can be used to wrap the checked exception through the stream operations:
-
-```java
-import static com.google.mu.util.Maybe.byValue;
-import static com.google.mu.util.Maybe.maybe;
-
-Stream<Maybe<byte[], IOException>> stream = files.stream()
-    .map(maybe(Files::toByteArray))
-    .filter(byValue(b -> b.length > 0));
-List<byte[]> contents = new ArrayList<>();
-Iterate.through(stream, m -> contents.add(m.orElseThrow()));
-return contents;
-```
-
-#### Futures
-
-In asynchronous programming, checked exceptions are wrapped inside ExecutionException or CompletionException. By the time the caller catches it, the static type of the causal exception is already lost. The caller code usually resorts to `instanceof MyException`. For example, the following code recovers from AuthenticationException:
-
-```java
-CompletionStage<User> assumeAnonymousIfNotAuthenticated(CompletionStage<User> stage) {
-  return stage.exceptionally((Throwable e) -> {
-    Throwable actual = e;
-    if (e instanceof ExecutionException || e instanceof CompletionException) {
-      actual = e.getCause();
-    }
-    if (actual instanceof AuthenticationException) {
-      return new AnonymousUser();
-    }
-    // The following re-throws the exception and possibly wraps it.
-    if (e instanceof RuntimeException) {
-      throw (RuntimeException) e;
-    }
-    if (e instanceof Error) {
-      throw (Error) e;
-    }
-    throw new CompletionException(e);
-  });
-}
-```
-
-Alternatively, if the asynchronous code returns `Maybe<Foo, AuthenticationException>` instead, then upon getting a `Future<Maybe<Foo, AuthenticationException>>`, the exception can be handled type safely using `maybe.catchException()` or `maybe.orElse()` etc.
-```java
-CompletionStage<User> assumeAnonymousIfNotAuthenticated(CompletionStage<User> stage) {
-  CompletionStage<Maybe<User, AuthenticationException>> authenticated =
-      Maybe.catchException(AuthenticationException.class, stage);
-  return authenticated.thenApply(maybe -> maybe.orElse(e -> new AnonymousUser()));
-}
-```
-
-#### Conceptually, what is `Maybe`?
-* An (otherwise) Java Optional parameterized by the exception type.
-* A computation result that could have failed with expected exception.
-* Helps with awkward situations in Java where checked exception isn't the sweet spot.
-
-#### What's not `Maybe`?
-* It's not Haskell Maybe (Optional is her cousin).
-* It's not Haskell `Either` either. In Java we think of return values and exceptions, not mathematical "Left" and "Right".
-* It's not to replace throwing and catching exceptions. Java code should do the Java way. When in Rome.
-* It's not designed to write code more "functional" just because you can. Use it where it helps.
-
 
 ## [Funnel](https://google.github.io/mug/apidocs/com/google/mu/util/Funnel.html)
 
