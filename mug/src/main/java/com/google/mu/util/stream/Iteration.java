@@ -29,7 +29,49 @@ import java.util.stream.Stream;
  * to <a href="https://en.wikipedia.org/wiki/Generator_(computer_programming)">generate</a> a
  * sequence that computes each value on-demand.
  *
- * <p>Imagine if you have a recursive binary tree traversal algorithm:
+ * <p>{@code Iteration} can be used to adapt iterative or recursive algorithms to lazy streams. The
+ * size of the stack is O(1) and execution is deferred.
+ *
+ * <p>For example, if you have a list API with pagination support, the following code retrieves all
+ * pages eagerly:
+ *
+ * <pre>{@code
+ * ImmutableList<Foo> listAllFoos() {
+ *   ImmutableList.Builder<Foo> builder = ImmutableList.builder();
+ *   ListFooRequest.Builder request = ListFooRequest.newBuilder()...;
+ *     do {
+ *       ListFooResponse response = service.listFoos(request.build());
+ *       builder.addAll(response.getFoos());
+ *       request.setPageToken(response.getNextPageToken());
+ *     } while (!request.getPageToken().isEmpty());
+ *   return builder.build();
+ * }
+ * }</pre>
+ *
+ * You can turn the above code to a lazy stream using Iteration so that callers can short-circuit
+ * when they need to:
+ *
+ * <pre>{@code
+ * Stream<Foo> listAllFoos() {
+ *   class Pagination extends new Iteration<Foo>() {
+ *     Pagination paginate(ListFooRequest request) {
+ *       ListFooResponse response = service.listFoos(request);
+ *       yieldAll(response.getFoos());
+ *       String nextPage = response.getNextPageToken();
+ *       if (!nextPage.isEmpty()) {
+ *         yield(() -> paginate(request.toBuilder().setNextPageToken(nextPage).build()));
+ *       }
+ *       return this;
+ *     }
+ *   }
+ *   return new Pagination()
+ *       .paginate(ListFooRequest.newBuilder()...build())
+ *       .iterate();
+ * }
+ * }</pre>
+ *
+ * <p>Another common use case is to traverse recursive data structures lazily. Imagine if you have a
+ * recursive binary tree traversal algorithm:
  *
  * <pre>{@code
  * void inOrder(Tree<T> tree) {
@@ -115,47 +157,6 @@ import java.util.stream.Stream;
  *     .iterate()
  *     .forEachOrdered(System.out::println);
  * }</pre>
- *
- * <p>And how about Fibonacci sequence as a lazy stream?
- *
- * <pre>{@code
- * class Fibonacci extends Iteration<Long> {
- *   Fibonacci from(long v0, long v1) {
- *     yield(v0);
- *     yield(() -> from(v1, v0 + v1));
- *     return this;
- *   }
- * }
- * Stream<Long> fibonacci = new Fibonacci().from(0, 1).iterate();
- * }</pre>
- *
- * <p>Another potential use case is to enhance the JDK {@link Stream#iterate} API with a terminal
- * condition. For example, we can simulate the <a
- * href="https://www.khanacademy.org/computing/computer-science/algorithms/intro-to-algorithms/a/a-guessing-game">
- * Guess the Number</a> game by yielding our guesses every round until success:
- *
- * <pre>{@code
- * class GuessTheNumber extends Iteration<Integer> {
- *   GuessTheNumber guess(int low, int high, int secret) {
- *     if (low > high) return this;
- *     int mid = (low + high) / 2;
- *     yield(mid);               // yield the guess.
- *     if (mid < secret) {
- *       yield(() -> guess(mid + 1, high, secret));
- *     } else if (mid > secret) {
- *       yield(() -> guess(low, mid - 1, secret));
- *     }
- *     return this;
- *   }
- * }
- *
- * static Stream<Integer> play(int max, int secret) {
- *   return new GuessTheNumber().guess(1, max, secret).iterate();
- * }
- * }</pre>
- *
- * Calling {@code play(9, 8)} will generate a stream of {@code [5, 7, 8]} each being a guess during
- * the game, in order.
  *
  * <p>If transforming tail-recursive algorithms, the space requirement is O(1) and execution is
  * deferred.
@@ -249,6 +250,18 @@ public class Iteration<T> {
       consumer.accept(result);
       yield(result);
     });
+  }
+
+  /**
+   * Yields all of {@code elements} to the result stream.
+   *
+   * @since 5.4
+   */
+  public final Iteration<T> yieldAll(Iterable<? extends T> elements) {
+    for (T element : elements) {
+      yield(element);
+    }
+    return this;
   }
 
   /**
