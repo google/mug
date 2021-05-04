@@ -1567,7 +1567,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
 
     class Runner extends AbstractSpliterator<Map.Entry<G, R>> implements BiConsumer<K, V> {
       // Implementation Note:
-      //   By calling implementing BiConsumer and calling iteartor.tryAdvance(),
+      //   By implementing BiConsumer and calling iteartor.tryAdvance(), as opposed to calling mapToEntry(),
       //   we avoid having to create an intermediary Map.Entry object for every group member.
       //   Instead, a Map.Entry is only created per group.
       //   This is specific to GenericEntryStream, which is what users get when they do:
