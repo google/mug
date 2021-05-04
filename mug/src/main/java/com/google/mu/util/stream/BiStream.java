@@ -1562,6 +1562,12 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     final int characteristics = Spliterator.NONNULL | Spliterator.ORDERED | Spliterator.DISTINCT;
 
     class Runner extends AbstractSpliterator<Map.Entry<G, R>> implements BiConsumer<K, V> {
+      // Implementation Note:
+      //   By calling implementing BiConsumer and calling iteartor.tryAdvance(),
+      //   we avoid having to create an intermediary Map.Entry object for every group member.
+      //   Instead, a Map.Entry is only created per group.
+      //   This is specific to GenericEntryStream, which is what users get when they do:
+      //       biStream(list).groupConsecutiveBy(...);
       private final BiIterator<K, V> iterator = iterator();
       private G currentGroup;
       private A currentRun = null;
