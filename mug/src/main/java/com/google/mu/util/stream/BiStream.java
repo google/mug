@@ -1436,6 +1436,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * @param classifier The function to determine the group key. Because it's guaranteed to be
    *     invoked once and only once per entry, and that the returned BiStream is sequential and
    *     respects encounter order, this function is allowed to have side effects.
+   * @since 5.4
    */
   public final <G, A, R> BiStream<G, R> groupConsecutiveBy(
       Function<? super K, ? extends G> classifier, Collector<? super V, A, R> groupCollector) {
@@ -1446,43 +1447,6 @@ public abstract class BiStream<K, V> implements AutoCloseable {
         groupCollector.supplier(),
         (a, k, v) -> accumulator.accept(a, v),
         groupCollector.finisher());
-  }
-
-  /**
-   * Returns a lazy {@code BiStream} of the consecutive groups of pairs from this stream.
-   * Consecutive pairs that map to the same key according to {@code classifier} are grouped into a
-   * mutable container, which is created by the {@code newGroup} function and populated with the
-   * {@code accumulator} function.
-   *
-   * <p>For example to lazily summarize a large, pre-sorted stock price data stream per day:
-   *
-   * <pre>{@code
-   * ImmutableMap<Date, DailyReport> dailyReports =
-   *     biStream(stockPriceData)
-   *         .groupConsecutiveBy(PriceDatum::day, DailyReport::new, DailyReport::addPrice)
-   *         ,toMap();
-   * }</pre>
-   *
-   * <p>Consecutive null keys are grouped together.
-   *
-   * @param classifier The function to determine the group key. Because it's guaranteed to be
-   *     invoked once and only once per entry, and that the returned BiStream is sequential and
-   *     respects encounter order, this function is allowed to have side effects.
-   * @param newGroup the factory function to create a new collection for each group
-   * @param groupAccumulator the function to accumulate group members
-   */
-  public final <G, A> BiStream<G, A> groupConsecutiveBy(
-      Function<? super K, ? extends G> classifier,
-      Supplier<? extends A> newGroup,
-      BiConsumer<A, ? super V> groupAccumulator) {
-    requireNonNull(classifier);
-    requireNonNull(newGroup);
-    requireNonNull(groupAccumulator);
-    return groupConsecutiveBy(
-        (k, v) -> classifier.apply(k),
-        newGroup,
-        (container, k, v) -> groupAccumulator.accept(container, v),
-        identity());
   }
 
   /**
@@ -1512,10 +1476,49 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * @param classifier The function to determine the group key. Because it's guaranteed to be
    *     invoked once and only once per entry, and that the returned BiStream is sequential and
    *     respects encounter order, this function is allowed to have side effects.
+   * @since 5.4
    */
   public final <G> BiStream<G, V> groupConsecutiveBy(
       Function<? super K, ? extends G> classifier, BinaryOperator<V> groupReducer) {
     return groupConsecutiveBy(classifier, reducingGroupMembers(groupReducer));
+  }
+
+  /**
+   * Returns a lazy {@code BiStream} of the consecutive groups of pairs from this stream.
+   * Consecutive pairs that map to the same key according to {@code classifier} are grouped into a
+   * mutable container, which is created by the {@code newGroup} function and populated with the
+   * {@code accumulator} function.
+   *
+   * <p>For example to lazily summarize a large, pre-sorted stock price data stream per day:
+   *
+   * <pre>{@code
+   * ImmutableMap<Date, DailyReport> dailyReports =
+   *     biStream(stockPriceData)
+   *         .groupConsecutiveBy(PriceDatum::day, DailyReport::new, DailyReport::addPrice)
+   *         ,toMap();
+   * }</pre>
+   *
+   * <p>Consecutive null keys are grouped together.
+   *
+   * @param classifier The function to determine the group key. Because it's guaranteed to be
+   *     invoked once and only once per entry, and that the returned BiStream is sequential and
+   *     respects encounter order, this function is allowed to have side effects.
+   * @param newGroup the factory function to create a new collection for each group
+   * @param groupAccumulator the function to accumulate group members
+   * @since 5.4
+   */
+  public final <G, A> BiStream<G, A> groupConsecutiveBy(
+      Function<? super K, ? extends G> classifier,
+      Supplier<? extends A> newGroup,
+      BiConsumer<A, ? super V> groupAccumulator) {
+    requireNonNull(classifier);
+    requireNonNull(newGroup);
+    requireNonNull(groupAccumulator);
+    return groupConsecutiveBy(
+        (k, v) -> classifier.apply(k),
+        newGroup,
+        (container, k, v) -> groupAccumulator.accept(container, v),
+        identity());
   }
 
   /**
@@ -1538,6 +1541,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * @param classifier The function to determine the group key. Because it's guaranteed to be
    *     invoked once and only once per entry, and that the returned BiStream is sequential and
    *     respects encounter order, this function is allowed to have side effects.
+   * @since 5.4
    */
   public final <G, R> BiStream<G, R> groupConsecutiveBy(
       BiFunction<? super K, ? super V, ? extends G> classifier,
