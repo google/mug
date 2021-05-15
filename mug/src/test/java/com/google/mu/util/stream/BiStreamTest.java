@@ -23,6 +23,7 @@ import static com.google.mu.util.stream.BiStream.concatenating;
 import static com.google.mu.util.stream.BiStream.crossJoining;
 import static com.google.mu.util.stream.BiStream.toAdjacentPairs;
 import static com.google.mu.util.stream.BiStreamOperations.groupConsecutiveBy;
+import static com.google.mu.util.stream.BiStreamOperations.groupConsecutiveIf;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static java.util.Arrays.asList;
 import static java.util.function.Function.identity;
@@ -39,7 +40,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collector;
@@ -194,40 +194,49 @@ public class BiStreamTest {
   /**
    * This test confirms that stateful classifier function can implement more sophisticated grouping.
    */
-  @Test public void testGroupConsecutive_statefulGrouping() {
+  @Test public void testGroupConsecutiveIf() {
     // Addinig "." to the end of an element doesn't change its logical value, but forces to conclude
     // the current consecutive group even if the next element would otherwise be considered "equal".
     Substring.Suffix period = Substring.suffix('.');
     Stream<String> data = Stream.of("foo", "foo", "foo.", "foo.", "foo", "bar");
-    AtomicInteger periods = new AtomicInteger();
     Stream<List<String>> groups =
-        biStream(data).then(BiStreamOperations.groupConsecutiveBy(text -> {
-          Object group = BiOptional.of(period.removeFrom(text), periods.get());
-          if (period.from(text).isPresent()) {
-            // "." concludes the current group and starts a new one.
-            periods.incrementAndGet();
-          }
-          return group;
-        }, toList()))
-            .values();
+        biStream(data)
+            .then(
+                groupConsecutiveIf(
+                    (t1, t2) ->
+                        !period.from(t1).isPresent()
+                            && period.removeFrom(t1).equals(period.removeFrom(t2)),
+                    toList()));
     assertThat(groups)
         .containsExactly(asList("foo", "foo", "foo."), asList("foo."), asList("foo"), asList("bar"))
         .inOrder();
   }
 
   /** Groups not by equal key, but by proximity. */
-  @Test public void testGroupConsecutive_proximityGrouping() {
+  @Test public void testGroupConsecutive_proximityGrouping_withReducer() {
+    // Make sure nulls are grouped properly
     Stream<Integer> data = Stream.of(1, 3, 3, 2, 13, 15, 100);
     final int proximity = 10;
-    AtomicInteger currentGroup = new AtomicInteger();
-    AtomicInteger previousValue = new AtomicInteger();
-    Stream<Long> groupSizes = biStream(data)
-        .then(groupConsecutiveBy(
-            value -> Math.abs(value - previousValue.getAndSet(value)) > proximity
-                ? currentGroup.incrementAndGet()
-                : currentGroup.get(), counting()))
-        .values();
-    assertThat(groupSizes).containsExactly(4L, 2L, 1L).inOrder();
+    Stream<Integer> groupSizes =
+        biStream(data)
+            .then(groupConsecutiveIf((d1, d2) -> Math.abs(d1 - d2) <= proximity, Integer::sum));
+    assertThat(groupSizes).containsExactly(1 + 3 + 3 + 2, 13 + 15, 100).inOrder();
+  }
+
+  /** Groups not by equal key, but by proximity. */
+  @Test public void testGroupConsecutive_proximityGrouping_nullElementsGrouped() {
+    // Make sure nulls are grouped properly
+    Stream<Integer> data = Stream.of(1, 3, 3, 2, 13, 15, 100, null, null);
+    final int proximity = 10;
+    Stream<Long> groupSizes =
+        biStream(data)
+            .then(
+                groupConsecutiveIf(
+                    (d1, d2) ->
+                        d1 == null && d2 == null
+                            || d1 != null && d2 != null && Math.abs(d1 - d2) <= proximity,
+                    counting()));
+    assertThat(groupSizes).containsExactly(4L, 2L, 1L, 2L).inOrder();
   }
 
   @Test public void testConsecutiveRunsFrom_emptyStream() {

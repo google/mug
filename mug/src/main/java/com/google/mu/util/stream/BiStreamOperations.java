@@ -19,15 +19,19 @@ import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-/** Some common {@link BiStream.Operation]s. */
+/** Some common {@link BiStream.Operation}s. */
 public final class BiStreamOperations {
   /**
    * Returns a lazy {@code BiStream} of the consecutive groups of pairs from this stream.
@@ -155,7 +159,7 @@ public final class BiStreamOperations {
    * BiCollectors#groupingBy(BiFunction, BiCollector) collect(BiCollectors.groupingBy(classifier,
    * groupCollector))} instead.
    *
-   * <p>Null elements are allowed as long as the {@code keyFunction} function and {@code
+   * <p>Null elements are allowed as long as the {@code classifier} function and {@code
    * groupCollector} allow nulls.
    *
    * @param classifier The function to determine the group key. Because it's guaranteed to be
@@ -172,6 +176,62 @@ public final class BiStreamOperations {
         .then(groupConsecutiveBy(
             e -> classifier.apply(e.getKey(), e.getValue()),
             groupCollector.splitting(Map.Entry::getKey, Map.Entry::getValue)));
+  }
+
+  /**
+   * Returns a lazy {@code Stream} of the consecutive groups of values from this stream. Two
+   * consecutive entries belong to the same group if {@code sameGroup.test(key1, key2)} is true.
+   * Values belonging to the same group are grouped together using {@code groupCollector}.
+   *
+   * <p>Unlike JDK {@link Collectors#groupingBy groupingBy()} collectors, the returned Stream
+   * consumes the input elements lazily and only requires {@code O(groupCollector)} space for the
+   * current consecutive elements group. While this makes it more efficient to process large
+   * streams, the input data often need to be pre-sorted for the grouping to be useful.
+   *
+   * <p>Null elements are allowed as long as the {@code sameGroup} function and {@code
+   * groupCollector} allow nulls.
+   */
+  public static <K, V, R> BiStream.Operation<K, V, Stream<R>> groupConsecutiveIf(
+      BiPredicate<? super K, ? super K> sameGroup, Collector<? super V, ?, R> groupCollector) {
+    requireNonNull(sameGroup);
+    requireNonNull(groupCollector);
+    return stream -> {
+      AtomicReference<K> previousKey = new AtomicReference<>();
+      AtomicInteger groups = new AtomicInteger();
+      return stream
+          .then(
+              groupConsecutiveBy(
+                  k -> {
+                    int currentGroup = groups.get();
+                    if (currentGroup > 0 && sameGroup.test(previousKey.get(), k)) {
+                      previousKey.set(k);
+                      return currentGroup;
+                    } else {
+                      previousKey.set(k);
+                      return groups.incrementAndGet();
+                    }
+                  },
+                  groupCollector))
+          .values();
+    };
+  }
+
+  /**
+   * Returns a lazy {@code Stream} of the consecutive groups of values from this stream. Two
+   * consecutive entries belong to the same group if {@code sameGroup.test(key1, key2)} is true.
+   * Values belonging to the same group are reduced using {@code groupReducer}.
+   *
+   * <p>Unlike JDK {@link Collectors#groupingBy groupingBy()} collectors, the returned Stream
+   * consumes the input elements lazily and only requires {@code O(groupCollector)} space for the
+   * current consecutive elements group. While this makes it more efficient to process large
+   * streams, the input data often need to be pre-sorted for the grouping to be useful.
+   *
+   * <p>Null elements are allowed as long as the {@code sameGroup} function and {@code
+   * groupCollector} allow nulls.
+   */
+  public static <K, V> BiStream.Operation<K, V, Stream<V>> groupConsecutiveIf(
+      BiPredicate<? super K, ? super K> sameGroup, BinaryOperator<V> groupReducer) {
+    return groupConsecutiveIf(sameGroup, BiStream.reducingGroupMembers(groupReducer));
   }
 
   private BiStreamOperations() {}

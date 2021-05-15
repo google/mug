@@ -1419,7 +1419,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * public static <K, V> BiStream.Operation<K, V> filterTypes(Class<K> keyType, Class<V> valueType) {
    *   return stream -> stream
    *       .filterKeys(keyType::isInstance)
-   *       .map(keyType::cast;
+   *       .map(keyType::cast)
    *       .filterValues(valueType::isInstance)
    *       .map(valueType::cast);
    * }
