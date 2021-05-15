@@ -101,7 +101,8 @@ import com.google.mu.util.Both;
  * will receive only the key) . They operate equivalently otherwise.
  */
 public abstract class BiStream<K, V> implements AutoCloseable {
-  private static final boolean NOT_PARALLEL = false;
+  static final boolean NOT_PARALLEL = false;
+
   /**
    * Builder for {@link BiStream}. Similar to {@link Stream.Builder}, entries may not be added after
    * {@link #build} is called.
@@ -671,7 +672,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
       Stream<T> stream,
       Function<? super T, ? extends K> by,
       Collector<? super T, A, R> runSummarizer) {
-    return biStream(stream).groupConsecutiveBy(by, runSummarizer);
+    return biStream(stream).then(BiStreamOperations.groupConsecutiveBy(by, runSummarizer));
   }
 
   static <K, V, E extends Map.Entry<? extends K, ? extends V>> BiStream<K, V> fromEntries(
@@ -1410,151 +1411,42 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   @Override public abstract void close();
 
   /**
-   * Returns a lazy {@code BiStream} of the consecutive groups of pairs from this stream.
-   * Consecutive pairs that map to the same key according to {@code classifier} are grouped together
-   * using {@code groupCollector}.
+   * Applies {@code downstream} operation on this stream and returns the result.
    *
-   * <p>For example to lazily summarize a large, pre-sorted stock price data stream per day:
-   *
-   * <pre>{@code
-   * biStream(stockPriceData)
-   *     .groupConsecutiveBy(PriceDatum::day, summarizingDouble(PriceDatum::price))
-   *     ,toMap();
+   * <p>Useful when you have some repetitive BiStream boilerplate to be applied. For example,
+   * if you need to filter the pairs of a certain key type and value type, you can first define the
+   * operation as: <pre>{@code
+   * public static <K, V> BiStream.Operation<K, V> filterTypes(Class<K> keyType, Class<V> valueType) {
+   *   return stream -> stream
+   *       .filterKeys(keyType::isInstance)
+   *       .map(keyType::cast;
+   *       .filterValues(valueType::isInstance)
+   *       .map(valueType::cast);
+   * }
    * }</pre>
    *
-   * <p>Unlike JDK {@link Collectors#groupingBy groupingBy()} collectors, the returned BiStream
-   * consumes the input elements lazily and only requires {@code O(groupCollector)} space for the
-   * current consecutive elements group. For instance the {@code groupConsecutiveByKey(counting())}
-   * stream takes O(1) space. While this makes it more efficient to process large streams, the input
-   * data often need to be pre-sorted for the grouping to be useful.
-   *
-   * <p>To apply grouping beyond consecutive elements, use {@link BiCollectors#groupingBy(Function,
-   * Collector) collect(BiCollectors.groupingBy(classifier, groupCollector))} instead.
-   *
-   * <p>Consecutive null keys are grouped together.
-   *
-   * @param classifier The function to determine the group key. Because it's guaranteed to be
-   *     invoked once and only once per entry, and that the returned BiStream is sequential and
-   *     respects encounter order, this function is allowed to have side effects.
-   * @since 5.4
-   */
-  public final <G, A, R> BiStream<G, R> groupConsecutiveBy(
-      Function<? super K, ? extends G> classifier, Collector<? super V, A, R> groupCollector) {
-    requireNonNull(classifier);
-    BiConsumer<A, ? super V> accumulator = groupCollector.accumulator();
-    return groupConsecutiveBy(
-        (k, v) -> classifier.apply(k),
-        groupCollector.supplier(),
-        (a, k, v) -> accumulator.accept(a, v),
-        groupCollector.finisher());
-  }
-
-  /**
-   * Returns a lazy {@code BiStream} of the consecutive groups of pairs from this stream.
-   * Consecutive pairs that map to the same key according to {@code classifier} are reduced using
-   * the {@code groupReducer} function.
-   *
-   * <p>For example to lazily find the daily opening stock price from a large, pre-sorted stock data
-   * stream:
-   *
+   * And then the {@code filterTypes()} operation can be reused in multiple places as in:
    * <pre>{@code
-   * biStream(stockPriceDataSortedByTime)
-   *     .groupConsecutiveBy(PriceDatum::day, (a, b) -> a)
-   *     ,toMap();
+   *   biStream.then(filterTypees(Foo.class, Bar.class));
    * }</pre>
    *
-   * <p>Unlike JDK {@link Collectors#groupingBy groupingBy()} collectors, the returned BiStream
-   * consumes the input elements lazily and only requires {@code O(1)} space. While this makes it
-   * more efficient to process large streams, the input data often need to be pre-sorted for the
-   * grouping to be useful.
-   *
-   * <p>To apply grouping beyond consecutive elements, use {@link BiCollectors#groupingBy(Function,
-   * BinaryOperator) collect(BiCollectors.groupingBy(classifier, groupReducer))} instead.
-   *
-   * <p>Consecutive null keys are grouped together.
-   *
-   * @param classifier The function to determine the group key. Because it's guaranteed to be
-   *     invoked once and only once per entry, and that the returned BiStream is sequential and
-   *     respects encounter order, this function is allowed to have side effects.
+   * @see BiStreamOperations for some common operations
    * @since 5.4
    */
-  public final <G> BiStream<G, V> groupConsecutiveBy(
-      Function<? super K, ? extends G> classifier, BinaryOperator<V> groupReducer) {
-    return groupConsecutiveBy(classifier, reducingGroupMembers(groupReducer));
+  public final <R> R then(Operation<? super K, ? super V, R> downstream) {
+    return downstream.apply(this);
   }
 
-  /**
-   * Returns a lazy {@code BiStream} of the consecutive groups of pairs from this stream.
-   * Consecutive pairs that map to the same key according to {@code classifier} are grouped into a
-   * mutable container, which is created by the {@code newGroup} function and populated with the
-   * {@code accumulator} function.
-   *
-   * <p>For example to lazily summarize a large, pre-sorted stock price data stream per day:
-   *
-   * <pre>{@code
-   * ImmutableMap<Date, DailyReport> dailyReports =
-   *     biStream(stockPriceData)
-   *         .groupConsecutiveBy(PriceDatum::day, DailyReport::new, DailyReport::addPrice)
-   *         ,toMap();
-   * }</pre>
-   *
-   * <p>Consecutive null keys are grouped together.
-   *
-   * @param classifier The function to determine the group key. Because it's guaranteed to be
-   *     invoked once and only once per entry, and that the returned BiStream is sequential and
-   *     respects encounter order, this function is allowed to have side effects.
-   * @param newGroup the factory function to create a new collection for each group
-   * @param groupAccumulator the function to accumulate group members
-   * @since 5.4
-   */
-  public final <G, A> BiStream<G, A> groupConsecutiveBy(
-      Function<? super K, ? extends G> classifier,
-      Supplier<? extends A> newGroup,
-      BiConsumer<A, ? super V> groupAccumulator) {
-    requireNonNull(classifier);
-    requireNonNull(newGroup);
-    requireNonNull(groupAccumulator);
-    return groupConsecutiveBy(
-        (k, v) -> classifier.apply(k),
-        newGroup,
-        (container, k, v) -> groupAccumulator.accept(container, v),
-        identity());
+  /** An operation to be applied on a {@link BiStream}. */
+  public interface Operation<K, V, R> {
+    /** Apply this operation against {@code stream}. */
+    R apply(BiStream<? extends K, ? extends V> stream);
   }
 
-  /**
-   * Returns a lazy {@code BiStream} of the consecutive groups of pairs from this stream.
-   * Consecutive pairs that map to the same key according to {@code classifier} are grouped together
-   * using {@code groupCollector}.
-   *
-   * <p>Unlike JDK {@link Collectors#groupingBy groupingBy()} collectors, the returned BiStream
-   * consumes the input elements lazily and only requires {@code O(groupCollector)} space for the
-   * current consecutive elements group. While this makes it more efficient to process large
-   * streams, the input data often need to be pre-sorted for the grouping to be useful.
-   *
-   * <p>To apply grouping beyond consecutive elements, use {@link
-   * BiCollectors#groupingBy(BiFunction, BiCollector) collect(BiCollectors.groupingBy(classifier,
-   * groupCollector))} instead.
-   *
-   * <p>Null elements are allowed as long as the {@code keyFunction} function and {@code
-   * groupCollector} allow nulls.
-   *
-   * @param classifier The function to determine the group key. Because it's guaranteed to be
-   *     invoked once and only once per entry, and that the returned BiStream is sequential and
-   *     respects encounter order, this function is allowed to have side effects.
-   * @since 5.4
-   */
-  public final <G, R> BiStream<G, R> groupConsecutiveBy(
-      BiFunction<? super K, ? super V, ? extends G> classifier,
-      BiCollector<? super K, ? super V, R> groupCollector) {
-    requireNonNull(classifier);
-    requireNonNull(groupCollector);
-    return biStream(mapToEntry())
-        .groupConsecutiveBy(
-            e -> classifier.apply(e.getKey(), e.getValue()),
-            groupCollector.splitting(Map.Entry::getKey, Map.Entry::getValue));
-  }
+  /** Returns a BiIterator for callers to iterate through the pairs in this stream in encounter order. */
+  abstract BiIterator<K, V> iterator();
 
-  private <G, A, R> BiStream<G, R> groupConsecutiveBy(
+  final <G, A, R> BiStream<G, R> groupConsecutiveBy(
       BiFunction<? super K, ? super V, ? extends G> classifier,
       Supplier<? extends A> newRun,
       BiAccumulator<A, ? super K, ? super V> groupAccumulator,
@@ -1619,17 +1511,15 @@ public abstract class BiStream<K, V> implements AutoCloseable {
         completedRun = kv(currentGroup, groupFinisher.apply(currentRun));
       }
     };
-    return fromEntries(StreamSupport.stream(Runner::new, characteristics, NOT_PARALLEL));
+    return BiStream.fromEntries(StreamSupport.stream(Runner::new, characteristics, NOT_PARALLEL));
   }
-
-  abstract BiIterator<K, V> iterator();
 
   static <K, V> Map.Entry<K, V> kv(K key, V value) {
     return new AbstractMap.SimpleImmutableEntry<>(key, value);
   }
 
   /** A group has at least 1 member, with 2nd+ members incrementally reduced by {@code reducer}. */
-  private static <T> Collector<T, ?, T> reducingGroupMembers(BinaryOperator<T> reducer) {
+  static <T> Collector<T, ?, T> reducingGroupMembers(BinaryOperator<T> reducer) {
     return collectingAndThen(Collectors.reducing(requireNonNull(reducer)), Optional::get);
   }
 
@@ -1639,10 +1529,6 @@ public abstract class BiStream<K, V> implements AutoCloseable {
 
   private static <T> T orElseNull(Optional<T> optional) {
     return optional.orElse(null);
-  }
-
-  private interface BiIterator<A, B> {
-    boolean tryAdvance(BiConsumer<? super A, ? super B> consumer);
   }
 
   /**
@@ -1753,7 +1639,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
       underlying.close();
     }
 
-    @Override final BiIterator<K, V> iterator() {
+    @Override public final BiIterator<K, V> iterator() {
       Spliterator<E> spliterator = underlying.spliterator();
       Temp<E> temp = new Temp<>();
       return consumer -> {
@@ -1864,7 +1750,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
       }
     }
 
-    @Override final BiIterator<K, V> iterator() {
+    @Override public final BiIterator<K, V> iterator() {
       Spliterator<K> leftSpliterator = left.spliterator();
       Spliterator<V> rightSpliterator = right.spliterator();
       Temp<K> tempLeft = new Temp<>();
