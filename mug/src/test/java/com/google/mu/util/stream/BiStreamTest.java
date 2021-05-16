@@ -176,14 +176,6 @@ public class BiStreamTest {
         .inOrder();
   }
 
-  @Test public void testGroupConsecutiveByBothKeyAndValue() {
-    ImmutableMap<Integer, Integer> data = ImmutableMap.of(1, 3, 2, 2, 3, 4, 0, 4);
-    assertKeyValues(BiStream.from(data).then(groupConsecutiveBy(Integer::sum, ImmutableMap::toImmutableMap)))
-        .containsExactly(
-            4, ImmutableMap.of(1, 3, 2, 2), 7, ImmutableMap.of(3, 4), 4, ImmutableMap.of(0, 4))
-        .inOrder();
-  }
-
   @Test public void testGroupConsecutive_mutableGroupReduction() {
     Stream<?> data = Stream.of(1, "2", 2, "3", 3, 3);
     assertKeyValues(biStream(data).then(groupConsecutiveBy(Object::toString, ArrayList::new, List::add)))

@@ -14,15 +14,12 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
-import static com.google.mu.util.stream.BiStream.biStream;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
 
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
@@ -67,10 +64,7 @@ public final class BiStreamOperations {
     requireNonNull(classifier);
     BiConsumer<A, ? super V> accumulator = groupCollector.accumulator();
     return stream -> stream.groupConsecutiveBy(
-        (k, v) -> classifier.apply(k),
-        groupCollector.supplier(),
-        (a, k, v) -> accumulator.accept(a, v),
-        groupCollector.finisher());
+        classifier,  groupCollector.supplier(), accumulator,  groupCollector.finisher());
   }
 
   /**
@@ -138,44 +132,7 @@ public final class BiStreamOperations {
     requireNonNull(classifier);
     requireNonNull(newGroup);
     requireNonNull(groupAccumulator);
-    return stream -> stream.groupConsecutiveBy(
-        (k, v) -> classifier.apply(k),
-        newGroup,
-        (container, k, v) -> groupAccumulator.accept(container, v),
-        identity());
-  }
-
-  /**
-   * Returns a lazy {@code BiStream} of the consecutive groups of pairs from this stream.
-   * Consecutive pairs that map to the same key according to {@code classifier} are grouped together
-   * using {@code groupCollector}.
-   *
-   * <p>Unlike JDK {@link Collectors#groupingBy groupingBy()} collectors, the returned BiStream
-   * consumes the input elements lazily and only requires {@code O(groupCollector)} space for the
-   * current consecutive elements group. While this makes it more efficient to process large
-   * streams, the input data often need to be pre-sorted for the grouping to be useful.
-   *
-   * <p>To apply grouping beyond consecutive elements, use {@link
-   * BiCollectors#groupingBy(BiFunction, BiCollector) collect(BiCollectors.groupingBy(classifier,
-   * groupCollector))} instead.
-   *
-   * <p>Null elements are allowed as long as the {@code classifier} function and {@code
-   * groupCollector} allow nulls.
-   *
-   * @param classifier The function to determine the group key. Because it's guaranteed to be
-   *     invoked once and only once per entry, and that the returned BiStream is sequential and
-   *     respects encounter order, this function is allowed to have side effects.
-   * @since 5.4
-   */
-  public static <K, V, G, R> BiStream.Operation<K, V, BiStream<G, R>> groupConsecutiveBy(
-      BiFunction<? super K, ? super V, ? extends G> classifier,
-      BiCollector<? super K, ? super V, R> groupCollector) {
-    requireNonNull(classifier);
-    requireNonNull(groupCollector);
-    return stream -> biStream(stream.mapToEntry())
-        .then(groupConsecutiveBy(
-            e -> classifier.apply(e.getKey(), e.getValue()),
-            groupCollector.splitting(Map.Entry::getKey, Map.Entry::getValue)));
+    return stream -> stream.groupConsecutiveBy(classifier, newGroup, groupAccumulator, identity());
   }
 
   /**

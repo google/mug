@@ -1447,9 +1447,9 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   abstract BiIterator<K, V> iterator();
 
   final <G, A, R> BiStream<G, R> groupConsecutiveBy(
-      BiFunction<? super K, ? super V, ? extends G> classifier,
+      Function<? super K, ? extends G> classifier,
       Supplier<? extends A> newRun,
-      BiAccumulator<A, ? super K, ? super V> groupAccumulator,
+      BiConsumer<A, ? super V> groupAccumulator,
       Function<? super A, ? extends R> groupFinisher) {
     requireNonNull(classifier);
     requireNonNull(newRun);
@@ -1492,14 +1492,14 @@ public abstract class BiStream<K, V> implements AutoCloseable {
       }
 
       @Override public void accept(K key, V value) {
-        G g = classifier.apply(key, value);
+        G g = classifier.apply(key);
         if (currentRun == null) {
           start(g);
         } else if (!Objects.equals(currentGroup, g)){
           stop();
           start(g);
         }
-        groupAccumulator.accumulate(currentRun, key, value);
+        groupAccumulator.accept(currentRun, value);
       }
 
       private void start(G group) {
