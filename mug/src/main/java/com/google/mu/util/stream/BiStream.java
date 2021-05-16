@@ -16,7 +16,7 @@ package com.google.mu.util.stream;
 
 import static com.google.mu.function.BiComparator.comparingKey;
 import static com.google.mu.function.BiComparator.comparingValue;
-import static com.google.mu.util.stream.MoreStreams.streaming;
+import static com.google.mu.util.stream.MoreStreams.collectingAndThen;
 import static java.util.Objects.requireNonNull;
 import static java.util.Spliterator.ORDERED;
 import static java.util.function.Function.identity;
@@ -272,7 +272,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    */
   public static <T, K, V> Collector<T, ?, BiStream<K, V>> concatenating(
       Function<? super T, ? extends BiStream<? extends K, ? extends V>> toBiStream) {
-    return streaming(stream -> concat(stream.map(toBiStream)));
+    return collectingAndThen(stream -> concat(stream.map(toBiStream)));
   }
 
   /**
@@ -333,7 +333,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
       Function<? super E, ? extends K> toKey, Function<? super E, ? extends V> toValue) {
     requireNonNull(toKey);
     requireNonNull(toValue);
-    return streaming(stream -> from(stream, toKey, toValue));
+    return collectingAndThen(stream -> from(stream, toKey, toValue));
   }
 
   /**
@@ -349,7 +349,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   public static <E, K, V> Collector<E, ?, BiStream<K, V>> toBiStream(
       Function<? super E, ? extends Both<? extends K, ? extends V>> toPair) {
     requireNonNull(toPair);;
-    return streaming(stream -> from(stream.map(toPair)));
+    return collectingAndThen(stream -> from(stream.map(toPair)));
   }
 
   /**
@@ -367,7 +367,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   public static <E, K, V> Collector<E, ?, BiStream<K, V>> toBiStream(
       DualValuedFunction<? super E, ? extends K, ? extends V> mapper) {
     requireNonNull(mapper);
-    return streaming(stream -> from(stream, mapper));
+    return collectingAndThen(stream -> from(stream, mapper));
   }
 
   /**

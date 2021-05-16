@@ -15,6 +15,8 @@
 package com.google.mu.util.stream;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
+import static com.google.mu.util.stream.BiCollectors.collectingAndThen;
 import static com.google.mu.util.stream.BiCollectors.groupingBy;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.BiStream.biStream;
@@ -24,6 +26,7 @@ import static java.util.stream.Collectors.summingInt;
 import static java.util.stream.Collectors.toList;
 
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -250,6 +253,16 @@ public class BiCollectorsTest {
             ImmutableListMultimap::toImmutableListMultimap));
     assertThat(result)
         .containsExactly("Joe", 1, "Tom", 2, "Tom", 2)
+        .inOrder();
+  }
+
+  @Test public void testCollectingAndThen() {
+    BiStream<String, Integer> salaries = BiStream.of("Joe", 1, "Tom", 2);
+    Stream<String> result = salaries
+        .collect(collectingAndThen(
+            stream -> stream.mapToObj((name, salary) -> name + ":" + salary)));
+    assertThat(result)
+        .containsExactly("Joe:1", "Tom:2")
         .inOrder();
   }
 
