@@ -411,6 +411,30 @@ public final class BiCollectors {
   }
 
   /**
+   * Returns a {@link BiCollector} that first collects the input pairs into a {@link BiStream] and then applies
+   * {@code finisher} on the intermediary BiStream.
+   *
+   * <p>This method makes it easier to create BiCollector using a lambda. For example, you may want to apply
+   * some stream operations for every group of pairs when using the {@link #groupingBy(BiFunction,
+   * BiCollector) groupingBy} method:
+   *
+   * <pre>{@code
+   *     BiStream.from(phoneBook)
+   *         .collect(
+   *             groupingBy(
+   *                 (addr, phone) -> phone.areaCode(),
+   *                 collectingAndThen(group -> group.flatMapKeys(...).mapIfPresent(...)...))
+   *         .collect(ImmutableMap::toImmutableMap);
+   * }</pre>
+   *
+   * @since 5.4
+   */
+  public static <K, V, R> BiCollector<K, V, R> collectingAndThen(
+      Function<? super BiStream<K, V>, ? extends R> finisher) {
+    return collectingAndThen(BiStream::toBiStream, finisher);
+  }
+
+  /**
    * Returns a {@link BiCollector} that first maps the input pair using {@code mapper} and then collects the
    * results using {@code downstream} collector.
    *

@@ -145,7 +145,7 @@ public final class BiStreamOperations {
    * current consecutive elements group. While this makes it more efficient to process large
    * streams, the input data often need to be pre-sorted for the grouping to be useful.
    *
-   * <p>Null elements are allowed as long as the {@code sameGroup} function and {@code
+   * <p>Null elements are allowed as long as the {@code sameGroup} predicate and {@code
    * groupCollector} allow nulls.
    */
   public static <K, V, R> BiStream.Operation<K, V, Stream<R>> groupConsecutiveIf(
@@ -183,7 +183,7 @@ public final class BiStreamOperations {
    * current consecutive elements group. While this makes it more efficient to process large
    * streams, the input data often need to be pre-sorted for the grouping to be useful.
    *
-   * <p>Null elements are allowed as long as the {@code sameGroup} function and {@code
+   * <p>Null elements are allowed as long as the {@code sameGroup} predicate and {@code
    * groupCollector} allow nulls.
    */
   public static <K, V> BiStream.Operation<K, V, Stream<V>> groupConsecutiveIf(

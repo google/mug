@@ -1438,10 +1438,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /** An operation to be applied on a {@link BiStream}. */
-  public interface Operation<K, V, R> {
-    /** Apply this operation against {@code stream}. */
-    R apply(BiStream<? extends K, ? extends V> stream);
-  }
+  public interface Operation<K, V, R> extends Function<BiStream<? extends K, ? extends V>, R> {}
 
   /** Returns a BiIterator for callers to iterate through the pairs in this stream in encounter order. */
   abstract BiIterator<K, V> iterator();
