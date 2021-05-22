@@ -460,7 +460,7 @@ public final class MoreStreams {
    * Returns a collector that first copies all input elements into a new {@code Stream} and then
    * passes the stream to the {@code finisher} function, which translates it to the final result.
    */
-  static <T, R> Collector<T, ?, R> streaming(Function<Stream<T>, R> finisher) {
+  static <T, R> Collector<T, ?, R> collectingAndThen(Function<Stream<T>, R> finisher) {
     return Collectors.collectingAndThen(toStream(), finisher);
   }
 

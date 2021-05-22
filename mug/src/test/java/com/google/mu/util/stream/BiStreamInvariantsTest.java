@@ -22,6 +22,7 @@ import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.BiStream.toBiStream;
 import static java.util.Arrays.asList;
 import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
@@ -694,6 +695,54 @@ public class BiStreamInvariantsTest {
   public void inverse() {
     assertKeyValues(of("a", 1).inverse())
         .containsExactlyEntriesIn(ImmutableMultimap.of(1, "a"))
+        .inOrder();
+  }
+
+  @Test
+  public void testGroupConsecutiveBy_emptyStream() {
+    assertKeyValues(of().groupConsecutiveBy(identity(), toList())).isEmpty();
+  }
+
+  @Test
+  public void testGroupConsecutiveBy_singleElement() {
+    assertKeyValues(of("1", 1).groupConsecutiveBy(identity(), toList()))
+        .containsExactly("1", asList(1));
+  }
+
+  @Test
+  public void testGroupConsecutiveBy_twoElementsSameRun() {
+    assertKeyValues(of("k", "a", "k", "b").groupConsecutiveBy(identity(), toList()))
+        .containsExactly("k", asList("a", "b"));
+  }
+
+  @Test
+  public void testGroupConsecutiveBy_twoElementsDifferentRuns() {
+    assertKeyValues(of("k1", 1, "k2", 2).groupConsecutiveBy(identity(), toList()))
+        .containsExactly("k1", asList(1), "k2", asList(2))
+        .inOrder();
+  }
+
+  @Test
+  public void testGroupConsecutiveIf_emptyStream() {
+    assertThat(of().groupConsecutiveIf(Object::equals, toList())).isEmpty();
+  }
+
+  @Test
+  public void testGroupConsecutiveIf_singleElement() {
+    assertThat(of("1", 1).groupConsecutiveIf(Object::equals, toList()))
+        .containsExactly(asList(1));
+  }
+
+  @Test
+  public void testGroupConsecutiveIf_twoElementsSameRun() {
+    assertThat(of("k", "a", "k", "b").groupConsecutiveIf(Object::equals, toList()))
+        .containsExactly(asList("a", "b"));
+  }
+
+  @Test
+  public void testGroupConsecutiveIf_twoElementsDifferentRuns() {
+    assertThat(of("k1", 1, "k2", 2).groupConsecutiveIf(Object::equals, Integer::sum))
+        .containsExactly(1, 2)
         .inOrder();
   }
 

@@ -16,7 +16,7 @@ package com.google.mu.util.stream;
 
 import static com.google.mu.function.BiComparator.comparingKey;
 import static com.google.mu.function.BiComparator.comparingValue;
-import static com.google.mu.util.stream.MoreStreams.streaming;
+import static com.google.mu.util.stream.MoreStreams.collectingAndThen;
 import static java.util.Objects.requireNonNull;
 import static java.util.Spliterator.ORDERED;
 import static java.util.function.Function.identity;
@@ -101,7 +101,8 @@ import com.google.mu.util.Both;
  * will receive only the key) . They operate equivalently otherwise.
  */
 public abstract class BiStream<K, V> implements AutoCloseable {
-  private static final boolean NOT_PARALLEL = false;
+  static final boolean NOT_PARALLEL = false;
+
   /**
    * Builder for {@link BiStream}. Similar to {@link Stream.Builder}, entries may not be added after
    * {@link #build} is called.
@@ -271,7 +272,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    */
   public static <T, K, V> Collector<T, ?, BiStream<K, V>> concatenating(
       Function<? super T, ? extends BiStream<? extends K, ? extends V>> toBiStream) {
-    return streaming(stream -> concat(stream.map(toBiStream)));
+    return collectingAndThen(stream -> concat(stream.map(toBiStream)));
   }
 
   /**
@@ -332,7 +333,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
       Function<? super E, ? extends K> toKey, Function<? super E, ? extends V> toValue) {
     requireNonNull(toKey);
     requireNonNull(toValue);
-    return streaming(stream -> from(stream, toKey, toValue));
+    return collectingAndThen(stream -> from(stream, toKey, toValue));
   }
 
   /**
@@ -348,7 +349,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   public static <E, K, V> Collector<E, ?, BiStream<K, V>> toBiStream(
       Function<? super E, ? extends Both<? extends K, ? extends V>> toPair) {
     requireNonNull(toPair);;
-    return streaming(stream -> from(stream.map(toPair)));
+    return collectingAndThen(stream -> from(stream.map(toPair)));
   }
 
   /**
@@ -366,7 +367,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   public static <E, K, V> Collector<E, ?, BiStream<K, V>> toBiStream(
       DualValuedFunction<? super E, ? extends K, ? extends V> mapper) {
     requireNonNull(mapper);
-    return streaming(stream -> from(stream, mapper));
+    return collectingAndThen(stream -> from(stream, mapper));
   }
 
   /**
@@ -621,7 +622,9 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *
    * @param stream the stream of input elements
    * @since 5.3
+   * @deprecated Use {@code biStream(stream).groupConsecutiveBy(identity(), counting())} instead.
    */
+  @Deprecated
   public static <T> BiStream<T, Long> consecutiveRunsFrom(Stream<T> stream) {
     return consecutiveRunsFrom(stream, identity(), counting());
   }
@@ -662,67 +665,14 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * @param by the function to compute the key of each element
    * @param runSummarizer collector to summarize elements of the same "run"
    * @since 5.2
+   * @deprecated Use {@code biStream(stream).groupConsecutiveBy(by, runSummarizer)} instead.
    */
+  @Deprecated
   public static <K, T, A, R> BiStream<K, R> consecutiveRunsFrom(
       Stream<T> stream,
       Function<? super T, ? extends K> by,
       Collector<? super T, A, R> runSummarizer) {
-    requireNonNull(stream);
-    requireNonNull(by);
-    Supplier<A> newBuffer = runSummarizer.supplier();
-    BiConsumer<A, ? super T> accumulator = runSummarizer.accumulator();
-    Function<A, R> finisher = runSummarizer.finisher();
-    final int characteristics = Spliterator.NONNULL | Spliterator.ORDERED | Spliterator.DISTINCT;
-
-    class Runner extends AbstractSpliterator<Map.Entry<K, R>> implements Consumer<T> {
-      private final Spliterator<? extends T> spliterator = stream.spliterator();
-      private K currentKey;
-      private A currentRun = null;
-      private Map.Entry<K, R> completedRun = null;
-
-      Runner() {
-        super(Long.MAX_VALUE, characteristics);
-      }
-
-      @Override public boolean tryAdvance(Consumer<? super Map.Entry<K, R>> action) {
-        while (spliterator.tryAdvance(this)) {
-          if (completedRun != null) {
-            action.accept(completedRun);
-            completedRun = null;
-            return true;
-          }
-        }
-        if (currentRun == null) {
-          return false;
-        }
-        // The last run.
-        stop();
-        currentRun = null;  // Be idempotent
-        action.accept(completedRun);
-        return true;
-      }
-
-      @Override public void accept(T element) {
-        K k = by.apply(element);
-        if (currentRun == null) {
-          start(k);
-        } else if (!Objects.equals(currentKey, k)){
-          stop();
-          start(k);
-        }
-        accumulator.accept(currentRun, element);
-      }
-
-      private void start(K key) {
-        currentRun = requireNonNull(newBuffer.get());
-        currentKey = key;
-      }
-
-      private void stop() {
-        completedRun = kv(currentKey, finisher.apply(currentRun));
-      }
-    };
-    return fromEntries(StreamSupport.stream(Runner::new, characteristics, NOT_PARALLEL));
+    return biStream(stream).groupConsecutiveBy(by, runSummarizer);
   }
 
   static <K, V, E extends Map.Entry<? extends K, ? extends V>> BiStream<K, V> fromEntries(
@@ -1455,17 +1405,239 @@ public abstract class BiStream<K, V> implements AutoCloseable {
       A container, BiAccumulator<? super A, ? super K, ? super V> accumulator);
 
   /**
-   * Closes any resources associated with this stream, tyipcally used in a try-with-resources
+   * Closes any resources associated with this stream, typically used in a try-with-resources
    * statement.
    */
   @Override public abstract void close();
+
+  /** Returns a BiIterator for callers to iterate through the pairs in this stream in encounter order. */
+  abstract BiIterator<K, V> iterator();
+
+  /**
+   * Returns a {@code BiStream} consisting of consecutive groupings from this stream. Consecutive
+   * pairs whose key maps to the same group according to {@code classifier} will have their values
+   * grouped together using {@code groupCollector}.
+   *
+   * <p>For example to lazily summarize a large, pre-sorted stock price data stream per day:
+   *
+   * <pre>{@code
+   * biStream(stockPriceData)
+   *     .then(groupConsecutiveBy(PriceDatum::day, summarizingDouble(PriceDatum::price)))
+   *     .toMap();
+   * }</pre>
+   *
+   * <p>Unlike JDK {@link Collectors#groupingBy groupingBy()} collectors, the returned BiStream
+   * consumes the input elements lazily and only requires {@code O(groupCollector)} space for the
+   * current consecutive elements group. For instance the {@code groupConsecutiveBy(Event::type,
+   * counting())} stream takes O(1) space. While this makes it more efficient to process large
+   * streams, the input data often need to be pre-sorted for the grouping to be useful.
+   *
+   * <p>To apply grouping beyond consecutive elements, use {@link BiCollectors#groupingBy(Function,
+   * Collector) collect(BiCollectors.groupingBy(classifier, groupCollector))} instead.
+   *
+   * <p>Consecutive keys mapped to null by {@code classifier} will be grouped together.
+   *
+   * @param classifier The function to determine the group key. Because it's guaranteed to be
+   *     invoked once and only once per entry, and that the returned BiStream is sequential and
+   *     respects encounter order, this function is allowed to have side effects.
+   *
+   * @since 5.4
+   */
+  public final <G, A, R> BiStream<G, R> groupConsecutiveBy(
+      Function<? super K, ? extends G> classifier,
+      Collector<? super V, A, ? extends R> groupCollector) {
+    requireNonNull(classifier);
+    requireNonNull(groupCollector);
+    return this
+        .<G>mapKeys(classifier)
+        .groupConsecutiveByKeys(groupCollector.supplier(), groupCollector.accumulator())
+        .mapValues(groupCollector.finisher());
+  }
+
+  /**
+   * Returns a lazy {@code BiStream} of the consecutive groups of pairs from this stream.
+   * Consecutive pairs whose key maps to the same group according to {@code classifier} will have
+   * their values reduced using the {@code groupReducer} function.
+   *
+   * <p>For example to lazily find the daily opening stock price from a large, pre-sorted stock data
+   * stream:
+   *
+   * <pre>{@code
+   * biStream(stockPriceDataSortedByTime)
+   *     .then(groupConsecutiveBy(PriceDatum::day, (a, b) -> a))
+   *     ,toMap();
+   * }</pre>
+   *
+   * <p>Unlike JDK {@link Collectors#groupingBy groupingBy()} collectors, the returned BiStream
+   * consumes the input elements lazily and only requires {@code O(1)} space. While this makes it
+   * more efficient to process large streams, the input data often need to be pre-sorted for the
+   * grouping to be useful.
+   *
+   * <p>To apply grouping beyond consecutive elements, use {@link BiCollectors#groupingBy(Function,
+   * BinaryOperator) collect(BiCollectors.groupingBy(classifier, groupReducer))} instead.
+   *
+   * <p>Consecutive null keys are grouped together.
+   *
+   * @param classifier The function to determine the group key. Because it's guaranteed to be
+   *     invoked once and only once per entry, and that the returned BiStream is sequential and
+   *     respects encounter order, this function is allowed to have side effects.
+   *
+   * @since 5.4
+   */
+  public final <G> BiStream<G, V> groupConsecutiveBy(
+      Function<? super K, ? extends G> classifier, BinaryOperator<V> groupReducer) {
+    return groupConsecutiveBy(classifier, reducingGroupMembers(groupReducer));
+  }
+
+  /**
+   * Returns a lazy {@code Stream} of the consecutive groups of values from this stream. Two
+   * consecutive entries belong to the same group if {@code sameGroup.test(key1, key2)} is true.
+   * Values belonging to the same group are grouped together using {@code groupCollector}.
+   *
+   * <p>The {@code sameGroup} predicate is always evaluated with two consecutive keys in encounter
+   * order.
+   *
+   * <p>The following example identifies price changes above a gap threshold from a stock's
+   * historical price:
+   *
+   * <pre>{@code
+   * Stream<DoubleSummaryStatistics> priceClusters =
+   *     biStream(stockPriceData)
+   *         .groupConsecutiveIf((a, b) -> abs(a - b) < gap, summarizingDouble());
+   * }</pre>
+   *
+   * <p>Unlike JDK {@link Collectors#groupingBy groupingBy()} collectors, the returned Stream
+   * consumes the input elements lazily and only requires {@code O(groupCollector)} space for the
+   * current consecutive elements group. While this makes it more efficient to process large
+   * streams, the input data often need to be pre-sorted for the grouping to be useful.
+   *
+   * <p>Null elements are allowed as long as the {@code sameGroup} predicate and {@code
+   * groupCollector} allow nulls.
+   *
+   * @since 5.4
+   */
+  public final <A, R> Stream<R> groupConsecutiveIf(
+      BiPredicate<? super K, ? super K> sameGroup, Collector<? super V, A, R> groupCollector) {
+    requireNonNull(sameGroup);
+    requireNonNull(groupCollector);
+    BiConsumer<A, ? super V> groupAccumulator = groupCollector.accumulator();
+    return groupConsecutiveIf(
+        sameGroup,
+        groupCollector.supplier(),
+        (a, k, v) -> groupAccumulator.accept(a, v),
+        groupCollector.finisher());
+  }
+
+  /**
+   * Returns a lazy {@code Stream} of the consecutive groups of values from this stream. Two
+   * consecutive entries belong to the same group if {@code sameGroup.test(key1, key2)} is true.
+   * Values belonging to the same group are reduced using {@code groupReducer}.
+   *
+   * <p>The {@code sameGroup} predicate is always evaluated with two consecutive keys in encounter
+   * order.
+   *
+   * <p>Unlike JDK {@link Collectors#groupingBy groupingBy()} collectors, the returned Stream
+   * consumes the input elements lazily and only requires {@code O(groupCollector)} space for the
+   * current consecutive elements group. While this makes it more efficient to process large
+   * streams, the input data often need to be pre-sorted for the grouping to be useful.
+   *
+   * <p>Null elements are allowed as long as the {@code sameGroup} predicate and {@code
+   * groupCollector} allow nulls.
+   *
+   * @since 5.4
+   */
+  public final Stream<V> groupConsecutiveIf(
+      BiPredicate<? super K, ? super K> sameGroup, BinaryOperator<V> groupReducer) {
+    return groupConsecutiveIf(sameGroup, reducingGroupMembers(groupReducer));
+  }
+
+  private <A> BiStream<K, A> groupConsecutiveByKeys(
+      Supplier<A> newGroup, BiConsumer<? super A, ? super V> groupAccumulator) {
+    requireNonNull(newGroup);
+    requireNonNull(groupAccumulator);
+    Temp<K> currentGroup = new Temp<>();
+    return fromEntries(
+        groupConsecutiveIf(
+            Objects::equals,
+            newGroup,
+            (a, k, v) -> {
+              currentGroup.value = k;
+              groupAccumulator.accept(a, v);
+            },
+            a -> kv(currentGroup.value, a)));
+  }
+
+  private <A, R> Stream<R> groupConsecutiveIf(
+      BiPredicate<? super K, ? super K> sameGroup,
+      Supplier<? extends A> newRun,
+      BiAccumulator<? super A, ? super K, ? super V> groupAccumulator,
+      Function<? super A, ? extends R> groupFinisher) {
+    requireNonNull(sameGroup);
+    requireNonNull(newRun);
+    requireNonNull(groupAccumulator);
+    requireNonNull(groupFinisher);
+    final int characteristics = Spliterator.ORDERED | Spliterator.DISTINCT;
+
+    class Runner extends AbstractSpliterator<R> implements BiConsumer<K, V> {
+      private final BiIterator<K, V> iterator = iterator();
+      private K previousKey;
+      private A currentRun = null;
+      private boolean hasRunResult = false;
+      private R runResult;
+
+      Runner() {
+        super(Long.MAX_VALUE, characteristics);
+      }
+
+      @Override
+      public boolean tryAdvance(Consumer<? super R> action) {
+        while (iterator.tryAdvance(this)) {
+          if (hasRunResult) {
+            action.accept(runResult);
+            hasRunResult = false;
+            return true;
+          }
+        }
+        if (currentRun == null) {
+          return false;
+        }
+        // The last run.
+        stop();
+        currentRun = null; // Be idempotent
+        action.accept(runResult);
+        return true;
+      }
+
+      @Override
+      public void accept(K key, V value) {
+        if (currentRun == null) {
+          start();
+        } else if (!sameGroup.test(previousKey, key)) {
+          stop();
+          start();
+        }
+        groupAccumulator.accumulate(currentRun, key, value);
+        previousKey = key;
+      }
+
+      private void start() {
+        currentRun = requireNonNull(newRun.get());
+      }
+
+      private void stop() {
+        runResult = groupFinisher.apply(currentRun);
+        hasRunResult = true;
+      }
+    }
+    return StreamSupport.stream(Runner::new, characteristics, NOT_PARALLEL);
+  }
 
   static <K, V> Map.Entry<K, V> kv(K key, V value) {
     return new AbstractMap.SimpleImmutableEntry<>(key, value);
   }
 
   /** A group has at least 1 member, with 2nd+ members incrementally reduced by {@code reducer}. */
-  private static <T> Collector<T, ?, T> reducingGroupMembers(BinaryOperator<T> reducer) {
+  static <T> Collector<T, ?, T> reducingGroupMembers(BinaryOperator<T> reducer) {
     return collectingAndThen(Collectors.reducing(requireNonNull(reducer)), Optional::get);
   }
 
@@ -1585,6 +1757,19 @@ public abstract class BiStream<K, V> implements AutoCloseable {
       underlying.close();
     }
 
+    @Override public final BiIterator<K, V> iterator() {
+      Spliterator<E> spliterator = underlying.spliterator();
+      Temp<E> temp = new Temp<>();
+      return consumer -> {
+        boolean advanced = spliterator.tryAdvance(temp);
+        if (advanced) {
+          E entry = temp.value;
+          consumer.accept(toKey.apply(entry), toValue.apply(entry));
+        }
+        return advanced;
+      };
+    }
+
     final <T> Function<E, T> forEntry(BiFunction<? super K, ? super V, T> function) {
       requireNonNull(function);
       return e -> function.apply(toKey.apply(e), toValue.apply(e));
@@ -1681,6 +1866,20 @@ public abstract class BiStream<K, V> implements AutoCloseable {
       try (Stream<K> closeLeft = left) {
         right.close();
       }
+    }
+
+    @Override public final BiIterator<K, V> iterator() {
+      Spliterator<K> leftSpliterator = left.spliterator();
+      Spliterator<V> rightSpliterator = right.spliterator();
+      Temp<K> tempLeft = new Temp<>();
+      Temp<V> tempRight = new Temp<>();
+      return consumer -> {
+        boolean advanced = leftSpliterator.tryAdvance(tempLeft) && rightSpliterator.tryAdvance(tempRight);
+        if (advanced) {
+          consumer.accept(tempLeft.value, tempRight.value);
+        }
+        return advanced;
+      };
     }
 
     private final class Spliteration {
@@ -1785,13 +1984,13 @@ public abstract class BiStream<K, V> implements AutoCloseable {
       consumer.accept(result);
       return true;
     }
+  }
 
-    private static final class Temp<T> implements Consumer<T> {
-      T value;
+  static final class Temp<T> implements Consumer<T> {
+    T value;
 
-      @Override public void accept(T value) {
-        this.value = value;
-      }
+    @Override public void accept(T value) {
+      this.value = value;
     }
   }
 

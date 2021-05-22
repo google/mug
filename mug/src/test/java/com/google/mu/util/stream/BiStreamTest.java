@@ -18,12 +18,14 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.stream.BiCollectors.toMap;
+import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.BiStream.concatenating;
 import static com.google.mu.util.stream.BiStream.crossJoining;
 import static com.google.mu.util.stream.BiStream.toAdjacentPairs;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static java.util.Arrays.asList;
 import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -87,6 +89,131 @@ public class BiStreamTest {
     assertKeyValues(BiStream.from(ImmutableMap.of("one", 1)))
         .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1))
         .inOrder();
+  }
+
+  @Test public void testGroupConsecutive_emptyStream() {
+    assertKeyValues(BiStream.empty().groupConsecutiveBy(identity(), toList())).isEmpty();
+  }
+
+  @Test public void testGroupConsecutive_singleElement() {
+    assertKeyValues(BiStream.of("1", 1).groupConsecutiveBy(identity(), toList()))
+        .containsExactly("1", asList(1));
+  }
+
+  @Test public void testGroupConsecutive_twoElementsSameRun() {
+    assertKeyValues(BiStream.of("k", "a", "k", "b").groupConsecutiveBy(identity(), toList()))
+        .containsExactly("k", asList("a", "b"));
+  }
+
+  @Test public void testGroupConsecutive_singleRunManyElements() {
+    assertKeyValues(
+            biStream(Collections.nCopies(100, 'x')).groupConsecutiveBy(identity(), counting()))
+        .containsExactly('x', 100L);
+  }
+
+  @Test public void testGroupConsecutive_twoElementsDifferentRuns() {
+    assertKeyValues(BiStream.of("k1", 1, "k2", 2).groupConsecutiveBy(identity(), toList()))
+        .containsExactly("k1", asList(1), "k2", asList(2))
+        .inOrder();
+  }
+
+  @Test public void testGroupConsecutive_oneElementPerRun() {
+    Stream<Integer> data = Stream.of(1, 2, 3, 4, 5);
+    assertKeyValues(biStream(data).groupConsecutiveBy(identity(), counting()))
+        .containsExactly(1, 1L, 2, 1L, 3, 1L, 4, 1L, 5, 1L)
+        .inOrder();
+  }
+
+  @Test public void testGroupConsecutive_twoElementsPerRun() {
+    Stream<Integer> data = Stream.of(1, 1, 2, 2, 3, 3, 2, 2, 1, 1);
+    assertKeyValues(biStream(data).groupConsecutiveBy(identity(), counting()))
+        .containsExactly(1, 2L, 2, 2L, 3, 2L, 2, 2L, 1, 2L)
+        .inOrder();
+  }
+
+  @Test public void testGroupConsecutive_threeElementsPerRun() {
+    Stream<Integer> data = Stream.of(1, 1, 1, 2, 2, 2, 3, 3, 3, 2, 2, 2);
+    assertKeyValues(biStream(data).groupConsecutiveBy(identity(), counting()))
+        .containsExactly(1, 3L, 2, 3L, 3, 3L, 2, 3L)
+        .inOrder();
+  }
+
+  @Test public void testGroupConsecutive_alternatingElements() {
+    Stream<?> data = Stream.of(1, 2, 1, 2, 1);
+    assertKeyValues(biStream(data).groupConsecutiveBy(identity(), counting()))
+        .containsExactly(1, 1L, 2, 1L, 1, 1L, 2, 1L, 1, 1L)
+        .inOrder();
+  }
+
+  @Test public void testGroupConsecutive_equalElementsNotAdjacent() {
+    Stream<?> data = Stream.of(1, "2", 2, 1);
+    assertKeyValues(biStream(data).groupConsecutiveBy(Object::toString, toList()))
+        .containsExactly("1", asList(1), "2", asList("2", 2), "1", asList(1))
+        .inOrder();
+  }
+
+  @Test public void testGroupConsecutive_multipleRuns() {
+    Stream<?> data = Stream.of(1, "2", 2, "3", 3, 3);
+    assertKeyValues(biStream(data).groupConsecutiveBy(Object::toString, toList()))
+        .containsExactly("1", asList(1), "2", asList("2", 2), "3", asList("3", 3, 3))
+        .inOrder();
+  }
+
+  @Test public void testGroupConsecutive_longerRuns() {
+    Stream<?> data = Stream.of('a', 'b', 'b', 'b', 'b', 'b');
+    assertKeyValues(biStream(data).groupConsecutiveBy(identity(), counting()))
+        .containsExactly('a', 1L, 'b', 5L)
+        .inOrder();
+  }
+
+  @Test public void testGroupConsecutive_nullAsRuns() {
+    Stream<?> data = Stream.of(null, null, "foo", "foo", "foo");
+    assertKeyValues(biStream(data).groupConsecutiveBy(identity(), counting()))
+        .containsExactly(null, 2L, "foo", 3L)
+        .inOrder();
+  }
+
+  /**
+   * This test confirms that stateful classifier function can implement more sophisticated grouping.
+   */
+  @Test public void testGroupConsecutiveIf() {
+    // Addinig "." to the end of an element doesn't change its logical value, but forces to conclude
+    // the current consecutive group even if the next element would otherwise be considered "equal".
+    Substring.Suffix period = Substring.suffix('.');
+    Stream<String> data = Stream.of("foo", "foo", "foo.", "foo.", "foo", "bar");
+    Stream<List<String>> groups = biStream(data)
+        .groupConsecutiveIf(
+            (t1, t2) ->
+                !period.from(t1).isPresent()
+                    && period.removeFrom(t1).equals(period.removeFrom(t2)),
+            toList());
+    assertThat(groups)
+        .containsExactly(asList("foo", "foo", "foo."), asList("foo."), asList("foo"), asList("bar"))
+        .inOrder();
+  }
+
+  /** Groups not by equal key, but by proximity. */
+  @Test public void testGroupConsecutive_proximityGrouping_withReducer() {
+    // Make sure nulls are grouped properly
+    Stream<Integer> data = Stream.of(1, 3, 3, 2, 13, 15, 100);
+    final int proximity = 10;
+    Stream<Integer> groupSizes = biStream(data)
+        .groupConsecutiveIf((d1, d2) -> Math.abs(d1 - d2) <= proximity, Integer::sum);
+    assertThat(groupSizes).containsExactly(1 + 3 + 3 + 2, 13 + 15, 100).inOrder();
+  }
+
+  /** Groups not by equal key, but by proximity. */
+  @Test public void testGroupConsecutive_proximityGrouping_nullElementsGrouped() {
+    // Make sure nulls are grouped properly
+    Stream<Integer> data = Stream.of(1, 3, 3, 2, 13, 15, 100, null, null);
+    final int proximity = 10;
+    Stream<Long> groupSizes = biStream(data)
+        .groupConsecutiveIf(
+            (d1, d2) ->
+                d1 == null && d2 == null
+                    || d1 != null && d2 != null && Math.abs(d1 - d2) <= proximity,
+            counting());
+    assertThat(groupSizes).containsExactly(4L, 2L, 1L, 2L).inOrder();
   }
 
   @Test public void testConsecutiveRunsFrom_emptyStream() {
