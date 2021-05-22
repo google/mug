@@ -1494,6 +1494,18 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * consecutive entries belong to the same group if {@code sameGroup.test(key1, key2)} is true.
    * Values belonging to the same group are grouped together using {@code groupCollector}.
    *
+   * <p>The {@code sameGroup} predicate is always evaluated with two consecutive keys in encounter
+   * order.
+   *
+   * <p>The following example identifies price changes above a gap threshold from a stock's
+   * historical price:
+   *
+   * <pre>{@code
+   * Stream<DoubleSummaryStatistics> priceClusters =
+   *     biStream(stockPriceData)
+   *         .groupConsecutiveIf((a, b) -> abs(a - b) < gap, summarizingDouble());
+   * }</pre>
+   *
    * <p>Unlike JDK {@link Collectors#groupingBy groupingBy()} collectors, the returned Stream
    * consumes the input elements lazily and only requires {@code O(groupCollector)} space for the
    * current consecutive elements group. While this makes it more efficient to process large
@@ -1521,14 +1533,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * consecutive entries belong to the same group if {@code sameGroup.test(key1, key2)} is true.
    * Values belonging to the same group are reduced using {@code groupReducer}.
    *
-   * <p>The following example identifies price changes above a gap threshold from a stock's
-   * historical price:
-   *
-   * <pre>{@code
-   * Stream<DoubleSummaryStatistics> priceClusters =
-   *     biStream(stockPriceData)
-   *         .groupConsecutiveIf((a, b) -> abs(a - b) < gap, summarizingDouble());
-   * }</pre>
+   * <p>The {@code sameGroup} predicate is always evaluated with two consecutive keys in encounter
+   * order.
    *
    * <p>Unlike JDK {@link Collectors#groupingBy groupingBy()} collectors, the returned Stream
    * consumes the input elements lazily and only requires {@code O(groupCollector)} space for the
