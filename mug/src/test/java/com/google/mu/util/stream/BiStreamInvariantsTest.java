@@ -20,8 +20,6 @@ import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.BiStream.toBiStream;
-import static com.google.mu.util.stream.BiStreamOperations.groupConsecutiveBy;
-import static com.google.mu.util.stream.BiStreamOperations.groupConsecutiveIf;
 import static java.util.Arrays.asList;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
@@ -702,48 +700,48 @@ public class BiStreamInvariantsTest {
 
   @Test
   public void testGroupConsecutiveBy_emptyStream() {
-    assertKeyValues(of().then(groupConsecutiveBy(identity(), toList()))).isEmpty();
+    assertKeyValues(of().groupConsecutiveBy(identity(), toList())).isEmpty();
   }
 
   @Test
   public void testGroupConsecutiveBy_singleElement() {
-    assertKeyValues(of("1", 1).then(groupConsecutiveBy(identity(), toList())))
+    assertKeyValues(of("1", 1).groupConsecutiveBy(identity(), toList()))
         .containsExactly("1", asList(1));
   }
 
   @Test
   public void testGroupConsecutiveBy_twoElementsSameRun() {
-    assertKeyValues(of("k", "a", "k", "b").then(groupConsecutiveBy(identity(), toList())))
+    assertKeyValues(of("k", "a", "k", "b").groupConsecutiveBy(identity(), toList()))
         .containsExactly("k", asList("a", "b"));
   }
 
   @Test
   public void testGroupConsecutiveBy_twoElementsDifferentRuns() {
-    assertKeyValues(of("k1", 1, "k2", 2).then(groupConsecutiveBy(identity(), toList())))
+    assertKeyValues(of("k1", 1, "k2", 2).groupConsecutiveBy(identity(), toList()))
         .containsExactly("k1", asList(1), "k2", asList(2))
         .inOrder();
   }
 
   @Test
   public void testGroupConsecutiveIf_emptyStream() {
-    assertThat(of().then(groupConsecutiveIf(Object::equals, toList()))).isEmpty();
+    assertThat(of().groupConsecutiveIf(Object::equals, toList())).isEmpty();
   }
 
   @Test
   public void testGroupConsecutiveIf_singleElement() {
-    assertThat(of("1", 1).then(groupConsecutiveIf(Object::equals, toList())))
+    assertThat(of("1", 1).groupConsecutiveIf(Object::equals, toList()))
         .containsExactly(asList(1));
   }
 
   @Test
   public void testGroupConsecutiveIf_twoElementsSameRun() {
-    assertThat(of("k", "a", "k", "b").then(groupConsecutiveIf(Object::equals, toList())))
+    assertThat(of("k", "a", "k", "b").groupConsecutiveIf(Object::equals, toList()))
         .containsExactly(asList("a", "b"));
   }
 
   @Test
   public void testGroupConsecutiveIf_twoElementsDifferentRuns() {
-    assertThat(of("k1", 1, "k2", 2).then(groupConsecutiveIf(Object::equals, Integer::sum)))
+    assertThat(of("k1", 1, "k2", 2).groupConsecutiveIf(Object::equals, Integer::sum))
         .containsExactly(1, 2)
         .inOrder();
   }
