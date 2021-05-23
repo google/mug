@@ -1422,7 +1422,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *
    * <pre>{@code
    * biStream(stockPriceData)
-   *     .then(groupConsecutiveBy(PriceDatum::day, summarizingDouble(PriceDatum::price)))
+   *     .groupConsecutiveBy(PriceDatum::day, summarizingDouble(PriceDatum::price))
    *     .toMap();
    * }</pre>
    *
@@ -1464,7 +1464,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *
    * <pre>{@code
    * biStream(stockPriceDataSortedByTime)
-   *     .then(groupConsecutiveBy(PriceDatum::day, (a, b) -> a))
+   *     .groupConsecutiveBy(PriceDatum::day, (a, b) -> a)
    *     ,toMap();
    * }</pre>
    *
