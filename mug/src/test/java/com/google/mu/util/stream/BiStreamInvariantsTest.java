@@ -746,6 +746,56 @@ public class BiStreamInvariantsTest {
         .inOrder();
   }
 
+  @Test
+  public void testGroupConsecutiveBy_withGroupReducer_emptyStream() {
+    assertKeyValues(of().groupConsecutiveBy(identity(), (a, b) -> a)).isEmpty();
+  }
+
+  @Test
+  public void testGroupConsecutiveBy_withGroupReducer_singleElement() {
+    assertKeyValues(of("1", 1).groupConsecutiveBy(identity(), Integer::sum))
+        .containsExactly("1", 1);
+  }
+
+  @Test
+  public void testGroupConsecutiveBy_withGroupReducer_twoElementsSameRun() {
+    assertKeyValues(of("k", "a", "k", "b").groupConsecutiveBy(identity(), String::concat))
+        .containsExactly("k", "ab");
+  }
+
+  @Test
+  public void testGroupConsecutiveBy_withGroupReducer_twoElementsDifferentRuns() {
+    assertKeyValues(of("k1", 1, "k2", 2).groupConsecutiveBy(identity(), Integer::sum))
+        .containsExactly("k1", 1, "k2", 2)
+        .inOrder();
+  }
+
+  @Test
+  public void testGroupConsecutiveBy_groupWithBiCollector_emptyStream() {
+    assertKeyValues(of().groupConsecutiveBy((k, v) -> k, toMap())).isEmpty();
+  }
+
+  @Test
+  public void testGroupConsecutiveBy_groupWithBiCollector_singleElement() {
+    assertKeyValues(
+            of("1", 1).groupConsecutiveBy((k, v) -> Integer.parseInt(k), toMap()))
+        .containsExactly(1, ImmutableMap.of("1", 1));
+  }
+
+  @Test
+  public void testGroupConsecutiveBy_groupWithBiCollector_twoElementsSameRun() {
+    assertKeyValues(
+            of("k", "a", "k", "b").groupConsecutiveBy((k, v) -> k, ImmutableListMultimap::toImmutableListMultimap))
+        .containsExactly("k", ImmutableListMultimap.of("k", "a", "k", "b"));
+  }
+
+  @Test
+  public void testGroupConsecutiveBy_groupWithBiCollector_twoElementsDifferentRuns() {
+    assertKeyValues(of("k1", 1, "k2", 2).groupConsecutiveBy((k, v) -> k, toMap()))
+        .containsExactly("k1", ImmutableMap.of("k1", 1), "k2", ImmutableMap.of("k2", 2))
+        .inOrder();
+  }
+
   private <K, V> BiStream<K, V> of() {
     return variant.wrap(factory.newBiStream());
   }
