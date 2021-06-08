@@ -1490,6 +1490,57 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
+   * Returns a {@code BiStream} consisting of consecutive groupings from this stream. Consecutive
+   * pairs mapping to the same group according to {@code classifier} will be grouped together using
+   * {@code groupCollector}.
+   *
+   * <p>This can be useful when you need to apply nested groupings, for example, to first group
+   * consecutive events by year, then by continuity (happened within 24 hours):
+   *
+   * <pre>{@code
+   * import static com.google.mu.util.stream.BiiCollectors.collectingAndThen;
+   *
+   * ImmutableListMultimap<Integer, List<Event>> continuousEventsByYear =
+   *     biStream(events)
+   *         .mapKeys(Event::date)
+   *         .groupConsecutiveBy(
+   *             (date, event) -> date.year(),
+   *             collectingAndThen(
+   *                 annual -> annual.groupConsecutiveIf(
+   *                     (d1, d2) -> Duration.between(d1, d2).compareTo(Duration.ofHours(24)) < 0,
+   *                     toList())))
+   *         .collect(toImmutableListMultimmap());
+   * }</pre>
+   *
+   * <p>Unlike JDK {@link Collectors#groupingBy groupingBy()} collectors, the returned BiStream
+   * consumes the input elements lazily and only requires {@code O(groupCollector)} space for the
+   * current consecutive elements group. For instance the {@code groupConsecutiveBy(Event::type,
+   * counting())} stream takes O(1) space. While this makes it more efficient to process large
+   * streams, the input data often need to be pre-sorted for the grouping to be useful.
+   *
+   * <p>To apply grouping beyond consecutive elements, use {@link
+   * BiCollectors#groupingBy(BiFunction, BiCollector) collect(BiCollectors.groupingBy(classifier,
+   * groupCollector))} instead.
+   *
+   * <p>Consecutive pairs mapped to null by {@code classifier} will be grouped together.
+   *
+   * @param classifier The function to determine the group key. Because it's guaranteed to be
+   *     invoked once and only once per entry, and that the returned BiStream is sequential and
+   *     respects encounter order, this function is allowed to have side effects.
+   *
+   * @since 5.5
+   */
+  public final <G, A, R> BiStream<G, R> groupConsecutiveBy(
+      BiFunction<? super K, ? super V, ? extends G> classifier,
+      BiCollector<? super K, ? super V, R> groupCollector) {
+    requireNonNull(classifier);
+    requireNonNull(groupCollector);
+    return this
+        .<G, Map.Entry<K, V>>map(classifier, BiStream::kv)
+        .groupConsecutiveByKeys(groupCollector.splitting(Map.Entry::getKey, Map.Entry::getValue));
+  }
+
+  /**
    * Returns a lazy {@code Stream} of the consecutive groups of values from this stream. Two
    * consecutive entries belong to the same group if {@code sameGroup.test(key1, key2)} is true.
    * Values belonging to the same group are grouped together using {@code groupCollector}.
@@ -1549,6 +1600,12 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   public final Stream<V> groupConsecutiveIf(
       BiPredicate<? super K, ? super K> sameGroup, BinaryOperator<V> groupReducer) {
     return groupConsecutiveIf(sameGroup, reducingGroupMembers(groupReducer));
+  }
+
+  private <A, R> BiStream<K, R> groupConsecutiveByKeys(
+      Collector<? super V, A, R> groupCollector) {
+    return groupConsecutiveByKeys(groupCollector.supplier(), groupCollector.accumulator())
+        .mapValues(groupCollector.finisher());
   }
 
   private <A> BiStream<K, A> groupConsecutiveByKeys(
