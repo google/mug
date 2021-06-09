@@ -1446,8 +1446,6 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   public final <G, A, R> BiStream<G, R> groupConsecutiveBy(
       Function<? super K, ? extends G> classifier,
       Collector<? super V, A, ? extends R> groupCollector) {
-    requireNonNull(classifier);
-    requireNonNull(groupCollector);
     return this
         .<G>mapKeys(classifier)
         .groupConsecutiveByKeys(groupCollector.supplier(), groupCollector.accumulator())
@@ -1533,8 +1531,6 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   public final <G, A, R> BiStream<G, R> groupConsecutiveBy(
       BiFunction<? super K, ? super V, ? extends G> classifier,
       BiCollector<? super K, ? super V, R> groupCollector) {
-    requireNonNull(classifier);
-    requireNonNull(groupCollector);
     return this
         .<G, Map.Entry<K, V>>map(classifier, BiStream::kv)
         .groupConsecutiveByKeys(groupCollector.splitting(Map.Entry::getKey, Map.Entry::getValue));
@@ -1569,8 +1565,6 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    */
   public final <A, R> Stream<R> groupConsecutiveIf(
       BiPredicate<? super K, ? super K> sameGroup, Collector<? super V, A, R> groupCollector) {
-    requireNonNull(sameGroup);
-    requireNonNull(groupCollector);
     BiConsumer<A, ? super V> groupAccumulator = groupCollector.accumulator();
     return groupConsecutiveIf(
         sameGroup,
