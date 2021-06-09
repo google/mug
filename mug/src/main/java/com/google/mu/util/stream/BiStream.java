@@ -1509,7 +1509,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *                 annual -> annual.groupConsecutiveIf(
    *                     (d1, d2) -> Duration.between(d1, d2).compareTo(Duration.ofHours(24)) < 0,
    *                     toList())))
-   *         .collect(toImmutableListMultimmap());
+   *         .collect(flatteningToImmutableListMultimap(subgroups -> subgroups));
    * }</pre>
    *
    * <p>Unlike JDK {@link Collectors#groupingBy groupingBy()} collectors, the returned BiStream
