@@ -612,9 +612,9 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Returns a lazy BiStream of the paginated inputs and outputs of the given {@code ask} function.
-   * The outputs are results of repetitive application of the {@code ask} function. After each page,
-   * the {@code next} function is called to get the input for the next page. The stream terminates
+   * Returns a lazy BiStream of the questions and corresponding answers from the given {@code ask}
+   * function. The answers are results of repetitive application of the {@code ask} function. At
+   * each round, the {@code next} function is called for the next question. The stream terminates
    * when {@code next} returns {@code Optional.empty()}.
    *
    * <p>For example, if you have a list API with pagination support, the following code retrieves
@@ -638,7 +638,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *
    * <pre>{@code
    * Stream<Foo> listAllFoos() {
-   *   BiStream.paginated(
+   *   return BiStream.converse(
    *           initialRequest, service::listFoos,
    *           (req, resp) ->
    *               optional(
@@ -648,30 +648,32 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * }
    * }</pre>
    *
-   * @param input the input to start the paginated stream. Cannot be null.
-   * @param ask the function used to get a single page based on the current input. Null return
-   *     values are passed through as is.
-   * @param next the function to flip to the next page given the current page's input and output.
+   * @param question the first question to start the conversation stream. Cannot be null.
+   * @param ask the function used to get answer to the current question. Null answers are passed
+   *     through as is.
+   * @param next the function to get the next question given the current question and answer.
+   * @param <Q> the question type
+   * @param <A> the answer type
    * @since 5.5
    */
-  public static <I, O> BiStream<I, O> paginated(
-      I input,
-      Function<? super I, ? extends O> ask,
-      BiFunction<? super I, ? super O, ? extends Optional<? extends I>> next) {
+  public static <Q, A> BiStream<Q, A> converse(
+      Q question,
+      Function<? super Q, ? extends A> ask,
+      BiFunction<? super Q, ? super A, ? extends Optional<? extends Q>> next) {
     requireNonNull(ask);
     requireNonNull(next);
     return fromEntries(
         MoreStreams.whileNotNull(
-            new Supplier<Map.Entry<I, O>>() {
-              I nextInput = requireNonNull(input);
-              @Override public Map.Entry<I, O> get() {
-                I in = nextInput;
-                if (in == null) {
+            new Supplier<Map.Entry<Q, A>>() {
+              Q nextQuestion = requireNonNull(question);
+              @Override public Map.Entry<Q, A> get() {
+                Q q = nextQuestion;
+                if (q == null) {
                   return null;
                 }
-                O out = ask.apply(in);
-                nextInput = next.apply(in, out).orElse(null);
-                return kv(in, out);
+                A a = ask.apply(q);
+                nextQuestion = next.apply(q, a).orElse(null);
+                return kv(q, a);
               }
             }));
   }

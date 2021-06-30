@@ -1038,7 +1038,7 @@ public class BiStreamTest {
 
     /** A typical paginated stream based off of Iteration. */
     final Stream<T> paginate(int startingIndex, int pageSize) {
-      return BiStream.paginated(
+      return BiStream.converse(
               new PaginationRequest(startingIndex, pageSize),
               this::getPage,
               (req, resp) -> optional(resp.next >= 0, new PaginationRequest(resp.next, pageSize)))
