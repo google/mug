@@ -648,8 +648,9 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * }
    * }</pre>
    *
-   * @param input the input to start the paginated stream.
-   * @param ask the function used to get a single page based on the current input.
+   * @param input the input to start the paginated stream. Cannot be null.
+   * @param ask the function used to get a single page based on the current input. Null return
+   *     values are passed through as is.
    * @param next the function to flip to the next page given the current page's input and output.
    * @since 5.5
    */
