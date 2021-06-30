@@ -612,6 +612,70 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
+   * Returns a lazy BiStream of the paginated inputs and outputs of the given {@code ask} function.
+   * The outputs are results of repetitive application of the {@code ask} function. After each page,
+   * the {@code next} function is called to get the input for the next page. The stream terminates
+   * when {@code next} returns {@code Optional.empty()}.
+   *
+   * <p>For example, if you have a list API with pagination support, the following code retrieves
+   * all pages eagerly:
+   *
+   * <pre>{@code
+   * ImmutableList<Foo> listAllFoos() {
+   *   ImmutableList.Builder<Foo> builder = ImmutableList.builder();
+   *   ListFooRequest.Builder request = ListFooRequest.newBuilder()...;
+   *     do {
+   *       ListFooResponse response = service.listFoos(request.build());
+   *       builder.addAll(response.getFoos());
+   *       request.setPageToken(response.getNextPageToken());
+   *     } while (!request.getPageToken().isEmpty());
+   *   return builder.build();
+   * }
+   * }</pre>
+   *
+   * You can turn the above code to a lazy stream so that callers can short-circuit when they need
+   * to without having to exhaust all pages:
+   *
+   * <pre>{@code
+   * Stream<Foo> listAllFoos() {
+   *   BiStream.paginated(
+   *           initialRequest, service::listFoos,
+   *           (req, resp) ->
+   *               optional(
+   *                   resp.hasNextPageToken(),
+   *                   req.toBuilder().setPageToken(response.getNextPageToken()).build()))
+   *       .flatMapToObj((req, resp) -> resp.getAllFoos().stream());
+   * }
+   * }</pre>
+   *
+   * @param input the input to start the paginated stream.
+   * @param ask the function used to get a single page based on the current input.
+   * @param next the function to flip to the next page given the current page's input and output.
+   * @since 5.5
+   */
+  public static <I, O> BiStream<I, O> paginated(
+      I input,
+      Function<? super I, ? extends O> ask,
+      BiFunction<? super I, ? super O, ? extends Optional<? extends I>> next) {
+    requireNonNull(ask);
+    requireNonNull(next);
+    return fromEntries(
+        MoreStreams.whileNotNull(
+            new Supplier<Map.Entry<I, O>>() {
+              I nextInput = requireNonNull(input);
+              @Override public Map.Entry<I, O> get() {
+                I in = nextInput;
+                if (in == null) {
+                  return null;
+                }
+                O out = ask.apply(in);
+                nextInput = next.apply(in, out).orElse(null);
+                return kv(in, out);
+              }
+            }));
+  }
+
+  /**
    * Returns a lazy {@code BiStream} of the consecutive runs of equal elements and their run-lengths
    * from the input {@code stream}.
    *
