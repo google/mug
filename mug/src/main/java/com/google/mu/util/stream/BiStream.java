@@ -639,7 +639,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * Stream<Foo> listAllFoos() {
    *   return BiStream.alternate(
    *           request, service::listFoos,
-   *           resp ->
+   *           (req, resp) ->
    *               optional(
    *                   resp.hasNextPageToken(),
    *                   request.toBuilder().setPageToken(response.getNextPageToken()).build()))
