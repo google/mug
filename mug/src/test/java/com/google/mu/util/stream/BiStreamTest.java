@@ -1041,7 +1041,7 @@ public class BiStreamTest {
       return BiStream.alternate(
               new PaginationRequest(startingIndex, pageSize),
               this::getPageResponse,
-              resp -> optional(resp.next >= 0, new PaginationRequest(resp.next, pageSize)))
+              (req, resp) -> optional(resp.next >= 0, new PaginationRequest(resp.next, pageSize)))
           .flatMapToObj((req, resp) -> resp.rows.stream());
     }
   }
