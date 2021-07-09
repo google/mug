@@ -612,6 +612,71 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
+   * Returns a lazy BiStream of the alternating inputs and corresponding outputs from the given
+   * {@code compute} function. At each round, the {@code next} function is called for the next
+   * question. The stream terminates when {@code next} returns {@code Optional.empty()}.
+   *
+   * <p>For example, if you have a list API with pagination support, the following code retrieves
+   * all pages eagerly:
+   *
+   * <pre>{@code
+   * ImmutableList<Foo> listAllFoos() {
+   *   ImmutableList.Builder<Foo> builder = ImmutableList.builder();
+   *   ListFooRequest.Builder request = ListFooRequest.newBuilder()...;
+   *     do {
+   *       ListFooResponse response = service.listFoos(request.build());
+   *       builder.addAll(response.getFoos());
+   *       request.setPageToken(response.getNextPageToken());
+   *     } while (!request.getPageToken().isEmpty());
+   *   return builder.build();
+   * }
+   * }</pre>
+   *
+   * You can turn the above code to a lazy stream so that callers can short-circuit when they need
+   * to without having to exhaust all pages:
+   *
+   * <pre>{@code
+   * Stream<Foo> listAllFoos() {
+   *   return BiStream.alternate(
+   *           request, service::listFoos,
+   *           resp ->
+   *               optional(
+   *                   resp.hasNextPageToken(),
+   *                   request.toBuilder().setPageToken(response.getNextPageToken()).build()))
+   *       .flatMapToObj((req, resp) -> resp.getAllFoos().stream());
+   * }
+   * }</pre>
+   *
+   * @param input the initial input to start the alternating stream. Cannot be null.
+   * @param compute the function used to get result to the current input. Null outputs are passed
+   *     through as is.
+   * @param next the function to get the next input given the current output.
+   * @param <I> the input type
+   * @param <O> the output type
+   */
+  public static <I, O> BiStream<I, O> alternate(
+      I input,
+      Function<? super I, ? extends O> compute,
+      Function<? super O, ? extends Optional<? extends I>> next) {
+    requireNonNull(compute);
+    requireNonNull(next);
+    return fromEntries(
+        MoreStreams.whileNotNull(
+            new Supplier<Map.Entry<I, O>>() {
+              I nextInput = requireNonNull(input);
+              @Override public Map.Entry<I, O> get() {
+                I in = nextInput;
+                if (in == null) {
+                  return null;
+                }
+                O out = compute.apply(in);
+                nextInput = next.apply(out).orElse(null);
+                return kv(in, out);
+              }
+            }));
+  }
+
+  /**
    * Returns a lazy {@code BiStream} of the consecutive runs of equal elements and their run-lengths
    * from the input {@code stream}.
    *
@@ -1446,8 +1511,6 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   public final <G, A, R> BiStream<G, R> groupConsecutiveBy(
       Function<? super K, ? extends G> classifier,
       Collector<? super V, A, ? extends R> groupCollector) {
-    requireNonNull(classifier);
-    requireNonNull(groupCollector);
     return this
         .<G>mapKeys(classifier)
         .groupConsecutiveByKeys(groupCollector.supplier(), groupCollector.accumulator())
@@ -1533,8 +1596,6 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   public final <G, A, R> BiStream<G, R> groupConsecutiveBy(
       BiFunction<? super K, ? super V, ? extends G> classifier,
       BiCollector<? super K, ? super V, R> groupCollector) {
-    requireNonNull(classifier);
-    requireNonNull(groupCollector);
     return this
         .<G, Map.Entry<K, V>>map(classifier, BiStream::kv)
         .groupConsecutiveByKeys(groupCollector.splitting(Map.Entry::getKey, Map.Entry::getValue));
@@ -1569,8 +1630,6 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    */
   public final <A, R> Stream<R> groupConsecutiveIf(
       BiPredicate<? super K, ? super K> sameGroup, Collector<? super V, A, R> groupCollector) {
-    requireNonNull(sameGroup);
-    requireNonNull(groupCollector);
     BiConsumer<A, ? super V> groupAccumulator = groupCollector.accumulator();
     return groupConsecutiveIf(
         sameGroup,

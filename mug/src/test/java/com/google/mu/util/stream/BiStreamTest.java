@@ -17,6 +17,7 @@ package com.google.mu.util.stream;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static com.google.mu.util.Optionals.optional;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.BiStream.concatenating;
@@ -28,6 +29,9 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -49,6 +53,7 @@ import java.util.stream.Stream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.mockito.Mockito;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
@@ -980,6 +985,85 @@ public class BiStreamTest {
             ImmutableMap.Builder::put)
         .build();
     assertThat(result).containsExactly("1", 1, "2", 2, "3", 3, "4", 4, "5", 5).inOrder();
+  }
+
+
+  @Test public void testPaginatedStream_singlePage() {
+    PaginationService<String> service = spy(new PaginationService<>("hello", "world"));
+    assertThat(service.paginate(0, 2)).containsExactly("hello", "world").inOrder();
+    verify(service).getPage(0, 2);
+    verifyNoMoreInteractions(service);
+  }
+
+  @Test public void testPaginatedStream_exhaustTwoPages() {
+    PaginationService<String> service = spy(new PaginationService<>("hello", "world"));
+    assertThat(service.paginate(0, 1)).containsExactly("hello", "world").inOrder();
+    Mockito.verify(service).getPage(0, 1);
+    verify(service).getPage(1, 1);
+    verifyNoMoreInteractions(service);
+  }
+
+  @Test  public void testPaginatedStream_secondPageSkipped() {
+    PaginationService<String> service = spy(new PaginationService<>("hello", "world"));
+    assertThat(service.paginate(0, 1).limit(1)).containsExactly("hello");
+    verify(service).getPage(0, 1);
+    verifyNoMoreInteractions(service);
+  }
+
+  @Test public void testPaginatedStream_secondPageNotExhausted() {
+    PaginationService<String> service = spy(new PaginationService<>("a", "b", "c", "d", "e"));
+    assertThat(service.paginate(0, 2).limit(3)).containsExactly("a", "b", "c");
+    verify(service).getPage(0, 2);
+    verify(service).getPage(2, 2);
+    verifyNoMoreInteractions(service);
+  }
+
+  private static class PaginationService<T> {
+    private final ImmutableList<T> data;
+
+    PaginationService(T... data) {
+      this.data = ImmutableList.copyOf(data);
+    }
+
+    final PaginationResponse<T> getPageResponse(PaginationRequest request) {
+      return getPage(request.from, request.pageSize);
+    }
+
+    PaginationResponse<T> getPage(int from, int pageSize) {
+      int next = from + pageSize;
+      return new PaginationResponse<>(
+          data.stream().skip(from).limit(pageSize).collect(toImmutableList()),
+          next >= data.size() ? -1 : next);
+    }
+
+    /** A typical paginated stream based off of Iteration. */
+    final Stream<T> paginate(int startingIndex, int pageSize) {
+      return BiStream.alternate(
+              new PaginationRequest(startingIndex, pageSize),
+              this::getPageResponse,
+              resp -> optional(resp.next >= 0, new PaginationRequest(resp.next, pageSize)))
+          .flatMapToObj((req, resp) -> resp.rows.stream());
+    }
+  }
+
+  private static final class PaginationRequest {
+    final int from;
+    final int pageSize;
+
+    PaginationRequest(int from, int pageSize) {
+      this.from = from;
+      this.pageSize = pageSize;
+    }
+  }
+
+  private static final class PaginationResponse<T> {
+    final ImmutableList<T> rows;
+    final int next; // -1 means no more
+
+    PaginationResponse(List<T> rows, int next) {
+      this.rows = ImmutableList.copyOf(rows);
+      this.next = next;
+    }
   }
 
   static<K,V> MultimapSubject assertKeyValues(BiStream<K, V> stream) {
