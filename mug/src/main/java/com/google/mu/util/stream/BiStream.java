@@ -616,8 +616,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * function. At each round, the {@code next} function is called for the next input. The stream
    * terminates when {@code next} returns {@code Optional.empty()}.
    *
-   * <p>For example, if you have a list API with pagination support, the following code retrieves
-   * all pages eagerly:
+   * <p>A common use case is pagination. For example, if you have a list API with pagination
+   * support, the following code retrieves all pages eagerly:
    *
    * <pre>{@code
    * ImmutableList<Foo> listAllFoos() {
@@ -650,7 +650,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * @param input the initial input to start the alternating stream. Cannot be null.
    * @param compute the function used to get result to the current input. Null outputs are passed
    *     through as is.
-   * @param next the function to get the next input given the current output.
+   * @param next the function to get the next input given the current input and output.
    * @param <I> the input type
    * @param <O> the output type
    * @since 5.5
@@ -658,7 +658,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   public static <I, O> BiStream<I, O> alternate(
       I input,
       Function<? super I, ? extends O> compute,
-      Function<? super O, ? extends Optional<? extends I>> next) {
+      BiFunction<? super I, ? super O, ? extends Optional<? extends I>> next) {
     requireNonNull(compute);
     requireNonNull(next);
     return fromEntries(
@@ -671,7 +671,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
                   return null;
                 }
                 O out = compute.apply(in);
-                nextInput = next.apply(out).orElse(null);
+                nextInput = next.apply(in, out).orElse(null);
                 return kv(in, out);
               }
             }));
