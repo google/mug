@@ -612,10 +612,9 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Returns a lazy BiStream of the questions and corresponding answers from the given {@code ask}
-   * function. The answers are results of repetitive application of the {@code ask} function. At
-   * each round, the {@code next} function is called for the next question. The stream terminates
-   * when {@code next} returns {@code Optional.empty()}.
+   * Returns a lazy BiStream of the alternating inputs and corresponding outputs from the given
+   * {@code compute} function. At each round, the {@code next} function is called for the next
+   * question. The stream terminates when {@code next} returns {@code Optional.empty()}.
    *
    * <p>For example, if you have a list API with pagination support, the following code retrieves
    * all pages eagerly:
@@ -638,42 +637,41 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *
    * <pre>{@code
    * Stream<Foo> listAllFoos() {
-   *   return BiStream.converse(
-   *           initialRequest, service::listFoos,
-   *           (req, resp) ->
+   *   return BiStream.alternate(
+   *           request, service::listFoos,
+   *           resp ->
    *               optional(
    *                   resp.hasNextPageToken(),
-   *                   req.toBuilder().setPageToken(response.getNextPageToken()).build()))
+   *                   request.toBuilder().setPageToken(response.getNextPageToken()).build()))
    *       .flatMapToObj((req, resp) -> resp.getAllFoos().stream());
    * }
    * }</pre>
    *
-   * @param question the first question to start the conversation stream. Cannot be null.
-   * @param ask the function used to get answer to the current question. Null answers are passed
+   * @param input the initial input to start the alternating stream. Cannot be null.
+   * @param compute the function used to get result to the current input. Null outputs are passed
    *     through as is.
-   * @param next the function to get the next question given the current question and answer.
-   * @param <Q> the question type
-   * @param <A> the answer type
-   * @since 5.5
+   * @param next the function to get the next input given the current output.
+   * @param <I> the input type
+   * @param <O> the output type
    */
-  public static <Q, A> BiStream<Q, A> converse(
-      Q question,
-      Function<? super Q, ? extends A> ask,
-      BiFunction<? super Q, ? super A, ? extends Optional<? extends Q>> next) {
-    requireNonNull(ask);
+  public static <I, O> BiStream<I, O> alternate(
+      I input,
+      Function<? super I, ? extends O> compute,
+      Function<? super O, ? extends Optional<? extends I>> next) {
+    requireNonNull(compute);
     requireNonNull(next);
     return fromEntries(
         MoreStreams.whileNotNull(
-            new Supplier<Map.Entry<Q, A>>() {
-              Q nextQuestion = requireNonNull(question);
-              @Override public Map.Entry<Q, A> get() {
-                Q q = nextQuestion;
-                if (q == null) {
+            new Supplier<Map.Entry<I, O>>() {
+              I nextInput = requireNonNull(input);
+              @Override public Map.Entry<I, O> get() {
+                I in = nextInput;
+                if (in == null) {
                   return null;
                 }
-                A a = ask.apply(q);
-                nextQuestion = next.apply(q, a).orElse(null);
-                return kv(q, a);
+                O out = compute.apply(in);
+                nextInput = next.apply(out).orElse(null);
+                return kv(in, out);
               }
             }));
   }

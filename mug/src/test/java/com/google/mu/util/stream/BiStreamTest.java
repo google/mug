@@ -1025,7 +1025,7 @@ public class BiStreamTest {
       this.data = ImmutableList.copyOf(data);
     }
 
-    final PaginationResponse<T> getPage(PaginationRequest request) {
+    final PaginationResponse<T> getPageResponse(PaginationRequest request) {
       return getPage(request.from, request.pageSize);
     }
 
@@ -1038,10 +1038,10 @@ public class BiStreamTest {
 
     /** A typical paginated stream based off of Iteration. */
     final Stream<T> paginate(int startingIndex, int pageSize) {
-      return BiStream.converse(
+      return BiStream.alternate(
               new PaginationRequest(startingIndex, pageSize),
-              this::getPage,
-              (req, resp) -> optional(resp.next >= 0, new PaginationRequest(resp.next, pageSize)))
+              this::getPageResponse,
+              resp -> optional(resp.next >= 0, new PaginationRequest(resp.next, pageSize)))
           .flatMapToObj((req, resp) -> resp.rows.stream());
     }
   }
