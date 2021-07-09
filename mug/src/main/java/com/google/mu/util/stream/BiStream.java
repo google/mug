@@ -612,9 +612,9 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Returns a lazy BiStream of the alternating inputs and corresponding outputs from the given
-   * {@code compute} function. At each round, the {@code next} function is called for the next
-   * question. The stream terminates when {@code next} returns {@code Optional.empty()}.
+   * Returns a lazy BiStream of the alternating inputs and outputs from the given {@code compute}
+   * function. At each round, the {@code next} function is called for the next input. The stream
+   * terminates when {@code next} returns {@code Optional.empty()}.
    *
    * <p>For example, if you have a list API with pagination support, the following code retrieves
    * all pages eagerly:
@@ -653,6 +653,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * @param next the function to get the next input given the current output.
    * @param <I> the input type
    * @param <O> the output type
+   * @since 5.5
    */
   public static <I, O> BiStream<I, O> alternate(
       I input,
