@@ -612,8 +612,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Returns a stream of the inputs and outputs from repeated applications of the {@code compute}
-   * function. The {@code initial} input is passed to {@code compute} for the first round, after
+   * Returns a stream of the inputs and outputs from repeated applications of the {@code work}
+   * function. The {@code initial} input is passed to {@code work} for the first round, after
    * which the {@code increment} function is called to determine the input for the next round. This
    * process repeats until the {@code increment} function returns {@code Optional.empty()}.
    *
@@ -641,29 +641,28 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *   return BiStream.repeat(
    *           service::listFoos,
    *           initialRequest,
-   *           (req, resp) ->
+   *           (request, response) ->
    *               optional(
-   *                   resp.hasNextPageToken(),
-   *                   req.toBuilder().setPageToken(resp.getNextPageToken()).build()))
-   *       .flatMapToObj((req, resp) -> resp.getAllFoos().stream());
+   *                   response.hasNextPageToken(),
+   *                   request.toBuilder().setPageToken(response.getNextPageToken()).build()))
+   *       .flatMapToObj((request, response) -> response.getAllFoos().stream());
    * }
    * }</pre>
-   * @param compute the function used to get result to the current input. Null outputs are passed
-   *     through as is.
+   * @param work the function to repeat. Null outputs are passed through as is.
    * @param initial the initial input to start the alternating stream. Cannot be null.
    * @param increment the function to get the next input given the current input and output.
    * @param <I> the input type
    * @param <O> the output type
-   * @return A BiStream of the inputs and outputs of the {@code compute} function. The stream is
-   *     lazy in that {@code compute} won't be called until the stream is being consumed; and it
+   * @return A BiStream of the inputs and outputs of the {@code work} function. The stream is
+   *     lazy in that {@code work} won't be called until the stream is being consumed; and it
    *     won't be called again until the second pair of input and output are being consumed, etc.
    * @since 5.5
    */
   public static <I, O> BiStream<I, O> repeat(
-      Function<? super I, ? extends O> compute,
+      Function<? super I, ? extends O> work,
       I initial,
       BiFunction<? super I, ? super O, ? extends Optional<? extends I>> increment) {
-    requireNonNull(compute);
+    requireNonNull(work);
     requireNonNull(increment);
     return fromEntries(
         MoreStreams.whileNotNull(
@@ -674,7 +673,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
                 if (in == null) {
                   return null;
                 }
-                O out = compute.apply(in);
+                O out = work.apply(in);
                 nextInput = increment.apply(in, out).orElse(null);
                 return kv(in, out);
               }
