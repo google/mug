@@ -1038,9 +1038,9 @@ public class BiStreamTest {
 
     /** A typical paginated stream based off of Iteration. */
     final Stream<T> paginate(int startingIndex, int pageSize) {
-      return BiStream.alternate(
-              new PaginationRequest(startingIndex, pageSize),
+      return BiStream.repeat(
               this::getPageResponse,
+              new PaginationRequest(startingIndex, pageSize),
               (req, resp) -> optional(resp.next >= 0, new PaginationRequest(resp.next, pageSize)))
           .flatMapToObj((req, resp) -> resp.rows.stream());
     }

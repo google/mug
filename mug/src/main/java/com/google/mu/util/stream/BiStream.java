@@ -612,9 +612,10 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Returns a lazy BiStream of the alternating inputs and outputs from the given {@code compute}
-   * function. At each round, the {@code next} function is called for the next input. The stream
-   * terminates when {@code next} returns {@code Optional.empty()}.
+   * Returns a lazy BiStream of the inputs and outputs from repeated applications of the {@code
+   * compute} function. The {@code initial} input is passed to {@code compute} for the first round,
+   * after which the {@code increment} function is called to determine the input for the next round.
+   * This process repeats until the {@code increment} function returns {@code Optional.empty()}.
    *
    * <p>A common use case is pagination. For example, if you have a list API with pagination
    * support, the following code retrieves all pages eagerly:
@@ -637,41 +638,41 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *
    * <pre>{@code
    * Stream<Foo> listAllFoos() {
-   *   return BiStream.alternate(
-   *           request, service::listFoos,
+   *   return BiStream.repeat(
+   *           service::listFoos, request,
    *           (req, resp) ->
    *               optional(
    *                   resp.hasNextPageToken(),
-   *                   request.toBuilder().setPageToken(response.getNextPageToken()).build()))
+   *                   req.toBuilder().setPageToken(resp.getNextPageToken()).build()))
    *       .flatMapToObj((req, resp) -> resp.getAllFoos().stream());
    * }
    * }</pre>
-   *
-   * @param input the initial input to start the alternating stream. Cannot be null.
    * @param compute the function used to get result to the current input. Null outputs are passed
    *     through as is.
-   * @param next the function to get the next input given the current input and output.
+   * @param initial the initial input to start the alternating stream. Cannot be null.
+   * @param increment the function to get the next input given the current input and output.
+   *
    * @param <I> the input type
    * @param <O> the output type
    * @since 5.5
    */
-  public static <I, O> BiStream<I, O> alternate(
-      I input,
+  public static <I, O> BiStream<I, O> repeat(
       Function<? super I, ? extends O> compute,
-      BiFunction<? super I, ? super O, ? extends Optional<? extends I>> next) {
+      I initial,
+      BiFunction<? super I, ? super O, ? extends Optional<? extends I>> increment) {
     requireNonNull(compute);
-    requireNonNull(next);
+    requireNonNull(increment);
     return fromEntries(
         MoreStreams.whileNotNull(
             new Supplier<Map.Entry<I, O>>() {
-              I nextInput = requireNonNull(input);
+              I nextInput = requireNonNull(initial);
               @Override public Map.Entry<I, O> get() {
                 I in = nextInput;
                 if (in == null) {
                   return null;
                 }
                 O out = compute.apply(in);
-                nextInput = next.apply(in, out).orElse(null);
+                nextInput = increment.apply(in, out).orElse(null);
                 return kv(in, out);
               }
             }));
