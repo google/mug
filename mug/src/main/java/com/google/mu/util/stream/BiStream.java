@@ -649,7 +649,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * }
    * }</pre>
    * @param work the function to repeat. Null outputs are passed through as is.
-   * @param initial the initial input to start the alternating stream. Cannot be null.
+   * @param initial the initial input to pass to the {@code work} function. Cannot be null.
    * @param increment the function to get the next input given the current input and output.
    * @param <I> the input type
    * @param <O> the output type
