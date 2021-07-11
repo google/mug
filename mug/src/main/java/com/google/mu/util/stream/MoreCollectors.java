@@ -127,12 +127,12 @@ public final class MoreCollectors {
    * using the {@code mapper} function. If there are fewer or more elements in the input,
    * IllegalArgumentExceptioin is thrown.
    *
-   * <p>Can be used together with the other {@code onlyElements()} {@link ConditionalCollector}
+   * <p>Can be used together with the other {@code onlyElements()} {@link FixedSizeCollector}
    * as one of the multiple cases passed to {@link #switching}.
    *
    * @since 5.4
    */
-  public static <T, R> ConditionalCollector<T, ?, R> onlyElement(
+  public static <T, R> FixedSizeCollector<T, ?, R> onlyElement(
       Function<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new ShortListCollector<T, R>() {
@@ -157,7 +157,7 @@ public final class MoreCollectors {
    *
    * @since 5.3
    */
-  public static <T, R> ConditionalCollector<T, ?, R> onlyElements(
+  public static <T, R> FixedSizeCollector<T, ?, R> onlyElements(
       BiFunction<? super T, ? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new ShortListCollector<T, R>() {
@@ -182,7 +182,7 @@ public final class MoreCollectors {
    *
    * @since 5.3
    */
-  public static <T, R> ConditionalCollector<T, ?, R> onlyElements(
+  public static <T, R> FixedSizeCollector<T, ?, R> onlyElements(
       Ternary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new ShortListCollector<T, R>() {
@@ -207,7 +207,7 @@ public final class MoreCollectors {
    *
    * @since 5.3
    */
-  public static <T, R> ConditionalCollector<T, ?, R> onlyElements(
+  public static <T, R> FixedSizeCollector<T, ?, R> onlyElements(
       Quarternary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new ShortListCollector<T, R>() {
@@ -232,7 +232,7 @@ public final class MoreCollectors {
    *
    * @since 5.3
    */
-  public static <T, R> ConditionalCollector<T, ?, R> onlyElements(
+  public static <T, R> FixedSizeCollector<T, ?, R> onlyElements(
       Quinary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new ShortListCollector<T, R>() {
@@ -257,7 +257,7 @@ public final class MoreCollectors {
    *
    * @since 5.3
    */
-  public static <T, R> ConditionalCollector<T, ?, R> onlyElements(
+  public static <T, R> FixedSizeCollector<T, ?, R> onlyElements(
       Senary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new ShortListCollector<T, R>() {
@@ -296,22 +296,22 @@ public final class MoreCollectors {
    */
   @SafeVarargs
   public static <T, R> Collector<T, ?, R> switching(
-      ConditionalCollector<T, ?, R> firstCase, ConditionalCollector<T, ?, R>... moreCases) {
-    List<ConditionalCollector<T, ?, R>> caseList = new ArrayList<>(1 + moreCases.length);
+      FixedSizeCollector<T, ?, R> firstCase, FixedSizeCollector<T, ?, R>... moreCases) {
+    List<FixedSizeCollector<T, ?, R>> caseList = new ArrayList<>(1 + moreCases.length);
     caseList.add(requireNonNull(firstCase));
-    for (ConditionalCollector<T, ?, R> c : moreCases) {
+    for (FixedSizeCollector<T, ?, R> c : moreCases) {
       caseList.add(requireNonNull(c));
     }
     return switching(caseList);
   }
 
-  private static <T, R> Collector<T, ?, R> switching(List<ConditionalCollector<T, ?, R>> cases) {
+  private static <T, R> Collector<T, ?, R> switching(List<FixedSizeCollector<T, ?, R>> cases) {
     if (cases.size() == 1) {
       return cases.get(0);
     }
     return collectingAndThen(toList(), list -> {
       int elementsToShow = 1;
-      for (ConditionalCollector<T, ?, R> c : cases) {
+      for (FixedSizeCollector<T, ?, R> c : cases) {
         if (c.appliesTo(list)) {
           return c.reduce(list);
         }

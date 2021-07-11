@@ -225,7 +225,7 @@ public class MoreCollectorsTest {
 
   @Test public void testNulls() throws Exception {
     new NullPointerTester()
-        .setDefault(ConditionalCollector.class, MoreCollectors.onlyElement(identity()))
+        .setDefault(FixedSizeCollector.class, MoreCollectors.onlyElement(identity()))
         .testAllPublicStaticMethods(MoreCollectors.class);
   }
 

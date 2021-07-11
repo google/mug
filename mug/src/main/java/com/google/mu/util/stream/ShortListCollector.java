@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
  *
  * @since 5.3
  */
-abstract class ShortListCollector<T, R> extends ConditionalCollector<T, List<T>, R> {
+abstract class ShortListCollector<T, R> extends FixedSizeCollector<T, List<T>, R> {
   @Override public final BiConsumer<List<T>, T> accumulator() {
     return List::add;
   }
