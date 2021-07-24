@@ -178,6 +178,20 @@ public class BiStreamTest {
         .inOrder();
   }
 
+  @Test public void testGroupConsecutiveIf_withBiCollector() {
+    Map<String, Integer> prices = ImmutableMap.of(
+        "day1", 10,
+        "day2", 20,
+        "day3", 10000,
+        "day4", 9999);
+    Stream<Map<String, Integer>> result = BiStream.from(prices)
+        .groupConsecutiveIf((d1, p1, d2, p2) -> Math.abs(p1 - p2) < 1000, Collectors::toMap);
+    assertThat(result)
+       .containsExactly(
+           ImmutableMap.of("day1", 10, "day2", 20),
+           ImmutableMap.of("day3", 10000, "day4", 9999));
+  }
+
   /**
    * This test confirms that stateful classifier function can implement more sophisticated grouping.
    */
