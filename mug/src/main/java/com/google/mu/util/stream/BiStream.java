@@ -744,6 +744,25 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     return biStream(stream).groupConsecutiveBy(by, runSummarizer);
   }
 
+  /**
+   * A function that can be used to partition a {@code BiStream} into sub-groups of consecutive
+   * pairs.
+   *
+   * <p>Aside from that it operates on pairs, logically a "Partitioner" is unlike {@link
+   * com.google.common.base.Equivalence} in that it doesn't need to be reflexive. For example, one
+   * may use {@code (v1, v2) -> v1 < v2} to partition ascending sub-sequences into groups, such that
+   * {@code [1, 2, 3]} results in a single group while {@code [3, 2, 1]} will be 3 groups:
+   * {@code [[3], [2], [1]]}.
+   */
+  @FunctionalInterface
+  public interface Partitioner<A, B> {
+    /**
+     * Returns true if consecutive pair {@code (a1, b1)} and {@code (a2, b2)} belong to the same
+     * partition.
+     */
+    boolean belong(A a1, B b1, A a2, B b2);
+  }
+
   static <K, V, E extends Map.Entry<? extends K, ? extends V>> BiStream<K, V> fromEntries(
       Stream<E> entryStream) {
     return new GenericEntryStream<E, K, V>(entryStream, Map.Entry::getKey, Map.Entry::getValue) {
@@ -1603,6 +1622,45 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     return this
         .<G, Map.Entry<K, V>>map(classifier, BiStream::kv)
         .groupConsecutiveByKeys(groupCollector.splitting(Map.Entry::getKey, Map.Entry::getValue));
+  }
+
+  /**
+   * Returns a lazy {@code Stream} of the consecutive groups of values from this stream. Two
+   * consecutive entries belong to the same group if {@code sameGroup.belong(key1, value1, key2,
+   * valuue2)} is true. Pairs belonging to the same group are grouped together using {@code
+   * groupCollector}.
+   *
+   * <p>The {@code sameGroup} predicate is always evaluated with two consecutive pairs in encounter
+   * order.
+   *
+   * <p>The following example identifies price changes above a gap threshold from a stock's
+   * historical price:
+   *
+   * <pre>{@code
+   * Map<DateTime, Double> historicalPrices = ...;
+   * ImmutableList<ImmutableMap<DateTime, Double>> priceClusters =
+   *     biStream(historicalPrices)
+   *         .groupConsecutiveIf((d1, p1, d2, p2) -> abs(p1 - p2) < gap, toImmutableMap())
+   *         .collect(toImmutableList());
+   * }</pre>
+   *
+   * <p>Unlike JDK {@link Collectors#groupingBy groupingBy()} collectors, the returned Stream
+   * consumes the input elements lazily and only requires {@code O(groupCollector)} space for the
+   * current consecutive elements group. While this makes it more efficient to process large
+   * streams, the input data often need to be pre-sorted for the grouping to be useful.
+   *
+   * <p>Null elements are allowed as long as the {@code sameGroup} predicate and {@code
+   * groupCollector} allow nulls.
+   *
+   * @since 5.6
+   */
+  public final <R> Stream<R> groupConsecutiveIf(
+      Partitioner<? super K, ? super V> sameGroup, BiCollector<? super K, ? super V, R> groupCollector) {
+    requireNonNull(sameGroup);
+    return biStream(mapToEntry())
+        .groupConsecutiveIf(
+            (p1, p2) -> sameGroup.belong(p1.getKey(), p1.getValue(), p2.getKey(), p2.getValue()),
+            groupCollector.splitting(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   /**
