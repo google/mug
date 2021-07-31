@@ -745,14 +745,13 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * A function that can be used to partition a {@code BiStream} into sub-groups of consecutive
-   * pairs.
+   * A predicate used to partition a {@code BiStream} into sub-groups of consecutive pairs.
    *
    * <p>Aside from that it operates on pairs, logically a "Partitioner" is unlike {@link
    * com.google.common.base.Equivalence} in that it doesn't need to be reflexive. For example, one
    * may use {@code (v1, v2) -> v1 < v2} to partition ascending sub-sequences into groups, such that
-   * {@code [1, 2, 3]} results in a single group while {@code [3, 2, 1]} will be 3 groups:
-   * {@code [[3], [2], [1]]}.
+   * {@code [1, 2, 3]} results in a single group while {@code [3, 2, 1]} will be 3 groups: {@code
+   * [[3], [2], [1]]}.
    */
   @FunctionalInterface
   public interface Partitioner<A, B> {
