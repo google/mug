@@ -13,7 +13,7 @@
 -docencoding
 'UTF-8'
 -doctitle
-'core 5.5-SNAPSHOT API'
+'core 5.6-SNAPSHOT API'
 -linkoffline
 'https://docs.oracle.com/javase/8/docs/api' '/Users/benyu/mug/mug/target/javadoc-bundle-options'
 -stylesheetfile
@@ -21,4 +21,4 @@
 -use
 -version
 -windowtitle
-'core 5.5-SNAPSHOT API'
+'core 5.6-SNAPSHOT API'
