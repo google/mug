@@ -27,7 +27,6 @@ enum Selections implements Selection<Object> {
   ALL {
     @Override
     public boolean has(Object candidate) {
-      requireNonNull(candidate);
       return true;
     }
 
@@ -66,7 +65,6 @@ enum Selections implements Selection<Object> {
   NONE {
     @Override
     public boolean has(Object candidate) {
-      requireNonNull(candidate);
       return false;
     }
 
@@ -122,7 +120,7 @@ enum Selections implements Selection<Object> {
 
     @Override
     public boolean has(T candidate) {
-      return choices.contains(requireNonNull(candidate));
+      return choices.contains(candidate);
     }
 
     @Override

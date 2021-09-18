@@ -218,8 +218,6 @@ public interface Selection<T> {
 
   /**
    * Returns true if {@code candidate} is in this selection.
-   *
-   * @throws NullPointerException if {@code candidate} is null
    */
   boolean has(T candidate);
 
