@@ -33,7 +33,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.EqualsTester;
 
 @RunWith(JUnit4.class)
@@ -47,6 +46,7 @@ public class SelectionTest {
   @Test
   public void all_has() {
     assertThat(all().has("foo")).isTrue();
+    assertThat(all().has(null)).isTrue();
   }
 
   @Test
@@ -62,6 +62,7 @@ public class SelectionTest {
   @Test
   public void none_has() {
     assertThat(none().has("foo")).isFalse();
+    assertThat(none().has(null)).isFalse();
   }
 
   @Test
@@ -78,6 +79,7 @@ public class SelectionTest {
   public void only_has() {
     assertThat(only("foo").has("foo")).isTrue();
     assertThat(only("foo").has("bar")).isFalse();
+    assertThat(only("foo").has(null)).isFalse();
   }
 
   @Test
@@ -181,15 +183,6 @@ public class SelectionTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> Selection.delimitedBy(Substring.first('*').or(Substring.last('/'))));
-  }
-
-  @Test
-  public void nullChecks() throws Exception {
-    new ClassSanityTester().testNulls(Selection.class);
-    new ClassSanityTester()
-        .setDefault(Substring.Pattern.class, Substring.first('|'))
-        .forAllPublicStaticMethods(Selection.class)
-        .testNulls();
   }
 
   @Test
