@@ -164,7 +164,7 @@ List<Page> pages = ...;
 // Merge traffic histogram across all pages of the web site
 Map<Day, Long> siteTrafficHistogram = pages.stream()
     .map(Page::getTrafficHistogram)
-    .collect(grouping(BiStream::from, (a, b) -> a + b))
+    .collect(flatMapping(BiStream::from, groupingBy(day -> day, Long::sum)))
     .toMap();
 ```
 
