@@ -513,7 +513,11 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * }</pre>
    *
    * @since 3.0
+   * @deprecated Use {@code biStream(User::id, users)} to create {@code BiStream<UserId, User>},
+   *     or, use {@code biStream(users, User::getAccount)} to create {@code BiStream<User, Account>}.
+   *     Then use {@link #mapKeys} or {@link #mapValues} to apply further mappings.
    */
+  @Deprecated
   public static <T> BiStream<T, T> biStream(Collection<T> elements) {
     return from(elements, identity(), identity());
   }
@@ -531,9 +535,81 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * }</pre>
    *
    * @since 3.6
+   * @deprecated Use {@code biStream(User::id, users)} to create {@code BiStream<UserId, User>},
+   *     or, use {@code biStream(users, User::getAccount)} to create {@code BiStream<User, Account>}.
+   *     Then use {@link #mapKeys} or {@link #mapValues} to apply further mappings.
    */
+  @Deprecated
   public static <T> BiStream<T, T> biStream(Stream<T> elements) {
-    return from(elements, identity(), identity());
+    return biStream(elements, identity());
+  }
+
+  /**
+   * Returns a {@code BiStream} of mappings between {@code keys} and the corresponding return values
+   * of the {@code toValue} function. For example:
+   *
+   * <pre>{@code
+   * BiStream<Request, ListenableFuture<Response>> requestsAndResponses =
+   *     biStream(requests, service::sendRequest);
+   * }</pre>
+   *
+   * @since 5.6
+   */
+  public static <K, V> BiStream<K, V> biStream(
+      Collection<K> keys, Function<? super K, ? extends V> toValue) {
+    return new GenericEntryStream<>(keys.stream(), identity(), toValue);
+  }
+
+  /**
+   * Returns a {@code BiStream} of mappings between {@code keys} and the corresponding return values
+   * of the {@code toValue} function. For example:
+   *
+   * <pre>{@code
+   * BiStream<Request, ListenableFuture<Response>> requestsAndResponses =
+   *     biStream(requests, service::sendRequest);
+   * }</pre>
+   *
+   * @since 5.6
+   */
+  public static <K, V> BiStream<K, V> biStream(
+      Stream<K> keys, Function<? super K, ? extends V> toValue) {
+    return new GenericEntryStream<>(keys, identity(), toValue);
+  }
+
+  /**
+   * Returns a {@code BiStream} of mappings between the key returned by the {@code toKey} function
+   * (when applied to each element of {@code values}), and the element itself.
+   *
+   * <pre>{@code
+   * ImmutableListMultimap<UserId, Account> userAccounts =
+   *     biStream(User::id, users)
+   *         .flatMapValues(User::accounts)
+   *         .collect(toImmutableListMultimap());
+   * }</pre>
+   *
+   * @since 5.6
+   */
+  public static <K, V> BiStream<K, V> biStream(
+      Function<? super V, ? extends K> toKey, Collection<V> values) {
+    return new GenericEntryStream<>(values.stream(), toKey, identity());
+  }
+
+  /**
+   * Returns a {@code BiStream} of mappings between the key returned by the {@code toKey} function
+   * (when applied to each element of {@code values}), and the element itself.
+   *
+   * <pre>{@code
+   * ImmutableListMultimap<UserId, Account> userAccounts =
+   *     biStream(User::id, users)
+   *         .flatMapValues(User::accounts)
+   *         .collect(toImmutableListMultimap());
+   * }</pre>
+   *
+   * @since 5.6
+   */
+  public static <K, V> BiStream<K, V> biStream(
+      Function<? super V, ? extends K> toKey, Stream<V> values) {
+    return new GenericEntryStream<>(values, toKey, identity());
   }
 
   /** Returns a {@code BiStream} of the entries in {@code map}. */
@@ -554,7 +630,12 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   /**
    * Returns a {@code BiStream} of {@code elements}, each transformed to a pair of values with
    * {@code toKey} and {@code toValue}.
+   *
+   * @deprecated Use {@code biStream(User::id, users)} to create {@code BiStream<UserId, User>},
+   *     or, use {@code biStream(users, User::getAccount)} to create {@code BiStream<User, Account>}.
+   *     Then use {@link #mapKeys} or {@link #mapValues} to apply further mappings.
    */
+  @Deprecated
   public static <T, K, V> BiStream<K, V> from(
       Collection<T> elements,
       Function<? super T, ? extends K> toKey,
@@ -565,7 +646,12 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   /**
    * Returns a {@code BiStream} of the elements from {@code stream}, each transformed to a pair of
    * values with {@code toKey} and {@code toValue}.
+   *
+   * @deprecated Use {@code biStream(User::id, users)} to create {@code BiStream<UserId, User>},
+   *     or, use {@code biStream(users, User::getAccount)} to create {@code BiStream<User, Account>}.
+   *     Then use {@link #mapKeys} or {@link #mapValues} to apply further mappings.
    */
+  @Deprecated
   public static <T, K, V> BiStream<K, V> from(
       Stream<T> stream,
       Function<? super T, ? extends K> toKey,
@@ -1464,6 +1550,43 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * implementations.
    */
   public abstract <R> R collect(BiCollector<? super K, ? super V, R> collector);
+
+  /**
+   * Equivalent to {@code collect(collectingAndThen(collector, finisher))} but helps to save
+   * syntactic noise.
+   *
+   * <p>This is mainly used for "return" statements where you have a long BiStream chain, only the
+   * last* step needs to pass the return value of {@code collect()} to a final method cqll, for
+   * example: <pre>{@code
+   *   return new Ledger(
+   *       BiStream.from(...)
+   *           .mapKeys(...)
+   *           .flatMapValues(...)
+   *           ...
+   *           .collect(toImmutableMap()));
+   * }</pre>
+   *
+   * This syntax breaks the first-thing-first order of the BiStream pipeline by showing the last
+   * step at the top-most line. Alternatively, one can declare a local variable to hold the
+   * return value of {@code collect()}. But sometimes it's undesirable if the intermediary
+   * object's type is implementation-detail-ish or just too verbose.
+   *
+   * <p>Using this method, the above example can be changed to pipeline-friendly syntax with less
+   * indentation:
+   * <pre>{@code
+   *   return BiStream.from(...)
+   *       .mapKeys(...)
+   *       .flatMapValues(...)
+   *       ...
+   *       .collect(toImmutableMap(), Ledger::new);
+   * }</pre>
+   *
+   * @since 5.6
+   */
+  public final <T, R> R collect(
+      BiCollector<? super K, ? super V, T> collector, Function<? super T, R> finisher) {
+    return finisher.apply(collect(collector));
+  }
 
   /**
    * Performs mutable reduction, as in {@code

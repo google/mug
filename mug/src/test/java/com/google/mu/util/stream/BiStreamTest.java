@@ -55,6 +55,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.mockito.Mockito;
 
+import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
@@ -938,6 +939,24 @@ public class BiStreamTest {
         .inOrder();
   }
 
+  @Test public void testBiStream_withValueMapper() {
+    assertKeyValues(biStream(Stream.of(1, 2), Object::toString))
+        .containsExactly(1, "1", 2, "2")
+        .inOrder();
+    assertKeyValues(biStream(asList(1, 2), Object::toString))
+        .containsExactly(1, "1", 2, "2")
+        .inOrder();
+  }
+
+  @Test public void testBiStream_withKeyMapper() {
+    assertKeyValues(biStream(Object::toString, Stream.of(1, 2)))
+        .containsExactly("1", 1, "2", 2)
+        .inOrder();
+    assertKeyValues(biStream(Object::toString, asList(1, 2)))
+        .containsExactly("1", 1, "2", 2)
+        .inOrder();
+  }
+
   @Test public void testToAdjacentPairs_empty() {
     Stream<String> stream = Stream.of().collect(toAdjacentPairs()).mapToObj((a, b) -> a + ":" + b);
     assertThat(stream).isEmpty();
@@ -998,6 +1017,12 @@ public class BiStreamTest {
     assertThat(result).containsExactly("1", 1, "2", 2, "3", 3, "4", 4, "5", 5).inOrder();
   }
 
+  @Test public void testCollect_withFinisher() {
+    ImmutableBiMap<String, Integer> biMap = BiStream.of("one", 1)
+        .collect(toMap(), com.google.common.collect.ImmutableBiMap::copyOf);
+    assertThat(biMap)
+        .containsExactly("one", 1);
+  }
 
   @Test public void testPaginatedStream_singlePage() {
     PaginationService<String> service = spy(new PaginationService<>("hello", "world"));
