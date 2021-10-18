@@ -412,6 +412,200 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
+   * Returns a {@code BiStream} of 4 pairs, containing the supplied keys and values.
+   *
+   * @since 5.6
+   */
+  public static <K, V> BiStream<K, V> of(
+      K k1,
+      V v1,
+      K k2,
+      V v2,
+      K k3,
+      V v3,
+      K k4,
+      V v4) {
+    return fromEntries(Stream.of(kv(k1, v1), kv(k2, v2), kv(k3, v3), kv(k4, v4)));
+  }
+
+  /**
+   * Returns a {@code BiStream} of 5 pairs, containing the supplied keys and values.
+   *
+   * @since 5.6
+   */
+  public static <K, V> BiStream<K, V> of(
+      K k1,
+      V v1,
+      K k2,
+      V v2,
+      K k3,
+      V v3,
+      K k4,
+      V v4,
+      K k5,
+      V v5) {
+    return fromEntries(Stream.of(kv(k1, v1), kv(k2, v2), kv(k3, v3), kv(k4, v4), kv(k5, v5)));
+  }
+
+  /**
+   * Returns a {@code BiStream} of 6 pairs, containing the supplied keys and values.
+   *
+   * @since 5.6
+   */
+  public static <K, V> BiStream<K, V> of(
+      K k1,
+      V v1,
+      K k2,
+      V v2,
+      K k3,
+      V v3,
+      K k4,
+      V v4,
+      K k5,
+      V v5,
+      K k6,
+      V v6) {
+    return fromEntries(
+        Stream.of(kv(k1, v1), kv(k2, v2), kv(k3, v3), kv(k4, v4), kv(k5, v5), kv(k6, v6)));
+  }
+
+  /**
+   * Returns a {@code BiStream} of 7 pairs, containing the supplied keys and values.
+   *
+   * @since 5.6
+   */
+  public static <K, V> BiStream<K, V> of(
+      K k1,
+      V v1,
+      K k2,
+      V v2,
+      K k3,
+      V v3,
+      K k4,
+      V v4,
+      K k5,
+      V v5,
+      K k6,
+      V v6,
+      K k7,
+      V v7) {
+    return fromEntries(
+        Stream.of(
+            kv(k1, v1), kv(k2, v2), kv(k3, v3), kv(k4, v4), kv(k5, v5), kv(k6, v6), kv(k7, v7)));
+  }
+
+  /**
+   * Returns a {@code BiStream} of 8 pairs, containing the supplied keys and values.
+   *
+   * @since 5.6
+   */
+  public static <K, V> BiStream<K, V> of(
+      K k1,
+      V v1,
+      K k2,
+      V v2,
+      K k3,
+      V v3,
+      K k4,
+      V v4,
+      K k5,
+      V v5,
+      K k6,
+      V v6,
+      K k7,
+      V v7,
+      K k8,
+      V v8) {
+    return fromEntries(
+        Stream.of(
+            kv(k1, v1),
+            kv(k2, v2),
+            kv(k3, v3),
+            kv(k4, v4),
+            kv(k5, v5),
+            kv(k6, v6),
+            kv(k7, v7),
+            kv(k8, v8)));
+  }
+
+  /**
+   * Returns a {@code BiStream} of 9 pairs, containing the supplied keys and values.
+   *
+   * @since 5.6
+   */
+  public static <K, V> BiStream<K, V> of(
+      K k1,
+      V v1,
+      K k2,
+      V v2,
+      K k3,
+      V v3,
+      K k4,
+      V v4,
+      K k5,
+      V v5,
+      K k6,
+      V v6,
+      K k7,
+      V v7,
+      K k8,
+      V v8,
+      K k9,
+      V v9) {
+    return fromEntries(
+        Stream.of(
+            kv(k1, v1),
+            kv(k2, v2),
+            kv(k3, v3),
+            kv(k4, v4),
+            kv(k5, v5),
+            kv(k6, v6),
+            kv(k7, v7),
+            kv(k8, v8),
+            kv(k9, v9)));
+  }
+
+  /**
+   * Returns a {@code BiStream} of 10 pairs, containing the supplied keys and values.
+   *
+   * @since 5.6
+   */
+  public static <K, V> BiStream<K, V> of(
+      K k1,
+      V v1,
+      K k2,
+      V v2,
+      K k3,
+      V v3,
+      K k4,
+      V v4,
+      K k5,
+      V v5,
+      K k6,
+      V v6,
+      K k7,
+      V v7,
+      K k8,
+      V v8,
+      K k9,
+      V v9,
+      K k10,
+      V v10) {
+    return fromEntries(
+        Stream.of(
+            kv(k1, v1),
+            kv(k2, v2),
+            kv(k3, v3),
+            kv(k4, v4),
+            kv(k5, v5),
+            kv(k6, v6),
+            kv(k7, v7),
+            kv(k8, v8),
+            kv(k9, v9),
+            kv(k10, v10)));
+  }
+
+  /**
    * Returns a {@code BiStream} of the entries from {@code m1}, {@code m2} then {@code rest} in
    * encounter order. For example:
    *

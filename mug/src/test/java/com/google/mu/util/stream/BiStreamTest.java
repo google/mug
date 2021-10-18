@@ -69,6 +69,67 @@ import com.google.mu.util.Substring;
 
 @RunWith(JUnit4.class)
 public class BiStreamTest {
+
+  @Test public void testOf_onePair() {
+    assertKeyValues(BiStream.of("one", 1)).containsExactly("one", 1);
+  }
+
+  @Test public void testOf_twoPairs() {
+    assertKeyValues(BiStream.of("one", 1, "two", 2)).containsExactly("one", 1, "two", 2).inOrder();
+  }
+
+  @Test public void testOf_threePairs() {
+    assertKeyValues(BiStream.of("one", 1, "two", 2, "three", 3))
+        .containsExactly("one", 1, "two", 2, "three", 3)
+        .inOrder();
+  }
+
+  @Test public void testOf_fourPairs() {
+    assertKeyValues(BiStream.of("one", 1, "two", 2, "three", 3, "four", 4))
+        .containsExactly("one", 1, "two", 2, "three", 3, "four", 4)
+        .inOrder();
+  }
+
+  @Test public void testOf_fivePairs() {
+    assertKeyValues(BiStream.of("one", 1, "two", 2, "three", 3, "four", 4, "five", 5))
+        .containsExactly("one", 1, "two", 2, "three", 3, "four", 4, "five", 5)
+        .inOrder();
+  }
+
+  @Test public void testOf_sixPairs() {
+    assertKeyValues(BiStream.of("one", 1, "two", 2, "three", 3, "four", 4, "five", 5, "six", 6))
+        .containsExactly("one", 1, "two", 2, "three", 3, "four", 4, "five", 5, "six", 6)
+        .inOrder();
+  }
+
+  @Test public void testOf_sevenPairs() {
+    assertKeyValues(BiStream.of("1", 1, "2", 2, "3", 3, "4", 4, "5", 5, "6", 6, "7", 7))
+        .containsExactly("1", 1, "2", 2, "3", 3, "4", 4, "5", 5, "6", 6, "7", 7)
+        .inOrder();
+  }
+
+  @Test public void testOf_eightPairs() {
+    assertKeyValues(BiStream.of("1", 1, "2", 2, "3", 3, "4", 4, "5", 5, "6", 6, "7", 7, "8", 8))
+        .containsExactly("1", 1, "2", 2, "3", 3, "4", 4, "5", 5, "6", 6, "7", 7, "8", 8)
+        .inOrder();
+  }
+
+  @Test public void testOf_ninePairs() {
+    assertKeyValues(
+            BiStream.of("1", 1, "2", 2, "3", 3, "4", 4, "5", 5, "6", 6, "7", 7, "8", 8, "9", 9))
+        .containsExactly("1", 1, "2", 2, "3", 3, "4", 4, "5", 5, "6", 6, "7", 7, "8", 8, "9", 9)
+        .inOrder();
+  }
+
+  @Test public void testOf_tenPairs() {
+    assertKeyValues(
+            BiStream.of(
+                "0", 0, "1", 1, "2", 2, "3", 3, "4", 4, "5", 5, "6", 6, "7", 7, "8", 8, "9", 9))
+        .containsExactly(
+            "0", 0, "1", 1, "2", 2, "3", 3, "4", 4, "5", 5, "6", 6, "7", 7, "8", 8, "9", 9)
+        .inOrder();
+  }
+
   @Test public void testBiStreamWithKeyAndValueFunctions() {
     assertKeyValues(BiStream.from(Stream.of(1, 2), Object::toString, v -> v))
         .containsExactlyEntriesIn(ImmutableMultimap.of("1", 1, "2", 2))
@@ -1039,7 +1100,7 @@ public class BiStreamTest {
     verifyNoMoreInteractions(service);
   }
 
-  @Test  public void testPaginatedStream_secondPageSkipped() {
+  @Test public void testPaginatedStream_secondPageSkipped() {
     PaginationService<String> service = spy(new PaginationService<>("hello", "world"));
     assertThat(service.paginate(0, 1).limit(1)).containsExactly("hello");
     verify(service).getPage(0, 1);
