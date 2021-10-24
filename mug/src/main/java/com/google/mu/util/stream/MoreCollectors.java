@@ -31,7 +31,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import com.google.mu.function.Quarternary;
 import com.google.mu.function.Quinary;
@@ -342,12 +341,8 @@ public final class MoreCollectors {
    */
   public static <T, R> Collector<T, ?, R> greatest(
       Comparator<? super T> comparator, Collector<? super T, ?, R> downstream) {
-    requireNonNull(downstream);
-    return collectingAndThen(greatest(comparator), tie -> tie.collect(downstream));
-  }
-
-  private static <T> Collector<T, ?, Stream<T>> greatest(Comparator<? super T> comparator) {
     requireNonNull(comparator);
+    requireNonNull(downstream);
     class Builder {
       private final List<T> tie = new ArrayList<>();
 
@@ -366,12 +361,12 @@ public final class MoreCollectors {
       }
 
       Builder merge(Builder that) {
-        that.build().forEach(this::add);
+        that.tie.forEach(this::add);
         return this;
       }
 
-      Stream<T> build() {
-        return tie.stream();
+      R build() {
+        return tie.stream().collect(downstream);
       }
     }
     return Collector.of(Builder::new, Builder::add, Builder::merge, Builder::build);
