@@ -323,7 +323,7 @@ public final class MoreCollectors {
    */
   public static <T, R> Collector<T, ?, R> least(
       Comparator<? super T> comparator, Collector<? super T, ?, R> downstream) {
-    return greatest(comparator.reversed(), requireNonNull(downstream));
+    return greatest(comparator.reversed(), downstream);
   }
 
   /**
