@@ -351,10 +351,10 @@ public final class MoreCollectors {
           tie.add(element);
         } else {
           int comparisonResult = comparator.compare(tie.get(0), element);
-          if (comparisonResult < 0) { // current < element
-            tie.clear();
+          if (comparisonResult == 0) { // current == element
             tie.add(element);
-          } else if (comparisonResult == 0) { // current == element
+          } else if (comparisonResult < 0) { // current < element
+            tie.clear();
             tie.add(element);
           } // else current > element, discard.
         }
