@@ -344,7 +344,7 @@ public final class MoreCollectors {
     requireNonNull(comparator);
     requireNonNull(downstream);
     class Builder {
-      private final List<T> tie = new ArrayList<>();
+      private final ArrayList<T> tie = new ArrayList<>();
 
       void add(T element) {
         if (tie.isEmpty()) {
