@@ -14,17 +14,23 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.stream.BiCollectors.groupingBy;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.MoreCollectors.flatMapping;
 import static com.google.mu.util.stream.MoreCollectors.flatteningMaps;
+import static com.google.mu.util.stream.MoreCollectors.greatest;
+import static com.google.mu.util.stream.MoreCollectors.least;
 import static com.google.mu.util.stream.MoreCollectors.mapping;
 import static com.google.mu.util.stream.MoreCollectors.onlyElement;
 import static com.google.mu.util.stream.MoreCollectors.onlyElements;
 import static com.google.mu.util.stream.MoreCollectors.switching;
 import static com.google.mu.util.stream.MoreCollectors.toListAndThen;
+import static java.util.Comparator.naturalOrder;
 import static java.util.function.Function.identity;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -221,6 +227,36 @@ public class MoreCollectorsTest {
         () -> Stream.of(1, 2, 3, 4).collect(switching(onlyElement(a -> "one"), onlyElements((a, b) -> "two"))));
     assertThat(thrown.getMessage())
         .isEqualTo("Unexpected input elements of size = 4 <[1, 2, 3, ...]>.");
+  }
+
+  @Test public void testGreatest_empty() {
+    assertThat(Stream.<Integer>empty().collect(greatest(naturalOrder(), toImmutableList())))
+        .isEmpty();
+  }
+
+  @Test public void testGreatest_toOnlyElement() {
+    assertThat(Stream.of(1, 1, 1, 1, 1, 1, 2).collect(greatest(naturalOrder(), onlyElement())))
+        .isEqualTo(2);
+  }
+
+  @Test public void testGreatest_multiple() {
+    assertThat(Stream.of(1, 1, 2, 1, 2).collect(greatest(naturalOrder(), toImmutableList())))
+        .containsExactly(2, 2);
+  }
+
+  @Test public void testLeast_empty() {
+    assertThat(Stream.<String>empty().collect(least(naturalOrder(), toImmutableSet())))
+        .isEmpty();
+  }
+
+  @Test public void testLeast_toOnlyElement() {
+    assertThat(Stream.of(2, 2, 2, 2, 2, 2, 1).collect(least(naturalOrder(), onlyElement())))
+        .isEqualTo(1);
+  }
+
+  @Test public void testLeast_multiple() {
+    assertThat(Stream.of(1, 1, 2, 1, 2).collect(least(naturalOrder(), toImmutableList())))
+        .containsExactly(1, 1, 1);
   }
 
   @Test public void testNulls() throws Exception {

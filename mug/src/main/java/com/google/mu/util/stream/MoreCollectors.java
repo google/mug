@@ -21,6 +21,7 @@ import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -30,6 +31,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.google.mu.function.Quarternary;
 import com.google.mu.function.Quinary;
@@ -303,6 +305,76 @@ public final class MoreCollectors {
       caseList.add(requireNonNull(c));
     }
     return switching(caseList);
+  }
+
+  /**
+   * Returns a {@code Collector} that collects all of the least (relative to the specified {@code
+   * Comparator}) input elements, in encounter order, using the {@code downstream} collector.
+   *
+   * <p>For example:
+   *
+   * <pre>{@code
+   * Stream.of("foo", "bar", "banana", "papaya")
+   *     .collect(least(comparingInt(String::length), toImmutableList()))
+   * // returns {"foo", "bar"}
+   * }</pre>
+   *
+   * @since 5.6
+   */
+  public static <T, R> Collector<T, ?, R> least(
+      Comparator<? super T> comparator, Collector<? super T, ?, R> downstream) {
+    return greatest(comparator.reversed(), requireNonNull(downstream));
+  }
+
+  /**
+   * Returns a {@code Collector} that collects all of the greatest (relative to the specified {@code
+   * Comparator}) input elements, in encounter order, using the {@code downstream} collector.
+   *
+   * <p>For example:
+   *
+   * <pre>{@code
+   * Stream.of("foo", "quux", "banana", "papaya")
+   *     .collect(greatest(comparingInt(String::length), toImmutableList()))
+   * // returns {"banana", "papaya"}
+   * }</pre>
+   *
+   * @since 5.6
+   */
+  public static <T, R> Collector<T, ?, R> greatest(
+      Comparator<? super T> comparator, Collector<? super T, ?, R> downstream) {
+    requireNonNull(downstream);
+    return collectingAndThen(greatest(comparator), tie -> tie.collect(downstream));
+  }
+
+  private static <T> Collector<T, ?, Stream<T>> greatest(Comparator<? super T> comparator) {
+    requireNonNull(comparator);
+    class Builder {
+      private final List<T> tie = new ArrayList<>();
+
+      void add(T element) {
+        if (tie.isEmpty()) {
+          tie.add(element);
+        } else {
+          int comparisonResult = comparator.compare(tie.get(0), element);
+          if (comparisonResult < 0) { // current < element
+            tie.clear();
+            tie.add(element);
+          } else if (comparisonResult == 0) { // current == element
+            tie.add(element);
+          } // else current > element, discard.
+        }
+      }
+
+      Builder merge(Builder that) {
+        that.build().forEach(this::add);
+        return this;
+      }
+
+      Stream<T> build() {
+        return tie.stream();
+      }
+    }
+    return Collector.of(Builder::new, Builder::add, Builder::merge, Builder::build);
   }
 
   private static <T, R> Collector<T, ?, R> switching(List<FixedSizeCollector<T, ?, R>> cases) {
