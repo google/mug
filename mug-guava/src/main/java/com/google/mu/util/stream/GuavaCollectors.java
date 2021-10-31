@@ -256,8 +256,8 @@ public final class GuavaCollectors {
   }
 
   /**
-   * Returns a {@link BiCollector} that collects the key-value pairs into an {@link ImmutableBimap}.
-   * Equivalent to {@code ImmutableBimap::toImmutableBimap}.
+   * Returns a {@link BiCollector} that collects the key-value pairs into an {@link ImmutableBiMap}.
+   * Equivalent to {@code ImmutableBimap::toImmutableBiMap}.
    */
   public static <K, V> BiCollector<K, V, ImmutableBiMap<K, V>> toImmutableBiMap() {
     return ImmutableBiMap::toImmutableBiMap;
@@ -282,7 +282,7 @@ public final class GuavaCollectors {
    * }</pre>
    *
    * <p>Similarly, cascading group-by can be performed on a {@code Map} or {@code Multimap} through
-   * {@link #groupingBy}, and then reduced in the same way using {@link #toImmutableTable}:
+   * {@code groupingBy()}, and then reduced in the same way using {@link #toImmutableTable}:
    *
    * <pre>{@code
    * import static com.google.common.labs.collect.BiCollectors.groupingBy;
