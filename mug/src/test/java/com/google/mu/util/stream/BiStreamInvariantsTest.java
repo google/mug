@@ -443,7 +443,7 @@ public class BiStreamInvariantsTest {
 
   @Test
   public void testMapToObj() {
-    assertThat(of("one", 1, "two", 2).mapToObj((k, v) -> k + ":" + v))
+    assertThat(of("one", 1, "two", 2).mapToObj(Joiner.on(':')::join))
         .containsExactly("one:1", "two:2");
   }
 
@@ -515,7 +515,7 @@ public class BiStreamInvariantsTest {
 
   @Test
   public void map() {
-    assertKeyValues(of(1, "one", 2, "two").map((k, v) -> k + ":" + v, (k, v) -> v + ":" + k))
+    assertKeyValues(of(1, "one", 2, "two").map(Joiner.on(':')::join, (k, v) -> v + ":" + k))
         .containsExactly("1:one", "one:1", "2:two", "two:2")
         .inOrder();
   }

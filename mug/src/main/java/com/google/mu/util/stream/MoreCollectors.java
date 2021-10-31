@@ -21,6 +21,7 @@ import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -303,6 +304,72 @@ public final class MoreCollectors {
       caseList.add(requireNonNull(c));
     }
     return switching(caseList);
+  }
+
+  /**
+   * Returns a {@code Collector} that collects all of the least (relative to the specified {@code
+   * Comparator}) input elements, in encounter order, using the {@code downstream} collector.
+   *
+   * <p>For example:
+   *
+   * <pre>{@code
+   * Stream.of("foo", "bar", "banana", "papaya")
+   *     .collect(least(comparingInt(String::length), toImmutableList()))
+   * // returns {"foo", "bar"}
+   * }</pre>
+   *
+   * @since 5.6
+   */
+  public static <T, R> Collector<T, ?, R> allMin(
+      Comparator<? super T> comparator, Collector<? super T, ?, R> downstream) {
+    return allMax(comparator.reversed(), downstream);
+  }
+
+  /**
+   * Returns a {@code Collector} that collects all of the greatest (relative to the specified {@code
+   * Comparator}) input elements, in encounter order, using the {@code downstream} collector.
+   *
+   * <p>For example:
+   *
+   * <pre>{@code
+   * Stream.of("foo", "quux", "banana", "papaya")
+   *     .collect(greatest(comparingInt(String::length), toImmutableList()))
+   * // returns {"banana", "papaya"}
+   * }</pre>
+   *
+   * @since 5.6
+   */
+  public static <T, R> Collector<T, ?, R> allMax(
+      Comparator<? super T> comparator, Collector<? super T, ?, R> downstream) {
+    requireNonNull(comparator);
+    requireNonNull(downstream);
+    class Builder {
+      private final ArrayList<T> tie = new ArrayList<>();
+
+      void add(T element) {
+        if (tie.isEmpty()) {
+          tie.add(element);
+        } else {
+          int comparisonResult = comparator.compare(tie.get(0), element);
+          if (comparisonResult == 0) { // current == element
+            tie.add(element);
+          } else if (comparisonResult < 0) { // current < element
+            tie.clear();
+            tie.add(element);
+          } // else current > element, discard.
+        }
+      }
+
+      Builder merge(Builder that) {
+        that.tie.forEach(this::add);
+        return this;
+      }
+
+      R build() {
+        return tie.stream().collect(downstream);
+      }
+    }
+    return Collector.of(Builder::new, Builder::add, Builder::merge, Builder::build);
   }
 
   private static <T, R> Collector<T, ?, R> switching(List<FixedSizeCollector<T, ?, R>> cases) {
