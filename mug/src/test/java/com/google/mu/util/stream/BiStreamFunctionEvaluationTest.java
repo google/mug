@@ -14,22 +14,28 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
-import com.google.common.collect.LinkedListMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.truth.MultimapSubject;
-import junit.framework.TestCase;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
-import java.util.stream.*;
+import java.util.stream.Collector;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
-import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth8.assertThat;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
+import com.google.common.collect.LinkedListMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.truth.MultimapSubject;
+
+import junit.framework.TestCase;
 
 /**
  * Tests to ensure {@link BiStream#from(Stream, Function, Function)} maintains the invariant that
@@ -138,7 +144,7 @@ public final class BiStreamFunctionEvaluationTest extends TestCase {
   @Test public void testMapKeysWithBiFunction_bothFunctionsCalledOnce() {
     assertKeyValues(
             biStream(Stream.of(1, 2, 3), Object::toString, i -> i * 10)
-                .mapKeys((k, v) -> k + "." + v))
+                .mapKeys(Joiner.on('.')::join))
         .containsExactly("1.10", 10, "2.20", 20, "3.30", 30)
         .inOrder();
     assertThat(evaluatedKeys).containsExactly(1, 2, 3).inOrder();
@@ -148,7 +154,7 @@ public final class BiStreamFunctionEvaluationTest extends TestCase {
   @Test public void testMapValuesWithBiFunction_bothFunctionsCalledOnce() {
     assertKeyValues(
             biStream(Stream.of(1, 2, 3), Object::toString, i -> i * 10)
-                .mapValues((k, v) -> k + "." + v))
+                .mapValues(Joiner.on('.')::join))
         .containsExactly("1", "1.10", "2", "2.20", "3", "3.30")
         .inOrder();
     assertThat(evaluatedKeys).containsExactly(1, 2, 3).inOrder();
@@ -158,7 +164,7 @@ public final class BiStreamFunctionEvaluationTest extends TestCase {
   @Test public void testMapWithBiFunctions_bothFunctionsCalledOnce() {
     assertKeyValues(
             biStream(Stream.of(1, 2, 3), Object::toString, i -> i * 10)
-                .map((k, v) -> k + "." + v, (k, v) -> v + "<-" + k))
+                .map(Joiner.on('.')::join, (k, v) -> v + "<-" + k))
         .containsExactly("1.10", "10<-1", "2.20", "20<-2", "3.30", "30<-3")
         .inOrder();
     assertThat(evaluatedKeys).containsExactly(1, 2, 3).inOrder();
@@ -168,7 +174,7 @@ public final class BiStreamFunctionEvaluationTest extends TestCase {
   @Test public void testMapToObj_bothFunctionsCalledOnce() {
     assertThat(
             biStream(Stream.of(1, 2, 3), Object::toString, i -> i * 10)
-                .mapToObj((k, v) -> k + "->" + v))
+                .mapToObj(Joiner.on("->")::join))
         .containsExactly("1->10", "2->20", "3->30")
         .inOrder();
     assertThat(evaluatedKeys).containsExactly(1, 2, 3).inOrder();
@@ -287,7 +293,7 @@ public final class BiStreamFunctionEvaluationTest extends TestCase {
   @Test public void testFlatMapToDouble_bothFunctionsCalledOnlyOnce() {
     assertThat(
             biStream(Stream.of(1, 2, 3), Object::toString, i -> i * 10)
-                .flatMapToDouble((k, v) -> DoubleStream.of((double) v, Double.parseDouble(k)))
+                .flatMapToDouble((k, v) -> DoubleStream.of(v, Double.parseDouble(k)))
                 .boxed())
         .containsExactly(10D, 1D, 20D, 2D, 30D, 3D)
         .inOrder();

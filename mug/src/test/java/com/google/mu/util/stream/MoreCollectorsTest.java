@@ -21,10 +21,10 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.stream.BiCollectors.groupingBy;
 import static com.google.mu.util.stream.BiCollectors.toMap;
-import static com.google.mu.util.stream.MoreCollectors.flatMapping;
-import static com.google.mu.util.stream.MoreCollectors.flatteningMaps;
 import static com.google.mu.util.stream.MoreCollectors.allMax;
 import static com.google.mu.util.stream.MoreCollectors.allMin;
+import static com.google.mu.util.stream.MoreCollectors.flatMapping;
+import static com.google.mu.util.stream.MoreCollectors.flatteningMaps;
 import static com.google.mu.util.stream.MoreCollectors.mapping;
 import static com.google.mu.util.stream.MoreCollectors.onlyElement;
 import static com.google.mu.util.stream.MoreCollectors.onlyElements;
@@ -62,7 +62,7 @@ public class MoreCollectorsTest {
         ImmutableList.of(new Translation(ImmutableMap.of()), new Translation(ImmutableMap.of()));
     Map<Integer, String> merged = translations.stream()
         .map(Translation::dictionary)
-        .collect(flatMapping(BiStream::from, groupingBy((Integer k) -> k, (a, b) -> a + "," + b)))
+        .collect(flatMapping(BiStream::from, groupingBy((Integer k) -> k, Joiner.on(',')::join)))
         .collect(ImmutableMap::toImmutableMap);
     assertThat(merged).isEmpty();
   }
@@ -72,7 +72,7 @@ public class MoreCollectorsTest {
         new Translation(ImmutableMap.of(1, "one")), new Translation(ImmutableMap.of(2, "two")));
     Map<Integer, String> merged = translations.stream()
         .map(Translation::dictionary)
-        .collect(flatMapping(BiStream::from, groupingBy((Integer k) -> k, (a, b) -> a + "," + b)))
+        .collect(flatMapping(BiStream::from, groupingBy((Integer k) -> k, Joiner.on(',')::join)))
         .collect(ImmutableMap::toImmutableMap);
     assertThat(merged)
         .containsExactly(1, "one", 2, "two")
@@ -85,7 +85,7 @@ public class MoreCollectorsTest {
         new Translation(ImmutableMap.of(2, "two", 1, "1")));
     Map<Integer, String> merged = translations.stream()
         .map(Translation::dictionary)
-        .collect(flatMapping(BiStream::from, groupingBy((Integer k) -> k, (a, b) -> a + "," + b)))
+        .collect(flatMapping(BiStream::from, groupingBy((Integer k) -> k, Joiner.on(',')::join)))
         .collect(ImmutableMap::toImmutableMap);
     assertThat(merged)
         .containsExactly(1, "one,1", 2, "two")

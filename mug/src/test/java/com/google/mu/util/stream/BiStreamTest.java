@@ -414,7 +414,7 @@ public class BiStreamTest {
 
   @Test public void testZip_mapToObj() {
     Stream<?> zipped =
-        BiStream.zip(asList(1, 2), asList("one", "two")).mapToObj((i, s) -> i + ":" + s);
+        BiStream.zip(asList(1, 2), asList("one", "two")).mapToObj(Joiner.on(':')::join);
     assertThat(zipped.isParallel()).isFalse();
     assertThat(zipped).containsExactly("1:one", "2:two").inOrder();
   }
@@ -422,14 +422,14 @@ public class BiStreamTest {
   @Test public void testZip_mapToObj_leftIsParallel() {
     Stream<String> zipped =
         BiStream.zip(asList(1, 2, 3).parallelStream(), Stream.of("one", "two", "three"))
-            .mapToObj((i, s) -> i + ":" + s);
+            .mapToObj(Joiner.on(':')::join);
     assertThat(zipped).containsExactly("1:one", "2:two", "3:three").inOrder();
   }
 
   @Test public void testZip_mapToObj_rightIsParallel() {
     Stream<String> zipped =
         BiStream.zip(Stream.of(1, 2, 3), asList("one", "two", "three").parallelStream())
-            .mapToObj((i, s) -> i + ":" + s);
+            .mapToObj(Joiner.on(':')::join);
     assertThat(zipped).containsExactly("1:one", "2:two", "3:three").inOrder();
   }
 
@@ -452,7 +452,7 @@ public class BiStreamTest {
     Map<Integer, String> dict = new HashMap<>();
     Stream<String> jdk = dict.entrySet().stream().map(e -> e.getKey() + ":" + e.getValue());
     Stream<String> zipped =
-        BiStream.zip(dict.keySet(), dict.values()).mapToObj((l, r) -> l + ":" + r);
+        BiStream.zip(dict.keySet(), dict.values()).mapToObj(Joiner.on(':')::join);
     dict.put(1, "one");
     assertThat(zipped).containsExactlyElementsIn(jdk.collect(toImmutableList()));
   }
@@ -811,7 +811,7 @@ public class BiStreamTest {
   @Test public void testZip_leftIsParallel_isSequential() {
     BiStream<?, ?> zipped =
         BiStream.zip(indexesFrom(1).parallel(), Stream.of("one", "two", "three"));
-    assertSequential(zipped.mapToObj((i, s) -> i + ":" + s))
+    assertSequential(zipped.mapToObj(Joiner.on(':')::join))
         .containsExactly("1:one", "2:two", "3:three")
         .inOrder();
   }
@@ -819,7 +819,7 @@ public class BiStreamTest {
   @Test public void testZip_rightIsParallel_isSequential() {
     BiStream<?, ?> zipped =
         BiStream.zip(indexesFrom(1), Stream.of("one", "two", "three").parallel());
-    assertSequential(zipped.mapToObj((i, s) -> i + ":" + s))
+    assertSequential(zipped.mapToObj(Joiner.on(':')::join))
         .containsExactly("1:one", "2:two", "3:three")
         .inOrder();
   }
@@ -1019,36 +1019,36 @@ public class BiStreamTest {
   }
 
   @Test public void testToAdjacentPairs_empty() {
-    Stream<String> stream = Stream.of().collect(toAdjacentPairs()).mapToObj((a, b) -> a + ":" + b);
+    Stream<String> stream = Stream.of().collect(toAdjacentPairs()).mapToObj(Joiner.on(':')::join);
     assertThat(stream).isEmpty();
   }
 
   @Test public void testToAdjacentPairs_oneElement() {
-    Stream<String> stream = Stream.of(1).collect(toAdjacentPairs()).mapToObj((a, b) -> a + ":" + b);
+    Stream<String> stream = Stream.of(1).collect(toAdjacentPairs()).mapToObj(Joiner.on(':')::join);
     assertThat(stream).isEmpty();
   }
 
   @Test public void testToAdjacentPairs_twoElements() {
     Stream<String> stream =
-        Stream.of(1, 2).collect(toAdjacentPairs()).mapToObj((a, b) -> a + ":" + b);
+        Stream.of(1, 2).collect(toAdjacentPairs()).mapToObj(Joiner.on(':')::join);
     assertThat(stream).containsExactly("1:2").inOrder();
   }
 
   @Test public void testToAdjacentPairs_threeElements() {
     Stream<String> stream =
-        Stream.of(1, 2, 3).collect(toAdjacentPairs()).mapToObj((a, b) -> a + ":" + b);
+        Stream.of(1, 2, 3).collect(toAdjacentPairs()).mapToObj(Joiner.on(':')::join);
     assertThat(stream).containsExactly("1:2", "2:3").inOrder();
   }
 
   @Test public void testToAdjacentPairs_fourElements() {
     Stream<String> stream =
-        Stream.of(1, 2, 3, 4).collect(toAdjacentPairs()).mapToObj((a, b) -> a + ":" + b);
+        Stream.of(1, 2, 3, 4).collect(toAdjacentPairs()).mapToObj(Joiner.on(':')::join);
     assertThat(stream).containsExactly("1:2", "2:3", "3:4").inOrder();
   }
 
   @Test public void testToAdjacentPairs_nullPadding() {
     Stream<String> stream =
-        Stream.of(null, 1, 2, 3, null).collect(toAdjacentPairs()).mapToObj((a, b) -> a + ":" + b);
+        Stream.of(null, 1, 2, 3, null).collect(toAdjacentPairs()).mapToObj(Joiner.on(':')::join);
     assertThat(stream).containsExactly("null:1", "1:2", "2:3", "3:null").inOrder();
   }
 
