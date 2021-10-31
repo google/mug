@@ -245,7 +245,7 @@ public class Iteration<T> {
       Supplier<? extends T> computation, Consumer<? super T> consumer) {
     requireNonNull(computation);
     requireNonNull(consumer);
-    return yield(() -> {
+    return this.yield(() -> {
       T result = computation.get();
       consumer.accept(result);
       yield(result);
