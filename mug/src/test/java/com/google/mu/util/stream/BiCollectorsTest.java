@@ -213,7 +213,7 @@ public class BiCollectorsTest {
 
   @Test public void testMapping_downstreamCollector() {
     BiStream<String, Integer> salaries = BiStream.of("Joe", 100, "Tom", 200);
-    assertThat(salaries.collect(BiCollectors.mapping((k, v) -> k + ":" + v, toList())))
+    assertThat(salaries.collect(BiCollectors.mapping(Joiner.on(':')::join, toList())))
         .containsExactly("Joe:100", "Tom:200")
         .inOrder();
   }

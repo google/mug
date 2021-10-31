@@ -22,7 +22,7 @@ import java.util.Map;
 import com.google.mu.util.stream.Iteration.Continuation;
 
 /**
- * Similar to {@link Iteration}, but is used to iteratively {@link #yeild yield()} pairs into a
+ * Similar to {@link Iteration}, but is used to iteratively {@link #yield yield()} pairs into a
  * lazy {@link BiStream}.
  */
 public class BiIteration<L, R> {

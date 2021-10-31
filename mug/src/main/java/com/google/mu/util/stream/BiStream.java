@@ -65,7 +65,6 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import com.google.mu.function.BiComparator;
-import com.google.mu.function.DualValuedFunction;
 import com.google.mu.util.BiOptional;
 import com.google.mu.util.Both;
 
@@ -353,24 +352,6 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Returns a {@code Collector} that splits each input element into two values and collects them
-   * into a {@link BiStream}.
-   *
-   * <p>Note that it's more efficient to use {@code BiStream.from(stream, mapper)} than
-   * {@code stream.collect(toBiStream(mapper))}. The latter is intended to be used in the
-   * middle of a long stream pipeline, when performance isn't critical.
-   *
-   * @since 4.6
-   * @deprecated Use {@link #toBiStream(Function)} instead.
-   */
-  @Deprecated
-  public static <E, K, V> Collector<E, ?, BiStream<K, V>> toBiStream(
-      DualValuedFunction<? super E, ? extends K, ? extends V> mapper) {
-    requireNonNull(mapper);
-    return collectingAndThen(stream -> from(stream, mapper));
-  }
-
-  /**
    * Returns a {@code Collector} that copies each input element as a pair of itself into an equivalent
    * {@code BiStream}.
    *
@@ -409,6 +390,200 @@ public abstract class BiStream<K, V> implements AutoCloseable {
       K key3,
       V value3) {
     return fromEntries(Stream.of(kv(key1, value1), kv(key2, value2), kv(key3, value3)));
+  }
+
+  /**
+   * Returns a {@code BiStream} of 4 pairs, containing the supplied keys and values.
+   *
+   * @since 5.6
+   */
+  public static <K, V> BiStream<K, V> of(
+      K k1,
+      V v1,
+      K k2,
+      V v2,
+      K k3,
+      V v3,
+      K k4,
+      V v4) {
+    return fromEntries(Stream.of(kv(k1, v1), kv(k2, v2), kv(k3, v3), kv(k4, v4)));
+  }
+
+  /**
+   * Returns a {@code BiStream} of 5 pairs, containing the supplied keys and values.
+   *
+   * @since 5.6
+   */
+  public static <K, V> BiStream<K, V> of(
+      K k1,
+      V v1,
+      K k2,
+      V v2,
+      K k3,
+      V v3,
+      K k4,
+      V v4,
+      K k5,
+      V v5) {
+    return fromEntries(Stream.of(kv(k1, v1), kv(k2, v2), kv(k3, v3), kv(k4, v4), kv(k5, v5)));
+  }
+
+  /**
+   * Returns a {@code BiStream} of 6 pairs, containing the supplied keys and values.
+   *
+   * @since 5.6
+   */
+  public static <K, V> BiStream<K, V> of(
+      K k1,
+      V v1,
+      K k2,
+      V v2,
+      K k3,
+      V v3,
+      K k4,
+      V v4,
+      K k5,
+      V v5,
+      K k6,
+      V v6) {
+    return fromEntries(
+        Stream.of(kv(k1, v1), kv(k2, v2), kv(k3, v3), kv(k4, v4), kv(k5, v5), kv(k6, v6)));
+  }
+
+  /**
+   * Returns a {@code BiStream} of 7 pairs, containing the supplied keys and values.
+   *
+   * @since 5.6
+   */
+  public static <K, V> BiStream<K, V> of(
+      K k1,
+      V v1,
+      K k2,
+      V v2,
+      K k3,
+      V v3,
+      K k4,
+      V v4,
+      K k5,
+      V v5,
+      K k6,
+      V v6,
+      K k7,
+      V v7) {
+    return fromEntries(
+        Stream.of(
+            kv(k1, v1), kv(k2, v2), kv(k3, v3), kv(k4, v4), kv(k5, v5), kv(k6, v6), kv(k7, v7)));
+  }
+
+  /**
+   * Returns a {@code BiStream} of 8 pairs, containing the supplied keys and values.
+   *
+   * @since 5.6
+   */
+  public static <K, V> BiStream<K, V> of(
+      K k1,
+      V v1,
+      K k2,
+      V v2,
+      K k3,
+      V v3,
+      K k4,
+      V v4,
+      K k5,
+      V v5,
+      K k6,
+      V v6,
+      K k7,
+      V v7,
+      K k8,
+      V v8) {
+    return fromEntries(
+        Stream.of(
+            kv(k1, v1),
+            kv(k2, v2),
+            kv(k3, v3),
+            kv(k4, v4),
+            kv(k5, v5),
+            kv(k6, v6),
+            kv(k7, v7),
+            kv(k8, v8)));
+  }
+
+  /**
+   * Returns a {@code BiStream} of 9 pairs, containing the supplied keys and values.
+   *
+   * @since 5.6
+   */
+  public static <K, V> BiStream<K, V> of(
+      K k1,
+      V v1,
+      K k2,
+      V v2,
+      K k3,
+      V v3,
+      K k4,
+      V v4,
+      K k5,
+      V v5,
+      K k6,
+      V v6,
+      K k7,
+      V v7,
+      K k8,
+      V v8,
+      K k9,
+      V v9) {
+    return fromEntries(
+        Stream.of(
+            kv(k1, v1),
+            kv(k2, v2),
+            kv(k3, v3),
+            kv(k4, v4),
+            kv(k5, v5),
+            kv(k6, v6),
+            kv(k7, v7),
+            kv(k8, v8),
+            kv(k9, v9)));
+  }
+
+  /**
+   * Returns a {@code BiStream} of 10 pairs, containing the supplied keys and values.
+   *
+   * @since 5.6
+   */
+  public static <K, V> BiStream<K, V> of(
+      K k1,
+      V v1,
+      K k2,
+      V v2,
+      K k3,
+      V v3,
+      K k4,
+      V v4,
+      K k5,
+      V v5,
+      K k6,
+      V v6,
+      K k7,
+      V v7,
+      K k8,
+      V v8,
+      K k9,
+      V v9,
+      K k10,
+      V v10) {
+    return fromEntries(
+        Stream.of(
+            kv(k1, v1),
+            kv(k2, v2),
+            kv(k3, v3),
+            kv(k4, v4),
+            kv(k5, v5),
+            kv(k6, v6),
+            kv(k7, v7),
+            kv(k8, v8),
+            kv(k9, v9),
+            kv(k10, v10)));
   }
 
   /**
@@ -513,7 +688,11 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * }</pre>
    *
    * @since 3.0
+   * @deprecated Use {@code biStream(User::id, users)} to create {@code BiStream<UserId, User>},
+   *     or, use {@code biStream(users, User::getAccount)} to create {@code BiStream<User, Account>}.
+   *     Then use {@link #mapKeys} or {@link #mapValues} to apply further mappings.
    */
+  @Deprecated
   public static <T> BiStream<T, T> biStream(Collection<T> elements) {
     return from(elements, identity(), identity());
   }
@@ -531,9 +710,81 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * }</pre>
    *
    * @since 3.6
+   * @deprecated Use {@code biStream(User::id, users)} to create {@code BiStream<UserId, User>},
+   *     or, use {@code biStream(users, User::getAccount)} to create {@code BiStream<User, Account>}.
+   *     Then use {@link #mapKeys} or {@link #mapValues} to apply further mappings.
    */
+  @Deprecated
   public static <T> BiStream<T, T> biStream(Stream<T> elements) {
-    return from(elements, identity(), identity());
+    return biStream(elements, identity());
+  }
+
+  /**
+   * Returns a {@code BiStream} of mappings between {@code keys} and the corresponding return values
+   * of the {@code toValue} function. For example:
+   *
+   * <pre>{@code
+   * BiStream<Request, ListenableFuture<Response>> requestsAndResponses =
+   *     biStream(requests, service::sendRequest);
+   * }</pre>
+   *
+   * @since 5.6
+   */
+  public static <K, V> BiStream<K, V> biStream(
+      Collection<K> keys, Function<? super K, ? extends V> toValue) {
+    return new GenericEntryStream<>(keys.stream(), identity(), toValue);
+  }
+
+  /**
+   * Returns a {@code BiStream} of mappings between {@code keys} and the corresponding return values
+   * of the {@code toValue} function. For example:
+   *
+   * <pre>{@code
+   * BiStream<Request, ListenableFuture<Response>> requestsAndResponses =
+   *     biStream(requests, service::sendRequest);
+   * }</pre>
+   *
+   * @since 5.6
+   */
+  public static <K, V> BiStream<K, V> biStream(
+      Stream<K> keys, Function<? super K, ? extends V> toValue) {
+    return new GenericEntryStream<>(keys, identity(), toValue);
+  }
+
+  /**
+   * Returns a {@code BiStream} of mappings between the key returned by the {@code toKey} function
+   * (when applied to each element of {@code values}), and the element itself.
+   *
+   * <pre>{@code
+   * ImmutableListMultimap<UserId, Account> userAccounts =
+   *     biStream(User::id, users)
+   *         .flatMapValues(User::accounts)
+   *         .collect(toImmutableListMultimap());
+   * }</pre>
+   *
+   * @since 5.6
+   */
+  public static <K, V> BiStream<K, V> biStream(
+      Function<? super V, ? extends K> toKey, Collection<V> values) {
+    return new GenericEntryStream<>(values.stream(), toKey, identity());
+  }
+
+  /**
+   * Returns a {@code BiStream} of mappings between the key returned by the {@code toKey} function
+   * (when applied to each element of {@code values}), and the element itself.
+   *
+   * <pre>{@code
+   * ImmutableListMultimap<UserId, Account> userAccounts =
+   *     biStream(User::id, users)
+   *         .flatMapValues(User::accounts)
+   *         .collect(toImmutableListMultimap());
+   * }</pre>
+   *
+   * @since 5.6
+   */
+  public static <K, V> BiStream<K, V> biStream(
+      Function<? super V, ? extends K> toKey, Stream<V> values) {
+    return new GenericEntryStream<>(values, toKey, identity());
   }
 
   /** Returns a {@code BiStream} of the entries in {@code map}. */
@@ -554,7 +805,12 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   /**
    * Returns a {@code BiStream} of {@code elements}, each transformed to a pair of values with
    * {@code toKey} and {@code toValue}.
+   *
+   * @deprecated Use {@code biStream(User::id, users)} to create {@code BiStream<UserId, User>},
+   *     or, use {@code biStream(users, User::getAccount)} to create {@code BiStream<User, Account>}.
+   *     Then use {@link #mapKeys} or {@link #mapValues} to apply further mappings.
    */
+  @Deprecated
   public static <T, K, V> BiStream<K, V> from(
       Collection<T> elements,
       Function<? super T, ? extends K> toKey,
@@ -565,7 +821,12 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   /**
    * Returns a {@code BiStream} of the elements from {@code stream}, each transformed to a pair of
    * values with {@code toKey} and {@code toValue}.
+   *
+   * @deprecated Use {@code biStream(User::id, users)} to create {@code BiStream<UserId, User>},
+   *     or, use {@code biStream(users, User::getAccount)} to create {@code BiStream<User, Account>}.
+   *     Then use {@link #mapKeys} or {@link #mapValues} to apply further mappings.
    */
+  @Deprecated
   public static <T, K, V> BiStream<K, V> from(
       Stream<T> stream,
       Function<? super T, ? extends K> toKey,
@@ -581,34 +842,6 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   public static <K, V> BiStream<K, V> from(
       Stream<? extends Both<? extends K, ? extends V>> pairs) {
     return from(pairs, BiStream::left, BiStream::right);
-  }
-
-  /**
-   * Returns a {@code BiStream} of the elements from {@code stream}, each transformed to a pair of
-   * values with {@code mapper} function.
-   *
-   * @since 4.6
-   * @deprecated Use {@link #from(Stream)} instead.
-   */
-  @Deprecated
-  public static <T, K, V> BiStream<K, V> from(
-      Collection<T> elements,
-      DualValuedFunction<? super T, ? extends K, ? extends V> mapper) {
-    return from(elements.stream(), mapper);
-  }
-
-  /**
-   * Returns a {@code BiStream} of the elements from {@code stream}, each transformed to a pair of
-   * values with {@code mapper} function.
-   *
-   * @since 4.6
-   * @deprecated Use {@link #from(Stream)} instead.
-   */
-  @Deprecated
-  public static <T, K, V> BiStream<K, V> from(
-      Stream<T> stream,
-      DualValuedFunction<? super T, ? extends K, ? extends V> mapper) {
-    return fromEntries(stream.map(mapper.andThen(BiStream::kv)));
   }
 
   /**
@@ -747,7 +980,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   /**
    * A predicate used to partition a {@code BiStream} into sub-groups of consecutive pairs.
    *
-   * <p>Aside from that it operates on pairs, logically a "Partitioner" is unlike {@link
+   * <p>Aside from that it operates on pairs, logically a "Partitioner" is unlike {@code
    * com.google.common.base.Equivalence} in that it doesn't need to be reflexive. For example, one
    * may use {@code (v1, v2) -> v1 < v2} to partition ascending sub-sequences into groups, such that
    * {@code [1, 2, 3]} results in a single group while {@code [3, 2, 1]} will be 3 groups: {@code
@@ -1283,7 +1516,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * Returns a {@code BiStream} consisting of the pairs in this stream, followed by the pairs in
    * {@code other}.
    *
-   * @implNote This method is implemented using {@link Stream#concat}; therefore, the same warnings
+   * <p>NOTE: This method is implemented using {@link Stream#concat}; therefore, the same warnings
    *     about deeply-nested combined streams also apply to this method. In particular, avoid
    *     calling this method in a loop to combine many streams together.
    */
@@ -1295,7 +1528,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * Returns a {@code BiStream} consisting of the pairs in this stream, followed by the pair of
    * {@code key} and {@code value}.
    *
-   * @implNote This method is implemented using {@link Stream#concat}; therefore, the same warnings
+   * <p>NOTE: This method is implemented using {@link Stream#concat}; therefore, the same warnings
    *     about deeply-nested combined streams also apply to this method. In particular, avoid
    *     calling this method in a loop to combine many streams together.
    */
@@ -1464,6 +1697,43 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * implementations.
    */
   public abstract <R> R collect(BiCollector<? super K, ? super V, R> collector);
+
+  /**
+   * Equivalent to {@code collect(collectingAndThen(collector, finisher))} but helps to save
+   * syntactic noise.
+   *
+   * <p>This is mainly used for "return" statements where you have a long BiStream chain, only the
+   * last* step needs to pass the return value of {@code collect()} to a final method cqll, for
+   * example: <pre>{@code
+   *   return new Ledger(
+   *       BiStream.from(...)
+   *           .mapKeys(...)
+   *           .flatMapValues(...)
+   *           ...
+   *           .collect(toImmutableMap()));
+   * }</pre>
+   *
+   * This syntax breaks the first-thing-first order of the BiStream pipeline by showing the last
+   * step at the top-most line. Alternatively, one can declare a local variable to hold the
+   * return value of {@code collect()}. But sometimes it's undesirable if the intermediary
+   * object's type is implementation-detail-ish or just too verbose.
+   *
+   * <p>Using this method, the above example can be changed to pipeline-friendly syntax with less
+   * indentation:
+   * <pre>{@code
+   *   return BiStream.from(...)
+   *       .mapKeys(...)
+   *       .flatMapValues(...)
+   *       ...
+   *       .collect(toImmutableMap(), Ledger::new);
+   * }</pre>
+   *
+   * @since 5.6
+   */
+  public final <T, R> R collect(
+      BiCollector<? super K, ? super V, T> collector, Function<? super T, R> finisher) {
+    return finisher.apply(collect(collector));
+  }
 
   /**
    * Performs mutable reduction, as in {@code

@@ -17,7 +17,6 @@ package com.google.mu.util.stream;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static java.util.Objects.requireNonNull;
 
-import java.util.AbstractMap;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -37,7 +36,6 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import com.google.mu.function.CheckedConsumer;
-import com.google.mu.function.DualValuedFunction;
 import com.google.mu.util.Both;
 
 /**
@@ -436,24 +434,6 @@ public final class MoreStreams {
         });
       }
     };
-  }
-
-  /**
-   * Analogous to {@link Collectors#mapping Collectors.mapping()}, applies a mapping function to
-   * each input element before accumulation, except that the {@code mapper} function returns a
-   * <em><b>pair of elements</b></em>, which are then accumulated by a <em>BiCollector</em>.
-   *
-   * @since 4.6
-   * @deprecated Use {@link #mapping(Function, BiCollector)} instead.
-   */
-  @Deprecated
-  public static <T, K, V, R> Collector<T, ?, R> mapping(
-      DualValuedFunction<? super T, ? extends K, ? extends V> mapper,
-      BiCollector<K, V, R> downstream) {
-    Function<? super T, Map.Entry<K, V>> toEntry =
-        mapper.andThen(AbstractMap.SimpleImmutableEntry::new);
-    return Collectors.mapping(
-        toEntry, downstream.splitting(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   /**

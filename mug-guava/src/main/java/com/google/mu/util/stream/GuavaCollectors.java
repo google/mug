@@ -24,6 +24,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.common.collect.ImmutableBiMap;
@@ -35,6 +36,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.ImmutableTable;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
+import com.google.common.collect.Multiset;
 import com.google.common.collect.Tables;
 import com.google.mu.util.Both;
 
@@ -69,6 +71,29 @@ public final class GuavaCollectors {
         return ImmutableMap.toImmutableMap(toKey, toValue, valueMerger);
       }
     };
+  }
+
+  /**
+   * Returns a collector that counts the number of occurrences for each unique bucket as determined
+   * by the {@code bucketer} function. The result counts are stored in an {@link ImmutableMultiset},
+   * hence implying that {@code bucketer} cannot return null.
+   *
+   * <p>{@code stream.collect(countingBy(User::id))} is equivalent to {@code
+   * stream.map(User::id).collect(toImmutableMultiset())}, but reads more intuitive when you are
+   * trying to count occurrences (as opposed to building Multiset as the end goal).
+   *
+   * <p>Alternatively, one can use {@code groupingBy(bucketer, Collectors.counting())} to collect
+   * the equivalent counts in an {@code ImmutableMap<B, Long>}. Which of the two types to use
+   * depends on whether you need to handle very large counts (potentially exceeding {@code
+   * Integer.MAX_VALUE}), or whether the {@link Multiset} API is more useful (particularly, {@link
+   * Multiset#count}). The memory footprint of {@code ImmutableMultiset<B>} is also more compact
+   * than {@code ImmutableMap<B, Long>}.
+   *
+   * @since 5.6
+   */
+  public static <T, B> Collector<T, ?, ImmutableMultiset<B>> countingBy(
+      Function<? super T, ? extends B> bucketer) {
+    return Collectors.mapping(requireNonNull(bucketer), ImmutableMultiset.toImmutableMultiset());
   }
 
   /**
@@ -231,8 +256,8 @@ public final class GuavaCollectors {
   }
 
   /**
-   * Returns a {@link BiCollector} that collects the key-value pairs into an {@link ImmutableBimap}.
-   * Equivalent to {@code ImmutableBimap::toImmutableBimap}.
+   * Returns a {@link BiCollector} that collects the key-value pairs into an {@link ImmutableBiMap}.
+   * Equivalent to {@code ImmutableBimap::toImmutableBiMap}.
    */
   public static <K, V> BiCollector<K, V, ImmutableBiMap<K, V>> toImmutableBiMap() {
     return ImmutableBiMap::toImmutableBiMap;
@@ -257,7 +282,7 @@ public final class GuavaCollectors {
    * }</pre>
    *
    * <p>Similarly, cascading group-by can be performed on a {@code Map} or {@code Multimap} through
-   * {@link #groupingBy}, and then reduced in the same way using {@link #toImmutableTable}:
+   * {@code groupingBy()}, and then reduced in the same way using {@link #toImmutableTable}:
    *
    * <pre>{@code
    * import static com.google.common.labs.collect.BiCollectors.groupingBy;

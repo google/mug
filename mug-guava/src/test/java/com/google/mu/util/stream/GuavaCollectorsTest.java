@@ -17,6 +17,7 @@ package com.google.mu.util.stream;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.stream.BiCollectors.groupingBy;
+import static com.google.mu.util.stream.GuavaCollectors.countingBy;
 import static com.google.mu.util.stream.GuavaCollectors.flatteningToImmutableListMultimap;
 import static com.google.mu.util.stream.GuavaCollectors.flatteningToImmutableSetMultimap;
 import static com.google.mu.util.stream.GuavaCollectors.indexingBy;
@@ -223,6 +224,12 @@ public class GuavaCollectorsTest {
         first(',').repeatedly().split(input)
             .collect(toImmutableBiMap(s -> first('=').split(s).orElseThrow()));
     assertThat(kvs).containsExactly("k1", "v1", "k2", "v2").inOrder();
+  }
+
+  @Test public void testCountingBy() {
+    assertThat(Stream.of("foo", "bar", "hi").collect(countingBy(String::length)))
+        .containsExactly(3, 3, 2)
+        .inOrder();
   }
 
   @Test public void testIndexingBy() {

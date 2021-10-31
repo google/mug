@@ -14,10 +14,15 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.stream.BiCollectors.groupingBy;
 import static com.google.mu.util.stream.BiCollectors.toMap;
+import static com.google.mu.util.stream.MoreCollectors.allMax;
+import static com.google.mu.util.stream.MoreCollectors.allMin;
 import static com.google.mu.util.stream.MoreCollectors.flatMapping;
 import static com.google.mu.util.stream.MoreCollectors.flatteningMaps;
 import static com.google.mu.util.stream.MoreCollectors.mapping;
@@ -25,6 +30,7 @@ import static com.google.mu.util.stream.MoreCollectors.onlyElement;
 import static com.google.mu.util.stream.MoreCollectors.onlyElements;
 import static com.google.mu.util.stream.MoreCollectors.switching;
 import static com.google.mu.util.stream.MoreCollectors.toListAndThen;
+import static java.util.Comparator.naturalOrder;
 import static java.util.function.Function.identity;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -56,7 +62,7 @@ public class MoreCollectorsTest {
         ImmutableList.of(new Translation(ImmutableMap.of()), new Translation(ImmutableMap.of()));
     Map<Integer, String> merged = translations.stream()
         .map(Translation::dictionary)
-        .collect(flatMapping(BiStream::from, groupingBy((Integer k) -> k, (a, b) -> a + "," + b)))
+        .collect(flatMapping(BiStream::from, groupingBy((Integer k) -> k, Joiner.on(',')::join)))
         .collect(ImmutableMap::toImmutableMap);
     assertThat(merged).isEmpty();
   }
@@ -66,7 +72,7 @@ public class MoreCollectorsTest {
         new Translation(ImmutableMap.of(1, "one")), new Translation(ImmutableMap.of(2, "two")));
     Map<Integer, String> merged = translations.stream()
         .map(Translation::dictionary)
-        .collect(flatMapping(BiStream::from, groupingBy((Integer k) -> k, (a, b) -> a + "," + b)))
+        .collect(flatMapping(BiStream::from, groupingBy((Integer k) -> k, Joiner.on(',')::join)))
         .collect(ImmutableMap::toImmutableMap);
     assertThat(merged)
         .containsExactly(1, "one", 2, "two")
@@ -79,7 +85,7 @@ public class MoreCollectorsTest {
         new Translation(ImmutableMap.of(2, "two", 1, "1")));
     Map<Integer, String> merged = translations.stream()
         .map(Translation::dictionary)
-        .collect(flatMapping(BiStream::from, groupingBy((Integer k) -> k, (a, b) -> a + "," + b)))
+        .collect(flatMapping(BiStream::from, groupingBy((Integer k) -> k, Joiner.on(',')::join)))
         .collect(ImmutableMap::toImmutableMap);
     assertThat(merged)
         .containsExactly(1, "one,1", 2, "two")
@@ -221,6 +227,36 @@ public class MoreCollectorsTest {
         () -> Stream.of(1, 2, 3, 4).collect(switching(onlyElement(a -> "one"), onlyElements((a, b) -> "two"))));
     assertThat(thrown.getMessage())
         .isEqualTo("Unexpected input elements of size = 4 <[1, 2, 3, ...]>.");
+  }
+
+  @Test public void testGreatest_empty() {
+    assertThat(Stream.<Integer>empty().collect(allMax(naturalOrder(), toImmutableList())))
+        .isEmpty();
+  }
+
+  @Test public void testGreatest_toOnlyElement() {
+    assertThat(Stream.of(1, 1, 1, 1, 1, 1, 2).collect(allMax(naturalOrder(), onlyElement())))
+        .isEqualTo(2);
+  }
+
+  @Test public void testGreatest_multiple() {
+    assertThat(Stream.of(1, 1, 2, 1, 2).collect(allMax(naturalOrder(), toImmutableList())))
+        .containsExactly(2, 2);
+  }
+
+  @Test public void testLeast_empty() {
+    assertThat(Stream.<String>empty().collect(allMin(naturalOrder(), toImmutableSet())))
+        .isEmpty();
+  }
+
+  @Test public void testLeast_toOnlyElement() {
+    assertThat(Stream.of(2, 2, 2, 2, 2, 2, 1).collect(allMin(naturalOrder(), onlyElement())))
+        .isEqualTo(1);
+  }
+
+  @Test public void testLeast_multiple() {
+    assertThat(Stream.of(1, 1, 2, 1, 2).collect(allMin(naturalOrder(), toImmutableList())))
+        .containsExactly(1, 1, 1);
   }
 
   @Test public void testNulls() throws Exception {

@@ -199,7 +199,7 @@ public abstract class Walker<N> {
    * }</pre>
    *
    * <p>In the case of walking a very large graph with more nodes than can fit in memory, it's
-   * conceivable to use {@link com.google.common.hash.BloomFilter#put BloomFilter} to track visited
+   * conceivable to use {@code com.google.common.hash.BloomFilter#put BloomFilter} to track visited
    * nodes, as long as you are okay with probabilistically missing a fraction of the graph nodes due
    * to Bloom filter's inherent false-positive rates. Because Bloom filters have zero
    * false-negatives, it's guaranteed that the walker will never walk in cycles.
