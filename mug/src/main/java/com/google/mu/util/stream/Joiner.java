@@ -102,6 +102,19 @@ public abstract class Joiner implements Collector<Object, StringJoiner, String> 
     };
   }
 
+  /** Returns a Collector that skips null inputs and joins the remaining using this Joiner. */
+  public final Collector<Object, ?, String> skipNulls() {
+    return Java9Collectors.filtering(v -> v != null, this);
+  }
+
+  /**
+   * Returns a Collector that skips null and empty string inputs and joins the remaining using
+   * this Joiner.
+   */
+  public final Collector<CharSequence, ?, String> skipEmpties() {
+    return Java9Collectors.filtering(s -> s != null && s.length() > 0, this);
+  }
+
   @Override public BiConsumer<StringJoiner, Object> accumulator() {
     return (joiner, obj) -> joiner.add(String.valueOf(obj));
   }
