@@ -51,8 +51,8 @@ import java.util.stream.Collectors;
  *       .collect(Joiner.on(", ").between('[', ']'));
  * }</pre>
  *
- * <p>Unlike {@link com.google.common.base.Joiner}, nulls don't cause NullPointerException, instead,
- * they are stringified using {@link String#valueOf}.
+ * <p>Unlike Guava {@code com.google.common.base.Joiner}, nulls don't cause NullPointerException,
+ * instead, they are stringified using {@link String#valueOf}.
  *
  * @since 5.6
  */
