@@ -134,22 +134,6 @@ public class BiStreamTest {
     assertKeyValues(BiStream.from(Stream.of(1, 2), Object::toString, v -> v))
         .containsExactlyEntriesIn(ImmutableMultimap.of("1", 1, "2", 2))
         .inOrder();
-    assertKeyValues(BiStream.from(Stream.of(1, 2).parallel(), BiStreamTest::withToString))
-        .containsExactlyEntriesIn(ImmutableMultimap.of("1", 1, "2", 2))
-        .inOrder();
-  }
-
-  @Test public void testBiStreamWithDualValuedFunctions() {
-    assertKeyValues(BiStream.from(Stream.of(1, 2), BiStreamTest::withToString))
-        .containsExactlyEntriesIn(ImmutableMultimap.of("1", 1, "2", 2))
-        .inOrder();
-    assertThat(
-            BiStream.concat(Stream.of("name=joe", "age=10")
-                .map(Substring.first('=')::split)
-                .map(BiOptional::stream))
-        .collect(toImmutableListMultimap()))
-        .containsExactly("name", "joe", "age", "10")
-        .inOrder();
   }
 
   @Test public void testFromMap() {

@@ -980,35 +980,6 @@ public class BiStreamInvariantsTest {
         return BiStream.from(Stream.of(both(k1, v1), both(k2, v2), both(k3, v3)));
       }
     },
-    FROM_DUAL_VALUED_FUNCTION {
-      @Override
-      <K, V> BiStream<K, V> newBiStream() {
-        return BiStream.from(
-            ImmutableListMultimap.<K, V>of().entries().stream(), this::fromEntry);
-      }
-
-      @Override
-      <K, V> BiStream<K, V> newBiStream(K key, V value) {
-        return BiStream.from(
-            keyValues(key, value).entries().stream(), this::fromEntry);
-      }
-
-      @Override
-      <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2) {
-        return BiStream.from(
-            keyValues(k1, v1, k2, v2).entries().stream(), this::fromEntry);
-      }
-
-      @Override
-      <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2, K k3, V v3) {
-        return BiStream.from(
-            keyValues(k1, v1, k2, v2, k3, v3).entries().stream(), this::fromEntry);
-      }
-
-      private <K, V, R> R fromEntry(Map.Entry<K, V> entry, BiFunction<K, V, R> joiner) {
-        return joiner.apply(entry.getKey(), entry.getValue());
-      }
-    },
     COLLECTED_FROM_PAIRS {
       @Override
       <K, V> BiStream<K, V> newBiStream() {
@@ -1036,35 +1007,6 @@ public class BiStreamInvariantsTest {
 
       private <K, V> Both<K, V> fromEntry(Map.Entry<K, V> entry) {
         return both(entry.getKey(), entry.getValue());
-      }
-    },
-    COLLECTED_FROM_DUAL_VALUED_FUNCTION {
-      @Override
-      <K, V> BiStream<K, V> newBiStream() {
-        return ImmutableListMultimap.<K, V>of().entries().stream()
-            .collect(toBiStream(this::fromEntry));
-      }
-
-      @Override
-      <K, V> BiStream<K, V> newBiStream(K key, V value) {
-        return keyValues(key, value).entries().stream()
-            .collect(toBiStream(this::fromEntry));
-      }
-
-      @Override
-      <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2) {
-        return keyValues(k1, v1, k2, v2).entries().stream()
-            .collect(toBiStream(this::fromEntry));
-      }
-
-      @Override
-      <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2, K k3, V v3) {
-        return keyValues(k1, v1, k2, v2, k3, v3).entries().stream()
-            .collect(toBiStream(this::fromEntry));
-      }
-
-      private <K, V, R> R fromEntry(Map.Entry<K, V> entry, BiFunction<K, V, R> joiner) {
-        return joiner.apply(entry.getKey(), entry.getValue());
       }
     },
     FROM_COLLECTION {
