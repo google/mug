@@ -248,7 +248,7 @@ public class Iteration<T> {
     return this.yield(() -> {
       T result = computation.get();
       consumer.accept(result);
-      yield(result);
+      this.yield(result);
     });
   }
 
@@ -259,7 +259,7 @@ public class Iteration<T> {
    */
   public final Iteration<T> yieldAll(Iterable<? extends T> elements) {
     for (T element : elements) {
-      yield(element);
+      this.yield(element);
     }
     return this;
   }
@@ -283,7 +283,7 @@ public class Iteration<T> {
   /**
    * Encapsulates recursive iteration or a lazy block of code with side-effect.
    *
-   * <p>Note that if after a {@link #yield(Continuation) yielded) recursive iteration, the
+   * <p>Note that if after a {@link #yield(Continuation) yielded} recursive iteration, the
    * subsequent code expects state change (for example, the nodes being visited will keep changing
    * during graph traversal), the subsequent code also needs to be yielded to be able to observe
    * the expected state change.
