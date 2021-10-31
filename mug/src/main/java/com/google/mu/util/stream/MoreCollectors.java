@@ -320,9 +320,9 @@ public final class MoreCollectors {
    *
    * @since 5.6
    */
-  public static <T, R> Collector<T, ?, R> least(
+  public static <T, R> Collector<T, ?, R> allMin(
       Comparator<? super T> comparator, Collector<? super T, ?, R> downstream) {
-    return greatest(comparator.reversed(), downstream);
+    return allMax(comparator.reversed(), downstream);
   }
 
   /**
@@ -339,7 +339,7 @@ public final class MoreCollectors {
    *
    * @since 5.6
    */
-  public static <T, R> Collector<T, ?, R> greatest(
+  public static <T, R> Collector<T, ?, R> allMax(
       Comparator<? super T> comparator, Collector<? super T, ?, R> downstream) {
     requireNonNull(comparator);
     requireNonNull(downstream);
