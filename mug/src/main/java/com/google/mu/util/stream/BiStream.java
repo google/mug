@@ -65,7 +65,6 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import com.google.mu.function.BiComparator;
-import com.google.mu.function.DualValuedFunction;
 import com.google.mu.util.BiOptional;
 import com.google.mu.util.Both;
 
@@ -350,24 +349,6 @@ public abstract class BiStream<K, V> implements AutoCloseable {
       Function<? super E, ? extends Both<? extends K, ? extends V>> toPair) {
     requireNonNull(toPair);;
     return collectingAndThen(stream -> from(stream.map(toPair)));
-  }
-
-  /**
-   * Returns a {@code Collector} that splits each input element into two values and collects them
-   * into a {@link BiStream}.
-   *
-   * <p>Note that it's more efficient to use {@code BiStream.from(stream, mapper)} than
-   * {@code stream.collect(toBiStream(mapper))}. The latter is intended to be used in the
-   * middle of a long stream pipeline, when performance isn't critical.
-   *
-   * @since 4.6
-   * @deprecated Use {@link #toBiStream(Function)} instead.
-   */
-  @Deprecated
-  public static <E, K, V> Collector<E, ?, BiStream<K, V>> toBiStream(
-      DualValuedFunction<? super E, ? extends K, ? extends V> mapper) {
-    requireNonNull(mapper);
-    return collectingAndThen(stream -> from(stream, mapper));
   }
 
   /**
@@ -861,34 +842,6 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   public static <K, V> BiStream<K, V> from(
       Stream<? extends Both<? extends K, ? extends V>> pairs) {
     return from(pairs, BiStream::left, BiStream::right);
-  }
-
-  /**
-   * Returns a {@code BiStream} of the elements from {@code stream}, each transformed to a pair of
-   * values with {@code mapper} function.
-   *
-   * @since 4.6
-   * @deprecated Use {@link #from(Stream)} instead.
-   */
-  @Deprecated
-  public static <T, K, V> BiStream<K, V> from(
-      Collection<T> elements,
-      DualValuedFunction<? super T, ? extends K, ? extends V> mapper) {
-    return from(elements.stream(), mapper);
-  }
-
-  /**
-   * Returns a {@code BiStream} of the elements from {@code stream}, each transformed to a pair of
-   * values with {@code mapper} function.
-   *
-   * @since 4.6
-   * @deprecated Use {@link #from(Stream)} instead.
-   */
-  @Deprecated
-  public static <T, K, V> BiStream<K, V> from(
-      Stream<T> stream,
-      DualValuedFunction<? super T, ? extends K, ? extends V> mapper) {
-    return fromEntries(stream.map(mapper.andThen(BiStream::kv)));
   }
 
   /**
