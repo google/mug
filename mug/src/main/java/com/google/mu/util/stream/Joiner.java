@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
  * }</pre>
  *
  * <p>Or, you can format the {@code (id, name)} pairs in the format of
- * {@code "[(id1, name1), (id2, name2). ...]":
+ * {@code "[(id1, name1), (id2, name2). ...]"}:
  * <pre>{@code
  *   BiStream.zip(userIds, names)
  *       .mapToObj(Joiner.on(", ").between('(', ')')::join)
