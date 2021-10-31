@@ -554,7 +554,7 @@ public final class BiCollectors {
     requireNonNull(downstream);
     return new BiCollector<K, V, R>() {
       @Override public <E> Collector<E, ?, R> splitting(Function<E, K> toKey, Function<E, V> toValue) {
-        return BiStream.flatMapping(e -> flattener.apply(toKey.apply(e), toValue.apply(e)), downstream);
+        return Java9Collectors.flatMapping(e -> flattener.apply(toKey.apply(e), toValue.apply(e)), downstream);
       }
     };
   }

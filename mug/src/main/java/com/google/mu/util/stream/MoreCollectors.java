@@ -77,7 +77,7 @@ public final class MoreCollectors {
   public static <T, K, V, R> Collector<T, ?, R> flatMapping(
       Function<? super T, ? extends BiStream<? extends K, ? extends V>> flattener,
       BiCollector<K, V, R> downstream) {
-    return BiStream.flatMapping(
+    return Java9Collectors.flatMapping(
         flattener.andThen(BiStream::mapToEntry),
         downstream.<Map.Entry<? extends K, ? extends V>>splitting(
             Map.Entry::getKey, Map.Entry::getValue));
