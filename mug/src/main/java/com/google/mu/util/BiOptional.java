@@ -127,8 +127,8 @@ public abstract class BiOptional<A, B> {
 
   /**
    * Maps the value contained in {@code optional} to a {@code BiOptional} using {@code mapper}, or
-   * else returns empty. For example, the following code uses {@link Substring#split} to split an
-   * optional string:
+   * else returns empty. For example, the following code uses {@link Substring.Pattern#split} to
+   * split an optional string:
    *
    * <pre>{@code
    * Optional<KeyValue> keyValue =

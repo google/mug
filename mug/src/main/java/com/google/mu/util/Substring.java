@@ -677,7 +677,7 @@ public final class Substring {
      * }</pre>
      *
      * <p>If you are trying to parse a string to a key-value data structure ({@code Map}, {@code
-     * Multimap} etc.), you can use {@link com.google.common.base.Splitter.MapSplitter} though it's
+     * Multimap} etc.), you can use {@code com.google.common.base.Splitter.MapSplitter} though it's
      * limited to {@code Map} and doesn't allow duplicate keys:
      *
      * <pre>{@code
@@ -861,8 +861,8 @@ public final class Substring {
      *
      * <p>The returned {@code Match} objects are cheap "views" of the matched substring sequences.
      * Because {@code Match} implements {@code CharSequence}, the returned {@code Match} objects can
-     * be directly passed to {@code CharSequence}-accepting APIs such as {@link
-     * CharMatcher#trimFrom} and {@link Pattern#splitThenTrim} etc.
+     * be directly passed to {@code CharSequence}-accepting APIs such as {@code
+     * com.google.common.base.CharMatcher.trimFrom()} and {@link Pattern#splitThenTrim} etc.
      */
     public Stream<Match> split(String string) {
       return MoreStreams.whileNotNull(
@@ -895,8 +895,8 @@ public final class Substring {
      *
      * <p>The returned {@code Match} objects are cheap "views" of the matched substring sequences.
      * Because {@code Match} implements {@code CharSequence}, the returned {@code Match} objects can
-     * be directly passed to {@code CharSequence}-accepting APIs such as {@link
-     * CharMatcher#trimFrom} and {@link Pattern#split} etc.
+     * be directly passed to {@code CharSequence}-accepting APIs such as {@code
+     * com.google.common.base.CharMatcher.trimFrom()} and {@link Pattern#split} etc.
      */
     public Stream<Match> splitThenTrim(String string) {
       return split(string).map(Match::trim);

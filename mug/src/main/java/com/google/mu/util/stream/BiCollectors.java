@@ -411,7 +411,7 @@ public final class BiCollectors {
   }
 
   /**
-   * Returns a {@link BiCollector} that first collects the input pairs into a {@link BiStream] and then applies
+   * Returns a {@link BiCollector} that first collects the input pairs into a {@link BiStream} and then applies
    * {@code finisher} on the intermediary BiStream.
    *
    * <p>This method makes it easier to create BiCollector using a lambda. For example, you may want to apply

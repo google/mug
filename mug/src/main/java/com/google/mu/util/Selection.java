@@ -180,7 +180,7 @@ public interface Selection<T> {
 
     /**
      * Parses {@code string} into a {@link Selection} by treating the single
-     * {@code '*'} character as {@link Selection.all()}, and delegating to
+     * {@code '*'} character as {@link Selection#all()}, and delegating to
      * {@code elementParser} to parse each explicit selection element.
      *
      * <p>Leading and trailing whitespaces are trimmed. Empty and duplicate elements are ignored.
@@ -207,7 +207,7 @@ public interface Selection<T> {
 
     /**
      * Parses {@code string} into a {@link Selection} of strings by treating the single
-     * {@code '*'} character as {@link Selection.all()}.
+     * {@code '*'} character as {@link Selection#all()}.
      *
      * <p>Leading and trailing whitespaces are trimmed. Empty and duplicate elements are ignored.
      */
