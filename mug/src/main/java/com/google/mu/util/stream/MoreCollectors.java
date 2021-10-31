@@ -94,8 +94,6 @@ public final class MoreCollectors {
    *     .map(Project::getTaskAssignments)
    *     .collect(flatteningMaps(ImmutableMap::toImmutableMap)));
    * }</pre>
-   *
-   * <p>To flatten a stream of multimaps, use {@link #flattening}.
    */
   public static <K, V, R> Collector<Map<K, V>, ?, R> flatteningMaps(
       BiCollector<K, V, R> downstream) {

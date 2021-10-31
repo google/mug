@@ -1516,7 +1516,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * Returns a {@code BiStream} consisting of the pairs in this stream, followed by the pairs in
    * {@code other}.
    *
-   * @implNote This method is implemented using {@link Stream#concat}; therefore, the same warnings
+   * <p>NOTE: This method is implemented using {@link Stream#concat}; therefore, the same warnings
    *     about deeply-nested combined streams also apply to this method. In particular, avoid
    *     calling this method in a loop to combine many streams together.
    */
@@ -1528,7 +1528,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * Returns a {@code BiStream} consisting of the pairs in this stream, followed by the pair of
    * {@code key} and {@code value}.
    *
-   * @implNote This method is implemented using {@link Stream#concat}; therefore, the same warnings
+   * <p>NOTE: This method is implemented using {@link Stream#concat}; therefore, the same warnings
    *     about deeply-nested combined streams also apply to this method. In particular, avoid
    *     calling this method in a loop to combine many streams together.
    */
