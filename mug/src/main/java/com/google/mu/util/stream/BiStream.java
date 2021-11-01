@@ -688,11 +688,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * }</pre>
    *
    * @since 3.0
-   * @deprecated Use {@code biStream(User::id, users)} to create {@code BiStream<UserId, User>},
-   *     or, use {@code biStream(users, User::getAccount)} to create {@code BiStream<User, Account>}.
-   *     Then use {@link #mapKeys} or {@link #mapValues} to apply further mappings.
    */
-  @Deprecated
   public static <T> BiStream<T, T> biStream(Collection<T> elements) {
     return from(elements, identity(), identity());
   }
@@ -710,11 +706,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * }</pre>
    *
    * @since 3.6
-   * @deprecated Use {@code biStream(User::id, users)} to create {@code BiStream<UserId, User>},
-   *     or, use {@code biStream(users, User::getAccount)} to create {@code BiStream<User, Account>}.
-   *     Then use {@link #mapKeys} or {@link #mapValues} to apply further mappings.
    */
-  @Deprecated
   public static <T> BiStream<T, T> biStream(Stream<T> elements) {
     return biStream(elements, identity());
   }
