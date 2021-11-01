@@ -53,7 +53,7 @@ import java.util.stream.Collectors;
  * }</pre>
  *
  * <p>If you need to skip nulls and/or empty strings while joining, use {@code
- * collect(Joiner.on(...).skipNulls()} or {@code collect(Joiner.on(...).skipEmpties()} respectively.
+ * collect(Joiner.on(...).skipNulls())} or {@code collect(Joiner.on(...).skipEmpties())} respectively.
  *
  * <p>Unlike Guava {@code com.google.common.base.Joiner}, nulls don't cause NullPointerException,
  * instead, they are stringified using {@link String#valueOf}.
