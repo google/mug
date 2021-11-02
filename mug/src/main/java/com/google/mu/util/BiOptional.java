@@ -53,16 +53,10 @@ public abstract class BiOptional<A, B> {
     return new Present<>(requireNonNull(a), requireNonNull(b));
   }
 
-  /**
-   * If {@code a} and {@code b} are present, returns a {@code BiOptional} instance containing them;
-   * otherwise returns an empty {@code BiOptional}.
-   *
-   * @throws NullPointerException if {@code a} or {@code b} is null
-   */
+  /** @deprecated Use {@link Optionals#both} instead. */
+  @Deprecated
   public static <A, B> BiOptional<A, B> both(Optional<A> a, Optional<B> b) {
-    requireNonNull(a);
-    requireNonNull(b);
-    return a.isPresent() && b.isPresent() ? of(a.get(), b.get()) : empty();
+    return Optionals.both(a, b);
   }
 
   /**
