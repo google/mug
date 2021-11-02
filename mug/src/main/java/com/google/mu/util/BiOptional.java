@@ -158,6 +158,13 @@ public abstract class BiOptional<A, B> {
   public abstract BiOptional<A, B> peek(BiConsumer<? super A, ? super B> consumer);
 
   /**
+   * Returns true if the pair exists and satisfies the {@code condition} predicate.
+   *
+   * @since 5.7
+   */
+  public abstract boolean matches(BiPredicate<? super A, ? super B> condition);
+
+  /**
    * If a pair of values is present, invoke {@code consumer} with them. Otherwise, do nothing.
    *
    * @throws NullPointerException if consumer is null
@@ -249,6 +256,12 @@ public abstract class BiOptional<A, B> {
         public BiOptional<Object, Object> filter(BiPredicate<Object, Object> predicate) {
           requireNonNull(predicate);
           return this;
+        }
+
+        @Override
+        public boolean matches(BiPredicate<Object, Object> condition) {
+          requireNonNull(condition);
+          return false;
         }
 
         @Override
