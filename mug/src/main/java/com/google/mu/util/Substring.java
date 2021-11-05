@@ -927,6 +927,26 @@ public final class Substring {
       return string.startsWith(prefix) ? string : prefix + string;
     }
 
+    /**
+     * If {@code builder} doesn't already start with this prefix, prepend the prefix to it.
+     *
+     * @return {@code builder} as is.
+     * @since 5.7
+     */
+    public StringBuilder addToIfAbsent(StringBuilder builder) {
+      int prefixChars = prefix.length();
+      int existingChars = builder.length();
+      if (existingChars < prefixChars) {
+        return builder.insert(0, prefix);
+      }
+      for (int i = 0; i < prefixChars; i++) {
+        if (prefix.charAt(i) != builder.charAt(i)) {
+          return builder.insert(0, prefix);
+        }
+      }
+      return builder;
+    }
+
     @Override Match match(String input, int fromIndex) {
       return input.startsWith(prefix, fromIndex)
           ? new Match(input, fromIndex, prefix.length())
@@ -959,6 +979,26 @@ public final class Substring {
      */
     public String addToIfAbsent(String string) {
       return string.endsWith(suffix) ? string : string + suffix;
+    }
+
+    /**
+     * If {@code builder} doesn't already end with this suffix, append the suffix to it.
+     *
+     * @return {@code builder} as is.
+     * @since 5.7
+     */
+    public StringBuilder addToIfAbsent(StringBuilder builder) {
+      int suffixChars = suffix.length();
+      int existingChars = builder.length();
+      if (existingChars < suffixChars) {
+        return builder.append(suffix);
+      }
+      for (int i = 1; i <= suffixChars; i++) {
+        if (suffix.charAt(suffixChars - i) != builder.charAt(existingChars - i)) {
+          return builder.append(suffix);
+        }
+      }
+      return builder;
     }
 
     @Override Match match(String input, int fromIndex) {
