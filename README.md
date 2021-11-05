@@ -12,16 +12,25 @@ A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/
 * [Parallelizer](https://github.com/google/mug/wiki/Parallelizer-Explained) An _Executor-friendly_, _interruptible_ alternative to parallel streams.
 * Graph utilities ([Walker](https://google.github.io/mug/apidocs/com/google/mu/util/graph/Walker.html), [ShortestPath](https://google.github.io/mug/apidocs/com/google/mu/util/graph/ShortestPath.html))
 
-## Maven
+## Installation
+### Maven
 
 Add the following to pom.xml:
 ```
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug</artifactId>
-    <version>5.5</version>
+    <version>5.6</version>
   </dependency>
 ```
+
+### Gradle
+
+Add to build.gradle:
+```
+  implementation 'com.google.mug:mug-guava:5.6'
+```
+
 
 ## Stream
 

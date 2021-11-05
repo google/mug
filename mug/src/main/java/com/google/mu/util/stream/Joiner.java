@@ -13,7 +13,7 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 /**
- * An joiner of strings.
+ * A joiner (and {@code Collector}) that joins strings.
  *
  * <p>When used to join a pair of objects (for example in a BiStream), it can be used for BiFunction:
  * <pre>{@code
@@ -46,10 +46,14 @@ import java.util.stream.Collectors;
  * <p>Or, you can format the {@code (id, name)} pairs in the format of
  * {@code "[(id1, name1), (id2, name2). ...]"}:
  * <pre>{@code
- *   BiStream.zip(userIds, names)
+ *   BiStream.from(userIdMap)
+ *       .mapValues(User::name)
  *       .mapToObj(Joiner.on(", ").between('(', ')')::join)
  *       .collect(Joiner.on(", ").between('[', ']'));
  * }</pre>
+ *
+ * <p>If you need to skip nulls and/or empty strings while joining, use {@code
+ * collect(Joiner.on(...).skipNulls())} or {@code collect(Joiner.on(...).skipEmpties())} respectively.
  *
  * <p>Unlike Guava {@code com.google.common.base.Joiner}, nulls don't cause NullPointerException,
  * instead, they are stringified using {@link String#valueOf}.

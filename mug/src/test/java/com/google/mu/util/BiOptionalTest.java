@@ -191,23 +191,6 @@ public class BiOptionalTest {
   }
 
   @Test
-  public void both_bothEmpty() {
-    assertThat(BiOptional.both(Optional.empty(), Optional.empty())).isEqualTo(BiOptional.empty());
-  }
-
-  @Test
-  public void both_oneIsEmpty() {
-    assertThat(BiOptional.both(Optional.empty(), Optional.of("one"))).isEqualTo(BiOptional.empty());
-    assertThat(BiOptional.both(Optional.of(1), Optional.empty())).isEqualTo(BiOptional.empty());
-  }
-
-  @Test
-  public void both_noneEmpty() {
-    assertThat(BiOptional.both(Optional.of(1), Optional.of("one")))
-        .isEqualTo(BiOptional.of(1, "one"));
-  }
-
-  @Test
   public void staticFlatMap_fromEmpty() {
     assertThat(BiOptional.flatMap(Optional.empty(), t -> BiOptional.of(t, t)))
         .isEqualTo(BiOptional.empty());

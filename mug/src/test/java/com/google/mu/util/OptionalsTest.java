@@ -25,7 +25,6 @@ import org.junit.runners.JUnit4;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.NullPointerTester;
 
 @RunWith(JUnit4.class)
@@ -237,6 +236,23 @@ public class OptionalsTest {
         .isEqualTo(Optional.of("foobar"));
   }
 
+  @Test
+  public void both_bothEmpty() {
+    assertThat(Optionals.both(Optional.empty(), Optional.empty())).isEqualTo(BiOptional.empty());
+  }
+
+  @Test
+  public void both_oneIsEmpty() {
+    assertThat(Optionals.both(Optional.empty(), Optional.of("one"))).isEqualTo(BiOptional.empty());
+    assertThat(Optionals.both(Optional.of(1), Optional.empty())).isEqualTo(BiOptional.empty());
+  }
+
+  @Test
+  public void both_noneEmpty() {
+    assertThat(Optionals.both(Optional.of(1), Optional.of("one")))
+        .isEqualTo(BiOptional.of(1, "one"));
+  }
+
   @Test public void testNulls() throws Exception {
     new NullPointerTester()
         .setDefault(Optional.class, Optional.empty())
@@ -245,6 +261,7 @@ public class OptionalsTest {
         .setDefault(OptionalDouble.class, OptionalDouble.empty())
         .setDefault(BiOptional.class, BiOptional.of(1, "one"))
         .ignore(Optionals.class.getMethod("optional", boolean.class, Object.class))
+        .ignore(Optionals.class.getMethod("both", Optional.class, Optional.class))
         .testAllPublicStaticMethods(Optionals.class);
     new NullPointerTester()
         .setDefault(Optional.class, Optional.of("foo"))
@@ -254,20 +271,6 @@ public class OptionalsTest {
         .setDefault(BiOptional.class, BiOptional.of(1, "one"))
         .ignore(Optionals.class.getMethod("optional", boolean.class, Object.class))
         .testAllPublicStaticMethods(Optionals.class);
-    new ClassSanityTester()
-        .setDefault(Optional.class, Optional.empty())
-        .setDefault(OptionalInt.class, OptionalInt.empty())
-        .setDefault(OptionalLong.class, OptionalLong.empty())
-        .setDefault(OptionalDouble.class, OptionalDouble.empty())
-        .setDefault(BiOptional.class, BiOptional.of(1, "one"))
-        .forAllPublicStaticMethods(Optionals.class).testNulls();
-    new ClassSanityTester()
-        .setDefault(Optional.class, Optional.of("foo"))
-        .setDefault(OptionalInt.class, OptionalInt.of(123))
-        .setDefault(OptionalLong.class, OptionalLong.of(123))
-        .setDefault(OptionalDouble.class, OptionalDouble.of(123))
-        .setDefault(BiOptional.class, BiOptional.of(1, "one"))
-        .forAllPublicStaticMethods(Optionals.class).testNulls();
   }
 
   private interface BiAction {
