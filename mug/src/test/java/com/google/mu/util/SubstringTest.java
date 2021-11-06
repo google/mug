@@ -260,6 +260,54 @@ public class SubstringTest {
   }
 
   @Test
+  public void prefix_emptyIsInEmptySource() {
+    assertThat(prefix("").isIn("")).isTrue();
+    assertThat(prefix("").isIn(new StringBuilder())).isTrue();
+  }
+
+  @Test
+  public void prefix_emptyIsInNonEmptySource() {
+    assertThat(prefix("").isIn("foo")).isTrue();
+    assertThat(prefix("").isIn(new StringBuilder().append("foo"))).isTrue();
+  }
+
+  @Test
+  public void prefix_nonEmptyNotInEmptySource() {
+    assertThat(prefix("foo").isIn("")).isFalse();
+    assertThat(prefix("foo").isIn(new StringBuilder())).isFalse();
+  }
+
+  @Test
+  public void prefix_sourceHasFewerCharacters() {
+    assertThat(prefix("foo").isIn("fo")).isFalse();
+    assertThat(prefix("foo").isIn(new StringBuilder().append("fo"))).isFalse();
+  }
+
+  @Test
+  public void prefix_sourceHasSameNumberOfCharacters_present() {
+    assertThat(prefix("foo").isIn("foo")).isTrue();
+    assertThat(prefix("foo").isIn(new StringBuilder().append("foo"))).isTrue();
+  }
+
+  @Test
+  public void prefix_sourceHasSameNumberOfCharacters_absent() {
+    assertThat(prefix("foo").isIn("fob")).isFalse();
+    assertThat(prefix("foo").isIn(new StringBuilder().append("fob"))).isFalse();
+  }
+
+  @Test
+  public void prefix_sourceHasMoreCharacters_present() {
+    assertThat(prefix("foo").isIn("food")).isTrue();
+    assertThat(prefix("foo").isIn(new StringBuilder().append("food"))).isTrue();
+  }
+
+  @Test
+  public void prefix_sourceHasMoreCharacters_absent() {
+    assertThat(prefix("foo").isIn("fit")).isFalse();
+    assertThat(prefix("foo").isIn(new StringBuilder().append("fit"))).isFalse();
+  }
+
+  @Test
   public void suffix_toString() {
     assertThat(suffix("foo").toString()).isEqualTo("foo");
   }
@@ -383,6 +431,54 @@ public class SubstringTest {
     StringBuilder builder = new StringBuilder("booo");
     assertThat(suffix("oo").addToIfAbsent(builder)).isEqualTo(builder);
     assertThat(builder.toString()).isEqualTo("booo");
+  }
+
+  @Test
+  public void suffix_emptyIsInEmptySource() {
+    assertThat(suffix("").isIn("")).isTrue();
+    assertThat(suffix("").isIn(new StringBuilder())).isTrue();
+  }
+
+  @Test
+  public void suffix_emptyIsInNonEmptySource() {
+    assertThat(suffix("").isIn("foo")).isTrue();
+    assertThat(suffix("").isIn(new StringBuilder().append("foo"))).isTrue();
+  }
+
+  @Test
+  public void suffix_nonEmptyNotInEmptySource() {
+    assertThat(suffix("foo").isIn("")).isFalse();
+    assertThat(suffix("foo").isIn(new StringBuilder())).isFalse();
+  }
+
+  @Test
+  public void suffix_sourceHasFewerCharacters() {
+    assertThat(suffix("foo").isIn("fo")).isFalse();
+    assertThat(suffix("foo").isIn(new StringBuilder().append("fo"))).isFalse();
+  }
+
+  @Test
+  public void suffix_sourceHasSameNumberOfCharacters_present() {
+    assertThat(suffix("foo").isIn("foo")).isTrue();
+    assertThat(suffix("foo").isIn(new StringBuilder().append("foo"))).isTrue();
+  }
+
+  @Test
+  public void suffix_sourceHasSameNumberOfCharacters_absent() {
+    assertThat(suffix("foo").isIn("boo")).isFalse();
+    assertThat(suffix("foo").isIn(new StringBuilder().append("boo"))).isFalse();
+  }
+
+  @Test
+  public void suffix_sourceHasMoreCharacters_present() {
+    assertThat(suffix("foo").isIn("ffoo")).isTrue();
+    assertThat(suffix("foo").isIn(new StringBuilder().append("ffoo"))).isTrue();
+  }
+
+  @Test
+  public void suffix_sourceHasMoreCharacters_absent() {
+    assertThat(suffix("foo").isIn("zoo")).isFalse();
+    assertThat(suffix("foo").isIn(new StringBuilder().append("zoo"))).isFalse();
   }
 
   @Test
