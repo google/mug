@@ -63,6 +63,19 @@ public final class Optionals {
   }
 
   /**
+   * If {@code a} and {@code b} are present, returns a {@code BiOptional} instance containing them;
+   * otherwise returns an empty {@code BiOptional}.
+   *
+   * @throws NullPointerException if {@code a} or {@code b} is null
+   * @since 5.7
+   */
+  public static <A, B> BiOptional<A, B> both(Optional<? extends A> a, Optional<? extends B> b) {
+    requireNonNull(a);
+    requireNonNull(b);
+    return a.isPresent() && b.isPresent() ? BiOptional.of(a.get(), b.get()) : BiOptional.empty();
+  }
+
+  /**
    * Invokes {@code consumer} if {@code optional} is present. Returns a {@code Premise}
    * object to allow {@link Premise#orElse orElse()} and friends to be chained. For example:
    *

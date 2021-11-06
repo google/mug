@@ -17,6 +17,7 @@ package com.google.mu.util.stream;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static com.google.mu.util.stream.MoreStreams.groupConsecutive;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Arrays.asList;
@@ -352,5 +353,23 @@ public class MoreStreamsTest {
     MoreStreams.withSideEffect(source.stream(), peeked::add).parallel().forEachOrdered(result::add);
     assertThat(result).containsExactlyElementsIn(source).inOrder();
     assertThat(peeked).containsExactlyElementsIn(source).inOrder();
+  }
+
+  @Test public void testGroupConsecutive_byPredicate() {
+    assertThat(groupConsecutive(Stream.of(10, 20, 9, 8), (a, b) -> a < b, toList()))
+        .containsExactly(asList(10, 20), asList(9), asList(8))
+        .inOrder();
+    assertThat(groupConsecutive(Stream.of(10, 20, 9, 8, 9), (a, b) -> a < b, Integer::sum))
+        .containsExactly(30, 9, 17)
+        .inOrder();
+  }
+
+  @Test public void testGroupConsecutive_byFunction() {
+    assertThat(groupConsecutive(Stream.of(10, 20, 9, 8), i -> i % 2, toList()))
+        .containsExactly(asList(10, 20), asList(9), asList(8))
+        .inOrder();
+    assertThat(groupConsecutive(Stream.of(10, 20, 9, 8, 10), i -> i % 2, Integer::sum))
+        .containsExactly(30, 9, 18)
+        .inOrder();
   }
 }

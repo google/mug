@@ -918,6 +918,28 @@ public final class Substring {
     }
 
     /**
+     * Returns true if {@code source} starts with this prefix.
+     *
+     * @since 5.7
+     */
+    public boolean isIn(CharSequence source) {
+      if (source instanceof String) {
+        return ((String) source).startsWith(prefix);
+      }
+      int prefixChars = prefix.length();
+      int existingChars = source.length();
+      if (existingChars < prefixChars) {
+        return false;
+      }
+      for (int i = 0; i < prefixChars; i++) {
+        if (prefix.charAt(i) != source.charAt(i)) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    /**
      * If {@code string} has this prefix, return it as-is; otherwise, return it with this prefix
      * prepended.
      *
@@ -925,6 +947,16 @@ public final class Substring {
      */
     public String addToIfAbsent(String string) {
       return string.startsWith(prefix) ? string : prefix + string;
+    }
+
+    /**
+     * If {@code builder} doesn't already start with this prefix, prepend the prefix to it.
+     *
+     * @return {@code builder} as is.
+     * @since 5.7
+     */
+    public StringBuilder addToIfAbsent(StringBuilder builder) {
+      return isIn(builder) ? builder : builder.insert(0, prefix);
     }
 
     @Override Match match(String input, int fromIndex) {
@@ -952,6 +984,28 @@ public final class Substring {
     }
 
     /**
+     * Returns true if {@code source} ends with this suffix.
+     *
+     * @since 5.7
+     */
+    public boolean isIn(CharSequence source) {
+      if (source instanceof String) {
+        return ((String) source).endsWith(suffix);
+      }
+      int suffixChars = suffix.length();
+      int existingChars = source.length();
+      if (existingChars < suffixChars) {
+        return false;
+      }
+      for (int i = 1; i <= suffixChars; i++) {
+        if (suffix.charAt(suffixChars - i) != source.charAt(existingChars - i)) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    /**
      * If {@code string} has this suffix, return it as-is; otherwise, return it with this suffix
      * appended.
      *
@@ -959,6 +1013,16 @@ public final class Substring {
      */
     public String addToIfAbsent(String string) {
       return string.endsWith(suffix) ? string : string + suffix;
+    }
+
+    /**
+     * If {@code builder} doesn't already end with this suffix, append the suffix to it.
+     *
+     * @return {@code builder} as is.
+     * @since 5.7
+     */
+    public StringBuilder addToIfAbsent(StringBuilder builder) {
+      return isIn(builder) ? builder : builder.append(suffix);
     }
 
     @Override Match match(String input, int fromIndex) {
