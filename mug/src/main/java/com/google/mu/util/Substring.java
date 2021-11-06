@@ -950,13 +950,31 @@ public final class Substring {
     }
 
     /**
-     * If {@code builder} doesn't already start with this prefix, prepend the prefix to it.
+     * If {@code builder} does not already have this prefix, prepend this prefix to it.
      *
-     * @return {@code builder} as is.
+     * @return true if this prefix is prepended
      * @since 5.7
      */
-    public StringBuilder addToIfAbsent(StringBuilder builder) {
-      return isIn(builder) ? builder : builder.insert(0, prefix);
+    public boolean addToIfAbsent(StringBuilder builder) {
+      boolean shouldAdd = !isIn(builder);
+      if (shouldAdd) {
+        builder.insert(0, prefix);
+      }
+      return shouldAdd;
+    }
+
+    /**
+     * Removes this prefix from {@code builder} if it starts with the prefix.
+     *
+     * @return true if this prefix is removed
+     * @since 5.7
+     */
+    public boolean removeFrom(StringBuilder builder) {
+      boolean present = isIn(builder);
+      if (present) {
+        builder.delete(0, prefix.length());
+      }
+      return present;
     }
 
     @Override Match match(String input, int fromIndex) {
@@ -1016,13 +1034,31 @@ public final class Substring {
     }
 
     /**
-     * If {@code builder} doesn't already end with this suffix, append the suffix to it.
+     * If {@code builder} does not already have this suffix, append this suffix to it.
      *
-     * @return {@code builder} as is.
+     * @return true if this suffix is appended
      * @since 5.7
      */
-    public StringBuilder addToIfAbsent(StringBuilder builder) {
-      return isIn(builder) ? builder : builder.append(suffix);
+    public boolean addToIfAbsent(StringBuilder builder) {
+      boolean shouldAdd = !isIn(builder);
+      if (shouldAdd) {
+        builder.append(suffix);
+      }
+      return shouldAdd;
+    }
+
+    /**
+     * Removes this suffix from {@code builder} if it ends with the suffix.
+     *
+     * @return true if this suffix is removed
+     * @since 5.7
+     */
+    public boolean removeFrom(StringBuilder builder) {
+      boolean present = isIn(builder);
+      if (present) {
+        builder.delete(builder.length() - suffix.length(), builder.length());
+      }
+      return present;
     }
 
     @Override Match match(String input, int fromIndex) {
