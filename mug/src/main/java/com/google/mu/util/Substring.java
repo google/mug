@@ -977,6 +977,22 @@ public final class Substring {
       return present;
     }
 
+    /**
+     * Replaces this prefix from {@code builder} with {@code replacement} if it starts with the
+     * prefix.
+     *
+     * @return true if this prefix is replaced
+     * @since 5.7
+     */
+    public boolean replaceFrom(StringBuilder builder, CharSequence replacement) {
+      requireNonNull(replacement);
+      boolean present = isIn(builder);
+      if (present) {
+        builder.replace(0, prefix.length(), replacement.toString());
+      }
+      return present;
+    }
+
     @Override Match match(String input, int fromIndex) {
       return input.startsWith(prefix, fromIndex)
           ? new Match(input, fromIndex, prefix.length())
@@ -1057,6 +1073,23 @@ public final class Substring {
       boolean present = isIn(builder);
       if (present) {
         builder.delete(builder.length() - suffix.length(), builder.length());
+      }
+      return present;
+    }
+
+    /**
+     * Replaces this suffix from {@code builder} with {@code replacement} if it ends with the
+     * suffix.
+     *
+     * @return true if this suffix is replaced
+     * @since 5.7
+     */
+    public boolean replaceFrom(StringBuilder builder, CharSequence replacement) {
+      requireNonNull(replacement);
+      boolean present = isIn(builder);
+      if (present) {
+        builder.replace(
+            builder.length() - suffix.length(), builder.length(), replacement.toString());
       }
       return present;
     }
