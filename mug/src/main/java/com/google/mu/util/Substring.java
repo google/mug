@@ -926,7 +926,7 @@ public final class Substring {
       if (source instanceof String) {
         return ((String) source).startsWith(prefix);
       }
-      int prefixChars = prefix.length();
+      int prefixChars = length();
       int existingChars = source.length();
       if (existingChars < prefixChars) {
         return false;
@@ -972,7 +972,7 @@ public final class Substring {
     public boolean removeFrom(StringBuilder builder) {
       boolean present = isIn(builder);
       if (present) {
-        builder.delete(0, prefix.length());
+        builder.delete(0, length());
       }
       return present;
     }
@@ -988,9 +988,18 @@ public final class Substring {
       requireNonNull(replacement);
       boolean present = isIn(builder);
       if (present) {
-        builder.replace(0, prefix.length(), replacement.toString());
+        builder.replace(0, length(), replacement.toString());
       }
       return present;
+    }
+
+    /**
+     * Returns the length of this prefix.
+     *
+     * @since 5.7
+     */
+    public int length() {
+      return prefix.length();
     }
 
     @Override Match match(String input, int fromIndex) {
@@ -1026,7 +1035,7 @@ public final class Substring {
       if (source instanceof String) {
         return ((String) source).endsWith(suffix);
       }
-      int suffixChars = suffix.length();
+      int suffixChars = length();
       int existingChars = source.length();
       if (existingChars < suffixChars) {
         return false;
@@ -1072,7 +1081,7 @@ public final class Substring {
     public boolean removeFrom(StringBuilder builder) {
       boolean present = isIn(builder);
       if (present) {
-        builder.delete(builder.length() - suffix.length(), builder.length());
+        builder.delete(builder.length() - length(), builder.length());
       }
       return present;
     }
@@ -1088,10 +1097,18 @@ public final class Substring {
       requireNonNull(replacement);
       boolean present = isIn(builder);
       if (present) {
-        builder.replace(
-            builder.length() - suffix.length(), builder.length(), replacement.toString());
+        builder.replace(builder.length() - length(), builder.length(), replacement.toString());
       }
       return present;
+    }
+
+    /**
+     * Returns the length of this suffix.
+     *
+     * @since 5.7
+     */
+    public int length() {
+      return suffix.length();
     }
 
     @Override Match match(String input, int fromIndex) {
