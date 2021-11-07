@@ -906,11 +906,11 @@ public final class Substring {
   }
 
   /**
-   * A string prefix pattern.
+   * An immutable string prefix pattern.
    *
    * @since 4.6
    */
-  public static final class Prefix extends Pattern {
+  public static final class Prefix extends Pattern implements CharSequence {
     private final String prefix;
 
     Prefix(String prefix) {
@@ -926,7 +926,7 @@ public final class Substring {
       if (source instanceof String) {
         return ((String) source).startsWith(prefix);
       }
-      int prefixChars = length();
+      int prefixChars = prefix.length();
       int existingChars = source.length();
       if (existingChars < prefixChars) {
         return false;
@@ -993,13 +993,36 @@ public final class Substring {
       return present;
     }
 
+    /** @since 5.7 */
+    @Override public char charAt(int index) {
+      return prefix.charAt(index);
+    }
+
+    /** @since 5.7 */
+    @Override public Prefix subSequence(int start, int end) {
+      return new Prefix(prefix.substring(start, end));
+    }
+
     /**
      * Returns the length of this prefix.
      *
      * @since 5.7
      */
-    public int length() {
+    @Override public int length() {
       return prefix.length();
+    }
+
+    @Override public int hashCode() {
+      return prefix.hashCode();
+    }
+
+    @Override public boolean equals(Object obj) {
+      return obj instanceof Prefix && prefix.equals(((Prefix) obj).prefix);
+    }
+
+    /** Returns this prefix string. */
+    @Override public String toString() {
+      return prefix;
     }
 
     @Override Match match(String input, int fromIndex) {
@@ -1007,19 +1030,14 @@ public final class Substring {
           ? new Match(input, fromIndex, prefix.length())
           : null;
     }
-
-    /** Returns this prefix string. */
-    @Override public String toString() {
-      return prefix;
-    }
   }
 
   /**
-   * A string suffix pattern.
+   * An immutable string suffix pattern.
    *
    * @since 4.6
    */
-  public static final class Suffix extends Pattern {
+  public static final class Suffix extends Pattern implements CharSequence {
     private final String suffix;
 
     Suffix(String suffix) {
@@ -1035,7 +1053,7 @@ public final class Substring {
       if (source instanceof String) {
         return ((String) source).endsWith(suffix);
       }
-      int suffixChars = length();
+      int suffixChars = suffix.length();
       int existingChars = source.length();
       if (existingChars < suffixChars) {
         return false;
@@ -1102,13 +1120,38 @@ public final class Substring {
       return present;
     }
 
+    /** @since 5.7 */
+    @Override public char charAt(int index) {
+      return suffix.charAt(index);
+    }
+
+    /** @since 5.7 */
+    @Override public Suffix subSequence(int start, int end) {
+      return new Suffix(suffix.substring(start, end));
+    }
+
     /**
      * Returns the length of this suffix.
      *
      * @since 5.7
      */
-    public int length() {
+    @Override public int length() {
       return suffix.length();
+    }
+
+    /** @since 5.7 */
+    @Override public int hashCode() {
+      return suffix.hashCode();
+    }
+
+    /** @since 5.7 */
+    @Override public boolean equals(Object obj) {
+      return obj instanceof Suffix && suffix.equals(((Suffix) obj).suffix);
+    }
+
+    /** Returns this suffix string. */
+    @Override public String toString() {
+      return suffix;
     }
 
     @Override Match match(String input, int fromIndex) {
@@ -1116,11 +1159,6 @@ public final class Substring {
       return index >= fromIndex && input.endsWith(suffix)
           ? new Match(input, index, suffix.length())
           : null;
-    }
-
-    /** Returns this suffix string. */
-    @Override public String toString() {
-      return suffix;
     }
   }
 

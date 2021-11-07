@@ -27,6 +27,7 @@ import org.junit.runners.JUnit4;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.testing.ClassSanityTester;
+import com.google.common.testing.EqualsTester;
 import com.google.common.testing.NullPointerTester;
 import com.google.mu.util.Substring.Match;
 
@@ -77,6 +78,30 @@ public class SubstringTest {
   @Test
   public void prefix_toString() {
     assertThat(prefix("foo").toString()).isEqualTo("foo");
+  }
+
+  @Test
+  public void prefix_length() {
+    assertThat(prefix("foo").length()).isEqualTo(3);
+  }
+
+  @Test
+  public void prefix_charAt() {
+    assertThat(prefix("foo").charAt(1)).isEqualTo('o');
+  }
+
+  @Test
+  public void prefix_subSequence() {
+    assertThat(prefix("foo").subSequence(1, 3)).isEqualTo(prefix("oo"));
+  }
+
+  @Test
+  public void prefix_equals() {
+    new EqualsTester()
+        .addEqualityGroup(prefix("foo"), prefix("foo"))
+        .addEqualityGroup(prefix("bar"))
+        .addEqualityGroup(suffix("foo"))
+        .testEquals();
   }
 
   @Test
@@ -380,6 +405,30 @@ public class SubstringTest {
   @Test
   public void suffix_toString() {
     assertThat(suffix("foo").toString()).isEqualTo("foo");
+  }
+
+  @Test
+  public void suffix_length() {
+    assertThat(suffix("foo").length()).isEqualTo(3);
+  }
+
+  @Test
+  public void suffix_charAt() {
+    assertThat(suffix("foo").charAt(1)).isEqualTo('o');
+  }
+
+  @Test
+  public void suffix_subSequence() {
+    assertThat(suffix("foo").subSequence(1, 3)).isEqualTo(suffix("oo"));
+  }
+
+  @Test
+  public void suffix_equals() {
+    new EqualsTester()
+        .addEqualityGroup(suffix("foo"), suffix("foo"))
+        .addEqualityGroup(suffix("bar"))
+        .addEqualityGroup(prefix("foo"))
+        .testEquals();
   }
 
   @Test
