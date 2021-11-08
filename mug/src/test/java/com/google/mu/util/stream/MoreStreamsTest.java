@@ -218,6 +218,12 @@ public class MoreStreamsTest {
         .containsExactly(Integer.MAX_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE + 1).inOrder();
   }
 
+  @Test public void testIndexesFrom_longIndex() {
+    assertThat(indexesFrom(1L).limit(3)).containsExactly(1L, 2L, 3L).inOrder();
+    assertThat(indexesFrom(Long.MAX_VALUE).limit(3))
+        .containsExactly(Long.MAX_VALUE, Long.MIN_VALUE, Long.MIN_VALUE + 1).inOrder();
+  }
+
   @Test public void removingFromQueue_empty() {
     Queue<String> queue = new ArrayDeque<>();
     assertThat(whileNotNull(queue::poll)).isEmpty();
