@@ -906,7 +906,19 @@ public final class Substring {
   }
 
   /**
-   * An immutable string prefix pattern.
+   * An immutable string prefix {@code Pattern} with extra utilities such as {@link
+   * #addToIfAbsent(String)}, {@link #removeFrom(StringBuilder)}, {@link #isIn(CharSequence)} etc.
+   *
+   * <p>Can usually be declared as a constant to save allocation cost. Because {@code Prefix}
+   * implements {@link CharSequence}, it can be used almost interchangeably as a string. You can:
+   *
+   * <ul>
+   *   <li>directly prepend a prefix as in {@code HOME_PREFIX + path};
+   *   <li>or prepend it into a {@code StringBuilder}: {@code builder.insert(0, HOME_PREFIX)};
+   *   <li>pass it to any CharSequence-accepting APIs such as {@code
+   *       CharMatcher.anyOf(...).matchesAnyOf(MY_PREFIX)}, {@code
+   *       Substring.first(':').splitThenTrim(MY_PREFIX)} etc.
+   * </ul>
    *
    * @since 4.6
    */
@@ -1033,7 +1045,19 @@ public final class Substring {
   }
 
   /**
-   * An immutable string suffix pattern.
+   * An immutable string suffix {@code Pattern} with extra utilities such as {@link
+   * #addToIfAbsent(String)}, {@link #removeFrom(StringBuilder)}, {@link #isIn(CharSequence)} etc.
+   *
+   * <p>Can usually be declared as a constant to save allocation cost. Because {@code Suffix}
+   * implements {@link CharSequence}, it can be used almost interchangeably as a string. You can:
+   *
+   * <ul>
+   *   <li>directly append a suffix as in {@code path + SHARD_SUFFIX};
+   *   <li>or append the suffix into a {@code StringBuilder}: {@code builder.append(SHARD_SUFFIX)}};
+   *   <li>pass it to any CharSequence-accepting APIs such as {@code
+   *       CharMatcher.anyOf(...).matchesAnyOf(MY_PREFIX)}, {@code
+   *       Substring.first(':').splitThenTrim(MY_PREFIX)} etc.
+   * </ul>
    *
    * @since 4.6
    */
