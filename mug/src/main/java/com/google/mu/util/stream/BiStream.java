@@ -676,6 +676,15 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
+   * Returns a {@code BiStream} in which each element of {@code values} is paired with its index in
+   * encounter order.
+   */
+  public static <V> BiStream<Long, V> enumerate(Collection<V> values) {
+    return zip(MoreStreams.indexesFrom(0L), values.stream());
+  }
+
+
+  /**
    * Short-hand for {@code from(elements, identity(), identity())}. Typically followed by {@link
    * #mapKeys} or {@link #mapValues}. For example:
    *

@@ -808,6 +808,15 @@ public class BiStreamTest {
         .inOrder();
   }
 
+  @Test public void testEnumerate_empty() {
+    assertKeyValues(BiStream.enumerate(ImmutableList.of())).isEmpty();
+  }
+
+  @Test public void testEnumerate_List() {
+    assertKeyValues(BiStream.enumerate(ImmutableList.of("zero", "one", "two")))
+        .containsExactly(0L, "zero", 1L, "one", 2L, "two");
+  }
+
   @Test public void testToBiStreamFromSplit() {
     assertThat(Stream.of("name=joe", "age=10")
             .map(Substring.first('=')::split)
