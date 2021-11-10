@@ -36,6 +36,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -422,6 +423,26 @@ public final class MoreStreams {
    */
   public static Stream<Integer> indexesFrom(int firstIndex) {
     return IntStream.iterate(firstIndex, i -> i + 1).boxed();
+  }
+
+  /**
+   * Returns an infinite index stream starting from {@code firstIndex}. This can then be used to
+   * {@link BiStream#zip zip} with another stream to provide indexing, such as:
+   *
+   * <pre>
+   *   BiStream.zip(indexesFrom(0), values).toMap();
+   * </pre>
+   *
+   * <p>To get a finite stream, use {@code indexesFrom(0).limit(size)}.
+   *
+   * <p>For small indexes (up to 127), {@code Long} instances are pre-cached by JVM so no boxing
+   * happens; for larger indexes, every index incurs some boxing cost. If the cost is of concern,
+   * prefer to use {@link LongStream#iterate} directly.
+   *
+   * @since 5.7
+   */
+  public static Stream<Long> indexesFrom(long firstIndex) {
+    return LongStream.iterate(firstIndex, i -> i + 1).boxed();
   }
 
   /**
