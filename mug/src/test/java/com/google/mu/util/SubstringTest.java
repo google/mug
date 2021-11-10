@@ -92,7 +92,7 @@ public class SubstringTest {
 
   @Test
   public void prefix_subSequence() {
-    assertThat(prefix("foo").subSequence(1, 3)).isEqualTo(prefix("oo"));
+    assertThat(prefix("foo").subSequence(1, 3)).isEqualTo("oo");
   }
 
   @Test
@@ -419,7 +419,7 @@ public class SubstringTest {
 
   @Test
   public void suffix_subSequence() {
-    assertThat(suffix("foo").subSequence(1, 3)).isEqualTo(suffix("oo"));
+    assertThat(suffix("foo").subSequence(1, 3)).isEqualTo("oo");
   }
 
   @Test

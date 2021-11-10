@@ -1011,8 +1011,8 @@ public final class Substring {
     }
 
     /** @since 5.7 */
-    @Override public Prefix subSequence(int start, int end) {
-      return new Prefix(prefix.substring(start, end));
+    @Override public String subSequence(int start, int end) {
+      return prefix.substring(start, end);
     }
 
     /**
@@ -1150,8 +1150,8 @@ public final class Substring {
     }
 
     /** @since 5.7 */
-    @Override public Suffix subSequence(int start, int end) {
-      return new Suffix(suffix.substring(start, end));
+    @Override public String subSequence(int start, int end) {
+      return suffix.substring(start, end);
     }
 
     /**
