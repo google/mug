@@ -35,4 +35,20 @@ public class JoinerTest {
                 .collect(Joiner.on(", ").between('{', '}')))
         .isEqualTo("{1:one, 2:two}");
   }
+
+  @Test public void nestedBetween_joinTwoObjects() {
+    assertThat(
+            BiStream.of(1, "one", 2, "two")
+                .mapToObj(Joiner.on(", ").between('(', ')').between("[", "]")::join)
+                .collect(Joiner.on(", ")))
+        .isEqualTo("[(1, one)], [(2, two)]");
+  }
+
+  @Test public void nestedBetween_joinStreamOfObjects() {
+    assertThat(
+            BiStream.of(1, "one", 2, "two")
+                .mapToObj(Joiner.on(':')::join)
+                .collect(Joiner.on(", ").between("[", "]").between('{', '}')))
+        .isEqualTo("{[1:one, 2:two]}");
+  }
 }
