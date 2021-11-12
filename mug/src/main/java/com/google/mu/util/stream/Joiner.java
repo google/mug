@@ -2,6 +2,7 @@ package com.google.mu.util.stream;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 import java.util.StringJoiner;
@@ -82,6 +83,18 @@ public abstract class Joiner implements Collector<Object, StringJoiner, String> 
 
   /** Joins {@code l} and {@code r} together. */
   public abstract String join(Object l, Object r);
+
+  /**
+   * Joins elements from {@code collection}.
+   *
+   * <p>{@code joiner.join(list)} is equivalent to {@code list.stream().collect(joiner)}.
+   *
+   * @since 5.7
+   */
+  public final String join(Collection<?> collection) {
+    return collection.stream().collect(this);
+  }
+
 
   /** Returns an instance that wraps the join result between {@code before} and {@code after}. */
   public final Joiner between(char before, char after) {

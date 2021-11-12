@@ -144,7 +144,7 @@ public final class BiStreamFunctionEvaluationTest extends TestCase {
   @Test public void testMapKeysWithBiFunction_bothFunctionsCalledOnce() {
     assertKeyValues(
             biStream(Stream.of(1, 2, 3), Object::toString, i -> i * 10)
-                .mapKeys(Joiner.on('.')::join))
+                .mapKeys((k, v) -> Joiner.on('.').join(k, v)))
         .containsExactly("1.10", 10, "2.20", 20, "3.30", 30)
         .inOrder();
     assertThat(evaluatedKeys).containsExactly(1, 2, 3).inOrder();
@@ -154,7 +154,7 @@ public final class BiStreamFunctionEvaluationTest extends TestCase {
   @Test public void testMapValuesWithBiFunction_bothFunctionsCalledOnce() {
     assertKeyValues(
             biStream(Stream.of(1, 2, 3), Object::toString, i -> i * 10)
-                .mapValues(Joiner.on('.')::join))
+                .mapValues((k, v) -> Joiner.on('.').join(k, v)))
         .containsExactly("1", "1.10", "2", "2.20", "3", "3.30")
         .inOrder();
     assertThat(evaluatedKeys).containsExactly(1, 2, 3).inOrder();
