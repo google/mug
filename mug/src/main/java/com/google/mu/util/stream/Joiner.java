@@ -101,8 +101,8 @@ public final class Joiner implements Collector<Object, StringJoiner, String> {
   /**
    * Returns an instance that wraps the join result between {@code before} and {@code after}.
    *
-   * <p>For example both {@code Joiner.on(',').between('[', ']').join([1, 2])} and
-   * {@code Joiner.on(',').between('[', ']').join(1, 2)} result in {@code "[1,2]"}.
+   * <p>For example both {@code Joiner.on(',').between('[', ']').join(List.of(1, 2))} and
+   * {@code Joiner.on(',').between('[', ']').join(1, 2)} return {@code "[1,2]"}.
    */
   public Joiner between(char before, char after) {
     return new Joiner(before + prefix, delimiter, suffix + after);

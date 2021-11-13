@@ -30,6 +30,7 @@ import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.EqualsTester;
 import com.google.common.testing.NullPointerTester;
 import com.google.mu.util.Substring.Match;
+import com.google.mu.util.stream.Joiner;
 
 @RunWith(JUnit4.class)
 public class SubstringTest {
@@ -2140,6 +2141,30 @@ public class SubstringTest {
             Substring.between(first("<"), first(">")).repeatedly().match(">foo<bar>h<baz>")
                 .map(Object::toString))
         .containsExactly("bar", "baz");
+  }
+
+  @Test
+  public void then_toString() {
+    assertThat(first("(").then(first("<")).toString())
+        .isEqualTo("first('(').then(first('<'))");
+  }
+
+  @Test
+  public void then_match() {
+    assertThat(first("GET").then(prefix(" ")).split("GET http").map(Joiner.on(':')::join))
+        .hasValue("GET:http");
+  }
+
+  @Test
+  public void then_firstPatternDoesNotMatch() {
+    assertThat(first("GET").then(prefix(" ")).split("GE http").map(Joiner.on(':')::join))
+        .isEmpty();
+  }
+
+  @Test
+  public void then_secondPatternDoesNotMatch() {
+    assertThat(first("GET").then(prefix(" ")).split("GET: http").map(Joiner.on('-')::join))
+        .isEmpty();
   }
 
   @Test
