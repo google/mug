@@ -720,7 +720,6 @@ public final class Substring {
      * String toSplit = " x -> y, z-> a, x -> t ";
      * ImmutableListMultimap<String, String> result = first(',')
      *     .delimit(toSplit)
-     *     .map(Match::toString)
      *     .map(first("->")::splitThenTrim)
      *     .collect(concatenating(BiOptional::stream))  // Or use BiStream.concat()
      *     .collect(ImmutableListMultimap::toImmutableListMultimap);
