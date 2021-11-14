@@ -28,7 +28,7 @@ Add the following to pom.xml:
 
 Add to build.gradle:
 ```
-  implementation 'com.google.mug:mug-guava:5.6'
+  implementation 'com.google.mug:mug-guava:5.7'
 ```
 
 
