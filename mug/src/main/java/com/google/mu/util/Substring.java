@@ -649,6 +649,31 @@ public final class Substring {
     }
 
     /**
+     * Similar to regex lookahead, returns a pattern that matches the {@code following}
+     * pattern after it has matched this pattern. For example {@code first('/').then(first('/'))}
+     * finds the second '/' character.
+     *
+     * @since 5.7
+     */
+    public final Pattern then(Pattern following) {
+      requireNonNull(following);
+      Pattern base = this;
+      return new Pattern() {
+        @Override Match match(String input, int fromIndex) {
+          Match preceding = base.match(input, fromIndex);
+          if (preceding == null) {
+            return null;
+          }
+          return following.match(input, preceding.endIndex);
+        }
+
+        @Override public String toString() {
+          return base + ".then(" + following + ")";
+        }
+      };
+    }
+
+    /**
      * Splits {@code string} into two parts that are separated by this separator pattern. For
      * example:
      *
@@ -695,7 +720,6 @@ public final class Substring {
      * String toSplit = " x -> y, z-> a, x -> t ";
      * ImmutableListMultimap<String, String> result = first(',')
      *     .delimit(toSplit)
-     *     .map(Match::toString)
      *     .map(first("->")::splitThenTrim)
      *     .collect(concatenating(BiOptional::stream))  // Or use BiStream.concat()
      *     .collect(ImmutableListMultimap::toImmutableListMultimap);
