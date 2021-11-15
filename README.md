@@ -20,7 +20,7 @@ Add the following to pom.xml:
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug</artifactId>
-    <version>5.6</version>
+    <version>5.7</version>
   </dependency>
 ```
 
@@ -28,7 +28,7 @@ Add the following to pom.xml:
 
 Add to build.gradle:
 ```
-  implementation 'com.google.mug:mug-guava:5.6'
+  implementation 'com.google.mug:mug-guava:5.7'
 ```
 
 
