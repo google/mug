@@ -683,7 +683,7 @@ public final class Substring {
      *
      * <p>If you need to trim the key-value pairs, use {@link #splitThenTrim}.
      *
-     * <p>To split a string into multiple substrings delimited by a delimiter, use {@link #delimit}.
+     * <p>To split a string into multiple substrings delimited by a delimiter, use {@link #repeatedly}.
      *
      * @throws IllegalArgumentException if this separator pattern isn't found in {@code string}.
      * @since 5.0
@@ -717,15 +717,20 @@ public final class Substring {
      * multimaps or other types:
      *
      * <pre>{@code
+     * import static com.google.mu.util.stream.MoreCollectors.mapping;
+     *
      * String toSplit = " x -> y, z-> a, x -> t ";
      * ImmutableListMultimap<String, String> result = first(',')
-     *     .delimit(toSplit)
+     *     .repeatedly()
+     *     .split(toSplit)
      *     .map(first("->")::splitThenTrim)
-     *     .collect(concatenating(BiOptional::stream))  // Or use BiStream.concat()
-     *     .collect(ImmutableListMultimap::toImmutableListMultimap);
+     *     .collect(
+     *         mapping(
+     *             kv -> kv.orElseThrow(...),
+     *             ImmutableListMultimap::toImmutableListMultimap));
      * }</pre>
      *
-     * <p>To split a string into multiple substrings delimited by a delimiter, use {@link #delimit}.
+     * <p>To split a string into multiple substrings delimited by a delimiter, use {@link #repeatedly}.
      *
      * @throws IllegalArgumentException if this separator pattern isn't found in {@code string}.
      * @since 5.0
