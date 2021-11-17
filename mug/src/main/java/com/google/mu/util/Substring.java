@@ -837,6 +837,20 @@ public final class Substring {
      */
     public abstract Stream<Match> match(String input);
 
+    /**
+     * Applies this pattern against {@code string} and returns a stream of each iteration.
+     *
+     * <p>Iterations happen in strict character encounter order, from the beginning of the input
+     * string to the end, with no overlapping. When a match is found, the next iteration is
+     * guaranteed to be in the substring after the current match. For example, {@code
+     * between(first('/'), first('/')).repeatedly().from("/foo/bar/baz/")} will return {@code
+     * ["foo", "bar", "baz"]}. On the other hand, {@code
+     * after(last('/')).repeatedly().from("/foo/bar")} will only return "bar".
+     *
+     * <p>Pattern matching is lazy and doesn't start until the returned stream is consumed.
+     *
+     * <p>An empty stream is returned if this pattern has no matches in the {@code input} string.
+     */
     public Stream<String> from(CharSequence input) {
       return match(input.toString()).map(Match::toString);
     }
