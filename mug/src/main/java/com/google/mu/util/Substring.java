@@ -161,29 +161,6 @@ public final class Substring {
       };
 
   /**
-   * {@code Pattern} that matches the empty substring at the end of the input string. Typically used
-   * to represent an optional delimiter. For example, the following pattern matches the text between
-   * the first occurrence of the string "id=" and the end of that line, or the end of the string:
-   *
-   * <pre>
-   * static final Substring.Pattern ID =
-   *     Substring.between(substring("id="), substring("\n").or(END));
-   * </pre>
-   *
-   * @since 5.8
-   */
-  public static final Pattern NON_EMPTY =
-      new Pattern() {
-        @Override Match match(String str, int fromIndex) {
-          return fromIndex >= str.length() ? null : new Match(str, fromIndex, str.length() - fromIndex);
-        }
-
-        @Override public String toString() {
-          return "NON_EMPTY";
-        }
-      };
-
-  /**
    * Returns a {@code Prefix} pattern that matches strings starting with {@code prefix}.
    *
    * <p>Typically if you have a {@code String} constant representing a prefix, consider to declare a
@@ -579,26 +556,6 @@ public final class Substring {
      */
     public final Optional<String> from(CharSequence string) {
       return Optional.ofNullable(Objects.toString(match(string.toString()), null));
-    }
-
-    /**
-     * Matches this pattern against {@code string}, returning the matched substring if successful,
-     * or {@code empty()} otherwise. {@code pattern.from(str)} is equivalent to {@code
-     * pattern.in(str).map(Object::toString)}.
-     *
-     * <p>This is useful if you only need the matched substring itself. Use {@link #in} if you need
-     * to call {@link Match} methods, like {@link Match#remove} or {@link Match#before}.
-     *
-     * @since 5.8
-     */
-    public final Optional<String> findFrom(CharSequence... strings) {
-      for (CharSequence string : strings) {
-        Optional<String> found = from(string);
-        if (found.isPresent()) {
-          return found;
-        }
-      }
-      return Optional.empty();
     }
 
     /** @deprecated Use {@code repeatedly().match(input)} instead. */
