@@ -58,6 +58,15 @@ import java.util.function.BiPredicate;
 @FunctionalInterface
 public interface Both<A, B> {
   /**
+   * Returns an instance with both {@code a} and {@code b}.
+   *
+   * @since 5.8
+   */
+  public static <A, B> Both<A, B> of(A a, B b) {
+    return new BiOptional.Present<>(a, b);
+  }
+
+  /**
    * Applies the {@code mapper} function with this pair of two things as arguments.
    *
    * @throws NullPointerException if {@code mapper} is null
