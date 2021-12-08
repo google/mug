@@ -600,14 +600,14 @@ Like:
 pictures.parallel().forEach(this::upload);
 ```
 
-Some major shopping-list differences:
+Reasons not to:
 * Parallelizer works with any existing `ExecutorService`.
 * Parallelizer supports an in-flight tasks limit.
 * Thread **unsafe** input streams or `Iterator`s are okay.
 * Upon failure, all pending tasks are canceled.
 * Exceptions from worker threads are wrapped so that stack trace isn't misleading.
 
-But fundamentally:
+Fundamentally:
 * Parallel streams are for CPU-bound tasks. JDK has built-in magic to optimally use the available cores.
 * Parallelizer is for IO-bound tasks.
 
@@ -625,7 +625,7 @@ try {
 }
 ```
 
-Again, use case is different:
+Reasons not to:
 1. The thread pool queues all pending tasks. If the input stream is too large to fit in memory, you'll get an `OutOfMemoryError`.
 2. Exceptions (including `NullPointerException`, `OutOfMemoryError`) are silently swallowed (but may print stack trace). To propagate the exceptions, the `Future` objects need to be stored in a list and then `Future#get()` needs to be called on every future object after all tasks have been submitted to the executor.
 3. Tasks submitted to an executor are independent. One task failing doesn't automatically terminate the pipeline.
