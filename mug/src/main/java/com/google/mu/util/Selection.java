@@ -41,7 +41,7 @@ import com.google.mu.function.CheckedFunction;
  * handling like:
  *
  * <pre>{@code
- *   Set<Sting> choices = getChoices();
+ *   Set<String> choices = getChoices();
  *   if (choices.isEmpty() || choices.contains("foo")) {
  *     // foo is selected.
  *   }
@@ -50,7 +50,7 @@ import com.google.mu.function.CheckedFunction;
  * Use {@code Selection} so your code is intuitive and hard to get wrong:
  *
  * <pre>{@code
- *   Selection<Sting> choices = getChoices();
+ *   Selection<String> choices = getChoices();
  *   if (choices.has("foo")) {
  *     // foo is selected.
  *   }
