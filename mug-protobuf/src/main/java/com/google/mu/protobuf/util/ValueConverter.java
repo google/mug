@@ -34,13 +34,30 @@ import com.google.protobuf.Value;
  * ValueConverter customConverter = new ValueConverter() {
  *   protected Value convert(Object obj) {
  *     if (obj instanceof User) {  // custom logic
- *       return super.convertToValue(((User) obj).getId());
+ *       return convert(((User) obj).getId());
  *     }
  *     return super.convert(obj);  // else delegate to default implementation
  *   }
  * };
  * Struct userStruct = BiStream.of("user1", user1).collect(customConverter::toStruct);
  * }</pre>
+ *
+ * <p>Or, if you need to convert a custom collection type to {@code ListValue}, you can
+ * override {@link #convertRecursively}:
+ *
+ * <pre>{@code
+ * ValueConverter customConverter = new ValueConverter() {
+ *   public Value convertRecursively(Object obj) {
+ *     if (obj instanceof Ledger) {  // custom logic
+ *       return convertRecursively(((Ledger) obj).getTransactionMap());
+ *     }
+ *     return super.convertRecursively(obj);  // else delegate to default implementation
+ *   }
+ * };
+ * }</pre>
+ *
+ * <p>The custom implementation can override both methods too to customize the leaf-level
+ * and recursive conversion.
  *
  * @since 5.8
  */
@@ -50,37 +67,33 @@ public class ValueConverter {
   private static final Value FALSE_VALUE = Value.newBuilder().setBoolValue(false).build();
   private static final Value TRUE_VALUE = Value.newBuilder().setBoolValue(true).build();
 
-  /** Converts {@code object} to {@code Value}. */
-  public final Value toValue(Object object) {
-    return checkNotNull(
-        convertRecursively(object), "Cannot convert to null. Consider converting to NullValue instead.");
-  }
-
   /**
-   * Returns a {@link Collector} that converts and accumulates the input objects into a {@link
-   * ListValue}.
-   */
-  public final Collector<Object, ListValue.Builder, ListValue> toListValue() {
-    return Collector.of(
-        ListValue::newBuilder,
-        (builder, v) -> builder.addValues(toValue(v)),
-        (a, b) -> a.addAllValues(b.getValuesList()),
-        ListValue.Builder::build);
-  }
-
-  /**
-   * Returns a {@link Collector} that accumulates elements into a {@link Struct} whose keys and
-   * values are the result of applying the provided mapping functions to the input elements.
+   * If {@code object} is of type {@link Iterable}, {@link Map}, {@link Multimap}
+   * or {@link Table}, apply this converter recursively and wrap the converted elements
+   * into {@code ListValue} or {@code Struct}. Otherwise delegates to {@link #convert}.
    *
-   * <p>Duplicate keys (according to {@link Object#equals(Object)}) are not allowed.
-   *
-   * <p>Null keys are not allowed.
+   * <p>Subclasses can override this method to convert custom recursive types.
+   * Must not return null.
    */
-  public final <T> Collector<T, ?, Struct> toStruct(
-      Function<? super T, ? extends CharSequence> keyFunction, Function<? super T, ?> valueFunction) {
-    return collectingAndThen(
-        toImmutableMap(keyFunction.andThen(CharSequence::toString), valueFunction.andThen(this::toValue)),
-        fields -> Struct.newBuilder().putAllFields(fields).build());
+  public Value convertRecursively(Object object) {
+    if (object instanceof Optional) {
+      return convertRecursivelyNotNull(((Optional<?>) object).orElse(null));
+    }
+    if (object instanceof Iterable) {
+      return Value.newBuilder()
+          .setListValue(stream((Iterable<?>) object).collect(toListValue()))
+          .build();
+    }
+    if (object instanceof Map) {
+      return toStructValue((Map<?, ?>) object);
+    }
+    if (object instanceof Multimap) {
+      return toStructValue(((Multimap<?, ?>) object).asMap());
+    }
+    if (object instanceof Table) {
+      return toStructValue(((Table<?, ?, ?>) object).rowMap());
+    }
+    return convert(object);
   }
 
   /** Converts {@code object} to {@code Value}. Must not return null. */
@@ -110,32 +123,37 @@ public class ValueConverter {
   }
 
   /**
-   * If {@code object} is of type {@link Iterable}, {@link Map}, {@link Multimap}
-   * or {@link Table}, apply this converter recursively and wrap the converted elements
-   * into {@code ListValue} or {@code Struct}. Otherwise delegates to {@link #convert}.
-   *
-   * <p>Subclasses can override this method to convert custom recursive types.
-   * Must not return null.
+   * Returns a {@link Collector} that converts and accumulates the input objects into a {@link
+   * ListValue}.
    */
-  protected Value convertRecursively(Object object) {
-    if (object instanceof Optional) {
-      return toValue(((Optional<?>) object).orElse(null));
-    }
-    if (object instanceof Iterable) {
-      return Value.newBuilder()
-          .setListValue(stream((Iterable<?>) object).collect(toListValue()))
-          .build();
-    }
-    if (object instanceof Map) {
-      return toStructValue((Map<?, ?>) object);
-    }
-    if (object instanceof Multimap) {
-      return toStructValue(((Multimap<?, ?>) object).asMap());
-    }
-    if (object instanceof Table) {
-      return toStructValue(((Table<?, ?, ?>) object).rowMap());
-    }
-    return convert(object);
+  public final Collector<Object, ListValue.Builder, ListValue> toListValue() {
+    return Collector.of(
+        ListValue::newBuilder,
+        (builder, v) -> builder.addValues(convertRecursivelyNotNull(v)),
+        (a, b) -> a.addAllValues(b.getValuesList()),
+        ListValue.Builder::build);
+  }
+
+  /**
+   * Returns a {@link Collector} that accumulates elements into a {@link Struct} whose keys and
+   * values are the result of applying the provided mapping functions to the input elements.
+   *
+   * <p>Duplicate keys (according to {@link Object#equals(Object)}) are not allowed.
+   *
+   * <p>Null keys are not allowed.
+   */
+  public final <T> Collector<T, ?, Struct> toStruct(
+      Function<? super T, ? extends CharSequence> keyFunction, Function<? super T, ?> valueFunction) {
+    return collectingAndThen(
+        toImmutableMap(
+            keyFunction.andThen(CharSequence::toString),
+            valueFunction.andThen(this::convertRecursivelyNotNull)),
+        fields -> Struct.newBuilder().putAllFields(fields).build());
+  }
+
+  private Value convertRecursivelyNotNull(Object object) {
+    return checkNotNull(
+        convertRecursively(object), "Cannot convert to null. Consider converting to NullValue instead.");
   }
 
   private Value toStructValue(Map<?, ?> map) {
