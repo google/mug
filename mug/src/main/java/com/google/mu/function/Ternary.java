@@ -14,8 +14,21 @@
  *****************************************************************************/
 package com.google.mu.function;
 
+import java.util.List;
+
 /** A 3-arg function of the signature of {@code (T, T, T) -> R}. */
 @FunctionalInterface
 public interface Ternary<T, R> {
   R apply(T a, T b, T c);
+
+
+  /**
+   * A function that accepts 3 or more elements.
+   *
+   * @since 5.8
+   */
+  @FunctionalInterface
+  interface OrMore<T, R> {
+    R apply(T a, T b, T c, List<? extends T> more);
+  }
 }

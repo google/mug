@@ -1,7 +1,6 @@
 package com.google.mu.util.stream;
 
 import java.util.List;
-import java.util.stream.Collector;
 
 /**
  * A collector that expects a fixed number of input elements.
@@ -11,11 +10,10 @@ import java.util.stream.Collector;
  *
  * @since 5.5
  */
-public abstract class FixedSizeCollector<T, A, R> implements Collector<T, A, R> {
-  boolean appliesTo(List<T> list) {
+public abstract class FixedSizeCollector<T, A, R> extends Unpacker<T, A, R> {
+  @Override boolean appliesTo(List<? extends T> list) {
     return list.size() == arity();
   }
 
   abstract int arity();
-  abstract R reduce(List<? extends T> list);
 }

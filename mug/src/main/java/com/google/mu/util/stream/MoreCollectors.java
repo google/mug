@@ -32,6 +32,7 @@ import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
+import com.google.mu.function.Binary;
 import com.google.mu.function.Quarternary;
 import com.google.mu.function.Quinary;
 import com.google.mu.function.Senary;
@@ -119,6 +120,256 @@ public final class MoreCollectors {
       arranger.accept(list);
       return Collections.unmodifiableList(list);
     });
+  }
+
+  /**
+   * Returns a collector that collects the only one element from the input and transforms it
+   * using the {@code mapper} function. If there are fewer or more elements in the input,
+   * IllegalArgumentExceptioin is thrown.
+   *
+   * <p>Can be used together with the other {@code only()} {@link Unpacker}
+   * as one of the multiple cases passed to {@link MoreCollections#unpack}.
+   *
+   * @since 5.8
+   */
+  public static <T, R> Unpacker<T, ?, R> only(
+      Function<? super T, ? extends R> mapper) {
+    return onlyElement(mapper);
+  }
+
+  /**
+   * Returns a collector that collects the only 2 elements from the input and transforms them
+   * using the {@code mapper} function. If there are fewer or more elements in the input,
+   * IllegalArgumentExceptioin is thrown.
+   *
+   * <p>Can be used together with the other {@code only()} {@link Unpacker}
+   * as one of the multiple cases passed to {@link MoreCollections#unpack}.
+   *
+   * @since 5.8
+   */
+  public static <T, R> Unpacker<T, ?, R> only(
+      Binary<? super T, ? extends R> mapper) {
+    return onlyElements(mapper);
+  }
+
+  /**
+   * Returns a collector that collects the only 3 elements from the input and transforms them
+   * using the {@code mapper} function. If there are fewer or more elements in the input,
+   * IllegalArgumentExceptioin is thrown.
+   *
+   * <p>Can be used together with the other {@code only()} {@link Unpacker}
+   * as one of the multiple cases passed to {@link MoreCollections#unpack}.
+   *
+   * @since 5.8
+   */
+  public static <T, R> Unpacker<T, ?, R> only(
+      Ternary<? super T, ? extends R> mapper) {
+    return onlyElements(mapper);
+  }
+
+  /**
+   * Returns a collector that collects the only 4 elements from the input and transforms them
+   * using the {@code mapper} function. If there are fewer or more elements in the input,
+   * IllegalArgumentExceptioin is thrown.
+   *
+   * <p>Can be used together with the other {@code only()} {@link Unpacker}
+   * as one of the multiple cases passed to {@link MoreCollections#unpack}.
+   *
+   * @since 5.8
+   */
+  public static <T, R> Unpacker<T, ?, R> only(
+      Quarternary<? super T, ? extends R> mapper) {
+    return onlyElements(mapper);
+  }
+
+  /**
+   * Returns a collector that collects the only 5 elements from the input and transforms them
+   * using the {@code mapper} function. If there are fewer or more elements in the input,
+   * IllegalArgumentExceptioin is thrown.
+   *
+   * <p>Can be used together with the other {@code only()} {@link Unpacker}
+   * as one of the multiple cases passed to {@link MoreCollections#unpack}.
+   *
+   * @since 5.8
+   */
+  public static <T, R> Unpacker<T, ?, R> only(
+      Quinary<? super T, ? extends R> mapper) {
+    return onlyElements(mapper);
+  }
+
+  /**
+   * Returns a collector that collects the only 6 elements from the input and transforms them
+   * using the {@code mapper} function. If there are fewer or more elements in the input,
+   * IllegalArgumentExceptioin is thrown.
+   *
+   * <p>Can be used together with the other {@code only()} {@link Unpacker}
+   * as one of the multiple cases passed to {@link MoreCollections#unpack}.
+   *
+   * @since 5.8
+   */
+  public static <T, R> Unpacker<T, ?, R> only(
+      Senary<? super T, ? extends R> mapper) {
+    return onlyElements(mapper);
+  }
+
+  /**
+   * Returns a collector that collects the inputs into a List and transforms the list (unmodifiably) using
+   * {@code mapper}.
+   *
+   * <p>Can be used as the default case, together with the other {@code only()} or {@code having()}
+   * {@link Unpacker}.
+   *
+   * @since 5.8
+   */
+  public static <T, R> Unpacker<T, ?, R> having(
+      Function<? super List<T>, ? extends R> mapper) {
+    requireNonNull(mapper);
+    return new MinSizeCollector<T, R>() {
+      @Override R reduce(List<? extends T> list) {
+        return mapper.apply(tail(list));
+      }
+      @Override int arity() {
+        return 0;
+      }
+    };
+  }
+
+  /**
+   * Returns a collector that unpacks the first element from the input and transforms it
+   * together with the tail list using the {@code mapper} function. If there are fewer elements
+   * in the input, IllegalArgumentExceptioin is thrown.
+   *
+   * <p>Can be used together with the other {@code only()} {@link Unpacker}
+   * as one of the multiple cases passed to {@link MoreCollections#unpack}.
+   *
+   * @since 5.8
+   */
+  public static <T, R> Unpacker<T, ?, R> having(
+      BiFunction<? super T, ? super List<T>, ? extends R> mapper) {
+    requireNonNull(mapper);
+    return new MinSizeCollector<T, R>() {
+      @Override R reduce(List<? extends T> list) {
+        return mapper.apply(list.get(0), tail(list));
+      }
+      @Override int arity() {
+        return 1;
+      }
+    };
+  }
+
+  /**
+   * Returns a collector that unpacks the first 2 elements from the input and transforms them
+   * together with the tail list using the {@code mapper} function. If there are fewer elements
+   * in the input, IllegalArgumentExceptioin is thrown.
+   *
+   * <p>Can be used together with the other {@code only()} {@link Unpacker}
+   * as one of the multiple cases passed to {@link MoreCollections#unpack}.
+   *
+   * @since 5.8
+   */
+  public static <T, R> Unpacker<T, ?, R> having(
+      Binary.OrMore<? super T, ? extends R> mapper) {
+    requireNonNull(mapper);
+    return new MinSizeCollector<T, R>() {
+      @Override R reduce(List<? extends T> list) {
+        return mapper.apply(list.get(0), list.get(1), tail(list));
+      }
+      @Override int arity() {
+        return 2;
+      }
+    };
+  }
+
+  /**
+   * Returns a collector that unpacks the first 3 elements from the input and transforms them
+   * together with the tail list using the {@code mapper} function. If there are fewer elements
+   * in the input, IllegalArgumentExceptioin is thrown.
+   *
+   * <p>Can be used together with the other {@code only()} {@link Unpacker}
+   * as one of the multiple cases passed to {@link MoreCollections#unpack}.
+   *
+   * @since 5.8
+   */
+  public static <T, R> Unpacker<T, ?, R> having(
+      Ternary.OrMore<? super T, ? extends R> mapper) {
+    requireNonNull(mapper);
+    return new MinSizeCollector<T, R>() {
+      @Override R reduce(List<? extends T> list) {
+        return mapper.apply(list.get(0), list.get(1), list.get(2), tail(list));
+      }
+      @Override int arity() {
+        return 3;
+      }
+    };
+  }
+
+  /**
+   * Returns a collector that unpacks the first 4 elements from the input and transforms them
+   * together with the tail list using the {@code mapper} function. If there are fewer elements
+   * in the input, IllegalArgumentExceptioin is thrown.
+   *
+   * <p>Can be used together with the other {@code only()} {@link Unpacker}
+   * as one of the multiple cases passed to {@link MoreCollections#unpack}.
+   *
+   * @since 5.8
+   */
+  public static <T, R> Unpacker<T, ?, R> having(
+      Quarternary.OrMore<? super T, ? extends R> mapper) {
+    requireNonNull(mapper);
+    return new MinSizeCollector<T, R>() {
+      @Override R reduce(List<? extends T> list) {
+        return mapper.apply(list.get(0), list.get(1), list.get(2), list.get(3), tail(list));
+      }
+      @Override int arity() {
+        return 4;
+      }
+    };
+  }
+
+  /**
+   * Returns a collector that unpacks the first 5 elements from the input and transforms them
+   * together with the tail list using the {@code mapper} function. If there are fewer elements
+   * in the input, IllegalArgumentExceptioin is thrown.
+   *
+   * <p>Can be used together with the other {@code only()} {@link Unpacker}
+   * as one of the multiple cases passed to {@link MoreCollections#unpack}.
+   *
+   * @since 5.8
+   */
+  public static <T, R> Unpacker<T, ?, R> having(
+      Quinary.OrMore<? super T, ? extends R> mapper) {
+    requireNonNull(mapper);
+    return new MinSizeCollector<T, R>() {
+      @Override R reduce(List<? extends T> list) {
+        return mapper.apply(list.get(0), list.get(1), list.get(2), list.get(3), list.get(4), tail(list));
+      }
+      @Override int arity() {
+        return 5;
+      }
+    };
+  }
+
+  /**
+   * Returns a collector that unpacks the first 6 elements from the input and transforms them
+   * together with the tail list using the {@code mapper} function. If there are fewer elements
+   * in the input, IllegalArgumentExceptioin is thrown.
+   *
+   * <p>Can be used together with the other {@code only()} {@link Unpacker}
+   * as one of the multiple cases passed to {@link MoreCollections#unpack}.
+   *
+   * @since 5.8
+   */
+  public static <T, R> Unpacker<T, ?, R> having(
+      Senary.OrMore<? super T, ? extends R> mapper) {
+    requireNonNull(mapper);
+    return new MinSizeCollector<T, R>() {
+      @Override R reduce(List<? extends T> list) {
+        return mapper.apply(list.get(0), list.get(1), list.get(2), list.get(3), list.get(4), list.get(5), tail(list));
+      }
+      @Override int arity() {
+        return 6;
+      }
+    };
   }
 
   /**

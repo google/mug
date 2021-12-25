@@ -14,7 +14,19 @@
  *****************************************************************************/
 package com.google.mu.function;
 
+import java.util.List;
+
 /** A 4-arg function of the signature of {@code (T, T, T, T) -> R}. */
 public interface Quarternary<T, R> {
   R apply(T a, T b, T c, T d);
+
+  /**
+   * A function that accepts 4 or more elements.
+   *
+   * @since 5.8
+   */
+  @FunctionalInterface
+  interface OrMore<T, R> {
+    R apply(T a, T b, T c, T d, List<? extends T> more);
+  }
 }

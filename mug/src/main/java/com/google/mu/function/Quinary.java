@@ -14,7 +14,20 @@
  *****************************************************************************/
 package com.google.mu.function;
 
+import java.util.List;
+
 /** A 5-arg function of the signature of {@code (T, T, T, T, T) -> R}. */
 public interface Quinary<T, R> {
   R apply(T a, T b, T c, T d, T e);
+
+
+  /**
+   * A function that accepts 5 or more elements.
+   *
+   * @since 5.8
+   */
+  @FunctionalInterface
+  interface OrMore<T, R> {
+    R apply(T a, T b, T c, T d, T e, List<? extends T> more);
+  }
 }
