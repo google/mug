@@ -30,14 +30,16 @@ import com.google.protobuf.Value;
 /**
  * Additional utilities to help create {@link Struct} messages.
  *
- * <p>Since Struct fields map to dynamically typed values, throughout this class, struct values
- * of all supported types (numeric, string, boolean, null) and the {@code Collection}s, {@code Map}s,
- * {@code Table}s, {@code Optional}s thereof are automatically converted to their corresponding
- * {@link Value} wrappers. This allows users to more conveniently create {@link Struct} and {@link Value}.
+ * <p>Unlike {@link com.google.protobuf.util.Structs}, struct values of all supported types
+ * (numeric, string, boolean, null) and the {@code Collection}s, {@code Map}s, {@code Table}s,
+ * {@code Optional}s thereof are automatically converted to their corresponding {@link Value}
+ * wrappers using {{@link ValueConverter}. This allows users to conveniently create {@link Struct}
+ * whose fields are heterogeneous maps of dynamically typed values.
  *
- * <p>Occasionally, an application may need custom logic to convert a domain-specific type into {@code Value},
- * and then recursively into {@code ListValue} and/or {@code Struct}. This can be done by implementing
- * {@link ValueConverter}.
+ * <p>Occasionally, an application may need custom logic to convert a domain-specific type into
+ * {@code Value}, and then recursively into {@code ListValue} and/or {@code Struct}. This can be
+ * done by creating a subclass  of {@link ValueConverter} and overriding {@link ValueConverter#convert}
+ * and/or {@link ValueConverter#convertRecursively}.
  *
  * @since 5.8
  */
@@ -47,7 +49,7 @@ public final class MoreStructs {
 
   /** Returns a Struct with {@code key} and {@code value}. Null {@code value} is translated to {@link NullValue}. */
   public static Struct struct(CharSequence key, Object value) {
-    return Struct.newBuilder().putFields(key.toString(), CONVERTER.toValue(value)).build();
+    return Struct.newBuilder().putFields(key.toString(), CONVERTER.convertRecursively(value)).build();
   }
 
   /**
@@ -61,7 +63,7 @@ public final class MoreStructs {
    */
   public static Struct struct(CharSequence k1, Object v1, CharSequence k2, Object v2) {
     return struct(
-        ImmutableMap.of(k1.toString(), CONVERTER.toValue(v1), k2.toString(), CONVERTER.toValue(v2)));
+        ImmutableMap.of(k1.toString(), CONVERTER.convertRecursively(v1), k2.toString(), CONVERTER.convertRecursively(v2)));
   }
 
   /**
@@ -77,9 +79,9 @@ public final class MoreStructs {
       CharSequence k1, Object v1, CharSequence k2, Object v2, CharSequence k3, Object v3) {
     return struct(
         ImmutableMap.of(
-            k1.toString(), CONVERTER.toValue(v1),
-            k2.toString(), CONVERTER.toValue(v2),
-            k3.toString(), CONVERTER.toValue(v3)));
+            k1.toString(), CONVERTER.convertRecursively(v1),
+            k2.toString(), CONVERTER.convertRecursively(v2),
+            k3.toString(), CONVERTER.convertRecursively(v3)));
   }
 
   /**
@@ -98,10 +100,10 @@ public final class MoreStructs {
       CharSequence k4, Object v4) {
     return struct(
         ImmutableMap.of(
-            k1.toString(), CONVERTER.toValue(v1),
-            k2.toString(), CONVERTER.toValue(v2),
-            k3.toString(), CONVERTER.toValue(v3),
-            k4.toString(), CONVERTER.toValue(v4)));
+            k1.toString(), CONVERTER.convertRecursively(v1),
+            k2.toString(), CONVERTER.convertRecursively(v2),
+            k3.toString(), CONVERTER.convertRecursively(v3),
+            k4.toString(), CONVERTER.convertRecursively(v4)));
   }
 
   /**
@@ -121,11 +123,11 @@ public final class MoreStructs {
       CharSequence k5, Object v5) {
     return struct(
         ImmutableMap.of(
-            k1.toString(), CONVERTER.toValue(v1),
-            k2.toString(), CONVERTER.toValue(v2),
-            k3.toString(), CONVERTER.toValue(v3),
-            k4.toString(), CONVERTER.toValue(v4),
-            k5.toString(), CONVERTER.toValue(v5)));
+            k1.toString(), CONVERTER.convertRecursively(v1),
+            k2.toString(), CONVERTER.convertRecursively(v2),
+            k3.toString(), CONVERTER.convertRecursively(v3),
+            k4.toString(), CONVERTER.convertRecursively(v4),
+            k5.toString(), CONVERTER.convertRecursively(v5)));
   }
 
   /**
@@ -146,12 +148,12 @@ public final class MoreStructs {
       CharSequence k6, Object v6) {
     return struct(
         ImmutableMap.of(
-            k1.toString(), CONVERTER.toValue(v1),
-            k2.toString(), CONVERTER.toValue(v2),
-            k3.toString(), CONVERTER.toValue(v3),
-            k4.toString(), CONVERTER.toValue(v4),
-            k5.toString(), CONVERTER.toValue(v5),
-            k6.toString(), CONVERTER.toValue(v6)));
+            k1.toString(), CONVERTER.convertRecursively(v1),
+            k2.toString(), CONVERTER.convertRecursively(v2),
+            k3.toString(), CONVERTER.convertRecursively(v3),
+            k4.toString(), CONVERTER.convertRecursively(v4),
+            k5.toString(), CONVERTER.convertRecursively(v5),
+            k6.toString(), CONVERTER.convertRecursively(v6)));
   }
 
   /**
@@ -173,13 +175,13 @@ public final class MoreStructs {
       CharSequence k7, Object v7) {
     return struct(
         ImmutableMap.of(
-            k1.toString(), CONVERTER.toValue(v1),
-            k2.toString(), CONVERTER.toValue(v2),
-            k3.toString(), CONVERTER.toValue(v3),
-            k4.toString(), CONVERTER.toValue(v4),
-            k5.toString(), CONVERTER.toValue(v5),
-            k6.toString(), CONVERTER.toValue(v6),
-            k7.toString(), CONVERTER.toValue(v7)));
+            k1.toString(), CONVERTER.convertRecursively(v1),
+            k2.toString(), CONVERTER.convertRecursively(v2),
+            k3.toString(), CONVERTER.convertRecursively(v3),
+            k4.toString(), CONVERTER.convertRecursively(v4),
+            k5.toString(), CONVERTER.convertRecursively(v5),
+            k6.toString(), CONVERTER.convertRecursively(v6),
+            k7.toString(), CONVERTER.convertRecursively(v7)));
   }
 
   /**
@@ -202,14 +204,14 @@ public final class MoreStructs {
       CharSequence k8, Object v8) {
     return struct(
         ImmutableMap.of(
-            k1.toString(), CONVERTER.toValue(v1),
-            k2.toString(), CONVERTER.toValue(v2),
-            k3.toString(), CONVERTER.toValue(v3),
-            k4.toString(), CONVERTER.toValue(v4),
-            k5.toString(), CONVERTER.toValue(v5),
-            k6.toString(), CONVERTER.toValue(v6),
-            k7.toString(), CONVERTER.toValue(v7),
-            k8.toString(), CONVERTER.toValue(v8)));
+            k1.toString(), CONVERTER.convertRecursively(v1),
+            k2.toString(), CONVERTER.convertRecursively(v2),
+            k3.toString(), CONVERTER.convertRecursively(v3),
+            k4.toString(), CONVERTER.convertRecursively(v4),
+            k5.toString(), CONVERTER.convertRecursively(v5),
+            k6.toString(), CONVERTER.convertRecursively(v6),
+            k7.toString(), CONVERTER.convertRecursively(v7),
+            k8.toString(), CONVERTER.convertRecursively(v8)));
   }
 
   /**
@@ -233,15 +235,15 @@ public final class MoreStructs {
       CharSequence k9, Object v9) {
     return struct(
         ImmutableMap.of(
-            k1.toString(), CONVERTER.toValue(v1),
-            k2.toString(), CONVERTER.toValue(v2),
-            k3.toString(), CONVERTER.toValue(v3),
-            k4.toString(), CONVERTER.toValue(v4),
-            k5.toString(), CONVERTER.toValue(v5),
-            k6.toString(), CONVERTER.toValue(v6),
-            k7.toString(), CONVERTER.toValue(v7),
-            k8.toString(), CONVERTER.toValue(v8),
-            k9.toString(), CONVERTER.toValue(v9)));
+            k1.toString(), CONVERTER.convertRecursively(v1),
+            k2.toString(), CONVERTER.convertRecursively(v2),
+            k3.toString(), CONVERTER.convertRecursively(v3),
+            k4.toString(), CONVERTER.convertRecursively(v4),
+            k5.toString(), CONVERTER.convertRecursively(v5),
+            k6.toString(), CONVERTER.convertRecursively(v6),
+            k7.toString(), CONVERTER.convertRecursively(v7),
+            k8.toString(), CONVERTER.convertRecursively(v8),
+            k9.toString(), CONVERTER.convertRecursively(v9)));
   }
 
   /**
@@ -266,16 +268,16 @@ public final class MoreStructs {
       CharSequence k10, Object v10) {
     return struct(
         ImmutableMap.of(
-            k1.toString(), CONVERTER.toValue(v1),
-            k2.toString(), CONVERTER.toValue(v2),
-            k3.toString(), CONVERTER.toValue(v3),
-            k4.toString(), CONVERTER.toValue(v4),
-            k5.toString(), CONVERTER.toValue(v5),
-            k6.toString(), CONVERTER.toValue(v6),
-            k7.toString(), CONVERTER.toValue(v7),
-            k8.toString(), CONVERTER.toValue(v8),
-            k9.toString(), CONVERTER.toValue(v9),
-            k10.toString(), CONVERTER.toValue(v10)));
+            k1.toString(), CONVERTER.convertRecursively(v1),
+            k2.toString(), CONVERTER.convertRecursively(v2),
+            k3.toString(), CONVERTER.convertRecursively(v3),
+            k4.toString(), CONVERTER.convertRecursively(v4),
+            k5.toString(), CONVERTER.convertRecursively(v5),
+            k6.toString(), CONVERTER.convertRecursively(v6),
+            k7.toString(), CONVERTER.convertRecursively(v7),
+            k8.toString(), CONVERTER.convertRecursively(v8),
+            k9.toString(), CONVERTER.convertRecursively(v9),
+            k10.toString(), CONVERTER.convertRecursively(v10)));
   }
 
   /**
