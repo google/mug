@@ -33,7 +33,7 @@ import com.google.protobuf.Value;
  *
  * <pre>{@code
  * ValueConverter customConverter = new ValueConverter() {
- *   @Override protected Value convert(Object obj) {
+ *   protected Value convert(Object obj) {
  *     if (obj instanceof User) {  // custom logic
  *       return super.convertToValue(((User) obj).getId());
  *     }
