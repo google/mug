@@ -39,6 +39,11 @@ import com.google.protobuf.Value;
 /**
  * Additional utilities to help create {@link Struct} and {@link Value} messages.
  *
+ * <p>Since Struct fields map to dynamically typed values, throughout this class, struct values
+ * of all supported types (numeric, string, boolean, null) and the {@code Collection}s, {@code Map}s,
+ * {@code Table}s, {@code Optional}s thereof are automatically converted to their corresponding
+ * {@link Value} wrappers. This allows users to more conveniently create {@link Struct} and {@link Value}.
+ *
  * @since 5.8
  */
 @CheckReturnValue
@@ -335,7 +340,6 @@ public final class MoreStructs {
    *       <ul>
    *         <li>Iterable is wrapped as {@code ListValue};
    *         <li>Map is wrapped as {@code Struct};
-   *         <li>Multimap is wrapped as a {@code Struct} with string to {@code ListValue} mappings;
    *         <li>Table is wrapped as a {@code Struct} with string to {@code Struct} mappings;
    *       </ul>
    * </ul>
