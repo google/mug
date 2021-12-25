@@ -16,9 +16,7 @@ package com.google.mu.protobuf.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.Streams.stream;
-import static java.util.stream.Collectors.collectingAndThen;
 
 import java.util.Map;
 import java.util.Optional;
@@ -284,12 +282,14 @@ public final class MoreStructs {
 
   /** Turns {@code map} into Struct. */
   public static Struct struct(Map<? extends CharSequence, ?> map) {
-    return BiStream.from(map).collect(toStruct());
+    ValueConverter converter = MoreStructs::toValue;
+    return converter.struct(map);
   }
 
   /** Turns {@code table} into a nested Struct of Struct. */
   public static Struct nestedStruct(Table<? extends CharSequence, ? extends CharSequence, ?> table) {
-    return struct(table.rowMap());
+    ValueConverter converter = MoreStructs::toValue;
+    return converter.nestedStruct(table);
   }
 
   /**
@@ -302,9 +302,8 @@ public final class MoreStructs {
    */
   public static <T> Collector<T, ?, Struct> toStruct(
       Function<? super T, ? extends CharSequence> toKey, Function<? super T, ?> toValue) {
-    return collectingAndThen(
-        toImmutableMap(toKey.andThen(CharSequence::toString), toValue.andThen(MoreStructs::toValue)),
-        fields -> Struct.newBuilder().putAllFields(fields).build());
+    ValueConverter converter = MoreStructs::toValue;
+    return converter.toStruct(toKey, toValue);
   }
 
   /**
@@ -399,11 +398,8 @@ public final class MoreStructs {
    * ListValue}.
    */
   public static Collector<Object, ListValue.Builder, ListValue> toListValue() {
-    return Collector.of(
-        ListValue::newBuilder,
-        (builder, v) -> builder.addValues(toValue(v)),
-        (a, b) -> a.addAllValues(b.getValuesList()),
-        ListValue.Builder::build);
+    ValueConverter converter = MoreStructs::toValue;
+    return converter.toListValue();
   }
 
   private static String toStructKey(Object key) {
