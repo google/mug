@@ -112,10 +112,10 @@ public class ValueConverterTest {
 
   @Test
   public void toValue_fromNumber() {
-    assertThat(converter.convertRecursively((Object) 10L)).isEqualTo(Value.newBuilder().setNumberValue(10).build());
-    assertThat(converter.convertRecursively((Object) 10)).isEqualTo(Value.newBuilder().setNumberValue(10).build());
-    assertThat(converter.convertRecursively((Object) 10F)).isEqualTo(Value.newBuilder().setNumberValue(10).build());
-    assertThat(converter.convertRecursively((Object) 10D)).isEqualTo(Value.newBuilder().setNumberValue(10).build());
+    assertThat(converter.convertRecursively(10L)).isEqualTo(Value.newBuilder().setNumberValue(10).build());
+    assertThat(converter.convertRecursively(10)).isEqualTo(Value.newBuilder().setNumberValue(10).build());
+    assertThat(converter.convertRecursively(10F)).isEqualTo(Value.newBuilder().setNumberValue(10).build());
+    assertThat(converter.convertRecursively(10D)).isEqualTo(Value.newBuilder().setNumberValue(10).build());
   }
 
   @Test
@@ -125,10 +125,10 @@ public class ValueConverterTest {
 
   @Test
   public void toValue_fromBoolean() {
-    assertThat(converter.convertRecursively((Object) true)).isEqualTo(Value.newBuilder().setBoolValue(true).build());
-    assertThat(converter.convertRecursively((Object) false)).isEqualTo(Value.newBuilder().setBoolValue(false).build());
-    assertThat(converter.convertRecursively((Object) true)).isSameAs(converter.convertRecursively((Object) true));
-    assertThat(converter.convertRecursively((Object) false)).isSameAs(converter.convertRecursively((Object) false));
+    assertThat(converter.convertRecursively(true)).isEqualTo(Value.newBuilder().setBoolValue(true).build());
+    assertThat(converter.convertRecursively(false)).isEqualTo(Value.newBuilder().setBoolValue(false).build());
+    assertThat(converter.convertRecursively(true)).isSameAs(converter.convertRecursively(true));
+    assertThat(converter.convertRecursively(false)).isSameAs(converter.convertRecursively(false));
   }
 
   @Test
@@ -180,5 +180,31 @@ public class ValueConverterTest {
                 .addValues(converter.convertRecursively(asList(true, false)))
                 .addValues(converter.convertRecursively(ImmutableMap.of("k", 20L)))
                 .build());
+  }
+
+  @Test
+  public void convertCannotReturnNull() {
+    ValueConverter nullReturn = new ValueConverter() {
+      @Override protected Value convert(Object obj) {
+        return null;
+      }
+    };
+    assertThrows(
+        NullPointerException.class, () -> Stream.of("foo").collect(nullReturn.toListValue()));
+    assertThrows(
+        NullPointerException.class, () -> BiStream.of("foo", 1).collect(nullReturn::toStruct));
+  }
+
+  @Test
+  public void convertRecursivelyCannotReturnNull() {
+    ValueConverter nullReturn = new ValueConverter() {
+      @Override public Value convertRecursively(Object obj) {
+        return null;
+      }
+    };
+    assertThrows(
+        NullPointerException.class, () -> Stream.of("foo").collect(nullReturn.toListValue()));
+    assertThrows(
+        NullPointerException.class, () -> BiStream.of("foo", 1).collect(nullReturn::toStruct));
   }
 }
