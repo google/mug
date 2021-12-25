@@ -56,7 +56,6 @@ import java.util.function.ToDoubleBiFunction;
 import java.util.function.ToIntBiFunction;
 import java.util.function.ToLongBiFunction;
 import java.util.stream.Collector;
-import java.util.stream.Collector.Characteristics;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
@@ -239,7 +238,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
       Function<? super T, ? extends BiStream<? extends K, ? extends V>> toKeyValues,
       Collector<? super V, ?, R> valueCollector) {
     requireNonNull(toKeyValues);
-    return flatMapping(
+    return Java9Collectors.flatMapping(
         e -> toKeyValues.apply(e).mapToEntry(),
         groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, valueCollector)));
   }
@@ -2439,18 +2438,6 @@ public abstract class BiStream<K, V> implements AutoCloseable {
 
   static <T> T right(Both<?, T> both) {
     return both.andThen((l, r) -> r);
-  }
-
-  // TODO: switch to Java 9 Collectors.flatMapping() when we can.
-  static <T, E, A, R> Collector<T, A, R> flatMapping(
-      Function<? super T, ? extends Stream<? extends E>> mapper, Collector<E, A, R> collector) {
-    BiConsumer<A, E> accumulator = collector.accumulator();
-    return Collector.of(
-        collector.supplier(),
-        (a, input) -> mapper.apply(input).forEachOrdered(e -> accumulator.accept(a, e)),
-        collector.combiner(),
-        collector.finisher(),
-        collector.characteristics().toArray(new Characteristics[0]));
   }
 
   private BiStream() {}
