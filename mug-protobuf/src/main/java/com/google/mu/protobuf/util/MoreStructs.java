@@ -44,7 +44,7 @@ import com.google.protobuf.Value;
  */
 @CheckReturnValue
 public final class MoreStructs {
-  private static final ValueConverter DEFAULT = new ValueConverter();
+  private static final ValueConverter CONVERTER = new ValueConverter();
 
   /** Returns a Struct with {@code key} and {@code value}. Null {@code value} is translated to {@link NullValue}. */
   public static Struct struct(CharSequence key, Object value) {
@@ -277,12 +277,12 @@ public final class MoreStructs {
 
   /** Turns {@code map} into Struct. */
   public static Struct struct(Map<? extends CharSequence, ?> map) {
-    return DEFAULT.struct(map);
+    return CONVERTER.struct(map);
   }
 
   /** Turns {@code table} into a nested Struct of Struct. */
   public static Struct nestedStruct(Table<? extends CharSequence, ? extends CharSequence, ?> table) {
-    return DEFAULT.nestedStruct(table);
+    return CONVERTER.nestedStruct(table);
   }
 
   /**
@@ -295,7 +295,7 @@ public final class MoreStructs {
    */
   public static <T> Collector<T, ?, Struct> toStruct(
       Function<? super T, ? extends CharSequence> toKey, Function<? super T, ?> toValue) {
-    return DEFAULT.toStruct(toKey, toValue);
+    return CONVERTER.toStruct(toKey, toValue);
   }
 
   /**
@@ -313,7 +313,7 @@ public final class MoreStructs {
    * }</pre>
    */
   public static BiCollector<CharSequence, Object, Struct> toStruct() {
-    return DEFAULT.toStruct();
+    return CONVERTER.toStruct();
   }
 
   /**
@@ -346,7 +346,7 @@ public final class MoreStructs {
    * @throws IllegalArgumentException if {@code object} cannot be converted to Value.
    */
   public static Value toValue(Object object) {
-    return DEFAULT.toValue(object);
+    return CONVERTER.toValue(object);
   }
 
   /**
@@ -354,7 +354,7 @@ public final class MoreStructs {
    * ListValue}.
    */
   public static Collector<Object, ListValue.Builder, ListValue> toListValue() {
-    return DEFAULT.toListValue();
+    return CONVERTER.toListValue();
   }
 
   private MoreStructs() {}
