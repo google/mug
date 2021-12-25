@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Table;
 import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.mu.util.stream.BiCollector;
+import com.google.mu.util.stream.BiStream;
 import com.google.protobuf.NullValue;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
@@ -286,7 +287,7 @@ public final class MoreStructs {
    * @throws NullPointerException if any key is null
    */
   public static Struct struct(Map<? extends CharSequence, ?> map) {
-    return CONVERTER.struct(map);
+    return BiStream.from(map).collect(toStruct());
   }
 
   /**

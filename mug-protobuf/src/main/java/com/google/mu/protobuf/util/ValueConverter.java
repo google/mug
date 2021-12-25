@@ -57,14 +57,15 @@ public class ValueConverter {
   }
 
   /**
-   * Returns a Struct equivalent to {@code map}.
-   *
-   * <p>Values are converted using {@link #toValue}.
-   *
-   * @throws NullPointerException if any key is null
+   * Returns a {@link Collector} that converts and accumulates the input objects into a {@link
+   * ListValue}.
    */
-  public final Struct struct(Map<? extends CharSequence, ?> map) {
-    return BiStream.from(map).collect(this::toStruct);
+  public final Collector<Object, ListValue.Builder, ListValue> toListValue() {
+    return Collector.of(
+        ListValue::newBuilder,
+        (builder, v) -> builder.addValues(toValue(v)),
+        (a, b) -> a.addAllValues(b.getValuesList()),
+        ListValue.Builder::build);
   }
 
   /**
@@ -80,18 +81,6 @@ public class ValueConverter {
     return collectingAndThen(
         toImmutableMap(keyFunction.andThen(CharSequence::toString), valueFunction.andThen(this::toValue)),
         fields -> Struct.newBuilder().putAllFields(fields).build());
-  }
-
-  /**
-   * Returns a {@link Collector} that converts and accumulates the input objects into a {@link
-   * ListValue}.
-   */
-  public final Collector<Object, ListValue.Builder, ListValue> toListValue() {
-    return Collector.of(
-        ListValue::newBuilder,
-        (builder, v) -> builder.addValues(toValue(v)),
-        (a, b) -> a.addAllValues(b.getValuesList()),
-        ListValue.Builder::build);
   }
 
   /** Converts {@code object} to {@code Value}. Must not return null. */
