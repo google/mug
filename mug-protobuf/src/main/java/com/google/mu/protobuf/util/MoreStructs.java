@@ -336,7 +336,7 @@ public final class MoreStructs {
    *   <li>{@code Value} is returned as is;
    *   <li>{@link Optional} of primitive types, {@code Value} or struct proto types is unwrapped
    *       then converted, with the {@code empty()} instance converted to {@code NullValue};
-   *   <li>Collection (Iterable, Map, Multimap, Table)s are recursively converted. Specifically:
+   *   <li>Collection (Iterable, Map, Table)s are recursively converted. Specifically:
    *       <ul>
    *         <li>Iterable is wrapped as {@code ListValue};
    *         <li>Map is wrapped as {@code Struct};
