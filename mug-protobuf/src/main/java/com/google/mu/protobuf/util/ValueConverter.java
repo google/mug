@@ -144,6 +144,7 @@ public class ValueConverter {
    * into {@code ListValue} or {@code Struct}. Otherwise delegates to {@link #convert}.
    *
    * <p>Subclasses can override this method to convert custom recursive types.
+   * Must not return null.
    */
   protected Value convertRecursively(Object object) {
     if (object instanceof Optional) {
