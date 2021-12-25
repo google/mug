@@ -13,7 +13,6 @@ import java.util.stream.Collector;
 
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
-import com.google.mu.util.stream.BiCollector;
 import com.google.mu.util.stream.BiStream;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.NullValue;
@@ -25,11 +24,11 @@ import com.google.protobuf.Value;
  * the {@code Collection}s, {@code Map}s and {@code Table}s thereof into corresponding
  * {@link ListValue} or {@link Struct} wrappers.
  *
- * <p>For simple scenarios, prefer to use {@link MoreStructs}, which is easier to use and more
- * static-import friendly. Use this class to implement custom conversion logic.
+ * <p>For simple scenarios, prefer to use {@link MoreStructs} to create Struct,
+ * for it's more convenient to use and static-import friendly.
  *
- * <p>For example, if the application needs to convert {@code User} types
- * to {@code Value} by using the user ids:
+ * <p>This class can be used to implement custom conversion logic. For example, if the application
+ * needs to convert {@code User} types to {@code Value} by using the user ids:
  *
  * <pre>{@code
  * ValueConverter customConverter = new ValueConverter() {
@@ -57,14 +56,16 @@ public class ValueConverter {
         convertRecursively(object), "Cannot convert to null. Consider converting to NullValue instead.");
   }
 
-  /** Turns {@code map} into Struct. */
-  public final Struct struct(Map<? extends CharSequence, ?> map) {
-    return BiStream.from(map).collect(toStruct());
-  }
-
-  /** Turns {@code table} into a nested Struct of Struct. */
-  public final Struct nestedStruct(Table<? extends CharSequence, ? extends CharSequence, ?> table) {
-    return struct(table.rowMap());
+  /**
+   * Returns a {@link Collector} that converts and accumulates the input objects into a {@link
+   * ListValue}.
+   */
+  public final Collector<Object, ListValue.Builder, ListValue> toListValue() {
+    return Collector.of(
+        ListValue::newBuilder,
+        (builder, v) -> builder.addValues(toValue(v)),
+        (a, b) -> a.addAllValues(b.getValuesList()),
+        ListValue.Builder::build);
   }
 
   /**
@@ -80,36 +81,6 @@ public class ValueConverter {
     return collectingAndThen(
         toImmutableMap(keyFunction.andThen(CharSequence::toString), valueFunction.andThen(this::toValue)),
         fields -> Struct.newBuilder().putAllFields(fields).build());
-  }
-
-  /**
-   * Returns a {@link BiCollector} that accumulates the name-value pairs into a {@link Struct} with
-   * the values converted using {@link #toValue}.
-   *
-   * <p>Duplicate keys (according to {@link Object#equals(Object)}) are not allowed.
-   *
-   * <p>Null keys are not allowed, but null values will be represented with {@link NullValue}.
-   *
-   * <p>Can also be used to create Struct literals conveniently, such as:
-   *
-   * <pre>{@code
-   * BiStream.of("foo", 1. "bar", true).collect(converter.toStruct());
-   * }</pre>
-   */
-  public final BiCollector<CharSequence, Object, Struct> toStruct() {
-    return this::toStruct;
-  }
-
-  /**
-   * Returns a {@link Collector} that converts and accumulates the input objects into a {@link
-   * ListValue}.
-   */
-  public final Collector<Object, ListValue.Builder, ListValue> toListValue() {
-    return Collector.of(
-        ListValue::newBuilder,
-        (builder, v) -> builder.addValues(toValue(v)),
-        (a, b) -> a.addAllValues(b.getValuesList()),
-        ListValue.Builder::build);
   }
 
   /** Converts {@code object} to {@code Value}. Must not return null. */
@@ -168,12 +139,10 @@ public class ValueConverter {
   }
 
   private Value toStructValue(Map<?, ?> map) {
-    return Value.newBuilder()
-        .setStructValue(
-            BiStream.from(map)
-                .mapKeys(ValueConverter::toStructKey)
-                .collect(toStruct()))
-        .build();
+    Struct struct = BiStream.from(map)
+        .mapKeys(ValueConverter::toStructKey)
+        .collect(this::toStruct);
+    return Value.newBuilder().setStructValue(struct).build();
   }
 
   private static String toStructKey(Object key) {

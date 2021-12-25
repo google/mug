@@ -2,31 +2,18 @@ package com.google.mu.protobuf.util;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.protobuf.util.MoreStructs.struct;
-import static com.google.mu.protobuf.util.MoreStructs.toListValue;
 import static com.google.mu.protobuf.util.MoreStructs.toStruct;
-import static com.google.mu.protobuf.util.MoreStructs.toValue;
-import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableTable;
 import com.google.mu.util.stream.BiStream;
-import com.google.protobuf.ListValue;
-import com.google.protobuf.NullValue;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
+import com.google.protobuf.util.Values;
 
 @RunWith(JUnit4.class)
 public class MoreStructsTest {
@@ -36,7 +23,7 @@ public class MoreStructsTest {
     assertThat(struct("key", 1))
         .isEqualTo(
             Struct.newBuilder()
-                .putFields("key", toValue(1))
+                .putFields("key", Values.of(1))
                 .build());
   }
 
@@ -50,7 +37,7 @@ public class MoreStructsTest {
     assertThat(struct("key", null))
         .isEqualTo(
             Struct.newBuilder()
-                .putFields("key", toValue(null))
+                .putFields("key", Values.ofNull())
                 .build());
   }
 
@@ -59,8 +46,8 @@ public class MoreStructsTest {
     assertThat(struct("int", 1, "string", "two"))
         .isEqualTo(
             Struct.newBuilder()
-                .putFields("int", toValue(1))
-                .putFields("string", toValue("two"))
+                .putFields("int", Values.of(1))
+                .putFields("string", Values.of("two"))
                 .build());
   }
 
@@ -74,8 +61,8 @@ public class MoreStructsTest {
     assertThat(struct("k1", null, "k2", null))
         .isEqualTo(
             Struct.newBuilder()
-                .putFields("k1", toValue(null))
-                .putFields("k2", toValue(null))
+                .putFields("k1", Values.ofNull())
+                .putFields("k2", Values.ofNull())
                 .build());
   }
 
@@ -89,9 +76,9 @@ public class MoreStructsTest {
     assertThat(struct("a", 1, "b", 2, "c", 3))
         .isEqualTo(
             Struct.newBuilder()
-                .putFields("a", toValue(1))
-                .putFields("b", toValue(2))
-                .putFields("c", toValue(3))
+                .putFields("a", Values.of(1))
+                .putFields("b", Values.of(2))
+                .putFields("c", Values.of(3))
                 .build());
   }
 
@@ -105,9 +92,9 @@ public class MoreStructsTest {
     assertThat(struct("k1", null, "k2", null, "k3", null))
         .isEqualTo(
             Struct.newBuilder()
-                .putFields("k1", toValue(null))
-                .putFields("k2", toValue(null))
-                .putFields("k3", toValue(null))
+                .putFields("k1", Values.ofNull())
+                .putFields("k2", Values.ofNull())
+                .putFields("k3", Values.ofNull())
                 .build());
   }
 
@@ -121,10 +108,10 @@ public class MoreStructsTest {
     assertThat(struct("a", 1, "b", 2, "c", 3, "d", 4))
         .isEqualTo(
             Struct.newBuilder()
-                .putFields("a", toValue(1))
-                .putFields("b", toValue(2))
-                .putFields("c", toValue(3))
-                .putFields("d", toValue(4))
+                .putFields("a", Values.of(1))
+                .putFields("b", Values.of(2))
+                .putFields("c", Values.of(3))
+                .putFields("d", Values.of(4))
                 .build());
   }
 
@@ -138,10 +125,10 @@ public class MoreStructsTest {
     assertThat(struct("k1", null, "k2", null, "k3", null, "k4", null))
         .isEqualTo(
             Struct.newBuilder()
-                .putFields("k1", toValue(null))
-                .putFields("k2", toValue(null))
-                .putFields("k3", toValue(null))
-                .putFields("k4", toValue(null))
+                .putFields("k1", Values.ofNull())
+                .putFields("k2", Values.ofNull())
+                .putFields("k3", Values.ofNull())
+                .putFields("k4", Values.ofNull())
                 .build());
   }
 
@@ -155,11 +142,11 @@ public class MoreStructsTest {
     assertThat(struct("a", 1, "b", 2, "c", 3, "d", 4, "e", 5))
         .isEqualTo(
             Struct.newBuilder()
-                .putFields("a", toValue(1))
-                .putFields("b", toValue(2))
-                .putFields("c", toValue(3))
-                .putFields("d", toValue(4))
-                .putFields("e", toValue(5))
+                .putFields("a", Values.of(1))
+                .putFields("b", Values.of(2))
+                .putFields("c", Values.of(3))
+                .putFields("d", Values.of(4))
+                .putFields("e", Values.of(5))
                 .build());
   }
 
@@ -173,11 +160,11 @@ public class MoreStructsTest {
     assertThat(struct("k1", null, "k2", null, "k3", null, "k4", null, "k5", null))
         .isEqualTo(
             Struct.newBuilder()
-                .putFields("k1", toValue(null))
-                .putFields("k2", toValue(null))
-                .putFields("k3", toValue(null))
-                .putFields("k4", toValue(null))
-                .putFields("k5", toValue(null))
+                .putFields("k1", Values.ofNull())
+                .putFields("k2", Values.ofNull())
+                .putFields("k3", Values.ofNull())
+                .putFields("k4", Values.ofNull())
+                .putFields("k5", Values.ofNull())
                 .build());
   }
 
@@ -191,12 +178,12 @@ public class MoreStructsTest {
     assertThat(struct("a", 1, "b", 2, "c", 3, "d", 4, "e", 5, "f", 6))
         .isEqualTo(
             Struct.newBuilder()
-                .putFields("a", toValue(1))
-                .putFields("b", toValue(2))
-                .putFields("c", toValue(3))
-                .putFields("d", toValue(4))
-                .putFields("e", toValue(5))
-                .putFields("f", toValue(6))
+                .putFields("a", Values.of(1))
+                .putFields("b", Values.of(2))
+                .putFields("c", Values.of(3))
+                .putFields("d", Values.of(4))
+                .putFields("e", Values.of(5))
+                .putFields("f", Values.of(6))
                 .build());
   }
 
@@ -211,12 +198,12 @@ public class MoreStructsTest {
     assertThat(struct("k1", null, "k2", null, "k3", null, "k4", null, "k5", null, "k6", null))
         .isEqualTo(
             Struct.newBuilder()
-                .putFields("k1", toValue(null))
-                .putFields("k2", toValue(null))
-                .putFields("k3", toValue(null))
-                .putFields("k4", toValue(null))
-                .putFields("k5", toValue(null))
-                .putFields("k6", toValue(null))
+                .putFields("k1", Values.ofNull())
+                .putFields("k2", Values.ofNull())
+                .putFields("k3", Values.ofNull())
+                .putFields("k4", Values.ofNull())
+                .putFields("k5", Values.ofNull())
+                .putFields("k6", Values.ofNull())
                 .build());
   }
 
@@ -231,13 +218,13 @@ public class MoreStructsTest {
     assertThat(struct("a", 1, "b", 2, "c", 3, "d", 4, "e", 5, "f", 6, "g", 7))
         .isEqualTo(
             Struct.newBuilder()
-                .putFields("a", toValue(1))
-                .putFields("b", toValue(2))
-                .putFields("c", toValue(3))
-                .putFields("d", toValue(4))
-                .putFields("e", toValue(5))
-                .putFields("f", toValue(6))
-                .putFields("g", toValue(7))
+                .putFields("a", Values.of(1))
+                .putFields("b", Values.of(2))
+                .putFields("c", Values.of(3))
+                .putFields("d", Values.of(4))
+                .putFields("e", Values.of(5))
+                .putFields("f", Values.of(6))
+                .putFields("g", Values.of(7))
                 .build());
   }
 
@@ -253,13 +240,13 @@ public class MoreStructsTest {
     assertThat(struct("k1", null, "k2", null, "k3", null, "k4", null, "k5", null, "k6", null, "k7", null))
         .isEqualTo(
             Struct.newBuilder()
-                .putFields("k1", toValue(null))
-                .putFields("k2", toValue(null))
-                .putFields("k3", toValue(null))
-                .putFields("k4", toValue(null))
-                .putFields("k5", toValue(null))
-                .putFields("k6", toValue(null))
-                .putFields("k7", toValue(null))
+                .putFields("k1", Values.ofNull())
+                .putFields("k2", Values.ofNull())
+                .putFields("k3", Values.ofNull())
+                .putFields("k4", Values.ofNull())
+                .putFields("k5", Values.ofNull())
+                .putFields("k6", Values.ofNull())
+                .putFields("k7", Values.ofNull())
                 .build());
   }
 
@@ -275,14 +262,14 @@ public class MoreStructsTest {
     assertThat(struct("a", 1, "b", 2, "c", 3, "d", 4, "e", 5, "f", 6, "g", 7, "h", 8))
         .isEqualTo(
             Struct.newBuilder()
-                .putFields("a", toValue(1))
-                .putFields("b", toValue(2))
-                .putFields("c", toValue(3))
-                .putFields("d", toValue(4))
-                .putFields("e", toValue(5))
-                .putFields("f", toValue(6))
-                .putFields("g", toValue(7))
-                .putFields("h", toValue(8))
+                .putFields("a", Values.of(1))
+                .putFields("b", Values.of(2))
+                .putFields("c", Values.of(3))
+                .putFields("d", Values.of(4))
+                .putFields("e", Values.of(5))
+                .putFields("f", Values.of(6))
+                .putFields("g", Values.of(7))
+                .putFields("h", Values.of(8))
                 .build());
   }
 
@@ -298,14 +285,14 @@ public class MoreStructsTest {
     assertThat(struct("k1", null, "k2", null, "k3", null, "k4", null, "k5", null, "k6", null, "k7", null, "k8", null))
         .isEqualTo(
             Struct.newBuilder()
-                .putFields("k1", toValue(null))
-                .putFields("k2", toValue(null))
-                .putFields("k3", toValue(null))
-                .putFields("k4", toValue(null))
-                .putFields("k5", toValue(null))
-                .putFields("k6", toValue(null))
-                .putFields("k7", toValue(null))
-                .putFields("k8", toValue(null))
+                .putFields("k1", Values.ofNull())
+                .putFields("k2", Values.ofNull())
+                .putFields("k3", Values.ofNull())
+                .putFields("k4", Values.ofNull())
+                .putFields("k5", Values.ofNull())
+                .putFields("k6", Values.ofNull())
+                .putFields("k7", Values.ofNull())
+                .putFields("k8", Values.ofNull())
                 .build());
   }
 
@@ -321,15 +308,15 @@ public class MoreStructsTest {
     assertThat(struct("a", 1, "b", 2, "c", 3, "d", 4, "e", 5, "f", 6, "g", 7, "h", 8, "i", 9))
         .isEqualTo(
             Struct.newBuilder()
-                .putFields("a", toValue(1))
-                .putFields("b", toValue(2))
-                .putFields("c", toValue(3))
-                .putFields("d", toValue(4))
-                .putFields("e", toValue(5))
-                .putFields("f", toValue(6))
-                .putFields("g", toValue(7))
-                .putFields("h", toValue(8))
-                .putFields("i", toValue(9))
+                .putFields("a", Values.of(1))
+                .putFields("b", Values.of(2))
+                .putFields("c", Values.of(3))
+                .putFields("d", Values.of(4))
+                .putFields("e", Values.of(5))
+                .putFields("f", Values.of(6))
+                .putFields("g", Values.of(7))
+                .putFields("h", Values.of(8))
+                .putFields("i", Values.of(9))
                 .build());
   }
 
@@ -346,15 +333,15 @@ public class MoreStructsTest {
             struct("k1", null, "k2", null, "k3", null, "k4", null, "k5", null, "k6", null, "k7", null, "k8", null, "k9", null))
         .isEqualTo(
             Struct.newBuilder()
-                .putFields("k1", toValue(null))
-                .putFields("k2", toValue(null))
-                .putFields("k3", toValue(null))
-                .putFields("k4", toValue(null))
-                .putFields("k5", toValue(null))
-                .putFields("k6", toValue(null))
-                .putFields("k7", toValue(null))
-                .putFields("k8", toValue(null))
-                .putFields("k9", toValue(null))
+                .putFields("k1", Values.ofNull())
+                .putFields("k2", Values.ofNull())
+                .putFields("k3", Values.ofNull())
+                .putFields("k4", Values.ofNull())
+                .putFields("k5", Values.ofNull())
+                .putFields("k6", Values.ofNull())
+                .putFields("k7", Values.ofNull())
+                .putFields("k8", Values.ofNull())
+                .putFields("k9", Values.ofNull())
                 .build());
   }
 
@@ -370,16 +357,16 @@ public class MoreStructsTest {
     assertThat(struct("a", 1, "b", 2, "c", 3, "d", 4, "e", 5, "f", 6, "g", 7, "h", 8, "i", 9, "j", 10))
         .isEqualTo(
             Struct.newBuilder()
-                .putFields("a", toValue(1))
-                .putFields("b", toValue(2))
-                .putFields("c", toValue(3))
-                .putFields("d", toValue(4))
-                .putFields("e", toValue(5))
-                .putFields("f", toValue(6))
-                .putFields("g", toValue(7))
-                .putFields("h", toValue(8))
-                .putFields("i", toValue(9))
-                .putFields("j", toValue(10))
+                .putFields("a", Values.of(1))
+                .putFields("b", Values.of(2))
+                .putFields("c", Values.of(3))
+                .putFields("d", Values.of(4))
+                .putFields("e", Values.of(5))
+                .putFields("f", Values.of(6))
+                .putFields("g", Values.of(7))
+                .putFields("h", Values.of(8))
+                .putFields("i", Values.of(9))
+                .putFields("j", Values.of(10))
                 .build());
   }
 
@@ -396,16 +383,16 @@ public class MoreStructsTest {
             struct("k1", null, "k2", null, "k3", null, "k4", null, "k5", null, "k6", null, "k7", null, "k8", null, "k9", null, "k10", null))
         .isEqualTo(
             Struct.newBuilder()
-                .putFields("k1", toValue(null))
-                .putFields("k2", toValue(null))
-                .putFields("k3", toValue(null))
-                .putFields("k4", toValue(null))
-                .putFields("k5", toValue(null))
-                .putFields("k6", toValue(null))
-                .putFields("k7", toValue(null))
-                .putFields("k8", toValue(null))
-                .putFields("k9", toValue(null))
-                .putFields("k10", toValue(null))
+                .putFields("k1", Values.ofNull())
+                .putFields("k2", Values.ofNull())
+                .putFields("k3", Values.ofNull())
+                .putFields("k4", Values.ofNull())
+                .putFields("k5", Values.ofNull())
+                .putFields("k6", Values.ofNull())
+                .putFields("k7", Values.ofNull())
+                .putFields("k8", Values.ofNull())
+                .putFields("k9", Values.ofNull())
+                .putFields("k10", Values.ofNull())
                 .build());
   }
 
@@ -417,169 +404,17 @@ public class MoreStructsTest {
   }
 
   @Test
-  public void toValue_fromMap() {
-    assertThat(toValue(ImmutableMap.of("one", 1, "two", 2)))
-        .isEqualTo(
-            Value.newBuilder()
-                .setStructValue(
-                    Struct.newBuilder()
-                        .putFields("one", toValue(1))
-                        .putFields("two", toValue(2))
-                        .build())
-                .build());
-  }
-
-  @Test
-  public void toValue_fromMultimap() {
-    assertThat(toValue(ImmutableListMultimap.of("1", "uno", "1", "one")))
-        .isEqualTo(
-            Value.newBuilder()
-                .setStructValue(
-                    Struct.newBuilder().putFields("1", toValue(asList("uno", "one"))).build())
-                .build());
-  }
-
-  @Test
-  public void toValue_fromTable() {
-    assertThat(toValue(ImmutableTable.of("one", "uno", 1)))
-        .isEqualTo(
-            Value.newBuilder()
-                .setStructValue(
-                    Struct.newBuilder()
-                        .putFields("one", toValue(ImmutableMap.of("uno", 1)))
-                        .build())
-                .build());
-  }
-
-  @Test
-  public void toValue_withNullMapKey() {
-    Map<?, ?> map = BiStream.of(null, "null").collect(Collectors::toMap);
-    assertThrows(NullPointerException.class, () -> toValue(map));
-  }
-
-  @Test
-  public void toValue_withNonStringMapKey() {
-    Map<?, ?> map = BiStream.of(1, "one").collect(Collectors::toMap);
-    assertThrows(IllegalArgumentException.class, () -> toValue(map));
-  }
-
-  @Test
-  public void toValue_fromIterable() {
-    assertThat(toValue(asList(10, 20)))
-        .isEqualTo(
-            Value.newBuilder()
-                .setListValue(ListValue.newBuilder().addValues(toValue(10)).addValues(toValue(20)))
-                .build());
-  }
-
-  @Test
-  public void toValue_fromOptional() {
-    assertThat(toValue(Optional.empty())).isEqualTo(toValue(null));
-    assertThat(toValue(Optional.of("foo"))).isEqualTo(toValue("foo"));
-  }
-
-  @Test
-  public void toValue_fromStruct() {
-    Struct struct = BiStream.of("foo", 1, "bar", "x").collect(toStruct());
-    assertThat(toValue(struct)).isEqualTo(Value.newBuilder().setStructValue(struct).build());
-  }
-
-  @Test
-  public void toValue_fromListValue() {
-    ListValue list = Stream.of(1, 2).collect(toListValue());
-    assertThat(toValue(list)).isEqualTo(Value.newBuilder().setListValue(list).build());
-  }
-
-  @Test
-  public void toValue_fromNullValue() {
-    assertThat(toValue(NullValue.NULL_VALUE))
-        .isEqualTo(Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build());
-  }
-
-  @Test
-  public void toValue_fromNumber() {
-    assertThat(toValue(10L)).isEqualTo(Value.newBuilder().setNumberValue(10).build());
-    assertThat(toValue(10)).isEqualTo(Value.newBuilder().setNumberValue(10).build());
-    assertThat(toValue(10F)).isEqualTo(Value.newBuilder().setNumberValue(10).build());
-    assertThat(toValue(10D)).isEqualTo(Value.newBuilder().setNumberValue(10).build());
-  }
-
-  @Test
-  public void toValue_fromString() {
-    assertThat(toValue("42")).isEqualTo(Value.newBuilder().setStringValue("42").build());
-  }
-
-  @Test
-  public void toValue_fromBoolean() {
-    assertThat(toValue(true)).isEqualTo(Value.newBuilder().setBoolValue(true).build());
-    assertThat(toValue(false)).isEqualTo(Value.newBuilder().setBoolValue(false).build());
-    assertThat(toValue(true)).isSameAs(toValue(true));
-    assertThat(toValue(false)).isSameAs(toValue(false));
-  }
-
-  @Test
-  public void toValue_fromNull() {
-    assertThat(toValue(null))
-        .isEqualTo(Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build());
-    assertThat(toValue(null)).isSameAs(toValue(null));
-  }
-
-  @Test
-  public void toValue_fromEmptyOptional() {
-    assertThat(toValue(Optional.empty())).isEqualTo(toValue(null));
-  }
-
-  @Test
-  public void toValue_fromNonEmptyOptional() {
-    assertThat(toValue(Optional.of(123))).isEqualTo(toValue(123));
-  }
-
-  @Test
-  public void toValue_fromValue() {
-    Value value = Value.newBuilder().setBoolValue(false).build();
-    assertThat(toValue(value).getBoolValue()).isFalse();
-  }
-
-  @Test
-  public void toValue_fromUnsupportedType() {
-    IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> toValue(this));
-    assertThat(thrown).hasMessageThat().contains(getClass().getName());
-  }
-
-  @Test
-  public void toValue_cyclic() {
-    List<Object> list = new ArrayList<>();
-    list.add(list);
-    assertThrows(StackOverflowError.class, () -> toValue(list));
-  }
-
-  @Test
   public void toStruct_biCollector() {
     Struct struct = BiStream.of("foo", 1, "bar", ImmutableMap.of("one", true)).collect(toStruct());
     assertThat(struct)
         .isEqualTo(
             Struct.newBuilder()
-                .putFields("foo", toValue(1))
+                .putFields("foo", Values.of(1))
                 .putFields(
                     "bar",
                     Value.newBuilder()
-                        .setStructValue(Struct.newBuilder().putFields("one", toValue(true)).build())
+                        .setStructValue(Struct.newBuilder().putFields("one", Values.of(true)).build())
                         .build())
-                .build());
-  }
-
-  @Test
-  public void testToListValue() {
-    assertThat(
-            Stream.of(1, "foo", asList(true, false), ImmutableMap.of("k", 20L))
-                .collect(toListValue()))
-        .isEqualTo(
-            ListValue.newBuilder()
-                .addValues(toValue(1))
-                .addValues(toValue("foo"))
-                .addValues(toValue(asList(true, false)))
-                .addValues(toValue(ImmutableMap.of("k", 20L)))
                 .build());
   }
 }
