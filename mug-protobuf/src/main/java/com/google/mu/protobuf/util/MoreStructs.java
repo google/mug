@@ -15,7 +15,6 @@
 package com.google.mu.protobuf.util;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collector;
 
@@ -23,13 +22,12 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Table;
 import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.mu.util.stream.BiCollector;
-import com.google.protobuf.ListValue;
 import com.google.protobuf.NullValue;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
 
 /**
- * Additional utilities to help create {@link Struct} and {@link Value} messages.
+ * Additional utilities to help create {@link Struct} messages.
  *
  * <p>Since Struct fields map to dynamically typed values, throughout this class, struct values
  * of all supported types (numeric, string, boolean, null) and the {@code Collection}s, {@code Map}s,
@@ -48,7 +46,7 @@ public final class MoreStructs {
 
   /** Returns a Struct with {@code key} and {@code value}. Null {@code value} is translated to {@link NullValue}. */
   public static Struct struct(CharSequence key, Object value) {
-    return Struct.newBuilder().putFields(key.toString(), toValue(value)).build();
+    return Struct.newBuilder().putFields(key.toString(), CONVERTER.toValue(value)).build();
   }
 
   /**
@@ -61,7 +59,8 @@ public final class MoreStructs {
    * @throws NullPointerException if any key is null
    */
   public static Struct struct(CharSequence k1, Object v1, CharSequence k2, Object v2) {
-    return struct(ImmutableMap.of(k1.toString(), toValue(v1), k2.toString(), toValue(v2)));
+    return struct(
+        ImmutableMap.of(k1.toString(), CONVERTER.toValue(v1), k2.toString(), CONVERTER.toValue(v2)));
   }
 
   /**
@@ -76,7 +75,10 @@ public final class MoreStructs {
   public static Struct struct(
       CharSequence k1, Object v1, CharSequence k2, Object v2, CharSequence k3, Object v3) {
     return struct(
-        ImmutableMap.of(k1.toString(), toValue(v1), k2.toString(), toValue(v2), k3.toString(), toValue(v3)));
+        ImmutableMap.of(
+            k1.toString(), CONVERTER.toValue(v1),
+            k2.toString(), CONVERTER.toValue(v2),
+            k3.toString(), CONVERTER.toValue(v3)));
   }
 
   /**
@@ -95,10 +97,10 @@ public final class MoreStructs {
       CharSequence k4, Object v4) {
     return struct(
         ImmutableMap.of(
-            k1.toString(), toValue(v1),
-            k2.toString(), toValue(v2),
-            k3.toString(), toValue(v3),
-            k4.toString(), toValue(v4)));
+            k1.toString(), CONVERTER.toValue(v1),
+            k2.toString(), CONVERTER.toValue(v2),
+            k3.toString(), CONVERTER.toValue(v3),
+            k4.toString(), CONVERTER.toValue(v4)));
   }
 
   /**
@@ -118,11 +120,11 @@ public final class MoreStructs {
       CharSequence k5, Object v5) {
     return struct(
         ImmutableMap.of(
-            k1.toString(), toValue(v1),
-            k2.toString(), toValue(v2),
-            k3.toString(), toValue(v3),
-            k4.toString(), toValue(v4),
-            k5.toString(), toValue(v5)));
+            k1.toString(), CONVERTER.toValue(v1),
+            k2.toString(), CONVERTER.toValue(v2),
+            k3.toString(), CONVERTER.toValue(v3),
+            k4.toString(), CONVERTER.toValue(v4),
+            k5.toString(), CONVERTER.toValue(v5)));
   }
 
   /**
@@ -143,12 +145,12 @@ public final class MoreStructs {
       CharSequence k6, Object v6) {
     return struct(
         ImmutableMap.of(
-            k1.toString(), toValue(v1),
-            k2.toString(), toValue(v2),
-            k3.toString(), toValue(v3),
-            k4.toString(), toValue(v4),
-            k5.toString(), toValue(v5),
-            k6.toString(), toValue(v6)));
+            k1.toString(), CONVERTER.toValue(v1),
+            k2.toString(), CONVERTER.toValue(v2),
+            k3.toString(), CONVERTER.toValue(v3),
+            k4.toString(), CONVERTER.toValue(v4),
+            k5.toString(), CONVERTER.toValue(v5),
+            k6.toString(), CONVERTER.toValue(v6)));
   }
 
   /**
@@ -170,13 +172,13 @@ public final class MoreStructs {
       CharSequence k7, Object v7) {
     return struct(
         ImmutableMap.of(
-            k1.toString(), toValue(v1),
-            k2.toString(), toValue(v2),
-            k3.toString(), toValue(v3),
-            k4.toString(), toValue(v4),
-            k5.toString(), toValue(v5),
-            k6.toString(), toValue(v6),
-            k7.toString(), toValue(v7)));
+            k1.toString(), CONVERTER.toValue(v1),
+            k2.toString(), CONVERTER.toValue(v2),
+            k3.toString(), CONVERTER.toValue(v3),
+            k4.toString(), CONVERTER.toValue(v4),
+            k5.toString(), CONVERTER.toValue(v5),
+            k6.toString(), CONVERTER.toValue(v6),
+            k7.toString(), CONVERTER.toValue(v7)));
   }
 
   /**
@@ -199,14 +201,14 @@ public final class MoreStructs {
       CharSequence k8, Object v8) {
     return struct(
         ImmutableMap.of(
-            k1.toString(), toValue(v1),
-            k2.toString(), toValue(v2),
-            k3.toString(), toValue(v3),
-            k4.toString(), toValue(v4),
-            k5.toString(), toValue(v5),
-            k6.toString(), toValue(v6),
-            k7.toString(), toValue(v7),
-            k8.toString(), toValue(v8)));
+            k1.toString(), CONVERTER.toValue(v1),
+            k2.toString(), CONVERTER.toValue(v2),
+            k3.toString(), CONVERTER.toValue(v3),
+            k4.toString(), CONVERTER.toValue(v4),
+            k5.toString(), CONVERTER.toValue(v5),
+            k6.toString(), CONVERTER.toValue(v6),
+            k7.toString(), CONVERTER.toValue(v7),
+            k8.toString(), CONVERTER.toValue(v8)));
   }
 
   /**
@@ -230,15 +232,15 @@ public final class MoreStructs {
       CharSequence k9, Object v9) {
     return struct(
         ImmutableMap.of(
-            k1.toString(), toValue(v1),
-            k2.toString(), toValue(v2),
-            k3.toString(), toValue(v3),
-            k4.toString(), toValue(v4),
-            k5.toString(), toValue(v5),
-            k6.toString(), toValue(v6),
-            k7.toString(), toValue(v7),
-            k8.toString(), toValue(v8),
-            k9.toString(), toValue(v9)));
+            k1.toString(), CONVERTER.toValue(v1),
+            k2.toString(), CONVERTER.toValue(v2),
+            k3.toString(), CONVERTER.toValue(v3),
+            k4.toString(), CONVERTER.toValue(v4),
+            k5.toString(), CONVERTER.toValue(v5),
+            k6.toString(), CONVERTER.toValue(v6),
+            k7.toString(), CONVERTER.toValue(v7),
+            k8.toString(), CONVERTER.toValue(v8),
+            k9.toString(), CONVERTER.toValue(v9)));
   }
 
   /**
@@ -263,26 +265,41 @@ public final class MoreStructs {
       CharSequence k10, Object v10) {
     return struct(
         ImmutableMap.of(
-            k1.toString(), toValue(v1),
-            k2.toString(), toValue(v2),
-            k3.toString(), toValue(v3),
-            k4.toString(), toValue(v4),
-            k5.toString(), toValue(v5),
-            k6.toString(), toValue(v6),
-            k7.toString(), toValue(v7),
-            k8.toString(), toValue(v8),
-            k9.toString(), toValue(v9),
-            k10.toString(), toValue(v10)));
+            k1.toString(), CONVERTER.toValue(v1),
+            k2.toString(), CONVERTER.toValue(v2),
+            k3.toString(), CONVERTER.toValue(v3),
+            k4.toString(), CONVERTER.toValue(v4),
+            k5.toString(), CONVERTER.toValue(v5),
+            k6.toString(), CONVERTER.toValue(v6),
+            k7.toString(), CONVERTER.toValue(v7),
+            k8.toString(), CONVERTER.toValue(v8),
+            k9.toString(), CONVERTER.toValue(v9),
+            k10.toString(), CONVERTER.toValue(v10)));
   }
 
-  /** Turns {@code map} into Struct. */
+  /**
+   * Returns a Struct equivalent to {@code map}.
+   *
+   * <p>Values are converted using {@link #toValue}. In particular, null values are translated to
+   * {@link NullValue}.
+   *
+   * @throws NullPointerException if any key is null
+   */
   public static Struct struct(Map<? extends CharSequence, ?> map) {
     return CONVERTER.struct(map);
   }
 
-  /** Turns {@code table} into a nested Struct of Struct. */
+  /**
+   * Returns a nested Struct of Struct equivalent to the {@link Table#rowMap row map} of {@code table}.
+   *
+   *
+   * <p>Values are converted using {@link #toValue}. In particular, null values are translated to
+   * {@link NullValue}.
+   *
+   * @throws NullPointerException if any row key or column key is null
+   */
   public static Struct nestedStruct(Table<? extends CharSequence, ? extends CharSequence, ?> table) {
-    return CONVERTER.nestedStruct(table);
+    return CONVERTER.struct(table.rowMap());
   }
 
   /**
@@ -313,48 +330,7 @@ public final class MoreStructs {
    * }</pre>
    */
   public static BiCollector<CharSequence, Object, Struct> toStruct() {
-    return CONVERTER.toStruct();
-  }
-
-  /**
-   * Converts {@code object} to {@link Value} according to the following rules:
-   *
-   * <ul>
-   *   <li>Primitive types (numbers, strings, booleans) and {@code Struct} proto types ({@link
-   *       Struct}, {@link ListValue} etc.) are wrapped inside the respective {@code Value} wrapper
-   *       protos;
-   *   <li>{@code null} and {@link NullValue} are converted to {@code NullValue};
-   *   <li>{@code Value} is returned as is;
-   *   <li>{@link Optional} of primitive types, {@code Value} or struct proto types is unwrapped
-   *       then converted, with the {@code empty()} instance converted to {@code NullValue};
-   *   <li>Collection (Iterable, Map, Multimap, Table)s are recursively converted. Specifically:
-   *       <ul>
-   *         <li>Iterable is wrapped as {@code ListValue};
-   *         <li>Map is wrapped as {@code Struct};
-   *         <li>Multimap is wrapped as {@code Struct} with all values mapped to the same key
-   *             wrapped inside a {@code ListValue}.
-   *         <li>Table is wrapped as a {@code Struct} with string to {@code Struct} mappings;
-   *       </ul>
-   * </ul>
-   *
-   * <pre>{@code
-   * maps.stream()
-   *     .map(MoreStructs::toValue)
-   *     .collect(toListValue());
-   * }</pre>
-   *
-   * @throws IllegalArgumentException if {@code object} cannot be converted to Value.
-   */
-  public static Value toValue(Object object) {
-    return CONVERTER.toValue(object);
-  }
-
-  /**
-   * Returns a {@link Collector} that converts and accumulates the input objects into a {@link
-   * ListValue}.
-   */
-  public static Collector<Object, ListValue.Builder, ListValue> toListValue() {
-    return CONVERTER.toListValue();
+    return CONVERTER::toStruct;
   }
 
   private MoreStructs() {}
