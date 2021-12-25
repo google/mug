@@ -39,7 +39,7 @@ import com.google.protobuf.Value;
  *     return super.convert(obj);  // else delegate to default implementation
  *   }
  * };
- * Struct userStruct = customConverter.struct(ImmutableMap.of("user1", user1));
+ * Struct userStruct = BiStream.of("user1", user1).collect(customConverter::toStruct);
  * }</pre>
  *
  * @since 5.8

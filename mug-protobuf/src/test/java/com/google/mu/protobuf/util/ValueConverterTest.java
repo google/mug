@@ -1,7 +1,7 @@
 package com.google.mu.protobuf.util;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.mu.protobuf.util.MoreStructs.toStruct;
+import static com.google.mu.protobuf.util.MoreStructs.struct;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
 
@@ -94,7 +94,7 @@ public class ValueConverterTest {
 
   @Test
   public void toValue_fromStruct() {
-    Struct struct = BiStream.of("foo", 1, "bar", "x").collect(toStruct());
+    Struct struct = struct("foo", 1, "bar", "x");
     assertThat(converter.toValue(struct)).isEqualTo(Value.newBuilder().setStructValue(struct).build());
   }
 
