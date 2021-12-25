@@ -14,21 +14,15 @@
  *****************************************************************************/
 package com.google.mu.protobuf.util;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.collect.Streams.stream;
-
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collector;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
 import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.mu.util.stream.BiCollector;
-import com.google.mu.util.stream.BiStream;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.NullValue;
 import com.google.protobuf.Struct;
@@ -42,15 +36,15 @@ import com.google.protobuf.Value;
  * {@code Table}s, {@code Optional}s thereof are automatically converted to their corresponding
  * {@link Value} wrappers. This allows users to more conveniently create {@link Struct} and {@link Value}.
  *
+ * <p>Occasionally, an application may need custom logic to convert a domain-specific type into {@code Value},
+ * and then recursively into {@code ListValue} and/or {@code Struct}. This can be done by implementing
+ * {@link ValueConverter}.
+ *
  * @since 5.8
  */
 @CheckReturnValue
 public final class MoreStructs {
-  private static final Value NULL_VALUE =
-      Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build();
-  private static final Value FALSE_VALUE = Value.newBuilder().setBoolValue(false).build();
-  private static final Value TRUE_VALUE = Value.newBuilder().setBoolValue(true).build();
-  private static final ValueConverter DEFAULT = MoreStructs::toValue;
+  private static final ValueConverter DEFAULT = new ValueConverter();
 
   /** Returns a Struct with {@code key} and {@code value}. Null {@code value} is translated to {@link NullValue}. */
   public static Struct struct(CharSequence key, Object value) {
@@ -333,10 +327,12 @@ public final class MoreStructs {
    *   <li>{@code Value} is returned as is;
    *   <li>{@link Optional} of primitive types, {@code Value} or struct proto types is unwrapped
    *       then converted, with the {@code empty()} instance converted to {@code NullValue};
-   *   <li>Collection (Iterable, Map, Table)s are recursively converted. Specifically:
+   *   <li>Collection (Iterable, Map, Multimap, Table)s are recursively converted. Specifically:
    *       <ul>
    *         <li>Iterable is wrapped as {@code ListValue};
    *         <li>Map is wrapped as {@code Struct};
+   *         <li>Multimap is wrapped as {@code Struct} with all values mapped to the same key
+   *             wrapped inside a {@code ListValue}.
    *         <li>Table is wrapped as a {@code Struct} with string to {@code Struct} mappings;
    *       </ul>
    * </ul>
@@ -350,45 +346,7 @@ public final class MoreStructs {
    * @throws IllegalArgumentException if {@code object} cannot be converted to Value.
    */
   public static Value toValue(Object object) {
-    if (object == null || object instanceof NullValue) {
-      return NULL_VALUE;
-    }
-    if (object instanceof Boolean) {
-      return ((Boolean) object) ? TRUE_VALUE : FALSE_VALUE;
-    }
-    if (object instanceof Number) {
-      return Value.newBuilder().setNumberValue(((Number) object).doubleValue()).build();
-    }
-    if (object instanceof CharSequence) {
-      return Value.newBuilder().setStringValue(object.toString()).build();
-    }
-    if (object instanceof Value) {
-      return (Value) object;
-    }
-    if (object instanceof Struct) {
-      return Value.newBuilder().setStructValue((Struct) object).build();
-    }
-    if (object instanceof ListValue) {
-      return Value.newBuilder().setListValue((ListValue) object).build();
-    }
-    if (object instanceof Optional) {
-      return toValue(((Optional<?>) object).orElse(null));
-    }
-    if (object instanceof Iterable) {
-      return Value.newBuilder()
-          .setListValue(stream((Iterable<?>) object).collect(toListValue()))
-          .build();
-    }
-    if (object instanceof Map) {
-      return toStructValue((Map<?, ?>) object);
-    }
-    if (object instanceof Multimap) {
-      return toStructValue(((Multimap<?, ?>) object).asMap());
-    }
-    if (object instanceof Table) {
-      return toStructValue(((Table<?, ?, ?>) object).rowMap());
-    }
-    throw new IllegalArgumentException("Unsupported type: " + object.getClass().getName());
+    return DEFAULT.toValue(object);
   }
 
   /**
@@ -397,23 +355,6 @@ public final class MoreStructs {
    */
   public static Collector<Object, ListValue.Builder, ListValue> toListValue() {
     return DEFAULT.toListValue();
-  }
-
-  private static String toStructKey(Object key) {
-    checkNotNull(key, "Struct key cannot be null");
-    checkArgument(
-        key instanceof CharSequence, "Unsupported struct key type: %s", key.getClass().getName());
-    return key.toString();
-  }
-
-  private static Value toStructValue(Map<?, ?> map) {
-    return Value.newBuilder()
-        .setStructValue(
-            BiStream.from(map)
-                .mapKeys(MoreStructs::toStructKey)
-                .mapValues(DEFAULT)
-                .collect(toStruct()))
-        .build();
   }
 
   private MoreStructs() {}
