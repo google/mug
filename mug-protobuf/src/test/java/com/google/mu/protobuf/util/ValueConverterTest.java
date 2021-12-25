@@ -32,7 +32,7 @@ public class ValueConverterTest {
 
   @Test
   public void toValue_fromMap() {
-    assertThat(converter.convertRecursively(ImmutableMap.of("one", 1, "two", 2)))
+    assertThat(converter.convert(ImmutableMap.of("one", 1, "two", 2)))
         .isEqualTo(
             Value.newBuilder()
                 .setStructValue(
@@ -45,22 +45,22 @@ public class ValueConverterTest {
 
   @Test
   public void toValue_fromMultimap() {
-    assertThat(converter.convertRecursively(ImmutableListMultimap.of("1", "uno", "1", "one")))
+    assertThat(converter.convert(ImmutableListMultimap.of("1", "uno", "1", "one")))
         .isEqualTo(
             Value.newBuilder()
                 .setStructValue(
-                    Struct.newBuilder().putFields("1", converter.convertRecursively(asList("uno", "one"))).build())
+                    Struct.newBuilder().putFields("1", converter.convert(asList("uno", "one"))).build())
                 .build());
   }
 
   @Test
   public void toValue_fromTable() {
-    assertThat(converter.convertRecursively(ImmutableTable.of("one", "uno", 1)))
+    assertThat(converter.convert(ImmutableTable.of("one", "uno", 1)))
         .isEqualTo(
             Value.newBuilder()
                 .setStructValue(
                     Struct.newBuilder()
-                        .putFields("one", converter.convertRecursively(ImmutableMap.of("uno", 1)))
+                        .putFields("one", converter.convert(ImmutableMap.of("uno", 1)))
                         .build())
                 .build());
   }
@@ -68,18 +68,18 @@ public class ValueConverterTest {
   @Test
   public void toValue_withNullMapKey() {
     Map<?, ?> map = BiStream.of(null, "null").collect(Collectors::toMap);
-    assertThrows(NullPointerException.class, () -> converter.convertRecursively(map));
+    assertThrows(NullPointerException.class, () -> converter.convert(map));
   }
 
   @Test
   public void toValue_withNonStringMapKey() {
     Map<?, ?> map = BiStream.of(1, "one").collect(Collectors::toMap);
-    assertThrows(IllegalArgumentException.class, () -> converter.convertRecursively(map));
+    assertThrows(IllegalArgumentException.class, () -> converter.convert(map));
   }
 
   @Test
   public void toValue_fromIterable() {
-    assertThat(converter.convertRecursively(asList(10, 20)))
+    assertThat(converter.convert(asList(10, 20)))
         .isEqualTo(
             Value.newBuilder()
                 .setListValue(ListValue.newBuilder().addValues(Values.of(10)).addValues(Values.of(20)))
@@ -88,76 +88,76 @@ public class ValueConverterTest {
 
   @Test
   public void toValue_fromOptional() {
-    assertThat(converter.convertRecursively(Optional.empty())).isEqualTo(Values.ofNull());
-    assertThat(converter.convertRecursively(Optional.of("foo"))).isEqualTo(Values.of("foo"));
+    assertThat(converter.convert(Optional.empty())).isEqualTo(Values.ofNull());
+    assertThat(converter.convert(Optional.of("foo"))).isEqualTo(Values.of("foo"));
   }
 
   @Test
   public void toValue_fromStruct() {
     Struct struct = struct("foo", 1, "bar", "x");
-    assertThat(converter.convertRecursively(struct)).isEqualTo(Value.newBuilder().setStructValue(struct).build());
+    assertThat(converter.convert(struct)).isEqualTo(Value.newBuilder().setStructValue(struct).build());
   }
 
   @Test
   public void toValue_fromListValue() {
     ListValue list = Stream.of(1, 2).collect(converter.toListValue());
-    assertThat(converter.convertRecursively(list)).isEqualTo(Value.newBuilder().setListValue(list).build());
+    assertThat(converter.convert(list)).isEqualTo(Value.newBuilder().setListValue(list).build());
   }
 
   @Test
   public void toValue_fromNullValue() {
-    assertThat(converter.convertRecursively(NullValue.NULL_VALUE))
+    assertThat(converter.convert(NullValue.NULL_VALUE))
         .isEqualTo(Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build());
   }
 
   @Test
   public void toValue_fromNumber() {
-    assertThat(converter.convertRecursively(10L)).isEqualTo(Value.newBuilder().setNumberValue(10).build());
-    assertThat(converter.convertRecursively(10)).isEqualTo(Value.newBuilder().setNumberValue(10).build());
-    assertThat(converter.convertRecursively(10F)).isEqualTo(Value.newBuilder().setNumberValue(10).build());
-    assertThat(converter.convertRecursively(10D)).isEqualTo(Value.newBuilder().setNumberValue(10).build());
+    assertThat(converter.convert(10L)).isEqualTo(Value.newBuilder().setNumberValue(10).build());
+    assertThat(converter.convert(10)).isEqualTo(Value.newBuilder().setNumberValue(10).build());
+    assertThat(converter.convert(10F)).isEqualTo(Value.newBuilder().setNumberValue(10).build());
+    assertThat(converter.convert(10D)).isEqualTo(Value.newBuilder().setNumberValue(10).build());
   }
 
   @Test
   public void toValue_fromString() {
-    assertThat(converter.convertRecursively("42")).isEqualTo(Value.newBuilder().setStringValue("42").build());
+    assertThat(converter.convert("42")).isEqualTo(Value.newBuilder().setStringValue("42").build());
   }
 
   @Test
   public void toValue_fromBoolean() {
-    assertThat(converter.convertRecursively(true)).isEqualTo(Value.newBuilder().setBoolValue(true).build());
-    assertThat(converter.convertRecursively(false)).isEqualTo(Value.newBuilder().setBoolValue(false).build());
-    assertThat(converter.convertRecursively(true)).isSameAs(converter.convertRecursively(true));
-    assertThat(converter.convertRecursively(false)).isSameAs(converter.convertRecursively(false));
+    assertThat(converter.convert(true)).isEqualTo(Value.newBuilder().setBoolValue(true).build());
+    assertThat(converter.convert(false)).isEqualTo(Value.newBuilder().setBoolValue(false).build());
+    assertThat(converter.convert(true)).isSameAs(converter.convert(true));
+    assertThat(converter.convert(false)).isSameAs(converter.convert(false));
   }
 
   @Test
   public void toValue_fromNull() {
-    assertThat(converter.convertRecursively(null))
+    assertThat(converter.convert(null))
         .isEqualTo(Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build());
-    assertThat(converter.convertRecursively(null)).isSameAs(converter.convertRecursively(null));
+    assertThat(converter.convert(null)).isSameAs(converter.convert(null));
   }
 
   @Test
   public void toValue_fromEmptyOptional() {
-    assertThat(converter.convertRecursively(Optional.empty())).isEqualTo(Values.ofNull());
+    assertThat(converter.convert(Optional.empty())).isEqualTo(Values.ofNull());
   }
 
   @Test
   public void toValue_fromNonEmptyOptional() {
-    assertThat(converter.convertRecursively(Optional.of(123))).isEqualTo(Values.of(123));
+    assertThat(converter.convert(Optional.of(123))).isEqualTo(Values.of(123));
   }
 
   @Test
   public void toValue_fromValue() {
     Value value = Value.newBuilder().setBoolValue(false).build();
-    assertThat(converter.convertRecursively(value).getBoolValue()).isFalse();
+    assertThat(converter.convert(value).getBoolValue()).isFalse();
   }
 
   @Test
   public void toValue_fromUnsupportedType() {
     IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> converter.convertRecursively(this));
+        assertThrows(IllegalArgumentException.class, () -> converter.convert(this));
     assertThat(thrown).hasMessageThat().contains(getClass().getName());
   }
 
@@ -165,7 +165,7 @@ public class ValueConverterTest {
   public void toValue_cyclic() {
     List<Object> list = new ArrayList<>();
     list.add(list);
-    assertThrows(StackOverflowError.class, () -> converter.convertRecursively(list));
+    assertThrows(StackOverflowError.class, () -> converter.convert(list));
   }
 
   @Test
@@ -177,28 +177,15 @@ public class ValueConverterTest {
             ListValue.newBuilder()
                 .addValues(Values.of(1))
                 .addValues(Values.of("foo"))
-                .addValues(converter.convertRecursively(asList(true, false)))
-                .addValues(converter.convertRecursively(ImmutableMap.of("k", 20L)))
+                .addValues(converter.convert(asList(true, false)))
+                .addValues(converter.convert(ImmutableMap.of("k", 20L)))
                 .build());
   }
 
   @Test
   public void convertCannotReturnNull() {
     ValueConverter nullReturn = new ValueConverter() {
-      @Override protected Value convert(Object obj) {
-        return null;
-      }
-    };
-    assertThrows(
-        NullPointerException.class, () -> Stream.of("foo").collect(nullReturn.toListValue()));
-    assertThrows(
-        NullPointerException.class, () -> BiStream.of("foo", 1).collect(nullReturn::toStruct));
-  }
-
-  @Test
-  public void convertRecursivelyCannotReturnNull() {
-    ValueConverter nullReturn = new ValueConverter() {
-      @Override public Value convertRecursively(Object obj) {
+      @Override public Value convert(Object obj) {
         return null;
       }
     };
