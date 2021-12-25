@@ -76,9 +76,9 @@ public class ValueConverter {
    * <p>Null keys are not allowed.
    */
   public final <T> Collector<T, ?, Struct> toStruct(
-      Function<? super T, ? extends CharSequence> toKey, Function<? super T, ?> toValue) {
+      Function<? super T, ? extends CharSequence> keyFunction, Function<? super T, ?> valueFunction) {
     return collectingAndThen(
-        toImmutableMap(toKey.andThen(CharSequence::toString), toValue.andThen(this::toValue)),
+        toImmutableMap(keyFunction.andThen(CharSequence::toString), valueFunction.andThen(this::toValue)),
         fields -> Struct.newBuilder().putAllFields(fields).build());
   }
 
