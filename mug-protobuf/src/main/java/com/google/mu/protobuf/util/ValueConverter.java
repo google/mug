@@ -44,7 +44,7 @@ public interface ValueConverter extends Function<Object, Value> {
    *
    * <p>Duplicate keys (according to {@link Object#equals(Object)}) are not allowed.
    *
-   * <p>Null keys are not allowed, but null values are represented with {@link NullValue}.
+   * <p>Null keys are not allowed.
    */
   default <T> Collector<T, ?, Struct> toStruct(
       Function<? super T, ? extends CharSequence> toKey, Function<? super T, ?> toValue) {
