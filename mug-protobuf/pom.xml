@@ -29,16 +29,19 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>mug</artifactId>
       <version>${project.version}</version>
+      <scope>compile</scope>
     </dependency>
 
     <dependency>
       <groupId>com.google.truth</groupId>
       <artifactId>truth</artifactId>
+      <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>com.google.truth.extensions</groupId>
       <artifactId>truth-java8-extension</artifactId>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>
