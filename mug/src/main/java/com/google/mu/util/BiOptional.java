@@ -312,7 +312,7 @@ public abstract class BiOptional<A, B> {
         }
       };
 
-  private static final class Present<A, B> extends BiOptional<A, B> implements Both<A, B> {
+  static final class Present<A, B> extends BiOptional<A, B> implements Both<A, B> {
     private final A a;
     private final B b;
 
