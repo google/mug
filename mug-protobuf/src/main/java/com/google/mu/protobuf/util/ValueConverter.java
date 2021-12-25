@@ -25,7 +25,7 @@ import com.google.protobuf.Value;
  * {@link ListValue} or {@link Struct} wrappers.
  *
  * <p>For simple scenarios, prefer to use {@link MoreStructs} to create Struct,
- * for it's easier to use and static-import friendly.
+ * for it's more convenient to use and static-import friendly.
  *
  * <p>This class can be used to implement custom conversion logic. For example, if the application
  * needs to convert {@code User} types to {@code Value} by using the user ids:

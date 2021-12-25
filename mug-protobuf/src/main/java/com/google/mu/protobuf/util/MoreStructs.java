@@ -299,7 +299,7 @@ public final class MoreStructs {
    * @throws NullPointerException if any row key or column key is null
    */
   public static Struct nestedStruct(Table<? extends CharSequence, ? extends CharSequence, ?> table) {
-    return CONVERTER.struct(table.rowMap());
+    return struct(table.rowMap());
   }
 
   /**
@@ -330,7 +330,7 @@ public final class MoreStructs {
    * }</pre>
    */
   public static BiCollector<CharSequence, Object, Struct> toStruct() {
-    return CONVERTER::toStruct;
+    return MoreStructs::toStruct;
   }
 
   private MoreStructs() {}
