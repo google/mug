@@ -25,8 +25,8 @@ import com.google.protobuf.Value;
  * the {@code Collection}s, {@code Map}s and {@code Table}s thereof into corresponding
  * {@link ListValue} or {@link Struct} wrappers.
  *
- * <p>Users can implement custom conversion logic while delegating to the default implementation
- * for the standard supported types.
+ * <p>For simple scenarios, prefer to use {@link MoreStructs}, which is easier to use and more
+ * static-import friendly. Use this class to implement custom conversion logic.
  *
  * <p>For example, if the application needs to convert {@code User} types
  * to {@code Value} by using the user ids:
