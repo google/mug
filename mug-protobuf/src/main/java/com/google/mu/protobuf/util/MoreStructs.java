@@ -33,7 +33,7 @@ import com.google.protobuf.Value;
  * <p>Unlike {@link com.google.protobuf.util.Structs}, struct values of all supported types
  * (numeric, string, boolean, null) and the {@code Collection}s, {@code Map}s, {@code Table}s,
  * {@code Optional}s thereof are automatically converted to their corresponding {@link Value}
- * wrappers using {{@link ValueConverter}. This allows users to conveniently create {@link Struct}
+ * wrappers using {@link ValueConverter}. This allows users to conveniently create {@link Struct}
  * whose fields are heterogeneous maps of dynamically typed values.
  *
  * <p>Occasionally, an application may need custom logic to convert a domain-specific type into
