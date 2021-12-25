@@ -63,7 +63,7 @@ public final class MoreStructs {
    * @throws NullPointerException if any key is null
    */
   public static Struct struct(CharSequence k1, Object v1, CharSequence k2, Object v2) {
-    return toStruct(ImmutableMap.of(k1.toString(), toValue(v1), k2.toString(), toValue(v2)));
+    return struct(ImmutableMap.of(k1.toString(), toValue(v1), k2.toString(), toValue(v2)));
   }
 
   /**
@@ -77,7 +77,7 @@ public final class MoreStructs {
    */
   public static Struct struct(
       CharSequence k1, Object v1, CharSequence k2, Object v2, CharSequence k3, Object v3) {
-    return toStruct(
+    return struct(
         ImmutableMap.of(k1.toString(), toValue(v1), k2.toString(), toValue(v2), k3.toString(), toValue(v3)));
   }
 
@@ -95,7 +95,7 @@ public final class MoreStructs {
       CharSequence k2, Object v2,
       CharSequence k3, Object v3,
       CharSequence k4, Object v4) {
-    return toStruct(
+    return struct(
         ImmutableMap.of(
             k1.toString(), toValue(v1),
             k2.toString(), toValue(v2),
@@ -118,7 +118,7 @@ public final class MoreStructs {
       CharSequence k3, Object v3,
       CharSequence k4, Object v4,
       CharSequence k5, Object v5) {
-    return toStruct(
+    return struct(
         ImmutableMap.of(
             k1.toString(), toValue(v1),
             k2.toString(), toValue(v2),
@@ -143,7 +143,7 @@ public final class MoreStructs {
       CharSequence k4, Object v4,
       CharSequence k5, Object v5,
       CharSequence k6, Object v6) {
-    return toStruct(
+    return struct(
         ImmutableMap.of(
             k1.toString(), toValue(v1),
             k2.toString(), toValue(v2),
@@ -170,7 +170,7 @@ public final class MoreStructs {
       CharSequence k5, Object v5,
       CharSequence k6, Object v6,
       CharSequence k7, Object v7) {
-    return toStruct(
+    return struct(
         ImmutableMap.of(
             k1.toString(), toValue(v1),
             k2.toString(), toValue(v2),
@@ -199,7 +199,7 @@ public final class MoreStructs {
       CharSequence k6, Object v6,
       CharSequence k7, Object v7,
       CharSequence k8, Object v8) {
-    return toStruct(
+    return struct(
         ImmutableMap.of(
             k1.toString(), toValue(v1),
             k2.toString(), toValue(v2),
@@ -230,7 +230,7 @@ public final class MoreStructs {
       CharSequence k7, Object v7,
       CharSequence k8, Object v8,
       CharSequence k9, Object v9) {
-    return toStruct(
+    return struct(
         ImmutableMap.of(
             k1.toString(), toValue(v1),
             k2.toString(), toValue(v2),
@@ -263,7 +263,7 @@ public final class MoreStructs {
       CharSequence k8, Object v8,
       CharSequence k9, Object v9,
       CharSequence k10, Object v10) {
-    return toStruct(
+    return struct(
         ImmutableMap.of(
             k1.toString(), toValue(v1),
             k2.toString(), toValue(v2),
@@ -275,6 +275,49 @@ public final class MoreStructs {
             k8.toString(), toValue(v8),
             k9.toString(), toValue(v9),
             k10.toString(), toValue(v10)));
+  }
+
+  /** Turns {@code map} into Struct. */
+  public static Struct struct(Map<? extends CharSequence, ?> map) {
+    return BiStream.from(map).collect(toStruct());
+  }
+
+  /** Turns {@code table} into a nested Struct of Struct. */
+  public static Struct nestedStruct(Table<? extends CharSequence, ? extends CharSequence, ?> table) {
+    return struct(table.rowMap());
+  }
+
+  /**
+   * Returns a {@link Collector} that accumulates elements into a {@link Struct} whose keys and
+   * values are the result of applying the provided mapping functions to the input elements.
+   *
+   * <p>Duplicate keys (according to {@link Object#equals(Object)}) are not allowed.
+   *
+   * <p>Null keys are not allowed, but null values are represented with {@link NullValue}.
+   */
+  public static <T> Collector<T, ?, Struct> toStruct(
+      Function<? super T, ? extends CharSequence> toKey, Function<? super T, ?> toValue) {
+    return collectingAndThen(
+        toImmutableMap(toKey.andThen(CharSequence::toString), toValue.andThen(MoreStructs::toValue)),
+        fields -> Struct.newBuilder().putAllFields(fields).build());
+  }
+
+  /**
+   * Returns a {@link BiCollector} that accumulates the name-value pairs into a {@link Struct} with
+   * the values converted using {@link #toValue}.
+   *
+   * <p>Duplicate keys (according to {@link Object#equals(Object)}) are not allowed.
+   *
+   * <p>Null keys are not allowed, but null values will be represented with {@link NullValue}.
+   *
+   * <p>Can also be used to create Struct literals conveniently, such as:
+   *
+   * <pre>{@code
+   * BiStream.of("foo", 1. "bar", true).collect(toStruct());
+   * }</pre>
+   */
+  public static BiCollector<CharSequence, Object, Struct> toStruct() {
+    return MoreStructs::toStruct;
   }
 
   /**
@@ -357,57 +400,6 @@ public final class MoreStructs {
         (builder, v) -> builder.addValues(toValue(v)),
         (a, b) -> a.addAllValues(b.getValuesList()),
         ListValue.Builder::build);
-  }
-
-  /** Turns {@code map} into Struct. */
-  public static Struct toStruct(Map<? extends CharSequence, ?> map) {
-    return BiStream.from(map).collect(toStruct());
-  }
-
-  /**
-   * Turns {@code multiple} into a Struct with {@link ListValue} for all the values mapped to each
-   * key.
-   */
-  public static Struct toStruct(Multimap<? extends CharSequence, ?> multimap) {
-    return toStruct(multimap.asMap());
-  }
-
-  /** Turns {@code table} into a nested Struct of Struct. */
-  public static Struct toStruct(Table<? extends CharSequence, ? extends CharSequence, ?> table) {
-    return toStruct(table.rowMap());
-  }
-
-  /**
-   * Returns a {@link Collector} that accumulates elements into a {@link Struct} whose keys and
-   * values are the result of applying the provided mapping functions to the input elements.
-   *
-   * <p>Duplicate keys (according to {@link Object#equals(Object)}) are not allowed.
-   *
-   * <p>Null keys are not allowed, but null values are represented with {@link NullValue}.
-   */
-  public static <T> Collector<T, ?, Struct> toStruct(
-      Function<? super T, ? extends CharSequence> toKey, Function<? super T, ?> toValue) {
-    return collectingAndThen(
-        toImmutableMap(toKey.andThen(CharSequence::toString), toValue.andThen(MoreStructs::toValue)),
-        fields -> Struct.newBuilder().putAllFields(fields).build());
-  }
-
-  /**
-   * Returns a {@link BiCollector} that accumulates the name-value pairs into a {@link Struct} with
-   * the values converted using {@link #toValue}.
-   *
-   * <p>Duplicate keys (according to {@link Object#equals(Object)}) are not allowed.
-   *
-   * <p>Null keys are not allowed, but null values will be represented with {@link NullValue}.
-   *
-   * <p>Can also be used to create Struct literals conveniently, such as:
-   *
-   * <pre>{@code
-   * BiStream.of("foo", 1. "bar", true).collect(toStruct());
-   * }</pre>
-   */
-  public static BiCollector<CharSequence, Object, Struct> toStruct() {
-    return MoreStructs::toStruct;
   }
 
   private static String toStructKey(Object key) {
