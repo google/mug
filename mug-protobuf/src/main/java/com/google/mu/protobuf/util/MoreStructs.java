@@ -18,7 +18,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collector;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Table;
 import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.mu.util.stream.BiCollector;
@@ -48,7 +47,7 @@ public final class MoreStructs {
 
   /** Returns a Struct with {@code key} and {@code value}. Null {@code value} is translated to {@link NullValue}. */
   public static Struct struct(CharSequence key, Object value) {
-    return Struct.newBuilder().putFields(key.toString(), CONVERTER.convert(value)).build();
+    return BiStream.of(key, value).collect(toStruct());
   }
 
   /**
@@ -61,8 +60,7 @@ public final class MoreStructs {
    * @throws NullPointerException if any key is null
    */
   public static Struct struct(CharSequence k1, Object v1, CharSequence k2, Object v2) {
-    return struct(
-        ImmutableMap.of(k1.toString(), CONVERTER.convert(v1), k2.toString(), CONVERTER.convert(v2)));
+    return BiStream.of(k1, v1, k2, v2).collect(toStruct());
   }
 
   /**
@@ -76,11 +74,7 @@ public final class MoreStructs {
    */
   public static Struct struct(
       CharSequence k1, Object v1, CharSequence k2, Object v2, CharSequence k3, Object v3) {
-    return struct(
-        ImmutableMap.of(
-            k1.toString(), CONVERTER.convert(v1),
-            k2.toString(), CONVERTER.convert(v2),
-            k3.toString(), CONVERTER.convert(v3)));
+    return BiStream.of(k1, v1, k2, v2, k3, v3).collect(toStruct());
   }
 
   /**
@@ -97,12 +91,7 @@ public final class MoreStructs {
       CharSequence k2, Object v2,
       CharSequence k3, Object v3,
       CharSequence k4, Object v4) {
-    return struct(
-        ImmutableMap.of(
-            k1.toString(), CONVERTER.convert(v1),
-            k2.toString(), CONVERTER.convert(v2),
-            k3.toString(), CONVERTER.convert(v3),
-            k4.toString(), CONVERTER.convert(v4)));
+    return BiStream.of(k1, v1, k2, v2, k3, v3, k4, v4).collect(toStruct());
   }
 
   /**
@@ -120,13 +109,7 @@ public final class MoreStructs {
       CharSequence k3, Object v3,
       CharSequence k4, Object v4,
       CharSequence k5, Object v5) {
-    return struct(
-        ImmutableMap.of(
-            k1.toString(), CONVERTER.convert(v1),
-            k2.toString(), CONVERTER.convert(v2),
-            k3.toString(), CONVERTER.convert(v3),
-            k4.toString(), CONVERTER.convert(v4),
-            k5.toString(), CONVERTER.convert(v5)));
+    return BiStream.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5).collect(toStruct());
   }
 
   /**
@@ -145,14 +128,7 @@ public final class MoreStructs {
       CharSequence k4, Object v4,
       CharSequence k5, Object v5,
       CharSequence k6, Object v6) {
-    return struct(
-        ImmutableMap.of(
-            k1.toString(), CONVERTER.convert(v1),
-            k2.toString(), CONVERTER.convert(v2),
-            k3.toString(), CONVERTER.convert(v3),
-            k4.toString(), CONVERTER.convert(v4),
-            k5.toString(), CONVERTER.convert(v5),
-            k6.toString(), CONVERTER.convert(v6)));
+    return BiStream.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6).collect(toStruct());
   }
 
   /**
@@ -172,15 +148,7 @@ public final class MoreStructs {
       CharSequence k5, Object v5,
       CharSequence k6, Object v6,
       CharSequence k7, Object v7) {
-    return struct(
-        ImmutableMap.of(
-            k1.toString(), CONVERTER.convert(v1),
-            k2.toString(), CONVERTER.convert(v2),
-            k3.toString(), CONVERTER.convert(v3),
-            k4.toString(), CONVERTER.convert(v4),
-            k5.toString(), CONVERTER.convert(v5),
-            k6.toString(), CONVERTER.convert(v6),
-            k7.toString(), CONVERTER.convert(v7)));
+    return BiStream.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7).collect(toStruct());
   }
 
   /**
@@ -201,16 +169,8 @@ public final class MoreStructs {
       CharSequence k6, Object v6,
       CharSequence k7, Object v7,
       CharSequence k8, Object v8) {
-    return struct(
-        ImmutableMap.of(
-            k1.toString(), CONVERTER.convert(v1),
-            k2.toString(), CONVERTER.convert(v2),
-            k3.toString(), CONVERTER.convert(v3),
-            k4.toString(), CONVERTER.convert(v4),
-            k5.toString(), CONVERTER.convert(v5),
-            k6.toString(), CONVERTER.convert(v6),
-            k7.toString(), CONVERTER.convert(v7),
-            k8.toString(), CONVERTER.convert(v8)));
+    return BiStream.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7, k8, v8)
+        .collect(toStruct());
   }
 
   /**
@@ -232,17 +192,8 @@ public final class MoreStructs {
       CharSequence k7, Object v7,
       CharSequence k8, Object v8,
       CharSequence k9, Object v9) {
-    return struct(
-        ImmutableMap.of(
-            k1.toString(), CONVERTER.convert(v1),
-            k2.toString(), CONVERTER.convert(v2),
-            k3.toString(), CONVERTER.convert(v3),
-            k4.toString(), CONVERTER.convert(v4),
-            k5.toString(), CONVERTER.convert(v5),
-            k6.toString(), CONVERTER.convert(v6),
-            k7.toString(), CONVERTER.convert(v7),
-            k8.toString(), CONVERTER.convert(v8),
-            k9.toString(), CONVERTER.convert(v9)));
+    return BiStream.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7, k8, v8, k9, v9)
+        .collect(toStruct());
   }
 
   /**
@@ -265,18 +216,8 @@ public final class MoreStructs {
       CharSequence k8, Object v8,
       CharSequence k9, Object v9,
       CharSequence k10, Object v10) {
-    return struct(
-        ImmutableMap.of(
-            k1.toString(), CONVERTER.convert(v1),
-            k2.toString(), CONVERTER.convert(v2),
-            k3.toString(), CONVERTER.convert(v3),
-            k4.toString(), CONVERTER.convert(v4),
-            k5.toString(), CONVERTER.convert(v5),
-            k6.toString(), CONVERTER.convert(v6),
-            k7.toString(), CONVERTER.convert(v7),
-            k8.toString(), CONVERTER.convert(v8),
-            k9.toString(), CONVERTER.convert(v9),
-            k10.toString(), CONVERTER.convert(v10)));
+    return BiStream.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7, k8, v8, k9, v9, k10, v10)
+        .collect(toStruct());
   }
 
   /**
