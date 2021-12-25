@@ -55,7 +55,7 @@ public final class MoreStructs {
   /**
    * Returns a Struct equivalent to {@code {k1:v1, k2:v2}}.
    *
-   * <p>Values are converted using {@link #toValue}.
+   * <p>Values are converted using {@link ValueConverter}.
    * In particular, null values are translated to {@link NullValue}.
    *
    * @throws IllegalArgumentException if duplicate keys are provided
@@ -69,7 +69,7 @@ public final class MoreStructs {
   /**
    * Returns a Struct equivalent to {@code {k1:v1, k2:v2, k3:v3}}.
    *
-   * <p>Values are converted using {@link #toValue}.
+   * <p>Values are converted using {@link ValueConverter}.
    * In particular, null values are translated to {@link NullValue}.
    *
    * @throws IllegalArgumentException if duplicate keys are provided
@@ -87,7 +87,7 @@ public final class MoreStructs {
   /**
    * Returns a Struct equivalent to {@code {k1:v1, k2:v2, k3:v3, k4:v4}}.
    *
-   * <p>Values are converted using {@link #toValue}.
+   * <p>Values are converted using {@link ValueConverter}.
    * In particular, null values are translated to {@link NullValue}.
    *
    * @throws IllegalArgumentException if duplicate keys are provided
@@ -109,7 +109,7 @@ public final class MoreStructs {
   /**
    * Returns a Struct equivalent to {@code {k1:v1, k2:v2, k3:v3, k4:v4, k5:v5}}.
    *
-   * <p>Values are converted using {@link #toValue}.
+   * <p>Values are converted using {@link ValueConverter}.
    * In particular, null values are translated to {@link NullValue}.
    *
    * @throws IllegalArgumentException if duplicate keys are provided
@@ -133,7 +133,7 @@ public final class MoreStructs {
   /**
    * Returns a Struct equivalent to {@code {k1:v1, k2:v2, k3:v3, k4:v4, k5:v5, k6:v6}}.
    *
-   * <p>Values are converted using {@link #toValue}.
+   * <p>Values are converted using {@link ValueConverter}.
    * In particular, null values are translated to {@link NullValue}.
    *
    * @throws IllegalArgumentException if duplicate keys are provided
@@ -159,7 +159,7 @@ public final class MoreStructs {
   /**
    * Returns a Struct equivalent to {@code {k1:v1, k2:v2, k3:v3, k4:v4, k5:v5, k6:v6, k7:v7}}.
    *
-   * <p>Values are converted using {@link #toValue}.
+   * <p>Values are converted using {@link ValueConverter}.
    * In particular, null values are translated to {@link NullValue}.
    *
    * @throws IllegalArgumentException if duplicate keys are provided
@@ -187,7 +187,7 @@ public final class MoreStructs {
   /**
    * Returns a Struct equivalent to {@code {k1:v1, k2:v2, k3:v3, k4:v4, k5:v5, k6:v6, k7:v7, k8:v8}}.
    *
-   * <p>Values are converted using {@link #toValue}.
+   * <p>Values are converted using {@link ValueConverter}.
    * In particular, null values are translated to {@link NullValue}.
    *
    * @throws IllegalArgumentException if duplicate keys are provided
@@ -217,7 +217,7 @@ public final class MoreStructs {
   /**
    * Returns a Struct equivalent to {@code {k1:v1, k2:v2, k3:v3, k4:v4, k5:v5, k6:v6, k7:v7, k8:v8, k9:v9}}.
    *
-   * <p>Values are converted using {@link #toValue}.
+   * <p>Values are converted using {@link ValueConverter}.
    * In particular, null values are translated to {@link NullValue}.
    *
    * @throws IllegalArgumentException if duplicate keys are provided
@@ -249,7 +249,7 @@ public final class MoreStructs {
   /**
    * Returns a Struct equivalent to {@code {k1:v1, k2:v2, k3:v3, k4:v4, k5:v5, k6:v6, k7:v7, k8:v8, k9:v9, k10:v10}}.
    *
-   * <p>Values are converted using {@link #toValue}.
+   * <p>Values are converted using {@link ValueConverter}.
    * In particular, null values are translated to {@link NullValue}.
    *
    * @throws IllegalArgumentException if duplicate keys are provided
@@ -283,7 +283,7 @@ public final class MoreStructs {
   /**
    * Returns a Struct equivalent to {@code map}.
    *
-   * <p>Values are converted using {@link #toValue}. In particular, null values are translated to
+   * <p>Values are converted using {@link ValueConverter}. In particular, null values are translated to
    * {@link NullValue}.
    *
    * @throws NullPointerException if any key is null
@@ -296,7 +296,7 @@ public final class MoreStructs {
    * Returns a nested Struct of Struct equivalent to the {@link Table#rowMap row map} of {@code table}.
    *
    *
-   * <p>Values are converted using {@link #toValue}. In particular, null values are translated to
+   * <p>Values are converted using {@link ValueConverter}. In particular, null values are translated to
    * {@link NullValue}.
    *
    * @throws NullPointerException if any row key or column key is null
@@ -314,13 +314,14 @@ public final class MoreStructs {
    * <p>Null keys are not allowed, but null values are represented with {@link NullValue}.
    */
   public static <T> Collector<T, ?, Struct> toStruct(
-      Function<? super T, ? extends CharSequence> toKey, Function<? super T, ?> toValue) {
-    return CONVERTER.toStruct(toKey, toValue);
+      Function<? super T, ? extends CharSequence> keyFunction,
+      Function<? super T, ?> valueFunction) {
+    return CONVERTER.toStruct(keyFunction, valueFunction);
   }
 
   /**
    * Returns a {@link BiCollector} that accumulates the name-value pairs into a {@link Struct} with
-   * the values converted using {@link #toValue}.
+   * the values converted using {@link ValueConverter}.
    *
    * <p>Duplicate keys (according to {@link Object#equals(Object)}) are not allowed.
    *
