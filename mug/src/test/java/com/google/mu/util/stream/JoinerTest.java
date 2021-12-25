@@ -38,7 +38,6 @@ public class JoinerTest {
         .isEqualTo("{1:one, 2:two}");
   }
 
-<<<<<<< HEAD
   @Test public void skipNulls_nullsSkipped() {
     assertThat(Stream.of(1, null, 3).collect(Joiner.on(',').skipNulls()))
         .isEqualTo("1,3");
@@ -57,21 +56,5 @@ public class JoinerTest {
   @Test public void skipEmpties_emptyStringSkipped() {
     assertThat(Stream.of("foo", "", "zoo", "").collect(Joiner.on(',').skipEmpties()))
         .isEqualTo("foo,zoo");
-=======
-  @Test public void nestedBetween_joinTwoObjects() {
-    assertThat(
-            BiStream.of(1, "one", 2, "two")
-                .mapToObj(Joiner.on(", ").between('(', ')').between("[", "]")::join)
-                .collect(Joiner.on(", ")))
-        .isEqualTo("[(1, one)], [(2, two)]");
-  }
-
-  @Test public void nestedBetween_joinStreamOfObjects() {
-    assertThat(
-            BiStream.of(1, "one", 2, "two")
-                .mapToObj(Joiner.on(':')::join)
-                .collect(Joiner.on(", ").between("[", "]").between('{', '}')))
-        .isEqualTo("{[1:one, 2:two]}");
->>>>>>> c3e46231d0f15be996787fe952e8f005e45896a5
   }
 }
