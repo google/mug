@@ -411,7 +411,7 @@ public final class MoreStructs {
         .setStructValue(
             BiStream.from(map)
                 .mapKeys(MoreStructs::toStructKey)
-                .mapValues(MoreStructs::toValue)
+                .mapValues(DEFAULT)
                 .collect(toStruct()))
         .build();
   }
