@@ -50,6 +50,7 @@ public final class MoreStructs {
       Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build();
   private static final Value FALSE_VALUE = Value.newBuilder().setBoolValue(false).build();
   private static final Value TRUE_VALUE = Value.newBuilder().setBoolValue(true).build();
+  private static final ValueConverter DEFAULT = MoreStructs::toValue;
 
   /** Returns a Struct with {@code key} and {@code value}. Null {@code value} is translated to {@link NullValue}. */
   public static Struct struct(CharSequence key, Object value) {
@@ -282,14 +283,12 @@ public final class MoreStructs {
 
   /** Turns {@code map} into Struct. */
   public static Struct struct(Map<? extends CharSequence, ?> map) {
-    ValueConverter converter = MoreStructs::toValue;
-    return converter.struct(map);
+    return DEFAULT.struct(map);
   }
 
   /** Turns {@code table} into a nested Struct of Struct. */
   public static Struct nestedStruct(Table<? extends CharSequence, ? extends CharSequence, ?> table) {
-    ValueConverter converter = MoreStructs::toValue;
-    return converter.nestedStruct(table);
+    return DEFAULT.nestedStruct(table);
   }
 
   /**
@@ -302,8 +301,7 @@ public final class MoreStructs {
    */
   public static <T> Collector<T, ?, Struct> toStruct(
       Function<? super T, ? extends CharSequence> toKey, Function<? super T, ?> toValue) {
-    ValueConverter converter = MoreStructs::toValue;
-    return converter.toStruct(toKey, toValue);
+    return DEFAULT.toStruct(toKey, toValue);
   }
 
   /**
@@ -321,7 +319,7 @@ public final class MoreStructs {
    * }</pre>
    */
   public static BiCollector<CharSequence, Object, Struct> toStruct() {
-    return MoreStructs::toStruct;
+    return DEFAULT.toStruct();
   }
 
   /**
@@ -398,8 +396,7 @@ public final class MoreStructs {
    * ListValue}.
    */
   public static Collector<Object, ListValue.Builder, ListValue> toListValue() {
-    ValueConverter converter = MoreStructs::toValue;
-    return converter.toListValue();
+    return DEFAULT.toListValue();
   }
 
   private static String toStructKey(Object key) {
