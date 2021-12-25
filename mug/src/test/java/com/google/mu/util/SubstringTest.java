@@ -27,8 +27,10 @@ import org.junit.runners.JUnit4;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.testing.ClassSanityTester;
+import com.google.common.testing.EqualsTester;
 import com.google.common.testing.NullPointerTester;
 import com.google.mu.util.Substring.Match;
+import com.google.mu.util.stream.Joiner;
 
 @RunWith(JUnit4.class)
 public class SubstringTest {
@@ -77,6 +79,30 @@ public class SubstringTest {
   @Test
   public void prefix_toString() {
     assertThat(prefix("foo").toString()).isEqualTo("foo");
+  }
+
+  @Test
+  public void prefix_length() {
+    assertThat(prefix("foo").length()).isEqualTo(3);
+  }
+
+  @Test
+  public void prefix_charAt() {
+    assertThat(prefix("foo").charAt(1)).isEqualTo('o');
+  }
+
+  @Test
+  public void prefix_subSequence() {
+    assertThat(prefix("foo").subSequence(1, 3)).isEqualTo("oo");
+  }
+
+  @Test
+  public void prefix_equals() {
+    new EqualsTester()
+        .addEqualityGroup(prefix("foo"), prefix("foo"))
+        .addEqualityGroup(prefix("bar"))
+        .addEqualityGroup(suffix("foo"))
+        .testEquals();
   }
 
   @Test
@@ -220,48 +246,190 @@ public class SubstringTest {
   @Test
   public void prefix_addToIfAbsent_builderIsEmpty() {
     StringBuilder builder = new StringBuilder();
-    assertThat(prefix("foo").addToIfAbsent(builder)).isEqualTo(builder);
+    assertThat(prefix("foo").addToIfAbsent(builder)).isTrue();
     assertThat(builder.toString()).isEqualTo("foo");
   }
 
   @Test
   public void prefix_addToIfAbsent_builderHasFewerChars() {
     StringBuilder builder = new StringBuilder("oo");
-    assertThat(prefix("foo").addToIfAbsent(builder)).isEqualTo(builder);
+    assertThat(prefix("foo").addToIfAbsent(builder)).isTrue();
     assertThat(builder.toString()).isEqualTo("foooo");
   }
 
   @Test
   public void prefix_addToIfAbsent_builderHasSameNumberOfChars_absent() {
     StringBuilder builder = new StringBuilder("ofo");
-    assertThat(prefix("obo").addToIfAbsent(builder)).isEqualTo(builder);
+    assertThat(prefix("obo").addToIfAbsent(builder)).isTrue();
     assertThat(builder.toString()).isEqualTo("oboofo");
   }
 
   @Test
   public void prefix_addToIfAbsent_builderHasSameNumberOfChars_present() {
     StringBuilder builder = new StringBuilder("foo");
-    assertThat(prefix("foo").addToIfAbsent(builder)).isEqualTo(builder);
+    assertThat(prefix("foo").addToIfAbsent(builder)).isFalse();
     assertThat(builder.toString()).isEqualTo("foo");
   }
 
   @Test
   public void prefix_addToIfAbsent_builderHasMoreChars_absent() {
     StringBuilder builder = new StringBuilder("booo");
-    assertThat(prefix("bob").addToIfAbsent(builder)).isEqualTo(builder);
+    assertThat(prefix("bob").addToIfAbsent(builder)).isTrue();
     assertThat(builder.toString()).isEqualTo("bobbooo");
   }
 
   @Test
   public void prefix_addToIfAbsent_builderHasMoreChars_present() {
     StringBuilder builder = new StringBuilder("booo");
-    assertThat(prefix("boo").addToIfAbsent(builder)).isEqualTo(builder);
+    assertThat(prefix("boo").addToIfAbsent(builder)).isFalse();
     assertThat(builder.toString()).isEqualTo("booo");
+  }
+
+  @Test
+  public void prefix_removeFrom_emptyIsRemovedFromEmptyBuilder() {
+    StringBuilder builder = new StringBuilder();
+    assertThat(prefix("").removeFrom(builder)).isTrue();
+    assertThat(builder.toString()).isEmpty();
+  }
+
+  @Test
+  public void prefix_removeFrom_emptyIsRemovedFromNonEmptyBuilder() {
+    StringBuilder builder = new StringBuilder("foo");
+    assertThat(prefix("").removeFrom(builder)).isTrue();
+    assertThat(builder.toString()).isEqualTo("foo");
+  }
+
+  @Test
+  public void prefix_removeFrom_nonEmptyIsNotRemovedFromEmptyBuilder() {
+    StringBuilder builder = new StringBuilder();
+    assertThat(prefix("foo").removeFrom(builder)).isFalse();
+    assertThat(builder.toString()).isEmpty();
+  }
+
+  @Test
+  public void prefix_removeFrom_nonEmptyIsNotRemovedFromNonEmptyBuilder() {
+    StringBuilder builder = new StringBuilder("foo");
+    assertThat(prefix("fob").removeFrom(builder)).isFalse();
+    assertThat(builder.toString()).isEqualTo("foo");
+  }
+
+  @Test
+  public void prefix_removeFrom_nonEmptyIsRemovedFromNonEmptyBuilder() {
+    StringBuilder builder = new StringBuilder("food");
+    assertThat(prefix("foo").removeFrom(builder)).isTrue();
+    assertThat(builder.toString()).isEqualTo("d");
+  }
+
+  @Test
+  public void prefix_replaceFrom_emptyIsReplacedFromEmptyBuilder() {
+    StringBuilder builder = new StringBuilder();
+    assertThat(prefix("").replaceFrom(builder, "head")).isTrue();
+    assertThat(builder.toString()).isEqualTo("head");
+  }
+
+  @Test
+  public void prefix_replaceFrom_emptyIsReplacedFromNonEmptyBuilder() {
+    StringBuilder builder = new StringBuilder("foo");
+    assertThat(prefix("").replaceFrom(builder, "/")).isTrue();
+    assertThat(builder.toString()).isEqualTo("/foo");
+  }
+
+  @Test
+  public void prefix_replaceFrom_nonEmptyIsNotReplacedFromEmptyBuilder() {
+    StringBuilder builder = new StringBuilder();
+    assertThat(prefix("foo").replaceFrom(builder, "/")).isFalse();
+    assertThat(builder.toString()).isEmpty();
+  }
+
+  @Test
+  public void prefix_replaceFrom_nonEmptyIsNotReplacedFromNonEmptyBuilder() {
+    StringBuilder builder = new StringBuilder("foo");
+    assertThat(prefix("fob").replaceFrom(builder, "bar")).isFalse();
+    assertThat(builder.toString()).isEqualTo("foo");
+  }
+
+  @Test
+  public void prefix_replaceFrom_nonEmptyIsReplacedFromNonEmptyBuilder() {
+    StringBuilder builder = new StringBuilder("food");
+    assertThat(prefix("foo").replaceFrom(builder, "$")).isTrue();
+    assertThat(builder.toString()).isEqualTo("$d");
+  }
+
+  @Test
+  public void prefix_emptyIsInEmptySource() {
+    assertThat(prefix("").isIn("")).isTrue();
+    assertThat(prefix("").isIn(new StringBuilder())).isTrue();
+  }
+
+  @Test
+  public void prefix_emptyIsInNonEmptySource() {
+    assertThat(prefix("").isIn("foo")).isTrue();
+    assertThat(prefix("").isIn(new StringBuilder().append("foo"))).isTrue();
+  }
+
+  @Test
+  public void prefix_nonEmptyNotInEmptySource() {
+    assertThat(prefix("foo").isIn("")).isFalse();
+    assertThat(prefix("foo").isIn(new StringBuilder())).isFalse();
+  }
+
+  @Test
+  public void prefix_sourceHasFewerCharacters() {
+    assertThat(prefix("foo").isIn("fo")).isFalse();
+    assertThat(prefix("foo").isIn(new StringBuilder().append("fo"))).isFalse();
+  }
+
+  @Test
+  public void prefix_sourceHasSameNumberOfCharacters_present() {
+    assertThat(prefix("foo").isIn("foo")).isTrue();
+    assertThat(prefix("foo").isIn(new StringBuilder().append("foo"))).isTrue();
+  }
+
+  @Test
+  public void prefix_sourceHasSameNumberOfCharacters_absent() {
+    assertThat(prefix("foo").isIn("fob")).isFalse();
+    assertThat(prefix("foo").isIn(new StringBuilder().append("fob"))).isFalse();
+  }
+
+  @Test
+  public void prefix_sourceHasMoreCharacters_present() {
+    assertThat(prefix("foo").isIn("food")).isTrue();
+    assertThat(prefix("foo").isIn(new StringBuilder().append("food"))).isTrue();
+  }
+
+  @Test
+  public void prefix_sourceHasMoreCharacters_absent() {
+    assertThat(prefix("foo").isIn("fit")).isFalse();
+    assertThat(prefix("foo").isIn(new StringBuilder().append("fit"))).isFalse();
   }
 
   @Test
   public void suffix_toString() {
     assertThat(suffix("foo").toString()).isEqualTo("foo");
+  }
+
+  @Test
+  public void suffix_length() {
+    assertThat(suffix("foo").length()).isEqualTo(3);
+  }
+
+  @Test
+  public void suffix_charAt() {
+    assertThat(suffix("foo").charAt(1)).isEqualTo('o');
+  }
+
+  @Test
+  public void suffix_subSequence() {
+    assertThat(suffix("foo").subSequence(1, 3)).isEqualTo("oo");
+  }
+
+  @Test
+  public void suffix_equals() {
+    new EqualsTester()
+        .addEqualityGroup(suffix("foo"), suffix("foo"))
+        .addEqualityGroup(suffix("bar"))
+        .addEqualityGroup(prefix("foo"))
+        .testEquals();
   }
 
   @Test
@@ -344,45 +512,163 @@ public class SubstringTest {
   }
 
   @Test
+  public void suffix_addToIfAbsent_emptyIsNotAddedToEmptyBuilder() {
+    StringBuilder builder = new StringBuilder();
+    assertThat(suffix("").addToIfAbsent(builder)).isFalse();
+    assertThat(builder.toString()).isEmpty();
+  }
+
+  @Test
   public void suffix_addToIfAbsent_builderEmpty() {
     StringBuilder builder = new StringBuilder();
-    assertThat(suffix(".").addToIfAbsent(builder)).isEqualTo(builder);
+    assertThat(suffix(".").addToIfAbsent(builder)).isTrue();
     assertThat(builder.toString()).isEqualTo(".");
   }
 
   @Test
   public void suffix_addToIfAbsent_builderHasFewerCharacters() {
     StringBuilder builder = new StringBuilder("oo");
-    assertThat(suffix("foo").addToIfAbsent(builder)).isEqualTo(builder);
+    assertThat(suffix("foo").addToIfAbsent(builder)).isTrue();
     assertThat(builder.toString()).isEqualTo("oofoo");
   }
 
   @Test
   public void suffix_addToIfAbsent_builderHasSameNumberOfCharacters_absent() {
     StringBuilder builder = new StringBuilder("foo");
-    assertThat(suffix("boo").addToIfAbsent(builder)).isEqualTo(builder);
+    assertThat(suffix("boo").addToIfAbsent(builder)).isTrue();
     assertThat(builder.toString()).isEqualTo("fooboo");
   }
 
   @Test
   public void suffix_addToIfAbsent_builderHasSameNumberOfCharacters_present() {
     StringBuilder builder = new StringBuilder("foo");
-    assertThat(suffix("foo").addToIfAbsent(builder)).isEqualTo(builder);
+    assertThat(suffix("foo").addToIfAbsent(builder)).isFalse();
     assertThat(builder.toString()).isEqualTo("foo");
   }
 
   @Test
   public void suffix_addToIfAbsent_builderHasMoreCharacters_absent() {
     StringBuilder builder = new StringBuilder("booo");
-    assertThat(suffix("foo").addToIfAbsent(builder)).isEqualTo(builder);
+    assertThat(suffix("foo").addToIfAbsent(builder)).isTrue();
     assertThat(builder.toString()).isEqualTo("booofoo");
   }
 
   @Test
   public void suffix_addToIfAbsent_builderHasMoreCharacters_present() {
     StringBuilder builder = new StringBuilder("booo");
-    assertThat(suffix("oo").addToIfAbsent(builder)).isEqualTo(builder);
+    assertThat(suffix("oo").addToIfAbsent(builder)).isFalse();
     assertThat(builder.toString()).isEqualTo("booo");
+  }
+
+  @Test
+  public void suffix_removeFrom_emptyIsRemovedFromEmptyBuilder() {
+    StringBuilder builder = new StringBuilder();
+    assertThat(suffix("").removeFrom(builder)).isTrue();
+    assertThat(builder.toString()).isEmpty();
+  }
+
+  @Test
+  public void suffix_removeFrom_emptyIsRemovedFromNonEmptyBuilder() {
+    StringBuilder builder = new StringBuilder("foo");
+    assertThat(suffix("").removeFrom(builder)).isTrue();
+    assertThat(builder.toString()).isEqualTo("foo");
+  }
+
+  @Test
+  public void suffix_removeFrom_nonEmptyIsNotRemovedFromEmptyBuilder() {
+    StringBuilder builder = new StringBuilder();
+    assertThat(suffix("foo").removeFrom(builder)).isFalse();
+    assertThat(builder.toString()).isEmpty();
+  }
+
+  @Test
+  public void suffix_removeFrom_nonEmptyIsNotRemovedFromNonEmptyBuilder() {
+    StringBuilder builder = new StringBuilder("foo");
+    assertThat(suffix("zoo").removeFrom(builder)).isFalse();
+    assertThat(builder.toString()).isEqualTo("foo");
+  }
+
+  @Test
+  public void suffix_removeFrom_nonEmptyIsRemovedFromNonEmptyBuilder() {
+    StringBuilder builder = new StringBuilder("boofoo");
+    assertThat(suffix("foo").removeFrom(builder)).isTrue();
+    assertThat(builder.toString()).isEqualTo("boo");
+  }
+
+  @Test
+  public void suffix_replaceFrom_emptyIsReplacedFromEmptyBuilder() {
+    StringBuilder builder = new StringBuilder();
+    assertThat(suffix("").replaceFrom(builder, ".")).isTrue();
+    assertThat(builder.toString()).isEqualTo(".");
+  }
+
+  @Test
+  public void suffix_replaceFrom_emptyIsReplacedFromNonEmptyBuilder() {
+    StringBuilder builder = new StringBuilder("foo");
+    assertThat(suffix("").replaceFrom(builder, ".")).isTrue();
+    assertThat(builder.toString()).isEqualTo("foo.");
+  }
+
+  @Test
+  public void suffix_replaceFrom_nonEmptyIsNotReplacedFromEmptyBuilder() {
+    StringBuilder builder = new StringBuilder();
+    assertThat(suffix("foo").replaceFrom(builder, ".")).isFalse();
+    assertThat(builder.toString()).isEmpty();
+  }
+
+  @Test
+  public void suffix_replaceFrom_nonEmptyIsReplacedFromNonEmptyBuilder() {
+    StringBuilder builder = new StringBuilder("boofoo");
+    assertThat(suffix("foo").replaceFrom(builder, "lala")).isTrue();
+    assertThat(builder.toString()).isEqualTo("boolala");
+  }
+
+  @Test
+  public void suffix_emptyIsInEmptySource() {
+    assertThat(suffix("").isIn("")).isTrue();
+    assertThat(suffix("").isIn(new StringBuilder())).isTrue();
+  }
+
+  @Test
+  public void suffix_emptyIsInNonEmptySource() {
+    assertThat(suffix("").isIn("foo")).isTrue();
+    assertThat(suffix("").isIn(new StringBuilder().append("foo"))).isTrue();
+  }
+
+  @Test
+  public void suffix_nonEmptyNotInEmptySource() {
+    assertThat(suffix("foo").isIn("")).isFalse();
+    assertThat(suffix("foo").isIn(new StringBuilder())).isFalse();
+  }
+
+  @Test
+  public void suffix_sourceHasFewerCharacters() {
+    assertThat(suffix("foo").isIn("fo")).isFalse();
+    assertThat(suffix("foo").isIn(new StringBuilder().append("fo"))).isFalse();
+  }
+
+  @Test
+  public void suffix_sourceHasSameNumberOfCharacters_present() {
+    assertThat(suffix("foo").isIn("foo")).isTrue();
+    assertThat(suffix("foo").isIn(new StringBuilder().append("foo"))).isTrue();
+  }
+
+  @Test
+  public void suffix_sourceHasSameNumberOfCharacters_absent() {
+    assertThat(suffix("foo").isIn("boo")).isFalse();
+    assertThat(suffix("foo").isIn(new StringBuilder().append("boo"))).isFalse();
+  }
+
+  @Test
+  public void suffix_sourceHasMoreCharacters_present() {
+    assertThat(suffix("foo").isIn("ffoo")).isTrue();
+    assertThat(suffix("foo").isIn(new StringBuilder().append("ffoo"))).isTrue();
+  }
+
+  @Test
+  public void suffix_sourceHasMoreCharacters_absent() {
+    assertThat(suffix("foo").isIn("zoo")).isFalse();
+    assertThat(suffix("foo").isIn(new StringBuilder().append("zoo"))).isFalse();
   }
 
   @Test
@@ -1855,6 +2141,30 @@ public class SubstringTest {
             Substring.between(first("<"), first(">")).repeatedly().match(">foo<bar>h<baz>")
                 .map(Object::toString))
         .containsExactly("bar", "baz");
+  }
+
+  @Test
+  public void then_toString() {
+    assertThat(first("(").then(first("<")).toString())
+        .isEqualTo("first('(').then(first('<'))");
+  }
+
+  @Test
+  public void then_match() {
+    assertThat(first("GET").then(prefix(" ")).split("GET http").map(Joiner.on(':')::join))
+        .hasValue("GET:http");
+  }
+
+  @Test
+  public void then_firstPatternDoesNotMatch() {
+    assertThat(first("GET").then(prefix(" ")).split("GE http").map(Joiner.on(':')::join))
+        .isEmpty();
+  }
+
+  @Test
+  public void then_secondPatternDoesNotMatch() {
+    assertThat(first("GET").then(prefix(" ")).split("GET: http").map(Joiner.on('-')::join))
+        .isEmpty();
   }
 
   @Test

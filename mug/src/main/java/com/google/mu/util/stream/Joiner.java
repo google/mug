@@ -2,6 +2,7 @@ package com.google.mu.util.stream;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 import java.util.StringJoiner;
@@ -60,7 +61,16 @@ import java.util.stream.Collectors;
  *
  * @since 5.6
  */
-public abstract class Joiner implements Collector<Object, StringJoiner, String> {
+public final class Joiner implements Collector<Object, StringJoiner, String> {
+  private final String prefix;
+  private final String delimiter;
+  private final String suffix;
+
+  private Joiner(String prefix, String delimiter, String suffix) {
+    this.prefix = prefix;
+    this.delimiter = delimiter;
+    this.suffix = suffix;
+  }
 
   /** Joining the inputs on the {@code delimiter} character */
   public static Joiner on(char delimiter) {
@@ -68,46 +78,48 @@ public abstract class Joiner implements Collector<Object, StringJoiner, String> 
   }
 
   /** Joining the inputs on the {@code delimiter} string */
-  public static Joiner on(String delimiter) {
-    requireNonNull(delimiter);
-    return new Joiner() {
-      @Override public Supplier<StringJoiner> supplier() {
-        return () -> new StringJoiner(delimiter);
-      }
-      @Override public String join(Object l, Object r) {
-        return l + delimiter + r;
-      }
-    };
+  public static Joiner on(CharSequence delimiter) {
+    return new Joiner("", delimiter.toString(), "");
   }
 
   /** Joins {@code l} and {@code r} together. */
-  public abstract String join(Object l, Object r);
-
-  /** Returns an instance that wraps the join result between {@code before} and {@code after}. */
-  public final Joiner between(char before, char after) {
-    return between(Character.toString(before), Character.toString(after));
+  public String join(Object l, Object r) {
+    return prefix + l + delimiter + r + suffix;
   }
 
-  /** Returns an instance that wraps the join result between {@code before} and {@code after}. */
-  public final Joiner between(String before, String after) {
-    requireNonNull(before);
-    requireNonNull(after);
-    Joiner base = this;
-    return new Joiner() {
-      @Override public Supplier<StringJoiner> supplier() {
-        return base.supplier();
-      }
-      @Override public Function<StringJoiner, String> finisher() {
-       return base.finisher().andThen(r -> before + r + after);
-      }
-      @Override public String join(Object l, Object r) {
-        return before + base.join(l, r) + after;
-      }
-    };
+  /**
+   * Joins elements from {@code collection}.
+   *
+   * <p>{@code joiner.join(list)} is equivalent to {@code list.stream().collect(joiner)}.
+   *
+   * @since 5.7
+   */
+  public String join(Collection<?> collection) {
+    return collection.stream().collect(this);
+  }
+
+  /**
+   * Returns an instance that wraps the join result between {@code before} and {@code after}.
+   *
+   * <p>For example both {@code Joiner.on(',').between('[', ']').join(List.of(1, 2))} and
+   * {@code Joiner.on(',').between('[', ']').join(1, 2)} return {@code "[1,2]"}.
+   */
+  public Joiner between(char before, char after) {
+    return new Joiner(before + prefix, delimiter, suffix + after);
+  }
+
+  /*
+   * Returns an instance that wraps the join result between {@code before} and {@code after}.
+   *
+   * <p>For example both {@code Joiner.on(',').between("[", "]").join([1, 2])} and
+   * {@code Joiner.on(',').between("[", "]").join(1, 2)} result in {@code "[1,2]"}.
+   */
+  public Joiner between(CharSequence before, CharSequence after) {
+    return new Joiner(requireNonNull(before) + prefix, delimiter, suffix + requireNonNull(after));
   }
 
   /** Returns a Collector that skips null inputs and joins the remaining using this Joiner. */
-  public final Collector<Object, ?, String> skipNulls() {
+  public Collector<Object, ?, String> skipNulls() {
     return Java9Collectors.filtering(v -> v != null, this);
   }
 
@@ -115,8 +127,12 @@ public abstract class Joiner implements Collector<Object, StringJoiner, String> 
    * Returns a Collector that skips null and empty string inputs and joins the remaining using
    * this Joiner.
    */
-  public final Collector<CharSequence, ?, String> skipEmpties() {
+  public Collector<CharSequence, ?, String> skipEmpties() {
     return Java9Collectors.filtering(s -> s != null && s.length() > 0, this);
+  }
+
+  @Override public Supplier<StringJoiner> supplier() {
+    return () -> new StringJoiner(delimiter, prefix, suffix);
   }
 
   @Override public BiConsumer<StringJoiner, Object> accumulator() {
@@ -134,6 +150,4 @@ public abstract class Joiner implements Collector<Object, StringJoiner, String> 
   @Override public Set<Characteristics> characteristics() {
     return Collections.emptySet();
   }
-
-  Joiner() {}
 }

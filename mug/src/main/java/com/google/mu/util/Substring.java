@@ -649,6 +649,31 @@ public final class Substring {
     }
 
     /**
+     * Similar to regex lookahead, returns a pattern that matches the {@code following}
+     * pattern after it has matched this pattern. For example {@code first('/').then(first('/'))}
+     * finds the second '/' character.
+     *
+     * @since 5.7
+     */
+    public final Pattern then(Pattern following) {
+      requireNonNull(following);
+      Pattern base = this;
+      return new Pattern() {
+        @Override Match match(String input, int fromIndex) {
+          Match preceding = base.match(input, fromIndex);
+          if (preceding == null) {
+            return null;
+          }
+          return following.match(input, preceding.endIndex);
+        }
+
+        @Override public String toString() {
+          return base + ".then(" + following + ")";
+        }
+      };
+    }
+
+    /**
      * Splits {@code string} into two parts that are separated by this separator pattern. For
      * example:
      *
@@ -658,9 +683,8 @@ public final class Substring {
      *
      * <p>If you need to trim the key-value pairs, use {@link #splitThenTrim}.
      *
-     * <p>To split a string into multiple substrings delimited by a delimiter, use {@link #delimit}.
+     * <p>To split a string into multiple substrings delimited by a delimiter, use {@link #repeatedly}.
      *
-     * @throws IllegalArgumentException if this separator pattern isn't found in {@code string}.
      * @since 5.0
      */
     public final BiOptional<String, String> split(CharSequence string) {
@@ -692,18 +716,21 @@ public final class Substring {
      * multimaps or other types:
      *
      * <pre>{@code
+     * import static com.google.mu.util.stream.MoreCollectors.mapping;
+     *
      * String toSplit = " x -> y, z-> a, x -> t ";
      * ImmutableListMultimap<String, String> result = first(',')
-     *     .delimit(toSplit)
-     *     .map(Match::toString)
+     *     .repeatedly()
+     *     .split(toSplit)
      *     .map(first("->")::splitThenTrim)
-     *     .collect(concatenating(BiOptional::stream))  // Or use BiStream.concat()
-     *     .collect(ImmutableListMultimap::toImmutableListMultimap);
+     *     .collect(
+     *         mapping(
+     *             kv -> kv.orElseThrow(...),
+     *             ImmutableListMultimap::toImmutableListMultimap));
      * }</pre>
      *
-     * <p>To split a string into multiple substrings delimited by a delimiter, use {@link #delimit}.
+     * <p>To split a string into multiple substrings delimited by a delimiter, use {@link #repeatedly}.
      *
-     * @throws IllegalArgumentException if this separator pattern isn't found in {@code string}.
      * @since 5.0
      */
     public final BiOptional<String, String> splitThenTrim(CharSequence string) {
@@ -810,6 +837,20 @@ public final class Substring {
      */
     public abstract Stream<Match> match(String input);
 
+    /**
+     * Applies this pattern against {@code string} and returns a stream of each iteration.
+     *
+     * <p>Iterations happen in strict character encounter order, from the beginning of the input
+     * string to the end, with no overlapping. When a match is found, the next iteration is
+     * guaranteed to be in the substring after the current match. For example, {@code
+     * between(first('/'), first('/')).repeatedly().from("/foo/bar/baz/")} will return {@code
+     * ["foo", "bar", "baz"]}. On the other hand, {@code
+     * after(last('/')).repeatedly().from("/foo/bar")} will only return "bar".
+     *
+     * <p>Pattern matching is lazy and doesn't start until the returned stream is consumed.
+     *
+     * <p>An empty stream is returned if this pattern has no matches in the {@code input} string.
+     */
     public Stream<String> from(CharSequence input) {
       return match(input.toString()).map(Match::toString);
     }
@@ -906,15 +947,49 @@ public final class Substring {
   }
 
   /**
-   * A string prefix pattern.
+   * An immutable string prefix {@code Pattern} with extra utilities such as {@link
+   * #addToIfAbsent(String)}, {@link #removeFrom(StringBuilder)}, {@link #isIn(CharSequence)} etc.
+   *
+   * <p>Can usually be declared as a constant to save allocation cost. Because {@code Prefix}
+   * implements {@link CharSequence}, it can be used almost interchangeably as a string. You can:
+   *
+   * <ul>
+   *   <li>directly prepend a prefix as in {@code HOME_PREFIX + path};
+   *   <li>or prepend it into a {@code StringBuilder}: {@code builder.insert(0, HOME_PREFIX)};
+   *   <li>pass it to any CharSequence-accepting APIs such as {@code
+   *       CharMatcher.anyOf(...).matchesAnyOf(MY_PREFIX)}, {@code
+   *       Substring.first(':').splitThenTrim(MY_PREFIX)} etc.
+   * </ul>
    *
    * @since 4.6
    */
-  public static final class Prefix extends Pattern {
+  public static final class Prefix extends Pattern implements CharSequence {
     private final String prefix;
 
     Prefix(String prefix) {
       this.prefix = prefix;
+    }
+
+    /**
+     * Returns true if {@code source} starts with this prefix.
+     *
+     * @since 5.7
+     */
+    public boolean isIn(CharSequence source) {
+      if (source instanceof String) {
+        return ((String) source).startsWith(prefix);
+      }
+      int prefixChars = prefix.length();
+      int existingChars = source.length();
+      if (existingChars < prefixChars) {
+        return false;
+      }
+      for (int i = 0; i < prefixChars; i++) {
+        if (prefix.charAt(i) != source.charAt(i)) {
+          return false;
+        }
+      }
+      return true;
     }
 
     /**
@@ -928,23 +1003,79 @@ public final class Substring {
     }
 
     /**
-     * If {@code builder} doesn't already start with this prefix, prepend the prefix to it.
+     * If {@code builder} does not already have this prefix, prepend this prefix to it.
      *
-     * @return {@code builder} as is.
+     * @return true if this prefix is prepended
      * @since 5.7
      */
-    public StringBuilder addToIfAbsent(StringBuilder builder) {
-      int prefixChars = prefix.length();
-      int existingChars = builder.length();
-      if (existingChars < prefixChars) {
-        return builder.insert(0, prefix);
+    public boolean addToIfAbsent(StringBuilder builder) {
+      boolean shouldAdd = !isIn(builder);
+      if (shouldAdd) {
+        builder.insert(0, prefix);
       }
-      for (int i = 0; i < prefixChars; i++) {
-        if (prefix.charAt(i) != builder.charAt(i)) {
-          return builder.insert(0, prefix);
-        }
+      return shouldAdd;
+    }
+
+    /**
+     * Removes this prefix from {@code builder} if it starts with the prefix.
+     *
+     * @return true if this prefix is removed
+     * @since 5.7
+     */
+    public boolean removeFrom(StringBuilder builder) {
+      boolean present = isIn(builder);
+      if (present) {
+        builder.delete(0, length());
       }
-      return builder;
+      return present;
+    }
+
+    /**
+     * Replaces this prefix from {@code builder} with {@code replacement} if it starts with the
+     * prefix.
+     *
+     * @return true if this prefix is replaced
+     * @since 5.7
+     */
+    public boolean replaceFrom(StringBuilder builder, CharSequence replacement) {
+      requireNonNull(replacement);
+      boolean present = isIn(builder);
+      if (present) {
+        builder.replace(0, length(), replacement.toString());
+      }
+      return present;
+    }
+
+    /** @since 5.7 */
+    @Override public char charAt(int index) {
+      return prefix.charAt(index);
+    }
+
+    /** @since 5.7 */
+    @Override public String subSequence(int start, int end) {
+      return prefix.substring(start, end);
+    }
+
+    /**
+     * Returns the length of this prefix.
+     *
+     * @since 5.7
+     */
+    @Override public int length() {
+      return prefix.length();
+    }
+
+    @Override public int hashCode() {
+      return prefix.hashCode();
+    }
+
+    @Override public boolean equals(Object obj) {
+      return obj instanceof Prefix && prefix.equals(((Prefix) obj).prefix);
+    }
+
+    /** Returns this prefix string. */
+    @Override public String toString() {
+      return prefix;
     }
 
     @Override Match match(String input, int fromIndex) {
@@ -952,23 +1083,52 @@ public final class Substring {
           ? new Match(input, fromIndex, prefix.length())
           : null;
     }
-
-    /** Returns this prefix string. */
-    @Override public String toString() {
-      return prefix;
-    }
   }
 
   /**
-   * A string suffix pattern.
+   * An immutable string suffix {@code Pattern} with extra utilities such as {@link
+   * #addToIfAbsent(String)}, {@link #removeFrom(StringBuilder)}, {@link #isIn(CharSequence)} etc.
+   *
+   * <p>Can usually be declared as a constant to save allocation cost. Because {@code Suffix}
+   * implements {@link CharSequence}, it can be used almost interchangeably as a string. You can:
+   *
+   * <ul>
+   *   <li>directly append a suffix as in {@code path + SHARD_SUFFIX};
+   *   <li>or append the suffix into a {@code StringBuilder}: {@code builder.append(SHARD_SUFFIX)}};
+   *   <li>pass it to any CharSequence-accepting APIs such as {@code
+   *       CharMatcher.anyOf(...).matchesAnyOf(MY_PREFIX)}, {@code
+   *       Substring.first(':').splitThenTrim(MY_PREFIX)} etc.
+   * </ul>
    *
    * @since 4.6
    */
-  public static final class Suffix extends Pattern {
+  public static final class Suffix extends Pattern implements CharSequence {
     private final String suffix;
 
     Suffix(String suffix) {
       this.suffix = suffix;
+    }
+
+    /**
+     * Returns true if {@code source} ends with this suffix.
+     *
+     * @since 5.7
+     */
+    public boolean isIn(CharSequence source) {
+      if (source instanceof String) {
+        return ((String) source).endsWith(suffix);
+      }
+      int suffixChars = suffix.length();
+      int existingChars = source.length();
+      if (existingChars < suffixChars) {
+        return false;
+      }
+      for (int i = 1; i <= suffixChars; i++) {
+        if (suffix.charAt(suffixChars - i) != source.charAt(existingChars - i)) {
+          return false;
+        }
+      }
+      return true;
     }
 
     /**
@@ -982,23 +1142,81 @@ public final class Substring {
     }
 
     /**
-     * If {@code builder} doesn't already end with this suffix, append the suffix to it.
+     * If {@code builder} does not already have this suffix, append this suffix to it.
      *
-     * @return {@code builder} as is.
+     * @return true if this suffix is appended
      * @since 5.7
      */
-    public StringBuilder addToIfAbsent(StringBuilder builder) {
-      int suffixChars = suffix.length();
-      int existingChars = builder.length();
-      if (existingChars < suffixChars) {
-        return builder.append(suffix);
+    public boolean addToIfAbsent(StringBuilder builder) {
+      boolean shouldAdd = !isIn(builder);
+      if (shouldAdd) {
+        builder.append(suffix);
       }
-      for (int i = 1; i <= suffixChars; i++) {
-        if (suffix.charAt(suffixChars - i) != builder.charAt(existingChars - i)) {
-          return builder.append(suffix);
-        }
+      return shouldAdd;
+    }
+
+    /**
+     * Removes this suffix from {@code builder} if it ends with the suffix.
+     *
+     * @return true if this suffix is removed
+     * @since 5.7
+     */
+    public boolean removeFrom(StringBuilder builder) {
+      boolean present = isIn(builder);
+      if (present) {
+        builder.delete(builder.length() - length(), builder.length());
       }
-      return builder;
+      return present;
+    }
+
+    /**
+     * Replaces this suffix from {@code builder} with {@code replacement} if it ends with the
+     * suffix.
+     *
+     * @return true if this suffix is replaced
+     * @since 5.7
+     */
+    public boolean replaceFrom(StringBuilder builder, CharSequence replacement) {
+      requireNonNull(replacement);
+      boolean present = isIn(builder);
+      if (present) {
+        builder.replace(builder.length() - length(), builder.length(), replacement.toString());
+      }
+      return present;
+    }
+
+    /** @since 5.7 */
+    @Override public char charAt(int index) {
+      return suffix.charAt(index);
+    }
+
+    /** @since 5.7 */
+    @Override public String subSequence(int start, int end) {
+      return suffix.substring(start, end);
+    }
+
+    /**
+     * Returns the length of this suffix.
+     *
+     * @since 5.7
+     */
+    @Override public int length() {
+      return suffix.length();
+    }
+
+    /** @since 5.7 */
+    @Override public int hashCode() {
+      return suffix.hashCode();
+    }
+
+    /** @since 5.7 */
+    @Override public boolean equals(Object obj) {
+      return obj instanceof Suffix && suffix.equals(((Suffix) obj).suffix);
+    }
+
+    /** Returns this suffix string. */
+    @Override public String toString() {
+      return suffix;
     }
 
     @Override Match match(String input, int fromIndex) {
@@ -1006,11 +1224,6 @@ public final class Substring {
       return index >= fromIndex && input.endsWith(suffix)
           ? new Match(input, index, suffix.length())
           : null;
-    }
-
-    /** Returns this suffix string. */
-    @Override public String toString() {
-      return suffix;
     }
   }
 

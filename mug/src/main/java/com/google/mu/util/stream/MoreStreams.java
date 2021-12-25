@@ -15,6 +15,7 @@
 package com.google.mu.util.stream;
 
 import static com.google.mu.util.stream.BiCollectors.toMap;
+import static com.google.mu.util.stream.BiStream.biStream;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayDeque;
@@ -22,16 +23,20 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Spliterator;
 import java.util.Spliterators.AbstractSpliterator;
+import java.util.function.BiPredicate;
+import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -124,6 +129,94 @@ public final class MoreStreams {
    */
   public static <T> Stream<T> flatten(Stream<? extends Stream<? extends T>> streamOfStream) {
     return mapBySpliterator(streamOfStream.sequential(), 0, FlattenedSpliterator<T>::new);
+  }
+
+  /**
+   * Groups consecutive elements from {@code stream} lazily. Two consecutive elements belong to the
+   * same group if {@code sameGroup} evaluates to true. Consecutive elements belonging to the same
+   * group will be collected together using {@code groupCollector}.
+   *
+   * <p>For example, you can find every list of increasing stock prices, given daily stock prices:
+   *
+   * <pre>{@code
+   * ImmutableList<ImmutableList<Double>> increasingStockPriceSeries =
+   *     groupConsecutive(stockPrices, (p1, p2) -> p1 <= p2, toImmutableList())
+   *         .collect(toImmutableList());
+   * }</pre>
+   *
+   * @since 5.7
+   */
+  public static <T, R> Stream<R> groupConsecutive(
+      Stream<T> stream,
+      BiPredicate<? super T, ? super T> sameGroup,
+      Collector<? super T, ?, R> groupCollector) {
+    return biStream(stream).groupConsecutiveIf(sameGroup, groupCollector);
+  }
+
+  /**
+   * Groups consecutive elements from {@code stream} lazily. Two consecutive elements belong to the
+   * same group if {@code sameGroup} evaluates to true. Consecutive elements belonging to the same
+   * group will be reduced using {@code groupReducer}.
+   *
+   * <p>For example, you can find the total number of trades for the stock during each period when
+   * there was no large trade anomaly (difference):
+   *
+   * <pre>{@code
+   * ImmutableList<Long> stockTradesPerPeriod =
+   *     groupConsecutive(stockTrades, (t1, t2) -> Math.abs(t1 - t2) < threshold, Long::sum)
+   *         .collect(toImmutableList());
+   * }</pre>
+   *
+   * @since 5.7
+   */
+  public static <T> Stream<T> groupConsecutive(
+      Stream<T> stream,
+      BiPredicate<? super T, ? super T> sameGroup,
+      BinaryOperator<T> groupReducer) {
+    return biStream(stream).groupConsecutiveIf(sameGroup, groupReducer);
+  }
+
+  /**
+   * Groups consecutive elements from {@code stream} lazily. Two consecutive elements belong to the
+   * same group if {@code groupKeyFunction} evaluates to equal keys. Consecutive elements belonging
+   * to the same group will be collected together using {@code groupCollector}.
+   *
+   * <p>For example, you can group consecutive events by their severity:
+   *
+   * <pre>{@code
+   * ImmutableList<ImmutableList<Event>> sameSeverityEventGroups =
+   *     groupConsecutive(events, Event::severity, toImmutableList())
+   *         .collect(toImmutableList());
+   * }</pre>
+   *
+   * @since 5.7
+   */
+  public static <T, R> Stream<R> groupConsecutive(
+      Stream<T> stream,
+      Function<? super T, ?> groupKeyFunction,
+      Collector<? super T, ?, R> groupCollector) {
+    return groupConsecutive(stream, by(groupKeyFunction), groupCollector);
+  }
+
+  /**
+   * Groups consecutive elements from {@code stream} lazily. Two consecutive elements belong to the
+   * same group if {@code groupKeyFunction} evaluates to equal keys. Consecutive elements belonging
+   * to the same group will be reduced using {@code groupReducer}.
+   *
+   * <p>For example, you can find the first event of each severity in a consecutive series of
+   * events:
+   *
+   * <pre>{@code
+   * ImmutableList<Event> firstEventsWithAlternatingSeverity =
+   *     groupConsecutive(events, Event::severity, (e1, e2) -> e1)
+   *         .collect(toImmutableList());
+   * }</pre>
+   *
+   * @since 5.7
+   */
+  public static <T> Stream<T> groupConsecutive(
+      Stream<T> stream, Function<? super T, ?> groupKeyFunction, BinaryOperator<T> groupReducer) {
+    return groupConsecutive(stream, by(groupKeyFunction), groupReducer);
   }
 
   /**
@@ -333,6 +426,26 @@ public final class MoreStreams {
   }
 
   /**
+   * Returns an infinite index stream starting from {@code firstIndex}. This can then be used to
+   * {@link BiStream#zip zip} with another stream to provide indexing, such as:
+   *
+   * <pre>
+   *   BiStream.zip(indexesFrom(0), values).toMap();
+   * </pre>
+   *
+   * <p>To get a finite stream, use {@code indexesFrom(0).limit(size)}.
+   *
+   * <p>For small indexes (up to 127), {@code Long} instances are pre-cached by JVM so no boxing
+   * happens; for larger indexes, every index incurs some boxing cost. If the cost is of concern,
+   * prefer to use {@link LongStream#iterate} directly.
+   *
+   * @since 5.7
+   */
+  public static Stream<Long> indexesFrom(long firstIndex) {
+    return LongStream.iterate(firstIndex, i -> i + 1).boxed();
+  }
+
+  /**
    * Similar to {@link Stream#generate}, returns an infinite, sequential, unordered, and non-null
    * stream where each element is generated by the provided Supplier. The stream however will
    * terminate as soon as the Supplier returns null, in which case the null is treated as the
@@ -464,6 +577,11 @@ public final class MoreStreams {
           return b1;
         },
         Stream.Builder::build);
+  }
+
+  private static <T> BiPredicate<T, T> by(Function<? super T, ?> keyFunction) {
+    requireNonNull(keyFunction);
+    return (a, b) -> Objects.equals(keyFunction.apply(a), keyFunction.apply(b));
   }
 
   private static <F, T> T splitThenWrap(
