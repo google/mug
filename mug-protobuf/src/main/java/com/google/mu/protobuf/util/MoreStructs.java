@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collector;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Table;
 import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.mu.util.stream.BiCollector;
@@ -33,7 +34,17 @@ import com.google.protobuf.Value;
  * (numeric, string, boolean, null) and the {@code Collection}s, {@code Map}s, {@code Table}s,
  * {@code Optional}s thereof are automatically converted to their corresponding {@link Value}
  * wrappers using {@link ValueConverter}. This allows users to conveniently create {@link Struct}
- * whose fields are often heterogeneous maps of dynamically typed values.
+ * whose fields are often heterogeneous maps of dynamically typed values. For example:
+ *
+ * <pre>{@code
+ * Struct ironMan =
+ *     struct("name", "Tony Stark", "age", 40, "talents", List.of("genius", "billionare"));
+ * }</pre>
+ *
+ * <p>The {@code struct()} factory methods will throw {@link IllegalArgumentException} if duplicate keys
+ * are provided. It's consistent with {@link Map#of} and {@link ImmutableMap#of},
+ * and different from {@link com.google.protobuf.util.Structs} that leaves it as
+ * "undefined behavior".
  *
  * <p>Occasionally, an application may need custom logic to convert a domain-specific type into
  * {@code Value}, and then recursively into {@code ListValue} and/or {@code Struct}. This can be
