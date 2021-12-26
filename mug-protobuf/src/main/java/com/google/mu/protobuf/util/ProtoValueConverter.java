@@ -25,7 +25,7 @@ import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
 
 /**
- * A converter that can convert a Pojo to {@link Value} message, and recursively,
+ * A converter that converts a POJO to {@link Value} protobuf message, and recursively,
  * the {@code Collection}s, {@code Map}s and {@code Table}s thereof into corresponding
  * {@link ListValue} or {@link Struct} wrappers.
  *
@@ -36,7 +36,7 @@ import com.google.protobuf.Value;
  * needs to convert {@code User} types to {@code Value} by using the user ids:
  *
  * <pre>{@code
- * ValueConverter customConverter = new ValueConverter() {
+ * ProtoValueConverter customConverter = new ProtoValueConverter() {
  *   public Value convert(Object obj) {
  *     if (obj instanceof User) {  // custom logic
  *       return convert(((User) obj).getId());
@@ -49,7 +49,7 @@ import com.google.protobuf.Value;
  *
  * @since 5.8
  */
-public class ValueConverter {
+public class ProtoValueConverter {
   private static final Value NULL_VALUE =
       Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build();
   private static final Value FALSE_VALUE = Value.newBuilder().setBoolValue(false).build();
@@ -116,32 +116,32 @@ public class ValueConverter {
     }
     if (object instanceof int[]) {
       return Arrays.stream((int[]) object)
-          .mapToObj(ValueConverter::valueOf)
+          .mapToObj(ProtoValueConverter::valueOf)
           .collect(valuesToValue());
     }
     if (object instanceof ImmutableIntArray) {
       return ((ImmutableIntArray) object).stream()
-          .mapToObj(ValueConverter::valueOf)
+          .mapToObj(ProtoValueConverter::valueOf)
           .collect(valuesToValue());
     }
     if (object instanceof long[]) {
       return Arrays.stream((long[]) object)
-          .mapToObj(ValueConverter::valueOf)
+          .mapToObj(ProtoValueConverter::valueOf)
           .collect(valuesToValue());
     }
     if (object instanceof ImmutableLongArray) {
       return ((ImmutableLongArray) object).stream()
-          .mapToObj(ValueConverter::valueOf)
+          .mapToObj(ProtoValueConverter::valueOf)
           .collect(valuesToValue());
     }
     if (object instanceof double[]) {
       return Arrays.stream((double[]) object)
-          .mapToObj(ValueConverter::valueOf)
+          .mapToObj(ProtoValueConverter::valueOf)
           .collect(valuesToValue());
     }
     if (object instanceof ImmutableDoubleArray) {
       return ((ImmutableDoubleArray) object).stream()
-          .mapToObj(ValueConverter::valueOf)
+          .mapToObj(ProtoValueConverter::valueOf)
           .collect(valuesToValue());
     }
     if (object instanceof Object[]) {
@@ -208,7 +208,7 @@ public class ValueConverter {
 
   private Value toStructValue(Map<?, ?> map) {
     Struct struct = BiStream.from(map)
-        .mapKeys(ValueConverter::toStructKey)
+        .mapKeys(ProtoValueConverter::toStructKey)
         .collect(this::toStruct);
     return Value.newBuilder().setStructValue(struct).build();
   }

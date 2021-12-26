@@ -31,8 +31,8 @@ import com.google.protobuf.Value;
 import com.google.protobuf.util.Values;
 
 @RunWith(JUnit4.class)
-public class ValueConverterTest {
-  private final ValueConverter converter = new ValueConverter();
+public class ProtoValueConverterTest {
+  private final ProtoValueConverter converter = new ProtoValueConverter();
 
   @Test
   public void convert_fromMap() {
@@ -248,7 +248,7 @@ public class ValueConverterTest {
 
   @Test
   public void convertCannotReturnNull() {
-    ValueConverter nullReturn = new ValueConverter() {
+    ProtoValueConverter nullReturn = new ProtoValueConverter() {
       @Override public Value convert(Object obj) {
         return null;
       }
@@ -261,7 +261,7 @@ public class ValueConverterTest {
 
   @Test
   public void customConversion() {
-    ValueConverter custom = new ValueConverter() {
+    ProtoValueConverter custom = new ProtoValueConverter() {
       @Override public Value convert(Object obj) {
         if (obj instanceof Hero) {
           Hero hero = (Hero) obj;
