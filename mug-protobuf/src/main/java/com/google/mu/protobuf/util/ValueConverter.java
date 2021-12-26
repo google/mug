@@ -112,7 +112,7 @@ public class ValueConverter {
       return convertNonNull(((Optional<?>) object).orElse(null));
     }
     if (object instanceof Enum) {
-      return Value.newBuilder().setStringValue((((Enum<>) object).name())).build();
+      return Value.newBuilder().setStringValue((((Enum<?>) object).name())).build();
     }
     if (object instanceof int[]) {
       return Arrays.stream((int[]) object)
