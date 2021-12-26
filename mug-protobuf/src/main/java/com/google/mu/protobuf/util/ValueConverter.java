@@ -6,13 +6,18 @@ import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.Streams.stream;
 import static java.util.stream.Collectors.collectingAndThen;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collector;
+import java.util.stream.IntStream;
 
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
+import com.google.common.primitives.ImmutableDoubleArray;
+import com.google.common.primitives.ImmutableIntArray;
+import com.google.common.primitives.ImmutableLongArray;
 import com.google.mu.util.stream.BiStream;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.NullValue;
@@ -50,7 +55,22 @@ public class ValueConverter {
   private static final Value FALSE_VALUE = Value.newBuilder().setBoolValue(false).build();
   private static final Value TRUE_VALUE = Value.newBuilder().setBoolValue(true).build();
 
-  /** Converts {@code object} to {@code Value}. Must not return null. */
+  /**
+   * Converts {@code object} to {@code Value}. Must not return null.
+   *
+   * <p>Supported types: <ul>
+   * <li>Primitive types (boolean, number, string)
+   * <li>{@code null} converted to {@link NullValue}
+   * <li>{@link Iterable} and arrays with elements recursively converted and wrapped in {@link ListValue}
+   * <li>{@link ImmutableIntArray}, {@link ImmutableLongArray} and {@link ImmutableDoubleArray}
+   *     with element numbers wrapped in {@link ListValue}
+   * <li>{@link Map} with values recursively converted and wrapped in {@link Struct}
+   * <li>{@link Multimap} converted as {@code convert(multimap.asMap())}
+   * <li>{@link Table} converted as {@code convert(table.rowMap())}
+   * <li>{@link Optional} converted as {@code convert(optional.orElse(null))}
+   * <li>Built-in protobuf types ({@link Struct}, {@link Value}, {@link ListValue}, {@link NullValue})
+   * </ul>
+   */
   public Value convert(Object object) {
     if (object == null || object instanceof NullValue) {
       return NULL_VALUE;
@@ -73,9 +93,6 @@ public class ValueConverter {
     if (object instanceof ListValue) {
       return Value.newBuilder().setListValue((ListValue) object).build();
     }
-    if (object instanceof Optional) {
-      return convertNonNull(((Optional<?>) object).orElse(null));
-    }
     if (object instanceof Iterable) {
       return Value.newBuilder()
           .setListValue(stream((Iterable<?>) object).collect(toListValue()))
@@ -90,6 +107,64 @@ public class ValueConverter {
     if (object instanceof Table) {
       return toStructValue(((Table<?, ?, ?>) object).rowMap());
     }
+    if (object instanceof Optional) {
+      return convertNonNull(((Optional<?>) object).orElse(null));
+    }
+    if (object instanceof int[]) {
+      return Arrays.stream((int[]) object)
+          .mapToObj(ValueConverter::valueOf)
+          .collect(valuesToValue());
+    }
+    if (object instanceof ImmutableIntArray) {
+      return ((ImmutableIntArray) object).stream()
+          .mapToObj(ValueConverter::valueOf)
+          .collect(valuesToValue());
+    }
+    if (object instanceof long[]) {
+      return Arrays.stream((long[]) object)
+          .mapToObj(ValueConverter::valueOf)
+          .collect(valuesToValue());
+    }
+    if (object instanceof ImmutableLongArray) {
+      return ((ImmutableLongArray) object).stream()
+          .mapToObj(ValueConverter::valueOf)
+          .collect(valuesToValue());
+    }
+    if (object instanceof double[]) {
+      return Arrays.stream((double[]) object)
+          .mapToObj(ValueConverter::valueOf)
+          .collect(valuesToValue());
+    }
+    if (object instanceof ImmutableDoubleArray) {
+      return ((ImmutableDoubleArray) object).stream()
+          .mapToObj(ValueConverter::valueOf)
+          .collect(valuesToValue());
+    }
+    if (object instanceof Object[]) {
+      return convert(Arrays.asList((Object[]) object));
+    }
+    if (object instanceof byte[]) {
+      byte[] array = (byte[]) object;
+      return IntStream.range(0, array.length)
+          .mapToObj(i -> valueOf(array[i]))
+          .collect(valuesToValue());
+    }
+    if (object instanceof short[]) {
+      short[] array = (short[]) object;
+      return IntStream.range(0, array.length)
+          .mapToObj(i -> valueOf(array[i]))
+          .collect(valuesToValue());
+    }
+    return defaultValue(object);
+  }
+
+  /**
+   * Called by {@code #convert} when {@code object} cannot be converted. Subclasses can override
+   * this method to throw a different exception type, or to return a catch-all default {@code Value}.
+   *
+   * @throws IllegalArgumentException to report that the type of {@code object} isn't supported
+   */
+  protected Value defaultValue(Object object) {
     throw new IllegalArgumentException("Unsupported type: " + object.getClass().getName());
   }
 
@@ -139,5 +214,17 @@ public class ValueConverter {
     checkArgument(
         key instanceof CharSequence, "Unsupported struct key type: %s", key.getClass().getName());
     return key.toString();
+  }
+
+  private static Collector<Value, ?, Value> valuesToValue() {
+    return Collector.of(
+        ListValue::newBuilder,
+        ListValue.Builder::addValues,
+        (a, b) -> a.addAllValues(b.getValuesList()),
+        b -> Value.newBuilder().setListValue(b).build());
+  }
+
+  private static Value valueOf(double n) {
+    return Value.newBuilder().setNumberValue(n).build();
   }
 }

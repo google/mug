@@ -20,6 +20,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableTable;
+import com.google.common.primitives.ImmutableDoubleArray;
+import com.google.common.primitives.ImmutableIntArray;
+import com.google.common.primitives.ImmutableLongArray;
 import com.google.mu.util.stream.BiStream;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.NullValue;
@@ -113,10 +116,10 @@ public class ValueConverterTest {
 
   @Test
   public void toValue_fromNumber() {
-    assertThat(converter.convert(10L)).isEqualTo(Value.newBuilder().setNumberValue(10).build());
-    assertThat(converter.convert(10)).isEqualTo(Value.newBuilder().setNumberValue(10).build());
-    assertThat(converter.convert(10F)).isEqualTo(Value.newBuilder().setNumberValue(10).build());
-    assertThat(converter.convert(10D)).isEqualTo(Value.newBuilder().setNumberValue(10).build());
+    assertThat(converter.convert(10L)).isEqualTo(Values.of(10));
+    assertThat(converter.convert(10)).isEqualTo(Values.of(10));
+    assertThat(converter.convert(10F)).isEqualTo(Values.of(10));
+    assertThat(converter.convert(10D)).isEqualTo(Values.of(10));
   }
 
   @Test
@@ -181,6 +184,60 @@ public class ValueConverterTest {
                 .addValues(converter.convert(asList(true, false)))
                 .addValues(converter.convert(ImmutableMap.of("k", 20L)))
                 .build());
+  }
+
+  @Test
+  public void toValue_fromIntArray() {
+    assertThat(converter.convert(new int[] {10}))
+        .isEqualTo(Values.of(ImmutableList.of(Values.of(10))));
+  }
+
+  @Test
+  public void toValue_fromImmutableIntArray() {
+    assertThat(converter.convert(ImmutableIntArray.of(10)))
+        .isEqualTo(Values.of(ImmutableList.of(Values.of(10))));
+  }
+
+  @Test
+  public void toValue_fromLongArray() {
+    assertThat(converter.convert(new long[] {10}))
+        .isEqualTo(Values.of(ImmutableList.of(Values.of(10))));
+  }
+
+  @Test
+  public void toValue_fromImmutableLongArray() {
+    assertThat(converter.convert(ImmutableLongArray.of(10)))
+        .isEqualTo(Values.of(ImmutableList.of(Values.of(10))));
+  }
+
+  @Test
+  public void toValue_fromDoubleArray() {
+    assertThat(converter.convert(new double[] {10}))
+        .isEqualTo(Values.of(ImmutableList.of(Values.of(10))));
+  }
+
+  @Test
+  public void toValue_fromImmutableDoubleArray() {
+    assertThat(converter.convert(ImmutableDoubleArray.of(10)))
+        .isEqualTo(Values.of(ImmutableList.of(Values.of(10))));
+  }
+
+  @Test
+  public void toValue_fromByteArray() {
+    assertThat(converter.convert(new byte[] {10, 20}))
+        .isEqualTo(Values.of(ImmutableList.of(Values.of(10), Values.of(20))));
+  }
+
+  @Test
+  public void toValue_fromShortArray() {
+    assertThat(converter.convert(new short[] {10, 20}))
+        .isEqualTo(Values.of(ImmutableList.of(Values.of(10), Values.of(20))));
+  }
+
+  @Test
+  public void toValue_fromArray() {
+    assertThat(converter.convert(new String[] {"foo", "bar"}))
+        .isEqualTo(Values.of(ImmutableList.of(Values.of("foo"), Values.of("bar"))));
   }
 
   @Test
