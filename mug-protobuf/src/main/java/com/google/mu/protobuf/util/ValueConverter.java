@@ -61,7 +61,7 @@ public class ValueConverter {
    * <p>Supported types: <ul>
    * <li>Primitive types (boolean, number, string)
    * <li>{@code null} converted to {@link NullValue}
-   * <li>Enum represented by {@link Enum#name name}
+   * <li>Enum encoded by {@link Enum#name name}
    * <li>{@link Iterable} and array elements recursively converted and wrapped in {@link ListValue}x
    * <li>{@link Map} values recursively converted and wrapped in {@link Struct}
    * <li>{@link Multimap} converted as {@code convert(multimap.asMap())}
@@ -112,7 +112,7 @@ public class ValueConverter {
       return convertNonNull(((Optional<?>) object).orElse(null));
     }
     if (object instanceof Enum) {
-      return Value.newBuilder().setStringValue((((Enum<?>) object).name())).build();
+      return Value.newBuilder().setStringValue((((Enum<>) object).name())).build();
     }
     if (object instanceof int[]) {
       return Arrays.stream((int[]) object)
