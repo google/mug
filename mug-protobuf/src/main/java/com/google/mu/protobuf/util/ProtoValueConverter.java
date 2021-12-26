@@ -2,9 +2,11 @@ package com.google.mu.protobuf.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.Streams.stream;
+import static com.google.mu.protobuf.util.MoreValues.NULL;
+import static com.google.mu.protobuf.util.MoreValues.valueOf;
 import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.mapping;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -50,11 +52,6 @@ import com.google.protobuf.Value;
  * @since 5.8
  */
 public class ProtoValueConverter {
-  private static final Value NULL_VALUE =
-      Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build();
-  private static final Value FALSE_VALUE = Value.newBuilder().setBoolValue(false).build();
-  private static final Value TRUE_VALUE = Value.newBuilder().setBoolValue(true).build();
-
   /**
    * Converts {@code object} to {@code Value}. Must not return null.
    *
@@ -74,10 +71,10 @@ public class ProtoValueConverter {
    */
   public Value convert(Object object) {
     if (object == null || object instanceof NullValue) {
-      return NULL_VALUE;
+      return NULL;
     }
     if (object instanceof Boolean) {
-      return ((Boolean) object) ? TRUE_VALUE : FALSE_VALUE;
+      return valueOf((Boolean) object);
     }
     if (object instanceof Number) {
       return Value.newBuilder().setNumberValue(((Number) object).doubleValue()).build();
@@ -92,12 +89,10 @@ public class ProtoValueConverter {
       return Value.newBuilder().setStructValue((Struct) object).build();
     }
     if (object instanceof ListValue) {
-      return Value.newBuilder().setListValue((ListValue) object).build();
+      return MoreValues.valueOf((ListValue) object);
     }
     if (object instanceof Iterable) {
-      return Value.newBuilder()
-          .setListValue(stream((Iterable<?>) object).collect(toListValue()))
-          .build();
+      return MoreValues.valueOf(stream((Iterable<?>) object).collect(toListValue()));
     }
     if (object instanceof Map) {
       return toStructValue((Map<?, ?>) object);
@@ -116,32 +111,32 @@ public class ProtoValueConverter {
     }
     if (object instanceof int[]) {
       return Arrays.stream((int[]) object)
-          .mapToObj(ProtoValueConverter::valueOf)
+          .mapToObj(MoreValues::valueOf)
           .collect(valuesToValue());
     }
     if (object instanceof ImmutableIntArray) {
       return ((ImmutableIntArray) object).stream()
-          .mapToObj(ProtoValueConverter::valueOf)
+          .mapToObj(MoreValues::valueOf)
           .collect(valuesToValue());
     }
     if (object instanceof long[]) {
       return Arrays.stream((long[]) object)
-          .mapToObj(ProtoValueConverter::valueOf)
+          .mapToObj(MoreValues::valueOf)
           .collect(valuesToValue());
     }
     if (object instanceof ImmutableLongArray) {
       return ((ImmutableLongArray) object).stream()
-          .mapToObj(ProtoValueConverter::valueOf)
+          .mapToObj(MoreValues::valueOf)
           .collect(valuesToValue());
     }
     if (object instanceof double[]) {
       return Arrays.stream((double[]) object)
-          .mapToObj(ProtoValueConverter::valueOf)
+          .mapToObj(MoreValues::valueOf)
           .collect(valuesToValue());
     }
     if (object instanceof ImmutableDoubleArray) {
       return ((ImmutableDoubleArray) object).stream()
-          .mapToObj(ProtoValueConverter::valueOf)
+          .mapToObj(MoreValues::valueOf)
           .collect(valuesToValue());
     }
     if (object instanceof Object[]) {
@@ -176,12 +171,8 @@ public class ProtoValueConverter {
    * Returns a {@link Collector} that converts and accumulates the input objects into a {@link
    * ListValue}.
    */
-  public final Collector<Object, ListValue.Builder, ListValue> toListValue() {
-    return Collector.of(
-        ListValue::newBuilder,
-        (builder, v) -> builder.addValues(convertNonNull(v)),
-        (a, b) -> a.addAllValues(b.getValuesList()),
-        ListValue.Builder::build);
+  public final Collector<Object, ?, ListValue> toListValue() {
+    return mapping(this::convertNonNull, MoreValues.toListValue());
   }
 
   /**
@@ -194,11 +185,7 @@ public class ProtoValueConverter {
    */
   public final <T> Collector<T, ?, Struct> toStruct(
       Function<? super T, ? extends CharSequence> keyFunction, Function<? super T, ?> valueFunction) {
-    return collectingAndThen(
-        toImmutableMap(
-            keyFunction.andThen(CharSequence::toString),
-            valueFunction.andThen(this::convertNonNull)),
-        fields -> Struct.newBuilder().putAllFields(fields).build());
+    return StructBuilder.toStruct(keyFunction, valueFunction.andThen(this::convertNonNull));
   }
 
   private Value convertNonNull(Object object) {
@@ -221,14 +208,6 @@ public class ProtoValueConverter {
   }
 
   private static Collector<Value, ?, Value> valuesToValue() {
-    return Collector.of(
-        ListValue::newBuilder,
-        ListValue.Builder::addValues,
-        (a, b) -> a.addAllValues(b.getValuesList()),
-        b -> Value.newBuilder().setListValue(b).build());
-  }
-
-  private static Value valueOf(double n) {
-    return Value.newBuilder().setNumberValue(n).build();
+    return collectingAndThen(MoreValues.toListValue(), MoreValues::valueOf);
   }
 }
