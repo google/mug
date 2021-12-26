@@ -16,6 +16,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableTable;
@@ -193,5 +194,46 @@ public class ValueConverterTest {
         NullPointerException.class, () -> Stream.of("foo").collect(nullReturn.toListValue()));
     assertThrows(
         NullPointerException.class, () -> BiStream.of("foo", 1).collect(nullReturn::toStruct));
+  }
+
+  @Test
+  public void customConversion() {
+    ValueConverter custom = new ValueConverter() {
+      @Override public Value convert(Object obj) {
+        if (obj instanceof Hero) {
+          Hero hero = (Hero) obj;
+          return convert(ImmutableMap.of("name", hero.name, "titles", hero.titles, "friends", hero.friends));
+        }
+        return super.convert(obj);
+      }
+    };
+    Hero ironMan = new Hero("Tony Stark", "Iron Man", "Robert Downey");
+    Hero scarletWitch = new Hero("Wanda", "Scarlet Witch");
+    ironMan.friends.add(scarletWitch);
+    scarletWitch.friends.add(new Hero("Vision"));
+    assertThat(Stream.of(Optional.of(ironMan)).collect(custom.toListValue()))
+        .isEqualTo(ListValue.newBuilder()
+            .addValues(Values.of(struct(
+                "name", "Tony Stark",
+                "titles", ImmutableList.of("Iron Man", "Robert Downey"),
+                "friends", ImmutableList.of(struct(
+                    "name", "Wanda",
+                    "titles", ImmutableList.of("Scarlet Witch"),
+                    "friends", ImmutableList.of(struct(
+                        "name", "Vision",
+                        "titles", ImmutableList.of(),
+                        "friends", ImmutableList.of())))))))
+            .build());
+  }
+
+  private static final class Hero {
+    final String name;
+    final ImmutableList<String> titles;
+    final List<Hero> friends = new ArrayList<>();
+
+    Hero(String name, String... titles) {
+      this.name = name;
+      this.titles = ImmutableList.copyOf(titles);
+    }
   }
 }
