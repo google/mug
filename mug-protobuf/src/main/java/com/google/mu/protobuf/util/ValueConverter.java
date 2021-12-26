@@ -61,7 +61,7 @@ public class ValueConverter {
    * <p>Supported types: <ul>
    * <li>Primitive types (boolean, number, string)
    * <li>{@code null} converted to {@link NullValue}
-   * <li>Enum encoded by {@link Enum#name name}
+   * <li>Enum e by {@link Enum#name name}
    * <li>{@link Iterable} and array elements recursively converted and wrapped in {@link ListValue}x
    * <li>{@link Map} values recursively converted and wrapped in {@link Struct}
    * <li>{@link Multimap} converted as {@code convert(multimap.asMap())}
