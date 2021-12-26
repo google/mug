@@ -42,7 +42,7 @@ import com.google.protobuf.Value;
  * }</pre>
  *
  * <p>The {@code struct()} factory methods will throw {@link IllegalArgumentException} if duplicate keys
- * are provided. It's consistent with {@link Map#of} and {@link ImmutableMap#of},
+ * are provided. This is consistent with {@link Map#of} and {@link ImmutableMap#of},
  * and different from {@link com.google.protobuf.util.Structs} that leaves it as
  * "undefined behavior".
  *
