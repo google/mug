@@ -25,7 +25,7 @@ import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
 
 /**
- * A converter that converts a POJO to {@link Value} protobuf message, and recursively,
+ * A converter that converts a POJO to protobuf {@link Value} message, and recursively,
  * the {@code Collection}s, {@code Map}s and {@code Table}s thereof into corresponding
  * {@link ListValue} or {@link Struct} wrappers.
  *
