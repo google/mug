@@ -61,10 +61,10 @@ public class ValueConverter {
    * <p>Supported types: <ul>
    * <li>Primitive types (boolean, number, string)
    * <li>{@code null} converted to {@link NullValue}
-   * <li>{@link Iterable} and arrays with elements recursively converted and wrapped in {@link ListValue}
+   * <li>{@link Iterable} and array elements recursively converted and wrapped in {@link ListValue}
    * <li>{@link ImmutableIntArray}, {@link ImmutableLongArray} and {@link ImmutableDoubleArray}
-   *     with element numbers wrapped in {@link ListValue}
-   * <li>{@link Map} with values recursively converted and wrapped in {@link Struct}
+   *     elements wrapped in {@link ListValue}
+   * <li>{@link Map} values recursively converted and wrapped in {@link Struct}
    * <li>{@link Multimap} converted as {@code convert(multimap.asMap())}
    * <li>{@link Table} converted as {@code convert(table.rowMap())}
    * <li>{@link Optional} converted as {@code convert(optional.orElse(null))}
