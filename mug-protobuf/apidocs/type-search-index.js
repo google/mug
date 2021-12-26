@@ -1,1 +1,1 @@
-typeSearchIndex = [{"l":"All Classes","url":"allclasses-index.html"},{"p":"com.google.mu.protobuf.util","l":"MoreStructs"},{"p":"com.google.mu.protobuf.util","l":"ProtoValueConverter"}]
+typeSearchIndex = [{"l":"All Classes","url":"allclasses-index.html"},{"p":"com.google.mu.protobuf.util","l":"MoreStructs"},{"p":"com.google.mu.protobuf.util","l":"ProtoValueConverter"},{"p":"com.google.mu.protobuf.util","l":"StructBuilder"}]
