@@ -33,7 +33,7 @@ import com.google.protobuf.Value;
  * <p>Unlike {@link com.google.protobuf.util.Structs}, struct values of all supported types
  * (numeric, string, boolean, null) and the {@code Collection}s, {@code Map}s, {@code Table}s,
  * {@code Optional}s thereof are automatically converted to their corresponding {@link Value}
- * wrappers using {@link ValueConverter}. This allows users to conveniently create {@link Struct}
+ * wrappers using {@link ProtoValueConverter}. This allows users to conveniently create {@link Struct}
  * whose fields are often heterogeneous maps of dynamically typed values. For example:
  *
  * <pre>{@code
@@ -48,13 +48,13 @@ import com.google.protobuf.Value;
  *
  * <p>Occasionally, an application may need custom logic to convert a domain-specific type into
  * {@code Value}, and then recursively into {@code ListValue} and/or {@code Struct}. This can be
- * done by overriding {@link ValueConverter#convert}.
+ * done by overriding {@link ProtoValueConverter#convert}.
  *
  * @since 5.8
  */
 @CheckReturnValue
 public final class MoreStructs {
-  private static final ValueConverter CONVERTER = new ValueConverter();
+  private static final ProtoValueConverter CONVERTER = new ProtoValueConverter();
 
   /** Returns a Struct with {@code key} and {@code value}. Null {@code value} is translated to {@link NullValue}. */
   public static Struct struct(CharSequence key, Object value) {
@@ -64,7 +64,7 @@ public final class MoreStructs {
   /**
    * Returns a Struct equivalent to {@code {k1:v1, k2:v2}}.
    *
-   * <p>Values are converted using {@link ValueConverter}.
+   * <p>Values are converted using {@link ProtoValueConverter}.
    * In particular, null values are translated to {@link NullValue}.
    *
    * @throws IllegalArgumentException if duplicate keys are provided
@@ -77,7 +77,7 @@ public final class MoreStructs {
   /**
    * Returns a Struct equivalent to {@code {k1:v1, k2:v2, k3:v3}}.
    *
-   * <p>Values are converted using {@link ValueConverter}.
+   * <p>Values are converted using {@link ProtoValueConverter}.
    * In particular, null values are translated to {@link NullValue}.
    *
    * @throws IllegalArgumentException if duplicate keys are provided
@@ -91,7 +91,7 @@ public final class MoreStructs {
   /**
    * Returns a Struct equivalent to {@code {k1:v1, k2:v2, k3:v3, k4:v4}}.
    *
-   * <p>Values are converted using {@link ValueConverter}.
+   * <p>Values are converted using {@link ProtoValueConverter}.
    * In particular, null values are translated to {@link NullValue}.
    *
    * @throws IllegalArgumentException if duplicate keys are provided
@@ -108,7 +108,7 @@ public final class MoreStructs {
   /**
    * Returns a Struct equivalent to {@code {k1:v1, k2:v2, k3:v3, k4:v4, k5:v5}}.
    *
-   * <p>Values are converted using {@link ValueConverter}.
+   * <p>Values are converted using {@link ProtoValueConverter}.
    * In particular, null values are translated to {@link NullValue}.
    *
    * @throws IllegalArgumentException if duplicate keys are provided
@@ -126,7 +126,7 @@ public final class MoreStructs {
   /**
    * Returns a Struct equivalent to {@code {k1:v1, k2:v2, k3:v3, k4:v4, k5:v5, k6:v6}}.
    *
-   * <p>Values are converted using {@link ValueConverter}.
+   * <p>Values are converted using {@link ProtoValueConverter}.
    * In particular, null values are translated to {@link NullValue}.
    *
    * @throws IllegalArgumentException if duplicate keys are provided
@@ -145,7 +145,7 @@ public final class MoreStructs {
   /**
    * Returns a Struct equivalent to {@code {k1:v1, k2:v2, k3:v3, k4:v4, k5:v5, k6:v6, k7:v7}}.
    *
-   * <p>Values are converted using {@link ValueConverter}.
+   * <p>Values are converted using {@link ProtoValueConverter}.
    * In particular, null values are translated to {@link NullValue}.
    *
    * @throws IllegalArgumentException if duplicate keys are provided
@@ -165,7 +165,7 @@ public final class MoreStructs {
   /**
    * Returns a Struct equivalent to {@code {k1:v1, k2:v2, k3:v3, k4:v4, k5:v5, k6:v6, k7:v7, k8:v8}}.
    *
-   * <p>Values are converted using {@link ValueConverter}.
+   * <p>Values are converted using {@link ProtoValueConverter}.
    * In particular, null values are translated to {@link NullValue}.
    *
    * @throws IllegalArgumentException if duplicate keys are provided
@@ -187,7 +187,7 @@ public final class MoreStructs {
   /**
    * Returns a Struct equivalent to {@code {k1:v1, k2:v2, k3:v3, k4:v4, k5:v5, k6:v6, k7:v7, k8:v8, k9:v9}}.
    *
-   * <p>Values are converted using {@link ValueConverter}.
+   * <p>Values are converted using {@link ProtoValueConverter}.
    * In particular, null values are translated to {@link NullValue}.
    *
    * @throws IllegalArgumentException if duplicate keys are provided
@@ -210,7 +210,7 @@ public final class MoreStructs {
   /**
    * Returns a Struct equivalent to {@code {k1:v1, k2:v2, k3:v3, k4:v4, k5:v5, k6:v6, k7:v7, k8:v8, k9:v9, k10:v10}}.
    *
-   * <p>Values are converted using {@link ValueConverter}.
+   * <p>Values are converted using {@link ProtoValueConverter}.
    * In particular, null values are translated to {@link NullValue}.
    *
    * @throws IllegalArgumentException if duplicate keys are provided
@@ -234,7 +234,7 @@ public final class MoreStructs {
   /**
    * Returns a Struct equivalent to {@code map}.
    *
-   * <p>Values are converted using {@link ValueConverter}. In particular, null values are translated to
+   * <p>Values are converted using {@link ProtoValueConverter}. In particular, null values are translated to
    * {@link NullValue}.
    *
    * @throws NullPointerException if any key is null
@@ -247,7 +247,7 @@ public final class MoreStructs {
    * Returns a nested Struct of Struct equivalent to the {@link Table#rowMap row map} of {@code table}.
    *
    *
-   * <p>Values are converted using {@link ValueConverter}. In particular, null values are translated to
+   * <p>Values are converted using {@link ProtoValueConverter}. In particular, null values are translated to
    * {@link NullValue}.
    *
    * @throws NullPointerException if any row key or column key is null
@@ -272,7 +272,7 @@ public final class MoreStructs {
 
   /**
    * Returns a {@link BiCollector} that accumulates the name-value pairs into a {@link Struct} with
-   * the values converted using {@link ValueConverter}.
+   * the values converted using {@link ProtoValueConverter}.
    *
    * <p>Duplicate keys (according to {@link Object#equals(Object)}) are not allowed.
    *
