@@ -52,8 +52,9 @@ import com.google.protobuf.Value;
  * {@code Value}, and then recursively into {@code ListValue} and/or {@code Struct}. This can be
  * done by overriding {@link ProtoValueConverter#convert}.
  *
- * <p>To build {@link Struct} in a static type-safe way, use {@link #toStruct(Function)} BiCollector
- * with a type safe {@code valueFunction}, or build it manually with {@link StructBuilder} instead.
+ * <p>To build {@link Struct} without risk of runtime {@link Value} conversion error caused by
+ * unsupported types, use {@link #toStruct(Function)} BiCollector on a BiStream, or build it
+ * manually with {@link StructBuilder} instead.
  *
  * @since 5.8
  */
@@ -331,7 +332,8 @@ public final class MoreStructs {
    * Returns a {@link BiCollector} that collects to {@link Struct} using {@code valueFunction}
    * to convert the input elements into {@link Value} instances.
    *
-   * <p>This BiCollector is static type safe as long as {@code valueFunction} is static type safe.
+   * <p>This BiCollector won't throw runtime {@link Value} conversion error so long as {@code valueFunction}
+   * doesn't throw.
    */
   public static <V> BiCollector<CharSequence, V, Struct> toStruct(Function<? super V, Value> valueFunction) {
     checkNotNull(valueFunction);
