@@ -59,7 +59,6 @@ import com.google.protobuf.Value;
  *     return super.convert(obj);  // else delegate to default implementation
  *   }
  * };
- * Struct userStruct = BiStream.of("user1", user1).collect(customConverter::convertingToStruct);
  * }</pre>
  *
  * @since 5.8
