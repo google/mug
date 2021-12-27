@@ -20,6 +20,7 @@ import java.util.stream.Collector;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
 
+import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.NullValue;
 import com.google.protobuf.Struct;
@@ -30,6 +31,7 @@ import com.google.protobuf.Value;
  *
  * @since 5.8
  */
+@CheckReturnValue
 public final class MoreValues {
   /** The {@link Value} for null. */
   public static final Value NULL =

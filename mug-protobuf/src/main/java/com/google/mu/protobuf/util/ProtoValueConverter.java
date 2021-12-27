@@ -29,11 +29,14 @@ import java.util.Optional;
 import java.util.stream.Collector;
 import java.util.stream.IntStream;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
 import com.google.common.primitives.ImmutableDoubleArray;
 import com.google.common.primitives.ImmutableIntArray;
 import com.google.common.primitives.ImmutableLongArray;
+import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.NullValue;
 import com.google.protobuf.Struct;
@@ -63,6 +66,7 @@ import com.google.protobuf.Value;
  *
  * @since 5.8
  */
+@CheckReturnValue
 public class ProtoValueConverter {
   /**
    * Converts {@code object} to {@code Value}. Must not return null.
@@ -81,7 +85,7 @@ public class ProtoValueConverter {
    * <li>Built-in protobuf types ({@link Struct}, {@link Value}, {@link ListValue}, {@link NullValue})
    * </ul>
    */
-  public Value convert(Object object) {
+  public Value convert(@Nullable Object object) {
     if (object == null || object instanceof NullValue) {
       return NULL;
     }
@@ -180,7 +184,7 @@ public class ProtoValueConverter {
     throw new IllegalArgumentException("Unsupported type: " + object.getClass().getName());
   }
 
-  private Value convertNonNull(Object object) {
+  private Value convertNonNull(@Nullable Object object) {
     return checkNotNull(
         convert(object), "Cannot convert to null. Consider converting to NullValue instead.");
   }
