@@ -17,7 +17,6 @@ package com.google.mu.protobuf.util;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Streams.stream;
-import static com.google.mu.protobuf.util.MoreStructs.toStruct;
 import static com.google.mu.protobuf.util.MoreValues.NULL;
 import static com.google.mu.protobuf.util.MoreValues.valueOf;
 import static java.util.Arrays.stream;
@@ -37,6 +36,8 @@ import com.google.common.primitives.ImmutableDoubleArray;
 import com.google.common.primitives.ImmutableIntArray;
 import com.google.common.primitives.ImmutableLongArray;
 import com.google.errorprone.annotations.CheckReturnValue;
+import com.google.mu.util.stream.BiCollector;
+import com.google.mu.util.stream.BiCollectors;
 import com.google.mu.util.stream.BiStream;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.NullValue;
@@ -44,23 +45,49 @@ import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
 
 /**
- * A converter that converts a POJO to protobuf {@link Value} message, and recursively,
- * the {@code Collection}s, {@code Map}s and {@code Table}s thereof into corresponding
- * {@link ListValue} or {@link Struct} wrappers.
+ * A helper class that makes it easier to create {@link Struct} and {@link Value}
+ * instances off of POJO, without having to create intermediary {@code Value} wrappers.
  *
- * <p>For simple scenarios, prefer to use {@link MoreStructs} to create Struct,
- * for it's more convenient and static-import friendly.
- *
- * <p>This class can be used to implement custom conversion logic. For example, if the application
- * needs to convert {@code User} types to {@code Value} by using the user ids:
+ * <p>For example, one can create a Struct literal as in:
  *
  * <pre>{@code
- * ProtoValueConverter customConverter = new ProtoValueConverter() {
- *   public Value convert(Object obj) {
+ * Struct ironMan =
+ *     new StructMaker()
+ *         .struct("name", "Tony Stark", "age", 10, "titles", List.of("Iron Man", "Genius"));
+ * }</pre>
+ *
+ * <p>For structs with even more fields, you can use the {@link #toStruct} BiCollector, as in:
+ *
+ * <pre>{@code
+ * BiStream.of("k1", 1, "k2", 2, "k3", 3, "k4", 4, ...)
+ *     .collect(new StructMaker().toStruct());
+ * }</pre>
+ *
+ * Or, create a Struct off of a {@code Map}:
+ *
+ * <pre>{@code
+ * new StructMaker()
+ *     .struct(Map.of("k1", 1, "k2", 2, "k3", 3, "k4", 4, ...));
+ * }</pre>
+ *
+ * <p>The {@link #toValue} method is responsible for converting POJO to {@code Value},
+ * and recursively, the {@code Collection}s, {@code Map}s and {@code Table}s thereof into
+ * corresponding {@link ListValue} or {@link Struct} wrappers.
+ *
+ * <p>For simple scenarios, prefer to use {@link MoreStructs} to create Struct.
+ * Its single-field {@code struct()} factory methods are more efficient, can be static imported,
+ * and will never throw {@link IllegalArgumentException}.
+ *
+ * <p>You can create a subclass to implement custom conversion logic. For example,
+ * if the application needs to convert {@code User} types to {@code Value} by using the user ids:
+ *
+ * <pre>{@code
+ * StructMaker maker = new StructMaker() {
+ *   public Value toValue(Object obj) {
  *     if (obj instanceof User) {  // custom logic
  *       return convert(((User) obj).getId());
  *     }
- *     return super.convert(obj);  // else delegate to default implementation
+ *     return super.toValue(obj);  // else delegate to default implementation
  *   }
  * };
  * }</pre>
@@ -68,7 +95,114 @@ import com.google.protobuf.Value;
  * @since 5.8
  */
 @CheckReturnValue
-public class ProtoValueConverter {
+public class StructMaker {
+
+  /**
+   * Returns a Struct with {@code name} and {@code value},with {@code value} converted using
+   * {@link #toValue}. In particular, null is translated to {@link NullValue}.
+   *
+   * <p>If runtime conversion error is undesirable, consider to use {@link MoreStructs} or build Struct
+   * manually with {@link StructBuilder}.
+   *
+   * @throws IllegalArgumentException if {@code value} cannot be converted
+   * @throws NullPointerException if {@code name} is null
+   */
+  public final Struct struct(CharSequence name, @Nullable Object value) {
+    return Struct.newBuilder().putFields(name.toString(), toValue(value)).build();
+  }
+
+  /**
+   * Returns a Struct equivalent to {@code {k1:v1, k2:v2}}.
+   *
+   * <p>Values are converted using {@link #toValue}.
+   * In particular, null values are translated to {@link NullValue}.
+   *
+   * <p>If runtime conversion error is undesirable, consider to use {@link MoreStructs} or build Struct
+   * manually with {@link StructBuilder}.
+   *
+   * @throws IllegalArgumentException if duplicate keys are provided
+   *    or if either value cannot be converted
+   * @throws NullPointerException if either key is null
+   */
+  public final Struct struct(
+      CharSequence k1, @Nullable Object v1, CharSequence k2, @Nullable Object v2) {
+    return new StructBuilder()
+        .add(k1.toString(), toValue(v1))
+        .add(k2.toString(), toValue(v2))
+        .build();
+  }
+
+  /**
+   * Returns a Struct equivalent to {@code {k1:v1, k2:v2, k3:v3}}.
+   *
+   * <p>Values are converted using {@link #toValue}.
+   * In particular, null values are translated to {@link NullValue}.
+   *
+   * <p>If runtime conversion error is undesirable, consider to use {@link MoreStructs} or build Struct
+   * manually with {@link StructBuilder}.
+   *
+   * @throws IllegalArgumentException if duplicate keys are provided or if a value cannot be converted
+   * @throws NullPointerException if any key is null
+   */
+  public final Struct struct(
+      CharSequence k1, @Nullable Object v1,
+      CharSequence k2, @Nullable Object v2,
+      CharSequence k3, @Nullable Object v3) {
+    return new StructBuilder()
+        .add(k1.toString(), toValue(v1))
+        .add(k2.toString(), toValue(v2))
+        .add(k3.toString(), toValue(v3))
+        .build();
+  }
+
+  /**
+   * Returns a Struct equivalent to {@code map}.
+   *
+   * <p>Values are converted using {@link #toValue}. In particular, null values are translated to
+   * {@link NullValue}.
+   *
+   * <p>If runtime conversion error is undesirable, consider to use {@link MoreStructs} or build Struct
+   * manually with {@link StructBuilder}.
+   *
+   * @throws IllegalArgumentException if a Map value cannot be converted
+   * @throws NullPointerException if any key is null
+   */
+  public final Struct struct(Map<? extends CharSequence, ? extends @Nullable Object> map) {
+    return BiStream.from(map).collect(toStruct());
+  }
+
+  /**
+   * Returns a nested Struct of Struct equivalent to the {@link Table#rowMap row map} of {@code table}.
+   *
+   *
+   * <p>Values are converted using {@link #toValue}. In particular, null values are translated to
+   * {@link NullValue}.
+   *
+   * <p>If runtime conversion error is undesirable, consider to use {@link MoreStructs} or build Struct
+   * manually with {@link StructBuilder}.
+   *
+   * @throws IllegalArgumentException if a Table cell value cannot be converted
+   * @throws NullPointerException if any row key or column key is null
+   */
+  public final Struct nestedStruct(
+      Table<? extends CharSequence, ? extends CharSequence, ? extends @Nullable Object> table) {
+    return struct(table.rowMap());
+  }
+
+  /**
+   * Returns a {@link BiCollector} that accumulates the name-value pairs into a {@link Struct} with
+   * the values converted using {@link #toValue}.
+   *
+   * <p>Duplicate keys (according to {@link CharSequence#toString()}) are not allowed.
+   *
+   * <p>Null keys are not allowed, but null values will be converted to {@link NullValue}.
+   *
+   * <p>If runtime conversion error is undesirable, consider to use {@link MoreStructs} or build Struct
+   * manually with {@link StructBuilder}.
+   */
+  public final BiCollector<CharSequence, @Nullable Object, Struct> toStruct() {
+    return BiCollectors.mapping((k, v) -> k, (k, v) -> toValue(v), MoreStructs.toStruct());
+  }
   /**
    * Converts {@code object} to {@code Value}. Must not return null.
    *
@@ -86,7 +220,7 @@ public class ProtoValueConverter {
    * <li>Built-in protobuf types ({@link Struct}, {@link Value}, {@link ListValue}, {@link NullValue})
    * </ul>
    */
-  public Value convert(@Nullable Object object) {
+  public Value toValue(@Nullable Object object) {
     if (object == null || object instanceof NullValue) {
       return NULL;
     }
@@ -158,7 +292,7 @@ public class ProtoValueConverter {
           .collect(valuesToValue());
     }
     if (object instanceof Object[]) {
-      return convert(Arrays.asList((Object[]) object));
+      return toValue(Arrays.asList((Object[]) object));
     }
     if (object instanceof byte[]) {
       byte[] array = (byte[]) object;
@@ -187,13 +321,13 @@ public class ProtoValueConverter {
 
   private Value convertNonNull(@Nullable Object object) {
     return checkNotNull(
-        convert(object), "Cannot convert to null. Consider converting to NullValue instead.");
+        toValue(object), "Cannot convert to null. Consider converting to NullValue instead.");
   }
 
   private Value toStructValue(Map<?, ?> map) {
     return valueOf(
         BiStream.from(map)
-            .mapKeys(ProtoValueConverter::toStructKey)
+            .mapKeys(StructMaker::toStructKey)
             .mapValues(this::convertNonNull)
             .collect(toStruct()));
   }
