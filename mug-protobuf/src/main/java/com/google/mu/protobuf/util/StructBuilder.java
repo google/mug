@@ -16,7 +16,6 @@ package com.google.mu.protobuf.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.mu.protobuf.util.MoreValues.NULL;
 import static com.google.mu.protobuf.util.MoreValues.valueOf;
 
 import java.util.LinkedHashMap;
@@ -30,7 +29,6 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.mu.util.stream.BiStream;
 import com.google.protobuf.ListValue;
-import com.google.protobuf.NullValue;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
 
@@ -162,7 +160,11 @@ public final class StructBuilder {
   }
 
   /**
-   * Adds {@code name} and {@code value}. Returns this.
+   * Adds {@code name} and {@code value}.
+   *
+   * <p>To add a null value, use {@link MoreValues#NULL} as in {@code add("name", NULL)}.
+   *
+   * <p>Returns this.
    *
    * @throws IllegalArgumentException if {@code name} is duplicate
    */
@@ -171,15 +173,6 @@ public final class StructBuilder {
     checkNotNull(value, "value is null");
     checkArgument(fields.putIfAbsent(name, value) == null, "Field %s already present", name);
     return this;
-  }
-
-  /**
-   * Adds {@code name} to be mapped to {@link NullValue}. Returns this.
-   *
-   * @throws IllegalArgumentException if {@code name} is duplicate
-   */
-  public StructBuilder addNull(String name) {
-    return add(name, NULL);
   }
 
   /** Returns a new {@link Struct} instance with all added fields. */
