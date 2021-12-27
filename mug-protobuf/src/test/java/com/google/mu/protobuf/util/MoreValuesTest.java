@@ -21,7 +21,7 @@ import com.google.protobuf.util.Values;
 
 @RunWith(JUnit4.class)
 public class MoreValuesTest {
-  @Test public void testToListValue() {
+  @Test public void testtoListValue() {
     ProtoValueConverter converter = new ProtoValueConverter();
     assertThat(
             Stream.of(1, "foo", asList(true, false), ImmutableMap.of("k", 20L)).map(converter::convert).collect(toListValue()))
@@ -34,7 +34,7 @@ public class MoreValuesTest {
                 .build());
   }
 
-  @Test public void testListValueOfNumbers() {
+  @Test public void testlistValueOfNumbers() {
     assertThat(listValueOf(1, 2))
         .isEqualTo(
             ListValue.newBuilder()
@@ -43,8 +43,8 @@ public class MoreValuesTest {
                 .build());
   }
 
-  @Test public void testListValueOfStrings() {
-    assertThat(listValue("foo", "bar"))
+  @Test public void testlistValueOfStrings() {
+    assertThat(listValueOf("foo", "bar"))
         .isEqualTo(
             ListValue.newBuilder()
                 .addValues(Values.of("foo"))
@@ -52,8 +52,8 @@ public class MoreValuesTest {
                 .build());
   }
 
-  @Test public void testListValueOfStructs() {
-    assertThat(listValue(struct("foo", 1), struct("bar", 2)))
+  @Test public void testlistValueOfStructs() {
+    assertThat(listValueOf(struct("foo", 1), struct("bar", 2)))
         .isEqualTo(
             ListValue.newBuilder()
                 .addValues(Values.of(Structs.of("foo", Values.of(1))))
@@ -61,8 +61,8 @@ public class MoreValuesTest {
                 .build());
   }
 
-  @Test public void testListValueOfListValues() {
-    assertThat(listValue(listValueOf(1, 2), listValue("foo", "bar")))
+  @Test public void testlistValueOflistValueOfs() {
+    assertThat(listValueOf(listValueOf(1, 2), listValueOf("foo", "bar")))
         .isEqualTo(
             ListValue.newBuilder()
                 .addValues(Values.of(asList(Values.of(1), Values.of(2))))
@@ -70,7 +70,7 @@ public class MoreValuesTest {
                 .build());
   }
 
-  @Test public void testListValue_nullStringArray() {
+  @Test public void testlistValueOf_nullStringArray() {
     assertThrows(NullPointerException.class, () -> listValueOf((String[]) null));
   }
 
