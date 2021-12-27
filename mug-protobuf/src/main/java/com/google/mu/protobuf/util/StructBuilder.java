@@ -49,7 +49,7 @@ public final class StructBuilder {
   private final LinkedHashMap<String, Value> fields = new LinkedHashMap<>();
 
   /**
-   * Adds {@code name} and {@code value}. Returns this.
+   * Adds {@code name}-{@code value} pair. Returns this.
    *
    * @throws IllegalArgumentException if {@code name} is duplicate
    */
@@ -58,7 +58,7 @@ public final class StructBuilder {
   }
 
   /**
-   * Adds {@code name} and {@code value}. Returns this.
+   * Adds {@code name}-{@code value} pair. Returns this.
    *
    * @throws IllegalArgumentException if {@code name} is duplicate
    */
@@ -67,7 +67,7 @@ public final class StructBuilder {
   }
 
   /**
-   * Adds {@code name} and {@code value}. Returns this.
+   * Adds {@code name}-{@code value} pair. Returns this.
    *
    * @throws IllegalArgumentException if {@code name} is duplicate
    */
@@ -76,7 +76,7 @@ public final class StructBuilder {
   }
 
   /**
-   * Adds {@code name} and {@code value}.
+   * Adds {@code name}-{@code value} pair.
    *
    * <p>See {@link MoreValues} for helpers that create common {@link ListValue} conveniently.
    *
@@ -89,7 +89,9 @@ public final class StructBuilder {
   }
 
   /**
-   * Adds {@code name} and {@code value}. Returns this.
+   * Adds {@code name}-{@code values} pair with {@code values} wrapped in {@link ListValue}.
+   *
+   * <p>Returns this.
    *
    * @throws IllegalArgumentException if {@code name} is duplicate
    */
@@ -102,7 +104,7 @@ public final class StructBuilder {
   }
 
   /**
-   * Adds {@code name} and {@code value}. Returns this.
+   * Adds {@code name}-{@code value} pair. Returns this.
    *
    * @throws IllegalArgumentException if {@code name} is duplicate
    */
@@ -111,7 +113,7 @@ public final class StructBuilder {
   }
 
   /**
-   * Adds {@code name} and {@code value}. Returns this.
+   * Adds {@code name}-{@code value} pair. Returns this.
    *
    * @throws IllegalArgumentException if {@code name} is duplicate
    */
@@ -120,7 +122,7 @@ public final class StructBuilder {
   }
 
   /**
-   * Adds {@code name} and {@code value}. {@code value} is converted to a nested Struct.
+   * Adds {@code name}-{@code value} pair. {@code value} is converted to a nested Struct.
    * Returns this.
    *
    * @throws IllegalArgumentException if {@code name} is duplicate
@@ -132,7 +134,7 @@ public final class StructBuilder {
   }
 
   /**
-   * Adds {@code name} and {@code values}. {@code value} is converted to a nested Struct
+   * Adds {@code name}-{@code value} pair. {@code value} is converted to a nested Struct
    * mapping nested keys to {@code ListValue}.
    *
    * <p>Returns this.
@@ -146,7 +148,7 @@ public final class StructBuilder {
   }
 
   /**
-   * Adds {@code name} and {@code value}. {@code value} is converted to a nested Struct
+   * Adds {@code name}-{@code value} pair. {@code value} is converted to a nested Struct
    * mapping nested keys to {@code Struct}.
    *
    * <p>Returns this.
@@ -160,7 +162,7 @@ public final class StructBuilder {
   }
 
   /**
-   * Adds {@code name} and {@code value}.
+   * Adds {@code name}-{@code value} pair.
    *
    * <p>To add a null value, use {@link MoreValues#NULL} as in {@code add("name", NULL)}.
    *
