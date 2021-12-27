@@ -14,8 +14,6 @@
  *****************************************************************************/
 package com.google.mu.protobuf.util;
 
-import java.util.stream.Collector;
-
 import com.google.protobuf.ListValue;
 import com.google.protobuf.NullValue;
 import com.google.protobuf.Value;
@@ -37,13 +35,5 @@ final class MoreValues {
 
   static Value valueOf(ListValue v) {
     return Value.newBuilder().setListValue(v).build();
-  }
-
-  static Collector<Value, ListValue.Builder, ListValue> toListValue() {
-    return Collector.of(
-        ListValue::newBuilder,
-        ListValue.Builder::addValues,
-        (a, b) -> a.addAllValues(b.getValuesList()),
-        ListValue.Builder::build);
   }
 }

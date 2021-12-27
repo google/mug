@@ -2,6 +2,7 @@ package com.google.mu.protobuf.util;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.protobuf.util.MoreStructs.struct;
+import static com.google.mu.protobuf.util.MoreStructs.toListValue;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
 
@@ -104,7 +105,7 @@ public class ProtoValueConverterTest {
 
   @Test
   public void convert_fromListValue() {
-    ListValue list = Stream.of(1, 2).collect(converter.convertingToListValue());
+    ListValue list = Stream.of(1, 2).collect(toListValue(converter::convert));
     assertThat(converter.convert(list)).isEqualTo(Value.newBuilder().setListValue(list).build());
   }
 
@@ -173,20 +174,6 @@ public class ProtoValueConverterTest {
   }
 
   @Test
-  public void testToListValue() {
-    assertThat(
-            Stream.of(1, "foo", asList(true, false), ImmutableMap.of("k", 20L))
-                .collect(converter.convertingToListValue()))
-        .isEqualTo(
-            ListValue.newBuilder()
-                .addValues(Values.of(1))
-                .addValues(Values.of("foo"))
-                .addValues(converter.convert(asList(true, false)))
-                .addValues(converter.convert(ImmutableMap.of("k", 20L)))
-                .build());
-  }
-
-  @Test
   public void convert_fromIntArray() {
     assertThat(converter.convert(new int[] {10}))
         .isEqualTo(Values.of(ImmutableList.of(Values.of(10))));
@@ -247,17 +234,6 @@ public class ProtoValueConverterTest {
   }
 
   @Test
-  public void convertCannotReturnNull() {
-    ProtoValueConverter nullReturn = new ProtoValueConverter() {
-      @Override public Value convert(Object obj) {
-        return null;
-      }
-    };
-    assertThrows(
-        NullPointerException.class, () -> Stream.of("foo").collect(nullReturn.convertingToListValue()));
-  }
-
-  @Test
   public void customConversion() {
     ProtoValueConverter custom = new ProtoValueConverter() {
       @Override public Value convert(Object obj) {
@@ -272,9 +248,8 @@ public class ProtoValueConverterTest {
     Hero scarletWitch = new Hero("Wanda", "Scarlet Witch");
     ironMan.friends.add(scarletWitch);
     scarletWitch.friends.add(new Hero("Vision"));
-    assertThat(Stream.of(Optional.of(ironMan)).collect(custom.convertingToListValue()))
-        .isEqualTo(ListValue.newBuilder()
-            .addValues(Values.of(struct(
+    assertThat(custom.convert(Optional.of(ironMan)))
+        .isEqualTo(Values.of(struct(
                 "name", "Tony Stark",
                 "titles", ImmutableList.of("Iron Man", "Robert Downey"),
                 "friends", ImmutableList.of(struct(
@@ -283,8 +258,7 @@ public class ProtoValueConverterTest {
                     "friends", ImmutableList.of(struct(
                         "name", "Vision",
                         "titles", ImmutableList.of(),
-                        "friends", ImmutableList.of())))))))
-            .build());
+                        "friends", ImmutableList.of())))))));
   }
 
   private static final class Hero {

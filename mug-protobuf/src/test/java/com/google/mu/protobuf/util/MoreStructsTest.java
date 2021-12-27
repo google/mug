@@ -1,10 +1,14 @@
 package com.google.mu.protobuf.util;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.mu.protobuf.util.MoreStructs.convertingToListValue;
 import static com.google.mu.protobuf.util.MoreStructs.convertingToStruct;
 import static com.google.mu.protobuf.util.MoreStructs.struct;
 import static com.google.mu.protobuf.util.MoreStructs.toStruct;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
+
+import java.util.stream.Stream;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -12,6 +16,7 @@ import org.junit.runners.JUnit4;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.mu.util.stream.BiStream;
+import com.google.protobuf.ListValue;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
 import com.google.protobuf.util.Values;
@@ -416,6 +421,21 @@ public class MoreStructsTest {
                     Value.newBuilder()
                         .setStructValue(Struct.newBuilder().putFields("one", Values.of(true)).build())
                         .build())
+                .build());
+  }
+
+  @Test
+  public void testToListValue() {
+    ProtoValueConverter converter = new ProtoValueConverter();
+    assertThat(
+            Stream.of(1, "foo", asList(true, false), ImmutableMap.of("k", 20L))
+                .collect(convertingToListValue()))
+        .isEqualTo(
+            ListValue.newBuilder()
+                .addValues(Values.of(1))
+                .addValues(Values.of("foo"))
+                .addValues(converter.convert(asList(true, false)))
+                .addValues(converter.convert(ImmutableMap.of("k", 20L)))
                 .build());
   }
 

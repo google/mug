@@ -17,15 +17,16 @@ package com.google.mu.protobuf.util;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Streams.stream;
+import static com.google.mu.protobuf.util.MoreStructs.toListValue;
 import static com.google.mu.protobuf.util.MoreValues.NULL;
 import static com.google.mu.protobuf.util.MoreValues.valueOf;
 import static com.google.mu.protobuf.util.StructBuilder.toStruct;
 import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.mapping;
 
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.IntStream;
 
@@ -105,7 +106,7 @@ public class ProtoValueConverter {
       return MoreValues.valueOf((ListValue) object);
     }
     if (object instanceof Iterable) {
-      return MoreValues.valueOf(stream((Iterable<?>) object).collect(convertingToListValue()));
+      return MoreValues.valueOf(stream((Iterable<?>) object).collect(toListValue(this::convertNonNull)));
     }
     if (object instanceof Map) {
       return toStructValue((Map<?, ?>) object);
@@ -180,14 +181,6 @@ public class ProtoValueConverter {
     throw new IllegalArgumentException("Unsupported type: " + object.getClass().getName());
   }
 
-  /**
-   * Returns a {@link Collector} that converts and accumulates the input objects into a {@link
-   * ListValue}.
-   */
-  public final Collector<Object, ?, ListValue> convertingToListValue() {
-    return mapping(this::convertNonNull, MoreValues.toListValue());
-  }
-
   private Value convertNonNull(Object object) {
     return checkNotNull(
         convert(object), "Cannot convert to null. Consider converting to NullValue instead.");
@@ -208,6 +201,6 @@ public class ProtoValueConverter {
   }
 
   private static Collector<Value, ?, Value> valuesToValue() {
-    return collectingAndThen(MoreValues.toListValue(), MoreValues::valueOf);
+    return collectingAndThen(toListValue(Function.identity()), MoreValues::valueOf);
   }
 }
