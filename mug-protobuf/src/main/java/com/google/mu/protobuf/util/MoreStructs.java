@@ -14,6 +14,8 @@
  *****************************************************************************/
 package com.google.mu.protobuf.util;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collector;
@@ -50,6 +52,8 @@ import com.google.protobuf.Value;
  * {@code Value}, and then recursively into {@code ListValue} and/or {@code Struct}. This can be
  * done by overriding {@link ProtoValueConverter#convert}.
  *
+ * <p>To build {@link Struct} in a static type-safe way, use {@link StructBuilder} instead.
+ *
  * @since 5.8
  */
 @CheckReturnValue
@@ -58,7 +62,7 @@ public final class MoreStructs {
 
   /** Returns a Struct with {@code key} and {@code value}. Null {@code value} is translated to {@link NullValue}. */
   public static Struct struct(CharSequence key, Object value) {
-    return BiStream.of(key, value).collect(toStruct());
+    return BiStream.of(key, value).collect(convertingToStruct());
   }
 
   /**
@@ -71,7 +75,7 @@ public final class MoreStructs {
    * @throws NullPointerException if any key is null
    */
   public static Struct struct(CharSequence k1, Object v1, CharSequence k2, Object v2) {
-    return BiStream.of(k1, v1, k2, v2).collect(toStruct());
+    return BiStream.of(k1, v1, k2, v2).collect(convertingToStruct());
   }
 
   /**
@@ -85,7 +89,7 @@ public final class MoreStructs {
    */
   public static Struct struct(
       CharSequence k1, Object v1, CharSequence k2, Object v2, CharSequence k3, Object v3) {
-    return BiStream.of(k1, v1, k2, v2, k3, v3).collect(toStruct());
+    return BiStream.of(k1, v1, k2, v2, k3, v3).collect(convertingToStruct());
   }
 
   /**
@@ -102,7 +106,7 @@ public final class MoreStructs {
       CharSequence k2, Object v2,
       CharSequence k3, Object v3,
       CharSequence k4, Object v4) {
-    return BiStream.of(k1, v1, k2, v2, k3, v3, k4, v4).collect(toStruct());
+    return BiStream.of(k1, v1, k2, v2, k3, v3, k4, v4).collect(convertingToStruct());
   }
 
   /**
@@ -120,7 +124,7 @@ public final class MoreStructs {
       CharSequence k3, Object v3,
       CharSequence k4, Object v4,
       CharSequence k5, Object v5) {
-    return BiStream.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5).collect(toStruct());
+    return BiStream.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5).collect(convertingToStruct());
   }
 
   /**
@@ -139,7 +143,7 @@ public final class MoreStructs {
       CharSequence k4, Object v4,
       CharSequence k5, Object v5,
       CharSequence k6, Object v6) {
-    return BiStream.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6).collect(toStruct());
+    return BiStream.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6).collect(convertingToStruct());
   }
 
   /**
@@ -159,7 +163,7 @@ public final class MoreStructs {
       CharSequence k5, Object v5,
       CharSequence k6, Object v6,
       CharSequence k7, Object v7) {
-    return BiStream.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7).collect(toStruct());
+    return BiStream.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7).collect(convertingToStruct());
   }
 
   /**
@@ -181,7 +185,7 @@ public final class MoreStructs {
       CharSequence k7, Object v7,
       CharSequence k8, Object v8) {
     return BiStream.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7, k8, v8)
-        .collect(toStruct());
+        .collect(convertingToStruct());
   }
 
   /**
@@ -204,7 +208,7 @@ public final class MoreStructs {
       CharSequence k8, Object v8,
       CharSequence k9, Object v9) {
     return BiStream.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7, k8, v8, k9, v9)
-        .collect(toStruct());
+        .collect(convertingToStruct());
   }
 
   /**
@@ -228,7 +232,7 @@ public final class MoreStructs {
       CharSequence k9, Object v9,
       CharSequence k10, Object v10) {
     return BiStream.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7, k8, v8, k9, v9, k10, v10)
-        .collect(toStruct());
+        .collect(convertingToStruct());
   }
 
   /**
@@ -240,7 +244,7 @@ public final class MoreStructs {
    * @throws NullPointerException if any key is null
    */
   public static Struct struct(Map<? extends CharSequence, ?> map) {
-    return BiStream.from(map).collect(toStruct());
+    return BiStream.from(map).collect(convertingToStruct());
   }
 
   /**
@@ -257,17 +261,18 @@ public final class MoreStructs {
   }
 
   /**
-   * Returns a {@link Collector} that accumulates elements into a {@link Struct} whose keys and
-   * values are the result of applying the provided mapping functions to the input elements.
+   * Returns a {@link Collector} that accumulates elements into a {@link Struct} whose keys
+   * are result of applying the {@code keyFunction} and whose values are converted from
+   * the result of applying the {@code valueFunction} to the input elements.
    *
-   * <p>Duplicate keys (according to {@link Object#equals(Object)}) are not allowed.
+   * <p>Duplicate keys (according to {@link CharSequence#toString}) are not allowed.
    *
    * <p>Null keys are not allowed, but null values are represented with {@link NullValue}.
    */
-  public static <T> Collector<T, ?, Struct> toStruct(
+  public static <T> Collector<T, ?, Struct> convertingToStruct(
       Function<? super T, ? extends CharSequence> keyFunction,
       Function<? super T, ?> valueFunction) {
-    return CONVERTER.toStruct(keyFunction, valueFunction);
+    return CONVERTER.convertingToStruct(keyFunction, valueFunction);
   }
 
   /**
@@ -281,11 +286,26 @@ public final class MoreStructs {
    * <p>Can also be used to create Struct literals conveniently, such as:
    *
    * <pre>{@code
-   * BiStream.of("foo", 1. "bar", true).collect(toStruct());
+   * BiStream.of("foo", 1. "bar", true).collect(convertingToStruct());
    * }</pre>
    */
-  public static BiCollector<CharSequence, Object, Struct> toStruct() {
-    return MoreStructs::toStruct;
+  public static BiCollector<CharSequence, Object, Struct> convertingToStruct() {
+    return MoreStructs::convertingToStruct;
+  }
+
+  /**
+   * Returns a {@link BiCollector} that collects to {@link Struct} using {@code valueFunction}
+   * to convert the input elements into {@link Value} instances.
+   *
+   * <p>This BiCollector is static type safe as long as {@code valueFunction} is static type safe.
+   */
+  public static <V> BiCollector<CharSequence, V, Struct> toStruct(Function<? super V, Value> valueFunction) {
+    checkNotNull(valueFunction);
+    return new BiCollector<CharSequence, V, Struct>() {
+      @Override public <E> Collector<E, ?, Struct> splitting(Function<E, CharSequence> toKey, Function<E, V> toValue) {
+        return StructBuilder.toStruct(toKey, toValue.andThen(valueFunction));
+      }
+    };
   }
 
   private MoreStructs() {}

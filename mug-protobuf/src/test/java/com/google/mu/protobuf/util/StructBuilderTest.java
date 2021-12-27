@@ -43,14 +43,14 @@ public class StructBuilderTest {
   }
 
   @Test public void testAdd_listValue() {
-    ListValue listValue = Stream.of(1, 2).collect(new ProtoValueConverter().toListValue());
+    ListValue listValue = Stream.of(1, 2).collect(new ProtoValueConverter().convertingToListValue());
     assertThat(new StructBuilder().add("k", listValue).build())
         .isEqualTo(Structs.of("k", Values.of(listValue)));
   }
 
   @Test public void testAdd_list() {
     assertThat(new StructBuilder().add("k", asList(Values.of(1), Values.of(2))).build())
-        .isEqualTo(Structs.of("k", Values.of(Stream.of(1, 2).collect(new ProtoValueConverter().toListValue()))));
+        .isEqualTo(Structs.of("k", Values.of(Stream.of(1, 2).collect(new ProtoValueConverter().convertingToListValue()))));
   }
 
   @Test public void testAdd_map() {
@@ -102,6 +102,17 @@ public class StructBuilderTest {
   @Test public void testToStruct() {
     Struct struct = BiStream.of("k", Values.of(1)).collect(StructBuilder::toStruct);
     assertThat(struct).isEqualTo(Structs.of("k", Values.of(1)));
+  }
+
+  @Test public void testToStruct_empty() {
+    Struct struct = BiStream.<String, Value>empty().collect(StructBuilder::toStruct);
+    assertThat(struct).isEqualTo(Struct.getDefaultInstance());
+  }
+
+  @Test public void testToStruct_duplicateKey() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> BiStream.of("k", Values.of(1), "k", Values.of(2)).collect(StructBuilder::toStruct));
   }
 
   @Test public void testDuplicateKey_boolean() {
