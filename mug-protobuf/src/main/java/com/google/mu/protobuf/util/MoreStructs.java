@@ -317,7 +317,7 @@ public final class MoreStructs {
     return BiCollectors.mapping((k, v) -> k, (k, v) -> CONVERTER.convert(v), toStruct());
   }
 
-  /** Returns a {@link Collector} that collects input key-value pairs to {@link Struct}. */
+  /** Returns a {@link Collector} that collects input key-value pairs into {@link Struct}. */
   public static <T> Collector<T, ?, Struct> toStruct(
       Function<? super T, ? extends CharSequence> keyFunction,
       Function<? super T, Value> valueFunction) {
