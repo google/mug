@@ -33,11 +33,11 @@ public final class MoreValues {
   public static final Value NULL =
       Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build();
 
-  /** The {@link Value} for boolean {@code true}. */
-  public static final Value FALSE = Value.newBuilder().setBoolValue(false).build();
-
   /** The {@link Value} for boolean {@code false}. */
   public static final Value TRUE = Value.newBuilder().setBoolValue(true).build();
+
+  /** The {@link Value} for boolean {@code true}. */
+  public static final Value FALSE = Value.newBuilder().setBoolValue(false).build();
 
   /** Returns {@link ListValue} wrapping {@code values}. */
   public static ListValue listValueOf(double... values) {
