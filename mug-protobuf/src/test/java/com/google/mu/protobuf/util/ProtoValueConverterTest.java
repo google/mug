@@ -255,8 +255,6 @@ public class ProtoValueConverterTest {
     };
     assertThrows(
         NullPointerException.class, () -> Stream.of("foo").collect(nullReturn.convertingToListValue()));
-    assertThrows(
-        NullPointerException.class, () -> BiStream.of("foo", 1).collect(nullReturn::convertingToStruct));
   }
 
   @Test

@@ -19,13 +19,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Streams.stream;
 import static com.google.mu.protobuf.util.MoreValues.NULL;
 import static com.google.mu.protobuf.util.MoreValues.valueOf;
+import static com.google.mu.protobuf.util.StructBuilder.toStruct;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.mapping;
 
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.IntStream;
 
@@ -34,7 +34,6 @@ import com.google.common.collect.Table;
 import com.google.common.primitives.ImmutableDoubleArray;
 import com.google.common.primitives.ImmutableIntArray;
 import com.google.common.primitives.ImmutableLongArray;
-import com.google.mu.util.stream.BiStream;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.NullValue;
 import com.google.protobuf.Struct;
@@ -189,30 +188,16 @@ public class ProtoValueConverter {
     return mapping(this::convertNonNull, MoreValues.toListValue());
   }
 
-  /**
-   * Returns a {@link Collector} that accumulates elements into a {@link Struct} whose keys
-   * are result of applying the {@code keyFunction} and whose values are converted from
-   * the result of applying the {@code valueFunction} to the input elements.
-   *
-   * <p>Duplicate keys (according to {@link CharSequence#toString}) are not allowed.
-   *
-   * <p>Null keys are not allowed.
-   */
-  public final <T> Collector<T, ?, Struct> convertingToStruct(
-      Function<? super T, ? extends CharSequence> keyFunction, Function<? super T, ?> valueFunction) {
-    return StructBuilder.toStruct(keyFunction, valueFunction.andThen(this::convertNonNull));
-  }
-
   private Value convertNonNull(Object object) {
     return checkNotNull(
         convert(object), "Cannot convert to null. Consider converting to NullValue instead.");
   }
 
   private Value toStructValue(Map<?, ?> map) {
-    Struct struct = BiStream.from(map)
-        .mapKeys(ProtoValueConverter::toStructKey)
-        .collect(this::convertingToStruct);
-    return Value.newBuilder().setStructValue(struct).build();
+    return Value.newBuilder()
+        .setStructValue(map.entrySet().stream()
+            .collect(toStruct(e -> toStructKey(e.getKey()), e-> convertNonNull(e.getValue()))))
+        .build();
   }
 
   private static String toStructKey(Object key) {
