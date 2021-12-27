@@ -17,10 +17,10 @@ package com.google.mu.protobuf.util;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Streams.stream;
-import static com.google.mu.protobuf.util.MoreStructs.toListValue;
 import static com.google.mu.protobuf.util.MoreValues.NULL;
 import static com.google.mu.protobuf.util.MoreValues.valueOf;
 import static com.google.mu.protobuf.util.StructBuilder.toStruct;
+import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.collectingAndThen;
 
 import java.util.Arrays;
@@ -90,23 +90,23 @@ public class ProtoValueConverter {
       return valueOf((Boolean) object);
     }
     if (object instanceof Number) {
-      return Value.newBuilder().setNumberValue(((Number) object).doubleValue()).build();
+      return valueOf(((Number) object).doubleValue());
     }
     if (object instanceof CharSequence) {
-      return Value.newBuilder().setStringValue(object.toString()).build();
+      return valueOf(object.toString());
     }
     if (object instanceof Value) {
       return (Value) object;
     }
     if (object instanceof Struct) {
-      return Value.newBuilder().setStructValue((Struct) object).build();
+      return valueOf((Struct) object);
     }
     if (object instanceof ListValue) {
-      return MoreValues.valueOf((ListValue) object);
+      return valueOf((ListValue) object);
     }
     if (object instanceof Iterable) {
-      return MoreValues.valueOf(
-          stream((Iterable<?>) object).map(this::convertNonNull).collect(toListValue()));
+      return valueOf(
+          stream((Iterable<?>) object).map(this::convertNonNull).collect(MoreValues.toListValue()));
     }
     if (object instanceof Map) {
       return toStructValue((Map<?, ?>) object);
@@ -121,10 +121,10 @@ public class ProtoValueConverter {
       return convertNonNull(((Optional<?>) object).orElse(null));
     }
     if (object instanceof Enum) {
-      return Value.newBuilder().setStringValue((((Enum<?>) object).name())).build();
+      return valueOf((((Enum<?>) object).name()));
     }
     if (object instanceof int[]) {
-      return Arrays.stream((int[]) object)
+      return stream((int[]) object)
           .mapToObj(MoreValues::valueOf)
           .collect(valuesToValue());
     }
@@ -134,7 +134,7 @@ public class ProtoValueConverter {
           .collect(valuesToValue());
     }
     if (object instanceof long[]) {
-      return Arrays.stream((long[]) object)
+      return stream((long[]) object)
           .mapToObj(MoreValues::valueOf)
           .collect(valuesToValue());
     }
@@ -144,7 +144,7 @@ public class ProtoValueConverter {
           .collect(valuesToValue());
     }
     if (object instanceof double[]) {
-      return Arrays.stream((double[]) object)
+      return stream((double[]) object)
           .mapToObj(MoreValues::valueOf)
           .collect(valuesToValue());
     }
@@ -187,10 +187,9 @@ public class ProtoValueConverter {
   }
 
   private Value toStructValue(Map<?, ?> map) {
-    return Value.newBuilder()
-        .setStructValue(map.entrySet().stream()
-            .collect(toStruct(e -> toStructKey(e.getKey()), e-> convertNonNull(e.getValue()))))
-        .build();
+    return valueOf(
+        map.entrySet().stream()
+            .collect(toStruct(e -> toStructKey(e.getKey()), e-> convertNonNull(e.getValue()))));
   }
 
   private static String toStructKey(Object key) {
@@ -201,6 +200,6 @@ public class ProtoValueConverter {
   }
 
   private static Collector<Value, ?, Value> valuesToValue() {
-    return collectingAndThen(toListValue(), MoreValues::valueOf);
+    return collectingAndThen(MoreValues.toListValue(), MoreValues::valueOf);
   }
 }

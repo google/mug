@@ -2,7 +2,7 @@ package com.google.mu.protobuf.util;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.protobuf.util.MoreStructs.struct;
-import static com.google.mu.protobuf.util.MoreStructs.toListValue;
+import static com.google.mu.protobuf.util.MoreValues.toListValue;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
 

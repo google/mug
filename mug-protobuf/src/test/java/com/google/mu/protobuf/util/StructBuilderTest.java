@@ -1,12 +1,10 @@
 package com.google.mu.protobuf.util;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.mu.protobuf.util.MoreStructs.convertingToListValue;
 import static com.google.mu.protobuf.util.MoreStructs.struct;
+import static com.google.mu.protobuf.util.MoreValues.listValue;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
-
-import java.util.stream.Stream;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -25,7 +23,6 @@ import com.google.protobuf.util.Values;
 
 @RunWith(JUnit4.class)
 public class StructBuilderTest {
-
   @Test public void testAdd_boolean() {
     assertThat(new StructBuilder().add("k", true).build())
         .isEqualTo(Structs.of("k", Values.of(true)));
@@ -44,14 +41,14 @@ public class StructBuilderTest {
   }
 
   @Test public void testAdd_listValue() {
-    ListValue listValue = Stream.of(1, 2).collect(convertingToListValue());
+    ListValue listValue = listValue(1, 2);
     assertThat(new StructBuilder().add("k", listValue).build())
         .isEqualTo(Structs.of("k", Values.of(listValue)));
   }
 
   @Test public void testAdd_list() {
     assertThat(new StructBuilder().add("k", asList(Values.of(1), Values.of(2))).build())
-        .isEqualTo(Structs.of("k", Values.of(Stream.of(1, 2).collect(convertingToListValue()))));
+        .isEqualTo(Structs.of("k", Values.of(listValue(1, 2))));
   }
 
   @Test public void testAdd_map() {

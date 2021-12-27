@@ -14,11 +14,8 @@
  *****************************************************************************/
 package com.google.mu.protobuf.util;
 
-import static java.util.stream.Collectors.mapping;
-
 import java.util.Map;
 import java.util.function.Function;
-import java.util.stream.Collector;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Table;
@@ -26,7 +23,6 @@ import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.mu.util.stream.BiCollector;
 import com.google.mu.util.stream.BiCollectors;
 import com.google.mu.util.stream.BiStream;
-import com.google.protobuf.ListValue;
 import com.google.protobuf.NullValue;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
@@ -320,30 +316,6 @@ public final class MoreStructs {
    */
   public static BiCollector<CharSequence, Value, Struct> toStruct() {
     return StructBuilder::toStruct;
-  }
-
-  /**
-   * Returns a {@link Collector} that collects to {@link ListValue} with the input elements
-   * first converted using {@link ProtoValueConverter}.
-   *
-   * <p>If runtime conversion error is undesirable, consider to use {@link #toListValue}.
-   */
-  public static Collector<Object, ?, ListValue> convertingToListValue() {
-    return mapping(CONVERTER::convert, toListValue());
-  }
-
-  /**
-   * Returns a {@link Collector} that collects the input values into {@link ListValue}.
-   *
-   * <p>Unlike {@link #convertingToListValue}, this Collector won't throw runtime {@link Value}
-   * conversion error.
-   */
-  public static Collector<Value, ?, ListValue> toListValue() {
-    return Collector.of(
-        ListValue::newBuilder,
-        ListValue.Builder::addValues,
-        (a, b) -> a.addAllValues(b.getValuesList()),
-        ListValue.Builder::build);
   }
 
   private MoreStructs() {}
