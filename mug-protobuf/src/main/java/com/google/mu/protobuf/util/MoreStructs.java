@@ -320,7 +320,7 @@ public final class MoreStructs {
    * <p>Unlike {@link #convertingToStruct}, this BiCollector won't throw runtime {@link Value}
    * conversion error.
    *
-   * <p>Use {@link StructBuilder#toStruct} if you need a {@link Collector}.
+   * <p>If you need a {@link Collector}, use {@link StructBuilder#toStruct} instead.
    */
   public static BiCollector<CharSequence, Value, Struct> toStruct() {
     return StructBuilder::toStruct;
