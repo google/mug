@@ -65,9 +65,14 @@ import com.google.protobuf.Value;
 public final class MoreStructs {
   private static final ProtoValueConverter CONVERTER = new ProtoValueConverter();
 
-  /** Returns a Struct with {@code key} and {@code value}. Null {@code value} is translated to {@link NullValue}. */
+  /**
+   * Returns a Struct with {@code key} and {@code value}. Null {@code value} is translated to {@link NullValue}.
+   *
+   * @throws IllegalArgumentException if {@code value} cannot be converted
+   * @throws NullPointerException if {@code key} is null
+   */
   public static Struct struct(CharSequence key, @Nullable Object value) {
-    return BiStream.of(key, value).collect(convertingToStruct());
+    return Struct.newBuilder().putFields(key.toString(), CONVERTER.convert(value)).build();
   }
 
   /**
@@ -79,12 +84,16 @@ public final class MoreStructs {
    * <p>If runtime conversion error is undesirable, consider to use {@link #toStruct} or build Struct
    * manually with {@link StructBuilder}.
    *
-   * @throws IllegalArgumentException if duplicate keys are provided or if a value cannot be converted
-   * @throws NullPointerException if any key is null
+   * @throws IllegalArgumentException if duplicate keys are provided
+   *    or if either value cannot be converted
+   * @throws NullPointerException if either key is null
    */
   public static Struct struct(
       CharSequence k1, @Nullable Object v1, CharSequence k2, @Nullable Object v2) {
-    return BiStream.of(k1, v1, k2, v2).collect(convertingToStruct());
+    return new StructBuilder()
+        .add(k1.toString(), CONVERTER.convert(v1))
+        .add(k2.toString(), CONVERTER.convert(v2))
+        .build();
   }
 
   /**
@@ -103,7 +112,11 @@ public final class MoreStructs {
       CharSequence k1, @Nullable Object v1,
       CharSequence k2, @Nullable Object v2,
       CharSequence k3, @Nullable Object v3) {
-    return BiStream.of(k1, v1, k2, v2, k3, v3).collect(convertingToStruct());
+    return new StructBuilder()
+        .add(k1.toString(), CONVERTER.convert(v1))
+        .add(k2.toString(), CONVERTER.convert(v2))
+        .add(k3.toString(), CONVERTER.convert(v3))
+        .build();
   }
 
   /**
@@ -123,7 +136,12 @@ public final class MoreStructs {
       CharSequence k2, @Nullable Object v2,
       CharSequence k3, @Nullable Object v3,
       CharSequence k4, @Nullable Object v4) {
-    return BiStream.of(k1, v1, k2, v2, k3, v3, k4, v4).collect(convertingToStruct());
+    return new StructBuilder()
+        .add(k1.toString(), CONVERTER.convert(v1))
+        .add(k2.toString(), CONVERTER.convert(v2))
+        .add(k3.toString(), CONVERTER.convert(v3))
+        .add(k4.toString(), CONVERTER.convert(v4))
+        .build();
   }
 
   /**
@@ -144,7 +162,13 @@ public final class MoreStructs {
       CharSequence k3, @Nullable Object v3,
       CharSequence k4, @Nullable Object v4,
       CharSequence k5, @Nullable Object v5) {
-    return BiStream.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5).collect(convertingToStruct());
+    return new StructBuilder()
+        .add(k1.toString(), CONVERTER.convert(v1))
+        .add(k2.toString(), CONVERTER.convert(v2))
+        .add(k3.toString(), CONVERTER.convert(v3))
+        .add(k4.toString(), CONVERTER.convert(v4))
+        .add(k5.toString(), CONVERTER.convert(v5))
+        .build();
   }
 
   /**
@@ -166,7 +190,14 @@ public final class MoreStructs {
       CharSequence k4, @Nullable Object v4,
       CharSequence k5, @Nullable Object v5,
       CharSequence k6, @Nullable Object v6) {
-    return BiStream.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6).collect(convertingToStruct());
+    return new StructBuilder()
+        .add(k1.toString(), CONVERTER.convert(v1))
+        .add(k2.toString(), CONVERTER.convert(v2))
+        .add(k3.toString(), CONVERTER.convert(v3))
+        .add(k4.toString(), CONVERTER.convert(v4))
+        .add(k5.toString(), CONVERTER.convert(v5))
+        .add(k6.toString(), CONVERTER.convert(v6))
+        .build();
   }
 
   /**
@@ -189,7 +220,15 @@ public final class MoreStructs {
       CharSequence k5, @Nullable Object v5,
       CharSequence k6, @Nullable Object v6,
       CharSequence k7, @Nullable Object v7) {
-    return BiStream.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7).collect(convertingToStruct());
+    return new StructBuilder()
+        .add(k1.toString(), CONVERTER.convert(v1))
+        .add(k2.toString(), CONVERTER.convert(v2))
+        .add(k3.toString(), CONVERTER.convert(v3))
+        .add(k4.toString(), CONVERTER.convert(v4))
+        .add(k5.toString(), CONVERTER.convert(v5))
+        .add(k6.toString(), CONVERTER.convert(v6))
+        .add(k7.toString(), CONVERTER.convert(v7))
+        .build();
   }
 
   /**
@@ -213,8 +252,16 @@ public final class MoreStructs {
       CharSequence k6, @Nullable Object v6,
       CharSequence k7, @Nullable Object v7,
       CharSequence k8, @Nullable Object v8) {
-    return BiStream.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7, k8, v8)
-        .collect(convertingToStruct());
+    return new StructBuilder()
+        .add(k1.toString(), CONVERTER.convert(v1))
+        .add(k2.toString(), CONVERTER.convert(v2))
+        .add(k3.toString(), CONVERTER.convert(v3))
+        .add(k4.toString(), CONVERTER.convert(v4))
+        .add(k5.toString(), CONVERTER.convert(v5))
+        .add(k6.toString(), CONVERTER.convert(v6))
+        .add(k7.toString(), CONVERTER.convert(v7))
+        .add(k8.toString(), CONVERTER.convert(v8))
+        .build();
   }
 
   /**
@@ -239,8 +286,17 @@ public final class MoreStructs {
       CharSequence k7, @Nullable Object v7,
       CharSequence k8, @Nullable Object v8,
       CharSequence k9, @Nullable Object v9) {
-    return BiStream.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7, k8, v8, k9, v9)
-        .collect(convertingToStruct());
+    return new StructBuilder()
+        .add(k1.toString(), CONVERTER.convert(v1))
+        .add(k2.toString(), CONVERTER.convert(v2))
+        .add(k3.toString(), CONVERTER.convert(v3))
+        .add(k4.toString(), CONVERTER.convert(v4))
+        .add(k5.toString(), CONVERTER.convert(v5))
+        .add(k6.toString(), CONVERTER.convert(v6))
+        .add(k7.toString(), CONVERTER.convert(v7))
+        .add(k8.toString(), CONVERTER.convert(v8))
+        .add(k9.toString(), CONVERTER.convert(v9))
+        .build();
   }
 
   /**
@@ -266,8 +322,18 @@ public final class MoreStructs {
       CharSequence k8, @Nullable Object v8,
       CharSequence k9, @Nullable Object v9,
       CharSequence k10, @Nullable Object v10) {
-    return BiStream.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7, k8, v8, k9, v9, k10, v10)
-        .collect(convertingToStruct());
+    return new StructBuilder()
+        .add(k1.toString(), CONVERTER.convert(v1))
+        .add(k2.toString(), CONVERTER.convert(v2))
+        .add(k3.toString(), CONVERTER.convert(v3))
+        .add(k4.toString(), CONVERTER.convert(v4))
+        .add(k5.toString(), CONVERTER.convert(v5))
+        .add(k6.toString(), CONVERTER.convert(v6))
+        .add(k7.toString(), CONVERTER.convert(v7))
+        .add(k8.toString(), CONVERTER.convert(v8))
+        .add(k9.toString(), CONVERTER.convert(v9))
+        .add(k10.toString(), CONVERTER.convert(v10))
+        .build();
   }
 
   /**
