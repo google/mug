@@ -23,7 +23,11 @@ import com.google.protobuf.NullValue;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
 
-/** Additional utilities to help create {@link Value} messages. */
+/**
+ * Additional utilities to help create {@link Value} messages.
+ *
+ * @since 5.8
+ */
 public final class MoreValues {
   static final Value NULL =
       Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build();
