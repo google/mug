@@ -52,7 +52,8 @@ import com.google.protobuf.Value;
  * {@code Value}, and then recursively into {@code ListValue} and/or {@code Struct}. This can be
  * done by overriding {@link ProtoValueConverter#convert}.
  *
- * <p>To build {@link Struct} in a static type-safe way, use {@link StructBuilder} instead.
+ * <p>To build {@link Struct} in a static type-safe way, use {@link #toStruct(Function)} BiCollector
+ * with a type safe {@code valueFunction}, or build it manually with {@link StructBuilder} instead.
  *
  * @since 5.8
  */
