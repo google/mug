@@ -296,24 +296,6 @@ public final class MoreStructs {
   }
 
   /**
-   * Returns a {@link Collector} that accumulates elements into a {@link Struct} whose keys
-   * are result of applying the {@code keyFunction} and whose values are converted from
-   * the result of applying the {@code valueFunction} to the input elements.
-   *
-   * <p>Duplicate keys (according to {@link CharSequence#toString}) are not allowed.
-   *
-   * <p>Null keys are not allowed, but null values are represented with {@link NullValue}.
-   *
-   * <p>If runtime conversion error is undesirable, consider to use {@link #toStruct} or build Struct
-   * manually with {@link StructBuilder}.
-   */
-  public static <T> Collector<T, ?, Struct> convertingToStruct(
-      Function<? super T, ? extends CharSequence> keyFunction,
-      Function<? super T, ?> valueFunction) {
-    return CONVERTER.convertingToStruct(keyFunction, valueFunction);
-  }
-
-  /**
    * Returns a {@link BiCollector} that accumulates the name-value pairs into a {@link Struct} with
    * the values converted using {@link ProtoValueConverter}.
    *
@@ -325,7 +307,7 @@ public final class MoreStructs {
    * manually with {@link StructBuilder}.
    */
   public static BiCollector<CharSequence, Object, Struct> convertingToStruct() {
-    return MoreStructs::convertingToStruct;
+    return toStruct(CONVERTER::convert);
   }
 
   /**

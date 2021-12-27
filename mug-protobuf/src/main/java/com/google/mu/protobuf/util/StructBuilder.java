@@ -191,11 +191,13 @@ public final class StructBuilder {
   /**
    * Returns a {@link Collector} that collects to {@link Struct} using {@link StructBuilder}.
    *
-   * <p>Different from {@link MoreStructs#convertingToStruct()}, this collector requires {@code valueFunction}
-   * to return {@link Value}, thus won't result in runtime {@link Value} conversion error.
+   * <p>Different from {@link MoreStructs#convertingToStruct()}, this collector requires
+   * {@code valueFunction} to return {@link Value}, thus won't result in runtime {@link Value}
+   * conversion error.
    */
   public static <T> Collector<T, StructBuilder, Struct> toStruct(
-      Function<? super T, ? extends CharSequence> keyFunction, Function<? super T, Value> valueFunction) {
+      Function<? super T, ? extends CharSequence> keyFunction,
+      Function<? super T, Value> valueFunction) {
     checkNotNull(keyFunction);
     checkNotNull(valueFunction);
     return Collector.of(
