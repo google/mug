@@ -376,7 +376,7 @@ public final class MoreStructs {
    *
    * <p>Duplicate keys (according to {@link CharSequence#toString()}) are not allowed.
    *
-   * <p>Null keys are not allowed, but null values will be represented with {@link NullValue}.
+   * <p>Null keys are not allowed, but null values will be converted to {@link NullValue}.
    *
    * <p>If runtime conversion error is undesirable, consider to use {@link #toStruct} or build Struct
    * manually with {@link StructBuilder}.
