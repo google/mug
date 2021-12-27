@@ -16,6 +16,8 @@ package com.google.mu.protobuf.util;
 
 import java.util.Map;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Table;
 import com.google.errorprone.annotations.CheckReturnValue;
@@ -60,7 +62,7 @@ public final class MoreStructs {
   private static final ProtoValueConverter CONVERTER = new ProtoValueConverter();
 
   /** Returns a Struct with {@code key} and {@code value}. Null {@code value} is translated to {@link NullValue}. */
-  public static Struct struct(CharSequence key, Object value) {
+  public static Struct struct(CharSequence key, @Nullable Object value) {
     return BiStream.of(key, value).collect(convertingToStruct());
   }
 
@@ -76,7 +78,8 @@ public final class MoreStructs {
    * @throws IllegalArgumentException if duplicate keys are provided
    * @throws NullPointerException if any key is null
    */
-  public static Struct struct(CharSequence k1, Object v1, CharSequence k2, Object v2) {
+  public static Struct struct(
+      CharSequence k1, @Nullable Object v1, CharSequence k2, @Nullable Object v2) {
     return BiStream.of(k1, v1, k2, v2).collect(convertingToStruct());
   }
 
@@ -93,7 +96,9 @@ public final class MoreStructs {
    * @throws NullPointerException if any key is null
    */
   public static Struct struct(
-      CharSequence k1, Object v1, CharSequence k2, Object v2, CharSequence k3, Object v3) {
+      CharSequence k1, @Nullable Object v1,
+      CharSequence k2, @Nullable Object v2,
+      CharSequence k3, @Nullable Object v3) {
     return BiStream.of(k1, v1, k2, v2, k3, v3).collect(convertingToStruct());
   }
 
@@ -110,10 +115,10 @@ public final class MoreStructs {
    * @throws NullPointerException if any key is null
    */
   public static Struct struct(
-      CharSequence k1, Object v1,
-      CharSequence k2, Object v2,
-      CharSequence k3, Object v3,
-      CharSequence k4, Object v4) {
+      CharSequence k1, @Nullable Object v1,
+      CharSequence k2, @Nullable Object v2,
+      CharSequence k3, @Nullable Object v3,
+      CharSequence k4, @Nullable Object v4) {
     return BiStream.of(k1, v1, k2, v2, k3, v3, k4, v4).collect(convertingToStruct());
   }
 
@@ -130,11 +135,11 @@ public final class MoreStructs {
    * @throws NullPointerException if any key is null
    */
   public static Struct struct(
-      CharSequence k1, Object v1,
-      CharSequence k2, Object v2,
-      CharSequence k3, Object v3,
-      CharSequence k4, Object v4,
-      CharSequence k5, Object v5) {
+      CharSequence k1, @Nullable Object v1,
+      CharSequence k2, @Nullable Object v2,
+      CharSequence k3, @Nullable Object v3,
+      CharSequence k4, @Nullable Object v4,
+      CharSequence k5, @Nullable Object v5) {
     return BiStream.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5).collect(convertingToStruct());
   }
 
@@ -151,12 +156,12 @@ public final class MoreStructs {
    * @throws NullPointerException if any key is null
    */
   public static Struct struct(
-      CharSequence k1, Object v1,
-      CharSequence k2, Object v2,
-      CharSequence k3, Object v3,
-      CharSequence k4, Object v4,
-      CharSequence k5, Object v5,
-      CharSequence k6, Object v6) {
+      CharSequence k1, @Nullable Object v1,
+      CharSequence k2, @Nullable Object v2,
+      CharSequence k3, @Nullable Object v3,
+      CharSequence k4, @Nullable Object v4,
+      CharSequence k5, @Nullable Object v5,
+      CharSequence k6, @Nullable Object v6) {
     return BiStream.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6).collect(convertingToStruct());
   }
 
@@ -173,13 +178,13 @@ public final class MoreStructs {
    * @throws NullPointerException if any key is null
    */
   public static Struct struct(
-      CharSequence k1, Object v1,
-      CharSequence k2, Object v2,
-      CharSequence k3, Object v3,
-      CharSequence k4, Object v4,
-      CharSequence k5, Object v5,
-      CharSequence k6, Object v6,
-      CharSequence k7, Object v7) {
+      CharSequence k1, @Nullable Object v1,
+      CharSequence k2, @Nullable Object v2,
+      CharSequence k3, @Nullable Object v3,
+      CharSequence k4, @Nullable Object v4,
+      CharSequence k5, @Nullable Object v5,
+      CharSequence k6, @Nullable Object v6,
+      CharSequence k7, @Nullable Object v7) {
     return BiStream.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7).collect(convertingToStruct());
   }
 
@@ -196,14 +201,14 @@ public final class MoreStructs {
    * @throws NullPointerException if any key is null
    */
   public static Struct struct(
-      CharSequence k1, Object v1,
-      CharSequence k2, Object v2,
-      CharSequence k3, Object v3,
-      CharSequence k4, Object v4,
-      CharSequence k5, Object v5,
-      CharSequence k6, Object v6,
-      CharSequence k7, Object v7,
-      CharSequence k8, Object v8) {
+      CharSequence k1, @Nullable Object v1,
+      CharSequence k2, @Nullable Object v2,
+      CharSequence k3, @Nullable Object v3,
+      CharSequence k4, @Nullable Object v4,
+      CharSequence k5, @Nullable Object v5,
+      CharSequence k6, @Nullable Object v6,
+      CharSequence k7, @Nullable Object v7,
+      CharSequence k8, @Nullable Object v8) {
     return BiStream.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7, k8, v8)
         .collect(convertingToStruct());
   }
@@ -221,15 +226,15 @@ public final class MoreStructs {
    * @throws NullPointerException if any key is null
    */
   public static Struct struct(
-      CharSequence k1, Object v1,
-      CharSequence k2, Object v2,
-      CharSequence k3, Object v3,
-      CharSequence k4, Object v4,
-      CharSequence k5, Object v5,
-      CharSequence k6, Object v6,
-      CharSequence k7, Object v7,
-      CharSequence k8, Object v8,
-      CharSequence k9, Object v9) {
+      CharSequence k1, @Nullable Object v1,
+      CharSequence k2, @Nullable Object v2,
+      CharSequence k3, @Nullable Object v3,
+      CharSequence k4, @Nullable Object v4,
+      CharSequence k5, @Nullable Object v5,
+      CharSequence k6, @Nullable Object v6,
+      CharSequence k7, @Nullable Object v7,
+      CharSequence k8, @Nullable Object v8,
+      CharSequence k9, @Nullable Object v9) {
     return BiStream.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7, k8, v8, k9, v9)
         .collect(convertingToStruct());
   }
@@ -247,16 +252,16 @@ public final class MoreStructs {
    * @throws NullPointerException if any key is null
    */
   public static Struct struct(
-      CharSequence k1, Object v1,
-      CharSequence k2, Object v2,
-      CharSequence k3, Object v3,
-      CharSequence k4, Object v4,
-      CharSequence k5, Object v5,
-      CharSequence k6, Object v6,
-      CharSequence k7, Object v7,
-      CharSequence k8, Object v8,
-      CharSequence k9, Object v9,
-      CharSequence k10, Object v10) {
+      CharSequence k1, @Nullable Object v1,
+      CharSequence k2, @Nullable Object v2,
+      CharSequence k3, @Nullable Object v3,
+      CharSequence k4, @Nullable Object v4,
+      CharSequence k5, @Nullable Object v5,
+      CharSequence k6, @Nullable Object v6,
+      CharSequence k7, @Nullable Object v7,
+      CharSequence k8, @Nullable Object v8,
+      CharSequence k9, @Nullable Object v9,
+      CharSequence k10, @Nullable Object v10) {
     return BiStream.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7, k8, v8, k9, v9, k10, v10)
         .collect(convertingToStruct());
   }

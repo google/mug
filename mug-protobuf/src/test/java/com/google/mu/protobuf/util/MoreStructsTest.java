@@ -11,6 +11,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.testing.NullPointerTester;
 import com.google.mu.util.stream.BiStream;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
@@ -436,5 +437,26 @@ public class MoreStructsTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> BiStream.of("foo", 1, "foo", 1).mapValues(Values::of).collect(toStruct()));
+  }
+
+  @Test public void testNulls() {
+    CharSequence key = new CharSequence() {
+      private int toStringCalled = 0;
+      @Override public String toString() {
+        return "string" + (++toStringCalled);
+      }
+      @Override public int length() {
+        throw new UnsupportedOperationException();
+      }
+      @Override public char charAt(int index) {
+        throw new UnsupportedOperationException();
+      }
+      @Override public CharSequence subSequence(int start, int end) {
+        throw new UnsupportedOperationException();
+      }
+    };
+    new NullPointerTester()
+        .setDefault(CharSequence.class, key)
+        .testAllPublicStaticMethods(MoreStructs.class);
   }
 }
