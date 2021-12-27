@@ -105,7 +105,7 @@ public class ProtoValueConverterTest {
 
   @Test
   public void convert_fromListValue() {
-    ListValue list = Stream.of(1, 2).collect(toListValue(converter::convert));
+    ListValue list = Stream.of(1, 2).map(converter::convert).collect(toListValue());
     assertThat(converter.convert(list)).isEqualTo(Value.newBuilder().setListValue(list).build());
   }
 

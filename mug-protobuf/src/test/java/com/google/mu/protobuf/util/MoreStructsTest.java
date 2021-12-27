@@ -441,18 +441,20 @@ public class MoreStructsTest {
 
   @Test
   public void toStruct_biCollector() {
-    Struct struct = BiStream.of("foo", 1).collect(toStruct(Values::of));
+    Struct struct = BiStream.of("foo", 1).mapValues(Values::of).collect(toStruct());
     assertThat(struct).isEqualTo(struct("foo", 1));
   }
 
   @Test
   public void toStruct_biCollector_empty() {
-    Struct struct = BiStream.<String, String>empty().collect(toStruct(Values::of));
+    Struct struct = BiStream.<String, String>empty().mapValues(Values::of).collect(toStruct());
     assertThat(struct).isEqualTo(Struct.getDefaultInstance());
   }
 
   @Test
   public void toStruct_biCollector_duplicateKeys() {
-    assertThrows(IllegalArgumentException.class, () -> BiStream.of("foo", 1, "foo", 1).collect(toStruct(Values::of)));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> BiStream.of("foo", 1, "foo", 1).mapValues(Values::of).collect(toStruct()));
   }
 }
