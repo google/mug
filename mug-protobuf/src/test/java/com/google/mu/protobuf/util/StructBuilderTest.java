@@ -2,7 +2,7 @@ package com.google.mu.protobuf.util;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.protobuf.util.MoreStructs.struct;
-import static com.google.mu.protobuf.util.MoreValues.listValue;
+import static com.google.mu.protobuf.util.MoreValues.listValueOf;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
 
@@ -41,14 +41,14 @@ public class StructBuilderTest {
   }
 
   @Test public void testAdd_listValue() {
-    ListValue listValue = listValue(1, 2);
+    ListValue listValue = listValueOf(1, 2);
     assertThat(new StructBuilder().add("k", listValue).build())
         .isEqualTo(Structs.of("k", Values.of(listValue)));
   }
 
   @Test public void testAdd_list() {
     assertThat(new StructBuilder().add("k", asList(Values.of(1), Values.of(2))).build())
-        .isEqualTo(Structs.of("k", Values.of(listValue(1, 2))));
+        .isEqualTo(Structs.of("k", Values.of(listValueOf(1, 2))));
   }
 
   @Test public void testAdd_map() {

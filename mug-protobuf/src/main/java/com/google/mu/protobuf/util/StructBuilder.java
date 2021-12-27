@@ -74,16 +74,20 @@ public final class StructBuilder {
    * @throws IllegalArgumentException if {@code name} is duplicate
    */
   public StructBuilder add(String name, String value) {
-    return add(name, valueOf(value));
+    return add(name, valueOf(checkNotNull(value)));
   }
 
   /**
-   * Adds {@code name} and {@code value}. Returns this.
+   * Adds {@code name} and {@code value}.
+   *
+   * <p>See {@link MoreValues} for helpers that create common {@link ListValue} conveniently.
+   *
+   *<p>Returns this.
    *
    * @throws IllegalArgumentException if {@code name} is duplicate
    */
   public StructBuilder add(String name, ListValue value) {
-    return add(name, MoreValues.valueOf(value));
+    return add(name, valueOf(checkNotNull(value)));
   }
 
   /**
@@ -105,7 +109,7 @@ public final class StructBuilder {
    * @throws IllegalArgumentException if {@code name} is duplicate
    */
   public StructBuilder add(String name, Struct value) {
-    return add(name, valueOf(value));
+    return add(name, valueOf(checkNotNull(value)));
   }
 
   /**
@@ -124,7 +128,9 @@ public final class StructBuilder {
    * @throws IllegalArgumentException if {@code name} is duplicate
    */
   public StructBuilder add(String name, Map<String, Value> value) {
-    return add(name, BiStream.from(value).collect(new StructBuilder(), StructBuilder::add).build());
+    return add(
+        name,
+        BiStream.from(value).collect(new StructBuilder(), StructBuilder::add).build());
   }
 
   /**
@@ -137,7 +143,8 @@ public final class StructBuilder {
    */
   public StructBuilder add(String name, Multimap<String, Value> value) {
     return add(
-        name, BiStream.from(value.asMap()).collect(new StructBuilder(), StructBuilder::add).build());
+        name,
+        BiStream.from(value.asMap()).collect(new StructBuilder(), StructBuilder::add).build());
   }
 
   /**
@@ -150,7 +157,8 @@ public final class StructBuilder {
    */
   public StructBuilder add(String name, Table<String, String, Value> value) {
     return add(
-        name, BiStream.from(value.rowMap()).collect(new StructBuilder(), StructBuilder::add).build());
+        name,
+        BiStream.from(value.rowMap()).collect(new StructBuilder(), StructBuilder::add).build());
   }
 
   /**

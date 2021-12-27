@@ -29,18 +29,34 @@ import com.google.protobuf.Value;
  * @since 5.8
  */
 public final class MoreValues {
-  static final Value NULL =
+  /** The {@link Value} for null. */
+  public static final Value NULL =
       Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build();
-  private static final Value FALSE_VALUE = Value.newBuilder().setBoolValue(false).build();
-  private static final Value TRUE_VALUE = Value.newBuilder().setBoolValue(true).build();
+
+  /** The {@link Value} for boolean {@code false}. */
+  public static final Value TRUE = Value.newBuilder().setBoolValue(true).build();
+
+  /** The {@link Value} for boolean {@code true}. */
+  public static final Value FALSE = Value.getDefaultInstance();
 
   /** Returns {@link ListValue} wrapping {@code values}. */
-  public static ListValue listValue(double... values) {
+  public static ListValue listValueOf(double... values) {
     return stream(values).mapToObj(MoreValues::valueOf).collect(toListValue());
   }
 
-  /** Returns {@link ListValue} wrapping {@code values}. */
-  public static ListValue listValue(String... values) {
+  /**
+   * Returns {@link ListValue} wrapping {@code values}.
+   * Null strings are converted to {@link NULL}.
+   */
+  public static ListValue listValueOf(String... values) {
+    return stream(values).map(MoreValues::valueOf).collect(toListValue());
+  }
+
+  /**
+   * Returns {@link ListValue} wrapping {@code values}.
+   * Null structs are converted to {@link NULL}.
+   */
+  public static ListValue listValueOf(Struct... values) {
     return stream(values).map(MoreValues::valueOf).collect(toListValue());
   }
 
@@ -58,18 +74,18 @@ public final class MoreValues {
   }
 
   static Value valueOf(boolean b) {
-    return b ? TRUE_VALUE : FALSE_VALUE;
+    return b ? TRUE : FALSE;
   }
 
   static Value valueOf(String s) {
-    return Value.newBuilder().setStringValue(s).build();
-  }
-
-  static Value valueOf(ListValue v) {
-    return Value.newBuilder().setListValue(v).build();
+    return s == null ? NULL : Value.newBuilder().setStringValue(s).build();
   }
 
   static Value valueOf(Struct v) {
-    return Value.newBuilder().setStructValue(v).build();
+    return v == null ? NULL : Value.newBuilder().setStructValue(v).build();
+  }
+
+  static Value valueOf(ListValue v) {
+    return v == null ? NULL : Value.newBuilder().setListValue(v).build();
   }
 }
