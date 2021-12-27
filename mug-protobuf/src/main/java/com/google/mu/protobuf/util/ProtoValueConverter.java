@@ -1,3 +1,17 @@
+/*****************************************************************************
+ * ------------------------------------------------------------------------- *
+ * Licensed under the Apache License, Version 2.0 (the "License");           *
+ * you may not use this file except in compliance with the License.          *
+ * You may obtain a copy of the License at                                   *
+ *                                                                           *
+ * http://www.apache.org/licenses/LICENSE-2.0                                *
+ *                                                                           *
+ * Unless required by applicable law or agreed to in writing, software       *
+ * distributed under the License is distributed on an "AS IS" BASIS,         *
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+ * See the License for the specific language governing permissions and       *
+ * limitations under the License.                                            *
+ *****************************************************************************/
 package com.google.mu.protobuf.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -46,7 +60,7 @@ import com.google.protobuf.Value;
  *     return super.convert(obj);  // else delegate to default implementation
  *   }
  * };
- * Struct userStruct = BiStream.of("user1", user1).collect(customConverter::toStruct);
+ * Struct userStruct = BiStream.of("user1", user1).collect(customConverter::convertingToStruct);
  * }</pre>
  *
  * @since 5.8
@@ -92,7 +106,7 @@ public class ProtoValueConverter {
       return MoreValues.valueOf((ListValue) object);
     }
     if (object instanceof Iterable) {
-      return MoreValues.valueOf(stream((Iterable<?>) object).collect(toListValue()));
+      return MoreValues.valueOf(stream((Iterable<?>) object).collect(convertingToListValue()));
     }
     if (object instanceof Map) {
       return toStructValue((Map<?, ?>) object);
@@ -171,19 +185,20 @@ public class ProtoValueConverter {
    * Returns a {@link Collector} that converts and accumulates the input objects into a {@link
    * ListValue}.
    */
-  public final Collector<Object, ?, ListValue> toListValue() {
+  public final Collector<Object, ?, ListValue> convertingToListValue() {
     return mapping(this::convertNonNull, MoreValues.toListValue());
   }
 
   /**
-   * Returns a {@link Collector} that accumulates elements into a {@link Struct} whose keys and
-   * values are the result of applying the provided mapping functions to the input elements.
+   * Returns a {@link Collector} that accumulates elements into a {@link Struct} whose keys
+   * are result of applying the {@code keyFunction} and whose values are converted from
+   * the result of applying the {@code valueFunction} to the input elements.
    *
-   * <p>Duplicate keys (according to {@link Object#equals(Object)}) are not allowed.
+   * <p>Duplicate keys (according to {@link CharSequence#toString}) are not allowed.
    *
    * <p>Null keys are not allowed.
    */
-  public final <T> Collector<T, ?, Struct> toStruct(
+  public final <T> Collector<T, ?, Struct> convertingToStruct(
       Function<? super T, ? extends CharSequence> keyFunction, Function<? super T, ?> valueFunction) {
     return StructBuilder.toStruct(keyFunction, valueFunction.andThen(this::convertNonNull));
   }
@@ -196,7 +211,7 @@ public class ProtoValueConverter {
   private Value toStructValue(Map<?, ?> map) {
     Struct struct = BiStream.from(map)
         .mapKeys(ProtoValueConverter::toStructKey)
-        .collect(this::toStruct);
+        .collect(this::convertingToStruct);
     return Value.newBuilder().setStructValue(struct).build();
   }
 

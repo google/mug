@@ -1,6 +1,7 @@
 package com.google.mu.protobuf.util;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.mu.protobuf.util.MoreStructs.convertingToStruct;
 import static com.google.mu.protobuf.util.MoreStructs.struct;
 import static com.google.mu.protobuf.util.MoreStructs.toStruct;
 import static org.junit.Assert.assertThrows;
@@ -404,8 +405,8 @@ public class MoreStructsTest {
   }
 
   @Test
-  public void toStruct_biCollector() {
-    Struct struct = BiStream.of("foo", 1, "bar", ImmutableMap.of("one", true)).collect(toStruct());
+  public void convertingToStruct_biCollector() {
+    Struct struct = BiStream.of("foo", 1, "bar", ImmutableMap.of("one", true)).collect(convertingToStruct());
     assertThat(struct)
         .isEqualTo(
             Struct.newBuilder()
@@ -416,5 +417,22 @@ public class MoreStructsTest {
                         .setStructValue(Struct.newBuilder().putFields("one", Values.of(true)).build())
                         .build())
                 .build());
+  }
+
+  @Test
+  public void toStruct_biCollector() {
+    Struct struct = BiStream.of("foo", 1).collect(toStruct(Values::of));
+    assertThat(struct).isEqualTo(struct("foo", 1));
+  }
+
+  @Test
+  public void toStruct_biCollector_empty() {
+    Struct struct = BiStream.<String, String>empty().collect(toStruct(Values::of));
+    assertThat(struct).isEqualTo(Struct.getDefaultInstance());
+  }
+
+  @Test
+  public void toStruct_biCollector_duplicateKeys() {
+    assertThrows(IllegalArgumentException.class, () -> BiStream.of("foo", 1, "foo", 1).collect(toStruct(Values::of)));
   }
 }

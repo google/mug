@@ -104,7 +104,7 @@ public class ProtoValueConverterTest {
 
   @Test
   public void convert_fromListValue() {
-    ListValue list = Stream.of(1, 2).collect(converter.toListValue());
+    ListValue list = Stream.of(1, 2).collect(converter.convertingToListValue());
     assertThat(converter.convert(list)).isEqualTo(Value.newBuilder().setListValue(list).build());
   }
 
@@ -176,7 +176,7 @@ public class ProtoValueConverterTest {
   public void testToListValue() {
     assertThat(
             Stream.of(1, "foo", asList(true, false), ImmutableMap.of("k", 20L))
-                .collect(converter.toListValue()))
+                .collect(converter.convertingToListValue()))
         .isEqualTo(
             ListValue.newBuilder()
                 .addValues(Values.of(1))
@@ -254,9 +254,9 @@ public class ProtoValueConverterTest {
       }
     };
     assertThrows(
-        NullPointerException.class, () -> Stream.of("foo").collect(nullReturn.toListValue()));
+        NullPointerException.class, () -> Stream.of("foo").collect(nullReturn.convertingToListValue()));
     assertThrows(
-        NullPointerException.class, () -> BiStream.of("foo", 1).collect(nullReturn::toStruct));
+        NullPointerException.class, () -> BiStream.of("foo", 1).collect(nullReturn::convertingToStruct));
   }
 
   @Test
@@ -274,7 +274,7 @@ public class ProtoValueConverterTest {
     Hero scarletWitch = new Hero("Wanda", "Scarlet Witch");
     ironMan.friends.add(scarletWitch);
     scarletWitch.friends.add(new Hero("Vision"));
-    assertThat(Stream.of(Optional.of(ironMan)).collect(custom.toListValue()))
+    assertThat(Stream.of(Optional.of(ironMan)).collect(custom.convertingToListValue()))
         .isEqualTo(ListValue.newBuilder()
             .addValues(Values.of(struct(
                 "name", "Tony Stark",
