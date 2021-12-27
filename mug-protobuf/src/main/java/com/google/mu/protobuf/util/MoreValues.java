@@ -24,7 +24,7 @@ import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
 
 /**
- * Additional utilities to help create {@link Value} messages.
+ * Additional utilities to help create {@link Value} and {@link ListValue} messages.
  *
  * @since 5.8
  */
