@@ -331,7 +331,8 @@ public final class MoreStructs {
   public static <V> BiCollector<CharSequence, V, Struct> toStruct(Function<? super V, Value> valueFunction) {
     checkNotNull(valueFunction);
     return new BiCollector<CharSequence, V, Struct>() {
-      @Override public <E> Collector<E, ?, Struct> splitting(Function<E, CharSequence> toKey, Function<E, V> toValue) {
+      @Override public <E> Collector<E, ?, Struct> splitting(
+          Function<E, CharSequence> toKey, Function<E, V> toValue) {
         return StructBuilder.toStruct(toKey, toValue.andThen(valueFunction));
       }
     };
