@@ -15,7 +15,6 @@
 package com.google.mu.protobuf.util;
 
 import java.util.Map;
-import java.util.function.Function;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Table;
@@ -51,7 +50,7 @@ import com.google.protobuf.Value;
  * done by overriding {@link ProtoValueConverter#convert}.
  *
  * <p>To build {@link Struct} without risk of runtime {@link Value} conversion error caused by
- * unsupported types, use {@link #toStruct(Function)} BiCollector on a BiStream, or build it
+ * unsupported types, use {@link #toStruct()} BiCollector on a BiStream, or build it
  * manually with {@link StructBuilder} instead.
  *
  * @since 5.8
