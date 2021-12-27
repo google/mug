@@ -25,6 +25,7 @@ import com.google.common.collect.Table;
 import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.mu.util.stream.BiCollector;
 import com.google.mu.util.stream.BiStream;
+import com.google.protobuf.ListValue;
 import com.google.protobuf.NullValue;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
@@ -311,6 +312,16 @@ public final class MoreStructs {
   }
 
   /**
+   * Returns a {@link Collector} that collects to {@link ListValue} with the input elements
+   * first converted using {@link ProtoValueConverter}.
+   *
+   * <p>If runtime conversion error is undesirable, consider to use {@link #toListValue}.
+   */
+  public static Collector<Object, ?, ListValue> convertingToListValue() {
+    return toListValue(CONVERTER::convert);
+  }
+
+  /**
    * Returns a {@link BiCollector} that collects to {@link Struct} using {@code valueFunction}
    * to convert the input elements into {@link Value} instances.
    *
@@ -324,6 +335,21 @@ public final class MoreStructs {
         return StructBuilder.toStruct(toKey, toValue.andThen(valueFunction));
       }
     };
+  }
+
+  /**
+   * Returns a {@link Collector} that collects to {@link ListValue} using {@code valueFunction}
+   * to convert the input elements into {@link Value} instances.
+   *
+   * <p>This Collector won't throw runtime {@link Value} conversion error so long as {@code valueFunction}
+   * doesn't throw.
+   */
+  public static <T> Collector<T, ?, ListValue> toListValue(Function<? super T, Value> valueFunction) {
+    return Collector.of(
+        ListValue::newBuilder,
+        (b, v) -> b.addValues(valueFunction.apply(v)),
+        (a, b) -> a.addAllValues(b.getValuesList()),
+        ListValue.Builder::build);
   }
 
   private MoreStructs() {}
