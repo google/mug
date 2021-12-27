@@ -86,8 +86,8 @@ public final class MoreValues {
     return b ? TRUE : FALSE;
   }
 
-  static Value valueOf(String s) {
-    return Value.newBuilder().setStringValue(s).build();
+  static Value valueOf(CharSequence s) {
+    return Value.newBuilder().setStringValue(s.toString()).build();
   }
 
   static Value valueOf(Struct v) {
