@@ -35,12 +35,22 @@ public final class MoreValues {
   private static final Value TRUE_VALUE = Value.newBuilder().setBoolValue(true).build();
 
   /** Returns {@link ListValue} wrapping {@code values}. */
-  public static ListValue listValue(double... values) {
+  public static ListValue listValueOf(double... values) {
     return stream(values).mapToObj(MoreValues::valueOf).collect(toListValue());
   }
 
   /** Returns {@link ListValue} wrapping {@code values}. */
-  public static ListValue listValue(String... values) {
+  public static ListValue listValueOf(String... values) {
+    return stream(values).map(MoreValues::valueOf).collect(toListValue());
+  }
+
+  /** Returns {@link ListValue} wrapping {@code values}. */
+  public static ListValue listValueOf(Struct... values) {
+    return stream(values).map(MoreValues::valueOf).collect(toListValue());
+  }
+
+  /** Returns {@link ListValue} wrapping {@code values}. */
+  public static ListValue listValueOf(ListValue... values) {
     return stream(values).map(MoreValues::valueOf).collect(toListValue());
   }
 
@@ -65,11 +75,11 @@ public final class MoreValues {
     return Value.newBuilder().setStringValue(s).build();
   }
 
-  static Value valueOf(ListValue v) {
-    return Value.newBuilder().setListValue(v).build();
-  }
-
   static Value valueOf(Struct v) {
     return Value.newBuilder().setStructValue(v).build();
+  }
+
+  static Value valueOf(ListValue v) {
+    return Value.newBuilder().setListValue(v).build();
   }
 }

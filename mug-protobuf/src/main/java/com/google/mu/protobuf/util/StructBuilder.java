@@ -78,7 +78,11 @@ public final class StructBuilder {
   }
 
   /**
-   * Adds {@code name} and {@code value}. Returns this.
+   * Adds {@code name} and {@code value}.
+   *
+   * <p>See {@link MoreValues} for helpers that create common {@link ListValue} conveniently.
+   *
+   *<p>Returns this.
    *
    * @throws IllegalArgumentException if {@code name} is duplicate
    */
