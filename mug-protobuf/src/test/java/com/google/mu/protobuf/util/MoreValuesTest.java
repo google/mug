@@ -67,6 +67,14 @@ public class MoreValuesTest {
     assertThrows(NullPointerException.class, () -> listValueOf((String[]) null));
   }
 
+  @Test public void testTrue() {
+    assertThat(MoreValues.TRUE.getBoolValue()).isTrue();
+  }
+
+  @Test public void testFalse() {
+    assertThat(MoreValues.FALSE.getBoolValue()).isFalse();
+  }
+
   @Test public void testNulls() {
     new NullPointerTester().testAllPublicStaticMethods(MoreValues.class);
   }

@@ -37,7 +37,7 @@ public final class MoreValues {
   public static final Value TRUE = Value.newBuilder().setBoolValue(true).build();
 
   /** The {@link Value} for boolean {@code true}. */
-  public static final Value FALSE = Value.newBuilder().setBoolValue(false).build();
+  public static final Value FALSE = Value.getDefaultInstance();
 
   /** Returns {@link ListValue} wrapping {@code values}. */
   public static ListValue listValueOf(double... values) {
