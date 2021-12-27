@@ -306,7 +306,7 @@ public final class MoreStructs {
    * Returns a {@link BiCollector} that accumulates the name-value pairs into a {@link Struct} with
    * the values converted using {@link ProtoValueConverter}.
    *
-   * <p>Duplicate keys (according to {@link Object#equals(Object)}) are not allowed.
+   * <p>Duplicate keys (according to {@link CharSequence#toString()}) are not allowed.
    *
    * <p>Null keys are not allowed, but null values will be represented with {@link NullValue}.
    *
@@ -317,7 +317,11 @@ public final class MoreStructs {
     return BiCollectors.mapping((k, v) -> k, (k, v) -> CONVERTER.convert(v), toStruct());
   }
 
-  /** Returns a {@link Collector} that collects input key-value pairs into {@link Struct}. */
+  /**
+   * Returns a {@link Collector} that collects input key-value pairs into {@link Struct}.
+   *
+   * <p>Duplicate keys (according to {@link CharSequence#toString()}) are not allowed.
+   */
   public static <T> Collector<T, ?, Struct> toStruct(
       Function<? super T, ? extends CharSequence> keyFunction,
       Function<? super T, Value> valueFunction) {
@@ -332,6 +336,8 @@ public final class MoreStructs {
 
   /**
    * Returns a {@link BiCollector} that collects the input key-value pairs into {@link Struct}.
+   *
+   * <p>Duplicate keys (according to {@link CharSequence#toString()}) are not allowed.
    *
    * <p>Unlike {@link #convertingToStruct}, this BiCollector won't throw runtime {@link Value}
    * conversion error.
