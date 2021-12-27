@@ -72,6 +72,9 @@ public final class MoreStructs {
    * <p>Values are converted using {@link ProtoValueConverter}.
    * In particular, null values are translated to {@link NullValue}.
    *
+   * <p>If runtime conversion error is undesirable, consider to use {@link #toStruct} or build Struct
+   * manually with {@link StructBuilder}.
+   *
    * @throws IllegalArgumentException if duplicate keys are provided
    * @throws NullPointerException if any key is null
    */
@@ -84,6 +87,9 @@ public final class MoreStructs {
    *
    * <p>Values are converted using {@link ProtoValueConverter}.
    * In particular, null values are translated to {@link NullValue}.
+   *
+   * <p>If runtime conversion error is undesirable, consider to use {@link #toStruct} or build Struct
+   * manually with {@link StructBuilder}.
    *
    * @throws IllegalArgumentException if duplicate keys are provided
    * @throws NullPointerException if any key is null
@@ -98,6 +104,9 @@ public final class MoreStructs {
    *
    * <p>Values are converted using {@link ProtoValueConverter}.
    * In particular, null values are translated to {@link NullValue}.
+   *
+   * <p>If runtime conversion error is undesirable, consider to use {@link #toStruct} or build Struct
+   * manually with {@link StructBuilder}.
    *
    * @throws IllegalArgumentException if duplicate keys are provided
    * @throws NullPointerException if any key is null
@@ -116,6 +125,9 @@ public final class MoreStructs {
    * <p>Values are converted using {@link ProtoValueConverter}.
    * In particular, null values are translated to {@link NullValue}.
    *
+   * <p>If runtime conversion error is undesirable, consider to use {@link #toStruct} or build Struct
+   * manually with {@link StructBuilder}.
+   *
    * @throws IllegalArgumentException if duplicate keys are provided
    * @throws NullPointerException if any key is null
    */
@@ -133,6 +145,9 @@ public final class MoreStructs {
    *
    * <p>Values are converted using {@link ProtoValueConverter}.
    * In particular, null values are translated to {@link NullValue}.
+   *
+   * <p>If runtime conversion error is undesirable, consider to use {@link #toStruct} or build Struct
+   * manually with {@link StructBuilder}.
    *
    * @throws IllegalArgumentException if duplicate keys are provided
    * @throws NullPointerException if any key is null
@@ -153,6 +168,9 @@ public final class MoreStructs {
    * <p>Values are converted using {@link ProtoValueConverter}.
    * In particular, null values are translated to {@link NullValue}.
    *
+   * <p>If runtime conversion error is undesirable, consider to use {@link #toStruct} or build Struct
+   * manually with {@link StructBuilder}.
+   *
    * @throws IllegalArgumentException if duplicate keys are provided
    * @throws NullPointerException if any key is null
    */
@@ -172,6 +190,9 @@ public final class MoreStructs {
    *
    * <p>Values are converted using {@link ProtoValueConverter}.
    * In particular, null values are translated to {@link NullValue}.
+   *
+   * <p>If runtime conversion error is undesirable, consider to use {@link #toStruct} or build Struct
+   * manually with {@link StructBuilder}.
    *
    * @throws IllegalArgumentException if duplicate keys are provided
    * @throws NullPointerException if any key is null
@@ -195,6 +216,9 @@ public final class MoreStructs {
    * <p>Values are converted using {@link ProtoValueConverter}.
    * In particular, null values are translated to {@link NullValue}.
    *
+   * <p>If runtime conversion error is undesirable, consider to use {@link #toStruct} or build Struct
+   * manually with {@link StructBuilder}.
+   *
    * @throws IllegalArgumentException if duplicate keys are provided
    * @throws NullPointerException if any key is null
    */
@@ -217,6 +241,9 @@ public final class MoreStructs {
    *
    * <p>Values are converted using {@link ProtoValueConverter}.
    * In particular, null values are translated to {@link NullValue}.
+   *
+   * <p>If runtime conversion error is undesirable, consider to use {@link #toStruct} or build Struct
+   * manually with {@link StructBuilder}.
    *
    * @throws IllegalArgumentException if duplicate keys are provided
    * @throws NullPointerException if any key is null
@@ -242,6 +269,9 @@ public final class MoreStructs {
    * <p>Values are converted using {@link ProtoValueConverter}. In particular, null values are translated to
    * {@link NullValue}.
    *
+   * <p>If runtime conversion error is undesirable, consider to use {@link #toStruct} or build Struct
+   * manually with {@link StructBuilder}.
+   *
    * @throws NullPointerException if any key is null
    */
   public static Struct struct(Map<? extends CharSequence, ?> map) {
@@ -254,6 +284,9 @@ public final class MoreStructs {
    *
    * <p>Values are converted using {@link ProtoValueConverter}. In particular, null values are translated to
    * {@link NullValue}.
+   *
+   * <p>If runtime conversion error is undesirable, consider to use {@link #toStruct} or build Struct
+   * manually with {@link StructBuilder}.
    *
    * @throws NullPointerException if any row key or column key is null
    */
@@ -269,6 +302,9 @@ public final class MoreStructs {
    * <p>Duplicate keys (according to {@link CharSequence#toString}) are not allowed.
    *
    * <p>Null keys are not allowed, but null values are represented with {@link NullValue}.
+   *
+   * <p>If runtime conversion error is undesirable, consider to use {@link #toStruct} or build Struct
+   * manually with {@link StructBuilder}.
    */
   public static <T> Collector<T, ?, Struct> convertingToStruct(
       Function<? super T, ? extends CharSequence> keyFunction,
@@ -284,11 +320,8 @@ public final class MoreStructs {
    *
    * <p>Null keys are not allowed, but null values will be represented with {@link NullValue}.
    *
-   * <p>Can also be used to create Struct literals conveniently, such as:
-   *
-   * <pre>{@code
-   * BiStream.of("foo", 1. "bar", true).collect(convertingToStruct());
-   * }</pre>
+   * <p>If runtime conversion error is undesirable, consider to use {@link #toStruct} or build Struct
+   * manually with {@link StructBuilder}.
    */
   public static BiCollector<CharSequence, Object, Struct> convertingToStruct() {
     return MoreStructs::convertingToStruct;
