@@ -191,7 +191,7 @@ public final class StructBuilder {
   /**
    * Returns a {@link Collector} that collects to {@link Struct} using {@link StructBuilder}.
    *
-   * <p>Different from {@link MoreStructs#toStruct}, this collector requires {@code valueFunction}
+   * <p>Different from {@link MoreStructs#convertingToStruct()}, this collector requires {@code valueFunction}
    * to return {@link Value}, thus is static type safe and won't result in runtime error.
    */
   public static <T> Collector<T, StructBuilder, Struct> toStruct(
