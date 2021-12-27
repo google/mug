@@ -23,9 +23,9 @@
     </dependency>
     <dependency>
       <groupId>com.google.errorprone</groupId>
-      <artifactId>error_prone_core</artifactId>
+      <artifactId>error_prone_annotations</artifactId>
       <scope>compile</scope>
-      <version>2.10.0</version>
+      <classifier>sources</classifier>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
@@ -54,6 +54,11 @@
         <groupId>com.google.guava</groupId>
         <artifactId>guava-testlib</artifactId>
         <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.checkerframework</groupId>
+      <artifactId>checker-qual</artifactId>
+      <classifier>sources</classifier>
     </dependency>
   </dependencies>
 </project>
