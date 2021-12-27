@@ -18,6 +18,8 @@ import static java.util.Arrays.stream;
 
 import java.util.stream.Collector;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 import com.google.protobuf.ListValue;
 import com.google.protobuf.NullValue;
 import com.google.protobuf.Struct;
@@ -39,6 +41,11 @@ public final class MoreValues {
   /** The {@link Value} for boolean {@code false}. */
   public static final Value FALSE = Value.newBuilder().setBoolValue(false).build();
 
+  /** Returns {@link Value} wrapper for {@code string} if not null, or else returns {@link #NULL}. */
+  public static Value nullableValue(@Nullable String string) {
+    return string == null ? NULL : valueOf(string);
+  }
+
   /** Returns {@link ListValue} wrapping {@code values}. */
   public static ListValue listValueOf(double... values) {
     return stream(values).mapToObj(MoreValues::valueOf).collect(toListValue());
@@ -48,16 +55,16 @@ public final class MoreValues {
    * Returns {@link ListValue} wrapping {@code values}.
    * Null strings are converted to {@link NULL}.
    */
-  public static ListValue listValueOf(String... values) {
-    return stream(values).map(MoreValues::valueOf).collect(toListValue());
+  public static ListValue listValueOf(@Nullable String... values) {
+    return stream(values).map(MoreValues::nullableValue).collect(toListValue());
   }
 
   /**
    * Returns {@link ListValue} wrapping {@code values}.
    * Null structs are converted to {@link NULL}.
    */
-  public static ListValue listValueOf(Struct... values) {
-    return stream(values).map(MoreValues::valueOf).collect(toListValue());
+  public static ListValue listValueOf(@Nullable Struct... values) {
+    return stream(values).map(MoreValues::nullableValue).collect(toListValue());
   }
 
   /** Returns a {@link Collector} that collects the input values into {@link ListValue}. */
@@ -78,14 +85,19 @@ public final class MoreValues {
   }
 
   static Value valueOf(String s) {
-    return s == null ? NULL : Value.newBuilder().setStringValue(s).build();
+    return Value.newBuilder().setStringValue(s).build();
   }
 
   static Value valueOf(Struct v) {
-    return v == null ? NULL : Value.newBuilder().setStructValue(v).build();
+    return Value.newBuilder().setStructValue(v).build();
   }
 
   static Value valueOf(ListValue v) {
-    return v == null ? NULL : Value.newBuilder().setListValue(v).build();
+    return Value.newBuilder().setListValue(v).build();
+  }
+
+  /** Returns {@link Value} wrapper for {@code struct} if not null, or else returns {@link #NULL}. */
+  private static Value nullableValue(@Nullable Struct struct) {
+    return struct == null ? NULL : valueOf(struct);
   }
 }

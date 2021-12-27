@@ -118,6 +118,19 @@
 				<version>31.0.1-jre</version>
 				<scope>test</scope>
 			</dependency>
+		    <dependency>
+		      <groupId>com.google.errorprone</groupId>
+		      <artifactId>error_prone_annotations</artifactId>
+		      <scope>compile</scope>
+		      <version>2.10.0</version>
+		      <classifier>sources</classifier>
+		    </dependency>
+		    <dependency>
+		      <groupId>org.checkerframework</groupId>
+		      <artifactId>checker-qual</artifactId>
+		      <version>3.12.0</version>
+		      <classifier>sources</classifier>
+		    </dependency>
 		</dependencies>
 
 	</dependencyManagement>
