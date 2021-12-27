@@ -65,7 +65,12 @@ import com.google.protobuf.Value;
 public final class MoreStructs {
   private static final ProtoValueConverter CONVERTER = new ProtoValueConverter();
 
-  /** Returns a Struct with {@code key} and {@code value}. Null {@code value} is translated to {@link NullValue}. */
+  /**
+   * Returns a Struct with {@code key} and {@code value}. Null {@code value} is translated to {@link NullValue}.
+   *
+   * @throws IllegalArgumentException if {@code value} cannot be converted
+   * @throws NullPointerException if {@code key} is null
+   */
   public static Struct struct(CharSequence key, @Nullable Object value) {
     return BiStream.of(key, value).collect(convertingToStruct());
   }
@@ -79,8 +84,9 @@ public final class MoreStructs {
    * <p>If runtime conversion error is undesirable, consider to use {@link #toStruct} or build Struct
    * manually with {@link StructBuilder}.
    *
-   * @throws IllegalArgumentException if duplicate keys are provided or if a value cannot be converted
-   * @throws NullPointerException if any key is null
+   * @throws IllegalArgumentException if duplicate keys are provided
+   *    or if either value cannot be converted
+   * @throws NullPointerException if either key is null
    */
   public static Struct struct(
       CharSequence k1, @Nullable Object v1, CharSequence k2, @Nullable Object v2) {
