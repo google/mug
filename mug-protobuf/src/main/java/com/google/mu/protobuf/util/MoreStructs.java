@@ -66,7 +66,7 @@ public final class MoreStructs {
    *
    * @throws NullPointerException if {@code name} or {@code value} is null
    */
-  public static Struct struct(CharSequence name, String value) {
+  public static Struct struct(CharSequence name, CharSequence value) {
     return struct(name, valueOf(value));
   }
 

@@ -68,7 +68,7 @@ public final class StructBuilder {
    * @throws IllegalArgumentException if {@code name} is duplicate
    * @return this builder
    */
-  public StructBuilder add(String name, String value) {
+  public StructBuilder add(String name, CharSequence value) {
     return add(name, valueOf(value));
   }
 
