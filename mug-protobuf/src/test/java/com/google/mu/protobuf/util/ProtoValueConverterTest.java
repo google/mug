@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableTable;
 import com.google.common.primitives.ImmutableDoubleArray;
 import com.google.common.primitives.ImmutableIntArray;
 import com.google.common.primitives.ImmutableLongArray;
+import com.google.common.testing.NullPointerTester;
 import com.google.mu.util.stream.BiStream;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.NullValue;
@@ -259,6 +260,10 @@ public class ProtoValueConverterTest {
                         "name", "Vision",
                         "titles", ImmutableList.of(),
                         "friends", ImmutableList.of())))))));
+  }
+
+  @Test public void testNulls() {
+    new NullPointerTester().testAllPublicInstanceMethods(new ProtoValueConverter());
   }
 
   private static final class Hero {
