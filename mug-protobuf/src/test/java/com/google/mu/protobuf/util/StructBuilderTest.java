@@ -14,7 +14,6 @@ import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableTable;
 import com.google.common.testing.NullPointerTester;
-import com.google.mu.util.stream.BiStream;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
@@ -90,22 +89,6 @@ public class StructBuilderTest {
   @Test public void testToString() {
     assertThat(new StructBuilder().add("k", 1).toString())
         .isEqualTo(struct("k", 1).toString());
-  }
-
-  @Test public void testToStruct() {
-    Struct struct = BiStream.of("k", Values.of(1)).collect(StructBuilder::toStruct);
-    assertThat(struct).isEqualTo(Structs.of("k", Values.of(1)));
-  }
-
-  @Test public void testToStruct_empty() {
-    Struct struct = BiStream.<String, Value>empty().collect(StructBuilder::toStruct);
-    assertThat(struct).isEqualTo(Struct.getDefaultInstance());
-  }
-
-  @Test public void testToStruct_duplicateKey() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> BiStream.of("k", Values.of(1), "k", Values.of(2)).collect(StructBuilder::toStruct));
   }
 
   @Test public void testDuplicateKey_boolean() {

@@ -14,7 +14,10 @@
  *****************************************************************************/
 package com.google.mu.protobuf.util;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collector;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -314,16 +317,27 @@ public final class MoreStructs {
     return BiCollectors.mapping((k, v) -> k, (k, v) -> CONVERTER.convert(v), toStruct());
   }
 
+  /** Returns a {@link Collector} that collects input key-value pairs to {@link Struct}. */
+  public static <T> Collector<T, ?, Struct> toStruct(
+      Function<? super T, ? extends CharSequence> keyFunction,
+      Function<? super T, Value> valueFunction) {
+    checkNotNull(keyFunction);
+    checkNotNull(valueFunction);
+    return Collector.of(
+        StructBuilder::new,
+        (builder, input) -> builder.add(keyFunction.apply(input).toString(), valueFunction.apply(input)),
+        StructBuilder::merge,
+        StructBuilder::build);
+  }
+
   /**
    * Returns a {@link BiCollector} that collects the input key-value pairs into {@link Struct}.
    *
    * <p>Unlike {@link #convertingToStruct}, this BiCollector won't throw runtime {@link Value}
    * conversion error.
-   *
-   * <p>If you need a {@link Collector}, use {@link StructBuilder#toStruct} instead.
    */
   public static BiCollector<CharSequence, Value, Struct> toStruct() {
-    return StructBuilder::toStruct;
+    return MoreStructs::toStruct;
   }
 
   private MoreStructs() {}

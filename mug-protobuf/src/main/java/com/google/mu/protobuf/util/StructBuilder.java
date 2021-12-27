@@ -20,8 +20,6 @@ import static com.google.mu.protobuf.util.MoreValues.valueOf;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collector;
 
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
@@ -191,26 +189,7 @@ public final class StructBuilder {
     return build().toString();
   }
 
-  /**
-   * Returns a {@link Collector} that collects to {@link Struct} using {@link StructBuilder}.
-   *
-   * <p>Different from {@link MoreStructs#convertingToStruct()}, this collector requires
-   * {@code valueFunction} to return {@link Value}, thus won't result in runtime {@link Value}
-   * conversion error.
-   */
-  public static <T> Collector<T, StructBuilder, Struct> toStruct(
-      Function<? super T, ? extends CharSequence> keyFunction,
-      Function<? super T, Value> valueFunction) {
-    checkNotNull(keyFunction);
-    checkNotNull(valueFunction);
-    return Collector.of(
-        StructBuilder::new,
-        (builder, input) -> builder.add(keyFunction.apply(input).toString(), valueFunction.apply(input)),
-        StructBuilder::merge,
-        StructBuilder::build);
-  }
-
-  private StructBuilder merge(StructBuilder that) {
+  StructBuilder merge(StructBuilder that) {
     BiStream.from(that.fields).forEachOrdered(this::add);
     return this;
   }

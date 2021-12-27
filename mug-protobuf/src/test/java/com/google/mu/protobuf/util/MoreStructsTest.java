@@ -439,6 +439,12 @@ public class MoreStructsTest {
         () -> BiStream.of("foo", 1, "foo", 1).mapValues(Values::of).collect(toStruct()));
   }
 
+  @Test public void testToStruct_duplicateKey() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> BiStream.of("k", Values.of(1), "k", Values.of(2)).collect(toStruct()));
+  }
+
   @Test public void testNulls() {
     CharSequence key = new CharSequence() {
       private int toStringCalled = 0;
