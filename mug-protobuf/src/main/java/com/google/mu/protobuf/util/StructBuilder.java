@@ -74,7 +74,7 @@ public final class StructBuilder {
    * @throws IllegalArgumentException if {@code name} is duplicate
    */
   public StructBuilder add(String name, String value) {
-    return add(name, valueOf(value));
+    return add(name, valueOf(checkNotNull(value)));
   }
 
   /**
@@ -87,7 +87,7 @@ public final class StructBuilder {
    * @throws IllegalArgumentException if {@code name} is duplicate
    */
   public StructBuilder add(String name, ListValue value) {
-    return add(name, MoreValues.valueOf(value));
+    return add(name, valueOf(checkNotNull(value)));
   }
 
   /**
@@ -109,7 +109,7 @@ public final class StructBuilder {
    * @throws IllegalArgumentException if {@code name} is duplicate
    */
   public StructBuilder add(String name, Struct value) {
-    return add(name, valueOf(value));
+    return add(name, valueOf(checkNotNull(value)));
   }
 
   /**

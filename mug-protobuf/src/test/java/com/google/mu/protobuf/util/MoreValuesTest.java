@@ -44,29 +44,22 @@ public class MoreValuesTest {
   }
 
   @Test public void testlistValueOfStrings() {
-    assertThat(listValueOf("foo", "bar"))
+    assertThat(listValueOf("foo", "bar", null))
         .isEqualTo(
             ListValue.newBuilder()
                 .addValues(Values.of("foo"))
                 .addValues(Values.of("bar"))
+                .addValues(MoreValues.NULL)
                 .build());
   }
 
   @Test public void testlistValueOfStructs() {
-    assertThat(listValueOf(struct("foo", 1), struct("bar", 2)))
+    assertThat(listValueOf(struct("foo", 1), null, struct("bar", 2)))
         .isEqualTo(
             ListValue.newBuilder()
                 .addValues(Values.of(Structs.of("foo", Values.of(1))))
+                .addValues(MoreValues.NULL)
                 .addValues(Values.of(Structs.of("bar", Values.of(2))))
-                .build());
-  }
-
-  @Test public void testlistValueOflistValueOfs() {
-    assertThat(listValueOf(listValueOf(1, 2), listValueOf("foo", "bar")))
-        .isEqualTo(
-            ListValue.newBuilder()
-                .addValues(Values.of(asList(Values.of(1), Values.of(2))))
-                .addValues(Values.of(asList(Values.of("foo"), Values.of("bar"))))
                 .build());
   }
 
