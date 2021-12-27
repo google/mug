@@ -87,11 +87,6 @@ public class StructBuilderTest {
         .isEqualTo(Structs.of("k", Values.of(1)));
   }
 
-  @Test public void testAddNull() {
-    assertThat(new StructBuilder().addNull("k").build())
-        .isEqualTo(Structs.of("k", Values.ofNull()));
-  }
-
   @Test public void testToString() {
     assertThat(new StructBuilder().add("k", 1).toString())
         .isEqualTo(struct("k", 1).toString());
@@ -181,13 +176,6 @@ public class StructBuilderTest {
     StructBuilder builder = new StructBuilder();
     builder.add("k", ImmutableTable.of("row", "col", Values.of(1)));
     assertThrows(IllegalArgumentException.class, () -> builder.add("k", ImmutableTable.of()));
-  }
-
-  @Test public void testDuplicateKey_null() {
-    StructBuilder builder = new StructBuilder();
-    builder.addNull("k");
-    builder.addNull("k2");
-    assertThrows(IllegalArgumentException.class, () -> builder.addNull("k"));
   }
 
   @Test public void testNulls() {
