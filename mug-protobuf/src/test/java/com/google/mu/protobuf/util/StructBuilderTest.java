@@ -57,7 +57,7 @@ public class StructBuilderTest {
 
   @Test public void testAdd_multimap() {
     assertThat(new StructBuilder().add("k", ImmutableListMultimap.of("one", Values.of(1))).build())
-        .isEqualTo(Structs.of("k", Values.of(struct("one", asList(1)))));
+        .isEqualTo(Structs.of("k", Values.of(struct("one", listValueOf(1)))));
   }
 
   @Test public void testAdd_table() {
@@ -69,6 +69,11 @@ public class StructBuilderTest {
     Struct struct =  struct("name", "v");
     assertThat(new StructBuilder().add("k", struct).build())
         .isEqualTo(Structs.of("k", Values.of(struct)));
+  }
+
+  @Test public void testAdd_thisStructBuilder() {
+    StructBuilder builder = new StructBuilder();
+    assertThrows(IllegalArgumentException.class, () -> builder.add("k", builder));
   }
 
   @Test public void testAdd_emptyStructBuilder() {
@@ -84,6 +89,22 @@ public class StructBuilderTest {
   @Test public void testAdd_value() {
     assertThat(new StructBuilder().add("k", Values.of(1)).build())
         .isEqualTo(Structs.of("k", Values.of(1)));
+  }
+
+  @Test public void testAddAllFields_fromStruct() {
+    Struct struct =  struct("name", "v");
+    assertThat(new StructBuilder().addAllFields(struct).build())
+        .isEqualTo(struct);
+  }
+
+  @Test public void testAddAllFields_fromStructBuilder() {
+    assertThat(new StructBuilder().addAllFields(new StructBuilder().add("name", 1)).build())
+        .isEqualTo(struct("name", 1));
+  }
+
+  @Test public void testAddAllFields_cyclic() {
+    StructBuilder builder = new StructBuilder();
+    assertThrows(IllegalArgumentException.class, () -> builder.addAllFields(builder));
   }
 
   @Test public void testToString() {
@@ -159,6 +180,16 @@ public class StructBuilderTest {
     StructBuilder builder = new StructBuilder();
     builder.add("k", ImmutableTable.of("row", "col", Values.of(1)));
     assertThrows(IllegalArgumentException.class, () -> builder.add("k", ImmutableTable.of()));
+  }
+
+  @Test public void testDuplicateKey_addAllFieldsFromStruct() {
+    StructBuilder builder = new StructBuilder().add("k", 1);
+    assertThrows(IllegalArgumentException.class, () -> builder.addAllFields(struct("k", 1)));
+  }
+
+  @Test public void testDuplicateKey_addAllFieldsFromStructBuilder() {
+    StructBuilder builder = new StructBuilder().add("k", 1);
+    assertThrows(IllegalArgumentException.class, () -> builder.addAllFields(new StructBuilder().add("k", 1)));
   }
 
   @Test public void testNulls() {

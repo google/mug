@@ -31,14 +31,10 @@ import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
 
 /**
- * A static type-safe builder that supports building heterogeneous {@link Struct} more conveniently,
+ * A builder that supports building heterogeneous {@link Struct} more conveniently,
  * while eliding most of the intermediary and verbose {@link Value} creation.
  *
  * <p>Unlike {@link Struct.Builder}, the {@code add()} methods will throw upon duplicate keys.
- *
- * <p>Compared with {@link MoreStructs#struct}, StructBuilder is more suitable to production code
- * where runtime {@link Value} conversion error caused by unsupported type is undesirable;
- * while MoreStructs is best used in tests and scenarios where runtime conversion error is tolerable.
  *
  * @since 5.8
  */
@@ -47,51 +43,52 @@ public final class StructBuilder {
   private final LinkedHashMap<String, Value> fields = new LinkedHashMap<>();
 
   /**
-   * Adds {@code name}-{@code value} pair. Returns this.
+   * Adds a {@code (name, value)} field.
    *
    * @throws IllegalArgumentException if {@code name} is duplicate
+   * @return this builder
    */
   public StructBuilder add(String name, boolean value) {
     return add(name, valueOf(value));
   }
 
   /**
-   * Adds {@code name}-{@code value} pair. Returns this.
+   * Adds a {@code (name, value)} field.
    *
    * @throws IllegalArgumentException if {@code name} is duplicate
+   * @return this builder
    */
   public StructBuilder add(String name, double value) {
     return add(name, valueOf(value));
   }
 
   /**
-   * Adds {@code name}-{@code value} pair. Returns this.
+   * Adds a {@code (name, value)} field.
    *
    * @throws IllegalArgumentException if {@code name} is duplicate
+   * @return this builder
    */
   public StructBuilder add(String name, String value) {
     return add(name, valueOf(value));
   }
 
   /**
-   * Adds {@code name}-{@code value} pair.
+   * Adds a {@code (name, value)} field.
    *
    * <p>See {@link MoreValues} for helpers that create common {@link ListValue} conveniently.
    *
-   *<p>Returns this.
-   *
    * @throws IllegalArgumentException if {@code name} is duplicate
+   * @return this builder
    */
   public StructBuilder add(String name, ListValue value) {
     return add(name, valueOf(value));
   }
 
   /**
-   * Adds {@code name}-{@code values} pair with {@code values} wrapped in {@link ListValue}.
-   *
-   * <p>Returns this.
+   * Adds a {@code (name, values) field}, with {@code values} wrapped in {@link ListValue}.
    *
    * @throws IllegalArgumentException if {@code name} is duplicate
+   * @return this builder
    */
   public StructBuilder add(String name, Iterable<Value> values) {
     ListValue.Builder listValue = ListValue.newBuilder();
@@ -102,28 +99,31 @@ public final class StructBuilder {
   }
 
   /**
-   * Adds {@code name}-{@code value} pair. Returns this.
+   * Adds a {@code (name, value)} field.
    *
    * @throws IllegalArgumentException if {@code name} is duplicate
+   * @return this builder
    */
   public StructBuilder add(String name, Struct value) {
     return add(name, valueOf(value));
   }
 
   /**
-   * Adds {@code name}-{@code value} pair. Returns this.
+   * Adds a {@code (name, value)} field.
    *
    * @throws IllegalArgumentException if {@code name} is duplicate
+   * @return this builder
    */
   public StructBuilder add(String name, StructBuilder value) {
+    checkArgument(this != value, "Cannot add this builder to itself.");
     return add(name, value.build());
   }
 
   /**
-   * Adds {@code name}-{@code value} pair. {@code value} is converted to a nested Struct.
-   * Returns this.
+   * Adds a {@code (name, value)} field. {@code value} is converted to a nested Struct.
    *
    * @throws IllegalArgumentException if {@code name} is duplicate
+   * @return this builder
    */
   public StructBuilder add(String name, Map<String, Value> value) {
     return add(
@@ -132,12 +132,11 @@ public final class StructBuilder {
   }
 
   /**
-   * Adds {@code name}-{@code value} pair. {@code value} is converted to a nested Struct
+   * Adds a {@code (name, value)} field. {@code value} is converted to a nested Struct
    * mapping nested keys to {@code ListValue}.
    *
-   * <p>Returns this.
-   *
    * @throws IllegalArgumentException if {@code name} is duplicate
+   * @return this builder
    */
   public StructBuilder add(String name, Multimap<String, Value> value) {
     return add(
@@ -146,12 +145,11 @@ public final class StructBuilder {
   }
 
   /**
-   * Adds {@code name}-{@code value} pair. {@code value} is converted to a nested Struct
+   * Adds a {@code (name, value)} field. {@code value} is converted to a nested Struct
    * mapping nested keys to {@code Struct}.
    *
-   * <p>Returns this.
-   *
    * @throws IllegalArgumentException if {@code name} is duplicate
+   * @return this builder
    */
   public StructBuilder add(String name, Table<String, String, Value> value) {
     return add(
@@ -160,18 +158,40 @@ public final class StructBuilder {
   }
 
   /**
-   * Adds {@code name}-{@code value} pair.
+   * Adds a {@code (name, value)} field.
    *
    * <p>To add a null value, use {@link MoreValues#NULL} as in {@code add("name", NULL)}.
    *
-   * <p>Returns this.
-   *
    * @throws IllegalArgumentException if {@code name} is duplicate
+   * @return this builder
    */
   public StructBuilder add(String name, Value value) {
     checkNotNull(name, "name is null");
     checkNotNull(value, "value is null");
     checkArgument(fields.putIfAbsent(name, value) == null, "Field %s already present", name);
+    return this;
+  }
+
+  /**
+   * Adds all fields from {@code that into this builder.
+   *
+   * @throws IllegalArgumentException if duplicate field name is encountered
+   * @return this builder
+   */
+  public StructBuilder addAllFields(Struct that) {
+    BiStream.from(that.getFieldsMap()).forEachOrdered(this::add);
+    return this;
+  }
+
+  /**
+   * Adds all fields from {@code that into this builder.
+   *
+   * @throws IllegalArgumentException if duplicate field name is encountered
+   * @return this builder
+   */
+  public StructBuilder addAllFields(StructBuilder that) {
+    checkArgument(this != that, "Cannot add this builder to itself.");
+    BiStream.from(that.fields).forEachOrdered(this::add);
     return this;
   }
 
@@ -187,10 +207,5 @@ public final class StructBuilder {
 
   @Override public String toString() {
     return build().toString();
-  }
-
-  StructBuilder merge(StructBuilder that) {
-    BiStream.from(that.fields).forEachOrdered(this::add);
-    return this;
   }
 }

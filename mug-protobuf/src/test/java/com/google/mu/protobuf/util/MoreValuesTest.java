@@ -23,15 +23,15 @@ import com.google.protobuf.util.Values;
 @RunWith(JUnit4.class)
 public class MoreValuesTest {
   @Test public void testToListValue() {
-    ProtoValueConverter converter = new ProtoValueConverter();
+    StructMaker converter = new StructMaker();
     assertThat(
-            Stream.of(1, "foo", asList(true, false), ImmutableMap.of("k", 20L)).map(converter::convert).collect(toListValue()))
+            Stream.of(1, "foo", asList(true, false), ImmutableMap.of("k", 20L)).map(converter::toValue).collect(toListValue()))
         .isEqualTo(
             ListValue.newBuilder()
                 .addValues(Values.of(1))
                 .addValues(Values.of("foo"))
-                .addValues(converter.convert(asList(true, false)))
-                .addValues(converter.convert(ImmutableMap.of("k", 20L)))
+                .addValues(converter.toValue(asList(true, false)))
+                .addValues(converter.toValue(ImmutableMap.of("k", 20L)))
                 .build());
   }
 
