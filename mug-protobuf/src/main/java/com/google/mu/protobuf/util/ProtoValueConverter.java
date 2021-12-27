@@ -26,7 +26,6 @@ import static java.util.stream.Collectors.collectingAndThen;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.IntStream;
 
@@ -106,7 +105,8 @@ public class ProtoValueConverter {
       return MoreValues.valueOf((ListValue) object);
     }
     if (object instanceof Iterable) {
-      return MoreValues.valueOf(stream((Iterable<?>) object).collect(toListValue(this::convertNonNull)));
+      return MoreValues.valueOf(
+          stream((Iterable<?>) object).map(this::convertNonNull).collect(toListValue()));
     }
     if (object instanceof Map) {
       return toStructValue((Map<?, ?>) object);
@@ -201,6 +201,6 @@ public class ProtoValueConverter {
   }
 
   private static Collector<Value, ?, Value> valuesToValue() {
-    return collectingAndThen(toListValue(Function.identity()), MoreValues::valueOf);
+    return collectingAndThen(toListValue(), MoreValues::valueOf);
   }
 }

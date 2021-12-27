@@ -14,7 +14,7 @@
  *****************************************************************************/
 package com.google.mu.protobuf.util;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.stream.Collectors.mapping;
 
 import java.util.Map;
 import java.util.function.Function;
@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Table;
 import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.mu.util.stream.BiCollector;
+import com.google.mu.util.stream.BiCollectors;
 import com.google.mu.util.stream.BiStream;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.NullValue;
@@ -308,7 +309,17 @@ public final class MoreStructs {
    * manually with {@link StructBuilder}.
    */
   public static BiCollector<CharSequence, Object, Struct> convertingToStruct() {
-    return toStruct(CONVERTER::convert);
+    return BiCollectors.mapping((k, v) -> k, (k, v) -> CONVERTER.convert(v), toStruct());
+  }
+
+  /**
+   * Returns a {@link BiCollector} that collects the input key-value pairs into {@link Struct}.
+   *
+   * <p>Unlike {@link #convertingToStruct}, this BiCollector won't throw runtime {@link Value}
+   * conversion error.
+   */
+  public static BiCollector<CharSequence, Value, Struct> toStruct() {
+    return StructBuilder::toStruct;
   }
 
   /**
@@ -318,37 +329,19 @@ public final class MoreStructs {
    * <p>If runtime conversion error is undesirable, consider to use {@link #toListValue}.
    */
   public static Collector<Object, ?, ListValue> convertingToListValue() {
-    return toListValue(CONVERTER::convert);
+    return mapping(CONVERTER::convert, toListValue());
   }
 
   /**
-   * Returns a {@link BiCollector} that collects to {@link Struct} using {@code valueFunction}
-   * to convert the input elements into {@link Value} instances.
+   * Returns a {@link Collector} that collects the input values into {@link ListValue}.
    *
-   * <p>This BiCollector won't throw runtime {@link Value} conversion error so long as {@code valueFunction}
-   * doesn't throw.
+   * <p>Unlike {@link #convertingToListValue}, this Collector won't throw runtime {@link Value}
+   * conversion error.
    */
-  public static <V> BiCollector<CharSequence, V, Struct> toStruct(Function<? super V, Value> valueFunction) {
-    checkNotNull(valueFunction);
-    return new BiCollector<CharSequence, V, Struct>() {
-      @Override public <E> Collector<E, ?, Struct> splitting(
-          Function<E, CharSequence> toKey, Function<E, V> toValue) {
-        return StructBuilder.toStruct(toKey, toValue.andThen(valueFunction));
-      }
-    };
-  }
-
-  /**
-   * Returns a {@link Collector} that collects to {@link ListValue} using {@code valueFunction}
-   * to convert the input elements into {@link Value} instances.
-   *
-   * <p>This Collector won't throw runtime {@link Value} conversion error so long as {@code valueFunction}
-   * doesn't throw.
-   */
-  public static <T> Collector<T, ?, ListValue> toListValue(Function<? super T, Value> valueFunction) {
+  public static Collector<Value, ?, ListValue> toListValue() {
     return Collector.of(
         ListValue::newBuilder,
-        (b, v) -> b.addValues(valueFunction.apply(v)),
+        ListValue.Builder::addValues,
         (a, b) -> a.addAllValues(b.getValuesList()),
         ListValue.Builder::build);
   }
