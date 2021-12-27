@@ -17,9 +17,9 @@ package com.google.mu.protobuf.util;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Streams.stream;
+import static com.google.mu.protobuf.util.MoreStructs.toStruct;
 import static com.google.mu.protobuf.util.MoreValues.NULL;
 import static com.google.mu.protobuf.util.MoreValues.valueOf;
-import static com.google.mu.protobuf.util.StructBuilder.toStruct;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.collectingAndThen;
 
@@ -37,6 +37,7 @@ import com.google.common.primitives.ImmutableDoubleArray;
 import com.google.common.primitives.ImmutableIntArray;
 import com.google.common.primitives.ImmutableLongArray;
 import com.google.errorprone.annotations.CheckReturnValue;
+import com.google.mu.util.stream.BiStream;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.NullValue;
 import com.google.protobuf.Struct;
@@ -191,8 +192,10 @@ public class ProtoValueConverter {
 
   private Value toStructValue(Map<?, ?> map) {
     return valueOf(
-        map.entrySet().stream()
-            .collect(toStruct(e -> toStructKey(e.getKey()), e-> convertNonNull(e.getValue()))));
+        BiStream.from(map)
+            .mapKeys(ProtoValueConverter::toStructKey)
+            .mapValues(this::convertNonNull)
+            .collect(toStruct()));
   }
 
   private static String toStructKey(Object key) {
