@@ -65,7 +65,7 @@ public final class StructBuilder {
    * @throws IllegalArgumentException if {@code name} is duplicate
    */
   public StructBuilder add(String name, double value) {
-    return add(name, Value.newBuilder().setNumberValue(value).build());
+    return add(name, valueOf(value));
   }
 
   /**
@@ -74,7 +74,7 @@ public final class StructBuilder {
    * @throws IllegalArgumentException if {@code name} is duplicate
    */
   public StructBuilder add(String name, String value) {
-    return add(name, Value.newBuilder().setStringValue(value).build());
+    return add(name, valueOf(value));
   }
 
   /**
@@ -94,7 +94,7 @@ public final class StructBuilder {
   public StructBuilder add(String name, Iterable<Value> values) {
     ListValue.Builder listValue = ListValue.newBuilder();
     for (Value v : values) {
-      listValue.addValues(checkNotNull(v));
+      listValue.addValues(v);
     }
     return add(name, listValue.build());
   }
@@ -105,7 +105,7 @@ public final class StructBuilder {
    * @throws IllegalArgumentException if {@code name} is duplicate
    */
   public StructBuilder add(String name, Struct value) {
-    return add(name, Value.newBuilder().setStructValue(value).build());
+    return add(name, valueOf(value));
   }
 
   /**
