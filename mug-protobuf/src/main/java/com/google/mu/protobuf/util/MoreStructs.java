@@ -277,7 +277,7 @@ public final class MoreStructs {
    *
    * @throws NullPointerException if any key is null
    */
-  public static Struct struct(Map<? extends CharSequence, ?> map) {
+  public static Struct struct(Map<? extends CharSequence, ? extends @Nullable Object> map) {
     return BiStream.from(map).collect(convertingToStruct());
   }
 
@@ -293,7 +293,8 @@ public final class MoreStructs {
    *
    * @throws NullPointerException if any row key or column key is null
    */
-  public static Struct nestedStruct(Table<? extends CharSequence, ? extends CharSequence, ?> table) {
+  public static Struct nestedStruct(
+      Table<? extends CharSequence, ? extends CharSequence, ? extends @Nullable Object> table) {
     return struct(table.rowMap());
   }
 
@@ -308,7 +309,7 @@ public final class MoreStructs {
    * <p>If runtime conversion error is undesirable, consider to use {@link #toStruct} or build Struct
    * manually with {@link StructBuilder}.
    */
-  public static BiCollector<CharSequence, Object, Struct> convertingToStruct() {
+  public static BiCollector<CharSequence, @Nullable Object, Struct> convertingToStruct() {
     return BiCollectors.mapping((k, v) -> k, (k, v) -> CONVERTER.convert(v), toStruct());
   }
 
