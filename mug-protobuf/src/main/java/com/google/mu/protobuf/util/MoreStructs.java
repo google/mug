@@ -79,7 +79,7 @@ public final class MoreStructs {
    * <p>If runtime conversion error is undesirable, consider to use {@link #toStruct} or build Struct
    * manually with {@link StructBuilder}.
    *
-   * @throws IllegalArgumentException if duplicate keys are provided
+   * @throws IllegalArgumentException if duplicate keys are provided or if a value cannot be converted
    * @throws NullPointerException if any key is null
    */
   public static Struct struct(
@@ -96,7 +96,7 @@ public final class MoreStructs {
    * <p>If runtime conversion error is undesirable, consider to use {@link #toStruct} or build Struct
    * manually with {@link StructBuilder}.
    *
-   * @throws IllegalArgumentException if duplicate keys are provided
+   * @throws IllegalArgumentException if duplicate keys are provided or if a value cannot be converted
    * @throws NullPointerException if any key is null
    */
   public static Struct struct(
@@ -115,7 +115,7 @@ public final class MoreStructs {
    * <p>If runtime conversion error is undesirable, consider to use {@link #toStruct} or build Struct
    * manually with {@link StructBuilder}.
    *
-   * @throws IllegalArgumentException if duplicate keys are provided
+   * @throws IllegalArgumentException if duplicate keys are provided or if a value cannot be converted
    * @throws NullPointerException if any key is null
    */
   public static Struct struct(
@@ -135,7 +135,7 @@ public final class MoreStructs {
    * <p>If runtime conversion error is undesirable, consider to use {@link #toStruct} or build Struct
    * manually with {@link StructBuilder}.
    *
-   * @throws IllegalArgumentException if duplicate keys are provided
+   * @throws IllegalArgumentException if duplicate keys are provided or if a value cannot be converted
    * @throws NullPointerException if any key is null
    */
   public static Struct struct(
@@ -156,7 +156,7 @@ public final class MoreStructs {
    * <p>If runtime conversion error is undesirable, consider to use {@link #toStruct} or build Struct
    * manually with {@link StructBuilder}.
    *
-   * @throws IllegalArgumentException if duplicate keys are provided
+   * @throws IllegalArgumentException if duplicate keys are provided or if a value cannot be converted
    * @throws NullPointerException if any key is null
    */
   public static Struct struct(
@@ -178,7 +178,7 @@ public final class MoreStructs {
    * <p>If runtime conversion error is undesirable, consider to use {@link #toStruct} or build Struct
    * manually with {@link StructBuilder}.
    *
-   * @throws IllegalArgumentException if duplicate keys are provided
+   * @throws IllegalArgumentException if duplicate keys are provided or if a value cannot be converted
    * @throws NullPointerException if any key is null
    */
   public static Struct struct(
@@ -201,7 +201,7 @@ public final class MoreStructs {
    * <p>If runtime conversion error is undesirable, consider to use {@link #toStruct} or build Struct
    * manually with {@link StructBuilder}.
    *
-   * @throws IllegalArgumentException if duplicate keys are provided
+   * @throws IllegalArgumentException if duplicate keys are provided or if a value cannot be converted
    * @throws NullPointerException if any key is null
    */
   public static Struct struct(
@@ -226,7 +226,7 @@ public final class MoreStructs {
    * <p>If runtime conversion error is undesirable, consider to use {@link #toStruct} or build Struct
    * manually with {@link StructBuilder}.
    *
-   * @throws IllegalArgumentException if duplicate keys are provided
+   * @throws IllegalArgumentException if duplicate keys are provided or if a value cannot be converted
    * @throws NullPointerException if any key is null
    */
   public static Struct struct(
@@ -252,7 +252,7 @@ public final class MoreStructs {
    * <p>If runtime conversion error is undesirable, consider to use {@link #toStruct} or build Struct
    * manually with {@link StructBuilder}.
    *
-   * @throws IllegalArgumentException if duplicate keys are provided
+   * @throws IllegalArgumentException if duplicate keys are provided or if a value cannot be converted
    * @throws NullPointerException if any key is null
    */
   public static Struct struct(
@@ -279,6 +279,7 @@ public final class MoreStructs {
    * <p>If runtime conversion error is undesirable, consider to use {@link #toStruct} or build Struct
    * manually with {@link StructBuilder}.
    *
+   * @throws IllegalArgumentException if a Map value cannot be converted
    * @throws NullPointerException if any key is null
    */
   public static Struct struct(Map<? extends CharSequence, ? extends @Nullable Object> map) {
@@ -295,6 +296,7 @@ public final class MoreStructs {
    * <p>If runtime conversion error is undesirable, consider to use {@link #toStruct} or build Struct
    * manually with {@link StructBuilder}.
    *
+   * @throws IllegalArgumentException if a Table cell value cannot be converted
    * @throws NullPointerException if any row key or column key is null
    */
   public static Struct nestedStruct(
@@ -321,6 +323,9 @@ public final class MoreStructs {
    * Returns a {@link Collector} that collects input key-value pairs into {@link Struct}.
    *
    * <p>Duplicate keys (according to {@link CharSequence#toString()}) are not allowed.
+   *
+   * <p>Unlike {@link #convertingToStruct}, this Collector won't throw runtime {@link Value}
+   * conversion error.
    */
   public static <T> Collector<T, ?, Struct> toStruct(
       Function<? super T, ? extends CharSequence> keyFunction,
