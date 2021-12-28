@@ -101,8 +101,8 @@ import com.google.protobuf.Value;
 public class StructMapper {
 
   /**
-   * Returns a Struct with {@code name} and {@code value},with {@code value} converted using
-   * {@link #toValue}. In particular, null is translated to {@link NullValue}.
+   * Returns a Struct with {@code name} and {@code value}, with {@code value} converted using
+   * {@link #toValue}. In particular, null is mapped to {@link NullValue}.
    *
    * <p>If runtime conversion error is undesirable, consider to use {@link MoreStructs} or build Struct
    * manually with {@link StructBuilder}.
@@ -118,7 +118,7 @@ public class StructMapper {
    * Returns a Struct equivalent to {@code {k1:v1, k2:v2}}.
    *
    * <p>Values are converted using {@link #toValue}.
-   * In particular, null values are translated to {@link NullValue}.
+   * In particular, null values are mapped to {@link NullValue}.
    *
    * <p>If runtime conversion error is undesirable, consider to use {@link MoreStructs} or build Struct
    * manually with {@link StructBuilder}.
@@ -139,7 +139,7 @@ public class StructMapper {
    * Returns a Struct equivalent to {@code {k1:v1, k2:v2, k3:v3}}.
    *
    * <p>Values are converted using {@link #toValue}.
-   * In particular, null values are translated to {@link NullValue}.
+   * In particular, null values are mapped to {@link NullValue}.
    *
    * <p>If runtime conversion error is undesirable, consider to use {@link MoreStructs} or build Struct
    * manually with {@link StructBuilder}.
@@ -161,7 +161,7 @@ public class StructMapper {
   /**
    * Returns a Struct equivalent to {@code map}.
    *
-   * <p>Values are converted using {@link #toValue}. In particular, null values are translated to
+   * <p>Values are converted using {@link #toValue}. In particular, null values are mapped to
    * {@link NullValue}.
    *
    * <p>If runtime conversion error is undesirable, consider to use {@link MoreStructs} or build Struct
@@ -178,7 +178,7 @@ public class StructMapper {
    * Returns a nested Struct of Struct equivalent to the {@link Table#rowMap row map} of {@code table}.
    *
    *
-   * <p>Values are converted using {@link #toValue}. In particular, null values are translated to
+   * <p>Values are converted using {@link #toValue}. In particular, null values are mapped to
    * {@link NullValue}.
    *
    * <p>If runtime conversion error is undesirable, consider to use {@link MoreStructs} or build Struct
@@ -198,7 +198,7 @@ public class StructMapper {
    *
    * <p>Duplicate keys (according to {@link CharSequence#toString()}) are not allowed.
    *
-   * <p>Null keys are not allowed, but null values will be converted to {@link NullValue}.
+   * <p>Null keys are not allowed, but null values will be mapped to {@link NullValue}.
    *
    * <p>If runtime conversion error is undesirable, consider to use {@link MoreStructs} or build Struct
    * manually with {@link StructBuilder}.
@@ -212,13 +212,13 @@ public class StructMapper {
    *
    * <p>Supported types: <ul>
    * <li>Primitive types (boolean, number, string)
-   * <li>{@code null} converted to {@link NullValue}
-   * <li>Enum encoded by {@link Enum#name name}
-   * <li>{@link Iterable} and array elements recursively converted and wrapped in {@link ListValue}x
+   * <li>{@code null} mapped to {@link NullValue}
+   * <li>Enum mapped to {@link Enum#name name}
+   * <li>{@link Iterable} and array elements recursively converted and wrapped in {@link ListValue}
    * <li>{@link Map} values recursively converted and wrapped in {@link Struct}
-   * <li>{@link Multimap} converted as {@code convert(multimap.asMap())}
-   * <li>{@link Table} converted as {@code convert(table.rowMap())}
-   * <li>{@link Optional} converted as {@code convert(optional.orElse(null))}
+   * <li>{@link Multimap} converted as {@code toValue(multimap.asMap())}
+   * <li>{@link Table} converted as {@code toValue(table.rowMap())}
+   * <li>{@link Optional} converted as {@code toValue(optional.orElse(null))}
    * <li>{@link ImmutableIntArray}, {@link ImmutableLongArray} and {@link ImmutableDoubleArray}
    *     elements wrapped in {@link ListValue}
    * <li>Built-in protobuf types ({@link Struct}, {@link Value}, {@link ListValue}, {@link NullValue})
