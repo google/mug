@@ -170,7 +170,7 @@ public class StructMapper {
    * @throws IllegalArgumentException if a Map value cannot be converted
    * @throws NullPointerException if any key is null
    */
-  public final Struct struct(Map<? extends CharSequence, ? extends @Nullable Object> map) {
+  public final Struct struct(Map<String, ? extends @Nullable Object> map) {
     return BiStream.from(map).collect(toStruct());
   }
 
@@ -187,8 +187,7 @@ public class StructMapper {
    * @throws IllegalArgumentException if a Table cell value cannot be converted
    * @throws NullPointerException if any row key or column key is null
    */
-  public final Struct nestedStruct(
-      Table<? extends CharSequence, ? extends CharSequence, ? extends @Nullable Object> table) {
+  public final Struct nestedStruct(Table<String, String, ? extends @Nullable Object> table) {
     return struct(table.rowMap());
   }
 
