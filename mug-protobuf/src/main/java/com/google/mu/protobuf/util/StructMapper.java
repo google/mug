@@ -47,7 +47,7 @@ import com.google.protobuf.Value;
 /**
  * A helper class that maps from POJOs to {@link Struct} and {@link Value} instances.
  *
- * <p>For example, one can create a Struct literal as in:
+ * <p>For example, you can create a heterogeneous {@code Struct} literal like:
  *
  * <pre>{@code
  * Struct ironMan =
@@ -55,7 +55,8 @@ import com.google.protobuf.Value;
  *         .struct("name", "Tony Stark", "age", 10, "titles", List.of("Iron Man", "Genius"));
  * }</pre>
  *
- * <p>For structs with even more fields, you can use the {@link #toStruct} BiCollector, as in:
+ * <p>If your structs need even more fields, consider to use the {@link #toStruct}
+ * {@code BiCollector}, as in:
  *
  * <pre>{@code
  * BiStream.of("k1", 1, "k2", 2, "k3", 3, "k4", 4, ...)
