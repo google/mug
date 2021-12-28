@@ -44,7 +44,7 @@ public final class MoreValues {
   public static final Value FALSE = Value.newBuilder().setBoolValue(false).build();
 
   /** Returns {@link Value} wrapper for {@code string} if not null, or else returns {@link #NULL}. */
-  public static Value nullableValue(@Nullable String string) {
+  public static Value nullableValueOf(@Nullable String string) {
     return string == null ? NULL : valueOf(string);
   }
 
@@ -58,7 +58,7 @@ public final class MoreValues {
    * Null strings are converted to {@link NULL}.
    */
   public static ListValue listValueOf(@Nullable String... values) {
-    return stream(values).map(MoreValues::nullableValue).collect(toListValue());
+    return stream(values).map(MoreValues::nullableValueOf).collect(toListValue());
   }
 
   /**
@@ -66,7 +66,7 @@ public final class MoreValues {
    * Null structs are converted to {@link NULL}.
    */
   public static ListValue listValueOf(@Nullable Struct... values) {
-    return stream(values).map(MoreValues::nullableValue).collect(toListValue());
+    return stream(values).map(MoreValues::nullableValueOf).collect(toListValue());
   }
 
   /** Returns a {@link Collector} that collects the input values into {@link ListValue}. */
@@ -99,7 +99,9 @@ public final class MoreValues {
   }
 
   /** Returns {@link Value} wrapper for {@code struct} if not null, or else returns {@link #NULL}. */
-  private static Value nullableValue(@Nullable Struct struct) {
+  private static Value nullableValueOf(@Nullable Struct struct) {
     return struct == null ? NULL : valueOf(struct);
   }
+
+  private MoreValues() {}
 }

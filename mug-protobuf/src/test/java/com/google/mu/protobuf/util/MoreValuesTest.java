@@ -69,8 +69,8 @@ public class MoreValuesTest {
   }
 
   @Test public void testNullableValue_string() {
-    assertThat(MoreValues.nullableValue((String) null)).isEqualTo(NULL);
-    assertThat(MoreValues.nullableValue("abc")).isEqualTo(Values.of("abc"));
+    assertThat(MoreValues.nullableValueOf((String) null)).isEqualTo(NULL);
+    assertThat(MoreValues.nullableValueOf("abc")).isEqualTo(Values.of("abc"));
   }
 
   @Test public void testTrue() {
