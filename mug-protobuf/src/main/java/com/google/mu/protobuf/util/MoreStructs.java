@@ -48,7 +48,7 @@ public final class MoreStructs {
    *
    * @throws NullPointerException if {@code name} is null
    */
-  public static Struct struct(CharSequence name, boolean value) {
+  public static Struct struct(String name, boolean value) {
     return struct(name, valueOf(value));
   }
 
@@ -57,7 +57,7 @@ public final class MoreStructs {
    *
    * @throws NullPointerException if {@code name} is null
    */
-  public static Struct struct(CharSequence name, double value) {
+  public static Struct struct(String name, double value) {
     return struct(name, valueOf(value));
   }
 
@@ -66,7 +66,7 @@ public final class MoreStructs {
    *
    * @throws NullPointerException if {@code name} or {@code value} is null
    */
-  public static Struct struct(CharSequence name, CharSequence value) {
+  public static Struct struct(String name, String value) {
     return struct(name, valueOf(value));
   }
 
@@ -75,7 +75,7 @@ public final class MoreStructs {
    *
    * @throws NullPointerException if {@code name} or {@code value} is null
    */
-  public static Struct struct(CharSequence name, Struct value) {
+  public static Struct struct(String name, Struct value) {
     return struct(name, valueOf(value));
   }
 
@@ -84,8 +84,8 @@ public final class MoreStructs {
    *
    * @throws NullPointerException if {@code name} or {@code value} is null
    */
-  public static Struct struct(CharSequence name, Value value) {
-    return Struct.newBuilder().putFields(name.toString(), value).build();
+  public static Struct struct(String name, Value value) {
+    return Struct.newBuilder().putFields(name, value).build();
   }
 
   /**
@@ -93,7 +93,7 @@ public final class MoreStructs {
    *
    * @throws NullPointerException if {@code name} or {@code value} is null
    */
-  public static Struct struct(CharSequence name, ListValue value) {
+  public static Struct struct(String name, ListValue value) {
     return struct(name, valueOf(value));
   }
 
