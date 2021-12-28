@@ -45,7 +45,7 @@ import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
 
 /**
- * A helper class that maps from POJO to {@link Struct} and {@link Value} instances.
+ * A helper class that maps from POJOs to {@link Struct} and {@link Value} instances.
  *
  * <p>For example, one can create a Struct literal as in:
  *
@@ -73,9 +73,9 @@ import com.google.protobuf.Value;
  * and recursively, the {@code Collection}s, {@code Map}s and {@code Table}s thereof into
  * corresponding {@link ListValue} or {@link Struct} wrappers.
  *
- * <p>For simple scenarios, prefer to use {@link MoreStructs} to create Struct.
+ * <p>For simple scenarios, prefer to use {@link MoreStructs} to create {@code Struct}.
  * Its single-field {@code struct()} factory methods are more efficient, can be static imported,
- * and will never throw {@link IllegalArgumentException}.
+ * and unsupported types cause compilation error as opposed to runtime exception.
  *
  * <p>You can create a subclass to implement custom conversion logic. For example,
  * if the application needs to convert {@code User} types to {@code Value} by using the user ids:
