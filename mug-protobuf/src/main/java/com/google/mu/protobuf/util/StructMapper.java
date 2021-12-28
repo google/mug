@@ -192,8 +192,7 @@ public class StructMapper {
    */
   public final Struct nestedStruct(Table<String, String, ? extends @Nullable Object> table) {
     return BiStream.from(table.rowMap())
-        .mapValues(cols -> struct(cols))
-        .mapValues(MoreValues::valueOf)
+        .mapValues(cols -> valueOf(struct(cols)))
         .collect(Struct.newBuilder(), Struct.Builder::putFields)
         .build();
   }
