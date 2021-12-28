@@ -45,8 +45,7 @@ import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
 
 /**
- * A helper class that makes it easier to map from POJO to {@link Struct} and {@link Value}
- * instances, without having to create intermediary {@code Value} wrappers.
+ * A helper class that maps from POJO to {@link Struct} and {@link Value} instances.
  *
  * <p>For example, one can create a Struct literal as in:
  *
