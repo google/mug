@@ -85,7 +85,7 @@ import com.google.protobuf.Value;
  * StructMapper maker = new StructMapper() {
  *   public Value toValue(Object obj) {
  *     if (obj instanceof User) {  // custom logic
- *       return convert(((User) obj).getId());
+ *       return toValue(((User) obj).getId());
  *     }
  *     return super.toValue(obj);  // else delegate to default implementation
  *   }
