@@ -45,14 +45,14 @@ import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
 
 /**
- * A helper class that makes it easier to create {@link Struct} and {@link Value}
- * instances off of POJO, without having to create intermediary {@code Value} wrappers.
+ * A helper class that makes it easier to map from POJO to {@link Struct} and {@link Value}
+ * instances, without having to create intermediary {@code Value} wrappers.
  *
  * <p>For example, one can create a Struct literal as in:
  *
  * <pre>{@code
  * Struct ironMan =
- *     new StructMaker()
+ *     new StructMapper()
  *         .struct("name", "Tony Stark", "age", 10, "titles", List.of("Iron Man", "Genius"));
  * }</pre>
  *
@@ -60,13 +60,13 @@ import com.google.protobuf.Value;
  *
  * <pre>{@code
  * BiStream.of("k1", 1, "k2", 2, "k3", 3, "k4", 4, ...)
- *     .collect(new StructMaker().toStruct());
+ *     .collect(new StructMapper().toStruct());
  * }</pre>
  *
  * Or, create a Struct off of a {@code Map}:
  *
  * <pre>{@code
- * new StructMaker()
+ * new StructMapper()
  *     .struct(Map.of("k1", 1, "k2", 2, "k3", 3, "k4", 4, ...));
  * }</pre>
  *
@@ -82,7 +82,7 @@ import com.google.protobuf.Value;
  * if the application needs to convert {@code User} types to {@code Value} by using the user ids:
  *
  * <pre>{@code
- * StructMaker maker = new StructMaker() {
+ * StructMapper maker = new StructMapper() {
  *   public Value toValue(Object obj) {
  *     if (obj instanceof User) {  // custom logic
  *       return convert(((User) obj).getId());
@@ -95,7 +95,7 @@ import com.google.protobuf.Value;
  * @since 5.8
  */
 @CheckReturnValue
-public class StructMaker {
+public class StructMapper {
 
   /**
    * Returns a Struct with {@code name} and {@code value},with {@code value} converted using
@@ -203,6 +203,7 @@ public class StructMaker {
   public final BiCollector<CharSequence, @Nullable Object, Struct> toStruct() {
     return BiCollectors.mapping((k, v) -> k, (k, v) -> toValue(v), MoreStructs.toStruct());
   }
+
   /**
    * Converts {@code object} to {@code Value}. Must not return null.
    *
@@ -327,7 +328,7 @@ public class StructMaker {
   private Value toStructValue(Map<?, ?> map) {
     return valueOf(
         BiStream.from(map)
-            .mapKeys(StructMaker::toStructKey)
+            .mapKeys(StructMapper::toStructKey)
             .mapValues(this::convertNonNull)
             .collect(toStruct()));
   }

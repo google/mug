@@ -36,7 +36,7 @@ import com.google.protobuf.Value;
  * {@link #toStruct()} to collect from a {@code BiStream}.
  *
  * <p>If you have complex nested data structures such as {@code Multimap<String, Optional<Integer>>},
- * consider to use {@link StructMaker}, which performs POJO {@code ->} Value conversion for most
+ * consider to use {@link StructMapper}, which performs POJO {@code ->} Struct mapping for most
  * common primitive types and collection types.
  *
  * @since 5.8
