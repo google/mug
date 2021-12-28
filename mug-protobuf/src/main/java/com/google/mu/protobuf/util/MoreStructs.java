@@ -17,13 +17,11 @@ package com.google.mu.protobuf.util;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.mu.protobuf.util.MoreValues.valueOf;
 
-import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collector;
 
 import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.mu.util.stream.BiCollector;
-import com.google.mu.util.stream.BiStream;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
@@ -97,15 +95,6 @@ public final class MoreStructs {
    */
   public static Struct struct(String name, ListValue value) {
     return struct(name, valueOf(value));
-  }
-
-  /**
-   * Returns a Struct with {@code fields}.
-   *
-   * @throws NullPointerException if any field key or value is null
-   */
-  public static Struct struct(Map<String, Value> fields) {
-    return BiStream.from(fields).collect(Struct.newBuilder(), Struct.Builder::putFields).build();
   }
 
   /**
