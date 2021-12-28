@@ -310,7 +310,7 @@ public class StructMaker {
   }
 
   /**
-   * Called by {@link #convert} when {@code object} cannot be converted. Subclasses can override
+   * Called by {@link #toValue} when {@code object} cannot be converted. Subclasses can override
    * this method to throw a different exception type, or to return a catch-all default {@code Value}.
    *
    * @throws IllegalArgumentException to report that the type of {@code object} isn't supported

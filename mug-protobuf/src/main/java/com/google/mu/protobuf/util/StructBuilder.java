@@ -99,6 +99,18 @@ public final class StructBuilder {
   }
 
   /**
+   * Adds a {@code (name, value)} field. {@code value} is converted to a nested Struct.
+   *
+   * @throws IllegalArgumentException if {@code name} is duplicate
+   * @return this builder
+   */
+  public StructBuilder add(String name, Map<String, Value> value) {
+    return add(
+        name,
+        BiStream.from(value).collect(new StructBuilder(), StructBuilder::add).build());
+  }
+
+  /**
    * Adds a {@code (name, value)} field.
    *
    * @throws IllegalArgumentException if {@code name} is duplicate
@@ -120,44 +132,6 @@ public final class StructBuilder {
   }
 
   /**
-   * Adds a {@code (name, value)} field. {@code value} is converted to a nested Struct.
-   *
-   * @throws IllegalArgumentException if {@code name} is duplicate
-   * @return this builder
-   */
-  public StructBuilder add(String name, Map<String, Value> value) {
-    return add(
-        name,
-        BiStream.from(value).collect(new StructBuilder(), StructBuilder::add).build());
-  }
-
-  /**
-   * Adds a {@code (name, value)} field. {@code value} is converted to a nested Struct
-   * mapping nested keys to {@code ListValue}.
-   *
-   * @throws IllegalArgumentException if {@code name} is duplicate
-   * @return this builder
-   */
-  public StructBuilder add(String name, Multimap<String, Value> value) {
-    return add(
-        name,
-        BiStream.from(value.asMap()).collect(new StructBuilder(), StructBuilder::add).build());
-  }
-
-  /**
-   * Adds a {@code (name, value)} field. {@code value} is converted to a nested Struct
-   * mapping nested keys to {@code Struct}.
-   *
-   * @throws IllegalArgumentException if {@code name} is duplicate
-   * @return this builder
-   */
-  public StructBuilder add(String name, Table<String, String, Value> value) {
-    return add(
-        name,
-        BiStream.from(value.rowMap()).collect(new StructBuilder(), StructBuilder::add).build());
-  }
-
-  /**
    * Adds a {@code (name, value)} field.
    *
    * <p>To add a null value, use {@link MoreValues#NULL} as in {@code add("name", NULL)}.
@@ -173,7 +147,42 @@ public final class StructBuilder {
   }
 
   /**
-   * Adds all fields from {@code that into this builder.
+   * Adds all key-value pairs from {@code map} into this builder.
+   *
+   * @throws IllegalArgumentException if any key is duplicate
+   * @return this builder
+   */
+  public StructBuilder addAll(Map<String, Value> map) {
+    BiStream.from(map).forEachOrdered(this::add);
+    return this;
+  }
+
+  /**
+   * Adds all distinct keys from {@code multimap} into this builder.
+   * Values mapping to the same key are grouped together in {@link ListValue}.
+   *
+   * @throws IllegalArgumentException if any key is duplicate
+   * @return this builder
+   */
+  public StructBuilder addAll(Multimap<String, Value> multimap) {
+    BiStream.from(multimap.asMap()).forEachOrdered(this::add);
+    return this;
+  }
+
+  /**
+   * Adds all rows from {@code table} into this builder. Columns of each row
+   * are grouped together in {@link Struct}, keyed by column name.
+   *
+   * @throws IllegalArgumentException if any row key is duplicate
+   * @return this builder
+   */
+  public StructBuilder addAll(Table<String, String, Value> table) {
+    BiStream.from(table.rowMap()).forEachOrdered(this::add);
+    return this;
+  }
+
+  /**
+   * Adds all fields from {@code that} into this builder.
    *
    * @throws IllegalArgumentException if duplicate field name is encountered
    * @return this builder
@@ -184,7 +193,7 @@ public final class StructBuilder {
   }
 
   /**
-   * Adds all fields from {@code that into this builder.
+   * Adds all fields from {@code that} into this builder.
    *
    * @throws IllegalArgumentException if duplicate field name is encountered
    * @return this builder
