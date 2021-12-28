@@ -108,19 +108,17 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * @since 3.2
    */
   public static final class Builder<K, V> {
-    private final Stream.Builder<K> keys = Stream.builder();
-    private final Stream.Builder<V> values = Stream.builder();
+    private final Stream.Builder<Map.Entry<K, V>> entries = Stream.builder();
 
     Builder() {}
 
     public Builder<K, V> add(K key, V value) {
-      keys.add(key);
-      values.add(value);
+      entries.add(kv(key, value));
       return this;
     }
 
     public BiStream<K, V> build() {
-      return zip(keys.build(), values.build());
+      return fromEntries(entries.build());
     }
   }
 
