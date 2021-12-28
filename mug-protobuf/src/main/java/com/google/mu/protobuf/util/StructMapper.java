@@ -171,7 +171,9 @@ public class StructMapper {
    * @throws NullPointerException if any key is null
    */
   public final Struct struct(Map<String, ? extends @Nullable Object> map) {
-    return BiStream.from(map).collect(toStruct());
+    return BiStream.from(map)
+        .collect(Struct.newBuilder(), (b, k, v) -> b.putFields(k, convertNonNull(v)))
+        .build();
   }
 
   /**
@@ -188,7 +190,11 @@ public class StructMapper {
    * @throws NullPointerException if any row key or column key is null
    */
   public final Struct nestedStruct(Table<String, String, ? extends @Nullable Object> table) {
-    return struct(table.rowMap());
+    return BiStream.from(table.rowMap())
+        .mapValues(cols -> struct(cols))
+        .mapValues(MoreValues::valueOf)
+        .collect(Struct.newBuilder(), Struct.Builder::putFields)
+        .build();
   }
 
   /**
