@@ -50,19 +50,29 @@ public class StructBuilderTest {
         .isEqualTo(Structs.of("k", Values.of(listValueOf(1, 2))));
   }
 
-  @Test public void testAdd_map() {
-    assertThat(new StructBuilder().add("k", ImmutableMap.of("one", Values.of(1))).build())
-        .isEqualTo(Structs.of("k", Values.of(struct("one", 1))));
+  @Test public void testAddAll_map() {
+    assertThat(new StructBuilder().addAll(ImmutableMap.of("one", Values.of(1))).build())
+        .isEqualTo(struct("one", 1));
   }
 
-  @Test public void testAdd_multimap() {
-    assertThat(new StructBuilder().add("k", ImmutableListMultimap.of("one", Values.of(1))).build())
-        .isEqualTo(Structs.of("k", Values.of(struct("one", listValueOf(1)))));
+  @Test public void testAddAll_multimap() {
+    assertThat(new StructBuilder().addAll(ImmutableListMultimap.of("one", Values.of(1))).build())
+        .isEqualTo(struct("one", listValueOf(1)));
   }
 
-  @Test public void testAdd_table() {
-    assertThat(new StructBuilder().add("k", ImmutableTable.of("row", "col", Values.of(1))).build())
-        .isEqualTo(Structs.of("k", Values.of(struct("row", struct("col", 1)))));
+  @Test public void testAddAll_table() {
+    assertThat(new StructBuilder().addAll(ImmutableTable.of("row", "col", Values.of(1))).build())
+        .isEqualTo(struct("row", struct("col", 1)));
+  }
+
+  @Test public void testAddAll_table_differentRowKeySameColumnKey() {
+    StructBuilder builder = new StructBuilder().addAll(ImmutableTable.of("r1", "col", Values.of(1)));
+    assertThat(builder.addAll(ImmutableTable.of("r2", "col", Values.of(2))).build())
+        .isEqualTo(
+            Struct.newBuilder()
+                .putFields("r1", Values.of(struct("col", 1)))
+                .putFields("r2", Values.of(struct("col", 2)))
+                .build());
   }
 
   @Test public void testAdd_struct() {
@@ -164,22 +174,34 @@ public class StructBuilderTest {
     assertThrows(IllegalArgumentException.class, () -> builder.add("k", asList()));
   }
 
-  @Test public void testDuplicateKey_map() {
+  @Test public void testAddAll_duplicateKeyInMap() {
     StructBuilder builder = new StructBuilder();
-    builder.add("k", ImmutableMap.of("one", Values.of(1)));
-    assertThrows(IllegalArgumentException.class, () -> builder.add("k", ImmutableMap.of()));
+    builder.addAll(ImmutableMap.of("one", Values.of(1)));
+    assertThrows(IllegalArgumentException.class, () -> builder.addAll(ImmutableMap.of("one", Values.of(2))));
   }
 
-  @Test public void testDuplicateKey_multimap() {
+  @Test public void testAddAll_duplicateKeyInMultimap() {
     StructBuilder builder = new StructBuilder();
-    builder.add("k", ImmutableListMultimap.of("one", Values.of(1)));
-    assertThrows(IllegalArgumentException.class, () -> builder.add("k", ImmutableListMultimap.of()));
+    builder.addAll(ImmutableListMultimap.of("one", Values.of(1)));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> builder.addAll(ImmutableListMultimap.of("one", Values.of(2))));
   }
 
-  @Test public void testDuplicateKey_table() {
+  @Test public void testAddAll_duplicateRowKeyInTable() {
     StructBuilder builder = new StructBuilder();
-    builder.add("k", ImmutableTable.of("row", "col", Values.of(1)));
-    assertThrows(IllegalArgumentException.class, () -> builder.add("k", ImmutableTable.of()));
+    builder.addAll(ImmutableTable.of("row", "col", Values.of(1)));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> builder.addAll(ImmutableTable.of("row", "col2", Values.of(2))));
+  }
+
+  @Test public void testAddAll_duplicateColumnKeyInTable() {
+    StructBuilder builder = new StructBuilder();
+    builder.addAll(ImmutableTable.of("row", "col", Values.of(1)));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> builder.addAll(ImmutableTable.of("row", "col", Values.of(2))));
   }
 
   @Test public void testDuplicateKey_addAllFieldsFromStruct() {
