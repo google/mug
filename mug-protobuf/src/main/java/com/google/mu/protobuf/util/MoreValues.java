@@ -102,4 +102,6 @@ public final class MoreValues {
   private static Value nullableValueOf(@Nullable Struct struct) {
     return struct == null ? NULL : valueOf(struct);
   }
+
+  private MoreValues() {}
 }
