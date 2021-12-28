@@ -25,6 +25,7 @@ import static java.util.stream.Collectors.collectingAndThen;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.IntStream;
 
@@ -37,7 +38,6 @@ import com.google.common.primitives.ImmutableIntArray;
 import com.google.common.primitives.ImmutableLongArray;
 import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.mu.util.stream.BiCollector;
-import com.google.mu.util.stream.BiCollectors;
 import com.google.mu.util.stream.BiStream;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.NullValue;
@@ -200,7 +200,7 @@ public class StructMapper {
    * manually with {@link StructBuilder}.
    */
   public final BiCollector<CharSequence, @Nullable Object, Struct> toStruct() {
-    return BiCollectors.mapping((k, v) -> k, (k, v) -> toValue(v), MoreStructs.toStruct());
+    return this::toStruct;
   }
 
   /**
@@ -317,6 +317,11 @@ public class StructMapper {
    */
   protected Value defaultValue(Object object) {
     throw new IllegalArgumentException("Unsupported type: " + object.getClass().getName());
+  }
+
+  private <T> Collector<T, ?, Struct> toStruct(
+      Function<T, CharSequence> keyFunction, Function<T, ?> valueFunction) {
+    return MoreStructs.toStruct(keyFunction, valueFunction.andThen(this::convertNonNull));
   }
 
   private Value convertNonNull(@Nullable Object object) {
