@@ -79,18 +79,21 @@ import com.google.protobuf.Value;
  * and unsupported types cause compilation error as opposed to runtime exception.
  *
  * <p>You can create a subclass to implement custom conversion logic. For example,
- * if the application needs to convert {@code User} types to {@code Value} by using the user ids:
+ * if the application needs to map {@code User} types to {@code Value} by using the user ids:
  *
  * <pre>{@code
- * StructMapper maker = new StructMapper() {
+ * StructMapper customStructMapper = new StructMapper() {
  *   public Value toValue(Object obj) {
  *     if (obj instanceof User) {  // custom logic
- *       return convert(((User) obj).getId());
+ *       return toValue(((User) obj).getId());
  *     }
  *     return super.toValue(obj);  // else delegate to default implementation
  *   }
  * };
  * }</pre>
+ *
+ * This custom mapping logic will be applied recursively to {@code Iterable} elements,
+ * {@code Map} keys/values, and all other supported collection types.
  *
  * @since 5.8
  */
