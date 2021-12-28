@@ -11,7 +11,7 @@ A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/
     `String user = first('@').toEnd().removeFrom(email);`
 * [Parallelizer](https://github.com/google/mug/wiki/Parallelizer-Explained) An _Executor-friendly_, _interruptible_ alternative to parallel streams.
 * Graph utilities ([Walker](https://google.github.io/mug/apidocs/com/google/mu/util/graph/Walker.html), [ShortestPath](https://google.github.io/mug/apidocs/com/google/mu/util/graph/ShortestPath.html))
-* [Google Protobuf Extensions](https://google.github.io/mug/mug-protobuf/apidocs)
+* [Google Protobuf Java 8 Utils](https://google.github.io/mug/mug-protobuf/apidocs)
 
 ## Installation
 ### Maven
