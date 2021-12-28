@@ -172,7 +172,8 @@ public class StructMapper {
    */
   public final Struct struct(Map<String, ? extends @Nullable Object> map) {
     return BiStream.from(map)
-        .collect(Struct.newBuilder(), (b, k, v) -> b.putFields(k, convertNonNull(v)))
+        .mapValues(this::convertNonNull)
+        .collect(Struct.newBuilder(), Struct.Builder::putFields)
         .build();
   }
 

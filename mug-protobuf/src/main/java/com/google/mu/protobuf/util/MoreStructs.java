@@ -105,9 +105,7 @@ public final class MoreStructs {
    * @throws NullPointerException if any field key or value is null
    */
   public static Struct struct(Map<String, Value> fields) {
-    return BiStream.from(fields)
-        .collect(Struct.newBuilder(), Struct.Builder::putFields)
-        .build();
+    return BiStream.from(fields).collect(Struct.newBuilder(), Struct.Builder::putFields).build();
   }
 
   /**
