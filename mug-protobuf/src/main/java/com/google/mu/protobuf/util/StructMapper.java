@@ -80,7 +80,7 @@ import com.google.protobuf.Value;
  * Its single-field {@code struct()} factory methods are more efficient, can be static imported,
  * and unsupported types cause compilation error as opposed to runtime exception.
  *
- * <p>You can create a subclass to implement custom conversion logic. For example,
+ * <p>You can create a subclass to implement custom mapping. For example,
  * if the application needs to map {@code User} types to {@code Value} by using the user ids:
  *
  * <pre>{@code
