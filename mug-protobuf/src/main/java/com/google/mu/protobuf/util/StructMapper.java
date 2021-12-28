@@ -214,7 +214,7 @@ public class StructMapper {
    * <li>Primitive types (boolean, number, string)
    * <li>{@code null} mapped to {@link NullValue}
    * <li>Enum mapped to {@link Enum#name name}
-   * <li>{@link Iterable} and array elements recursively converted and wrapped in {@link ListValue}x
+   * <li>{@link Iterable} and array elements recursively converted and wrapped in {@link ListValue}
    * <li>{@link Map} values recursively converted and wrapped in {@link Struct}
    * <li>{@link Multimap} converted as {@code toValue(multimap.asMap())}
    * <li>{@link Table} converted as {@code toValue(table.rowMap())}
