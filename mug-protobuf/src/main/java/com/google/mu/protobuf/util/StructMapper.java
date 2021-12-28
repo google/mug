@@ -50,9 +50,11 @@ import com.google.protobuf.Value;
  * <p>For example, you can create a heterogeneous {@code Struct} literal like:
  *
  * <pre>{@code
- * Struct ironMan =
- *     new StructMapper()
- *         .struct("name", "Tony Stark", "age", 10, "titles", List.of("Iron Man", "Genius"));
+ * Struct ironMan = new StructMapper()
+ *     .struct(
+ *         "name", "Tony Stark",
+ *         "age", 10,
+ *         "known_as", List.of("Iron Man", "Genius"));
  * }</pre>
  *
  * <p>If your structs need even more fields, consider to use the {@link #toStruct}
