@@ -111,7 +111,7 @@ public class StructMapper {
    * @throws NullPointerException if {@code name} is null
    */
   public final Struct struct(CharSequence name, @Nullable Object value) {
-    return Struct.newBuilder().putFields(name.toString(), toValue(value)).build();
+    return Struct.newBuilder().putFields(name.toString(), convertNonNull(value)).build();
   }
 
   /**
@@ -130,8 +130,8 @@ public class StructMapper {
   public final Struct struct(
       CharSequence k1, @Nullable Object v1, CharSequence k2, @Nullable Object v2) {
     return new StructBuilder()
-        .add(k1.toString(), toValue(v1))
-        .add(k2.toString(), toValue(v2))
+        .add(k1.toString(), convertNonNull(v1))
+        .add(k2.toString(), convertNonNull(v2))
         .build();
   }
 
@@ -152,9 +152,9 @@ public class StructMapper {
       CharSequence k2, @Nullable Object v2,
       CharSequence k3, @Nullable Object v3) {
     return new StructBuilder()
-        .add(k1.toString(), toValue(v1))
-        .add(k2.toString(), toValue(v2))
-        .add(k3.toString(), toValue(v3))
+        .add(k1.toString(), convertNonNull(v1))
+        .add(k2.toString(), convertNonNull(v2))
+        .add(k3.toString(), convertNonNull(v3))
         .build();
   }
 
