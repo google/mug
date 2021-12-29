@@ -45,7 +45,7 @@ import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
 
 /**
- * A helper that constructs {@link Struct} and {@link Value} from POJOs.
+ * A helper that makes {@link Struct}s and {@link Value}s from POJOs.
  *
  * <p>For example, you can create a heterogeneous {@code Struct} literal like:
  *
