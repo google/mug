@@ -63,7 +63,7 @@ import com.google.protobuf.Value;
  *         "known_as", List.of("Iron Man", "Genius"));
  * }</pre>
  *
- * <p>Or if your structs have more fields, consider to use the {@link #toStruct}
+ * <p>Or if your structs have many more fields, consider to use the {@link #toStruct}
  * {@code BiCollector}, as in:
  *
  * <pre>{@code
@@ -156,6 +156,90 @@ public class Structor {
         .add(k1.toString(), convertNonNull(v1))
         .add(k2.toString(), convertNonNull(v2))
         .add(k3.toString(), convertNonNull(v3))
+        .build();
+  }
+
+  /**
+   * Returns a Struct equivalent to {@code {k1:v1, k2:v2, k3:v3, k4:v4}}.
+   *
+   * <p>Values are converted using {@link #toValue}.
+   * In particular, null values are mapped to {@link NullValue}.
+   *
+   * <p>If runtime conversion error is undesirable, consider to use {@link MoreStructs} or build Struct
+   * manually with {@link StructBuilder}.
+   *
+   * @throws IllegalArgumentException if duplicate keys are provided or if a value cannot be converted
+   * @throws NullPointerException if any key is null
+   * @since 5.9
+   */
+  public final Struct struct(
+      CharSequence k1, @Nullable Object v1,
+      CharSequence k2, @Nullable Object v2,
+      CharSequence k3, @Nullable Object v3,
+      CharSequence k4, @Nullable Object v4) {
+    return new StructBuilder()
+        .add(k1.toString(), convertNonNull(v1))
+        .add(k2.toString(), convertNonNull(v2))
+        .add(k3.toString(), convertNonNull(v3))
+        .add(k4.toString(), convertNonNull(v4))
+        .build();
+  }
+
+  /**
+   * Returns a Struct equivalent to {@code {k1:v1, k2:v2, k3:v3, k4:v4, k5:v5}}.
+   *
+   * <p>Values are converted using {@link #toValue}.
+   * In particular, null values are mapped to {@link NullValue}.
+   *
+   * <p>If runtime conversion error is undesirable, consider to use {@link MoreStructs} or build Struct
+   * manually with {@link StructBuilder}.
+   *
+   * @throws IllegalArgumentException if duplicate keys are provided or if a value cannot be converted
+   * @throws NullPointerException if any key is null
+   * @since 5.9
+   */
+  public final Struct struct(
+      CharSequence k1, @Nullable Object v1,
+      CharSequence k2, @Nullable Object v2,
+      CharSequence k3, @Nullable Object v3,
+      CharSequence k4, @Nullable Object v4,
+      CharSequence k5, @Nullable Object v5) {
+    return new StructBuilder()
+        .add(k1.toString(), convertNonNull(v1))
+        .add(k2.toString(), convertNonNull(v2))
+        .add(k3.toString(), convertNonNull(v3))
+        .add(k4.toString(), convertNonNull(v4))
+        .add(k5.toString(), convertNonNull(v5))
+        .build();
+  }
+
+  /**
+   * Returns a Struct equivalent to {@code {k1:v1, k2:v2, k3:v3, k4:v4, k5:v5, k6:v6}}.
+   *
+   * <p>Values are converted using {@link #toValue}.
+   * In particular, null values are mapped to {@link NullValue}.
+   *
+   * <p>If runtime conversion error is undesirable, consider to use {@link MoreStructs} or build Struct
+   * manually with {@link StructBuilder}.
+   *
+   * @throws IllegalArgumentException if duplicate keys are provided or if a value cannot be converted
+   * @throws NullPointerException if any key is null
+   * @since 5.9
+   */
+  public final Struct struct(
+      CharSequence k1, @Nullable Object v1,
+      CharSequence k2, @Nullable Object v2,
+      CharSequence k3, @Nullable Object v3,
+      CharSequence k4, @Nullable Object v4,
+      CharSequence k5, @Nullable Object v5,
+      CharSequence k6, @Nullable Object v6) {
+    return new StructBuilder()
+        .add(k1.toString(), convertNonNull(v1))
+        .add(k2.toString(), convertNonNull(v2))
+        .add(k3.toString(), convertNonNull(v3))
+        .add(k4.toString(), convertNonNull(v4))
+        .add(k5.toString(), convertNonNull(v5))
+        .add(k6.toString(), convertNonNull(v6))
         .build();
   }
 
