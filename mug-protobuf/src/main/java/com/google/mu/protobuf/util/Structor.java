@@ -45,12 +45,12 @@ import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
 
 /**
- * A helper class that maps from POJOs to {@link Struct} and {@link Value} instances.
+ * A helper that constructs {@link Struct} and {@link Value} from POJOs.
  *
  * <p>For example, you can create a heterogeneous {@code Struct} literal like:
  *
  * <pre>{@code
- * Struct ironMan = new StructMapper()
+ * Struct ironMan = new Structor()
  *     .struct(
  *         "name", "Tony Stark",
  *         "age", 10,
@@ -62,13 +62,13 @@ import com.google.protobuf.Value;
  *
  * <pre>{@code
  * BiStream.of("k1", 1, "k2", 2, "k3", 3, "k4", 4, ...)
- *     .collect(new StructMapper().toStruct());
+ *     .collect(new Structor().toStruct());
  * }</pre>
  *
  * Or, create a Struct off of a {@code Map}:
  *
  * <pre>{@code
- * new StructMapper()
+ * new Structor()
  *     .struct(Map.of("k1", 1, "k2", 2, "k3", 3, "k4", 4, ...));
  * }</pre>
  *
@@ -84,7 +84,7 @@ import com.google.protobuf.Value;
  * if the application needs to map {@code User} types to {@code Value} by using the user ids:
  *
  * <pre>{@code
- * StructMapper customStructMapper = new StructMapper() {
+ * Structor customStructor = new Structor() {
  *   public Value toValue(Object obj) {
  *     if (obj instanceof User) {  // custom logic
  *       return toValue(((User) obj).getId());
@@ -100,7 +100,7 @@ import com.google.protobuf.Value;
  * @since 5.8
  */
 @CheckReturnValue
-public class StructMapper {
+public class Structor {
 
   /**
    * Returns a Struct with {@code name} and {@code value}, with {@code value} converted using
@@ -343,7 +343,7 @@ public class StructMapper {
   private Value toStructValue(Map<?, ?> map) {
     return valueOf(
         BiStream.from(map)
-            .mapKeys(StructMapper::toStructKey)
+            .mapKeys(Structor::toStructKey)
             .mapValues(this::convertNonNull)
             .collect(toStruct()));
   }
