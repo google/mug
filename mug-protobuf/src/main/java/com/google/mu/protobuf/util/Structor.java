@@ -45,9 +45,15 @@ import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
 
 /**
- * A helper that makes {@link Struct}s and {@link Value}s from POJOs.
+ * A helper that makes {@link Struct}s and {@link Value}s from POJOs. Useful for
+ * converting Json data to {@code Struct}. For example:
  *
- * <p>For example, you can create a heterogeneous {@code Struct} literal like:
+ * <pre>{@code
+ * Map<String, ?> jsonData = ...;
+ * Struct struct = new Structor().struct(jsonData);
+ * }</pre>
+ *
+ * <p>It can also be used to create a heterogeneous {@code Struct} literal like:
  *
  * <pre>{@code
  * Struct ironMan = new Structor()
@@ -57,7 +63,7 @@ import com.google.protobuf.Value;
  *         "known_as", List.of("Iron Man", "Genius"));
  * }</pre>
  *
- * <p>If your structs need even more fields, consider to use the {@link #toStruct}
+ * <p>Or if your structs have more fields, consider to use the {@link #toStruct}
  * {@code BiCollector}, as in:
  *
  * <pre>{@code
@@ -65,20 +71,13 @@ import com.google.protobuf.Value;
  *     .collect(new Structor().toStruct());
  * }</pre>
  *
- * Or, create a Struct off of a {@code Map}:
- *
- * <pre>{@code
- * new Structor()
- *     .struct(Map.of("k1", 1, "k2", 2, "k3", 3, "k4", 4, ...));
- * }</pre>
+ * <p>For simple scenarios, prefer to use {@link MoreStructs} to create {@code Struct}.
+ * Its single-field {@code struct()} factory methods are more efficient, can be static imported,
+ * and unsupported types cause compilation error as opposed to runtime exception.
  *
  * <p>The {@link #toValue} method is responsible for converting POJO to {@code Value},
  * and recursively, the {@code Collection}s, {@code Map}s and {@code Table}s thereof into
  * corresponding {@link ListValue} or {@link Struct} wrappers.
- *
- * <p>For simple scenarios, prefer to use {@link MoreStructs} to create {@code Struct}.
- * Its single-field {@code struct()} factory methods are more efficient, can be static imported,
- * and unsupported types cause compilation error as opposed to runtime exception.
  *
  * <p>You can create a subclass to implement custom mapping. For example,
  * if the application needs to map {@code User} types to {@code Value} by using the user ids:
