@@ -7,11 +7,8 @@
   <artifactId>mug-root</artifactId>
   <packaging>pom</packaging>
   <version>5.8-SNAPSHOT</version>
-
   <name>mug-root</name>
-
   <description>Extra Lambda Utilities</description>
-
   <url>http://github.com/google/mug</url>
 
   <distributionManagement>
