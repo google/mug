@@ -38,7 +38,9 @@ Protobuf utils:
 
 Add to build.gradle:
 ```
+  implementation 'com.google.mug:mug:5.8'
   implementation 'com.google.mug:mug-guava:5.8'
+  implementation 'com.google.mug:mug-protobuf:5.8'
 ```
 
 
