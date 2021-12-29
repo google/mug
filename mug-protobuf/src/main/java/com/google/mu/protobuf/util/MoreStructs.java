@@ -115,6 +115,20 @@ public final class MoreStructs {
   }
 
   /**
+   * Returns a {@link Collector} that flattens all fields from the input {@code Struct}s
+   * and collects them into the final {@link Struct}.
+   *
+   * <p>Duplicate field keys are not allowed.
+   */
+  public static Collector<Struct, ?, Struct> flatteningToStruct() {
+    return Collector.of(
+        StructBuilder::new,
+        StructBuilder::addAllFields,
+        StructBuilder::addAllFields,
+        StructBuilder::build);
+  }
+
+  /**
    * Returns a {@link BiCollector} that collects the input key-value pairs into {@link Struct}.
    *
    * <p>Duplicate keys (according to {@link CharSequence#toString()}) are not allowed.

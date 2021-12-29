@@ -1,9 +1,12 @@
 package com.google.mu.protobuf.util;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.mu.protobuf.util.MoreStructs.flatteningToStruct;
 import static com.google.mu.protobuf.util.MoreStructs.struct;
 import static com.google.mu.protobuf.util.MoreStructs.toStruct;
 import static org.junit.Assert.assertThrows;
+
+import java.util.stream.Stream;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -83,6 +86,33 @@ public class MoreStructsTest {
   public void toStruct_biCollector_empty() {
     Struct struct = BiStream.<String, String>empty().mapValues(Values::of).collect(toStruct());
     assertThat(struct).isEqualTo(Struct.getDefaultInstance());
+  }
+
+  @Test
+  public void flatteningToStruct_empty() {
+    assertThat(Stream.<Struct>empty().collect(flatteningToStruct()))
+        .isEqualTo(Struct.getDefaultInstance());
+  }
+
+  @Test
+  public void flatteningToStruct_singleStruct() {
+    assertThat(Stream.of(struct("foo", 1)).collect(flatteningToStruct()))
+        .isEqualTo(struct("foo", 1));
+  }
+
+  @Test
+  public void flatteningToStruct_multipleStructs() {
+    assertThat(Stream.of(struct("foo", 1), struct("bar", "boo")).collect(flatteningToStruct()))
+        .isEqualTo(Struct.newBuilder()
+            .putFields("foo", Values.of(1))
+            .putFields("bar", Values.of("boo"))
+            .build());
+  }
+
+  @Test
+  public void flatteningToStruct_duplicateKeys() {
+    Stream<Struct> structs = Stream.of(struct("foo", 1), struct("foo", "boo"));
+    assertThrows(IllegalArgumentException.class, () -> structs.collect(flatteningToStruct()));
   }
 
   @Test
