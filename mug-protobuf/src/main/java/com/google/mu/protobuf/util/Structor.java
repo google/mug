@@ -45,9 +45,15 @@ import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
 
 /**
- * A helper that makes {@link Struct}s and {@link Value}s from POJOs.
+ * A helper that makes {@link Struct}s and {@link Value}s from POJOs. Useful if you need to
+ * convert a Json {@code Map<String, Object>} to {@code Struct}:
  *
- * <p>For example, you can create a heterogeneous {@code Struct} literal like:
+ * <pre>{@code
+ * Map<String, ?> jsonData = ...;
+ * Struct struct = new Structor().struct(jsonData);
+ * }</pre>
+ *
+ * <p>You can also use it to create a heterogeneous {@code Struct} literal like:
  *
  * <pre>{@code
  * Struct ironMan = new Structor()
@@ -57,19 +63,12 @@ import com.google.protobuf.Value;
  *         "known_as", List.of("Iron Man", "Genius"));
  * }</pre>
  *
- * <p>If your structs need even more fields, consider to use the {@link #toStruct}
+ * <p>Or if your structs have more fields, consider to use the {@link #toStruct}
  * {@code BiCollector}, as in:
  *
  * <pre>{@code
  * BiStream.of("k1", 1, "k2", 2, "k3", 3, "k4", 4, ...)
  *     .collect(new Structor().toStruct());
- * }</pre>
- *
- * Or, create a Struct off of a {@code Map}:
- *
- * <pre>{@code
- * new Structor()
- *     .struct(Map.of("k1", 1, "k2", 2, "k3", 3, "k4", 4, ...));
  * }</pre>
  *
  * <p>The {@link #toValue} method is responsible for converting POJO to {@code Value},
