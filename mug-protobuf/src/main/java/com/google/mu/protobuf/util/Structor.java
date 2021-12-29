@@ -16,20 +16,25 @@ package com.google.mu.protobuf.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.collect.Streams.stream;
 import static com.google.mu.protobuf.util.MoreValues.NULL;
 import static com.google.mu.protobuf.util.MoreValues.valueOf;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.collectingAndThen;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Spliterators.AbstractSpliterator;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
-import org.checkerframework.checker.nullness.qual.Nullable;
+import javax.annotation.Nullable;
 
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
@@ -171,7 +176,7 @@ public class Structor {
    * @throws IllegalArgumentException if a Map value cannot be converted
    * @throws NullPointerException if any key is null
    */
-  public final Struct struct(Map<String, ? extends @Nullable Object> map) {
+  public final Struct struct(Map<String, ?> map) {
     return BiStream.from(map)
         .mapValues(this::convertNonNull)
         .collect(Struct.newBuilder(), Struct.Builder::putFields)
@@ -191,7 +196,7 @@ public class Structor {
    * @throws IllegalArgumentException if a Table cell value cannot be converted
    * @throws NullPointerException if any row key or column key is null
    */
-  public final Struct nestedStruct(Table<String, String, ? extends @Nullable Object> table) {
+  public final Struct nestedStruct(Table<String, String, ?> table) {
     return BiStream.from(table.rowMap())
         .mapValues(cols -> valueOf(struct(cols)))
         .collect(Struct.newBuilder(), Struct.Builder::putFields)
@@ -209,7 +214,7 @@ public class Structor {
    * <p>If runtime conversion error is undesirable, consider to use {@link MoreStructs} or build Struct
    * manually with {@link StructBuilder}.
    */
-  public final BiCollector<CharSequence, @Nullable Object, Struct> toStruct() {
+  public final BiCollector<CharSequence, Object, Struct> toStruct() {
     return this::toStruct;
   }
 
@@ -254,7 +259,7 @@ public class Structor {
     }
     if (object instanceof Iterable) {
       return valueOf(
-          stream((Iterable<?>) object).map(this::convertNonNull).collect(MoreValues.toListValue()));
+          iterate((Iterable<?>) object).map(this::convertNonNull).collect(MoreValues.toListValue()));
     }
     if (object instanceof Map) {
       return toStructValue((Map<?, ?>) object);
@@ -277,8 +282,10 @@ public class Structor {
           .collect(valuesToValue());
     }
     if (object instanceof ImmutableIntArray) {
-      return ((ImmutableIntArray) object).stream()
-          .mapToObj(MoreValues::valueOf)
+      // TODO: use ImmutableIntArray.stream() when it's available in Android
+     ImmutableIntArray array = (ImmutableIntArray) object;
+     return IntStream.range(0, array.length())
+          .mapToObj(i -> valueOf(array.get(i)))
           .collect(valuesToValue());
     }
     if (object instanceof long[]) {
@@ -287,8 +294,10 @@ public class Structor {
           .collect(valuesToValue());
     }
     if (object instanceof ImmutableLongArray) {
-      return ((ImmutableLongArray) object).stream()
-          .mapToObj(MoreValues::valueOf)
+      // TODO: use ImmutableLongArray.stream() when it's available in Android
+      ImmutableLongArray array = (ImmutableLongArray) object;
+      return IntStream.range(0, array.length())
+          .mapToObj(i -> valueOf(array.get(i)))
           .collect(valuesToValue());
     }
     if (object instanceof double[]) {
@@ -297,9 +306,11 @@ public class Structor {
           .collect(valuesToValue());
     }
     if (object instanceof ImmutableDoubleArray) {
-      return ((ImmutableDoubleArray) object).stream()
-          .mapToObj(MoreValues::valueOf)
-          .collect(valuesToValue());
+      // TODO: use ImmutableDoubleArray.stream() when it's available in Android
+      ImmutableDoubleArray array = (ImmutableDoubleArray) object;
+      return IntStream.range(0, array.length())
+          .mapToObj(i -> valueOf(array.get(i)))
+        .collect(valuesToValue());
     }
     if (object instanceof Object[]) {
       return toValue(Arrays.asList((Object[]) object));
@@ -356,5 +367,28 @@ public class Structor {
 
   private static Collector<Value, ?, Value> valuesToValue() {
     return collectingAndThen(MoreValues.toListValue(), MoreValues::valueOf);
+  }
+
+  // TODO: remove once Streams.stream() is available in Android
+  private static <T> Stream<T> iterate(Iterable<T> iterable) {
+    if (iterable instanceof Collection) {
+      return ((Collection<T>) iterable).stream();
+    }
+    return iterate(iterable.iterator());
+  }
+
+  private static <T> Stream<T> iterate(Iterator<T> iterator) {
+    return StreamSupport.stream(
+        new AbstractSpliterator<T>(Long.MAX_VALUE, 0) {
+          @Override
+          public boolean tryAdvance(Consumer<? super T> action) {
+            boolean canAdvance = iterator.hasNext();
+            if (canAdvance) {
+              action.accept(iterator.next());
+            }
+            return canAdvance;
+          }
+        },
+        false /* not parallel */);
   }
 }

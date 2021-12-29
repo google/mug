@@ -18,7 +18,7 @@ import static java.util.Arrays.stream;
 
 import java.util.stream.Collector;
 
-import org.checkerframework.checker.nullness.qual.Nullable;
+import javax.annotation.Nullable;
 
 import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.protobuf.ListValue;
