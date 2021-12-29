@@ -21,7 +21,16 @@ Add the following to pom.xml:
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug</artifactId>
-    <version>5.7</version>
+    <version>5.8</version>
+  </dependency>
+```
+
+Protobuf utils:
+```
+  <dependency>
+    <groupId>com.google.mug</groupId>
+    <artifactId>mug-protobuf</artifactId>
+    <version>5.8</version>
   </dependency>
 ```
 
@@ -29,7 +38,7 @@ Add the following to pom.xml:
 
 Add to build.gradle:
 ```
-  implementation 'com.google.mug:mug-guava:5.7'
+  implementation 'com.google.mug:mug-guava:5.8'
 ```
 
 
