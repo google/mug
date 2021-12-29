@@ -30,6 +30,7 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
+      <version>30.1.1-android</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -53,12 +54,8 @@
     <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava-testlib</artifactId>
+        <version>30.1.1-android</version>
         <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.checkerframework</groupId>
-      <artifactId>checker-qual</artifactId>
-      <classifier>sources</classifier>
     </dependency>
   </dependencies>
 </project>
