@@ -46,7 +46,7 @@ import com.google.protobuf.Value;
 
 /**
  * A helper that makes {@link Struct}s and {@link Value}s from POJOs. Useful if you need to
- * convert Json data to {@code Struct}:
+ * convert Json data to {@code Struct}. For example:
  *
  * <pre>{@code
  * Map<String, ?> jsonData = ...;
