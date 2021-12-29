@@ -115,6 +115,15 @@ public final class MoreStructs {
   }
 
   /**
+   * Returns a {@link BiCollector} that collects the input key-value pairs into {@link Struct}.
+   *
+   * <p>Duplicate keys (according to {@link CharSequence#toString()}) are not allowed.
+   */
+  public static BiCollector<CharSequence, Value, Struct> toStruct() {
+    return MoreStructs::toStruct;
+  }
+
+  /**
    * Returns a {@link Collector} that flattens all fields from the input {@code Struct}s
    * and collects them into the final {@link Struct}.
    *
@@ -126,15 +135,6 @@ public final class MoreStructs {
         StructBuilder::addAllFields,
         StructBuilder::addAllFields,
         StructBuilder::build);
-  }
-
-  /**
-   * Returns a {@link BiCollector} that collects the input key-value pairs into {@link Struct}.
-   *
-   * <p>Duplicate keys (according to {@link CharSequence#toString()}) are not allowed.
-   */
-  public static BiCollector<CharSequence, Value, Struct> toStruct() {
-    return MoreStructs::toStruct;
   }
 
   private MoreStructs() {}
