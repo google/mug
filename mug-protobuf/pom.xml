@@ -3,7 +3,7 @@
   <parent>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-root</artifactId>
-    <version>5.8-SNAPSHOT</version>
+    <version>5.9-SNAPSHOT</version>
   </parent>
   <artifactId>mug-protobuf</artifactId>
   <packaging>jar</packaging>
@@ -39,23 +39,21 @@
       <version>${project.version}</version>
       <scope>compile</scope>
     </dependency>
-
     <dependency>
       <groupId>com.google.truth</groupId>
       <artifactId>truth</artifactId>
       <scope>test</scope>
     </dependency>
-
     <dependency>
       <groupId>com.google.truth.extensions</groupId>
       <artifactId>truth-java8-extension</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
-        <groupId>com.google.guava</groupId>
-        <artifactId>guava-testlib</artifactId>
-        <version>30.1.1-android</version>
-        <scope>test</scope>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava-testlib</artifactId>
+      <version>30.1.1-android</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>

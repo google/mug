@@ -4,11 +4,11 @@
   <parent>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-root</artifactId>
-    <version>5.8-SNAPSHOT</version>
+    <version>5.9-SNAPSHOT</version>
   </parent>
   <groupId>com.google.mug</groupId>
   <artifactId>mug-algorithms</artifactId>
-  <version>5.8-SNAPSHOT</version>
+  <version>5.9-SNAPSHOT</version>
   <name>algorithms</name>
   <url>http://maven.apache.org</url>
   <properties>
