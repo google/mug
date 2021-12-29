@@ -45,15 +45,15 @@ import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
 
 /**
- * A helper that makes {@link Struct}s and {@link Value}s from POJOs. Useful if you need to
- * convert Json data to {@code Struct}. For example:
+ * A helper that makes {@link Struct}s and {@link Value}s from POJOs. Useful for
+ * converting Json data to {@code Struct}. For example:
  *
  * <pre>{@code
  * Map<String, ?> jsonData = ...;
  * Struct struct = new Structor().struct(jsonData);
  * }</pre>
  *
- * <p>You can also use it to create a heterogeneous {@code Struct} literal like:
+ * <p>It can also be used to create a heterogeneous {@code Struct} literal like:
  *
  * <pre>{@code
  * Struct ironMan = new Structor()
