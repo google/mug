@@ -123,5 +123,19 @@ public final class MoreStructs {
     return MoreStructs::toStruct;
   }
 
+  /**
+   * Returns a {@link Collector} that flattens all fields from the input {@code Struct}s
+   * and collects them into the final {@link Struct}.
+   *
+   * <p>Duplicate field keys are not allowed.
+   */
+  public static Collector<Struct, ?, Struct> flatteningToStruct() {
+    return Collector.of(
+        StructBuilder::new,
+        StructBuilder::addAllFields,
+        StructBuilder::addAllFields,
+        StructBuilder::build);
+  }
+
   private MoreStructs() {}
 }
