@@ -33,8 +33,8 @@ import com.google.protobuf.Value;
 import com.google.protobuf.util.Values;
 
 @RunWith(JUnit4.class)
-public class StructMapperTest {
-  private final StructMapper maker = new StructMapper();
+public class StructorTest {
+  private final Structor maker = new Structor();
 
   @Test
   public void toValue_fromMap() {
@@ -236,7 +236,7 @@ public class StructMapperTest {
 
   @Test
   public void customConversion() {
-    StructMapper custom = new StructMapper() {
+    Structor custom = new Structor() {
       @Override public Value toValue(Object obj) {
         if (obj instanceof Hero) {
           Hero hero = (Hero) obj;
@@ -264,7 +264,7 @@ public class StructMapperTest {
 
   @Test
   public void struct_onePair() {
-    assertThat(new StructMapper().struct("key", 1))
+    assertThat(new Structor().struct("key", 1))
         .isEqualTo(
             Struct.newBuilder()
                 .putFields("key", Values.of(1))
@@ -278,7 +278,7 @@ public class StructMapperTest {
 
   @Test
   public void struct_onePair_nullValue() {
-    assertThat(new StructMapper().struct("key", null))
+    assertThat(new Structor().struct("key", null))
         .isEqualTo(
             Struct.newBuilder()
                 .putFields("key", Values.ofNull())
@@ -287,7 +287,7 @@ public class StructMapperTest {
 
   @Test
   public void struct_twoPairs() {
-    assertThat(new StructMapper().struct("int", 1, "string", "two"))
+    assertThat(new Structor().struct("int", 1, "string", "two"))
         .isEqualTo(
             Struct.newBuilder()
                 .putFields("int", Values.of(1))
@@ -297,13 +297,13 @@ public class StructMapperTest {
 
   @Test
   public void struct_twoPairs_nullKey() {
-    StructMapper maker = new StructMapper();
+    Structor maker = new Structor();
     assertThrows(NullPointerException.class, () -> maker.struct(null, "v1", "k2", "v2"));
   }
 
   @Test
   public void struct_twoPairs_nullValue() {
-    assertThat(new StructMapper().struct("k1", null, "k2", null))
+    assertThat(new Structor().struct("k1", null, "k2", null))
         .isEqualTo(
             Struct.newBuilder()
                 .putFields("k1", Values.ofNull())
@@ -313,13 +313,13 @@ public class StructMapperTest {
 
   @Test
   public void struct_twoPairs_duplicateKey() {
-    StructMapper maker = new StructMapper();
+    Structor maker = new Structor();
     assertThrows(IllegalArgumentException.class, () -> maker.struct("a", 1, "a", 2));
   }
 
   @Test
   public void struct_3Pairs() {
-    assertThat(new StructMapper().struct("a", 1, "b", 2, "c", 3))
+    assertThat(new Structor().struct("a", 1, "b", 2, "c", 3))
         .isEqualTo(
             Struct.newBuilder()
                 .putFields("a", Values.of(1))
@@ -330,13 +330,13 @@ public class StructMapperTest {
 
   @Test
   public void struct_3Pairs_nullKey() {
-    StructMapper maker = new StructMapper();
+    Structor maker = new Structor();
     assertThrows(NullPointerException.class, () -> maker.struct("k1", "v1", "k2", "v2", null, 3));
   }
 
   @Test
   public void struct_3Pairs_nullValue() {
-    assertThat(new StructMapper().struct("k1", null, "k2", null, "k3", null))
+    assertThat(new Structor().struct("k1", null, "k2", null, "k3", null))
         .isEqualTo(
             Struct.newBuilder()
                 .putFields("k1", Values.ofNull())
@@ -347,13 +347,13 @@ public class StructMapperTest {
 
   @Test
   public void struct_3Pairs_duplicateKey() {
-    StructMapper maker = new StructMapper();
+    Structor maker = new Structor();
     assertThrows(IllegalArgumentException.class, () -> maker.struct("a", 1, "b", 2, "a", 3));
   }
 
   @Test
   public void struct_fromMap() {
-    assertThat(new StructMapper().struct(ImmutableMap.of("int", 1, "string", "two")))
+    assertThat(new Structor().struct(ImmutableMap.of("int", 1, "string", "two")))
         .isEqualTo(
             Struct.newBuilder()
                 .putFields("int", Values.of(1))
@@ -363,14 +363,14 @@ public class StructMapperTest {
 
   @Test
   public void nestedStruct_fromTable() {
-    assertThat(new StructMapper().nestedStruct(ImmutableTable.of("row", "col", 1)))
+    assertThat(new Structor().nestedStruct(ImmutableTable.of("row", "col", 1)))
         .isEqualTo(struct("row", struct("col", 1)));
   }
 
 
   @Test
   public void toStruct_biCollector() {
-    Struct struct = BiStream.of("foo", 1, "bar", ImmutableMap.of("one", true)).collect(new StructMapper().toStruct());
+    Struct struct = BiStream.of("foo", 1, "bar", ImmutableMap.of("one", true)).collect(new Structor().toStruct());
     assertThat(struct)
         .isEqualTo(
             Struct.newBuilder()
@@ -401,7 +401,7 @@ public class StructMapperTest {
     };
     new NullPointerTester()
         .setDefault(CharSequence.class, key)
-        .testAllPublicInstanceMethods(new StructMapper());
+        .testAllPublicInstanceMethods(new Structor());
   }
 
   private static final class Hero {

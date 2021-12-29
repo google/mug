@@ -23,7 +23,7 @@ import com.google.protobuf.util.Values;
 @RunWith(JUnit4.class)
 public class MoreValuesTest {
   @Test public void testToListValue() {
-    StructMapper converter = new StructMapper();
+    Structor converter = new Structor();
     assertThat(
             Stream.of(1, "foo", asList(true, false), ImmutableMap.of("k", 20L)).map(converter::toValue).collect(toListValue()))
         .isEqualTo(
