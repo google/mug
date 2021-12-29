@@ -17,22 +17,17 @@ package com.google.mu.protobuf.util;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.mu.protobuf.util.MoreValues.NULL;
+import static com.google.mu.protobuf.util.MoreValues.toListValue;
 import static com.google.mu.protobuf.util.MoreValues.valueOf;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.collectingAndThen;
 
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Spliterators.AbstractSpliterator;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import javax.annotation.Nullable;
 
@@ -258,8 +253,11 @@ public class Structor {
       return valueOf((ListValue) object);
     }
     if (object instanceof Iterable) {
-      return valueOf(
-          iterate((Iterable<?>) object).map(this::convertNonNull).collect(MoreValues.toListValue()));
+      ListValue.Builder builder = ListValue.newBuilder();
+      for (Object element : ((Iterable<?>) object)) {
+        builder.addValues(convertNonNull(element));
+      }
+      return valueOf(builder.build());
     }
     if (object instanceof Map) {
       return toStructValue((Map<?, ?>) object);
@@ -313,7 +311,9 @@ public class Structor {
         .collect(valuesToValue());
     }
     if (object instanceof Object[]) {
-      return toValue(Arrays.asList((Object[]) object));
+      return Arrays.stream((Object[]) object)
+          .map(this::convertNonNull)
+          .collect(valuesToValue());
     }
     if (object instanceof byte[]) {
       byte[] array = (byte[]) object;
@@ -366,29 +366,6 @@ public class Structor {
   }
 
   private static Collector<Value, ?, Value> valuesToValue() {
-    return collectingAndThen(MoreValues.toListValue(), MoreValues::valueOf);
-  }
-
-  // TODO: remove once Streams.stream() is available in Android
-  private static <T> Stream<T> iterate(Iterable<T> iterable) {
-    if (iterable instanceof Collection) {
-      return ((Collection<T>) iterable).stream();
-    }
-    return iterate(iterable.iterator());
-  }
-
-  private static <T> Stream<T> iterate(Iterator<T> iterator) {
-    return StreamSupport.stream(
-        new AbstractSpliterator<T>(Long.MAX_VALUE, 0) {
-          @Override
-          public boolean tryAdvance(Consumer<? super T> action) {
-            boolean canAdvance = iterator.hasNext();
-            if (canAdvance) {
-              action.accept(iterator.next());
-            }
-            return canAdvance;
-          }
-        },
-        false /* not parallel */);
+    return collectingAndThen(toListValue(), MoreValues::valueOf);
   }
 }
