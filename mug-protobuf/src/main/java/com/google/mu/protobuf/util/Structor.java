@@ -71,13 +71,13 @@ import com.google.protobuf.Value;
  *     .collect(new Structor().toStruct());
  * }</pre>
  *
- * <p>The {@link #toValue} method is responsible for converting POJO to {@code Value},
- * and recursively, the {@code Collection}s, {@code Map}s and {@code Table}s thereof into
- * corresponding {@link ListValue} or {@link Struct} wrappers.
- *
  * <p>For simple scenarios, prefer to use {@link MoreStructs} to create {@code Struct}.
  * Its single-field {@code struct()} factory methods are more efficient, can be static imported,
  * and unsupported types cause compilation error as opposed to runtime exception.
+ *
+ * <p>The {@link #toValue} method is responsible for converting POJO to {@code Value},
+ * and recursively, the {@code Collection}s, {@code Map}s and {@code Table}s thereof into
+ * corresponding {@link ListValue} or {@link Struct} wrappers.
  *
  * <p>You can create a subclass to implement custom mapping. For example,
  * if the application needs to map {@code User} types to {@code Value} by using the user ids:
