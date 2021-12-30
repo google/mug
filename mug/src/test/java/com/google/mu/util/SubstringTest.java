@@ -1570,8 +1570,8 @@ public class SubstringTest {
     assertKeyValues(first(',').repeatedly().splitKeyValuesAround(first('='), "k1=v1,,"))
         .containsExactly("k1", "v1")
         .inOrder();
-    assertKeyValues(first(',').repeatedly().splitKeyValuesAround(first('='), ",k1 = v1,"))
-        .containsExactly("k1 ", " v1")
+    assertKeyValues(first(',').repeatedly().splitKeyValuesAround(first('='), ",k1 = v1 =x,"))
+        .containsExactly("k1 ", " v1 =x")
         .inOrder();
   }
 
@@ -1621,8 +1621,8 @@ public class SubstringTest {
     assertKeyValues(first(',').repeatedly().splitThenTrimKeyValuesAround(first('='), "k1=v1,,"))
         .containsExactly("k1", "v1")
         .inOrder();
-    assertKeyValues(first(',').repeatedly().splitThenTrimKeyValuesAround(first('='), ", k1=v1 ,"))
-        .containsExactly("k1", "v1")
+    assertKeyValues(first(',').repeatedly().splitThenTrimKeyValuesAround(first('='), ", k1=v1=x ,"))
+        .containsExactly("k1", "v1=x")
         .inOrder();
   }
 
