@@ -3,7 +3,7 @@ Disclaimer: This is not an official Google product.
 # Mug
 A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/index.html)), with 0 deps. ![](https://travis-ci.org/google/mug.svg?branch=master)
 
-* Stream utilities ([BiStream](https://github.com/google/mug/wiki/BiStream-Explained), [MoreStreams](#morestreams), [Iteration](https://github.com/google/mug/wiki/Iteration-Explained)):  
+* Stream utilities ([BiStream](https://github.com/google/mug/wiki/BiStream-Explained), [MoreStreams](#morestreams), [Iteration](https://github.com/google/mug/wiki/Iteration-Explained), [GuavaCollectors](https://google.github.io/mug/mug-guava/apidocs/com/google/mu/util/stream/GuavaCollectors.html)):  
     `histogram = zip(times, counts).toMap();`
 * [Optionals](#optionals) provides extra utilities for Optional:  
     `optional(id.length() > 0, id)`
