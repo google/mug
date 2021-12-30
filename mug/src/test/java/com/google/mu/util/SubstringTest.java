@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.Spliterator;
 import java.util.function.Function;
 import java.util.regex.Pattern;
+import java.util.stream.Collector;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -26,10 +27,15 @@ import org.junit.runners.JUnit4;
 
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.LinkedListMultimap;
+import com.google.common.collect.Multimap;
 import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.EqualsTester;
 import com.google.common.testing.NullPointerTester;
+import com.google.common.truth.MultimapSubject;
 import com.google.mu.util.Substring.Match;
+import com.google.mu.util.stream.BiCollector;
+import com.google.mu.util.stream.BiStream;
 import com.google.mu.util.stream.Joiner;
 
 @RunWith(JUnit4.class)
@@ -1549,6 +1555,106 @@ public class SubstringTest {
   }
 
   @Test
+  public void repeatedly_splitKeyValuesAround_empty() {
+    assertKeyValues(first(',').repeatedly().splitKeyValuesAround(first('='), ""))
+        .isEmpty();
+    assertKeyValues(first(',').repeatedly().splitKeyValuesAround(first('='), ",,"))
+        .isEmpty();
+  }
+
+  @Test
+  public void repeatedly_splitKeyValuesAround() {
+    assertKeyValues(first(',').repeatedly().splitKeyValuesAround(first('='), "k1=v1,k2=v2"))
+        .containsExactly("k1", "v1", "k2", "v2")
+        .inOrder();
+    assertKeyValues(first(',').repeatedly().splitKeyValuesAround(first('='), "k1=v1,,"))
+        .containsExactly("k1", "v1")
+        .inOrder();
+    assertKeyValues(first(',').repeatedly().splitKeyValuesAround(first('='), ",k1 = v1,"))
+        .containsExactly("k1 ", " v1")
+        .inOrder();
+  }
+
+  @Test
+  public void repeatedly_splitKeyValuesAround_emptyKey() {
+    assertKeyValues(first(',').repeatedly().splitKeyValuesAround(first('='), "= v1"))
+        .containsExactly("", " v1")
+        .inOrder();
+  }
+
+  @Test
+  public void repeatedly_splitKeyValuesAround_emptyValue() {
+    assertKeyValues(first(',').repeatedly().splitKeyValuesAround(first('='), " k =,"))
+        .containsExactly(" k ", "")
+        .inOrder();
+  }
+
+  @Test
+  public void repeatedly_splitKeyValuesAround_emptyKeyValue() {
+    assertKeyValues(first(',').repeatedly().splitKeyValuesAround(first('='), ",=,"))
+        .containsExactly("", "")
+        .inOrder();
+  }
+
+  @Test
+  public void repeatedly_splitKeyValuesAround_keyValueSeparatorNotFound() {
+    BiStream<String, String> kvs =
+        first(',').repeatedly().splitKeyValuesAround(first('='), "k=v, ");
+    assertThrows(IllegalArgumentException.class, () -> kvs.toMap());
+  }
+
+  @Test
+  public void repeatedly_splitThenTrimKeyValuesAround_empty() {
+    assertKeyValues(first(',').repeatedly().splitThenTrimKeyValuesAround(first('='), ""))
+        .isEmpty();
+    assertKeyValues(first(',').repeatedly().splitThenTrimKeyValuesAround(first('='), " "))
+        .isEmpty();
+    assertKeyValues(first(',').repeatedly().splitThenTrimKeyValuesAround(first('='), ", ,"))
+        .isEmpty();
+  }
+
+  @Test
+  public void repeatedly_splitThenTrimKeyValuesAround() {
+    assertKeyValues(first(',').repeatedly().splitThenTrimKeyValuesAround(first('='), "k1 = v1, k2=v2"))
+        .containsExactly("k1", "v1", "k2", "v2")
+        .inOrder();
+    assertKeyValues(first(',').repeatedly().splitThenTrimKeyValuesAround(first('='), "k1=v1,,"))
+        .containsExactly("k1", "v1")
+        .inOrder();
+    assertKeyValues(first(',').repeatedly().splitThenTrimKeyValuesAround(first('='), ", k1=v1 ,"))
+        .containsExactly("k1", "v1")
+        .inOrder();
+  }
+
+  @Test
+  public void repeatedly_splitThenTrimKeyValuesAround_emptyKey() {
+    assertKeyValues(first(',').repeatedly().splitThenTrimKeyValuesAround(first('='), " = v1"))
+        .containsExactly("", "v1")
+        .inOrder();
+  }
+
+  @Test
+  public void repeatedly_splitThenTrimKeyValuesAround_emptyValue() {
+    assertKeyValues(first(',').repeatedly().splitThenTrimKeyValuesAround(first('='), " k =,"))
+        .containsExactly("k", "")
+        .inOrder();
+  }
+
+  @Test
+  public void repeatedly_splitThenTrimKeyValuesAround_emptyKeyValue() {
+    assertKeyValues(first(',').repeatedly().splitThenTrimKeyValuesAround(first('='), ",=,"))
+        .containsExactly("", "")
+        .inOrder();
+  }
+
+  @Test
+  public void repeatedly_splitThenTrimKeyValuesAround_keyValueSeparatorNotFound() {
+    BiStream<String, String> kvs =
+        first(',').repeatedly().splitThenTrimKeyValuesAround(first('='), "k:v");
+    assertThrows(IllegalArgumentException.class, () -> kvs.toMap());
+  }
+
+  @Test
   public void split_canSplit() {
     assertThat(first('=').split(" foo=bar").map((String k, String v) -> k)).hasValue(" foo");
     assertThat(first('=').split("foo=bar ").map((String k, String v) -> v)).hasValue("bar ");
@@ -2324,5 +2430,26 @@ public class SubstringTest {
         .setDefault(String.class, "sub")
         .setDefault(Pattern.class, Pattern.compile("testpattern"))
         .setDefault(Substring.Pattern.class, prefix("foo"));
+  }
+
+  private static<K,V> MultimapSubject assertKeyValues(BiStream<K, V> stream) {
+    Multimap<?, ?> multimap = stream.collect(new BiCollector<K, V, Multimap<K, V>>() {
+      @Override
+      public <E> Collector<E, ?, Multimap<K, V>> splitting(Function<E, K> toKey, Function<E, V> toValue) {
+        return SubstringTest.toLinkedListMultimap(toKey,toValue);
+      }
+    });
+    return assertThat(multimap);
+  }
+
+  private static <T, K, V> Collector<T, ?, Multimap<K, V>> toLinkedListMultimap(
+      Function<? super T, ? extends K> toKey, Function<? super T, ? extends V> toValue) {
+    return Collector.of(
+        LinkedListMultimap::create,
+        (m, e) -> m.put(toKey.apply(e), toValue.apply(e)),
+        (m1, m2) -> {
+          m1.putAll(m2);
+          return m1;
+        });
   }
 }
