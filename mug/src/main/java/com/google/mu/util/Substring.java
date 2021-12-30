@@ -87,7 +87,7 @@ import com.google.mu.util.stream.MoreStreams;
  * ImmutableListMultimap<String, String> tags =
  *     first(',')
  *         .repeatedly()
- *         .splitThenTrimKeyValuesAround(first('='), "k1=v1, k2=v2")  // Split into ["k1=v1", "k2=v2"]
+ *         .splitThenTrimKeyValuesAround(first('='), "k1=v1, k2=v2")  // => [(k1, v1), (k2, v2)]
  *         .collect(toImmutableListMultimap());
  * }</pre>
  *
