@@ -41,7 +41,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -1157,7 +1156,7 @@ public class BiStreamTest {
     return assertThat(multimap);
   }
 
-  public static <T, K, V> Collector<T, ?, Multimap<K, V>> toLinkedListMultimap(
+  private static <T, K, V> Collector<T, ?, Multimap<K, V>> toLinkedListMultimap(
       Function<? super T, ? extends K> toKey, Function<? super T, ? extends V> toValue) {
     return Collector.of(
         LinkedListMultimap::create,
@@ -1180,12 +1179,6 @@ public class BiStreamTest {
             .collect(toList());
     assertThat(threads).hasSize(1);
     return assertThat(list);
-  }
-
-  // T doesn't use wildcard to test that less-than-perfect method-ref can be used as
-  // DualValuedFunction.
-  private static <T, R> R withToString(T obj, BiFunction<? super String, ? super T, R> then) {
-    return then.apply(obj.toString(), obj);
   }
 
   private static <K, V> BiCollector<K, V, ImmutableListMultimap<K, V>> toImmutableListMultimap() {

@@ -28,6 +28,7 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.stream.Stream;
 
+import com.google.mu.util.stream.BiStream;
 import com.google.mu.util.stream.MoreStreams;
 
 /**
@@ -941,6 +942,126 @@ public final class Substring {
      */
     public Stream<Match> splitThenTrim(String string) {
       return split(string).map(Match::trim);
+    }
+
+    /**
+     * Returns a {@link BiStream} of key value pairs from {@code input}.
+     *
+     * <p>The key-value pairs are delimited by this repeating pattern.
+     * with the key and value separated by {@code keyValueSeparator}.
+     *
+     * <p>Empty parts (including leading and trailing separator) are ignored.
+     * Although whitespaces are not trimmed. For example:
+     *
+     * <pre>{@code
+     * first(',')
+     *     .repeatedly()
+     *     .splitKeyValuesAround(first('='), "k1=v1,,k2=v2,")
+     * }</pre>
+     * will result in a {@code BiStream} equivalent to {@code [(k1, v1), (k2, v2)]},
+     * but {@code "k1=v1, ,k2=v2"} will fail to be split due to the whitespace after the first
+     * {@code ','}.
+     *
+     * <p>Non-empty parts where {@code keyValueSeparator} is absent will result in
+     * {@link IllegalArgumentException}.
+     *
+     * <p>For alternative splitting strategies, like, if you want to reject instead of ignoring
+     * empty parts. consider to use {@link #split} and {@link Pattern#split} directly,
+     * such as:
+     *
+     * <pre>{@code
+     * first(',')
+     *     .repeatedly()
+     *     .split("k1=v1,,k2=v2,")  // the redundant ',' will throw IAE
+     *     .collect(
+     *         GuavaCollectors.toImmutableMap(
+     *             m -> first('=').split(m).orElseThrow(...)));
+     * }</pre>
+     *
+     * Or, if you want to ignore unparsable parts:
+     *
+     * <pre>{@code
+     * first(',')
+     *     .repeatedly()
+     *     .split("k1=v1,k2>v2")  // Ignore the unknown "k2>v2"
+     *     .map(first('=')::split)
+     *     .collect(
+     *         MoreCollectors.flatMapping(
+     *             BiOptional::stream,
+     *             toImmutableMap()));
+     * }</pre>
+     *
+     * @since 5.9
+     */
+    public final BiStream<String, String> splitKeyValuesAround(
+        Pattern keyValueSeparator, String input) {
+      requireNonNull(keyValueSeparator);
+      return BiStream.from(
+          split(input)
+              .filter(m -> m.length() > 0)
+              .map(m -> keyValueSeparator
+                  .split(m)
+                  .orElseThrow(
+                      () -> new IllegalArgumentException("Cannot split key values from '" + m + "'"))));
+    }
+
+    /**
+     * Returns a {@link BiStream} of key value pairs from {@code input}.
+     *
+     * <p>The key-value pairs are delimited by this repeating pattern.
+     * with the key and value separated by {@code keyValueSeparator}.
+     *
+     * <p>All keys and values are trimmed, with empty parts (including leading and trailing
+     * separator) ignored. For example:
+     *
+     * <pre>{@code
+     * first(',')
+     *     .repeatedly()
+     *     .splitThenTrimKeyValuesAround(first('='), "k1 = v1, , k2=v2,")
+     * }</pre>
+     * will result in a {@code BiStream} equivalent to {@code [(k1, v1), (k2, v2)]}.
+     *
+     * <p>Non-empty parts where {@code keyValueSeparator} is absent will result in
+     * {@link IllegalArgumentException}.
+     *
+     * <p>For alternative splitting strategies, like, if you want to reject instead of ignoring
+     * empty parts. consider to use {@link #split} and {@link Pattern#splitThenTrim} directly,
+     * such as:
+     *
+     * <pre>{@code
+     * first(',')
+     *     .repeatedly()
+     *     .split("k1 = v1, , k2=v2,")  // the redundant ',' will throw IAE
+     *     .collect(
+     *         GuavaCollectors.toImmutableMap(
+     *             m -> first('=').splitThenTrim(m).orElseThrow(...)));
+     * }</pre>
+     *
+     * Or, if you want to ignore unparsable parts:
+     *
+     * <pre>{@code
+     * first(',')
+     *     .repeatedly()
+     *     .split("k1 = v1, k2 > v2")  // Ignore the unknown "k2 > v2"
+     *     .map(first('=')::splitThenTrim)
+     *     .collect(
+     *         MoreCollectors.flatMapping(
+     *             BiOptional::stream,
+     *             toImmutableMap()));
+     * }</pre>
+     *
+     * @since 5.9
+     */
+    public final BiStream<String, String> splitThenTrimKeyValuesAround(
+        Pattern keyValueSeparator, String input) {
+      requireNonNull(keyValueSeparator);
+      return BiStream.from(
+          splitThenTrim(input)
+              .filter(m -> m.length() > 0)
+              .map(m -> keyValueSeparator
+                  .splitThenTrim(m)
+                  .orElseThrow(
+                      () -> new IllegalArgumentException("Cannot split key values from '" + m + "'"))));
     }
 
     RepeatingPattern() {}
