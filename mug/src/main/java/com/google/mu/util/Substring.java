@@ -82,16 +82,13 @@ import com.google.mu.util.stream.MoreStreams;
  * To parse key-value pairs:
  *
  * <pre>{@code
- * import static com.google.common.labs.collect.MoreCollectors.toImmutableListMultimap;
+ * import static com.google.mu.util.stream.GuavaCollectors.toImmutableListMultimap;
  *
  * ImmutableListMultimap<String, String> tags =
  *     first(',')
  *         .repeatedly()
- *         .split("k1=v1,k2=v2")  // Split into ["k1=v1", "k2=v2"]
- *         .collect(
- *             toImmutableListMultimap(
- *                 // Split "k1=v1" into (k1, v1) and "k2=v2" into (k2, v2)
- *                 s -> first('=').splitThenTrim(s).orElseThrow(...)));
+ *         .splitThenTrimKeyValuesAround(first('='), "k1=v1,k2=v2")  // Split into ["k1=v1", "k2=v2"]
+ *         .collect(toImmutableListMultimap());
  * }</pre>
  *
  * @since 2.0
