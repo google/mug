@@ -145,8 +145,8 @@ public final class MoreStructs {
    *
    * <p>{@link Value} wrappers are unwrapped using {@link MoreValues#fromValue},
    * such that {@code Values.of(1)} is unwrapped to {@code 1L},
-   * {@code ListValue} is unwrapped as {@code List<Object>}, and {@code NULL_VALUE} is unwrapped as
-   * {@code null}, etc.
+   * {@code ListValue} is unwrapped as {@code List<Object>}, and {@link
+   * com.google.protobuf.NullValue} is unwrapped as {@code null}, etc.
    *
    * <p>Field encounter order is preserved in the result {@code Map}.
    *

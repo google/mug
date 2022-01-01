@@ -88,7 +88,7 @@ public final class MoreValues {
    *
    * <p>For example, {@code Values.of(1)} is unwrapped to {@code 1}; {@link ListValue} is
    * unwrapped as {@code List<Object>}; {@link Struct} is unwrapped as {@code Map<String, Object>};
-   * and {@code NULL_VALUE} is unwrapped as {@code null}, etc.
+   * and {@link NullValue} is unwrapped as {@code null}, etc.
    *
    * <p>Note that integral numbers in the range of {@code int} will be unwrapped as {@code Integer};
    * while integral numbers otherwise in the range of {@code long} will be unwrapped as {@code Long}.
@@ -134,7 +134,7 @@ public final class MoreValues {
    *
    * <p>For example, {@code Values.of(1)} is unwrapped to {@code 1L};
    * {@link Struct} is unwrapped as {@code Map<String, Object>};
-   * and {@code NULL_VALUE} is unwrapped as {@code null}, etc.
+   * and {@link NullValue} is unwrapped as {@code null}, etc.
    *
    * @see MoreStructs#asMap
    * @see #fromValue
