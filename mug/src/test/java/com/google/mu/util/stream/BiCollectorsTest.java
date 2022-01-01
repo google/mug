@@ -87,9 +87,22 @@ public class BiCollectorsTest {
   }
 
   @Test public void testToMap_withSupplier_duplicateKey() {
-    assertThrows(
+    IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
-        () -> BiStream.of("one", 1, "one", 2).collect(toMap(() -> new LinkedHashMap<>())));
+        () -> BiStream.of("foo", 1, "foo", 2).collect(toMap(() -> new LinkedHashMap<>())));
+    assertThat(thrown).hasMessageThat().contains("Duplicate key: [foo]");
+  }
+
+  @Test public void testToMap_duplicateKeys_bothMappingToNull() {
+    assertThat(BiStream.of("foo", null, "foo", null).collect(toMap(() -> new LinkedHashMap<>())))
+        .containsExactly("foo", null);
+  }
+
+  @Test public void testToMap_duplicateKeys_nonNullValueOverridesNullValue() {
+    assertThat(BiStream.of("foo", null, "foo", "nonnull").collect(toMap(() -> new LinkedHashMap<>())))
+        .containsExactly("foo", "nonnull");
+    assertThat(BiStream.of("foo", "nonnull", "foo", null).collect(toMap(() -> new LinkedHashMap<>())))
+    .containsExactly("foo", "nonnull");
   }
 
   @Test public void testToImmutableMap_covariance() {

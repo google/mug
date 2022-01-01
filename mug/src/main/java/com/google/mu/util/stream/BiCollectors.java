@@ -75,18 +75,48 @@ public final class BiCollectors {
    * constructor reference to work around the compiler ambiguity, such as {@code
    * toMap(() -> new LinkedHashMap<>())}.
    *
+   * <p>Duplicate keys are not allowed and will cause {@link IllegalArgumentException} to be thrown.
+   * Unlike {@link Collectors#toMap(Function, Function, BinaryOperator, Supplier)}, the culprit
+   * duplicate key is reported in the error message.
+   *
+   * <p>Null values are supported as long as the result {@code Map} type supports null values. Thus
+   * this method can be used as a work-around of the
+   * <a href="https://bugs.openjdk.java.net/browse/JDK-8148463">toMap() JDK bug</a>.
+   * For efficiency reasons, null values mapping to the same key do not trigger {@code
+   * IllegalArgumentException}. Instead, the non-null values take precedence over the null values
+   * of the same key. And if there are multiple {@code k -> null} mappings, the duplicates
+   * will be silently ignored, with only one such null mapping added to the result {@code Map}.
+   *
    * @since 5.9
    */
   public static <K, V, M extends Map<K, V>> BiCollector<K, V, M> toMap(Supplier<M> mapSupplier) {
     requireNonNull(mapSupplier);
+    class Builder {
+      private final M map = mapSupplier.get();
+
+      void add(K key, V value) {
+        if (map.putIfAbsent(key, value) != null && value != null) {
+          throw new IllegalArgumentException("Duplicate key: [" + key + "]");
+        }
+      }
+
+      Builder addAll(Builder that) {
+        BiStream.from(that.map).forEachOrdered(this::add);
+        return this;
+      }
+
+      M build() {
+        return map;
+      }
+    }
     return new BiCollector<K, V, M>() {
-      @Override
-      public <E> Collector<E, ?, M> splitting(
+      @Override public <E> Collector<E, ?, M> splitting(
           Function<E, K> toKey, Function<E, V> toValue) {
-        return Collectors.toMap(
-            toKey, toValue,
-            (v1, v2) -> {throw new IllegalArgumentException("Duplicate key");},
-            mapSupplier);
+        return Collector.of(
+            Builder::new,
+            (b, e) -> b.add(toKey.apply(e), toValue.apply(e)),
+            Builder::addAll,
+            Builder::build);
       }
     };
   }
