@@ -134,13 +134,13 @@ public class MoreStructsTest {
 
   @Test public void testAsMap_fromStruct() {
     assertThat(MoreStructs.asMap(new Structor().struct("one", 1, "twos", listValueOf(2, 2.5))))
-        .containsExactly("one", 1L, "twos", asList(2L, 2.5D))
+        .containsExactly("one", 1, "twos", asList(2, 2.5D))
         .inOrder();
   }
 
   @Test public void testAsMap_fromStructBuilder() {
     assertThat(MoreStructs.asMap(struct("one", 1).toBuilder()))
-        .containsExactly("one", 1L)
+        .containsExactly("one", 1)
         .inOrder();
   }
 
@@ -149,7 +149,7 @@ public class MoreStructsTest {
     Map<String, Object> map = MoreStructs.asMap(builder);
     builder.putFields("two", Values.of(2));
     assertThat(map)
-        .containsExactly("one", 1L, "two", 2L)
+        .containsExactly("one", 1, "two", 2)
         .inOrder();
   }
 

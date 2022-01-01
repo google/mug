@@ -79,7 +79,7 @@ public class MoreValuesTest {
 
   @Test public void testAsList() {
     assertThat(MoreValues.asList(listValueOf(1, Long.MAX_VALUE, Long.MIN_VALUE)))
-        .containsExactly(1L, Long.MAX_VALUE, Long.MIN_VALUE)
+        .containsExactly(1, Long.MAX_VALUE, Long.MIN_VALUE)
         .inOrder();
   }
 
@@ -94,7 +94,7 @@ public class MoreValuesTest {
     List<Object> list = MoreValues.asList(builder);
     builder.addValues(Values.of(2));
     assertThat(list)
-        .containsExactly("foo", 2L)
+        .containsExactly("foo", 2)
         .inOrder();
   }
 
@@ -178,7 +178,7 @@ public class MoreValuesTest {
 
   @Test public void testFromValue_struct() {
     assertThat(MoreValues.fromValue(Values.of(struct("one", 1))))
-        .isEqualTo(ImmutableMap.of("one", 1L));
+        .isEqualTo(ImmutableMap.of("one", 1));
     assertThat(MoreValues.fromValue(Value.newBuilder().setStructValue(struct("one", 0.5))))
         .isEqualTo(ImmutableMap.of("one", 0.5D));
   }
