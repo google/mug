@@ -75,17 +75,20 @@ public final class BiCollectors {
    * constructor reference to work around the compiler ambiguity, such as {@code
    * toMap(() -> new LinkedHashMap<>())}.
    *
-   * <p>Duplicate keys are not allowed and will cause {@link IllegalArgumentException} to be thrown.
+   * <p>Duplicate keys with non-null values are not allowed and will cause {@link
+   * IllegalArgumentException} to be thrown.
    * Unlike {@link Collectors#toMap(Function, Function, BinaryOperator, Supplier)}, the culprit
    * duplicate key is reported in the error message.
    *
    * <p>Null values are supported as long as the result {@code Map} type supports null values. Thus
    * this method can be used as a work-around of the
    * <a href="https://bugs.openjdk.java.net/browse/JDK-8148463">toMap() JDK bug</a>.
-   * For efficiency reasons, null values mapping to the same key do not trigger {@code
+   * For efficiency reasons, null values mapping to the same key do not cause {@code
    * IllegalArgumentException}. Instead, the non-null values take precedence over the null values
    * of the same key (as if the null values didn't exist). Otherwise, if there are multiple {@code
    * k -> null} mappings, only one such null mapping is added to the result {@code Map}.
+   *
+   * <p>Null keys are supported as long as the result {@code Map} type supports null keys.
    *
    * @since 5.9
    */

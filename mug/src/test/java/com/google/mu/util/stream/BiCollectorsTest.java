@@ -86,6 +86,18 @@ public class BiCollectorsTest {
     assertThat(map).containsExactly("one", 1, "two", 2).inOrder();
   }
 
+  @Test public void testToMap_withSupplier_nullKey() {
+    LinkedHashMap<String, String> map =
+        BiStream.of((String) null, "nonnull").collect(toMap(() -> new LinkedHashMap<>()));
+    assertThat(map).containsExactly(null, "nonnull").inOrder();
+  }
+
+  @Test public void testToMap_withSupplier_nullValue() {
+    LinkedHashMap<String, String> map =
+        BiStream.of("nonnull", (String) null).collect(toMap(() -> new LinkedHashMap<>()));
+    assertThat(map).containsExactly("nonnull", null).inOrder();
+  }
+
   @Test public void testToMap_withSupplier_duplicateKey() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
