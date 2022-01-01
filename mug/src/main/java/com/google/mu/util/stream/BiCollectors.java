@@ -91,7 +91,7 @@ public final class BiCollectors {
    */
   public static <K, V, M extends Map<K, V>> BiCollector<K, V, M> toMap(Supplier<M> mapSupplier) {
     requireNonNull(mapSupplier);
-    class Builder {
+    final class Builder {
       private final M map = mapSupplier.get();
 
       void add(K key, V value) {
