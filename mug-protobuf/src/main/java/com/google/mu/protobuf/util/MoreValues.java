@@ -86,9 +86,18 @@ public final class MoreValues {
   /**
    * Unwraps {@code value}.
    *
-   * <p>For example, {@code Values.of(1)} is unwrapped to {@code 1L}; {@link ListValue} is
+   * <p>For example, {@code Values.of(1)} is unwrapped to {@code 1}; {@link ListValue} is
    * unwrapped as {@code List<Object>}; {@link Struct} is unwrapped as {@code Map<String, Object>};
-   * and {@code NULL_VALUE} is unwrapped as {@code null}, etc.
+   * and {@link NullValue} is unwrapped as {@code null}, etc.
+   *
+   * <p>Note that integral numbers in the range of {@code int} will be unwrapped as {@code Integer};
+   * while integral numbers otherwise in the range of {@code long} will be unwrapped as {@code Long}.
+   * All other numbers are unwrapped as {@code Double}. If you need to handle all number cases
+   * unconditionally, consider to use {@link Number#doubleValue}.
+   *
+   * <p>The returned object is immutable. Even if {@code value} is an instance of {@link
+   * Value.Builder}, and the underlying state is changed after this method returns,
+   * the returned object remains unchanged.
    *
    * @see MoreStructs#asMap
    * @see #asList
@@ -103,12 +112,18 @@ public final class MoreValues {
         return value.getBoolValue();
       case STRING_VALUE:
         return value.getStringValue();
-      case NUMBER_VALUE:
-        if (DoubleMath.isMathematicalInteger(value.getNumberValue())) {
-          return (long) value.getNumberValue();
+      case NUMBER_VALUE: {
+        double v = value.getNumberValue();
+        if (v >= Long.MIN_VALUE && v <= Long.MAX_VALUE && DoubleMath.isMathematicalInteger(v)) {
+          if (v >= Integer.MIN_VALUE && v <= Integer.MAX_VALUE) {
+            return (int) v;
+          } else {
+            return (long) v;
+          }
         } else {
-          return value.getNumberValue();
+          return v;
         }
+      }
       case LIST_VALUE:
         return asList(value.getListValue());
       case STRUCT_VALUE:
@@ -123,7 +138,7 @@ public final class MoreValues {
    *
    * <p>For example, {@code Values.of(1)} is unwrapped to {@code 1L};
    * {@link Struct} is unwrapped as {@code Map<String, Object>};
-   * and {@code NULL_VALUE} is unwrapped as {@code null}, etc.
+   * and {@link NullValue} is unwrapped as {@code null}, etc.
    *
    * @see MoreStructs#asMap
    * @see #fromValue
