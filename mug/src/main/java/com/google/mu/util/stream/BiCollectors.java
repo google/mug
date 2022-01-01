@@ -76,6 +76,9 @@ public final class BiCollectors {
    * toMap(() -> new LinkedHashMap<>())}.
    *
    * <p>Null keys and values are supported as long as the result {@code Map} type supports them.
+   * Thus this method can be used as a workaround of the
+   * <a href="https://bugs.openjdk.java.net/browse/JDK-8148463">toMap(Supplier) JDK bug</a> that
+   * fails to support null values.
    *
    * <p>Upon duplicate keys, null values are considered absent and ignored; non-null values will
    * throw {@link IllegalArgumentException}, with the duplicate key reported in the error message.
