@@ -103,12 +103,14 @@ public final class MoreValues {
         return value.getBoolValue();
       case STRING_VALUE:
         return value.getStringValue();
-      case NUMBER_VALUE:
-        if (DoubleMath.isMathematicalInteger(value.getNumberValue())) {
-          return (long) value.getNumberValue();
+      case NUMBER_VALUE: {
+        double v = value.getNumberValue();
+        if (v >= Long.MIN_VALUE && v <= Long.MAX_VALUE && DoubleMath.isMathematicalInteger(v)) {
+          return (long) v;
         } else {
-          return value.getNumberValue();
+          return v;
         }
+      }
       case LIST_VALUE:
         return asList(value.getListValue());
       case STRUCT_VALUE:

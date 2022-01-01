@@ -9,6 +9,7 @@ import static com.google.mu.protobuf.util.MoreValues.listValueOf;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
 
+import java.util.Map;
 import java.util.stream.Stream;
 
 import org.junit.Test;
@@ -140,6 +141,15 @@ public class MoreStructsTest {
   @Test public void testAsMap_fromStructBuilder() {
     assertThat(MoreStructs.asMap(struct("one", 1).toBuilder()))
         .containsExactly("one", 1L)
+        .inOrder();
+  }
+
+  @Test public void testAsMap_fromStructBuilder_mutation() {
+    Struct.Builder builder = struct("one", 1).toBuilder();
+    Map<String, Object> map = MoreStructs.asMap(builder);
+    builder.putFields("two", Values.of(2));
+    assertThat(map)
+        .containsExactly("one", 1L, "two", 2L)
         .inOrder();
   }
 

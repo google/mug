@@ -10,6 +10,7 @@ import static com.google.mu.protobuf.util.MoreValues.toListValue;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
 
+import java.util.List;
 import java.util.stream.Stream;
 
 import org.junit.Test;
@@ -77,14 +78,23 @@ public class MoreValuesTest {
   }
 
   @Test public void testAsList() {
-    assertThat(MoreValues.asList(listValueOf(1, 2)))
-        .containsExactly(1L, 2L)
+    assertThat(MoreValues.asList(listValueOf(1, Long.MAX_VALUE, Long.MIN_VALUE)))
+        .containsExactly(1L, Long.MAX_VALUE, Long.MIN_VALUE)
         .inOrder();
   }
 
   @Test public void testAsList_withNullElement() {
     assertThat(MoreValues.asList(ListValue.newBuilder().addValues(NULL)))
         .containsExactly((Object) null)
+        .inOrder();
+  }
+
+  @Test public void testAsList_fromBuilder_mutation() {
+    ListValue.Builder builder = ListValue.newBuilder().addValues(Values.of("foo"));
+    List<Object> list = MoreValues.asList(builder);
+    builder.addValues(Values.of(2));
+    assertThat(list)
+        .containsExactly("foo", 2L)
         .inOrder();
   }
 
@@ -101,13 +111,57 @@ public class MoreValuesTest {
   }
 
   @Test public void testFromValue_integer() {
+    assertThat(MoreValues.fromValue(Values.of(0))).isEqualTo(0L);
     assertThat(MoreValues.fromValue(Values.of(1))).isEqualTo(1L);
+    assertThat(MoreValues.fromValue(Values.of(-1))).isEqualTo(-1L);
     assertThat(MoreValues.fromValue(Values.of(1).toBuilder())).isEqualTo(1L);
+  }
+
+  @Test public void testFromValue_integer_minValue() {
+    assertThat(MoreValues.fromValue(Values.of(Long.MIN_VALUE))).isEqualTo(Long.MIN_VALUE);
+    assertThat(MoreValues.fromValue(Values.of(Integer.MIN_VALUE))).isEqualTo((long) Integer.MIN_VALUE);
+  }
+
+  @Test public void testFromValue_integer_maxValue() {
+    assertThat(MoreValues.fromValue(Values.of(Long.MAX_VALUE))).isEqualTo(Long.MAX_VALUE);
+    assertThat(MoreValues.fromValue(Values.of(Integer.MAX_VALUE))).isEqualTo((long) Integer.MAX_VALUE);
   }
 
   @Test public void testFromValue_double() {
     assertThat(MoreValues.fromValue(Values.of(0.5))).isEqualTo(0.5D);
+    assertThat(MoreValues.fromValue(Values.of(-0.5))).isEqualTo(-0.5D);
     assertThat(MoreValues.fromValue(Values.of(0.5).toBuilder())).isEqualTo(0.5D);
+  }
+
+  @Test public void testFromValue_double_minValue() {
+    assertThat(MoreValues.fromValue(Values.of(Double.MIN_VALUE))).isEqualTo(Double.MIN_VALUE);
+    assertThat(MoreValues.fromValue(Values.of(Double.MIN_VALUE + Double.MAX_VALUE / 2)))
+        .isEqualTo(Double.MIN_VALUE + Double.MAX_VALUE / 2);
+    assertThat(MoreValues.fromValue(Values.of(((double) Long.MIN_VALUE) * 2)))
+        .isEqualTo(((double) Long.MIN_VALUE) * 2);
+  }
+
+  @Test public void testFromValue_double_maxValue() {
+    assertThat(Values.of(Double.MAX_VALUE).getNumberValue()).isEqualTo(Double.MAX_VALUE);
+    assertThat(MoreValues.fromValue(Values.of(Double.MAX_VALUE))).isEqualTo(Double.MAX_VALUE);
+    assertThat(MoreValues.fromValue(Values.of(Double.MAX_VALUE / 2))).isEqualTo(Double.MAX_VALUE / 2);
+    assertThat(MoreValues.fromValue(Values.of(((double) Long.MAX_VALUE) * 2)))
+        .isEqualTo(((double) Long.MAX_VALUE) * 2);
+  }
+
+  @Test public void testFromValue_double_minNormal() {
+    assertThat(MoreValues.fromValue(Values.of(Double.MIN_NORMAL))).isEqualTo(Double.MIN_NORMAL);
+  }
+
+  @Test public void testFromValue_double_infinity() {
+    assertThat(MoreValues.fromValue(Values.of(Double.POSITIVE_INFINITY)))
+        .isEqualTo(Double.POSITIVE_INFINITY);
+    assertThat(MoreValues.fromValue(Values.of(Double.NEGATIVE_INFINITY)))
+        .isEqualTo(Double.NEGATIVE_INFINITY);
+  }
+
+  @Test public void testFromValue_double_nan() {
+    assertThat(Values.of(Double.NaN).getNumberValue()).isEqualTo(Double.NaN);
   }
 
   @Test public void testFromValue_string() {
