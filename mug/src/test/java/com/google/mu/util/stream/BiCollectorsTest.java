@@ -24,7 +24,9 @@ import static com.google.mu.util.stream.BiStreamTest.assertKeyValues;
 import static java.util.Collections.nCopies;
 import static java.util.stream.Collectors.summingInt;
 import static java.util.stream.Collectors.toList;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -76,6 +78,18 @@ public class BiCollectorsTest {
             BiStream.from(towns, Town::getState, town -> town)
                 .collect(toMap(summingInt(Town::getPopulation))))
         .isEmpty();
+  }
+
+  @Test public void testToMap_withSupplier() {
+    LinkedHashMap<String, Integer> map =
+        BiStream.of("one", 1, "two", 2).collect(toMap(() -> new LinkedHashMap<>()));
+    assertThat(map).containsExactly("one", 1, "two", 2).inOrder();
+  }
+
+  @Test public void testToMap_withSupplier_duplicateKey() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> BiStream.of("one", 1, "one", 2).collect(toMap(() -> new LinkedHashMap<>())));
   }
 
   @Test public void testToImmutableMap_covariance() {

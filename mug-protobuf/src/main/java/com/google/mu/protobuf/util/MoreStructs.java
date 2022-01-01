@@ -17,13 +17,16 @@ package com.google.mu.protobuf.util;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.mu.protobuf.util.MoreValues.valueOf;
 
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collector;
 
+import com.google.common.collect.Maps;
 import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.mu.util.stream.BiCollector;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.Struct;
+import com.google.protobuf.StructOrBuilder;
 import com.google.protobuf.Value;
 
 /**
@@ -135,6 +138,22 @@ public final class MoreStructs {
         StructBuilder::addAllFields,
         StructBuilder::addAllFields,
         StructBuilder::build);
+  }
+
+  /**
+   * Returns a {@code Map<String, Object>} <em>view</em> over {@code struct}.
+   *
+   * <p>{@link Value} wrappers are unwrapped such that {@code Values.of(1)} is unwrapped to {@code 1L},
+   * {@code ListValue} is unwrapped as {@code List<Object>}, and {@code NULL_VALUE} is unwrapped as
+   * {@code null}, etc.
+   *
+   * <p>Field encounter order is preserved in the result {@code Map}.
+   *
+   * @see MoreValues#fromValue
+   * @since 5.9
+   */
+  public static Map<String, Object> asMap(StructOrBuilder struct) {
+    return Maps.transformValues(struct.getFieldsMap(), MoreValues::fromValue);
   }
 
   private MoreStructs() {}

@@ -4,6 +4,9 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.protobuf.util.MoreStructs.flatteningToStruct;
 import static com.google.mu.protobuf.util.MoreStructs.struct;
 import static com.google.mu.protobuf.util.MoreStructs.toStruct;
+import static com.google.mu.protobuf.util.MoreValues.NULL;
+import static com.google.mu.protobuf.util.MoreValues.listValueOf;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
 
 import java.util.stream.Stream;
@@ -126,6 +129,24 @@ public class MoreStructsTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> BiStream.of("k", Values.of(1), "k", Values.of(2)).collect(toStruct()));
+  }
+
+  @Test public void testAsMap_fromStruct() {
+    assertThat(MoreStructs.asMap(new Structor().struct("one", 1, "twos", listValueOf(2, 2.5))))
+        .containsExactly("one", 1L, "twos", asList(2L, 2.5D))
+        .inOrder();
+  }
+
+  @Test public void testAsMap_fromStructBuilder() {
+    assertThat(MoreStructs.asMap(struct("one", 1).toBuilder()))
+        .containsExactly("one", 1L)
+        .inOrder();
+  }
+
+  @Test public void testAsMap_withNullValue() {
+    assertThat(MoreStructs.asMap(new Structor().struct("one", NULL)))
+        .containsExactly("one", null)
+        .inOrder();
   }
 
   @Test public void testNulls() {
