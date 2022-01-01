@@ -66,12 +66,12 @@ public final class BiCollectors {
   }
 
   /**
-   * Returns a {@link BiCollector} that collects the key-value pairs into a {@code Map} created by
-   * {@code mapSupplier}.
+   * Returns a {@link BiCollector} that collects the key-value pairs into a mutable {@code Map}
+   * created by {@code mapSupplier}.
    *
    * <p>Note that due to constructor overload ambiguity, {@code toMap(CustomMapType::new)} may not
    * compile because many mutable {@code Map} types such as {@link LinkedHashMap} expose
-   * both parameter-less constructor and 1-arg constructor. You may need to use a lambda instead of
+   * both 0-arg and 1-arg constructors. You may need to use a lambda instead of
    * constructor reference to work around the compiler ambiguity, such as {@code
    * toMap(() -> new LinkedHashMap<>())}.
    *
@@ -84,8 +84,8 @@ public final class BiCollectors {
    * <a href="https://bugs.openjdk.java.net/browse/JDK-8148463">toMap() JDK bug</a>.
    * For efficiency reasons, null values mapping to the same key do not trigger {@code
    * IllegalArgumentException}. Instead, the non-null values take precedence over the null values
-   * of the same key. And if there are multiple {@code k -> null} mappings, the duplicates
-   * will be silently ignored, with only one such null mapping added to the result {@code Map}.
+   * of the same key (as if the null values didn't exist). Otherwise, if there are multiple {@code
+   * k -> null} mappings, only one such null mapping is added to the result {@code Map}.
    *
    * @since 5.9
    */
