@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.function.ToDoubleBiFunction;
 import java.util.function.ToIntBiFunction;
 import java.util.function.ToLongBiFunction;
@@ -62,6 +63,32 @@ public final class BiCollectors {
    */
   public static <K, V> BiCollector<K, V, Map<K, V>> toMap() {
     return Collectors::toMap;
+  }
+
+  /**
+   * Returns a {@link BiCollector} that collects the key-value pairs into a {@code Map} created by
+   * {@code mapSupplier}.
+   *
+   * <p>Note that due to constructor overload ambiguity, {@code toMap(CustomMapType::new)} may not
+   * compile because many mutable {@code Map} types such as {@link LinkedHashMap} expose
+   * both parameter-less constructor and 1-arg constructor. You may need to use a lambda instead of
+   * constructor reference to work around the compiler ambiguity, such as {@code
+   * toMap(() -> new LinkedHashMap<>())}.
+   *
+   * @since 5.9
+   */
+  public static <K, V, M extends Map<K, V>> BiCollector<K, V, M> toMap(Supplier<M> mapSupplier) {
+    requireNonNull(mapSupplier);
+    return new BiCollector<K, V, M>() {
+      @Override
+      public <E> Collector<E, ?, M> splitting(
+          Function<E, K> toKey, Function<E, V> toValue) {
+        return Collectors.toMap(
+            toKey, toValue,
+            (v1, v2) -> {throw new IllegalArgumentException("Duplicate key");},
+            mapSupplier);
+      }
+    };
   }
 
   /**

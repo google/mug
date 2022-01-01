@@ -16,15 +16,20 @@ package com.google.mu.protobuf.util;
 
 import static java.util.Arrays.stream;
 
+import java.util.List;
 import java.util.stream.Collector;
 
 import javax.annotation.Nullable;
 
+import com.google.common.collect.Lists;
+import com.google.common.math.DoubleMath;
 import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.protobuf.ListValue;
+import com.google.protobuf.ListValueOrBuilder;
 import com.google.protobuf.NullValue;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
+import com.google.protobuf.ValueOrBuilder;
 
 /**
  * Additional utilities to help create {@link Value} and {@link ListValue} messages.
@@ -76,6 +81,56 @@ public final class MoreValues {
         ListValue.Builder::addValues,
         (a, b) -> a.addAllValues(b.getValuesList()),
         ListValue.Builder::build);
+  }
+
+  /**
+   * Unwraps {@code value}.
+   *
+   * <p>For example, {@code Values.of(1)} is unwrapped to {@code 1L}; {@link ListValue} is
+   * unwrapped as {@code List<Object>}; {@link Struct} is unwrapped as {@code Map<String, Object>};
+   * and {@code NULL_VALUE} is unwrapped as {@code null}, etc.
+   *
+   * @see MoreStructs#asMap
+   * @see #asList
+   * @since 5.9
+   */
+  @Nullable
+  public static Object fromValue(ValueOrBuilder value) {
+    switch (value.getKindCase()) {
+      case NULL_VALUE:
+        return null;
+      case BOOL_VALUE:
+        return value.getBoolValue();
+      case STRING_VALUE:
+        return value.getStringValue();
+      case NUMBER_VALUE:
+        if (DoubleMath.isMathematicalInteger(value.getNumberValue())) {
+          return (long) value.getNumberValue();
+        } else {
+          return value.getNumberValue();
+        }
+      case LIST_VALUE:
+        return asList(value.getListValue());
+      case STRUCT_VALUE:
+        return MoreStructs.asMap(value.getStructValue());
+      default:
+        throw new AssertionError("Unsupported value: " + value);
+    }
+  }
+
+  /**
+   * Returns a {@code List<Object>} <em>view</em> over {@code listValue}.
+   *
+   * <p>For example, {@code Values.of(1)} is unwrapped to {@code 1L};
+   * {@link Struct} is unwrapped as {@code Map<String, Object>};
+   * and {@code NULL_VALUE} is unwrapped as {@code null}, etc.
+   *
+   * @see MoreStructs#asMap
+   * @see #fromValue
+   * @since 5.9
+   */
+  public static List<Object> asList(ListValueOrBuilder listValue) {
+    return Lists.transform(listValue.getValuesList(), MoreValues::fromValue);
   }
 
   static Value valueOf(double n) {
