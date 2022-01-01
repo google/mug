@@ -117,14 +117,32 @@ public class MoreValuesTest {
     assertThat(MoreValues.fromValue(Values.of(1).toBuilder())).isEqualTo(1L);
   }
 
-  @Test public void testFromValue_integer_minValue() {
-    assertThat(MoreValues.fromValue(Values.of(Long.MIN_VALUE))).isEqualTo(Long.MIN_VALUE);
-    assertThat(MoreValues.fromValue(Values.of(Integer.MIN_VALUE))).isEqualTo((long) Integer.MIN_VALUE);
+  @Test public void testFromValue_int_minValue() {
+    assertThat(MoreValues.fromValue(Values.of(Integer.MIN_VALUE))).isEqualTo(Integer.MIN_VALUE);
+    assertThat(MoreValues.fromValue(Values.of(Integer.MIN_VALUE))).isInstanceOf(Integer.class);
   }
 
-  @Test public void testFromValue_integer_maxValue() {
+  @Test public void testFromValue_int_maxValue() {
+    assertThat(MoreValues.fromValue(Values.of(Integer.MAX_VALUE))).isEqualTo(Integer.MAX_VALUE);
+    assertThat(MoreValues.fromValue(Values.of(Integer.MAX_VALUE))).isInstanceOf(Integer.class);
+  }
+
+  @Test public void testFromValue_long_minValue() {
+    assertThat(MoreValues.fromValue(Values.of(Long.MIN_VALUE))).isEqualTo(Long.MIN_VALUE);
+    assertThat(MoreValues.fromValue(Values.of(Long.MIN_VALUE))).isInstanceOf(Long.class);
+    assertThat(MoreValues.fromValue(Values.of(((long) Integer.MIN_VALUE) - 1)))
+        .isEqualTo(((long) Integer.MIN_VALUE) - 1);
+    assertThat(MoreValues.fromValue(Values.of(((long) Integer.MIN_VALUE) * 2)))
+        .isEqualTo(((long) Integer.MIN_VALUE) * 2);
+  }
+
+  @Test public void testFromValue_long_maxValue() {
     assertThat(MoreValues.fromValue(Values.of(Long.MAX_VALUE))).isEqualTo(Long.MAX_VALUE);
-    assertThat(MoreValues.fromValue(Values.of(Integer.MAX_VALUE))).isEqualTo((long) Integer.MAX_VALUE);
+    assertThat(MoreValues.fromValue(Values.of(Long.MAX_VALUE))).isInstanceOf(Long.class);
+    assertThat(MoreValues.fromValue(Values.of(((long) Integer.MAX_VALUE) + 1)))
+        .isEqualTo(((long) Integer.MAX_VALUE) + 1);
+    assertThat(MoreValues.fromValue(Values.of(((long) Integer.MAX_VALUE) * 2)))
+        .isEqualTo(((long) Integer.MAX_VALUE) * 2);
   }
 
   @Test public void testFromValue_double() {
@@ -135,6 +153,7 @@ public class MoreValuesTest {
 
   @Test public void testFromValue_double_minValue() {
     assertThat(MoreValues.fromValue(Values.of(Double.MIN_VALUE))).isEqualTo(Double.MIN_VALUE);
+    assertThat(MoreValues.fromValue(Values.of(Double.MIN_VALUE))).isInstanceOf(Double.class);
     assertThat(MoreValues.fromValue(Values.of(Double.MIN_VALUE + Double.MAX_VALUE / 2)))
         .isEqualTo(Double.MIN_VALUE + Double.MAX_VALUE / 2);
     assertThat(MoreValues.fromValue(Values.of(((double) Long.MIN_VALUE) * 2)))
@@ -143,6 +162,7 @@ public class MoreValuesTest {
 
   @Test public void testFromValue_double_maxValue() {
     assertThat(Values.of(Double.MAX_VALUE).getNumberValue()).isEqualTo(Double.MAX_VALUE);
+    assertThat(MoreValues.fromValue(Values.of(Double.MAX_VALUE))).isInstanceOf(Double.class);
     assertThat(MoreValues.fromValue(Values.of(Double.MAX_VALUE))).isEqualTo(Double.MAX_VALUE);
     assertThat(MoreValues.fromValue(Values.of(Double.MAX_VALUE / 2))).isEqualTo(Double.MAX_VALUE / 2);
     assertThat(MoreValues.fromValue(Values.of(((double) Long.MAX_VALUE) * 2)))
