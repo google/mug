@@ -95,6 +95,10 @@ public final class MoreValues {
    * All other numbers are unwrapped as {@code Double}. If you need to handle all number cases
    * unconditionally, consider to use {@link Number#doubleValue}.
    *
+   * <p>The returned object is immutable. Even if {@code value} is an instance of {@link
+   * Value.Builder}, and the underlying state is changed after this method returns,
+   * the returned object remains unchanged.
+   *
    * @see MoreStructs#asMap
    * @see #asList
    * @since 5.9

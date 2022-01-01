@@ -203,6 +203,20 @@ public class MoreValuesTest {
         .isEqualTo(ImmutableMap.of("one", 0.5D));
   }
 
+  @Test public void testFromValue_builder_listValueChangeNotReflected() {
+    Value.Builder builder = Value.newBuilder().setListValue(listValueOf(1, 2));
+    Object object = MoreValues.fromValue(builder);
+    builder.getListValueBuilder().clear();
+    assertThat(object).isEqualTo(asList(1, 2));
+  }
+
+  @Test public void testFromValue_builder_structValueChangeNotReflected() {
+    Value.Builder builder = Value.newBuilder().setStructValue(struct("one", 1));
+    Object object = MoreValues.fromValue(builder);
+    builder.getStructValueBuilder().clear();
+    assertThat(object).isEqualTo(ImmutableMap.of("one", 1));
+  }
+
   @Test public void testTrue() {
     assertThat(TRUE.getBoolValue()).isTrue();
   }
