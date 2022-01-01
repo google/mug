@@ -83,13 +83,10 @@ public final class BiCollectors {
    * <p>Null values are supported as long as the result {@code Map} type supports null values. Thus
    * this method can be used as a workaround of the
    * <a href="https://bugs.openjdk.java.net/browse/JDK-8148463">toMap(Supplier) JDK bug</a> that
-   * fails to support null values even when the {@code Map} type supports null values.
+   * fails to support null values.
    *
-   * <p>Duplicate keys with null values do not cause {@code IllegalArgumentException}.
-   * When the same key maps to both non-null value and null value, the non-null value takes
-   * precedence (as if the null value didn't exist). Otherwise, for duplicate {@code k -> null}
-   * entries, only one null mapping is added to the result {@code Map}, and the duplicates are
-   * ignored.
+   * <p>Null values are treated as non-existent if another entry with the same key already exists.
+   * Particularly, duplicate keys with null values never cause {@code IllegalArgumentException}.
    *
    * <p>Null keys are supported as long as the result {@code Map} type supports null keys.
    *
