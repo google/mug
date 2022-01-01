@@ -4,6 +4,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.protobuf.util.MoreStructs.flatteningToStruct;
 import static com.google.mu.protobuf.util.MoreStructs.struct;
 import static com.google.mu.protobuf.util.MoreStructs.toStruct;
+import static com.google.mu.protobuf.util.MoreValues.NULL;
 import static com.google.mu.protobuf.util.MoreValues.listValueOf;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
@@ -139,6 +140,12 @@ public class MoreStructsTest {
   @Test public void testAsMap_fromStructBuilder() {
     assertThat(MoreStructs.asMap(struct("one", 1).toBuilder()))
         .containsExactly("one", 1L)
+        .inOrder();
+  }
+
+  @Test public void testAsMap_withNullValue() {
+    assertThat(MoreStructs.asMap(new Structor().struct("one", NULL)))
+        .containsExactly("one", null)
         .inOrder();
   }
 

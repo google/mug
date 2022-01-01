@@ -82,6 +82,12 @@ public class MoreValuesTest {
         .inOrder();
   }
 
+  @Test public void testAsList_withNullElement() {
+    assertThat(MoreValues.asList(ListValue.newBuilder().addValues(NULL)))
+        .containsExactly((Object) null)
+        .inOrder();
+  }
+
   @Test public void testFromValue_null() {
     assertThat(MoreValues.fromValue(NULL)).isNull();
     assertThat(MoreValues.fromValue(NULL.toBuilder())).isNull();
