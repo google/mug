@@ -114,7 +114,7 @@ public class BiCollectorsTest {
     assertThat(BiStream.of("foo", null, "foo", "nonnull").collect(toMap(() -> new LinkedHashMap<>())))
         .containsExactly("foo", "nonnull");
     assertThat(BiStream.of("foo", "nonnull", "foo", null).collect(toMap(() -> new LinkedHashMap<>())))
-    .containsExactly("foo", "nonnull");
+        .containsExactly("foo", "nonnull");
   }
 
   @Test public void testToImmutableMap_covariance() {
