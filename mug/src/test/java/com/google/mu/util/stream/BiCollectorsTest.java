@@ -86,6 +86,10 @@ public class BiCollectorsTest {
     assertThat(map).containsExactly("one", 1, "two", 2).inOrder();
   }
 
+  @Test public void testToMap_withSupplier_empty() {
+    assertThat(BiStream.empty().collect(toLinkedHashMap())).isEmpty();
+  }
+
   @Test public void testToMap_withSupplier_nullKey() {
     LinkedHashMap<String, String> map =
         BiStream.of((String) null, "nonnull").collect(toLinkedHashMap());
