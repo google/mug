@@ -72,8 +72,8 @@ public final class BiCollectors {
    * <p>Duplicate keys will cause {@link IllegalArgumentException} to be thrown, with the offending
    * key reported in the error message. If instead of throwing exception, you need to merge the
    * values mapped to the same key, consider to use {@code biStream.collect(new CustomMap<>(),
-   * Map::put)} for overwriting semantics, {@code biStream.collect(new CustomMap<>(),
-   * Map::putIfAbsent)} for no overwrites, or {@code biStream.collect(new CustomMap<>(), (m, k, v)
+   * Map::put)} for overwriting semantics; {@code biStream.collect(new CustomMap<>(),
+   * Map::putIfAbsent)} for no overwrites; or {@code biStream.collect(new CustomMap<>(), (m, k, v)
    * -> m.merge(k, v, ...)} for other merge logic.
    *
    * <p>Note that due to constructor overload ambiguity, {@code toMap(CustomMapType::new)} may not
