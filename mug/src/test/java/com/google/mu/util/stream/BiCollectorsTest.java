@@ -43,12 +43,17 @@ import com.google.mu.util.BiOptional;
 @RunWith(JUnit4.class)
 public class BiCollectorsTest {
 
+  @Test public void testToMap_nullKey() {
+    ImmutableList<Integer> list = ImmutableList.of(1, 2, 3, 4);
+    assertThat(biStream(t -> null, list).collect(toMap(Integer::sum)))
+        .containsExactly(null, 10)
+        .inOrder();
+  }
+
   @Test public void testToMap_valuesCollected() {
     ImmutableList<Town> towns =
         ImmutableList.of(new Town("WA", 100), new Town("WA", 50), new Town("IL", 200));
-    assertThat(
-            BiStream.from(towns, Town::getState, town -> town)
-                .collect(toMap(summingInt(Town::getPopulation))))
+    assertThat(biStream(Town::getState, towns).collect(toMap(summingInt(Town::getPopulation))))
         .containsExactly("WA", 150, "IL", 200)
         .inOrder();
   }
@@ -65,56 +70,90 @@ public class BiCollectorsTest {
             new Town("IN", 7),
             new Town("CA", 8),
             new Town("CA", 9));
-    assertThat(
-            BiStream.from(towns, Town::getState, town -> town)
-                .collect(toMap(summingInt(Town::getPopulation))))
+    assertThat(biStream(Town::getState, towns).collect(toMap(summingInt(Town::getPopulation))))
         .containsExactly("WA", 4, "FL", 2, "IL", 4, "AZ", 5, "OH", 6, "IN", 7, "CA", 17)
         .inOrder();
   }
 
   @Test public void testToMap_empty() {
     ImmutableList<Town> towns = ImmutableList.of();
-    assertThat(
-            BiStream.from(towns, Town::getState, town -> town)
-                .collect(toMap(summingInt(Town::getPopulation))))
+    assertThat(biStream(Town::getState, towns).collect(toMap(summingInt(Town::getPopulation))))
         .isEmpty();
   }
 
   @Test public void testToMap_withSupplier() {
     LinkedHashMap<String, Integer> map =
-        BiStream.of("one", 1, "two", 2).collect(toMap(() -> new LinkedHashMap<>()));
+        BiStream.of("one", 1, "two", 2).collect(toLinkedHashMap());
     assertThat(map).containsExactly("one", 1, "two", 2).inOrder();
+  }
+
+  @Test public void testToMap_withSupplier_empty() {
+    assertThat(BiStream.empty().collect(toLinkedHashMap())).isEmpty();
   }
 
   @Test public void testToMap_withSupplier_nullKey() {
     LinkedHashMap<String, String> map =
-        BiStream.of((String) null, "nonnull").collect(toMap(() -> new LinkedHashMap<>()));
+        BiStream.of((String) null, "nonnull").collect(toLinkedHashMap());
     assertThat(map).containsExactly(null, "nonnull").inOrder();
+  }
+
+  @Test public void testToMap_withSupplier_nullKey_orderPreserved() {
+    LinkedHashMap<String, String> map =
+        BiStream.of("foo", "x", (String) null, "nonnull", "bar", "y").collect(toLinkedHashMap());
+    assertThat(map).containsExactly("foo", "x", null, "nonnull", "bar", "y").inOrder();
   }
 
   @Test public void testToMap_withSupplier_nullValue() {
     LinkedHashMap<String, String> map =
-        BiStream.of("nonnull", (String) null).collect(toMap(() -> new LinkedHashMap<>()));
-    assertThat(map).containsExactly("nonnull", null).inOrder();
+        BiStream.of("foo", (String) null).collect(toLinkedHashMap());
+    assertThat(map).containsExactly("foo", null).inOrder();
+  }
+
+  @Test public void testToMap_withSupplier_nullValue_orderPreserved() {
+    LinkedHashMap<String, String> map =
+        BiStream.of("foo", "x", "bar", (String) null, "zoo", "y").collect(toLinkedHashMap());
+    assertThat(map).containsExactly("foo", "x", "bar", null, "zoo", "y").inOrder();
   }
 
   @Test public void testToMap_withSupplier_duplicateKey() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
-        () -> BiStream.of("foo", 1, "foo", 2).collect(toMap(() -> new LinkedHashMap<>())));
+        () -> BiStream.of("foo", 1, "foo", 2).collect(toLinkedHashMap()));
     assertThat(thrown).hasMessageThat().contains("Duplicate key: [foo]");
   }
 
-  @Test public void testToMap_duplicateKeys_bothMappingToNull() {
-    assertThat(BiStream.of("foo", null, "foo", null).collect(toMap(() -> new LinkedHashMap<>())))
-        .containsExactly("foo", null);
+  @Test public void testToMap_withSupplier_duplicateNullKey() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> BiStream.of(null, 1, null, 2).collect(toLinkedHashMap()));
+    assertThat(thrown).hasMessageThat().contains("Duplicate key: [null]");
   }
 
-  @Test public void testToMap_duplicateKeys_nonNullValueOverridesNullValue() {
-    assertThat(BiStream.of("foo", null, "foo", "nonnull").collect(toMap(() -> new LinkedHashMap<>())))
-        .containsExactly("foo", "nonnull");
-    assertThat(BiStream.of("foo", "nonnull", "foo", null).collect(toMap(() -> new LinkedHashMap<>())))
-    .containsExactly("foo", "nonnull");
+  @Test public void testToMap_duplicateKeys_nullThenNull() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> BiStream.of("foo", null, "foo", null).collect(toLinkedHashMap()));
+    assertThat(thrown).hasMessageThat().contains("Duplicate key: [foo]");
+  }
+
+  @Test public void testToMap_duplicateKeys_nullThenNonNull() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> BiStream.of("foo", null, "foo", "nonnull").collect(toLinkedHashMap()));
+    assertThat(thrown).hasMessageThat().contains("Duplicate key: [foo]");
+  }
+
+  @Test public void testToMap_duplicateKeys_nonNullThenNull() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> BiStream.of("foo", "nonnull", "foo", null).collect(toLinkedHashMap()));
+    assertThat(thrown).hasMessageThat().contains("Duplicate key: [foo]");
+  }
+
+  @Test public void testToMap_mapSupplierReturnsNull() {
+    assertThrows(
+        NullPointerException.class,
+        () -> BiStream.of("foo", "nonnull", "foo", null).collect(toMap(() -> null)));
   }
 
   @Test public void testToImmutableMap_covariance() {
@@ -303,6 +342,10 @@ public class BiCollectorsTest {
     assertThat(result)
         .containsExactly("Joe:1", "Tom:2")
         .inOrder();
+  }
+
+  private static <K, V> BiCollector<K, V, LinkedHashMap<K, V>> toLinkedHashMap() {
+    return BiCollectors.toMap(() -> new LinkedHashMap<>());
   }
 
   private static final class Town {

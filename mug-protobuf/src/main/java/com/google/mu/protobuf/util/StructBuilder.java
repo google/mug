@@ -99,36 +99,36 @@ public final class StructBuilder {
   }
 
   /**
-   * Adds a {@code (name, value)} field. {@code value} is converted to a nested Struct.
+   * Adds a {@code (name, map)} field. {@code map} is converted to a nested Struct.
    *
    * @throws IllegalArgumentException if {@code name} is duplicate
    * @return this builder
    */
-  public StructBuilder add(String name, Map<String, Value> value) {
+  public StructBuilder add(String name, Map<String, Value> map) {
     return add(
         name,
-        BiStream.from(value).collect(new StructBuilder(), StructBuilder::add).build());
+        BiStream.from(map).collect(new StructBuilder(), StructBuilder::add).build());
   }
 
   /**
-   * Adds a {@code (name, value)} field.
+   * Adds a {@code (name, struct)} field.
    *
    * @throws IllegalArgumentException if {@code name} is duplicate
    * @return this builder
    */
-  public StructBuilder add(String name, Struct value) {
-    return add(name, valueOf(value));
+  public StructBuilder add(String name, Struct struct) {
+    return add(name, valueOf(struct));
   }
 
   /**
-   * Adds a {@code (name, value)} field.
+   * Adds a {@code (name, struct)} field.
    *
    * @throws IllegalArgumentException if {@code name} is duplicate
    * @return this builder
    */
-  public StructBuilder add(String name, StructBuilder value) {
-    checkArgument(this != value, "Cannot add this builder to itself.");
-    return add(name, value.build());
+  public StructBuilder add(String name, StructBuilder struct) {
+    checkArgument(this != struct, "Cannot add this builder to itself.");
+    return add(name, struct.build());
   }
 
   /**

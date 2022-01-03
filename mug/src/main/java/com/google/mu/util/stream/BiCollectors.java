@@ -69,60 +69,29 @@ public final class BiCollectors {
    * Returns a {@link BiCollector} that collects the key-value pairs into a mutable {@code Map}
    * created by {@code mapSupplier}.
    *
+   * <p>Duplicate keys will cause {@link IllegalArgumentException} to be thrown, with the offending
+   * key reported in the error message.
+   *
    * <p>Note that due to constructor overload ambiguity, {@code toMap(CustomMapType::new)} may not
    * compile because many mutable {@code Map} types such as {@link LinkedHashMap} expose
    * both 0-arg and 1-arg constructors. You may need to use a lambda instead of
    * constructor reference to work around the compiler ambiguity, such as {@code
    * toMap(() -> new LinkedHashMap<>())}.
    *
-   * <p>Null keys and values are supported as long as the result {@code Map} type supports them.
-   * Thus this method can be used as a workaround of the
+   * <p>Null keys and values are discouraged but supported as long as the result {@code Map}
+   * supports them. Thus this method can be used as a workaround of the
    * <a href="https://bugs.openjdk.java.net/browse/JDK-8148463">toMap(Supplier) JDK bug</a> that
    * fails to support null values.
-   *
-   * <p>Upon duplicate keys, null values are considered absent and ignored; non-null values will
-   * throw {@link IllegalArgumentException}, with the duplicate key reported in the error message.
-   * More specifically, the duplicate resolution logic is roughly equivalent to:
-   *
-   * <pre>{@code
-   * (v1, v2) -> {
-   *   if (v1 == null) return v2;
-   *   if (v2 == null) return v1;
-   *   throw new IllegalArgumentException(...);
-   * }
-   * }</pre>
    *
    * @since 5.9
    */
   public static <K, V, M extends Map<K, V>> BiCollector<K, V, M> toMap(
       Supplier<? extends M> mapSupplier) {
     requireNonNull(mapSupplier);
-    final class Builder {
-      private final M map = mapSupplier.get();
-
-      void add(K key, V value) {
-        if (map.putIfAbsent(key, value) != null && value != null) {
-          throw new IllegalArgumentException("Duplicate key: [" + key + "]");
-        }
-      }
-
-      Builder addAll(Builder that) {
-        BiStream.from(that.map).forEachOrdered(this::add);
-        return this;
-      }
-
-      M build() {
-        return map;
-      }
-    }
     return new BiCollector<K, V, M>() {
       @Override public <E> Collector<E, ?, M> splitting(
           Function<E, K> toKey, Function<E, V> toValue) {
-        return Collector.of(
-            Builder::new,
-            (b, e) -> b.add(toKey.apply(e), toValue.apply(e)),
-            Builder::addAll,
-            Builder::build);
+        return MoreCollectors.toMap(toKey, toValue, mapSupplier);
       }
     };
   }
