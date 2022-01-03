@@ -70,7 +70,11 @@ public final class BiCollectors {
    * created by {@code mapSupplier}.
    *
    * <p>Duplicate keys will cause {@link IllegalArgumentException} to be thrown, with the offending
-   * key reported in the error message.
+   * key reported in the error message. If instead of throwing exception, you need to merge the
+   * values mapped to the same key, consider to use {@code biStream.collect(new CustomMap<>(),
+   * Map::put)} for overwriting semantics, {@code biStream.collect(new CustomMap<>(),
+   * Map::putIfAbsent)} for no overwrites, or {@code biStream.collect(new CustomMap<>(), (m, k, v)
+   * -> m.merge(k, v, ...)} for other merge logic.
    *
    * <p>Note that due to constructor overload ambiguity, {@code toMap(CustomMapType::new)} may not
    * compile because many mutable {@code Map} types such as {@link LinkedHashMap} expose
@@ -92,32 +96,6 @@ public final class BiCollectors {
       @Override public <E> Collector<E, ?, M> splitting(
           Function<E, K> toKey, Function<E, V> toValue) {
         return MoreCollectors.toMap(toKey, toValue, mapSupplier);
-      }
-    };
-  }
-
-  /**
-   * Returns a {@link BiCollector} that collects the key-value pairs into a mutable {@code Map}
-   * created by {@code mapSupplier}.
-   *
-   * <p>If there are duplicate keys (according to {@link Object#equals}), the values are
-   * merged using the provided {@code mergeFunction}, as specified in {@link
-   * Map#merge(Object, Object, BiFunction)}. Particularly, if {@code mergeFunction} returns null,
-   * the duplicate key is removed.
-   *
-   * <p>Null keys are supported as long as the result {@code Map} supports them; null values are
-   * disallowed regardless of null support in the result {@code Map}.
-   *
-   * @since 5.9
-   */
-  public static <K, V, M extends Map<K, V>> BiCollector<K, V, M> toMap(
-      Supplier<? extends M> mapSupplier, BinaryOperator<V> mergeFunction) {
-    requireNonNull(mapSupplier);
-    requireNonNull(mergeFunction);
-    return new BiCollector<K, V, M>() {
-      @Override public <E> Collector<E, ?, M> splitting(
-          Function<E, K> toKey, Function<E, V> toValue) {
-        return Collectors.toMap(toKey, toValue, mergeFunction, mapSupplier::get);
       }
     };
   }
