@@ -43,12 +43,17 @@ import com.google.mu.util.BiOptional;
 @RunWith(JUnit4.class)
 public class BiCollectorsTest {
 
+  @Test public void testToMap_nullKey() {
+    ImmutableList<Integer> list = ImmutableList.of(1, 2, 3, 4);
+    assertThat(biStream(t -> null, list).collect(toMap(Integer::sum)))
+        .containsExactly(null, 10)
+        .inOrder();
+  }
+
   @Test public void testToMap_valuesCollected() {
     ImmutableList<Town> towns =
         ImmutableList.of(new Town("WA", 100), new Town("WA", 50), new Town("IL", 200));
-    assertThat(
-            BiStream.from(towns, Town::getState, town -> town)
-                .collect(toMap(summingInt(Town::getPopulation))))
+    assertThat(biStream(Town::getState, towns).collect(toMap(summingInt(Town::getPopulation))))
         .containsExactly("WA", 150, "IL", 200)
         .inOrder();
   }
@@ -65,18 +70,14 @@ public class BiCollectorsTest {
             new Town("IN", 7),
             new Town("CA", 8),
             new Town("CA", 9));
-    assertThat(
-            BiStream.from(towns, Town::getState, town -> town)
-                .collect(toMap(summingInt(Town::getPopulation))))
+    assertThat(biStream(Town::getState, towns).collect(toMap(summingInt(Town::getPopulation))))
         .containsExactly("WA", 4, "FL", 2, "IL", 4, "AZ", 5, "OH", 6, "IN", 7, "CA", 17)
         .inOrder();
   }
 
   @Test public void testToMap_empty() {
     ImmutableList<Town> towns = ImmutableList.of();
-    assertThat(
-            BiStream.from(towns, Town::getState, town -> town)
-                .collect(toMap(summingInt(Town::getPopulation))))
+    assertThat(biStream(Town::getState, towns).collect(toMap(summingInt(Town::getPopulation))))
         .isEmpty();
   }
 
@@ -128,16 +129,25 @@ public class BiCollectorsTest {
     assertThat(thrown).hasMessageThat().contains("Duplicate key: [null]");
   }
 
-  @Test public void testToMap_duplicateKeys_bothMappingToNull() {
-    assertThat(BiStream.of("foo", null, "foo", null).collect(toLinkedHashMap()))
-        .containsExactly("foo", null);
+  @Test public void testToMap_duplicateKeys_nullThenNull() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> BiStream.of("foo", null, "foo", null).collect(toLinkedHashMap()));
+    assertThat(thrown).hasMessageThat().contains("Duplicate key: [foo]");
   }
 
-  @Test public void testToMap_duplicateKeys_nonNullValueOverridesNullValue() {
-    assertThat(BiStream.of("foo", null, "foo", "nonnull").collect(toLinkedHashMap()))
-        .containsExactly("foo", "nonnull");
-    assertThat(BiStream.of("foo", "nonnull", "foo", null).collect(toLinkedHashMap()))
-        .containsExactly("foo", "nonnull");
+  @Test public void testToMap_duplicateKeys_nullThenNonNull() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> BiStream.of("foo", null, "foo", "nonnull").collect(toLinkedHashMap()));
+    assertThat(thrown).hasMessageThat().contains("Duplicate key: [foo]");
+  }
+
+  @Test public void testToMap_duplicateKeys_nonNullThenNull() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> BiStream.of("foo", "nonnull", "foo", null).collect(toLinkedHashMap()));
+    assertThat(thrown).hasMessageThat().contains("Duplicate key: [foo]");
   }
 
   @Test public void testToImmutableMap_covariance() {

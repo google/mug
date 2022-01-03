@@ -80,18 +80,6 @@ public final class BiCollectors {
    * <a href="https://bugs.openjdk.java.net/browse/JDK-8148463">toMap(Supplier) JDK bug</a> that
    * fails to support null values.
    *
-   * <p>Upon duplicate keys, null values are considered absent and ignored; non-null values will
-   * throw {@link IllegalArgumentException}, with the duplicate key reported in the error message.
-   * More specifically, the duplicate resolution logic is roughly equivalent to:
-   *
-   * <pre>{@code
-   * (v1, v2) -> {
-   *   if (v1 == null) return v2;
-   *   if (v2 == null) return v1;
-   *   throw new IllegalArgumentException(...);
-   * }
-   * }</pre>
-   *
    * @since 5.9
    */
   public static <K, V, M extends Map<K, V>> BiCollector<K, V, M> toMap(
@@ -99,10 +87,19 @@ public final class BiCollectors {
     requireNonNull(mapSupplier);
     final class Builder {
       private final M map = mapSupplier.get();
+      private boolean hasNull = false;
 
       void add(K key, V value) {
-        if (map.putIfAbsent(key, value) != null && value != null) {
-          throw new IllegalArgumentException("Duplicate key: [" + key + "]");
+        if (hasNull) {
+          if (map.containsKey(key)) {
+            throw new IllegalArgumentException("Duplicate key: [" + key + "]");
+          }
+          map.put(key, value);
+        } else {
+          if (map.putIfAbsent(key, value) != null) {
+            throw new IllegalArgumentException("Duplicate key: [" + key + "]");
+          }
+          hasNull = (value == null);
         }
       }
 
