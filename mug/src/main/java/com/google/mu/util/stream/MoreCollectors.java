@@ -137,7 +137,9 @@ public final class MoreCollectors {
           if (map.putIfAbsent(key, value) != null) {
             throw new IllegalArgumentException("Duplicate key: [" + key + "]");
           }
-          hasNull = (value == null);
+          if (value == null) {
+            hasNull = true;
+          }
         }
       }
 

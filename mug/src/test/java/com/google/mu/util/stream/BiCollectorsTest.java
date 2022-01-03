@@ -129,31 +129,79 @@ public class BiCollectorsTest {
     assertThat(thrown).hasMessageThat().contains("Duplicate key: [null]");
   }
 
-  @Test public void testToMap_duplicateKeys_nullThenNull() {
+  @Test public void testToMap_withSupplier_duplicateKeys_nullThenNull() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
         () -> BiStream.of("foo", null, "foo", null).collect(toLinkedHashMap()));
     assertThat(thrown).hasMessageThat().contains("Duplicate key: [foo]");
   }
 
-  @Test public void testToMap_duplicateKeys_nullThenNonNull() {
+  @Test public void testToMap_withSupplier_duplicateKeys_nullThenNonNull() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
         () -> BiStream.of("foo", null, "foo", "nonnull").collect(toLinkedHashMap()));
     assertThat(thrown).hasMessageThat().contains("Duplicate key: [foo]");
   }
 
-  @Test public void testToMap_duplicateKeys_nonNullThenNull() {
+  @Test public void testToMap_withSupplier_duplicateKeys_nonNullThenNull() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
         () -> BiStream.of("foo", "nonnull", "foo", null).collect(toLinkedHashMap()));
     assertThat(thrown).hasMessageThat().contains("Duplicate key: [foo]");
   }
 
-  @Test public void testToMap_mapSupplierReturnsNull() {
+  @Test public void testToMap_withSupplier_mapSupplierReturnsNull() {
     assertThrows(
         NullPointerException.class,
         () -> BiStream.of("foo", "nonnull", "foo", null).collect(toMap(() -> null)));
+  }
+
+  @Test public void testToMap_withSupplierAndMerger_noDuplicates() {
+    LinkedHashMap<String, Integer> map =
+        BiStream.of("foo", 1, "bar", 2).collect(toMap(LinkedHashMap::new, (a, b) -> a));
+    assertThat(map).containsExactly("foo", 1, "bar", 2).inOrder();
+  }
+
+  @Test public void testToMap_withSupplierAndMerger_keepsFirst() {
+    LinkedHashMap<String, Integer> map =
+        BiStream.of("foo", 1, "foo", 2).collect(toMap(LinkedHashMap::new, (a, b) -> a));
+    assertThat(map).containsExactly("foo", 1);
+  }
+
+  @Test public void testToMap_withSupplierAndMerger_keepsSecond() {
+    LinkedHashMap<String, Integer> map =
+        BiStream.of("foo", 1, "foo", 2).collect(toMap(LinkedHashMap::new, (a, b) -> b));
+    assertThat(map).containsExactly("foo", 2);
+  }
+
+  @Test public void testToMap_withSupplierAndMerger_removesDuplicates() {
+    LinkedHashMap<String, Integer> map =
+        BiStream.of("foo", 1, "foo", 2).collect(toMap(LinkedHashMap::new, (a, b) -> null));
+    assertThat(map).isEmpty();
+  }
+
+  @Test public void testToMap_withSupplierAndMerger_removesDuplicateRetainsDistinct() {
+    LinkedHashMap<String, Integer> map =
+        BiStream.of("foo", 1, "foo", 2, "bar", 3).collect(toMap(LinkedHashMap::new, (a, b) -> null));
+    assertThat(map).containsExactly("bar", 3);
+  }
+
+  @Test public void testToMap_withSupplierAndMerger_removesDuplicateThenAddAnother() {
+    LinkedHashMap<String, Integer> map =
+        BiStream.of("foo", 1, "foo", 2, "bar", 3, "foo", 4).collect(toMap(LinkedHashMap::new, (a, b) -> null));
+    assertThat(map).containsExactly("bar", 3, "foo", 4).inOrder();
+  }
+
+  @Test public void testToMap_withSupplierAndMerger_nullKey() {
+    LinkedHashMap<?, ?> map =
+        BiStream.of(null, "null").collect(toMap(LinkedHashMap::new, (a, b) -> a));
+    assertThat(map).containsExactly(null, "null");
+  }
+
+  @Test public void testToMap_withSupplierAndMerger_nullValue() {
+    assertThrows(
+        NullPointerException.class,
+        () -> BiStream.of("foo", null).collect(toMap(LinkedHashMap::new, (a, b) -> a)));
   }
 
   @Test public void testToImmutableMap_covariance() {
