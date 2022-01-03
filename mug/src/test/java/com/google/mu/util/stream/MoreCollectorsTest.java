@@ -30,11 +30,13 @@ import static com.google.mu.util.stream.MoreCollectors.onlyElement;
 import static com.google.mu.util.stream.MoreCollectors.onlyElements;
 import static com.google.mu.util.stream.MoreCollectors.switching;
 import static com.google.mu.util.stream.MoreCollectors.toListAndThen;
+import static com.google.mu.util.stream.MoreCollectors.toMap;
 import static java.util.Comparator.naturalOrder;
 import static java.util.function.Function.identity;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -121,6 +123,12 @@ public class MoreCollectorsTest {
         () -> translations.stream()
             .map(Translation::dictionary)
             .collect(flatteningMaps(toMap())));
+  }
+
+  @Test public void testToMap_withMapSupplier() {
+    LinkedHashMap<String, Integer> map =
+        Stream.of(1, 2).collect(toMap(Object::toString, i -> i * 10, LinkedHashMap::new));
+    assertThat(map).containsExactly("1", 10, "2", 20).inOrder();
   }
 
   @Test public void toListAndThen_reversed() {

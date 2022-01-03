@@ -150,6 +150,12 @@ public class BiCollectorsTest {
     assertThat(thrown).hasMessageThat().contains("Duplicate key: [foo]");
   }
 
+  @Test public void testToMap_mapSupplierReturnsNull() {
+    assertThrows(
+        NullPointerException.class,
+        () -> BiStream.of("foo", "nonnull", "foo", null).collect(toMap(() -> null)));
+  }
+
   @Test public void testToImmutableMap_covariance() {
     Map<Object, String> map = BiStream.of(1, "one").collect(toMap());
     assertThat(map).containsExactly(1, "one");

@@ -85,41 +85,10 @@ public final class BiCollectors {
   public static <K, V, M extends Map<K, V>> BiCollector<K, V, M> toMap(
       Supplier<? extends M> mapSupplier) {
     requireNonNull(mapSupplier);
-    final class Builder {
-      private final M map = requireNonNull(mapSupplier.get());
-      private boolean hasNull;
-
-      void add(K key, V value) {
-        if (hasNull) {  // Existence of null values requires 2 lookups to check for duplicates.
-          if (map.containsKey(key)) {
-            throw new IllegalArgumentException("Duplicate key: [" + key + "]");
-          }
-          map.put(key, value);
-        } else {  // The Map doesn't have null. putIfAbsent() == null means no duplicates.
-          if (map.putIfAbsent(key, value) != null) {
-            throw new IllegalArgumentException("Duplicate key: [" + key + "]");
-          }
-          hasNull = (value == null);
-        }
-      }
-
-      Builder addAll(Builder that) {
-        BiStream.from(that.map).forEachOrdered(this::add);
-        return this;
-      }
-
-      M build() {
-        return map;
-      }
-    }
     return new BiCollector<K, V, M>() {
       @Override public <E> Collector<E, ?, M> splitting(
           Function<E, K> toKey, Function<E, V> toValue) {
-        return Collector.of(
-            Builder::new,
-            (b, e) -> b.add(toKey.apply(e), toValue.apply(e)),
-            Builder::addAll,
-            Builder::build);
+        return MoreCollectors.toMap(toKey, toValue, mapSupplier);
       }
     };
   }
