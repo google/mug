@@ -69,6 +69,9 @@ public final class BiCollectors {
    * Returns a {@link BiCollector} that collects the key-value pairs into a mutable {@code Map}
    * created by {@code mapSupplier}.
    *
+   * <p>Duplicate keys will cause {@link IllegalArgumentException} to be thrown, with the offending
+   * key reported in the error message.
+   *
    * <p>Note that due to constructor overload ambiguity, {@code toMap(CustomMapType::new)} may not
    * compile because many mutable {@code Map} types such as {@link LinkedHashMap} expose
    * both 0-arg and 1-arg constructors. You may need to use a lambda instead of

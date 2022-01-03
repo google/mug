@@ -106,8 +106,8 @@ public final class MoreCollectors {
    * keyFunction} and {@code valueFunction} respectively, and then collects them into a mutable
    * {@code Map} created by {@code mapSupplier}.
    *
-   * <p>Duplicate keys will cause {@link IllegalArgumentException} to be thrown, with the key
-   * reported in the error message.
+   * <p>Duplicate keys will cause {@link IllegalArgumentException} to be thrown, with the offending
+   * key reported in the error message.
    *
    * <p>Null keys and values are discouraged but supported as long as the result {@code Map}
    * supports them. Thus this method can be used as a workaround of the <a
