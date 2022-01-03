@@ -75,8 +75,8 @@ public final class BiCollectors {
    * constructor reference to work around the compiler ambiguity, such as {@code
    * toMap(() -> new LinkedHashMap<>())}.
    *
-   * <p>Null keys and values are supported as long as the result {@code Map} type supports them.
-   * Thus this method can be used as a workaround of the
+   * <p>Null keys and values are discouraged but supported as long as the result {@code Map} type
+   * supports them. Thus this method can be used as a workaround of the
    * <a href="https://bugs.openjdk.java.net/browse/JDK-8148463">toMap(Supplier) JDK bug</a> that
    * fails to support null values.
    *
@@ -87,15 +87,15 @@ public final class BiCollectors {
     requireNonNull(mapSupplier);
     final class Builder {
       private final M map = mapSupplier.get();
-      private boolean hasNull = false;
+      private boolean hasNull;
 
       void add(K key, V value) {
-        if (hasNull) {
+        if (hasNull) {  // Existence of null values requires 2 lookups to check for duplicates.
           if (map.containsKey(key)) {
             throw new IllegalArgumentException("Duplicate key: [" + key + "]");
           }
           map.put(key, value);
-        } else {
+        } else {  // The Map doesn't have null. putIfAbsent() == null means no duplicates.
           if (map.putIfAbsent(key, value) != null) {
             throw new IllegalArgumentException("Duplicate key: [" + key + "]");
           }
