@@ -97,6 +97,32 @@ public final class BiCollectors {
   }
 
   /**
+   * Returns a {@link BiCollector} that collects the key-value pairs into a mutable {@code Map}
+   * created by {@code mapSupplier}.
+   *
+   * <p>If there are duplicate keys (according to {@link Object#equals}), the values are
+   * merged using the provided {@code mergeFunction}, as specified in {@link
+   * Map#merge(Object, Object, BiFunction)}. Particularly, if {@code mergeFunction} returns null,
+   * the duplicate key is removed.
+   *
+   * <p>Null keys are supported as long as the result {@code Map} supports them; null values are
+   * disallowed regardless of null support in the result {@code Map}.
+   *
+   * @since 5.9
+   */
+  public static <K, V, M extends Map<K, V>> BiCollector<K, V, M> toMap(
+      Supplier<? extends M> mapSupplier, BinaryOperator<V> mergeFunction) {
+    requireNonNull(mapSupplier);
+    requireNonNull(mergeFunction);
+    return new BiCollector<K, V, M>() {
+      @Override public <E> Collector<E, ?, M> splitting(
+          Function<E, K> toKey, Function<E, V> toValue) {
+        return Collectors.toMap(toKey, toValue, mergeFunction, mapSupplier::get);
+      }
+    };
+  }
+
+  /**
    * Returns a {@link BiCollector} that collects the key-value pairs into an immutable {@link Map}
    * using {@code valueMerger} to merge values of duplicate keys.
    */
