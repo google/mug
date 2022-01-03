@@ -75,7 +75,7 @@ public final class BiCollectors {
    * constructor reference to work around the compiler ambiguity, such as {@code
    * toMap(() -> new LinkedHashMap<>())}.
    *
-   * <p>Null keys and values are discouraged but supported as long as the result {@code Map} type
+   * <p>Null keys and values are discouraged but supported as long as the result {@code Map}
    * supports them. Thus this method can be used as a workaround of the
    * <a href="https://bugs.openjdk.java.net/browse/JDK-8148463">toMap(Supplier) JDK bug</a> that
    * fails to support null values.
@@ -86,7 +86,7 @@ public final class BiCollectors {
       Supplier<? extends M> mapSupplier) {
     requireNonNull(mapSupplier);
     final class Builder {
-      private final M map = mapSupplier.get();
+      private final M map = requireNonNull(mapSupplier.get());
       private boolean hasNull;
 
       void add(K key, V value) {
