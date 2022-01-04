@@ -143,20 +143,19 @@ public final class MoreCollectors {
         }
       }
 
+      void add(T input) {
+        add(keyFunction.apply(input), valueFunction.apply(input));
+      }
+
       Builder addAll(Builder that) {
-        BiStream.from(that.map).forEachOrdered(this::add);
-        return this;
+        return BiStream.from(that.map).collect(this, Builder::add);
       }
 
       M build() {
         return map;
       }
     }
-    return Collector.of(
-        Builder::new,
-        (b, e) -> b.add(keyFunction.apply(e), valueFunction.apply(e)),
-        Builder::addAll,
-        Builder::build);
+    return Collector.of(Builder::new, Builder::add, Builder::addAll, Builder::build);
   }
 
   /**
