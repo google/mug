@@ -62,7 +62,7 @@ public final class BiCollectors {
    * you'll need to call {@code collect(toMap())} instead of {@link BiStream#toMap()}.
    */
   public static <K, V> BiCollector<K, V, Map<K, V>> toMap() {
-    return Collectors::toMap;
+    return collectingAndThen(toMap(() -> new LinkedHashMap<>()), Collections::unmodifiableMap);
   }
 
   /**

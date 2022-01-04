@@ -119,7 +119,7 @@ public class MoreCollectorsTest {
         new Translation(ImmutableMap.of(1, "one")),
         new Translation(ImmutableMap.of(2, "two", 1, "1")));
     assertThrows(
-        IllegalStateException.class,
+        IllegalArgumentException.class,
         () -> translations.stream()
             .map(Translation::dictionary)
             .collect(flatteningMaps(toMap())));
