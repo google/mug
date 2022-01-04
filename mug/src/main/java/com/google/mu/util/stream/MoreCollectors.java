@@ -417,7 +417,7 @@ public final class MoreCollectors {
       }
 
       Builder merge(Builder that) {
-        that.tie.forEach(this::add);
+        that.tie.stream().forEach(this::add);
         return this;
       }
 
