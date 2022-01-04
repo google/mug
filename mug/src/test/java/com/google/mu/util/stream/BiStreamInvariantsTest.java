@@ -19,6 +19,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.stream.BiCollectors.toMap;
+import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.BiStream.toBiStream;
 import static java.util.Arrays.asList;
 import static java.util.function.Function.identity;
@@ -124,14 +125,14 @@ public class BiStreamInvariantsTest {
   @Test
   public void distinct_byKey() {
     BiStream<Integer, ?> distinct =
-        BiStream.from(Stream.of(1, 1, 2, 2, 3), k -> k, x -> null).distinct();
+        biStream(Stream.of(1, 1, 2, 2, 3), x -> null).distinct();
     assertKeyValues(distinct).containsExactlyEntriesIn(keyValues(1, null, 2, null, 3, null));
   }
 
   @Test
   public void distinct_byValue() {
     BiStream<?, Integer> distinct =
-        BiStream.from(Stream.of(1, 1, 2, 2, 3), k -> null, v -> v).distinct();
+        biStream(k -> null, Stream.of(1, 1, 2, 2, 3)).distinct();
     assertKeyValues(distinct).containsExactlyEntriesIn(keyValues(null, 1, null, 2, null, 3));
   }
 
@@ -525,25 +526,6 @@ public class BiStreamInvariantsTest {
     assertKeyValues(of(1, "a:foo", 2, "b:bar").map((l, t) -> first(':').split(t).orElseThrow()))
         .containsExactly("a", "foo", "b", "bar")
         .inOrder();
-  }
-
-  @Test
-  public void map_present() {
-    assertKeyValues(of(1, "one", 2, "two").mapIfPresent((k, v) -> Optional.of(k + ":" + v), (k, v) -> Optional.of(v + ":" + k)))
-        .containsExactly("1:one", "one:1", "2:two", "two:2")
-        .inOrder();
-  }
-
-  @Test
-  public void map_firstAbsent() {
-    assertKeyValues(of(1, "one", 2, "two").mapIfPresent((k, v) -> Optional.empty(), (k, v) -> Optional.of(v + ":" + k)))
-        .isEmpty();
-  }
-
-  @Test
-  public void map_secondAbsent() {
-    assertKeyValues(of(1, "one", 2, "two").mapIfPresent((k, v) -> Optional.empty(), (k, v) -> Optional.empty()))
-        .isEmpty();
   }
 
   @Test

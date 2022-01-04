@@ -2,10 +2,10 @@ package examples;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.mu.util.stream.BiStream.grouping;
 import static com.google.mu.util.stream.BiStream.groupingBy;
+import static com.google.mu.util.stream.GuavaCollectors.toImmutableListMultimap;
+import static com.google.mu.util.stream.MoreCollectors.flatteningMaps;
 import static java.util.Arrays.asList;
-import static java.util.stream.Collectors.toList;
 
 import java.util.List;
 import java.util.Map;
@@ -17,6 +17,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.mu.util.stream.BiCollector;
@@ -51,10 +52,9 @@ public class HowToDoGroupingFluentlyTest {
     Stream<Map<Integer, String>> numbers = Stream.of(
         ImmutableMap.of(1, "one", 2, "two"),
         ImmutableMap.of(1, "uno", 2, "dos"));
-    Map<Integer, List<String>> numberTranslations = numbers
-        .collect(grouping(BiStream::from, toList()))
-        .toMap();
-    assertThat(numberTranslations)
+    ImmutableListMultimap<Integer, String> numberTranslations =
+        numbers.collect(flatteningMaps(toImmutableListMultimap()));
+    assertThat(numberTranslations.asMap())
         .containsExactly(1, asList("one", "uno"), 2, asList("two", "dos"));
   }
 }

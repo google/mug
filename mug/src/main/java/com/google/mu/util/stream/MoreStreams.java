@@ -14,15 +14,12 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
-import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
@@ -41,7 +38,6 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import com.google.mu.function.CheckedConsumer;
-import com.google.mu.util.Both;
 
 /**
  * Static utilities pertaining to {@link Stream} in addition to relevant utilities in JDK and Guava.
@@ -306,107 +302,6 @@ public final class MoreStreams {
     requireNonNull(spliterator);
     if (maxSize <= 0) throw new IllegalArgumentException();
     return new DicedSpliterator<T>(spliterator, maxSize);
-  }
-
-  /** @deprecated Use {@code maps.collect(flatteningMaps(toMap())} instead. */
-  @Deprecated
-  public static <K, V> Collector<Map<K, V>, ?, Map<K, V>> uniqueKeys() {
-    return MoreCollectors.flatteningMaps(toMap());
-  }
-
-  /**
-   * Analogous to {@link Collectors#mapping Collectors.mapping()}, applies a mapping function to
-   * each input element before accumulation, except that the {@code mapper} function returns a
-   * <em><b>pair of elements</b></em>, which are then accumulated by a <em>BiCollector</em>.
-   *
-   * <p>For example, you can parse key-value pairs in the form of "k1=v1,k2=v2" with:
-   *
-   * <pre>{@code
-   * Substring.first(',')
-   *     .delimit("k1=v2,k2=v2")
-   *     .collect(
-   *         mapping(
-   *             s -> first('=').split(s).orElseThrow(...),
-   *             toImmutableSetMultimap()));
-   * }</pre>
-   *
-   * @since 5.1
-   * @deprecated Moved to {@link MoreCollectors}.
-   */
-  @Deprecated
-  public static <T, A, B, R> Collector<T, ?, R> mapping(
-      Function<? super T, ? extends Both<? extends A, ? extends B>> mapper,
-      BiCollector<A, B, R> downstream) {
-    return MoreCollectors.mapping(mapper, downstream);
-  }
-
-  /**
-   * Similar but slightly different than {@link Collectors#flatMapping}, returns a {@link Collector}
-   * that first flattens the input stream of <em>pairs</em> (as opposed to single elements) and then
-   * collects the flattened pairs with the {@code downstream} BiCollector.
-   *
-   * @since 4.8
-   * @deprecated Moved to {@link MoreCollectors}.
-   */
-  @Deprecated
-  public static <T, K, V, R> Collector<T, ?, R> flatMapping(
-      Function<? super T, ? extends BiStream<? extends K, ? extends V>> flattener,
-      BiCollector<K, V, R> downstream) {
-    return MoreCollectors.flatMapping(flattener, downstream);
-  }
-
-  /**
-   * @since 3.6
-   * @deprecated If you need to flatten a stream of Multimap, use something like {@code
-   * flatMapping(m -> BiStream.from(m.asMap()), flatteningToImmutableSetMultimap())}.
-   */
-  @Deprecated
-  public static <T, K, V, R> Collector<T, ?, R> flattening(
-      Function<? super T, ? extends Collection<? extends Map.Entry<? extends K, ? extends V>>> flattener,
-      BiCollector<K, V, R> downstream) {
-    return flatMapping(flattener.andThen(BiStream::from), downstream);
-  }
-
-  /**
-   * Returns a {@code Collector} that flattens the input {@link Map} entries and collects them using
-   * the {@code downstream} BiCollector.
-   *
-   * <p>For example, you can flatten a list of multimaps:
-   *
-   * <pre>{@code
-   * ImmutableMap<EmployeeId, Task> billableTaskAssignments = projects.stream()
-   *     .map(Project::getTaskAssignments)
-   *     .collect(flatteningMaps(ImmutableMap::toImmutableMap)));
-   * }</pre>
-   *
-   * <p>To flatten a stream of multimaps, use {@link #flattening}.
-   *
-   * @since 4.6
-   * @deprecated Moved to {@link MoreCollectors}.
-   */
-  @Deprecated
-  public static <K, V, R> Collector<Map<K, V>, ?, R> flatteningMaps(
-      BiCollector<K, V, R> downstream) {
-    return flatMapping(BiStream::from, downstream);
-  }
-
-  /**
-   * Returns a collector that collects input elements into a list, which is then arranged by the
-   * {@code arranger} function before being wrapped as <em>immutable</em> list result.
-   * List elements are not allowed to be null.
-   *
-   * <p>Example usages: <ul>
-   * <li>{@code stream.collect(toListAndThen(Collections::reverse))} to collect to reverse order.
-   * <li>{@code stream.collect(toListAndThen(Collections::shuffle))} to collect and shuffle.
-   * <li>{@code stream.collect(toListAndThen(Collections::sort))} to collect and sort.
-   * </ul>
-   *
-   * @since 4.2
-   * @deprecated Moved to {@link MoreCollectors}.
-   */
-  @Deprecated
-  public static <T> Collector<T, ?, List<T>> toListAndThen(Consumer<? super List<T>> arranger) {
-    return MoreCollectors.toListAndThen(arranger);
   }
 
   /**
