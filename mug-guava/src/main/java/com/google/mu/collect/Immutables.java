@@ -24,7 +24,9 @@ import com.google.common.collect.ImmutableTable;
  *
  * <p>Unlike JDK collection literals such as {@code Map.of()}, collection literals returned by this class
  * don't lose the "Immutable" from the type. This allows you to use ImmutableMap, ImmutableList as
- * return types of public API, making the contract unambiguous.
+ * return types of public API, making the contract unambiguous. If you use Guava, we recommend
+ * continuing to use the immutable collection types and hence the immutable collection literals over
+ * JDK collection literals.
  *
  * @since 6.0
  */
