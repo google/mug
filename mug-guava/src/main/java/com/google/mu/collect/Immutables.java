@@ -17,7 +17,10 @@ import com.google.common.collect.ImmutableTable;
  * <p>For example {@code list(1, 2)}, {@code map("key", "value")}, {@code multimap(k1, v1, k2, v2)} etc.
  *
  * <p>These APIs are best static imported universally throughout a code base such that seeing
- * {@code list(1)}, {@code map(k, v)} immediately tells the readers what they are.
+ * {@code list(1)}, {@code map(k, v)} immediately tells the readers what they are. For new code base,
+ * collection literals like {@code list(foo)} are more concise than their longer equivalents like
+ * {@code ImmutableList.of(foo)}. For existing code base, either fully migrate the longer literals
+ * or continue using them. Mixing the two styles can cause confusion.
  *
  * <p>Unlike JDK collection literals such as {@code Map.of()}, collection literals returned by this class
  * don't lose the "Immutable" from the type. This allows you to use ImmutableMap, ImmutableList as
