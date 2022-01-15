@@ -600,4 +600,6 @@ public final class Immutables {
   public static <R, C, V> ImmutableTable<R, C, V> table(R r1, C c1, V v1, R r2, C c2, V v2) {
     return ImmutableTable.<R, C, V>builder().put(r1, c1, v1).put(r2, c2, v2).build();
   }
+
+  private Immutables() {}
 }
