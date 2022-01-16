@@ -29,6 +29,7 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -361,6 +362,26 @@ public final class MoreCollectors {
       caseList.add(requireNonNull(c));
     }
     return switching(caseList);
+  }
+
+  /**
+   * Returns a collector that partitions the incoming elements into two groups: elements that
+   * match {@code predicate}, and those that don't.
+   *
+   * <p>For example: <pre>{@code
+   * candidates
+   *     .collect(partitioningBy(Candidate::isEligible, toImmutableList()))
+   *     .andThen((eligible, ineligible) -> ...);
+   * }</pre>
+   *
+   * @since 6.0
+   */
+  public static <T, R> Collector<T, ?, Both<R, R>> partitioningBy(
+      Predicate<? super T> predicate, Collector<T, ?, R> downstream) {
+    requireNonNull(predicate);
+    return Collectors.collectingAndThen(
+        Collectors.partitioningBy(predicate, downstream),
+        m -> Both.of(m.get(true), m.get(false)));
   }
 
   /**
