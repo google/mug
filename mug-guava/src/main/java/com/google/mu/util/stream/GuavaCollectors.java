@@ -14,6 +14,7 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.mu.util.stream.MoreCollectors.mapping;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
@@ -21,6 +22,7 @@ import static java.util.function.Function.identity;
 import java.util.Comparator;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collector;
@@ -28,6 +30,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.common.collect.ImmutableBiMap;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultiset;
@@ -352,6 +355,26 @@ public final class GuavaCollectors {
   public static <T, K, V> Collector<T, ?, ImmutableBiMap<K, V>> toImmutableBiMap(
       Function<? super T, ? extends Both<? extends K, ? extends V>> mapper) {
     return mapping(mapper, toImmutableBiMap());
+  }
+
+  /**
+   * Returns a collector that partitions the incoming elements into two groups: elements that
+   * match {@code predicate} fall into the first group, with the other elements in the second group.
+   *
+   * <p>For example: <pre>{@code
+   * candidates
+   *     .collect(partitioningBy(Candidate::isElegible))
+   *     .andThen((eligible, ineligible) -> ...);
+   * }</pre>
+   *
+   * @since 6.0
+   */
+  public static <T> Collector<T, ?, Both<ImmutableList<T>, ImmutableList<T>>> partitioningBy(
+      Predicate<? super T> predicate) {
+    requireNonNull(predicate);
+    return Collectors.collectingAndThen(
+        Collectors.partitioningBy(predicate, toImmutableList()),
+        m -> Both.of(m.get(true), m.get(false)));
   }
 
   private static <K, V, T, R> BiCollector<K, V, R> mappingValues(

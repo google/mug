@@ -18,6 +18,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.stream.BiCollectors.groupingBy;
 import static com.google.mu.util.stream.BiCollectors.toMap;
@@ -26,6 +27,7 @@ import static com.google.mu.util.stream.MoreCollectors.allMin;
 import static com.google.mu.util.stream.MoreCollectors.flatMapping;
 import static com.google.mu.util.stream.MoreCollectors.flatteningMaps;
 import static com.google.mu.util.stream.MoreCollectors.mapping;
+import static com.google.mu.util.stream.MoreCollectors.minMax;
 import static com.google.mu.util.stream.MoreCollectors.onlyElement;
 import static com.google.mu.util.stream.MoreCollectors.onlyElements;
 import static com.google.mu.util.stream.MoreCollectors.switching;
@@ -36,6 +38,7 @@ import static java.util.function.Function.identity;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +52,7 @@ import org.junit.runners.JUnit4;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.testing.NullPointerTester;
+import com.google.mu.util.BiOptional;
 
 @RunWith(JUnit4.class)
 public class MoreCollectorsTest {
@@ -265,6 +269,43 @@ public class MoreCollectorsTest {
   @Test public void testLeast_multiple() {
     assertThat(Stream.of(1, 1, 2, 1, 2).collect(allMin(naturalOrder(), toImmutableList())))
         .containsExactly(1, 1, 1);
+  }
+
+  @Test public void testMinMax_empty() {
+    assertThat(Stream.<String>empty().collect(minMax(naturalOrder())))
+        .isEqualTo(BiOptional.empty());
+  }
+
+  @Test public void testMinMax_singleElement() {
+    assertThat(Stream.of("foo").collect(minMax(naturalOrder())))
+        .isEqualTo(BiOptional.of("foo", "foo"));
+  }
+
+  @Test public void testMinMax_twoUnequalElements() {
+    assertThat(Stream.of("foo", "bar").collect(minMax(naturalOrder())))
+        .isEqualTo(BiOptional.of("bar", "foo"));
+  }
+
+  @Test public void testMinMax_twoEqualElements() {
+    assertThat(Stream.of("foo", "foo").collect(minMax(naturalOrder())))
+        .isEqualTo(BiOptional.of("foo", "foo"));
+  }
+
+  @Test public void testMinMax_threeEqualElements() {
+    assertThat(Stream.of("foo", "foo", "foo").collect(minMax(naturalOrder())))
+        .isEqualTo(BiOptional.of("foo", "foo"));
+  }
+
+  @Test public void testMinMax_threeUnequalElements() {
+    assertThat(Stream.of("foo", "bar", "zoo").collect(minMax(naturalOrder())))
+        .isEqualTo(BiOptional.of("bar", "zoo"));
+  }
+
+  @Test public void testMinMax_withNullElements() {
+    BiOptional<String, String> minMax =
+        Stream.of("foo", null, "zoo").collect(minMax(Comparator.nullsFirst(naturalOrder())));
+    assertThat(minMax.map((a, b) -> a)).isEmpty();
+    assertThat(minMax.map((a, b) -> b)).hasValue("zoo");
   }
 
   @Test public void testNulls() throws Exception {
