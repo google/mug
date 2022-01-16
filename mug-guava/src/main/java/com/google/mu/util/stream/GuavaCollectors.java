@@ -363,7 +363,7 @@ public final class GuavaCollectors {
    *
    * <p>For example: <pre>{@code
    * candidates
-   *     .collect(partitioningBy(Candidate::isElegible))
+   *     .collect(partitioningBy(Candidate::isEligible))
    *     .andThen((eligible, ineligible) -> ...);
    * }</pre>
    *
