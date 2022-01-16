@@ -1,1 +1,1 @@
-typeSearchIndex = [{"l":"All Classes","url":"allclasses-index.html"},{"p":"com.google.mu.util.stream","l":"GuavaCollectors"}]
+typeSearchIndex = [{"l":"All Classes","url":"allclasses-index.html"},{"p":"com.google.mu.util.stream","l":"GuavaCollectors"},{"p":"com.google.mu.collect","l":"Immutables"}]
