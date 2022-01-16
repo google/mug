@@ -146,18 +146,6 @@ public final class Substring {
         }
       };
 
-  /** {@code Pattern} that matches the entire string. */
-  private static final Pattern FULL_STRING =
-      new Pattern() {
-        @Override public Match match(String s, int fromIndex) {
-          return new Match(s, fromIndex, s.length() - fromIndex);
-        }
-
-        @Override public String toString() {
-          return "FULL_STRING";
-        }
-      };
-
   /**
    * Returns a {@code Prefix} pattern that matches strings starting with {@code prefix}.
    *
@@ -200,12 +188,6 @@ public final class Substring {
    */
   public static Suffix suffix(char suffix) {
     return new Suffix(Character.toString(suffix));
-  }
-
-  /** @deprecated Use {@code first(str)} instead. */
-  @Deprecated
-  public static Pattern substring(String str) {
-    return first(str);
   }
 
   /** Returns a {@code Pattern} that matches the first occurrence of {@code str}. */
@@ -556,18 +538,6 @@ public final class Substring {
       return Optional.ofNullable(Objects.toString(match(string.toString()), null));
     }
 
-    /** @deprecated Use {@code repeatedly().match(input)} instead. */
-    @Deprecated
-    public final Stream<Match> iterateIn(String input) {
-      return repeatedly().match(input);
-    }
-
-    /** @deprecated Use {@code repeatedly().split(string)} instead. */
-    @Deprecated
-    public Stream<Match> delimit(String string) {
-      return repeatedly().split(string);
-    }
-
     /**
      * Matches this pattern against {@code string}, and returns a copy with the matched substring
      * removed if successful. Otherwise, returns {@code string} unchanged.
@@ -575,12 +545,6 @@ public final class Substring {
     public final String removeFrom(String string) {
       Match match = match(string);
       return match == null ? string : match.remove();
-    }
-
-    /** @deprecated Use {@code repeatedly().removeAllFrom(string)} instead. */
-    @Deprecated
-    public final String removeAllFrom(String string) {
-      return repeatedly().removeAllFrom(string);
     }
 
     /**
@@ -591,13 +555,6 @@ public final class Substring {
       requireNonNull(replacement);
       Match match = match(string);
       return match == null ? string : match.replaceWith(replacement);
-    }
-
-    /** @deprecated Use {@code repeatedly().replaceAllFrom(string, replacementFunction)} instead. */
-    @Deprecated
-    public final String replaceAllFrom(
-        String string, Function<? super Match, ? extends CharSequence> replacementFunction) {
-      return repeatedly().replaceAllFrom(string, replacementFunction);
     }
 
     /**

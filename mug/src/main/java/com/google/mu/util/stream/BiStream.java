@@ -14,14 +14,11 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
-import static com.google.mu.function.BiComparator.comparingKey;
-import static com.google.mu.function.BiComparator.comparingValue;
 import static com.google.mu.util.stream.MoreStreams.collectingAndThen;
 import static java.util.Objects.requireNonNull;
 import static java.util.Spliterator.ORDERED;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.doubleStream;
 import static java.util.stream.StreamSupport.intStream;
@@ -226,29 +223,6 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     Collector<T, ?, Map<K, V>> grouping =
         Collectors.groupingBy(classifier, LinkedHashMap::new, valueCollector);
     return collectingAndThen(grouping, BiStream::from);
-  }
-
-  /**
-   * @deprecated Use {@code MoreStreams.flatMapping(toKeyValues, BiCollectors.groupingBy(k -> k, reducer))}.
-   */
-  @Deprecated
-  public static <T, K, V, R> Collector<T, ?, BiStream<K, R>> grouping(
-      Function<? super T, ? extends BiStream<? extends K, ? extends V>> toKeyValues,
-      Collector<? super V, ?, R> valueCollector) {
-    requireNonNull(toKeyValues);
-    return Java9Collectors.flatMapping(
-        e -> toKeyValues.apply(e).mapToEntry(),
-        groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, valueCollector)));
-  }
-
-  /**
-   * @deprecated Use {@code MoreStreams.flatMapping(toKeyValues, BiCollectors.groupingBy(k -> k, reducer))}.
-   */
-  @Deprecated
-  public static <T, K, V> Collector<T, ?, BiStream<K, V>> grouping(
-      Function<? super T, ? extends BiStream<? extends K, ? extends V>> toKeyValues,
-      BinaryOperator<V> reducer) {
-    return grouping(toKeyValues, reducingGroupMembers(reducer));
   }
 
   /**
@@ -903,70 +877,6 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Returns a lazy {@code BiStream} of the consecutive runs of equal elements and their run-lengths
-   * from the input {@code stream}.
-   *
-   * <p>For example, {@code consecutiveRunsFrom([a, a, b, b, b, a])} will result in
-   * {@code [{a, 2}, {b, 3}, {a, 1}]}.
-   *
-   * <p>Null elements are allowed.
-   *
-   * @param stream the stream of input elements
-   * @since 5.3
-   * @deprecated Use {@code biStream(stream).groupConsecutiveBy(identity(), counting())} instead.
-   */
-  @Deprecated
-  public static <T> BiStream<T, Long> consecutiveRunsFrom(Stream<T> stream) {
-    return consecutiveRunsFrom(stream, identity(), counting());
-  }
-
-  /**
-   * Returns a {@code BiStream} of the consecutive runs of equal elements from the input
-   * {@code stream}.
-   *
-   * <p>Consecutive null elements will be grouped in a "run" with null as the key.
-   *
-   * @since 5.2
-   * @deprecated Use {@link #consecutiveRunsFrom(Stream)} for run-length encoding, or {@link
-   *     #consecutiveRunsFrom(Stream, Function, Collector)}.
-   */
-  @Deprecated
-  public static <T, R> BiStream<T, R> consecutiveRunsFrom(
-      Stream<T> stream, Collector<? super T, ?, R> runSummarizer) {
-    return consecutiveRunsFrom(stream, identity(), runSummarizer);
-  }
-
-  /**
-   * Returns a lazy {@code BiStream} of the consecutive runs of elements from the input {@code stream}.
-   * Elements in the same consecutive run share the same "key" according to the {@code by} function.
-   *
-   * <p>The {@code runSummarizer} Collector is used to summarize the elements of each "run".
-   * For example you could use {@code Collectors.summarizingDouble()} to summarize stock price per
-   * day:
-   *
-   * <pre>{@code
-   * consecutiveRunsFrom(stockPriceData, PriceDatum::day, summarizingDouble(PriceDatum::price)):
-   * }</pre>
-   *
-   * <p>For run-length encoding, use {@link #consecutiveRunsFrom(Stream)}.
-   *
-   * <p>Null elements are allowed as long as the {@code by} function allows nulls.
-   *
-   * @param stream the stream of input elements
-   * @param by the function to compute the key of each element
-   * @param runSummarizer collector to summarize elements of the same "run"
-   * @since 5.2
-   * @deprecated Use {@code biStream(stream).groupConsecutiveBy(by, runSummarizer)} instead.
-   */
-  @Deprecated
-  public static <K, T, A, R> BiStream<K, R> consecutiveRunsFrom(
-      Stream<T> stream,
-      Function<? super T, ? extends K> by,
-      Collector<? super T, A, R> runSummarizer) {
-    return biStream(stream).groupConsecutiveBy(by, runSummarizer);
-  }
-
-  /**
    * A predicate used to partition a {@code BiStream} into sub-groups of consecutive pairs.
    *
    * <p>Aside from that it operates on pairs, logically a "Partitioner" is unlike {@code
@@ -1073,25 +983,6 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   public final <K2, V2> BiStream<K2, V2> map(
       BiFunction<? super K, ? super V, ? extends Both<? extends K2, ? extends V2>> mapper) {
     return from(mapToObj(mapper));
-  }
-
-  /**
-   * Returns a {@code BiStream} consisting of the results of applying {@code keyMapper} and {@code
-   * valueMapper} to the pairs in this {@code BiStream}. If either {@code keyMapper} function or
-   * {@code valueMapper} function returns empty, the pair is discarded.
-   *
-   * @since 4.7
-   * @deprecated Use {@link #mapIfPresent(BiFunction)} instead.
-   */
-  @Deprecated
-  public final <K2, V2> BiStream<K2, V2> mapIfPresent(
-      BiFunction<? super K, ? super V, ? extends Optional<? extends K2>> keyMapper,
-      BiFunction<? super K, ? super V, ? extends Optional<? extends V2>> valueMapper) {
-    return map(keyMapper, valueMapper)
-        .<K2>mapKeys(BiStream::orElseNull)
-        .filterKeys(Objects::nonNull)
-        .<V2>mapValues(BiStream::orElseNull)
-        .filterValues(Objects::nonNull);
   }
 
   /**
@@ -1596,19 +1487,6 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    */
   public final BiStream<K, V> distinct() {
     return fromEntries(mapToEntry().distinct());
-  }
-
-  /**
-   * Returns a {@code BiStream} consisting of the pairs in this stream, in the order produced by
-   * applying {@code keyComparator} on the keys of each pair, and then for equal keys,
-   * applying {@code valueComparator} on the values of each pair.
-   *
-   * @deprecated Use {@link #sorted(BiComparator)} instead.
-   */
-  @Deprecated
-  public final BiStream<K, V> sorted(
-      Comparator<? super K> keyComparator, Comparator<? super V> valueComparator) {
-    return sorted(comparingKey(keyComparator).then(comparingValue(valueComparator)));
   }
 
   /**

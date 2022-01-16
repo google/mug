@@ -71,7 +71,7 @@ public abstract class BiOptional<A, B> {
 
   /**
    * If a pair of values is present, apply {@code mapper} to them, and if the result is non-null,
-   * return an {@code Optional} containing it. Otherwise return an empty {@code BiOptional}.
+   * return an {@code Optional} containing it. Otherwise return an empty {@code Optional}.
    *
    * @throws NullPointerException if {@code mapper} is null
    */

@@ -17,10 +17,12 @@ package com.google.mu.util.stream;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.stream.BiCollectors.groupingBy;
+import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.GuavaCollectors.countingBy;
 import static com.google.mu.util.stream.GuavaCollectors.flatteningToImmutableListMultimap;
 import static com.google.mu.util.stream.GuavaCollectors.flatteningToImmutableSetMultimap;
 import static com.google.mu.util.stream.GuavaCollectors.indexingBy;
+import static com.google.mu.util.stream.GuavaCollectors.partitioningBy;
 import static com.google.mu.util.stream.GuavaCollectors.toImmutableBiMap;
 import static com.google.mu.util.stream.GuavaCollectors.toImmutableListMultimap;
 import static com.google.mu.util.stream.GuavaCollectors.toImmutableMap;
@@ -49,6 +51,7 @@ import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.ImmutableTable;
 import com.google.common.collect.TreeMultimap;
 import com.google.common.testing.NullPointerTester;
+import com.google.mu.util.Both;
 
 @RunWith(JUnit4.class)
 public class GuavaCollectorsTest {
@@ -56,7 +59,7 @@ public class GuavaCollectorsTest {
     ImmutableList<Town> towns =
         ImmutableList.of(new Town("WA", 100), new Town("WA", 50), new Town("IL", 200));
     assertThat(
-            BiStream.from(towns, Town::getState, town -> town)
+            biStream(Town::getState, towns)
                 .collect(toImmutableMap(summingInt(Town::getPopulation))))
         .containsExactly("WA", 150, "IL", 200)
         .inOrder();
@@ -75,7 +78,7 @@ public class GuavaCollectorsTest {
             new Town("CA", 8),
             new Town("CA", 9));
     assertThat(
-            BiStream.from(towns, Town::getState, town -> town)
+            biStream(Town::getState, towns)
                 .collect(toImmutableMap(summingInt(Town::getPopulation))))
         .containsExactly("WA", 4, "FL", 2, "IL", 4, "AZ", 5, "OH", 6, "IN", 7, "CA", 17)
         .inOrder();
@@ -84,7 +87,7 @@ public class GuavaCollectorsTest {
   @Test public void testToImmutableMap_empty() {
     ImmutableList<Town> towns = ImmutableList.of();
     assertThat(
-            BiStream.from(towns, Town::getState, town -> town)
+            biStream(Town::getState, towns)
                 .collect(toImmutableMap(summingInt(Town::getPopulation))))
         .isEmpty();
   }
@@ -235,6 +238,37 @@ public class GuavaCollectorsTest {
   @Test public void testIndexingBy() {
     assertThat(Stream.of(1, 2).collect(indexingBy(Object::toString)))
         .containsExactly("1", 1, "2", 2)
+        .inOrder();
+  }
+
+  @Test public void testPartitioningBy_matchingIsEmpty() {
+    Both<ImmutableList<Integer>, ImmutableList<Integer>> oddEven =
+        Stream.of(2, 4).collect(partitioningBy(n -> n % 2 == 1));
+    assertThat(oddEven.andThen((ImmutableList<Integer> odd, ImmutableList<Integer> even) -> odd))
+        .isEmpty();
+    assertThat(oddEven.andThen((ImmutableList<Integer> odd, ImmutableList<Integer> even) -> even))
+        .containsExactly(2, 4)
+        .inOrder();
+  }
+
+  @Test public void testPartitioningBy_notMatchingIsEmpty() {
+    Both<ImmutableList<Integer>, ImmutableList<Integer>> oddEven =
+        Stream.of(1, 3).collect(partitioningBy(n -> n % 2 == 0));
+    assertThat(oddEven.andThen((ImmutableList<Integer> even, ImmutableList<Integer> odd) -> even))
+        .isEmpty();
+    assertThat(oddEven.andThen((ImmutableList<Integer> even, ImmutableList<Integer> odd) -> odd))
+        .containsExactly(1, 3)
+        .inOrder();
+  }
+
+  @Test public void testPartitioningBy_neitherIsEmpty() {
+    Both<ImmutableList<Integer>, ImmutableList<Integer>> oddEven =
+        Stream.of(1, 2, 3).collect(partitioningBy(n -> n % 2 == 1));
+    assertThat(oddEven.andThen((ImmutableList<Integer> odd, ImmutableList<Integer> even) -> odd))
+        .containsExactly(1, 3)
+        .inOrder();
+    assertThat(oddEven.andThen((ImmutableList<Integer> odd, ImmutableList<Integer> even) -> even))
+        .containsExactly(2)
         .inOrder();
   }
 

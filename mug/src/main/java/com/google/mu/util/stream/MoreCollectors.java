@@ -37,6 +37,7 @@ import com.google.mu.function.Quarternary;
 import com.google.mu.function.Quinary;
 import com.google.mu.function.Senary;
 import com.google.mu.function.Ternary;
+import com.google.mu.util.BiOptional;
 import com.google.mu.util.Both;
 import com.google.mu.util.MoreCollections;
 
@@ -143,20 +144,19 @@ public final class MoreCollectors {
         }
       }
 
+      void add(T input) {
+        add(keyFunction.apply(input), valueFunction.apply(input));
+      }
+
       Builder addAll(Builder that) {
-        BiStream.from(that.map).forEachOrdered(this::add);
-        return this;
+        return BiStream.from(that.map).collect(this, Builder::add);
       }
 
       M build() {
         return map;
       }
     }
-    return Collector.of(
-        Builder::new,
-        (b, e) -> b.add(keyFunction.apply(e), valueFunction.apply(e)),
-        Builder::addAll,
-        Builder::build);
+    return Collector.of(Builder::new, Builder::add, Builder::addAll, Builder::build);
   }
 
   /**
@@ -364,6 +364,53 @@ public final class MoreCollectors {
   }
 
   /**
+   * Returns a collector that collects the minimum and maximum elements from the input elements.
+   * the result {@code BiOptional}, if present, contains the pair of {@code (min, max)}.
+   *
+   * @since 6.0
+   */
+  public static <T> Collector<T, ?, BiOptional<T, T>> minMax(Comparator<? super T> comparator) {
+    requireNonNull(comparator);
+    class MinMax {
+      private boolean empty = true;
+      private T min;
+      private T max;
+
+      void add(T element) {
+        if (empty) {
+          min = max = element;
+          empty = false;
+        } else {
+          int againstMin = comparator.compare(element, min);
+          if (againstMin < 0) {
+            min = element;
+          } else if (againstMin > 0 && comparator.compare(element, max) > 0) {
+            // If equal to min, we don't need to compare with max.
+            max = element;
+          }
+        }
+      }
+
+      MinMax merge(MinMax that) {
+        that.get().ifPresent((a, b) -> { add(a); add(b); });
+        return this;
+      }
+
+      BiOptional<T, T> get() {
+        if (empty) {
+          return BiOptional.empty();
+        }
+        if (min == null || max == null) {
+          return Both.of(min, max).filter((x, y) -> true);
+        }
+        return BiOptional.of(min, max);
+      }
+    }
+
+    return Collector.of(MinMax::new, MinMax::add, MinMax::merge, MinMax::get);
+  }
+
+  /**
    * Returns a {@code Collector} that collects all of the least (relative to the specified {@code
    * Comparator}) input elements, in encounter order, using the {@code downstream} collector.
    *
@@ -418,7 +465,7 @@ public final class MoreCollectors {
       }
 
       Builder merge(Builder that) {
-        that.tie.forEach(this::add);
+        that.tie.stream().forEach(this::add);
         return this;
       }
 

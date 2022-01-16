@@ -30,8 +30,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import com.google.mu.util.stream.MoreStreams;
-
 @RunWith(Parameterized.class)
 public class MoreStreamsParameterizedTest {
 
@@ -102,7 +100,7 @@ public class MoreStreamsParameterizedTest {
       }
     },
     ;
-    
+
     abstract Stream<Integer> natural(int numbers);
   }
 }

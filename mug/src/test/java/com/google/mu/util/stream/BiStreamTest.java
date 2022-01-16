@@ -130,7 +130,7 @@ public class BiStreamTest {
   }
 
   @Test public void testBiStreamWithKeyAndValueFunctions() {
-    assertKeyValues(BiStream.from(Stream.of(1, 2), Object::toString, v -> v))
+    assertKeyValues(biStream(Object::toString, Stream.of(1, 2)))
         .containsExactlyEntriesIn(ImmutableMultimap.of("1", 1, "2", 2))
         .inOrder();
   }
@@ -275,80 +275,6 @@ public class BiStreamTest {
                     || d1 != null && d2 != null && Math.abs(d1 - d2) <= proximity,
             counting());
     assertThat(groupSizes).containsExactly(4L, 2L, 1L, 2L).inOrder();
-  }
-
-  @Test public void testConsecutiveRunsFrom_emptyStream() {
-    assertKeyValues(BiStream.consecutiveRunsFrom(Stream.empty())).isEmpty();
-  }
-
-  @Test public void testConsecutiveRunsFrom_singleElement() {
-    assertKeyValues(BiStream.consecutiveRunsFrom(Stream.of(1), Object::toString, toList()))
-        .containsExactly("1", asList(1));
-  }
-
-  @Test public void testConsecutiveRunsFrom_twoElementsSameRun() {
-    assertKeyValues(BiStream.consecutiveRunsFrom(Stream.of(1, "1"), Object::toString, toList()))
-        .containsExactly("1", asList(1, "1"))
-        .inOrder();
-  }
-
-  @Test public void testConsecutiveRunsFrom_singleRunManyElements() {
-    assertKeyValues(BiStream.consecutiveRunsFrom(Collections.nCopies(100, 'x').stream()))
-        .containsExactly('x', 100L);
-  }
-
-  @Test public void testConsecutiveRunsFrom_twoElementsDifferentRuns() {
-    assertKeyValues(BiStream.consecutiveRunsFrom(Stream.of(1, "2"), Object::toString, toList()))
-        .containsExactly("1", asList(1), "2", asList("2"))
-        .inOrder();
-  }
-
-  @Test public void testConsecutiveRunsFrom_oneElementPerRun() {
-    assertKeyValues(BiStream.consecutiveRunsFrom(Stream.of(1, 2, 3, 4, 5)))
-        .containsExactly(1, 1L, 2, 1L, 3, 1L, 4, 1L, 5, 1L)
-        .inOrder();
-  }
-
-  @Test public void testConsecutiveRunsFrom_twoElementsPerRun() {
-    assertKeyValues(BiStream.consecutiveRunsFrom(Stream.of(1, 1, 2, 2, 3, 3, 2, 2, 1, 1)))
-        .containsExactly(1, 2L, 2, 2L, 3, 2L, 2, 2L, 1, 2L)
-        .inOrder();
-  }
-
-  @Test public void testConsecutiveRunsFrom_threeElementsPerRun() {
-    assertKeyValues(BiStream.consecutiveRunsFrom(Stream.of(1, 1, 1, 2, 2, 2, 3, 3, 3, 2, 2, 2)))
-        .containsExactly(1, 3L, 2, 3L, 3, 3L, 2, 3L)
-        .inOrder();
-  }
-
-  @Test public void testConsecutiveRunsFrom_alternatingElements() {
-    assertKeyValues(BiStream.consecutiveRunsFrom(Stream.of(1, 2, 1, 2, 1)))
-        .containsExactly(1, 1L, 2, 1L, 1, 1L, 2, 1L, 1, 1L)
-        .inOrder();
-  }
-
-  @Test public void testConsecutiveRunsFrom_equalElementsNotAdjacent() {
-    assertKeyValues(BiStream.consecutiveRunsFrom(Stream.of(1, "2", 2, 1), Object::toString, toList()))
-        .containsExactly("1", asList(1), "2", asList("2", 2), "1", asList(1))
-        .inOrder();
-  }
-
-  @Test public void testConsecutiveRunsFrom_multipleRuns() {
-    assertKeyValues(BiStream.consecutiveRunsFrom(Stream.of(1, "2", 2, "3", 3, 3), Object::toString, toList()))
-        .containsExactly("1", asList(1), "2", asList("2", 2), "3", asList("3", 3, 3))
-        .inOrder();
-  }
-
-  @Test public void testConsecutiveRunsFrom_longerRuns() {
-    assertKeyValues(BiStream.consecutiveRunsFrom(Stream.of('a', 'b', 'b', 'b', 'b', 'b')))
-        .containsExactly('a', 1L, 'b', 5L)
-        .inOrder();
-  }
-
-  @Test public void testConsecutiveRunsFrom_nullAsRuns() {
-    assertKeyValues(BiStream.consecutiveRunsFrom(Stream.of(null, null, "foo", "foo", "foo")))
-        .containsExactly(null, 2L, "foo", 3L)
-        .inOrder();
   }
 
   @Test public void testZip_bothEmpty() {
@@ -1052,7 +978,7 @@ public class BiStreamTest {
 
   @Test public void testCollect_concurrentMutableReduction() {
     BiStream<String, Integer> parallel =
-        BiStream.from(Stream.of(1, 2, 3, 4, 5).parallel(), Object::toString, identity());
+        biStream(Object::toString, Stream.of(1, 2, 3, 4, 5).parallel());
     Map<String, Integer> result = parallel
         .collect(
             ImmutableMap.<String, Integer>builder(),
@@ -1101,6 +1027,7 @@ public class BiStreamTest {
   private static class PaginationService<T> {
     private final ImmutableList<T> data;
 
+    @SafeVarargs
     PaginationService(T... data) {
       this.data = ImmutableList.copyOf(data);
     }
