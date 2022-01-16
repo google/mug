@@ -359,7 +359,7 @@ public final class GuavaCollectors {
 
   /**
    * Returns a collector that partitions the incoming elements into two groups: elements that
-   * match {@code predicate} fall into the first group, with the other elements in the second group.
+   * match {@code predicate}, and those that don't.
    *
    * <p>For example: <pre>{@code
    * candidates
