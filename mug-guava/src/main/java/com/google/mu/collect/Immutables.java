@@ -11,22 +11,22 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableTable;
 
 /**
- * Provides convenient factory methods of common immutable Guava data types that are concise yet
+ * Convenient factory methods of common immutable Guava data types that are concise yet
  * unambiguous when static imported.
  *
  * <p>For example {@code list(1, 2)}, {@code map("key", "value")}, {@code multimap(k1, v1, k2, v2)} etc.
  *
  * <p>These APIs are best static imported universally throughout a code base such that seeing
- * {@code list(1)}, {@code map(k, v)} immediately tells the readers what they are. For new code base,
- * collection literals like {@code list(foo)} are more concise than their longer equivalents like
- * {@code ImmutableList.of(foo)}. For existing code base, either fully migrate the longer literals
+ * {@code list(1, 2)}, {@code map(k, v)} immediately tells the readers what they are. For new code base,
+ * collection literals like {@code list(1, 2)} are more concise than their longer equivalents like
+ * {@code ImmutableList.of(1, 2)}. For existing code base, either fully migrate the longer literals
  * or continue using them. Mixing the two styles can cause confusion.
  *
  * <p>Unlike JDK collection literals such as {@code Map.of()}, collection literals returned by this class
- * don't lose the "Immutable" from the type. This allows you to use ImmutableMap, ImmutableList as
- * return types of public API, making the contract unambiguous. If you use Guava, we recommend
- * continuing to use the immutable collection types and hence the immutable collection literals over
- * JDK collection literals.
+ * don't lose the "Immutable" from the type. This allows you to use {@code ImmutableMap},
+ * {@code ImmutableList} as return types of public API, helping to make the contract unambiguous.
+ * If you use Guava, we recommend continuing to use the immutable collection types and the
+ * immutable collection literals in this class over JDK collection literals.
  *
  * @since 6.0
  */

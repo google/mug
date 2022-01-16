@@ -367,6 +367,8 @@ public final class MoreCollectors {
    * Returns a collector that collects the minimum and maximum elements from the input elements.
    * the result {@code BiOptional}, if present, contains the pair of {@code (min, max)}.
    *
+   * <p>Null elements are supported as long as {@code comparator} supports them.
+   *
    * @since 6.0
    */
   public static <T> Collector<T, ?, BiOptional<T, T>> minMax(Comparator<? super T> comparator) {
