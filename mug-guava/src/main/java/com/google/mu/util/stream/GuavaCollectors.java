@@ -363,18 +363,19 @@ public final class GuavaCollectors {
    *
    * <p>For example: <pre>{@code
    * candidates
-   *     .collect(partitioningBy(Candidate::isElegible))
+   *     .collect(partitioningBy(Candidate::isEligible))
    *     .andThen((eligible, ineligible) -> ...);
    * }</pre>
+   *
+   * <p>Null elements are not allowed. To support nulls, use {@link MoreCollectors#partitioningBy}
+   * with a null-supporting downstream collector, such as
+   * {@code MoreCollectors.partitioningBy(predicate, toList())}.
    *
    * @since 6.0
    */
   public static <T> Collector<T, ?, Both<ImmutableList<T>, ImmutableList<T>>> partitioningBy(
       Predicate<? super T> predicate) {
-    requireNonNull(predicate);
-    return Collectors.collectingAndThen(
-        Collectors.partitioningBy(predicate, toImmutableList()),
-        m -> Both.of(m.get(true), m.get(false)));
+    return MoreCollectors.partitioningBy(predicate, toImmutableList());
   }
 
   private static <K, V, T, R> BiCollector<K, V, R> mappingValues(
