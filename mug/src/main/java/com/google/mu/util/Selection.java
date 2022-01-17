@@ -193,10 +193,9 @@ public interface Selection<T> {
       if (string.equals("*")) {
         return all();
       }
-      Set<String> parts = delimiter.repeatedly().split(string)
+      Set<String> parts = delimiter.repeatedly().splitThenTrim(string)
+          .filter(m -> m.length() > 0)
           .map(Substring.Match::toString)
-          .map(String::trim)
-          .filter(s -> s.length() > 0)
           .collect(toCollection(LinkedHashSet::new));
       List<T> elements = new ArrayList<>(parts.size());
       for (String part : parts) {
