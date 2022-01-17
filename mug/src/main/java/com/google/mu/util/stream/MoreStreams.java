@@ -402,14 +402,26 @@ public final class MoreStreams {
   public static <T> Stream<T> whileNotNull(Supplier<? extends T> supplier) {
     requireNonNull(supplier);
     return StreamSupport.stream(
-        new AbstractSpliterator<T>(Long.MAX_VALUE, Spliterator.NONNULL | Spliterator.ORDERED) {
+        new Spliterator<T>() {
           @Override public boolean tryAdvance(Consumer<? super T> action) {
-            T element = supplier.get();
-            if (element == null) return false;
-            action.accept(element);
+            T generated = supplier.get();
+            if (generated == null) {
+              return false;
+            }
+            action.accept(generated);
             return true;
           }
-        }, false);
+          @Override public int characteristics() {
+            return Spliterator.NONNULL | Spliterator.ORDERED;
+          }
+          @Override public long estimateSize() {
+            return Long.MAX_VALUE;
+          }
+          @Override public Spliterator<T> trySplit() {
+            return null;
+          }
+        },
+        false);
   }
 
   /**
