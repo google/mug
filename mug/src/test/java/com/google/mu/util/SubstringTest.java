@@ -1539,6 +1539,25 @@ public class SubstringTest {
   }
 
   @Test
+  public void repeatedly_split_distinct() {
+    assertThat(first(',').repeatedly().split("b,a,c,a,c,b,d").map(Match::toString).distinct())
+        .containsExactly("b", "a", "c", "d")
+        .inOrder();
+  }
+
+  @Test
+  public void repeatedly_split_ordered() {
+    assertThat(first(',').repeatedly().split("a,b").spliterator().characteristics() & Spliterator.ORDERED)
+        .isEqualTo(Spliterator.ORDERED);
+  }
+
+  @Test
+  public void repeatedly_split_nonNull() {
+    assertThat(first(',').repeatedly().split("a,b").spliterator().characteristics() & Spliterator.NONNULL)
+        .isEqualTo(Spliterator.NONNULL);
+  }
+
+  @Test
   public void repeatedly_splitThenTrim_noMatch() {
     assertThat(first("://").repeatedly().splitThenTrim("abc").map(Match::toString))
         .containsExactly("abc");
@@ -1652,6 +1671,19 @@ public class SubstringTest {
     BiStream<String, String> kvs =
         first(',').repeatedly().splitThenTrimKeyValuesAround(first('='), "k:v");
     assertThrows(IllegalArgumentException.class, () -> kvs.toMap());
+  }
+
+  @Test
+  public void repeatedly_splitThenTrim_distinct() {
+    assertThat(first(',').repeatedly().splitThenTrim("b, a,c,a,c,b,d").map(Match::toString).distinct())
+        .containsExactly("b", "a", "c", "d")
+        .inOrder();
+  }
+
+  @Test
+  public void repeatedly_splitThenTrim_ordered() {
+    assertThat(first(',').repeatedly().splitThenTrim("a,b").spliterator().characteristics() & Spliterator.ORDERED)
+        .isEqualTo(Spliterator.ORDERED);
   }
 
   @Test

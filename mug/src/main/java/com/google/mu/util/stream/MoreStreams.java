@@ -402,7 +402,7 @@ public final class MoreStreams {
   public static <T> Stream<T> whileNotNull(Supplier<? extends T> supplier) {
     requireNonNull(supplier);
     return StreamSupport.stream(
-        new AbstractSpliterator<T>(Long.MAX_VALUE, Spliterator.NONNULL) {
+        new AbstractSpliterator<T>(Long.MAX_VALUE, Spliterator.NONNULL | Spliterator.ORDERED) {
           @Override public boolean tryAdvance(Consumer<? super T> action) {
             T element = supplier.get();
             if (element == null) return false;
