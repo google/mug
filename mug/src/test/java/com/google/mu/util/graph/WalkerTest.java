@@ -41,32 +41,27 @@ public class WalkerTest {
   // TODO: figure out parameterized test like @ParameterizedTestRunner
   private final DataType dataType = DataType.GRAPH;
 
-  @Test
-  public void preOrder_noChildren() {
+  @Test public void preOrder_noChildren() {
     assertThat(dataType.newWalker().preOrderFrom("root")).containsExactly("root");
   }
 
-  @Test
-  public void preOrder_emptyStartNodes() {
+  @Test public void preOrder_emptyStartNodes() {
     Walker<String> walker = dataType.newWalker(ImmutableListMultimap.of("foo", "bar"));
     assertThat(walker.preOrderFrom(ImmutableList.of())).isEmpty();
   }
 
-  @Test
-  public void preOrder_oneEdge() {
+  @Test public void preOrder_oneEdge() {
     Walker<String> walker = dataType.newWalker(ImmutableListMultimap.of("foo", "bar"));
     assertThat(walker.preOrderFrom("foo")).containsExactly("foo", "bar").inOrder();
   }
 
-  @Test
-  public void preOrder_twoEdges() {
+  @Test public void preOrder_twoEdges() {
     Walker<String> walker =
         dataType.newWalker(ImmutableListMultimap.of("foo", "bar", "bar", "baz"));
     assertThat(walker.preOrderFrom("foo")).containsExactly("foo", "bar", "baz").inOrder();
   }
 
-  @Test
-  public void preOrder_graph_depthFirst() {
+  @Test public void preOrder_graph_depthFirst() {
     Walker<String> walker =
         DataType.GRAPH.newWalker(
             ImmutableMap.of(
@@ -78,8 +73,7 @@ public class WalkerTest {
         .inOrder();
   }
 
-  @Test
-  public void preOrder_tree_depthFirst() {
+  @Test public void preOrder_tree_depthFirst() {
     Walker<String> walker =
         DataType.TREE.newWalker(
             ImmutableMap.of(
@@ -91,8 +85,7 @@ public class WalkerTest {
         .inOrder();
   }
 
-  @Test
-  public void preOrder_disjointRoots() {
+  @Test public void preOrder_disjointRoots() {
     Walker<String> walker =
         dataType.newWalker(
             ImmutableMap.of(
@@ -105,8 +98,7 @@ public class WalkerTest {
         .inOrder();
   }
 
-  @Test
-  public void preOrder_graph_connectedRoots() {
+  @Test public void preOrder_graph_connectedRoots() {
     Walker<String> walker =
         DataType.GRAPH.newWalker(
             ImmutableMap.of(
@@ -119,8 +111,7 @@ public class WalkerTest {
         .inOrder();
   }
 
-  @Test
-  public void preOrder_tree_connectedRoots() {
+  @Test public void preOrder_tree_connectedRoots() {
     Walker<String> walker =
         DataType.TREE.newWalker(
             ImmutableMap.of(
@@ -133,57 +124,48 @@ public class WalkerTest {
         .inOrder();
   }
 
-  @Test
-  public void preOrder_infiniteBreadth() {
+  @Test public void preOrder_infiniteBreadth() {
     Walker<Integer> walker = dataType.newWalker(n -> indexesFrom(n + 1));
     assertThat(walker.preOrderFrom(1).limit(4)).containsExactly(1, 2, 3, 4).inOrder();
   }
 
-  @Test
-  public void preOrder_graph_infiniteDepth() {
+  @Test public void preOrder_graph_infiniteDepth() {
     Walker<Integer> walker = Walker.inGraph(n -> Stream.of(n, n + 1, n + 2));
     assertThat(walker.preOrderFrom(1).limit(4)).containsExactly(1, 2, 3, 4).inOrder();
   }
 
-  @Test
-  public void preOrder_tree_infiniteDepth() {
+  @Test public void preOrder_tree_infiniteDepth() {
     Walker<Integer> walker = Walker.inTree(n -> Stream.of(n, n + 1, n + 2));
     assertThat(walker.preOrderFrom(1).limit(4)).containsExactly(1, 1, 1, 1).inOrder();
   }
 
-  @Test
-  public void postOrder_noChildren() {
+  @Test public void postOrder_noChildren() {
     assertThat(dataType.newWalker().postOrderFrom("root")).containsExactly("root");
   }
 
-  @Test
-  public void postOrder_emptyStartNodes() {
+  @Test public void postOrder_emptyStartNodes() {
     Walker<String> walker = dataType.newWalker(ImmutableListMultimap.of("foo", "bar"));
     assertThat(walker.postOrderFrom(ImmutableList.of())).isEmpty();
   }
 
-  @Test
-  public void postOrder_oneEdge() {
+  @Test public void postOrder_oneEdge() {
     Walker<String> walker = dataType.newWalker(ImmutableListMultimap.of("foo", "bar"));
     assertThat(walker.postOrderFrom("foo")).containsExactly("bar", "foo").inOrder();
   }
 
-  @Test
-  public void postOrder_twoEdges() {
+  @Test public void postOrder_twoEdges() {
     Walker<String> walker =
         dataType.newWalker(ImmutableListMultimap.of("foo", "bar", "bar", "baz"));
     assertThat(walker.postOrderFrom("foo")).containsExactly("baz", "bar", "foo").inOrder();
   }
 
-  @Test
-  public void postOrder_depthFirst() {
+  @Test public void postOrder_depthFirst() {
     Walker<String> walker =
         dataType.newWalker(ImmutableListMultimap.of("foo", "bar", "foo", "baz", "bar", "dog"));
     assertThat(walker.postOrderFrom("foo")).containsExactly("dog", "bar", "baz", "foo").inOrder();
   }
 
-  @Test
-  public void postOrder_disjointRoots() {
+  @Test public void postOrder_disjointRoots() {
     Walker<String> walker =
         dataType.newWalker(
             ImmutableListMultimap.of("foo", "bar", "bar", "dog", "zoo", "cat", "zoo", "lion"));
@@ -192,8 +174,7 @@ public class WalkerTest {
         .inOrder();
   }
 
-  @Test
-  public void postOrder_graph_connectedRoots() {
+  @Test public void postOrder_graph_connectedRoots() {
     Walker<String> walker =
         DataType.GRAPH.newWalker(
             ImmutableListMultimap.of("foo", "bar", "bar", "dog", "zoo", "dog", "zoo", "cat"));
@@ -202,8 +183,7 @@ public class WalkerTest {
         .inOrder();
   }
 
-  @Test
-  public void postOrder_tree_connectedRoots() {
+  @Test public void postOrder_tree_connectedRoots() {
     Walker<String> walker =
         DataType.TREE.newWalker(
             ImmutableListMultimap.of("foo", "bar", "bar", "dog", "zoo", "dog", "zoo", "cat"));
@@ -212,16 +192,14 @@ public class WalkerTest {
         .inOrder();
   }
 
-  @Test
-  public void postOrder_graph_infiniteBreadth() {
+  @Test public void postOrder_graph_infiniteBreadth() {
     ImmutableMap<Integer, Stream<Integer>> infiniteBreadth =
         ImmutableMap.of(1, indexesFrom(2), 2, Stream.of(3, 4), 3, Stream.of(4, 5));
     Walker<Integer> walker = Walker.inGraph(infiniteBreadth::get);
     assertThat(walker.postOrderFrom(1).limit(6)).containsExactly(4, 5, 3, 2, 6, 7).inOrder();
   }
 
-  @Test
-  public void postOrder_tree_infiniteBreadth() {
+  @Test public void postOrder_tree_infiniteBreadth() {
     ImmutableMap<Integer, Streamer<Integer>> infiniteBreadth =
         ImmutableMap.of(
             1, () -> indexesFrom(2), 2, asList(30, 40, 50)::stream, 30, asList(40, 50)::stream);
@@ -231,32 +209,27 @@ public class WalkerTest {
         .inOrder();
   }
 
-  @Test
-  public void breadthFirst_noChildren() {
+  @Test public void breadthFirst_noChildren() {
     assertThat(dataType.newWalker().breadthFirstFrom("foo")).containsExactly("foo");
   }
 
-  @Test
-  public void breadthFirst_emptyStartNodes() {
+  @Test public void breadthFirst_emptyStartNodes() {
     Walker<String> walker = dataType.newWalker(ImmutableListMultimap.of("foo", "bar"));
     assertThat(walker.breadthFirstFrom(ImmutableList.of())).isEmpty();
   }
 
-  @Test
-  public void breadthFirst_oneEdge() {
+  @Test public void breadthFirst_oneEdge() {
     Walker<String> walker = dataType.newWalker(ImmutableListMultimap.of("foo", "bar"));
     assertThat(walker.breadthFirstFrom("foo")).containsExactly("foo", "bar").inOrder();
   }
 
-  @Test
-  public void breadthFirst_twoEdges() {
+  @Test public void breadthFirst_twoEdges() {
     Walker<String> walker =
         dataType.newWalker(ImmutableListMultimap.of("foo", "bar", "bar", "baz"));
     assertThat(walker.breadthFirstFrom("foo")).containsExactly("foo", "bar", "baz").inOrder();
   }
 
-  @Test
-  public void breadthFirst_breadthFirst() {
+  @Test public void breadthFirst_breadthFirst() {
     Walker<String> walker =
         dataType.newWalker(ImmutableListMultimap.of("foo", "bar", "foo", "baz", "bar", "dog"));
     assertThat(walker.breadthFirstFrom("foo"))
@@ -264,8 +237,7 @@ public class WalkerTest {
         .inOrder();
   }
 
-  @Test
-  public void breadthFirst_disjointRoots() {
+  @Test public void breadthFirst_disjointRoots() {
     Walker<String> walker =
         dataType.newWalker(
             ImmutableListMultimap.of("foo", "bar", "foo", "baz", "zoo", "dog", "zoo", "cat"));
@@ -274,8 +246,7 @@ public class WalkerTest {
         .inOrder();
   }
 
-  @Test
-  public void breadthFirst_graph_connectedRoots() {
+  @Test public void breadthFirst_graph_connectedRoots() {
     Walker<String> walker =
         DataType.GRAPH.newWalker(
             ImmutableListMultimap.of("foo", "bar", "foo", "cat", "zoo", "dog", "zoo", "cat"));
@@ -284,8 +255,7 @@ public class WalkerTest {
         .inOrder();
   }
 
-  @Test
-  public void breadthFirst_tree_connectedRoots() {
+  @Test public void breadthFirst_tree_connectedRoots() {
     Walker<String> walker =
         DataType.TREE.newWalker(
             ImmutableListMultimap.of("foo", "bar", "foo", "cat", "zoo", "dog", "zoo", "cat"));
@@ -294,38 +264,32 @@ public class WalkerTest {
         .inOrder();
   }
 
-  @Test
-  public void breadthFirst_graph_infiniteDepth() {
+  @Test public void breadthFirst_graph_infiniteDepth() {
     Walker<Integer> walker = Walker.inGraph(n -> Stream.of(n + 1, n + 2));
     assertThat(walker.breadthFirstFrom(1).limit(6)).containsExactly(1, 2, 3, 4, 5, 6).inOrder();
   }
 
-  @Test
-  public void breadthFirst_tree_infiniteDepth() {
+  @Test public void breadthFirst_tree_infiniteDepth() {
     Walker<Integer> walker = Walker.inTree(n -> Stream.of(n + 1, n + 2));
     assertThat(walker.breadthFirstFrom(1).limit(6)).containsExactly(1, 2, 3, 3, 4, 4).inOrder();
   }
 
-  @Test
-  public void breadthFirst_graph_infiniteBreadth() {
+  @Test public void breadthFirst_graph_infiniteBreadth() {
     Walker<Integer> walker = Walker.inGraph(MoreStreams::indexesFrom);
     assertThat(walker.breadthFirstFrom(1).limit(6)).containsExactly(1, 2, 3, 4, 5, 6).inOrder();
   }
 
-  @Test
-  public void breadthFirst_tree_infiniteBreadth() {
+  @Test public void breadthFirst_tree_infiniteBreadth() {
     Walker<Integer> walker = Walker.inTree(MoreStreams::indexesFrom);
     assertThat(walker.breadthFirstFrom(1).limit(6)).containsExactly(1, 1, 2, 3, 4, 5).inOrder();
   }
 
-  @Test
-  public void staticMethods_nullCheck() throws Exception {
+  @Test public void staticMethods_nullCheck() throws Exception {
     new NullPointerTester().testAllPublicStaticMethods(Walker.class);
     new ClassSanityTester().forAllPublicStaticMethods(Walker.class).testNulls();
   }
 
-  @Test
-  public void instanceMethods_nullCheck()
+  @Test public void instanceMethods_nullCheck()
       throws Exception {
     new NullPointerTester().testAllPublicInstanceMethods(dataType.newWalker());
   }

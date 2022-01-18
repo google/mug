@@ -19,30 +19,26 @@ import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public final class CasesTest {
-  @Test
-  public void when_zeroElement() {
+  @Test public void when_zeroElement() {
     assertThat(Stream.of(1).collect(when(() -> "zero"))).isEmpty();
     assertThat(Stream.empty().collect(when(() -> "zero"))).hasValue("zero");
   }
 
-  @Test
-  public void when_oneElement() {
+  @Test public void when_oneElement() {
     assertThat(Stream.of(1).collect(when(i -> i + 1))).hasValue(2);
     assertThat(Stream.of(1, 2).collect(when(i -> i + 1))).isEmpty();
     assertThat(Stream.of(1).collect(when(x -> x == 1, i -> i + 1))).hasValue(2);
     assertThat(Stream.of(1).collect(when(x -> x == 2, i -> i + 1))).isEmpty();
   }
 
-  @Test
-  public void when_twoElements() {
+  @Test public void when_twoElements() {
     assertThat(Stream.of(2, 3).collect(when((a, b) -> a * b))).hasValue(6);
     assertThat(Stream.of(2, 3, 4).collect(when((a, b) -> a * b))).isEmpty();
     assertThat(Stream.of(2, 3).collect(when((x, y) -> x < y, (a, b) -> a * b))).hasValue(6);
     assertThat(Stream.of(2, 3).collect(when((x, y) -> x > y, (a, b) -> a * b))).isEmpty();
   }
 
-  @Test
-  public void only_oneElement() {
+  @Test public void only_oneElement() {
     String result = Stream.of("foo").collect(onlyElement());
     assertThat(result).isEqualTo("foo");
     IllegalArgumentException thrown =
@@ -51,8 +47,7 @@ public final class CasesTest {
     assertThat(thrown).hasMessageThat().contains("size: 3");
   }
 
-  @Test
-  public void only_twoElements() {
+  @Test public void only_twoElements() {
     int result = Stream.of(2, 3).collect(onlyElements((a, b) -> a * b));
     assertThat(result).isEqualTo(6);
     IllegalArgumentException thrown =
@@ -61,20 +56,17 @@ public final class CasesTest {
     assertThat(thrown).hasMessageThat().contains("size: 1");
   }
 
-  @Test
-  public void cases_firstCaseMatch() {
+  @Test public void cases_firstCaseMatch() {
     String result = Stream.of("foo", "bar").collect(cases(when((a, b) -> a + b), when(a -> a)));
     assertThat(result).isEqualTo("foobar");
   }
 
-  @Test
-  public void cases_secondCaseMatch() {
+  @Test public void cases_secondCaseMatch() {
     String result = Stream.of("foo").collect(cases(when((a, b) -> a + b), when(a -> a)));
     assertThat(result).isEqualTo("foo");
   }
 
-  @Test
-  public void cases_noMatchingCase() {
+  @Test public void cases_noMatchingCase() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -82,25 +74,21 @@ public final class CasesTest {
     assertThat(thrown).hasMessageThat().contains("size: 3");
   }
 
-  @Test
-  public void toTinyContainer_empty() {
+  @Test public void toTinyContainer_empty() {
     assertThat(Stream.empty().collect(toTinyContainer()).size()).isEqualTo(0);
   }
 
-  @Test
-  public void toTinyContainer_oneElement() {
+  @Test public void toTinyContainer_oneElement() {
     assertThat(Stream.of("foo").collect(toTinyContainer()).when(x -> true, "got:"::concat))
         .hasValue("got:foo");
   }
 
-  @Test
-  public void toTinyContainer_twoElements() {
+  @Test public void toTinyContainer_twoElements() {
     assertThat(Stream.of(2, 3).collect(toTinyContainer()).when((x, y) -> true, Integer::max))
         .hasValue(3);
   }
 
-  @Test
-  public void tinyContainer_addAll_fromEmpty() {
+  @Test public void tinyContainer_addAll_fromEmpty() {
     TinyContainer<String> empty = new TinyContainer<>();
     assertThat(Stream.empty().collect(toTinyContainer()).addAll(empty).size()).isEqualTo(0);
     assertThat(Stream.of("foo").collect(toTinyContainer()).addAll(empty).size()).isEqualTo(1);
@@ -110,8 +98,7 @@ public final class CasesTest {
         .isEqualTo(3);
   }
 
-  @Test
-  public void tinyContainer_addAll_fromOneElement() {
+  @Test public void tinyContainer_addAll_fromOneElement() {
     TinyContainer<String> source = Stream.of("foo").collect(toTinyContainer());
     assertThat(Stream.empty().collect(toTinyContainer()).addAll(source).when(x -> true, identity()))
         .hasValue("foo");
@@ -123,8 +110,7 @@ public final class CasesTest {
         .isEqualTo(4);
   }
 
-  @Test
-  public void tinyContainer_addAll_fromTwoElements() {
+  @Test public void tinyContainer_addAll_fromTwoElements() {
     TinyContainer<String> source = Stream.of("a", "b").collect(toTinyContainer());
     assertThat(Stream.<String>empty().collect(toTinyContainer()).addAll(source).when((x, y) -> true, (a, b) -> a + b))
         .hasValue("ab");
@@ -136,8 +122,7 @@ public final class CasesTest {
         .isEqualTo(5);
   }
 
-  @Test
-  public void tinyContainer_addAll_fromThreeElements() {
+  @Test public void tinyContainer_addAll_fromThreeElements() {
     TinyContainer<String> source = Stream.of("a", "b", "c").collect(toTinyContainer());
     assertThat(Stream.empty().collect(toTinyContainer()).addAll(source).size())
         .isEqualTo(3);
@@ -149,8 +134,7 @@ public final class CasesTest {
         .isEqualTo(6);
   }
 
-  @Test
-  public void nullChecks() {
+  @Test public void nullChecks() {
     new NullPointerTester().testAllPublicStaticMethods(Cases.class);
   }
 }

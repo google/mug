@@ -13,28 +13,24 @@ import com.google.common.testing.NullPointerTester;
 
 @RunWith(JUnit4.class)
 public class BothTest {
-  @Test
-  public void match() {
+  @Test public void match() {
     assertThat(both(1, 2).matches(Object::equals)).isFalse();
     assertThat(both(1, 1).matches(Object::equals)).isTrue();
   }
 
-  @Test
-  public void filter() {
+  @Test public void filter() {
     assertThat(both(1, 2).filter(Object::equals)).isEqualTo(BiOptional.empty());
     assertThat(both(1, 1).filter(Object::equals)).isEqualTo(BiOptional.of(1, 1));
   }
 
-  @Test
-  public void peek() {
+  @Test public void peek() {
     AtomicInteger effect = new AtomicInteger();
     Both<Integer, Integer> b = both(1, 2);
     assertThat(b.peek((x, y) -> effect.set(x + y))).isSameAs(b);
     assertThat(effect.get()).isEqualTo(3);
   }
 
-  @Test
-  public void nulls() {
+  @Test public void nulls() {
     new NullPointerTester().testAllPublicInstanceMethods(both(1, 2));
   }
 

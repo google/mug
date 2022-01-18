@@ -3,6 +3,7 @@ package com.google.mu.protobuf.util;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.collect.Immutables.list;
 import static com.google.mu.collect.Immutables.map;
+import static com.google.mu.collect.Immutables.table;
 import static com.google.mu.protobuf.util.MoreStructs.struct;
 import static com.google.mu.protobuf.util.MoreValues.listValueOf;
 import static org.junit.Assert.assertThrows;
@@ -12,7 +13,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.collect.ImmutableTable;
 import com.google.common.testing.NullPointerTester;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.Struct;
@@ -61,13 +61,13 @@ public class StructBuilderTest {
   }
 
   @Test public void testAddAll_table() {
-    assertThat(new StructBuilder().addAll(ImmutableTable.of("row", "col", Values.of(1))).build())
+    assertThat(new StructBuilder().addAll(table("row", "col", Values.of(1))).build())
         .isEqualTo(struct("row", struct("col", 1)));
   }
 
   @Test public void testAddAll_table_differentRowKeySameColumnKey() {
-    StructBuilder builder = new StructBuilder().addAll(ImmutableTable.of("r1", "col", Values.of(1)));
-    assertThat(builder.addAll(ImmutableTable.of("r2", "col", Values.of(2))).build())
+    StructBuilder builder = new StructBuilder().addAll(table("r1", "col", Values.of(1)));
+    assertThat(builder.addAll(table("r2", "col", Values.of(2))).build())
         .isEqualTo(
             Struct.newBuilder()
                 .putFields("r1", Values.of(struct("col", 1)))
@@ -190,18 +190,18 @@ public class StructBuilderTest {
 
   @Test public void testAddAll_duplicateRowKeyInTable() {
     StructBuilder builder = new StructBuilder();
-    builder.addAll(ImmutableTable.of("row", "col", Values.of(1)));
+    builder.addAll(table("row", "col", Values.of(1)));
     assertThrows(
         IllegalArgumentException.class,
-        () -> builder.addAll(ImmutableTable.of("row", "col2", Values.of(2))));
+        () -> builder.addAll(table("row", "col2", Values.of(2))));
   }
 
   @Test public void testAddAll_duplicateColumnKeyInTable() {
     StructBuilder builder = new StructBuilder();
-    builder.addAll(ImmutableTable.of("row", "col", Values.of(1)));
+    builder.addAll(table("row", "col", Values.of(1)));
     assertThrows(
         IllegalArgumentException.class,
-        () -> builder.addAll(ImmutableTable.of("row", "col", Values.of(2))));
+        () -> builder.addAll(table("row", "col", Values.of(2))));
   }
 
   @Test public void testDuplicateKey_addAllFieldsFromStruct() {

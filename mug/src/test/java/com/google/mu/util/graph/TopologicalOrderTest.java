@@ -18,36 +18,31 @@ import com.google.common.graph.MutableGraph;
 import com.google.mu.util.stream.BiStream;
 
 public class TopologicalOrderTest {
-  @Test
-  public void topologicalOrder_noStartNode() {
+  @Test public void topologicalOrder_noStartNode() {
     GraphWalker<String> walker = Walker.inGraph(Stream::of);
     assertThat(walker.topologicalOrderFrom()).isEmpty();
   }
 
-  @Test
-  public void topologicalOrder_noChildren() {
+  @Test public void topologicalOrder_noChildren() {
     assertThat(Walker.inGraph(n -> null).topologicalOrderFrom("root"))
         .containsExactly("root");
   }
 
-  @Test
-  public void topologicalOrder_oneEdge() {
+  @Test public void topologicalOrder_oneEdge() {
     Graph<String> graph = toDirectedGraph(ImmutableListMultimap.of("foo", "bar"));
     assertThat(topologicalOrder(graph, "foo"))
         .containsExactly("foo", "bar")
         .inOrder();
   }
 
-  @Test
-  public void topologicalOrder_twoEdges() {
+  @Test public void topologicalOrder_twoEdges() {
     Graph<String> graph = toDirectedGraph(ImmutableListMultimap.of("foo", "bar", "bar", "baz"));
     assertThat(topologicalOrder(graph, "foo"))
         .containsExactly("foo", "bar", "baz")
         .inOrder();
   }
 
-  @Test
-  public void topologicalOrder_dag() {
+  @Test public void topologicalOrder_dag() {
     Graph<String> graph = toDirectedGraph(
         ImmutableListMultimap.of("foo", "baz", "foo", "bar", "bar", "zoo", "baz", "zoo"));
     assertThat(topologicalOrder(graph, "foo"))
@@ -55,8 +50,7 @@ public class TopologicalOrderTest {
         .inOrder();
   }
 
-  @Test
-  public void topologicalOrder_multipleStartNodes() {
+  @Test public void topologicalOrder_multipleStartNodes() {
     Graph<String> graph = toDirectedGraph(
         ImmutableListMultimap.of("foo", "baz", "foo", "bar", "bar", "zoo", "baz", "zoo"));
     assertThat(topologicalOrder(graph, "zoo", "foo"))
@@ -64,24 +58,21 @@ public class TopologicalOrderTest {
         .inOrder();
   }
 
-  @Test
-  public void topologicalOrder_trivialCycle() {
+  @Test public void topologicalOrder_trivialCycle() {
     GraphWalker<String> walker = Walker.inGraph(Stream::of);
     CyclicGraphException thrown =
         assertThrows(CyclicGraphException.class, () -> walker.topologicalOrderFrom("root"));
     assertThat(thrown.cyclicPath()).containsExactly("root", "root");
   }
 
-  @Test
-  public void topologicalOrder_oneUndirectedEdge() {
+  @Test public void topologicalOrder_oneUndirectedEdge() {
     Graph<String> graph = toUndirectedGraph(ImmutableListMultimap.of("foo", "bar"));
     CyclicGraphException thrown =
         assertThrows(CyclicGraphException.class, () -> topologicalOrder(graph, "foo"));
     assertThat(thrown.cyclicPath()).containsExactly("foo", "bar", "foo").inOrder();
   }
 
-  @Test
-  public void topologicalOrder_backEdge() {
+  @Test public void topologicalOrder_backEdge() {
     Graph<String> graph =
         toDirectedGraph(ImmutableListMultimap.of("foo", "bar", "bar", "baz", "baz", "foo"));
     CyclicGraphException thrown =

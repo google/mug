@@ -44,74 +44,60 @@ public class BiOptionalTest {
     MockitoAnnotations.initMocks(this);
   }
 
-  @Test
-  public void empty_toString() {
+  @Test public void empty_toString() {
     assertThat(BiOptional.empty().toString()).isEqualTo("empty()");
   }
 
-  @Test
-  public void empty_singleton() {
+  @Test public void empty_singleton() {
     assertThat(BiOptional.empty()).isSameAs(BiOptional.empty());
   }
 
-  @Test
-  public void map_empty() {
+  @Test public void map_empty() {
     assertThat(BiOptional.empty().map((a, b) -> "test")).isEmpty();
   }
 
-  @Test
-  public void map_nonEmpty() {
+  @Test public void map_nonEmpty() {
     assertThat(BiOptional.of(1, 2).map((a, b) -> a + b)).hasValue(3);
   }
 
-  @Test
-  public void map_nullResultToEmpty() {
+  @Test public void map_nullResultToEmpty() {
     assertThat(BiOptional.of(1, 2).map((a, b) -> null)).isEmpty();
   }
 
-  @Test
-  public void flatMap_empty() {
+  @Test public void flatMap_empty() {
     assertThat(BiOptional.empty().flatMap((a, b) -> Optional.of("test"))).isEmpty();
   }
 
-  @Test
-  public void flatMap_emptyResultMappedToEmpty() {
+  @Test public void flatMap_emptyResultMappedToEmpty() {
     assertThat(BiOptional.of(1, 2).flatMap((a, b) -> Optional.empty())).isEmpty();
   }
 
-  @Test
-  public void flatMap_nonEmptyMappedToNonEmpty() {
+  @Test public void flatMap_nonEmptyMappedToNonEmpty() {
     assertThat(BiOptional.of(1, 2).flatMap((a, b) -> Optional.of(a + b))).hasValue(3);
   }
 
-  @Test
-  public void flatMap_nullResultThrows() {
+  @Test public void flatMap_nullResultThrows() {
     assertThrows(NullPointerException.class, () -> BiOptional.of(1, 2).flatMap((a, b) -> null));
   }
 
-  @Test
-  public void filter_empty() {
+  @Test public void filter_empty() {
     assertThat(BiOptional.empty().filter((a, b) -> true)).isEqualTo(BiOptional.empty());
   }
 
-  @Test
-  public void filter_nonEmptyFilteredOut() {
+  @Test public void filter_nonEmptyFilteredOut() {
     assertThat(BiOptional.of(1, 2).filter((a, b) -> a > b)).isEqualTo(BiOptional.empty());
   }
 
-  @Test
-  public void filter_nonEmptyFilteredIn() {
+  @Test public void filter_nonEmptyFilteredIn() {
     assertThat(BiOptional.of(1, 2).filter((a, b) -> a < b)).isEqualTo(BiOptional.of(1, 2));
   }
 
-  @Test
-  public void peek_empty() {
+  @Test public void peek_empty() {
     assertThat(BiOptional.empty().peek(consumer)).isEqualTo(BiOptional.empty());
     verifyZeroInteractions(consumer);
   }
 
-  @Test
-  public void orElse_peek_empty() {
+  @Test public void orElse_peek_empty() {
     assertThat(
             BiOptional.<String, String>empty()
                 .orElse("foo", "bar")
@@ -121,44 +107,37 @@ public class BiOptionalTest {
     verify(consumer).accept("foo", "bar");
   }
 
-  @Test
-  public void peek_nonEmpty() {
+  @Test public void peek_nonEmpty() {
     BiOptional<?, ?> optional = BiOptional.of("foo", "bar");
     assertThat(optional.peek(consumer)).isSameAs(optional);
     verify(consumer).accept("foo", "bar");
   }
 
-  @Test
-  public void orElse_peek_nonEmpty() {
+  @Test public void orElse_peek_nonEmpty() {
     BiOptional<String, String> optional = BiOptional.of("foo", "bar");
     assertThat(optional.orElse("x", null).peek(consumer)).isSameAs(optional);
     verify(consumer).accept("foo", "bar");
   }
 
-  @Test
-  public void or_emptyOrEmpty() {
+  @Test public void or_emptyOrEmpty() {
     assertThat(BiOptional.empty().or(BiOptional::empty)).isEqualTo(BiOptional.empty());
   }
 
-  @Test
-  public void or_emptyOrNonEmptyReturnsAlternative() {
+  @Test public void or_emptyOrNonEmptyReturnsAlternative() {
     assertThat(BiOptional.empty().or(() -> BiOptional.of(1, "one")))
         .isEqualTo(BiOptional.of(1, "one"));
   }
 
-  @Test
-  public void or_nonEmptyOrEmptyReturnsOriginal() {
+  @Test public void or_nonEmptyOrEmptyReturnsOriginal() {
     assertThat(BiOptional.of(1, "one").or(BiOptional::empty)).isEqualTo(BiOptional.of(1, "one"));
   }
 
-  @Test
-  public void or_nonEmptyOrNonEmptyReturnsOriginal() {
+  @Test public void or_nonEmptyOrNonEmptyReturnsOriginal() {
     assertThat(BiOptional.of(1, "one").or(() -> BiOptional.of(2, "two")))
         .isEqualTo(BiOptional.of(1, "one"));
   }
 
-  @Test
-  public void ifPresent_empty() {
+  @Test public void ifPresent_empty() {
     BiOptional.empty()
         .ifPresent(
             (a, b) -> {
@@ -166,8 +145,7 @@ public class BiOptionalTest {
             });
   }
 
-  @Test
-  public void ifPresent_nonEmpty() {
+  @Test public void ifPresent_nonEmpty() {
     AtomicInteger x = new AtomicInteger();
     AtomicReference<String> y = new AtomicReference<>();
     BiOptional.of(1, "one")
@@ -180,113 +158,94 @@ public class BiOptionalTest {
     assertThat(y.get()).isEqualTo("one");
   }
 
-  @Test
-  public void isPresent_empty() {
+  @Test public void isPresent_empty() {
     assertThat(BiOptional.empty().isPresent()).isFalse();
   }
 
-  @Test
-  public void isPresent_nonEmpty() {
+  @Test public void isPresent_nonEmpty() {
     assertThat(BiOptional.of(1, 2).isPresent()).isTrue();
   }
 
-  @Test
-  public void staticFlatMap_fromEmpty() {
+  @Test public void staticFlatMap_fromEmpty() {
     assertThat(BiOptional.flatMap(Optional.empty(), t -> BiOptional.of(t, t)))
         .isEqualTo(BiOptional.empty());
   }
 
-  @Test
-  public void staticFlatMap_mapToEmpty() {
+  @Test public void staticFlatMap_mapToEmpty() {
     assertThat(BiOptional.flatMap(Optional.of(1), t -> BiOptional.empty()))
         .isEqualTo(BiOptional.empty());
   }
 
-  @Test
-  public void staticFlatMap_mapToNonEmpty() {
+  @Test public void staticFlatMap_mapToNonEmpty() {
     assertThat(BiOptional.flatMap(Optional.of(1), t -> BiOptional.of(t, t)))
         .isEqualTo(BiOptional.of(1, 1));
   }
 
-  @Test
-  public void mapPair_fromEmpty() {
+  @Test public void mapPair_fromEmpty() {
     assertThat(BiOptional.from(Optional.empty()).map(l -> l, r -> r)).isEqualTo(BiOptional.empty());
   }
 
-  @Test
-  public void mapPair_fromNonEmpty() {
+  @Test public void mapPair_fromNonEmpty() {
     assertThat(BiOptional.from(Optional.of(1)).map(l -> l, r -> r * 10))
         .isEqualTo(BiOptional.of(1, 10));
   }
 
-  @Test
-  public void mapPair_keyMapsToNull() {
+  @Test public void mapPair_keyMapsToNull() {
     assertThat(BiOptional.from(Optional.of(1)).map(l -> null, r -> r))
         .isEqualTo(BiOptional.empty());
   }
 
-  @Test
-  public void mapPair_valueMapsToNull() {
+  @Test public void mapPair_valueMapsToNull() {
     assertThat(BiOptional.from(Optional.of(1)).map(l -> l, r -> null))
         .isEqualTo(BiOptional.empty());
   }
 
-  @Test
-  public void binaryMapPair_fromEmpty() {
+  @Test public void binaryMapPair_fromEmpty() {
     assertThat(BiOptional.from(Optional.empty()).map((l, r) -> l, (l, r) -> r))
         .isEqualTo(BiOptional.empty());
   }
 
-  @Test
-  public void binaryMapPair_fromNonEmpty() {
+  @Test public void binaryMapPair_fromNonEmpty() {
     assertThat(BiOptional.from(Optional.of(1)).map((l, r) -> l, (l, r) -> r * 10))
         .isEqualTo(BiOptional.of(1, 10));
   }
 
-  @Test
-  public void binaryMapPair_keyMapsToNull() {
+  @Test public void binaryMapPair_keyMapsToNull() {
     assertThat(BiOptional.from(Optional.of(1)).map((l, r) -> null, (l, r) -> r))
         .isEqualTo(BiOptional.empty());
   }
 
-  @Test
-  public void binaryMapPair_valueMapsToNull() {
+  @Test public void binaryMapPair_valueMapsToNull() {
     assertThat(BiOptional.from(Optional.of(1)).map((l, r) -> l, (l, r) -> null))
         .isEqualTo(BiOptional.empty());
   }
 
-  @Test
-  public void testOrElse_empty() {
+  @Test public void testOrElse_empty() {
     String result = BiOptional.empty().orElse("foo", "bar").andThen((a, b) -> a + ":" + b);
     assertThat(result).isEqualTo("foo:bar");
   }
 
-  @Test
-  public void testOrElse_nonEmpty() {
+  @Test public void testOrElse_nonEmpty() {
     int result = BiOptional.of(1, 2).orElse(30, 40).andThen(Integer::sum);
     assertThat(result).isEqualTo(3);
   }
 
-  @Test
-  public void testOrElse_nullAlternatives() {
+  @Test public void testOrElse_nullAlternatives() {
     String result = BiOptional.empty().orElse(null, null).andThen((a, b) -> a + ":" + b);
     assertThat(result).isEqualTo("null:null");
   }
 
-  @Test
-  public void testOrElseThrow_npe() {
+  @Test public void testOrElseThrow_npe() {
     assertThrows(NullPointerException.class, () -> BiOptional.empty().orElseThrow(() -> null));
   }
 
-  @Test
-  public void testOrElseThrow_empty() {
+  @Test public void testOrElseThrow_empty() {
     Exception e = new Exception("test");
     Exception thrown = assertThrows(Exception.class, () -> BiOptional.empty().orElseThrow(() -> e));
     assertThat(thrown).isSameAs(e);
   }
 
-  @Test
-  public void testOrElseThrow_notEmpty() {
+  @Test public void testOrElseThrow_notEmpty() {
     assertThat(BiOptional.of("foo", "bar").orElseThrow().andThen(String::concat))
         .isEqualTo("foobar");
     assertThat(BiOptional.of("foo", "bar").orElseThrow().filter(String::equals))
@@ -299,15 +258,13 @@ public class BiOptionalTest {
         .isTrue();
   }
 
-  @Test
-  public void testNulls() throws Exception {
+  @Test public void testNulls() throws Exception {
     new NullPointerTester().testAllPublicStaticMethods(BiOptional.class);
     testNullChecks(BiOptional.empty());
     testNullChecks(BiOptional.of(1, "one"));
   }
 
-  @Test
-  public void testEquals() {
+  @Test public void testEquals() {
     new EqualsTester()
         .addEqualityGroup(BiOptional.empty(), BiOptional.of(1, 2).filter((a, b) -> a > b))
         .addEqualityGroup(BiOptional.of(1, "one"), BiOptional.of(1, "one").filter((a, b) -> true))
