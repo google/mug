@@ -1,13 +1,14 @@
 package com.google.mu.protobuf.util;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.mu.collect.Immutables.list;
+import static com.google.mu.collect.Immutables.map;
 import static com.google.mu.protobuf.util.MoreStructs.struct;
 import static com.google.mu.protobuf.util.MoreValues.FALSE;
 import static com.google.mu.protobuf.util.MoreValues.NULL;
 import static com.google.mu.protobuf.util.MoreValues.TRUE;
 import static com.google.mu.protobuf.util.MoreValues.listValueOf;
 import static com.google.mu.protobuf.util.MoreValues.toListValue;
-import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
 
 import java.util.List;
@@ -17,7 +18,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.testing.NullPointerTester;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.Value;
@@ -29,13 +29,13 @@ public class MoreValuesTest {
   @Test public void testToListValue() {
     Structor converter = new Structor();
     assertThat(
-            Stream.of(1, "foo", asList(true, false), ImmutableMap.of("k", 20L)).map(converter::toValue).collect(toListValue()))
+            Stream.of(1, "foo", list(true, false), map("k", 20L)).map(converter::toValue).collect(toListValue()))
         .isEqualTo(
             ListValue.newBuilder()
                 .addValues(Values.of(1))
                 .addValues(Values.of("foo"))
-                .addValues(converter.toValue(asList(true, false)))
-                .addValues(converter.toValue(ImmutableMap.of("k", 20L)))
+                .addValues(converter.toValue(list(true, false)))
+                .addValues(converter.toValue(map("k", 20L)))
                 .build());
   }
 
@@ -77,19 +77,19 @@ public class MoreValuesTest {
     assertThat(MoreValues.nullableValueOf("abc")).isEqualTo(Values.of("abc"));
   }
 
-  @Test public void testAsList() {
+  @Test public void testlist() {
     assertThat(MoreValues.asList(listValueOf(1, Long.MAX_VALUE, Long.MIN_VALUE)))
         .containsExactly(1, Long.MAX_VALUE, Long.MIN_VALUE)
         .inOrder();
   }
 
-  @Test public void testAsList_withNullElement() {
+  @Test public void testlist_withNullElement() {
     assertThat(MoreValues.asList(ListValue.newBuilder().addValues(NULL)))
         .containsExactly((Object) null)
         .inOrder();
   }
 
-  @Test public void testAsList_fromBuilder_mutation() {
+  @Test public void testlist_fromBuilder_mutation() {
     ListValue.Builder builder = ListValue.newBuilder().addValues(Values.of("foo"));
     List<Object> list = MoreValues.asList(builder);
     builder.addValues(Values.of(2));
@@ -191,30 +191,30 @@ public class MoreValuesTest {
 
   @Test public void testFromValue_list() {
     assertThat(MoreValues.fromValue(Values.of(listValueOf("foo", "bar"))))
-        .isEqualTo(asList("foo", "bar"));
+        .isEqualTo(list("foo", "bar"));
     assertThat(MoreValues.fromValue(Values.of(listValueOf("foo", "bar")).toBuilder()))
-        .isEqualTo(asList("foo", "bar"));
+        .isEqualTo(list("foo", "bar"));
   }
 
   @Test public void testFromValue_struct() {
     assertThat(MoreValues.fromValue(Values.of(struct("one", 1))))
-        .isEqualTo(ImmutableMap.of("one", 1));
+        .isEqualTo(map("one", 1));
     assertThat(MoreValues.fromValue(Value.newBuilder().setStructValue(struct("one", 0.5))))
-        .isEqualTo(ImmutableMap.of("one", 0.5D));
+        .isEqualTo(map("one", 0.5D));
   }
 
   @Test public void testFromValue_builder_listValueChangeNotReflected() {
     Value.Builder builder = Value.newBuilder().setListValue(listValueOf(1, 2));
     Object object = MoreValues.fromValue(builder);
     builder.getListValueBuilder().clear();
-    assertThat(object).isEqualTo(asList(1, 2));
+    assertThat(object).isEqualTo(list(1, 2));
   }
 
   @Test public void testFromValue_builder_structValueChangeNotReflected() {
     Value.Builder builder = Value.newBuilder().setStructValue(struct("one", 1));
     Object object = MoreValues.fromValue(builder);
     builder.getStructValueBuilder().clear();
-    assertThat(object).isEqualTo(ImmutableMap.of("one", 1));
+    assertThat(object).isEqualTo(map("one", 1));
   }
 
   @Test public void testTrue() {

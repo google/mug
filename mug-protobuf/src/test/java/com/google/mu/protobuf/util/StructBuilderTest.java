@@ -1,9 +1,10 @@
 package com.google.mu.protobuf.util;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.mu.collect.Immutables.list;
+import static com.google.mu.collect.Immutables.map;
 import static com.google.mu.protobuf.util.MoreStructs.struct;
 import static com.google.mu.protobuf.util.MoreValues.listValueOf;
-import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
 
 import org.junit.Test;
@@ -11,7 +12,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableTable;
 import com.google.common.testing.NullPointerTester;
 import com.google.protobuf.ListValue;
@@ -46,12 +46,12 @@ public class StructBuilderTest {
   }
 
   @Test public void testAdd_list() {
-    assertThat(new StructBuilder().add("k", asList(Values.of(1), Values.of(2))).build())
+    assertThat(new StructBuilder().add("k", list(Values.of(1), Values.of(2))).build())
         .isEqualTo(Structs.of("k", Values.of(listValueOf(1, 2))));
   }
 
   @Test public void testAddAll_map() {
-    assertThat(new StructBuilder().addAll(ImmutableMap.of("one", Values.of(1))).build())
+    assertThat(new StructBuilder().addAll(map("one", Values.of(1))).build())
         .isEqualTo(struct("one", 1));
   }
 
@@ -163,21 +163,21 @@ public class StructBuilderTest {
 
   @Test public void testDuplicateKey_listValue() {
     StructBuilder builder = new StructBuilder();
-    builder.add("k", Values.of(asList(Values.of(1))));
+    builder.add("k", Values.of(list(Values.of(1))));
     assertThrows(
-        IllegalArgumentException.class, () -> builder.add("k", Values.of(asList(Values.of(1)))));
+        IllegalArgumentException.class, () -> builder.add("k", Values.of(list(Values.of(1)))));
   }
 
   @Test public void testDuplicateKey_list() {
     StructBuilder builder = new StructBuilder();
-    builder.add("k", asList(Values.of(1)));
-    assertThrows(IllegalArgumentException.class, () -> builder.add("k", asList()));
+    builder.add("k", list(Values.of(1)));
+    assertThrows(IllegalArgumentException.class, () -> builder.add("k", list()));
   }
 
   @Test public void testAddAll_duplicateKeyInMap() {
     StructBuilder builder = new StructBuilder();
-    builder.addAll(ImmutableMap.of("one", Values.of(1)));
-    assertThrows(IllegalArgumentException.class, () -> builder.addAll(ImmutableMap.of("one", Values.of(2))));
+    builder.addAll(map("one", Values.of(1)));
+    assertThrows(IllegalArgumentException.class, () -> builder.addAll(map("one", Values.of(2))));
   }
 
   @Test public void testAddAll_duplicateKeyInMultimap() {
