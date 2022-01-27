@@ -38,57 +38,47 @@ import com.google.common.testing.EqualsTester;
 @RunWith(JUnit4.class)
 public class SelectionTest {
 
-  @Test
-  public void all_limit() {
+  @Test public void all_limit() {
     assertThat(all().limited()).isEmpty();
   }
 
-  @Test
-  public void all_has() {
+  @Test public void all_has() {
     assertThat(all().has("foo")).isTrue();
     assertThat(all().has(null)).isTrue();
   }
 
-  @Test
-  public void all_isEmpty() {
+  @Test public void all_isEmpty() {
     assertThat(all().isEmpty()).isFalse();
   }
 
-  @Test
-  public void none_limit() {
+  @Test public void none_limit() {
     assertThat(none().limited()).hasValue(ImmutableSet.of());
   }
 
-  @Test
-  public void none_has() {
+  @Test public void none_has() {
     assertThat(none().has("foo")).isFalse();
     assertThat(none().has(null)).isFalse();
   }
 
-  @Test
-  public void none_isEmpty() {
+  @Test public void none_isEmpty() {
     assertThat(none().isEmpty()).isTrue();
   }
 
-  @Test
-  public void only_limit() {
+  @Test public void only_limit() {
     assertThat(only("foo", "bar").limited()).hasValue(ImmutableSet.of("foo", "bar"));
   }
 
-  @Test
-  public void only_has() {
+  @Test public void only_has() {
     assertThat(only("foo").has("foo")).isTrue();
     assertThat(only("foo").has("bar")).isFalse();
     assertThat(only("foo").has(null)).isFalse();
   }
 
-  @Test
-  public void only_isEmpty() {
+  @Test public void only_isEmpty() {
     assertThat(only("foo").isEmpty()).isFalse();
   }
 
-  @Test
-  public void only_union() {
+  @Test public void only_union() {
     assertThat(only("foo").union(only("bar"))).isEqualTo(only("foo", "bar"));
     assertThat(only("foo").union(only("bar")).limited().get())
         .containsExactly("foo", "bar")
@@ -98,8 +88,7 @@ public class SelectionTest {
         .inOrder();
   }
 
-  @Test
-  public void only_intersect() {
+  @Test public void only_intersect() {
     assertThat(only("foo", "bar").intersect(only("dog", "bar", "foo")))
         .isEqualTo(only("foo", "bar"));
     assertThat(only("foo", "bar").intersect(only("bar", "dog", "foo")).limited().get())
@@ -108,14 +97,12 @@ public class SelectionTest {
     assertThat(only("foo").intersect(only("bar"))).isEqualTo(none());
   }
 
-  @Test
-  public void nonEmptyOrAll_empty() {
+  @Test public void nonEmptyOrAll_empty() {
     assertThat(nonEmptyOrAll(asList()).limited()).isEmpty();
     assertThat(nonEmptyOrAll(asList()).has("foo")).isTrue();
   }
 
-  @Test
-  public void nonEmptyOrAll_nonEmpty() {
+  @Test public void nonEmptyOrAll_nonEmpty() {
     assertThat(nonEmptyOrAll(asList("foo", "bar")).limited().get())
         .containsExactly("foo", "bar")
         .inOrder();
@@ -124,8 +111,7 @@ public class SelectionTest {
     assertThat(nonEmptyOrAll(asList("foo", "bar")).has("zoo")).isFalse();
   }
 
-  @Test
-  public void nonEmptyOrAll_withDuplicates() {
+  @Test public void nonEmptyOrAll_withDuplicates() {
     assertThat(nonEmptyOrAll(asList("foo", "bar", "foo")).limited().get())
         .containsExactly("foo", "bar")
         .inOrder();
@@ -134,59 +120,49 @@ public class SelectionTest {
     assertThat(nonEmptyOrAll(asList("foo", "bar", "foo")).has("zoo")).isFalse();
   }
 
-  @Test
-  public void parser_all() {
+  @Test public void parser_all() {
     assertThat(Selection.parser().parse("*")).isEqualTo(Selection.all());
   }
 
-  @Test
-  public void parser_empty() {
+  @Test public void parser_empty() {
     assertThat(Selection.parser().parse("")).isEqualTo(Selection.none());
     assertThat(Selection.parser().parse("  ")).isEqualTo(Selection.none());
   }
 
-  @Test
-  public void parser_oneElement() {
+  @Test public void parser_oneElement() {
     assertThat(Selection.parser().parse("foo")).isEqualTo(Selection.only("foo"));
   }
 
-  @Test
-  public void parser_twoElements() {
+  @Test public void parser_twoElements() {
     assertThat(Selection.parser().parse("foo,bar")).isEqualTo(Selection.only("foo", "bar"));
   }
 
-  @Test
-  public void parser_twoElementsWithWhitespacesTrimmed() {
+  @Test public void parser_twoElementsWithWhitespacesTrimmed() {
     assertThat(Selection.parser().parse("foo , bar")).isEqualTo(Selection.only("foo", "bar"));
   }
 
-  @Test
-  public void parser_twoElementsWithEmptyElements() {
+  @Test public void parser_twoElementsWithEmptyElements() {
     assertThat(Selection.parser().parse("foo ,")).isEqualTo(Selection.only("foo"));
   }
 
-  @Test
-  public void delimitedByChar_withElementParser() {
+  @Test public void delimitedByChar_withElementParser() {
     assertThat(Selection.delimitedBy('|').parse("1 |0x2", Integer::decode))
         .isEqualTo(Selection.only(1, 2));
   }
 
-  @Test
-  public void delimitedByWhitespace_withElementParser() {
+  @Test public void delimitedByWhitespace_withElementParser() {
     assertThat(Selection.delimitedBy(' ').parse("1  0x2 ", Integer::decode))
         .isEqualTo(Selection.only(1, 2));
   }
 
-  @Test
-  public void delimitedByStar() {
+  @Test public void delimitedByStar() {
     assertThrows(IllegalArgumentException.class, () -> Selection.delimitedBy('*'));
     assertThrows(
         IllegalArgumentException.class,
         () -> Selection.delimitedBy(Substring.first('*').or(Substring.last('/'))));
   }
 
-  @Test
-  public void testEquals() throws Exception {
+  @Test public void testEquals() throws Exception {
     new EqualsTester()
         .addEqualityGroup(
             all(),

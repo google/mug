@@ -37,8 +37,7 @@ public class OptionalsTest {
     MockitoAnnotations.initMocks(this);
   }
 
-  @Test
-  public void optionally_empty() {
+  @Test public void optionally_empty() {
     assertThat(
             optionally(
                 false,
@@ -48,29 +47,24 @@ public class OptionalsTest {
         .isEmpty();
   }
 
-  @Test
-  public void optionally_supplierReturnsNull() {
+  @Test public void optionally_supplierReturnsNull() {
     assertThat(optionally(true, () -> null)).isEmpty();
   }
 
-  @Test
-  public void optionally_notEmpty() {
+  @Test public void optionally_notEmpty() {
     assertThat(optionally(true, () -> "v")).hasValue("v");
   }
 
-  @Test
-  public void optional_empty() {
+  @Test public void optional_empty() {
     assertThat(optional(false, "whatever")).isEmpty();
     assertThat(optional(false, null)).isEmpty();
   }
 
-  @Test
-  public void optional_nullValueIsTranslatedToEmpty() {
+  @Test public void optional_nullValueIsTranslatedToEmpty() {
     assertThat(optional(true, null)).isEmpty();
   }
 
-  @Test
-  public void optional_notEmpty() {
+  @Test public void optional_notEmpty() {
     assertThat(optional(true, "v")).hasValue("v");
   }
 
@@ -236,19 +230,16 @@ public class OptionalsTest {
         .isEqualTo(Optional.of("foobar"));
   }
 
-  @Test
-  public void both_bothEmpty() {
+  @Test public void both_bothEmpty() {
     assertThat(Optionals.both(Optional.empty(), Optional.empty())).isEqualTo(BiOptional.empty());
   }
 
-  @Test
-  public void both_oneIsEmpty() {
+  @Test public void both_oneIsEmpty() {
     assertThat(Optionals.both(Optional.empty(), Optional.of("one"))).isEqualTo(BiOptional.empty());
     assertThat(Optionals.both(Optional.of(1), Optional.empty())).isEqualTo(BiOptional.empty());
   }
 
-  @Test
-  public void both_noneEmpty() {
+  @Test public void both_noneEmpty() {
     assertThat(Optionals.both(Optional.of(1), Optional.of("one")))
         .isEqualTo(BiOptional.of(1, "one"));
   }

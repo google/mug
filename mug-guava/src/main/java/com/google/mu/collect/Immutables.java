@@ -8,6 +8,7 @@ import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultiset;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.ImmutableTable;
 
 /**
@@ -337,7 +338,8 @@ public final class Immutables {
       K k7, V v7,
       K k8, V v8,
       K k9, V v9) {
-    return ImmutableMap.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7, k8, v8, k9, v9);
+    return ImmutableMap.of(
+        k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7, k8, v8, k9, v9);
   }
 
   /**
@@ -356,7 +358,147 @@ public final class Immutables {
       K k8, V v8,
       K k9, V v9,
       K k10, V v10) {
-    return ImmutableMap.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7, k8, v8, k9, v9, k10, v10);
+    return ImmutableMap.of(
+        k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7, k8, v8, k9, v9, k10, v10);
+  }
+
+  /**
+   * Returns the empty sorted map.
+   *
+   * <p><b>Performance note:</b> the instance returned is a singleton.
+   */
+  public static <K, V> ImmutableSortedMap<K, V> sortedMap() {
+    return ImmutableSortedMap.of();
+  }
+
+  /** Returns an immutable map containing a single entry. */
+  public static <K extends Comparable<? super K>, V> ImmutableSortedMap<K, V> sortedMap(K k1, V v1) {
+    return ImmutableSortedMap.of(k1, v1);
+  }
+
+  /**
+   * Returns an immutable sorted map containing the given entries, sorted by the natural ordering of
+   * their keys.
+   *
+   * @throws IllegalArgumentException if the two keys are equal according to their natural ordering
+   */
+  public static <K extends Comparable<? super K>, V> ImmutableSortedMap<K, V> sortedMap(
+      K k1, V v1, K k2, V v2) {
+    return ImmutableSortedMap.of(k1, v1, k2, v2);
+  }
+
+  /**
+   * Returns an immutable sorted map containing the given entries, sorted by the natural ordering of
+   * their keys.
+   *
+   * @throws IllegalArgumentException if any two keys are equal according to their natural ordering
+   */
+  public static <K extends Comparable<? super K>, V> ImmutableSortedMap<K, V> sortedMap(
+      K k1, V v1, K k2, V v2, K k3, V v3) {
+    return ImmutableSortedMap.of(k1, v1, k2, v2, k3, v3);
+  }
+
+  /**
+   * Returns an immutable sorted map containing the given entries, sorted by the natural ordering of
+   * their keys.
+   *
+   * @throws IllegalArgumentException if any two keys are equal according to their natural ordering
+   */
+  public static <K extends Comparable<? super K>, V> ImmutableSortedMap<K, V> sortedMap(
+      K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4) {
+    return ImmutableSortedMap.of(k1, v1, k2, v2, k3, v3, k4, v4);
+  }
+
+  /**
+   * Returns an immutable sorted map containing the given entries, sorted by the natural ordering of
+   * their keys.
+   *
+   * @throws IllegalArgumentException if any two keys are equal according to their natural ordering
+   */
+  public static <K extends Comparable<? super K>, V> ImmutableSortedMap<K, V> sortedMap(
+      K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5) {
+    return ImmutableSortedMap.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5);
+  }
+
+  /**
+   * Returns an immutable sorted map containing the given entries, sorted by the natural ordering of
+   * their keys.
+   *
+   * @throws IllegalArgumentException if any two keys are equal according to their natural ordering
+   */
+  public static <K extends Comparable<? super K>, V> ImmutableSortedMap<K, V> sortedMap(
+      K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6) {
+    return ImmutableSortedMap.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6);
+  }
+
+  /**
+   * Returns an immutable sorted map containing the given entries, sorted by the natural ordering of
+   * their keys.
+   *
+   * @throws IllegalArgumentException if any two keys are equal according to their natural ordering
+   */
+  public static <K extends Comparable<? super K>, V> ImmutableSortedMap<K, V> sortedMap(
+      K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7) {
+    return ImmutableSortedMap.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7);
+  }
+
+  /**
+   * Returns an immutable sorted map containing the given entries, sorted by the natural ordering of
+   * their keys.
+   *
+   * @throws IllegalArgumentException if any two keys are equal according to their natural ordering
+   */
+  public static <K extends Comparable<? super K>, V> ImmutableSortedMap<K, V> sortedMap(
+      K k1, V v1,
+      K k2, V v2,
+      K k3, V v3,
+      K k4, V v4,
+      K k5, V v5,
+      K k6, V v6,
+      K k7, V v7,
+      K k8, V v8) {
+    return ImmutableSortedMap.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7, k8, v8);
+  }
+
+  /**
+   * Returns an immutable sorted map containing the given entries, sorted by the natural ordering of
+   * their keys.
+   *
+   * @throws IllegalArgumentException if any two keys are equal according to their natural ordering
+   */
+  public static <K extends Comparable<? super K>, V> ImmutableSortedMap<K, V> sortedMap(
+      K k1, V v1,
+      K k2, V v2,
+      K k3, V v3,
+      K k4, V v4,
+      K k5, V v5,
+      K k6, V v6,
+      K k7, V v7,
+      K k8, V v8,
+      K k9, V v9) {
+    return ImmutableSortedMap.of(
+        k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7, k8, v8, k9, v9);
+  }
+
+  /**
+   * Returns an immutable sorted map containing the given entries, sorted by the natural ordering of
+   * their keys.
+   *
+   * @throws IllegalArgumentException if any two keys are equal according to their natural ordering
+   */
+  public static <K extends Comparable<? super K>, V> ImmutableSortedMap<K, V> sortedMap(
+      K k1, V v1,
+      K k2, V v2,
+      K k3, V v3,
+      K k4, V v4,
+      K k5, V v5,
+      K k6, V v6,
+      K k7, V v7,
+      K k8, V v8,
+      K k9, V v9,
+      K k10, V v10) {
+    return ImmutableSortedMap.of(
+        k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7, k8, v8, k9, v9, k10, v10);
   }
 
   /**
@@ -566,7 +708,8 @@ public final class Immutables {
       K k7, V v7,
       K k8, V v8,
       K k9, V v9) {
-    return ImmutableBiMap.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7, k8, v8, k9, v9);
+    return ImmutableBiMap.of(
+        k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7, k8, v8, k9, v9);
   }
   /**
    * Returns an immutable map containing the given entries, in order.
@@ -584,7 +727,8 @@ public final class Immutables {
       K k8, V v8,
       K k9, V v9,
       K k10, V v10) {
-    return ImmutableBiMap.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7, k8, v8, k9, v9, k10, v10);
+    return ImmutableBiMap.of(
+        k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7, k8, v8, k9, v9, k10, v10);
   }
 
   /**

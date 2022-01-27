@@ -15,6 +15,8 @@
 package com.google.mu.util.stream;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.mu.collect.Immutables.list;
+import static com.google.mu.collect.Immutables.map;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.stream.BiCollectors.groupingBy;
 import static com.google.mu.util.stream.BiStream.biStream;
@@ -31,7 +33,6 @@ import static com.google.mu.util.stream.GuavaCollectors.toImmutableSetMultimap;
 import static com.google.mu.util.stream.GuavaCollectors.toImmutableSortedMap;
 import static com.google.mu.util.stream.GuavaCollectors.toImmutableTable;
 import static com.google.mu.util.stream.GuavaCollectors.toMultimap;
-import static java.util.Arrays.asList;
 import static java.util.Comparator.naturalOrder;
 import static java.util.stream.Collectors.summingInt;
 import static java.util.stream.Collectors.toList;
@@ -57,7 +58,7 @@ import com.google.mu.util.Both;
 public class GuavaCollectorsTest {
   @Test public void testToImmutableMap_valuesCollected() {
     ImmutableList<Town> towns =
-        ImmutableList.of(new Town("WA", 100), new Town("WA", 50), new Town("IL", 200));
+        list(new Town("WA", 100), new Town("WA", 50), new Town("IL", 200));
     assertThat(
             biStream(Town::getState, towns)
                 .collect(toImmutableMap(summingInt(Town::getPopulation))))
@@ -67,7 +68,7 @@ public class GuavaCollectorsTest {
 
   @Test public void testToImmutableMap_keyEncounterOrderRetainedThroughValueCollector() {
     ImmutableList<Town> towns =
-        ImmutableList.of(
+        list(
             new Town("WA", 1),
             new Town("FL", 2),
             new Town("WA", 3),
@@ -85,7 +86,7 @@ public class GuavaCollectorsTest {
   }
 
   @Test public void testToImmutableMap_empty() {
-    ImmutableList<Town> towns = ImmutableList.of();
+    ImmutableList<Town> towns = list();
     assertThat(
             biStream(Town::getState, towns)
                 .collect(toImmutableMap(summingInt(Town::getPopulation))))
@@ -141,14 +142,14 @@ public class GuavaCollectorsTest {
 
   @Test public void testFlatteningToImmutableListMultimap() {
     ImmutableListMultimap<Object, String> map =
-        BiStream.of(1, asList("one", "uno"))
+        BiStream.of(1, list("one", "uno"))
             .collect(flatteningToImmutableListMultimap(List::stream));
     assertThat(map).containsExactly(1, "one", 1, "uno");
   }
 
   @Test public void testFlatteningToImmutableSetMultimap() {
     ImmutableSetMultimap<Object, String> map =
-        BiStream.of(1, asList("one", "one", "uno"))
+        BiStream.of(1, list("one", "one", "uno"))
             .collect(flatteningToImmutableSetMultimap(List::stream));
     assertThat(map).containsExactly(1, "one", 1, "uno");
   }
@@ -165,7 +166,7 @@ public class GuavaCollectorsTest {
             .collect(groupingBy((s, i) -> s.charAt(0), groupingBy(s -> s.charAt(1), toList())))
             .collect(toImmutableTable());
     assertThat(table.rowMap())
-        .containsExactly('a', ImmutableMap.of('b', asList(1)), 'b', ImmutableMap.of('c', asList(2)))
+        .containsExactly('a', map('b', list(1)), 'b', map('c', list(2)))
         .inOrder();
   }
 
@@ -175,7 +176,7 @@ public class GuavaCollectorsTest {
             .collect(groupingBy((s, i) -> s.charAt(0), groupingBy(s -> s.charAt(1), toList())))
             .collect(toImmutableTable());
     assertThat(table.rowMap())
-        .containsExactly('a', ImmutableMap.of('b', asList(1)), 'b', ImmutableMap.of('c', asList(2)))
+        .containsExactly('a', map('b', list(1)), 'b', map('c', list(2)))
         .inOrder();
   }
 
@@ -185,7 +186,7 @@ public class GuavaCollectorsTest {
             .collect(groupingBy((s, i) -> s.charAt(0), groupingBy(s -> s.charAt(1), toList())))
             .collect(toImmutableTable());
     assertThat(table.rowMap())
-        .containsExactly('a', ImmutableMap.of('b', asList(1)), 'b', ImmutableMap.of('c', asList(2)))
+        .containsExactly('a', map('b', list(1)), 'b', map('c', list(2)))
         .inOrder();
   }
 
@@ -195,7 +196,7 @@ public class GuavaCollectorsTest {
                 "r1", BiStream.of("c1", 11),
                 "r1", BiStream.of("c2", 12))
             .collect(toImmutableTable());
-    assertThat(table.rowMap()).containsExactly("r1", ImmutableMap.of("c1", 11, "c2", 12)).inOrder();
+    assertThat(table.rowMap()).containsExactly("r1", map("c1", 11, "c2", 12)).inOrder();
   }
 
   @Test public void testToImmutableMap_fromPairs() {

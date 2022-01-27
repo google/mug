@@ -1,9 +1,11 @@
 package com.google.mu.protobuf.util;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.mu.collect.Immutables.list;
+import static com.google.mu.collect.Immutables.map;
+import static com.google.mu.collect.Immutables.table;
 import static com.google.mu.protobuf.util.MoreStructs.struct;
 import static com.google.mu.protobuf.util.MoreValues.toListValue;
-import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
 
 import java.util.ArrayList;
@@ -19,8 +21,6 @@ import org.junit.runners.JUnit4;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableTable;
 import com.google.common.primitives.ImmutableDoubleArray;
 import com.google.common.primitives.ImmutableIntArray;
 import com.google.common.primitives.ImmutableLongArray;
@@ -36,9 +36,8 @@ import com.google.protobuf.util.Values;
 public class StructorTest {
   private final Structor maker = new Structor();
 
-  @Test
-  public void toValue_fromMap() {
-    assertThat(maker.toValue(ImmutableMap.of("one", 1, "two", 2)))
+  @Test public void toValue_fromMap() {
+    assertThat(maker.toValue(map("one", 1, "two", 2)))
         .isEqualTo(
             Value.newBuilder()
                 .setStructValue(
@@ -49,198 +48,169 @@ public class StructorTest {
                 .build());
   }
 
-  @Test
-  public void toValue_fromMultimap() {
+  @Test public void toValue_fromMultimap() {
     assertThat(maker.toValue(ImmutableListMultimap.of("1", "uno", "1", "one")))
         .isEqualTo(
             Value.newBuilder()
                 .setStructValue(
-                    Struct.newBuilder().putFields("1", maker.toValue(asList("uno", "one"))).build())
+                    Struct.newBuilder().putFields("1", maker.toValue(list("uno", "one"))).build())
                 .build());
   }
 
-  @Test
-  public void toValue_fromTable() {
-    assertThat(maker.toValue(ImmutableTable.of("one", "uno", 1)))
+  @Test public void toValue_fromTable() {
+    assertThat(maker.toValue(table("one", "uno", 1)))
         .isEqualTo(
             Value.newBuilder()
                 .setStructValue(
                     Struct.newBuilder()
-                        .putFields("one", maker.toValue(ImmutableMap.of("uno", 1)))
+                        .putFields("one", maker.toValue(map("uno", 1)))
                         .build())
                 .build());
   }
 
-  @Test
-  public void toValue_withNullMapKey() {
+  @Test public void toValue_withNullMapKey() {
     Map<?, ?> map = BiStream.of(null, "null").collect(Collectors::toMap);
     assertThrows(NullPointerException.class, () -> maker.toValue(map));
   }
 
-  @Test
-  public void toValue_withNonStringMapKey() {
+  @Test public void toValue_withNonStringMapKey() {
     Map<?, ?> map = BiStream.of(1, "one").collect(Collectors::toMap);
     assertThrows(IllegalArgumentException.class, () -> maker.toValue(map));
   }
 
-  @Test
-  public void toValue_fromIterable() {
-    assertThat(maker.toValue(asList(10, 20)))
+  @Test public void toValue_fromIterable() {
+    assertThat(maker.toValue(list(10, 20)))
         .isEqualTo(
             Value.newBuilder()
                 .setListValue(ListValue.newBuilder().addValues(Values.of(10)).addValues(Values.of(20)))
                 .build());
   }
 
-  @Test
-  public void toValue_fromOptional() {
+  @Test public void toValue_fromOptional() {
     assertThat(maker.toValue(Optional.empty())).isEqualTo(Values.ofNull());
     assertThat(maker.toValue(Optional.of("foo"))).isEqualTo(Values.of("foo"));
   }
 
-  @Test
-  public void toValue_fromStruct() {
+  @Test public void toValue_fromStruct() {
     Struct struct = maker.struct("foo", 1, "bar", "x");
     assertThat(maker.toValue(struct)).isEqualTo(Value.newBuilder().setStructValue(struct).build());
   }
 
-  @Test
-  public void toValue_fromListValue() {
+  @Test public void toValue_fromListValue() {
     ListValue list = Stream.of(1, 2).map(maker::toValue).collect(toListValue());
     assertThat(maker.toValue(list)).isEqualTo(Value.newBuilder().setListValue(list).build());
   }
 
-  @Test
-  public void toValue_fromNullValue() {
+  @Test public void toValue_fromNullValue() {
     assertThat(maker.toValue(NullValue.NULL_VALUE))
         .isEqualTo(Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build());
   }
 
-  @Test
-  public void toValue_fromNumber() {
+  @Test public void toValue_fromNumber() {
     assertThat(maker.toValue(10L)).isEqualTo(Values.of(10));
     assertThat(maker.toValue(10)).isEqualTo(Values.of(10));
     assertThat(maker.toValue(10F)).isEqualTo(Values.of(10));
     assertThat(maker.toValue(10D)).isEqualTo(Values.of(10));
   }
 
-  @Test
-  public void toValue_fromString() {
+  @Test public void toValue_fromString() {
     assertThat(maker.toValue("42")).isEqualTo(Value.newBuilder().setStringValue("42").build());
   }
 
-  @Test
-  public void toValue_fromBoolean() {
+  @Test public void toValue_fromBoolean() {
     assertThat(maker.toValue(true)).isEqualTo(Value.newBuilder().setBoolValue(true).build());
     assertThat(maker.toValue(false)).isEqualTo(Value.newBuilder().setBoolValue(false).build());
     assertThat(maker.toValue(true)).isSameAs(maker.toValue(true));
     assertThat(maker.toValue(false)).isSameAs(maker.toValue(false));
   }
 
-  @Test
-  public void toValue_fromNull() {
+  @Test public void toValue_fromNull() {
     assertThat(maker.toValue(null))
         .isEqualTo(Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build());
     assertThat(maker.toValue(null)).isSameAs(maker.toValue(null));
   }
 
-  @Test
-  public void toValue_fromEmptyOptional() {
+  @Test public void toValue_fromEmptyOptional() {
     assertThat(maker.toValue(Optional.empty())).isEqualTo(Values.ofNull());
   }
 
-  @Test
-  public void toValue_fromNonEmptyOptional() {
+  @Test public void toValue_fromNonEmptyOptional() {
     assertThat(maker.toValue(Optional.of(123))).isEqualTo(Values.of(123));
   }
 
-  @Test
-  public void toValue_fromValue() {
+  @Test public void toValue_fromValue() {
     Value value = Value.newBuilder().setBoolValue(false).build();
     assertThat(maker.toValue(value).getBoolValue()).isFalse();
   }
 
-  @Test
-  public void toValue_fromUnsupportedType() {
+  @Test public void toValue_fromUnsupportedType() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> maker.toValue(this));
     assertThat(thrown).hasMessageThat().contains(getClass().getName());
   }
 
-  @Test
-  public void toValue_cyclic() {
+  @Test public void toValue_cyclic() {
     List<Object> list = new ArrayList<>();
     list.add(list);
     assertThrows(StackOverflowError.class, () -> maker.toValue(list));
   }
 
-  @Test
-  public void toValue_fromIntArray() {
+  @Test public void toValue_fromIntArray() {
     assertThat(maker.toValue(new int[] {10}))
         .isEqualTo(Values.of(ImmutableList.of(Values.of(10))));
   }
 
-  @Test
-  public void toValue_fromImmutableIntArray() {
+  @Test public void toValue_fromImmutableIntArray() {
     assertThat(maker.toValue(ImmutableIntArray.of(10)))
         .isEqualTo(Values.of(ImmutableList.of(Values.of(10))));
   }
 
-  @Test
-  public void toValue_fromLongArray() {
+  @Test public void toValue_fromLongArray() {
     assertThat(maker.toValue(new long[] {10}))
         .isEqualTo(Values.of(ImmutableList.of(Values.of(10))));
   }
 
-  @Test
-  public void toValue_fromImmutableLongArray() {
+  @Test public void toValue_fromImmutableLongArray() {
     assertThat(maker.toValue(ImmutableLongArray.of(10)))
         .isEqualTo(Values.of(ImmutableList.of(Values.of(10))));
   }
 
-  @Test
-  public void toValue_fromDoubleArray() {
+  @Test public void toValue_fromDoubleArray() {
     assertThat(maker.toValue(new double[] {10}))
         .isEqualTo(Values.of(ImmutableList.of(Values.of(10))));
   }
 
-  @Test
-  public void toValue_fromImmutableDoubleArray() {
+  @Test public void toValue_fromImmutableDoubleArray() {
     assertThat(maker.toValue(ImmutableDoubleArray.of(10)))
         .isEqualTo(Values.of(ImmutableList.of(Values.of(10))));
   }
 
-  @Test
-  public void toValue_fromByteArray() {
+  @Test public void toValue_fromByteArray() {
     assertThat(maker.toValue(new byte[] {10, 20}))
         .isEqualTo(Values.of(ImmutableList.of(Values.of(10), Values.of(20))));
   }
 
-  @Test
-  public void toValue_fromShortArray() {
+  @Test public void toValue_fromShortArray() {
     assertThat(maker.toValue(new short[] {10, 20}))
         .isEqualTo(Values.of(ImmutableList.of(Values.of(10), Values.of(20))));
   }
 
-  @Test
-  public void toValue_fromArray() {
+  @Test public void toValue_fromArray() {
     assertThat(maker.toValue(new String[] {"foo", "bar"}))
         .isEqualTo(Values.of(ImmutableList.of(Values.of("foo"), Values.of("bar"))));
   }
 
-  @Test
-  public void toValue_fromEnum() {
+  @Test public void toValue_fromEnum() {
     assertThat(maker.toValue(Cast.values()))
         .isEqualTo(Values.of(ImmutableList.of(Values.of("VILLAIN"), Values.of("HERO"))));
   }
 
-  @Test
-  public void customConversion() {
+  @Test public void customConversion() {
     Structor custom = new Structor() {
       @Override public Value toValue(Object obj) {
         if (obj instanceof Hero) {
           Hero hero = (Hero) obj;
-          return toValue(ImmutableMap.of("name", hero.name, "titles", hero.titles, "friends", hero.friends));
+          return toValue(map("name", hero.name, "titles", hero.titles, "friends", hero.friends));
         }
         return super.toValue(obj);
       }
@@ -262,8 +232,7 @@ public class StructorTest {
                         "friends", ImmutableList.of())))))));
   }
 
-  @Test
-  public void struct_onePair() {
+  @Test public void struct_onePair() {
     assertThat(new Structor().struct("key", 1))
         .isEqualTo(
             Struct.newBuilder()
@@ -271,13 +240,11 @@ public class StructorTest {
                 .build());
   }
 
-  @Test
-  public void struct_onePair_nullKey() {
+  @Test public void struct_onePair_nullKey() {
     assertThrows(NullPointerException.class, () -> struct(null, "v"));
   }
 
-  @Test
-  public void struct_onePair_nullValue() {
+  @Test public void struct_onePair_nullValue() {
     assertThat(new Structor().struct("key", null))
         .isEqualTo(
             Struct.newBuilder()
@@ -285,8 +252,7 @@ public class StructorTest {
                 .build());
   }
 
-  @Test
-  public void struct_twoPairs() {
+  @Test public void struct_twoPairs() {
     assertThat(new Structor().struct("int", 1, "string", "two"))
         .isEqualTo(
             Struct.newBuilder()
@@ -295,14 +261,12 @@ public class StructorTest {
                 .build());
   }
 
-  @Test
-  public void struct_twoPairs_nullKey() {
+  @Test public void struct_twoPairs_nullKey() {
     Structor maker = new Structor();
     assertThrows(NullPointerException.class, () -> maker.struct(null, "v1", "k2", "v2"));
   }
 
-  @Test
-  public void struct_twoPairs_nullValue() {
+  @Test public void struct_twoPairs_nullValue() {
     assertThat(new Structor().struct("k1", null, "k2", null))
         .isEqualTo(
             Struct.newBuilder()
@@ -311,14 +275,12 @@ public class StructorTest {
                 .build());
   }
 
-  @Test
-  public void struct_twoPairs_duplicateKey() {
+  @Test public void struct_twoPairs_duplicateKey() {
     Structor maker = new Structor();
     assertThrows(IllegalArgumentException.class, () -> maker.struct("a", 1, "a", 2));
   }
 
-  @Test
-  public void struct_3Pairs() {
+  @Test public void struct_3Pairs() {
     assertThat(new Structor().struct("a", 1, "b", 2, "c", 3))
         .isEqualTo(
             Struct.newBuilder()
@@ -328,14 +290,12 @@ public class StructorTest {
                 .build());
   }
 
-  @Test
-  public void struct_3Pairs_nullKey() {
+  @Test public void struct_3Pairs_nullKey() {
     Structor maker = new Structor();
     assertThrows(NullPointerException.class, () -> maker.struct("k1", "v1", "k2", "v2", null, 3));
   }
 
-  @Test
-  public void struct_3Pairs_nullValue() {
+  @Test public void struct_3Pairs_nullValue() {
     assertThat(new Structor().struct("k1", null, "k2", null, "k3", null))
         .isEqualTo(
             Struct.newBuilder()
@@ -345,15 +305,13 @@ public class StructorTest {
                 .build());
   }
 
-  @Test
-  public void struct_3Pairs_duplicateKey() {
+  @Test public void struct_3Pairs_duplicateKey() {
     Structor maker = new Structor();
     assertThrows(IllegalArgumentException.class, () -> maker.struct("a", 1, "b", 2, "a", 3));
   }
 
-  @Test
-  public void struct_fromMap() {
-    assertThat(new Structor().struct(ImmutableMap.of("int", 1, "string", "two")))
+  @Test public void struct_fromMap() {
+    assertThat(new Structor().struct(map("int", 1, "string", "two")))
         .isEqualTo(
             Struct.newBuilder()
                 .putFields("int", Values.of(1))
@@ -361,16 +319,14 @@ public class StructorTest {
                 .build());
   }
 
-  @Test
-  public void nestedStruct_fromTable() {
-    assertThat(new Structor().nestedStruct(ImmutableTable.of("row", "col", 1)))
+  @Test public void nestedStruct_fromTable() {
+    assertThat(new Structor().nestedStruct(table("row", "col", 1)))
         .isEqualTo(struct("row", struct("col", 1)));
   }
 
 
-  @Test
-  public void toStruct_biCollector() {
-    Struct struct = BiStream.of("foo", 1, "bar", ImmutableMap.of("one", true)).collect(new Structor().toStruct());
+  @Test public void toStruct_biCollector() {
+    Struct struct = BiStream.of("foo", 1, "bar", map("one", true)).collect(new Structor().toStruct());
     assertThat(struct)
         .isEqualTo(
             Struct.newBuilder()

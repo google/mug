@@ -26,18 +26,15 @@ import org.junit.Test;
 import com.google.common.testing.ClassSanityTester;
 
 public class IterationTest {
-  @Test
-  public void iteration_empty() {
+  @Test public void iteration_empty() {
     assertThat(new Iteration<Object>().iterate()).isEmpty();
   }
 
-  @Test
-  public void yield_eagerElements() {
+  @Test public void yield_eagerElements() {
     assertThat(new Iteration<>().yield(1).yield(2).iterate()).containsExactly(1, 2).inOrder();
   }
 
-  @Test
-  public void preOrder_deep() {
+  @Test public void preOrder_deep() {
     Tree<String> tree = tree("a")
         .setLeft(tree("b")
             .setLeft("c")
@@ -49,8 +46,7 @@ public class IterationTest {
         .inOrder();
   }
 
-  @Test
-  public void inOrder_deep() {
+  @Test public void inOrder_deep() {
     Tree<String> tree = tree("a")
         .setLeft(tree("b")
             .setLeft("c")
@@ -62,8 +58,7 @@ public class IterationTest {
         .inOrder();
   }
 
-  @Test
-  public void postOrder_deep() {
+  @Test public void postOrder_deep() {
     Tree<String> tree = tree("a")
         .setLeft(tree("b")
             .setLeft("c")
@@ -76,15 +71,13 @@ public class IterationTest {
         .inOrder();
   }
 
-  @Test
-  public void oneTimeIteration() {
+  @Test public void oneTimeIteration() {
     DepthFirst<String> iteration = new DepthFirst<>();
     iteration.iterate();
     assertThrows(IllegalStateException.class, iteration::iterate);
   }
 
-  @Test
-  public void nullChecks() {
+  @Test public void nullChecks() {
     new ClassSanityTester().testNulls(Iteration.class);
   }
 
