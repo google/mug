@@ -1803,7 +1803,7 @@ public class SubstringTest {
             Substring.between(last('<'), last('>')).repeatedly().from("foo<bar>baz"))
         .containsExactly("bar");
     assertThat(
-            Substring.between(first('/'), first('/')).repeatedly().from("/foo/bar/"))
+            Substring.between('/', '/').repeatedly().from("/foo/bar/"))
         .containsExactly("foo", "bar");
   }
 
@@ -1886,38 +1886,38 @@ public class SubstringTest {
   }
 
   @Test public void between_nothingBetweenSameChar() {
-    assertThat(Substring.between(first('.'), first('.')).in(".")).isEmpty();
-    assertThat(Substring.between(first('.'), first('.')).repeatedly().match(".")).isEmpty();
+    assertThat(Substring.between('.', '.').in(".")).isEmpty();
+    assertThat(Substring.between('.', '.').repeatedly().match(".")).isEmpty();
   }
 
   @Test public void between_matchesOpenButNotClose() {
-    assertThat(Substring.between(first('<'), first('>')).in("<foo")).isEmpty();
-    assertThat(Substring.between(first('<'), first('>')).repeatedly().match("<foo")).isEmpty();
+    assertThat(Substring.between('<', '>').in("<foo")).isEmpty();
+    assertThat(Substring.between('<', '>').repeatedly().match("<foo")).isEmpty();
   }
 
   @Test public void between_matchesCloseButNotOpen() {
-    assertThat(Substring.between(first('<'), first('>')).in("foo>")).isEmpty();
-    assertThat(Substring.between(first('<'), first('>')).repeatedly().match("foo>")).isEmpty();
+    assertThat(Substring.between('<', '>').in("foo>")).isEmpty();
+    assertThat(Substring.between('<', '>').repeatedly().match("foo>")).isEmpty();
   }
 
   @Test public void between_closeIsBeforeOpen() {
-    assertThat(Substring.between(first('<'), first('>')).in(">foo<")).isEmpty();
-    assertThat(Substring.between(first('<'), first('>')).repeatedly().match(">foo<")).isEmpty();
+    assertThat(Substring.between('<', '>').in(">foo<")).isEmpty();
+    assertThat(Substring.between('<', '>').repeatedly().match(">foo<")).isEmpty();
   }
 
   @Test public void between_closeBeforeOpenDoesNotCount() {
-    Substring.Match match = Substring.between(first('<'), first('>')).in("><foo>").get();
+    Substring.Match match = Substring.between('<', '>').in("><foo>").get();
     assertThat(match.toString()).isEqualTo("foo");
     assertThat(match.before()).isEqualTo("><");
     assertThat(match.after()).isEqualTo(">");
     assertThat(match.length()).isEqualTo(3);
-    assertThat(Substring.between(first('<'), first('>')).repeatedly().from("><foo>"))
+    assertThat(Substring.between('<', '>').repeatedly().from("><foo>"))
         .containsExactly("foo");
   }
 
   @Test public void between_matchesNone() {
-    assertThat(Substring.between(first('<'), first('>')).in("foo")).isEmpty();
-    assertThat(Substring.between(first('<'), first('>')).repeatedly().match("foo")).isEmpty();
+    assertThat(Substring.between('<', '>').in("foo")).isEmpty();
+    assertThat(Substring.between('<', '>').repeatedly().match("foo")).isEmpty();
   }
 
   @Test public void between_closeUsesBefore() {
@@ -1973,8 +1973,8 @@ public class SubstringTest {
     assertThat(Substring.between(first("abc"), prefix("a")).repeatedly().match("abc")).isEmpty();
     assertThat(Substring.between(first("abc"), prefix('a')).in("abc")).isEmpty();
     assertThat(Substring.between(first("abc"), prefix('a')).repeatedly().match("abc")).isEmpty();
-    assertThat(Substring.between(first("abc"), first("a")).in("abc")).isEmpty();
-    assertThat(Substring.between(first("abc"), first("a")).repeatedly().match("abc")).isEmpty();
+    assertThat(Substring.between("abc", "a").in("abc")).isEmpty();
+    assertThat(Substring.between("abc", "a").repeatedly().match("abc")).isEmpty();
     assertThat(Substring.between(first("abc"), first('a')).in("abc")).isEmpty();
     assertThat(Substring.between(first("abc"), first('a')).repeatedly().match("abc")).isEmpty();
   }
@@ -2024,25 +2024,25 @@ public class SubstringTest {
   }
 
   @Test public void between_openAndCloseAreEqual() {
-    Substring.Match match = Substring.between(first("-"), first("-")).in("foo-bar-baz-duh").get();
+    Substring.Match match = Substring.between("-", "-").in("foo-bar-baz-duh").get();
     assertThat(match.toString()).isEqualTo("bar");
     assertThat(match.before()).isEqualTo("foo-");
     assertThat(match.after()).isEqualTo("-baz-duh");
     assertThat(match.length()).isEqualTo(3);
     assertThat(
-            Substring.between(first("-"), first("-")).repeatedly().match("foo-bar-baz-duh")
+            Substring.between("-", "-").repeatedly().match("foo-bar-baz-duh")
                 .map(Object::toString))
         .containsExactly("bar", "baz");
   }
 
   @Test public void between_closeBeforeOpenIgnored() {
-    Substring.Match match = Substring.between(first("<"), first(">")).in(">foo<bar>").get();
+    Substring.Match match = Substring.between("<", ">").in(">foo<bar>").get();
     assertThat(match.toString()).isEqualTo("bar");
     assertThat(match.before()).isEqualTo(">foo<");
     assertThat(match.after()).isEqualTo(">");
     assertThat(match.length()).isEqualTo(3);
     assertThat(
-            Substring.between(first("<"), first(">")).repeatedly().match(">foo<bar>h<baz>")
+            Substring.between("<", ">").repeatedly().match(">foo<bar>h<baz>")
                 .map(Object::toString))
         .containsExactly("bar", "baz");
   }
@@ -2088,7 +2088,7 @@ public class SubstringTest {
   @Test public void iterateIn_example() {
     String text = "{x:1}, {y:2}, {z:3}";
     ImmutableListMultimap<String, String> dictionary =
-        Substring.between(first('{'), first('}')).repeatedly().match(text)
+        Substring.between('{', '}').repeatedly().match(text)
             .map(Object::toString)
             .map(Substring.first(':')::in)
             .map(Optional::get)

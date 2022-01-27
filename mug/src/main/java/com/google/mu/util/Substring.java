@@ -479,6 +479,24 @@ public final class Substring {
 
   /**
    * Returns a {@code Pattern} that will match the substring between {@code open} and {@code close}.
+   *
+   * @since 6.0
+   */
+  public static Pattern between(String open, String close) {
+    return between(first(open), first(close));
+  }
+
+  /**
+   * Returns a {@code Pattern} that will match the substring between {@code open} and {@code close}.
+   *
+   * @since 6.0
+   */
+  public static Pattern between(char open, char close) {
+    return between(first(open), first(close));
+  }
+
+  /**
+   * Returns a {@code Pattern} that will match the substring between {@code open} and {@code close}.
    * For example the following pattern finds the link text in markdown syntax:
    *
    * <pre>
