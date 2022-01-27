@@ -478,7 +478,11 @@ public final class Substring {
   }
 
   /**
-   * Returns a {@code Pattern} that will match the substring between {@code open} and {@code close}.
+   * Returns a {@code Pattern} that will match the substring between the first {@code open} and the
+   * first {@code close} after it.
+   *
+   * <p>If for example you need to find the substring between the first {@code "<-"} and the
+   * <em>last</em> {@code "->"}, use {@code between(first("<-"), last("->"))} instead.
    *
    * @since 6.0
    */
@@ -487,7 +491,11 @@ public final class Substring {
   }
 
   /**
-   * Returns a {@code Pattern} that will match the substring between {@code open} and {@code close}.
+   * Returns a {@code Pattern} that will match the substring between the first {@code open} and the
+   * first {@code close} after it.
+   *
+   * <p>If for example you need to find the substring between the first and the <em>last</em> {@code
+   * '/'}, use {@code between(first('/'), last('/'))} instead.
    *
    * @since 6.0
    */
