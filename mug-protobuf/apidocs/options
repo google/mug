@@ -20,6 +20,8 @@
 'https://docs.oracle.com/javase/8/docs/api' '/Users/yinglei/mug/mug-protobuf/target/javadoc-bundle-options'
 -linkoffline
 'http://github.com/google/mug/mug/apidocs' '/Users/yinglei/mug/mug/target/site/apidocs'
+-linkoffline
+'http://github.com/google/mug/mug-guava/apidocs' '/Users/yinglei/mug/mug-guava/target/site/apidocs'
 -stylesheetfile
 '/Users/yinglei/mug/javadoc-stylesheet.css'
 -use
