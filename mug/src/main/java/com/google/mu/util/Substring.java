@@ -543,11 +543,11 @@ public final class Substring {
    * Returns a {@code Pattern} specified by the {@code format} string with {@code "%s"} as
    * sub-pattern placeholders, which are provided through parameters.
    *
-   * <p>For example, {@code pattern("%s://%s/%s?%s", SCHEME, AUTHORITY, PATH, QUERY)} can be used
-   * to match a full URI with scheme, authority, path and query strings.
+   * <p>For example, {@code pattern("http://%s/%s?%s", AUTHORITY, PATH, QUERY)} can be used
+   * to match a full HTTP URI with authority, path and query strings.
    *
    * <p>The match always starts from the beginning of the string, but doesn't need to match to the
-   * end of the input string (unless specially asked for by a placeholder pattern such as {@link #END}).
+   * end of the input string.
    *
    * <p>If the pattern starts with a placeholder {@code "%s"}, then the result match doesn't have to
    * start from the beginning (say, if the corresponding sub-pattern is {@code first('/')}).
