@@ -528,7 +528,7 @@ public final class Substring {
    * {@code "%s"} placeholder is supported.
    *
    * <p>This method provides a cheap (runtime and memory-wise) alternative to regex for string
-   * patterns with simple to medium complexity (no quantifiers, lookaround or backtracking),
+   * patterns with simple to medium complexity (no quantifiers, look-behind or backtracking),
    * by composing {@link Pattern} objects together.
    *
    * <p>Pattern matching starts from the beginning of the string, but doesn't need to match to the

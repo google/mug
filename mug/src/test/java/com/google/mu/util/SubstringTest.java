@@ -2075,9 +2075,14 @@ public class SubstringTest {
         .isEqualTo("first('(').peek(first('<'))");
   }
 
-  @Test public void peek_match() {
+  @Test
+  public void peek_empty() {
     assertThat(prefix("http").peek("").from("http")).hasValue("http");
     assertThat(prefix("http").peek("").from("https")).hasValue("http");
+  }
+
+  @Test
+  public void peek_match() {
     assertThat(prefix("http").peek(":").from("http://")).hasValue("http");
     assertThat(prefix("http").peek(":").repeatedly().from("http://")).containsExactly("http");
     assertThat(before(first('/')).peek("/").repeatedly().from("foo/bar/"))
