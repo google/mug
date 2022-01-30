@@ -2250,6 +2250,14 @@ public class SubstringTest {
     assertThrows(IllegalArgumentException.class, () -> Substring.pattern("foo", first("boo")));
   }
 
+  @Test public void testPattern_toString() {
+    assertThat(Substring.pattern("http://%s/%s", prefix("google.com"), prefix("path")).toString())
+        .isEqualTo("upToIncluding(http://.then(google.com).then(/).then(path))");
+    assertThat(
+            Substring.pattern("%s:%s%s/%s", first("http"), prefix("//"), prefix("google.com"), prefix("path")).toString())
+        .isEqualTo("first('http').spanTo(:).spanTo(//).spanTo(google.com).spanTo(/).spanTo(path)");
+  }
+
   @Test public void testNulls() throws Exception {
     new NullPointerTester().testAllPublicInstanceMethods(prefix("foo").in("foobar").get());
     newClassSanityTester().testNulls(Substring.class);

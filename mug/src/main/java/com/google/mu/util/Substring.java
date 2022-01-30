@@ -562,7 +562,6 @@ public final class Substring {
    * <p>Character escaping isn't supported. If the pattern contains literal {@code %s},
    * make it a placeholder with {@code prefix("%s")} as the parameter value.
    *
-   *
    * @throws IllegalArgumentException if the number of parameters doesn't match the number of
    *         {@code "%s"} placeholders.
    * @throws NullPointerException if {@code format} or any parameter is null
