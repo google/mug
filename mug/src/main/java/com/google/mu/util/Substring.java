@@ -712,7 +712,7 @@ public final class Substring {
      * if the {@code following} pattern can't find a match in the substring after the current match.
      *
      * <p>Useful in asserting that the current match is followed by the expected pattern. For example:
-     * {@code SCHEME_NAME.peek(prefix(':')} returns the URI scheme name.
+     * {@code SCHEME_NAME.peek(prefix(':'))} returns the URI scheme name.
      *
      * <p>Note that unlike regex lookahead, no backtracking is attempted. So {@code
      * first("foo").peek("bar")} will match "bafoobar" but won't match "foofoobar" because
@@ -742,7 +742,10 @@ public final class Substring {
      * Returns a {@code Pattern} that asserts that this pattern must <em>not</em> match the input,
      * in which case an empty match starting at the beginning of the input is returned.
      *
-     * <p>Useful when combined with {@link peek} to support negative lookahead.
+     * <p>Useful when combined with {@link #peek} to support negative lookahead.
+     *
+     * <p>Note that {@code pattern.not().not()} isn't equivalent to {@code pattern} because the
+     * result match is empty.
      *
      * @since 6.0
      */

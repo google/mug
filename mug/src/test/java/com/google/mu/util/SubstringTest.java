@@ -2110,6 +2110,17 @@ public class SubstringTest {
     assertThat(prefix("http").not().repeatedly().from("http://")).isEmpty();
   }
 
+  @Test public void notOfNot_match() {
+    assertThat(prefix("http").not().not().from("http")).hasValue("");
+    assertThat(prefix("http").not().not().in("http").map(Match::after)).hasValue("http");
+    assertThat(prefix("http").not().not().repeatedly().from("http")).containsExactly("");
+  }
+
+  @Test public void notOfNot_noMatch() {
+    assertThat(prefix("http").not().not().from("ftp")).isEmpty();
+    assertThat(prefix("http").not().not().repeatedly().from("ftp")).isEmpty();
+  }
+
   @Test public void patternFrom_noMatch() {
     assertThat(prefix("foo").from("")).isEmpty();
   }
