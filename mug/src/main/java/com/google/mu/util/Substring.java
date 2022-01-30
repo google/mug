@@ -562,8 +562,8 @@ public final class Substring {
    *
    * <p>Note that the result pattern attempts no backtracking, so if any placeholder or the format
    * string in between already matches, the remaining must match or else matching fails. For example,
-   * {@code pattern("%sbar", first("foo")} won't match {@code "foonotbar,foobar"} because after {@code
-   * first("foo") matches, the following {@code "notbar"} fails the match immediately.
+   * {@code pattern("%sbar", first("foo"))} won't match {@code "foonotbar,foobar"} because after
+   * {@code first("foo")} matches, the following {@code "notbar"} aborts the match immediately.
    *
    * <p>No other JDK-style placeholders (like {@code %d}) are supported.
    *
