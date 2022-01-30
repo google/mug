@@ -560,6 +560,7 @@ public final class Substring {
    * @throws IllegalArgumentException if the number of parameters doesn't match the number of
    *         {@code "%s"} placeholders.
    * @throws NullPointerException if {@code format} or any parameter is null
+   * @since 6.0
    */
   public static Pattern pattern(String format, Pattern param1, Pattern... extraParams) {
     List<String> fragments =
