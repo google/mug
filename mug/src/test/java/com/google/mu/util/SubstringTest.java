@@ -2076,6 +2076,8 @@ public class SubstringTest {
   }
 
   @Test public void peek_match() {
+    assertThat(prefix("http").peek("").from("http")).hasValue("http");
+    assertThat(prefix("http").peek("").from("https")).hasValue("http");
     assertThat(prefix("http").peek(":").from("http://")).hasValue("http");
     assertThat(prefix("http").peek(":").repeatedly().from("http://")).containsExactly("http");
     assertThat(before(first('/')).peek("/").repeatedly().from("foo/bar/"))
