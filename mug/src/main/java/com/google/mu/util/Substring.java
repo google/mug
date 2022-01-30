@@ -517,7 +517,7 @@ public final class Substring {
 
   /**
    * Returns a {@code Pattern} specified by the {@code format} string with {@code "%s"} as
-   * inner pattern placeholders, which are provided through parameters.
+   * inner pattern placeholders, which are provided through {@code params}.
    *
    * <p>For example, {@code pattern("http://%s/%s?%s", AUTHORITY, PATH, QUERY)} can be used
    * to match a full HTTP URI, where {@code AUTHORITY}, {@code PATH} and {@code QUERY} are
