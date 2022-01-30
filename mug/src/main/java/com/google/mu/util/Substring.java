@@ -557,6 +557,12 @@ public final class Substring {
    * {@code pattern("%sbar", first("foo")} won't match {@code "foonotbar,foobar"} because after {@code
    * first("foo") matches, the following {@code "notbar"} fails the match immediately.
    *
+   * <p>No other JDK-style placeholders (like {@code %d}) are supported.
+   *
+   * <p>Character escaping isn't supported. If the pattern contains literal {@code %s},
+   * make it a placeholder with {@code prefix("%s")} as the parameter value.
+   *
+   *
    * @throws IllegalArgumentException if the number of parameters doesn't match the number of
    *         {@code "%s"} placeholders.
    * @throws NullPointerException if {@code format} or any parameter is null
