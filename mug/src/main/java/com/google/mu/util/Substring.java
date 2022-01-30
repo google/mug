@@ -547,7 +547,7 @@ public final class Substring {
    * to match a full URI with scheme, authority, path and query strings.
    *
    * <p>The match always starts from the beginning of the string, but doesn't need to match to the
-   * end of the input string (unless specially done by a placeholder pattern such as {@link #END}).
+   * end of the input string (unless specially asked for by a placeholder pattern such as {@link #END}).
    *
    * <p>If the pattern starts with a placeholder {@code "%s"}, then the result match doesn't have to
    * start from the beginning (say, if the corresponding sub-pattern is {@code first('/')}).
