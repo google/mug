@@ -2092,6 +2092,24 @@ public class SubstringTest {
     assertThat(prefix("http").peek(":").repeatedly().from("https://")).isEmpty();
   }
 
+  @Test public void not_toString() {
+    assertThat(first("(").not().toString())
+        .isEqualTo("first('(').not()");
+  }
+
+  @Test public void not_match() {
+    assertThat(prefix("http").peek(prefix(':').not()).from("https://")).hasValue("http");
+    assertThat(prefix("http").peek(prefix(':').not()).repeatedly().from("https://"))
+        .containsExactly("http");
+    assertThat(before(first('/')).peek(prefix('?').not()).repeatedly().from("foo/bar/"))
+        .containsExactly("foo", "bar").inOrder();
+  }
+
+  @Test public void not_noMatch() {
+    assertThat(prefix("http").not().from("http://")).isEmpty();
+    assertThat(prefix("http").not().repeatedly().from("http://")).isEmpty();
+  }
+
   @Test public void patternFrom_noMatch() {
     assertThat(prefix("foo").from("")).isEmpty();
   }

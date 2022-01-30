@@ -709,13 +709,14 @@ public final class Substring {
 
     /**
      * Return a {@code Pattern} equivalent to this {@code Pattern}, except it will fail to match
-     * if {@code following} pattern can't find a match in the substring after the current match.
+     * if the {@code following} pattern can't find a match in the substring after the current match.
      *
      * <p>Useful in asserting that the current match is followed by the expected pattern. For example:
      * {@code SCHEME_NAME.peek(prefix(':')} returns the URI scheme name.
      *
      * <p>Note that unlike regex lookahead, no backtracking is attempted. So {@code
-     * first("foo").peek("bar")} will match "bafoobar" but won't match "foofoobar".
+     * first("foo").peek("bar")} will match "bafoobar" but won't match "foofoobar" because
+     * the first "foo" isn't followed by "bar".
      *
      * @since 6.0
      */
@@ -728,8 +729,7 @@ public final class Substring {
           if (preceding == null) {
             return null;
           }
-          Match next = following.match(input, preceding.endIndex);
-          return next == null ? null : preceding;
+          return following.match(input, preceding.endIndex) == null ? null : preceding;
         }
 
         @Override public String toString() {
@@ -739,10 +739,30 @@ public final class Substring {
     }
 
     /**
+     * Returns a {@code Pattern} that asserts that this pattern must <em>not</em> match the input,
+     * in which case an empty match starting at the beginning of the input is returned.
+     *
+     * <p>Useful when combined with {@link peek} to support negative lookahead.
+     *
+     * @since 6.0
+     */
+    public final Pattern not() {
+      Pattern base = this;
+      return new Pattern() {
+        @Override Match match(String input, int fromIndex) {
+          return base.match(input, fromIndex) == null ? BEGINNING.match(input, fromIndex) : null;
+        }
+        @Override public String toString() {
+          return base + ".not()";
+        }
+      };
+    }
+
+    /**
      * Return a {@code Pattern} equivalent to this {@code Pattern}, except it will fail to match
      * if it's not followed by the {@code following} string.
      *
-     * <p>Useful in asserting that the current match is followed by the expected substring. For example:
+     * <p>Useful in asserting that the current match is followed by the expected keyword. For example:
      * {@code SCHEME_NAME.peek(":")} returns the URI scheme name.
      *
      * <p>Note that unlike regex lookahead, no backtracking is attempted. So {@code
