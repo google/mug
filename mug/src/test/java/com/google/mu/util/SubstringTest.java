@@ -2055,6 +2055,9 @@ public class SubstringTest {
   @Test public void then_match() {
     assertThat(first("GET").then(prefix(" ")).split("GET http").map(Joiner.on(':')::join))
         .hasValue("GET:http");
+    assertThat(
+            before(first('/')).then(prefix("")).repeatedly().match("foo/bar/").map(Match::before))
+        .containsExactly("foo", "foo/bar");
   }
 
   @Test public void then_firstPatternDoesNotMatch() {
@@ -2191,6 +2194,74 @@ public class SubstringTest {
   @Test public void testRegexTopLevelGroups_noMatch() {
     assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("((ab)(cd)+)ef")).from("cdef"))
         .isEmpty();
+  }
+
+  @Test public void testPattern_noParam() {
+    assertThat(Substring.pattern("foo").from("foo.bar.boo")).hasValue("foo");
+    assertThat(Substring.pattern("foo")).isEqualTo(prefix("foo"));
+  }
+
+  @Test public void testPattern_withOneParam() {
+    assertThat(Substring.pattern("foo%s", first("bar")).from("foo.bar.boo")).hasValue("foo.bar");
+    assertThat(Substring.pattern("foo%s", first("bar")).repeatedly().from("foo.barfoo-barfoo"))
+        .containsExactly("foo.bar", "foo-bar");
+  }
+
+  @Test public void testPattern_lookahead() {
+    assertThat(Substring.pattern("%s%s", prefix("http").or(prefix("https")), before(prefix("://"))).from("http://"))
+        .hasValue("http");
+    assertThat(Substring.pattern("%s%s", prefix("http").or(prefix("https")), before(prefix("://"))).from("http:/"))
+        .isEmpty();
+  }
+
+  @Test public void testPattern_anchorAtEnd() {
+    assertThat(Substring.pattern("(%s);%s", prefix(':'), END).from("(:);"))
+        .hasValue("(:);");
+  }
+
+  @Test public void testPattern_succeedingIndex() {
+    assertThat(Substring.pattern("%s%s", prefix('/'), before(first('/'))).repeatedly().from("/foo//bar/"))
+        .containsExactly("/foo", "/bar");
+    assertThat(Substring.pattern("%s", before(first('/'))).repeatedly().from("foo/bar/"))
+        .containsExactly("foo", "bar");
+  }
+
+  @Test public void testPattern_matchFromTheFirstPattern() {
+    assertThat(Substring.pattern("%s%s", first("boo"), first("zoo")).from("fooboobarzootoo"))
+        .hasValue("boobarzoo");
+  }
+
+  @Test public void testPattern_mismatchAtFirstFragment() {
+    assertThat(Substring.pattern("foo%s", prefix("boo")).from("foboo")).isEmpty();
+  }
+
+  @Test public void testPattern_mismatchAtFirstPlaceholder() {
+    assertThat(Substring.pattern("foo%s%s", prefix("boo"), first("zoo")).from("foobozoo")).isEmpty();
+  }
+
+  @Test public void testPattern_mismatchAtSecondPlaceholder() {
+    assertThat(Substring.pattern("foo%s%s", prefix("boo"), first("zoo")).from("fooboozo")).isEmpty();
+  }
+
+  @Test public void testPattern_noBacktrack() {
+    assertThat(Substring.pattern("%s%s", first("boo"), Substring.pattern("zoo")).from("fooboozofooboozoo"))
+        .isEmpty();
+  }
+
+  @Test public void testPattern_fewerPlaceholders() {
+    assertThrows(IllegalArgumentException.class, () -> Substring.pattern("foo%s%s", first("boo")));
+  }
+
+  @Test public void testPattern_morePlaceholders() {
+    assertThrows(IllegalArgumentException.class, () -> Substring.pattern("foo", first("boo")));
+  }
+
+  @Test public void testPattern_toString() {
+    assertThat(Substring.pattern("http://%s/%s", prefix("google.com"), prefix("path")).toString())
+        .isEqualTo("upToIncluding(http://.then(google.com).then(/).then(path))");
+    assertThat(
+            Substring.pattern("%s:%s%s/%s", first("http"), prefix("//"), prefix("google.com"), prefix("path")).toString())
+        .isEqualTo("first('http').spanTo(:).spanTo(//).spanTo(google.com).spanTo(/).spanTo(path)");
   }
 
   @Test public void testNulls() throws Exception {
