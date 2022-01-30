@@ -541,11 +541,11 @@ public final class Substring {
 
   /**
    * Returns a {@code Pattern} specified by the {@code format} string with {@code "%s"} as
-   * sub-pattern placeholders, which are provided through parameters.
+   * inner pattern placeholders, which are provided through parameters.
    *
    * <p>For example, {@code pattern("http://%s/%s?%s", AUTHORITY, PATH, QUERY)} can be used
    * to match a full HTTP URI, where {@code AUTHORITY}, {@code PATH} and {@code QUERY} are
-   * patterns defined to match uri authority, path and query string respectively.
+   * pattern objects defined to match uri authority, path and query string respectively.
    *
    * <p>Generally, if a string is formatted with {@code String.format(formatString, "foo", "bar")},
    * it can be matched by {@code pattern(formatString, prefix("foo"), prefix("bar"))}, but only
