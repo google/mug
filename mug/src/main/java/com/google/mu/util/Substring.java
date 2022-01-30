@@ -18,6 +18,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -538,6 +539,56 @@ public final class Substring {
     };
   }
 
+  /**
+   * Returns a {@code Pattern} specified by the {@code format} string with {@code "%s"} as
+   * sub-pattern placeholders, which are provided through parameters.
+   *
+   * <p>For example, {@code pattern("%s://%s/%s?%s", SCHEME, AUTHORITY, PATH, QUERY)} can be used
+   * to match a full URI with scheme, authority, path and query strings.
+   *
+   * <p>The match always starts from the beginning of the string, but doesn't need to match to the
+   * end of the input string (unless specially done by a placeholder pattern such as {@link #END}).
+   *
+   * <p>If the pattern starts with a placeholder {@code "%s"}, then the result match doesn't have to
+   * start from the beginning (say, if the corresponding sub-pattern is {@code first('/')}).
+   *
+   * <p>Note that the result pattern attempts no backtracking, so if any placeholder or the format
+   * string in between already matches, the remaining must match or else matching fails. For example,
+   * {@code pattern("%sbar", first("foo")} won't match {@code "foonotbar,foobar"} because after {@code
+   * first("foo") matches, the following {@code "notbar"} fails the match immediately.
+   *
+   * @throws IllegalArgumentException if the number of parameters doesn't match the number of
+   *         {@code "%s"} placeholders.
+   * @throws NullPointerException if {@code format} or any parameter is null
+   */
+  public static Pattern pattern(String format, Pattern param1, Pattern... extraParams) {
+    List<String> fragments =
+        first("%s").repeatedly().split(format).map(Match::toString).collect(toList());
+    List<Pattern> parameters = new ArrayList<>();
+    parameters.add(requireNonNull(param1));
+    for (Pattern param : extraParams) {
+      parameters.add(requireNonNull(param));
+    }
+    if (fragments.size() != parameters.size() + 1) {
+      throw new IllegalArgumentException(
+          (fragments.size() - 1) + " placeholders in pattern; " + parameters.size() + " parameters provided.");
+    }
+    if (fragments.get(0).isEmpty()) {
+      // Pattern starts with %s. Which means it doesn't necessarily start from the beginning
+      Pattern p = parameters.get(0).spanImmediately(fragments.get(1));
+      for (int i = 1; i < parameters.size(); i++) {
+        p = p.spanTo(parameters.get(i)).spanImmediately(fragments.get(i + 1));
+      }
+      return p;
+    } else {
+      Pattern p = prefix(fragments.get(0));
+      for (int i = 0; i < parameters.size(); i++) {
+        p = p.then(parameters.get(i)).thenImmediately(fragments.get(i + 1));
+      }
+      return upToIncluding(p);
+    }
+  }
+
   /** A pattern that can be matched against a string, finding a single substring from it. */
   public abstract static class Pattern {
     /**
@@ -645,13 +696,61 @@ public final class Substring {
           if (preceding == null) {
             return null;
           }
-          return following.match(input, preceding.endIndex);
+          Match next = following.match(input, preceding.endIndex);
+          if (next == null) {
+            return null;
+          }
+          // Keep the succeedingIndex strictly increasing.
+          return next.succeedingIndex < preceding.succeedingIndex
+              ? new Match(input, next.startIndex, next.length(), preceding.succeedingIndex)
+              : next;
         }
 
         @Override public String toString() {
           return base + ".then(" + following + ")";
         }
       };
+    }
+
+    /** Matches {@code following} string that immediately follows. */
+    final Pattern thenImmediately(String following) {
+      return following.isEmpty() ? this : then(prefix(following));
+    }
+
+    /**
+     * Matches this pattern and then matches {@code following}.
+     * The result matches from the beginning of this pattern to the end of {@code following}.
+     */
+    final Pattern spanTo(Pattern following) {
+      requireNonNull(following);
+      Pattern base = this;
+      return new Pattern() {
+        @Override Match match(String input, int fromIndex) {
+          Match preceding = base.match(input, fromIndex);
+          if (preceding == null) {
+            return null;
+          }
+          Match next = following.match(input, preceding.endIndex);
+          if (next == null) {
+            return null;
+          }
+          return new Match(
+              input,
+              preceding.startIndex,
+              next.endIndex - preceding.startIndex,
+              // Keep the succeedingIndex strictly increasing.
+              Math.max(preceding.succeedingIndex, next.succeedingIndex));
+        }
+
+        @Override public String toString() {
+          return base + ".to(" + following + ")";
+        }
+      };
+    }
+
+    /** Span the match to the {@code following} string that immediately follows. */
+    final Pattern spanImmediately(String following) {
+      return following.isEmpty() ? this : spanTo(prefix(following));
     }
 
     /**
