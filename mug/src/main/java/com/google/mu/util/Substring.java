@@ -15,10 +15,8 @@
 package com.google.mu.util;
 
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -337,32 +335,11 @@ public final class Substring {
    * order, including any characters between consecutive stops.
    */
   public static Pattern spanningInOrder(String stop1, String stop2, String... moreStops) {
-    List<String> stops =
-        Stream.concat(Stream.of(stop1, stop2), Arrays.stream(moreStops))
-            .peek(Objects::requireNonNull)
-            .collect(toList());
-    return new Pattern() {
-      @Override Match match(String input, int fromIndex) {
-        int begin = -1;
-        for (String stop : stops) {
-          int index = input.indexOf(stop, fromIndex);
-          if (index < 0) {
-            return null;
-          }
-          if (begin == -1) {
-            begin = index;
-          }
-          fromIndex = index + stop.length();
-        }
-        return new Match(input, begin, fromIndex - begin);
-      }
-
-      @Override public String toString() {
-        return "spanningInOrder("
-            + stops.stream().map(s -> "'" + s + "'").collect(joining(", "))
-            + ")";
-      }
-    };
+    Pattern result = first(stop1).spanTo(first(stop2));
+    for (String stop : moreStops) {
+      result = result.spanTo(first(stop));
+    }
+    return result;
   }
 
   /** Returns a {@code Pattern} that matches the last occurrence of {@code str}. */
@@ -540,7 +517,7 @@ public final class Substring {
 
   /**
    * Returns a {@code Pattern} specified by the {@code format} string with {@code "%s"} as
-   * inner pattern placeholders, which are provided through parameters.
+   * inner pattern placeholders, which are provided through {@code params}.
    *
    * <p>For example, {@code pattern("http://%s/%s?%s", AUTHORITY, PATH, QUERY)} can be used
    * to match a full HTTP URI, where {@code AUTHORITY}, {@code PATH} and {@code QUERY} are
