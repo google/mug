@@ -527,9 +527,9 @@ public final class Substring {
    * it can be matched by {@code pattern(formatString, pattern("foo"), pattern("bar"))}, but only
    * {@code "%s"} placeholder is supported.
    *
-   * <p>This method provides a cheap (runtime and memory-wise) alternative to regex for simplistic
-   * string patterns (no quantifiers, lookaround or backtracking), by composing {@link Pattern}
-   * objects together.
+   * <p>This method provides a cheap (runtime and memory-wise) alternative to regex for string
+   * patterns with simple to medium complexity (no quantifiers, lookaround or backtracking),
+   * by composing {@link Pattern} objects together.
    *
    * <p>Pattern matching starts from the beginning of the string, but doesn't need to match to the
    * end of the input string.
