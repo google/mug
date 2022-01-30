@@ -2112,7 +2112,7 @@ public class SubstringTest {
   }
 
   @Test public void spanningInOrder_toString() {
-    assertThat(spanningInOrder("o", "bar").toString()).isEqualTo("spanningInOrder('o', 'bar')");
+    assertThat(spanningInOrder("o", "bar").toString()).isEqualTo("first('o').spanTo(first('bar'))");
   }
 
   @Test public void spanningInOrder_twoStops_matches() {
