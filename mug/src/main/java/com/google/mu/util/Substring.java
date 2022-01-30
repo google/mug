@@ -551,6 +551,10 @@ public final class Substring {
    * it can be matched by {@code pattern(formatString, prefix("foo"), prefix("bar"))}, but only
    * {@code "%s"} placeholder is supported.
    *
+   * <p>This method provides a cheap (runtime and memory-wise) alternative to regex for simplistic
+   * string patterns (no quantifiers, lookaround or backtracking), by composing {@link Pattern}
+   * objects together.
+   *
    * <p>Pattern matching starts from the beginning of the string, but doesn't need to match to the
    * end of the input string.
    *
@@ -585,7 +589,7 @@ public final class Substring {
           (fragments.size() - 1) + " placeholders in pattern; " + parameters.size() + " parameters provided.");
     }
     if (fragments.get(0).isEmpty()) {
-      // Pattern starts with %s. Which means it doesn't necessarily start from the beginning
+      // Pattern starts with %s, which means it doesn't necessarily start from the beginning
       Pattern p = parameters.get(0).spanImmediately(fragments.get(1));
       for (int i = 1; i < parameters.size(); i++) {
         p = p.spanTo(parameters.get(i)).spanImmediately(fragments.get(i + 1));
