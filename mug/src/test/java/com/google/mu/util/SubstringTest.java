@@ -2055,6 +2055,9 @@ public class SubstringTest {
   @Test public void then_match() {
     assertThat(first("GET").then(prefix(" ")).split("GET http").map(Joiner.on(':')::join))
         .hasValue("GET:http");
+    assertThat(
+            before(first('/')).then(prefix("")).repeatedly().match("foo/bar/").map(Match::before))
+        .containsExactly("foo", "foo/bar");
   }
 
   @Test public void then_firstPatternDoesNotMatch() {

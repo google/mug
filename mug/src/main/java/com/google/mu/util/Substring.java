@@ -707,7 +707,8 @@ public final class Substring {
           if (next == null) {
             return null;
           }
-          // Keep the succeedingIndex strictly increasing.
+          // Keep the succeedingIndex strictly increasing to avoid the next iteration
+          // in repeatedly() to be stuck with no progress.
           return next.succeedingIndex < preceding.succeedingIndex
               ? new Match(input, next.startIndex, next.length(), preceding.succeedingIndex)
               : next;
@@ -745,7 +746,8 @@ public final class Substring {
               input,
               preceding.startIndex,
               next.endIndex - preceding.startIndex,
-              // Keep the succeedingIndex strictly increasing.
+              // Keep the succeedingIndex strictly increasing to avoid the next iteration
+              // in repeatedly() to be stuck with no progress.
               Math.max(preceding.succeedingIndex, next.succeedingIndex));
         }
 
