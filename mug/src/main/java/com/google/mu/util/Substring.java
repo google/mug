@@ -544,9 +544,14 @@ public final class Substring {
    * sub-pattern placeholders, which are provided through parameters.
    *
    * <p>For example, {@code pattern("http://%s/%s?%s", AUTHORITY, PATH, QUERY)} can be used
-   * to match a full HTTP URI with authority, path and query strings.
+   * to match a full HTTP URI, where {@code AUTHORITY}, {@code PATH} and {@code QUERY} are
+   * patterns defined to match uri authority, path and query string respectively.
    *
-   * <p>The match always starts from the beginning of the string, but doesn't need to match to the
+   * <p>Generally, if a string is formatted with {@code String.format(formatString, "foo", "bar")},
+   * it can be matched by {@code pattern(formatString, prefix("foo"), prefix("bar"))}, but only
+   * {@code "%s"} placeholder is supported.
+   *
+   * <p>Pattern matching starts from the beginning of the string, but doesn't need to match to the
    * end of the input string.
    *
    * <p>If the pattern starts with a placeholder {@code "%s"}, then the result match doesn't have to
@@ -567,13 +572,13 @@ public final class Substring {
    * @throws NullPointerException if {@code format} or any parameter is null
    * @since 6.0
    */
-  public static Pattern pattern(String format, Pattern param1, Pattern... extraParams) {
+  public static Pattern pattern(String format, Pattern param, Pattern... extraParams) {
     List<String> fragments =
         first("%s").repeatedly().split(format).map(Match::toString).collect(toList());
     List<Pattern> parameters = new ArrayList<>();
-    parameters.add(requireNonNull(param1));
-    for (Pattern param : extraParams) {
-      parameters.add(requireNonNull(param));
+    parameters.add(requireNonNull(param));
+    for (Pattern p : extraParams) {
+      parameters.add(requireNonNull(p));
     }
     if (fragments.size() != parameters.size() + 1) {
       throw new IllegalArgumentException(
