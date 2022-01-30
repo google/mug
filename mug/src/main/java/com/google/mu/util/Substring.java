@@ -18,7 +18,6 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -548,7 +547,7 @@ public final class Substring {
    * pattern objects defined to match uri authority, path and query string respectively.
    *
    * <p>Generally, if a string is formatted with {@code String.format(formatString, "foo", "bar")},
-   * it can be matched by {@code pattern(formatString, prefix("foo"), prefix("bar"))}, but only
+   * it can be matched by {@code pattern(formatString, pattern("foo"), pattern("bar"))}, but only
    * {@code "%s"} placeholder is supported.
    *
    * <p>This method provides a cheap (runtime and memory-wise) alternative to regex for simplistic
@@ -576,29 +575,27 @@ public final class Substring {
    * @throws NullPointerException if {@code format} or any parameter is null
    * @since 6.0
    */
-  public static Pattern pattern(String format, Pattern param, Pattern... extraParams) {
+  public static Pattern pattern(String format, Pattern... params) {
     List<String> fragments =
         first("%s").repeatedly().split(format).map(Match::toString).collect(toList());
-    List<Pattern> parameters = new ArrayList<>();
-    parameters.add(requireNonNull(param));
-    for (Pattern p : extraParams) {
-      parameters.add(requireNonNull(p));
-    }
-    if (fragments.size() != parameters.size() + 1) {
+    if (fragments.size() != params.length + 1) {
       throw new IllegalArgumentException(
-          (fragments.size() - 1) + " %s placeholders in pattern; " + parameters.size() + " parameters provided.");
+          (fragments.size() - 1) + " %s placeholders in pattern; " + params.length + " parameters provided.");
+    }
+    if (params.length == 0) { // No params.
+      return prefix(format);
     }
     if (fragments.get(0).isEmpty()) {
       // Pattern starts with %s, which means it doesn't necessarily start from the beginning
-      Pattern p = parameters.get(0).spanImmediately(fragments.get(1));
-      for (int i = 1; i < parameters.size(); i++) {
-        p = p.spanTo(parameters.get(i)).spanImmediately(fragments.get(i + 1));
+      Pattern p = params[0].spanImmediately(fragments.get(1));
+      for (int i = 1; i < params.length; i++) {
+        p = p.spanTo(params[i]).spanImmediately(fragments.get(i + 1));
       }
       return p;
     } else {
       Pattern p = prefix(fragments.get(0));
-      for (int i = 0; i < parameters.size(); i++) {
-        p = p.then(parameters.get(i)).thenImmediately(fragments.get(i + 1));
+      for (int i = 0; i < params.length; i++) {
+        p = p.then(params[i]).thenImmediately(fragments.get(i + 1));
       }
       return upToIncluding(p);
     }

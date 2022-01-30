@@ -2196,6 +2196,11 @@ public class SubstringTest {
         .isEmpty();
   }
 
+  @Test public void testPattern_noParam() {
+    assertThat(Substring.pattern("foo").from("foo.bar.boo")).hasValue("foo");
+    assertThat(Substring.pattern("foo")).isEqualTo(prefix("foo"));
+  }
+
   @Test public void testPattern_withOneParam() {
     assertThat(Substring.pattern("foo%s", first("bar")).from("foo.bar.boo")).hasValue("foo.bar");
     assertThat(Substring.pattern("foo%s", first("bar")).repeatedly().from("foo.barfoo-barfoo"))
@@ -2239,7 +2244,8 @@ public class SubstringTest {
   }
 
   @Test public void testPattern_noBacktrack() {
-    assertThat(Substring.pattern("%s%s", first("boo"), prefix("zoo")).from("fooboozofooboozoo")).isEmpty();
+    assertThat(Substring.pattern("%s%s", first("boo"), Substring.pattern("zoo")).from("fooboozofooboozoo"))
+        .isEmpty();
   }
 
   @Test public void testPattern_fewerPlaceholders() {
@@ -2267,7 +2273,7 @@ public class SubstringTest {
   private static ClassSanityTester newClassSanityTester() {
     return new ClassSanityTester()
         .setDefault(int.class, 0)
-        .setDefault(String.class, "sub%s")
+        .setDefault(String.class, "sub")
         .setDefault(Pattern.class, Pattern.compile("testpattern"))
         .setDefault(Substring.Pattern.class, prefix("foo"));
   }
