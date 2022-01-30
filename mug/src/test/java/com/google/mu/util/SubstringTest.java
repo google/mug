@@ -2070,6 +2070,28 @@ public class SubstringTest {
         .isEmpty();
   }
 
+  @Test public void peek_toString() {
+    assertThat(first("(").peek(first("<")).toString())
+        .isEqualTo("first('(').peek(first('<'))");
+  }
+
+  @Test public void peek_match() {
+    assertThat(prefix("http").peek(":").from("http://")).hasValue("http");
+    assertThat(prefix("http").peek(":").repeatedly().from("http://")).containsExactly("http");
+    assertThat(before(first('/')).peek("/").repeatedly().from("foo/bar/"))
+        .containsExactly("foo", "bar").inOrder();
+  }
+
+  @Test public void peek_firstPatternDoesNotMatch() {
+    assertThat(prefix("http").peek(":").from("ftp://")).isEmpty();
+    assertThat(prefix("http").peek(":").repeatedly().from("ftp://")).isEmpty();
+  }
+
+  @Test public void peek_peekedPatternDoesNotMatch() {
+    assertThat(prefix("http").peek(":").from("https://")).isEmpty();
+    assertThat(prefix("http").peek(":").repeatedly().from("https://")).isEmpty();
+  }
+
   @Test public void patternFrom_noMatch() {
     assertThat(prefix("foo").from("")).isEmpty();
   }

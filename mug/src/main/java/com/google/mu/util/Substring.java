@@ -392,7 +392,7 @@ public final class Substring {
             // For example when matching before(first("//")) against "http://", there should be
             // only one iteration, which is "http:". If the next scan starts before //, we'd get
             // an empty string match.
-            : new Match(input, fromIndex, match.startIndex - fromIndex, match.succeedingIndex);
+            : new Match(input, fromIndex, match.startIndex - fromIndex, match.repetitionStartIndex);
       }
 
       @Override public String toString() {
@@ -445,7 +445,7 @@ public final class Substring {
         return match == null
             ? null
             // Do not include the delimiter pattern in the next iteration.
-            : new Match(input, fromIndex, match.endIndex - fromIndex, match.succeedingIndex);
+            : new Match(input, fromIndex, match.endIndex - fromIndex, match.repetitionStartIndex);
       }
 
       @Override public String toString() {
@@ -689,10 +689,10 @@ public final class Substring {
           if (next == null) {
             return null;
           }
-          // Keep the succeedingIndex strictly increasing to avoid the next iteration
+          // Keep the repetitionStartIndex strictly increasing to avoid the next iteration
           // in repeatedly() to be stuck with no progress.
-          return next.succeedingIndex < preceding.succeedingIndex
-              ? new Match(input, next.startIndex, next.length(), preceding.succeedingIndex)
+          return next.repetitionStartIndex < preceding.repetitionStartIndex
+              ? new Match(input, next.startIndex, next.length(), preceding.repetitionStartIndex)
               : next;
         }
 
@@ -705,6 +705,53 @@ public final class Substring {
     /** Matches {@code following} string that immediately follows. */
     final Pattern thenImmediately(String following) {
       return following.isEmpty() ? this : then(prefix(following));
+    }
+
+    /**
+     * Return a {@code Pattern} equivalent to this {@code Pattern}, except it will fail to match
+     * if {@code following} pattern can't find a match in the substring after the current match.
+     *
+     * <p>Useful in asserting that the current match is followed by the expected pattern. For example:
+     * {@code SCHEME_NAME.peek(prefix(':')} returns the URI scheme name.
+     *
+     * <p>Note that unlike regex lookahead, no backtracking is attempted. So {@code
+     * first("foo").peek("bar")} will match "bafoobar" but won't match "foofoobar".
+     *
+     * @since 6.0
+     */
+    public final Pattern peek(Pattern following) {
+      requireNonNull(following);
+      Pattern base = this;
+      return new Pattern() {
+        @Override Match match(String input, int fromIndex) {
+          Match preceding = base.match(input, fromIndex);
+          if (preceding == null) {
+            return null;
+          }
+          Match next = following.match(input, preceding.endIndex);
+          return next == null ? null : preceding;
+        }
+
+        @Override public String toString() {
+          return base + ".peek(" + following + ")";
+        }
+      };
+    }
+
+    /**
+     * Return a {@code Pattern} equivalent to this {@code Pattern}, except it will fail to match
+     * if it's not followed by the {@code following} string.
+     *
+     * <p>Useful in asserting that the current match is followed by the expected substring. For example:
+     * {@code SCHEME_NAME.peek(":")} returns the URI scheme name.
+     *
+     * <p>Note that unlike regex lookahead, no backtracking is attempted. So {@code
+     * first("foo").peek("bar")} will match "bafoobar" but won't match "foofoobar".
+     *
+     * @since 6.0
+     */
+    public final Pattern peek(String following) {
+      return peek(prefix(following));
     }
 
     /**
@@ -728,9 +775,9 @@ public final class Substring {
               input,
               preceding.startIndex,
               next.endIndex - preceding.startIndex,
-              // Keep the succeedingIndex strictly increasing to avoid the next iteration
+              // Keep the repetitionStartIndex strictly increasing to avoid the next iteration
               // in repeatedly() to be stuck with no progress.
-              Math.max(preceding.succeedingIndex, next.succeedingIndex));
+              Math.max(preceding.repetitionStartIndex, next.repetitionStartIndex));
         }
 
         @Override public String toString() {
@@ -839,8 +886,8 @@ public final class Substring {
                   }
                   if (match.endIndex == end) { // We've consumed the entire string.
                     nextIndex = Integer.MAX_VALUE;
-                  } else if (match.succeedingIndex > nextIndex) {
-                    nextIndex = match.succeedingIndex;
+                  } else if (match.repetitionStartIndex > nextIndex) {
+                    nextIndex = match.repetitionStartIndex;
                   } else {
                     // instead of being stuck in infinite loop, consider this the end.
                     nextIndex = Integer.MAX_VALUE;
@@ -1435,22 +1482,22 @@ public final class Substring {
     private final int endIndex;
 
     /**
-     * While {@code endIndex} demarcates the matched substring, {@code succeedingIndex} points to
+     * While {@code endIndex} demarcates the matched substring, {@code repetitionStartIndex} points to
      * the starting point to scan for the succeeding {@link Pattern#iterateIn iteration} of the same
      * pattern. It's by default equal to {@code endIndex}, but for {@link Substring#before} and
-     * {@link Substring#upToIncluding}, {@code succeedingIndex} starts after the delimiters.
+     * {@link Substring#upToIncluding}, {@code repetitionStartIndex} starts after the delimiters.
      */
-    private final int succeedingIndex;
+    private final int repetitionStartIndex;
 
     private Match(String context, int startIndex, int length) {
       this(context, startIndex, length, startIndex + length);
     }
 
-    private Match(String context, int startIndex, int length, int succeedingIndex) {
+    private Match(String context, int startIndex, int length, int repetitionStartIndex) {
       this.context = context;
       this.startIndex = startIndex;
       this.endIndex = startIndex + length;
-      this.succeedingIndex = succeedingIndex;
+      this.repetitionStartIndex = repetitionStartIndex;
     }
 
     /**
@@ -1591,7 +1638,7 @@ public final class Substring {
       int trimmedLength = right - left + 1;
       return trimmedLength == length()
           ? this
-          : new Match(context, left, trimmedLength, succeedingIndex);
+          : new Match(context, left, trimmedLength, repetitionStartIndex);
     }
 
     private Match toEnd() {
