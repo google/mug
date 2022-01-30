@@ -586,7 +586,7 @@ public final class Substring {
     }
     if (fragments.size() != parameters.size() + 1) {
       throw new IllegalArgumentException(
-          (fragments.size() - 1) + " placeholders in pattern; " + parameters.size() + " parameters provided.");
+          (fragments.size() - 1) + " %s placeholders in pattern; " + parameters.size() + " parameters provided.");
     }
     if (fragments.get(0).isEmpty()) {
       // Pattern starts with %s, which means it doesn't necessarily start from the beginning
