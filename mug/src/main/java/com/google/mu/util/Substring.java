@@ -752,7 +752,7 @@ public final class Substring {
         }
 
         @Override public String toString() {
-          return base + ".to(" + following + ")";
+          return base + ".spanTo(" + following + ")";
         }
       };
     }
