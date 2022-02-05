@@ -2097,6 +2097,8 @@ public class SubstringTest {
   @Test public void peek_peekedPatternDoesNotMatch() {
     assertThat(prefix("http").peek(":").from("https://")).isEmpty();
     assertThat(prefix("http").peek(":").repeatedly().from("https://")).isEmpty();
+    assertThat(BEGINNING.peek(":").repeatedly().split("foo").map(Match::toString))
+        .containsExactly("foo");
   }
 
   @Test public void not_toString() {

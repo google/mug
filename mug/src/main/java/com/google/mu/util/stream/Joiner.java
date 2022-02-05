@@ -31,7 +31,9 @@ import java.util.stream.Collectors;
  *
  * <p>You can also chain {@link #between} to further enclose the joined result between a pair of strings.
  * The following code joins a list of ids and their corresponding names in the format of
- * {@code "[id1:name1, id2:name2, id3:name3, ...]"}:
+ * {@code "[id1=name1, id2=name2, id3=name3, ...]"} by first joining each pair with {@code '='} and then
+ * joining the {@code "id=name"} entries with {@code ','}, finally enclosing them between
+ * {@code '['} and {@code ']'}:
  * <pre>{@code
  *   BiStream.zip(userIds, names)
  *       .mapToObj(Joiner.on('=')::join)
@@ -40,17 +42,8 @@ import java.util.stream.Collectors;
  * Which reads clearer than using JDK {@link Collectors#joining}:
  * <pre>{@code
  *   BiStream.zip(userIds, names)
- *       .mapToObj(id, name) -> id + ":" + name)
+ *       .mapToObj(id, name) -> id + "=" + name)
  *       .collect(Collectors.joining(", ", "[", "]"));
- * }</pre>
- *
- * <p>Or, you can format the {@code (id, name)} pairs in the format of
- * {@code "[(id1, name1), (id2, name2). ...]"}:
- * <pre>{@code
- *   BiStream.from(userIdMap)
- *       .mapValues(User::name)
- *       .mapToObj(Joiner.on(", ").between('(', ')')::join)
- *       .collect(Joiner.on(", ").between('[', ']'));
  * }</pre>
  *
  * <p>If you need to skip nulls and/or empty strings while joining, use {@code
