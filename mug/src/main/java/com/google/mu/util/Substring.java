@@ -241,7 +241,7 @@ public final class Substring {
    * Instead, you should use {@code word("cat")} to skip over "cathie".
    *
    * <p>If your word boundary isn't equivalent to the regex {@code \W} character class, you can
-   * define your own word boundary {@code CharMatcher} and then use {@link Pattern#withBoundary}
+   * define your own word boundary {@code CharPredicate} and then use {@link Pattern#withBoundary}
    * instead. Say, if your word is lower-case alpha with dash ('-'), then:
    *
    * <pre>{@code
