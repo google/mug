@@ -94,13 +94,6 @@ import com.google.mu.util.stream.MoreStreams;
  * @since 2.0
  */
 public final class Substring {
-  private static final CharPredicate ASCII_WORD_BOUNDARY =
-      CharPredicate.is('_')
-          .or('a', 'z')
-          .or('A', 'Z')
-          .or('0', '9')
-          .not();
-
   /** {@code Pattern} that never matches any substring. */
   public static final Pattern NONE = new Pattern() {
     @Override Match match(String s, int fromIndex) {
@@ -239,6 +232,29 @@ public final class Substring {
    */
   public static Pattern first(java.util.regex.Pattern regexPattern) {
     return first(regexPattern, 0);
+  }
+
+  /**
+   * Returns a {@code Pattern} that matches the first occurrence of {@code word} that isn't
+   * immediately preceded or followed by another "word" ({@code [a-zA-Z0-9_]}) character.
+   *
+   * <p>For example, if you are looking for an English word "cat" in the string "catchie has a cat",
+   * {@code first("cat")} won't work because it'll match the first three letters of "cathie".
+   * Instead, you should use {@code word("cat")} to skip over "cathie".
+   *
+   * <p>If your word boundary isn't equivalent to the regex {@code \W} character class, you can
+   * define your own word boundary {@code CharMatcher} and then use {@link Pattern#withBoundary}
+   * instead. Say, if your word is lower-case alpha with "-", then:
+   *
+   * <pre>{@code
+   * CharPredicate boundary = CharPredicate.is('-').or('a', 'z');
+   * Substring.Pattern petFriendly = first("pet-friendly").withBoundary(boundary);
+   * }</pre>
+   *
+   * @since 6.0
+   */
+  public static Pattern word(String word) {
+    return first(word).withBoundary(CharPredicate.WORD.not());
   }
 
   /**
@@ -913,7 +929,7 @@ public final class Substring {
       return new Pattern() {
         @Override
         Match match(String input, int fromIndex) {
-          for (; fromIndex <= input.length(); ) {
+          for (; fromIndex <= input.length(); fromIndex++) {
             Match match = target.match(input, fromIndex);
             if (match == null) {
               return null;
@@ -926,10 +942,6 @@ public final class Substring {
                 return match;
               }
             }
-            fromIndex =
-                (match.repetitionStartIndex <= fromIndex
-                    ? fromIndex + 1
-                    : match.repetitionStartIndex);
           }
           return null;
         }
