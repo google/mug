@@ -16,10 +16,8 @@ package com.google.mu.util;
 
 import static java.lang.Math.max;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toList;
 
 import java.util.Iterator;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
@@ -643,69 +641,6 @@ public final class Substring {
     };
   }
 
-  /**
-   * Returns a {@code Pattern} specified by the {@code format} string with {@code "%s"} as
-   * inner pattern placeholders, which are provided through {@code params}.
-   *
-   * <p>For example, {@code pattern("http://%s/%s?%s", AUTHORITY, PATH, QUERY)} can be used
-   * to match a full HTTP URI, where {@code AUTHORITY}, {@code PATH} and {@code QUERY} are
-   * pattern objects defined to match uri authority, path and query string respectively.
-   *
-   * <p>Generally, if a string is formatted with {@code String.format(formatString, "foo", "bar")},
-   * it can be matched by {@code pattern(formatString, pattern("foo"), pattern("bar"))}, but only
-   * {@code "%s"} placeholder is supported.
-   *
-   * <p>This method provides a cheap (runtime and memory-wise) alternative to regex for string
-   * patterns with simple to medium complexity (no quantifiers, look-behind or backtracking),
-   * by composing {@link Pattern} objects together.
-   *
-   * <p>Pattern matching starts from the beginning of the string, but doesn't need to match to the
-   * end of the input string.
-   *
-   * <p>If the pattern starts with a placeholder {@code "%s"}, then the result match doesn't have to
-   * start from the beginning (say, if the corresponding sub-pattern is {@code first('/')}).
-   *
-   * <p>Note that the result pattern attempts no backtracking, so if any placeholder or the format
-   * string in between already matches, the remaining must match or else matching fails. For example,
-   * {@code pattern("%sbar", first("foo"))} won't match {@code "foonotbar,foobar"} because after
-   * {@code first("foo")} matches, the following {@code "notbar"} aborts the match immediately.
-   *
-   * <p>No other JDK-style placeholders (like {@code %d}) are supported.
-   *
-   * <p>Character escaping isn't supported. If the pattern contains literal {@code %s},
-   * make it a placeholder with {@code prefix("%s")} as the parameter value.
-   *
-   * @throws IllegalArgumentException if the number of parameters doesn't match the number of
-   *         {@code "%s"} placeholders.
-   * @throws NullPointerException if {@code format} or any parameter is null
-   * @since 6.0
-   */
-  public static Pattern pattern(String format, Pattern... params) {
-    List<String> fragments =
-        first("%s").repeatedly().split(format).map(Match::toString).collect(toList());
-    if (fragments.size() != params.length + 1) {
-      throw new IllegalArgumentException(
-          (fragments.size() - 1) + " %s placeholders in pattern; " + params.length + " parameters provided.");
-    }
-    if (params.length == 0) { // No params.
-      return prefix(format);
-    }
-    if (fragments.get(0).isEmpty()) {
-      // Pattern starts with %s, which means it doesn't necessarily start from the beginning
-      Pattern p = params[0].spanImmediately(fragments.get(1));
-      for (int i = 1; i < params.length; i++) {
-        p = p.spanTo(params[i]).spanImmediately(fragments.get(i + 1));
-      }
-      return p;
-    } else {
-      Pattern p = prefix(fragments.get(0));
-      for (int i = 0; i < params.length; i++) {
-        p = p.then(params[i]).thenImmediately(fragments.get(i + 1));
-      }
-      return upToIncluding(p);
-    }
-  }
-
   /** A pattern that can be matched against a string, finding a single substring from it. */
   public abstract static class Pattern {
     /**
@@ -997,11 +932,6 @@ public final class Substring {
           return base + ".spanTo(" + following + ")";
         }
       };
-    }
-
-    /** Span the match to the {@code following} string that immediately follows. */
-    final Pattern spanImmediately(String following) {
-      return following.isEmpty() ? this : spanTo(prefix(following));
     }
 
     /**
