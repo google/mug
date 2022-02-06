@@ -23,6 +23,8 @@ import static java.util.Objects.requireNonNull;
  */
 @FunctionalInterface
 public interface CharPredicate {
+  /** A predicate corresponding non-word characters as in regex {@code \W}. */
+  static final CharPredicate WORD_BOUNDARY = is('_').or('a', 'z').or('A', 'Z').not();
 
   /** Returns a CharPredicate for the range of characters: {@code [from, to]}. */
   static CharPredicate is(char ch) {

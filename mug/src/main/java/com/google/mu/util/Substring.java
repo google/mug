@@ -242,29 +242,6 @@ public final class Substring {
   }
 
   /**
-   * Returns a {@code Pattern} that matches the first occurrence of {@code word} that isn't
-   * immediately preceded or followed by another "word" ({@code [a-zA-Z0-9_]}) character.
-   *
-   * <p>For example, if you are looking for an English word "cat" in the string "catchie has a cat",
-   * {@code first("cat")} won't work because it'll match the first three letters of "cathie".
-   * Instead, you should use {@code firstWord("cat")} to skip over "cathie".
-   *
-   * <p>If your word boundary isn't equivalent to the regex {@code \W} character class, you can
-   * define your own word boundary {@code CharMatcher} and then use {@link Pattern#withBoundary}
-   * instead. Say, if your word is lower-case alpha with "-", then:
-   *
-   * <pre>{@code
-   * CharMatcher boundary = CharMatcher.inRange('a', 'z').or(CharMatcher.is('-'));
-   * Substring.Pattern petFriendly = first("pet-friendly").withBoundary(boundary);
-   * }</pre>
-   *
-   * @since 6.0
-   */
-  public static Pattern firstWord(String word) {
-    return first(word).withBoundary(ASCII_WORD_BOUNDARY);
-  }
-
-  /**
    * Returns a {@code Pattern} that matches from the beginning of the input string, a non-empty
    * sequence of leading characters identified by {@code matcher}.
    *
@@ -925,8 +902,7 @@ public final class Substring {
      * be the end of the input, or be followed by a boundary character as defined by {@code
      * boundaryAfter}.
      *
-     * <p>Useful if you are trying to find a word with custom boundaries. For normal words composed
-     * of regex {@code \w} character class, use {@link Substring#firstWord} instead.
+     * <p>Useful if you are trying to find a word with custom boundaries.
      *
      * @since 6.0
      */
@@ -971,8 +947,7 @@ public final class Substring {
      * boundary character as defined by {@code boundary}; and the end of the match must either be
      * the end of the input, or be followed by a boundary character as defined by {@code boundary}.
      *
-     * <p>Useful if you are trying to find a word with custom boundaries. For normal words composed
-     * of regex {@code \w} character class, use {@link Substring#firstWord} instead.
+     * <p>Useful if you are trying to find a word with custom boundaries.
      *
      * @since 6.0
      */

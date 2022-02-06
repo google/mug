@@ -3,6 +3,7 @@ package com.google.mu.util;
 import static com.google.common.collect.ImmutableListMultimap.toImmutableListMultimap;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static com.google.mu.function.CharPredicate.WORD_BOUNDARY;
 import static com.google.mu.util.Substring.BEGINNING;
 import static com.google.mu.util.Substring.END;
 import static com.google.mu.util.Substring.after;
@@ -2308,52 +2309,52 @@ public class SubstringTest {
 
   @Test
   public void firstWord_notFound() {
-    assertThat(Substring.firstWord("cat").from("dog")).isEmpty();
-    assertThat(Substring.firstWord("cat").from("")).isEmpty();
+    assertThat(first("cat").withBoundary(WORD_BOUNDARY).from("dog")).isEmpty();
+    assertThat(first("cat").withBoundary(WORD_BOUNDARY).from("")).isEmpty();
   }
 
   @Test
   public void firstWord_onlyWord() {
-    assertThat(Substring.firstWord("word").from("word")).hasValue("word");
-    assertThat(Substring.firstWord("word").repeatedly().from("word")).containsExactly("word");
+    assertThat(first("word").withBoundary(WORD_BOUNDARY).from("word")).hasValue("word");
+    assertThat(first("word").withBoundary(WORD_BOUNDARY).repeatedly().from("word")).containsExactly("word");
   }
 
   @Test
   public void firstWord_partialWord() {
-    assertThat(Substring.firstWord("cat").from("catchie")).isEmpty();
-    assertThat(Substring.firstWord("cat").repeatedly().from("catchie")).isEmpty();
-    assertThat(Substring.firstWord("cat").from("bobcat")).isEmpty();
-    assertThat(Substring.firstWord("cat").repeatedly().from("bobcat")).isEmpty();
+    assertThat(first("cat").withBoundary(WORD_BOUNDARY).from("catchie")).isEmpty();
+    assertThat(first("cat").withBoundary(WORD_BOUNDARY).repeatedly().from("catchie")).isEmpty();
+    assertThat(first("cat").withBoundary(WORD_BOUNDARY).from("bobcat")).isEmpty();
+    assertThat(first("cat").withBoundary(WORD_BOUNDARY).repeatedly().from("bobcat")).isEmpty();
   }
 
   @Test
   public void firstWord_startedByWord() {
-    assertThat(Substring.firstWord("cat").from("cat loves dog")).hasValue("cat");
-    assertThat(Substring.firstWord("cat").repeatedly().from("cat loves dog"))
+    assertThat(first("cat").withBoundary(WORD_BOUNDARY).from("cat loves dog")).hasValue("cat");
+    assertThat(first("cat").withBoundary(WORD_BOUNDARY).repeatedly().from("cat loves dog"))
         .containsExactly("cat");
   }
 
   @Test
   public void firstWord_endedByWord() {
-    assertThat(Substring.firstWord("word").from("hello word")).hasValue("word");
-    assertThat(Substring.firstWord("word").repeatedly().from("hello word")).containsExactly("word");
+    assertThat(first("word").withBoundary(WORD_BOUNDARY).from("hello word")).hasValue("word");
+    assertThat(first("word").withBoundary(WORD_BOUNDARY).repeatedly().from("hello word")).containsExactly("word");
   }
 
   @Test
   public void firstWord_multipleWords() {
-    assertThat(Substring.firstWord("cat").from("bobcat is not a cat, or is it a cat?"))
+    assertThat(first("cat").withBoundary(WORD_BOUNDARY).from("bobcat is not a cat, or is it a cat?"))
         .hasValue("cat");
-    assertThat(Substring.firstWord("cat").in("bobcat is not a cat, or is it a cat?").get().before())
+    assertThat(first("cat").withBoundary(WORD_BOUNDARY).in("bobcat is not a cat, or is it a cat?").get().before())
         .isEqualTo("bobcat is not a ");
-    assertThat(Substring.firstWord("cat").repeatedly().from("bobcat is not a cat, or is it a cat?"))
+    assertThat(first("cat").withBoundary(WORD_BOUNDARY).repeatedly().from("bobcat is not a cat, or is it a cat?"))
         .containsExactly("cat", "cat");
   }
 
   @Test
   public void firstWord_emptyWord() {
-    assertThat(Substring.firstWord("").repeatedly().from("a.b")).isEmpty();
-    assertThat(Substring.firstWord("").from("a.b")).isEmpty();
-    assertThat(Substring.firstWord("").repeatedly().from("ab..cd,,ef,"))
+    assertThat(first("").withBoundary(WORD_BOUNDARY).repeatedly().from("a.b")).isEmpty();
+    assertThat(first("").withBoundary(WORD_BOUNDARY).from("a.b")).isEmpty();
+    assertThat(first("").withBoundary(WORD_BOUNDARY).repeatedly().from("ab..cd,,ef,"))
         .containsExactly("", "", "");
   }
 
