@@ -2308,19 +2308,19 @@ public class SubstringTest {
   }
 
   @Test
-  public void firstWord_notFound() {
+  public void word_notFound() {
     assertThat(word("cat").from("dog")).isEmpty();
     assertThat(word("cat").from("")).isEmpty();
   }
 
   @Test
-  public void firstWord_onlyWord() {
+  public void word_onlyWord() {
     assertThat(word("word").from("word")).hasValue("word");
     assertThat(word("word").repeatedly().from("word")).containsExactly("word");
   }
 
   @Test
-  public void firstWord_partialWord() {
+  public void word_partialWord() {
     assertThat(word("cat").from("catchie")).isEmpty();
     assertThat(word("cat").repeatedly().from("catchie")).isEmpty();
     assertThat(word("cat").from("bobcat")).isEmpty();
@@ -2328,20 +2328,20 @@ public class SubstringTest {
   }
 
   @Test
-  public void firstWord_startedByWord() {
+  public void word_startedByWord() {
     assertThat(word("cat").from("cat loves dog")).hasValue("cat");
     assertThat(word("cat").repeatedly().from("cat loves dog"))
         .containsExactly("cat");
   }
 
   @Test
-  public void firstWord_endedByWord() {
+  public void word_endedByWord() {
     assertThat(word("word").from("hello word")).hasValue("word");
     assertThat(word("word").repeatedly().from("hello word")).containsExactly("word");
   }
 
   @Test
-  public void firstWord_multipleWords() {
+  public void word_multipleWords() {
     assertThat(word("cat").from("bobcat is not a cat, or is it a cat?"))
         .hasValue("cat");
     assertThat(word("cat").in("bobcat is not a cat, or is it a cat?").get().before())
@@ -2351,11 +2351,24 @@ public class SubstringTest {
   }
 
   @Test
-  public void firstWord_emptyWord() {
+  public void word_emptyWord() {
     assertThat(word("").repeatedly().from("a.b")).isEmpty();
     assertThat(word("").from("a.b")).isEmpty();
     assertThat(word("").repeatedly().from("ab..cd,,ef,"))
         .containsExactly("", "", "");
+  }
+
+  @Test public void word_noMatch() {
+    assertThat(word().from("")).isEmpty();
+    assertThat(word().repeatedly().from("")).isEmpty();
+    assertThat(word().from("./> ")).isEmpty();
+    assertThat(word().repeatedly().from("./> ")).isEmpty();
+  }
+
+  @Test public void word_withMatches() {
+    assertThat(word().from("hello world")).hasValue("hello");
+    assertThat(word().repeatedly().from("hello world"))
+        .containsExactly("hello", "world");
   }
 
   @Test

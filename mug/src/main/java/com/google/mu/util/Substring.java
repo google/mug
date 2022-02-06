@@ -233,6 +233,16 @@ public final class Substring {
   }
 
   /**
+   * Returns a {@code Pattern} that matches the first occurrence of a word composed of
+   * {@code [a-zA-Z0-9_]} characters.
+   *
+   * @since 6.0
+   */
+  public static Pattern word() {
+    return consecutive(CharPredicate.WORD);
+  }
+
+  /**
    * Returns a {@code Pattern} that matches the first occurrence of {@code word} that isn't
    * immediately preceded or followed by another "word" ({@code [a-zA-Z0-9_]}) character.
    *
