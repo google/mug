@@ -341,10 +341,11 @@ public final class Substring {
     return new Pattern() {
       @Override
       Match match(String input, int fromIndex) {
-        for (int i = fromIndex; i < input.length(); i++) {
+        int end = input.length();
+        for (int i = fromIndex; i < end; i++) {
           if (matcher.matches(input.charAt(i))) {
             int len = 1;
-            for (int j = i + 1; j < input.length(); j++, len++) {
+            for (int j = i + 1; j < end; j++, len++) {
               if (!matcher.matches(input.charAt(j))) {
                 break;
               }
