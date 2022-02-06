@@ -242,10 +242,10 @@ public final class Substring {
    *
    * <p>If your word boundary isn't equivalent to the regex {@code \W} character class, you can
    * define your own word boundary {@code CharMatcher} and then use {@link Pattern#withBoundary}
-   * instead. Say, if your word is lower-case alpha with "-", then:
+   * instead. Say, if your word is lower-case alpha with dash ('-'), then:
    *
    * <pre>{@code
-   * CharPredicate boundary = CharPredicate.is('-').or('a', 'z');
+   * CharPredicate boundary = CharPredicate.range('a', 'z').or('-').not();
    * Substring.Pattern petFriendly = first("pet-friendly").withBoundary(boundary);
    * }</pre>
    *
