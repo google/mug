@@ -89,6 +89,7 @@ public interface CharPredicate {
     return or(range(from, to));
   }
 
+  /** Returns the negation of this {@code CharPredicate}. */
   default CharPredicate not() {
     CharPredicate me = this;
     return new CharPredicate() {
