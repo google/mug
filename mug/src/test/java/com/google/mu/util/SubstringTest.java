@@ -7,12 +7,16 @@ import static com.google.mu.util.Substring.BEGINNING;
 import static com.google.mu.util.Substring.END;
 import static com.google.mu.util.Substring.after;
 import static com.google.mu.util.Substring.before;
+import static com.google.mu.util.Substring.consecutive;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.last;
+import static com.google.mu.util.Substring.leading;
 import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.Substring.spanningInOrder;
 import static com.google.mu.util.Substring.suffix;
+import static com.google.mu.util.Substring.trailing;
 import static com.google.mu.util.Substring.upToIncluding;
+import static com.google.mu.util.Substring.word;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Optional;
@@ -25,6 +29,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import com.google.common.base.Ascii;
+import com.google.common.base.CharMatcher;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.LinkedListMultimap;
@@ -33,6 +39,7 @@ import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.EqualsTester;
 import com.google.common.testing.NullPointerTester;
 import com.google.common.truth.MultimapSubject;
+import com.google.mu.function.CharPredicate;
 import com.google.mu.util.Substring.Match;
 import com.google.mu.util.stream.BiCollector;
 import com.google.mu.util.stream.BiStream;
@@ -40,6 +47,9 @@ import com.google.mu.util.stream.Joiner;
 
 @RunWith(JUnit4.class)
 public class SubstringTest {
+  private static final CharPredicate ALPHA = CharPredicate.range('a', 'z').orRange('A', 'Z');
+  private static final CharPredicate DIGIT = CharPredicate.range('0', '9');
+
   @Test public void none() {
     assertThat(Substring.NONE.in("foo")).isEmpty();
     assertThat(Substring.NONE.removeFrom("foo")).isEqualTo("foo");
@@ -56,7 +66,7 @@ public class SubstringTest {
     assertThat(BEGINNING.replaceFrom("foo", "begin ")).isEqualTo("begin foo");
     assertThat(BEGINNING.in("foo").get().before()).isEmpty();
     assertThat(BEGINNING.in("foo").get().after()).isEqualTo("foo");
-    assertThat(BEGINNING.repeatedly().from("foo")).containsExactly("");
+    assertThat(BEGINNING.repeatedly().from("foo")).containsExactly("", "", "", "");
     assertThat(BEGINNING.repeatedly().from("")).containsExactly("");
   }
 
@@ -165,7 +175,7 @@ public class SubstringTest {
     assertThat(match.get().replaceWith("bar")).isEqualTo("barfoo");
     assertThat(match.get().length()).isEqualTo(0);
     assertThat(match.get().toString()).isEmpty();
-    assertThat(prefix("").repeatedly().from("foo")).containsExactly("");
+    assertThat(prefix("").repeatedly().from("foo")).containsExactly("", "", "", "");
   }
 
   @Test public void charPrefix_toString() {
@@ -745,7 +755,7 @@ public class SubstringTest {
     assertThat(match.get().replaceWith("bar")).isEqualTo("barfoo");
     assertThat(match.get().length()).isEqualTo(0);
     assertThat(match.get().toString()).isEmpty();
-    assertThat(first("").repeatedly().from("foo")).containsExactly("");
+    assertThat(first("").repeatedly().from("foo")).containsExactly("", "", "", "");
   }
 
   @Test public void firstSnippet_matchesFirstOccurrence() {
@@ -847,7 +857,7 @@ public class SubstringTest {
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("foo");
     assertThat(first(Pattern.compile("^.oo")).repeatedly().from("foodoobar"))
-        .containsExactly("foo", "doo");
+        .containsExactly("foo");
   }
 
   @Test public void regex_doesNotMatchPrefixDueToStartingAnchor() {
@@ -921,7 +931,7 @@ public class SubstringTest {
     assertThat(match.get().length()).isEqualTo(0);
     assertThat(match.get().toString()).isEmpty();
     assertThat(first(Pattern.compile("")).repeatedly().from("foo"))
-        .containsExactly("");
+        .contains("");
     assertThat(first(Pattern.compile("^")).repeatedly().from("foo"))
         .containsExactly("");
     assertThat(first(Pattern.compile("$")).repeatedly().from("foo"))
@@ -2020,7 +2030,7 @@ public class SubstringTest {
     assertThat(match.after()).isEqualTo("foo");
     assertThat(match.length()).isEqualTo(0);
     assertThat(Substring.between(first(""), first("")).repeatedly().from("foo"))
-        .containsExactly("");
+        .containsExactly("", "", "", "");
   }
 
   @Test public void between_openAndCloseAreEqual() {
@@ -2068,6 +2078,66 @@ public class SubstringTest {
   @Test public void then_secondPatternDoesNotMatch() {
     assertThat(first("GET").then(prefix(" ")).split("GET: http").map(Joiner.on('-')::join))
         .isEmpty();
+  }
+
+  @Test public void peek_toString() {
+    assertThat(first("(").peek(first("<")).toString())
+        .isEqualTo("first('(').peek(first('<'))");
+  }
+
+  @Test
+  public void peek_empty() {
+    assertThat(prefix("http").peek("").from("http")).hasValue("http");
+    assertThat(prefix("http").peek("").from("https")).hasValue("http");
+  }
+
+  @Test
+  public void peek_match() {
+    assertThat(prefix("http").peek(":").from("http://")).hasValue("http");
+    assertThat(prefix("http").peek(":").repeatedly().from("http://")).containsExactly("http");
+    assertThat(before(first('/')).peek("/").repeatedly().from("foo/bar/"))
+        .containsExactly("foo", "bar").inOrder();
+  }
+
+  @Test public void peek_firstPatternDoesNotMatch() {
+    assertThat(prefix("http").peek(":").from("ftp://")).isEmpty();
+    assertThat(prefix("http").peek(":").repeatedly().from("ftp://")).isEmpty();
+  }
+
+  @Test public void peek_peekedPatternDoesNotMatch() {
+    assertThat(prefix("http").peek(":").from("https://")).isEmpty();
+    assertThat(prefix("http").peek(":").repeatedly().from("https://")).isEmpty();
+    assertThat(BEGINNING.peek(":").repeatedly().split("foo").map(Match::toString))
+        .containsExactly("foo");
+  }
+
+  @Test public void not_toString() {
+    assertThat(first("(").not().toString())
+        .isEqualTo("first('(').not()");
+  }
+
+  @Test public void not_match() {
+    assertThat(prefix("http").peek(prefix(':').not()).from("https://")).hasValue("http");
+    assertThat(prefix("http").peek(prefix(':').not()).repeatedly().from("https://"))
+        .containsExactly("http");
+    assertThat(before(first('/')).peek(prefix('?').not()).repeatedly().from("foo/bar/"))
+        .containsExactly("foo", "bar").inOrder();
+  }
+
+  @Test public void not_noMatch() {
+    assertThat(prefix("http").not().from("http://")).isEmpty();
+    assertThat(prefix("http").not().repeatedly().from("http://")).isEmpty();
+  }
+
+  @Test public void notOfNot_match() {
+    assertThat(prefix("http").not().not().from("http")).hasValue("");
+    assertThat(prefix("http").not().not().in("http").map(Match::after)).hasValue("http");
+    assertThat(prefix("http").not().not().repeatedly().from("http")).containsExactly("");
+  }
+
+  @Test public void notOfNot_noMatch() {
+    assertThat(prefix("http").not().not().from("ftp")).isEmpty();
+    assertThat(prefix("http").not().not().repeatedly().from("ftp")).isEmpty();
   }
 
   @Test public void patternFrom_noMatch() {
@@ -2166,6 +2236,157 @@ public class SubstringTest {
     assertThat(spanningInOrder("o", "bar", "car").in("foo bar cat")).isEmpty();
   }
 
+  @Test
+  public void leading_noMatch() {
+    assertThat(leading(ALPHA).from(" foo")).isEmpty();
+    assertThat(leading(ALPHA).from("")).isEmpty();
+    assertThat(leading(ALPHA).repeatedly().from(" foo")).isEmpty();
+  }
+
+  @Test
+  public void leading_match() {
+    assertThat(leading(ALPHA).from("System.out")).hasValue("System");
+    assertThat(leading(ALPHA).removeFrom("System.out")).isEqualTo(".out");
+    assertThat(
+            leading(CharMatcher.inRange('a', 'z')::matches)
+                .then(prefix(':'))
+                .in("http://google.com")
+                .map(Match::before))
+        .hasValue("http");
+  }
+
+  @Test
+  public void leading_match_repeatedly() {
+    assertThat(leading(ALPHA).repeatedly().removeAllFrom("System.out")).isEqualTo(".out");
+    assertThat(leading(ALPHA).repeatedly().from("System.out")).containsExactly("System");
+    assertThat(leading(ALPHA).repeatedly().from("out")).containsExactly("out");
+  }
+
+  @Test
+  public void trailing_noMatch() {
+    assertThat(trailing(DIGIT).from("123.")).isEmpty();
+    assertThat(trailing(DIGIT).from("")).isEmpty();
+    assertThat(trailing(DIGIT).repeatedly().from("123.")).isEmpty();
+  }
+
+  @Test
+  public void trailing_match() {
+    assertThat(trailing(DIGIT).from("12>11")).hasValue("11");
+    assertThat(trailing(DIGIT).removeFrom("12>11")).isEqualTo("12>");
+  }
+
+  @Test
+  public void trailing_match_repeatedly() {
+    assertThat(trailing(DIGIT).repeatedly().removeAllFrom("12>11")).isEqualTo("12>");
+    assertThat(trailing(DIGIT).repeatedly().from("12>11")).containsExactly("11");
+    assertThat(trailing(DIGIT).repeatedly().from("11")).containsExactly("11");
+  }
+
+  @Test
+  public void consecutive_noMatch() {
+    assertThat(consecutive(ALPHA).from(" ")).isEmpty();
+    assertThat(consecutive(ALPHA).from("")).isEmpty();
+    assertThat(consecutive(ALPHA).from(".")).isEmpty();
+    assertThat(consecutive(ALPHA).repeatedly().from(".")).isEmpty();
+  }
+
+  @Test
+  public void consecutive_match() {
+    assertThat(consecutive(ALPHA).from(" foo.")).hasValue("foo");
+    assertThat(consecutive(ALPHA).removeFrom(" foo.")).isEqualTo(" .");
+    assertThat(consecutive(ALPHA).repeatedly().removeAllFrom(" foo.")).isEqualTo(" .");
+  }
+
+  @Test
+  public void consecutive_match_repeatedly() {
+    assertThat(consecutive(ALPHA).repeatedly().from(" foo.")).containsExactly("foo");
+    assertThat(consecutive(ALPHA).repeatedly().from("(System.out)"))
+        .containsExactly("System", "out")
+        .inOrder();
+    assertThat(consecutive(ALPHA).repeatedly().replaceAllFrom("(System.out)", Ascii::toLowerCase))
+        .isEqualTo("(system.out)");
+  }
+
+  @Test
+  public void firstWord_notFound() {
+    assertThat(word("cat").from("dog")).isEmpty();
+    assertThat(word("cat").from("")).isEmpty();
+  }
+
+  @Test
+  public void firstWord_onlyWord() {
+    assertThat(word("word").from("word")).hasValue("word");
+    assertThat(word("word").repeatedly().from("word")).containsExactly("word");
+  }
+
+  @Test
+  public void firstWord_partialWord() {
+    assertThat(word("cat").from("catchie")).isEmpty();
+    assertThat(word("cat").repeatedly().from("catchie")).isEmpty();
+    assertThat(word("cat").from("bobcat")).isEmpty();
+    assertThat(word("cat").repeatedly().from("bobcat")).isEmpty();
+  }
+
+  @Test
+  public void firstWord_startedByWord() {
+    assertThat(word("cat").from("cat loves dog")).hasValue("cat");
+    assertThat(word("cat").repeatedly().from("cat loves dog"))
+        .containsExactly("cat");
+  }
+
+  @Test
+  public void firstWord_endedByWord() {
+    assertThat(word("word").from("hello word")).hasValue("word");
+    assertThat(word("word").repeatedly().from("hello word")).containsExactly("word");
+  }
+
+  @Test
+  public void firstWord_multipleWords() {
+    assertThat(word("cat").from("bobcat is not a cat, or is it a cat?"))
+        .hasValue("cat");
+    assertThat(word("cat").in("bobcat is not a cat, or is it a cat?").get().before())
+        .isEqualTo("bobcat is not a ");
+    assertThat(word("cat").repeatedly().from("bobcat is not a cat, or is it a cat?"))
+        .containsExactly("cat", "cat");
+  }
+
+  @Test
+  public void firstWord_emptyWord() {
+    assertThat(word("").repeatedly().from("a.b")).isEmpty();
+    assertThat(word("").from("a.b")).isEmpty();
+    assertThat(word("").repeatedly().from("ab..cd,,ef,"))
+        .containsExactly("", "", "");
+  }
+
+  @Test
+  public void withBoundary_first() {
+    CharPredicate left = CharPredicate.range('a', 'z').not();
+    CharPredicate right = CharPredicate.range('a', 'z').or('-').not();
+    Substring.Pattern petRock = Substring.first("pet-rock").withBoundary(left, right);
+    assertThat(petRock.from("pet-rock")).hasValue("pet-rock");
+    assertThat(petRock.from("pet-rock is fun")).hasValue("pet-rock");
+    assertThat(petRock.from("love-pet-rock")).hasValue("pet-rock");
+    assertThat(petRock.from("pet-rock-not")).isEmpty();
+    assertThat(petRock.from("muppet-rock")).isEmpty();
+  }
+
+  @Test
+  public void withBoundary_before() {
+    CharPredicate boundary = CharPredicate.range('a', 'z').not();
+    Substring.Pattern dir = Substring.before(first("//")).withBoundary(boundary);
+    assertThat(dir.from("foo//bar//zoo")).hasValue("foo");
+    assertThat(dir.repeatedly().from("foo//bar//zoo")).containsExactly("foo", "bar").inOrder();
+  }
+
+  @Test
+  public void withBoundary_skipEscape() {
+    CharPredicate escape = CharPredicate.is('\\');
+    Substring.Pattern unescaped = Substring.first("aaa").withBoundary(escape.not());
+    assertThat(unescaped.from("\\aaaa")).hasValue("aaa");
+    assertThat(unescaped.repeatedly().from("\\aaaa")).containsExactly("aaa");
+    assertThat(unescaped.in("\\aaaa").get().before()).isEqualTo("\\a");
+  }
+
   @Test public void testRegexTopLevelGroups_noGroup() {
     assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("f+")).from("fff"))
         .containsExactly("fff");
@@ -2194,74 +2415,6 @@ public class SubstringTest {
   @Test public void testRegexTopLevelGroups_noMatch() {
     assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("((ab)(cd)+)ef")).from("cdef"))
         .isEmpty();
-  }
-
-  @Test public void testPattern_noParam() {
-    assertThat(Substring.pattern("foo").from("foo.bar.boo")).hasValue("foo");
-    assertThat(Substring.pattern("foo")).isEqualTo(prefix("foo"));
-  }
-
-  @Test public void testPattern_withOneParam() {
-    assertThat(Substring.pattern("foo%s", first("bar")).from("foo.bar.boo")).hasValue("foo.bar");
-    assertThat(Substring.pattern("foo%s", first("bar")).repeatedly().from("foo.barfoo-barfoo"))
-        .containsExactly("foo.bar", "foo-bar");
-  }
-
-  @Test public void testPattern_lookahead() {
-    assertThat(Substring.pattern("%s%s", prefix("http").or(prefix("https")), before(prefix("://"))).from("http://"))
-        .hasValue("http");
-    assertThat(Substring.pattern("%s%s", prefix("http").or(prefix("https")), before(prefix("://"))).from("http:/"))
-        .isEmpty();
-  }
-
-  @Test public void testPattern_anchorAtEnd() {
-    assertThat(Substring.pattern("(%s);%s", prefix(':'), END).from("(:);"))
-        .hasValue("(:);");
-  }
-
-  @Test public void testPattern_succeedingIndex() {
-    assertThat(Substring.pattern("%s%s", prefix('/'), before(first('/'))).repeatedly().from("/foo//bar/"))
-        .containsExactly("/foo", "/bar");
-    assertThat(Substring.pattern("%s", before(first('/'))).repeatedly().from("foo/bar/"))
-        .containsExactly("foo", "bar");
-  }
-
-  @Test public void testPattern_matchFromTheFirstPattern() {
-    assertThat(Substring.pattern("%s%s", first("boo"), first("zoo")).from("fooboobarzootoo"))
-        .hasValue("boobarzoo");
-  }
-
-  @Test public void testPattern_mismatchAtFirstFragment() {
-    assertThat(Substring.pattern("foo%s", prefix("boo")).from("foboo")).isEmpty();
-  }
-
-  @Test public void testPattern_mismatchAtFirstPlaceholder() {
-    assertThat(Substring.pattern("foo%s%s", prefix("boo"), first("zoo")).from("foobozoo")).isEmpty();
-  }
-
-  @Test public void testPattern_mismatchAtSecondPlaceholder() {
-    assertThat(Substring.pattern("foo%s%s", prefix("boo"), first("zoo")).from("fooboozo")).isEmpty();
-  }
-
-  @Test public void testPattern_noBacktrack() {
-    assertThat(Substring.pattern("%s%s", first("boo"), Substring.pattern("zoo")).from("fooboozofooboozoo"))
-        .isEmpty();
-  }
-
-  @Test public void testPattern_fewerPlaceholders() {
-    assertThrows(IllegalArgumentException.class, () -> Substring.pattern("foo%s%s", first("boo")));
-  }
-
-  @Test public void testPattern_morePlaceholders() {
-    assertThrows(IllegalArgumentException.class, () -> Substring.pattern("foo", first("boo")));
-  }
-
-  @Test public void testPattern_toString() {
-    assertThat(Substring.pattern("http://%s/%s", prefix("google.com"), prefix("path")).toString())
-        .isEqualTo("upToIncluding(http://.then(google.com).then(/).then(path))");
-    assertThat(
-            Substring.pattern("%s:%s%s/%s", first("http"), prefix("//"), prefix("google.com"), prefix("path")).toString())
-        .isEqualTo("first('http').spanTo(:).spanTo(//).spanTo(google.com).spanTo(/).spanTo(path)");
   }
 
   @Test public void testNulls() throws Exception {

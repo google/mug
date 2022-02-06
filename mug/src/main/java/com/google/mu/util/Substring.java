@@ -14,11 +14,10 @@
  *****************************************************************************/
 package com.google.mu.util;
 
+import static java.lang.Math.max;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toList;
 
 import java.util.Iterator;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
@@ -26,6 +25,7 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.stream.Stream;
 
+import com.google.mu.function.CharPredicate;
 import com.google.mu.util.stream.BiStream;
 import com.google.mu.util.stream.MoreStreams;
 
@@ -92,7 +92,6 @@ import com.google.mu.util.stream.MoreStreams;
  * @since 2.0
  */
 public final class Substring {
-
   /** {@code Pattern} that never matches any substring. */
   public static final Pattern NONE = new Pattern() {
     @Override Match match(String s, int fromIndex) {
@@ -234,6 +233,137 @@ public final class Substring {
   }
 
   /**
+   * Returns a {@code Pattern} that matches the first occurrence of {@code word} that isn't
+   * immediately preceded or followed by another "word" ({@code [a-zA-Z0-9_]}) character.
+   *
+   * <p>For example, if you are looking for an English word "cat" in the string "catchie has a cat",
+   * {@code first("cat")} won't work because it'll match the first three letters of "cathie".
+   * Instead, you should use {@code word("cat")} to skip over "cathie".
+   *
+   * <p>If your word boundary isn't equivalent to the regex {@code \W} character class, you can
+   * define your own word boundary {@code CharMatcher} and then use {@link Pattern#withBoundary}
+   * instead. Say, if your word is lower-case alpha with dash ('-'), then:
+   *
+   * <pre>{@code
+   * CharPredicate boundary = CharPredicate.range('a', 'z').or('-').not();
+   * Substring.Pattern petFriendly = first("pet-friendly").withBoundary(boundary);
+   * }</pre>
+   *
+   * @since 6.0
+   */
+  public static Pattern word(String word) {
+    return first(word).withBoundary(CharPredicate.WORD.not());
+  }
+
+  /**
+   * Returns a {@code Pattern} that matches from the beginning of the input string, a non-empty
+   * sequence of leading characters identified by {@code matcher}.
+   *
+   * <p>For example: {@code leading(javaLetter()).from("System.err")} will result in {@code
+   * "System"}.
+   *
+   * <p>It's related to and complements {@link com.google.common.base.CharMatcher#trimLeadingFrom},
+   * which removes the leading characters instead of extracting them.
+   *
+   * @since 6.0
+   */
+  public static Pattern leading(CharPredicate matcher) {
+    requireNonNull(matcher);
+    return new Pattern() {
+      @Override
+      Match match(String input, int fromIndex) {
+        int len = 0;
+        for (int i = fromIndex; i < input.length(); i++, len++) {
+          if (!matcher.matches(input.charAt(i))) {
+            break;
+          }
+        }
+        return len == 0 ? null : new Match(input, fromIndex, len);
+      }
+
+      @Override
+      public String toString() {
+        return "leading(" + matcher + ")";
+      }
+    };
+  }
+
+  /**
+   * Returns a {@code Pattern} that matches from the end of the input string, a non-empty sequence
+   * of trailing characters identified by {@code matcher}.
+   *
+   * <p>For example: {@code trailing(digit()).from("60612-3588")} will result in {@code "3588"}.
+   *
+   * <p>It's related to and complements {@link CharMatcher#trimTrailingFrom}, which removes the
+   * trailing characters instead of extracting them.
+   *
+   * @since 6.0
+   */
+  public static Pattern trailing(CharPredicate matcher) {
+    requireNonNull(matcher);
+    return new Pattern() {
+      @Override
+      Match match(String input, int fromIndex) {
+        int len = 0;
+        for (int i = input.length() - 1; i >= fromIndex; i--, len++) {
+          if (!matcher.matches(input.charAt(i))) {
+            break;
+          }
+        }
+        return len == 0 ? null : new Match(input, input.length() - len, len);
+      }
+
+      @Override
+      public String toString() {
+        return "trailing(" + matcher + ")";
+      }
+    };
+  }
+
+  /**
+   * Returns a {@code Pattern} that matches the first non-empty sequence of consecutive characters
+   * identified by {@code matcher}.
+   *
+   * <p>For example: {@code consecutive(javaLetter()).from("(System.out)")} will find {@code
+   * "System"}, and {@code consecutive(javaLetter()).repeatedly().from("(System.out)")} will produce
+   * {@code ["System", "out"]}.
+   *
+   * <p>Equivalent to {@code matcher.collapseFrom(string, replacement)}, you can do {@code
+   * consecutive(matcher).repeatedly().replaceAllFrom(string, replacement)}. But you can also do
+   * things other than collapsing these consecutive groups, for example to inspect their values and
+   * replace conditionally: {@code consecutive(matcher).repeatedly().replaceAllFrom(string, group ->
+   * ...)}, or other more sophisticated use cases like building index maps of these sub sequences.
+   *
+   * @since 6.0
+   */
+  public static Pattern consecutive(CharPredicate matcher) {
+    requireNonNull(matcher);
+    return new Pattern() {
+      @Override
+      Match match(String input, int fromIndex) {
+        int end = input.length();
+        for (int i = fromIndex; i < end; i++) {
+          if (matcher.matches(input.charAt(i))) {
+            int len = 1;
+            for (int j = i + 1; j < end; j++, len++) {
+              if (!matcher.matches(input.charAt(j))) {
+                break;
+              }
+            }
+            return new Match(input, i, len);
+          }
+        }
+        return null;
+      }
+
+      @Override
+      public String toString() {
+        return "consecutive(" + matcher + ")";
+      }
+    };
+  }
+
+  /**
    * Returns a repeating pattern representing all the top-level groups from {@code regexPattern}.
    * If {@code regexPattern} has no capture group, the entire pattern is considered the only group.
    *
@@ -312,13 +442,10 @@ public final class Substring {
     }
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
-        CharSequence remaining =
-            fromIndex == 0 ? input : new Match(input, fromIndex, input.length() - fromIndex);
-        Matcher matcher = regexPattern.matcher(remaining);
-        if (matcher.find()) {
+        Matcher matcher = regexPattern.matcher(input);
+        if (matcher.find(fromIndex)) {
           int start = matcher.start(group);
-          return new Match(
-              input, fromIndex + start, matcher.end(group) - start, fromIndex + matcher.end());
+          return new Match(input, start, matcher.end(group) - start);
         }
         return null;
       }
@@ -392,7 +519,7 @@ public final class Substring {
             // For example when matching before(first("//")) against "http://", there should be
             // only one iteration, which is "http:". If the next scan starts before //, we'd get
             // an empty string match.
-            : new Match(input, fromIndex, match.startIndex - fromIndex, match.succeedingIndex);
+            : new Match(input, fromIndex, match.startIndex - fromIndex, match.repetitionStartIndex);
       }
 
       @Override public String toString() {
@@ -445,7 +572,7 @@ public final class Substring {
         return match == null
             ? null
             // Do not include the delimiter pattern in the next iteration.
-            : new Match(input, fromIndex, match.endIndex - fromIndex, match.succeedingIndex);
+            : new Match(input, fromIndex, match.endIndex - fromIndex, match.repetitionStartIndex);
       }
 
       @Override public String toString() {
@@ -513,69 +640,6 @@ public final class Substring {
         return "between(" + open + ", " + close + ")";
       }
     };
-  }
-
-  /**
-   * Returns a {@code Pattern} specified by the {@code format} string with {@code "%s"} as
-   * inner pattern placeholders, which are provided through {@code params}.
-   *
-   * <p>For example, {@code pattern("http://%s/%s?%s", AUTHORITY, PATH, QUERY)} can be used
-   * to match a full HTTP URI, where {@code AUTHORITY}, {@code PATH} and {@code QUERY} are
-   * pattern objects defined to match uri authority, path and query string respectively.
-   *
-   * <p>Generally, if a string is formatted with {@code String.format(formatString, "foo", "bar")},
-   * it can be matched by {@code pattern(formatString, pattern("foo"), pattern("bar"))}, but only
-   * {@code "%s"} placeholder is supported.
-   *
-   * <p>This method provides a cheap (runtime and memory-wise) alternative to regex for simplistic
-   * string patterns (no quantifiers, lookaround or backtracking), by composing {@link Pattern}
-   * objects together.
-   *
-   * <p>Pattern matching starts from the beginning of the string, but doesn't need to match to the
-   * end of the input string.
-   *
-   * <p>If the pattern starts with a placeholder {@code "%s"}, then the result match doesn't have to
-   * start from the beginning (say, if the corresponding sub-pattern is {@code first('/')}).
-   *
-   * <p>Note that the result pattern attempts no backtracking, so if any placeholder or the format
-   * string in between already matches, the remaining must match or else matching fails. For example,
-   * {@code pattern("%sbar", first("foo"))} won't match {@code "foonotbar,foobar"} because after
-   * {@code first("foo")} matches, the following {@code "notbar"} aborts the match immediately.
-   *
-   * <p>No other JDK-style placeholders (like {@code %d}) are supported.
-   *
-   * <p>Character escaping isn't supported. If the pattern contains literal {@code %s},
-   * make it a placeholder with {@code prefix("%s")} as the parameter value.
-   *
-   * @throws IllegalArgumentException if the number of parameters doesn't match the number of
-   *         {@code "%s"} placeholders.
-   * @throws NullPointerException if {@code format} or any parameter is null
-   * @since 6.0
-   */
-  public static Pattern pattern(String format, Pattern... params) {
-    List<String> fragments =
-        first("%s").repeatedly().split(format).map(Match::toString).collect(toList());
-    if (fragments.size() != params.length + 1) {
-      throw new IllegalArgumentException(
-          (fragments.size() - 1) + " %s placeholders in pattern; " + params.length + " parameters provided.");
-    }
-    if (params.length == 0) { // No params.
-      return prefix(format);
-    }
-    if (fragments.get(0).isEmpty()) {
-      // Pattern starts with %s, which means it doesn't necessarily start from the beginning
-      Pattern p = params[0].spanImmediately(fragments.get(1));
-      for (int i = 1; i < params.length; i++) {
-        p = p.spanTo(params[i]).spanImmediately(fragments.get(i + 1));
-      }
-      return p;
-    } else {
-      Pattern p = prefix(fragments.get(0));
-      for (int i = 0; i < params.length; i++) {
-        p = p.then(params[i]).thenImmediately(fragments.get(i + 1));
-      }
-      return upToIncluding(p);
-    }
   }
 
   /** A pattern that can be matched against a string, finding a single substring from it. */
@@ -689,10 +753,10 @@ public final class Substring {
           if (next == null) {
             return null;
           }
-          // Keep the succeedingIndex strictly increasing to avoid the next iteration
+          // Keep the repetitionStartIndex strictly increasing to avoid the next iteration
           // in repeatedly() to be stuck with no progress.
-          return next.succeedingIndex < preceding.succeedingIndex
-              ? new Match(input, next.startIndex, next.length(), preceding.succeedingIndex)
+          return next.repetitionStartIndex < preceding.repetitionStartIndex
+              ? new Match(input, next.startIndex, next.length(), preceding.repetitionStartIndex)
               : next;
         }
 
@@ -705,6 +769,138 @@ public final class Substring {
     /** Matches {@code following} string that immediately follows. */
     final Pattern thenImmediately(String following) {
       return following.isEmpty() ? this : then(prefix(following));
+    }
+
+    /**
+     * Return a {@code Pattern} equivalent to this {@code Pattern}, except it will fail to match
+     * if it's not followed by the {@code following} string.
+     *
+     * <p>Useful in asserting that the current match is followed by the expected keyword. For example:
+     * {@code SCHEME_NAME.peek(":")} returns the URI scheme name.
+     *
+     * <p>Note that unlike regex lookahead, no backtracking is attempted. So {@code
+     * first("foo").peek("bar")} will match "bafoobar" but won't match "foofoobar".
+     *
+     * <p>If you are trying to define a boundary around or after your pattern, consider to use
+     * {@link #withBoundary} if the boundary can be detected by a character.
+     *
+     * @since 6.0
+     */
+    public final Pattern peek(String following) {
+      return peek(prefix(following));
+    }
+
+    /**
+     * Return a {@code Pattern} equivalent to this {@code Pattern}, except it will fail to match
+     * if the {@code following} pattern can't find a match in the substring after the current match.
+     *
+     * <p>Useful in asserting that the current match is followed by the expected pattern. For example:
+     * {@code SCHEME_NAME.peek(prefix(':'))} returns the URI scheme name.
+     *
+     * <p>Note that unlike regex lookahead, no backtracking is attempted. So {@code
+     * first("foo").peek("bar")} will match "bafoobar" but won't match "foofoobar" because
+     * the first "foo" isn't followed by "bar".
+     *
+     * <p>If you are trying to define a boundary around or after your pattern, consider to use
+     * {@link #withBoundary} if the boundary can be detected by a character.
+     *
+     * @since 6.0
+     */
+    public final Pattern peek(Pattern following) {
+      requireNonNull(following);
+      Pattern base = this;
+      return new Pattern() {
+        @Override Match match(String input, int fromIndex) {
+          Match preceding = base.match(input, fromIndex);
+          if (preceding == null) {
+            return null;
+          }
+          return following.match(input, preceding.endIndex) == null ? null : preceding;
+        }
+
+        @Override public String toString() {
+          return base + ".peek(" + following + ")";
+        }
+      };
+    }
+
+    /**
+     * Returns a {@code Pattern} that asserts that this pattern must <em>not</em> match the input,
+     * in which case an empty match starting at the beginning of the input is returned.
+     *
+     * <p>Useful when combined with {@link #peek} to support negative lookahead.
+     *
+     * <p>Note that {@code pattern.not().not()} isn't equivalent to {@code pattern} because the
+     * result match is empty.
+     *
+     * @since 6.0
+     */
+    public final Pattern not() {
+      Pattern base = this;
+      return new Pattern() {
+        @Override Match match(String input, int fromIndex) {
+          return base.match(input, fromIndex) == null ? BEGINNING.match(input, fromIndex) : null;
+        }
+        @Override public String toString() {
+          return base + ".not()";
+        }
+      };
+    }
+
+    /**
+     * Returns a {@code Pattern} that matches the first occurrence of this pattern, where the
+     * beginning of the match must either be the beginning of the input, or be preceded by a
+     * boundary character as defined by {@code boundaryBefore}; and the end of the match must either
+     * be the end of the input, or be followed by a boundary character as defined by {@code
+     * boundaryAfter}.
+     *
+     * <p>Useful if you are trying to find a word with custom boundaries.
+     *
+     * @since 6.0
+     */
+    public final Pattern withBoundary(CharPredicate boundaryBefore, CharPredicate boundaryAfter) {
+      requireNonNull(boundaryBefore);
+      requireNonNull(boundaryAfter);
+      Pattern target = this;
+      return new Pattern() {
+        @Override
+        Match match(String input, int fromIndex) {
+          for (; fromIndex <= input.length(); fromIndex++) {
+            Match match = target.match(input, fromIndex);
+            if (match == null) {
+              return null;
+            }
+            if (match.startIndex == 0
+                || boundaryBefore.matches(input.charAt(match.startIndex - 1))) {
+              int boundaryIndex = match.endIndex;
+              if (boundaryIndex >= input.length()
+                  || boundaryAfter.matches(input.charAt(boundaryIndex))) {
+                return match;
+              }
+            }
+          }
+          return null;
+        }
+
+        @Override
+        public String toString() {
+          return this + ".withBoundary('" + boundaryBefore + ", " + boundaryAfter + "')";
+        }
+      };
+    }
+
+    /**
+     * Returns a {@code Pattern} that matches the first occurrence of this pattern, where the
+     * beginning of the match must either be the beginning of the input, or be preceded by a
+     * boundary character as defined by {@code boundary}; and the end of the match must either be
+     * the end of the input, or be followed by a boundary character as defined by {@code boundary}.
+     *
+     * <p>Useful if you are trying to find a word with custom boundaries.
+     *
+     * @since 6.0
+     */
+    public final Pattern withBoundary(CharPredicate boundary) {
+      return withBoundary(boundary, boundary);
     }
 
     /**
@@ -728,20 +924,15 @@ public final class Substring {
               input,
               preceding.startIndex,
               next.endIndex - preceding.startIndex,
-              // Keep the succeedingIndex strictly increasing to avoid the next iteration
+              // Keep the repetitionStartIndex strictly increasing to avoid the next iteration
               // in repeatedly() to be stuck with no progress.
-              Math.max(preceding.succeedingIndex, next.succeedingIndex));
+              Math.max(preceding.repetitionStartIndex, next.repetitionStartIndex));
         }
 
         @Override public String toString() {
           return base + ".spanTo(" + following + ")";
         }
       };
-    }
-
-    /** Span the match to the {@code following} string that immediately follows. */
-    final Pattern spanImmediately(String following) {
-      return following.isEmpty() ? this : spanTo(prefix(following));
     }
 
     /**
@@ -839,11 +1030,11 @@ public final class Substring {
                   }
                   if (match.endIndex == end) { // We've consumed the entire string.
                     nextIndex = Integer.MAX_VALUE;
-                  } else if (match.succeedingIndex > nextIndex) {
-                    nextIndex = match.succeedingIndex;
+                  } else if (match.repetitionStartIndex > nextIndex) {
+                    nextIndex = match.repetitionStartIndex;
                   } else {
-                    // instead of being stuck in infinite loop, consider this the end.
-                    nextIndex = Integer.MAX_VALUE;
+                    throw new IllegalStateException(
+                        "Infinite loop detected at " + match.repetitionStartIndex);
                   }
                   return match;
                 }
@@ -1435,22 +1626,22 @@ public final class Substring {
     private final int endIndex;
 
     /**
-     * While {@code endIndex} demarcates the matched substring, {@code succeedingIndex} points to
+     * While {@code endIndex} demarcates the matched substring, {@code repetitionStartIndex} points to
      * the starting point to scan for the succeeding {@link Pattern#iterateIn iteration} of the same
      * pattern. It's by default equal to {@code endIndex}, but for {@link Substring#before} and
-     * {@link Substring#upToIncluding}, {@code succeedingIndex} starts after the delimiters.
+     * {@link Substring#upToIncluding}, {@code repetitionStartIndex} starts after the delimiters.
      */
-    private final int succeedingIndex;
+    private final int repetitionStartIndex;
 
     private Match(String context, int startIndex, int length) {
-      this(context, startIndex, length, startIndex + length);
+      this(context, startIndex, length, startIndex + max(1, length));
     }
 
-    private Match(String context, int startIndex, int length, int succeedingIndex) {
+    private Match(String context, int startIndex, int length, int repetitionStartIndex) {
       this.context = context;
       this.startIndex = startIndex;
       this.endIndex = startIndex + length;
-      this.succeedingIndex = succeedingIndex;
+      this.repetitionStartIndex = repetitionStartIndex;
     }
 
     /**
@@ -1543,10 +1734,17 @@ public final class Substring {
     }
 
     /**
-     * {@inheritDoc}
+     * Returns a {@link Match} instance which is a sub-range of this {@code Match}.
+     *
+     * <p>For example, if this {@code Match} points to the range of {@code "wood"} from
+     * the {@code "Holywood"} string, calling {@code subSequence(1, 3)} will point to the
+     * range of {@code "oo"} from the original string.
+     *
+     * <p>Can be used to further reduce the matched range manually.
+     *
      * @since 4.6
      */
-    @Override public CharSequence subSequence(int begin, int end) {
+    @Override public Match subSequence(int begin, int end) {
       if (begin < 0) {
         throw new IndexOutOfBoundsException("Invalid index: begin (" + begin + ") < 0");
       }
@@ -1559,6 +1757,30 @@ public final class Substring {
             "Invalid index: begin (" + begin + ") > end (" + end + ")");
       }
       return new Match(context, startIndex + begin, end - begin);
+    }
+
+    /**
+     * Returns a {@link Match} instance which is a sub-range of this {@code Match}.
+     *
+     * <p>For example, if you need to remove the {@code "pubs/abc/"} prefix from the
+     * {@code "pubs/abc/books/xyz} resource name, where the "abc" and "xyz" can be any alphanumeric
+     * string, you can't do {@code before(first("books/")).removeFrom(resourceName)} because the
+     * string could have been {@code "pubs/1_million_books/books/xyz"}. Instead, you need to
+     * find the {@code "/books/"} substring, and then remove everything before it including its
+     * leading {@code '/'} character:
+     *
+     * <pre>{@code
+     * first("/books/")
+     *     .in("pubs/1_million_books/books/xyz")
+     *     .map(m -> m.subSequence(1))            // Get rid of the first '/' char
+     *     .map(m -> m + m.after())
+     *     .orElseThrow();
+     * }</pre>
+     *
+     * @since 6.0
+     */
+    public Match subSequence(int begin) {
+      return subSequence(begin, length());
     }
 
     /** Returns the matched substring. */
@@ -1591,7 +1813,7 @@ public final class Substring {
       int trimmedLength = right - left + 1;
       return trimmedLength == length()
           ? this
-          : new Match(context, left, trimmedLength, succeedingIndex);
+          : new Match(context, left, trimmedLength, repetitionStartIndex);
     }
 
     private Match toEnd() {
