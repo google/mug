@@ -27,6 +27,7 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.stream.Stream;
 
+import com.google.mu.function.CharPredicate;
 import com.google.mu.util.stream.BiStream;
 import com.google.mu.util.stream.MoreStreams;
 
@@ -93,6 +94,12 @@ import com.google.mu.util.stream.MoreStreams;
  * @since 2.0
  */
 public final class Substring {
+  private static final CharPredicate ASCII_WORD_BOUNDARY =
+      CharPredicate.is('_')
+          .or('a', 'z')
+          .or('A', 'Z')
+          .or('0', '9')
+          .not();
 
   /** {@code Pattern} that never matches any substring. */
   public static final Pattern NONE = new Pattern() {
@@ -232,6 +239,136 @@ public final class Substring {
    */
   public static Pattern first(java.util.regex.Pattern regexPattern) {
     return first(regexPattern, 0);
+  }
+
+  /**
+   * Returns a {@code Pattern} that matches the first occurrence of {@code word} that isn't
+   * immediately preceded or followed by another "word" ({@code [a-zA-Z0-9_]}) character.
+   *
+   * <p>For example, if you are looking for an English word "cat" in the string "catchie has a cat",
+   * {@code first("cat")} won't work because it'll match the first three letters of "cathie".
+   * Instead, you should use {@code firstWord("cat")} to skip over "cathie".
+   *
+   * <p>If your word boundary isn't equivalent to the regex {@code \W} character class, you can
+   * define your own word boundary {@code CharMatcher} and then use {@link Pattern#withBoundary}
+   * instead. Say, if your word is lower-case alpha with "-", then:
+   *
+   * <pre>{@code
+   * CharMatcher boundary = CharMatcher.inRange('a', 'z').or(CharMatcher.is('-'));
+   * Substring.Pattern petFriendly = first("pet-friendly").withBoundary(boundary);
+   * }</pre>
+   *
+   * @since 6.0
+   */
+  public static Pattern firstWord(String word) {
+    return first(word).withBoundary(ASCII_WORD_BOUNDARY);
+  }
+
+  /**
+   * Returns a {@code Pattern} that matches from the beginning of the input string, a non-empty
+   * sequence of leading characters identified by {@code matcher}.
+   *
+   * <p>For example: {@code leading(javaLetter()).from("System.err")} will result in {@code
+   * "System"}.
+   *
+   * <p>It's related to and complements {@link com.google.common.base.CharMatcher#trimLeadingFrom},
+   * which removes the leading characters instead of extracting them.
+   *
+   * @since 6.0
+   */
+  public static Pattern leading(CharPredicate matcher) {
+    requireNonNull(matcher);
+    return new Pattern() {
+      @Override
+      Match match(String input, int fromIndex) {
+        int len = 0;
+        for (int i = fromIndex; i < input.length(); i++, len++) {
+          if (!matcher.matches(input.charAt(i))) {
+            break;
+          }
+        }
+        return len == 0 ? null : new Match(input, fromIndex, len);
+      }
+
+      @Override
+      public String toString() {
+        return "leading(" + matcher + ")";
+      }
+    };
+  }
+
+  /**
+   * Returns a {@code Pattern} that matches from the end of the input string, a non-empty sequence
+   * of trailing characters identified by {@code matcher}.
+   *
+   * <p>For example: {@code trailing(digit()).from("60612-3588")} will result in {@code "3588"}.
+   *
+   * <p>It's related to and complements {@link CharMatcher#trimTrailingFrom}, which removes the
+   * trailing characters instead of extracting them.
+   *
+   * @since 6.0
+   */
+  public static Pattern trailing(CharPredicate matcher) {
+    requireNonNull(matcher);
+    return new Pattern() {
+      @Override
+      Match match(String input, int fromIndex) {
+        int len = 0;
+        for (int i = input.length() - 1; i >= fromIndex; i--, len++) {
+          if (!matcher.matches(input.charAt(i))) {
+            break;
+          }
+        }
+        return len == 0 ? null : new Match(input, input.length() - len, len);
+      }
+
+      @Override
+      public String toString() {
+        return "trailing(" + matcher + ")";
+      }
+    };
+  }
+
+  /**
+   * Returns a {@code Pattern} that matches the first non-empty sequence of consecutive characters
+   * identified by {@code matcher}.
+   *
+   * <p>For example: {@code consecutive(javaLetter()).from("(System.out)")} will find {@code
+   * "System"}, and {@code consecutive(javaLetter()).repeatedly().from("(System.out)")} will produce
+   * {@code ["System", "out"]}.
+   *
+   * <p>Equivalent to {@code matcher.collapseFrom(string, replacement)}, you can do {@code
+   * consecutive(matcher).repeatedly().replaceAllFrom(string, replacement)}. But you can also do
+   * things other than collapsing these consecutive groups, for example to inspect their values and
+   * replace conditionally: {@code consecutive(matcher).repeatedly().replaceAllFrom(string, group ->
+   * ...)}, or other more sophisticated use cases like building index maps of these sub sequences.
+   *
+   * @since 6.0
+   */
+  public static Pattern consecutive(CharPredicate matcher) {
+    requireNonNull(matcher);
+    return new Pattern() {
+      @Override
+      Match match(String input, int fromIndex) {
+        for (int i = fromIndex; i < input.length(); i++) {
+          if (matcher.matches(input.charAt(i))) {
+            int len = 1;
+            for (int j = i + 1; j < input.length(); j++, len++) {
+              if (!matcher.matches(input.charAt(j))) {
+                break;
+              }
+            }
+            return new Match(input, i, len);
+          }
+        }
+        return null;
+      }
+
+      @Override
+      public String toString() {
+        return "consecutive(" + matcher + ")";
+      }
+    };
   }
 
   /**
@@ -707,6 +844,25 @@ public final class Substring {
 
     /**
      * Return a {@code Pattern} equivalent to this {@code Pattern}, except it will fail to match
+     * if it's not followed by the {@code following} string.
+     *
+     * <p>Useful in asserting that the current match is followed by the expected keyword. For example:
+     * {@code SCHEME_NAME.peek(":")} returns the URI scheme name.
+     *
+     * <p>Note that unlike regex lookahead, no backtracking is attempted. So {@code
+     * first("foo").peek("bar")} will match "bafoobar" but won't match "foofoobar".
+     *
+     * <p>If you are trying to define a boundary around or after your pattern, consider to use
+     * {@link #withBoundary} if the boundary can be detected by a character.
+     *
+     * @since 6.0
+     */
+    public final Pattern peek(String following) {
+      return peek(prefix(following));
+    }
+
+    /**
+     * Return a {@code Pattern} equivalent to this {@code Pattern}, except it will fail to match
      * if the {@code following} pattern can't find a match in the substring after the current match.
      *
      * <p>Useful in asserting that the current match is followed by the expected pattern. For example:
@@ -715,6 +871,9 @@ public final class Substring {
      * <p>Note that unlike regex lookahead, no backtracking is attempted. So {@code
      * first("foo").peek("bar")} will match "bafoobar" but won't match "foofoobar" because
      * the first "foo" isn't followed by "bar".
+     *
+     * <p>If you are trying to define a boundary around or after your pattern, consider to use
+     * {@link #withBoundary} if the boundary can be detected by a character.
      *
      * @since 6.0
      */
@@ -760,19 +919,65 @@ public final class Substring {
     }
 
     /**
-     * Return a {@code Pattern} equivalent to this {@code Pattern}, except it will fail to match
-     * if it's not followed by the {@code following} string.
+     * Returns a {@code Pattern} that matches the first occurrence of this pattern, where the
+     * beginning of the match must either be the beginning of the input, or be preceded by a
+     * boundary character as defined by {@code boundaryBefore}; and the end of the match must either
+     * be the end of the input, or be followed by a boundary character as defined by {@code
+     * boundaryAfter}.
      *
-     * <p>Useful in asserting that the current match is followed by the expected keyword. For example:
-     * {@code SCHEME_NAME.peek(":")} returns the URI scheme name.
-     *
-     * <p>Note that unlike regex lookahead, no backtracking is attempted. So {@code
-     * first("foo").peek("bar")} will match "bafoobar" but won't match "foofoobar".
+     * <p>Useful if you are trying to find a word with custom boundaries. For normal words composed
+     * of regex {@code \w} character class, use {@link Substring#firstWord} instead.
      *
      * @since 6.0
      */
-    public final Pattern peek(String following) {
-      return peek(prefix(following));
+    public final Pattern withBoundary(CharPredicate boundaryBefore, CharPredicate boundaryAfter) {
+      requireNonNull(boundaryBefore);
+      requireNonNull(boundaryAfter);
+      Pattern target = this;
+      return new Pattern() {
+        @Override
+        Match match(String input, int fromIndex) {
+          for (; fromIndex <= input.length(); ) {
+            Match match = target.match(input, fromIndex);
+            if (match == null) {
+              return null;
+            }
+            if (match.startIndex == 0
+                || boundaryBefore.matches(input.charAt(match.startIndex - 1))) {
+              int boundaryIndex = match.endIndex;
+              if (boundaryIndex >= input.length()
+                  || boundaryAfter.matches(input.charAt(boundaryIndex))) {
+                return match;
+              }
+            }
+            fromIndex =
+                (match.repetitionStartIndex <= fromIndex
+                    ? fromIndex + 1
+                    : match.repetitionStartIndex);
+          }
+          return null;
+        }
+
+        @Override
+        public String toString() {
+          return this + ".withBoundary('" + boundaryBefore + ", " + boundaryAfter + "')";
+        }
+      };
+    }
+
+    /**
+     * Returns a {@code Pattern} that matches the first occurrence of this pattern, where the
+     * beginning of the match must either be the beginning of the input, or be preceded by a
+     * boundary character as defined by {@code boundary}; and the end of the match must either be
+     * the end of the input, or be followed by a boundary character as defined by {@code boundary}.
+     *
+     * <p>Useful if you are trying to find a word with custom boundaries. For normal words composed
+     * of regex {@code \w} character class, use {@link Substring#firstWord} instead.
+     *
+     * @since 6.0
+     */
+    public final Pattern withBoundary(CharPredicate boundary) {
+      return withBoundary(boundary, boundary);
     }
 
     /**

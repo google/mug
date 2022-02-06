@@ -7,11 +7,14 @@ import static com.google.mu.util.Substring.BEGINNING;
 import static com.google.mu.util.Substring.END;
 import static com.google.mu.util.Substring.after;
 import static com.google.mu.util.Substring.before;
+import static com.google.mu.util.Substring.consecutive;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.last;
+import static com.google.mu.util.Substring.leading;
 import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.Substring.spanningInOrder;
 import static com.google.mu.util.Substring.suffix;
+import static com.google.mu.util.Substring.trailing;
 import static com.google.mu.util.Substring.upToIncluding;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -25,6 +28,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import com.google.common.base.Ascii;
+import com.google.common.base.CharMatcher;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.LinkedListMultimap;
@@ -33,6 +38,7 @@ import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.EqualsTester;
 import com.google.common.testing.NullPointerTester;
 import com.google.common.truth.MultimapSubject;
+import com.google.mu.function.CharPredicate;
 import com.google.mu.util.Substring.Match;
 import com.google.mu.util.stream.BiCollector;
 import com.google.mu.util.stream.BiStream;
@@ -40,6 +46,9 @@ import com.google.mu.util.stream.Joiner;
 
 @RunWith(JUnit4.class)
 public class SubstringTest {
+  private static final CharPredicate ALPHA = CharPredicate.range('a', 'z').or('A', 'Z');
+  private static final CharPredicate DIGIT = CharPredicate.range('0', '9');
+
   @Test public void none() {
     assertThat(Substring.NONE.in("foo")).isEmpty();
     assertThat(Substring.NONE.removeFrom("foo")).isEqualTo("foo");
@@ -2224,6 +2233,148 @@ public class SubstringTest {
 
   @Test public void spanningInOrder_threeStops_thirdPatternDoesNotMatch() {
     assertThat(spanningInOrder("o", "bar", "car").in("foo bar cat")).isEmpty();
+  }
+
+  @Test
+  public void leading_noMatch() {
+    assertThat(leading(ALPHA).from(" foo")).isEmpty();
+    assertThat(leading(ALPHA).from("")).isEmpty();
+    assertThat(leading(ALPHA).repeatedly().from(" foo")).isEmpty();
+  }
+
+  @Test
+  public void leading_match() {
+    assertThat(leading(ALPHA).from("System.out")).hasValue("System");
+    assertThat(leading(ALPHA).removeFrom("System.out")).isEqualTo(".out");
+    assertThat(
+            leading(CharMatcher.inRange('a', 'z')::matches)
+                .then(prefix(':'))
+                .in("http://google.com")
+                .map(Match::before))
+        .hasValue("http");
+  }
+
+  @Test
+  public void leading_match_repeatedly() {
+    assertThat(leading(ALPHA).repeatedly().removeAllFrom("System.out")).isEqualTo(".out");
+    assertThat(leading(ALPHA).repeatedly().from("System.out")).containsExactly("System");
+    assertThat(leading(ALPHA).repeatedly().from("out")).containsExactly("out");
+  }
+
+  @Test
+  public void trailing_noMatch() {
+    assertThat(trailing(DIGIT).from("123.")).isEmpty();
+    assertThat(trailing(DIGIT).from("")).isEmpty();
+    assertThat(trailing(DIGIT).repeatedly().from("123.")).isEmpty();
+  }
+
+  @Test
+  public void trailing_match() {
+    assertThat(trailing(DIGIT).from("12>11")).hasValue("11");
+    assertThat(trailing(DIGIT).removeFrom("12>11")).isEqualTo("12>");
+  }
+
+  @Test
+  public void trailing_match_repeatedly() {
+    assertThat(trailing(DIGIT).repeatedly().removeAllFrom("12>11")).isEqualTo("12>");
+    assertThat(trailing(DIGIT).repeatedly().from("12>11")).containsExactly("11");
+    assertThat(trailing(DIGIT).repeatedly().from("11")).containsExactly("11");
+  }
+
+  @Test
+  public void consecutive_noMatch() {
+    assertThat(consecutive(ALPHA).from(" ")).isEmpty();
+    assertThat(consecutive(ALPHA).from("")).isEmpty();
+    assertThat(consecutive(ALPHA).from(".")).isEmpty();
+    assertThat(consecutive(ALPHA).repeatedly().from(".")).isEmpty();
+  }
+
+  @Test
+  public void consecutive_match() {
+    assertThat(consecutive(ALPHA).from(" foo.")).hasValue("foo");
+    assertThat(consecutive(ALPHA).removeFrom(" foo.")).isEqualTo(" .");
+    assertThat(consecutive(ALPHA).repeatedly().removeAllFrom(" foo.")).isEqualTo(" .");
+  }
+
+  @Test
+  public void consecutive_match_repeatedly() {
+    assertThat(consecutive(ALPHA).repeatedly().from(" foo.")).containsExactly("foo");
+    assertThat(consecutive(ALPHA).repeatedly().from("(System.out)"))
+        .containsExactly("System", "out")
+        .inOrder();
+    assertThat(consecutive(ALPHA).repeatedly().replaceAllFrom("(System.out)", Ascii::toLowerCase))
+        .isEqualTo("(system.out)");
+  }
+
+  @Test
+  public void firstWord_notFound() {
+    assertThat(Substring.firstWord("cat").from("dog")).isEmpty();
+    assertThat(Substring.firstWord("cat").from("")).isEmpty();
+  }
+
+  @Test
+  public void firstWord_onlyWord() {
+    assertThat(Substring.firstWord("word").from("word")).hasValue("word");
+    assertThat(Substring.firstWord("word").repeatedly().from("word")).containsExactly("word");
+  }
+
+  @Test
+  public void firstWord_partialWord() {
+    assertThat(Substring.firstWord("cat").from("catchie")).isEmpty();
+    assertThat(Substring.firstWord("cat").repeatedly().from("catchie")).isEmpty();
+    assertThat(Substring.firstWord("cat").from("bobcat")).isEmpty();
+    assertThat(Substring.firstWord("cat").repeatedly().from("bobcat")).isEmpty();
+  }
+
+  @Test
+  public void firstWord_startedByWord() {
+    assertThat(Substring.firstWord("cat").from("cat loves dog")).hasValue("cat");
+    assertThat(Substring.firstWord("cat").repeatedly().from("cat loves dog"))
+        .containsExactly("cat");
+  }
+
+  @Test
+  public void firstWord_endedByWord() {
+    assertThat(Substring.firstWord("word").from("hello word")).hasValue("word");
+    assertThat(Substring.firstWord("word").repeatedly().from("hello word")).containsExactly("word");
+  }
+
+  @Test
+  public void firstWord_multipleWords() {
+    assertThat(Substring.firstWord("cat").from("bobcat is not a cat, or is it a cat?"))
+        .hasValue("cat");
+    assertThat(Substring.firstWord("cat").in("bobcat is not a cat, or is it a cat?").get().before())
+        .isEqualTo("bobcat is not a ");
+    assertThat(Substring.firstWord("cat").repeatedly().from("bobcat is not a cat, or is it a cat?"))
+        .containsExactly("cat", "cat");
+  }
+
+  @Test
+  public void firstWord_emptyWord() {
+    assertThat(Substring.firstWord("").repeatedly().from("a.b")).isEmpty();
+    assertThat(Substring.firstWord("").from("a.b")).isEmpty();
+    assertThat(Substring.firstWord("").repeatedly().from("ab..cd,,ef,"))
+        .containsExactly("", "", "");
+  }
+
+  @Test
+  public void first_withBoundary() {
+    CharPredicate left = CharPredicate.range('a', 'z').not();
+    CharPredicate right = CharPredicate.is('-').or('a', 'z').not();
+    Substring.Pattern petRock = Substring.first("pet-rock").withBoundary(left, right);
+    assertThat(petRock.from("pet-rock")).hasValue("pet-rock");
+    assertThat(petRock.from("pet-rock is fun")).hasValue("pet-rock");
+    assertThat(petRock.from("love-pet-rock")).hasValue("pet-rock");
+    assertThat(petRock.from("pet-rock-not")).isEmpty();
+    assertThat(petRock.from("muppet-rock")).isEmpty();
+  }
+
+  @Test
+  public void before_withBoundary() {
+    CharPredicate boundary = CharPredicate.range('a', 'z').not();
+    Substring.Pattern dir = Substring.before(first("//")).withBoundary(boundary);
+    assertThat(dir.from("foo//bar//zoo")).hasValue("foo");
+    assertThat(dir.repeatedly().from("foo//bar//zoo")).containsExactly("foo", "bar").inOrder();
   }
 
   @Test public void testRegexTopLevelGroups_noGroup() {
