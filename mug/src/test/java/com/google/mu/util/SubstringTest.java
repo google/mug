@@ -47,7 +47,7 @@ import com.google.mu.util.stream.Joiner;
 
 @RunWith(JUnit4.class)
 public class SubstringTest {
-  private static final CharPredicate ALPHA = CharPredicate.range('a', 'z').or('A', 'Z');
+  private static final CharPredicate ALPHA = CharPredicate.range('a', 'z').orRange('A', 'Z');
   private static final CharPredicate DIGIT = CharPredicate.range('0', '9');
 
   @Test public void none() {
@@ -2361,7 +2361,7 @@ public class SubstringTest {
   @Test
   public void withBoundary_first() {
     CharPredicate left = CharPredicate.range('a', 'z').not();
-    CharPredicate right = CharPredicate.is('-').or('a', 'z').not();
+    CharPredicate right = CharPredicate.range('a', 'z').or('-').not();
     Substring.Pattern petRock = Substring.first("pet-rock").withBoundary(left, right);
     assertThat(petRock.from("pet-rock")).hasValue("pet-rock");
     assertThat(petRock.from("pet-rock is fun")).hasValue("pet-rock");

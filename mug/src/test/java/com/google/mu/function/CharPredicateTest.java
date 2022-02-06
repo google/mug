@@ -56,13 +56,17 @@ public class CharPredicateTest {
   }
 
   @Test public void testOr() {
-    assertThat(CharPredicate.is('c').or('A', 'Z').matches('c')).isTrue();
-    assertThat(CharPredicate.is('c').or('A', 'Z').matches('Z')).isTrue();
-    assertThat(CharPredicate.is('c').or('A', 'Z').matches('z')).isFalse();
+    assertThat(CharPredicate.is('c').orRange('A', 'Z').matches('c')).isTrue();
+    assertThat(CharPredicate.is('c').orRange('A', 'Z').matches('Z')).isTrue();
+    assertThat(CharPredicate.is('c').orRange('A', 'Z').matches('z')).isFalse();
+    assertThat(CharPredicate.is('x').or('X').matches('x')).isTrue();
+    assertThat(CharPredicate.is('x').or('X').matches('X')).isTrue();
+    assertThat(CharPredicate.is('x').or('X').matches('y')).isFalse();
   }
 
   @Test public void testOr_toString() {
-    assertThat(CharPredicate.is('c').or('A', 'Z').toString()).isEqualTo("'c' | ['A', 'Z']");
+    assertThat(CharPredicate.is('c').orRange('A', 'Z').toString()).isEqualTo("'c' | ['A', 'Z']");
+    assertThat(CharPredicate.range('A', 'Z').or('c').toString()).isEqualTo("['A', 'Z'] | 'c'");
   }
 
   @Test public void testNulls() throws Throwable {

@@ -24,7 +24,7 @@ import static java.util.Objects.requireNonNull;
 @FunctionalInterface
 public interface CharPredicate {
   /** A predicate corresponding the word character class as in regex {@code \w}. */
-  static final CharPredicate WORD = is('_').or('a', 'z').or('A', 'Z');
+  static final CharPredicate WORD = range('a', 'z').orRange('A', 'Z').or('_');
 
   /** Returns a CharPredicate for the range of characters: {@code [from, to]}. */
   static CharPredicate is(char ch) {
@@ -75,9 +75,17 @@ public interface CharPredicate {
 
   /**
    * Returns a {@link CharPredicate} that evaluates true if either this predicate evaluates to true,
+   * or the character is {@code ch}.
+   */
+  default CharPredicate or(char ch) {
+    return or(is(ch));
+  }
+
+  /**
+   * Returns a {@link CharPredicate} that evaluates true if either this predicate evaluates to true,
    * or the character is in the range of {@code [from, to]).
    */
-  default CharPredicate or(char from, char to) {
+  default CharPredicate orRange(char from, char to) {
     return or(range(from, to));
   }
 
