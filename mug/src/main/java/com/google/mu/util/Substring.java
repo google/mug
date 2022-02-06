@@ -14,6 +14,7 @@
  *****************************************************************************/
 package com.google.mu.util;
 
+import static java.lang.Math.max;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
@@ -312,13 +313,10 @@ public final class Substring {
     }
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
-        CharSequence remaining =
-            fromIndex == 0 ? input : new Match(input, fromIndex, input.length() - fromIndex);
-        Matcher matcher = regexPattern.matcher(remaining);
-        if (matcher.find()) {
+        Matcher matcher = regexPattern.matcher(input);
+        if (matcher.find(fromIndex)) {
           int start = matcher.start(group);
-          return new Match(
-              input, fromIndex + start, matcher.end(group) - start, fromIndex + matcher.end());
+          return new Match(input, start, matcher.end(group) - start);
         }
         return null;
       }
@@ -912,8 +910,8 @@ public final class Substring {
                   } else if (match.repetitionStartIndex > nextIndex) {
                     nextIndex = match.repetitionStartIndex;
                   } else {
-                    // instead of being stuck in infinite loop, consider this the end.
-                    nextIndex = Integer.MAX_VALUE;
+                    throw new IllegalStateException(
+                        "Infinite loop detected at " + match.repetitionStartIndex);
                   }
                   return match;
                 }
@@ -1513,7 +1511,7 @@ public final class Substring {
     private final int repetitionStartIndex;
 
     private Match(String context, int startIndex, int length) {
-      this(context, startIndex, length, startIndex + length);
+      this(context, startIndex, length, startIndex + max(1, length));
     }
 
     private Match(String context, int startIndex, int length, int repetitionStartIndex) {
@@ -1613,10 +1611,17 @@ public final class Substring {
     }
 
     /**
-     * {@inheritDoc}
+     * Returns a {@link Match} instance which is a sub-range of this {@code Match}.
+     *
+     * <p>For example, if this {@code Match} points to the range of {@code "wood"} from
+     * the {@code "Holywood"} string, calling {@code subSequence(1, 3)} will point to the
+     * range of {@code "oo"} from the original string.
+     *
+     * <p>Can be used to further reduce the matched range manually.
+     *
      * @since 4.6
      */
-    @Override public CharSequence subSequence(int begin, int end) {
+    @Override public Match subSequence(int begin, int end) {
       if (begin < 0) {
         throw new IndexOutOfBoundsException("Invalid index: begin (" + begin + ") < 0");
       }
@@ -1629,6 +1634,30 @@ public final class Substring {
             "Invalid index: begin (" + begin + ") > end (" + end + ")");
       }
       return new Match(context, startIndex + begin, end - begin);
+    }
+
+    /**
+     * Returns a {@link Match} instance which is a sub-range of this {@code Match}.
+     *
+     * <p>For example, if you need to remove the {@code "pubs/abc/"} prefix from the
+     * {@code "pubs/abc/books/xyz} resource name, where the "abc" and "xyz" can be any alphanumeric
+     * string, you can't do {@code before(first("books/")).removeFrom(resourceName)} because the
+     * string could have been {@code "pubs/1_million_books/books/xyz"}. Instead, you need to
+     * find the {@code "/books/"} substring, and then remove everything before it including its
+     * leading {@code '/'} character:
+     *
+     * <pre>{@code
+     * first("/books/")
+     *     .in("pubs/1_million_books/books/xyz")
+     *     .map(m -> m.subSequence(1))            // Get rid of the first '/' char
+     *     .map(m -> m + m.after())
+     *     .orElseThrow();
+     * }</pre>
+     *
+     * @since 6.0
+     */
+    public Match subSequence(int begin) {
+      return subSequence(begin, length());
     }
 
     /** Returns the matched substring. */

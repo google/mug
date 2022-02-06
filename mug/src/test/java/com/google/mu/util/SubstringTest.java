@@ -56,7 +56,7 @@ public class SubstringTest {
     assertThat(BEGINNING.replaceFrom("foo", "begin ")).isEqualTo("begin foo");
     assertThat(BEGINNING.in("foo").get().before()).isEmpty();
     assertThat(BEGINNING.in("foo").get().after()).isEqualTo("foo");
-    assertThat(BEGINNING.repeatedly().from("foo")).containsExactly("");
+    assertThat(BEGINNING.repeatedly().from("foo")).containsExactly("", "", "", "");
     assertThat(BEGINNING.repeatedly().from("")).containsExactly("");
   }
 
@@ -165,7 +165,7 @@ public class SubstringTest {
     assertThat(match.get().replaceWith("bar")).isEqualTo("barfoo");
     assertThat(match.get().length()).isEqualTo(0);
     assertThat(match.get().toString()).isEmpty();
-    assertThat(prefix("").repeatedly().from("foo")).containsExactly("");
+    assertThat(prefix("").repeatedly().from("foo")).containsExactly("", "", "", "");
   }
 
   @Test public void charPrefix_toString() {
@@ -745,7 +745,7 @@ public class SubstringTest {
     assertThat(match.get().replaceWith("bar")).isEqualTo("barfoo");
     assertThat(match.get().length()).isEqualTo(0);
     assertThat(match.get().toString()).isEmpty();
-    assertThat(first("").repeatedly().from("foo")).containsExactly("");
+    assertThat(first("").repeatedly().from("foo")).containsExactly("", "", "", "");
   }
 
   @Test public void firstSnippet_matchesFirstOccurrence() {
@@ -847,7 +847,7 @@ public class SubstringTest {
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("foo");
     assertThat(first(Pattern.compile("^.oo")).repeatedly().from("foodoobar"))
-        .containsExactly("foo", "doo");
+        .containsExactly("foo");
   }
 
   @Test public void regex_doesNotMatchPrefixDueToStartingAnchor() {
@@ -921,7 +921,7 @@ public class SubstringTest {
     assertThat(match.get().length()).isEqualTo(0);
     assertThat(match.get().toString()).isEmpty();
     assertThat(first(Pattern.compile("")).repeatedly().from("foo"))
-        .containsExactly("");
+        .contains("");
     assertThat(first(Pattern.compile("^")).repeatedly().from("foo"))
         .containsExactly("");
     assertThat(first(Pattern.compile("$")).repeatedly().from("foo"))
@@ -2020,7 +2020,7 @@ public class SubstringTest {
     assertThat(match.after()).isEqualTo("foo");
     assertThat(match.length()).isEqualTo(0);
     assertThat(Substring.between(first(""), first("")).repeatedly().from("foo"))
-        .containsExactly("");
+        .containsExactly("", "", "", "");
   }
 
   @Test public void between_openAndCloseAreEqual() {
