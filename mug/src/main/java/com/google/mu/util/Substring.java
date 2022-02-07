@@ -876,11 +876,14 @@ public final class Substring {
         @Override
         Match match(String input, int fromIndex) {
           for (; fromIndex <= input.length(); fromIndex++) {
+            if (fromIndex > 0 && !boundaryBefore.matches(input.charAt(fromIndex - 1))) {
+              continue;  // The current position cannot possibly be the beginning of match.
+            }
             Match match = target.match(input, fromIndex);
             if (match == null) {
               return null;
             }
-            if (match.startIndex == 0
+            if (match.startIndex == fromIndex // already checked boundaryBefore
                 || boundaryBefore.matches(input.charAt(match.startIndex - 1))) {
               int boundaryIndex = match.endIndex;
               if (boundaryIndex >= input.length()

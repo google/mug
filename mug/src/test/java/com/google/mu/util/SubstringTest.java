@@ -2365,7 +2365,7 @@ public class SubstringTest {
     assertThat(word().repeatedly().from("./> ")).isEmpty();
   }
 
-  @Test public void word_withMatches() {
+  @Test public void word_matches() {
     assertThat(word().from("hello world")).hasValue("hello");
     assertThat(word().repeatedly().from("hello world"))
         .containsExactly("hello", "world");
