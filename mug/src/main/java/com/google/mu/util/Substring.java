@@ -875,15 +875,16 @@ public final class Substring {
       return new Pattern() {
         @Override
         Match match(String input, int fromIndex) {
-          for (; fromIndex <= input.length(); fromIndex++) {
+          for (; fromIndex <= input.length(); ) {
             if (fromIndex > 0 && !boundaryBefore.matches(input.charAt(fromIndex - 1))) {
-              continue;  // The current position cannot possibly be the beginning of match.
+              fromIndex++;
+              continue; // The current position cannot possibly be the beginning of match.
             }
             Match match = target.match(input, fromIndex);
             if (match == null) {
               return null;
             }
-            if (match.startIndex == fromIndex // already checked boundaryBefore
+            if (match.startIndex == fromIndex // Already checked boundaryBefore
                 || boundaryBefore.matches(input.charAt(match.startIndex - 1))) {
               int boundaryIndex = match.endIndex;
               if (boundaryIndex >= input.length()
@@ -891,6 +892,7 @@ public final class Substring {
                 return match;
               }
             }
+            fromIndex = match.startIndex + 1; // Skip the first matched char.
           }
           return null;
         }
