@@ -875,7 +875,7 @@ public final class Substring {
       return new Pattern() {
         @Override
         Match match(String input, int fromIndex) {
-          for (; fromIndex <= input.length(); ) {
+          while (fromIndex <= input.length()) {
             if (fromIndex > 0 && !boundaryBefore.matches(input.charAt(fromIndex - 1))) {
               fromIndex++;
               continue; // The current position cannot possibly be the beginning of match.
