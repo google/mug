@@ -16,7 +16,6 @@ import static com.google.mu.util.Substring.spanningInOrder;
 import static com.google.mu.util.Substring.suffix;
 import static com.google.mu.util.Substring.trailing;
 import static com.google.mu.util.Substring.upToIncluding;
-import static com.google.mu.util.Substring.word;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Optional;
@@ -2182,7 +2181,8 @@ public class SubstringTest {
   }
 
   @Test public void spanningInOrder_toString() {
-    assertThat(spanningInOrder("o", "bar").toString()).isEqualTo("first('o').spanTo(first('bar'))");
+    assertThat(spanningInOrder("o", "bar").toString())
+        .isEqualTo("first('o').extendTo(first('bar'))");
   }
 
   @Test public void spanningInOrder_twoStops_matches() {
@@ -2305,99 +2305,6 @@ public class SubstringTest {
         .inOrder();
     assertThat(consecutive(ALPHA).repeatedly().replaceAllFrom("(System.out)", Ascii::toLowerCase))
         .isEqualTo("(system.out)");
-  }
-
-  @Test
-  public void word_notFound() {
-    assertThat(word("cat").from("dog")).isEmpty();
-    assertThat(word("cat").from("")).isEmpty();
-  }
-
-  @Test
-  public void word_onlyWord() {
-    assertThat(word("word").from("word")).hasValue("word");
-    assertThat(word("word").repeatedly().from("word")).containsExactly("word");
-  }
-
-  @Test
-  public void word_partialWord() {
-    assertThat(word("cat").from("catchie")).isEmpty();
-    assertThat(word("cat").repeatedly().from("catchie")).isEmpty();
-    assertThat(word("cat").from("bobcat")).isEmpty();
-    assertThat(word("cat").repeatedly().from("bobcat")).isEmpty();
-  }
-
-  @Test
-  public void word_startedByWord() {
-    assertThat(word("cat").from("cat loves dog")).hasValue("cat");
-    assertThat(word("cat").repeatedly().from("cat loves dog"))
-        .containsExactly("cat");
-  }
-
-  @Test
-  public void word_endedByWord() {
-    assertThat(word("word").from("hello word")).hasValue("word");
-    assertThat(word("word").repeatedly().from("hello word")).containsExactly("word");
-  }
-
-  @Test
-  public void word_multipleWords() {
-    assertThat(word("cat").from("bobcat is not a cat, or is it a cat?"))
-        .hasValue("cat");
-    assertThat(word("cat").in("bobcat is not a cat, or is it a cat?").get().before())
-        .isEqualTo("bobcat is not a ");
-    assertThat(word("cat").repeatedly().from("bobcat is not a cat, or is it a cat?"))
-        .containsExactly("cat", "cat");
-  }
-
-  @Test
-  public void word_emptyWord() {
-    assertThat(word("").repeatedly().from("a.b")).isEmpty();
-    assertThat(word("").from("a.b")).isEmpty();
-    assertThat(word("").repeatedly().from("ab..cd,,ef,"))
-        .containsExactly("", "", "");
-  }
-
-  @Test public void word_noMatch() {
-    assertThat(word().from("")).isEmpty();
-    assertThat(word().repeatedly().from("")).isEmpty();
-    assertThat(word().from("./> ")).isEmpty();
-    assertThat(word().repeatedly().from("./> ")).isEmpty();
-  }
-
-  @Test public void word_matches() {
-    assertThat(word().from("hello world")).hasValue("hello");
-    assertThat(word().repeatedly().from("hello world"))
-        .containsExactly("hello", "world");
-  }
-
-  @Test
-  public void withBoundary_first() {
-    CharPredicate left = CharPredicate.range('a', 'z').not();
-    CharPredicate right = CharPredicate.range('a', 'z').or('-').not();
-    Substring.Pattern petRock = Substring.first("pet-rock").withBoundary(left, right);
-    assertThat(petRock.from("pet-rock")).hasValue("pet-rock");
-    assertThat(petRock.from("pet-rock is fun")).hasValue("pet-rock");
-    assertThat(petRock.from("love-pet-rock")).hasValue("pet-rock");
-    assertThat(petRock.from("pet-rock-not")).isEmpty();
-    assertThat(petRock.from("muppet-rock")).isEmpty();
-  }
-
-  @Test
-  public void withBoundary_before() {
-    CharPredicate boundary = CharPredicate.range('a', 'z').not();
-    Substring.Pattern dir = Substring.before(first("//")).withBoundary(boundary);
-    assertThat(dir.from("foo//bar//zoo")).hasValue("foo");
-    assertThat(dir.repeatedly().from("foo//bar//zoo")).containsExactly("foo", "bar").inOrder();
-  }
-
-  @Test
-  public void withBoundary_skipEscape() {
-    CharPredicate escape = CharPredicate.is('\\');
-    Substring.Pattern unescaped = Substring.first("aaa").withBoundary(escape.not());
-    assertThat(unescaped.from("\\aaaa")).hasValue("aaa");
-    assertThat(unescaped.repeatedly().from("\\aaaa")).containsExactly("aaa");
-    assertThat(unescaped.in("\\aaaa").get().before()).isEqualTo("\\a");
   }
 
   @Test public void testRegexTopLevelGroups_noGroup() {
