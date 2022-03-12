@@ -2531,6 +2531,8 @@ public class SubstringTest {
     assertThat(Substring.splitAsciiByCase("3 separate words."))
         .containsExactly("3", "separate", "words");
     assertThat(Substring.splitAsciiByCase("1 + 2 == 3")).containsExactly("1", "2", "3");
+    assertThat(Substring.splitAsciiByCase("HTTP or FTP"))
+        .containsExactly("HTTP", "or", "FTP");
   }
 
   @Test
