@@ -317,8 +317,8 @@ public final class Substring {
   }
 
   /**
-   * Returns a stream of substrings split out from {@code text}, delimited by non-alphanumeric ascii
-   * characters as punctuations, and word boundaries in lowerCamelCase or UpperCamelCase.
+   * Returns a lazy stream of substrings split out from {@code text}, delimited by non-alphanumeric
+   * ascii characters as punctuations, and word boundaries in lowerCamelCase or UpperCamelCase.
    *
    * <p>Examples:
    *
