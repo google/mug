@@ -317,8 +317,8 @@ public final class Substring {
   }
 
   /**
-   * Returns a stream of substrings split out from {@code text}, delimited by either non-alphanum
-   * characters, or if words are in lowerCamelCase or UpperCamelCase.
+   * Returns a stream of substrings split out from {@code text}, delimited by non-alphanumeric ascii
+   * characters as punctuations, and word boundaries in lowerCamelCase or UpperCamelCase.
    *
    * <p>Examples:
    *
@@ -331,8 +331,8 @@ public final class Substring {
    * splitAsciiByCase("3 separate words") => ["3", "separate", "words"]
    * }</pre>
    *
-   * <p>Non-alpha-num ASCII characters are only treated as punctuations and are otherwise filtered
-   * out.
+   * <p>Besides used as word delimiters, non-alphanumeric ascii characters are filtered out from the
+   * returned words.
    *
    * <p>Non-ascii characters are not split. Splitting with ascii and non-ascii mixed is best-effort.
    *
