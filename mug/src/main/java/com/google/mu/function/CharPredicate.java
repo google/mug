@@ -23,8 +23,66 @@ import static java.util.Objects.requireNonNull;
  */
 @FunctionalInterface
 public interface CharPredicate {
-  /** A predicate corresponding the word character class as in regex {@code \w}. */
-  static final CharPredicate WORD = range('a', 'z').orRange('A', 'Z').or('_');
+  /**
+   * Equivalent to the {@code [a-z]} character class.
+   *
+   * @since 6.0
+   **/
+  static final CharPredicate LOWER_CASE = range('a', 'z');
+
+  /**
+   * Equivalent to the {@code [A-Z]} character class.
+   *
+   * @since 6.0
+   **/
+  static final CharPredicate UPPER_CASE = range('A', 'Z');
+
+  /**
+   * Equivalent to the {@code [a-zA-Z]} character class.
+   *
+   * @since 6.0
+   **/
+  static final CharPredicate ALPHA = LOWER_CASE.or(UPPER_CASE);
+
+  /**
+   * Equivalent to the {@code [0-9]} character class.
+   *
+   * @since 6.0
+   **/
+  static final CharPredicate DIGIT = range('0', '9');
+
+  /** Equivalent to the {@code [a-zA-Z0-9_]} character class. */
+  static CharPredicate WORD = ALPHA .or(DIGIT).or('_');
+
+  /**
+   * Corresponds to the ASCII characters.
+   *
+   * @since 6.0
+   **/
+  static CharPredicate ASCII = new CharPredicate() {
+    @Override public boolean matches(char c) {
+      return c <= '\u007f';
+    }
+
+    @Override public String toString() {
+      return "ASCII";
+    }
+  };
+
+  /**
+   * Corresponds to all characters.
+   *
+   * @since 6.0
+   **/
+  static CharPredicate ANY = new CharPredicate() {
+    @Override public boolean matches(char c) {
+      return true;
+    }
+
+    @Override public String toString() {
+      return "ANY";
+    }
+  };
 
   /** Returns a CharPredicate for the range of characters: {@code [from, to]}. */
   static CharPredicate is(char ch) {
@@ -69,6 +127,24 @@ public interface CharPredicate {
 
       @Override public String toString() {
         return me + " | " + that;
+      }
+    };
+  }
+
+  /**
+   * Returns a {@link CharPredicate} that evaluates true if both this and {@code that} predicate
+   * evaluate to true.
+   */
+  default CharPredicate and(CharPredicate that) {
+    requireNonNull(that);
+    CharPredicate me = this;
+    return new CharPredicate() {
+      @Override public boolean matches(char c) {
+        return me.matches(c) && that.matches(c);
+      }
+
+      @Override public String toString() {
+        return me + " & " + that;
       }
     };
   }

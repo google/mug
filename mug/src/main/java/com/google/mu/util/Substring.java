@@ -14,6 +14,11 @@
  *****************************************************************************/
 package com.google.mu.util;
 
+import static com.google.mu.function.CharPredicate.ALPHA;
+import static com.google.mu.function.CharPredicate.ANY;
+import static com.google.mu.function.CharPredicate.ASCII;
+import static com.google.mu.function.CharPredicate.DIGIT;
+import static com.google.mu.function.CharPredicate.LOWER_CASE;
 import static java.lang.Math.max;
 import static java.util.Objects.requireNonNull;
 
@@ -219,6 +224,52 @@ public final class Substring {
   }
 
   /**
+   * Returns a {@code Pattern} that matches the first character found by {@code charMatcher}.
+   *
+   * @since 6.0
+   */
+  public static Pattern first(CharPredicate charMatcher) {
+    requireNonNull(charMatcher);
+    return new Pattern() {
+      @Override Match match(String input, int fromIndex) {
+        for (int i = fromIndex; i < input.length(); i++) {
+          if (charMatcher.matches(input.charAt(i))) {
+            return new Match(input, i, 1);
+          }
+        }
+        return null;
+      }
+
+      @Override public String toString() {
+        return "first(" + charMatcher + ")";
+      }
+    };
+  }
+
+  /**
+   * Returns a {@code Pattern} that matches the last character found by {@code charMatcher}.
+   *
+   * @since 6.0
+   */
+  public static Pattern last(CharPredicate charMatcher) {
+    requireNonNull(charMatcher);
+    return new Pattern() {
+      @Override Match match(String input, int fromIndex) {
+        for (int i = input.length() - 1; i >= fromIndex; i--) {
+          if (charMatcher.matches(input.charAt(i))) {
+            return new Match(input, i, 1);
+          }
+        }
+        return null;
+      }
+
+      @Override public String toString() {
+        return "last(" + charMatcher + ")";
+      }
+    };
+  }
+
+  /**
    * Returns a {@code Pattern} that matches the first occurrence of {@code regexPattern}.
    *
    * <p>Unlike {@code str.replaceFirst(regexPattern, replacement)},
@@ -233,6 +284,16 @@ public final class Substring {
   }
 
   /**
+   * Returns a {@code Pattern} that matches the first occurrence of a word composed of {@code
+   * [a-zA-Z0-9_]} characters.
+   *
+   * @since 6.0
+   */
+  public static Pattern word() {
+    return consecutive(CharPredicate.WORD);
+  }
+
+  /**
    * Returns a {@code Pattern} that matches the first occurrence of {@code word} that isn't
    * immediately preceded or followed by another "word" ({@code [a-zA-Z0-9_]}) character.
    *
@@ -241,11 +302,11 @@ public final class Substring {
    * Instead, you should use {@code word("cat")} to skip over "cathie".
    *
    * <p>If your word boundary isn't equivalent to the regex {@code \W} character class, you can
-   * define your own word boundary {@code CharPredicate} and then use {@link Pattern#withBoundary}
+   * define your own word boundary {@code CharMatcher} and then use {@link Pattern#withBoundary}
    * instead. Say, if your word is lower-case alpha with dash ('-'), then:
    *
    * <pre>{@code
-   * CharPredicate boundary = CharPredicate.range('a', 'z').or('-').not();
+   * CharMatcher boundary = CharMatcher.inRange('a', 'z').or(CharMatcher.is('-')).negate();
    * Substring.Pattern petFriendly = first("pet-friendly").withBoundary(boundary);
    * }</pre>
    *
@@ -253,6 +314,41 @@ public final class Substring {
    */
   public static Pattern word(String word) {
     return first(word).withBoundary(CharPredicate.WORD.not());
+  }
+
+  /**
+   * Returns a stream of substrings split out from {@code string}, delimited by either non-alphanum
+   * characters, or if words are in lowerCamelCase or UpperCamelCase.
+   *
+   * <p>Examples:
+   *
+   * <pre>{@code
+   * splitAsciiByCase("orderID") => ["order", "ID"]
+   * splitAsciiByCase("snake_case") => ["snake", "case"]
+   * splitAsciiByCase("UPPER_SNAKE_CASE") => ["UPPER", "SNAKE", "CASE"]
+   * splitAsciiByCase("MyClass") => ["My", "Class"]
+   * splitAsciiByCase("dash-case") => ["dash", "case"]
+   * splitAsciiByCase("3 separate words") => ["3", "separate", "words"]
+   * }</pre>
+   *
+   * <p>Non-alpha-num ASCII characters are only treated as punctuations and are otherwise filtered
+   * out.
+   *
+   * <p>Non-ascii characters are not split. Splitting with ascii and non-ascii mixed is best-effort.
+   *
+   * @since 6.0
+   */
+  public static Stream<String> splitAsciiByCase(String string) {
+    CharPredicate punctuation = ASCII.and(ALPHA.or(DIGIT).not());
+    CharPredicate lowerOrDigit = LOWER_CASE.or(DIGIT);
+    Pattern camelHump =
+        upToIncluding(
+            first(lowerOrDigit).withBoundary(ANY, lowerOrDigit.not()).or(END));
+    return consecutive(punctuation)
+        .repeatedly()
+        .split(string)
+        .filter(Match::isNotEmpty)
+        .flatMap(camelHump.repeatedly()::from);
   }
 
   /**
@@ -270,8 +366,7 @@ public final class Substring {
   public static Pattern leading(CharPredicate matcher) {
     requireNonNull(matcher);
     return new Pattern() {
-      @Override
-      Match match(String input, int fromIndex) {
+      @Override Match match(String input, int fromIndex) {
         int len = 0;
         for (int i = fromIndex; i < input.length(); i++, len++) {
           if (!matcher.matches(input.charAt(i))) {
@@ -281,8 +376,7 @@ public final class Substring {
         return len == 0 ? null : new Match(input, fromIndex, len);
       }
 
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return "leading(" + matcher + ")";
       }
     };
@@ -302,8 +396,7 @@ public final class Substring {
   public static Pattern trailing(CharPredicate matcher) {
     requireNonNull(matcher);
     return new Pattern() {
-      @Override
-      Match match(String input, int fromIndex) {
+      @Override Match match(String input, int fromIndex) {
         int len = 0;
         for (int i = input.length() - 1; i >= fromIndex; i--, len++) {
           if (!matcher.matches(input.charAt(i))) {
@@ -313,8 +406,7 @@ public final class Substring {
         return len == 0 ? null : new Match(input, input.length() - len, len);
       }
 
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return "trailing(" + matcher + ")";
       }
     };
@@ -339,8 +431,7 @@ public final class Substring {
   public static Pattern consecutive(CharPredicate matcher) {
     requireNonNull(matcher);
     return new Pattern() {
-      @Override
-      Match match(String input, int fromIndex) {
+      @Override Match match(String input, int fromIndex) {
         int end = input.length();
         for (int i = fromIndex; i < end; i++) {
           if (matcher.matches(input.charAt(i))) {
@@ -356,8 +447,7 @@ public final class Substring {
         return null;
       }
 
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return "consecutive(" + matcher + ")";
       }
     };
@@ -384,8 +474,7 @@ public final class Substring {
   public static RepeatingPattern topLevelGroups(java.util.regex.Pattern regexPattern) {
     requireNonNull(regexPattern);
     return new RepeatingPattern() {
-      @Override
-      public Stream<Match> match(String string) {
+      @Override public Stream<Match> match(String string) {
         Matcher matcher = regexPattern.matcher(string);
         if (!matcher.find()) return Stream.empty();
         int groups = matcher.groupCount();
@@ -411,8 +500,7 @@ public final class Substring {
         }
       }
 
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return "topLevelGroups(" + regexPattern + ")";
       }
     };
@@ -462,9 +550,9 @@ public final class Substring {
    * order, including any characters between consecutive stops.
    */
   public static Pattern spanningInOrder(String stop1, String stop2, String... moreStops) {
-    Pattern result = first(stop1).spanTo(first(stop2));
+    Pattern result = first(stop1).extendTo(first(stop2));
     for (String stop : moreStops) {
-      result = result.spanTo(first(stop));
+      result = result.extendTo(first(stop));
     }
     return result;
   }
@@ -766,11 +854,6 @@ public final class Substring {
       };
     }
 
-    /** Matches {@code following} string that immediately follows. */
-    final Pattern thenImmediately(String following) {
-      return following.isEmpty() ? this : then(prefix(following));
-    }
-
     /**
      * Return a {@code Pattern} equivalent to this {@code Pattern}, except it will fail to match
      * if it's not followed by the {@code following} string.
@@ -825,6 +908,74 @@ public final class Substring {
     }
 
     /**
+     * Returns a {@code Pattern} that matches the first occurrence of this pattern, where the
+     * beginning of the match must either be the beginning of the input, or be preceded by a
+     * boundary character as defined by {@code boundary}; and the end of the match must either be
+     * the end of the input, or be followed by a boundary character as defined by {@code boundary}.
+     *
+     * <p>In other words, whatever {@code boundary} is, the beginning and the end of the input
+     * string are always considered implicit boundary.
+     *
+     * <p>Useful if you are trying to find a word with custom boundaries. To search for words
+     * composed of regex {@code \w} character class, consider using {@link Substring#word} instead.
+     *
+     * @since 6.0
+     */
+    public final Pattern withBoundary(CharPredicate boundary) {
+      return withBoundary(boundary, boundary);
+    }
+
+    /**
+     * Returns a {@code Pattern} that matches the first occurrence of this pattern, where the
+     * beginning of the match must either be the beginning of the input, or be preceded by a
+     * boundary character as defined by {@code boundaryBefore}; and the end of the match must either
+     * be the end of the input, or be followed by a boundary character as defined by {@code
+     * boundaryAfter}.
+     *
+     * <p>In other words, the beginning and the end of the input string are always considered
+     * implicit boundaries.
+     *
+     * <p>Useful if you are trying to find a word with custom boundaries. To search for words
+     * composed of regex {@code \w} character class, consider using {@link Substring#word} instead.
+     *
+     * @since 6.0
+     */
+    public final Pattern withBoundary(CharPredicate boundaryBefore, CharPredicate boundaryAfter) {
+      requireNonNull(boundaryBefore);
+      requireNonNull(boundaryAfter);
+      Pattern target = this;
+      return new Pattern() {
+        @Override Match match(String input, int fromIndex) {
+          while (fromIndex <= input.length()) {
+            if (fromIndex > 0 && !boundaryBefore.matches(input.charAt(fromIndex - 1))) {
+              fromIndex++;
+              continue; // The current position cannot possibly be the beginning of match.
+            }
+            Match match = target.match(input, fromIndex);
+            if (match == null) {
+              return null;
+            }
+            if (match.startIndex == fromIndex // Already checked boundaryBefore
+                || boundaryBefore.matches(input.charAt(match.startIndex - 1))) {
+              int boundaryIndex = match.endIndex;
+              if (boundaryIndex >= input.length()
+                  || boundaryAfter.matches(input.charAt(boundaryIndex))) {
+                return match;
+              }
+            }
+            // Boundary mismatch, skip the first matched char then try again.
+            fromIndex = match.startIndex + 1;
+          }
+          return null;
+        }
+
+        @Override public String toString() {
+          return target + ".withBoundary(" + boundaryBefore + ", " + boundaryAfter + ")";
+        }
+      };
+    }
+
+    /**
      * Returns a {@code Pattern} that asserts that this pattern must <em>not</em> match the input,
      * in which case an empty match starting at the beginning of the input is returned.
      *
@@ -848,66 +999,10 @@ public final class Substring {
     }
 
     /**
-     * Returns a {@code Pattern} that matches the first occurrence of this pattern, where the
-     * beginning of the match must either be the beginning of the input, or be preceded by a
-     * boundary character as defined by {@code boundaryBefore}; and the end of the match must either
-     * be the end of the input, or be followed by a boundary character as defined by {@code
-     * boundaryAfter}.
-     *
-     * <p>Useful if you are trying to find a word with custom boundaries.
-     *
-     * @since 6.0
-     */
-    public final Pattern withBoundary(CharPredicate boundaryBefore, CharPredicate boundaryAfter) {
-      requireNonNull(boundaryBefore);
-      requireNonNull(boundaryAfter);
-      Pattern target = this;
-      return new Pattern() {
-        @Override
-        Match match(String input, int fromIndex) {
-          for (; fromIndex <= input.length(); fromIndex++) {
-            Match match = target.match(input, fromIndex);
-            if (match == null) {
-              return null;
-            }
-            if (match.startIndex == 0
-                || boundaryBefore.matches(input.charAt(match.startIndex - 1))) {
-              int boundaryIndex = match.endIndex;
-              if (boundaryIndex >= input.length()
-                  || boundaryAfter.matches(input.charAt(boundaryIndex))) {
-                return match;
-              }
-            }
-          }
-          return null;
-        }
-
-        @Override
-        public String toString() {
-          return this + ".withBoundary('" + boundaryBefore + ", " + boundaryAfter + "')";
-        }
-      };
-    }
-
-    /**
-     * Returns a {@code Pattern} that matches the first occurrence of this pattern, where the
-     * beginning of the match must either be the beginning of the input, or be preceded by a
-     * boundary character as defined by {@code boundary}; and the end of the match must either be
-     * the end of the input, or be followed by a boundary character as defined by {@code boundary}.
-     *
-     * <p>Useful if you are trying to find a word with custom boundaries.
-     *
-     * @since 6.0
-     */
-    public final Pattern withBoundary(CharPredicate boundary) {
-      return withBoundary(boundary, boundary);
-    }
-
-    /**
      * Matches this pattern and then matches {@code following}.
      * The result matches from the beginning of this pattern to the end of {@code following}.
      */
-    final Pattern spanTo(Pattern following) {
+    final Pattern extendTo(Pattern following) {
       requireNonNull(following);
       Pattern base = this;
       return new Pattern() {
@@ -930,7 +1025,7 @@ public final class Substring {
         }
 
         @Override public String toString() {
-          return base + ".spanTo(" + following + ")";
+          return base + ".extendTo(" + following + ")";
         }
       };
     }
@@ -1012,15 +1107,13 @@ public final class Substring {
     public final RepeatingPattern repeatedly() {
       Pattern repeatable = Pattern.this;
       return new RepeatingPattern() {
-        @Override
-        public Stream<Match> match(String input) {
+        @Override public Stream<Match> match(String input) {
           return MoreStreams.whileNotNull(
               new Supplier<Match>() {
                 private final int end = input.length();
                 private int nextIndex = 0;
 
-                @Override
-                public Match get() {
+                @Override public Match get() {
                   if (nextIndex > end) {
                     return null;
                   }
@@ -1041,16 +1134,14 @@ public final class Substring {
               });
         }
 
-        @Override
-        public Stream<Match> split(String string) {
+        @Override public Stream<Match> split(String string) {
           if (repeatable.match("") != null) {
             throw new IllegalStateException("Pattern (" + repeatable + ") cannot be used as delimiter.");
           }
           return super.split(string);
         }
 
-        @Override
-        public String toString() {
+        @Override public String toString() {
           return repeatable + ".repeatedly()";
         }
       };
@@ -1070,8 +1161,7 @@ public final class Substring {
      * Do not depend on the string representation of Substring, except for subtypes {@link Prefix}
      * and {@link Suffix} that have an explicitly defined representation.
      */
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return super.toString();
     }
   }
@@ -1173,8 +1263,7 @@ public final class Substring {
             int next = 0;
             Iterator<Match> it = match(string).iterator();
 
-            @Override
-            public Match get() {
+            @Override public Match get() {
               if (it.hasNext()) {
                 Match delim = it.next();
                 Match result = new Match(string, next, delim.index() - next);
@@ -1708,6 +1797,15 @@ public final class Substring {
       return before() + replacement + after();
     }
 
+    /**
+     * Returns true if the match isn't empty.
+     *
+     * @since 6.0
+     */
+    public boolean isNotEmpty() {
+      return length() > 0;
+    }
+
     /** Return 0-based index of this match in {@link #fullString}. */
     public int index() {
       return startIndex;
@@ -1734,7 +1832,7 @@ public final class Substring {
     }
 
     /**
-     * Returns a {@link Match} instance which is a sub-range of this {@code Match}.
+     * Returns a {@link CharSequence} instance which is a sub-range of this {@code Match}.
      *
      * <p>For example, if this {@code Match} points to the range of {@code "wood"} from
      * the {@code "Holywood"} string, calling {@code subSequence(1, 3)} will point to the
@@ -1744,7 +1842,7 @@ public final class Substring {
      *
      * @since 4.6
      */
-    @Override public Match subSequence(int begin, int end) {
+    @Override public CharSequence subSequence(int begin, int end) {
       if (begin < 0) {
         throw new IndexOutOfBoundsException("Invalid index: begin (" + begin + ") < 0");
       }
@@ -1757,30 +1855,6 @@ public final class Substring {
             "Invalid index: begin (" + begin + ") > end (" + end + ")");
       }
       return new Match(context, startIndex + begin, end - begin);
-    }
-
-    /**
-     * Returns a {@link Match} instance which is a sub-range of this {@code Match}.
-     *
-     * <p>For example, if you need to remove the {@code "pubs/abc/"} prefix from the
-     * {@code "pubs/abc/books/xyz} resource name, where the "abc" and "xyz" can be any alphanumeric
-     * string, you can't do {@code before(first("books/")).removeFrom(resourceName)} because the
-     * string could have been {@code "pubs/1_million_books/books/xyz"}. Instead, you need to
-     * find the {@code "/books/"} substring, and then remove everything before it including its
-     * leading {@code '/'} character:
-     *
-     * <pre>{@code
-     * first("/books/")
-     *     .in("pubs/1_million_books/books/xyz")
-     *     .map(m -> m.subSequence(1))            // Get rid of the first '/' char
-     *     .map(m -> m + m.after())
-     *     .orElseThrow();
-     * }</pre>
-     *
-     * @since 6.0
-     */
-    public Match subSequence(int begin) {
-      return subSequence(begin, length());
     }
 
     /** Returns the matched substring. */
