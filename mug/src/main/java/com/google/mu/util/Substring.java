@@ -317,7 +317,7 @@ public final class Substring {
   }
 
   /**
-   * Returns a stream of substrings split out from {@code string}, delimited by either non-alphanum
+   * Returns a stream of substrings split out from {@code text}, delimited by either non-alphanum
    * characters, or if words are in lowerCamelCase or UpperCamelCase.
    *
    * <p>Examples:
@@ -338,7 +338,7 @@ public final class Substring {
    *
    * @since 6.0
    */
-  public static Stream<String> splitAsciiByCase(String string) {
+  public static Stream<String> splitAsciiByCase(CharSequence text) {
     CharPredicate punctuation = ASCII.and(ALPHA.or(DIGIT).not());
     CharPredicate lowerOrDigit = LOWER_CASE.or(DIGIT);
     Pattern camelHump =
@@ -346,7 +346,7 @@ public final class Substring {
             first(lowerOrDigit).withBoundary(ANY, lowerOrDigit.not()).or(END));
     return consecutive(punctuation)
         .repeatedly()
-        .split(string)
+        .split(text.toString())
         .filter(Match::isNotEmpty)
         .flatMap(camelHump.repeatedly()::from);
   }
