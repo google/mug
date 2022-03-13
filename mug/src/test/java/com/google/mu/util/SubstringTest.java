@@ -2490,8 +2490,23 @@ public class SubstringTest {
     assertThat(Substring.splitAsciiByCase("A")).containsExactly("A");
     assertThat(Substring.splitAsciiByCase("HelloWorld")).containsExactly("Hello", "World");
     assertThat(Substring.splitAsciiByCase("helloWorld")).containsExactly("hello", "World");
-    assertThat(Substring.splitAsciiByCase("2_WORD2WORD3"))
-        .containsExactly("2", "WORD2", "WORD3")
+    assertThat(Substring.splitAsciiByCase("2sigmaOffice"))
+        .containsExactly("2sigma", "Office")
+        .inOrder();
+  }
+
+  @Test
+  public void splitAsciiByCase_upperCamelCase() {
+    assertThat(Substring.splitAsciiByCase("IP Address")).containsExactly("IP", "Address").inOrder();
+    assertThat(Substring.splitAsciiByCase("A B CorABC"))
+        .containsExactly("A", "B", "Cor", "ABC")
+        .inOrder();
+    assertThat(Substring.splitAsciiByCase("AB")).containsExactly("AB").inOrder();
+    assertThat(Substring.splitAsciiByCase("IPv6OrIPV4"))
+        .containsExactly("IPv6", "Or", "IPV4")
+        .inOrder();
+    assertThat(Substring.splitAsciiByCase("SplitURLsByCase"))
+        .containsExactly("Split", "URLs", "By", "Case")
         .inOrder();
   }
 
@@ -2521,6 +2536,9 @@ public class SubstringTest {
   public void splitAsciiByCase_mixedCase() {
     assertThat(Substring.splitAsciiByCase(" a0--b1+c34DEF56 78"))
         .containsExactly("a0", "b1", "c34", "DEF56", "78")
+        .inOrder();
+    assertThat(Substring.splitAsciiByCase("2_WORD2WORD3"))
+        .containsExactly("2", "WORD2", "WORD3")
         .inOrder();
   }
 
