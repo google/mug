@@ -323,12 +323,13 @@ public final class Substring {
    * <p>Examples:
    *
    * <pre>{@code
-   * splitAsciiByCase("orderID") => ["order", "ID"]
-   * splitAsciiByCase("snake_case") => ["snake", "case"]
-   * splitAsciiByCase("UPPER_SNAKE_CASE") => ["UPPER", "SNAKE", "CASE"]
-   * splitAsciiByCase("MyClass") => ["My", "Class"]
+   * splitAsciiByCase("userId") => ["user", "ID"]
+   * splitAsciiByCase("field_name") => ["field", "name"]
+   * splitAsciiByCase("CONSTANT_NAME") => ["CONSTANT", "NAME"]
    * splitAsciiByCase("dash-case") => ["dash", "case"]
    * splitAsciiByCase("3 separate words") => ["3", "separate", "words"]
+   * splitAsciiByCase("TheURLs") => ["The", "URLs"]
+   * splitAsciiByCase("UpgradeIPv4ToIPv6") => ["Upgrade", "IPv4", "To", "IPv6"]
    * }</pre>
    *
    * <p>Besides used as word delimiters, non-alphanumeric ascii characters are filtered out from the
