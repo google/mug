@@ -345,10 +345,9 @@ public final class Substring {
     Pattern camelHump =
         upToIncluding(
             first(lowerOrDigit).withBoundary(ANY, lowerOrDigit.not()).or(END));
-    return consecutive(punctuation)
+    return consecutive(punctuation.not())
         .repeatedly()
-        .split(text.toString())
-        .filter(Match::isNotEmpty)
+        .from(text)
         .flatMap(camelHump.repeatedly()::from);
   }
 
