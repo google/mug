@@ -323,7 +323,7 @@ public final class Substring {
    * <p>Examples:
    *
    * <pre>{@code
-   * splitAsciiByCase("userId") => ["user", "ID"]
+   * splitAsciiByCase("userId") => ["user", "Id"]
    * splitAsciiByCase("field_name") => ["field", "name"]
    * splitAsciiByCase("CONSTANT_NAME") => ["CONSTANT", "NAME"]
    * splitAsciiByCase("dash-case") => ["dash", "case"]
