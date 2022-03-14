@@ -17,7 +17,6 @@ package com.google.mu.util;
 import static com.google.mu.function.CharPredicate.ALPHA;
 import static com.google.mu.function.CharPredicate.ANY;
 import static com.google.mu.function.CharPredicate.ASCII;
-import static com.google.mu.function.CharPredicate.DIGIT;
 import static java.lang.Math.max;
 import static java.util.Objects.requireNonNull;
 
@@ -344,8 +343,9 @@ public final class Substring {
    * @since 6.0
    */
   public static Stream<String> breakCase(CharSequence text) {
-    CharPredicate punctuation = ASCII.and(ALPHA.or(DIGIT).not());
-    CharPredicate lowerOrDigit = DIGIT.or(Character::isLowerCase);
+    CharPredicate punctuation = ASCII.and(ALPHA.orRange('0', '9').not());
+    CharPredicate digit = Character::isDigit;
+    CharPredicate lowerOrDigit = digit.or(Character::isLowerCase);
     Pattern camelHump =
         upToIncluding(
             first(lowerOrDigit).withBoundary(ANY, lowerOrDigit.not()).or(END));

@@ -29,17 +29,10 @@ public interface CharPredicate {
    *
    * @since 6.0
    **/
-  static final CharPredicate ALPHA = range('a', 'z').orRange('A', 'Z');
-
-  /**
-   * Equivalent to the {@code [0-9]} character class.
-   *
-   * @since 6.0
-   **/
-  static final CharPredicate DIGIT = range('0', '9');
+  static CharPredicate ALPHA = range('a', 'z').orRange('A', 'Z');
 
   /** Equivalent to the {@code [a-zA-Z0-9_]} character class. */
-  static CharPredicate WORD = ALPHA .or(DIGIT).or('_');
+  static CharPredicate WORD = ALPHA .orRange('0', '9').or('_');
 
   /**
    * Corresponds to the ASCII characters.
