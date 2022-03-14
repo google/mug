@@ -344,10 +344,8 @@ public final class Substring {
    */
   public static Stream<String> breakCase(CharSequence text) {
     CharPredicate num = CharPredicate.range('0', '9');
-    CharPredicate lowerOrDigit = num.or(Character::isLowerCase);
-    Pattern camelHump =
-        upToIncluding(
-            first(lowerOrDigit).withBoundary(ANY, lowerOrDigit.not()).or(END));
+    CharPredicate lowerNum = num.or(Character::isLowerCase);
+    Pattern camelHump = upToIncluding(first(lowerNum).withBoundary(ANY, lowerNum.not()).or(END));
     return consecutive(ALPHA.or(num).or(ASCII.not()))
         .repeatedly()
         .from(text)
