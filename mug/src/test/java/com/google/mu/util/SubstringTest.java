@@ -2486,89 +2486,104 @@ public class SubstringTest {
 
   @Test
   public void splitAsciiByCase_camelCase() {
-    assertThat(Substring.splitAsciiByCase("x")).containsExactly("x");
-    assertThat(Substring.splitAsciiByCase("A")).containsExactly("A");
-    assertThat(Substring.splitAsciiByCase("HelloWorld")).containsExactly("Hello", "World");
-    assertThat(Substring.splitAsciiByCase("helloWorld")).containsExactly("hello", "World");
-    assertThat(Substring.splitAsciiByCase("2sigmaOffice"))
+    assertThat(Substring.breakCase("x")).containsExactly("x");
+    assertThat(Substring.breakCase("A")).containsExactly("A");
+    assertThat(Substring.breakCase("HelloWorld")).containsExactly("Hello", "World");
+    assertThat(Substring.breakCase("helloWorld")).containsExactly("hello", "World");
+    assertThat(Substring.breakCase("2sigmaOffice"))
         .containsExactly("2sigma", "Office")
         .inOrder();
   }
 
   @Test
+  public void splitAsciiByCase_camelCaseInGreek() {
+    assertThat(Substring.breakCase("αβΑβΤττ")).containsExactly("αβ", "Αβ", "Τττ").inOrder();
+  }
+
+  @Test
   public void splitAsciiByCase_upperCamelCase() {
-    assertThat(Substring.splitAsciiByCase("IP Address")).containsExactly("IP", "Address").inOrder();
-    assertThat(Substring.splitAsciiByCase("A B CorABC"))
+    assertThat(Substring.breakCase("IP Address")).containsExactly("IP", "Address").inOrder();
+    assertThat(Substring.breakCase("A B CorABC"))
         .containsExactly("A", "B", "Cor", "ABC")
         .inOrder();
-    assertThat(Substring.splitAsciiByCase("AB")).containsExactly("AB").inOrder();
-    assertThat(Substring.splitAsciiByCase("IPv6OrIPV4"))
+    assertThat(Substring.breakCase("AB")).containsExactly("AB").inOrder();
+    assertThat(Substring.breakCase("IPv6OrIPV4"))
         .containsExactly("IPv6", "Or", "IPV4")
         .inOrder();
-    assertThat(Substring.splitAsciiByCase("SplitURLsByCase"))
+    assertThat(Substring.breakCase("SplitURLsByCase"))
         .containsExactly("Split", "URLs", "By", "Case")
         .inOrder();
   }
 
   @Test
   public void splitAsciiByCase_allCaps() {
-    assertThat(Substring.splitAsciiByCase("ID")).containsExactly("ID");
-    assertThat(Substring.splitAsciiByCase("orderID")).containsExactly("order", "ID");
+    assertThat(Substring.breakCase("ID")).containsExactly("ID");
+    assertThat(Substring.breakCase("orderID")).containsExactly("order", "ID");
   }
 
   @Test
   public void splitAsciiByCase_snakeCase() {
-    assertThat(Substring.splitAsciiByCase("order_id")).containsExactly("order", "id");
-    assertThat(Substring.splitAsciiByCase("order_ID")).containsExactly("order", "ID");
-    assertThat(Substring.splitAsciiByCase("SPLIT_ASCII_BY_CASE"))
+    assertThat(Substring.breakCase("order_id")).containsExactly("order", "id");
+    assertThat(Substring.breakCase("order_ID")).containsExactly("order", "ID");
+    assertThat(Substring.breakCase("SPLIT_ASCII_BY_CASE"))
         .containsExactly("SPLIT", "ASCII", "BY", "CASE")
         .inOrder();
   }
 
   @Test
   public void splitAsciiByCase_dashCase() {
-    assertThat(Substring.splitAsciiByCase("order-id")).containsExactly("order", "id");
-    assertThat(Substring.splitAsciiByCase("order-ID")).containsExactly("order", "ID");
-    assertThat(Substring.splitAsciiByCase("ORDER-ID")).containsExactly("ORDER", "ID");
+    assertThat(Substring.breakCase("order-id")).containsExactly("order", "id");
+    assertThat(Substring.breakCase("order-ID")).containsExactly("order", "ID");
+    assertThat(Substring.breakCase("ORDER-ID")).containsExactly("ORDER", "ID");
   }
 
   @Test
   public void splitAsciiByCase_mixedCase() {
-    assertThat(Substring.splitAsciiByCase(" a0--b1+c34DEF56 78"))
+    assertThat(Substring.breakCase(" a0--b1+c34DEF56 78"))
         .containsExactly("a0", "b1", "c34", "DEF56", "78")
         .inOrder();
-    assertThat(Substring.splitAsciiByCase("2_WORD2WORD3"))
+    assertThat(Substring.breakCase("2_WORD2WORD3"))
         .containsExactly("2", "WORD2", "WORD3")
         .inOrder();
   }
 
   @Test
   public void splitAsciiByCase_separateWords() {
-    assertThat(Substring.splitAsciiByCase("order id")).containsExactly("order", "id");
-    assertThat(Substring.splitAsciiByCase("order ID")).containsExactly("order", "ID");
-    assertThat(Substring.splitAsciiByCase("3 separate words."))
+    assertThat(Substring.breakCase("order id")).containsExactly("order", "id");
+    assertThat(Substring.breakCase("order ID")).containsExactly("order", "ID");
+    assertThat(Substring.breakCase("3 separate words."))
         .containsExactly("3", "separate", "words");
-    assertThat(Substring.splitAsciiByCase("1 + 2 == 3")).containsExactly("1", "2", "3");
-    assertThat(Substring.splitAsciiByCase("HTTP or FTP"))
+    assertThat(Substring.breakCase("1 + 2 == 3")).containsExactly("1", "2", "3");
+    assertThat(Substring.breakCase("HTTP or FTP"))
         .containsExactly("HTTP", "or", "FTP");
   }
 
   @Test
   public void splitAsciiByCase_noMatch() {
-    assertThat(Substring.splitAsciiByCase("")).isEmpty();
-    assertThat(Substring.splitAsciiByCase("?")).isEmpty();
-    assertThat(Substring.splitAsciiByCase("_")).isEmpty();
-    assertThat(Substring.splitAsciiByCase(" ")).isEmpty();
-    assertThat(Substring.splitAsciiByCase("@.")).isEmpty();
+    assertThat(Substring.breakCase("")).isEmpty();
+    assertThat(Substring.breakCase("?")).isEmpty();
+    assertThat(Substring.breakCase("_")).isEmpty();
+    assertThat(Substring.breakCase(" ")).isEmpty();
+    assertThat(Substring.breakCase("@.")).isEmpty();
   }
 
   @Test
   public void splitAsciiByCase_i18n() {
-    assertThat(Substring.splitAsciiByCase("中文")).containsExactly("中文");
-    assertThat(Substring.splitAsciiByCase("中 文")).containsExactly("中", "文");
-    assertThat(Substring.splitAsciiByCase("chineseAsIn中文-or japanese"))
+    assertThat(Substring.breakCase("中文")).containsExactly("中文");
+    assertThat(Substring.breakCase("中 文")).containsExactly("中", "文");
+    assertThat(Substring.breakCase("中。文")).containsExactly("中。文");
+    assertThat(Substring.breakCase("中，文")).containsExactly("中，文");
+    assertThat(Substring.breakCase("chineseAsIn中文-or japanese"))
         .containsExactly("chinese", "As", "In", "中文", "or", "japanese")
         .inOrder();
+  }
+
+  @Test
+  public void splitAsciiByCase_emoji() {
+    assertThat(Substring.breakCase("中😀文")).containsExactly("中😀文");
+    assertThat(Substring.breakCase("ab😀CD")).containsExactly("ab", "😀CD").inOrder();
+    assertThat(Substring.breakCase("ab😀🤣cd")).containsExactly("ab", "😀🤣cd").inOrder();
+    assertThat(Substring.breakCase("ab😀c🤣d")).containsExactly("ab", "😀c", "🤣d").inOrder();
   }
 
   @Test

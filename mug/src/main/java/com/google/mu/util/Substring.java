@@ -18,7 +18,6 @@ import static com.google.mu.function.CharPredicate.ALPHA;
 import static com.google.mu.function.CharPredicate.ANY;
 import static com.google.mu.function.CharPredicate.ASCII;
 import static com.google.mu.function.CharPredicate.DIGIT;
-import static com.google.mu.function.CharPredicate.LOWER_CASE;
 import static java.lang.Math.max;
 import static java.util.Objects.requireNonNull;
 
@@ -317,38 +316,41 @@ public final class Substring {
   }
 
   /**
-   * Returns a lazy stream of substrings split out from {@code text}, delimited by non-alphanumeric
-   * ascii characters as punctuations, and word boundaries in lowerCamelCase or UpperCamelCase.
+   * Returns a lazy stream of words split out from {@code text}, delimited by non-letter-digit ascii
+   * characters, and further split at lowerCamelCase and UpperCamelCase boundaries.
    *
    * <p>Examples:
    *
    * <pre>{@code
-   * splitAsciiByCase("userId") => ["user", "Id"]
-   * splitAsciiByCase("field_name") => ["field", "name"]
-   * splitAsciiByCase("CONSTANT_NAME") => ["CONSTANT", "NAME"]
-   * splitAsciiByCase("dash-case") => ["dash", "case"]
-   * splitAsciiByCase("3 separate words") => ["3", "separate", "words"]
-   * splitAsciiByCase("TheURLs") => ["The", "URLs"]
-   * splitAsciiByCase("UpgradeIPv4ToIPv6") => ["Upgrade", "IPv4", "To", "IPv6"]
+   * breakCase("userId") => ["user", "Id"]
+   * breakCase("field_name") => ["field", "name"]
+   * breakCase("CONSTANT_NAME") => ["CONSTANT", "NAME"]
+   * breakCase("dash-case") => ["dash", "case"]
+   * breakCase("3 separate words") => ["3", "separate", "words"]
+   * breakCase("TheURLs") => ["The", "URLs"]
+   * breakCase("UpgradeIPv4ToIPv6") => ["Upgrade", "IPv4", "To", "IPv6"]
    * }</pre>
    *
-   * <p>Besides used as word delimiters, non-alphanumeric ascii characters are filtered out from the
+   * <p>Besides used as word delimiters, non-letter-digit ascii characters are filtered out from the
    * returned words.
    *
-   * <p>Non-ascii characters are not split. Splitting with ascii and non-ascii mixed is best-effort.
+   * <p><b>Warning:</b> This method doesn't understand non-ascii punctuation characters (such as CJK
+   * punctuations and emoji), and keeps them as is without breaking around them. It also doesn't
+   * recognize lower case <a
+   * href="https://docs.oracle.com/javase/8/docs/api/java/lang/Character.html#supplementary">supplementary
+   * characters</a>.
    *
    * @since 6.0
    */
-  public static Stream<String> splitAsciiByCase(CharSequence text) {
+  public static Stream<String> breakCase(CharSequence text) {
     CharPredicate punctuation = ASCII.and(ALPHA.or(DIGIT).not());
-    CharPredicate lowerOrDigit = LOWER_CASE.or(DIGIT);
+    CharPredicate lowerOrDigit = DIGIT.or(Character::isLowerCase);
     Pattern camelHump =
         upToIncluding(
             first(lowerOrDigit).withBoundary(ANY, lowerOrDigit.not()).or(END));
-    return consecutive(punctuation)
+    return consecutive(punctuation.not())
         .repeatedly()
-        .split(text.toString())
-        .filter(Match::isNotEmpty)
+        .from(text)
         .flatMap(camelHump.repeatedly()::from);
   }
 
