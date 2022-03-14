@@ -15,7 +15,6 @@
 package com.google.mu.util;
 
 import static com.google.mu.function.CharPredicate.ALPHA;
-import static com.google.mu.function.CharPredicate.ANY;
 import static com.google.mu.function.CharPredicate.ASCII;
 import static java.lang.Math.max;
 import static java.util.Objects.requireNonNull;
@@ -345,7 +344,8 @@ public final class Substring {
   public static Stream<String> breakCase(CharSequence text) {
     CharPredicate num = CharPredicate.range('0', '9');
     CharPredicate lowerNum = num.or(Character::isLowerCase);
-    Pattern camelHump = upToIncluding(first(lowerNum).withBoundary(ANY, lowerNum.not()).or(END));
+    Pattern camelHump = // The 'Foo' from 'FooBar'.
+        upToIncluding(first(lowerNum).withBoundary(CharPredicate.ANY, lowerNum.not()).or(END));
     return consecutive(ALPHA.or(num).or(ASCII.not()))
         .repeatedly()
         .from(text)
