@@ -2582,7 +2582,7 @@ public class SubstringTest {
   @Test
   public void splitAsciiByCase_emoji() {
     assertThat(Substring.breakCase("🅗ⓞⓜⓔ🅁ⓤⓝ")).containsExactly("🅗ⓞⓜⓔ", "🅁ⓤⓝ").inOrder();
-    assertThat(Substring.breakCase("ⓖⓞ٢🄷ⓞⓜⓔ")).containsExactly("ⓖⓞ٢", "🄷ⓞⓜⓔ").inOrder();
+    assertThat(Substring.breakCase("ⓖⓞ🄷ⓞⓜⓔ")).containsExactly("ⓖⓞ", "🄷ⓞⓜⓔ").inOrder();
     assertThat(Substring.breakCase("🅣ⓗⓔ🅤🅡🅛ⓢ")).containsExactly("🅣ⓗⓔ", "🅤🅡🅛ⓢ").inOrder();
     assertThat(Substring.breakCase("中😀文")).containsExactly("中😀文");
     assertThat(Substring.breakCase("ab😀CD")).containsExactly("ab", "😀CD").inOrder();

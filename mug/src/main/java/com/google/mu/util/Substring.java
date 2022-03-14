@@ -343,9 +343,9 @@ public final class Substring {
    * @since 6.0
    */
   public static Stream<String> breakCase(CharSequence text) {
-    CharPredicate punctuation = ASCII.and(ALPHA.orRange('0', '9').not());
-    CharPredicate digit = Character::isDigit;
-    CharPredicate lowerOrDigit = digit.or(Character::isLowerCase);
+    CharPredicate num = CharPredicate.range('0', '9');
+    CharPredicate punctuation = ASCII.and(ALPHA.or(num).not());
+    CharPredicate lowerOrDigit = num.or(Character::isLowerCase);
     Pattern camelHump =
         upToIncluding(
             first(lowerOrDigit).withBoundary(ANY, lowerOrDigit.not()).or(END));
