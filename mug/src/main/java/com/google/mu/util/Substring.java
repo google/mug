@@ -348,8 +348,7 @@ public final class Substring {
     Pattern camelHump =
         upToIncluding(
             first(lowerOrDigit).withBoundary(ANY, lowerOrDigit.not()).or(END));
-    CharPredicate punctuation = ASCII.and(ALPHA.or(num).not());
-    return consecutive(punctuation.not())
+    return consecutive(ALPHA.or(num).or(ASCII.not()))
         .repeatedly()
         .from(text)
         .flatMap(camelHump.repeatedly()::from);
