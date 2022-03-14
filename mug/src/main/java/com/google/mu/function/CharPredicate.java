@@ -23,26 +23,13 @@ import static java.util.Objects.requireNonNull;
  */
 @FunctionalInterface
 public interface CharPredicate {
-  /**
-   * Equivalent to the {@code [a-z]} character class.
-   *
-   * @since 6.0
-   **/
-  static final CharPredicate LOWER_CASE = range('a', 'z');
-
-  /**
-   * Equivalent to the {@code [A-Z]} character class.
-   *
-   * @since 6.0
-   **/
-  static final CharPredicate UPPER_CASE = range('A', 'Z');
 
   /**
    * Equivalent to the {@code [a-zA-Z]} character class.
    *
    * @since 6.0
    **/
-  static final CharPredicate ALPHA = LOWER_CASE.or(UPPER_CASE);
+  static final CharPredicate ALPHA = range('a', 'z').orRange('A', 'Z');
 
   /**
    * Equivalent to the {@code [0-9]} character class.
