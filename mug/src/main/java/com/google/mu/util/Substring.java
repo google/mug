@@ -334,7 +334,7 @@ public final class Substring {
    * returned words.
    *
    * <p><b>Warning:</b> This method doesn't understand non-ascii punctuation characters (such as CJK
-   * punctuations and emoji), and keeps them as is without breaking around them. It also doesn't
+   * punctuations and emoji), and keeps them as is without breaking around them.  Nor does it
    * recognize <a
    * href="https://docs.oracle.com/javase/8/docs/api/java/lang/Character.html#supplementary">supplementary
    * characters</a>.
@@ -344,12 +344,12 @@ public final class Substring {
   public static Stream<String> breakCase(CharSequence text) {
     CharPredicate num = CharPredicate.range('0', '9');
     CharPredicate lowerNum = num.or(Character::isLowerCase);
-    Pattern camelHump = // The 'Foo' from 'FooBar'.
-        upToIncluding(first(lowerNum).withBoundary(CharPredicate.ANY, lowerNum.not()).or(END));
+    // The 'l' in 'camelCase', 'CamelCase', 'camel' or 'Camel'.
+    Pattern lowerTail = first(lowerNum).withBoundary(CharPredicate.ANY, lowerNum.not());
     return consecutive(ALPHA.or(num).or(ASCII.not()))
         .repeatedly()
         .from(text)
-        .flatMap(camelHump.repeatedly()::from);
+        .flatMap(upToIncluding(lowerTail.or(END)).repeatedly()::from);
   }
 
   /**
