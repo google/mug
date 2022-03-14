@@ -328,7 +328,7 @@ public final class Substring {
    * breakCase("dash-case") => ["dash", "case"]
    * breakCase("3 separate words") => ["3", "separate", "words"]
    * breakCase("TheURLs") => ["The", "URLs"]
-   * breakCase("ⓉⓗⓔⓊⓇⓁⓢ") => ["Ⓣⓗⓔ", "ⓊⓇⓁⓢ""]
+   * breakCase("🅣ⓗⓔ🅤🅡🅛ⓢ") => ["🅣ⓗⓔ", "🅤🅡🅛ⓢ""]
    * breakCase("UpgradeIPv4ToIPv6") => ["Upgrade", "IPv4", "To", "IPv6"]
    * }</pre>
    *
