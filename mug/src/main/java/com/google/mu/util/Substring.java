@@ -336,7 +336,7 @@ public final class Substring {
    *
    * <p><b>Warning:</b> This method doesn't understand non-ascii punctuation characters (such as CJK
    * punctuations and emoji), and keeps them as is without breaking around them. It also doesn't
-   * recognize lower case <a
+   * recognize <a
    * href="https://docs.oracle.com/javase/8/docs/api/java/lang/Character.html#supplementary">supplementary
    * characters</a>.
    *
