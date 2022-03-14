@@ -2584,6 +2584,7 @@ public class SubstringTest {
     assertThat(Substring.breakCase("ab😀CD")).containsExactly("ab", "😀CD").inOrder();
     assertThat(Substring.breakCase("ab😀🤣cd")).containsExactly("ab", "😀🤣cd").inOrder();
     assertThat(Substring.breakCase("ab😀c🤣d")).containsExactly("ab", "😀c", "🤣d").inOrder();
+    assertThat(Substring.breakCase("🅶ⓞ🄷ⓞⓜⓔ")).containsExactly("🅶ⓞ", "🄷ⓞⓜⓔ").inOrder();
   }
 
   @Test
