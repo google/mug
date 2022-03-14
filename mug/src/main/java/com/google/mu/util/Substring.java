@@ -328,8 +328,8 @@ public final class Substring {
    * breakCase("dash-case") => ["dash", "case"]
    * breakCase("3 separate words") => ["3", "separate", "words"]
    * breakCase("TheURLs") => ["The", "URLs"]
+   * breakCase("ⓉⓗⓔⓊⓇⓁⓢ") => ["Ⓣⓗⓔ", "ⓊⓇⓁⓢ""]
    * breakCase("UpgradeIPv4ToIPv6") => ["Upgrade", "IPv4", "To", "IPv6"]
-   * breakCase("🅗ⓞⓜⓔ🅁ⓤⓝ") => ["🅗ⓞⓜⓔ", "🅁ⓤⓝ"]
    * }</pre>
    *
    * <p>Besides used as word delimiters, non-letter-digit ascii characters are filtered out from the
