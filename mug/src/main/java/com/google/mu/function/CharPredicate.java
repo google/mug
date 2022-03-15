@@ -24,21 +24,13 @@ import static java.util.Objects.requireNonNull;
 @FunctionalInterface
 public interface CharPredicate {
 
-  /**
-   * Equivalent to the {@code [a-zA-Z]} character class.
-   *
-   * @since 6.0
-   **/
+  /** Equivalent to the {@code [a-zA-Z]} character class. */
   static CharPredicate ALPHA = range('a', 'z').orRange('A', 'Z');
 
   /** Equivalent to the {@code [a-zA-Z0-9_]} character class. */
   static CharPredicate WORD = ALPHA .orRange('0', '9').or('_');
 
-  /**
-   * Corresponds to the ASCII characters.
-   *
-   * @since 6.0
-   **/
+  /** Corresponds to the ASCII characters. **/
   static CharPredicate ASCII = new CharPredicate() {
     @Override public boolean matches(int c) {
       return c <= '\u007f';
@@ -49,11 +41,7 @@ public interface CharPredicate {
     }
   };
 
-  /**
-   * Corresponds to all characters.
-   *
-   * @since 6.0
-   **/
+  /** Corresponds to all characters. */
   static CharPredicate ANY = new CharPredicate() {
     @Override public boolean matches(int c) {
       return true;
@@ -64,7 +52,7 @@ public interface CharPredicate {
     }
   };
 
-  /** Returns a CharPredicate for the range of characters: {@code [from, to]}. */
+  /** Returns a CharPredicate that only matches {@code ch}. */
   static CharPredicate is(int ch) {
     return new CharPredicate() {
       @Override public boolean matches(int c) {
@@ -79,6 +67,9 @@ public interface CharPredicate {
 
   /** Returns a CharPredicate for the range of characters: {@code [from, to]}. */
   static CharPredicate range(int from, int to) {
+    if (from > to) {
+      throw new IllegalArgumentException("Not true that " + from + " <= " + to);
+    }
     return new CharPredicate() {
       @Override public boolean matches(int c) {
         return c >= from && c <= to;

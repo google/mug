@@ -15,6 +15,7 @@
 package com.google.mu.function;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,6 +32,12 @@ public class CharPredicateTest {
     assertThat(CharPredicate.range('a', 'z').matches('v')).isTrue();
     assertThat(CharPredicate.range('a', 'z').matches('0')).isFalse();
     assertThat(CharPredicate.range('a', 'z').matches('C')).isFalse();
+    assertThat(CharPredicate.range('a', 'a').matches('a')).isTrue();
+    assertThat(CharPredicate.range('a', 'a').matches('A')).isFalse();
+  }
+
+  @Test public void testInvalidRange() {
+    assertThrows(IllegalArgumentException.class, () -> CharPredicate.range('b', 'a'));
   }
 
   @Test public void testRange_toString() {
