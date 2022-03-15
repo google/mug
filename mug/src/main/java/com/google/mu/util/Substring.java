@@ -204,7 +204,11 @@ public final class Substring {
     };
   }
 
-  /** Returns a {@code Pattern} that matches the first occurrence of {@code character}. */
+  /**
+   * Returns a {@code Pattern} that matches the first occurrence of {@code character}.
+   *
+   * <p>To work with supplementary characters, use {@link #first(CharPredicate)} instead.
+   */
   public static Pattern first(char character) {
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
@@ -555,7 +559,11 @@ public final class Substring {
     };
   }
 
-  /** Returns a {@code Pattern} that matches the last occurrence of {@code character}. */
+  /**
+   * Returns a {@code Pattern} that matches the last occurrence of {@code character}.
+   *
+   * <p>To work with supplementary characters, use {@link #last(CharPredicate)} instead.
+   */
   public static Pattern last(char character) {
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
