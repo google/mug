@@ -16,13 +16,15 @@ package com.google.mu.function;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.function.IntPredicate;
+
 /**
  * A predicate of character. More efficient than {@code Predicate<Character>}.
  *
  * @since 6.0
  */
 @FunctionalInterface
-public interface CharPredicate {
+public interface CharPredicate extends IntPredicate {
 
   /** Equivalent to the {@code [a-zA-Z]} character class. */
   static CharPredicate ALPHA = range('a', 'z').orRange('A', 'Z');
@@ -32,7 +34,7 @@ public interface CharPredicate {
 
   /** Corresponds to the ASCII characters. **/
   static CharPredicate ASCII = new CharPredicate() {
-    @Override public boolean matches(int c) {
+    @Override public boolean test(int c) {
       return c <= '\u007f';
     }
 
@@ -43,7 +45,7 @@ public interface CharPredicate {
 
   /** Corresponds to all characters. */
   static CharPredicate ANY = new CharPredicate() {
-    @Override public boolean matches(int c) {
+    @Override public boolean test(int c) {
       return true;
     }
 
@@ -55,7 +57,7 @@ public interface CharPredicate {
   /** Returns a CharPredicate that only matches {@code ch}. */
   static CharPredicate is(int ch) {
     return new CharPredicate() {
-      @Override public boolean matches(int c) {
+      @Override public boolean test(int c) {
         return c == ch;
       }
 
@@ -71,7 +73,7 @@ public interface CharPredicate {
       throw new IllegalArgumentException("Not true that " + from + " <= " + to);
     }
     return new CharPredicate() {
-      @Override public boolean matches(int c) {
+      @Override public boolean test(int c) {
         return c >= from && c <= to;
       }
 
@@ -81,9 +83,6 @@ public interface CharPredicate {
     };
   }
 
-  /** Returns true if {@code ch} satisfies this predicate. */
-  boolean matches(int ch);
-
   /**
    * Returns a {@link CharPredicate} that evaluates true if either this or {@code that} predicate
    * evaluate to true.
@@ -92,8 +91,8 @@ public interface CharPredicate {
     requireNonNull(that);
     CharPredicate me = this;
     return new CharPredicate() {
-      @Override public boolean matches(int c) {
-        return me.matches(c) || that.matches(c);
+      @Override public boolean test(int c) {
+        return me.test(c) || that.test(c);
       }
 
       @Override public String toString() {
@@ -110,8 +109,8 @@ public interface CharPredicate {
     requireNonNull(that);
     CharPredicate me = this;
     return new CharPredicate() {
-      @Override public boolean matches(int c) {
-        return me.matches(c) && that.matches(c);
+      @Override public boolean test(int c) {
+        return me.test(c) && that.test(c);
       }
 
       @Override public String toString() {
@@ -140,8 +139,8 @@ public interface CharPredicate {
   default CharPredicate not() {
     CharPredicate me = this;
     return new CharPredicate() {
-      @Override public boolean matches(int c) {
-        return !me.matches(c);
+      @Override public boolean test(int c) {
+        return !me.test(c);
       }
 
       @Override public String toString() {

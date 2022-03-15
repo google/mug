@@ -234,7 +234,7 @@ public final class Substring {
         for (int i = fromIndex; i < input.length(); ) {
           int ch = input.codePointAt(i);
           int width = Character.charCount(ch);
-          if (charMatcher.matches(ch)) {
+          if (charMatcher.test(ch)) {
             return new Match(input, i, width);
           }
           i += width;
@@ -260,7 +260,7 @@ public final class Substring {
         for (int i = lastCodePointIndex(input); i >= fromIndex; ) {
           int ch = input.codePointAt(i);
           int width = Character.charCount(ch);
-          if (charMatcher.matches(ch)) {
+          if (charMatcher.test(ch)) {
             return new Match(input, i, width);
           }
           i -= width;
@@ -340,7 +340,7 @@ public final class Substring {
         int len = 0;
         for (int i = fromIndex; i < input.length(); ) {
           int ch = input.codePointAt(i);
-          if (!matcher.matches(ch)) {
+          if (!matcher.test(ch)) {
             break;
           }
           int width = Character.charCount(ch);
@@ -374,7 +374,7 @@ public final class Substring {
         int len = 0;
         for (int i = lastCodePointIndex(input); i >= fromIndex; ) {
           int ch = input.codePointAt(i);
-          if (!matcher.matches(ch)) {
+          if (!matcher.test(ch)) {
             break;
           }
           int width = Character.charCount(ch);
@@ -414,11 +414,11 @@ public final class Substring {
         for (int i = fromIndex; i < end; ) {
           int ch = input.codePointAt(i);
           int width = Character.charCount(ch);
-          if (matcher.matches(ch)) {
+          if (matcher.test(ch)) {
             int len = width;
             for (int j = i + width; j < end; ) {
               int ch2 = input.codePointAt(j);
-              if (!matcher.matches(ch2)) {
+              if (!matcher.test(ch2)) {
                 break;
               }
               int width2 = Character.charCount(ch2);
@@ -936,7 +936,7 @@ public final class Substring {
       return new Pattern() {
         @Override Match match(String input, int fromIndex) {
           while (fromIndex <= input.length()) {
-            if (fromIndex > 0 && !boundaryBefore.matches(input.codePointBefore(fromIndex))) {
+            if (fromIndex > 0 && !boundaryBefore.test(input.codePointBefore(fromIndex))) {
               fromIndex += (fromIndex < input.length() ? Character.charCount(input.codePointAt(fromIndex)) : 1);
               continue; // The current position cannot possibly be the beginning of match.
             }
@@ -945,10 +945,10 @@ public final class Substring {
               return null;
             }
             if (match.startIndex == fromIndex // Already checked boundaryBefore
-                || boundaryBefore.matches(input.codePointBefore(match.startIndex))) {
+                || boundaryBefore.test(input.codePointBefore(match.startIndex))) {
               int boundaryIndex = match.endIndex;
               if (boundaryIndex >= input.length()
-                  || boundaryAfter.matches(input.codePointAt(boundaryIndex))) {
+                  || boundaryAfter.test(input.codePointAt(boundaryIndex))) {
                 return match;
               }
             }

@@ -27,13 +27,13 @@ import com.google.common.testing.NullPointerTester;
 public class CharPredicateTest {
 
   @Test public void testRange() {
-    assertThat(CharPredicate.range('a', 'z').matches('a')).isTrue();
-    assertThat(CharPredicate.range('a', 'z').matches('z')).isTrue();
-    assertThat(CharPredicate.range('a', 'z').matches('v')).isTrue();
-    assertThat(CharPredicate.range('a', 'z').matches('0')).isFalse();
-    assertThat(CharPredicate.range('a', 'z').matches('C')).isFalse();
-    assertThat(CharPredicate.range('a', 'a').matches('a')).isTrue();
-    assertThat(CharPredicate.range('a', 'a').matches('A')).isFalse();
+    assertThat(CharPredicate.range('a', 'z').test('a')).isTrue();
+    assertThat(CharPredicate.range('a', 'z').test('z')).isTrue();
+    assertThat(CharPredicate.range('a', 'z').test('v')).isTrue();
+    assertThat(CharPredicate.range('a', 'z').test('0')).isFalse();
+    assertThat(CharPredicate.range('a', 'z').test('C')).isFalse();
+    assertThat(CharPredicate.range('a', 'a').test('a')).isTrue();
+    assertThat(CharPredicate.range('a', 'a').test('A')).isFalse();
   }
 
   @Test public void testInvalidRange() {
@@ -45,8 +45,8 @@ public class CharPredicateTest {
   }
 
   @Test public void testIs() {
-    assertThat(CharPredicate.is('c').matches('c')).isTrue();
-    assertThat(CharPredicate.is('x').matches('c')).isFalse();
+    assertThat(CharPredicate.is('c').test('c')).isTrue();
+    assertThat(CharPredicate.is('x').test('c')).isFalse();
   }
 
   @Test public void testIs_toString() {
@@ -54,8 +54,8 @@ public class CharPredicateTest {
   }
 
   @Test public void testNot() {
-    assertThat(CharPredicate.is('c').not().matches('c')).isFalse();
-    assertThat(CharPredicate.is('c').not().matches('x')).isTrue();
+    assertThat(CharPredicate.is('c').not().test('c')).isFalse();
+    assertThat(CharPredicate.is('c').not().test('x')).isTrue();
   }
 
   @Test public void testNot_toString() {
@@ -63,12 +63,12 @@ public class CharPredicateTest {
   }
 
   @Test public void testOr() {
-    assertThat(CharPredicate.is('c').orRange('A', 'Z').matches('c')).isTrue();
-    assertThat(CharPredicate.is('c').orRange('A', 'Z').matches('Z')).isTrue();
-    assertThat(CharPredicate.is('c').orRange('A', 'Z').matches('z')).isFalse();
-    assertThat(CharPredicate.is('x').or('X').matches('x')).isTrue();
-    assertThat(CharPredicate.is('x').or('X').matches('X')).isTrue();
-    assertThat(CharPredicate.is('x').or('X').matches('y')).isFalse();
+    assertThat(CharPredicate.is('c').orRange('A', 'Z').test('c')).isTrue();
+    assertThat(CharPredicate.is('c').orRange('A', 'Z').test('Z')).isTrue();
+    assertThat(CharPredicate.is('c').orRange('A', 'Z').test('z')).isFalse();
+    assertThat(CharPredicate.is('x').or('X').test('x')).isTrue();
+    assertThat(CharPredicate.is('x').or('X').test('X')).isTrue();
+    assertThat(CharPredicate.is('x').or('X').test('y')).isFalse();
   }
 
   @Test public void testOr_toString() {
