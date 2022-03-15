@@ -72,7 +72,7 @@ public interface CharPredicate {
       }
 
       @Override public String toString() {
-        return "'" + ch + "'";
+        return "'" + new String(Character.toChars(ch)) + "'";
       }
     };
   }
@@ -85,7 +85,7 @@ public interface CharPredicate {
       }
 
       @Override public String toString() {
-        return "['" + from + "', '" + to + "']";
+        return "['" + new String(Character.toChars(from)) + "', '" + new String(Character.toChars(to)) + "']";
       }
     };
   }
