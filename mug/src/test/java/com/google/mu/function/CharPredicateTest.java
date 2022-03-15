@@ -27,58 +27,58 @@ import com.google.common.testing.NullPointerTester;
 public class CharPredicateTest {
 
   @Test public void testRange() {
-    assertThat(CharPredicate.range('a', 'z').test('a')).isTrue();
-    assertThat(CharPredicate.range('a', 'z').test('z')).isTrue();
-    assertThat(CharPredicate.range('a', 'z').test('v')).isTrue();
-    assertThat(CharPredicate.range('a', 'z').test('0')).isFalse();
-    assertThat(CharPredicate.range('a', 'z').test('C')).isFalse();
-    assertThat(CharPredicate.range('a', 'a').test('a')).isTrue();
-    assertThat(CharPredicate.range('a', 'a').test('A')).isFalse();
+    assertThat(CodePointMatcher.range('a', 'z').test('a')).isTrue();
+    assertThat(CodePointMatcher.range('a', 'z').test('z')).isTrue();
+    assertThat(CodePointMatcher.range('a', 'z').test('v')).isTrue();
+    assertThat(CodePointMatcher.range('a', 'z').test('0')).isFalse();
+    assertThat(CodePointMatcher.range('a', 'z').test('C')).isFalse();
+    assertThat(CodePointMatcher.range('a', 'a').test('a')).isTrue();
+    assertThat(CodePointMatcher.range('a', 'a').test('A')).isFalse();
   }
 
   @Test public void testInvalidRange() {
-    assertThrows(IllegalArgumentException.class, () -> CharPredicate.range('b', 'a'));
+    assertThrows(IllegalArgumentException.class, () -> CodePointMatcher.range('b', 'a'));
   }
 
   @Test public void testRange_toString() {
-    assertThat(CharPredicate.range('a', 'z').toString()).isEqualTo("['a', 'z']");
+    assertThat(CodePointMatcher.range('a', 'z').toString()).isEqualTo("['a', 'z']");
   }
 
   @Test public void testIs() {
-    assertThat(CharPredicate.is('c').test('c')).isTrue();
-    assertThat(CharPredicate.is('x').test('c')).isFalse();
+    assertThat(CodePointMatcher.is('c').test('c')).isTrue();
+    assertThat(CodePointMatcher.is('x').test('c')).isFalse();
   }
 
   @Test public void testIs_toString() {
-    assertThat(CharPredicate.is('c').toString()).isEqualTo("'c'");
+    assertThat(CodePointMatcher.is('c').toString()).isEqualTo("'c'");
   }
 
   @Test public void testNot() {
-    assertThat(CharPredicate.is('c').not().test('c')).isFalse();
-    assertThat(CharPredicate.is('c').not().test('x')).isTrue();
+    assertThat(CodePointMatcher.is('c').negate().test('c')).isFalse();
+    assertThat(CodePointMatcher.is('c').negate().test('x')).isTrue();
   }
 
   @Test public void testNot_toString() {
-    assertThat(CharPredicate.is('c').not().toString()).isEqualTo("not ('c')");
+    assertThat(CodePointMatcher.is('c').negate().toString()).isEqualTo("not ('c')");
   }
 
   @Test public void testOr() {
-    assertThat(CharPredicate.is('c').orRange('A', 'Z').test('c')).isTrue();
-    assertThat(CharPredicate.is('c').orRange('A', 'Z').test('Z')).isTrue();
-    assertThat(CharPredicate.is('c').orRange('A', 'Z').test('z')).isFalse();
-    assertThat(CharPredicate.is('x').or('X').test('x')).isTrue();
-    assertThat(CharPredicate.is('x').or('X').test('X')).isTrue();
-    assertThat(CharPredicate.is('x').or('X').test('y')).isFalse();
+    assertThat(CodePointMatcher.is('c').orRange('A', 'Z').test('c')).isTrue();
+    assertThat(CodePointMatcher.is('c').orRange('A', 'Z').test('Z')).isTrue();
+    assertThat(CodePointMatcher.is('c').orRange('A', 'Z').test('z')).isFalse();
+    assertThat(CodePointMatcher.is('x').or('X').test('x')).isTrue();
+    assertThat(CodePointMatcher.is('x').or('X').test('X')).isTrue();
+    assertThat(CodePointMatcher.is('x').or('X').test('y')).isFalse();
   }
 
   @Test public void testOr_toString() {
-    assertThat(CharPredicate.is('c').orRange('A', 'Z').toString()).isEqualTo("'c' | ['A', 'Z']");
-    assertThat(CharPredicate.range('A', 'Z').or('c').toString()).isEqualTo("['A', 'Z'] | 'c'");
+    assertThat(CodePointMatcher.is('c').orRange('A', 'Z').toString()).isEqualTo("'c' | ['A', 'Z']");
+    assertThat(CodePointMatcher.range('A', 'Z').or('c').toString()).isEqualTo("['A', 'Z'] | 'c'");
   }
 
   @Test public void testNulls() throws Throwable {
-    CharPredicate p = CharPredicate.is('a');
+    CodePointMatcher p = CodePointMatcher.is('a');
     new NullPointerTester().testAllPublicInstanceMethods(p);
-    new NullPointerTester().testAllPublicStaticMethods(CharPredicate.class);
+    new NullPointerTester().testAllPublicStaticMethods(CodePointMatcher.class);
   }
 }

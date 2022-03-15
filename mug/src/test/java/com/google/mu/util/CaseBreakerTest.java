@@ -7,7 +7,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import com.google.common.testing.NullPointerTester;
-import com.google.mu.function.CharPredicate;
+import com.google.mu.function.CodePointMatcher;
 
 @RunWith(JUnit4.class)
 public class CaseBreakerTest {
@@ -129,14 +129,14 @@ public class CaseBreakerTest {
   public void breakCase_customCamelCase() {
     assertThat(
             new CaseBreaker()
-                .withLowerCaseChars(CharPredicate.range('a', 'z'))
+                .withLowerCaseChars(CodePointMatcher.range('a', 'z'))
                 .breakCase("aBβaΑβb"))
         .containsExactly("a", "Bβa", "Αβb");
   }
 
   @Test
   public void breakCase_customCaseDelimiter() {
-    assertThat(new CaseBreaker().withCaseDelimiterChars(CharPredicate.is('，')).breakCase("中，文"))
+    assertThat(new CaseBreaker().withCaseDelimiterChars(CodePointMatcher.is('，')).breakCase("中，文"))
         .containsExactly("中", "文");
   }
 

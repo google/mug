@@ -25,7 +25,7 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.stream.Stream;
 
-import com.google.mu.function.CharPredicate;
+import com.google.mu.function.CodePointMatcher;
 import com.google.mu.util.stream.BiStream;
 import com.google.mu.util.stream.MoreStreams;
 
@@ -207,7 +207,7 @@ public final class Substring {
   /**
    * Returns a {@code Pattern} that matches the first occurrence of {@code character}.
    *
-   * <p>To work with supplementary characters, use {@link #first(CharPredicate)} instead.
+   * <p>To work with supplementary characters, use {@link #first(CodePointMatcher)} instead.
    */
   public static Pattern first(char character) {
     return new Pattern() {
@@ -227,7 +227,7 @@ public final class Substring {
    *
    * @since 6.0
    */
-  public static Pattern first(CharPredicate charMatcher) {
+  public static Pattern first(CodePointMatcher charMatcher) {
     requireNonNull(charMatcher);
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
@@ -253,7 +253,7 @@ public final class Substring {
    *
    * @since 6.0
    */
-  public static Pattern last(CharPredicate charMatcher) {
+  public static Pattern last(CodePointMatcher charMatcher) {
     requireNonNull(charMatcher);
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
@@ -295,7 +295,7 @@ public final class Substring {
    * @since 6.0
    */
   public static Pattern word() {
-    return consecutive(CharPredicate.WORD);
+    return consecutive(CodePointMatcher.WORD);
   }
 
   /**
@@ -318,7 +318,7 @@ public final class Substring {
    * @since 6.0
    */
   public static Pattern word(String word) {
-    return first(word).withBoundary(CharPredicate.WORD.not());
+    return first(word).withBoundary(CodePointMatcher.WORD.negate());
   }
 
   /**
@@ -333,7 +333,7 @@ public final class Substring {
    *
    * @since 6.0
    */
-  public static Pattern leading(CharPredicate matcher) {
+  public static Pattern leading(CodePointMatcher matcher) {
     requireNonNull(matcher);
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
@@ -367,7 +367,7 @@ public final class Substring {
    *
    * @since 6.0
    */
-  public static Pattern trailing(CharPredicate matcher) {
+  public static Pattern trailing(CodePointMatcher matcher) {
     requireNonNull(matcher);
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
@@ -406,7 +406,7 @@ public final class Substring {
    *
    * @since 6.0
    */
-  public static Pattern consecutive(CharPredicate matcher) {
+  public static Pattern consecutive(CodePointMatcher matcher) {
     requireNonNull(matcher);
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
@@ -562,7 +562,7 @@ public final class Substring {
   /**
    * Returns a {@code Pattern} that matches the last occurrence of {@code character}.
    *
-   * <p>To work with supplementary characters, use {@link #last(CharPredicate)} instead.
+   * <p>To work with supplementary characters, use {@link #last(CodePointMatcher)} instead.
    */
   public static Pattern last(char character) {
     return new Pattern() {
@@ -910,7 +910,7 @@ public final class Substring {
      *
      * @since 6.0
      */
-    public final Pattern withBoundary(CharPredicate boundary) {
+    public final Pattern withBoundary(CodePointMatcher boundary) {
       return withBoundary(boundary, boundary);
     }
 
@@ -929,7 +929,7 @@ public final class Substring {
      *
      * @since 6.0
      */
-    public final Pattern withBoundary(CharPredicate boundaryBefore, CharPredicate boundaryAfter) {
+    public final Pattern withBoundary(CodePointMatcher boundaryBefore, CodePointMatcher boundaryAfter) {
       requireNonNull(boundaryBefore);
       requireNonNull(boundaryAfter);
       Pattern target = this;

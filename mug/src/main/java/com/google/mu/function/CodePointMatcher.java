@@ -19,21 +19,21 @@ import static java.util.Objects.requireNonNull;
 import java.util.function.IntPredicate;
 
 /**
- * A predicate of character. More efficient than {@code Predicate<Character>}.
+ * A matcher of a Unicode code points.
  *
  * @since 6.0
  */
 @FunctionalInterface
-public interface CharPredicate extends IntPredicate {
+public interface CodePointMatcher extends IntPredicate {
 
   /** Equivalent to the {@code [a-zA-Z]} character class. */
-  static CharPredicate ALPHA = range('a', 'z').orRange('A', 'Z');
+  static CodePointMatcher ALPHA = range('a', 'z').orRange('A', 'Z');
 
   /** Equivalent to the {@code [a-zA-Z0-9_]} character class. */
-  static CharPredicate WORD = ALPHA .orRange('0', '9').or('_');
+  static CodePointMatcher WORD = ALPHA .orRange('0', '9').or('_');
 
   /** Corresponds to the ASCII characters. **/
-  static CharPredicate ASCII = new CharPredicate() {
+  static CodePointMatcher ASCII = new CodePointMatcher() {
     @Override public boolean test(int c) {
       return c <= '\u007f';
     }
@@ -44,7 +44,7 @@ public interface CharPredicate extends IntPredicate {
   };
 
   /** Corresponds to all characters. */
-  static CharPredicate ANY = new CharPredicate() {
+  static CodePointMatcher ANY = new CodePointMatcher() {
     @Override public boolean test(int c) {
       return true;
     }
@@ -55,8 +55,8 @@ public interface CharPredicate extends IntPredicate {
   };
 
   /** Returns a CharPredicate that only matches {@code ch}. */
-  static CharPredicate is(int ch) {
-    return new CharPredicate() {
+  static CodePointMatcher is(int ch) {
+    return new CodePointMatcher() {
       @Override public boolean test(int c) {
         return c == ch;
       }
@@ -68,11 +68,11 @@ public interface CharPredicate extends IntPredicate {
   }
 
   /** Returns a CharPredicate for the range of characters: {@code [from, to]}. */
-  static CharPredicate range(int from, int to) {
+  static CodePointMatcher range(int from, int to) {
     if (from > to) {
       throw new IllegalArgumentException("Not true that " + from + " <= " + to);
     }
-    return new CharPredicate() {
+    return new CodePointMatcher() {
       @Override public boolean test(int c) {
         return c >= from && c <= to;
       }
@@ -84,13 +84,14 @@ public interface CharPredicate extends IntPredicate {
   }
 
   /**
-   * Returns a {@link CharPredicate} that evaluates true if either this or {@code that} predicate
+   * Returns a {@link CodePointMatcher} that evaluates true if either this or {@code that} predicate
    * evaluate to true.
    */
-  default CharPredicate or(CharPredicate that) {
+  @Override
+  default CodePointMatcher or(IntPredicate that) {
     requireNonNull(that);
-    CharPredicate me = this;
-    return new CharPredicate() {
+    CodePointMatcher me = this;
+    return new CodePointMatcher() {
       @Override public boolean test(int c) {
         return me.test(c) || that.test(c);
       }
@@ -102,13 +103,14 @@ public interface CharPredicate extends IntPredicate {
   }
 
   /**
-   * Returns a {@link CharPredicate} that evaluates true if both this and {@code that} predicate
+   * Returns a {@link CodePointMatcher} that evaluates true if both this and {@code that} predicate
    * evaluate to true.
    */
-  default CharPredicate and(CharPredicate that) {
+  @Override
+  default CodePointMatcher and(IntPredicate that) {
     requireNonNull(that);
-    CharPredicate me = this;
-    return new CharPredicate() {
+    CodePointMatcher me = this;
+    return new CodePointMatcher() {
       @Override public boolean test(int c) {
         return me.test(c) && that.test(c);
       }
@@ -120,25 +122,26 @@ public interface CharPredicate extends IntPredicate {
   }
 
   /**
-   * Returns a {@link CharPredicate} that evaluates true if either this predicate evaluates to true,
+   * Returns a {@link CodePointMatcher} that evaluates true if either this predicate evaluates to true,
    * or the character is {@code ch}.
    */
-  default CharPredicate or(int ch) {
+  default CodePointMatcher or(int ch) {
     return or(is(ch));
   }
 
   /**
-   * Returns a {@link CharPredicate} that evaluates true if either this predicate evaluates to true,
+   * Returns a {@link CodePointMatcher} that evaluates true if either this predicate evaluates to true,
    * or the character is in the range of {@code [from, to]}.
    */
-  default CharPredicate orRange(int from, int to) {
+  default CodePointMatcher orRange(int from, int to) {
     return or(range(from, to));
   }
 
   /** Returns the negation of this {@code CharPredicate}. */
-  default CharPredicate not() {
-    CharPredicate me = this;
-    return new CharPredicate() {
+  @Override
+  default CodePointMatcher negate() {
+    CodePointMatcher me = this;
+    return new CodePointMatcher() {
       @Override public boolean test(int c) {
         return !me.test(c);
       }

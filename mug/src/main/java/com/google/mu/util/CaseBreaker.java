@@ -21,7 +21,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.stream.Stream;
 
-import com.google.mu.function.CharPredicate;
+import com.google.mu.function.CodePointMatcher;
 
 /**
  * Utility class to break input strings (normally identifier strings) in camelCase, UpperCamelCase,
@@ -38,16 +38,16 @@ import com.google.mu.function.CharPredicate;
  * @since 6.0
  */
 public final class CaseBreaker {
-  private static final CharPredicate NUM = CharPredicate.range('0', '9');
-  private final CharPredicate caseDelimiter;
-  private final CharPredicate camelLower;
+  private static final CodePointMatcher NUM = CodePointMatcher.range('0', '9');
+  private final CodePointMatcher caseDelimiter;
+  private final CodePointMatcher camelLower;
 
   public CaseBreaker() {
-    this.caseDelimiter = CharPredicate.ASCII.and(CharPredicate.ALPHA.or(NUM).not());
-    this.camelLower = ((CharPredicate) Character::isDigit).or(Character::isLowerCase);
+    this.caseDelimiter = CodePointMatcher.ASCII.and(CodePointMatcher.ALPHA.or(NUM).negate());
+    this.camelLower = ((CodePointMatcher) Character::isDigit).or(Character::isLowerCase);
   }
 
-  private CaseBreaker(CharPredicate caseDelimiter, CharPredicate camelLower) {
+  private CaseBreaker(CodePointMatcher caseDelimiter, CodePointMatcher camelLower) {
     this.caseDelimiter = caseDelimiter;
     this.camelLower = camelLower;
   }
@@ -56,7 +56,7 @@ public final class CaseBreaker {
    * Returns a new instance using {@code caseDelimiter} to identify case delimiter characters, for
    * example if you need to respect CJK caseDelimiter characters.
    */
-  public CaseBreaker withCaseDelimiterChars(CharPredicate caseDelimiter) {
+  public CaseBreaker withCaseDelimiterChars(CodePointMatcher caseDelimiter) {
     return new CaseBreaker(requireNonNull(caseDelimiter), camelLower);
   }
 
@@ -64,7 +64,7 @@ public final class CaseBreaker {
    * Returns a new instance using {@code camelLower} to identify lower case characters (don't forget
    * to include digits if they should also be treated as lower case).
    */
-  public CaseBreaker withLowerCaseChars(CharPredicate camelLower) {
+  public CaseBreaker withLowerCaseChars(CodePointMatcher camelLower) {
     return new CaseBreaker(caseDelimiter, requireNonNull(camelLower));
   }
 
@@ -90,8 +90,8 @@ public final class CaseBreaker {
    */
   public Stream<String> breakCase(CharSequence text) {
     Substring.Pattern lowerTail = // The 'l' in 'camelCase', 'CamelCase', 'camel' or 'Camel'.
-        first(camelLower).withBoundary(CharPredicate.ANY, camelLower.not());
-    return Substring.consecutive(caseDelimiter.not())
+        first(camelLower).withBoundary(CodePointMatcher.ANY, camelLower.negate());
+    return Substring.consecutive(caseDelimiter.negate())
         .repeatedly()
         .from(text)
         .flatMap(upToIncluding(lowerTail.or(END)).repeatedly()::from);
