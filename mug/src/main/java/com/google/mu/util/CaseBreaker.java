@@ -28,8 +28,9 @@ import com.google.mu.function.CharPredicate;
  * snake_case, UPPER_SNAKE_CASE, dash-case etc.
  *
  * <p>By default, non-alphanum ascii characters are treated as caseDelimiter characters and are
- * treated the same as any case delimiter. And {@link Character#isLowerCase JDK lower case}
- * characters and ascii digits are considers to be lower-case when breaking up camel case.
+ * treated the same as any case delimiter. {@link Character#isLowerCase(int) Lower case}
+ * characters and {@link Character#isDigit(int) digits} are considers to be lower-case when
+ * breaking up camel case.
  *
  * <p>If the default settings don't work for you, they can be customized by using {@link
  * #withCaseDelimiterChars} and/or {@link #withLowerCaseChars}.
@@ -43,7 +44,7 @@ public final class CaseBreaker {
 
   public CaseBreaker() {
     this.caseDelimiter = CharPredicate.ASCII.and(CharPredicate.ALPHA.or(NUM).not());
-    this.camelLower = NUM.or(Character::isLowerCase);
+    this.camelLower = ((CharPredicate) Character::isDigit).or(Character::isLowerCase);
   }
 
   private CaseBreaker(CharPredicate caseDelimiter, CharPredicate camelLower) {
