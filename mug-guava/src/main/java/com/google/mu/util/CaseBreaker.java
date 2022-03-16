@@ -34,8 +34,9 @@ import com.google.errorprone.annotations.CheckReturnValue;
  * {@code UPPER_SNAKE_CASE} and {@code dash-case} etc.
  *
  * <p>By default, non-alphanumeric ascii characters are treated as case delimiter characters. And
- * {@link Character#isLowerCase JDK lower case} characters and ascii digits are considered to be
- * lower-case when breaking up camel case.
+ * <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Character.html#isLowerCase-char-">
+ * Java lower case</a> characters and ascii digits are considered to be lower case when breaking up
+ * camel case.
  *
  * <p>If the default settings don't work for you, they can be customized by using {@link
  * #withCaseDelimiterChars} and/or {@link #withLowerCaseChars}.
