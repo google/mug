@@ -42,6 +42,8 @@ import com.google.errorprone.annotations.CheckReturnValue;
  * <p><b>Warning:</b> This class doesn't recognize <a
  * href="https://docs.oracle.com/javase/8/docs/api/java/lang/Character.html#supplementary">supplementary
  * code points</a>.
+ *
+ * @since 6.0
  */
 @CheckReturnValue
 public final class CaseBreaker {
