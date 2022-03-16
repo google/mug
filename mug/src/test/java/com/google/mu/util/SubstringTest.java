@@ -37,7 +37,6 @@ import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.EqualsTester;
 import com.google.common.testing.NullPointerTester;
 import com.google.common.truth.MultimapSubject;
-import com.google.mu.function.CodePointMatcher;
 import com.google.mu.util.Substring.Match;
 import com.google.mu.util.stream.BiCollector;
 import com.google.mu.util.stream.BiStream;
@@ -1392,6 +1391,13 @@ public class SubstringTest {
     assertThat(match.get().length()).isEqualTo(1);
     assertThat(match.get().toString()).isEqualTo("f");
     assertThat(last(CodePointMatcher.is('f')).repeatedly().from("foobar")).contains("f");
+  }
+
+  @Test
+  public void lastCodePointMatcher_matchesSupplementary() {
+    Substring.Pattern pattern = last(CodePointMatcher.of(Character::isSupplementaryCodePoint));
+    assertThat(pattern.split("\uD801\uDC00left\uD801\uDC00right").map(Joiner.on(":")::join))
+        .hasValue("\uD801\uDC00left:right");
   }
 
   @Test public void removeFrom_noMatch() {

@@ -21,8 +21,6 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.stream.Stream;
 
-import com.google.mu.function.CodePointMatcher;
-
 /**
  * Utility class to break input strings (normally identifier strings) in camelCase, UpperCamelCase,
  * snake_case, UPPER_SNAKE_CASE, dash-case etc.
@@ -44,7 +42,7 @@ public final class CaseBreaker {
 
   public CaseBreaker() {
     this.caseDelimiter = CodePointMatcher.ASCII.and(CodePointMatcher.ALPHA.or(NUM).negate());
-    this.camelLower = ((CodePointMatcher) Character::isDigit).or(Character::isLowerCase);
+    this.camelLower = CodePointMatcher.of(Character::isDigit).or(Character::isLowerCase);
   }
 
   private CaseBreaker(CodePointMatcher caseDelimiter, CodePointMatcher camelLower) {

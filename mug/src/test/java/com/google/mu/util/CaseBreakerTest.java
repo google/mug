@@ -7,7 +7,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import com.google.common.testing.NullPointerTester;
-import com.google.mu.function.CodePointMatcher;
 
 @RunWith(JUnit4.class)
 public class CaseBreakerTest {

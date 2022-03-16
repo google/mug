@@ -25,7 +25,7 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.stream.Stream;
 
-import com.google.mu.function.CodePointMatcher;
+import com.google.mu.util.Substring.Match;
 import com.google.mu.util.stream.BiStream;
 import com.google.mu.util.stream.MoreStreams;
 
@@ -257,15 +257,11 @@ public final class Substring {
     requireNonNull(charMatcher);
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
-        for (int i = lastCodePointIndex(input); i >= fromIndex; ) {
-          int ch = input.codePointAt(i);
-          int width = Character.charCount(ch);
-          if (charMatcher.test(ch)) {
-            return new Match(input, i, width);
-          }
-          i -= width;
-        }
-        return null;
+        return CodePointUtils.backwardCodePointIndexes(input, fromIndex)
+            .filter(charMatcher)
+            .mapToObj(idx -> new Match(input, idx, Character.charCount(input.codePointAt(idx))))
+            .findFirst()
+            .orElse(null);
       }
 
       @Override public String toString() {
@@ -371,17 +367,11 @@ public final class Substring {
     requireNonNull(matcher);
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
-        int len = 0;
-        for (int i = lastCodePointIndex(input); i >= fromIndex; ) {
-          int ch = input.codePointAt(i);
-          if (!matcher.test(ch)) {
-            break;
-          }
-          int width = Character.charCount(ch);
-          i -= width;
-          len += width;
-        }
-        return len == 0 ? null : new Match(input, input.length() - len, len);
+        return CodePointUtils.backwardCodePointIndexes(input, fromIndex)
+            .takeWhile(i -> matcher.test(input.codePointAt(i)))
+            .findLast()
+            .mapToObj(i -> new Match(input, i, input.length() - i))
+            .orElse(null);
       }
 
       @Override public String toString() {
@@ -1843,7 +1833,7 @@ public final class Substring {
         throw new IndexOutOfBoundsException(
             "Invalid index: begin (" + begin + ") > end (" + end + ")");
       }
-      return new Match(context, startIndex + begin, end - begin);
+      return new Match(context, startIndex + begin, end - begin, repetitionStartIndex);
     }
 
     /** Returns the matched substring. */
@@ -1860,23 +1850,7 @@ public final class Substring {
     }
 
     Match trim() {
-      int left = startIndex;
-      int right = endIndex - 1;
-      while (left <= right) {
-        if (Character.isWhitespace(context.charAt(left))) {
-          left++;
-          continue;
-        }
-        if (Character.isWhitespace(context.charAt(right))) {
-          right--;
-          continue;
-        }
-        break;
-      }
-      int trimmedLength = right - left + 1;
-      return trimmedLength == length()
-          ? this
-          : new Match(context, left, trimmedLength, repetitionStartIndex);
+      return (Match) CodePointMatcher.of(Character::isWhitespace).trim(this);
     }
 
     private Match toEnd() {
@@ -1884,10 +1858,5 @@ public final class Substring {
     }
   }
 
-  private static int lastCodePointIndex(String s) {
-    return
-        s.length()
-            - (s.length() < 2 ? 1 : Character.charCount(s.codePointAt(s.length() - 2)));
-  }
   private Substring() {}
 }

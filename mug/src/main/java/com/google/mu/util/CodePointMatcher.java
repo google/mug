@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.function;
+package com.google.mu.util;
 
 import static java.util.Objects.requireNonNull;
 
@@ -53,6 +53,28 @@ public interface CodePointMatcher extends IntPredicate {
       return "ANY";
     }
   };
+
+  /** Corresponds to no character. */
+  static CodePointMatcher NONE = new CodePointMatcher() {
+    @Override public boolean test(int c) {
+      return false;
+    }
+
+    @Override public String toString() {
+      return "NONE";
+    }
+  };
+
+  /**
+   * Returns a CodePointMatcher backed by {@code predicate},
+   * which is usually a lambda or method reference.
+   */
+  static CodePointMatcher of(IntPredicate predicate) {
+    if (predicate instanceof CodePointMatcher) {
+      return (CodePointMatcher) predicate;
+    }
+    return predicate::test;
+  }
 
   /** Returns a CharPredicate that only matches {@code ch}. */
   static CodePointMatcher is(int ch) {
@@ -150,5 +172,53 @@ public interface CodePointMatcher extends IntPredicate {
         return "not (" + me + ")";
       }
     };
+  }
+
+  /**
+   * Returns a substring with leading and trailing code points
+   * matching this matcher trimmed.
+   *
+   * <p>To trim only from the left or only from the right, use
+   * {@code Substring.leading(matcher).removeFrom(source)} or
+   * {@code Substring.trailing(matcher).removeFrom(source)}
+   * respectively.
+   */
+  default String trim(String source) {
+    return (String) trim((CharSequence) source);
+  }
+
+  /**
+   * Returns a new {@link CharSequence} instance with leading and trailing code points
+   * matching this matcher trimmed.
+   *
+   * <p>The returned CharSequence is either {@code source} itself if no character needs to be
+   * trimmed, or an instance returned by {@link CharSequence#subSequence}. The caller can
+   * choose to down-cast to the known subtype whenever safe.
+   *
+   * <p>To trim only from the left or only from the right, use
+   * {@code Substring.leading(matcher).removeFrom(source)} or
+   * {@code Substring.trailing(matcher).removeFrom(source)}
+   * respectively.
+   */
+  default CharSequence trim(CharSequence source) {
+    int left = 0;
+    int right = CodePointUtils.lastCodePointIndex(source);
+    while (left <= right) {
+      int lc = Character.codePointAt(source, left);
+      if (test(lc)) {
+        left += Character.charCount(lc);
+        continue;
+      }
+      int rc = Character.codePointAt(source, right);
+      if (test(rc)) {
+        right -= Character.charCount(Character.codePointBefore(source, right));
+        continue;
+      }
+      break;
+    }
+    int trimmedLength = right - left + Character.charCount(Character.codePointAt(source, right));
+    return trimmedLength == source.length()
+        ? source
+        : source.subSequence(left, left + trimmedLength);
   }
 }
