@@ -32,9 +32,9 @@ import com.google.errorprone.annotations.CheckReturnValue;
  * Utility class to break input strings (normally identifier strings) in camelCase, UpperCamelCase,
  * snake_case, UPPER_SNAKE_CASE, dash-case etc.
  *
- * <p>By default, non-alphanum ascii characters are treated as case delimiter characters. And {@link
- * Character#isLowerCase JDK lower case} characters and ascii digits are considered to be lower-case
- * when breaking up camel case.
+ * <p>By default, non-alphanumeric ascii characters are treated as case delimiter characters. And
+ * {@link Character#isLowerCase JDK lower case} characters and ascii digits are considered to be
+ * lower-case when breaking up camel case.
  *
  * <p>If the default settings don't work for you, they can be customized by using {@link
  * #withCaseDelimiterChars} and/or {@link #withLowerCaseChars}.
