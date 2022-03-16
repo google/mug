@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.function;
+package com.google.mu.util;
 
 import static java.util.Objects.requireNonNull;
 
@@ -30,9 +30,9 @@ public interface CharPredicate {
   /** Equivalent to the {@code [a-zA-Z0-9_]} character class. */
   static CharPredicate WORD = ALPHA .orRange('0', '9').or('_');
 
-  /** Corresponds to the ASCII characters. **/
+  /** Corresponds to the ASCII characters. */
   static CharPredicate ASCII = new CharPredicate() {
-    @Override public boolean matches(int c) {
+    @Override public boolean test(char c) {
       return c <= '\u007f';
     }
 
@@ -43,7 +43,7 @@ public interface CharPredicate {
 
   /** Corresponds to all characters. */
   static CharPredicate ANY = new CharPredicate() {
-    @Override public boolean matches(int c) {
+    @Override public boolean test(char c) {
       return true;
     }
 
@@ -52,37 +52,45 @@ public interface CharPredicate {
     }
   };
 
-  /** Returns a CharPredicate that only matches {@code ch}. */
-  static CharPredicate is(int ch) {
+  /** Corresponds to no characters. */
+  static CharPredicate NONE = new CharPredicate() {
+    @Override public boolean test(char c) {
+      return false;
+    }
+
+    @Override public String toString() {
+      return "NONE";
+    }
+  };
+
+  /** Returns a CharPredicate for the range of characters: {@code [from, to]}. */
+  static CharPredicate is(char ch) {
     return new CharPredicate() {
-      @Override public boolean matches(int c) {
+      @Override public boolean test(char c) {
         return c == ch;
       }
 
       @Override public String toString() {
-        return "'" + new String(Character.toChars(ch)) + "'";
+        return "'" + ch + "'";
       }
     };
   }
 
   /** Returns a CharPredicate for the range of characters: {@code [from, to]}. */
-  static CharPredicate range(int from, int to) {
-    if (from > to) {
-      throw new IllegalArgumentException("Not true that " + from + " <= " + to);
-    }
+  static CharPredicate range(char from, char to) {
     return new CharPredicate() {
-      @Override public boolean matches(int c) {
+      @Override public boolean test(char c) {
         return c >= from && c <= to;
       }
 
       @Override public String toString() {
-        return "['" + new String(Character.toChars(from)) + "', '" + new String(Character.toChars(to)) + "']";
+        return "['" + from + "', '" + to + "']";
       }
     };
   }
 
   /** Returns true if {@code ch} satisfies this predicate. */
-  boolean matches(int ch);
+  boolean test(char ch);
 
   /**
    * Returns a {@link CharPredicate} that evaluates true if either this or {@code that} predicate
@@ -92,8 +100,8 @@ public interface CharPredicate {
     requireNonNull(that);
     CharPredicate me = this;
     return new CharPredicate() {
-      @Override public boolean matches(int c) {
-        return me.matches(c) || that.matches(c);
+      @Override public boolean test(char c) {
+        return me.test(c) || that.test(c);
       }
 
       @Override public String toString() {
@@ -110,8 +118,8 @@ public interface CharPredicate {
     requireNonNull(that);
     CharPredicate me = this;
     return new CharPredicate() {
-      @Override public boolean matches(int c) {
-        return me.matches(c) && that.matches(c);
+      @Override public boolean test(char c) {
+        return me.test(c) && that.test(c);
       }
 
       @Override public String toString() {
@@ -124,15 +132,15 @@ public interface CharPredicate {
    * Returns a {@link CharPredicate} that evaluates true if either this predicate evaluates to true,
    * or the character is {@code ch}.
    */
-  default CharPredicate or(int ch) {
+  default CharPredicate or(char ch) {
     return or(is(ch));
   }
 
   /**
    * Returns a {@link CharPredicate} that evaluates true if either this predicate evaluates to true,
-   * or the character is in the range of {@code [from, to]}.
+   * or the character is in the range of {@code [from, to]).
    */
-  default CharPredicate orRange(int from, int to) {
+  default CharPredicate orRange(char from, char to) {
     return or(range(from, to));
   }
 
@@ -140,8 +148,8 @@ public interface CharPredicate {
   default CharPredicate not() {
     CharPredicate me = this;
     return new CharPredicate() {
-      @Override public boolean matches(int c) {
-        return !me.matches(c);
+      @Override public boolean test(char c) {
+        return !me.test(c);
       }
 
       @Override public String toString() {
