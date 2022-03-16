@@ -14,8 +14,6 @@
  *****************************************************************************/
 package com.google.mu.util;
 
-import static com.google.mu.util.CharPredicate.ALPHA;
-import static com.google.mu.util.CharPredicate.ASCII;
 import static java.lang.Math.max;
 import static java.util.Objects.requireNonNull;
 
@@ -310,45 +308,6 @@ public final class Substring {
    */
   public static Pattern word(String word) {
     return first(word).withBoundary(CharPredicate.WORD.not());
-  }
-
-  /**
-   * Returns a lazy stream of words split out from {@code text}, delimited by non-letter-digit ascii
-   * characters, and further split at lowerCamelCase and UpperCamelCase boundaries.
-   *
-   * <p>Examples:
-   *
-   * <pre>{@code
-   * breakCase("userId") => ["user", "Id"]
-   * breakCase("field_name") => ["field", "name"]
-   * breakCase("CONSTANT_NAME") => ["CONSTANT", "NAME"]
-   * breakCase("dash-case") => ["dash", "case"]
-   * breakCase("3 separate words") => ["3", "separate", "words"]
-   * breakCase("TheURLs") => ["The", "URLs"]
-   * breakCase("🅣ⓗⓔ🅤🅡🅛ⓢ") => ["🅣ⓗⓔ", "🅤🅡🅛ⓢ""]
-   * breakCase("UpgradeIPv4ToIPv6") => ["Upgrade", "IPv4", "To", "IPv6"]
-   * }</pre>
-   *
-   * <p>Besides used as word delimiters, non-letter-digit ascii characters are filtered out from the
-   * returned words.
-   *
-   * <p><b>Warning:</b> This method doesn't understand non-ascii punctuation characters (such as CJK
-   * punctuations and emoji), and keeps them as is without breaking around them.  Nor does it
-   * recognize <a
-   * href="https://docs.oracle.com/javase/8/docs/api/java/lang/Character.html#supplementary">supplementary
-   * characters</a>.
-   *
-   * @since 6.0
-   */
-  public static Stream<String> breakCase(CharSequence text) {
-    CharPredicate num = CharPredicate.range('0', '9');
-    CharPredicate lowerNum = num.or(Character::isLowerCase);
-    // The 'l' in 'camelCase', 'CamelCase', 'camel' or 'Camel'.
-    Pattern lowerTail = first(lowerNum).withBoundary(CharPredicate.ANY, lowerNum.not());
-    return consecutive(ALPHA.or(num).or(ASCII.not()))
-        .repeatedly()
-        .from(text)
-        .flatMap(upToIncluding(lowerTail.or(END)).repeatedly()::from);
   }
 
   /**
