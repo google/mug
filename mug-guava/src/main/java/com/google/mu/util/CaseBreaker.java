@@ -29,9 +29,9 @@ import com.google.common.base.CharMatcher;
 import com.google.errorprone.annotations.CheckReturnValue;
 
 /**
- * Utility class to {@link #breakCase break} and {@link #convertAsciiTo convert} input strings
- * (normally identifier strings) in {@code camelCase}, {@code UpperCamelCase}, {@code snake_case},
- * {@code UPPER_SNAKE_CASE} and {@code dash-case} etc.
+ * Utility to {@link #breakCase break} and {@link #convertAsciiTo convert} input strings (normally
+ * identifier strings) in {@code camelCase}, {@code UpperCamelCase}, {@code snake_case}, {@code
+ * UPPER_SNAKE_CASE} and {@code dash-case} etc.
  *
  * <p>By default, non-alphanumeric ascii characters are treated as case delimiter characters. And
  * <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Character.html#isLowerCase-char-">
