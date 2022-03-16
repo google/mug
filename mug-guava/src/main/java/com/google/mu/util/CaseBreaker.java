@@ -20,7 +20,9 @@ import static com.google.mu.util.Substring.END;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.upToIncluding;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.mapping;
 
+import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import com.google.common.base.Ascii;
@@ -30,7 +32,7 @@ import com.google.common.base.Converter;
 import com.google.errorprone.annotations.CheckReturnValue;
 
 /**
- * Utility to {@link #breakCase break} and {@link #convertAsciiTo convert} input strings (normally
+ * Utility to {@link #breakCase break} and {@link #toCase convert} input strings (normally
  * identifier strings) in {@code camelCase}, {@code UpperCamelCase}, {@code snake_case}, {@code
  * UPPER_SNAKE_CASE} and {@code dash-case} etc.
  *
@@ -116,24 +118,26 @@ public final class CaseBreaker {
    * combination thereof. For example:
    *
    * <pre>{@code
-   * convertAsciiTo(LOWER_CAMEL, "user_id")      => "userId"
-   * convertAsciiTo(LOWER_HYPHEN, "UserID")      => "user-id"
-   * convertAsciiTo(UPPER_UNDERSCORE, "orderId") => "ORDER_ID"
+   * toCase(LOWER_CAMEL, "user_id")      => "userId"
+   * toCase(LOWER_HYPHEN, "UserID")      => "user-id"
+   * toCase(UPPER_UNDERSCORE, "orderId") => "ORDER_ID"
    * }</pre>
    *
-   * <p>Behavior for non-ascii characters is undefined. If you need to handle BMP characters,
-   * consider using {@link #breakCase} and then apply the upper-casing and lower-casing on the
-   * broken-up words manually before joining them back to the target case.
+   * <p>Characters outside of the range of {@code [a-zA-Z0-9_-]} are kept as is.
    */
-  public static String convertAsciiTo(CaseFormat format, CharSequence input) {
-    CharPredicate wordChar = ALPHA.or(NUM).or('-').or('_');
+  public static String toCase(CaseFormat format, CharSequence input) {
     CaseBreaker breaker = new CaseBreaker()
         .withCaseDelimiterChars(CharMatcher.anyOf("_-"))
         .withLowerCaseChars(CharMatcher.inRange('a', 'z').or(CharMatcher.inRange('0', '9')));
     Converter<String, String> converter = CaseFormat.LOWER_UNDERSCORE.converterTo(format);
-    return Substring.consecutive(wordChar)
+    return Substring.consecutive(ALPHA.or(NUM).or('-').or('_'))
         .repeatedly()
-        .replaceAllFrom(input.toString(), w ->
-           converter.convert(breaker.breakCase(w).map(Ascii::toLowerCase).collect(joining("_"))));
+        .replaceAllFrom(
+            input.toString(),
+            w -> converter.convert(breaker.breakCase(w).collect(toSnakeCase())));
+  }
+
+  private static Collector<String, ?, String> toSnakeCase() {
+    return mapping(Ascii::toLowerCase, joining("_"));
   }
 }
