@@ -119,7 +119,9 @@ public final class CaseBreaker {
    * convertAsciiTo(UPPER_UNDERSCORE, "orderId") => "ORDER_ID"
    * }</pre>
    *
-   * <p>Behavior for non-ascii characters is undefined.
+   * <p>Behavior for non-ascii characters is undefined. If you need to handle BMP characters,
+   * consider using {@link #breakCase} and then apply the upper-casing and lower-casing
+   * on the broken-up words manually before joining them back to the target case.
    */
   public String convertAsciiTo(CaseFormat format, CharSequence input) {
     String snake = breakCase(input).map(Ascii::toLowerCase).collect(joining("_"));
