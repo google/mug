@@ -38,7 +38,7 @@ import com.google.errorprone.annotations.CheckReturnValue;
  * Java lower case</a> characters and ascii digits are considered to be lower case when breaking up
  * camel case.
  *
- * <p>If the default settings don't work for you, they can be customized by using {@link
+ * <p>If the default setting doesn't work for you, it can be customized by using {@link
  * #withCaseDelimiterChars} and/or {@link #withLowerCaseChars}.
  *
  * <p><b>Warning:</b> This class doesn't recognize <a
