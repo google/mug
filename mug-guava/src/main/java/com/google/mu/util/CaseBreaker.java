@@ -54,7 +54,6 @@ public final class CaseBreaker {
   private final CharPredicate camelLower;
 
   // Use javaLowerCase() to break 'αβΑβ' into ['αβ', 'Αβ'].
-  // We don't support supplemental codepoints due to the use of CharMatcher.
   public CaseBreaker() {
     this.caseDelimiter = ASCII.and(ALPHA.or(NUM).not());
     this.camelLower = ((CharPredicate) Character::isLowerCase).or(NUM);
@@ -88,13 +87,13 @@ public final class CaseBreaker {
    * <p>Examples:
    *
    * <pre>{@code
-   * breakCase("userId") => ["user", "Id"]
-   * breakCase("field_name") => ["field", "name"]
-   * breakCase("CONSTANT_NAME") => ["CONSTANT", "NAME"]
-   * breakCase("dash-case") => ["dash", "case"]
-   * breakCase("3 separate words") => ["3", "separate", "words"]
-   * breakCase("TheURLs") => ["The", "URLs"]
-   * breakCase("🅣ⓗⓔ🅤🅡🅛ⓢ") => ["🅣ⓗⓔ", "🅤🅡🅛ⓢ""]
+   * breakCase("userId")            => ["user", "Id"]
+   * breakCase("field_name")        => ["field", "name"]
+   * breakCase("CONSTANT_NAME")     => ["CONSTANT", "NAME"]
+   * breakCase("dash-case")         => ["dash", "case"]
+   * breakCase("3 separate words")  => ["3", "separate", "words"]
+   * breakCase("TheURLs")           => ["The", "URLs"]
+   * breakCase("🅣ⓗⓔ🅤🅡🅛ⓢ")      => ["🅣ⓗⓔ", "🅤🅡🅛ⓢ""]
    * breakCase("UpgradeIPv4ToIPv6") => ["Upgrade", "IPv4", "To", "IPv6"]
    * }</pre>
    *
@@ -116,8 +115,8 @@ public final class CaseBreaker {
    * combination thereof. For example:
    *
    * <pre>{@code
-   * convertAsciiTo(LOWER_CAMEL, "user_id") => "userId"
-   * convertAsciiTo(LOWER_HYPHEN, "UserID") => "user-id"
+   * convertAsciiTo(LOWER_CAMEL, "user_id")      => "userId"
+   * convertAsciiTo(LOWER_HYPHEN, "UserID")      => "user-id"
    * convertAsciiTo(UPPER_UNDERSCORE, "orderId") => "ORDER_ID"
    * }</pre>
    *
