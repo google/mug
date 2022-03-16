@@ -29,6 +29,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import com.google.common.base.Ascii;
+import com.google.common.base.CharMatcher;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.LinkedListMultimap;
@@ -44,8 +45,8 @@ import com.google.mu.util.stream.Joiner;
 
 @RunWith(JUnit4.class)
 public class SubstringTest {
-  private static final CodePointMatcher ALPHA = CodePointMatcher.range('a', 'z').orRange('A', 'Z');
-  private static final CodePointMatcher DIGIT = CodePointMatcher.range('0', '9');
+  private static final CharPredicate ALPHA = CharPredicate.range('a', 'z').orRange('A', 'Z');
+  private static final CharPredicate DIGIT = CharPredicate.range('0', '9');
 
   @Test public void none() {
     assertThat(Substring.NONE.in("foo")).isEmpty();
@@ -1209,19 +1210,19 @@ public class SubstringTest {
 
   @Test
   public void firstCharMatcher_toString() {
-    assertThat(first(CodePointMatcher.ASCII).toString())
+    assertThat(first(CharPredicate.ASCII).toString())
         .isEqualTo("first(ASCII)");
   }
 
   @Test
   public void firstCharMatcher_noMatch() {
-    assertThat(first(CodePointMatcher.ANY).in("")).isEmpty();
-    assertThat(first(CodePointMatcher.ANY).repeatedly().match("")).isEmpty();
+    assertThat(first(CharPredicate.ANY).in("")).isEmpty();
+    assertThat(first(CharPredicate.ANY).repeatedly().match("")).isEmpty();
   }
 
   @Test
   public void firstCharMatcher_matchesFullString() {
-    Optional<Substring.Match> match = first(CodePointMatcher.ANY).in("f");
+    Optional<Substring.Match> match = first(CharPredicate.ANY).in("f");
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEmpty();
     assertThat(match.get().after()).isEmpty();
@@ -1231,12 +1232,12 @@ public class SubstringTest {
     assertThat(match.get().replaceWith("bar")).isEqualTo("bar");
     assertThat(match.get().length()).isEqualTo(1);
     assertThat(match.get().toString()).isEqualTo("f");
-    assertThat(first(CodePointMatcher.ANY).repeatedly().from("f")).containsExactly("f");
+    assertThat(first(CharPredicate.ANY).repeatedly().from("f")).containsExactly("f");
   }
 
   @Test
   public void firstCharMatcher_matchesPrefix() {
-    Optional<Substring.Match> match = first(CodePointMatcher.is('f')).in("foobar");
+    Optional<Substring.Match> match = first(CharPredicate.is('f')).in("foobar");
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEmpty();
     assertThat(match.get().after()).isEqualTo("oobar");
@@ -1246,12 +1247,12 @@ public class SubstringTest {
     assertThat(match.get().replaceWith("car")).isEqualTo("caroobar");
     assertThat(match.get().length()).isEqualTo(1);
     assertThat(match.get().toString()).isEqualTo("f");
-    assertThat(first(CodePointMatcher.ANY).repeatedly().from("foo")).containsExactly("f", "o", "o");
+    assertThat(first(CharPredicate.ANY).repeatedly().from("foo")).containsExactly("f", "o", "o");
   }
 
   @Test
   public void firstCharMatcher_matchesSuffix() {
-    Optional<Substring.Match> match = first(CodePointMatcher.is('r')).in("foobar");
+    Optional<Substring.Match> match = first(CharPredicate.is('r')).in("foobar");
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEqualTo("fooba");
     assertThat(match.get().after()).isEmpty();
@@ -1261,12 +1262,12 @@ public class SubstringTest {
     assertThat(match.get().replaceWith("car")).isEqualTo("foobacar");
     assertThat(match.get().length()).isEqualTo(1);
     assertThat(match.get().toString()).isEqualTo("r");
-    assertThat(first(CodePointMatcher.is('r')).repeatedly().from("bar")).containsExactly("r");
+    assertThat(first(CharPredicate.is('r')).repeatedly().from("bar")).containsExactly("r");
   }
 
   @Test
   public void firstCharMatcher_matchesFirstOccurrence() {
-    Optional<Substring.Match> match = first(CodePointMatcher.is('b')).in("foobarbarbaz");
+    Optional<Substring.Match> match = first(CharPredicate.is('b')).in("foobarbarbaz");
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEqualTo("foo");
     assertThat(match.get().after()).isEqualTo("arbarbaz");
@@ -1276,7 +1277,7 @@ public class SubstringTest {
     assertThat(match.get().replaceWith("coo")).isEqualTo("foocooarbarbaz");
     assertThat(match.get().length()).isEqualTo(1);
     assertThat(match.get().toString()).isEqualTo("b");
-    assertThat(first(CodePointMatcher.is('b')).repeatedly().from("foobarbarbaz"))
+    assertThat(first(CharPredicate.is('b')).repeatedly().from("foobarbarbaz"))
         .containsExactly("b", "b", "b");
   }
 
@@ -1353,19 +1354,19 @@ public class SubstringTest {
 
   @Test
   public void lastCharMatcher_toString() {
-    assertThat(last(CodePointMatcher.ASCII).toString())
+    assertThat(last(CharPredicate.ASCII).toString())
         .isEqualTo("last(ASCII)");
   }
 
   @Test
   public void lastCharMatcher_noMatch() {
-    assertThat(last(CodePointMatcher.ANY).in("")).isEmpty();
-    assertThat(last(CodePointMatcher.ANY).repeatedly().match("")).isEmpty();
+    assertThat(last(CharPredicate.ANY).in("")).isEmpty();
+    assertThat(last(CharPredicate.ANY).repeatedly().match("")).isEmpty();
   }
 
   @Test
   public void lastCharMatcher_matchesFullString() {
-    Optional<Substring.Match> match = last(CodePointMatcher.ANY).in("f");
+    Optional<Substring.Match> match = last(CharPredicate.ANY).in("f");
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEmpty();
     assertThat(match.get().after()).isEmpty();
@@ -1375,12 +1376,12 @@ public class SubstringTest {
     assertThat(match.get().replaceWith("bar")).isEqualTo("bar");
     assertThat(match.get().length()).isEqualTo(1);
     assertThat(match.get().toString()).isEqualTo("f");
-    assertThat(last(CodePointMatcher.ANY).repeatedly().from("bar")).contains("r");
+    assertThat(last(CharPredicate.ANY).repeatedly().from("bar")).contains("r");
   }
 
   @Test
   public void lastCharMatcher_matchesPrefix() {
-    Optional<Substring.Match> match = last(CodePointMatcher.is('f')).in("foobar");
+    Optional<Substring.Match> match = last(CharPredicate.is('f')).in("foobar");
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEmpty();
     assertThat(match.get().after()).isEqualTo("oobar");
@@ -1390,14 +1391,7 @@ public class SubstringTest {
     assertThat(match.get().replaceWith("car")).isEqualTo("caroobar");
     assertThat(match.get().length()).isEqualTo(1);
     assertThat(match.get().toString()).isEqualTo("f");
-    assertThat(last(CodePointMatcher.is('f')).repeatedly().from("foobar")).contains("f");
-  }
-
-  @Test
-  public void lastCodePointMatcher_matchesSupplementary() {
-    Substring.Pattern pattern = last(CodePointMatcher.of(Character::isSupplementaryCodePoint));
-    assertThat(pattern.split("\uD801\uDC00left\uD801\uDC00right").map(Joiner.on(":")::join))
-        .hasValue("\uD801\uDC00left:right");
+    assertThat(last(CharPredicate.is('f')).repeatedly().from("foobar")).contains("f");
   }
 
   @Test public void removeFrom_noMatch() {
@@ -2368,7 +2362,7 @@ public class SubstringTest {
     assertThat(leading(ALPHA).from("System.out")).hasValue("System");
     assertThat(leading(ALPHA).removeFrom("System.out")).isEqualTo(".out");
     assertThat(
-            leading(CodePointMatcher.range('a', 'z'))
+            leading(CharMatcher.inRange('a', 'z')::matches)
                 .then(prefix(':'))
                 .in("http://google.com")
                 .map(Match::before))
@@ -2490,9 +2484,118 @@ public class SubstringTest {
   }
 
   @Test
+  public void splitAsciiByCase_camelCase() {
+    assertThat(Substring.breakCase("x")).containsExactly("x");
+    assertThat(Substring.breakCase("A")).containsExactly("A");
+    assertThat(Substring.breakCase("HelloWorld")).containsExactly("Hello", "World");
+    assertThat(Substring.breakCase("helloWorld")).containsExactly("hello", "World");
+    assertThat(Substring.breakCase("2sigmaOffice"))
+        .containsExactly("2sigma", "Office")
+        .inOrder();
+  }
+
+  @Test
+  public void splitAsciiByCase_camelCaseInGreek() {
+    assertThat(Substring.breakCase("αβΑβΤττ")).containsExactly("αβ", "Αβ", "Τττ").inOrder();
+  }
+
+  @Test
+  public void splitAsciiByCase_upperCamelCase() {
+    assertThat(Substring.breakCase("IP Address")).containsExactly("IP", "Address").inOrder();
+    assertThat(Substring.breakCase("A B CorABC"))
+        .containsExactly("A", "B", "Cor", "ABC")
+        .inOrder();
+    assertThat(Substring.breakCase("AB")).containsExactly("AB").inOrder();
+    assertThat(Substring.breakCase("IPv6OrIPV4"))
+        .containsExactly("IPv6", "Or", "IPV4")
+        .inOrder();
+    assertThat(Substring.breakCase("SplitURLsByCase"))
+        .containsExactly("Split", "URLs", "By", "Case")
+        .inOrder();
+  }
+
+  @Test
+  public void splitAsciiByCase_allCaps() {
+    assertThat(Substring.breakCase("ID")).containsExactly("ID");
+    assertThat(Substring.breakCase("orderID")).containsExactly("order", "ID");
+  }
+
+  @Test
+  public void splitAsciiByCase_snakeCase() {
+    assertThat(Substring.breakCase("order_id")).containsExactly("order", "id");
+    assertThat(Substring.breakCase("order_ID")).containsExactly("order", "ID");
+    assertThat(Substring.breakCase("SPLIT_ASCII_BY_CASE"))
+        .containsExactly("SPLIT", "ASCII", "BY", "CASE")
+        .inOrder();
+  }
+
+  @Test
+  public void splitAsciiByCase_dashCase() {
+    assertThat(Substring.breakCase("order-id")).containsExactly("order", "id");
+    assertThat(Substring.breakCase("order-ID")).containsExactly("order", "ID");
+    assertThat(Substring.breakCase("ORDER-ID")).containsExactly("ORDER", "ID");
+  }
+
+  @Test
+  public void splitAsciiByCase_mixedCase() {
+    assertThat(Substring.breakCase(" a0--b1+c34DEF56 78"))
+        .containsExactly("a0", "b1", "c34", "DEF56", "78")
+        .inOrder();
+    assertThat(Substring.breakCase("2_WORD2WORD3"))
+        .containsExactly("2", "WORD2", "WORD3")
+        .inOrder();
+  }
+
+  @Test
+  public void splitAsciiByCase_separateWords() {
+    assertThat(Substring.breakCase("order id")).containsExactly("order", "id");
+    assertThat(Substring.breakCase("order ID")).containsExactly("order", "ID");
+    assertThat(Substring.breakCase("3 separate words."))
+        .containsExactly("3", "separate", "words");
+    assertThat(Substring.breakCase("1 + 2 == 3")).containsExactly("1", "2", "3");
+    assertThat(Substring.breakCase("HTTP or FTP"))
+        .containsExactly("HTTP", "or", "FTP");
+  }
+
+  @Test
+  public void splitAsciiByCase_noMatch() {
+    assertThat(Substring.breakCase("")).isEmpty();
+    assertThat(Substring.breakCase("?")).isEmpty();
+    assertThat(Substring.breakCase("_")).isEmpty();
+    assertThat(Substring.breakCase(" ")).isEmpty();
+    assertThat(Substring.breakCase("@.")).isEmpty();
+  }
+
+  @Test
+  public void splitAsciiByCase_i18n() {
+    assertThat(Substring.breakCase("中文")).containsExactly("中文");
+    assertThat(Substring.breakCase("中 文")).containsExactly("中", "文");
+    assertThat(Substring.breakCase("中。文")).containsExactly("中。文");
+    assertThat(Substring.breakCase("中，文")).containsExactly("中，文");
+    assertThat(Substring.breakCase("chineseAsIn中文-or japanese"))
+        .containsExactly("chinese", "As", "In", "中文", "or", "japanese")
+        .inOrder();
+    assertThat(Substring.breakCase("٩realms")).containsExactly("٩realms");
+  }
+
+  @Test
+  public void splitAsciiByCase_emoji() {
+    assertThat(Substring.breakCase("🅗ⓞⓜⓔ🅁ⓤⓝ")).containsExactly("🅗ⓞⓜⓔ", "🅁ⓤⓝ").inOrder();
+    assertThat(Substring.breakCase("ⓖⓞ🄷ⓞⓜⓔ")).containsExactly("ⓖⓞ", "🄷ⓞⓜⓔ").inOrder();
+    assertThat(Substring.breakCase("🅣ⓗⓔ🅤🅡🅛ⓢ")).containsExactly("🅣ⓗⓔ", "🅤🅡🅛ⓢ").inOrder();
+    assertThat(Substring.breakCase("中😀文")).containsExactly("中😀文");
+    assertThat(Substring.breakCase("ab😀CD")).containsExactly("ab", "😀CD").inOrder();
+    assertThat(Substring.breakCase("ab😀🤣cd")).containsExactly("ab", "😀🤣cd").inOrder();
+    assertThat(Substring.breakCase("ab😀c🤣d")).containsExactly("ab", "😀c", "🤣d").inOrder();
+    assertThat(Substring.breakCase("¹/₂")).containsExactly("¹", "₂").inOrder();
+    assertThat(Substring.breakCase("۱𑛃")).containsExactly("۱𑛃").inOrder();
+    assertThat(Substring.breakCase("🔟💯")).containsExactly("🔟💯").inOrder();
+  }
+
+  @Test
   public void withBoundary_first() {
-    CodePointMatcher left = CodePointMatcher.range('a', 'z').negate();
-    CodePointMatcher right = CodePointMatcher.range('a', 'z').or('-').negate();
+    CharPredicate left = CharPredicate.range('a', 'z').not();
+    CharPredicate right = CharPredicate.range('a', 'z').or('-').not();
     Substring.Pattern petRock = Substring.first("pet-rock").withBoundary(left, right);
     assertThat(petRock.from("pet-rock")).hasValue("pet-rock");
     assertThat(petRock.from("pet-rock is fun")).hasValue("pet-rock");
@@ -2503,8 +2606,8 @@ public class SubstringTest {
 
   @Test
   public void withBoundary_skipEscape() {
-    CodePointMatcher escape = CodePointMatcher.is('\\');
-    Substring.Pattern unescaped = Substring.first("aaa").withBoundary(escape.negate());
+    CharPredicate escape = CharPredicate.is('\\');
+    Substring.Pattern unescaped = Substring.first("aaa").withBoundary(escape.not());
     assertThat(unescaped.from("\\aaaa")).hasValue("aaa");
     assertThat(unescaped.repeatedly().from("\\aaaa")).containsExactly("aaa");
     assertThat(unescaped.in("\\aaaa").get().before()).isEqualTo("\\a");
@@ -2512,7 +2615,7 @@ public class SubstringTest {
 
   @Test
   public void withBoundary_before() {
-    CodePointMatcher boundary = CodePointMatcher.range('a', 'z').negate();
+    CharPredicate boundary = CharPredicate.range('a', 'z').not();
     Substring.Pattern dir = Substring.before(first("//")).withBoundary(boundary);
     assertThat(dir.from("foo//bar//zoo")).hasValue("foo");
     assertThat(dir.repeatedly().from("foo//bar//zoo")).containsExactly("foo", "bar").inOrder();

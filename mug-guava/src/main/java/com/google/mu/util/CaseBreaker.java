@@ -14,38 +14,49 @@
  *****************************************************************************/
 package com.google.mu.util;
 
+import static com.google.mu.util.CharPredicate.ALPHA;
+import static com.google.mu.util.CharPredicate.ASCII;
 import static com.google.mu.util.Substring.END;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.upToIncluding;
-import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 
 import java.util.stream.Stream;
+
+import com.google.common.base.Ascii;
+import com.google.common.base.CaseFormat;
+import com.google.common.base.CharMatcher;
+import com.google.errorprone.annotations.CheckReturnValue;
 
 /**
  * Utility class to break input strings (normally identifier strings) in camelCase, UpperCamelCase,
  * snake_case, UPPER_SNAKE_CASE, dash-case etc.
  *
- * <p>By default, non-alphanum ascii characters are treated as caseDelimiter characters and are
- * treated the same as any case delimiter. {@link Character#isLowerCase(int) Lower case}
- * characters and {@link Character#isDigit(int) digits} are considers to be lower-case when
- * breaking up camel case.
+ * <p>By default, non-alphanum ascii characters are treated as case delimiter characters. And {@link
+ * Character#isLowerCase JDK lower case} characters and ascii digits are considered to be lower-case
+ * when breaking up camel case.
  *
  * <p>If the default settings don't work for you, they can be customized by using {@link
  * #withCaseDelimiterChars} and/or {@link #withLowerCaseChars}.
  *
- * @since 6.0
+ * <p><b>Warning:</b> This class doesn't recognize <a
+ * href="https://docs.oracle.com/javase/8/docs/api/java/lang/Character.html#supplementary">supplementary
+ * code points</a>.
  */
+@CheckReturnValue
 public final class CaseBreaker {
-  private static final CodePointMatcher NUM = CodePointMatcher.range('0', '9');
-  private final CodePointMatcher caseDelimiter;
-  private final CodePointMatcher camelLower;
+  private static final CharPredicate NUM = CharPredicate.range('0', '9');
+  private final CharPredicate caseDelimiter;
+  private final CharPredicate camelLower;
 
+  // Use javaLowerCase() to break 'αβΑβ' into ['αβ', 'Αβ'].
+  // We don't support supplemental codepoints due to the use of CharMatcher.
   public CaseBreaker() {
-    this.caseDelimiter = CodePointMatcher.ASCII.and(CodePointMatcher.ALPHA.or(NUM).negate());
-    this.camelLower = CodePointMatcher.of(Character::isDigit).or(Character::isLowerCase);
+    this.caseDelimiter = ASCII.and(ALPHA.or(NUM).not());
+    this.camelLower = ((CharPredicate) Character::isLowerCase).or(NUM);
   }
 
-  private CaseBreaker(CodePointMatcher caseDelimiter, CodePointMatcher camelLower) {
+  private CaseBreaker(CharPredicate caseDelimiter, CharPredicate camelLower) {
     this.caseDelimiter = caseDelimiter;
     this.camelLower = camelLower;
   }
@@ -54,16 +65,16 @@ public final class CaseBreaker {
    * Returns a new instance using {@code caseDelimiter} to identify case delimiter characters, for
    * example if you need to respect CJK caseDelimiter characters.
    */
-  public CaseBreaker withCaseDelimiterChars(CodePointMatcher caseDelimiter) {
-    return new CaseBreaker(requireNonNull(caseDelimiter), camelLower);
+  public CaseBreaker withCaseDelimiterChars(CharMatcher caseDelimiter) {
+    return new CaseBreaker(caseDelimiter::matches, camelLower);
   }
 
   /**
    * Returns a new instance using {@code camelLower} to identify lower case characters (don't forget
    * to include digits if they should also be treated as lower case).
    */
-  public CaseBreaker withLowerCaseChars(CodePointMatcher camelLower) {
-    return new CaseBreaker(caseDelimiter, requireNonNull(camelLower));
+  public CaseBreaker withLowerCaseChars(CharMatcher camelLower) {
+    return new CaseBreaker(caseDelimiter, camelLower::matches);
   }
 
   /**
@@ -88,10 +99,29 @@ public final class CaseBreaker {
    */
   public Stream<String> breakCase(CharSequence text) {
     Substring.Pattern lowerTail = // The 'l' in 'camelCase', 'CamelCase', 'camel' or 'Camel'.
-        first(camelLower).withBoundary(CodePointMatcher.ANY, camelLower.negate());
-    return Substring.consecutive(caseDelimiter.negate())
+        first(camelLower).withBoundary(CharPredicate.ANY, camelLower.not());
+    return Substring.consecutive(caseDelimiter.not())
         .repeatedly()
         .from(text)
         .flatMap(upToIncluding(lowerTail.or(END)).repeatedly()::from);
+  }
+
+  /**
+   * Converts {@code input} string to using the given {@link CaseFormat}. {@code input} can be in
+   * snake_case, lowerCamelCase, UpperCamelCase, CONSTANT_CASE, dash-case, snake_case or any
+   * combination thereof. For example:
+   *
+   * <pre>{@code
+   * convertAsciiTo(LOWER_CAMEL, "user_id") => "userId"
+   * convertAsciiTo(LOWER_HYPHEN, "UserID") => "user-id"
+   * convertAsciiTo(UPPER_UNDERSCORE, "orderId") => "ORDER_ID"
+   * }</pre>
+   *
+   * <p>Behavior for non-ascii characters is undefined.
+   */
+  public String convertAsciiTo(CaseFormat format, CharSequence input) {
+    return CaseFormat.LOWER_UNDERSCORE
+        .converterTo(format)
+        .convert(breakCase(input).map(Ascii::toLowerCase).collect(joining("_")));
   }
 }

@@ -14,6 +14,8 @@
  *****************************************************************************/
 package com.google.mu.util;
 
+import static com.google.mu.util.CharPredicate.ALPHA;
+import static com.google.mu.util.CharPredicate.ASCII;
 import static java.lang.Math.max;
 import static java.util.Objects.requireNonNull;
 
@@ -25,7 +27,6 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.stream.Stream;
 
-import com.google.mu.util.Substring.Match;
 import com.google.mu.util.stream.BiStream;
 import com.google.mu.util.stream.MoreStreams;
 
@@ -204,11 +205,7 @@ public final class Substring {
     };
   }
 
-  /**
-   * Returns a {@code Pattern} that matches the first occurrence of {@code character}.
-   *
-   * <p>To work with supplementary characters, use {@link #first(CodePointMatcher)} instead.
-   */
+  /** Returns a {@code Pattern} that matches the first occurrence of {@code character}. */
   public static Pattern first(char character) {
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
@@ -227,17 +224,14 @@ public final class Substring {
    *
    * @since 6.0
    */
-  public static Pattern first(CodePointMatcher charMatcher) {
+  public static Pattern first(CharPredicate charMatcher) {
     requireNonNull(charMatcher);
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
-        for (int i = fromIndex; i < input.length(); ) {
-          int ch = input.codePointAt(i);
-          int width = Character.charCount(ch);
-          if (charMatcher.test(ch)) {
-            return new Match(input, i, width);
+        for (int i = fromIndex; i < input.length(); i++) {
+          if (charMatcher.test(input.charAt(i))) {
+            return new Match(input, i, 1);
           }
-          i += width;
         }
         return null;
       }
@@ -253,15 +247,16 @@ public final class Substring {
    *
    * @since 6.0
    */
-  public static Pattern last(CodePointMatcher charMatcher) {
+  public static Pattern last(CharPredicate charMatcher) {
     requireNonNull(charMatcher);
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
-        return CodePointUtils.backwardCodePointIndexes(input, fromIndex)
-            .filter(charMatcher)
-            .mapToObj(idx -> new Match(input, idx, Character.charCount(input.codePointAt(idx))))
-            .findFirst()
-            .orElse(null);
+        for (int i = input.length() - 1; i >= fromIndex; i--) {
+          if (charMatcher.test(input.charAt(i))) {
+            return new Match(input, i, 1);
+          }
+        }
+        return null;
       }
 
       @Override public String toString() {
@@ -291,7 +286,7 @@ public final class Substring {
    * @since 6.0
    */
   public static Pattern word() {
-    return consecutive(CodePointMatcher.WORD);
+    return consecutive(CharPredicate.WORD);
   }
 
   /**
@@ -314,7 +309,46 @@ public final class Substring {
    * @since 6.0
    */
   public static Pattern word(String word) {
-    return first(word).withBoundary(CodePointMatcher.WORD.negate());
+    return first(word).withBoundary(CharPredicate.WORD.not());
+  }
+
+  /**
+   * Returns a lazy stream of words split out from {@code text}, delimited by non-letter-digit ascii
+   * characters, and further split at lowerCamelCase and UpperCamelCase boundaries.
+   *
+   * <p>Examples:
+   *
+   * <pre>{@code
+   * breakCase("userId") => ["user", "Id"]
+   * breakCase("field_name") => ["field", "name"]
+   * breakCase("CONSTANT_NAME") => ["CONSTANT", "NAME"]
+   * breakCase("dash-case") => ["dash", "case"]
+   * breakCase("3 separate words") => ["3", "separate", "words"]
+   * breakCase("TheURLs") => ["The", "URLs"]
+   * breakCase("🅣ⓗⓔ🅤🅡🅛ⓢ") => ["🅣ⓗⓔ", "🅤🅡🅛ⓢ""]
+   * breakCase("UpgradeIPv4ToIPv6") => ["Upgrade", "IPv4", "To", "IPv6"]
+   * }</pre>
+   *
+   * <p>Besides used as word delimiters, non-letter-digit ascii characters are filtered out from the
+   * returned words.
+   *
+   * <p><b>Warning:</b> This method doesn't understand non-ascii punctuation characters (such as CJK
+   * punctuations and emoji), and keeps them as is without breaking around them.  Nor does it
+   * recognize <a
+   * href="https://docs.oracle.com/javase/8/docs/api/java/lang/Character.html#supplementary">supplementary
+   * characters</a>.
+   *
+   * @since 6.0
+   */
+  public static Stream<String> breakCase(CharSequence text) {
+    CharPredicate num = CharPredicate.range('0', '9');
+    CharPredicate lowerNum = num.or(Character::isLowerCase);
+    // The 'l' in 'camelCase', 'CamelCase', 'camel' or 'Camel'.
+    Pattern lowerTail = first(lowerNum).withBoundary(CharPredicate.ANY, lowerNum.not());
+    return consecutive(ALPHA.or(num).or(ASCII.not()))
+        .repeatedly()
+        .from(text)
+        .flatMap(upToIncluding(lowerTail.or(END)).repeatedly()::from);
   }
 
   /**
@@ -329,19 +363,15 @@ public final class Substring {
    *
    * @since 6.0
    */
-  public static Pattern leading(CodePointMatcher matcher) {
+  public static Pattern leading(CharPredicate matcher) {
     requireNonNull(matcher);
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
         int len = 0;
-        for (int i = fromIndex; i < input.length(); ) {
-          int ch = input.codePointAt(i);
-          if (!matcher.test(ch)) {
+        for (int i = fromIndex; i < input.length(); i++, len++) {
+          if (!matcher.test(input.charAt(i))) {
             break;
           }
-          int width = Character.charCount(ch);
-          i += width;
-          len += width;
         }
         return len == 0 ? null : new Match(input, fromIndex, len);
       }
@@ -363,15 +393,17 @@ public final class Substring {
    *
    * @since 6.0
    */
-  public static Pattern trailing(CodePointMatcher matcher) {
+  public static Pattern trailing(CharPredicate matcher) {
     requireNonNull(matcher);
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
-        return CodePointUtils.backwardCodePointIndexes(input, fromIndex)
-            .takeWhile(i -> matcher.test(input.codePointAt(i)))
-            .findLast()
-            .mapToObj(i -> new Match(input, i, input.length() - i))
-            .orElse(null);
+        int len = 0;
+        for (int i = input.length() - 1; i >= fromIndex; i--, len++) {
+          if (!matcher.test(input.charAt(i))) {
+            break;
+          }
+        }
+        return len == 0 ? null : new Match(input, input.length() - len, len);
       }
 
       @Override public String toString() {
@@ -396,28 +428,21 @@ public final class Substring {
    *
    * @since 6.0
    */
-  public static Pattern consecutive(CodePointMatcher matcher) {
+  public static Pattern consecutive(CharPredicate matcher) {
     requireNonNull(matcher);
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
         int end = input.length();
-        for (int i = fromIndex; i < end; ) {
-          int ch = input.codePointAt(i);
-          int width = Character.charCount(ch);
-          if (matcher.test(ch)) {
-            int len = width;
-            for (int j = i + width; j < end; ) {
-              int ch2 = input.codePointAt(j);
-              if (!matcher.test(ch2)) {
+        for (int i = fromIndex; i < end; i++) {
+          if (matcher.test(input.charAt(i))) {
+            int len = 1;
+            for (int j = i + 1; j < end; j++, len++) {
+              if (!matcher.test(input.charAt(j))) {
                 break;
               }
-              int width2 = Character.charCount(ch2);
-              j += width2;
-              len += width2;
             }
             return new Match(input, i, len);
           }
-          i += width;
         }
         return null;
       }
@@ -549,11 +574,7 @@ public final class Substring {
     };
   }
 
-  /**
-   * Returns a {@code Pattern} that matches the last occurrence of {@code character}.
-   *
-   * <p>To work with supplementary characters, use {@link #last(CodePointMatcher)} instead.
-   */
+  /** Returns a {@code Pattern} that matches the last occurrence of {@code character}. */
   public static Pattern last(char character) {
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
@@ -900,7 +921,7 @@ public final class Substring {
      *
      * @since 6.0
      */
-    public final Pattern withBoundary(CodePointMatcher boundary) {
+    public final Pattern withBoundary(CharPredicate boundary) {
       return withBoundary(boundary, boundary);
     }
 
@@ -919,15 +940,15 @@ public final class Substring {
      *
      * @since 6.0
      */
-    public final Pattern withBoundary(CodePointMatcher boundaryBefore, CodePointMatcher boundaryAfter) {
+    public final Pattern withBoundary(CharPredicate boundaryBefore, CharPredicate boundaryAfter) {
       requireNonNull(boundaryBefore);
       requireNonNull(boundaryAfter);
       Pattern target = this;
       return new Pattern() {
         @Override Match match(String input, int fromIndex) {
           while (fromIndex <= input.length()) {
-            if (fromIndex > 0 && !boundaryBefore.test(input.codePointBefore(fromIndex))) {
-              fromIndex += (fromIndex < input.length() ? Character.charCount(input.codePointAt(fromIndex)) : 1);
+            if (fromIndex > 0 && !boundaryBefore.test(input.charAt(fromIndex - 1))) {
+              fromIndex++;
               continue; // The current position cannot possibly be the beginning of match.
             }
             Match match = target.match(input, fromIndex);
@@ -935,15 +956,15 @@ public final class Substring {
               return null;
             }
             if (match.startIndex == fromIndex // Already checked boundaryBefore
-                || boundaryBefore.test(input.codePointBefore(match.startIndex))) {
+                || boundaryBefore.test(input.charAt(match.startIndex - 1))) {
               int boundaryIndex = match.endIndex;
               if (boundaryIndex >= input.length()
-                  || boundaryAfter.test(input.codePointAt(boundaryIndex))) {
+                  || boundaryAfter.test(input.charAt(boundaryIndex))) {
                 return match;
               }
             }
             // Boundary mismatch, skip the first matched char then try again.
-            fromIndex = match.startIndex + Character.charCount(input.codePointAt(match.startIndex));
+            fromIndex = match.startIndex + 1;
           }
           return null;
         }
@@ -1833,7 +1854,7 @@ public final class Substring {
         throw new IndexOutOfBoundsException(
             "Invalid index: begin (" + begin + ") > end (" + end + ")");
       }
-      return new Match(context, startIndex + begin, end - begin, repetitionStartIndex);
+      return new Match(context, startIndex + begin, end - begin);
     }
 
     /** Returns the matched substring. */
@@ -1850,7 +1871,23 @@ public final class Substring {
     }
 
     Match trim() {
-      return (Match) CodePointMatcher.of(Character::isWhitespace).trim(this);
+      int left = startIndex;
+      int right = endIndex - 1;
+      while (left <= right) {
+        if (Character.isWhitespace(context.charAt(left))) {
+          left++;
+          continue;
+        }
+        if (Character.isWhitespace(context.charAt(right))) {
+          right--;
+          continue;
+        }
+        break;
+      }
+      int trimmedLength = right - left + 1;
+      return trimmedLength == length()
+          ? this
+          : new Match(context, left, trimmedLength, repetitionStartIndex);
     }
 
     private Match toEnd() {
