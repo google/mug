@@ -105,6 +105,8 @@ public final class CaseBreakerTest {
   @Test public void testBreakCase_customCaseDelimiter() {
     assertThat(new CaseBreaker().withCaseDelimiterChars(CharMatcher.is('，')).breakCase("中，文"))
         .containsExactly("中", "文");
+    assertThat(new CaseBreaker().withCaseDelimiterChars(CharMatcher.is('–')).breakCase("100–200"))
+        .containsExactly("100", "200");
   }
 
   @Test public void testBreakCase_customCamelCase() {
