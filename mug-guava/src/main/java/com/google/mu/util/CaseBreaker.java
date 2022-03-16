@@ -29,14 +29,16 @@ import com.google.common.base.CharMatcher;
 import com.google.errorprone.annotations.CheckReturnValue;
 
 /**
- * Utility class to break input strings (normally identifier strings) in camelCase, UpperCamelCase,
- * snake_case, UPPER_SNAKE_CASE, dash-case etc.
+ * Utility to {@link #breakCase break} and {@link #convertAsciiTo convert} input strings (normally
+ * identifier strings) in {@code camelCase}, {@code UpperCamelCase}, {@code snake_case}, {@code
+ * UPPER_SNAKE_CASE} and {@code dash-case} etc.
  *
  * <p>By default, non-alphanumeric ascii characters are treated as case delimiter characters. And
- * {@link Character#isLowerCase JDK lower case} characters and ascii digits are considered to be
- * lower-case when breaking up camel case.
+ * <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Character.html#isLowerCase-char-">
+ * Java lower case</a> characters and ascii digits are considered to be lower case when breaking up
+ * camel case.
  *
- * <p>If the default settings don't work for you, they can be customized by using {@link
+ * <p>If the default setting doesn't work for you, it can be customized by using {@link
  * #withCaseDelimiterChars} and/or {@link #withLowerCaseChars}.
  *
  * <p><b>Warning:</b> This class doesn't recognize <a
