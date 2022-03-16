@@ -26,6 +26,7 @@ import java.util.stream.Stream;
 import com.google.common.base.Ascii;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.CharMatcher;
+import com.google.common.base.Converter;
 import com.google.errorprone.annotations.CheckReturnValue;
 
 /**
@@ -124,8 +125,15 @@ public final class CaseBreaker {
    * consider using {@link #breakCase} and then apply the upper-casing and lower-casing on the
    * broken-up words manually before joining them back to the target case.
    */
-  public String convertAsciiTo(CaseFormat format, CharSequence input) {
-    String snake = breakCase(input).map(Ascii::toLowerCase).collect(joining("_"));
-    return CaseFormat.LOWER_UNDERSCORE.converterTo(format).convert(snake);
+  public static String convertAsciiTo(CaseFormat format, CharSequence input) {
+    CharPredicate wordChar = ALPHA.or(NUM).or('-').or('_');
+    CaseBreaker breaker = new CaseBreaker()
+        .withCaseDelimiterChars(CharMatcher.anyOf("_-"))
+        .withLowerCaseChars(CharMatcher.inRange('a', 'z').or(CharMatcher.inRange('0', '9')));
+    Converter<String, String> converter = CaseFormat.LOWER_UNDERSCORE.converterTo(format);
+    return Substring.consecutive(wordChar)
+        .repeatedly()
+        .replaceAllFrom(input.toString(), w ->
+           converter.convert(breaker.breakCase(w).map(Ascii::toLowerCase).collect(joining("_"))));
   }
 }
