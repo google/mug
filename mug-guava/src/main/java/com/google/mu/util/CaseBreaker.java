@@ -122,8 +122,7 @@ public final class CaseBreaker {
    * <p>Behavior for non-ascii characters is undefined.
    */
   public String convertAsciiTo(CaseFormat format, CharSequence input) {
-    return CaseFormat.LOWER_UNDERSCORE
-        .converterTo(format)
-        .convert(breakCase(input).map(Ascii::toLowerCase).collect(joining("_")));
+    String snake = breakCase(input).map(Ascii::toLowerCase).collect(joining("_"));
+    return CaseFormat.LOWER_UNDERSCORE.converterTo(format).convert(snake);
   }
 }
