@@ -227,7 +227,7 @@ public final class CaseBreakerTest {
   @Test public void testToCase_inputIsMultipleWords() {
     assertThat(CaseBreaker.toCase(CaseFormat.LOWER_HYPHEN, "call CaseBreaker.toCase()"))
         .isEqualTo("call case-breaker.to-case()");
-    assertThat(CaseBreaker.toCase(CaseFormat.LOWER_HYPHEN, "调用：CaseBreaker.toCase()"))
-        .isEqualTo("调用：case-breaker.to-case()");
+    assertThat(CaseBreaker.toCase(CaseFormat.LOWER_UNDERSCORE, "调用：CASE_BREAKER.toCase()"))
+        .isEqualTo("调用：case_breaker.to_case()");
   }
 }
