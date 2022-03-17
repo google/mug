@@ -65,7 +65,7 @@ public final class CaseBreaker {
 
   /**
    * Returns a new instance using {@code caseDelimiter} to identify case delimiter characters, for
-   * example if you need to respect CJK caseDelimiter characters.
+   * example if you want to support dash-case using the en dash (–) character.
    */
   public CaseBreaker withCaseDelimiterChars(CharMatcher caseDelimiter) {
     return new CaseBreaker(caseDelimiter::matches, camelLower);
@@ -81,7 +81,7 @@ public final class CaseBreaker {
 
   /**
    * Returns a lazy stream of words split out from {@code text}, delimited by non-letter-digit ascii
-   * characters, and further split at lowerCamelCase and UpperCamelCase boundaries.
+   * characters, and further split at {@code lowerCamelCase} and {@code UpperCamelCase} boundaries.
    *
    * <p>Examples:
    *
