@@ -55,7 +55,7 @@ public final class CaseBreaker {
 
   public CaseBreaker() {
     this.caseDelimiter = ASCII.and(ALPHA.or(NUM).not());
-    this.camelLower = ((CharPredicate) Character::isLowerCase).or(NUM);
+    this.camelLower = NUM.or(Character::isLowerCase);
   }
 
   private CaseBreaker(CharPredicate caseDelimiter, CharPredicate camelLower) {
@@ -127,16 +127,18 @@ public final class CaseBreaker {
    * toCase(UPPER_UNDERSCORE, "orderId") => "ORDER_ID"
    * }</pre>
    *
-   * <p>Because {@link CaseFormat} only handles ascii, characters outside of the range of
-   * {@code [a-zA-Z0-9_-]} (e.g. whitespaces, parenthesis, non-ascii) are passed through as is.
-   * If you need to support non-ascii camel case such as Greek upper case ('Β') and lower case
-   * ('β'), consider using {@link #breakCase} to break up words in the source and then apply
-   * target casing manually using e.g. {@link Character#toLowerCase}.
+   * <p>Because {@link CaseFormat} only handles ascii, characters outside of the range of {@code
+   * [a-zA-Z0-9_-]} (e.g. whitespaces, parenthesis, non-ascii) are passed through as is. If you need
+   * to support non-ascii camel case such as Greek upper case ('Β') and lower case ('β'), consider
+   * using {@link #breakCase} to break up words in the source and then apply target casing manually
+   * using e.g. {@link Character#toLowerCase}.
    */
   public static String toCase(CaseFormat format, CharSequence input) {
-    CaseBreaker breaker = new CaseBreaker();
+    // Ascii char matchers are faster than the default.
+    CharPredicate caseDelimiter = CharMatcher.anyOf("_-")::matches;
+    CaseBreaker breaker = new CaseBreaker(caseDelimiter, NUM.or(Ascii::isLowerCase));
     Converter<String, String> fromSnake = CaseFormat.LOWER_UNDERSCORE.converterTo(format);
-    return Substring.consecutive(ALPHA.or(NUM).or('-').or('_'))
+    return Substring.consecutive(ALPHA.or(NUM).or(caseDelimiter))
         .repeatedly()
         .replaceAllFrom(input.toString(), w -> fromSnake.convert(breaker.toAsciiSnake(w)));
   }
