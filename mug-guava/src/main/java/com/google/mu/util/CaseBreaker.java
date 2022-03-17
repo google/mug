@@ -127,8 +127,11 @@ public final class CaseBreaker {
    * toCase(UPPER_UNDERSCORE, "orderId") => "ORDER_ID"
    * }</pre>
    *
-   * <p>Characters outside of the range of {@code [a-zA-Z0-9_-]} (e.g. whitespaces, parenthesis,
-   * non-ascii) are kept as is.
+   * <p>Because {@link CaseFormat} only handles ascii, characters outside of the range of
+   * {@code [a-zA-Z0-9_-]} (e.g. whitespaces, parenthesis, non-ascii) are passed through as is.
+   * If you need to support non-ascii camel case such as Greek upper case ('Β') and lower case
+   * ('β'), consider using {@link #breakCase} to break up words in the source and then apply
+   * target casing manually using e.g. {@link Character#toLowerCase}.
    */
   public static String toCase(CaseFormat format, CharSequence input) {
     CaseBreaker breaker = new CaseBreaker();
