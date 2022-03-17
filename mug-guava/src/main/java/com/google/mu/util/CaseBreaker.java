@@ -26,20 +26,16 @@ import java.util.stream.Stream;
 import com.google.common.base.Ascii;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.CharMatcher;
+import com.google.common.base.Converter;
 import com.google.errorprone.annotations.CheckReturnValue;
 
 /**
- * Utility to {@link #breakCase break} and {@link #convertAsciiTo convert} input strings (normally
+ * Utility to {@link #breakCase break} and {@link #toCase convert} input strings (normally
  * identifier strings) in {@code camelCase}, {@code UpperCamelCase}, {@code snake_case}, {@code
  * UPPER_SNAKE_CASE} and {@code dash-case} etc.
  *
- * <p>By default, non-alphanumeric ascii characters are treated as case delimiter characters. And
- * <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Character.html#isLowerCase-char-">
- * Java lower case</a> characters and ascii digits are considered to be lower case when breaking up
- * camel case.
- *
- * <p>If the default setting doesn't work for you, it can be customized by using {@link
- * #withCaseDelimiterChars} and/or {@link #withLowerCaseChars}.
+ * <p>Unlike {@link CaseFormat}, this class doesn't require you to know the input casing. You can
+ * take any string and then extract or convert into the target casing.
  *
  * <p><b>Warning:</b> This class doesn't recognize <a
  * href="https://docs.oracle.com/javase/8/docs/api/java/lang/Character.html#supplementary">supplementary
@@ -50,11 +46,13 @@ import com.google.errorprone.annotations.CheckReturnValue;
 @CheckReturnValue
 public final class CaseBreaker {
   private static final CharPredicate NUM = CharPredicate.range('0', '9');
+
+  /** For example, the '_' and '-' in snake_case and dash-case. */
   private final CharPredicate caseDelimiter;
+
+  /** By default, the lower-case and numeric characters that don't conclude a word in camelCase. */
   private final CharPredicate camelLower;
 
-  // Use javaLowerCase() to break 'αβΑβ' into ['αβ', 'Αβ'].
-  // We don't support supplemental codepoints due to the use of CharMatcher.
   public CaseBreaker() {
     this.caseDelimiter = ASCII.and(ALPHA.or(NUM).not());
     this.camelLower = ((CharPredicate) Character::isLowerCase).or(NUM);
@@ -88,18 +86,26 @@ public final class CaseBreaker {
    * <p>Examples:
    *
    * <pre>{@code
-   * breakCase("userId") => ["user", "Id"]
-   * breakCase("field_name") => ["field", "name"]
-   * breakCase("CONSTANT_NAME") => ["CONSTANT", "NAME"]
-   * breakCase("dash-case") => ["dash", "case"]
-   * breakCase("3 separate words") => ["3", "separate", "words"]
-   * breakCase("TheURLs") => ["The", "URLs"]
-   * breakCase("🅣ⓗⓔ🅤🅡🅛ⓢ") => ["🅣ⓗⓔ", "🅤🅡🅛ⓢ""]
+   * breakCase("userId")            => ["user", "Id"]
+   * breakCase("field_name")        => ["field", "name"]
+   * breakCase("CONSTANT_NAME")     => ["CONSTANT", "NAME"]
+   * breakCase("dash-case")         => ["dash", "case"]
+   * breakCase("3 separate words")  => ["3", "separate", "words"]
+   * breakCase("TheURLs")           => ["The", "URLs"]
+   * breakCase("🅣ⓗⓔ🅤🅡🅛ⓢ")      => ["🅣ⓗⓔ", "🅤🅡🅛ⓢ""]
    * breakCase("UpgradeIPv4ToIPv6") => ["Upgrade", "IPv4", "To", "IPv6"]
    * }</pre>
    *
+   * <p>By default, non-alphanumeric ascii characters are treated as case delimiter characters. And
+   * <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Character.html#isLowerCase-char-">
+   * Java lower case</a> characters and ascii digits are considered to be lower case when breaking up
+   * camel case.
+   *
    * <p>Besides used as case delimiters, non-letter-digit ascii characters are filtered out from the
    * returned words.
+   *
+   * <p>If the default setting doesn't work for you, it can be customized by using {@link
+   * #withCaseDelimiterChars} and/or {@link #withLowerCaseChars}.
    */
   public Stream<String> breakCase(CharSequence text) {
     Substring.Pattern lowerTail = // The 'l' in 'camelCase', 'CamelCase', 'camel' or 'Camel'.
@@ -112,21 +118,27 @@ public final class CaseBreaker {
 
   /**
    * Converts {@code input} string to using the given {@link CaseFormat}. {@code input} can be in
-   * snake_case, lowerCamelCase, UpperCamelCase, CONSTANT_CASE, dash-case, snake_case or any
-   * combination thereof. For example:
+   * {@code snake_case}, {@code lowerCamelCase}, {@code UpperCamelCase}, {@code CONSTANT_CASE},
+   * {@code dash-case} or any combination thereof. For example:
    *
    * <pre>{@code
-   * convertAsciiTo(LOWER_CAMEL, "user_id") => "userId"
-   * convertAsciiTo(LOWER_HYPHEN, "UserID") => "user-id"
-   * convertAsciiTo(UPPER_UNDERSCORE, "orderId") => "ORDER_ID"
+   * toCase(LOWER_CAMEL, "user_id")      => "userId"
+   * toCase(LOWER_HYPHEN, "UserID")      => "user-id"
+   * toCase(UPPER_UNDERSCORE, "orderId") => "ORDER_ID"
    * }</pre>
    *
-   * <p>Behavior for non-ascii characters is undefined. If you need to handle BMP characters,
-   * consider using {@link #breakCase} and then apply the upper-casing and lower-casing on the
-   * broken-up words manually before joining them back to the target case.
+   * <p>Characters outside of the range of {@code [a-zA-Z0-9_-]} (e.g. whitespaces, parenthesis,
+   * non-ascii) are kept as is.
    */
-  public String convertAsciiTo(CaseFormat format, CharSequence input) {
-    String snake = breakCase(input).map(Ascii::toLowerCase).collect(joining("_"));
-    return CaseFormat.LOWER_UNDERSCORE.converterTo(format).convert(snake);
+  public static String toCase(CaseFormat format, CharSequence input) {
+    CaseBreaker breaker = new CaseBreaker();
+    Converter<String, String> fromSnake = CaseFormat.LOWER_UNDERSCORE.converterTo(format);
+    return Substring.consecutive(ALPHA.or(NUM).or('-').or('_'))
+        .repeatedly()
+        .replaceAllFrom(input.toString(), w -> fromSnake.convert(breaker.toAsciiSnake(w)));
+  }
+
+  private String toAsciiSnake(CharSequence input) {
+    return breakCase(input).map(Ascii::toLowerCase).collect(joining("_"));
   }
 }

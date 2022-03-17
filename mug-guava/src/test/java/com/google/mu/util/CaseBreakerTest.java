@@ -1,6 +1,5 @@
 package com.google.mu.util;
 
-
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 
@@ -105,6 +104,8 @@ public final class CaseBreakerTest {
   @Test public void testBreakCase_customCaseDelimiter() {
     assertThat(new CaseBreaker().withCaseDelimiterChars(CharMatcher.is('，')).breakCase("中，文"))
         .containsExactly("中", "文");
+    assertThat(new CaseBreaker().withCaseDelimiterChars(CharMatcher.is('–')).breakCase("100–200"))
+        .containsExactly("100", "200");
   }
 
   @Test public void testBreakCase_customCamelCase() {
@@ -132,94 +133,101 @@ public final class CaseBreakerTest {
     assertThat(new CaseBreaker().breakCase("🔟💯")).containsExactly("🔟💯").inOrder();
   }
 
-  @Test public void testConvertAsciiToLowerCamelCase() {
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.LOWER_CAMEL, "")).isEmpty();
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.LOWER_CAMEL, "FOO")).isEqualTo("foo");
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.LOWER_CAMEL, "foo_bar"))
+  @Test public void testToCase_lowerCamelCase() {
+    assertThat(CaseBreaker.toCase(CaseFormat.LOWER_CAMEL, "")).isEmpty();
+    assertThat(CaseBreaker.toCase(CaseFormat.LOWER_CAMEL, "FOO")).isEqualTo("foo");
+    assertThat(CaseBreaker.toCase(CaseFormat.LOWER_CAMEL, "foo_bar"))
         .isEqualTo("fooBar");
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.LOWER_CAMEL, "fooBar"))
+    assertThat(CaseBreaker.toCase(CaseFormat.LOWER_CAMEL, "fooBar"))
         .isEqualTo("fooBar");
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.LOWER_CAMEL, "FooBar"))
+    assertThat(CaseBreaker.toCase(CaseFormat.LOWER_CAMEL, "FooBar"))
         .isEqualTo("fooBar");
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.LOWER_CAMEL, "FooBAR"))
+    assertThat(CaseBreaker.toCase(CaseFormat.LOWER_CAMEL, "FooBAR"))
         .isEqualTo("fooBar");
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.LOWER_CAMEL, "Foo-Bar"))
+    assertThat(CaseBreaker.toCase(CaseFormat.LOWER_CAMEL, "Foo-Bar"))
         .isEqualTo("fooBar");
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.LOWER_CAMEL, "this-Is-A-MixedCase"))
+    assertThat(CaseBreaker.toCase(CaseFormat.LOWER_CAMEL, "this-Is-A-MixedCase"))
         .isEqualTo("thisIsAMixedCase");
   }
 
-  @Test public void testConvertAsciiToUpperCamelCase() {
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.UPPER_CAMEL, "")).isEmpty();
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.UPPER_CAMEL, "foo")).isEqualTo("Foo");
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.UPPER_CAMEL, "foo_bar"))
+  @Test public void testToCase_upperCamelCase() {
+    assertThat(CaseBreaker.toCase(CaseFormat.UPPER_CAMEL, "")).isEmpty();
+    assertThat(CaseBreaker.toCase(CaseFormat.UPPER_CAMEL, "foo")).isEqualTo("Foo");
+    assertThat(CaseBreaker.toCase(CaseFormat.UPPER_CAMEL, "foo_bar"))
         .isEqualTo("FooBar");
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.UPPER_CAMEL, "fooBar"))
+    assertThat(CaseBreaker.toCase(CaseFormat.UPPER_CAMEL, "fooBar"))
         .isEqualTo("FooBar");
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.UPPER_CAMEL, "FooBar"))
+    assertThat(CaseBreaker.toCase(CaseFormat.UPPER_CAMEL, "FooBar"))
         .isEqualTo("FooBar");
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.UPPER_CAMEL, "FooBAR"))
+    assertThat(CaseBreaker.toCase(CaseFormat.UPPER_CAMEL, "FooBAR"))
         .isEqualTo("FooBar");
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.UPPER_CAMEL, "Foo-Bar"))
+    assertThat(CaseBreaker.toCase(CaseFormat.UPPER_CAMEL, "Foo-Bar"))
         .isEqualTo("FooBar");
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.UPPER_CAMEL, "this-Is-A-MixedCase"))
+    assertThat(CaseBreaker.toCase(CaseFormat.UPPER_CAMEL, "this-Is-A-MixedCase"))
         .isEqualTo("ThisIsAMixedCase");
   }
 
-  @Test public void testConvertAsciiToLowerUnderscore() {
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.LOWER_UNDERSCORE, "")).isEmpty();
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.LOWER_UNDERSCORE, "FOO"))
+  @Test public void testToCase_lowerUnderscore() {
+    assertThat(CaseBreaker.toCase(CaseFormat.LOWER_UNDERSCORE, "")).isEmpty();
+    assertThat(CaseBreaker.toCase(CaseFormat.LOWER_UNDERSCORE, "FOO"))
         .isEqualTo("foo");
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.LOWER_UNDERSCORE, "IPv4"))
+    assertThat(CaseBreaker.toCase(CaseFormat.LOWER_UNDERSCORE, "IPv4"))
         .isEqualTo("ipv4");
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.LOWER_UNDERSCORE, "userID"))
+    assertThat(CaseBreaker.toCase(CaseFormat.LOWER_UNDERSCORE, "userID"))
         .isEqualTo("user_id");
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.LOWER_UNDERSCORE, "foo_bar"))
+    assertThat(CaseBreaker.toCase(CaseFormat.LOWER_UNDERSCORE, "foo_bar"))
         .isEqualTo("foo_bar");
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.LOWER_UNDERSCORE, "fooBar"))
+    assertThat(CaseBreaker.toCase(CaseFormat.LOWER_UNDERSCORE, "fooBar"))
         .isEqualTo("foo_bar");
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.LOWER_UNDERSCORE, "FooBar"))
+    assertThat(CaseBreaker.toCase(CaseFormat.LOWER_UNDERSCORE, "FooBar"))
         .isEqualTo("foo_bar");
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.LOWER_UNDERSCORE, "FooBAR"))
+    assertThat(CaseBreaker.toCase(CaseFormat.LOWER_UNDERSCORE, "FooBAR"))
         .isEqualTo("foo_bar");
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.LOWER_UNDERSCORE, "Foo-Bar"))
+    assertThat(CaseBreaker.toCase(CaseFormat.LOWER_UNDERSCORE, "Foo-Bar"))
         .isEqualTo("foo_bar");
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.LOWER_UNDERSCORE, "this-Is-A_MixedCase"))
+    assertThat(CaseBreaker.toCase(CaseFormat.LOWER_UNDERSCORE, "this-Is-A_MixedCase"))
         .isEqualTo("this_is_a_mixed_case");
   }
 
-  @Test public void testConvertAsciiToUpperUnderscore() {
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.UPPER_UNDERSCORE, "")).isEmpty();
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.UPPER_UNDERSCORE, "foo"))
+  @Test public void testToCase_upperUnderscore() {
+    assertThat(CaseBreaker.toCase(CaseFormat.UPPER_UNDERSCORE, "")).isEmpty();
+    assertThat(CaseBreaker.toCase(CaseFormat.UPPER_UNDERSCORE, "foo"))
         .isEqualTo("FOO");
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.UPPER_UNDERSCORE, "foo_bar"))
+    assertThat(CaseBreaker.toCase(CaseFormat.UPPER_UNDERSCORE, "foo_bar"))
         .isEqualTo("FOO_BAR");
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.UPPER_UNDERSCORE, "fooBar"))
+    assertThat(CaseBreaker.toCase(CaseFormat.UPPER_UNDERSCORE, "fooBar"))
         .isEqualTo("FOO_BAR");
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.UPPER_UNDERSCORE, "FooBar"))
+    assertThat(CaseBreaker.toCase(CaseFormat.UPPER_UNDERSCORE, "FooBar"))
         .isEqualTo("FOO_BAR");
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.UPPER_UNDERSCORE, "FooBAR"))
+    assertThat(CaseBreaker.toCase(CaseFormat.UPPER_UNDERSCORE, "FooBAR"))
         .isEqualTo("FOO_BAR");
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.UPPER_UNDERSCORE, "Foo-Bar"))
+    assertThat(CaseBreaker.toCase(CaseFormat.UPPER_UNDERSCORE, "Foo-Bar"))
         .isEqualTo("FOO_BAR");
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.UPPER_UNDERSCORE, "this-Is-A_MixedCase"))
+    assertThat(CaseBreaker.toCase(CaseFormat.UPPER_UNDERSCORE, "this-Is-A_MixedCase"))
         .isEqualTo("THIS_IS_A_MIXED_CASE");
   }
 
-  @Test public void testConvertAsciiToLowerDashCase() {
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.LOWER_HYPHEN, "")).isEmpty();
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.LOWER_HYPHEN, "foo")).isEqualTo("foo");
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.LOWER_HYPHEN, "foo_bar"))
+  @Test public void testToCase_lowerDashCase() {
+    assertThat(CaseBreaker.toCase(CaseFormat.LOWER_HYPHEN, "")).isEmpty();
+    assertThat(CaseBreaker.toCase(CaseFormat.LOWER_HYPHEN, "foo")).isEqualTo("foo");
+    assertThat(CaseBreaker.toCase(CaseFormat.LOWER_HYPHEN, "foo_bar"))
         .isEqualTo("foo-bar");
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.LOWER_HYPHEN, "fooBar"))
+    assertThat(CaseBreaker.toCase(CaseFormat.LOWER_HYPHEN, "fooBar"))
         .isEqualTo("foo-bar");
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.LOWER_HYPHEN, "FooBar"))
+    assertThat(CaseBreaker.toCase(CaseFormat.LOWER_HYPHEN, "FooBar"))
         .isEqualTo("foo-bar");
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.LOWER_HYPHEN, "FooBAR"))
+    assertThat(CaseBreaker.toCase(CaseFormat.LOWER_HYPHEN, "FooBAR"))
         .isEqualTo("foo-bar");
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.LOWER_HYPHEN, "Foo-Bar"))
+    assertThat(CaseBreaker.toCase(CaseFormat.LOWER_HYPHEN, "Foo-Bar"))
         .isEqualTo("foo-bar");
-    assertThat(new CaseBreaker().convertAsciiTo(CaseFormat.LOWER_HYPHEN, "this-Is-A_MixedCase"))
+    assertThat(CaseBreaker.toCase(CaseFormat.LOWER_HYPHEN, "this-Is-A_MixedCase"))
         .isEqualTo("this-is-a-mixed-case");
+  }
+
+  @Test public void testToCase_inputIsMultipleWords() {
+    assertThat(CaseBreaker.toCase(CaseFormat.LOWER_HYPHEN, "call CaseBreaker.toCase()"))
+        .isEqualTo("call case-breaker.to-case()");
+    assertThat(CaseBreaker.toCase(CaseFormat.LOWER_UNDERSCORE, "调用：CASE_BREAKER.toCase()"))
+        .isEqualTo("调用：case_breaker.to_case()");
   }
 }
