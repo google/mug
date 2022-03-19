@@ -20,9 +20,7 @@ import static com.google.mu.util.CharPredicate.ASCII;
 import static com.google.mu.util.Substring.END;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.upToIncluding;
-import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.mapping;
 
 import java.util.stream.Collector;
 import java.util.stream.Stream;
@@ -31,6 +29,7 @@ import com.google.common.base.Ascii;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.CharMatcher;
 import com.google.errorprone.annotations.CheckReturnValue;
+import com.google.mu.util.stream.MoreCollectors;
 
 /**
  * Utility to {@link #breakCase break} and {@link #toCase convert} input strings (normally
@@ -141,9 +140,8 @@ public final class CaseBreaker {
     // Ascii char matchers are faster than the default.
     CharPredicate caseDelimiter = CharMatcher.anyOf("_-")::matches;
     CaseBreaker breaker = new CaseBreaker(caseDelimiter, NUM.or(Ascii::isLowerCase));
-    Collector<CharSequence, ?, String> toCaseFormat =
-        collectingAndThen(
-            mapping(Ascii::toLowerCase, joining("_")), LOWER_UNDERSCORE.converterTo(caseFormat));
+    Collector<String, ?, String> toCaseFormat = MoreCollectors.mapping(
+       Ascii::toLowerCase, joining("_"), LOWER_UNDERSCORE.converterTo(caseFormat));
     return Substring.consecutive(ALPHA.or(NUM).or(caseDelimiter))
         .repeatedly()
         .replaceAllFrom(input.toString(), w -> breaker.breakCase(w).collect(toCaseFormat));
