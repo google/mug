@@ -14,11 +14,13 @@
  *****************************************************************************/
 package com.google.mu.util;
 
+import static com.google.common.base.CaseFormat.LOWER_UNDERSCORE;
 import static com.google.mu.util.CharPredicate.ALPHA;
 import static com.google.mu.util.CharPredicate.ASCII;
 import static com.google.mu.util.Substring.END;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.upToIncluding;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 
 import java.util.stream.Stream;
@@ -26,7 +28,6 @@ import java.util.stream.Stream;
 import com.google.common.base.Ascii;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.CharMatcher;
-import com.google.common.base.Converter;
 import com.google.errorprone.annotations.CheckReturnValue;
 
 /**
@@ -122,25 +123,28 @@ public final class CaseBreaker {
    * {@code dash-case} or any combination thereof. For example:
    *
    * <pre>{@code
-   * toCase(LOWER_CAMEL, "user_id")      => "userId"
-   * toCase(LOWER_HYPHEN, "UserID")      => "user-id"
-   * toCase(UPPER_UNDERSCORE, "orderId") => "ORDER_ID"
+   * toCase(LOWER_CAMEL, "user_id")                 => "userId"
+   * toCase(LOWER_HYPHEN, "UserID")                 => "user-id"
+   * toCase(UPPER_UNDERSCORE, "orderId")            => "ORDER_ID"
+   * toCase(LOWER_UNDERSCORE, "primaryUser.userId") => "primary_user.user_id"
    * }</pre>
    *
-   * <p>Because {@link CaseFormat} only handles ascii, characters outside of the range of {@code
+   * <p>Given that {@link CaseFormat} only handles ascii, characters outside of the range of {@code
    * [a-zA-Z0-9_-]} (e.g. whitespaces, parenthesis, non-ascii) are passed through as is. If you need
    * to support non-ascii camel case such as Greek upper case ('Β') and lower case ('β'), consider
    * using {@link #breakCase} to break up words in the source and then apply target casing manually
    * using e.g. {@link Character#toLowerCase}.
    */
-  public static String toCase(CaseFormat format, CharSequence input) {
+  public static String toCase(CaseFormat caseFormat, CharSequence input) {
+    requireNonNull(caseFormat);
     // Ascii char matchers are faster than the default.
     CharPredicate caseDelimiter = CharMatcher.anyOf("_-")::matches;
     CaseBreaker breaker = new CaseBreaker(caseDelimiter, NUM.or(Ascii::isLowerCase));
-    Converter<String, String> fromSnake = CaseFormat.LOWER_UNDERSCORE.converterTo(format);
     return Substring.consecutive(ALPHA.or(NUM).or(caseDelimiter))
         .repeatedly()
-        .replaceAllFrom(input.toString(), w -> fromSnake.convert(breaker.toAsciiSnake(w)));
+        .replaceAllFrom(
+            input.toString(),
+            w -> LOWER_UNDERSCORE.to(caseFormat, breaker.toAsciiSnake(w)));
   }
 
   private String toAsciiSnake(CharSequence input) {

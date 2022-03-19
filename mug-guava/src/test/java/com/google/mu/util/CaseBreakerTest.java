@@ -9,6 +9,7 @@ import org.junit.runners.JUnit4;
 
 import com.google.common.base.CaseFormat;
 import com.google.common.base.CharMatcher;
+import com.google.common.testing.NullPointerTester;
 
 @RunWith(JUnit4.class)
 public final class CaseBreakerTest {
@@ -229,5 +230,10 @@ public final class CaseBreakerTest {
         .isEqualTo("call case-breaker.to-case()");
     assertThat(CaseBreaker.toCase(CaseFormat.LOWER_UNDERSCORE, "调用：CASE_BREAKER.toCase()"))
         .isEqualTo("调用：case_breaker.to_case()");
+  }
+
+  @Test public void testNulls() {
+    new NullPointerTester().testAllPublicStaticMethods(CaseBreaker.class);
+    new NullPointerTester().testAllPublicInstanceMethods(new CaseBreaker());
   }
 }
