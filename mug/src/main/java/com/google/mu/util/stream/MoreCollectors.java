@@ -59,7 +59,7 @@ public final class MoreCollectors {
       Collector<T, ?, T1> collector,
       Function<? super T1, R> outputMapper) {
     return Collectors.collectingAndThen(
-        Collectors.mapping(inputMapper, collector), outputMapper::apply);
+        Collectors.mapping(requireNonNull(inputMapper), collector), outputMapper::apply);
   }
 
   /**
