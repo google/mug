@@ -55,9 +55,9 @@ public final class MoreCollectors {
    * @since 6.0
    */
   public static <F, T, T1, R> Collector<F, ?, R> mapping(
-      Function<F, ? extends T> inputMapper,
+      Function<? super F, ? extends T> inputMapper,
       Collector<T, ?, T1> collector,
-      Function<? super T1, R> outputMapper) {
+      Function<? super T1, ? extends R> outputMapper) {
     return Collectors.collectingAndThen(
         Collectors.mapping(requireNonNull(inputMapper), collector), outputMapper::apply);
   }
