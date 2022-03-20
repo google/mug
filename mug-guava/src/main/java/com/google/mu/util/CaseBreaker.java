@@ -136,7 +136,7 @@ public final class CaseBreaker {
    * using {@link #breakCase} to break up words in the source and then apply target casing manually
    * using e.g. {@link Character#toLowerCase}.
    */
-  public static String toCase(CaseFormat caseFormat, CharSequence input) {
+  public static String toCase(CaseFormat caseFormat, String input) {
     // Ascii char matchers are faster than the default.
     CharPredicate caseDelimiter = CharMatcher.anyOf("_-")::matches;
     CaseBreaker breaker = new CaseBreaker(caseDelimiter, NUM.or(Ascii::isLowerCase));
@@ -144,6 +144,6 @@ public final class CaseBreaker {
        Ascii::toLowerCase, joining("_"), LOWER_UNDERSCORE.converterTo(caseFormat));
     return Substring.consecutive(ALPHA.or(NUM).or(caseDelimiter))
         .repeatedly()
-        .replaceAllFrom(input.toString(), w -> breaker.breakCase(w).collect(toCaseFormat));
+        .replaceAllFrom(input, w -> breaker.breakCase(w).collect(toCaseFormat));
   }
 }
