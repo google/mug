@@ -20,15 +20,16 @@ import static com.google.mu.util.CharPredicate.ASCII;
 import static com.google.mu.util.Substring.END;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.upToIncluding;
-import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 
+import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import com.google.common.base.Ascii;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.CharMatcher;
 import com.google.errorprone.annotations.CheckReturnValue;
+import com.google.mu.util.stream.MoreCollectors;
 
 /**
  * Utility to {@link #breakCase break} and {@link #toCase convert} input strings (normally
@@ -135,19 +136,14 @@ public final class CaseBreaker {
    * using {@link #breakCase} to break up words in the source and then apply target casing manually
    * using e.g. {@link Character#toLowerCase}.
    */
-  public static String toCase(CaseFormat caseFormat, CharSequence input) {
-    requireNonNull(caseFormat);
+  public static String toCase(CaseFormat caseFormat, String input) {
     // Ascii char matchers are faster than the default.
     CharPredicate caseDelimiter = CharMatcher.anyOf("_-")::matches;
     CaseBreaker breaker = new CaseBreaker(caseDelimiter, NUM.or(Ascii::isLowerCase));
+    Collector<String, ?, String> toCaseFormat = MoreCollectors.mapping(
+       Ascii::toLowerCase, joining("_"), LOWER_UNDERSCORE.converterTo(caseFormat));
     return Substring.consecutive(ALPHA.or(NUM).or(caseDelimiter))
         .repeatedly()
-        .replaceAllFrom(
-            input.toString(),
-            w -> LOWER_UNDERSCORE.to(caseFormat, breaker.toAsciiSnake(w)));
-  }
-
-  private String toAsciiSnake(CharSequence input) {
-    return breakCase(input).map(Ascii::toLowerCase).collect(joining("_"));
+        .replaceAllFrom(input, w -> breaker.breakCase(w).collect(toCaseFormat));
   }
 }

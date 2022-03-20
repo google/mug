@@ -49,6 +49,20 @@ import com.google.mu.util.MoreCollections;
  */
 public final class MoreCollectors {
   /**
+   * Returns a collector that uses {@code inputMapper} function to transform each input, and finally
+   * uses {@code outputMapper} to transform the output of the given {@code collector}.
+   *
+   * @since 6.0
+   */
+  public static <F, T, T1, R> Collector<F, ?, R> mapping(
+      Function<? super F, ? extends T> inputMapper,
+      Collector<T, ?, T1> collector,
+      Function<? super T1, ? extends R> outputMapper) {
+    return Collectors.collectingAndThen(
+        Collectors.mapping(requireNonNull(inputMapper), collector), outputMapper::apply);
+  }
+
+  /**
    * Analogous to {@link Collectors#mapping Collectors.mapping()}, applies a mapping function to
    * each input element before accumulation, except that the {@code mapper} function returns a
    * <em><b>pair of elements</b></em>, which are then accumulated by a <em>BiCollector</em>.
