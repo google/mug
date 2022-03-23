@@ -54,6 +54,15 @@ public interface BiComparator<K, V> {
   }
 
   /**
+   * Returns a {@code BiComparator} that compares by the key of the key-value pairs.
+   *
+   * @since 6.0
+   */
+  static <K extends Comparable<K>> BiComparator<K, Object> comparingKey() {
+    return comparingKey(naturalOrder());
+  }
+
+  /**
    * Returns a {@code BiComparator} that first transforms the key element of type {@code K} using
    * {@code function} and then compares the result of {@code function}.
    */
@@ -77,6 +86,15 @@ public interface BiComparator<K, V> {
    */
   static <K> BiComparator<K, Object> comparingKey(Comparator<? super K> ordering) {
     return comparing((k, v) -> k, ordering);
+  }
+
+  /**
+   * Returns a {@code BiComparator} that compares by the value of the key-value pairs.
+   *
+   * @since 6.0
+   */
+  static <V extends Comparable<V>> BiComparator<Object, V> comparingValue() {
+    return comparingValue(naturalOrder());
   }
 
   /**
@@ -133,5 +151,22 @@ public interface BiComparator<K, V> {
     requireNonNull(toKey);
     requireNonNull(toValue);
     return (e1, e2) -> compare(toKey.apply(e1), toValue.apply(e1), toKey.apply(e2), toValue.apply(e2));
+  }
+
+  /**
+   * Returns a {@code BiComparator} that reverses the order specified by this comparator.
+   *
+   * @since 6.0
+   */
+  default BiComparator<K, V> reversed() {
+    BiComparator<K, V> self = this;
+    return new BiComparator<K, V>() {
+      @Override public int compare(K k1, V v1, K k2, V v2) {
+        return self.compare(k2, v2, k1, v1);
+      }
+      @Override public BiComparator<K, V> reversed() {
+        return self;
+      }
+    };
   }
 }

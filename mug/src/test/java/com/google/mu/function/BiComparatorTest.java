@@ -120,6 +120,18 @@ public class BiComparatorTest {
     assertThat(ordering.compare("a", 4, "a", 3)).isGreaterThan(0);
   }
 
+  @Test public void reversed_comparing() {
+    BiComparator<Object, Object> ordering = comparingKey(Object::toString).reversed();
+    assertThat(ordering.compare("a", 1, "b", 1)).isGreaterThan(0);
+    assertThat(ordering.compare("a", 3, "a", 2)).isEqualTo(0);
+    assertThat(ordering.compare("b", 4, "a", 1)).isLessThan(0);
+  }
+
+  @Test public void reversed_reversed() {
+    BiComparator<Object, Object> ordering = comparingKey(Object::toString);
+    assertThat(ordering.reversed().reversed()).isSameAs(ordering);
+  }
+
   @Test public void testNuls() {
     new NullPointerTester().testAllPublicStaticMethods(BiComparator.class);
     new NullPointerTester()

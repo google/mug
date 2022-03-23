@@ -16,8 +16,12 @@ package com.google.mu.util.stream;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static com.google.mu.function.BiComparator.comparingKey;
+import static com.google.mu.function.BiComparator.comparingValue;
 import static com.google.mu.util.stream.BiCollectors.collectingAndThen;
 import static com.google.mu.util.stream.BiCollectors.groupingBy;
+import static com.google.mu.util.stream.BiCollectors.maxBy;
+import static com.google.mu.util.stream.BiCollectors.minBy;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.BiStreamTest.assertKeyValues;
@@ -342,6 +346,66 @@ public class BiCollectorsTest {
     assertThat(result)
         .containsExactly("Joe:1", "Tom:2")
         .inOrder();
+  }
+
+  @Test public void testMaxByKey_found() {
+    assertThat(BiStream.of(1, "y", 2, "x").collect(maxBy(comparingKey())))
+        .isEqualTo(BiOptional.of(2, "x"));
+  }
+
+ @Test public void testMaxByKey_multipleMax_firstWins() {
+    assertThat(BiStream.of(1, "y", 2, "x", 2, "a").collect(maxBy(comparingKey())))
+        .isEqualTo(BiOptional.of(2, "x"));
+  }
+
+ @Test public void testMaxByKey_notFound() {
+    assertThat(BiStream.<String, Integer>empty().collect(maxBy(comparingKey())))
+        .isEqualTo(BiOptional.empty());
+  }
+
+ @Test public void testMinByKey_found() {
+    assertThat(BiStream.of(1, "y", 2, "x").collect(minBy(comparingKey())))
+        .isEqualTo(BiOptional.of(1, "y"));
+  }
+
+ @Test public void testMinByKey_multipleMin_firstWins() {
+    assertThat(BiStream.of(1, "y", 2, "x", 1, "a").collect(minBy(comparingKey())))
+        .isEqualTo(BiOptional.of(1, "y"));
+  }
+
+ @Test public void testMinByKey_notFound() {
+    assertThat(BiStream.<String, Integer>empty().collect(minBy(comparingKey())))
+        .isEqualTo(BiOptional.empty());
+  }
+
+ @Test public void testMaxByValue_found() {
+    assertThat(BiStream.of(1, "y", 2, "x").collect(maxBy(comparingValue())))
+        .isEqualTo(BiOptional.of(1, "y"));
+  }
+
+ @Test public void testMaxByValue_multipleMax_firstWins() {
+    assertThat(BiStream.of(1, "y", 2, "x", 3, "y").collect(maxBy(comparingValue())))
+        .isEqualTo(BiOptional.of(1, "y"));
+  }
+
+ @Test public void testMaxByValue_notFound() {
+    assertThat(BiStream.<String, Integer>empty().collect(maxBy(comparingValue())))
+        .isEqualTo(BiOptional.empty());
+  }
+
+ @Test public void testMinByValue_found() {
+    assertThat(BiStream.of(1, "y", 2, "x").collect(minBy(comparingValue())))
+        .isEqualTo(BiOptional.of(2, "x"));
+  }
+
+ @Test public void testMinByValue_multipleMin_firstWins() {
+    assertThat(BiStream.of(1, "y", 2, "x", 3, "x").collect(minBy(comparingValue())))
+        .isEqualTo(BiOptional.of(2, "x"));
+  }
+
+ @Test public void testMinByValue_notFound() {
+    assertThat(BiStream.<String, Integer>empty().collect(minBy(comparingValue())))
+        .isEqualTo(BiOptional.empty());
   }
 
   private static <K, V> BiCollector<K, V, LinkedHashMap<K, V>> toLinkedHashMap() {

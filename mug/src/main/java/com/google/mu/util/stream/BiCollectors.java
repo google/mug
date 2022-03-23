@@ -35,6 +35,8 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.google.mu.function.BiComparator;
+import com.google.mu.util.BiOptional;
 import com.google.mu.util.Both;
 
 /**
@@ -607,6 +609,39 @@ public final class BiCollectors {
     return flatMapping(
         flattener.andThen(BiStream::mapToEntry),
         downstream.<Map.Entry<? extends K1, ? extends V1>>splitting(Map.Entry::getKey, Map.Entry::getValue));
+  }
+
+  /**
+   * Returns a {@link BiCollector} that finds the maximum pair according to {@code comparator}.
+   *
+   * <p>Null keys and values are not supported.
+   *
+   * @since 6.0
+   */
+  public static <K, V> BiCollector<K, V, BiOptional<K, V>> maxBy(
+      BiComparator<? super K, ? super V> comparator) {
+    requireNonNull(comparator);
+    return new BiCollector<K, V, BiOptional<K, V>>() {
+      @Override
+      public <E> Collector<E, ?, BiOptional<K, V>> splitting(
+          Function<E, K> toKey, Function<E, V> toValue) {
+        return Collectors.collectingAndThen(
+            Collectors.maxBy((e1, e2) -> comparator.compare(toKey.apply(e1), toValue.apply(e1), toKey.apply(e2), toValue.apply(e2))),
+            optional -> BiOptional.from(optional).map(toKey, toValue));
+      }
+    };
+  }
+
+  /**
+   * Returns a {@link BiCollector} that finds the minimum pair according to {@code comparator}.
+   *
+   * <p>Null keys and values are not supported.
+   *
+   * @since 6.0
+   */
+  public static <K, V> BiCollector<K, V, BiOptional<K, V>> minBy(
+      BiComparator<? super K, ? super V> comparator) {
+    return maxBy(comparator.reversed());
   }
 
   private BiCollectors() {}
