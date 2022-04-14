@@ -68,6 +68,25 @@ public final class Optionals {
    * Returns a {@link Set} view of {@code optional} that contains the optional's value if present,
    * or else returns an empty set.
    *
+   * <p>This is useful when you are trying to apply some side-effects on the value contained in the
+   * {@code Optional}: <pre>{@code
+   * for (Foo foo : asSet(optionalFoo)) {
+   *   // ...
+   * }
+   * }</pre>
+   *
+   * While you could use {@code optional.ifPresent(v -> ...)}, the lambda has limitations
+   * (no checked exceptions etc.). The body of the lambda can also become unwieldy if there are
+   * more than 5 lines of code, with conditionals and what not.
+   *
+   * <p>If you need to add the Optional's contained value into another collection, consider
+   * {@code results.addAll(asSet(optional))}. The {@code addAll()} side effect stands out
+   * more crisply than in {@code optional.ifPresent(results::add)} where the important data
+   * flow into the {@code results} collection is somewhat buried and easy to miss.
+   *
+   * <p>Lastly, if you need to check whether the optional contains a particular value, consider using
+   * {@code asSet(optional).contains(value)}.
+   *
    * @since 6.1
    */
   public static <T> Set<T> asSet(Optional<? extends T> optional) {
