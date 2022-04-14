@@ -16,10 +16,12 @@ package com.google.mu.util;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Collections;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import java.util.Set;
 
 import com.google.mu.function.CheckedBiConsumer;
 import com.google.mu.function.CheckedBiFunction;
@@ -60,6 +62,16 @@ public final class Optionals {
    */
   public static <T> Optional<T> optional(boolean condition, T value) {
     return condition ? Optional.ofNullable(value) : Optional.empty();
+  }
+
+  /**
+   * Returns a {@link Set} view of {@code optional} that contains the optional's value if present,
+   * or else returns an empty set.
+   *
+   * @since 6.1
+   */
+  public static <T> Set<T> asSet(Optional<? extends T> optional) {
+    return optional.isPresent() ? Collections.singleton(optional.get()) : Collections.emptySet();
   }
 
   /**
