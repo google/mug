@@ -65,8 +65,8 @@ public final class Optionals {
   }
 
   /**
-   * Returns a {@link Set} view of {@code optional} that contains the optional's value if present,
-   * or else returns an empty set.
+   * Returns an immutable singleton {@link Set} whose only element is the contained instance if it
+   * is present; an empty immutable {@link Set} otherwise.
    *
    * <p>This is useful when you are trying to apply some side-effects on the value contained in the
    * {@code Optional}: <pre>{@code
@@ -290,7 +290,7 @@ public final class Optionals {
    * {@code Optional.empty()}.
    *
    * @since 3.8
-   * @deprecated Use {@link BiOptional#both} instead.
+   * @deprecated Use {@link #both} instead.
    */
   @Deprecated
   public static <A, B, R, E extends Throwable> Optional<R> mapBoth(
@@ -312,7 +312,7 @@ public final class Optionals {
    *
    * @throws NullPointerException if {@code mapper} returns null
    * @since 3.8
-   * @deprecated Use {@link BiOptional#both} instead.
+   * @deprecated Use {@link #both} instead.
    */
   @Deprecated
   public static <A, B, R, E extends Throwable> Optional<R> flatMapBoth(
