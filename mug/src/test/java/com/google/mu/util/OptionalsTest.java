@@ -68,6 +68,14 @@ public class OptionalsTest {
     assertThat(optional(true, "v")).hasValue("v");
   }
 
+  @Test public void asSet_empty() {
+    assertThat(Optionals.asSet(Optional.empty())).isEmpty();
+  }
+
+  @Test public void asSet_notEmpty() {
+    assertThat(Optionals.asSet(Optional.of(123))).containsExactly(123);
+  }
+
   @Test public void ifPresent_or_firstIsAbsent_secondSupplierIsPresent() {
     ifPresent(Optional.empty(), consumer::accept)
         .or(() -> ifPresent(Optional.of("left"), Optional.of("right"), action::run))

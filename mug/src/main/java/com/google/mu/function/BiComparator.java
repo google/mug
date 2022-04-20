@@ -54,15 +54,6 @@ public interface BiComparator<K, V> {
   }
 
   /**
-   * Returns a {@code BiComparator} that compares by the key of the key-value pairs.
-   *
-   * @since 6.0
-   */
-  static <K extends Comparable<K>> BiComparator<K, Object> comparingKey() {
-    return comparingKey(naturalOrder());
-  }
-
-  /**
    * Returns a {@code BiComparator} that first transforms the key element of type {@code K} using
    * {@code function} and then compares the result of {@code function}.
    */
@@ -86,15 +77,6 @@ public interface BiComparator<K, V> {
    */
   static <K> BiComparator<K, Object> comparingKey(Comparator<? super K> ordering) {
     return comparing((k, v) -> k, ordering);
-  }
-
-  /**
-   * Returns a {@code BiComparator} that compares by the value of the key-value pairs.
-   *
-   * @since 6.0
-   */
-  static <V extends Comparable<V>> BiComparator<Object, V> comparingValue() {
-    return comparingValue(naturalOrder());
   }
 
   /**
