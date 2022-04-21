@@ -346,6 +346,26 @@ public final class BiCollectors {
   }
 
   /**
+   * Groups input pairs by {@code classifier} and collects entries belonging to the same group into
+   * a nested {@link BiStream}. For example, you can break a {@link Map} into an {@link
+   * ImmutableTable} with:
+   *
+   * <pre>{@code
+   * Map<City, Long> cityPopulations = ...;
+   * ImmutableTable<State, City, Long> stateCityPoulations =
+   *     BiStream.from(cityPopulations)
+   *         .collect(groupingBy((city, population) -> city.getState()))
+   *         .collect(GuavaCollectors.toImmutableTable());
+   * }</pre>
+   *
+   * @since 6.1
+   */
+  public static <R, C, V> BiCollector<C, V, BiStream<R, BiStream<C, V>>> groupingBy(
+      BiFunction<? super C, ? super V, ? extends R> classifier) {
+    return groupingBy(classifier, BiStream::toBiStream);
+  }
+
+  /**
    * Groups input entries by {@code classifier} and collects entries belonging to the same group
    * using {@code groupCollector}. For example, the following code splits a phone book by area code:
    *
