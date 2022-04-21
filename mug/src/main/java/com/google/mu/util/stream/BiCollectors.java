@@ -347,7 +347,7 @@ public final class BiCollectors {
 
   /**
    * Groups input pairs by {@code classifier} and collects entries belonging to the same group into
-   * a nested {@link BiStream}. For example, you can break a {@link Map} into an {@link
+   * a nested {@link BiStream}. For example, you can break a {@link Map} into an {@code
    * ImmutableTable} with:
    *
    * <pre>{@code
