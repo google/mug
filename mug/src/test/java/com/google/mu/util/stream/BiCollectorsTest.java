@@ -270,6 +270,18 @@ public class BiCollectorsTest {
         .containsExactly(2, ImmutableSetMultimap.of(1, 3, 2, 4), 100, ImmutableSetMultimap.of(11, 111));
   }
 
+  @Test public void testGroupingBy_toNestedBiStream() {
+    Map<Integer, Map<Integer, Integer>> nested =
+        BiStream.of(1, 3, 2, 4, 11, 111)
+            .collect(groupingBy((a, b) -> b - a))
+            .mapValues(BiStream::toMap)
+            .toMap();
+    assertThat(nested)
+        .containsExactly(
+            2, ImmutableMap.of(1, 3, 2, 4),
+            100, ImmutableMap.of(11, 111));
+  }
+
   @Test public void testGroupingBy_withReducer_empty() {
     BiStream<String, Integer> salaries = BiStream.empty();
     assertKeyValues(salaries.collect(groupingBy(s -> s.charAt(0), (a, b) -> a + b))).isEmpty();
