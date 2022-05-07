@@ -14,10 +14,10 @@
  *****************************************************************************/
 package com.google.mu.util;
 
+import static com.google.mu.util.InternalCollectors.toImmutableList;
 import static java.lang.Math.max;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.toList;
 
 import java.util.Iterator;
 import java.util.Objects;
@@ -522,11 +522,8 @@ public final class Substring {
    */
   public static Collector<Pattern, ?, Pattern> firstOccurrence() {
     return collectingAndThen(
-        toList(),
+        toImmutableList(),
         candidates -> {
-          for (Pattern candidate : candidates) {
-            requireNonNull(candidate);
-          }
           return new Pattern() {
             @Override
             Match match(String input, int fromIndex) {
@@ -534,13 +531,14 @@ public final class Substring {
               Match best = null;
               for (Pattern candidate : candidates) {
                 Match match = candidate.match(input, fromIndex);
-                if (match != null) {
-                  if (match.index() == fromIndex) { // First occurrence for sure.
-                    return match;
-                  }
-                  if (best == null || match.index() < best.index()) {
-                    best = match;
-                  }
+                if (match == null) {
+                  continue;
+                }
+                if (match.index() == fromIndex) { // First occurrence for sure.
+                  return match;
+                }
+                if (best == null || match.index() < best.index()) {
+                  best = match;
                 }
               }
               return best;
@@ -548,7 +546,7 @@ public final class Substring {
 
             @Override
             public String toString() {
-              return "firstOccurrence(" + candidates + ")";
+              return "firstOccurrenceOf(" + candidates + ")";
             }
           };
         });
