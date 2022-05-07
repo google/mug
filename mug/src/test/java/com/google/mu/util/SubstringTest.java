@@ -2552,10 +2552,13 @@ public class SubstringTest {
         delim.repeatedly()
             .splitThenTrim(input)
             .collect(MoreCollectors.mapping(
-                seg -> first(':').splitThenTrim(seg).orElseThrow(() -> new IllegalArgumentException("Bad seg: '" + seg + "'")),
+                seg -> first(':')
+                    .splitThenTrim(seg)
+                    .orElseThrow(() -> new IllegalArgumentException("Bad seg: '" + seg + "'")),
                 ImmutableMap::toImmutableMap));
     assertThat(keyValues)
-        .containsExactly("a", "my name:age", "artist", "another name", "playlist id", "foo bar");
+        .containsExactly("playlist id", "foo bar", "artist", "another name", "a", "my name:age")
+        .inOrder();
   }
 
   @Test
