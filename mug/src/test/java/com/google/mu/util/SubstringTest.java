@@ -19,6 +19,7 @@ import static com.google.mu.util.Substring.trailing;
 import static com.google.mu.util.Substring.upToIncluding;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.Spliterator;
 import java.util.function.Function;
@@ -1624,6 +1625,22 @@ public class SubstringTest {
     BiStream<String, String> kvs =
         first(',').repeatedly().splitThenTrimKeyValuesAround(first('='), "k:v");
     assertThrows(IllegalArgumentException.class, () -> kvs.toMap());
+  }
+
+  @Test public void repeatedly_splitAlternatingKeyValues_empty() {
+    assertKeyValues(first(',').repeatedly().splitAlternatingKeyValues(""))
+        .isEmpty();
+  }
+
+  @Test public void repeatedly_splitAlternatingKeyValues() {
+    Substring.Pattern bulletNumber = consecutive(CharPredicate.range('0', '9'))
+        .withBoundary(CharPredicate.WORD.not(), CharPredicate.is(':'));
+    Map<Integer, String> bulleted = bulletNumber.repeatedly()
+        .splitAlternatingKeyValues("1: go home 2: feed 2 cats 3: sleep")
+        .mapKeys(n -> Integer.parseInt(n))
+        .mapValues(withColon -> prefix(":").removeFrom(withColon.toString()).trim())
+        .toMap();
+    assertThat(bulleted).containsExactly(1, "go home", 2, "feed 2 cats", 3, "sleep");
   }
 
   @Test public void repeatedly_splitThenTrim_distinct() {

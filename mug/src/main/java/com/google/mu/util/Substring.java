@@ -1443,6 +1443,30 @@ public final class Substring {
                       () -> new IllegalArgumentException("Cannot split key values from '" + m + "'"))));
     }
 
+    /**
+     * Returns the key-value pairs where the values are in between every two neighboring keys.
+     *
+     * <p>For example: to find bulleted items (strings prefixed by 1:, 2:, 112: etc.), you can:
+     *
+     * <pre>{@code
+     * Substring.Pattern bulletNumber = consecutive(CharPredicate.range('0', '9'))
+     *     .withBoundary(CharPredicate.WORD.not(), CharPredicate.is(':'));
+     * Map<Integer, String> bulleted = bulletNumber.repeatedly()
+     *     .splitAlternatingKeyValues("1: go home 2: feed 2 cats 3: sleep")
+     *     .mapKeys(n -> Integer.parseInt(n))
+     *     .mapValues(withColon -> prefix(":").removeFrom(withColon.toString()).trim())
+     *     .toMap();
+     * }</pre>
+     *
+     * @since 6.1
+     */
+    public final BiStream<String, String> splitAlternatingKeyValues(String input) {
+      return Stream.concat(match(input), Stream.of(END.in(input).get()))
+          .collect(BiStream.toAdjacentPairs())
+          .mapValues((k, k2) -> input.substring(k.index() + k.length(), k2.index()))
+          .mapKeys(Match::toString);
+    }
+
     RepeatingPattern() {}
   }
 
