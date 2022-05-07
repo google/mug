@@ -14,8 +14,10 @@
  *****************************************************************************/
 package com.google.mu.util;
 
+import static com.google.mu.util.InternalCollectors.toImmutableList;
 import static java.lang.Math.max;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.collectingAndThen;
 
 import java.util.Iterator;
 import java.util.Objects;
@@ -23,6 +25,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
+import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import com.google.mu.util.stream.BiStream;
@@ -504,6 +507,52 @@ public final class Substring {
   }
 
   /**
+   * Returns a {@link Collector} that collects the input candidate {@link Pattern} and reults in a
+   * pattern that matches whichever that occurs first in the input string. For example you can use
+   * it to find the first occurrence of any reserved word in a set:
+   *
+   * <pre>{@code
+   * Substring.Pattern reserved =
+   *     Stream.of("if", "else", "for", "public")
+   *         .map(Substring::word)
+   *         .collect(firstOccurrence());
+   * }</pre>
+   *
+   * @since 6.1
+   */
+  public static Collector<Pattern, ?, Pattern> firstOccurrence() {
+    return collectingAndThen(
+        toImmutableList(),
+        candidates -> {
+          return new Pattern() {
+            @Override
+            Match match(String input, int fromIndex) {
+              requireNonNull(input);
+              Match best = null;
+              for (Pattern candidate : candidates) {
+                Match match = candidate.match(input, fromIndex);
+                if (match == null) {
+                  continue;
+                }
+                if (match.index() == fromIndex) { // First occurrence for sure.
+                  return match;
+                }
+                if (best == null || match.index() < best.index()) {
+                  best = match;
+                }
+              }
+              return best;
+            }
+
+            @Override
+            public String toString() {
+              return "firstOccurrenceOf(" + candidates + ")";
+            }
+          };
+        });
+  }
+
+  /**
    * Returns a {@code Pattern} that matches the first occurrence of {@code stop1}, followed by an
    * occurrence of {@code stop2}, followed sequentially by occurrences of {@code moreStops} in
    * order, including any characters between consecutive stops.
@@ -776,6 +825,27 @@ public final class Substring {
 
         @Override public String toString() {
           return base + ".or(" + that + ")";
+        }
+      };
+    }
+
+    /**
+     * Returns a {@code Pattern} that's equivalent to this pattern except it only matches at
+     * most {@code maxChars}.
+     */
+    public final Pattern limit(int maxChars) {
+      if (maxChars < 0) {
+        throw new IllegalArgumentException("Negative maxChars: " + maxChars);
+      }
+      Pattern base = this;
+      return new Pattern() {
+        @Override Match match(String input, int fromIndex) {
+          Match m = base.match(input, fromIndex);
+          return m == null ? null : m.limit(maxChars);
+        }
+
+        @Override public String toString() {
+          return base + ".limit(" + maxChars + ")";
         }
       };
     }
@@ -1373,6 +1443,33 @@ public final class Substring {
                       () -> new IllegalArgumentException("Cannot split key values from '" + m + "'"))));
     }
 
+    /**
+     * With keys identified by this pattern, returns the key-value pairs where the values are in
+     * between every two neighboring keys.
+     *
+     * <p>For example: to find bulleted items (strings prefixed by {@code 1:}, {@code 2:},
+     * {@code 456:} etc.), you can:
+     *
+     * <pre>{@code
+     * Substring.Pattern bulletNumber = consecutive(CharPredicate.range('0', '9'))
+     *     .withBoundary(CharPredicate.WORD.not(), CharPredicate.is(':'));
+     * Map<Integer, String> bulleted = bulletNumber.repeatedly()
+     *     .splitAlternatingKeyValues("1: go home;2: feed 2 cats 3: sleep tight.")
+     *     .mapKeys(n -> Integer.parseInt(n))
+     *     .mapValues(withColon -> prefix(":").removeFrom(withColon.toString()).trim())
+     *     .toMap();
+     *     // => [{1, "go home;"}, {2, "feed 2 cats"}, {3, "sleep tight."}]
+     * }</pre>
+     *
+     * @since 6.1
+     */
+    public final BiStream<String, String> splitAlternatingKeyValues(String input) {
+      return Stream.concat(match(input), Stream.of(END.in(input).get()))
+          .collect(BiStream.toAdjacentPairs())
+          .mapValues((k, k2) -> input.substring(k.index() + k.length(), k2.index()))
+          .mapKeys(Match::toString);
+    }
+
     RepeatingPattern() {}
   }
 
@@ -1763,6 +1860,18 @@ public final class Substring {
      */
     public boolean isNotEmpty() {
       return length() > 0;
+    }
+
+    /**
+     * Returns an equivalent match with at most {@code maxChars}.
+     *
+     * @since 6.1
+     */
+    public Match limit(int maxChars) {
+      if (maxChars < 0) {
+        throw new IllegalArgumentException("Negative maxChars: " + maxChars);
+      }
+      return length() <= maxChars ? this : new Match(context, startIndex, maxChars, repetitionStartIndex);
     }
 
     /** Return 0-based index of this match in {@link #fullString}. */

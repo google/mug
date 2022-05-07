@@ -9,6 +9,7 @@ import static com.google.mu.util.Substring.after;
 import static com.google.mu.util.Substring.before;
 import static com.google.mu.util.Substring.consecutive;
 import static com.google.mu.util.Substring.first;
+import static com.google.mu.util.Substring.firstOccurrence;
 import static com.google.mu.util.Substring.last;
 import static com.google.mu.util.Substring.leading;
 import static com.google.mu.util.Substring.prefix;
@@ -18,11 +19,13 @@ import static com.google.mu.util.Substring.trailing;
 import static com.google.mu.util.Substring.upToIncluding;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.Spliterator;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collector;
+import java.util.stream.Stream;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -42,6 +45,7 @@ import com.google.mu.util.Substring.Match;
 import com.google.mu.util.stream.BiCollector;
 import com.google.mu.util.stream.BiStream;
 import com.google.mu.util.stream.Joiner;
+import com.google.mu.util.stream.MoreCollectors;
 
 @RunWith(JUnit4.class)
 public class SubstringTest {
@@ -1623,6 +1627,22 @@ public class SubstringTest {
     assertThrows(IllegalArgumentException.class, () -> kvs.toMap());
   }
 
+  @Test public void repeatedly_splitAlternatingKeyValues_empty() {
+    assertKeyValues(first(',').repeatedly().splitAlternatingKeyValues(""))
+        .isEmpty();
+  }
+
+  @Test public void repeatedly_splitAlternatingKeyValues() {
+    Substring.Pattern bulletNumber = consecutive(CharPredicate.range('0', '9'))
+        .withBoundary(CharPredicate.WORD.not(), CharPredicate.is(':'));
+    Map<Integer, String> bulleted = bulletNumber.repeatedly()
+        .splitAlternatingKeyValues("1: go home;2: feed 2 cats 3: sleep tight.")
+        .mapKeys(n -> Integer.parseInt(n))
+        .mapValues(withColon -> prefix(":").removeFrom(withColon.toString()).trim())
+        .toMap();
+    assertThat(bulleted).containsExactly(1, "go home;", 2, "feed 2 cats", 3, "sleep tight.");
+  }
+
   @Test public void repeatedly_splitThenTrim_distinct() {
     assertThat(first(',').repeatedly().splitThenTrim("b, a,c,a,c,b,d").map(Match::toString).distinct())
         .containsExactly("b", "a", "c", "d")
@@ -1747,6 +1767,85 @@ public class SubstringTest {
     assertThrows(IndexOutOfBoundsException.class, () -> match.subSequence(0, 3));
   }
 
+  @Test
+  public void matchLimit_negative() {
+    Substring.Match match = first("foo").in(" foo bar").get();
+    assertThrows(IllegalArgumentException.class, () -> match.limit(-1));
+    assertThrows(IllegalArgumentException.class, () -> match.limit(Integer.MIN_VALUE));
+  }
+
+  @Test
+  public void matchLimit_zero() {
+    Substring.Match match = first("foo").in(" foo bar").get();
+    assertThat(match.limit(0).toString()).isEmpty();
+  }
+
+  @Test
+  public void matchLimit_smallerThanLength() {
+    Substring.Match match = first("foo").in(" foo bar").get();
+    assertThat(match.limit(1).toString()).isEqualTo("f");
+  }
+
+  @Test
+  public void matchLimit_equalToLength() {
+    Substring.Match match = first("foo").in(" foo bar").get();
+    assertThat(match.limit(3)).isSameAs(match);
+  }
+
+  @Test
+  public void matchLimit_greaterThanLength() {
+    Substring.Match match = first("foo").in(" foo bar").get();
+    assertThat(match.limit(4)).isSameAs(match);
+    assertThat(match.limit(5)).isSameAs(match);
+    assertThat(match.limit(Integer.MAX_VALUE)).isSameAs(match);
+  }
+
+  @Test
+  public void limit_negative() {
+    Substring.Pattern pattern = first("foo");
+    assertThrows(IllegalArgumentException.class, () -> pattern.limit(-1));
+    assertThrows(IllegalArgumentException.class, () -> pattern.limit(Integer.MIN_VALUE));
+  }
+
+  @Test
+  public void limit_noMatch() {
+    Substring.Pattern pattern = first("foo");
+    assertThat(pattern.limit(1).from("fur")).isEmpty();
+  }
+
+  @Test
+  public void limit_smallerThanSize() {
+    assertThat(first("foo").limit(1).from("my food")).hasValue("f");
+    assertThat(first("foo").limit(1).repeatedly().from("my food")).containsExactly("f");
+    assertThat(first("foo").limit(1).repeatedly().from("my ffoof")).containsExactly("f");
+    assertThat(first("fff").limit(1).repeatedly().from("fffff")).containsExactly("f");
+    assertThat(first("fff").limit(2).repeatedly().from("ffffff")).containsExactly("ff", "ff");
+  }
+
+  @Test
+  public void limit_equalToSize() {
+    assertThat(first("foo").limit(3).from("my food")).hasValue("foo");
+    assertThat(first("foo").limit(3).repeatedly().from("my food")).containsExactly("foo");
+    assertThat(first("foo").limit(3).repeatedly().from("my ffoof")).containsExactly("foo");
+    assertThat(first("fff").limit(3).repeatedly().from("fffff")).containsExactly("fff");
+  }
+
+  @Test
+  public void limit_greaterThanSize() {
+    assertThat(first("foo").limit(Integer.MAX_VALUE).from("my food")).hasValue("foo");
+    assertThat(first("foo").limit(Integer.MAX_VALUE).repeatedly().from("my food"))
+        .containsExactly("foo");
+    assertThat(first("foo").limit(Integer.MAX_VALUE).repeatedly().from("my ffoof"))
+        .containsExactly("foo");
+    assertThat(first("fff").limit(Integer.MAX_VALUE).repeatedly().from("ffffff"))
+        .containsExactly("fff", "fff");
+  }
+
+  @Test
+  public void limit_toString() {
+    assertThat(first("foo").limit(2).toString()).isEqualTo("first('foo').limit(2)");
+  }
+
   @Test public void or_toString() {
     assertThat(first("foo").or(last("bar")).toString()).isEqualTo("first('foo').or(last('bar'))");
   }
@@ -1857,7 +1956,14 @@ public class SubstringTest {
         .containsExactly("http:");
   }
 
-  @Test public void delimite_noMatch() {
+  @Test
+  public void before_limit() {
+    assertThat(Substring.before(first("//")).limit(4).removeFrom("http://foo")).isEqualTo("://foo");
+    assertThat(Substring.before(first("/")).limit(4).repeatedly().from("http://foo/barbara/"))
+        .containsExactly("http", "", "foo", "barb");
+  }
+
+  @Test public void repeatedly_split_noMatch() {
     assertThat(first("://").repeatedly().split("abc").map(Match::toString))
         .containsExactly("abc");
   }
@@ -2170,6 +2276,16 @@ public class SubstringTest {
         .containsExactly("bar", "baz");
   }
 
+  @Test
+  public void between_withLimit() {
+    assertThat(
+            Substring.between(first("//").limit(1), first("//").limit(1))
+                .repeatedly()
+                .from("//abc//d////"))
+        .containsExactly("/abc", "/d", "")
+        .inOrder();
+  }
+
   @Test public void then_toString() {
     assertThat(first("(").then(first("<")).toString())
         .isEqualTo("first('(').then(first('<'))");
@@ -2348,6 +2464,101 @@ public class SubstringTest {
 
   @Test public void spanningInOrder_threeStops_thirdPatternDoesNotMatch() {
     assertThat(spanningInOrder("o", "bar", "car").in("foo bar cat")).isEmpty();
+  }
+
+  @Test
+  public void firstOccurrence_noPattern() {
+    assertThat(Stream.<Substring.Pattern>empty().collect(firstOccurrence()).from("string"))
+        .isEmpty();
+  }
+
+  @Test
+  public void firstOccurrence_singlePattern_noMatch() {
+    assertThat(Stream.of(first("foo")).collect(firstOccurrence()).from("string")).isEmpty();
+  }
+
+  @Test
+  public void firstOccurrence_singlePattern_match() {
+    Substring.Pattern pattern = Stream.of(Substring.word()).collect(firstOccurrence());
+    assertThat(pattern.from("foo bar")).hasValue("foo");
+    assertThat(pattern.repeatedly().from("foo bar")).containsExactly("foo", "bar").inOrder();
+  }
+
+  @Test
+  public void firstOccurrence_twoPatterns_noneMatch() {
+    Substring.Pattern pattern = Stream.of(first("foo"), first("bar")).collect(firstOccurrence());
+    assertThat(pattern.from("what")).isEmpty();
+  }
+
+  @Test
+  public void firstOccurrence_twoPatterns_firstMatches() {
+    Substring.Pattern pattern = Stream.of(first("foo"), first("bar")).collect(firstOccurrence());
+    assertThat(pattern.from("foo bar")).hasValue("foo");
+    assertThat(pattern.repeatedly().from("foo bar")).containsExactly("foo", "bar").inOrder();
+  }
+
+  @Test
+  public void firstOccurrence_twoPatterns_secondMatches() {
+    Substring.Pattern pattern = Stream.of(first("foo"), first("bar")).collect(firstOccurrence());
+    assertThat(pattern.from("bar foo")).hasValue("bar");
+    assertThat(pattern.repeatedly().from("bar foo")).containsExactly("bar", "foo").inOrder();
+  }
+
+  @Test
+  public void firstOccurrence_threePatterns_noneMatch() {
+    Substring.Pattern pattern =
+        Stream.of(first("foo"), first("bar"), first("zoo")).collect(firstOccurrence());
+    assertThat(pattern.from("what")).isEmpty();
+  }
+
+  @Test
+  public void firstOccurrence_threePatterns_firstMatches() {
+    Substring.Pattern pattern =
+        Stream.of(first("foo"), first("bar"), first("zoo")).collect(firstOccurrence());
+    assertThat(pattern.from("foo zoo bar")).hasValue("foo");
+    assertThat(pattern.repeatedly().from("foo zoo bar"))
+        .containsExactly("foo", "zoo", "bar")
+        .inOrder();
+  }
+
+  @Test
+  public void firstOccurrence_threePatterns_secondMatches() {
+    Substring.Pattern pattern =
+        Stream.of(first("foo"), first("bar"), first("zoo")).collect(firstOccurrence());
+    assertThat(pattern.from("bar zoo foo")).hasValue("bar");
+    assertThat(pattern.repeatedly().from("bar zoo foo"))
+        .containsExactly("bar", "zoo", "foo")
+        .inOrder();
+  }
+
+  @Test
+  public void firstOccurrence_threePatterns_thirdMatches() {
+    Substring.Pattern pattern =
+        Stream.of(first("foo"), first("bar"), first("zoo")).collect(firstOccurrence());
+    assertThat(pattern.from("zoo bar foo")).hasValue("zoo");
+    assertThat(pattern.repeatedly().from("zoo bar foo"))
+        .containsExactly("zoo", "bar", "foo")
+        .inOrder();
+  }
+
+  @Test public void firstOccurrence_splitKeyValues_withFixedSetOfKeys_noReservedDelimiter() {
+    String input = "playlist id:foo bar artist: another name a: my name:age";
+    Substring.Pattern delim =
+        Stream.of("a", "artist", "playlist id", "foo bar")
+            .map(k -> first(" " + k + ":"))
+            .collect(firstOccurrence())
+            .limit(1);
+    ImmutableMap<String, String> keyValues =
+        delim.repeatedly()
+            .splitThenTrim(input)
+            .collect(MoreCollectors.mapping(
+                seg -> first(':')
+                    .splitThenTrim(seg)
+                    .orElseThrow(() -> new IllegalArgumentException("Bad seg: '" + seg + "'")),
+                ImmutableMap::toImmutableMap));
+    assertThat(keyValues)
+        .containsExactly("playlist id", "foo bar", "artist", "another name", "a", "my name:age")
+        .inOrder();
   }
 
   @Test

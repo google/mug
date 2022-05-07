@@ -17,14 +17,21 @@ package com.google.mu.util;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toCollection;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 final class InternalCollectors {
+  static <T> Collector<T, ?, List<T>> toImmutableList() {
+    return checkingNulls(
+        collectingAndThen(toCollection(ArrayList::new), Collections::unmodifiableList));
+  }
+
   static <T> Collector<T, ?, Set<T>> toImmutableSet() {
     return checkingNulls(
         collectingAndThen(toCollection(LinkedHashSet::new), Collections::unmodifiableSet));
