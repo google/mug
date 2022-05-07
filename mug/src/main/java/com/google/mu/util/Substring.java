@@ -1871,7 +1871,7 @@ public final class Substring {
       if (maxChars < 0) {
         throw new IllegalArgumentException("Negative maxChars: " + maxChars);
       }
-      return length() <= maxChars ? this : new Match(context, startIndex, maxChars);
+      return length() <= maxChars ? this : new Match(context, startIndex, maxChars, repetitionStartIndex);
     }
 
     /** Return 0-based index of this match in {@link #fullString}. */

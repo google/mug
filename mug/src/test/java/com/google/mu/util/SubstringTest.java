@@ -1818,8 +1818,8 @@ public class SubstringTest {
     assertThat(first("foo").limit(1).from("my food")).hasValue("f");
     assertThat(first("foo").limit(1).repeatedly().from("my food")).containsExactly("f");
     assertThat(first("foo").limit(1).repeatedly().from("my ffoof")).containsExactly("f");
-    assertThat(first("fff").limit(1).repeatedly().from("fffff")).containsExactly("f", "f", "f");
-    assertThat(first("fff").limit(2).repeatedly().from("fffff")).containsExactly("ff", "ff");
+    assertThat(first("fff").limit(1).repeatedly().from("fffff")).containsExactly("f");
+    assertThat(first("fff").limit(2).repeatedly().from("ffffff")).containsExactly("ff", "ff");
   }
 
   @Test
@@ -1839,6 +1839,11 @@ public class SubstringTest {
         .containsExactly("foo");
     assertThat(first("fff").limit(Integer.MAX_VALUE).repeatedly().from("ffffff"))
         .containsExactly("fff", "fff");
+  }
+
+  @Test
+  public void limit_toString() {
+    assertThat(first("foo").limit(2).toString()).isEqualTo("first('foo').limit(2)");
   }
 
   @Test public void or_toString() {
@@ -1951,7 +1956,14 @@ public class SubstringTest {
         .containsExactly("http:");
   }
 
-  @Test public void delimite_noMatch() {
+  @Test
+  public void before_limit() {
+    assertThat(Substring.before(first("//")).limit(4).removeFrom("http://foo")).isEqualTo("://foo");
+    assertThat(Substring.before(first("/")).limit(4).repeatedly().from("http://foo/barbara/"))
+        .containsExactly("http", "", "foo", "barb");
+  }
+
+  @Test public void repeatedly_split_noMatch() {
     assertThat(first("://").repeatedly().split("abc").map(Match::toString))
         .containsExactly("abc");
   }
@@ -2264,6 +2276,16 @@ public class SubstringTest {
         .containsExactly("bar", "baz");
   }
 
+  @Test
+  public void between_withLimit() {
+    assertThat(
+            Substring.between(first("//").limit(1), first("//").limit(1))
+                .repeatedly()
+                .from("//abc//d////"))
+        .containsExactly("/abc", "/d", "")
+        .inOrder();
+  }
+
   @Test public void then_toString() {
     assertThat(first("(").then(first("<")).toString())
         .isEqualTo("first('(').then(first('<'))");
@@ -2523,8 +2545,9 @@ public class SubstringTest {
     String input = "playlist id:foo bar artist: another name a: my name:age";
     Substring.Pattern delim =
         Stream.of("a", "artist", "playlist id", "foo bar")
-            .map(k -> first(" " + k + ":").limit(1))
-            .collect(firstOccurrence());
+            .map(k -> first(" " + k + ":"))
+            .collect(firstOccurrence())
+            .limit(1);
     ImmutableMap<String, String> keyValues =
         delim.repeatedly()
             .splitThenTrim(input)
