@@ -1444,18 +1444,21 @@ public final class Substring {
     }
 
     /**
-     * Returns the key-value pairs where the values are in between every two neighboring keys.
+     * With keys identified by this pattern, returns the key-value pairs where the values are in
+     * between every two neighboring keys.
      *
-     * <p>For example: to find bulleted items (strings prefixed by 1:, 2:, 112: etc.), you can:
+     * <p>For example: to find bulleted items (strings prefixed by {@code 1:}, {@code 2:},
+     * {@code 456:} etc.), you can:
      *
      * <pre>{@code
      * Substring.Pattern bulletNumber = consecutive(CharPredicate.range('0', '9'))
      *     .withBoundary(CharPredicate.WORD.not(), CharPredicate.is(':'));
      * Map<Integer, String> bulleted = bulletNumber.repeatedly()
-     *     .splitAlternatingKeyValues("1: go home 2: feed 2 cats 3: sleep")
+     *     .splitAlternatingKeyValues("1: go home;2: feed 2 cats 3: sleep tight.")
      *     .mapKeys(n -> Integer.parseInt(n))
      *     .mapValues(withColon -> prefix(":").removeFrom(withColon.toString()).trim())
      *     .toMap();
+     *     // => [{1, "go home;"}, {2, "feed 2 cats"}, {3, "sleep tight."}]
      * }</pre>
      *
      * @since 6.1

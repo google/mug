@@ -1636,11 +1636,11 @@ public class SubstringTest {
     Substring.Pattern bulletNumber = consecutive(CharPredicate.range('0', '9'))
         .withBoundary(CharPredicate.WORD.not(), CharPredicate.is(':'));
     Map<Integer, String> bulleted = bulletNumber.repeatedly()
-        .splitAlternatingKeyValues("1: go home 2: feed 2 cats 3: sleep")
+        .splitAlternatingKeyValues("1: go home;2: feed 2 cats 3: sleep tight.")
         .mapKeys(n -> Integer.parseInt(n))
         .mapValues(withColon -> prefix(":").removeFrom(withColon.toString()).trim())
         .toMap();
-    assertThat(bulleted).containsExactly(1, "go home", 2, "feed 2 cats", 3, "sleep");
+    assertThat(bulleted).containsExactly(1, "go home;", 2, "feed 2 cats", 3, "sleep tight.");
   }
 
   @Test public void repeatedly_splitThenTrim_distinct() {
