@@ -1444,8 +1444,8 @@ public final class Substring {
     }
 
     /**
-     * With keys identified by this pattern, returns the key-value pairs where the values are in
-     * between every two neighboring keys.
+     * Returns the alternation of this pattern, with the matched substring alternated with
+     * the substring following it until the next match.
      *
      * <p>For example: to find bulleted items (strings prefixed by {@code 1:}, {@code 2:},
      * {@code 456:} etc.), you can:
@@ -1454,7 +1454,7 @@ public final class Substring {
      * Substring.Pattern bulletNumber = consecutive(CharPredicate.range('0', '9'))
      *     .withBoundary(CharPredicate.WORD.not(), CharPredicate.is(':'));
      * Map<Integer, String> bulleted = bulletNumber.repeatedly()
-     *     .splitAlternatingKeyValues("1: go home;2: feed 2 cats 3: sleep tight.")
+     *     .alternationFrom("1: go home;2: feed 2 cats 3: sleep tight.")
      *     .mapKeys(n -> Integer.parseInt(n))
      *     .mapValues(withColon -> prefix(":").removeFrom(withColon.toString()).trim())
      *     .toMap();
@@ -1463,7 +1463,7 @@ public final class Substring {
      *
      * @since 6.1
      */
-    public final BiStream<String, String> splitAlternatingKeyValues(String input) {
+    public final BiStream<String, String> alternationFrom(String input) {
       return Stream.concat(match(input), Stream.of(END.in(input).get()))
           .collect(BiStream.toAdjacentPairs())
           .mapValues((k, k2) -> input.substring(k.index() + k.length(), k2.index()))
