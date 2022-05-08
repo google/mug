@@ -1440,32 +1440,32 @@ public class SubstringTest {
   }
 
   @Test public void replaceAllFrom_noMatch() {
-    assertThat(first('f').repeatedly().replaceAllFrom("bar", (Function<? super Match, ? extends CharSequence>) m -> "x")).isEqualTo("bar");
-    assertThat(first('f').repeatedly().replaceAllFrom("bar", (Function<? super Match, ? extends CharSequence>) m -> "xyz")).isEqualTo("bar");
+    assertThat(first('f').repeatedly().replaceAllFrom("bar", m -> "x")).isEqualTo("bar");
+    assertThat(first('f').repeatedly().replaceAllFrom("bar", m -> "xyz")).isEqualTo("bar");
   }
 
   @Test public void replaceAllFrom_oneMatch() {
-    assertThat(first('f').repeatedly().replaceAllFrom("foo", (Function<? super Match, ? extends CharSequence>) m -> "xx")).isEqualTo("xxoo");
-    assertThat(first('f').repeatedly().replaceAllFrom("afoo", (Function<? super Match, ? extends CharSequence>) m -> "xx")).isEqualTo("axxoo");
-    assertThat(first('f').repeatedly().replaceAllFrom("oof", (Function<? super Match, ? extends CharSequence>) m -> "xx")).isEqualTo("ooxx");
+    assertThat(first('f').repeatedly().replaceAllFrom("foo", m -> "xx")).isEqualTo("xxoo");
+    assertThat(first('f').repeatedly().replaceAllFrom("afoo", m -> "xx")).isEqualTo("axxoo");
+    assertThat(first('f').repeatedly().replaceAllFrom("oof", m -> "xx")).isEqualTo("ooxx");
   }
 
   @Test public void replaceAllFrom_twoMatches() {
-    assertThat(first('o').repeatedly().replaceAllFrom("foo", (Function<? super Match, ? extends CharSequence>) m -> "xx")).isEqualTo("fxxxx");
-    assertThat(first('o').repeatedly().replaceAllFrom("ofo", (Function<? super Match, ? extends CharSequence>) m -> "xx")).isEqualTo("xxfxx");
-    assertThat(first('o').repeatedly().replaceAllFrom("oof", (Function<? super Match, ? extends CharSequence>) m -> "xx")).isEqualTo("xxxxf");
+    assertThat(first('o').repeatedly().replaceAllFrom("foo", m -> "xx")).isEqualTo("fxxxx");
+    assertThat(first('o').repeatedly().replaceAllFrom("ofo", m -> "xx")).isEqualTo("xxfxx");
+    assertThat(first('o').repeatedly().replaceAllFrom("oof", m -> "xx")).isEqualTo("xxxxf");
   }
 
   @Test public void replaceAllFrom_threeMatches() {
-    assertThat(first("x").repeatedly().replaceAllFrom("fox x bxr", (Function<? super Match, ? extends CharSequence>) m -> "yy")).isEqualTo("foyy yy byyr");
-    assertThat(first("x").repeatedly().replaceAllFrom("xaxbxxcx", (Function<? super Match, ? extends CharSequence>) m -> "yy")).isEqualTo("yyayybyyyycyy");
+    assertThat(first("x").repeatedly().replaceAllFrom("fox x bxr", m -> "yy")).isEqualTo("foyy yy byyr");
+    assertThat(first("x").repeatedly().replaceAllFrom("xaxbxxcx", m -> "yy")).isEqualTo("yyayybyyyycyy");
   }
 
   @Test public void replaceAllFrom_placeholderSubstitution() {
     Substring.Pattern placeholder = Substring.between(before(first('{')), after(first('}')));
     ImmutableMap<String, String> dictionary = ImmutableMap.of("{key}", "foo", "{value}", "bar");
     assertThat(
-            placeholder.repeatedly().replaceAllFrom("/{key}:{value}/", (Function<? super Match, ? extends CharSequence>) match -> dictionary.get(match.toString())))
+            placeholder.repeatedly().replaceAllFrom("/{key}:{value}/", match -> dictionary.get(match.toString())))
         .isEqualTo("/foo:bar/");
   }
 
@@ -1474,12 +1474,12 @@ public class SubstringTest {
     NullPointerException thrown =
         assertThrows(
             NullPointerException.class,
-            () -> placeholder.repeatedly().replaceAllFrom("{unknown}", (Function<? super Match, ? extends CharSequence>) match -> null));
+            () -> placeholder.repeatedly().replaceAllFrom("{unknown}", match -> null));
     assertThat(thrown).hasMessageThat().contains("{unknown}");
   }
 
   @Test public void replaceAllFrom_replacementFunctionReturnsNonEmpty() {
-    assertThat(Substring.first("var").repeatedly().replaceAllFrom("var=x", (Function<? super Match, ? extends CharSequence>) m -> "v")).isEqualTo("v=x");
+    assertThat(Substring.first("var").repeatedly().replaceAllFrom("var=x", m -> "v")).isEqualTo("v=x");
   }
 
   @Test public void delimit() {
@@ -1627,16 +1627,16 @@ public class SubstringTest {
     assertThrows(IllegalArgumentException.class, () -> kvs.toMap());
   }
 
-  @Test public void repeatedly_splitAlternatingKeyValues_empty() {
-    assertKeyValues(first(',').repeatedly().splitAlternatingKeyValues(""))
+  @Test public void repeatedly_alternationFrom_empty() {
+    assertKeyValues(first(',').repeatedly().alternationFrom(""))
         .isEmpty();
   }
 
-  @Test public void repeatedly_splitAlternatingKeyValues() {
+  @Test public void repeatedly_alternationFrom() {
     Substring.Pattern bulletNumber = consecutive(CharPredicate.range('0', '9'))
         .withBoundary(CharPredicate.WORD.not(), CharPredicate.is(':'));
     Map<Integer, String> bulleted = bulletNumber.repeatedly()
-        .splitAlternatingKeyValues("1: go home;2: feed 2 cats 3: sleep tight.")
+        .alternationFrom("1: go home;2: feed 2 cats 3: sleep tight.")
         .mapKeys(n -> Integer.parseInt(n))
         .mapValues(withColon -> prefix(":").removeFrom(withColon.toString()).trim())
         .toMap();
@@ -1954,6 +1954,13 @@ public class SubstringTest {
     assertThat(Substring.before(first("//")).removeFrom("http://foo")).isEqualTo("//foo");
     assertThat(Substring.before(first("//")).repeatedly().from("http://foo"))
         .containsExactly("http:");
+  }
+
+  @Test public void before_repeatedly_split() {
+    assertThat(Substring.before(first("/")).repeatedly().from("a/b/cd"))
+        .containsExactly("a", "b").inOrder();
+    assertThat(Substring.before(first("/")).repeatedly().split("a/b/cd").map(Substring.Match::toString))
+        .containsExactly("", "/", "/cd");
   }
 
   @Test
