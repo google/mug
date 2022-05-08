@@ -1444,8 +1444,8 @@ public final class Substring {
     }
 
     /**
-     * Returns the alternation of this pattern, with the matched substring alternated with
-     * the substring following it until the next match.
+     * Returns the alternation of this pattern from the {@code input} string, with the matched
+     * substring alternated with the substring following it until the next match alternates again.
      *
      * <p>For example: to find bulleted items (strings prefixed by {@code 1:}, {@code 2:},
      * {@code 456:} etc.), you can:
