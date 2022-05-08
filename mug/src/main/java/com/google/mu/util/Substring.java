@@ -1445,7 +1445,7 @@ public final class Substring {
 
     /**
      * Returns the alternation of this pattern from the {@code input} string, with the matched
-     * substring alternated with the substring following it until the next match alternates again.
+     * substring alternated with the trailing substring before the next match.
      *
      * <p>For example: to find bulleted items (strings prefixed by {@code 1:}, {@code 2:},
      * {@code 456:} etc.), you can:
