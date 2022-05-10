@@ -832,6 +832,8 @@ public final class Substring {
     /**
      * Returns a {@code Pattern} that's equivalent to this pattern except it only matches at
      * most {@code maxChars}.
+     *
+     * @since 6.1
      */
     public final Pattern limit(int maxChars) {
       if (maxChars < 0) {
