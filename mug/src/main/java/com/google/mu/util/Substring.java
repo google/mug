@@ -16,12 +16,16 @@ package com.google.mu.util;
 
 import static com.google.mu.util.InternalCollectors.toImmutableList;
 import static java.lang.Math.max;
+import static java.util.Comparator.comparingInt;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.collectingAndThen;
 
+import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.PriorityQueue;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
@@ -542,6 +546,11 @@ public final class Substring {
                 }
               }
               return best;
+            }
+
+            @Override
+            public RepeatingPattern repeatedly() {
+              return allOccurrencesOf(candidates);
             }
 
             @Override
@@ -1135,7 +1144,7 @@ public final class Substring {
      *
      * @since 5.2
      */
-    public final RepeatingPattern repeatedly() {
+    public RepeatingPattern repeatedly() {
       Pattern repeatable = Pattern.this;
       return new RepeatingPattern() {
         @Override public Stream<Match> match(String input) {
@@ -1963,6 +1972,82 @@ public final class Substring {
     private Match toEnd() {
       return new Match(context, startIndex, context.length() - startIndex);
     }
+  }
+
+  private static RepeatingPattern allOccurrencesOf(List<Pattern> candidates) {
+    /** A single occurrence of a Pattern in a source string. */
+    final class PatternOccurrence {
+      private final Pattern pattern;
+      private final int stableOrder;
+      final Match match;
+
+      PatternOccurrence(Pattern pattern, Match match, int stableOrder) {
+        this.pattern = pattern;
+        this.match = match;
+        this.stableOrder = stableOrder;
+      }
+
+      PatternOccurrence findNextOccurrence(String input, int fromIndex) {
+        Match nextMatch = pattern.match(input, fromIndex);
+        return (nextMatch == null) ? null : new PatternOccurrence(pattern, nextMatch, fromIndex);
+      }
+    }
+
+    Comparator<PatternOccurrence> earlierOccurrence =
+        comparingInt((PatternOccurrence po) -> po.match.index())
+            .thenComparing(po -> po.stableOrder);
+    return new RepeatingPattern() {
+      @Override
+      public Stream<Match> match(String input) {
+        return MoreStreams.whileNotNull(
+            new Supplier<Match>() {
+              private final PriorityQueue<PatternOccurrence> occurrences =
+                  new PriorityQueue<>(
+                      /*initialCapacity=*/ 11, // For Android API level 1 compatibility
+                      earlierOccurrence);
+
+              { // constructor
+                for (int i = 0; i < candidates.size(); i++) {
+                  Pattern candidate = candidates.get(i);
+                  Match match = candidate.match(input, 0);
+                  if (match != null) {
+                    occurrences.add(new PatternOccurrence(candidate, match, i));
+                  }
+                }
+              }
+
+              @Override
+              public Match get() {
+                PatternOccurrence occurrence = occurrences.poll();
+                if (occurrence == null) {
+                  return null;
+                }
+                Match match = occurrence.match;
+                findNextOccurrence(occurrence, match);
+                for (PatternOccurrence mayExpire = occurrences.peek();
+                    mayExpire != null && mayExpire.match.index() < match.repetitionStartIndex;
+                    mayExpire = occurrences.peek()) {
+                  occurrences.remove();
+                  findNextOccurrence(mayExpire, match);
+                }
+                return match;
+              }
+
+              private void findNextOccurrence(PatternOccurrence occurrence, Match currentMatch) {
+                PatternOccurrence nextOccurrence =
+                    occurrence.findNextOccurrence(input, currentMatch.repetitionStartIndex);
+                if (nextOccurrence != null) {
+                  occurrences.add(nextOccurrence);
+                }
+              }
+            });
+      }
+
+      @Override
+      public String toString() {
+        return "allOccurrencesOf(" + candidates + ".)";
+      }
+    };
   }
 
   private Substring() {}

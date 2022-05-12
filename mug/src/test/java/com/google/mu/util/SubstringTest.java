@@ -2569,6 +2569,36 @@ public class SubstringTest {
   }
 
   @Test
+  public void firstOccurrence_overlappingCandidatePatterns() {
+    Substring.Pattern pattern =
+        Stream.of("oop", "foo", "op", "pool", "load", "oad")
+            .map(Substring::first)
+            .collect(firstOccurrence());
+    assertThat(pattern.repeatedly().from("foopooload"))
+        .containsExactly("foo", "pool", "oad")
+        .inOrder();
+  }
+
+  @Test
+  public void firstOccurrence_beforePatternRepetitionIndexRespected() {
+    Substring.Pattern pattern =
+        Stream.of(first("foo"), before(first("/")), first('/'), first("bar"))
+            .collect(firstOccurrence());
+    assertThat(pattern.repeatedly().from("food/bar"))
+        .containsExactly("foo", "d", "bar")
+        .inOrder();
+  }
+
+  @Test
+  public void firstOccurrence_breaksTieByCandidatePatternOrder() {
+    Substring.Pattern pattern =
+        Stream.of("foo", "food", "dog", "f", "fo", "d", "do")
+            .map(Substring::first)
+            .collect(firstOccurrence());
+    assertThat(pattern.repeatedly().from("foodog")).containsExactly("foo", "dog").inOrder();
+  }
+
+  @Test
   public void leading_noMatch() {
     assertThat(leading(ALPHA).from(" foo")).isEmpty();
     assertThat(leading(ALPHA).from("")).isEmpty();
