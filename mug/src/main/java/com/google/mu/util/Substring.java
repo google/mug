@@ -1989,11 +1989,11 @@ public final class Substring {
         }
         return MoreStreams.whileNotNull(
             () -> {
-              Occurrence occurrence = occurrences.poll();
+              final Occurrence occurrence = occurrences.poll();
               if (occurrence == null) {
                 return null;
               }
-              Match match = occurrence.match;
+              final Match match = occurrence.match;
               for (Occurrence removed = occurrence; ; removed = occurrences.remove()) {
                 removed.enqueueNextOccurrence(input, match.repetitionStartIndex, occurrences);
                 Occurrence nextInLine = occurrences.peek();
@@ -2025,13 +2025,13 @@ public final class Substring {
     /** Stable order by the occurrence's index. */
     static Comparator<Occurrence> byIndex() {
       return comparingInt((Occurrence occurrence) -> occurrence.match.index())
-          .thenComparing(occurrence -> occurrence.stableOrder);
+          .thenComparingInt(occurrence -> occurrence.stableOrder);
     }
 
     void enqueueNextOccurrence(String input, int fromIndex, Queue<Occurrence> queue) {
       Match nextMatch = pattern.match(input, fromIndex);
       if (nextMatch != null) {
-        queue.add(new Occurrence(pattern, nextMatch, fromIndex));
+        queue.add(new Occurrence(pattern, nextMatch, stableOrder));
       }
     }
   }
