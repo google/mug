@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
@@ -1975,78 +1976,64 @@ public final class Substring {
   }
 
   private static RepeatingPattern allOccurrencesOf(List<Pattern> candidates) {
-    /** A single occurrence of a Pattern in a source string. */
-    final class Occurrence {
-      final Pattern pattern;
-      final int stableOrder;
-      final Match match;
-
-      Occurrence(Pattern pattern, Match match, int stableOrder) {
-        this.pattern = pattern;
-        this.match = match;
-        this.stableOrder = stableOrder;
-      }
-
-      Occurrence findNextOccurrence(String input, int fromIndex) {
-        Match nextMatch = pattern.match(input, fromIndex);
-        return (nextMatch == null) ? null : new Occurrence(pattern, nextMatch, fromIndex);
-      }
-    }
-
-    Comparator<Occurrence> earlierOccurrence =
-        comparingInt((Occurrence occurrence) -> occurrence.match.index())
-            .thenComparing(occurrence -> occurrence.stableOrder);
     return new RepeatingPattern() {
-      @Override
-      public Stream<Match> match(String input) {
+      @Override public Stream<Match> match(String input) {
+        // Use the constructor with initialCapaacity for Android API level 1 compatibility
+        PriorityQueue<Occurrence> occurrences = new PriorityQueue<>(11, Occurrence.byIndex());
+        for (int i = 0; i < candidates.size(); i++) {
+          Pattern candidate = candidates.get(i);
+          Match match = candidate.match(input, 0);
+          if (match != null) {
+            occurrences.add(new Occurrence(candidate, match, i));
+          }
+        }
         return MoreStreams.whileNotNull(
-            new Supplier<Match>() {
-              private final PriorityQueue<Occurrence> occurrences =
-                  // Use the constructor with initialCapaacity for Android API level 1 compatibility
-                  new PriorityQueue<>(11, earlierOccurrence);
-
-              { // constructor
-                for (int i = 0; i < candidates.size(); i++) {
-                  Pattern candidate = candidates.get(i);
-                  Match match = candidate.match(input, 0);
-                  if (match != null) {
-                    occurrences.add(new Occurrence(candidate, match, i));
-                  }
-                }
+            () -> {
+              Occurrence occurrence = occurrences.poll();
+              if (occurrence == null) {
+                return null;
               }
-
-              @Override
-              public Match get() {
-                Occurrence occurrence = occurrences.poll();
-                if (occurrence == null) {
-                  return null;
-                }
-                Match match = occurrence.match;
-                findNextOccurrence(occurrence, match);
-                for (Occurrence mayExpire = occurrences.peek();
-                    mayExpire != null && mayExpire.match.index() < match.repetitionStartIndex;
-                    mayExpire = occurrences.peek()) {
-                  occurrences.remove();
-                  findNextOccurrence(mayExpire, match);
-                }
-                return match;
-              }
-
-              private void findNextOccurrence(Occurrence occurrence, Match currentMatch) {
-                Occurrence nextOccurrence =
-                    occurrence.findNextOccurrence(input, currentMatch.repetitionStartIndex);
-                if (nextOccurrence != null) {
-                  occurrences.add(nextOccurrence);
+              Match match = occurrence.match;
+              for (Occurrence removed = occurrence; ; removed = occurrences.remove()) {
+                removed.enqueueNextOccurrence(input, match.repetitionStartIndex, occurrences);
+                Occurrence nextInLine = occurrences.peek();
+                if (nextInLine == null || nextInLine.match.index() >= match.repetitionStartIndex) {
+                  return match;
                 }
               }
             });
       }
 
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return "allOccurrencesOf(" + candidates + ")";
       }
     };
+  }
+
+  /** A single occurrence of a Pattern in a source string. */
+  private static final class Occurrence {
+    private final Pattern pattern;
+    private final int stableOrder;
+    final Match match;
+
+    Occurrence(Pattern pattern, Match match, int stableOrder) {
+      this.pattern = pattern;
+      this.match = match;
+      this.stableOrder = stableOrder;
+    }
+
+    /** Stable order by the occurrence's index. */
+    static Comparator<Occurrence> byIndex() {
+      return comparingInt((Occurrence occurrence) -> occurrence.match.index())
+          .thenComparing(occurrence -> occurrence.stableOrder);
+    }
+
+    void enqueueNextOccurrence(String input, int fromIndex, Queue<Occurrence> queue) {
+      Match nextMatch = pattern.match(input, fromIndex);
+      if (nextMatch != null) {
+        queue.add(new Occurrence(pattern, nextMatch, fromIndex));
+      }
+    }
   }
 
   private Substring() {}
