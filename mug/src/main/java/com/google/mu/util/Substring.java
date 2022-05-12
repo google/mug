@@ -1976,55 +1976,54 @@ public final class Substring {
 
   private static RepeatingPattern allOccurrencesOf(List<Pattern> candidates) {
     /** A single occurrence of a Pattern in a source string. */
-    final class PatternOccurrence {
-      private final Pattern pattern;
-      private final int stableOrder;
+    final class Occurrence {
+      final Pattern pattern;
+      final int stableOrder;
       final Match match;
 
-      PatternOccurrence(Pattern pattern, Match match, int stableOrder) {
+      Occurrence(Pattern pattern, Match match, int stableOrder) {
         this.pattern = pattern;
         this.match = match;
         this.stableOrder = stableOrder;
       }
 
-      PatternOccurrence findNextOccurrence(String input, int fromIndex) {
+      Occurrence findNextOccurrence(String input, int fromIndex) {
         Match nextMatch = pattern.match(input, fromIndex);
-        return (nextMatch == null) ? null : new PatternOccurrence(pattern, nextMatch, fromIndex);
+        return (nextMatch == null) ? null : new Occurrence(pattern, nextMatch, fromIndex);
       }
     }
 
-    Comparator<PatternOccurrence> earlierOccurrence =
-        comparingInt((PatternOccurrence po) -> po.match.index())
-            .thenComparing(po -> po.stableOrder);
+    Comparator<Occurrence> earlierOccurrence =
+        comparingInt((Occurrence occurrence) -> occurrence.match.index())
+            .thenComparing(occurrence -> occurrence.stableOrder);
     return new RepeatingPattern() {
       @Override
       public Stream<Match> match(String input) {
         return MoreStreams.whileNotNull(
             new Supplier<Match>() {
-              private final PriorityQueue<PatternOccurrence> occurrences =
-                  new PriorityQueue<>(
-                      /*initialCapacity=*/ 11, // For Android API level 1 compatibility
-                      earlierOccurrence);
+              private final PriorityQueue<Occurrence> occurrences =
+                  // Use the constructor with initialCapaacity for Android API level 1 compatibility
+                  new PriorityQueue<>(11, earlierOccurrence);
 
               { // constructor
                 for (int i = 0; i < candidates.size(); i++) {
                   Pattern candidate = candidates.get(i);
                   Match match = candidate.match(input, 0);
                   if (match != null) {
-                    occurrences.add(new PatternOccurrence(candidate, match, i));
+                    occurrences.add(new Occurrence(candidate, match, i));
                   }
                 }
               }
 
               @Override
               public Match get() {
-                PatternOccurrence occurrence = occurrences.poll();
+                Occurrence occurrence = occurrences.poll();
                 if (occurrence == null) {
                   return null;
                 }
                 Match match = occurrence.match;
                 findNextOccurrence(occurrence, match);
-                for (PatternOccurrence mayExpire = occurrences.peek();
+                for (Occurrence mayExpire = occurrences.peek();
                     mayExpire != null && mayExpire.match.index() < match.repetitionStartIndex;
                     mayExpire = occurrences.peek()) {
                   occurrences.remove();
@@ -2033,8 +2032,8 @@ public final class Substring {
                 return match;
               }
 
-              private void findNextOccurrence(PatternOccurrence occurrence, Match currentMatch) {
-                PatternOccurrence nextOccurrence =
+              private void findNextOccurrence(Occurrence occurrence, Match currentMatch) {
+                Occurrence nextOccurrence =
                     occurrence.findNextOccurrence(input, currentMatch.repetitionStartIndex);
                 if (nextOccurrence != null) {
                   occurrences.add(nextOccurrence);
@@ -2045,7 +2044,7 @@ public final class Substring {
 
       @Override
       public String toString() {
-        return "allOccurrencesOf(" + candidates + ".)";
+        return "allOccurrencesOf(" + candidates + ")";
       }
     };
   }
