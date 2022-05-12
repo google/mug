@@ -1978,8 +1978,8 @@ public final class Substring {
   private static RepeatingPattern allOccurrencesOf(List<Pattern> candidates) {
     return new RepeatingPattern() {
       @Override public Stream<Match> match(String input) {
-        // Use the constructor with initialCapaacity for Android API level 1 compatibility
-        PriorityQueue<Occurrence> occurrences = new PriorityQueue<>(11, Occurrence.byIndex());
+        PriorityQueue<Occurrence> occurrences =
+            new PriorityQueue<>(candidates.size(), Occurrence.byIndex());
         for (int i = 0; i < candidates.size(); i++) {
           Pattern candidate = candidates.get(i);
           Match match = candidate.match(input, 0);
