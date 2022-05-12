@@ -17,6 +17,7 @@ import static com.google.mu.util.Substring.spanningInOrder;
 import static com.google.mu.util.Substring.suffix;
 import static com.google.mu.util.Substring.trailing;
 import static com.google.mu.util.Substring.upToIncluding;
+import static java.util.Collections.nCopies;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Map;
@@ -2577,6 +2578,9 @@ public class SubstringTest {
     assertThat(pattern.repeatedly().from("foopooload"))
         .containsExactly("foo", "pool", "oad")
         .inOrder();
+    assertThat(pattern.repeatedly().from(repeat("foopooload", 10)).distinct())
+        .containsExactly("foo", "pool", "oad")
+        .inOrder();
   }
 
   @Test
@@ -2596,6 +2600,8 @@ public class SubstringTest {
             .map(Substring::first)
             .collect(firstOccurrence());
     assertThat(pattern.repeatedly().from("foodog")).containsExactly("foo", "dog").inOrder();
+    assertThat(pattern.repeatedly().from(repeat("foodog", 10)).distinct())
+        .containsExactly("foo", "dog");
   }
 
   @Test
@@ -2823,5 +2829,9 @@ public class SubstringTest {
           m1.putAll(m2);
           return m1;
         });
+  }
+
+  private static String repeat(String s, int times) {
+    return String.join("", nCopies(times, s));
   }
 }
