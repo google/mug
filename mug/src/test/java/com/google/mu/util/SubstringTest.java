@@ -1495,15 +1495,21 @@ public class SubstringTest {
   }
 
   @Test public void repeatedly_split_beginning() {
-    assertThrows(IllegalStateException.class, () -> BEGINNING.repeatedly().split("foo"));
+    assertThat(BEGINNING.repeatedly().split("foo").map(Object::toString))
+        .containsExactly("", "f", "o", "o", "")
+        .inOrder();
   }
 
   @Test public void repeatedly_split_end() {
-    assertThrows(IllegalStateException.class, () -> END.repeatedly().split("foo"));
+    assertThat(END.repeatedly().split("foo").map(Object::toString))
+        .containsExactly("foo", "")
+        .inOrder();
   }
 
   @Test public void repeatedly_split_empty() {
-    assertThrows(IllegalStateException.class, () -> first("").repeatedly().split("foo"));
+    assertThat(first("").repeatedly().split("foo").map(Object::toString))
+        .containsExactly("", "f", "o", "o", "")
+        .inOrder();
   }
 
   @Test public void split_cannotSplit() {
@@ -2631,6 +2637,17 @@ public class SubstringTest {
         .inOrder();
     assertThat(pattern.repeatedly().from("kookooko"))
         .containsExactly("", "", "")
+        .inOrder();
+  }
+
+  @Test
+  public void firstOccurrenceThenLimit_interleaved() {
+    Substring.Pattern pattern =
+        Stream.of(first("koook"), first("ok"))
+            .collect(firstOccurrence())
+            .limit(3);
+    assertThat(pattern.repeatedly().from("koookoook"))
+        .containsExactly("koo", "ok")
         .inOrder();
   }
 

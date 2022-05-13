@@ -22,7 +22,6 @@ import static java.util.stream.Collectors.collectingAndThen;
 
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.PriorityQueue;
@@ -526,6 +525,31 @@ public final class Substring {
    * @since 6.1
    */
   public static Collector<Pattern, ?, Pattern> firstOccurrence() {
+    final class Occurrence {
+      private final Pattern pattern;
+      private final int stableOrder;
+      final Match match;
+
+      @Override public String toString() {
+        return pattern + ": " + match.toString();
+      }
+
+      Occurrence(Pattern pattern, Match match, int stableOrder) {
+        this.pattern = pattern;
+        this.match = match;
+        this.stableOrder = stableOrder;
+      }
+
+      void enqueueNextOccurrence(String input, int fromIndex, Queue<Occurrence> queue) {
+        Match nextMatch = pattern.match(input, fromIndex);
+        if (nextMatch != null) {
+          queue.add(new Occurrence(pattern, nextMatch, stableOrder));
+        }
+      }
+    }
+    Comparator<Occurrence> byIndex =
+        comparingInt((Occurrence occurrence) -> occurrence.match.index())
+            .thenComparingInt(occurrence -> occurrence.stableOrder);
     return collectingAndThen(
         toImmutableList(),
         candidates -> {
@@ -549,9 +573,38 @@ public final class Substring {
               return best;
             }
 
-            @Override
-            public RepeatingPattern repeatedly() {
-              return allOccurrencesOf(candidates);
+            @Override Stream<Match> iterationsIn(String input) {
+              PriorityQueue<Occurrence> occurrences =
+                  new PriorityQueue<>(max(1, candidates.size()), byIndex);
+              for (int i = 0; i < candidates.size(); i++) {
+                Pattern candidate = candidates.get(i);
+                Match match = candidate.match(input, 0);
+                if (match != null) {
+                  occurrences.add(new Occurrence(candidate, match, i));
+                }
+              }
+              return MoreStreams.whileNotNull(
+                  () -> {
+                    final Occurrence occurrence = occurrences.poll();
+                    if (occurrence == null) {
+                      return null;
+                    }
+                    final Match match = occurrence.match;
+
+                    // For allOccurrencesOf([before(first('/')), first('/')]) against input = "foo/bar",
+                    // before(first('/')) will match the first occurrence of "foo".
+                    // In the next iteration, we want to start *after* the '/' for the repetition
+                    // of before(first('/')), yet start from the '/' for the other unmatched first('/').
+                    // The expected result is [foo, /].
+                    occurrence.enqueueNextOccurrence(input, match.repetitionStartIndex, occurrences);
+                    for (final int waterMark = match.endIndex; ;) {
+                      Occurrence nextInLine = occurrences.peek();
+                      if (nextInLine == null || nextInLine.match.index() >= waterMark) {
+                        return match;
+                      }
+                      occurrences.remove().enqueueNextOccurrence(input, waterMark, occurrences);
+                    }
+                  });
             }
 
             @Override
@@ -856,6 +909,10 @@ public final class Substring {
           return m == null ? null : m.limit(maxChars);
         }
 
+        @Override Stream<Match> iterationsIn(String input) {
+          return base.iterationsIn(input).map(m -> m.limit(maxChars));
+        }
+
         @Override public String toString() {
           return base + ".limit(" + maxChars + ")";
         }
@@ -1146,44 +1203,13 @@ public final class Substring {
      * @since 5.2
      */
     public RepeatingPattern repeatedly() {
-      Pattern repeatable = Pattern.this;
       return new RepeatingPattern() {
         @Override public Stream<Match> match(String input) {
-          return MoreStreams.whileNotNull(
-              new Supplier<Match>() {
-                private final int end = input.length();
-                private int nextIndex = 0;
-
-                @Override public Match get() {
-                  if (nextIndex > end) {
-                    return null;
-                  }
-                  Match match = repeatable.match(input, nextIndex);
-                  if (match == null) {
-                    return null;
-                  }
-                  if (match.endIndex == end) { // We've consumed the entire string.
-                    nextIndex = Integer.MAX_VALUE;
-                  } else if (match.repetitionStartIndex > nextIndex) {
-                    nextIndex = match.repetitionStartIndex;
-                  } else {
-                    throw new IllegalStateException(
-                        "Infinite loop detected at " + match.repetitionStartIndex);
-                  }
-                  return match;
-                }
-              });
-        }
-
-        @Override public Stream<Match> split(String string) {
-          if (repeatable.match("") != null) {
-            throw new IllegalStateException("Pattern (" + repeatable + ") cannot be used as delimiter.");
-          }
-          return super.split(string);
+          return iterationsIn(input);
         }
 
         @Override public String toString() {
-          return repeatable + ".repeatedly()";
+          return Pattern.this + ".repeatedly()";
         }
       };
     }
@@ -1193,6 +1219,34 @@ public final class Substring {
      * found.
      */
     abstract Match match(String string, int fromIndex);
+
+    /** Applies this pattern repeatedly against {@code input} and return all iterations. */
+    Stream<Match> iterationsIn(String input) {
+      return MoreStreams.whileNotNull(
+          new Supplier<Match>() {
+            private final int end = input.length();
+            private int nextIndex = 0;
+
+            @Override public Match get() {
+              if (nextIndex > end) {
+                return null;
+              }
+              Match match = match(input, nextIndex);
+              if (match == null) {
+                return null;
+              }
+              if (match.endIndex == end) { // We've consumed the entire string.
+                nextIndex = Integer.MAX_VALUE;
+              } else if (match.repetitionStartIndex > nextIndex) {
+                nextIndex = match.repetitionStartIndex;
+              } else {
+                throw new IllegalStateException(
+                    "Infinite loop detected at " + match.repetitionStartIndex);
+              }
+              return match;
+            }
+          });
+    }
 
     private Match match(String string) {
       return match(string, 0);
@@ -1972,78 +2026,6 @@ public final class Substring {
 
     private Match toEnd() {
       return new Match(context, startIndex, context.length() - startIndex);
-    }
-  }
-
-  private static RepeatingPattern allOccurrencesOf(List<Pattern> candidates) {
-    return new RepeatingPattern() {
-      @Override public Stream<Match> match(String input) {
-        PriorityQueue<Occurrence> occurrences =
-            new PriorityQueue<>(max(1, candidates.size()), Occurrence.byIndex());
-        for (int i = 0; i < candidates.size(); i++) {
-          Pattern candidate = candidates.get(i);
-          Match match = candidate.match(input, 0);
-          if (match != null) {
-            occurrences.add(new Occurrence(candidate, match, i));
-          }
-        }
-        return MoreStreams.whileNotNull(
-            () -> {
-              final Occurrence occurrence = occurrences.poll();
-              if (occurrence == null) {
-                return null;
-              }
-              final Match match = occurrence.match;
-
-              // For allOccurrencesOf([before(first('/')), first('/')]) against input = "foo/bar",
-              // before(first('/')) will match the first occurrence of "foo".
-              // In the next iteration, we want to start *after* the '/' for the repetition
-              // of before(first('/')), yet start from the '/' for the other unmatched first('/').
-              // The expected result is [foo, /].
-              occurrence.enqueueNextOccurrence(input, match.repetitionStartIndex, occurrences);
-              for (final int waterMark = match.endIndex; ;) {
-                Occurrence nextInLine = occurrences.peek();
-                if (nextInLine == null || nextInLine.match.index() >= waterMark) {
-                  return match;
-                }
-                occurrences.remove().enqueueNextOccurrence(input, waterMark, occurrences);
-              }
-            });
-      }
-
-      @Override public String toString() {
-        return "allOccurrencesOf(" + candidates + ")";
-      }
-    };
-  }
-
-  /** A single occurrence of a Pattern in a source string. */
-  private static final class Occurrence {
-    private final Pattern pattern;
-    private final int stableOrder;
-    final Match match;
-
-    @Override public String toString() {
-      return pattern + ": " + match.toString();
-    }
-
-    Occurrence(Pattern pattern, Match match, int stableOrder) {
-      this.pattern = pattern;
-      this.match = match;
-      this.stableOrder = stableOrder;
-    }
-
-    /** Stable order by the occurrence's index. */
-    static Comparator<Occurrence> byIndex() {
-      return comparingInt((Occurrence occurrence) -> occurrence.match.index())
-          .thenComparingInt(occurrence -> occurrence.stableOrder);
-    }
-
-    void enqueueNextOccurrence(String input, int fromIndex, Queue<Occurrence> queue) {
-      Match nextMatch = pattern.match(input, fromIndex);
-      if (nextMatch != null) {
-        queue.add(new Occurrence(pattern, nextMatch, stableOrder));
-      }
     }
   }
 
