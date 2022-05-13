@@ -2476,13 +2476,16 @@ public class SubstringTest {
 
   @Test
   public void firstOccurrence_noPattern() {
-    assertThat(Stream.<Substring.Pattern>empty().collect(firstOccurrence()).from("string"))
-        .isEmpty();
+    Substring.Pattern pattern = Stream.<Substring.Pattern>empty().collect(firstOccurrence());
+    assertThat(pattern.from("string")).isEmpty();
+    assertThat(pattern.repeatedly().from("string")).isEmpty();
   }
 
   @Test
   public void firstOccurrence_singlePattern_noMatch() {
-    assertThat(Stream.of(first("foo")).collect(firstOccurrence()).from("string")).isEmpty();
+    Substring.Pattern pattern = Stream.of(first("foo")).collect(firstOccurrence());
+    assertThat(pattern.from("string")).isEmpty();
+    assertThat(pattern.repeatedly().from("string")).isEmpty();
   }
 
   @Test
@@ -2496,6 +2499,7 @@ public class SubstringTest {
   public void firstOccurrence_twoPatterns_noneMatch() {
     Substring.Pattern pattern = Stream.of(first("foo"), first("bar")).collect(firstOccurrence());
     assertThat(pattern.from("what")).isEmpty();
+    assertThat(pattern.repeatedly().from("what")).isEmpty();
   }
 
   @Test
@@ -2517,6 +2521,7 @@ public class SubstringTest {
     Substring.Pattern pattern =
         Stream.of(first("foo"), first("bar"), first("zoo")).collect(firstOccurrence());
     assertThat(pattern.from("what")).isEmpty();
+    assertThat(pattern.repeatedly().from("what")).isEmpty();
   }
 
   @Test
@@ -2586,10 +2591,66 @@ public class SubstringTest {
   @Test
   public void firstOccurrence_beforePatternRepetitionIndexRespected() {
     Substring.Pattern pattern =
-        Stream.of(first("foo"), before(first("/")), first('/'), first("bar"))
+        Stream.of(first("foo"), before(first("/")), first('/'), first("zoo"))
             .collect(firstOccurrence());
-    assertThat(pattern.repeatedly().from("food/bar"))
-        .containsExactly("foo", "d", "bar")
+    assertThat(pattern.repeatedly().from("food/bar/baz/zoo"))
+        .containsExactly("foo", "d", "/", "bar", "/", "baz", "/", "zoo")
+        .inOrder();
+  }
+
+  @Test
+  public void firstOccurrence_beforePatternRepetition() {
+    Substring.Pattern pattern =
+        Stream.of(before(first("//")))
+            .collect(firstOccurrence());
+    assertThat(pattern.repeatedly().from("foo//bar//baz//zoo"))
+        .containsExactly("foo", "bar", "baz")
+        .inOrder();
+  }
+
+  @Test
+  public void firstOccurrence_limitPatternInterleavedWithLimitPattern() {
+    Substring.Pattern pattern =
+        Stream.of(first("koook").limit(3), first("ok").limit(1))
+            .collect(firstOccurrence());
+    assertThat(pattern.repeatedly().from("okoookoook"))
+        .containsExactly("o", "koo", "o", "o")
+        .inOrder();
+    assertThat(pattern.repeatedly().from("koookoooko"))
+        .containsExactly("koo", "o", "o")
+        .inOrder();
+  }
+
+  @Test
+  public void firstOccurrence_zeroLimitPatternInterleavedWithZeroLimitPattern() {
+    Substring.Pattern pattern =
+        Stream.of(first("kook").limit(0), first("ok").limit(0))
+            .collect(firstOccurrence());
+    assertThat(pattern.repeatedly().from("okookook"))
+        .containsExactly("", "", "", "")
+        .inOrder();
+    assertThat(pattern.repeatedly().from("kookooko"))
+        .containsExactly("", "", "")
+        .inOrder();
+  }
+
+  @Test
+  public void firstOccurrence_beforePatternInterleavedWithBeforePattern() {
+    Substring.Pattern pattern =
+        Stream.of(before(first("/")), before(first("//")))
+            .collect(firstOccurrence());
+    assertThat(pattern.repeatedly().from("foo//bar//baz//zoo"))
+        .containsExactly("foo", "", "", "bar", "", "", "baz", "", "")
+        .inOrder();
+  }
+
+  @Test
+  public void firstOccurrence_beforePatternInterleavedWithFirst() {
+    Substring.Pattern pattern =
+        Stream.of(before(first("//")), first("//"))
+            .collect(firstOccurrence());
+    assertThat(pattern.repeatedly().from("foo//bar//baz//zoo"))
+        .containsExactly("foo", "//", "bar", "//", "baz", "//")
         .inOrder();
   }
 

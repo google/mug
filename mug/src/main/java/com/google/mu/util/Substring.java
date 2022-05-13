@@ -1979,7 +1979,7 @@ public final class Substring {
     return new RepeatingPattern() {
       @Override public Stream<Match> match(String input) {
         PriorityQueue<Occurrence> occurrences =
-            new PriorityQueue<>(candidates.size(), Occurrence.byIndex());
+            new PriorityQueue<>(max(1, candidates.size()), Occurrence.byIndex());
         for (int i = 0; i < candidates.size(); i++) {
           Pattern candidate = candidates.get(i);
           Match match = candidate.match(input, 0);
@@ -1994,12 +1994,19 @@ public final class Substring {
                 return null;
               }
               final Match match = occurrence.match;
-              for (Occurrence removed = occurrence; ; removed = occurrences.remove()) {
-                removed.enqueueNextOccurrence(input, match.repetitionStartIndex, occurrences);
+
+              // For allOccurrencesOf([before(first('/')), first('/')]) against input = "foo/bar",
+              // before(first('/')) will match the first occurrence of "foo".
+              // In the next iteration, we want to start *after* the '/' for the repetition
+              // of before(first('/')), yet start from the '/' for the other unmatched first('/').
+              // The expected result is [foo, /].
+              occurrence.enqueueNextOccurrence(input, match.repetitionStartIndex, occurrences);
+              for (final int waterMark = match.endIndex; ;) {
                 Occurrence nextInLine = occurrences.peek();
-                if (nextInLine == null || nextInLine.match.index() >= match.repetitionStartIndex) {
+                if (nextInLine == null || nextInLine.match.index() >= waterMark) {
                   return match;
                 }
+                occurrences.remove().enqueueNextOccurrence(input, waterMark, occurrences);
               }
             });
       }
@@ -2015,6 +2022,10 @@ public final class Substring {
     private final Pattern pattern;
     private final int stableOrder;
     final Match match;
+
+    @Override public String toString() {
+      return pattern + ": " + match.toString();
+    }
 
     Occurrence(Pattern pattern, Match match, int stableOrder) {
       this.pattern = pattern;
