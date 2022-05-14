@@ -2721,10 +2721,40 @@ public class SubstringTest {
   }
 
   @Test
+  public void firstOccurrence_peek_alternativeBackTrackingNotTriggeredByPeek() {
+    Substring.Pattern pattern =
+        Stream.of("foo", "ood").map(Substring::first).collect(firstOccurrence()).peek(" ");
+    assertThat(pattern.from("food ")).isEmpty();
+    assertThat(pattern.repeatedly().from("food ")).isEmpty();
+  }
+
+  @Test
+  public void peekThenFirstOccurrence_alternativeBackTrackingTriggeredByPeek() {
+    Substring.Pattern pattern =
+        Stream.of("foo", "ood").map(Substring::first).map(p -> p.peek(" ")).collect(firstOccurrence());
+    assertThat(pattern.from("food ")).hasValue("ood");
+    assertThat(pattern.repeatedly().from("food ")).containsExactly("ood");
+  }
+
+  @Test
   public void or_withBoundary_alternativeBackTrackingTriggeredByBoundaryMismatch() {
     Substring.Pattern pattern = first("foo").or(first("food")).withBoundary(Character::isWhitespace);
     assertThat(pattern.from("food")).hasValue("food");
     assertThat(pattern.repeatedly().from("food")).containsExactly("food");
+  }
+
+  @Test
+  public void or_peek_alternativeBackTrackingTriggeredByPeek() {
+    Substring.Pattern pattern = first("foo").or(first("food")).peek(" ");
+    assertThat(pattern.from("food ")).hasValue("food");
+    assertThat(pattern.repeatedly().from("food ")).containsExactly("food");
+  }
+
+  @Test
+  public void or_limitThenPeek_alternativeBackTrackingTriggeredByPeek() {
+    Substring.Pattern pattern = first("foo").or(first("food")).limit(4).peek(" ");
+    assertThat(pattern.from("food ")).hasValue("food");
+    assertThat(pattern.repeatedly().from("food ")).containsExactly("food");
   }
 
   @Test

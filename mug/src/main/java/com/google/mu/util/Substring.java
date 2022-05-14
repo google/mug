@@ -608,13 +608,27 @@ public final class Substring {
             }
 
             // withBoundary() moves one char at a time when boundary mismatches.
-            // firstOccurrence().withBoundary() will end up re-applying all candidate patterns at
-            // every index.
-            // By changing it to withBoundary().firstOccurrence(), the one-char-a-time is saved by
-            // the fast-forwarding in firstOccurrence().
-            // Because withBoundary() does back-tracking, it's equivalent doing the backtracking
-            // for each candidate pattern vs. back-tracking back into every candidate pattern
-            // from the next char.
+            // As such firstOccurrence().withBoundary().repeatedly() will end up re-applying all
+            // candidate patterns at every index.
+            //
+            // This override rewrites it to withBoundary().firstOccurrence().repeatedly(),
+            // Because firstOccurrence() implements the fast-forwarding optimization, the
+            // withBoundary() boundary scanning is significantly reduced.
+            //
+            // This rewrite is mostly equivalent before vs. after because if a boundary check
+            // disqualifies a candidate pattern returned by firstOccurrence(), all of the other
+            // candidate
+            // patterns will be tried.
+            //
+            // There is one subtle difference though. Without this override:
+            //     In ['foo', 'food'].collect(firstOccurrence()).withBoundary(whitespace());
+            //     'foo' will be matched and then withBoundary(whitespace()) will disqualify it;
+            //     The next iteration of withBoundary() will start from the second char 'o', so
+            //     'food' will never get a chance to match.
+            // With the override, the above expression is rewritten to:
+            //     ['foo', 'food'].withBoundary(whitespace()).collect(firstOccurrence()).
+            //     firstOccurrence().repeatedly() is in the driving seat and will attempt 'food'
+            //     from the first char.
             @Override public Pattern withBoundary(CharPredicate boundaryBefore, CharPredicate boundaryAfter) {
               requireNonNull(boundaryBefore);
               requireNonNull(boundaryAfter);
@@ -909,6 +923,14 @@ public final class Substring {
               .or(that.withBoundary(boundaryBefore, boundaryAfter));
         }
 
+        @Override public Pattern peek(Pattern following) {
+          return base.peek(following).or(that.peek(following));
+        }
+
+        @Override public Pattern limit(int maxChars) {
+          return base.limit(maxChars).or(that.limit(maxChars));
+        }
+
         @Override public String toString() {
           return base + ".or(" + that + ")";
         }
@@ -921,7 +943,7 @@ public final class Substring {
      *
      * @since 6.1
      */
-    public final Pattern limit(int maxChars) {
+    public Pattern limit(int maxChars) {
       if (maxChars < 0) {
         throw new IllegalArgumentException("Negative maxChars: " + maxChars);
       }
@@ -1012,7 +1034,7 @@ public final class Substring {
      *
      * @since 6.0
      */
-    public final Pattern peek(Pattern following) {
+    public Pattern peek(Pattern following) {
       requireNonNull(following);
       Pattern base = this;
       return new Pattern() {
