@@ -2683,6 +2683,33 @@ public class SubstringTest {
   }
 
   @Test
+  public void firstOccurrence_word() {
+    Substring.Pattern pattern =
+        Stream.of("food", "dog", "f", "fo", "d", "do")
+        .map(Substring::word)
+        .collect(firstOccurrence());
+    assertThat(pattern.from("foodog")).isEmpty();
+    assertThat(pattern.repeatedly().from("foodog")).isEmpty();
+    assertThat(pattern.repeatedly().from("dog foo dog food catfood"))
+        .containsExactly("dog", "dog", "food")
+        .inOrder();
+  }
+
+  @Test
+  public void firstOccurrence_withBoundary() {
+    Substring.Pattern pattern =
+        Stream.of("food", "dog", "f", "fo", "d", "do")
+        .map(Substring::first)
+        .collect(firstOccurrence())
+        .withBoundary(Character::isWhitespace);
+    assertThat(pattern.from("foodog")).isEmpty();
+    assertThat(pattern.repeatedly().from("foodog")).isEmpty();
+    assertThat(pattern.repeatedly().from("dog foo dog food catfood"))
+        .containsExactly("dog", "dog", "food")
+        .inOrder();
+  }
+
+  @Test
   public void leading_noMatch() {
     assertThat(leading(ALPHA).from(" foo")).isEmpty();
     assertThat(leading(ALPHA).from("")).isEmpty();

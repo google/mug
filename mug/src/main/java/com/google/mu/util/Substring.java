@@ -607,6 +607,22 @@ public final class Substring {
                   });
             }
 
+            // withBoundary() moves one char at a time when boundary mismatches.
+            // firstOccurrence().withBoundary() will end up re-applying all candidate patterns at
+            // every index.
+            // By changing it to withBoundary().firstOccurrence(), the one-char-a-time is saved by
+            // the fast-forwarding in firstOccurrence().
+            // Because withBoundary() does back-tracking, it's equivalent doing the backtracking
+            // for each candidate pattern vs. back-tracking back into every candidate pattern
+            // from the next char.
+            @Override public Pattern withBoundary(CharPredicate boundaryBefore, CharPredicate boundaryAfter) {
+              requireNonNull(boundaryBefore);
+              requireNonNull(boundaryAfter);
+              return candidates.stream()
+                  .map(c -> c.withBoundary(boundaryBefore, boundaryAfter))
+                  .collect(firstOccurrence());
+            }
+
             @Override
             public String toString() {
               return "firstOccurrenceOf(" + candidates + ")";
@@ -1040,7 +1056,7 @@ public final class Substring {
      *
      * @since 6.0
      */
-    public final Pattern withBoundary(CharPredicate boundaryBefore, CharPredicate boundaryAfter) {
+    public Pattern withBoundary(CharPredicate boundaryBefore, CharPredicate boundaryAfter) {
       requireNonNull(boundaryBefore);
       requireNonNull(boundaryAfter);
       Pattern target = this;
