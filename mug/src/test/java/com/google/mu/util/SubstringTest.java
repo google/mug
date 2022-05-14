@@ -2710,6 +2710,24 @@ public class SubstringTest {
   }
 
   @Test
+  public void firstOccurrence_withBoundary_tieBrokenByBoundary() {
+    Substring.Pattern pattern =
+        Stream.of("foo", "food")
+        .map(Substring::first)
+        .collect(firstOccurrence())
+        .withBoundary(Character::isWhitespace);
+    assertThat(pattern.from("food")).hasValue("food");
+    assertThat(pattern.repeatedly().from("food")).containsExactly("food");
+  }
+
+  @Test
+  public void or_withBoundary_alternativeBackTrackingTriggeredByBoundaryMismatch() {
+    Substring.Pattern pattern = first("foo").or(first("food")).withBoundary(Character::isWhitespace);
+    assertThat(pattern.from("food")).hasValue("food");
+    assertThat(pattern.repeatedly().from("food")).containsExactly("food");
+  }
+
+  @Test
   public void leading_noMatch() {
     assertThat(leading(ALPHA).from(" foo")).isEmpty();
     assertThat(leading(ALPHA).from("")).isEmpty();

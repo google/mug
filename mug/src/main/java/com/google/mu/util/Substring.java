@@ -902,6 +902,13 @@ public final class Substring {
           return match == null ? that.match(input, fromIndex) : match;
         }
 
+        // Allow withBoundary to trigger backtracking.
+        @Override public Pattern withBoundary(
+            CharPredicate boundaryBefore, CharPredicate boundaryAfter) {
+          return base.withBoundary(boundaryBefore, boundaryAfter)
+              .or(that.withBoundary(boundaryBefore, boundaryAfter));
+        }
+
         @Override public String toString() {
           return base + ".or(" + that + ")";
         }
