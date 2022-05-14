@@ -573,7 +573,7 @@ public final class Substring {
               return best;
             }
 
-            @Override Stream<Match> iterationsIn(String input) {
+            @Override Stream<Match> iterate(String input) {
               PriorityQueue<Occurrence> occurrences =
                   new PriorityQueue<>(max(1, candidates.size()), byIndex);
               for (int i = 0; i < candidates.size(); i++) {
@@ -909,8 +909,10 @@ public final class Substring {
           return m == null ? null : m.limit(maxChars);
         }
 
-        @Override Stream<Match> iterationsIn(String input) {
-          return base.iterationsIn(input).map(m -> m.limit(maxChars));
+        // For, firstOccurrence().limit().repeatedly(), apply firstOccurrence().iterate()
+        // and then apply limit() on the result matches to take advantage of the optimization.
+        @Override Stream<Match> iterate(String input) {
+          return base.iterate(input).map(m -> m.limit(maxChars));
         }
 
         @Override public String toString() {
@@ -1205,7 +1207,7 @@ public final class Substring {
     public RepeatingPattern repeatedly() {
       return new RepeatingPattern() {
         @Override public Stream<Match> match(String input) {
-          return iterationsIn(input);
+          return iterate(requireNonNull(input));
         }
 
         @Override public String toString() {
@@ -1220,8 +1222,8 @@ public final class Substring {
      */
     abstract Match match(String string, int fromIndex);
 
-    /** Applies this pattern repeatedly against {@code input} and return all iterations. */
-    Stream<Match> iterationsIn(String input) {
+    /** Applies this pattern repeatedly against {@code input} and returns all iterations. */
+    Stream<Match> iterate(String input) {
       return MoreStreams.whileNotNull(
           new Supplier<Match>() {
             private final int end = input.length();
