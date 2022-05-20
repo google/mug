@@ -1853,6 +1853,164 @@ public class SubstringTest {
     assertThat(first("foo").limit(2).toString()).isEqualTo("first('foo').limit(2)");
   }
 
+  @Test
+  public void matchSkip_negative() {
+    Substring.Match match = first("foo").in(" foo bar").get();
+    assertThrows(IllegalArgumentException.class, () -> match.skip(-1));
+    assertThrows(IllegalArgumentException.class, () -> match.skip(Integer.MIN_VALUE));
+  }
+
+  @Test
+  public void matchSkip_zero() {
+    Substring.Match match = first("foo").in(" foo bar").get();
+    assertThat(match.skip(0)).isSameAs(match);
+  }
+
+  @Test
+  public void matchSkip_smallerThanLength() {
+    Substring.Match match = first("foo").in(" foo bar").get();
+    assertThat(match.skip(1).toString()).isEqualTo("oo");
+  }
+
+  @Test
+  public void matchSkip_equalToLength() {
+    Substring.Match match = first("foo").in(" foo bar").get();
+    assertThat(match.skip(3).toString()).isEmpty();
+  }
+
+  @Test
+  public void matchSkip_greaterThanLength() {
+    Substring.Match match = first("foo").in(" foo bar").get();
+    assertThat(match.skip(4).toString()).isEmpty();
+    assertThat(match.skip(5).toString()).isEmpty();
+    assertThat(match.skip(Integer.MAX_VALUE).toString()).isEmpty();
+  }
+
+  @Test
+  public void skip_negative() {
+    Substring.Pattern pattern = first("foo");
+    assertThrows(IllegalArgumentException.class, () -> pattern.skip(-1));
+    assertThrows(IllegalArgumentException.class, () -> pattern.skip(Integer.MIN_VALUE));
+  }
+
+  @Test
+  public void skip_noMatch() {
+    Substring.Pattern pattern = first("foo");
+    assertThat(pattern.skip(1).from("fur")).isEmpty();
+  }
+
+  @Test
+  public void skip_smallerThanSize() {
+    assertThat(first("foo").skip(1).from("my food")).hasValue("oo");
+    assertThat(first("foo").skip(1).repeatedly().from("my food")).containsExactly("oo");
+    assertThat(first("foo").skip(1).repeatedly().from("my ffoof")).containsExactly("oo");
+    assertThat(first("fff").skip(1).repeatedly().from("fffff")).containsExactly("ff");
+    assertThat(first("fff").skip(2).repeatedly().from("ffffff")).containsExactly("f", "f");
+  }
+
+  @Test
+  public void skip_equalToSize() {
+    assertThat(first("foo").skip(3).from("my food")).hasValue("");
+    assertThat(first("foo").skip(3).repeatedly().from("my food")).containsExactly("");
+    assertThat(first("foo").skip(3).repeatedly().from("my ffoof")).containsExactly("");
+    assertThat(first("fff").skip(3).repeatedly().from("fffff")).containsExactly("");
+  }
+
+  @Test
+  public void skip_greaterThanSize() {
+    assertThat(first("foo").skip(Integer.MAX_VALUE).from("my food")).hasValue("");
+    assertThat(first("foo").skip(Integer.MAX_VALUE).repeatedly().from("my food"))
+        .containsExactly("");
+    assertThat(first("foo").skip(Integer.MAX_VALUE).repeatedly().from("my ffoof"))
+        .containsExactly("");
+    assertThat(first("fff").skip(Integer.MAX_VALUE).repeatedly().from("ffffff"))
+        .containsExactly("", "");
+  }
+
+  @Test
+  public void skip_toString() {
+    assertThat(first("foo").skip(2).toString()).isEqualTo("first('foo').skip(2)");
+  }
+
+  @Test
+  public void matchChop_negative() {
+    Substring.Match match = first("foo").in(" foo bar").get();
+    assertThrows(IllegalArgumentException.class, () -> match.chop(-1));
+    assertThrows(IllegalArgumentException.class, () -> match.chop(Integer.MIN_VALUE));
+  }
+
+  @Test
+  public void matchChop_zero() {
+    Substring.Match match = first("foo").in(" foo bar").get();
+    assertThat(match.chop(0)).isSameAs(match);
+  }
+
+  @Test
+  public void matchChop_smallerThanLength() {
+    Substring.Match match = first("foo").in(" foo bar").get();
+    assertThat(match.chop(1).toString()).isEqualTo("fo");
+  }
+
+  @Test
+  public void matchChop_equalToLength() {
+    Substring.Match match = first("foo").in(" foo bar").get();
+    assertThat(match.chop(3).toString()).isEmpty();
+  }
+
+  @Test
+  public void matchChop_greaterThanLength() {
+    Substring.Match match = first("foo").in(" foo bar").get();
+    assertThat(match.chop(4).toString()).isEmpty();
+    assertThat(match.chop(5).toString()).isEmpty();
+    assertThat(match.chop(Integer.MAX_VALUE).toString()).isEmpty();
+  }
+
+  @Test
+  public void chop_negative() {
+    Substring.Pattern pattern = first("foo");
+    assertThrows(IllegalArgumentException.class, () -> pattern.chop(-1));
+    assertThrows(IllegalArgumentException.class, () -> pattern.chop(Integer.MIN_VALUE));
+  }
+
+  @Test
+  public void chop_noMatch() {
+    Substring.Pattern pattern = first("foo");
+    assertThat(pattern.chop(1).from("fur")).isEmpty();
+  }
+
+  @Test
+  public void chop_smallerThanSize() {
+    assertThat(first("foo").chop(1).from("my food")).hasValue("fo");
+    assertThat(first("foo").chop(1).repeatedly().from("my food")).containsExactly("fo");
+    assertThat(first("foo").chop(1).repeatedly().from("my ffoof")).containsExactly("fo");
+    assertThat(first("fff").chop(1).repeatedly().from("fffff")).containsExactly("ff");
+    assertThat(first("fff").chop(2).repeatedly().from("ffffff")).containsExactly("f", "f");
+  }
+
+  @Test
+  public void chop_equalToSize() {
+    assertThat(first("foo").chop(3).from("my food")).hasValue("");
+    assertThat(first("foo").chop(3).repeatedly().from("my food")).containsExactly("");
+    assertThat(first("foo").chop(3).repeatedly().from("my ffoof")).containsExactly("");
+    assertThat(first("fff").chop(3).repeatedly().from("fffff")).containsExactly("");
+  }
+
+  @Test
+  public void chop_greaterThanSize() {
+    assertThat(first("foo").chop(Integer.MAX_VALUE).from("my food")).hasValue("");
+    assertThat(first("foo").chop(Integer.MAX_VALUE).repeatedly().from("my food"))
+        .containsExactly("");
+    assertThat(first("foo").chop(Integer.MAX_VALUE).repeatedly().from("my ffoof"))
+        .containsExactly("");
+    assertThat(first("fff").chop(Integer.MAX_VALUE).repeatedly().from("ffffff"))
+        .containsExactly("", "");
+  }
+
+  @Test
+  public void chop_toString() {
+    assertThat(first("foo").chop(2).toString()).isEqualTo("first('foo').chop(2)");
+  }
+
   @Test public void or_toString() {
     assertThat(first("foo").or(last("bar")).toString()).isEqualTo("first('foo').or(last('bar'))");
   }
@@ -2753,6 +2911,20 @@ public class SubstringTest {
   @Test
   public void or_limitThenPeek_alternativeBackTrackingTriggeredByPeek() {
     Substring.Pattern pattern = first("foo").or(first("food")).limit(4).peek(" ");
+    assertThat(pattern.from("food ")).hasValue("food");
+    assertThat(pattern.repeatedly().from("food ")).containsExactly("food");
+  }
+
+  @Test
+  public void or_skipThenPeek_alternativeBackTrackingTriggeredByPeek() {
+    Substring.Pattern pattern = first("foo").or(first("food")).skip(1).peek(" ");
+    assertThat(pattern.from("food ")).hasValue("ood");
+    assertThat(pattern.repeatedly().from("food ")).containsExactly("ood");
+  }
+
+  @Test
+  public void or_chopThenPeek_alternativeBackTrackingTriggeredByPeek() {
+    Substring.Pattern pattern = first("foo").or(first("food")).chop(0).peek(" ");
     assertThat(pattern.from("food ")).hasValue("food");
     assertThat(pattern.repeatedly().from("food ")).containsExactly("food");
   }

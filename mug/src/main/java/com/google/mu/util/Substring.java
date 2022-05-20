@@ -931,6 +931,14 @@ public final class Substring {
           return base.limit(maxChars).or(that.limit(maxChars));
         }
 
+        @Override public Pattern skip(int maxChars) {
+          return base.skip(maxChars).or(that.skip(maxChars));
+        }
+
+        @Override public Pattern chop(int maxChars) {
+          return base.chop(maxChars).or(that.chop(maxChars));
+        }
+
         @Override public String toString() {
           return base + ".or(" + that + ")";
         }
@@ -944,9 +952,7 @@ public final class Substring {
      * @since 6.1
      */
     public Pattern limit(int maxChars) {
-      if (maxChars < 0) {
-        throw new IllegalArgumentException("Negative maxChars: " + maxChars);
-      }
+      checkMaxChars(maxChars);
       Pattern base = this;
       return new Pattern() {
         @Override Match match(String input, int fromIndex) {
@@ -965,6 +971,63 @@ public final class Substring {
         }
       };
     }
+
+    /**
+     * Returns a {@code Pattern} that's equivalent to this pattern except it will skip up To {@code
+     * maxChars} from the beginning of the match.
+     *
+     * @since 6.1
+     */
+    public Pattern skip(int maxChars) {
+      checkMaxChars(maxChars);
+      Pattern original = this;
+      return new Pattern() {
+        @Override Match match(String input, int fromIndex) {
+          Match m = original.match(input, fromIndex);
+          return m == null ? null : m.skip(maxChars);
+        }
+
+        // For firstOccurrence().skiip().repeatedly(), apply
+        // firstOccurrence().iterate() to take advantage of the optimization and then apply
+        // skip() on the result matches.
+        @Override Stream<Match> iterate(String input) {
+          return original.iterate(input).map(m -> m.skip(maxChars));
+        }
+
+        @Override public String toString() {
+          return original + ".skip(" + maxChars + ")";
+        }
+      };
+    }
+
+    /**
+     * Returns a {@code Pattern} that's equivalent to this pattern except it will chop up To {@code
+     * maxChars} from the end of the match.
+     *
+     * @since 6.1
+     */
+    public Pattern chop(int maxChars) {
+      checkMaxChars(maxChars);
+      Pattern original = this;
+      return new Pattern() {
+        @Override Match match(String input, int fromIndex) {
+          Match m = original.match(input, fromIndex);
+          return m == null ? null : m.chop(maxChars);
+        }
+
+        // For firstOccurrence().chop().repeatedly(), apply
+        // firstOccurrence().iterate() to take advantage of the optimization and then apply
+        // chop() on the result matches.
+        @Override Stream<Match> iterate(String input) {
+          return original.iterate(input).map(m -> m.chop(maxChars));
+        }
+
+        @Override public String toString() {
+          return original + ".chop(" + maxChars + ")";
+        }
+      };
+    }
+
 
     /**
      * Similar to regex lookahead, returns a pattern that matches the {@code following}
@@ -1981,10 +2044,40 @@ public final class Substring {
      * @since 6.1
      */
     public Match limit(int maxChars) {
-      if (maxChars < 0) {
-        throw new IllegalArgumentException("Negative maxChars: " + maxChars);
+      return checkMaxChars(maxChars) >= length()
+          ? this
+          : new Match(context, startIndex, maxChars, repetitionStartIndex);
+    }
+
+    /**
+     * Returns an equivalent match skipping up to {@code maxChars} from the beginning of the match.
+     *
+     * <p>For example, {@code first("hello").in("say hello").get().skip(2)} will match the "llo"
+     * substring.
+     *
+     * @since 6.1
+     */
+    public Match skip(int maxChars) {
+      if (checkMaxChars(maxChars) == 0) {
+        return this;
       }
-      return length() <= maxChars ? this : new Match(context, startIndex, maxChars, repetitionStartIndex);
+      int index = maxChars >= length() ? endIndex : startIndex + maxChars;
+      return new Match(context, index, endIndex - index, repetitionStartIndex);
+    }
+
+    /**
+     * Returns an equivalent match chopping up to {@code maxChars} from the end of the match.
+     *
+     * <p>For example, {@code first("hello").in("say hello").get().chop(2)} will match the "hel"
+     * substring.
+     *
+     * @since 6.1
+     */
+    public Match chop(int maxChars) {
+      if (checkMaxChars(maxChars) == 0) {
+        return this;
+      }
+      return new Match(context, startIndex, max(0, length() - maxChars), repetitionStartIndex);
     }
 
     /** Return 0-based index of this match in {@link #fullString}. */
@@ -2074,6 +2167,13 @@ public final class Substring {
     private Match toEnd() {
       return new Match(context, startIndex, context.length() - startIndex);
     }
+  }
+
+  private static int checkMaxChars(int maxChars) {
+    if (maxChars < 0) {
+      throw new IllegalArgumentException("Negative maxChars: " + maxChars);
+    }
+    return maxChars;
   }
 
   private Substring() {}
