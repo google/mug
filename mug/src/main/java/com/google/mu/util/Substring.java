@@ -16,12 +16,16 @@ package com.google.mu.util;
 
 import static com.google.mu.util.InternalCollectors.toImmutableList;
 import static java.lang.Math.max;
+import static java.util.Comparator.comparingInt;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.collectingAndThen;
 
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
@@ -89,6 +93,22 @@ import com.google.mu.util.stream.MoreStreams;
  *         .repeatedly()
  *         .splitThenTrimKeyValuesAround(first('='), "k1=v1, k2=v2")  // => [(k1, v1), (k2, v2)]
  *         .collect(toImmutableListMultimap());
+ * }</pre>
+ *
+ * To replace the placeholders in a text with values (although do consider using a proper templating
+ * framework because it's a security vulnerability if your values come from untrusted sources like
+ * the user inputs):
+ *
+ * <pre>{@code
+ * ImmutableMap<String, String> variables =
+ *     ImmutableMap.of("who", "Arya Stark", "where", "Braavos");
+ * String rendered =
+ *     spanningInOrder("{", "}")
+ *         .repeatedly()
+ *         .replaceAllFrom(
+ *             "{who} went to {where}.",
+ *             placeholder -> variables.get(placeholder.skip(1, 1).toString()));
+ * assertThat(rendered).isEqualTo("Arya Stark went to Braavos.");
  * }</pre>
  *
  * @since 2.0
@@ -521,6 +541,31 @@ public final class Substring {
    * @since 6.1
    */
   public static Collector<Pattern, ?, Pattern> firstOccurrence() {
+    final class Occurrence {
+      private final Pattern pattern;
+      private final int stableOrder;
+      final Match match;
+
+      @Override public String toString() {
+        return pattern + ": " + match.toString();
+      }
+
+      Occurrence(Pattern pattern, Match match, int stableOrder) {
+        this.pattern = pattern;
+        this.match = match;
+        this.stableOrder = stableOrder;
+      }
+
+      void enqueueNextOccurrence(String input, int fromIndex, Queue<Occurrence> queue) {
+        Match nextMatch = pattern.match(input, fromIndex);
+        if (nextMatch != null) {
+          queue.add(new Occurrence(pattern, nextMatch, stableOrder));
+        }
+      }
+    }
+    Comparator<Occurrence> byIndex =
+        comparingInt((Occurrence occurrence) -> occurrence.match.index())
+            .thenComparingInt(occurrence -> occurrence.stableOrder);
     return collectingAndThen(
         toImmutableList(),
         candidates -> {
@@ -542,6 +587,70 @@ public final class Substring {
                 }
               }
               return best;
+            }
+
+            @Override Stream<Match> iterate(String input) {
+              PriorityQueue<Occurrence> occurrences =
+                  new PriorityQueue<>(max(1, candidates.size()), byIndex);
+              for (int i = 0; i < candidates.size(); i++) {
+                Pattern candidate = candidates.get(i);
+                Match match = candidate.match(input, 0);
+                if (match != null) {
+                  occurrences.add(new Occurrence(candidate, match, i));
+                }
+              }
+              return MoreStreams.whileNotNull(
+                  () -> {
+                    final Occurrence occurrence = occurrences.poll();
+                    if (occurrence == null) {
+                      return null;
+                    }
+                    final Match match = occurrence.match;
+
+                    // For allOccurrencesOf([before(first('/')), first('/')]) against input = "foo/bar",
+                    // before(first('/')) will match the first occurrence of "foo".
+                    // In the next iteration, we want to start *after* the '/' for the repetition
+                    // of before(first('/')), yet start from the '/' for the other unmatched first('/').
+                    // The expected result is [foo, /].
+                    occurrence.enqueueNextOccurrence(input, match.repetitionStartIndex, occurrences);
+                    for (final int waterMark = match.endIndex; ;) {
+                      Occurrence nextInLine = occurrences.peek();
+                      if (nextInLine == null || nextInLine.match.index() >= waterMark) {
+                        return match;
+                      }
+                      occurrences.remove().enqueueNextOccurrence(input, waterMark, occurrences);
+                    }
+                  });
+            }
+
+            // withBoundary() moves one char at a time when boundary mismatches.
+            // As such firstOccurrence().withBoundary().repeatedly() will end up re-applying all
+            // candidate patterns at every index.
+            //
+            // This override rewrites it to withBoundary().firstOccurrence().repeatedly(),
+            // Because firstOccurrence() implements the fast-forwarding optimization, the
+            // withBoundary() boundary scanning is significantly reduced.
+            //
+            // This rewrite is mostly equivalent before vs. after because if a boundary check
+            // disqualifies a candidate pattern returned by firstOccurrence(), all of the other
+            // candidate
+            // patterns will be tried.
+            //
+            // There is one subtle difference though. Without this override:
+            //     In ['foo', 'food'].collect(firstOccurrence()).withBoundary(whitespace());
+            //     'foo' will be matched and then withBoundary(whitespace()) will disqualify it;
+            //     The next iteration of withBoundary() will start from the second char 'o', so
+            //     'food' will never get a chance to match.
+            // With the override, the above expression is rewritten to:
+            //     ['foo', 'food'].withBoundary(whitespace()).collect(firstOccurrence()).
+            //     firstOccurrence().repeatedly() is in the driving seat and will attempt 'food'
+            //     from the first char.
+            @Override public Pattern withBoundary(CharPredicate boundaryBefore, CharPredicate boundaryAfter) {
+              requireNonNull(boundaryBefore);
+              requireNonNull(boundaryAfter);
+              return candidates.stream()
+                  .map(c -> c.withBoundary(boundaryBefore, boundaryAfter))
+                  .collect(firstOccurrence());
             }
 
             @Override
@@ -823,6 +932,25 @@ public final class Substring {
           return match == null ? that.match(input, fromIndex) : match;
         }
 
+        // Allow withBoundary to trigger backtracking.
+        @Override public Pattern withBoundary(
+            CharPredicate boundaryBefore, CharPredicate boundaryAfter) {
+          return base.withBoundary(boundaryBefore, boundaryAfter)
+              .or(that.withBoundary(boundaryBefore, boundaryAfter));
+        }
+
+        @Override public Pattern peek(Pattern following) {
+          return base.peek(following).or(that.peek(following));
+        }
+
+        @Override public Pattern limit(int maxChars) {
+          return base.limit(maxChars).or(that.limit(maxChars));
+        }
+
+        @Override public Pattern skip(int fromBeginning, int fromEnd) {
+          return base.skip(fromBeginning, fromEnd).or(that.skip(fromBeginning, fromEnd));
+        }
+
         @Override public String toString() {
           return base + ".or(" + that + ")";
         }
@@ -832,11 +960,11 @@ public final class Substring {
     /**
      * Returns a {@code Pattern} that's equivalent to this pattern except it only matches at
      * most {@code maxChars}.
+     *
+     * @since 6.1
      */
-    public final Pattern limit(int maxChars) {
-      if (maxChars < 0) {
-        throw new IllegalArgumentException("Negative maxChars: " + maxChars);
-      }
+    public Pattern limit(int maxChars) {
+      checkNumChars(maxChars);
       Pattern base = this;
       return new Pattern() {
         @Override Match match(String input, int fromIndex) {
@@ -844,11 +972,50 @@ public final class Substring {
           return m == null ? null : m.limit(maxChars);
         }
 
+        // For, firstOccurrence().limit().repeatedly(), apply firstOccurrence().iterate()
+        // and then apply limit() on the result matches to take advantage of the optimization.
+        @Override Stream<Match> iterate(String input) {
+          return base.iterate(input).map(m -> m.limit(maxChars));
+        }
+
         @Override public String toString() {
           return base + ".limit(" + maxChars + ")";
         }
       };
     }
+
+    /**
+     * Returns a {@code Pattern} that's equivalent to this pattern except it will skip up To {@code
+     * fromBeginnings} characters from the beginning of the match and up to {@code fromEnd} characters
+     * from the end of the match.
+     *
+     * <p>If the match includes fewer characters, an empty match is returned.
+     *
+     * @since 6.1
+     */
+    public Pattern skip(int fromBeginning, int fromEnd) {
+      checkNumChars(fromBeginning);
+      checkNumChars(fromEnd);
+      Pattern original = this;
+      return new Pattern() {
+        @Override Match match(String input, int fromIndex) {
+          Match m = original.match(input, fromIndex);
+          return m == null ? null : m.skip(fromBeginning, fromEnd);
+        }
+
+        // For firstOccurrence().skiip().repeatedly(), apply
+        // firstOccurrence().iterate() to take advantage of the optimization and then apply
+        // skip() on the result matches.
+        @Override Stream<Match> iterate(String input) {
+          return original.iterate(input).map(m -> m.skip(fromBeginning, fromEnd));
+        }
+
+        @Override public String toString() {
+          return original + ".skip(" + fromBeginning + ", " + fromEnd + ")";
+        }
+      };
+    }
+
 
     /**
      * Similar to regex lookahead, returns a pattern that matches the {@code following}
@@ -918,7 +1085,7 @@ public final class Substring {
      *
      * @since 6.0
      */
-    public final Pattern peek(Pattern following) {
+    public Pattern peek(Pattern following) {
       requireNonNull(following);
       Pattern base = this;
       return new Pattern() {
@@ -969,7 +1136,7 @@ public final class Substring {
      *
      * @since 6.0
      */
-    public final Pattern withBoundary(CharPredicate boundaryBefore, CharPredicate boundaryAfter) {
+    public Pattern withBoundary(CharPredicate boundaryBefore, CharPredicate boundaryAfter) {
       requireNonNull(boundaryBefore);
       requireNonNull(boundaryAfter);
       Pattern target = this;
@@ -1133,45 +1300,14 @@ public final class Substring {
      *
      * @since 5.2
      */
-    public final RepeatingPattern repeatedly() {
-      Pattern repeatable = Pattern.this;
+    public RepeatingPattern repeatedly() {
       return new RepeatingPattern() {
         @Override public Stream<Match> match(String input) {
-          return MoreStreams.whileNotNull(
-              new Supplier<Match>() {
-                private final int end = input.length();
-                private int nextIndex = 0;
-
-                @Override public Match get() {
-                  if (nextIndex > end) {
-                    return null;
-                  }
-                  Match match = repeatable.match(input, nextIndex);
-                  if (match == null) {
-                    return null;
-                  }
-                  if (match.endIndex == end) { // We've consumed the entire string.
-                    nextIndex = Integer.MAX_VALUE;
-                  } else if (match.repetitionStartIndex > nextIndex) {
-                    nextIndex = match.repetitionStartIndex;
-                  } else {
-                    throw new IllegalStateException(
-                        "Infinite loop detected at " + match.repetitionStartIndex);
-                  }
-                  return match;
-                }
-              });
-        }
-
-        @Override public Stream<Match> split(String string) {
-          if (repeatable.match("") != null) {
-            throw new IllegalStateException("Pattern (" + repeatable + ") cannot be used as delimiter.");
-          }
-          return super.split(string);
+          return iterate(requireNonNull(input));
         }
 
         @Override public String toString() {
-          return repeatable + ".repeatedly()";
+          return Pattern.this + ".repeatedly()";
         }
       };
     }
@@ -1181,6 +1317,34 @@ public final class Substring {
      * found.
      */
     abstract Match match(String string, int fromIndex);
+
+    /** Applies this pattern repeatedly against {@code input} and returns all iterations. */
+    Stream<Match> iterate(String input) {
+      return MoreStreams.whileNotNull(
+          new Supplier<Match>() {
+            private final int end = input.length();
+            private int nextIndex = 0;
+
+            @Override public Match get() {
+              if (nextIndex > end) {
+                return null;
+              }
+              Match match = match(input, nextIndex);
+              if (match == null) {
+                return null;
+              }
+              if (match.endIndex == end) { // We've consumed the entire string.
+                nextIndex = Integer.MAX_VALUE;
+              } else if (match.repetitionStartIndex > nextIndex) {
+                nextIndex = match.repetitionStartIndex;
+              } else {
+                throw new IllegalStateException(
+                    "Infinite loop detected at " + match.repetitionStartIndex);
+              }
+              return match;
+            }
+          });
+    }
 
     private Match match(String string) {
       return match(string, 0);
@@ -1843,6 +2007,60 @@ public final class Substring {
     }
 
     /**
+     * Strips the given {@code prefix} from the match.
+     *
+     * @since 6.1
+     */
+    public Match strip(Prefix prefix) {
+      return prefix.length() > 0 && startsWith(prefix.toString())
+          ? new Match(context, startIndex + prefix.length(), length() - prefix.length(), repetitionStartIndex)
+          : this;
+    }
+
+    /**
+     * Strips the given {@code prefix} from the match.
+     *
+     * @since 6.1
+     */
+    public Match strip(Suffix suffix) {
+      return suffix.length() > 0 && endsWith(suffix.toString())
+          ? new Match(context, startIndex, length() - suffix.length(), repetitionStartIndex)
+          : this;
+    }
+
+    /**
+     * Strips the given {@code prefix} and {@code suffix} from the match.
+     *
+     * <p>If this match is equivalent to {@code prefix} and {@code suffix} overlapped with each
+     * other, such as stripping "foo" and "ood" from "food", then only {@code prefix} is stripped.
+     *
+     * @since 6.1
+     */
+    public Match strip(String prefix, String suffix) {
+      return strip(prefix(prefix)).strip(suffix(suffix));
+    }
+
+    /**
+     * Returns true if this match starts with {@code prefix}.
+     *
+     * @since 6.1
+     */
+    public boolean startsWith(String prefix) {
+      return prefix.length() <= length()
+          && context.regionMatches(startIndex, prefix, 0, prefix.length());
+    }
+
+    /**
+     * Returns true if this match ends with {@code suffix}.
+     *
+     * @since 6.1
+     */
+    public boolean endsWith(String suffix) {
+      return suffix.length() <= length()
+          && context.regionMatches(startIndex + (length() - suffix.length()), suffix, 0, suffix.length());
+    }
+
+    /**
      * Returns a copy of the original string with the matched substring replaced with {@code
      * replacement}.
      *
@@ -1868,10 +2086,32 @@ public final class Substring {
      * @since 6.1
      */
     public Match limit(int maxChars) {
-      if (maxChars < 0) {
-        throw new IllegalArgumentException("Negative maxChars: " + maxChars);
+      return checkNumChars(maxChars) >= length()
+          ? this
+          : new Match(context, startIndex, maxChars, repetitionStartIndex);
+    }
+
+    /**
+     * Returns a new instance that's otherwise equivalent except with {@code fromBeginning}
+     * characters skipped from the beginning and {@code fromEnd} characters skipped from the end.
+     * If there are fewer characters, an empty match is returned.
+     *
+     * <p>For example, {@code first("hello").in("say hello").get().skip(2, 1)} returns "ll".
+     *
+     * @since 6.1
+     */
+    public Match skip(int fromBeginning, int fromEnd) {
+      checkNumChars(fromBeginning);
+      checkNumChars(fromEnd);
+      if (fromBeginning >= length()) {
+        return new Match(context, endIndex, 0, repetitionStartIndex);
       }
-      return length() <= maxChars ? this : new Match(context, startIndex, maxChars, repetitionStartIndex);
+      int index = startIndex + fromBeginning;
+      if (fromEnd >= length() - fromBeginning) {
+        return new Match(context, index, 0, repetitionStartIndex);
+      }
+      int len = length() - fromBeginning - fromEnd;
+      return new Match(context, index, len, repetitionStartIndex);
     }
 
     /** Return 0-based index of this match in {@link #fullString}. */
@@ -1961,6 +2201,13 @@ public final class Substring {
     private Match toEnd() {
       return new Match(context, startIndex, context.length() - startIndex);
     }
+  }
+
+  private static int checkNumChars(int maxChars) {
+    if (maxChars < 0) {
+      throw new IllegalArgumentException("Number of characters (" + maxChars + ") cannot be negative.");
+    }
+    return maxChars;
   }
 
   private Substring() {}
