@@ -985,7 +985,7 @@ public final class Substring {
     }
 
     /**
-     * Returns a {@code Pattern} that's equivalent to this pattern except it will skip up To {@code
+     * Returns a {@code Pattern} that's equivalent to this pattern except it will skip up to {@code
      * fromBeginnings} characters from the beginning of the match and up to {@code fromEnd} characters
      * from the end of the match.
      *
@@ -2004,40 +2004,6 @@ public final class Substring {
       } else {
         return before() + after();
       }
-    }
-
-    /**
-     * Strips the given {@code prefix} from the match.
-     *
-     * @since 6.1
-     */
-    public Match strip(Prefix prefix) {
-      return prefix.length() > 0 && startsWith(prefix.toString())
-          ? new Match(context, startIndex + prefix.length(), length() - prefix.length(), repetitionStartIndex)
-          : this;
-    }
-
-    /**
-     * Strips the given {@code prefix} from the match.
-     *
-     * @since 6.1
-     */
-    public Match strip(Suffix suffix) {
-      return suffix.length() > 0 && endsWith(suffix.toString())
-          ? new Match(context, startIndex, length() - suffix.length(), repetitionStartIndex)
-          : this;
-    }
-
-    /**
-     * Strips the given {@code prefix} and {@code suffix} from the match.
-     *
-     * <p>If this match is equivalent to {@code prefix} and {@code suffix} overlapped with each
-     * other, such as stripping "foo" and "ood" from "food", then only {@code prefix} is stripped.
-     *
-     * @since 6.1
-     */
-    public Match strip(String prefix, String suffix) {
-      return strip(prefix(prefix)).strip(suffix(suffix));
     }
 
     /**
