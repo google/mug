@@ -2063,6 +2063,7 @@ public class SubstringTest {
     assertThat(match.startsWith("bc")).isTrue();
     assertThat(match.startsWith("bcd")).isFalse();
     assertThat(match.startsWith("c")).isFalse();
+    assertThat(match.skip(1, 0).startsWith("c")).isTrue();
   }
 
   @Test
@@ -2080,60 +2081,7 @@ public class SubstringTest {
     assertThat(match.endsWith("bc")).isTrue();
     assertThat(match.endsWith("bcd")).isFalse();
     assertThat(match.endsWith("d")).isFalse();
-  }
-
-  @Test
-  public void matchStrip_prefixNotFound() {
-    Substring.Match match = Substring.first("bcd").in("abcde").get();
-    assertThat(match.strip(prefix("a"))).isSameAs(match);
-    assertThat(match.strip(prefix("c"))).isSameAs(match);
-    assertThat(match.strip(prefix("cd"))).isSameAs(match);
-    assertThat(match.strip(prefix("bcde"))).isSameAs(match);
-  }
-
-  @Test
-  public void matchStrip_emptyPrefix() {
-    Substring.Match match = Substring.first("bcd").in("abcde").get();
-    assertThat(match.strip(prefix(""))).isSameAs(match);
-  }
-
-  @Test
-  public void matchStrip_prefixFound() {
-    Substring.Match match = Substring.first("bcd").in("abcde").get();
-    assertThat(match.strip(prefix("b")).toString()).isEqualTo("cd");
-    assertThat(match.strip(prefix("bc")).toString()).isEqualTo("d");
-    assertThat(match.strip(prefix("bcd")).toString()).isEmpty();
-  }
-
-  @Test
-  public void matchStrip_suffixNotFound() {
-    Substring.Match match = Substring.first("bcd").in("abcde").get();
-    assertThat(match.strip(suffix("e"))).isSameAs(match);
-    assertThat(match.strip(suffix("c"))).isSameAs(match);
-    assertThat(match.strip(suffix("abcd"))).isSameAs(match);
-  }
-
-  @Test
-  public void matchStrip_suffixEmpty() {
-    Substring.Match match = Substring.first("bcd").in("abcde").get();
-    assertThat(match.strip(suffix(""))).isSameAs(match);
-  }
-
-  @Test
-  public void matchStrip_suffixFound() {
-    Substring.Match match = Substring.first("bcd").in("abcde").get();
-    assertThat(match.strip(suffix("d")).toString()).isEqualTo("bc");
-    assertThat(match.strip(suffix("cd")).toString()).isEqualTo("b");
-    assertThat(match.strip(suffix("bcd")).toString()).isEmpty();
-  }
-
-  @Test
-  public void matchStrip_prefixAndSuffix() {
-    Substring.Match match = Substring.first("food").in("food network").get();
-    assertThat(match.strip("foo", "ood").toString()).isEqualTo("d");
-    assertThat(match.strip("foo", "").toString()).isEqualTo("d");
-    assertThat(match.strip("", "ood").toString()).isEqualTo("f");
-    assertThat(match.strip("", "")).isSameAs(match);
+    assertThat(match.limit(1).endsWith("b")).isTrue();
   }
 
   @Test public void or_toString() {
