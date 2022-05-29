@@ -95,6 +95,22 @@ import com.google.mu.util.stream.MoreStreams;
  *         .collect(toImmutableListMultimap());
  * }</pre>
  *
+ * To replace the placeholders in a text with values (although do consider using a proper templating
+ * framework because it's a security vulnerability if your values come from untrusted sources like
+ * the user inputs):
+ *
+ * <pre>{@code
+ * ImmutableMap<String, String> variables =
+ *     ImmutableMap.of("who", "Arya Stark", "where", "Braavos");
+ * String rendered =
+ *     spanningInOrder("{", "}")
+ *         .repeatedly()
+ *         .replaceAllFrom(
+ *             "{who} went to {where}.",
+ *             placeholder -> variables.get(placeholder.skip(1, 1).toString()));
+ * assertThat(rendered).isEqualTo("Arya Stark went to Braavos.");
+ * }</pre>
+ *
  * @since 2.0
  */
 public final class Substring {
@@ -972,6 +988,8 @@ public final class Substring {
      * Returns a {@code Pattern} that's equivalent to this pattern except it will skip up To {@code
      * fromBeginnings} characters from the beginning of the match and up to {@code fromEnd} characters
      * from the end of the match.
+     *
+     * <p>If the match includes fewer characters, an empty match is returned.
      *
      * @since 6.1
      */
