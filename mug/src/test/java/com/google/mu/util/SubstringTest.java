@@ -2063,6 +2063,7 @@ public class SubstringTest {
     assertThat(match.startsWith("bc")).isTrue();
     assertThat(match.startsWith("bcd")).isFalse();
     assertThat(match.startsWith("c")).isFalse();
+    assertThat(match.skip(1, 0).startsWith("c")).isTrue();
   }
 
   @Test
@@ -2080,6 +2081,7 @@ public class SubstringTest {
     assertThat(match.endsWith("bc")).isTrue();
     assertThat(match.endsWith("bcd")).isFalse();
     assertThat(match.endsWith("d")).isFalse();
+    assertThat(match.limit(1).endsWith("b")).isTrue();
   }
 
   @Test public void or_toString() {
