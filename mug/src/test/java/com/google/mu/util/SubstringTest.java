@@ -2048,42 +2048,6 @@ public class SubstringTest {
     assertThat(first("foo").skip(0, 2).toString()).isEqualTo("first('foo').skip(0, 2)");
   }
 
-  @Test
-  public void matchStartsWith_emptyMatch() {
-    Substring.Match match = Substring.first("").in("abc").get();
-    assertThat(match.startsWith("")).isTrue();
-    assertThat(match.startsWith("a")).isFalse();
-  }
-
-  @Test
-  public void matchStartsWith_nonEmptyMatch() {
-    Substring.Match match = Substring.first("bc").in("abcd").get();
-    assertThat(match.startsWith("")).isTrue();
-    assertThat(match.startsWith("b")).isTrue();
-    assertThat(match.startsWith("bc")).isTrue();
-    assertThat(match.startsWith("bcd")).isFalse();
-    assertThat(match.startsWith("c")).isFalse();
-    assertThat(match.skip(1, 0).startsWith("c")).isTrue();
-  }
-
-  @Test
-  public void matchEndsWith_emptyMatch() {
-    Substring.Match match = Substring.first("").in("abc").get();
-    assertThat(match.endsWith("")).isTrue();
-    assertThat(match.endsWith("c")).isFalse();
-  }
-
-  @Test
-  public void matchEndsWith_nonEmptyMatch() {
-    Substring.Match match = Substring.first("bc").in("abcd").get();
-    assertThat(match.endsWith("")).isTrue();
-    assertThat(match.endsWith("c")).isTrue();
-    assertThat(match.endsWith("bc")).isTrue();
-    assertThat(match.endsWith("bcd")).isFalse();
-    assertThat(match.endsWith("d")).isFalse();
-    assertThat(match.limit(1).endsWith("b")).isTrue();
-  }
-
   @Test public void or_toString() {
     assertThat(first("foo").or(last("bar")).toString()).isEqualTo("first('foo').or(last('bar'))");
   }

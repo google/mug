@@ -2007,26 +2007,6 @@ public final class Substring {
     }
 
     /**
-     * Returns true if this match starts with {@code prefix}.
-     *
-     * @since 6.1
-     */
-    public boolean startsWith(String prefix) {
-      return prefix.length() <= length()
-          && context.regionMatches(startIndex, prefix, 0, prefix.length());
-    }
-
-    /**
-     * Returns true if this match ends with {@code suffix}.
-     *
-     * @since 6.1
-     */
-    public boolean endsWith(String suffix) {
-      return suffix.length() <= length()
-          && context.regionMatches(startIndex + (length() - suffix.length()), suffix, 0, suffix.length());
-    }
-
-    /**
      * Returns a copy of the original string with the matched substring replaced with {@code
      * replacement}.
      *
