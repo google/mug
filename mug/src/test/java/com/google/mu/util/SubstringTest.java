@@ -2908,11 +2908,22 @@ public class SubstringTest {
   public void firstOccurrence_withBoundary_tieBrokenByBoundary() {
     Substring.Pattern pattern =
         Stream.of("foo", "food")
-        .map(Substring::first)
-        .collect(firstOccurrence())
-        .withBoundary(Character::isWhitespace);
+            .map(Substring::first)
+            .collect(firstOccurrence())
+            .withBoundary(Character::isWhitespace);
     assertThat(pattern.from("food")).hasValue("food");
     assertThat(pattern.repeatedly().from("food")).containsExactly("food");
+  }
+
+  @Test
+  public void firstOccurrence_enclosedBy_tieBrokenByBoundary() {
+    Substring.Pattern pattern =
+        Stream.of("foo", "food")
+            .map(Substring::first)
+            .collect(firstOccurrence())
+            .enclosedBy("(", ")");
+    assertThat(pattern.from("(food)")).hasValue("food");
+    assertThat(pattern.repeatedly().from("(food)")).containsExactly("food");
   }
 
   @Test
@@ -2936,6 +2947,13 @@ public class SubstringTest {
     Substring.Pattern pattern = first("foo").or(first("food")).withBoundary(Character::isWhitespace);
     assertThat(pattern.from("food")).hasValue("food");
     assertThat(pattern.repeatedly().from("food")).containsExactly("food");
+  }
+
+  @Test
+  public void or_enclosedBy_alternativeBackTrackingTriggeredByBoundaryMismatch() {
+    Substring.Pattern pattern = first("foo").or(first("food")).enclosedBy("(", ")");
+    assertThat(pattern.from("(food)")).hasValue("food");
+    assertThat(pattern.repeatedly().from("(food)")).containsExactly("food");
   }
 
   @Test
@@ -3112,6 +3130,99 @@ public class SubstringTest {
     Substring.Pattern dir = Substring.before(first("//")).withBoundary(boundary);
     assertThat(dir.from("foo//bar//zoo")).hasValue("foo");
     assertThat(dir.repeatedly().from("foo//bar//zoo")).containsExactly("foo", "bar").inOrder();
+  }
+
+  @Test public void followedBy_patternNotFound() {
+    Substring.Pattern pattern = first("foo").followedBy("...");
+    assertThat(pattern.from("")).isEmpty();
+    assertThat(pattern.from("bar")).isEmpty();
+    assertThat(pattern.repeatedly().from("bar")).isEmpty();
+  }
+
+  @Test public void followedBy_lookaheadNoFound() {
+    Substring.Pattern pattern = first("foo").followedBy("...");
+    assertThat(pattern.from("foo")).isEmpty();
+    assertThat(pattern.repeatedly().from("foo")).isEmpty();
+    assertThat(pattern.repeatedly().from("foo..")).isEmpty();
+  }
+
+  @Test public void followedBy_found() {
+    Substring.Pattern pattern = first("foo").followedBy("...");
+    assertThat(pattern.from("foo...")).hasValue("foo");
+    assertThat(pattern.repeatedly().from("foo...")).containsExactly("foo");
+    assertThat(pattern.repeatedly().from("foo...barfoo...")).containsExactly("foo", "foo");
+  }
+
+  @Test public void precededBy_patternNotFound() {
+    Substring.Pattern pattern = first("foo").enclosedBy("...", "");
+    assertThat(pattern.from("...bar")).isEmpty();
+    assertThat(pattern.repeatedly().from("...bar")).isEmpty();
+  }
+
+  @Test public void precededBy_lookbehindNoFound() {
+    Substring.Pattern pattern = first("foo").enclosedBy("...", "");
+    assertThat(pattern.from("..foo")).isEmpty();
+    assertThat(pattern.repeatedly().from("foo")).isEmpty();
+    assertThat(pattern.repeatedly().from("..foo")).isEmpty();
+  }
+
+  @Test public void precededBy_found() {
+    Substring.Pattern pattern = first("foo").enclosedBy("...", "");
+    assertThat(pattern.from("...foo")).hasValue("foo");
+    assertThat(pattern.repeatedly().from("...foo")).containsExactly("foo");
+    assertThat(pattern.repeatedly().from("bar...foo bar...foo")).containsExactly("foo", "foo");
+  }
+
+  @Test public void enclosedBy_empty() {
+    Substring.Pattern pattern = first("foo").enclosedBy("", "");
+    assertThat(pattern.from("foo")).hasValue("foo");
+    assertThat(pattern.from("fo")).isEmpty();
+    assertThat(pattern.repeatedly().from("foo bar foo")).containsExactly("foo", "foo");
+    assertThat(pattern.repeatedly().from("bar")).isEmpty();
+  }
+
+  @Test public void enclosedBy_patternNotFound() {
+    Substring.Pattern pattern = first("foo").enclosedBy("<-", "->");
+    assertThat(pattern.from("<-fo->")).isEmpty();
+    assertThat(pattern.repeatedly().from("<-fo->")).isEmpty();
+  }
+
+  @Test public void enclosedBy_lookbehindNotFound() {
+    Substring.Pattern pattern = first("foo").enclosedBy("<-", "->");
+    assertThat(pattern.from("<!-foo->")).isEmpty();
+    assertThat(pattern.repeatedly().from("<!-foo->")).isEmpty();
+    assertThat(pattern.repeatedly().from("foo->")).isEmpty();
+  }
+
+  @Test public void enclosedBy_lookaheadNotFound() {
+    Substring.Pattern pattern = first("foo").enclosedBy("<-", "->");
+    assertThat(pattern.from("<-foo>>")).isEmpty();
+    assertThat(pattern.repeatedly().from("<-foo>>")).isEmpty();
+    assertThat(pattern.repeatedly().from("<-foo")).isEmpty();
+    assertThat(pattern.repeatedly().from("foo")).isEmpty();
+  }
+
+  @Test public void enclosedBy_found() {
+    Substring.Pattern pattern = Substring.word().enclosedBy("<-", "->");
+    assertThat(pattern.from("<-foo->")).hasValue("foo");
+    assertThat(pattern.repeatedly().from("<-foo->")).containsExactly("foo");
+    assertThat(pattern.repeatedly().from("<-foo-> <-bar->")).containsExactly("foo", "bar");
+  }
+
+  @Test
+  public void splitBeforeDelimiter() {
+    assertThat(
+            Substring.first(".").skip(0, 1).repeatedly().split("a.b.c.de").map(Object::toString))
+        .containsExactly("a", ".b", ".c", ".de")
+        .inOrder();
+  }
+
+  @Test
+  public void splitAfterDelimiter() {
+    assertThat(
+            Substring.first(".").skip(1, 0).repeatedly().split("a.b.c.de").map(Object::toString))
+        .containsExactly("a.", "b.", "c.", "de")
+        .inOrder();
   }
 
   @Test public void testRegexTopLevelGroups_noGroup() {

@@ -653,6 +653,14 @@ public final class Substring {
                   .collect(firstOccurrence());
             }
 
+            @Override public Pattern enclosedBy(String before, String after) {
+              requireNonNull(before);
+              requireNonNull(after);
+              return candidates.stream()
+                  .map(c -> c.enclosedBy(before, after))
+                  .collect(firstOccurrence());
+            }
+
             @Override
             public String toString() {
               return "firstOccurrenceOf(" + candidates + ")";
@@ -932,11 +940,17 @@ public final class Substring {
           return match == null ? that.match(input, fromIndex) : match;
         }
 
-        // Allow withBoundary to trigger backtracking.
+        // Allow withBoundary() to trigger backtracking.
         @Override public Pattern withBoundary(
             CharPredicate boundaryBefore, CharPredicate boundaryAfter) {
           return base.withBoundary(boundaryBefore, boundaryAfter)
               .or(that.withBoundary(boundaryBefore, boundaryAfter));
+        }
+
+        // Allow enclosedBy() to trigger backtracking.
+        @Override public Pattern enclosedBy(String before, String after) {
+          return base.enclosedBy(before, after)
+              .or(that.enclosedBy(before, after));
         }
 
         @Override public Pattern peek(Pattern following) {
@@ -1169,6 +1183,71 @@ public final class Substring {
           return target + ".withBoundary(" + boundaryBefore + ", " + boundaryAfter + ")";
         }
       };
+    }
+
+    /**
+     * Returns a {@code Pattern} that matches the first occurrence of this pattern, where the
+     * match must be immediately preceded by the {@code before} string and immediately followed by
+     * the {@code after} string.
+     *
+     * <p>This is equivalent to Regex "lookaround". The pattern will backtrack until the lookaround is
+     * satisfied.
+     *
+     * <p>Note that different from {@link #withBoundary}, which are counterparts of regex "\b",
+     * the beginning and the end of the input string don't implicitly match.
+     *
+     * <p>If you need lookahead only, use {@link #followedBy} instead; if you need lookbehind only, pass
+     * an empty string for {@code after}. For example: {@code word().enclosedBy(":", "")}.
+     *
+     * @since 6.2
+     */
+    public Pattern enclosedBy(String before, String after) {
+      requireNonNull(before);
+      requireNonNull(after);
+      Pattern target = this;
+      return new Pattern() {
+        @Override Match match(String input, int fromIndex) {
+          final int lastIndex = input.length() - after.length();
+          fromIndex = max(fromIndex, before.length());
+          while (fromIndex <= lastIndex) {
+            Match match = target.match(input, fromIndex);
+            if (match == null) {
+              return null;
+            }
+            if (match.endIndex <= lastIndex
+                && input.regionMatches(match.endIndex, after, 0, after.length())
+                && input.regionMatches(
+                    match.startIndex - before.length(), before, 0, before.length())) {
+              return match;
+            }
+            // Lookaround mismatch, skip the first matched char then try again.
+            fromIndex = match.startIndex + 1;
+          }
+          return null;
+        }
+
+        @Override public String toString() {
+          return target + ".enclosedBy('" + before + "', '" + after + "')";
+        }
+      };
+    }
+
+    /**
+     * Returns a {@code Pattern} that matches the first occurrence of this pattern, where the
+     * match must be immediately followed by* the {@code after} string.
+     *
+     * <p>This is equivalent to Regex "lookahead". The pattern will backtrack until the lookahead is
+     * satisfied.
+     *
+     * <p>Note that different from {@link #withBoundary}, which are counterparts of regex "\b",
+     * the beginning and the end of the input string don't implicitly match.
+     *
+     * <p>If you need lookbehind, or both lookahead and lookbehind, use {@link #enclosedBy} instead.
+     *
+     * @since 6.2
+     */
+    public final Pattern followedBy(String after) {
+      return enclosedBy("", after);
     }
 
     /**
