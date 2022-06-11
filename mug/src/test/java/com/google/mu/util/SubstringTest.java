@@ -3269,6 +3269,11 @@ public class SubstringTest {
     assertThat(pattern.repeatedly().from("[(foo)] [(bar)]")).containsExactly("foo", "bar");
   }
 
+  @Test public void between_backtrackingAtOpeningDelimiter() {
+    Substring.Pattern pattern = Substring.between("oo", "cc").between("ooo", "ccc");
+    assertThat(pattern.from("oofooccooobarccc")).hasValue("bar");
+  }
+
   @Test public void between_thenBacktracks() {
     Substring.Pattern pattern = Substring.first(':').then(Substring.word()).between("(", ")");
     assertThat(pattern.from(": (foo)")).hasValue("foo");
