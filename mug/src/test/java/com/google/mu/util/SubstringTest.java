@@ -2916,12 +2916,12 @@ public class SubstringTest {
   }
 
   @Test
-  public void firstOccurrence_enclosedBy_tieBrokenByBoundary() {
+  public void firstOccurrence_between_tieBrokenByBoundary() {
     Substring.Pattern pattern =
         Stream.of("foo", "food")
             .map(Substring::first)
             .collect(firstOccurrence())
-            .enclosedBy("(", ")");
+            .between("(", ")");
     assertThat(pattern.from("(food)")).hasValue("food");
     assertThat(pattern.repeatedly().from("(food)")).containsExactly("food");
   }
@@ -2950,8 +2950,8 @@ public class SubstringTest {
   }
 
   @Test
-  public void or_enclosedBy_alternativeBackTrackingTriggeredByBoundaryMismatch() {
-    Substring.Pattern pattern = first("foo").or(first("food")).enclosedBy("(", ")");
+  public void or_between_alternativeBackTrackingTriggeredByBoundaryMismatch() {
+    Substring.Pattern pattern = first("foo").or(first("food")).between("(", ")");
     assertThat(pattern.from("(food)")).hasValue("food");
     assertThat(pattern.repeatedly().from("(food)")).containsExactly("food");
   }
@@ -3153,60 +3153,128 @@ public class SubstringTest {
     assertThat(pattern.repeatedly().from("foo...barfoo...")).containsExactly("foo", "foo");
   }
 
+  @Test public void followedBy_backtracking() {
+    Substring.Pattern pattern = Substring.first("--").followedBy("->");
+    assertThat(pattern.from("<---->")).hasValue("--");
+  }
+
+  @Test public void followedBy_prefixHasNoBacktracking() {
+    Substring.Pattern pattern = Substring.prefix("--").followedBy("->");
+    assertThat(pattern.from("---->")).isEmpty();
+    assertThat(pattern.repeatedly().from("---->")).isEmpty();
+  }
+
+  @Test public void followedBy_beforeHasNoBacktracking() {
+    Substring.Pattern pattern = Substring.before(first("--")).followedBy("->");
+    assertThat(pattern.from("---->")).isEmpty();
+    assertThat(pattern.repeatedly().from("---->")).isEmpty();
+  }
+
+  @Test public void followedBy_afterHasNoBacktracking() {
+    Substring.Pattern pattern = Substring.after(first("--")).followedBy("->");
+    assertThat(pattern.from("---->")).isEmpty();
+    assertThat(pattern.repeatedly().from("---->")).isEmpty();
+  }
+
+  @Test public void followedBy_upToIncludingHasNoBacktracking() {
+    Substring.Pattern pattern = Substring.upToIncluding(first("--")).followedBy("->");
+    assertThat(pattern.from("---->")).isEmpty();
+    assertThat(pattern.repeatedly().from("---->")).isEmpty();
+  }
+
+  @Test public void followedBy_leadingHasNoBacktracking() {
+    Substring.Pattern pattern = Substring.leading(CharPredicate.is('-')).followedBy("->");
+    assertThat(pattern.from("---->")).isEmpty();
+    assertThat(pattern.repeatedly().from("---->")).isEmpty();
+  }
+
+  @Test public void precededBy_suffixHasNoBacktracking() {
+    Substring.Pattern pattern = Substring.suffix("--").between("<-", "");
+    assertThat(pattern.from("<----")).isEmpty();
+    assertThat(pattern.repeatedly().from("<----")).isEmpty();
+  }
+
+  @Test public void precededBy_trailingHasNoBacktracking() {
+    Substring.Pattern pattern = Substring.trailing(CharPredicate.is('-')).between("<-", "");
+    assertThat(pattern.from("<----")).isEmpty();
+    assertThat(pattern.repeatedly().from("<----")).isEmpty();
+  }
+
+  @Test public void precededBy_toEndHasNoBacktracking() {
+    Substring.Pattern pattern = first("--").toEnd().between("<-", "");
+    assertThat(pattern.from("<---->")).isEmpty();
+    assertThat(pattern.repeatedly().from("<---->")).isEmpty();
+  }
+
   @Test public void precededBy_patternNotFound() {
-    Substring.Pattern pattern = first("foo").enclosedBy("...", "");
+    Substring.Pattern pattern = first("foo").between("...", "");
     assertThat(pattern.from("...bar")).isEmpty();
     assertThat(pattern.repeatedly().from("...bar")).isEmpty();
   }
 
   @Test public void precededBy_lookbehindNoFound() {
-    Substring.Pattern pattern = first("foo").enclosedBy("...", "");
+    Substring.Pattern pattern = first("foo").between("...", "");
     assertThat(pattern.from("..foo")).isEmpty();
     assertThat(pattern.repeatedly().from("foo")).isEmpty();
     assertThat(pattern.repeatedly().from("..foo")).isEmpty();
   }
 
   @Test public void precededBy_found() {
-    Substring.Pattern pattern = first("foo").enclosedBy("...", "");
+    Substring.Pattern pattern = first("foo").between("...", "");
     assertThat(pattern.from("...foo")).hasValue("foo");
     assertThat(pattern.repeatedly().from("...foo")).containsExactly("foo");
     assertThat(pattern.repeatedly().from("bar...foo bar...foo")).containsExactly("foo", "foo");
   }
 
-  @Test public void enclosedBy_empty() {
-    Substring.Pattern pattern = first("foo").enclosedBy("", "");
+  @Test public void between_empty() {
+    Substring.Pattern pattern = first("foo").between("", "");
     assertThat(pattern.from("foo")).hasValue("foo");
     assertThat(pattern.from("fo")).isEmpty();
     assertThat(pattern.repeatedly().from("foo bar foo")).containsExactly("foo", "foo");
     assertThat(pattern.repeatedly().from("bar")).isEmpty();
   }
 
-  @Test public void enclosedBy_patternNotFound() {
-    Substring.Pattern pattern = first("foo").enclosedBy("<-", "->");
+  @Test public void between_patternNotFound() {
+    Substring.Pattern pattern = first("foo").between("<-", "->");
     assertThat(pattern.from("<-fo->")).isEmpty();
     assertThat(pattern.repeatedly().from("<-fo->")).isEmpty();
   }
 
-  @Test public void enclosedBy_lookbehindNotFound() {
-    Substring.Pattern pattern = first("foo").enclosedBy("<-", "->");
+  @Test public void between_lookbehindNotFound() {
+    Substring.Pattern pattern = first("foo").between("<-", "->");
     assertThat(pattern.from("<!-foo->")).isEmpty();
     assertThat(pattern.repeatedly().from("<!-foo->")).isEmpty();
     assertThat(pattern.repeatedly().from("foo->")).isEmpty();
   }
 
-  @Test public void enclosedBy_lookaheadNotFound() {
-    Substring.Pattern pattern = first("foo").enclosedBy("<-", "->");
+  @Test public void between_lookaheadNotFound() {
+    Substring.Pattern pattern = first("foo").between("<-", "->");
     assertThat(pattern.from("<-foo>>")).isEmpty();
     assertThat(pattern.repeatedly().from("<-foo>>")).isEmpty();
     assertThat(pattern.repeatedly().from("<-foo")).isEmpty();
     assertThat(pattern.repeatedly().from("foo")).isEmpty();
   }
 
-  @Test public void enclosedBy_found() {
-    Substring.Pattern pattern = Substring.word().enclosedBy("<-", "->");
+  @Test public void between_found() {
+    Substring.Pattern pattern = Substring.word().between("<-", "->");
     assertThat(pattern.from("<-foo->")).hasValue("foo");
     assertThat(pattern.repeatedly().from("<-foo->")).containsExactly("foo");
     assertThat(pattern.repeatedly().from("<-foo-> <-bar->")).containsExactly("foo", "bar");
+  }
+
+  @Test public void between_betweenBacktrackingStartsFromDelimiter() {
+    Substring.Pattern pattern = Substring.between("(", ")").between("[(", ")]");
+    assertThat(pattern.from("[(foo)]")).hasValue("foo");
+    assertThat(pattern.repeatedly().from("[(foo)]")).containsExactly("foo");
+    assertThat(pattern.repeatedly().from("[(foo)] [(bar)]")).containsExactly("foo", "bar");
+  }
+
+  @Test public void between_thenBacktracks() {
+    Substring.Pattern pattern = Substring.first(':').then(Substring.word()).between("(", ")");
+    assertThat(pattern.from(": (foo)")).hasValue("foo");
+    assertThat(pattern.from(": foo (bar)")).hasValue("bar");
+    assertThat(pattern.repeatedly().from(": foo (bar) : or (zoo)")).containsExactly("bar", "zoo");
+    assertThat(pattern.repeatedly().from(": foo (bar) or :(zoo)")).containsExactly("bar", "zoo");
   }
 
   @Test
