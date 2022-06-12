@@ -1093,8 +1093,12 @@ public final class Substring {
      * <p>Note that unlike regex lookahead, no backtracking is attempted. So {@code
      * first("foo").peek("bar")} will match "bafoobar" but won't match "foofoobar".
      *
-     * <p>If you are trying to define a boundary around or after your pattern, consider to use
-     * {@link #withBoundary} if the boundary can be detected by a character.
+     * <p>If look-ahead is needed, you can use {@link #followedBy} as in {@code
+     * first("foo").followedBy("bar")}.
+     *
+     * <p>If you are trying to define a boundary around or after your pattern similar to regex
+     * anchor {@code '\b'}, consider using {@link #withBoundary} if the boundary can be detected by
+     * a character.
      *
      * @since 6.0
      */
@@ -1113,8 +1117,12 @@ public final class Substring {
      * first("foo").peek("bar")} will match "bafoobar" but won't match "foofoobar" because
      * the first "foo" isn't followed by "bar".
      *
-     * <p>If you are trying to define a boundary around or after your pattern, consider to use
-     * {@link #withBoundary} if the boundary can be detected by a character.
+     * <p>If look-ahead is needed, you can use {@link #followedBy} as in {@code
+     * first("foo").followedBy("bar")}.
+     *
+     * <p>If you are trying to define a boundary around or after your pattern similar to regex
+     * anchor {@code '\b'}, consider using {@link #withBoundary} if the boundary can be detected by
+     * a character.
      *
      * @since 6.0
      */
@@ -1205,11 +1213,11 @@ public final class Substring {
     }
 
     /**
-     * Returns a {@code Pattern} that matches the first occurrence of this pattern, where the
-     * match must be immediately preceded by the {@code before} string and immediately followed by
-     * the {@code after} string.
+     * Returns an otherwise equivalent pattern except it requires the matched substring be
+     * immediately precedec by the {@code before} string and immediately followed by the {@code
+     * after} string.
      *
-     * <p>This is equivalent to Regex "lookaround". The pattern will backtrack until the lookaround is
+     * <p>Similar to regex "lookaround", the returned pattern will backtrack until the lookaround is
      * satisfied.
      *
      * <p>Note that different from {@link #withBoundary}, which are counterparts of regex "\b",
@@ -1252,10 +1260,10 @@ public final class Substring {
     }
 
     /**
-     * Returns a {@code Pattern} that matches the first occurrence of this pattern, where the
-     * match must be immediately followed by* the {@code after} string.
+     * Returns an otherwise equivalent pattern except it requires the matched substring be
+     * immediately followed by the {@code after} string.
      *
-     * <p>This is equivalent to Regex "lookahead". The pattern will backtrack until the lookahead is
+     * <p>Similar to regex "lookahead", the returned pattern will backtrack until the lookahead is
      * satisfied.
      *
      * <p>Note that different from {@link #withBoundary}, which are counterparts of regex "\b",
