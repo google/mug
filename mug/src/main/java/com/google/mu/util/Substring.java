@@ -1261,8 +1261,8 @@ public final class Substring {
             if (match == null) {
               return null;
             }
-            if (input.startsWith(after, match.endIndex)
-                && input.startsWith(before, match.startIndex - before.length())) {
+            if (input.startsWith(before, match.startIndex - before.length())
+                && input.startsWith(after, match.endIndex)) {
               return match;
             }
             // Lookaround mismatch, skip the first matched char then try again.
