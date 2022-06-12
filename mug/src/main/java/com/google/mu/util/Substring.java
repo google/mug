@@ -1247,15 +1247,6 @@ public final class Substring {
      * <p>If you need lookahead only, use {@link #followedBy} instead; for lookbehind only, pass an
      * empty string as the {@code after} string, as in: {@code word().between(":", "")}.
      *
-     * <p>If the pattern should <em>not</em> be preceded or followed by particular character(s),
-     * consider using {@link #withBoundary}. The following code finds "911" but only if it's at the
-     * beginning of a number:
-     *
-     * <pre>{@code
-     * Substring.Pattern emergency =
-     *     first("911").withBoundary(CharPredicate.range('0', '9').not(), CharPredicate.ANY);
-     * }</pre>
-     *
      * @since 6.2
      */
     public Pattern between(String before, String after) {
@@ -1300,6 +1291,15 @@ public final class Substring {
      * lookbehind only, pass an empty string as the {@code after} string, as in: {@code
      * word().between(":", "")}.
      *
+     * <p>If the pattern shouldn't be preceded or followed by particular character(s), consider
+     * using {@link #withBoundary}. The following code finds "911" but only if it's at the beginning
+     * of a number:
+     *
+     * <pre>{@code
+     * Substring.Pattern emergency =
+     *     first("911").withBoundary(CharPredicate.range('0', '9').not(), CharPredicate.ANY);
+     * }</pre>
+     *
      * @since 6.2
      */
     public Pattern notBetween(String before, String after) {
@@ -1340,16 +1340,6 @@ public final class Substring {
      *
      * <p>If you need lookbehind, or both lookahead and lookbehind, use {@link #between} instead.
      *
-     * <p>If the pattern should <em>not</em> be followed by particular character(s), consider using
-     * {@link #withBoundary}. The following code finds the file extension name ".java" if it's not
-     * followed by another letter:
-     *
-     * <pre>{@code
-     * CharPredicate letter = Character::isJavaIdentifierStart;
-     * Substring.Pattern javaExtension =
-     *     first(".java").withBoundary(CharPredicate.ANY, letter.not());
-     * }</pre>
-     *
      * @since 6.2
      */
     public final Pattern followedBy(String after) {
@@ -1366,6 +1356,16 @@ public final class Substring {
      *
      * <p>If you need negative lookbehind, or both negative lookahead and lookbehind, use {@link
      * #notBetween} instead.
+     *
+     * <p>If the pattern shouldn't be followed by particular character(s), consider using {@link
+     * #withBoundary}. The following code finds the file extension name ".java" if it's not followed
+     * by another letter:
+     *
+     * <pre>{@code
+     * CharPredicate letter = Character::isJavaIdentifierStart;
+     * Substring.Pattern javaExtension =
+     *     first(".java").withBoundary(CharPredicate.ANY, letter.not());
+     * }</pre>
      *
      * @since 6.2
      */
