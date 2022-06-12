@@ -340,9 +340,6 @@ public final class Substring {
    * <p>For example: {@code leading(javaLetter()).from("System.err")} will result in {@code
    * "System"}.
    *
-   * <p>It's related to and complements {@link com.google.common.base.CharMatcher#trimLeadingFrom},
-   * which removes the leading characters instead of extracting them.
-   *
    * @since 6.0
    */
   public static Pattern leading(CharPredicate matcher) {
@@ -369,9 +366,6 @@ public final class Substring {
    * of trailing characters identified by {@code matcher}.
    *
    * <p>For example: {@code trailing(digit()).from("60612-3588")} will result in {@code "3588"}.
-   *
-   * <p>It's related to and complements {@link CharMatcher#trimTrailingFrom}, which removes the
-   * trailing characters instead of extracting them.
    *
    * @since 6.0
    */
@@ -1101,7 +1095,9 @@ public final class Substring {
      * a character.
      *
      * @since 6.0
+     * @deprecated Use {@link #followedBy} instead.
      */
+    @Deprecated
     public final Pattern peek(String following) {
       return peek(prefix(following));
     }
@@ -1125,7 +1121,9 @@ public final class Substring {
      * a character.
      *
      * @since 6.0
+     * @deprecated Use {@link #followedBy} instead.
      */
+    @Deprecated
     public Pattern peek(Pattern following) {
       requireNonNull(following);
       Pattern base = this;
