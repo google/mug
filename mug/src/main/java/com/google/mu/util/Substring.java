@@ -1261,9 +1261,8 @@ public final class Substring {
             if (match == null) {
               return null;
             }
-            if (input.regionMatches(match.endIndex, after, 0, after.length())
-                && input.regionMatches(
-                    match.startIndex - before.length(), before, 0, before.length())) {
+            if (input.startsWith(after, match.endIndex)
+                && input.startsWith(before, match.startIndex - before.length())) {
               return match;
             }
             // Lookaround mismatch, skip the first matched char then try again.
@@ -1313,9 +1312,8 @@ public final class Substring {
             if (match == null) {
               return null;
             }
-            if (!input.regionMatches(
-                    match.startIndex - before.length(), before, 0, before.length())
-                || !input.regionMatches(match.endIndex, after, 0, after.length())) {
+            if (!input.startsWith(before, match.startIndex - before.length())
+                || !input.startsWith(after, match.endIndex)) {
               return match;
             }
             // Lookaround mismatch, skip the first matched char then try again.
