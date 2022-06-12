@@ -1383,7 +1383,11 @@ public final class Substring {
      * result match is empty.
      *
      * @since 6.0
+     *
+     * @deprecated Use {@link #notFollowedBy} or {@link #notBetween} for negative lookahead and
+     *     negative lookbehind.
      */
+    @Deprecated
     public final Pattern not() {
       Pattern base = this;
       return new Pattern() {
