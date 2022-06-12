@@ -1221,8 +1221,9 @@ public final class Substring {
      * immediately precedec by the {@code before} string and immediately followed by the {@code
      * after} string.
      *
-     * <p>Similar to regex "lookaround", the returned pattern will backtrack until the lookaround is
-     * satisfied.
+     * <p>Similar to regex lookarounds, the returned pattern will backtrack until the lookaround is
+     * satisfied. That is, {@code word().between("(", ")")} will find the "bar" substring inside the
+     * parenthesis from "foo (bar)".
      *
      * <p>If you need lookahead only, use {@link #followedBy} instead; for lookbehind only, pass an
      * empty string as the {@code after} string, as in: {@code word().between(":", "")}.
@@ -1273,8 +1274,9 @@ public final class Substring {
      * Returns an otherwise equivalent pattern except it requires the matched substring be
      * immediately followed by the {@code after} string.
      *
-     * <p>Similar to regex "lookahead", the returned pattern will backtrack until the lookahead is
-     * satisfied.
+     * <p>Similar to regex lookahead, the returned pattern will backtrack until the lookahead is
+     * satisfied. That is, {@code word().followedBy(":")} will find the "Joe" substring from "To
+     * Joe:".
      *
      * <p>If you need lookbehind, or both lookahead and lookbehind, use {@link #between} instead.
      *
