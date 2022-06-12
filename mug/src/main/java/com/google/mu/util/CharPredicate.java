@@ -138,7 +138,7 @@ public interface CharPredicate {
 
   /**
    * Returns a {@link CharPredicate} that evaluates true if either this predicate evaluates to true,
-   * or the character is in the range of {@code [from, to]).
+   * or the character is in the range of {@code [from, to]}.
    */
   default CharPredicate orRange(char from, char to) {
     return or(range(from, to));
