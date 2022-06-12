@@ -1154,6 +1154,9 @@ public final class Substring {
      * <p>Useful if you are trying to find a word with custom boundaries. To search for words
      * composed of regex {@code \w} character class, consider using {@link Substring#word} instead.
      *
+     * <p>For lookahead and lookbehind assertions, consider using {@link #between} or {@link
+     * #followedBy} instead.
+     *
      * @since 6.0
      */
     public final Pattern withBoundary(CharPredicate boundary) {
@@ -1172,6 +1175,9 @@ public final class Substring {
      *
      * <p>Useful if you are trying to find a word with custom boundaries. To search for words
      * composed of regex {@code \w} character class, consider using {@link Substring#word} instead.
+     *
+     * <p>For lookahead and lookbehind assertions, consider using {@link #between} or {@link
+     * #followedBy} instead.
      *
      * @since 6.0
      */
@@ -1218,11 +1224,17 @@ public final class Substring {
      * <p>Similar to regex "lookaround", the returned pattern will backtrack until the lookaround is
      * satisfied.
      *
-     * <p>Note that different from {@link #withBoundary}, which are counterparts of regex "\b",
-     * the beginning and the end of the input string don't implicitly match.
+     * <p>If you need lookahead only, use {@link #followedBy} instead; for lookbehind only, pass an
+     * empty string as the {@code after} string, as in: {@code word().between(":", "")}.
      *
-     * <p>If you need lookahead only, use {@link #followedBy} instead; if you need lookbehind only, pass
-     * an empty string for {@code after}. For example: {@code word().between(":", "")}.
+     * <p>If the pattern should <em>not</em> be preceded or followed by particular character(s),
+     * consider using {@link #withBoundary}. The following code finds "911" but only if it's at the
+     * beginning of a number:
+     *
+     * <pre>{@code
+     * Substring.Pattern emergency =
+     *     first("911").withBoundary(CharPredicate.range('0', '9').not(), CharPredicate.ANY);
+     * }</pre>
      *
      * @since 6.2
      */
@@ -1264,10 +1276,17 @@ public final class Substring {
      * <p>Similar to regex "lookahead", the returned pattern will backtrack until the lookahead is
      * satisfied.
      *
-     * <p>Note that different from {@link #withBoundary}, which are counterparts of regex "\b",
-     * the beginning and the end of the input string don't implicitly match.
-     *
      * <p>If you need lookbehind, or both lookahead and lookbehind, use {@link #between} instead.
+     *
+     * <p>If the pattern should <em>not</em> be followed by particular character(s), consider using
+     * {@link #withBoundary}. The following code finds the file extension name ".java" if it's not
+     * followed by another letter:
+     *
+     * <pre>{@code
+     * CharPredicate letter = Character::isJavaIdentifierStart;
+     * Substring.Pattern javaExtension =
+     *     first(".java").withBoundary(CharPredicate.ANY, letter.not());
+     * }</pre>
      *
      * @since 6.2
      */
