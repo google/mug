@@ -847,15 +847,15 @@ public final class Substring {
         if (right == null) {
           return null;
         }
-        int len = right.startIndex - left.endIndex;
-        return new Match(
-            // Include the closing delimiter in the next iteration. This allows delimiters in
-            // patterns like "/foo/bar/baz/" to be treated more intuitively.
+        int startIndex = left.endIndex;
+        int len = right.startIndex - startIndex;
+        // Include the closing delimiter in the next iteration. This allows delimiters in
+        // patterns like "/foo/bar/baz/" to be treated more intuitively.
+        return Match.backtrackable(
             input,
-            /*startIndex=*/ left.endIndex,
+            startIndex,
             /*length=*/ len,
-            /*backtrackIndex=*/ left.backtrackIndex,
-            /*repetitionStartIndex=*/ left.endIndex + max(1, len));
+            /*backtrackingOffset=*/ left.backtrackIndex - startIndex);
       }
 
       @Override public String toString() {
