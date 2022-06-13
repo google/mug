@@ -1251,7 +1251,7 @@ public final class Substring {
               }
             }
             // Boundary mismatch, skip the first matched char then try again.
-            fromIndex = checkGreaterThan(match.backtrackIndex, fromIndex);
+            fromIndex = match.backtrackFrom(fromIndex);
           }
           return null;
         }
@@ -1293,7 +1293,7 @@ public final class Substring {
               return match;
             }
             // Lookaround mismatch, skip the first matched char then try again.
-            fromIndex = checkGreaterThan(match.backtrackIndex, fromIndex);
+            fromIndex = match.backtrackFrom(fromIndex);
           }
           return null;
         }
@@ -1344,7 +1344,7 @@ public final class Substring {
               return match;
             }
             // Lookaround mismatch, skip the first matched char then try again.
-            fromIndex = checkGreaterThan(match.backtrackIndex, fromIndex);
+            fromIndex = match.backtrackFrom(fromIndex);
           }
           return null;
         }
@@ -2389,6 +2389,12 @@ public final class Substring {
           ? this
           : suffix(context, context.length() - startIndex);
     }
+    private int backtrackFrom(int fromIndex) {
+      if (backtrackIndex <= fromIndex) {
+        throw new IllegalStateException("Not true that " + backtrackIndex + " > " + fromIndex);
+      }
+      return backtrackIndex;
+    }
   }
 
   private static int checkNumChars(int maxChars) {
@@ -2396,13 +2402,6 @@ public final class Substring {
       throw new IllegalArgumentException("Number of characters (" + maxChars + ") cannot be negative.");
     }
     return maxChars;
-  }
-
-  private static int checkGreaterThan(int high, int low) {
-    if (high <= low) {
-      throw new IllegalStateException("Not true that " + high + " > " + low);
-    }
-    return high;
   }
 
   private Substring() {}
