@@ -1315,7 +1315,7 @@ public final class Substring {
      *
      * <p>If you need negative lookahead only, use {@link #notFollowedBy} instead; for negative
      * lookbehind only, pass an empty string as the {@code lookahead} string, as in: {@code
-     * word().between(":", "")}.
+     * word().notBetween(":", "")}.
      *
      * <p>If the pattern shouldn't be preceded or followed by particular character(s), consider
      * using {@link #withBoundary}. The following code finds "911" but only if it's at the beginning
