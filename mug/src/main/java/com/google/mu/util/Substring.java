@@ -18,6 +18,8 @@ import static com.google.mu.util.InternalCollectors.toImmutableList;
 import static java.lang.Math.max;
 import static java.util.Comparator.comparingInt;
 import static java.util.Objects.requireNonNull;
+import static java.util.regex.Pattern.compile;
+import static java.util.regex.Pattern.quote;
 import static java.util.stream.Collectors.collectingAndThen;
 
 import java.util.Comparator;
@@ -217,7 +219,7 @@ public final class Substring {
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
         int index = input.indexOf(str, fromIndex);
-        return index >= 0 ? Match.backtrackable(input, index, str.length(), 1) : null;
+        return index >= 0 ? Match.backtrackable(1, input, index, str.length()) : null;
       }
 
       @Override public String toString() {
@@ -231,7 +233,7 @@ public final class Substring {
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
         int index = input.indexOf(character, fromIndex);
-        return index >= 0 ? Match.backtrackable(input, index, 1, 1) : null;
+        return index >= 0 ? Match.backtrackable(1, input, index, 1) : null;
       }
 
       @Override public String toString() {
@@ -251,7 +253,7 @@ public final class Substring {
       @Override Match match(String input, int fromIndex) {
         for (int i = fromIndex; i < input.length(); i++) {
           if (charMatcher.test(input.charAt(i))) {
-            return Match.backtrackable(input, i, 1, 1);
+            return Match.backtrackable(1, input, i, 1);
           }
         }
         return null;
@@ -417,7 +419,7 @@ public final class Substring {
                 break;
               }
             }
-            return Match.backtrackable(input, i, len, len);
+            return Match.backtrackable(len, input, i, len);
           }
         }
         return null;
@@ -455,7 +457,7 @@ public final class Substring {
         if (!matcher.find()) return Stream.empty();
         int groups = matcher.groupCount();
         if (groups == 0) {
-          return Stream.of(Match.backtrackable(string, matcher.start(), matcher.end() - matcher.start(), 1));
+          return Stream.of(Match.backtrackable(1, string, matcher.start(), matcher.end() - matcher.start()));
         } else {
           return MoreStreams.whileNotNull(new Supplier<Match>() {
             private int next = 0;
@@ -467,7 +469,7 @@ public final class Substring {
                 int end = matcher.end(g);
                 if (start >= next) {
                   next = end;
-                  return Match.backtrackable(string, start, end - start, 1);
+                  return Match.backtrackable(1, string, start, end - start);
                 }
               }
               return null;
@@ -509,9 +511,34 @@ public final class Substring {
         Matcher matcher = regexPattern.matcher(input);
         if (matcher.find(fromIndex)) {
           int start = matcher.start(group);
-          return Match.backtrackable(input, start, matcher.end(group) - start, 1);
+          return Match.backtrackable(1, input, start, matcher.end(group) - start);
         }
         return null;
+      }
+
+      /** Delegate to native regex backtracking, which can be more efficient for regex patterns. */
+      @Override public Pattern between(String lookbehind, String lookahead) {
+        StringBuilder builder = new StringBuilder();
+        if (!lookbehind.isEmpty()) {
+          builder.append("(?<=").append(quote(lookbehind)).append(")");
+        }
+        builder.append("(").append(regexPattern).append(")");
+        if (!lookahead.isEmpty()) {
+          builder.append("(?=").append(quote(lookahead)).append(")");
+        }
+        return first(compile(builder.toString()), group);
+      }
+
+      /** Delegate to native regex backtracking, which can be more efficient for regex patterns. */
+      @Override public Pattern notBetween(String lookbehind, String lookahead) {
+        if (lookahead.isEmpty()) { // negative lookbehind
+          return first(compile("(?<!" + quote(lookbehind) + ")" + regexPattern));
+        }
+        if (lookbehind.isEmpty()) { // negative lookahead
+          return first(compile(regexPattern + "(?!" + quote(lookahead) + ")"));
+        }
+        // Regex has no negative front-and-back lookaround
+        return super.notBetween(lookbehind, lookahead);
       }
 
       @Override public String toString() {
@@ -737,7 +764,7 @@ public final class Substring {
             //
             // For before(first('/')).withBoundary(), if boundary doesn't match, it's not loggically correct
             // to try the second '/'.
-            : new Match(input, fromIndex, match.startIndex - fromIndex, input.length(), match.repetitionStartIndex);
+            : new Match(input, fromIndex, match.startIndex - fromIndex, Integer.MAX_VALUE, match.repetitionStartIndex);
       }
 
       @Override public String toString() {
@@ -791,7 +818,7 @@ public final class Substring {
             ? null
             // Do not include the delimiter pattern in the next iteration.
             // upToIncluding(first('/')).withBoundary() should not backtrack to the second '/'.
-            : new Match(input, fromIndex, match.endIndex - fromIndex, input.length(), match.repetitionStartIndex);
+            : new Match(input, fromIndex, match.endIndex - fromIndex, Integer.MAX_VALUE, match.repetitionStartIndex);
       }
 
       @Override public String toString() {
@@ -854,10 +881,10 @@ public final class Substring {
         // Include the closing delimiter in the next iteration. This allows delimiters in
         // patterns like "/foo/bar/baz/" to be treated more intuitively.
         return Match.backtrackable(
+            /*backtrackingOffset=*/ left.backtrackIndex - startIndex,
             input,
             startIndex,
-            /*length=*/ len,
-            /*backtrackingOffset=*/ left.backtrackIndex - startIndex);
+            /*length=*/ len);
       }
 
       @Override public String toString() {
@@ -1224,7 +1251,7 @@ public final class Substring {
               }
             }
             // Boundary mismatch, skip the first matched char then try again.
-            fromIndex = match.backtrackIndex;
+            fromIndex = checkGreaterThan(match.backtrackIndex, fromIndex);
           }
           return null;
         }
@@ -1266,7 +1293,7 @@ public final class Substring {
               return match;
             }
             // Lookaround mismatch, skip the first matched char then try again.
-            fromIndex = match.backtrackIndex;
+            fromIndex = checkGreaterThan(match.backtrackIndex, fromIndex);
           }
           return null;
         }
@@ -1317,7 +1344,7 @@ public final class Substring {
               return match;
             }
             // Lookaround mismatch, skip the first matched char then try again.
-            fromIndex = match.backtrackIndex;
+            fromIndex = checkGreaterThan(match.backtrackIndex, fromIndex);
           }
           return null;
         }
@@ -2162,12 +2189,12 @@ public final class Substring {
       return nonBacktrackable(context, context.length() - length, length);
     }
 
-    static Match backtrackable(String context, int fromIndex, int length, int backtrackingOffset) {
+    static Match backtrackable(int backtrackingOffset, String context, int fromIndex, int length) {
       return new Match(context, fromIndex, length, fromIndex + backtrackingOffset, fromIndex + max(1, length));
     }
 
     static Match nonBacktrackable(String context, int fromIndex, int length) {
-      return new Match(context, fromIndex, length, context.length(), fromIndex + max(1, length));
+      return new Match(context, fromIndex, length, Integer.MAX_VALUE, fromIndex + max(1, length));
     }
 
     /**
@@ -2325,7 +2352,7 @@ public final class Substring {
         throw new IndexOutOfBoundsException(
             "Invalid index: begin (" + begin + ") > end (" + end + ")");
       }
-      return new Match(context, startIndex + begin, end - begin, context.length(), repetitionStartIndex);
+      return new Match(context, startIndex + begin, end - begin, Integer.MAX_VALUE, repetitionStartIndex);
     }
 
     /** Returns the matched substring. */
@@ -2369,6 +2396,13 @@ public final class Substring {
       throw new IllegalArgumentException("Number of characters (" + maxChars + ") cannot be negative.");
     }
     return maxChars;
+  }
+
+  private static int checkGreaterThan(int high, int low) {
+    if (high <= low) {
+      throw new IllegalStateException("Not true that " + high + " > " + low);
+    }
+    return high;
   }
 
   private Substring() {}
