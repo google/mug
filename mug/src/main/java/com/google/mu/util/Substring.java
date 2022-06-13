@@ -674,19 +674,19 @@ public final class Substring {
                   .collect(firstOccurrence());
             }
 
-            @Override public Pattern between(String before, String after) {
-              requireNonNull(before);
-              requireNonNull(after);
+            @Override public Pattern between(String lookbehind, String lookahead) {
+              requireNonNull(lookbehind);
+              requireNonNull(lookahead);
               return candidates.stream()
-                  .map(c -> c.between(before, after))
+                  .map(c -> c.between(lookbehind, lookahead))
                   .collect(firstOccurrence());
             }
 
-            @Override public Pattern notBetween(String before, String after) {
-              requireNonNull(before);
-              requireNonNull(after);
+            @Override public Pattern notBetween(String lookbehind, String lookahead) {
+              requireNonNull(lookbehind);
+              requireNonNull(lookahead);
               return candidates.stream()
-                  .map(c -> c.notBetween(before, after))
+                  .map(c -> c.notBetween(lookbehind, lookahead))
                   .collect(firstOccurrence());
             }
 
@@ -986,15 +986,15 @@ public final class Substring {
         }
 
         // Allow between() to trigger backtracking.
-        @Override public Pattern between(String before, String after) {
-          return base.between(before, after)
-              .or(that.between(before, after));
+        @Override public Pattern between(String lookbehind, String lookahead) {
+          return base.between(lookbehind, lookahead)
+              .or(that.between(lookbehind, lookahead));
         }
 
         // Allow notBetween() to trigger backtracking.
-        @Override public Pattern notBetween(String before, String after) {
-          return base.notBetween(before, after)
-              .or(that.notBetween(before, after));
+        @Override public Pattern notBetween(String lookbehind, String lookahead) {
+          return base.notBetween(lookbehind, lookahead)
+              .or(that.notBetween(lookbehind, lookahead));
         }
 
         @Override public Pattern peek(Pattern following) {
@@ -1108,13 +1108,13 @@ public final class Substring {
         }
 
         @Override
-        public Pattern between(String before, String after) {
-          return base.then(following.between(before, after));
+        public Pattern between(String lookbehind, String lookahead) {
+          return base.then(following.between(lookbehind, lookahead));
         }
 
         @Override
-        public Pattern notBetween(String before, String after) {
-          return base.then(following.notBetween(before, after));
+        public Pattern notBetween(String lookbehind, String lookahead) {
+          return base.then(following.notBetween(lookbehind, lookahead));
         }
 
         @Override public String toString() {
@@ -1264,7 +1264,7 @@ public final class Substring {
 
     /**
      * Returns an otherwise equivalent pattern except it requires the matched substring be
-     * immediately preceded by the {@code before} string and immediately followed by the {@code
+     * immediately preceded by the {@code lookbehind} string and immediately followed by the {@code
      * after} string.
      *
      * <p>Similar to regex lookarounds, the returned pattern will backtrack until the lookaround is
@@ -1272,24 +1272,24 @@ public final class Substring {
      * parenthesis from "foo (bar)".
      *
      * <p>If you need lookahead only, use {@link #followedBy} instead; for lookbehind only, pass an
-     * empty string as the {@code after} string, as in: {@code word().between(":", "")}.
+     * empty string as the {@code lookahead} string, as in: {@code word().between(":", "")}.
      *
      * @since 6.2
      */
-    public Pattern between(String before, String after) {
-      requireNonNull(before);
-      requireNonNull(after);
+    public Pattern between(String lookbehind, String lookahead) {
+      requireNonNull(lookbehind);
+      requireNonNull(lookahead);
       Pattern target = this;
       return new Pattern() {
         @Override Match match(String input, int fromIndex) {
-          final int lastIndex = input.length() - after.length();
+          final int lastIndex = input.length() - lookahead.length();
           while (fromIndex <= lastIndex) {
             Match match = target.match(input, fromIndex);
             if (match == null) {
               return null;
             }
-            if (input.startsWith(before, match.startIndex - before.length())
-                && input.startsWith(after, match.endIndex)) {
+            if (input.startsWith(lookbehind, match.startIndex - lookbehind.length())
+                && input.startsWith(lookahead, match.endIndex)) {
               return match;
             }
             // Lookaround mismatch, skip the first matched char then try again.
@@ -1299,14 +1299,14 @@ public final class Substring {
         }
 
         @Override public String toString() {
-          return target + ".between('" + before + "', '" + after + "')";
+          return target + ".between('" + lookbehind + "', '" + lookahead + "')";
         }
       };
     }
 
     /**
      * Returns an otherwise equivalent pattern except it requires the matched substring <em>not</em>
-     * be immediately preceded by the {@code before} string and immediately followed by the {@code
+     * be immediately preceded by the {@code lookbehind} string and immediately followed by the {@code
      * after} string.
      *
      * <p>Similar to regex negative lookarounds, the returned pattern will backtrack until the
@@ -1314,7 +1314,7 @@ public final class Substring {
      * "bar" substring from "(foo) bar".
      *
      * <p>If you need negative lookahead only, use {@link #notFollowedBy} instead; for negative
-     * lookbehind only, pass an empty string as the {@code after} string, as in: {@code
+     * lookbehind only, pass an empty string as the {@code lookahead} string, as in: {@code
      * word().between(":", "")}.
      *
      * <p>If the pattern shouldn't be preceded or followed by particular character(s), consider
@@ -1328,9 +1328,9 @@ public final class Substring {
      *
      * @since 6.2
      */
-    public Pattern notBetween(String before, String after) {
-      requireNonNull(before);
-      requireNonNull(after);
+    public Pattern notBetween(String lookbehind, String lookahead) {
+      requireNonNull(lookbehind);
+      requireNonNull(lookahead);
       Pattern target = this;
       return new Pattern() {
         @Override Match match(String input, int fromIndex) {
@@ -1339,8 +1339,8 @@ public final class Substring {
             if (match == null) {
               return null;
             }
-            if (!input.startsWith(before, match.startIndex - before.length())
-                || !input.startsWith(after, match.endIndex)) {
+            if (!input.startsWith(lookbehind, match.startIndex - lookbehind.length())
+                || !input.startsWith(lookahead, match.endIndex)) {
               return match;
             }
             // Lookaround mismatch, skip the first matched char then try again.
@@ -1350,14 +1350,14 @@ public final class Substring {
         }
 
         @Override public String toString() {
-          return target + ".notBetween('" + before + "', '" + after + "')";
+          return target + ".notBetween('" + lookbehind + "', '" + lookahead + "')";
         }
       };
     }
 
     /**
      * Returns an otherwise equivalent pattern except it requires the matched substring <em>not</em> be
-     * immediately followed by the {@code after} string.
+     * immediately followed by the {@code lookahead} string.
      *
      * <p>Similar to regex negative lookahead, the returned pattern will backtrack until the lookahead is
      * satisfied. That is, {@code word().followedBy(":")} will find the "Joe" substring from "To
@@ -1367,13 +1367,13 @@ public final class Substring {
      *
      * @since 6.2
      */
-    public final Pattern followedBy(String after) {
-      return between("", after);
+    public final Pattern followedBy(String lookahead) {
+      return between("", lookahead);
     }
 
     /**
      * Returns an otherwise equivalent pattern except it requires the matched substring <em>not</em>
-     * be immediately followed by the {@code after} string.
+     * be immediately followed by the {@code lookahead} string.
      *
      * <p>Similar to regex negative lookahead, the returned pattern will backtrack until the
      * negative lookahead is satisfied. That is, {@code word().notFollowedBy(" ")} will find the
@@ -1394,8 +1394,8 @@ public final class Substring {
      *
      * @since 6.2
      */
-    public final Pattern notFollowedBy(String after) {
-      return notBetween("", after);
+    public final Pattern notFollowedBy(String lookahead) {
+      return notBetween("", lookahead);
     }
 
     /**
