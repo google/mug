@@ -3287,6 +3287,21 @@ public class SubstringTest {
     assertThat(pattern.repeatedly().from("<-foo-> <-bar->")).containsExactly("foo", "bar");
   }
 
+  @Test public void firstString_between_found() {
+    Substring.Pattern pattern = first("foo").between("<-", "->");
+    assertThat(pattern.from("<-foo->")).hasValue("foo");
+    assertThat(pattern.repeatedly().from("<-foo->")).containsExactly("foo");
+    assertThat(pattern.repeatedly().from("<-foo-> <-foo-> <-foo- -foo->"))
+        .containsExactly("foo", "foo");
+  }
+
+  @Test public void firstChar_between_found() {
+    Substring.Pattern pattern = first('.').between("<-", "->");
+    assertThat(pattern.from("<-.->")).hasValue(".");
+    assertThat(pattern.repeatedly().from("<-.->")).containsExactly(".");
+    assertThat(pattern.repeatedly().from("<-.-> <-.-> <-.- -.->")).containsExactly(".", ".");
+  }
+
   @Test public void between_betweenBacktrackingStartsFromDelimiter() {
     Substring.Pattern pattern = Substring.between("(", ")").between("[(", ")]");
     assertThat(pattern.from("[(foo)]")).hasValue("foo");

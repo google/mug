@@ -247,6 +247,13 @@ public final class Substring {
         return index >= 0 ? Match.backtrackable(1, input, index, 1) : null;
       }
 
+      @Override public Pattern between(String lookbehind, String lookahead) {
+        // first(lookbehind + char).skip(lookbehind) is more efficient with native String#indexOf().
+        return lookbehind.isEmpty()
+            ? super.between(lookbehind, lookahead)
+            : first(lookbehind + character).skip(lookbehind.length(), 0).followedBy(lookahead);
+      }
+
       @Override public String toString() {
         return "first(\'" + character + "\')";
       }
