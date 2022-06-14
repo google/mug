@@ -222,6 +222,17 @@ public final class Substring {
         return index >= 0 ? Match.backtrackable(1, input, index, str.length()) : null;
       }
 
+      @Override public Pattern between(String lookbehind, String lookahead) {
+        // first(lookbehind + str).skip(lookbehind) is more efficient with native String#indexOf().
+        //
+        // Can't use first(lookbehind + str + lookbehind).skip(lookbehind, lookahead)
+        // because skip().repeatedly() will repeat after `lookahead`.
+        // between(lookbehind, lookahead).repeatedly() should repeat _at_ `lookahead`.
+        return lookbehind.isEmpty()
+            ? super.between(lookbehind, lookahead)
+            : first(lookbehind + str).skip(lookbehind.length(), 0).followedBy(lookahead);
+      }
+
       @Override public String toString() {
         return "first('" + str + "')";
       }
@@ -1250,7 +1261,6 @@ public final class Substring {
                 return match;
               }
             }
-            // Boundary mismatch, skip the first matched char then try again.
             fromIndex = match.backtrackFrom(fromIndex);
           }
           return null;
@@ -1292,7 +1302,6 @@ public final class Substring {
                 && input.startsWith(lookahead, match.endIndex)) {
               return match;
             }
-            // Lookaround mismatch, skip the first matched char then try again.
             fromIndex = match.backtrackFrom(fromIndex);
           }
           return null;
@@ -1343,7 +1352,6 @@ public final class Substring {
                 || !input.startsWith(lookahead, match.endIndex)) {
               return match;
             }
-            // Lookaround mismatch, skip the first matched char then try again.
             fromIndex = match.backtrackFrom(fromIndex);
           }
           return null;
