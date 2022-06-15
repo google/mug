@@ -778,7 +778,12 @@ public final class Substring {
             //
             // For before(first('/')).withBoundary(), if boundary doesn't match, it's not loggically correct
             // to try the second '/'.
-            : new Match(input, fromIndex, match.startIndex - fromIndex, Integer.MAX_VALUE, match.repetitionStartIndex);
+            : new Match(
+                input,
+                fromIndex,
+                match.startIndex - fromIndex,
+                Integer.MAX_VALUE,
+                match.repetitionStartIndex);
       }
 
       @Override public String toString() {
@@ -832,7 +837,12 @@ public final class Substring {
             ? null
             // Do not include the delimiter pattern in the next iteration.
             // upToIncluding(first('/')).withBoundary() should not backtrack to the second '/'.
-            : new Match(input, fromIndex, match.endIndex - fromIndex, Integer.MAX_VALUE, match.repetitionStartIndex);
+            : new Match(
+                input,
+                fromIndex,
+                match.endIndex - fromIndex,
+                Integer.MAX_VALUE,
+                match.repetitionStartIndex);
       }
 
       @Override public String toString() {
@@ -1112,7 +1122,12 @@ public final class Substring {
           // Keep the repetitionStartIndex strictly increasing to avoid the next iteration
           // in repeatedly() to be stuck with no progress.
           return next.repetitionStartIndex < preceding.repetitionStartIndex
-              ? new Match(input, next.startIndex, next.length(), preceding.backtrackIndex, preceding.repetitionStartIndex)
+              ? new Match(
+                  input,
+                  next.startIndex,
+                  next.length(),
+                  preceding.backtrackIndex,
+                  preceding.repetitionStartIndex)
               : next;
         }
 
@@ -2209,7 +2224,8 @@ public final class Substring {
     }
 
     static Match backtrackable(int backtrackingOffset, String context, int fromIndex, int length) {
-      return new Match(context, fromIndex, length, fromIndex + backtrackingOffset, fromIndex + max(1, length));
+      return new Match(
+          context, fromIndex, length, fromIndex + backtrackingOffset, fromIndex + max(1, length));
     }
 
     static Match nonBacktrackable(String context, int fromIndex, int length) {
@@ -2371,7 +2387,8 @@ public final class Substring {
         throw new IndexOutOfBoundsException(
             "Invalid index: begin (" + begin + ") > end (" + end + ")");
       }
-      return new Match(context, startIndex + begin, end - begin, Integer.MAX_VALUE, repetitionStartIndex);
+      return new Match(
+          context, startIndex + begin, end - begin, Integer.MAX_VALUE, repetitionStartIndex);
     }
 
     /** Returns the matched substring. */
