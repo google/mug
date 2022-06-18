@@ -596,9 +596,6 @@ public final class Substring {
       }
 
       void enqueueNextOccurrence(String input, int fromIndex, Queue<Occurrence> queue) {
-        if (fromIndex > input.length()) {
-          return;
-        }
         Match nextMatch = pattern.match(input, fromIndex);
         if (nextMatch != null) {
           queue.add(new Occurrence(pattern, nextMatch, stableOrder));
@@ -654,7 +651,9 @@ public final class Substring {
                     // In the next iteration, we want to start *after* the '/' for the repetition
                     // of before(first('/')), yet start from the '/' for the other unmatched first('/').
                     // The expected result is [foo, /].
-                    occurrence.enqueueNextOccurrence(input, match.repetitionStartIndex, occurrences);
+                    if (match.repetitionStartIndex <= input.length()) {
+                      occurrence.enqueueNextOccurrence(input, match.repetitionStartIndex, occurrences);
+                    }
                     for (final int waterMark = match.endIndex; ;) {
                       Occurrence nextInLine = occurrences.peek();
                       if (nextInLine == null || nextInLine.match.index() >= waterMark) {
