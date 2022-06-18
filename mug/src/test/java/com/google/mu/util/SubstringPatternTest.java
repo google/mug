@@ -2,6 +2,7 @@ package com.google.mu.util;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static com.google.common.truth.TruthJUnit.assume;
 import static com.google.mu.util.Substring.BEGINNING;
 import static com.google.mu.util.Substring.END;
 import static com.google.mu.util.Substring.NONE;
@@ -24,6 +25,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import com.google.common.base.Ascii;
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
 import com.google.mu.util.Substring.Match;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
@@ -689,6 +692,229 @@ public class SubstringPatternTest {
     CharPredicate boundary = LOWER.not();
     Substring.Pattern dir = Substring.before(first("//")).withBoundary(boundary);
     assertPattern(dir, "foo//bar//zoo").finds("foo", "bar");
+  }
+
+  @Test
+  public void firstOccurrence_noPattern() {
+    Substring.Pattern pattern = Stream.<Substring.Pattern>empty().collect(firstOccurrence());
+    assertPattern(pattern, "string").findsNothing();
+  }
+
+  @Test
+  public void firstOccurrence_singlePattern_noMatch() {
+    Substring.Pattern pattern = Stream.of(first("foo")).collect(firstOccurrence());
+    assertPattern(pattern, "string").findsNothing();
+  }
+
+  @Test
+  public void firstOccurrence_singlePattern_match() {
+    Substring.Pattern pattern = Stream.of(Substring.word()).collect(firstOccurrence());
+    assertPattern(pattern, "foo bar").finds("foo", "bar");
+  }
+
+  @Test
+  public void firstOccurrence_twoPatterns_noneMatch() {
+    Substring.Pattern pattern = Stream.of(first("foo"), first("bar")).collect(firstOccurrence());
+    assertPattern(pattern, "what").findsNothing();
+  }
+
+  @Test
+  public void firstOccurrence_twoPatterns_firstMatches() {
+    Substring.Pattern pattern = Stream.of(first("foo"), first("bar")).collect(firstOccurrence());
+    assertPattern(pattern, "foo bar").finds("foo", "bar");
+  }
+
+  @Test
+  public void firstOccurrence_twoPatterns_secondMatches() {
+    Substring.Pattern pattern = Stream.of(first("foo"), first("bar")).collect(firstOccurrence());
+    assertPattern(pattern, "bar foo").finds("bar", "foo");
+  }
+
+  @Test
+  public void firstOccurrence_threePatterns_noneMatch() {
+    Substring.Pattern pattern =
+        Stream.of(first("foo"), first("bar"), first("zoo")).collect(firstOccurrence());
+    assertPattern(pattern, "what").findsNothing();
+  }
+
+  @Test
+  public void firstOccurrence_threePatterns_firstMatches() {
+    Substring.Pattern pattern =
+        Stream.of(first("foo"), first("bar"), first("zoo")).collect(firstOccurrence());
+    assertPattern(pattern, "foo zoo bar").finds("foo", "zoo", "bar");
+  }
+
+  @Test
+  public void firstOccurrence_threePatterns_secondMatches() {
+    Substring.Pattern pattern =
+        Stream.of(first("foo"), first("bar"), first("zoo")).collect(firstOccurrence());
+    assertPattern(pattern, "bar zoo foo").finds("bar", "zoo", "foo");
+  }
+
+  @Test
+  public void firstOccurrence_threePatterns_thirdMatches() {
+    Substring.Pattern pattern =
+        Stream.of(first("foo"), first("bar"), first("zoo")).collect(firstOccurrence());
+    assertPattern(pattern, "zoo bar foo").finds("zoo", "bar", "foo");
+  }
+
+  @Test
+  public void firstOccurrence_overlappingCandidatePatterns() {
+    Substring.Pattern pattern =
+        Stream.of("oop", "foo", "op", "pool", "load", "oad")
+            .map(Substring::first)
+            .collect(firstOccurrence());
+    assertPattern(pattern, "foopooload").finds("foo", "pool", "oad");
+    assertThat(variant.wrap(pattern).repeatedly().from(Strings.repeat("foopooload", 10)).distinct())
+        .containsExactly("foo", "pool", "oad")
+        .inOrder();
+  }
+
+  @Test
+  public void firstOccurrence_beforePatternRepetitionIndexRespected() {
+    assume().that(variant).isEqualTo(SubstringPatternVariant.AS_IS);
+    Substring.Pattern pattern =
+        Stream.of(first("foo"), before(first("/")), first('/'), first("zoo"))
+            .collect(firstOccurrence());
+    assertPattern(pattern, "food/bar/baz/zoo")
+        .finds("foo", "d", "/", "bar", "/", "baz", "/", "zoo");
+  }
+
+  @Test
+  public void firstOccurrence_beforePatternWithMoreThanOneCharacters() {
+    assume().that(variant).isEqualTo(SubstringPatternVariant.AS_IS);
+    Substring.Pattern pattern =
+        Stream.of(before(first("//")), first("//")).collect(firstOccurrence());
+    assertPattern(pattern, "foo//bar//baz//zoo").finds("foo", "//", "bar", "//", "baz", "//");
+  }
+
+  @Test
+  public void firstOccurrence_beforePatternRepetition() {
+    Substring.Pattern pattern = Stream.of(before(first("//"))).collect(firstOccurrence());
+    assertPattern(pattern, "foo//bar//baz//zoo").finds("foo", "bar", "baz");
+  }
+
+  @Test
+  public void firstOccurrence_zeroLimitPatternInterleavedWithZeroLimitPattern() {
+    assume().that(variant).isEqualTo(SubstringPatternVariant.AS_IS);
+    Substring.Pattern pattern =
+        Stream.of(first("kook").limit(0), first("ok").limit(0)).collect(firstOccurrence());
+    assertPattern(pattern, "okookook").finds("", "", "", "");
+    assertPattern(pattern, "kookooko").finds("", "", "");
+  }
+
+  @Test
+  public void firstOccurrence_limitPatternInterleavedWithLimitPattern() {
+    assume().that(variant).isEqualTo(SubstringPatternVariant.AS_IS);
+    Substring.Pattern pattern =
+        Stream.of(first("koook").limit(3), first("ok").limit(1)).collect(firstOccurrence());
+    assertPattern(pattern, "okoookoook").finds("o", "koo", "o", "o");
+    assertPattern(pattern, "koookoooko").finds("koo", "o", "o");
+  }
+
+  @Test
+  public void firstOccurrenceThenLimit_interleaved() {
+    Substring.Pattern pattern =
+        Stream.of(first("koook"), first("ok")).collect(firstOccurrence()).limit(3);
+    assertPattern(pattern, "koookoook").finds("koo", "ok");
+  }
+
+  @Test
+  public void firstOccurrence_beforePatternInterleavedWithBeforePattern() {
+    assume().that(variant).isEqualTo(SubstringPatternVariant.AS_IS);
+    Substring.Pattern pattern =
+        Stream.of(before(first("/")), before(first("//"))).collect(firstOccurrence());
+    assertPattern(pattern, "foo//bar//baz//zoo").finds("foo", "", "", "bar", "", "", "baz", "", "");
+  }
+
+  @Test
+  public void firstOccurrence_breaksTieByCandidatePatternOrder() {
+    Substring.Pattern pattern =
+        Stream.of("foo", "food", "dog", "f", "fo", "d", "do")
+            .map(Substring::first)
+            .collect(firstOccurrence());
+    assertPattern(pattern, "foodog").finds("foo", "dog");
+    assertThat(pattern.repeatedly().from(Strings.repeat("foodog", 10)).distinct())
+        .containsExactly("foo", "dog");
+  }
+
+  @Test
+  public void firstOccurrence_splitKeyValues_withFixedSetOfKeys_noReservedDelimiter() {
+    Substring.Pattern delim =
+        Stream.of("a", "artist", "playlist id", "foo bar")
+            .map(k -> first(" " + k + ":"))
+            .collect(firstOccurrence())
+            .limit(1);
+    String input = "playlist id:foo bar artist: another name a: my name:age";
+    ImmutableMap<String, String> keyValues =
+        delim
+            .repeatedly()
+            .splitThenTrimKeyValuesAround(first(':'), input)
+            .collect(ImmutableMap::toImmutableMap);
+    assertThat(keyValues)
+        .containsExactly("playlist id", "foo bar", "artist", "another name", "a", "my name:age")
+        .inOrder();
+  }
+
+  @Test
+  public void firstOccurrence_word() {
+    Substring.Pattern pattern =
+        Stream.of("food", "dog", "f", "fo", "d", "do")
+            .map(Substring::word)
+            .collect(firstOccurrence());
+    assertThat(pattern.from("foodog")).isEmpty();
+    assertThat(pattern.repeatedly().from("foodog")).isEmpty();
+    assertPattern(pattern, "dog foo dog food catfood").finds("dog", "dog", "food");
+  }
+
+  @Test
+  public void firstOccurrence_withBoundary() {
+    Substring.Pattern pattern =
+        Stream.of("food", "dog", "f", "fo", "d", "do")
+            .map(Substring::first)
+            .collect(firstOccurrence())
+            .withBoundary(Character::isWhitespace);
+    assertThat(pattern.from("foodog")).isEmpty();
+    assertThat(pattern.repeatedly().from("foodog")).isEmpty();
+    assertPattern(pattern, "dog foo dog food catfood").finds("dog", "dog", "food");
+  }
+
+  @Test
+  public void firstOccurrence_withBoundary_tieBrokenByBoundary() {
+    Substring.Pattern pattern =
+        Stream.of("foo", "food")
+            .map(Substring::first)
+            .collect(firstOccurrence())
+            .withBoundary(Character::isWhitespace);
+    assertThat(pattern.from("food")).hasValue("food");
+    assertThat(pattern.repeatedly().from("food")).containsExactly("food");
+  }
+
+  @Test
+  public void firstOccurrence_between_tieBrokenByBoundary() {
+    Substring.Pattern pattern =
+        Stream.of("foo", "food").map(Substring::first).collect(firstOccurrence()).between("(", ")");
+    assertThat(pattern.from("(food)")).hasValue("food");
+    assertThat(pattern.repeatedly().from("(food)")).containsExactly("food");
+  }
+
+  @Test
+  public void firstOccurrence_notBetween_tieBrokenByBoundary() {
+    Substring.Pattern pattern =
+        Stream.of("food", "foo")
+            .map(Substring::first)
+            .collect(firstOccurrence())
+            .notBetween("(", ")");
+    assertThat(pattern.from("(food)")).hasValue("foo");
+    assertThat(pattern.repeatedly().from("(food)")).containsExactly("foo");
+  }
+
+  @Test
+  public void firstOccurrence_peek_alternativeBackTrackingNotTriggeredByPeek() {
+    Substring.Pattern pattern =
+        Stream.of("foo", "ood").map(Substring::first).collect(firstOccurrence()).peek(" ");
+    assertThat(pattern.from("food ")).isEmpty();
+    assertThat(pattern.repeatedly().from("food ")).isEmpty();
   }
 
   private SubstringPatternAssertion assertPattern(Substring.Pattern pattern, String input) {
