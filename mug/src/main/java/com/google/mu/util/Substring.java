@@ -219,7 +219,7 @@ public final class Substring {
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
         int index = input.indexOf(str, fromIndex);
-        return index >= 0 ? Match.backtrackable(1, input, index, str.length()) : null;
+        return index >= fromIndex ? Match.backtrackable(1, input, index, str.length()) : null;
       }
 
       @Override Pattern lookaround(String lookbehind, String lookahead) {
@@ -527,7 +527,7 @@ public final class Substring {
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
         Matcher matcher = regexPattern.matcher(input);
-        if (matcher.find(fromIndex)) {
+        if (fromIndex <= input.length() && matcher.find(fromIndex)) {
           int start = matcher.start(group);
           return Match.backtrackable(1, input, start, matcher.end(group) - start);
         }
@@ -596,6 +596,9 @@ public final class Substring {
       }
 
       void enqueueNextOccurrence(String input, int fromIndex, Queue<Occurrence> queue) {
+        if (fromIndex > input.length()) {
+          return;
+        }
         Match nextMatch = pattern.match(input, fromIndex);
         if (nextMatch != null) {
           queue.add(new Occurrence(pattern, nextMatch, stableOrder));
@@ -1305,7 +1308,8 @@ public final class Substring {
     public final Pattern between(String lookbehind, String lookahead) {
       requireNonNull(lookbehind);
       requireNonNull(lookahead);
-      return lookbehind.isEmpty() && lookahead.isEmpty() ? this : lookaround(lookbehind, lookahead);
+      return //lookbehind.isEmpty() && lookahead.isEmpty() ? this :
+        lookaround(lookbehind, lookahead);
     }
 
     /**
@@ -1335,9 +1339,9 @@ public final class Substring {
     public final Pattern notBetween(String lookbehind, String lookahead) {
       requireNonNull(lookbehind);
       requireNonNull(lookahead);
-      return lookbehind.isEmpty() && lookahead.isEmpty()
+      return /*lookbehind.isEmpty() && lookahead.isEmpty()
           ? NONE
-          : negativeLookaround(lookbehind, lookahead);
+          :*/ negativeLookaround(lookbehind, lookahead);
     }
 
     /**

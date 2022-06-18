@@ -2690,6 +2690,14 @@ public class SubstringTest {
   }
 
   @Test
+  public void firstOccurrence_emptyPattern() {
+    Substring.Pattern pattern = Stream.of(first("")).collect(firstOccurrence());
+    assertThat(pattern.from("")).hasValue("");
+    assertThat(pattern.repeatedly().from("").limit(100)).containsExactly("");
+    assertThat(pattern.repeatedly().from("ab").limit(100)).containsExactly("", "", "");
+  }
+
+  @Test
   public void firstOccurrence_singlePattern_noMatch() {
     Substring.Pattern pattern = Stream.of(first("foo")).collect(firstOccurrence());
     assertThat(pattern.from("string")).isEmpty();
