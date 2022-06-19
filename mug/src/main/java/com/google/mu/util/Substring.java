@@ -1307,8 +1307,9 @@ public final class Substring {
     public final Pattern between(String lookbehind, String lookahead) {
       requireNonNull(lookbehind);
       requireNonNull(lookahead);
-      return //lookbehind.isEmpty() && lookahead.isEmpty() ? this :
-        lookaround(lookbehind, lookahead);
+      return lookbehind.isEmpty() && lookahead.isEmpty()
+          ? this
+          : lookaround(lookbehind, lookahead);
     }
 
     /**
@@ -1338,9 +1339,9 @@ public final class Substring {
     public final Pattern notBetween(String lookbehind, String lookahead) {
       requireNonNull(lookbehind);
       requireNonNull(lookahead);
-      return /*lookbehind.isEmpty() && lookahead.isEmpty()
+      return lookbehind.isEmpty() && lookahead.isEmpty()
           ? NONE
-          :*/ negativeLookaround(lookbehind, lookahead);
+          : negativeLookaround(lookbehind, lookahead);
     }
 
     /**
