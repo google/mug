@@ -26,6 +26,20 @@ final class SubstringPatternAssertion {
         .containsExactly(input.trim());
   }
 
+  void finds(String... findings) {
+    assertThat(pattern.from(input)).hasValue(findings[0]);
+    assertThat(pattern.repeatedly().from(input).limit(findings.length + 10))
+        .containsExactlyElementsIn(asList(findings))
+        .inOrder();
+  }
+
+  void findsDistinct(String... findings) {
+    assertThat(pattern.from(input)).hasValue(findings[0]);
+    assertThat(pattern.repeatedly().from(input).distinct().limit(findings.length + 10))
+        .containsExactlyElementsIn(asList(findings))
+        .inOrder();
+  }
+
   void splitsTo(String... parts) {
     assertThat(
             pattern
@@ -48,6 +62,30 @@ final class SubstringPatternAssertion {
         .inOrder();
   }
 
+  void splitsDistinctTo(String... parts) {
+    assertThat(
+            pattern
+                .repeatedly()
+                .split(input)
+                .map(Substring.Match::toString)
+                .distinct()
+                .limit(parts.length + 10))
+        .containsExactlyElementsIn(asList(parts))
+        .inOrder();
+  }
+
+  void splitsThenTrimsDistinctTo(String... parts) {
+    assertThat(
+            pattern
+                .repeatedly()
+                .splitThenTrim(input)
+                .map(Substring.Match::toString)
+                .distinct()
+                .limit(parts.length + 10))
+        .containsExactlyElementsIn(asList(parts))
+        .inOrder();
+  }
+
   void twoWaySplitsTo(String left, String right) {
     assertThat(pattern.split(input).map((a, b) -> a)).hasValue(left);
     assertThat(pattern.split(input).map((a, b) -> b)).hasValue(right);
@@ -56,12 +94,5 @@ final class SubstringPatternAssertion {
   void twoWaySplitsThenTrimsTo(String left, String right) {
     assertThat(pattern.splitThenTrim(input).map((a, b) -> a)).hasValue(left);
     assertThat(pattern.splitThenTrim(input).map((a, b) -> b)).hasValue(right);
-  }
-
-  void finds(String... findings) {
-    assertThat(pattern.from(input)).hasValue(findings[0]);
-    assertThat(pattern.repeatedly().from(input).limit(findings.length + 10))
-        .containsExactlyElementsIn(asList(findings))
-        .inOrder();
   }
 }
