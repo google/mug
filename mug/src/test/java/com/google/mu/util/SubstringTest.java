@@ -1895,6 +1895,13 @@ public class SubstringTest {
   }
 
   @Test
+  public void skip_backtrackFromNextChar() {
+    Substring.Pattern pattern = Substring.first("ttl").skip(2, 0).between("t", "o");
+    assertThat(pattern.from("tttlo")).hasValue("l");
+    assertThat(pattern.repeatedly().from("(tttlo)")).containsExactly("l");
+  }
+
+  @Test
   public void skip_toString() {
     assertThat(first("foo").skip(2, 3).toString()).isEqualTo("first('foo').skip(2, 3)");
   }
@@ -3258,14 +3265,14 @@ public class SubstringTest {
     assertThat(pattern.repeatedly().from("<-fo->")).isEmpty();
   }
 
-  @Test public void between_lookbehindNotFound() {
+  @Test public void between_lookbehindAbsent() {
     Substring.Pattern pattern = first("foo").between("<-", "->");
     assertThat(pattern.from("<!-foo->")).isEmpty();
     assertThat(pattern.repeatedly().from("<!-foo->")).isEmpty();
     assertThat(pattern.repeatedly().from("foo->")).isEmpty();
   }
 
-  @Test public void between_lookaheadNotFound() {
+  @Test public void between_lookaheadAbsent() {
     Substring.Pattern pattern = first("foo").between("<-", "->");
     assertThat(pattern.from("<-foo>>")).isEmpty();
     assertThat(pattern.repeatedly().from("<-foo>>")).isEmpty();
@@ -3280,6 +3287,21 @@ public class SubstringTest {
     assertThat(pattern.repeatedly().from("<-foo-> <-bar->")).containsExactly("foo", "bar");
   }
 
+  @Test public void firstString_between_found() {
+    Substring.Pattern pattern = first("foo").between("<-", "->");
+    assertThat(pattern.from("<-foo->")).hasValue("foo");
+    assertThat(pattern.repeatedly().from("<-foo->")).containsExactly("foo");
+    assertThat(pattern.repeatedly().from("<-foo-> <-foo-> <-foo- -foo->"))
+        .containsExactly("foo", "foo");
+  }
+
+  @Test public void firstChar_between_found() {
+    Substring.Pattern pattern = first('.').between("<-", "->");
+    assertThat(pattern.from("<-.->")).hasValue(".");
+    assertThat(pattern.repeatedly().from("<-.->")).containsExactly(".");
+    assertThat(pattern.repeatedly().from("<-.-> <-.-> <-.- -.->")).containsExactly(".", ".");
+  }
+
   @Test public void between_betweenBacktrackingStartsFromDelimiter() {
     Substring.Pattern pattern = Substring.between("(", ")").between("[(", ")]");
     assertThat(pattern.from("[(foo)]")).hasValue("foo");
@@ -3290,6 +3312,14 @@ public class SubstringTest {
   @Test public void between_backtrackingAtOpeningDelimiter() {
     Substring.Pattern pattern = Substring.between("oo", "cc").between("ooo", "ccc");
     assertThat(pattern.from("oofooccooobarccc")).hasValue("bar");
+    assertThat(pattern.repeatedly().from("oofooccooobarccc")).containsExactly("bar");
+  }
+
+  @Test public void between_repetitionStartsFromLookahead() {
+    Substring.Pattern pattern = Substring.first("bar").between("of", "o");
+    assertThat(pattern.from("ofbarofbaro")).hasValue("bar");
+    assertThat(pattern.repeatedly().from("ofbarofbaro"))
+        .containsExactly("bar", "bar");
   }
 
   @Test public void between_thenBacktracks() {
@@ -3381,7 +3411,7 @@ public class SubstringTest {
     assertThat(pattern.repeatedly().from("bar")).isEmpty();
   }
 
-  @Test public void notPrecededBy_lookbehindNotFound() {
+  @Test public void notPrecededBy_lookbehindAbsent() {
     Substring.Pattern pattern = first("foo").notBetween("...", "");
     assertThat(pattern.from("...foo")).isEmpty();
     assertThat(pattern.repeatedly().from("....foo")).isEmpty();
@@ -3408,22 +3438,37 @@ public class SubstringTest {
     assertThat(pattern.repeatedly().from("<fo>")).isEmpty();
   }
 
-  @Test public void notBetween_lookbehindNotFound() {
-    Substring.Pattern pattern = first("foo").notBetween("<-", "->");
-    assertThat(pattern.from("<-foo->")).isEmpty();
-    assertThat(pattern.repeatedly().from("<-foo->")).isEmpty();
-  }
-
-  @Test public void notBetween_lookaheadNotFound() {
-    Substring.Pattern pattern = first("foo").notBetween("<-", "->");
-    assertThat(pattern.from("<-foo->")).isEmpty();
-    assertThat(pattern.repeatedly().from("<-foo->")).isEmpty();
-  }
-
-  @Test public void notBetween_found() {
+  @Test public void notBetween_lookaheadAbsent() {
     Substring.Pattern pattern = Substring.word().notBetween("<-", "->");
-    assertThat(pattern.from("<<foo->")).hasValue("foo");
-    assertThat(pattern.from("<-foo>>")).hasValue("foo");
+    assertThat(pattern.from("<-foo-->")).hasValue("foo");
+    assertThat(pattern.repeatedly().from("<-foo-->")).containsExactly("foo");
+    assertThat(pattern.repeatedly().from("<-foo--> bar"))
+        .containsExactly("foo", "bar")
+        .inOrder();
+  }
+
+  @Test public void notBetween_lookbehindAbsent() {
+    Substring.Pattern pattern = Substring.word().notBetween("<-", "->");
+    assertThat(pattern.from("<--foo->")).hasValue("foo");
+    assertThat(pattern.repeatedly().from("<--foo->")).containsExactly("foo");
+    assertThat(pattern.repeatedly().from("<--foo-> bar->"))
+        .containsExactly("foo", "bar")
+        .inOrder();
+  }
+
+  @Test public void notBetween_bothLookbehindAndLookaheadPresent() {
+    Substring.Pattern pattern = Substring.word().notBetween("<-", "->");
+    assertThat(pattern.from("<-foo-->")).hasValue("foo");
+    assertThat(pattern.repeatedly().from("<-foo-->")).containsExactly("foo");
+    assertThat(pattern.repeatedly().from("<-foo--> bar"))
+        .containsExactly("foo", "bar")
+        .inOrder();
+  }
+
+  @Test public void notBetween_neitherLookbehindNorLookaheadPresent() {
+    Substring.Pattern pattern = Substring.word().notBetween("<-", "->");
+    assertThat(pattern.from("<<foo>")).hasValue("foo");
+    assertThat(pattern.from("<--foo-->")).hasValue("foo");
     assertThat(pattern.from("foo")).hasValue("foo");
     assertThat(pattern.repeatedly().from("foo")).containsExactly("foo");
     assertThat(pattern.repeatedly().from("<<foo>> bar")).containsExactly("foo", "bar");
@@ -3447,6 +3492,178 @@ public class SubstringTest {
     assertThat(pattern.from(": ((foo)) [bar]")).hasValue("bar");
     assertThat(pattern.repeatedly().from(": ((foo)) bar : <zoo>")).containsExactly("bar", "zoo");
     assertThat(pattern.repeatedly().from(": ((foo)) bar :(zoo)")).containsExactly("bar", "zoo");
+  }
+
+  @Test
+  public void regex_followedBy_lookaheadAbsent() {
+    Substring.Pattern pattern = first(Pattern.compile("\\w+")).followedBy("...");
+    assertThat(pattern.from("foo")).isEmpty();
+    assertThat(pattern.repeatedly().from("foo")).isEmpty();
+    assertThat(pattern.repeatedly().from("foo..")).isEmpty();
+  }
+
+  @Test
+  public void regex_followedBy_found() {
+    Substring.Pattern pattern = first(Pattern.compile("\\w+")).followedBy("...");
+    assertThat(pattern.from("foo...")).hasValue("foo");
+    assertThat(pattern.repeatedly().from("foo...")).containsExactly("foo");
+    assertThat(pattern.repeatedly().from("foo...bar zoo...")).containsExactly("foo", "zoo");
+  }
+
+  @Test
+  public void regex_followedBy_backtracking() {
+    Substring.Pattern pattern = Substring.first(Pattern.compile("--")).followedBy("->");
+    assertThat(pattern.from("<---->")).hasValue("--");
+  }
+
+  @Test
+  public void regex_notFollowedBy_lookaheadAbsent() {
+    Substring.Pattern pattern = first(Pattern.compile("\\w+")).notFollowedBy("...");
+    assertThat(pattern.from("foo...")).hasValue("fo");
+    assertThat(pattern.repeatedly().from("foo...")).containsExactly("fo");
+    assertThat(pattern.repeatedly().from("foo....bar")).containsExactly("fo", "bar");
+  }
+
+  @Test
+  public void regex_notFollowedBy_found() {
+    Substring.Pattern pattern = first(Pattern.compile("\\w+")).notFollowedBy("...");
+    assertThat(pattern.from("foo")).hasValue("foo");
+    assertThat(pattern.repeatedly().from("foo.")).containsExactly("foo");
+    assertThat(pattern.repeatedly().from("foo..")).containsExactly("foo");
+    assertThat(pattern.repeatedly().from("foo.barfoo..")).containsExactly("foo", "barfoo");
+  }
+
+  @Test
+  public void regex_notFollowedBy_backtracking() {
+    Substring.Pattern pattern = Substring.first(Pattern.compile("--")).notFollowedBy("->");
+    assertThat(pattern.from("<---->--")).hasValue("--");
+  }
+
+  @Test
+  public void regex_precededBy_patternNotFound() {
+    Substring.Pattern pattern = first(Pattern.compile("foo")).between("...", "");
+    assertThat(pattern.from("...bar")).isEmpty();
+    assertThat(pattern.repeatedly().from("...bar")).isEmpty();
+  }
+
+  @Test
+  public void regex_precededBy_lookbehindAbsent() {
+    Substring.Pattern pattern = first(Pattern.compile("\\w+")).between("...", "");
+    assertThat(pattern.from("..foo")).isEmpty();
+    assertThat(pattern.repeatedly().from("foo")).isEmpty();
+    assertThat(pattern.repeatedly().from("..foo")).isEmpty();
+  }
+
+  @Test
+  public void regex_precededBy_found() {
+    Substring.Pattern pattern = first(Pattern.compile("\\w+")).between("...", "");
+    assertThat(pattern.from("...foo")).hasValue("foo");
+    assertThat(pattern.repeatedly().from("...foo")).containsExactly("foo");
+    assertThat(pattern.repeatedly().from("bar...foo bar...foo")).containsExactly("foo", "foo");
+  }
+
+  @Test
+  public void regex_notPrecededBy_patternNotFound() {
+    Substring.Pattern pattern = first(Pattern.compile("foo")).notBetween("...", "");
+    assertThat(pattern.from("bar")).isEmpty();
+    assertThat(pattern.repeatedly().from("bar")).isEmpty();
+  }
+
+  @Test
+  public void regex_notPrecededBy_lookbehindAbsent() {
+    Substring.Pattern pattern = first(Pattern.compile("\\w+")).notBetween("...", "");
+    assertThat(pattern.from("...f")).isEmpty();
+    assertThat(pattern.repeatedly().from("....f")).isEmpty();
+    assertThat(pattern.repeatedly().from("...f")).isEmpty();
+  }
+
+  @Test
+  public void regex_notPrecededBy_found() {
+    Substring.Pattern pattern = first(Pattern.compile("\\w+")).notBetween("...", "");
+    assertThat(pattern.from("..foo")).hasValue("foo");
+    assertThat(pattern.repeatedly().from("..foo")).containsExactly("foo");
+    assertThat(pattern.repeatedly().from("bar..foo bar...foo"))
+        .containsExactly("bar", "foo", "bar", "oo")
+        .inOrder();
+  }
+
+  @Test
+  public void regex_between_lookbehindAbsent() {
+    Substring.Pattern pattern = first(Pattern.compile("\\w+")).between("<-", "->");
+    assertThat(pattern.from("<!-foo->")).isEmpty();
+    assertThat(pattern.repeatedly().from("<!-foo->")).isEmpty();
+    assertThat(pattern.repeatedly().from("<-!foo->")).isEmpty();
+    assertThat(pattern.repeatedly().from("foo->")).isEmpty();
+  }
+
+  @Test
+  public void regex_between_lookaheadAbsent() {
+    Substring.Pattern pattern = first(Pattern.compile("\\w+")).between("<-", "->");
+    assertThat(pattern.from("<-foo>>")).isEmpty();
+    assertThat(pattern.repeatedly().from("<-foo>>")).isEmpty();
+    assertThat(pattern.repeatedly().from("<-foo>->")).isEmpty();
+    assertThat(pattern.repeatedly().from("<-foo")).isEmpty();
+    assertThat(pattern.repeatedly().from("foo")).isEmpty();
+  }
+
+  @Test
+  public void regex_between_found() {
+    Substring.Pattern pattern = first(Pattern.compile("\\w+")).between("<-", "->");
+    assertThat(pattern.from("<-foo->")).hasValue("foo");
+    assertThat(pattern.repeatedly().from("<-foo->")).containsExactly("foo");
+    assertThat(pattern.repeatedly().from("<-foo-> <-bar->")).containsExactly("foo", "bar");
+  }
+
+  @Test
+  public void regex_between_reluctance() {
+    Substring.Pattern pattern = first(Pattern.compile("\\w+")).between("a", "b");
+    assertThat(pattern.from("afoob")).hasValue("foo");
+  }
+
+  @Test
+  public void regex_between_empty() {
+    Substring.Pattern pattern = first(Pattern.compile("\\w+")).between("", "");
+    assertThat(pattern.from("<-foo->")).hasValue("foo");
+    assertThat(pattern.repeatedly().from("<-foo-> <-bar->")).containsExactly("foo", "bar");
+  }
+
+  @Test
+  public void regex_notBetween_lookbehindAbsent() {
+    Substring.Pattern pattern = first(Pattern.compile("foo")).notBetween("<-", "->");
+    assertThat(pattern.from("<-foo->")).isEmpty();
+    assertThat(pattern.repeatedly().from("<-foo->")).isEmpty();
+  }
+
+  @Test
+  public void regex_notBetween_lookaheadAbsent() {
+    Substring.Pattern pattern = first(Pattern.compile("foo")).notBetween("<-", "->");
+    assertThat(pattern.from("<-foo->")).isEmpty();
+    assertThat(pattern.repeatedly().from("<-foo->")).isEmpty();
+  }
+
+  @Test
+  public void regex_notBetween_bothLookbehindAndLookaheadPresent() {
+    Substring.Pattern pattern = first(Pattern.compile("foo")).notBetween("<-", "->");
+    assertThat(pattern.from("<-foo->")).isEmpty();
+    assertThat(pattern.repeatedly().from("<-foo->")).isEmpty();
+  }
+
+  @Test
+  public void regex_notBetween_neitherLookbehindNorLookaheadPresent() {
+    Substring.Pattern pattern = first(Pattern.compile("\\w+")).notBetween("<-", "->");
+    assertThat(pattern.from("<<foo>>")).hasValue("foo");
+    assertThat(pattern.from("foo")).hasValue("foo");
+    assertThat(pattern.from("<-food->")).hasValue("ood");
+    assertThat(pattern.repeatedly().from("foo")).containsExactly("foo");
+    assertThat(pattern.repeatedly().from("<<foo>> bar")).containsExactly("foo", "bar");
+  }
+
+  @Test
+  public void regex_notBetween_empty() {
+    Substring.Pattern pattern = first(Pattern.compile("\\w+")).notBetween("", "");
+    assertThat(pattern.from("<foo>")).isEmpty();
+    assertThat(pattern.from("")).isEmpty();
+    assertThat(pattern.from("foo")).isEmpty();
   }
 
   @Test
