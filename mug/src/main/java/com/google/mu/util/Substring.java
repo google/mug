@@ -1218,20 +1218,6 @@ public final class Substring {
     }
 
     /**
-     * Returns a {@code Pattern} that matches the first occurrence of this pattern, where the
-     * beginning of the match must either be the beginning of the input, or be preceded by a
-     * boundary character as defined by {@code boundary}; and the end of the match must either be
-     * the end of the input, or be followed by a boundary character as defined by {@code boundary}.
-     *
-     * <p>In other words, whatever {@code boundary} is, the beginning and the end of the input
-     * string are always considered implicit boundary.
-     *
-     * <p>Useful if you are trying to find a word with custom boundaries. To search for words
-     * composed of regex {@code \w} character class, consider using {@link Substring#word} instead.
-     *
-     * <p>For lookahead and lookbehind assertions, consider using {@link #between} or {@link
-     * #followedBy} instead.
-     *
      * @since 6.0
      * @deprecated Use {@link #separatedBy(CharPredicate)} instead.
      */
@@ -1241,21 +1227,6 @@ public final class Substring {
     }
 
     /**
-     * Returns a {@code Pattern} that matches the first occurrence of this pattern, where the
-     * beginning of the match must either be the beginning of the input, or be preceded by a
-     * boundary character as defined by {@code boundaryBefore}; and the end of the match must either
-     * be the end of the input, or be followed by a boundary character as defined by {@code
-     * boundaryAfter}.
-     *
-     * <p>In other words, the beginning and the end of the input string are always considered
-     * implicit boundaries.
-     *
-     * <p>Useful if you are trying to find a word with custom boundaries. To search for words
-     * composed of regex {@code \w} character class, consider using {@link Substring#word} instead.
-     *
-     * <p>For lookahead and lookbehind assertions, consider using {@link #between} or {@link
-     * #followedBy} instead.
-     *
      * @since 6.0
      * @deprecated Use {@link #separatedBy(CharPredicate, CharPredicate)} instead.
      */
