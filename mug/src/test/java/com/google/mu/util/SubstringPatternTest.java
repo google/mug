@@ -509,9 +509,9 @@ public class SubstringPatternTest {
   }
 
   @Test
-  public void or_withBoundary_alternativeBackTrackingTriggeredByBoundaryMismatch() {
+  public void or_separatedBy_alternativeBackTrackingTriggeredByBoundaryMismatch() {
     Substring.Pattern pattern =
-        first("foo").or(first("food")).withBoundary(Character::isWhitespace);
+        first("foo").or(first("food")).separatedBy(Character::isWhitespace);
     assertPattern(pattern, "food").finds("food");
   }
 
@@ -657,10 +657,10 @@ public class SubstringPatternTest {
   }
 
   @Test
-  public void withBoundary_first() {
+  public void separatedBy_first() {
     CharPredicate left = LOWER.not();
     CharPredicate right = LOWER.or(CharPredicate.is('-')).not();
-    Substring.Pattern petRock = Substring.first("pet-rock").withBoundary(left, right);
+    Substring.Pattern petRock = Substring.first("pet-rock").separatedBy(left, right);
     assertPattern(petRock, "pet-rock").finds("pet-rock");
     assertPattern(petRock, "pet-rock is fun").finds("pet-rock");
     assertPattern(petRock, "love-pet-rock").finds("pet-rock");
@@ -669,17 +669,17 @@ public class SubstringPatternTest {
   }
 
   @Test
-  public void withBoundary_skipEscape() {
+  public void separatedBy_skipEscape() {
     CharPredicate escape = CharPredicate.is('\\');
-    Substring.Pattern unescaped = Substring.first("aaa").withBoundary(escape.not());
+    Substring.Pattern unescaped = Substring.first("aaa").separatedBy(escape.not());
     assertPattern(unescaped, "\\aaaa").finds("aaa");
     assertThat(unescaped.in("\\aaaa").get().before()).isEqualTo("\\a");
   }
 
   @Test
-  public void withBoundary_before() {
+  public void separatedBy_before() {
     CharPredicate boundary = LOWER.not();
-    Substring.Pattern dir = Substring.before(first("//")).withBoundary(boundary);
+    Substring.Pattern dir = Substring.before(first("//")).separatedBy(boundary);
     assertPattern(dir, "foo//bar//zoo").finds("foo", "bar");
   }
 
@@ -1337,23 +1337,23 @@ public class SubstringPatternTest {
   }
 
   @Test
-  public void firstOccurrence_withBoundary() {
+  public void firstOccurrence_separatedBy() {
     Substring.Pattern pattern =
         Stream.of("food", "dog", "f", "fo", "d", "do")
             .map(Substring::first)
             .collect(firstOccurrence())
-            .withBoundary(Character::isWhitespace);
+            .separatedBy(Character::isWhitespace);
     assertPattern(pattern, "foodog").findsNothing();
     assertPattern(pattern, "dog foo dog food catfood").finds("dog", "dog", "food");
   }
 
   @Test
-  public void firstOccurrence_withBoundary_tieBrokenByBoundary() {
+  public void firstOccurrence_separatedBy_tieBrokenByBoundary() {
     Substring.Pattern pattern =
         Stream.of("foo", "food")
             .map(Substring::first)
             .collect(firstOccurrence())
-            .withBoundary(Character::isWhitespace);
+            .separatedBy(Character::isWhitespace);
     assertPattern(pattern, "food").finds("food");
   }
 

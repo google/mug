@@ -33,7 +33,7 @@ enum SubstringPatternVariant {
   },
   TRIVIAL_BOUNDARY {
     @Override Substring.Pattern wrap(Substring.Pattern pattern) {
-      return pattern.withBoundary(CharPredicate.ANY);
+      return pattern.separatedBy(CharPredicate.ANY);
     }
   },
   SKIP_NONE {

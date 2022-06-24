@@ -1641,7 +1641,7 @@ public class SubstringTest {
 
   @Test public void repeatedly_alternationFrom() {
     Substring.Pattern bulletNumber = consecutive(CharPredicate.range('0', '9'))
-        .withBoundary(CharPredicate.WORD.not(), CharPredicate.is(':'));
+        .separatedBy(CharPredicate.WORD.not(), CharPredicate.is(':'));
     Map<Integer, String> bulleted = bulletNumber.repeatedly()
         .alternationFrom("1: go home;2: feed 2 cats 3: sleep tight.")
         .mapKeys(n -> Integer.parseInt(n))
@@ -2906,12 +2906,12 @@ public class SubstringTest {
   }
 
   @Test
-  public void firstOccurrence_withBoundary() {
+  public void firstOccurrence_separatedBy() {
     Substring.Pattern pattern =
         Stream.of("food", "dog", "f", "fo", "d", "do")
         .map(Substring::first)
         .collect(firstOccurrence())
-        .withBoundary(Character::isWhitespace);
+        .separatedBy(Character::isWhitespace);
     assertThat(pattern.from("foodog")).isEmpty();
     assertThat(pattern.repeatedly().from("foodog")).isEmpty();
     assertThat(pattern.repeatedly().from("dog foo dog food catfood"))
@@ -2920,12 +2920,12 @@ public class SubstringTest {
   }
 
   @Test
-  public void firstOccurrence_withBoundary_tieBrokenByBoundary() {
+  public void firstOccurrence_separatedBy_tieBrokenByBoundary() {
     Substring.Pattern pattern =
         Stream.of("foo", "food")
             .map(Substring::first)
             .collect(firstOccurrence())
-            .withBoundary(Character::isWhitespace);
+            .separatedBy(Character::isWhitespace);
     assertThat(pattern.from("food")).hasValue("food");
     assertThat(pattern.repeatedly().from("food")).containsExactly("food");
   }
@@ -2969,8 +2969,8 @@ public class SubstringTest {
   }
 
   @Test
-  public void or_withBoundary_alternativeBackTrackingTriggeredByBoundaryMismatch() {
-    Substring.Pattern pattern = first("foo").or(first("food")).withBoundary(Character::isWhitespace);
+  public void or_separatedBy_alternativeBackTrackingTriggeredByBoundaryMismatch() {
+    Substring.Pattern pattern = first("foo").or(first("food")).separatedBy(Character::isWhitespace);
     assertThat(pattern.from("food")).hasValue("food");
     assertThat(pattern.repeatedly().from("food")).containsExactly("food");
   }
@@ -3137,10 +3137,10 @@ public class SubstringTest {
   }
 
   @Test
-  public void withBoundary_first() {
+  public void separatedBy_first() {
     CharPredicate left = CharPredicate.range('a', 'z').not();
     CharPredicate right = CharPredicate.range('a', 'z').or('-').not();
-    Substring.Pattern petRock = Substring.first("pet-rock").withBoundary(left, right);
+    Substring.Pattern petRock = Substring.first("pet-rock").separatedBy(left, right);
     assertThat(petRock.from("pet-rock")).hasValue("pet-rock");
     assertThat(petRock.from("pet-rock is fun")).hasValue("pet-rock");
     assertThat(petRock.from("love-pet-rock")).hasValue("pet-rock");
@@ -3149,18 +3149,18 @@ public class SubstringTest {
   }
 
   @Test
-  public void withBoundary_skipEscape() {
+  public void separatedBy_skipEscape() {
     CharPredicate escape = CharPredicate.is('\\');
-    Substring.Pattern unescaped = Substring.first("aaa").withBoundary(escape.not());
+    Substring.Pattern unescaped = Substring.first("aaa").separatedBy(escape.not());
     assertThat(unescaped.from("\\aaaa")).hasValue("aaa");
     assertThat(unescaped.repeatedly().from("\\aaaa")).containsExactly("aaa");
     assertThat(unescaped.in("\\aaaa").get().before()).isEqualTo("\\a");
   }
 
   @Test
-  public void withBoundary_before() {
+  public void separatedBy_before() {
     CharPredicate boundary = CharPredicate.range('a', 'z').not();
-    Substring.Pattern dir = Substring.before(first("//")).withBoundary(boundary);
+    Substring.Pattern dir = Substring.before(first("//")).separatedBy(boundary);
     assertThat(dir.from("foo//bar//zoo")).hasValue("foo");
     assertThat(dir.repeatedly().from("foo//bar//zoo")).containsExactly("foo", "bar").inOrder();
   }

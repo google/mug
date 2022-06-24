@@ -339,18 +339,18 @@ public final class Substring {
    * Instead, you should use {@code word("cat")} to skip over "cathie".
    *
    * <p>If your word boundary isn't equivalent to the regex {@code \W} character class, you can
-   * define your own word boundary {@code CharMatcher} and then use {@link Pattern#withBoundary}
+   * define your own word boundary {@code CharMatcher} and then use {@link Pattern#separatedBy}
    * instead. Say, if your word is lower-case alpha with dash ('-'), then:
    *
    * <pre>{@code
    * CharMatcher boundary = CharMatcher.inRange('a', 'z').or(CharMatcher.is('-')).negate();
-   * Substring.Pattern petFriendly = first("pet-friendly").withBoundary(boundary);
+   * Substring.Pattern petFriendly = first("pet-friendly").separatedBy(boundary);
    * }</pre>
    *
    * @since 6.0
    */
   public static Pattern word(String word) {
-    return first(word).withBoundary(CharPredicate.WORD.not());
+    return first(word).separatedBy(CharPredicate.WORD.not());
   }
 
   /**
@@ -664,13 +664,13 @@ public final class Substring {
                   });
             }
 
-            // withBoundary() moves one char at a time when boundary mismatches.
-            // As such firstOccurrence().withBoundary().repeatedly() will end up re-applying all
+            // separatedBy() moves one char at a time when boundary mismatches.
+            // As such firstOccurrence().separatedBy().repeatedly() will end up re-applying all
             // candidate patterns at every index.
             //
-            // This override rewrites it to withBoundary().firstOccurrence().repeatedly(),
+            // This override rewrites it to separatedBy().firstOccurrence().repeatedly(),
             // Because firstOccurrence() implements the fast-forwarding optimization, the
-            // withBoundary() boundary scanning is significantly reduced.
+            // separatedBy() boundary scanning is significantly reduced.
             //
             // This rewrite is mostly equivalent before vs. after because if a boundary check
             // disqualifies a candidate pattern returned by firstOccurrence(), all of the other
@@ -678,19 +678,19 @@ public final class Substring {
             // patterns will be tried.
             //
             // There is one subtle difference though. Without this override:
-            //     In ['foo', 'food'].collect(firstOccurrence()).withBoundary(whitespace());
-            //     'foo' will be matched and then withBoundary(whitespace()) will disqualify it;
-            //     The next iteration of withBoundary() will start from the second char 'o', so
+            //     In ['foo', 'food'].collect(firstOccurrence()).separatedBy(whitespace());
+            //     'foo' will be matched and then separatedBy(whitespace()) will disqualify it;
+            //     The next iteration of separatedBy() will start from the second char 'o', so
             //     'food' will never get a chance to match.
             // With the override, the above expression is rewritten to:
-            //     ['foo', 'food'].withBoundary(whitespace()).collect(firstOccurrence()).
+            //     ['foo', 'food'].separatedBy(whitespace()).collect(firstOccurrence()).
             //     firstOccurrence().repeatedly() is in the driving seat and will attempt 'food'
             //     from the first char.
-            @Override public Pattern withBoundary(CharPredicate boundaryBefore, CharPredicate boundaryAfter) {
+            @Override public Pattern separatedBy(CharPredicate boundaryBefore, CharPredicate boundaryAfter) {
               requireNonNull(boundaryBefore);
               requireNonNull(boundaryAfter);
               return candidates.stream()
-                  .map(c -> c.withBoundary(boundaryBefore, boundaryAfter))
+                  .map(c -> c.separatedBy(boundaryBefore, boundaryAfter))
                   .collect(firstOccurrence());
             }
 
@@ -778,7 +778,7 @@ public final class Substring {
             // only one iteration, which is "http:". If the next scan starts before //, we'd get
             // an empty string match.
             //
-            // For before(first('/')).withBoundary(), if boundary doesn't match, it's not loggically correct
+            // For before(first('/')).separatedBy(), if boundary doesn't match, it's not loggically correct
             // to try the second '/'.
             : new Match(
                 input,
@@ -838,7 +838,7 @@ public final class Substring {
         return match == null
             ? null
             // Do not include the delimiter pattern in the next iteration.
-            // upToIncluding(first('/')).withBoundary() should not backtrack to the second '/'.
+            // upToIncluding(first('/')).separatedBy() should not backtrack to the second '/'.
             : new Match(
                 input,
                 fromIndex,
@@ -1004,11 +1004,11 @@ public final class Substring {
           return match == null ? that.match(input, fromIndex) : match;
         }
 
-        // Allow withBoundary() to trigger backtracking.
-        @Override public Pattern withBoundary(
+        // Allow separatedBy() to trigger backtracking.
+        @Override public Pattern separatedBy(
             CharPredicate boundaryBefore, CharPredicate boundaryAfter) {
-          return base.withBoundary(boundaryBefore, boundaryAfter)
-              .or(that.withBoundary(boundaryBefore, boundaryAfter));
+          return base.separatedBy(boundaryBefore, boundaryAfter)
+              .or(that.separatedBy(boundaryBefore, boundaryAfter));
         }
 
         // Allow between() to trigger backtracking.
@@ -1133,8 +1133,8 @@ public final class Substring {
               : next;
         }
 
-        @Override public Pattern withBoundary(CharPredicate boundaryBefore, CharPredicate boundaryAfter) {
-          return base.then(following.withBoundary(boundaryBefore, boundaryAfter));
+        @Override public Pattern separatedBy(CharPredicate boundaryBefore, CharPredicate boundaryAfter) {
+          return base.then(following.separatedBy(boundaryBefore, boundaryAfter));
         }
 
         @Override Pattern lookaround(String lookbehind, String lookahead) {
@@ -1166,7 +1166,7 @@ public final class Substring {
      * first("foo").followedBy("bar")}.
      *
      * <p>If you are trying to define a boundary around or after your pattern similar to regex
-     * anchor {@code '\b'}, consider using {@link #withBoundary} if the boundary can be detected by
+     * anchor {@code '\b'}, consider using {@link #separatedBy} if the boundary can be detected by
      * a character.
      *
      * @since 6.0
@@ -1192,7 +1192,7 @@ public final class Substring {
      * first("foo").followedBy("bar")}.
      *
      * <p>If you are trying to define a boundary around or after your pattern similar to regex
-     * anchor {@code '\b'}, consider using {@link #withBoundary} if the boundary can be detected by
+     * anchor {@code '\b'}, consider using {@link #separatedBy} if the boundary can be detected by
      * a character.
      *
      * @since 6.0
@@ -1233,9 +1233,11 @@ public final class Substring {
      * #followedBy} instead.
      *
      * @since 6.0
+     * @deprecated Use {@link #separatedBy(CharPredicate)} instead.
      */
+    @Deprecated
     public final Pattern withBoundary(CharPredicate boundary) {
-      return withBoundary(boundary, boundary);
+      return separatedBy(boundary);
     }
 
     /**
@@ -1255,15 +1257,52 @@ public final class Substring {
      * #followedBy} instead.
      *
      * @since 6.0
+     * @deprecated Use {@link #separatedBy(CharPredicate, CharPredicate)} instead.
      */
-    public Pattern withBoundary(CharPredicate boundaryBefore, CharPredicate boundaryAfter) {
-      requireNonNull(boundaryBefore);
-      requireNonNull(boundaryAfter);
+    @Deprecated
+    public final Pattern withBoundary(CharPredicate boundaryBefore, CharPredicate boundaryAfter) {
+      return separatedBy(boundaryBefore, boundaryAfter);
+    }
+
+    /**
+     * Returns an otherwise equivalent {@code Pattern}, except it only matches if the it's next
+     * to the beginning of the string, the end of the string, or the {@code separator} character(s).
+     *
+     * <p>Useful if you are trying to find a word with custom boundaries. To search for words
+     * composed of regex {@code \w} character class, consider using {@link Substring#word} instead.
+     *
+     * <p>For lookahead and lookbehind assertions, consider using {@link #between} or {@link
+     * #followedBy} instead.
+     *
+     * @since 6.2
+     */
+    public final Pattern separatedBy(CharPredicate separator) {
+      return separatedBy(separator, separator);
+    }
+
+    /**
+     * Returns an otherwise equivalent {@code Pattern}, except it requires the
+     * beginning of the match must either be the beginning of the string, or be separated from the rest
+     * of the string by the {@code separatorBefore} character; and the end of the match must either
+     * be the end of the string, or be separated from the rest of the string by the {@code
+     * separatorAfter} character.
+     *
+     * <p>Useful if you are trying to find a word with custom boundaries. To search for words
+     * composed of regex {@code \w} character class, consider using {@link Substring#word} instead.
+     *
+     * <p>For lookahead and lookbehind assertions, consider using {@link #between} or {@link
+     * #followedBy} instead.
+     *
+     * @since 6.2
+     */
+    public Pattern separatedBy(CharPredicate separatorBefore, CharPredicate separatorAfter) {
+      requireNonNull(separatorBefore);
+      requireNonNull(separatorAfter);
       Pattern target = this;
       return new Pattern() {
         @Override Match match(String input, int fromIndex) {
           while (fromIndex <= input.length()) {
-            if (fromIndex > 0 && !boundaryBefore.test(input.charAt(fromIndex - 1))) {
+            if (fromIndex > 0 && !separatorBefore.test(input.charAt(fromIndex - 1))) {
               fromIndex++;
               continue; // The current position cannot possibly be the beginning of match.
             }
@@ -1272,10 +1311,10 @@ public final class Substring {
               return null;
             }
             if (match.startIndex == fromIndex // Already checked boundaryBefore
-                || boundaryBefore.test(input.charAt(match.startIndex - 1))) {
+                || separatorBefore.test(input.charAt(match.startIndex - 1))) {
               int boundaryIndex = match.endIndex;
               if (boundaryIndex >= input.length()
-                  || boundaryAfter.test(input.charAt(boundaryIndex))) {
+                  || separatorAfter.test(input.charAt(boundaryIndex))) {
                 return match;
               }
             }
@@ -1285,7 +1324,7 @@ public final class Substring {
         }
 
         @Override public String toString() {
-          return target + ".withBoundary(" + boundaryBefore + ", " + boundaryAfter + ")";
+          return target + ".separatedBy(" + separatorBefore + ", " + separatorAfter + ")";
         }
       };
     }
@@ -1326,12 +1365,12 @@ public final class Substring {
      * word().notBetween(":", "")}.
      *
      * <p>If the pattern shouldn't be preceded or followed by particular character(s), consider
-     * using {@link #withBoundary}. The following code finds "911" but only if it's at the beginning
+     * using {@link #separatedBy}. The following code finds "911" but only if it's at the beginning
      * of a number:
      *
      * <pre>{@code
      * Substring.Pattern emergency =
-     *     first("911").withBoundary(CharPredicate.range('0', '9').not(), CharPredicate.ANY);
+     *     first("911").separatedBy(CharPredicate.range('0', '9').not(), CharPredicate.ANY);
      * }</pre>
      *
      * @since 6.2
@@ -1372,13 +1411,13 @@ public final class Substring {
      * #notBetween} instead.
      *
      * <p>If the pattern shouldn't be followed by particular character(s), consider using {@link
-     * #withBoundary}. The following code finds the file extension name ".java" if it's not followed
+     * #separatedBy}. The following code finds the file extension name ".java" if it's not followed
      * by another letter:
      *
      * <pre>{@code
      * CharPredicate letter = Character::isJavaIdentifierStart;
      * Substring.Pattern javaExtension =
-     *     first(".java").withBoundary(CharPredicate.ANY, letter.not());
+     *     first(".java").separatedBy(CharPredicate.ANY, letter.not());
      * }</pre>
      *
      * @since 6.2
@@ -1886,7 +1925,7 @@ public final class Substring {
      *
      * <pre>{@code
      * Substring.Pattern bulletNumber = consecutive(CharPredicate.range('0', '9'))
-     *     .withBoundary(CharPredicate.WORD.not(), CharPredicate.is(':'));
+     *     .separatedBy(CharPredicate.WORD.not(), CharPredicate.is(':'));
      * Map<Integer, String> bulleted = bulletNumber.repeatedly()
      *     .alternationFrom("1: go home;2: feed 2 cats 3: sleep tight.")
      *     .mapKeys(n -> Integer.parseInt(n))
