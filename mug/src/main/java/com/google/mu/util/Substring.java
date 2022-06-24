@@ -1236,7 +1236,7 @@ public final class Substring {
     }
 
     /**
-     * Returns an otherwise equivalent {@code Pattern}, except it only matches if the it's next
+     * Returns an otherwise equivalent {@code Pattern}, except it only matches if it's next
      * to the beginning of the string, the end of the string, or the {@code separator} character(s).
      *
      * <p>Useful if you are trying to find a word with custom boundaries. To search for words
