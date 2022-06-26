@@ -1591,8 +1591,7 @@ public final class Substring {
             if (match == null) {
               return null;
             }
-            if (input.startsWith(lookbehind, match.startIndex - lookbehind.length())
-                && input.startsWith(lookahead, match.endIndex)) {
+            if (match.isBetween(lookbehind, lookahead)) {
               return match;
             }
             fromIndex = match.backtrackFrom(fromIndex);
@@ -1615,8 +1614,7 @@ public final class Substring {
             if (match == null) {
               return null;
             }
-            if (!input.startsWith(lookbehind, match.startIndex - lookbehind.length())
-                || !input.startsWith(lookahead, match.endIndex)) {
+            if (!match.isBetween(lookbehind, lookahead)) {
               return match;
             }
             fromIndex = match.backtrackFrom(fromIndex);
@@ -2439,6 +2437,19 @@ public final class Substring {
           ? this
           : suffix(context, context.length() - startIndex);
     }
+
+    private boolean isBetween(String lookbehind, String lookahead) {
+      return isPrecededBy(lookbehind) && isFollowedBy(lookahead);
+    }
+
+    private boolean isPrecededBy(String lookbehind) {
+      return context.startsWith(lookbehind, startIndex - lookbehind.length());
+    }
+
+    private boolean isFollowedBy(String lookahead) {
+      return context.startsWith(lookahead, endIndex);
+    }
+
     private int backtrackFrom(int fromIndex) {
       if (backtrackIndex <= fromIndex) {
         throw new IllegalStateException("Not true that " + backtrackIndex + " > " + fromIndex);
