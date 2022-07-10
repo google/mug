@@ -13,7 +13,7 @@ enum SubstringPatternVariant {
   },
   BETWEEN_EMPTIES {
     @Override Substring.Pattern wrap(Substring.Pattern pattern) {
-      return pattern.between("", "");
+      return pattern.immediatelyBetween("", "");
     }
   },
   FOLLOWED_BY_EMPTY {
@@ -23,7 +23,7 @@ enum SubstringPatternVariant {
   },
   NOT_BETWEEN_IMPOSSIBLES {
     @Override Substring.Pattern wrap(Substring.Pattern pattern) {
-      return pattern.notBetween(NON_EXISTENT, NON_EXISTENT);
+      return pattern.notImmediatelyBetween(NON_EXISTENT, NON_EXISTENT);
     }
   },
   NOT_FOLLOWED_BY_IMPOSSIBLE {

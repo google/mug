@@ -1017,7 +1017,7 @@ public final class Substring {
               .or(that.lookaround(lookbehind, lookahead));
         }
 
-        // Allow notBetween() to trigger backtracking.
+        // Allow notImmediatelyBetween() to trigger backtracking.
         @Override Pattern negativeLookaround(String lookbehind, String lookahead) {
           return base.negativeLookaround(lookbehind, lookahead)
               .or(that.negativeLookaround(lookbehind, lookahead));
@@ -1242,7 +1242,7 @@ public final class Substring {
      * <p>Useful if you are trying to find a word with custom boundaries. To search for words
      * composed of regex {@code \w} character class, consider using {@link Substring#word} instead.
      *
-     * <p>For lookahead and lookbehind assertions, consider using {@link #between} or {@link
+     * <p>For lookahead and lookbehind assertions, consider using {@link #immediatelyBetween} or {@link
      * #followedBy} instead.
      *
      * @since 6.2
@@ -1306,15 +1306,15 @@ public final class Substring {
      * after} string.
      *
      * <p>Similar to regex lookarounds, the returned pattern will backtrack until the lookaround is
-     * satisfied. That is, {@code word().between("(", ")")} will find the "bar" substring inside the
+     * satisfied. That is, {@code word().immediatelyBetween("(", ")")} will find the "bar" substring inside the
      * parenthesis from "foo (bar)".
      *
      * <p>If you need lookahead only, use {@link #followedBy} instead; for lookbehind only, pass an
-     * empty string as the {@code lookahead} string, as in: {@code word().between(":", "")}.
+     * empty string as the {@code lookahead} string, as in: {@code word().immediatelyBetween(":", "")}.
      *
      * @since 6.2
      */
-    public final Pattern between(String lookbehind, String lookahead) {
+    public final Pattern immediatelyBetween(String lookbehind, String lookahead) {
       requireNonNull(lookbehind);
       requireNonNull(lookahead);
       return lookbehind.isEmpty() && lookahead.isEmpty()
@@ -1328,12 +1328,12 @@ public final class Substring {
      * after} string.
      *
      * <p>Similar to regex negative lookarounds, the returned pattern will backtrack until the
-     * negative lookaround is satisfied. That is, {@code word().notBetween("(", ")")} will find the
+     * negative lookaround is satisfied. That is, {@code word().notImmediatelyBetween("(", ")")} will find the
      * "bar" substring from "(foo) bar".
      *
      * <p>If you need negative lookahead only, use {@link #notFollowedBy} instead; for negative
      * lookbehind only, pass an empty string as the {@code lookahead} string, as in: {@code
-     * word().notBetween(":", "")}.
+     * word().notImmediatelyBetween(":", "")}.
      *
      * <p>If the pattern shouldn't be preceded or followed by particular character(s), consider
      * using {@link #separatedBy}. The following code finds "911" but only if it's at the beginning
@@ -1346,7 +1346,7 @@ public final class Substring {
      *
      * @since 6.2
      */
-    public final Pattern notBetween(String lookbehind, String lookahead) {
+    public final Pattern notImmediatelyBetween(String lookbehind, String lookahead) {
       requireNonNull(lookbehind);
       requireNonNull(lookahead);
       return lookbehind.isEmpty() && lookahead.isEmpty()
@@ -1355,19 +1355,19 @@ public final class Substring {
     }
 
     /**
-     * Returns an otherwise equivalent pattern except it requires the matched substring <em>not</em> be
+     * Returns an otherwise equivalent pattern except it requires the matched substring be
      * immediately followed by the {@code lookahead} string.
      *
      * <p>Similar to regex negative lookahead, the returned pattern will backtrack until the lookahead is
      * satisfied. That is, {@code word().followedBy(":")} will find the "Joe" substring from "To
      * Joe:".
      *
-     * <p>If you need lookbehind, or both lookahead and lookbehind, use {@link #between} instead.
+     * <p>If you need lookbehind, or both lookahead and lookbehind, use {@link #immediatelyBetween} instead.
      *
      * @since 6.2
      */
     public final Pattern followedBy(String lookahead) {
-      return between("", lookahead);
+      return immediatelyBetween("", lookahead);
     }
 
     /**
@@ -1379,7 +1379,7 @@ public final class Substring {
      * "Joe" substring from "To Joe:".
      *
      * <p>If you need negative lookbehind, or both negative lookahead and lookbehind, use {@link
-     * #notBetween} instead.
+     * #notImmediatelyBetween} instead.
      *
      * <p>If the pattern shouldn't be followed by particular character(s), consider using {@link
      * #separatedBy}. The following code finds the file extension name ".java" if it's not followed
@@ -1394,7 +1394,35 @@ public final class Substring {
      * @since 6.2
      */
     public final Pattern notFollowedBy(String lookahead) {
-      return notBetween("", lookahead);
+      return notImmediatelyBetween("", lookahead);
+    }
+
+    /**
+     * Returns an otherwise equivalent pattern except it requires the matched substring be
+     * immediately followed by the {@code lookahead} string.
+     *
+     * <p>Similar to regex lookbehind, the returned pattern will backtrack until the lookbehind is
+     * satisfied. That is, {@code word().precededBy(": ")} will find the "Please" substring from
+     * "Amy: Please come in".
+     *
+     * @since 6.2
+     */
+    public final Pattern precededBy(String lookbehind) {
+      return immediatelyBetween(lookbehind, "");
+    }
+
+    /**
+     * Returns an otherwise equivalent pattern except it requires the matched substring <em>not</em> be
+     * immediately followed by the {@code lookahead} string.
+     *
+     * <p>Similar to regex negative lookbehind, the returned pattern will backtrack until the
+     * negative lookahead is satisfied. For example, {@code word().notPrecededBy("(")} will find the
+     * "bar" substring from "(foo+bar)".
+     *
+     * @since 6.2
+     */
+    public final Pattern notPrecededBy(String lookbehind) {
+      return notImmediatelyBetween(lookbehind, "");
     }
 
     /**
@@ -1408,7 +1436,7 @@ public final class Substring {
      *
      * @since 6.0
      *
-     * @deprecated Use {@link #notFollowedBy} or {@link #notBetween} for negative lookahead and
+     * @deprecated Use {@link #notFollowedBy} or {@link #notImmediatelyBetween} for negative lookahead and
      *     negative lookbehind.
      */
     @Deprecated
@@ -1585,14 +1613,10 @@ public final class Substring {
       Pattern target = this;
       return new Pattern() {
         @Override Match match(String input, int fromIndex) {
-          final int lastIndex = input.length() - lookahead.length();
+          int lastIndex = input.length() - lookahead.length();
           while (fromIndex <= lastIndex) {
             Match match = target.match(input, fromIndex);
-            if (match == null) {
-              return null;
-            }
-            if (input.startsWith(lookbehind, match.startIndex - lookbehind.length())
-                && input.startsWith(lookahead, match.endIndex)) {
+            if (match == null || match.isImmediatelyBetween(lookbehind, lookahead)) {
               return match;
             }
             fromIndex = match.backtrackFrom(fromIndex);
@@ -1601,7 +1625,7 @@ public final class Substring {
         }
 
         @Override public String toString() {
-          return target + ".between('" + lookbehind + "', '" + lookahead + "')";
+          return target + ".immediatelyBetween('" + lookbehind + "', '" + lookahead + "')";
         }
       };
     }
@@ -1612,11 +1636,7 @@ public final class Substring {
         @Override Match match(String input, int fromIndex) {
           while (fromIndex <= input.length()) {
             Match match = target.match(input, fromIndex);
-            if (match == null) {
-              return null;
-            }
-            if (!input.startsWith(lookbehind, match.startIndex - lookbehind.length())
-                || !input.startsWith(lookahead, match.endIndex)) {
+            if (match == null || !match.isImmediatelyBetween(lookbehind, lookahead)) {
               return match;
             }
             fromIndex = match.backtrackFrom(fromIndex);
@@ -1625,7 +1645,7 @@ public final class Substring {
         }
 
         @Override public String toString() {
-          return target + ".notBetween('" + lookbehind + "', '" + lookahead + "')";
+          return target + ".notImmediatelyBetween('" + lookbehind + "', '" + lookahead + "')";
         }
       };
     }
@@ -2358,6 +2378,32 @@ public final class Substring {
       return startIndex;
     }
 
+    /**
+     * Returns true if the match is immediately followed by the {@code lookahead} string. Note that
+     * {@code isFollowedBy("")} is always true.
+     */
+
+    public boolean isFollowedBy(String lookahead) {
+      return context.startsWith(lookahead, endIndex);
+    }
+
+    /**
+     * Returns true if the match immediately follows the {@code lookbehind} string. Note that {@code
+     * isPrecededBy("")} is always true.
+     */
+    public boolean isPrecededBy(String lookbehind) {
+      return context.startsWith(lookbehind, startIndex - lookbehind.length());
+    }
+
+    /**
+     * Returns true if the match immediately follows the {@code lookbehind} string and is
+     * immediately followed by the {@code lookahead} string. Note that {@code isBetween("", "")} is
+     * always true.
+     */
+    public boolean isImmediatelyBetween(String lookbehind, String lookahead) {
+      return isPrecededBy(lookbehind) && isFollowedBy(lookahead);
+    }
+
     /** Returns the length of the matched substring. */
     @Override public int length() {
       return endIndex - startIndex;
@@ -2439,6 +2485,7 @@ public final class Substring {
           ? this
           : suffix(context, context.length() - startIndex);
     }
+
     private int backtrackFrom(int fromIndex) {
       if (backtrackIndex <= fromIndex) {
         throw new IllegalStateException("Not true that " + backtrackIndex + " > " + fromIndex);
