@@ -1416,7 +1416,7 @@ public final class Substring {
      * immediately preceded by the {@code lookbehind} string.
      *
      * <p>Similar to regex negative lookbehind, the returned pattern will backtrack until the
-     * negative lookahead is satisfied. For example, {@code word().notPrecededBy("(")} will find the
+     * negative lookbehind is satisfied. For example, {@code word().notPrecededBy("(")} will find the
      * "bar" substring from "(foo+bar)".
      *
      * @since 6.2
