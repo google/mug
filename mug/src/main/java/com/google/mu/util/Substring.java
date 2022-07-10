@@ -1413,7 +1413,7 @@ public final class Substring {
 
     /**
      * Returns an otherwise equivalent pattern except it requires the matched substring <em>not</em> be
-     * immediately followed by the {@code lookahead} string.
+     * immediately preceded by the {@code lookbehind} string.
      *
      * <p>Similar to regex negative lookbehind, the returned pattern will backtrack until the
      * negative lookahead is satisfied. For example, {@code word().notPrecededBy("(")} will find the
