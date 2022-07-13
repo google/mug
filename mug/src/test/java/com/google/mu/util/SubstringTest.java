@@ -3777,6 +3777,30 @@ public class SubstringTest {
     assertThat(match.isImmediatelyBetween("", "")).isTrue();
   }
 
+  @Test public void match_isSeparatedBy_fullString() {
+    Substring.Match match = first("foo").in("foo").get();
+    assertThat(match.isSeparatedBy(Character::isWhitespace, Character::isWhitespace)).isTrue();
+  }
+
+  @Test public void match_isSeparatedBy_atEnd() {
+    Substring.Match match = first("foo").in(" foo").get();
+    assertThat(match.isSeparatedBy(Character::isWhitespace, Character::isWhitespace)).isTrue();
+    assertThat(match.isSeparatedBy(Character::isLowerCase, Character::isWhitespace)).isFalse();
+  }
+
+  @Test public void match_isSeparatedBy_atBeginning() {
+    Substring.Match match = first("foo").in("food").get();
+    assertThat(match.isSeparatedBy(Character::isLowerCase, Character::isLowerCase)).isTrue();
+    assertThat(match.isSeparatedBy(Character::isLowerCase, Character::isWhitespace)).isFalse();
+  }
+
+  @Test public void match_isSeparatedBy_middle() {
+    Substring.Match match = first("foo").in("afood").get();
+    assertThat(match.isSeparatedBy(Character::isLowerCase, Character::isLowerCase)).isTrue();
+    assertThat(match.isSeparatedBy(Character::isLowerCase, Character::isWhitespace)).isFalse();
+    assertThat(match.isSeparatedBy(Character::isWhitespace, Character::isLowerCase)).isFalse();
+  }
+
   @Test public void testNulls() throws Exception {
     new NullPointerTester().testAllPublicInstanceMethods(prefix("foo").in("foobar").get());
     newClassSanityTester().testNulls(Substring.class);

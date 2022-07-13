@@ -16,6 +16,7 @@ package com.google.mu.util;
 
 import static com.google.mu.util.InternalCollectors.toImmutableList;
 import static java.lang.Math.max;
+import static java.lang.Math.min;
 import static java.util.Comparator.comparingInt;
 import static java.util.Objects.requireNonNull;
 import static java.util.regex.Pattern.compile;
@@ -2515,12 +2516,12 @@ public final class Substring {
       return lookaround(match -> match.isSeparatedBy(separatorBefore, separatorAfter));
     }
 
-    @Override Pattern lookaround(String lookbehind, String lookahead) {
-      return lookaround(match -> match.isImmediatelyBetween(lookbehind, lookahead));
-    }
-
     @Override Pattern negativeLookaround(String lookbehind, String lookahead) {
       return lookaround(match -> !match.isImmediatelyBetween(lookbehind, lookahead));
+    }
+
+    @Override Pattern lookaround(String lookbehind, String lookahead) {
+      return lookaround(match -> match.isImmediatelyBetween(lookbehind, lookahead));
     }
 
     private Pattern lookaround(Predicate<Match> condition) {
@@ -2532,7 +2533,7 @@ public final class Substring {
             if (match == null || condition.test(match)) {
               return match;
             }
-            i = Math.min(match.endIndex - 1, i - 1);
+            i = min(match.endIndex - 1, i - 1);
           }
           return null;
         }

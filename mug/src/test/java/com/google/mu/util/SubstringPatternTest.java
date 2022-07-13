@@ -1066,8 +1066,8 @@ public class SubstringPatternTest {
 
   @Test
   public void lastChar_separatedBy_found() {
-    Substring.Pattern pattern = Substring.last('?').separatedBy(Character::isWhitespace);
-    assertPattern(pattern, "? (?)").finds("?");
+    assertPattern(Substring.last('?').separatedBy(Character::isWhitespace), "? (?)").finds("?");
+    assertPattern(Substring.last('?').separatedBy(Character::isWhitespace), " ? (?)").finds("?");
   }
 
   @Test
