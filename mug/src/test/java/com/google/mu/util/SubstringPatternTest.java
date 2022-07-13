@@ -971,7 +971,7 @@ public class SubstringPatternTest {
   }
 
   @Test
-  public void notBetween_empty() {
+  public void notImmediatelyBetween_empty() {
     Substring.Pattern pattern = first("foo").notImmediatelyBetween("", "");
     assertPattern(pattern, "foo").findsNothing();
     assertPattern(pattern, " foo ").findsNothing();
@@ -979,32 +979,32 @@ public class SubstringPatternTest {
   }
 
   @Test
-  public void notBetween_patternNotFound() {
+  public void notImmediatelyBetween_patternNotFound() {
     Substring.Pattern pattern = first("foo").notImmediatelyBetween("<-", "->");
     assertPattern(pattern, "<fo>").findsNothing();
   }
 
   @Test
-  public void notBetween_lookbehindAbsent() {
+  public void notImmediatelyBetween_lookbehindAbsent() {
     Substring.Pattern pattern = first("foo").notImmediatelyBetween("<-", "->");
     assertPattern(pattern, "<-foo->").findsNothing();
   }
 
   @Test
-  public void notBetween_lookaheadAbsent() {
+  public void notImmediatelyBetween_lookaheadAbsent() {
     Substring.Pattern pattern = first("foo").notImmediatelyBetween("<-", "->");
     assertPattern(pattern, "<-foo->").findsNothing();
   }
 
   @Test
-  public void notBetween_bothLookbehindAndLookaheadPresent() {
+  public void notImmediatelyBetween_bothLookbehindAndLookaheadPresent() {
     Substring.Pattern pattern = Substring.word().notImmediatelyBetween("<-", "->");
     assertPattern(pattern, "<-foo-->").finds("foo");
     assertPattern(pattern, "<-foo--> bar").finds("foo", "bar");
   }
 
   @Test
-  public void notBetween_neitherLookbehindNorLookaheadPresent() {
+  public void notImmediatelyBetween_neitherLookbehindNorLookaheadPresent() {
     Substring.Pattern pattern = Substring.word().notImmediatelyBetween("<-", "->");
     assertPattern(pattern, "<<foo>").finds("foo");
     assertPattern(pattern, "<--foo-->").finds("foo");
@@ -1013,25 +1013,295 @@ public class SubstringPatternTest {
   }
 
   @Test
-  public void notBetween_betweenBacktrackingStartsFromDelimiter() {
+  public void notImmediatelyBetween_betweenBacktrackingStartsFromDelimiter() {
     Substring.Pattern pattern = Substring.between("(", ")").notImmediatelyBetween("[(", ")]");
     assertPattern(pattern, "{(foo)}").finds("foo");
     assertPattern(pattern, "{(foo)} {(bar)}").finds("foo", "bar");
   }
 
   @Test
-  public void notBetween_backtrackingAtOpeningDelimiter() {
+  public void notImmediatelyBetween_backtrackingAtOpeningDelimiter() {
     Substring.Pattern pattern = Substring.between("oa", "ac").notImmediatelyBetween("ooa", "acc");
     assertPattern(pattern, "ooafooaccoabarac").finds("ccoabar");
   }
 
   @Test
-  public void notBetween_thenBacktracks() {
+  public void notImmediatelyBetween_thenBacktracks() {
     Substring.Pattern pattern = Substring.first(':').then(Substring.word()).notImmediatelyBetween("((", "))");
     assertPattern(pattern, ": foo").finds("foo");
     assertPattern(pattern, ": ((foo)) [bar]").finds("bar");
     assertPattern(pattern, ": ((foo)) bar : <zoo>").finds("bar", "zoo");
     assertPattern(pattern, ": ((foo)) bar :(zoo)").finds("bar", "zoo");
+  }
+
+  @Test
+  public void last_separatedBy_patternNotFound() {
+    Substring.Pattern pattern = Substring.last("foo").separatedBy(CharPredicate.is('('), CharPredicate.is(')'));
+    assertPattern(pattern, "bar").findsNothing();
+  }
+
+  @Test
+  public void last_separatedBy_patternFoundButNotSeparatedBySeparator() {
+    Substring.Pattern pattern = Substring.last("foo").separatedBy(Character::isWhitespace);
+    assertPattern(pattern, "(foo)").findsNothing();
+  }
+
+  @Test
+  public void last_separatedBy_found() {
+    Substring.Pattern pattern = Substring.last("foo").separatedBy(Character::isWhitespace);
+    assertPattern(pattern, "foo (foo)").finds("foo");
+  }
+
+  @Test
+  public void lastChar_separatedBy_patternNotFound() {
+    Substring.Pattern pattern = Substring.last('?').separatedBy(CharPredicate.is('('), CharPredicate.is(')'));
+    assertPattern(pattern, "bar").findsNothing();
+  }
+
+  @Test
+  public void lastChar_separatedBy_patternFoundButNotSeparatedBySeparator() {
+    Substring.Pattern pattern = Substring.last('?').separatedBy(Character::isWhitespace);
+    assertPattern(pattern, "(?)").findsNothing();
+  }
+
+  @Test
+  public void lastChar_separatedBy_found() {
+    Substring.Pattern pattern = Substring.last('?').separatedBy(Character::isWhitespace);
+    assertPattern(pattern, "? (?)").finds("?");
+  }
+
+  @Test
+  public void lastCharMatcher_separatedBy_patternNotFound() {
+    Substring.Pattern pattern = Substring.last(CharPredicate.is('?')).separatedBy(CharPredicate.is('('), CharPredicate.is(')'));
+    assertPattern(pattern, "bar").findsNothing();
+  }
+
+  @Test
+  public void lastCharMatcher_separatedBy_patternFoundButNotSeparatedBySeparator() {
+    Substring.Pattern pattern = Substring.last(CharPredicate.is('?')).separatedBy(Character::isWhitespace);
+    assertPattern(pattern, "(?)").findsNothing();
+  }
+
+  @Test
+  public void lastCharMatcher_separatedBy_found() {
+    Substring.Pattern pattern = Substring.last(CharPredicate.is('?')).separatedBy(Character::isWhitespace);
+    assertPattern(pattern, "? (?)").finds("?");
+  }
+
+  @Test
+  public void last_followedBy_patternNotFound() {
+    Substring.Pattern pattern = Substring.last("foo").followedBy(":");
+    assertPattern(pattern, "bar").findsNothing();
+  }
+
+  @Test
+  public void last_followedBy_patternFoundButLookaheadNotFound() {
+    Substring.Pattern pattern = Substring.last("foo").followedBy(":");
+    assertPattern(pattern, "foo ").findsNothing();
+  }
+
+  @Test
+  public void last_followedBy_found() {
+    assertPattern(Substring.last("foo").followedBy(":"), "foo: foo").finds("foo");
+    assertPattern(Substring.last("a").followedBy("ab"), "aaab").finds("a");
+  }
+
+  @Test
+  public void last_immediatelyBetween_patternNotFound() {
+    Substring.Pattern pattern = Substring.last("foo").immediatelyBetween("(", ")");
+    assertPattern(pattern, "bar").findsNothing();
+  }
+
+  @Test
+  public void last_immediatelyBetween_patternFoundButLookbehindNotFound() {
+    Substring.Pattern pattern = Substring.last("foo").immediatelyBetween("(", ")");
+    assertPattern(pattern, "foo)").findsNothing();
+  }
+
+  @Test
+  public void last_immediatelyBetween_found() {
+    Substring.Pattern pattern = Substring.last("foo").immediatelyBetween("(", ")");
+    assertPattern(pattern, "(foo) (foo").finds("foo");
+  }
+
+  @Test
+  public void lastChar_followedBy_patternNotfound() {
+    Substring.Pattern pattern = Substring.last('?').followedBy(":");
+    assertPattern(pattern, ":").findsNothing();
+  }
+
+  @Test
+  public void lastChar_followedBy_lookaheadNotfound() {
+    Substring.Pattern pattern = Substring.last('?').followedBy(":");
+    assertPattern(pattern, "? :").findsNothing();
+  }
+
+  @Test
+  public void lastChar_followedBy_found() {
+    Substring.Pattern pattern = Substring.last('?').followedBy(":");
+    assertPattern(pattern, "?:?").finds("?");
+  }
+
+  @Test
+  public void lastChar_immediatelyBetween_patternNotFound() {
+    Substring.Pattern pattern = Substring.last('?').immediatelyBetween("(", ")");
+    assertPattern(pattern, "?)").findsNothing();
+  }
+
+  @Test
+  public void lastChar_immediatelyBetween_lookbehindNotFound() {
+    Substring.Pattern pattern = Substring.last('?').immediatelyBetween("(", ")");
+    assertPattern(pattern, "(/)").findsNothing();
+  }
+
+  @Test
+  public void lastChar_immediatelyBetween_found() {
+    Substring.Pattern pattern = Substring.last('?').immediatelyBetween("(", ")");
+    assertPattern(pattern, "(?):?").finds("?");
+  }
+
+  @Test
+  public void lastCharMatcher_followedBy_patternNotfound() {
+    Substring.Pattern pattern = Substring.last(CharPredicate.is('?')).followedBy(":");
+    assertPattern(pattern, ":").findsNothing();
+  }
+
+  @Test
+  public void lastCharMatcher_followedBy_lookaheadNotfound() {
+    Substring.Pattern pattern = Substring.last(CharPredicate.is('?')).followedBy(":");
+    assertPattern(pattern, "? :").findsNothing();
+  }
+
+  @Test
+  public void lastCharMatcher_followedBy_found() {
+    Substring.Pattern pattern = Substring.last(CharPredicate.is('?')).followedBy(":");
+    assertPattern(pattern, "?:?").finds("?");
+  }
+
+  @Test
+  public void lastCharMatcher_immediatelyBetween_patternNotFound() {
+    Substring.Pattern pattern = Substring.last(CharPredicate.is('?')).immediatelyBetween("(", ")");
+    assertPattern(pattern, "?)").findsNothing();
+  }
+
+  @Test
+  public void lastCharMatcher_immediatelyBetween_lookbehindNotFound() {
+    Substring.Pattern pattern = Substring.last(CharPredicate.is('?')).immediatelyBetween("(", ")");
+    assertPattern(pattern, "(/)").findsNothing();
+  }
+
+  @Test
+  public void lastCharMatcher_immediatelyBetween_found() {
+    Substring.Pattern pattern = Substring.last(CharPredicate.is('?')).immediatelyBetween("(", ")");
+    assertPattern(pattern, "(?):?").finds("?");
+  }
+
+  @Test
+  public void last_notFollowedBy_patternNotFound() {
+    Substring.Pattern pattern = Substring.last("foo").notFollowedBy(":");
+    assertPattern(pattern, "bar").findsNothing();
+  }
+
+  @Test
+  public void last_notFollowedBy_patternFoundButLookaheadFollows() {
+    Substring.Pattern pattern = Substring.last("foo").notFollowedBy(":");
+    assertPattern(pattern, "foo:").findsNothing();
+  }
+
+  @Test
+  public void last_notFollowedBy_found() {
+    Substring.Pattern pattern = Substring.last("foo").notFollowedBy(":");
+    assertPattern(pattern, "foo foo:").finds("foo");
+  }
+
+  @Test
+  public void last_notImmediatelyBetween_patternNotFound() {
+    Substring.Pattern pattern = Substring.last("foo").notImmediatelyBetween("(", ")");
+    assertPattern(pattern, "bar").findsNothing();
+  }
+
+  @Test
+  public void last_notImmediatelyBetween_patternFoundButLookaroundPresent() {
+    Substring.Pattern pattern = Substring.last("foo").notImmediatelyBetween("(", ")");
+    assertPattern(pattern, "(foo)").findsNothing();
+  }
+
+  @Test
+  public void last_notImmediatelyBetween_found() {
+    Substring.Pattern pattern = Substring.last("foo").notImmediatelyBetween("(", ")");
+    assertPattern(pattern, "foo (foo").finds("foo");
+  }
+
+  @Test
+  public void lastChar_notFollowedBy_patternNotfound() {
+    Substring.Pattern pattern = Substring.last('?').notFollowedBy(":");
+    assertPattern(pattern, "x").findsNothing();
+  }
+
+  @Test
+  public void lastChar_notFollowedBy_lookaheadPresent() {
+    Substring.Pattern pattern = Substring.last('?').notFollowedBy(":");
+    assertPattern(pattern, "?:").findsNothing();
+  }
+
+  @Test
+  public void lastChar_notFollowedBy_found() {
+    Substring.Pattern pattern = Substring.last('?').notFollowedBy(":");
+    assertPattern(pattern, "?/?:").finds("?");
+  }
+
+  @Test
+  public void lastChar_notImmediatelyBetween_patternNotFound() {
+    Substring.Pattern pattern = Substring.last('?').notImmediatelyBetween("(", ")");
+    assertPattern(pattern, "(x)").findsNothing();
+  }
+
+  @Test
+  public void lastChar_notImmediatelyBetween_lookaroundPresent() {
+    Substring.Pattern pattern = Substring.last('?').notImmediatelyBetween("(", ")");
+    assertPattern(pattern, "(?)").findsNothing();
+  }
+
+  @Test
+  public void lastChar_notImmediatelyBetween_found() {
+    Substring.Pattern pattern = Substring.last('?').notImmediatelyBetween("(", ")");
+    assertPattern(pattern, "(?:(?)").finds("?");
+  }
+
+  @Test
+  public void lastCharMatcher_notFollowedBy_patternNotFound() {
+    Substring.Pattern pattern = Substring.last(CharPredicate.is('?')).notFollowedBy(":");
+    assertPattern(pattern, "/").findsNothing();
+  }
+
+  @Test
+  public void lastCharMatcher_notFollowedBy_lookaheadPresent() {
+    Substring.Pattern pattern = Substring.last(CharPredicate.is('?')).notFollowedBy(":");
+    assertPattern(pattern, "?:").findsNothing();
+  }
+
+  @Test
+  public void lastCharMatcher_notFollowedBy_found() {
+    Substring.Pattern pattern = Substring.last(CharPredicate.is('?')).notFollowedBy(":");
+    assertPattern(pattern, "? ?:").finds("?");
+  }
+
+  @Test
+  public void lastCharMatcher_notImmediatelyBetween_patternNotFound() {
+    Substring.Pattern pattern = Substring.last(CharPredicate.is('?')).notImmediatelyBetween("(", ")");
+    assertPattern(pattern, "x").findsNothing();
+  }
+
+  @Test
+  public void lastCharMatcher_notImmediatelyBetween_lookaroundPresent() {
+    Substring.Pattern pattern = Substring.last(CharPredicate.is('?')).notImmediatelyBetween("(", ")");
+    assertPattern(pattern, "(?)").findsNothing();
+  }
+
+  @Test
+  public void lastCharMatcher_notImmediatelyBetween_found() {
+    Substring.Pattern pattern = Substring.last(CharPredicate.is('?')).notImmediatelyBetween("(", ")");
+    assertPattern(pattern, "?:(?)").finds("?");
   }
 
   @Test
@@ -1156,25 +1426,25 @@ public class SubstringPatternTest {
   }
 
   @Test
-  public void regex_notBetween_lookbehindAbsent() {
+  public void regex_notImmediatelyBetween_lookbehindAbsent() {
     Substring.Pattern pattern = first(Pattern.compile("foo")).notImmediatelyBetween("<-", "->");
     assertPattern(pattern, "<-foo->").findsNothing();
   }
 
   @Test
-  public void regex_notBetween_lookaheadAbsent() {
+  public void regex_notImmediatelyBetween_lookaheadAbsent() {
     Substring.Pattern pattern = first(Pattern.compile("foo")).notImmediatelyBetween("<-", "->");
     assertPattern(pattern, "<-foo->").findsNothing();
   }
 
   @Test
-  public void regex_notBetween_bothLookbehindAndLookaheadPresent() {
+  public void regex_notImmediatelyBetween_bothLookbehindAndLookaheadPresent() {
     Substring.Pattern pattern = first(Pattern.compile("foo")).notImmediatelyBetween("<-", "->");
     assertPattern(pattern, "<-foo->").findsNothing();
   }
 
   @Test
-  public void regex_notBetween_neitherLookbehindNorLookaheadPresent() {
+  public void regex_notImmediatelyBetween_neitherLookbehindNorLookaheadPresent() {
     Substring.Pattern pattern = first(Pattern.compile("\\w+")).notImmediatelyBetween("<-", "->");
     assertPattern(pattern, "<<foo>>").finds("foo");
     assertPattern(pattern, "foo").finds("foo");
@@ -1184,7 +1454,7 @@ public class SubstringPatternTest {
   }
 
   @Test
-  public void regex_notBetween_empty() {
+  public void regex_notImmediatelyBetween_empty() {
     Substring.Pattern pattern = first(Pattern.compile("\\w+")).notImmediatelyBetween("", "");
     assertPattern(pattern, "<foo>").findsNothing();
     assertPattern(pattern, "").findsNothing();
@@ -1372,7 +1642,7 @@ public class SubstringPatternTest {
   }
 
   @Test
-  public void firstOccurrence_notBetween_tieBrokenByBoundary() {
+  public void firstOccurrence_notImmediatelyBetween_tieBrokenByBoundary() {
     Substring.Pattern pattern =
         Stream.of("food", "foo")
             .map(Substring::first)
