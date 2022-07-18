@@ -2513,18 +2513,18 @@ public final class Substring {
     @Override public Pattern separatedBy(CharPredicate separatorBefore, CharPredicate separatorAfter) {
       requireNonNull(separatorBefore);
       requireNonNull(separatorAfter);
-      return lookaround(match -> match.isSeparatedBy(separatorBefore, separatorAfter));
-    }
-
-    @Override Pattern negativeLookaround(String lookbehind, String lookahead) {
-      return lookaround(match -> !match.isImmediatelyBetween(lookbehind, lookahead));
+      return look(match -> match.isSeparatedBy(separatorBefore, separatorAfter));
     }
 
     @Override Pattern lookaround(String lookbehind, String lookahead) {
-      return lookaround(match -> match.isImmediatelyBetween(lookbehind, lookahead));
+      return look(match -> match.isImmediatelyBetween(lookbehind, lookahead));
     }
 
-    private Pattern lookaround(Predicate<Match> condition) {
+    @Override Pattern negativeLookaround(String lookbehind, String lookahead) {
+      return look(match -> !match.isImmediatelyBetween(lookbehind, lookahead));
+    }
+
+    private Pattern look(Predicate<Match> condition) {
       Last original = this;
       return new Last() {
         @Override Match match(String input, int fromIndex, int endIndex) {

@@ -1035,6 +1035,23 @@ public class SubstringPatternTest {
   }
 
   @Test
+  public void lastEmpty_separatedBy_separatorNotFound() {
+    assertPattern(Substring.last("").separatedBy(Character::isWhitespace), "/").findsNothing();
+  }
+
+  @Test
+  public void lastEmpty_separatedBy_separatorFound() {
+    assertPattern(Substring.last("").separatedBy(Character::isWhitespace), "  ").finds("");
+    assertPattern(Substring.last("").separatedBy(Character::isWhitespace), "/ ").finds("");
+    assertPattern(Substring.last("").separatedBy(Character::isWhitespace), " /").finds("");
+  }
+
+  @Test
+  public void lastEmpty_separatedBy_allEmpty() {
+    assertPattern(Substring.last("").separatedBy(Character::isWhitespace), "").finds("");
+  }
+
+  @Test
   public void last_separatedBy_patternNotFound() {
     Substring.Pattern pattern = Substring.last("foo").separatedBy(CharPredicate.is('('), CharPredicate.is(')'));
     assertPattern(pattern, "bar").findsNothing();
@@ -1049,7 +1066,7 @@ public class SubstringPatternTest {
   @Test
   public void last_separatedBy_found() {
     Substring.Pattern pattern = Substring.last("foo").separatedBy(Character::isWhitespace);
-    assertPattern(pattern, "foo (foo)").finds("foo");
+    assertPattern(pattern, "foo (foo)").findsBetween("", " (foo)");
   }
 
   @Test
@@ -1066,8 +1083,8 @@ public class SubstringPatternTest {
 
   @Test
   public void lastChar_separatedBy_found() {
-    assertPattern(Substring.last('?').separatedBy(Character::isWhitespace), "? (?)").finds("?");
-    assertPattern(Substring.last('?').separatedBy(Character::isWhitespace), " ? (?)").finds("?");
+    assertPattern(Substring.last('?').separatedBy(Character::isWhitespace), "? (?)").findsBetween("", " (?)");
+    assertPattern(Substring.last('?').separatedBy(Character::isWhitespace), " ? (?)").findsBetween(" ", " (?)");
   }
 
   @Test
@@ -1085,7 +1102,7 @@ public class SubstringPatternTest {
   @Test
   public void lastCharMatcher_separatedBy_found() {
     Substring.Pattern pattern = Substring.last(CharPredicate.is('?')).separatedBy(Character::isWhitespace);
-    assertPattern(pattern, "? (?)").finds("?");
+    assertPattern(pattern, "? (?)").findsBetween("", " (?)");
   }
 
   @Test
@@ -1102,8 +1119,8 @@ public class SubstringPatternTest {
 
   @Test
   public void last_followedBy_found() {
-    assertPattern(Substring.last("foo").followedBy(":"), "foo: foo").finds("foo");
-    assertPattern(Substring.last("a").followedBy("ab"), "aaab").finds("a");
+    assertPattern(Substring.last("foo").followedBy(":"), "foo: foo").findsBetween("", ": foo");
+    assertPattern(Substring.last("a").followedBy("ab"), "aaab").findsBetween("a", "ab");
   }
 
   @Test
@@ -1121,7 +1138,7 @@ public class SubstringPatternTest {
   @Test
   public void last_immediatelyBetween_found() {
     Substring.Pattern pattern = Substring.last("foo").immediatelyBetween("(", ")");
-    assertPattern(pattern, "(foo) (foo").finds("foo");
+    assertPattern(pattern, "(foo) (foo").findsBetween("(", ") (foo");
   }
 
   @Test
@@ -1139,7 +1156,7 @@ public class SubstringPatternTest {
   @Test
   public void lastChar_followedBy_found() {
     Substring.Pattern pattern = Substring.last('?').followedBy(":");
-    assertPattern(pattern, "?:?").finds("?");
+    assertPattern(pattern, "?:?").findsBetween("", ":?");
   }
 
   @Test
@@ -1157,7 +1174,7 @@ public class SubstringPatternTest {
   @Test
   public void lastChar_immediatelyBetween_found() {
     Substring.Pattern pattern = Substring.last('?').immediatelyBetween("(", ")");
-    assertPattern(pattern, "(?):?").finds("?");
+    assertPattern(pattern, "(?):?").findsBetween("(", "):?");
   }
 
   @Test
@@ -1175,7 +1192,7 @@ public class SubstringPatternTest {
   @Test
   public void lastCharMatcher_followedBy_found() {
     Substring.Pattern pattern = Substring.last(CharPredicate.is('?')).followedBy(":");
-    assertPattern(pattern, "?:?").finds("?");
+    assertPattern(pattern, "?:?").findsBetween("", ":?");
   }
 
   @Test
@@ -1193,7 +1210,7 @@ public class SubstringPatternTest {
   @Test
   public void lastCharMatcher_immediatelyBetween_found() {
     Substring.Pattern pattern = Substring.last(CharPredicate.is('?')).immediatelyBetween("(", ")");
-    assertPattern(pattern, "(?):?").finds("?");
+    assertPattern(pattern, "(?):?").findsBetween("(", "):?");
   }
 
   @Test
@@ -1211,7 +1228,7 @@ public class SubstringPatternTest {
   @Test
   public void last_notFollowedBy_found() {
     Substring.Pattern pattern = Substring.last("foo").notFollowedBy(":");
-    assertPattern(pattern, "foo foo:").finds("foo");
+    assertPattern(pattern, "foo foo:").findsBetween("", " foo:");
   }
 
   @Test
@@ -1229,7 +1246,7 @@ public class SubstringPatternTest {
   @Test
   public void last_notImmediatelyBetween_found() {
     Substring.Pattern pattern = Substring.last("foo").notImmediatelyBetween("(", ")");
-    assertPattern(pattern, "foo (foo").finds("foo");
+    assertPattern(pattern, "foo) (foo)").findsBetween("", ") (foo)");
   }
 
   @Test
@@ -1247,7 +1264,7 @@ public class SubstringPatternTest {
   @Test
   public void lastChar_notFollowedBy_found() {
     Substring.Pattern pattern = Substring.last('?').notFollowedBy(":");
-    assertPattern(pattern, "?/?:").finds("?");
+    assertPattern(pattern, "?/?:").findsBetween("", "/?:");
   }
 
   @Test
@@ -1265,7 +1282,7 @@ public class SubstringPatternTest {
   @Test
   public void lastChar_notImmediatelyBetween_found() {
     Substring.Pattern pattern = Substring.last('?').notImmediatelyBetween("(", ")");
-    assertPattern(pattern, "(?:(?)").finds("?");
+    assertPattern(pattern, "(?:(?)").findsBetween("(", ":(?)");
   }
 
   @Test
@@ -1283,7 +1300,7 @@ public class SubstringPatternTest {
   @Test
   public void lastCharMatcher_notFollowedBy_found() {
     Substring.Pattern pattern = Substring.last(CharPredicate.is('?')).notFollowedBy(":");
-    assertPattern(pattern, "? ?:").finds("?");
+    assertPattern(pattern, "? ?:").findsBetween("", " ?:");
   }
 
   @Test
@@ -1301,7 +1318,7 @@ public class SubstringPatternTest {
   @Test
   public void lastCharMatcher_notImmediatelyBetween_found() {
     Substring.Pattern pattern = Substring.last(CharPredicate.is('?')).notImmediatelyBetween("(", ")");
-    assertPattern(pattern, "?:(?)").finds("?");
+    assertPattern(pattern, "?:(?)").findsBetween("", ":(?)");
   }
 
   @Test
