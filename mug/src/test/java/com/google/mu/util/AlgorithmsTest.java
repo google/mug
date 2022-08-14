@@ -167,6 +167,30 @@ public class AlgorithmsTest {
     assertThat(binarySearchRotated(rotated, 15)).isEmpty();
   }
 
+  @Test public void binarySearchSqrt_smallNumbers() {
+    assertThat(sqrt(4)).isEqualTo(2);
+    assertThat(sqrt(1)).isEqualTo(1);
+    assertThat(sqrt(0)).isEqualTo(0);
+    assertThat(sqrt(5)).isEqualTo(2);
+    assertThat(sqrt(101)).isEqualTo(10);
+    assertThat(sqrt(4097)).isEqualTo(64);
+  }
+
+  @Test public void binarySearchSqrt_largeNumbers() {
+    int[] numbers = {
+        Integer.MAX_VALUE,
+        Integer.MAX_VALUE - 1,
+        Integer.MAX_VALUE - 2,
+        Integer.MAX_VALUE / 2,
+        Integer.MAX_VALUE / 10};
+    for (int n : numbers) {
+      long square = ((long) n) * n;
+      assertThat(sqrt(square)).isEqualTo(n);
+      assertThat(sqrt(square + 1)).isEqualTo(n);
+      assertThat(sqrt(square - 1)).isEqualTo(n - 1);
+    }
+  }
+
   @Test public void binarySearchInsertionPoint_empty() {
     assertThat(binarySearchInsertionPoint(0, -1, (low, mid, high) -> 0)).isEqualTo(-0.5);
     assertThat(
@@ -254,6 +278,12 @@ public class AlgorithmsTest {
         return 0;
       }
     });
+  }
+
+  private static int sqrt(long square) {
+    return (int) Math.floor(
+        binarySearchInsertionPoint(
+            0, Integer.MAX_VALUE, (low, mid, high) -> Long.compare(square, (long) mid * mid)));
   }
 
 
