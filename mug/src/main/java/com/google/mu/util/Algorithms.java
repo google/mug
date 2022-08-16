@@ -88,7 +88,7 @@ public final class Algorithms {
    * }
    * }</pre>
    */
-  public static Optional<Integer> binarySearch(int low, int high, BinarySearchMapper mapper) {
+  public static Optional<Integer> binarySearch(int low, int high, BinarySearchProber mapper) {
     double index = binarySearchInsertionPoint(low, high, mapper);
     return optional(Math.rint(index) == index, (int) index);
   }
@@ -114,7 +114,18 @@ public final class Algorithms {
    * <p>You can use {@code Math.rint(index) == index} to check if the returned value is an insertion
    * point or a found index. If you don't need the insertion point, use {@link #binarySearch} instead.
    *
-   * <p>Imagine in a Google Doc page, if you have two columns of texts to be rendered into a two-column
+   * <p>In a sorted array with potentially duplicate methods, the following code can find the index range
+   *  of potentially duplicate elements matching the target:
+   *  <pre>{@code
+   *  int from = (int) Math.ceil(
+   *      binarySearchInsertionPoint(
+   *          0, arr.length - 1, (low, mid, high) -> target <= arr[mid] ? -1 : 1));
+   *  int to = (int) Math.floor(
+   *      binarySearchInsertionPoint(
+   *          0, arr.length - 1, (low, mid, high) -> target < arr[mid] ? -1 : 1));
+   *  }</pre>
+   *
+   * <p>For another example, imagine in a Google Doc page, if you have two columns of texts to be rendered into a two-column
    * table, and you want to split the two columns as evenly as possible such that it takes the fewest
    * number of lines overall. you can implement it with binary search:
    * <pre>{@code
@@ -140,7 +151,7 @@ public final class Algorithms {
    * }
    * }</pre>
    */
-  public static double binarySearchInsertionPoint(int low, int high, BinarySearchMapper mapper) {
+  public static double binarySearchInsertionPoint(int low, int high, BinarySearchProber mapper) {
     requireNonNull(mapper);
     if (low > high) {
       return low - 0.5;
@@ -165,7 +176,7 @@ public final class Algorithms {
   }
 
   /** Callback upon each binary search probe to locate the search target. */
-  public interface BinarySearchMapper {
+  public interface BinarySearchProber {
     /**
      * Given a range of {@code [low, high]} inclusively with {@code mid} as the middle point of
      * the binary search, maps out the location of the target.

@@ -13,6 +13,7 @@ import org.junit.runner.RunWith;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Range;
 import com.google.common.testing.NullPointerTester;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
@@ -191,6 +192,33 @@ public class AlgorithmsTest {
     }
   }
 
+  @Test public void binarySearchRange_empty() {
+    assertThat(binarySearchRange(new int[0], 1)).isNull();
+  }
+
+  @Test public void binarySearchRange_notFound() {
+    assertThat(binarySearchRange(new int[] {1, 2, 3}, 4)).isNull();
+  }
+
+  @Test public void binarySearchRange_singleElement() {
+    assertThat(binarySearchRange(new int[] {1, 2, 3}, 2)).isEqualTo(Range.closed(1, 1));
+    assertThat(binarySearchRange(new int[] {1, 2, 3}, 1)).isEqualTo(Range.closed(0, 0));
+    assertThat(binarySearchRange(new int[] {1, 2, 3}, 3)).isEqualTo(Range.closed(2, 2));
+  }
+
+  @Test public void binarySearchRange_duplicateElements() {
+    assertThat(binarySearchRange(new int[] {10, 10}, 10)).isEqualTo(Range.closed(0, 1));
+    assertThat(binarySearchRange(new int[] {10, 10, 10}, 10)).isEqualTo(Range.closed(0, 2));
+  }
+
+  @Test public void binarySearchRange_duplicateElementsInTheMiddle() {
+    int[] arr = {10, 10, 20, 20, 20, 30};
+    assertThat(binarySearchRange(arr, 10)).isEqualTo(Range.closed(0, 1));
+    assertThat(binarySearchRange(arr, 20)).isEqualTo(Range.closed(2, 4));
+    assertThat(binarySearchRange(arr, 30)).isEqualTo(Range.closed(5, 5));
+    assertThat(binarySearchRange(arr, 40)).isNull();
+  }
+
   @Test public void binarySearchInsertionPoint_empty() {
     assertThat(binarySearchInsertionPoint(0, -1, (low, mid, high) -> 0)).isEqualTo(-0.5);
     assertThat(
@@ -286,6 +314,15 @@ public class AlgorithmsTest {
             0, Integer.MAX_VALUE, (low, mid, high) -> Long.compare(square, (long) mid * mid)));
   }
 
+  private static Range<Integer> binarySearchRange(int[] sorted, int target) {
+    int last = sorted.length - 1;
+    int from = (int) Math.ceil(
+        binarySearchInsertionPoint( 0, last, (low, mid, high) -> target <= sorted[mid] ? -1 : 1));
+    int to = (int) Math.floor(
+        binarySearchInsertionPoint(0, last, (low, mid, high) -> target < sorted[mid] ? -1 : 1));
+    if (from > to) return null;
+    return Range.closed(from, to);
+  }
 
   static class NegativeValues implements TestParameter.TestParameterValuesProvider {
     @Override public List<?> provideValues() {
