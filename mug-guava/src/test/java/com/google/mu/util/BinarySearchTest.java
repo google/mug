@@ -6,8 +6,10 @@ import static com.google.mu.util.BinarySearch.inSortedArray;
 import static com.google.mu.util.BinarySearch.inSortedArrayWithTolerance;
 import static com.google.mu.util.BinarySearch.inSortedList;
 import static com.google.mu.util.BinarySearch.inSortedListWithTolerance;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -760,6 +762,19 @@ public class BinarySearchTest {
     assertThat(inSortedList(sorted).rangeOf(40)).isEqualTo(Range.closed(4, 6));
     assertThat(inSortedList(sorted).insertionPointBefore(40)).isEqualTo(InsertionPoint.before(4));
     assertThat(inSortedList(sorted).insertionPointAfter(40)).isEqualTo(InsertionPoint.after(6));
+  }
+
+  @Test
+  public void binarySearch_inSortedList_byKeyFunction() {
+    ImmutableList<String> sorted = ImmutableList.of("x", "ab", "foo", "zerg");
+    assertThat(inSortedList(sorted, String::length).find(2)).hasValue(1);
+  }
+
+  @Test
+  public void binarySearch_inSortedList_byComparator() {
+    List<String> sorted = asList(null, "a", "b", "c");
+    assertThat(inSortedList(sorted, Comparator.nullsFirst(Comparator.naturalOrder())).find(null)).hasValue(0);
+    assertThat(inSortedList(sorted, Comparator.nullsFirst(Comparator.naturalOrder())).find("b")).hasValue(2);
   }
 
   @Test

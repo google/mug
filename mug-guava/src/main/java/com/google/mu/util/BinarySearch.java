@@ -36,7 +36,10 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
   /** Returns a {@link BinarySearch} for indexes with the given sorted {@code list}. */
   public static <E extends Comparable<E>> BinarySearch<E, Integer> inSortedList(List<? extends E> list) {
     return inRangeInclusive(0, list.size() - 1)
-        .keyedBy(key -> (l, i, h) -> key.compareTo(list.get(i)));
+        .keyedBy(key -> {
+          checkNotNull(key);
+          return (l, i, h) -> key.compareTo(list.get(i));
+        });
   }
 
   /** Returns a {@link BinarySearch} for indexes with the given sorted {@code list} according to {@code comparator. */
@@ -125,10 +128,10 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
         }
       }
       @Override public InsertionPoint<Integer> insertionPointBefore(IndexedSearchTarget target) {
-        return insertionPointFor(IndexedSearchTarget.before(target));
+        return insertionPointFor(before(target));
       }
       @Override public InsertionPoint<Integer> insertionPointAfter(IndexedSearchTarget target) {
-        return insertionPointFor(IndexedSearchTarget.after(target));
+        return insertionPointFor(after(target));
       }
     };
   }
@@ -167,10 +170,10 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
         }
       }
       @Override public InsertionPoint<Long> insertionPointBefore(LongIndexedSearchTarget target) {
-        return insertionPointFor(LongIndexedSearchTarget.before(target));
+        return insertionPointFor(before(target));
       }
       @Override public InsertionPoint<Long> insertionPointAfter(LongIndexedSearchTarget target) {
-        return insertionPointFor(LongIndexedSearchTarget.after(target));
+        return insertionPointFor(after(target));
       }
     };
   }
@@ -307,16 +310,6 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
      * It's guaranteed that {@code low <= mid <= high}.
      */
     int locate(int low, int mid, int high);
-
-    static IndexedSearchTarget before(IndexedSearchTarget target) {
-      checkNotNull(target);
-      return (low, mid, high) -> target.locate(low, mid, high) <= 0 ? -1 : 1;
-    }
-
-    static IndexedSearchTarget after(IndexedSearchTarget target) {
-      checkNotNull(target);
-      return (low, mid, high) -> target.locate(low, mid, high) < 0 ? -1 : 1;
-    }
   }
 
   /** Represents the search target that can be found through bisecting the long integer index. */
@@ -335,16 +328,6 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
      * It's guaranteed that {@code low <= mid <= high}.
      */
     int locate(long low, long mid, long high);
-
-    static LongIndexedSearchTarget before(LongIndexedSearchTarget target) {
-      checkNotNull(target);
-      return (low, mid, high) -> target.locate(low, mid, high) <= 0 ? -1 : 1;
-    }
-
-    static LongIndexedSearchTarget after(LongIndexedSearchTarget target) {
-      checkNotNull(target);
-      return (low, mid, high) -> target.locate(low, mid, high) < 0 ? -1 : 1;
-    }
   }
 
   private static int safeMid(int low, int high) {
@@ -359,16 +342,36 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
   private <E> BinarySearch<E, C> keyedBy(Function<E, ? extends K> keyMapper) {
     BinarySearch<K, C> underlying = this;
     return new BinarySearch<E, C>() {
-      @Override public InsertionPoint<C> insertionPointFor(E key) {
-        return underlying.insertionPointFor(keyMapper.apply(checkNotNull(key)));
+      @Override public InsertionPoint<C> insertionPointFor(@Nullable E key) {
+        return underlying.insertionPointFor(keyMapper.apply(key));
       }
-      @Override public InsertionPoint<C> insertionPointBefore(E key) {
-        return underlying.insertionPointBefore(keyMapper.apply(checkNotNull(key)));
+      @Override public InsertionPoint<C> insertionPointBefore(@Nullable E key) {
+        return underlying.insertionPointBefore(keyMapper.apply(key));
       }
-      @Override public InsertionPoint<C> insertionPointAfter(E key) {
-        return underlying.insertionPointAfter(keyMapper.apply(checkNotNull(key)));
+      @Override public InsertionPoint<C> insertionPointAfter(@Nullable E key) {
+        return underlying.insertionPointAfter(keyMapper.apply(key));
       }
     };
+  }
+
+  private static IndexedSearchTarget before(IndexedSearchTarget target) {
+    checkNotNull(target);
+    return (low, mid, high) -> target.locate(low, mid, high) <= 0 ? -1 : 1;
+  }
+
+  private static IndexedSearchTarget after(IndexedSearchTarget target) {
+    checkNotNull(target);
+    return (low, mid, high) -> target.locate(low, mid, high) < 0 ? -1 : 1;
+  }
+
+  private static LongIndexedSearchTarget before(LongIndexedSearchTarget target) {
+    checkNotNull(target);
+    return (low, mid, high) -> target.locate(low, mid, high) <= 0 ? -1 : 1;
+  }
+
+  private static LongIndexedSearchTarget after(LongIndexedSearchTarget target) {
+    checkNotNull(target);
+    return (low, mid, high) -> target.locate(low, mid, high) < 0 ? -1 : 1;
   }
 
   private static <K, R extends Comparable<R>> BinarySearch<K, R> always(InsertionPoint<R> point) {
