@@ -2,6 +2,8 @@ package com.google.mu.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.collect.DiscreteDomain.integers;
+import static com.google.common.collect.DiscreteDomain.longs;
 
 import java.util.Comparator;
 import java.util.List;
@@ -10,6 +12,8 @@ import java.util.function.Function;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
 
+import com.google.common.collect.BoundType;
+import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Range;
 import com.google.common.math.DoubleMath;
@@ -24,8 +28,8 @@ import com.google.common.math.DoubleMath;
  *     => Range.closed(1, 3)
  * }</pre>
  *
- * <p>For {@code inRangeInclusive()} and the primitive array search methods, no boxing is performed in the
- * O(logn) search operation. The input search key and the output result are however boxed and wrapped
+ * <p>For {@code inRange()} and the primitive array search methods, no boxing is performed in the
+ * O(logn) search operation. The  output result is however boxed and wrapped
  * in one of {@code Optional}, {@code Range} or {@code InsertionPoint} objects, which is O(1).
  *
  * @param <K> the search key
@@ -98,87 +102,39 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
   }
 
   /**
-   * Returns a {@link BinarySearch} over the inclusive range of {@code [from, to]}.
-   * The range is empty if {@code from == to + 1}.
+   * Returns a {@link BinarySearch} over the given {@code range}.
    *
    * <p>This is the most generic binary search algorithm, supporting flexible target
    * matching criterion.
    */
-  public static BinarySearch<IndexedSearchTarget, Integer> inRangeInclusive(int from, int to) {
-    if (from > to) {
-      checkArgument(from - to == 1, "Invalid from (%s) vs. to (%s)", from, to);
-      return always(InsertionPoint.before(from));
+  public static BinarySearch<IndexedSearchTarget, Integer> inRange(Range<Integer> range) {
+    Integer low = low(range, integers());
+    if (low == null) {
+      return always(InsertionPoint.before(range.lowerEndpoint()));
     }
-    return new BinarySearch<IndexedSearchTarget, Integer>() {
-      @Override public InsertionPoint<Integer> insertionPointFor(IndexedSearchTarget target) {
-        checkNotNull(target);
-        for (int low = from, high = to; ;) {
-          int mid = safeMid(low, high);
-          int where = target.locate(low, mid, high);
-          if (where > 0) {
-            if (mid == high) { // mid is the floor
-              return InsertionPoint.after(mid);
-            }
-            low = mid + 1;
-          } else if (where < 0) {
-            if (mid == low) { // mid is the ceiling
-              return InsertionPoint.before(mid);
-            }
-            high = mid - 1;
-          } else {
-            return InsertionPoint.at(mid);
-          }
-        }
-      }
-      @Override public InsertionPoint<Integer> insertionPointBefore(IndexedSearchTarget target) {
-        return insertionPointFor(before(target));
-      }
-      @Override public InsertionPoint<Integer> insertionPointAfter(IndexedSearchTarget target) {
-        return insertionPointFor(after(target));
-      }
-    };
+    Integer high = high(range, integers());
+    if (high == null) {
+      return always(InsertionPoint.after(range.upperEndpoint()));
+    }
+    return inRangeInclusive(low, high);
   }
 
   /**
-   * Returns a {@link BinarySearch} over the inclusive range of {@code [from, to]}.
-   * The range is empty if {@code from == to + 1}.
+   * Returns a {@link BinarySearch} over the given {@code range}.
    *
    * <p>This is the most generic binary search algorithm, supporting flexible target
    * matching criterion.
    */
-  public static BinarySearch<LongIndexedSearchTarget, Long> inRangeInclusive(long from, long to) {
-    if (from > to) {
-      checkArgument(from - to == 1, "Invalid from (%s) vs. to (%s)", from, to);
-      return always(InsertionPoint.before(from));
+  public static BinarySearch<LongIndexedSearchTarget, Long> inLongRange(Range<Long> range) {
+    Long low = low(range, longs());
+    if (low == null) {
+      return always(InsertionPoint.before(range.lowerEndpoint()));
     }
-    return new BinarySearch<LongIndexedSearchTarget, Long>() {
-      @Override public InsertionPoint<Long> insertionPointFor(LongIndexedSearchTarget target) {
-        checkNotNull(target);
-        for (long low = from, high = to; ;) {
-          long mid = safeMid(low, high);
-          int where = target.locate(low, mid, high);
-          if (where > 0) {
-            if (mid == high) { // mid is the floor
-              return InsertionPoint.after(mid);
-            }
-            low = mid + 1;
-          } else if (where < 0) {
-            if (mid == low) { // mid is the ceiling
-              return InsertionPoint.before(mid);
-            }
-            high = mid - 1;
-          } else {
-            return InsertionPoint.at(mid);
-          }
-        }
-      }
-      @Override public InsertionPoint<Long> insertionPointBefore(LongIndexedSearchTarget target) {
-        return insertionPointFor(before(target));
-      }
-      @Override public InsertionPoint<Long> insertionPointAfter(LongIndexedSearchTarget target) {
-        return insertionPointFor(after(target));
-      }
-    };
+    Long high = high(range, longs());
+    if (high == null) {
+      return always(InsertionPoint.after(range.upperEndpoint()));
+    }
+    return inRangeInclusive(low, high);
   }
 
   /**
@@ -201,7 +157,7 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
    * <pre>
    * {@code
    * Optional<Integer> binarySearchRotated(int[] rotated, int target) {
-   *   return BinarySearch.inRangeInclusive(0, rotated.length - 1)
+   *   return BinarySearch.inRange(Range.closedOpen(0, rotated.length))
    *       find((low, mid, high) -> {
    *         int probe = rotated[mid];
    *         if (target < probe) {
@@ -231,7 +187,7 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
    * after {@code MAX_VALUE}, in which case the open upper bound is saturated at
    * {@code MAX_VALUE} even though it's not a valid insertion point.
    */
-  public final Range<C> rangeOf(@Nullable K key) {
+  public final Range<C> findRangeOf(@Nullable K key) {
     InsertionPoint<C> left = insertionPointBefore(key);
     InsertionPoint<C> right = insertionPointAfter(key);
     if (!left.equals(right)) {
@@ -255,7 +211,7 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
    * overall. you can implement it with binary search:
    *
    * <pre>{@code
-   *   InsertionPoint optimal = BinarySearch.inRangeInclusive(1, tableWidth - 1)
+   *   InsertionPoint optimal = BinarySearch.inRange(Range.closedOpen(1, tableWidth))
    *       .insertionPointFor(
    *           (low, w, high) ->
    *               Integer.compare(
@@ -297,7 +253,14 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
    */
   public abstract InsertionPoint<C> insertionPointAfter(@Nullable K key);
 
-  private <E> BinarySearch<E, C> by(Function<E, ? extends K> keyFunction) {
+  /**
+   * Returns a new {@link BinarySearch} over the same source but transforms
+   * the search key using the given {@code keyFunction} first.
+   *
+   * <p>Useful for creating a facade in front of a lower-level backing data source.
+   */
+  public final <E> BinarySearch<E, C> by(Function<E, ? extends K> keyFunction) {
+    checkNotNull(keyFunction);
     BinarySearch<K, C> underlying = this;
     return new BinarySearch<E, C>() {
       @Override public InsertionPoint<C> insertionPointFor(@Nullable E key) {
@@ -348,6 +311,74 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
     int locate(long low, long mid, long high);
   }
 
+  private static BinarySearch<IndexedSearchTarget, Integer> inRangeInclusive(int from, int to) {
+    if (from > to) {
+      return always(InsertionPoint.before(from));
+    }
+    return new BinarySearch<IndexedSearchTarget, Integer>() {
+      @Override public InsertionPoint<Integer> insertionPointFor(IndexedSearchTarget target) {
+        checkNotNull(target);
+        for (int low = from, high = to; ;) {
+          int mid = safeMid(low, high);
+          int where = target.locate(low, mid, high);
+          if (where > 0) {
+            if (mid == high) { // mid is the floor
+              return InsertionPoint.after(mid);
+            }
+            low = mid + 1;
+          } else if (where < 0) {
+            if (mid == low) { // mid is the ceiling
+              return InsertionPoint.before(mid);
+            }
+            high = mid - 1;
+          } else {
+            return InsertionPoint.at(mid);
+          }
+        }
+      }
+      @Override public InsertionPoint<Integer> insertionPointBefore(IndexedSearchTarget target) {
+        return insertionPointFor(before(target));
+      }
+      @Override public InsertionPoint<Integer> insertionPointAfter(IndexedSearchTarget target) {
+        return insertionPointFor(after(target));
+      }
+    };
+  }
+
+  private static BinarySearch<LongIndexedSearchTarget, Long> inRangeInclusive(long from, long to) {
+    if (from > to) {
+      return always(InsertionPoint.before(from));
+    }
+    return new BinarySearch<LongIndexedSearchTarget, Long>() {
+      @Override public InsertionPoint<Long> insertionPointFor(LongIndexedSearchTarget target) {
+        checkNotNull(target);
+        for (long low = from, high = to; ;) {
+          long mid = safeMid(low, high);
+          int where = target.locate(low, mid, high);
+          if (where > 0) {
+            if (mid == high) { // mid is the floor
+              return InsertionPoint.after(mid);
+            }
+            low = mid + 1;
+          } else if (where < 0) {
+            if (mid == low) { // mid is the ceiling
+              return InsertionPoint.before(mid);
+            }
+            high = mid - 1;
+          } else {
+            return InsertionPoint.at(mid);
+          }
+        }
+      }
+      @Override public InsertionPoint<Long> insertionPointBefore(LongIndexedSearchTarget target) {
+        return insertionPointFor(before(target));
+      }
+      @Override public InsertionPoint<Long> insertionPointAfter(LongIndexedSearchTarget target) {
+        return insertionPointFor(after(target));
+      }
+    };
+  }
+
   private static int safeMid(int low, int high) {
     return (int) (((long) low + high) / 2);
   }
@@ -396,6 +427,34 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
 
   private static void checkNotNegative(double tolerance) {
     checkArgument(tolerance >= 0.0, "tolerance (%s) cannot be negative", tolerance);
+  }
+
+  /**
+   * Returns the effective low endpoint of {@code range} in {@code domain}, or null if the endpoint
+   * is impossible as in {@code lessThan(MIN_VALUE)}.
+   */
+  @Nullable
+  private static <C extends Comparable<C>> C low(Range<C> range, DiscreteDomain<C> domain) {
+    if (range.hasLowerBound()) {
+      return range.lowerBoundType() == BoundType.CLOSED
+          ? range.lowerEndpoint()
+          : domain.next(range.lowerEndpoint());
+    }
+    return domain.minValue();
+  }
+
+  /**
+   * Returns the effective upper endpoint of {@code range} in {@code domain}, or null if the endpoint
+   * is impossible as in {@code greaterThan(MAX_VALUE)}.
+   */
+  @Nullable
+  private static <C extends Comparable<C>> C high(Range<C> range, DiscreteDomain<C> domain) {
+    if (range.hasUpperBound()) {
+      return range.upperBoundType() == BoundType.CLOSED
+          ? range.upperEndpoint()
+          : domain.previous(range.upperEndpoint());
+    }
+    return domain.maxValue();
   }
 
   BinarySearch() {}
