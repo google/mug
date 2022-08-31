@@ -4,6 +4,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.DiscreteDomain.integers;
 import static com.google.common.collect.DiscreteDomain.longs;
+import static com.google.common.collect.Range.all;
 
 import java.util.Comparator;
 import java.util.List;
@@ -28,9 +29,9 @@ import com.google.common.math.DoubleMath;
  *     => Range.closed(1, 3)
  * }</pre>
  *
- * <p>For {@code inRange()} and the primitive array search methods, no boxing is performed in the
- * O(logn) search operation. The  output result is however boxed and wrapped
- * in one of {@code Optional}, {@code Range} or {@code InsertionPoint} objects, which is O(1).
+ * <p>The {@link #forInts}, {@link #forLongs} and the primitive array search methods performs no boxing in the
+ * O(logn) search operation. The search result is boxed and wrapped in one of {@code Optional}, {@code Range}
+ * or {@code InsertionPoint} objects, which is O(1).
  *
  * @param <K> the search key
  * @param <C> the comparable search result (typically a numeric index)
@@ -51,10 +52,10 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
    * {@code comparator}.
    */
   public static <E> BinarySearch<E, Integer> inSortedList(
-      List<? extends E> list, Comparator<? super E> comparator) {
-    checkNotNull(comparator);
+      List<? extends E> list, Comparator<? super E> sortedBy) {
+    checkNotNull(sortedBy);
     return inRangeInclusive(0, list.size() - 1)
-        .by(key -> (l, i, h) -> comparator.compare(key, list.get(i)));
+        .by(key -> (l, i, h) -> sortedBy.compare(key, list.get(i)));
   }
 
   /** Returns a {@link BinarySearch} for indexes with the given {@code list} sorted by the {@code sortBy} function. */
@@ -101,13 +102,18 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
         });
   }
 
+  /** Returns a {@link BinarySearch} over all integers. */
+  public static BinarySearch<IndexedSearchTarget, Integer> forInts() {
+    return forInts(all());
+  }
+
   /**
    * Returns a {@link BinarySearch} over the given {@code range}.
    *
    * <p>This is the most generic binary search algorithm, supporting flexible target
    * matching criterion.
    */
-  public static BinarySearch<IndexedSearchTarget, Integer> inRange(Range<Integer> range) {
+  public static BinarySearch<IndexedSearchTarget, Integer> forInts(Range<Integer> range) {
     Integer low = low(range, integers());
     if (low == null) {
       return always(InsertionPoint.before(range.lowerEndpoint()));
@@ -119,13 +125,18 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
     return inRangeInclusive(low, high);
   }
 
+  /** Returns a {@link BinarySearch} over all {@code long} integers. */
+  public static BinarySearch<LongIndexedSearchTarget, Long> forLongs() {
+    return forLongs(all());
+  }
+
   /**
    * Returns a {@link BinarySearch} over the given {@code range}.
    *
    * <p>This is the most generic binary search algorithm, supporting flexible target
    * matching criterion.
    */
-  public static BinarySearch<LongIndexedSearchTarget, Long> inLongRange(Range<Long> range) {
+  public static BinarySearch<LongIndexedSearchTarget, Long> forLongs(Range<Long> range) {
     Long low = low(range, longs());
     if (low == null) {
       return always(InsertionPoint.before(range.lowerEndpoint()));
@@ -157,7 +168,7 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
    * <pre>
    * {@code
    * Optional<Integer> binarySearchRotated(int[] rotated, int target) {
-   *   return BinarySearch.inRange(Range.closedOpen(0, rotated.length))
+   *   return BinarySearch.forInts(Range.closedOpen(0, rotated.length))
    *       find((low, mid, high) -> {
    *         int probe = rotated[mid];
    *         if (target < probe) {
@@ -185,9 +196,9 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
    * found, an empty range is returned with the open {@link Range#upperEndpoint}
    * being the insertion point, except if the insertion point should have been
    * after {@code MAX_VALUE}, in which case the open upper bound is saturated at
-   * {@code MAX_VALUE} even though it's not a valid insertion point.
+   * {@code MAX_VALUE} even though it's not the correct insertion point.
    */
-  public final Range<C> findRangeOf(@Nullable K key) {
+  public final Range<C> rangeOf(@Nullable K key) {
     InsertionPoint<C> left = insertionPointBefore(key);
     InsertionPoint<C> right = insertionPointAfter(key);
     if (!left.equals(right)) {
@@ -211,7 +222,7 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
    * overall. you can implement it with binary search:
    *
    * <pre>{@code
-   *   InsertionPoint optimal = BinarySearch.inRange(Range.closedOpen(1, tableWidth))
+   *   InsertionPoint optimal = BinarySearch.forInts(Range.closedOpen(1, tableWidth))
    *       .insertionPointFor(
    *           (low, w, high) ->
    *               Integer.compare(
