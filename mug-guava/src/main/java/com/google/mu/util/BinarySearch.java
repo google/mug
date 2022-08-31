@@ -27,18 +27,19 @@ import com.google.common.math.DoubleMath;
  * BinarySearch.inSortedArray([10, 20, 30, 40]).insertionPointFor(22) => InsertionPoint.before(2)
  * BinarySearch.inSortedArrayWithTolerance([1.1, 2.1, 2.2, 2.3, 3.3, 4.4], 0.5).rangeOf(2D)
  *     => Range.closed(1, 3)
+ * BinarySearch.forInts().find((lo, mid, hi) -> tooHighOrTooLow(mid))
+ *     => Optional.of(the gussed number)
  * }</pre>
  *
  * <p>The {@link #forInts}, {@link #forLongs} and the primitive array search methods performs no boxing in the
- * O(logn) search operation. The search result is boxed and wrapped in one of {@code Optional}, {@code Range}
- * or {@code InsertionPoint} objects, which is O(1).
+ * O(logn) search operation.
  *
  * @param <K> the search key
  * @param <C> the comparable search result (typically a numeric index)
  * @since 6.4
  */
 public abstract class BinarySearch<K, C extends Comparable<C>> {
-  /** Returns a {@link BinarySearch} for indexes with the given sorted {@code list}. */
+  /** Returns a {@link BinarySearch} for indexes in the given sorted {@code list}. */
   public static <E extends Comparable<E>> BinarySearch<E, Integer> inSortedList(List<? extends E> list) {
     return inRangeInclusive(0, list.size() - 1)
         .by(key -> {
@@ -48,7 +49,7 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
   }
 
   /**
-   * Returns a {@link BinarySearch} for indexes with the given sorted {@code list} according to
+   * Returns a {@link BinarySearch} for indexes in the given sorted {@code list} according to
    * {@code comparator}.
    */
   public static <E> BinarySearch<E, Integer> inSortedList(
@@ -58,13 +59,13 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
         .by(key -> (l, i, h) -> sortedBy.compare(key, list.get(i)));
   }
 
-  /** Returns a {@link BinarySearch} for indexes with the given {@code list} sorted by the {@code sortBy} function. */
+  /** Returns a {@link BinarySearch} for indexes in the given {@code list} sorted by the {@code sortBy} function. */
   public static <K extends Comparable<K>, E> BinarySearch<K, Integer> inSortedList(
       List<? extends E> list, Function<? super E, ? extends K> sortedBy) {
     return inSortedList(Lists.transform(list, sortedBy::apply));
   }
 
-  /** Returns a {@link BinarySearch} for indexes with the given sorted int {@code array}. */
+  /** Returns a {@link BinarySearch} for indexes in the given sorted int {@code array}. */
   public static BinarySearch<Integer, Integer> inSortedArray(int[] array) {
     return inRangeInclusive(0, array.length - 1)
         .by(key -> {
@@ -73,7 +74,7 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
         });
   }
 
-  /** Returns a {@link BinarySearch} for indexes with the given sorted long {@code array}. */
+  /** Returns a {@link BinarySearch} for indexes in the given sorted long {@code array}. */
   public static BinarySearch<Long, Integer> inSortedArray(long[] array) {
     return inRangeInclusive(0, array.length - 1)
         .by(key -> {
@@ -82,7 +83,10 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
         });
   }
 
-  /** Returns a {@link BinarySearch} for indexes with the given sorted double {@code array}. */
+  /**
+   * Returns a {@link BinarySearch} for indexes in the given sorted double {@code array}.
+   * The positive {@code tolerance} is respected when comparing double values.
+   */
   public static BinarySearch<Double, Integer> inSortedListWithTolerance(List<Double> list, double tolerance) {
     checkNotNegative(tolerance);
     return inRangeInclusive(0, list.size() - 1)
@@ -92,7 +96,10 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
         });
   }
 
-  /** Returns a {@link BinarySearch} for indexes with the given sorted double {@code array}. */
+  /**
+   * Returns a {@link BinarySearch} for indexes in the given sorted double {@code array}.
+   * The positive {@code tolerance} is respected when comparing double values.
+   */
   public static BinarySearch<Double, Integer> inSortedArrayWithTolerance(double[] array, double tolerance) {
     checkNotNegative(tolerance);
     return inRangeInclusive(0, array.length - 1)
@@ -102,7 +109,13 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
         });
   }
 
-  /** Returns a {@link BinarySearch} over all integers. */
+  /**
+   * Returns a {@link BinarySearch} over all integers.
+   *
+   * <p>Callers can search by an {@link IndexedSearchTarget} object that will be called at each iteration
+   * to determine whether the target is already found at the current mid-point, to the left half of the
+   * current subrange, or to the right half of the current subrange.
+   */
   public static BinarySearch<IndexedSearchTarget, Integer> forInts() {
     return forInts(all());
   }
@@ -110,8 +123,9 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
   /**
    * Returns a {@link BinarySearch} over the given {@code range}.
    *
-   * <p>This is the most generic binary search algorithm, supporting flexible target
-   * matching criterion.
+   * <p>Callers can search by an {@link IndexedSearchTarget} object that will be called at each iteration
+   * to determine whether the target is already found at the current mid-point, to the left half of the
+   * current subrange, or to the right half of the current subrange.
    */
   public static BinarySearch<IndexedSearchTarget, Integer> forInts(Range<Integer> range) {
     Integer low = low(range, integers());
@@ -125,16 +139,23 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
     return inRangeInclusive(low, high);
   }
 
-  /** Returns a {@link BinarySearch} over all {@code long} integers. */
+  /**
+   * Returns a {@link BinarySearch} over all {@code long} integers.
+   *
+   * <p>Callers can search by a {@link LongIndexedSearchTarget} object that will be called at each iteration
+   * to determine whether the target is already found at the current mid-point, to the left half of the
+   * current subrange, or to the right half of the current subrange.
+   */
   public static BinarySearch<LongIndexedSearchTarget, Long> forLongs() {
     return forLongs(all());
   }
 
   /**
-   * Returns a {@link BinarySearch} over the given {@code range}.
+   * Returns a {@link BinarySearch} over the given {@code range} of {@code long} integers.
    *
-   * <p>This is the most generic binary search algorithm, supporting flexible target
-   * matching criterion.
+   * <p>Callers can search by a {@link LongIndexedSearchTarget} object that will be called at each iteration
+   * to determine whether the target is already found at the current mid-point, to the left half of the
+   * current subrange, or to the right half of the current subrange.
    */
   public static BinarySearch<LongIndexedSearchTarget, Long> forLongs(Range<Long> range) {
     Long low = low(range, longs());
@@ -149,10 +170,10 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
   }
 
   /**
-   * Searches for the index of {@code target}.
+   * Searches for the index of {@code key}.
    *
    * <p>
-   * If target is found, returns the matching integer; otherwise returns empty.
+   * If key is found, returns the matching integer; otherwise returns empty.
    *
    * <p>
    * Prefer using {@link java.util.Arrays#binarySearch} and
@@ -188,7 +209,7 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
   }
 
   /**
-   * Finds the sub-range of elements that match {@code target}.
+   * Finds the range of elements that match {@code key}.
    *
    * <p>
    * If there is a single match at index `i`, {@code [i, i]} is returned. For more
@@ -209,9 +230,9 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
   }
 
   /**
-   * Finds the {@link InsertionPoint if {@code target} were to be added <em>in order</em>.
+   * Finds the {@link InsertionPoint} if {@code key} were to be added <em>in order</em>.
    *
-   * <p>Specifically, if {@code target} is found, the insertion point is at the its index;
+   * <p>Specifically, if {@code key} is found, the insertion point is at the its index;
    * while if not found, the insertion point is between the two adjacent indexes where
    * it could be inserted.
    *
@@ -245,10 +266,10 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
   public abstract InsertionPoint<C> insertionPointFor(@Nullable K key);
 
   /**
-   * Finds the insertion point immediately before the first element that's greater than or equal to the target.
+   * Finds the insertion point immediately before the first element that's greater than or equal to the key.
    *
    * <p>If {@code target} is absent, {@link #insertionPointBefore} and {@link #insertionPointAter} will be
-   * the same point.
+   * the same point, where is after the last element less than the key and the first element greater than it.
    *
    * <p>{@code insertionPointBefore(target).exact()} will always return empty.
    */
@@ -286,7 +307,7 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
     };
   }
 
-  /** Represents the search target that can be found through bisecting the integer index. */
+  /** Represents the search target that can be found through bisecting the integer domain. */
   public interface IndexedSearchTarget {
     /**
      * Given a range of {@code [low, high]} inclusively with {@code mid} as the
@@ -294,8 +315,7 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
      *
      * <p>
      * Returns 0 if {@code mid} is the target; negative to find it in the lower
-     * range of {@code
-     * [low, mid)}; or positive to find it in the upper range of
+     * range of {@code [low, mid)}; or positive to find it in the upper range of
      * {@code (mid, high]}.
      *
      * <p>
@@ -304,7 +324,7 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
     int locate(int low, int mid, int high);
   }
 
-  /** Represents the search target that can be found through bisecting the long integer index. */
+  /** Represents the search target that can be found through bisecting the long integer domain. */
   public interface LongIndexedSearchTarget {
     /**
      * Given a range of {@code [low, high]} inclusively with {@code mid} as the
@@ -312,8 +332,7 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
      *
      * <p>
      * Returns 0 if {@code mid} is the target; negative to find it in the lower
-     * range of {@code
-     * [low, mid)}; or positive to find it in the upper range of
+     * range of {@code [low, mid)}; or positive to find it in the upper range of
      * {@code (mid, high]}.
      *
      * <p>
