@@ -224,6 +224,8 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * }
    * }
    * </pre>
+   *
+   * <p>This is an O(logn) operation.
    */
   public final Optional<R> find(@Nullable Q target) {
     return insertionPointFor(target).exact();
@@ -239,6 +241,8 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * being the insertion point, except if the insertion point should have been
    * after {@code MAX_VALUE}, in which case the open upper bound is saturated at
    * {@code MAX_VALUE} even though it's not the correct insertion point.
+   *
+   * <p>This is an O(logn) operation.
    */
   public final Range<R> rangeOf(@Nullable Q target) {
     InsertionPoint<R> left = insertionPointBefore(target);
@@ -283,6 +287,8 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    *           });
    * }
    * </pre>
+   *
+   * <p>This is an O(logn) operation.
    */
   public abstract InsertionPoint<R> insertionPointFor(@Nullable Q target);
 
@@ -293,6 +299,8 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * the same point, where is after the last element less than the target and the first element greater than it.
    *
    * <p>{@code insertionPointBefore(target).exact()} will always return empty.
+   *
+   * <p>This is an O(logn) operation.
    */
   public abstract InsertionPoint<R> insertionPointBefore(@Nullable Q target);
 
@@ -303,6 +311,8 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * the same point.
    *
    * <p>{@code insertionPointAfter(target).exact()} will always return empty.
+   *
+   * <p>This is an O(logn) operation.
    */
   public abstract InsertionPoint<R> insertionPointAfter(@Nullable Q target);
 
@@ -311,6 +321,8 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * the search target using the given {@code keyFunction} first.
    *
    * <p>Useful for creating a facade in front of a lower-level backing data source.
+   *
+   * <p>This is an O(1) operation.
    */
   public final <K> BinarySearch<K, R> by(Function<K, ? extends Q> keyFunction) {
     checkNotNull(keyFunction);
