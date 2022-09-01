@@ -23,9 +23,15 @@ import com.google.common.math.DoubleMath;
  * Flexible binary search algorithm in a fluent API.
  *
  * <p>For example: <pre>{@code
+ * // Most common: search within a sorted array
  * BinarySearch.inSortedArray([10, 20, 30, 40]).find(20) => Optional.of(1)
+ *
+ * // Find the insertion point if not found
  * BinarySearch.inSortedArray([10, 20, 30, 40]).insertionPointFor(22) => InsertionPoint.before(2)
- * BinarySearch.inSortedArrayWithTolerance([1.1, 2.1, 2.2, 2.3, 3.3, 4.4], 0.5).rangeOf(2D)
+ *
+ * // Search for double with a tolerance factor
+ * // And find the range of all matches
+ * BinarySearch.inSortedArrayWithTolerance([1.1, 2.1, 2.2, 2.3, 3.3, 4.4], 0.5).rangeOf(2)
  *     => Range.closed(1, 3)
  *
  * // Guess The Number Game
