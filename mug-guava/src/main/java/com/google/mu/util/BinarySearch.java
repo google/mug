@@ -20,12 +20,20 @@ import com.google.common.collect.Range;
 import com.google.common.math.DoubleMath;
 
 /**
- * Generic algorithm to fluently binary search for a target value.
+ * Flexible binary search algorithm in a fluent API.
  *
  * <p>For example: <pre>{@code
- * BinarySearch.inSortedArray([10, 20, 30, 40]).find(20) => Optional.of(1)
- * BinarySearch.inSortedArray([10, 20, 30, 40]).insertionPointFor(22) => InsertionPoint.before(2)
- * BinarySearch.inSortedArrayWithTolerance([1.1, 2.1, 2.2, 2.3, 3.3, 4.4], 0.5).rangeOf(2D)
+ * // Most common: search within a sorted array
+ * BinarySearch.inSortedArray([10, 20, 30, 40]).find(20)
+ *     => Optional.of(1)
+ *
+ * // Find the insertion point if not found
+ * BinarySearch.inSortedArray([10, 20, 30, 40]).insertionPointFor(22)
+ *     => InsertionPoint.before(2)
+ *
+ * // Search for double with a tolerance factor
+ * // And find the range of all matches
+ * BinarySearch.inSortedArrayWithTolerance([1.1, 2.1, 2.2, 2.3, 3.3, 4.4], 0.5).rangeOf(2)
  *     => Range.closed(1, 3)
  *
  * // Guess The Number Game
@@ -33,16 +41,20 @@ import com.google.common.math.DoubleMath;
  *     => Optional.of(theGuessedNumber)
  * }</pre>
  *
- * <p>The {@link #forInts}, {@link #forLongs} and the primitive array search methods performs no boxing in the
- * O(logn) search operation.
+ * <p>The {@link #forInts}, {@link #forLongs} and the primitive array search methods perform no
+ * boxing in the O(logn) search operation.
+ *
+ * <p>Note that except {@link #inSortedList(List, Comparator)}, which may support null keys if the
+ * comparator supports null, no other {@code BinarySearch} implementations support null keys.
  *
  * @param <K> the search key
- * @param <C> the comparable search result (typically a numeric index)
+ * @param <C> the binary search result (typically a numeric index)
  * @since 6.4
  */
 public abstract class BinarySearch<K, C extends Comparable<C>> {
   /** Returns a {@link BinarySearch} for indexes in the given sorted {@code list}. */
-  public static <E extends Comparable<E>> BinarySearch<E, Integer> inSortedList(List<? extends E> list) {
+  public static <E extends Comparable<E>> BinarySearch<E, Integer> inSortedList(
+      List<? extends E> list) {
     return inRangeInclusive(0, list.size() - 1)
         .by(key -> {
           checkNotNull(key);
@@ -61,7 +73,10 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
         .by(key -> (l, i, h) -> sortedBy.compare(key, list.get(i)));
   }
 
-  /** Returns a {@link BinarySearch} for indexes in the given {@code list} sorted by the {@code sortBy} function. */
+  /**
+   * Returns a {@link BinarySearch} for indexes in the given {@code list} sorted by the
+   * {@code sortBy} function.
+   */
   public static <K extends Comparable<K>, E> BinarySearch<K, Integer> inSortedList(
       List<? extends E> list, Function<? super E, ? extends K> sortedBy) {
     return inSortedList(Lists.transform(list, sortedBy::apply));
@@ -89,7 +104,8 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
    * Returns a {@link BinarySearch} for indexes in the given sorted double {@code array}.
    * The positive {@code tolerance} is respected when comparing double values.
    */
-  public static BinarySearch<Double, Integer> inSortedListWithTolerance(List<Double> list, double tolerance) {
+  public static BinarySearch<Double, Integer> inSortedListWithTolerance(
+      List<Double> list, double tolerance) {
     checkNotNegative(tolerance);
     return inRangeInclusive(0, list.size() - 1)
         .by(key -> {
@@ -102,7 +118,8 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
    * Returns a {@link BinarySearch} for indexes in the given sorted double {@code array}.
    * The positive {@code tolerance} is respected when comparing double values.
    */
-  public static BinarySearch<Double, Integer> inSortedArrayWithTolerance(double[] array, double tolerance) {
+  public static BinarySearch<Double, Integer> inSortedArrayWithTolerance(
+      double[] array, double tolerance) {
     checkNotNegative(tolerance);
     return inRangeInclusive(0, array.length - 1)
         .by(key -> {
