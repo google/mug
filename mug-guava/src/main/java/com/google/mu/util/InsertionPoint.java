@@ -17,9 +17,9 @@ import com.google.common.collect.Range;
 import com.google.errorprone.annotations.Immutable;
 
 /**
- * An insertion point in a discrete domain (normally of indexes), that's either an exact element, or in
- * between two adjacent elements in a discrete domain, or before or after all elements of the discrete
- * domain.
+ * An insertion point in a sequence of elements (normally of indexes), which is either an exact element,
+ * or in between two adjacent elements in a discrete domain, or before or after all elements of the
+ * discrete domain.
  *
  * <p>If representing an exact point, {@link #exact}, {@link #floor} and {@link #ceiling} all return the element.
  *
