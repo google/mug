@@ -20,7 +20,7 @@ import com.google.common.collect.Range;
 import com.google.common.math.DoubleMath;
 
 /**
- * Generic algorithm to fluently binary search for a target value.
+ * Flexible binary search algorithm in a fluent API.
  *
  * <p>For example: <pre>{@code
  * BinarySearch.inSortedArray([10, 20, 30, 40]).find(20) => Optional.of(1)
