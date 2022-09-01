@@ -137,7 +137,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * Returns a {@link BinarySearch} for indexes in the given sorted double {@code array}.
    * The positive {@code tolerance} is respected when comparing double values.
    *
-   * <p>For example: {@code inSortedArrayWithTolerance(tempuratures, 0.1).find(30)}.
+   * <p>For example: {@code inSortedArrayWithTolerance(temperatures, 0.1).find(30)}.
    */
   public static BinarySearch<Double, Integer> inSortedArrayWithTolerance(
       double[] array, double tolerance) {
