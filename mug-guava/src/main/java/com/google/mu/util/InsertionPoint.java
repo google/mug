@@ -21,16 +21,17 @@ import com.google.errorprone.annotations.Immutable;
  * or in between two adjacent elements in a discrete domain, or before or after all elements of the
  * discrete domain.
  *
- * <p>If representing an exact point, {@link #exact}, {@link #floor} and {@link #ceiling} all return the element.
+ * <p>If representing an exact point, {@link #exact}, {@link #floor()} and {@link #ceiling()} all
+ * return the element.
  *
- * <p>If it's between two elements, {@link #exact} will return empty, and {@link #floor} and {@code
- * #ceiling} will return the two adjacent elements respectively.
+ * <p>If it's between two elements, {@link #exact} will return empty, and {@link #floor()} and {@link
+ * #ceiling()} will return the two adjacent elements respectively.
  *
- * <p>If it's below all possible elements, {@link #isBelowAll} will return true and {@link #floor}
- * will throw. The {@link #ceiling} method will return the min element of the domain (if present).
+ * <p>If it's below all possible elements, {@link #isBelowAll} will return true and {@link #floor()}
+ * will throw. The {@link #ceiling()} method will return the min element of the domain (if present).
  *
- * <p>If it's above all possible elements, {@link #isAboveAll} will return true and {@link #ceiling}
- * will throw. The {@link #floor} method will return the max element of the domain (if present).
+ * <p>If it's above all possible elements, {@link #isAboveAll} will return true and {@link #ceiling()}
+ * will throw. The {@link #floor()} method will return the max element of the domain (if present).
  *
  * <p>Over a discrete domain with N discrete elements, there are {@code 2 * N + 1} distinct insertion
  * points, including all the elements, the points between each two adjacent elements, the point before
