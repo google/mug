@@ -24,10 +24,12 @@ import com.google.common.math.DoubleMath;
  *
  * <p>For example: <pre>{@code
  * // Most common: search within a sorted array
- * BinarySearch.inSortedArray([10, 20, 30, 40]).find(20) => Optional.of(1)
+ * BinarySearch.inSortedArray([10, 20, 30, 40]).find(20)
+ *     => Optional.of(1)
  *
  * // Find the insertion point if not found
- * BinarySearch.inSortedArray([10, 20, 30, 40]).insertionPointFor(22) => InsertionPoint.before(2)
+ * BinarySearch.inSortedArray([10, 20, 30, 40]).insertionPointFor(22)
+ *     => InsertionPoint.before(2)
  *
  * // Search for double with a tolerance factor
  * // And find the range of all matches
