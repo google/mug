@@ -28,7 +28,7 @@ import com.google.common.math.DoubleMath;
  *     => Optional.of(1)
  *
  * // Find the insertion point if not found
- * BinarySearch.inSortedArray([10, 20, 30, 40]).insertionPointFor(22)
+ * BinarySearch.inSortedList([10, 20, 30, 40]).insertionPointFor(22)
  *     => InsertionPoint.before(2)
  *
  * // Search for double with a tolerance factor
