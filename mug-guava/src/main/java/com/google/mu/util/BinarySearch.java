@@ -18,7 +18,6 @@ import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Range;
 import com.google.common.math.DoubleMath;
-import com.google.errorprone.annotations.Immutable;
 
 /**
  * Flexible binary search algorithm in a fluent API.
@@ -52,7 +51,6 @@ import com.google.errorprone.annotations.Immutable;
  * @param <C> the binary search result (typically a numeric index)
  * @since 6.4
  */
-@Immutable
 public abstract class BinarySearch<K, C extends Comparable<C>> {
   /** Returns a {@link BinarySearch} for indexes in the given sorted {@code list}. */
   public static <E extends Comparable<E>> BinarySearch<E, Integer> inSortedList(
