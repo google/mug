@@ -247,8 +247,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
   /**
    * Searches for the index of {@code target}.
    *
-   * <p>
-   * If target is found, returns the matching integer; otherwise returns empty.
+   * <p>If target is found, returns the matching integer; otherwise returns empty.
    *
    * <p>This is an O(logn) operation.
    */
@@ -259,13 +258,14 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
   /**
    * Finds the range of elements that match {@code target}.
    *
-   * <p>
-   * If there is a single match at index `i`, {@code [i, i]} is returned. For more
+   * <p>If there is a single match at index `i`, {@code [i, i]} is returned. For more
    * than one matches, the returned range is closed at both ends. If no match is
    * found, an empty range is returned with the open {@link Range#upperEndpoint}
    * being the insertion point, except if the insertion point should have been
    * after {@code MAX_VALUE}, in which case the open upper bound is saturated at
    * {@code MAX_VALUE} even though it's not the correct insertion point.
+   *
+   * <p>Callers can check {@link Range#isEmpty} to find out if {@code target} is found at all.
    *
    * <p>This is an O(logn) operation.
    */
