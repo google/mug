@@ -33,7 +33,7 @@ import com.google.common.math.DoubleMath;
  *     => Optional.of(theGuessedNumber)
  * }</pre>
  *
- * <p>The {@link #forInts}, {@link #forLongs} and the primitive array search methods performs no boxing in the
+ * <p>The {@link #forInts}, {@link #forLongs} and the primitive array search methods perform no boxing in the
  * O(logn) search operation.
  *
  * @param <K> the search key
