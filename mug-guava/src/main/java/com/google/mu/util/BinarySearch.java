@@ -121,7 +121,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * Returns a {@link BinarySearch} for indexes in the given sorted double {@code array}.
    * The positive {@code tolerance} is respected when comparing double values.
    *
-   * <p>For example: {@code inSortedListWithTolerance(tempuratures, 0.1).find(30)}.
+   * <p>For example: {@code inSortedListWithTolerance(temperatures, 0.1).find(30)}.
    */
   public static BinarySearch<Double, Integer> inSortedListWithTolerance(
       List<Double> list, double tolerance) {
@@ -156,7 +156,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * to determine whether the target is already found at the current mid-point, to the left half of the
    * current subrange, or to the right half of the current subrange.
    *
-   * @see {@link forInts(Range)} for examples
+   * @see {@link #forInts(Range)} for examples
    */
   public static BinarySearch<IndexedSearchTarget, Integer> forInts() {
     return forInts(all());
