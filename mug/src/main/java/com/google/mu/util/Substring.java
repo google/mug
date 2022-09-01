@@ -16,6 +16,7 @@ package com.google.mu.util;
 
 import static com.google.mu.util.InternalCollectors.toImmutableList;
 import static java.lang.Math.max;
+import static java.lang.Math.min;
 import static java.util.Comparator.comparingInt;
 import static java.util.Objects.requireNonNull;
 import static java.util.regex.Pattern.compile;
@@ -29,6 +30,7 @@ import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.stream.Collector;
@@ -290,9 +292,9 @@ public final class Substring {
    */
   public static Pattern last(CharPredicate charMatcher) {
     requireNonNull(charMatcher);
-    return new Pattern() {
-      @Override Match match(String input, int fromIndex) {
-        for (int i = input.length() - 1; i >= fromIndex; i--) {
+    return new Last() {
+      @Override Match match(String input, int fromIndex, int endIndex) {
+        for (int i = endIndex - 1; i >= fromIndex; i--) {
           if (charMatcher.test(input.charAt(i))) {
             return Match.nonBacktrackable(input, i, 1);
           }
@@ -732,10 +734,12 @@ public final class Substring {
     if (str.length() == 1) {
       return last(str.charAt(0));
     }
-    return new Pattern() {
-      @Override Match match(String input, int fromIndex) {
-        int index = input.lastIndexOf(str);
-        return index >= fromIndex ? Match.nonBacktrackable(input, index, str.length()) : null;
+    return new Last() {
+      @Override Match match(String input, int fromIndex, int endIndex) {
+        int index = str.isEmpty() ? endIndex : input.lastIndexOf(str, endIndex - 1);
+        return index >= fromIndex
+            ? Match.nonBacktrackable(input, index, str.length())
+            : null;
       }
 
       @Override public String toString() {
@@ -746,9 +750,9 @@ public final class Substring {
 
   /** Returns a {@code Pattern} that matches the last occurrence of {@code character}. */
   public static Pattern last(char character) {
-    return new Pattern() {
-      @Override Match match(String input, int fromIndex) {
-        int index = input.lastIndexOf(character);
+    return new Last() {
+      @Override Match match(String input, int fromIndex, int endIndex) {
+        int index = input.lastIndexOf(character, endIndex - 1);
         return index >= fromIndex ? Match.nonBacktrackable(input, index, 1) : null;
       }
 
@@ -2404,6 +2408,11 @@ public final class Substring {
       return isPrecededBy(lookbehind) && isFollowedBy(lookahead);
     }
 
+    boolean isSeparatedBy(CharPredicate separatorBefore, CharPredicate separatorAfter) {
+      return (startIndex == 0 || separatorBefore.test(context.charAt(startIndex - 1)))
+          && (endIndex >= context.length() || separatorAfter.test(context.charAt(endIndex)));
+    }
+
     /** Returns the length of the matched substring. */
     @Override public int length() {
       return endIndex - startIndex;
@@ -2491,6 +2500,44 @@ public final class Substring {
         throw new IllegalStateException("Not true that " + backtrackIndex + " > " + fromIndex);
       }
       return backtrackIndex;
+    }
+  }
+
+  abstract static class Last extends Pattern {
+    abstract Match match(String input, int fromIndex, int endIndex);
+
+    @Override Match match(String input, int fromIndex) {
+      return match(input, fromIndex, input.length());
+    }
+
+    @Override public Pattern separatedBy(CharPredicate separatorBefore, CharPredicate separatorAfter) {
+      requireNonNull(separatorBefore);
+      requireNonNull(separatorAfter);
+      return look(match -> match.isSeparatedBy(separatorBefore, separatorAfter));
+    }
+
+    @Override Pattern lookaround(String lookbehind, String lookahead) {
+      return look(match -> match.isImmediatelyBetween(lookbehind, lookahead));
+    }
+
+    @Override Pattern negativeLookaround(String lookbehind, String lookahead) {
+      return look(match -> !match.isImmediatelyBetween(lookbehind, lookahead));
+    }
+
+    private Pattern look(Predicate<Match> condition) {
+      Last original = this;
+      return new Last() {
+        @Override Match match(String input, int fromIndex, int endIndex) {
+          for (int i = endIndex; i >= fromIndex; ) {
+            Match match = original.match(input, fromIndex, i);
+            if (match == null || condition.test(match)) {
+              return match;
+            }
+            i = min(match.endIndex - 1, i - 1);
+          }
+          return null;
+        }
+      };
     }
   }
 

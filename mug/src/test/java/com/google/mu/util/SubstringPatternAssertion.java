@@ -33,6 +33,11 @@ final class SubstringPatternAssertion {
         .inOrder();
   }
 
+  void findsBetween(String before, String after) {
+    assertThat(pattern.in(input).map(Substring.Match::before)).hasValue(before);
+    assertThat(pattern.in(input).map(Substring.Match::after)).hasValue(after);
+  }
+
   void findsDistinct(String... findings) {
     assertThat(pattern.from(input)).hasValue(findings[0]);
     assertThat(pattern.repeatedly().from(input).distinct().limit(findings.length + 10))
