@@ -45,7 +45,8 @@ import com.google.common.math.DoubleMath;
  */
 public abstract class BinarySearch<K, C extends Comparable<C>> {
   /** Returns a {@link BinarySearch} for indexes in the given sorted {@code list}. */
-  public static <E extends Comparable<E>> BinarySearch<E, Integer> inSortedList(List<? extends E> list) {
+  public static <E extends Comparable<E>> BinarySearch<E, Integer> inSortedList(
+      List<? extends E> list) {
     return inRangeInclusive(0, list.size() - 1)
         .by(key -> {
           checkNotNull(key);
@@ -64,7 +65,10 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
         .by(key -> (l, i, h) -> sortedBy.compare(key, list.get(i)));
   }
 
-  /** Returns a {@link BinarySearch} for indexes in the given {@code list} sorted by the {@code sortBy} function. */
+  /**
+   * Returns a {@link BinarySearch} for indexes in the given {@code list} sorted by the
+   * {@code sortBy} function.
+   */
   public static <K extends Comparable<K>, E> BinarySearch<K, Integer> inSortedList(
       List<? extends E> list, Function<? super E, ? extends K> sortedBy) {
     return inSortedList(Lists.transform(list, sortedBy::apply));
@@ -92,7 +96,8 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
    * Returns a {@link BinarySearch} for indexes in the given sorted double {@code array}.
    * The positive {@code tolerance} is respected when comparing double values.
    */
-  public static BinarySearch<Double, Integer> inSortedListWithTolerance(List<Double> list, double tolerance) {
+  public static BinarySearch<Double, Integer> inSortedListWithTolerance(
+      List<Double> list, double tolerance) {
     checkNotNegative(tolerance);
     return inRangeInclusive(0, list.size() - 1)
         .by(key -> {
@@ -105,7 +110,8 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
    * Returns a {@link BinarySearch} for indexes in the given sorted double {@code array}.
    * The positive {@code tolerance} is respected when comparing double values.
    */
-  public static BinarySearch<Double, Integer> inSortedArrayWithTolerance(double[] array, double tolerance) {
+  public static BinarySearch<Double, Integer> inSortedArrayWithTolerance(
+      double[] array, double tolerance) {
     checkNotNegative(tolerance);
     return inRangeInclusive(0, array.length - 1)
         .by(key -> {
