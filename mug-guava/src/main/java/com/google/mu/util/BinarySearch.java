@@ -47,18 +47,18 @@ import com.google.common.math.DoubleMath;
  * <p>Note that except {@link #inSortedList(List, Comparator)}, which may support null keys if the
  * comparator supports null, no other {@code BinarySearch} implementations support null keys.
  *
- * @param <K> the search key
- * @param <C> the binary search result (typically a numeric index)
+ * @param <T> the search target (what you search by)
+ * @param <R> the binary search result (typically a numeric index)
  * @since 6.4
  */
-public abstract class BinarySearch<K, C extends Comparable<C>> {
+public abstract class BinarySearch<T, R extends Comparable<R>> {
   /** Returns a {@link BinarySearch} for indexes in the given sorted {@code list}. */
   public static <E extends Comparable<E>> BinarySearch<E, Integer> inSortedList(
       List<? extends E> list) {
     return inRangeInclusive(0, list.size() - 1)
-        .by(key -> {
-          checkNotNull(key);
-          return (l, i, h) -> key.compareTo(list.get(i));
+        .by(target -> {
+          checkNotNull(target);
+          return (l, i, h) -> target.compareTo(list.get(i));
         });
   }
 
@@ -70,23 +70,23 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
       List<? extends E> list, Comparator<? super E> sortedBy) {
     checkNotNull(sortedBy);
     return inRangeInclusive(0, list.size() - 1)
-        .by(key -> (l, i, h) -> sortedBy.compare(key, list.get(i)));
+        .by(target -> (l, i, h) -> sortedBy.compare(target, list.get(i)));
   }
 
   /**
    * Returns a {@link BinarySearch} for indexes in the given {@code list} sorted by the
    * {@code sortBy} function.
    */
-  public static <K extends Comparable<K>, E> BinarySearch<K, Integer> inSortedList(
-      List<? extends E> list, Function<? super E, ? extends K> sortedBy) {
+  public static <T extends Comparable<T>, E> BinarySearch<T, Integer> inSortedList(
+      List<? extends E> list, Function<? super E, ? extends T> sortedBy) {
     return inSortedList(Lists.transform(list, sortedBy::apply));
   }
 
   /** Returns a {@link BinarySearch} for indexes in the given sorted int {@code array}. */
   public static BinarySearch<Integer, Integer> inSortedArray(int[] array) {
     return inRangeInclusive(0, array.length - 1)
-        .by(key -> {
-          int intValue = key.intValue();
+        .by(target -> {
+          int intValue = target.intValue();
           return (l, i, h) -> Integer.compare(intValue, array[i]);
         });
   }
@@ -94,8 +94,8 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
   /** Returns a {@link BinarySearch} for indexes in the given sorted long {@code array}. */
   public static BinarySearch<Long, Integer> inSortedArray(long[] array) {
     return inRangeInclusive(0, array.length - 1)
-        .by(key -> {
-          long longValue = key.longValue();
+        .by(target -> {
+          long longValue = target.longValue();
           return (l, i, h) -> Long.compare(longValue, array[i]);
         });
   }
@@ -108,9 +108,9 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
       List<Double> list, double tolerance) {
     checkNotNegative(tolerance);
     return inRangeInclusive(0, list.size() - 1)
-        .by(key -> {
-          double target = key.doubleValue();
-          return (l, i, h) -> DoubleMath.fuzzyCompare(target, list.get(i), tolerance);
+        .by(target -> {
+          double v = target.doubleValue();
+          return (l, i, h) -> DoubleMath.fuzzyCompare(v, list.get(i), tolerance);
         });
   }
 
@@ -122,9 +122,9 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
       double[] array, double tolerance) {
     checkNotNegative(tolerance);
     return inRangeInclusive(0, array.length - 1)
-        .by(key -> {
-          double target = key.doubleValue();
-          return (l, i, h) -> DoubleMath.fuzzyCompare(target, array[i], tolerance);
+        .by(target -> {
+          double v = target.doubleValue();
+          return (l, i, h) -> DoubleMath.fuzzyCompare(v, array[i], tolerance);
         });
   }
 
@@ -189,10 +189,10 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
   }
 
   /**
-   * Searches for the index of {@code key}.
+   * Searches for the index of {@code target}.
    *
    * <p>
-   * If key is found, returns the matching integer; otherwise returns empty.
+   * If target is found, returns the matching integer; otherwise returns empty.
    *
    * <p>
    * Prefer using {@link java.util.Arrays#binarySearch} and
@@ -223,12 +223,12 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
    * }
    * </pre>
    */
-  public final Optional<C> find(@Nullable K key) {
-    return insertionPointFor(key).exact();
+  public final Optional<R> find(@Nullable T target) {
+    return insertionPointFor(target).exact();
   }
 
   /**
-   * Finds the range of elements that match {@code key}.
+   * Finds the range of elements that match {@code target}.
    *
    * <p>
    * If there is a single match at index `i`, {@code [i, i]} is returned. For more
@@ -238,20 +238,20 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
    * after {@code MAX_VALUE}, in which case the open upper bound is saturated at
    * {@code MAX_VALUE} even though it's not the correct insertion point.
    */
-  public final Range<C> rangeOf(@Nullable K key) {
-    InsertionPoint<C> left = insertionPointBefore(key);
-    InsertionPoint<C> right = insertionPointAfter(key);
+  public final Range<R> rangeOf(@Nullable T target) {
+    InsertionPoint<R> left = insertionPointBefore(target);
+    InsertionPoint<R> right = insertionPointAfter(target);
     if (!left.equals(right)) {
       return Range.closed(left.ceiling(), right.floor());
     }
-    C insertAt = right.isAboveAll() ? right.floor() : right.ceiling();
+    R insertAt = right.isAboveAll() ? right.floor() : right.ceiling();
     return Range.closedOpen(insertAt, insertAt);
   }
 
   /**
-   * Finds the {@link InsertionPoint} if {@code key} were to be added <em>in order</em>.
+   * Finds the {@link InsertionPoint} if {@code target} were to be added <em>in order</em>.
    *
-   * <p>Specifically, if {@code key} is found, the insertion point is at the its index;
+   * <p>Specifically, if {@code target} is found, the insertion point is at the its index;
    * while if not found, the insertion point is between the two adjacent indexes where
    * it could be inserted.
    *
@@ -282,17 +282,17 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
    * }
    * </pre>
    */
-  public abstract InsertionPoint<C> insertionPointFor(@Nullable K key);
+  public abstract InsertionPoint<R> insertionPointFor(@Nullable T target);
 
   /**
-   * Finds the insertion point immediately before the first element that's greater than or equal to the key.
+   * Finds the insertion point immediately before the first element that's greater than or equal to the target.
    *
    * <p>If {@code target} is absent, {@link #insertionPointBefore} and {@link #insertionPointAter} will be
-   * the same point, where is after the last element less than the key and the first element greater than it.
+   * the same point, where is after the last element less than the target and the first element greater than it.
    *
    * <p>{@code insertionPointBefore(target).exact()} will always return empty.
    */
-  public abstract InsertionPoint<C> insertionPointBefore(@Nullable K key);
+  public abstract InsertionPoint<R> insertionPointBefore(@Nullable T target);
 
   /**
    * Finds the insertion point immediately after the last element that's less than or equal to the target.
@@ -302,26 +302,26 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
    *
    * <p>{@code insertionPointAfter(target).exact()} will always return empty.
    */
-  public abstract InsertionPoint<C> insertionPointAfter(@Nullable K key);
+  public abstract InsertionPoint<R> insertionPointAfter(@Nullable T target);
 
   /**
    * Returns a new {@link BinarySearch} over the same source but transforms
-   * the search key using the given {@code keyFunction} first.
+   * the search target using the given {@code keyFunction} first.
    *
    * <p>Useful for creating a facade in front of a lower-level backing data source.
    */
-  public final <E> BinarySearch<E, C> by(Function<E, ? extends K> keyFunction) {
+  public final <K> BinarySearch<K, R> by(Function<K, ? extends T> keyFunction) {
     checkNotNull(keyFunction);
-    BinarySearch<K, C> underlying = this;
-    return new BinarySearch<E, C>() {
-      @Override public InsertionPoint<C> insertionPointFor(@Nullable E key) {
-        return underlying.insertionPointFor(keyFunction.apply(key));
+    BinarySearch<T, R> underlying = this;
+    return new BinarySearch<K, R>() {
+      @Override public InsertionPoint<R> insertionPointFor(@Nullable K target) {
+        return underlying.insertionPointFor(keyFunction.apply(target));
       }
-      @Override public InsertionPoint<C> insertionPointBefore(@Nullable E key) {
-        return underlying.insertionPointBefore(keyFunction.apply(key));
+      @Override public InsertionPoint<R> insertionPointBefore(@Nullable K target) {
+        return underlying.insertionPointBefore(keyFunction.apply(target));
       }
-      @Override public InsertionPoint<C> insertionPointAfter(@Nullable E key) {
-        return underlying.insertionPointAfter(keyFunction.apply(key));
+      @Override public InsertionPoint<R> insertionPointAfter(@Nullable K target) {
+        return underlying.insertionPointAfter(keyFunction.apply(target));
       }
     };
   }
@@ -457,18 +457,18 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
     return (low, mid, high) -> target.locate(low, mid, high) < 0 ? -1 : 1;
   }
 
-  private static <K, R extends Comparable<R>> BinarySearch<K, R> always(InsertionPoint<R> point) {
-    return new BinarySearch<K, R>() {
-      @Override public InsertionPoint<R> insertionPointFor(K key) {
-        checkNotNull(key);
+  private static <T, R extends Comparable<R>> BinarySearch<T, R> always(InsertionPoint<R> point) {
+    return new BinarySearch<T, R>() {
+      @Override public InsertionPoint<R> insertionPointFor(T target) {
+        checkNotNull(target);
         return point;
       }
-      @Override public InsertionPoint<R> insertionPointBefore(K key) {
-        checkNotNull(key);
+      @Override public InsertionPoint<R> insertionPointBefore(T target) {
+        checkNotNull(target);
         return point;
       }
-      @Override public InsertionPoint<R> insertionPointAfter(K key) {
-        checkNotNull(key);
+      @Override public InsertionPoint<R> insertionPointAfter(T target) {
+        checkNotNull(target);
         return point;
       }
     };
@@ -483,7 +483,7 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
    * is impossible as in {@code lessThan(MIN_VALUE)}.
    */
   @Nullable
-  private static <C extends Comparable<C>> C low(Range<C> range, DiscreteDomain<C> domain) {
+  private static <R extends Comparable<R>> R low(Range<R> range, DiscreteDomain<R> domain) {
     if (range.hasLowerBound()) {
       return range.lowerBoundType() == BoundType.CLOSED
           ? range.lowerEndpoint()
@@ -497,7 +497,7 @@ public abstract class BinarySearch<K, C extends Comparable<C>> {
    * is impossible as in {@code greaterThan(MAX_VALUE)}.
    */
   @Nullable
-  private static <C extends Comparable<C>> C high(Range<C> range, DiscreteDomain<C> domain) {
+  private static <R extends Comparable<R>> R high(Range<R> range, DiscreteDomain<R> domain) {
     if (range.hasUpperBound()) {
       return range.upperBoundType() == BoundType.CLOSED
           ? range.upperEndpoint()
