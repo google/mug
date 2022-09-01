@@ -54,7 +54,11 @@ import com.google.common.math.DoubleMath;
  * @since 6.4
  */
 public abstract class BinarySearch<Q, R extends Comparable<R>> {
-  /** Returns a {@link BinarySearch} for indexes in the given sorted {@code list}. */
+  /**
+   * Returns a {@link BinarySearch} for indexes in the given sorted {@code list}.
+   *
+   * <p>For example: {@code inSortedList(numbers).find(20)}.
+   */
   public static <E extends Comparable<E>> BinarySearch<E, Integer> inSortedList(
       List<? extends E> list) {
     return inRangeInclusive(0, list.size() - 1)
@@ -67,6 +71,8 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
   /**
    * Returns a {@link BinarySearch} for indexes in the given sorted {@code list} according to
    * {@code comparator}.
+   *
+   * <p>For example: {@code inSortedList(timestamps, nullsFirst(naturalOrder())).find(timestamp)}.
    */
   public static <E> BinarySearch<E, Integer> inSortedList(
       List<? extends E> list, Comparator<? super E> sortedBy) {
@@ -78,13 +84,19 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
   /**
    * Returns a {@link BinarySearch} for indexes in the given {@code list} sorted by the
    * {@code sortBy} function.
+   *
+   * <p>For example: {@code inSortedList(employees, Employee::age).rangeOf(20)}.
    */
   public static <Q extends Comparable<Q>, E> BinarySearch<Q, Integer> inSortedList(
       List<? extends E> list, Function<? super E, ? extends Q> sortedBy) {
     return inSortedList(Lists.transform(list, sortedBy::apply));
   }
 
-  /** Returns a {@link BinarySearch} for indexes in the given sorted int {@code array}. */
+  /**
+   * Returns a {@link BinarySearch} for indexes in the given sorted int {@code array}.
+   *
+   * <p>For example: {@code inSortedArray(numbers).find(20)}.
+   */
   public static BinarySearch<Integer, Integer> inSortedArray(int[] array) {
     return inRangeInclusive(0, array.length - 1)
         .by(target -> {
@@ -93,7 +105,10 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
         });
   }
 
-  /** Returns a {@link BinarySearch} for indexes in the given sorted long {@code array}. */
+  /** Returns a {@link BinarySearch} for indexes in the given sorted long {@code array}.
+   *
+   * <p>For example: {@code inSortedArray(largeNumbers).find(1000000000000L)}.
+   */
   public static BinarySearch<Long, Integer> inSortedArray(long[] array) {
     return inRangeInclusive(0, array.length - 1)
         .by(target -> {
@@ -105,6 +120,8 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
   /**
    * Returns a {@link BinarySearch} for indexes in the given sorted double {@code array}.
    * The positive {@code tolerance} is respected when comparing double values.
+   *
+   * <p>For example: {@code inSortedListWithTolerance(tempuratures, 0.1).find(30)}.
    */
   public static BinarySearch<Double, Integer> inSortedListWithTolerance(
       List<Double> list, double tolerance) {
@@ -119,6 +136,8 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
   /**
    * Returns a {@link BinarySearch} for indexes in the given sorted double {@code array}.
    * The positive {@code tolerance} is respected when comparing double values.
+   *
+   * <p>For example: {@code inSortedArrayWithTolerance(tempuratures, 0.1).find(30)}.
    */
   public static BinarySearch<Double, Integer> inSortedArrayWithTolerance(
       double[] array, double tolerance) {
@@ -136,6 +155,8 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * <p>Callers can search by an {@link IndexedSearchTarget} object that will be called at each iteration
    * to determine whether the target is already found at the current mid-point, to the left half of the
    * current subrange, or to the right half of the current subrange.
+   *
+   * @see {@link forInts(Range)} for examples
    */
   public static BinarySearch<IndexedSearchTarget, Integer> forInts() {
     return forInts(all());
@@ -147,61 +168,8 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * <p>Callers can search by an {@link IndexedSearchTarget} object that will be called at each iteration
    * to determine whether the target is already found at the current mid-point, to the left half of the
    * current subrange, or to the right half of the current subrange.
-   */
-  public static BinarySearch<IndexedSearchTarget, Integer> forInts(Range<Integer> range) {
-    Integer low = low(range, integers());
-    if (low == null) {
-      return always(InsertionPoint.before(range.lowerEndpoint()));
-    }
-    Integer high = high(range, integers());
-    if (high == null) {
-      return always(InsertionPoint.after(range.upperEndpoint()));
-    }
-    return inRangeInclusive(low, high);
-  }
-
-  /**
-   * Returns a {@link BinarySearch} over all {@code long} integers.
    *
-   * <p>Callers can search by a {@link LongIndexedSearchTarget} object that will be called at each iteration
-   * to determine whether the target is already found at the current mid-point, to the left half of the
-   * current subrange, or to the right half of the current subrange.
-   */
-  public static BinarySearch<LongIndexedSearchTarget, Long> forLongs() {
-    return forLongs(all());
-  }
-
-  /**
-   * Returns a {@link BinarySearch} over the given {@code range} of {@code long} integers.
-   *
-   * <p>Callers can search by a {@link LongIndexedSearchTarget} object that will be called at each iteration
-   * to determine whether the target is already found at the current mid-point, to the left half of the
-   * current subrange, or to the right half of the current subrange.
-   */
-  public static BinarySearch<LongIndexedSearchTarget, Long> forLongs(Range<Long> range) {
-    Long low = low(range, longs());
-    if (low == null) {
-      return always(InsertionPoint.before(range.lowerEndpoint()));
-    }
-    Long high = high(range, longs());
-    if (high == null) {
-      return always(InsertionPoint.after(range.upperEndpoint()));
-    }
-    return inRangeInclusive(low, high);
-  }
-
-  /**
-   * Searches for the index of {@code target}.
-   *
-   * <p>
-   * If target is found, returns the matching integer; otherwise returns empty.
-   *
-   * <p>
-   * Prefer using {@link java.util.Arrays#binarySearch} and
-   * {@link java.util.Collections#binarySearch} when possible.
-   *
-   * <p>
-   * While the common use cases of binary search is to search in sorted arrays and
+   * <p>While the common use cases of binary search is to search in sorted arrays and
    * lists, there are diverse contexts where the algorithm is also applicable
    * (think of the Guess the Number game). As a more realistic example, you can
    * binary search a rotated, otherwise strictly-ordered array, using the
@@ -224,6 +192,63 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * }
    * }
    * </pre>
+   */
+  public static BinarySearch<IndexedSearchTarget, Integer> forInts(Range<Integer> range) {
+    Integer low = low(range, integers());
+    if (low == null) {
+      return always(InsertionPoint.before(range.lowerEndpoint()));
+    }
+    Integer high = high(range, integers());
+    if (high == null) {
+      return always(InsertionPoint.after(range.upperEndpoint()));
+    }
+    return inRangeInclusive(low, high);
+  }
+
+  /**
+   * Similar to {@link #forInts()}, but returns a {@link BinarySearch} over all {@code long} integers.
+   *
+   * <p>Callers can search by a {@link LongIndexedSearchTarget} object that will be called at each iteration
+   * to determine whether the target is already found at the current mid-point, to the left half of the
+   * current subrange, or to the right half of the current subrange.
+   *
+   * <p>For example, if we are to emulate the "Guess The Number" game, there will be a secret number
+   * and we can bisect the full long integer domain to find the number as in:
+   *
+   * <pre>{@code
+   * Optional<Long> guessed = forLongs().find((low, mid, high) -> Integer.compare(secret, mid));
+   * assertThat(guessed).hasValue(secret);
+   * }</pre>
+   */
+  public static BinarySearch<LongIndexedSearchTarget, Long> forLongs() {
+    return forLongs(all());
+  }
+
+  /**
+   * Similar to {@link #forInts(Range)}, but returns a {@link BinarySearch} over the given
+   * {@code range} of {@code long} integers.
+   *
+   * <p>Callers can search by a {@link LongIndexedSearchTarget} object that will be called at each iteration
+   * to determine whether the target is already found at the current mid-point, to the left half of the
+   * current subrange, or to the right half of the current subrange.
+   */
+  public static BinarySearch<LongIndexedSearchTarget, Long> forLongs(Range<Long> range) {
+    Long low = low(range, longs());
+    if (low == null) {
+      return always(InsertionPoint.before(range.lowerEndpoint()));
+    }
+    Long high = high(range, longs());
+    if (high == null) {
+      return always(InsertionPoint.after(range.upperEndpoint()));
+    }
+    return inRangeInclusive(low, high);
+  }
+
+  /**
+   * Searches for the index of {@code target}.
+   *
+   * <p>
+   * If target is found, returns the matching integer; otherwise returns empty.
    *
    * <p>This is an O(logn) operation.
    */
