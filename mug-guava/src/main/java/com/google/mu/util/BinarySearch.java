@@ -27,8 +27,10 @@ import com.google.common.math.DoubleMath;
  * BinarySearch.inSortedArray([10, 20, 30, 40]).insertionPointFor(22) => InsertionPoint.before(2)
  * BinarySearch.inSortedArrayWithTolerance([1.1, 2.1, 2.2, 2.3, 3.3, 4.4], 0.5).rangeOf(2D)
  *     => Range.closed(1, 3)
+ *
+ * // Guess The Number Game
  * BinarySearch.forInts().find((lo, mid, hi) -> tooHighOrTooLow(mid))
- *     => Optional.of(the gussed number)
+ *     => Optional.of(theGuessedNumber)
  * }</pre>
  *
  * <p>The {@link #forInts}, {@link #forLongs} and the primitive array search methods performs no boxing in the
