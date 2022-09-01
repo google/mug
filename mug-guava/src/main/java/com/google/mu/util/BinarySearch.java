@@ -40,7 +40,7 @@ import com.google.common.math.DoubleMath;
  * comparator supports null, no other {@code BinarySearch} implementations support null keys.
  *
  * @param <K> the search key
- * @param <C> the comparable search result (typically a numeric index)
+ * @param <C> the binary search result (typically a numeric index)
  * @since 6.4
  */
 public abstract class BinarySearch<K, C extends Comparable<C>> {
