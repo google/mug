@@ -252,7 +252,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    *
    * <p>This is an O(logn) operation.
    */
-  public final Optional<R> find(@Nullable Q target) {
+  public Optional<R> find(Q target) {
     return insertionPointFor(target).exact();
   }
 
@@ -270,7 +270,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    *
    * <p>This is an O(logn) operation.
    */
-  public final Range<R> rangeOf(@Nullable Q target) {
+  public Range<R> rangeOf(Q target) {
     InsertionPoint<R> left = insertionPointBefore(target);
     InsertionPoint<R> right = insertionPointAfter(target);
     if (!left.equals(right)) {
@@ -316,7 +316,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    *
    * <p>This is an O(logn) operation.
    */
-  public abstract InsertionPoint<R> insertionPointFor(@Nullable Q target);
+  public abstract InsertionPoint<R> insertionPointFor(Q target);
 
   /**
    * Finds the insertion point immediately before the first element that's greater than or equal to the target.
@@ -328,7 +328,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    *
    * <p>This is an O(logn) operation.
    */
-  public abstract InsertionPoint<R> insertionPointBefore(@Nullable Q target);
+  public abstract InsertionPoint<R> insertionPointBefore(Q target);
 
   /**
    * Finds the insertion point immediately after the last element that's less than or equal to the target.
@@ -340,7 +340,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    *
    * <p>This is an O(logn) operation.
    */
-  public abstract InsertionPoint<R> insertionPointAfter(@Nullable Q target);
+  public abstract InsertionPoint<R> insertionPointAfter(Q target);
 
   /**
    * Returns a new {@link BinarySearch} over the same source but transforms
@@ -354,6 +354,12 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
     checkNotNull(keyFunction);
     BinarySearch<Q, R> underlying = this;
     return new BinarySearch<K, R>() {
+      @Override public Optional<R> find(@Nullable K target) {
+        return super.find(target);
+      }
+      @Override public Range<R> rangeOf(@Nullable K target) {
+        return super.rangeOf(target);
+      }
       @Override public InsertionPoint<R> insertionPointFor(@Nullable K target) {
         return underlying.insertionPointFor(keyFunction.apply(target));
       }
