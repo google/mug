@@ -44,8 +44,9 @@ import com.google.common.math.DoubleMath;
  * <p>The {@link #forInts}, {@link #forLongs} and the primitive array search methods perform no
  * boxing in the O(logn) search operation.
  *
- * <p>Note that except {@link #inSortedList(List, Comparator)}, which may support null keys if the
- * comparator supports null, no other {@code BinarySearch} implementations support null keys.
+ * <p>Note that except {@link #inSortedList(List, Comparator)}, which may support null search
+ * targets if the comparator supports nulls, no other {@code BinarySearch} implementations
+ * allow null queries.
  *
  * @param <Q> the search query, usually a target value, but can also be a target locator object
  *     like {@link IndexedSearchTarget}.
