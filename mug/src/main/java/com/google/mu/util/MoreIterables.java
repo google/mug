@@ -19,6 +19,7 @@ import static java.util.Objects.requireNonNull;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.RandomAccess;
 import java.util.function.BiPredicate;
 
 /**
@@ -73,7 +74,7 @@ public final class MoreIterables {
   }
 
   private static boolean isRandomAccessList(Iterable<?> iterable) {
-    return iterable instanceof List && iterable instanceof List;
+    return iterable instanceof RandomAccess && iterable instanceof List;
   }
 
   private MoreIterables() {}
