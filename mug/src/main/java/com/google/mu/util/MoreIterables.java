@@ -40,7 +40,7 @@ public final class MoreIterables {
    * Optional} into a {@code Set} using {@link com.google.mu.util.Optionals#asSet}. For
    * example:
    *
-   * <pre>{
+   * <pre>{@code
    * pairwise(asSet(resultProto1), asSet(resultProto2), differencer::compare)
    * }</pre>
    */
