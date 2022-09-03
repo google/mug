@@ -188,6 +188,20 @@ public class BinarySearchTest {
   }
 
   @Test
+  public void forInts_useMinValueForLeft() {
+    assertThat(BinarySearch.forInts(atMost(Integer.MIN_VALUE)).find((l, i, h) -> Integer.MIN_VALUE))
+        .isEmpty();
+    assertThat(BinarySearch.forInts(atMost(Integer.MIN_VALUE)).rangeOf((l, i, h) -> Integer.MIN_VALUE))
+        .isEqualTo(Range.closedOpen(Integer.MIN_VALUE, Integer.MIN_VALUE));
+    assertThat(BinarySearch.forInts(atMost(Integer.MIN_VALUE)).insertionPointFor((l, i, h) -> Integer.MIN_VALUE))
+        .isEqualTo(InsertionPoint.before(Integer.MIN_VALUE));
+    assertThat(BinarySearch.forInts(atMost(Integer.MIN_VALUE)).insertionPointBefore((l, i, h) -> Integer.MIN_VALUE))
+        .isEqualTo(InsertionPoint.before(Integer.MIN_VALUE));
+    assertThat(BinarySearch.forInts(atMost(Integer.MIN_VALUE)).insertionPointAfter((l, i, h) -> Integer.MIN_VALUE))
+        .isEqualTo(InsertionPoint.before(Integer.MIN_VALUE));
+  }
+
+  @Test
   public void forInts_preventsUderflow_shouldBeBefore() {
     assertThat(BinarySearch.forInts(atMost(Integer.MIN_VALUE)).find((l, i, h) -> -1))
         .isEmpty();
@@ -199,6 +213,20 @@ public class BinarySearchTest {
         .isEqualTo(InsertionPoint.before(Integer.MIN_VALUE));
     assertThat(BinarySearch.forInts(atMost(Integer.MIN_VALUE)).insertionPointAfter((l, i, h) -> -1))
         .isEqualTo(InsertionPoint.before(Integer.MIN_VALUE));
+  }
+
+  @Test
+  public void forInts_useMaxValueForRight() {
+    assertThat(BinarySearch.forInts(atMost(Integer.MIN_VALUE)).find((l, i, h) -> Integer.MAX_VALUE))
+        .isEmpty();
+    assertThat(BinarySearch.forInts(atMost(Integer.MIN_VALUE)).rangeOf((l, i, h) -> Integer.MAX_VALUE))
+        .isEqualTo(Range.closedOpen(Integer.MIN_VALUE + 1, Integer.MIN_VALUE + 1));
+    assertThat(BinarySearch.forInts(atMost(Integer.MIN_VALUE)).insertionPointFor((l, i, h) -> Integer.MAX_VALUE))
+        .isEqualTo(InsertionPoint.after(Integer.MIN_VALUE));
+    assertThat(BinarySearch.forInts(atMost(Integer.MIN_VALUE)).insertionPointBefore((l, i, h) -> Integer.MAX_VALUE))
+        .isEqualTo(InsertionPoint.after(Integer.MIN_VALUE));
+    assertThat(BinarySearch.forInts(atMost(Integer.MIN_VALUE)).insertionPointAfter((l, i, h) -> Integer.MAX_VALUE))
+        .isEqualTo(InsertionPoint.after(Integer.MIN_VALUE));
   }
 
   @Test
@@ -216,7 +244,21 @@ public class BinarySearchTest {
   }
 
   @Test
-  public void forLongs__preventsUderflow_shouldBeBefore() {
+  public void forLongs_useMinValueForLeft() {
+    assertThat(BinarySearch.forLongs(atMost(Long.MIN_VALUE)).find((l, i, h) -> Integer.MIN_VALUE))
+        .isEmpty();
+    assertThat(BinarySearch.forLongs(atMost(Long.MIN_VALUE)).rangeOf((l, i, h) -> Integer.MIN_VALUE))
+        .isEqualTo(Range.closedOpen(Long.MIN_VALUE, Long.MIN_VALUE));
+    assertThat(BinarySearch.forLongs(atMost(Long.MIN_VALUE)).insertionPointFor((l, i, h) -> Integer.MIN_VALUE))
+        .isEqualTo(InsertionPoint.before(Long.MIN_VALUE));
+    assertThat(BinarySearch.forLongs(atMost(Long.MIN_VALUE)).insertionPointBefore((l, i, h) -> Integer.MIN_VALUE))
+        .isEqualTo(InsertionPoint.before(Long.MIN_VALUE));
+    assertThat(BinarySearch.forLongs(atMost(Long.MIN_VALUE)).insertionPointAfter((l, i, h) -> Integer.MIN_VALUE))
+        .isEqualTo(InsertionPoint.before(Long.MIN_VALUE));
+  }
+
+  @Test
+  public void forLongs_preventsUderflow_shouldBeBefore() {
     assertThat(BinarySearch.forLongs(atMost(Long.MIN_VALUE)).find((l, i, h) -> -1))
         .isEmpty();
     assertThat(BinarySearch.forLongs(atMost(Long.MIN_VALUE)).rangeOf((l, i, h) -> -1))
@@ -230,7 +272,21 @@ public class BinarySearchTest {
   }
 
   @Test
-  public void forLongs__preventsUnderflow_shouldBeAfter() {
+  public void forLongs_useMaxValueForRight() {
+    assertThat(BinarySearch.forLongs(atMost(Long.MIN_VALUE)).find((l, i, h) -> Integer.MAX_VALUE))
+        .isEmpty();
+    assertThat(BinarySearch.forLongs(atMost(Long.MIN_VALUE)).rangeOf((l, i, h) -> Integer.MAX_VALUE))
+        .isEqualTo(Range.closedOpen(Long.MIN_VALUE + 1, Long.MIN_VALUE + 1));
+    assertThat(BinarySearch.forLongs(atMost(Long.MIN_VALUE)).insertionPointFor((l, i, h) -> Integer.MAX_VALUE))
+        .isEqualTo(InsertionPoint.after(Long.MIN_VALUE));
+    assertThat(BinarySearch.forLongs(atMost(Long.MIN_VALUE)).insertionPointBefore((l, i, h) -> Integer.MAX_VALUE))
+        .isEqualTo(InsertionPoint.after(Long.MIN_VALUE));
+    assertThat(BinarySearch.forLongs(atMost(Long.MIN_VALUE)).insertionPointAfter((l, i, h) -> Integer.MAX_VALUE))
+        .isEqualTo(InsertionPoint.after(Long.MIN_VALUE));
+  }
+
+  @Test
+  public void forLongs_preventsUnderflow_shouldBeAfter() {
     assertThat(BinarySearch.forLongs(atMost(Long.MIN_VALUE)).find((l, i, h) -> 1))
         .isEmpty();
     assertThat(BinarySearch.forLongs(atMost(Long.MIN_VALUE)).rangeOf((l, i, h) -> 1))
