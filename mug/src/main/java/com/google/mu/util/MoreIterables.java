@@ -16,9 +16,9 @@ package com.google.mu.util;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.RandomAccess;
 import java.util.function.BiPredicate;
 
 /**
@@ -46,14 +46,14 @@ public final class MoreIterables {
   public static <A, B> boolean pairwise(
       Iterable<A> left, Iterable<B> right, BiPredicate<? super A, ? super B> matcher) {
     requireNonNull(matcher);
-    if (left instanceof List && right instanceof List) {
-      List<A> list1 = (List<A>) left;
-      List<B> list2 = (List<B>) right;
-      if (list1.size() != list2.size()) {
+    if (left instanceof Collection && right instanceof Collection) {
+      int size = ((Collection<?>) left).size();
+      if (((Collection<?>) right).size() != size) {
         return false;
       }
-      if (left instanceof RandomAccess && right instanceof RandomAccess) {
-        int size = list1.size();
+      if (isRandomAccessList(left) && isRandomAccessList(right)) {
+        List<A> list1 = (List<A>) left;
+        List<B> list2 = (List<B>) right;
         for (int i = 0; i < size; i++) {
           if (!matcher.test(list1.get(i), list2.get(i))) {
             return false;
@@ -70,6 +70,10 @@ public final class MoreIterables {
       }
     }
     return l.hasNext() == r.hasNext();
+  }
+
+  private static boolean isRandomAccessList(Iterable<?> iterable) {
+    return iterable instanceof List && iterable instanceof List;
   }
 
   private MoreIterables() {}
