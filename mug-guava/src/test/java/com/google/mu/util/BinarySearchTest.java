@@ -33,6 +33,7 @@ import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 @RunWith(TestParameterInjector.class)
 public class BinarySearchTest {
+  private static final Range<Double> INFINITE_DOUBLE = Range.closed(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
   @Rule public final Expect expect = Expect.create();
 
   @Test
@@ -1010,17 +1011,17 @@ public class BinarySearchTest {
   }
 
   @Test
-  public void binarySearchSqrt_smallNumbers() {
-    assertThat(sqrt().insertionPointFor(4L).floor()).isEqualTo(2);
-    assertThat(sqrt().insertionPointFor(1L).floor()).isEqualTo(1);
-    assertThat(sqrt().insertionPointFor(0L).floor()).isEqualTo(0);
-    assertThat(sqrt().insertionPointFor(5L).floor()).isEqualTo(2);
-    assertThat(sqrt().insertionPointFor(101L).floor()).isEqualTo(10);
-    assertThat(sqrt().insertionPointFor(4097L).floor()).isEqualTo(64);
+  public void binarySearchIntSqrt_smallNumbers() {
+    assertThat(intSqrt().insertionPointFor(4L).floor()).isEqualTo(2);
+    assertThat(intSqrt().insertionPointFor(1L).floor()).isEqualTo(1);
+    assertThat(intSqrt().insertionPointFor(0L).floor()).isEqualTo(0);
+    assertThat(intSqrt().insertionPointFor(5L).floor()).isEqualTo(2);
+    assertThat(intSqrt().insertionPointFor(101L).floor()).isEqualTo(10);
+    assertThat(intSqrt().insertionPointFor(4097L).floor()).isEqualTo(64);
   }
 
   @Test
-  public void binarySearchSqrt_largeNumbers() {
+  public void binarySearchIntSqrt_largeNumbers() {
     int[] numbers = {
       Integer.MAX_VALUE,
       Integer.MAX_VALUE - 1,
@@ -1030,13 +1031,145 @@ public class BinarySearchTest {
     };
     for (int n : numbers) {
       long square = ((long) n) * n;
-      assertThat(sqrt().insertionPointFor(square).floor()).isEqualTo(n);
-      assertThat(sqrt().insertionPointFor(square + 1).floor()).isEqualTo(n);
-      assertThat(sqrt().insertionPointFor(square - 1).floor()).isEqualTo(n - 1);
-      assertThat(sqrt().find(square)).hasValue(n);
-      assertThat(sqrt().find(square + 1)).isEmpty();
-      assertThat(sqrt().find(square - 1)).isEmpty();
+      assertThat(intSqrt().insertionPointFor(square).floor()).isEqualTo(n);
+      assertThat(intSqrt().insertionPointFor(square + 1).floor()).isEqualTo(n);
+      assertThat(intSqrt().insertionPointFor(square - 1).floor()).isEqualTo(n - 1);
+      assertThat(intSqrt().find(square)).hasValue(n);
+      assertThat(intSqrt().find(square + 1)).isEmpty();
+      assertThat(intSqrt().find(square - 1)).isEmpty();
     }
+  }
+
+  @Test
+  public void binarySearchDoubleSqrt_smallNumbers(
+      @TestParameter(
+          {"0", "0.1", "0.2", "0.5", "1", "2", "3", "4", "5", "10", "20", "100", "1000", "9999999999"})
+      double square) {
+    double epsilon = 0.0000000001;
+    InsertionPoint<Double> insertionPoint = sqrtDouble().insertionPointFor(square);
+    assertThat(insertionPoint.floor()).isWithin(epsilon).of(Math.sqrt(square));
+    assertThat(insertionPoint.ceiling()).isWithin(epsilon).of(Math.sqrt(square));
+  }
+
+  @Test
+  public void binarySearchDoubles_fullRange_smallNumberFound(
+      @TestParameter(
+          {"0", "0.1", "1", "100", "1000", "9999999999", "-1", "-100.345", "-999999.999"})
+      double secret) {
+    InsertionPoint<Double> insertionPoint =
+        BinarySearch.forDoubles()
+            .insertionPointFor((low, mid, high) -> Double.compare(secret, mid));
+    assertThat(insertionPoint.floor()).isWithin(Double.MIN_VALUE).of(secret);
+    assertThat(insertionPoint.ceiling()).isWithin(Double.MIN_VALUE).of(secret);
+  }
+
+  @Test
+  public void binarySearchDoubles_fullRange_maxValueFound() {
+    Double secret = Double.MAX_VALUE;
+    InsertionPoint<Double> insertionPoint =
+        BinarySearch.forDoubles()
+            .insertionPointFor((low, mid, high) -> Double.compare(secret, mid));
+    assertThat(insertionPoint.floor()).isWithin(Double.MIN_VALUE).of(secret);
+    assertThat(insertionPoint.ceiling()).isWithin(Double.MIN_VALUE).of(secret);
+  }
+
+  @Test
+  public void binarySearchDoubles_fullRange_minValueFound() {
+    Double secret = -Double.MAX_VALUE;
+    InsertionPoint<Double> insertionPoint =
+        BinarySearch.forDoubles()
+            .insertionPointFor((low, mid, high) -> Double.compare(secret, mid));
+    assertThat(insertionPoint.floor()).isWithin(Double.MIN_VALUE).of(secret);
+    assertThat(insertionPoint.ceiling()).isWithin(Double.MIN_VALUE).of(secret);
+  }
+
+  @Test
+  public void binarySearchDoubles_fullRange_infinityNotFound() {
+    Double secret = Double.POSITIVE_INFINITY;
+    InsertionPoint<Double> insertionPoint =
+        BinarySearch.forDoubles()
+            .insertionPointFor((low, mid, high) -> Double.compare(secret, mid));
+    assertThat(insertionPoint.floor()).isEqualTo(Double.MAX_VALUE);
+    assertThat(insertionPoint.ceiling()).isEqualTo(Double.POSITIVE_INFINITY);
+  }
+
+  @Test
+  public void binarySearchDoubles_fullRange_negativeInfinityNotFound() {
+    Double secret = Double.NEGATIVE_INFINITY;
+    InsertionPoint<Double> insertionPoint =
+        BinarySearch.forDoubles()
+            .insertionPointFor((low, mid, high) -> Double.compare(secret, mid));
+    assertThat(insertionPoint.ceiling()).isEqualTo(-Double.MAX_VALUE);
+    assertThat(insertionPoint.floor()).isEqualTo(Double.NEGATIVE_INFINITY);
+  }
+
+  @Test
+  public void binarySearchDoubles_negativeRange_smallNumberFound(
+      @TestParameter({"-1", "-100.345", "-999999.999"}) double secret) {
+    InsertionPoint<Double> insertionPoint =
+        BinarySearch.forDoubles(lessThan(0D))
+            .insertionPointFor((low, mid, high) -> Double.compare(secret, mid));
+    assertThat(insertionPoint.floor()).isWithin(Double.MIN_VALUE).of(secret);
+    assertThat(insertionPoint.ceiling()).isWithin(Double.MIN_VALUE).of(secret);
+  }
+
+  @Test
+  public void binarySearchDoubles_negativeRange_maxValueFound() {
+    Double secret = -Double.MIN_VALUE;
+    InsertionPoint<Double> insertionPoint =
+        BinarySearch.forDoubles(lessThan(0D))
+            .insertionPointFor((low, mid, high) -> Double.compare(secret, mid));
+    assertThat(insertionPoint.floor()).isWithin(2 * Double.MIN_VALUE).of(secret);
+    assertThat(insertionPoint.ceiling()).isWithin(2 * Double.MIN_VALUE).of(secret);
+  }
+
+  @Test
+  public void binarySearchDoubles_negativeRange_minValueFound() {
+    Double secret = -Double.MAX_VALUE;
+    InsertionPoint<Double> insertionPoint =
+        BinarySearch.forDoubles(lessThan(0D))
+            .insertionPointFor((low, mid, high) -> Double.compare(secret, mid));
+    assertThat(insertionPoint.floor()).isWithin(Double.MIN_VALUE).of(secret);
+    assertThat(insertionPoint.ceiling()).isWithin(Double.MIN_VALUE).of(secret);
+  }
+
+  @Test
+  public void binarySearchDoubles_negativeRange_infinityNotFound() {
+    Double secret = Double.POSITIVE_INFINITY;
+    InsertionPoint<Double> insertionPoint =
+        BinarySearch.forDoubles(lessThan(0D))
+            .insertionPointFor((low, mid, high) -> Double.compare(secret, mid));
+    assertThat(insertionPoint.floor()).isWithin(Double.MIN_VALUE).of(0);
+    assertThat(insertionPoint.ceiling()).isEqualTo(Double.POSITIVE_INFINITY);
+  }
+
+  @Test
+  public void binarySearchDoubles_negativeRange_negativeInfinityNotFound() {
+    Double secret = Double.NEGATIVE_INFINITY;
+    InsertionPoint<Double> insertionPoint =
+        BinarySearch.forDoubles(lessThan(0D))
+            .insertionPointFor((low, mid, high) -> Double.compare(secret, mid));
+    assertThat(insertionPoint.ceiling()).isEqualTo(-Double.MAX_VALUE);
+    assertThat(insertionPoint.floor()).isEqualTo(Double.NEGATIVE_INFINITY);
+  }
+
+  @Test
+  public void binarySearchDoubles_infiniteRange_disallowed() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> BinarySearch.forDoubles(closed(Double.NEGATIVE_INFINITY, 0D)));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> BinarySearch.forDoubles(closed(Double.NaN, 0D)));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> BinarySearch.forDoubles(closed(0D, Double.POSITIVE_INFINITY)));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> BinarySearch.forDoubles(closed(0D, Double.NaN)));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> BinarySearch.forDoubles(closed(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY)));
   }
 
   @Test
@@ -1116,9 +1249,14 @@ public class BinarySearchTest {
         });
   }
 
-  private static BinarySearch<Long, Integer> sqrt() {
+  private static BinarySearch<Long, Integer> intSqrt() {
     return BinarySearch.forInts(atLeast(0))
         .by(square -> (low, mid, high) -> Long.compare(square, (long) mid * mid));
+  }
+
+  private static BinarySearch<Double, Double> sqrtDouble() {
+    return BinarySearch.forDoubles(atLeast(0D))
+        .by(square -> (low, mid, high) -> Double.compare(square, mid * mid));
   }
 
   static class NegativeValues implements TestParameter.TestParameterValuesProvider {

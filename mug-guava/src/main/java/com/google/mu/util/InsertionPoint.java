@@ -14,6 +14,7 @@
  *****************************************************************************/
 package com.google.mu.util;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.mu.util.Optionals.optional;
 import static java.util.Comparator.naturalOrder;
@@ -133,6 +134,12 @@ public final class InsertionPoint<C extends Comparable<C>> implements Comparable
   public static <C extends Comparable<C>> InsertionPoint<C> after(
       C floor, DiscreteDomain<C> domain) {
     return new InsertionPoint<>(floor, domain.next(floor));
+  }
+
+  /** Returns an insertion point in the open range of {@code (floor, ceiling)}. */
+  public static InsertionPoint<Double> between(double floor, double ceiling) {
+    checkArgument(floor <= ceiling, "Not true that floor(%s) <= ceiling(%s)", floor, ceiling);
+    return new InsertionPoint<>(floor, ceiling);
   }
 
   /**
