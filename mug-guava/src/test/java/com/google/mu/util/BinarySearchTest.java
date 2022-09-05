@@ -1058,8 +1058,8 @@ public class BinarySearchTest {
     InsertionPoint<Double> insertionPoint =
         BinarySearch.forDoubles()
             .insertionPointFor((low, mid, high) -> Double.compare(secret, mid));
-    assertThat(insertionPoint.floor()).isWithin(Double.MIN_VALUE).of(secret);
-    assertThat(insertionPoint.ceiling()).isWithin(Double.MIN_VALUE).of(secret);
+    assertThat(insertionPoint.floor()).isEqualTo(secret);
+    assertThat(insertionPoint.ceiling()).isEqualTo(secret);
   }
 
   @Test
@@ -1068,8 +1068,8 @@ public class BinarySearchTest {
     InsertionPoint<Double> insertionPoint =
         BinarySearch.forDoubles()
             .insertionPointFor((low, mid, high) -> Double.compare(secret, mid));
-    assertThat(insertionPoint.floor()).isWithin(Double.MIN_VALUE).of(secret);
-    assertThat(insertionPoint.ceiling()).isWithin(Double.MIN_VALUE).of(secret);
+    assertThat(insertionPoint.floor()).isEqualTo(secret);
+    assertThat(insertionPoint.ceiling()).isEqualTo(secret);
   }
 
   @Test
@@ -1088,8 +1088,8 @@ public class BinarySearchTest {
     InsertionPoint<Double> insertionPoint =
         BinarySearch.forDoubles()
             .insertionPointFor((low, mid, high) -> Double.compare(secret, mid));
-    assertThat(insertionPoint.floor()).isWithin(Double.MIN_VALUE).of(secret);
-    assertThat(insertionPoint.ceiling()).isWithin(Double.MIN_VALUE).of(secret);
+    assertThat(insertionPoint.floor()).isEqualTo(secret);
+    assertThat(insertionPoint.ceiling()).isEqualTo(secret);
   }
 
   @Test
@@ -1110,8 +1110,8 @@ public class BinarySearchTest {
     InsertionPoint<Double> insertionPoint =
         BinarySearch.forDoubles(Range.atLeast(0D))
             .insertionPointFor((low, mid, high) -> Double.compare(secret, mid));
-    assertThat(insertionPoint.floor()).isWithin(Double.MIN_VALUE).of(secret);
-    assertThat(insertionPoint.ceiling()).isWithin(Double.MIN_VALUE).of(secret);
+    assertThat(insertionPoint.floor()).isEqualTo(secret);
+    assertThat(insertionPoint.ceiling()).isEqualTo(secret);
   }
 
   @Test
@@ -1122,8 +1122,8 @@ public class BinarySearchTest {
     InsertionPoint<Double> insertionPoint =
         BinarySearch.forDoubles(Range.greaterThan(0D))
             .insertionPointFor((low, mid, high) -> Double.compare(secret, mid));
-    assertThat(insertionPoint.floor()).isWithin(Double.MIN_VALUE).of(secret);
-    assertThat(insertionPoint.ceiling()).isWithin(Double.MIN_VALUE).of(secret);
+    assertThat(insertionPoint.floor()).isEqualTo(secret);
+    assertThat(insertionPoint.ceiling()).isEqualTo(secret);
   }
 
   @Test
@@ -1132,8 +1132,8 @@ public class BinarySearchTest {
     InsertionPoint<Double> insertionPoint =
         BinarySearch.forDoubles(Range.greaterThan(0D))
             .insertionPointFor((low, mid, high) -> Double.compare(secret, mid));
-    assertThat(insertionPoint.floor()).isWithin(Double.MIN_VALUE).of(secret);
-    assertThat(insertionPoint.ceiling()).isWithin(Double.MIN_VALUE).of(secret);
+    assertThat(insertionPoint.floor()).isEqualTo(secret);
+    assertThat(insertionPoint.ceiling()).isEqualTo(secret);
   }
 
   @Test
@@ -1142,8 +1142,8 @@ public class BinarySearchTest {
     InsertionPoint<Double> insertionPoint =
         BinarySearch.forDoubles(Range.greaterThan(0D))
             .insertionPointFor((low, mid, high) -> Double.compare(secret, mid));
-    assertThat(insertionPoint.floor()).isWithin(Double.MIN_VALUE).of(secret);
-    assertThat(insertionPoint.ceiling()).isWithin(Double.MIN_VALUE).of(secret);
+    assertThat(insertionPoint.floor()).isEqualTo(secret);
+    assertThat(insertionPoint.ceiling()).isEqualTo(secret);
   }
 
   @Test
@@ -1265,8 +1265,8 @@ public class BinarySearchTest {
     InsertionPoint<Double> insertionPoint =
         BinarySearch.forDoubles(lessThan(0D))
             .insertionPointFor((low, mid, high) -> Double.compare(secret, mid));
-    assertThat(insertionPoint.floor()).isWithin(Double.MIN_VALUE).of(secret);
-    assertThat(insertionPoint.ceiling()).isWithin(Double.MIN_VALUE).of(secret);
+    assertThat(insertionPoint.floor()).isEqualTo(secret);
+    assertThat(insertionPoint.ceiling()).isEqualTo(secret);
   }
 
   @Test
@@ -1285,8 +1285,8 @@ public class BinarySearchTest {
     InsertionPoint<Double> insertionPoint =
         BinarySearch.forDoubles(lessThan(0D))
             .insertionPointFor((low, mid, high) -> Double.compare(secret, mid));
-    assertThat(insertionPoint.floor()).isWithin(Double.MIN_VALUE).of(secret);
-    assertThat(insertionPoint.ceiling()).isWithin(Double.MIN_VALUE).of(secret);
+    assertThat(insertionPoint.floor()).isEqualTo(secret);
+    assertThat(insertionPoint.ceiling()).isEqualTo(secret);
   }
 
   @Test
@@ -1296,7 +1296,7 @@ public class BinarySearchTest {
         BinarySearch.forDoubles(lessThan(0D))
             .insertionPointFor((low, mid, high) -> Double.compare(secret, mid));
     assertThat(insertionPoint.exact()).isEmpty();
-    assertThat(insertionPoint.floor()).isWithin(Double.MIN_NORMAL).of(-Double.MIN_VALUE);
+    assertThat(insertionPoint.floor()).isEqualTo(-Double.MIN_VALUE);
     assertThat(insertionPoint.ceiling()).isEqualTo(Double.POSITIVE_INFINITY);
   }
 
