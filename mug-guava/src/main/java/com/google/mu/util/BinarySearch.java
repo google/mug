@@ -558,21 +558,19 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
   private static BinarySearch<DoubleSearchTarget, Double> inRangeInclusive(
       final double from, final double to) {
     checkArgument(from <= to, "Empty range not supported from(%s) > to (%s)", from, to);
-    final double minStep = Double.MIN_VALUE;
     return new BinarySearch<DoubleSearchTarget, Double>() {
       @Override public InsertionPoint<Double> insertionPointFor(DoubleSearchTarget target) {
         checkNotNull(target);
         double floor = Double.NEGATIVE_INFINITY;
         double ceiling = Double.POSITIVE_INFINITY;
-        double step = minStep;
-        for (double low = from, high = to; ;) {
+        for (double low = from, high = to, increment = Double.MIN_VALUE; ;) {
           double mid = safeMidForDouble(low, high);
           int where = target.locate(low, mid, high);
           if (where > 0) {
-            double higherLow = mid + step;
+            double higherLow = mid + increment;
             while (higherLow <= low) {
-              step *= 2;
-              higherLow = mid + step;
+              increment *= 2;
+              higherLow = mid + increment;
             }
             if (higherLow > high) { // mid is the floor
               if (ceiling > to && target.locate(to, to, to) <= 0) {
@@ -583,10 +581,10 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
             low = higherLow;
             floor = mid;
           } else if (where < 0) {
-            double lowerHigh = mid - step;
+            double lowerHigh = mid - increment;
             while (lowerHigh >= high) {
-              step *= 2;
-              lowerHigh = mid - step;
+              increment *= 2;
+              lowerHigh = mid - increment;
             }
             if (lowerHigh < low) { // mid is the ceiling
               if (floor < from && target.locate(from, from, from) >= 0) {
