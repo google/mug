@@ -63,7 +63,7 @@ import com.google.common.math.DoubleMath;
  * allow null queries.
  *
  * @param <Q> the search query, usually a target value, but can also be a target locator object
- *     like {@link IndexedSearchTarget}.
+ *     like {@link IntSearchTarget}.
  * @param <R> the binary search result, usually the index in the source array or list, but can also
  *     be the optimal solution in non-array based bisection algorithms.
  * @since 6.4
@@ -167,20 +167,20 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
   /**
    * Returns a {@link BinarySearch} over all integers.
    *
-   * <p>Callers can search by an {@link IndexedSearchTarget} object that will be called at each iteration
+   * <p>Callers can search by an {@link IntSearchTarget} object that will be called at each iteration
    * to determine whether the target is already found at the current mid-point, to the left half of the
    * current subrange, or to the right half of the current subrange.
    *
    * @see {@link #forInts(Range)} for examples
    */
-  public static BinarySearch<IndexedSearchTarget, Integer> forInts() {
+  public static BinarySearch<IntSearchTarget, Integer> forInts() {
     return forInts(all());
   }
 
   /**
    * Returns a {@link BinarySearch} over the given {@code range}.
    *
-   * <p>Callers can search by an {@link IndexedSearchTarget} object that will be called at each iteration
+   * <p>Callers can search by an {@link IntSearchTarget} object that will be called at each iteration
    * to determine whether the target is already found at the current mid-point, to the left half of the
    * current subrange, or to the right half of the current subrange.
    *
@@ -208,7 +208,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * }
    * </pre>
    */
-  public static BinarySearch<IndexedSearchTarget, Integer> forInts(Range<Integer> range) {
+  public static BinarySearch<IntSearchTarget, Integer> forInts(Range<Integer> range) {
     Integer low = low(range, integers());
     if (low == null) {
       return always(InsertionPoint.before(range.lowerEndpoint()));
@@ -223,7 +223,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
   /**
    * Similar to {@link #forInts()}, but returns a {@link BinarySearch} over all {@code long} integers.
    *
-   * <p>Callers can search by a {@link LongIndexedSearchTarget} object that will be called at each iteration
+   * <p>Callers can search by a {@link LongSearchTarget} object that will be called at each iteration
    * to determine whether the target is already found at the current mid-point, to the left half of the
    * current subrange, or to the right half of the current subrange.
    *
@@ -235,7 +235,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * assertThat(guessed).hasValue(secret);
    * }</pre>
    */
-  public static BinarySearch<LongIndexedSearchTarget, Long> forLongs() {
+  public static BinarySearch<LongSearchTarget, Long> forLongs() {
     return forLongs(all());
   }
 
@@ -243,11 +243,11 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * Similar to {@link #forInts(Range)}, but returns a {@link BinarySearch} over the given
    * {@code range} of {@code long} integers.
    *
-   * <p>Callers can search by a {@link LongIndexedSearchTarget} object that will be called at each iteration
+   * <p>Callers can search by a {@link LongSearchTarget} object that will be called at each iteration
    * to determine whether the target is already found at the current mid-point, to the left half of the
    * current subrange, or to the right half of the current subrange.
    */
-  public static BinarySearch<LongIndexedSearchTarget, Long> forLongs(Range<Long> range) {
+  public static BinarySearch<LongSearchTarget, Long> forLongs(Range<Long> range) {
     Long low = low(range, longs());
     if (low == null) {
       return always(InsertionPoint.before(range.lowerEndpoint()));
@@ -433,7 +433,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
   }
 
   /** Represents the search target that can be found through bisecting the integer domain. */
-  public interface IndexedSearchTarget {
+  public interface IntSearchTarget {
     /**
      * Given a range of {@code [low, high]} inclusively with {@code mid} as the
      * middle point of the binary search, locates the target.
@@ -450,7 +450,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
   }
 
   /** Represents the search target that can be found through bisecting the long integer domain. */
-  public interface LongIndexedSearchTarget {
+  public interface LongSearchTarget {
     /**
      * Given a range of {@code [low, high]} inclusively with {@code mid} as the
      * middle point of the binary search, locates the target.
@@ -483,12 +483,12 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
     int locate(double low, double mid, double high);
   }
 
-  private static BinarySearch<IndexedSearchTarget, Integer> inRangeInclusive(int from, int to) {
+  private static BinarySearch<IntSearchTarget, Integer> inRangeInclusive(int from, int to) {
     if (from > to) {
       return always(InsertionPoint.before(from));
     }
-    return new BinarySearch<IndexedSearchTarget, Integer>() {
-      @Override public InsertionPoint<Integer> insertionPointFor(IndexedSearchTarget target) {
+    return new BinarySearch<IntSearchTarget, Integer>() {
+      @Override public InsertionPoint<Integer> insertionPointFor(IntSearchTarget target) {
         checkNotNull(target);
         for (int low = from, high = to; ;) {
           int mid = safeMid(low, high);
@@ -508,21 +508,21 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
           }
         }
       }
-      @Override public InsertionPoint<Integer> insertionPointBefore(IndexedSearchTarget target) {
+      @Override public InsertionPoint<Integer> insertionPointBefore(IntSearchTarget target) {
         return insertionPointFor(before(target));
       }
-      @Override public InsertionPoint<Integer> insertionPointAfter(IndexedSearchTarget target) {
+      @Override public InsertionPoint<Integer> insertionPointAfter(IntSearchTarget target) {
         return insertionPointFor(after(target));
       }
     };
   }
 
-  private static BinarySearch<LongIndexedSearchTarget, Long> inRangeInclusive(long from, long to) {
+  private static BinarySearch<LongSearchTarget, Long> inRangeInclusive(long from, long to) {
     if (from > to) {
       return always(InsertionPoint.before(from));
     }
-    return new BinarySearch<LongIndexedSearchTarget, Long>() {
-      @Override public InsertionPoint<Long> insertionPointFor(LongIndexedSearchTarget target) {
+    return new BinarySearch<LongSearchTarget, Long>() {
+      @Override public InsertionPoint<Long> insertionPointFor(LongSearchTarget target) {
         checkNotNull(target);
         for (long low = from, high = to; ;) {
           long mid = safeMidForLong(low, high);
@@ -542,10 +542,10 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
           }
         }
       }
-      @Override public InsertionPoint<Long> insertionPointBefore(LongIndexedSearchTarget target) {
+      @Override public InsertionPoint<Long> insertionPointBefore(LongSearchTarget target) {
         return insertionPointFor(before(target));
       }
-      @Override public InsertionPoint<Long> insertionPointAfter(LongIndexedSearchTarget target) {
+      @Override public InsertionPoint<Long> insertionPointAfter(LongSearchTarget target) {
         return insertionPointFor(after(target));
       }
     };
@@ -601,12 +601,12 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
     return sameSign ? low + (high - low) / 2 : (low + high) / 2;
   }
 
-  private static IndexedSearchTarget before(IndexedSearchTarget target) {
+  private static IntSearchTarget before(IntSearchTarget target) {
     checkNotNull(target);
     return (low, mid, high) -> target.locate(low, mid, high) <= 0 ? -1 : 1;
   }
 
-  private static LongIndexedSearchTarget before(LongIndexedSearchTarget target) {
+  private static LongSearchTarget before(LongSearchTarget target) {
     checkNotNull(target);
     return (low, mid, high) -> target.locate(low, mid, high) <= 0 ? -1 : 1;
   }
@@ -616,12 +616,12 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
     return (low, mid, high) -> target.locate(low, mid, high) <= 0 ? -1 : 1;
   }
 
-  private static IndexedSearchTarget after(IndexedSearchTarget target) {
+  private static IntSearchTarget after(IntSearchTarget target) {
     checkNotNull(target);
     return (low, mid, high) -> target.locate(low, mid, high) < 0 ? -1 : 1;
   }
 
-  private static LongIndexedSearchTarget after(LongIndexedSearchTarget target) {
+  private static LongSearchTarget after(LongSearchTarget target) {
     checkNotNull(target);
     return (low, mid, high) -> target.locate(low, mid, high) < 0 ? -1 : 1;
   }
