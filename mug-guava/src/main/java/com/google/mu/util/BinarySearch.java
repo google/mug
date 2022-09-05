@@ -299,7 +299,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
           Double.isFinite(range.upperEndpoint()), "Range with infinite endpoint not supported.");
       high = range.upperEndpoint();
       if (range.upperBoundType() == BoundType.OPEN) {
-        high = Math.nextAfter(low, Double.NEGATIVE_INFINITY);
+        high = Math.nextAfter(high, Double.NEGATIVE_INFINITY);
       }
     }
     return inRangeInclusive(low, high);

@@ -1103,7 +1103,7 @@ public class BinarySearchTest {
   }
 
   @Test
-  public void forDoubles_positiveRange_smallNumberFound(
+  public void forDoubles_nonNegativeRange_smallNumberFound(
       @TestParameter(
           {"0", "0.1", "1", "100", "1000", "9999999999"})
       double secret) {
@@ -1115,10 +1115,22 @@ public class BinarySearchTest {
   }
 
   @Test
+  public void forDoubles_positiveRange_smallNumberFound(
+      @TestParameter(
+          {"0.1", "1", "100", "1000", "9999999999"})
+      double secret) {
+    InsertionPoint<Double> insertionPoint =
+        BinarySearch.forDoubles(Range.greaterThan(0D))
+            .insertionPointFor((low, mid, high) -> Double.compare(secret, mid));
+    assertThat(insertionPoint.floor()).isWithin(Double.MIN_VALUE).of(secret);
+    assertThat(insertionPoint.ceiling()).isWithin(Double.MIN_VALUE).of(secret);
+  }
+
+  @Test
   public void forDoubles_positiveRange_maxValueFound() {
     double secret = Double.MAX_VALUE;
     InsertionPoint<Double> insertionPoint =
-        BinarySearch.forDoubles(Range.atLeast(0D))
+        BinarySearch.forDoubles(Range.greaterThan(0D))
             .insertionPointFor((low, mid, high) -> Double.compare(secret, mid));
     assertThat(insertionPoint.floor()).isWithin(Double.MIN_VALUE).of(secret);
     assertThat(insertionPoint.ceiling()).isWithin(Double.MIN_VALUE).of(secret);
@@ -1128,7 +1140,7 @@ public class BinarySearchTest {
   public void forDoubles_positiveRange_largeNumberFound() {
     double secret = Double.MAX_VALUE / Integer.MAX_VALUE;
     InsertionPoint<Double> insertionPoint =
-        BinarySearch.forDoubles(Range.atLeast(0D))
+        BinarySearch.forDoubles(Range.greaterThan(0D))
             .insertionPointFor((low, mid, high) -> Double.compare(secret, mid));
     assertThat(insertionPoint.floor()).isWithin(Double.MIN_VALUE).of(secret);
     assertThat(insertionPoint.ceiling()).isWithin(Double.MIN_VALUE).of(secret);
@@ -1137,7 +1149,7 @@ public class BinarySearchTest {
   @Test
   public void forDoubles_positiveRange_maxValueNotFound() {
     InsertionPoint<Double> insertionPoint =
-        BinarySearch.forDoubles(atLeast(0D))
+        BinarySearch.forDoubles(greaterThan(0D))
             .insertionPointFor((low, mid, high) -> 1);
     assertThat(insertionPoint.exact()).isEmpty();
     assertThat(insertionPoint.floor()).isEqualTo(Double.MAX_VALUE);
@@ -1251,7 +1263,7 @@ public class BinarySearchTest {
   public void forDoubles_negativeRange_smallNumberFound(
       @TestParameter({"-1", "-100.345", "-999999.999"}) double secret) {
     InsertionPoint<Double> insertionPoint =
-        BinarySearch.forDoubles(atMost(-Double.MIN_VALUE))
+        BinarySearch.forDoubles(lessThan(0D))
             .insertionPointFor((low, mid, high) -> Double.compare(secret, mid));
     assertThat(insertionPoint.floor()).isWithin(Double.MIN_VALUE).of(secret);
     assertThat(insertionPoint.ceiling()).isWithin(Double.MIN_VALUE).of(secret);
@@ -1261,7 +1273,7 @@ public class BinarySearchTest {
   public void forDoubles_negativeRange_maxValueFound() {
     double secret = -Double.MIN_VALUE;
     InsertionPoint<Double> insertionPoint =
-        BinarySearch.forDoubles(atMost(-Double.MIN_VALUE))
+        BinarySearch.forDoubles(lessThan(0D))
             .insertionPointFor((low, mid, high) -> Double.compare(secret, mid));
     assertThat(insertionPoint.floor()).isWithin(2 * Double.MIN_NORMAL).of(secret);
     assertThat(insertionPoint.ceiling()).isWithin(2 * Double.MIN_NORMAL).of(secret);
@@ -1271,7 +1283,7 @@ public class BinarySearchTest {
   public void forDoubles_negativeRange_minValueFound() {
     double secret = -Double.MAX_VALUE;
     InsertionPoint<Double> insertionPoint =
-        BinarySearch.forDoubles(atMost(-Double.MIN_VALUE))
+        BinarySearch.forDoubles(lessThan(0D))
             .insertionPointFor((low, mid, high) -> Double.compare(secret, mid));
     assertThat(insertionPoint.floor()).isWithin(Double.MIN_VALUE).of(secret);
     assertThat(insertionPoint.ceiling()).isWithin(Double.MIN_VALUE).of(secret);
@@ -1281,7 +1293,7 @@ public class BinarySearchTest {
   public void forDoubles_negativeRange_infinityNotFound() {
     double secret = Double.POSITIVE_INFINITY;
     InsertionPoint<Double> insertionPoint =
-        BinarySearch.forDoubles(atMost(-Double.MIN_VALUE))
+        BinarySearch.forDoubles(lessThan(0D))
             .insertionPointFor((low, mid, high) -> Double.compare(secret, mid));
     assertThat(insertionPoint.exact()).isEmpty();
     assertThat(insertionPoint.floor()).isWithin(Double.MIN_NORMAL).of(-Double.MIN_VALUE);
@@ -1292,7 +1304,7 @@ public class BinarySearchTest {
   public void forDoubles_negativeRange_negativeInfinityNotFound() {
     double secret = Double.NEGATIVE_INFINITY;
     InsertionPoint<Double> insertionPoint =
-        BinarySearch.forDoubles(atMost(-Double.MIN_VALUE))
+        BinarySearch.forDoubles(lessThan(0D))
             .insertionPointFor((low, mid, high) -> Double.compare(secret, mid));
     assertThat(insertionPoint.ceiling()).isEqualTo(-Double.MAX_VALUE);
     assertThat(insertionPoint.floor()).isEqualTo(Double.NEGATIVE_INFINITY);
