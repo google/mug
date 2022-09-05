@@ -260,6 +260,52 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
   }
 
   /**
+   * Returns a {@link BinarySearch} over double values.
+   *
+   * <p>Callers can search by an {@link DoubleSearchTarget} object that will be called at each iteration
+   * to determine whether the target is already found at the current mid-point, to the left half of the
+   * current subrange, or to the right half of the current subrange.
+   *
+   * <p>Different from {@link #inSortedArray(double[])}, which is to search within
+   * the int indexes of a double array, this method searches through double values.
+   */
+  public static BinarySearch<DoubleSearchTarget, Double> forDoubles() {
+    return forDoubles(all());
+  }
+
+  /**
+   * Similar to {@link #forInts(Range)}, but returns a {@link BinarySearch} over the given
+   * {@code range} of {@code double} precision numbers.
+   *
+   * <p>Callers can search by a {@link DoubleSearchTarget} object that will be called at each iteration
+   * to determine whether the target is already found at the current mid-point, to the left half of the
+   * current subrange, or to the right half of the current subrange.
+   *
+   * <p>Infinite endpoints are disallowed.
+   */
+  public static BinarySearch<DoubleSearchTarget, Double> forDoubles(Range<Double> range) {
+    double low = - Double.MAX_VALUE;
+    if (range.hasLowerBound()) {
+      checkArgument(
+          Double.isFinite(range.lowerEndpoint()), "Range with infinite endpoint not supported.");
+      low = range.lowerEndpoint();
+      if (range.lowerBoundType() == BoundType.OPEN) {
+        low = Math.nextAfter(low, Double.POSITIVE_INFINITY);
+      }
+    }
+    double high = Double.MAX_VALUE;
+    if (range.hasUpperBound()) {
+      checkArgument(
+          Double.isFinite(range.upperEndpoint()), "Range with infinite endpoint not supported.");
+      high = range.upperEndpoint();
+      if (range.upperBoundType() == BoundType.OPEN) {
+        high = Math.nextAfter(high, Double.NEGATIVE_INFINITY);
+      }
+    }
+    return inRangeInclusive(low, high);
+  }
+
+  /**
    * Searches for the index of {@code target}.
    *
    * <p>If target is found, returns the matching integer; otherwise returns empty.
@@ -420,6 +466,23 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
     int locate(long low, long mid, long high);
   }
 
+  /** Represents the search target that can be found through bisecting the double domain. */
+  public interface DoubleSearchTarget {
+    /**
+     * Given a range of {@code [low, high]} inclusively with {@code mid} as the
+     * middle point of the binary search, locates the target.
+     *
+     * <p>
+     * Returns 0 if {@code mid} is the target; negative to find it in the lower
+     * range of {@code [low, mid)}; or positive to find it in the upper range of
+     * {@code (mid, high]}.
+     *
+     * <p>
+     * It's guaranteed that {@code low <= mid <= high}.
+     */
+    int locate(double low, double mid, double high);
+  }
+
   private static BinarySearch<IndexedSearchTarget, Integer> inRangeInclusive(int from, int to) {
     if (from > to) {
       return always(InsertionPoint.before(from));
@@ -462,7 +525,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
       @Override public InsertionPoint<Long> insertionPointFor(LongIndexedSearchTarget target) {
         checkNotNull(target);
         for (long low = from, high = to; ;) {
-          long mid = safeMid(low, high);
+          long mid = safeMidForLong(low, high);
           int where = target.locate(low, mid, high);
           if (where > 0) {
             if (mid == high) { // mid is the floor
@@ -488,11 +551,52 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
     };
   }
 
+  private static BinarySearch<DoubleSearchTarget, Double> inRangeInclusive(
+      final double from, final double to) {
+    if (from > to) {
+      return always(InsertionPoint.before(from));
+    }
+    return new BinarySearch<DoubleSearchTarget, Double>() {
+      @Override public InsertionPoint<Double> insertionPointFor(DoubleSearchTarget target) {
+        checkNotNull(target);
+        double floor = Double.NEGATIVE_INFINITY;
+        double ceiling = Double.POSITIVE_INFINITY;
+        for (double low = from, high = to; low <= high ;) {
+          double mid = safeMidForDouble(low, high);
+          int where = target.locate(low, mid, high);
+          if (where > 0) {
+            low = Math.nextAfter(mid, Double.POSITIVE_INFINITY);
+            floor = mid;
+          } else if (where < 0) {
+            high = Math.nextAfter(mid, Double.NEGATIVE_INFINITY);
+            ceiling = mid;
+          } else {
+            return InsertionPoint.at(mid);
+          }
+        }
+        return InsertionPoint.between(
+            floor < from && target.locate(from, from, from) >= 0 ? from : floor,
+            ceiling > to && target.locate(to, to, to) <= 0 ? to : ceiling);
+      }
+      @Override public InsertionPoint<Double> insertionPointBefore(DoubleSearchTarget target) {
+        return insertionPointFor(before(target));
+      }
+      @Override public InsertionPoint<Double> insertionPointAfter(DoubleSearchTarget target) {
+        return insertionPointFor(after(target));
+      }
+    };
+  }
+
   private static int safeMid(int low, int high) {
     return (int) (((long) low + high) / 2);
   }
 
-  private static long safeMid(long low, long high) {
+  private static long safeMidForLong(long low, long high) {
+    boolean sameSign = (low >= 0) == (high >= 0);
+    return sameSign ? low + (high - low) / 2 : (low + high) / 2;
+  }
+
+  private static double safeMidForDouble(double low, double high) {
     boolean sameSign = (low >= 0) == (high >= 0);
     return sameSign ? low + (high - low) / 2 : (low + high) / 2;
   }
@@ -502,17 +606,27 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
     return (low, mid, high) -> target.locate(low, mid, high) <= 0 ? -1 : 1;
   }
 
-  private static IndexedSearchTarget after(IndexedSearchTarget target) {
-    checkNotNull(target);
-    return (low, mid, high) -> target.locate(low, mid, high) < 0 ? -1 : 1;
-  }
-
   private static LongIndexedSearchTarget before(LongIndexedSearchTarget target) {
     checkNotNull(target);
     return (low, mid, high) -> target.locate(low, mid, high) <= 0 ? -1 : 1;
   }
 
+  private static DoubleSearchTarget before(DoubleSearchTarget target) {
+    checkNotNull(target);
+    return (low, mid, high) -> target.locate(low, mid, high) <= 0 ? -1 : 1;
+  }
+
+  private static IndexedSearchTarget after(IndexedSearchTarget target) {
+    checkNotNull(target);
+    return (low, mid, high) -> target.locate(low, mid, high) < 0 ? -1 : 1;
+  }
+
   private static LongIndexedSearchTarget after(LongIndexedSearchTarget target) {
+    checkNotNull(target);
+    return (low, mid, high) -> target.locate(low, mid, high) < 0 ? -1 : 1;
+  }
+
+  private static DoubleSearchTarget after(DoubleSearchTarget target) {
     checkNotNull(target);
     return (low, mid, high) -> target.locate(low, mid, high) < 0 ? -1 : 1;
   }
