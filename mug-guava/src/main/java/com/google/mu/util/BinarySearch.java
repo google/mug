@@ -281,10 +281,6 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * to determine whether the target is already found at the current mid-point, to the left half of the
    * current subrange, or to the right half of the current subrange.
    *
-   * <p>You can use {@link Range#all}, {@link Range#atLeast}, {@link Range#atMost} or {@link Range#closed}.
-   * But open ranges ({@link Range#open}, {@link Range#closedOpen}, {@link Range#openClosed)})
-   * are not supported.
-   *
    * <p>Infinite endpoints are disallowed.
    */
   public static BinarySearch<DoubleSearchTarget, Double> forDoubles(Range<Double> range) {
@@ -292,15 +288,19 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
     if (range.hasLowerBound()) {
       checkArgument(
           Double.isFinite(range.lowerEndpoint()), "Range with infinite endpoint not supported.");
-      checkArgument(range.lowerBoundType() == BoundType.CLOSED, "Open range not supported.");
       low = range.lowerEndpoint();
+      if (range.lowerBoundType() == BoundType.OPEN) {
+        low = Math.nextAfter(low, Double.POSITIVE_INFINITY);
+      }
     }
     double high = Double.MAX_VALUE;
     if (range.hasUpperBound()) {
       checkArgument(
           Double.isFinite(range.upperEndpoint()), "Range with infinite endpoint not supported.");
-      checkArgument(range.upperBoundType() == BoundType.CLOSED, "Open range not supported.");
       high = range.upperEndpoint();
+      if (range.upperBoundType() == BoundType.OPEN) {
+        high = Math.nextAfter(low, Double.NEGATIVE_INFINITY);
+      }
     }
     return inRangeInclusive(low, high);
   }
@@ -553,37 +553,30 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
 
   private static BinarySearch<DoubleSearchTarget, Double> inRangeInclusive(
       final double from, final double to) {
-    checkArgument(from <= to, "Empty range not supported from(%s) > to (%s)", from, to);
+    if (from > to) {
+      return always(InsertionPoint.before(from));
+    }
     return new BinarySearch<DoubleSearchTarget, Double>() {
       @Override public InsertionPoint<Double> insertionPointFor(DoubleSearchTarget target) {
         checkNotNull(target);
         double floor = Double.NEGATIVE_INFINITY;
         double ceiling = Double.POSITIVE_INFINITY;
-        for (double low = from, high = to; ;) {
+        for (double low = from, high = to; low <= high ;) {
           double mid = safeMidForDouble(low, high);
           int where = target.locate(low, mid, high);
           if (where > 0) {
             low = Math.nextAfter(mid, Double.POSITIVE_INFINITY);
-            if (low > high) { // mid is the floor
-              if (ceiling > to && target.locate(to, to, to) <= 0) {
-                ceiling = to;
-              }
-              return InsertionPoint.between(mid, ceiling);
-            }
             floor = mid;
           } else if (where < 0) {
             high = Math.nextAfter(mid, Double.NEGATIVE_INFINITY);
-            if (high < low) { // mid is the ceiling
-              if (floor < from && target.locate(from, from, from) >= 0) {
-                floor = from;
-              }
-              return InsertionPoint.between(floor, mid);
-            }
             ceiling = mid;
           } else {
             return InsertionPoint.at(mid);
           }
         }
+        return InsertionPoint.between(
+            floor < from && target.locate(from, from, from) >= 0 ? from : floor,
+            ceiling > to && target.locate(to, to, to) <= 0 ? to : ceiling);
       }
       @Override public InsertionPoint<Double> insertionPointBefore(DoubleSearchTarget target) {
         return insertionPointFor(before(target));

@@ -142,6 +142,16 @@ public final class InsertionPoint<C extends Comparable<C>> implements Comparable
     return new InsertionPoint<>(floor, ceiling);
   }
 
+  /** Returns an insertion point immediately before {@code ceiling}. */
+  public static InsertionPoint<Double> before(double ceiling) {
+    return new InsertionPoint<>(Math.nextAfter(ceiling, Double.NEGATIVE_INFINITY), ceiling);
+  }
+
+  /** Returns an insertion point immediately after {@code floor}. */
+  public static InsertionPoint<Double> after(double floor) {
+    return new InsertionPoint<>(floor, Math.nextAfter(floor, Double.POSITIVE_INFINITY));
+  }
+
   /**
    * If this represents an exact point (not between two adjacent values), returns
    * the element at the point; else returns empty.
