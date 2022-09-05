@@ -281,6 +281,17 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * to determine whether the target is already found at the current mid-point, to the left half of the
    * current subrange, or to the right half of the current subrange.
    *
+   * <p>For example you can implement {@code sqrt(double)} through binary search:
+   *
+   * <pre>{@code
+   * BinarySearch<Double, Double> sqrt() {
+   *   return forDoubles(atLeast(0D))
+   *       .by(square -> (low, mid, high) -> Double.compare(square, mid * mid));
+   * }
+   *
+   * sqrt().insertionPointFor(4096) => InsertionPoint.at(64)
+   * }</pre>
+   *
    * <p>Infinite endpoints are disallowed.
    */
   public static BinarySearch<DoubleSearchTarget, Double> forDoubles(Range<Double> range) {
