@@ -268,10 +268,6 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    *
    * <p>Different from {@link #inSortedArray(double[])}, which is to search within
    * the int indexes of a double array, this method searches through double values.
-   *
-   * <p>Note that not all representable double precision values will be examined.
-   * Some degree of approximation should be expected at very small granularity close to the level of
-   * {@link Double#MIN_NORMAL}.
    */
   public static BinarySearch<DoubleSearchTarget, Double> forDoubles() {
     return forDoubles(all());
@@ -563,36 +559,26 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
         checkNotNull(target);
         double floor = Double.NEGATIVE_INFINITY;
         double ceiling = Double.POSITIVE_INFINITY;
-        for (double low = from, high = to, increment = Double.MIN_VALUE; ;) {
+        for (double low = from, high = to; ;) {
           double mid = safeMidForDouble(low, high);
           int where = target.locate(low, mid, high);
           if (where > 0) {
-            double higherLow = mid + increment;
-            while (higherLow <= low) {
-              increment *= 2;
-              higherLow = mid + increment;
-            }
-            if (higherLow > high) { // mid is the floor
+            low = Math.nextAfter(mid, Double.POSITIVE_INFINITY);
+            if (low > high) { // mid is the floor
               if (ceiling > to && target.locate(to, to, to) <= 0) {
                 ceiling = to;
               }
               return InsertionPoint.between(mid, ceiling);
             }
-            low = higherLow;
             floor = mid;
           } else if (where < 0) {
-            double lowerHigh = mid - increment;
-            while (lowerHigh >= high) {
-              increment *= 2;
-              lowerHigh = mid - increment;
-            }
-            if (lowerHigh < low) { // mid is the ceiling
+            high = Math.nextAfter(mid, Double.NEGATIVE_INFINITY);
+            if (high < low) { // mid is the ceiling
               if (floor < from && target.locate(from, from, from) >= 0) {
                 floor = from;
               }
               return InsertionPoint.between(floor, mid);
             }
-            high = lowerHigh;
             ceiling = mid;
           } else {
             return InsertionPoint.at(mid);
