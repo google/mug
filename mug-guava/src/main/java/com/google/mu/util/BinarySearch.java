@@ -19,6 +19,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.DiscreteDomain.integers;
 import static com.google.common.collect.DiscreteDomain.longs;
 import static com.google.common.collect.Range.all;
+import static java.lang.Double.doubleToLongBits;
+import static java.lang.Double.longBitsToDouble;
 
 import java.util.Comparator;
 import java.util.List;
@@ -32,6 +34,8 @@ import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Range;
 import com.google.common.math.DoubleMath;
+import com.google.common.math.IntMath;
+import com.google.common.math.LongMath;
 
 /**
  * Generic binary search algorithm with support for and <b>beyond</b> sorted lists and arrays,
@@ -364,7 +368,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
           "Range with infinite endpoint not supported: %s", range);
       low =
           range.lowerBoundType() == BoundType.OPEN
-              ? Math.nextAfter(range.lowerEndpoint(), Double.POSITIVE_INFINITY)
+              ? Math.nextUp(range.lowerEndpoint())
               : range.lowerEndpoint();
     } else {
       low = -Double.MAX_VALUE;
@@ -376,7 +380,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
           "Range with infinite endpoint not supported: %s", range);
       high =
           range.upperBoundType() == BoundType.OPEN
-              ? Math.nextAfter(range.upperEndpoint(), Double.NEGATIVE_INFINITY)
+              ? Math.nextDown(range.upperEndpoint())
               : range.upperEndpoint();
     } else {
       high = Double.MAX_VALUE;
@@ -551,18 +555,21 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
   @FunctionalInterface
   public interface DoubleSearchTarget {
     /**
-     * Given a range of {@code [low, high]} inclusively with {@code mid} as the
-     * middle point of the binary search, locates the target.
+     * Given a range of {@code [low, high]} inclusively with {@code median} as the
+     * mid point of the binary search, locates the target.
      *
-     * <p>
-     * Returns 0 if {@code mid} is the target; negative to find it in the lower
-     * range of {@code [low, mid)}; or positive to find it in the upper range of
-     * {@code (mid, high]}.
+     * <p>Returns 0 if {@code median} is the target; negative to find it in the lower
+     * range of {@code [low, median)}; or positive to find it in the upper range of
+     * {@code (median, high]}.
      *
-     * <p>
-     * It's guaranteed that {@code low <= mid <= high}.
+     * <p>It's guaranteed that {@code low <= median <= high}.
+     *
+     * <p>Different from {@link IntSearchTarget} and {@link LongSearchTarget}, the
+     * {@code (low, median, high)} parameters aren't guaranteed to split the range in half.
+     * Instead, {@code median} is picked such that the distinct double precision
+     * values in the lower subrange is close to the distinct values in the higher subrange.
      */
-    int locate(double low, double mid, double high);
+    int locate(double low, double median, double high);
   }
 
   private static BinarySearch<IntSearchTarget, Integer> inRangeInclusive(int from, int to) {
@@ -573,7 +580,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
       @Override public InsertionPoint<Integer> insertionPointFor(IntSearchTarget target) {
         checkNotNull(target);
         for (int low = from, high = to; ;) {
-          int mid = safeMid(low, high);
+          int mid = IntMath.mean(low, high);
           int where = target.locate(low, mid, high);
           if (where > 0) {
             if (mid == high) { // mid is the floor
@@ -607,7 +614,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
       @Override public InsertionPoint<Long> insertionPointFor(LongSearchTarget target) {
         checkNotNull(target);
         for (long low = from, high = to; ;) {
-          long mid = safeMid(low, high);
+          long mid = LongMath.mean(low, high);
           int where = target.locate(low, mid, high);
           if (where > 0) {
             if (mid == high) { // mid is the floor
@@ -644,13 +651,13 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
         double floor = Double.NEGATIVE_INFINITY;
         double ceiling = Double.POSITIVE_INFINITY;
         for (double low = from, high = to; low <= high ;) {
-          double mid = safeMid(low, high);
+          double mid = median(low, high);
           int where = target.locate(low, mid, high);
           if (where > 0) {
-            low = Math.nextAfter(mid, Double.POSITIVE_INFINITY);
+            low = Math.nextUp(mid);
             floor = mid;
           } else if (where < 0) {
-            high = Math.nextAfter(mid, Double.NEGATIVE_INFINITY);
+            high = Math.nextDown(mid);
             ceiling = mid;
           } else {
             return InsertionPoint.at(mid);
@@ -667,18 +674,11 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
     };
   }
 
-  private static int safeMid(int low, int high) {
-    return (int) (((long) low + high) / 2);
-  }
-
-  private static long safeMid(long low, long high) {
+  private static double median(double low, double high) {
     boolean sameSign = (low >= 0) == (high >= 0);
-    return sameSign ? low + (high - low) / 2 : (low + high) / 2;
-  }
-
-  private static double safeMid(double low, double high) {
-    boolean sameSign = (low >= 0) == (high >= 0);
-    return sameSign ? low + (high - low) / 2 : (low + high) / 2;
+    return sameSign
+        ? longBitsToDouble(LongMath.mean(doubleToLongBits(low), doubleToLongBits(high)))
+        : (low + high) / 2;
   }
 
   private static IntSearchTarget before(IntSearchTarget target) {
