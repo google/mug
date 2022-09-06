@@ -34,10 +34,10 @@ import com.google.common.collect.Range;
 import com.google.common.math.DoubleMath;
 
 /**
- * Generic binary search algorithm with support for and <em>beyond</em> sorted lists and arrays,
+ * Generic binary search algorithm with support for and <em>beyond sorted lists and arrays</em>,
  * in a fluent API.
  *
- * <p>For sorted arrays and lists:
+ * <p>For sorted lists and arrays:
  *
  * <pre>{@code
  * BinarySearch.inSortedArray([10, 20, 30, 40]).find(20)
