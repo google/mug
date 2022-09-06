@@ -34,7 +34,7 @@ import com.google.common.collect.Range;
 import com.google.common.math.DoubleMath;
 
 /**
- * Generic binary search algorithm with support for and <em>beyond sorted lists and arrays</em>,
+ * Generic binary search algorithm with support for and <b>beyond</b> sorted lists and arrays,
  * in a fluent API.
  *
  * <p>For sorted lists and arrays:
@@ -75,7 +75,8 @@ import com.google.common.math.DoubleMath;
  *
  * int minimum =
  *     BinarySearch.forInts()
- *         .insertionPointFor((low, mid, high) -> Double.compare(parabola(mid - 1), parabola(mid)))
+ *         .insertionPointFor(
+ *             (low, mid, high) -> Double.compare(parabola(mid - 1), parabola(mid)))
  *         .floor();
  *     => -2
  * }
