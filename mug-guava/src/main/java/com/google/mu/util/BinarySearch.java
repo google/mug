@@ -104,7 +104,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    */
   public static <Q extends Comparable<Q>, E> BinarySearch<Q, Integer> inSortedList(
       List<? extends E> list, Function<? super E, ? extends Q> sortedBy) {
-    return inSortedList(Lists.transform(list, toGuava(sortedBy)));
+    return inSortedList(Lists.transform(list, sortedBy::apply));
   }
 
   /**
@@ -708,12 +708,6 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
           : domain.previous(range.upperEndpoint());
     }
     return domain.maxValue();
-  }
-
-  private static <F, T> com.google.common.base.Function<F, T> toGuava(Function<F, T> function) {
-    return function instanceof com.google.common.base.Function
-        ? (com.google.common.base.Function<F, T>) function
-        : function::apply;
   }
 
   BinarySearch() {}
