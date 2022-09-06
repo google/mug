@@ -107,6 +107,9 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * Returns a {@link BinarySearch} for indexes in the given sorted {@code list}.
    *
    * <p>For example: {@code inSortedList(numbers).find(20)}.
+   *
+   * @param list expected to support random access (not {@code LinkedList} for instance),
+   *     or else performance will suffer.
    */
   public static <E extends Comparable<E>> BinarySearch<E, Integer> inSortedList(
       List<? extends E> list) {
@@ -122,6 +125,9 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * {@code comparator}.
    *
    * <p>For example: {@code inSortedList(timestamps, nullsFirst(naturalOrder())).find(timestamp)}.
+   *
+   * @param list expected to support random access (not {@code LinkedList} for instance),
+   *     or else performance will suffer.
    */
   public static <E> BinarySearch<E, Integer> inSortedList(
       List<? extends E> list, Comparator<? super E> sortedBy) {
@@ -135,6 +141,9 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * {@code sortBy} function.
    *
    * <p>For example: {@code inSortedList(employees, Employee::age).rangeOf(20)}.
+   *
+   * @param list expected to support random access (not {@code LinkedList} for instance),
+   *     or else performance will suffer.
    */
   public static <Q extends Comparable<Q>, E> BinarySearch<Q, Integer> inSortedList(
       List<? extends E> list, Function<? super E, ? extends Q> sortedBy) {
@@ -171,6 +180,12 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * The positive {@code tolerance} is respected when comparing double values.
    *
    * <p>For example: {@code inSortedListWithTolerance(temperatures, 0.1).find(30)}.
+   *
+   * @param list expected to support random access (not {@code LinkedList} for instance),
+   *     or else performance will suffer.
+   * @param tolerance an inclusive upper bound on the difference between the search target
+   *     and elements in the list, which must be a non-negative finite value, i.e. not {@link
+   *     Double#NaN}, {@link Double#POSITIVE_INFINITY}, or negative, including {@code -0.0}
    */
   public static BinarySearch<Double, Integer> inSortedListWithTolerance(
       List<Double> list, double tolerance) {
