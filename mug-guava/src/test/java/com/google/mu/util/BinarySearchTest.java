@@ -17,6 +17,7 @@ import static org.junit.Assert.assertThrows;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -1392,6 +1393,17 @@ public class BinarySearchTest {
     assertThat(inCircularSortedArray(rotated).find(0)).isEmpty();
     assertThat(inCircularSortedArray(rotated).find(80)).isEmpty();
     assertThat(inCircularSortedArray(rotated).find(15)).isEmpty();
+  }
+
+  @Test
+  public void guessTheNumberGame(
+      @TestParameter(valuesProvider = LongValues.class) long secret) {
+    AtomicInteger times = new AtomicInteger();
+    assertThat(BinarySearch.forLongs().find((low, mid, high) -> {
+      times.incrementAndGet();
+      return Long.compare(secret, mid);
+    })).hasValue(secret);
+    assertThat(times.get()).isAtMost(65);
   }
 
   @Test public void binarySearch_findMinParabola() {

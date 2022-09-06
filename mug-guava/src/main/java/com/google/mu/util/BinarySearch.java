@@ -82,7 +82,7 @@ import com.google.common.math.DoubleMath;
  * }
  * }</pre>
  *
- * To emulate the Guess The Number Game:
+ * To emulate the Guess The Number game:
  *
  * <pre>{@code
  * BinarySearch.forInts()
