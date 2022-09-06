@@ -1045,7 +1045,7 @@ public class BinarySearchTest {
           {"0", "0.1", "0.2", "0.5", "1", "2", "3", "4", "5", "10", "20", "100", "1000", "9999999999"})
       double square) {
     double epsilon = 0.0000000001;
-    InsertionPoint<Double> insertionPoint = sqrtDouble().insertionPointFor(square);
+    InsertionPoint<Double> insertionPoint = squareRoot().insertionPointFor(square);
     assertThat(insertionPoint.floor()).isWithin(epsilon).of(Math.sqrt(square));
     assertThat(insertionPoint.ceiling()).isWithin(epsilon).of(Math.sqrt(square));
   }
@@ -1056,7 +1056,7 @@ public class BinarySearchTest {
           {"0", "0.1", "0.2", "0.5", "1", "2", "-3", "4", "5", "10", "-20", "100", "1000", "-9999.99999"})
       double cube) {
     double epsilon = 0.0000000001;
-    InsertionPoint<Double> insertionPoint = cbrt().insertionPointFor(cube);
+    InsertionPoint<Double> insertionPoint = cubeRoot().insertionPointFor(cube);
     assertThat(insertionPoint.floor()).isWithin(epsilon).of(Math.cbrt(cube));
     assertThat(insertionPoint.ceiling()).isWithin(epsilon).of(Math.cbrt(cube));
   }
@@ -1422,12 +1422,12 @@ public class BinarySearchTest {
         .by(square -> (low, mid, high) -> Long.compare(square, (long) mid * mid));
   }
 
-  private static BinarySearch<Double, Double> sqrtDouble() {
+  private static BinarySearch<Double, Double> squareRoot() {
     return BinarySearch.forDoubles(atLeast(0D))
         .by(square -> (low, mid, high) -> Double.compare(square, mid * mid));
   }
 
-  private static BinarySearch<Double, Double> cbrt() {
+  private static BinarySearch<Double, Double> cubeRoot() {
     return BinarySearch.forDoubles()
       .by(cube -> (low, mid, high) -> Double.compare(cube, mid * mid * mid));
   }
