@@ -19,7 +19,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.DiscreteDomain.integers;
 import static com.google.common.collect.DiscreteDomain.longs;
 import static com.google.common.collect.Range.all;
-import static java.lang.Double.doubleToLongBits;
+import static java.lang.Double.doubleToRawLongBits;
 import static java.lang.Double.longBitsToDouble;
 
 import java.util.Comparator;
@@ -675,9 +675,9 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
   }
 
   private static double median(double low, double high) {
-    boolean sameSign = (low >= 0) == (high >= 0);
-    return sameSign
-        ? longBitsToDouble(LongMath.mean(doubleToLongBits(low), doubleToLongBits(high)))
+    // use doubleToRawLongBits() because we've already checked that low/high cannot be NaN.
+    return low >= 0 == high >= 0
+        ? longBitsToDouble(LongMath.mean(doubleToRawLongBits(low), doubleToRawLongBits(high)))
         : 0;
   }
 
