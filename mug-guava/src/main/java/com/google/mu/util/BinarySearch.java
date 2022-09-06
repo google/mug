@@ -34,10 +34,12 @@ import com.google.common.collect.Range;
 import com.google.common.math.DoubleMath;
 
 /**
- * Flexible binary search algorithm in a fluent API.
+ * Generic binary search algorithm with support for and <em>beyond</em> sorted lists and arrays,
+ * in a fluent API.
  *
- * <p>For example: <pre>{@code
- * // Most common: search within a sorted array
+ * <p>For sorted arrays and lists:
+ *
+ * <pre>{@code
  * BinarySearch.inSortedArray([10, 20, 30, 40]).find(20)
  *     => Optional.of(1)
  *
@@ -49,9 +51,26 @@ import com.google.common.math.DoubleMath;
  * // And find the range of all matches
  * BinarySearch.inSortedArrayWithTolerance([1.1, 2.1, 2.2, 2.3, 3.3, 4.4], 0.5).rangeOf(2)
  *     => Range.closed(1, 3)
+ * }</pre>
  *
- * // Guess The Number Game
- * BinarySearch.forInts().find((lo, mid, hi) -> tooHighOrTooLow(mid))
+ * To solve a monotonic polynomial function:
+ *
+ * <pre>{@code
+ * double polynomial(double x) {
+ *   return pow(x, 3) + 3 * x;
+ * }
+ *
+ * InsertionPoint<Double> solve(double y) {
+ *   return BinarySearch.forDoubles()
+ *       .insertionPointFor((low, mid, high) -> Double.compare(y, polynomial(mid)));
+ * }
+ * }</pre>
+ *
+ * To emulate the Guess The Number Game:
+ *
+ * <pre>{@code
+ * BinarySearch.forInts()
+ *     .find((lo, mid, hi) -> tooHighOrTooLow(mid))
  *     => Optional.of(theGuessedNumber)
  * }</pre>
  *
