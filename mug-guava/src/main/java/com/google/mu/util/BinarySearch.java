@@ -268,6 +268,18 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    *
    * <p>Different from {@link #inSortedArrayWithTolerance}, which is to search within
    * the int indexes of a double array, this method searches through double values.
+   *
+   * <p>You can use binary search to solve monotonic functions.
+   * For example the following method solves cube root:
+   *
+   * <pre>{@code
+   * BinarySearch<Double, Double> cubeRoot() {
+   *   return forDoubles()
+   *       .by(cube -> (low, mid, high) -> Double.compare(cube, mid * mid * mid));
+   * }
+   *
+   * cubeRoot().insertionPointFor(125.0) => InsertionPoint.at(5.0)
+   * }</pre>
    */
   public static BinarySearch<DoubleSearchTarget, Double> forDoubles() {
     return forDoubles(all());
@@ -281,7 +293,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * to determine whether the target is already found at the current mid-point, to the left half of the
    * current subrange, or to the right half of the current subrange.
    *
-   * <p>For example you can implement {@code sqrt(double)} through binary search:
+   * <p>For example you can implement square root through binary search:
    *
    * <pre>{@code
    * BinarySearch<Double, Double> sqrt() {
@@ -289,29 +301,35 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    *       .by(square -> (low, mid, high) -> Double.compare(square, mid * mid));
    * }
    *
-   * sqrt().insertionPointFor(4096) => InsertionPoint.at(64)
+   * sqrt().insertionPointFor(25.0) => InsertionPoint.at(5.0)
    * }</pre>
    *
    * <p>Infinite endpoints are disallowed.
    */
   public static BinarySearch<DoubleSearchTarget, Double> forDoubles(Range<Double> range) {
-    double low = - Double.MAX_VALUE;
+    final double low;
     if (range.hasLowerBound()) {
       checkArgument(
-          Double.isFinite(range.lowerEndpoint()), "Range with infinite endpoint not supported.");
-      low = range.lowerEndpoint();
-      if (range.lowerBoundType() == BoundType.OPEN) {
-        low = Math.nextAfter(low, Double.POSITIVE_INFINITY);
-      }
+          Double.isFinite(range.lowerEndpoint()),
+          "Range with infinite endpoint not supported: %s", range);
+      low =
+          range.lowerBoundType() == BoundType.OPEN
+              ? Math.nextAfter(range.lowerEndpoint(), Double.POSITIVE_INFINITY)
+              : range.lowerEndpoint();
+    } else {
+      low = -Double.MAX_VALUE;
     }
-    double high = Double.MAX_VALUE;
+    final double high;
     if (range.hasUpperBound()) {
       checkArgument(
-          Double.isFinite(range.upperEndpoint()), "Range with infinite endpoint not supported.");
-      high = range.upperEndpoint();
-      if (range.upperBoundType() == BoundType.OPEN) {
-        high = Math.nextAfter(high, Double.NEGATIVE_INFINITY);
-      }
+          Double.isFinite(range.upperEndpoint()),
+          "Range with infinite endpoint not supported: %s", range);
+      high =
+          range.upperBoundType() == BoundType.OPEN
+              ? Math.nextAfter(range.upperEndpoint(), Double.NEGATIVE_INFINITY)
+              : range.upperEndpoint();
+    } else {
+      high = Double.MAX_VALUE;
     }
     return inRangeInclusive(low, high);
   }
