@@ -55,8 +55,8 @@ import com.google.common.math.DoubleMath;
  *     => Optional.of(theGuessedNumber)
  * }</pre>
  *
- * <p>The {@link #forInts}, {@link #forLongs} and the primitive array search methods perform no
- * boxing in the O(logn) search operation.
+ * <p>The {@link #forInts}, {@link #forLongs}, {@link #forDoubles} and the primitive array search
+ * methods perform no boxing in the O(logn) search operation.
  *
  * <p>Note that except {@link #inSortedList(List, Comparator)}, which may support null search
  * targets if the comparator supports nulls, no other {@code BinarySearch} implementations
