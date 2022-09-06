@@ -678,7 +678,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
     boolean sameSign = (low >= 0) == (high >= 0);
     return sameSign
         ? longBitsToDouble(LongMath.mean(doubleToLongBits(low), doubleToLongBits(high)))
-        : (low + high) / 2;
+        : 0;
   }
 
   private static IntSearchTarget before(IntSearchTarget target) {

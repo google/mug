@@ -1420,6 +1420,19 @@ public class BinarySearchTest {
     assertThat(times.get()).isAtMost(65);
   }
 
+  @Test
+  public void guessTheDoubleNumberWithMostlyPositive(
+      @TestParameter({"-0.5", "-0.1", "0", "0.001", "0.1", "1"}) double secret) {
+    AtomicInteger times = new AtomicInteger();
+    ImmutableMap.Builder<Double, Integer> builder = ImmutableMap.builder();
+    assertThat(BinarySearch.forDoubles(atLeast(-1.0)).find((low, mid, high) -> {
+      builder.put(mid, times.incrementAndGet());
+      return Double.compare(secret, mid);
+    })).hasValue(secret);
+    assertThat(builder.buildOrThrow().size()).isAtMost(65);
+    assertThat(times.get()).isAtMost(65);
+  }
+
   @Test public void binarySearch_findMinParabola() {
     InsertionPoint<Integer> point = BinarySearch.forInts()
         .insertionPointFor((low, mid, high) -> Double.compare(parabola(mid - 1), parabola(mid)));
