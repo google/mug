@@ -676,8 +676,10 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
 
   private static double median(double low, double high) {
     // use doubleToRawLongBits() because we've already checked that low/high cannot be NaN.
-    return low >= 0 == high >= 0
-        ? longBitsToDouble(LongMath.mean(doubleToRawLongBits(low), doubleToRawLongBits(high)))
+    long lowBits = doubleToRawLongBits(low);
+    long highBits = doubleToRawLongBits(high);
+    return lowBits >= 0 == highBits >= 0
+        ? longBitsToDouble(LongMath.mean(lowBits, highBits))
         : 0;
   }
 
