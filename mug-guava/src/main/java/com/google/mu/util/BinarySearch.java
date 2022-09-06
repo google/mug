@@ -298,7 +298,8 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
     final double low;
     if (range.hasLowerBound()) {
       checkArgument(
-          Double.isFinite(range.lowerEndpoint()), "Range with infinite endpoint not supported.");
+          Double.isFinite(range.lowerEndpoint()),
+          "Range with infinite endpoint not supported: %s", range);
       low =
           range.lowerBoundType() == BoundType.OPEN
               ? Math.nextAfter(range.lowerEndpoint(), Double.POSITIVE_INFINITY)
@@ -309,7 +310,8 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
     final double high;
     if (range.hasUpperBound()) {
       checkArgument(
-          Double.isFinite(range.upperEndpoint()), "Range with infinite endpoint not supported.");
+          Double.isFinite(range.upperEndpoint()),
+          "Range with infinite endpoint not supported: %s", range);
       high =
           range.upperBoundType() == BoundType.OPEN
               ? Math.nextAfter(range.upperEndpoint(), Double.NEGATIVE_INFINITY)
