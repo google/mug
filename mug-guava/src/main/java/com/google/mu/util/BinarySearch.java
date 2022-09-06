@@ -554,7 +554,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
       @Override public InsertionPoint<Long> insertionPointFor(LongSearchTarget target) {
         checkNotNull(target);
         for (long low = from, high = to; ;) {
-          long mid = safeMidForLong(low, high);
+          long mid = safeMid(low, high);
           int where = target.locate(low, mid, high);
           if (where > 0) {
             if (mid == high) { // mid is the floor
@@ -591,7 +591,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
         double floor = Double.NEGATIVE_INFINITY;
         double ceiling = Double.POSITIVE_INFINITY;
         for (double low = from, high = to; low <= high ;) {
-          double mid = safeMidForDouble(low, high);
+          double mid = safeMid(low, high);
           int where = target.locate(low, mid, high);
           if (where > 0) {
             low = Math.nextAfter(mid, Double.POSITIVE_INFINITY);
@@ -618,12 +618,12 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
     return (int) (((long) low + high) / 2);
   }
 
-  private static long safeMidForLong(long low, long high) {
+  private static long safeMid(long low, long high) {
     boolean sameSign = (low >= 0) == (high >= 0);
     return sameSign ? low + (high - low) / 2 : (low + high) / 2;
   }
 
-  private static double safeMidForDouble(double low, double high) {
+  private static double safeMid(double low, double high) {
     boolean sameSign = (low >= 0) == (high >= 0);
     return sameSign ? low + (high - low) / 2 : (low + high) / 2;
   }
