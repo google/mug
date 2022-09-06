@@ -295,23 +295,27 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * <p>Infinite endpoints are disallowed.
    */
   public static BinarySearch<DoubleSearchTarget, Double> forDoubles(Range<Double> range) {
-    double low = - Double.MAX_VALUE;
+    final double low;
     if (range.hasLowerBound()) {
       checkArgument(
           Double.isFinite(range.lowerEndpoint()), "Range with infinite endpoint not supported.");
-      low = range.lowerEndpoint();
-      if (range.lowerBoundType() == BoundType.OPEN) {
-        low = Math.nextAfter(low, Double.POSITIVE_INFINITY);
-      }
+      low =
+          range.lowerBoundType() == BoundType.OPEN
+              ? Math.nextAfter(range.lowerEndpoint(), Double.POSITIVE_INFINITY)
+              : range.lowerEndpoint();
+    } else {
+      low = -Double.MAX_VALUE;
     }
-    double high = Double.MAX_VALUE;
+    final double high;
     if (range.hasUpperBound()) {
       checkArgument(
           Double.isFinite(range.upperEndpoint()), "Range with infinite endpoint not supported.");
-      high = range.upperEndpoint();
-      if (range.upperBoundType() == BoundType.OPEN) {
-        high = Math.nextAfter(high, Double.NEGATIVE_INFINITY);
-      }
+      high =
+          range.upperBoundType() == BoundType.OPEN
+              ? Math.nextAfter(range.upperEndpoint(), Double.NEGATIVE_INFINITY)
+              : range.upperEndpoint();
+    } else {
+      high = Double.MAX_VALUE;
     }
     return inRangeInclusive(low, high);
   }
