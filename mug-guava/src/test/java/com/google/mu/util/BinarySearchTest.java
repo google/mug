@@ -1394,6 +1394,17 @@ public class BinarySearchTest {
     assertThat(inCircularSortedArray(rotated).find(15)).isEmpty();
   }
 
+  @Test public void binarySearch_findMinParabola() {
+    InsertionPoint<Integer> point = BinarySearch.forInts()
+        .insertionPointFor((low, mid, high) -> Double.compare(parabola(mid - 1), parabola(mid)));
+    int solution = point.floor();
+    assertThat(solution).isEqualTo(-2);
+  }
+
+  private static double parabola(int x) {
+    return Math.pow(x, 2) + 4 * x - 3;
+  }
+
   // Demo how binarySearch() can be used to implement more advanced binary search algorithms
   // such as searching within a rotated array.
   private static BinarySearch<Integer, Integer> inCircularSortedArray(int[] rotated) {

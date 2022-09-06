@@ -66,6 +66,21 @@ import com.google.common.math.DoubleMath;
  * }
  * }</pre>
  *
+ * To find the minimum int value of a parabola:
+ *
+ * <pre>{@code
+ * double parabola(int x) {
+ *   return pow(x, 2) + 4 * x - 3;
+ * }
+ *
+ * int minimum =
+ *     BinarySearch.forInts()
+ *         .insertionPointFor((low, mid, high) -> Double.compare(parabola(mid - 1), parabola(mid)))
+ *         .floor();
+ *     => -2
+ * }
+ * }</pre>
+ *
  * To emulate the Guess The Number Game:
  *
  * <pre>{@code
