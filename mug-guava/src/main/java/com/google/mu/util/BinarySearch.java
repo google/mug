@@ -269,7 +269,8 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * <p>Different from {@link #inSortedArrayWithTolerance}, which is to search within
    * the int indexes of a double array, this method searches through double values.
    *
-   * <p>For example you can implement cube root through binary search:
+   * <p>You can use binary search to solve monotonic functions.
+   * For example the following method solves cube root:
    *
    * <pre>{@code
    * BinarySearch<Double, Double> cubeRoot() {
