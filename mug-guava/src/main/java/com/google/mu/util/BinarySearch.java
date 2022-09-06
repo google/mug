@@ -460,7 +460,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * Finds the insertion point immediately before the first element that's greater than or equal to the target.
    *
    * <p>If {@code target} is absent, {@link #insertionPointBefore} and {@link #insertionPointAfter} will be
-   * the same point, where is after the last element less than the target and the first element greater than it.
+   * the same point, after the last element less than the target and the first element greater than it.
    *
    * <p>{@code insertionPointBefore(target).exact()} will always return empty.
    *
@@ -472,7 +472,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * Finds the insertion point immediately after the last element that's less than or equal to the target.
    *
    * <p>If {@code target} is absent, {@link #insertionPointBefore} and {@link #insertionPointAfter} will be
-   * the same point.
+   * the same point, after the last element less than the target and the first element greater than it.
    *
    * <p>{@code insertionPointAfter(target).exact()} will always return empty.
    *
