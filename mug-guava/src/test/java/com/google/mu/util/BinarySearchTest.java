@@ -1220,6 +1220,9 @@ public class BinarySearchTest {
   public void forDoubles_emptyRange_maxValue() {
     double at = Double.MAX_VALUE;
     assertThat(BinarySearch.forDoubles(Range.closedOpen(at, at))
+            .rangeOf((low, mid, high) -> 0))
+        .isEqualTo(Range.closedOpen(at, at));
+    assertThat(BinarySearch.forDoubles(Range.closedOpen(at, at))
             .insertionPointFor((low, mid, high) -> 0)).isEqualTo(InsertionPoint.before(at));
     assertThat(BinarySearch.forDoubles(Range.openClosed(at, at))
         .insertionPointFor((low, mid, high) -> 0)).isEqualTo(InsertionPoint.after(at));

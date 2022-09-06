@@ -603,9 +603,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
             return InsertionPoint.at(mid);
           }
         }
-        return InsertionPoint.between(
-            floor < from && target.locate(from, from, from) >= 0 ? from : floor,
-            ceiling > to && target.locate(to, to, to) <= 0 ? to : ceiling);
+        return InsertionPoint.between(floor, ceiling);
       }
       @Override public InsertionPoint<Double> insertionPointBefore(DoubleSearchTarget target) {
         return insertionPointFor(before(target));
