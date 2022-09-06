@@ -462,6 +462,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
   }
 
   /** Represents the search target that can be found through bisecting the integer domain. */
+  @FunctionalInterface
   public interface IntSearchTarget {
     /**
      * Given a range of {@code [low, high]} inclusively with {@code mid} as the
@@ -479,6 +480,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
   }
 
   /** Represents the search target that can be found through bisecting the long integer domain. */
+  @FunctionalInterface
   public interface LongSearchTarget {
     /**
      * Given a range of {@code [low, high]} inclusively with {@code mid} as the
@@ -496,6 +498,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
   }
 
   /** Represents the search target that can be found through bisecting the double domain. */
+  @FunctionalInterface
   public interface DoubleSearchTarget {
     /**
      * Given a range of {@code [low, high]} inclusively with {@code mid} as the
