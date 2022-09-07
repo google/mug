@@ -403,14 +403,18 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
   /**
    * Finds the range of elements that match {@code target}.
    *
-   * <p>If there is a single match at index `i`, {@code [i, i]} is returned. For more
-   * than one matches, the returned range is closed at both ends. If no match is
-   * found, an empty range is returned with the open {@link Range#upperEndpoint}
-   * being the insertion point, except if the insertion point should have been
-   * after {@code MAX_VALUE}, in which case the open upper bound is saturated at
-   * {@code MAX_VALUE} even though it's not the correct insertion point.
+   * <p>If the target is found at index {@code i}, {@code [i, i]} is returned.
    *
-   * <p>Callers can check {@link Range#isEmpty} to find out if {@code target} is found at all.
+   * <p>If there are ties from index {@code i} to {@code j}, the closed range {@code [i, j]} is
+   * returned.
+   *
+   * <p>If the target isn't found, an empty range is returned. The open endpoint of the empty range
+   * is where the target should have been inserted <em>before</em>. The rule however has an
+   * exception: if the empty range's endpoint is {@code MAX_VALUE}, the insertion point could
+   * theoretically be either before or after {@code MAX_VALUE} (e.g. the target is {@code
+   * Double.POSITIVE_INFINITY}). If the saturation is problematic, consider using one of
+   * {@link #insertionPointFor}, {@link #insertionPointBefore} or {@link #insertionPointAfter}
+   * instead, which handle all insertion points.
    *
    * <p>This is an O(logn) operation.
    */
