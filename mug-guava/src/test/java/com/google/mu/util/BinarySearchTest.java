@@ -17,12 +17,14 @@ import static org.junit.Assert.assertThrows;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Range;
 import com.google.common.testing.ClassSanityTester;
@@ -1394,6 +1396,43 @@ public class BinarySearchTest {
     assertThat(inCircularSortedArray(rotated).find(15)).isEmpty();
   }
 
+  @Test
+  public void guessTheNumberGame(
+      @TestParameter(valuesProvider = LongValues.class) long secret) {
+    AtomicInteger times = new AtomicInteger();
+    assertThat(BinarySearch.forLongs().find((low, mid, high) -> {
+      times.incrementAndGet();
+      return Long.compare(secret, mid);
+    })).hasValue(secret);
+    assertThat(times.get()).isAtMost(65);
+  }
+
+  @Test
+  public void guessTheDoubleNumberGame(
+      @TestParameter(valuesProvider = DoubleValues.class) double secret) {
+    AtomicInteger times = new AtomicInteger();
+    ImmutableMap.Builder<Double, Integer> builder = ImmutableMap.builder();
+    assertThat(BinarySearch.forDoubles().find((low, mid, high) -> {
+      builder.put(mid, times.incrementAndGet());
+      return Double.compare(secret, mid);
+    })).hasValue(secret);
+    assertThat(builder.buildOrThrow().size()).isAtMost(65);
+    assertThat(times.get()).isAtMost(65);
+  }
+
+  @Test
+  public void guessTheDoubleNumberWithMostlyPositive(
+      @TestParameter({"-0.5", "-0.1", "0", "0.001", "0.1", "1"}) double secret) {
+    AtomicInteger times = new AtomicInteger();
+    ImmutableMap.Builder<Double, Integer> builder = ImmutableMap.builder();
+    assertThat(BinarySearch.forDoubles(atLeast(-1.0)).find((low, mid, high) -> {
+      builder.put(mid, times.incrementAndGet());
+      return Double.compare(secret, mid);
+    })).hasValue(secret);
+    assertThat(builder.buildOrThrow().size()).isAtMost(65);
+    assertThat(times.get()).isAtMost(65);
+  }
+
   @Test public void binarySearch_findMinParabola() {
     InsertionPoint<Integer> point = BinarySearch.forInts()
         .insertionPointFor((low, mid, high) -> Double.compare(parabola(mid - 1), parabola(mid)));
@@ -1525,6 +1564,28 @@ public class BinarySearchTest {
           .addAll(new NegativeLongValues().provideValues())
           .addAll(new NonNegativeLongValues().provideValues())
           .build();
+    }
+  }
+
+  static class DoubleValues implements TestParameter.TestParameterValuesProvider {
+    @Override
+    public List<?> provideValues() {
+      return ImmutableList.of(
+          -Long.MAX_VALUE,
+          -Long.MAX_VALUE / 2,
+          -Long.MAX_VALUE / 3,
+          -3D,
+          -2.5D,
+          -1D,
+          0D,
+          0.5,
+          0.123456789,
+          1D,
+          2D,
+          3D,
+          Double.MAX_VALUE,
+          Double.MAX_VALUE / 2,
+          Double.MAX_VALUE / 3);
     }
   }
 }
