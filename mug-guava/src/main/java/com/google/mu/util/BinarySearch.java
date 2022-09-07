@@ -403,7 +403,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
   /**
    * Finds the range of elements that match {@code target}.
    *
-   * <p>If the target is found at index {@code i}, {@code [i, i]} is returned.
+   * <p>If the target is found at index {@code i}, a single-element range {@code [i, i]} is returned.
    *
    * <p>If there are ties from index {@code i} to {@code j}, the closed range {@code [i, j]} is
    * returned.
