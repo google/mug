@@ -104,7 +104,8 @@ import com.google.common.math.LongMath;
  * @param <Q> the search query, usually a target value, but can also be a target locator object
  *     like {@link IntSearchTarget}.
  * @param <R> the binary search result, usually the index in the source array or list, but can also
- *     be the optimal solution in non-array based bisection algorithms.
+ *     be the optimal solution in non-array based bisection algorithms such as the minimum value of
+ *     a parabola function.
  * @since 6.4
  */
 public abstract class BinarySearch<Q, R extends Comparable<R>> {
@@ -650,7 +651,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
         checkNotNull(target);
         double floor = Double.NEGATIVE_INFINITY;
         double ceiling = Double.POSITIVE_INFINITY;
-        for (double low = from, high = to; low <= high ;) {
+        for (double low = from, high = to; low <= high; ) {
           double mid = median(low, high);
           int where = target.locate(low, mid, high);
           if (where > 0) {
