@@ -410,16 +410,17 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * Specifically:
    *
    * <ul>
-   * <li>For all insertion points except before {@code MIN_VALUE}, the returned range is {@link
-   *   Range#closedOpen closed-open} <b>{@code [i, i)}</b>, indicating that the insertion point is
-   *   immediately <em>after</em> endpoint {@code i}.
-   * <li>While if the insertion point is before {@code MIN_VALUE}, the returned range is {@link
-   *   Range#openClosed open-closed} <b>{@code (MIN_VALUE, MIN_VALUE]}</b>, indicating that the
-   *   insertion point is immediately <em>before</em> endpoint {@code MIN_VALUE}.
+   * <li>For all insertion points except the last one after {@code MAX_VALUE}, the returned range
+   *   is {@link Range#openClosed open-closed} <b>{@code (i, i]}</b>, indicating that the insertion
+   *   point is immediately <em>before</em> endpoint {@code i}.
+   * <li>While if the insertion point is after {@code MAX_VALUE}, the returned range is {@link
+   *   Range#closedOpen closed-open} <b>{@code [MAX_VALUE, MAX_VALUE)}</b>, indicating that the
+   *   insertion point is immediately <em>after</em> endpoint {@code MAX_VALUE}.
    * </ul>
    *
    * <p>If your code needs the insertion point when not found, but doesn't need to find the range of
-   * elements if found, use {@link #insertionPointFor} instead, which is more intuitive and also faster.
+   * elements otherwise, use {@link #insertionPointFor} instead, which is more intuitive and also
+   * faster.
    *
    * <p>This is an O(logn) operation.
    */
@@ -427,9 +428,9 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
     InsertionPoint<R> left = insertionPointBefore(target);
     InsertionPoint<R> right = insertionPointAfter(target);
     if (left.equals(right)) {
-      return left.isBelowAll()
-          ? Range.openClosed(left.ceiling(), left.ceiling())
-          : Range.closedOpen(left.floor(), right.floor());
+      return left.isAboveAll()
+          ? Range.closedOpen(left.floor(), left.floor())
+          : Range.openClosed(left.ceiling(), right.ceiling());
     }
     return Range.closed(left.ceiling(), right.floor());
   }
