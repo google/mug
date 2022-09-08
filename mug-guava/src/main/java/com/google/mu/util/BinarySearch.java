@@ -406,12 +406,16 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    *
    * <p>If the target isn't found, a half-open-half-closed empty range is returned whose endpoint
    * is the insertion point (where the target would have been inserted).
-   * Specifically, for all insertion points except before {@code MIN_VALUE}, the returned range
-   * is the {@link Range#closedOpen} {@code [i, i)}, indicating that the insertion point is
-   * immediately <em>after</em> the closed endpoint {@code i}. While if the insertion point is
-   * before {@code MIN_VALUE}, the returned range is the {@link Range#openClosed} {@code
-   * (MIN_VALUE, MIN_VALUE]}, indicating that the insertion point is immediately <em>before</em>
-   * the closed endpoint {@code MIN_VALUE}.
+   * Specifically:
+   *
+   * <ul>
+   * <li>For all insertion points except before {@code MIN_VALUE}, the returned range is {@link
+   *   Range#closedOpen} {@code [i, i)}, indicating that the insertion point is immediately
+   *   <em>after</em> endpoint {@code i}.
+   * <li>While if the insertion point is before {@code MIN_VALUE}, the returned range is {@link
+   *   Range#openClosed} {@code (MIN_VALUE, MIN_VALUE]}, indicating that the insertion point is
+   *   immediately <em>before</em> endpoint {@code MIN_VALUE}.
+   * </ul>
    *
    * <p>If your code needs the insertion point when not found, but doesn't need to find the range of
    * elements if found, use {@link #insertionPointFor} instead, which is easier and also faster.
