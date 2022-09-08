@@ -388,9 +388,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
   }
 
   /**
-   * Searches for the index of {@code target}.
-   *
-   * <p>If target is found, returns the matching integer; otherwise returns empty.
+   * Searches for {@code target} and returns the result if found; or else returns empty.
    *
    * <p>This is an O(logn) operation.
    */
