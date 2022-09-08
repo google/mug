@@ -404,24 +404,29 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * <p>If there are ties from index {@code i} to {@code j}, the closed range {@code [i, j]} is
    * returned.
    *
-   * <p>If the target isn't found, an empty range is returned. The open endpoint of the empty range
-   * is where the target should have been inserted <em>before</em>. The rule however has an
-   * exception: if the empty range's endpoint is {@code MAX_VALUE}, the insertion point could
-   * theoretically be either before or after {@code MAX_VALUE} (e.g. the target is {@code
-   * Double.POSITIVE_INFINITY}). If the saturation is problematic, consider using one of
-   * {@link #insertionPointFor}, {@link #insertionPointBefore} or {@link #insertionPointAfter}
-   * instead, which handle all insertion points.
+   * <p>If the target isn't found, a half-open-half-closed empty range is returned whose endpoint
+   * is the insertion point (where the target would have been inserted).
+   * Specifically, for all insertion points except before {@code MIN_VALUE}, the returned range
+   * is the {@link Range#closedOpen} {@code [i, i)}, indicating that the insertion point is
+   * immediately <em>after</em> the closed endpoint {@code i}. While if the insertion point is
+   * before {@code MIN_VALUE}, the returned range is the {@link Range#openClosed} {@code
+   * (MIN_VALUE, MIN_VALUE]}, indicating that the insertion point is immediately <em>before</em>
+   * the closed endpoint {@code MIN_VALUE}.
+   *
+   * <p>If your code needs the insertion point when not found, but doesn't need to find the range of
+   * elements if found, use {@link #insertionPointFor} instead, which is easier and also faster.
    *
    * <p>This is an O(logn) operation.
    */
   public Range<R> rangeOf(Q target) {
     InsertionPoint<R> left = insertionPointBefore(target);
     InsertionPoint<R> right = insertionPointAfter(target);
-    if (!left.equals(right)) {
-      return Range.closed(left.ceiling(), right.floor());
+    if (left.equals(right)) {
+      return left.isBelowAll()
+          ? Range.openClosed(left.ceiling(), left.ceiling())
+          : Range.closedOpen(left.floor(), right.floor());
     }
-    R insertAt = right.isAboveAll() ? right.floor() : right.ceiling();
-    return Range.closedOpen(insertAt, insertAt);
+    return Range.closed(left.ceiling(), right.floor());
   }
 
   /**
