@@ -408,16 +408,6 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * <p>If the target isn't found, an {@link Range#isEmpty empty} range is returned whose endpoint
    * is the "insertion point" (where the target would have been inserted without breaking order).
    * The direction of the open endpoint determines whether to insert before or after the point.
-   * Specifically:
-   *
-   * <ul>
-   * <li>For all insertion points except the last one after {@code MAX_VALUE}, the returned range
-   *   is {@link Range#closedOpen closed-open} <b>{@code [i..i)}</b>, indicating that the insertion
-   *   point is immediately <em>before</em> endpoint {@code i}.
-   * <li>While if the insertion point is after {@code MAX_VALUE}, the returned range is {@link
-   *   Range#openClosed open-closed} <b>{@code (MAX_VALUE..MAX_VALUE]}</b>, indicating that the
-   *   insertion point is immediately <em>after</em> endpoint {@code MAX_VALUE}.
-   * </ul>
    *
    * <p>Invariants for insertion points:
    * <ul>
@@ -427,6 +417,17 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    *   should be before {@code i} in order not to break order.
    * <li>A closed lower or upper endpoint means {@code target >= i} or {@code target <= j}
    *   respectively, so the insertion point can be either before or after without breaking order.
+   * </ul>
+   *
+   * Therefore:
+   *
+   * <ul>
+   * <li>For all insertion points except the last one after {@code MAX_VALUE}, the returned range
+   *   is {@link Range#closedOpen closed-open} <b>{@code [i..i)}</b>, indicating that the insertion
+   *   point is immediately <em>before</em> endpoint {@code i}.
+   * <li>While if the insertion point is after {@code MAX_VALUE}, the returned range is {@link
+   *   Range#openClosed open-closed} <b>{@code (MAX_VALUE..MAX_VALUE]}</b>, indicating that the
+   *   insertion point is immediately <em>after</em> endpoint {@code MAX_VALUE}.
    * </ul>
    *
    * <p>If your code needs the insertion point when not found, but doesn't need to find the range of
