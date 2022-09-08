@@ -436,8 +436,8 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    *
    * <p>Realistically, if you do need to use both the found range of elements and the insertion
    * point in case the target isn't found, and yet don't want to bother checking the openness
-   * of the endpoints, it's most likely safe to insert the target before {@code
-   * rangeOf().lowerEndpoint()}, unless inserting after {@code MAX_VALUE} is meanigful in your use
+   * of the endpoints, it's most likely safe to unconditionally insert the target before {@code
+   * rangeOf().lowerEndpoint()}, unless inserting after {@code MAX_VALUE} is meaningful in your use
    * case.
    *
    * <p>This is an O(logn) operation.
