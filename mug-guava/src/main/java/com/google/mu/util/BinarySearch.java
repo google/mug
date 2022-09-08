@@ -410,11 +410,11 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    *
    * <ul>
    * <li>For all insertion points except before {@code MIN_VALUE}, the returned range is {@link
-   *   Range#closedOpen} {@code [i, i)}, indicating that the insertion point is immediately
-   *   <em>after</em> endpoint {@code i}.
+   *   Range#closedOpen closed-open} {@code [i, i)}, indicating that the insertion point is
+   *   immediately <em>after</em> endpoint {@code i}.
    * <li>While if the insertion point is before {@code MIN_VALUE}, the returned range is {@link
-   *   Range#openClosed} {@code (MIN_VALUE, MIN_VALUE]}, indicating that the insertion point is
-   *   immediately <em>before</em> endpoint {@code MIN_VALUE}.
+   *   Range#openClosed open-closed} {@code (MIN_VALUE, MIN_VALUE]}, indicating that the insertion
+   *   point is immediately <em>before</em> endpoint {@code MIN_VALUE}.
    * </ul>
    *
    * <p>If your code needs the insertion point when not found, but doesn't need to find the range of
