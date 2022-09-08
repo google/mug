@@ -405,7 +405,8 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * returned.
    *
    * <p>If the target isn't found, an {@link Range#isEmpty empty} range is returned whose endpoint
-   * is the "insertion point" (where the target would have been inserted). Specifically:
+   * is the "insertion point" (where the target would have been inserted without breaking order).
+   * Specifically:
    *
    * <ul>
    * <li>For all insertion points except before {@code MIN_VALUE}, the returned range is {@link
