@@ -419,7 +419,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * </ul>
    *
    * <p>If your code needs the insertion point when not found, but doesn't need to find the range of
-   * elements if found, use {@link #insertionPointFor} instead, which is easier and also faster.
+   * elements if found, use {@link #insertionPointFor} instead, which is more intuitive and also faster.
    *
    * <p>This is an O(logn) operation.
    */
