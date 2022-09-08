@@ -412,11 +412,21 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    *
    * <ul>
    * <li>For all insertion points except the last one after {@code MAX_VALUE}, the returned range
-   *   is {@link Range#openClosed open-closed} <b>{@code (i, i]}</b>, indicating that the insertion
+   *   is {@link Range#closedOpen closed-open} <b>{@code [i, i)}</b>, indicating that the insertion
    *   point is immediately <em>before</em> endpoint {@code i}.
    * <li>While if the insertion point is after {@code MAX_VALUE}, the returned range is {@link
-   *   Range#closedOpen closed-open} <b>{@code [MAX_VALUE, MAX_VALUE)}</b>, indicating that the
+   *   Range#openClosed open-closed} <b>{@code (MAX_VALUE, MAX_VALUE]}</b>, indicating that the
    *   insertion point is immediately <em>after</em> endpoint {@code MAX_VALUE}.
+   * </ul>
+   *
+   * <p>Invariants for insertion points:
+   * <ul>
+   * <li>An open lower endpoint {@code (i..} means {@code target > i} so the insertion point
+   *   should be after {@code i} in order not to break order.
+   * <li>An open upper endpoint {@code ..j)} means {@code target < j} so the insertion point
+   *   should be before {@code i} in order not to break order.
+   * <li>A closed lower or upper endpoint means {@code target >= i} or {@code target <= j}
+   *   respectively, so the insertion point can be either before or after without breaking order.
    * </ul>
    *
    * <p>If your code needs the insertion point when not found, but doesn't need to find the range of
@@ -430,8 +440,8 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
     InsertionPoint<R> right = insertionPointAfter(target);
     if (left.equals(right)) {
       return left.isAboveAll()
-          ? Range.closedOpen(left.floor(), left.floor())
-          : Range.openClosed(left.ceiling(), right.ceiling());
+          ? Range.openClosed(left.floor(), left.floor())
+          : Range.closedOpen(left.ceiling(), right.ceiling());
     }
     return Range.closed(left.ceiling(), right.floor());
   }
