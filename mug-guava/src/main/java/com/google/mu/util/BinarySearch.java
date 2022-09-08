@@ -413,6 +413,9 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * (MIN_VALUE, MIN_VALUE]}, indicating that the insertion point is immediately <em>before</em>
    * the closed endpoint {@code MIN_VALUE}.
    *
+   * <p>If your code needs the insertion point when not found, but doesn't need to find the range of
+   * elements if found, use {@link #insertionPointFor} instead, which is easier and also faster.
+   *
    * <p>This is an O(logn) operation.
    */
   public Range<R> rangeOf(Q target) {
