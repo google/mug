@@ -399,10 +399,11 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
   /**
    * Finds the range of elements that match {@code target}.
    *
-   * <p>If the target is found at index {@code i}, a single-element range {@code [i, i]} is returned.
+   * <p>If the target is found at index {@code i}, the single-element range <b>{@code [i, i]}</b>
+   * is returned.
    *
-   * <p>If there are ties from index {@code i} to {@code j}, the closed range {@code [i, j]} is
-   * returned.
+   * <p>If there are ties from index {@code i} to {@code j}, the closed range <b>{@code [i, j]}</b>
+   * is returned.
    *
    * <p>If the target isn't found, an {@link Range#isEmpty empty} range is returned whose endpoint
    * is the "insertion point" (where the target would have been inserted without breaking order).
@@ -410,11 +411,11 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    *
    * <ul>
    * <li>For all insertion points except before {@code MIN_VALUE}, the returned range is {@link
-   *   Range#closedOpen closed-open} {@code [i, i)}, indicating that the insertion point is
+   *   Range#closedOpen closed-open} <b>{@code [i, i)}</b>, indicating that the insertion point is
    *   immediately <em>after</em> endpoint {@code i}.
    * <li>While if the insertion point is before {@code MIN_VALUE}, the returned range is {@link
-   *   Range#openClosed open-closed} {@code (MIN_VALUE, MIN_VALUE]}, indicating that the insertion
-   *   point is immediately <em>before</em> endpoint {@code MIN_VALUE}.
+   *   Range#openClosed open-closed} <b>{@code (MIN_VALUE, MIN_VALUE]}</b>, indicating that the
+   *   insertion point is immediately <em>before</em> endpoint {@code MIN_VALUE}.
    * </ul>
    *
    * <p>If your code needs the insertion point when not found, but doesn't need to find the range of
