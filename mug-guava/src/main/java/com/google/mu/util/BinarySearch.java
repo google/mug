@@ -404,9 +404,8 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * <p>If there are ties from index {@code i} to {@code j}, the closed range {@code [i, j]} is
    * returned.
    *
-   * <p>If the target isn't found, a half-open-half-closed empty range is returned whose endpoint
-   * is the insertion point (where the target would have been inserted).
-   * Specifically:
+   * <p>If the target isn't found, an {@link Range#isEmpty empty} range is returned whose endpoint
+   * is the "insertion point" (where the target would have been inserted). Specifically:
    *
    * <ul>
    * <li>For all insertion points except before {@code MIN_VALUE}, the returned range is {@link
