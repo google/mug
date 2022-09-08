@@ -399,10 +399,10 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
   /**
    * Finds the range of elements that match {@code target}.
    *
-   * <p>If the target is found at index {@code i}, the single-element range <b>{@code [i, i]}</b>
+   * <p>If the target is found at index {@code i}, the single-element range <b>{@code [i..i]}</b>
    * is returned.
    *
-   * <p>If there are ties from index {@code i} to {@code j}, the closed range <b>{@code [i, j]}</b>
+   * <p>If there are ties from index {@code i} to {@code j}, the closed range <b>{@code [i..j]}</b>
    * is returned.
    *
    * <p>If the target isn't found, an {@link Range#isEmpty empty} range is returned whose endpoint
@@ -412,10 +412,10 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    *
    * <ul>
    * <li>For all insertion points except the last one after {@code MAX_VALUE}, the returned range
-   *   is {@link Range#closedOpen closed-open} <b>{@code [i, i)}</b>, indicating that the insertion
+   *   is {@link Range#closedOpen closed-open} <b>{@code [i..i)}</b>, indicating that the insertion
    *   point is immediately <em>before</em> endpoint {@code i}.
    * <li>While if the insertion point is after {@code MAX_VALUE}, the returned range is {@link
-   *   Range#openClosed open-closed} <b>{@code (MAX_VALUE, MAX_VALUE]}</b>, indicating that the
+   *   Range#openClosed open-closed} <b>{@code (MAX_VALUE..MAX_VALUE]}</b>, indicating that the
    *   insertion point is immediately <em>after</em> endpoint {@code MAX_VALUE}.
    * </ul>
    *
