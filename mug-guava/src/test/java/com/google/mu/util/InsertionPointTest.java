@@ -209,17 +209,11 @@ public class InsertionPointTest {
   }
 
   @Test public void beforeNegativeInfinity() {
-    InsertionPoint<Double> insertionPoint = InsertionPoint.before(Double.NEGATIVE_INFINITY);
-    assertThat(insertionPoint.ceiling()).isEqualTo(Double.NEGATIVE_INFINITY);
-    assertThat(insertionPoint.isBelowAll()).isTrue();
-    assertThat(insertionPoint.isAboveAll()).isFalse();
+    assertThrows(IllegalArgumentException.class, () -> InsertionPoint.before(Double.NEGATIVE_INFINITY));
   }
 
   @Test public void afterPositiveInfinity() {
-    InsertionPoint<Double> insertionPoint = InsertionPoint.after(Double.POSITIVE_INFINITY);
-    assertThat(insertionPoint.floor()).isEqualTo(Double.POSITIVE_INFINITY);
-    assertThat(insertionPoint.isBelowAll()).isFalse();
-    assertThat(insertionPoint.isAboveAll()).isTrue();
+    assertThrows(IllegalArgumentException.class, () -> InsertionPoint.after(Double.POSITIVE_INFINITY));
   }
 
   @Test public void afterNegativeInfinity() {
@@ -236,6 +230,9 @@ public class InsertionPointTest {
     assertThrows(IllegalArgumentException.class, () -> InsertionPoint.between(Double.NaN, Double.NaN));
     assertThrows(IllegalArgumentException.class, () -> InsertionPoint.between(0.0, Double.NaN));
     assertThrows(IllegalArgumentException.class, () -> InsertionPoint.between(Double.NaN, 0.0));
+    assertThrows(IllegalArgumentException.class, () -> InsertionPoint.between(Double.POSITIVE_INFINITY, Double.NaN));
+    assertThrows(IllegalArgumentException.class, () -> InsertionPoint.between(Double.NEGATIVE_INFINITY, Double.NaN));
+    assertThrows(IllegalArgumentException.class, () -> InsertionPoint.between(Double.NaN, Double.POSITIVE_INFINITY));
   }
 
   @Test public void testEquals() {
@@ -257,8 +254,6 @@ public class InsertionPointTest {
         .addEqualityGroup(InsertionPoint.between(-Double.MIN_VALUE, Double.MIN_VALUE))
         .addEqualityGroup(InsertionPoint.between(-Double.MAX_VALUE, Double.MAX_VALUE))
         .addEqualityGroup(InsertionPoint.between(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY))
-        .addEqualityGroup(InsertionPoint.before(Double.NEGATIVE_INFINITY))
-        .addEqualityGroup(InsertionPoint.after(Double.POSITIVE_INFINITY))
         .testEquals();
   }
 
