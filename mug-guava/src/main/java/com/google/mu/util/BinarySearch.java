@@ -414,12 +414,12 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * <li>An open lower endpoint {@code (i..} means {@code target > i} so the insertion point
    *   should be after {@code i} in order not to break order.
    * <li>An open upper endpoint {@code ..j)} means {@code target < j} so the insertion point
-   *   should be before {@code i} in order not to break order.
+   *   should be before {@code j} in order not to break order.
    * <li>A closed lower or upper endpoint means {@code target >= i} or {@code target <= j}
    *   respectively, so the insertion point can be either before or after without breaking order.
    * </ul>
    *
-   * Therefore:
+   * <p>Therefore:
    *
    * <ul>
    * <li>For all insertion points except the last one after {@code MAX_VALUE}, the returned range
