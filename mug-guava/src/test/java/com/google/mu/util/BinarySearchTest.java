@@ -1183,6 +1183,19 @@ public class BinarySearchTest {
   }
 
   @Test
+  public void forDoubles_positiveRange_invisibleNumber() {
+    InsertionPoint<Double> insertionPoint =
+        BinarySearch.forDoubles(greaterThan(0D))
+            .insertionPointFor((low, mid, high) -> mid <= 100 ? 1 : -1);
+    assertThat(insertionPoint.exact()).isEmpty();
+    assertThat(insertionPoint.floor()).isEqualTo(100.0);
+    assertThat(insertionPoint.ceiling()).isEqualTo(Math.nextUp(100.0));
+    assertThat(BinarySearch.forDoubles(greaterThan(0D))
+         .rangeOf((low, mid, high) -> mid <= 100 ? 1 : -1))
+        .isEqualTo(Range.closedOpen(Math.nextUp(100.0), Math.nextUp(100.0)));
+  }
+
+  @Test
   public void forDoubles_singletonRange_maxValueFound() {
     double secret = Double.MAX_VALUE;
     InsertionPoint<Double> insertionPoint =
