@@ -399,27 +399,45 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
   /**
    * Finds the range of elements that match {@code target}.
    *
-   * <p>If the target is found at index {@code i}, the single-element range <b>{@code [i, i]}</b>
+   * <p>If the target is found at index {@code i}, the single-element range <b>{@code [i..i]}</b>
    * is returned.
    *
-   * <p>If there are ties from index {@code i} to {@code j}, the closed range <b>{@code [i, j]}</b>
+   * <p>If there are ties from index {@code i} to {@code j}, the closed range <b>{@code [i..j]}</b>
    * is returned.
    *
    * <p>If the target isn't found, an {@link Range#isEmpty empty} range is returned whose endpoint
    * is the "insertion point" (where the target would have been inserted without breaking order).
-   * Specifically:
+   * The direction of the open endpoint determines whether to insert before or after the point.
+   *
+   * <p>Invariants for insertion points:
+   * <ul>
+   * <li>An open lower endpoint {@code (i..} means {@code target > i} so the insertion point
+   *   should be after {@code i} in order not to break order.
+   * <li>An open upper endpoint {@code ..j)} means {@code target < j} so the insertion point
+   *   should be before {@code i} in order not to break order.
+   * <li>A closed lower or upper endpoint means {@code target >= i} or {@code target <= j}
+   *   respectively, so the insertion point can be either before or after without breaking order.
+   * </ul>
+   *
+   * Therefore:
    *
    * <ul>
-   * <li>For all insertion points except before {@code MIN_VALUE}, the returned range is {@link
-   *   Range#closedOpen closed-open} <b>{@code [i, i)}</b>, indicating that the insertion point is
-   *   immediately <em>after</em> endpoint {@code i}.
-   * <li>While if the insertion point is before {@code MIN_VALUE}, the returned range is {@link
-   *   Range#openClosed open-closed} <b>{@code (MIN_VALUE, MIN_VALUE]}</b>, indicating that the
-   *   insertion point is immediately <em>before</em> endpoint {@code MIN_VALUE}.
+   * <li>For all insertion points except the last one after {@code MAX_VALUE}, the returned range
+   *   is {@link Range#closedOpen closed-open} <b>{@code [i..i)}</b>, indicating that the insertion
+   *   point is immediately <em>before</em> endpoint {@code i}.
+   * <li>While if the insertion point is after {@code MAX_VALUE}, the returned range is {@link
+   *   Range#openClosed open-closed} <b>{@code (MAX_VALUE..MAX_VALUE]}</b>, indicating that the
+   *   insertion point is immediately <em>after</em> endpoint {@code MAX_VALUE}.
    * </ul>
    *
    * <p>If your code needs the insertion point when not found, but doesn't need to find the range of
-   * elements if found, use {@link #insertionPointFor} instead, which is more intuitive and also faster.
+   * elements otherwise, use {@link #insertionPointFor} instead, which is more intuitive and also
+   * faster.
+   *
+   * <p>Realistically, if you do need to use both the found range of elements and the insertion
+   * point in case the target isn't found, and yet don't want to bother checking the openness
+   * of the endpoints, it's likely okay to unconditionally insert the target before {@code
+   * rangeOf().lowerEndpoint()}, unless {@code target > MAX_VALUE} is meaningful in your use case.
    *
    * <p>This is an O(logn) operation.
    */
@@ -427,9 +445,9 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
     InsertionPoint<R> left = insertionPointBefore(target);
     InsertionPoint<R> right = insertionPointAfter(target);
     if (left.equals(right)) {
-      return left.isBelowAll()
-          ? Range.openClosed(left.ceiling(), left.ceiling())
-          : Range.closedOpen(left.floor(), right.floor());
+      return left.isAboveAll()
+          ? Range.openClosed(left.floor(), left.floor())
+          : Range.closedOpen(left.ceiling(), right.ceiling());
     }
     return Range.closed(left.ceiling(), right.floor());
   }
