@@ -1083,6 +1083,9 @@ public class BinarySearchTest {
             .insertionPointFor((low, mid, high) -> Double.compare(secret, mid));
     assertThat(insertionPoint.floor()).isEqualTo(secret);
     assertThat(insertionPoint.ceiling()).isEqualTo(secret);
+    assertThat(BinarySearch.forDoubles()
+            .rangeOf((low, mid, high) -> Double.compare(secret, mid)))
+        .isEqualTo(Range.closed(secret, secret));
   }
 
   @Test
@@ -1093,6 +1096,8 @@ public class BinarySearchTest {
     assertThat(insertionPoint.exact()).isEmpty();
     assertThat(insertionPoint.floor()).isEqualTo(Double.MAX_VALUE);
     assertThat(insertionPoint.ceiling()).isEqualTo(Double.POSITIVE_INFINITY);
+    assertThat(BinarySearch.forDoubles().rangeOf(((low, mid, high) -> 1)))
+        .isEqualTo(Range.closedOpen(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY));
   }
 
   @Test
@@ -1103,6 +1108,9 @@ public class BinarySearchTest {
             .insertionPointFor((low, mid, high) -> Double.compare(secret, mid));
     assertThat(insertionPoint.floor()).isEqualTo(secret);
     assertThat(insertionPoint.ceiling()).isEqualTo(secret);
+    assertThat(BinarySearch.forDoubles()
+            .rangeOf((low, mid, high) -> Double.compare(secret, mid)))
+        .isEqualTo(Range.closed(secret, secret));
   }
 
   @Test
@@ -1113,6 +1121,8 @@ public class BinarySearchTest {
     assertThat(insertionPoint.exact()).isEmpty();
     assertThat(insertionPoint.floor()).isEqualTo(Double.NEGATIVE_INFINITY);
     assertThat(insertionPoint.ceiling()).isEqualTo(-Double.MAX_VALUE);
+    assertThat(BinarySearch.forDoubles().rangeOf(((low, mid, high) -> -1)))
+        .isEqualTo(Range.closedOpen(-Double.MAX_VALUE, -Double.MAX_VALUE));
   }
 
   @Test
@@ -1125,6 +1135,9 @@ public class BinarySearchTest {
             .insertionPointFor((low, mid, high) -> Double.compare(secret, mid));
     assertThat(insertionPoint.floor()).isEqualTo(secret);
     assertThat(insertionPoint.ceiling()).isEqualTo(secret);
+    assertThat(BinarySearch.forDoubles(Range.atLeast(0D))
+            .rangeOf((low, mid, high) -> Double.compare(secret, mid)))
+        .isEqualTo(Range.closed(secret, secret));
   }
 
   @Test
