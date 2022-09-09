@@ -1191,8 +1191,11 @@ public class BinarySearchTest {
     assertThat(insertionPoint.floor()).isEqualTo(100.0);
     assertThat(insertionPoint.ceiling()).isEqualTo(Math.nextUp(100.0));
     assertThat(BinarySearch.forDoubles(greaterThan(0D))
-         .rangeOf((low, mid, high) -> mid <= 100 ? 1 : -1))
+            .rangeOf((low, mid, high) -> mid <= 100 ? 1 : -1))
         .isEqualTo(Range.closedOpen(Math.nextUp(100.0), Math.nextUp(100.0)));
+    assertThat(BinarySearch.forDoubles(greaterThan(0D))
+            .find((low, mid, high) -> mid <= 100 ? 1 : -1))
+       .isEmpty();
   }
 
   @Test
