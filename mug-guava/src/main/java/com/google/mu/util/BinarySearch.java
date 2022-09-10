@@ -96,16 +96,18 @@ import com.google.common.math.LongMath;
  * methods perform no boxing in the O(logn) search operation.
  *
  * <p>Note that except {@link #inSortedList(List, Comparator)}, which may support null search
- * targets if the comparator supports nulls, no other {@code BinarySearch} implementations
+ * targets if the comparator supports nulls, no other {@code LookupTable} implementations
  * allow null queries.
  *
  * @since 6.4
  */
 public final class BinarySearch {
   /**
-   * Returns a {@link BinarySearch} for indexes in the given sorted {@code list}.
+   * Returns a {@link LookupTable} to search for element indexes in the given sorted {@code list}.
    *
    * <p>For example: {@code inSortedList(numbers).find(20)}.
+   *
+   * <p>This is an O(1) operation.
    *
    * @param list expected to support random access (not {@code LinkedList} for instance),
    *     or else performance will suffer.
@@ -120,10 +122,12 @@ public final class BinarySearch {
   }
 
   /**
-   * Returns a {@link BinarySearch} for indexes in the given sorted {@code list} according to
-   * {@code comparator}.
+   * Returns a {@link LookupTable} to search for element indexes in the given sorted {@code list}
+   * according to {@code comparator}.
    *
    * <p>For example: {@code inSortedList(timestamps, nullsFirst(naturalOrder())).find(timestamp)}.
+   *
+   * <p>This is an O(1) operation.
    *
    * @param list expected to support random access (not {@code LinkedList} for instance),
    *     or else performance will suffer.
@@ -136,10 +140,12 @@ public final class BinarySearch {
   }
 
   /**
-   * Returns a {@link BinarySearch} for indexes in the given {@code list} sorted by the
-   * {@code sortBy} function.
+   * Returns a {@link LookupTable} to search for element indexes in the given {@code list} sorted by
+   * the {@code sortBy} function.
    *
    * <p>For example: {@code inSortedList(employees, Employee::age).rangeOf(20)}.
+   *
+   * <p>This is an O(1) operation.
    *
    * @param list expected to support random access (not {@code LinkedList} for instance),
    *     or else performance will suffer.
@@ -150,9 +156,12 @@ public final class BinarySearch {
   }
 
   /**
-   * Returns a {@link BinarySearch} for indexes in the given sorted int {@code array}.
+   * Returns a {@link LookupTable} to search for array element indexes in the given sorted int
+   * {@code array}.
    *
    * <p>For example: {@code inSortedArray(numbers).find(20)}.
+   *
+   * <p>This is an O(1) operation.
    */
   public static LookupTable<Integer, Integer> inSortedArray(int[] array) {
     return inRangeInclusive(0, array.length - 1)
@@ -162,9 +171,12 @@ public final class BinarySearch {
         });
   }
 
-  /** Returns a {@link BinarySearch} for indexes in the given sorted long {@code array}.
+  /** Returns a {@link LookupTable} to search for array element indexes in the given sorted long
+   * {@code array}.
    *
    * <p>For example: {@code inSortedArray(largeNumbers).find(1000000000000L)}.
+   *
+   * <p>This is an O(1) operation.
    */
   public static LookupTable<Long, Integer> inSortedArray(long[] array) {
     return inRangeInclusive(0, array.length - 1)
@@ -175,10 +187,13 @@ public final class BinarySearch {
   }
 
   /**
-   * Returns a {@link BinarySearch} for indexes in the given sorted double {@code array}.
-   * The positive {@code tolerance} is respected when comparing double values.
+   * Returns a {@link LookupTable} to search for element indexes in the given list of sorted
+   * {@code double} values. The positive {@code tolerance} is respected when comparing double
+   * values.
    *
    * <p>For example: {@code inSortedListWithTolerance(temperatures, 0.1).find(30)}.
+   *
+   * <p>This is an O(1) operation.
    *
    * @param list expected to support random access (not {@code LinkedList} for instance),
    *     or else performance will suffer.
@@ -197,10 +212,12 @@ public final class BinarySearch {
   }
 
   /**
-   * Returns a {@link BinarySearch} for indexes in the given sorted double {@code array}.
-   * The positive {@code tolerance} is respected when comparing double values.
+   * Returns a {@link LookupTable} to search for array element indexes in the given sorted double
+   * {@code array}. The positive {@code tolerance} is respected when comparing double values.
    *
    * <p>For example: {@code inSortedArrayWithTolerance(temperatures, 0.1).find(30)}.
+   *
+   * <p>This is an O(1) operation.
    */
   public static LookupTable<Double, Integer> inSortedArrayWithTolerance(
       double[] array, double tolerance) {
@@ -213,11 +230,13 @@ public final class BinarySearch {
   }
 
   /**
-   * Returns a {@link BinarySearch} over all integers.
+   * Returns a {@link LookupTable} over all integers.
    *
    * <p>Callers can search by an {@link IntSearchTarget} object that will be called at each iteration
    * to determine whether the target is already found at the current mid-point, to the left half of the
    * current subrange, or to the right half of the current subrange.
+   *
+   * <p>This is an O(1) operation.
    *
    * @see {@link #forInts(Range)} for examples
    */
@@ -226,7 +245,7 @@ public final class BinarySearch {
   }
 
   /**
-   * Returns a {@link BinarySearch} over the given {@code range}.
+   * Returns a {@link LookupTable} over the given {@code range}.
    *
    * <p>Callers can search by an {@link IntSearchTarget} object that will be called at each iteration
    * to determine whether the target is already found at the current mid-point, to the left half of the
@@ -255,6 +274,8 @@ public final class BinarySearch {
    * }
    * }
    * </pre>
+   *
+   * <p>This is an O(1) operation.
    */
   public static LookupTable<IntSearchTarget, Integer> forInts(Range<Integer> range) {
     Integer low = low(range, integers());
@@ -269,7 +290,7 @@ public final class BinarySearch {
   }
 
   /**
-   * Similar to {@link #forInts()}, but returns a {@link BinarySearch} over all {@code long} integers.
+   * Similar to {@link #forInts()}, but returns a {@link LookupTable} over all {@code long} integers.
    *
    * <p>Callers can search by a {@link LongSearchTarget} object that will be called at each iteration
    * to determine whether the target is already found at the current mid-point, to the left half of the
@@ -282,18 +303,22 @@ public final class BinarySearch {
    * Optional<Long> guessed = forLongs().find((low, mid, high) -> Integer.compare(secret, mid));
    * assertThat(guessed).hasValue(secret);
    * }</pre>
+   *
+   * <p>This is an O(1) operation.
    */
   public static LookupTable<LongSearchTarget, Long> forLongs() {
     return forLongs(all());
   }
 
   /**
-   * Similar to {@link #forInts(Range)}, but returns a {@link BinarySearch} over the given
+   * Similar to {@link #forInts(Range)}, but returns a {@link LookupTable} over the given
    * {@code range} of {@code long} integers.
    *
    * <p>Callers can search by a {@link LongSearchTarget} object that will be called at each iteration
    * to determine whether the target is already found at the current mid-point, to the left half of the
    * current subrange, or to the right half of the current subrange.
+   *
+   * <p>This is an O(1) operation.
    */
   public static LookupTable<LongSearchTarget, Long> forLongs(Range<Long> range) {
     Long low = low(range, longs());
@@ -308,7 +333,8 @@ public final class BinarySearch {
   }
 
   /**
-   * Returns a {@link BinarySearch} over double values.
+   * Returns a {@link LookupTable} over all finite double values (except {@link Double#NaN},
+   * {@link Double#NEGATIVE_INFINITY} and {@link Double#POSITIVE_INFINITY}).
    *
    * <p>Callers can search by an {@link DoubleSearchTarget} object that will be called at each iteration
    * to determine whether the target is already found at the current mid-point, to the left half of the
@@ -328,13 +354,15 @@ public final class BinarySearch {
    *
    * cubeRoot().insertionPointFor(125.0) => InsertionPoint.at(5.0)
    * }</pre>
+   *
+   * <p>This is an O(1) operation.
    */
   public static LookupTable<DoubleSearchTarget, Double> forDoubles() {
     return forDoubles(all());
   }
 
   /**
-   * Similar to {@link #forInts(Range)}, but returns a {@link BinarySearch} over the given
+   * Similar to {@link #forInts(Range)}, but returns a {@link LookupTable} over the given
    * {@code range} of {@code double} precision numbers.
    *
    * <p>Callers can search by a {@link DoubleSearchTarget} object that will be called at each iteration
@@ -353,6 +381,8 @@ public final class BinarySearch {
    * }</pre>
    *
    * <p>Infinite endpoints are disallowed.
+   *
+   * <p>This is an O(1) operation.
    */
   public static LookupTable<DoubleSearchTarget, Double> forDoubles(Range<Double> range) {
     final double low;
@@ -519,7 +549,7 @@ public final class BinarySearch {
     public abstract InsertionPoint<R> insertionPointAfter(K target);
 
     /**
-     * Returns a new {@link BinarySearch} over the same source but transforms
+     * Returns a new {@link LookupTable} over the same source but transforms
      * the search target using the given {@code keyFunction} first.
      *
      * <p>Useful for creating a facade in front of a lower-level backing data source.
