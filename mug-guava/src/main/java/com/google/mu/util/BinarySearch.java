@@ -99,14 +99,9 @@ import com.google.common.math.LongMath;
  * targets if the comparator supports nulls, no other {@code BinarySearch} implementations
  * allow null queries.
  *
- * @param <Q> the search query, usually a target value, but can also be a target locator object
- *     like {@link IntSearchTarget}.
- * @param <R> the binary search result, usually the index in the source array or list, but can also
- *     be the optimal solution in non-array based bisection algorithms such as the minimum value of
- *     a parabola function.
  * @since 6.4
  */
-public abstract class BinarySearch<Q, R extends Comparable<R>> {
+public final class BinarySearch {
   /**
    * Returns a {@link BinarySearch} for indexes in the given sorted {@code list}.
    *
@@ -115,7 +110,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * @param list expected to support random access (not {@code LinkedList} for instance),
    *     or else performance will suffer.
    */
-  public static <E extends Comparable<E>> BinarySearch<E, Integer> inSortedList(
+  public static <E extends Comparable<E>> LookupTable<E, Integer> inSortedList(
       List<? extends E> list) {
     return inRangeInclusive(0, list.size() - 1)
         .by(target -> {
@@ -133,7 +128,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * @param list expected to support random access (not {@code LinkedList} for instance),
    *     or else performance will suffer.
    */
-  public static <E> BinarySearch<E, Integer> inSortedList(
+  public static <E> LookupTable<E, Integer> inSortedList(
       List<? extends E> list, Comparator<? super E> sortedBy) {
     checkNotNull(sortedBy);
     return inRangeInclusive(0, list.size() - 1)
@@ -149,7 +144,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * @param list expected to support random access (not {@code LinkedList} for instance),
    *     or else performance will suffer.
    */
-  public static <Q extends Comparable<Q>, E> BinarySearch<Q, Integer> inSortedList(
+  public static <Q extends Comparable<Q>, E> LookupTable<Q, Integer> inSortedList(
       List<? extends E> list, Function<? super E, ? extends Q> sortedBy) {
     return inSortedList(Lists.transform(list, sortedBy::apply));
   }
@@ -159,7 +154,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    *
    * <p>For example: {@code inSortedArray(numbers).find(20)}.
    */
-  public static BinarySearch<Integer, Integer> inSortedArray(int[] array) {
+  public static LookupTable<Integer, Integer> inSortedArray(int[] array) {
     return inRangeInclusive(0, array.length - 1)
         .by(target -> {
           int intValue = target.intValue();
@@ -171,7 +166,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    *
    * <p>For example: {@code inSortedArray(largeNumbers).find(1000000000000L)}.
    */
-  public static BinarySearch<Long, Integer> inSortedArray(long[] array) {
+  public static LookupTable<Long, Integer> inSortedArray(long[] array) {
     return inRangeInclusive(0, array.length - 1)
         .by(target -> {
           long longValue = target.longValue();
@@ -191,7 +186,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    *     and elements in the list, which must be a non-negative finite value, i.e. not {@link
    *     Double#NaN}, {@link Double#POSITIVE_INFINITY}, or negative, including {@code -0.0}
    */
-  public static BinarySearch<Double, Integer> inSortedListWithTolerance(
+  public static LookupTable<Double, Integer> inSortedListWithTolerance(
       List<Double> list, double tolerance) {
     checkNotNegative(tolerance);
     return inRangeInclusive(0, list.size() - 1)
@@ -207,7 +202,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    *
    * <p>For example: {@code inSortedArrayWithTolerance(temperatures, 0.1).find(30)}.
    */
-  public static BinarySearch<Double, Integer> inSortedArrayWithTolerance(
+  public static LookupTable<Double, Integer> inSortedArrayWithTolerance(
       double[] array, double tolerance) {
     checkNotNegative(tolerance);
     return inRangeInclusive(0, array.length - 1)
@@ -226,7 +221,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    *
    * @see {@link #forInts(Range)} for examples
    */
-  public static BinarySearch<IntSearchTarget, Integer> forInts() {
+  public static LookupTable<IntSearchTarget, Integer> forInts() {
     return forInts(all());
   }
 
@@ -261,7 +256,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * }
    * </pre>
    */
-  public static BinarySearch<IntSearchTarget, Integer> forInts(Range<Integer> range) {
+  public static LookupTable<IntSearchTarget, Integer> forInts(Range<Integer> range) {
     Integer low = low(range, integers());
     if (low == null) {
       return always(InsertionPoint.before(range.lowerEndpoint()));
@@ -288,7 +283,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * assertThat(guessed).hasValue(secret);
    * }</pre>
    */
-  public static BinarySearch<LongSearchTarget, Long> forLongs() {
+  public static LookupTable<LongSearchTarget, Long> forLongs() {
     return forLongs(all());
   }
 
@@ -300,7 +295,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * to determine whether the target is already found at the current mid-point, to the left half of the
    * current subrange, or to the right half of the current subrange.
    */
-  public static BinarySearch<LongSearchTarget, Long> forLongs(Range<Long> range) {
+  public static LookupTable<LongSearchTarget, Long> forLongs(Range<Long> range) {
     Long low = low(range, longs());
     if (low == null) {
       return always(InsertionPoint.before(range.lowerEndpoint()));
@@ -326,7 +321,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * For example the following method solves cube root:
    *
    * <pre>{@code
-   * BinarySearch<Double, Double> cubeRoot() {
+   * LookupTable<Double, Double> cubeRoot() {
    *   return forDoubles()
    *       .by(cube -> (low, mid, high) -> Double.compare(cube, mid * mid * mid));
    * }
@@ -334,7 +329,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * cubeRoot().insertionPointFor(125.0) => InsertionPoint.at(5.0)
    * }</pre>
    */
-  public static BinarySearch<DoubleSearchTarget, Double> forDoubles() {
+  public static LookupTable<DoubleSearchTarget, Double> forDoubles() {
     return forDoubles(all());
   }
 
@@ -349,7 +344,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * <p>For example you can implement square root through binary search:
    *
    * <pre>{@code
-   * BinarySearch<Double, Double> sqrt() {
+   * LookupTable<Double, Double> sqrt() {
    *   return forDoubles(atLeast(0D))
    *       .by(square -> (low, mid, high) -> Double.compare(square, mid * mid));
    * }
@@ -359,7 +354,7 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    *
    * <p>Infinite endpoints are disallowed.
    */
-  public static BinarySearch<DoubleSearchTarget, Double> forDoubles(Range<Double> range) {
+  public static LookupTable<DoubleSearchTarget, Double> forDoubles(Range<Double> range) {
     final double low;
     if (range.hasLowerBound()) {
       checkArgument(
@@ -388,173 +383,186 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
   }
 
   /**
-   * Searches for {@code target} and returns the result if found; or else returns empty.
+   * The source data to be looked up using binary search.
    *
-   * <p>This is an O(logn) operation.
+   * @param <K> the search key, usually a target value, but can also be a target locator object
+   *     like {@link IntSearchTarget}.
+   * @param <R> the binary search result, usually the index in the source array or list, but can also
+   *     be the optimal solution in non-array based bisection algorithms such as the minimum value of
+   *     a parabola function.
    */
-  public Optional<R> find(Q target) {
-    return insertionPointFor(target).exact();
-  }
-
-  /**
-   * Finds the range of elements that match {@code target}.
-   *
-   * <p>If the target is found at index {@code i}, the single-element range <b>{@code [i..i]}</b>
-   * is returned.
-   *
-   * <p>If there are ties from index {@code i} to {@code j}, the closed range <b>{@code [i..j]}</b>
-   * is returned.
-   *
-   * <p>If the target isn't found, an {@link Range#isEmpty empty} range is returned whose endpoint
-   * is the "insertion point" (where the target would have been inserted without breaking order).
-   * The direction of the open endpoint determines whether to insert before or after the point.
-   *
-   * <p>Invariants for insertion points:
-   * <ul>
-   * <li>An open lower endpoint {@code (i..} means {@code target > i} so the insertion point
-   *   should be after {@code i} in order not to break order.
-   * <li>An open upper endpoint {@code ..j)} means {@code target < j} so the insertion point
-   *   should be before {@code j} in order not to break order.
-   * <li>A closed lower or upper endpoint means {@code target >= i} or {@code target <= j}
-   *   respectively, so the insertion point can be either before or after without breaking order.
-   * </ul>
-   *
-   * <p>Therefore:
-   *
-   * <ul>
-   * <li>For all insertion points except the last one after {@code MAX_VALUE}, the returned range
-   *   is {@link Range#closedOpen closed-open} <b>{@code [i..i)}</b>, indicating that the insertion
-   *   point is immediately <em>before</em> endpoint {@code i}.
-   * <li>While if the insertion point is after {@code MAX_VALUE}, the returned range is {@link
-   *   Range#openClosed open-closed} <b>{@code (MAX_VALUE..MAX_VALUE]}</b>, indicating that the
-   *   insertion point is immediately <em>after</em> endpoint {@code MAX_VALUE}.
-   * </ul>
-   *
-   * <p>If your code needs the insertion point when not found, but doesn't need to find the range of
-   * elements otherwise, use {@link #insertionPointFor} instead, which is more intuitive and also
-   * faster.
-   *
-   * <p>Realistically though, unless {@code target > MAX_VALUE} is meaningful to your use case,
-   * it's okay to simply insert the target before {@code rangeOf().lowerEndpoint()}. This invariant
-   * holds regardless whether the target is found or not.
-   *
-   * <p>This is an O(logn) operation.
-   */
-  public Range<R> rangeOf(Q target) {
-    InsertionPoint<R> left = insertionPointBefore(target);
-    InsertionPoint<R> right = insertionPointAfter(target);
-    if (left.equals(right)) {
-      return left.isAboveAll()
-          ? Range.openClosed(left.floor(), left.floor())
-          : Range.closedOpen(left.ceiling(), right.ceiling());
+  public static abstract class LookupTable<K, R extends Comparable<R>> {
+    /**
+     * Searches for {@code target} and returns the result if found; or else returns empty.
+     *
+     * <p>This is an O(logn) operation.
+     */
+    public Optional<R> find(K target) {
+      return insertionPointFor(target).exact();
     }
-    return Range.closed(left.ceiling(), right.floor());
-  }
 
-  /**
-   * Finds the {@link InsertionPoint} if {@code target} were to be added <em>in order</em>.
-   *
-   * <p>Specifically, if {@code target} is found, the insertion point is at the its index;
-   * while if not found, the insertion point is between the two adjacent indexes where
-   * it could be inserted.
-   *
-   * <p>
-   * Imagine in a Google Doc page, if you have two columns of
-   * texts to be rendered into a two-column table, and you want to split the two
-   * columns as evenly as possible such that it takes the fewest number of lines
-   * overall. you can implement it with binary search:
-   *
-   * <pre>{@code
-   *   InsertionPoint optimal = BinarySearch.forInts(Range.closedOpen(1, tableWidth))
-   *       .insertionPointFor(
-   *           (low, w, high) ->
-   *               Integer.compare(
-   *                   renderWithColumnWidth(text1, w),
-   *                   renderWithColumnWidth(text2, tableWidth - w)));
-   *   return optimal.exact()
-   *       .orElseGet(
-   *           () -> {
-   *             int lines1 = max(
-   *                 renderWithColumnWidth(text1, optimal.floor()),
-   *                 renderWithColumnWidth(text2, tableWidth - optimal.floor()));
-   *             int lines2 = max(
-   *                 renderWithColumnWidth(text1, optimal.ceiling()),
-   *                 renderWithColumnWidth(text2, tableWidth - optimal.ceiling()));
-   *             return lines1 < lines2 ? floor : ceiling;
-   *           });
-   * }
-   * </pre>
-   *
-   * <p>This is an O(logn) operation.
-   */
-  public abstract InsertionPoint<R> insertionPointFor(Q target);
+    /**
+     * Finds the range of elements that match {@code target}.
+     *
+     * <p>If the target is found at index {@code i}, the single-element range <b>{@code [i..i]}</b>
+     * is returned.
+     *
+     * <p>If there are ties from index {@code i} to {@code j}, the closed range <b>{@code [i..j]}</b>
+     * is returned.
+     *
+     * <p>If the target isn't found, an {@link Range#isEmpty empty} range is returned whose endpoint
+     * is the "insertion point" (where the target would have been inserted without breaking order).
+     * The direction of the open endpoint determines whether to insert before or after the point.
+     *
+     * <p>Invariants for insertion points:
+     * <ul>
+     * <li>An open lower endpoint {@code (i..} means {@code target > i} so the insertion point
+     *   should be after {@code i} in order not to break order.
+     * <li>An open upper endpoint {@code ..j)} means {@code target < j} so the insertion point
+     *   should be before {@code j} in order not to break order.
+     * <li>A closed lower or upper endpoint means {@code target >= i} or {@code target <= j}
+     *   respectively, so the insertion point can be either before or after without breaking order.
+     * </ul>
+     *
+     * <p>Therefore:
+     *
+     * <ul>
+     * <li>For all insertion points except the last one after {@code MAX_VALUE}, the returned range
+     *   is {@link Range#closedOpen closed-open} <b>{@code [i..i)}</b>, indicating that the insertion
+     *   point is immediately <em>before</em> endpoint {@code i}.
+     * <li>While if the insertion point is after {@code MAX_VALUE}, the returned range is {@link
+     *   Range#openClosed open-closed} <b>{@code (MAX_VALUE..MAX_VALUE]}</b>, indicating that the
+     *   insertion point is immediately <em>after</em> endpoint {@code MAX_VALUE}.
+     * </ul>
+     *
+     * <p>If your code needs the insertion point when not found, but doesn't need to find the range of
+     * elements otherwise, use {@link #insertionPointFor} instead, which is more intuitive and also
+     * faster.
+     *
+     * <p>Realistically though, unless {@code target > MAX_VALUE} is meaningful to your use case,
+     * it's okay to simply insert the target before {@code rangeOf().lowerEndpoint()}. This invariant
+     * holds regardless whether the target is found or not.
+     *
+     * <p>This is an O(logn) operation.
+     */
+    public Range<R> rangeOf(K target) {
+      InsertionPoint<R> left = insertionPointBefore(target);
+      InsertionPoint<R> right = insertionPointAfter(target);
+      if (left.equals(right)) {
+        return left.isAboveAll()
+            ? Range.openClosed(left.floor(), left.floor())
+            : Range.closedOpen(left.ceiling(), right.ceiling());
+      }
+      return Range.closed(left.ceiling(), right.floor());
+    }
 
-  /**
-   * Finds the insertion point immediately before the first element that's greater than or equal to the target.
-   *
-   * <p>If {@code target} is absent, {@link #insertionPointBefore} and {@link #insertionPointAfter} will be
-   * the same point, after the last element less than the target and the first element greater than it.
-   *
-   * <p>{@code insertionPointBefore(target).exact()} will always return empty.
-   *
-   * <p>This is an O(logn) operation.
-   */
-  public abstract InsertionPoint<R> insertionPointBefore(Q target);
+    /**
+     * Finds the {@link InsertionPoint} if {@code target} were to be added <em>in order</em>.
+     *
+     * <p>Specifically, if {@code target} is found, the insertion point is at the its index;
+     * while if not found, the insertion point is between the two adjacent indexes where
+     * it could be inserted.
+     *
+     * <p>
+     * Imagine in a Google Doc page, if you have two columns of
+     * texts to be rendered into a two-column table, and you want to split the two
+     * columns as evenly as possible such that it takes the fewest number of lines
+     * overall. you can implement it with binary search:
+     *
+     * <pre>{@code
+     *   InsertionPoint optimal = BinarySearch.forInts(Range.closedOpen(1, tableWidth))
+     *       .insertionPointFor(
+     *           (low, w, high) ->
+     *               Integer.compare(
+     *                   renderWithColumnWidth(text1, w),
+     *                   renderWithColumnWidth(text2, tableWidth - w)));
+     *   return optimal.exact()
+     *       .orElseGet(
+     *           () -> {
+     *             int lines1 = max(
+     *                 renderWithColumnWidth(text1, optimal.floor()),
+     *                 renderWithColumnWidth(text2, tableWidth - optimal.floor()));
+     *             int lines2 = max(
+     *                 renderWithColumnWidth(text1, optimal.ceiling()),
+     *                 renderWithColumnWidth(text2, tableWidth - optimal.ceiling()));
+     *             return lines1 < lines2 ? floor : ceiling;
+     *           });
+     * }
+     * </pre>
+     *
+     * <p>This is an O(logn) operation.
+     */
+    public abstract InsertionPoint<R> insertionPointFor(K target);
 
-  /**
-   * Finds the insertion point immediately after the last element that's less than or equal to the target.
-   *
-   * <p>If {@code target} is absent, {@link #insertionPointBefore} and {@link #insertionPointAfter} will be
-   * the same point, after the last element less than the target and the first element greater than it.
-   *
-   * <p>{@code insertionPointAfter(target).exact()} will always return empty.
-   *
-   * <p>This is an O(logn) operation.
-   */
-  public abstract InsertionPoint<R> insertionPointAfter(Q target);
+    /**
+     * Finds the insertion point immediately before the first element that's greater than or equal to the target.
+     *
+     * <p>If {@code target} is absent, {@link #insertionPointBefore} and {@link #insertionPointAfter} will be
+     * the same point, after the last element less than the target and the first element greater than it.
+     *
+     * <p>{@code insertionPointBefore(target).exact()} will always return empty.
+     *
+     * <p>This is an O(logn) operation.
+     */
+    public abstract InsertionPoint<R> insertionPointBefore(K target);
 
-  /**
-   * Returns a new {@link BinarySearch} over the same source but transforms
-   * the search target using the given {@code keyFunction} first.
-   *
-   * <p>Useful for creating a facade in front of a lower-level backing data source.
-   *
-   * <p>For example, if you have epoch millisecond timestamps stored in a sorted {@code long[]}
-   * array, you can wrap it as a {@code BinarySearch<Instant, Integer>} for your code to be able
-   * to search by {@link java.time.Instant} repeatedly:
-   *
-   * <pre>{@code
-   * class Timeline {
-   *   private final long[] timestamps;
-   *
-   *   BinarySearch<Instant, Integer> instants() {
-   *     return BinarySearch.inSortedArray(timestamps).by(Instant::toEpochMilli);
-   *   }
-   * }
-   * }</pre>
-   *
-   * <p>This is an O(1) operation.
-   */
-  public final <K> BinarySearch<K, R> by(Function<K, ? extends Q> keyFunction) {
-    checkNotNull(keyFunction);
-    BinarySearch<Q, R> underlying = this;
-    return new BinarySearch<K, R>() {
-      @Override public Optional<R> find(@Nullable K target) {
-        return super.find(target);
-      }
-      @Override public Range<R> rangeOf(@Nullable K target) {
-        return super.rangeOf(target);
-      }
-      @Override public InsertionPoint<R> insertionPointFor(@Nullable K target) {
-        return underlying.insertionPointFor(keyFunction.apply(target));
-      }
-      @Override public InsertionPoint<R> insertionPointBefore(@Nullable K target) {
-        return underlying.insertionPointBefore(keyFunction.apply(target));
-      }
-      @Override public InsertionPoint<R> insertionPointAfter(@Nullable K target) {
-        return underlying.insertionPointAfter(keyFunction.apply(target));
-      }
-    };
+    /**
+     * Finds the insertion point immediately after the last element that's less than or equal to the target.
+     *
+     * <p>If {@code target} is absent, {@link #insertionPointBefore} and {@link #insertionPointAfter} will be
+     * the same point, after the last element less than the target and the first element greater than it.
+     *
+     * <p>{@code insertionPointAfter(target).exact()} will always return empty.
+     *
+     * <p>This is an O(logn) operation.
+     */
+    public abstract InsertionPoint<R> insertionPointAfter(K target);
+
+    /**
+     * Returns a new {@link BinarySearch} over the same source but transforms
+     * the search target using the given {@code keyFunction} first.
+     *
+     * <p>Useful for creating a facade in front of a lower-level backing data source.
+     *
+     * <p>For example, if you have epoch millisecond timestamps stored in a sorted {@code long[]}
+     * array, you can wrap it as a {@code LookupTable<Instant, Integer>} for your code to be able
+     * to search by {@link java.time.Instant} repeatedly:
+     *
+     * <pre>{@code
+     * class Timeline {
+     *   private final long[] timestamps;
+     *
+     *   LookupTable<Instant, Integer> instants() {
+     *     return BinarySearch.inSortedArray(timestamps).by(Instant::toEpochMilli);
+     *   }
+     * }
+     * }</pre>
+     *
+     * <p>This is an O(1) operation.
+     */
+    public final <K2> LookupTable<K2, R> by(Function<K2, ? extends K> keyFunction) {
+      checkNotNull(keyFunction);
+      LookupTable<K, R> underlying = this;
+      return new LookupTable<K2, R>() {
+        @Override public Optional<R> find(@Nullable K2 target) {
+          return super.find(target);
+        }
+        @Override public Range<R> rangeOf(@Nullable K2 target) {
+          return super.rangeOf(target);
+        }
+        @Override public InsertionPoint<R> insertionPointFor(@Nullable K2 target) {
+          return underlying.insertionPointFor(keyFunction.apply(target));
+        }
+        @Override public InsertionPoint<R> insertionPointBefore(@Nullable K2 target) {
+          return underlying.insertionPointBefore(keyFunction.apply(target));
+        }
+        @Override public InsertionPoint<R> insertionPointAfter(@Nullable K2 target) {
+          return underlying.insertionPointAfter(keyFunction.apply(target));
+        }
+      };
+    }
+
+    LookupTable() {}
   }
 
   /** Represents the search target that can be found through bisecting the integer domain. */
@@ -614,11 +622,11 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
     int locate(double low, double median, double high);
   }
 
-  private static BinarySearch<IntSearchTarget, Integer> inRangeInclusive(int from, int to) {
+  private static LookupTable<IntSearchTarget, Integer> inRangeInclusive(int from, int to) {
     if (from > to) {
       return always(InsertionPoint.before(from));
     }
-    return new BinarySearch<IntSearchTarget, Integer>() {
+    return new LookupTable<IntSearchTarget, Integer>() {
       @Override public InsertionPoint<Integer> insertionPointFor(IntSearchTarget target) {
         checkNotNull(target);
         for (int low = from, high = to; ;) {
@@ -648,11 +656,11 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
     };
   }
 
-  private static BinarySearch<LongSearchTarget, Long> inRangeInclusive(long from, long to) {
+  private static LookupTable<LongSearchTarget, Long> inRangeInclusive(long from, long to) {
     if (from > to) {
       return always(InsertionPoint.before(from));
     }
-    return new BinarySearch<LongSearchTarget, Long>() {
+    return new LookupTable<LongSearchTarget, Long>() {
       @Override public InsertionPoint<Long> insertionPointFor(LongSearchTarget target) {
         checkNotNull(target);
         for (long low = from, high = to; ;) {
@@ -682,12 +690,12 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
     };
   }
 
-  private static BinarySearch<DoubleSearchTarget, Double> inRangeInclusive(
+  private static LookupTable<DoubleSearchTarget, Double> inRangeInclusive(
       final double from, final double to) {
     if (from > to) {
       return always(InsertionPoint.before(from));
     }
-    return new BinarySearch<DoubleSearchTarget, Double>() {
+    return new LookupTable<DoubleSearchTarget, Double>() {
       @Override public InsertionPoint<Double> insertionPointFor(DoubleSearchTarget target) {
         checkNotNull(target);
         double floor = Double.NEGATIVE_INFINITY;
@@ -755,8 +763,8 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
     return (low, mid, high) -> target.locate(low, mid, high) < 0 ? -1 : 1;
   }
 
-  private static <Q, R extends Comparable<R>> BinarySearch<Q, R> always(InsertionPoint<R> point) {
-    return new BinarySearch<Q, R>() {
+  private static <Q, R extends Comparable<R>> LookupTable<Q, R> always(InsertionPoint<R> point) {
+    return new LookupTable<Q, R>() {
       @Override public InsertionPoint<R> insertionPointFor(Q target) {
         checkNotNull(target);
         return point;
@@ -804,5 +812,5 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
     return domain.maxValue();
   }
 
-  BinarySearch() {}
+  private BinarySearch() {}
 }
