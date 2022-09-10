@@ -100,6 +100,13 @@ public final class InsertionPoint<C extends Comparable<C>> implements Comparable
     return before(ceiling, DiscreteDomain.longs());
   }
 
+  /** Returns an insertion point immediately before {@code ceiling}. */
+  public static InsertionPoint<Double> before(double ceiling) {
+    checkArgument(
+        ceiling != Double.NEGATIVE_INFINITY, "before(NEGATIVE_INFINITY) not supported.", ceiling);
+    return new InsertionPoint<>(Math.nextDown(ceiling), normalize(ceiling));
+  }
+
   /**
    * Returns an insertion point immediately before the given {@code ceiling} and
    * after the previous element in the given discrete {@code domain} (if a previous
@@ -126,6 +133,13 @@ public final class InsertionPoint<C extends Comparable<C>> implements Comparable
     return after(floor, DiscreteDomain.longs());
   }
 
+  /** Returns an insertion point immediately after {@code floor}. */
+  public static InsertionPoint<Double> after(double floor) {
+    checkArgument(
+        floor != Double.POSITIVE_INFINITY, "after(POSITIVE_INFINITY) not supported.", floor);
+    return new InsertionPoint<>(normalize(floor), Math.nextUp(floor));
+  }
+
   /**
    * Returns an insertion point immediately after the given {@code floor} and
    * before the next element in the given discrete {@code domain} (if a next element
@@ -138,18 +152,8 @@ public final class InsertionPoint<C extends Comparable<C>> implements Comparable
 
   /** Returns an insertion point in the open range of {@code (floor, ceiling)}. */
   public static InsertionPoint<Double> between(double floor, double ceiling) {
-    checkArgument(floor <= ceiling, "Not true that floor(%s) <= ceiling(%s)", floor, ceiling);
-    return new InsertionPoint<>(floor, ceiling);
-  }
-
-  /** Returns an insertion point immediately before {@code ceiling}. */
-  public static InsertionPoint<Double> before(double ceiling) {
-    return new InsertionPoint<>(Math.nextAfter(ceiling, Double.NEGATIVE_INFINITY), ceiling);
-  }
-
-  /** Returns an insertion point immediately after {@code floor}. */
-  public static InsertionPoint<Double> after(double floor) {
-    return new InsertionPoint<>(floor, Math.nextAfter(floor, Double.POSITIVE_INFINITY));
+    checkArgument(floor < ceiling, "Not true that floor(%s) < ceiling(%s)", floor, ceiling);
+    return new InsertionPoint<>(normalize(floor), normalize(ceiling));
   }
 
   /**
@@ -237,5 +241,10 @@ public final class InsertionPoint<C extends Comparable<C>> implements Comparable
       return Range.greaterThan(floor).toString();
     }
     return exact().map(Object::toString).orElseGet(() -> Range.open(floor, ceiling).toString());
+  }
+
+  private static double normalize(double v) {
+    checkArgument(!Double.isNaN(v), "NaN not supported");
+    return v == -0.0 ? 0.0 : v;
   }
 }

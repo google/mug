@@ -139,6 +139,102 @@ public class InsertionPointTest {
         .isEqualTo(Range.greaterThan(Integer.MAX_VALUE).toString());
   }
 
+  @Test public void afterDoubleMax() {
+    InsertionPoint<Double> insertionPoint = InsertionPoint.after(Double.MAX_VALUE);
+    assertThat(insertionPoint.floor()).isEqualTo(Double.MAX_VALUE);
+    assertThat(insertionPoint.isBelowAll()).isFalse();
+  }
+
+  @Test public void beforeDoubleNegativeMax() {
+    InsertionPoint<Double> insertionPoint = InsertionPoint.before(-Double.MAX_VALUE);
+    assertThat(insertionPoint.ceiling()).isEqualTo(-Double.MAX_VALUE);
+    assertThat(insertionPoint.isAboveAll()).isFalse();
+  }
+
+  @Test public void betweenDoublePostiveAndNegativeZero() {
+    assertThrows(IllegalArgumentException.class, () -> InsertionPoint.between(0.0, -0.0));
+  }
+
+  @Test public void negativeZeroIsEqualToPositiveZero() {
+    assertThat(InsertionPoint.before(-0.0).compareTo(InsertionPoint.before(0.0))).isEqualTo(0);
+    assertThat(InsertionPoint.before(-0.0)).isEqualTo(InsertionPoint.before(0.0));
+  }
+
+  @Test public void lowerDoubleGreaterThanHigherDouble() {
+    assertThrows(IllegalArgumentException.class, () -> InsertionPoint.between(Double.MIN_VALUE, 0.0));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> InsertionPoint.between(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY));
+  }
+
+  @Test public void betweenEqualValue() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> InsertionPoint.between(Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> InsertionPoint.between(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY));
+    assertThrows(IllegalArgumentException.class, () -> InsertionPoint.between(0.0, 0.0));
+    assertThrows(IllegalArgumentException.class, () -> InsertionPoint.between(-0.0, 0.0));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> InsertionPoint.between(Double.MAX_VALUE, Double.MAX_VALUE));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> InsertionPoint.between(Double.MIN_VALUE, Double.MIN_VALUE));
+  }
+
+  @Test public void betweenFiniteDoubles() {
+    InsertionPoint<Double> insertionPoint = InsertionPoint.between(-1.0, 1.0);
+    assertThat(insertionPoint.floor()).isEqualTo(-1.0);
+    assertThat(insertionPoint.ceiling()).isEqualTo(1.0);
+    assertThat(insertionPoint.isBelowAll()).isFalse();
+    assertThat(insertionPoint.isAboveAll()).isFalse();
+  }
+
+  @Test public void betweenInfinity() {
+    InsertionPoint<Double> insertionPoint = InsertionPoint.between(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
+    assertThat(insertionPoint.floor()).isEqualTo(Double.NEGATIVE_INFINITY);
+    assertThat(insertionPoint.ceiling()).isEqualTo(Double.POSITIVE_INFINITY);
+    assertThat(insertionPoint.isBelowAll()).isFalse();
+    assertThat(insertionPoint.isAboveAll()).isFalse();
+  }
+
+  @Test public void beforePositiveInfinity() {
+    InsertionPoint<Double> insertionPoint = InsertionPoint.before(Double.POSITIVE_INFINITY);
+    assertThat(insertionPoint.floor()).isEqualTo(Double.MAX_VALUE);
+    assertThat(insertionPoint.ceiling()).isEqualTo(Double.POSITIVE_INFINITY);
+    assertThat(insertionPoint.isBelowAll()).isFalse();
+    assertThat(insertionPoint.isAboveAll()).isFalse();
+  }
+
+  @Test public void beforeNegativeInfinity() {
+    assertThrows(IllegalArgumentException.class, () -> InsertionPoint.before(Double.NEGATIVE_INFINITY));
+  }
+
+  @Test public void afterPositiveInfinity() {
+    assertThrows(IllegalArgumentException.class, () -> InsertionPoint.after(Double.POSITIVE_INFINITY));
+  }
+
+  @Test public void afterNegativeInfinity() {
+    InsertionPoint<Double> insertionPoint = InsertionPoint.after(Double.NEGATIVE_INFINITY);
+    assertThat(insertionPoint.floor()).isEqualTo(Double.NEGATIVE_INFINITY);
+    assertThat(insertionPoint.ceiling()).isEqualTo(-Double.MAX_VALUE);
+    assertThat(insertionPoint.isBelowAll()).isFalse();
+    assertThat(insertionPoint.isAboveAll()).isFalse();
+  }
+
+  @Test public void nanNotSupported() {
+    assertThrows(IllegalArgumentException.class, () -> InsertionPoint.before(Double.NaN));
+    assertThrows(IllegalArgumentException.class, () -> InsertionPoint.after(Double.NaN));
+    assertThrows(IllegalArgumentException.class, () -> InsertionPoint.between(Double.NaN, Double.NaN));
+    assertThrows(IllegalArgumentException.class, () -> InsertionPoint.between(0.0, Double.NaN));
+    assertThrows(IllegalArgumentException.class, () -> InsertionPoint.between(Double.NaN, 0.0));
+    assertThrows(IllegalArgumentException.class, () -> InsertionPoint.between(Double.POSITIVE_INFINITY, Double.NaN));
+    assertThrows(IllegalArgumentException.class, () -> InsertionPoint.between(Double.NEGATIVE_INFINITY, Double.NaN));
+    assertThrows(IllegalArgumentException.class, () -> InsertionPoint.between(Double.NaN, Double.POSITIVE_INFINITY));
+  }
+
   @Test public void testEquals() {
     new EqualsTester()
         .addEqualityGroup(InsertionPoint.at(1))
@@ -151,6 +247,13 @@ public class InsertionPointTest {
         .addEqualityGroup(InsertionPoint.before(Integer.MIN_VALUE))
         .addEqualityGroup(InsertionPoint.before(1), InsertionPoint.after(0))
         .addEqualityGroup(InsertionPoint.before(-1), InsertionPoint.after(-2))
+        .addEqualityGroup(InsertionPoint.before(0.0), InsertionPoint.between(-Double.MIN_VALUE, 0.0))
+        .addEqualityGroup(InsertionPoint.before(Double.MIN_VALUE), InsertionPoint.after(0.0))
+        .addEqualityGroup(InsertionPoint.before(-Double.MAX_VALUE), InsertionPoint.after(Double.NEGATIVE_INFINITY))
+        .addEqualityGroup(InsertionPoint.after(Double.MAX_VALUE), InsertionPoint.before(Double.POSITIVE_INFINITY))
+        .addEqualityGroup(InsertionPoint.between(-Double.MIN_VALUE, Double.MIN_VALUE))
+        .addEqualityGroup(InsertionPoint.between(-Double.MAX_VALUE, Double.MAX_VALUE))
+        .addEqualityGroup(InsertionPoint.between(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY))
         .testEquals();
   }
 
@@ -159,6 +262,5 @@ public class InsertionPointTest {
         .setDefault(DiscreteDomain.class, DiscreteDomain.integers())
         .setDefault(Comparable.class, 123);
     tester.testNulls(InsertionPoint.class);
-    tester.forAllPublicStaticMethods(InsertionPoint.class).testNulls();
   }
 }

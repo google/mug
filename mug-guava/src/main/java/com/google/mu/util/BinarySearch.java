@@ -434,10 +434,9 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    * elements otherwise, use {@link #insertionPointFor} instead, which is more intuitive and also
    * faster.
    *
-   * <p>Realistically, if you do need to use both the found range of elements and the insertion
-   * point in case the target isn't found, and yet don't want to bother checking the openness
-   * of the endpoints, it's likely okay to unconditionally insert the target before {@code
-   * rangeOf().lowerEndpoint()}, unless {@code target > MAX_VALUE} is meaningful in your use case.
+   * <p>Realistically though, unless {@code target > MAX_VALUE} is meaningful to your use case,
+   * it's okay to simply insert the target before {@code rangeOf().lowerEndpoint()}. This invariant
+   * holds regardless whether the target is found or not.
    *
    * <p>This is an O(logn) operation.
    */

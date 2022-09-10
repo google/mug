@@ -1083,6 +1083,9 @@ public class BinarySearchTest {
             .insertionPointFor((low, mid, high) -> Double.compare(secret, mid));
     assertThat(insertionPoint.floor()).isEqualTo(secret);
     assertThat(insertionPoint.ceiling()).isEqualTo(secret);
+    assertThat(BinarySearch.forDoubles()
+            .rangeOf((low, mid, high) -> Double.compare(secret, mid)))
+        .isEqualTo(Range.closed(secret, secret));
   }
 
   @Test
@@ -1093,6 +1096,8 @@ public class BinarySearchTest {
     assertThat(insertionPoint.exact()).isEmpty();
     assertThat(insertionPoint.floor()).isEqualTo(Double.MAX_VALUE);
     assertThat(insertionPoint.ceiling()).isEqualTo(Double.POSITIVE_INFINITY);
+    assertThat(BinarySearch.forDoubles().rangeOf(((low, mid, high) -> 1)))
+        .isEqualTo(Range.closedOpen(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY));
   }
 
   @Test
@@ -1103,6 +1108,9 @@ public class BinarySearchTest {
             .insertionPointFor((low, mid, high) -> Double.compare(secret, mid));
     assertThat(insertionPoint.floor()).isEqualTo(secret);
     assertThat(insertionPoint.ceiling()).isEqualTo(secret);
+    assertThat(BinarySearch.forDoubles()
+            .rangeOf((low, mid, high) -> Double.compare(secret, mid)))
+        .isEqualTo(Range.closed(secret, secret));
   }
 
   @Test
@@ -1113,6 +1121,8 @@ public class BinarySearchTest {
     assertThat(insertionPoint.exact()).isEmpty();
     assertThat(insertionPoint.floor()).isEqualTo(Double.NEGATIVE_INFINITY);
     assertThat(insertionPoint.ceiling()).isEqualTo(-Double.MAX_VALUE);
+    assertThat(BinarySearch.forDoubles().rangeOf(((low, mid, high) -> -1)))
+        .isEqualTo(Range.closedOpen(-Double.MAX_VALUE, -Double.MAX_VALUE));
   }
 
   @Test
@@ -1125,6 +1135,9 @@ public class BinarySearchTest {
             .insertionPointFor((low, mid, high) -> Double.compare(secret, mid));
     assertThat(insertionPoint.floor()).isEqualTo(secret);
     assertThat(insertionPoint.ceiling()).isEqualTo(secret);
+    assertThat(BinarySearch.forDoubles(Range.atLeast(0D))
+            .rangeOf((low, mid, high) -> Double.compare(secret, mid)))
+        .isEqualTo(Range.closed(secret, secret));
   }
 
   @Test
@@ -1167,6 +1180,22 @@ public class BinarySearchTest {
     assertThat(insertionPoint.exact()).isEmpty();
     assertThat(insertionPoint.floor()).isEqualTo(Double.MAX_VALUE);
     assertThat(insertionPoint.ceiling()).isEqualTo(Double.POSITIVE_INFINITY);
+  }
+
+  @Test
+  public void forDoubles_positiveRange_invisibleNumber() {
+    InsertionPoint<Double> insertionPoint =
+        BinarySearch.forDoubles(greaterThan(0D))
+            .insertionPointFor((low, mid, high) -> mid <= 100 ? 1 : -1);
+    assertThat(insertionPoint.exact()).isEmpty();
+    assertThat(insertionPoint.floor()).isEqualTo(100.0);
+    assertThat(insertionPoint.ceiling()).isEqualTo(Math.nextUp(100.0));
+    assertThat(BinarySearch.forDoubles(greaterThan(0D))
+            .rangeOf((low, mid, high) -> mid <= 100 ? 1 : -1))
+        .isEqualTo(Range.closedOpen(Math.nextUp(100.0), Math.nextUp(100.0)));
+    assertThat(BinarySearch.forDoubles(greaterThan(0D))
+            .find((low, mid, high) -> mid <= 100 ? 1 : -1))
+       .isEmpty();
   }
 
   @Test
