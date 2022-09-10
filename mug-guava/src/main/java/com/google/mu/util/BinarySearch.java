@@ -644,7 +644,7 @@ public final class BinarySearch {
      * range of {@code [low..median)}; or positive to find it in the upper range of
      * {@code (median..high]}.
      *
-     * <p>All of {@code low}, {@code mid} and {@code high} are finite values.
+     * <p>The {@code (low, median, high)} parameters are finite values.
      * And it's guaranteed that {@code low <= median <= high}.
      *
      * <p>Different from {@link IntSearchTarget} and {@link LongSearchTarget}, the
