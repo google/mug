@@ -601,13 +601,13 @@ public final class BinarySearch {
   @FunctionalInterface
   public interface IntSearchTarget {
     /**
-     * Given a range of {@code [low, high]} inclusively with {@code mid} as the
+     * Given a range of {@code [low..high]} inclusively with {@code mid} as the
      * middle point of the binary search, locates the target.
      *
      * <p>
      * Returns 0 if {@code mid} is the target; negative to find it in the lower
-     * range of {@code [low, mid)}; or positive to find it in the upper range of
-     * {@code (mid, high]}.
+     * range of {@code [low..mid)}; or positive to find it in the upper range of
+     * {@code (mid..high]}.
      *
      * <p>
      * It's guaranteed that {@code low <= mid <= high}.
@@ -619,13 +619,13 @@ public final class BinarySearch {
   @FunctionalInterface
   public interface LongSearchTarget {
     /**
-     * Given a range of {@code [low, high]} inclusively with {@code mid} as the
+     * Given a range of {@code [low..high]} inclusively with {@code mid} as the
      * middle point of the binary search, locates the target.
      *
      * <p>
      * Returns 0 if {@code mid} is the target; negative to find it in the lower
-     * range of {@code [low, mid)}; or positive to find it in the upper range of
-     * {@code (mid, high]}.
+     * range of {@code [low..mid)}; or positive to find it in the upper range of
+     * {@code (mid..high]}.
      *
      * <p>
      * It's guaranteed that {@code low <= mid <= high}.
@@ -637,12 +637,12 @@ public final class BinarySearch {
   @FunctionalInterface
   public interface DoubleSearchTarget {
     /**
-     * Given a range of {@code [low, high]} inclusively with {@code median} as the
+     * Given a range of {@code [low..high]} inclusively with {@code median} as the
      * mid point of the binary search, locates the target.
      *
      * <p>Returns 0 if {@code median} is the target; negative to find it in the lower
-     * range of {@code [low, median)}; or positive to find it in the upper range of
-     * {@code (median, high]}.
+     * range of {@code [low..median)}; or positive to find it in the upper range of
+     * {@code (median..high]}.
      *
      * <p>All of {@code low}, {@code mid} and {@code high} are finite values.
      * And it's guaranteed that {@code low <= median <= high}.
