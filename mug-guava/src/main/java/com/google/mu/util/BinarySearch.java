@@ -417,17 +417,17 @@ public final class BinarySearch {
    *
    * @param <K> the search key, usually a target value, but can also be a target locator object
    *     like {@link IntSearchTarget}.
-   * @param <R> the binary search result, usually the index in the source array or list, but can also
+   * @param <C> the binary search result, usually the index in the source array or list, but can also
    *     be the optimal solution in non-array based bisection algorithms such as the minimum value of
    *     a parabola function.
    */
-  public static abstract class LookupTable<K, R extends Comparable<R>> {
+  public static abstract class LookupTable<K, C extends Comparable<C>> {
     /**
      * Searches for {@code target} and returns the result if found; or else returns empty.
      *
      * <p>This is an O(logn) operation.
      */
-    public Optional<R> find(K target) {
+    public Optional<C> find(K target) {
       return insertionPointFor(target).exact();
     }
 
@@ -475,9 +475,9 @@ public final class BinarySearch {
      *
      * <p>This is an O(logn) operation.
      */
-    public Range<R> rangeOf(K target) {
-      InsertionPoint<R> left = insertionPointBefore(target);
-      InsertionPoint<R> right = insertionPointAfter(target);
+    public Range<C> rangeOf(K target) {
+      InsertionPoint<C> left = insertionPointBefore(target);
+      InsertionPoint<C> right = insertionPointAfter(target);
       if (left.equals(right)) {
         return left.isAboveAll()
             ? Range.openClosed(left.floor(), left.floor())
@@ -522,7 +522,7 @@ public final class BinarySearch {
      *
      * <p>This is an O(logn) operation.
      */
-    public abstract InsertionPoint<R> insertionPointFor(K target);
+    public abstract InsertionPoint<C> insertionPointFor(K target);
 
     /**
      * Finds the insertion point immediately before the first element that's greater than or equal to the target.
@@ -534,7 +534,7 @@ public final class BinarySearch {
      *
      * <p>This is an O(logn) operation.
      */
-    public abstract InsertionPoint<R> insertionPointBefore(K target);
+    public abstract InsertionPoint<C> insertionPointBefore(K target);
 
     /**
      * Finds the insertion point immediately after the last element that's less than or equal to the target.
@@ -546,7 +546,7 @@ public final class BinarySearch {
      *
      * <p>This is an O(logn) operation.
      */
-    public abstract InsertionPoint<R> insertionPointAfter(K target);
+    public abstract InsertionPoint<C> insertionPointAfter(K target);
 
     /**
      * Returns a new {@link LookupTable} over the same source but transforms
@@ -569,25 +569,27 @@ public final class BinarySearch {
      * }</pre>
      *
      * <p>This is an O(1) operation.
+     *
+     * @param <Q> the logical search key type of the returned {@link LookupTable}.
      */
-    public final <K2> LookupTable<K2, R> by(Function<K2, ? extends K> keyFunction) {
+    public final <Q> LookupTable<Q, C> by(Function<Q, ? extends K> keyFunction) {
       checkNotNull(keyFunction);
-      LookupTable<K, R> underlying = this;
-      return new LookupTable<K2, R>() {
-        @Override public Optional<R> find(@Nullable K2 target) {
-          return super.find(target);
+      LookupTable<K, C> underlying = this;
+      return new LookupTable<Q, C>() {
+        @Override public Optional<C> find(@Nullable Q query) {
+          return super.find(query);
         }
-        @Override public Range<R> rangeOf(@Nullable K2 target) {
-          return super.rangeOf(target);
+        @Override public Range<C> rangeOf(@Nullable Q query) {
+          return super.rangeOf(query);
         }
-        @Override public InsertionPoint<R> insertionPointFor(@Nullable K2 target) {
-          return underlying.insertionPointFor(keyFunction.apply(target));
+        @Override public InsertionPoint<C> insertionPointFor(@Nullable Q query) {
+          return underlying.insertionPointFor(keyFunction.apply(query));
         }
-        @Override public InsertionPoint<R> insertionPointBefore(@Nullable K2 target) {
-          return underlying.insertionPointBefore(keyFunction.apply(target));
+        @Override public InsertionPoint<C> insertionPointBefore(@Nullable Q query) {
+          return underlying.insertionPointBefore(keyFunction.apply(query));
         }
-        @Override public InsertionPoint<R> insertionPointAfter(@Nullable K2 target) {
-          return underlying.insertionPointAfter(keyFunction.apply(target));
+        @Override public InsertionPoint<C> insertionPointAfter(@Nullable Q query) {
+          return underlying.insertionPointAfter(keyFunction.apply(query));
         }
       };
     }
