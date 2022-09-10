@@ -1475,7 +1475,7 @@ public class BinarySearchTest {
 
   // Demo how binarySearch() can be used to implement more advanced binary search algorithms
   // such as searching within a rotated array.
-  private static BinarySearch<Integer, Integer> inCircularSortedArray(int[] rotated) {
+  private static BinarySearch.LookupTable<Integer, Integer> inCircularSortedArray(int[] rotated) {
     return BinarySearch.forInts(Range.closedOpen(0, rotated.length))
         .by(key -> (low, mid, high) -> {
           int probe = rotated[mid];
@@ -1499,17 +1499,17 @@ public class BinarySearchTest {
         });
   }
 
-  private static BinarySearch<Long, Integer> intSqrt() {
+  private static BinarySearch.LookupTable<Long, Integer> intSqrt() {
     return BinarySearch.forInts(atLeast(0))
         .by(square -> (low, mid, high) -> Long.compare(square, (long) mid * mid));
   }
 
-  private static BinarySearch<Double, Double> squareRoot() {
+  private static BinarySearch.LookupTable<Double, Double> squareRoot() {
     return BinarySearch.forDoubles(atLeast(0D))
         .by(square -> (low, mid, high) -> Double.compare(square, mid * mid));
   }
 
-  private static BinarySearch<Double, Double> cubeRoot() {
+  private static BinarySearch.LookupTable<Double, Double> cubeRoot() {
     return BinarySearch.forDoubles()
       .by(cube -> (low, mid, high) -> Double.compare(cube, mid * mid * mid));
   }
