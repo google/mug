@@ -519,6 +519,20 @@ public abstract class BinarySearch<Q, R extends Comparable<R>> {
    *
    * <p>Useful for creating a facade in front of a lower-level backing data source.
    *
+   * <p>For example, if you have epoch millisecond timestamps stored in a sorted {@code long[]}
+   * array, you can wrap it as a {@code BinarySearch<Instant, Integer>} for your code to be able
+   * to search by {@link java.time.Instant} repeatedly:
+   *
+   * <pre>{@code
+   * class Timeline {
+   *   private final long[] timestamps;
+   *
+   *   BinarySearch<Instant, Integer> instants() {
+   *     return BinarySearch.inSortedArray(timestamps).by(Instant::toEpochMilli);
+   *   }
+   * }
+   * }</pre>
+   *
    * <p>This is an O(1) operation.
    */
   public final <K> BinarySearch<K, R> by(Function<K, ? extends Q> keyFunction) {
