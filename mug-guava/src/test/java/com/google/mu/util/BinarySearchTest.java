@@ -246,6 +246,30 @@ public class BinarySearchTest {
   }
 
   @Test
+  public void forInts_aboveAll() {
+    assertThat(BinarySearch.forInts().rangeOf((l, i, h) -> 1))
+        .isEqualTo(Range.openClosed(Integer.MAX_VALUE, Integer.MAX_VALUE));
+  }
+
+  @Test
+  public void forInts_belowAll() {
+    assertThat(BinarySearch.forInts().rangeOf((l, i, h) -> -1))
+        .isEqualTo(Range.closedOpen(Integer.MIN_VALUE, Integer.MIN_VALUE));
+  }
+
+  @Test
+  public void forLongs_aboveAll() {
+    assertThat(BinarySearch.forLongs().rangeOf((l, i, h) -> 1))
+        .isEqualTo(Range.openClosed(Long.MAX_VALUE, Long.MAX_VALUE));
+  }
+
+  @Test
+  public void forLongs_belowAll() {
+    assertThat(BinarySearch.forLongs().rangeOf((l, i, h) -> -1))
+        .isEqualTo(Range.closedOpen(Long.MIN_VALUE, Long.MIN_VALUE));
+  }
+
+  @Test
   public void forLongs_useMinValueForLeft() {
     assertThat(BinarySearch.forLongs(atMost(Long.MIN_VALUE)).find((l, i, h) -> Integer.MIN_VALUE))
         .isEmpty();
@@ -1517,7 +1541,7 @@ public class BinarySearchTest {
 
   // Demo how binarySearch() can be used to implement more advanced binary search algorithms
   // such as searching within a rotated array.
-  private static BinarySearch.LookupTable<Integer, Integer> inCircularSortedArray(int[] rotated) {
+  private static BinarySearch.Table<Integer, Integer> inCircularSortedArray(int[] rotated) {
     return BinarySearch.forInts(Range.closedOpen(0, rotated.length))
         .by(key -> (low, mid, high) -> {
           int probe = rotated[mid];
@@ -1541,17 +1565,17 @@ public class BinarySearchTest {
         });
   }
 
-  private static BinarySearch.LookupTable<Long, Integer> intSqrt() {
+  private static BinarySearch.Table<Long, Integer> intSqrt() {
     return BinarySearch.forInts(atLeast(0))
         .by(square -> (low, mid, high) -> Long.compare(square, (long) mid * mid));
   }
 
-  private static BinarySearch.LookupTable<Double, Double> squareRoot() {
+  private static BinarySearch.Table<Double, Double> squareRoot() {
     return BinarySearch.forDoubles(atLeast(0D))
         .by(square -> (low, mid, high) -> Double.compare(square, mid * mid));
   }
 
-  private static BinarySearch.LookupTable<Double, Double> cubeRoot() {
+  private static BinarySearch.Table<Double, Double> cubeRoot() {
     return BinarySearch.forDoubles()
       .by(cube -> (low, mid, high) -> Double.compare(cube, mid * mid * mid));
   }

@@ -96,14 +96,14 @@ import com.google.common.math.LongMath;
  * methods perform no boxing in the O(logn) search operation.
  *
  * <p>Note that except {@link #inSortedList(List, Comparator)}, which may support null search
- * targets if the comparator supports nulls, no other {@code LookupTable} implementations
+ * targets if the comparator supports nulls, no other {@code BinarySearch.Table} implementations
  * allow null queries.
  *
  * @since 6.4
  */
 public final class BinarySearch {
   /**
-   * Returns a {@link LookupTable} to search for element indexes in the given sorted {@code list}.
+   * Returns a {@link Table} to search for element indexes in the given sorted {@code list}.
    *
    * <p>For example: {@code inSortedList(numbers).find(20)}.
    *
@@ -112,7 +112,7 @@ public final class BinarySearch {
    * @param list expected to support random access (not {@code LinkedList} for instance),
    *     or else performance will suffer.
    */
-  public static <E extends Comparable<E>> LookupTable<E, Integer> inSortedList(
+  public static <E extends Comparable<E>> Table<E, Integer> inSortedList(
       List<? extends E> list) {
     return inRangeInclusive(0, list.size() - 1)
         .by(target -> {
@@ -122,7 +122,7 @@ public final class BinarySearch {
   }
 
   /**
-   * Returns a {@link LookupTable} to search for element indexes in the given sorted {@code list}
+   * Returns a {@link Table} to search for element indexes in the given sorted {@code list}
    * according to {@code comparator}.
    *
    * <p>For example: {@code inSortedList(timestamps, nullsFirst(naturalOrder())).find(timestamp)}.
@@ -132,7 +132,7 @@ public final class BinarySearch {
    * @param list expected to support random access (not {@code LinkedList} for instance),
    *     or else performance will suffer.
    */
-  public static <E> LookupTable<E, Integer> inSortedList(
+  public static <E> Table<E, Integer> inSortedList(
       List<? extends E> list, Comparator<? super E> sortedBy) {
     checkNotNull(sortedBy);
     return inRangeInclusive(0, list.size() - 1)
@@ -140,7 +140,7 @@ public final class BinarySearch {
   }
 
   /**
-   * Returns a {@link LookupTable} to search for element indexes in the given {@code list} sorted by
+   * Returns a {@link Table} to search for element indexes in the given {@code list} sorted by
    * the {@code sortBy} function.
    *
    * <p>For example: {@code inSortedList(employees, Employee::age).rangeOf(20)}.
@@ -150,20 +150,20 @@ public final class BinarySearch {
    * @param list expected to support random access (not {@code LinkedList} for instance),
    *     or else performance will suffer.
    */
-  public static <Q extends Comparable<Q>, E> LookupTable<Q, Integer> inSortedList(
+  public static <Q extends Comparable<Q>, E> Table<Q, Integer> inSortedList(
       List<? extends E> list, Function<? super E, ? extends Q> sortedBy) {
     return inSortedList(Lists.transform(list, sortedBy::apply));
   }
 
   /**
-   * Returns a {@link LookupTable} to search for array element indexes in the given sorted int
+   * Returns a {@link Table} to search for array element indexes in the given sorted int
    * {@code array}.
    *
    * <p>For example: {@code inSortedArray(numbers).find(20)}.
    *
    * <p>This is an O(1) operation.
    */
-  public static LookupTable<Integer, Integer> inSortedArray(int[] array) {
+  public static Table<Integer, Integer> inSortedArray(int[] array) {
     return inRangeInclusive(0, array.length - 1)
         .by(target -> {
           int intValue = target.intValue();
@@ -171,14 +171,14 @@ public final class BinarySearch {
         });
   }
 
-  /** Returns a {@link LookupTable} to search for array element indexes in the given sorted long
+  /** Returns a {@link Table} to search for array element indexes in the given sorted long
    * {@code array}.
    *
    * <p>For example: {@code inSortedArray(largeNumbers).find(1000000000000L)}.
    *
    * <p>This is an O(1) operation.
    */
-  public static LookupTable<Long, Integer> inSortedArray(long[] array) {
+  public static Table<Long, Integer> inSortedArray(long[] array) {
     return inRangeInclusive(0, array.length - 1)
         .by(target -> {
           long longValue = target.longValue();
@@ -187,7 +187,7 @@ public final class BinarySearch {
   }
 
   /**
-   * Returns a {@link LookupTable} to search for element indexes in the given list of sorted
+   * Returns a {@link Table} to search for element indexes in the given list of sorted
    * {@code double} values. The positive {@code tolerance} is respected when comparing double
    * values.
    *
@@ -201,7 +201,7 @@ public final class BinarySearch {
    *     and elements in the list, which must be a non-negative finite value, i.e. not {@link
    *     Double#NaN}, {@link Double#POSITIVE_INFINITY}, or negative, including {@code -0.0}
    */
-  public static LookupTable<Double, Integer> inSortedListWithTolerance(
+  public static Table<Double, Integer> inSortedListWithTolerance(
       List<Double> list, double tolerance) {
     checkNotNegative(tolerance);
     return inRangeInclusive(0, list.size() - 1)
@@ -212,14 +212,14 @@ public final class BinarySearch {
   }
 
   /**
-   * Returns a {@link LookupTable} to search for array element indexes in the given sorted double
+   * Returns a {@link Table} to search for array element indexes in the given sorted double
    * {@code array}. The positive {@code tolerance} is respected when comparing double values.
    *
    * <p>For example: {@code inSortedArrayWithTolerance(temperatures, 0.1).find(30)}.
    *
    * <p>This is an O(1) operation.
    */
-  public static LookupTable<Double, Integer> inSortedArrayWithTolerance(
+  public static Table<Double, Integer> inSortedArrayWithTolerance(
       double[] array, double tolerance) {
     checkNotNegative(tolerance);
     return inRangeInclusive(0, array.length - 1)
@@ -230,7 +230,7 @@ public final class BinarySearch {
   }
 
   /**
-   * Returns a {@link LookupTable} over all integers.
+   * Returns a {@link Table} over all integers.
    *
    * <p>Callers can search by an {@link IntSearchTarget} object that will be called at each iteration
    * to determine whether the target is already found at the current mid-point, to the left half of the
@@ -240,12 +240,12 @@ public final class BinarySearch {
    *
    * @see {@link #forInts(Range)} for examples
    */
-  public static LookupTable<IntSearchTarget, Integer> forInts() {
+  public static Table<IntSearchTarget, Integer> forInts() {
     return forInts(all());
   }
 
   /**
-   * Returns a {@link LookupTable} over the given {@code range}.
+   * Returns a {@link Table} over the given {@code range}.
    *
    * <p>Callers can search by an {@link IntSearchTarget} object that will be called at each iteration
    * to determine whether the target is already found at the current mid-point, to the left half of the
@@ -277,7 +277,7 @@ public final class BinarySearch {
    *
    * <p>This is an O(1) operation.
    */
-  public static LookupTable<IntSearchTarget, Integer> forInts(Range<Integer> range) {
+  public static Table<IntSearchTarget, Integer> forInts(Range<Integer> range) {
     Integer low = low(range, integers());
     if (low == null) {
       return always(InsertionPoint.before(range.lowerEndpoint()));
@@ -290,7 +290,7 @@ public final class BinarySearch {
   }
 
   /**
-   * Similar to {@link #forInts()}, but returns a {@link LookupTable} over all {@code long} integers.
+   * Similar to {@link #forInts()}, but returns a {@link Table} over all {@code long} integers.
    *
    * <p>Callers can search by a {@link LongSearchTarget} object that will be called at each iteration
    * to determine whether the target is already found at the current mid-point, to the left half of the
@@ -306,12 +306,12 @@ public final class BinarySearch {
    *
    * <p>This is an O(1) operation.
    */
-  public static LookupTable<LongSearchTarget, Long> forLongs() {
+  public static Table<LongSearchTarget, Long> forLongs() {
     return forLongs(all());
   }
 
   /**
-   * Similar to {@link #forInts(Range)}, but returns a {@link LookupTable} over the given
+   * Similar to {@link #forInts(Range)}, but returns a {@link Table} over the given
    * {@code range} of {@code long} integers.
    *
    * <p>Callers can search by a {@link LongSearchTarget} object that will be called at each iteration
@@ -320,7 +320,7 @@ public final class BinarySearch {
    *
    * <p>This is an O(1) operation.
    */
-  public static LookupTable<LongSearchTarget, Long> forLongs(Range<Long> range) {
+  public static Table<LongSearchTarget, Long> forLongs(Range<Long> range) {
     Long low = low(range, longs());
     if (low == null) {
       return always(InsertionPoint.before(range.lowerEndpoint()));
@@ -333,7 +333,7 @@ public final class BinarySearch {
   }
 
   /**
-   * Returns a {@link LookupTable} over all finite double values (except {@link Double#NaN},
+   * Returns a {@link Table} over all finite double values (except {@link Double#NaN},
    * {@link Double#NEGATIVE_INFINITY} and {@link Double#POSITIVE_INFINITY}).
    *
    * <p>Callers can search by an {@link DoubleSearchTarget} object that will be called at each iteration
@@ -347,7 +347,7 @@ public final class BinarySearch {
    * For example the following method solves cube root:
    *
    * <pre>{@code
-   * LookupTable<Double, Double> cubeRoot() {
+   * BinarySearch.Table<Double, Double> cubeRoot() {
    *   return forDoubles()
    *       .by(cube -> (low, mid, high) -> Double.compare(cube, mid * mid * mid));
    * }
@@ -357,12 +357,12 @@ public final class BinarySearch {
    *
    * <p>This is an O(1) operation.
    */
-  public static LookupTable<DoubleSearchTarget, Double> forDoubles() {
+  public static Table<DoubleSearchTarget, Double> forDoubles() {
     return forDoubles(all());
   }
 
   /**
-   * Similar to {@link #forInts(Range)}, but returns a {@link LookupTable} over the given
+   * Similar to {@link #forInts(Range)}, but returns a {@link Table} over the given
    * {@code range} of {@code double} precision numbers.
    *
    * <p>Callers can search by a {@link DoubleSearchTarget} object that will be called at each iteration
@@ -372,7 +372,7 @@ public final class BinarySearch {
    * <p>For example you can implement square root through binary search:
    *
    * <pre>{@code
-   * LookupTable<Double, Double> sqrt() {
+   * BinarySearch.Table<Double, Double> sqrt() {
    *   return forDoubles(atLeast(0D))
    *       .by(square -> (low, mid, high) -> Double.compare(square, mid * mid));
    * }
@@ -384,7 +384,7 @@ public final class BinarySearch {
    *
    * <p>This is an O(1) operation.
    */
-  public static LookupTable<DoubleSearchTarget, Double> forDoubles(Range<Double> range) {
+  public static Table<DoubleSearchTarget, Double> forDoubles(Range<Double> range) {
     final double low;
     if (range.hasLowerBound()) {
       checkArgument(
@@ -413,7 +413,7 @@ public final class BinarySearch {
   }
 
   /**
-   * The source data to be looked up using binary search.
+   * An abstract "table" of source data to be looked up using binary search.
    *
    * @param <K> the search key, usually a target value, but can also be a target locator object
    *     like {@link IntSearchTarget}.
@@ -421,7 +421,7 @@ public final class BinarySearch {
    *     be the optimal solution in non-array based bisection algorithms such as the minimum value of
    *     a parabola function.
    */
-  public static abstract class LookupTable<K, C extends Comparable<C>> {
+  public static abstract class Table<K, C extends Comparable<C>> {
     /**
      * Searches for {@code target} and returns the result if found; or else returns empty.
      *
@@ -549,20 +549,20 @@ public final class BinarySearch {
     public abstract InsertionPoint<C> insertionPointAfter(K target);
 
     /**
-     * Returns a new {@link LookupTable} over the same source but transforms
+     * Returns a new {@link Table} over the same source but transforms
      * the search target using the given {@code keyFunction} first.
      *
      * <p>Useful for creating a facade in front of a lower-level backing data source.
      *
      * <p>For example, if you have epoch millisecond timestamps stored in a sorted {@code long[]}
-     * array, you can wrap it as a {@code LookupTable<Instant, Integer>} for your code to be able
+     * array, you can wrap it as a {@code BinarySearch.Table<Instant, Integer>} for your code to be able
      * to search by {@link java.time.Instant} repeatedly:
      *
      * <pre>{@code
      * class Timeline {
      *   private final long[] timestamps;
      *
-     *   LookupTable<Instant, Integer> instants() {
+     *   BinarySearch.Table<Instant, Integer> instants() {
      *     return BinarySearch.inSortedArray(timestamps).by(Instant::toEpochMilli);
      *   }
      * }
@@ -570,12 +570,12 @@ public final class BinarySearch {
      *
      * <p>This is an O(1) operation.
      *
-     * @param <Q> the logical search key type of the returned {@link LookupTable}.
+     * @param <Q> the logical search key type of the returned {@link Table}.
      */
-    public final <Q> LookupTable<Q, C> by(Function<Q, ? extends K> keyFunction) {
+    public final <Q> Table<Q, C> by(Function<Q, ? extends K> keyFunction) {
       checkNotNull(keyFunction);
-      LookupTable<K, C> underlying = this;
-      return new LookupTable<Q, C>() {
+      Table<K, C> underlying = this;
+      return new Table<Q, C>() {
         @Override public Optional<C> find(@Nullable Q query) {
           return super.find(query);
         }
@@ -594,7 +594,7 @@ public final class BinarySearch {
       };
     }
 
-    LookupTable() {}
+    Table() {}
   }
 
   /** Represents the search target that can be found through bisecting the integer domain. */
@@ -655,11 +655,11 @@ public final class BinarySearch {
     int locate(double low, double median, double high);
   }
 
-  private static LookupTable<IntSearchTarget, Integer> inRangeInclusive(int from, int to) {
+  private static Table<IntSearchTarget, Integer> inRangeInclusive(int from, int to) {
     if (from > to) {
       return always(InsertionPoint.before(from));
     }
-    return new LookupTable<IntSearchTarget, Integer>() {
+    return new Table<IntSearchTarget, Integer>() {
       @Override public InsertionPoint<Integer> insertionPointFor(IntSearchTarget target) {
         checkNotNull(target);
         for (int low = from, high = to; ;) {
@@ -689,11 +689,11 @@ public final class BinarySearch {
     };
   }
 
-  private static LookupTable<LongSearchTarget, Long> inRangeInclusive(long from, long to) {
+  private static Table<LongSearchTarget, Long> inRangeInclusive(long from, long to) {
     if (from > to) {
       return always(InsertionPoint.before(from));
     }
-    return new LookupTable<LongSearchTarget, Long>() {
+    return new Table<LongSearchTarget, Long>() {
       @Override public InsertionPoint<Long> insertionPointFor(LongSearchTarget target) {
         checkNotNull(target);
         for (long low = from, high = to; ;) {
@@ -723,12 +723,12 @@ public final class BinarySearch {
     };
   }
 
-  private static LookupTable<DoubleSearchTarget, Double> inRangeInclusive(
+  private static Table<DoubleSearchTarget, Double> inRangeInclusive(
       final double from, final double to) {
     if (from > to) {
       return always(InsertionPoint.before(from));
     }
-    return new LookupTable<DoubleSearchTarget, Double>() {
+    return new Table<DoubleSearchTarget, Double>() {
       @Override public InsertionPoint<Double> insertionPointFor(DoubleSearchTarget target) {
         checkNotNull(target);
         double floor = Double.NEGATIVE_INFINITY;
@@ -796,8 +796,8 @@ public final class BinarySearch {
     return (low, mid, high) -> target.locate(low, mid, high) < 0 ? -1 : 1;
   }
 
-  private static <Q, R extends Comparable<R>> LookupTable<Q, R> always(InsertionPoint<R> point) {
-    return new LookupTable<Q, R>() {
+  private static <Q, R extends Comparable<R>> Table<Q, R> always(InsertionPoint<R> point) {
+    return new Table<Q, R>() {
       @Override public InsertionPoint<R> insertionPointFor(Q target) {
         checkNotNull(target);
         return point;
