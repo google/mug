@@ -23,6 +23,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -194,7 +195,7 @@ public class BinarySearchTest {
     assertThat(BinarySearch.forInts(atMost(Integer.MIN_VALUE)).find((l, i, h) -> Integer.MIN_VALUE))
         .isEmpty();
     assertThat(BinarySearch.forInts(atMost(Integer.MIN_VALUE)).rangeOf((l, i, h) -> Integer.MIN_VALUE))
-        .isEqualTo(Range.closedOpen(Integer.MIN_VALUE, Integer.MIN_VALUE));
+        .isEqualTo(belowAllInts());
     assertThat(BinarySearch.forInts(atMost(Integer.MIN_VALUE)).insertionPointFor((l, i, h) -> Integer.MIN_VALUE))
         .isEqualTo(InsertionPoint.before(Integer.MIN_VALUE));
     assertThat(BinarySearch.forInts(atMost(Integer.MIN_VALUE)).insertionPointBefore((l, i, h) -> Integer.MIN_VALUE))
@@ -208,7 +209,7 @@ public class BinarySearchTest {
     assertThat(BinarySearch.forInts(atMost(Integer.MIN_VALUE)).find((l, i, h) -> -1))
         .isEmpty();
     assertThat(BinarySearch.forInts(atMost(Integer.MIN_VALUE)).rangeOf((l, i, h) -> -1))
-        .isEqualTo(Range.closedOpen(Integer.MIN_VALUE, Integer.MIN_VALUE));
+        .isEqualTo(belowAllInts());
     assertThat(BinarySearch.forInts(atMost(Integer.MIN_VALUE)).insertionPointFor((l, i, h) -> -1))
         .isEqualTo(InsertionPoint.before(Integer.MIN_VALUE));
     assertThat(BinarySearch.forInts(atMost(Integer.MIN_VALUE)).insertionPointBefore((l, i, h) -> -1))
@@ -248,25 +249,25 @@ public class BinarySearchTest {
   @Test
   public void forInts_aboveAll() {
     assertThat(BinarySearch.forInts().rangeOf((l, i, h) -> 1))
-        .isEqualTo(Range.openClosed(Integer.MAX_VALUE, Integer.MAX_VALUE));
+        .isEqualTo(aboveAllInts());
   }
 
   @Test
   public void forInts_belowAll() {
     assertThat(BinarySearch.forInts().rangeOf((l, i, h) -> -1))
-        .isEqualTo(Range.closedOpen(Integer.MIN_VALUE, Integer.MIN_VALUE));
+        .isEqualTo(belowAllInts());
   }
 
   @Test
   public void forLongs_aboveAll() {
     assertThat(BinarySearch.forLongs().rangeOf((l, i, h) -> 1))
-        .isEqualTo(Range.openClosed(Long.MAX_VALUE, Long.MAX_VALUE));
+        .isEqualTo(aboveAllLongs());
   }
 
   @Test
   public void forLongs_belowAll() {
     assertThat(BinarySearch.forLongs().rangeOf((l, i, h) -> -1))
-        .isEqualTo(Range.closedOpen(Long.MIN_VALUE, Long.MIN_VALUE));
+        .isEqualTo(belowAllLongs());
   }
 
   @Test
@@ -274,7 +275,7 @@ public class BinarySearchTest {
     assertThat(BinarySearch.forLongs(atMost(Long.MIN_VALUE)).find((l, i, h) -> Integer.MIN_VALUE))
         .isEmpty();
     assertThat(BinarySearch.forLongs(atMost(Long.MIN_VALUE)).rangeOf((l, i, h) -> Integer.MIN_VALUE))
-        .isEqualTo(Range.closedOpen(Long.MIN_VALUE, Long.MIN_VALUE));
+        .isEqualTo(belowAllLongs());
     assertThat(BinarySearch.forLongs(atMost(Long.MIN_VALUE)).insertionPointFor((l, i, h) -> Integer.MIN_VALUE))
         .isEqualTo(InsertionPoint.before(Long.MIN_VALUE));
     assertThat(BinarySearch.forLongs(atMost(Long.MIN_VALUE)).insertionPointBefore((l, i, h) -> Integer.MIN_VALUE))
@@ -288,7 +289,7 @@ public class BinarySearchTest {
     assertThat(BinarySearch.forLongs(atMost(Long.MIN_VALUE)).find((l, i, h) -> -1))
         .isEmpty();
     assertThat(BinarySearch.forLongs(atMost(Long.MIN_VALUE)).rangeOf((l, i, h) -> -1))
-        .isEqualTo(Range.closedOpen(Long.MIN_VALUE, Long.MIN_VALUE));
+        .isEqualTo(belowAllLongs());
     assertThat(BinarySearch.forLongs(atMost(Long.MIN_VALUE)).insertionPointFor((l, i, h) -> -1))
         .isEqualTo(InsertionPoint.before(Long.MIN_VALUE));
     assertThat(BinarySearch.forLongs(atMost(Long.MIN_VALUE)).insertionPointBefore((l, i, h) -> -1))
@@ -344,7 +345,7 @@ public class BinarySearchTest {
     assertThat(BinarySearch.forInts(atLeast(Integer.MAX_VALUE)).find((l, i, h) -> 1))
         .isEmpty();
     assertThat(BinarySearch.forInts(atLeast(Integer.MAX_VALUE)).rangeOf((l, i, h) -> 1))
-        .isEqualTo(Range.openClosed(Integer.MAX_VALUE, Integer.MAX_VALUE));
+        .isEqualTo(aboveAllInts());
     assertThat(BinarySearch.forInts(atLeast(Integer.MAX_VALUE)).insertionPointFor((l, i, h) -> 1))
         .isEqualTo(InsertionPoint.after(Integer.MAX_VALUE));
     assertThat(BinarySearch.forInts(atLeast(Integer.MAX_VALUE)).insertionPointBefore((l, i, h) -> 1))
@@ -372,7 +373,7 @@ public class BinarySearchTest {
     assertThat(BinarySearch.forLongs(atLeast(Long.MAX_VALUE)).find((l, i, h) -> 1))
         .isEmpty();
     assertThat(BinarySearch.forLongs(atLeast(Long.MAX_VALUE)).rangeOf((l, i, h) -> 1))
-        .isEqualTo(Range.openClosed(Long.MAX_VALUE, Long.MAX_VALUE));
+        .isEqualTo(aboveAllLongs());
     assertThat(BinarySearch.forLongs(atLeast(Long.MAX_VALUE)).insertionPointFor((l, i, h) -> 1))
         .isEqualTo(InsertionPoint.after(Long.MAX_VALUE));
     assertThat(BinarySearch.forLongs(atLeast(Long.MAX_VALUE)).insertionPointBefore((l, i, h) -> 1))
@@ -386,7 +387,7 @@ public class BinarySearchTest {
     assertThat(BinarySearch.forInts().find((l, i, h) -> -1))
         .isEmpty();
     assertThat(BinarySearch.forInts().rangeOf((l, i, h) -> -1))
-        .isEqualTo(Range.closedOpen(Integer.MIN_VALUE, Integer.MIN_VALUE));
+        .isEqualTo(belowAllInts());
     assertThat(BinarySearch.forInts().insertionPointFor((l, i, h) -> -1))
         .isEqualTo(InsertionPoint.before(Integer.MIN_VALUE));
     assertThat(BinarySearch.forInts().insertionPointBefore((l, i, h) -> -1))
@@ -401,7 +402,7 @@ public class BinarySearchTest {
     assertThat(BinarySearch.forInts().find((l, i, h) -> 1))
         .isEmpty();
     assertThat(BinarySearch.forInts().rangeOf((l, i, h) -> 1))
-        .isEqualTo(Range.openClosed(Integer.MAX_VALUE, Integer.MAX_VALUE));
+        .isEqualTo(aboveAllInts());
     assertThat(BinarySearch.forInts().insertionPointFor((l, i, h) -> 1))
         .isEqualTo(InsertionPoint.after(Integer.MAX_VALUE));
     assertThat(BinarySearch.forInts().insertionPointBefore((l, i, h) -> 1))
@@ -415,7 +416,7 @@ public class BinarySearchTest {
     assertThat(BinarySearch.forLongs().find((l, i, h) -> -1))
         .isEmpty();
     assertThat(BinarySearch.forLongs().rangeOf((l, i, h) -> -1))
-        .isEqualTo(Range.closedOpen(Long.MIN_VALUE, Long.MIN_VALUE));
+        .isEqualTo(belowAllLongs());
     assertThat(BinarySearch.forLongs().insertionPointFor((l, i, h) -> -1))
         .isEqualTo(InsertionPoint.before(Long.MIN_VALUE));
     assertThat(BinarySearch.forLongs().insertionPointBefore((l, i, h) -> -1))
@@ -430,7 +431,7 @@ public class BinarySearchTest {
     assertThat(BinarySearch.forLongs().find((l, i, h) -> 1))
         .isEmpty();
     assertThat(BinarySearch.forLongs().rangeOf((l, i, h) -> 1))
-        .isEqualTo(Range.openClosed(Long.MAX_VALUE, Long.MAX_VALUE));
+        .isEqualTo(aboveAllLongs());
     assertThat(BinarySearch.forLongs().insertionPointFor((l, i, h) -> 1))
         .isEqualTo(InsertionPoint.after(Long.MAX_VALUE));
     assertThat(BinarySearch.forLongs().insertionPointBefore((l, i, h) -> 1))
@@ -459,7 +460,7 @@ public class BinarySearchTest {
     assertThat(BinarySearch.forInts(atLeast(0)).find((l, i, h) -> 1))
         .isEmpty();
     assertThat(BinarySearch.forInts(atLeast(0)).rangeOf((l, i, h) -> 1))
-        .isEqualTo(Range.openClosed(Integer.MAX_VALUE, Integer.MAX_VALUE));
+        .isEqualTo(aboveAllInts());
     assertThat(BinarySearch.forInts(atLeast(0)).insertionPointFor((l, i, h) -> 1))
         .isEqualTo(InsertionPoint.after(Integer.MAX_VALUE));
     assertThat(BinarySearch.forInts(atLeast(0)).insertionPointBefore((l, i, h) -> 1))
@@ -474,7 +475,7 @@ public class BinarySearchTest {
     assertThat(BinarySearch.forLongs(atLeast(0L)).find((l, i, h) -> 1))
         .isEmpty();
     assertThat(BinarySearch.forLongs(atLeast(0L)).rangeOf((l, i, h) -> 1))
-        .isEqualTo(Range.openClosed(Long.MAX_VALUE, Long.MAX_VALUE));
+        .isEqualTo(aboveAllLongs());
     assertThat(BinarySearch.forLongs(atLeast(0L)).insertionPointFor((l, i, h) -> 1))
         .isEqualTo(InsertionPoint.after(Long.MAX_VALUE));
     assertThat(BinarySearch.forLongs(atLeast(0L)).insertionPointBefore((l, i, h) -> 1))
@@ -502,7 +503,7 @@ public class BinarySearchTest {
     assertThat(BinarySearch.forLongs(Range.lessThan(0L)).find((l, i, h) -> -1))
         .isEmpty();
     assertThat(BinarySearch.forLongs(Range.lessThan(0L)).rangeOf((l, i, h) -> -1))
-        .isEqualTo(Range.closedOpen(Long.MIN_VALUE, Long.MIN_VALUE));
+        .isEqualTo(belowAllLongs());
     assertThat(BinarySearch.forLongs(Range.lessThan(0L)).insertionPointFor((l, i, h) -> -1))
         .isEqualTo(InsertionPoint.before(Long.MIN_VALUE));
     assertThat(BinarySearch.forLongs(Range.lessThan(0L)).insertionPointBefore((l, i, h) -> -1))
@@ -1578,6 +1579,22 @@ public class BinarySearchTest {
   private static BinarySearch.Table<Double, Double> cubeRoot() {
     return BinarySearch.forDoubles()
       .by(cube -> (low, mid, high) -> Double.compare(cube, mid * mid * mid));
+  }
+
+  private static Range<Integer> belowAllInts() {
+    return Range.lessThan(Integer.MIN_VALUE).canonical(DiscreteDomain.integers());
+  }
+
+  private static Range<Long> belowAllLongs() {
+    return Range.lessThan(Long.MIN_VALUE).canonical(DiscreteDomain.longs());
+  }
+
+  private static Range<Integer> aboveAllInts() {
+    return Range.openClosed(Integer.MAX_VALUE, Integer.MAX_VALUE);
+  }
+
+  private static Range<Long> aboveAllLongs() {
+    return Range.openClosed(Long.MAX_VALUE, Long.MAX_VALUE);
   }
 
   static class NegativeValues implements TestParameter.TestParameterValuesProvider {
