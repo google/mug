@@ -12,13 +12,13 @@
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
-      <version>3.19.2</version>
+      <version>[3.0.0,)</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java-util</artifactId>
-      <version>3.19.1</version>
+      <version>[3.0.0,)</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -30,7 +30,6 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>30.1.1-android</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -52,7 +51,6 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava-testlib</artifactId>
-      <version>30.1.1-android</version>
       <scope>test</scope>
     </dependency>
 	<dependency>
