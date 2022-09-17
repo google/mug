@@ -105,7 +105,7 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava-testlib</artifactId>
-      <version>31.0.1-jre</version>
+      <version>[20.0,)</version>
       <scope>test</scope>
     </dependency>
 
