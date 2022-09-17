@@ -648,9 +648,9 @@ public final class BinarySearch {
      * And it's guaranteed that {@code low <= median <= high}.
      *
      * <p>Different from {@link IntSearchTarget} and {@link LongSearchTarget}, the
-     * {@code (low, median, high)} parameters aren't guaranteed to split the range in half.
-     * Instead, {@code median} is picked such that the distinct double precision
-     * values in the lower subrange is close to the distinct values in the higher subrange.
+     * {@code (low, median, high)} parameters don't necessarily split the range in half.
+     * Instead, {@code median} is picked such that the number of distinct double precision
+     * values in the lower subrange is close to that of the higher subrange.
      */
     int locate(double low, double median, double high);
   }
