@@ -145,6 +145,82 @@ A: When you already have a proper domain object, sure. But you might find it cum
 A: It's distracting to read code littered with opaque method names like `getFirst()` and `getSecond()`.
 
 
+## Substring
+
+**Example 1: strip off a prefix if existent:**
+```java
+String httpStripped = Substring.prefix("http://").removeFrom(uri);
+```
+
+**Example 2: strip off any scheme prefix from a uri:**
+```java
+String schemeStripped = Substring.upToIncluding(first("://")).removeFrom(uri);
+```
+
+**Example 3: split a string in the format of "name=value" into `name` and `value`:**
+```java
+Substring.first('=').split("name=value").map((name, value) -> ...);
+```
+
+**Example 4: replace trailing "//" with "/" :**
+```java
+Substring.suffix("//").replaceFrom(path, "/");
+```
+
+
+**Example 5: strip off the suffix starting with a dash (-) character :**
+```java
+last('-').toEnd().removeFrom(str);
+```
+
+**Example 6: extract a substring using regex :**
+```java
+String quoted = Substring.first(Pattern.compile("'(.*?)'"), 1)
+    .from(str)
+    .orElseThrow(...);
+```
+
+**Example 7: find the substring between the first and last curly braces ({) :**
+```java
+String body = Substring.between(first('{'), last('}'))
+    .from(source)
+    .orElseThrow(...);
+```
+
+## Optionals
+
+**Example 1: to combine two Optional instances into a single one:**
+```java
+Optional<Couple> couple = Optionals.both(optionalHusband, optionalWife).map(Couple::new);
+```
+
+**Example 2: to run code when two Optional instances are both present:**
+```java
+Optionals.both(findTeacher(), findStudent()).ifPresent(Teacher::teach);
+```
+
+**Example 3: or else run a fallback code block:**
+```java
+static import com.google.mu.util.Optionals.ifPresent;
+
+Optional<Teacher> teacher = findTeacher(...);
+Optional<Student> student = findStudent(...);
+ifPresent(teacher, student, Teacher::teach)             // teach if both present
+    .or(() -> ifPresent(teacher, Teacher::workOut))     // teacher work out if present
+    .or(() -> ifPresent(student, Student::doHomework))  // student do homework if present
+    .orElse(() -> log("no teacher. no student"));       // or else log
+```
+
+**Example 4: wrap a value in Optional if it exists:**
+```java
+static import com.google.mu.util.Optionals.optionally;
+
+Optional<String> id = optionally(request.hasId(), request::getId);
+```
+
+All Optionals utilites propagate checked exception from the the lambda/method references.
+
+
 #### [MoreStreams](https://google.github.io/mug/apidocs/com/google/mu/util/stream/MoreStreams.html)
 
 **Example 1: to split a stream into smaller-size chunks (batches):**
@@ -235,82 +311,6 @@ Stream<Long> fibonacci = new Fibonacci().from(0, 1).iterate();
     => [0, 1, 2, 3, 5, 8, ...]
 ```
 
-## Optionals
-
-**Example 1: to combine two Optional instances into a single one:**
-```java
-Optional<Couple> couple = Optionals.mapBoth(optionalHusband, optionalWife, Couple::new);
-```
-
-**Example 2: to run code when two Optional instances are both present:**
-```java
-Optionals.ifPresent(findTeacher(), findStudent(), Teacher::teach);
-```
-
-**Example 3: or else run a fallback code block:**
-```java
-static import com.google.mu.util.Optionals.ifPresent;
-
-Optional<Teacher> teacher = findTeacher(...);
-Optional<Student> student = findStudent(...);
-ifPresent(teacher, student, Teacher::teach)             // teach if both present
-    .or(() -> ifPresent(teacher, Teacher::workOut))     // teacher work out if present
-    .or(() -> ifPresent(student, Student::doHomework))  // student do homework if present
-    .orElse(() -> log("no teacher. no student"));       // or else log
-```
-
-**Example 4: wrap a value in Optional if it exists:**
-```java
-static import com.google.mu.util.Optionals.optional;
-
-Optional<String> id = optional(request.hasId(), request.getId());
-```
-
-All Optionals utilites propagate checked exception from the the lambda/method references.
-
-
-## Substring
-
-**Example 1: strip off a prefix if existent:**
-```java
-String httpStripped = Substring.prefix("http://").removeFrom(uri);
-```
-
-**Example 2: strip off any scheme prefix from a uri:**
-```java
-String schemeStripped = Substring.upToIncluding(first("://")).removeFrom(uri);
-```
-
-**Example 3: split a string in the format of "name=value" into `name` and `value`:**
-```java
-Substring.first('=').split("name=value").map((name, value) -> ...);
-```
-
-**Example 4: replace trailing "//" with "/" :**
-```java
-Substring.suffix("//").replaceFrom(path, "/");
-```
-
-
-**Example 5: strip off the suffix starting with a dash (-) character :**
-```java
-last('-').toEnd().removeFrom(str);
-```
-
-**Example 6: extract a substring using regex :**
-```java
-String quoted = Substring.first(Pattern.compile("'(.*?)'"), 1)
-    .from(str)
-    .orElseThrow(...);
-```
-
-**Example 7: find the substring between the first and last curly braces ({) :**
-```java
-String body = Substring.between(first('{'), last('}'))
-    .from(source)
-    .orElseThrow(...);
-```
-
 ## [Selection](https://google.github.io/mug/apidocs/com/google/mu/util/Selection.html)
 
 Have you needed to specify a whitelist of things, while also needed to allow _all_ when the feature becomes ready for prime time?
@@ -319,14 +319,14 @@ A common work-around is to use a `Set` to capture the whitelist, and then treat 
 
 This has a few caveats:
 
-1. The code that checks the whiteliist is error prone. You'll need to remember to check the special case for an empty Set:
+1. The code that checks the whitelist is error prone. You'll need to remember to check the special case for an empty Set:
 
   ```java
   if (allowedUsers.isEmpty() || allowedUsers.contains(userId)) {
     ...;
   }
   ```
-2. How do you disable it completely, blocking all users from this feature?
+2. If "empty" means all, how do you disable the feature completely, blocking all users?
 3. Assume `allowedUsers` in the above example is a flag, it's not super clear to the staff configuring this flag about what it means when it's empty. When your system has a dozen components, each with its own flavor of whitelist, allowlist flags, it's easy to mis-understand and mis-configure.
 
 Instead, use `Selection` to differentiate and make explicit the *all* vs. *none* cases. Code checking against a `Selection` is straight-forward:
