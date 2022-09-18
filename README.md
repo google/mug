@@ -292,7 +292,9 @@ But the binary search algorithm is applicable to more use cases. For example:
     ```
 * Or search for the solution of a polynomial equation:
     ```java
-    long polynomial(int x) {...}
+    long polynomial(int x) {
+      return 5 * x * x - 3 * x + 2;
+    }
     
     Optional<Integer> solvePolynomial(long y) {
       return BinarySearch.forInts()
