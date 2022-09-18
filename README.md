@@ -280,17 +280,17 @@ The JDK offers binary search algorithms out of the box, for sorted arrays and li
 
 But the binary search algorithm is applicable to more use cases. For example:
 
-* You may want to search in a `double` array with a tolerance factor:
+* You may want to search in a `double` array with a tolerance factor.
     ```java
     Optional<Integer> index =
         BinarySearch.inSortedArrayWithToleranceFactor(doubles, 0.01).find(3.14)
     ```
-* Or search for the range of indexes when the array can have duplicates (at least according to the tolerance factor):
+* Or search for the range of indexes when the array can have duplicates (at least according to the tolerance factor).
     ```java
     Range<Integer> indexRange =
         BinarySearch.inSortedArrayWithToleranceFactor(doubles, 0.01).rangeOf(3.14)
     ```
-* Or search for the solution of a polynomial equation:
+* Or search for the solution of a polynomial equation.
     ```java
     long polynomial(int x) {
       return 5 * x * x - 3 * x + 2;
