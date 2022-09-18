@@ -282,11 +282,13 @@ But the binary search algorithm is applicable to more use cases. For example:
 
 * You may want to search in a `double` array with a tolerance factor:
     ```java
-    BinarySearch.inSortedArrayWithToleranceFactor(doubles, 0.01).find(3.14)`
+    Optional<Integer> index =
+        BinarySearch.inSortedArrayWithToleranceFactor(doubles, 0.01).find(3.14)
     ```
 * Or search for the range of indexes when the array can have duplicates (at least according to the tolerance factor):
     ```java
-    BinarySearch.inSortedArrayWithToleranceFactor(doubles, 0.01).rangeOf(3.14)
+    Range<Integer> range =
+        BinarySearch.inSortedArrayWithToleranceFactor(doubles, 0.01).rangeOf(3.14)
     ```
 * Or search for the solution of a polynomial equation:
     ```java
