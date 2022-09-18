@@ -274,6 +274,26 @@ Map<Day, Long> siteTrafficHistogram = pages.stream()
     .toMap();
 ```
 
+#### [BinarySearch](https://google.github.io/mug/mug-guava/apidocs/com/google/mu/util/BinarySearch.html)
+
+The JDK offers binary search algorithms out of the box, for sorted arrays and lists.
+
+But the binary search algorithm is applicable to more use cases. For example:
+
+* You may want to search in a `double` array with a tolerance factor:
+    `BinarySearch.inSortedArrayWithToleranceFactor(doubles, 0.01).find(3.14)`.
+* Or search for the range of indexes when the array can have duplicates (at least according to the tolerance factor):
+    `BinarySearch.inSortedArrayWithToleranceFactor(doubles, 0.01).rangeOf(3.14)`
+* Or search for the solution of a polynomial equation:
+    ```java
+    long polynomial(int x) {...}
+    
+    Optional<Integer> solvePolynomial(long y) {
+      return BinarySearch.forInts()
+          .find((low, x, high) -> Long.compare(y, polynomial(x));
+    }
+    ```
+
 #### [Iteration](https://google.github.io/mug/apidocs/com/google/mu/util/stream/Iteration.html)
 
 **Example 1: turn your recursive algorithm into a _lazy_ Stream:**
