@@ -290,10 +290,10 @@ But the binary search algorithm is applicable to more use cases. For example:
     Range<Integer> indexRange =
         BinarySearch.inSortedArrayWithTolerance(doubles, 0.0001).rangeOf(3.14)
     ```
-* Or search for the solution of a polynomial equation.
+* Or search for the solution to a monotonic polynomial equation.
     ```java
     long polynomial(int x) {
-      return 5 * x * x - 3 * x + 2;
+      return 5 * x * x * x + 3 * x + 2;
     }
     
     Optional<Integer> solvePolynomial(long y) {
