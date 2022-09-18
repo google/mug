@@ -287,7 +287,7 @@ But the binary search algorithm is applicable to more use cases. For example:
     ```
 * Or search for the range of indexes when the array can have duplicates (at least according to the tolerance factor):
     ```java
-    Range<Integer> range =
+    Range<Integer> indexRange =
         BinarySearch.inSortedArrayWithToleranceFactor(doubles, 0.01).rangeOf(3.14)
     ```
 * Or search for the solution of a polynomial equation:
