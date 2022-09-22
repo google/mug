@@ -21,7 +21,7 @@ Add the following to pom.xml:
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug</artifactId>
-    <version>6.3</version>
+    <version>6.4</version>
   </dependency>
 ```
 
@@ -30,7 +30,16 @@ Protobuf utils:
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-protobuf</artifactId>
-    <version>6.3</version>
+    <version>6.4</version>
+  </dependency>
+```
+
+Guava add-ons:
+```
+  <dependency>
+    <groupId>com.google.mug</groupId>
+    <artifactId>mug-guava</artifactId>
+    <version>6.4</version>
   </dependency>
 ```
 
@@ -38,9 +47,9 @@ Protobuf utils:
 
 Add to build.gradle:
 ```
-  implementation 'com.google.mug:mug:6.3'
-  implementation 'com.google.mug:mug-guava:6.3'
-  implementation 'com.google.mug:mug-protobuf:6.3'
+  implementation 'com.google.mug:mug:6.4'
+  implementation 'com.google.mug:mug-guava:6.4'
+  implementation 'com.google.mug:mug-protobuf:6.4'
 ```
 
 
@@ -136,6 +145,82 @@ A: When you already have a proper domain object, sure. But you might find it cum
 A: It's distracting to read code littered with opaque method names like `getFirst()` and `getSecond()`.
 
 
+## Substring
+
+**Example 1: strip off a prefix if existent:**
+```java
+String httpStripped = Substring.prefix("http://").removeFrom(uri);
+```
+
+**Example 2: strip off any scheme prefix from a uri:**
+```java
+String schemeStripped = Substring.upToIncluding(first("://")).removeFrom(uri);
+```
+
+**Example 3: split a string in the format of "name=value" into `name` and `value`:**
+```java
+Substring.first('=').split("name=value").map((name, value) -> ...);
+```
+
+**Example 4: replace trailing "//" with "/" :**
+```java
+Substring.suffix("//").replaceFrom(path, "/");
+```
+
+
+**Example 5: strip off the suffix starting with a dash (-) character :**
+```java
+last('-').toEnd().removeFrom(str);
+```
+
+**Example 6: extract a substring using regex :**
+```java
+String quoted = Substring.first(Pattern.compile("'(.*?)'"), 1)
+    .from(str)
+    .orElseThrow(...);
+```
+
+**Example 7: find the substring between the first and last curly braces ({) :**
+```java
+String body = Substring.between(first('{'), last('}'))
+    .from(source)
+    .orElseThrow(...);
+```
+
+## Optionals
+
+**Example 1: to combine two Optional instances into a single one:**
+```java
+Optional<Couple> couple = Optionals.both(optionalHusband, optionalWife).map(Couple::new);
+```
+
+**Example 2: to run code when two Optional instances are both present:**
+```java
+Optionals.both(findTeacher(), findStudent()).ifPresent(Teacher::teach);
+```
+
+**Example 3: or else run a fallback code block:**
+```java
+static import com.google.mu.util.Optionals.ifPresent;
+
+Optional<Teacher> teacher = findTeacher(...);
+Optional<Student> student = findStudent(...);
+ifPresent(teacher, student, Teacher::teach)             // teach if both present
+    .or(() -> ifPresent(teacher, Teacher::workOut))     // teacher work out if present
+    .or(() -> ifPresent(student, Student::doHomework))  // student do homework if present
+    .orElse(() -> log("no teacher. no student"));       // or else log
+```
+
+**Example 4: wrap a value in Optional if it exists:**
+```java
+static import com.google.mu.util.Optionals.optionally;
+
+Optional<String> id = optionally(request.hasId(), request::getId);
+```
+
+All Optionals utilites propagate checked exception from the the lambda/method references.
+
+
 #### [MoreStreams](https://google.github.io/mug/apidocs/com/google/mu/util/stream/MoreStreams.html)
 
 **Example 1: to split a stream into smaller-size chunks (batches):**
@@ -189,6 +274,34 @@ Map<Day, Long> siteTrafficHistogram = pages.stream()
     .toMap();
 ```
 
+#### [BinarySearch](https://google.github.io/mug/mug-guava/apidocs/com/google/mu/util/BinarySearch.html)
+
+The JDK offers binary search algorithms out of the box, for sorted arrays and lists.
+
+But the binary search algorithm is applicable to more use cases. For example:
+
+* You may want to search in a `double` array with a tolerance factor.
+    ```java
+    Optional<Integer> index =
+        BinarySearch.inSortedArrayWithTolerance(doubles, 0.0001).find(3.14)
+    ```
+* Or search for the range of indexes when the array can have duplicates (at least according to the tolerance factor).
+    ```java
+    Range<Integer> indexRange =
+        BinarySearch.inSortedArrayWithTolerance(doubles, 0.0001).rangeOf(3.14)
+    ```
+* Or search for the solution to a monotonic polynomial equation.
+    ```java
+    long polynomial(int x) {
+      return 5 * x * x * x + 3 * x + 2;
+    }
+    
+    Optional<Integer> solvePolynomial(long y) {
+      return BinarySearch.forInts()
+          .find((low, x, high) -> Long.compare(y, polynomial(x));
+    }
+    ```
+
 #### [Iteration](https://google.github.io/mug/apidocs/com/google/mu/util/stream/Iteration.html)
 
 **Example 1: turn your recursive algorithm into a _lazy_ Stream:**
@@ -226,82 +339,6 @@ Stream<Long> fibonacci = new Fibonacci().from(0, 1).iterate();
     => [0, 1, 2, 3, 5, 8, ...]
 ```
 
-## Optionals
-
-**Example 1: to combine two Optional instances into a single one:**
-```java
-Optional<Couple> couple = Optionals.mapBoth(optionalHusband, optionalWife, Couple::new);
-```
-
-**Example 2: to run code when two Optional instances are both present:**
-```java
-Optionals.ifPresent(findTeacher(), findStudent(), Teacher::teach);
-```
-
-**Example 3: or else run a fallback code block:**
-```java
-static import com.google.mu.util.Optionals.ifPresent;
-
-Optional<Teacher> teacher = findTeacher(...);
-Optional<Student> student = findStudent(...);
-ifPresent(teacher, student, Teacher::teach)             // teach if both present
-    .or(() -> ifPresent(teacher, Teacher::workOut))     // teacher work out if present
-    .or(() -> ifPresent(student, Student::doHomework))  // student do homework if present
-    .orElse(() -> log("no teacher. no student"));       // or else log
-```
-
-**Example 4: wrap a value in Optional if it exists:**
-```java
-static import com.google.mu.util.Optionals.optional;
-
-Optional<String> id = optional(request.hasId(), request.getId());
-```
-
-All Optionals utilites propagate checked exception from the the lambda/method references.
-
-
-## Substring
-
-**Example 1: strip off a prefix if existent:**
-```java
-String httpStripped = Substring.prefix("http://").removeFrom(uri);
-```
-
-**Example 2: strip off any scheme prefix from a uri:**
-```java
-String schemeStripped = Substring.upToIncluding(first("://")).removeFrom(uri);
-```
-
-**Example 3: split a string in the format of "name=value" into `name` and `value`:**
-```java
-Substring.first('=').split("name=value").map((name, value) -> ...);
-```
-
-**Example 4: replace trailing "//" with "/" :**
-```java
-Substring.suffix("//").replaceFrom(path, "/");
-```
-
-
-**Example 5: strip off the suffix starting with a dash (-) character :**
-```java
-last('-').toEnd().removeFrom(str);
-```
-
-**Example 6: extract a substring using regex :**
-```java
-String quoted = Substring.first(Pattern.compile("'(.*?)'"), 1)
-    .from(str)
-    .orElseThrow(...);
-```
-
-**Example 7: find the substring between the first and last curly braces ({) :**
-```java
-String body = Substring.between(first('{'), last('}'))
-    .from(source)
-    .orElseThrow(...);
-```
-
 ## [Selection](https://google.github.io/mug/apidocs/com/google/mu/util/Selection.html)
 
 Have you needed to specify a whitelist of things, while also needed to allow _all_ when the feature becomes ready for prime time?
@@ -310,14 +347,14 @@ A common work-around is to use a `Set` to capture the whitelist, and then treat 
 
 This has a few caveats:
 
-1. The code that checks the whiteliist is error prone. You'll need to remember to check the special case for an empty Set:
+1. The code that checks the whitelist is error prone. You'll need to remember to check the special case for an empty Set:
 
   ```java
   if (allowedUsers.isEmpty() || allowedUsers.contains(userId)) {
     ...;
   }
   ```
-2. How do you disable it completely, blocking all users from this feature?
+2. If "empty" means all, how do you disable the feature completely, blocking all users?
 3. Assume `allowedUsers` in the above example is a flag, it's not super clear to the staff configuring this flag about what it means when it's empty. When your system has a dozen components, each with its own flavor of whitelist, allowlist flags, it's easy to mis-understand and mis-configure.
 
 Instead, use `Selection` to differentiate and make explicit the *all* vs. *none* cases. Code checking against a `Selection` is straight-forward:
@@ -364,6 +401,73 @@ HourMinuteSecond result =
         .split("12:05:10")
         .collect(onlyElements((h, m, s) -> new HourMinuteSecond(h, m, s));
 ```
+
+## [Parallelizer](https://google.github.io/mug/apidocs/com/google/mu/util/concurrent/Parallelizer.html)
+
+An _Executor-friendly_, _interruptible_ alternative to parallel streams.
+
+Designed for running a (large) pipeline of _IO-bound_ (as opposed to CPU-bound) sub tasks in parallel, while limiting max concurrency.
+
+For example, the following snippet uploads a large number of pictures in parallel:
+```java
+ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
+try {
+  new Parallelizer(threadPool, numThreads)
+      .parallelize(pictures, this::upload);
+} finally {
+  threadPool.shutdownNow();
+}
+```
+
+Note that this code will terminate if any picture fails to upload. If `upload()` throws `IOException` and an `IOException` should not terminate the batch upload, the exception needs to be caught and handled:
+```java
+  new Parallelizer(threadPool, numThreads)
+      .parallelize(pictures, pic -> {
+        try {
+          upload(pic);
+        } catch (IOException e) {
+          log(e);
+        }
+      });
+```
+
+#### Why not parallel stream?
+
+Like:
+```java
+pictures.parallel().forEach(this::upload);
+```
+
+Reasons not to:
+* Parallelizer works with any existing `ExecutorService`.
+* Parallelizer supports an in-flight tasks limit.
+* Thread **unsafe** input streams or `Iterator`s are okay.
+* Upon failure, all pending tasks are canceled.
+* Exceptions from worker threads are wrapped so that stack trace isn't misleading.
+
+Fundamentally:
+* Parallel streams are for CPU-bound tasks. JDK has built-in magic to optimally use the available cores.
+* Parallelizer is for IO-bound tasks.
+
+#### Why not just submitting to a fixed thread pool?
+
+Like:
+```java
+ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
+try {
+  pictures.forEach(pic -> threadPool.submit(() -> upload(pic)));
+  threadPool.shutdown();
+  threadPool.awaitTermination(100, SECONDS);
+} finally {
+  threadPool.shutdownNow();
+}
+```
+
+Reasons not to:
+1. The thread pool queues all pending tasks. If the input stream is too large to fit in memory, you'll get an `OutOfMemoryError`.
+2. Exceptions (including `NullPointerException`, `OutOfMemoryError`) are silently swallowed (but may print stack trace). To propagate the exceptions, the `Future` objects need to be stored in a list and then `Future#get()` needs to be called on every future object after all tasks have been submitted to the executor.
+3. Tasks submitted to an executor are independent. One task failing doesn't automatically terminate the pipeline.
+
 
 
 ## [Retryer](https://google.github.io/mug/apidocs/com/google/mu/util/concurrent/Retryer.html)
@@ -575,69 +679,3 @@ List<Result> convert(List<Input> inputs) {
 }
 ```
 That is, define the batches with ```funnel.through()``` and then inputs can flow through arbitrary number of batch conversions. Conversion results flow out of the funnel in the same order as inputs entered the funnel. 
-
-## [Parallelizer](https://google.github.io/mug/apidocs/com/google/mu/util/concurrent/Parallelizer.html)
-
-An _Executor-friendly_, _interruptible_ alternative to parallel streams.
-
-Designed for running a (large) pipeline of _IO-bound_ (as opposed to CPU-bound) sub tasks in parallel, while limiting max concurrency.
-
-For example, the following snippet uploads a large number of pictures in parallel:
-```java
-ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
-try {
-  new Parallelizer(threadPool, numThreads)
-      .parallelize(pictures, this::upload);
-} finally {
-  threadPool.shutdownNow();
-}
-```
-
-Note that this code will terminate if any picture fails to upload. If `upload()` throws `IOException` and an `IOException` should not terminate the batch upload, the exception needs to be caught and handled:
-```java
-  new Parallelizer(threadPool, numThreads)
-      .parallelize(pictures, pic -> {
-        try {
-          upload(pic);
-        } catch (IOException e) {
-          log(e);
-        }
-      });
-```
-
-#### Why not parallel stream?
-
-Like:
-```java
-pictures.parallel().forEach(this::upload);
-```
-
-Reasons not to:
-* Parallelizer works with any existing `ExecutorService`.
-* Parallelizer supports an in-flight tasks limit.
-* Thread **unsafe** input streams or `Iterator`s are okay.
-* Upon failure, all pending tasks are canceled.
-* Exceptions from worker threads are wrapped so that stack trace isn't misleading.
-
-Fundamentally:
-* Parallel streams are for CPU-bound tasks. JDK has built-in magic to optimally use the available cores.
-* Parallelizer is for IO-bound tasks.
-
-#### Why not just submitting to a fixed thread pool?
-
-Like:
-```java
-ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
-try {
-  pictures.forEach(pic -> threadPool.submit(() -> upload(pic)));
-  threadPool.shutdown();
-  threadPool.awaitTermination(100, SECONDS);
-} finally {
-  threadPool.shutdownNow();
-}
-```
-
-Reasons not to:
-1. The thread pool queues all pending tasks. If the input stream is too large to fit in memory, you'll get an `OutOfMemoryError`.
-2. Exceptions (including `NullPointerException`, `OutOfMemoryError`) are silently swallowed (but may print stack trace). To propagate the exceptions, the `Future` objects need to be stored in a list and then `Future#get()` needs to be called on every future object after all tasks have been submitted to the executor.
-3. Tasks submitted to an executor are independent. One task failing doesn't automatically terminate the pipeline.
