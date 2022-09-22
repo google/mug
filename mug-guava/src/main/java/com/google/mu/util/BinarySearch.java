@@ -232,7 +232,7 @@ public final class BinarySearch {
   /**
    * Returns a {@link Table} over all integers.
    *
-   * <p>Callers can search by an {@link IntSearchTarget} object that will be called at each iteration
+   * <p>Callers can search by an {@link IntSearchTarget} object that will be called at each probe
    * to determine whether the target is already found at the current mid-point, to the left half of the
    * current subrange, or to the right half of the current subrange.
    *
@@ -247,7 +247,7 @@ public final class BinarySearch {
   /**
    * Returns a {@link Table} over the given {@code range}.
    *
-   * <p>Callers can search by an {@link IntSearchTarget} object that will be called at each iteration
+   * <p>Callers can search by an {@link IntSearchTarget} object that will be called at each probe
    * to determine whether the target is already found at the current mid-point, to the left half of the
    * current subrange, or to the right half of the current subrange.
    *
@@ -292,7 +292,7 @@ public final class BinarySearch {
   /**
    * Similar to {@link #forInts()}, but returns a {@link Table} over all {@code long} integers.
    *
-   * <p>Callers can search by a {@link LongSearchTarget} object that will be called at each iteration
+   * <p>Callers can search by a {@link LongSearchTarget} object that will be called at each probe
    * to determine whether the target is already found at the current mid-point, to the left half of the
    * current subrange, or to the right half of the current subrange.
    *
@@ -314,7 +314,7 @@ public final class BinarySearch {
    * Similar to {@link #forInts(Range)}, but returns a {@link Table} over the given
    * {@code range} of {@code long} integers.
    *
-   * <p>Callers can search by a {@link LongSearchTarget} object that will be called at each iteration
+   * <p>Callers can search by a {@link LongSearchTarget} object that will be called at each probe
    * to determine whether the target is already found at the current mid-point, to the left half of the
    * current subrange, or to the right half of the current subrange.
    *
@@ -336,7 +336,7 @@ public final class BinarySearch {
    * Returns a {@link Table} over all finite double values (except {@link Double#NaN},
    * {@link Double#NEGATIVE_INFINITY} and {@link Double#POSITIVE_INFINITY}).
    *
-   * <p>Callers can search by an {@link DoubleSearchTarget} object that will be called at each iteration
+   * <p>Callers can search by an {@link DoubleSearchTarget} object that will be called at each probe
    * to determine whether the target is already found at the current mid-point, to the left half of the
    * current subrange, or to the right half of the current subrange.
    *
@@ -365,7 +365,7 @@ public final class BinarySearch {
    * Similar to {@link #forInts(Range)}, but returns a {@link Table} over the given
    * {@code range} of {@code double} precision numbers.
    *
-   * <p>Callers can search by a {@link DoubleSearchTarget} object that will be called at each iteration
+   * <p>Callers can search by a {@link DoubleSearchTarget} object that will be called at each probe
    * to determine whether the target is already found at the current mid-point, to the left half of the
    * current subrange, or to the right half of the current subrange.
    *
