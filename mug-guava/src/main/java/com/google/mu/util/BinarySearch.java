@@ -97,7 +97,7 @@ import com.google.common.math.LongMath;
  *
  * <p>Note that except {@link #inSortedList(List, Comparator)}, which may support null search
  * targets if the comparator supports nulls, no other {@code BinarySearch.Table} implementations
- * allow null queries.
+ * allow null search targets.
  *
  * @since 6.4
  */
@@ -413,7 +413,7 @@ public final class BinarySearch {
   }
 
   /**
-   * An abstract "table" of source data to be looked up using binary search.
+   * An abstract, virtual lookup table of source data to be looked up using binary search.
    *
    * @param <K> the search key, usually a target value, but can also be a target locator object
    *     like {@link IntSearchTarget}.
