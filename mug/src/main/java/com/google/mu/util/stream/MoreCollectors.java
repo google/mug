@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -379,23 +380,88 @@ public final class MoreCollectors {
   }
 
   /**
-   * Returns a collector that partitions the incoming elements into two groups: elements that
-   * match {@code predicate}, and those that don't.
+   * Returns a collector that partitions the incoming elements into two groups: elements that match
+   * {@code predicate}, and those that don't.
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * candidates
    *     .collect(partitioningBy(Candidate::isEligible, toImmutableList()))
    *     .andThen((eligible, ineligible) -> ...);
    * }</pre>
    *
+   * <p>Compared to {@link Collectors#partitioningBy}, which returns a {@code Map<Boolean, V>}, the
+   * syntax is easier to be chained without needing an intermediary {@code Map} local variable.
+   *
+   * @param <E> the input element type
+   * @param <R> the result type of {@code downstream} collector.
+   *
    * @since 6.0
    */
-  public static <T, R> Collector<T, ?, Both<R, R>> partitioningBy(
-      Predicate<? super T> predicate, Collector<T, ?, R> downstream) {
+  public static <E, R> Collector<E, ?, Both<R, R>> partitioningBy(
+      Predicate<? super E> predicate, Collector<E, ?, R> downstream) {
+    return partitioningBy(predicate, downstream, downstream);
+  }
+
+  /**
+   * Returns a collector that partitions the incoming elements into two groups: elements that match
+   * {@code predicate}, and those that don't, and use {@code downstreamIfTrue} and {@code
+   * downstreamIfFalse} respectively to collect the elements.
+   *
+   * <p>For example:
+   *
+   * <pre>{@code
+   * candidates
+   *     .collect(partitioningBy(Candidate::isPrimary, toOptional(), toImmutableList()))
+   *     .andThen((primary, secondaries) -> ...);
+   * }</pre>
+   *
+   * <p>Compared to {@link Collectors#partitioningBy}, which returns a {@code Map<Boolean, V>}, the
+   * syntax is easier to be chained without needing an intermediary {@code Map} local variable; and
+   * you can collect the two partitions to different types.
+   *
+   * @param <E> the input type
+   * @param <A1> the accumulator type of the {@code downstreamIfTrue} collector
+   * @param <A2> the accumulator type of the {@code downstreamIfFalse} collector
+   * @param <T> the result type of the {@code downstreamIfTrue} collector
+   * @param <F> the result type of the {@code downstreamIfFalse} collector
+   * @since 6.5
+   */
+  public static <E, A1, A2, T, F> Collector<E, ?, Both<T, F>> partitioningBy(
+      Predicate<? super E> predicate,
+      Collector<E, A1, T> downstreamIfTrue,
+      Collector<E, A2, F> downstreamIfFalse) {
     requireNonNull(predicate);
-    return Collectors.collectingAndThen(
-        Collectors.partitioningBy(predicate, downstream),
-        m -> Both.of(m.get(true), m.get(false)));
+    Supplier<A1> factory1 = downstreamIfTrue.supplier();
+    Supplier<A2> factory2 = downstreamIfFalse.supplier();
+    BiConsumer<A1, E> accumulator1 = downstreamIfTrue.accumulator();
+    BiConsumer<A2, E> accumulator2 = downstreamIfFalse.accumulator();
+    final class Builder {
+      private A1 container1 = factory1.get();
+      private A2 container2 = factory2.get();
+
+      void add(E input) {
+        if (predicate.test(input)) {
+          accumulator1.accept(container1, input);
+        } else {
+          accumulator2.accept(container2, input);
+        }
+      }
+
+      Builder addAll(Builder that) {
+        container1 = downstreamIfTrue.combiner().apply(container1, that.container1);
+        container2 = downstreamIfFalse.combiner().apply(container2, that.container2);
+        return this;
+      }
+
+      Both<T, F> build() {
+        return Both.of(
+            downstreamIfTrue.finisher().apply(container1),
+            downstreamIfFalse.finisher().apply(container2));
+      }
+    }
+    return Collector.of(Builder::new, Builder::add, Builder::addAll, Builder::build);
   }
 
   /**

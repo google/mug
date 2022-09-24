@@ -30,11 +30,13 @@ import static com.google.mu.util.stream.MoreCollectors.mapping;
 import static com.google.mu.util.stream.MoreCollectors.minMax;
 import static com.google.mu.util.stream.MoreCollectors.onlyElement;
 import static com.google.mu.util.stream.MoreCollectors.onlyElements;
+import static com.google.mu.util.stream.MoreCollectors.partitioningBy;
 import static com.google.mu.util.stream.MoreCollectors.switching;
 import static com.google.mu.util.stream.MoreCollectors.toListAndThen;
 import static com.google.mu.util.stream.MoreCollectors.toMap;
 import static java.util.Comparator.naturalOrder;
 import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.summingInt;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Collections;
@@ -269,6 +271,23 @@ public class MoreCollectorsTest {
   @Test public void testLeast_multiple() {
     assertThat(Stream.of(1, 1, 2, 1, 2).collect(allMin(naturalOrder(), toImmutableList())))
         .containsExactly(1, 1, 1);
+  }
+
+  public void testPartitioningBy_sameDownstreamCollector() {
+    String result =
+        Stream.of(1, 2, 3, 4, 5)
+            .collect(partitioningBy(n -> n % 2 == 1, toImmutableList()))
+            .andThen((odd, even) -> "odd:" + odd + "; even:" + even);
+    assertThat(result).isEqualTo("odd:[1, 3, 5]; even:[2, 4]");
+  }
+
+  public void testPartitioningBy_differentDownstreamCollectors() {
+    String result =
+        Stream.of(1, 2, 3, 4, 5)
+            .collect(
+                partitioningBy(n -> n % 2 == 1, toImmutableList(), summingInt(Integer::intValue)))
+            .andThen((odd, even) -> "odd:" + odd + "; sum of even:" + even);
+    assertThat(result).isEqualTo("odd:[1, 3, 5]; sum of even:6");
   }
 
   @Test public void testMinMax_empty() {
