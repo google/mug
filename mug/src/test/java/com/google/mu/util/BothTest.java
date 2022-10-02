@@ -2,6 +2,7 @@ package com.google.mu.util;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.util.AbstractMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 
@@ -28,6 +29,12 @@ public class BothTest {
     Both<Integer, Integer> b = both(1, 2);
     assertThat(b.peek((x, y) -> effect.set(x + y))).isSameAs(b);
     assertThat(effect.get()).isEqualTo(3);
+  }
+
+  @Test
+  public void testToEntry() {
+    assertThat(Both.of(1, "foo").toEntry())
+        .isEqualTo(new AbstractMap.SimpleImmutableEntry<>(1, "foo"));
   }
 
   @Test public void nulls() {
