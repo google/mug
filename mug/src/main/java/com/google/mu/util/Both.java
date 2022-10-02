@@ -79,7 +79,7 @@ import java.util.function.Function;
  * <pre>{@code
  * import static com.google.mu.util.stream.MoreCollectors.partitioningBy;
  *
- * Map.Entry<Optional<Contact>, ImmutableList<Contact>> primaryAndSecondaries =
+ * var primaryAndSecondaries =
  *     contacts.stream()
  *         .collect(partitioningBy(Contact::isPrimary, toOptional(), toImmutableList()))
  *         .toEntry();
