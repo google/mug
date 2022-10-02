@@ -2,9 +2,12 @@ package com.google.mu.util;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.AbstractMap;
+import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
+import java.util.function.Function;
 
 /**
  * Represents two unrelated or loosely-related things of type {@code A} and {@code B}.
@@ -16,6 +19,17 @@ import java.util.function.BiPredicate;
  *     .split("k=v")             // BiOptional<String, String>
  *     .orElseThrow(...)         // Both<String, String>
  *     .andThen(KeyValue::new);  // KeyValue
+ * }</pre>
+ *
+ * Or:
+ *
+ * <pre>{@code
+ * import static com.google.mu.util.stream.MoreCollectors.partitioningBy;
+ *
+ * contacts.stream()
+ *     .collect(partitioningBy(Contact::isPrimary, toOptional(), toImmutableList()))
+ *     .andThen((primary, secondaries) -> ...);
+ * ...
  * }</pre>
  *
  * <p>If you have a stream of {@code Both} objects, the following turns it into a {@code BiStream}:
@@ -51,6 +65,27 @@ import java.util.function.BiPredicate;
  *             mapping(
  *                 s -> first('=').split(s).orElseThrow(...),
  *                 toImmutableListMultimap()));
+ * }</pre>
+ *
+ * <p>Intended as a short-lived intermediary type in a fluent expression (e.g. from {@link
+ * com.google.common.labs.collect.EvenMoreCollectors#partitioningBy}, {@link
+ * Substring.Pattern#split}), it's expected that you can either chain fluently using {@link
+ * #andThen}, {@link #filter}, or directly pass it to common libraries such as {@link
+ * com.google.mu.util.stream.MoreCollectors#toImmutableMap(Function)} without needing to
+ * extract the two values. If you really have to extract the two values individually though,
+ * consider using {@link #toEntry} and then call the {@link Map.Entry#getKey} and {@link
+ * Map.Entry#getValue} methods to access them. For example:
+ *
+ * <pre>{@code
+ * import static com.google.mu.util.stream.MoreCollectors.partitioningBy;
+ *
+ * Map.Entry<Optional<Contact>, ImmutableList<Contact>> primaryAndSecondaries =
+ *     contacts.stream()
+ *         .collect(partitioningBy(Contact::isPrimary, toOptional(), toImmutableList()))
+ *         .toEntry();
+ * Optional<Contact> primary = primaryAndSecondaries.getKey();
+ * ImmutableList<Contact> secondaries = primaryAndSecondaries.getValue();
+ * ...
  * }</pre>
  *
  * @since 5.1
@@ -105,5 +140,14 @@ public interface Both<A, B> {
       consumer.accept(a, b);
       return this;
     });
+  }
+
+  /**
+   * Returns an immutable {@link Map.Entry} holding the pair of values.
+   *
+   * @since 6.5
+   */
+  default Map.Entry<A, B> toEntry() {
+    return andThen(AbstractMap.SimpleImmutableEntry::new);
   }
 }
