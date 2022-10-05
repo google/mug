@@ -749,52 +749,6 @@ public class BiStreamTest {
     assertThat(groups).containsExactly(0, ImmutableList.of(0, 1), 1, ImmutableList.of(2)).inOrder();
   }
 
-  @Test public void testMultiGroupingBy_withCollector() {
-    Map<Character, Long> groups =
-        Stream.of("dog", "food", "fog")
-            .collect(BiStream.multiGroupingBy(s -> stream(s), Collectors.counting()))
-            .toMap();
-    assertThat(groups).containsExactly('d', 2L, 'o', 4L, 'g', 2L, 'f', 2L).inOrder();
-  }
-
-  @Test public void testMultiGroupingBy_withMapperAndReducer() {
-    AtomicInteger index = new AtomicInteger();
-    Map<Character, String> groups =
-        Stream.of("dog", "food", "fog")
-            .collect(BiStream.multiGroupingBy(s -> stream(s), s -> index.incrementAndGet() + s, String::concat))
-            .toMap();
-    assertThat(groups)
-        .containsExactly(
-            'd', "1dog2food",
-            'o', "1dog2food2food3fog",
-            'g', "1dog3fog",
-            'f', "2food3fog")
-        .inOrder();
-  }
-
-  @Test public void testMultiGroupingBy_withMapperAndCollector() {
-    AtomicInteger index = new AtomicInteger();
-    Map<Character, List<String>> groups =
-        Stream.of("dog", "food", "fog")
-            .collect(BiStream.multiGroupingBy(s -> stream(s), s -> index.incrementAndGet() + s, toList()))
-            .toMap();
-    assertThat(groups)
-        .containsExactly(
-            'd', ImmutableList.of("1dog", "2food"),
-            'o', ImmutableList.of("1dog", "2food", "2food", "3fog"),
-            'g', ImmutableList.of("1dog", "3fog"),
-            'f', ImmutableList.of("2food", "3fog"))
-        .inOrder();
-  }
-
-  @Test public void testGroupingBy_withCollector() {
-    Map<String, Long> groups =
-        Stream.of(1, 1, 2, 3, 3)
-            .collect(BiStream.groupingBy(Object::toString, Collectors.counting()))
-            .toMap();
-    assertThat(groups).containsExactly("1", 2L, "2", 1L, "3", 2L).inOrder();
-  }
-
   @Test public void testGroupingBy_withReducer_empty() {
     Stream<String> inputs = Stream.empty();
     assertThat(inputs.collect(BiStream.groupingBy(s -> s.charAt(0), String::concat)).toMap())
@@ -850,6 +804,52 @@ public class BiStreamTest {
                 .collect(BiStream.groupingBy(s -> s.charAt(0), String::length, Integer::sum)))
         .containsExactly('f', 3, 'b', 4)
         .inOrder();
+  }
+
+  @Test public void testMultiGroupingBy_withCollector() {
+    Map<Character, Long> groups =
+        Stream.of("dog", "food", "fog")
+            .collect(BiStream.multiGroupingBy(s -> stream(s), Collectors.counting()))
+            .toMap();
+    assertThat(groups).containsExactly('d', 2L, 'o', 4L, 'g', 2L, 'f', 2L).inOrder();
+  }
+
+  @Test public void testMultiGroupingBy_withMapperAndReducer() {
+    AtomicInteger index = new AtomicInteger();
+    Map<Character, String> groups =
+        Stream.of("dog", "food", "fog")
+            .collect(BiStream.multiGroupingBy(s -> stream(s), s -> index.incrementAndGet() + s, String::concat))
+            .toMap();
+    assertThat(groups)
+        .containsExactly(
+            'd', "1dog2food",
+            'o', "1dog2food2food3fog",
+            'g', "1dog3fog",
+            'f', "2food3fog")
+        .inOrder();
+  }
+
+  @Test public void testMultiGroupingBy_withMapperAndCollector() {
+    AtomicInteger index = new AtomicInteger();
+    Map<Character, List<String>> groups =
+        Stream.of("dog", "food", "fog")
+            .collect(BiStream.multiGroupingBy(s -> stream(s), s -> index.incrementAndGet() + s, toList()))
+            .toMap();
+    assertThat(groups)
+        .containsExactly(
+            'd', ImmutableList.of("1dog", "2food"),
+            'o', ImmutableList.of("1dog", "2food", "2food", "3fog"),
+            'g', ImmutableList.of("1dog", "3fog"),
+            'f', ImmutableList.of("2food", "3fog"))
+        .inOrder();
+  }
+
+  @Test public void testGroupingBy_withCollector() {
+    Map<String, Long> groups =
+        Stream.of(1, 1, 2, 3, 3)
+            .collect(BiStream.groupingBy(Object::toString, Collectors.counting()))
+            .toMap();
+    assertThat(groups).containsExactly("1", 2L, "2", 1L, "3", 2L).inOrder();
   }
 
   @Test public void testConcatMap() {
