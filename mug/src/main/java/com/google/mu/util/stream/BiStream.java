@@ -273,8 +273,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   public static <T, K, V> Collector<T, ?, BiStream<K, V>> multiGroupingBy(
       Function<? super T, ? extends Stream<? extends K>> keysFunction,
       Function<? super T, ? extends V> valueFunction,
-      BinaryOperator<V> reducer) {
-    return multiGroupingBy(keysFunction, valueFunction, reducingGroupMembers(reducer));
+      BinaryOperator<V> groupReducer) {
+    return multiGroupingBy(keysFunction, valueFunction, reducingGroupMembers(groupReducer));
   }
 
   /**
@@ -306,7 +306,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     requireNonNull(valueFunction);
     requireNonNull(groupCollector);
     return Java9Collectors.flatMapping(
-        e -> {
+        (T e) -> {
           V v = valueFunction.apply(e);
           return keysFunction.apply(e).map(k -> kv(k, v));
         },
