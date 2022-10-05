@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -748,6 +749,44 @@ public class BiStreamTest {
     assertThat(groups).containsExactly(0, ImmutableList.of(0, 1), 1, ImmutableList.of(2)).inOrder();
   }
 
+  @Test public void testMultiGroupingBy_withCollector() {
+    Map<Character, Long> groups =
+        Stream.of("dog", "food", "fog")
+            .collect(BiStream.multiGroupingBy(s -> stream(s), Collectors.counting()))
+            .toMap();
+    assertThat(groups).containsExactly('d', 2L, 'o', 4L, 'g', 2L, 'f', 2L).inOrder();
+  }
+
+  @Test public void testMultiGroupingBy_withMapperAndReducer() {
+    AtomicInteger index = new AtomicInteger();
+    Map<Character, String> groups =
+        Stream.of("dog", "food", "fog")
+            .collect(BiStream.multiGroupingBy(s -> stream(s), s -> index.incrementAndGet() + s, String::concat))
+            .toMap();
+    assertThat(groups)
+        .containsExactly(
+            'd', "1dog2food",
+            'o', "1dog2food2food3fog",
+            'g', "1dog3fog",
+            'f', "2food3fog")
+        .inOrder();
+  }
+
+  @Test public void testMultiGroupingBy_withMapperAndCollector() {
+    AtomicInteger index = new AtomicInteger();
+    Map<Character, List<String>> groups =
+        Stream.of("dog", "food", "fog")
+            .collect(BiStream.multiGroupingBy(s -> stream(s), s -> index.incrementAndGet() + s, toList()))
+            .toMap();
+    assertThat(groups)
+        .containsExactly(
+            'd', ImmutableList.of("1dog", "2food"),
+            'o', ImmutableList.of("1dog", "2food", "2food", "3fog"),
+            'g', ImmutableList.of("1dog", "3fog"),
+            'f', ImmutableList.of("2food", "3fog"))
+        .inOrder();
+  }
+
   @Test public void testGroupingBy_withCollector() {
     Map<String, Long> groups =
         Stream.of(1, 1, 2, 3, 3)
@@ -1110,5 +1149,9 @@ public class BiStreamTest {
 
   private static <K, V> BiCollector<K, V, ImmutableListMultimap<K, V>> toImmutableListMultimap() {
     return ImmutableListMultimap::toImmutableListMultimap;
+  }
+
+  private static Stream<Character> stream(String s) {
+    return s.chars().mapToObj(c -> (char) c);
   }
 }

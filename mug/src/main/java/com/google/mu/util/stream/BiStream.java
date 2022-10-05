@@ -226,6 +226,94 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
+   * Similar to {@link #groupingBy(Function, Collector)} except each element can belong to multiple
+   * groups according to the multiple keys returned by {code keysFunction}. For example:
+   *
+   * <pre>{@code
+   * ImmutableMap<EmployeeId, Long> projectCountPerEmployee =
+   *     projects.stream()
+   *         .collect(
+   *             multiGroupingBy(project -> project.getOwnersList().stream(), counting()))
+   *         .toMap();
+   * }</pre>
+   *
+   * <p>Entries are collected in encounter order.
+   *
+   * @since 6.5
+   */
+  public static <T, K, V> Collector<T, ?, BiStream<K, V>> multiGroupingBy(
+      Function<? super T, ? extends Stream<? extends K>> keysFunction,
+      Collector<T, ?, V> groupCollector) {
+    requireNonNull(keysFunction);
+    return Java9Collectors.flatMapping(
+        (T e) -> keysFunction.apply(e).map(k -> kv(k, e)),
+        groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, groupCollector)));
+  }
+
+  /**
+   * Similar to {@link #groupingBy(Function, Function, BinaryOperator)} eexcept each element can
+   * belong to multiple groups according to the multiple keys returned by {code keysFunction}. For
+   * example:
+   *
+   * <pre>{@code
+   * ImmutableMap<EmployeeId, Money> revenuePerEmployee =
+   *     projects.stream()
+   *         .collect(
+   *             multiGroupingBy(
+   *                 project -> project.getOwnersList().stream(),
+   *                 Project::revenue,
+   *                 Money::add))
+   *         .toMap();
+   * }</pre>
+   *
+   * <p>Entries are collected in encounter order.
+   *
+   * @since 6.5
+   */
+  public static <T, K, V> Collector<T, ?, BiStream<K, V>> multiGroupingBy(
+      Function<? super T, ? extends Stream<? extends K>> keysFunction,
+      Function<? super T, ? extends V> valueFunction,
+      BinaryOperator<V> reducer) {
+    return multiGroupingBy(keysFunction, valueFunction, reducingGroupMembers(reducer));
+  }
+
+  /**
+   * Returns a {@link Collector} that groups each input element by the multiple keys
+   * returned by the {@code keysFunction}. The input element is passed to the {@code valueFunction}
+   * and the return value is added to every group it belongs to. And finally each group is
+   * collected using {@code groupCollector}. For example:
+   *
+   * <pre>{@code
+   * ImmutableMap<EmployeeId, ImmutableList<ProjectId>> projectIdsPerEmployee =
+   *     projects.stream()
+   *         .collect(
+   *             multiGroupingBy(
+   *                 project -> project.getOwnersList().stream(),
+   *                 Project::id,
+   *                 toImmutableList()))
+   *         .toMap();
+   * }</pre>
+   *
+   * <p>Entries are collected in encounter order.
+   *
+   * @since 6.5
+   */
+  public static <T, K, V, G> Collector<T, ?, BiStream<K, G>> multiGroupingBy(
+      Function<? super T, ? extends Stream<? extends K>> keysFunction,
+      Function<? super T, ? extends V> valueFunction,
+      Collector<V, ?, G> groupCollector) {
+    requireNonNull(keysFunction);
+    requireNonNull(valueFunction);
+    requireNonNull(groupCollector);
+    return Java9Collectors.flatMapping(
+        e -> {
+          V v = valueFunction.apply(e);
+          return keysFunction.apply(e).map(k -> kv(k, v));
+        },
+        groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, groupCollector)));
+  }
+
+  /**
    * Returns a {@code Collector} that concatenates {@code BiStream} objects derived from the input
    * elements using the given {@code toBiStream} function.
    *
