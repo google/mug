@@ -230,10 +230,10 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * groups according to the multiple keys returned by {code keysFunction}. For example:
    *
    * <pre>{@code
-   * ImmutableMap<EmployeeId, Long> projectCountPerEmployee =
-   *     projects.stream()
+   * ImmutableMap<Person, ImmutableList<Club>> clubMemberships =
+   *     clubs.stream()
    *         .collect(
-   *             multiGroupingBy(project -> project.getOwnersList().stream(), counting()))
+   *             multiGroupingBy(club -> club.getMembers().stream(), toImmutableList()))
    *         .toMap();
    * }</pre>
    *
@@ -256,12 +256,12 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * example:
    *
    * <pre>{@code
-   * ImmutableMap<EmployeeId, Money> revenuePerEmployee =
-   *     projects.stream()
+   * ImmutableMap<Person, Money> clubMembershipFees =
+   *     clubs.stream()
    *         .collect(
    *             multiGroupingBy(
-   *                 project -> project.getOwnersList().stream(),
-   *                 Project::revenue,
+   *                 club -> club.getMembers().stream(),
+   *                 Club::getMembershipFee,
    *                 Money::add))
    *         .toMap();
    * }</pre>
