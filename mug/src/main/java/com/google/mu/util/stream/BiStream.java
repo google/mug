@@ -226,8 +226,9 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Similar to {@link #groupingBy(Function, Collector)} except each element can belong to multiple
-   * groups according to the multiple keys returned by {code keysFunction}. For example:
+   * Returns a {@link Collector} grouping input elements by each of the multiple keys returned by
+   * the {@code keysFunction}. It's similar to {@link #groupingBy(Function, Collector)} except each
+   * element can belong to multiple groups. For example:
    *
    * <pre>{@code
    * ImmutableMap<Person, ImmutableList<Club>> clubMemberships =
@@ -251,37 +252,10 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Similar to {@link #groupingBy(Function, Function, BinaryOperator)} eexcept each element can
-   * belong to multiple groups according to the multiple keys returned by {code keysFunction}. For
-   * example:
-   *
-   * <pre>{@code
-   * ImmutableMap<Person, Money> clubMembershipFees =
-   *     clubs.stream()
-   *         .collect(
-   *             groupingByEach(
-   *                 club -> club.getMembers().stream(),
-   *                 Club::getMembershipFee,
-   *                 Money::add))
-   *         .toMap();
-   * }</pre>
-   *
-   * <p>Entries are collected in encounter order.
-   *
-   * @since 6.5
-   */
-  public static <T, K, V> Collector<T, ?, BiStream<K, V>> groupingByEach(
-      Function<? super T, ? extends Stream<? extends K>> keysFunction,
-      Function<? super T, ? extends V> valueFunction,
-      BinaryOperator<V> groupReducer) {
-    return groupingByEach(keysFunction, valueFunction, reducingGroupMembers(groupReducer));
-  }
-
-  /**
-   * Returns a {@link Collector} that groups each input element by the multiple keys
-   * returned by the {@code keysFunction}. The input element is passed to the {@code valueFunction}
-   * and the return value is added to every group it belongs to. And finally each group is
-   * collected using {@code groupCollector}. For example:
+   * Returns a {@link Collector} grouping input elements by each of the multiple keys returned by
+   * the {@code keysFunction}. The input element is passed to the {@code valueFunction} and the
+   * return value is added to every group it belongs to. And finally each group is collected using
+   * {@code groupCollector}. For example:
    *
    * <pre>{@code
    * ImmutableMap<EmployeeId, ImmutableList<ProjectId>> projectIdsPerEmployee =
@@ -311,6 +285,33 @@ public abstract class BiStream<K, V> implements AutoCloseable {
           return keysFunction.apply(e).map(k -> kv(k, v));
         },
         groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, groupCollector)));
+  }
+
+  /**
+   * Returns a {@link Collector} grouping input elements by each of the multiple keys returned by
+   * the {@code keysFunction}. It's similar to {@link #groupingBy(Function, Function,
+   * BinaryOperator)} eexcept each element can belong to multiple groups. For example:
+   *
+   * <pre>{@code
+   * ImmutableMap<Person, Money> clubMembershipFees =
+   *     clubs.stream()
+   *         .collect(
+   *             groupingByEach(
+   *                 club -> club.getMembers().stream(),
+   *                 Club::getMembershipFee,
+   *                 Money::add))
+   *         .toMap();
+   * }</pre>
+   *
+   * <p>Entries are collected in encounter order.
+   *
+   * @since 6.5
+   */
+  public static <T, K, V> Collector<T, ?, BiStream<K, V>> groupingByEach(
+      Function<? super T, ? extends Stream<? extends K>> keysFunction,
+      Function<? super T, ? extends V> valueFunction,
+      BinaryOperator<V> groupReducer) {
+    return groupingByEach(keysFunction, valueFunction, reducingGroupMembers(groupReducer));
   }
 
   /**
