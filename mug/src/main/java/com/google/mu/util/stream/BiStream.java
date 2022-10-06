@@ -290,7 +290,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   /**
    * Returns a {@link Collector} grouping input elements by each of the multiple keys returned by
    * the {@code keysFunction}. It's similar to {@link #groupingBy(Function, Function,
-   * BinaryOperator)} eexcept each element can belong to multiple groups. For example:
+   * BinaryOperator)} except each element can belong to multiple groups. For example:
    *
    * <pre>{@code
    * ImmutableMap<Person, Money> clubMembershipFees =

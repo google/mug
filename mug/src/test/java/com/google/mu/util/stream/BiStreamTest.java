@@ -810,7 +810,7 @@ public class BiStreamTest {
   @Test public void testGroupingByEach_withCollector() {
     Map<Character, Long> groups =
         Stream.of("dog", "food", "fog")
-            .collect(groupingByEach(s -> stream(s), Collectors.counting()))
+            .collect(groupingByEach(s -> charactersOf(s), Collectors.counting()))
             .toMap();
     assertThat(groups).containsExactly('d', 2L, 'o', 4L, 'g', 2L, 'f', 2L).inOrder();
   }
@@ -819,7 +819,7 @@ public class BiStreamTest {
     AtomicInteger index = new AtomicInteger();
     Map<Character, String> groups =
         Stream.of("dog", "food", "fog")
-            .collect(groupingByEach(s -> stream(s), s -> index.incrementAndGet() + s, String::concat))
+            .collect(groupingByEach(s -> charactersOf(s), s -> index.incrementAndGet() + s, String::concat))
             .toMap();
     assertThat(groups)
         .containsExactly(
@@ -834,7 +834,7 @@ public class BiStreamTest {
     AtomicInteger index = new AtomicInteger();
     Map<Character, List<String>> groups =
         Stream.of("dog", "food", "fog")
-            .collect(groupingByEach(s -> stream(s), s -> index.incrementAndGet() + s, toList()))
+            .collect(groupingByEach(s -> charactersOf(s), s -> index.incrementAndGet() + s, toList()))
             .toMap();
     assertThat(groups)
         .containsExactly(
@@ -1152,7 +1152,7 @@ public class BiStreamTest {
     return ImmutableListMultimap::toImmutableListMultimap;
   }
 
-  private static Stream<Character> stream(String s) {
+  private static Stream<Character> charactersOf(String s) {
     return s.chars().mapToObj(c -> (char) c);
   }
 }
