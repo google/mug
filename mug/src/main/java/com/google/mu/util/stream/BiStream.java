@@ -233,7 +233,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * ImmutableMap<Person, ImmutableList<Club>> clubMemberships =
    *     clubs.stream()
    *         .collect(
-   *             multiGroupingBy(club -> club.getMembers().stream(), toImmutableList()))
+   *             groupingByEach(club -> club.getMembers().stream(), toImmutableList()))
    *         .toMap();
    * }</pre>
    *
@@ -241,7 +241,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *
    * @since 6.5
    */
-  public static <T, K, V> Collector<T, ?, BiStream<K, V>> multiGroupingBy(
+  public static <T, K, V> Collector<T, ?, BiStream<K, V>> groupingByEach(
       Function<? super T, ? extends Stream<? extends K>> keysFunction,
       Collector<T, ?, V> groupCollector) {
     requireNonNull(keysFunction);
@@ -259,7 +259,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * ImmutableMap<Person, Money> clubMembershipFees =
    *     clubs.stream()
    *         .collect(
-   *             multiGroupingBy(
+   *             groupingByEach(
    *                 club -> club.getMembers().stream(),
    *                 Club::getMembershipFee,
    *                 Money::add))
@@ -270,11 +270,11 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *
    * @since 6.5
    */
-  public static <T, K, V> Collector<T, ?, BiStream<K, V>> multiGroupingBy(
+  public static <T, K, V> Collector<T, ?, BiStream<K, V>> groupingByEach(
       Function<? super T, ? extends Stream<? extends K>> keysFunction,
       Function<? super T, ? extends V> valueFunction,
       BinaryOperator<V> groupReducer) {
-    return multiGroupingBy(keysFunction, valueFunction, reducingGroupMembers(groupReducer));
+    return groupingByEach(keysFunction, valueFunction, reducingGroupMembers(groupReducer));
   }
 
   /**
@@ -287,7 +287,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * ImmutableMap<EmployeeId, ImmutableList<ProjectId>> projectIdsPerEmployee =
    *     projects.stream()
    *         .collect(
-   *             multiGroupingBy(
+   *             groupingByEach(
    *                 project -> project.getOwnersList().stream(),
    *                 Project::id,
    *                 toImmutableList()))
@@ -298,7 +298,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *
    * @since 6.5
    */
-  public static <T, K, V, G> Collector<T, ?, BiStream<K, G>> multiGroupingBy(
+  public static <T, K, V, G> Collector<T, ?, BiStream<K, G>> groupingByEach(
       Function<? super T, ? extends Stream<? extends K>> keysFunction,
       Function<? super T, ? extends V> valueFunction,
       Collector<V, ?, G> groupCollector) {

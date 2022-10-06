@@ -22,6 +22,7 @@ import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.BiStream.concatenating;
 import static com.google.mu.util.stream.BiStream.crossJoining;
+import static com.google.mu.util.stream.BiStream.groupingByEach;
 import static com.google.mu.util.stream.BiStream.toAdjacentPairs;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static java.util.Arrays.asList;
@@ -806,19 +807,19 @@ public class BiStreamTest {
         .inOrder();
   }
 
-  @Test public void testMultiGroupingBy_withCollector() {
+  @Test public void testGroupingByEach_withCollector() {
     Map<Character, Long> groups =
         Stream.of("dog", "food", "fog")
-            .collect(BiStream.multiGroupingBy(s -> stream(s), Collectors.counting()))
+            .collect(groupingByEach(s -> stream(s), Collectors.counting()))
             .toMap();
     assertThat(groups).containsExactly('d', 2L, 'o', 4L, 'g', 2L, 'f', 2L).inOrder();
   }
 
-  @Test public void testMultiGroupingBy_withMapperAndReducer() {
+  @Test public void testGroupingByEach_withMapperAndReducer() {
     AtomicInteger index = new AtomicInteger();
     Map<Character, String> groups =
         Stream.of("dog", "food", "fog")
-            .collect(BiStream.multiGroupingBy(s -> stream(s), s -> index.incrementAndGet() + s, String::concat))
+            .collect(groupingByEach(s -> stream(s), s -> index.incrementAndGet() + s, String::concat))
             .toMap();
     assertThat(groups)
         .containsExactly(
@@ -829,11 +830,11 @@ public class BiStreamTest {
         .inOrder();
   }
 
-  @Test public void testMultiGroupingBy_withMapperAndCollector() {
+  @Test public void testGroupingByEach_withMapperAndCollector() {
     AtomicInteger index = new AtomicInteger();
     Map<Character, List<String>> groups =
         Stream.of("dog", "food", "fog")
-            .collect(BiStream.multiGroupingBy(s -> stream(s), s -> index.incrementAndGet() + s, toList()))
+            .collect(groupingByEach(s -> stream(s), s -> index.incrementAndGet() + s, toList()))
             .toMap();
     assertThat(groups)
         .containsExactly(
