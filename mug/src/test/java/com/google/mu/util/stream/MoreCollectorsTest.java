@@ -22,10 +22,10 @@ import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.stream.BiCollectors.groupingBy;
 import static com.google.mu.util.stream.BiCollectors.toMap;
-import static com.google.mu.util.stream.MoreCollectors.allMax;
-import static com.google.mu.util.stream.MoreCollectors.allMin;
 import static com.google.mu.util.stream.MoreCollectors.flatMapping;
 import static com.google.mu.util.stream.MoreCollectors.flatteningMaps;
+import static com.google.mu.util.stream.MoreCollectors.greatest;
+import static com.google.mu.util.stream.MoreCollectors.least;
 import static com.google.mu.util.stream.MoreCollectors.mapping;
 import static com.google.mu.util.stream.MoreCollectors.minMax;
 import static com.google.mu.util.stream.MoreCollectors.onlyElement;
@@ -244,32 +244,32 @@ public class MoreCollectorsTest {
   }
 
   @Test public void testGreatest_empty() {
-    assertThat(Stream.<Integer>empty().collect(allMax(naturalOrder(), toImmutableList())))
+    assertThat(Stream.<Integer>empty().collect(greatest(naturalOrder(), toImmutableList())))
         .isEmpty();
   }
 
   @Test public void testGreatest_toOnlyElement() {
-    assertThat(Stream.of(1, 1, 1, 1, 1, 1, 2).collect(allMax(naturalOrder(), onlyElement())))
+    assertThat(Stream.of(1, 1, 1, 1, 1, 1, 2).collect(greatest(naturalOrder(), onlyElement())))
         .isEqualTo(2);
   }
 
   @Test public void testGreatest_multiple() {
-    assertThat(Stream.of(1, 1, 2, 1, 2).collect(allMax(naturalOrder(), toImmutableList())))
+    assertThat(Stream.of(1, 1, 2, 1, 2).collect(greatest(naturalOrder(), toImmutableList())))
         .containsExactly(2, 2);
   }
 
   @Test public void testLeast_empty() {
-    assertThat(Stream.<String>empty().collect(allMin(naturalOrder(), toImmutableSet())))
+    assertThat(Stream.<String>empty().collect(least(naturalOrder(), toImmutableSet())))
         .isEmpty();
   }
 
   @Test public void testLeast_toOnlyElement() {
-    assertThat(Stream.of(2, 2, 2, 2, 2, 2, 1).collect(allMin(naturalOrder(), onlyElement())))
+    assertThat(Stream.of(2, 2, 2, 2, 2, 2, 1).collect(least(naturalOrder(), onlyElement())))
         .isEqualTo(1);
   }
 
   @Test public void testLeast_multiple() {
-    assertThat(Stream.of(1, 1, 2, 1, 2).collect(allMin(naturalOrder(), toImmutableList())))
+    assertThat(Stream.of(1, 1, 2, 1, 2).collect(least(naturalOrder(), toImmutableList())))
         .containsExactly(1, 1, 1);
   }
 

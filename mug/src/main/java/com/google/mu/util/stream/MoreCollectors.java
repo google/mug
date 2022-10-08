@@ -525,9 +525,9 @@ public final class MoreCollectors {
    * // returns {"foo", "bar"}
    * }</pre>
    *
-   * @since 5.6
+   * @since 6.5
    */
-  public static <T, R> Collector<T, ?, R> allMin(
+  public static <T, R> Collector<T, ?, R> least(
       Comparator<? super T> comparator, Collector<? super T, ?, R> downstream) {
     return allMax(comparator.reversed(), downstream);
   }
@@ -544,9 +544,9 @@ public final class MoreCollectors {
    * // returns {"banana", "papaya"}
    * }</pre>
    *
-   * @since 5.6
+   * @since 6.5
    */
-  public static <T, R> Collector<T, ?, R> allMax(
+  public static <T, R> Collector<T, ?, R> greatest(
       Comparator<? super T> comparator, Collector<? super T, ?, R> downstream) {
     requireNonNull(comparator);
     requireNonNull(downstream);
@@ -577,6 +577,48 @@ public final class MoreCollectors {
       }
     }
     return Collector.of(Builder::new, Builder::add, Builder::merge, Builder::build);
+  }
+
+  /**
+   * Returns a {@code Collector} that collects all of the least (relative to the specified {@code
+   * Comparator}) input elements, in encounter order, using the {@code downstream} collector.
+   *
+   * <p>For example:
+   *
+   * <pre>{@code
+   * Stream.of("foo", "bar", "banana", "papaya")
+   *     .collect(allMin(comparingInt(String::length), toImmutableList()))
+   * // returns {"foo", "bar"}
+   * }</pre>
+   *
+   * @since 5.6
+   * @deprecated Use {@link #least} instead.
+   */
+  @Deprecated
+  public static <T, R> Collector<T, ?, R> allMin(
+      Comparator<? super T> comparator, Collector<? super T, ?, R> downstream) {
+    return least(comparator.reversed(), downstream);
+  }
+
+  /**
+   * Returns a {@code Collector} that collects all of the greatest (relative to the specified {@code
+   * Comparator}) input elements, in encounter order, using the {@code downstream} collector.
+   *
+   * <p>For example:
+   *
+   * <pre>{@code
+   * Stream.of("foo", "quux", "banana", "papaya")
+   *     .collect(greatest(comparingInt(String::length), toImmutableList()))
+   * // returns {"banana", "papaya"}
+   * }</pre>
+   *
+   * @since 5.6
+   * @deprecated Use {@link #greatest} instead.
+   */
+  @Deprecated
+  public static <T, R> Collector<T, ?, R> allMax(
+      Comparator<? super T> comparator, Collector<? super T, ?, R> downstream) {
+    return greatest(comparator, downstream);
   }
 
   private static <T, R> Collector<T, ?, R> switching(List<FixedSizeCollector<T, ?, R>> cases) {
