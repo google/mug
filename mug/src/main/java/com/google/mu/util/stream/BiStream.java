@@ -226,6 +226,95 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
+   * Returns a {@link Collector} grouping input elements by each of the multiple keys returned by
+   * the {@code keysFunction}. It's similar to {@link #groupingBy(Function, Collector)} except each
+   * element can belong to multiple groups. For example:
+   *
+   * <pre>{@code
+   * ImmutableMap<Person, ImmutableList<Club>> clubMemberships =
+   *     clubs.stream()
+   *         .collect(
+   *             groupingByEach(club -> club.getMembers().stream(), toImmutableList()))
+   *         .toMap();
+   * }</pre>
+   *
+   * <p>Entries are collected in encounter order.
+   *
+   * @since 6.5
+   */
+  public static <T, K, V> Collector<T, ?, BiStream<K, V>> groupingByEach(
+      Function<? super T, ? extends Stream<? extends K>> keysFunction,
+      Collector<T, ?, V> groupCollector) {
+    requireNonNull(keysFunction);
+    return Java9Collectors.flatMapping(
+        (T e) -> keysFunction.apply(e).map(k -> kv(k, e)),
+        groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, groupCollector)));
+  }
+
+  /**
+   * Returns a {@link Collector} grouping input elements by each of the multiple keys returned by
+   * the {@code keysFunction}. The input element is passed to the {@code valueFunction} and the
+   * return value is added to every group it belongs to. And finally each group is collected using
+   * {@code groupCollector}. For example:
+   *
+   * <pre>{@code
+   * ImmutableMap<EmployeeId, ImmutableList<ProjectId>> projectIdsPerEmployee =
+   *     projects.stream()
+   *         .collect(
+   *             groupingByEach(
+   *                 project -> project.getOwnersList().stream(),
+   *                 Project::id,
+   *                 toImmutableList()))
+   *         .toMap();
+   * }</pre>
+   *
+   * <p>Entries are collected in encounter order.
+   *
+   * @since 6.5
+   */
+  public static <T, K, V, G> Collector<T, ?, BiStream<K, G>> groupingByEach(
+      Function<? super T, ? extends Stream<? extends K>> keysFunction,
+      Function<? super T, ? extends V> valueFunction,
+      Collector<V, ?, G> groupCollector) {
+    requireNonNull(keysFunction);
+    requireNonNull(valueFunction);
+    requireNonNull(groupCollector);
+    return Java9Collectors.flatMapping(
+        (T e) -> {
+          V v = valueFunction.apply(e);
+          return keysFunction.apply(e).map(k -> kv(k, v));
+        },
+        groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, groupCollector)));
+  }
+
+  /**
+   * Returns a {@link Collector} grouping input elements by each of the multiple keys returned by
+   * the {@code keysFunction}. It's similar to {@link #groupingBy(Function, Function,
+   * BinaryOperator)} except each element can belong to multiple groups. For example:
+   *
+   * <pre>{@code
+   * ImmutableMap<Person, Money> clubMembershipFees =
+   *     clubs.stream()
+   *         .collect(
+   *             groupingByEach(
+   *                 club -> club.getMembers().stream(),
+   *                 Club::getMembershipFee,
+   *                 Money::add))
+   *         .toMap();
+   * }</pre>
+   *
+   * <p>Entries are collected in encounter order.
+   *
+   * @since 6.5
+   */
+  public static <T, K, V> Collector<T, ?, BiStream<K, V>> groupingByEach(
+      Function<? super T, ? extends Stream<? extends K>> keysFunction,
+      Function<? super T, ? extends V> valueFunction,
+      BinaryOperator<V> groupReducer) {
+    return groupingByEach(keysFunction, valueFunction, reducingGroupMembers(groupReducer));
+  }
+
+  /**
    * Returns a {@code Collector} that concatenates {@code BiStream} objects derived from the input
    * elements using the given {@code toBiStream} function.
    *
