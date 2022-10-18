@@ -2012,6 +2012,20 @@ public final class Substring {
     }
 
     /**
+     * Returns a <em>view</em> of {@code source} with this prefix hidden away if present, or else
+     * returns {@code source} as is.
+     *
+     * @since 6.5
+     */
+    public CharSequence hideFrom(String source) {
+      if (length() == 0) {
+        return requireNonNull(source);
+      }
+      Match match = match(source, 0);
+      return match == null ? source : match.following();
+    }
+
+    /**
      * Removes this prefix from {@code builder} if it starts with the prefix.
      *
      * @return true if this prefix is removed
@@ -2162,6 +2176,20 @@ public final class Substring {
         builder.delete(builder.length() - length(), builder.length());
       }
       return present;
+    }
+
+    /**
+     * Returns a <em>view</em> of {@code source} with this suffix hidden away if present, or else
+     * returns {@code source} as is.
+     *
+     * @since 6.5
+     */
+    public CharSequence hideFrom(String source) {
+      if (length() == 0) {
+        return requireNonNull(source);
+      }
+      Match match = match(source, 0);
+      return match == null ? source : match.preceding();
     }
 
     /**
@@ -2467,6 +2495,10 @@ public final class Substring {
 
     Match following() {
       return suffix(context, context.length() - endIndex);
+    }
+
+    Match preceding() {
+      return nonBacktrackable(context, 0, startIndex);
     }
 
     Match trim() {
