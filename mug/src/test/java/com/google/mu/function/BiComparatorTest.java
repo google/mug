@@ -16,7 +16,11 @@ package com.google.mu.function;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.function.BiComparator.comparing;
+import static com.google.mu.function.BiComparator.comparingBoolean;
+import static com.google.mu.function.BiComparator.comparingDouble;
+import static com.google.mu.function.BiComparator.comparingInt;
 import static com.google.mu.function.BiComparator.comparingKey;
+import static com.google.mu.function.BiComparator.comparingLong;
 import static com.google.mu.function.BiComparator.comparingValue;
 import static java.util.Comparator.naturalOrder;
 import static java.util.Comparator.reverseOrder;
@@ -36,6 +40,30 @@ public class BiComparatorTest {
     assertThat(comparing(Integer::sum).compare(1, 3, 2, 2)).isEqualTo(0);
     assertThat(comparing(Integer::sum).compare(1, 3, 0, 5)).isLessThan(0);
     assertThat(comparing(Integer::sum).compare(1, 4, 2, 2)).isGreaterThan(0);
+  }
+
+  @Test public void comparingIntFunction() {
+    assertThat(comparingInt(Integer::sum).compare(1, 3, 2, 2)).isEqualTo(0);
+    assertThat(comparingInt(Integer::sum).compare(1, 3, 0, 5)).isLessThan(0);
+    assertThat(comparingInt(Integer::sum).compare(1, 4, 2, 2)).isGreaterThan(0);
+  }
+
+  @Test public void comparingLongFunction() {
+    assertThat(comparingLong(Long::sum).compare(1L, 3L, 2L, 2L)).isEqualTo(0);
+    assertThat(comparingLong(Long::sum).compare(1L, 3L, 0L, 5L)).isLessThan(0);
+    assertThat(comparingLong(Long::sum).compare(1L, 4L, 2L, 2L)).isGreaterThan(0);
+  }
+
+  @Test public void comparingDoubleFunction() {
+    assertThat(comparingDouble(Double::sum).compare(1D, 3D, 2D, 2D)).isEqualTo(0);
+    assertThat(comparingDouble(Double::sum).compare(1D, 3D, 0D, 5D)).isLessThan(0);
+    assertThat(comparingDouble(Double::sum).compare(1D, 4D, 2D, 2D)).isGreaterThan(0);
+  }
+
+  @Test public void comparingBooleanFunction() {
+    assertThat(comparingBoolean(Boolean::logicalOr).compare(false, false, true, false)).isLessThan(0);
+    assertThat(comparingBoolean(Boolean::logicalAnd).compare(false, true, false, false)).isEqualTo(0);
+    assertThat(comparingBoolean(Boolean::logicalOr).compare(true, false, false, false)).isGreaterThan(0);
   }
 
   @Test public void comparingKeyByFunction() {
