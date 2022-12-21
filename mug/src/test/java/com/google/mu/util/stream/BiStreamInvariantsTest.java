@@ -17,11 +17,13 @@ package com.google.mu.util.stream;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static com.google.mu.function.BiComparator.comparingKey;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.BiStream.toBiStream;
 import static java.util.Arrays.asList;
+import static java.util.Comparator.naturalOrder;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -570,6 +572,36 @@ public class BiStreamInvariantsTest {
     assertKeyValues(of("a", 3, "b", 1, "c", 2).sortedByValues(Comparator.naturalOrder()))
         .containsExactlyEntriesIn(ImmutableMultimap.of("b", 1, "c", 2, "a", 3))
         .inOrder();
+  }
+
+  @Test public void testMaxBy_found() {
+    assertThat(of(1, "y", 2, "x").maxBy(comparingKey(naturalOrder())))
+        .isEqualTo(BiOptional.of(2, "x"));
+  }
+
+ @Test public void testMaxBy_multipleMax_firstWins() {
+    assertThat(of(1, "y", 2, "x", 2, "a").maxBy(comparingKey(naturalOrder())))
+        .isEqualTo(BiOptional.of(2, "x"));
+  }
+
+ @Test public void testMaxBy_notFound() {
+    assertThat(this.<String, Integer>of().maxBy(comparingKey(naturalOrder())))
+        .isEqualTo(BiOptional.empty());
+  }
+
+ @Test public void testMinBy_found() {
+    assertThat(of(1, "y", 2, "x").minBy(comparingKey(naturalOrder())))
+        .isEqualTo(BiOptional.of(1, "y"));
+  }
+
+ @Test public void testMinBy_multipleMin_firstWins() {
+    assertThat(of(1, "y", 2, "x", 1, "a").minBy(comparingKey(naturalOrder())))
+        .isEqualTo(BiOptional.of(1, "y"));
+  }
+
+ @Test public void testMinBy_notFound() {
+    assertThat(this.<String, Integer>of().minBy(comparingKey(naturalOrder())))
+        .isEqualTo(BiOptional.empty());
   }
 
   @Test public void distinct() {

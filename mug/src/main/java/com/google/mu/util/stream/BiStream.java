@@ -1620,6 +1620,26 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     return fromEntries(mapToEntry().sorted(ordering.asComparator(Map.Entry::getKey, Map.Entry::getValue)));
   }
 
+  /**
+   * Returns the max pair according to {@code ordering}.
+   *
+   * @since 6.5
+   */
+  public final BiOptional<K, V> maxBy(BiComparator<? super K, ? super V> ordering) {
+    return fromOptionalEntry(
+        mapToEntry().max(ordering.asComparator(Map.Entry::getKey, Map.Entry::getValue)));
+  }
+
+  /**
+   * Returns the min pair according to {@code ordering}.
+   *
+   * @since 6.5
+   */
+  public final BiOptional<K, V> minBy(BiComparator<? super K, ? super V> ordering) {
+    return fromOptionalEntry(
+        mapToEntry().min(ordering.asComparator(Map.Entry::getKey, Map.Entry::getValue)));
+  }
+
   /** Returns the count of pairs in this stream. */
   public final long count() {
     return keys().count();
@@ -2403,6 +2423,12 @@ public abstract class BiStream<K, V> implements AutoCloseable {
 
   static <T> T right(Both<?, T> both) {
     return both.andThen((l, r) -> r);
+  }
+
+  private static <K, V> BiOptional<K, V> fromOptionalEntry(Optional<? extends Map.Entry<? extends K, ? extends V>> optional) {
+    return optional
+        .map(e -> BiOptional.<K, V>of(e.getKey(), e.getValue()))
+        .orElse(BiOptional.<K, V>empty());
   }
 
   private BiStream() {}
