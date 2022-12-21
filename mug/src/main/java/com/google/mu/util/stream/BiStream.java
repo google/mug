@@ -1625,7 +1625,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *
    * @since 6.5
    */
-  public final BiOptional<K, V> maxBy(BiComparator<? super K, ? super V> ordering) {
+  public final BiOptional<K, V> max(BiComparator<? super K, ? super V> ordering) {
     return fromOptionalEntry(
         mapToEntry().max(ordering.asComparator(Map.Entry::getKey, Map.Entry::getValue)));
   }
@@ -1635,7 +1635,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *
    * @since 6.5
    */
-  public final BiOptional<K, V> minBy(BiComparator<? super K, ? super V> ordering) {
+  public final BiOptional<K, V> min(BiComparator<? super K, ? super V> ordering) {
     return fromOptionalEntry(
         mapToEntry().min(ordering.asComparator(Map.Entry::getKey, Map.Entry::getValue)));
   }

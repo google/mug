@@ -574,33 +574,33 @@ public class BiStreamInvariantsTest {
         .inOrder();
   }
 
-  @Test public void testMaxBy_found() {
-    assertThat(of(1, "y", 2, "x").maxBy(comparingKey(naturalOrder())))
+  @Test public void testMax_found() {
+    assertThat(of(1, "y", 2, "x").max(comparingKey(naturalOrder())))
         .isEqualTo(BiOptional.of(2, "x"));
   }
 
- @Test public void testMaxBy_multipleMax_firstWins() {
-    assertThat(of(1, "y", 2, "x", 2, "a").maxBy(comparingKey(naturalOrder())))
+ @Test public void testMax_multipleMax_firstWins() {
+    assertThat(of(1, "y", 2, "x", 2, "a").max(comparingKey(naturalOrder())))
         .isEqualTo(BiOptional.of(2, "x"));
   }
 
- @Test public void testMaxBy_notFound() {
-    assertThat(this.<String, Integer>of().maxBy(comparingKey(naturalOrder())))
+ @Test public void testMax_notFound() {
+    assertThat(this.<String, Integer>of().max(comparingKey(naturalOrder())))
         .isEqualTo(BiOptional.empty());
   }
 
- @Test public void testMinBy_found() {
-    assertThat(of(1, "y", 2, "x").minBy(comparingKey(naturalOrder())))
+ @Test public void testMin_found() {
+    assertThat(of(1, "y", 2, "x").min(comparingKey(naturalOrder())))
         .isEqualTo(BiOptional.of(1, "y"));
   }
 
- @Test public void testMinBy_multipleMin_firstWins() {
-    assertThat(of(1, "y", 2, "x", 1, "a").minBy(comparingKey(naturalOrder())))
+ @Test public void testMin_multipleMin_firstWins() {
+    assertThat(of(1, "y", 2, "x", 1, "a").min(comparingKey(naturalOrder())))
         .isEqualTo(BiOptional.of(1, "y"));
   }
 
- @Test public void testMinBy_notFound() {
-    assertThat(this.<String, Integer>of().minBy(comparingKey(naturalOrder())))
+ @Test public void testMin_notFound() {
+    assertThat(this.<String, Integer>of().min(comparingKey(naturalOrder())))
         .isEqualTo(BiOptional.empty());
   }
 
