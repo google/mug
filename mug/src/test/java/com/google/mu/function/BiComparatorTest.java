@@ -16,7 +16,6 @@ package com.google.mu.function;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.function.BiComparator.comparing;
-import static com.google.mu.function.BiComparator.comparingBoolean;
 import static com.google.mu.function.BiComparator.comparingDouble;
 import static com.google.mu.function.BiComparator.comparingInt;
 import static com.google.mu.function.BiComparator.comparingKey;
@@ -58,12 +57,6 @@ public class BiComparatorTest {
     assertThat(comparingDouble(Double::sum).compare(1D, 3D, 2D, 2D)).isEqualTo(0);
     assertThat(comparingDouble(Double::sum).compare(1D, 3D, 0D, 5D)).isLessThan(0);
     assertThat(comparingDouble(Double::sum).compare(1D, 4D, 2D, 2D)).isGreaterThan(0);
-  }
-
-  @Test public void comparingBooleanFunction() {
-    assertThat(comparingBoolean(Boolean::logicalOr).compare(false, false, true, false)).isLessThan(0);
-    assertThat(comparingBoolean(Boolean::logicalAnd).compare(false, true, false, false)).isEqualTo(0);
-    assertThat(comparingBoolean(Boolean::logicalOr).compare(true, false, false, false)).isGreaterThan(0);
   }
 
   @Test public void comparingKeyByFunction() {

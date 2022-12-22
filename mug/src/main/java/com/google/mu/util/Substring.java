@@ -975,7 +975,7 @@ public final class Substring {
      *
      * <pre>{@code
      * Substring.spanningInOrder("{", "}")
-     *     .replaceFrom(placeholder -> replacements.get(placeholder.skip(1, 1).toString()));
+     *     .replaceFrom(s, placeholder -> replacements.get(placeholder.skip(1, 1).toString()));
      * }</pre>
      *
      * <p>Returns {@code string} as-is if a substring is not found.

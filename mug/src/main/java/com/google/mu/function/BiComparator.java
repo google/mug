@@ -19,7 +19,6 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Comparator;
 import java.util.function.BiFunction;
-import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.ToDoubleBiFunction;
 import java.util.function.ToIntBiFunction;
@@ -88,17 +87,6 @@ public interface BiComparator<K, V> {
       ToDoubleBiFunction<? super K, ? super V> function) {
     requireNonNull(function);
     return (k1, v1, k2, v2) -> Double.compare(function.applyAsDouble(k1, v1), function.applyAsDouble(k2, v2));
-  }
-
-  /**
-   * Returns a {@code BiComparator} that compares by the return value of {@code predicate}.
-   *
-   * @since 5.6
-   */
-  static <K, V> BiComparator<K, V> comparingBoolean(
-      BiPredicate<? super K, ? super V> predicate) {
-    requireNonNull(predicate);
-    return (k1, v1, k2, v2) -> Boolean.compare(predicate.test(k1, v1), predicate.test(k2, v2));
   }
 
   /**
