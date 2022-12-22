@@ -964,8 +964,29 @@ public final class Substring {
      */
     public final String replaceFrom(String string, CharSequence replacement) {
       requireNonNull(replacement);
+      return replaceFrom(string, m -> replacement);
+    }
+
+    /**
+     * Returns a new string with the substring matched by {@code this} replaced by
+     * the return value of {@code replacementFunction}.
+     *
+     * <p>For example, you can replace a single template placeholder using:
+     *
+     * <pre>{@code
+     * Substring.spanningInOrder("{", "}")
+     *     .replaceFrom(placeholder -> replacements.get(placeholder.skip(1, 1).toString()));
+     * }</pre>
+     *
+     * <p>Returns {@code string} as-is if a substring is not found.
+     *
+     * @since 5.6
+     */
+    public final String replaceFrom(
+        String string, Function<? super Match, ? extends CharSequence> replacementFunction) {
+      requireNonNull(replacementFunction);
       Match match = match(string);
-      return match == null ? string : match.replaceWith(replacement);
+      return match == null ? string : match.replaceWith(replacementFunction.apply(match));
     }
 
     /**

@@ -1468,6 +1468,22 @@ public class SubstringTest {
     assertThat(first('f').replaceFrom("foo", "bar")).isEqualTo("baroo");
   }
 
+  @Test public void replaceFrom_withFunction_noMatch() {
+    assertThat(first('f').replaceFrom("bar", m -> "")).isEqualTo("bar");
+    assertThat(first('f').replaceFrom("bar", m -> "x")).isEqualTo("bar");
+    assertThat(first('f').replaceFrom("bar", m -> "xyz")).isEqualTo("bar");
+  }
+
+  @Test public void replaceFrom_withFunction_match() {
+    assertThat(first('f').replaceFrom("foo", m -> "")).isEqualTo("oo");
+    assertThat(first('f').replaceFrom("foo", m -> "b")).isEqualTo("boo");
+    assertThat(first('f').replaceFrom("foo", m -> "bar")).isEqualTo("baroo");
+  }
+
+  @Test public void replaceFrom_withFunction_functionReturnsNull() {
+    assertThrows(NullPointerException.class, () -> first('f').replaceFrom("foo", m -> null));
+  }
+
   @Test public void replaceAllFrom_noMatch() {
     assertThat(first('f').repeatedly().replaceAllFrom("bar", m -> "x")).isEqualTo("bar");
     assertThat(first('f').repeatedly().replaceAllFrom("bar", m -> "xyz")).isEqualTo("bar");
