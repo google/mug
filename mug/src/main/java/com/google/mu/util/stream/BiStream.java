@@ -2425,10 +2425,11 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     return both.andThen((l, r) -> r);
   }
 
-  private static <K, V> BiOptional<K, V> fromOptionalEntry(Optional<? extends Map.Entry<? extends K, ? extends V>> optional) {
-    return optional
-        .map(e -> BiOptional.<K, V>of(e.getKey(), e.getValue()))
-        .orElse(BiOptional.<K, V>empty());
+  private static <K, V> BiOptional<K, V> fromOptionalEntry(
+      Optional<? extends Map.Entry<? extends K, ? extends V>> optional) {
+    return optional.isPresent()
+        ? BiOptional.of(optional.get().getKey(), optional.get().getValue())
+        : BiOptional.empty();
   }
 
   private BiStream() {}

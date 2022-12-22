@@ -18,6 +18,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.function.BiComparator.comparingKey;
+import static com.google.mu.function.BiComparator.comparingValue;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.BiStream.biStream;
@@ -566,10 +567,16 @@ public class BiStreamInvariantsTest {
     assertKeyValues(of("a", 1, "c", 2, "b", 3).sortedByKeys(Comparator.naturalOrder()))
         .containsExactlyEntriesIn(ImmutableMultimap.of("a", 1, "b", 3, "c", 2))
         .inOrder();
+    assertKeyValues(of("a", 1, "c", 2, "b", 3).sorted(comparingKey(Comparator.naturalOrder())))
+        .containsExactlyEntriesIn(ImmutableMultimap.of("a", 1, "b", 3, "c", 2))
+        .inOrder();
   }
 
   @Test public void sortedByValues() {
     assertKeyValues(of("a", 3, "b", 1, "c", 2).sortedByValues(Comparator.naturalOrder()))
+        .containsExactlyEntriesIn(ImmutableMultimap.of("b", 1, "c", 2, "a", 3))
+        .inOrder();
+    assertKeyValues(of("a", 3, "b", 1, "c", 2).sorted(comparingValue(Comparator.naturalOrder())))
         .containsExactlyEntriesIn(ImmutableMultimap.of("b", 1, "c", 2, "a", 3))
         .inOrder();
   }
