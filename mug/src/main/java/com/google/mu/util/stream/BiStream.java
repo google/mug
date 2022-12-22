@@ -14,6 +14,8 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
+import static com.google.mu.function.BiComparator.comparingKey;
+import static com.google.mu.function.BiComparator.comparingValue;
 import static com.google.mu.util.stream.MoreStreams.collectingAndThen;
 import static java.util.Objects.requireNonNull;
 import static java.util.Spliterator.ORDERED;
@@ -1583,8 +1585,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * applying {@code comparator} on the keys of each pair.
    */
   public final BiStream<K, V> sortedByKeys(Comparator<? super K> comparator) {
-    requireNonNull(comparator);
-    return fromEntries(mapToEntry().sorted(Comparator.comparing(Map.Entry::getKey, comparator)));
+    return sorted(comparingKey(comparator));
   }
 
   /**
@@ -1592,8 +1593,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * applying {@code comparator} on the values of each pair.
    */
   public final BiStream<K, V> sortedByValues(Comparator<? super V> comparator) {
-    requireNonNull(comparator);
-    return fromEntries(mapToEntry().sorted(Comparator.comparing(Map.Entry::getValue, comparator)));
+    return sorted(comparingValue(comparator));
   }
 
   /**
