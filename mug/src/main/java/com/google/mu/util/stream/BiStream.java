@@ -14,6 +14,7 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
+import static com.google.mu.function.BiComparator.comparingInOrder;
 import static com.google.mu.function.BiComparator.comparingKey;
 import static com.google.mu.function.BiComparator.comparingValue;
 import static com.google.mu.util.stream.MoreStreams.collectingAndThen;
@@ -1598,7 +1599,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
 
   /**
    * Returns a {@code BiStream} consisting of the pairs in this stream, in the order produced by
-   * applying {@code ordering} BiComparator between each pair.
+   * applying the {@code primary} comparator (and {@code secondaries} for tie breaking) between each
+   * pair.
    *
    * <p>The following example first sorts by household income and then by address:
    *
@@ -1609,35 +1611,56 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * Map<Address, Household> households = ...;
    * List<Household> householdsByIncomeThenAddress =
    *     BiStream.from(households)
-   *         .sorted(comparingValue(Household::income).then(comparingKey(naturalOrder()))
+   *         .sorted(comparingValue(Household::income, comparingKey(naturalOrder())))
    *         .values()
    *         .collect(toList());
    * }</pre>
    *
    * @since 4.7
    */
-  public final BiStream<K, V> sorted(BiComparator<? super K, ? super V> ordering) {
-    return fromEntries(mapToEntry().sorted(ordering.asComparator(Map.Entry::getKey, Map.Entry::getValue)));
+  @SafeVarargs
+  public final BiStream<K, V> sorted(
+      BiComparator<? super K, ? super V> primary,
+      BiComparator<? super K, ? super V>... secondaries) {
+    return fromEntries(
+        mapToEntry()
+            .sorted(
+                comparingInOrder(primary, secondaries)
+                    .asComparator(Map.Entry::getKey, Map.Entry::getValue)));
   }
 
   /**
-   * Returns the max pair according to {@code ordering}.
+   * Returns the max pair according to the {@code primary} and {@code secondaries} (for tie-breaking
+   * purpose) comparators.
    *
    * @since 6.5
    */
-  public final BiOptional<K, V> max(BiComparator<? super K, ? super V> ordering) {
+  @SafeVarargs
+  public final BiOptional<K, V> max(
+      BiComparator<? super K, ? super V> primary,
+      BiComparator<? super K, ? super V>... secondaries) {
     return fromOptionalEntry(
-        mapToEntry().max(ordering.asComparator(Map.Entry::getKey, Map.Entry::getValue)));
+        mapToEntry()
+            .max(
+                comparingInOrder(primary, secondaries)
+                    .asComparator(Map.Entry::getKey, Map.Entry::getValue)));
   }
 
   /**
-   * Returns the min pair according to {@code ordering}.
+   * Returns the min pair according to {@code primary} and {@code secondaries} (for tie-breaking
+   * purpose) comparators.
    *
    * @since 6.5
    */
-  public final BiOptional<K, V> min(BiComparator<? super K, ? super V> ordering) {
+  @SafeVarargs
+  public final BiOptional<K, V> min(
+      BiComparator<? super K, ? super V> primary,
+      BiComparator<? super K, ? super V>... secondaries) {
     return fromOptionalEntry(
-        mapToEntry().min(ordering.asComparator(Map.Entry::getKey, Map.Entry::getValue)));
+        mapToEntry()
+            .min(
+                comparingInOrder(primary, secondaries)
+                    .asComparator(Map.Entry::getKey, Map.Entry::getValue)));
   }
 
   /** Returns the count of pairs in this stream. */

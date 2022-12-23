@@ -59,7 +59,7 @@ public interface BiComparator<K, V> {
   /**
    * Returns a {@code BiComparator} that compares by the int return value of {@code function}.
    *
-   * @since 5.6
+   * @since 6.5
    */
   static <K, V> BiComparator<K, V> comparingInt(
       ToIntBiFunction<? super K, ? super V> function) {
@@ -70,7 +70,7 @@ public interface BiComparator<K, V> {
   /**
    * Returns a {@code BiComparator} that compares by the long return value of {@code function}.
    *
-   * @since 5.6
+   * @since 6.5
    */
   static <K, V> BiComparator<K, V> comparingLong(
       ToLongBiFunction<? super K, ? super V> function) {
@@ -81,7 +81,7 @@ public interface BiComparator<K, V> {
   /**
    * Returns a {@code BiComparator} that compares by the double return value of {@code function}.
    *
-   * @since 5.6
+   * @since 6.5
    */
   static <K, V> BiComparator<K, V> comparingDouble(
       ToDoubleBiFunction<? super K, ? super V> function) {
@@ -139,6 +139,25 @@ public interface BiComparator<K, V> {
    */
   static <V> BiComparator<Object, V> comparingValue(Comparator<? super V> ordering) {
     return comparing((k, v) -> v, ordering);
+  }
+
+  /**
+   * Returns a {@code BiComparator} that compares the input pairs using the {@code primary}
+   * comparator, and then {@code secondaries} in the given order until tie is broken.
+   *
+   * @since 6.5
+   */
+  @SuppressWarnings("unchecked")
+  @SafeVarargs
+  static <K, V> BiComparator<K, V> comparingInOrder(
+      BiComparator<? super K, ? super V> primary,
+      BiComparator<? super K, ? super V>... secondaries) {
+    BiComparator<K, V> comparator = (BiComparator<K, V>) requireNonNull(primary);
+    for (BiComparator<? super K, ? super V> secondary : secondaries) {
+      requireNonNull(secondary);
+      comparator = comparator.then(secondary);
+    }
+    return comparator;
   }
 
   /**

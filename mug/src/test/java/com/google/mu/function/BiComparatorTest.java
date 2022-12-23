@@ -26,6 +26,7 @@ import static java.util.Comparator.reverseOrder;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Comparator;
+import java.util.function.Function;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -139,6 +140,19 @@ public class BiComparatorTest {
     assertThat(ordering.compare("a", 1, "b", 1)).isLessThan(0);
     assertThat(ordering.compare("a", 3, "a", 2)).isEqualTo(0);
     assertThat(ordering.compare("a", 4, "a", 3)).isGreaterThan(0);
+  }
+
+  @Test public void testComparingInOrder_primaryOnly() {
+    BiComparator<?, ?> primary = comparingKey(Object::toString);
+    assertThat(BiComparator.comparingInOrder(primary)).isSameAs(primary);
+  }
+
+  @Test public void testComparingInOrder_byValueThenByKey() {
+    BiComparator<Integer, Object> ordering =
+        BiComparator.comparingInOrder(comparingValue(Object::toString), comparingKey(Function.identity()));
+    assertThat(ordering.compare(2, "a", 1, "b")).isLessThan(0);
+    assertThat(ordering.compare(2, "a", 1, "a")).isGreaterThan(0);
+    assertThat(ordering.compare(1, "a", 1, "a")).isEqualTo(0);
   }
 
   @Test public void reversed_comparing() {

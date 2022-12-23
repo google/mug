@@ -16,9 +16,13 @@ package com.google.mu.util.concurrent;
 
 import static com.google.mu.util.stream.MoreStreams.iterateOnce;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,10 +36,16 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import com.google.mu.util.stream.BiStream;
 
 /**
  * An <em>{@code Executor}-friendly</em>, <em>interruptible</em> alternative to parallel streams.
@@ -145,7 +155,7 @@ public final class Parallelizer {
    * Constructs a {@code Parallelizer} that runs tasks with {@code executor}.
    * At any given time, at most {@code maxInFlight} tasks are allowed to be submitted to
    * {@code executor}.
-   * 
+   *
    * <p>Note that a task being submitted to {@code executor} doesn't guarantee immediate
    * execution, if for example all worker threads in {@code executor} are busy.
    */
@@ -385,6 +395,34 @@ public final class Parallelizer {
     }
   }
 
+  /**
+   * Returns a {@link Collector} that runs {@code concurrentFunction} in parallel using this {@code
+   * Parallelizer} and returns the inputs and outputs in a {@link BiStream}.
+   *
+   * <p>For example: <pre>{@code
+   * ImmutableListMultimap<String, Asset> resourceAssets =
+   *     resources.stream()
+   *         .collect(parallelizer.inParallel(this::listAssets))
+   *         .collect(flatteningToImmutableListMultimap(List::stream));
+   * }</pre>
+   *
+   * @since 6.5
+   */
+  public <I, O> Collector<I, ?, BiStream<I, O>> inParallel(
+      Function<? super I, ? extends O> concurrentFunction) {
+    requireNonNull(concurrentFunction);
+    return Collectors.collectingAndThen(
+        toList(),
+        inputs -> {
+          List<O> outputs = new ArrayList<>(inputs.size());
+          outputs.addAll(Collections.nCopies(inputs.size(), null));
+          parallelizeUninterruptibly(
+              IntStream.range(0, inputs.size()).boxed(),
+              i -> outputs.set(i, concurrentFunction.apply(inputs.get(i))));
+          return BiStream.zip(inputs, outputs);
+        });
+  }
+
   static <T> Stream<Runnable> forAll(Stream<? extends T> inputs, Consumer<? super T> consumer) {
     requireNonNull(consumer);
     return inputs.map(input -> () -> consumer.accept(input));
@@ -395,14 +433,14 @@ public final class Parallelizer {
     private final Semaphore semaphore = new Semaphore(maxInFlight);
     private final ConcurrentMap<Object, Future<?>> onboard = new ConcurrentHashMap<>();
     private volatile ConcurrentLinkedQueue<Throwable> thrown = new ConcurrentLinkedQueue<>();
-  
+
     void checkIn(long timeout, TimeUnit timeUnit)
         throws InterruptedException, TimeoutException, UncheckedExecutionException {
       boolean acquired = semaphore.tryAcquire(timeout, timeUnit);
       propagateExceptions();
       if (!acquired) throw new TimeoutException();
     }
-  
+
     void checkInUninterruptibly() throws UncheckedExecutionException {
       semaphore.acquireUninterruptibly();
       propagateExceptions();
