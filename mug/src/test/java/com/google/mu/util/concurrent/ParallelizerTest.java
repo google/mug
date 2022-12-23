@@ -125,7 +125,7 @@ public class ParallelizerTest {
   }
 
   @RunWith(Parameterized.class)
-  public static class ApiTest {
+  public static class CoreApiTest {
     private final Mode mode;
     private final Threading threading;
     private ExecutorService threadPool;
@@ -138,7 +138,7 @@ public class ParallelizerTest {
 
     @Rule public final Verifier verifyTaskAssertions = new Verifier() {
       @Override protected void verify() throws Throwable {
-        ApiTest.this.shutdownThreadPool();
+        shutdownThreadPool();
         for (Throwable e : thrown) {
           throw e;
         }
@@ -146,7 +146,7 @@ public class ParallelizerTest {
       }
     };
 
-    public ApiTest(Mode mode, Threading threading) {
+    public CoreApiTest(Mode mode, Threading threading) {
       this.mode = mode;
       this.threading = threading;
     }

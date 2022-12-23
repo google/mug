@@ -16,6 +16,7 @@ package com.google.mu.util.concurrent;
 
 import static com.google.mu.util.stream.MoreStreams.iterateOnce;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toList;
 
 import java.time.Duration;
@@ -40,7 +41,6 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collector;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -411,7 +411,7 @@ public final class Parallelizer {
   public <I, O> Collector<I, ?, BiStream<I, O>> inParallel(
       Function<? super I, ? extends O> concurrentFunction) {
     requireNonNull(concurrentFunction);
-    return Collectors.collectingAndThen(
+    return collectingAndThen(
         toList(),
         inputs -> {
           List<O> outputs = new ArrayList<>(inputs.size());
