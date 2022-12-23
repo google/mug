@@ -406,6 +406,9 @@ public final class Parallelizer {
    *         .collect(flatteningToImmutableListMultimap(List::stream));
    * }</pre>
    *
+   * @param concurrentFunction a function that's safe to be run concurrently, and is usually
+   *     IO-intensive (such as an outgoing RPC or reading distributed storage).
+   *
    * @since 6.5
    */
   public <I, O> Collector<I, ?, BiStream<I, O>> inParallel(
