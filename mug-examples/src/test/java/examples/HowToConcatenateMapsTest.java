@@ -1,21 +1,22 @@
 package examples;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSetMultimap;
-import com.google.mu.util.stream.BiCollector;
-import com.google.mu.util.stream.BiStream;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import static com.google.common.truth.Truth.assertThat;
+import static com.google.mu.util.stream.BiStream.concat;
+import static com.google.mu.util.stream.BiStream.flattening;
 
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 
-import static com.google.common.truth.Truth.assertThat;
-import static com.google.mu.util.stream.BiStream.concat;
-import static com.google.mu.util.stream.BiStream.concatenating;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSetMultimap;
+import com.google.mu.util.stream.BiCollector;
+import com.google.mu.util.stream.BiStream;
 
 /** Some examples to show how to easily concatenate {@code Map}s and {@code Multimap}s. */
 @RunWith(JUnit4.class)
@@ -52,7 +53,7 @@ public class HowToConcatenateMapsTest {
     Stream<Map<String, Integer>> stream = Stream.of(
         ImmutableMap.of("one", 1, "two", 2), ImmutableMap.of("uno", 1, "dos", 2));
     Map<String, Integer> combined = stream
-        .collect(concatenating(BiStream::from))
+        .collect(flattening(BiStream::from))
         .toMap();
     assertThat(combined).containsExactly("one", 1, "uno", 1, "two", 2, "dos", 2);
   }
