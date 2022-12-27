@@ -16,13 +16,17 @@ package com.google.mu.function;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.function.BiComparator.comparing;
+import static com.google.mu.function.BiComparator.comparingDouble;
+import static com.google.mu.function.BiComparator.comparingInt;
 import static com.google.mu.function.BiComparator.comparingKey;
+import static com.google.mu.function.BiComparator.comparingLong;
 import static com.google.mu.function.BiComparator.comparingValue;
 import static java.util.Comparator.naturalOrder;
 import static java.util.Comparator.reverseOrder;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Comparator;
+import java.util.function.Function;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -36,6 +40,24 @@ public class BiComparatorTest {
     assertThat(comparing(Integer::sum).compare(1, 3, 2, 2)).isEqualTo(0);
     assertThat(comparing(Integer::sum).compare(1, 3, 0, 5)).isLessThan(0);
     assertThat(comparing(Integer::sum).compare(1, 4, 2, 2)).isGreaterThan(0);
+  }
+
+  @Test public void comparingIntFunction() {
+    assertThat(comparingInt(Integer::sum).compare(1, 3, 2, 2)).isEqualTo(0);
+    assertThat(comparingInt(Integer::sum).compare(1, 3, 0, 5)).isLessThan(0);
+    assertThat(comparingInt(Integer::sum).compare(1, 4, 2, 2)).isGreaterThan(0);
+  }
+
+  @Test public void comparingLongFunction() {
+    assertThat(comparingLong(Long::sum).compare(1L, 3L, 2L, 2L)).isEqualTo(0);
+    assertThat(comparingLong(Long::sum).compare(1L, 3L, 0L, 5L)).isLessThan(0);
+    assertThat(comparingLong(Long::sum).compare(1L, 4L, 2L, 2L)).isGreaterThan(0);
+  }
+
+  @Test public void comparingDoubleFunction() {
+    assertThat(comparingDouble(Double::sum).compare(1D, 3D, 2D, 2D)).isEqualTo(0);
+    assertThat(comparingDouble(Double::sum).compare(1D, 3D, 0D, 5D)).isLessThan(0);
+    assertThat(comparingDouble(Double::sum).compare(1D, 4D, 2D, 2D)).isGreaterThan(0);
   }
 
   @Test public void comparingKeyByFunction() {
@@ -118,6 +140,19 @@ public class BiComparatorTest {
     assertThat(ordering.compare("a", 1, "b", 1)).isLessThan(0);
     assertThat(ordering.compare("a", 3, "a", 2)).isEqualTo(0);
     assertThat(ordering.compare("a", 4, "a", 3)).isGreaterThan(0);
+  }
+
+  @Test public void testComparingInOrder_primaryOnly() {
+    BiComparator<?, ?> primary = comparingKey(Object::toString);
+    assertThat(BiComparator.comparingInOrder(primary)).isSameAs(primary);
+  }
+
+  @Test public void testComparingInOrder_byValueThenByKey() {
+    BiComparator<Integer, Object> ordering =
+        BiComparator.comparingInOrder(comparingValue(Object::toString), comparingKey(Function.identity()));
+    assertThat(ordering.compare(2, "a", 1, "b")).isLessThan(0);
+    assertThat(ordering.compare(2, "a", 1, "a")).isGreaterThan(0);
+    assertThat(ordering.compare(1, "a", 1, "a")).isEqualTo(0);
   }
 
   @Test public void reversed_comparing() {

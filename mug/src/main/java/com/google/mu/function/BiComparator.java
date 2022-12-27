@@ -20,6 +20,9 @@ import static java.util.Objects.requireNonNull;
 import java.util.Comparator;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.ToDoubleBiFunction;
+import java.util.function.ToIntBiFunction;
+import java.util.function.ToLongBiFunction;
 
 /**
  * Similar to {@link java.util.Comparator}, but compares between two pairs of objects.
@@ -51,6 +54,39 @@ public interface BiComparator<K, V> {
   static <K, V, T extends Comparable<T>> BiComparator<K, V> comparing(
       BiFunction<? super K, ? super V, ? extends T> function) {
     return comparing(function, naturalOrder());
+  }
+
+  /**
+   * Returns a {@code BiComparator} that compares by the int return value of {@code function}.
+   *
+   * @since 6.5
+   */
+  static <K, V> BiComparator<K, V> comparingInt(
+      ToIntBiFunction<? super K, ? super V> function) {
+    requireNonNull(function);
+    return (k1, v1, k2, v2) -> Integer.compare(function.applyAsInt(k1, v1), function.applyAsInt(k2, v2));
+  }
+
+  /**
+   * Returns a {@code BiComparator} that compares by the long return value of {@code function}.
+   *
+   * @since 6.5
+   */
+  static <K, V> BiComparator<K, V> comparingLong(
+      ToLongBiFunction<? super K, ? super V> function) {
+    requireNonNull(function);
+    return (k1, v1, k2, v2) -> Long.compare(function.applyAsLong(k1, v1), function.applyAsLong(k2, v2));
+  }
+
+  /**
+   * Returns a {@code BiComparator} that compares by the double return value of {@code function}.
+   *
+   * @since 6.5
+   */
+  static <K, V> BiComparator<K, V> comparingDouble(
+      ToDoubleBiFunction<? super K, ? super V> function) {
+    requireNonNull(function);
+    return (k1, v1, k2, v2) -> Double.compare(function.applyAsDouble(k1, v1), function.applyAsDouble(k2, v2));
   }
 
   /**
@@ -103,6 +139,25 @@ public interface BiComparator<K, V> {
    */
   static <V> BiComparator<Object, V> comparingValue(Comparator<? super V> ordering) {
     return comparing((k, v) -> v, ordering);
+  }
+
+  /**
+   * Returns a {@code BiComparator} that compares the input pairs using the {@code primary}
+   * comparator, and then {@code secondaries} in the given order until tie is broken.
+   *
+   * @since 6.5
+   */
+  @SuppressWarnings("unchecked")
+  @SafeVarargs
+  static <K, V> BiComparator<K, V> comparingInOrder(
+      BiComparator<? super K, ? super V> primary,
+      BiComparator<? super K, ? super V>... secondaries) {
+    BiComparator<K, V> comparator = (BiComparator<K, V>) requireNonNull(primary);
+    for (BiComparator<? super K, ? super V> secondary : secondaries) {
+      requireNonNull(secondary);
+      comparator = comparator.then(secondary);
+    }
+    return comparator;
   }
 
   /**

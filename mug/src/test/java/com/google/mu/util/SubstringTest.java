@@ -277,6 +277,20 @@ public class SubstringTest {
     assertThat(builder.toString()).isEqualTo("booo");
   }
 
+  @Test public void prefix_hideFrom_prefixNotFound() {
+    String string = new String("foo");
+    assertThat(prefix("bar").hideFrom(string)).isSameAs(string);
+  }
+
+  @Test public void prefix_hideFrom_emptyPrefix() {
+    String string = new String("foo");
+    assertThat(prefix("").hideFrom(string)).isSameAs(string);
+  }
+
+  @Test public void prefix_hideFrom_nonEmptyPrefixFound() {
+    assertThat(prefix("foo").hideFrom("foobar").toString()).isEqualTo("bar");
+  }
+
   @Test public void prefix_removeFrom_emptyIsRemovedFromEmptyBuilder() {
     StringBuilder builder = new StringBuilder();
     assertThat(prefix("").removeFrom(builder)).isTrue();
@@ -513,6 +527,20 @@ public class SubstringTest {
     StringBuilder builder = new StringBuilder("booo");
     assertThat(suffix("oo").addToIfAbsent(builder)).isFalse();
     assertThat(builder.toString()).isEqualTo("booo");
+  }
+
+  @Test public void suffix_hideFrom_prefixNotFound() {
+    String string = new String("foo");
+    assertThat(suffix("bar").hideFrom(string)).isSameAs(string);
+  }
+
+  @Test public void suffix_hideFrom_emptyPrefix() {
+    String string = new String("foo");
+    assertThat(suffix("").hideFrom(string)).isSameAs(string);
+  }
+
+  @Test public void suffix_hideFrom_nonEmptyPrefixFound() {
+    assertThat(suffix("bar").hideFrom("foobar").toString()).isEqualTo("foo");
   }
 
   @Test public void suffix_removeFrom_emptyIsRemovedFromEmptyBuilder() {
@@ -1438,6 +1466,22 @@ public class SubstringTest {
     assertThat(first('f').replaceFrom("foo", "")).isEqualTo("oo");
     assertThat(first('f').replaceFrom("foo", "b")).isEqualTo("boo");
     assertThat(first('f').replaceFrom("foo", "bar")).isEqualTo("baroo");
+  }
+
+  @Test public void replaceFrom_withFunction_noMatch() {
+    assertThat(first('f').replaceFrom("bar", m -> "")).isEqualTo("bar");
+    assertThat(first('f').replaceFrom("bar", m -> "x")).isEqualTo("bar");
+    assertThat(first('f').replaceFrom("bar", m -> "xyz")).isEqualTo("bar");
+  }
+
+  @Test public void replaceFrom_withFunction_match() {
+    assertThat(first('f').replaceFrom("foo", m -> "")).isEqualTo("oo");
+    assertThat(first('f').replaceFrom("foo", m -> "b")).isEqualTo("boo");
+    assertThat(first('f').replaceFrom("foo", m -> "bar")).isEqualTo("baroo");
+  }
+
+  @Test public void replaceFrom_withFunction_functionReturnsNull() {
+    assertThrows(NullPointerException.class, () -> first('f').replaceFrom("foo", m -> null));
   }
 
   @Test public void replaceAllFrom_noMatch() {

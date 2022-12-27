@@ -14,6 +14,9 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
+import static com.google.mu.function.BiComparator.comparingInOrder;
+import static com.google.mu.function.BiComparator.comparingKey;
+import static com.google.mu.function.BiComparator.comparingValue;
 import static com.google.mu.util.stream.MoreStreams.collectingAndThen;
 import static java.util.Objects.requireNonNull;
 import static java.util.Spliterator.ORDERED;
@@ -315,21 +318,31 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Returns a {@code Collector} that concatenates {@code BiStream} objects derived from the input
+   * @since 3.0
+   * @deprecated use {@link #flattening} instead
+   */
+  @Deprecated
+  public static <T, K, V> Collector<T, ?, BiStream<K, V>> concatenating(
+      Function<? super T, ? extends BiStream<? extends K, ? extends V>> toBiStream) {
+    return flattening(toBiStream);
+  }
+
+  /**
+   * Returns a {@code Collector} that flattens {@code BiStream} objects derived from the input
    * elements using the given {@code toBiStream} function.
    *
    * <p>For example:
    *
    * <pre>{@code
    * Map<EmployeeId, Task> billableTaskAssignments = projects.stream()
-   *     .collect(concatenating(p -> BiStream.from(p.getTaskAssignments())))
+   *     .collect(flattening(p -> BiStream.from(p.getTaskAssignments())))
    *     .filterValues(Task::billable)
    *     .toMap();
    * }</pre>
    *
    * @since 3.0
    */
-  public static <T, K, V> Collector<T, ?, BiStream<K, V>> concatenating(
+  public static <T, K, V> Collector<T, ?, BiStream<K, V>> flattening(
       Function<? super T, ? extends BiStream<? extends K, ? extends V>> toBiStream) {
     return collectingAndThen(stream -> concat(stream.map(toBiStream)));
   }
@@ -1583,8 +1596,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * applying {@code comparator} on the keys of each pair.
    */
   public final BiStream<K, V> sortedByKeys(Comparator<? super K> comparator) {
-    requireNonNull(comparator);
-    return fromEntries(mapToEntry().sorted(Comparator.comparing(Map.Entry::getKey, comparator)));
+    return sorted(comparingKey(comparator));
   }
 
   /**
@@ -1592,13 +1604,13 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * applying {@code comparator} on the values of each pair.
    */
   public final BiStream<K, V> sortedByValues(Comparator<? super V> comparator) {
-    requireNonNull(comparator);
-    return fromEntries(mapToEntry().sorted(Comparator.comparing(Map.Entry::getValue, comparator)));
+    return sorted(comparingValue(comparator));
   }
 
   /**
    * Returns a {@code BiStream} consisting of the pairs in this stream, in the order produced by
-   * applying {@code ordering} BiComparator between each pair.
+   * applying the {@code primary} comparator (and {@code secondaries} for tie breaking) between each
+   * pair.
    *
    * <p>The following example first sorts by household income and then by address:
    *
@@ -1609,15 +1621,56 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * Map<Address, Household> households = ...;
    * List<Household> householdsByIncomeThenAddress =
    *     BiStream.from(households)
-   *         .sorted(comparingValue(Household::income).then(comparingKey(naturalOrder()))
+   *         .sorted(comparingValue(Household::income, comparingKey(naturalOrder())))
    *         .values()
    *         .collect(toList());
    * }</pre>
    *
    * @since 4.7
    */
-  public final BiStream<K, V> sorted(BiComparator<? super K, ? super V> ordering) {
-    return fromEntries(mapToEntry().sorted(ordering.asComparator(Map.Entry::getKey, Map.Entry::getValue)));
+  @SafeVarargs
+  public final BiStream<K, V> sorted(
+      BiComparator<? super K, ? super V> primary,
+      BiComparator<? super K, ? super V>... secondaries) {
+    return fromEntries(
+        mapToEntry()
+            .sorted(
+                comparingInOrder(primary, secondaries)
+                    .asComparator(Map.Entry::getKey, Map.Entry::getValue)));
+  }
+
+  /**
+   * Returns the max pair according to the {@code primary} and {@code secondaries} (for tie-breaking
+   * purpose) comparators.
+   *
+   * @since 6.5
+   */
+  @SafeVarargs
+  public final BiOptional<K, V> max(
+      BiComparator<? super K, ? super V> primary,
+      BiComparator<? super K, ? super V>... secondaries) {
+    return fromOptionalEntry(
+        mapToEntry()
+            .max(
+                comparingInOrder(primary, secondaries)
+                    .asComparator(Map.Entry::getKey, Map.Entry::getValue)));
+  }
+
+  /**
+   * Returns the min pair according to {@code primary} and {@code secondaries} (for tie-breaking
+   * purpose) comparators.
+   *
+   * @since 6.5
+   */
+  @SafeVarargs
+  public final BiOptional<K, V> min(
+      BiComparator<? super K, ? super V> primary,
+      BiComparator<? super K, ? super V>... secondaries) {
+    return fromOptionalEntry(
+        mapToEntry()
+            .min(
+                comparingInOrder(primary, secondaries)
+                    .asComparator(Map.Entry::getKey, Map.Entry::getValue)));
   }
 
   /** Returns the count of pairs in this stream. */
@@ -2403,6 +2456,13 @@ public abstract class BiStream<K, V> implements AutoCloseable {
 
   static <T> T right(Both<?, T> both) {
     return both.andThen((l, r) -> r);
+  }
+
+  private static <K, V> BiOptional<K, V> fromOptionalEntry(
+      Optional<? extends Map.Entry<? extends K, ? extends V>> optional) {
+    return optional.isPresent()
+        ? BiOptional.of(optional.get().getKey(), optional.get().getValue())
+        : BiOptional.empty();
   }
 
   private BiStream() {}
