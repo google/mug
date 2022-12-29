@@ -16,6 +16,7 @@ package com.google.mu.util.concurrent;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.util.concurrent.Parallelizer.forAll;
+import static com.google.mu.util.concurrent.Parallelizer.newExitingParallelizer;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeFalse;
@@ -121,6 +122,19 @@ public class ParallelizerTest {
     @Test public void testNulls() {
       Parallelizer parallelizer = new Parallelizer(threadPool, 3);
       assertThrows(NullPointerException.class, () -> parallelizer.inParallel(null));
+    }
+  }
+
+  @RunWith(TestParameterInjector.class)
+  public static class FactoryMethodsTest {
+    @Test
+    public void newExitingParallelizer_doesNotHangVm() {
+      assertThat(
+              Stream.of(1, 2, 3, 4, 5)
+                  .collect(newExitingParallelizer(2).inParallel(Object::toString))
+                  .toMap())
+          .containsExactly(1, "1", 2, "2", 3, "3", 4, "4", 5, "5")
+          .inOrder();
     }
   }
 

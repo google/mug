@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
@@ -164,6 +165,27 @@ public final class Parallelizer {
     this.executor = requireNonNull(executor);
     this.maxInFlight = maxInFlight;
     if (maxInFlight <= 0) throw new IllegalArgumentException("maxInFlight = " + maxInFlight);
+  }
+
+  /*
+   * Returns a new {@link Parallelizer} based on an ExecutorService that exits when the application
+   * is complete. It does so by using daemon threads and adding a shutdown hook to wait for their
+   * completion.
+   *
+   * <p>Typically used by the {@code main()} method or shared throughout the application.
+   *
+   * @since 6.5
+   */
+  public static Parallelizer newExitingParallelizer(int maxInFlight) {
+    ExecutorService executor = Executors.newFixedThreadPool(
+        maxInFlight, runnable -> {
+          Thread thread = new Thread(runnable);
+          thread.setDaemon(true);
+          thread.setName("ExitingParallelizer@" + thread.hashCode());
+          return thread;
+        });
+    Runtime.getRuntime().addShutdownHook(new Thread(executor::shutdownNow));
+    return new Parallelizer(executor, maxInFlight);
   }
 
   /**
