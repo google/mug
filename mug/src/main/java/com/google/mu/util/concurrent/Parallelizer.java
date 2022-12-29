@@ -506,10 +506,11 @@ public final class Parallelizer {
         } catch (Throwable e) {
           ConcurrentLinkedQueue<Throwable> toPropagate = thrown;
           if (toPropagate == null) {
-            if (!Thread.currentThread().isInterrupted()) {
+            if (Thread.currentThread().isInterrupted()) {
               // If we are interrupted, the exception is not a cause but a result of cancellation.
               // Don't spam the log.
-              //
+              logger.info(e.getMessage());
+            } else {
               // The main thread propagates exceptions as soon as any task fails.
               // If a task did not respond in time and yet fails afterwards, the main thread has
               // already thrown and nothing will propagate this exception.
