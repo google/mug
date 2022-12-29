@@ -508,7 +508,7 @@ public final class Parallelizer {
           if (toPropagate == null) {
             if (Thread.currentThread().isInterrupted()) {
               // If we are interrupted, the exception is not a cause but a result of cancellation.
-              // Don't spam the log.
+              // Don't log the noisy stack trace.
               logger.info(e.getMessage());
             } else {
               // The main thread propagates exceptions as soon as any task fails.
