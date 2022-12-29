@@ -375,7 +375,7 @@ public class ParallelizerTest {
       parallelize(forAll(inputs, consumer));
     }
 
-    private <T> void parallelize(Stream<? extends Runnable> tasks)
+    private void parallelize(Stream<? extends Runnable> tasks)
         throws InterruptedException, TimeoutException {
       mode.run(
           new Parallelizer(threadPool, maxInFlight), tasks, this::runTask, timeout);
