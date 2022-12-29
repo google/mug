@@ -482,11 +482,16 @@ public final class Parallelizer {
         } catch (Throwable e) {
           ConcurrentLinkedQueue<Throwable> toPropagate = thrown;
           if (toPropagate == null) {
-            // The main thread propagates exceptions as soon as any task fails.
-            // If a task did not respond in time and yet fails afterwards, the main thread has
-            // already thrown and nothing will propagate this exception.
-            // So just log it as best effort.
-            logger.log(Level.WARNING, "Orphan task failure", e);
+            if (!Thread.currentThread().isInterrupted()) {
+              // If we are interrupted, the exception is not a cause but a result of cancellation.
+              // Don't spam the log.
+              //
+              // The main thread propagates exceptions as soon as any task fails.
+              // If a task did not respond in time and yet fails afterwards, the main thread has
+              // already thrown and nothing will propagate this exception.
+              // So just log it as best effort.
+              logger.log(Level.WARNING, "Orphan task failure", e);
+            }
           } else {
             // Upon race condition, the exception may be added while the main thread is propagating.
             // It's ok though since the best we could have done is logging.
