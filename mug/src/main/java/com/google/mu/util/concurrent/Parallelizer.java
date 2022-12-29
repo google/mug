@@ -172,11 +172,11 @@ public final class Parallelizer {
    * Returns a new {@link Parallelizer} based on an ExecutorService that exits when the application
    * is complete. It does so by using daemon threads.
    *
-   * <p>Typically used by the {@code main()} method or shared throughout the application.
+   * <p>Typically used by the {@code main()} method or as a static final field.
    *
    * @since 6.5
    */
-  public static Parallelizer newExitingParallelizer(int maxInFlight) {
+  public static Parallelizer newDaemonParallelizer(int maxInFlight) {
     AtomicInteger threadCount = new AtomicInteger();
     return new Parallelizer(
         Executors.newFixedThreadPool(
@@ -184,7 +184,7 @@ public final class Parallelizer {
             runnable -> {
               Thread thread = new Thread(runnable);
               thread.setDaemon(true);
-              thread.setName("ExitingParallelizer#" + threadCount.getAndIncrement());
+              thread.setName("DaemonParallelizer#" + threadCount.getAndIncrement());
               return thread;
             }),
         maxInFlight);
@@ -507,9 +507,12 @@ public final class Parallelizer {
           ConcurrentLinkedQueue<Throwable> toPropagate = thrown;
           if (toPropagate == null) {
             if (Thread.currentThread().isInterrupted()) {
-              // If we are interrupted, the exception is not a cause but a result of cancellation.
-              // Don't log the noisy stack trace.
-              logger.info(e.getMessage());
+              // If we are cancelled (and interrupted), the exception is likely due to the
+              // cancellation. Don't log the noisy stack trace.
+              logger.info(
+                  String.format(
+                      "worker thread (%s) interrupted - %s",
+                      Thread.currentThread().getName(), e.getMessage()));
             } else {
               // The main thread propagates exceptions as soon as any task fails.
               // If a task did not respond in time and yet fails afterwards, the main thread has

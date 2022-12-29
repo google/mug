@@ -16,7 +16,7 @@ package com.google.mu.util.concurrent;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.util.concurrent.Parallelizer.forAll;
-import static com.google.mu.util.concurrent.Parallelizer.newExitingParallelizer;
+import static com.google.mu.util.concurrent.Parallelizer.newDaemonParallelizer;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeFalse;
@@ -131,7 +131,7 @@ public class ParallelizerTest {
     public void newExitingParallelizer_doesNotHangVm() {
       assertThat(
               Stream.of(1, 2, 3, 4, 5)
-                  .collect(newExitingParallelizer(2).inParallel(Object::toString))
+                  .collect(newDaemonParallelizer(2).inParallel(Object::toString))
                   .toMap())
           .containsExactly(1, "1", 2, "2", 3, "3", 4, "4", 5, "5")
           .inOrder();
@@ -139,13 +139,13 @@ public class ParallelizerTest {
 
     @Test
     public void newExitingParallelizer_zeroMaxInflight() {
-      assertThrows(IllegalArgumentException.class, () -> newExitingParallelizer(0));
+      assertThrows(IllegalArgumentException.class, () -> newDaemonParallelizer(0));
     }
 
     @Test
     public void newExitingParallelizer_negativeMaxInflight() {
-      assertThrows(IllegalArgumentException.class, () -> newExitingParallelizer(-1));
-      assertThrows(IllegalArgumentException.class, () -> newExitingParallelizer(Integer.MIN_VALUE));
+      assertThrows(IllegalArgumentException.class, () -> newDaemonParallelizer(-1));
+      assertThrows(IllegalArgumentException.class, () -> newDaemonParallelizer(Integer.MIN_VALUE));
     }
   }
 
