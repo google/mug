@@ -136,6 +136,17 @@ public class ParallelizerTest {
           .containsExactly(1, "1", 2, "2", 3, "3", 4, "4", 5, "5")
           .inOrder();
     }
+
+    @Test
+    public void newExitingParallelizer_zeroMaxInflight() {
+      assertThrows(IllegalArgumentException.class, () -> newExitingParallelizer(0));
+    }
+
+    @Test
+    public void newExitingParallelizer_negativeMaxInflight() {
+      assertThrows(IllegalArgumentException.class, () -> newExitingParallelizer(-1));
+      assertThrows(IllegalArgumentException.class, () -> newExitingParallelizer(Integer.MIN_VALUE));
+    }
   }
 
   @RunWith(Parameterized.class)
