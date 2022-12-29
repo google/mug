@@ -37,6 +37,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -176,13 +177,14 @@ public final class Parallelizer {
    * @since 6.5
    */
   public static Parallelizer newExitingParallelizer(int maxInFlight) {
+    AtomicInteger threadCount = new AtomicInteger();
     return new Parallelizer(
         Executors.newFixedThreadPool(
             maxInFlight,
             runnable -> {
               Thread thread = new Thread(runnable);
               thread.setDaemon(true);
-              thread.setName("ExitingParallelizer@" + thread.hashCode());
+              thread.setName("ExitingParallelizer#" + threadCount.getAndIncrement());
               return thread;
             }),
         maxInFlight);
