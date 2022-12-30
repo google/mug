@@ -318,31 +318,21 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * @since 3.0
-   * @deprecated use {@link #flattening} instead
-   */
-  @Deprecated
-  public static <T, K, V> Collector<T, ?, BiStream<K, V>> concatenating(
-      Function<? super T, ? extends BiStream<? extends K, ? extends V>> toBiStream) {
-    return flattening(toBiStream);
-  }
-
-  /**
-   * Returns a {@code Collector} that flattens {@code BiStream} objects derived from the input
+   * Returns a {@code Collector} that concatenates {@code BiStream} objects derived from the input
    * elements using the given {@code toBiStream} function.
    *
    * <p>For example:
    *
    * <pre>{@code
    * Map<EmployeeId, Task> billableTaskAssignments = projects.stream()
-   *     .collect(flattening(p -> BiStream.from(p.getTaskAssignments())))
+   *     .collect(concatenating(p -> BiStream.from(p.getTaskAssignments())))
    *     .filterValues(Task::billable)
    *     .toMap();
    * }</pre>
    *
    * @since 3.0
    */
-  public static <T, K, V> Collector<T, ?, BiStream<K, V>> flattening(
+  public static <T, K, V> Collector<T, ?, BiStream<K, V>> concatenating(
       Function<? super T, ? extends BiStream<? extends K, ? extends V>> toBiStream) {
     return collectingAndThen(stream -> concat(stream.map(toBiStream)));
   }

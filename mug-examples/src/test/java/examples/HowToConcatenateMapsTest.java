@@ -2,7 +2,7 @@ package examples;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.util.stream.BiStream.concat;
-import static com.google.mu.util.stream.BiStream.flattening;
+import static com.google.mu.util.stream.BiStream.concatenating;
 
 import java.util.Map;
 import java.util.function.Function;
@@ -53,7 +53,7 @@ public class HowToConcatenateMapsTest {
     Stream<Map<String, Integer>> stream = Stream.of(
         ImmutableMap.of("one", 1, "two", 2), ImmutableMap.of("uno", 1, "dos", 2));
     Map<String, Integer> combined = stream
-        .collect(flattening(BiStream::from))
+        .collect(concatenating(BiStream::from))
         .toMap();
     assertThat(combined).containsExactly("one", 1, "uno", 1, "two", 2, "dos", 2);
   }
