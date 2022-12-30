@@ -14,12 +14,16 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.mu.util.stream.BiStream.groupingBy;
 import static com.google.mu.util.stream.MoreCollectors.mapping;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.collectingAndThen;
 
 import java.util.Comparator;
+import java.util.Map;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -41,6 +45,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Tables;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.mu.util.Both;
 
 /**
@@ -356,6 +361,171 @@ public final class GuavaCollectors {
       Function<? super T, ? extends Both<? extends K, ? extends V>> mapper) {
     return mapping(mapper, toImmutableBiMap());
   }
+
+  /**
+   * Returns a collector that first maps each input into a key-value pair, and then collects them
+   * into a {@link ImmutableListMultimap}.
+   *
+   * <p>Inconsistent (unequal) values mapped to the same key (according to {@link
+   * Object#equals(Object)}) will throw {@link IllegalArgumentException}, Duplicate (equal) values
+   * mapped to the same key will be ignored. Entries will appear in the encounter order of the first
+   * occurrence of the key.
+   *
+   * @since 6.6
+   */
+  public static <T, K, V>
+      Collector<T, ?, ImmutableMap<K, V>> toImmutableMapIgnoringDuplicateEntries(
+          Function<? super T, ? extends Both<? extends K, ? extends V>> mapper) {
+    return mapping(mapper, GuavaCollectors::toImmutableMapIgnoringDuplicateEntries);
+  }
+
+  /**
+   * Returns a collector that maps each value into a row-key and column-key for a table, and then
+   * collects all values mapped to the same cell using {@code cellCollector}. For example:
+   *
+   * <pre>{@code
+   * ImmutableTable<State, County, ImmutableSet<City>> citiesByStateAndCounty =
+   *     cities.stream().collect(
+   *         toImmutableTable(City::state, City::county, toImmutableSet());
+   * }</pre>
+   *
+   * <p>To transform values before they are collected, use {@link Collectors#mapping}. For more
+   * complex operations on row- or column-keys, look at {@link BiStream#groupingBy}. For collectors
+   * that throw or merge when values map to the same cell, see {@link
+   * ImmutableTable#toImmutableTable}.
+   *
+   * @since 6.6
+   */
+  public static <T, R, C, V> Collector<T, ?, ImmutableTable<R, C, V>> toImmutableTable(
+      Function<? super T, ? extends R> rowFunction,
+      Function<? super T, ? extends C> columnFunction,
+      Collector<T, ?, V> cellCollector) {
+    return collectingAndThen(
+        groupingBy(rowFunction, groupingBy(columnFunction, cellCollector)),
+        grouped -> grouped.collect(toImmutableTable()));
+  }
+
+  /**
+   * Returns a {@link Collector} that accumulates elements into an {@code ImmutableMap} whose keys
+   * and values are the result of applying the provided mapping functions to the input elements.
+   *
+   * <p>Inconsistent (unequal) values mapped to the same key (according to {@link
+   * Object#equals(Object)}) will throw {@link IllegalArgumentException}, Duplicate (equal) values
+   * mapped to the same key will be ignored. Entries will appear in the encounter order of the first
+   * occurrence of the key.
+   *
+   * @since 6.6
+   */
+  public static <T, K, V>
+      Collector<T, ?, ImmutableMap<K, V>> toImmutableMapIgnoringDuplicateEntries(
+          Function<? super T, ? extends K> toKey, Function<? super T, ? extends V> toValue) {
+    requireNonNull(toKey);
+    requireNonNull(toValue);
+    // Use a custom collector to be able to report the offending key without having to invoke the
+    // toKey and toValue functions more than once (except when reporting the exception message).
+    class ConsistentMapping {
+      private T entry;
+      private V value;
+
+      void add(T entry) {
+        V newValue = requireNonNull(toValue.apply(entry), "Null value disallowed");
+        if (value == null) {
+          this.entry = entry;
+          this.value = newValue;
+        } else if (!value.equals(newValue)) {
+          throw new IllegalArgumentException(
+              "Key <"
+                  + toKey.apply(entry)
+                  + "> is mapped to more than one values: <"
+                  + value
+                  + "> vs. <"
+                  + newValue
+                  + ">");
+        }
+      }
+
+      @CanIgnoreReturnValue
+      ConsistentMapping merge(ConsistentMapping that) {
+        if (that.value != null) {
+          add(that.entry);
+        }
+        return this;
+      }
+
+      V getValue() {
+        checkState(value != null);
+        return value;
+      }
+    }
+
+    return collectingAndThen(
+        BiStream.<T, K, V>groupingBy(
+            toKey,
+            Collector.of(
+                ConsistentMapping::new,
+                ConsistentMapping::add,
+                ConsistentMapping::merge,
+                ConsistentMapping::getValue)),
+        stream -> stream.collect(toImmutableMap()));
+  }
+
+  /**
+   * Returns a {@link Collector} that extracts the keys and values through the given {@code
+   * keyFunction} and {@code valueFunction} respectively, and then collects them into a mutable
+   * {@code Map} created by {@code mapSupplier}.
+   *
+   * <p>Duplicate keys will cause {@link IllegalArgumentException} to be thrown, with the offending
+   * key reported in the error message.
+   *
+   * <p>Null keys and values are discouraged but supported as long as the result {@code Map}
+   * supports them. Thus this method can be used as a workaround of the <a
+   * href="https://bugs.openjdk.java.net/browse/JDK-8148463">toMap(Supplier) JDK bug</a> that fails
+   * to support null values.
+   *
+   * @since 6.6
+   */
+  public static <T, K, V, M extends Map<K, V>> Collector<T, ?, M> toMap(
+      Function<? super T, ? extends K> keyFunction,
+      Function<? super T, ? extends V> valueFunction,
+      Supplier<? extends M> mapSupplier) {
+    requireNonNull(keyFunction);
+    requireNonNull(valueFunction);
+    requireNonNull(mapSupplier);
+    final class Builder {
+      private final M map = requireNonNull(mapSupplier.get(), "mapSupplier must not return null");
+      private boolean hasNull;
+
+      void add(K key, V value) {
+        if (hasNull) { // Existence of null values requires 2 lookups to check for duplicates.
+          if (map.containsKey(key)) {
+            throw new IllegalArgumentException("Duplicate key: [" + key + "]");
+          }
+          map.put(key, value);
+        } else { // The Map doesn't have null. putIfAbsent() == null means no duplicates.
+          if (map.putIfAbsent(key, value) != null) {
+            throw new IllegalArgumentException("Duplicate key: [" + key + "]");
+          }
+          if (value == null) {
+            hasNull = true;
+          }
+        }
+      }
+
+      void add(T input) {
+        add(keyFunction.apply(input), valueFunction.apply(input));
+      }
+
+      Builder addAll(Builder that) {
+        return BiStream.from(that.map).collect(this, Builder::add);
+      }
+
+      M build() {
+        return map;
+      }
+    }
+    return Collector.of(Builder::new, Builder::add, Builder::addAll, Builder::build);
+  }
+
 
   /**
    * Returns a collector that partitions the incoming elements into two groups: elements that

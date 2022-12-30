@@ -14,6 +14,7 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.collect.Immutables.list;
 import static com.google.mu.collect.Immutables.map;
@@ -28,15 +29,19 @@ import static com.google.mu.util.stream.GuavaCollectors.partitioningBy;
 import static com.google.mu.util.stream.GuavaCollectors.toImmutableBiMap;
 import static com.google.mu.util.stream.GuavaCollectors.toImmutableListMultimap;
 import static com.google.mu.util.stream.GuavaCollectors.toImmutableMap;
+import static com.google.mu.util.stream.GuavaCollectors.toImmutableMapIgnoringDuplicateEntries;
 import static com.google.mu.util.stream.GuavaCollectors.toImmutableMultiset;
 import static com.google.mu.util.stream.GuavaCollectors.toImmutableSetMultimap;
 import static com.google.mu.util.stream.GuavaCollectors.toImmutableSortedMap;
 import static com.google.mu.util.stream.GuavaCollectors.toImmutableTable;
+import static com.google.mu.util.stream.GuavaCollectors.toMap;
 import static com.google.mu.util.stream.GuavaCollectors.toMultimap;
 import static java.util.Comparator.naturalOrder;
 import static java.util.stream.Collectors.summingInt;
 import static java.util.stream.Collectors.toList;
+import static org.junit.Assert.assertThrows;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -48,6 +53,7 @@ import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.ImmutableTable;
 import com.google.common.collect.TreeMultimap;
@@ -271,6 +277,100 @@ public class GuavaCollectorsTest {
     assertThat(oddEven.andThen((ImmutableList<Integer> odd, ImmutableList<Integer> even) -> even))
         .containsExactly(2)
         .inOrder();
+  }
+
+  @Test public void testToImmutableMapIgnoringDuplicateEntries_equalValuesMappedToSameKeyIgnored() {
+    assertThat(
+            Stream.of(1, 1)
+                .collect(toImmutableMapIgnoringDuplicateEntries(k -> k, Object::toString)))
+        .containsExactly(1, "1");
+  }
+
+  @Test public void testToImmutableMapIgnoringDuplicateEntries_equalValuesMappedToDifferentKeysAreFine() {
+    assertThat(
+            Stream.of(1, 2)
+                .collect(toImmutableMapIgnoringDuplicateEntries(k -> k, Object::toString)))
+        .containsExactly(1, "1", 2, "2");
+  }
+
+  @Test public void
+      testToImmutableMapIgnoringDuplicateEntries_unequalValuesMappedToEqualKeysAreRejected() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Stream.of(1, 2).collect(toImmutableMapIgnoringDuplicateEntries(k -> 0, v -> v)));
+  }
+
+  @Test public void testToImmutableMapIgnoringDuplicateEntries_fromPairs() {
+    String input = "k1=v1,k2=v2,k2=v2";
+    ImmutableMap<String, String> kvs =
+        first(',')
+            .repeatedly()
+            .split(input)
+            .collect(
+                toImmutableMapIgnoringDuplicateEntries(s -> first('=').split(s).orElseThrow()));
+    assertThat(kvs).containsExactly("k1", "v1", "k2", "v2").inOrder();
+  }
+
+  @Test public void testToImmutableMapIgnoringDuplicateEntries_fromPairs_inconsistentMapping() {
+    String input = "k1=v1,k2=v2,k2=v3";
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                first(',')
+                    .repeatedly()
+                    .split(input)
+                    .collect(
+                        toImmutableMapIgnoringDuplicateEntries(
+                            s -> first('=').split(s).orElseThrow())));
+    assertThat(thrown.getMessage())
+        .contains("Key <k2> is mapped to more than one values: <v2> vs. <v3>");
+  }
+
+  @Test public void testToImmutableMapIgnoringDuplicateEntries_asBiCollector_inconsistentMapping() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                BiStream.zip(Stream.of("k1", "k2", "k1", "k2"), Stream.of("v1", "v2", "v1", "v3"))
+                    .collect(GuavaCollectors::toImmutableMapIgnoringDuplicateEntries));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("Key <k2> is mapped to more than one values: <v2> vs. <v3>");
+  }
+
+  @Test public void testToImmutableMapIgnoringDuplicateEntries_nullValueDisallowed() {
+    assertThrows(
+        NullPointerException.class,
+        () -> Stream.of(1, 2).collect(toImmutableMapIgnoringDuplicateEntries(k -> 0, v -> null)));
+  }
+
+  @Test public void testToImmutableTable_mappings() {
+    ImmutableTable<?,?, ?> table =
+        Stream.of("x")
+            .collect(
+                toImmutableTable(
+                    s -> s + "-row", s -> s + "-col", toImmutableSet()));
+    assertThat(table).isEqualTo(ImmutableTable.of("x-row", "x-col", ImmutableSet.of("x")));
+  }
+
+  @Test public void testToImmutableTable_empty() {
+    ImmutableTable<?,?, ?> table =
+        Stream.of().collect(toImmutableTable(s -> s, s -> s, toImmutableSet()));
+    assertThat(table).isEmpty();
+  }
+
+  @Test public void testToImmutableTable_collecting() {
+    ImmutableTable<?,?, ?> table =
+        Stream.of("x", "y", "z")
+            .collect(toImmutableTable(s -> "row", s -> "col", toImmutableSet()));
+    assertThat(table).isEqualTo(ImmutableTable.of("row", "col", ImmutableSet.of("x", "y", "z")));
+  }
+
+  @Test public void testToMap_withMapSupplier() {
+    LinkedHashMap<String, Integer> map =
+        Stream.of(1, 2).collect(toMap(Object::toString, i -> i * 10, LinkedHashMap::new));
+    assertThat(map).containsExactly("1", 10, "2", 20).inOrder();
   }
 
   @Test public void testNulls() throws Exception {

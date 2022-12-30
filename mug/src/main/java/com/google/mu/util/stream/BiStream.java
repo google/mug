@@ -223,6 +223,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    */
   public static <T, K, V> Collector<T, ?, BiStream<K, V>> groupingBy(
       Function<? super T, ? extends K> classifier, Collector<? super T, ?, V> valueCollector) {
+    requireNonNull(classifier);
     Collector<T, ?, Map<K, V>> grouping =
         Collectors.groupingBy(classifier, LinkedHashMap::new, valueCollector);
     return collectingAndThen(grouping, BiStream::from);
