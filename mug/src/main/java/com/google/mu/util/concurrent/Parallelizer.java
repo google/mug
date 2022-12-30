@@ -30,12 +30,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -48,20 +50,21 @@ import java.util.stream.StreamSupport;
 import com.google.mu.util.stream.BiStream;
 
 /**
- * An <em>{@code Executor}-friendly</em>, <em>interruptible</em> alternative to parallel streams.
+ * Utility to support <a href="https://en.wikipedia.org/wiki/Structured_concurrency">structured
+ * concurrency</a> for <em>IO-bound</em> subtasks of a single unit of work, while limiting the max
+ * concurrency.
  *
- * <p>Designed for <em>IO-bound</em> (as opposed to CPU-bound) use cases, this utility allows
- * running a (large) stream of IO-bound sub-tasks in parallel while limiting the max concurrency.
+ * <p>For example, the following code saves a stream of {@code UserData} in parallel with at most 3
+ * concurrent RPC calls at the same time:
  *
- * <p>For example, the following code saves a stream of {@code UserData} in parallel with at most
- * 3 concurrent RPC calls at the same time: <pre>  {@code
- *   new Parallelizer(executor, 3)
- *       .parallelize(userDataStream.filter(UserData::isModified), userService::save);
+ * <pre>{@code
+ * new Parallelizer(executor, 3)
+ *     .parallelize(userDataStream.filter(UserData::isModified), userService::save);
  * }</pre>
  *
- * <p>Like parallel streams (and unlike executors), these sub-tasks are considered integral parts
- * of one logical task. Failure of any sub-task aborts the entire task, automatically.
- * If an exception isn't fatal, the sub-task should catch and handle it.
+ * <p>Similar to parallel streams (and unlike executors), these sub-tasks are considered integral
+ * parts of one unit of work. Failure of any sub-task aborts the entire work, automatically. If an
+ * exception isn't fatal, the sub-task should catch and handle it.
  *
  * <p>How does it stack against parallel stream itself?
  * The parallel stream counterpart to the above example use case may look like:
@@ -163,6 +166,28 @@ public final class Parallelizer {
     this.executor = requireNonNull(executor);
     this.maxInFlight = maxInFlight;
     if (maxInFlight <= 0) throw new IllegalArgumentException("maxInFlight = " + maxInFlight);
+  }
+
+  /*
+   * Returns a new {@link Parallelizer} based on an ExecutorService that exits when the application
+   * is complete. It does so by using daemon threads.
+   *
+   * <p>Typically used by the {@code main()} method or as a static final field.
+   *
+   * @since 6.5
+   */
+  public static Parallelizer newDaemonParallelizer(int maxInFlight) {
+    AtomicInteger threadCount = new AtomicInteger();
+    return new Parallelizer(
+        Executors.newFixedThreadPool(
+            maxInFlight,
+            runnable -> {
+              Thread thread = new Thread(runnable);
+              thread.setDaemon(true);
+              thread.setName("DaemonParallelizer#" + threadCount.getAndIncrement());
+              return thread;
+            }),
+        maxInFlight);
   }
 
   /**
@@ -397,13 +422,30 @@ public final class Parallelizer {
 
   /**
    * Returns a {@link Collector} that runs {@code concurrentFunction} in parallel using this {@code
-   * Parallelizer} and returns the inputs and outputs in a {@link BiStream}.
+   * Parallelizer} and returns the inputs and outputs in a {@link BiStream}, in encounter order of
+   * the input elements.
    *
    * <p>For example: <pre>{@code
    * ImmutableListMultimap<String, Asset> resourceAssets =
    *     resources.stream()
    *         .collect(parallelizer.inParallel(this::listAssets))
    *         .collect(flatteningToImmutableListMultimap(List::stream));
+   * }</pre>
+   *
+   * <p>In Java 20 using structured concurrency, it can be implemented equivalently as in:
+   * <pre>{@code
+   * ImmutableListMultimap<String, Asset> resourceAssets;
+   * try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+   *   ImmutableList<Future<?>> results =
+   *       resources.stream()
+   *           .map(resource -> scope.fork(() -> listAssets(resource)))
+   *           .collect(toImmutableList());
+   *   scope.join();
+   *   resourceAssets =
+   *       BiStream.zip(resources, results)
+   *           .mapValues(Future::resultNow)
+   *           .collect(flatteningToImmutableListMultimap(List::stream));
+   * }
    * }</pre>
    *
    * @param concurrentFunction a function that's safe to be run concurrently, and is usually
@@ -464,11 +506,20 @@ public final class Parallelizer {
         } catch (Throwable e) {
           ConcurrentLinkedQueue<Throwable> toPropagate = thrown;
           if (toPropagate == null) {
-            // The main thread propagates exceptions as soon as any task fails.
-            // If a task did not respond in time and yet fails afterwards, the main thread has
-            // already thrown and nothing will propagate this exception.
-            // So just log it as best effort.
-            logger.log(Level.WARNING, "Orphan task failure", e);
+            if (Thread.currentThread().isInterrupted()) {
+              // If we are cancelled (and interrupted), the exception is likely due to the
+              // cancellation. Don't log the noisy stack trace.
+              logger.info(
+                  String.format(
+                      "worker thread (%s) interrupted - %s",
+                      Thread.currentThread().getName(), e.getMessage()));
+            } else {
+              // The main thread propagates exceptions as soon as any task fails.
+              // If a task did not respond in time and yet fails afterwards, the main thread has
+              // already thrown and nothing will propagate this exception.
+              // So just log it as best effort.
+              logger.log(Level.WARNING, "Orphan task failure", e);
+            }
           } else {
             // Upon race condition, the exception may be added while the main thread is propagating.
             // It's ok though since the best we could have done is logging.

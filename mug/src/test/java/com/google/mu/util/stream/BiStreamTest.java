@@ -21,7 +21,7 @@ import static com.google.mu.util.Optionals.optional;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.BiStream.crossJoining;
-import static com.google.mu.util.stream.BiStream.flattening;
+import static com.google.mu.util.stream.BiStream.concatenating;
 import static com.google.mu.util.stream.BiStream.groupingByEach;
 import static com.google.mu.util.stream.BiStream.toAdjacentPairs;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
@@ -738,7 +738,7 @@ public class BiStreamTest {
   @Test public void testToBiStreamFromSplit() {
     assertThat(Stream.of("name=joe", "age=10")
             .map(Substring.first('=')::split)
-            .collect(flattening(BiOptional::stream))
+            .collect(concatenating(BiOptional::stream))
             .collect(toImmutableListMultimap()))
         .containsExactly("name", "joe", "age", "10")
         .inOrder();
@@ -904,21 +904,21 @@ public class BiStreamTest {
   @Test public void testFlattening_emptyStream() {
     assertThat(
             Stream.<ImmutableMap<Integer, String>>empty()
-                .collect(flattening(BiStream::from))
+                .collect(concatenating(BiStream::from))
                 .toMap())
         .isEmpty();
   }
 
   @Test public void testFlattening_nestedBiStreamsNotConsumed() {
     BiStream<Integer, String> nested = BiStream.of(1, "one");
-    assertThat(Stream.of(nested).collect(BiStream.flattening(identity()))).isNotNull();
+    assertThat(Stream.of(nested).collect(BiStream.concatenating(identity()))).isNotNull();
     assertKeyValues(nested).containsExactly(1, "one").inOrder();
   }
 
   @Test public void testFlattening() {
     assertThat(
             Stream.of(ImmutableMap.of(1, "one"), ImmutableMap.of(2, "two"))
-                .collect(flattening(BiStream::from))
+                .collect(concatenating(BiStream::from))
                 .toMap())
         .containsExactly(1, "one", 2, "two")
         .inOrder();
