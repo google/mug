@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
-import java.util.function.Function;
 
 /**
  * Represents two unrelated or loosely-related things of type {@code A} and {@code B}.
@@ -70,8 +69,7 @@ import java.util.function.Function;
  * <p>Intended as a short-lived intermediary type in a fluent expression (e.g. from {@link
  * com.google.mu.util.stream.MoreCollectors#partitioningBy}, {@link
  * Substring.Pattern#split}), it's expected that you can either chain fluently using {@link
- * #andThen}, {@link #filter}, or directly pass it to common libraries such as {@link
- * com.google.mu.util.stream.MoreCollectors#toImmutableMap(Function)} without needing to
+ * #andThen}, {@link #filter}, or directly pass it to common libraries without needing to
  * extract the two values. If you really have to extract the two values individually though,
  * consider using {@link #toEntry} and then call the {@link Map.Entry#getKey} and {@link
  * Map.Entry#getValue} methods to access them. For example:
