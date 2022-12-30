@@ -68,7 +68,7 @@ import java.util.function.Function;
  * }</pre>
  *
  * <p>Intended as a short-lived intermediary type in a fluent expression (e.g. from {@link
- * com.google.common.labs.collect.EvenMoreCollectors#partitioningBy}, {@link
+ * com.google.mu.util.stream.MoreCollectors#partitioningBy}, {@link
  * Substring.Pattern#split}), it's expected that you can either chain fluently using {@link
  * #andThen}, {@link #filter}, or directly pass it to common libraries such as {@link
  * com.google.mu.util.stream.MoreCollectors#toImmutableMap(Function)} without needing to
