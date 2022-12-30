@@ -34,14 +34,12 @@ import static com.google.mu.util.stream.GuavaCollectors.toImmutableMultiset;
 import static com.google.mu.util.stream.GuavaCollectors.toImmutableSetMultimap;
 import static com.google.mu.util.stream.GuavaCollectors.toImmutableSortedMap;
 import static com.google.mu.util.stream.GuavaCollectors.toImmutableTable;
-import static com.google.mu.util.stream.GuavaCollectors.toMap;
 import static com.google.mu.util.stream.GuavaCollectors.toMultimap;
 import static java.util.Comparator.naturalOrder;
 import static java.util.stream.Collectors.summingInt;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertThrows;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -365,12 +363,6 @@ public class GuavaCollectorsTest {
         Stream.of("x", "y", "z")
             .collect(toImmutableTable(s -> "row", s -> "col", toImmutableSet()));
     assertThat(table).isEqualTo(ImmutableTable.of("row", "col", ImmutableSet.of("x", "y", "z")));
-  }
-
-  @Test public void testToMap_withMapSupplier() {
-    LinkedHashMap<String, Integer> map =
-        Stream.of(1, 2).collect(toMap(Object::toString, i -> i * 10, LinkedHashMap::new));
-    assertThat(map).containsExactly("1", 10, "2", 20).inOrder();
   }
 
   @Test public void testNulls() throws Exception {

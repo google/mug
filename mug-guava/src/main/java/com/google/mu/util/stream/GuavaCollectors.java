@@ -23,7 +23,6 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.collectingAndThen;
 
 import java.util.Comparator;
-import java.util.Map;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -467,63 +466,6 @@ public final class GuavaCollectors {
                 ConsistentMapping::merge,
                 ConsistentMapping::getValue)),
         stream -> stream.collect(toImmutableMap()));
-  }
-
-  /**
-   * Returns a {@link Collector} that extracts the keys and values through the given {@code
-   * keyFunction} and {@code valueFunction} respectively, and then collects them into a mutable
-   * {@code Map} created by {@code mapSupplier}.
-   *
-   * <p>Duplicate keys will cause {@link IllegalArgumentException} to be thrown, with the offending
-   * key reported in the error message.
-   *
-   * <p>Null keys and values are discouraged but supported as long as the result {@code Map}
-   * supports them. Thus this method can be used as a workaround of the <a
-   * href="https://bugs.openjdk.java.net/browse/JDK-8148463">toMap(Supplier) JDK bug</a> that fails
-   * to support null values.
-   *
-   * @since 6.6
-   */
-  public static <T, K, V, M extends Map<K, V>> Collector<T, ?, M> toMap(
-      Function<? super T, ? extends K> keyFunction,
-      Function<? super T, ? extends V> valueFunction,
-      Supplier<? extends M> mapSupplier) {
-    requireNonNull(keyFunction);
-    requireNonNull(valueFunction);
-    requireNonNull(mapSupplier);
-    final class Builder {
-      private final M map = requireNonNull(mapSupplier.get(), "mapSupplier must not return null");
-      private boolean hasNull;
-
-      void add(K key, V value) {
-        if (hasNull) { // Existence of null values requires 2 lookups to check for duplicates.
-          if (map.containsKey(key)) {
-            throw new IllegalArgumentException("Duplicate key: [" + key + "]");
-          }
-          map.put(key, value);
-        } else { // The Map doesn't have null. putIfAbsent() == null means no duplicates.
-          if (map.putIfAbsent(key, value) != null) {
-            throw new IllegalArgumentException("Duplicate key: [" + key + "]");
-          }
-          if (value == null) {
-            hasNull = true;
-          }
-        }
-      }
-
-      void add(T input) {
-        add(keyFunction.apply(input), valueFunction.apply(input));
-      }
-
-      Builder addAll(Builder that) {
-        return BiStream.from(that.map).collect(this, Builder::add);
-      }
-
-      M build() {
-        return map;
-      }
-    }
-    return Collector.of(Builder::new, Builder::add, Builder::addAll, Builder::build);
   }
 
 
