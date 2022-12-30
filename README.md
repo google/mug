@@ -47,9 +47,9 @@ Guava add-ons:
 
 Add to build.gradle:
 ```
-  implementation 'com.google.mug:mug:6.4'
-  implementation 'com.google.mug:mug-guava:6.4'
-  implementation 'com.google.mug:mug-protobuf:6.4'
+  implementation 'com.google.mug:mug:6.5'
+  implementation 'com.google.mug:mug-guava:6.5'
+  implementation 'com.google.mug:mug-protobuf:6.5'
 ```
 
 
