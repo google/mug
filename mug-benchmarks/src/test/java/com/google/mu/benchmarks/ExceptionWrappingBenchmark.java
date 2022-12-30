@@ -22,9 +22,13 @@ import com.google.common.testing.SerializableTester;
 import com.google.common.util.concurrent.Futures;
 import com.google.mu.util.Maybe;
 
-public class ExceptionWrappingBenchmark {
+/**
+ * Benchmarks for checking and throwing exceptions.
+ */
+public class ExceptionBenchmark {
 
   @Benchmark
+    // Benchmark for Futures#getChecked.
   void futuresGetChecked(int n) {
     IOException exception = new IOException();
     CompletableFuture<?> future = new CompletableFuture<>();
@@ -33,10 +37,15 @@ public class ExceptionWrappingBenchmark {
       try {
         Futures.getChecked(future, IOException.class);
         throw new AssertionError();
-      } catch (IOException expected) {}
+      } catch (IOException rethrow) {
+        throw new AssertionError(rethrow); // rethrow the exception with a more descriptive message
+      } catch (Exception e) {
+        throw new AssertionError(e); // handle other exceptions in some other way
+      }
     }
   }
 
+    // Benchmark for Maybe#orElseThrow.
   @Benchmark
   void maybeGet(int n) {
     IOException exception = new IOException();
@@ -44,12 +53,17 @@ public class ExceptionWrappingBenchmark {
       try {
         Maybe.except(exception).orElseThrow();
         throw new AssertionError();
-      } catch (IOException expected) {}
+      } catch (IOException rethrow) {
+        throw new AssertionError(rethrow); // rethrow the exception with a more descriptive message
+      } catch (Exception e) {
+        throw new AssertionError(e); // handle other exceptions in some other way
+      }
     }
   }
 
   @Benchmark
-  void reserializeException(int n) {
+  void serializeException(int n) {
+    // Benchmark for serializing an exception.
     IOException exception = new IOException();
     for (int i = 0; i < n; i++) {
       SerializableTester.reserialize(exception);
@@ -57,11 +71,13 @@ public class ExceptionWrappingBenchmark {
   }
 
   @Benchmark
-  void reserializeString(int n) {
-    String string = new String("abc");
+  void serializeString(int n) {
+    // Benchmark for serializing a string.
+    String string = "abc";
     for (int i = 0; i < n; i++) {
       SerializableTester.reserialize(string);
     }
+    // Benchmark for wrapping an exception.
   }
 
   @Benchmark
@@ -71,10 +87,15 @@ public class ExceptionWrappingBenchmark {
       try {
         Maybe.except(exception).orElseThrow(IOException::new);
         throw new AssertionError();
-      } catch (IOException expected) {}
+      } catch (IOException rethrow) {
+        throw new AssertionError(rethrow); // rethrow the exception with a more descriptive message
+      } catch (Exception e) {
+        throw new AssertionError(e); // handle other exceptions in some other way
+      }
     }
   }
 
+    // Benchmark for not wrapping an exception.
   @Benchmark
   void noWrapper(int n) {
     IOException exception = new IOException();
@@ -82,7 +103,11 @@ public class ExceptionWrappingBenchmark {
       try {
         Maybe.except(exception).orElseThrow(e -> e);
         throw new AssertionError();
-      } catch (IOException expected) {}
+      } catch (IOException rethrow) {
+        throw new AssertionError(rethrow); // rethrow the exception with a more descriptive message
+      } catch (Exception e) {
+        throw new AssertionError(e); // handle other exceptions in some other way
+      }
     }
   }
 }
