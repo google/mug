@@ -168,7 +168,7 @@ public final class Parallelizer {
     if (maxInFlight <= 0) throw new IllegalArgumentException("maxInFlight = " + maxInFlight);
   }
 
-  /*
+  /**
    * Returns a new {@link Parallelizer} based on an ExecutorService that exits when the application
    * is complete. It does so by using daemon threads.
    *
