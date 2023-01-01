@@ -24,6 +24,11 @@ public class BothTest {
     assertThat(both(1, 1).filter(Object::equals)).isEqualTo(BiOptional.of(1, 1));
   }
 
+  @Test public void skipIf() {
+    assertThat(both(1, 1).skipIf(Object::equals)).isEqualTo(BiOptional.empty());
+    assertThat(both(1, 2).skipIf(Object::equals)).isEqualTo(BiOptional.of(1, 2));
+  }
+
   @Test public void peek() {
     AtomicInteger effect = new AtomicInteger();
     Both<Integer, Integer> b = both(1, 2);

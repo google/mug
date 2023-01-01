@@ -150,6 +150,16 @@ public abstract class BiOptional<A, B> {
   public abstract BiOptional<A, B> filter(BiPredicate<? super A, ? super B> predicate);
 
   /**
+   * If a pair of values is present and matches {@code predicate}, the pair is skipped (returns empty).
+   *
+   * @throws NullPointerException if {@code predicate} is null
+   * @since 6.6
+   */
+  public BiOptional<A, B> skipIf(BiPredicate<? super A, ? super B> predicate) {
+    return filter(predicate.negate());
+  }
+
+  /**
    * Invokes {@code consumer} with the pair if present and returns this object as is.
    *
    * @throws NullPointerException if consumer is null

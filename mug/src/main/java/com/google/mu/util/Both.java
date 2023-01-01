@@ -119,6 +119,16 @@ public interface Both<A, B> {
   }
 
   /**
+   * If the pair matches {@code predicate}, it's skipped (returns empty).
+   *
+   * @throws NullPointerException if {@code predicate} is null
+   * @since 6.6
+   */
+  default BiOptional<A, B> skipIf(BiPredicate<? super A, ? super B> predicate) {
+    return filter(predicate.negate());
+  }
+
+  /**
    * Returns true if the pair matches {@code condition}.
    *
    * @throws NullPointerException if {@code condition} is null

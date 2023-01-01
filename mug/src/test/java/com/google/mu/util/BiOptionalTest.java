@@ -92,6 +92,18 @@ public class BiOptionalTest {
     assertThat(BiOptional.of(1, 2).filter((a, b) -> a < b)).isEqualTo(BiOptional.of(1, 2));
   }
 
+  @Test public void skipIf_empty() {
+    assertThat(BiOptional.empty().skipIf((a, b) -> false)).isEqualTo(BiOptional.empty());
+  }
+
+  @Test public void skipIf_nonEmptyFilteredOut() {
+    assertThat(BiOptional.of(1, 2).skipIf((a, b) -> a < b)).isEqualTo(BiOptional.empty());
+  }
+
+  @Test public void skipIf_nonEmptyFilteredIn() {
+    assertThat(BiOptional.of(1, 2).skipIf((a, b) -> a >= b)).isEqualTo(BiOptional.of(1, 2));
+  }
+
   @Test public void peek_empty() {
     assertThat(BiOptional.empty().peek(consumer)).isEqualTo(BiOptional.empty());
     verifyZeroInteractions(consumer);
