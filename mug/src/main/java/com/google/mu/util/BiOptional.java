@@ -217,6 +217,27 @@ public abstract class BiOptional<A, B> {
   public abstract <E extends Throwable> Both<A, B> orElseThrow(Supplier<E> exceptionSupplier)
       throws E;
 
+  /**
+   * Ensures that the pair must be present or else throws the exception returned by {@code
+   * exceptionFactory} with {@code message} formatted with {@code args} using {@link
+   * Strings#lenientFormat}.
+   *
+   * @throws NullPointerException if {@code exceptionFactory} or {@code message} is null, or if
+   *     {@code exceptionFactory} returns null.
+   * @throws E if the pair is absent.
+   * @since 6.6
+   */
+  public final <E extends Throwable> Both<A, B> orElseThrow(
+      Function<String, E> exceptionFactory, String message, Object... args) throws E {
+    requireNonNull(exceptionFactory);
+    requireNonNull(message);
+    requireNonNull(args);
+    if (isPresent()) {
+      return orElseThrow();
+    }
+    throw exceptionFactory.apply(String.format(message, args));
+  }
+
   /** Returns a {@code BiStream} view of this BiOptional. */
   public abstract BiStream<A, B> stream();
 

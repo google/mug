@@ -270,6 +270,26 @@ public class BiOptionalTest {
         .isTrue();
   }
 
+  @Test
+  public void testOrElseThrow_withMessage_present() {
+    assertThat(BiOptional.of(1, 2).orElseThrow(IllegalStateException::new, "bad"))
+        .isEqualTo(BiOptional.of(1, 2));
+  }
+
+  @Test
+  public void testOrElseThrow_withMessage_npe() {
+    assertThrows(NullPointerException.class, () -> BiOptional.empty().orElseThrow(msg -> null, ""));
+  }
+
+  @Test
+  public void testOrElseThrow_withMessage_empty() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> BiOptional.empty().orElseThrow(IllegalArgumentException::new, "my rank=%s", 1));
+    assertThat(thrown).hasMessageThat().isEqualTo("my rank=1");
+  }
+
   @Test public void testNulls() throws Exception {
     new NullPointerTester().testAllPublicStaticMethods(BiOptional.class);
     testNullChecks(BiOptional.empty());
