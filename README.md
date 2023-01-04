@@ -470,7 +470,8 @@ The above examples are all about "writing". If for example you have a command li
 ```java
 public void main(String[] args) throws Exception {
   Parallelizer parallelizer = Parallelizer.newDaemonParallelizer(10); // at most 10 concurrently
-  Map<String, Picture> pics = CharStreams.readLines(System.in).stream()
+  Map<PictureId, Picture> pics = CharStreams.readLines(System.in).stream()
+      .map(PictureId::parse)
       .distinct()
       .collect(parallelizer.inParallel(picId -> readPictureFromDistributedStorage(picId)))
       .toMap();
