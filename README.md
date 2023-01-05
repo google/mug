@@ -223,7 +223,18 @@ All Optionals utilites propagate checked exception from the the lambda/method re
 
 #### [MoreStreams](https://google.github.io/mug/apidocs/com/google/mu/util/stream/MoreStreams.html)
 
-**Example 1: to split a stream into smaller-size chunks (batches):**
+**Example 1: to group consecutive elements in a stream:**
+
+```java
+List<StockPrice> pricesOrderedByTime = ...;
+
+List<List<StockPrice>> priceSequences =
+    MoreStreams.groupConsecutive(
+            pricesOrderedByTime.stream(), (p1, p2) -> closeEnough(p1, p2), toList())
+        .collect(toList());
+```
+
+**Example 2: to split a stream into smaller-size chunks (batches):**
 
 ```java
 int batchSize = 5;
@@ -232,7 +243,7 @@ MoreStreams.dice(requests, batchSize)
     .forEach(batchClient::sendBatchRequest);
 ```
 
-**Example 2: to iterate over `Stream`s in the presence of checked exceptions or control flow:**
+**Example 3: to iterate over `Stream`s in the presence of checked exceptions or control flow:**
 
 The `Stream` API provides `forEach()` to iterate over a stream, if you don't have to throw checked exceptions.
 
@@ -253,13 +264,13 @@ for (Object obj : iterateOnce(stream)) {
 }
 ```
 
-**Example 3: to generate a BFS stream:**
+**Example 4: to generate a BFS stream:**
 ```java
 Stream<V> bfs = MoreStreams.generate(root, node -> node.children().stream())
     .map(Node::value);
 ```
 
-**Example 4: to merge maps:**
+**Example 5: to merge maps:**
 ```java
 interface Page {
   Map<Day, Long> getTrafficHistogram();
@@ -270,7 +281,7 @@ List<Page> pages = ...;
 // Merge traffic histogram across all pages of the web site
 Map<Day, Long> siteTrafficHistogram = pages.stream()
     .map(Page::getTrafficHistogram)
-    .collect(flatMapping(BiStream::from, groupingBy(day -> day, Long::sum)))
+    .collect(flatteningMaps(groupingBy(day -> day, Long::sum)))
     .toMap();
 ```
 
