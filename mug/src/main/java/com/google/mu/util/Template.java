@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import com.google.mu.util.stream.BiStream;
@@ -79,20 +80,22 @@ public final class Template {
   public BiStream<String, String> parse(String input) {
     return BiStream.zip(
         placeholders.stream().map(Substring.Match::toString),
-        match(input).stream().map(Substring.Match::toString));
+        match(input)
+            .orElseThrow(() -> new IllegalArgumentException("Input doesn't match template (" + pattern + ")"))
+            .stream()
+            .map(Substring.Match::toString));
   }
 
   /**
    * Matches {@code input} against the pattern.
    *
-   * <p>Returns an immutable list of placeholder values in the same order as {@link #placeholders}.
+   * <p>Returns an immutable list of placeholder values in the same order as {@link #placeholders}, upon success;
+   * otherwise returns empty.
    *
    * <p>The {@link Substring.Match} result type allows caller to inspect the characters around each match,
    * or to access the raw index in the input string.
-   *
-   * @throws IllegalArgumentException if {@code input} doesn't match the template
    */
-  public List<Substring.Match> match(String input) {
+  public Optional<List<Substring.Match>> match(String input) {
     Substring.Pattern placeholderValuePattern =
         Substring.leading(placeholderCharMatcher).or(Substring.BEGINNING);
     List<Substring.Match> builder = new ArrayList<>();
@@ -101,7 +104,7 @@ public final class Template {
     for (Substring.Match placeholder : placeholders) {
       int preludeLength = placeholder.index() - templateIndex;
       if (!input.regionMatches(inputIndex, pattern, templateIndex, preludeLength)) {
-        throw new IllegalArgumentException("Input doesn't match template (" + pattern + ")");
+        return Optional.empty();
       }
       templateIndex += preludeLength;
       inputIndex += preludeLength;
@@ -113,19 +116,25 @@ public final class Template {
     int remaining = pattern.length() - templateIndex;
     if (remaining != input.length() - inputIndex
         || !input.regionMatches(inputIndex, pattern, templateIndex, remaining)) {
-      throw new IllegalArgumentException("Input doesn't match template (" + pattern + ")");
+      return Optional.empty();
     }
-    return Collections.unmodifiableList(builder);
+    return Optional.of(Collections.unmodifiableList(builder));
   }
 
   /**
    * Returns the immutable list of placeholders in this template.
    *
    * <p>Each placeholder is-a {@link CharSequence} with extra accessors to the index in this
-   * template string.
+   * template string. Callers can also use, for example, {@code .skip(1, 1)} to easily strip away
+   * the '{' and '}' characters around the placeholder names.
    */
   public List<Substring.Match> placeholders() {
     return placeholders;
+  }
+
+  /** Returns the immutable list of placeholder names in this template. */
+  public List<String> placeholderNames() {
+    return placeholders.stream().map(Substring.Match::toString).collect(toImmutableList());
   }
 
   /** Returns the template pattern. */
