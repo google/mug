@@ -18,7 +18,7 @@ import com.google.mu.util.stream.BiStream;
  * reverse-engineer the placeholder values from a formatted string such as "To Charlie: How are you?":
  *
  * <pre>{@code
- * Template template = new Template("To {recipient}: {question}?", is('?').not());
+ * StringTemplate template = new StringTemplate("To {recipient}: {question}?", is('?').not());
  * Map<String, String> placeholderValues = template.parse("To Charlie: How are you?").toMap();
  * assertThat(placeholderValues)
  *     .containsExactly("{recipient}", "Charlie", "{question}", "How are you");
@@ -29,25 +29,25 @@ import com.google.mu.util.stream.BiStream;
  *
  * @since 6.6
  */
-public final class Template {
+public final class StringTemplate {
   private final String pattern;
   private final List<Substring.Match> placeholders;
   private final List<String> placeholderVariableNames;
   private final CharPredicate placeholderValueCharMatcher;
 
   /**
-   * Constructs a Template
+   * Constructs a StringTemplate
    *
    * @param pattern the template pattern with placeholders in the format of {@code "{placeholder_name}"}
    * @param placeholderValueCharMatcher
    *     the characters that are allowed in each matched placeholder value
    */
-  public Template(String pattern, CharPredicate placeholderValueCharMatcher) {
+  public StringTemplate(String pattern, CharPredicate placeholderValueCharMatcher) {
     this(pattern, Substring.spanningInOrder("{", "}"), placeholderValueCharMatcher);
   }
 
   /**
-   * Constructs a Template
+   * Constructs a StringTemplate
    *
    * @param pattern the template pattern with placeholders
    * @param placeholderVariablePattern
@@ -55,7 +55,7 @@ public final class Template {
    * @param placeholderValueCharMatcher
    *     the characters that are allowed in each matched placeholder value
    */
-  public Template(
+  public StringTemplate(
       String pattern, Substring.Pattern placeholderVariablePattern, CharPredicate placeholderValueCharMatcher) {
     this.pattern = pattern;
     this.placeholders =
