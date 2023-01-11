@@ -72,7 +72,7 @@ public final class Template {
    */
   public BiStream<String, String> parse(String input) {
     return BiStream.zip(
-        placeholders.stream().map(Substring.Match::toString),
+        placeholderVariableNames.stream(),
         match(input)
             .orElseThrow(() -> new IllegalArgumentException("Input doesn't match template (" + pattern + ")"))
             .stream()
