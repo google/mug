@@ -33,47 +33,45 @@ import com.google.mu.util.stream.BiStream;
 public final class Template {
   private final String pattern;
   private final List<Substring.Match> placeholders;
-  private final CharPredicate placeholderCharMatcher;
+  private final List<String> placeholderVariableNames;
+  private final CharPredicate placeholderValueCharMatcher;
 
   /**
    * Constructs a Template
    *
    * @param pattern the template pattern with placeholders in the format of {@code "{placeholder_name}"}
-   * @param placeholderCharMatcher
+   * @param placeholderValueCharMatcher
    *     the characters that are allowed in each matched placeholder value
    * @throws IllegalArgumentException if {@code pattern} includes duplicate placeholders
    */
-  public Template(String pattern, CharPredicate placeholderMatcher) {
-    this(pattern, Substring.spanningInOrder("{", "}"), placeholderMatcher);
+  public Template(String pattern, CharPredicate placeholderValueCharMatcher) {
+    this(pattern, Substring.spanningInOrder("{", "}"), placeholderValueCharMatcher);
   }
 
   /**
    * Constructs a Template
    *
    * @param pattern the template pattern with placeholders
-   * @param placeholderNamePattern
-   *     the pattern of the placeholder names such as {@code Substring.spanningInOrder("[", "]")}.
-   * @param placeholderCharMatcher
+   * @param placeholderVariablePattern
+   *     the pattern of the placeholder variables such as {@code Substring.spanningInOrder("[", "]")}.
+   * @param placeholderValueCharMatcher
    *     the characters that are allowed in each matched placeholder value
    * @throws IllegalArgumentException if {@code pattern} includes duplicate placeholders
    */
   public Template(
-      String pattern, Substring.Pattern placeholderNamePattern, CharPredicate placeholderCharMatcher) {
+      String pattern, Substring.Pattern placeholderVariablePattern, CharPredicate placeholderValueCharMatcher) {
     this.pattern = pattern;
     this.placeholders =
-        placeholderNamePattern.repeatedly().match(pattern).collect(toImmutableList());
-    this.placeholderCharMatcher = requireNonNull(placeholderCharMatcher);
-    Set<String> placeholderNames = new HashSet<>(placeholders.size());
-    for (Substring.Match placeholder : placeholders) {
-      if (!placeholderNames.add(placeholder.toString())) {
-        throw new IllegalArgumentException("Duplicate placeholder (" + placeholder + ")");
-      }
-    }
+        placeholderVariablePattern.repeatedly().match(pattern).collect(toImmutableList());
+    this.placeholderVariableNames =
+        checkPlaceholderVariableNames(
+            placeholders.stream().map(Substring.Match::toString).collect(toImmutableList()));
+    this.placeholderValueCharMatcher = requireNonNull(placeholderValueCharMatcher);
   }
 
   /**
    * Parses {@code input} and extracts all placeholder name-value pairs in a BiStream,
-   * in encounter order.
+   * in the same order as {@link #placeholders}.
    *
    * @throws IllegalArgumentException if {@code input} doesn't match the template
    */
@@ -97,7 +95,7 @@ public final class Template {
    */
   public Optional<List<Substring.Match>> match(String input) {
     Substring.Pattern placeholderValuePattern =
-        Substring.leading(placeholderCharMatcher).or(Substring.BEGINNING);
+        Substring.leading(placeholderValueCharMatcher).or(Substring.BEGINNING);
     List<Substring.Match> builder = new ArrayList<>();
     int templateIndex = 0;
     int inputIndex = 0;
@@ -122,7 +120,7 @@ public final class Template {
   }
 
   /**
-   * Returns the immutable list of placeholders in this template.
+   * Returns the immutable list of placeholders in this template, in occurrence order.
    *
    * <p>Each placeholder is-a {@link CharSequence} with extra accessors to the index in this
    * template string. Callers can also use, for example, {@code .skip(1, 1)} to easily strip away
@@ -132,13 +130,23 @@ public final class Template {
     return placeholders;
   }
 
-  /** Returns the immutable list of placeholder names in this template. */
-  public List<String> placeholderNames() {
-    return placeholders.stream().map(Substring.Match::toString).collect(toImmutableList());
+  /** Returns the immutable list of placeholder variable names in this template, in occurrence order. */
+  public List<String> placeholderVariableNames() {
+    return placeholderVariableNames;
   }
 
   /** Returns the template pattern. */
   @Override public String toString() {
     return pattern;
+  }
+
+  private static List<String> checkPlaceholderVariableNames(List<String> names) {
+    Set<String> distinctNames = new HashSet<>(names.size());
+    for (String name : names) {
+      if (!distinctNames.add(name)) {
+        throw new IllegalArgumentException("Duplicate placeholder variable: " + name);
+      }
+    }
+    return names;
   }
 }
