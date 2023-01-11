@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.testing.ClassSanityTester;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
@@ -27,14 +26,9 @@ public class TemplateTest {
   }
 
   @Test public void parse_multiplePlaceholdersWithSameName() {
-    Template template =
-        new Template("Hello {name} and {name}!", Character::isLetter);
-    ImmutableListMultimap<String, String> result =
-        template.parse("Hello Gandolf and Aragon!")
-            .collect(ImmutableListMultimap::toImmutableListMultimap);
-    assertThat(result)
-        .containsExactly("{name}", "Gandolf", "{name}", "Aragon")
-        .inOrder();
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new Template("Hello {name} and {name}!", Character::isLetter));
   }
 
   @Test public void parse_emptyPlaceholdervalue() {

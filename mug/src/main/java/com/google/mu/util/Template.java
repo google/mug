@@ -5,7 +5,9 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.google.mu.util.stream.BiStream;
 
@@ -38,6 +40,7 @@ public final class Template {
    * @param pattern the template pattern with placeholders in the format of {@code "{placeholder_name}"}
    * @param placeholderCharMatcher
    *     the characters that are allowed in each matched placeholder value
+   * @throws IllegalArgumentException if {@code pattern} includes duplicate placeholders
    */
   public Template(String pattern, CharPredicate placeholderMatcher) {
     this(pattern, Substring.spanningInOrder("{", "}"), placeholderMatcher);
@@ -51,6 +54,7 @@ public final class Template {
    *     the pattern of the placeholder names such as {@code Substring.spanningInOrder("[", "]")}.
    * @param placeholderCharMatcher
    *     the characters that are allowed in each matched placeholder value
+   * @throws IllegalArgumentException if {@code pattern} includes duplicate placeholders
    */
   public Template(
       String pattern, Substring.Pattern placeholderNamePattern, CharPredicate placeholderCharMatcher) {
@@ -58,6 +62,12 @@ public final class Template {
     this.placeholders =
         placeholderNamePattern.repeatedly().match(pattern).collect(toImmutableList());
     this.placeholderCharMatcher = requireNonNull(placeholderCharMatcher);
+    Set<String> placeholderNames = new HashSet<>(placeholders.size());
+    for (Substring.Match placeholder : placeholders) {
+      if (!placeholderNames.add(placeholder.toString())) {
+        throw new IllegalArgumentException("Duplicate placeholder (" + placeholder + ")");
+      }
+    }
   }
 
   /**
@@ -75,7 +85,7 @@ public final class Template {
   /**
    * Matches {@code input} against the pattern.
    *
-   * <p>Returns an immutable list of placeholder values in encounter order.
+   * <p>Returns an immutable list of placeholder values in the same order as {@link #placeholders}.
    *
    * <p>The {@link Substring.Match} result type allows caller to inspect the characters around each match,
    * or to access the raw index in the input string.
