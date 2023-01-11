@@ -128,6 +128,7 @@ public final class Template {
     return placeholders;
   }
 
+  /** Returns the template pattern. */
   @Override public String toString() {
     return pattern;
   }
