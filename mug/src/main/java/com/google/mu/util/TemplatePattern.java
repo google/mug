@@ -33,6 +33,17 @@ public final class TemplatePattern {
   /**
    * Constructs a TemplatePattern.
    *
+   * @param template the template pattern with placeholders in the format of {@code "{placeholder_name}"}
+   * @param placeholderCharMatcher
+   *     the characters that are allowed in each matched placeholder value
+   */
+  public TemplatePattern(String template, CharPredicate placeholderMatcher) {
+    this(template, Substring.spanningInOrder("{", "}"), placeholderMatcher);
+  }
+
+  /**
+   * Constructs a TemplatePattern.
+   *
    * @param template the template pattern with placeholders
    * @param placeholderNamePattern
    *     the pattern of the placeholder names such as {@code Substring.spanningInOrder("[", "]")}.
@@ -48,17 +59,11 @@ public final class TemplatePattern {
   }
 
   /**
-   * Constructs a TemplatePattern.
+   * Parses {@code input} and extracts all placeholder name-value pairs in a BiStream,
+   * in encounter order.
    *
-   * @param template the template pattern with placeholders in the format of {@code "{placeholder_name}"}
-   * @param placeholderCharMatcher
-   *     the characters that are allowed in each matched placeholder value
+   * @throws IllegalArgumentException if {@code input} doesn't match the template
    */
-  public TemplatePattern(String template, CharPredicate placeholderMatcher) {
-    this(template, Substring.spanningInOrder("{", "}"), placeholderMatcher);
-  }
-
-  /** Parses {@code input} and extracts all placeholder name-value pairs in a BiStream, in encounter order. */
   public BiStream<String, String> parse(String input) {
     return match(input).mapKeys(Substring.Match::toString).mapValues(Substring.Match::toString);
   }
@@ -71,6 +76,8 @@ public final class TemplatePattern {
    *
    * <p>The {@link Substring.Match} result type allows caller to inspect the characters around each match,
    * or to access the raw index in the original template or the input.
+   *
+   * @throws IllegalArgumentException if {@code input} doesn't match the template
    */
   public BiStream<Substring.Match, Substring.Match> match(String input) {
     Substring.Pattern placeholderValuePattern =
