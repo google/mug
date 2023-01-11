@@ -25,36 +25,36 @@ import com.google.mu.util.stream.BiStream;
  *
  * @since 6.6
  */
-public final class TemplatePattern {
-  private final String template;
+public final class Template {
+  private final String pattern;
   private final List<Substring.Match> placeholderMatches;
   private final CharPredicate placeholderCharMatcher;
 
   /**
-   * Constructs a TemplatePattern.
+   * Constructs a Template
    *
-   * @param template the template pattern with placeholders in the format of {@code "{placeholder_name}"}
+   * @param pattern the template pattern with placeholders in the format of {@code "{placeholder_name}"}
    * @param placeholderCharMatcher
    *     the characters that are allowed in each matched placeholder value
    */
-  public TemplatePattern(String template, CharPredicate placeholderMatcher) {
-    this(template, Substring.spanningInOrder("{", "}"), placeholderMatcher);
+  public Template(String pattern, CharPredicate placeholderMatcher) {
+    this(pattern, Substring.spanningInOrder("{", "}"), placeholderMatcher);
   }
 
   /**
-   * Constructs a TemplatePattern.
+   * Constructs a Template
    *
-   * @param template the template pattern with placeholders
+   * @param pattern the template pattern with placeholders
    * @param placeholderNamePattern
    *     the pattern of the placeholder names such as {@code Substring.spanningInOrder("[", "]")}.
    * @param placeholderCharMatcher
    *     the characters that are allowed in each matched placeholder value
    */
-  public TemplatePattern(
-      String template, Substring.Pattern placeholderNamePattern, CharPredicate placeholderCharMatcher) {
-    this.template = template;
+  public Template(
+      String pattern, Substring.Pattern placeholderNamePattern, CharPredicate placeholderCharMatcher) {
+    this.pattern = pattern;
     this.placeholderMatches =
-        placeholderNamePattern.repeatedly().match(template).collect(toImmutableList());
+        placeholderNamePattern.repeatedly().match(pattern).collect(toImmutableList());
     this.placeholderCharMatcher = requireNonNull(placeholderCharMatcher);
   }
 
@@ -87,8 +87,8 @@ public final class TemplatePattern {
     int inputIndex = 0;
     for (Substring.Match placeholder : placeholderMatches) {
       int preludeLength = placeholder.index() - templateIndex;
-      if (!input.regionMatches(inputIndex, template, templateIndex, preludeLength)) {
-        throw new IllegalArgumentException("Input doesn't match template (" + template + ")");
+      if (!input.regionMatches(inputIndex, pattern, templateIndex, preludeLength)) {
+        throw new IllegalArgumentException("Input doesn't match template (" + pattern + ")");
       }
       templateIndex += preludeLength;
       inputIndex += preludeLength;
@@ -97,11 +97,15 @@ public final class TemplatePattern {
       templateIndex += placeholder.length();
       inputIndex += placeholderValue.length();
     }
-    int remaining = template.length() - templateIndex;
+    int remaining = pattern.length() - templateIndex;
     if (remaining != input.length() - inputIndex
-        || !input.regionMatches(inputIndex, template, templateIndex, remaining)) {
-      throw new IllegalArgumentException("Input doesn't match template (" + template + ")");
+        || !input.regionMatches(inputIndex, pattern, templateIndex, remaining)) {
+      throw new IllegalArgumentException("Input doesn't match template (" + pattern + ")");
     }
     return builder.build();
+  }
+
+  @Override public String toString() {
+    return pattern;
   }
 }
