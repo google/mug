@@ -1,6 +1,7 @@
 package com.google.mu.util;
 
 import static com.google.mu.util.InternalCollectors.toImmutableList;
+import static com.google.mu.util.Optionals.optional;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
@@ -107,11 +108,10 @@ public final class Template {
       inputIndex += placeholderValue.length();
     }
     int remaining = pattern.length() - templateIndex;
-    if (remaining != input.length() - inputIndex
-        || !input.regionMatches(inputIndex, pattern, templateIndex, remaining)) {
-      return Optional.empty();
-    }
-    return Optional.of(Collections.unmodifiableList(builder));
+    return optional(
+        remaining == input.length() - inputIndex
+            && input.regionMatches(inputIndex, pattern, templateIndex, remaining),
+        Collections.unmodifiableList(builder));
   }
 
   /**
