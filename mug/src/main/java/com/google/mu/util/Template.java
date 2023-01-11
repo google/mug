@@ -14,7 +14,7 @@ import com.google.mu.util.stream.BiStream;
  * reverse-engineer the placeholder values from a formatted string such as "To Charlie: How are you?":
  *
  * <pre>{@code
- * TemplatePattern template = new TemplatePattern("To {recipient}: {question}?", is('?').not());
+ * Template template = new Template("To {recipient}: {question}?", is('?').not());
  * Map<String, String> placeholderValues = template.parse("To Charlie: How are you?").toMap();
  * assertThat(placeholderValues)
  *     .containsExactly("{recipient}", "Charlie", "{question}", "How are you");
