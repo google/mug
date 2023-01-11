@@ -3,6 +3,8 @@ package com.google.mu.util;
 import static com.google.mu.util.InternalCollectors.toImmutableList;
 import static java.util.Objects.requireNonNull;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import com.google.mu.util.stream.BiStream;
@@ -27,7 +29,7 @@ import com.google.mu.util.stream.BiStream;
  */
 public final class Template {
   private final String pattern;
-  private final List<Substring.Match> placeholderMatches;
+  private final List<Substring.Match> placeholders;
   private final CharPredicate placeholderCharMatcher;
 
   /**
@@ -53,7 +55,7 @@ public final class Template {
   public Template(
       String pattern, Substring.Pattern placeholderNamePattern, CharPredicate placeholderCharMatcher) {
     this.pattern = pattern;
-    this.placeholderMatches =
+    this.placeholders =
         placeholderNamePattern.repeatedly().match(pattern).collect(toImmutableList());
     this.placeholderCharMatcher = requireNonNull(placeholderCharMatcher);
   }
@@ -65,27 +67,28 @@ public final class Template {
    * @throws IllegalArgumentException if {@code input} doesn't match the template
    */
   public BiStream<String, String> parse(String input) {
-    return match(input).mapKeys(Substring.Match::toString).mapValues(Substring.Match::toString);
+    return BiStream.zip(
+        placeholders.stream().map(Substring.Match::toString),
+        match(input).stream().map(Substring.Match::toString));
   }
 
   /**
    * Matches {@code input} against the pattern.
    *
-   * <p>Returns each placeholder name and the corresponding placeholder value (both of type {@link Substring.Match} in a BiStream,
-   * in encounter order.
+   * <p>Returns an immutable list of placeholder values in encounter order.
    *
    * <p>The {@link Substring.Match} result type allows caller to inspect the characters around each match,
-   * or to access the raw index in the original template or the input.
+   * or to access the raw index in the input string.
    *
    * @throws IllegalArgumentException if {@code input} doesn't match the template
    */
-  public BiStream<Substring.Match, Substring.Match> match(String input) {
+  public List<Substring.Match> match(String input) {
     Substring.Pattern placeholderValuePattern =
         Substring.leading(placeholderCharMatcher).or(Substring.BEGINNING);
-    BiStream.Builder<Substring.Match, Substring.Match> builder = BiStream.builder();
+    List<Substring.Match> builder = new ArrayList<>();
     int templateIndex = 0;
     int inputIndex = 0;
-    for (Substring.Match placeholder : placeholderMatches) {
+    for (Substring.Match placeholder : placeholders) {
       int preludeLength = placeholder.index() - templateIndex;
       if (!input.regionMatches(inputIndex, pattern, templateIndex, preludeLength)) {
         throw new IllegalArgumentException("Input doesn't match template (" + pattern + ")");
@@ -93,7 +96,7 @@ public final class Template {
       templateIndex += preludeLength;
       inputIndex += preludeLength;
       Substring.Match placeholderValue = placeholderValuePattern.match(input, inputIndex);
-      builder.add(placeholder, placeholderValue);
+      builder.add(placeholderValue);
       templateIndex += placeholder.length();
       inputIndex += placeholderValue.length();
     }
@@ -102,7 +105,17 @@ public final class Template {
         || !input.regionMatches(inputIndex, pattern, templateIndex, remaining)) {
       throw new IllegalArgumentException("Input doesn't match template (" + pattern + ")");
     }
-    return builder.build();
+    return Collections.unmodifiableList(builder);
+  }
+
+  /**
+   * Returns the immutable list of placeholders in this template.
+   *
+   * <p>Each placeholder is-a {@link CharSequence} with extra accessors to the index in this
+   * template string.
+   */
+  public List<Substring.Match> placeholders() {
+    return placeholders;
   }
 
   @Override public String toString() {
