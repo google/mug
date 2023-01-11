@@ -5,15 +5,13 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import com.google.mu.util.stream.BiStream;
 
 /**
- * A utility class to help extract placeholder values from input strings based on a template.
+ * A utility class to extract placeholder values from input strings based on a template.
  *
  * <p>If you have a simple template with placeholder names like "{recipient}", "{question}", you can then
  * reverse-engineer the placeholder values from a formatted string such as "To Charlie: How are you?":
@@ -42,7 +40,6 @@ public final class Template {
    * @param pattern the template pattern with placeholders in the format of {@code "{placeholder_name}"}
    * @param placeholderValueCharMatcher
    *     the characters that are allowed in each matched placeholder value
-   * @throws IllegalArgumentException if {@code pattern} includes duplicate placeholders
    */
   public Template(String pattern, CharPredicate placeholderValueCharMatcher) {
     this(pattern, Substring.spanningInOrder("{", "}"), placeholderValueCharMatcher);
@@ -56,7 +53,6 @@ public final class Template {
    *     the pattern of the placeholder variables such as {@code Substring.spanningInOrder("[", "]")}.
    * @param placeholderValueCharMatcher
    *     the characters that are allowed in each matched placeholder value
-   * @throws IllegalArgumentException if {@code pattern} includes duplicate placeholders
    */
   public Template(
       String pattern, Substring.Pattern placeholderVariablePattern, CharPredicate placeholderValueCharMatcher) {
@@ -64,8 +60,7 @@ public final class Template {
     this.placeholders =
         placeholderVariablePattern.repeatedly().match(pattern).collect(toImmutableList());
     this.placeholderVariableNames =
-        checkPlaceholderVariableNames(
-            placeholders.stream().map(Substring.Match::toString).collect(toImmutableList()));
+        placeholders.stream().map(Substring.Match::toString).collect(toImmutableList());
     this.placeholderValueCharMatcher = requireNonNull(placeholderValueCharMatcher);
   }
 
@@ -138,15 +133,5 @@ public final class Template {
   /** Returns the template pattern. */
   @Override public String toString() {
     return pattern;
-  }
-
-  private static List<String> checkPlaceholderVariableNames(List<String> names) {
-    Set<String> distinctNames = new HashSet<>(names.size());
-    for (String name : names) {
-      if (!distinctNames.add(name)) {
-        throw new IllegalArgumentException("Duplicate placeholder variable: " + name);
-      }
-    }
-    return names;
   }
 }
