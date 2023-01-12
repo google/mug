@@ -1,6 +1,7 @@
 package com.google.mu.util;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.Test;
@@ -12,6 +13,12 @@ import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 @RunWith(TestParameterInjector.class)
 public class StringTemplateTest {
+
+  @Test public void parse_noPlaceholder() {
+    StringTemplate template = new StringTemplate("this is literal");
+    assertThat(template.parse("this is literal").toMap()).isEmpty();
+    assertThat(template.match("this isn't literal")).isEmpty();
+  }
 
   @Test public void parse_onlyPlaceholder() {
     StringTemplate template = new StringTemplate("{body}");
