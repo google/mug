@@ -58,8 +58,8 @@ public final class StringTemplate {
 
   /**
    * In the input string, a placeholder value is found from the current position to the next delimiter.
-   * The delimiter consists of all literal characters in the template after the previous placeholder
-   * and before the next placeholder.
+   * The delimiter consists of all literal characters in the template between the previous placeholder
+   * (or the BEGINNING) and the next placeholder (or the END).
    */
   private final List<Substring.Pattern> delimiters;
 

@@ -51,7 +51,7 @@ public class StringTemplateTest {
         .inOrder();
   }
 
-  @Test public void parse_emptyPlaceholdervalue() {
+  @Test public void parse_emptyPlaceholderValue() {
     StringTemplate template =
         new StringTemplate("Hello {name}!");
     assertThat(template.parse("Hello !").toMap()).containsExactly("{name}", "");
@@ -61,12 +61,13 @@ public class StringTemplateTest {
     StringTemplate template = new StringTemplate("Hello {name}!");
     assertThrows(IllegalArgumentException.class, () -> template.parse("Hell Tom!"));
     assertThrows(IllegalArgumentException.class, () -> template.parse("elloh Tom!"));
+    assertThrows(IllegalArgumentException.class, () -> template.parse(" Hello Tom!"));
   }
 
   @Test public void parse_postludeFailsToMatch() {
     StringTemplate template = new StringTemplate("Hello {name}!");
     assertThrows(IllegalArgumentException.class, () -> template.parse("Hello Tom?"));
-    assertThrows(IllegalArgumentException.class, () -> template.parse("Hello Tom!?"));
+    assertThrows(IllegalArgumentException.class, () -> template.parse("Hello Tom! "));
     assertThrows(IllegalArgumentException.class, () -> template.parse("Hello Tom"));
   }
 
