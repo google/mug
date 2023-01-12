@@ -14,8 +14,9 @@ import com.google.mu.util.stream.BiStream;
 /**
  * A utility class to extract placeholder values from input strings based on a template.
  *
- * <p>If you have a simple template with placeholder names like "{recipient}", "{question}", you can then
- * reverse-engineer the placeholder values from a formatted string such as "To Charlie: How are you?":
+ * <p>If you have a simple template with placeholder names like "{recipient}", "{question}",
+ * you can then reverse-engineer the placeholder values from a formatted string such as
+ * "To Charlie: How are you?":
  *
  * <pre>{@code
  * StringTemplate template = new StringTemplate("To {recipient}: {question}?", is('?').not());
@@ -24,8 +25,12 @@ import com.google.mu.util.stream.BiStream;
  *     .containsExactly("{recipient}", "Charlie", "{question}", "How are you");
  * }</pre>
  *
- * <p>Note that other than the placeholders, characters in the template and the input must match exactly,
- * case sensitively, including whitespaces, punctuations and everything.
+ * <p>Note that other than the placeholders, characters in the template and the input must match
+ * exactly, case sensitively, including whitespaces, punctuations and everything.
+ *
+ * <p>This class doesn't perform formatting. For formatting the template with placeholder
+ * variable values, it's trivial to do {@code
+ * spanningInOrder("{", "}").repeatedly().replaceAllFrom(template, placeholder -> ...)}
  *
  * @since 6.6
  */
@@ -56,7 +61,9 @@ public final class StringTemplate {
    *     the characters that are allowed in each matched placeholder value
    */
   public StringTemplate(
-      String pattern, Substring.Pattern placeholderVariablePattern, CharPredicate placeholderValueCharMatcher) {
+      String pattern,
+      Substring.Pattern placeholderVariablePattern,
+      CharPredicate placeholderValueCharMatcher) {
     this.pattern = pattern;
     this.placeholders =
         placeholderVariablePattern.repeatedly().match(pattern).collect(toImmutableList());
@@ -83,11 +90,11 @@ public final class StringTemplate {
   /**
    * Matches {@code input} against the pattern.
    *
-   * <p>Returns an immutable list of placeholder values in the same order as {@link #placeholders}, upon success;
-   * otherwise returns empty.
+   * <p>Returns an immutable list of placeholder values in the same order as {@link #placeholders},
+   * upon success; otherwise returns empty.
    *
-   * <p>The {@link Substring.Match} result type allows caller to inspect the characters around each match,
-   * or to access the raw index in the input string.
+   * <p>The {@link Substring.Match} result type allows caller to inspect the characters around each
+   * match, or to access the raw index in the input string.
    */
   public Optional<List<Substring.Match>> match(String input) {
     Substring.Pattern placeholderValuePattern =
