@@ -26,8 +26,7 @@ import com.google.mu.util.stream.BiStream;
  * A utility class to extract placeholder values from input strings based on a template.
  *
  * <p>If you have a simple template with placeholder names like "{recipient}", "{question}",
- * you can then reverse-engineer the placeholder values from a formatted string such as
- * "To Charlie: How are you?":
+ * you can then parse out the placeholder values from strings like "To Charlie: How are you?":
  *
  * <pre>{@code
  * StringTemplate template = new StringTemplate("To {recipient}: {question}?");
@@ -38,15 +37,16 @@ import com.google.mu.util.stream.BiStream;
  *
  * <p>More fluently, instead of parsing into a {@code Map} keyed by the placeholder variable names,
  * directly collect the placeholder values using lambda:
- * "To Charlie: How are you?":
  *
  * <pre>{@code
- * StringTemplate template = new StringTemplate("To {recipient}: {question}?");
- * return template.parse("To Charlie: How are you?", (recipient, question) -> ...));
+ * return new StringTemplate("To {recipient}: {question}?")
+ *     .parse(input, (recipient, question) -> ...));
  * }</pre>
  *
  * <p>Note that other than the placeholders, characters in the template and the input must match
  * exactly, case sensitively, including whitespaces, punctuations and everything.
+ *
+ * <p>Unlike regex, the template format uses literal characters without escaping. No backtracking.
  *
  * @since 6.6
  */
