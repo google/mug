@@ -13,14 +13,19 @@ import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 @RunWith(TestParameterInjector.class)
 public class StringTemplateTest {
 
+  @Test public void parse_onlyPlaceholder() {
+    StringTemplate template = new StringTemplate("{body}");
+    assertThat(template.parse("Hello Tom!").toMap()).containsExactly("{body}", "Hello Tom!");
+  }
+
   @Test public void parse_singlePlaceholder() {
-    StringTemplate template = new StringTemplate("Hello {name}!", Character::isLetter);
+    StringTemplate template = new StringTemplate("Hello {name}!");
     assertThat(template.parse("Hello Tom!").toMap()).containsExactly("{name}", "Tom");
   }
 
   @Test public void parse_multiplePlaceholders() {
     StringTemplate template =
-        new StringTemplate("Hello {name}, welcome to {where}!", Character::isLetter);
+        new StringTemplate("Hello {name}, welcome to {where}!");
     assertThat(template.parse("Hello Gandolf, welcome to Isengard!").toMap())
         .containsExactly("{name}", "Gandolf", "{where}", "Isengard")
         .inOrder();
@@ -28,7 +33,7 @@ public class StringTemplateTest {
 
   @Test public void parse_multiplePlaceholdersWithSameName() {
     StringTemplate template =
-        new StringTemplate("Hello {name} and {name}!", Character::isLetter);
+        new StringTemplate("Hello {name} and {name}!");
     ImmutableListMultimap<String, String> result =
         template.parse("Hello Gandolf and Aragon!")
             .collect(ImmutableListMultimap::toImmutableListMultimap);
@@ -39,36 +44,81 @@ public class StringTemplateTest {
 
   @Test public void parse_emptyPlaceholdervalue() {
     StringTemplate template =
-        new StringTemplate("Hello {name}!", Character::isLetter);
+        new StringTemplate("Hello {name}!");
     assertThat(template.parse("Hello !").toMap()).containsExactly("{name}", "");
   }
 
   @Test public void parse_preludeFailsToMatch() {
-    StringTemplate template = new StringTemplate("Hello {name}!", Character::isLetter);
+    StringTemplate template = new StringTemplate("Hello {name}!");
     assertThrows(IllegalArgumentException.class, () -> template.parse("Hell Tom!"));
     assertThrows(IllegalArgumentException.class, () -> template.parse("elloh Tom!"));
   }
 
   @Test public void parse_postludeFailsToMatch() {
-    StringTemplate template = new StringTemplate("Hello {name}!", Character::isLetter);
+    StringTemplate template = new StringTemplate("Hello {name}!");
     assertThrows(IllegalArgumentException.class, () -> template.parse("Hello Tom?"));
-    assertThrows(IllegalArgumentException.class, () -> template.parse("Hello Tom!!"));
+    assertThrows(IllegalArgumentException.class, () -> template.parse("Hello Tom!?"));
     assertThrows(IllegalArgumentException.class, () -> template.parse("Hello Tom"));
   }
 
   @Test public void parse_nonEmptyTemplate_emptyInput() {
-    StringTemplate template = new StringTemplate("Hello {name}!", Character::isLetter);
+    StringTemplate template = new StringTemplate("Hello {name}!");
     assertThrows(IllegalArgumentException.class, () -> template.parse(""));
   }
 
   @Test public void parse_emptyTemplate_nonEmptyInput() {
-    StringTemplate template = new StringTemplate("", Character::isLetter);
+    StringTemplate template = new StringTemplate("");
     assertThrows(IllegalArgumentException.class, () -> template.parse("."));
   }
 
   @Test public void parse_emptyTemplate_emptyInput() {
-    StringTemplate template = new StringTemplate("", Character::isLetter);
+    StringTemplate template = new StringTemplate("");
     assertThat(template.parse("").toMap()).isEmpty();
+  }
+
+  @Test public void parse_withOneArgLambda() {
+    assertThat(new StringTemplate("1 is {}").parse("1 is one", Object::toString)).isEqualTo("one");
+  }
+
+  @Test public void parse_withTwoArgsLambda() {
+    assertThat(new StringTemplate("1 is {}, 2 is {}").parse("1 is one, 2 is two", String::concat))
+        .isEqualTo("onetwo");
+  }
+
+  @Test public void parse_withThreeArgsLambda() {
+    String result =
+        new StringTemplate("1 is {}, 2 is {}, 3 is {}")
+            .parse("1 is one, 2 is two, 3 is three", (x, y, z) -> x + "," + y + "," + z);
+    assertThat(result).isEqualTo("one,two,three");
+  }
+
+  @Test public void parse_withFourArgsLambda() {
+    String result =
+        new StringTemplate("1 is {}, 2 is {}, 3 is {}, 4 is {what}")
+            .parse("1 is one, 2 is two, 3 is three, 4 is four", (a, b, c, d) -> a + b + c + d);
+    assertThat(result).isEqualTo("onetwothreefour");
+  }
+
+  @Test public void parse_withFiveArgsLambda() {
+    String result =
+        new StringTemplate("1 is {}, 2 is {}, 3 is {}, 4 is {what}, 5 is {}")
+            .parse("1 is one, 2 is two, 3 is three, 4 is four, 5 is five", (a, b, c, d, e) -> a + b + c + d + e);
+    assertThat(result).isEqualTo("onetwothreefourfive");
+  }
+
+  @Test public void parse_withSixArgsLambda() {
+    String result =
+        new StringTemplate("1 is {}, 2 is {}, 3 is {}, 4 is {what}, 5 is {}, 6 is {}")
+            .parse("1 is one, 2 is two, 3 is three, 4 is four, 5 is five, 6 is six", (a, b, c, d, e, f) -> a + b + c + d + e + f);
+    assertThat(result).isEqualTo("onetwothreefourfivesix");
+  }
+
+  @Test public void testRender() {
+    assertThat(new StringTemplate("Hi {name}!").render(v -> "Tom")).isEqualTo("Hi Tom!");
+  }
+
+  @Test public void twoPlaceholdersNextToEachOther() {
+    assertThrows(IllegalArgumentException.class, () -> new StringTemplate("{a}{b}"));
   }
 
   @Test public void testNulls() {

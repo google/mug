@@ -2,14 +2,18 @@ package com.google.mu.util;
 
 import static com.google.mu.util.InternalCollectors.toImmutableList;
 import static com.google.mu.util.Optionals.optional;
+import static com.google.mu.util.Substring.first;
+import static com.google.mu.util.Substring.prefix;
+import static com.google.mu.util.Substring.suffix;
+import static com.google.mu.util.stream.MoreCollectors.onlyElement;
 import static com.google.mu.util.stream.MoreCollectors.onlyElements;
-import static java.util.Objects.requireNonNull;
+import static java.util.Collections.unmodifiableList;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import com.google.mu.function.Quarternary;
@@ -26,7 +30,7 @@ import com.google.mu.util.stream.BiStream;
  * "To Charlie: How are you?":
  *
  * <pre>{@code
- * StringTemplate template = new StringTemplate("To {recipient}: {question}?", is('?').not());
+ * StringTemplate template = new StringTemplate("To {recipient}: {question}?");
  * Map<String, String> placeholderValues = template.parse("To Charlie: How are you?").toMap();
  * assertThat(placeholderValues)
  *     .containsExactly("{recipient}", "Charlie", "{question}", "How are you");
@@ -37,55 +41,53 @@ import com.google.mu.util.stream.BiStream;
  * "To Charlie: How are you?":
  *
  * <pre>{@code
- * StringTemplate template = new StringTemplate("To {recipient}: {question}?", is('?').not());
+ * StringTemplate template = new StringTemplate("To {recipient}: {question}?");
  * return template.parse("To Charlie: How are you?", (recipient, question) -> ...));
  * }</pre>
  *
  * <p>Note that other than the placeholders, characters in the template and the input must match
  * exactly, case sensitively, including whitespaces, punctuations and everything.
  *
- * <p>This class doesn't perform formatting. For formatting the template with placeholder
- * variable values, it's trivial to do {@code
- * spanningInOrder("{", "}").repeatedly().replaceAllFrom(template, placeholder -> ...)}
- *
  * @since 6.6
  */
 public final class StringTemplate {
   private final String pattern;
+  private final Substring.Pattern placeholderVariablePattern;
   private final List<Substring.Match> placeholders;
   private final List<String> placeholderVariableNames;
-  private final CharPredicate placeholderValueCharMatcher;
+  private final List<Substring.Pattern> anchoringPatterns;
 
   /**
    * Constructs a StringTemplate
    *
    * @param pattern the template pattern with placeholders in the format of {@code "{placeholder_name}"}
-   * @param placeholderValueCharMatcher
-   *     the characters that are allowed in each matched placeholder value
+   * @throws IllegalArgumentException if {@code pattern} is invalid
+   *     (e.g. a placeholder immediately followed by another placeholder)
    */
-  public StringTemplate(String pattern, CharPredicate placeholderValueCharMatcher) {
-    this(pattern, Substring.spanningInOrder("{", "}"), placeholderValueCharMatcher);
+  public StringTemplate(String pattern) {
+    this(pattern, Substring.spanningInOrder("{", "}"));
   }
 
   /**
    * Constructs a StringTemplate
    *
    * @param pattern the template pattern with placeholders
-   * @param placeholderVariablePattern
-   *     the pattern of the placeholder variables such as {@code Substring.spanningInOrder("[", "]")}.
-   * @param placeholderValueCharMatcher
-   *     the characters that are allowed in each matched placeholder value
+   * @throws IllegalArgumentException if {@code pattern} is invalid
+   *     (e.g. a placeholder immediately followed by another placeholder)
    */
-  public StringTemplate(
-      String pattern,
-      Substring.Pattern placeholderVariablePattern,
-      CharPredicate placeholderValueCharMatcher) {
+  public StringTemplate(String pattern, Substring.Pattern placeholderVariablePattern) {
     this.pattern = pattern;
+    this.placeholderVariablePattern = placeholderVariablePattern;
     this.placeholders =
         placeholderVariablePattern.repeatedly().match(pattern).collect(toImmutableList());
     this.placeholderVariableNames =
         placeholders.stream().map(Substring.Match::toString).collect(toImmutableList());
-    this.placeholderValueCharMatcher = requireNonNull(placeholderValueCharMatcher);
+    this.anchoringPatterns = getAnchoringPatterns(pattern, placeholders);
+  }
+
+  /** Render this template using placeholder values returned by {@code placeholderValueFunction}. */
+  public String render(Function<? super Substring.Match, ? extends CharSequence> placeholderValueFunction) {
+    return placeholderVariablePattern.repeatedly().replaceAllFrom(pattern, placeholderValueFunction);
   }
 
   /**
@@ -99,55 +101,66 @@ public final class StringTemplate {
   }
 
   /**
-   * Parses {@code input} and apply {@code function} with the two placeholder name-value pairs
+   * Parses {@code input} and apply {@code function} with the single placeholder value
    * in this template.
    *
    * @throws IllegalArgumentException if {@code input} doesn't match the template or the template
-   *     doesn't have two placeholders.
+   *     doesn't have exactly one placeholder.
+   */
+  public <R> R parse(String input, Function<? super String, R> function) {
+    return parsePlaceholderValues(input).collect(onlyElement(function));
+  }
+
+  /**
+   * Parses {@code input} and apply {@code function} with the two placeholder values
+   * in this template.
+   *
+   * @throws IllegalArgumentException if {@code input} doesn't match the template or the template
+   *     doesn't have exactly two placeholders.
    */
   public <R> R parse(String input, BiFunction<? super String, ? super String, R> function) {
     return parsePlaceholderValues(input).collect(onlyElements(function));
   }
 
   /**
-   * Parses {@code input} and apply {@code function} with the 3 placeholder name-value pairs
+   * Parses {@code input} and apply {@code function} with the 3 placeholder values
    * in this template.
    *
    * @throws IllegalArgumentException if {@code input} doesn't match the template or the template
-   *     doesn't have 3 placeholders.
+   *     doesn't have exactly 3 placeholders.
    */
   public <R> R parse(String input, Ternary<? super String,  R> function) {
     return parsePlaceholderValues(input).collect(onlyElements(function));
   }
 
   /**
-   * Parses {@code input} and apply {@code function} with the 4 placeholder name-value pairs
+   * Parses {@code input} and apply {@code function} with the 4 placeholder values
    * in this template.
    *
    * @throws IllegalArgumentException if {@code input} doesn't match the template or the template
-   *     doesn't have 4 placeholders.
+   *     doesn't have exactly 4 placeholders.
    */
   public <R> R parse(String input, Quarternary<? super String,  R> function) {
     return parsePlaceholderValues(input).collect(onlyElements(function));
   }
 
   /**
-   * Parses {@code input} and apply {@code function} with the 5 placeholder name-value pairs
+   * Parses {@code input} and apply {@code function} with the 5 placeholder values
    * in this template.
    *
    * @throws IllegalArgumentException if {@code input} doesn't match the template or the template
-   *     doesn't have 5 placeholders.
+   *     doesn't have exactly 5 placeholders.
    */
   public <R> R parse(String input, Quinary<? super String,  R> function) {
     return parsePlaceholderValues(input).collect(onlyElements(function));
   }
 
   /**
-   * Parses {@code input} and apply {@code function} with the 6 placeholder name-value pairs
+   * Parses {@code input} and apply {@code function} with the 6 placeholder values
    * in this template.
    *
    * @throws IllegalArgumentException if {@code input} doesn't match the template or the template
-   *     doesn't have 6 placeholders.
+   *     doesn't have exactly 6 placeholders.
    */
   public <R> R parse(String input, Senary<? super String,  R> function) {
     return parsePlaceholderValues(input).collect(onlyElements(function));
@@ -163,28 +176,17 @@ public final class StringTemplate {
    * match, or to access the raw index in the input string.
    */
   public Optional<List<Substring.Match>> match(String input) {
-    Substring.Pattern placeholderValuePattern =
-        Substring.leading(placeholderValueCharMatcher).or(Substring.BEGINNING);
     List<Substring.Match> builder = new ArrayList<>();
-    int templateIndex = 0;
-    int inputIndex = 0;
-    for (Substring.Match placeholder : placeholders) {
-      int preludeLength = placeholder.index() - templateIndex;
-      if (!input.regionMatches(inputIndex, pattern, templateIndex, preludeLength)) {
-        return Optional.empty();
-      }
-      templateIndex += preludeLength;
-      inputIndex += preludeLength;
-      Substring.Match placeholderValue = placeholderValuePattern.match(input, inputIndex);
-      builder.add(placeholderValue);
-      templateIndex += placeholder.length();
-      inputIndex += placeholderValue.length();
+    Substring.Match prelude = anchoringPatterns.get(0).match(input, 0);
+    if (prelude == null) return Optional.empty();
+    int inputIndex = prelude.length();
+    for (int i = 1; i < anchoringPatterns.size(); i++) {
+      Substring.Match following = anchoringPatterns.get(i).match(input, inputIndex);
+      if (following == null) return Optional.empty();
+      builder.add(Substring.Match.nonBacktrackable(input, inputIndex, following.index() - inputIndex));
+      inputIndex = following.index() + following.length();
     }
-    int remaining = pattern.length() - templateIndex;
-    return optional(
-        remaining == input.length() - inputIndex
-            && input.regionMatches(inputIndex, pattern, templateIndex, remaining),
-        Collections.unmodifiableList(builder));
+    return optional(inputIndex == input.length(), unmodifiableList(builder));
   }
 
   /**
@@ -213,5 +215,32 @@ public final class StringTemplate {
         .orElseThrow(() -> new IllegalArgumentException("Input doesn't match template (" + pattern + ")"))
         .stream()
         .map(Substring.Match::toString);
+  }
+
+  private static List<Substring.Pattern> getAnchoringPatterns(
+      String pattern, List<Substring.Match> placeholders) {
+    List<Substring.Pattern> literals = new ArrayList<>();
+    if (placeholders.isEmpty()) {
+      literals.add(Substring.prefix(pattern));
+    } else {
+      Substring.Match placeholder = placeholders.get(0);
+      literals.add(prefix(pattern.substring(0, placeholder.index())));
+      for (int i = 1; ; i++) {
+        if (i == placeholders.size()) {
+          int from = placeholder.index() + placeholder.length();
+          literals.add(suffix(pattern.substring(from, pattern.length())));
+          break;
+        }
+        int from = placeholder.index() + placeholder.length();
+        int end = placeholders.get(i).index();
+        if (from >= end) {
+          throw new IllegalArgumentException(
+              "Invalid pattern with '" + placeholder + placeholders.get(i) + "'");
+        }
+        literals.add(first(pattern.substring(from, end)));
+        placeholder = placeholders.get(i);
+      }
+    }
+    return unmodifiableList(literals);
   }
 }
