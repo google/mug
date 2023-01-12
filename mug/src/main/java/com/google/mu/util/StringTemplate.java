@@ -55,7 +55,13 @@ public final class StringTemplate {
   private final Substring.Pattern placeholderVariablePattern;
   private final List<Substring.Match> placeholders;
   private final List<String> placeholderVariableNames;
-  private final List<Substring.Pattern> anchoringPatterns;
+
+  /**
+   * In the input string, a placeholder value is found from the current position to the next delimiter.
+   * The delimiter consists of all literal characters in the template after the previous placeholder
+   * and before the next placeholder.
+   */
+  private final List<Substring.Pattern> delimiters;
 
   /**
    * Constructs a StringTemplate
@@ -84,7 +90,7 @@ public final class StringTemplate {
         placeholderVariablePattern.repeatedly().match(pattern).collect(toImmutableList());
     this.placeholderVariableNames =
         placeholders.stream().map(Substring.Match::toString).collect(toImmutableList());
-    this.anchoringPatterns = getAnchoringPatterns(pattern, placeholders);
+    this.delimiters = getDelimiters(pattern, placeholders);
   }
 
   /** Render this template using placeholder values returned by {@code placeholderValueFunction}. */
@@ -180,13 +186,14 @@ public final class StringTemplate {
   public Optional<List<Substring.Match>> match(String input) {
     List<Substring.Match> builder = new ArrayList<>();
     int inputIndex = 0;
-    for (int i = 0; i < anchoringPatterns.size(); i++) {
-      Substring.Match following = anchoringPatterns.get(i).match(input, inputIndex);
-      if (following == null) return Optional.empty();
+    for (int i = 0; i < delimiters.size(); i++) {
+      Substring.Match delimiter = delimiters.get(i).match(input, inputIndex);
+      if (delimiter == null) return Optional.empty();
       if (i > 0) {
-        builder.add(Substring.Match.nonBacktrackable(input, inputIndex, following.index() - inputIndex));
+        builder.add(
+            Substring.Match.nonBacktrackable(input, inputIndex, delimiter.index() - inputIndex));
       }
-      inputIndex = following.index() + following.length();
+      inputIndex = delimiter.index() + delimiter.length();
     }
     return optional(inputIndex == input.length(), unmodifiableList(builder));
   }
@@ -214,23 +221,24 @@ public final class StringTemplate {
 
   private Stream<String> parsePlaceholderValues(String input) {
     return match(input)
-        .orElseThrow(() -> new IllegalArgumentException("Input doesn't match template (" + pattern + ")"))
+        .orElseThrow(
+            () -> new IllegalArgumentException("Input doesn't match template (" + pattern + ")"))
         .stream()
         .map(Substring.Match::toString);
   }
 
-  private static List<Substring.Pattern> getAnchoringPatterns(
+  private static List<Substring.Pattern> getDelimiters(
       String pattern, List<Substring.Match> placeholders) {
-    List<Substring.Pattern> literals = new ArrayList<>();
+    List<Substring.Pattern> builder = new ArrayList<>();
     if (placeholders.isEmpty()) {
-      literals.add(prefix(pattern));
+      builder.add(prefix(pattern));
     } else {
       Substring.Match placeholder = placeholders.get(0);
-      literals.add(prefix(pattern.substring(0, placeholder.index())));
+      builder.add(prefix(pattern.substring(0, placeholder.index())));
       for (int i = 1; ; i++) {
         if (i == placeholders.size()) {
           int from = placeholder.index() + placeholder.length();
-          literals.add(suffix(pattern.substring(from, pattern.length())));
+          builder.add(suffix(pattern.substring(from, pattern.length())));
           break;
         }
         int from = placeholder.index() + placeholder.length();
@@ -239,10 +247,10 @@ public final class StringTemplate {
           throw new IllegalArgumentException(
               "Invalid pattern with '" + placeholder + placeholders.get(i) + "'");
         }
-        literals.add(first(pattern.substring(from, end)));
+        builder.add(first(pattern.substring(from, end)));
         placeholder = placeholders.get(i);
       }
     }
-    return unmodifiableList(literals);
+    return unmodifiableList(builder);
   }
 }
