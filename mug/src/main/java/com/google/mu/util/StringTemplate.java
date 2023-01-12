@@ -72,6 +72,8 @@ public final class StringTemplate {
    * Constructs a StringTemplate
    *
    * @param pattern the template pattern with placeholders
+   * @param placeholderVariablePattern placeholders in {@code pattern}.
+   *     For example: {@code spanningInOrder("[", "]")}.
    * @throws IllegalArgumentException if {@code pattern} is invalid
    *     (e.g. a placeholder immediately followed by another placeholder)
    */
