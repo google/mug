@@ -2,13 +2,20 @@ package com.google.mu.util;
 
 import static com.google.mu.util.InternalCollectors.toImmutableList;
 import static com.google.mu.util.Optionals.optional;
+import static com.google.mu.util.stream.MoreCollectors.onlyElements;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiFunction;
+import java.util.stream.Stream;
 
+import com.google.mu.function.Quarternary;
+import com.google.mu.function.Quinary;
+import com.google.mu.function.Senary;
+import com.google.mu.function.Ternary;
 import com.google.mu.util.stream.BiStream;
 
 /**
@@ -23,6 +30,15 @@ import com.google.mu.util.stream.BiStream;
  * Map<String, String> placeholderValues = template.parse("To Charlie: How are you?").toMap();
  * assertThat(placeholderValues)
  *     .containsExactly("{recipient}", "Charlie", "{question}", "How are you");
+ * }</pre>
+ *
+ * <p>More fluently, instead of parsing into a {@code Map} keyed by the placeholder variable names,
+ * directly collect the placeholder values using lambda:
+ * "To Charlie: How are you?":
+ *
+ * <pre>{@code
+ * StringTemplate template = new StringTemplate("To {recipient}: {question}?", is('?').not());
+ * return template.parse("To Charlie: How are you?", (recipient, question) -> ...));
  * }</pre>
  *
  * <p>Note that other than the placeholders, characters in the template and the input must match
@@ -79,12 +95,62 @@ public final class StringTemplate {
    * @throws IllegalArgumentException if {@code input} doesn't match the template
    */
   public BiStream<String, String> parse(String input) {
-    return BiStream.zip(
-        placeholderVariableNames.stream(),
-        match(input)
-            .orElseThrow(() -> new IllegalArgumentException("Input doesn't match template (" + pattern + ")"))
-            .stream()
-            .map(Substring.Match::toString));
+    return BiStream.zip(placeholderVariableNames.stream(),  parsePlaceholderValues(input));
+  }
+
+  /**
+   * Parses {@code input} and apply {@code function} with the two placeholder name-value pairs
+   * in this template.
+   *
+   * @throws IllegalArgumentException if {@code input} doesn't match the template or the template
+   *     doesn't have two placeholders.
+   */
+  public <R> R parse(String input, BiFunction<? super String, ? super String, R> function) {
+    return parsePlaceholderValues(input).collect(onlyElements(function));
+  }
+
+  /**
+   * Parses {@code input} and apply {@code function} with the 3 placeholder name-value pairs
+   * in this template.
+   *
+   * @throws IllegalArgumentException if {@code input} doesn't match the template or the template
+   *     doesn't have 3 placeholders.
+   */
+  public <R> R parse(String input, Ternary<? super String,  R> function) {
+    return parsePlaceholderValues(input).collect(onlyElements(function));
+  }
+
+  /**
+   * Parses {@code input} and apply {@code function} with the 4 placeholder name-value pairs
+   * in this template.
+   *
+   * @throws IllegalArgumentException if {@code input} doesn't match the template or the template
+   *     doesn't have 4 placeholders.
+   */
+  public <R> R parse(String input, Quarternary<? super String,  R> function) {
+    return parsePlaceholderValues(input).collect(onlyElements(function));
+  }
+
+  /**
+   * Parses {@code input} and apply {@code function} with the 5 placeholder name-value pairs
+   * in this template.
+   *
+   * @throws IllegalArgumentException if {@code input} doesn't match the template or the template
+   *     doesn't have 5 placeholders.
+   */
+  public <R> R parse(String input, Quinary<? super String,  R> function) {
+    return parsePlaceholderValues(input).collect(onlyElements(function));
+  }
+
+  /**
+   * Parses {@code input} and apply {@code function} with the 6 placeholder name-value pairs
+   * in this template.
+   *
+   * @throws IllegalArgumentException if {@code input} doesn't match the template or the template
+   *     doesn't have 6 placeholders.
+   */
+  public <R> R parse(String input, Senary<? super String,  R> function) {
+    return parsePlaceholderValues(input).collect(onlyElements(function));
   }
 
   /**
@@ -140,5 +206,12 @@ public final class StringTemplate {
   /** Returns the template pattern. */
   @Override public String toString() {
     return pattern;
+  }
+
+  private Stream<String> parsePlaceholderValues(String input) {
+    return match(input)
+        .orElseThrow(() -> new IllegalArgumentException("Input doesn't match template (" + pattern + ")"))
+        .stream()
+        .map(Substring.Match::toString);
   }
 }
