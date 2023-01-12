@@ -8,7 +8,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.testing.ClassSanityTester;
+import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 @RunWith(TestParameterInjector.class)
@@ -122,6 +124,15 @@ public class StringTemplateTest {
 
   @Test public void testRender() {
     assertThat(new StringTemplate("Hi {name}!").render(v -> "Tom")).isEqualTo("Hi Tom!");
+  }
+
+  @Test public void testRenderRoundtrip(
+      @TestParameter({"", "k", ".", "foo"}) String key,
+      @TestParameter({"", "v", ".", "bar"}) String value) {
+    ImmutableMap<String, String> mappings = ImmutableMap.of("{key}", key, "{value}", value);
+    StringTemplate template = new StringTemplate("key : {key}, value : {value}");
+    String rendered = template.render(v -> mappings.get(v.toString()));
+    assertThat(template.parse(rendered).toMap()).isEqualTo(mappings);
   }
 
   @Test public void twoPlaceholdersNextToEachOther() {
