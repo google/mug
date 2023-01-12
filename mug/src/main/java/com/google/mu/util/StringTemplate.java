@@ -39,7 +39,7 @@ import com.google.mu.util.stream.BiStream;
  * at all. Sometimes, it may be easier to directly collect the placeholder values using lambda:
  *
  * <pre>{@code
- * return new StringTemplate("To {recipient}: {question}?")
+ * return new StringTemplate("To {}: {}?")
  *     .parse(input, (recipient, question) -> ...));
  * }</pre>
  *
@@ -69,34 +69,34 @@ public final class StringTemplate {
   /**
    * Constructs a StringTemplate
    *
-   * @param pattern the template pattern with placeholders in the format of {@code "{placeholder_name}"}
-   * @throws IllegalArgumentException if {@code pattern} is invalid
+   * @param format the template format with placeholders in the format of {@code "{placeholder_name}"}
+   * @throws IllegalArgumentException if {@code format} is invalid
    *     (e.g. a placeholder immediately followed by another placeholder)
    */
-  public StringTemplate(String pattern) {
-    this(pattern, Substring.spanningInOrder("{", "}").repeatedly());
+  public StringTemplate(String format) {
+    this(format, Substring.spanningInOrder("{", "}").repeatedly());
   }
 
   /**
-   * Constructs a StringTemplate. By default, {@code new StringTemplate(template)} assumes placeholders
-   * to be enclosed by curly braces. For example: "Hello {customer}". If you need different placeholders,
-   * for example, to emulate Java's "%s", you can use:
+   * Constructs a StringTemplate. By default, {@code new StringTemplate(format)} assumes placeholders
+   * to be enclosed by curly braces. For example: "Hello {customer}". If you need different placeholder
+   * syntax, for example, to emulate Java's "%s", you can use:
    *
    * <pre>{@code new StringTemplate("Hi %s, my name is %s", first("%s").repeatedly())}</pre>
    *
-   * @param pattern the template pattern with placeholders
-   * @param placeholderVariablePattern placeholders in {@code pattern}.
-   *     For example: {@code spanningInOrder("[", "]")}.
-   * @throws IllegalArgumentException if {@code pattern} is invalid
+   * @param format the template format with placeholders
+   * @param placeholderVariablePattern placeholders in {@code format}.
+   *     For example: {@code first("%s").repeatedly()}.
+   * @throws IllegalArgumentException if {@code format} is invalid
    *     (e.g. a placeholder immediately followed by another placeholder)
    */
-  public StringTemplate(String pattern, Substring.RepeatingPattern placeholderVariablesPattern) {
-    this.format = pattern;
+  public StringTemplate(String format, Substring.RepeatingPattern placeholderVariablesPattern) {
+    this.format = format;
     this.placeholderVariablesPattern = placeholderVariablesPattern;
-    this.placeholders = placeholderVariablesPattern.match(pattern).collect(toImmutableList());
+    this.placeholders = placeholderVariablesPattern.match(format).collect(toImmutableList());
     this.placeholderVariableNames =
         placeholders.stream().map(Substring.Match::toString).collect(toImmutableList());
-    this.delimiters = getDelimiters(pattern, placeholders);
+    this.delimiters = getDelimiters(format, placeholders);
   }
 
   /**
