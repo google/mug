@@ -57,7 +57,7 @@ public final class StringTemplate {
   private final List<String> placeholderVariableNames;
 
   /**
-   * In the input string, a placeholder value is found from the current position to the next delimiter.
+   * In the input string, a placeholder value is found from the current position until the next delimiter.
    * The delimiter consists of all literal characters in the template between the previous placeholder
    * (or the BEGINNING) and the next placeholder (or the END).
    */
