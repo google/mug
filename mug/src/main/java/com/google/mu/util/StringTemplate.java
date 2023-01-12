@@ -223,7 +223,7 @@ public final class StringTemplate {
       String pattern, List<Substring.Match> placeholders) {
     List<Substring.Pattern> literals = new ArrayList<>();
     if (placeholders.isEmpty()) {
-      literals.add(Substring.prefix(pattern));
+      literals.add(prefix(pattern));
     } else {
       Substring.Match placeholder = placeholders.get(0);
       literals.add(prefix(pattern.substring(0, placeholder.index())));
