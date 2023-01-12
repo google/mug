@@ -2,6 +2,7 @@ package com.google.mu.util;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static com.google.mu.util.Substring.first;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.Test;
@@ -70,7 +71,6 @@ public class StringTemplateTest {
     assertThrows(IllegalArgumentException.class, () -> template.parse("Hello Tom! "));
     assertThrows(IllegalArgumentException.class, () -> template.parse("Hello Tom"));
   }
-
   @Test public void parse_nonEmptyTemplate_emptyInput() {
     StringTemplate template = new StringTemplate("Hello {name}!");
     assertThrows(IllegalArgumentException.class, () -> template.parse(""));
@@ -123,17 +123,22 @@ public class StringTemplateTest {
     assertThat(result).isEqualTo("onetwothreefourfivesix");
   }
 
-  @Test public void testRender() {
-    assertThat(new StringTemplate("Hi {name}!").render(v -> "Tom")).isEqualTo("Hi Tom!");
+  @Test public void parse_customPlaceholderPattern() {
+    assertThat(new StringTemplate("My name is %s", first("%s").repeatedly()).parse("My name is one", Object::toString))
+        .isEqualTo("one");
   }
 
-  @Test public void testRenderRoundtrip(
+  @Test public void testFormat() {
+    assertThat(new StringTemplate("Hi {name}!").format(v -> "Tom")).isEqualTo("Hi Tom!");
+  }
+
+  @Test public void testFormatRoundtrip(
       @TestParameter({"", "k", ".", "foo"}) String key,
       @TestParameter({"", "v", ".", "bar"}) String value) {
     ImmutableMap<String, String> mappings = ImmutableMap.of("{key}", key, "{value}", value);
     StringTemplate template = new StringTemplate("key : {key}, value : {value}");
-    String rendered = template.render(v -> mappings.get(v.toString()));
-    assertThat(template.parse(rendered).toMap()).isEqualTo(mappings);
+    String formatted = template.format(v -> mappings.get(v.toString()));
+    assertThat(template.parse(formatted).toMap()).isEqualTo(mappings);
   }
 
   @Test public void twoPlaceholdersNextToEachOther() {
@@ -143,7 +148,7 @@ public class StringTemplateTest {
 
   @Test public void testNulls() {
     new ClassSanityTester()
-        .setDefault(Substring.Pattern.class, Substring.between("{", "}"))
+        .setDefault(Substring.RepeatingPattern.class, first("%s").repeatedly())
         .testNulls(StringTemplate.class);
   }
 }

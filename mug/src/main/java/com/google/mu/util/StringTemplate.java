@@ -35,8 +35,8 @@ import com.google.mu.util.stream.BiStream;
  *     .containsExactly("{recipient}", "Charlie", "{question}", "How are you");
  * }</pre>
  *
- * <p>More fluently, instead of parsing into a {@code Map} keyed by the placeholder variable names,
- * directly collect the placeholder values using lambda:
+ * <p>It's not required that the placeholder variable names must be distinct or even logically named
+ * at all. Sometimes, it may be easier to directly collect the placeholder values using lambda:
  *
  * <pre>{@code
  * return new StringTemplate("To {recipient}: {question}?")
@@ -46,13 +46,16 @@ import com.google.mu.util.stream.BiStream;
  * <p>Note that other than the placeholders, characters in the template and the input must match
  * exactly, case sensitively, including whitespaces, punctuations and everything.
  *
- * <p>Unlike regex, the template format uses literal characters without escaping. No backtracking.
+ * <p>Except the placeholder variables, all other characters in the string template are treated as
+ * literals. This makes it simpler compared to regex if your pattern is close to free-form text with
+ * characters like '.', '?', '(', '|' and what not. On the other hand, if you need to use regex
+ * modifiers and quantifiers to express complex pattern, this class is not the right tool for the job.
  *
  * @since 6.6
  */
 public final class StringTemplate {
-  private final String pattern;
-  private final Substring.Pattern placeholderVariablePattern;
+  private final String format;
+  private final Substring.RepeatingPattern placeholderVariablesPattern;
   private final List<Substring.Match> placeholders;
   private final List<String> placeholderVariableNames;
 
@@ -71,11 +74,15 @@ public final class StringTemplate {
    *     (e.g. a placeholder immediately followed by another placeholder)
    */
   public StringTemplate(String pattern) {
-    this(pattern, Substring.spanningInOrder("{", "}"));
+    this(pattern, Substring.spanningInOrder("{", "}").repeatedly());
   }
 
   /**
-   * Constructs a StringTemplate
+   * Constructs a StringTemplate. By default, {@code new StringTemplate(template)} assumes placeholders
+   * to be enclosed by curly braces. For example: "Hello {customer}". If you need different placeholders,
+   * for example, to emulate Java's "%s", you can use:
+   *
+   * <pre>{@code new StringTemplate("Hi %s, my name is %s", first("%s").repeatedly())}</pre>
    *
    * @param pattern the template pattern with placeholders
    * @param placeholderVariablePattern placeholders in {@code pattern}.
@@ -83,19 +90,13 @@ public final class StringTemplate {
    * @throws IllegalArgumentException if {@code pattern} is invalid
    *     (e.g. a placeholder immediately followed by another placeholder)
    */
-  public StringTemplate(String pattern, Substring.Pattern placeholderVariablePattern) {
-    this.pattern = pattern;
-    this.placeholderVariablePattern = placeholderVariablePattern;
-    this.placeholders =
-        placeholderVariablePattern.repeatedly().match(pattern).collect(toImmutableList());
+  public StringTemplate(String pattern, Substring.RepeatingPattern placeholderVariablesPattern) {
+    this.format = pattern;
+    this.placeholderVariablesPattern = placeholderVariablesPattern;
+    this.placeholders = placeholderVariablesPattern.match(pattern).collect(toImmutableList());
     this.placeholderVariableNames =
         placeholders.stream().map(Substring.Match::toString).collect(toImmutableList());
     this.delimiters = getDelimiters(pattern, placeholders);
-  }
-
-  /** Render this template using placeholder values returned by {@code placeholderValueFunction}. */
-  public String render(Function<? super Substring.Match, ? extends CharSequence> placeholderValueFunction) {
-    return placeholderVariablePattern.repeatedly().replaceAllFrom(pattern, placeholderValueFunction);
   }
 
   /**
@@ -199,6 +200,15 @@ public final class StringTemplate {
   }
 
   /**
+   * Render this template using placeholder values returned by {@code placeholderValueFunction}.
+   *
+   * @throws NullPointerException if {@code placeholderValueFunction} is null or returns null value for any placeholder
+   */
+  public String format(Function<? super Substring.Match, ? extends CharSequence> placeholderValueFunction) {
+    return placeholderVariablesPattern.replaceAllFrom(format, placeholderValueFunction);
+  }
+
+  /**
    * Returns the immutable list of placeholders in this template, in occurrence order.
    *
    * <p>Each placeholder is-a {@link CharSequence} with extra accessors to the index in this
@@ -216,13 +226,13 @@ public final class StringTemplate {
 
   /** Returns the template pattern. */
   @Override public String toString() {
-    return pattern;
+    return format;
   }
 
   private Stream<String> parsePlaceholderValues(String input) {
     return match(input)
         .orElseThrow(
-            () -> new IllegalArgumentException("Input doesn't match template (" + pattern + ")"))
+            () -> new IllegalArgumentException("Input doesn't match template (" + format + ")"))
         .stream()
         .map(Substring.Match::toString);
   }
