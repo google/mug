@@ -179,13 +179,13 @@ public final class StringTemplate {
    */
   public Optional<List<Substring.Match>> match(String input) {
     List<Substring.Match> builder = new ArrayList<>();
-    Substring.Match prelude = anchoringPatterns.get(0).match(input, 0);
-    if (prelude == null) return Optional.empty();
-    int inputIndex = prelude.length();
-    for (int i = 1; i < anchoringPatterns.size(); i++) {
+    int inputIndex = 0;
+    for (int i = 0; i < anchoringPatterns.size(); i++) {
       Substring.Match following = anchoringPatterns.get(i).match(input, inputIndex);
       if (following == null) return Optional.empty();
-      builder.add(Substring.Match.nonBacktrackable(input, inputIndex, following.index() - inputIndex));
+      if (i > 0) {
+        builder.add(Substring.Match.nonBacktrackable(input, inputIndex, following.index() - inputIndex));
+      }
       inputIndex = following.index() + following.length();
     }
     return optional(inputIndex == input.length(), unmodifiableList(builder));

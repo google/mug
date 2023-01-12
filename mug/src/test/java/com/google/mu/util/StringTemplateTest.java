@@ -137,6 +137,7 @@ public class StringTemplateTest {
 
   @Test public void twoPlaceholdersNextToEachOther() {
     assertThrows(IllegalArgumentException.class, () -> new StringTemplate("{a}{b}"));
+    assertThrows(IllegalArgumentException.class, () -> new StringTemplate("{}{}"));
   }
 
   @Test public void testNulls() {
