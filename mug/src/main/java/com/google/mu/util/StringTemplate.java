@@ -229,19 +229,18 @@ public final class StringTemplate {
 
   private static List<Substring.Pattern> getDelimiters(
       String pattern, List<Substring.Match> placeholders) {
-    List<Substring.Pattern> builder = new ArrayList<>();
+    List<Substring.Pattern> builder = new ArrayList<>(placeholders.size() + 1);
     if (placeholders.isEmpty()) {
       builder.add(prefix(pattern));
     } else {
       Substring.Match placeholder = placeholders.get(0);
       builder.add(prefix(pattern.substring(0, placeholder.index())));
       for (int i = 1; ; i++) {
+        final int from = placeholder.index() + placeholder.length();
         if (i == placeholders.size()) {
-          int from = placeholder.index() + placeholder.length();
           builder.add(suffix(pattern.substring(from, pattern.length())));
           break;
         }
-        int from = placeholder.index() + placeholder.length();
         int end = placeholders.get(i).index();
         if (from >= end) {
           throw new IllegalArgumentException(
