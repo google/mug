@@ -103,6 +103,11 @@ public final class StringTemplate {
    * Parses {@code input} and extracts all placeholder name-value pairs in a BiStream,
    * in the same order as {@link #placeholders}.
    *
+   * <p>The entire {@code input} string is matched against the template. So if there are trailing
+   * characters after what's captured by the template, the parsing will fail. If you need to allow
+   * trailing characters, consider adding a trailing placeholder such as "{*}" to capture them.
+   * You can then filter them out using {@code .skipKeysIf("{*}"::equals)}.
+   *
    * @throws IllegalArgumentException if {@code input} doesn't match the template
    */
   public BiStream<String, String> parse(String input) {
