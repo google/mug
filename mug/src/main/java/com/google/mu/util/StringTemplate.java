@@ -115,7 +115,7 @@ public final class StringTemplate {
   }
 
   /**
-   * Parses {@code input} and apply {@code function} with the single placeholder value
+   * Parses {@code input} and applies {@code function} with the single placeholder value
    * in this template.
    *
    * @throws IllegalArgumentException if {@code input} doesn't match the template or the template
@@ -126,7 +126,7 @@ public final class StringTemplate {
   }
 
   /**
-   * Parses {@code input} and apply {@code function} with the two placeholder values
+   * Parses {@code input} and applies {@code function} with the two placeholder values
    * in this template.
    *
    * @throws IllegalArgumentException if {@code input} doesn't match the template or the template
@@ -137,7 +137,7 @@ public final class StringTemplate {
   }
 
   /**
-   * Parses {@code input} and apply {@code function} with the 3 placeholder values
+   * Parses {@code input} and applies {@code function} with the 3 placeholder values
    * in this template.
    *
    * @throws IllegalArgumentException if {@code input} doesn't match the template or the template
@@ -148,7 +148,7 @@ public final class StringTemplate {
   }
 
   /**
-   * Parses {@code input} and apply {@code function} with the 4 placeholder values
+   * Parses {@code input} and applies {@code function} with the 4 placeholder values
    * in this template.
    *
    * @throws IllegalArgumentException if {@code input} doesn't match the template or the template
@@ -159,7 +159,7 @@ public final class StringTemplate {
   }
 
   /**
-   * Parses {@code input} and apply {@code function} with the 5 placeholder values
+   * Parses {@code input} and applies {@code function} with the 5 placeholder values
    * in this template.
    *
    * @throws IllegalArgumentException if {@code input} doesn't match the template or the template
@@ -170,7 +170,7 @@ public final class StringTemplate {
   }
 
   /**
-   * Parses {@code input} and apply {@code function} with the 6 placeholder values
+   * Parses {@code input} and applies {@code function} with the 6 placeholder values
    * in this template.
    *
    * @throws IllegalArgumentException if {@code input} doesn't match the template or the template
