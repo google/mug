@@ -36,6 +36,7 @@ abstract class ShortListCollector<T, R> extends FixedSizeCollector<T, List<T>, R
 
   @Override public final BinaryOperator<List<T>> combiner() {
     return (l1, l2) -> {
+      l1.addAll(l2);
       return l1;
     };
   }

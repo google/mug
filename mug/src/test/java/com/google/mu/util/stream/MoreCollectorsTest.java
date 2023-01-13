@@ -201,6 +201,23 @@ public class MoreCollectorsTest {
         .isEqualTo("Not true that input <[1, 2]> has 6 elements.");
   }
 
+  @Test public void testAsIn_parallel_success() {
+    String result =
+        Stream.of(1, 3, 5, 7, 9, 11)
+            .parallel()
+            .map(Object::toString)
+            .collect(asIn((a, b, c, d, e, f) -> a + b + c + d + e + f));
+    assertThat(result).isEqualTo("1357911");
+  }
+
+  @Test public void testAsIn_parallel_failure() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> Stream.of(1, 2, 3, 4, 5, 6, 7, 8).parallel().collect(asIn((a, b, c, d, e, f) -> "ok")));
+    assertThat(thrown.getMessage())
+        .isEqualTo("Not true that input of size = 8 <[1, 2, 3, 4, 5, 6, 7, ...]> has 6 elements.");
+  }
+
   @Test public void testLongListInErrorMessage() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
