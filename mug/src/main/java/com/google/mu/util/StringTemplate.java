@@ -35,19 +35,16 @@ import com.google.mu.util.stream.BiStream;
  *     .containsExactly("{recipient}", "Charlie", "{question}", "How are you");
  * }</pre>
  *
- * <p>It's not required that the placeholder variable names must be distinct or even logically named
- * at all. Sometimes, it may be easier to directly collect the placeholder values using lambda:
+ * <p>It's not required that the placeholder variable names must be distinct or even logically named.
+ * Sometimes, it may be easier to directly collect the placeholder values using lambda:
  *
  * <pre>{@code
  * return new StringTemplate("To {}: {}?")
  *     .parse(input, (recipient, question) -> ...));
  * }</pre>
  *
- * <p>Note that other than the placeholders, characters in the template and the input must match
- * exactly, case sensitively, including whitespaces, punctuations and everything.
- *
- * <p>Except the placeholder variables, all other characters in the string template are treated as
- * literals. This makes it simpler compared to regex if your pattern is close to free-form text with
+ * <p>Note that other than the placeholders, characters in the template are treated as literals.
+ * This makes it simpler compared to regex if your pattern is close to free-form text with
  * characters like '.', '?', '(', '|' and what not. On the other hand, if you need to use regex
  * modifiers and quantifiers to express complex pattern, this class is not the right tool for the job.
  *
@@ -190,7 +187,7 @@ public final class StringTemplate {
    * match, or to access the raw index in the input string.
    */
   public Optional<List<Substring.Match>> match(String input) {
-    List<Substring.Match> builder = new ArrayList<>();
+    List<Substring.Match> builder = new ArrayList<>(placeholders.size());
     int inputIndex = 0;
     for (int i = 0; i < delimiters.size(); i++) {
       Substring.Match delimiter = delimiters.get(i).match(input, inputIndex);
