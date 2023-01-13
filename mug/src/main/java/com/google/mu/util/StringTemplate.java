@@ -114,6 +114,10 @@ public final class StringTemplate {
    * Parses {@code input} and applies {@code function} with the single placeholder value
    * in this template.
    *
+   * <p>For example: <pre>{@code
+   * new StringTemplate("Job failed (job id: {})").parse(input, jobId -> ...);
+   * }</pre>
+   *
    * @throws IllegalArgumentException if {@code input} doesn't match the template or the template
    *     doesn't have exactly one placeholder.
    */
@@ -125,6 +129,11 @@ public final class StringTemplate {
    * Parses {@code input} and applies {@code function} with the two placeholder values
    * in this template.
    *
+   * <p>For example: <pre>{@code
+   * new StringTemplate("Job failed (job id: '{}', error code: {})")
+   *     .parse(input, (jobId, errorCode) -> ...);
+   * }</pre>
+   *
    * @throws IllegalArgumentException if {@code input} doesn't match the template or the template
    *     doesn't have exactly two placeholders.
    */
@@ -133,8 +142,13 @@ public final class StringTemplate {
   }
 
   /**
-   * Parses {@code input} and applies {@code function} with the 3 placeholder values
-   * in this template.
+   * Similar to {@link #parse(String, BiFunction}, but parses {@code input} and applies {@code
+   * function} with the <em>3</em> placeholder values in this template.
+   *
+   * <p>For example: <pre>{@code
+   * new StringTemplate("Job failed (job id: '{}', error code: {}, error details: {})")
+   *     .parse(input, (jobId, errorCode, errorDetails) -> ...);
+   * }</pre>
    *
    * @throws IllegalArgumentException if {@code input} doesn't match the template or the template
    *     doesn't have exactly 3 placeholders.
@@ -144,8 +158,8 @@ public final class StringTemplate {
   }
 
   /**
-   * Parses {@code input} and applies {@code function} with the 4 placeholder values
-   * in this template.
+   * Similar to {@link #parse(String, BiFunction}, but parses {@code input} and applies {@code
+   * function} with the <em>4</em> placeholder values in this template.
    *
    * @throws IllegalArgumentException if {@code input} doesn't match the template or the template
    *     doesn't have exactly 4 placeholders.
@@ -155,8 +169,8 @@ public final class StringTemplate {
   }
 
   /**
-   * Parses {@code input} and applies {@code function} with the 5 placeholder values
-   * in this template.
+   * Similar to {@link #parse(String, BiFunction}, but parses {@code input} and applies {@code
+   * function} with the <em>5</em> placeholder values in this template.
    *
    * @throws IllegalArgumentException if {@code input} doesn't match the template or the template
    *     doesn't have exactly 5 placeholders.
@@ -166,8 +180,8 @@ public final class StringTemplate {
   }
 
   /**
-   * Parses {@code input} and applies {@code function} with the 6 placeholder values
-   * in this template.
+   * Similar to {@link #parse(String, BiFunction}, but parses {@code input} and applies {@code
+   * function} with the <em>6</em> placeholder values in this template.
    *
    * @throws IllegalArgumentException if {@code input} doesn't match the template or the template
    *     doesn't have exactly 6 placeholders.
