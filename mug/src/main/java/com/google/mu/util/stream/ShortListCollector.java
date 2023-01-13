@@ -54,7 +54,7 @@ abstract class ShortListCollector<T, R> extends FixedSizeCollector<T, List<T>, R
   }
 
   @Override public final Supplier<List<T>> supplier() {
-    return ArrayList::new;
+    return () -> new ArrayList<T>(arity());
   }
 
   @Override public String toString() {
