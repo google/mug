@@ -71,6 +71,7 @@ public class StringTemplateTest {
     assertThrows(IllegalArgumentException.class, () -> template.parse("Hello Tom! "));
     assertThrows(IllegalArgumentException.class, () -> template.parse("Hello Tom"));
   }
+
   @Test public void parse_nonEmptyTemplate_emptyInput() {
     StringTemplate template = new StringTemplate("Hello {name}!");
     assertThrows(IllegalArgumentException.class, () -> template.parse(""));
@@ -126,6 +127,12 @@ public class StringTemplateTest {
   @Test public void parse_customPlaceholderPattern() {
     assertThat(new StringTemplate("My name is %s", first("%s").repeatedly()).parse("My name is one", Object::toString))
         .isEqualTo("one");
+  }
+
+  @Test public void parse_ignoreTrailing() {
+    StringTemplate template = new StringTemplate("Hello {name}!{*}");
+    assertThat(template.parse("Hello Tom! whatever").skipKeysIf("{*}"::equals).toMap())
+        .containsExactly("{name}", "Tom");
   }
 
   @Test public void testFormat() {
