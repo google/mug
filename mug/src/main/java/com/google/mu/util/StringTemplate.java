@@ -59,6 +59,7 @@ import com.google.mu.util.stream.BiStream;
 public final class StringTemplate {
   private final String format;
   private final List<Substring.Match> placeholders;
+  private List<String> placeholderVariableNames;  // lazy init
 
   /**
    * In the input string, a placeholder value is found from the current position until the next
@@ -131,8 +132,7 @@ public final class StringTemplate {
    * @throws IllegalArgumentException if {@code input} doesn't match the template
    */
   public BiStream<String, String> parse(String input) {
-    return BiStream.zip(
-        placeholders.stream().map(Substring.Match::toString), parsePlaceholderValues(input));
+    return BiStream.zip(placeholderVariableNames().stream(), parsePlaceholderValues(input));
   }
 
   /**
@@ -277,7 +277,7 @@ public final class StringTemplate {
    */
   public String format(Map<String, ?> placeholderValuesMap) {
     requireNonNull(placeholderValuesMap);
-    return format(placeholder -> toStringOrNull(placeholderValuesMap.get(placeholder.toString())));
+    return format(placeholder -> toStringOrNull(placeholderValuesMap.get(placeholder)));
   }
 
   /**
@@ -287,11 +287,12 @@ public final class StringTemplate {
    *     if {@code placeholderValueFunction} is null or returns null value for any placeholder
    */
   public String format(
-      Function<? super Substring.Match, ? extends CharSequence> placeholderValueFunction) {
+      Function<? super String, ? extends CharSequence> placeholderValueFunction) {
     requireNonNull(placeholderValueFunction);
     StringBuilder builder = new StringBuilder();
-    for (int i = 0; i < placeholders.size(); i++) {
-      Substring.Match placeholder = placeholders.get(i);
+    List<String> placeholderNames = placeholderVariableNames();
+    for (int i = 0; i < placeholderNames.size(); i++) {
+      String placeholder = placeholderNames.get(i);
       CharSequence placeholderValue = placeholderValueFunction.apply(placeholder);
       if (placeholderValue == null) {
         throw new NullPointerException("no placeholder value for " + placeholder);
@@ -312,9 +313,16 @@ public final class StringTemplate {
     return placeholders;
   }
 
-  /** Returns the immutable list of placeholder variable names in this template, in occurrence order. */
+  /**
+   * Returns the immutable list of placeholder variable names in this template, in occurrence order.
+   */
   public List<String> placeholderVariableNames() {
-    return placeholders.stream().map(Substring.Match::toString).collect(toImmutableList());
+    List<String> names = placeholderVariableNames;
+    if (names == null) {
+      names = placeholders.stream().map(Substring.Match::toString).collect(toImmutableList());
+      placeholderVariableNames = names;
+    }
+    return names;
   }
 
   /** Returns the template pattern. */
