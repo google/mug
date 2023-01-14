@@ -330,30 +330,30 @@ public final class StringTemplate {
   }
 
   private static void extractLiteralsFromFormat(
-      String format, List<Substring.Match> placeholders,
-      List<String> literals, List<Substring.Pattern> literalLocators) {
-    int formatIndex = 0;
+      String template, List<Substring.Match> placeholders,
+      ArrayList<String> literals, ArrayList<Substring.Pattern> literalLocators) {
+    int templateIndex = 0;
     for (
         int i = 0; i < placeholders.size();
-        formatIndex = placeholders.get(i).index() + placeholders.get(i).length(), i++) {
+        templateIndex = placeholders.get(i).index() + placeholders.get(i).length(), i++) {
       Substring.Match nextPlaceholder = placeholders.get(i);
       int literalEnd = nextPlaceholder.index();
-      String literal = format.substring(formatIndex, literalEnd);
+      String literal = template.substring(templateIndex, literalEnd);
       literals.add(literal);
       if (i == 0) {
         literalLocators.add(prefix(literal));  // First literal anchored to beginning
         continue;
       }
       literalLocators.add(first(literal));  // Subsequent literals are searched
-      if (formatIndex >= literalEnd) {
+      if (templateIndex >= literalEnd) {
         throw new IllegalArgumentException(
             "Invalid pattern with '" + placeholders.get(i - 1) + nextPlaceholder + "'");
       }
     }
-    String literal = format.substring(formatIndex, format.length());
+    String literal = template.substring(templateIndex, template.length());
     literals.add(literal);
     // If no placeholder, anchor to beginning; else last literal anchored to end.
-    literalLocators.add(formatIndex == 0 ? prefix(literal) : suffix(literal));
+    literalLocators.add(templateIndex == 0 ? prefix(literal) : suffix(literal));
   }
 
   private static String toStringOrNull(Object obj) {
