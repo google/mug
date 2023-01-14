@@ -48,6 +48,9 @@ import com.google.mu.util.stream.BiStream;
  * characters like '.', '?', '(', '|' and what not. On the other hand, if you need to use regex
  * modifiers and quantifiers to express complex pattern, this class is not the right tool for the job.
  *
+ * <p>This class is immutable and pre-compiles the template format at constructor time so that the
+ * {@code parse()} and {@code format()} methods will be more efficient.
+ *
  * @since 6.6
  */
 public final class StringTemplate {
