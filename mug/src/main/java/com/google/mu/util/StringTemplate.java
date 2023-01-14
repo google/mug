@@ -59,7 +59,7 @@ import com.google.mu.util.stream.BiStream;
 public final class StringTemplate {
   private final String format;
   private final List<Substring.Match> placeholders;
-  private List<String> placeholderVariableNames;  // lazy init
+  private List<String> placeholderVariableNames;  // lazy initialized
 
   /**
    * In the input string, a placeholder value is found from the current position until the next
@@ -319,8 +319,8 @@ public final class StringTemplate {
   public List<String> placeholderVariableNames() {
     List<String> names = placeholderVariableNames;
     if (names == null) {
-      names = placeholders.stream().map(Substring.Match::toString).collect(toImmutableList());
-      placeholderVariableNames = names;
+      placeholderVariableNames =
+          names = placeholders.stream().map(Substring.Match::toString).collect(toImmutableList());
     }
     return names;
   }
