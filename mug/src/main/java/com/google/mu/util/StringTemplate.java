@@ -100,7 +100,7 @@ public final class StringTemplate {
         placeholders.stream().map(Substring.Match::toString).collect(toImmutableList());
     List<String> literals = new ArrayList<>(placeholders.size() + 1);
     List<Substring.Pattern> literalLocators = new ArrayList<>(literals.size());
-    populateLiterals(format, placeholders, literals, literalLocators);
+    extractLiteralsFromFormat(format, placeholders, literals, literalLocators);
     this.literals = unmodifiableList(literals);
     this.literalLocators = unmodifiableList(literalLocators);
   }
@@ -313,38 +313,31 @@ public final class StringTemplate {
         .map(Substring.Match::toString);
   }
 
-  private static void populateLiterals(
+  private static void extractLiteralsFromFormat(
       String format, List<Substring.Match> placeholders,
       List<String> literals, List<Substring.Pattern> literalLocators) {
-    if (placeholders.isEmpty()) {
-      literals.add(format);
-      literalLocators.add(prefix(format));
-    } else {
-      Substring.Match placeholder = placeholders.get(0);
-      {
-        String literal = format.substring(0, placeholder.index());
-        literals.add(literal);
-        literalLocators.add(prefix(literal));
+    int formatIndex = 0;
+    for (
+        int i = 0; i < placeholders.size();
+        formatIndex = placeholders.get(i).index() + placeholders.get(i).length(), i++) {
+      Substring.Match nextPlaceholder = placeholders.get(i);
+      int literalEnd = nextPlaceholder.index();
+      String literal = format.substring(formatIndex, literalEnd);
+      literals.add(literal);
+      if (i == 0) {
+        literalLocators.add(prefix(literal));  // First literal anchored to beginning
+        continue;
       }
-      for (int i = 1; ; i++) {
-        final int from = placeholder.index() + placeholder.length();
-        if (i == placeholders.size()) {
-          String literal = format.substring(from, format.length());
-          literals.add(literal);
-          literalLocators.add(suffix(literal));
-          break;
-        }
-        int end = placeholders.get(i).index();
-        if (from >= end) {
-          throw new IllegalArgumentException(
-              "Invalid pattern with '" + placeholder + placeholders.get(i) + "'");
-        }
-        String literal = format.substring(from, end);
-        literals.add(literal);
-        literalLocators.add(first(literal));
-        placeholder = placeholders.get(i);
+      if (formatIndex >= literalEnd) {
+        throw new IllegalArgumentException(
+            "Invalid pattern with '" + placeholders.get(i - 1) + nextPlaceholder + "'");
       }
+      literalLocators.add(first(literal));  // Subsequent literals are searched
     }
+    String literal = format.substring(formatIndex, format.length());
+    literals.add(literal);
+    // If no placeholder, we anchor it to the beginning. Otherwise last literal anchored to end.
+    literalLocators.add(formatIndex == 0 ? prefix(literal) : suffix(literal));
   }
 
   private static String toStringOrNull(Object obj) {
