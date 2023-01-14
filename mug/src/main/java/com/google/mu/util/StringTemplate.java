@@ -114,7 +114,7 @@ public final class StringTemplate {
    * (no other String format specifiers are supported).
    *
    * <p>For example: <pre>{@code
-   * StringTemplate.usingFormatString("I bought %s and %s at price of %s")
+   * usingFormatString("I bought %s and %s at price of %s")
    *     .parse("I bought ice cream and beer at price of $15.4", (a, b, price) -> ...));
    * }</pre>
    */
