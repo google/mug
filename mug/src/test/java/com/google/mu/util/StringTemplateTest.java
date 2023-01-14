@@ -160,6 +160,11 @@ public class StringTemplateTest {
         .isEqualTo("Hi Tom!");
   }
 
+  @Test public void testFormatWithMap_duplicatePlaceholderVariableNames() {
+    assertThat(new StringTemplate("Hi {person}. Thank you {person}!").format(ImmutableMap.of("{person}", "Tom")))
+        .isEqualTo("Hi Tom. Thank you Tom!");
+  }
+
   @Test public void testFormatWithMap_returnsNull() {
     NullPointerException thrown =
         assertThrows(NullPointerException.class, () -> new StringTemplate("Hi {name}!").format(ImmutableMap.of()));
