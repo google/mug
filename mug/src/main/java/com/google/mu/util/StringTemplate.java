@@ -70,7 +70,11 @@ public final class StringTemplate {
   private final List<Substring.Pattern> literalLocators;
 
   /**
-   * Constructs a StringTemplate
+   * Constructs a StringTemplate. For example:
+   *
+   * <pre>{@code
+   * new StringTemplate("Dear {person}, your confirmation number is {confirmation_number}")
+   * }</pre>.
    *
    * @param format the template format with placeholders in the format of {@code "{placeholder_name}"}
    * @throws IllegalArgumentException if {@code format} is invalid
@@ -110,11 +114,11 @@ public final class StringTemplate {
    * (no other String format specifiers are supported).
    *
    * <p>For example: <pre>{@code
-   * StringTemplate.ofFormatString("I bought %s and %s at price of %s")
+   * StringTemplate.usingFormatString("I bought %s and %s at price of %s")
    *     .parse("I bought ice cream and beer at price of $15.4", (a, b, price) -> ...));
    * }</pre>
    */
-  public static StringTemplate ofFormatString(String format) {
+  public static StringTemplate usingFormatString(String format) {
     return new StringTemplate(format, first("%s").repeatedly());
   }
 
