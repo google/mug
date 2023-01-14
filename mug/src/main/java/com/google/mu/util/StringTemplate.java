@@ -59,7 +59,6 @@ import com.google.mu.util.stream.BiStream;
 public final class StringTemplate {
   private final String format;
   private final List<Substring.Match> placeholders;
-  private final List<String> placeholderVariableNames;
 
   /**
    * In the input string, a placeholder value is found from the current position until the next
@@ -100,8 +99,6 @@ public final class StringTemplate {
   public StringTemplate(String format, Substring.RepeatingPattern placeholderVariablesPattern) {
     this.format = format;
     this.placeholders = placeholderVariablesPattern.match(format).collect(toImmutableList());
-    this.placeholderVariableNames =
-        placeholders.stream().map(Substring.Match::toString).collect(toImmutableList());
     List<String> literals = new ArrayList<>(placeholders.size() + 1);
     List<Substring.Pattern> literalLocators = new ArrayList<>(literals.size());
     extractLiteralsFromFormat(format, placeholders, literals, literalLocators);
@@ -134,7 +131,8 @@ public final class StringTemplate {
    * @throws IllegalArgumentException if {@code input} doesn't match the template
    */
   public BiStream<String, String> parse(String input) {
-    return BiStream.zip(placeholderVariableNames.stream(),  parsePlaceholderValues(input));
+    return BiStream.zip(
+        placeholders.stream().map(Substring.Match::toString), parsePlaceholderValues(input));
   }
 
   /**
@@ -315,7 +313,7 @@ public final class StringTemplate {
 
   /** Returns the immutable list of placeholder variable names in this template, in occurrence order. */
   public List<String> placeholderVariableNames() {
-    return placeholderVariableNames;
+    return placeholders.stream().map(Substring.Match::toString).collect(toImmutableList());
   }
 
   /** Returns the template pattern. */
