@@ -244,6 +244,12 @@ public final class StringTemplate {
    * Formats this template with the provided {@code args} for each placeholder, in the same order
    * as {@link #placeholders}. Null arg will show up as "null" in the result string.
    *
+   * <p>For example: <pre>{@code
+   * new StringTemplate("Dear {person}, your confirmation number is {confirmation#}")
+   *     .format("customer", 12345);
+   *   => "Dear customer, your confirmation number is 12345"
+   * }</pre>
+   *
    * @throws NullPointerException if {@code args} is null
    * @throws IllegalArgumentException if {@code args} is longer or shorter than {@link #placeholders}.
    */
@@ -258,9 +264,17 @@ public final class StringTemplate {
   }
 
   /**
-   * Formats this template with {@code placeholderValuesMap} keyed by the {@link #placeholderVariableNames}.
+   * Formats this template with {@code placeholderValuesMap} keyed by the {@link
+   * #placeholderVariableNames}.
    *
-   * @throws NullPointerException if {@code placeholderValueFunction} is null or returns null value for any placeholder
+   * <p>For example: <pre>{@code
+   * new StringTemplate("Dear {person}, your confirmation number is {confirmation#}")
+   *     .format(Map.of("{person}", "customer", "{confirmation#}", 12345));
+   *   => "Dear customer, your confirmation number is 12345"
+   * }</pre>
+   *
+   * @throws NullPointerException
+   *     if {@code placeholderValuesMap} is null or any placeholder mapping is missing or null
    */
   public String format(Map<String, ?> placeholderValuesMap) {
     requireNonNull(placeholderValuesMap);
