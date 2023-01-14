@@ -27,11 +27,15 @@ public class StringTemplateTest {
   @Test public void parse_onlyPlaceholder() {
     StringTemplate template = new StringTemplate("{body}");
     assertThat(template.parse("Hello Tom!").toMap()).containsExactly("{body}", "Hello Tom!");
+    assertThat(template.match("Hello Tom!").get().stream().map(Substring.Match::toString))
+        .containsExactly("Hello Tom!");
   }
 
   @Test public void parse_singlePlaceholder() {
     StringTemplate template = new StringTemplate("Hello {name}!");
     assertThat(template.parse("Hello Tom!").toMap()).containsExactly("{name}", "Tom");
+    assertThat(template.match("Hello Tom!").get().stream().map(Substring.Match::toString))
+        .containsExactly("Tom");
   }
 
   @Test public void parse_multiplePlaceholders() {
@@ -39,6 +43,9 @@ public class StringTemplateTest {
         new StringTemplate("Hello {name}, welcome to {where}!");
     assertThat(template.parse("Hello Gandolf, welcome to Isengard!").toMap())
         .containsExactly("{name}", "Gandolf", "{where}", "Isengard")
+        .inOrder();
+    assertThat(template.match("Hello Gandolf, welcome to Isengard!").get().stream().map(Substring.Match::toString))
+        .containsExactly( "Gandolf", "Isengard")
         .inOrder();
   }
 
