@@ -7,6 +7,7 @@ import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.Substring.suffix;
 import static com.google.mu.util.stream.MoreCollectors.asIn;
 import static java.util.Collections.unmodifiableList;
+import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,7 +52,6 @@ import com.google.mu.util.stream.BiStream;
  */
 public final class StringTemplate {
   private final String format;
-  private final Substring.RepeatingPattern placeholderVariablesPattern;
   private final List<Substring.Match> placeholders;
   private final List<String> placeholderVariableNames;
 
@@ -88,11 +88,23 @@ public final class StringTemplate {
    */
   public StringTemplate(String format, Substring.RepeatingPattern placeholderVariablesPattern) {
     this.format = format;
-    this.placeholderVariablesPattern = placeholderVariablesPattern;
     this.placeholders = placeholderVariablesPattern.match(format).collect(toImmutableList());
     this.placeholderVariableNames =
         placeholders.stream().map(Substring.Match::toString).collect(toImmutableList());
     this.delimiters = getDelimiters(format, placeholders);
+  }
+
+  /**
+   * Returns a StringTemplate of {@code format} with {@code %s} placeholders
+   * (no other String format specifiers are supported).
+   *
+   * <p>For example: <pre>{@code
+   * StringTemplate.ofFormatString("I bought %s and %s at price of %s")
+   *     .parse("I bought ice cream and beer at price of $15.4", (a, b, price) -> ...));
+   * }</pre>
+   */
+  public static StringTemplate ofFormatString(String format) {
+    return new StringTemplate(format, first("%s").repeatedly());
   }
 
   /**
@@ -215,12 +227,41 @@ public final class StringTemplate {
   }
 
   /**
-   * Render this template using placeholder values returned by {@code placeholderValueFunction}.
+   * Formats this template with placeholder values returned by {@code placeholderValueFunction}.
    *
    * @throws NullPointerException if {@code placeholderValueFunction} is null or returns null value for any placeholder
    */
-  public String format(Function<? super Substring.Match, ? extends CharSequence> placeholderValueFunction) {
-    return placeholderVariablesPattern.replaceAllFrom(format, placeholderValueFunction);
+  public String formatWith(Function<? super Substring.Match, ? extends CharSequence> placeholderValueFunction) {
+    requireNonNull(placeholderValueFunction);
+    StringBuilder builder = new StringBuilder();
+    int index = 0;
+    for (Substring.Match placeholder : placeholders) {
+      builder
+          .append(format.substring(index, placeholder.index()))
+          .append(
+              requireNonNull(
+                  placeholderValueFunction.apply(placeholder),
+                  "Null returned from placeholder value function."));
+      index = placeholder.index() + placeholder.length();
+    }
+    return builder.append(format.substring(index)).toString();
+  }
+
+  /**
+   * Formats this template with the provided {@code args} for each placeholder, in the same order
+   * as {@link #placeholders}. Null arg will show up as "null" in the result string.
+   *
+   * @throws NullPointerException if {@code args} is null
+   * @throws IllegalArgumentException if {@code args} is longer or shorter than {@link #placeholders}.
+   */
+  public String format(Object... args) {
+    if (args.length != placeholders.size()) {
+      throw new IllegalArgumentException(
+          placeholders.size() + " format arguments expected, " + args.length + " provided.");
+    }
+    int[] index = new int[1];
+    // We know the function is called once for each placeholder, in strict order.
+    return formatWith(placeholder -> String.valueOf(args[index[0]++]));
   }
 
   /**

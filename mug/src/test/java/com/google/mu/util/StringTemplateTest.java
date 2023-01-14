@@ -135,17 +135,58 @@ public class StringTemplateTest {
         .containsExactly("{name}", "Tom");
   }
 
-  @Test public void testFormat() {
-    assertThat(new StringTemplate("Hi {name}!").format(v -> "Tom")).isEqualTo("Hi Tom!");
+  @Test public void testFormatWith() {
+    assertThat(new StringTemplate("Hi {name}!").formatWith(v -> "Tom")).isEqualTo("Hi Tom!");
   }
 
-  @Test public void testFormatRoundtrip(
+  @Test public void testFormatWith_returnsNull() {
+    assertThrows(NullPointerException.class, () -> new StringTemplate("Hi {name}!").formatWith(v -> null));
+  }
+
+  @Test public void testFormat() {
+    assertThat(
+            StringTemplate.ofFormatString("Dear %s, next stop is %s!").format("passengers", "Seattle"))
+        .isEqualTo("Dear passengers, next stop is Seattle!");
+    assertThat(
+            new StringTemplate("Who is {person}").format("David"))
+        .isEqualTo("Who is David");
+  }
+
+  @Test public void testFormat_nullArg() {
+    assertThat(
+            StringTemplate.ofFormatString("Dear %s, next stop is %s!").format("passengers", null))
+        .isEqualTo("Dear passengers, next stop is null!");
+  }
+
+  @Test public void testFormat_fewerArgs() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> StringTemplate.ofFormatString("Dear %s, next stop is %s!").format("passengers"));
+  }
+
+  @Test public void testFormat_moreArgs() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> StringTemplate.ofFormatString("Dear %s, next stop is %s!").format("passengers", "Seattle", 1));
+  }
+
+  @Test public void testFormatWith_roundtrip(
       @TestParameter({"", "k", ".", "foo"}) String key,
       @TestParameter({"", "v", ".", "bar"}) String value) {
     ImmutableMap<String, String> mappings = ImmutableMap.of("{key}", key, "{value}", value);
     StringTemplate template = new StringTemplate("key : {key}, value : {value}");
-    String formatted = template.format(v -> mappings.get(v.toString()));
+    String formatted = template.formatWith(v -> mappings.get(v.toString()));
     assertThat(template.parse(formatted).toMap()).isEqualTo(mappings);
+  }
+
+  @Test public void testFormat_roundtrip(
+      @TestParameter({"", "k", ".", "foo"}) String key,
+      @TestParameter({"", "v", ".", "bar"}) String value) {
+    StringTemplate template = new StringTemplate("key : {key}, value : {value}");
+    String formatted = template.format(key, value);
+    assertThat(template.parse(formatted).toMap())
+        .containsExactly("{key}", key, "{value}", value)
+        .inOrder();
   }
 
   @Test public void twoPlaceholdersNextToEachOther() {
