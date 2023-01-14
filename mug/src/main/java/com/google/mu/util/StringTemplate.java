@@ -273,14 +273,15 @@ public final class StringTemplate {
       Function<? super Substring.Match, ? extends CharSequence> placeholderValueFunction) {
     requireNonNull(placeholderValueFunction);
     StringBuilder builder = new StringBuilder();
-    for (int i = 0; i < placeholders.size(); i++) {
-      Substring.Match placeholder = placeholders.get(i);
-      CharSequence placeholderValue = placeholderValueFunction.apply(placeholder);
-      if (placeholderValue == null) {
-        throw new NullPointerException("No placeholder value for " + placeholder);
-      }
-      builder.append(literals.get(i)).append(placeholderValue);
-    }
+    BiStream.zip(literals, placeholders)
+        .mapValues(placeholder -> {
+          CharSequence placeholderValue = placeholderValueFunction.apply(placeholder);
+          if (placeholderValue == null) {
+            throw new NullPointerException("No placeholder value for " + placeholder);
+          }
+          return placeholderValue;
+        })
+        .forEachOrdered((literal, placeholderValue) -> builder.append(literal).append(placeholderValue));
     return builder.append(literals.get(placeholders.size())).toString();
   }
 
