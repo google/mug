@@ -336,7 +336,7 @@ public final class StringTemplate {
     }
     String literal = format.substring(formatIndex, format.length());
     literals.add(literal);
-    // If no placeholder, anchor to beginning. Otherwise last literal anchored to end.
+    // If no placeholder, anchor to beginning; else last literal anchored to end.
     literalLocators.add(formatIndex == 0 ? prefix(literal) : suffix(literal));
   }
 
