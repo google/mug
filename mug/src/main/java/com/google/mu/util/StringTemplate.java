@@ -328,11 +328,11 @@ public final class StringTemplate {
         literalLocators.add(prefix(literal));  // First literal anchored to beginning
         continue;
       }
+      literalLocators.add(first(literal));  // Subsequent literals are searched
       if (formatIndex >= literalEnd) {
         throw new IllegalArgumentException(
             "Invalid pattern with '" + placeholders.get(i - 1) + nextPlaceholder + "'");
       }
-      literalLocators.add(first(literal));  // Subsequent literals are searched
     }
     String literal = format.substring(formatIndex, format.length());
     literals.add(literal);
