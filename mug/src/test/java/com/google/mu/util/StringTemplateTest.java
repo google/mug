@@ -238,6 +238,11 @@ public class StringTemplateTest {
     assertThrows(IllegalArgumentException.class, () -> new StringTemplate("{}{}"));
   }
 
+  @Test public void parse_partiallyOverlappingTemplate() {
+    assertThat(new StringTemplate("xyz{x}xzz").parse("xyzzxxzz").toMap())
+        .containsExactly("{x}", "zx");
+  }
+
   @Test public void testNulls() {
     new ClassSanityTester()
         .setDefault(Substring.RepeatingPattern.class, first("%s").repeatedly())
