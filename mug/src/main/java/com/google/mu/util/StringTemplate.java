@@ -2,6 +2,7 @@ package com.google.mu.util;
 
 import static com.google.mu.util.InternalCollectors.toImmutableList;
 import static com.google.mu.util.Optionals.optional;
+import static com.google.mu.util.Substring.before;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.Substring.suffix;
@@ -11,6 +12,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -223,13 +225,12 @@ public final class StringTemplate {
     List<Substring.Match> builder = new ArrayList<>(placeholders.size());
     int inputIndex = 0;
     for (int i = 0; i < literalLocators.size(); i++) {
-      Substring.Match delimiter = literalLocators.get(i).match(input, inputIndex);
-      if (delimiter == null) return Optional.empty();
+      Substring.Match placeholder = before(literalLocators.get(i)).match(input, inputIndex);
+      if (placeholder == null) return Optional.empty();
       if (i > 0) {
-        builder.add(
-            Substring.Match.nonBacktrackable(input, inputIndex, delimiter.index() - inputIndex));
+        builder.add(placeholder);
       }
-      inputIndex = delimiter.index() + delimiter.length();
+      inputIndex = placeholder.index() + placeholder.length() + literals.get(i).length();
     }
     return optional(inputIndex == input.length(), unmodifiableList(builder));
   }
@@ -248,26 +249,36 @@ public final class StringTemplate {
     }
     int[] index = new int[1];
     // We know the function is called once for each placeholder, in strict order.
-    return formatWith(placeholder -> String.valueOf(args[index[0]++]));
+    return format(placeholder -> String.valueOf(args[index[0]++]));
+  }
+
+  /**
+   * Formats this template with {@code placeholderValuesMap} keyed by the {@link #placeholderVariableNames}.
+   *
+   * @throws NullPointerException if {@code placeholderValueFunction} is null or returns null value for any placeholder
+   */
+  public String format(Map<String, ?> placeholderValuesMap) {
+    requireNonNull(placeholderValuesMap);
+    return format(placeholder -> toStringOrNull(placeholderValuesMap.get(placeholder.toString())));
   }
 
   /**
    * Formats this template with placeholder values returned by {@code placeholderValueFunction}.
    *
-   * @throws NullPointerException if {@code placeholderValueFunction} is null or returns null value for any placeholder
+   * @throws NullPointerException
+   *     if {@code placeholderValueFunction} is null or returns null value for any placeholder
    */
-  public String formatWith(
+  public String format(
       Function<? super Substring.Match, ? extends CharSequence> placeholderValueFunction) {
     requireNonNull(placeholderValueFunction);
     StringBuilder builder = new StringBuilder();
     for (int i = 0; i < placeholders.size(); i++) {
       Substring.Match placeholder = placeholders.get(i);
-      builder
-          .append(literals.get(i))
-          .append(
-              requireNonNull(
-                  placeholderValueFunction.apply(placeholder),
-                  "null returned from placeholder value function."));
+      CharSequence placeholderValue = placeholderValueFunction.apply(placeholder);
+      if (placeholderValue == null) {
+        throw new NullPointerException("No placeholder value for " + placeholder);
+      }
+      builder.append(literals.get(i)).append(placeholderValue);
     }
     return builder.append(literals.get(placeholders.size())).toString();
   }
@@ -333,5 +344,9 @@ public final class StringTemplate {
         placeholder = placeholders.get(i);
       }
     }
+  }
+
+  private static String toStringOrNull(Object obj) {
+    return obj == null ? null : obj.toString();
   }
 }

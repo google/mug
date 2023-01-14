@@ -135,12 +135,43 @@ public class StringTemplateTest {
         .containsExactly("{name}", "Tom");
   }
 
-  @Test public void testFormatWith() {
-    assertThat(new StringTemplate("Hi {name}!").formatWith(v -> "Tom")).isEqualTo("Hi Tom!");
+  @Test public void testFormatWithFunction() {
+    assertThat(new StringTemplate("Hi {name}!").format(v -> "Tom")).isEqualTo("Hi Tom!");
   }
 
-  @Test public void testFormatWith_returnsNull() {
-    assertThrows(NullPointerException.class, () -> new StringTemplate("Hi {name}!").formatWith(v -> null));
+  @Test public void testFormatWithFunction_returnsNull() {
+    NullPointerException thrown =
+        assertThrows(NullPointerException.class, () -> new StringTemplate("Hi {name}!").format(v -> null));
+    assertThat(thrown).hasMessageThat().contains("{name}");
+  }
+
+  @Test public void testFormatWithFunction_roundtrip(
+      @TestParameter({"", "k", ".", "foo"}) String key,
+      @TestParameter({"", "v", ".", "bar"}) String value) {
+    ImmutableMap<String, String> mappings = ImmutableMap.of("{key}", key, "{value}", value);
+    StringTemplate template = new StringTemplate("key : {key}, value : {value}");
+    String formatted = template.format(v -> mappings.get(v.toString()));
+    assertThat(template.parse(formatted).toMap()).isEqualTo(mappings);
+  }
+
+  @Test public void testFormatWithMap() {
+    assertThat(new StringTemplate("Hi {name}!").format(ImmutableMap.of("{name}", "Tom")))
+        .isEqualTo("Hi Tom!");
+  }
+
+  @Test public void testFormatWithMap_returnsNull() {
+    NullPointerException thrown =
+        assertThrows(NullPointerException.class, () -> new StringTemplate("Hi {name}!").format(ImmutableMap.of()));
+    assertThat(thrown).hasMessageThat().contains("{name}");
+  }
+
+  @Test public void testFormatWithMap_roundtrip(
+      @TestParameter({"", "k", ".", "foo"}) String key,
+      @TestParameter({"", "v", ".", "bar"}) String value) {
+    ImmutableMap<String, String> mappings = ImmutableMap.of("{key}", key, "{value}", value);
+    StringTemplate template = new StringTemplate("key : {key}, value : {value}");
+    String formatted = template.format(mappings);
+    assertThat(template.parse(formatted).toMap()).isEqualTo(mappings);
   }
 
   @Test public void testFormat() {
@@ -172,15 +203,6 @@ public class StringTemplateTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> StringTemplate.ofFormatString("Dear %s, next stop is %s!").format("passengers", "Seattle", 1));
-  }
-
-  @Test public void testFormatWith_roundtrip(
-      @TestParameter({"", "k", ".", "foo"}) String key,
-      @TestParameter({"", "v", ".", "bar"}) String value) {
-    ImmutableMap<String, String> mappings = ImmutableMap.of("{key}", key, "{value}", value);
-    StringTemplate template = new StringTemplate("key : {key}, value : {value}");
-    String formatted = template.formatWith(v -> mappings.get(v.toString()));
-    assertThat(template.parse(formatted).toMap()).isEqualTo(mappings);
   }
 
   @Test public void testFormat_roundtrip(
