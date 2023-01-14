@@ -277,7 +277,7 @@ public final class StringTemplate {
       Substring.Match placeholder = placeholders.get(i);
       CharSequence placeholderValue = placeholderValueFunction.apply(placeholder);
       if (placeholderValue == null) {
-        throw new NullPointerException("No placeholder value for " + placeholder);
+        throw new NullPointerException("no placeholder value for " + placeholder);
       }
       builder.append(literals.get(i)).append(placeholderValue);
     }
