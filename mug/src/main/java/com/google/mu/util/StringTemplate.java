@@ -41,14 +41,15 @@ import com.google.mu.util.stream.BiStream;
  * Sometimes, it may be easier to directly collect the placeholder values using lambda:
  *
  * <pre>{@code
- * return new StringTemplate("To {}: {}?")
+ * return StringTemplate.ofFormatString("To %s: %s?")
  *     .parse(input, (recipient, question) -> ...));
  * }</pre>
  *
  * <p>Note that other than the placeholders, characters in the template are treated as literals.
  * This makes it simpler compared to regex if your pattern is close to free-form text with
  * characters like '.', '?', '(', '|' and what not. On the other hand, if you need to use regex
- * modifiers and quantifiers to express complex pattern, this class is not the right tool for the job.
+ * modifiers and quantifiers to express complex patterns, you need a regex pattern, not a literal
+ * pattern with placeholders.
  *
  * <p>This class is immutable and pre-compiles the template format at constructor time so that the
  * {@code parse()} and {@code format()} methods will be more efficient.
