@@ -56,12 +56,12 @@ public final class StringTemplate {
   private final List<String> placeholderVariableNames;
 
   /**
-   * In the input string, a placeholder value is found from the current position until the next delimiter.
-   * The delimiter consists of all literal characters in the template between the previous placeholder
-   * (or the BEGINNING) and the next placeholder (or the END).
+   * In the input string, a placeholder value is found from the current position until the next
+   * text literal, which includes all literal characters found in the template between the previous
+   * placeholder variable (or the BEGINNING) and the next placeholder variable (or the END).
    */
-  private final List<String> delimiterLiterals;
-  private final List<Substring.Pattern> delimiterPatterns;
+  private final List<String> literals;
+  private final List<Substring.Pattern> literalLocators;
 
   /**
    * Constructs a StringTemplate
@@ -92,11 +92,11 @@ public final class StringTemplate {
     this.placeholders = placeholderVariablesPattern.match(format).collect(toImmutableList());
     this.placeholderVariableNames =
         placeholders.stream().map(Substring.Match::toString).collect(toImmutableList());
-    List<String> delimiterLiterals = new ArrayList<>(placeholders.size() + 1);
-    List<Substring.Pattern> delimiterPatterns = new ArrayList<>(delimiterLiterals.size());
-    populateDelimiters(format, placeholders, delimiterLiterals, delimiterPatterns);
-    this.delimiterLiterals = unmodifiableList(delimiterLiterals);
-    this.delimiterPatterns = unmodifiableList(delimiterPatterns);
+    List<String> literals = new ArrayList<>(placeholders.size() + 1);
+    List<Substring.Pattern> literalLocators = new ArrayList<>(literals.size());
+    populateLiterals(format, placeholders, literals, literalLocators);
+    this.literals = unmodifiableList(literals);
+    this.literalLocators = unmodifiableList(literalLocators);
   }
 
   /**
@@ -219,8 +219,8 @@ public final class StringTemplate {
   public Optional<List<Substring.Match>> match(String input) {
     List<Substring.Match> builder = new ArrayList<>(placeholders.size());
     int inputIndex = 0;
-    for (int i = 0; i < delimiterPatterns.size(); i++) {
-      Substring.Match delimiter = delimiterPatterns.get(i).match(input, inputIndex);
+    for (int i = 0; i < literalLocators.size(); i++) {
+      Substring.Match delimiter = literalLocators.get(i).match(input, inputIndex);
       if (delimiter == null) return Optional.empty();
       if (i > 0) {
         builder.add(
@@ -229,27 +229,6 @@ public final class StringTemplate {
       inputIndex = delimiter.index() + delimiter.length();
     }
     return optional(inputIndex == input.length(), unmodifiableList(builder));
-  }
-
-  /**
-   * Formats this template with placeholder values returned by {@code placeholderValueFunction}.
-   *
-   * @throws NullPointerException if {@code placeholderValueFunction} is null or returns null value for any placeholder
-   */
-  public String formatWith(
-      Function<? super Substring.Match, ? extends CharSequence> placeholderValueFunction) {
-    requireNonNull(placeholderValueFunction);
-    StringBuilder builder = new StringBuilder();
-    for (int i = 0; i < placeholders.size(); i++) {
-      Substring.Match placeholder = placeholders.get(i);
-      builder
-          .append(delimiterLiterals.get(i))
-          .append(
-              requireNonNull(
-                  placeholderValueFunction.apply(placeholder),
-                  "null returned from placeholder value function."));
-    }
-    return builder.append(delimiterLiterals.get(placeholders.size())).toString();
   }
 
   /**
@@ -267,6 +246,27 @@ public final class StringTemplate {
     int[] index = new int[1];
     // We know the function is called once for each placeholder, in strict order.
     return formatWith(placeholder -> String.valueOf(args[index[0]++]));
+  }
+
+  /**
+   * Formats this template with placeholder values returned by {@code placeholderValueFunction}.
+   *
+   * @throws NullPointerException if {@code placeholderValueFunction} is null or returns null value for any placeholder
+   */
+  public String formatWith(
+      Function<? super Substring.Match, ? extends CharSequence> placeholderValueFunction) {
+    requireNonNull(placeholderValueFunction);
+    StringBuilder builder = new StringBuilder();
+    for (int i = 0; i < placeholders.size(); i++) {
+      Substring.Match placeholder = placeholders.get(i);
+      builder
+          .append(literals.get(i))
+          .append(
+              requireNonNull(
+                  placeholderValueFunction.apply(placeholder),
+                  "null returned from placeholder value function."));
+    }
+    return builder.append(literals.get(placeholders.size())).toString();
   }
 
   /**
@@ -298,25 +298,25 @@ public final class StringTemplate {
         .map(Substring.Match::toString);
   }
 
-  private static void populateDelimiters(
+  private static void populateLiterals(
       String format, List<Substring.Match> placeholders,
-      List<String> delimiterLiterals, List<Substring.Pattern> delimiterPatterns) {
+      List<String> literals, List<Substring.Pattern> literalLocators) {
     if (placeholders.isEmpty()) {
-      delimiterLiterals.add(format);
-      delimiterPatterns.add(prefix(format));
+      literals.add(format);
+      literalLocators.add(prefix(format));
     } else {
       Substring.Match placeholder = placeholders.get(0);
       {
-        String delimiterLiteral = format.substring(0, placeholder.index());
-        delimiterLiterals.add(delimiterLiteral);
-        delimiterPatterns.add(prefix(delimiterLiteral));
+        String literal = format.substring(0, placeholder.index());
+        literals.add(literal);
+        literalLocators.add(prefix(literal));
       }
       for (int i = 1; ; i++) {
         final int from = placeholder.index() + placeholder.length();
         if (i == placeholders.size()) {
-          String delimiterLiteral = format.substring(from, format.length());
-          delimiterLiterals.add(delimiterLiteral);
-          delimiterPatterns.add(suffix(delimiterLiteral));
+          String literal = format.substring(from, format.length());
+          literals.add(literal);
+          literalLocators.add(suffix(literal));
           break;
         }
         int end = placeholders.get(i).index();
@@ -324,9 +324,9 @@ public final class StringTemplate {
           throw new IllegalArgumentException(
               "Invalid pattern with '" + placeholder + placeholders.get(i) + "'");
         }
-        String delimiterLiteral = format.substring(from, end);
-        delimiterLiterals.add(delimiterLiteral);
-        delimiterPatterns.add(first(delimiterLiteral));
+        String literal = format.substring(from, end);
+        literals.add(literal);
+        literalLocators.add(first(literal));
         placeholder = placeholders.get(i);
       }
     }
