@@ -41,7 +41,7 @@ import com.google.mu.util.stream.BiStream;
  * Sometimes, it may be easier to directly collect the placeholder values using lambda:
  *
  * <pre>{@code
- * return StringTemplate.ofFormatString("To %s: %s?")
+ * return StringTemplate.usingFormatString("To %s: %s?")
  *     .parse(input, (recipient, question) -> ...));
  * }</pre>
  *
