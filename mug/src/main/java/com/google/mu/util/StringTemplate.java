@@ -229,7 +229,7 @@ public final class StringTemplate {
   public Optional<List<Substring.Match>> match(String input) {
     List<Substring.Match> builder = new ArrayList<>(placeholders.size());
     int inputIndex = 0;
-    for (int i = 0; i < literalLocators.size(); i++) {
+    for (int i = 0; i < literals.size(); i++) {
       Substring.Match placeholder = before(literalLocators.get(i)).match(input, inputIndex);
       if (placeholder == null) return Optional.empty();
       if (i > 0) {
