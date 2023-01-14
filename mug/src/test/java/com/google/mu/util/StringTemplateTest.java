@@ -152,6 +152,10 @@ public class StringTemplateTest {
         .isEqualTo("Who is David");
   }
 
+  @Test public void testFormat_noArg() {
+    assertThat(new StringTemplate("Hello world!").format()).isEqualTo("Hello world!");
+  }
+
   @Test public void testFormat_nullArg() {
     assertThat(
             StringTemplate.ofFormatString("Dear %s, next stop is %s!").format("passengers", null))
