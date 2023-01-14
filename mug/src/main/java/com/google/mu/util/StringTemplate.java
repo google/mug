@@ -73,7 +73,7 @@ public final class StringTemplate {
    *
    * <pre>{@code
    * new StringTemplate("Dear {person}, your confirmation number is {confirmation_number}")
-   * }</pre>.
+   * }</pre>
    *
    * @param format the template format with placeholders in the format of {@code "{placeholder_name}"}
    * @throws IllegalArgumentException if {@code format} is invalid
@@ -251,7 +251,8 @@ public final class StringTemplate {
    * @throws NullPointerException if {@code args} is null
    * @throws IllegalArgumentException if {@code args} is longer or shorter than {@link #placeholders}.
    */
-  public String format(Object... args) {
+  @SafeVarargs
+  public final String format(Object... args) {
     if (args.length != placeholders.size()) {
       throw new IllegalArgumentException(
           placeholders.size() + " format arguments expected, " + args.length + " provided.");
@@ -331,7 +332,7 @@ public final class StringTemplate {
 
   private static void extractLiteralsFromFormat(
       String template, List<Substring.Match> placeholders,
-      ArrayList<String> literals, ArrayList<Substring.Pattern> literalLocators) {
+      List<String> literals, List<Substring.Pattern> literalLocators) {
     int templateIndex = 0;
     for (
         int i = 0; i < placeholders.size();
