@@ -218,6 +218,11 @@ public class StringTemplateTest {
         () -> usingFormatString("Dear %s, next stop is %s!").format("passengers", "Seattle", 1));
   }
 
+  @Test public void testFormat_duplicatePlaceholderVariableNames() {
+    assertThat(new StringTemplate("Hi {person} and {person}!").format("Tom", "Jerry"))
+        .isEqualTo("Hi Tom and Jerry!");
+  }
+
   @Test public void testFormat_roundtrip(
       @TestParameter({"", "k", ".", "foo"}) String key,
       @TestParameter({"", "v", ".", "bar"}) String value) {
