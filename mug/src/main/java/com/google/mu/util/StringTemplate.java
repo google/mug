@@ -61,9 +61,9 @@ import com.google.mu.util.stream.BiStream;
  *     .parse( "I bought apples and oranges and chips", (fruit, snacks) -> ...);
  * }</pre>
  *
- * This is because the parser will see the " and " substring and immediately matches {@code fruit}
- * to {@code "apples"}, with no backtracking attempted. As such, only use this class to parse
- * unambiguous strings. Use regex otherwise.
+ * This is because the parser will see the " and " substring and immediately matches {@code
+ * "apples"} as {@code fruits}, with no backtracking attempted. As such, only use this class to
+ * parse unambiguous strings. Use regex otherwise.
  *
  * <p>This class is immutable and pre-compiles the template format at constructor time so that the
  * {@code parse()} and {@code format()} methods will be more efficient.
