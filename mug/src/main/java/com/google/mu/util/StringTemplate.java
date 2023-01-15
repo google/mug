@@ -334,7 +334,7 @@ public final class StringTemplate {
   private Stream<String> parsePlaceholderValues(String input) {
     return match(input)
         .orElseThrow(
-            () -> new IllegalArgumentException("Input doesn't match template (" + format + ")"))
+            () -> new IllegalArgumentException("input doesn't match template (" + format + ")"))
         .stream()
         .map(Substring.Match::toString);
   }
@@ -357,7 +357,7 @@ public final class StringTemplate {
       literalLocators.add(first(literal));  // Subsequent literals are searched
       if (templateIndex >= literalEnd) {
         throw new IllegalArgumentException(
-            "Invalid pattern with '" + placeholders.get(i - 1) + nextPlaceholder + "'");
+            "invalid pattern with '" + placeholders.get(i - 1) + nextPlaceholder + "'");
       }
     }
     String literal = template.substring(templateIndex, template.length());

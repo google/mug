@@ -42,14 +42,7 @@ abstract class ShortListCollector<T, R> extends FixedSizeCollector<T, List<T>, R
   }
 
   @Override public final Function<List<T>, R> finisher() {
-    return this::collect;
-  }
-
-  @Override
-  public final R collect(List<? extends T> list) {
-    if (appliesTo(list)) return reduce(list);
-    throw new IllegalArgumentException(
-        "Not true that input " + showShortList(list, arity() + 1) + " has " + this + ".");
+    return this::collectOrThrow;
   }
 
   @Override public final Set<Characteristics> characteristics() {
@@ -62,6 +55,16 @@ abstract class ShortListCollector<T, R> extends FixedSizeCollector<T, List<T>, R
 
   @Override public String toString() {
     return arity() + " elements";
+  }
+
+  /**
+   * Use this collector to collect elements from {@code list} if it's of the expected size,
+   * or else throws {@link IllegalArgumentException}.
+   */
+  private R collectOrThrow(List<? extends T> list) {
+    if (appliesTo(list)) return reduce(list);
+    throw new IllegalArgumentException(
+        "Not true that input " + showShortList(list, arity() + 1) + " has " + this + ".");
   }
 
   static String showShortList(List<?> list, int elementsToShow) {
