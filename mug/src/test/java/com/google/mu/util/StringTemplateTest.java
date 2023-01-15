@@ -2,7 +2,6 @@ package com.google.mu.util;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static com.google.mu.util.StringTemplate.usingFormatString;
 import static com.google.mu.util.Substring.first;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -133,7 +132,7 @@ public class StringTemplateTest {
   }
 
   @Test public void parse_usingFormatString() {
-    assertThat(usingFormatString("My name is %s").parse("My name is one", Object::toString))
+    assertThat(new StringTemplate("My name is %s", "%s").parse("My name is one", Object::toString))
         .isEqualTo("one");
   }
 
@@ -189,7 +188,7 @@ public class StringTemplateTest {
 
   @Test public void testFormat() {
     assertThat(
-            usingFormatString("Dear %s, next stop is %s!").format("passengers", "Seattle"))
+            new StringTemplate("Dear %s, next stop is %s!", "%s").format("passengers", "Seattle"))
         .isEqualTo("Dear passengers, next stop is Seattle!");
     assertThat(
             new StringTemplate("Who is {person}").format("David"))
@@ -202,20 +201,20 @@ public class StringTemplateTest {
 
   @Test public void testFormat_nullArg() {
     assertThat(
-            usingFormatString("Dear %s, next stop is %s!").format("passengers", null))
+            new StringTemplate("Dear %s, next stop is %s!", "%s").format("passengers", null))
         .isEqualTo("Dear passengers, next stop is null!");
   }
 
   @Test public void testFormat_fewerArgs() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> usingFormatString("Dear %s, next stop is %s!").format("passengers"));
+        () -> new StringTemplate("Dear %s, next stop is %s!", "%s").format("passengers"));
   }
 
   @Test public void testFormat_moreArgs() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> usingFormatString("Dear %s, next stop is %s!").format("passengers", "Seattle", 1));
+        () -> new StringTemplate("Dear %s, next stop is %s!", "%s").format("passengers", "Seattle", 1));
   }
 
   @Test public void testFormat_duplicatePlaceholderVariableNames() {

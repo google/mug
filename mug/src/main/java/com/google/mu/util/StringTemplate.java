@@ -41,7 +41,7 @@ import com.google.mu.util.stream.BiStream;
  * Sometimes, it may be easier to directly collect the placeholder values using lambda:
  *
  * <pre>{@code
- * return StringTemplate.usingFormatString("To %s: %s?")
+ * return new StringTemplate("To %s: %s?", "%s")
  *     .parse(input, (recipient, question) -> ...));
  * }</pre>
  *
@@ -50,6 +50,20 @@ import com.google.mu.util.stream.BiStream;
  * characters like '.', '?', '(', '|' and what not. On the other hand, if you need to use regex
  * modifiers and quantifiers to express complex patterns, you need a regex pattern, not a literal
  * pattern with placeholders.
+ *
+ * <p>The {@code parse()} methods are potentially lossy reverse operations of {@link
+ * String#format} or the {@code format()} methods. Consider the format string of
+ * {@code String.format("I bought %s and %s", "apples and oranges", "chips")}, it returns
+ * {@code "I bought apples and oranges and chips"}; but the following code will fail to parse:
+ *
+ * <pre>{@code
+ * new StringTemplate("I bought {fruits} and {snacks}")
+ *     .parse( "I bought apples and oranges and chips", (fruit, snacks) -> ...);
+ * }</pre>
+ *
+ * This is because the parser will see the " and " substring and immediately matches {@code fruit}
+ * to {@code "apples"}, with no backtracking attempted. As such, only use this class to parse
+ * unambiguous strings. Use regex otherwise.
  *
  * <p>This class is immutable and pre-compiles the template format at constructor time so that the
  * {@code parse()} and {@code format()} methods will be more efficient.
@@ -86,6 +100,18 @@ public final class StringTemplate {
   }
 
   /**
+   * Returns a StringTemplate for the given {@code format} with {@code placeholder}.
+   *
+   * <p>For example: <pre>{@code
+   * new StringTemplate("I bought %s and %s at price of %s", "%s")
+   *     .parse("I bought ice cream and beer at price of $15.4", (a, b, price) -> ...));
+   * }</pre>
+   */
+  public StringTemplate(String format, String placeholder) {
+    this(format, first(placeholder).repeatedly());
+  }
+
+  /**
    * Constructs a StringTemplate. By default, {@code new StringTemplate(format)} assumes placeholders
    * to be enclosed by curly braces. For example: "Hello {customer}". If you need different placeholder
    * syntax, for example, to emulate Java's "%s", you can use:
@@ -106,19 +132,6 @@ public final class StringTemplate {
     extractLiteralsFromFormat(format, placeholders, literals, literalLocators);
     this.literals = unmodifiableList(literals);
     this.literalLocators = unmodifiableList(literalLocators);
-  }
-
-  /**
-   * Returns a StringTemplate of {@code format} with {@code %s} placeholders
-   * (no other String format specifiers are supported).
-   *
-   * <p>For example: <pre>{@code
-   * usingFormatString("I bought %s and %s at price of %s")
-   *     .parse("I bought ice cream and beer at price of $15.4", (a, b, price) -> ...));
-   * }</pre>
-   */
-  public static StringTemplate usingFormatString(String format) {
-    return new StringTemplate(format, first("%s").repeatedly());
   }
 
   /**
