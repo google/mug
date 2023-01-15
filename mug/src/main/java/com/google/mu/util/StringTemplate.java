@@ -51,10 +51,11 @@ import com.google.mu.util.stream.BiStream;
  * modifiers and quantifiers to express complex patterns, you need a regex pattern, not a literal
  * pattern with placeholders.
  *
- * <p>The {@code parse()} methods are potentially lossy reverse operations of {@link
- * String#format} or the {@code format()} methods. Consider the format string of
- * {@code String.format("I bought %s and %s", "apples and oranges", "chips")}, it returns
- * {@code "I bought apples and oranges and chips"}; but the following code will fail to parse:
+ * <p>The {@code parse()} methods are potentially lossy reverse operations of {@link String#format}
+ * or the {@code format()} methods. Consider the format string of {@code String.format("I bought %s
+ * and %s", "apples and oranges", "chips")}, it returns {@code "I bought apples and oranges and
+ * chips"}; but the parsing code will incorrectly return {@code Map.of("{fruits}", "apples",
+ * "{snacks}", "oranges and chips")}:
  *
  * <pre>{@code
  * new StringTemplate("I bought {fruits} and {snacks}")
