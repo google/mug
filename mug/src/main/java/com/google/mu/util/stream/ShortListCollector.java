@@ -42,11 +42,14 @@ abstract class ShortListCollector<T, R> extends FixedSizeCollector<T, List<T>, R
   }
 
   @Override public final Function<List<T>, R> finisher() {
-    return l -> {
-      if (appliesTo(l)) return reduce(l);
-      throw new IllegalArgumentException(
-          "Not true that input " + showShortList(l, arity() + 1) + " has " + this + ".");
-    };
+    return this::collect;
+  }
+
+  @Override
+  public final R collect(List<? extends T> list) {
+    if (appliesTo(list)) return reduce(list);
+    throw new IllegalArgumentException(
+        "Not true that input " + showShortList(list, arity() + 1) + " has " + this + ".");
   }
 
   @Override public final Set<Characteristics> characteristics() {

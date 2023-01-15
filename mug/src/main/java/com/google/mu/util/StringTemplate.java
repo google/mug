@@ -59,7 +59,8 @@ import com.google.mu.util.stream.BiStream;
 public final class StringTemplate {
   private final String format;
   private final List<Substring.Match> placeholders;
-  private List<String> placeholderVariableNames;  // lazy initialized
+  // See http://jeremymanson.blogspot.com/2008/12/benign-data-races-in-java.html
+  private List<String> lazyInitPlaceholderVariableNames;
 
   /**
    * In the input string, a placeholder value is found from the current position until the next
@@ -126,8 +127,8 @@ public final class StringTemplate {
    *
    * <p>The entire {@code input} string is matched against the template. So if there are trailing
    * characters after what's captured by the template, the parsing will fail. If you need to allow
-   * trailing characters, consider adding a trailing placeholder such as "{*}" to capture them.
-   * You can then filter them out using {@code .skipKeysIf("{*}"::equals)}.
+   * trailing characters, consider adding a trailing placeholder such as "{_}" to capture them.
+   * You can then filter them out using {@code .skipKeysIf("{_}"::equals)}.
    *
    * @throws IllegalArgumentException if {@code input} doesn't match the template
    */
@@ -264,7 +265,7 @@ public final class StringTemplate {
 
   /**
    * Formats this template with {@code placeholderValuesMap} keyed by the {@link
-   * #placeholderVariableNames}.
+   * #lazyInitPlaceholderVariableNames}.
    *
    * <p>For example: <pre>{@code
    * new StringTemplate("Dear {person}, your confirmation number is {confirmation#}")
@@ -277,7 +278,9 @@ public final class StringTemplate {
    */
   public String format(Map<String, ?> placeholderValuesMap) {
     requireNonNull(placeholderValuesMap);
-    return format(placeholder -> toStringOrNull(placeholderValuesMap.get(placeholder)));
+    return format(
+        placeholder ->
+            nonNullPlaceholderValue(placeholder, placeholderValuesMap.get(placeholder)).toString());
   }
 
   /**
@@ -293,11 +296,9 @@ public final class StringTemplate {
     List<String> placeholderNames = placeholderVariableNames();
     for (int i = 0; i < placeholderNames.size(); i++) {
       String placeholder = placeholderNames.get(i);
-      CharSequence placeholderValue = placeholderValueFunction.apply(placeholder);
-      if (placeholderValue == null) {
-        throw new NullPointerException("no placeholder value for " + placeholder);
-      }
-      builder.append(literals.get(i)).append(placeholderValue);
+      builder
+          .append(literals.get(i))
+          .append(nonNullPlaceholderValue(placeholder, placeholderValueFunction.apply(placeholder)));
     }
     return builder.append(literals.get(placeholders.size())).toString();
   }
@@ -317,9 +318,9 @@ public final class StringTemplate {
    * Returns the immutable list of placeholder variable names in this template, in occurrence order.
    */
   public List<String> placeholderVariableNames() {
-    List<String> names = placeholderVariableNames;
+    List<String> names = lazyInitPlaceholderVariableNames;
     if (names == null) {
-      placeholderVariableNames =
+      lazyInitPlaceholderVariableNames =
           names = placeholders.stream().map(Substring.Match::toString).collect(toImmutableList());
     }
     return names;
@@ -365,7 +366,10 @@ public final class StringTemplate {
     literalLocators.add(templateIndex == 0 ? prefix(literal) : suffix(literal));
   }
 
-  private static String toStringOrNull(Object obj) {
-    return obj == null ? null : obj.toString();
+  private static <T> T nonNullPlaceholderValue(String variableName, T value) {
+    if (value == null) {
+      throw new NullPointerException("no placeholder value for " + variableName);
+    }
+    return value;
   }
 }
