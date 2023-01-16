@@ -79,8 +79,6 @@ import com.google.mu.util.stream.BiStream;
 public final class StringFormat {
   private final String format;
   private final List<Substring.Match> placeholders;
-  // See http://jeremymanson.blogspot.com/2008/12/benign-data-races-in-java.html
-  private List<String> lazyInitPlaceholderVariableNames;
 
   /**
    * In the input string, a placeholder value is found from the current position until the next
@@ -227,7 +225,8 @@ public final class StringFormat {
    * @throws IllegalArgumentException if {@code input} doesn't match the format
    */
   public BiStream<String, String> parse(String input) {
-    return BiStream.zip(placeholderVariableNames().stream(), parsePlaceholderValues(input));
+    return BiStream.zip(
+        placeholders.stream().map(Substring.Match::toString), parsePlaceholderValues(input));
   }
 
   /**
@@ -306,18 +305,6 @@ public final class StringFormat {
   /** Returns the template pattern. */
   @Override public String toString() {
     return format;
-  }
-
-  /**
-   * Returns the immutable list of placeholder variable names in this template, in occurrence order.
-   */
-  private List<String> placeholderVariableNames() {
-    List<String> names = lazyInitPlaceholderVariableNames;
-    if (names == null) {
-      lazyInitPlaceholderVariableNames =
-          names = placeholders.stream().map(Substring.Match::toString).collect(toImmutableList());
-    }
-    return names;
   }
 
   private Stream<String> parsePlaceholderValues(String input) {
