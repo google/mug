@@ -1,6 +1,7 @@
 package com.google.mu.util;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.Substring.first;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -11,7 +12,6 @@ import org.junit.runner.RunWith;
 
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.testing.ClassSanityTester;
-import com.google.mu.util.stream.BiStream;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
@@ -20,23 +20,23 @@ public class StringFormatTest {
 
   @Test public void parse_noPlaceholder() {
     StringFormat template = new StringFormat("this is literal");
-    assertThat(template.parse("this is literal")).isEmpty();
+    assertThat(template.parse("this is literal").toMap()).isEmpty();
   }
 
   @Test public void parse_onlyPlaceholder() {
     StringFormat template = new StringFormat("%s");
-    assertThat(template.parse("Hello Tom!")).containsExactly("Hello Tom!");
+    assertThat(template.parse("Hello Tom!").toMap()).containsExactly("%s", "Hello Tom!");
   }
 
   @Test public void parse_singlePlaceholder() {
     StringFormat template = new StringFormat("Hello %s!");
-    assertThat(template.parse("Hello Tom!")).containsExactly("Tom");
+    assertThat(template.parse("Hello Tom!").toMap()).containsExactly("%s", "Tom");
   }
 
   @Test public void parse_multiplePlaceholders() {
     StringFormat template =
         new StringFormat("Hello %s, welcome to %s!");
-    assertThat(template.parse("Hello Gandolf, welcome to Isengard!"))
+    assertThat(template.parse("Hello Gandolf, welcome to Isengard!").values())
         .containsExactly("Gandolf", "Isengard")
         .inOrder();
   }
@@ -45,8 +45,7 @@ public class StringFormatTest {
     StringFormat template =
         new StringFormat("Hello {name} and {name}!", "{", "}");
     ImmutableListMultimap<String, String> result =
-        BiStream.zip(template.placeholders(), template.parse("Hello Gandolf and Aragon!"))
-            .mapKeys(Substring.Match::toString)
+        template.parse("Hello Gandolf and Aragon!")
             .collect(ImmutableListMultimap::toImmutableListMultimap);
     assertThat(result)
         .containsExactly("{name}", "Gandolf", "{name}", "Aragon")
@@ -54,9 +53,8 @@ public class StringFormatTest {
   }
 
   @Test public void parse_emptyPlaceholderValue() {
-    StringFormat template =
-        new StringFormat("Hello %s!");
-    assertThat(template.parse("Hello !")).containsExactly("");
+    StringFormat template = new StringFormat("Hello %s!");
+    assertThat(template.parse("Hello !").toMap()).containsExactly("%s", "");
   }
 
   @Test public void parse_preludeFailsToMatch() {
@@ -85,7 +83,7 @@ public class StringFormatTest {
 
   @Test public void parse_emptyTemplate_emptyInput() {
     StringFormat template = new StringFormat("");
-    assertThat(template.parse("")).isEmpty();
+    assertThat(template.parse("").toMap()).isEmpty();
   }
 
   @Test public void parse_withOneArgLambda() {
@@ -133,8 +131,7 @@ public class StringFormatTest {
   @Test public void parse_ignoreTrailing() {
     StringFormat template = new StringFormat("Hello {name}!{*}", "{", "}");
     Map<String, String> result =
-        BiStream.zip(template.placeholders(), template.parse("Hello Tom! whatever"))
-            .mapKeys(Substring.Match::toString)
+        template.parse("Hello Tom! whatever")
             .skipKeysIf("{*}"::equals)
             .toMap();
     assertThat(result).containsExactly("{name}", "Tom");
@@ -181,7 +178,7 @@ public class StringFormatTest {
       @TestParameter({"", "v", ".", "bar"}) String value) {
     StringFormat template = new StringFormat("key : {key}, value : {value}", "{", "}");
     String formatted = template.format(key, value);
-    assertThat(BiStream.zip(template.placeholders(), template.parse(formatted)).mapKeys(Substring.Match::toString).toMap())
+    assertThat( template.parse(formatted).toMap())
         .containsExactly("{key}", key, "{value}", value)
         .inOrder();
   }
@@ -192,7 +189,7 @@ public class StringFormatTest {
   }
 
   @Test public void parse_partiallyOverlappingTemplate() {
-    assertThat(new StringFormat("xyz%sxzz").parse("xyzzxxzz"))
+    assertThat(new StringFormat("xyz%sxzz").parse("xyzzxxzz").values())
         .containsExactly("zx");
   }
 
