@@ -236,7 +236,7 @@ public final class StringFormat {
    * <p>The {@link Substring.Match} result type allows caller to inspect the characters around each
    * match, or to access the raw index in the input string.
    */
-  private Optional<List<Substring.Match>> match(String input) {
+  public Optional<List<Substring.Match>> match(String input) {
     List<Substring.Match> builder = new ArrayList<>(placeholders.size());
     int inputIndex = 0;
     for (int i = 0; i < literals.size(); i++) {
@@ -251,13 +251,24 @@ public final class StringFormat {
   }
 
   /**
-   * Formats this template with the provided {@code args} for each placeholder, in the same order
-   * as {@link #placeholders}. Null arg will show up as "null" in the result string.
+   * By default, (with "%s" as the placeholder), it's equivalent to {@link String#format}
+   * (but faster). It can also be used for named placeholders. For example:
    *
-   * <p>For example: <pre>{@code
-   * new StringFormat("Dear {person}, your confirmation number is {confirmation#}")
+   * <pre>{@code
+   * new StringFormat("Dear {person}, your confirmation number is {confirmation#}", "{", "}")
    *     .format("customer", 12345);
    *   => "Dear customer, your confirmation number is 12345"
+   * }</pre>
+   *
+   * <p>If you wish to supply the placeholder values by name, consider using {@link Substring},
+   * as in:
+   *
+   * <pre>{@code
+   * Substring.spanningInOrder("{", "{")
+   *     .repeatedly()
+   *     .replaceAllFrom(
+   *         "Dear {person}, your confirmation number is {confirmation#}",
+   *         placeholder -> ...);
    * }</pre>
    *
    * @throws NullPointerException if {@code args} is null
