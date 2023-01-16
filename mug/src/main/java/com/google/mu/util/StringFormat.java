@@ -139,7 +139,7 @@ public final class StringFormat {
   }
 
   /**
-   * Parses {@code input} and applies {@code function} with the single placeholder value
+   * Parses {@code input} and applies {@code reducer} with the single placeholder value
    * in this template.
    *
    * <p>For example: <pre>{@code
@@ -149,12 +149,12 @@ public final class StringFormat {
    * @throws IllegalArgumentException if {@code input} doesn't match the format or the template
    *     doesn't have exactly one placeholder.
    */
-  public <R> R parse(String input, Function<? super String, R> function) {
-    return parsePlaceholderValues(input).collect(asIn(function));
+  public <R> R parse(String input, Function<? super String, R> reducer) {
+    return parsePlaceholderValues(input).collect(asIn(reducer));
   }
 
   /**
-   * Parses {@code input} and applies {@code function} with the two placeholder values
+   * Parses {@code input} and applies {@code reducer} with the two placeholder values
    * in this template.
    *
    * <p>For example: <pre>{@code
@@ -165,13 +165,13 @@ public final class StringFormat {
    * @throws IllegalArgumentException if {@code input} doesn't match the format or the template
    *     doesn't have exactly two placeholders.
    */
-  public <R> R parse(String input, BiFunction<? super String, ? super String, R> function) {
-    return parsePlaceholderValues(input).collect(asIn(function));
+  public <R> R parse(String input, BiFunction<? super String, ? super String, R> reducer) {
+    return parsePlaceholderValues(input).collect(asIn(reducer));
   }
 
   /**
    * Similar to {@link #parse(String, BiFunction}, but parses {@code input} and applies {@code
-   * function} with the <em>3</em> placeholder values in this template.
+   * reducer} with the <em>3</em> placeholder values in this template.
    *
    * <p>For example: <pre>{@code
    * new StringFormat("Job failed (job id: '{}', error code: {}, error details: {})")
@@ -181,41 +181,41 @@ public final class StringFormat {
    * @throws IllegalArgumentException if {@code input} doesn't match the format or the template
    *     doesn't have exactly 3 placeholders.
    */
-  public <R> R parse(String input, Ternary<? super String,  R> function) {
-    return parsePlaceholderValues(input).collect(asIn(function));
+  public <R> R parse(String input, Ternary<? super String,  R> reducer) {
+    return parsePlaceholderValues(input).collect(asIn(reducer));
   }
 
   /**
    * Similar to {@link #parse(String, BiFunction}, but parses {@code input} and applies {@code
-   * function} with the <em>4</em> placeholder values in this template.
+   * reducer} with the <em>4</em> placeholder values in this template.
    *
    * @throws IllegalArgumentException if {@code input} doesn't match the format or the template
    *     doesn't have exactly 4 placeholders.
    */
-  public <R> R parse(String input, Quarternary<? super String,  R> function) {
-    return parsePlaceholderValues(input).collect(asIn(function));
+  public <R> R parse(String input, Quarternary<? super String,  R> reducer) {
+    return parsePlaceholderValues(input).collect(asIn(reducer));
   }
 
   /**
    * Similar to {@link #parse(String, BiFunction}, but parses {@code input} and applies {@code
-   * function} with the <em>5</em> placeholder values in this template.
+   * reducer} with the <em>5</em> placeholder values in this template.
    *
    * @throws IllegalArgumentException if {@code input} doesn't match the format or the template
    *     doesn't have exactly 5 placeholders.
    */
-  public <R> R parse(String input, Quinary<? super String,  R> function) {
-    return parsePlaceholderValues(input).collect(asIn(function));
+  public <R> R parse(String input, Quinary<? super String,  R> reducer) {
+    return parsePlaceholderValues(input).collect(asIn(reducer));
   }
 
   /**
    * Similar to {@link #parse(String, BiFunction}, but parses {@code input} and applies {@code
-   * function} with the <em>6</em> placeholder values in this template.
+   * reducer} with the <em>6</em> placeholder values in this template.
    *
    * @throws IllegalArgumentException if {@code input} doesn't match the format or the template
    *     doesn't have exactly 6 placeholders.
    */
-  public <R> R parse(String input, Senary<? super String,  R> function) {
-    return parsePlaceholderValues(input).collect(asIn(function));
+  public <R> R parse(String input, Senary<? super String,  R> reducer) {
+    return parsePlaceholderValues(input).collect(asIn(reducer));
   }
 
   /**
@@ -255,16 +255,16 @@ public final class StringFormat {
    * (but faster). It can also be used for named placeholders. For example:
    *
    * <pre>{@code
-   * new StringFormat("Dear {person}, your confirmation number is {confirmation#}", "{", "}")
-   *     .format("customer", 12345);
-   *   => "Dear customer, your confirmation number is 12345"
+   * new StringFormat("projects/{project}/locations/{location}", "{", "}")
+   *     .format("my-project", "us");
+   *   => "projects/my-project/locations/us"
    * }</pre>
    *
    * <p>If you wish to supply the placeholder values by name, consider using {@link Substring},
    * as in:
    *
    * <pre>{@code
-   * Substring.spanningInOrder("{", "{")
+   * Substring.spanningInOrder("{", "}")
    *     .repeatedly()
    *     .replaceAllFrom(
    *         "Dear {person}, your confirmation number is {confirmation#}",
