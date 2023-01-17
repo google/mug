@@ -69,11 +69,7 @@ public final class StringFormat {
   private final String format;
   private final List<Substring.Match> placeholders;
 
-  /**
-   * In the input string, a placeholder value is found from the current position until the next
-   * text literal, which includes all literal characters found in the template between the previous
-   * placeholder variable (or the BEGINNING) and the next placeholder variable (or the END).
-   */
+  /** In the input string "key: %s value: %s", "key: " and " value: " are the literals. */
   private final List<String> literals;
 
   /**
