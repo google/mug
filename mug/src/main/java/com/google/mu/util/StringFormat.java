@@ -4,7 +4,6 @@ import static com.google.mu.util.InternalCollectors.toImmutableList;
 import static com.google.mu.util.Optionals.optional;
 import static com.google.mu.util.Substring.before;
 import static com.google.mu.util.Substring.first;
-import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.Substring.suffix;
 import static com.google.mu.util.stream.MoreCollectors.asIn;
 import static java.util.Collections.unmodifiableList;
@@ -86,7 +85,6 @@ public final class StringFormat {
    * placeholder variable (or the BEGINNING) and the next placeholder variable (or the END).
    */
   private final List<String> literals;
-  private final List<Substring.Pattern> literalLocators;
 
   /**
    * Constructs a StringFormat. For example:
@@ -110,6 +108,12 @@ public final class StringFormat {
    * new StringFormat("I bought {fruits} and {snacks} at price of {price}", "{", "}")
    *     .parse("I bought ice cream and beer at price of $15.4", (a, b, price) -> ...));
    * }</pre>
+   *
+   * @param format the template format with placeholders
+   * @param placeholderPrefix the prefix of a placeholder
+   * @param placeholderSuffix the suffix of a placeholder
+   * @throws IllegalArgumentException if {@code format} is invalid
+   *     (e.g. a placeholder immediately followed by another placeholder)
    */
   public StringFormat(String format, String placeholderPrefix, String placeholderSuffix) {
     this(format, Substring.spanningInOrder(placeholderPrefix, placeholderSuffix).repeatedly());
@@ -131,11 +135,7 @@ public final class StringFormat {
   private StringFormat(String format, Substring.RepeatingPattern placeholderVariablesPattern) {
     this.format = format;
     this.placeholders = placeholderVariablesPattern.match(format).collect(toImmutableList());
-    List<String> literals = new ArrayList<>(placeholders.size() + 1);
-    List<Substring.Pattern> literalLocators = new ArrayList<>(literals.size());
-    extractLiteralsFromFormat(format, placeholders, literals, literalLocators);
-    this.literals = unmodifiableList(literals);
-    this.literalLocators = unmodifiableList(literalLocators);
+    this.literals = extractLiteralsFromFormat(format, placeholders);
   }
 
   /**
@@ -143,7 +143,7 @@ public final class StringFormat {
    * in this template.
    *
    * <p>For example: <pre>{@code
-   * new StringFormat("Job failed (job id: {})").parse(input, jobId -> ...);
+   * new StringFormat("Job failed (job id: %s)").parse(input, jobId -> ...);
    * }</pre>
    *
    * @throws IllegalArgumentException if {@code input} doesn't match the format or the template
@@ -158,7 +158,7 @@ public final class StringFormat {
    * in this template.
    *
    * <p>For example: <pre>{@code
-   * new StringFormat("Job failed (job id: '{}', error code: {})")
+   * new StringFormat("Job failed (job id: '%s', error code: %s)")
    *     .parse(input, (jobId, errorCode) -> ...);
    * }</pre>
    *
@@ -174,7 +174,7 @@ public final class StringFormat {
    * reducer} with the <em>3</em> placeholder values in this template.
    *
    * <p>For example: <pre>{@code
-   * new StringFormat("Job failed (job id: '{}', error code: {}, error details: {})")
+   * new StringFormat("Job failed (job id: '%s', error code: %s, error details: %s)")
    *     .parse(input, (jobId, errorCode, errorDetails) -> ...);
    * }</pre>
    *
@@ -240,13 +240,19 @@ public final class StringFormat {
    */
   public Optional<List<Substring.Match>> match(String input) {
     List<Substring.Match> builder = new ArrayList<>(placeholders.size());
-    int inputIndex = 0;
-    for (int i = 0; i < literals.size(); i++) {
-      Substring.Match placeholder = before(literalLocators.get(i)).match(input, inputIndex);
-      if (placeholder == null) return Optional.empty();
-      if (i > 0) {
-        builder.add(placeholder);
+    if (!input.startsWith(literals.get(0))) {  // first literal anchors to beginning
+      return Optional.empty();
+    }
+    int inputIndex = literals.get(0).length();
+    for (int i = 1; i < literals.size(); i++) {
+      // subsequent literals are searched; last literal anchors to the end
+      Substring.Pattern literalLocator =
+          i < literals.size() - 1 ? first(literals.get(i)) : suffix(literals.get(i));
+      Substring.Match placeholder = before(literalLocator).match(input, inputIndex);
+      if (placeholder == null) {
+        return Optional.empty();
       }
+      builder.add(placeholder);
       inputIndex = placeholder.index() + placeholder.length() + literals.get(i).length();
     }
     return optional(inputIndex == input.length(), unmodifiableList(builder));
@@ -315,30 +321,23 @@ public final class StringFormat {
         .map(Substring.Match::toString);
   }
 
-  private static void extractLiteralsFromFormat(
-      String template, List<Substring.Match> placeholders,
-      List<String> literals, List<Substring.Pattern> literalLocators) {
+  private static List<String> extractLiteralsFromFormat(
+      String template, List<Substring.Match> placeholders) {
+    List<String> literals = new ArrayList<>(placeholders.size() + 1);
     int templateIndex = 0;
     for (
         int i = 0; i < placeholders.size();
         templateIndex = placeholders.get(i).index() + placeholders.get(i).length(), i++) {
       Substring.Match nextPlaceholder = placeholders.get(i);
       int literalEnd = nextPlaceholder.index();
-      String literal = template.substring(templateIndex, literalEnd);
-      literals.add(literal);
-      if (i == 0) {
-        literalLocators.add(prefix(literal));  // First literal anchored to beginning
-        continue;
-      }
-      literalLocators.add(first(literal));  // Subsequent literals are searched
-      if (templateIndex >= literalEnd) {
+      if (i > 0 && templateIndex >= literalEnd) {
         throw new IllegalArgumentException(
             "invalid pattern with '" + placeholders.get(i - 1) + nextPlaceholder + "'");
       }
+      String literal = template.substring(templateIndex, literalEnd);
+      literals.add(literal);
     }
-    String literal = template.substring(templateIndex, template.length());
-    literals.add(literal);
-    // If no placeholder, anchor to beginning; else last literal anchored to end.
-    literalLocators.add(templateIndex == 0 ? prefix(literal) : suffix(literal));
+    literals.add(template.substring(templateIndex, template.length()));
+    return unmodifiableList(literals);
   }
 }
