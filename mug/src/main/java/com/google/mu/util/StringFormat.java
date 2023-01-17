@@ -334,8 +334,7 @@ public final class StringFormat {
         throw new IllegalArgumentException(
             "invalid pattern with '" + placeholders.get(i - 1) + nextPlaceholder + "'");
       }
-      String literal = template.substring(templateIndex, literalEnd);
-      literals.add(literal);
+      literals.add(template.substring(templateIndex, literalEnd));
     }
     literals.add(template.substring(templateIndex, template.length()));
     return unmodifiableList(literals);
