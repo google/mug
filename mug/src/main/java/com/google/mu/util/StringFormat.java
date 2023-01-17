@@ -33,19 +33,9 @@ import com.google.mu.util.stream.BiStream;
  * <p>Placeholders can be named:
  *
  * <pre>{@code
- * List<String> values =
+ * Map<String, String> placeholderValues =
  *     new StringFormat("To {recipient}: {question}?", "{", "}")
- *         .parse("To Charlie: How are you?");
- * }</pre>
- *
- * <p>If you'd like to access the placeholder values by name, you can {@link BiStream#zip zip}
- * them with {@link #placeholders}:
- *
- * <pre>{@code
- * StringFormat template = new StringFormat("To {recipient}: {question}?", "{", "}");
- * Map<String, String> values =
- *     BiStream.zip(template.placeholders(), template.parse("To Charlie: How are you?"))
- *         .mapKeys(Substring::Match::toString)
+ *         .parse("To Charlie: How are you?")
  *         .toMap();
  * }</pre>
  *
