@@ -3,6 +3,7 @@ package com.google.mu.util;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.Substring.first;
+import static com.google.mu.util.Substring.spanningInOrder;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Map;
@@ -43,7 +44,7 @@ public class StringFormatTest {
 
   @Test public void parse_multiplePlaceholdersWithSameName() {
     StringFormat template =
-        new StringFormat("Hello {name} and {name}!", "{", "}");
+        new StringFormat("Hello {name} and {name}!");
     ImmutableListMultimap<String, String> result =
         template.parse("Hello Gandolf and Aragon!")
             .collect(ImmutableListMultimap::toImmutableListMultimap);
@@ -123,13 +124,16 @@ public class StringFormatTest {
     assertThat(result).isEqualTo("onetwothreefourfivesix");
   }
 
-  @Test public void parse_usingFormatString() {
-    assertThat(new StringFormat("My name is %s").parse("My name is one", Object::toString))
-        .isEqualTo("one");
+  @Test public void parse_customPlaceholder() {
+    assertThat(
+            new StringFormat("My name is [name]", spanningInOrder("[", "]").repeatedly())
+                .parse("My name is one")
+                .toMap())
+        .containsExactly("[name]", "one");
   }
 
   @Test public void parse_ignoreTrailing() {
-    StringFormat template = new StringFormat("Hello {name}!{*}", "{", "}");
+    StringFormat template = new StringFormat("Hello {name}!{*}");
     Map<String, String> result =
         template.parse("Hello Tom! whatever")
             .skipKeysIf("{*}"::equals)
@@ -142,7 +146,7 @@ public class StringFormatTest {
             new StringFormat("Dear %s, next stop is %s!").format("passengers", "Seattle"))
         .isEqualTo("Dear passengers, next stop is Seattle!");
     assertThat(
-            new StringFormat("Who is {person}", "{", "}").format("David"))
+            new StringFormat("Who is {person}").format("David"))
         .isEqualTo("Who is David");
   }
 
@@ -169,14 +173,14 @@ public class StringFormatTest {
   }
 
   @Test public void testFormat_duplicatePlaceholderVariableNames() {
-    assertThat(new StringFormat("Hi {person} and {person}!", "{", "}").format("Tom", "Jerry"))
+    assertThat(new StringFormat("Hi {person} and {person}!").format("Tom", "Jerry"))
         .isEqualTo("Hi Tom and Jerry!");
   }
 
   @Test public void testFormat_roundtrip(
       @TestParameter({"", "k", ".", "foo"}) String key,
       @TestParameter({"", "v", ".", "bar"}) String value) {
-    StringFormat template = new StringFormat("key : {key}, value : {value}", "{", "}");
+    StringFormat template = new StringFormat("key : {key}, value : {value}");
     String formatted = template.format(key, value);
     assertThat( template.parse(formatted).toMap())
         .containsExactly("{key}", key, "{value}", value)
@@ -184,7 +188,7 @@ public class StringFormatTest {
   }
 
   @Test public void twoPlaceholdersNextToEachOther() {
-    assertThrows(IllegalArgumentException.class, () -> new StringFormat("{a}{b}", "{", "}"));
+    assertThrows(IllegalArgumentException.class, () -> new StringFormat("{a}{b}"));
     assertThrows(IllegalArgumentException.class, () -> new StringFormat("%s%s"));
   }
 

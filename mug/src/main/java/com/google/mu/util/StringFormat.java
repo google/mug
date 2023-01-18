@@ -4,6 +4,7 @@ import static com.google.mu.util.InternalCollectors.toImmutableList;
 import static com.google.mu.util.Optionals.optional;
 import static com.google.mu.util.Substring.before;
 import static com.google.mu.util.Substring.first;
+import static com.google.mu.util.Substring.spanningInOrder;
 import static com.google.mu.util.Substring.suffix;
 import static com.google.mu.util.stream.MoreCollectors.asIn;
 import static java.util.Collections.unmodifiableList;
@@ -34,7 +35,7 @@ import com.google.mu.util.stream.BiStream;
  *
  * <pre>{@code
  * Map<String, String> placeholderValues =
- *     new StringFormat("To {recipient}: {question}?", "{", "}")
+ *     new StringFormat("To {recipient}: {question}?")
  *         .parse("To Charlie: How are you?")
  *         .toMap();
  * }</pre>
@@ -52,7 +53,7 @@ import com.google.mu.util.stream.BiStream;
  * "{snacks}", "oranges and chips")}:
  *
  * <pre>{@code
- * new StringFormat("I bought {fruits} and {snacks}", "{", "}")
+ * new StringFormat("I bought {fruits} and {snacks}")
  *     .parse( "I bought apples and oranges and chips", (fruit, snacks) -> ...);
  * }</pre>
  *
@@ -76,6 +77,12 @@ public final class StringFormat {
    * Constructs a StringFormat. For example:
    *
    * <pre>{@code
+   * new StringFormat("Dear %s, your confirmation number is %s")
+   * }</pre>
+   *
+   * Or if you use named placeholders instead of {@code "%s"}:
+   *
+   * <pre>{@code
    * new StringFormat("Dear {person}, your confirmation number is {confirmation_number}")
    * }</pre>
    *
@@ -84,25 +91,7 @@ public final class StringFormat {
    *     (e.g. a placeholder immediately followed by another placeholder)
    */
   public StringFormat(String format) {
-    this(format, first("%s").repeatedly());
-  }
-
-  /**
-   * Returns a StringFormat for the given {@code format} with {@code placeholder}.
-   *
-   * <p>For example: <pre>{@code
-   * new StringFormat("I bought {fruits} and {snacks} at price of {price}", "{", "}")
-   *     .parse("I bought ice cream and beer at price of $15.4", (a, b, price) -> ...));
-   * }</pre>
-   *
-   * @param format the template format with placeholders
-   * @param placeholderPrefix the prefix of a placeholder
-   * @param placeholderSuffix the suffix of a placeholder
-   * @throws IllegalArgumentException if {@code format} is invalid
-   *     (e.g. a placeholder immediately followed by another placeholder)
-   */
-  public StringFormat(String format, String placeholderPrefix, String placeholderSuffix) {
-    this(format, Substring.spanningInOrder(placeholderPrefix, placeholderSuffix).repeatedly());
+    this(format, (format.contains("%s") ? first("%s") : spanningInOrder("{", "}")).repeatedly());
   }
 
   /**
@@ -110,7 +99,9 @@ public final class StringFormat {
    * to be enclosed by curly braces. For example: "Hello {customer}". If you need different placeholder
    * syntax, for example, to emulate Java's "%s", you can use:
    *
-   * <pre>{@code new StringFormat("Hi %s, my name is %s", first("%s").repeatedly())}</pre>
+   * <pre>{@code
+   * new StringFormat("Hi [person], my name is [me]", spanningInOrder("[", "]").repeatedly())
+   * }</pre>
    *
    * @param format the template format with placeholders
    * @param placeholderVariablePattern placeholders in {@code format}.
@@ -118,7 +109,7 @@ public final class StringFormat {
    * @throws IllegalArgumentException if {@code format} is invalid
    *     (e.g. a placeholder immediately followed by another placeholder)
    */
-  private StringFormat(String format, Substring.RepeatingPattern placeholderVariablesPattern) {
+  public StringFormat(String format, Substring.RepeatingPattern placeholderVariablesPattern) {
     this.format = format;
     this.placeholders = placeholderVariablesPattern.match(format).collect(toImmutableList());
     this.literals = extractLiteralsFromFormat(format, placeholders);
@@ -249,7 +240,7 @@ public final class StringFormat {
    * (but faster). It can also be used for named placeholders. For example:
    *
    * <pre>{@code
-   * new StringFormat("projects/{project}/locations/{location}", "{", "}")
+   * new StringFormat("projects/{project}/locations/{location}")
    *     .format("my-project", "us");
    *   => "projects/my-project/locations/us"
    * }</pre>
