@@ -13,7 +13,6 @@ import org.junit.runner.RunWith;
 
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.testing.ClassSanityTester;
-import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 @RunWith(TestParameterInjector.class)
@@ -139,52 +138,6 @@ public class StringFormatTest {
             .skipKeysIf("{*}"::equals)
             .toMap();
     assertThat(result).containsExactly("{name}", "Tom");
-  }
-
-  @Test public void testFormat() {
-    assertThat(
-            new StringFormat("Dear %s, next stop is %s!").format("passengers", "Seattle"))
-        .isEqualTo("Dear passengers, next stop is Seattle!");
-    assertThat(
-            new StringFormat("Who is {person}").format("David"))
-        .isEqualTo("Who is David");
-  }
-
-  @Test public void testFormat_noArg() {
-    assertThat(new StringFormat("Hello world!").format()).isEqualTo("Hello world!");
-  }
-
-  @Test public void testFormat_nullArg() {
-    assertThat(
-            new StringFormat("Dear %s, next stop is %s!").format("passengers", null))
-        .isEqualTo("Dear passengers, next stop is null!");
-  }
-
-  @Test public void testFormat_fewerArgs() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> new StringFormat("Dear %s, next stop is %s!").format("passengers"));
-  }
-
-  @Test public void testFormat_moreArgs() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> new StringFormat("Dear %s, next stop is %s!").format("passengers", "Seattle", 1));
-  }
-
-  @Test public void testFormat_duplicatePlaceholderVariableNames() {
-    assertThat(new StringFormat("Hi {person} and {person}!").format("Tom", "Jerry"))
-        .isEqualTo("Hi Tom and Jerry!");
-  }
-
-  @Test public void testFormat_roundtrip(
-      @TestParameter({"", "k", ".", "foo"}) String key,
-      @TestParameter({"", "v", ".", "bar"}) String value) {
-    StringFormat template = new StringFormat("key : {key}, value : {value}");
-    String formatted = template.format(key, value);
-    assertThat( template.parse(formatted).toMap())
-        .containsExactly("{key}", key, "{value}", value)
-        .inOrder();
   }
 
   @Test public void twoPlaceholdersNextToEachOther() {

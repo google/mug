@@ -25,52 +25,50 @@ import com.google.mu.function.Ternary;
 import com.google.mu.util.stream.BiStream;
 
 /**
- * A (lossy) reverse operation of {@link String#format} to extract placeholder values from input strings
- * based on a format string. For example:
+ * A (lossy) reverse operation of {@link String#format} to extract placeholder values from input
+ * strings according to a format string. For example:
  *
  * <pre>{@code
- * return new StringFormat("To %s: %s?")
+ * return new StringFormat("Dear %s: %s?")
  *     .parse(input, (recipient, question) -> ...);
  * }</pre>
  *
  * <p>Placeholders can also be named:
  *
  * <pre>{@code
- * Map<String, String> placeholderValues =
- *     new StringFormat("To {recipient}: {question}?")
- *         .parse("To Charlie: How are you?")
+ * ImmutableMap<String, String> placeholderValues =
+ *     new StringFormat("Dear {recipient}: {question}?")
+ *         .parse("Dear Charlie: How are you?")
  *         .toMap();
  * }</pre>
  *
- * <p>If your format uses named placeholders but also includes {@code %s} as literal, specify the
+ * <p>If the placeholder auto detection doesn't work for you, for example, your format uses named
+ * placeholders but also needs to include the {@code %s} as literal characters, specify the
  * placeholder explicitly as in:
+ *
  * <pre>{@code
  * new StringFormat("I use {placeholder}, not %s", spanningInOrder("{", "}").repeatedly())
  * }</pre>
  *
- * <p>Note that other than the placeholders, characters in the template are treated as literals.
- * This makes it simpler compared to regex if your pattern is close to free-form text with
- * characters like '.', '?', '(', '|' and what not. On the other hand, if you need to use regex
- * modifiers and quantifiers to express complex patterns, you need a regex pattern, not a literal
- * pattern with placeholders.
+ * <p>Note that other than the placeholders, characters in the format string are treated as
+ * literals. This works better if your format string is close to free-form text with characters like
+ * '.', '?', '(', '|' and what not because you won't have to escape them. On the other hand, it
+ * won't work for more sophisticated patterns where regex modifiers and quantifiers are needed.
  *
- * <p>The {@code parse()} methods are potentially lossy reverse operations of {@link String#format}
- * or the {@code format()} methods. Consider the format string of {@code String.format("I bought %s
- * and %s", "apples and oranges", "chips")}, it returns {@code "I bought apples and oranges and
- * chips"}; but the parsing code will incorrectly return {@code Map.of("{fruits}", "apples",
- * "{snacks}", "oranges and chips")}:
+ * <p>In the face of ambiguity, the {@code parse()} methods can be lossy. Consider the format string
+ * of {@code String.format("I bought %s and %s", "apples and oranges", "chips")}, it returns {@code
+ * "I bought apples and oranges and chips"}; but the following parsing code will incorrectly return
+ * {@code Map.of("{fruits}", "apples", "{snacks}", "oranges and chips")}:
  *
  * <pre>{@code
  * new StringFormat("I bought {fruits} and {snacks}")
- *     .parse( "I bought apples and oranges and chips", (fruits, snacks) -> ...);
+ *     .parse("I bought apples and oranges and chips", (fruits, snacks) -> ...);
  * }</pre>
  *
- * This is because the parser will see the " and " substring and immediately matches {@code
- * "apples"} as {@code fruits}, with no backtracking attempted. As such, only use this class to
- * parse unambiguous strings. Use regex otherwise.
+ * As such, use regex instead to better deal with ambiguity.
  *
- * <p>This class is immutable and pre-compiles the template format at constructor time so that the
- * {@code parse()} and {@code format()} methods will be more efficient.
+ * <p>This class is immutable and pre-compiles the format string at constructor time so that the
+ * {@code parse()} methods will be more efficient.
  *
  * @since 6.6
  */
@@ -247,45 +245,6 @@ public final class StringFormat {
       inputIndex = placeholder.index() + placeholder.length() + literals.get(i).length();
     }
     return optional(inputIndex == input.length(), unmodifiableList(builder));
-  }
-
-  /**
-   * By default, (with "%s" as the placeholder), it's equivalent to {@link String#format}
-   * (but faster). It can also be used for named placeholders. For example:
-   *
-   * <pre>{@code
-   * new StringFormat("projects/{project}/locations/{location}")
-   *     .format("my-project", "us");
-   *   => "projects/my-project/locations/us"
-   * }</pre>
-   *
-   * <p>If you wish to supply the placeholder values by name, consider using {@link Substring},
-   * as in:
-   *
-   * <pre>{@code
-   * Substring.spanningInOrder("{", "}")
-   *     .repeatedly()
-   *     .replaceAllFrom(
-   *         "Dear {person}, your confirmation number is {confirmation#}",
-   *         placeholder -> ...);
-   * }</pre>
-   *
-   * @throws NullPointerException if {@code args} is null
-   * @throws IllegalArgumentException if {@code args} is longer or shorter than {@link #placeholders}.
-   */
-  @SafeVarargs
-  public final String format(Object... args) {
-    if (args.length != placeholders.size()) {
-      throw new IllegalArgumentException(
-          placeholders.size() + " format arguments expected, " + args.length + " provided.");
-    }
-    StringBuilder builder = new StringBuilder();
-    for (int i = 0; i < args.length; i++) {
-      builder
-          .append(literals.get(i))
-          .append(args[i]);
-    }
-    return builder.append(literals.get(placeholders.size())).toString();
   }
 
   /**
