@@ -6,7 +6,9 @@ import static com.google.mu.util.Substring.before;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.spanningInOrder;
 import static com.google.mu.util.Substring.suffix;
+import static com.google.mu.util.Substring.RepeatingPattern.splitInBetween;
 import static com.google.mu.util.stream.MoreCollectors.asIn;
+import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static java.util.Collections.unmodifiableList;
 
 import java.util.ArrayList;
@@ -23,21 +25,27 @@ import com.google.mu.function.Ternary;
 import com.google.mu.util.stream.BiStream;
 
 /**
- * A utility class to extract placeholder values from input strings based on a format string.
- * For example:
+ * A (lossy) reverse operation of {@link String#format} to extract placeholder values from input strings
+ * based on a format string. For example:
  *
  * <pre>{@code
  * return new StringFormat("To %s: %s?")
- *     .parse(input, (recipient, question) -> ...));
+ *     .parse(input, (recipient, question) -> ...);
  * }</pre>
  *
- * <p>Placeholders can be named:
+ * <p>Placeholders can also be named:
  *
  * <pre>{@code
  * Map<String, String> placeholderValues =
  *     new StringFormat("To {recipient}: {question}?")
  *         .parse("To Charlie: How are you?")
  *         .toMap();
+ * }</pre>
+ *
+ * <p>If your format uses named placeholders but also includes {@code %s} as literal, specify the
+ * placeholder explicitly as in:
+ * <pre>{@code
+ * new StringFormat("I use {placeholder}, not %s", spanningInOrder("{", "}").repeatedly())
  * }</pre>
  *
  * <p>Note that other than the placeholders, characters in the template are treated as literals.
@@ -54,7 +62,7 @@ import com.google.mu.util.stream.BiStream;
  *
  * <pre>{@code
  * new StringFormat("I bought {fruits} and {snacks}")
- *     .parse( "I bought apples and oranges and chips", (fruit, snacks) -> ...);
+ *     .parse( "I bought apples and oranges and chips", (fruits, snacks) -> ...);
  * }</pre>
  *
  * This is because the parser will see the " and " substring and immediately matches {@code
@@ -74,19 +82,15 @@ public final class StringFormat {
   private final List<String> literals;
 
   /**
-   * Constructs a StringFormat. For example:
+   * Constructs a StringFormat using either {@code "%s"} as placeholder,
+   * or placeholders with curly braces. For example:
    *
    * <pre>{@code
-   * new StringFormat("Dear %s, your confirmation number is %s")
+   * new StringFormat("Dear %s, your confirmation number is %s");
+   * new StringFormat("Dear {person}, your confirmation number is {confirmation_number}");
    * }</pre>
    *
-   * Or if you use named placeholders instead of {@code "%s"}:
-   *
-   * <pre>{@code
-   * new StringFormat("Dear {person}, your confirmation number is {confirmation_number}")
-   * }</pre>
-   *
-   * @param format the template format with placeholders in the format of {@code "{placeholder_name}"}
+   * @param format the template format with placeholders
    * @throws IllegalArgumentException if {@code format} is invalid
    *     (e.g. a placeholder immediately followed by another placeholder)
    */
@@ -95,12 +99,12 @@ public final class StringFormat {
   }
 
   /**
-   * Constructs a StringFormat. By default, {@code new StringFormat(format)} assumes placeholders
-   * to be enclosed by curly braces. For example: "Hello {customer}". If you need different placeholder
-   * syntax, for example, to emulate Java's "%s", you can use:
+   * Constructs a StringFormat. By default, {@code new StringFormat(format)} automatically detects
+   * placeholders with either {@code "%s"} or curly braces. If you need different placeholder
+   * syntax, for example, to use square brackets instead of curly braces:
    *
    * <pre>{@code
-   * new StringFormat("Hi [person], my name is [me]", spanningInOrder("[", "]").repeatedly())
+   * new StringFormat("Hi [person], my name is [me]", spanningInOrder("[", "]").repeatedly());
    * }</pre>
    *
    * @param format the template format with placeholders
@@ -112,7 +116,17 @@ public final class StringFormat {
   public StringFormat(String format, Substring.RepeatingPattern placeholderVariablesPattern) {
     this.format = format;
     this.placeholders = placeholderVariablesPattern.match(format).collect(toImmutableList());
-    this.literals = extractLiteralsFromFormat(format, placeholders);
+    this.literals =
+        BiStream.zip(indexesFrom(0), splitInBetween(placeholders.iterator(), format))
+            .peek((i, literal) -> {
+              if (i > 0 && i < placeholders.size() && literal.length() == 0) {
+                throw new IllegalArgumentException(
+                    "invalid pattern with '" + placeholders.get(i - 1) + placeholders.get(i) + "'");
+              }
+            })
+            .values()
+            .map(Substring.Match::toString)
+            .collect(toImmutableList());
   }
 
   /**
@@ -217,12 +231,12 @@ public final class StringFormat {
    */
   public Optional<List<Substring.Match>> match(String input) {
     List<Substring.Match> builder = new ArrayList<>(placeholders.size());
-    if (!input.startsWith(literals.get(0))) {  // first literal anchors to beginning
+    if (!input.startsWith(literals.get(0))) {  // first literal is the prefix
       return Optional.empty();
     }
     int inputIndex = literals.get(0).length();
     for (int i = 1; i < literals.size(); i++) {
-      // subsequent literals are searched; last literal anchors to the end
+      // subsequent literals are searched; last literal is the suffix.
       Substring.Pattern literalLocator =
           i < literals.size() - 1 ? first(literals.get(i)) : suffix(literals.get(i));
       Substring.Match placeholder = before(literalLocator).match(input, inputIndex);
@@ -285,7 +299,7 @@ public final class StringFormat {
     return placeholders;
   }
 
-  /** Returns the template pattern. */
+  /** Returns the string format. */
   @Override public String toString() {
     return format;
   }
@@ -296,24 +310,5 @@ public final class StringFormat {
             () -> new IllegalArgumentException("input doesn't match template (" + format + ")"))
         .stream()
         .map(Substring.Match::toString);
-  }
-
-  private static List<String> extractLiteralsFromFormat(
-      String template, List<Substring.Match> placeholders) {
-    List<String> literals = new ArrayList<>(placeholders.size() + 1);
-    int templateIndex = 0;
-    for (
-        int i = 0; i < placeholders.size();
-        templateIndex = placeholders.get(i).index() + placeholders.get(i).length(), i++) {
-      Substring.Match nextPlaceholder = placeholders.get(i);
-      int literalEnd = nextPlaceholder.index();
-      if (i > 0 && templateIndex >= literalEnd) {
-        throw new IllegalArgumentException(
-            "invalid pattern with '" + placeholders.get(i - 1) + nextPlaceholder + "'");
-      }
-      literals.add(template.substring(templateIndex, literalEnd));
-    }
-    literals.add(template.substring(templateIndex, template.length()));
-    return unmodifiableList(literals);
   }
 }
