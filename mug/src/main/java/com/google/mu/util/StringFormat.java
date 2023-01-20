@@ -6,7 +6,6 @@ import static com.google.mu.util.Substring.before;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.spanningInOrder;
 import static com.google.mu.util.Substring.suffix;
-import static com.google.mu.util.Substring.RepeatingPattern.splitInBetween;
 import static com.google.mu.util.stream.MoreCollectors.asIn;
 import static java.util.Collections.unmodifiableList;
 
@@ -113,9 +112,7 @@ public final class StringFormat {
   public StringFormat(String format, Substring.RepeatingPattern placeholderVariablesPattern) {
     this.format = format;
     this.placeholders = placeholderVariablesPattern.match(format).collect(toImmutableList());
-    this.literals = splitInBetween(placeholders.iterator(), format)
-        .map(Substring.Match::toString)
-        .collect(toImmutableList());
+    this.literals = extractLiteralsFromFormat(format, placeholders);
     for (int i = 1; i < placeholders.size(); i++) {
       if (literals.get(i).isEmpty()) {
         throw new IllegalArgumentException(
@@ -266,5 +263,22 @@ public final class StringFormat {
             () -> new IllegalArgumentException("input doesn't match template (" + format + ")"))
         .stream()
         .map(Substring.Match::toString);
+  }
+
+  private static List<String> extractLiteralsFromFormat(
+      String format, List<Substring.Match> placeholders) {
+    List<String> builder = new ArrayList<>(placeholders.size() + 1);
+    int formatStringIndex = 0;
+    for (Substring.Match placeholder : placeholders) {
+      builder.add(substr(format, formatStringIndex, placeholder.index()));
+      formatStringIndex = placeholder.index() + placeholder.length();
+    }
+    builder.add(substr(format, formatStringIndex, format.length()));
+    return unmodifiableList(builder);
+  }
+
+  /** Same as {@link String#substring} but short-circuits when substring is empty. */
+  private static String substr(String s, int begin, int end) {
+    return begin == end ? "" : s.substring(begin, end);
   }
 }

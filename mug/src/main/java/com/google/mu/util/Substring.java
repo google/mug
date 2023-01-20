@@ -1776,16 +1776,14 @@ public final class Substring {
      * com.google.common.base.CharMatcher.trimFrom()} and {@link Pattern#splitThenTrim} etc.
      */
     public Stream<Match> split(String string) {
-      return splitInBetween(match(string).iterator(), string);
-    }
-
-    static Stream<Match> splitInBetween(Iterator<Match> matches, String string) {
       return MoreStreams.whileNotNull(
           new Supplier<Match>() {
             int next = 0;
+            Iterator<Match> it = match(string).iterator();
+
             @Override public Match get() {
-              if (matches.hasNext()) {
-                Match delim = matches.next();
+              if (it.hasNext()) {
+                Match delim = it.next();
                 Match result = Match.nonBacktrackable(string, next, delim.index() - next);
                 next = delim.endIndex;
                 return result;
