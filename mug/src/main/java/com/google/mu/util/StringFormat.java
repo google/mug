@@ -8,7 +8,6 @@ import static com.google.mu.util.Substring.spanningInOrder;
 import static com.google.mu.util.Substring.suffix;
 import static com.google.mu.util.Substring.RepeatingPattern.splitInBetween;
 import static com.google.mu.util.stream.MoreCollectors.asIn;
-import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static java.util.Collections.unmodifiableList;
 
 import java.util.ArrayList;
@@ -114,17 +113,15 @@ public final class StringFormat {
   public StringFormat(String format, Substring.RepeatingPattern placeholderVariablesPattern) {
     this.format = format;
     this.placeholders = placeholderVariablesPattern.match(format).collect(toImmutableList());
-    this.literals =
-        BiStream.zip(indexesFrom(0), splitInBetween(placeholders.iterator(), format))
-            .peek((i, literal) -> {
-              if (i > 0 && i < placeholders.size() && literal.length() == 0) {
-                throw new IllegalArgumentException(
-                    "invalid pattern with '" + placeholders.get(i - 1) + placeholders.get(i) + "'");
-              }
-            })
-            .values()
-            .map(Substring.Match::toString)
-            .collect(toImmutableList());
+    this.literals = splitInBetween(placeholders.iterator(), format)
+        .map(Substring.Match::toString)
+        .collect(toImmutableList());
+    for (int i = 1; i < placeholders.size(); i++) {
+      if (literals.get(i).isEmpty()) {
+        throw new IllegalArgumentException(
+            "invalid pattern with '" + placeholders.get(i - 1) + placeholders.get(i) + "'");
+      }
+    }
   }
 
   /**
