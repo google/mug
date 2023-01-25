@@ -95,7 +95,7 @@ public final class BiCollectors {
       Supplier<? extends M> mapSupplier) {
     requireNonNull(mapSupplier);
     return new BiCollector<K, V, M>() {
-      @Override public <E> Collector<E, ?, M> splitting(
+      @Override public <E> Collector<E, ?, M> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return MoreCollectors.toMap(toKey, toValue, mapSupplier);
       }
@@ -110,7 +110,7 @@ public final class BiCollectors {
     requireNonNull(valueMerger);
     return new BiCollector<K, V, Map<K, V>>() {
       @Override
-      public <E> Collector<E, ?, Map<K, V>> splitting(
+      public <E> Collector<E, ?, Map<K, V>> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return Collectors.toMap(toKey, toValue, valueMerger);
       }
@@ -135,7 +135,7 @@ public final class BiCollectors {
     requireNonNull(valueCollector);
     return new BiCollector<K, V1, Map<K, V>>() {
       @Override
-      public <E> Collector<E, ?, Map<K, V>> splitting(
+      public <E> Collector<E, ?, Map<K, V>> collectorOf(
           Function<E, K> toKey, Function<E, V1> toValue) {
         return Collectors.collectingAndThen(
             Collectors.groupingBy(
@@ -183,7 +183,7 @@ public final class BiCollectors {
     requireNonNull(mapper);
     return new BiCollector<K, V, Integer>() {
       @Override
-      public <E> Collector<E, ?, Integer> splitting(
+      public <E> Collector<E, ?, Integer> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return Collectors.summingInt(e -> mapper.applyAsInt(toKey.apply(e), toValue.apply(e)));
       }
@@ -202,7 +202,7 @@ public final class BiCollectors {
     requireNonNull(mapper);
     return new BiCollector<K, V, Long>() {
       @Override
-      public <E> Collector<E, ?, Long> splitting(
+      public <E> Collector<E, ?, Long> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return Collectors.summingLong(e -> mapper.applyAsLong(toKey.apply(e), toValue.apply(e)));
       }
@@ -221,7 +221,7 @@ public final class BiCollectors {
     requireNonNull(mapper);
     return new BiCollector<K, V, Double>() {
       @Override
-      public <E> Collector<E, ?, Double> splitting(
+      public <E> Collector<E, ?, Double> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return Collectors.summingDouble(e -> mapper.applyAsDouble(toKey.apply(e), toValue.apply(e)));
       }
@@ -240,7 +240,7 @@ public final class BiCollectors {
     requireNonNull(mapper);
     return new BiCollector<K, V, Double>() {
       @Override
-      public <E> Collector<E, ?, Double> splitting(
+      public <E> Collector<E, ?, Double> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return Collectors.averagingInt(e -> mapper.applyAsInt(toKey.apply(e), toValue.apply(e)));
       }
@@ -259,7 +259,7 @@ public final class BiCollectors {
     requireNonNull(mapper);
     return new BiCollector<K, V, Double>() {
       @Override
-      public <E> Collector<E, ?, Double> splitting(
+      public <E> Collector<E, ?, Double> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return Collectors.averagingLong(e -> mapper.applyAsLong(toKey.apply(e), toValue.apply(e)));
       }
@@ -278,7 +278,7 @@ public final class BiCollectors {
     requireNonNull(mapper);
     return new BiCollector<K, V, Double>() {
       @Override
-      public <E> Collector<E, ?, Double> splitting(
+      public <E> Collector<E, ?, Double> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return Collectors.averagingDouble(e -> mapper.applyAsDouble(toKey.apply(e), toValue.apply(e)));
       }
@@ -298,7 +298,7 @@ public final class BiCollectors {
     requireNonNull(mapper);
     return new BiCollector<K, V, IntSummaryStatistics>() {
       @Override
-      public <E> Collector<E, ?, IntSummaryStatistics> splitting(
+      public <E> Collector<E, ?, IntSummaryStatistics> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return Collectors.summarizingInt(e -> mapper.applyAsInt(toKey.apply(e), toValue.apply(e)));
       }
@@ -318,7 +318,7 @@ public final class BiCollectors {
     requireNonNull(mapper);
     return new BiCollector<K, V, LongSummaryStatistics>() {
       @Override
-      public <E> Collector<E, ?, LongSummaryStatistics> splitting(
+      public <E> Collector<E, ?, LongSummaryStatistics> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return Collectors.summarizingLong(e -> mapper.applyAsLong(toKey.apply(e), toValue.apply(e)));
       }
@@ -338,7 +338,7 @@ public final class BiCollectors {
     requireNonNull(mapper);
     return new BiCollector<K, V, DoubleSummaryStatistics>() {
       @Override
-      public <E> Collector<E, ?, DoubleSummaryStatistics> splitting(
+      public <E> Collector<E, ?, DoubleSummaryStatistics> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return Collectors.summarizingDouble(e -> mapper.applyAsDouble(toKey.apply(e), toValue.apply(e)));
       }
@@ -389,11 +389,11 @@ public final class BiCollectors {
     requireNonNull(groupCollector);
     return new BiCollector<K, V, BiStream<G, R>>() {
       @Override
-      public <E> Collector<E, ?, BiStream<G, R>> splitting(
+      public <E> Collector<E, ?, BiStream<G, R>> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return BiStream.groupingBy(
             e -> classifier.apply(toKey.apply(e), toValue.apply(e)),
-            groupCollector.splitting(toKey::apply, toValue::apply));
+            groupCollector.collectorOf(toKey::apply, toValue::apply));
       }
     };
   }
@@ -443,7 +443,7 @@ public final class BiCollectors {
     requireNonNull(groupReducer);
     return new BiCollector<K, V, BiStream<G, V>>() {
       @Override
-      public <E> Collector<E, ?, BiStream<G, V>> splitting(
+      public <E> Collector<E, ?, BiStream<G, V>> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return BiStream.groupingBy(toKey.andThen(classifier), toValue, groupReducer);
       }
@@ -462,8 +462,8 @@ public final class BiCollectors {
     requireNonNull(finisher);
     return new BiCollector<K, V, R>() {
       @Override
-      public <E> Collector<E, ?, R> splitting(Function<E, K> toKey, Function<E, V> toValue) {
-        return Collectors.collectingAndThen(upstream.splitting(toKey, toValue), finisher::apply);
+      public <E> Collector<E, ?, R> collectorOf(Function<E, K> toKey, Function<E, V> toValue) {
+        return Collectors.collectingAndThen(upstream.collectorOf(toKey, toValue), finisher::apply);
       }
     };
   }
@@ -503,7 +503,7 @@ public final class BiCollectors {
     requireNonNull(mapper);
     requireNonNull(downstream);
     return new BiCollector<K, V, R>() {
-      @Override public <E> Collector<E, ?, R> splitting(Function<E, K> toKey, Function<E, V> toValue) {
+      @Override public <E> Collector<E, ?, R> collectorOf(Function<E, K> toKey, Function<E, V> toValue) {
         return Collectors.mapping(e -> mapper.apply(toKey.apply(e), toValue.apply(e)), downstream);
       }
     };
@@ -523,8 +523,8 @@ public final class BiCollectors {
     requireNonNull(valueMapper);
     requireNonNull(downstream);
     return new BiCollector<K, V, R>() {
-      @Override public <E> Collector<E, ?, R> splitting(Function<E, K> toKey, Function<E, V> toValue) {
-        return downstream.splitting(
+      @Override public <E> Collector<E, ?, R> collectorOf(Function<E, K> toKey, Function<E, V> toValue) {
+        return downstream.collectorOf(
             e -> keyMapper.apply(toKey.apply(e), toValue.apply(e)),
             e -> valueMapper.apply(toKey.apply(e), toValue.apply(e)));
       }
@@ -543,10 +543,10 @@ public final class BiCollectors {
     requireNonNull(mapper);
     requireNonNull(downstream);
     return new BiCollector<K, V, R>() {
-      @Override public <E> Collector<E, ?, R> splitting(Function<E, K> toKey, Function<E, V> toValue) {
+      @Override public <E> Collector<E, ?, R> collectorOf(Function<E, K> toKey, Function<E, V> toValue) {
         return Collectors.mapping(
             e -> mapper.apply(toKey.apply(e), toValue.apply(e)),
-            downstream.splitting(BiStream::left, BiStream::right));
+            downstream.collectorOf(BiStream::left, BiStream::right));
       }
     };
   }
@@ -611,7 +611,7 @@ public final class BiCollectors {
     requireNonNull(flattener);
     requireNonNull(downstream);
     return new BiCollector<K, V, R>() {
-      @Override public <E> Collector<E, ?, R> splitting(Function<E, K> toKey, Function<E, V> toValue) {
+      @Override public <E> Collector<E, ?, R> collectorOf(Function<E, K> toKey, Function<E, V> toValue) {
         return Java9Collectors.flatMapping(e -> flattener.apply(toKey.apply(e), toValue.apply(e)), downstream);
       }
     };
@@ -628,7 +628,7 @@ public final class BiCollectors {
       BiCollector<K1, V1, R> downstream) {
     return flatMapping(
         flattener.andThen(BiStream::mapToEntry),
-        downstream.<Map.Entry<? extends K1, ? extends V1>>splitting(Map.Entry::getKey, Map.Entry::getValue));
+        downstream.<Map.Entry<? extends K1, ? extends V1>>collectorOf(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   /**
@@ -643,7 +643,7 @@ public final class BiCollectors {
     requireNonNull(comparator);
     return new BiCollector<K, V, BiOptional<K, V>>() {
       @Override
-      public <E> Collector<E, ?, BiOptional<K, V>> splitting(
+      public <E> Collector<E, ?, BiOptional<K, V>> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return Collectors.collectingAndThen(
             Collectors.maxBy((e1, e2) -> comparator.compare(toKey.apply(e1), toValue.apply(e1), toKey.apply(e2), toValue.apply(e2))),

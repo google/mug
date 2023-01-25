@@ -84,7 +84,7 @@ public final class MoreCollectors {
       Function<? super T, ? extends Both<? extends A, ? extends B>> mapper,
       BiCollector<A, B, R> downstream) {
     return Collectors.mapping(
-        requireNonNull(mapper), downstream.splitting(BiStream::left, BiStream::right));
+        requireNonNull(mapper), downstream.collectorOf(BiStream::left, BiStream::right));
   }
 
   /**
@@ -97,7 +97,7 @@ public final class MoreCollectors {
       BiCollector<K, V, R> downstream) {
     return Java9Collectors.flatMapping(
         flattener.andThen(BiStream::mapToEntry),
-        downstream.<Map.Entry<? extends K, ? extends V>>splitting(
+        downstream.<Map.Entry<? extends K, ? extends V>>collectorOf(
             Map.Entry::getKey, Map.Entry::getValue));
   }
 

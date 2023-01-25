@@ -63,7 +63,8 @@ import com.google.mu.util.stream.BiStream;
  *     .parse("I bought apples and oranges and chips", (fruits, snacks) -> ...);
  * }</pre>
  *
- * As such, use regex instead to better deal with ambiguity.
+ * As such, only use this class on trusted input strings (i.e. not user inputs).
+ * And use regex instead to better deal with ambiguity.
  *
  * <p>This class is immutable and pre-compiles the format string at constructor time so that the
  * {@code parse()} methods will be more efficient.
@@ -268,12 +269,12 @@ public final class StringFormat {
   private static List<String> extractLiteralsFromFormat(
       String format, List<Substring.Match> placeholders) {
     List<String> builder = new ArrayList<>(placeholders.size() + 1);
-    int formatStringIndex = 0;
+    int index = 0;
     for (Substring.Match placeholder : placeholders) {
-      builder.add(substr(format, formatStringIndex, placeholder.index()));
-      formatStringIndex = placeholder.index() + placeholder.length();
+      builder.add(substr(format, index, placeholder.index()));
+      index = placeholder.index() + placeholder.length();
     }
-    builder.add(substr(format, formatStringIndex, format.length()));
+    builder.add(substr(format, index, format.length()));
     return unmodifiableList(builder);
   }
 

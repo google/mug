@@ -73,7 +73,7 @@ public final class GuavaCollectors {
     requireNonNull(valueMerger);
     return new BiCollector<K, V, ImmutableMap<K, V>>() {
       @Override
-      public <E> Collector<E, ?, ImmutableMap<K, V>> splitting(
+      public <E> Collector<E, ?, ImmutableMap<K, V>> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return ImmutableMap.toImmutableMap(toKey, toValue, valueMerger);
       }
@@ -144,7 +144,7 @@ public final class GuavaCollectors {
     requireNonNull(valueMerger);
     return new BiCollector<K, V, ImmutableSortedMap<K, V>>() {
       @Override
-      public <E> Collector<E, ?, ImmutableSortedMap<K, V>> splitting(
+      public <E> Collector<E, ?, ImmutableSortedMap<K, V>> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return ImmutableSortedMap.toImmutableSortedMap(comparator, toKey, toValue, valueMerger);
       }
@@ -160,7 +160,7 @@ public final class GuavaCollectors {
     requireNonNull(comparator);
     return new BiCollector<K, V, ImmutableSortedMap<K, V>>() {
       @Override
-      public <E> Collector<E, ?, ImmutableSortedMap<K, V>> splitting(
+      public <E> Collector<E, ?, ImmutableSortedMap<K, V>> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return ImmutableSortedMap.toImmutableSortedMap(comparator, toKey, toValue);
       }
@@ -176,7 +176,7 @@ public final class GuavaCollectors {
     requireNonNull(multimapSupplier);
     return new BiCollector<K, V, M>() {
       @Override
-      public <E> Collector<E, ?, M> splitting(Function<E, K> toKey, Function<E, V> toValue) {
+      public <E> Collector<E, ?, M> collectorOf(Function<E, K> toKey, Function<E, V> toValue) {
         return Multimaps.toMultimap(toKey, toValue, multimapSupplier);
       }
     };
@@ -254,7 +254,7 @@ public final class GuavaCollectors {
     requireNonNull(countFunction);
     return new BiCollector<K, V, ImmutableMultiset<K>>() {
       @Override
-      public <E> Collector<E, ?, ImmutableMultiset<K>> splitting(
+      public <E> Collector<E, ?, ImmutableMultiset<K>> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return ImmutableMultiset.toImmutableMultiset(
             toKey, input -> countFunction.applyAsInt(toValue.apply(input)));
@@ -496,8 +496,8 @@ public final class GuavaCollectors {
     requireNonNull(downstream);
     return new BiCollector<K, V, R>() {
       @Override
-      public <E> Collector<E, ?, R> splitting(Function<E, K> toKey, Function<E, V> toValue) {
-        return downstream.splitting(toKey, toValue.andThen(mapper));
+      public <E> Collector<E, ?, R> collectorOf(Function<E, K> toKey, Function<E, V> toValue) {
+        return downstream.collectorOf(toKey, toValue.andThen(mapper));
       }
     };
   }
