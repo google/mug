@@ -10,7 +10,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.testing.ClassSanityTester;
 import com.google.mu.util.stream.Joiner;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
@@ -42,8 +41,7 @@ public class StringFormatTest {
   }
 
   @Test public void parse_multiplePlaceholdersWithSameName() {
-    StringFormat template =
-        new StringFormat("Hello {name} and {name}!");
+    StringFormat template = withCurlyBraces("Hello {name} and {name}!");
     assertThat(template.parse("Hello Gandolf and Aragon!").get().stream().map(Object::toString))
         .containsExactly("Gandolf", "Aragon")
         .inOrder();
@@ -172,27 +170,8 @@ public class StringFormatTest {
         .hasValue("one");
   }
 
-  @Test public void parseToMap_noPlaceholder() {
-    assertThat(new StringFormat("Hello world").parseToMap("Hello world"))
-        .hasValue(ImmutableMap.of());
-  }
-
-  @Test public void parseToMap_failsToMatch() {
-    assertThat(new StringFormat("Hello {person}").parseToMap("Hi Tom")).isEmpty();
-  }
-
-  @Test public void parseToMap_matches() {
-    assertThat(new StringFormat("key={key}, value={value}").parseToMap("key=1, value=one"))
-        .hasValue(ImmutableMap.of("{key}", "1","{value}", "one"));
-  }
-
-  @Test public void parseToMap_duplicateKeyName() {
-    StringFormat format = new StringFormat("key=%s, value=%s");
-    assertThrows(IllegalArgumentException.class, () -> format.parseToMap("key=1, value=one"));
-  }
-
   @Test public void twoPlaceholdersNextToEachOther() {
-    assertThrows(IllegalArgumentException.class, () -> new StringFormat("{a}{b}"));
+    assertThrows(IllegalArgumentException.class, () -> withCurlyBraces("{a}{b}"));
     assertThrows(IllegalArgumentException.class, () -> new StringFormat("%s%s"));
   }
 
@@ -415,7 +394,7 @@ public class StringFormatTest {
   }
 
   @Test public void testToString() {
-    assertThat(new StringFormat("projects/{project}/locations/{location}").toString())
+    assertThat(withCurlyBraces("projects/{project}/locations/{location}").toString())
         .isEqualTo("projects/{project}/locations/{location}");
   }
 
@@ -423,5 +402,9 @@ public class StringFormatTest {
     new ClassSanityTester()
         .setDefault(Substring.RepeatingPattern.class, first("%s").repeatedly())
         .testNulls(StringFormat.class);
+  }
+
+  private static StringFormat withCurlyBraces(String format) {
+    return new StringFormat(format, spanningInOrder("{", "}").repeatedly());
   }
 }

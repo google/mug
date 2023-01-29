@@ -4,7 +4,6 @@ import static com.google.mu.util.InternalCollectors.toImmutableList;
 import static com.google.mu.util.Optionals.optional;
 import static com.google.mu.util.Substring.before;
 import static com.google.mu.util.Substring.first;
-import static com.google.mu.util.Substring.spanningInOrder;
 import static com.google.mu.util.Substring.suffix;
 import static com.google.mu.util.stream.MoreCollectors.combining;
 import static com.google.mu.util.stream.MoreCollectors.onlyElement;
@@ -13,7 +12,6 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -25,7 +23,6 @@ import com.google.mu.function.Quarternary;
 import com.google.mu.function.Quinary;
 import com.google.mu.function.Senary;
 import com.google.mu.function.Ternary;
-import com.google.mu.util.stream.BiStream;
 import com.google.mu.util.stream.MoreStreams;
 
 /**
@@ -37,19 +34,12 @@ import com.google.mu.util.stream.MoreStreams;
  *     .parse(input, (recipient, question) -> ...);
  * }</pre>
  *
- * <p>Placeholders can also be named:
+ * <p>If you wish to use named placeholders like "{confirmation_number}", you can:
  *
  * <pre>{@code
- * new StringFormat("Dear {recipient}: {question}?")
- *         .parseToMap("Dear Charlie: How are you?");
- * }</pre>
- *
- * <p>If the placeholder auto detection doesn't work for you, for example, your format uses named
- * placeholders but also needs to include the {@code %s} as literal characters, specify the
- * placeholder explicitly as in:
- *
- * <pre>{@code
- * new StringFormat("I use {placeholder}, not %s", spanningInOrder("{", "}").repeatedly())
+ * new StringFormat(
+ *     "Dear {person}, your confirmation number is {confirmation_number}",
+ *      spanningInOrder("{", "}").repeatedly());
  * }</pre>
  *
  * <p>Note that other than the placeholders, characters in the format string are treated as
@@ -93,7 +83,13 @@ public final class StringFormat {
    *
    * <pre>{@code
    * new StringFormat("Dear %s, your confirmation number is %s");
-   * new StringFormat("Dear {person}, your confirmation number is {confirmation_number}");
+   * }</pre>
+   *
+   * <p>If you need to support named placeholders, use {@link
+   * #StringFormat(String, Substring.RepeatingPattern)} instead:
+   *
+   * <pre>{@code
+   * new StringFormat("I use {placeholder}, not %s", spanningInOrder("{", "}").repeatedly())
    * }</pre>
    *
    * @param format the template format with placeholders
@@ -101,7 +97,7 @@ public final class StringFormat {
    *     (e.g. a placeholder immediately followed by another placeholder)
    */
   public StringFormat(String format) {
-    this(format, (format.contains("%s") ? first("%s") : spanningInOrder("{", "}")).repeatedly());
+    this(format, first("%s").repeatedly());
   }
 
   /**
@@ -132,24 +128,24 @@ public final class StringFormat {
   }
 
   /**
-   * Parses {@code input} and applies {@code reducer} with the single placeholder value
+   * Parses {@code input} and applies the {@code mapper} function with the single placeholder value
    * in this template.
    *
    * <p>For example: <pre>{@code
    * new StringFormat("Job failed (job id: %s)").parse(input, jobId -> ...);
    * }</pre>
    *
-   * @return the return value of the {@code reducer} function if not null. Returns empty if
-   *     {@code input} doesn't match the format, or {@code reducer} returns null.
+   * @return the return value of the {@code mapper} function if not null. Returns empty if
+   *     {@code input} doesn't match the format, or {@code mapper} returns null.
    * @throws IllegalArgumentException if {@code input} doesn't match the format or the template
    *     doesn't have exactly one placeholder.
    */
-  public <R> Optional<R> parse(String input, Function<? super String, ? extends R> reducer) {
-    return parseAndCollect(input, onlyElement(reducer));
+  public <R> Optional<R> parse(String input, Function<? super String, ? extends R> mapper) {
+    return parseAndCollect(input, onlyElement(mapper));
   }
 
   /**
-   * Parses {@code input} and applies {@code reducer} with the two placeholder values
+   * Parses {@code input} and applies {@code mapper} with the two placeholder values
    * in this template.
    *
    * <p>For example: <pre>{@code
@@ -157,91 +153,71 @@ public final class StringFormat {
    *     .parse(input, (jobId, errorCode) -> ...);
    * }</pre>
    *
-   * @return the return value of the {@code reducer} function if not null. Returns empty if
-   *     {@code input} doesn't match the format, or {@code reducer} returns null.
+   * @return the return value of the {@code mapper} function if not null. Returns empty if
+   *     {@code input} doesn't match the format, or {@code mapper} returns null.
    * @throws IllegalArgumentException if {@code input} doesn't match the format or the template
    *     doesn't have exactly two placeholders.
    */
   public <R> Optional<R> parse(
-      String input, BiFunction<? super String, ? super String, ? extends R> reducer) {
-    return parseAndCollect(input, combining(reducer));
+      String input, BiFunction<? super String, ? super String, ? extends R> mapper) {
+    return parseAndCollect(input, combining(mapper));
   }
 
   /**
    * Similar to {@link #parse(String, BiFunction}, but parses {@code input} and applies {@code
-   * reducer} with the <em>3</em> placeholder values in this template.
+   * mapper} with the <em>3</em> placeholder values in this template.
    *
    * <p>For example: <pre>{@code
    * new StringFormat("Job failed (job id: '%s', error code: %s, error details: %s)")
    *     .parse(input, (jobId, errorCode, errorDetails) -> ...);
    * }</pre>
    *
-   * @return the return value of the {@code reducer} function if not null. Returns empty if
-   *     {@code input} doesn't match the format, or {@code reducer} returns null.
+   * @return the return value of the {@code mapper} function if not null. Returns empty if
+   *     {@code input} doesn't match the format, or {@code mapper} returns null.
    * @throws IllegalArgumentException if {@code input} doesn't match the format or the template
    *     doesn't have exactly 3 placeholders.
    */
-  public <R> Optional<R> parse(String input, Ternary<? super String, ? extends R> reducer) {
-    return parseAndCollect(input, combining(reducer));
+  public <R> Optional<R> parse(String input, Ternary<? super String, ? extends R> mapper) {
+    return parseAndCollect(input, combining(mapper));
   }
 
   /**
    * Similar to {@link #parse(String, BiFunction}, but parses {@code input} and applies {@code
-   * reducer} with the <em>4</em> placeholder values in this template.
+   * mapper} with the <em>4</em> placeholder values in this template.
    *
-   * @return the return value of the {@code reducer} function if not null. Returns empty if
-   *     {@code input} doesn't match the format, or {@code reducer} returns null.
+   * @return the return value of the {@code mapper} function if not null. Returns empty if
+   *     {@code input} doesn't match the format, or {@code mapper} returns null.
    * @throws IllegalArgumentException if {@code input} doesn't match the format or the template
    *     doesn't have exactly 4 placeholders.
    */
-  public <R> Optional<R> parse(String input, Quarternary<? super String, ? extends R> reducer) {
-    return parseAndCollect(input, combining(reducer));
+  public <R> Optional<R> parse(String input, Quarternary<? super String, ? extends R> mapper) {
+    return parseAndCollect(input, combining(mapper));
   }
 
   /**
    * Similar to {@link #parse(String, BiFunction}, but parses {@code input} and applies {@code
-   * reducer} with the <em>5</em> placeholder values in this template.
+   * mapper} with the <em>5</em> placeholder values in this template.
    *
-   * @return the return value of the {@code reducer} function if not null. Returns empty if
-   *     {@code input} doesn't match the format, or {@code reducer} returns null.
+   * @return the return value of the {@code mapper} function if not null. Returns empty if
+   *     {@code input} doesn't match the format, or {@code mapper} returns null.
    * @throws IllegalArgumentException if {@code input} doesn't match the format or the template
    *     doesn't have exactly 5 placeholders.
    */
-  public <R> Optional<R> parse(String input, Quinary<? super String, ? extends R> reducer) {
-    return parseAndCollect(input, combining(reducer));
+  public <R> Optional<R> parse(String input, Quinary<? super String, ? extends R> mapper) {
+    return parseAndCollect(input, combining(mapper));
   }
 
   /**
    * Similar to {@link #parse(String, BiFunction}, but parses {@code input} and applies {@code
-   * reducer} with the <em>6</em> placeholder values in this template.
+   * mapper} with the <em>6</em> placeholder values in this template.
    *
-   * @return the return value of the {@code reducer} function if not null. Returns empty if
-   *     {@code input} doesn't match the format, or {@code reducer} returns null.
+   * @return the return value of the {@code mapper} function if not null. Returns empty if
+   *     {@code input} doesn't match the format, or {@code mapper} returns null.
    * @throws IllegalArgumentException if {@code input} doesn't match the format or the template
    *     doesn't have exactly 6 placeholders.
    */
-  public <R> Optional<R> parse(String input, Senary<? super String, ? extends R> reducer) {
-    return parseAndCollect(input, combining(reducer));
-  }
-
-  /**
-   * Parses {@code input} and extracts all placeholder name-value pairs in a {@link Map},
-   * in the same order as {@link #placeholders}.
-   *
-   * <p>Best to use this method with named placeholders since duplicate placeholder names
-   * ({@code %s}) are not allowed.
-   *
-   * @return the placeholder_name-value pairs if {@code input} matches this format,
-   *     or else {@code empty()}.
-   * @throws IllegalArgumentException upon duplicate placeholder names.
-   */
-  public Optional<Map<String, String>> parseToMap(String input) {
-    return parse(input)
-        .map(values ->
-            BiStream.zip(
-                    placeholders.stream().map(Substring.Match::toString),
-                    values.stream().map(Substring.Match::toString))
-                .toMap());
+  public <R> Optional<R> parse(String input, Senary<? super String, ? extends R> mapper) {
+    return parseAndCollect(input, combining(mapper));
   }
 
   /**
@@ -311,7 +287,7 @@ public final class StringFormat {
   /**
    * Scans the {@code input} string and extracts all matches of this string format.
    * Returns the lazy stream of non-null results from passing the single placeholder values to
-   * the {@code reducer} function for each iteration, with null results skipped.
+   * the {@code mapper} function for each iteration, with null results skipped.
    *
    * <p>For example: <pre>{@code
    * new StringFormat("/home/usr/myname/%s\n")
@@ -325,16 +301,16 @@ public final class StringFormat {
    *
    * <p>By default, placeholders are allowed to be matched against an empty string. If the
    * placeholder isn't expected to be empty, consider filtering it out by returning null from
-   * the {@code reducer} function, which will then be ignored in the result stream.
+   * the {@code mapper} function, which will then be ignored in the result stream.
    */
-  public <R> Stream<R> scan(String input, Function<? super String, ? extends R> reducer) {
-    return scanAndCollect(input, onlyElement(reducer));
+  public <R> Stream<R> scan(String input, Function<? super String, ? extends R> mapper) {
+    return scanAndCollect(input, onlyElement(mapper));
   }
 
   /**
    * Scans the {@code input} string and extracts all matches of this string format.
    * Returns the lazy stream of non-null results from passing the two placeholder values to
-   * the {@code reducer} function for each iteration, with null results skipped.
+   * the {@code mapper} function for each iteration, with null results skipped.
    *
    * <p>For example: <pre>{@code
    * new StringFormat("[key=%s, value=%s]")
@@ -349,17 +325,17 @@ public final class StringFormat {
    *
    * <p>By default, placeholders are allowed to be matched against an empty string. If a certain
    * placeholder isn't expected to be empty, consider filtering it out by returning null from
-   * the {@code reducer} function, which will then be ignored in the result stream.
+   * the {@code mapper} function, which will then be ignored in the result stream.
    */
   public <R> Stream<R> scan(
-      String input, BiFunction<? super String, ? super String, ? extends R> reducer) {
-    return scanAndCollect(input, combining(reducer));
+      String input, BiFunction<? super String, ? super String, ? extends R> mapper) {
+    return scanAndCollect(input, combining(mapper));
   }
 
   /**
    * Scans the {@code input} string and extracts all matches of this string format.
    * Returns the lazy stream of non-null results from passing the 3 placeholder values to
-   * the {@code reducer} function for each iteration, with null results skipped.
+   * the {@code mapper} function for each iteration, with null results skipped.
    *
    * <p>For example: <pre>{@code
    * new StringFormat("[%s + %s = %s]")
@@ -374,16 +350,16 @@ public final class StringFormat {
    *
    * <p>By default, placeholders are allowed to be matched against an empty string. If a certain
    * placeholder isn't expected to be empty, consider filtering it out by returning null from
-   * the {@code reducer} function, which will then be ignored in the result stream.
+   * the {@code mapper} function, which will then be ignored in the result stream.
    */
-  public <R> Stream<R> scan(String input, Ternary<? super String, ? extends R> reducer) {
-    return scanAndCollect(input, combining(reducer));
+  public <R> Stream<R> scan(String input, Ternary<? super String, ? extends R> mapper) {
+    return scanAndCollect(input, combining(mapper));
   }
 
   /**
    * Scans the {@code input} string and extracts all matches of this string format.
    * Returns the lazy stream of non-null results from passing the 4 placeholder values to
-   * the {@code reducer} function for each iteration, with null results skipped.
+   * the {@code mapper} function for each iteration, with null results skipped.
    *
    * <p>unlike {@link #parse(String, Quarternary)}, the input string isn't matched
    * entirely: the pattern doesn't have to start from the beginning, and if there are some remaining
@@ -392,16 +368,16 @@ public final class StringFormat {
    *
    * <p>By default, placeholders are allowed to be matched against an empty string. If a certain
    * placeholder isn't expected to be empty, consider filtering it out by returning null from
-   * the {@code reducer} function, which will then be ignored in the result stream.
+   * the {@code mapper} function, which will then be ignored in the result stream.
    */
-  public <R> Stream<R> scan(String input, Quarternary<? super String, ? extends R> reducer) {
-    return scanAndCollect(input, combining(reducer));
+  public <R> Stream<R> scan(String input, Quarternary<? super String, ? extends R> mapper) {
+    return scanAndCollect(input, combining(mapper));
   }
 
   /**
    * Scans the {@code input} string and extracts all matches of this string format.
    * Returns the lazy stream of non-null results from passing the 5 placeholder values to
-   * the {@code reducer} function for each iteration, with null results skipped.
+   * the {@code mapper} function for each iteration, with null results skipped.
    *
    * <p>unlike {@link #parse(String, Quinary)}, the input string isn't matched
    * entirely: the pattern doesn't have to start from the beginning, and if there are some remaining
@@ -410,16 +386,16 @@ public final class StringFormat {
    *
    * <p>By default, placeholders are allowed to be matched against an empty string. If a certain
    * placeholder isn't expected to be empty, consider filtering it out by returning null from
-   * the {@code reducer} function, which will then be ignored in the result stream.
+   * the {@code mapper} function, which will then be ignored in the result stream.
    */
-  public <R> Stream<R> scan(String input, Quinary<? super String, ? extends R> reducer) {
-    return scanAndCollect(input, combining(reducer));
+  public <R> Stream<R> scan(String input, Quinary<? super String, ? extends R> mapper) {
+    return scanAndCollect(input, combining(mapper));
   }
 
   /**
    * Scans the {@code input} string and extracts all matches of this string format.
    * Returns the lazy stream of non-null results from passing the 6 placeholder values to
-   * the {@code reducer} function for each iteration, with null results skipped.
+   * the {@code mapper} function for each iteration, with null results skipped.
    *
    * <p>unlike {@link #parse(String, Senary)}, the input string isn't matched
    * entirely: the pattern doesn't have to start from the beginning, and if there are some remaining
@@ -428,10 +404,10 @@ public final class StringFormat {
    *
    * <p>By default, placeholders are allowed to be matched against an empty string. If a certain
    * placeholder isn't expected to be empty, consider filtering it out by returning null from
-   * the {@code reducer} function, which will then be ignored in the result stream.
+   * the {@code mapper} function, which will then be ignored in the result stream.
    */
-  public <R> Stream<R> scan(String input, Senary<? super String, ? extends R> reducer) {
-    return scanAndCollect(input, combining(reducer));
+  public <R> Stream<R> scan(String input, Senary<? super String, ? extends R> mapper) {
+    return scanAndCollect(input, combining(mapper));
   }
 
   /**
