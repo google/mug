@@ -24,11 +24,13 @@ import static com.google.mu.util.stream.BiCollectors.groupingBy;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.MoreCollectors.allMax;
 import static com.google.mu.util.stream.MoreCollectors.allMin;
-import static com.google.mu.util.stream.MoreCollectors.asIn;
+import static com.google.mu.util.stream.MoreCollectors.combining;
 import static com.google.mu.util.stream.MoreCollectors.flatMapping;
 import static com.google.mu.util.stream.MoreCollectors.flatteningMaps;
 import static com.google.mu.util.stream.MoreCollectors.mapping;
 import static com.google.mu.util.stream.MoreCollectors.minMax;
+import static com.google.mu.util.stream.MoreCollectors.onlyElement;
+import static com.google.mu.util.stream.MoreCollectors.onlyElements;
 import static com.google.mu.util.stream.MoreCollectors.partitioningBy;
 import static com.google.mu.util.stream.MoreCollectors.switching;
 import static com.google.mu.util.stream.MoreCollectors.toListAndThen;
@@ -153,67 +155,67 @@ public class MoreCollectorsTest {
     assertThrows(UnsupportedOperationException.class, list::clear);
   }
 
-  @Test public void testAsIn_Two() {
-    assertThat(Stream.of(1, 10).collect(asIn(Integer::sum)).intValue()).isEqualTo(11);
+  @Test public void testCombining_Two() {
+    assertThat(Stream.of(1, 10).collect(combining(Integer::sum)).intValue()).isEqualTo(11);
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.of(1, 2, 3).collect(asIn((a, b) -> "ok")));
+        () -> Stream.of(1, 2, 3).collect(combining((a, b) -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Not true that input <[1, 2, 3]> has 2 elements.");
   }
 
-  @Test public void testAsIn_Three() {
-    assertThat(Stream.of(1, 3, 5).collect(asIn((a, b, c) -> a + b + c)).intValue()).isEqualTo(9);
+  @Test public void testCombining_Three() {
+    assertThat(Stream.of(1, 3, 5).collect(combining((a, b, c) -> a + b + c)).intValue()).isEqualTo(9);
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.of(1, 2).collect(asIn((a, b, c) -> "ok")));
+        () -> Stream.of(1, 2).collect(combining((a, b, c) -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Not true that input <[1, 2]> has 3 elements.");
   }
 
-  @Test public void testAsIn_Four() {
-    assertThat(Stream.of(1, 3, 5, 7).collect(asIn((a, b, c, d) -> a + b + c + d)).intValue())
+  @Test public void testCombining_Four() {
+    assertThat(Stream.of(1, 3, 5, 7).collect(combining((a, b, c, d) -> a + b + c + d)).intValue())
         .isEqualTo(16);
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.of(1, 2).collect(asIn((a, b, c, d) -> "ok")));
+        () -> Stream.of(1, 2).collect(combining((a, b, c, d) -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Not true that input <[1, 2]> has 4 elements.");
   }
 
-  @Test public void testAsIn_Five() {
-    assertThat(Stream.of(1, 3, 5, 7, 9).collect(asIn((a, b, c, d, e) -> a + b + c + d + e)).intValue())
+  @Test public void testCombining_Five() {
+    assertThat(Stream.of(1, 3, 5, 7, 9).collect(combining((a, b, c, d, e) -> a + b + c + d + e)).intValue())
         .isEqualTo(25);
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.of(1, 2).collect(asIn((a, b, c, d, e) -> "ok")));
+        () -> Stream.of(1, 2).collect(combining((a, b, c, d, e) -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Not true that input <[1, 2]> has 5 elements.");
   }
 
-  @Test public void testAsIn_Six() {
-    assertThat(Stream.of(1, 3, 5, 7, 9, 11).collect(asIn((a, b, c, d, e, f) -> a + b + c + d + e + f)).intValue())
+  @Test public void testCombining_Six() {
+    assertThat(Stream.of(1, 3, 5, 7, 9, 11).collect(combining((a, b, c, d, e, f) -> a + b + c + d + e + f)).intValue())
         .isEqualTo(36);
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.of(1, 2).collect(asIn((a, b, c, d, e, f) -> "ok")));
+        () -> Stream.of(1, 2).collect(combining((a, b, c, d, e, f) -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Not true that input <[1, 2]> has 6 elements.");
   }
 
-  @Test public void testAsIn_parallel_success() {
+  @Test public void testCombining_parallel_success() {
     String result =
         Stream.of(1, 3, 5, 7, 9, 11)
             .parallel()
             .map(Object::toString)
-            .collect(asIn((a, b, c, d, e, f) -> a + b + c + d + e + f));
+            .collect(combining((a, b, c, d, e, f) -> a + b + c + d + e + f));
     assertThat(result).isEqualTo("1357911");
   }
 
-  @Test public void testAsIn_parallel_failure() {
+  @Test public void testCombining_parallel_failure() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.of(1, 2, 3, 4, 5, 6, 7, 8).parallel().collect(asIn((a, b, c, d, e, f) -> "ok")));
+        () -> Stream.of(1, 2, 3, 4, 5, 6, 7, 8).parallel().collect(combining((a, b, c, d, e, f) -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Not true that input of size = 8 <[1, 2, 3, 4, 5, 6, 7, ...]> has 6 elements.");
   }
@@ -221,40 +223,40 @@ public class MoreCollectorsTest {
   @Test public void testLongListInErrorMessage() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).collect(asIn((a, b) -> "ok")));
+        () -> Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).collect(combining((a, b) -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Not true that input of size = 10 <[1, 2, 3, ...]> has 2 elements.");
   }
 
   @Test public void testSwitching_singleCaseApplies() {
-    int result = Stream.of(1).collect(switching(asIn(i -> i * 10)));
+    int result = Stream.of(1).collect(switching(onlyElement(i -> i * 10)));
     assertThat(result).isEqualTo(10);
   }
 
   @Test public void testSwitching_singleCaseNotApply() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.of(1, 2).collect(switching(asIn(a -> "ok"))));
+        () -> Stream.of(1, 2).collect(switching(onlyElement(a -> "ok"))));
     assertThat(thrown.getMessage())
         .isEqualTo("Not true that input <[1, 2]> has 1 elements.");
   }
 
   @Test public void testSwitching_twoCases_firstCaseApplies() {
     String result =
-        Stream.of(1).collect(switching(asIn(i -> "one"), asIn((a, b) -> "two")));
+        Stream.of(1).collect(switching(onlyElement(i -> "one"), onlyElements((a, b) -> "two")));
     assertThat(result).isEqualTo("one");
   }
 
   @Test public void testSwitching_twoCases_secondCaseApplies() {
     String result =
-        Stream.of(1, 2).collect(switching(asIn(i -> "one"), asIn((a, b) -> "two")));
+        Stream.of(1, 2).collect(switching(onlyElement(i -> "one"), onlyElements((a, b) -> "two")));
     assertThat(result).isEqualTo("two");
   }
 
   @Test public void testSwitching_twoCases_neitherApplies() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.of(1, 2, 3, 4).collect(switching(asIn(a -> "one"), asIn((a, b) -> "two"))));
+        () -> Stream.of(1, 2, 3, 4).collect(switching(onlyElement(a -> "one"), onlyElements((a, b) -> "two"))));
     assertThat(thrown.getMessage())
         .isEqualTo("Unexpected input elements of size = 4 <[1, 2, 3, ...]>.");
   }
@@ -345,7 +347,7 @@ public class MoreCollectorsTest {
 
   @Test public void testNulls() throws Exception {
     new NullPointerTester()
-        .setDefault(FixedSizeCollector.class, MoreCollectors.asIn(identity()))
+        .setDefault(FixedSizeCollector.class, MoreCollectors.onlyElement(identity()))
         .testAllPublicStaticMethods(MoreCollectors.class);
   }
 

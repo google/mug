@@ -13,6 +13,7 @@ import org.junit.runner.RunWith;
 
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.testing.ClassSanityTester;
+import com.google.mu.util.stream.Joiner;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 @RunWith(TestParameterInjector.class)
@@ -148,6 +149,144 @@ public class StringFormatTest {
   @Test public void parse_partiallyOverlappingTemplate() {
     assertThat(new StringFormat("xyz%sxzz").parse("xyzzxxzz").values())
         .containsExactly("zx");
+  }
+
+  @Test public void scan_singlePlaceholder() {
+    assertThat(new StringFormat("[id=%s]").scan("id=1", v -> v)).isEmpty();
+    assertThat(new StringFormat("[id=%s]").scan("[id=foo]", v -> v)).containsExactly("foo");
+    assertThat(new StringFormat("[id=%s]").scan("[id=foo][id=bar]", v -> v))
+        .containsExactly("foo", "bar")
+        .inOrder();
+  }
+
+  @Test public void scan_singlePlaceholder_emptyInput() {
+    assertThat(new StringFormat("[id=%s]").scan("", v -> v)).isEmpty();
+  }
+
+  @Test public void scan_twoPlaceholders() {
+    assertThat(new StringFormat("[id=%s, name=%s]").scan("id=1", (id, name) -> id + "," + name)).isEmpty();
+    assertThat(new StringFormat("[id=%s, name=%s]").scan("[id=foo, name=bar]", (id, name) -> id + "," + name))
+        .containsExactly("foo,bar");
+    assertThat(
+            new StringFormat("[id=%s, name=%s]")
+                .scan("[id=foo, name=bar][id=zoo, name=boo]", (id, name) -> id + "," + name))
+        .containsExactly("foo,bar", "zoo,boo")
+        .inOrder();
+  }
+
+  @Test public void scan_twoPlaceholders_emptyInput() {
+    assertThat(new StringFormat("[id=%s, name=%s]").scan("", (id, name) -> id + "," + name)).isEmpty();
+  }
+
+  @Test public void scan_threePlaceholders() {
+    assertThat(new StringFormat("[a=%s, b=%s, c=%s]").scan("a=1,b=2,c", (a, b, c) -> a + b + c)).isEmpty();
+    assertThat(new StringFormat("[a=%s, b=%s, c=%s]").scan("[a=1, b=2, c=3]", (a, b, c) -> a + b + c))
+        .containsExactly("123");
+    assertThat(
+            new StringFormat("[a=%s, b=%s, c=%s]")
+                .scan("[a=1, b=2, c=3] [a=x, b=y, c=z]", (a, b, c) -> a + b + c))
+        .containsExactly("123", "xyz")
+        .inOrder();
+  }
+
+  @Test public void scan_threePlaceholders_emptyInput() {
+    assertThat(new StringFormat("[a=%s, b=%s, c=%s]").scan("", (a, b, c) -> a + b + c)).isEmpty();
+  }
+
+  @Test public void scan_fourPlaceholders() {
+    assertThat(new StringFormat("[a=%s, b=%s, c=%s, d=%s]").scan("a=1,b=2,c=3,d", (a, b, c, d) -> a + b + c + d))
+        .isEmpty();
+    assertThat(
+            new StringFormat("[a=%s, b=%s, c=%s, d=%s]")
+                .scan("[a=1, b=2, c=3, d=4]", (a, b, c, d) -> a + b + c + d))
+        .containsExactly("1234");
+    assertThat(
+            new StringFormat("[a=%s, b=%s, c=%s, d=%s]")
+                .scan("[a=1, b=2, c=3, d=4] [a=z, b=y, c=x, d=w]", (a, b, c, d) -> a + b + c + d))
+        .containsExactly("1234", "zyxw")
+        .inOrder();
+  }
+
+  @Test public void scan_fourPlaceholders_emptyInput() {
+    assertThat(new StringFormat("[a=%s, b=%s, c=%s, d=%s]").scan("", (a, b, c, d) -> a + b + c + d)).isEmpty();
+  }
+
+  @Test public void scan_fivePlaceholders_emptyInput() {
+    assertThat(new StringFormat("[a=%s, b=%s, c=%s, d=%s, e=%s]").scan("", (a, b, c, d, e) -> a + b + c + d + e))
+        .isEmpty();
+  }
+
+  @Test public void scan_fivePlaceholders() {
+    assertThat(new StringFormat("[a=%s, b=%s, c=%s, d=%s, e=%s]").scan("a=1,b=2,c=3,d", (a, b, c, d, e) -> a + b + c + d + e))
+        .isEmpty();
+    assertThat(
+            new StringFormat("[a=%s, b=%s, c=%s, d=%s, e=%s]")
+                .scan("[a=1, b=2, c=3, d=4, e=5]", (a, b, c, d, e) -> a + b + c + d + e))
+        .containsExactly("12345");
+    assertThat(
+            new StringFormat("[a=%s, b=%s, c=%s, d=%s, e=%s]")
+                .scan("[a=1, b=2, c=3, d=4, e=5] [a=z, b=y, c=x, d=w, e=v]", (a, b, c, d, e) -> a + b + c + d + e))
+        .containsExactly("12345", "zyxwv")
+        .inOrder();
+  }
+
+  @Test public void scan_sixPlaceholders_emptyInput() {
+    assertThat(
+            new StringFormat("[a=%s, b=%s, c=%s, d=%s, e=%s, f=%s]")
+                .scan("", (a, b, c, d, e, f) -> a + b + c + d + e + f))
+        .isEmpty();
+  }
+
+  @Test public void scan_sixPlaceholders() {
+    assertThat(
+            new StringFormat("[a=%s, b=%s, c=%s, d=%s, e=%s, f=%s]")
+                .scan("a=1, b=2, c=3, d=4, e=5, f", (a, b, c, d, e, f) -> a + b + c + d + e + f))
+        .isEmpty();
+    assertThat(
+            new StringFormat("[a=%s, b=%s, c=%s, d=%s, e=%s, f=%s]")
+                .scan("[a=1, b=2, c=3, d=4, e=5, f=6]", (a, b, c, d, e, f) -> a + b + c + d + e + f))
+        .containsExactly("123456");
+    assertThat(
+            new StringFormat("[a=%s, b=%s, c=%s, d=%s, e=%s, f=%s]")
+                .scan("[a=1, b=2, c=3, d=4, e=5, f=6] [a=z, b=y, c=x, d=w, e=v, f=u]", (a, b, c, d, e, f) -> a + b + c + d + e + f))
+        .containsExactly("123456", "zyxwvu")
+        .inOrder();
+  }
+
+  @Test public void scan_skipsNonMatchingCharsFromBeginning() {
+    assertThat(new StringFormat("[id=%s]").scan("whatever [id=foo] [id=bar]", v -> v))
+        .containsExactly("foo", "bar")
+        .inOrder();
+    assertThat(
+            new StringFormat("[k=%s, v=%s]")
+                .scan("whatever [k=one, v=1] [k=two, v=2]")
+                .map(Joiner.on(":")::join))
+        .containsExactly("one:1", "two:2")
+        .inOrder();
+  }
+
+  @Test public void scan_skipsNonMatchingCharsFromMiddle() {
+    assertThat(new StringFormat("[id=%s]").scan("[id=foo] [id=bar]", v -> v))
+        .containsExactly("foo", "bar")
+        .inOrder();
+    assertThat(
+            new StringFormat("[k=%s, v=%s]")
+                .scan("[k=one, v=1] and then [k=two, v=2]")
+                .map(Joiner.on(":")::join))
+        .containsExactly("one:1", "two:2")
+        .inOrder();
+  }
+
+  @Test public void scan_skipsNonMatchingCharsFromEnd() {
+    assertThat(new StringFormat("[id=%s]").scan("[id=foo] [id=bar];[id=baz", v -> v))
+        .containsExactly("foo", "bar")
+        .inOrder();
+    assertThat(
+            new StringFormat("[k=%s, v=%s]")
+                .scan("[k=one, v=1][k=two, v=2];[k=three,v]")
+                .map(Joiner.on(":")::join))
+        .containsExactly("one:1", "two:2")
+        .inOrder();
   }
 
   @Test public void testNulls() {

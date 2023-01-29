@@ -6,7 +6,7 @@ import static com.google.mu.util.Substring.before;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.Substring.suffix;
-import static com.google.mu.util.stream.MoreCollectors.asIn;
+import static com.google.mu.util.stream.MoreCollectors.combining;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Objects.requireNonNull;
 
@@ -23,6 +23,7 @@ import com.google.mu.function.Quinary;
 import com.google.mu.function.Senary;
 import com.google.mu.function.Ternary;
 import com.google.mu.util.stream.BiStream;
+import com.google.mu.util.stream.MoreCollectors;
 
 /**
  * A utility class to extract placeholder values from input strings based on a template.
@@ -162,7 +163,7 @@ public final class StringTemplate {
    *     doesn't have exactly one placeholder.
    */
   public <R> R parse(String input, Function<? super String, R> function) {
-    return parsePlaceholderValues(input).collect(asIn(function));
+    return parsePlaceholderValues(input).collect(MoreCollectors.onlyElement(function));
   }
 
   /**
@@ -178,7 +179,7 @@ public final class StringTemplate {
    *     doesn't have exactly two placeholders.
    */
   public <R> R parse(String input, BiFunction<? super String, ? super String, R> function) {
-    return parsePlaceholderValues(input).collect(asIn(function));
+    return parsePlaceholderValues(input).collect(combining(function));
   }
 
   /**
@@ -194,7 +195,7 @@ public final class StringTemplate {
    *     doesn't have exactly 3 placeholders.
    */
   public <R> R parse(String input, Ternary<? super String,  R> function) {
-    return parsePlaceholderValues(input).collect(asIn(function));
+    return parsePlaceholderValues(input).collect(combining(function));
   }
 
   /**
@@ -205,7 +206,7 @@ public final class StringTemplate {
    *     doesn't have exactly 4 placeholders.
    */
   public <R> R parse(String input, Quarternary<? super String,  R> function) {
-    return parsePlaceholderValues(input).collect(asIn(function));
+    return parsePlaceholderValues(input).collect(combining(function));
   }
 
   /**
@@ -216,7 +217,7 @@ public final class StringTemplate {
    *     doesn't have exactly 5 placeholders.
    */
   public <R> R parse(String input, Quinary<? super String,  R> function) {
-    return parsePlaceholderValues(input).collect(asIn(function));
+    return parsePlaceholderValues(input).collect(combining(function));
   }
 
   /**
@@ -227,7 +228,7 @@ public final class StringTemplate {
    *     doesn't have exactly 6 placeholders.
    */
   public <R> R parse(String input, Senary<? super String,  R> function) {
-    return parsePlaceholderValues(input).collect(asIn(function));
+    return parsePlaceholderValues(input).collect(combining(function));
   }
 
   /**

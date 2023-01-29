@@ -197,29 +197,6 @@ public final class MoreCollectors {
   }
 
   /**
-   * Returns a collector that collects the only one element from the input and transforms it
-   * using the {@code mapper} function. If there are fewer or more elements in the input,
-   * IllegalArgumentExceptioin is thrown.
-   *
-   * <p>Can be used together with the other {@code asIn()} {@link FixedSizeCollector}
-   * as one of the multiple cases passed to {@link #switching}.
-   *
-   * @since 6.6
-   */
-  public static <T, R> FixedSizeCollector<T, ?, R> asIn(
-      Function<? super T, ? extends R> mapper) {
-    requireNonNull(mapper);
-    return new ShortListCollector<T, R>() {
-      @Override R reduce(List<? extends T> list) {
-        return mapper.apply(list.get(0));
-      }
-      @Override int arity() {
-        return 1;
-      }
-    };
-  }
-
-  /**
    * Returns a collector that collects the only two elements from the input and transforms them
    * using the {@code mapper} function. If there are fewer or more elements in the input,
    * IllegalArgumentExceptioin is thrown.
@@ -231,7 +208,7 @@ public final class MoreCollectors {
    *
    * @since 6.6
    */
-  public static <T, R> FixedSizeCollector<T, ?, R> asIn(
+  public static <T, R> FixedSizeCollector<T, ?, R> combining(
       BiFunction<? super T, ? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new ShortListCollector<T, R>() {
@@ -256,7 +233,7 @@ public final class MoreCollectors {
    *
    * @since 6.6
    */
-  public static <T, R> FixedSizeCollector<T, ?, R> asIn(Ternary<? super T, ? extends R> mapper) {
+  public static <T, R> FixedSizeCollector<T, ?, R> combining(Ternary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new ShortListCollector<T, R>() {
       @Override R reduce(List<? extends T> list) {
@@ -280,7 +257,7 @@ public final class MoreCollectors {
    *
    * @since 6.6
    */
-  public static <T, R> FixedSizeCollector<T, ?, R> asIn(Quarternary<? super T, ? extends R> mapper) {
+  public static <T, R> FixedSizeCollector<T, ?, R> combining(Quarternary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new ShortListCollector<T, R>() {
       @Override R reduce(List<? extends T> list) {
@@ -304,7 +281,7 @@ public final class MoreCollectors {
    *
    * @since 6.6
    */
-  public static <T, R> FixedSizeCollector<T, ?, R> asIn(Quinary<? super T, ? extends R> mapper) {
+  public static <T, R> FixedSizeCollector<T, ?, R> combining(Quinary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new ShortListCollector<T, R>() {
       @Override R reduce(List<? extends T> list) {
@@ -328,7 +305,7 @@ public final class MoreCollectors {
    *
    * @since 6.6
    */
-  public static <T, R> FixedSizeCollector<T, ?, R> asIn(Senary<? super T, ? extends R> mapper) {
+  public static <T, R> FixedSizeCollector<T, ?, R> combining(Senary<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new ShortListCollector<T, R>() {
       @Override R reduce(List<? extends T> list) {
@@ -348,57 +325,65 @@ public final class MoreCollectors {
    */
   public static <T, R> FixedSizeCollector<T, ?, R> onlyElement(
       Function<? super T, ? extends R> mapper) {
-    return asIn(mapper);
+    requireNonNull(mapper);
+    return new ShortListCollector<T, R>() {
+      @Override R reduce(List<? extends T> list) {
+        return mapper.apply(list.get(0));
+      }
+      @Override int arity() {
+        return 1;
+      }
+    };
   }
 
   /**
-   * Same as {@link #asIn(BiFunction)}.
+   * Same as {@link #combining(BiFunction)}.
    *
    * @since 5.3
    */
   public static <T, R> FixedSizeCollector<T, ?, R> onlyElements(
       BiFunction<? super T, ? super T, ? extends R> mapper) {
-    return asIn(mapper);
+    return combining(mapper);
   }
 
   /**
-   * Same as {@link #asIn(Ternary)}.
+   * Same as {@link #combining(Ternary)}.
    *
    * @since 5.3
    */
   public static <T, R> FixedSizeCollector<T, ?, R> onlyElements(
       Ternary<? super T, ? extends R> mapper) {
-    return asIn(mapper);
+    return combining(mapper);
   }
 
   /**
-   * Same as {@link #asIn(Quarternary)}.
+   * Same as {@link #combining(Quarternary)}.
    *
    * @since 5.3
    */
   public static <T, R> FixedSizeCollector<T, ?, R> onlyElements(
       Quarternary<? super T, ? extends R> mapper) {
-    return asIn(mapper);
+    return combining(mapper);
   }
 
   /**
-   * Same as {@link #asIn(Quinary)}.
+   * Same as {@link #combining(Quinary)}.
    *
    * @since 5.3
    */
   public static <T, R> FixedSizeCollector<T, ?, R> onlyElements(
       Quinary<? super T, ? extends R> mapper) {
-    return asIn(mapper);
+    return combining(mapper);
   }
 
   /**
-   * Same as {@link #asIn(Senary)}.
+   * Same as {@link #combining(Senary)}.
    *
    * @since 5.3
    */
   public static <T, R> FixedSizeCollector<T, ?, R> onlyElements(
       Senary<? super T, ? extends R> mapper) {
-    return asIn(mapper);
+    return combining(mapper);
   }
 
   /**

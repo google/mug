@@ -6,14 +6,18 @@ import static com.google.mu.util.Substring.before;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.spanningInOrder;
 import static com.google.mu.util.Substring.suffix;
-import static com.google.mu.util.stream.MoreCollectors.asIn;
+import static com.google.mu.util.stream.MoreCollectors.combining;
+import static com.google.mu.util.stream.MoreCollectors.onlyElement;
 import static java.util.Collections.unmodifiableList;
+import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import com.google.mu.function.Quarternary;
@@ -21,6 +25,7 @@ import com.google.mu.function.Quinary;
 import com.google.mu.function.Senary;
 import com.google.mu.function.Ternary;
 import com.google.mu.util.stream.BiStream;
+import com.google.mu.util.stream.MoreStreams;
 
 /**
  * A (lossy) reverse operation of {@link String#format} to extract placeholder values from input
@@ -65,6 +70,14 @@ import com.google.mu.util.stream.BiStream;
  *
  * As such, only use this class on trusted input strings (i.e. not user inputs).
  * And use regex instead to better deal with ambiguity.
+ *
+ * <p>All the {@code parse()} and {@code match()} methods attempt to match the entire input string,
+ * with the {@code parse()} methods throwing and {@code match()} returning {@code Optional.empty()}
+ * upon mismatch.
+ *
+ * <p>If you need to find the string format anywhere in the input string, or need to find repeated
+ * occurrences from the input string, use the {@code scan()} methods instead. Tack on {@code
+ * .findFirst()} on the returned lazy stream if you only care to find a single occurrence.
  *
  * <p>This class is immutable and pre-compiles the format string at constructor time so that the
  * {@code parse()} methods will be more efficient.
@@ -134,7 +147,7 @@ public final class StringFormat {
    *     doesn't have exactly one placeholder.
    */
   public <R> R parse(String input, Function<? super String, R> reducer) {
-    return parsePlaceholderValues(input).collect(asIn(reducer));
+    return parsePlaceholderValues(input).collect(onlyElement(reducer));
   }
 
   /**
@@ -150,7 +163,7 @@ public final class StringFormat {
    *     doesn't have exactly two placeholders.
    */
   public <R> R parse(String input, BiFunction<? super String, ? super String, R> reducer) {
-    return parsePlaceholderValues(input).collect(asIn(reducer));
+    return parsePlaceholderValues(input).collect(combining(reducer));
   }
 
   /**
@@ -166,7 +179,7 @@ public final class StringFormat {
    *     doesn't have exactly 3 placeholders.
    */
   public <R> R parse(String input, Ternary<? super String,  R> reducer) {
-    return parsePlaceholderValues(input).collect(asIn(reducer));
+    return parsePlaceholderValues(input).collect(combining(reducer));
   }
 
   /**
@@ -177,7 +190,7 @@ public final class StringFormat {
    *     doesn't have exactly 4 placeholders.
    */
   public <R> R parse(String input, Quarternary<? super String,  R> reducer) {
-    return parsePlaceholderValues(input).collect(asIn(reducer));
+    return parsePlaceholderValues(input).collect(combining(reducer));
   }
 
   /**
@@ -188,7 +201,7 @@ public final class StringFormat {
    *     doesn't have exactly 5 placeholders.
    */
   public <R> R parse(String input, Quinary<? super String,  R> reducer) {
-    return parsePlaceholderValues(input).collect(asIn(reducer));
+    return parsePlaceholderValues(input).collect(combining(reducer));
   }
 
   /**
@@ -199,7 +212,7 @@ public final class StringFormat {
    *     doesn't have exactly 6 placeholders.
    */
   public <R> R parse(String input, Senary<? super String,  R> reducer) {
-    return parsePlaceholderValues(input).collect(asIn(reducer));
+    return parsePlaceholderValues(input).collect(combining(reducer));
   }
 
   /**
@@ -240,6 +253,146 @@ public final class StringFormat {
       inputIndex = placeholder.index() + placeholder.length() + literals.get(i).length();
     }
     return optional(inputIndex == input.length(), unmodifiableList(builder));
+  }
+
+  /**
+   * Scans the {@code input} string and extracts all matches of this string format.
+   * Returns the lazy stream of results from passing the single placeholder value to {@code reducer}
+   * function for each iteration.
+   *
+   * <p>For example: <pre>{@code
+   * new StringFormat("/home/usr/myname/%s\n")
+   *     .scan(multiLineInput, fileName -> ...);
+   * }</pre>
+   *
+   * <p>unlike {@link StringFormat#parse(String, Function)}, the input string isn't matched
+   * entirely: the pattern doesn't have to start from the beginning, and if there are some remaining
+   * characters that don't match the pattern any more, the stream stops. In particular, if there
+   * is no match, empty stream is returned.
+   */
+  public <R> Stream<R> scan(String input, Function<? super String, ? extends R> reducer) {
+    return scanAndCollect(input, onlyElement(reducer));
+  }
+
+  /**
+   * Scans the {@code input} string and extracts all matches of this string format.
+   * Returns the lazy stream of results from passing the two placeholder values to {@code reducer}
+   * function for each iteration.
+   *
+   * <p>For example: <pre>{@code
+   * new StringFormat("[key=%s, value=%s]")
+   *     .repeatedly()
+   *     .parse(input, (key, value) -> ...);
+   * }</pre>
+   *
+   * <p>unlike {@link StringFormat#parse(String, BiFunction)}, the input string isn't matched
+   * entirely: the pattern doesn't have to start from the beginning, and if there are some remaining
+   * characters that don't match the pattern any more, the stream stops. In particular, if there
+   * is no match, empty stream is returned.
+   */
+  public <R> Stream<R> scan(String input, BiFunction<? super String, ? super String, ? extends R> reducer) {
+    return scanAndCollect(input, combining(reducer));
+  }
+
+  /**
+   * Scans the {@code input} string and extracts all matches of this string format.
+   * Returns the lazy stream of results from passing the three placeholder values to {@code reducer}
+   * function for each iteration.
+   *
+   * <p>For example: <pre>{@code
+   * new StringFormat("[%s + %s = %s]")
+   *     .repeatedly()
+   *     .parse(input, (lhs, rhs, result) -> ...);
+   * }</pre>
+   *
+   * <p>unlike {@link StringFormat#parse(String, Ternary)}, the input string isn't matched
+   * entirely: the pattern doesn't have to start from the beginning, and if there are some remaining
+   * characters that don't match the pattern any more, the stream stops. In particular, if there
+   * is no match, empty stream is returned.
+   */
+  public <R> Stream<R> scan(String input, Ternary<? super String, ? extends R> reducer) {
+    return scanAndCollect(input, combining(reducer));
+  }
+
+  /**
+   * Scans the {@code input} string and extracts all matches of this string format.
+   * Returns the lazy stream of results from passing the 4 placeholder values to {@code reducer}
+   * function for each iteration.
+   *
+   * <p>unlike {@link StringFormat#parse(String, Quarternary)}, the input string isn't matched
+   * entirely: the pattern doesn't have to start from the beginning, and if there are some remaining
+   * characters that don't match the pattern any more, the stream stops. In particular, if there
+   * is no match, empty stream is returned.
+   */
+  public <R> Stream<R> scan(String input, Quarternary<? super String, ? extends R> reducer) {
+    return scanAndCollect(input, combining(reducer));
+  }
+
+  /**
+   * Scans the {@code input} string and extracts all matches of this string format.
+   * Returns the lazy stream of results from passing the 5 placeholder values to {@code reducer}
+   * function for each iteration.
+   *
+   * <p>unlike {@link StringFormat#parse(String, Quinary)}, the input string isn't matched
+   * entirely: the pattern doesn't have to start from the beginning, and if there are some remaining
+   * characters that don't match the pattern any more, the stream stops. In particular, if there
+   * is no match, empty stream is returned.
+   */
+  public <R> Stream<R> scan(String input, Quinary<? super String, ? extends R> reducer) {
+    return scanAndCollect(input, combining(reducer));
+  }
+
+  /**
+   * Scans the {@code input} string and extracts all matches of this string format.
+   * Returns the lazy stream of results from passing the 6 placeholder values to {@code reducer}
+   * function for each iteration.
+   *
+   * <p>unlike {@link StringFormat#parse(String, Senary)}, the input string isn't matched
+   * entirely: the pattern doesn't have to start from the beginning, and if there are some remaining
+   * characters that don't match the pattern any more, the stream stops. In particular, if there
+   * is no match, empty stream is returned.
+   */
+  public <R> Stream<R> scan(String input, Senary<? super String, ? extends R> reducer) {
+    return scanAndCollect(input, combining(reducer));
+  }
+
+  /**
+   * Scans the {@code input} string and extracts all matched placeholders in this string format.
+   *
+   * <p>unlike {@link StringFormat#match(String)}, the input string isn't matched entirely:
+   * the pattern doesn't have to start from the beginning, and if there are some remaining
+   * characters that don't match the pattern any more, the stream stops. In particular, if there
+   * is no match, empty stream is returned.
+   */
+  public Stream<List<Substring.Match>> scan(String input) {
+    requireNonNull(input);
+    return MoreStreams.whileNotNull(
+        new Supplier<List<Substring.Match>>() {
+          private int inputIndex = 0;
+
+          @Override public List<Substring.Match> get() {
+            inputIndex = input.indexOf(literals.get(0), inputIndex);
+            if (inputIndex < 0) {
+              return null;
+            }
+            inputIndex += literals.get(0).length();
+            List<Substring.Match> builder = new ArrayList<>(placeholders.size());
+            for (int i = 1; i < literals.size(); i++) {
+              String literal = literals.get(i);
+              Substring.Match placeholder = before(first(literal)).match(input, inputIndex);
+              if (placeholder == null) {
+                return null;
+              }
+              builder.add(placeholder);
+              inputIndex = placeholder.index() + placeholder.length() + literal.length();
+            }
+            return unmodifiableList(builder);
+          }
+        });
+  }
+
+  private <R> Stream<R> scanAndCollect(String input, Collector<? super String, ?, R> collector) {
+    return scan(input).map(values -> values.stream().map(Substring.Match::toString).collect(collector));
   }
 
   /**
