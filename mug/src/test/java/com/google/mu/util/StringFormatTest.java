@@ -6,12 +6,11 @@ import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.spanningInOrder;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.util.Map;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.testing.ClassSanityTester;
 import com.google.mu.util.stream.Joiner;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
@@ -21,23 +20,23 @@ public class StringFormatTest {
 
   @Test public void parse_noPlaceholder() {
     StringFormat template = new StringFormat("this is literal");
-    assertThat(template.parse("this is literal").toMap()).isEmpty();
+    assertThat(template.parse("this is literal").get()).isEmpty();
   }
 
   @Test public void parse_onlyPlaceholder() {
     StringFormat template = new StringFormat("%s");
-    assertThat(template.parse("Hello Tom!").toMap()).containsExactly("%s", "Hello Tom!");
+    assertThat(template.parse("Hello Tom!", v -> v)).hasValue("Hello Tom!");
   }
 
   @Test public void parse_singlePlaceholder() {
     StringFormat template = new StringFormat("Hello %s!");
-    assertThat(template.parse("Hello Tom!").toMap()).containsExactly("%s", "Tom");
+    assertThat(template.parse("Hello Tom!", v -> v)).hasValue("Tom");
   }
 
   @Test public void parse_multiplePlaceholders() {
     StringFormat template =
         new StringFormat("Hello %s, welcome to %s!");
-    assertThat(template.parse("Hello Gandolf, welcome to Isengard!").values())
+    assertThat(template.parse("Hello Gandolf, welcome to Isengard!").get().stream().map(Object::toString))
         .containsExactly("Gandolf", "Isengard")
         .inOrder();
   }
@@ -45,100 +44,152 @@ public class StringFormatTest {
   @Test public void parse_multiplePlaceholdersWithSameName() {
     StringFormat template =
         new StringFormat("Hello {name} and {name}!");
-    ImmutableListMultimap<String, String> result =
-        template.parse("Hello Gandolf and Aragon!")
-            .collect(ImmutableListMultimap::toImmutableListMultimap);
-    assertThat(result)
-        .containsExactly("{name}", "Gandolf", "{name}", "Aragon")
+    assertThat(template.parse("Hello Gandolf and Aragon!").get().stream().map(Object::toString))
+        .containsExactly("Gandolf", "Aragon")
         .inOrder();
   }
 
   @Test public void parse_emptyPlaceholderValue() {
     StringFormat template = new StringFormat("Hello %s!");
-    assertThat(template.parse("Hello !").toMap()).containsExactly("%s", "");
+    assertThat(template.parse("Hello !").get().stream().map(Object::toString))
+        .containsExactly("");
   }
 
   @Test public void parse_preludeFailsToMatch() {
     StringFormat template = new StringFormat("Hello %s!");
-    assertThrows(IllegalArgumentException.class, () -> template.parse("Hell Tom!"));
-    assertThrows(IllegalArgumentException.class, () -> template.parse("elloh Tom!"));
-    assertThrows(IllegalArgumentException.class, () -> template.parse(" Hello Tom!"));
+    assertThat(template.parse("Hell Tom!")).isEmpty();
+    assertThat(template.parse("elloh Tom!")).isEmpty();
+    assertThat(template.parse(" Hello Tom!")).isEmpty();
   }
 
   @Test public void parse_postludeFailsToMatch() {
     StringFormat template = new StringFormat("Hello %s!");
-    assertThrows(IllegalArgumentException.class, () -> template.parse("Hello Tom?"));
-    assertThrows(IllegalArgumentException.class, () -> template.parse("Hello Tom! "));
-    assertThrows(IllegalArgumentException.class, () -> template.parse("Hello Tom"));
+    assertThat(template.parse("Hello Tom?")).isEmpty();
+    assertThat(template.parse("Hello Tom! ")).isEmpty();
+    assertThat(template.parse("Hello Tom")).isEmpty();
   }
 
   @Test public void parse_nonEmptyTemplate_emptyInput() {
     StringFormat template = new StringFormat("Hello %s!");
-    assertThrows(IllegalArgumentException.class, () -> template.parse(""));
+    assertThat(template.parse("")).isEmpty();
   }
 
   @Test public void parse_emptyTemplate_nonEmptyInput() {
     StringFormat template = new StringFormat("");
-    assertThrows(IllegalArgumentException.class, () -> template.parse("."));
+    assertThat(template.parse(".")).isEmpty();
   }
 
   @Test public void parse_emptyTemplate_emptyInput() {
     StringFormat template = new StringFormat("");
-    assertThat(template.parse("").toMap()).isEmpty();
+    assertThat(template.parse("")).hasValue(ImmutableList.of());
   }
 
   @Test public void parse_withOneArgLambda() {
-    assertThat(new StringFormat("1 is %s").parse("1 is one", Object::toString)).isEqualTo("one");
+    assertThat(new StringFormat("1 is %s").parse("1 is one", Object::toString)).hasValue("one");
+  }
+
+  @Test public void parse_withOneArgLambda_lambdaReturnsNull() {
+    assertThat(new StringFormat("1 is %s").parse("1 is one", x -> null)).isEmpty();
   }
 
   @Test public void parse_withTwoArgsLambda() {
     assertThat(new StringFormat("1 is %s, 2 is %s").parse("1 is one, 2 is two", String::concat))
-        .isEqualTo("onetwo");
+        .hasValue("onetwo");
+  }
+
+  @Test public void parse_withTwoArgsLambda_lambdaReturnsNull() {
+    assertThat(new StringFormat("1 is %s, 2 is %s").parse("1 is one, 2 is two", (x, y) -> null))
+        .isEmpty();
   }
 
   @Test public void parse_withThreeArgsLambda() {
-    String result =
-        new StringFormat("1 is %s, 2 is %s, 3 is %s")
-            .parse("1 is one, 2 is two, 3 is three", (x, y, z) -> x + "," + y + "," + z);
-    assertThat(result).isEqualTo("one,two,three");
+    assertThat(
+            new StringFormat("1 is %s, 2 is %s, 3 is %s")
+                .parse("1 is one, 2 is two, 3 is three", (x, y, z) -> x + "," + y + "," + z))
+        .hasValue("one,two,three");
+  }
+
+  @Test public void parse_withThreeArgsLambda_lambdaReturnsNull() {
+    assertThat(
+            new StringFormat("1 is %s, 2 is %s, 3 is %s")
+                .parse("1 is one, 2 is two, 3 is three", (x, y, z) -> null))
+        .isEmpty();
   }
 
   @Test public void parse_withFourArgsLambda() {
-    String result =
-        new StringFormat("1 is %s, 2 is %s, 3 is %s, 4 is %s")
-            .parse("1 is one, 2 is two, 3 is three, 4 is four", (a, b, c, d) -> a + b + c + d);
-    assertThat(result).isEqualTo("onetwothreefour");
+    assertThat(
+            new StringFormat("1 is %s, 2 is %s, 3 is %s, 4 is %s")
+                .parse("1 is one, 2 is two, 3 is three, 4 is four", (a, b, c, d) -> a + b + c + d))
+        .hasValue("onetwothreefour");
+  }
+
+  @Test public void parse_withFourArgsLambda_lambdaReturnsNull() {
+    assertThat(
+            new StringFormat("1 is %s, 2 is %s, 3 is %s, 4 is %s")
+                .parse("1 is one, 2 is two, 3 is three, 4 is four", (a, b, c, d) -> null))
+        .isEmpty();
   }
 
   @Test public void parse_withFiveArgsLambda() {
-    String result =
-        new StringFormat("1 is %s, 2 is %s, 3 is %s, 4 is %s, 5 is %s")
-            .parse("1 is one, 2 is two, 3 is three, 4 is four, 5 is five", (a, b, c, d, e) -> a + b + c + d + e);
-    assertThat(result).isEqualTo("onetwothreefourfive");
+    assertThat(
+            new StringFormat("1 is %s, 2 is %s, 3 is %s, 4 is %s, 5 is %s")
+                .parse(
+                    "1 is one, 2 is two, 3 is three, 4 is four, 5 is five",
+                    (a, b, c, d, e) -> a + b + c + d + e))
+        .hasValue("onetwothreefourfive");
+  }
+
+  @Test public void parse_withFiveArgsLambda_lambdaReturnsNull() {
+    assertThat(
+            new StringFormat("1 is %s, 2 is %s, 3 is %s, 4 is %s, 5 is %s")
+                .parse(
+                    "1 is one, 2 is two, 3 is three, 4 is four, 5 is five",
+                    (a, b, c, d, e) -> null))
+        .isEmpty();
   }
 
   @Test public void parse_withSixArgsLambda() {
-    String result =
-        new StringFormat("1 is %s, 2 is %s, 3 is %s, 4 is %s, 5 is %s, 6 is %s")
-            .parse("1 is one, 2 is two, 3 is three, 4 is four, 5 is five, 6 is six", (a, b, c, d, e, f) -> a + b + c + d + e + f);
-    assertThat(result).isEqualTo("onetwothreefourfivesix");
+    assertThat(
+            new StringFormat("1 is %s, 2 is %s, 3 is %s, 4 is %s, 5 is %s, 6 is %s")
+                .parse(
+                    "1 is one, 2 is two, 3 is three, 4 is four, 5 is five, 6 is six",
+                    (a, b, c, d, e, f) -> a + b + c + d + e + f))
+        .hasValue("onetwothreefourfivesix");
+  }
+
+  @Test public void parse_withSixArgsLambd_lambdaReturnsNull() {
+    assertThat(
+            new StringFormat("1 is %s, 2 is %s, 3 is %s, 4 is %s, 5 is %s, 6 is %s")
+                .parse(
+                    "1 is one, 2 is two, 3 is three, 4 is four, 5 is five, 6 is six",
+                    (a, b, c, d, e, f) -> null))
+        .isEmpty();
   }
 
   @Test public void parse_customPlaceholder() {
     assertThat(
             new StringFormat("My name is [name]", spanningInOrder("[", "]").repeatedly())
-                .parse("My name is one")
-                .toMap())
-        .containsExactly("[name]", "one");
+                .parse("My name is one", name -> name))
+        .hasValue("one");
   }
 
-  @Test public void parse_ignoreTrailing() {
-    StringFormat template = new StringFormat("Hello {name}!{*}");
-    Map<String, String> result =
-        template.parse("Hello Tom! whatever")
-            .skipKeysIf("{*}"::equals)
-            .toMap();
-    assertThat(result).containsExactly("{name}", "Tom");
+  @Test public void parseToMap_noPlaceholder() {
+    assertThat(new StringFormat("Hello world").parseToMap("Hello world"))
+        .hasValue(ImmutableMap.of());
+  }
+
+  @Test public void parseToMap_failsToMatch() {
+    assertThat(new StringFormat("Hello {person}").parseToMap("Hi Tom")).isEmpty();
+  }
+
+  @Test public void parseToMap_matches() {
+    assertThat(new StringFormat("key={key}, value={value}").parseToMap("key=1, value=one"))
+        .hasValue(ImmutableMap.of("{key}", "1","{value}", "one"));
+  }
+
+  @Test public void parseToMap_duplicateKeyName() {
+    StringFormat format = new StringFormat("key=%s, value=%s");
+    assertThrows(IllegalArgumentException.class, () -> format.parseToMap("key=1, value=one"));
   }
 
   @Test public void twoPlaceholdersNextToEachOther() {
@@ -147,8 +198,8 @@ public class StringFormatTest {
   }
 
   @Test public void parse_partiallyOverlappingTemplate() {
-    assertThat(new StringFormat("xyz%sxzz").parse("xyzzxxzz").values())
-        .containsExactly("zx");
+    assertThat(new StringFormat("xyz%sxzz").parse("xyzzxxzz", v -> v))
+        .hasValue("zx");
   }
 
   @Test public void scan_singlePlaceholder() {
