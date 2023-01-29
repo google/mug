@@ -276,7 +276,7 @@ public final class StringFormat {
   /**
    * Scans the {@code input} string and extracts all matched placeholders in this string format.
    *
-   * <p>unlike {@link StringFormat#parse(String)}, the input string isn't matched entirely:
+   * <p>unlike {@link #parse(String)}, the input string isn't matched entirely:
    * the pattern doesn't have to start from the beginning, and if there are some remaining
    * characters that don't match the pattern any more, the stream stops. In particular, if there
    * is no match, empty stream is returned.
@@ -318,7 +318,7 @@ public final class StringFormat {
    *     .scan(multiLineInput, fileName -> ...);
    * }</pre>
    *
-   * <p>unlike {@link StringFormat#parse(String, Function)}, the input string isn't matched
+   * <p>unlike {@link #parse(String, Function)}, the input string isn't matched
    * entirely: the pattern doesn't have to start from the beginning, and if there are some remaining
    * characters that don't match the pattern any more, the stream stops. In particular, if there
    * is no match, empty stream is returned.
@@ -338,7 +338,7 @@ public final class StringFormat {
    *     .parse(input, (key, value) -> ...);
    * }</pre>
    *
-   * <p>unlike {@link StringFormat#parse(String, BiFunction)}, the input string isn't matched
+   * <p>unlike {@link #parse(String, BiFunction)}, the input string isn't matched
    * entirely: the pattern doesn't have to start from the beginning, and if there are some remaining
    * characters that don't match the pattern any more, the stream stops. In particular, if there
    * is no match, empty stream is returned.
@@ -358,7 +358,7 @@ public final class StringFormat {
    *     .parse(input, (lhs, rhs, result) -> ...);
    * }</pre>
    *
-   * <p>unlike {@link StringFormat#parse(String, Ternary)}, the input string isn't matched
+   * <p>unlike {@link #parse(String, Ternary)}, the input string isn't matched
    * entirely: the pattern doesn't have to start from the beginning, and if there are some remaining
    * characters that don't match the pattern any more, the stream stops. In particular, if there
    * is no match, empty stream is returned.
@@ -372,7 +372,7 @@ public final class StringFormat {
    * Returns the lazy stream of results from passing the 4 placeholder values to {@code reducer}
    * function for each iteration.
    *
-   * <p>unlike {@link StringFormat#parse(String, Quarternary)}, the input string isn't matched
+   * <p>unlike {@link #parse(String, Quarternary)}, the input string isn't matched
    * entirely: the pattern doesn't have to start from the beginning, and if there are some remaining
    * characters that don't match the pattern any more, the stream stops. In particular, if there
    * is no match, empty stream is returned.
@@ -386,7 +386,7 @@ public final class StringFormat {
    * Returns the lazy stream of results from passing the 5 placeholder values to {@code reducer}
    * function for each iteration.
    *
-   * <p>unlike {@link StringFormat#parse(String, Quinary)}, the input string isn't matched
+   * <p>unlike {@link #parse(String, Quinary)}, the input string isn't matched
    * entirely: the pattern doesn't have to start from the beginning, and if there are some remaining
    * characters that don't match the pattern any more, the stream stops. In particular, if there
    * is no match, empty stream is returned.
@@ -400,7 +400,7 @@ public final class StringFormat {
    * Returns the lazy stream of results from passing the 6 placeholder values to {@code reducer}
    * function for each iteration.
    *
-   * <p>unlike {@link StringFormat#parse(String, Senary)}, the input string isn't matched
+   * <p>unlike {@link #parse(String, Senary)}, the input string isn't matched
    * entirely: the pattern doesn't have to start from the beginning, and if there are some remaining
    * characters that don't match the pattern any more, the stream stops. In particular, if there
    * is no match, empty stream is returned.
