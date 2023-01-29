@@ -227,35 +227,6 @@ public final class StringFormat {
   }
 
   /**
-   * Matches {@code input} against the pattern.
-   *
-   * <p>Returns an immutable list of placeholder values in the same order as {@link #placeholders},
-   * upon success; otherwise returns empty.
-   *
-   * <p>The {@link Substring.Match} result type allows caller to inspect the characters around each
-   * match, or to access the raw index in the input string.
-   */
-  public Optional<List<Substring.Match>> match(String input) {
-    List<Substring.Match> builder = new ArrayList<>(placeholders.size());
-    if (!input.startsWith(literals.get(0))) {  // first literal is the prefix
-      return Optional.empty();
-    }
-    int inputIndex = literals.get(0).length();
-    for (int i = 1; i < literals.size(); i++) {
-      // subsequent literals are searched; last literal is the suffix.
-      Substring.Pattern literalLocator =
-          i < literals.size() - 1 ? first(literals.get(i)) : suffix(literals.get(i));
-      Substring.Match placeholder = before(literalLocator).match(input, inputIndex);
-      if (placeholder == null) {
-        return Optional.empty();
-      }
-      builder.add(placeholder);
-      inputIndex = placeholder.index() + placeholder.length() + literals.get(i).length();
-    }
-    return optional(inputIndex == input.length(), unmodifiableList(builder));
-  }
-
-  /**
    * Scans the {@code input} string and extracts all matches of this string format.
    * Returns the lazy stream of results from passing the single placeholder value to {@code reducer}
    * function for each iteration.
@@ -389,6 +360,35 @@ public final class StringFormat {
             return unmodifiableList(builder);
           }
         });
+  }
+
+  /**
+   * Matches {@code input} against the pattern.
+   *
+   * <p>Returns an immutable list of placeholder values in the same order as {@link #placeholders},
+   * upon success; otherwise returns empty.
+   *
+   * <p>The {@link Substring.Match} result type allows caller to inspect the characters around each
+   * match, or to access the raw index in the input string.
+   */
+  public Optional<List<Substring.Match>> match(String input) {
+    List<Substring.Match> builder = new ArrayList<>(placeholders.size());
+    if (!input.startsWith(literals.get(0))) {  // first literal is the prefix
+      return Optional.empty();
+    }
+    int inputIndex = literals.get(0).length();
+    for (int i = 1; i < literals.size(); i++) {
+      // subsequent literals are searched; last literal is the suffix.
+      Substring.Pattern literalLocator =
+          i < literals.size() - 1 ? first(literals.get(i)) : suffix(literals.get(i));
+      Substring.Match placeholder = before(literalLocator).match(input, inputIndex);
+      if (placeholder == null) {
+        return Optional.empty();
+      }
+      builder.add(placeholder);
+      inputIndex = placeholder.index() + placeholder.length() + literals.get(i).length();
+    }
+    return optional(inputIndex == input.length(), unmodifiableList(builder));
   }
 
   /**
