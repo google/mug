@@ -75,9 +75,6 @@ import com.google.mu.util.stream.MoreStreams;
  * occurrences from the input string, use the {@code scan()} methods instead. Tack on
  * {@code .findFirst()} on the returned lazy stream if you only care to find a single occurrence.
  *
- * <p>Placeholder values are required to be non-empty. If you need to allow empty placeholders,
- * use regex pattern instead.
- *
  * <p>This class is immutable and pre-compiles the format string at constructor time so that the
  * {@code parse()} methods will be more efficient.
  *
@@ -257,17 +254,17 @@ public final class StringFormat {
    * match, or to access the raw index in the input string.
    */
   public Optional<List<Substring.Match>> parse(String input) {
-    List<Substring.Match> builder = new ArrayList<>(placeholders.size());
     if (!input.startsWith(literals.get(0))) {  // first literal is the prefix
       return Optional.empty();
     }
+    List<Substring.Match> builder = new ArrayList<>(placeholders.size());
     int inputIndex = literals.get(0).length();
     for (int i = 1; i < literals.size(); i++) {
       // subsequent literals are searched; last literal is the suffix.
       Substring.Pattern literalLocator =
           i < literals.size() - 1 ? first(literals.get(i)) : suffix(literals.get(i));
       Substring.Match placeholder = before(literalLocator).match(input, inputIndex);
-      if (placeholder == null || placeholder.length() == 0) {
+      if (placeholder == null) {
         return Optional.empty();
       }
       builder.add(placeholder);
@@ -300,7 +297,7 @@ public final class StringFormat {
             for (int i = 1; i < literals.size(); i++) {
               String literal = literals.get(i);
               Substring.Match placeholder = before(first(literal)).match(input, inputIndex);
-              if (placeholder == null || placeholder.length() == 0) {
+              if (placeholder == null) {
                 return null;
               }
               builder.add(placeholder);
