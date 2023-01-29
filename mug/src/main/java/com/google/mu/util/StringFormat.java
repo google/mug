@@ -144,7 +144,7 @@ public final class StringFormat {
    * @throws IllegalArgumentException if {@code input} doesn't match the format or the template
    *     doesn't have exactly one placeholder.
    */
-  public <R> Optional<R> parse(String input, Function<? super String, R> reducer) {
+  public <R> Optional<R> parse(String input, Function<? super String, ? extends R> reducer) {
     return parseAndCollect(input, onlyElement(reducer));
   }
 
@@ -162,7 +162,8 @@ public final class StringFormat {
    * @throws IllegalArgumentException if {@code input} doesn't match the format or the template
    *     doesn't have exactly two placeholders.
    */
-  public <R> Optional<R> parse(String input, BiFunction<? super String, ? super String, R> reducer) {
+  public <R> Optional<R> parse(
+      String input, BiFunction<? super String, ? super String, ? extends R> reducer) {
     return parseAndCollect(input, combining(reducer));
   }
 
@@ -180,7 +181,7 @@ public final class StringFormat {
    * @throws IllegalArgumentException if {@code input} doesn't match the format or the template
    *     doesn't have exactly 3 placeholders.
    */
-  public <R> Optional<R> parse(String input, Ternary<? super String,  R> reducer) {
+  public <R> Optional<R> parse(String input, Ternary<? super String, ? extends R> reducer) {
     return parseAndCollect(input, combining(reducer));
   }
 
@@ -193,7 +194,7 @@ public final class StringFormat {
    * @throws IllegalArgumentException if {@code input} doesn't match the format or the template
    *     doesn't have exactly 4 placeholders.
    */
-  public <R> Optional<R> parse(String input, Quarternary<? super String,  R> reducer) {
+  public <R> Optional<R> parse(String input, Quarternary<? super String, ? extends R> reducer) {
     return parseAndCollect(input, combining(reducer));
   }
 
@@ -206,7 +207,7 @@ public final class StringFormat {
    * @throws IllegalArgumentException if {@code input} doesn't match the format or the template
    *     doesn't have exactly 5 placeholders.
    */
-  public <R> Optional<R> parse(String input, Quinary<? super String,  R> reducer) {
+  public <R> Optional<R> parse(String input, Quinary<? super String, ? extends R> reducer) {
     return parseAndCollect(input, combining(reducer));
   }
 
@@ -219,7 +220,7 @@ public final class StringFormat {
    * @throws IllegalArgumentException if {@code input} doesn't match the format or the template
    *     doesn't have exactly 6 placeholders.
    */
-  public <R> Optional<R> parse(String input, Senary<? super String,  R> reducer) {
+  public <R> Optional<R> parse(String input, Senary<? super String, ? extends R> reducer) {
     return parseAndCollect(input, combining(reducer));
   }
 
