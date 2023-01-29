@@ -225,6 +225,11 @@ public class StringFormatTest {
         .inOrder();
   }
 
+  @Test public void scan_suffixConsumed() {
+    assertThat(new StringFormat("/%s/%s/").scan("/foo/bar//zoo/boo/", (a, b) -> a + b))
+        .containsExactly("foobar", "zooboo");
+  }
+
   @Test public void scan_twoPlaceholders_emptyInput() {
     assertThat(new StringFormat("[id=%s, name=%s]").scan("", (id, name) -> id + "," + name)).isEmpty();
   }
