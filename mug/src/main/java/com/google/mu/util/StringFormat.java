@@ -391,10 +391,6 @@ public final class StringFormat {
         });
   }
 
-  private <R> Stream<R> scanAndCollect(String input, Collector<? super String, ?, R> collector) {
-    return scan(input).map(values -> values.stream().map(Substring.Match::toString).collect(collector));
-  }
-
   /**
    * Returns the immutable list of placeholders in this template, in occurrence order.
    *
@@ -417,6 +413,10 @@ public final class StringFormat {
             () -> new IllegalArgumentException("input doesn't match template (" + format + ")"))
         .stream()
         .map(Substring.Match::toString);
+  }
+
+  private <R> Stream<R> scanAndCollect(String input, Collector<? super String, ?, R> collector) {
+    return scan(input).map(values -> values.stream().map(Substring.Match::toString).collect(collector));
   }
 
   private static List<String> extractLiteralsFromFormat(

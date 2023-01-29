@@ -289,6 +289,11 @@ public class StringFormatTest {
         .inOrder();
   }
 
+  @Test public void testToString() {
+    assertThat(new StringFormat("projects/{project}/locations/{location}").toString())
+        .isEqualTo("projects/{project}/locations/{location}");
+  }
+
   @Test public void testNulls() {
     new ClassSanityTester()
         .setDefault(Substring.RepeatingPattern.class, first("%s").repeatedly())
