@@ -75,6 +75,9 @@ import com.google.mu.util.stream.MoreStreams;
  * occurrences from the input string, use the {@code scan()} methods instead. Tack on
  * {@code .findFirst()} on the returned lazy stream if you only care to find a single occurrence.
  *
+ * <p>Placeholder values are required to be non-empty. If you need to allow empty placeholders,
+ * use regex pattern instead.
+ *
  * <p>This class is immutable and pre-compiles the format string at constructor time so that the
  * {@code parse()} methods will be more efficient.
  *
