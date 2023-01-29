@@ -310,8 +310,8 @@ public final class StringFormat {
 
   /**
    * Scans the {@code input} string and extracts all matches of this string format.
-   * Returns the lazy stream of results from passing the single placeholder value to {@code reducer}
-   * function for each iteration.
+   * Returns the lazy stream of non-null results from passing the single placeholder values to
+   * the {@code reducer} function for each iteration, with null results skipped.
    *
    * <p>For example: <pre>{@code
    * new StringFormat("/home/usr/myname/%s\n")
@@ -322,6 +322,10 @@ public final class StringFormat {
    * entirely: the pattern doesn't have to start from the beginning, and if there are some remaining
    * characters that don't match the pattern any more, the stream stops. In particular, if there
    * is no match, empty stream is returned.
+   *
+   * <p>By default, placeholders are allowed to be matched against an empty string. If the
+   * placeholder isn't expected to be empty, consider filtering it out by returning null from
+   * the {@code reducer} function, which will then be ignored in the result stream.
    */
   public <R> Stream<R> scan(String input, Function<? super String, ? extends R> reducer) {
     return scanAndCollect(input, onlyElement(reducer));
@@ -329,8 +333,8 @@ public final class StringFormat {
 
   /**
    * Scans the {@code input} string and extracts all matches of this string format.
-   * Returns the lazy stream of results from passing the two placeholder values to {@code reducer}
-   * function for each iteration.
+   * Returns the lazy stream of non-null results from passing the two placeholder values to
+   * the {@code reducer} function for each iteration, with null results skipped.
    *
    * <p>For example: <pre>{@code
    * new StringFormat("[key=%s, value=%s]")
@@ -342,15 +346,20 @@ public final class StringFormat {
    * entirely: the pattern doesn't have to start from the beginning, and if there are some remaining
    * characters that don't match the pattern any more, the stream stops. In particular, if there
    * is no match, empty stream is returned.
+   *
+   * <p>By default, placeholders are allowed to be matched against an empty string. If a certain
+   * placeholder isn't expected to be empty, consider filtering it out by returning null from
+   * the {@code reducer} function, which will then be ignored in the result stream.
    */
-  public <R> Stream<R> scan(String input, BiFunction<? super String, ? super String, ? extends R> reducer) {
+  public <R> Stream<R> scan(
+      String input, BiFunction<? super String, ? super String, ? extends R> reducer) {
     return scanAndCollect(input, combining(reducer));
   }
 
   /**
    * Scans the {@code input} string and extracts all matches of this string format.
-   * Returns the lazy stream of results from passing the three placeholder values to {@code reducer}
-   * function for each iteration.
+   * Returns the lazy stream of non-null results from passing the 3 placeholder values to
+   * the {@code reducer} function for each iteration, with null results skipped.
    *
    * <p>For example: <pre>{@code
    * new StringFormat("[%s + %s = %s]")
@@ -362,6 +371,10 @@ public final class StringFormat {
    * entirely: the pattern doesn't have to start from the beginning, and if there are some remaining
    * characters that don't match the pattern any more, the stream stops. In particular, if there
    * is no match, empty stream is returned.
+   *
+   * <p>By default, placeholders are allowed to be matched against an empty string. If a certain
+   * placeholder isn't expected to be empty, consider filtering it out by returning null from
+   * the {@code reducer} function, which will then be ignored in the result stream.
    */
   public <R> Stream<R> scan(String input, Ternary<? super String, ? extends R> reducer) {
     return scanAndCollect(input, combining(reducer));
@@ -369,13 +382,17 @@ public final class StringFormat {
 
   /**
    * Scans the {@code input} string and extracts all matches of this string format.
-   * Returns the lazy stream of results from passing the 4 placeholder values to {@code reducer}
-   * function for each iteration.
+   * Returns the lazy stream of non-null results from passing the 4 placeholder values to
+   * the {@code reducer} function for each iteration, with null results skipped.
    *
    * <p>unlike {@link #parse(String, Quarternary)}, the input string isn't matched
    * entirely: the pattern doesn't have to start from the beginning, and if there are some remaining
    * characters that don't match the pattern any more, the stream stops. In particular, if there
    * is no match, empty stream is returned.
+   *
+   * <p>By default, placeholders are allowed to be matched against an empty string. If a certain
+   * placeholder isn't expected to be empty, consider filtering it out by returning null from
+   * the {@code reducer} function, which will then be ignored in the result stream.
    */
   public <R> Stream<R> scan(String input, Quarternary<? super String, ? extends R> reducer) {
     return scanAndCollect(input, combining(reducer));
@@ -383,13 +400,17 @@ public final class StringFormat {
 
   /**
    * Scans the {@code input} string and extracts all matches of this string format.
-   * Returns the lazy stream of results from passing the 5 placeholder values to {@code reducer}
-   * function for each iteration.
+   * Returns the lazy stream of non-null results from passing the 5 placeholder values to
+   * the {@code reducer} function for each iteration, with null results skipped.
    *
    * <p>unlike {@link #parse(String, Quinary)}, the input string isn't matched
    * entirely: the pattern doesn't have to start from the beginning, and if there are some remaining
    * characters that don't match the pattern any more, the stream stops. In particular, if there
    * is no match, empty stream is returned.
+   *
+   * <p>By default, placeholders are allowed to be matched against an empty string. If a certain
+   * placeholder isn't expected to be empty, consider filtering it out by returning null from
+   * the {@code reducer} function, which will then be ignored in the result stream.
    */
   public <R> Stream<R> scan(String input, Quinary<? super String, ? extends R> reducer) {
     return scanAndCollect(input, combining(reducer));
@@ -397,13 +418,17 @@ public final class StringFormat {
 
   /**
    * Scans the {@code input} string and extracts all matches of this string format.
-   * Returns the lazy stream of results from passing the 6 placeholder values to {@code reducer}
-   * function for each iteration.
+   * Returns the lazy stream of non-null results from passing the 6 placeholder values to
+   * the {@code reducer} function for each iteration, with null results skipped.
    *
    * <p>unlike {@link #parse(String, Senary)}, the input string isn't matched
    * entirely: the pattern doesn't have to start from the beginning, and if there are some remaining
    * characters that don't match the pattern any more, the stream stops. In particular, if there
    * is no match, empty stream is returned.
+   *
+   * <p>By default, placeholders are allowed to be matched against an empty string. If a certain
+   * placeholder isn't expected to be empty, consider filtering it out by returning null from
+   * the {@code reducer} function, which will then be ignored in the result stream.
    */
   public <R> Stream<R> scan(String input, Senary<? super String, ? extends R> reducer) {
     return scanAndCollect(input, combining(reducer));
@@ -430,7 +455,9 @@ public final class StringFormat {
   }
 
   private <R> Stream<R> scanAndCollect(String input, Collector<? super String, ?, R> collector) {
-    return scan(input).map(values -> values.stream().map(Substring.Match::toString).collect(collector));
+    return scan(input)
+        .map(values -> values.stream().map(Substring.Match::toString).collect(collector))
+        .filter(v -> v != null);
   }
 
   private static List<String> extractLiteralsFromFormat(

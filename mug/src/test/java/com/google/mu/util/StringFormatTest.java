@@ -213,6 +213,18 @@ public class StringFormatTest {
     assertThat(new StringFormat("[id=%s]").scan("", v -> v)).isEmpty();
   }
 
+  @Test public void scan_singlePlaceholder_nullFilteredOut() {
+    assertThat(new StringFormat("[id=%s]").scan("[id=foo]", v -> null)).isEmpty();
+    assertThat(new StringFormat("[id=%s]").scan("[id=foo][id=]", v -> v.isEmpty() ? null : v))
+        .containsExactly("foo");
+  }
+
+  @Test public void scan_emptyPlaceholderValue() {
+    assertThat(new StringFormat("/%s/%s/").scan("/foo/bar//zoo//", (a, b) -> a + b))
+        .containsExactly("foobar", "zoo")
+        .inOrder();
+  }
+
   @Test public void scan_twoPlaceholders() {
     assertThat(new StringFormat("[id=%s, name=%s]").scan("id=1", (id, name) -> id + "," + name)).isEmpty();
     assertThat(new StringFormat("[id=%s, name=%s]").scan("[id=foo, name=bar]", (id, name) -> id + "," + name))
@@ -224,16 +236,13 @@ public class StringFormatTest {
         .inOrder();
   }
 
-  @Test public void scan_suffixConsumed() {
-    assertThat(new StringFormat("/%s/%s/").scan("/foo/bar//zoo/boo/", (a, b) -> a + b))
-        .containsExactly("foobar", "zooboo")
-        .inOrder();
-  }
-
-  @Test public void scan_emptyPlaceholderValue() {
-    assertThat(new StringFormat("/%s/%s/").scan("/foo/bar//zoo//", (a, b) -> a + b))
-        .containsExactly("foobar", "zoo")
-        .inOrder();
+  @Test public void scan_twoPlaceholders_nullFilteredOut() {
+    assertThat(new StringFormat("[id=%s, name=%s]").scan("[id=foo, name=bar]", (id, name) -> null))
+        .isEmpty();
+    assertThat(
+            new StringFormat("[id=%s, name=%s]")
+                .scan("[id=, name=bar][id=zoo, name=boo]", (id, name) -> id.isEmpty() ? null : id + "," + name))
+        .containsExactly("zoo,boo");
   }
 
   @Test public void scan_twoPlaceholders_emptyInput() {
@@ -249,6 +258,15 @@ public class StringFormatTest {
                 .scan("[a=1, b=2, c=3] [a=x, b=y, c=z]", (a, b, c) -> a + b + c))
         .containsExactly("123", "xyz")
         .inOrder();
+  }
+
+  @Test public void scan_threePlaceholders_nullFilteredOut() {
+    assertThat(new StringFormat("[a=%s, b=%s, c=%s]").scan("[a=1, b=2, c=3]", (a, b, c) -> null))
+        .isEmpty();
+    assertThat(
+            new StringFormat("[a=%s, b=%s, c=%s]")
+                .scan("[a=1, b=2, c=3] [a=x, b=, c=z]", (a, b, c) -> b.isEmpty() ? null : a + b + c))
+        .containsExactly("123");
   }
 
   @Test public void scan_threePlaceholders_emptyInput() {
@@ -269,13 +287,20 @@ public class StringFormatTest {
         .inOrder();
   }
 
-  @Test public void scan_fourPlaceholders_emptyInput() {
-    assertThat(new StringFormat("[a=%s, b=%s, c=%s, d=%s]").scan("", (a, b, c, d) -> a + b + c + d)).isEmpty();
+  @Test public void scan_fourPlaceholders_nullFilteredOut() {
+    assertThat(
+            new StringFormat("[a=%s, b=%s, c=%s, d=%s]")
+                .scan("[a=1, b=2, c=3, d=4]", (a, b, c, d) -> null))
+        .isEmpty();
+    assertThat(
+            new StringFormat("[a=%s, b=%s, c=%s, d=%s]")
+                .scan("[a=1, b=2, c=3, d=4] [a=z, b=y, c=x, d=]", (a, b, c, d) -> d.isEmpty() ? null : a + b + c + d))
+        .containsExactly("1234")
+        .inOrder();
   }
 
-  @Test public void scan_fivePlaceholders_emptyInput() {
-    assertThat(new StringFormat("[a=%s, b=%s, c=%s, d=%s, e=%s]").scan("", (a, b, c, d, e) -> a + b + c + d + e))
-        .isEmpty();
+  @Test public void scan_fourPlaceholders_emptyInput() {
+    assertThat(new StringFormat("[a=%s, b=%s, c=%s, d=%s]").scan("", (a, b, c, d) -> a + b + c + d)).isEmpty();
   }
 
   @Test public void scan_fivePlaceholders() {
@@ -292,10 +317,21 @@ public class StringFormatTest {
         .inOrder();
   }
 
-  @Test public void scan_sixPlaceholders_emptyInput() {
+  @Test public void scan_fivePlaceholders_nullFilteredOut() {
     assertThat(
-            new StringFormat("[a=%s, b=%s, c=%s, d=%s, e=%s, f=%s]")
-                .scan("", (a, b, c, d, e, f) -> a + b + c + d + e + f))
+            new StringFormat("[a=%s, b=%s, c=%s, d=%s, e=%s]")
+                .scan("[a=1, b=2, c=3, d=4, e=5]", (a, b, c, d, e) -> null))
+        .isEmpty();
+    assertThat(
+            new StringFormat("[a=%s, b=%s, c=%s, d=%s, e=%s]")
+                .scan(
+                    "[a=, b=2, c=3, d=4, e=5] [a=z, b=y, c=x, d=w, e=v]",
+                    (a, b, c, d, e) -> a.isEmpty() ? null : a + b + c + d + e))
+        .containsExactly("zyxwv");
+  }
+
+  @Test public void scan_fivePlaceholders_emptyInput() {
+    assertThat(new StringFormat("[a=%s, b=%s, c=%s, d=%s, e=%s]").scan("", (a, b, c, d, e) -> a + b + c + d + e))
         .isEmpty();
   }
 
@@ -312,6 +348,33 @@ public class StringFormatTest {
             new StringFormat("[a=%s, b=%s, c=%s, d=%s, e=%s, f=%s]")
                 .scan("[a=1, b=2, c=3, d=4, e=5, f=6] [a=z, b=y, c=x, d=w, e=v, f=u]", (a, b, c, d, e, f) -> a + b + c + d + e + f))
         .containsExactly("123456", "zyxwvu")
+        .inOrder();
+  }
+
+  @Test public void scan_sixPlaceholders_nullFiltered() {
+    assertThat(
+            new StringFormat("[a=%s, b=%s, c=%s, d=%s, e=%s, f=%s]")
+                .scan("[a=1, b=2, c=3, d=4, e=5, f=6]", (a, b, c, d, e, f) -> null))
+        .isEmpty();
+    assertThat(
+            new StringFormat("[a=%s, b=%s, c=%s, d=%s, e=%s, f=%s]")
+                .scan(
+                    "[a=1, b=2, c=3, d=, e=5, f=6] [a=z, b=y, c=x, d=w, e=v, f=u]",
+                    (a, b, c, d, e, f) -> d.isEmpty() ? null : a + b + c + d + e + f))
+        .containsExactly("zyxwvu")
+        .inOrder();
+  }
+
+  @Test public void scan_sixPlaceholders_emptyInput() {
+    assertThat(
+            new StringFormat("[a=%s, b=%s, c=%s, d=%s, e=%s, f=%s]")
+                .scan("", (a, b, c, d, e, f) -> a + b + c + d + e + f))
+        .isEmpty();
+  }
+
+  @Test public void scan_suffixConsumed() {
+    assertThat(new StringFormat("/%s/%s/").scan("/foo/bar//zoo/boo/", (a, b) -> a + b))
+        .containsExactly("foobar", "zooboo")
         .inOrder();
   }
 
