@@ -424,7 +424,7 @@ public final class StringFormat {
     return format;
   }
 
-  private <R> Optional<R> parseAndCollect(String input, Collector<? super String, ?, ? extends R> collector) {
+  private <R> Optional<R> parseAndCollect(String input, Collector<? super String, ?, R> collector) {
     return parse(input).map(values -> values.stream().map(Substring.Match::toString).collect(collector));
   }
 
