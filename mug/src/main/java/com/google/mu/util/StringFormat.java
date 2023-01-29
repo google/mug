@@ -264,7 +264,7 @@ public final class StringFormat {
       Substring.Pattern literalLocator =
           i < literals.size() - 1 ? first(literals.get(i)) : suffix(literals.get(i));
       Substring.Match placeholder = before(literalLocator).match(input, inputIndex);
-      if (placeholder == null) {
+      if (placeholder == null || placeholder.length() == 0) {
         return Optional.empty();
       }
       builder.add(placeholder);
@@ -297,7 +297,7 @@ public final class StringFormat {
             for (int i = 1; i < literals.size(); i++) {
               String literal = literals.get(i);
               Substring.Match placeholder = before(first(literal)).match(input, inputIndex);
-              if (placeholder == null) {
+              if (placeholder == null || placeholder.length() == 0) {
                 return null;
               }
               builder.add(placeholder);

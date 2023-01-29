@@ -51,8 +51,7 @@ public class StringFormatTest {
 
   @Test public void parse_emptyPlaceholderValue() {
     StringFormat template = new StringFormat("Hello %s!");
-    assertThat(template.parse("Hello !").get().stream().map(Object::toString))
-        .containsExactly("");
+    assertThat(template.parse("Hello !")).isEmpty();
   }
 
   @Test public void parse_preludeFailsToMatch() {
@@ -227,7 +226,13 @@ public class StringFormatTest {
 
   @Test public void scan_suffixConsumed() {
     assertThat(new StringFormat("/%s/%s/").scan("/foo/bar//zoo/boo/", (a, b) -> a + b))
-        .containsExactly("foobar", "zooboo");
+        .containsExactly("foobar", "zooboo")
+        .inOrder();
+  }
+
+  @Test public void scan_emptyPlaceholderValue() {
+    assertThat(new StringFormat("/%s/%s/").scan("/foo/bar//zoo//", (a, b) -> a + b))
+        .containsExactly("foobar");
   }
 
   @Test public void scan_twoPlaceholders_emptyInput() {
