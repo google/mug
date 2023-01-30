@@ -395,6 +395,7 @@ public class StringFormatTest {
 
   @Test public void scan_singlePlaceholderOnly() {
     assertThat(new StringFormat("%s").scan("whatever", s -> s)).containsExactly("whatever");
+    assertThat(new StringFormat("%s").scan("", s -> s)).containsExactly("");
   }
 
   @Test public void scan_placeholderAtBeginning() {
@@ -405,6 +406,7 @@ public class StringFormatTest {
   @Test public void scan_placeholderAtEnd() {
     assertThat(new StringFormat(" %s").scan(" a", s -> s)).containsExactly("a");
     assertThat(new StringFormat(" %s").scan(" abc d ", s -> s)).containsExactly("abc d ").inOrder();
+    assertThat(new StringFormat(" %s %s").scan(" abc d ", (a, b) -> a + "," + b)).containsExactly("abc,d ").inOrder();
   }
 
   @Test public void testToString() {
