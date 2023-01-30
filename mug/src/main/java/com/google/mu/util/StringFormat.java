@@ -70,7 +70,7 @@ import com.google.mu.util.stream.MoreStreams;
  *
  * @since 6.6
  */
-public final class StringFormat {
+public class StringFormat {
   private final String format;
   private final List<Substring.Match> placeholders;
 
@@ -140,7 +140,7 @@ public final class StringFormat {
    * @throws IllegalArgumentException if {@code input} doesn't match the format or the template
    *     doesn't have exactly one placeholder.
    */
-  public <R> Optional<R> parse(String input, Function<? super String, ? extends R> mapper) {
+  public final <R> Optional<R> parse(String input, Function<? super String, ? extends R> mapper) {
     return parseAndCollect(input, onlyElement(mapper));
   }
 
@@ -158,7 +158,7 @@ public final class StringFormat {
    * @throws IllegalArgumentException if {@code input} doesn't match the format or the template
    *     doesn't have exactly two placeholders.
    */
-  public <R> Optional<R> parse(
+  public final <R> Optional<R> parse(
       String input, BiFunction<? super String, ? super String, ? extends R> mapper) {
     return parseAndCollect(input, combining(mapper));
   }
@@ -177,7 +177,7 @@ public final class StringFormat {
    * @throws IllegalArgumentException if {@code input} doesn't match the format or the template
    *     doesn't have exactly 3 placeholders.
    */
-  public <R> Optional<R> parse(String input, Ternary<? super String, ? extends R> mapper) {
+  public final <R> Optional<R> parse(String input, Ternary<? super String, ? extends R> mapper) {
     return parseAndCollect(input, combining(mapper));
   }
 
@@ -190,7 +190,7 @@ public final class StringFormat {
    * @throws IllegalArgumentException if {@code input} doesn't match the format or the template
    *     doesn't have exactly 4 placeholders.
    */
-  public <R> Optional<R> parse(String input, Quarternary<? super String, ? extends R> mapper) {
+  public final <R> Optional<R> parse(String input, Quarternary<? super String, ? extends R> mapper) {
     return parseAndCollect(input, combining(mapper));
   }
 
@@ -203,7 +203,7 @@ public final class StringFormat {
    * @throws IllegalArgumentException if {@code input} doesn't match the format or the template
    *     doesn't have exactly 5 placeholders.
    */
-  public <R> Optional<R> parse(String input, Quinary<? super String, ? extends R> mapper) {
+  public final <R> Optional<R> parse(String input, Quinary<? super String, ? extends R> mapper) {
     return parseAndCollect(input, combining(mapper));
   }
 
@@ -216,7 +216,7 @@ public final class StringFormat {
    * @throws IllegalArgumentException if {@code input} doesn't match the format or the template
    *     doesn't have exactly 6 placeholders.
    */
-  public <R> Optional<R> parse(String input, Senary<? super String, ? extends R> mapper) {
+  public final <R> Optional<R> parse(String input, Senary<? super String, ? extends R> mapper) {
     return parseAndCollect(input, combining(mapper));
   }
 
@@ -262,8 +262,12 @@ public final class StringFormat {
     return MoreStreams.whileNotNull(
         new Supplier<List<Substring.Match>>() {
           private int inputIndex = 0;
+          private boolean done = false;
 
           @Override public List<Substring.Match> get() {
+            if (done) {
+              return null;
+            }
             inputIndex = input.indexOf(literals.get(0), inputIndex);
             if (inputIndex < 0) {
               return null;
@@ -272,12 +276,19 @@ public final class StringFormat {
             List<Substring.Match> builder = new ArrayList<>(placeholders.size());
             for (int i = 1; i < literals.size(); i++) {
               String literal = literals.get(i);
-              Substring.Match placeholder = before(first(literal)).match(input, inputIndex);
+              Substring.Pattern literalLocator =
+                  i == literals.size() - 1 && literals.get(i).isEmpty()
+                      ? Substring.END
+                      : first(literals.get(i));
+              Substring.Match placeholder = before(literalLocator).match(input, inputIndex);
               if (placeholder == null) {
                 return null;
               }
               builder.add(placeholder);
               inputIndex = placeholder.index() + placeholder.length() + literal.length();
+            }
+            if (inputIndex == input.length()) {
+              done = true;
             }
             return unmodifiableList(builder);
           }
@@ -303,7 +314,7 @@ public final class StringFormat {
    * placeholder isn't expected to be empty, consider filtering it out by returning null from
    * the {@code mapper} function, which will then be ignored in the result stream.
    */
-  public <R> Stream<R> scan(String input, Function<? super String, ? extends R> mapper) {
+  public final <R> Stream<R> scan(String input, Function<? super String, ? extends R> mapper) {
     return scanAndCollect(input, onlyElement(mapper));
   }
 
@@ -327,7 +338,7 @@ public final class StringFormat {
    * placeholder isn't expected to be empty, consider filtering it out by returning null from
    * the {@code mapper} function, which will then be ignored in the result stream.
    */
-  public <R> Stream<R> scan(
+  public final <R> Stream<R> scan(
       String input, BiFunction<? super String, ? super String, ? extends R> mapper) {
     return scanAndCollect(input, combining(mapper));
   }
@@ -352,7 +363,7 @@ public final class StringFormat {
    * placeholder isn't expected to be empty, consider filtering it out by returning null from
    * the {@code mapper} function, which will then be ignored in the result stream.
    */
-  public <R> Stream<R> scan(String input, Ternary<? super String, ? extends R> mapper) {
+  public final <R> Stream<R> scan(String input, Ternary<? super String, ? extends R> mapper) {
     return scanAndCollect(input, combining(mapper));
   }
 
@@ -370,7 +381,7 @@ public final class StringFormat {
    * placeholder isn't expected to be empty, consider filtering it out by returning null from
    * the {@code mapper} function, which will then be ignored in the result stream.
    */
-  public <R> Stream<R> scan(String input, Quarternary<? super String, ? extends R> mapper) {
+  public final <R> Stream<R> scan(String input, Quarternary<? super String, ? extends R> mapper) {
     return scanAndCollect(input, combining(mapper));
   }
 
@@ -388,7 +399,7 @@ public final class StringFormat {
    * placeholder isn't expected to be empty, consider filtering it out by returning null from
    * the {@code mapper} function, which will then be ignored in the result stream.
    */
-  public <R> Stream<R> scan(String input, Quinary<? super String, ? extends R> mapper) {
+  public final <R> Stream<R> scan(String input, Quinary<? super String, ? extends R> mapper) {
     return scanAndCollect(input, combining(mapper));
   }
 
@@ -406,7 +417,7 @@ public final class StringFormat {
    * placeholder isn't expected to be empty, consider filtering it out by returning null from
    * the {@code mapper} function, which will then be ignored in the result stream.
    */
-  public <R> Stream<R> scan(String input, Senary<? super String, ? extends R> mapper) {
+  public final <R> Stream<R> scan(String input, Senary<? super String, ? extends R> mapper) {
     return scanAndCollect(input, combining(mapper));
   }
 
@@ -417,7 +428,7 @@ public final class StringFormat {
    * template string. Callers can also use, for example, {@code .skip(1, 1)} to easily strip away
    * the '{' and '}' characters around the placeholder names.
    */
-  public List<Substring.Match> placeholders() {
+  public final List<Substring.Match> placeholders() {
     return placeholders;
   }
 

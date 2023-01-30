@@ -393,6 +393,20 @@ public class StringFormatTest {
         .inOrder();
   }
 
+  @Test public void scan_singlePlaceholderOnly() {
+    assertThat(new StringFormat("%s").scan("whatever", s -> s)).containsExactly("whatever");
+  }
+
+  @Test public void scan_placeholderAtBeginning() {
+    assertThat(new StringFormat("%s ").scan("a ", s -> s)).containsExactly("a");
+    assertThat(new StringFormat("%s ").scan("abc d ", s -> s)).containsExactly("abc", "d").inOrder();
+  }
+
+  @Test public void scan_placeholderAtEnd() {
+    assertThat(new StringFormat(" %s").scan(" a", s -> s)).containsExactly("a");
+    assertThat(new StringFormat(" %s").scan(" abc d ", s -> s)).containsExactly("abc d ").inOrder();
+  }
+
   @Test public void testToString() {
     assertThat(withCurlyBraces("projects/{project}/locations/{location}").toString())
         .isEqualTo("projects/{project}/locations/{location}");
