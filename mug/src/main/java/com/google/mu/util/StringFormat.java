@@ -4,6 +4,7 @@ import static com.google.mu.util.InternalCollectors.toImmutableList;
 import static com.google.mu.util.Optionals.optional;
 import static com.google.mu.util.Substring.before;
 import static com.google.mu.util.Substring.first;
+import static com.google.mu.util.Substring.spanningInOrder;
 import static com.google.mu.util.Substring.suffix;
 import static com.google.mu.util.stream.MoreCollectors.combining;
 import static com.google.mu.util.stream.MoreCollectors.onlyElement;
@@ -30,16 +31,8 @@ import com.google.mu.util.stream.MoreStreams;
  * strings according to a format string. For example:
  *
  * <pre>{@code
- * return new StringFormat("Dear %s: %s?")
- *     .parse(input, (recipient, question) -> ...);
- * }</pre>
- *
- * <p>If you wish to use named placeholders like "{confirmation_number}", you can:
- *
- * <pre>{@code
- * new StringFormat(
- *     "Dear {person}, your confirmation number is {confirmation_number}",
- *      spanningInOrder("{", "}").repeatedly());
+ * return new StringFormat("Dear {customer}: {question}?")
+ *     .parse(input, (customer, question) -> ...);
  * }</pre>
  *
  * <p>Note that other than the placeholders, characters in the format string are treated as
@@ -70,26 +63,22 @@ import com.google.mu.util.stream.MoreStreams;
  *
  * @since 6.6
  */
-public class StringFormat {
+public final class StringFormat {
   private final String format;
-  private final List<Substring.Match> placeholders;
-
-  /** In the input string "key: %s value: %s", "key: " and " value: " are the literals. */
-  private final List<String> literals;
+  private final List<String> literals; // The string literals between placeholders
 
   /**
-   * Constructs a StringFormat using either {@code "%s"} as placeholder,
-   * or placeholders with curly braces. For example:
+   * Constructs a StringFormat with placeholders in the syntax of {@code "{foo}"}. For example:
    *
    * <pre>{@code
-   * new StringFormat("Dear %s, your confirmation number is %s");
+   * new StringFormat("Dear {customer}, your confirmation number is {conf#}");
    * }</pre>
    *
-   * <p>If you need to support named placeholders, use {@link
+   * <p>For alternative placeholders, such as "%s", use {@link
    * #StringFormat(String, Substring.RepeatingPattern)} instead:
    *
    * <pre>{@code
-   * new StringFormat("I use {placeholder}, not %s", spanningInOrder("{", "}").repeatedly())
+   * new StringFormat("%s+%s@%s", first("%s").repeatedly())
    * }</pre>
    *
    * @param format the template format with placeholders
@@ -97,7 +86,7 @@ public class StringFormat {
    *     (e.g. a placeholder immediately followed by another placeholder)
    */
   public StringFormat(String format) {
-    this(format, first("%s").repeatedly());
+    this(format, spanningInOrder("{", "}").repeatedly());
   }
 
   /**
@@ -117,19 +106,18 @@ public class StringFormat {
    */
   public StringFormat(String format, Substring.RepeatingPattern placeholderVariablesPattern) {
     this.format = format;
-    this.placeholders = placeholderVariablesPattern.match(format).collect(toImmutableList());
-    this.literals = extractLiteralsFromFormat(format, placeholders);
-    for (int i = 1; i < placeholders.size(); i++) {
+    this.literals =
+        placeholderVariablesPattern.split(format).map(Substring.Match::toString).collect(toImmutableList());
+    for (int i = 1; i < numPlaceholders(); i++) {
       if (literals.get(i).isEmpty()) {
-        throw new IllegalArgumentException(
-            "invalid pattern with '" + placeholders.get(i - 1) + placeholders.get(i) + "'");
+        throw new IllegalArgumentException("Placeholders cannot be next to each other: " + format);
       }
     }
   }
 
   /**
    * Parses {@code input} and applies the {@code mapper} function with the single placeholder value
-   * in this template.
+   * in this string format.
    *
    * <p>For example: <pre>{@code
    * new StringFormat("Job failed (job id: %s)").parse(input, jobId -> ...);
@@ -137,16 +125,18 @@ public class StringFormat {
    *
    * @return the return value of the {@code mapper} function if not null. Returns empty if
    *     {@code input} doesn't match the format, or {@code mapper} returns null.
-   * @throws IllegalArgumentException if {@code input} doesn't match the format or the template
-   *     doesn't have exactly one placeholder.
+   * @throws IllegalArgumentException if or the format string doesn't have exactly one placeholder.
    */
   public final <R> Optional<R> parse(String input, Function<? super String, ? extends R> mapper) {
+    requireNonNull(input);
+    requireNonNull(mapper);
+    checkPlaceholderCount(1);
     return parseAndCollect(input, onlyElement(mapper));
   }
 
   /**
    * Parses {@code input} and applies {@code mapper} with the two placeholder values
-   * in this template.
+   * in this string format.
    *
    * <p>For example: <pre>{@code
    * new StringFormat("Job failed (job id: '%s', error code: %s)")
@@ -155,17 +145,19 @@ public class StringFormat {
    *
    * @return the return value of the {@code mapper} function if not null. Returns empty if
    *     {@code input} doesn't match the format, or {@code mapper} returns null.
-   * @throws IllegalArgumentException if {@code input} doesn't match the format or the template
-   *     doesn't have exactly two placeholders.
+   * @throws IllegalArgumentException if or the format string doesn't have exactly two placeholders.
    */
   public final <R> Optional<R> parse(
       String input, BiFunction<? super String, ? super String, ? extends R> mapper) {
+    requireNonNull(input);
+    requireNonNull(mapper);
+    checkPlaceholderCount(2);
     return parseAndCollect(input, combining(mapper));
   }
 
   /**
    * Similar to {@link #parse(String, BiFunction}, but parses {@code input} and applies {@code
-   * mapper} with the <em>3</em> placeholder values in this template.
+   * mapper} with the <em>3</em> placeholder values in this string format.
    *
    * <p>For example: <pre>{@code
    * new StringFormat("Job failed (job id: '%s', error code: %s, error details: %s)")
@@ -174,49 +166,57 @@ public class StringFormat {
    *
    * @return the return value of the {@code mapper} function if not null. Returns empty if
    *     {@code input} doesn't match the format, or {@code mapper} returns null.
-   * @throws IllegalArgumentException if {@code input} doesn't match the format or the template
-   *     doesn't have exactly 3 placeholders.
+   * @throws IllegalArgumentException if or the format string doesn't have exactly 3 placeholders.
    */
   public final <R> Optional<R> parse(String input, Ternary<? super String, ? extends R> mapper) {
+    requireNonNull(input);
+    requireNonNull(mapper);
+    checkPlaceholderCount(3);
     return parseAndCollect(input, combining(mapper));
   }
 
   /**
    * Similar to {@link #parse(String, BiFunction}, but parses {@code input} and applies {@code
-   * mapper} with the <em>4</em> placeholder values in this template.
+   * mapper} with the <em>4</em> placeholder values in this string format.
    *
    * @return the return value of the {@code mapper} function if not null. Returns empty if
    *     {@code input} doesn't match the format, or {@code mapper} returns null.
-   * @throws IllegalArgumentException if {@code input} doesn't match the format or the template
-   *     doesn't have exactly 4 placeholders.
+   * @throws IllegalArgumentException if or the format string doesn't have exactly 4 placeholders.
    */
   public final <R> Optional<R> parse(String input, Quarternary<? super String, ? extends R> mapper) {
+    requireNonNull(input);
+    requireNonNull(mapper);
+    checkPlaceholderCount(4);
     return parseAndCollect(input, combining(mapper));
   }
 
   /**
    * Similar to {@link #parse(String, BiFunction}, but parses {@code input} and applies {@code
-   * mapper} with the <em>5</em> placeholder values in this template.
+   * mapper} with the <em>5</em> placeholder values in this string format.
    *
    * @return the return value of the {@code mapper} function if not null. Returns empty if
    *     {@code input} doesn't match the format, or {@code mapper} returns null.
-   * @throws IllegalArgumentException if {@code input} doesn't match the format or the template
-   *     doesn't have exactly 5 placeholders.
+   * @throws IllegalArgumentException if or the format string doesn't have exactly 5 placeholders.
    */
   public final <R> Optional<R> parse(String input, Quinary<? super String, ? extends R> mapper) {
+    requireNonNull(input);
+    requireNonNull(mapper);
+    checkPlaceholderCount(5);
     return parseAndCollect(input, combining(mapper));
   }
 
   /**
    * Similar to {@link #parse(String, BiFunction}, but parses {@code input} and applies {@code
-   * mapper} with the <em>6</em> placeholder values in this template.
+   * mapper} with the <em>6</em> placeholder values in this string format.
    *
    * @return the return value of the {@code mapper} function if not null. Returns empty if
    *     {@code input} doesn't match the format, or {@code mapper} returns null.
-   * @throws IllegalArgumentException if {@code input} doesn't match the format or the template
-   *     doesn't have exactly 6 placeholders.
+   * @throws IllegalArgumentException if or the format string doesn't have exactly 6 placeholders.
    */
   public final <R> Optional<R> parse(String input, Senary<? super String, ? extends R> mapper) {
+    requireNonNull(input);
+    requireNonNull(mapper);
+    checkPlaceholderCount(6);
     return parseAndCollect(input, combining(mapper));
   }
 
@@ -233,13 +233,14 @@ public class StringFormat {
     if (!input.startsWith(literals.get(0))) {  // first literal is the prefix
       return Optional.empty();
     }
-    List<Substring.Match> builder = new ArrayList<>(placeholders.size());
+    final int numPlaceholders = numPlaceholders();
+    List<Substring.Match> builder = new ArrayList<>(numPlaceholders);
     int inputIndex = literals.get(0).length();
-    for (int i = 1; i < literals.size(); i++) {
-      // subsequent literals are searched; last literal is the suffix.
-      Substring.Pattern literalLocator =
-          i < literals.size() - 1 ? first(literals.get(i)) : suffix(literals.get(i));
-      Substring.Match placeholder = before(literalLocator).match(input, inputIndex);
+    for (int i = 1; i <= numPlaceholders; i++) {
+      // subsequent literals are searched left-to-right; last literal is the suffix.
+      Substring.Pattern trailingLiteral =
+          i < numPlaceholders ? first(literals.get(i)) : suffix(literals.get(i));
+      Substring.Match placeholder = before(trailingLiteral).match(input, inputIndex);
       if (placeholder == null) {
         return Optional.empty();
       }
@@ -259,6 +260,7 @@ public class StringFormat {
    */
   public Stream<List<Substring.Match>> scan(String input) {
     requireNonNull(input);
+    int numPlaceholders = numPlaceholders();
     return MoreStreams.whileNotNull(
         new Supplier<List<Substring.Match>>() {
           private int inputIndex = 0;
@@ -273,11 +275,12 @@ public class StringFormat {
               return null;
             }
             inputIndex += literals.get(0).length();
-            List<Substring.Match> builder = new ArrayList<>(placeholders.size());
-            for (int i = 1; i < literals.size(); i++) {
+            List<Substring.Match> builder = new ArrayList<>(numPlaceholders);
+            for (int i = 1; i <= numPlaceholders; i++) {
               String literal = literals.get(i);
+              // Always search left-to-right. The last placeholder at the end of format is suffix.
               Substring.Pattern literalLocator =
-                  i == literals.size() - 1 && literals.get(i).isEmpty()
+                  i == numPlaceholders && literals.get(i).isEmpty()
                       ? Substring.END
                       : first(literals.get(i));
               Substring.Match placeholder = before(literalLocator).match(input, inputIndex);
@@ -315,6 +318,9 @@ public class StringFormat {
    * the {@code mapper} function, which will then be ignored in the result stream.
    */
   public final <R> Stream<R> scan(String input, Function<? super String, ? extends R> mapper) {
+    requireNonNull(input);
+    requireNonNull(mapper);
+    checkPlaceholderCount(1);
     return scanAndCollect(input, onlyElement(mapper));
   }
 
@@ -340,6 +346,9 @@ public class StringFormat {
    */
   public final <R> Stream<R> scan(
       String input, BiFunction<? super String, ? super String, ? extends R> mapper) {
+    requireNonNull(input);
+    requireNonNull(mapper);
+    checkPlaceholderCount(2);
     return scanAndCollect(input, combining(mapper));
   }
 
@@ -364,6 +373,9 @@ public class StringFormat {
    * the {@code mapper} function, which will then be ignored in the result stream.
    */
   public final <R> Stream<R> scan(String input, Ternary<? super String, ? extends R> mapper) {
+    requireNonNull(input);
+    requireNonNull(mapper);
+    checkPlaceholderCount(3);
     return scanAndCollect(input, combining(mapper));
   }
 
@@ -382,6 +394,9 @@ public class StringFormat {
    * the {@code mapper} function, which will then be ignored in the result stream.
    */
   public final <R> Stream<R> scan(String input, Quarternary<? super String, ? extends R> mapper) {
+    requireNonNull(input);
+    requireNonNull(mapper);
+    checkPlaceholderCount(4);
     return scanAndCollect(input, combining(mapper));
   }
 
@@ -400,6 +415,9 @@ public class StringFormat {
    * the {@code mapper} function, which will then be ignored in the result stream.
    */
   public final <R> Stream<R> scan(String input, Quinary<? super String, ? extends R> mapper) {
+    requireNonNull(input);
+    requireNonNull(mapper);
+    checkPlaceholderCount(5);
     return scanAndCollect(input, combining(mapper));
   }
 
@@ -418,18 +436,10 @@ public class StringFormat {
    * the {@code mapper} function, which will then be ignored in the result stream.
    */
   public final <R> Stream<R> scan(String input, Senary<? super String, ? extends R> mapper) {
+    requireNonNull(input);
+    requireNonNull(mapper);
+    checkPlaceholderCount(6);
     return scanAndCollect(input, combining(mapper));
-  }
-
-  /**
-   * Returns the immutable list of placeholders in this template, in occurrence order.
-   *
-   * <p>Each placeholder is-a {@link CharSequence} with extra accessors to the index in this
-   * template string. Callers can also use, for example, {@code .skip(1, 1)} to easily strip away
-   * the '{' and '}' characters around the placeholder names.
-   */
-  public final List<Substring.Match> placeholders() {
-    return placeholders;
   }
 
   /** Returns the string format. */
@@ -447,20 +457,18 @@ public class StringFormat {
         .filter(v -> v != null);
   }
 
-  private static List<String> extractLiteralsFromFormat(
-      String format, List<Substring.Match> placeholders) {
-    List<String> builder = new ArrayList<>(placeholders.size() + 1);
-    int index = 0;
-    for (Substring.Match placeholder : placeholders) {
-      builder.add(substr(format, index, placeholder.index()));
-      index = placeholder.index() + placeholder.length();
-    }
-    builder.add(substr(format, index, format.length()));
-    return unmodifiableList(builder);
+  private int numPlaceholders() {
+    return literals.size() - 1;
   }
 
-  /** Same as {@link String#substring} but short-circuits when substring is empty. */
-  private static String substr(String s, int begin, int end) {
-    return begin == end ? "" : s.substring(begin, end);
+  private void checkPlaceholderCount(int expected) {
+    if (numPlaceholders() != expected) {
+      throw new IllegalArgumentException(
+          String.format(
+              "format string has %s placeholders; %s expected.",
+              numPlaceholders(),
+              expected));
+    }
   }
+
 }
