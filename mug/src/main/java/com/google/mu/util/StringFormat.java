@@ -90,17 +90,13 @@ public final class StringFormat {
   }
 
   /**
-   * Constructs a StringFormat. By default, {@code new StringFormat(format)} automatically detects
-   * placeholders with either {@code "%s"} or curly braces. If you need different placeholder
-   * syntax, for example, to use square brackets instead of curly braces:
+   * Constructs a StringFormt using {@code placeholderVariablesPattern} to detect placeholders
+   * in the {@code format} string. For example, the following code uses "%s" as the placeholder:
    *
    * <pre>{@code
-   * new StringFormat("Hi [person], my name is [me]", spanningInOrder("[", "]").repeatedly());
+   * new StringFormat("Hi %s, my name is %s", first("%s").repeatedly());
    * }</pre>
    *
-   * @param format the template format with placeholders
-   * @param placeholderVariablePattern placeholders in {@code format}.
-   *     For example: {@code first("%s").repeatedly()}.
    * @throws IllegalArgumentException if {@code format} is invalid
    *     (e.g. a placeholder immediately followed by another placeholder)
    */
