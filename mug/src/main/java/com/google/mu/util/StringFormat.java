@@ -31,35 +31,36 @@ import com.google.mu.util.stream.MoreStreams;
  * strings according to a format string. For example:
  *
  * <pre>{@code
- * return new StringFormat("Dear {customer}: {question}?")
- *     .parse(input, (customer, question) -> ...);
+ * return new StringFormat("{address}+{subaddress}@{domain}")
+ *     .parse("my-account+test@gmail.com", (address, subaddress, domain) -> ...);
  * }</pre>
  *
- * <p>Note that other than the placeholders, characters in the format string are treated as
- * literals. This works better if your format string is close to free-form text with characters like
- * '.', '?', '(', '|' and whatnot because you won't have to escape them. On the other hand, it
- * won't work for more sophisticated patterns where regex modifiers and quantifiers are needed.
+ * <p>Note that except the placeholders, characters in the format string are treated as literals.
+ * This works better if your pattern is close to free-form text with characters like '.', '?', '(',
+ * '|' and whatnot because you don't need to escape them. On the other hand, the literal characters
+ * won't offer regex functionalities you get from {@code (\w+)}, {@code (foo|bar)} etc.
  *
  * <p>In the face of ambiguity, the {@code parse()} methods can be lossy. Consider the format string
  * of {@code String.format("I bought %s and %s", "apples and oranges", "chips")}, it returns {@code
- * "I bought apples and oranges and chips"}; but the following parsing code will incorrectly return
- * {@code Map.of("{fruits}", "apples", "{snacks}", "oranges and chips")}:
+ * "I bought apples and oranges and chips"}; but the following parsing code will incorrectly parse
+ * "apples" as "{fruits}" and "oranges and chips" as "{snacks}":
  *
  * <pre>{@code
  * new StringFormat("I bought {fruits} and {snacks}")
  *     .parse("I bought apples and oranges and chips", (fruits, snacks) -> ...);
  * }</pre>
  *
- * As such, only use this class on trusted input strings (i.e. not user inputs).
- * And use regex instead to better deal with ambiguity.
+ * As such, only use this class on trusted input strings (i.e. not user inputs). And use regex
+ * instead to better deal with ambiguity.
  *
- * <p>All the {@code parse()} methods attempt to match the entire input string. If you need to find
- * the string format as a substring anywhere inside the input string, or need to find repeated
- * occurrences from the input string, use the {@code scan()} methods instead. Tack on
- * {@code .findFirst()} on the returned lazy stream if you only care to find a single occurrence.
+ * <p>All the {@code parse()} methods attempt to match the entire input string from beginning to
+ * end. If you need to find the string format as a substring anywhere inside the input string, or
+ * need to find repeated occurrences from the input string, use the {@code scan()} methods instead.
+ * Tack on {@code .findFirst()} on the returned lazy stream if you only care to find a single
+ * occurrence.
  *
  * <p>This class is immutable and pre-compiles the format string at constructor time so that the
- * {@code parse()} methods will be more efficient.
+ * {@code parse()} and {@code scan()} methods will be more efficient.
  *
  * @since 6.6
  */
