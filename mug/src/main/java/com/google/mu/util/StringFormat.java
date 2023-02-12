@@ -75,11 +75,7 @@ public final class StringFormat {
    * }</pre>
    *
    * <p>For alternative placeholders, such as "%s", use {@link
-   * #StringFormat(String, Substring.RepeatingPattern)} instead:
-   *
-   * <pre>{@code
-   * new StringFormat("%s+%s@%s", first("%s").repeatedly())
-   * }</pre>
+   * #StringFormat(String, Substring.RepeatingPattern)} instead.
    *
    * @param format the template format with placeholders
    * @throws IllegalArgumentException if {@code format} is invalid
@@ -116,14 +112,14 @@ public final class StringFormat {
    * in this string format.
    *
    * <p>For example: <pre>{@code
-   * new StringFormat("Job failed (job id: %s)").parse(input, jobId -> ...);
+   * new StringFormat("Job failed (job id: {job_id})").parse(input, jobId -> ...);
    * }</pre>
    *
    * @return the return value of the {@code mapper} function if not null. Returns empty if
    *     {@code input} doesn't match the format, or {@code mapper} returns null.
    * @throws IllegalArgumentException if or the format string doesn't have exactly one placeholder.
    */
-  public final <R> Optional<R> parse(String input, Function<? super String, ? extends R> mapper) {
+  public <R> Optional<R> parse(String input, Function<? super String, ? extends R> mapper) {
     requireNonNull(input);
     requireNonNull(mapper);
     checkPlaceholderCount(1);
@@ -135,7 +131,7 @@ public final class StringFormat {
    * in this string format.
    *
    * <p>For example: <pre>{@code
-   * new StringFormat("Job failed (job id: '%s', error code: %s)")
+   * new StringFormat("Job failed (job id: '{id}', error code: {code})")
    *     .parse(input, (jobId, errorCode) -> ...);
    * }</pre>
    *
@@ -143,7 +139,7 @@ public final class StringFormat {
    *     {@code input} doesn't match the format, or {@code mapper} returns null.
    * @throws IllegalArgumentException if or the format string doesn't have exactly two placeholders.
    */
-  public final <R> Optional<R> parse(
+  public <R> Optional<R> parse(
       String input, BiFunction<? super String, ? super String, ? extends R> mapper) {
     requireNonNull(input);
     requireNonNull(mapper);
@@ -156,7 +152,7 @@ public final class StringFormat {
    * mapper} with the <em>3</em> placeholder values in this string format.
    *
    * <p>For example: <pre>{@code
-   * new StringFormat("Job failed (job id: '%s', error code: %s, error details: %s)")
+   * new StringFormat("Job failed (job id: '{job_id}', error code: {code}, error details: {details})")
    *     .parse(input, (jobId, errorCode, errorDetails) -> ...);
    * }</pre>
    *
@@ -164,7 +160,7 @@ public final class StringFormat {
    *     {@code input} doesn't match the format, or {@code mapper} returns null.
    * @throws IllegalArgumentException if or the format string doesn't have exactly 3 placeholders.
    */
-  public final <R> Optional<R> parse(String input, Ternary<? super String, ? extends R> mapper) {
+  public <R> Optional<R> parse(String input, Ternary<? super String, ? extends R> mapper) {
     requireNonNull(input);
     requireNonNull(mapper);
     checkPlaceholderCount(3);
@@ -179,7 +175,7 @@ public final class StringFormat {
    *     {@code input} doesn't match the format, or {@code mapper} returns null.
    * @throws IllegalArgumentException if or the format string doesn't have exactly 4 placeholders.
    */
-  public final <R> Optional<R> parse(String input, Quarternary<? super String, ? extends R> mapper) {
+  public <R> Optional<R> parse(String input, Quarternary<? super String, ? extends R> mapper) {
     requireNonNull(input);
     requireNonNull(mapper);
     checkPlaceholderCount(4);
@@ -194,7 +190,7 @@ public final class StringFormat {
    *     {@code input} doesn't match the format, or {@code mapper} returns null.
    * @throws IllegalArgumentException if or the format string doesn't have exactly 5 placeholders.
    */
-  public final <R> Optional<R> parse(String input, Quinary<? super String, ? extends R> mapper) {
+  public <R> Optional<R> parse(String input, Quinary<? super String, ? extends R> mapper) {
     requireNonNull(input);
     requireNonNull(mapper);
     checkPlaceholderCount(5);
@@ -209,7 +205,7 @@ public final class StringFormat {
    *     {@code input} doesn't match the format, or {@code mapper} returns null.
    * @throws IllegalArgumentException if or the format string doesn't have exactly 6 placeholders.
    */
-  public final <R> Optional<R> parse(String input, Senary<? super String, ? extends R> mapper) {
+  public <R> Optional<R> parse(String input, Senary<? super String, ? extends R> mapper) {
     requireNonNull(input);
     requireNonNull(mapper);
     checkPlaceholderCount(6);
@@ -300,7 +296,7 @@ public final class StringFormat {
    * the {@code mapper} function for each iteration, with null results skipped.
    *
    * <p>For example: <pre>{@code
-   * new StringFormat("/home/usr/myname/%s\n")
+   * new StringFormat("/home/usr/myname/{file_name}\n")
    *     .scan(multiLineInput, fileName -> ...);
    * }</pre>
    *
@@ -313,7 +309,7 @@ public final class StringFormat {
    * placeholder isn't expected to be empty, consider filtering it out by returning null from
    * the {@code mapper} function, which will then be ignored in the result stream.
    */
-  public final <R> Stream<R> scan(String input, Function<? super String, ? extends R> mapper) {
+  public <R> Stream<R> scan(String input, Function<? super String, ? extends R> mapper) {
     requireNonNull(input);
     requireNonNull(mapper);
     checkPlaceholderCount(1);
@@ -326,7 +322,7 @@ public final class StringFormat {
    * the {@code mapper} function for each iteration, with null results skipped.
    *
    * <p>For example: <pre>{@code
-   * new StringFormat("[key=%s, value=%s]")
+   * new StringFormat("[key={key}, value={value}]")
    *     .repeatedly()
    *     .parse(input, (key, value) -> ...);
    * }</pre>
@@ -340,7 +336,7 @@ public final class StringFormat {
    * placeholder isn't expected to be empty, consider filtering it out by returning null from
    * the {@code mapper} function, which will then be ignored in the result stream.
    */
-  public final <R> Stream<R> scan(
+  public <R> Stream<R> scan(
       String input, BiFunction<? super String, ? super String, ? extends R> mapper) {
     requireNonNull(input);
     requireNonNull(mapper);
@@ -354,7 +350,7 @@ public final class StringFormat {
    * the {@code mapper} function for each iteration, with null results skipped.
    *
    * <p>For example: <pre>{@code
-   * new StringFormat("[%s + %s = %s]")
+   * new StringFormat("[{lhs} + {rhs} = {result}]")
    *     .repeatedly()
    *     .parse(input, (lhs, rhs, result) -> ...);
    * }</pre>
@@ -368,7 +364,7 @@ public final class StringFormat {
    * placeholder isn't expected to be empty, consider filtering it out by returning null from
    * the {@code mapper} function, which will then be ignored in the result stream.
    */
-  public final <R> Stream<R> scan(String input, Ternary<? super String, ? extends R> mapper) {
+  public <R> Stream<R> scan(String input, Ternary<? super String, ? extends R> mapper) {
     requireNonNull(input);
     requireNonNull(mapper);
     checkPlaceholderCount(3);
@@ -389,7 +385,7 @@ public final class StringFormat {
    * placeholder isn't expected to be empty, consider filtering it out by returning null from
    * the {@code mapper} function, which will then be ignored in the result stream.
    */
-  public final <R> Stream<R> scan(String input, Quarternary<? super String, ? extends R> mapper) {
+  public <R> Stream<R> scan(String input, Quarternary<? super String, ? extends R> mapper) {
     requireNonNull(input);
     requireNonNull(mapper);
     checkPlaceholderCount(4);
@@ -410,7 +406,7 @@ public final class StringFormat {
    * placeholder isn't expected to be empty, consider filtering it out by returning null from
    * the {@code mapper} function, which will then be ignored in the result stream.
    */
-  public final <R> Stream<R> scan(String input, Quinary<? super String, ? extends R> mapper) {
+  public <R> Stream<R> scan(String input, Quinary<? super String, ? extends R> mapper) {
     requireNonNull(input);
     requireNonNull(mapper);
     checkPlaceholderCount(5);
@@ -431,7 +427,7 @@ public final class StringFormat {
    * placeholder isn't expected to be empty, consider filtering it out by returning null from
    * the {@code mapper} function, which will then be ignored in the result stream.
    */
-  public final <R> Stream<R> scan(String input, Senary<? super String, ? extends R> mapper) {
+  public <R> Stream<R> scan(String input, Senary<? super String, ? extends R> mapper) {
     requireNonNull(input);
     requireNonNull(mapper);
     checkPlaceholderCount(6);
@@ -466,5 +462,4 @@ public final class StringFormat {
               expected));
     }
   }
-
 }
