@@ -5,7 +5,7 @@
 '/Users/yinglei/mug/mug/src/main/java'
 -author
 -bottom
-'Copyright &#169; 2022. All rights reserved.'
+'Copyright &#169; 2023. All rights reserved.'
 -charset
 'UTF-8'
 -d
@@ -13,7 +13,7 @@
 -docencoding
 'UTF-8'
 -doctitle
-'core 6.5-SNAPSHOT API'
+'core 6.6-SNAPSHOT API'
 -linkoffline
 'https://docs.oracle.com/javase/8/docs/api' '/Users/yinglei/mug/mug/target/javadoc-bundle-options'
 -stylesheetfile
@@ -21,4 +21,4 @@
 -use
 -version
 -windowtitle
-'core 6.5-SNAPSHOT API'
+'core 6.6-SNAPSHOT API'

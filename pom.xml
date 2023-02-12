@@ -4,11 +4,7 @@
   <groupId>com.google.mug</groupId>
   <artifactId>mug-root</artifactId>
   <packaging>pom</packaging>
-<<<<<<< HEAD
-  <version>6.5-SNAPSHOT</version>
-=======
   <version>6.6-SNAPSHOT</version>
->>>>>>> master
   <name>mug-root</name>
   <description>Extra Lambda Utilities</description>
   <url>http://github.com/google/mug</url>
