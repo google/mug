@@ -37,7 +37,7 @@ import com.google.mu.util.stream.MoreStreams;
  *
  * <p>Note that other than the placeholders, characters in the format string are treated as
  * literals. This works better if your format string is close to free-form text with characters like
- * '.', '?', '(', '|' and what not because you won't have to escape them. On the other hand, it
+ * '.', '?', '(', '|' and whatnot because you won't have to escape them. On the other hand, it
  * won't work for more sophisticated patterns where regex modifiers and quantifiers are needed.
  *
  * <p>In the face of ambiguity, the {@code parse()} methods can be lossy. Consider the format string
