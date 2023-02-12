@@ -92,6 +92,18 @@ public class BiOptionalTest {
     assertThat(BiOptional.of(1, 2).filter((a, b) -> a < b)).isEqualTo(BiOptional.of(1, 2));
   }
 
+  @Test public void skipIf_empty() {
+    assertThat(BiOptional.empty().skipIf((a, b) -> false)).isEqualTo(BiOptional.empty());
+  }
+
+  @Test public void skipIf_nonEmptyFilteredOut() {
+    assertThat(BiOptional.of(1, 2).skipIf((a, b) -> a < b)).isEqualTo(BiOptional.empty());
+  }
+
+  @Test public void skipIf_nonEmptyFilteredIn() {
+    assertThat(BiOptional.of(1, 2).skipIf((a, b) -> a >= b)).isEqualTo(BiOptional.of(1, 2));
+  }
+
   @Test public void peek_empty() {
     assertThat(BiOptional.empty().peek(consumer)).isEqualTo(BiOptional.empty());
     verifyZeroInteractions(consumer);
@@ -256,6 +268,26 @@ public class BiOptionalTest {
         .isFalse();
     assertThat(BiOptional.of("foo", "foo").orElseThrow().matches(String::equals))
         .isTrue();
+  }
+
+  @Test
+  public void testOrElseThrow_withMessage_present() {
+    assertThat(BiOptional.of(1, 2).orElseThrow(IllegalStateException::new, "bad"))
+        .isEqualTo(BiOptional.of(1, 2));
+  }
+
+  @Test
+  public void testOrElseThrow_withMessage_npe() {
+    assertThrows(NullPointerException.class, () -> BiOptional.empty().orElseThrow(msg -> null, ""));
+  }
+
+  @Test
+  public void testOrElseThrow_withMessage_empty() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> BiOptional.empty().orElseThrow(IllegalArgumentException::new, "my rank=%s", 1));
+    assertThat(thrown).hasMessageThat().isEqualTo("my rank=1");
   }
 
   @Test public void testNulls() throws Exception {

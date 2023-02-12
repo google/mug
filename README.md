@@ -21,7 +21,7 @@ Add the following to pom.xml:
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug</artifactId>
-    <version>6.4</version>
+    <version>6.5</version>
   </dependency>
 ```
 
@@ -30,7 +30,7 @@ Protobuf utils:
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-protobuf</artifactId>
-    <version>6.4</version>
+    <version>6.5</version>
   </dependency>
 ```
 
@@ -39,7 +39,7 @@ Guava add-ons:
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-guava</artifactId>
-    <version>6.4</version>
+    <version>6.5</version>
   </dependency>
 ```
 
@@ -47,9 +47,9 @@ Guava add-ons:
 
 Add to build.gradle:
 ```
-  implementation 'com.google.mug:mug:6.4'
-  implementation 'com.google.mug:mug-guava:6.4'
-  implementation 'com.google.mug:mug-protobuf:6.4'
+  implementation 'com.google.mug:mug:6.5'
+  implementation 'com.google.mug:mug-guava:6.5'
+  implementation 'com.google.mug:mug-protobuf:6.5'
 ```
 
 
@@ -223,7 +223,18 @@ All Optionals utilites propagate checked exception from the the lambda/method re
 
 #### [MoreStreams](https://google.github.io/mug/apidocs/com/google/mu/util/stream/MoreStreams.html)
 
-**Example 1: to split a stream into smaller-size chunks (batches):**
+**Example 1: to group consecutive elements in a stream:**
+
+```java
+List<StockPrice> pricesOrderedByTime = ...;
+
+List<List<StockPrice>> priceSequences =
+    MoreStreams.groupConsecutive(
+            pricesOrderedByTime.stream(), (p1, p2) -> closeEnough(p1, p2), toList())
+        .collect(toList());
+```
+
+**Example 2: to split a stream into smaller-size chunks (batches):**
 
 ```java
 int batchSize = 5;
@@ -232,7 +243,7 @@ MoreStreams.dice(requests, batchSize)
     .forEach(batchClient::sendBatchRequest);
 ```
 
-**Example 2: to iterate over `Stream`s in the presence of checked exceptions or control flow:**
+**Example 3: to iterate over `Stream`s in the presence of checked exceptions or control flow:**
 
 The `Stream` API provides `forEach()` to iterate over a stream, if you don't have to throw checked exceptions.
 
@@ -253,13 +264,13 @@ for (Object obj : iterateOnce(stream)) {
 }
 ```
 
-**Example 3: to generate a BFS stream:**
+**Example 4: to generate a BFS stream:**
 ```java
 Stream<V> bfs = MoreStreams.generate(root, node -> node.children().stream())
     .map(Node::value);
 ```
 
-**Example 4: to merge maps:**
+**Example 5: to merge maps:**
 ```java
 interface Page {
   Map<Day, Long> getTrafficHistogram();
@@ -270,7 +281,7 @@ List<Page> pages = ...;
 // Merge traffic histogram across all pages of the web site
 Map<Day, Long> siteTrafficHistogram = pages.stream()
     .map(Page::getTrafficHistogram)
-    .collect(flatMapping(BiStream::from, groupingBy(day -> day, Long::sum)))
+    .collect(flatteningMaps(groupingBy(day -> day, Long::sum)))
     .toMap();
 ```
 
@@ -404,16 +415,14 @@ HourMinuteSecond result =
 
 ## [Parallelizer](https://google.github.io/mug/apidocs/com/google/mu/util/concurrent/Parallelizer.html)
 
-An _Executor-friendly_, _interruptible_ alternative to parallel streams.
+Runs IO-bound operations in the [structured concurrency](https://en.wikipedia.org/wiki/Structured_concurrency) model, while limiting max concurrency.
 
-Designed for running a (large) pipeline of _IO-bound_ (as opposed to CPU-bound) sub tasks in parallel, while limiting max concurrency.
-
-For example, the following snippet uploads a large number of pictures in parallel:
+For example, the following snippet uploads a large number (think of millions) of pictures in parallel:
 ```java
-ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
+ExecutorService threadPool = Executors.newCachedThreadPool();
 try {
   new Parallelizer(threadPool, numThreads)
-      .parallelize(pictures, this::upload);
+      .parallelize(pictures.stream(), this::upload);
 } finally {
   threadPool.shutdownNow();
 }
@@ -441,13 +450,10 @@ pictures.parallel().forEach(this::upload);
 Reasons not to:
 * Parallelizer works with any existing `ExecutorService`.
 * Parallelizer supports an in-flight tasks limit.
-* Thread **unsafe** input streams or `Iterator`s are okay.
-* Upon failure, all pending tasks are canceled.
+* Parallelizer can be interrupted.
+* Thread **unsafe** input streams or `Iterator`s are okay because they are always consumed in the main thread.
+* When any parallel work fails, the pipeline is aborted with all pending and in-flight tasks are canceled.
 * Exceptions from worker threads are wrapped so that stack trace isn't misleading.
-
-Fundamentally:
-* Parallel streams are for CPU-bound tasks. JDK has built-in magic to optimally use the available cores.
-* Parallelizer is for IO-bound tasks.
 
 #### Why not just submitting to a fixed thread pool?
 
@@ -465,9 +471,24 @@ try {
 
 Reasons not to:
 1. The thread pool queues all pending tasks. If the input stream is too large to fit in memory, you'll get an `OutOfMemoryError`.
-2. Exceptions (including `NullPointerException`, `OutOfMemoryError`) are silently swallowed (but may print stack trace). To propagate the exceptions, the `Future` objects need to be stored in a list and then `Future#get()` needs to be called on every future object after all tasks have been submitted to the executor.
-3. Tasks submitted to an executor are independent. One task failing doesn't automatically terminate the pipeline.
+2. Exceptions (including `NullPointerException`, `OutOfMemoryError`) are silently swallowed (the executor may log stack trace). To propagate the exceptions, the `Future` objects need to be stored in a list and then `Future#get()` needs to be called on every future object after all tasks have been submitted to the executor.
+3. Tasks submitted to an executor are not "structured" but independent. One task failing doesn't automatically terminate the pipeline.
 
+#### Read in parallel
+
+The above examples are all about "writing". If for example you have a command line tool that needs to read from a distributed storage, you can do:
+
+```java
+public void main(String[] args) throws Exception {
+  Parallelizer parallelizer = Parallelizer.newDaemonParallelizer(10); // at most 10 concurrently
+  Map<PictureId, Picture> pics = CharStreams.readLines(System.in).stream()
+      .map(PictureId::parse)
+      .distinct()
+      .collect(parallelizer.inParallel(picId -> readPictureFromDistributedStorage(picId)))
+      .toMap();
+  ...
+}
+```
 
 
 ## [Retryer](https://google.github.io/mug/apidocs/com/google/mu/util/concurrent/Retryer.html)
@@ -601,81 +622,3 @@ return new Retryer()
 If the method succeeds after retry, the exceptions are by default logged. As shown above, one can override `beforeDelay()` and `afterDelay()` to change or suppress the logging.
 
 If the method fails after retry, the exceptions can also be accessed programmatically through `exception.getSuppressed()`.
-
-## [Funnel](https://google.github.io/mug/apidocs/com/google/mu/util/Funnel.html)
-
-#### The problem
-
-The following code converts a list of objects:
-
-```java
-List<Result> convert(List<Input> inputs) {
-  List<Result> list = new ArrayList<>();
-  for (Input input : inputs) {
-    list.add(convertInput(input));
-  }
-  return list;
-}
-```
-
-Intuitively, the contract is that the order of results are in the same order as the inputs.
-
-Now assume the input can be of two different kinds, with one kind to be converted through a remote service. Like this:
-
-```java
-List<Result> convert(List<Input> inputs) {
-  List<Result> list = new ArrayList<>();
-  for (Input input : inputs) {
-    if (input.needsRemoteConversion()) {
-      list.add(remoteService.convertInput(input));
-    } else {
-      list.add(convertInput(input));
-    }
-  }
-  return list;
-}
-```
-
-In reality, most remote services are expensive and could use batching as an optimization. How do you batch the ones needing remote conversion and convert them in one remote call?
-
-Perhaps this?
-
-```java
-List<Result> convert(List<Input> inputs) {
-  List<Result> local = new ArrayList<>();
-  List<Input> needRemote = new ArrayList<>();
-  for (Input input : inputs) {
-    if (input.needsRemoteConversion()) {
-      needRemote.add(input);
-    } else {
-      local.add(convertInput(input));
-    }
-  }
-  List<Result> remote = remoteService.batchConvert(needRemote);
-  return concat(local, remote);
-}
-```
-
-Close. Except it breaks the ordering of results. The caller no longer knows which result is for which input.
-
-Tl;Dr: maintaining the encounter order while dispatching objects to batches requires careful juggling of the indices and messes up the code rather quickly.
-
-#### The tool
-
-Funnel is a simple class designed for this use case:
-
-```java
-List<Result> convert(List<Input> inputs) {
-  Funnel<Result> funnel = new Funnel<>();
-  Funnel.Batch<Input, Result> remoteBatch = funnel.through(remoteService::batchConvert);
-  for (Input input : inputs) {
-    if (input.needsRemoteConversion()) {
-      remoteBatch.accept(input);
-    } else {
-      funnel.add(convertInput(input));
-    }
-  }
-  return funnel.run();
-}
-```
-That is, define the batches with ```funnel.through()``` and then inputs can flow through arbitrary number of batch conversions. Conversion results flow out of the funnel in the same order as inputs entered the funnel. 

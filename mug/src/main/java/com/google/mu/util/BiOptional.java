@@ -150,6 +150,16 @@ public abstract class BiOptional<A, B> {
   public abstract BiOptional<A, B> filter(BiPredicate<? super A, ? super B> predicate);
 
   /**
+   * If a pair of values is present and matches {@code predicate}, the pair is skipped (returns empty).
+   *
+   * @throws NullPointerException if {@code predicate} is null
+   * @since 6.6
+   */
+  public BiOptional<A, B> skipIf(BiPredicate<? super A, ? super B> predicate) {
+    return filter(predicate.negate());
+  }
+
+  /**
    * Invokes {@code consumer} with the pair if present and returns this object as is.
    *
    * @throws NullPointerException if consumer is null
@@ -206,6 +216,27 @@ public abstract class BiOptional<A, B> {
    */
   public abstract <E extends Throwable> Both<A, B> orElseThrow(Supplier<E> exceptionSupplier)
       throws E;
+
+  /**
+   * Ensures that the pair must be present or else throws the exception returned by {@code
+   * exceptionFactory} with {@code message} formatted with {@code args} using {@link
+   * Strings#lenientFormat}.
+   *
+   * @throws NullPointerException if {@code exceptionFactory} or {@code message} is null, or if
+   *     {@code exceptionFactory} returns null.
+   * @throws E if the pair is absent.
+   * @since 6.6
+   */
+  public final <E extends Throwable> Both<A, B> orElseThrow(
+      Function<String, E> exceptionFactory, String message, Object... args) throws E {
+    requireNonNull(exceptionFactory);
+    requireNonNull(message);
+    requireNonNull(args);
+    if (isPresent()) {
+      return orElseThrow();
+    }
+    throw exceptionFactory.apply(String.format(message, args));
+  }
 
   /** Returns a {@code BiStream} view of this BiOptional. */
   public abstract BiStream<A, B> stream();

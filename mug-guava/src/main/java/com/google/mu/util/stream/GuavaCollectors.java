@@ -14,10 +14,13 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.mu.util.stream.BiStream.groupingBy;
 import static com.google.mu.util.stream.MoreCollectors.mapping;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.collectingAndThen;
 
 import java.util.Comparator;
 import java.util.function.BinaryOperator;
@@ -41,6 +44,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Tables;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.mu.util.Both;
 
 /**
@@ -69,7 +73,7 @@ public final class GuavaCollectors {
     requireNonNull(valueMerger);
     return new BiCollector<K, V, ImmutableMap<K, V>>() {
       @Override
-      public <E> Collector<E, ?, ImmutableMap<K, V>> splitting(
+      public <E> Collector<E, ?, ImmutableMap<K, V>> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return ImmutableMap.toImmutableMap(toKey, toValue, valueMerger);
       }
@@ -140,7 +144,7 @@ public final class GuavaCollectors {
     requireNonNull(valueMerger);
     return new BiCollector<K, V, ImmutableSortedMap<K, V>>() {
       @Override
-      public <E> Collector<E, ?, ImmutableSortedMap<K, V>> splitting(
+      public <E> Collector<E, ?, ImmutableSortedMap<K, V>> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return ImmutableSortedMap.toImmutableSortedMap(comparator, toKey, toValue, valueMerger);
       }
@@ -156,7 +160,7 @@ public final class GuavaCollectors {
     requireNonNull(comparator);
     return new BiCollector<K, V, ImmutableSortedMap<K, V>>() {
       @Override
-      public <E> Collector<E, ?, ImmutableSortedMap<K, V>> splitting(
+      public <E> Collector<E, ?, ImmutableSortedMap<K, V>> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return ImmutableSortedMap.toImmutableSortedMap(comparator, toKey, toValue);
       }
@@ -172,7 +176,7 @@ public final class GuavaCollectors {
     requireNonNull(multimapSupplier);
     return new BiCollector<K, V, M>() {
       @Override
-      public <E> Collector<E, ?, M> splitting(Function<E, K> toKey, Function<E, V> toValue) {
+      public <E> Collector<E, ?, M> collectorOf(Function<E, K> toKey, Function<E, V> toValue) {
         return Multimaps.toMultimap(toKey, toValue, multimapSupplier);
       }
     };
@@ -250,7 +254,7 @@ public final class GuavaCollectors {
     requireNonNull(countFunction);
     return new BiCollector<K, V, ImmutableMultiset<K>>() {
       @Override
-      public <E> Collector<E, ?, ImmutableMultiset<K>> splitting(
+      public <E> Collector<E, ?, ImmutableMultiset<K>> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return ImmutableMultiset.toImmutableMultiset(
             toKey, input -> countFunction.applyAsInt(toValue.apply(input)));
@@ -358,6 +362,114 @@ public final class GuavaCollectors {
   }
 
   /**
+   * Returns a collector that first maps each input into a key-value pair, and then collects them
+   * into a {@link ImmutableListMultimap}.
+   *
+   * <p>Inconsistent (unequal) values mapped to the same key (according to {@link
+   * Object#equals(Object)}) will throw {@link IllegalArgumentException}, Duplicate (equal) values
+   * mapped to the same key will be ignored. Entries will appear in the encounter order of the first
+   * occurrence of the key.
+   *
+   * @since 6.6
+   */
+  public static <T, K, V>
+      Collector<T, ?, ImmutableMap<K, V>> toImmutableMapIgnoringDuplicateEntries(
+          Function<? super T, ? extends Both<? extends K, ? extends V>> mapper) {
+    return mapping(mapper, GuavaCollectors::toImmutableMapIgnoringDuplicateEntries);
+  }
+
+  /**
+   * Returns a collector that maps each value into a row-key and column-key for a table, and then
+   * collects all values mapped to the same cell using {@code cellCollector}. For example:
+   *
+   * <pre>{@code
+   * ImmutableTable<State, County, ImmutableSet<City>> citiesByStateAndCounty =
+   *     cities.stream().collect(
+   *         toImmutableTable(City::state, City::county, toImmutableSet());
+   * }</pre>
+   *
+   * <p>To transform values before they are collected, use {@link Collectors#mapping}. For more
+   * complex operations on row- or column-keys, look at {@link BiStream#groupingBy}. For collectors
+   * that throw or merge when values map to the same cell, see {@link
+   * ImmutableTable#toImmutableTable}.
+   *
+   * @since 6.6
+   */
+  public static <T, R, C, V> Collector<T, ?, ImmutableTable<R, C, V>> toImmutableTable(
+      Function<? super T, ? extends R> rowFunction,
+      Function<? super T, ? extends C> columnFunction,
+      Collector<T, ?, V> cellCollector) {
+    return collectingAndThen(
+        groupingBy(rowFunction, groupingBy(columnFunction, cellCollector)),
+        grouped -> grouped.collect(toImmutableTable()));
+  }
+
+  /**
+   * Returns a {@link Collector} that accumulates elements into an {@code ImmutableMap} whose keys
+   * and values are the result of applying the provided mapping functions to the input elements.
+   *
+   * <p>Inconsistent (unequal) values mapped to the same key (according to {@link
+   * Object#equals(Object)}) will throw {@link IllegalArgumentException}, Duplicate (equal) values
+   * mapped to the same key will be ignored. Entries will appear in the encounter order of the first
+   * occurrence of the key.
+   *
+   * @since 6.6
+   */
+  public static <T, K, V>
+      Collector<T, ?, ImmutableMap<K, V>> toImmutableMapIgnoringDuplicateEntries(
+          Function<? super T, ? extends K> toKey, Function<? super T, ? extends V> toValue) {
+    requireNonNull(toKey);
+    requireNonNull(toValue);
+    // Use a custom collector to be able to report the offending key without having to invoke the
+    // toKey and toValue functions more than once (except when reporting the exception message).
+    class ConsistentMapping {
+      private T entry;
+      private V value;
+
+      void add(T entry) {
+        V newValue = requireNonNull(toValue.apply(entry), "Null value disallowed");
+        if (value == null) {
+          this.entry = entry;
+          this.value = newValue;
+        } else if (!value.equals(newValue)) {
+          throw new IllegalArgumentException(
+              "Key <"
+                  + toKey.apply(entry)
+                  + "> is mapped to more than one values: <"
+                  + value
+                  + "> vs. <"
+                  + newValue
+                  + ">");
+        }
+      }
+
+      @CanIgnoreReturnValue
+      ConsistentMapping merge(ConsistentMapping that) {
+        if (that.value != null) {
+          add(that.entry);
+        }
+        return this;
+      }
+
+      V getValue() {
+        checkState(value != null);
+        return value;
+      }
+    }
+
+    return collectingAndThen(
+        BiStream.<T, K, V>groupingBy(
+            toKey,
+            Collector.of(
+                ConsistentMapping::new,
+                ConsistentMapping::add,
+                ConsistentMapping::merge,
+                ConsistentMapping::getValue)),
+        stream -> stream.collect(toImmutableMap()));
+  }
+
+
+  /**
    * Returns a collector that partitions the incoming elements into two groups: elements that
    * match {@code predicate}, and those that don't.
    *
@@ -384,8 +496,8 @@ public final class GuavaCollectors {
     requireNonNull(downstream);
     return new BiCollector<K, V, R>() {
       @Override
-      public <E> Collector<E, ?, R> splitting(Function<E, K> toKey, Function<E, V> toValue) {
-        return downstream.splitting(toKey, toValue.andThen(mapper));
+      public <E> Collector<E, ?, R> collectorOf(Function<E, K> toKey, Function<E, V> toValue) {
+        return downstream.collectorOf(toKey, toValue.andThen(mapper));
       }
     };
   }

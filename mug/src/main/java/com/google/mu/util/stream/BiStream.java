@@ -223,6 +223,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    */
   public static <T, K, V> Collector<T, ?, BiStream<K, V>> groupingBy(
       Function<? super T, ? extends K> classifier, Collector<? super T, ?, V> valueCollector) {
+    requireNonNull(classifier);
     Collector<T, ?, Map<K, V>> grouping =
         Collectors.groupingBy(classifier, LinkedHashMap::new, valueCollector);
     return collectingAndThen(grouping, BiStream::from);
@@ -1889,7 +1890,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
       BiCollector<? super K, ? super V, R> groupCollector) {
     return this
         .<G, Map.Entry<K, V>>map(classifier, BiStream::kv)
-        .groupConsecutiveByKeys(groupCollector.splitting(Map.Entry::getKey, Map.Entry::getValue));
+        .groupConsecutiveByKeys(groupCollector.collectorOf(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   /**
@@ -1928,7 +1929,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     return biStream(mapToEntry())
         .groupConsecutiveIf(
             (p1, p2) -> sameGroup.belong(p1.getKey(), p1.getValue(), p2.getKey(), p2.getValue()),
-            groupCollector.splitting(Map.Entry::getKey, Map.Entry::getValue));
+            groupCollector.collectorOf(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   /**
@@ -2188,7 +2189,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     }
 
     @Override public final <R> R collect(BiCollector<? super K, ? super V, R> collector) {
-      return underlying.collect(collector.splitting(toKey::apply, toValue::apply));
+      return underlying.collect(collector.collectorOf(toKey::apply, toValue::apply));
     }
 
     @Override public final <A> A collect(A container, BiAccumulator<? super A, ? super K, ? super V> accumulator) {
@@ -2389,7 +2390,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
       }
 
       <R> R collectWith(BiCollector<? super K, ? super V, R> collector) {
-        return collectWith(collector.splitting(x -> currentLeft.value, x -> currentRight.value));
+        return collectWith(collector.collectorOf(x -> currentLeft.value, x -> currentRight.value));
       }
 
       /** {@code collector} internally reads from {@link #currentLeft} and {@link #currentRight}. */

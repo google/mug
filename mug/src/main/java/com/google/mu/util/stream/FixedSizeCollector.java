@@ -12,7 +12,7 @@ import java.util.stream.Collector;
  * @since 5.5
  */
 public abstract class FixedSizeCollector<T, A, R> implements Collector<T, A, R> {
-  boolean appliesTo(List<T> list) {
+  final boolean appliesTo(List<? extends T> list) {
     return list.size() == arity();
   }
 
