@@ -148,7 +148,7 @@ public final class StringFormat {
   }
 
   /**
-   * Similar to {@link #parse(String, BiFunction}, but parses {@code input} and applies {@code
+   * Similar to {@link #parse(String, BiFunction)}, but parses {@code input} and applies {@code
    * mapper} with the <em>3</em> placeholder values in this string format.
    *
    * <p>For example: <pre>{@code
@@ -168,7 +168,7 @@ public final class StringFormat {
   }
 
   /**
-   * Similar to {@link #parse(String, BiFunction}, but parses {@code input} and applies {@code
+   * Similar to {@link #parse(String, BiFunction)}, but parses {@code input} and applies {@code
    * mapper} with the <em>4</em> placeholder values in this string format.
    *
    * @return the return value of the {@code mapper} function if not null. Returns empty if
@@ -183,7 +183,7 @@ public final class StringFormat {
   }
 
   /**
-   * Similar to {@link #parse(String, BiFunction}, but parses {@code input} and applies {@code
+   * Similar to {@link #parse(String, BiFunction)}, but parses {@code input} and applies {@code
    * mapper} with the <em>5</em> placeholder values in this string format.
    *
    * @return the return value of the {@code mapper} function if not null. Returns empty if
@@ -198,7 +198,7 @@ public final class StringFormat {
   }
 
   /**
-   * Similar to {@link #parse(String, BiFunction}, but parses {@code input} and applies {@code
+   * Similar to {@link #parse(String, BiFunction)}, but parses {@code input} and applies {@code
    * mapper} with the <em>6</em> placeholder values in this string format.
    *
    * @return the return value of the {@code mapper} function if not null. Returns empty if
