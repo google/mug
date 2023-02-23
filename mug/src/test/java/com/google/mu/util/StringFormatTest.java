@@ -21,6 +21,12 @@ public class StringFormatTest {
   }
 
   @Test
+  public void parse_emptyCurlyBrace_doesNotCountAsPlaceholder() {
+    StringFormat template = new StringFormat("curly brace: {}");
+    assertThat(template.parse("curly brace: {}").get()).isEmpty();
+  }
+
+  @Test
   public void parse_onlyPlaceholder() {
     StringFormat template = new StringFormat("{v}");
     assertThat(template.parse("Hello Tom!", v -> v)).hasValue("Hello Tom!");
@@ -176,13 +182,34 @@ public class StringFormatTest {
   }
 
   @Test
-  public void parse_withSixArgsLambd_lambdaReturnsNull() {
+  public void parse_withSixArgsLambda_lambdaReturnsNull() {
     assertThat(
             new StringFormat("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}, 5 is {e}, 6 is {f}")
                 .parse(
                     "1 is one, 2 is two, 3 is three, 4 is four, 5 is five, 6 is six",
                     (a, b, c, d, e, f) -> null))
         .isEmpty();
+  }
+
+  @Test
+  public void parse_placeholderInsideCurlyBraces() {
+    StringFormat format = new StringFormat("{key={key}, value={value}}");
+    assertThat(format.parse("{key=one, value=1}", (key, value) -> key + ":" + value))
+        .hasValue("one:1");
+  }
+
+  @Test
+  public void parse_multipleCurlyBracedPlaceholderGroups() {
+    StringFormat format = new StringFormat("{key={key}}{value={value}}");
+    assertThat(format.parse("{key=one}{value=1}", (key, value) -> key + ":" + value))
+        .hasValue("one:1");
+  }
+
+  @Test
+  public void parse_placeholderInsideMultipleCurlyBraces() {
+    StringFormat format = new StringFormat("{test: {{key={key}, value={value}}}}");
+    assertThat(format.parse("{test: {{key=one, value=1}}}", (key, value) -> key + ":" + value))
+        .hasValue("one:1");
   }
 
   @Test
