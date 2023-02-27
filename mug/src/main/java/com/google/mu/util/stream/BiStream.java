@@ -15,9 +15,9 @@
 package com.google.mu.util.stream;
 
 import static com.google.mu.function.BiComparator.comparingInOrder;
-import static com.google.mu.function.BiComparator.comparingKey;
-import static com.google.mu.function.BiComparator.comparingValue;
 import static com.google.mu.util.stream.MoreStreams.collectingAndThen;
+import static java.util.Map.Entry.comparingByKey;
+import static java.util.Map.Entry.comparingByValue;
 import static java.util.Objects.requireNonNull;
 import static java.util.Spliterator.ORDERED;
 import static java.util.function.Function.identity;
@@ -1587,7 +1587,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * applying {@code comparator} on the keys of each pair.
    */
   public final BiStream<K, V> sortedByKeys(Comparator<? super K> comparator) {
-    return sorted(comparingKey(comparator));
+    return sorted(comparingByKey(comparator));
   }
 
   /**
@@ -1595,7 +1595,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * applying {@code comparator} on the values of each pair.
    */
   public final BiStream<K, V> sortedByValues(Comparator<? super V> comparator) {
-    return sorted(comparingValue(comparator));
+    return sorted(comparingByValue(comparator));
   }
 
   /**
@@ -1629,9 +1629,9 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * Returns a {@code BiStream} consisting of the pairs in this stream, in the order produced by
    * applying the {@code entryComparator} comparator between key-value pairs.
    */
-  private BiStream<K, V> sorted(
-      Comparator<? super Map.Entry<? extends K, ? extends V>> entryComparator) {
-    return fromEntries(mapToEntry().sorted(entryComparator));
+  @SuppressWarnings("unchecked") // Immutable Map.Entry<> is covariant.
+  private BiStream<K, V> sorted(Comparator<? super Map.Entry< K, V>> entryComparator) {
+    return fromEntries(((Stream<Map.Entry<K, V>>) mapToEntry()).sorted(entryComparator));
   }
 
   /**

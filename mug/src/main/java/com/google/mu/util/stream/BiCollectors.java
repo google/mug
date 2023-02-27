@@ -14,7 +14,8 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
-import static java.util.Comparator.comparing;
+import static java.util.Map.Entry.comparingByKey;
+import static java.util.Map.Entry.comparingByValue;
 import static java.util.Objects.requireNonNull;
 
 import java.util.AbstractMap;
@@ -672,7 +673,7 @@ public final class BiCollectors {
    */
   public static <K, V> BiCollector<K, V, BiOptional<K, V>> maxByKey(
       Comparator<? super K> comparator) {
-    return maxBy(comparing(Map.Entry::getKey, requireNonNull(comparator)));
+    return maxBy(comparingByKey(comparator));
   }
 
   /**
@@ -698,7 +699,7 @@ public final class BiCollectors {
    */
   public static <K, V> BiCollector<K, V, BiOptional<K, V>> maxByValue(
       Comparator<? super V> comparator) {
-    return maxBy(comparing(Map.Entry::getValue, requireNonNull(comparator)));
+    return maxBy(comparingByValue(comparator));
   }
 
   /**
