@@ -17,6 +17,7 @@ package com.google.mu.util.stream;
 import static com.google.mu.function.BiComparator.comparingKey;
 import static com.google.mu.function.BiComparator.comparingValue;
 import static com.google.mu.util.stream.BiStreamTest.assertKeyValues;
+import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
 
 import java.util.Comparator;
@@ -80,7 +81,7 @@ public class BiStreamCompoundTest {
     assertKeyValues(
             BiStream.of("b", 10, "a", 11, "a", 22)
                 .mapKeys(Function.identity())
-                .sorted(comparingKey(Object::toString).then(comparingValue(naturalOrder()))))
+                .sorted(comparing(Object::toString), naturalOrder()))
         .containsExactlyEntriesIn(ImmutableMultimap.of("a", 11, "a", 22, "b", 10))
         .inOrder();
   }

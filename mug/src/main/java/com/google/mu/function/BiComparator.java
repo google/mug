@@ -33,7 +33,9 @@ import java.util.function.ToLongBiFunction;
  * You may equivalently read them as 'left' and 'right', or 'night' and 'day'.
  *
  * @since 4.7
+ * @deprecated
  */
+@Deprecated
 @FunctionalInterface
 public interface BiComparator<K, V> {
   /**

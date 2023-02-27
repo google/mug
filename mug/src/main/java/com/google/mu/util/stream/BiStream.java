@@ -1599,27 +1599,11 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Returns a {@code BiStream} consisting of the pairs in this stream, in the order produced by
-   * applying the {@code primary} comparator (and {@code secondaries} for tie breaking) between each
-   * pair.
-   *
-   * <p>The following example first sorts by household income and then by address:
-   *
-   * <pre>{@code
-   * import static com.google.mu.function.BiComparator.comparingKey;
-   * import static com.google.mu.function.BiComparator.comparingValue;
-   *
-   * Map<Address, Household> households = ...;
-   * List<Household> householdsByIncomeThenAddress =
-   *     BiStream.from(households)
-   *         .sorted(comparingValue(Household::income, comparingKey(naturalOrder())))
-   *         .values()
-   *         .collect(toList());
-   * }</pre>
-   *
    * @since 4.7
+   * @deprecated Use {@link #sorted(Comparator, Comparator)} instead
    */
   @SafeVarargs
+  @Deprecated
   public final BiStream<K, V> sorted(
       BiComparator<? super K, ? super V> primary,
       BiComparator<? super K, ? super V>... secondaries) {
@@ -1631,12 +1615,34 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
+   * Returns a {@code BiStream} consisting of the pairs in this stream, in the order produced by
+   * applying the {@code byKey} comparator on the keys of each pair, and then the {@code byValue}
+   * comparator on the values of pairs with equal keys.
+   */
+  public final BiStream<K, V> sorted(Comparator<? super K> byKey, Comparator<? super V> byValue) {
+    return sorted(
+        Comparator.<Map.Entry<? extends K, ? extends V>, K>comparing(Map.Entry::getKey, byKey)
+            .thenComparing(Map.Entry::getValue, byValue));
+  }
+
+  /**
+   * Returns a {@code BiStream} consisting of the pairs in this stream, in the order produced by
+   * applying the {@code entryComparator} comparator between key-value pairs.
+   */
+  private BiStream<K, V> sorted(
+      Comparator<? super Map.Entry<? extends K, ? extends V>> entryComparator) {
+    return fromEntries(mapToEntry().sorted(entryComparator));
+  }
+
+  /**
    * Returns the max pair according to the {@code primary} and {@code secondaries} (for tie-breaking
    * purpose) comparators.
    *
    * @since 6.5
+   * @deprecated Use {@link BiCollectors#maxByKey} or {@link BiCollectors#maxByValue}.
    */
   @SafeVarargs
+  @Deprecated
   public final BiOptional<K, V> max(
       BiComparator<? super K, ? super V> primary,
       BiComparator<? super K, ? super V>... secondaries) {
