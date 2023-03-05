@@ -1,0 +1,24 @@
+-encoding
+'UTF-8'
+-protected
+-sourcepath
+'/Users/yinglei/mug/mug/src/main/java'
+-author
+-bottom
+'Copyright &#169; 2023. All rights reserved.'
+-charset
+'UTF-8'
+-d
+'/Users/yinglei/mug/mug/target/site/apidocs'
+-docencoding
+'UTF-8'
+-doctitle
+'core 6.6-SNAPSHOT API'
+-linkoffline
+'https://docs.oracle.com/javase/8/docs/api' '/Users/yinglei/mug/mug/target/javadoc-bundle-options'
+-stylesheetfile
+'/Users/yinglei/mug/javadoc-stylesheet.css'
+-use
+-version
+-windowtitle
+'core 6.6-SNAPSHOT API'
