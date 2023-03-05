@@ -14,15 +14,19 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
+import static java.util.Map.Entry.comparingByKey;
+import static java.util.Map.Entry.comparingByValue;
 import static java.util.Objects.requireNonNull;
 
 import java.util.AbstractMap;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.DoubleSummaryStatistics;
 import java.util.IntSummaryStatistics;
 import java.util.LinkedHashMap;
 import java.util.LongSummaryStatistics;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
@@ -632,12 +636,10 @@ public final class BiCollectors {
   }
 
   /**
-   * Returns a {@link BiCollector} that finds the maximum pair according to {@code comparator}.
-   *
-   * <p>Null keys and values are not supported.
-   *
    * @since 6.0
+   * @deprecated Use {@link #maxByKey} or {@link #maxByValue}.
    */
+  @Deprecated
   public static <K, V> BiCollector<K, V, BiOptional<K, V>> maxBy(
       BiComparator<? super K, ? super V> comparator) {
     requireNonNull(comparator);
@@ -653,15 +655,121 @@ public final class BiCollectors {
   }
 
   /**
-   * Returns a {@link BiCollector} that finds the minimum pair according to {@code comparator}.
-   *
-   * <p>Null keys and values are not supported.
-   *
    * @since 6.0
+   * @deprecated Use {@link #minBykey} or {@link #minByValue}.
    */
+  @Deprecated
   public static <K, V> BiCollector<K, V, BiOptional<K, V>> minBy(
       BiComparator<? super K, ? super V> comparator) {
     return maxBy(comparator.reversed());
+  }
+
+  /**
+   * Returns a {@link BiCollector} that finds the pair with the maximum key according to {@code
+   * comparator}.
+   *
+   * <p>Null keys and values are not supported.
+   *
+   * @since 6.6
+   */
+  public static <K, V> BiCollector<K, V, BiOptional<K, V>> maxByKey(
+      Comparator<? super K> comparator) {
+    return maxBy(comparingByKey(comparator));
+  }
+
+  /**
+   * Returns a {@link BiCollector} that finds the pair with the minimum key according to {@code
+   * comparator}.
+   *
+   * <p>Null keys and values are not supported.
+   *
+   * @since 6.6
+   */
+  public static <K, V> BiCollector<K, V, BiOptional<K, V>> minByKey(
+      Comparator<? super K> comparator) {
+    return maxByKey(comparator.reversed());
+  }
+
+  /**
+   * Returns a {@link BiCollector} that finds the pair with the maximum value according to {@code
+   * comparator}.
+   *
+   * <p>Null keys and values are not supported.
+   *
+   * @since 6.6
+   */
+  public static <K, V> BiCollector<K, V, BiOptional<K, V>> maxByValue(
+      Comparator<? super V> comparator) {
+    return maxBy(comparingByValue(comparator));
+  }
+
+  /**
+   * Returns a {@link BiCollector} that finds the pair with the minimum value according to {@code
+   * comparator}.
+   *
+   * <p>Null keys and values are not supported.
+   *
+   * @since 6.6
+   */
+  public static <K, V> BiCollector<K, V, BiOptional<K, V>> minByValue(
+      Comparator<? super V> comparator) {
+    return maxByValue(comparator.reversed());
+  }
+
+  /**
+   * Returns a {@link BiCollector} that finds the minimum pair according to {@code keyComparator}
+   * and then {@code valueComparator} for equal keys.
+   *
+   * <p>Null keys and values are not supported.
+   *
+   * @since 6.6
+   */
+  public static <K, V> BiCollector<K, V, BiOptional<K, V>> minBy(
+      Comparator<? super K> keyComparator, Comparator<? super V> valueComparator) {
+    return minBy(
+        Map.Entry.<K, V>comparingByKey(keyComparator)
+            .thenComparing(comparingByValue(valueComparator)));
+  }
+
+  private static <K, V> BiCollector<K, V, BiOptional<K, V>> minBy(
+      Comparator<? super Map.Entry<K, V>> comparator) {
+    return maxBy(comparator.reversed());
+  }
+
+  /**
+   * Returns a {@link BiCollector} that finds the maximum pair according to {@code keyComparator}
+   * and then {@code valueComparator} for equal keys.
+   *
+   * <p>Null keys and values are not supported.
+   *
+   * @since 6.6
+   */
+  public static <K, V> BiCollector<K, V, BiOptional<K, V>> maxBy(
+      Comparator<? super K> keyComparator, Comparator<? super V> valueComparator) {
+    return maxBy(
+        Map.Entry.<K, V>comparingByKey(keyComparator)
+            .thenComparing(comparingByValue(valueComparator)));
+  }
+
+  private static <K,V> BiCollector<K, V, BiOptional<K, V>> maxBy(
+      Comparator<? super Map.Entry<K, V>> comparator) {
+    requireNonNull(comparator);
+    return new BiCollector<K, V, BiOptional<K, V>>() {
+      @Override
+      public <E> Collector<E, ?, BiOptional<K, V>> collectorOf(
+          Function<E, K> toKey, Function<E, V> toValue) {
+        return Collectors.collectingAndThen(
+            Collectors.mapping(
+                (E e) -> BiStream.kv(toKey.apply(e), toValue.apply(e)),
+                Collectors.maxBy(comparator)),
+            BiCollectors::asBiOptional);
+      }
+    };
+  }
+
+  private static <K, V> BiOptional<K, V> asBiOptional(
+      Optional<? extends Map.Entry<? extends K, ? extends V>> optional) {
+    return BiOptional.from(optional).map(Map.Entry::getKey, Map.Entry::getValue);
   }
 
   private BiCollectors() {}

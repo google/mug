@@ -17,15 +17,18 @@ package com.google.mu.util.stream;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static com.google.mu.function.BiComparator.comparingKey;
-import static com.google.mu.function.BiComparator.comparingValue;
 import static com.google.mu.util.Substring.first;
+import static com.google.mu.util.stream.BiCollectors.maxBy;
+import static com.google.mu.util.stream.BiCollectors.maxByKey;
+import static com.google.mu.util.stream.BiCollectors.maxByValue;
+import static com.google.mu.util.stream.BiCollectors.minBy;
+import static com.google.mu.util.stream.BiCollectors.minByKey;
+import static com.google.mu.util.stream.BiCollectors.minByValue;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.BiStream.toBiStream;
 import static java.util.Arrays.asList;
 import static java.util.Comparator.naturalOrder;
-import static java.util.Comparator.reverseOrder;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -565,67 +568,114 @@ public class BiStreamInvariantsTest {
 
   @Test public void sortedByKeys() {
     assertKeyValues(of("a", 1, "c", 2, "b", 3).sortedByKeys(naturalOrder()))
-        .containsExactlyEntriesIn(ImmutableMultimap.of("a", 1, "b", 3, "c", 2))
-        .inOrder();
-    assertKeyValues(of("a", 1, "c", 2, "b", 3).sorted(comparingKey(naturalOrder())))
-        .containsExactlyEntriesIn(ImmutableMultimap.of("a", 1, "b", 3, "c", 2))
-        .inOrder();
+        .containsExactlyEntriesIn(ImmutableMultimap.of("a", 1, "b", 3, "c", 2));
   }
 
   @Test public void sortedByValues() {
     assertKeyValues(of("a", 3, "b", 1, "c", 2).sortedByValues(naturalOrder()))
         .containsExactlyEntriesIn(ImmutableMultimap.of("b", 1, "c", 2, "a", 3))
         .inOrder();
-    assertKeyValues(of("a", 3, "b", 1, "c", 2).sorted(comparingValue(naturalOrder())))
-        .containsExactlyEntriesIn(ImmutableMultimap.of("b", 1, "c", 2, "a", 3))
-        .inOrder();
   }
 
-  @Test public void sortedByValuesThenKeys() {
-    assertKeyValues(of("a", 1, "c", 2, "b", 2).sorted(comparingValue(reverseOrder()), comparingKey(naturalOrder())))
-        .containsExactlyEntriesIn(ImmutableMultimap.of("b", 2, "c", 2, "a", 1))
-        .inOrder();
-  }
-
-  @Test public void testMax_found() {
-    assertThat(of(1, "y", 2, "x").max(comparingKey(naturalOrder())))
+  @Test public void testMaxByKey_found() {
+    assertThat(of(1, "y", 2, "x").collect(maxByKey(naturalOrder())))
         .isEqualTo(BiOptional.of(2, "x"));
   }
 
- @Test public void testMax_multipleMax_firstWins() {
-    assertThat(of(1, "y", 2, "x", 2, "a").max(comparingKey(naturalOrder())))
+ @Test public void testMaxByKey_multipleMax_firstWins() {
+    assertThat(of(1, "y", 2, "x", 2, "a").collect(maxByKey(naturalOrder())))
         .isEqualTo(BiOptional.of(2, "x"));
   }
 
- @Test public void testMax_byValueThenByKey() {
-    assertThat(of(1, "y", 2, "y", 2, "a").max(comparingValue(naturalOrder()), comparingKey(naturalOrder())))
-        .isEqualTo(BiOptional.of(2, "y"));
-  }
-
- @Test public void testMax_notFound() {
-    assertThat(this.<String, Integer>of().max(comparingKey(naturalOrder())))
+ @Test public void testMaxByKey_notFound() {
+    assertThat(this.<String, Integer>of().collect(maxByKey(naturalOrder())))
         .isEqualTo(BiOptional.empty());
   }
 
- @Test public void testMin_found() {
-    assertThat(of(1, "y", 2, "x").min(comparingKey(naturalOrder())))
+ @Test public void testMinByKey_found() {
+    assertThat(of(1, "y", 2, "x").collect(minByKey(naturalOrder())))
         .isEqualTo(BiOptional.of(1, "y"));
   }
 
- @Test public void testMin_multipleMin_firstWins() {
-    assertThat(of(1, "y", 2, "x", 1, "a").min(comparingKey(naturalOrder())))
+ @Test public void testMinByKey_multipleMin_firstWins() {
+    assertThat(of(1, "y", 2, "x", 1, "a").collect(minByKey(naturalOrder())))
         .isEqualTo(BiOptional.of(1, "y"));
   }
 
- @Test public void testMin_byValueThenByKey() {
-    assertThat(of(1, "a", 2, "x", 3, "a").min(comparingValue(naturalOrder()), comparingKey(naturalOrder())))
-        .isEqualTo(BiOptional.of(1, "a"));
-  }
-
- @Test public void testMin_notFound() {
-    assertThat(this.<String, Integer>of().min(comparingKey(naturalOrder())))
+ @Test public void testMinByKey_notFound() {
+    assertThat(this.<String, Integer>of().collect(minByKey(naturalOrder())))
         .isEqualTo(BiOptional.empty());
   }
+
+ @Test public void testMaxByValue_found() {
+   assertThat(of(1, "y", 2, "x").collect(maxByValue(naturalOrder())))
+       .isEqualTo(BiOptional.of(1, "y"));
+ }
+
+@Test public void testMaxByValue_multipleMax_firstWins() {
+   assertThat(of(1, "x", 2, "y", 3, "y").collect(maxByValue(naturalOrder())))
+       .isEqualTo(BiOptional.of(2, "y"));
+ }
+
+@Test public void testMaxByValue_notFound() {
+   assertThat(this.<String, Integer>of().collect(maxByValue(naturalOrder())))
+       .isEqualTo(BiOptional.empty());
+ }
+
+@Test public void testMinByValue_found() {
+   assertThat(of(1, "y", 2, "x").collect(minByValue(naturalOrder())))
+       .isEqualTo(BiOptional.of(2, "x"));
+ }
+
+@Test public void testMinByValue_multipleMin_firstWins() {
+   assertThat(of(1, "y", 3, "x", 2, "x").collect(minByValue(naturalOrder())))
+       .isEqualTo(BiOptional.of(3, "x"));
+ }
+
+@Test public void testMinByValue_notFound() {
+   assertThat(this.<String, Integer>of().collect(minByValue(naturalOrder())))
+       .isEqualTo(BiOptional.empty());
+ }
+
+@Test
+public void testMinBy_found() {
+  assertThat(of(1, "y", 2, "x").collect(minBy(naturalOrder(), naturalOrder())))
+      .isEqualTo(BiOptional.of(1, "y"));
+  assertThat(of(1, "y", 1, "x").collect(minBy(naturalOrder(), naturalOrder())))
+      .isEqualTo(BiOptional.of(1, "x"));
+}
+
+@Test
+public void testMinBy_breakTieByValue() {
+  assertThat(of(1, "y", 2, "x", 1, "a").collect(minBy(naturalOrder(), naturalOrder())))
+      .isEqualTo(BiOptional.of(1, "a"));
+}
+
+@Test
+public void testMinBy_notFound() {
+  assertThat(this.<String, Integer>of().collect(minBy(naturalOrder(), naturalOrder())))
+      .isEqualTo(BiOptional.empty());
+}
+
+@Test
+public void testMaxBy_found() {
+  assertThat(of(1, "y", 2, "x").collect(maxBy(naturalOrder(), naturalOrder())))
+      .isEqualTo(BiOptional.of(2, "x"));
+  assertThat(of(1, "y", 1, "x").collect(maxBy(naturalOrder(), naturalOrder())))
+      .isEqualTo(BiOptional.of(1, "y"));
+}
+
+@Test
+public void testMaxBy_breakTieByValue() {
+  assertThat(of(3, "x", 2, "y", 3, "y").collect(maxBy(naturalOrder(), naturalOrder())))
+      .isEqualTo(BiOptional.of(3, "y"));
+}
+
+@Test
+public void testMaxBy_notFound() {
+  assertThat(this.<String, Integer>of().collect(maxBy(naturalOrder(), naturalOrder())))
+      .isEqualTo(BiOptional.empty());
+}
 
   @Test public void distinct() {
     assertKeyValues(of("a", 1, "b", 2, "a", 1).distinct())
