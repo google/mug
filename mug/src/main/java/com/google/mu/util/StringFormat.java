@@ -4,7 +4,6 @@ import static com.google.mu.util.InternalCollectors.toImmutableList;
 import static com.google.mu.util.Optionals.optional;
 import static com.google.mu.util.Substring.before;
 import static com.google.mu.util.Substring.first;
-import static com.google.mu.util.Substring.spanningInOrder;
 import static com.google.mu.util.Substring.suffix;
 import static com.google.mu.util.stream.MoreCollectors.combining;
 import static com.google.mu.util.stream.MoreCollectors.onlyElement;
@@ -75,32 +74,32 @@ public final class StringFormat {
    * new StringFormat("Dear {customer}, your confirmation number is {conf#}");
    * }</pre>
    *
-   * <p>For alternative placeholders, such as "%s", use {@link
-   * #StringFormat(String, Substring.RepeatingPattern)} instead.
+   * <p>Nesting "{placeholder}" syntax inside literal curly braces is supported. For example, you
+   * could use a format like: {@code "{name: {name}, age: {age}}"}, and it will be able to parse
+   * record-like strings such as "{name: Joe, age: 25}".
    *
    * @param format the template format with placeholders
    * @throws IllegalArgumentException if {@code format} is invalid
    *     (e.g. a placeholder immediately followed by another placeholder)
    */
   public StringFormat(String format) {
-    this(format, spanningInOrder("{", "}").repeatedly());
-  }
-
-  /**
-   * Constructs a StringFormt using {@code placeholderVariablesPattern} to detect placeholders
-   * in the {@code format} string. For example, the following code uses "%s" as the placeholder:
-   *
-   * <pre>{@code
-   * new StringFormat("Hi %s, my name is %s", first("%s").repeatedly());
-   * }</pre>
-   *
-   * @throws IllegalArgumentException if {@code format} is invalid
-   *     (e.g. a placeholder immediately followed by another placeholder)
-   */
-  public StringFormat(String format, Substring.RepeatingPattern placeholderVariablesPattern) {
     this.format = format;
     this.literals =
-        placeholderVariablesPattern.split(format).map(Substring.Match::toString).collect(toImmutableList());
+        Substring.consecutive(c -> c != '{' && c != '}') // Find the inner-most pairs of curly braces.
+            .immediatelyBetween("{", "}")
+            .repeatedly()
+            .split(format)
+            .map(
+                literal ->
+                    // Format "{key:{k}, value:{v}}" will split into ["{key:{", "}, value:{", "}}"].
+                    // Remove the leading "}" for all except the first split results, then remove
+                    // the trailing '{' for all except the last split results. The result is the
+                    // exact literals around {k} and {v}: ["{key:", ", value:", "}"].
+                    literal.skip(
+                        literal.index() == 0 ? 0 : 1,
+                        literal.index() + literal.length() == format.length() ? 0 : 1))
+            .map(Substring.Match::toString)
+            .collect(toImmutableList());
     for (int i = 1; i < numPlaceholders(); i++) {
       if (literals.get(i).isEmpty()) {
         throw new IllegalArgumentException("Placeholders cannot be next to each other: " + format);
