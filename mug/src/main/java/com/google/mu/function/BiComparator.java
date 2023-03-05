@@ -25,15 +25,16 @@ import java.util.function.ToIntBiFunction;
 import java.util.function.ToLongBiFunction;
 
 /**
- * Similar to {@link java.util.Comparator}, but compares between two pairs of objects.
- *
- * <p>Note: For ease of reference, this interface uses 'key' and 'value' to refer to the two
- * parts of a pair respectively. However, both 'key' and 'value' can be of any type, or null.
- * There is no implication that the 'key' or 'value' must implement {@link Object#equals}.
- * You may equivalently read them as 'left' and 'right', or 'night' and 'day'.
- *
- * @since 4.7
- * @deprecated
+ * @deprecated Use one of:
+ *     {@link com.google.mu.util.stream.BiStream#sorted},
+ *     {@link com.google.mu.util.stream.BiStream#sortedByKeys},
+ *     {@link com.google.mu.util.stream.BiStream#sortedByValues},
+ *     {@link com.google.mu.util.stream.BiCollectors#minBy},
+ *     {@link com.google.mu.util.stream.BiCollectors#minByKey},
+ *     {@link com.google.mu.util.stream.BiCollectors#minByValue},
+ *     {@link com.google.mu.util.stream.BiCollectors#maxBy},
+ *     {@link com.google.mu.util.stream.BiCollectors#maxByKey},
+ *     {@link com.google.mu.util.stream.BiCollectors#maxByValue}.
  */
 @Deprecated
 @FunctionalInterface
