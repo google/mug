@@ -18,8 +18,10 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.Substring.first;
+import static com.google.mu.util.stream.BiCollectors.maxBy;
 import static com.google.mu.util.stream.BiCollectors.maxByKey;
 import static com.google.mu.util.stream.BiCollectors.maxByValue;
+import static com.google.mu.util.stream.BiCollectors.minBy;
 import static com.google.mu.util.stream.BiCollectors.minByKey;
 import static com.google.mu.util.stream.BiCollectors.minByValue;
 import static com.google.mu.util.stream.BiCollectors.toMap;
@@ -634,6 +636,46 @@ public class BiStreamInvariantsTest {
    assertThat(this.<String, Integer>of().collect(minByValue(naturalOrder())))
        .isEqualTo(BiOptional.empty());
  }
+
+@Test
+public void testMinBy_found() {
+  assertThat(of(1, "y", 2, "x").collect(minBy(naturalOrder(), naturalOrder())))
+      .isEqualTo(BiOptional.of(1, "y"));
+  assertThat(of(1, "y", 1, "x").collect(minBy(naturalOrder(), naturalOrder())))
+      .isEqualTo(BiOptional.of(1, "x"));
+}
+
+@Test
+public void testMinBy_breakTieByValue() {
+  assertThat(of(1, "y", 2, "x", 1, "a").collect(minBy(naturalOrder(), naturalOrder())))
+      .isEqualTo(BiOptional.of(1, "a"));
+}
+
+@Test
+public void testMinBy_notFound() {
+  assertThat(this.<String, Integer>of().collect(minBy(naturalOrder(), naturalOrder())))
+      .isEqualTo(BiOptional.empty());
+}
+
+@Test
+public void testMaxBy_found() {
+  assertThat(of(1, "y", 2, "x").collect(maxBy(naturalOrder(), naturalOrder())))
+      .isEqualTo(BiOptional.of(2, "x"));
+  assertThat(of(1, "y", 1, "x").collect(maxBy(naturalOrder(), naturalOrder())))
+      .isEqualTo(BiOptional.of(1, "y"));
+}
+
+@Test
+public void testMaxBy_breakTieByValue() {
+  assertThat(of(3, "x", 2, "y", 3, "y").collect(maxBy(naturalOrder(), naturalOrder())))
+      .isEqualTo(BiOptional.of(3, "y"));
+}
+
+@Test
+public void testMaxBy_notFound() {
+  assertThat(this.<String, Integer>of().collect(maxBy(naturalOrder(), naturalOrder())))
+      .isEqualTo(BiOptional.empty());
+}
 
   @Test public void distinct() {
     assertKeyValues(of("a", 1, "b", 2, "a", 1).distinct())

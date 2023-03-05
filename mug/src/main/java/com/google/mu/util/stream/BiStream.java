@@ -1618,6 +1618,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * Returns a {@code BiStream} consisting of the pairs in this stream, in the order produced by
    * applying the {@code byKey} comparator on the keys of each pair, and then the {@code byValue}
    * comparator on the values of pairs with equal keys.
+   *
+   * <p>To sort by value then by key, consider using {@link #inverse} first.
    */
   public final BiStream<K, V> sorted(Comparator<? super K> byKey, Comparator<? super V> byValue) {
     return sorted(
@@ -1639,7 +1641,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * purpose) comparators.
    *
    * @since 6.5
-   * @deprecated Use {@link BiCollectors#maxByKey} or {@link BiCollectors#maxByValue}.
+   * @deprecated Use {@link BiCollectors#maxBy} instead.
    */
   @SafeVarargs
   @Deprecated
@@ -1658,7 +1660,9 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * purpose) comparators.
    *
    * @since 6.5
+   * @deprecated Use {@link BiCollectors#minBy} instead
    */
+  @Deprecated
   @SafeVarargs
   public final BiOptional<K, V> min(
       BiComparator<? super K, ? super V> primary,

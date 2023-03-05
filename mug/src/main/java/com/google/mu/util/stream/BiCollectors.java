@@ -26,6 +26,7 @@ import java.util.IntSummaryStatistics;
 import java.util.LinkedHashMap;
 import java.util.LongSummaryStatistics;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
@@ -715,6 +716,41 @@ public final class BiCollectors {
     return maxByValue(comparator.reversed());
   }
 
+  /**
+   * Returns a {@link BiCollector} that finds the minimum pair according to {@code keyComparator}
+   * and then {@code valueComparator} for equal keys.
+   *
+   * <p>Null keys and values are not supported.
+   *
+   * @since 6.6
+   */
+  public static <K, V> BiCollector<K, V, BiOptional<K, V>> minBy(
+      Comparator<? super K> keyComparator, Comparator<? super V> valueComparator) {
+    return minBy(
+        Map.Entry.<K, V>comparingByKey(keyComparator)
+            .thenComparing(comparingByValue(valueComparator)));
+  }
+
+  private static <K, V> BiCollector<K, V, BiOptional<K, V>> minBy(
+      Comparator<? super Map.Entry<K, V>> comparator) {
+    return maxBy(comparator.reversed());
+  }
+
+  /**
+   * Returns a {@link BiCollector} that finds the maximum pair according to {@code keyComparator}
+   * and then {@code valueComparator} for equal keys.
+   *
+   * <p>Null keys and values are not supported.
+   *
+   * @since 6.6
+   */
+  public static <K, V> BiCollector<K, V, BiOptional<K, V>> maxBy(
+      Comparator<? super K> keyComparator, Comparator<? super V> valueComparator) {
+    return maxBy(
+        Map.Entry.<K, V>comparingByKey(keyComparator)
+            .thenComparing(comparingByValue(valueComparator)));
+  }
+
   private static <K,V> BiCollector<K, V, BiOptional<K, V>> maxBy(
       Comparator<? super Map.Entry<K, V>> comparator) {
     requireNonNull(comparator);
@@ -726,9 +762,14 @@ public final class BiCollectors {
             Collectors.mapping(
                 (E e) -> BiStream.kv(toKey.apply(e), toValue.apply(e)),
                 Collectors.maxBy(comparator)),
-            optional -> BiOptional.from(optional).map(Map.Entry::getKey, Map.Entry::getValue));
+            BiCollectors::asBiOptional);
       }
     };
+  }
+
+  private static <K, V> BiOptional<K, V> asBiOptional(
+      Optional<? extends Map.Entry<? extends K, ? extends V>> optional) {
+    return BiOptional.from(optional).map(Map.Entry::getKey, Map.Entry::getValue);
   }
 
   private BiCollectors() {}
