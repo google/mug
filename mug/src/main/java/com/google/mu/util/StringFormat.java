@@ -434,6 +434,24 @@ public final class StringFormat {
     return scanAndCollect(input, combining(mapper));
   }
 
+  /**
+   * Returns the string formatted with placeholders filled using {@code args}.
+   */
+  public String format(Object... args) {
+    if (args.length != numPlaceholders()) {
+      throw new IllegalArgumentException(
+          String.format(
+              "format string expects %s placeholders, %s provided",
+              numPlaceholders(),
+              args.length));
+    }
+    StringBuilder builder = new StringBuilder().append(literals.get(0));
+    for (int i = 0; i < args.length; i++) {
+      builder.append(args[i]).append(literals.get(i + 1));
+    }
+    return builder.toString();
+  }
+
   /** Returns the string format. */
   @Override public String toString() {
     return format;
