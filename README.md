@@ -21,7 +21,7 @@ Add the following to pom.xml:
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug</artifactId>
-    <version>6.5</version>
+    <version>6.6</version>
   </dependency>
 ```
 
@@ -30,7 +30,7 @@ Protobuf utils:
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-protobuf</artifactId>
-    <version>6.5</version>
+    <version>6.6</version>
   </dependency>
 ```
 
@@ -39,7 +39,7 @@ Guava add-ons:
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-guava</artifactId>
-    <version>6.5</version>
+    <version>6.6</version>
   </dependency>
 ```
 
@@ -47,9 +47,9 @@ Guava add-ons:
 
 Add to build.gradle:
 ```
-  implementation 'com.google.mug:mug:6.5'
-  implementation 'com.google.mug:mug-guava:6.5'
-  implementation 'com.google.mug:mug-protobuf:6.5'
+  implementation 'com.google.mug:mug:6.6'
+  implementation 'com.google.mug:mug-guava:6.6'
+  implementation 'com.google.mug:mug-protobuf:6.6'
 ```
 
 
