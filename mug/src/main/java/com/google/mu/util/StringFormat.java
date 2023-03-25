@@ -285,6 +285,9 @@ public final class StringFormat {
             if (inputIndex == input.length()) {
               done = true;
             }
+            if (format.isEmpty()) {
+              inputIndex++;
+            }
             return unmodifiableList(builder);
           }
         });

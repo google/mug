@@ -531,6 +531,17 @@ public class StringFormatTest {
   }
 
   @Test
+  public void scan_emptyTemplate_nonEmptyInput() {
+    assertThat(new StringFormat("").scan("."))
+        .containsExactly(ImmutableList.of(), ImmutableList.of());
+  }
+
+  @Test
+  public void scan_emptyTemplate_emptyInput() {
+    assertThat(new StringFormat("").scan("")).containsExactly(ImmutableList.of());
+  }
+
+  @Test
   public void format_placeholdersFilled() {
     assertThat(new StringFormat("{a} + {b} = {c}").format(1, 2, 3)).isEqualTo("1 + 2 = 3");
   }
