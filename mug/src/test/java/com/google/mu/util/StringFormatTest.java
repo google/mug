@@ -531,6 +531,32 @@ public class StringFormatTest {
   }
 
   @Test
+  public void format_placeholdersFilled() {
+    assertThat(new StringFormat("{a} + {b} = {c}").format(1, 2, 3)).isEqualTo("1 + 2 = 3");
+  }
+
+  @Test
+  public void format_nullValueAllowed() {
+    assertThat(new StringFormat("{key} == {value}").format("x", null)).isEqualTo("x == null");
+  }
+
+  @Test
+  public void format_noPlaceholder() {
+    assertThat(new StringFormat("hello").format()).isEqualTo("hello");
+  }
+
+  @Test
+  public void format_tooFewArgs() {
+    assertThrows(IllegalArgumentException.class, () -> new StringFormat("{foo}:{bar}").format(1));
+  }
+
+  @Test
+  public void format_tooManyArgs() {
+    assertThrows(
+        IllegalArgumentException.class, () -> new StringFormat("{foo}:{bar}").format(1, 2, 3));
+  }
+
+  @Test
   public void testToString() {
     assertThat(new StringFormat("projects/{project}/locations/{location}").toString())
         .isEqualTo("projects/{project}/locations/{location}");

@@ -1599,6 +1599,18 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
+   * Returns a {@code BiStream} consisting of the pairs in this stream, in the order produced by
+   * applying {@code comparator} on the result of applying the {@code sortKeyFunction}.
+   *
+   * @since 6.6
+   */
+  public final <T> BiStream<K, V> sortedBy(
+      BiFunction<? super K, ? super V, T> sortKeyFunction, Comparator<? super T> comparator) {
+    requireNonNull(sortKeyFunction);
+    return sorted(Comparator.comparing((Map.Entry<K, V> e) -> sortKeyFunction.apply(e.getKey(), e.getValue()), comparator));
+  }
+
+  /**
    * @since 4.7
    * @deprecated Use {@link #sorted(Comparator, Comparator)} instead
    */
