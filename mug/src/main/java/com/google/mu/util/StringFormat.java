@@ -436,6 +436,8 @@ public final class StringFormat {
 
   /**
    * Returns the string formatted with placeholders filled using {@code args}.
+   *
+   * @throws IllegalArgumentException if the number of arguments doesn't match that of the placeholders
    */
   public String format(Object... args) {
     if (args.length != numPlaceholders()) {
