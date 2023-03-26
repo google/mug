@@ -11,6 +11,7 @@ import static java.util.Collections.unmodifiableList;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
@@ -252,6 +253,10 @@ public final class StringFormat {
    */
   public Stream<List<Substring.Match>> scan(String input) {
     requireNonNull(input);
+    if (format.isEmpty()) {
+      return Stream.generate(() -> Collections.<Substring.Match>emptyList())
+          .limit(input.length() + 1);
+    }
     int numPlaceholders = numPlaceholders();
     return MoreStreams.whileNotNull(
         new Supplier<List<Substring.Match>>() {
@@ -284,9 +289,6 @@ public final class StringFormat {
             }
             if (inputIndex == input.length()) {
               done = true;
-            }
-            if (format.isEmpty()) {
-              inputIndex++;
             }
             return unmodifiableList(builder);
           }
