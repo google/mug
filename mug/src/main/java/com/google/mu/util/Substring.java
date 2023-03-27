@@ -215,9 +215,7 @@ public final class Substring {
 
   /** Returns a {@code Pattern} that matches the first occurrence of {@code str}. */
   public static Pattern first(String str) {
-    if (str.length() == 1) {
-      return first(str.charAt(0));
-    }
+    requireNonNull(str);
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
         int index = input.indexOf(str, fromIndex);
@@ -731,9 +729,7 @@ public final class Substring {
 
   /** Returns a {@code Pattern} that matches the last occurrence of {@code str}. */
   public static Pattern last(String str) {
-    if (str.length() == 1) {
-      return last(str.charAt(0));
-    }
+    requireNonNull(str);
     return new Last() {
       @Override Match match(String input, int fromIndex, int endIndex) {
         int index = str.isEmpty() ? endIndex : input.lastIndexOf(str, endIndex - 1);
