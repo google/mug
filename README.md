@@ -146,6 +146,8 @@ A: It's distracting to read code littered with opaque method names like `getFirs
 
 ## StringFormat
 
+Parses structured data from string:
+
 ```java
 new StringFormat("/Users/{user}/.{hidden_file_name}")
     .parse(filePath, (user, fileName) -> ...);
