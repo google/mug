@@ -144,6 +144,18 @@ A: When you already have a proper domain object, sure. But you might find it cum
 
 A: It's distracting to read code littered with opaque method names like `getFirst()` and `getSecond()`.
 
+## StringFormat
+
+```java
+new StringFormat("/Users/{user}/.{hidden_file_name}")
+    .parse(filePath, (user, fileName) -> ...);
+```
+
+```java
+new StringFormat("{hour}:{minute}:{second}.{millis}")
+    .parse(timeString, (hour, minute, second, millis) -> ...);
+```
+
 
 ## Substring
 
