@@ -155,7 +155,7 @@ new StringFormat("/users/{user}/.{hidden_file_name}")
 
 ```java
 new StringFormat("{hour}:{minute}:{second}.{millis}")
-    .parse(timeString, (hour, minute, second, millis) -> ...);
+    .parse(“10:26:30.748”, (hour, minute, second, millis) -> ...);
 ```
 
 
