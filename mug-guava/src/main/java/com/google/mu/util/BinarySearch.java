@@ -413,7 +413,8 @@ public final class BinarySearch {
   }
 
   /**
-   * An abstract, virtual lookup table of source data to be looked up using binary search.
+   * Like a hash table, allows looking up comparable values by a key, except the lookup is through
+   * binary search instead of hashing.
    *
    * @param <K> the search key, usually a target value, but can also be a target locator object
    *     like {@link IntSearchTarget}.
