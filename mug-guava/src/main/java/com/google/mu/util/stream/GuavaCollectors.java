@@ -16,6 +16,7 @@ package com.google.mu.util.stream;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.mu.util.stream.BiStream.groupingBy;
 import static com.google.mu.util.stream.MoreCollectors.mapping;
 import static java.util.Objects.requireNonNull;
@@ -37,6 +38,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultiset;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.ImmutableTable;
@@ -488,6 +490,32 @@ public final class GuavaCollectors {
   public static <T> Collector<T, ?, Both<ImmutableList<T>, ImmutableList<T>>> partitioningBy(
       Predicate<? super T> predicate) {
     return MoreCollectors.partitioningBy(predicate, toImmutableList());
+  }
+
+  /**
+   * Returns a collector that collects the results of applying the {@code mapper} function on
+   * the input elements into an {@link ImmutableList}.
+   *
+   * <p>Equivalent to but more convenient than {@code Collectors.mapping(mapper, toImmutableList())}.
+   *
+   * @since 6.7
+   */
+  public static <F, T> Collector<F, ?, ImmutableList<T>> toImmutableListOf(
+      Function<? super F, ? extends T> mapper) {
+    return Collectors.mapping(requireNonNull(mapper), toImmutableList());
+  }
+
+  /**
+   * Returns a collector that collects the results of applying the {@code mapper} function on
+   * the input elements into an {@link ImmutableSet}.
+   *
+   * <p>Equivalent to but more convenient than {@code Collectors.mapping(mapper, toImmutableSet())}.
+   *
+   * @since 6.7
+   */
+  public static <F, T> Collector<F, ?, ImmutableSet<T>> toImmutableSetOf(
+      Function<? super F, ? extends T> mapper) {
+    return Collectors.mapping(requireNonNull(mapper), toImmutableSet());
   }
 
   private static <K, V, T, R> BiCollector<K, V, R> mappingValues(
