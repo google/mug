@@ -126,10 +126,17 @@ public class OrdinalTest {
     assertThrows(IllegalArgumentException.class, () -> Ordinal.of(-1));
   }
 
-  @Test public void of() {
+  @Test public void testOf() {
     for (int i = 1; i < 1000; i++) {
       assertThat(Ordinal.of(i).toIndex()).isEqualTo(i - 1);
     }
+  }
+
+  @Test public void testOf_enum() {
+    assertThat(Ordinal.of(Fruit.APPLE)).isEqualTo(Ordinal.first());
+    assertThat(Ordinal.of(Fruit.ORANGE)).isEqualTo(Ordinal.second());
+    assertThat(Ordinal.of(Fruit.APPLE).next()).isEqualTo(Ordinal.of(Fruit.ORANGE));
+    assertThat(Ordinal.of(Fruit.ORANGE).previous()).isEqualTo(Ordinal.of(Fruit.APPLE));
   }
 
   @Test public void interning() {
@@ -158,7 +165,7 @@ public class OrdinalTest {
   }
 
   @Test public void testNext() {
-    assertThat(Ordinal.first().next()).isEqualTo(Ordinal.of(2));
+    assertThat(Ordinal.first().next()).isEqualTo(Ordinal.second());
     assertThat(Ordinal.first().previous().next()).isEqualTo(Ordinal.first());
   }
 
@@ -181,8 +188,8 @@ public class OrdinalTest {
   }
 
   @Test public void testMinus() {
-    assertThat(Ordinal.first().minus(Ordinal.of(2))).isEqualTo(-1);
-    assertThat(Ordinal.of(2).minus(Ordinal.of(1))).isEqualTo(1);
+    assertThat(Ordinal.first().minus(Ordinal.second())).isEqualTo(-1);
+    assertThat(Ordinal.second().minus(Ordinal.of(1))).isEqualTo(1);
     assertThat(Ordinal.MAX_VALUE.minus(Ordinal.first())).isEqualTo(Integer.MAX_VALUE - 1);
     assertThat(Ordinal.first().minus(Ordinal.MAX_VALUE)).isEqualTo(1 - Integer.MAX_VALUE);
   }
@@ -190,4 +197,6 @@ public class OrdinalTest {
   private static String name(int n) {
     return Ordinal.of(n).toString();
   }
+
+  private enum Fruit {APPLE, ORANGE}
 }

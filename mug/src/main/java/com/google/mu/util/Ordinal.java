@@ -55,6 +55,15 @@ public final class Ordinal implements Comparable<Ordinal> {
     return FIRST[0];
   }
 
+  /**
+   * Returns the second ordinal.
+   *
+   * @since 6.7
+   */
+  public static Ordinal second() {
+    return FIRST[1];
+  }
+
   /** Returns the infinite stream of natural ordinals starting from "1st". */
   public static Stream<Ordinal> natural() {
     return Stream.iterate(first(), Ordinal::next);
@@ -68,6 +77,18 @@ public final class Ordinal implements Comparable<Ordinal> {
    */
   public static Ordinal of(int oneBased) {
     return oneBased > 0 && oneBased <= FIRST.length ? FIRST[oneBased - 1] : new Ordinal(oneBased);
+  }
+
+  /**
+   * Returns instance corresponding to the ordinal of the Enum object {@code e}.
+   *
+   * <p>Note that given {@link Enum#ordinal} is 0-based, an enum with {@code ordinal() == 0}
+   * maps to {@link #first}, or {@code of(1)}.
+   *
+   * @since 6.7
+   */
+  public static Ordinal of(Enum<?> e) {
+    return fromIndex(e.ordinal());
   }
 
   /**
