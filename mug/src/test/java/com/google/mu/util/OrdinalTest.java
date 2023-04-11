@@ -152,6 +152,16 @@ public class OrdinalTest {
     }
   }
 
+  @Test public void fromIndex_overflow() {
+    assertThrows(IllegalArgumentException.class, () -> Ordinal.fromIndex(Integer.MAX_VALUE));
+  }
+
+  @Test public void fromIndex_negative() {
+    assertThrows(IllegalArgumentException.class, () -> Ordinal.fromIndex(-1));
+    assertThrows(IllegalArgumentException.class, () -> Ordinal.fromIndex(-2));
+    assertThrows(IllegalArgumentException.class, () -> Ordinal.fromIndex(Integer.MIN_VALUE));
+  }
+
   @Test public void toIndex() {
     List<Ordinal> ordinals = Ordinal.natural().limit(100).collect(toList());
     for (Ordinal ordinal : ordinals) {
