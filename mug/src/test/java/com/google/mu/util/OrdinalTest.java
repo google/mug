@@ -154,6 +154,37 @@ public class OrdinalTest {
 
   @Test public void maxValue() {
     assertThat(name(Integer.MAX_VALUE)).isEqualTo(Integer.MAX_VALUE + "th");
+    assertThat(Ordinal.first().previous().next()).isEqualTo(Ordinal.first());
+  }
+
+  @Test public void testNext() {
+    assertThat(Ordinal.first().next()).isEqualTo(Ordinal.of(2));
+    assertThat(Ordinal.first().previous().next()).isEqualTo(Ordinal.first());
+  }
+
+  @Test public void testNext_overflow() {
+    assertThat(Ordinal.MAX_VALUE.next()).isEqualTo(Ordinal.first());
+  }
+
+  @Test public void testPrevious() {
+    assertThat(Ordinal.first().next().previous()).isEqualTo(Ordinal.first());
+    assertThat(Ordinal.MAX_VALUE.next().previous()).isEqualTo(Ordinal.MAX_VALUE);
+  }
+
+  @Test public void testPrevious_underflow() {
+    assertThat(Ordinal.first().previous()).isEqualTo(Ordinal.MAX_VALUE);
+  }
+
+  @Test public void testMinus_sameValue() {
+    assertThat(Ordinal.first().minus(Ordinal.first())).isEqualTo(0);
+    assertThat(Ordinal.MAX_VALUE.minus(Ordinal.MAX_VALUE)).isEqualTo(0);
+  }
+
+  @Test public void testMinus() {
+    assertThat(Ordinal.first().minus(Ordinal.of(2))).isEqualTo(-1);
+    assertThat(Ordinal.of(2).minus(Ordinal.of(1))).isEqualTo(1);
+    assertThat(Ordinal.MAX_VALUE.minus(Ordinal.first())).isEqualTo(Integer.MAX_VALUE - 1);
+    assertThat(Ordinal.first().minus(Ordinal.MAX_VALUE)).isEqualTo(1 - Integer.MAX_VALUE);
   }
 
   private static String name(int n) {

@@ -500,7 +500,7 @@ public final class GuavaCollectors {
    *
    * @since 6.7
    */
-  public static <F, T> Collector<F, ?, ImmutableList<T>> toImmutableListOf(
+  public static <F, T> Collector<F, ?, ImmutableList<T>> toListOf(
       Function<? super F, ? extends T> mapper) {
     return Collectors.mapping(requireNonNull(mapper), toImmutableList());
   }
@@ -513,7 +513,7 @@ public final class GuavaCollectors {
    *
    * @since 6.7
    */
-  public static <F, T> Collector<F, ?, ImmutableSet<T>> toImmutableSetOf(
+  public static <F, T> Collector<F, ?, ImmutableSet<T>> toSetOf(
       Function<? super F, ? extends T> mapper) {
     return Collectors.mapping(requireNonNull(mapper), toImmutableSet());
   }
