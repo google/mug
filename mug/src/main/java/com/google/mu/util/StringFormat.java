@@ -66,7 +66,36 @@ import com.google.mu.util.stream.MoreStreams;
  */
 public final class StringFormat {
   private final String format;
-  private final List<String> literals; // The string literals between placeholders
+  private final List<String> delimiters; // The string literals between placeholders
+  private final CharPredicate requiredChars; // null for unconstrained matches
+
+  /**
+   * Returns a strict StringFormat according to the {@code format} string. All placeholder values
+   * must be <em>non-empty</em> and all placeholder value characters must match {@code
+   * requiredChars}.
+   *
+   * <p>For example:
+   *
+   * <pre>{@code
+   * StringFormat userFormat =
+   *     StringFormat.strict("user: {user_id}", CharMatcher.inRange('0', '9'));
+   * userFormat.parse("user: 123", id -> Integer.parseInt(id))  => Optional.of(123)
+   * userFormat.parse("user: xyz", ...) => empty()
+   * userFormat.parse("user: ", ...)    => empty()
+   * }</pre>
+   *
+   * <p>Note that {@code requiredChars} applies to all placeholders. If you need to apply
+   * constraints on an individual placeholder, consider filtering in the lambda by returning null if
+   * the placeholder value isn't valid.
+   *
+   * <p>Parameters passed to {@link #format} are not checked so it's possible that {@code format()}
+   * returns a string not parseable by the same {@code StringFormat} strict instance.
+   *
+   * @since 6.7
+   */
+  public static StringFormat strict(String format, CharPredicate requiredChars) {
+    return new StringFormat(format, requireNonNull(requiredChars));
+  }
 
   /**
    * Constructs a StringFormat with placeholders in the syntax of {@code "{foo}"}. For example:
@@ -84,8 +113,12 @@ public final class StringFormat {
    *     (e.g. a placeholder immediately followed by another placeholder)
    */
   public StringFormat(String format) {
+    this(format, null);
+  }
+
+  private StringFormat(String format, CharPredicate requiredChars) {
     this.format = format;
-    this.literals =
+    this.delimiters =
         Substring.consecutive(c -> c != '{' && c != '}') // Find the inner-most pairs of curly braces.
             .immediatelyBetween("{", "}")
             .repeatedly()
@@ -102,10 +135,11 @@ public final class StringFormat {
             .map(Substring.Match::toString)
             .collect(toImmutableList());
     for (int i = 1; i < numPlaceholders(); i++) {
-      if (literals.get(i).isEmpty()) {
+      if (delimiters.get(i).isEmpty()) {
         throw new IllegalArgumentException("Placeholders cannot be next to each other: " + format);
       }
     }
+    this.requiredChars = requiredChars;
   }
 
   /**
@@ -223,22 +257,22 @@ public final class StringFormat {
    * match, or to access the raw index in the input string.
    */
   public Optional<List<Substring.Match>> parse(String input) {
-    if (!input.startsWith(literals.get(0))) {  // first literal is the prefix
+    if (!input.startsWith(delimiters.get(0))) {  // first literal is the prefix
       return Optional.empty();
     }
     final int numPlaceholders = numPlaceholders();
     List<Substring.Match> builder = new ArrayList<>(numPlaceholders);
-    int inputIndex = literals.get(0).length();
+    int inputIndex = delimiters.get(0).length();
     for (int i = 1; i <= numPlaceholders; i++) {
       // subsequent literals are searched left-to-right; last literal is the suffix.
       Substring.Pattern trailingLiteral =
-          i < numPlaceholders ? first(literals.get(i)) : suffix(literals.get(i));
+          i < numPlaceholders ? first(delimiters.get(i)) : suffix(delimiters.get(i));
       Substring.Match placeholder = before(trailingLiteral).match(input, inputIndex);
-      if (placeholder == null) {
+      if (placeholder == null || !isValidPlaceholderValue(placeholder)) {
         return Optional.empty();
       }
       builder.add(placeholder);
-      inputIndex = placeholder.index() + placeholder.length() + literals.get(i).length();
+      inputIndex = placeholder.index() + placeholder.length() + delimiters.get(i).length();
     }
     return optional(inputIndex == input.length(), unmodifiableList(builder));
   }
@@ -254,11 +288,12 @@ public final class StringFormat {
   public Stream<List<Substring.Match>> scan(String input) {
     requireNonNull(input);
     if (format.isEmpty()) {
-      return Stream.generate(() -> Collections.<Substring.Match>emptyList())
-          .limit(input.length() + 1);
+      return requiredChars == null
+          ? Stream.generate(() -> Collections.<Substring.Match>emptyList()).limit(input.length() + 1)
+          : Stream.empty();
     }
     int numPlaceholders = numPlaceholders();
-    return MoreStreams.whileNotNull(
+    Stream<List<Substring.Match>> groups = MoreStreams.whileNotNull(
         new Supplier<List<Substring.Match>>() {
           private int inputIndex = 0;
           private boolean done = false;
@@ -267,19 +302,19 @@ public final class StringFormat {
             if (done) {
               return null;
             }
-            inputIndex = input.indexOf(literals.get(0), inputIndex);
+            inputIndex = input.indexOf(delimiters.get(0), inputIndex);
             if (inputIndex < 0) {
               return null;
             }
-            inputIndex += literals.get(0).length();
+            inputIndex += delimiters.get(0).length();
             List<Substring.Match> builder = new ArrayList<>(numPlaceholders);
             for (int i = 1; i <= numPlaceholders; i++) {
-              String literal = literals.get(i);
+              String literal = delimiters.get(i);
               // Always search left-to-right. The last placeholder at the end of format is suffix.
               Substring.Pattern literalLocator =
-                  i == numPlaceholders && literals.get(i).isEmpty()
+                  i == numPlaceholders && delimiters.get(i).isEmpty()
                       ? Substring.END
-                      : first(literals.get(i));
+                      : first(delimiters.get(i));
               Substring.Match placeholder = before(literalLocator).match(input, inputIndex);
               if (placeholder == null) {
                 return null;
@@ -293,6 +328,11 @@ public final class StringFormat {
             return unmodifiableList(builder);
           }
         });
+    if (requiredChars == null) {
+      return groups;
+    }
+    return groups.filter(
+        matches -> matches.stream().allMatch(m -> m.isNotEmpty() && requiredChars.matchesAllOf(m)));
   }
 
   /**
@@ -458,9 +498,9 @@ public final class StringFormat {
               numPlaceholders(),
               args.length));
     }
-    StringBuilder builder = new StringBuilder().append(literals.get(0));
+    StringBuilder builder = new StringBuilder().append(delimiters.get(0));
     for (int i = 0; i < args.length; i++) {
-      builder.append(args[i]).append(literals.get(i + 1));
+      builder.append(args[i]).append(delimiters.get(i + 1));
     }
     return builder.toString();
   }
@@ -481,7 +521,7 @@ public final class StringFormat {
   }
 
   private int numPlaceholders() {
-    return literals.size() - 1;
+    return delimiters.size() - 1;
   }
 
   private void checkPlaceholderCount(int expected) {
@@ -492,5 +532,9 @@ public final class StringFormat {
               numPlaceholders(),
               expected));
     }
+  }
+
+  private boolean isValidPlaceholderValue(CharSequence chars) {
+    return requiredChars == null || (chars.length() > 0 && requiredChars.matchesAllOf(chars));
   }
 }

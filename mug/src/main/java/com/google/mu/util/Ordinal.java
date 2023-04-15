@@ -130,7 +130,7 @@ public final class Ordinal implements Comparable<Ordinal> {
    * <p>Some examples:
    * <pre>{@code
    *   1st.minus(2nd) => -1
-   *   5th.minus(2nd) -> 3
+   *   5th.minus(2nd) => 3
    * }</pre>
    *
    * @since 6.7
