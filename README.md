@@ -9,6 +9,8 @@ A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/
     `optional(id.length() > 0, id)`
 * [Substring](https://github.com/google/mug/wiki/Substring-Explained) finds a substring in a string:  
     `String user = first('@').toEnd().removeFrom(email);`
+* [StringFormat](https://github.com/google/mug/wiki/StringFormat-Explained) extracts structured data from string:  
+    `new StringFormat("{yyyy}/{mm}/{dd}").parse(dateStr, (yyyy, mm, dd) -> ...)`
 * [Parallelizer](https://github.com/google/mug/wiki/Parallelizer-Explained) An _Executor-friendly_, _interruptible_ alternative to parallel streams.
 * Graph utilities ([Walker](https://google.github.io/mug/apidocs/com/google/mu/util/graph/Walker.html), [ShortestPath](https://google.github.io/mug/apidocs/com/google/mu/util/graph/ShortestPath.html))
 * [Google Protobuf Java 8 Utilities](https://google.github.io/mug/mug-protobuf/apidocs)
