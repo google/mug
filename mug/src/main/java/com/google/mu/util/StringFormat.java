@@ -5,6 +5,7 @@ import static com.google.mu.util.Optionals.optional;
 import static com.google.mu.util.Substring.before;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.suffix;
+import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static com.google.mu.util.stream.MoreCollectors.combining;
 import static com.google.mu.util.stream.MoreCollectors.onlyElement;
 import static java.util.Collections.unmodifiableList;
@@ -27,12 +28,21 @@ import com.google.mu.function.Ternary;
 import com.google.mu.util.stream.MoreStreams;
 
 /**
- * A (lossy) reverse operation of {@link String#format} to extract placeholder values from input
- * strings according to a format string. For example:
+ * A string parser to extract placeholder values from input strings according to a format string.
+ * For example:
  *
  * <pre>{@code
  * return new StringFormat("{address}+{subaddress}@{domain}")
- *     .parse("my-account+test@gmail.com", (address, subaddress, domain) -> ...);
+ *     .parse("my-ldap+test@google.com", (address, subaddress, domain) -> ...);
+ * }</pre>
+ *
+ * <p>Starting from 6.7, if a certain placeholder is uninteresting and you'd rather not name it,
+ * you can use the special {@code ...} placeholder and then you won't need to assign a lambda
+ * variable to capture it:
+ *
+ * <pre>{@code
+ * return new StringFormat("{...}+{subaddress}@{domain}")
+ *     .parse("my-ldap+test@google.com", (subaddress, domain) -> ...);
  * }</pre>
  *
  * <p>Note that except the placeholders, characters in the format string are treated as literals.
@@ -65,8 +75,14 @@ import com.google.mu.util.stream.MoreStreams;
  * @since 6.6
  */
 public final class StringFormat {
+  private static final Substring.RepeatingPattern PLACEHOLDERS =
+      Substring.consecutive(c -> c != '{' && c != '}') // Find the inner-most pairs of curly braces.
+          .immediatelyBetween("{", INCLUSIVE, "}", INCLUSIVE)
+          .repeatedly();
   private final String format;
   private final List<String> delimiters; // The string literals between placeholders
+  private final List<Boolean> toCapture;
+  private final int numCapturingPlaceholders;
   private final CharPredicate requiredChars; // null for unconstrained matches
 
   /**
@@ -117,29 +133,25 @@ public final class StringFormat {
   }
 
   private StringFormat(String format, CharPredicate requiredChars) {
+    Stream.Builder<String> delimiters = Stream.builder();
+    Stream.Builder<Boolean> toCapture = Stream.builder();
+    PLACEHOLDERS.split(format)
+        .forEachOrdered(
+          literal -> {
+            delimiters.add(literal.toString());
+            toCapture.add(!format.startsWith("...}", literal.index() + literal.length() + 1));
+          });
     this.format = format;
-    this.delimiters =
-        Substring.consecutive(c -> c != '{' && c != '}') // Find the inner-most pairs of curly braces.
-            .immediatelyBetween("{", "}")
-            .repeatedly()
-            .split(format)
-            .map(
-                literal ->
-                    // Format "{key:{k}, value:{v}}" will split into ["{key:{", "}, value:{", "}}"].
-                    // Remove the leading "}" for all except the first split results, then remove
-                    // the trailing '{' for all except the last split results. The result is the
-                    // exact literals around {k} and {v}: ["{key:", ", value:", "}"].
-                    literal.skip(
-                        literal.index() == 0 ? 0 : 1,
-                        literal.index() + literal.length() == format.length() ? 0 : 1))
-            .map(Substring.Match::toString)
-            .collect(toImmutableList());
+    this.delimiters = delimiters.build().collect(toImmutableList());
+    this.toCapture = toCapture.build().collect(toImmutableList());
+    this.numCapturingPlaceholders =
+        this.delimiters.size() - 1 - (int) this.toCapture.stream().filter(c -> !c).count();
+    this.requiredChars = requiredChars;
     for (int i = 1; i < numPlaceholders(); i++) {
-      if (delimiters.get(i).isEmpty()) {
+      if (this.delimiters.get(i).isEmpty()) {
         throw new IllegalArgumentException("Placeholders cannot be next to each other: " + format);
       }
     }
-    this.requiredChars = requiredChars;
   }
 
   /**
@@ -260,8 +272,8 @@ public final class StringFormat {
     if (!input.startsWith(delimiters.get(0))) {  // first literal is the prefix
       return Optional.empty();
     }
+    List<Substring.Match> builder = new ArrayList<>(numCapturingPlaceholders);
     final int numPlaceholders = numPlaceholders();
-    List<Substring.Match> builder = new ArrayList<>(numPlaceholders);
     int inputIndex = delimiters.get(0).length();
     for (int i = 1; i <= numPlaceholders; i++) {
       // subsequent literals are searched left-to-right; last literal is the suffix.
@@ -271,7 +283,9 @@ public final class StringFormat {
       if (placeholder == null || !isValidPlaceholderValue(placeholder)) {
         return Optional.empty();
       }
-      builder.add(placeholder);
+      if (toCapture.get(i - 1)) {
+        builder.add(placeholder);
+      }
       inputIndex = placeholder.index() + placeholder.length() + delimiters.get(i).length();
     }
     return optional(inputIndex == input.length(), unmodifiableList(builder));
@@ -307,7 +321,7 @@ public final class StringFormat {
               return null;
             }
             inputIndex += delimiters.get(0).length();
-            List<Substring.Match> builder = new ArrayList<>(numPlaceholders);
+            List<Substring.Match> builder = new ArrayList<>(numCapturingPlaceholders);
             for (int i = 1; i <= numPlaceholders; i++) {
               String literal = delimiters.get(i);
               // Always search left-to-right. The last placeholder at the end of format is suffix.
@@ -319,7 +333,9 @@ public final class StringFormat {
               if (placeholder == null) {
                 return null;
               }
-              builder.add(placeholder);
+              if (toCapture.get(i - 1)) {
+                builder.add(placeholder);
+              }
               inputIndex = placeholder.index() + placeholder.length() + literal.length();
             }
             if (inputIndex == input.length()) {
@@ -525,11 +541,11 @@ public final class StringFormat {
   }
 
   private void checkPlaceholderCount(int expected) {
-    if (numPlaceholders() != expected) {
+    if (numCapturingPlaceholders != expected) {
       throw new IllegalArgumentException(
           String.format(
               "format string has %s placeholders; %s expected.",
-              numPlaceholders(),
+              numCapturingPlaceholders,
               expected));
     }
   }

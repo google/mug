@@ -1,5 +1,6 @@
 package com.google.mu.util;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -36,9 +37,21 @@ public class StringFormatTest {
   }
 
   @Test
+  public void parse_onlyEllipsis(@TestParameter Mode mode) {
+    StringFormat format = mode.formatOf("{...}");
+    assertThat(format.parse("Hello Tom!")).hasValue(ImmutableList.of());
+  }
+
+  @Test
   public void parse_singlePlaceholder(@TestParameter Mode mode) {
     StringFormat format = mode.formatOf("Hello {v}!");
     assertThat(format.parse("Hello Tom!", v -> v)).hasValue("Tom");
+  }
+
+  @Test
+  public void parse_singlePlaceholder_withEllipsis(@TestParameter Mode mode) {
+    StringFormat format = mode.formatOf("Hello {...}!");
+    assertThat(format.parse("Hello Tom!")).hasValue(ImmutableList.of());
   }
 
   @Test
@@ -49,6 +62,21 @@ public class StringFormatTest {
                 .map(Object::toString))
         .containsExactly("Gandolf", "Isengard")
         .inOrder();
+  }
+
+  @Test
+  public void parse_multiplePlaceholders_withEllipsis(@TestParameter Mode mode) {
+    StringFormat format = mode.formatOf("Hello {...}, welcome to {place}!");
+    assertThat(
+            format.parse("Hello Gandolf, welcome to Isengard!").get().stream()
+                .map(Object::toString))
+        .containsExactly("Isengard");
+  }
+
+  @Test
+  public void parse_multiplePlaceholders_withEllipsis_usingLambda(@TestParameter Mode mode) {
+    StringFormat format = mode.formatOf("Hello {...}, welcome to {place}!");
+    assertThat(format.parse("Hello Gandolf, welcome to Isengard!", p -> p)).hasValue("Isengard");
   }
 
   @Test
@@ -351,6 +379,15 @@ public class StringFormatTest {
   }
 
   @Test
+  public void scan_singlePlaceholder_withEllipsis(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("[id={...}]").scan("id=1")).isEmpty();
+    assertThat(mode.formatOf("[id={...}]").scan("[id=foo]")).containsExactly(ImmutableList.of());
+    assertThat(mode.formatOf("[id={...}]").scan("[id=foo][id=bar]"))
+        .containsExactly(ImmutableList.of(), ImmutableList.of())
+        .inOrder();
+  }
+
+  @Test
   public void scan_singlePlaceholder_emptyInput(@TestParameter Mode mode) {
     assertThat(mode.formatOf("[id={id}]").scan("", id -> id)).isEmpty();
   }
@@ -387,6 +424,32 @@ public class StringFormatTest {
             mode.formatOf("[id={id}, name={name}]")
                 .scan("[id=foo, name=bar][id=zoo, name=boo]", (id, name) -> id + "," + name))
         .containsExactly("foo,bar", "zoo,boo")
+        .inOrder();
+  }
+
+  @Test
+  public void scan_twoPlaceholders_withEllipsis(@TestParameter Mode mode) {
+    assertThat(
+            mode.formatOf("[id={...}, name={name}]")
+                .scan("[id=foo, name=bar]")
+                .map(l -> l.stream().map(Substring.Match::toString).collect(toImmutableList())))
+        .containsExactly(ImmutableList.of("bar"));
+    assertThat(
+            mode.formatOf("[id={...}, name={name}]")
+                .scan("[id=, name=bar][id=zoo, name=boo]")
+                .map(l -> l.stream().map(Substring.Match::toString).collect(toImmutableList())))
+        .containsExactly(ImmutableList.of("bar"), ImmutableList.of("boo"))
+        .inOrder();
+  }
+
+  @Test
+  public void scan_twoPlaceholders_withEllipsis_usingLambda(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("[id={id}, name={...}]").scan("[id=foo, name=bar]", id -> id))
+        .containsExactly("foo");
+    assertThat(
+            mode.formatOf("[id={...}, name={name}]")
+                .scan("[id=, name=bar][id=zoo, name=boo]", name -> name))
+        .containsExactly("bar", "boo")
         .inOrder();
   }
 
@@ -621,6 +684,12 @@ public class StringFormatTest {
   }
 
   @Test
+  public void scan_singleEllipsisOnly(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("{...}").scan("whatever")).containsExactly(ImmutableList.of());
+    assertThat(new StringFormat("{...}").scan("")).containsExactly(ImmutableList.of());
+  }
+
+  @Test
   public void scan_singlePlaceholderOnly_emptyInput() {
     assertThat(new StringFormat("{s}").scan("", s -> s)).containsExactly("");
   }
@@ -670,6 +739,11 @@ public class StringFormatTest {
   @Test
   public void format_placeholdersFilled(@TestParameter Mode mode) {
     assertThat(mode.formatOf("{a} + {b} = {c}").format(1, 2, 3)).isEqualTo("1 + 2 = 3");
+  }
+
+  @Test
+  public void format_ellipsisFilled(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("{a} + {b} = {...}").format(1, 2, 3)).isEqualTo("1 + 2 = 3");
   }
 
   @Test
