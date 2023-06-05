@@ -17,6 +17,8 @@ import static com.google.mu.util.Substring.leading;
 import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.Substring.spanningInOrder;
 import static com.google.mu.util.Substring.trailing;
+import static com.google.mu.util.Substring.BoundStyle.EXCLUSIVE;
+import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.regex.Pattern;
@@ -28,6 +30,7 @@ import org.junit.runner.RunWith;
 import com.google.common.base.Ascii;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
+import com.google.mu.util.Substring.BoundStyle;
 import com.google.mu.util.Substring.Match;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
@@ -870,6 +873,272 @@ public class SubstringPatternTest {
     assertPattern(pattern, ": foo (bar)").finds("bar");
     assertPattern(pattern, ": foo (bar) : or (zoo)").finds("bar", "zoo");
     assertPattern(pattern, ": foo (bar) or :(zoo)").finds("bar", "zoo");
+  }
+
+  @Test
+  public void immediatelyBetween_inclusive_empty(
+      @TestParameter BoundStyle leftBound, @TestParameter BoundStyle rightBound) {
+    Substring.Pattern pattern = first("foo").immediatelyBetween("", leftBound, "", rightBound);
+    assertPattern(pattern, "fo").findsNothing();
+    assertPattern(pattern, "foo bar foo").finds("foo", "foo");
+    assertPattern(pattern, "bar").findsNothing();
+  }
+
+  @Test
+  public void immediatelyBetween_inclusive_patternNotFound(
+      @TestParameter BoundStyle leftBound, @TestParameter BoundStyle rightBound) {
+    Substring.Pattern pattern = first("foo").immediatelyBetween("<-", leftBound, "->", rightBound);
+    assertPattern(pattern, "").findsNothing();
+    assertPattern(pattern, "<-").findsNothing();
+    assertPattern(pattern, "<->").findsNothing();
+    assertPattern(pattern, "<-->").findsNothing();
+    assertPattern(pattern, "<-fo->").findsNothing();
+    assertPattern(pattern, "<-fo->").findsNothing();
+  }
+
+  @Test
+  public void immediatelyBetween_inclusive_lookbehindAbsent(
+      @TestParameter BoundStyle leftBound, @TestParameter BoundStyle rightBound) {
+    Substring.Pattern pattern = first("foo").immediatelyBetween("<-", leftBound, "->", rightBound);
+    assertPattern(pattern, "<!-foo->").findsNothing();
+    assertPattern(pattern, "<-!foo->").findsNothing();
+    assertPattern(pattern, "foo->").findsNothing();
+  }
+
+  @Test
+  public void immediatelyBetween_inclusive_lookaheadAbsent(
+      @TestParameter BoundStyle leftBound, @TestParameter BoundStyle rightBound) {
+    Substring.Pattern pattern = first("foo").immediatelyBetween("<-", leftBound, "->", rightBound);
+    assertPattern(pattern, "<-foo>>").findsNothing();
+    assertPattern(pattern, "<-foo>->").findsNothing();
+    assertPattern(pattern, "<-foo").findsNothing();
+    assertPattern(pattern, "foo").findsNothing();
+  }
+
+  @Test
+  public void immediatelyBetween_fullExclusive_found() {
+    Substring.Pattern pattern =
+        Substring.word().immediatelyBetween("<-", EXCLUSIVE, "->", EXCLUSIVE);
+    assertPattern(pattern, "<-foo->").finds("foo");
+    assertPattern(pattern, "<-foo-> <-bar->").finds("foo", "bar");
+  }
+
+  @Test
+  public void immediatelyBetween_leftInclusive_found() {
+    Substring.Pattern pattern =
+        Substring.word().immediatelyBetween("<-", INCLUSIVE, "->", EXCLUSIVE);
+    assertPattern(pattern, "<-foo->").finds("<-foo");
+    assertPattern(pattern, "<-foo-> <-bar->").finds("<-foo", "<-bar");
+  }
+
+  @Test
+  public void immediatelyBetween_rightInclusive_found() {
+    Substring.Pattern pattern =
+        Substring.word().immediatelyBetween("<-", EXCLUSIVE, "->", INCLUSIVE);
+    assertPattern(pattern, "<-foo->").finds("foo->");
+    assertPattern(pattern, "<-foo-> <-bar->").finds("foo->", "bar->");
+  }
+
+  @Test
+  public void immediatelyBetween_fullInclusive_found() {
+    Substring.Pattern pattern =
+        Substring.word().immediatelyBetween("<-", INCLUSIVE, "->", INCLUSIVE);
+    assertPattern(pattern, "<-foo->").finds("<-foo->");
+    assertPattern(pattern, "<-foo-> <-bar->").finds("<-foo->", "<-bar->");
+  }
+
+  @Test
+  public void firstString_immediatelyBetween_fullExclusive_found() {
+    Substring.Pattern pattern = first("foo").immediatelyBetween("<-", EXCLUSIVE, "->", EXCLUSIVE);
+    assertPattern(pattern, "<-foo->").finds("foo");
+    assertPattern(pattern, "<-foo-> <-foo-> <-foo- -foo->").finds("foo", "foo");
+  }
+
+  @Test
+  public void firstString_immediatelyBetween_leftInclusive_found() {
+    Substring.Pattern pattern = first("foo").immediatelyBetween("<-", INCLUSIVE, "->", EXCLUSIVE);
+    assertPattern(pattern, "<-foo->").finds("<-foo");
+    assertPattern(pattern, "<-foo-> <-foo-> <-foo- -foo->").finds("<-foo", "<-foo");
+  }
+
+  @Test
+  public void firstString_immediatelyBetween_rightInclusive_found() {
+    Substring.Pattern pattern = first("foo").immediatelyBetween("<-", EXCLUSIVE, "->", INCLUSIVE);
+    assertPattern(pattern, "<-foo->").finds("foo->");
+    assertPattern(pattern, "<-foo-> <-foo-> <-foo- -foo->").finds("foo->", "foo->");
+  }
+
+  @Test
+  public void firstString_immediatelyBetween_fullInclusive_found() {
+    Substring.Pattern pattern = first("foo").immediatelyBetween("<-", INCLUSIVE, "->", INCLUSIVE);
+    assertPattern(pattern, "<-foo->").finds("<-foo->");
+    assertPattern(pattern, "<-foo-> <-foo-> <-foo- -foo->").finds("<-foo->", "<-foo->");
+  }
+
+  @Test
+  public void firstChar_immediatelyBetween_fullExclusive_found() {
+    Substring.Pattern pattern = first('.').immediatelyBetween("<-", EXCLUSIVE, "->", EXCLUSIVE);
+    assertPattern(pattern, "<-.->").finds(".");
+    assertPattern(pattern, "<-.-> <-.-> <-.- -.->").finds(".", ".");
+  }
+
+  @Test
+  public void firstChar_immediatelyBetween_leftInclusive_found() {
+    Substring.Pattern pattern = first('.').immediatelyBetween("<-", INCLUSIVE, "->", EXCLUSIVE);
+    assertPattern(pattern, "<-.->").finds("<-.");
+    assertPattern(pattern, "<-.-> <-.-> <-.- -.->").finds("<-.", "<-.");
+  }
+
+  @Test
+  public void firstChar_immediatelyBetween_rightInclusive_found() {
+    Substring.Pattern pattern = first('.').immediatelyBetween("<-", EXCLUSIVE, "->", INCLUSIVE);
+    assertPattern(pattern, "<-.->").finds(".->");
+    assertPattern(pattern, "<-.-> <-.-> <-.- -.->").finds(".->", ".->");
+  }
+
+  @Test
+  public void firstChar_immediatelyBetween_fullInclusive_found() {
+    Substring.Pattern pattern = first('.').immediatelyBetween("<-", INCLUSIVE, "->", INCLUSIVE);
+    assertPattern(pattern, "<-.->").finds("<-.->");
+    assertPattern(pattern, "<-.-> <-.-> <-.- -.->").finds("<-.->", "<-.->");
+  }
+
+  @Test
+  public void immediatelyBetween_fullExclusive_betweenBacktrackingStartsFromDelimiter() {
+    Substring.Pattern pattern =
+        Substring.between("(", ")").immediatelyBetween("[(", EXCLUSIVE, ")]", EXCLUSIVE);
+    assertPattern(pattern, "[(foo)]").finds("foo");
+    assertPattern(pattern, "[(foo)] [(bar)]").finds("foo", "bar");
+  }
+
+  @Test
+  public void immediatelyBetween_leftInclusive_betweenBacktrackingStartsFromDelimiter() {
+    Substring.Pattern pattern =
+        Substring.between("(", ")").immediatelyBetween("[(", INCLUSIVE, ")]", EXCLUSIVE);
+    assertPattern(pattern, "[(foo)]").finds("[(foo");
+    assertPattern(pattern, "[(foo)] [(bar)]").finds("[(foo", "[(bar");
+  }
+
+  @Test
+  public void immediatelyBetween_rightInclusive_betweenBacktrackingStartsFromDelimiter() {
+    Substring.Pattern pattern =
+        Substring.between("(", ")").immediatelyBetween("[(", EXCLUSIVE, ")]", INCLUSIVE);
+    assertPattern(pattern, "[(foo)]").finds("foo)]");
+    assertPattern(pattern, "[(foo)] [(bar)]").finds("foo)]", "bar)]");
+  }
+
+  @Test
+  public void immediatelyBetween_fullInclusive_betweenBacktrackingStartsFromDelimiter() {
+    Substring.Pattern pattern =
+        Substring.between("(", ")").immediatelyBetween("[(", INCLUSIVE, ")]", INCLUSIVE);
+    assertPattern(pattern, "[(foo)]").finds("[(foo)]");
+    assertPattern(pattern, "[(foo)] [(bar)]").finds("[(foo)]", "[(bar)]");
+  }
+
+  @Test
+  public void immediatelyBetween_fullExclusive_backtrackingAtOpeningDelimiter() {
+    Substring.Pattern pattern =
+        Substring.between("oo", "cc").immediatelyBetween("ooo", EXCLUSIVE, "ccc", EXCLUSIVE);
+    assertPattern(pattern, "oofooccooobarccc").finds("bar");
+  }
+
+  @Test
+  public void immediatelyBetween_leftInclusive_backtrackingAtOpeningDelimiter() {
+    Substring.Pattern pattern =
+        Substring.between("oo", "cc").immediatelyBetween("ooo", INCLUSIVE, "ccc", EXCLUSIVE);
+    assertPattern(pattern, "oofooccooobarccc").finds("ooobar");
+  }
+
+  @Test
+  public void immediatelyBetween_rightInclusive_backtrackingAtOpeningDelimiter() {
+    Substring.Pattern pattern =
+        Substring.between("oo", "cc").immediatelyBetween("ooo", EXCLUSIVE, "ccc", INCLUSIVE);
+    assertPattern(pattern, "oofooccooobarccc").finds("barccc");
+  }
+
+  @Test
+  public void immediatelyBetween_fullInclusive_backtrackingAtOpeningDelimiter() {
+    Substring.Pattern pattern =
+        Substring.between("oo", "cc").immediatelyBetween("ooo", INCLUSIVE, "ccc", INCLUSIVE);
+    assertPattern(pattern, "oofooccooobarccc").finds("ooobarccc");
+  }
+
+  @Test
+  public void immediatelyBetween_fullExclusive_repetitionStartsFromLookahead() {
+    Substring.Pattern pattern =
+        Substring.first("bar").immediatelyBetween("of", EXCLUSIVE, "o", EXCLUSIVE);
+    assertPattern(pattern, "ofbarofbaro").finds("bar", "bar");
+  }
+
+  @Test
+  public void immediatelyBetween_leftInclusive_repetitionStartsFromLookahead() {
+    Substring.Pattern pattern =
+        Substring.first("bar").immediatelyBetween("of", INCLUSIVE, "o", EXCLUSIVE);
+    assertPattern(pattern, "ofbarofbaro").finds("ofbar", "ofbar");
+  }
+
+  @Test
+  public void immediatelyBetween_rightInclusive_repetitionStartsFromLookahead() {
+    Substring.Pattern pattern =
+        Substring.first("bar").immediatelyBetween("of", EXCLUSIVE, "o", INCLUSIVE);
+    assertPattern(pattern, "ofbarofbaro").finds("baro");
+    assertPattern(pattern, "ofbarofbarofbarofbaro").finds("baro", "baro");
+  }
+
+  @Test
+  public void immediatelyBetween_fullInclusive_repetitionStartsFromLookahead() {
+    Substring.Pattern pattern =
+        Substring.first("bar").immediatelyBetween("of", INCLUSIVE, "o", INCLUSIVE);
+    assertPattern(pattern, "ofbarofbaro").finds("ofbaro");
+    assertPattern(pattern, "ofbarofbarofbarofbaro").finds("ofbaro", "ofbaro");
+  }
+
+  @Test
+  public void immediatelyBetween_fullExclusive_thenBacktracks() {
+    Substring.Pattern pattern =
+        Substring.first(':')
+            .then(Substring.word())
+            .immediatelyBetween("(", EXCLUSIVE, ")", EXCLUSIVE);
+    assertPattern(pattern, ": (foo)").finds("foo");
+    assertPattern(pattern, ": foo (bar)").finds("bar");
+    assertPattern(pattern, ": foo (bar) : or (zoo)").finds("bar", "zoo");
+    assertPattern(pattern, ": foo (bar) or :(zoo)").finds("bar", "zoo");
+  }
+
+  @Test
+  public void immediatelyBetween_leftInclusive_thenBacktracks() {
+    Substring.Pattern pattern =
+        Substring.first(':')
+            .then(Substring.word())
+            .immediatelyBetween("(", INCLUSIVE, ")", EXCLUSIVE);
+    assertPattern(pattern, ": (foo)").finds("(foo");
+    assertPattern(pattern, ": foo (bar)").finds("(bar");
+    assertPattern(pattern, ": foo (bar) : or (zoo)").finds("(bar", "(zoo");
+    assertPattern(pattern, ": foo (bar) or :(zoo)").finds("(bar", "(zoo");
+  }
+
+  @Test
+  public void immediatelyBetween_rightInclusive_thenBacktracks() {
+    Substring.Pattern pattern =
+        Substring.first(':')
+            .then(Substring.word())
+            .immediatelyBetween("(", EXCLUSIVE, ")", INCLUSIVE);
+    assertPattern(pattern, ": (foo)").finds("foo)");
+    assertPattern(pattern, ": foo (bar)").finds("bar)");
+    assertPattern(pattern, ": foo (bar) : or (zoo)").finds("bar)", "zoo)");
+    assertPattern(pattern, ": foo (bar) or :(zoo)").finds("bar)", "zoo)");
+  }
+
+  @Test
+  public void immediatelyBetween_fullInclusive_thenBacktracks() {
+    Substring.Pattern pattern =
+        Substring.first(':')
+            .then(Substring.word())
+            .immediatelyBetween("(", INCLUSIVE, ")", INCLUSIVE);
+    assertPattern(pattern, ": (foo)").finds("(foo)");
+    assertPattern(pattern, ": foo (bar)").finds("(bar)");
+    assertPattern(pattern, ": foo (bar) : or (zoo)").finds("(bar)", "(zoo)");
+    assertPattern(pattern, ": foo (bar) or :(zoo)").finds("(bar)", "(zoo)");
   }
 
   @Test

@@ -1898,6 +1898,44 @@ public class SubstringTest {
   }
 
   @Test
+  public void matchExpand_zeroExpansion() {
+    Substring.Match match = first("foo").in(" foo bar").get();
+    assertThat(match.expand(0, 0).toString()).isEqualTo("foo");
+  }
+
+  @Test
+  public void matchExpand_negativeExpansionDisallowed() {
+    Substring.Match match = first("foo").in(" foo bar").get();
+    assertThrows(AssertionError.class, () -> match.expand(-1, 0));
+    assertThrows(AssertionError.class, () -> match.expand(0, -1));
+  }
+
+  @Test
+  public void matchExpand_expandingBeyondScopeDisallowed() {
+    Substring.Match match = first("bar").in(" foo bar ").get();
+    assertThrows(AssertionError.class, () -> match.expand(6, 0));
+    assertThrows(AssertionError.class, () -> match.expand(0, 2));
+  }
+
+  @Test
+  public void matchExpand_expandingToLeft() {
+    Substring.Match match = first("bar").in(" foo bar ").get();
+    assertThat(match.expand(2, 0).toString()).isEqualTo("o bar");
+  }
+
+  @Test
+  public void matchExpand_expandingToRight() {
+    Substring.Match match = first("foo").in(" foo bar ").get();
+    assertThat(match.expand(0, 3).toString()).isEqualTo("foo ba");
+  }
+
+  @Test
+  public void matchExpand_expandingBothDirections() {
+    Substring.Match match = first("foo").in(" foo bar ").get();
+    assertThat(match.expand(1, 2).toString()).isEqualTo(" foo b");
+  }
+
+  @Test
   public void skipFromBeginning_negative() {
     Substring.Pattern pattern = first("foo");
     assertThrows(IllegalArgumentException.class, () -> pattern.skip(-1, 1));
@@ -3762,6 +3800,42 @@ public class SubstringTest {
   @Test public void testRegexTopLevelGroups_noMatch() {
     assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("((ab)(cd)+)ef")).from("cdef"))
         .isEmpty();
+  }
+
+  @Test
+  public void match_startsWith_false() {
+    Substring.Match match = first("bar").in("foobarbaz").get();
+    assertThat(match.startsWith("barb")).isFalse();
+    assertThat(match.startsWith("barbaz")).isFalse();
+    assertThat(match.startsWith("barbaz1")).isFalse();
+    assertThat(match.startsWith("arb")).isFalse();
+  }
+
+  @Test
+  public void match_startsWith_true() {
+    Substring.Match match = first("bar").in("foobarbaz").get();
+    assertThat(match.startsWith("")).isTrue();
+    assertThat(match.startsWith("b")).isTrue();
+    assertThat(match.startsWith("ba")).isTrue();
+    assertThat(match.startsWith("bar")).isTrue();
+  }
+
+  @Test
+  public void match_endsWith_false() {
+    Substring.Match match = first("bar").in("foobarbaz").get();
+    assertThat(match.endsWith("obar")).isFalse();
+    assertThat(match.endsWith("rb")).isFalse();
+    assertThat(match.endsWith("foobar")).isFalse();
+    assertThat(match.endsWith("baz")).isFalse();
+  }
+
+  @Test
+  public void match_endsWith_true() {
+    Substring.Match match = first("bar").in("foobarbaz").get();
+    assertThat(match.endsWith("bar")).isTrue();
+    assertThat(match.endsWith("ar")).isTrue();
+    assertThat(match.endsWith("r")).isTrue();
+    assertThat(match.endsWith("")).isTrue();
   }
 
   @Test public void match_isFollowedBy_notAtTheEnd() {
