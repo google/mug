@@ -135,12 +135,11 @@ public final class StringFormat {
   private StringFormat(String format, CharPredicate requiredChars) {
     Stream.Builder<String> delimiters = Stream.builder();
     Stream.Builder<Boolean> toCapture = Stream.builder();
-    PLACEHOLDERS.split(format)
-        .forEachOrdered(
-          literal -> {
-            delimiters.add(literal.toString());
-            toCapture.add(!format.startsWith("...}", literal.index() + literal.length() + 1));
-          });
+    PLACEHOLDERS.split(format).forEachOrdered(
+        literal -> {
+          delimiters.add(literal.toString());
+          toCapture.add(!format.startsWith("...}", literal.index() + literal.length() + 1));
+        });
     this.format = format;
     this.delimiters = delimiters.build().collect(toImmutableList());
     this.toCapture = toCapture.build().collect(toImmutableList());

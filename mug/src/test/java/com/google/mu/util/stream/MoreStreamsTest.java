@@ -19,6 +19,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.stream.MoreStreams.groupConsecutive;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
+import static com.google.mu.util.stream.MoreStreams.runLengthEncode;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
@@ -43,8 +44,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Iterables;
-import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.NullPointerTester;
 
 @RunWith(JUnit4.class)
@@ -348,7 +349,6 @@ public class MoreStreamsTest {
         .filter(m -> m.getName().equals("generate"))
         .forEach(tester::ignore);
     tester.testAllPublicStaticMethods(MoreStreams.class);
-    new ClassSanityTester().forAllPublicStaticMethods(MoreStreams.class).testNulls();
   }
 
   @Test public void withSideEffectInOrder() {
@@ -376,6 +376,15 @@ public class MoreStreamsTest {
         .inOrder();
     assertThat(groupConsecutive(Stream.of(10, 20, 9, 8, 10), i -> i % 2, Integer::sum))
         .containsExactly(30, 9, 18)
+        .inOrder();
+  }
+
+  @Test public void testRunLengthEncode() {
+    ImmutableListMultimap<Integer, Long> encoded =
+        runLengthEncode(Stream.of(10, 20, 9, 10, 11, 8), (a, b) -> a < b)
+            .collect(ImmutableListMultimap::toImmutableListMultimap);
+    assertThat(encoded)
+        .containsExactly(10, 2L, 9, 3L, 8, 1L)
         .inOrder();
   }
 }

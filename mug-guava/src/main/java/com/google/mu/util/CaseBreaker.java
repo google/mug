@@ -50,27 +50,41 @@ public final class CaseBreaker {
   private static final CharPredicate NUM = CharPredicate.range('0', '9');
 
   /** For example, the '_' and '-' in snake_case and dash-case. */
-  private final CharPredicate caseDelimiter;
+  private final CharPredicate punctuation;
 
   /** By default, the lower-case and numeric characters that don't conclude a word in camelCase. */
   private final CharPredicate camelLower;
 
   public CaseBreaker() {
-    this.caseDelimiter = ASCII.and(ALPHA.or(NUM).not());
+    this.punctuation = ASCII.and(ALPHA.or(NUM).not());
     this.camelLower = NUM.or(Character::isLowerCase);
   }
 
-  private CaseBreaker(CharPredicate caseDelimiter, CharPredicate camelLower) {
-    this.caseDelimiter = caseDelimiter;
+  private CaseBreaker(CharPredicate punctuation, CharPredicate camelLower) {
+    this.punctuation = punctuation;
     this.camelLower = camelLower;
+  }
+
+  /**
+   * Returns a new instance using {@code punctuation} to identify punctuation characters (ones
+   * that separate words but aren't themselves included in the result), for
+   * example if you want to support dash-case using the en dash (–) character.
+   *
+   * @since 6.7
+   */
+  public CaseBreaker withPunctuationChars(CharMatcher punctuation) {
+    return new CaseBreaker(punctuation::matches, camelLower);
   }
 
   /**
    * Returns a new instance using {@code caseDelimiter} to identify case delimiter characters, for
    * example if you want to support dash-case using the en dash (–) character.
+   *
+   * @deprecated Use {@link #withPunctuationChars} instead.
    */
+  @Deprecated
   public CaseBreaker withCaseDelimiterChars(CharMatcher caseDelimiter) {
-    return new CaseBreaker(caseDelimiter::matches, camelLower);
+    return withPunctuationChars(caseDelimiter);
   }
 
   /**
@@ -78,7 +92,7 @@ public final class CaseBreaker {
    * to include digits if they should also be treated as lower case).
    */
   public CaseBreaker withLowerCaseChars(CharMatcher camelLower) {
-    return new CaseBreaker(caseDelimiter, camelLower::matches);
+    return new CaseBreaker(punctuation, camelLower::matches);
   }
 
   /**
@@ -111,8 +125,8 @@ public final class CaseBreaker {
    */
   public Stream<String> breakCase(CharSequence text) {
     Substring.Pattern lowerTail = // The 'l' in 'camelCase', 'CamelCase', 'camel' or 'Camel'.
-        first(camelLower).withBoundary(CharPredicate.ANY, camelLower.not());
-    return Substring.consecutive(caseDelimiter.not())
+        first(camelLower).separatedBy(CharPredicate.ANY, camelLower.not());
+    return Substring.consecutive(punctuation.not())
         .repeatedly()
         .from(text)
         .flatMap(upToIncluding(lowerTail.or(END)).repeatedly()::from);
