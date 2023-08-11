@@ -21,6 +21,7 @@ import static com.google.mu.util.Substring.END;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.upToIncluding;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.mapping;
 
 import java.util.stream.Collector;
 import java.util.stream.Stream;
@@ -29,7 +30,6 @@ import com.google.common.base.Ascii;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.CharMatcher;
 import com.google.errorprone.annotations.CheckReturnValue;
-import com.google.mu.util.stream.MoreCollectors;
 
 /**
  * Utility to {@link #breakCase break} and {@link #toCase convert} input strings (normally
@@ -50,27 +50,41 @@ public final class CaseBreaker {
   private static final CharPredicate NUM = CharPredicate.range('0', '9');
 
   /** For example, the '_' and '-' in snake_case and dash-case. */
-  private final CharPredicate caseDelimiter;
+  private final CharPredicate punctuation;
 
   /** By default, the lower-case and numeric characters that don't conclude a word in camelCase. */
   private final CharPredicate camelLower;
 
   public CaseBreaker() {
-    this.caseDelimiter = ASCII.and(ALPHA.or(NUM).not());
+    this.punctuation = ASCII.and(ALPHA.or(NUM).not());
     this.camelLower = NUM.or(Character::isLowerCase);
   }
 
-  private CaseBreaker(CharPredicate caseDelimiter, CharPredicate camelLower) {
-    this.caseDelimiter = caseDelimiter;
+  private CaseBreaker(CharPredicate punctuation, CharPredicate camelLower) {
+    this.punctuation = punctuation;
     this.camelLower = camelLower;
+  }
+
+  /**
+   * Returns a new instance using {@code punctuation} to identify punctuation characters (ones
+   * that separate words but aren't themselves included in the result), for
+   * example if you want to support dash-case using the en dash (–) character.
+   *
+   * @since 6.7
+   */
+  public CaseBreaker withPunctuationChars(CharMatcher punctuation) {
+    return new CaseBreaker(punctuation::matches, camelLower);
   }
 
   /**
    * Returns a new instance using {@code caseDelimiter} to identify case delimiter characters, for
    * example if you want to support dash-case using the en dash (–) character.
+   *
+   * @deprecated Use {@link #withPunctuationChars} instead.
    */
+  @Deprecated
   public CaseBreaker withCaseDelimiterChars(CharMatcher caseDelimiter) {
-    return new CaseBreaker(caseDelimiter::matches, camelLower);
+    return withPunctuationChars(caseDelimiter);
   }
 
   /**
@@ -78,7 +92,7 @@ public final class CaseBreaker {
    * to include digits if they should also be treated as lower case).
    */
   public CaseBreaker withLowerCaseChars(CharMatcher camelLower) {
-    return new CaseBreaker(caseDelimiter, camelLower::matches);
+    return new CaseBreaker(punctuation, camelLower::matches);
   }
 
   /**
@@ -111,8 +125,8 @@ public final class CaseBreaker {
    */
   public Stream<String> breakCase(CharSequence text) {
     Substring.Pattern lowerTail = // The 'l' in 'camelCase', 'CamelCase', 'camel' or 'Camel'.
-        first(camelLower).withBoundary(CharPredicate.ANY, camelLower.not());
-    return Substring.consecutive(caseDelimiter.not())
+        first(camelLower).separatedBy(CharPredicate.ANY, camelLower.not());
+    return Substring.consecutive(punctuation.not())
         .repeatedly()
         .from(text)
         .flatMap(upToIncluding(lowerTail.or(END)).repeatedly()::from);
@@ -140,10 +154,13 @@ public final class CaseBreaker {
     // Ascii char matchers are faster than the default.
     CharPredicate caseDelimiter = CharMatcher.anyOf("_-")::matches;
     CaseBreaker breaker = new CaseBreaker(caseDelimiter, NUM.or(Ascii::isLowerCase));
-    Collector<String, ?, String> toCaseFormat = MoreCollectors.mapping(
-       Ascii::toLowerCase, joining("_"), LOWER_UNDERSCORE.converterTo(caseFormat));
-    return Substring.consecutive(ALPHA.or(NUM).or(caseDelimiter))
-        .repeatedly()
-        .replaceAllFrom(input, w -> breaker.breakCase(w).collect(toCaseFormat));
+    Collector<String, ?, String> toSnakeCase =
+        mapping(Ascii::toLowerCase, joining("_")); // first convert to snake_case
+    Substring.RepeatingPattern words =
+        Substring.consecutive(ALPHA.or(NUM).or(caseDelimiter)).repeatedly();
+    return caseFormat.equals(LOWER_UNDERSCORE)
+        ? words.replaceAllFrom(input, w -> breaker.breakCase(w).collect(toSnakeCase))
+        : words.replaceAllFrom(
+            input, w -> LOWER_UNDERSCORE.to(caseFormat, breaker.breakCase(w).collect(toSnakeCase)));
   }
 }

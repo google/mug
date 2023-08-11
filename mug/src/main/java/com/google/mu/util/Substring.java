@@ -1348,6 +1348,54 @@ public final class Substring {
     }
 
     /**
+     * Similar to {@link #immediatelyBetween(String, String)}, but allows including the {@code
+     * lookbehind} and/or {@code lookahead} inclusive in the match.
+     *
+     * <p>For example, to split around all "{placholder_name}", you can use:
+     *
+     * <pre>{@code
+     * PLACEHOLDER_NAME_PATTERN.immediatelyBetween("{", INCLUSIVE, "}", INCLUSIVE)
+     *     .split(input);
+     * }</pre>
+     *
+     * @since 6.7
+     */
+    public final Pattern immediatelyBetween(
+        String lookbehind,
+        BoundStyle lookbehindBound,
+        String lookahead,
+        BoundStyle lookaheadBound) {
+      Pattern withLookaround = lookaround(lookbehind, lookahead);
+      int behind = requireNonNull(lookbehindBound) == BoundStyle.INCLUSIVE ? lookbehind.length() : 0;
+      int ahead = requireNonNull(lookaheadBound) == BoundStyle.INCLUSIVE ? lookahead.length() : 0;
+      if (behind == 0 && ahead == 0) {
+        return withLookaround;
+      }
+      Pattern original = this;
+      return new Pattern() {
+        @Override
+        Match match(String input, int fromIndex) {
+          Match match = withLookaround.match(input, fromIndex);
+          return match == null ? null : match.expand(behind, ahead);
+        }
+
+        @Override
+        public String toString() {
+          return original
+              + ".immediatelyBetween('"
+              + lookbehind
+              + "', "
+              + lookbehindBound
+              + ", '"
+              + lookahead
+              + "', "
+              + lookaheadBound
+              + ")";
+        }
+      };
+    }
+
+    /**
      * Returns an otherwise equivalent pattern except it requires the matched substring <em>not</em>
      * be immediately preceded by the {@code lookbehind} string and immediately followed by the {@code
      * after} string.
@@ -2304,6 +2352,10 @@ public final class Substring {
       this.endIndex = startIndex + length;
       this.backtrackIndex = backtrackIndex;
       this.repetitionStartIndex = repetitionStartIndex;
+      assert startIndex >= 0 : "Invalid index: " + startIndex;
+      assert length >= 0 : "Invalid length: " + length;
+      assert endIndex <= context.length() : "Invalid endIndex: " + endIndex;
+      assert repetitionStartIndex >= endIndex : "Invalid repetitionStartIndex: " + repetitionStartIndex;
     }
 
     static Match suffix(String context, int length) {
@@ -2432,6 +2484,24 @@ public final class Substring {
     }
 
     /**
+     * Returns true if this match starts with the given {@code prefix}.
+     *
+     * @since 6.7
+     */
+    public boolean startsWith(String prefix) {
+      return prefix.length() <= length() && context.startsWith(prefix, startIndex);
+    }
+
+    /**
+     * Returns true if this match ends with the given {@code suffix}.
+     *
+     * @since 6.7
+     */
+    public boolean endsWith(String suffix) {
+      return suffix.length() <= length() && context.startsWith(suffix, endIndex - suffix.length());
+    }
+
+    /**
      * Returns true if the match is immediately followed by the {@code lookahead} string. Note that
      * {@code isFollowedBy("")} is always true.
      */
@@ -2522,6 +2592,23 @@ public final class Substring {
       return nonBacktrackable(context, 0, startIndex);
     }
 
+    /**
+     * Expands this match for {@code toLeft} characters before the starting index and {@code
+     * toRight} characters beyond the end index.
+     *
+     * @throws IllegalArgumentException if either {@code toLeft} or {@code toRight} is negative
+     * @throws IllegalStateException if there are not sufficient characters to expand
+     */
+    Match expand(int toLeft, int toRight) {
+      assert toLeft >= 0 : "Invalid toLeft: " + toLeft;
+      assert toRight >= 0 : "Invalid toRight: " + toRight;
+      int newStartIndex = startIndex - toLeft;
+      int newLength = length() + toLeft + toRight;
+      int newEndIndex = newStartIndex + newLength;
+      int newRepetitionStartIndex = max(repetitionStartIndex, newEndIndex);
+      return new Match(context, newStartIndex, newLength, backtrackIndex, newRepetitionStartIndex);
+    }
+
     Match trim() {
       int left = startIndex;
       int right = endIndex - 1;
@@ -2554,6 +2641,19 @@ public final class Substring {
       }
       return backtrackIndex;
     }
+  }
+
+  /**
+   * The style of the bounds of a match. See {@link Substring.Pattern#immediatelyBetween(String,
+   * BoundStyle, String, BoundStyle)}.
+   *
+   * @since 6.7
+   */
+  public enum BoundStyle {
+    /** The match includes the bound */
+    INCLUSIVE,
+    /** The match doesn't include the bound */
+    EXCLUSIVE
   }
 
   abstract static class Last extends Pattern {

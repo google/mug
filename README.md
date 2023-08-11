@@ -9,6 +9,8 @@ A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/
     `optional(id.length() > 0, id)`
 * [Substring](https://github.com/google/mug/wiki/Substring-Explained) finds a substring in a string:  
     `String user = first('@').toEnd().removeFrom(email);`
+* [StringFormat](https://github.com/google/mug/wiki/StringFormat-Explained) extracts structured data from string:  
+    `new StringFormat("{yyyy}/{mm}/{dd}").parse(dateStr, (yyyy, mm, dd) -> ...)`
 * [Parallelizer](https://github.com/google/mug/wiki/Parallelizer-Explained) An _Executor-friendly_, _interruptible_ alternative to parallel streams.
 * Graph utilities ([Walker](https://google.github.io/mug/apidocs/com/google/mu/util/graph/Walker.html), [ShortestPath](https://google.github.io/mug/apidocs/com/google/mu/util/graph/ShortestPath.html))
 * [Google Protobuf Java 8 Utilities](https://google.github.io/mug/mug-protobuf/apidocs)
@@ -21,7 +23,7 @@ Add the following to pom.xml:
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug</artifactId>
-    <version>6.5</version>
+    <version>6.6</version>
   </dependency>
 ```
 
@@ -30,7 +32,7 @@ Protobuf utils:
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-protobuf</artifactId>
-    <version>6.5</version>
+    <version>6.6</version>
   </dependency>
 ```
 
@@ -39,7 +41,7 @@ Guava add-ons:
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-guava</artifactId>
-    <version>6.5</version>
+    <version>6.6</version>
   </dependency>
 ```
 
@@ -47,9 +49,9 @@ Guava add-ons:
 
 Add to build.gradle:
 ```
-  implementation 'com.google.mug:mug:6.5'
-  implementation 'com.google.mug:mug-guava:6.5'
-  implementation 'com.google.mug:mug-protobuf:6.5'
+  implementation 'com.google.mug:mug:6.6'
+  implementation 'com.google.mug:mug-guava:6.6'
+  implementation 'com.google.mug:mug-protobuf:6.6'
 ```
 
 
@@ -143,6 +145,20 @@ A: When you already have a proper domain object, sure. But you might find it cum
 **Q: Why not `Stream<Pair<Foo, Bar>>`?**
 
 A: It's distracting to read code littered with opaque method names like `getFirst()` and `getSecond()`.
+
+## StringFormat
+
+Extracts structured data from string:
+
+```java
+new StringFormat("/users/{user}/.{hidden_file_name}")
+    .parse(filePath, (user, fileName) -> ...);
+```
+
+```java
+new StringFormat("{hour}:{minute}:{second}.{millis}")
+    .parse(“10:26:30.748”, (hour, minute, second, millis) -> ...);
+```
 
 
 ## Substring

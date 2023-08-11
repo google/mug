@@ -17,9 +17,11 @@ package com.google.mu.util.stream;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static java.util.Objects.requireNonNull;
 
+import java.util.AbstractMap;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
@@ -213,6 +215,39 @@ public final class MoreStreams {
   public static <T> Stream<T> groupConsecutive(
       Stream<T> stream, Function<? super T, ?> groupKeyFunction, BinaryOperator<T> groupReducer) {
     return groupConsecutive(stream, by(groupKeyFunction), groupReducer);
+  }
+
+  /**
+   * Groups consecutive items in {@code stream} using the {@code sameGroup} predicate, along with
+   * the group's run length (number of items).
+   *
+   * @return a BiStream with the first item of each group and the run length of that group.
+   * @since 6.7
+   */
+  public static <T> BiStream<T, Long> runLengthEncode(
+      Stream<T> stream, BiPredicate<? super T, ? super T> sameGroup) {
+    class Run {
+      private T firstValue;
+      private long count;
+
+      void add(T value) {
+        if (count++ == 0) {
+          firstValue = value;
+        }
+      }
+
+      Run merge(Run that) {
+        count += that.count;
+        return this;
+      }
+
+      Map.Entry<T, Long> toEntry() {
+        return new AbstractMap.SimpleImmutableEntry<>(firstValue, count);
+      }
+    }
+    return BiStream.fromEntries(
+        groupConsecutive(
+            stream, sameGroup, Collector.of(Run::new, Run::add, Run::merge, Run::toEntry)));
   }
 
   /**

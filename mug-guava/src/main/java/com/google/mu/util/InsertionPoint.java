@@ -103,7 +103,7 @@ public final class InsertionPoint<C extends Comparable<C>> implements Comparable
   /** Returns an insertion point immediately before {@code ceiling}. */
   public static InsertionPoint<Double> before(double ceiling) {
     checkArgument(
-        ceiling != Double.NEGATIVE_INFINITY, "before(NEGATIVE_INFINITY) not supported.", ceiling);
+        ceiling != Double.NEGATIVE_INFINITY, "before(NEGATIVE_INFINITY) not supported.");
     return new InsertionPoint<>(Math.nextDown(ceiling), normalize(ceiling));
   }
 
@@ -136,7 +136,7 @@ public final class InsertionPoint<C extends Comparable<C>> implements Comparable
   /** Returns an insertion point immediately after {@code floor}. */
   public static InsertionPoint<Double> after(double floor) {
     checkArgument(
-        floor != Double.POSITIVE_INFINITY, "after(POSITIVE_INFINITY) not supported.", floor);
+        floor != Double.POSITIVE_INFINITY, "after(POSITIVE_INFINITY) not supported.");
     return new InsertionPoint<>(normalize(floor), Math.nextUp(floor));
   }
 

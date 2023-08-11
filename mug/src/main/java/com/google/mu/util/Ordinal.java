@@ -36,6 +36,13 @@ public final class Ordinal implements Comparable<Ordinal> {
       .mapToObj(Ordinal::new)
       .toArray(Ordinal[]::new);
 
+  /**
+   * The maximum ordinal.
+   *
+   * @since 6.7
+   */
+  public static final Ordinal MAX_VALUE = of(Integer.MAX_VALUE);
+
   private final int num;
 
   private Ordinal(int num) {
@@ -46,6 +53,15 @@ public final class Ordinal implements Comparable<Ordinal> {
   /** Returns the first ordinal. */
   public static Ordinal first() {
     return FIRST[0];
+  }
+
+  /**
+   * Returns the second ordinal.
+   *
+   * @since 6.7
+   */
+  public static Ordinal second() {
+    return FIRST[1];
   }
 
   /** Returns the infinite stream of natural ordinals starting from "1st". */
@@ -61,6 +77,18 @@ public final class Ordinal implements Comparable<Ordinal> {
    */
   public static Ordinal of(int oneBased) {
     return oneBased > 0 && oneBased <= FIRST.length ? FIRST[oneBased - 1] : new Ordinal(oneBased);
+  }
+
+  /**
+   * Returns instance corresponding to the ordinal of the Enum object {@code e}.
+   *
+   * <p>Note that given {@link Enum#ordinal} is 0-based, an enum with {@code ordinal() == 0}
+   * maps to {@link #first}, or {@code of(1)}.
+   *
+   * @since 6.7
+   */
+  public static Ordinal of(Enum<?> e) {
+    return fromIndex(e.ordinal());
   }
 
   /**
@@ -81,9 +109,34 @@ public final class Ordinal implements Comparable<Ordinal> {
     return num - 1;
   }
 
-  /** Returns the next ordinal. */
+  /** Returns the next ordinal. Overflows to {@link #first}. */
   public Ordinal next() {
-    return of(num + 1);
+    return num == Integer.MAX_VALUE ? first() : of(num + 1);
+  }
+
+  /**
+   * Returns the previous ordinal. Underflows to MAX_VALUE.
+   *
+   * @since 6.7
+   */
+  public Ordinal previous() {
+    return num == 1 ? MAX_VALUE : of(num - 1);
+  }
+
+
+  /**
+   * Returns the distance between {@code this} and {@code that}.
+   *
+   * <p>Some examples:
+   * <pre>{@code
+   *   1st.minus(2nd) => -1
+   *   5th.minus(2nd) => 3
+   * }</pre>
+   *
+   * @since 6.7
+   */
+  public int minus(Ordinal that) {
+    return num - that.num;
   }
 
   /** Compares to {@code that} according to natural order. */

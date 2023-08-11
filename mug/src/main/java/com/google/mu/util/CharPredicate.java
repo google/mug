@@ -157,4 +157,43 @@ public interface CharPredicate {
       }
     };
   }
+
+  /**
+   * Returns {@code true} if a character sequence contains at least one matching BMP character.
+   * Equivalent to {@code !matchesNoneOf(sequence)}.
+   *
+   * @since 6.7
+   */
+  default boolean matchesAnyOf(CharSequence sequence) {
+    return !matchesNoneOf(sequence);
+  }
+
+  /**
+   * Returns {@code true} if a character sequence contains only matching BMP characters.
+   *
+   * @since 6.7
+   */
+  default boolean matchesAllOf(CharSequence sequence) {
+    for (int i = sequence.length() - 1; i >= 0; i--) {
+      if (!test(sequence.charAt(i))) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Returns {@code true} if a character sequence contains no matching BMP characters. Equivalent to
+   * {@code !matchesAnyOf(sequence)}.
+   *
+   * @since 6.7
+   */
+  default boolean matchesNoneOf(CharSequence sequence) {
+    for (int i = sequence.length() - 1; i >= 0; i--) {
+      if (test(sequence.charAt(i))) {
+        return true;
+      }
+    }
+    return false;
+  }
 }

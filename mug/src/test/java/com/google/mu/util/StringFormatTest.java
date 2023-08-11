@@ -1,5 +1,6 @@
 package com.google.mu.util;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -9,152 +10,218 @@ import org.junit.runner.RunWith;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.testing.ClassSanityTester;
+import com.google.errorprone.annotations.CompileTimeConstant;
+import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 @RunWith(TestParameterInjector.class)
 public class StringFormatTest {
+  private static final CharPredicate DIGIT = CharPredicate.range('0', '9');
 
   @Test
-  public void parse_noPlaceholder() {
-    StringFormat template = new StringFormat("this is literal");
-    assertThat(template.parse("this is literal").get()).isEmpty();
+  public void parse_noPlaceholder(@TestParameter Mode mode) {
+    StringFormat format = mode.formatOf("this is literal");
+    assertThat(format.parse("this is literal").get()).isEmpty();
   }
 
   @Test
-  public void parse_emptyCurlyBrace_doesNotCountAsPlaceholder() {
-    StringFormat template = new StringFormat("curly brace: {}");
-    assertThat(template.parse("curly brace: {}").get()).isEmpty();
+  public void parse_emptyCurlyBrace_doesNotCountAsPlaceholder(@TestParameter Mode mode) {
+    StringFormat format = mode.formatOf("curly brace: {}");
+    assertThat(format.parse("curly brace: {}").get()).isEmpty();
   }
 
   @Test
-  public void parse_onlyPlaceholder() {
-    StringFormat template = new StringFormat("{v}");
-    assertThat(template.parse("Hello Tom!", v -> v)).hasValue("Hello Tom!");
+  public void parse_onlyPlaceholder(@TestParameter Mode mode) {
+    StringFormat format = mode.formatOf("{v}");
+    assertThat(format.parse("Hello Tom!", v -> v)).hasValue("Hello Tom!");
   }
 
   @Test
-  public void parse_singlePlaceholder() {
-    StringFormat template = new StringFormat("Hello {v}!");
-    assertThat(template.parse("Hello Tom!", v -> v)).hasValue("Tom");
+  public void parse_onlyEllipsis(@TestParameter Mode mode) {
+    StringFormat format = mode.formatOf("{...}");
+    assertThat(format.parse("Hello Tom!")).hasValue(ImmutableList.of());
   }
 
   @Test
-  public void parse_multiplePlaceholders() {
-    StringFormat template = new StringFormat("Hello {person}, welcome to {place}!");
+  public void parse_singlePlaceholder(@TestParameter Mode mode) {
+    StringFormat format = mode.formatOf("Hello {v}!");
+    assertThat(format.parse("Hello Tom!", v -> v)).hasValue("Tom");
+  }
+
+  @Test
+  public void parse_singlePlaceholder_withEllipsis(@TestParameter Mode mode) {
+    StringFormat format = mode.formatOf("Hello {...}!");
+    assertThat(format.parse("Hello Tom!")).hasValue(ImmutableList.of());
+  }
+
+  @Test
+  public void parse_multiplePlaceholders(@TestParameter Mode mode) {
+    StringFormat format = mode.formatOf("Hello {person}, welcome to {place}!");
     assertThat(
-            template.parse("Hello Gandolf, welcome to Isengard!").get().stream()
+            format.parse("Hello Gandolf, welcome to Isengard!").get().stream()
                 .map(Object::toString))
         .containsExactly("Gandolf", "Isengard")
         .inOrder();
   }
 
   @Test
-  public void parse_multiplePlaceholdersWithSameName() {
-    StringFormat template = new StringFormat("Hello {name} and {name}!");
-    assertThat(template.parse("Hello Gandolf and Aragon!").get().stream().map(Object::toString))
+  public void parse_multiplePlaceholders_withEllipsis(@TestParameter Mode mode) {
+    StringFormat format = mode.formatOf("Hello {...}, welcome to {place}!");
+    assertThat(
+            format.parse("Hello Gandolf, welcome to Isengard!").get().stream()
+                .map(Object::toString))
+        .containsExactly("Isengard");
+  }
+
+  @Test
+  public void parse_multiplePlaceholders_withEllipsis_usingLambda(@TestParameter Mode mode) {
+    StringFormat format = mode.formatOf("Hello {...}, welcome to {place}!");
+    assertThat(format.parse("Hello Gandolf, welcome to Isengard!", p -> p)).hasValue("Isengard");
+  }
+
+  @Test
+  public void parse_multiplePlaceholdersWithSameName(@TestParameter Mode mode) {
+    StringFormat format = mode.formatOf("Hello {name} and {name}!");
+    assertThat(format.parse("Hello Gandolf and Aragon!").get().stream().map(Object::toString))
         .containsExactly("Gandolf", "Aragon")
         .inOrder();
   }
 
   @Test
   public void parse_emptyPlaceholderValue() {
-    StringFormat template = new StringFormat("Hello {what}!");
-    assertThat(template.parse("Hello !").get().stream().map(Substring.Match::toString))
+    StringFormat format = new StringFormat("Hello {what}!");
+    assertThat(format.parse("Hello !").get().stream().map(Substring.Match::toString))
         .containsExactly("");
   }
 
   @Test
-  public void parse_preludeFailsToMatch() {
-    StringFormat template = new StringFormat("Hello {person}!");
-    assertThat(template.parse("Hell Tom!")).isEmpty();
-    assertThat(template.parse("elloh Tom!")).isEmpty();
-    assertThat(template.parse(" Hello Tom!")).isEmpty();
+  public void parse_strict_emptyPlaceholderValue() {
+    StringFormat format = Mode.NO_EMPTY_MATCH.formatOf("Hello {what}!");
+    assertThat(format.parse("Hello !")).isEmpty();
   }
 
   @Test
-  public void parse_postludeFailsToMatch() {
-    StringFormat template = new StringFormat("Hello {person}!");
-    assertThat(template.parse("Hello Tom?")).isEmpty();
-    assertThat(template.parse("Hello Tom! ")).isEmpty();
-    assertThat(template.parse("Hello Tom")).isEmpty();
+  public void parse_strict_placeholdeWithInvalidChar() {
+    StringFormat format = StringFormat.strict("Hello {what}!", DIGIT);
+    assertThat(format.parse("Hello x!")).isEmpty();
+    assertThat(format.parse("Hello x1!")).isEmpty();
+    assertThat(format.parse("Hello 1x!")).isEmpty();
   }
 
   @Test
-  public void parse_nonEmptyTemplate_emptyInput() {
-    StringFormat template = new StringFormat("Hello {person}!");
-    assertThat(template.parse("")).isEmpty();
+  public void parse_preludeFailsToMatch(@TestParameter Mode mode) {
+    StringFormat format = mode.formatOf("Hello {person}!");
+    assertThat(format.parse("Hell Tom!")).isEmpty();
+    assertThat(format.parse("elloh Tom!")).isEmpty();
+    assertThat(format.parse(" Hello Tom!")).isEmpty();
   }
 
   @Test
-  public void parse_emptyTemplate_nonEmptyInput() {
-    assertThat(new StringFormat("").parse(".")).isEmpty();
+  public void parse_postludeFailsToMatch(@TestParameter Mode mode) {
+    StringFormat format = mode.formatOf("Hello {person}!");
+    assertThat(format.parse("Hello Tom?")).isEmpty();
+    assertThat(format.parse("Hello Tom! ")).isEmpty();
+    assertThat(format.parse("Hello Tom")).isEmpty();
   }
 
   @Test
-  public void parse_emptyTemplate_emptyInput() {
-    assertThat(new StringFormat("").parse("")).hasValue(ImmutableList.of());
+  public void parse_nonEmptyTemplate_emptyInput(@TestParameter Mode mode) {
+    StringFormat format = mode.formatOf("Hello {person}!");
+    assertThat(format.parse("")).isEmpty();
   }
 
   @Test
-  public void parse_withOneArgLambda() {
-    assertThat(new StringFormat("1 is {what}").parse("1 is one", Object::toString)).hasValue("one");
+  public void parse_emptyTemplate_nonEmptyInput(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("").parse(".")).isEmpty();
   }
 
   @Test
-  public void parse_withOneArgLambda_lambdaReturnsNull() {
-    assertThat(new StringFormat("1 is {what}").parse("1 is one", x -> null)).isEmpty();
+  public void parse_emptyTemplate_emptyInput(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("").parse("")).hasValue(ImmutableList.of());
   }
 
   @Test
-  public void parse_withTwoArgsLambda() {
+  public void parse_withOneArgLambda(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("1 is {what}").parse("1 is one", Object::toString)).hasValue("one");
+  }
+
+  @Test
+  public void parse_withOneArgLambda_emptyInput(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("1 is {what}").parse("", Object::toString)).isEmpty();
+  }
+
+  @Test
+  public void parse_withOneArgLambda_lambdaReturnsNull(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("1 is {what}").parse("1 is one", w -> null)).isEmpty();
+  }
+
+  @Test
+  public void parse_withTwoArgsLambda(@TestParameter Mode mode) {
     assertThat(
-            new StringFormat("1 is {what}, 2 is {what}")
-                .parse("1 is one, 2 is two", String::concat))
+            mode.formatOf("1 is {what}, 2 is {what}").parse("1 is one, 2 is two", String::concat))
         .hasValue("onetwo");
   }
 
   @Test
-  public void parse_withTwoArgsLambda_lambdaReturnsNull() {
-    assertThat(new StringFormat("1 is {x}, 2 is {y}").parse("1 is one, 2 is two", (x, y) -> null))
+  public void parse_withTwoArgsLambda_emptyInput(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("1 is {x}, 2 is {y}").parse("", (x, y) -> null)).isEmpty();
+  }
+
+  @Test
+  public void parse_withTwoArgsLambda_lambdaReturnsNull(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("1 is {x}, 2 is {y}").parse("1 is one, 2 is two", (x, y) -> null))
         .isEmpty();
   }
 
   @Test
-  public void parse_withThreeArgsLambda() {
+  public void parse_withThreeArgsLambda(@TestParameter Mode mode) {
     assertThat(
-            new StringFormat("1 is {x}, 2 is {y}, 3 is {z}")
+            mode.formatOf("1 is {x}, 2 is {y}, 3 is {z}")
                 .parse("1 is one, 2 is two, 3 is three", (x, y, z) -> x + "," + y + "," + z))
         .hasValue("one,two,three");
   }
 
   @Test
-  public void parse_withThreeArgsLambda_lambdaReturnsNull() {
+  public void parse_withThreeArgsLambda_emptyInput(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("1 is {x}, 2 is {y}, 3 is {z}").parse("", (x, y, z) -> null))
+        .isEmpty();
+  }
+
+  @Test
+  public void parse_withThreeArgsLambda_lambdaReturnsNull(@TestParameter Mode mode) {
     assertThat(
-            new StringFormat("1 is {x}, 2 is {y}, 3 is {z}")
+            mode.formatOf("1 is {x}, 2 is {y}, 3 is {z}")
                 .parse("1 is one, 2 is two, 3 is three", (x, y, z) -> null))
         .isEmpty();
   }
 
   @Test
-  public void parse_withFourArgsLambda() {
+  public void parse_withFourArgsLambda(@TestParameter Mode mode) {
     assertThat(
-            new StringFormat("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}")
+            mode.formatOf("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}")
                 .parse("1 is one, 2 is two, 3 is three, 4 is four", (a, b, c, d) -> a + b + c + d))
         .hasValue("onetwothreefour");
   }
 
   @Test
-  public void parse_withFourArgsLambda_lambdaReturnsNull() {
+  public void parse_withFourArgsLambda_emptyInput(@TestParameter Mode mode) {
     assertThat(
-            new StringFormat("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}")
+            mode.formatOf("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}").parse("", (a, b, c, d) -> null))
+        .isEmpty();
+  }
+
+  @Test
+  public void parse_withFourArgsLambda_lambdaReturnsNull(@TestParameter Mode mode) {
+    assertThat(
+            mode.formatOf("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}")
                 .parse("1 is one, 2 is two, 3 is three, 4 is four", (a, b, c, d) -> null))
         .isEmpty();
   }
 
   @Test
-  public void parse_withFiveArgsLambda() {
+  public void parse_withFiveArgsLambda(@TestParameter Mode mode) {
     assertThat(
-            new StringFormat("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}, 5 is {e}")
+            mode.formatOf("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}, 5 is {e}")
                 .parse(
                     "1 is one, 2 is two, 3 is three, 4 is four, 5 is five",
                     (a, b, c, d, e) -> a + b + c + d + e))
@@ -162,9 +229,17 @@ public class StringFormatTest {
   }
 
   @Test
-  public void parse_withFiveArgsLambda_lambdaReturnsNull() {
+  public void parse_withFiveArgsLambda_emptyInput(@TestParameter Mode mode) {
     assertThat(
-            new StringFormat("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}, 5 is {e}")
+            mode.formatOf("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}, 5 is {e}")
+                .parse("", (a, b, c, d, e) -> null))
+        .isEmpty();
+  }
+
+  @Test
+  public void parse_withFiveArgsLambda_lambdaReturnsNull(@TestParameter Mode mode) {
+    assertThat(
+            mode.formatOf("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}, 5 is {e}")
                 .parse(
                     "1 is one, 2 is two, 3 is three, 4 is four, 5 is five",
                     (a, b, c, d, e) -> null))
@@ -172,9 +247,9 @@ public class StringFormatTest {
   }
 
   @Test
-  public void parse_withSixArgsLambda() {
+  public void parse_withSixArgsLambda(@TestParameter Mode mode) {
     assertThat(
-            new StringFormat("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}, 5 is {e}, 6 is {f}")
+            mode.formatOf("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}, 5 is {e}, 6 is {f}")
                 .parse(
                     "1 is one, 2 is two, 3 is three, 4 is four, 5 is five, 6 is six",
                     (a, b, c, d, e, f) -> a + b + c + d + e + f))
@@ -182,9 +257,17 @@ public class StringFormatTest {
   }
 
   @Test
-  public void parse_withSixArgsLambda_lambdaReturnsNull() {
+  public void parse_withSixArgsLambda_emptyInput(@TestParameter Mode mode) {
     assertThat(
-            new StringFormat("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}, 5 is {e}, 6 is {f}")
+            mode.formatOf("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}, 5 is {e}, 6 is {f}")
+                .parse("", (a, b, c, d, e, f) -> null))
+        .isEmpty();
+  }
+
+  @Test
+  public void parse_withSixArgsLambda_lambdaReturnsNull(@TestParameter Mode mode) {
+    assertThat(
+            mode.formatOf("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}, 5 is {e}, 6 is {f}")
                 .parse(
                     "1 is one, 2 is two, 3 is three, 4 is four, 5 is five, 6 is six",
                     (a, b, c, d, e, f) -> null))
@@ -192,76 +275,127 @@ public class StringFormatTest {
   }
 
   @Test
-  public void parse_placeholderInsideCurlyBraces() {
-    StringFormat format = new StringFormat("{key={key}, value={value}}");
+  public void parse_placeholderInsideCurlyBraces(@TestParameter Mode mode) {
+    StringFormat format = mode.formatOf("{key={key}, value={value}}");
     assertThat(format.parse("{key=one, value=1}", (key, value) -> key + ":" + value))
         .hasValue("one:1");
   }
 
   @Test
-  public void parse_multipleCurlyBracedPlaceholderGroups() {
-    StringFormat format = new StringFormat("{key={key}}{value={value}}");
+  public void parse_multipleCurlyBracedPlaceholderGroups(@TestParameter Mode mode) {
+    StringFormat format = mode.formatOf("{key={key}}{value={value}}");
     assertThat(format.parse("{key=one}{value=1}", (key, value) -> key + ":" + value))
         .hasValue("one:1");
   }
 
   @Test
-  public void parse_placeholderInsideMultipleCurlyBraces() {
-    StringFormat format = new StringFormat("{test: {{key={key}, value={value}}}}");
+  public void parse_placeholderInsideMultipleCurlyBraces(@TestParameter Mode mode) {
+    StringFormat format = mode.formatOf("{test: {{key={key}, value={value}}}}");
     assertThat(format.parse("{test: {{key=one, value=1}}}", (key, value) -> key + ":" + value))
         .hasValue("one:1");
   }
 
   @Test
-  public void twoPlaceholdersNextToEachOther_invalid() {
-    assertThrows(IllegalArgumentException.class, () -> new StringFormat("{a}{b}"));
+  public void twoPlaceholdersNextToEachOther_invalid(@TestParameter Mode mode) {
+    assertThrows(IllegalArgumentException.class, () -> mode.formatOf("{a}{b}").parse("ab"));
   }
 
   @Test
-  public void parse_partiallyOverlappingTemplate() {
-    assertThat(new StringFormat("xyz{?}xzz").parse("xyzzxxzz", v -> v)).hasValue("zx");
+  public void parse_partiallyOverlappingTemplate(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("xyz{?}xzz").parse("xyzzxxzz", v -> v)).hasValue("zx");
   }
 
   @Test
-  public void parse_throwsUponIncorrectNumLambdaParameters() {
+  public void parse_throwsUponIncorrectNumLambdaParameters(@TestParameter Mode mode) {
     assertThrows(
         IllegalArgumentException.class,
-        () -> new StringFormat("1 is {a} or {b}").parse("bad input", Object::toString));
+        () -> mode.formatOf("1 is {a} or {b}").parse("bad input", Object::toString));
     assertThrows(
         IllegalArgumentException.class,
-        () -> new StringFormat("1 is {what}").parse("bad input", String::concat));
+        () -> mode.formatOf("1 is {what}").parse("bad input", String::concat));
     assertThrows(
         IllegalArgumentException.class,
-        () -> new StringFormat("1 is {what}").parse("bad input", (a, b, c) -> a));
+        () -> mode.formatOf("1 is {what}").parse("bad input", (a, b, c) -> a));
     assertThrows(
         IllegalArgumentException.class,
-        () -> new StringFormat("1 is {what}").parse("bad input", (a, b, c, d) -> a));
+        () -> mode.formatOf("1 is {what}").parse("bad input", (a, b, c, d) -> a));
     assertThrows(
         IllegalArgumentException.class,
-        () -> new StringFormat("1 is {what}").parse("bad input", (a, b, c, d, e) -> a));
+        () -> mode.formatOf("1 is {what}").parse("bad input", (a, b, c, d, e) -> a));
     assertThrows(
         IllegalArgumentException.class,
-        () -> new StringFormat("1 is {what}").parse("bad input", (a, b, c, d, e, f) -> a));
+        () -> mode.formatOf("1 is {what}").parse("bad input", (a, b, c, d, e, f) -> a));
   }
 
   @Test
-  public void scan_singlePlaceholder() {
-    assertThat(new StringFormat("[id={d}]").scan("id=1", v -> v)).isEmpty();
-    assertThat(new StringFormat("[id={d}]").scan("[id=foo]", v -> v)).containsExactly("foo");
-    assertThat(new StringFormat("[id={d}]").scan("[id=foo][id=bar]", v -> v))
+  public void scan_emptyTemplate_nonEmptyInput() {
+    assertThat(new StringFormat("").scan("."))
+        .containsExactly(ImmutableList.of(), ImmutableList.of());
+    assertThat(new StringFormat("").scan("foo"))
+        .containsExactly(
+            ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), ImmutableList.of());
+  }
+
+  @Test
+  public void scan_strict_emptyTemplate_nonEmptyInput() {
+    assertThat(Mode.NO_EMPTY_MATCH.formatOf("").scan(".")).isEmpty();
+    assertThat(Mode.NO_EMPTY_MATCH.formatOf("").scan("foo")).isEmpty();
+  }
+
+  @Test
+  public void scan_strict_withAllValidChars() {
+    StringFormat format = StringFormat.strict("{user: {user_id}}", DIGIT);
+    assertThat(format.scan("{user: 123}", id -> Integer.parseInt(id))).containsExactly(123);
+    assertThat(format.scan("{user: 123}, {user: 456}", id -> Integer.parseInt(id)))
+        .containsExactly(123, 456)
+        .inOrder();
+  }
+
+  @Test
+  public void scan_strict_invalidCharsFiltered() {
+    StringFormat format = StringFormat.strict("{user: {user_id}}", DIGIT);
+    assertThat(format.scan("{user: 12x}", id -> Integer.parseInt(id))).isEmpty();
+    assertThat(format.scan("{user: 12x}, {user: 456}", id -> Integer.parseInt(id)))
+        .containsExactly(456);
+  }
+
+  @Test
+  public void scan_emptyTemplate_emptyInput() {
+    assertThat(new StringFormat("").scan("")).containsExactly(ImmutableList.of());
+  }
+
+  @Test
+  public void scan_strict_emptyTemplate_emptyInput() {
+    assertThat(Mode.NO_EMPTY_MATCH.formatOf("").scan("")).isEmpty();
+  }
+
+  @Test
+  public void scan_singlePlaceholder(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("[id={id}]").scan("id=1", id -> id)).isEmpty();
+    assertThat(mode.formatOf("[id={id}]").scan("[id=foo]", id -> id)).containsExactly("foo");
+    assertThat(mode.formatOf("[id={id}]").scan("[id=foo][id=bar]", id -> id))
         .containsExactly("foo", "bar")
         .inOrder();
   }
 
   @Test
-  public void scan_singlePlaceholder_emptyInput() {
-    assertThat(new StringFormat("[id={d}]").scan("", v -> v)).isEmpty();
+  public void scan_singlePlaceholder_withEllipsis(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("[id={...}]").scan("id=1")).isEmpty();
+    assertThat(mode.formatOf("[id={...}]").scan("[id=foo]")).containsExactly(ImmutableList.of());
+    assertThat(mode.formatOf("[id={...}]").scan("[id=foo][id=bar]"))
+        .containsExactly(ImmutableList.of(), ImmutableList.of())
+        .inOrder();
   }
 
   @Test
-  public void scan_singlePlaceholder_nullFilteredOut() {
-    assertThat(new StringFormat("[id={d}]").scan("[id=foo]", v -> null)).isEmpty();
-    assertThat(new StringFormat("[id={d}]").scan("[id=foo][id=]", v -> v.isEmpty() ? null : v))
+  public void scan_singlePlaceholder_emptyInput(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("[id={id}]").scan("", id -> id)).isEmpty();
+  }
+
+  @Test
+  public void scan_singlePlaceholder_nullFilteredOut(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("[id={id}]").scan("[id=foo]", id -> null)).isEmpty();
+    assertThat(mode.formatOf("[id={id}]").scan("[id=foo][id=]", id -> id.isEmpty() ? null : id))
         .containsExactly("foo");
   }
 
@@ -273,27 +407,59 @@ public class StringFormatTest {
   }
 
   @Test
-  public void scan_twoPlaceholders() {
-    assertThat(new StringFormat("[id={d}, name={e}]").scan("id=1", (id, name) -> id + "," + name))
+  public void scan_strict_emptyPlaceholderValue() {
+    assertThat(Mode.NO_EMPTY_MATCH.formatOf("/{a}/{b}/").scan("/foo/bar//zoo//", (a, b) -> a + b))
+        .containsExactly("foobar");
+  }
+
+  @Test
+  public void scan_twoPlaceholders(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("[id={id}, name={name}]").scan("id=1", (id, name) -> id + "," + name))
         .isEmpty();
     assertThat(
-            new StringFormat("[id={d}, name={e}]")
+            mode.formatOf("[id={id}, name={name}]")
                 .scan("[id=foo, name=bar]", (id, name) -> id + "," + name))
         .containsExactly("foo,bar");
     assertThat(
-            new StringFormat("[id={d}, name={e}]")
+            mode.formatOf("[id={id}, name={name}]")
                 .scan("[id=foo, name=bar][id=zoo, name=boo]", (id, name) -> id + "," + name))
         .containsExactly("foo,bar", "zoo,boo")
         .inOrder();
   }
 
   @Test
-  public void scan_twoPlaceholders_nullFilteredOut() {
+  public void scan_twoPlaceholders_withEllipsis(@TestParameter Mode mode) {
     assertThat(
-            new StringFormat("[id={d}, name={e}]").scan("[id=foo, name=bar]", (id, name) -> null))
+            mode.formatOf("[id={...}, name={name}]")
+                .scan("[id=foo, name=bar]")
+                .map(l -> l.stream().map(Substring.Match::toString).collect(toImmutableList())))
+        .containsExactly(ImmutableList.of("bar"));
+    assertThat(
+            mode.formatOf("[id={...}, name={name}]")
+                .scan("[id=, name=bar][id=zoo, name=boo]")
+                .map(l -> l.stream().map(Substring.Match::toString).collect(toImmutableList())))
+        .containsExactly(ImmutableList.of("bar"), ImmutableList.of("boo"))
+        .inOrder();
+  }
+
+  @Test
+  public void scan_twoPlaceholders_withEllipsis_usingLambda(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("[id={id}, name={...}]").scan("[id=foo, name=bar]", id -> id))
+        .containsExactly("foo");
+    assertThat(
+            mode.formatOf("[id={...}, name={name}]")
+                .scan("[id=, name=bar][id=zoo, name=boo]", name -> name))
+        .containsExactly("bar", "boo")
+        .inOrder();
+  }
+
+  @Test
+  public void scan_twoPlaceholders_nullFilteredOut(@TestParameter Mode mode) {
+    assertThat(
+            mode.formatOf("[id={id}, name={name}]").scan("[id=foo, name=bar]", (id, name) -> null))
         .isEmpty();
     assertThat(
-            new StringFormat("[id={d}, name={e}]")
+            mode.formatOf("[id={id}, name={name}]")
                 .scan(
                     "[id=, name=bar][id=zoo, name=boo]",
                     (id, name) -> id.isEmpty() ? null : id + "," + name))
@@ -301,68 +467,66 @@ public class StringFormatTest {
   }
 
   @Test
-  public void scan_twoPlaceholders_emptyInput() {
-    assertThat(new StringFormat("[id={d}, name={e}]").scan("", (id, name) -> id + "," + name))
+  public void scan_twoPlaceholders_emptyInput(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("[id={id}, name={name}]").scan("", (id, name) -> id + "," + name))
         .isEmpty();
   }
 
   @Test
-  public void scan_threePlaceholders() {
-    assertThat(new StringFormat("[a={a}, b={b}, c={c}]").scan("a=1,b=2,c", (a, b, c) -> a + b + c))
+  public void scan_threePlaceholders(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("[a={a}, b={b}, c={c}]").scan("a=1,b=2,c", (a, b, c) -> a + b + c))
         .isEmpty();
     assertThat(
-            new StringFormat("[a={a}, b={b}, c={c}]")
-                .scan("[a=1, b=2, c=3]", (a, b, c) -> a + b + c))
+            mode.formatOf("[a={a}, b={b}, c={c}]").scan("[a=1, b=2, c=3]", (a, b, c) -> a + b + c))
         .containsExactly("123");
     assertThat(
-            new StringFormat("[a={a}, b={b}, c={c}]")
+            mode.formatOf("[a={a}, b={b}, c={c}]")
                 .scan("[a=1, b=2, c=3] [a=x, b=y, c=z]", (a, b, c) -> a + b + c))
         .containsExactly("123", "xyz")
         .inOrder();
   }
 
   @Test
-  public void scan_threePlaceholders_nullFilteredOut() {
-    assertThat(new StringFormat("[a={a}, b={b}, c={c}]").scan("[a=1, b=2, c=3]", (a, b, c) -> null))
+  public void scan_threePlaceholders_nullFilteredOut(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("[a={a}, b={b}, c={c}]").scan("[a=1, b=2, c=3]", (a, b, c) -> null))
         .isEmpty();
     assertThat(
-            new StringFormat("[a={a}, b={b}, c={c}]")
+            mode.formatOf("[a={a}, b={b}, c={c}]")
                 .scan(
                     "[a=1, b=2, c=3] [a=x, b=, c=z]", (a, b, c) -> b.isEmpty() ? null : a + b + c))
         .containsExactly("123");
   }
 
   @Test
-  public void scan_threePlaceholders_emptyInput() {
-    assertThat(new StringFormat("[a={a}, b={b}, c={c}]").scan("", (a, b, c) -> a + b + c))
-        .isEmpty();
+  public void scan_threePlaceholders_emptyInput(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("[a={a}, b={b}, c={c}]").scan("", (a, b, c) -> a + b + c)).isEmpty();
   }
 
   @Test
-  public void scan_fourPlaceholders() {
+  public void scan_fourPlaceholders(@TestParameter Mode mode) {
     assertThat(
-            new StringFormat("[a={a}, b={b}, c={c}, d={d}]")
+            mode.formatOf("[a={a}, b={b}, c={c}, d={d}]")
                 .scan("a=1,b=2,c=3,d", (a, b, c, d) -> a + b + c + d))
         .isEmpty();
     assertThat(
-            new StringFormat("[a={a}, b={b}, c={c}, d={d}]")
+            mode.formatOf("[a={a}, b={b}, c={c}, d={d}]")
                 .scan("[a=1, b=2, c=3, d=4]", (a, b, c, d) -> a + b + c + d))
         .containsExactly("1234");
     assertThat(
-            new StringFormat("[a={a}, b={b}, c={c}, d={d}]")
+            mode.formatOf("[a={a}, b={b}, c={c}, d={d}]")
                 .scan("[a=1, b=2, c=3, d=4] [a=z, b=y, c=x, d=w]", (a, b, c, d) -> a + b + c + d))
         .containsExactly("1234", "zyxw")
         .inOrder();
   }
 
   @Test
-  public void scan_fourPlaceholders_nullFilteredOut() {
+  public void scan_fourPlaceholders_nullFilteredOut(@TestParameter Mode mode) {
     assertThat(
-            new StringFormat("[a={a}, b={b}, c={c}, d={d}]")
+            mode.formatOf("[a={a}, b={b}, c={c}, d={d}]")
                 .scan("[a=1, b=2, c=3, d=4]", (a, b, c, d) -> null))
         .isEmpty();
     assertThat(
-            new StringFormat("[a={a}, b={b}, c={c}, d={d}]")
+            mode.formatOf("[a={a}, b={b}, c={c}, d={d}]")
                 .scan(
                     "[a=1, b=2, c=3, d=4] [a=z, b=y, c=x, d=]",
                     (a, b, c, d) -> d.isEmpty() ? null : a + b + c + d))
@@ -371,25 +535,24 @@ public class StringFormatTest {
   }
 
   @Test
-  public void scan_fourPlaceholders_emptyInput() {
+  public void scan_fourPlaceholders_emptyInput(@TestParameter Mode mode) {
     assertThat(
-            new StringFormat("[a={a}, b={b}, c={c}, d={d}]")
-                .scan("", (a, b, c, d) -> a + b + c + d))
+            mode.formatOf("[a={a}, b={b}, c={c}, d={d}]").scan("", (a, b, c, d) -> a + b + c + d))
         .isEmpty();
   }
 
   @Test
-  public void scan_fivePlaceholders() {
+  public void scan_fivePlaceholders(@TestParameter Mode mode) {
     assertThat(
-            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}]")
+            mode.formatOf("[a={a}, b={b}, c={c}, d={d}, e={e}]")
                 .scan("a=1,b=2,c=3,d", (a, b, c, d, e) -> a + b + c + d + e))
         .isEmpty();
     assertThat(
-            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}]")
+            mode.formatOf("[a={a}, b={b}, c={c}, d={d}, e={e}]")
                 .scan("[a=1, b=2, c=3, d=4, e=5]", (a, b, c, d, e) -> a + b + c + d + e))
         .containsExactly("12345");
     assertThat(
-            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}]")
+            mode.formatOf("[a={a}, b={b}, c={c}, d={d}, e={e}]")
                 .scan(
                     "[a=1, b=2, c=3, d=4, e=5] [a=z, b=y, c=x, d=w, e=v]",
                     (a, b, c, d, e) -> a + b + c + d + e))
@@ -398,13 +561,13 @@ public class StringFormatTest {
   }
 
   @Test
-  public void scan_fivePlaceholders_nullFilteredOut() {
+  public void scan_fivePlaceholders_nullFilteredOut(@TestParameter Mode mode) {
     assertThat(
-            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}]")
+            mode.formatOf("[a={a}, b={b}, c={c}, d={d}, e={e}]")
                 .scan("[a=1, b=2, c=3, d=4, e=5]", (a, b, c, d, e) -> null))
         .isEmpty();
     assertThat(
-            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}]")
+            mode.formatOf("[a={a}, b={b}, c={c}, d={d}, e={e}]")
                 .scan(
                     "[a=, b=2, c=3, d=4, e=5] [a=z, b=y, c=x, d=w, e=v]",
                     (a, b, c, d, e) -> a.isEmpty() ? null : a + b + c + d + e))
@@ -412,26 +575,26 @@ public class StringFormatTest {
   }
 
   @Test
-  public void scan_fivePlaceholders_emptyInput() {
+  public void scan_fivePlaceholders_emptyInput(@TestParameter Mode mode) {
     assertThat(
-            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}]")
+            mode.formatOf("[a={a}, b={b}, c={c}, d={d}, e={e}]")
                 .scan("", (a, b, c, d, e) -> a + b + c + d + e))
         .isEmpty();
   }
 
   @Test
-  public void scan_sixPlaceholders() {
+  public void scan_sixPlaceholders(@TestParameter Mode mode) {
     assertThat(
-            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}]")
+            mode.formatOf("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}]")
                 .scan("a=1, b=2, c=3, d=4, e=5, f", (a, b, c, d, e, f) -> a + b + c + d + e + f))
         .isEmpty();
     assertThat(
-            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}]")
+            mode.formatOf("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}]")
                 .scan(
                     "[a=1, b=2, c=3, d=4, e=5, f=6]", (a, b, c, d, e, f) -> a + b + c + d + e + f))
         .containsExactly("123456");
     assertThat(
-            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}]")
+            mode.formatOf("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}]")
                 .scan(
                     "[a=1, b=2, c=3, d=4, e=5, f=6] [a=z, b=y, c=x, d=w, e=v, f=u]",
                     (a, b, c, d, e, f) -> a + b + c + d + e + f))
@@ -440,13 +603,13 @@ public class StringFormatTest {
   }
 
   @Test
-  public void scan_sixPlaceholders_nullFiltered() {
+  public void scan_sixPlaceholders_nullFiltered(@TestParameter Mode mode) {
     assertThat(
-            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}]")
+            mode.formatOf("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}]")
                 .scan("[a=1, b=2, c=3, d=4, e=5, f=6]", (a, b, c, d, e, f) -> null))
         .isEmpty();
     assertThat(
-            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}]")
+            mode.formatOf("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}]")
                 .scan(
                     "[a=1, b=2, c=3, d=, e=5, f=6] [a=z, b=y, c=x, d=w, e=v, f=u]",
                     (a, b, c, d, e, f) -> d.isEmpty() ? null : a + b + c + d + e + f))
@@ -455,117 +618,187 @@ public class StringFormatTest {
   }
 
   @Test
-  public void scan_sixPlaceholders_emptyInput() {
+  public void scan_sixPlaceholders_emptyInput(@TestParameter Mode mode) {
     assertThat(
-            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}]")
+            mode.formatOf("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}]")
                 .scan("", (a, b, c, d, e, f) -> a + b + c + d + e + f))
         .isEmpty();
   }
 
   @Test
-  public void scan_suffixConsumed() {
-    assertThat(new StringFormat("/{a}/{b}/").scan("/foo/bar//zoo/boo/", (a, b) -> a + b))
+  public void scan_suffixConsumed(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("/{a}/{b}/").scan("/foo/bar//zoo/boo/", (a, b) -> a + b))
         .containsExactly("foobar", "zooboo")
         .inOrder();
   }
 
   @Test
-  public void scan_skipsNonMatchingCharsFromBeginning() {
-    assertThat(new StringFormat("[id={d}]").scan("whatever [id=foo] [id=bar]", v -> v))
+  public void scan_skipsNonMatchingCharsFromBeginning(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("[id={id}]").scan("whatever [id=foo] [id=bar]", id -> id))
         .containsExactly("foo", "bar")
         .inOrder();
     assertThat(
-            new StringFormat("[k={key}, v={value}]")
+            mode.formatOf("[k={key}, v={value}]")
                 .scan("whatever [k=one, v=1] [k=two, v=2]", (k, v) -> k + ":" + v))
         .containsExactly("one:1", "two:2")
         .inOrder();
   }
 
   @Test
-  public void scan_skipsNonMatchingCharsFromMiddle() {
-    assertThat(new StringFormat("[id={d}]").scan("[id=foo] [id=bar]", v -> v))
+  public void scan_skipsNonMatchingCharsFromMiddle(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("[id={id}]").scan("[id=foo] [id=bar]", id -> id))
         .containsExactly("foo", "bar")
         .inOrder();
     assertThat(
-            new StringFormat("[k={key}, v={value}]")
+            mode.formatOf("[k={key}, v={value}]")
                 .scan("[k=one, v=1] and then [k=two, v=2]", (k, v) -> k + ":" + v))
         .containsExactly("one:1", "two:2")
         .inOrder();
   }
 
   @Test
-  public void scan_skipsNonMatchingCharsFromEnd() {
-    assertThat(new StringFormat("[id={d}]").scan("[id=foo] [id=bar];[id=baz", v -> v))
+  public void scan_skipsNonMatchingCharsFromEnd(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("[id={id}]").scan("[id=foo] [id=bar];[id=baz", id -> id))
         .containsExactly("foo", "bar")
         .inOrder();
     assertThat(
-            new StringFormat("[k={key}, v={value}]")
+            mode.formatOf("[k={key}, v={value}]")
                 .scan("[k=one, v=1][k=two, v=2];[k=three,v]", (k, v) -> k + ":" + v))
         .containsExactly("one:1", "two:2")
         .inOrder();
   }
 
   @Test
-  public void scan_singlePlaceholderOnly() {
-    assertThat(new StringFormat("{s}").scan("whatever", s -> s)).containsExactly("whatever");
+  public void scan_skipsPartialMatches(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("[id={id}]").scan("[id [id=bar];[id=baz", id -> id))
+        .containsExactly("bar")
+        .inOrder();
+    assertThat(mode.formatOf("[[id={id}]]").scan("[[id [[[id=bar]];[id=baz", id -> id))
+        .containsExactly("bar")
+        .inOrder();
+  }
+
+  @Test
+  public void scan_singlePlaceholderOnly(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("{s}").scan("whatever", s -> s)).containsExactly("whatever");
+  }
+
+  @Test
+  public void scan_singleEllipsisOnly(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("{...}").scan("whatever")).containsExactly(ImmutableList.of());
+    assertThat(new StringFormat("{...}").scan("")).containsExactly(ImmutableList.of());
+  }
+
+  @Test
+  public void scan_singlePlaceholderOnly_emptyInput() {
     assertThat(new StringFormat("{s}").scan("", s -> s)).containsExactly("");
   }
 
   @Test
-  public void scan_placeholderAtBeginning() {
-    assertThat(new StringFormat("{s} ").scan("a ", s -> s)).containsExactly("a");
-    assertThat(new StringFormat("{s} ").scan("abc d ", s -> s))
-        .containsExactly("abc", "d")
-        .inOrder();
+  public void scan_strict_singlePlaceholderOnly_emptyInput() {
+    assertThat(Mode.NO_EMPTY_MATCH.formatOf("{s}").scan("", s -> s)).isEmpty();
   }
 
   @Test
-  public void scan_placeholderAtEnd() {
-    assertThat(new StringFormat(" {s}").scan(" a", s -> s)).containsExactly("a");
-    assertThat(new StringFormat(" {s}").scan(" abc d ", s -> s))
-        .containsExactly("abc d ")
-        .inOrder();
-    assertThat(new StringFormat(" {a} {b}").scan(" abc d ", (a, b) -> a + "," + b))
+  public void scan_placeholderAtBeginning(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("{s} ").scan("a ", s -> s)).containsExactly("a");
+    assertThat(mode.formatOf("{s} ").scan("abc d ", s -> s)).containsExactly("abc", "d").inOrder();
+  }
+
+  @Test
+  public void scan_placeholderAtEnd(@TestParameter Mode mode) {
+    assertThat(mode.formatOf(" {s}").scan(" a", s -> s)).containsExactly("a");
+    assertThat(mode.formatOf(" {s}").scan(" abc d ", s -> s)).containsExactly("abc d ").inOrder();
+    assertThat(mode.formatOf(" {a} {b}").scan(" abc d ", (a, b) -> a + "," + b))
         .containsExactly("abc,d ")
         .inOrder();
   }
 
   @Test
-  public void format_placeholdersFilled() {
-    assertThat(new StringFormat("{a} + {b} = {c}").format(1, 2, 3)).isEqualTo("1 + 2 = 3");
-  }
-
-  @Test
-  public void format_nullValueAllowed() {
-    assertThat(new StringFormat("{key} == {value}").format("x", null)).isEqualTo("x == null");
-  }
-
-  @Test
-  public void format_noPlaceholder() {
-    assertThat(new StringFormat("hello").format()).isEqualTo("hello");
-  }
-
-  @Test
-  public void format_tooFewArgs() {
-    assertThrows(IllegalArgumentException.class, () -> new StringFormat("{foo}:{bar}").format(1));
-  }
-
-  @Test
-  public void format_tooManyArgs() {
+  public void scan_throwsUponIncorrectNumLambdaParameters(@TestParameter Mode mode) {
     assertThrows(
-        IllegalArgumentException.class, () -> new StringFormat("{foo}:{bar}").format(1, 2, 3));
+        IllegalArgumentException.class,
+        () -> mode.formatOf("1 is {a} or {b}").scan("bad input", Object::toString));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> mode.formatOf("1 is {what}").scan("bad input", String::concat));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> mode.formatOf("1 is {what}").scan("bad input", (a, b, c) -> a));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> mode.formatOf("1 is {what}").scan("bad input", (a, b, c, d) -> a));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> mode.formatOf("1 is {what}").scan("bad input", (a, b, c, d, e) -> a));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> mode.formatOf("1 is {what}").scan("bad input", (a, b, c, d, e, f) -> a));
   }
 
   @Test
-  public void testToString() {
-    assertThat(new StringFormat("projects/{project}/locations/{location}").toString())
+  public void format_placeholdersFilled(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("{a} + {b} = {c}").format(1, 2, 3)).isEqualTo("1 + 2 = 3");
+  }
+
+  @Test
+  public void format_ellipsisFilled(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("{a} + {b} = {...}").format(1, 2, 3)).isEqualTo("1 + 2 = 3");
+  }
+
+  @Test
+  public void format_nullValueAllowed(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("{key} == {value}").format("x", null)).isEqualTo("x == null");
+  }
+
+  @Test
+  public void format_noPlaceholder(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("hello").format()).isEqualTo("hello");
+  }
+
+  @Test
+  public void format_withEmptyValue(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("{a} + {b} = {c}").format(1, 2, "")).isEqualTo("1 + 2 = ");
+  }
+
+  @Test
+  public void format_tooFewArgs(@TestParameter Mode mode) {
+    assertThrows(IllegalArgumentException.class, () -> mode.formatOf("{foo}:{bar}").format(1));
+  }
+
+  @Test
+  public void format_tooManyArgs(@TestParameter Mode mode) {
+    assertThrows(
+        IllegalArgumentException.class, () -> mode.formatOf("{foo}:{bar}").format(1, 2, 3));
+  }
+
+  @Test
+  public void testToString(@TestParameter Mode mode) {
+    assertThat(mode.formatOf("projects/{project}/locations/{location}").toString())
         .isEqualTo("projects/{project}/locations/{location}");
   }
 
   @Test
-  public void testNulls() {
-    new ClassSanityTester()
-        .setDefault(Substring.RepeatingPattern.class, Substring.first("%s").repeatedly())
-        .testNulls(StringFormat.class);
+  public void testNulls() throws Exception {
+    new ClassSanityTester().testNulls(StringFormat.class);
+    new ClassSanityTester().forAllPublicStaticMethods(StringFormat.class).testNulls();
+  }
+
+  private enum Mode {
+    ANY_MATCH {
+      @Override
+      StringFormat formatOf(@CompileTimeConstant String format) {
+        return new StringFormat(format);
+      }
+    },
+    NO_EMPTY_MATCH {
+      @Override
+      StringFormat formatOf(@CompileTimeConstant String format) {
+        return StringFormat.strict(format, c -> true);
+      }
+    };
+
+    abstract StringFormat formatOf(@CompileTimeConstant String format);
   }
 }
+
