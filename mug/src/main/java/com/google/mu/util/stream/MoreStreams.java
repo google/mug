@@ -221,6 +221,20 @@ public final class MoreStreams {
    * Groups consecutive items in {@code stream} using the {@code sameGroup} predicate, along with
    * the group's run length (number of items).
    *
+   * <p>The following example encodes a stream of payloads with run length:
+   *
+   * <pre>{@code
+   * ImmutableList<RunLengthEncodedPayload> encodedPayloads =
+   *     runLengthEncode(payloads.stream(), payloadDiffer::isEquivalent)
+   *         .mapToObj(
+   *             (payload, count) ->
+   *                 RunLengthEncodedPayload.newBuilder()
+   *                     .setPayload(payload)
+   *                     .setCount(count)
+   *                     .build())
+   *         .collect(toImmutableList());
+   * }</pre>
+   *
    * @return a BiStream with the first item of each group and the run length of that group.
    * @since 6.7
    */
