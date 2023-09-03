@@ -130,9 +130,7 @@ public final class StringFormat {
         PLACEHOLDERS.split(format).map(Substring.Match::toString).collect(toList());
     if (delimiters.size() > 1 && delimiters.get(delimiters.size() - 1).isEmpty()) {
       // If the last placeholder is at end, treat it as anchoring to the end.
-      return delimiters.size() <= 2
-          ? first(delimiters.get(0)).toEnd()
-          : spanInOrder(delimiters.subList(0, delimiters.size() - 1)).toEnd();
+      return spanInOrder(delimiters.subList(0, delimiters.size() - 1)).toEnd();
     }
     return spanInOrder(delimiters);
   }
