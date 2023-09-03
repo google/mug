@@ -2,6 +2,7 @@ package com.google.mu.util;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.common.truth.Truth8.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -10,6 +11,7 @@ import org.junit.runner.RunWith;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.testing.ClassSanityTester;
+import com.google.common.truth.OptionalSubject;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
@@ -771,6 +773,58 @@ public class StringFormatTest {
     assertThrows(
         IllegalArgumentException.class, () -> mode.formatOf("{foo}:{bar}").format(1, 2, 3));
   }
+  @Test
+  public void span_emptyFormatString() {
+    assertPatternMatch(StringFormat.span(""), "foo").hasValue("[]foo");
+    assertPatternMatch(StringFormat.span(""), "").hasValue("[]");
+  }
+
+  @Test
+  public void span_noPlaceholder_noMatch() {
+    assertPatternMatch(StringFormat.span("world"), "hello word 2").isEmpty();
+  }
+
+  @Test
+  public void span_noPlaceholder_matches() {
+    assertPatternMatch(StringFormat.span("world"), "hello world 2").hasValue("hello [world] 2");
+  }
+
+  @Test
+  public void span_singlePlaceholder_noMatch() {
+    assertPatternMatch(StringFormat.span("name: {name}"), "name").isEmpty();
+  }
+
+  @Test
+  public void span_singlePlaceholder_matches() {
+    assertPatternMatch(StringFormat.span("name: {name}."), " name: foo.").hasValue(" [name: foo.]");
+  }
+
+  @Test
+  public void span_twoPlaceholders_matches() {
+    assertPatternMatch(StringFormat.span("{key={key}, value={value}}"), "{key=one, value=1}")
+        .hasValue("[{key=one, value=1}]");
+  }
+
+  @Test
+  public void span_twoPlaceholders_noMatch() {
+    assertPatternMatch(StringFormat.span("{key={key}, value={value}}"), "{key=one, }").isEmpty();
+  }
+
+  @Test
+  public void span_placeholderAtBeginning() {
+    assertPatternMatch(StringFormat.span("{foo}=1"), "x=1, y=1").hasValue("[x=1], y=1");
+  }
+
+  @Test
+  public void span_placeholderAtEnd() {
+    assertPatternMatch(StringFormat.span("name: {name}"), "name: 1").hasValue("[name: 1]");
+  }
+
+  @Test
+  public void span_placeholdersNextToEachOther() {
+    assertPatternMatch(StringFormat.span("{key}{value}"), "k:v").hasValue("[k:v]");
+    assertPatternMatch(StringFormat.span("{{key}{value}}"), "{k:v}").hasValue("[{k:v}]");
+  }
 
   @Test
   public void testToString(@TestParameter Mode mode) {
@@ -782,6 +836,12 @@ public class StringFormatTest {
   public void testNulls() throws Exception {
     new ClassSanityTester().testNulls(StringFormat.class);
     new ClassSanityTester().forAllPublicStaticMethods(StringFormat.class).testNulls();
+  }
+
+  private static OptionalSubject assertPatternMatch(Substring.Pattern pattern, String input) {
+    return assertWithMessage(pattern.toString())
+        .about(OptionalSubject.optionals())
+        .that(pattern.in(input).map(m -> m.before() + "[" + m + "]" + m.after()));
   }
 
   private enum Mode {

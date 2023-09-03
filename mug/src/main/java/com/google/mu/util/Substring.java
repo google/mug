@@ -720,6 +720,14 @@ public final class Substring {
    * Returns a {@code Pattern} that matches the first occurrence of {@code stop1}, followed by an
    * occurrence of {@code stop2}, followed sequentially by occurrences of {@code moreStops} in
    * order, including any characters between consecutive stops.
+   *
+   * <p>Note that with more than two stops and if all the stops are literals, you may want to use
+   * {@link StringFormat#span StringFormat.span()} instead.
+   *
+   * <p>For example, to find hyperlinks like {@code <a href="...">...</a>}, you can use {@code
+   * StringFormat.span("<a href=\"{link}\">{...}</a>")}, which is equivalent to {@code
+   * spanningInOrder("<a href=\"", "\">", "</a>")} but more self-documenting with proper placeholder
+   * names.
    */
   public static Pattern spanningInOrder(String stop1, String stop2, String... moreStops) {
     Pattern result = first(stop1).extendTo(first(stop2));

@@ -10,6 +10,7 @@ import static com.google.mu.util.stream.MoreCollectors.combining;
 import static com.google.mu.util.stream.MoreCollectors.onlyElement;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -111,6 +112,43 @@ public final class StringFormat {
    */
   public static StringFormat strict(String format, CharPredicate requiredChars) {
     return new StringFormat(format, requireNonNull(requiredChars));
+  }
+
+  /**
+   * Returns a {@link Substring.Pattern} spanning the substring matching {@code format}. For
+   * example, {@code StringFormat.span("projects/{project}/")} is equivalent to {@code
+   * spanningInOrder("projects/", "/")}.
+   *
+   * <p>Useful if you need a Substring.Pattern for purposes such as composition, but prefer a more
+   * self-documenting syntax. The placeholder names in the format string don't affect runtime
+   * semantics, but using meaningful names improves readability.
+   *
+   * @since 6.7
+   */
+  public static Substring.Pattern span(String format) {
+    List<CharSequence> delimiters = PLACEHOLDERS.split(format).collect(toList());
+    if (delimiters.size() == 1) {
+      return first(format);
+    }
+    if (delimiters.isEmpty()) {
+      throw new IllegalStateException();
+    }
+    if (delimiters.get(delimiters.size() - 1).length() == 0) {
+      // If the last placeholder is at end, treat it as anchoring to the end.
+      // Using CharSequence allows us not to copy the last placeholder into String.
+      return delimiters.size() <= 2
+          ? first(delimiters.get(0).toString()).toEnd()
+          : spanInOrder(delimiters.subList(0, delimiters.size() - 1)).toEnd();
+    }
+    return spanInOrder(delimiters);
+  }
+
+  private static Substring.Pattern spanInOrder(List<CharSequence> goalPosts) {
+    return goalPosts.stream()
+        .skip(1)
+        .map(CharSequence::toString)
+        .map(Substring::first)
+        .reduce(Substring.first(goalPosts.get(0).toString()), Substring.Pattern::extendTo);
   }
 
   /**
