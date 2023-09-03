@@ -126,29 +126,28 @@ public final class StringFormat {
    * @since 6.7
    */
   public static Substring.Pattern span(String format) {
-    List<CharSequence> delimiters = PLACEHOLDERS.split(format).collect(toList());
+    List<String> delimiters =
+        PLACEHOLDERS.split(format).map(Substring.Match::toString).collect(toList());
     if (delimiters.size() == 1) {
       return first(format);
     }
     if (delimiters.isEmpty()) {
       throw new IllegalStateException();
     }
-    if (delimiters.get(delimiters.size() - 1).length() == 0) {
+    if (delimiters.get(delimiters.size() - 1).isEmpty()) {
       // If the last placeholder is at end, treat it as anchoring to the end.
-      // Using CharSequence allows us not to copy the last placeholder into String.
       return delimiters.size() <= 2
-          ? first(delimiters.get(0).toString()).toEnd()
+          ? first(delimiters.get(0)).toEnd()
           : spanInOrder(delimiters.subList(0, delimiters.size() - 1)).toEnd();
     }
     return spanInOrder(delimiters);
   }
 
-  private static Substring.Pattern spanInOrder(List<CharSequence> goalPosts) {
+  private static Substring.Pattern spanInOrder(List<String> goalPosts) {
     return goalPosts.stream()
         .skip(1)
-        .map(CharSequence::toString)
         .map(Substring::first)
-        .reduce(Substring.first(goalPosts.get(0).toString()), Substring.Pattern::extendTo);
+        .reduce(Substring.first(goalPosts.get(0)), Substring.Pattern::extendTo);
   }
 
   /**
