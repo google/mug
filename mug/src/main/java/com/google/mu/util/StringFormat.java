@@ -128,11 +128,10 @@ public final class StringFormat {
   public static Substring.Pattern span(String format) {
     List<String> delimiters =
         PLACEHOLDERS.split(format).map(Substring.Match::toString).collect(toList());
-    if (delimiters.size() > 1 && delimiters.get(delimiters.size() - 1).isEmpty()) {
-      // If the last placeholder is at end, treat it as anchoring to the end.
-      return spanInOrder(delimiters.subList(0, delimiters.size() - 1)).toEnd();
-    }
-    return spanInOrder(delimiters);
+    return delimiters.size() > 1 && delimiters.get(delimiters.size() - 1).isEmpty()
+        // If the last placeholder is at end, treat it as anchoring to the end.
+        ? spanInOrder(delimiters.subList(0, delimiters.size() - 1)).toEnd()
+        : spanInOrder(delimiters);
   }
 
   private static Substring.Pattern spanInOrder(List<String> goalPosts) {
