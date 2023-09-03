@@ -197,7 +197,8 @@ public abstract class Maybe<T, E extends Throwable> {
    */
   public static <T, E extends Throwable> Stream<Maybe<T, E>> maybeStream(
       CheckedSupplier<? extends Stream<? extends T>, E> supplier) {
-    return maybe(supplier).map(s -> s.map(Maybe::<T, E>of)).orElse(e -> Stream.of(except(e)));
+      // assigning the correct value to the except by calling it using the static variable
+      return maybe(supplier).map(s -> s.map(Maybe::<T, E>of)).orElse(e -> Stream.of(Maybe.<T,E>except(e)));
   }
 
   /**
