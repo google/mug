@@ -128,13 +128,7 @@ public final class StringFormat {
   public static Substring.Pattern span(String format) {
     List<String> delimiters =
         PLACEHOLDERS.split(format).map(Substring.Match::toString).collect(toList());
-    if (delimiters.size() == 1) {
-      return first(format);
-    }
-    if (delimiters.isEmpty()) {
-      throw new IllegalStateException();
-    }
-    if (delimiters.get(delimiters.size() - 1).isEmpty()) {
+    if (delimiters.size() > 1 && delimiters.get(delimiters.size() - 1).isEmpty()) {
       // If the last placeholder is at end, treat it as anchoring to the end.
       return delimiters.size() <= 2
           ? first(delimiters.get(0)).toEnd()
