@@ -151,7 +151,9 @@ public abstract class Maybe<T, E extends Throwable> {
     requireNonNull(handler);
     return map(Stream::of).orElse(e -> {
       handler.accept(e);
-      return Stream.empty();
+
+      // Setting the empty stream to return stream of type <T>
+        return Stream.<T>empty();
     });
   }
 
