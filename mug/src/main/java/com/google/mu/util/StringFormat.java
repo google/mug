@@ -319,6 +319,15 @@ public final class StringFormat {
   }
 
   /**
+   * Returns true if this format matches {@code input} entirely.
+   *
+   * @since 6.7
+   */
+  public boolean matches(String input) {
+    return parse(input).isPresent();
+  }
+
+  /**
    * Scans the {@code input} string and extracts all matched placeholders in this string format.
    *
    * <p>unlike {@link #parse(String)}, the input string isn't matched entirely:

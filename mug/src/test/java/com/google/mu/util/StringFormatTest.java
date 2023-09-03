@@ -827,6 +827,22 @@ public class StringFormatTest {
   }
 
   @Test
+  public void matches_emptyFormat() {
+    assertThat(new StringFormat("").matches("")).isTrue();
+    assertThat(new StringFormat("").matches("x")).isFalse();
+  }
+
+  @Test
+  public void matches_true() {
+    assertThat(new StringFormat("id:{id}, value:{value}").matches("id:123, value:x")).isTrue();
+  }
+
+  @Test
+  public void matches_false() {
+    assertThat(new StringFormat("id:{id}, value:{value}").matches("id:123")).isFalse();
+  }
+
+  @Test
   public void testToString(@TestParameter Mode mode) {
     assertThat(mode.formatOf("projects/{project}/locations/{location}").toString())
         .isEqualTo("projects/{project}/locations/{location}");
