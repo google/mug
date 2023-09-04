@@ -481,7 +481,7 @@ public abstract class Maybe<T, E extends Throwable> {
   /** Adapts a {@code Maybe<Stream<T>, E>} to {@code Stream<Maybe<T, E>}. */
   private static <T, E extends Throwable> Stream<Maybe<T, E>> maybeStream(
       Maybe<? extends Stream<? extends T>, ? extends E> maybeStream) {
-    return maybeStream.map(s -> s.map(Maybe::<T, E>of)).orElse(e -> Stream.of(except(e)));
+    return maybeStream.map(s -> s.map(Maybe::<T, E>of)).orElse(e -> Stream.of(Maybe.<T,E>except(e)));
   }
 
   private static <E extends Throwable> E cleanupInterruption(E exception) {
