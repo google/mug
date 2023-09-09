@@ -151,7 +151,9 @@ public abstract class Maybe<T, E extends Throwable> {
     requireNonNull(handler);
     return map(Stream::of).orElse(e -> {
       handler.accept(e);
-      return Stream.empty();
+
+      // Setting the empty stream to return stream of type <T>
+        return Stream.<T>empty();
     });
   }
 
@@ -195,7 +197,8 @@ public abstract class Maybe<T, E extends Throwable> {
    */
   public static <T, E extends Throwable> Stream<Maybe<T, E>> maybeStream(
       CheckedSupplier<? extends Stream<? extends T>, E> supplier) {
-    return maybe(supplier).map(s -> s.map(Maybe::<T, E>of)).orElse(e -> Stream.of(except(e)));
+      // assigning the correct value to the except by calling it using the static variable
+      return maybe(supplier).map(s -> s.map(Maybe::<T, E>of)).orElse(e -> Stream.of(Maybe.<T,E>except(e)));
   }
 
   /**
@@ -478,7 +481,7 @@ public abstract class Maybe<T, E extends Throwable> {
   /** Adapts a {@code Maybe<Stream<T>, E>} to {@code Stream<Maybe<T, E>}. */
   private static <T, E extends Throwable> Stream<Maybe<T, E>> maybeStream(
       Maybe<? extends Stream<? extends T>, ? extends E> maybeStream) {
-    return maybeStream.map(s -> s.map(Maybe::<T, E>of)).orElse(e -> Stream.of(except(e)));
+    return maybeStream.map(s -> s.map(Maybe::<T, E>of)).orElse(e -> Stream.of(Maybe.<T,E>except(e)));
   }
 
   private static <E extends Throwable> E cleanupInterruption(E exception) {
