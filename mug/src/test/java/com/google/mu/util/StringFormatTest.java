@@ -163,6 +163,8 @@ public class StringFormatTest {
         assertThrows(
             NullPointerException.class,
             () -> mode.formatOf("1 is {what}").parseOrThrow("1 is one", w -> null));
+    assertThat(thrown).hasMessageThat().contains("format string '1 is {what}'");
+    assertThat(thrown).hasMessageThat().contains("input '1 is one'");
   }
 
   @Test
