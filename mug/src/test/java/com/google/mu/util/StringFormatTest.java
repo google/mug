@@ -2,6 +2,7 @@ package com.google.mu.util;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.common.truth.Truth8.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -10,6 +11,7 @@ import org.junit.runner.RunWith;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.testing.ClassSanityTester;
+import com.google.common.truth.OptionalSubject;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
@@ -34,6 +36,7 @@ public class StringFormatTest {
   public void parse_onlyPlaceholder(@TestParameter Mode mode) {
     StringFormat format = mode.formatOf("{v}");
     assertThat(format.parse("Hello Tom!", v -> v)).hasValue("Hello Tom!");
+    assertThat(format.parseOrThrow("Hello Tom!", (String v) -> v)).isEqualTo("Hello Tom!");
   }
 
   @Test
@@ -46,6 +49,7 @@ public class StringFormatTest {
   public void parse_singlePlaceholder(@TestParameter Mode mode) {
     StringFormat format = mode.formatOf("Hello {v}!");
     assertThat(format.parse("Hello Tom!", v -> v)).hasValue("Tom");
+    assertThat(format.parseOrThrow("Hello Tom!", (String v) -> v)).isEqualTo("Tom");
   }
 
   @Test
@@ -77,6 +81,8 @@ public class StringFormatTest {
   public void parse_multiplePlaceholders_withEllipsis_usingLambda(@TestParameter Mode mode) {
     StringFormat format = mode.formatOf("Hello {...}, welcome to {place}!");
     assertThat(format.parse("Hello Gandolf, welcome to Isengard!", p -> p)).hasValue("Isengard");
+    assertThat(format.parseOrThrow("Hello Gandolf, welcome to Isengard!", (String p) -> p))
+        .isEqualTo("Isengard");
   }
 
   @Test
@@ -153,6 +159,12 @@ public class StringFormatTest {
   @Test
   public void parse_withOneArgLambda_lambdaReturnsNull(@TestParameter Mode mode) {
     assertThat(mode.formatOf("1 is {what}").parse("1 is one", w -> null)).isEmpty();
+    NullPointerException thrown =
+        assertThrows(
+            NullPointerException.class,
+            () -> mode.formatOf("1 is {what}").parseOrThrow("1 is one", w -> null));
+    assertThat(thrown).hasMessageThat().contains("format string '1 is {what}'");
+    assertThat(thrown).hasMessageThat().contains("input '1 is one'");
   }
 
   @Test
@@ -160,17 +172,33 @@ public class StringFormatTest {
     assertThat(
             mode.formatOf("1 is {what}, 2 is {what}").parse("1 is one, 2 is two", String::concat))
         .hasValue("onetwo");
+    assertThat(
+            mode.formatOf("1 is {what}, 2 is {what}")
+                .parseOrThrow("1 is one, 2 is two", String::concat))
+        .isEqualTo("onetwo");
   }
 
   @Test
   public void parse_withTwoArgsLambda_emptyInput(@TestParameter Mode mode) {
     assertThat(mode.formatOf("1 is {x}, 2 is {y}").parse("", (x, y) -> null)).isEmpty();
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> mode.formatOf("1 is {x}, 2 is {y}").parseOrThrow("", (x, y) -> null));
   }
 
   @Test
   public void parse_withTwoArgsLambda_lambdaReturnsNull(@TestParameter Mode mode) {
     assertThat(mode.formatOf("1 is {x}, 2 is {y}").parse("1 is one, 2 is two", (x, y) -> null))
         .isEmpty();
+    NullPointerException thrown =
+        assertThrows(
+            NullPointerException.class,
+            () ->
+                mode.formatOf("1 is {x}, 2 is {y}")
+                    .parseOrThrow("1 is one, 2 is two", (x, y) -> null));
+    assertThat(thrown).hasMessageThat().contains("format string '1 is {x}, 2 is {y}'");
+    assertThat(thrown).hasMessageThat().contains("input '1 is one, 2 is two'");
   }
 
   @Test
@@ -179,12 +207,21 @@ public class StringFormatTest {
             mode.formatOf("1 is {x}, 2 is {y}, 3 is {z}")
                 .parse("1 is one, 2 is two, 3 is three", (x, y, z) -> x + "," + y + "," + z))
         .hasValue("one,two,three");
+    assertThat(
+            mode.formatOf("1 is {x}, 2 is {y}, 3 is {z}")
+                .parseOrThrow(
+                    "1 is one, 2 is two, 3 is three",
+                    (String x, String y, String z) -> x + "," + y + "," + z))
+        .isEqualTo("one,two,three");
   }
 
   @Test
   public void parse_withThreeArgsLambda_emptyInput(@TestParameter Mode mode) {
     assertThat(mode.formatOf("1 is {x}, 2 is {y}, 3 is {z}").parse("", (x, y, z) -> null))
         .isEmpty();
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> mode.formatOf("1 is {x}, 2 is {y}, 3 is {z}").parseOrThrow("", (x, y, z) -> null));
   }
 
   @Test
@@ -193,6 +230,11 @@ public class StringFormatTest {
             mode.formatOf("1 is {x}, 2 is {y}, 3 is {z}")
                 .parse("1 is one, 2 is two, 3 is three", (x, y, z) -> null))
         .isEmpty();
+    assertThrows(
+        NullPointerException.class,
+        () ->
+            mode.formatOf("1 is {x}, 2 is {y}, 3 is {z}")
+                .parseOrThrow("1 is one, 2 is two, 3 is three", (x, y, z) -> null));
   }
 
   @Test
@@ -201,6 +243,12 @@ public class StringFormatTest {
             mode.formatOf("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}")
                 .parse("1 is one, 2 is two, 3 is three, 4 is four", (a, b, c, d) -> a + b + c + d))
         .hasValue("onetwothreefour");
+    assertThat(
+            mode.formatOf("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}")
+                .parseOrThrow(
+                    "1 is one, 2 is two, 3 is three, 4 is four",
+                    (String a, String b, String c, String d) -> a + b + c + d))
+        .isEqualTo("onetwothreefour");
   }
 
   @Test
@@ -208,6 +256,11 @@ public class StringFormatTest {
     assertThat(
             mode.formatOf("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}").parse("", (a, b, c, d) -> null))
         .isEmpty();
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            mode.formatOf("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}")
+                .parseOrThrow("", (a, b, c, d) -> null));
   }
 
   @Test
@@ -216,6 +269,11 @@ public class StringFormatTest {
             mode.formatOf("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}")
                 .parse("1 is one, 2 is two, 3 is three, 4 is four", (a, b, c, d) -> null))
         .isEmpty();
+    assertThrows(
+        NullPointerException.class,
+        () ->
+            mode.formatOf("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}")
+                .parseOrThrow("1 is one, 2 is two, 3 is three, 4 is four", (a, b, c, d) -> null));
   }
 
   @Test
@@ -226,6 +284,12 @@ public class StringFormatTest {
                     "1 is one, 2 is two, 3 is three, 4 is four, 5 is five",
                     (a, b, c, d, e) -> a + b + c + d + e))
         .hasValue("onetwothreefourfive");
+    assertThat(
+            mode.formatOf("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}, 5 is {e}")
+                .parseOrThrow(
+                    "1 is one, 2 is two, 3 is three, 4 is four, 5 is five",
+                    (String a, String b, String c, String d, String e) -> a + b + c + d + e))
+        .isEqualTo("onetwothreefourfive");
   }
 
   @Test
@@ -234,6 +298,11 @@ public class StringFormatTest {
             mode.formatOf("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}, 5 is {e}")
                 .parse("", (a, b, c, d, e) -> null))
         .isEmpty();
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            mode.formatOf("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}, 5 is {e}")
+                .parseOrThrow("", (a, b, c, d, e) -> null));
   }
 
   @Test
@@ -244,6 +313,13 @@ public class StringFormatTest {
                     "1 is one, 2 is two, 3 is three, 4 is four, 5 is five",
                     (a, b, c, d, e) -> null))
         .isEmpty();
+    assertThrows(
+        NullPointerException.class,
+        () ->
+            mode.formatOf("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}, 5 is {e}")
+                .parseOrThrow(
+                    "1 is one, 2 is two, 3 is three, 4 is four, 5 is five",
+                    (a, b, c, d, e) -> null));
   }
 
   @Test
@@ -254,6 +330,12 @@ public class StringFormatTest {
                     "1 is one, 2 is two, 3 is three, 4 is four, 5 is five, 6 is six",
                     (a, b, c, d, e, f) -> a + b + c + d + e + f))
         .hasValue("onetwothreefourfivesix");
+    assertThat(
+            mode.formatOf("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}, 5 is {e}, 6 is {f}")
+                .<String>parseOrThrow(
+                    "1 is one, 2 is two, 3 is three, 4 is four, 5 is five, 6 is six",
+                    (a, b, c, d, e, f) -> a + b + c + d + e + f))
+        .isEqualTo("onetwothreefourfivesix");
   }
 
   @Test
@@ -262,6 +344,11 @@ public class StringFormatTest {
             mode.formatOf("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}, 5 is {e}, 6 is {f}")
                 .parse("", (a, b, c, d, e, f) -> null))
         .isEmpty();
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            mode.formatOf("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}, 5 is {e}, 6 is {f}")
+                .parseOrThrow("", (a, b, c, d, e, f) -> null));
   }
 
   @Test
@@ -272,6 +359,13 @@ public class StringFormatTest {
                     "1 is one, 2 is two, 3 is three, 4 is four, 5 is five, 6 is six",
                     (a, b, c, d, e, f) -> null))
         .isEmpty();
+    assertThrows(
+        NullPointerException.class,
+        () ->
+            mode.formatOf("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}, 5 is {e}, 6 is {f}")
+                .parseOrThrow(
+                    "1 is one, 2 is two, 3 is three, 4 is four, 5 is five, 6 is six",
+                    (a, b, c, d, e, f) -> null));
   }
 
   @Test
@@ -771,6 +865,74 @@ public class StringFormatTest {
     assertThrows(
         IllegalArgumentException.class, () -> mode.formatOf("{foo}:{bar}").format(1, 2, 3));
   }
+  @Test
+  public void span_emptyFormatString() {
+    assertPatternMatch(StringFormat.span(""), "foo").hasValue("[]foo");
+    assertPatternMatch(StringFormat.span(""), "").hasValue("[]");
+  }
+
+  @Test
+  public void span_noPlaceholder_noMatch() {
+    assertPatternMatch(StringFormat.span("world"), "hello word 2").isEmpty();
+  }
+
+  @Test
+  public void span_noPlaceholder_matches() {
+    assertPatternMatch(StringFormat.span("world"), "hello world 2").hasValue("hello [world] 2");
+  }
+
+  @Test
+  public void span_singlePlaceholder_noMatch() {
+    assertPatternMatch(StringFormat.span("name: {name}"), "name").isEmpty();
+  }
+
+  @Test
+  public void span_singlePlaceholder_matches() {
+    assertPatternMatch(StringFormat.span("name: {name}."), " name: foo.").hasValue(" [name: foo.]");
+  }
+
+  @Test
+  public void span_twoPlaceholders_matches() {
+    assertPatternMatch(StringFormat.span("{key={key}, value={value}}"), "{key=one, value=1}")
+        .hasValue("[{key=one, value=1}]");
+  }
+
+  @Test
+  public void span_twoPlaceholders_noMatch() {
+    assertPatternMatch(StringFormat.span("{key={key}, value={value}}"), "{key=one, }").isEmpty();
+  }
+
+  @Test
+  public void span_placeholderAtBeginning() {
+    assertPatternMatch(StringFormat.span("{foo}=1"), "x=1, y=1").hasValue("[x=1], y=1");
+  }
+
+  @Test
+  public void span_placeholderAtEnd() {
+    assertPatternMatch(StringFormat.span("name: {name}"), "name: 1").hasValue("[name: 1]");
+  }
+
+  @Test
+  public void span_placeholdersNextToEachOther() {
+    assertPatternMatch(StringFormat.span("{key}{value}"), "k:v").hasValue("[k:v]");
+    assertPatternMatch(StringFormat.span("{{key}{value}}"), "{k:v}").hasValue("[{k:v}]");
+  }
+
+  @Test
+  public void matches_emptyFormat() {
+    assertThat(new StringFormat("").matches("")).isTrue();
+    assertThat(new StringFormat("").matches("x")).isFalse();
+  }
+
+  @Test
+  public void matches_true() {
+    assertThat(new StringFormat("id:{id}, value:{value}").matches("id:123, value:x")).isTrue();
+  }
+
+  @Test
+  public void matches_false() {
+    assertThat(new StringFormat("id:{id}, value:{value}").matches("id:123")).isFalse();
+  }
 
   @Test
   public void testToString(@TestParameter Mode mode) {
@@ -782,6 +944,12 @@ public class StringFormatTest {
   public void testNulls() throws Exception {
     new ClassSanityTester().testNulls(StringFormat.class);
     new ClassSanityTester().forAllPublicStaticMethods(StringFormat.class).testNulls();
+  }
+
+  private static OptionalSubject assertPatternMatch(Substring.Pattern pattern, String input) {
+    return assertWithMessage(pattern.toString())
+        .about(OptionalSubject.optionals())
+        .that(pattern.in(input).map(m -> m.before() + "[" + m + "]" + m.after()));
   }
 
   private enum Mode {

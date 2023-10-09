@@ -10,6 +10,7 @@ import static com.google.mu.util.stream.MoreCollectors.combining;
 import static com.google.mu.util.stream.MoreCollectors.onlyElement;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -111,6 +112,33 @@ public final class StringFormat {
    */
   public static StringFormat strict(String format, CharPredicate requiredChars) {
     return new StringFormat(format, requireNonNull(requiredChars));
+  }
+
+  /**
+   * Returns a {@link Substring.Pattern} spanning the substring matching {@code format}. For
+   * example, {@code StringFormat.span("projects/{project}/")} is equivalent to {@code
+   * spanningInOrder("projects/", "/")}.
+   *
+   * <p>Useful if you need a Substring.Pattern for purposes such as composition, but prefer a more
+   * self-documenting syntax. The placeholder names in the format string don't affect runtime
+   * semantics, but using meaningful names improves readability.
+   *
+   * @since 6.7
+   */
+  public static Substring.Pattern span(String format) {
+    List<String> delimiters =
+        PLACEHOLDERS.split(format).map(Substring.Match::toString).collect(toList());
+    return delimiters.size() > 1 && delimiters.get(delimiters.size() - 1).isEmpty()
+        // If the last placeholder is at end, treat it as anchoring to the end.
+        ? spanInOrder(delimiters.subList(0, delimiters.size() - 1)).toEnd()
+        : spanInOrder(delimiters);
+  }
+
+  private static Substring.Pattern spanInOrder(List<String> goalPosts) {
+    return goalPosts.stream()
+        .skip(1)
+        .map(Substring::first)
+        .reduce(Substring.first(goalPosts.get(0)), Substring.Pattern::extendTo);
   }
 
   /**
@@ -288,6 +316,161 @@ public final class StringFormat {
       inputIndex = placeholder.index() + placeholder.length() + delimiters.get(i).length();
     }
     return optional(inputIndex == input.length(), unmodifiableList(builder));
+  }
+
+  /**
+   * Parses {@code input} and applies {@code mapper} with the single placeholder value in this
+   * format string.
+   *
+   * <p>For example:
+   *
+   * <pre>{@code
+   * new StringFormat("Job failed (job id: {job_id})").parseOrThrow(input, jobId -> ...);
+   * }</pre>
+   *
+   * <p>Unlike {@link #parse(String, Function)}, {@code IllegalArgumentException} is thrown if the
+   * input string doesn't match the string format. The error message will include both the input
+   * string and the format string for ease of debugging, but is otherwise generic. If you need a
+   * different exception type, or need to customize the error message, consider using {@link
+   * parse(String, Function)} instead and call {@link Optional#orElseThrow} explicitly.
+   *
+   * @return the return value of the {@code mapper} function if not null. Returns empty if {@code
+   *     input} doesn't match the format, or {@code mapper} returns null.
+   * @throws IllegalArgumentException if the input string doesn't match the string format, or if the
+   *     format string doesn't have exactly one placeholder
+   * @throws NullPointerException if any of the parameter is null or {@code mapper} returns null.
+   * @since 6.7
+   */
+  public <R> R parseOrThrow(String input, Function<? super String, R> mapper) {
+    return parseOrThrowThenCollect(input, 1, onlyElement(mapper));
+  }
+
+  /**
+   * Parses {@code input} and applies {@code mapper} with the two placeholder values in this format
+   * string.
+   *
+   * <p>For example:
+   *
+   * <pre>{@code
+   * new StringFormat("Job failed (job id: '{job_id}', error code: {error_code})")
+   *     .parseOrThrow(input, (jobId, errorCode) -> ...);
+   * }</pre>
+   *
+   * <p>Unlike {@link #parse(String, BiFunction)}, {@code IllegalArgumentException} is thrown if the
+   * input string doesn't match the string format. The error message will include both the input
+   * string and the format string for ease of debugging, but is otherwise generic. If you need a
+   * different exception type, or need to customize the error message, consider using {@link
+   * parse(String, BiFunction)} instead and call {@link Optional#orElseThrow} explicitly.
+   *
+   * @return the return value of the {@code mapper} function applied on the extracted placeholder
+   *     value.
+   * @throws IllegalArgumentException if the input string doesn't match the string format, or if the
+   *     format string doesn't have exactly two placeholders
+   * @throws NullPointerException if any of the parameter is null or {@code mapper} returns null.
+   * @since 6.7
+   */
+  public <R> R parseOrThrow(String input, BiFunction<? super String, ? super String, R> mapper) {
+    return parseOrThrowThenCollect(input, 2, combining(mapper));
+  }
+
+  /**
+   * Similar to {@link #parseOrThrow(String, BiFunction)}, but parses {@code input} and applies
+   * {@code mapper} with the <em>2</em> placeholder values in this format string.
+   *
+   * <p>For example:
+   *
+   * <pre>{@code
+   * new StringFormat("Job failed (id: '{job_id}', code: {error_code}, error details: {details})")
+   *     .parseOrThrow(input, (jobId, errorCode, errorDetails) -> ...);
+   * }</pre>
+   *
+   * <p>Unlike {@link #parse(String, Ternary)}, {@code IllegalArgumentException} is thrown if the
+   * input string doesn't match the string format. The error message will include both the input
+   * string and the format string for ease of debugging, but is otherwise generic. If you need a
+   * different exception type, or need to customize the error message, consider using {@link
+   * parse(String, Ternary)} instead and call {@link Optional#orElseThrow} explicitly.
+   *
+   * @return the return value of the {@code mapper} function applied on the extracted placeholder
+   *     values.
+   * @throws IllegalArgumentException if the input string doesn't match the string format, or if the
+   *     format string doesn't have exactly 3 placeholders
+   * @throws NullPointerException if any of the parameter is null or {@code mapper} returns null.
+   * @since 6.7
+   */
+  public <R> R parseOrThrow(String input, Ternary<? super String, R> mapper) {
+    return parseOrThrowThenCollect(input, 3, combining(mapper));
+  }
+
+  /**
+   * Similar to {@link #parseOrThrow(String, BiFunction)}, but parses {@code input} and applies
+   * {@code mapper} with the <em>4</em> placeholder values in this string format.
+   *
+   * <p>Unlike {@link #parse(String, Quarternary)}, {@code IllegalArgumentException} is thrown if the
+   * input string doesn't match the string format. The error message will include both the input
+   * string and the format string for ease of debugging, but is otherwise generic. If you need a
+   * different exception type, or need to customize the error message, consider using {@link
+   * parse(String, Quarternary)} instead and call {@link Optional#orElseThrow} explicitly.
+   *
+   * @return the return value of the {@code mapper} function applied on the extracted placeholder
+   *     values.
+   * @throws IllegalArgumentException if the input string doesn't match the string format, or if the
+   *     format string doesn't have exactly 4 placeholders
+   * @throws NullPointerException if any of the parameter is null or {@code mapper} returns null.
+   * @since 6.7
+   */
+  public <R> R parseOrThrow(String input, Quarternary<? super String, R> mapper) {
+    return parseOrThrowThenCollect(input, 4, combining(mapper));
+  }
+
+  /**
+   * Similar to {@link #parseOrThrow(String, BiFunction)}, but parses {@code input} and applies
+   * {@code mapper} with the <em>5</em> placeholder values in this string format.
+   *
+   * <p>Unlike {@link #parse(String, Quinary)}, {@code IllegalArgumentException} is thrown if the
+   * input string doesn't match the string format. The error message will include both the input
+   * string and the format string for ease of debugging, but is otherwise generic. If you need a
+   * different exception type, or need to customize the error message, consider using {@link
+   * parse(String, Quinary)} instead and call {@link Optional#orElseThrow} explicitly.
+   *
+   * @return the return value of the {@code mapper} function applied on the extracted placeholder
+   *     values.
+   * @throws IllegalArgumentException if the input string doesn't match the string format, or if the
+   *     format string doesn't have exactly 5 placeholders
+   * @throws NullPointerException if any of the parameter is null or {@code mapper} returns null.
+   * @since 6.7
+   */
+  public <R> R parseOrThrow(String input, Quinary<? super String, R> mapper) {
+    return parseOrThrowThenCollect(input, 5, combining(mapper));
+  }
+
+  /**
+   * Similar to {@link #parseOrThrow(String, BiFunction)}, but parses {@code input} and applies
+   * {@code mapper} with the <em>6</em> placeholder values in this string format.
+   *
+   * <p>Unlike {@link #parse(String, MapFrom6)}, {@code IllegalArgumentException} is thrown if the
+   * input string doesn't match the string format. The error message will include both the input
+   * string and the format string for ease of debugging, but is otherwise generic. If you need a
+   * different exception type, or need to customize the error message, consider using {@link
+   * parse(String, MapFrom6)} instead and call {@link Optional#orElseThrow} explicitly.
+   *
+   * @return the return value of the {@code mapper} function applied on the extracted placeholder
+   *     values.
+   * @throws IllegalArgumentException if the input string doesn't match the string format, or if the
+   *     format string doesn't have exactly 6 placeholders
+   * @throws NullPointerException if any of the parameter is null or {@code mapper} returns null.
+   * @since 6.7
+   */
+  public <R> R parseOrThrow(String input, Senary<? super String, R> mapper) {
+    return parseOrThrowThenCollect(input, 6, combining(mapper));
+  }
+
+  /**
+   * Returns true if this format matches {@code input} entirely.
+   *
+   * @since 6.7
+   */
+  public boolean matches(String input) {
+    return parse(input).isPresent();
   }
 
   /**
@@ -527,6 +710,33 @@ public final class StringFormat {
 
   private <R> Optional<R> parseAndCollect(String input, Collector<? super String, ?, R> collector) {
     return parse(input).map(values -> values.stream().map(Substring.Match::toString).collect(collector));
+  }
+
+  /**
+   * Parses {@code input} with the number of placeholders equal to {@code cardinality}, then
+   * collects the placeholder values using {@code collector}.
+   *
+   * @throws IllegalArgumentException if input fails parsing
+   */
+  private <R> R parseOrThrowThenCollect(
+      String input, int cardinality, Collector<? super String, ?, R> collector) {
+    requireNonNull(input);
+    checkPlaceholderCount(cardinality);
+    List<Substring.Match> values =
+        parse(input)
+            .orElseThrow(
+                () ->
+                    new IllegalArgumentException(
+                        new StringFormat("input '{input}' doesn't match format string '{format}'")
+                            .format(input, format)));
+    R result = values.stream().map(Substring.Match::toString).collect(collector);
+    if (result == null) {
+      throw new NullPointerException(
+          String.format(
+              "mapper function returned null when matching input '%s' against format string '%s'",
+              input, format));
+    }
+    return result;
   }
 
   private <R> Stream<R> scanAndCollect(String input, Collector<? super String, ?, R> collector) {

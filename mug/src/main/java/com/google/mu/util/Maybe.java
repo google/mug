@@ -17,16 +17,21 @@ package com.google.mu.util;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import com.google.mu.function.CheckedBiFunction;
@@ -128,7 +133,8 @@ public abstract class Maybe<T, E extends Throwable> {
    *
    * <p>It's recommended for {@code exceptionWrapper} to wrap the original exception as the cause.
    */
-  public final T orElseThrow(Function<? super E, ? extends E> exceptionWrapper) throws E {
+  public final <X extends Throwable> T orElseThrow(Function<? super E, X> exceptionWrapper)
+      throws X {
     requireNonNull(exceptionWrapper);
     return orElse(e -> {
       throw exceptionWrapper.apply(e);
@@ -145,7 +151,9 @@ public abstract class Maybe<T, E extends Throwable> {
     requireNonNull(handler);
     return map(Stream::of).orElse(e -> {
       handler.accept(e);
-      return Stream.empty();
+
+      // Setting the empty stream to return stream of type <T>
+        return Stream.<T>empty();
     });
   }
 
@@ -189,7 +197,8 @@ public abstract class Maybe<T, E extends Throwable> {
    */
   public static <T, E extends Throwable> Stream<Maybe<T, E>> maybeStream(
       CheckedSupplier<? extends Stream<? extends T>, E> supplier) {
-    return maybe(supplier).map(s -> s.map(Maybe::<T, E>of)).orElse(e -> Stream.of(except(e)));
+      // assigning the correct value to the except by calling it using the static variable
+      return maybe(supplier).map(s -> s.map(Maybe::<T, E>of)).orElse(e -> Stream.of(Maybe.<T,E>except(e)));
   }
 
   /**
@@ -365,6 +374,69 @@ public abstract class Maybe<T, E extends Throwable> {
   }
 
   /**
+   * Collects a stream of {@code Maybe} to an immutable {@code Maybe<List<T>, E>}, which will wrap the exception
+   * if any input {@code Maybe} is exceptional.
+   *
+   * @since 6.7
+   */
+  public static <T, E extends Throwable> Collector<Maybe<T, E>, ?, Maybe<List<T>, E>> maybeToList() {
+    return allOrNothing(InternalCollectors.toImmutableList());
+  }
+
+  /**
+   * Collects a stream of {@code Maybe} to an immutable {@code Maybe<Set<T>, E>}, which will wrap the exception
+   * if any input {@code Maybe} is exceptional.
+   *
+   * @since 6.7
+   */
+  public static <T, E extends Throwable> Collector<Maybe<T, E>, ?, Maybe<Set<T>, E>> maybeToSet() {
+    return allOrNothing(InternalCollectors.toImmutableSet());
+  }
+
+  private static <T, E extends Throwable, A, R> Collector<Maybe<T, E>, ?, Maybe<R, E>> allOrNothing(
+      Collector<T, A, R> downstream) {
+    Supplier<A> factory = downstream.supplier();
+    BiConsumer<A, T> accumulator = downstream.accumulator();
+    class Failable {
+      private A buffer = factory.get();
+      private E exception = null;
+
+      @SuppressWarnings("unchecked") // orElseThrow() only throws E
+      void add(Maybe<T, E> maybe) {
+        if (exception != null) {
+          return;
+        }
+        T value;
+        try {
+          value = maybe.orElseThrow(Function.identity());
+        } catch (Throwable e) {
+          exception = (E) e;
+          return;
+        }
+        accumulator.accept(buffer, value);
+      }
+
+      Failable merge(Failable that) {
+        if (exception != null) {
+          return this;
+        }
+        if (that.exception != null) {
+          return that;
+        }
+        buffer = downstream.combiner().apply(buffer, that.buffer);
+        return this;
+      }
+
+      Maybe<R, E> build() {
+          return exception == null
+              ? of(downstream.finisher().apply(buffer))
+              : except(exception);
+      }
+    }
+    return Collector.of(Failable::new, Failable::add, Failable::merge, Failable::build);
+  }
+
+  /**
    * Returns a wrapper of {@code stage} that if {@code stage} failed with exception of
    * {@code exceptionType}, that exception is caught and wrapped inside a {@link Maybe} to complete
    * the wrapper stage normally.
@@ -409,7 +481,7 @@ public abstract class Maybe<T, E extends Throwable> {
   /** Adapts a {@code Maybe<Stream<T>, E>} to {@code Stream<Maybe<T, E>}. */
   private static <T, E extends Throwable> Stream<Maybe<T, E>> maybeStream(
       Maybe<? extends Stream<? extends T>, ? extends E> maybeStream) {
-    return maybeStream.map(s -> s.map(Maybe::<T, E>of)).orElse(e -> Stream.of(except(e)));
+    return maybeStream.map(s -> s.map(Maybe::<T, E>of)).orElse(e -> Stream.of(Maybe.<T,E>except(e)));
   }
 
   private static <E extends Throwable> E cleanupInterruption(E exception) {

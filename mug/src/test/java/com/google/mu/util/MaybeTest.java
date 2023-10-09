@@ -48,7 +48,6 @@ import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.EqualsTester;
 import com.google.common.testing.NullPointerTester;
 import com.google.common.truth.IterableSubject;
-import com.google.mu.util.Maybe;
 
 @RunWith(JUnit4.class)
 public class MaybeTest {
@@ -261,6 +260,186 @@ public class MaybeTest {
         .isEqualTo("hello");
     assertThat(assertThrows(MyException.class, () -> maybes.get(1).orElseThrow()).getMessage())
         .isEqualTo("friend");
+  }
+
+  @Test public void maybeToList_empty() throws Exception {
+    assertThat(Stream.<Maybe<String, Exception>>of().collect(Maybe.maybeToList()).orElseThrow())
+        .isEmpty();
+  }
+
+  @Test public void maybeToList_singleValue() throws Throwable {
+    assertThat(Stream.of(Maybe.of(1)).collect(Maybe.maybeToList()).orElseThrow()).containsExactly(1);
+  }
+
+  @Test public void maybeToList_singleException() throws Throwable {
+    IOException exception = new IOException("intentional");
+    IOException thrown =
+        assertThrows(
+            IOException.class,
+            () -> Stream.of(Maybe.except(exception)).collect(Maybe.maybeToList()).orElseThrow(e -> e));
+    assertThat(thrown).isSameAs(exception);
+  }
+
+  @Test public void maybeToList_twoValues() throws Throwable {
+    assertThat(Stream.of(Maybe.of(1), Maybe.of(3)).collect(Maybe.maybeToList()).orElseThrow())
+        .containsExactly(1, 3)
+        .inOrder();
+  }
+
+  @Test public void maybeToList_twoExceptions() throws Throwable {
+    IOException e1 = new IOException("intentional");
+    IOException thrown =
+        assertThrows(
+            IOException.class,
+            () -> Stream.of(Maybe.except(e1), Maybe.except(new IOException())).collect(Maybe.maybeToList()).orElseThrow(e -> e));
+    assertThat(thrown).isSameAs(e1);
+  }
+
+  @Test public void maybeToList_exceptionAndValue() throws Throwable {
+    IOException e = new IOException("intentional");
+    IOException thrown =
+        assertThrows(
+            IOException.class,
+            () -> Stream.<Maybe<Integer, Throwable>>of(
+                Maybe.except(e), Maybe.of(123)).collect(Maybe.maybeToList()).orElseThrow(x -> x));
+    assertThat(thrown).isSameAs(e);
+  }
+
+  @Test public void maybeToList_exceptionAndValue_parallel() throws Throwable {
+    IOException e = new IOException("intentional");
+    IOException thrown =
+        assertThrows(
+            IOException.class,
+            () -> Stream.<Maybe<Integer, Throwable>>of(
+                Maybe.except(e), Maybe.of(123)).parallel().collect(Maybe.maybeToList()).orElseThrow(x -> x));
+    assertThat(thrown).isSameAs(e);
+  }
+
+  @Test public void maybeToList_valueAndException() throws Throwable {
+    IOException e = new IOException("intentional");
+    IOException thrown =
+        assertThrows(
+            IOException.class,
+            () -> Stream.<Maybe<Integer, Throwable>>of(
+                Maybe.of(123), Maybe.except(e)).collect(Maybe.maybeToList()).orElseThrow(x -> x));
+    assertThat(thrown).isSameAs(e);
+  }
+
+  @Test public void maybeToList_valueAndException_parallel() throws Throwable {
+    IOException e = new IOException("intentional");
+    IOException thrown =
+        assertThrows(
+            IOException.class,
+            () -> Stream.<Maybe<Integer, Throwable>>of(
+                Maybe.of(123), Maybe.except(e)).parallel().collect(Maybe.maybeToList()).orElseThrow(x -> x));
+    assertThat(thrown).isSameAs(e);
+  }
+
+  @Test public void maybeToList_exceptional_parallel() throws Throwable {
+    assertThrows(
+        IOException.class,
+        () -> Stream.<Maybe<Integer, Throwable>>of(
+                    Maybe.of(123), Maybe.except(new IOException("e1")), Maybe.of(456), Maybe.except(new IOException()))
+                .parallel()
+                .collect(Maybe.maybeToList()).orElseThrow(x -> x));
+  }
+
+  @Test public void maybeToList_succeeded_parallel() throws Throwable {
+    assertThat(Stream.of(Maybe.of(1), Maybe.of(2), Maybe.of(3), Maybe.of(4))
+                .parallel()
+                .collect(Maybe.maybeToList()).orElseThrow(x -> x))
+        .containsExactly(1, 2, 3, 4)
+        .inOrder();
+  }
+
+  @Test public void maybeToSet_empty() throws Exception {
+    assertThat(Stream.<Maybe<String, Exception>>of().collect(Maybe.maybeToSet()).orElseThrow())
+        .isEmpty();
+  }
+
+  @Test public void maybeToSet_singleValue() throws Throwable {
+    assertThat(Stream.of(Maybe.of(1)).collect(Maybe.maybeToSet()).orElseThrow()).containsExactly(1);
+  }
+
+  @Test public void maybeToSet_singleException() throws Throwable {
+    IOException exception = new IOException("intentional");
+    IOException thrown =
+        assertThrows(
+            IOException.class,
+            () -> Stream.of(Maybe.except(exception)).collect(Maybe.maybeToSet()).orElseThrow(e -> e));
+    assertThat(thrown).isSameAs(exception);
+  }
+
+  @Test public void maybeToSet_twoValues() throws Throwable {
+    assertThat(Stream.of(Maybe.of(1), Maybe.of(3)).collect(Maybe.maybeToSet()).orElseThrow())
+        .containsExactly(1, 3)
+        .inOrder();
+  }
+
+  @Test public void maybeToSet_twoExceptions() throws Throwable {
+    IOException e1 = new IOException("intentional");
+    IOException thrown =
+        assertThrows(
+            IOException.class,
+            () -> Stream.of(Maybe.except(e1), Maybe.except(new IOException())).collect(Maybe.maybeToSet()).orElseThrow(e -> e));
+    assertThat(thrown).isSameAs(e1);
+  }
+
+  @Test public void maybeToSet_exceptionAndValue() throws Throwable {
+    IOException e = new IOException("intentional");
+    IOException thrown =
+        assertThrows(
+            IOException.class,
+            () -> Stream.<Maybe<Integer, Throwable>>of(
+                Maybe.except(e), Maybe.of(123)).collect(Maybe.maybeToSet()).orElseThrow(x -> x));
+    assertThat(thrown).isSameAs(e);
+  }
+
+  @Test public void maybeToSet_exceptionAndValue_parallel() throws Throwable {
+    IOException e = new IOException("intentional");
+    IOException thrown =
+        assertThrows(
+            IOException.class,
+            () -> Stream.<Maybe<Integer, Throwable>>of(
+                Maybe.except(e), Maybe.of(123)).parallel().collect(Maybe.maybeToSet()).orElseThrow(x -> x));
+    assertThat(thrown).isSameAs(e);
+  }
+
+  @Test public void maybeToSet_valueAndException() throws Throwable {
+    IOException e = new IOException("intentional");
+    IOException thrown =
+        assertThrows(
+            IOException.class,
+            () -> Stream.<Maybe<Integer, Throwable>>of(
+                Maybe.of(123), Maybe.except(e)).collect(Maybe.maybeToSet()).orElseThrow(x -> x));
+    assertThat(thrown).isSameAs(e);
+  }
+
+  @Test public void maybeToSet_valueAndException_parallel() throws Throwable {
+    IOException e = new IOException("intentional");
+    IOException thrown =
+        assertThrows(
+            IOException.class,
+            () -> Stream.<Maybe<Integer, Throwable>>of(
+                Maybe.of(123), Maybe.except(e)).parallel().collect(Maybe.maybeToSet()).orElseThrow(x -> x));
+    assertThat(thrown).isSameAs(e);
+  }
+
+  @Test public void maybeToSet_exceptional_parallel() throws Throwable {
+    assertThrows(
+        IOException.class,
+        () -> Stream.<Maybe<Integer, Throwable>>of(
+                    Maybe.of(123), Maybe.except(new IOException("e1")), Maybe.of(456), Maybe.except(new IOException()))
+                .parallel()
+                .collect(Maybe.maybeToSet()).orElseThrow(x -> x));
+  }
+
+  @Test public void maybeToSet_succeeded_parallel() throws Throwable {
+    assertThat(Stream.of(Maybe.of(1), Maybe.of(2), Maybe.of(3), Maybe.of(4))
+                .parallel()
+                .collect(Maybe.maybeToSet()).orElseThrow(x -> x))
+        .containsExactly(1, 2, 3, 4)
+        .inOrder();
   }
 
   @Test public void wrapFuture_futureIsSuccess() throws Exception {
