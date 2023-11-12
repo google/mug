@@ -377,7 +377,7 @@ public final class StringFormat {
 
   /**
    * Similar to {@link #parseOrThrow(String, BiFunction)}, but parses {@code input} and applies
-   * {@code mapper} with the <em>2</em> placeholder values in this format string.
+   * {@code mapper} with the <em>3</em> placeholder values in this format string.
    *
    * <p>For example:
    *
