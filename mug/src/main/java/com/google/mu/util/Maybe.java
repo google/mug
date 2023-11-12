@@ -453,7 +453,8 @@ public abstract class Maybe<T, E extends Throwable> {
         if (e == null) {
           future.complete(Maybe.of(v));
         } else {
-          unwrapFutureException(exceptionType, e)
+        @SuppressWarnings("unused")  // For "ReturnValueIgnored"
+		boolean unused = unwrapFutureException(exceptionType, e)
               .map(cause -> future.complete(Maybe.except(cause)))
               .orElseGet(() -> future.completeExceptionally(e));
         }

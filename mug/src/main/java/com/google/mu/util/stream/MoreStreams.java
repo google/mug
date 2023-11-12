@@ -519,8 +519,7 @@ public final class MoreStreams {
     requireNonNull(mapper);
     Stream<T> mapped = StreamSupport.stream(
         () -> mapper.apply(stream.spliterator()), characteristics, stream.isParallel());
-    mapped.onClose(stream::close);
-    return mapped;
+    return mapped.onClose(stream::close);
   }
 
   /** Copying input elements into another stream. */

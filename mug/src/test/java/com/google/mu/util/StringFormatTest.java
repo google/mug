@@ -955,13 +955,13 @@ public class StringFormatTest {
   private enum Mode {
     ANY_MATCH {
       @Override
-      StringFormat formatOf(@CompileTimeConstant String format) {
+      StringFormat formatOf(String format) {
         return new StringFormat(format);
       }
     },
     NO_EMPTY_MATCH {
       @Override
-      StringFormat formatOf(@CompileTimeConstant String format) {
+      StringFormat formatOf(String format) {
         return StringFormat.strict(format, c -> true);
       }
     };
