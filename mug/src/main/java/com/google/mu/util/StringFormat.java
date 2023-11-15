@@ -109,7 +109,9 @@ public final class StringFormat {
    * returns a string not parseable by the same {@code StringFormat} strict instance.
    *
    * @since 6.7
+   * @deprecated Consider manually checking the placeholder values in the lambda
    */
+  @Deprecated
   public static StringFormat strict(String format, CharPredicate requiredChars) {
     return new StringFormat(format, requireNonNull(requiredChars));
   }
