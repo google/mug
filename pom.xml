@@ -52,6 +52,7 @@
     <module>mug-algorithms</module>
     <module>mug-guava</module>
     <module>mug-protobuf</module>
+    <module>mug-errorprone</module>
   </modules>
 
   <properties>
@@ -114,6 +115,13 @@
       <artifactId>guava</artifactId>
       <version>[20.0,)</version>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.errorprone</groupId>
+      <artifactId>error_prone_annotation</artifactId>
+      <scope>compile</scope>
+      <version>2.23.0</version>
+      <classifier>sources</classifier>
     </dependency>
     <dependency>
       <groupId>com.google.errorprone</groupId>
