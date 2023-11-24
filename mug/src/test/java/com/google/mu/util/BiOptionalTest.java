@@ -49,7 +49,7 @@ public class BiOptionalTest {
   }
 
   @Test public void empty_singleton() {
-    assertThat(BiOptional.empty()).isSameAs(BiOptional.empty());
+    assertThat(BiOptional.empty()).isSameInstanceAs(BiOptional.empty());
   }
 
   @Test public void map_empty() {
@@ -121,13 +121,13 @@ public class BiOptionalTest {
 
   @Test public void peek_nonEmpty() {
     BiOptional<?, ?> optional = BiOptional.of("foo", "bar");
-    assertThat(optional.peek(consumer)).isSameAs(optional);
+    assertThat(optional.peek(consumer)).isSameInstanceAs(optional);
     verify(consumer).accept("foo", "bar");
   }
 
   @Test public void orElse_peek_nonEmpty() {
     BiOptional<String, String> optional = BiOptional.of("foo", "bar");
-    assertThat(optional.orElse("x", null).peek(consumer)).isSameAs(optional);
+    assertThat(optional.orElse("x", null).peek(consumer)).isSameInstanceAs(optional);
     verify(consumer).accept("foo", "bar");
   }
 
@@ -254,7 +254,7 @@ public class BiOptionalTest {
   @Test public void testOrElseThrow_empty() {
     Exception e = new Exception("test");
     Exception thrown = assertThrows(Exception.class, () -> BiOptional.empty().orElseThrow(() -> e));
-    assertThat(thrown).isSameAs(e);
+    assertThat(thrown).isSameInstanceAs(e);
   }
 
   @Test public void testOrElseThrow_notEmpty() {
