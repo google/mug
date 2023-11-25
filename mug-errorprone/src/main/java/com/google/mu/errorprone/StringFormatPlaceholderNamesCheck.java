@@ -32,16 +32,8 @@ public final class StringFormatPlaceholderNamesCheck extends AbstractBugChecker
     implements AbstractBugChecker.MethodInvocationCheck, AbstractBugChecker.ConstructorCallCheck {
   private static final Matcher<ExpressionTree> MATCHER =
       Matchers.anyOf(
-          constructor().forClass("com.google.common.labs.text.StringFormat"),
-          staticMethod().onClass("com.google.common.labs.text.StringFormat"),
-          constructor()
-              .forClass("com.google.common.labs.text.StringFormat.WithSquareBracketedPlaceholders"),
-          staticMethod()
-              .onClass("com.google.common.labs.text.StringFormat.WithSquareBracketedPlaceholders"),
-          constructor().forClass("com.google.cloud.api.input.ResourceNamePattern"),
-          staticMethod().onClass("com.google.cloud.api.input.ResourceNamePattern"),
-          staticMethod().onClass("com.google.common.labs.text.SafeQuery"),
-          staticMethod().onClass("com.google.cloud.bigquery.client.template.SafeQuery"));
+          constructor().forClass("com.google.mu.util.StringFormat"),
+          staticMethod().onClass("com.google.mu.util.StringFormat"));
   private static final CharPredicate ALPHA =
       CharPredicate.range('a', 'z').orRange('A', 'Z');
   private static final CharPredicate VALID_CHARS =

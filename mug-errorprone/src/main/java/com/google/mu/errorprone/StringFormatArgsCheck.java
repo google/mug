@@ -60,9 +60,6 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
   private static final Matcher<MethodInvocationTree> MATCHER =
       Matchers.anyOf(
           anyMethod().onDescendantOf("com.google.mu.util.StringFormat"),
-          anyMethod()
-              .onDescendantOf(
-                  "com.google.mu.util.StringFormat.WithSquareBracketedPlaceholders"),
           anyMethod().onDescendantOf("com.google.mu.util.StringFormat.To"));
   private static final ImmutableSet<TypeName> FORMATTER_TYPES =
       ImmutableSet.of(
