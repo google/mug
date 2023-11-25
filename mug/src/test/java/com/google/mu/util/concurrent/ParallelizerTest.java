@@ -336,7 +336,7 @@ public class ParallelizerTest {
       UncheckedExecutionException exception = assertThrows(
           UncheckedExecutionException.class,
           () -> parallelize(Stream.of(() -> raise(error))));
-      assertThat(exception.getCause()).isSameAs(error);
+      assertThat(exception.getCause()).isSameInstanceAs(error);
     }
 
     @Test public void testExceptionPropagated() {
@@ -344,7 +344,7 @@ public class ParallelizerTest {
       UncheckedExecutionException caught = assertThrows(
           UncheckedExecutionException.class,
           () -> parallelize(Stream.of(() -> raise(exception))));
-      assertThat(caught.getCause()).isSameAs(exception);
+      assertThat(caught.getCause()).isSameInstanceAs(exception);
     }
 
     private void translateToString(int i) {

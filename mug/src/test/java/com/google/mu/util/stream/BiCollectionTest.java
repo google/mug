@@ -36,7 +36,7 @@ public class BiCollectionTest {
 
   @Test public void empty() {
     assertKeyValues(BiCollection.of()).isEmpty();
-    assertThat(BiCollection.of()).isSameAs(BiCollection.of());
+    assertThat(BiCollection.of()).isSameInstanceAs(BiCollection.of());
   }
 
   @Test public void onePair() {

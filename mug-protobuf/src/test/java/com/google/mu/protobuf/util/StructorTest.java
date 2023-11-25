@@ -120,14 +120,14 @@ public class StructorTest {
   @Test public void toValue_fromBoolean() {
     assertThat(maker.toValue(true)).isEqualTo(Value.newBuilder().setBoolValue(true).build());
     assertThat(maker.toValue(false)).isEqualTo(Value.newBuilder().setBoolValue(false).build());
-    assertThat(maker.toValue(true)).isSameAs(maker.toValue(true));
-    assertThat(maker.toValue(false)).isSameAs(maker.toValue(false));
+    assertThat(maker.toValue(true)).isSameInstanceAs(maker.toValue(true));
+    assertThat(maker.toValue(false)).isSameInstanceAs(maker.toValue(false));
   }
 
   @Test public void toValue_fromNull() {
     assertThat(maker.toValue(null))
         .isEqualTo(Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build());
-    assertThat(maker.toValue(null)).isSameAs(maker.toValue(null));
+    assertThat(maker.toValue(null)).isSameInstanceAs(maker.toValue(null));
   }
 
   @Test public void toValue_fromEmptyOptional() {

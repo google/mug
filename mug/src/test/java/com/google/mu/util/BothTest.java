@@ -32,7 +32,7 @@ public class BothTest {
   @Test public void peek() {
     AtomicInteger effect = new AtomicInteger();
     Both<Integer, Integer> b = both(1, 2);
-    assertThat(b.peek((x, y) -> effect.set(x + y))).isSameAs(b);
+    assertThat(b.peek((x, y) -> effect.set(x + y))).isSameInstanceAs(b);
     assertThat(effect.get()).isEqualTo(3);
   }
 

@@ -279,12 +279,12 @@ public class SubstringTest {
 
   @Test public void prefix_hideFrom_prefixNotFound() {
     String string = new String("foo");
-    assertThat(prefix("bar").hideFrom(string)).isSameAs(string);
+    assertThat(prefix("bar").hideFrom(string)).isSameInstanceAs(string);
   }
 
   @Test public void prefix_hideFrom_emptyPrefix() {
     String string = new String("foo");
-    assertThat(prefix("").hideFrom(string)).isSameAs(string);
+    assertThat(prefix("").hideFrom(string)).isSameInstanceAs(string);
   }
 
   @Test public void prefix_hideFrom_nonEmptyPrefixFound() {
@@ -531,12 +531,12 @@ public class SubstringTest {
 
   @Test public void suffix_hideFrom_prefixNotFound() {
     String string = new String("foo");
-    assertThat(suffix("bar").hideFrom(string)).isSameAs(string);
+    assertThat(suffix("bar").hideFrom(string)).isSameInstanceAs(string);
   }
 
   @Test public void suffix_hideFrom_emptyPrefix() {
     String string = new String("foo");
-    assertThat(suffix("").hideFrom(string)).isSameAs(string);
+    assertThat(suffix("").hideFrom(string)).isSameInstanceAs(string);
   }
 
   @Test public void suffix_hideFrom_nonEmptyPrefixFound() {
@@ -1840,15 +1840,15 @@ public class SubstringTest {
   @Test
   public void matchLimit_equalToLength() {
     Substring.Match match = first("foo").in(" foo bar").get();
-    assertThat(match.limit(3)).isSameAs(match);
+    assertThat(match.limit(3)).isSameInstanceAs(match);
   }
 
   @Test
   public void matchLimit_greaterThanLength() {
     Substring.Match match = first("foo").in(" foo bar").get();
-    assertThat(match.limit(4)).isSameAs(match);
-    assertThat(match.limit(5)).isSameAs(match);
-    assertThat(match.limit(Integer.MAX_VALUE)).isSameAs(match);
+    assertThat(match.limit(4)).isSameInstanceAs(match);
+    assertThat(match.limit(5)).isSameInstanceAs(match);
+    assertThat(match.limit(Integer.MAX_VALUE)).isSameInstanceAs(match);
   }
 
   @Test
