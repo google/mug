@@ -13,6 +13,6 @@ public class HowToUseStringFormatTest {
   }
 
   private String badUsage() {
-	return new StringFormat("{key}:{value}").parseOrThrow("k:v", key -> key);
+	  return new StringFormat("{key}:{value}").parseOrThrow("k:v", key -> key);
   }
 }
