@@ -21,15 +21,19 @@ java_library(
     visibility = ["//visibility:public"],
     add_exports = JDK_COMPILER_ADD_EXPORTS,
     deps = [
-        "@maven//:com_google_guava_guava",
         "@maven//:com_google_errorprone_error_prone_core",
         "@maven//:com_google_errorprone_error_prone_annotation",
         "@maven//:com_google_errorprone_error_prone_annotations",
         "@maven//:com_google_errorprone_error_prone_check_api",
-        "@maven//:com_google_auto_service_auto_service_annotations",
         "@maven//:com_google_errorprone_error_prone_docgen_processor",
+        "@maven//:com_google_guava_guava",
         "//mug:base",
         "//mug-guava",
+        "@maven//:com_google_auto_service_auto_service_annotations",
+    ],
+    exports = [
+        "@maven//:com_google_errorprone_error_prone_core",
+        "@maven//:com_google_auto_service_auto_service",
     ],
 )
 
@@ -37,11 +41,7 @@ java_plugin(
     name = "plugin",
     processor_class = "com.google.auto.service.processor.AutoServiceProcessor",
     visibility = ["//visibility:public"],
-    deps = [
-      ":errorprone",
-      "@maven//:com_google_errorprone_error_prone_core",
-      "@maven//:com_google_auto_service_auto_service",
-    ],
+    deps = [":errorprone"],
 )
 
 load("@com_googlesource_gerrit_bazlets//tools:junit.bzl", "junit_tests")
