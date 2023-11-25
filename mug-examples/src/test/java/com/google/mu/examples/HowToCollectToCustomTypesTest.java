@@ -1,4 +1,4 @@
-package examples;
+package com.google.mu.examples;
 
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;

@@ -644,7 +644,7 @@ public class StringUnformatArgsCheckTest {
         .doTest();
   }
 
-  @Test
+  @Test	
   public void methodWithoutMapperParameterIsIgnored() {
     helper
         .addSourceLines(

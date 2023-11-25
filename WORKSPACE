@@ -54,6 +54,7 @@ maven_install(
         "com.google.truth.extensions:truth-java8-extension:[1.1,)",
         "org.checkerframework:checker-qual:3.12.0",
         "com.google.auto.service:auto-service-annotations:1.1.1",
+        "com.google.auto.service:auto-service:1.1.1",
         "com.google.protobuf:protobuf-java:[3.0.0,)",
         "com.google.protobuf:protobuf-java-util:[3.0.0,)",
         "com.google.code.findbugs:jsr305:3.0.2",

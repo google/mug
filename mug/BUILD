@@ -1,8 +1,34 @@
 java_library(
-    name = "mug",
+    name = "base",
     visibility = ["//visibility:public"],
-    srcs = glob(["src/main/java/**/*.java"]),
-    resources = glob(["src/main/resources/**"]),
+    srcs = glob([
+        "src/main/java/com/google/mu/util/*.java",
+        "src/main/java/com/google/mu/util/stream/*.java",
+        "src/main/java/com/google/mu/function/*.java",
+      ],
+      exclude = ["src/main/java/com/google/mu/util/StringFormat.java"]),
+)
+
+java_library(
+    name = "graph",
+    visibility = ["//visibility:public"],
+    srcs = glob([ "src/main/java/com/google/mu/util/graph/*.java"]),
+    deps = [":base"]
+)
+
+java_library(
+    name = "concurrent",
+    visibility = ["//visibility:public"],
+    srcs = glob([ "src/main/java/com/google/mu/util/concurrent/*.java"]),
+    deps = [":base"]
+)
+
+java_library(
+    name = "format",
+    visibility = ["//visibility:public"],
+    srcs = ["src/main/java/com/google/mu/util/StringFormat.java"],
+    deps = [":base"],
+    exported_plugins = ["//mug-errorprone:plugin"],
 )
 
 load("@com_googlesource_gerrit_bazlets//tools:junit.bzl", "junit_tests")
@@ -11,7 +37,8 @@ java_library(
     name = "tests",
     srcs = glob(["src/test/java/**/*.java"], exclude =  glob(["src/test/java/**/*Test.java"])),
     deps = [
-        ":mug",
+        ":base",
+        ":concurrent",
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_guava_guava_testlib",
         "@maven//:com_google_truth_truth",
@@ -29,7 +56,10 @@ junit_tests(
     name = "AllTests",
     srcs = glob(["src/test/java/**/*Test.java"]),
     deps = [
-        ":mug",
+        ":base",
+        ":concurrent",
+        ":format",
+        ":graph",
         ":tests",
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_guava_guava_testlib",

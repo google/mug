@@ -6,7 +6,7 @@ java_library(
         "@@maven//:com_google_guava_guava",
         "@maven//:org_checkerframework_checker_qual",
         "@maven//:com_google_errorprone_error_prone_annotations",
-        "//mug",
+        "//mug:base",
     ],
 )
 
@@ -19,7 +19,7 @@ junit_tests(
     srcs = glob(["src/test/java/**/*Test.java"]),
     deps = [
         ":mug-guava",
-        "//mug",
+        "//mug:base",
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_guava_guava_testlib",
         "@maven//:com_google_truth_truth",

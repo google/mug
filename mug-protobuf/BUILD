@@ -8,11 +8,9 @@ java_library(
         "@maven//:com_google_errorprone_error_prone_annotations",
         "@maven//:com_google_protobuf_protobuf_java",
         "@maven//:com_google_protobuf_protobuf_java_util",
-        "//mug",
+        "//mug:base",
     ],
 )
-
-
 
 load("@com_googlesource_gerrit_bazlets//tools:junit.bzl", "junit_tests")
 
@@ -22,7 +20,7 @@ junit_tests(
     srcs = glob(["src/test/java/**/*Test.java"]),
     deps = [
         ":mug-protobuf",
-        "//mug",
+        "//mug:base",
         "//mug-guava",
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_guava_guava_testlib",

@@ -1,11 +1,7 @@
-java_plugin(
-    name = "mug-errorprone",
-    deps = [":errorprone"],
-)
-
 java_library(
     name = "errorprone",
     srcs = glob(["src/main/java/**/*.java"]),
+    visibility = ["//visibility:public"],
     deps = [
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_errorprone_error_prone_core",
@@ -13,21 +9,30 @@ java_library(
         "@maven//:com_google_errorprone_error_prone_annotations",
         "@maven//:com_google_errorprone_error_prone_check_api",
         "@maven//:com_google_auto_service_auto_service_annotations",
-        "//mug",
+        "//mug:base",
         "//mug-guava",
     ],
 )
 
+java_plugin(
+    name = "plugin",
+    processor_class = "com.google.auto.service.processor.AutoServiceProcessor",
+    visibility = ["//visibility:public"],
+    deps = [
+      ":errorprone",
+      "@maven//:com_google_errorprone_error_prone_core",
+      "@maven//:com_google_auto_service_auto_service",
+    ],
+)
 
 load("@com_googlesource_gerrit_bazlets//tools:junit.bzl", "junit_tests")
-
 
 junit_tests(
     name = "AllTests",
     srcs = glob(["src/test/java/**/*Test.java"]),
     deps = [
         ":errorprone",
-        "//mug",
+        "//mug:format",
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_guava_guava_testlib",
         "@maven//:com_google_truth_truth",
