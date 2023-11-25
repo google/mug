@@ -43,6 +43,7 @@ maven_install(
         "com.google.errorprone:error_prone_core:[2.0,)",
         "com.google.errorprone:error_prone_annotations:[2.0,)",
         "com.google.errorprone:error_prone_check_api:[2.0,)",
+        "com.google.errorprone:error_prone_docgen_processor:[2.0,)",
         "com.google.errorprone:error_prone_test_helpers:[2.0,)",
         "com.google.guava:guava:[20.0,)",
         "com.google.guava:guava-testlib:[30.0,)",
