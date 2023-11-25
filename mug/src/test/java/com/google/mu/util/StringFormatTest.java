@@ -4,7 +4,10 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.common.truth.Truth8.assertThat;
+import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.util.List;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -419,6 +422,106 @@ public class StringFormatTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> mode.formatOf("1 is {what}").parse("bad input", (a, b, c, d, e, f) -> a));
+  }
+
+  @Test
+  public void parseGreedy_with2Placeholders() {
+    StringFormat format = new StringFormat("{parent}/{child}");
+    assertThat(
+            format.parseGreedy("foo/bar/c/d", (parent, child) -> ImmutableList.of(parent, child)))
+        .hasValue(ImmutableList.of("foo/bar/c", "d"));
+    assertThat(format.parseGreedy("a/b", (parent, child) -> ImmutableList.of(parent, child)))
+        .hasValue(ImmutableList.of("a", "b"));
+    assertThat(format.parseGreedy("a/b", (parent, child) -> null)).isEmpty();
+  }
+
+  @Test
+  public void parseGreedy_with1PlaceholderAndElipsisAtBeginning() {
+    StringFormat format = new StringFormat("{...}/{child}");
+    assertThat(format.parseGreedy("foo/bar/c/d", child -> child)).hasValue("d");
+  }
+
+  @Test
+  public void parseGreedy_with1PlaceholderAndElipsisAtEnd() {
+    StringFormat format = new StringFormat("{parent}/{...}");
+    assertThat(format.parseGreedy("foo/bar/c/d", parent -> parent)).hasValue("foo/bar/c");
+    assertThat(format.parseGreedy("foo/bar/c/d", parent -> null)).isEmpty();
+  }
+
+  @Test
+  public void parseGreedy_with2PlaceholdersAndElipsisAtBeginning() {
+    StringFormat format = new StringFormat("{...}/{parent}/{child}");
+    assertThat(
+            format.parseGreedy("foo/bar/c/d", (parent, child) -> ImmutableList.of(parent, child)))
+        .hasValue(ImmutableList.of("c", "d"));
+    assertThat(format.parseGreedy("foo/bar/c/d", (parent, child) -> null)).isEmpty();
+  }
+
+  @Test
+  public void parseGreedy_with2PlaceholdersAndElipsisAtEnd() {
+    StringFormat format = new StringFormat("{parent}/{child}/{...}");
+    assertThat(
+            format.parseGreedy("foo/bar/c/d", (parent, child) -> ImmutableList.of(parent, child)))
+        .hasValue(ImmutableList.of("foo/bar", "c"));
+    assertThat(format.parseGreedy("foo/bar/c/d", (parent, child) -> null)).isEmpty();
+  }
+
+  @Test
+  public void parseGreedy_with3Placeholders() {
+    StringFormat format = new StringFormat("{home}/{parent}/{child}");
+    assertThat(
+            format.parseGreedy(
+                "foo/bar/c/d", (home, parent, child) -> ImmutableList.of(home, parent, child)))
+        .hasValue(ImmutableList.of("foo/bar", "c", "d"));
+    assertThat(
+            format.parseGreedy(
+                "foo/bar/c/", (home, parent, child) -> ImmutableList.of(home, parent, child)))
+        .hasValue(ImmutableList.of("foo/bar", "c", ""));
+    assertThat(
+            format.parseGreedy(
+                "/bar/c/d", (home, parent, child) -> ImmutableList.of(home, parent, child)))
+        .hasValue(ImmutableList.of("/bar", "c", "d"));
+    assertThat(
+            format.parseGreedy(
+                "///", (home, parent, child) -> ImmutableList.of(home, parent, child)))
+        .hasValue(ImmutableList.of("/", "", ""));
+    assertThat(
+            format.parseGreedy(
+                "a/b/c", (home, parent, child) -> ImmutableList.of(home, parent, child)))
+        .hasValue(ImmutableList.of("a", "b", "c"));
+    assertThat(format.parseGreedy("a/b/c", (home, parent, child) -> null)).isEmpty();
+  }
+
+  @Test
+  public void parseGreedy_with4Placeholders() {
+    StringFormat format = new StringFormat("{a}/{b}/{c}/{d}");
+    assertThat(format.parseGreedy("x/a/b/c/d", (a, b, c, d) -> ImmutableList.of(a, b, c, d)))
+        .hasValue(ImmutableList.of("x/a", "b", "c", "d"));
+    assertThat(format.parseGreedy("x/a/b/c/d", (a, b, c, d) -> null)).isEmpty();
+  }
+
+  @Test
+  public void parseGreedy_with4PlaceholdersAndElipsis() {
+    StringFormat format = new StringFormat("{a}/{b}/{...}/{c}/{d}");
+    assertThat(format.parseGreedy("0/a/b/x/c/d", (a, b, c, d) -> ImmutableList.of(a, b, c, d)))
+        .hasValue(ImmutableList.of("0/a", "b", "c", "d"));
+  }
+
+  @Test
+  public void parseGreedy_with5Placeholders() {
+    StringFormat format = new StringFormat("{a}/{b}/{c}/{d}/{e}");
+    assertThat(
+            format.parseGreedy("x/a/b/c/d/e", (a, b, c, d, e) -> ImmutableList.of(a, b, c, d, e)))
+        .hasValue(ImmutableList.of("x/a", "b", "c", "d", "e"));
+    assertThat(format.parseGreedy("x/a/b/c/d/e", (a, b, c, d, e) -> null)).isEmpty();
+  }
+
+  @Test
+  public void parseGreedy_with5PlaceholdersAndElipsis() {
+    StringFormat format = new StringFormat("{a}/{b}/{...}/{c}/{d}/{e}");
+    assertThat(
+            format.parseGreedy("0/a/b/x/c/d/e", (a, b, c, d, e) -> ImmutableList.of(a, b, c, d, e)))
+        .hasValue(ImmutableList.of("0/a", "b", "c", "d", "e"));
   }
 
   @Test
@@ -932,6 +1035,42 @@ public class StringFormatTest {
   @Test
   public void matches_false() {
     assertThat(new StringFormat("id:{id}, value:{value}").matches("id:123")).isFalse();
+  }
+
+  @Test
+  public void reverseString_emptyString() {
+    assertThat(StringFormat.reverse("")).isEqualTo("");
+  }
+
+  @Test
+  public void reverseString_singleCharRemainsAsIs() {
+    String s = "a";
+    assertThat(StringFormat.reverse(s)).isSameInstanceAs(s);
+  }
+
+  @Test
+  public void reverseString_multipleCharsReversed() {
+    assertThat(StringFormat.reverse("ab")).isEqualTo("ba");
+    assertThat(StringFormat.reverse("abc")).isEqualTo("cba");
+    assertThat(StringFormat.reverse("aa")).isEqualTo("aa");
+  }
+
+  @Test
+  public void reverseList_emptyString() {
+    assertThat(StringFormat.reverse(asList())).isEmpty();
+  }
+
+  @Test
+  public void reverseList_singleElementRemainsAsIs() {
+    List<String> list = asList("a");
+    assertThat(StringFormat.reverse(list)).isSameInstanceAs(list);
+    assertThat(StringFormat.reverse(list)).containsExactly("a");
+  }
+
+  @Test
+  public void reverseList_multipleElementsReversed() {
+    assertThat(StringFormat.reverse(asList(1, 2))).containsExactly(2, 1);
+    assertThat(StringFormat.reverse(asList(1, 2, 3))).containsExactly(3, 2, 1);
   }
 
   @Test
