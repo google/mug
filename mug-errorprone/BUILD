@@ -1,7 +1,25 @@
+JDK_COMPILER_ADD_EXPORTS = [
+    "jdk.compiler/com.sun.tools.javac.%s" % p
+    for p in (
+        "api",
+        "code",
+        "comp",
+        "file",
+        "main",
+        "model",
+        "parser",
+        "processing",
+        "resources",
+        "tree",
+        "util",
+    )
+]
+
 java_library(
     name = "errorprone",
     srcs = glob(["src/main/java/**/*.java"]),
     visibility = ["//visibility:public"],
+    add_exports = JDK_COMPILER_ADD_EXPORTS,
     deps = [
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_errorprone_error_prone_core",
@@ -9,6 +27,7 @@ java_library(
         "@maven//:com_google_errorprone_error_prone_annotations",
         "@maven//:com_google_errorprone_error_prone_check_api",
         "@maven//:com_google_auto_service_auto_service_annotations",
+        "@maven//:com_google_errorprone_error_prone_docgen_processor",
         "//mug:base",
         "//mug-guava",
     ],
