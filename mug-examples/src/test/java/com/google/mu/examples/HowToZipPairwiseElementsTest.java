@@ -1,4 +1,4 @@
-package examples;
+package com.google.mu.examples;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;

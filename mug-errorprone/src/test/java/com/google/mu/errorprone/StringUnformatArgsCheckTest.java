@@ -1,6 +1,8 @@
 package com.google.mu.errorprone;
 
 import com.google.errorprone.CompilationTestHelper;
+
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -10,11 +12,6 @@ public class StringUnformatArgsCheckTest {
   private final CompilationTestHelper helper =
       CompilationTestHelper.newInstance(StringUnformatArgsCheck.class, getClass());
 
-  @Test public void parseWithFewerLambdaArgs() {
-    //helper.addSourceFile("ParseWithFewerLambdaArgs.java").doTest();
-  }
-
-  /*
   @Test
   public void goodParseWithLambda() {
     helper
@@ -613,6 +610,7 @@ public class StringUnformatArgsCheckTest {
         .doTest();
   }
 
+  @Ignore("scanAndCollectFrom() doesn't exist?")
   @Test
   public void scanAndCollectFromMethodChecked_withCollector() {
     helper
@@ -629,6 +627,7 @@ public class StringUnformatArgsCheckTest {
         .doTest();
   }
 
+  @Ignore("scanAndCollectFrom() doesn't exist?")
   @Test
   public void scanAndCollectFromMethodChecked_withBiCollector() {
     helper
@@ -645,7 +644,7 @@ public class StringUnformatArgsCheckTest {
         .doTest();
   }
 
-  @Test
+  @Test	
   public void methodWithoutMapperParameterIsIgnored() {
     helper
         .addSourceLines(
@@ -803,5 +802,5 @@ public class StringUnformatArgsCheckTest {
             "  }",
             "}")
         .doTest();
-  }*/
+  }
 }
