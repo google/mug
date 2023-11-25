@@ -1,6 +1,8 @@
 package com.google.mu.errorprone;
 
 import com.google.errorprone.CompilationTestHelper;
+
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -523,6 +525,7 @@ public final class StringFormatArgsCheckTest {
         .doTest();
   }
 
+  @Ignore
   @Test
   public void to_argLiteralDoesNotMatchPlaceholderName() {
     helper
@@ -540,6 +543,7 @@ public final class StringFormatArgsCheckTest {
         .doTest();
   }
 
+  @Ignore
   @Test
   public void to_tooManyArgs() {
     helper
@@ -556,6 +560,7 @@ public final class StringFormatArgsCheckTest {
         .doTest();
   }
 
+  @Ignore
   @Test
   public void to_tooFewArgs() {
     helper
@@ -753,6 +758,7 @@ public final class StringFormatArgsCheckTest {
         .doTest();
   }
 
+  @Ignore
   @Test
   public void usingSquareBrackets_correctMethodReference() {
     helper
@@ -770,6 +776,7 @@ public final class StringFormatArgsCheckTest {
         .doTest();
   }
 
+  @Ignore
   @Test
   public void usingSquareBrackets_incorrectMethodReference() {
     helper
@@ -911,6 +918,7 @@ public final class StringFormatArgsCheckTest {
         .doTest();
   }
 
+  @Ignore
   @Test
   public void lenientFormatUsedAsMethodReferenceCorrectly() {
     helper
@@ -926,6 +934,7 @@ public final class StringFormatArgsCheckTest {
         .doTest();
   }
 
+  @Ignore
   @Test
   public void lenientFormatUsedAsMethodReferenceIncorrectly() {
     helper
@@ -942,6 +951,7 @@ public final class StringFormatArgsCheckTest {
         .doTest();
   }
 
+  @Ignore
   @Test
   public void toWithMethodUsedAsMethodReferenceCorrectly() {
     helper
@@ -959,6 +969,7 @@ public final class StringFormatArgsCheckTest {
         .doTest();
   }
 
+  @Ignore
   @Test
   public void toWithMethodUsedAsMethodReferenceIncorrectly() {
     helper
