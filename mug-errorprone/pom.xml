@@ -1,11 +1,13 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>com.google.mug</groupId>
-    <artifactId>mug-root</artifactId>
-    <version>6.6-SNAPSHOT</version>
+	<groupId>com.google.mug</groupId>
+	<artifactId>mug-root</artifactId>
+	<version>6.7-SNAPSHOT</version>
+	<relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>mug-errorprone</artifactId>
+  <version>6.7-SNAPSHOT</version>
   <name>Java Plugins</name>
   <packaging>jar</packaging>
   <build>
@@ -151,7 +153,7 @@
 	<dependency>
 	  <groupId>com.google.mug</groupId>
 	  <artifactId>mug-guava</artifactId>
-	  <version>${version}</version>
+	  <version>${project.version}</version>
 	</dependency>
   </dependencies>
 </project>

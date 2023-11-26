@@ -57,7 +57,7 @@
 		<groupId>com.google.mug</groupId>
 		<artifactId>mug-guava</artifactId>
 		<scope>test</scope>
-		<version>${version}</version>
+		<version>${project.version}</version>
 	</dependency>
   </dependencies>
 </project>
