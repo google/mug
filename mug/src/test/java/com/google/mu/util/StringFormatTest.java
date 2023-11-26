@@ -386,6 +386,7 @@ public class StringFormatTest {
   }
 
   @Test
+  @SuppressWarnings("StringFormatArgsCheck")
   public void parse_placeholderInsideMultipleCurlyBraces(@TestParameter Mode mode) {
     StringFormat format = mode.formatOf("{test: {{key={key}, value={value}}}}");
     assertThat(format.parse("{test: {{key=one, value=1}}}", (key, value) -> key + ":" + value))
@@ -393,6 +394,7 @@ public class StringFormatTest {
   }
 
   @Test
+  @SuppressWarnings("StringUnformatArgsCheck")
   public void twoPlaceholdersNextToEachOther_invalid(@TestParameter Mode mode) {
     assertThrows(IllegalArgumentException.class, () -> mode.formatOf("{a}{b}").parse("ab"));
   }
@@ -403,6 +405,7 @@ public class StringFormatTest {
   }
 
   @Test
+  @SuppressWarnings("StringUnformatArgsCheck")
   public void parse_throwsUponIncorrectNumLambdaParameters(@TestParameter Mode mode) {
     assertThrows(
         IllegalArgumentException.class,
@@ -912,6 +915,7 @@ public class StringFormatTest {
   }
 
   @Test
+  @SuppressWarnings("StringUnformatArgsCheck")
   public void scan_throwsUponIncorrectNumLambdaParameters(@TestParameter Mode mode) {
     assertThrows(
         IllegalArgumentException.class,
@@ -959,11 +963,13 @@ public class StringFormatTest {
   }
 
   @Test
+  @SuppressWarnings("StringFormatArgsCheck")
   public void format_tooFewArgs(@TestParameter Mode mode) {
     assertThrows(IllegalArgumentException.class, () -> mode.formatOf("{foo}:{bar}").format(1));
   }
 
   @Test
+  @SuppressWarnings("StringFormatArgsCheck")
   public void format_tooManyArgs(@TestParameter Mode mode) {
     assertThrows(
         IllegalArgumentException.class, () -> mode.formatOf("{foo}:{bar}").format(1, 2, 3));

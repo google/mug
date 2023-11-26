@@ -12,7 +12,8 @@ public class HowToUseStringFormatTest {
   @Test public void testIt() {
   }
 
-  private String badUsage() {
+  @SuppressWarnings("StringUnformatArgsCheck")
+  String failsBecauseTwoLambdaParametersAreExpected() {
 	  return new StringFormat("{key}:{value}").parseOrThrow("k:v", key -> key);
   }
 }

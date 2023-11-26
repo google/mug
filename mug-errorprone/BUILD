@@ -1,47 +1,69 @@
-JDK_COMPILER_ADD_EXPORTS = [
-    "jdk.compiler/com.sun.tools.javac.%s" % p
-    for p in (
-        "api",
-        "code",
-        "comp",
-        "file",
-        "main",
-        "model",
-        "parser",
-        "processing",
-        "resources",
-        "tree",
-        "util",
-    )
-]
-
 java_library(
     name = "errorprone",
     srcs = glob(["src/main/java/**/*.java"]),
-    visibility = ["//visibility:public"],
-    add_exports = JDK_COMPILER_ADD_EXPORTS,
     deps = [
-        "@maven//:com_google_errorprone_error_prone_core",
+        "@maven//:com_google_auto_service_auto_service_annotations",
         "@maven//:com_google_errorprone_error_prone_annotation",
         "@maven//:com_google_errorprone_error_prone_annotations",
         "@maven//:com_google_errorprone_error_prone_check_api",
-        "@maven//:com_google_errorprone_error_prone_docgen_processor",
         "@maven//:com_google_guava_guava",
         "//mug:base",
         "//mug-guava",
-        "@maven//:com_google_auto_service_auto_service_annotations",
-    ],
-    exports = [
-        "@maven//:com_google_errorprone_error_prone_core",
-        "@maven//:com_google_auto_service_auto_service",
     ],
 )
 
 java_plugin(
     name = "plugin",
-    processor_class = "com.google.auto.service.processor.AutoServiceProcessor",
+    srcs = glob(["src/main/java/**/*.java"]),
     visibility = ["//visibility:public"],
-    deps = [":errorprone"],
+    deps = [
+        ":auto_service",
+        ":error_prone_docgen",
+        "@maven//:com_google_auto_service_auto_service_annotations",
+        "@maven//:com_google_errorprone_error_prone_core",
+        "@maven//:com_google_errorprone_error_prone_annotation",
+        "@maven//:com_google_errorprone_error_prone_annotations",
+        "@maven//:com_google_errorprone_error_prone_check_api",
+        "@maven//:com_google_guava_guava",
+        "//mug:base",
+        "//mug-guava",
+    ],
+)
+
+java_library(
+    name = "auto_service",
+    exported_plugins = [
+        ":auto_service_plugin",
+    ],
+    exports = [
+        "@maven//:com_google_auto_service_auto_service_annotations",
+    ],
+)
+
+java_plugin(
+    name = "auto_service_plugin",
+    processor_class = "com.google.auto.service.processor.AutoServiceProcessor",
+    deps = [
+        "@maven//:com_google_auto_service_auto_service",
+    ],
+)
+
+java_library(
+    name = "error_prone_docgen",
+    exported_plugins = [
+        ":error_prone_docgen_plugin",
+    ],
+    exports = [
+        "@maven//:com_google_auto_service_auto_service_annotations",
+    ],
+)
+
+java_plugin(
+    name = "error_prone_docgen_plugin",
+    processor_class = "com.google.auto.service.processor.AutoServiceProcessor",
+    deps = [
+        "@maven//:com_google_errorprone_error_prone_docgen_processor",
+    ],
 )
 
 load("@com_googlesource_gerrit_bazlets//tools:junit.bzl", "junit_tests")
