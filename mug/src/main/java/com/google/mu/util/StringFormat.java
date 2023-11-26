@@ -91,37 +91,6 @@ public final class StringFormat {
   private final List<String> fragments; // The string literals between placeholders
   private final List<Boolean> toCapture;
   private final int numCapturingPlaceholders;
-  private final CharPredicate requiredChars; // null for unconstrained matches
-
-  /**
-   * Returns a strict StringFormat according to the {@code format} string. All placeholder values
-   * must be <em>non-empty</em> and all placeholder value characters must match {@code
-   * requiredChars}.
-   *
-   * <p>For example:
-   *
-   * <pre>{@code
-   * StringFormat userFormat =
-   *     StringFormat.strict("user: {user_id}", CharMatcher.inRange('0', '9'));
-   * userFormat.parse("user: 123", id -> Integer.parseInt(id))  => Optional.of(123)
-   * userFormat.parse("user: xyz", ...) => empty()
-   * userFormat.parse("user: ", ...)    => empty()
-   * }</pre>
-   *
-   * <p>Note that {@code requiredChars} applies to all placeholders. If you need to apply
-   * constraints on an individual placeholder, consider filtering in the lambda by returning null if
-   * the placeholder value isn't valid.
-   *
-   * <p>Parameters passed to {@link #format} are not checked so it's possible that {@code format()}
-   * returns a string not parseable by the same {@code StringFormat} strict instance.
-   *
-   * @since 6.7
-   * @deprecated Consider manually checking the placeholder values in the lambda
-   */
-  @Deprecated
-  public static StringFormat strict(String format, CharPredicate requiredChars) {
-    return new StringFormat(format, requireNonNull(requiredChars));
-  }
 
   /**
    * Returns a {@link Substring.Pattern} spanning the substring matching {@code format}. For
@@ -166,10 +135,6 @@ public final class StringFormat {
    *     (e.g. a placeholder immediately followed by another placeholder)
    */
   public StringFormat(String format) {
-    this(format, null);
-  }
-
-  private StringFormat(String format, CharPredicate requiredChars) {
     Stream.Builder<String> delimiters = Stream.builder();
     Stream.Builder<Boolean> toCapture = Stream.builder();
     PLACEHOLDERS.split(format).forEachOrdered(
@@ -182,7 +147,6 @@ public final class StringFormat {
     this.toCapture = chop(toCapture.build().collect(toImmutableList()));
     this.numCapturingPlaceholders =
         this.fragments.size() - 1 - (int) this.toCapture.stream().filter(c -> !c).count();
-    this.requiredChars = requiredChars;
   }
 
   /**
@@ -300,9 +264,6 @@ public final class StringFormat {
           i < numPlaceholders ? first(fragments.get(i)) : suffix(fragments.get(i));
       Substring.Match placeholder = before(trailingLiteral).in(input, inputIndex).orElse(null);
       if (placeholder == null) {
-        return Optional.empty();
-      }
-      if (requiredChars != null && !isValidPlaceholderValue(placeholder)) {
         return Optional.empty();
       }
       if (toCapture.get(i - 1)) {
@@ -579,17 +540,17 @@ public final class StringFormat {
   public Stream<List<Substring.Match>> scan(String input) {
     requireNonNull(input);
     if (format.isEmpty()) {
-      return requiredChars == null
-          ? Stream.generate(() -> Collections.<Substring.Match>emptyList()).limit(input.length() + 1)
-          : Stream.empty();
+      return Stream.generate(() -> Collections.<Substring.Match>emptyList())
+          .limit(input.length() + 1);
     }
     int numPlaceholders = numPlaceholders();
-    Stream<List<Substring.Match>> groups = MoreStreams.whileNotNull(
+    return MoreStreams.whileNotNull(
         new Supplier<List<Substring.Match>>() {
           private int inputIndex = 0;
           private boolean done = false;
 
-          @Override public List<Substring.Match> get() {
+          @Override
+          public List<Substring.Match> get() {
             if (done) {
               return null;
             }
@@ -621,10 +582,6 @@ public final class StringFormat {
             return unmodifiableList(builder);
           }
         });
-    if (requiredChars == null) {
-      return groups;
-    }
-    return groups.filter(matches -> matches.stream().allMatch(this::isValidPlaceholderValue));
   }
 
   /**
@@ -882,10 +839,6 @@ public final class StringFormat {
               numCapturingPlaceholders,
               expected));
     }
-  }
-
-  private boolean isValidPlaceholderValue(CharSequence chars) {
-    return requiredChars == null || (chars.length() > 0 && requiredChars.matchesAllOf(chars));
   }
 
   static String reverse(String s) {
