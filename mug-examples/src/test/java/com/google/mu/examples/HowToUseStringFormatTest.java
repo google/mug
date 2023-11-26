@@ -18,6 +18,13 @@ public class HowToUseStringFormatTest {
         .hasValue("10");
   }
 
+  @Test public void parseGreedyExample() {
+    StringFormat filenameFormat = new StringFormat("{path}/{name}.{ext}");
+    String input = "/usr/tom/my.file.txt";
+    assertThat(filenameFormat.parseGreedy(input, (path, name, ext) -> name))
+        .hasValue("my.file");
+  }
+
   @Test public void scanExample() {
     StringFormat boldFormat = new StringFormat("<b>{bolded}</b>");
     String input = "Please come back to the <b>front desk</b> at <b>12:00</b>.";
