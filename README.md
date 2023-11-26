@@ -160,6 +160,12 @@ new StringFormat("{hour}:{minute}:{second}.{millis}")
     .parse(“10:26:30.748”, (hour, minute, second, millis) -> ...);
 ```
 
+An ErrorProne check is in place to check that the number of lambda parameters and
+the parameter names match the format string.
+
+This allows you to define `StringFormat` objects as private class constant, and safely use them
+many lines away.
+
 
 ## Substring
 
