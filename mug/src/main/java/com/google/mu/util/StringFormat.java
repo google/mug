@@ -38,9 +38,15 @@ import com.google.mu.util.stream.MoreStreams;
  *     .parse("my-ldap+test@google.com", (address, subaddress, domain) -> ...);
  * }</pre>
  *
- * <p>Starting from 6.7, if a certain placeholder is uninteresting and you'd rather not name it,
- * you can use the special {@code ...} placeholder and then you won't need to assign a lambda
- * variable to capture it:
+ * <p>An ErrorProne check is provided to guard against incorrect lambda parameters to the {@code
+ * parse()}, {@code parseOrThrow()}, {@code parseGreedy()} and {@code scan()} methods. Both the
+ * number of parameters and the lambda parameter names are checked to ensure they match the format
+ * string. The arguments passed to the {@link #format} are also checked. If you use bazel, the check
+ * is automatically enforced.
+ *
+ * <p>Starting from 6.7, if a certain placeholder is uninteresting and you'd rather not name it, you
+ * can use the special {@code ...} placeholder and then you won't need to assign a lambda variable
+ * to capture it:
  *
  * <pre>{@code
  * return new StringFormat("{...}+{subaddress}@{domain}")
