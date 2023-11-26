@@ -45,7 +45,7 @@ public class OrdinalTest {
         Ordinal.natural().limit(100).collect(Collectors.toCollection(ArrayList::new));
     Collections.shuffle(ordinals);
     Collections.sort(ordinals);
-    assertThat(ordinals).isStrictlyOrdered();
+    assertThat(ordinals).isInOrder();
     assertThat(ordinals.stream().map(Ordinal::toString).limit(7))
         .containsExactly("1st", "2nd", "3rd", "4th", "5th", "6th", "7th")
         .inOrder();
@@ -140,9 +140,9 @@ public class OrdinalTest {
   }
 
   @Test public void interning() {
-    assertThat(Ordinal.first()).isSameAs(Ordinal.first());
+    assertThat(Ordinal.first()).isSameInstanceAs(Ordinal.first());
     for (int i = 1; i < 100; i++) {
-      assertThat(Ordinal.of(i)).isSameAs(Ordinal.of(i));
+      assertThat(Ordinal.of(i)).isSameInstanceAs(Ordinal.of(i));
     }
   }
 
@@ -165,7 +165,7 @@ public class OrdinalTest {
   @Test public void toIndex() {
     List<Ordinal> ordinals = Ordinal.natural().limit(100).collect(toList());
     for (Ordinal ordinal : ordinals) {
-      assertThat(ordinals.get(ordinal.toIndex())).isSameAs(ordinal);
+      assertThat(ordinals.get(ordinal.toIndex())).isSameInstanceAs(ordinal);
     }
   }
 

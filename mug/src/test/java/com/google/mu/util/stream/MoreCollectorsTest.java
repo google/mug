@@ -291,7 +291,7 @@ public class MoreCollectorsTest {
         .containsExactly(1, 1, 1);
   }
 
-  public void testPartitioningBy_sameDownstreamCollector() {
+  @Test public void testPartitioningBy_sameDownstreamCollector() {
     String result =
         Stream.of(1, 2, 3, 4, 5)
             .collect(partitioningBy(n -> n % 2 == 1, toImmutableList()))
@@ -299,7 +299,7 @@ public class MoreCollectorsTest {
     assertThat(result).isEqualTo("odd:[1, 3, 5]; even:[2, 4]");
   }
 
-  public void testPartitioningBy_differentDownstreamCollectors() {
+  @Test public void testPartitioningBy_differentDownstreamCollectors() {
     String result =
         Stream.of(1, 2, 3, 4, 5)
             .collect(

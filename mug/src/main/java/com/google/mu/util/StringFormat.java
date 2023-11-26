@@ -12,6 +12,7 @@ import static java.util.Collections.unmodifiableList;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -81,7 +82,7 @@ public final class StringFormat {
           .immediatelyBetween("{", INCLUSIVE, "}", INCLUSIVE)
           .repeatedly();
   private final String format;
-  private final List<String> delimiters; // The string literals between placeholders
+  private final List<String> fragments; // The string literals between placeholders
   private final List<Boolean> toCapture;
   private final int numCapturingPlaceholders;
   private final CharPredicate requiredChars; // null for unconstrained matches
@@ -109,7 +110,9 @@ public final class StringFormat {
    * returns a string not parseable by the same {@code StringFormat} strict instance.
    *
    * @since 6.7
+   * @deprecated Consider manually checking the placeholder values in the lambda
    */
+  @Deprecated
   public static StringFormat strict(String format, CharPredicate requiredChars) {
     return new StringFormat(format, requireNonNull(requiredChars));
   }
@@ -169,16 +172,11 @@ public final class StringFormat {
           toCapture.add(!format.startsWith("...}", literal.index() + literal.length() + 1));
         });
     this.format = format;
-    this.delimiters = delimiters.build().collect(toImmutableList());
-    this.toCapture = toCapture.build().collect(toImmutableList());
+    this.fragments = delimiters.build().collect(toImmutableList());
+    this.toCapture = chop(toCapture.build().collect(toImmutableList()));
     this.numCapturingPlaceholders =
-        this.delimiters.size() - 1 - (int) this.toCapture.stream().filter(c -> !c).count();
+        this.fragments.size() - 1 - (int) this.toCapture.stream().filter(c -> !c).count();
     this.requiredChars = requiredChars;
-    for (int i = 1; i < numPlaceholders(); i++) {
-      if (this.delimiters.get(i).isEmpty()) {
-        throw new IllegalArgumentException("Placeholders cannot be next to each other: " + format);
-      }
-    }
   }
 
   /**
@@ -194,10 +192,7 @@ public final class StringFormat {
    * @throws IllegalArgumentException if or the format string doesn't have exactly one placeholder.
    */
   public <R> Optional<R> parse(String input, Function<? super String, ? extends R> mapper) {
-    requireNonNull(input);
-    requireNonNull(mapper);
-    checkPlaceholderCount(1);
-    return parseAndCollect(input, onlyElement(mapper));
+    return parseExpecting(1, input, onlyElement(mapper));
   }
 
   /**
@@ -215,10 +210,7 @@ public final class StringFormat {
    */
   public <R> Optional<R> parse(
       String input, BiFunction<? super String, ? super String, ? extends R> mapper) {
-    requireNonNull(input);
-    requireNonNull(mapper);
-    checkPlaceholderCount(2);
-    return parseAndCollect(input, combining(mapper));
+    return parseExpecting(2, input, combining(mapper));
   }
 
   /**
@@ -235,10 +227,7 @@ public final class StringFormat {
    * @throws IllegalArgumentException if or the format string doesn't have exactly 3 placeholders.
    */
   public <R> Optional<R> parse(String input, Ternary<? super String, ? extends R> mapper) {
-    requireNonNull(input);
-    requireNonNull(mapper);
-    checkPlaceholderCount(3);
-    return parseAndCollect(input, combining(mapper));
+    return parseExpecting(3, input, combining(mapper));
   }
 
   /**
@@ -250,10 +239,7 @@ public final class StringFormat {
    * @throws IllegalArgumentException if or the format string doesn't have exactly 4 placeholders.
    */
   public <R> Optional<R> parse(String input, Quarternary<? super String, ? extends R> mapper) {
-    requireNonNull(input);
-    requireNonNull(mapper);
-    checkPlaceholderCount(4);
-    return parseAndCollect(input, combining(mapper));
+    return parseExpecting(4, input, combining(mapper));
   }
 
   /**
@@ -265,10 +251,7 @@ public final class StringFormat {
    * @throws IllegalArgumentException if or the format string doesn't have exactly 5 placeholders.
    */
   public <R> Optional<R> parse(String input, Quinary<? super String, ? extends R> mapper) {
-    requireNonNull(input);
-    requireNonNull(mapper);
-    checkPlaceholderCount(5);
-    return parseAndCollect(input, combining(mapper));
+    return parseExpecting(5, input, combining(mapper));
   }
 
   /**
@@ -280,10 +263,7 @@ public final class StringFormat {
    * @throws IllegalArgumentException if or the format string doesn't have exactly 6 placeholders.
    */
   public <R> Optional<R> parse(String input, Senary<? super String, ? extends R> mapper) {
-    requireNonNull(input);
-    requireNonNull(mapper);
-    checkPlaceholderCount(6);
-    return parseAndCollect(input, combining(mapper));
+    return parseExpecting(6, input, combining(mapper));
   }
 
   /**
@@ -296,24 +276,33 @@ public final class StringFormat {
    * match, or to access the raw index in the input string.
    */
   public Optional<List<Substring.Match>> parse(String input) {
-    if (!input.startsWith(delimiters.get(0))) {  // first literal is the prefix
+    return internalParse(input, fragments, toCapture);
+  }
+
+  private Optional<List<Substring.Match>> internalParse(
+      String input, List<String> fragments, List<Boolean> toCapture) {
+    checkUnformattability();
+    if (!input.startsWith(fragments.get(0))) { // first literal is the prefix
       return Optional.empty();
     }
     List<Substring.Match> builder = new ArrayList<>(numCapturingPlaceholders);
-    final int numPlaceholders = numPlaceholders();
-    int inputIndex = delimiters.get(0).length();
+    int inputIndex = fragments.get(0).length();
+    int numPlaceholders = numPlaceholders();
     for (int i = 1; i <= numPlaceholders; i++) {
-      // subsequent literals are searched left-to-right; last literal is the suffix.
+      // subsequent delimiters are searched left-to-right; last literal is the suffix.
       Substring.Pattern trailingLiteral =
-          i < numPlaceholders ? first(delimiters.get(i)) : suffix(delimiters.get(i));
-      Substring.Match placeholder = before(trailingLiteral).match(input, inputIndex);
-      if (placeholder == null || !isValidPlaceholderValue(placeholder)) {
+          i < numPlaceholders ? first(fragments.get(i)) : suffix(fragments.get(i));
+      Substring.Match placeholder = before(trailingLiteral).in(input, inputIndex).orElse(null);
+      if (placeholder == null) {
+        return Optional.empty();
+      }
+      if (requiredChars != null && !isValidPlaceholderValue(placeholder)) {
         return Optional.empty();
       }
       if (toCapture.get(i - 1)) {
         builder.add(placeholder);
       }
-      inputIndex = placeholder.index() + placeholder.length() + delimiters.get(i).length();
+      inputIndex = placeholder.index() + placeholder.length() + fragments.get(i).length();
     }
     return optional(inputIndex == input.length(), unmodifiableList(builder));
   }
@@ -342,7 +331,7 @@ public final class StringFormat {
    * @since 6.7
    */
   public <R> R parseOrThrow(String input, Function<? super String, R> mapper) {
-    return parseOrThrowThenCollect(input, 1, onlyElement(mapper));
+    return parseOrThrowExpecting(1, input, onlyElement(mapper));
   }
 
   /**
@@ -370,12 +359,12 @@ public final class StringFormat {
    * @since 6.7
    */
   public <R> R parseOrThrow(String input, BiFunction<? super String, ? super String, R> mapper) {
-    return parseOrThrowThenCollect(input, 2, combining(mapper));
+    return parseOrThrowExpecting(2, input, combining(mapper));
   }
 
   /**
    * Similar to {@link #parseOrThrow(String, BiFunction)}, but parses {@code input} and applies
-   * {@code mapper} with the <em>2</em> placeholder values in this format string.
+   * {@code mapper} with the <em>3</em> placeholder values in this format string.
    *
    * <p>For example:
    *
@@ -398,7 +387,7 @@ public final class StringFormat {
    * @since 6.7
    */
   public <R> R parseOrThrow(String input, Ternary<? super String, R> mapper) {
-    return parseOrThrowThenCollect(input, 3, combining(mapper));
+    return parseOrThrowExpecting(3, input, combining(mapper));
   }
 
   /**
@@ -419,7 +408,7 @@ public final class StringFormat {
    * @since 6.7
    */
   public <R> R parseOrThrow(String input, Quarternary<? super String, R> mapper) {
-    return parseOrThrowThenCollect(input, 4, combining(mapper));
+    return parseOrThrowExpecting(4, input, combining(mapper));
   }
 
   /**
@@ -440,7 +429,7 @@ public final class StringFormat {
    * @since 6.7
    */
   public <R> R parseOrThrow(String input, Quinary<? super String, R> mapper) {
-    return parseOrThrowThenCollect(input, 5, combining(mapper));
+    return parseOrThrowExpecting(5, input, combining(mapper));
   }
 
   /**
@@ -461,7 +450,107 @@ public final class StringFormat {
    * @since 6.7
    */
   public <R> R parseOrThrow(String input, Senary<? super String, R> mapper) {
-    return parseOrThrowThenCollect(input, 6, combining(mapper));
+    return parseOrThrowExpecting(6, input, combining(mapper));
+  }
+
+  /**
+   * Similar to {@link #parse(String, Function)}, parses {@code input} and applies {@code mapper}
+   * with the single placeholder value in this format string, but matches the placeholders backwards
+   * from the end to the beginning of the input string.
+   *
+   * <p>For unambiguous strings, it's equivalent to {@link #parse(String, Function)}, but if for
+   * example you are parsing "a/b/c" against the pattern of "{parent}/{...}", {@code parse("a/b/c",
+   * parent -> parent)} results in "a", while {@code parseGreedy("a/b/c", parent -> parent)} results
+   * in "a/b".
+   *
+   * <p>This is also equivalent to allowing the left placeholder to match greedily, while still
+   * requiring the remaining placeholder(s) to be matched.
+   *
+   * @return the return value of the {@code mapper} function if not null. Returns empty if {@code
+   *     input} doesn't match the format, or {@code mapper} returns null.
+   * @throws IllegalArgumentException if the format string doesn't have exactly one placeholder.
+   * @since 6.7
+   */
+  public final <R> Optional<R> parseGreedy(
+      String input, Function<? super String, ? extends R> mapper) {
+    return parseGreedyExpecting(1, input, onlyElement(mapper));
+  }
+
+  /**
+   * Similar to {@link #parse(String, BiFunction)}, parses {@code input} and applies {@code mapper}
+   * with the two placeholder values in this format string, but matches the placeholders backwards
+   * from the end to the beginning of the input string.
+   *
+   * <p>For unambiguous strings, it's equivalent to {@link #parse(String, BiFunction)}, but if for
+   * example you are parsing "a/b/c" against the pattern of "{parent}/{child}", {@code
+   * parse("a/b/c", (parent, child) -> ...)} parses out "a" as parent and "b/c" as child, while
+   * {@code parseGreedy("a/b/c", (parent, child) -> ...)} parses "a/b" as parent and "c" as child.
+   *
+   * <p>This is also equivalent to allowing the left placeholder to match greedily, while still
+   * requiring the remaining placeholder(s) to be matched.
+   *
+   * @return the return value of the {@code mapper} function if not null. Returns empty if {@code
+   *     input} doesn't match the format, or {@code mapper} returns null.
+   * @throws IllegalArgumentException if the format string doesn't have exactly two placeholders.
+   * @since 6.7
+   */
+  public final <R> Optional<R> parseGreedy(
+      String input, BiFunction<? super String, ? super String, ? extends R> mapper) {
+    return parseGreedyExpecting(2, input, combining(mapper));
+  }
+
+  /**
+   * Similar to {@link #parse(String, MapFrom3)}, parses {@code input} and applies {@code mapper}
+   * with the 3 placeholder values in this format string, but matches the placeholders backwards
+   * from the end to the beginning of the input string.
+   *
+   * <p>This is also equivalent to allowing the left placeholder to match greedily, while still
+   * requiring the remaining placeholder(s) to be matched.
+   *
+   * @return the return value of the {@code mapper} function if not null. Returns empty if {@code
+   *     input} doesn't match the format, or {@code mapper} returns null.
+   * @throws IllegalArgumentException if the format string doesn't have exactly 3 placeholders.
+   * @since 6.7
+   */
+  public final <R> Optional<R> parseGreedy(
+      String input, Ternary<? super String, ? extends R> mapper) {
+    return parseGreedyExpecting(3, input, combining(mapper));
+  }
+
+  /**
+   * Similar to {@link #parse(String, MapFrom4)}, parses {@code input} and applies {@code mapper}
+   * with the 3 placeholder values in this format string, but matches the placeholders backwards
+   * from the end to the beginning of the input string.
+   *
+   * <p>This is also equivalent to allowing the left placeholder to match greedily, while still
+   * requiring the remaining placeholder(s) to be matched.
+   *
+   * @return the return value of the {@code mapper} function if not null. Returns empty if {@code
+   *     input} doesn't match the format, or {@code mapper} returns null.
+   * @throws IllegalArgumentException if the format string doesn't have exactly 4 placeholders.
+   * @since 6.7
+   */
+  public final <R> Optional<R> parseGreedy(
+      String input, Quarternary<? super String, ? extends R> mapper) {
+    return parseGreedyExpecting(4, input, combining(mapper));
+  }
+
+  /**
+   * Similar to {@link #parse(String, MapFrom5)}, parses {@code input} and applies {@code mapper}
+   * with the 5 placeholder values in this format string, but matches the placeholders backwards
+   * from the end to the beginning of the input string.
+   *
+   * <p>This is also equivalent to allowing the left placeholder to match greedily, while still
+   * requiring the remaining placeholder(s) to be matched.
+   *
+   * @return the return value of the {@code mapper} function if not null. Returns empty if {@code
+   *     input} doesn't match the format, or {@code mapper} returns null.
+   * @throws IllegalArgumentException if the format string doesn't have exactly 5 placeholders.
+   * @since 6.7
+   */
+  public final <R> Optional<R> parseGreedy(
+      String input, Quinary<? super String, ? extends R> mapper) {
+    return parseGreedyExpecting(5, input, combining(mapper));
   }
 
   /**
@@ -498,19 +587,19 @@ public final class StringFormat {
             if (done) {
               return null;
             }
-            inputIndex = input.indexOf(delimiters.get(0), inputIndex);
+            inputIndex = input.indexOf(fragments.get(0), inputIndex);
             if (inputIndex < 0) {
               return null;
             }
-            inputIndex += delimiters.get(0).length();
+            inputIndex += fragments.get(0).length();
             List<Substring.Match> builder = new ArrayList<>(numCapturingPlaceholders);
             for (int i = 1; i <= numPlaceholders; i++) {
-              String literal = delimiters.get(i);
+              String literal = fragments.get(i);
               // Always search left-to-right. The last placeholder at the end of format is suffix.
               Substring.Pattern literalLocator =
-                  i == numPlaceholders && delimiters.get(i).isEmpty()
+                  i == numPlaceholders && fragments.get(i).isEmpty()
                       ? Substring.END
-                      : first(delimiters.get(i));
+                      : first(fragments.get(i));
               Substring.Match placeholder = before(literalLocator).match(input, inputIndex);
               if (placeholder == null) {
                 return null;
@@ -529,8 +618,7 @@ public final class StringFormat {
     if (requiredChars == null) {
       return groups;
     }
-    return groups.filter(
-        matches -> matches.stream().allMatch(m -> m.isNotEmpty() && requiredChars.matchesAllOf(m)));
+    return groups.filter(matches -> matches.stream().allMatch(this::isValidPlaceholderValue));
   }
 
   /**
@@ -696,9 +784,9 @@ public final class StringFormat {
               numPlaceholders(),
               args.length));
     }
-    StringBuilder builder = new StringBuilder().append(delimiters.get(0));
+    StringBuilder builder = new StringBuilder().append(fragments.get(0));
     for (int i = 0; i < args.length; i++) {
-      builder.append(args[i]).append(delimiters.get(i + 1));
+      builder.append(args[i]).append(fragments.get(i + 1));
     }
     return builder.toString();
   }
@@ -708,7 +796,30 @@ public final class StringFormat {
     return format;
   }
 
-  private <R> Optional<R> parseAndCollect(String input, Collector<? super String, ?, R> collector) {
+  private <R> Optional<R> parseGreedyExpecting(
+      int cardinality, String input, Collector<? super String, ?, R> collector) {
+    requireNonNull(input);
+    checkPlaceholderCount(cardinality);
+    // To match backwards, we reverse the input as well as the format string.
+    // After the matching is done, reverse the results back.
+    return internalParse(
+            reverse(input),
+            reverse(fragments).stream().map(s -> reverse(s)).collect(toImmutableList()),
+            reverse(toCapture))
+        .map(
+            captured ->
+                reverse(captured).stream()
+                    .map(
+                        sub -> { // Return the original (unreversed) substring
+                          int forwardIndex = input.length() - (sub.index() + sub.length());
+                          return input.substring(forwardIndex, forwardIndex + sub.length());
+                        })
+                    .collect(collector));
+  }
+
+  private <R> Optional<R> parseExpecting(int cardinality, String input, Collector<? super String, ?, R> collector) {
+    requireNonNull(input);
+    checkPlaceholderCount(cardinality);
     return parse(input).map(values -> values.stream().map(Substring.Match::toString).collect(collector));
   }
 
@@ -718,8 +829,8 @@ public final class StringFormat {
    *
    * @throws IllegalArgumentException if input fails parsing
    */
-  private <R> R parseOrThrowThenCollect(
-      String input, int cardinality, Collector<? super String, ?, R> collector) {
+  private <R> R parseOrThrowExpecting(
+      int cardinality, String input, Collector<? super String, ?, R> collector) {
     requireNonNull(input);
     checkPlaceholderCount(cardinality);
     List<Substring.Match> values =
@@ -746,7 +857,15 @@ public final class StringFormat {
   }
 
   private int numPlaceholders() {
-    return delimiters.size() - 1;
+    return fragments.size() - 1;
+  }
+
+  private void checkUnformattability() {
+    for (int i = 1; i < numPlaceholders(); i++) {
+      if (this.fragments.get(i).isEmpty()) {
+        throw new IllegalArgumentException("Placeholders cannot be next to each other: " + format);
+      }
+    }
   }
 
   private void checkPlaceholderCount(int expected) {
@@ -761,5 +880,34 @@ public final class StringFormat {
 
   private boolean isValidPlaceholderValue(CharSequence chars) {
     return requiredChars == null || (chars.length() > 0 && requiredChars.matchesAllOf(chars));
+  }
+
+  static String reverse(String s) {
+    if (s.length() <= 1) {
+      return s;
+    }
+    StringBuilder builder = new StringBuilder(s.length());
+    for (int i = s.length() - 1; i >= 0; i--) {
+      builder.append(s.charAt(i));
+    }
+    return builder.toString();
+  }
+
+  static <T> List<T> reverse(List<T> list) {
+    if (list.size() <= 1) {
+      return list;
+    }
+    return new AbstractList<T>() {
+      @Override public int size() {
+        return list.size();
+      }
+      @Override public T get(int i) {
+        return list.get(list.size() - 1 - i);
+      }
+    };
+  }
+
+  private static <T> List<T> chop(List<T> list) {
+    return list.subList(0, list.size() - 1);
   }
 }

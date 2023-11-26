@@ -144,7 +144,7 @@ public class BiComparatorTest {
 
   @Test public void testComparingInOrder_primaryOnly() {
     BiComparator<?, ?> primary = comparingKey(Object::toString);
-    assertThat(BiComparator.comparingInOrder(primary)).isSameAs(primary);
+    assertThat(BiComparator.comparingInOrder(primary)).isSameInstanceAs(primary);
   }
 
   @Test public void testComparingInOrder_byValueThenByKey() {
@@ -164,7 +164,7 @@ public class BiComparatorTest {
 
   @Test public void reversed_reversed() {
     BiComparator<Object, Object> ordering = comparingKey(Object::toString);
-    assertThat(ordering.reversed().reversed()).isSameAs(ordering);
+    assertThat(ordering.reversed().reversed()).isSameInstanceAs(ordering);
   }
 
   @Test public void testNuls() {
