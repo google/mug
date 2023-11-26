@@ -150,7 +150,7 @@
 	<dependency>
 	  <groupId>com.google.mug</groupId>
 	  <artifactId>mug-guava</artifactId>
-	  <version>${version}</version>
+	  <version>${project.version}</version>
 	</dependency>
   </dependencies>
 </project>
