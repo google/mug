@@ -500,7 +500,7 @@ public final class StringFormat {
   }
 
   /**
-   * Similar to {@link #parse(String, MapFrom3)}, parses {@code input} and applies {@code mapper}
+   * Similar to {@link #parse(String, Ternary)}, parses {@code input} and applies {@code mapper}
    * with the 3 placeholder values in this format string, but matches the placeholders backwards
    * from the end to the beginning of the input string.
    *
@@ -518,7 +518,7 @@ public final class StringFormat {
   }
 
   /**
-   * Similar to {@link #parse(String, MapFrom4)}, parses {@code input} and applies {@code mapper}
+   * Similar to {@link #parse(String, Quarternary)}, parses {@code input} and applies {@code mapper}
    * with the 3 placeholder values in this format string, but matches the placeholders backwards
    * from the end to the beginning of the input string.
    *
@@ -536,7 +536,7 @@ public final class StringFormat {
   }
 
   /**
-   * Similar to {@link #parse(String, MapFrom5)}, parses {@code input} and applies {@code mapper}
+   * Similar to {@link #parse(String, Quinary)}, parses {@code input} and applies {@code mapper}
    * with the 5 placeholder values in this format string, but matches the placeholders backwards
    * from the end to the beginning of the input string.
    *
