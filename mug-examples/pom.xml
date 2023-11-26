@@ -64,6 +64,11 @@
                 <artifactId>mug</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>mug-errorprone</artifactId>
+                <version>${project.version}</version>
+            </dependency>
           </dependencies>
         </plugin>
       </plugins>
