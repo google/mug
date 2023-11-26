@@ -3,11 +3,11 @@
   <parent>
 	<groupId>com.google.mug</groupId>
 	<artifactId>mug-root</artifactId>
-	<version>6.7-SNAPSHOT</version>
+	<version>6.6-SNAPSHOT</version>
 	<relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>mug-errorprone</artifactId>
-  <version>6.7-SNAPSHOT</version>
+  <version>6.6-SNAPSHOT</version>
   <name>Java Plugins</name>
   <packaging>jar</packaging>
   <build>
