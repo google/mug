@@ -14,6 +14,7 @@ import static java.util.stream.Collectors.toList;
 
 import java.util.AbstractList;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -27,6 +28,7 @@ import com.google.mu.function.Quarternary;
 import com.google.mu.function.Quinary;
 import com.google.mu.function.Senary;
 import com.google.mu.function.Ternary;
+import com.google.mu.util.stream.BiStream;
 import com.google.mu.util.stream.MoreStreams;
 
 /**
@@ -38,9 +40,15 @@ import com.google.mu.util.stream.MoreStreams;
  *     .parse("my-ldap+test@google.com", (address, subaddress, domain) -> ...);
  * }</pre>
  *
- * <p>Starting from 6.7, if a certain placeholder is uninteresting and you'd rather not name it,
- * you can use the special {@code ...} placeholder and then you won't need to assign a lambda
- * variable to capture it:
+ * <p>An ErrorProne check is provided to guard against incorrect lambda parameters to the {@code
+ * parse()}, {@code parseOrThrow()}, {@code parseGreedy()} and {@code scan()} methods. Both the
+ * number of parameters and the lambda parameter names are checked to ensure they match the format
+ * string. The arguments passed to the {@link #format} are also checked. If you use bazel, the check
+ * is automatically enforced.
+ *
+ * <p>Starting from 6.7, if a certain placeholder is uninteresting and you'd rather not name it, you
+ * can use the special {@code ...} placeholder and then you won't need to assign a lambda variable
+ * to capture it:
  *
  * <pre>{@code
  * return new StringFormat("{...}+{subaddress}@{domain}")
@@ -85,37 +93,6 @@ public final class StringFormat {
   private final List<String> fragments; // The string literals between placeholders
   private final List<Boolean> toCapture;
   private final int numCapturingPlaceholders;
-  private final CharPredicate requiredChars; // null for unconstrained matches
-
-  /**
-   * Returns a strict StringFormat according to the {@code format} string. All placeholder values
-   * must be <em>non-empty</em> and all placeholder value characters must match {@code
-   * requiredChars}.
-   *
-   * <p>For example:
-   *
-   * <pre>{@code
-   * StringFormat userFormat =
-   *     StringFormat.strict("user: {user_id}", CharMatcher.inRange('0', '9'));
-   * userFormat.parse("user: 123", id -> Integer.parseInt(id))  => Optional.of(123)
-   * userFormat.parse("user: xyz", ...) => empty()
-   * userFormat.parse("user: ", ...)    => empty()
-   * }</pre>
-   *
-   * <p>Note that {@code requiredChars} applies to all placeholders. If you need to apply
-   * constraints on an individual placeholder, consider filtering in the lambda by returning null if
-   * the placeholder value isn't valid.
-   *
-   * <p>Parameters passed to {@link #format} are not checked so it's possible that {@code format()}
-   * returns a string not parseable by the same {@code StringFormat} strict instance.
-   *
-   * @since 6.7
-   * @deprecated Consider manually checking the placeholder values in the lambda
-   */
-  @Deprecated
-  public static StringFormat strict(String format, CharPredicate requiredChars) {
-    return new StringFormat(format, requireNonNull(requiredChars));
-  }
 
   /**
    * Returns a {@link Substring.Pattern} spanning the substring matching {@code format}. For
@@ -145,6 +122,96 @@ public final class StringFormat {
   }
 
   /**
+   * Returns a factory of type {@code T} using {@code format} string as the template, whose
+   * curly-braced placeholders will be filled with the template arguments and then passed to the
+   * {@code creator} function to create the {@code T} instances.
+   *
+   * <p>A typical use case is to pre-create an exception template that can be used to create
+   * exceptions filled with different parameter values. For example:
+   *
+   * <pre>{@code
+   * private static final StringFormat.To<IOException> JOB_FAILED =
+   *     StringFormat.to(
+   *         IOException::new, "Job ({job_id}) failed with {error_code}, details: {details}");
+   *
+   *   // 150 lines later.
+   *   // Compile-time enforced that parameters are correct and in the right order.
+   *   throw JOB_FAILED.with(jobId, errorCode, errorDetails);
+   * }</pre>
+   *
+   * @since 6.7
+   */
+  public static <T> To<T> to(
+      Function<? super String, ? extends T> creator, String format) {
+    requireNonNull(creator);
+    StringFormat fmt = new StringFormat(format);
+    return new To<T>() {
+      @Override
+      @SuppressWarnings("StringFormatArgsCheck")
+      public T with(Object... params) {
+        return creator.apply(fmt.format(params));
+      }
+
+      @Override
+      public String toString() {
+        return format;
+      }
+    };
+  }
+
+  /**
+   * Returns a go/jep-430 style template of {@code T} produced by interpolating arguments into the
+   * {@code template} string, using the given {@code interpolator} function.
+   *
+   * <p>The {@code interpolator} function is an SPI. That is, instead of users creating the lambda
+   * in-line, you are expected to provide a canned implementation -- typically by wrapping it inside
+   * a convenient facade class. For example:
+   *
+   * <pre>{@code
+   * // Provided to the user:
+   * public final class BigQuery {
+   *   public static StringFormat.To<QueryRequest> template(String template) {
+   *     return StringFormat.template(template, (fragments, placeholders) -> ...);
+   *   }
+   * }
+   *
+   * // At call site:
+   * private static final StringFormat.To<QueryRequest> GET_CASE_BY_ID = BigQuery.template(
+   *     "SELECT CaseId, Description FROM tbl WHERE CaseId = '{case_id}'");
+   *
+   *    ....
+   *    QueryRequest query = GET_CASE_BY_ID.with(caseId);  // automatically escape special chars
+   * }</pre>
+   *
+   * <p>This way, the StringFormat API provides compile-time safety, and the SPI plugs in custom
+   * interpolation logic.
+   *
+   * <p>Calling {@link To#with} with unexpected number of parameters will throw {@link
+   * IllegalArgumentException} without invoking {@code interpolator}.
+   *
+   * @since 6.7
+   */
+  public static <T> To<T> template(String template, Interpolator<? extends T> interpolator) {
+    requireNonNull(interpolator);
+    StringFormat formatter = new StringFormat(template);
+    List<Substring.Match> placeholders =
+        PLACEHOLDERS.match(template).collect(toImmutableList());
+    return new To<T>() {
+      @Override
+      public T with(Object... params) {
+        formatter.checkFormatArgs(params);
+        return interpolator.interpolate(
+            formatter.fragments, BiStream.zip(placeholders.stream(), Arrays.stream(params)));
+      }
+
+      @Override
+      public String toString() {
+        return template;
+      }
+    };
+  }
+
+  /**
    * Constructs a StringFormat with placeholders in the syntax of {@code "{foo}"}. For example:
    *
    * <pre>{@code
@@ -160,10 +227,6 @@ public final class StringFormat {
    *     (e.g. a placeholder immediately followed by another placeholder)
    */
   public StringFormat(String format) {
-    this(format, null);
-  }
-
-  private StringFormat(String format, CharPredicate requiredChars) {
     Stream.Builder<String> delimiters = Stream.builder();
     Stream.Builder<Boolean> toCapture = Stream.builder();
     PLACEHOLDERS.split(format).forEachOrdered(
@@ -176,7 +239,6 @@ public final class StringFormat {
     this.toCapture = chop(toCapture.build().collect(toImmutableList()));
     this.numCapturingPlaceholders =
         this.fragments.size() - 1 - (int) this.toCapture.stream().filter(c -> !c).count();
-    this.requiredChars = requiredChars;
   }
 
   /**
@@ -294,9 +356,6 @@ public final class StringFormat {
           i < numPlaceholders ? first(fragments.get(i)) : suffix(fragments.get(i));
       Substring.Match placeholder = before(trailingLiteral).in(input, inputIndex).orElse(null);
       if (placeholder == null) {
-        return Optional.empty();
-      }
-      if (requiredChars != null && !isValidPlaceholderValue(placeholder)) {
         return Optional.empty();
       }
       if (toCapture.get(i - 1)) {
@@ -573,17 +632,17 @@ public final class StringFormat {
   public Stream<List<Substring.Match>> scan(String input) {
     requireNonNull(input);
     if (format.isEmpty()) {
-      return requiredChars == null
-          ? Stream.generate(() -> Collections.<Substring.Match>emptyList()).limit(input.length() + 1)
-          : Stream.empty();
+      return Stream.generate(() -> Collections.<Substring.Match>emptyList())
+          .limit(input.length() + 1);
     }
     int numPlaceholders = numPlaceholders();
-    Stream<List<Substring.Match>> groups = MoreStreams.whileNotNull(
+    return MoreStreams.whileNotNull(
         new Supplier<List<Substring.Match>>() {
           private int inputIndex = 0;
           private boolean done = false;
 
-          @Override public List<Substring.Match> get() {
+          @Override
+          public List<Substring.Match> get() {
             if (done) {
               return null;
             }
@@ -615,10 +674,6 @@ public final class StringFormat {
             return unmodifiableList(builder);
           }
         });
-    if (requiredChars == null) {
-      return groups;
-    }
-    return groups.filter(matches -> matches.stream().allMatch(this::isValidPlaceholderValue));
   }
 
   /**
@@ -777,13 +832,7 @@ public final class StringFormat {
    * @throws IllegalArgumentException if the number of arguments doesn't match that of the placeholders
    */
   public String format(Object... args) {
-    if (args.length != numPlaceholders()) {
-      throw new IllegalArgumentException(
-          String.format(
-              "format string expects %s placeholders, %s provided",
-              numPlaceholders(),
-              args.length));
-    }
+    checkFormatArgs(args);
     StringBuilder builder = new StringBuilder().append(fragments.get(0));
     for (int i = 0; i < args.length; i++) {
       builder.append(args[i]).append(fragments.get(i + 1));
@@ -794,6 +843,32 @@ public final class StringFormat {
   /** Returns the string format. */
   @Override public String toString() {
     return format;
+  }
+
+  /**
+   * A view of the {@code StringFormat} that returns an instance of {@code T}, after filling the
+   * format with the given variadic parameters.
+   *
+   * @since 6.7
+   */
+  public interface To<T> {
+    /** Returns an instance of {@code T} from the string format filled with {@code params}. */
+    T with(Object... params);
+
+    /** Returns the string representation of the format. */
+    @Override
+    public abstract String toString();
+  }
+
+  /** A functional SPI interface for custom interpolation. */
+  public interface Interpolator<T> {
+    /**
+     * Interpolates with {@code fragments} of size {@code N + 1} and {@code placeholders} of size
+     * {@code N}. The {@code placeholders} BiStream includes pairs of placeholder names in the form
+     * of "{foo}" and their corresponding values passed through the varargs parameter of {@link
+     * To#with}.
+     */
+    T interpolate(List<String> fragments, BiStream<Substring.Match, Object> placeholders);
   }
 
   private <R> Optional<R> parseGreedyExpecting(
@@ -878,8 +953,15 @@ public final class StringFormat {
     }
   }
 
-  private boolean isValidPlaceholderValue(CharSequence chars) {
-    return requiredChars == null || (chars.length() > 0 && requiredChars.matchesAllOf(chars));
+
+  private void checkFormatArgs(Object[] args) {
+    if (args.length != numPlaceholders()) {
+      throw new IllegalArgumentException(
+          String.format(
+              "format string expects %s placeholders, %s provided",
+              numPlaceholders(),
+              args.length));
+    }
   }
 
   static String reverse(String s) {
