@@ -7,14 +7,19 @@ import static com.google.common.truth.Truth8.assertThat;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.Iterator;
 import java.util.List;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import com.google.common.base.CharMatcher;
 import com.google.common.collect.ImmutableList;
 import com.google.common.testing.ClassSanityTester;
 import com.google.common.truth.OptionalSubject;
+import com.google.errorprone.annotations.CompileTimeConstant;
+import com.google.mu.util.stream.BiStream;
+import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 @RunWith(TestParameterInjector.class)
@@ -928,6 +933,88 @@ public class StringFormatTest {
     assertThrows(
         IllegalArgumentException.class, () -> new StringFormat("{foo}:{bar}").format(1, 2, 3));
   }
+
+  @Test
+  public void to_noPlaceholder() {
+    StringFormat.To<IllegalArgumentException> template =
+        StringFormat.to(IllegalArgumentException::new, "foo");
+    assertThat(template.with()).hasMessageThat().isEqualTo("foo");
+  }
+
+  @Test
+  public void to_withPlaceholders() {
+    StringFormat.To<IllegalArgumentException> template =
+        StringFormat.to(IllegalArgumentException::new, "bad user id: {id}, name: {name}");
+    assertThat(template.with(/*id*/ 123, /*name*/ "Tom"))
+        .hasMessageThat()
+        .isEqualTo("bad user id: 123, name: Tom");
+  }
+
+  @Test
+  public void to_withPlaceholders_multilines() {
+    StringFormat.To<IllegalArgumentException> template =
+        StringFormat.to(IllegalArgumentException::new, "id: {id}, name: {name}, alias: {alias}");
+    assertThat(
+            template.with(
+                /* id */ 1234567890,
+                /* name */ "TomTomTomTomTomTom",
+                /* alias */ "AtomAtomAtomAtomAtomAtom"))
+        .hasMessageThat()
+        .isEqualTo("id: 1234567890, name: TomTomTomTomTomTom, alias: AtomAtomAtomAtomAtomAtom");
+  }
+
+  @Test
+  @SuppressWarnings("StringFormatArgsCheck")
+  public void to_tooFewArguments() {
+    StringFormat.To<IllegalArgumentException> template =
+        StringFormat.to(IllegalArgumentException::new, "bad user id: {id}, name: {name}");
+    assertThrows(IllegalArgumentException.class, () -> template.with(123));
+  }
+
+  @Test
+  @SuppressWarnings("StringFormatArgsCheck")
+  public void to_tooManyArguments() {
+    StringFormat.To<IllegalArgumentException> template =
+        StringFormat.to(IllegalArgumentException::new, "bad user id: {id}");
+    assertThrows(IllegalArgumentException.class, () -> template.with(123, "Tom"));
+  }
+
+  @Test
+  public void template_noPlaceholder() {
+    StringFormat.To<BigQuery> template = BigQuery.template("SELECT *");
+    assertThat(template.with().toString()).isEqualTo("SELECT *");
+  }
+
+  @Test
+  public void template_withPlaceholders() {
+    StringFormat.To<BigQuery> template =
+        BigQuery.template("SELECT * FROM tbl WHERE id = '{id}' AND timestamp > '{time}'");
+    assertThat(template.with(/* id */ "a'b", /* time */ "2023-10-01").toString())
+        .isEqualTo("SELECT * FROM tbl WHERE id = 'a\\'b' AND timestamp > '2023-10-01'");
+  }
+
+  @Test
+  public void template_withNullPlaceholderValue() {
+    StringFormat.To<BigQuery> template = BigQuery.template("id = {id}");
+    String id = null;
+    assertThat(template.with(id).toString()).isEqualTo("id = null");
+  }
+
+  @SuppressWarnings("StringFormatArgsCheck")
+  @Test
+  public void template_tooFewArguments() {
+    StringFormat.To<BigQuery> template =
+        BigQuery.template("SELECT * FROM tbl WHERE id in ({id1}, {id2})");
+    assertThrows(IllegalArgumentException.class, () -> template.with(123));
+  }
+
+  @SuppressWarnings("StringFormatArgsCheck")
+  @Test
+  public void template_tooManyArguments() {
+    StringFormat.To<BigQuery> template = BigQuery.template("SELECT * FROM tbl WHERE id = {id}");
+    assertThrows(IllegalArgumentException.class, () -> template.with(123, "Tom"));
+  }
+
   @Test
   public void span_emptyFormatString() {
     assertPatternMatch(StringFormat.span(""), "foo").hasValue("[]foo");
@@ -1049,6 +1136,50 @@ public class StringFormatTest {
     return assertWithMessage(pattern.toString())
         .about(OptionalSubject.optionals())
         .that(pattern.in(input).map(m -> m.before() + "[" + m + "]" + m.after()));
+  }
+
+  /** How we expect SPI providers to use {@link StringFormat#template}. */
+  private static final class BigQuery {
+    private final String query;
+
+    static StringFormat.To<BigQuery> template(@CompileTimeConstant String template) {
+      return StringFormat.template(template, BigQuery::safeInterpolate);
+    }
+
+    private BigQuery(String query) {
+      this.query = query;
+    }
+
+    // Some custom interpolation logic. For testing purpose, naively quote the args.
+    // Real BQ interpolation should also handle double quotes.
+    private static BigQuery safeInterpolate(
+        List<String> fragments, BiStream<Substring.Match, ?> placeholders) {
+      Iterator<String> it = fragments.iterator();
+      return new BigQuery(
+          placeholders
+              .collect(
+                  new StringBuilder(),
+                  (b, p, v) -> b.append(it.next()).append(escapeIfNeeded(p, v)))
+              .append(it.next())
+              .toString());
+    }
+
+    private static String escapeIfNeeded(Substring.Match placeholder, Object value) {
+      return placeholder.isImmediatelyBetween("'", "'")
+          ? escape(String.valueOf(value))
+          : String.valueOf(value);
+    }
+
+    private static String escape(String s) {
+      return Substring.first(CharMatcher.anyOf("\\'")::matches)
+          .repeatedly()
+          .replaceAllFrom(s, c -> "\\" + c);
+    }
+
+    @Override
+    public String toString() {
+      return query;
+    }
   }
 }
 
