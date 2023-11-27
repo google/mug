@@ -33,26 +33,6 @@
             together with other annotation processors' below. -->
             </annotationProcessorPaths>
           </configuration>
-<<<<<<< HEAD
-          <dependencies>
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>mug-guava</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>mug</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>mug-errorprone</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-          </dependencies>
-=======
->>>>>>> master
         </plugin>
       </plugins>
     </pluginManagement>
