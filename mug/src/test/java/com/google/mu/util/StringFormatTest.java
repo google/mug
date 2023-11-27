@@ -19,7 +19,6 @@ import com.google.common.testing.ClassSanityTester;
 import com.google.common.truth.OptionalSubject;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.mu.util.stream.BiStream;
-import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 @RunWith(TestParameterInjector.class)
