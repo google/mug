@@ -494,7 +494,7 @@ public final class SafeQueryTest {
         .contains("TrustedSql should not be quoted: \"{value}\"");
   }
 
-  private static final class TrustedSql {
+  static final class TrustedSql {
     private final String sql;
 
     TrustedSql(String sql) {

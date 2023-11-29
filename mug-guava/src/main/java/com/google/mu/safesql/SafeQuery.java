@@ -132,7 +132,8 @@ public final class SafeQuery {
               placeholders
                   .collect(
                       new StringBuilder(),
-                      (b, p, v) -> b.append(it.next()).append(fillInPlaceholder(p, v, defaultConverter)))
+                      (b, p, v) ->
+                          b.append(it.next()).append(fillInPlaceholder(p, v, defaultConverter)))
                   .append(it.next())
                   .toString());
         });
@@ -158,7 +159,7 @@ public final class SafeQuery {
   }
 
   private static String fillInPlaceholder(
-      Substring.Match placeholder, Object value, Function<Object, String> byDefault) {
+      Substring.Match placeholder, Object value, Function<Object, String> defaultConverter) {
     validatePlaceholder(placeholder);
     if (value instanceof Iterable) {
       Iterable<?> iterable = (Iterable<?>) value;
@@ -173,7 +174,8 @@ public final class SafeQuery {
         return String.join(
             "\", \"", Iterables.transform(iterable, v -> quotedBy('"', placeholder, v)));
       }
-      return String.join(", ", Iterables.transform(iterable, v -> unquoted(placeholder, v)));
+      return String.join(
+          ", ", Iterables.transform(iterable, v -> unquoted(placeholder, v, defaultConverter)));
     }
     if (placeholder.isImmediatelyBetween("'", "'")) {
       return quotedBy('\'', placeholder, value);
@@ -184,11 +186,11 @@ public final class SafeQuery {
     if (placeholder.isImmediatelyBetween("`", "`")) {
       return backquoted(placeholder, value);
     }
-    String result = unquoted(placeholder, value);
-    return result == null ? byDefault.apply(value) : result;
+    return unquoted(placeholder, value, defaultConverter);
   }
 
-  private static String unquoted(Substring.Match placeholder, Object value) {
+  private static String unquoted(
+      Substring.Match placeholder, Object value, Function<Object, String> byDefault) {
     if (value == null) {
       return "NULL";
     }
@@ -210,7 +212,7 @@ public final class SafeQuery {
             + "subqueries must be wrapped in another SafeQuery object;\n"
             + "and string literals must be quoted like '%s'",
             TRUSTED_SQL_TYPE_NAME, placeholder);
-    return null;
+    return byDefault.apply(value);
   }
 
   private static String quotedBy(char quoteChar, Substring.Match placeholder, Object value) {
