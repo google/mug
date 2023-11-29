@@ -23,7 +23,7 @@ public final class GoogleSql {
 
 
   /**
-   * Similar to {@link SafeQuery#template}, but applies additional GoogleSQL translation rules.
+   * Much like {@link SafeQuery#template}, but with additional GoogleSQL translation rules.
    * 
    * <p>Specifically, {@link Instant} are translated to `TIMESTAMP()` GoogleSql function,
    * {@link ZonedDateTime} are translated to `DTETIME()` GoogleSql function,

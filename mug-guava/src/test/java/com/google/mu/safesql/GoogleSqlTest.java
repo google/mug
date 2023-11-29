@@ -8,16 +8,25 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import com.google.mu.safesql.SafeQueryTest.TrustedSql;
+
 @RunWith(JUnit4.class)
 public class GoogleSqlTest {
+  @BeforeClass  // Consistently set the system property across the test suite
+  public static void setUpTrustedType() {
+    System.setProperty(
+        "com.google.mu.safesql.SafeQuery.trusted_sql_type",
+        SafeQueryTest.TrustedSql.class.getName());
+  }
 
   @Test
   public void farPastTimestampPlaceholder() {
-    ZonedDateTime time = ZonedDateTime.of(1900, 1, 1, 0, 0, 0, 0, googleZoneId());
+    ZonedDateTime time = ZonedDateTime.of(1900, 1, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
     assertThat(
             template("SELECT * FROM tbl WHERE creation_time = {creation_time}")
                 .with(/* creation_time */ time.toInstant()))
