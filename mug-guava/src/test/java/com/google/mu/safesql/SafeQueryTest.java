@@ -384,7 +384,7 @@ public final class SafeQueryTest {
         .isEqualTo(SafeQuery.of("SELECT * FROM jobs WHERE id = x"));
   }
 
-  @SuppressWarnings("LabsStringFormatArgsCheck")
+  @SuppressWarnings("StringFormatArgsCheck")
   @Test
   public void placeholderNameDoesNotMatch() {
     StringFormat.To<SafeQuery> template = template("SELECT * FROM {table} WHERE id = {id}");
@@ -392,7 +392,7 @@ public final class SafeQueryTest {
         .isEqualTo(SafeQuery.of("SELECT * FROM jobs WHERE id = x"));
   }
 
-  @SuppressWarnings("LabsStringFormatArgsCheck")
+  @SuppressWarnings("StringFormatArgsCheck")
   @Test
   public void wrongNumberOfArgs() {
     assertThrows(
