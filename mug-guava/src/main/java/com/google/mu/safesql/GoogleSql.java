@@ -26,7 +26,7 @@ public final class GoogleSql {
    * Much like {@link SafeQuery#template}, but with additional GoogleSQL translation rules.
    * 
    * <p>Specifically, {@link Instant} are translated to `TIMESTAMP()` GoogleSql function,
-   * {@link ZonedDateTime} are translated to `DTETIME()` GoogleSql function,
+   * {@link ZonedDateTime} are translated to `DATETIME()` GoogleSql function,
    * and {@link LocalDate} are translated to `DATE()` GoogleSql function.
    */
   public static StringFormat.To<SafeQuery> template(@CompileTimeConstant String formatString) {
