@@ -13,8 +13,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import com.google.mu.safesql.SafeQueryTest.TrustedSql;
-
 @RunWith(JUnit4.class)
 public class GoogleSqlTest {
   @BeforeClass  // Consistently set the system property across the test suite
