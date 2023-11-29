@@ -2,6 +2,8 @@ java_library(
     name = "errorprone",
     srcs = glob(["src/main/java/**/*.java"]),
     deps = [
+        ":auto_service",
+        ":error_prone_docgen",
         "@maven//:com_google_auto_service_auto_service_annotations",
         "@maven//:com_google_errorprone_error_prone_annotation",
         "@maven//:com_google_errorprone_error_prone_annotations",
@@ -14,19 +16,9 @@ java_library(
 
 java_plugin(
     name = "plugin",
-    srcs = glob(["src/main/java/**/*.java"]),
     visibility = ["//visibility:public"],
     deps = [
-        ":auto_service",
-        ":error_prone_docgen",
-        "@maven//:com_google_auto_service_auto_service_annotations",
-        "@maven//:com_google_errorprone_error_prone_core",
-        "@maven//:com_google_errorprone_error_prone_annotation",
-        "@maven//:com_google_errorprone_error_prone_annotations",
-        "@maven//:com_google_errorprone_error_prone_check_api",
-        "@maven//:com_google_guava_guava",
-        "//mug:base",
-        "//mug-guava",
+        ":errorprone",
     ],
 )
 
