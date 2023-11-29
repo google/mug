@@ -10,6 +10,7 @@ import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.mapping;
 
 import java.util.Iterator;
+import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -115,16 +116,23 @@ public final class SafeQuery {
    *   <li>Iterable
    * </ul>
    */
-  public static StringFormat.To<SafeQuery> template(@CompileTimeConstant String template) {
+  public static StringFormat.To<SafeQuery> template(@CompileTimeConstant String formatString) {
+    return template(formatString, value -> {
+      throw new IllegalArgumentException("Unsupported argument type: " + value.getClass().getName());
+    });
+  }
+
+  static StringFormat.To<SafeQuery> template(
+      @CompileTimeConstant String formatString, Function<Object, String> defaultConverter) {
     return StringFormat.template(
-        template,
+        formatString,
         (fragments, placeholders) -> {
           Iterator<String> it = fragments.iterator();
           return new SafeQuery(
               placeholders
                   .collect(
                       new StringBuilder(),
-                      (b, p, v) -> b.append(it.next()).append(fillInPlaceholder(p, v)))
+                      (b, p, v) -> b.append(it.next()).append(fillInPlaceholder(p, v, defaultConverter)))
                   .append(it.next())
                   .toString());
         });
@@ -149,7 +157,8 @@ public final class SafeQuery {
     return query.hashCode();
   }
 
-  private static String fillInPlaceholder(Substring.Match placeholder, Object value) {
+  private static String fillInPlaceholder(
+      Substring.Match placeholder, Object value, Function<Object, String> byDefault) {
     validatePlaceholder(placeholder);
     if (value instanceof Iterable) {
       Iterable<?> iterable = (Iterable<?>) value;
@@ -175,7 +184,8 @@ public final class SafeQuery {
     if (placeholder.isImmediatelyBetween("`", "`")) {
       return backquoted(placeholder, value);
     }
-    return unquoted(placeholder, value);
+    String result = unquoted(placeholder, value);
+    return result == null ? byDefault.apply(value) : result;
   }
 
   private static String unquoted(Substring.Match placeholder, Object value) {
@@ -200,7 +210,7 @@ public final class SafeQuery {
             + "subqueries must be wrapped in another SafeQuery object;\n"
             + "and string literals must be quoted like '%s'",
             TRUSTED_SQL_TYPE_NAME, placeholder);
-    throw new IllegalArgumentException("Unsupported argument type: " + value.getClass().getName());
+    return null;
   }
 
   private static String quotedBy(char quoteChar, Substring.Match placeholder, Object value) {
@@ -232,11 +242,7 @@ public final class SafeQuery {
   }
 
   private static boolean isTrusted(Object value) {
-    return value instanceof SafeQuery
-        || value
-            .getClass()
-            .getName()
-            .equals(TRUSTED_SQL_TYPE_NAME);
+    return value instanceof SafeQuery || value.getClass().getName().equals(TRUSTED_SQL_TYPE_NAME);
   }
 
   private static void validatePlaceholder(Substring.Match placeholder) {
