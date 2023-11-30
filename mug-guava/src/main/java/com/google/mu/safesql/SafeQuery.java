@@ -62,7 +62,7 @@ public final class SafeQuery {
   }
 
   /**
-   * Creates a GoogleSQL template with the placeholders to be filled by subsequent {@link
+   * Creates a template with the placeholders to be filled by subsequent {@link
    * StringFormat.To#with} calls. For example:
    *
    * <pre>{@code
