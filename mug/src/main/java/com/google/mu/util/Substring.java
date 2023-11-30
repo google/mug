@@ -1251,9 +1251,7 @@ public final class Substring {
      * a character.
      *
      * @since 6.0
-     * @deprecated Use {@link #followedBy} instead.
      */
-    @Deprecated
     public Pattern peek(Pattern following) {
       requireNonNull(following);
       Pattern base = this;

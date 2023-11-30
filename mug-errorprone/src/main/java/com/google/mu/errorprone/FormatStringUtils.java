@@ -5,11 +5,14 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.mu.util.Optionals.optionally;
 import static com.google.mu.util.Substring.consecutive;
 import static com.google.mu.util.Substring.first;
+import static com.google.mu.util.Substring.firstOccurrence;
 import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
+import com.google.common.base.Ascii;
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.VisitorState;
@@ -61,6 +64,28 @@ final class FormatStringUtils {
     }
     return getInlineStringArg(unformatter, state)
         .map(tree -> ASTHelpers.constValue(tree, String.class));
+  }
+
+  static boolean looksLikeSql(String template) {
+    return looksLikeQuery().or(looksLikeInsert()).in(Ascii.toLowerCase(template)).isPresent();
+  }
+
+  private static Substring.Pattern looksLikeQuery() {
+    return Stream.of("select", "update", "delete")
+        .map(w -> keyword(w))
+        .collect(firstOccurrence())
+        .peek(keyword("from").or(keyword("where")))
+        .peek(PLACEHOLDER_PATTERN);
+  }
+
+  private static Substring.Pattern looksLikeInsert() {
+    return keyword("insert into")
+        .peek(keyword("values").or(keyword("select")))
+        .peek(PLACEHOLDER_PATTERN);
+  }
+
+  private static Substring.Pattern keyword(String word) {
+    return first(word).separatedBy(CharMatcher.whitespace().or(CharMatcher.anyOf("()"))::matches);
   }
 
   private static List<? extends ExpressionTree> invocationArgs(Tree tree) {
