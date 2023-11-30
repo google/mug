@@ -9,7 +9,11 @@ import java.time.format.DateTimeFormatter;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.mu.util.StringFormat;
 
-/** Facade class providing {@link SafeQuery} templates for GoogleSQL. */
+/**
+ * Facade class providing {@link SafeQuery} templates for GoogleSQL.
+ *
+ * @since 7.0
+ */
 public final class GoogleSql {
   private static final DateTimeFormatter LOCAL_DATE_TIME_FORMATTER =
       DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss[.SSSSSS]");
@@ -24,7 +28,7 @@ public final class GoogleSql {
 
   /**
    * Much like {@link SafeQuery#template}, but with additional GoogleSQL translation rules.
-   * 
+   *
    * <p>Specifically, {@link Instant} are translated to `TIMESTAMP()` GoogleSql function,
    * {@link ZonedDateTime} are translated to `DATETIME()` GoogleSql function,
    * and {@link LocalDate} are translated to `DATE()` GoogleSql function.

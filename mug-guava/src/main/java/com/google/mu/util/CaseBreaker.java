@@ -70,7 +70,7 @@ public final class CaseBreaker {
    * that separate words but aren't themselves included in the result), for
    * example if you want to support dash-case using the en dash (–) character.
    *
-   * @since 6.7
+   * @since 7.0
    */
   public CaseBreaker withPunctuationChars(CharMatcher punctuation) {
     return new CaseBreaker(punctuation::matches, camelLower);

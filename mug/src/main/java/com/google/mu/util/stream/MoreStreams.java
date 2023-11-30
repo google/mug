@@ -236,7 +236,7 @@ public final class MoreStreams {
    * }</pre>
    *
    * @return a BiStream with the first item of each group and the run length of that group.
-   * @since 6.7
+   * @since 7.0
    */
   public static <T> BiStream<T, Long> runLengthEncode(
       Stream<T> stream, BiPredicate<? super T, ? super T> sameGroup) {

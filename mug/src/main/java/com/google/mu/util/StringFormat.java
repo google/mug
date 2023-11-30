@@ -103,7 +103,7 @@ public final class StringFormat {
    * self-documenting syntax. The placeholder names in the format string don't affect runtime
    * semantics, but using meaningful names improves readability.
    *
-   * @since 6.7
+   * @since 7.0
    */
   public static Substring.Pattern span(String format) {
     List<String> delimiters =
@@ -139,7 +139,7 @@ public final class StringFormat {
    *   throw JOB_FAILED.with(jobId, errorCode, errorDetails);
    * }</pre>
    *
-   * @since 6.7
+   * @since 7.0
    */
   public static <T> To<T> to(
       Function<? super String, ? extends T> creator, String format) {
@@ -189,7 +189,7 @@ public final class StringFormat {
    * <p>Calling {@link To#with} with unexpected number of parameters will throw {@link
    * IllegalArgumentException} without invoking {@code interpolator}.
    *
-   * @since 6.7
+   * @since 7.0
    */
   public static <T> To<T> template(String template, Interpolator<? extends T> interpolator) {
     requireNonNull(interpolator);
@@ -387,7 +387,7 @@ public final class StringFormat {
    * @throws IllegalArgumentException if the input string doesn't match the string format, or if the
    *     format string doesn't have exactly one placeholder
    * @throws NullPointerException if any of the parameter is null or {@code mapper} returns null.
-   * @since 6.7
+   * @since 7.0
    */
   public <R> R parseOrThrow(String input, Function<? super String, R> mapper) {
     return parseOrThrowExpecting(1, input, onlyElement(mapper));
@@ -415,7 +415,7 @@ public final class StringFormat {
    * @throws IllegalArgumentException if the input string doesn't match the string format, or if the
    *     format string doesn't have exactly two placeholders
    * @throws NullPointerException if any of the parameter is null or {@code mapper} returns null.
-   * @since 6.7
+   * @since 7.0
    */
   public <R> R parseOrThrow(String input, BiFunction<? super String, ? super String, R> mapper) {
     return parseOrThrowExpecting(2, input, combining(mapper));
@@ -443,7 +443,7 @@ public final class StringFormat {
    * @throws IllegalArgumentException if the input string doesn't match the string format, or if the
    *     format string doesn't have exactly 3 placeholders
    * @throws NullPointerException if any of the parameter is null or {@code mapper} returns null.
-   * @since 6.7
+   * @since 7.0
    */
   public <R> R parseOrThrow(String input, Ternary<? super String, R> mapper) {
     return parseOrThrowExpecting(3, input, combining(mapper));
@@ -464,7 +464,7 @@ public final class StringFormat {
    * @throws IllegalArgumentException if the input string doesn't match the string format, or if the
    *     format string doesn't have exactly 4 placeholders
    * @throws NullPointerException if any of the parameter is null or {@code mapper} returns null.
-   * @since 6.7
+   * @since 7.0
    */
   public <R> R parseOrThrow(String input, Quarternary<? super String, R> mapper) {
     return parseOrThrowExpecting(4, input, combining(mapper));
@@ -485,7 +485,7 @@ public final class StringFormat {
    * @throws IllegalArgumentException if the input string doesn't match the string format, or if the
    *     format string doesn't have exactly 5 placeholders
    * @throws NullPointerException if any of the parameter is null or {@code mapper} returns null.
-   * @since 6.7
+   * @since 7.0
    */
   public <R> R parseOrThrow(String input, Quinary<? super String, R> mapper) {
     return parseOrThrowExpecting(5, input, combining(mapper));
@@ -506,7 +506,7 @@ public final class StringFormat {
    * @throws IllegalArgumentException if the input string doesn't match the string format, or if the
    *     format string doesn't have exactly 6 placeholders
    * @throws NullPointerException if any of the parameter is null or {@code mapper} returns null.
-   * @since 6.7
+   * @since 7.0
    */
   public <R> R parseOrThrow(String input, Senary<? super String, R> mapper) {
     return parseOrThrowExpecting(6, input, combining(mapper));
@@ -528,7 +528,7 @@ public final class StringFormat {
    * @return the return value of the {@code mapper} function if not null. Returns empty if {@code
    *     input} doesn't match the format, or {@code mapper} returns null.
    * @throws IllegalArgumentException if the format string doesn't have exactly one placeholder.
-   * @since 6.7
+   * @since 7.0
    */
   public final <R> Optional<R> parseGreedy(
       String input, Function<? super String, ? extends R> mapper) {
@@ -551,7 +551,7 @@ public final class StringFormat {
    * @return the return value of the {@code mapper} function if not null. Returns empty if {@code
    *     input} doesn't match the format, or {@code mapper} returns null.
    * @throws IllegalArgumentException if the format string doesn't have exactly two placeholders.
-   * @since 6.7
+   * @since 7.0
    */
   public final <R> Optional<R> parseGreedy(
       String input, BiFunction<? super String, ? super String, ? extends R> mapper) {
@@ -569,7 +569,7 @@ public final class StringFormat {
    * @return the return value of the {@code mapper} function if not null. Returns empty if {@code
    *     input} doesn't match the format, or {@code mapper} returns null.
    * @throws IllegalArgumentException if the format string doesn't have exactly 3 placeholders.
-   * @since 6.7
+   * @since 7.0
    */
   public final <R> Optional<R> parseGreedy(
       String input, Ternary<? super String, ? extends R> mapper) {
@@ -587,7 +587,7 @@ public final class StringFormat {
    * @return the return value of the {@code mapper} function if not null. Returns empty if {@code
    *     input} doesn't match the format, or {@code mapper} returns null.
    * @throws IllegalArgumentException if the format string doesn't have exactly 4 placeholders.
-   * @since 6.7
+   * @since 7.0
    */
   public final <R> Optional<R> parseGreedy(
       String input, Quarternary<? super String, ? extends R> mapper) {
@@ -605,7 +605,7 @@ public final class StringFormat {
    * @return the return value of the {@code mapper} function if not null. Returns empty if {@code
    *     input} doesn't match the format, or {@code mapper} returns null.
    * @throws IllegalArgumentException if the format string doesn't have exactly 5 placeholders.
-   * @since 6.7
+   * @since 7.0
    */
   public final <R> Optional<R> parseGreedy(
       String input, Quinary<? super String, ? extends R> mapper) {
@@ -615,7 +615,7 @@ public final class StringFormat {
   /**
    * Returns true if this format matches {@code input} entirely.
    *
-   * @since 6.7
+   * @since 7.0
    */
   public boolean matches(String input) {
     return parse(input).isPresent();
@@ -849,7 +849,7 @@ public final class StringFormat {
    * A view of the {@code StringFormat} that returns an instance of {@code T}, after filling the
    * format with the given variadic parameters.
    *
-   * @since 6.7
+   * @since 7.0
    */
   public interface To<T> {
     /** Returns an instance of {@code T} from the string format filled with {@code params}. */
