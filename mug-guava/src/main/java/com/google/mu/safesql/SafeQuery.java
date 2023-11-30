@@ -23,9 +23,9 @@ import com.google.mu.util.StringFormat;
 import com.google.mu.util.Substring;
 
 /**
- * Facade class used to generate SQL based on a string template in the syntax of {@link StringFormat},
- * and with the same compile-time protection. Special characters of string expressions are
- * automatically escaped to prevent SQL injection errors.
+ * Facade class to generate queries based on a string template in the syntax of {@link StringFormat},
+ * with compile-time guard rails and runtime protection against SQL injection and programmer mistakes.
+ * Special characters of string expressions are automatically escaped to prevent SQL injection errors.
  *
  * <p>A SafeQuery encapsulates the query string. You can use {@link #toString} to access the query
  * string.

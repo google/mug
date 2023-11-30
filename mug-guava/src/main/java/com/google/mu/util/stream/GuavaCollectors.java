@@ -498,7 +498,7 @@ public final class GuavaCollectors {
    *
    * <p>Equivalent to but more convenient than {@code Collectors.mapping(mapper, toImmutableList())}.
    *
-   * @since 6.7
+   * @since 7.0
    */
   public static <F, T> Collector<F, ?, ImmutableList<T>> toListOf(
       Function<? super F, ? extends T> mapper) {
@@ -511,7 +511,7 @@ public final class GuavaCollectors {
    *
    * <p>Equivalent to but more convenient than {@code Collectors.mapping(mapper, toImmutableSet())}.
    *
-   * @since 6.7
+   * @since 7.0
    */
   public static <F, T> Collector<F, ?, ImmutableSet<T>> toSetOf(
       Function<? super F, ? extends T> mapper) {

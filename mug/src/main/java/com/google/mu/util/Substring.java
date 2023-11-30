@@ -954,7 +954,7 @@ public final class Substring {
      *
      * @throws IndexOutOfBoundsException if fromIndex is negative or greater than {@code
      *     string.length()}
-     * @since 6.7
+     * @since 7.0
      */
     public final Optional<Match> in(String string, int fromIndex) {
       if (fromIndex < 0) {
@@ -1386,7 +1386,7 @@ public final class Substring {
      *     .split(input);
      * }</pre>
      *
-     * @since 6.7
+     * @since 7.0
      */
     public final Pattern immediatelyBetween(
         String lookbehind,
@@ -2514,7 +2514,7 @@ public final class Substring {
     /**
      * Returns true if this match starts with the given {@code prefix}.
      *
-     * @since 6.7
+     * @since 7.0
      */
     public boolean startsWith(String prefix) {
       return prefix.length() <= length() && context.startsWith(prefix, startIndex);
@@ -2523,7 +2523,7 @@ public final class Substring {
     /**
      * Returns true if this match ends with the given {@code suffix}.
      *
-     * @since 6.7
+     * @since 7.0
      */
     public boolean endsWith(String suffix) {
       return suffix.length() <= length() && context.startsWith(suffix, endIndex - suffix.length());
@@ -2675,7 +2675,7 @@ public final class Substring {
    * The style of the bounds of a match. See {@link Substring.Pattern#immediatelyBetween(String,
    * BoundStyle, String, BoundStyle)}.
    *
-   * @since 6.7
+   * @since 7.0
    */
   public enum BoundStyle {
     /** The match includes the bound */

@@ -39,7 +39,7 @@ public final class Ordinal implements Comparable<Ordinal> {
   /**
    * The maximum ordinal.
    *
-   * @since 6.7
+   * @since 7.0
    */
   public static final Ordinal MAX_VALUE = of(Integer.MAX_VALUE);
 
@@ -58,7 +58,7 @@ public final class Ordinal implements Comparable<Ordinal> {
   /**
    * Returns the second ordinal.
    *
-   * @since 6.7
+   * @since 7.0
    */
   public static Ordinal second() {
     return FIRST[1];
@@ -85,7 +85,7 @@ public final class Ordinal implements Comparable<Ordinal> {
    * <p>Note that given {@link Enum#ordinal} is 0-based, an enum with {@code ordinal() == 0}
    * maps to {@link #first}, or {@code of(1)}.
    *
-   * @since 6.7
+   * @since 7.0
    */
   public static Ordinal of(Enum<?> e) {
     return fromIndex(e.ordinal());
@@ -117,7 +117,7 @@ public final class Ordinal implements Comparable<Ordinal> {
   /**
    * Returns the previous ordinal. Underflows to MAX_VALUE.
    *
-   * @since 6.7
+   * @since 7.0
    */
   public Ordinal previous() {
     return num == 1 ? MAX_VALUE : of(num - 1);
@@ -133,7 +133,7 @@ public final class Ordinal implements Comparable<Ordinal> {
    *   5th.minus(2nd) => 3
    * }</pre>
    *
-   * @since 6.7
+   * @since 7.0
    */
   public int minus(Ordinal that) {
     return num - that.num;

@@ -377,7 +377,7 @@ public abstract class Maybe<T, E extends Throwable> {
    * Collects a stream of {@code Maybe} to an immutable {@code Maybe<List<T>, E>}, which will wrap the exception
    * if any input {@code Maybe} is exceptional.
    *
-   * @since 6.7
+   * @since 7.0
    */
   public static <T, E extends Throwable> Collector<Maybe<T, E>, ?, Maybe<List<T>, E>> maybeToList() {
     return allOrNothing(InternalCollectors.toImmutableList());
@@ -387,7 +387,7 @@ public abstract class Maybe<T, E extends Throwable> {
    * Collects a stream of {@code Maybe} to an immutable {@code Maybe<Set<T>, E>}, which will wrap the exception
    * if any input {@code Maybe} is exceptional.
    *
-   * @since 6.7
+   * @since 7.0
    */
   public static <T, E extends Throwable> Collector<Maybe<T, E>, ?, Maybe<Set<T>, E>> maybeToSet() {
     return allOrNothing(InternalCollectors.toImmutableSet());
