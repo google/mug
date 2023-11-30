@@ -34,6 +34,8 @@ import com.google.mu.util.Substring;
  * StringFormat.To#with} to compose larger queries.
  *
  * <p>This class is Android and J2CL compatible.
+ *
+ * @since 7.0
  */
 @Immutable
 public final class SafeQuery {
