@@ -276,7 +276,7 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
         <configuration>
-          <additionalparam>-Xdoclint:none</additionalparam>
+          <doclint>none</doclint>
         </configuration>
         <executions>
           <!-- always deploy sources on Nexus -->
