@@ -77,8 +77,7 @@ public class MoreStreamsParameterizedTest {
   @Test public void close() {
     Stream<?> stream = kind.natural(0);
     AtomicBoolean closed = new AtomicBoolean();
-    stream.onClose(() -> closed.set(true));
-    try (Stream<?> diced = MoreStreams.dice(stream, 1)) {}
+    try (Stream<?> diced = MoreStreams.dice(stream.onClose(() -> closed.set(true)), 1)) {}
     assertThat(closed.get()).isTrue();
   }
 

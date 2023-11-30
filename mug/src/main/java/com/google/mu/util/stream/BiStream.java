@@ -363,7 +363,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     requireNonNull(right);
     return collectingAndThen(
         toList(),
-        left ->
+        (List<L> left) ->
             // If `right` is infinite, even limit(1) will result in infinite loop otherwise.
             left.isEmpty() ? empty() : concat(right.map(r -> from(left, identity(), l -> r))));
   }

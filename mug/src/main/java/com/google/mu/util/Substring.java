@@ -946,6 +946,28 @@ public final class Substring {
     }
 
     /**
+     * Matches this pattern against {@code string} starting from the character at {@code fromIndex},
+     * returning a {@code Match} if successful, or {@code empty()} otherwise.
+     *
+     * <p>Note that it treats {@code fromIndex} as the beginning of the string, so patterns like
+     * {@link #prefix}, {@link #BEGINNING} will attempt to match from this index.
+     *
+     * @throws IndexOutOfBoundsException if fromIndex is negative or greater than {@code
+     *     string.length()}
+     * @since 6.7
+     */
+    public final Optional<Match> in(String string, int fromIndex) {
+      if (fromIndex < 0) {
+        throw new IndexOutOfBoundsException("Invalid index (" + fromIndex + ") < 0");
+      }
+      if (fromIndex > string.length()) {
+        throw new IndexOutOfBoundsException(
+            "Invalid index (" + fromIndex + ") > length (" + string.length() + ")");
+      }
+      return Optional.ofNullable(match(string, fromIndex));
+    }
+
+    /**
      * Matches this pattern against {@code string}, returning the matched substring if successful,
      * or {@code empty()} otherwise. {@code pattern.from(str)} is equivalent to {@code
      * pattern.in(str).map(Object::toString)}.
@@ -1229,9 +1251,7 @@ public final class Substring {
      * a character.
      *
      * @since 6.0
-     * @deprecated Use {@link #followedBy} instead.
      */
-    @Deprecated
     public Pattern peek(Pattern following) {
       requireNonNull(following);
       Pattern base = this;
