@@ -8,7 +8,6 @@
   </parent>
   <groupId>com.google.mug</groupId>
   <artifactId>mug-algorithms</artifactId>
-  <version>6.7-SNAPSHOT</version>
   <name>algorithms</name>
   <url>http://maven.apache.org</url>
   <properties>
