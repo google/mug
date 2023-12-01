@@ -66,6 +66,12 @@ public final class SafeQueryTest {
   }
 
   @Test
+  public void newLineEscapedWithinSingleQuote() {
+    assertThat(template("SELECT * FROM tbl WHERE id = '{id}'").with("\n"))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = '\\n'"));
+  }
+
+  @Test
   public void singleQuoteNotEscapedWithinDoubleQuote() {
     assertThat(template("SELECT * FROM tbl WHERE id = \"{id}\"").with("'v'"))
         .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = \"'v'\""));
