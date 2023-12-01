@@ -84,6 +84,30 @@ public final class SafeQueryTest {
   }
 
   @Test
+  public void carriageReturnEscapedWithinSingleQuote() {
+    assertThat(template("SELECT * FROM tbl WHERE id = '{id}'").with("\r"))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = '\\r'"));
+  }
+
+  @Test
+  public void carriageReturnEscapedWithinDoubleQuote() {
+    assertThat(template("SELECT * FROM tbl WHERE id = \"{id}\"").with("\r"))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = \"\\r\""));
+  }
+
+  @Test
+  public void carriageReturnDisallowedWithinBackticks() {
+    StringFormat.To<SafeQuery> template = template("SELECT * FROM `{tbl}`");
+    assertThrows(IllegalArgumentException.class, () -> template.with(/* tbl */ "a\rb"));
+  }
+
+  @Test
+  public void carriageReturnAndLineFeedEscapedWithinDoubleQuote() {
+    assertThat(template("SELECT * FROM tbl WHERE id = \"{id}\"").with("a\r\nb"))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = \"a\\r\\nb\""));
+  }
+
+  @Test
   public void singleQuoteNotEscapedWithinDoubleQuote() {
     assertThat(template("SELECT * FROM tbl WHERE id = \"{id}\"").with("'v'"))
         .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = \"'v'\""));

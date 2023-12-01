@@ -232,16 +232,15 @@ public final class SafeQuery {
         quoteChar,
         placeholder,
         quoteChar);
-    return first(CharPredicate.is('\\').or(quoteChar).or('\n'))
+    return first(CharPredicate.is('\\').or(quoteChar).or('\n').or('\r'))
         .repeatedly()
         .replaceAllFrom(
             value.toString(),
             c -> {
               switch (c.charAt(0)) {
-                case '\n':
-                  return "\\n";
-                default:
-                  return "\\" + c;
+                case '\r': return "\\r";
+                case '\n': return "\\n";
+                default: return "\\" + c;
               }
             });
   }
