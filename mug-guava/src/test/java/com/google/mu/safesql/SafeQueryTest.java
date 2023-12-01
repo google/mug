@@ -97,7 +97,7 @@ public final class SafeQueryTest {
   }
 
   @Test
-  @SuppressWarnings("SafeSqlArgsCheck")
+  @SuppressWarnings("SafeQueryArgsCheck")
   public void charPlaceholder_notAllowed() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -307,7 +307,7 @@ public final class SafeQueryTest {
   }
 
   @Test
-  @SuppressWarnings("SafeSqlArgsCheck")
+  @SuppressWarnings("SafeQueryArgsCheck")
   public void safeQueryShouldNotBeSingleQuoted() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -317,7 +317,7 @@ public final class SafeQueryTest {
   }
 
   @Test
-  @SuppressWarnings("SafeSqlArgsCheck")
+  @SuppressWarnings("SafeQueryArgsCheck")
   public void safeQueryShouldNotBeDoubleQuoted() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -339,7 +339,7 @@ public final class SafeQueryTest {
   }
 
   @Test
-  @SuppressWarnings("SafeSqlArgsCheck")
+  @SuppressWarnings("SafeQueryArgsCheck")
   public void subQueryDisallowed() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -348,7 +348,7 @@ public final class SafeQueryTest {
   }
 
   @Test
-  @SuppressWarnings("SafeSqlArgsCheck")
+  @SuppressWarnings("SafeQueryArgsCheck")
   public void stringLiteralDisallowed() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -357,7 +357,7 @@ public final class SafeQueryTest {
   }
 
   @Test
-  @SuppressWarnings("SafeSqlArgsCheck")
+  @SuppressWarnings("SafeQueryArgsCheck")
   public void backquoteAndSingleQuoteMixed() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -366,7 +366,7 @@ public final class SafeQueryTest {
   }
 
   @Test
-  @SuppressWarnings("SafeSqlArgsCheck")
+  @SuppressWarnings("SafeQueryArgsCheck")
   public void singleQuoteAndBackquoteMixed() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -466,7 +466,7 @@ public final class SafeQueryTest {
   }
 
   @Test
-  @SuppressWarnings("SafeSqlArgsCheck")
+  @SuppressWarnings("SafeQueryArgsCheck")
   public void trustedSqlStringShouldNotBeSingleQuoted() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -480,7 +480,7 @@ public final class SafeQueryTest {
   }
 
   @Test
-  @SuppressWarnings("SafeSqlArgsCheck")
+  @SuppressWarnings("SafeQueryArgsCheck")
   public void trustedSqlStringShouldNotBeDoubleQuoted() {
     IllegalArgumentException thrown =
         assertThrows(
