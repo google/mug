@@ -253,7 +253,7 @@ public final class SafeQuery {
     String name = removeQuotes('`', value.toString(), '`'); // ok if already backquoted
     // Make sure the backquoted string doesn't contain some special chars that may cause trouble.
     checkArgument(
-        CharMatcher.anyOf("'\"`()[]{}\\~!@$^*,/?;\n").matchesNoneOf(name),
+        CharMatcher.anyOf("'\"`()[]{}\\~!@$^*,/?;\r\n").matchesNoneOf(name),
         "placeholder value for `%s` (%s) contains illegal character",
         placeholder,
         name);
