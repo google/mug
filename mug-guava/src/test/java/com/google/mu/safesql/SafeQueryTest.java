@@ -1,6 +1,5 @@
 package com.google.mu.safesql;
 
-
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.safesql.SafeQuery.template;
 import static java.util.Arrays.asList;
