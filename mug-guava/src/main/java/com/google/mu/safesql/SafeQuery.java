@@ -226,9 +226,10 @@ public final class SafeQuery {
         quoteChar,
         placeholder,
         quoteChar);
-    return first(CharPredicate.is('\\').or(quoteChar))
+    String escaped = first(CharPredicate.is('\\').or(quoteChar))
         .repeatedly()
         .replaceAllFrom(value.toString(), c -> "\\" + c);
+    return first('\n').repeatedly().replaceAllFrom(escaped, unused -> "\\n");
   }
 
   private static String backquoted(Substring.Match placeholder, Object value) {
@@ -238,7 +239,7 @@ public final class SafeQuery {
     String name = removeQuotes('`', value.toString(), '`'); // ok if already backquoted
     // Make sure the backquoted string doesn't contain some special chars that may cause trouble.
     checkArgument(
-        CharMatcher.anyOf("'\"`()[]{}\\~!@$^*,/?;").matchesNoneOf(name),
+        CharMatcher.anyOf("'\"`()[]{}\\~!@$^*,/?;\n").matchesNoneOf(name),
         "placeholder value for `%s` (%s) contains illegal character",
         placeholder,
         name);

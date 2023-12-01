@@ -72,6 +72,18 @@ public final class SafeQueryTest {
   }
 
   @Test
+  public void newLineEscapedWithinDoubleQuote() {
+    assertThat(template("SELECT * FROM tbl WHERE id = \"{id}\"").with("\n"))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = \"\\n\""));
+  }
+
+  @Test
+  public void newLineDisallowedWithinBackticks() {
+    StringFormat.To<SafeQuery> template = template("SELECT * FROM `{tbl}`");
+    assertThrows(IllegalArgumentException.class, () -> template.with(/* tbl */ "a\nb"));
+  }
+
+  @Test
   public void singleQuoteNotEscapedWithinDoubleQuote() {
     assertThat(template("SELECT * FROM tbl WHERE id = \"{id}\"").with("'v'"))
         .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = \"'v'\""));
