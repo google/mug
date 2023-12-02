@@ -66,6 +66,48 @@ public final class SafeQueryTest {
   }
 
   @Test
+  public void newLineEscapedWithinSingleQuote() {
+    assertThat(template("SELECT * FROM tbl WHERE id = '{id}'").with("\n"))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = '\\n'"));
+  }
+
+  @Test
+  public void newLineEscapedWithinDoubleQuote() {
+    assertThat(template("SELECT * FROM tbl WHERE id = \"{id}\"").with("\n"))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = \"\\n\""));
+  }
+
+  @Test
+  public void newLineDisallowedWithinBackticks() {
+    StringFormat.To<SafeQuery> template = template("SELECT * FROM `{tbl}`");
+    assertThrows(IllegalArgumentException.class, () -> template.with(/* tbl */ "a\nb"));
+  }
+
+  @Test
+  public void carriageReturnEscapedWithinSingleQuote() {
+    assertThat(template("SELECT * FROM tbl WHERE id = '{id}'").with("\r"))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = '\\r'"));
+  }
+
+  @Test
+  public void carriageReturnEscapedWithinDoubleQuote() {
+    assertThat(template("SELECT * FROM tbl WHERE id = \"{id}\"").with("\r"))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = \"\\r\""));
+  }
+
+  @Test
+  public void carriageReturnDisallowedWithinBackticks() {
+    StringFormat.To<SafeQuery> template = template("SELECT * FROM `{tbl}`");
+    assertThrows(IllegalArgumentException.class, () -> template.with(/* tbl */ "a\rb"));
+  }
+
+  @Test
+  public void carriageReturnAndLineFeedEscapedWithinDoubleQuote() {
+    assertThat(template("SELECT * FROM tbl WHERE id = \"{id}\"").with("a\r\nb"))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = \"a\\r\\nb\""));
+  }
+
+  @Test
   public void singleQuoteNotEscapedWithinDoubleQuote() {
     assertThat(template("SELECT * FROM tbl WHERE id = \"{id}\"").with("'v'"))
         .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = \"'v'\""));
@@ -97,7 +139,7 @@ public final class SafeQueryTest {
   }
 
   @Test
-  @SuppressWarnings("SafeSqlArgsCheck")
+  @SuppressWarnings("SafeQueryArgsCheck")
   public void charPlaceholder_notAllowed() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -307,7 +349,7 @@ public final class SafeQueryTest {
   }
 
   @Test
-  @SuppressWarnings("SafeSqlArgsCheck")
+  @SuppressWarnings("SafeQueryArgsCheck")
   public void safeQueryShouldNotBeSingleQuoted() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -317,7 +359,7 @@ public final class SafeQueryTest {
   }
 
   @Test
-  @SuppressWarnings("SafeSqlArgsCheck")
+  @SuppressWarnings("SafeQueryArgsCheck")
   public void safeQueryShouldNotBeDoubleQuoted() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -339,7 +381,7 @@ public final class SafeQueryTest {
   }
 
   @Test
-  @SuppressWarnings("SafeSqlArgsCheck")
+  @SuppressWarnings("SafeQueryArgsCheck")
   public void subQueryDisallowed() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -348,7 +390,7 @@ public final class SafeQueryTest {
   }
 
   @Test
-  @SuppressWarnings("SafeSqlArgsCheck")
+  @SuppressWarnings("SafeQueryArgsCheck")
   public void stringLiteralDisallowed() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -357,7 +399,7 @@ public final class SafeQueryTest {
   }
 
   @Test
-  @SuppressWarnings("SafeSqlArgsCheck")
+  @SuppressWarnings("SafeQueryArgsCheck")
   public void backquoteAndSingleQuoteMixed() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -366,7 +408,7 @@ public final class SafeQueryTest {
   }
 
   @Test
-  @SuppressWarnings("SafeSqlArgsCheck")
+  @SuppressWarnings("SafeQueryArgsCheck")
   public void singleQuoteAndBackquoteMixed() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -466,7 +508,7 @@ public final class SafeQueryTest {
   }
 
   @Test
-  @SuppressWarnings("SafeSqlArgsCheck")
+  @SuppressWarnings("SafeQueryArgsCheck")
   public void trustedSqlStringShouldNotBeSingleQuoted() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -480,7 +522,7 @@ public final class SafeQueryTest {
   }
 
   @Test
-  @SuppressWarnings("SafeSqlArgsCheck")
+  @SuppressWarnings("SafeQueryArgsCheck")
   public void trustedSqlStringShouldNotBeDoubleQuoted() {
     IllegalArgumentException thrown =
         assertThrows(
