@@ -30,8 +30,9 @@ public class ParameterizedQueryTest {
 
   @Test
   public void template_trustedArg() {
-    assertThat(template("SELECT * FROM {tbl}").with(/* tbl */ ParameterizedQuery.of("Jobs")).jobConfiguration())
-        .isEqualTo(QueryJobConfiguration.of("SELECT * FROM Jobs"));
+    ParameterizedQuery query =
+        template("SELECT * FROM {tbl}").with(/* tbl */ ParameterizedQuery.of("Jobs"));
+    assertThat(query.jobConfiguration()).isEqualTo(QueryJobConfiguration.of("SELECT * FROM Jobs"));
   }
 
   @Test
@@ -196,38 +197,44 @@ public class ParameterizedQueryTest {
     StringFormat.To<ParameterizedQuery> query = template("SELECT * WHERE status = {status}");
     assertThrows(IllegalArgumentException.class, () -> query.with(asList(Status.ACTIVE)));
   }
- 
-  @Test public void testJoining_noParameters() {
+
+  @Test
+  public void testJoining_noParameters() {
     assertThat(
             Stream.of(ParameterizedQuery.of("a"), ParameterizedQuery.of("b"))
                 .collect(ParameterizedQuery.joining(", ")))
         .isEqualTo(ParameterizedQuery.of("a, b"));
   }
- 
-  @Test public void testJoining_withParameters() {
+
+  @Test
+  public void testJoining_withParameters() {
     assertThat(
             Stream.of(ParameterizedQuery.of("{v1}", 1), ParameterizedQuery.of("{v2}", "2"))
                 .collect(ParameterizedQuery.joining(", ")))
         .isEqualTo(ParameterizedQuery.of("{v1}, {v2}", 1, "2"));
   }
- 
-  @Test public void testJoining_parallel() {
-    assertThat(
-            Stream.of(ParameterizedQuery.of("{v1}", 1), ParameterizedQuery.of("{v2}", "2"), ParameterizedQuery.of("{v3}", 3))
-                .parallel()
-                .collect(ParameterizedQuery.joining(", ")))
-        .isEqualTo(ParameterizedQuery.of("{v1}, {v2}, {v3}", 1, "2", 3));
+
+  @Test
+  public void testJoining_parallel() {
+    ParameterizedQuery query =
+        Stream.of(
+                ParameterizedQuery.of("{v1}", 1),
+                ParameterizedQuery.of("{v2}", "2"),
+                ParameterizedQuery.of("{v3}", 3))
+            .parallel()
+            .collect(ParameterizedQuery.joining(", "));
+    assertThat(query).isEqualTo(ParameterizedQuery.of("{v1}, {v2}, {v3}", 1, "2", 3));
   }
-  
-  @Test public void testEquals() {
+
+  @Test
+  public void testEquals() {
     new EqualsTester()
         .addEqualityGroup(ParameterizedQuery.of("foo"))
         .addEqualityGroup(ParameterizedQuery.of("bar"))
         .addEqualityGroup(
             ParameterizedQuery.of("select {col1}, {col2}", "a", "b"),
             ParameterizedQuery.of("select {col1}, {col2}", "a", "b"))
-        .addEqualityGroup(
-            ParameterizedQuery.of("select {col1}, {col2}", "b", "a"))
+        .addEqualityGroup(ParameterizedQuery.of("select {col1}, {col2}", "b", "a"))
         .testEquals();
   }
 
