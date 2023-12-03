@@ -42,7 +42,7 @@ public final class SafeBigQuery {
    * QueryJobConfiguration query = GET_JOB_IDS_BY_QUERY.with("sensitive word");
    * }</pre>
    *
-   * <p>Except  {@link TrustedSql} (which are directly substituted into the query,
+   * <p>Except  {@link TrustedSql}, which are directly substituted into the query,
    * all other placeholder arguments are passed into the QueryJobConfiguration as query parameters.
    *
    * <p>Placeholder types supported:
