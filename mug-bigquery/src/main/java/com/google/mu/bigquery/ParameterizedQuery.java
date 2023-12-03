@@ -169,13 +169,30 @@ public final class ParameterizedQuery {
         });
   }
 
-  /** Returns a joiner that joins ParameterizedQuery elements using {@code delim}. */
+  /**
+   * Returns a collector that joins ParameterizedQuery elements using {@code delimiter}.
+   *
+   * <p>Useful if you need to parameterize by a set of columns to select. Say, you might need to
+   * query the table names only, or read the project, dataset and table names:
+   *
+   * <pre>{@code
+   * private static final StringFormat.To<ParameterizedQuery> QUERY_TABLES =
+   *     ParameterizedQuery.template("SELECT {columns} FROM {dataset}.INFORMATION_SCHEMA.TABLES");
+   *
+   * ParameterizedQuery getTableNames = QUERY_TABLES.with(ParameterizedQuery.of("table_name"));
+   * ParameterizedQuery getFullyQualified = QUERY_TABLES.with(
+   *     Stream.of("table_catalog", "table_schema", "table_name")
+   *         .map(ParameterizedQuery::of)
+   *         .collect(ParameterizedQuery.joining(", ")),
+   *     ParameterizedQuery.of("my-dataset"));
+   * }</pre>
+   */
   public static Collector<ParameterizedQuery, ?, ParameterizedQuery> joining(
-      @CompileTimeConstant String delim) {
+      @CompileTimeConstant String delimiter) {
     return Collector.of(
         Builder::new,
-        (b, q) -> b.appendDelimiter(delim).addSubQuery(q),
-        (b1, b2) -> b1.appendDelimiter(delim).addSubQuery(b2.build()),
+        (b, q) -> b.appendDelimiter(delimiter).addSubQuery(q),
+        (b1, b2) -> b1.appendDelimiter(delimiter).addSubQuery(b2.build()),
         Builder::build);
   }
 
