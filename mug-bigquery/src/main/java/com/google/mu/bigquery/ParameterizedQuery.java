@@ -44,13 +44,14 @@ public final class ParameterizedQuery {
 
   private ParameterizedQuery(String query, Map<String, QueryParameterValue> parameters) {
     this.query = requireNonNull(query);
+    // Defensive copy. Not worth pulling in Guava dependency just for this
     this.parameters = Collections.unmodifiableMap(new LinkedHashMap<>(parameters));
   }
 
   /**
-   * Convenience method when you need to create the {@link ParameterizedQuery} inline, with
-   * both the query template and the arguments.
-   * 
+   * Convenience method when you need to create the {@link ParameterizedQuery} inline, with both the
+   * query template and the arguments.
+   *
    * <p>For example:
    *
    * <pre>{@code
@@ -135,9 +136,9 @@ public final class ParameterizedQuery {
 
   /**
    * Sends this query to BigQuery using the default options.
-   * 
-   * <p>To use alternative options, pass {@link #jobConfiguration} to the {link BigQueryOptions}
-   * of your choice.
+   *
+   * <p>To use alternative options, pass {@link #jobConfiguration} to the {link BigQueryOptions} of
+   * your choice.
    */
   public TableResult run() throws JobException, InterruptedException {
     return BigQueryOptions.getDefaultInstance().getService().query(jobConfiguration());
