@@ -27,10 +27,53 @@ import com.google.mu.util.StringFormat;
 import com.google.mu.util.stream.BiStream;
 
 /**
- * Facade class to create BigQuery parameterized queries using a template string and parameters.
+ * Facade class to create <a href="https://cloud.google.com/bigquery/docs/parameterized-queries">
+ * BigQuery parameterized queries</a> using a template string and parameters.
  *
- * <p>The string template syntax is defined by {@link StringFormat} and protected by the same
+ * <p>The string template syntax is defined by {@link StringFormat} and protected by the same set of
  * compile-time checks.
+ *
+ * <p>For simple use cases, a one-liner is enough to construct a parameterized query. For example:
+ *
+ * <pre>{@code
+ * ParameterizedQuery query = ParameterizedQuery.of(
+ *     "SELECT name FROM Students WHERE id = {id} and status = {status}",
+ *     studentId, Status.ENROLLED);
+ * TableResult result = query.run();
+ * }</pre>
+ *
+ * <p>If you need to reuse the same query for different parameters, or to get a long query
+ * "out of the way", you can define the query template as a class constant:
+ *
+ * <pre>{@code
+ * private static final StringFormat.To<ParameterizedQuery> GET_STUDENT = ParameterizedQuery.template(
+ *     "SELECT name FROM Students WHERE id = {id} and status = {status}");
+ *
+ * // 200 lines later
+ * TableResult enrolled = GET_STUDENT.with(studentId, Status.ENROLLED).run();
+ * TableResult graduated = GET_STUDENT.with(alumniId, Status.GRADUATED).run();
+ * }</pre>
+ *
+ * Compared to building the {@link QueryJobConfiguration} object manually, you get the following benefits:
+ * <ul>
+ * <li>Automatic type conversion. Particularly, {@link Instant} and {@link LocalDate} are
+ *     formatted and converted to {@code TIMESTAMP} and {@code DATE} parameters respectively.
+ * <li>Concise API for common use cases.
+ * <li>Compile-time safety for defining the template as a class constant.
+ * </ul>
+ *
+ * <p>In addition to parameterizing by values, you can also parameterize by columns, table names or
+ * sub-queries. The following example allows you to use the same query on different datasets:
+ *
+ * <pre>{@code
+ * private static final StringFormat.To<ParameterizedQuery> GET_TABLES = ParameterizedQuery.template(
+ *     "SELECT table_name FROM `{dataset}.INFORMATION_SCHEMA.TABLES`");
+ *
+ * TableResult marketingTables = GET_TABLES.with(ParameterizedQuery.of("marketing")).run();
+ * TableResult humanResourceTables = GET_TABLES.with(ParameterizedQuery.of("human-resource")).run();
+ * }</pre>
+ *
+ * Non-value string parameters must be wrapped inside {@code ParameterizedQuery} to ensure safety.
  *
  * @since 7.1
  */
@@ -95,6 +138,7 @@ public final class ParameterizedQuery {
    *   <li>BigDecimal
    *   <li>Double
    *   <li>Float
+   *   <li>arrays
    * </ul>
    *
    * If you need to supply other types, consider to wrap them explicitly using one of the static
@@ -142,7 +186,7 @@ public final class ParameterizedQuery {
    * your choice.
    */
   public TableResult run(JobOption... options) throws JobException, InterruptedException {
-    return BigQueryOptions.getDefaultInstance().getService().query(jobConfiguration());
+    return BigQueryOptions.getDefaultInstance().getService().query(jobConfiguration(), options);
   }
 
   /** Returns the {@link QueryJobConfiguration} that can be sent to BigQuery. */
