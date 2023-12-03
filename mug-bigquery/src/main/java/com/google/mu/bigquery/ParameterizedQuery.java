@@ -7,7 +7,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -260,27 +259,5 @@ public final class ParameterizedQuery {
   @Override
   public String toString() {
     return query;
-  }
-
-  /**
-   * A simple command-line tool for you to try it out. Pass command line args like:
-   *
-   * <pre>"select name from {tbl} where id = {id}" students 123</pre>
-   * @param args
-   */
-  public static void main(String[] args) {
-    if (args.length < 1) {
-      System.out.println("'[parameterized query]' [args...]");
-     return;
-    }
-    try {
-      @SuppressWarnings("CompileTimeConstant")
-      TableResult result = of(args[0], Arrays.asList(args).subList(1, args.length).toArray(new Object[0]))
-          .run();
-      System.out.println(result);
-    } catch (Exception e) {
-      e.printStackTrace();
-      System.exit(1);
-    }
   }
 }
