@@ -146,6 +146,7 @@ public final class ParameterizedQuery {
   }
 
   /** Returns the {@link QueryJobConfiguration} that can be sent to BigQuery. */
+  @SuppressWarnings("CheckReturnValue") // addNamedParameter should use @CanIgnoreReturnValue
   public QueryJobConfiguration jobConfiguration() {
     return BiStream.from(parameters)
         .collect(
