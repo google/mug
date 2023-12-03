@@ -36,6 +36,20 @@ public class ParameterizedQueryTest {
   }
 
   @Test
+  public void template_subqueryArg() {
+    ParameterizedQuery query =
+        template("SELECT * FROM {tbl} WHERE id in ({ids})")
+            .with(
+                /* tbl */ ParameterizedQuery.of("Jobs"),
+                /* ids */ ParameterizedQuery.of("SELECT id FROM Students where status = {status}", Status.ACTIVE));
+    assertThat(query.jobConfiguration())
+        .isEqualTo(
+            QueryJobConfiguration.newBuilder("SELECT * FROM Jobs WHERE id in (SELECT id FROM Students where status = @status)")
+                .addNamedParameter("status", QueryParameterValue.string("ACTIVE"))
+                .build());
+  }
+
+  @Test
   public void template_nullArg() {
     StringFormat.To<ParameterizedQuery> query = template("SELECT {expr} where {cond}");
     assertThat(query.with(/* expr */ null, /* cond */ true).jobConfiguration())
