@@ -55,10 +55,10 @@ public class SafeBigQueryTest {
 
   @Test
   public void template_stringArg() {
-    StringFormat.To<QueryJobConfiguration> query = template("SELECT * where id = {id};");
+    StringFormat.To<QueryJobConfiguration> query = template("SELECT * where message like '%{id}%'");
     assertThat(query.with("1's id"))
         .isEqualTo(
-            QueryJobConfiguration.newBuilder("SELECT * where id = @id;")
+            QueryJobConfiguration.newBuilder("SELECT * where message like '%@id%'")
                 .addNamedParameter("id", QueryParameterValue.string("1's id"))
                 .build());
   }
