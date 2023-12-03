@@ -53,6 +53,7 @@
     <module>mug-guava</module>
     <module>mug-protobuf</module>
     <module>mug-errorprone</module>
+    <module>mug-bigquery</module>
   </modules>
 
   <properties>
