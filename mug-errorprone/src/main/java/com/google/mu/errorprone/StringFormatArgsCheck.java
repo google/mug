@@ -216,28 +216,28 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
       List<? extends ExpressionTree> args,
       VisitorState state)
       throws ErrorReport {
-    // placeholderName -> source -> list<arg>
-    Table<String, String, ExpressionTree> allPlaceholderSources = HashBasedTable.create();
-    for (int i = 0; i < placeholderVariableNames.size(); i++) {
-      String placeholderName = placeholderVariableNames.get(i);
-      ExpressionTree arg = args.get(i);
-      Map<String, ExpressionTree> placeholderArgs = allPlaceholderSources.row(placeholderName);
-      placeholderArgs.put(state.getSourceForNode(arg), arg);
-      if (placeholderArgs.size() > 1) {
-        // could have duplicates. Compare the tokens to be sure.
-        ImmutableList<String> duplicateArgSources =
-            BiStream.from(placeholderArgs)
-                .mapKeys((src, dupe) -> tokensFrom(dupe, state))
-                .collect(groupingBy(sig -> sig, (a, b) -> a))
-                .mapToObj((sig, node) -> state.getSourceForNode(node))
-                .collect(toImmutableList());
-        if (duplicateArgSources.size() > 1) {
-          throw checkingOn(arg)
-              .report(
-                  "placeholder {%s} used for inconsistent values:\n%s",
-                  placeholderName,
-                  duplicateArgSources.stream().map("  "::concat).collect(joining("\n")));
-        }
+    Map<String, ? extends ImmutableList<? extends ExpressionTree>> possibleConflicts =
+        BiStream.zip(placeholderVariableNames, args)
+            .collect(groupingBy(placeholderName -> placeholderName, toImmutableList()))
+            .filterValues(placeholderArgs -> placeholderArgs.size() > 1)
+            .toMap();
+    for (Map.Entry<String, ? extends ImmutableList<? extends ExpressionTree>> entry :
+        possibleConflicts.entrySet()) {
+      ImmutableList<ExpressionTree> conflictingArgs =
+          entry.getValue().stream()
+              // elide conflicts with identical source
+              .collect(BiStream.groupingBy(state::getSourceForNode, (a, b) -> a))
+              .mapKeys((src, dupe) -> tokensFrom(dupe, state))
+              // elide conflicts with equal tokens
+              .collect(groupingBy(tokens -> tokens, (a, b) -> a))
+              .mapToObj((tokens, arg) -> arg)
+              .collect(toImmutableList());
+      if (conflictingArgs.size() > 1) {
+        throw checkingOn(conflictingArgs.get(0))
+            .report(
+                "conflicting argument for placeholder {%s} encountered: %s",
+                entry.getKey(),
+                conflictingArgs.stream().skip(1).map(state::getSourceForNode).findFirst().get());
       }
     }
   }
