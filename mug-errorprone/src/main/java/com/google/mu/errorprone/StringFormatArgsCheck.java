@@ -3,6 +3,7 @@ package com.google.mu.errorprone;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.errorprone.BugPattern.SeverityLevel.ERROR;
 import static com.google.errorprone.matchers.Matchers.anyMethod;
+import static com.google.mu.util.stream.BiCollectors.groupingBy;
 import static java.util.stream.Collectors.joining;
 
 import java.util.List;
@@ -16,6 +17,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Table;
 import com.google.mu.util.Substring;
+import com.google.mu.util.stream.BiCollectors;
 import com.google.mu.util.stream.BiStream;
 import com.google.mu.util.CaseBreaker;
 import com.google.errorprone.BugPattern;
@@ -214,23 +216,28 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
       List<? extends ExpressionTree> args,
       VisitorState state)
       throws ErrorReport {
-    Table<String, ImmutableList<String>, ExpressionTree> placeholderSources =
-        HashBasedTable.create();
+    // placeholderName -> source -> list<arg>
+    Table<String, String, ExpressionTree> allPlaceholderSources = HashBasedTable.create();
     for (int i = 0; i < placeholderVariableNames.size(); i++) {
       String placeholderName = placeholderVariableNames.get(i);
       ExpressionTree arg = args.get(i);
-      Map<ImmutableList<String>, ExpressionTree> placeholderArgs =
-          placeholderSources.row(placeholderName);
-      placeholderArgs.put(tokensFrom(arg, state), arg);
+      Map<String, ExpressionTree> placeholderArgs = allPlaceholderSources.row(placeholderName);
+      placeholderArgs.put(state.getSourceForNode(arg), arg);
       if (placeholderArgs.size() > 1) {
-        throw checkingOn(arg)
-            .report(
-                "placeholder {%s} used for inconsistent values:\n%s",
-                placeholderName,
-                placeholderArgs.values().stream()
-                    .map(state::getSourceForNode)
-                    .map("  "::concat)
-                    .collect(joining("\n")));
+        // could have duplicates. Compare the tokens to be sure.
+        ImmutableList<String> duplicateArgSources =
+            BiStream.from(placeholderArgs)
+                .mapKeys((src, dupe) -> tokensFrom(dupe, state))
+                .collect(groupingBy(sig -> sig, (a, b) -> a))
+                .mapToObj((sig, node) -> state.getSourceForNode(node))
+                .collect(toImmutableList());
+        if (duplicateArgSources.size() > 1) {
+          throw checkingOn(arg)
+              .report(
+                  "placeholder {%s} used for inconsistent values:\n%s",
+                  placeholderName,
+                  duplicateArgSources.stream().map("  "::concat).collect(joining("\n")));
+        }
       }
     }
   }
