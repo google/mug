@@ -4,6 +4,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.errorprone.BugPattern.SeverityLevel.ERROR;
 import static com.google.errorprone.matchers.Matchers.anyMethod;
 import static com.google.mu.util.stream.BiCollectors.groupingBy;
+import static com.google.mu.util.stream.GuavaCollectors.toImmutableListMultimap;
 import static java.util.stream.Collectors.joining;
 
 import java.util.List;
@@ -13,12 +14,15 @@ import com.google.auto.service.AutoService;
 import com.google.common.base.Ascii;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Multimaps;
 import com.google.common.collect.Table;
 import com.google.mu.util.Substring;
 import com.google.mu.util.stream.BiCollectors;
 import com.google.mu.util.stream.BiStream;
+import com.google.mu.util.stream.GuavaCollectors;
 import com.google.mu.util.CaseBreaker;
 import com.google.errorprone.BugPattern;
 import com.google.errorprone.BugPattern.LinkType;
@@ -216,28 +220,18 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
       List<? extends ExpressionTree> args,
       VisitorState state)
       throws ErrorReport {
-    Map<String, ? extends ImmutableList<? extends ExpressionTree>> possibleConflicts =
-        BiStream.zip(placeholderVariableNames, args)
-            .collect(groupingBy(placeholderName -> placeholderName, toImmutableList()))
-            .filterValues(placeholderArgs -> placeholderArgs.size() > 1)
-            .toMap();
-    for (Map.Entry<String, ? extends ImmutableList<? extends ExpressionTree>> entry :
-        possibleConflicts.entrySet()) {
-      ImmutableList<ExpressionTree> conflictingArgs =
-          entry.getValue().stream()
-              // elide conflicts with identical source
-              .collect(BiStream.groupingBy(state::getSourceForNode, (a, b) -> a))
-              .mapKeys((src, dupe) -> tokensFrom(dupe, state))
-              // elide conflicts with equal tokens
-              .collect(groupingBy(tokens -> tokens, (a, b) -> a))
-              .mapToObj((tokens, arg) -> arg)
-              .collect(toImmutableList());
-      if (conflictingArgs.size() > 1) {
-        throw checkingOn(conflictingArgs.get(0))
+    ImmutableListMultimap<String, ExpressionTree> allPlaceholders =
+        BiStream.zip(placeholderVariableNames, args).collect(toImmutableListMultimap());
+    for (Map.Entry<String, List<ExpressionTree>> entry :
+        Multimaps.asMap(allPlaceholders).entrySet()) {
+      List<ExpressionTree> conflicts =
+          elide(entry.getValue(), state::getSourceForNode, arg -> tokensFrom(arg, state));
+      if (conflicts.size() > 1) {
+        throw checkingOn(conflicts.get(0))
             .report(
                 "conflicting argument for placeholder {%s} encountered: %s",
                 entry.getKey(),
-                conflictingArgs.stream().skip(1).map(state::getSourceForNode).findFirst().get());
+                conflicts.stream().skip(1).map(state::getSourceForNode).findFirst().get());
       }
     }
   }
@@ -289,5 +283,26 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
               "%s shouldn't be used as string format argument",
               type);
     }
+  }
+
+  /**
+   * Elides elements in {@code list}.
+   *
+   * <p>Elements mapping to the same key using one of {@code elideFunctions} will be elided and only
+   * the first element is retained.
+   */
+  @SafeVarargs
+  private static <T> List<T> elide(List<T> list, Function<? super T, ?>... elidingFunctions) {
+    for (Function<? super T, ?> elidingFunction : elidingFunctions) {
+      if (list.size() <= 1) {
+        return list;
+      }
+      list =
+          list.stream()
+              .collect(BiStream.groupingBy(elidingFunction, (a, b) -> a))
+              .mapToObj((k, v) -> v)
+              .collect(toImmutableList());
+    }
+    return list;
   }
 }
