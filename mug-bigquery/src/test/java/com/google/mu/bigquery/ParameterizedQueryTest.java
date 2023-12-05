@@ -197,6 +197,7 @@ public class ParameterizedQueryTest {
   }
 
   @Test
+  @SuppressWarnings("StringFormatArgsCheck")
   public void template_duplicatePlaceholderNameThrows() {
     StringFormat.To<ParameterizedQuery> query =
         template("SELECT * WHERE status in ({status}, {status}");

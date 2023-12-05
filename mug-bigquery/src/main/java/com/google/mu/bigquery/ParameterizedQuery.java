@@ -1,5 +1,6 @@
 package com.google.mu.bigquery;
 
+import static java.util.Collections.emptyMap;
 import static java.util.Objects.requireNonNull;
 
 import java.math.BigDecimal;
@@ -7,12 +8,14 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collector;
+import java.util.stream.Stream;
 
 import com.google.cloud.bigquery.BigQuery.JobOption;
 import com.google.cloud.bigquery.BigQueryOptions;
@@ -167,6 +170,15 @@ public final class ParameterizedQuery {
               .append(it.next())
               .build();
         });
+  }
+
+  /**
+   * Returns the stream of enum constants defined by {@code enumClass},
+   * with the names wrapped in ParameterizedQuery}.
+   */
+  public static Stream<ParameterizedQuery> enumConstants(Class<? extends Enum<?>> enumClass) {
+    return Arrays.stream(enumClass.getEnumConstants())
+        .map(e -> new ParameterizedQuery(e.name(), emptyMap()));
   }
 
   /**
