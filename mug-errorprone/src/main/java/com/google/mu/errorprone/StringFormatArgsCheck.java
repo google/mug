@@ -31,6 +31,7 @@ import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.matchers.Matcher;
 import com.google.errorprone.matchers.Matchers;
 import com.google.errorprone.util.ASTHelpers;
+import com.google.errorprone.util.ErrorProneTokens;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MemberReferenceTree;
 import com.sun.source.tree.MethodInvocationTree;
@@ -226,19 +227,21 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
         Multimaps.asMap(allPlaceholders).entrySet()) {
       List<ExpressionTree> conflicts =
           elide(entry.getValue(), state::getSourceForNode, arg -> tokensFrom(arg, state));
-      if (conflicts.size() > 1) {
+      if (conflicts.size() >= 2) {
         throw checkingOn(conflicts.get(0))
             .report(
                 "conflicting argument for placeholder {%s} encountered: %s",
-                entry.getKey(),
-                conflicts.stream().skip(1).map(state::getSourceForNode).findFirst().get());
+                entry.getKey(), state.getSourceForNode(conflicts.get(1)));
       }
     }
   }
 
+  /**
+   * Moderately expensive since it needs to re-lex the source. Only call it to confirm a conflict.
+   */
   private static ImmutableList<String> tokensFrom(Tree tree, VisitorState state) {
     String source = state.getSourceForNode(tree);
-    return state.getTokensForNode(tree).stream()
+    return ErrorProneTokens.getTokens(source, state.context).stream()
         .map(token -> source.subSequence(token.pos(), token.endPos()).toString())
         .collect(toImmutableList());
   }
@@ -294,7 +297,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
   @SafeVarargs
   private static <T> List<T> elide(List<T> list, Function<? super T, ?>... elidingFunctions) {
     for (Function<? super T, ?> elidingFunction : elidingFunctions) {
-      if (list.size() <= 1) {
+      if (list.size() < 2) {
         return list;
       }
       list =
