@@ -198,13 +198,24 @@ public class ParameterizedQueryTest {
 
   @Test
   @SuppressWarnings("StringFormatArgsCheck")
-  public void template_duplicatePlaceholderNameThrows() {
+  public void template_duplicatePlaceholderName_throwsWithConflictingValues() {
     StringFormat.To<ParameterizedQuery> query =
         template("SELECT * WHERE status in ({status}, {status}");
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class, () -> query.with(Status.ACTIVE, Status.INACTIVE));
     assertThat(thrown).hasMessageThat().contains("status");
+  }
+
+  @Test
+  public void template_duplicatePlaceholderName_okWithConsistentValues() {
+    StringFormat.To<ParameterizedQuery> query =
+        template("SELECT {status} as status WHERE status = {status}");
+    assertThat(query.with(Status.ACTIVE, Status.ACTIVE).jobConfiguration())
+        .isEqualTo(
+            QueryJobConfiguration.newBuilder("SELECT @status as status WHERE status = @status")
+                .addNamedParameter("status", QueryParameterValue.string("ACTIVE"))
+                .build());
   }
 
   @Test

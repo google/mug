@@ -10,6 +10,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -89,10 +90,17 @@ public final class ParameterizedQuery {
   @SuppressWarnings("Immutable")
   private final Map<String, QueryParameterValue> parameters;
 
-  private ParameterizedQuery(String query, Map<String, QueryParameterValue> parameters) {
+  @SuppressWarnings("Immutable")
+  private final Map<String, Object> originalValues;
+
+  private ParameterizedQuery(
+      String query,
+      Map<String, QueryParameterValue> parameters,
+      Map<String, Object> originalValues) {
     this.query = requireNonNull(query);
     // Defensive copy. Not worth pulling in Guava dependency just for this
     this.parameters = Collections.unmodifiableMap(new LinkedHashMap<>(parameters));
+    this.originalValues = Collections.unmodifiableMap(new HashMap<>(originalValues));
   }
 
   /**
@@ -164,7 +172,7 @@ public final class ParameterizedQuery {
                     } else {
                       String paramName = placeholder.skip(1, 1).toString().trim();
                       builder.append("@" + paramName);
-                      builder.addParameter(paramName, toQueryParameter(value));
+                      builder.addParameter(paramName, value);
                     }
                   })
               .append(it.next())
@@ -178,7 +186,7 @@ public final class ParameterizedQuery {
    */
   public static Stream<ParameterizedQuery> enumConstants(Class<? extends Enum<?>> enumClass) {
     return Arrays.stream(enumClass.getEnumConstants())
-        .map(e -> new ParameterizedQuery(e.name(), emptyMap()));
+        .map(e -> new ParameterizedQuery(e.name(), emptyMap(), emptyMap()));
   }
 
   /**
@@ -231,6 +239,7 @@ public final class ParameterizedQuery {
   private static final class Builder {
     private final StringBuilder queryText = new StringBuilder();
     private final LinkedHashMap<String, QueryParameterValue> parameters = new LinkedHashMap<>();
+    private final Map<String, Object> originalValues = new HashMap<>();
 
     @CanIgnoreReturnValue
     Builder append(String snippet) {
@@ -247,73 +256,84 @@ public final class ParameterizedQuery {
     }
 
     @CanIgnoreReturnValue
-    Builder addParameter(String name, QueryParameterValue value) {
-      if (parameters.put(name, value) != null) {
-        throw new IllegalArgumentException("Duplicate placeholder name " + name);
-      }
+    Builder addSubQuery(ParameterizedQuery subQuery) {
+      queryText.append(subQuery.query);
+      BiStream.from(subQuery.parameters)
+          .forEachOrdered(
+              (name, value) -> internalAddParameter(name, subQuery.originalValues.get(name), value));
       return this;
     }
 
     @CanIgnoreReturnValue
-    Builder addSubQuery(ParameterizedQuery subQuery) {
-      queryText.append(subQuery.query);
-      BiStream.from(subQuery.parameters).forEachOrdered(this::addParameter);
+    Builder addParameter(String name, Object originalValue) {
+      return internalAddParameter(name, originalValue, toQueryParameter(originalValue));
+    }
+
+    private Builder internalAddParameter(String name, Object originalValue, QueryParameterValue value) {
+      Object oldValue = originalValues.put(name, originalValue);
+      if (oldValue != null) {
+        if (oldValue.equals(originalValue)) {
+          return this; // consistent. Just do nothing
+        }
+        throw new IllegalArgumentException("Duplicate placeholder name: " + name);
+      }
+      parameters.put(name, value);
       return this;
     }
 
     ParameterizedQuery build() {
-      return new ParameterizedQuery(queryText.toString(), parameters);
+      return new ParameterizedQuery(queryText.toString(), parameters, originalValues);
     }
-  }
 
-  private static QueryParameterValue toQueryParameter(Object value) {
-    if (value instanceof CharSequence) {
-      return QueryParameterValue.string(value.toString());
+    private static QueryParameterValue toQueryParameter(Object value) {
+      if (value instanceof CharSequence) {
+        return QueryParameterValue.string(value.toString());
+      }
+      if (value instanceof Instant) {
+        Instant time = (Instant) value;
+        return QueryParameterValue.timestamp(
+            time.atZone(ZoneId.of("UTC")).format(TIMESTAMP_FORMATTER));
+      }
+      if (value instanceof LocalDate) {
+        return QueryParameterValue.date(((LocalDate) value).toString());
+      }
+      if (value instanceof Boolean) {
+        return QueryParameterValue.bool((Boolean) value);
+      }
+      if (value instanceof Integer) {
+        return QueryParameterValue.int64((Integer) value);
+      }
+      if (value instanceof Long) {
+        return QueryParameterValue.int64((Long) value);
+      }
+      if (value instanceof Double) {
+        return QueryParameterValue.float64((Double) value);
+      }
+      if (value instanceof Float) {
+        return QueryParameterValue.float64((Float) value);
+      }
+      if (value instanceof BigDecimal) {
+        return QueryParameterValue.bigNumeric((BigDecimal) value);
+      }
+      if (value instanceof byte[]) {
+        return QueryParameterValue.bytes((byte[]) value);
+      }
+      if (value instanceof QueryParameterValue) {
+        return (QueryParameterValue) value;
+      }
+      if (value instanceof Enum) {
+        return QueryParameterValue.string(((Enum<?>) value).name());
+      }
+      if (value.getClass().isArray()) {
+        @SuppressWarnings("rawtypes")
+        Class componentType = value.getClass().getComponentType();
+        return QueryParameterValue.array((Object[]) value, componentType);
+      }
+      throw new IllegalArgumentException(
+          "Unsupported parameter type: "
+              + value.getClass().getName()
+              + ". Consider manually converting it to QueryParameterValue.");
     }
-    if (value instanceof Instant) {
-      Instant time = (Instant) value;
-      return QueryParameterValue.timestamp(
-          time.atZone(ZoneId.of("UTC")).format(TIMESTAMP_FORMATTER));
-    }
-    if (value instanceof LocalDate) {
-      return QueryParameterValue.date(((LocalDate) value).toString());
-    }
-    if (value instanceof Boolean) {
-      return QueryParameterValue.bool((Boolean) value);
-    }
-    if (value instanceof Integer) {
-      return QueryParameterValue.int64((Integer) value);
-    }
-    if (value instanceof Long) {
-      return QueryParameterValue.int64((Long) value);
-    }
-    if (value instanceof Double) {
-      return QueryParameterValue.float64((Double) value);
-    }
-    if (value instanceof Float) {
-      return QueryParameterValue.float64((Float) value);
-    }
-    if (value instanceof BigDecimal) {
-      return QueryParameterValue.bigNumeric((BigDecimal) value);
-    }
-    if (value instanceof byte[]) {
-      return QueryParameterValue.bytes((byte[]) value);
-    }
-    if (value instanceof QueryParameterValue) {
-      return (QueryParameterValue) value;
-    }
-    if (value instanceof Enum) {
-      return QueryParameterValue.string(((Enum<?>) value).name());
-    }
-    if (value.getClass().isArray()) {
-      @SuppressWarnings("rawtypes")
-      Class componentType = value.getClass().getComponentType();
-      return QueryParameterValue.array((Object[]) value, componentType);
-    }
-    throw new IllegalArgumentException(
-        "Unsupported parameter type: "
-            + value.getClass().getName()
-            + ". Consider manually converting it to QueryParameterValue.");
   }
 
   @Override
