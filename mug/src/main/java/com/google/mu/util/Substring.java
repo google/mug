@@ -2512,6 +2512,16 @@ public final class Substring {
     }
 
     /**
+     * Equivalent to {@code toString().equals(str)} but without copying the characters into a
+     * temporary string.
+     *
+     * @since 7.1
+     */
+    public boolean contentEquals(String str) {
+      return str.length() == length() && context.startsWith(str, startIndex);
+    }
+
+    /**
      * Returns true if this match starts with the given {@code prefix}.
      *
      * @since 7.0
