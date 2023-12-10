@@ -119,7 +119,7 @@ public final class ParameterizedQuery {
   }
 
   /**
-   * Returns a template of {@iink QueryJobConfiguration} based on the {@code template} string.
+   * Returns a template of {@link QueryJobConfiguration} based on the {@code template} string.
    *
    * <p>For example:
    *

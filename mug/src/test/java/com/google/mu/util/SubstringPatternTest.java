@@ -327,6 +327,38 @@ public class SubstringPatternTest {
   }
 
   @Test
+  public void repeatedly_cut_noMatch() {
+    assertPattern(first("://"), "abc").cutsTo("abc");
+  }
+
+  @Test
+  public void repeatedly_cut_match() {
+    assertPattern(first("//"), "//foo").cutsTo("", "//", "foo");
+    assertPattern(first("/"), "foo/bar").cutsTo("foo", "/", "bar");
+    assertPattern(first("/"), "foo/bar/").cutsTo("foo", "/", "bar", "/", "");
+  }
+
+  @Test
+  public void repeatedly_cut_byBetweenPattern() {
+    Substring.Pattern comment = Substring.between(before(first("/*")), after(first("*/")));
+    assertPattern(comment, "a").cutsTo("a");
+    assertPattern(comment, "a/*comment*/").cutsTo("a", "/*comment*/", "");
+    assertPattern(comment, "a/*comment*/b").cutsTo("a", "/*comment*/", "b");
+    assertPattern(comment, "a/*c1*/b/*c2*/").cutsTo("a", "/*c1*/", "b", "/*c2*/", "");
+    assertPattern(comment, "a/*c1*/b/*c2*/c").cutsTo("a", "/*c1*/", "b", "/*c2*/", "c");
+  }
+
+  @Test
+  public void repeatedly_cut_beginning() {
+    assertPattern(BEGINNING, "foo").cutsTo("", "", "f", "", "o", "", "o", "", "");
+  }
+
+  @Test
+  public void repeatedly_cut_end() {
+    assertPattern(END, "foo").cutsTo("foo", "", "");
+  }
+
+  @Test
   public void after_noMatch() {
     assertPattern(Substring.after(first("//")), "abc").findsNothing();
     assertPattern(Substring.after(first("//")), "abc").findsNothing();

@@ -15,6 +15,7 @@
 package com.google.mu.util;
 
 import static com.google.mu.util.InternalCollectors.toImmutableList;
+import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.util.Comparator.comparingInt;
@@ -1886,6 +1887,59 @@ public final class Substring {
      */
     public Stream<Match> splitThenTrim(String string) {
       return split(string).map(Match::trim);
+    }
+
+    /**
+     * Returns a stream of {@code Match} objects from the input {@code string} as demarcated by this
+     * delimiter pattern. It's similar to {@link #split} but includes both the substrings split by
+     * the delimiters and the delimiter substrings themselves, interpolated in the order they appear
+     * in the input string.
+     *
+     * <p>For example,
+     *
+     * <pre>{@code
+     * spanningInOrder("{", "}").repeatedly().cut("Dear {user}: please {act}.")
+     * }</pre>
+     *
+     * will result in the stream of {@code ["Dear ", "{user}", ": please ", "{act}", "."]}.
+     *
+     * <p>The returned {@code Match} objects are cheap "views" of the matched substring sequences.
+     * Because {@code Match} implements {@code CharSequence}, the returned {@code Match} objects can
+     * be directly passed to {@code CharSequence}-accepting APIs such as {@link
+     * CharMatcher#trimFrom}, {@link Pattern#splitThenTrim}, etc.
+     *
+     * @since 7.1
+     */
+    public Stream<Match> cut(String string) {
+      Iterator<Match> delimiters = match(string).iterator();
+      return whileNotNull(
+          new Supplier<Match>() {
+            Match delimiter = null;
+            int next = 0;
+
+            @Override
+            public Match get() {
+              if (next == -1) {
+                return null;
+              }
+              if (delimiter == null) { // Should return the substring before the next delimiter.
+                if (delimiters.hasNext()) {
+                  delimiter = delimiters.next();
+                  Match result = Match.nonBacktrackable(string, next, delimiter.index() - next);
+                  next = delimiter.endIndex;
+                  return result;
+                } else {
+                  Match result = Match.nonBacktrackable(string, next, string.length() - next);
+                  next = -1;
+                  return result;
+                }
+              }
+              // should return delimiter
+              Match result = delimiter;
+              delimiter = null;
+              return result;
+            }
+          });
     }
 
     /**

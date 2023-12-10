@@ -91,6 +91,13 @@ final class SubstringPatternAssertion {
         .inOrder();
   }
 
+  void cutsTo(String... parts) {
+    assertThat(
+            pattern.repeatedly().cut(input).map(Substring.Match::toString).limit(parts.length + 10))
+        .containsExactlyElementsIn(asList(parts))
+        .inOrder();
+  }
+
   void twoWaySplitsTo(String left, String right) {
     assertThat(pattern.split(input).map((a, b) -> a)).hasValue(left);
     assertThat(pattern.split(input).map((a, b) -> b)).hasValue(right);
