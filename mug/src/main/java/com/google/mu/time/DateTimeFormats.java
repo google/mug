@@ -245,7 +245,7 @@ public final class DateTimeFormats {
                 DateTimeFormatter fmt = DateTimeFormatter.ofPattern(pattern);
                 fmt.parse(example);
                 return fmt;
-              } catch (DateTimeParseException | IllegalArgumentException e) {
+              } catch (DateTimeParseException e) {
                 throw new IllegalArgumentException(
                     "invalid date time example: " + example + " (" + pattern + ")", e);
               }
@@ -280,7 +280,7 @@ public final class DateTimeFormats {
                   })
               .orElse(0);
       if (consumed <= 0) {
-        throw new IllegalArgumentException("unsupported example: " + example);
+        throw new IllegalArgumentException("unsupported date time example: " + example);
       }
       matched += consumed;
     }

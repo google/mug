@@ -5,6 +5,7 @@ java_library(
         "src/main/java/com/google/mu/util/*.java",
         "src/main/java/com/google/mu/util/stream/*.java",
         "src/main/java/com/google/mu/function/*.java",
+        "src/main/java/com/google/mu/collect/*.java",
       ],
       exclude = ["src/main/java/com/google/mu/util/StringFormat.java"]),
 )
@@ -27,6 +28,14 @@ java_library(
     name = "format",
     visibility = ["//visibility:public"],
     srcs = ["src/main/java/com/google/mu/util/StringFormat.java"],
+    deps = [":base"],
+    exported_plugins = ["//mug-errorprone:plugin"],
+)
+
+java_library(
+    name = "time",
+    visibility = ["//visibility:public"],
+    srcs = glob(["src/main/java/com/google/mu/time/*.java"]),
     deps = [":base"],
     exported_plugins = ["//mug-errorprone:plugin"],
 )
