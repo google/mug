@@ -97,7 +97,7 @@ public final class DateTimeFormats {
       CharPredicate.range('a', 'z').or(CharPredicate.range('A', 'Z').or(is('_')));
 
   /** delimiters don't have semantics and are ignored during parsing. */
-  private static final CharPredicate DELIMITER = anyOf(" ,;").or(Character::isWhitespace);
+  private static final CharPredicate DELIMITER = anyOf(" ,;");
 
   /** Punctuation chars, such as '/', ':', '-' are essential part of the pattern syntax. */
   private static final CharPredicate PUNCTUATION = DIGIT.or(ALPHA).or(DELIMITER).not();
