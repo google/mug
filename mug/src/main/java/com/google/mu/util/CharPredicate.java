@@ -89,6 +89,34 @@ public interface CharPredicate {
     };
   }
 
+  /** Returns a CharPredicate that matches any of {@code chars}. */
+  static CharPredicate anyOf(String chars) {
+    requireNonNull(chars);
+    return new CharPredicate() {
+      @Override public boolean test(char c) {
+        return chars.indexOf(c) >= 0;
+      }
+
+      @Override public String toString() {
+        return "anyOf('" + chars + "')";
+      }
+    };
+  }
+
+  /** Returns a CharPredicate that matches any of {@code chars}. */
+  static CharPredicate noneOf(String chars) {
+    requireNonNull(chars);
+    return new CharPredicate() {
+      @Override public boolean test(char c) {
+        return chars.indexOf(c) < 0;
+      }
+
+      @Override public String toString() {
+        return "noneOf('" + chars + "')";
+      }
+    };
+  }
+
   /** Returns true if {@code ch} satisfies this predicate. */
   boolean test(char ch);
 
@@ -191,9 +219,9 @@ public interface CharPredicate {
   default boolean matchesNoneOf(CharSequence sequence) {
     for (int i = sequence.length() - 1; i >= 0; i--) {
       if (test(sequence.charAt(i))) {
-        return true;
+        return false;
       }
     }
-    return false;
+    return true;
   }
 }

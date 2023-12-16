@@ -69,6 +69,45 @@ public class CharPredicateTest {
     assertThat(CharPredicate.range('A', 'Z').or('c').toString()).isEqualTo("['A', 'Z'] | 'c'");
   }
 
+  @Test public void testAnyOf() {
+    assertThat(CharPredicate.anyOf("ab").test('a')).isTrue();
+    assertThat(CharPredicate.anyOf("ab").test('b')).isTrue();
+    assertThat(CharPredicate.anyOf("ab").test('c')).isFalse();
+  }
+
+  @Test public void testAnyOf_toString() {
+    assertThat(CharPredicate.anyOf("ab").toString()).isEqualTo("anyOf('ab')");
+  }
+
+  @Test public void testNoneOf() {
+    assertThat(CharPredicate.noneOf("ab").test('a')).isFalse();
+    assertThat(CharPredicate.noneOf("ab").test('b')).isFalse();
+    assertThat(CharPredicate.noneOf("ab").test('c')).isTrue();
+  }
+
+  @Test public void testNoneOf_toString() {
+    assertThat(CharPredicate.noneOf("ab").toString()).isEqualTo("noneOf('ab')");
+  }
+
+  @Test public void testMatchesAnyOf() {
+    assertThat(CharPredicate.range('0', '9').matchesAnyOf("-")).isFalse();
+    assertThat(CharPredicate.range('0', '9').matchesAnyOf("0")).isTrue();
+  }
+
+  @Test public void testMatchesNoneOf() {
+    assertThat(CharPredicate.anyOf("ab").matchesNoneOf("a")).isFalse();
+    assertThat(CharPredicate.anyOf("ab").matchesNoneOf("b")).isFalse();
+    assertThat(CharPredicate.anyOf("ab").matchesNoneOf("c")).isTrue();
+  }
+
+  @Test public void testMatchesAllOf() {
+    assertThat(CharPredicate.anyOf("ab").matchesAllOf("a")).isTrue();
+    assertThat(CharPredicate.anyOf("ab").matchesAllOf("b")).isTrue();
+    assertThat(CharPredicate.anyOf("ab").matchesAllOf("ba")).isTrue();
+    assertThat(CharPredicate.anyOf("ab").matchesAllOf("abc")).isFalse();
+    assertThat(CharPredicate.anyOf("ab").matchesAllOf("c")).isFalse();
+  }
+
   @Test public void testNulls() throws Throwable {
     CharPredicate p = CharPredicate.is('a');
     new NullPointerTester().testAllPublicInstanceMethods(p);

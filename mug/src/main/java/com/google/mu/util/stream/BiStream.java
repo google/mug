@@ -987,7 +987,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     boolean belong(A a1, B b1, A a2, B b2);
   }
 
-  static <K, V, E extends Map.Entry<? extends K, ? extends V>> BiStream<K, V> fromEntries(
+  /** @since 7.1 */
+  public static <K, V, E extends Map.Entry<? extends K, ? extends V>> BiStream<K, V> fromEntries(
       Stream<E> entryStream) {
     return new GenericEntryStream<E, K, V>(entryStream, Map.Entry::getKey, Map.Entry::getValue) {
       @Override public <K2, V2> BiStream<K2, V2> map(
