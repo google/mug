@@ -69,12 +69,7 @@ abstract class AbstractBugChecker extends BugChecker {
   /** Starts checking on {@code node}. Errors will be reported as pertaining to this node. */
   final NodeCheck checkingOn(Tree node) {
     checkNotNull(node);
-    return (condition, message, args) -> {
-      if (condition) {
-        return checkingOn(node);
-      }
-      throw new ErrorReport(buildDescription(node), message, args);
-    };
+    return (message, args) -> new ErrorReport(buildDescription(node), message, args);
   }
 
   /** Fluently checking on a tree node. */
@@ -85,7 +80,15 @@ abstract class AbstractBugChecker extends BugChecker {
      * reported in the error message.
      */
     @CanIgnoreReturnValue
-    NodeCheck require(boolean condition, String message, Object... args) throws ErrorReport;
+    default NodeCheck require(boolean condition, String message, Object... args)
+        throws ErrorReport {
+      if (condition) {
+        return this;
+      }
+      throw report(message, args);
+    }
+
+    ErrorReport report(String message, Object... args);
   }
 
   /** An error report of a violation. */

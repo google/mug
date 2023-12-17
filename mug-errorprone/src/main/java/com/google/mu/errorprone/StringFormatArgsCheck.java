@@ -1,18 +1,28 @@
 package com.google.mu.errorprone;
 
-
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.errorprone.BugPattern.SeverityLevel.ERROR;
 import static com.google.errorprone.matchers.Matchers.anyMethod;
+import static com.google.mu.util.stream.BiCollectors.groupingBy;
+import static com.google.mu.util.stream.GuavaCollectors.toImmutableListMultimap;
 import static java.util.stream.Collectors.joining;
+
+import java.util.List;
+import java.util.Map;
 
 import com.google.auto.service.AutoService;
 import com.google.common.base.Ascii;
+import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Multimaps;
+import com.google.common.collect.Table;
 import com.google.mu.util.Substring;
+import com.google.mu.util.stream.BiCollectors;
 import com.google.mu.util.stream.BiStream;
+import com.google.mu.util.stream.GuavaCollectors;
 import com.google.mu.util.CaseBreaker;
 import com.google.errorprone.BugPattern;
 import com.google.errorprone.BugPattern.LinkType;
@@ -21,9 +31,11 @@ import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.matchers.Matcher;
 import com.google.errorprone.matchers.Matchers;
 import com.google.errorprone.util.ASTHelpers;
+import com.google.errorprone.util.ErrorProneTokens;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MemberReferenceTree;
 import com.sun.source.tree.MethodInvocationTree;
+import com.sun.source.tree.Tree;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.tree.JCTree.JCLiteral;
@@ -201,6 +213,37 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
                 placeholderName);
       }
     }
+    checkDuplicatePlaceholderNames(placeholderVariableNames, tree.getArguments(), state);
+  }
+
+  private void checkDuplicatePlaceholderNames(
+      List<String> placeholderVariableNames,
+      List<? extends ExpressionTree> args,
+      VisitorState state)
+      throws ErrorReport {
+    ImmutableListMultimap<String, ExpressionTree> allPlaceholders =
+        BiStream.zip(placeholderVariableNames, args).collect(toImmutableListMultimap());
+    for (Map.Entry<String, List<ExpressionTree>> entry :
+        Multimaps.asMap(allPlaceholders).entrySet()) {
+      List<ExpressionTree> conflicts =
+          elide(entry.getValue(), state::getSourceForNode, arg -> tokensFrom(arg, state));
+      if (conflicts.size() >= 2) {
+        throw checkingOn(conflicts.get(0))
+            .report(
+                "conflicting argument for placeholder {%s} encountered: %s",
+                entry.getKey(), state.getSourceForNode(conflicts.get(1)));
+      }
+    }
+  }
+
+  /**
+   * Moderately expensive since it needs to re-lex the source. Only call it to confirm a conflict.
+   */
+  private static ImmutableList<String> tokensFrom(Tree tree, VisitorState state) {
+    String source = state.getSourceForNode(tree);
+    return ErrorProneTokens.getTokens(source, state.context).stream()
+        .map(token -> source.subSequence(token.pos(), token.endPos()).toString())
+        .collect(toImmutableList());
   }
 
   private static String normalizeForComparison(String text) {
@@ -243,5 +286,26 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
               "%s shouldn't be used as string format argument",
               type);
     }
+  }
+
+  /**
+   * Elides elements in {@code list}.
+   *
+   * <p>Elements mapping to the same key using one of {@code elideFunctions} will be elided and only
+   * the first element is retained.
+   */
+  @SafeVarargs
+  private static <T> List<T> elide(List<T> list, Function<? super T, ?>... elidingFunctions) {
+    for (Function<? super T, ?> elidingFunction : elidingFunctions) {
+      if (list.size() < 2) {
+        return list;
+      }
+      list =
+          list.stream()
+              .collect(BiStream.groupingBy(elidingFunction, (a, b) -> a))
+              .mapToObj((k, v) -> v)
+              .collect(toImmutableList());
+    }
+    return list;
   }
 }

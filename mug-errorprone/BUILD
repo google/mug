@@ -10,6 +10,7 @@ java_library(
         "@maven//:com_google_errorprone_error_prone_check_api",
         "@maven//:com_google_guava_guava",
         "//mug:base",
+        "//mug:time_lib",
         "//mug-guava",
     ],
 )
@@ -66,6 +67,7 @@ junit_tests(
     deps = [
         ":errorprone",
         "//mug:format",
+        "//mug:time",
         "//mug-guava:safe_sql",
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_guava_guava_testlib",

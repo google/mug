@@ -3803,6 +3803,21 @@ public class SubstringTest {
   }
 
   @Test
+  public void match_contentEquals_false() {
+    Substring.Match match = first("bar").in("foobarbaz").get();
+    assertThat(match.contentEquals("barb")).isFalse();
+    assertThat(match.contentEquals("obar")).isFalse();
+    assertThat(match.contentEquals("ba")).isFalse();
+    assertThat(match.contentEquals("ar")).isFalse();
+  }
+
+  @Test
+  public void match_contentEquals_true() {
+    Substring.Match match = first("bar").in("foobarbaz").get();
+    assertThat(match.contentEquals("bar")).isTrue();
+  }
+
+  @Test
   public void match_startsWith_false() {
     Substring.Match match = first("bar").in("foobarbaz").get();
     assertThat(match.startsWith("barb")).isFalse();

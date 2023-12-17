@@ -4,7 +4,7 @@
   <groupId>com.google.mug</groupId>
   <artifactId>mug-root</artifactId>
   <packaging>pom</packaging>
-  <version>7.0-SNAPSHOT</version>
+  <version>7.1-SNAPSHOT</version>
   <name>mug-root</name>
   <description>Extra Lambda Utilities</description>
   <url>http://github.com/google/mug</url>
@@ -53,6 +53,7 @@
     <module>mug-guava</module>
     <module>mug-protobuf</module>
     <module>mug-errorprone</module>
+    <module>mug-bigquery</module>
   </modules>
 
   <properties>

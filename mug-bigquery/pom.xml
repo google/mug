@@ -6,9 +6,9 @@
       <version>7.1-SNAPSHOT</version>
       <relativePath>../pom.xml</relativePath>
   </parent>
-  <artifactId>mug-examples</artifactId>
+  <artifactId>mug-bigquery</artifactId>
   <packaging>jar</packaging>
-  <name>Examples</name>
+  <name>BigQuery Utils</name>
 
   <build>
     <pluginManagement>
@@ -56,22 +56,37 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.google.truth</groupId>
       <artifactId>truth</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.google.truth.extensions</groupId>
       <artifactId>truth-java8-extension</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava-testlib</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.cloud</groupId>
+      <artifactId>google-cloud-bigquery</artifactId>
+      <version>2.34.2</version>
     </dependency>
   </dependencies>
 

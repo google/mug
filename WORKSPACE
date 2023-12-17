@@ -59,6 +59,7 @@ maven_install(
         "com.google.protobuf:protobuf-java:[3.0.0,)",
         "com.google.protobuf:protobuf-java-util:[3.0.0,)",
         "com.google.code.findbugs:jsr305:3.0.2",
+        "com.google.cloud:google-cloud-bigquery:[2.34.2,)",
     ],
     repositories = [
         "https://repo1.maven.org/maven2",

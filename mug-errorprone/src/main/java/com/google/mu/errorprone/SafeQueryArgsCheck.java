@@ -1,8 +1,7 @@
 package com.google.mu.errorprone;
 
-
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.errorprone.BugPattern.SeverityLevel.WARNING;
+import static com.google.errorprone.BugPattern.SeverityLevel.ERROR;
 import static com.google.errorprone.matchers.Matchers.anyMethod;
 
 import com.google.auto.service.AutoService;
@@ -30,12 +29,14 @@ import com.sun.tools.javac.code.Type;
     summary = "Checks that string placeholders in SQL template strings are quoted.",
     link = "go/java-tips/024#preventing-sql-injection",
     linkType = LinkType.CUSTOM,
-    severity = WARNING)
+    severity = ERROR)
 @AutoService(BugChecker.class)
-public final class SafeSqlArgsCheck extends AbstractBugChecker
+public final class SafeQueryArgsCheck extends AbstractBugChecker
     implements AbstractBugChecker.MethodInvocationCheck {
   private static final MethodClassMatcher MATCHER =
       anyMethod().onDescendantOf("com.google.mu.util.StringFormat.To");
+  private static final TypeName SAFE_QUERY_TYPE =
+      new TypeName("com.google.mu.safesql.SafeQuery");
   private static final ImmutableSet<TypeName> ARG_TYPES_THAT_SHOULD_NOT_BE_QUOTED =
       ImmutableSet.of(
           new TypeName("com.google.storage.googlesql.safesql.TrustedSqlString"),
@@ -49,6 +50,9 @@ public final class SafeSqlArgsCheck extends AbstractBugChecker
   public void checkMethodInvocation(MethodInvocationTree tree, VisitorState state)
       throws ErrorReport {
     if (!MATCHER.matches(tree, state)) {
+      return;
+    }
+    if (!SAFE_QUERY_TYPE.isSameType(ASTHelpers.getType(tree), state)) {
       return;
     }
     MethodSymbol symbol = ASTHelpers.getSymbol(tree);
@@ -72,6 +76,9 @@ public final class SafeSqlArgsCheck extends AbstractBugChecker
     }
     for (int i = 0; i < placeholders.size(); i++) {
       Substring.Match placeholder = placeholders.get(i);
+      if (placeholder.isImmediatelyBetween("`", "`")) {
+        continue;
+      }
       ExpressionTree arg = tree.getArguments().get(i);
       Type type = ASTHelpers.getType(arg);
       if (placeholder.isImmediatelyBetween("'", "'")
@@ -84,14 +91,15 @@ public final class SafeSqlArgsCheck extends AbstractBugChecker
                 "argument of type %s should not be quoted: '%s'",
                 type,
                 placeholder);
-      } else if (!placeholder.isImmediatelyBetween("`", "`")) {
-        // Disallow arbitrary string literals or characters unless backquoted.
+      } else { // Disallow arbitrary string literals or characters unless backquoted.
         checkingOn(arg)
-            .require(
-                ARG_TYPES_THAT_MUST_BE_QUOTED.stream().noneMatch(t -> t.isSameType(type, state)),
-                "argument of type %s must be quoted (for example '%s')",
-                type,
-                placeholder);
+        .require(
+            ARG_TYPES_THAT_MUST_BE_QUOTED.stream().noneMatch(t -> t.isSameType(type, state)),
+            "argument of type %s must be quoted (for example '%s' for string literals or `%s`"
+                + " for identifiers)",
+            type,
+            placeholder,
+            placeholder);
       }
     }
   }

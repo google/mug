@@ -5,6 +5,7 @@ java_library(
         "src/main/java/com/google/mu/util/*.java",
         "src/main/java/com/google/mu/util/stream/*.java",
         "src/main/java/com/google/mu/function/*.java",
+        "src/main/java/com/google/mu/collect/*.java",
       ],
       exclude = ["src/main/java/com/google/mu/util/StringFormat.java"]),
 )
@@ -28,6 +29,20 @@ java_library(
     visibility = ["//visibility:public"],
     srcs = ["src/main/java/com/google/mu/util/StringFormat.java"],
     deps = [":base"],
+    exported_plugins = ["//mug-errorprone:plugin"],
+)
+
+java_library(
+    name = "time_lib",
+    visibility = ["//mug-errorprone:__pkg__"],
+    srcs = glob(["src/main/java/com/google/mu/time/*.java"]),
+    deps = [":base"],
+)
+
+java_library(
+    name = "time",
+    visibility = ["//visibility:public"],
+    exports = [":time_lib"],
     exported_plugins = ["//mug-errorprone:plugin"],
 )
 
@@ -61,6 +76,7 @@ junit_tests(
         ":format",
         ":graph",
         ":tests",
+        ":time",
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_guava_guava_testlib",
         "@maven//:com_google_truth_truth",

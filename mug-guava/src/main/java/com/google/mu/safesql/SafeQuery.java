@@ -23,9 +23,10 @@ import com.google.mu.util.StringFormat;
 import com.google.mu.util.Substring;
 
 /**
- * Facade class to generate queries based on a string template in the syntax of {@link StringFormat},
- * with compile-time guard rails and runtime protection against SQL injection and programmer mistakes.
- * Special characters of string expressions are automatically escaped to prevent SQL injection errors.
+ * Facade class to generate queries based on a string template in the syntax of {@link
+ * StringFormat}, with compile-time guard rails and runtime protection against SQL injection and
+ * programmer mistakes. Special characters of string expressions are automatically escaped to
+ * prevent SQL injection errors.
  *
  * <p>A SafeQuery encapsulates the query string. You can use {@link #toString} to access the query
  * string.
@@ -39,9 +40,10 @@ import com.google.mu.util.Substring;
  */
 @Immutable
 public final class SafeQuery {
-  private static final String TRUSTED_SQL_TYPE_NAME = firstNonNull(
-      System.getProperty("com.google.mu.safesql.SafeQuery.trusted_sql_type"),
-      "com.google.storage.googlesql.safesql.TrustedSqlString");
+  private static final String TRUSTED_SQL_TYPE_NAME =
+      firstNonNull(
+          System.getProperty("com.google.mu.safesql.SafeQuery.trusted_sql_type"),
+          "com.google.storage.googlesql.safesql.TrustedSqlString");
 
   private final String query;
 
@@ -119,9 +121,12 @@ public final class SafeQuery {
    * </ul>
    */
   public static StringFormat.To<SafeQuery> template(@CompileTimeConstant String formatString) {
-    return template(formatString, value -> {
-      throw new IllegalArgumentException("Unsupported argument type: " + value.getClass().getName());
-    });
+    return template(
+        formatString,
+        value -> {
+          throw new IllegalArgumentException(
+              "Unsupported argument type: " + value.getClass().getName());
+        });
   }
 
   static StringFormat.To<SafeQuery> template(
@@ -213,7 +218,8 @@ public final class SafeQuery {
         "Symbols should be wrapped inside %s;\n"
             + "subqueries must be wrapped in another SafeQuery object;\n"
             + "and string literals must be quoted like '%s'",
-            TRUSTED_SQL_TYPE_NAME, placeholder);
+        TRUSTED_SQL_TYPE_NAME,
+        placeholder);
     return byDefault.apply(value);
   }
 
@@ -226,9 +232,17 @@ public final class SafeQuery {
         quoteChar,
         placeholder,
         quoteChar);
-    return first(CharPredicate.is('\\').or(quoteChar))
+    return first(CharPredicate.is('\\').or(quoteChar).or('\n').or('\r'))
         .repeatedly()
-        .replaceAllFrom(value.toString(), c -> "\\" + c);
+        .replaceAllFrom(
+            value.toString(),
+            c -> {
+              switch (c.charAt(0)) {
+                case '\r': return "\\r";
+                case '\n': return "\\n";
+                default: return "\\" + c;
+              }
+            });
   }
 
   private static String backquoted(Substring.Match placeholder, Object value) {
@@ -238,7 +252,7 @@ public final class SafeQuery {
     String name = removeQuotes('`', value.toString(), '`'); // ok if already backquoted
     // Make sure the backquoted string doesn't contain some special chars that may cause trouble.
     checkArgument(
-        CharMatcher.anyOf("'\"`()[]{}\\~!@$^*,/?;").matchesNoneOf(name),
+        CharMatcher.anyOf("'\"`()[]{}\\~!@$^*,/?;\r\n").matchesNoneOf(name),
         "placeholder value for `%s` (%s) contains illegal character",
         placeholder,
         name);

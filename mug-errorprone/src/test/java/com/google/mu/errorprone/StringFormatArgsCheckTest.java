@@ -58,6 +58,49 @@ public final class StringFormatArgsCheckTest {
   }
 
   @Test
+  public void format_duplicatePlaceholderNameWithConflictingValues() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test(String foo1, String foo2) {",
+            "    // BUG: Diagnostic contains: {foo}",
+            "    new StringFormat(\"{foo}={foo}\").format(foo1, foo2);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void format_duplicatePlaceholderNameWithConsistentValues() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test(String foo) {",
+            "    new StringFormat(\"{foo}={foo}\").format(foo, foo);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void format_duplicatePlaceholderNameWithEquivalentValues() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test(String foo) {",
+            "    new StringFormat(\"{foo}={foo}\").format(foo.toString(), foo .toString());",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
   public void format_argsOutOfOrder() {
     helper
         .addSourceLines(
@@ -1068,6 +1111,39 @@ public final class StringFormatArgsCheckTest {
             "  private static final long COUNT =",
             "      // BUG: Diagnostic contains: DoubleFunctionWithIndex",
             "      Streams.mapWithIndex(DoubleStream.of(1), FORMAT::format).count();",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void to_duplicatePlaceholderNameWithConflictingValues() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  private static final StringFormat.To<IllegalArgumentException> TEMPLATE =",
+            "      StringFormat.to(IllegalArgumentException::new, \"{foo}={foo}\");",
+            "  void test() {",
+            "    // BUG: Diagnostic contains: {foo}",
+            "    TEMPLATE.with(/* foo */ 1, /* foo */ 2);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void to_duplicatePlaceholderNameWithConsistentValues() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  private static final StringFormat.To<IllegalArgumentException> TEMPLATE =",
+            "      StringFormat.to(IllegalArgumentException::new, \"{foo}={foo}\");",
+            "  void test() {",
+            "    TEMPLATE.with(/* foo */ 1, /* foo expected to be the same */ 1);",
+            "  }",
             "}")
         .doTest();
   }
