@@ -75,7 +75,7 @@ import com.google.mu.util.stream.BiStream;
  *
  * <p>If the variant of the date time pattern you need exceeds the out-of-box support, you can
  * explicitly mix the {@link DateTimeFormatter} specifiers with example placeholders
- * (between a pair of curly braces) to be translated.
+ * (between a pair of pointy brackets) to be translated.
  *
  * <p>For example the following code uses the {@code dd}, {@code MM} and {@code yyyy} specifiers as
  * is but translates the {@code Tue} and {@code America/New_York} example snippets into {@code E}
@@ -84,7 +84,7 @@ import com.google.mu.util.stream.BiStream;
  *
  * <pre>{@code
  * private static final DateTimeFormatter FORMATTER =
- *     formatOf("{Tue}, dd MM yyyy HH:mm:ss.SSS {America/New_York}");
+ *     formatOf("<Tue>, dd MM yyyy HH:mm:ss.SSS <America/New_York>");
  * }</pre>
  *
  * @since 7.1
@@ -106,8 +106,8 @@ public final class DateTimeFormats {
           .repeatedly();
 
   private static final Substring.RepeatingPattern PLACEHOLDERS =
-      Substring.consecutive(CharPredicate.noneOf("{}"))
-          .immediatelyBetween("{", Substring.BoundStyle.INCLUSIVE, "}", INCLUSIVE)
+      Substring.consecutive(CharPredicate.noneOf("<>"))
+          .immediatelyBetween("<", Substring.BoundStyle.INCLUSIVE, ">", INCLUSIVE)
           .repeatedly();
   private static final Map<List<?>, DateTimeFormatter> ISO_DATE_FORMATTERS =
       BiStream.of(
