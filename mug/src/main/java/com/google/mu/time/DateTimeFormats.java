@@ -64,29 +64,27 @@ import com.google.mu.util.stream.BiStream;
  * <p>Most ISO 8601 formats are supported, except ISO_WEEK_DATE ('2012-W48-6') and ISO_ORDINAL_DATE
  * ('2012-337').
  *
- * <p>For the date part of custom patterns, only the variants with the same order as {@code
- * yyyy/MM/dd} are supported, no {@code MM/dd/yyyy} or {@code dd/MM/yyyy}.
+ * <p>For the date part of custom patterns, {@code MM/dd/yyyy} or {@code dd/MM/yyyy} or any variant
+ * where the {@code yyyy} is after the {@code MM} or {@code dd} are not supported. However if
+ * localized month names such as {@code Jan} or {@code March} are used, all natural orders
+ * ({@code year month day}, {@code month day year} or {@code day month year}) are supported.
  *
  * <p>For the time part of custom patterns, only {@code HH:mm}, {@code HH:mm:ss} and {@code
  * HH:mm:ss.S} variants are supported (the S can be 1 to 9 digits). AM/PM and 12-hour numbers are
- * not supported.
+ * not supported. Though you can explicitly specify them together with placeholders (see below).
  *
- * <p>Besides RFC_1123_DATE_TIME, day-of-week texts (such as Fri, Friday) and month-of-year texts
- * (such as Jan, January) are not supported. It's assumed that you either use yyyy/MM/dd or
- * yyyy-MM-dd.
- *
- * <p>If the variant of the date time pattern exceeds the out-of-box support, you can directly
- * specify the {@link DateTimeFormatter} specifiers you care about, together with example
- * placeholders (between a pair of curly braces) to be translated.
+ * <p>If the variant of the date time pattern you need exceeds the out-of-box support, you can
+ * explicitly mix the {@link DateTimeFormatter} specifiers with example placeholders
+ * (between a pair of curly braces) to be translated.
  *
  * <p>For example the following code uses the {@code dd}, {@code MM} and {@code yyyy} specifiers as
- * is but translates the {@code Mon} and {@code America/New_York} example snippets into {@code E}
+ * is but translates the {@code Tue} and {@code America/New_York} example snippets into {@code E}
  * and {@code VV} specifiers respectively. It will then parse and format to datetime strings like
  * "Fri, 20 Oct 2023 10:30:59.123 Europe/Paris".
  *
  * <pre>{@code
  * private static final DateTimeFormatter FORMATTER =
- *     formatOf("{Mon}, dd MM yyyy HH:mm:ss.SSS {America/New_York}");
+ *     formatOf("{Tue}, dd MM yyyy HH:mm:ss.SSS {America/New_York}");
  * }</pre>
  *
  * @since 7.1
