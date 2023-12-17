@@ -231,14 +231,12 @@ public final class DateTimeFormats {
                       example,
                       placeholder -> {
                         placeholderCount.incrementAndGet();
-                        System.out.println("translating placeholder " + placeholder);
                         return inferDateTimePattern(placeholder.skip(1, 1).toString());
                       });
               try {
                 if (placeholderCount.get() > 0) {
                   // There is at least 1 placeholder. The input isn't a pure datetime "example".
                   // So we can't validate using parse().
-                  System.out.println("after placeholder translated: " + pattern);
                   return DateTimeFormatter.ofPattern(pattern);
                 }
                 pattern = inferDateTimePattern(example, signature);
@@ -309,18 +307,15 @@ public final class DateTimeFormats {
         .map(
             match -> {
               if (DIGIT.matchesAnyOf(match)) {
-                System.out.println("got number token " + match);
                 return match.length(); // the number of digits in the example matter
               }
               String name = match.toString();
               if (PUNCTUATION.matchesAnyOf(name)) {
-                System.out.println("got punctuation token " + match);
                 // A punctuation that must be matched literally.
                 // But + and - are interchangeable (as example) in timezone spec.
                 return name.replace('+', '-');
               }
               if (DELIMITER.matchesAnyOf(name)) {
-                System.out.println("got delimiter " + match);
                 // whitespaces are treated as is and will be ignored from prefix pattern matching
                 return name;
               }

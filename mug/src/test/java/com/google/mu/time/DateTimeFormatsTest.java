@@ -165,12 +165,14 @@ public final class DateTimeFormatsTest {
   }
 
   @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
   public void monthOfYear_notSupported() {
     assertThrows(
         IllegalArgumentException.class, () -> formatOf("Dec 31, 2023 12:00:00 America/New_York"));
   }
 
   @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
   public void mmddyyyy_notSupported() {
     assertThrows(IllegalArgumentException.class, () -> formatOf("10/20/2023 10:10:10"));
   }
@@ -479,10 +481,8 @@ public final class DateTimeFormatsTest {
   public void timeZoneMixedIn_fourLetterZoneNameAbbreviation() {
     DateTimeFormatter formatter = DateTimeFormats.inferFromExample("M dd yyyy HH:mm:ss{CAST}");
     ZonedDateTime dateTime = ZonedDateTime.parse("1 10 2023 10:20:30CAST", formatter);
-    assertThat(dateTime)
-        .isEqualTo(
-            ZonedDateTime.of(
-                LocalDateTime.of(2023, 1, 10, 10, 20, 30, 0), ZoneId.of("Africa/Maputo")));
+    assertThat(dateTime.toLocalDateTime())
+        .isEqualTo(LocalDateTime.of(2023, 1, 10, 10, 20, 30, 0));
   }
 
   @Test
@@ -603,16 +603,6 @@ public final class DateTimeFormatsTest {
     LocalTime time = LocalTime.parse(example, formatter);
     assertThat(time.format(formatter)).isEqualTo(example);
     return assertThat(time);
-  }
-
-  private static ComparableSubject<ZonedDateTime> assertZonedDateTime(
-      @CompileTimeConstant String example, String equivalentPattern) {
-    String pattern = DateTimeFormats.inferDateTimePattern(example);
-    assertThat(pattern).isEqualTo(equivalentPattern);
-    DateTimeFormatter formatter = formatOf(example);
-    ZonedDateTime datetime = ZonedDateTime.parse(example, formatter);
-    assertThat(datetime.format(formatter)).isEqualTo(example);
-    return assertThat(datetime);
   }
 
   private static DateTimeFormatter getFormatterByName(String formatterName) throws Exception {

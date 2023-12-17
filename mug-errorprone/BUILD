@@ -10,7 +10,7 @@ java_library(
         "@maven//:com_google_errorprone_error_prone_check_api",
         "@maven//:com_google_guava_guava",
         "//mug:base",
-        "//mug:time",
+        "//mug:time_lib",
         "//mug-guava",
     ],
 )
