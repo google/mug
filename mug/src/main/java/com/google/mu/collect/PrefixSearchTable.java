@@ -58,8 +58,8 @@ public final class PrefixSearchTable<K, V> {
   }
 
   /**
-   * Searches the table for prefixes of {@code compoundKey} and returns a BiStream of all mappings
-   * in ascending order of prefix length.
+   * Searches the table for prefixes of {@code compoundKey} and returns a <em>lazy</em> BiStream of
+   * all mappings in ascending order of prefix length.
    *
    * <p>If no non-empty prefix exists in the table, an empty BiStream is returned.
    *
