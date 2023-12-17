@@ -575,6 +575,32 @@ public final class DateTimeFormatsTest {
         IllegalArgumentException.class, () -> DateTimeFormats.inferDateTimePattern("12:34:5"));
   }
 
+  @Test
+  public void emptyExample_disallowed() {
+    assertThrows(IllegalArgumentException.class, () -> formatOf(""));
+  }
+
+  @Test
+  public void exampleWithOnlySpaces_disallowed() {
+    assertThrows(IllegalArgumentException.class, () -> formatOf("  "));
+  }
+
+  @Test
+  public void exampleWithOnlyPunctuations_disallowed() {
+    assertThrows(IllegalArgumentException.class, () -> formatOf("/"));
+  }
+
+  @Test
+  public void exampleWithOnlyNumbers_disallowed() {
+    assertThrows(IllegalArgumentException.class, () -> formatOf("1234"));
+  }
+
+  @Test
+  public void exampleWithOnlyWords_disallowed() {
+    assertThrows(IllegalArgumentException.class, () -> formatOf("yyyy"));
+    assertThrows(IllegalArgumentException.class, () -> formatOf("America"));
+  }
+
   private static ComparableSubject<LocalDateTime> assertLocalDateTime(
       @CompileTimeConstant String example, String equivalentPattern) {
     String pattern = DateTimeFormats.inferDateTimePattern(example);
