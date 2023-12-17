@@ -54,12 +54,12 @@ public final class PrefixSearchTable<K, V> {
    * @throws NullPointerException if {@code compoundKey} is null or any key element is null
    */
   public Optional<V> get(List<? extends K> compoundKey) {
-    return search(compoundKey).values().reduce((shorter, longer) -> longer);
+    return getAll(compoundKey).values().reduce((shorter, longer) -> longer);
   }
 
   /**
-   * Searches the table for prefixes of {@code compoundKey}. If there are multiple prefixes, all of
-   * the matches will be returned, in ascending order of match length.
+   * Searches the table for prefixes of {@code compoundKey} and returns a BiStream of all mappings
+   * in ascending order of prefix length.
    *
    * <p>If no non-empty prefix exists in the table, an empty BiStream is returned.
    *
@@ -69,7 +69,7 @@ public final class PrefixSearchTable<K, V> {
    * @throws IllegalArgumentException if {@code compoundKey} is empty
    * @throws NullPointerException if {@code compoundKey} is null or any key element is null
    */
-  public BiStream<List<K>, V> search(List<? extends K> compoundKey) {
+  public BiStream<List<K>, V> getAll(List<? extends K> compoundKey) {
     checkArgument(compoundKey.size() > 0, "cannot search by empty key");
     return BiStream.fromEntries(
         MoreStreams.whileNotNull(
