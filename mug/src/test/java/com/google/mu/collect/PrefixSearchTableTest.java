@@ -29,14 +29,14 @@ public final class PrefixSearchTableTest {
   @Test
   public void emptyTable() {
     PrefixSearchTable<Integer, String> table = PrefixSearchTable.<Integer, String>builder().build();
-    assertThat(table.search(asList(1)).toMap()).isEmpty();
+    assertThat(table.getAll(asList(1)).toMap()).isEmpty();
     assertThat(table.get(asList(1))).isEmpty();
   }
 
   @Test
   public void emptyKeyCannotBeSearched() {
     PrefixSearchTable<Integer, String> table = PrefixSearchTable.<Integer, String>builder().build();
-    assertThrows(IllegalArgumentException.class, () -> table.search(asList()));
+    assertThrows(IllegalArgumentException.class, () -> table.getAll(asList()));
     assertThrows(IllegalArgumentException.class, () -> table.get(asList()));
   }
 
@@ -63,7 +63,7 @@ public final class PrefixSearchTableTest {
   public void singleKeyMatched() {
     PrefixSearchTable<Integer, String> table =
         PrefixSearchTable.<Integer, String>builder().add(asList(1), "foo").build();
-    assertThat(table.search(asList(1)).toMap()).containsExactly(asList(1), "foo");
+    assertThat(table.getAll(asList(1)).toMap()).containsExactly(asList(1), "foo");
     assertThat(table.get(asList(1))).hasValue("foo");
   }
 
@@ -71,7 +71,7 @@ public final class PrefixSearchTableTest {
   public void singleKeyNotMatched() {
     PrefixSearchTable<Integer, String> table =
         PrefixSearchTable.<Integer, String>builder().add(asList(1), "foo").build();
-    assertThat(table.search(asList(2)).toMap()).isEmpty();
+    assertThat(table.getAll(asList(2)).toMap()).isEmpty();
     assertThat(table.get(asList(2))).isEmpty();
   }
 
@@ -79,7 +79,7 @@ public final class PrefixSearchTableTest {
   public void singleKeyMatchesPrefix() {
     PrefixSearchTable<Integer, String> table =
         PrefixSearchTable.<Integer, String>builder().add(asList(1), "foo").build();
-    assertThat(table.search(asList(1, 2, 3)).toMap()).containsExactly(asList(1), "foo");
+    assertThat(table.getAll(asList(1, 2, 3)).toMap()).containsExactly(asList(1), "foo");
     assertThat(table.get(asList(1, 2, 3))).hasValue("foo");
   }
 
@@ -87,7 +87,7 @@ public final class PrefixSearchTableTest {
   public void multipleKeysExactMatch() {
     PrefixSearchTable<Integer, String> table =
         PrefixSearchTable.<Integer, String>builder().add(asList(1, 2, 3), "foo").build();
-    assertThat(table.search(asList(1, 2, 3)).toMap()).containsExactly(asList(1, 2, 3), "foo");
+    assertThat(table.getAll(asList(1, 2, 3)).toMap()).containsExactly(asList(1, 2, 3), "foo");
     assertThat(table.get(asList(1, 2, 3))).hasValue("foo");
   }
 
@@ -95,7 +95,7 @@ public final class PrefixSearchTableTest {
   public void multipleKeysPrefixMatched() {
     PrefixSearchTable<Integer, String> table =
         PrefixSearchTable.<Integer, String>builder().add(asList(1, 2, 3), "foo").build();
-    assertThat(table.search(asList(1, 2, 3, 4, 5)).toMap()).containsExactly(asList(1, 2, 3), "foo");
+    assertThat(table.getAll(asList(1, 2, 3, 4, 5)).toMap()).containsExactly(asList(1, 2, 3), "foo");
     assertThat(table.get(asList(1, 2, 3, 4, 5))).hasValue("foo");
   }
 
@@ -103,7 +103,7 @@ public final class PrefixSearchTableTest {
   public void multipleKeysLongerThanSearchKeySize() {
     PrefixSearchTable<Integer, String> table =
         PrefixSearchTable.<Integer, String>builder().add(asList(1, 2, 3), "foo").build();
-    assertThat(table.search(asList(1, 2)).toMap()).isEmpty();
+    assertThat(table.getAll(asList(1, 2)).toMap()).isEmpty();
     assertThat(table.get(asList(1, 2))).isEmpty();
   }
 
@@ -116,7 +116,7 @@ public final class PrefixSearchTableTest {
             .add(asList(1, 2, 4), "baz")
             .add(asList(2, 1, 3), "zoo")
             .build();
-    assertThat(table.search(asList(1, 2, 3)).toMap())
+    assertThat(table.getAll(asList(1, 2, 3)).toMap())
         .containsExactly(asList(1, 2), "bar", asList(1, 2, 3), "foo")
         .inOrder();
     assertThat(table.get(asList(1, 2, 3))).hasValue("foo");
@@ -137,7 +137,7 @@ public final class PrefixSearchTableTest {
             .add(asList(1), "bar")
             .add(asList(1, 2, 3), "foo")
             .build();
-    assertThat(table.search(asList(1, 2, 3)).toMap())
+    assertThat(table.getAll(asList(1, 2, 3)).toMap())
         .containsExactly(asList(1), "bar", asList(1, 2, 3), "foo")
         .inOrder();
     assertThat(table.get(asList(1, 2, 3))).hasValue("foo");

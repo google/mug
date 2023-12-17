@@ -267,7 +267,7 @@ public final class DateTimeFormats {
 
       int consumed =
           PREFIX_TABLE
-              .search(remaining)
+              .getAll(remaining)
               .collect(maxByKey(comparingInt(List::size)))
               .map(
                   (prefix, fmt) -> {
