@@ -403,7 +403,7 @@ public final class DateTimeFormats {
 
     private final Set<String> names;
 
-    Token(String... names) {
+    private Token(String... names) {
       this.names = new HashSet<String>(asList(names));
     }
   }
