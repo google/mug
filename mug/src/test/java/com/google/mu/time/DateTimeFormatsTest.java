@@ -179,7 +179,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void formatOf_mmddyyMixedIn() {
-    DateTimeFormatter formatter = formatOf("MM/dd/yyyy {12:10:00} {America/New_York}");
+    DateTimeFormatter formatter = formatOf("MM/dd/yyyy <12:10:00> <America/New_York>");
     ZonedDateTime zonedTime =
         ZonedDateTime.of(LocalDateTime.of(2023, 10, 20, 1, 2, 3), ZoneId.of("America/Los_Angeles"));
     assertThat(zonedTime.format(formatter)).isEqualTo("10/20/2023 01:02:03 America/Los_Angeles");
@@ -187,7 +187,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void formatOf_ddmmyyMixedIn() {
-    DateTimeFormatter formatter = formatOf("dd MM yyyy {12:10:00  America/New_York}");
+    DateTimeFormatter formatter = formatOf("dd MM yyyy <12:10:00  America/New_York>");
     ZonedDateTime zonedTime =
         ZonedDateTime.of(LocalDateTime.of(2023, 10, 20, 1, 2, 3), ZoneId.of("America/Los_Angeles"));
     assertThat(zonedTime.format(formatter)).isEqualTo("20 10 2023 01:02:03  America/Los_Angeles");
@@ -195,7 +195,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void formatOf_monthOfYearMixedIn() {
-    DateTimeFormatter formatter = formatOf("E, LLL dd yyyy {12:10:00 America/New_York}");
+    DateTimeFormatter formatter = formatOf("E, LLL dd yyyy <12:10:00 America/New_York>");
     ZonedDateTime zonedTime =
         ZonedDateTime.of(LocalDateTime.of(2023, 10, 20, 1, 2, 3), ZoneId.of("America/Los_Angeles"));
     assertEquivalent(formatter, zonedTime, "E, LLL dd yyyy HH:mm:ss VV");
@@ -205,7 +205,7 @@ public final class DateTimeFormatsTest {
   public void formatOf_fullWeekdayAndMonthNamePlaceholder() {
     ZonedDateTime zonedTime =
         ZonedDateTime.of(LocalDateTime.of(2023, 10, 20, 1, 2, 3), ZoneId.of("America/Los_Angeles"));
-    DateTimeFormatter formatter = formatOf("{Tuesday}, {May} dd yyyy {12:10:00} {+08:00} {America/New_York}");
+    DateTimeFormatter formatter = formatOf("<Tuesday>, <May> dd yyyy <12:10:00> <+08:00> <America/New_York>");
     assertEquivalent(formatter, zonedTime, "EEEE, LLLL dd yyyy HH:mm:ss ZZZZZ VV");
   }
 
@@ -213,13 +213,13 @@ public final class DateTimeFormatsTest {
   public void formatOf_12HourFormat() {
     ZonedDateTime zonedTime =
         ZonedDateTime.of(LocalDateTime.of(2023, 10, 20, 1, 2, 3), ZoneId.of("America/Los_Angeles"));
-    DateTimeFormatter formatter = formatOf("dd MM yyyy {ad} hh:mm {pm} {+08:00}");
+    DateTimeFormatter formatter = formatOf("dd MM yyyy <ad> hh:mm <pm> <+08:00>");
     assertThat(zonedTime.format(formatter)).isEqualTo("20 10 2023 AD 01:02 AM -07:00");
   }
 
   @Test
   public void formatOf_zoneNameNotRetranslated() {
-    DateTimeFormatter formatter = formatOf("{Mon}, {Jan} dd yyyy {12:10:00} VV");
+    DateTimeFormatter formatter = formatOf("<Mon>, <Jan> dd yyyy <12:10:00> VV");
     ZonedDateTime zonedTime =
         ZonedDateTime.of(LocalDateTime.of(2023, 10, 20, 1, 2, 3), ZoneId.of("America/Los_Angeles"));
     assertEquivalent(formatter, zonedTime, "E, LLL dd yyyy HH:mm:ss VV");
@@ -227,7 +227,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void formatOf_zoneOffsetNotRetranslated() {
-    DateTimeFormatter formatter = formatOf("E, LLL dd yyyy {12:10:00} zzzz");
+    DateTimeFormatter formatter = formatOf("E, LLL dd yyyy <12:10:00> zzzz");
     ZonedDateTime zonedTime =
         ZonedDateTime.of(LocalDateTime.of(2023, 10, 20, 1, 2, 3), ZoneId.of("America/Los_Angeles"));
     assertEquivalent(formatter, zonedTime, "E, LLL dd yyyy HH:mm:ss zzzz");
@@ -235,7 +235,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void formatOf_monthOfYearMixedIn_withDayOfWeek() {
-    DateTimeFormatter formatter = formatOf("E, LLL dd yyyy {12:10:00} {America/New_York}");
+    DateTimeFormatter formatter = formatOf("E, LLL dd yyyy <12:10:00> <America/New_York>");
     ZonedDateTime zonedTime =
         ZonedDateTime.of(LocalDateTime.of(2023, 10, 20, 1, 2, 3), ZoneId.of("America/Los_Angeles"));
     assertEquivalent(formatter, zonedTime, "E, LLL dd yyyy HH:mm:ss VV");
@@ -414,7 +414,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void timeZoneMixedIn_zeroOffset() {
-    DateTimeFormatter formatter = DateTimeFormats.inferFromExample("M dd yyyy HH:mm:ss{Z}");
+    DateTimeFormatter formatter = DateTimeFormats.inferFromExample("M dd yyyy HH:mm:ss<Z>");
     ZonedDateTime dateTime = ZonedDateTime.parse("1 10 2023 10:20:30Z", formatter);
     assertThat(dateTime)
         .isEqualTo(ZonedDateTime.of(LocalDateTime.of(2023, 1, 10, 10, 20, 30, 0), ZoneOffset.UTC));
@@ -422,7 +422,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void timeZoneMixedIn_offsetWithoutColon() {
-    DateTimeFormatter formatter = DateTimeFormats.inferFromExample("MM dd yyyy HH:mm:ss{+0100}");
+    DateTimeFormatter formatter = DateTimeFormats.inferFromExample("MM dd yyyy HH:mm:ss<+0100>");
     ZonedDateTime dateTime = ZonedDateTime.parse("01 10 2023 10:20:30-0800", formatter);
     assertThat(dateTime)
         .isEqualTo(
@@ -431,7 +431,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void timeZoneMixedIn_hourOffset() {
-    DateTimeFormatter formatter = DateTimeFormats.inferFromExample("M dd yyyy HH:mm:ss{+01}");
+    DateTimeFormatter formatter = DateTimeFormats.inferFromExample("M dd yyyy HH:mm:ss<+01>");
     ZonedDateTime dateTime = ZonedDateTime.parse("1 10 2023 10:20:30-08", formatter);
     assertThat(dateTime)
         .isEqualTo(
@@ -440,7 +440,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void timeZoneMixedIn_offsetWithColon() {
-    DateTimeFormatter formatter = DateTimeFormats.inferFromExample("M dd yyyy HH:mm:ss{-01:00}");
+    DateTimeFormatter formatter = DateTimeFormats.inferFromExample("M dd yyyy HH:mm:ss<-01:00>");
     ZonedDateTime dateTime = ZonedDateTime.parse("1 10 2023 10:20:30-08:00", formatter);
     assertThat(dateTime)
         .isEqualTo(
@@ -450,7 +450,7 @@ public final class DateTimeFormatsTest {
   @Test
   public void timeZoneMixedIn_zoneNameWithEuropeDateStyle() {
     DateTimeFormatter formatter =
-        DateTimeFormats.inferFromExample("dd MM yyyy HH:mm:ss.SSS {America/New_York}");
+        DateTimeFormats.inferFromExample("dd MM yyyy HH:mm:ss.SSS <America/New_York>");
     ZonedDateTime dateTime = ZonedDateTime.parse("30 10 2023 10:20:30.123 Europe/Paris", formatter);
     assertThat(dateTime)
         .isEqualTo(
@@ -460,7 +460,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void timeZoneMixedIn_offsetWithAmericanDateStyle() {
-    DateTimeFormatter formatter = DateTimeFormats.inferFromExample("M dd yyyy HH:mm:ss{+01:00}");
+    DateTimeFormatter formatter = DateTimeFormats.inferFromExample("M dd yyyy HH:mm:ss<+01:00>");
     ZonedDateTime dateTime = ZonedDateTime.parse("1 10 2023 10:20:30-07:00", formatter);
     assertThat(dateTime)
         .isEqualTo(
@@ -469,7 +469,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void timeZoneMixedIn_twoLetterZoneNameAbbreviation() {
-    DateTimeFormatter formatter = DateTimeFormats.inferFromExample("M dd yyyy HH:mm:ss{PT}");
+    DateTimeFormatter formatter = DateTimeFormats.inferFromExample("M dd yyyy HH:mm:ss<PT>");
     ZonedDateTime dateTime = ZonedDateTime.parse("1 10 2023 10:20:30PT", formatter);
     assertThat(dateTime)
         .isEqualTo(
@@ -479,7 +479,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void timeZoneMixedIn_fourLetterZoneNameAbbreviation() {
-    DateTimeFormatter formatter = DateTimeFormats.inferFromExample("M dd yyyy HH:mm:ss{CAST}");
+    DateTimeFormatter formatter = DateTimeFormats.inferFromExample("M dd yyyy HH:mm:ss<CAST>");
     ZonedDateTime dateTime = ZonedDateTime.parse("1 10 2023 10:20:30CAST", formatter);
     assertThat(dateTime.toLocalDateTime())
         .isEqualTo(LocalDateTime.of(2023, 1, 10, 10, 20, 30, 0));
@@ -487,7 +487,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void timeZoneMixedIn_abbreviatedZoneName() {
-    DateTimeFormatter formatter = DateTimeFormats.inferFromExample("MM dd yyyy HH:mm:ss{GMT}");
+    DateTimeFormatter formatter = DateTimeFormats.inferFromExample("MM dd yyyy HH:mm:ss<GMT>");
     ZonedDateTime dateTime = ZonedDateTime.parse("01 10 2023 10:20:30PST", formatter);
     assertThat(dateTime)
         .isEqualTo(
@@ -498,7 +498,7 @@ public final class DateTimeFormatsTest {
   @Test
   public void timeZoneMixedIn_twoWordsZoneName() {
     DateTimeFormatter formatter =
-        DateTimeFormats.inferFromExample("M dd yyyy HH:mm:ss {Eastern Time}");
+        DateTimeFormats.inferFromExample("M dd yyyy HH:mm:ss <Eastern Time>");
     ZonedDateTime dateTime =
         ZonedDateTime.parse("1 10 2023 10:20:30 Eastern Standard Time", formatter);
     assertThat(dateTime)
@@ -510,7 +510,7 @@ public final class DateTimeFormatsTest {
   @Test
   public void timeZoneMixedIn_threeWordsZoneName() {
     DateTimeFormatter formatter =
-        DateTimeFormats.inferFromExample("M dd yyyy HH:mm:ss {Zulu Time Zone}");
+        DateTimeFormats.inferFromExample("M dd yyyy HH:mm:ss <Zulu Time Zone>");
     ZonedDateTime dateTime =
         ZonedDateTime.parse("1 10 2023 10:20:30 Eastern Standard Time", formatter);
     assertThat(dateTime)
@@ -522,7 +522,7 @@ public final class DateTimeFormatsTest {
   @Test
   public void timeZoneMixedIn_fourWordsZoneName() {
     DateTimeFormatter formatter =
-        DateTimeFormats.inferFromExample("M dd yyyy HH:mm:ss {Eastern European Summer Time}");
+        DateTimeFormats.inferFromExample("M dd yyyy HH:mm:ss <Eastern European Summer Time>");
     ZonedDateTime dateTime =
         ZonedDateTime.parse("1 10 2023 10:20:30 Eastern Standard Time", formatter);
     assertThat(dateTime)
@@ -535,7 +535,7 @@ public final class DateTimeFormatsTest {
   public void timeZoneMixedIn_fiveWordsZoneName() {
     DateTimeFormatter formatter =
         DateTimeFormats.inferFromExample(
-            "M dd yyyy HH:mm:ss {French Southern and Antarctic Time}");
+            "M dd yyyy HH:mm:ss <French Southern and Antarctic Time>");
     ZonedDateTime dateTime =
         ZonedDateTime.parse("1 10 2023 10:20:30 Eastern Standard Time", formatter);
     assertThat(dateTime)
@@ -547,7 +547,7 @@ public final class DateTimeFormatsTest {
   @Test
   public void timeZoneMixedIn_zoneNameWithDash() {
     DateTimeFormatter formatter =
-        DateTimeFormats.inferFromExample("M dd yyyy HH:mm:ss {Further-Eastern European Time}");
+        DateTimeFormats.inferFromExample("M dd yyyy HH:mm:ss <Further-Eastern European Time>");
     ZonedDateTime dateTime =
         ZonedDateTime.parse("1 10 2023 10:20:30 Eastern Standard Time", formatter);
     assertThat(dateTime)
@@ -559,7 +559,7 @@ public final class DateTimeFormatsTest {
   @Test
   public void timeZoneMixedIn_zoneNameWithApostrophe() {
     DateTimeFormatter formatter =
-        DateTimeFormats.inferFromExample("M dd yyyy HH:mm:ss {Dumont-d'Urville Time}");
+        DateTimeFormats.inferFromExample("M dd yyyy HH:mm:ss <Dumont-d'Urville Time>");
     ZonedDateTime dateTime = ZonedDateTime.parse("1 10 2023 10:20:30 Eastern Time", formatter);
     assertThat(dateTime)
         .isEqualTo(
@@ -573,6 +573,32 @@ public final class DateTimeFormatsTest {
         IllegalArgumentException.class, () -> DateTimeFormats.inferDateTimePattern("1234"));
     assertThrows(
         IllegalArgumentException.class, () -> DateTimeFormats.inferDateTimePattern("12:34:5"));
+  }
+
+  @Test
+  public void emptyExample_disallowed() {
+    assertThrows(IllegalArgumentException.class, () -> formatOf(""));
+  }
+
+  @Test
+  public void exampleWithOnlySpaces_disallowed() {
+    assertThrows(IllegalArgumentException.class, () -> formatOf("  "));
+  }
+
+  @Test
+  public void exampleWithOnlyPunctuations_disallowed() {
+    assertThrows(IllegalArgumentException.class, () -> formatOf("/"));
+  }
+
+  @Test
+  public void exampleWithOnlyNumbers_disallowed() {
+    assertThrows(IllegalArgumentException.class, () -> formatOf("1234"));
+  }
+
+  @Test
+  public void exampleWithOnlyWords_disallowed() {
+    assertThrows(IllegalArgumentException.class, () -> formatOf("yyyy"));
+    assertThrows(IllegalArgumentException.class, () -> formatOf("America"));
   }
 
   private static ComparableSubject<LocalDateTime> assertLocalDateTime(

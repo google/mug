@@ -75,7 +75,7 @@ import com.google.mu.util.stream.BiStream;
  *
  * <p>If the variant of the date time pattern you need exceeds the out-of-box support, you can
  * explicitly mix the {@link DateTimeFormatter} specifiers with example placeholders
- * (between a pair of curly braces) to be translated.
+ * (between a pair of pointy brackets) to be translated.
  *
  * <p>For example the following code uses the {@code dd}, {@code MM} and {@code yyyy} specifiers as
  * is but translates the {@code Tue} and {@code America/New_York} example snippets into {@code E}
@@ -84,7 +84,7 @@ import com.google.mu.util.stream.BiStream;
  *
  * <pre>{@code
  * private static final DateTimeFormatter FORMATTER =
- *     formatOf("{Tue}, dd MM yyyy HH:mm:ss.SSS {America/New_York}");
+ *     formatOf("<Tue>, dd MM yyyy HH:mm:ss.SSS <America/New_York>");
  * }</pre>
  *
  * @since 7.1
@@ -100,9 +100,14 @@ public final class DateTimeFormats {
   /** Punctuation chars, such as '/', ':', '-' are essential part of the pattern syntax. */
   private static final CharPredicate PUNCTUATION = DIGIT.or(ALPHA).or(DELIMITER).not();
 
+  private static final Substring.RepeatingPattern TOKENIZER =
+      Stream.of(consecutive(DIGIT), consecutive(ALPHA), first(PUNCTUATION))
+          .collect(firstOccurrence())
+          .repeatedly();
+
   private static final Substring.RepeatingPattern PLACEHOLDERS =
-      Substring.consecutive(CharPredicate.noneOf("{}"))
-          .immediatelyBetween("{", Substring.BoundStyle.INCLUSIVE, "}", INCLUSIVE)
+      Substring.consecutive(CharPredicate.noneOf("<>"))
+          .immediatelyBetween("<", Substring.BoundStyle.INCLUSIVE, ">", INCLUSIVE)
           .repeatedly();
   private static final Map<List<?>, DateTimeFormatter> ISO_DATE_FORMATTERS =
       BiStream.of(
@@ -253,15 +258,16 @@ public final class DateTimeFormats {
   }
 
   private static String inferDateTimePattern(String example, List<?> signature) {
-    int matched = 0;
+    boolean matched = false;
+    int index = 0;
     StringBuilder builder = new StringBuilder();
     for (List<?> remaining = signature;
         remaining.size() > 0;
-        remaining = signature.subList(matched, signature.size())) {
+        remaining = signature.subList(index, signature.size())) {
       Object head = remaining.get(0);
       if (head instanceof String && DELIMITER.matchesAllOf((String) head)) {
         builder.append(head);
-        matched++;
+        index++;
         continue;
       }
 
@@ -278,7 +284,11 @@ public final class DateTimeFormats {
       if (consumed <= 0) {
         throw new IllegalArgumentException("unsupported date time example: " + example);
       }
-      matched += consumed;
+      index += consumed;
+      matched = true;
+    }
+    if (!matched) {
+      throw new IllegalArgumentException("unsupported date time example: " + example);
     }
     return builder.toString();
   }
@@ -297,9 +307,7 @@ public final class DateTimeFormats {
    * signature lists being: {@code [2, :, 2]} and {@code [2, :, 2, :, 2]} respectively.
    */
   private static List<?> forExample(String example) {
-    return Stream.of(consecutive(DIGIT), consecutive(ALPHA), first(PUNCTUATION))
-        .collect(firstOccurrence())
-        .repeatedly()
+    return TOKENIZER
         .cut(example)
         .filter(Substring.Match::isNotEmpty)
         .map(
@@ -395,7 +403,7 @@ public final class DateTimeFormats {
 
     private final Set<String> names;
 
-    Token(String... names) {
+    private Token(String... names) {
       this.names = new HashSet<String>(asList(names));
     }
   }
