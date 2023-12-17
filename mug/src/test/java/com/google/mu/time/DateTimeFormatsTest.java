@@ -576,26 +576,31 @@ public final class DateTimeFormatsTest {
   }
 
   @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
   public void emptyExample_disallowed() {
     assertThrows(IllegalArgumentException.class, () -> formatOf(""));
   }
 
   @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
   public void exampleWithOnlySpaces_disallowed() {
     assertThrows(IllegalArgumentException.class, () -> formatOf("  "));
   }
 
   @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
   public void exampleWithOnlyPunctuations_disallowed() {
     assertThrows(IllegalArgumentException.class, () -> formatOf("/"));
   }
 
   @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
   public void exampleWithOnlyNumbers_disallowed() {
     assertThrows(IllegalArgumentException.class, () -> formatOf("1234"));
   }
 
   @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
   public void exampleWithOnlyWords_disallowed() {
     assertThrows(IllegalArgumentException.class, () -> formatOf("yyyy"));
     assertThrows(IllegalArgumentException.class, () -> formatOf("America"));
