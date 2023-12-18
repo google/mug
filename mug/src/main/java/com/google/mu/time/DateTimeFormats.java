@@ -172,14 +172,6 @@ public final class DateTimeFormats {
           .add(forExample("10:15:30.123456789"), "HH:mm:ss.SSSSSSSSS")
           .add(forExample("America/Los_Angeles"), "VV")
           .add(forExample("PST"), "zzz")
-          .add(forExample("Central Time"), "zzzz")
-          .add(forExample("Alma-Ata Time"), "zzzz")
-          .add(forExample("Hawaii-Aleutian Daylight Time"), "zzzz")
-          .add(forExample("Dumont-d'Urville Time"), "zzzz")
-          .add(forExample("Pacific Standard Time"), "zzzz")
-          .add(forExample("Easter Island Standard Time"), "zzzz")
-          .add(forExample("Australian Central Western Standard Time"), "zzzz")
-          .add(forExample("Pierre & Miquelon Daylight Time"), "zzzz")
           .add(forExample("Z"), "X")
           .add(forExample("-08"), "x")
           .add(forExample("+0800"), "ZZ")
@@ -394,6 +386,44 @@ public final class DateTimeFormats {
         "YEKT", "YET", "YKT", "YST"),
     ZONE_CODES("VV", "z", "zz", "zzz", "zzzz", "ZZ", "ZZZ", "ZZZZ", "ZZZZZ", "x", "X", "O", "OOOO"),
     ZERO_OFFSET("Z"),
+    REGION(
+        "Africa",
+        "America",
+        "Antarctica",
+        "Arctic",
+        "Asia",
+        "Atlantic",
+        "Australia",
+        "Brazil",
+        "Canada",
+        "Chile",
+        "Cuba",
+        "Egypt",
+        "Eire",
+        "Europe",
+        "GB",
+        "Greenwich",
+        "Hongkong",
+        "Iceland",
+        "Indian",
+        "Iran",
+        "Israel",
+        "Jamaica",
+        "Japan",
+        "Kwajalein",
+        "Libya",
+        "Mexico",
+        "Mideast",
+        "Navajo",
+        "Pacific",
+        "Poland",
+        "Portugal",
+        "Singapore",
+        "SystemV",
+        "Turkey",
+        "US",
+        "Universal",
+        "Zulu"),
     WORD;
 
     static final Map<String, Token> ALL =

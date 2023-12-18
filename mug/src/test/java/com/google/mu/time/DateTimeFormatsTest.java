@@ -327,7 +327,6 @@ public final class DateTimeFormatsTest {
             "yyyy/MM/dd HH:mm:sszz",
             "yyyy/MM/dd HH:mm:sszzz",
             "yyyy/MM/dd HH:mm:ssz",
-            "yyyy/MM/dd HH:mm:sszzzz",
           })
           String formatterName,
       @TestParameter({
@@ -496,78 +495,6 @@ public final class DateTimeFormatsTest {
   }
 
   @Test
-  public void timeZoneMixedIn_twoWordsZoneName() {
-    DateTimeFormatter formatter =
-        DateTimeFormats.inferFromExample("M dd yyyy HH:mm:ss <Eastern Time>");
-    ZonedDateTime dateTime =
-        ZonedDateTime.parse("1 10 2023 10:20:30 Eastern Standard Time", formatter);
-    assertThat(dateTime)
-        .isEqualTo(
-            ZonedDateTime.of(
-                LocalDateTime.of(2023, 1, 10, 10, 20, 30, 0), ZoneId.of("America/New_York")));
-  }
-
-  @Test
-  public void timeZoneMixedIn_threeWordsZoneName() {
-    DateTimeFormatter formatter =
-        DateTimeFormats.inferFromExample("M dd yyyy HH:mm:ss <Zulu Time Zone>");
-    ZonedDateTime dateTime =
-        ZonedDateTime.parse("1 10 2023 10:20:30 Eastern Standard Time", formatter);
-    assertThat(dateTime)
-        .isEqualTo(
-            ZonedDateTime.of(
-                LocalDateTime.of(2023, 1, 10, 10, 20, 30, 0), ZoneId.of("America/New_York")));
-  }
-
-  @Test
-  public void timeZoneMixedIn_fourWordsZoneName() {
-    DateTimeFormatter formatter =
-        DateTimeFormats.inferFromExample("M dd yyyy HH:mm:ss <Eastern European Summer Time>");
-    ZonedDateTime dateTime =
-        ZonedDateTime.parse("1 10 2023 10:20:30 Eastern Standard Time", formatter);
-    assertThat(dateTime)
-        .isEqualTo(
-            ZonedDateTime.of(
-                LocalDateTime.of(2023, 1, 10, 10, 20, 30, 0), ZoneId.of("America/New_York")));
-  }
-
-  @Test
-  public void timeZoneMixedIn_fiveWordsZoneName() {
-    DateTimeFormatter formatter =
-        DateTimeFormats.inferFromExample(
-            "M dd yyyy HH:mm:ss <French Southern and Antarctic Time>");
-    ZonedDateTime dateTime =
-        ZonedDateTime.parse("1 10 2023 10:20:30 Eastern Standard Time", formatter);
-    assertThat(dateTime)
-        .isEqualTo(
-            ZonedDateTime.of(
-                LocalDateTime.of(2023, 1, 10, 10, 20, 30, 0), ZoneId.of("America/New_York")));
-  }
-
-  @Test
-  public void timeZoneMixedIn_zoneNameWithDash() {
-    DateTimeFormatter formatter =
-        DateTimeFormats.inferFromExample("M dd yyyy HH:mm:ss <Further-Eastern European Time>");
-    ZonedDateTime dateTime =
-        ZonedDateTime.parse("1 10 2023 10:20:30 Eastern Standard Time", formatter);
-    assertThat(dateTime)
-        .isEqualTo(
-            ZonedDateTime.of(
-                LocalDateTime.of(2023, 1, 10, 10, 20, 30, 0), ZoneId.of("America/New_York")));
-  }
-
-  @Test
-  public void timeZoneMixedIn_zoneNameWithApostrophe() {
-    DateTimeFormatter formatter =
-        DateTimeFormats.inferFromExample("M dd yyyy HH:mm:ss <Dumont-d'Urville Time>");
-    ZonedDateTime dateTime = ZonedDateTime.parse("1 10 2023 10:20:30 Eastern Time", formatter);
-    assertThat(dateTime)
-        .isEqualTo(
-            ZonedDateTime.of(
-                LocalDateTime.of(2023, 1, 10, 10, 20, 30, 0), ZoneId.of("America/New_York")));
-  }
-
-  @Test
   public void timeZoneMixedIn_unsupportedZoneSpec() {
     assertThrows(
         IllegalArgumentException.class, () -> DateTimeFormats.inferDateTimePattern("1234"));
@@ -604,6 +531,13 @@ public final class DateTimeFormatsTest {
   public void exampleWithOnlyWords_disallowed() {
     assertThrows(IllegalArgumentException.class, () -> formatOf("yyyy"));
     assertThrows(IllegalArgumentException.class, () -> formatOf("America"));
+  }
+
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void typoInExample() {
+    assertThrows(
+        IllegalArgumentException.class, () -> formatOf("<Febuary Wedenesday>, <2021/20/30>"));
   }
 
   private static ComparableSubject<LocalDateTime> assertLocalDateTime(
