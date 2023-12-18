@@ -113,7 +113,8 @@ public final class DateTimeFormats {
       BiStream.of(
           forExample("20111203"), DateTimeFormatter.BASIC_ISO_DATE,
           forExample("2011-12-03"), DateTimeFormatter.ISO_LOCAL_DATE,
-          forExample("2011-12-03+08:00"), DateTimeFormatter.ISO_DATE).toMap();
+          forExample("2011-12-03+08:00"), DateTimeFormatter.ISO_DATE,
+          forExample("2011-12-03-08:00"), DateTimeFormatter.ISO_DATE).toMap();
 
   /** These ISO formats all support optional nanoseconds in the format of ".nnnnnnnnn". */
   private static final Map<List<?>, DateTimeFormatter> ISO_DATE_TIME_FORMATTERS =
@@ -122,7 +123,9 @@ public final class DateTimeFormats {
           forExample("10:00:00+00:00"), DateTimeFormatter.ISO_TIME,
           forExample("2011-12-03T10:15:30"), DateTimeFormatter.ISO_LOCAL_DATE_TIME,
           forExample("2011-12-03T10:15:30+01:00"), DateTimeFormatter.ISO_DATE_TIME,
+          forExample("2011-12-03T10:15:30-01:00"), DateTimeFormatter.ISO_DATE_TIME,
           forExample("2011-12-03T10:15:30+01:00[Europe/Paris]"), DateTimeFormatter.ISO_DATE_TIME,
+          forExample("2011-12-03T10:15:30-01:00[Europe/Paris]"), DateTimeFormatter.ISO_DATE_TIME,
           forExample("2011-12-03T10:15:30Z"), DateTimeFormatter.ISO_INSTANT).toMap();
 
   /** The day-of-week part is optional; the day-of-month can be 1 or 2 digits. */
@@ -133,7 +136,9 @@ public final class DateTimeFormats {
               "1 Jun 2008 11:05:30 GMT",
               "10 Jun 2008 11:05:30 GMT",
               "Tue, 1 Jun 2008 11:05:30 +0800",
+              "Tue, 1 Jun 2008 11:05:30 -0800",
               "Tue, 10 Jun 2008 11:05:30 +0800",
+              "Tue, 10 Jun 2008 11:05:30 -0800",
               "1 Jun 2008 11:05:30 +0800",
               "10 Jun 2008 11:05:30 +0800")
           .collect(
@@ -174,12 +179,18 @@ public final class DateTimeFormats {
           .add(forExample("PST"), "zzz")
           .add(forExample("PT"), "zzz") // In Java 21 it can be "v"
           .add(forExample("Z"), "X")
+          .add(forExample("+08"), "x")
           .add(forExample("-08"), "x")
           .add(forExample("+0800"), "ZZ")
+          .add(forExample("-0800"), "ZZ")
           .add(forExample("+08:00"), "ZZZZZ")
+          .add(forExample("-08:00"), "ZZZZZ")
           .add(forExample("GMT+8"), "O")
+          .add(forExample("GMT-8"), "O")
           .add(forExample("GMT+12"), "O")
+          .add(forExample("GMT-12"), "O")
           .add(forExample("GMT+08:00"), "OOOO")
+          .add(forExample("GMT-08:00"), "OOOO")
           .add(forExample("Fri"), "E")
           .add(forExample("Friday"), "EEEE")
           .add(forExample("Jan"), "LLL")
@@ -309,24 +320,14 @@ public final class DateTimeFormats {
                 return match.length(); // the number of digits in the example matter
               }
               String name = match.toString();
-              if (PUNCTUATION.matchesAnyOf(name)) {
-                // A punctuation that must be matched literally.
-                // But + and - are interchangeable (as example) in timezone spec.
-                return name.replace('+', '-');
-              }
-              if (DELIMITER.matchesAnyOf(name)) {
-                // whitespaces are treated as is and will be ignored from prefix pattern matching
-                return name;
-              }
-              // Keyword equivalences are grouped by their pre-defined mappings.
-              // Differentiating known keywords to avoid matching apples as oranges.
-              // Single-letter words are reserved as format specifiers.
-              // Multi-letter unreserved words can be timezone names.
               Token token = Token.ALL.get(name);
               if (token != null) {
                 return token;
               }
-              return name.length() == 1 ? name : Token.WORD;
+              // Single-letter (including all punctuations) are reserved as format specifiers.
+              // Spaces and delimiters are ignored during prefix matching and retained literally.
+              // Unrecognized words are considered equivalent as they may be zone or geo names.
+              return name.length() == 1 || DELIMITER.matchesAnyOf(name) ? name : Token.WORD;
             })
         .collect(toList());
   }
@@ -364,10 +365,8 @@ public final class DateTimeFormats {
     HOUR_CODES("HH", "hh"),
     MINUTE_CODES("mm"),
     SECOND_CODES("ss"),
-    AM_OR_PM("am", "pm", "AM", "PM"),
-    AM_PM_CODES("a"),
-    AD_OR_BC("ad", "bc", "AD", "BC"),
-    AD_BC_CODES("G"),
+    AM_PM("am", "pm", "AM", "PM"),
+    AD_BC("ad", "bc", "AD", "BC"),
     GENERIC_ZONE_NAME(
         "AT", "BT", "CT", "DT", "ET", "FT", "GT", "HT", "IT", "JT", "KT", "LT", "MT", "NT", "OT",
         "PT", "QT", "RT", "ST", "TT", "UT", "VT", "WT", "XT", "YT", "ZT"),
@@ -388,7 +387,6 @@ public final class DateTimeFormats {
         "WAKT", "WAST", "WAT", "WEDT", "WEST", "WET", "WIB", "WIT", "WITA", "WST", "YAKT", "YEKT",
         "YET", "YKT", "YST"),
     ZONE_CODES("VV", "z", "zz", "zzz", "zzzz", "ZZ", "ZZZ", "ZZZZ", "ZZZZZ", "x", "X", "O", "OOOO"),
-    ZERO_OFFSET("Z"),
     REGION(
         "Africa",
         "America",
