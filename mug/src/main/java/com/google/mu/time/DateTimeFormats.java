@@ -172,6 +172,7 @@ public final class DateTimeFormats {
           .add(forExample("10:15:30.123456789"), "HH:mm:ss.SSSSSSSSS")
           .add(forExample("America/Los_Angeles"), "VV")
           .add(forExample("PST"), "zzz")
+          .add(forExample("PT"), "zzz") // In Java 21 it can be "v"
           .add(forExample("Z"), "X")
           .add(forExample("-08"), "x")
           .add(forExample("+0800"), "ZZ")
@@ -367,23 +368,25 @@ public final class DateTimeFormats {
     AM_PM_CODES("a"),
     AD_OR_BC("ad", "bc", "AD", "BC"),
     AD_BC_CODES("G"),
-    ZONE_ABBREVIATION(
+    GENERIC_ZONE_NAME(
+        "AT", "BT", "CT", "DT", "ET", "FT", "GT", "HT", "IT", "JT", "KT", "LT", "MT", "NT", "OT",
+        "PT", "QT", "RT", "ST", "TT", "UT", "VT", "WT", "XT", "YT", "ZT"),
+    ZONE_NAME(
         "ACDT", "ACST", "ACT", "ADT", "AEDT", "AEST", "AET", "AFT", "AKDT", "AKST", "AKT", "AMST",
-        "AST", "AT", "AWDT", "AWST", "AWT", "AZOST", "AZT", "BDT", "BET", "BIOT", "BRT", "BST",
-        "BT", "BTT", "CAST", "CAT", "CCT", "CDT", "CEDT", "CEST", "CET", "CHADT", "CHAST", "CHOST",
-        "CHOT", "CHUT", "CIST", "CIT", "CKT", "CLST", "CLT", "CST", "CT", "CVT", "CWST", "CXT",
-        "ChST", "DAVT", "DDUT", "DFT", "DUT", "EASST", "EAT", "ECT", "EDT", "EEDT", "EEST", "EET",
-        "EGST", "EGT", "EIT", "EST", "ET", "FET", "FJT", "FKST", "FKT", "FNT", "GALT", "GAMT",
-        "GFT", "GMT", "GST", "GT", "GYT", "HADT", "HAEC", "HAST", "HDT", "HKT", "HMT", "HOVT",
-        "HST", "HT", "ICT", "IDT", "IOT", "IRDT", "IRKT", "IRST", "IST", "IT", "JST", "JT", "KGT",
-        "KOST", "KRAT", "KST", "KT", "LHST", "LINT", "MAGT", "MAWT", "MDT", "MEST", "MET", "MHT",
-        "MMT", "MSK", "MST", "MT", "MUT", "MVT", "MYT", "NCT", "NDT", "NFT", "NPT", "NST", "NT",
-        "NUT", "NZDT", "NZST", "NZT", "OMST", "ORAT", "PDT", "PETT", "PGT", "PHOT", "PHT", "PKT",
-        "PMDT", "PMST", "PONT", "PST", "PT", "RET", "ROTT", "SAKT", "SAMT", "SAST", "SBT", "SCT",
-        "SGT", "SLT", "SRT", "SST", "ST", "SYOT", "TAHT", "TFT", "THA", "TJT", "TKT", "TLT", "TMT",
-        "TVT", "UCT", "ULAT", "UT", "UTC", "UYST", "UYT", "UZT", "VLAT", "VOLT", "VOST", "VUT",
-        "WAKT", "WAST", "WAT", "WEDT", "WEST", "WET", "WIB", "WIT", "WITA", "WST", "WT", "YAKT",
-        "YEKT", "YET", "YKT", "YST"),
+        "AST", "AWDT", "AWST", "AWT", "AZOST", "AZT", "BDT", "BET", "BIOT", "BRT", "BST", "BTT",
+        "CAST", "CAT", "CCT", "CDT", "CEDT", "CEST", "CET", "CHADT", "CHAST", "CHOST", "CHOT",
+        "CHUT", "CIST", "CIT", "CKT", "CLST", "CLT", "CST", "CVT", "CWST", "CXT", "ChST", "DAVT",
+        "DDUT", "DFT", "DUT", "EASST", "EAT", "ECT", "EDT", "EEDT", "EEST", "EET", "EGST", "EGT",
+        "EIT", "EST", "FET", "FJT", "FKST", "FKT", "FNT", "GALT", "GAMT", "GFT", "GMT", "GST",
+        "GYT", "HADT", "HAEC", "HAST", "HDT", "HKT", "HMT", "HOVT", "HST", "ICT", "IDT", "IOT",
+        "IRDT", "IRKT", "IRST", "IST", "JST", "KGT", "KOST", "KRAT", "KST", "LHST", "LINT", "MAGT",
+        "MAWT", "MDT", "MEST", "MET", "MHT", "MMT", "MSK", "MST", "MUT", "MVT", "MYT", "NCT", "NDT",
+        "NFT", "NPT", "NST", "NUT", "NZDT", "NZST", "NZT", "OMST", "ORAT", "PDT", "PETT", "PGT",
+        "PHOT", "PHT", "PKT", "PMDT", "PMST", "PONT", "PST", "RET", "ROTT", "SAKT", "SAMT", "SAST",
+        "SBT", "SCT", "SGT", "SLT", "SRT", "SST", "SYOT", "TAHT", "TFT", "THA", "TJT", "TKT", "TLT",
+        "TMT", "TVT", "UCT", "ULAT", "UTC", "UYST", "UYT", "UZT", "VLAT", "VOLT", "VOST", "VUT",
+        "WAKT", "WAST", "WAT", "WEDT", "WEST", "WET", "WIB", "WIT", "WITA", "WST", "YAKT", "YEKT",
+        "YET", "YKT", "YST"),
     ZONE_CODES("VV", "z", "zz", "zzz", "zzzz", "ZZ", "ZZZ", "ZZZZ", "ZZZZZ", "x", "X", "O", "OOOO"),
     ZERO_OFFSET("Z"),
     REGION(
