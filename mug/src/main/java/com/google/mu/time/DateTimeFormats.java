@@ -16,6 +16,7 @@ package com.google.mu.time;
 
 import static com.google.mu.util.CharPredicate.anyOf;
 import static com.google.mu.util.CharPredicate.is;
+import static com.google.mu.util.CharPredicate.noneOf;
 import static com.google.mu.util.Substring.consecutive;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.firstOccurrence;
@@ -61,8 +62,8 @@ import com.google.mu.util.stream.BiStream;
  *     DateTimeFormats.formatOf("2023/12/09 Sat 10:00+08:00");
  * }</pre>
  *
- * <p>Most ISO 8601 formats are supported, except ISO_WEEK_DATE ('2012-W48-6') and ISO_ORDINAL_DATE
- * ('2012-337').
+ * <p>Most ISO 8601 formats are supported, except BASIC_ISO_DATE, ISO_WEEK_DATE ('2012-W48-6')
+ * and ISO_ORDINAL_DATE ('2012-337').
  *
  * <p>For the date part of custom patterns, {@code MM/dd/yyyy} or {@code dd/MM/yyyy} or any variant
  * where the {@code yyyy} is after the {@code MM} or {@code dd} are not supported. However if
@@ -99,19 +100,14 @@ public final class DateTimeFormats {
 
   /** Punctuation chars, such as '/', ':', '-' are essential part of the pattern syntax. */
   private static final CharPredicate PUNCTUATION = DIGIT.or(ALPHA).or(DELIMITER).not();
-
   private static final Substring.RepeatingPattern TOKENIZER =
       Stream.of(consecutive(DIGIT), consecutive(ALPHA), first(PUNCTUATION))
           .collect(firstOccurrence())
           .repeatedly();
-
   private static final Substring.RepeatingPattern PLACEHOLDERS =
-      Substring.consecutive(CharPredicate.noneOf("<>"))
-          .immediatelyBetween("<", Substring.BoundStyle.INCLUSIVE, ">", INCLUSIVE)
-          .repeatedly();
+      consecutive(noneOf("<>")).immediatelyBetween("<", INCLUSIVE, ">", INCLUSIVE).repeatedly();
   private static final Map<List<?>, DateTimeFormatter> ISO_DATE_FORMATTERS =
       BiStream.of(
-          forExample("20111203"), DateTimeFormatter.BASIC_ISO_DATE,
           forExample("2011-12-03"), DateTimeFormatter.ISO_LOCAL_DATE,
           forExample("2011-12-03+08:00"), DateTimeFormatter.ISO_DATE,
           forExample("2011-12-03-08:00"), DateTimeFormatter.ISO_DATE).toMap();
@@ -151,7 +147,6 @@ public final class DateTimeFormats {
           .add(forExample("2011-12-3"), "yyyy-MM-d")
           .add(forExample("2011/12/03"), "yyyy/MM/dd")
           .add(forExample("2011/12/3"), "yyyy/MM/d")
-          .add(forExample("20111201"), "yyyyMMdd")
           .add(forExample("Jan 11 2011"), "LLL dd yyyy")
           .add(forExample("Jan 1 2011"), "LLL d yyyy")
           .add(forExample("11 Jan 2011"), "dd LLL yyyy")

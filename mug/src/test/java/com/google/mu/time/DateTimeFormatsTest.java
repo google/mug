@@ -141,12 +141,6 @@ public final class DateTimeFormatsTest {
   }
 
   @Test
-  public void basicIsoDateExample() {
-    assertThat(LocalDate.parse("19881010", formatOf("20231020")))
-        .isEqualTo(LocalDate.of(1988, 10, 10));
-  }
-
-  @Test
   public void rfc1123Example() {
     assertThat(
             ZonedDateTime.parse(
@@ -260,7 +254,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void localDateExamplesFromDifferentFormatters(
-      @TestParameter({"BASIC_ISO_DATE", "ISO_LOCAL_DATE", "yyyy/MM/dd", "yyyyMMdd"})
+      @TestParameter({"ISO_LOCAL_DATE", "yyyy/MM/dd"})
           String formatterName,
       @TestParameter({"2020-01-01", "1979-01-01", "2035-12-31"}) String date)
       throws Exception {
@@ -278,7 +272,7 @@ public final class DateTimeFormatsTest {
             "RFC_1123_DATE_TIME",
             "yyyy/MM/dd HH:mm:ss.SSSSSSX",
             "yyyy/MM/dd HH:mm:ss.SSSSSSx",
-            "yyyyMMdd HH:mm:ssZ",
+            "yyyy/MM/dd HH:mm:ssZ",
             "yyyy/MM/dd HH:mm:ssZ",
             "yyyy/MM/dd HH:mm:ss.nnnZZ",
             "yyyy-MM-dd HH:mm:ss.nnnZZZ",
@@ -311,7 +305,7 @@ public final class DateTimeFormatsTest {
             "ISO_DATE_TIME",
             "ISO_ZONED_DATE_TIME",
             "RFC_1123_DATE_TIME",
-            "yyyyMMdd HH:mm:ssa VV",
+            "yyyy/MM/dd HH:mm:ssa VV",
             "yyyy/MM/dd HH:mm:ss VV",
             "yyyy/MM/dd HH:mm:ss.nnn VV",
             "yyyy/MM/dd HH:mm:ss.nnn VV",
@@ -348,7 +342,7 @@ public final class DateTimeFormatsTest {
       @TestParameter({
             "ISO_DATE_TIME",
             "ISO_ZONED_DATE_TIME",
-            "yyyyMMdd HH:mm:ss VV",
+            "yyyy/MM/dd HH:mm:ss VV",
             "yyyy/MM/dd HH:mm:ss VV",
             "yyyy/MM/dd HH:mm:ss.nnn VV",
             "yyyy/MM/dd HH:mm:ss.nnn VV",
@@ -379,7 +373,7 @@ public final class DateTimeFormatsTest {
             "ISO_ZONED_DATE_TIME",
             "yyyy/MM/dd HH:mm:ss.SSSSSSX",
             "yyyy/MM/dd HH:mm:ss.SSSSSSVV",
-            "yyyyMMdd HH:mm:ss.SSSSSSZ",
+            "yyyy/MM/dd HH:mm:ss.SSSSSSZ",
             "yyyy/MM/dd HH:mm:ss.SSSSSSZ",
             "yyyy/MM/dd HH:mm:ss.SSSSSSVV",
             "yyyy/MM/dd HH:mm:ss.SSSSSSz",
