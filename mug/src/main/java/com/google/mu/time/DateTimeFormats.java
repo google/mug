@@ -159,6 +159,7 @@ public final class DateTimeFormats {
           .add(forExample("1 January 2011"), "d LLLL yyyy")
           .add(forExample("2011 January 1"), "yyyy LLLL d")
           .add(forExample("2011 January 11"), "yyyy LLLL dd")
+          .add(forExample("T"), "'T'")
           .add(forExample("10:15"), "HH:mm")
           .add(forExample("10:15:30"), "HH:mm:ss")
           .add(forExample("10:15:30.1"), "HH:mm:ss.S")

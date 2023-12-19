@@ -397,6 +397,16 @@ public final class DateTimeFormatsTest {
   }
 
   @Test
+  public void tIsRecognizedAndEscaped() {
+    assertThat(
+            ZonedDateTime.parse(
+                "2023-11-06T00:10 Europe/Paris", formatOf("2022-10-05T00:10 America/New_York")))
+        .isEqualTo(
+            ZonedDateTime.of(
+                LocalDateTime.of(2023, 11, 6, 0, 10, 0, 0), ZoneId.of("Europe/Paris")));
+  }
+
+  @Test
   public void offsetTimeExamples(
       @TestParameter({"00:00:00+18:00", "12:00-08:00", "23:59:59.999999999-18:00"})
           String example) {
