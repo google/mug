@@ -31,6 +31,7 @@ import static java.util.stream.Collectors.toMap;
 
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -177,6 +178,10 @@ public final class DateTimeFormats {
           .add(forExample("Z"), "X")
           .add(forExample("+08"), "x")
           .add(forExample("-08"), "x")
+          .add(forExample("+080000"), "xxxx")
+          .add(forExample("-080000"), "xxxx")
+          .add(forExample("+08:00:00"), "xxxxx")
+          .add(forExample("-08:00:00"), "xxxxx")
           .add(forExample("+0800"), "ZZ")
           .add(forExample("-0800"), "ZZ")
           .add(forExample("+08:00"), "ZZZZZ")
@@ -220,7 +225,7 @@ public final class DateTimeFormats {
         .map(
             fmt -> {
               try {
-                fmt.parse(example);
+                fmt.withResolverStyle(ResolverStyle.STRICT).parse(example);
               } catch (DateTimeParseException e) {
                 throw new IllegalArgumentException("invalid date time example: " + example, e);
               }
@@ -244,7 +249,7 @@ public final class DateTimeFormats {
                 }
                 pattern = inferDateTimePattern(example, signature);
                 DateTimeFormatter fmt = DateTimeFormatter.ofPattern(pattern);
-                fmt.parse(example);
+                fmt.withResolverStyle(ResolverStyle.STRICT).parse(example);
                 return fmt;
               } catch (DateTimeParseException e) {
                 throw new IllegalArgumentException(
