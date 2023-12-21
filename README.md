@@ -19,6 +19,7 @@ A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/
 * [Parallelizer](https://github.com/google/mug/wiki/Parallelizer-Explained) An _Executor-friendly_, _interruptible_ alternative to parallel streams.
 * Graph utilities ([Walker](https://google.github.io/mug/apidocs/com/google/mu/util/graph/Walker.html), [ShortestPath](https://google.github.io/mug/apidocs/com/google/mu/util/graph/ShortestPath.html))
 * [Google Protobuf Java 8 Utilities](https://google.github.io/mug/mug-protobuf/apidocs)
+* [BigQuery ParameterizedQuery](https://google.github.io/mug/mug-bigquery/apidocs/com/google/mu/bigquery/ParameterizedQuery.html)
 
 ## Installation
 ### Maven
