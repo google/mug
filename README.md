@@ -13,7 +13,8 @@ A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/
     `new StringFormat("{yyyy}/{mm}/{dd}").parse(dateStr, (yyyy, mm, dd) -> ...)`
 * [DateTimeFormats](https://github.com/google/mug/wiki/DateTimeFormats-Explained) creates `DateTimeFormatter` from an example date time string:
     ```java
-    DateTimeFormatter formatter = DateTimeFormats.formatOf("Tue, 10 Jan 2023 10:00:00.123 America/Los_Angeles")
+    DateTimeFormatter formatter =
+        DateTimeFormats.formatOf("Tue, 10 Jan 2023 10:00:00.123 America/Los_Angeles")
     ```
 * [SafeQuery](https://github.com/google/mug/wiki/SafeQuery-Explained) and [GoogleSql](https://google.github.io/mug/mug-guava/apidocs/com/google/mu/safesql/GoogleSql.html) for injection-safe SQL templating.
 * [Parallelizer](https://github.com/google/mug/wiki/Parallelizer-Explained) An _Executor-friendly_, _interruptible_ alternative to parallel streams.
