@@ -3,7 +3,7 @@
   <parent>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-root</artifactId>
-    <version>7.1</version>
+    <version>7.2-SNAPSHOT</version>
   </parent>
   <artifactId>mug-errorprone</artifactId>
   <name>Compile-time Plugins</name>
