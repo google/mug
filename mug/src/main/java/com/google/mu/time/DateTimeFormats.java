@@ -16,6 +16,7 @@ package com.google.mu.time;
 
 import static com.google.mu.util.CharPredicate.anyOf;
 import static com.google.mu.util.CharPredicate.is;
+import static com.google.mu.util.CharPredicate.noneOf;
 import static com.google.mu.util.Substring.consecutive;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.firstOccurrence;
@@ -30,6 +31,7 @@ import static java.util.stream.Collectors.toMap;
 
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -61,8 +63,8 @@ import com.google.mu.util.stream.BiStream;
  *     DateTimeFormats.formatOf("2023/12/09 Sat 10:00+08:00");
  * }</pre>
  *
- * <p>Most ISO 8601 formats are supported, except ISO_WEEK_DATE ('2012-W48-6') and ISO_ORDINAL_DATE
- * ('2012-337').
+ * <p>Most ISO 8601 formats are supported, except BASIC_ISO_DATE, ISO_WEEK_DATE ('2012-W48-6')
+ * and ISO_ORDINAL_DATE ('2012-337').
  *
  * <p>For the date part of custom patterns, {@code MM/dd/yyyy} or {@code dd/MM/yyyy} or any variant
  * where the {@code yyyy} is after the {@code MM} or {@code dd} are not supported. However if
@@ -99,21 +101,17 @@ public final class DateTimeFormats {
 
   /** Punctuation chars, such as '/', ':', '-' are essential part of the pattern syntax. */
   private static final CharPredicate PUNCTUATION = DIGIT.or(ALPHA).or(DELIMITER).not();
-
   private static final Substring.RepeatingPattern TOKENIZER =
       Stream.of(consecutive(DIGIT), consecutive(ALPHA), first(PUNCTUATION))
           .collect(firstOccurrence())
           .repeatedly();
-
   private static final Substring.RepeatingPattern PLACEHOLDERS =
-      Substring.consecutive(CharPredicate.noneOf("<>"))
-          .immediatelyBetween("<", Substring.BoundStyle.INCLUSIVE, ">", INCLUSIVE)
-          .repeatedly();
+      consecutive(noneOf("<>")).immediatelyBetween("<", INCLUSIVE, ">", INCLUSIVE).repeatedly();
   private static final Map<List<?>, DateTimeFormatter> ISO_DATE_FORMATTERS =
       BiStream.of(
-          forExample("20111203"), DateTimeFormatter.BASIC_ISO_DATE,
           forExample("2011-12-03"), DateTimeFormatter.ISO_LOCAL_DATE,
-          forExample("2011-12-03+08:00"), DateTimeFormatter.ISO_DATE).toMap();
+          forExample("2011-12-03+08:00"), DateTimeFormatter.ISO_DATE,
+          forExample("2011-12-03-08:00"), DateTimeFormatter.ISO_DATE).toMap();
 
   /** These ISO formats all support optional nanoseconds in the format of ".nnnnnnnnn". */
   private static final Map<List<?>, DateTimeFormatter> ISO_DATE_TIME_FORMATTERS =
@@ -122,7 +120,9 @@ public final class DateTimeFormats {
           forExample("10:00:00+00:00"), DateTimeFormatter.ISO_TIME,
           forExample("2011-12-03T10:15:30"), DateTimeFormatter.ISO_LOCAL_DATE_TIME,
           forExample("2011-12-03T10:15:30+01:00"), DateTimeFormatter.ISO_DATE_TIME,
+          forExample("2011-12-03T10:15:30-01:00"), DateTimeFormatter.ISO_DATE_TIME,
           forExample("2011-12-03T10:15:30+01:00[Europe/Paris]"), DateTimeFormatter.ISO_DATE_TIME,
+          forExample("2011-12-03T10:15:30-01:00[Europe/Paris]"), DateTimeFormatter.ISO_DATE_TIME,
           forExample("2011-12-03T10:15:30Z"), DateTimeFormatter.ISO_INSTANT).toMap();
 
   /** The day-of-week part is optional; the day-of-month can be 1 or 2 digits. */
@@ -133,7 +133,9 @@ public final class DateTimeFormats {
               "1 Jun 2008 11:05:30 GMT",
               "10 Jun 2008 11:05:30 GMT",
               "Tue, 1 Jun 2008 11:05:30 +0800",
+              "Tue, 1 Jun 2008 11:05:30 -0800",
               "Tue, 10 Jun 2008 11:05:30 +0800",
+              "Tue, 10 Jun 2008 11:05:30 -0800",
               "1 Jun 2008 11:05:30 +0800",
               "10 Jun 2008 11:05:30 +0800")
           .collect(
@@ -146,7 +148,6 @@ public final class DateTimeFormats {
           .add(forExample("2011-12-3"), "yyyy-MM-d")
           .add(forExample("2011/12/03"), "yyyy/MM/dd")
           .add(forExample("2011/12/3"), "yyyy/MM/d")
-          .add(forExample("20111201"), "yyyyMMdd")
           .add(forExample("Jan 11 2011"), "LLL dd yyyy")
           .add(forExample("Jan 1 2011"), "LLL d yyyy")
           .add(forExample("11 Jan 2011"), "dd LLL yyyy")
@@ -159,6 +160,7 @@ public final class DateTimeFormats {
           .add(forExample("1 January 2011"), "d LLLL yyyy")
           .add(forExample("2011 January 1"), "yyyy LLLL d")
           .add(forExample("2011 January 11"), "yyyy LLLL dd")
+          .add(forExample("T"), "'T'")
           .add(forExample("10:15"), "HH:mm")
           .add(forExample("10:15:30"), "HH:mm:ss")
           .add(forExample("10:15:30.1"), "HH:mm:ss.S")
@@ -172,21 +174,24 @@ public final class DateTimeFormats {
           .add(forExample("10:15:30.123456789"), "HH:mm:ss.SSSSSSSSS")
           .add(forExample("America/Los_Angeles"), "VV")
           .add(forExample("PST"), "zzz")
-          .add(forExample("Central Time"), "zzzz")
-          .add(forExample("Alma-Ata Time"), "zzzz")
-          .add(forExample("Hawaii-Aleutian Daylight Time"), "zzzz")
-          .add(forExample("Dumont-d'Urville Time"), "zzzz")
-          .add(forExample("Pacific Standard Time"), "zzzz")
-          .add(forExample("Easter Island Standard Time"), "zzzz")
-          .add(forExample("Australian Central Western Standard Time"), "zzzz")
-          .add(forExample("Pierre & Miquelon Daylight Time"), "zzzz")
+          .add(forExample("PT"), "zzz") // In Java 21 it can be "v"
           .add(forExample("Z"), "X")
+          .add(forExample("+08"), "x")
           .add(forExample("-08"), "x")
+          .add(forExample("+080000"), "xxxx")
+          .add(forExample("-080000"), "xxxx")
+          .add(forExample("+08:00:00"), "xxxxx")
+          .add(forExample("-08:00:00"), "xxxxx")
           .add(forExample("+0800"), "ZZ")
+          .add(forExample("-0800"), "ZZ")
           .add(forExample("+08:00"), "ZZZZZ")
+          .add(forExample("-08:00"), "ZZZZZ")
           .add(forExample("GMT+8"), "O")
+          .add(forExample("GMT-8"), "O")
           .add(forExample("GMT+12"), "O")
+          .add(forExample("GMT-12"), "O")
           .add(forExample("GMT+08:00"), "OOOO")
+          .add(forExample("GMT-08:00"), "OOOO")
           .add(forExample("Fri"), "E")
           .add(forExample("Friday"), "EEEE")
           .add(forExample("Jan"), "LLL")
@@ -220,7 +225,7 @@ public final class DateTimeFormats {
         .map(
             fmt -> {
               try {
-                fmt.parse(example);
+                fmt.withResolverStyle(ResolverStyle.STRICT).parse(example);
               } catch (DateTimeParseException e) {
                 throw new IllegalArgumentException("invalid date time example: " + example, e);
               }
@@ -244,7 +249,7 @@ public final class DateTimeFormats {
                 }
                 pattern = inferDateTimePattern(example, signature);
                 DateTimeFormatter fmt = DateTimeFormatter.ofPattern(pattern);
-                fmt.parse(example);
+                fmt.withResolverStyle(ResolverStyle.STRICT).parse(example);
                 return fmt;
               } catch (DateTimeParseException e) {
                 throw new IllegalArgumentException(
@@ -316,24 +321,14 @@ public final class DateTimeFormats {
                 return match.length(); // the number of digits in the example matter
               }
               String name = match.toString();
-              if (PUNCTUATION.matchesAnyOf(name)) {
-                // A punctuation that must be matched literally.
-                // But + and - are interchangeable (as example) in timezone spec.
-                return name.replace('+', '-');
-              }
-              if (DELIMITER.matchesAnyOf(name)) {
-                // whitespaces are treated as is and will be ignored from prefix pattern matching
-                return name;
-              }
-              // Keyword equivalences are grouped by their pre-defined mappings.
-              // Differentiating known keywords to avoid matching apples as oranges.
-              // Single-letter words are reserved as format specifiers.
-              // Multi-letter unreserved words can be timezone names.
               Token token = Token.ALL.get(name);
               if (token != null) {
                 return token;
               }
-              return name.length() == 1 ? name : Token.WORD;
+              // Single-letter (including all punctuations) are reserved as format specifiers.
+              // Spaces and delimiters are ignored during prefix matching and retained literally.
+              // Unrecognized words are considered equivalent as they may be zone or geo names.
+              return name.length() == 1 || DELIMITER.matchesAnyOf(name) ? name : Token.WORD;
             })
         .collect(toList());
   }
@@ -371,29 +366,66 @@ public final class DateTimeFormats {
     HOUR_CODES("HH", "hh"),
     MINUTE_CODES("mm"),
     SECOND_CODES("ss"),
-    AM_OR_PM("am", "pm", "AM", "PM"),
-    AM_PM_CODES("a"),
-    AD_OR_BC("ad", "bc", "AD", "BC"),
-    AD_BC_CODES("G"),
-    ZONE_ABBREVIATION(
+    AM_PM("am", "pm", "AM", "PM"),
+    AD_BC("ad", "bc", "AD", "BC"),
+    GENERIC_ZONE_NAME(
+        "AT", "BT", "CT", "DT", "ET", "FT", "GT", "HT", "IT", "JT", "KT", "LT", "MT", "NT", "OT",
+        "PT", "QT", "RT", "ST", "TT", "UT", "VT", "WT", "XT", "YT", "ZT"),
+    ZONE_NAME(
         "ACDT", "ACST", "ACT", "ADT", "AEDT", "AEST", "AET", "AFT", "AKDT", "AKST", "AKT", "AMST",
-        "AST", "AT", "AWDT", "AWST", "AWT", "AZOST", "AZT", "BDT", "BET", "BIOT", "BRT", "BST",
-        "BT", "BTT", "CAST", "CAT", "CCT", "CDT", "CEDT", "CEST", "CET", "CHADT", "CHAST", "CHOST",
-        "CHOT", "CHUT", "CIST", "CIT", "CKT", "CLST", "CLT", "CST", "CT", "CVT", "CWST", "CXT",
-        "ChST", "DAVT", "DDUT", "DFT", "DUT", "EASST", "EAT", "ECT", "EDT", "EEDT", "EEST", "EET",
-        "EGST", "EGT", "EIT", "EST", "ET", "FET", "FJT", "FKST", "FKT", "FNT", "GALT", "GAMT",
-        "GFT", "GMT", "GST", "GT", "GYT", "HADT", "HAEC", "HAST", "HDT", "HKT", "HMT", "HOVT",
-        "HST", "HT", "ICT", "IDT", "IOT", "IRDT", "IRKT", "IRST", "IST", "IT", "JST", "JT", "KGT",
-        "KOST", "KRAT", "KST", "KT", "LHST", "LINT", "MAGT", "MAWT", "MDT", "MEST", "MET", "MHT",
-        "MMT", "MSK", "MST", "MT", "MUT", "MVT", "MYT", "NCT", "NDT", "NFT", "NPT", "NST", "NT",
-        "NUT", "NZDT", "NZST", "NZT", "OMST", "ORAT", "PDT", "PETT", "PGT", "PHOT", "PHT", "PKT",
-        "PMDT", "PMST", "PONT", "PST", "PT", "RET", "ROTT", "SAKT", "SAMT", "SAST", "SBT", "SCT",
-        "SGT", "SLT", "SRT", "SST", "ST", "SYOT", "TAHT", "TFT", "THA", "TJT", "TKT", "TLT", "TMT",
-        "TVT", "UCT", "ULAT", "UT", "UTC", "UYST", "UYT", "UZT", "VLAT", "VOLT", "VOST", "VUT",
-        "WAKT", "WAST", "WAT", "WEDT", "WEST", "WET", "WIB", "WIT", "WITA", "WST", "WT", "YAKT",
-        "YEKT", "YET", "YKT", "YST"),
+        "AST", "AWDT", "AWST", "AWT", "AZOST", "AZT", "BDT", "BET", "BIOT", "BRT", "BST", "BTT",
+        "CAST", "CAT", "CCT", "CDT", "CEDT", "CEST", "CET", "CHADT", "CHAST", "CHOST", "CHOT",
+        "CHUT", "CIST", "CIT", "CKT", "CLST", "CLT", "CST", "CVT", "CWST", "CXT", "ChST", "DAVT",
+        "DDUT", "DFT", "DUT", "EASST", "EAT", "ECT", "EDT", "EEDT", "EEST", "EET", "EGST", "EGT",
+        "EIT", "EST", "FET", "FJT", "FKST", "FKT", "FNT", "GALT", "GAMT", "GFT", "GMT", "GST",
+        "GYT", "HADT", "HAEC", "HAST", "HDT", "HKT", "HMT", "HOVT", "HST", "ICT", "IDT", "IOT",
+        "IRDT", "IRKT", "IRST", "IST", "JST", "KGT", "KOST", "KRAT", "KST", "LHST", "LINT", "MAGT",
+        "MAWT", "MDT", "MEST", "MET", "MHT", "MMT", "MSK", "MST", "MUT", "MVT", "MYT", "NCT", "NDT",
+        "NFT", "NPT", "NST", "NUT", "NZDT", "NZST", "NZT", "OMST", "ORAT", "PDT", "PETT", "PGT",
+        "PHOT", "PHT", "PKT", "PMDT", "PMST", "PONT", "PST", "RET", "ROTT", "SAKT", "SAMT", "SAST",
+        "SBT", "SCT", "SGT", "SLT", "SRT", "SST", "SYOT", "TAHT", "TFT", "THA", "TJT", "TKT", "TLT",
+        "TMT", "TVT", "UCT", "ULAT", "UTC", "UYST", "UYT", "UZT", "VLAT", "VOLT", "VOST", "VUT",
+        "WAKT", "WAST", "WAT", "WEDT", "WEST", "WET", "WIB", "WIT", "WITA", "WST", "YAKT", "YEKT",
+        "YET", "YKT", "YST"),
     ZONE_CODES("VV", "z", "zz", "zzz", "zzzz", "ZZ", "ZZZ", "ZZZZ", "ZZZZZ", "x", "X", "O", "OOOO"),
-    ZERO_OFFSET("Z"),
+    REGION(
+        "Africa",
+        "America",
+        "Antarctica",
+        "Arctic",
+        "Asia",
+        "Atlantic",
+        "Australia",
+        "Brazil",
+        "Canada",
+        "Chile",
+        "Cuba",
+        "Egypt",
+        "Eire",
+        "Europe",
+        "GB",
+        "Greenwich",
+        "Hongkong",
+        "Iceland",
+        "Indian",
+        "Iran",
+        "Israel",
+        "Jamaica",
+        "Japan",
+        "Kwajalein",
+        "Libya",
+        "Mexico",
+        "Mideast",
+        "Navajo",
+        "Pacific",
+        "Poland",
+        "Portugal",
+        "Singapore",
+        "SystemV",
+        "Turkey",
+        "US",
+        "Universal",
+        "Zulu"),
     WORD;
 
     static final Map<String, Token> ALL =
