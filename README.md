@@ -11,10 +11,16 @@ A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/
     `String user = first('@').toEnd().removeFrom(email);`
 * [StringFormat](https://github.com/google/mug/wiki/StringFormat-Explained) extracts structured data from string:  
     `new StringFormat("{yyyy}/{mm}/{dd}").parse(dateStr, (yyyy, mm, dd) -> ...)`
-* [SafeQuery](https://github.com/google/mug/wiki/SafeQuery-Explained) and `GoogleSql` for injection-safe SQL templating.
+* [DateTimeFormats](https://github.com/google/mug/wiki/DateTimeFormats-Explained) creates `DateTimeFormatter` from an example date time string:
+    ```java
+    DateTimeFormatter formatter =
+        DateTimeFormats.formatOf("Tue, 10 Jan 2023 10:00:00.123 America/Los_Angeles")
+    ```
+* [SafeQuery](https://github.com/google/mug/wiki/SafeQuery-Explained) and [GoogleSql](https://google.github.io/mug/mug-guava/apidocs/com/google/mu/safesql/GoogleSql.html) for injection-safe SQL templating.
 * [Parallelizer](https://github.com/google/mug/wiki/Parallelizer-Explained) An _Executor-friendly_, _interruptible_ alternative to parallel streams.
 * Graph utilities ([Walker](https://google.github.io/mug/apidocs/com/google/mu/util/graph/Walker.html), [ShortestPath](https://google.github.io/mug/apidocs/com/google/mu/util/graph/ShortestPath.html))
 * [Google Protobuf Java 8 Utilities](https://google.github.io/mug/mug-protobuf/apidocs)
+* [BigQuery ParameterizedQuery](https://google.github.io/mug/mug-bigquery/apidocs/com/google/mu/bigquery/ParameterizedQuery.html)
 
 ## Installation
 ### Maven
@@ -24,7 +30,7 @@ Add the following to pom.xml:
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug</artifactId>
-    <version>7.0</version>
+    <version>7.1</version>
   </dependency>
 ```
 
@@ -46,7 +52,7 @@ Add `mug-errorprone` to your annotationProcessorPaths:
               <path>
                 <groupId>com.google.mug</groupId>
                 <artifactId>mug-errorprone</artifactId>
-                <version>7.0</version>
+                <version>7.1</version>
               </path>
             </annotationProcessorPaths>
           </configuration>
@@ -61,7 +67,7 @@ Protobuf utils:
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-protobuf</artifactId>
-    <version>7.0</version>
+    <version>7.1</version>
   </dependency>
 ```
 
@@ -70,7 +76,7 @@ Guava add-ons (with `SafeQuery` and `GoogleSql`):
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-guava</artifactId>
-    <version>7.0</version>
+    <version>7.1</version>
   </dependency>
 ```
 
@@ -78,9 +84,9 @@ Guava add-ons (with `SafeQuery` and `GoogleSql`):
 
 Add to build.gradle:
 ```
-  implementation 'com.google.mug:mug:7.0'
-  implementation 'com.google.mug:mug-guava:7.0'
-  implementation 'com.google.mug:mug-protobuf:7.0'
+  implementation 'com.google.mug:mug:7.1'
+  implementation 'com.google.mug:mug-guava:7.1'
+  implementation 'com.google.mug:mug-protobuf:7.1'
 ```
 
 
