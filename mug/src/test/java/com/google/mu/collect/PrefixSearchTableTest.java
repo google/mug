@@ -142,4 +142,29 @@ public final class PrefixSearchTableTest {
         .inOrder();
     assertThat(table.get(asList(1, 2, 3))).hasValue("foo");
   }
+
+  @Test
+  public void toBuilder_mappingsRetained() {
+    PrefixSearchTable<Integer, String> table =
+        PrefixSearchTable.<Integer, String>builder()
+            .add(asList(1, 2, 3), "foo")
+            .add(asList(1, 2), "bar")
+            .add(asList(2, 1, 3), "zoo")
+            .build()
+            .toBuilder()
+            .add(asList(1, 2, 4), "baz")
+            .build();
+    assertThat(table.getAll(asList(1, 2, 3)).toMap())
+        .containsExactly(asList(1, 2), "bar", asList(1, 2, 3), "foo")
+        .inOrder();
+    assertThat(table.get(asList(1, 2, 3))).hasValue("foo");
+  }
+
+  @Test
+  public void toBuilder_empty() {
+    PrefixSearchTable<Integer, String> table =
+        PrefixSearchTable.<Integer, String>builder().build().toBuilder().build();
+    assertThat(table.getAll(asList(1)).toMap()).isEmpty();
+    assertThat(table.get(asList(1))).isEmpty();
+  }
 }
