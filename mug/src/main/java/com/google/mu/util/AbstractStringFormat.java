@@ -36,7 +36,8 @@ abstract class AbstractStringFormat {
   private final List<Boolean> toCapture;
   private final int numCapturingPlaceholders;
 
-  AbstractStringFormat(String format, Substring.RepeatingPattern placeholdersPattern, String wildcard) {
+  AbstractStringFormat(
+      String format, Substring.RepeatingPattern placeholdersPattern, String wildcard) {
     Stream.Builder<String> delimiters = Stream.builder();
     Stream.Builder<Boolean> toCapture = Stream.builder();
     placeholdersPattern.split(format).forEachOrdered(
@@ -55,32 +56,36 @@ abstract class AbstractStringFormat {
    * Parses {@code input} and applies the {@code mapper} function with the single placeholder value
    * in this string format.
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * new StringFormat("Job failed (job id: {job_id})").parse(input, jobId -> ...);
    * }</pre>
    *
-   * @return the return value of the {@code mapper} function if not null. Returns empty if
-   *     {@code input} doesn't match the format, or {@code mapper} returns null.
+   * @return the return value of the {@code mapper} function if not null. Returns empty if {@code
+   *     input} doesn't match the format, or {@code mapper} returns null.
    * @throws IllegalArgumentException if or the format string doesn't have exactly one placeholder.
    */
-  public <R> Optional<R> parse(String input, Function<? super String, ? extends R> mapper) {
+  public final <R> Optional<R> parse(String input, Function<? super String, ? extends R> mapper) {
     return parseExpecting(1, input, onlyElement(mapper));
   }
 
   /**
-   * Parses {@code input} and applies {@code mapper} with the two placeholder values
-   * in this string format.
+   * Parses {@code input} and applies {@code mapper} with the two placeholder values in this string
+   * format.
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * new StringFormat("Job failed (job id: '{id}', error code: {code})")
    *     .parse(input, (jobId, errorCode) -> ...);
    * }</pre>
    *
-   * @return the return value of the {@code mapper} function if not null. Returns empty if
-   *     {@code input} doesn't match the format, or {@code mapper} returns null.
+   * @return the return value of the {@code mapper} function if not null. Returns empty if {@code
+   *     input} doesn't match the format, or {@code mapper} returns null.
    * @throws IllegalArgumentException if or the format string doesn't have exactly two placeholders.
    */
-  public <R> Optional<R> parse(
+  public final <R> Optional<R> parse(
       String input, BiFunction<? super String, ? super String, ? extends R> mapper) {
     return parseExpecting(2, input, combining(mapper));
   }
@@ -89,16 +94,18 @@ abstract class AbstractStringFormat {
    * Similar to {@link #parse(String, BiFunction)}, but parses {@code input} and applies {@code
    * mapper} with the <em>3</em> placeholder values in this string format.
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * new StringFormat("Job failed (job id: '{job_id}', error code: {code}, error details: {details})")
    *     .parse(input, (jobId, errorCode, errorDetails) -> ...);
    * }</pre>
    *
-   * @return the return value of the {@code mapper} function if not null. Returns empty if
-   *     {@code input} doesn't match the format, or {@code mapper} returns null.
+   * @return the return value of the {@code mapper} function if not null. Returns empty if {@code
+   *     input} doesn't match the format, or {@code mapper} returns null.
    * @throws IllegalArgumentException if or the format string doesn't have exactly 3 placeholders.
    */
-  public <R> Optional<R> parse(String input, Ternary<? super String, ? extends R> mapper) {
+  public final <R> Optional<R> parse(String input, Ternary<? super String, ? extends R> mapper) {
     return parseExpecting(3, input, combining(mapper));
   }
 
@@ -106,11 +113,12 @@ abstract class AbstractStringFormat {
    * Similar to {@link #parse(String, BiFunction)}, but parses {@code input} and applies {@code
    * mapper} with the <em>4</em> placeholder values in this string format.
    *
-   * @return the return value of the {@code mapper} function if not null. Returns empty if
-   *     {@code input} doesn't match the format, or {@code mapper} returns null.
+   * @return the return value of the {@code mapper} function if not null. Returns empty if {@code
+   *     input} doesn't match the format, or {@code mapper} returns null.
    * @throws IllegalArgumentException if or the format string doesn't have exactly 4 placeholders.
    */
-  public <R> Optional<R> parse(String input, Quarternary<? super String, ? extends R> mapper) {
+  public final <R> Optional<R> parse(
+      String input, Quarternary<? super String, ? extends R> mapper) {
     return parseExpecting(4, input, combining(mapper));
   }
 
@@ -118,11 +126,11 @@ abstract class AbstractStringFormat {
    * Similar to {@link #parse(String, BiFunction)}, but parses {@code input} and applies {@code
    * mapper} with the <em>5</em> placeholder values in this string format.
    *
-   * @return the return value of the {@code mapper} function if not null. Returns empty if
-   *     {@code input} doesn't match the format, or {@code mapper} returns null.
+   * @return the return value of the {@code mapper} function if not null. Returns empty if {@code
+   *     input} doesn't match the format, or {@code mapper} returns null.
    * @throws IllegalArgumentException if or the format string doesn't have exactly 5 placeholders.
    */
-  public <R> Optional<R> parse(String input, Quinary<? super String, ? extends R> mapper) {
+  public final <R> Optional<R> parse(String input, Quinary<? super String, ? extends R> mapper) {
     return parseExpecting(5, input, combining(mapper));
   }
 
@@ -130,11 +138,11 @@ abstract class AbstractStringFormat {
    * Similar to {@link #parse(String, BiFunction)}, but parses {@code input} and applies {@code
    * mapper} with the <em>6</em> placeholder values in this string format.
    *
-   * @return the return value of the {@code mapper} function if not null. Returns empty if
-   *     {@code input} doesn't match the format, or {@code mapper} returns null.
+   * @return the return value of the {@code mapper} function if not null. Returns empty if {@code
+   *     input} doesn't match the format, or {@code mapper} returns null.
    * @throws IllegalArgumentException if or the format string doesn't have exactly 6 placeholders.
    */
-  public <R> Optional<R> parse(String input, Senary<? super String, ? extends R> mapper) {
+  public final <R> Optional<R> parse(String input, Senary<? super String, ? extends R> mapper) {
     return parseExpecting(6, input, combining(mapper));
   }
 
@@ -147,7 +155,7 @@ abstract class AbstractStringFormat {
    * <p>The {@link Substring.Match} result type allows caller to inspect the characters around each
    * match, or to access the raw index in the input string.
    */
-  public Optional<List<Substring.Match>> parse(String input) {
+  public final Optional<List<Substring.Match>> parse(String input) {
     return internalParse(input, fragments, toCapture);
   }
 
@@ -199,7 +207,7 @@ abstract class AbstractStringFormat {
    * @throws NullPointerException if any of the parameter is null or {@code mapper} returns null.
    * @since 7.0
    */
-  public <R> R parseOrThrow(String input, Function<? super String, R> mapper) {
+  public final <R> R parseOrThrow(String input, Function<? super String, R> mapper) {
     return parseOrThrowExpecting(1, input, onlyElement(mapper));
   }
 
@@ -227,7 +235,8 @@ abstract class AbstractStringFormat {
    * @throws NullPointerException if any of the parameter is null or {@code mapper} returns null.
    * @since 7.0
    */
-  public <R> R parseOrThrow(String input, BiFunction<? super String, ? super String, R> mapper) {
+  public final <R> R parseOrThrow(
+      String input, BiFunction<? super String, ? super String, R> mapper) {
     return parseOrThrowExpecting(2, input, combining(mapper));
   }
 
@@ -255,7 +264,7 @@ abstract class AbstractStringFormat {
    * @throws NullPointerException if any of the parameter is null or {@code mapper} returns null.
    * @since 7.0
    */
-  public <R> R parseOrThrow(String input, Ternary<? super String, R> mapper) {
+  public final <R> R parseOrThrow(String input, Ternary<? super String, R> mapper) {
     return parseOrThrowExpecting(3, input, combining(mapper));
   }
 
@@ -263,8 +272,8 @@ abstract class AbstractStringFormat {
    * Similar to {@link #parseOrThrow(String, BiFunction)}, but parses {@code input} and applies
    * {@code mapper} with the <em>4</em> placeholder values in this string format.
    *
-   * <p>Unlike {@link #parse(String, Quarternary)}, {@code IllegalArgumentException} is thrown if the
-   * input string doesn't match the string format. The error message will include both the input
+   * <p>Unlike {@link #parse(String, Quarternary)}, {@code IllegalArgumentException} is thrown if
+   * the input string doesn't match the string format. The error message will include both the input
    * string and the format string for ease of debugging, but is otherwise generic. If you need a
    * different exception type, or need to customize the error message, consider using {@link
    * parse(String, Quarternary)} instead and call {@link Optional#orElseThrow} explicitly.
@@ -276,7 +285,7 @@ abstract class AbstractStringFormat {
    * @throws NullPointerException if any of the parameter is null or {@code mapper} returns null.
    * @since 7.0
    */
-  public <R> R parseOrThrow(String input, Quarternary<? super String, R> mapper) {
+  public final <R> R parseOrThrow(String input, Quarternary<? super String, R> mapper) {
     return parseOrThrowExpecting(4, input, combining(mapper));
   }
 
@@ -297,7 +306,7 @@ abstract class AbstractStringFormat {
    * @throws NullPointerException if any of the parameter is null or {@code mapper} returns null.
    * @since 7.0
    */
-  public <R> R parseOrThrow(String input, Quinary<? super String, R> mapper) {
+  public final <R> R parseOrThrow(String input, Quinary<? super String, R> mapper) {
     return parseOrThrowExpecting(5, input, combining(mapper));
   }
 
@@ -318,7 +327,7 @@ abstract class AbstractStringFormat {
    * @throws NullPointerException if any of the parameter is null or {@code mapper} returns null.
    * @since 7.0
    */
-  public <R> R parseOrThrow(String input, Senary<? super String, R> mapper) {
+  public final <R> R parseOrThrow(String input, Senary<? super String, R> mapper) {
     return parseOrThrowExpecting(6, input, combining(mapper));
   }
 
@@ -427,19 +436,19 @@ abstract class AbstractStringFormat {
    *
    * @since 7.0
    */
-  public boolean matches(String input) {
+  public final boolean matches(String input) {
     return parse(input).isPresent();
   }
 
   /**
    * Scans the {@code input} string and extracts all matched placeholders in this string format.
    *
-   * <p>unlike {@link #parse(String)}, the input string isn't matched entirely:
-   * the pattern doesn't have to start from the beginning, and if there are some remaining
-   * characters that don't match the pattern any more, the stream stops. In particular, if there
-   * is no match, empty stream is returned.
+   * <p>unlike {@link #parse(String)}, the input string isn't matched entirely: the pattern doesn't
+   * have to start from the beginning, and if there are some remaining characters that don't match
+   * the pattern any more, the stream stops. In particular, if there is no match, empty stream is
+   * returned.
    */
-  public Stream<List<Substring.Match>> scan(String input) {
+  public final Stream<List<Substring.Match>> scan(String input) {
     requireNonNull(input);
     if (format.isEmpty()) {
       return Stream.generate(() -> Collections.<Substring.Match>emptyList())
@@ -487,25 +496,27 @@ abstract class AbstractStringFormat {
   }
 
   /**
-   * Scans the {@code input} string and extracts all matches of this string format.
-   * Returns the lazy stream of non-null results from passing the single placeholder values to
-   * the {@code mapper} function for each iteration, with null results skipped.
+   * Scans the {@code input} string and extracts all matches of this string format. Returns the lazy
+   * stream of non-null results from passing the single placeholder values to the {@code mapper}
+   * function for each iteration, with null results skipped.
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * new StringFormat("/home/usr/myname/{file_name}\n")
    *     .scan(multiLineInput, fileName -> ...);
    * }</pre>
    *
-   * <p>unlike {@link #parse(String, Function)}, the input string isn't matched
-   * entirely: the pattern doesn't have to start from the beginning, and if there are some remaining
-   * characters that don't match the pattern any more, the stream stops. In particular, if there
-   * is no match, empty stream is returned.
+   * <p>unlike {@link #parse(String, Function)}, the input string isn't matched entirely: the
+   * pattern doesn't have to start from the beginning, and if there are some remaining characters
+   * that don't match the pattern any more, the stream stops. In particular, if there is no match,
+   * empty stream is returned.
    *
    * <p>By default, placeholders are allowed to be matched against an empty string. If the
-   * placeholder isn't expected to be empty, consider filtering it out by returning null from
-   * the {@code mapper} function, which will then be ignored in the result stream.
+   * placeholder isn't expected to be empty, consider filtering it out by returning null from the
+   * {@code mapper} function, which will then be ignored in the result stream.
    */
-  public <R> Stream<R> scan(String input, Function<? super String, ? extends R> mapper) {
+  public final <R> Stream<R> scan(String input, Function<? super String, ? extends R> mapper) {
     requireNonNull(input);
     requireNonNull(mapper);
     checkPlaceholderCount(1);
@@ -513,26 +524,28 @@ abstract class AbstractStringFormat {
   }
 
   /**
-   * Scans the {@code input} string and extracts all matches of this string format.
-   * Returns the lazy stream of non-null results from passing the two placeholder values to
-   * the {@code mapper} function for each iteration, with null results skipped.
+   * Scans the {@code input} string and extracts all matches of this string format. Returns the lazy
+   * stream of non-null results from passing the two placeholder values to the {@code mapper}
+   * function for each iteration, with null results skipped.
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * new StringFormat("[key={key}, value={value}]")
    *     .repeatedly()
    *     .parse(input, (key, value) -> ...);
    * }</pre>
    *
-   * <p>unlike {@link #parse(String, BiFunction)}, the input string isn't matched
-   * entirely: the pattern doesn't have to start from the beginning, and if there are some remaining
-   * characters that don't match the pattern any more, the stream stops. In particular, if there
-   * is no match, empty stream is returned.
+   * <p>unlike {@link #parse(String, BiFunction)}, the input string isn't matched entirely: the
+   * pattern doesn't have to start from the beginning, and if there are some remaining characters
+   * that don't match the pattern any more, the stream stops. In particular, if there is no match,
+   * empty stream is returned.
    *
    * <p>By default, placeholders are allowed to be matched against an empty string. If a certain
-   * placeholder isn't expected to be empty, consider filtering it out by returning null from
-   * the {@code mapper} function, which will then be ignored in the result stream.
+   * placeholder isn't expected to be empty, consider filtering it out by returning null from the
+   * {@code mapper} function, which will then be ignored in the result stream.
    */
-  public <R> Stream<R> scan(
+  public final <R> Stream<R> scan(
       String input, BiFunction<? super String, ? super String, ? extends R> mapper) {
     requireNonNull(input);
     requireNonNull(mapper);
@@ -541,26 +554,28 @@ abstract class AbstractStringFormat {
   }
 
   /**
-   * Scans the {@code input} string and extracts all matches of this string format.
-   * Returns the lazy stream of non-null results from passing the 3 placeholder values to
-   * the {@code mapper} function for each iteration, with null results skipped.
+   * Scans the {@code input} string and extracts all matches of this string format. Returns the lazy
+   * stream of non-null results from passing the 3 placeholder values to the {@code mapper} function
+   * for each iteration, with null results skipped.
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * new StringFormat("[{lhs} + {rhs} = {result}]")
    *     .repeatedly()
    *     .parse(input, (lhs, rhs, result) -> ...);
    * }</pre>
    *
-   * <p>unlike {@link #parse(String, Ternary)}, the input string isn't matched
-   * entirely: the pattern doesn't have to start from the beginning, and if there are some remaining
-   * characters that don't match the pattern any more, the stream stops. In particular, if there
-   * is no match, empty stream is returned.
+   * <p>unlike {@link #parse(String, Ternary)}, the input string isn't matched entirely: the pattern
+   * doesn't have to start from the beginning, and if there are some remaining characters that don't
+   * match the pattern any more, the stream stops. In particular, if there is no match, empty stream
+   * is returned.
    *
    * <p>By default, placeholders are allowed to be matched against an empty string. If a certain
-   * placeholder isn't expected to be empty, consider filtering it out by returning null from
-   * the {@code mapper} function, which will then be ignored in the result stream.
+   * placeholder isn't expected to be empty, consider filtering it out by returning null from the
+   * {@code mapper} function, which will then be ignored in the result stream.
    */
-  public <R> Stream<R> scan(String input, Ternary<? super String, ? extends R> mapper) {
+  public final <R> Stream<R> scan(String input, Ternary<? super String, ? extends R> mapper) {
     requireNonNull(input);
     requireNonNull(mapper);
     checkPlaceholderCount(3);
@@ -568,20 +583,20 @@ abstract class AbstractStringFormat {
   }
 
   /**
-   * Scans the {@code input} string and extracts all matches of this string format.
-   * Returns the lazy stream of non-null results from passing the 4 placeholder values to
-   * the {@code mapper} function for each iteration, with null results skipped.
+   * Scans the {@code input} string and extracts all matches of this string format. Returns the lazy
+   * stream of non-null results from passing the 4 placeholder values to the {@code mapper} function
+   * for each iteration, with null results skipped.
    *
-   * <p>unlike {@link #parse(String, Quarternary)}, the input string isn't matched
-   * entirely: the pattern doesn't have to start from the beginning, and if there are some remaining
-   * characters that don't match the pattern any more, the stream stops. In particular, if there
-   * is no match, empty stream is returned.
+   * <p>unlike {@link #parse(String, Quarternary)}, the input string isn't matched entirely: the
+   * pattern doesn't have to start from the beginning, and if there are some remaining characters
+   * that don't match the pattern any more, the stream stops. In particular, if there is no match,
+   * empty stream is returned.
    *
    * <p>By default, placeholders are allowed to be matched against an empty string. If a certain
-   * placeholder isn't expected to be empty, consider filtering it out by returning null from
-   * the {@code mapper} function, which will then be ignored in the result stream.
+   * placeholder isn't expected to be empty, consider filtering it out by returning null from the
+   * {@code mapper} function, which will then be ignored in the result stream.
    */
-  public <R> Stream<R> scan(String input, Quarternary<? super String, ? extends R> mapper) {
+  public final <R> Stream<R> scan(String input, Quarternary<? super String, ? extends R> mapper) {
     requireNonNull(input);
     requireNonNull(mapper);
     checkPlaceholderCount(4);
@@ -589,20 +604,20 @@ abstract class AbstractStringFormat {
   }
 
   /**
-   * Scans the {@code input} string and extracts all matches of this string format.
-   * Returns the lazy stream of non-null results from passing the 5 placeholder values to
-   * the {@code mapper} function for each iteration, with null results skipped.
+   * Scans the {@code input} string and extracts all matches of this string format. Returns the lazy
+   * stream of non-null results from passing the 5 placeholder values to the {@code mapper} function
+   * for each iteration, with null results skipped.
    *
-   * <p>unlike {@link #parse(String, Quinary)}, the input string isn't matched
-   * entirely: the pattern doesn't have to start from the beginning, and if there are some remaining
-   * characters that don't match the pattern any more, the stream stops. In particular, if there
-   * is no match, empty stream is returned.
+   * <p>unlike {@link #parse(String, Quinary)}, the input string isn't matched entirely: the pattern
+   * doesn't have to start from the beginning, and if there are some remaining characters that don't
+   * match the pattern any more, the stream stops. In particular, if there is no match, empty stream
+   * is returned.
    *
    * <p>By default, placeholders are allowed to be matched against an empty string. If a certain
-   * placeholder isn't expected to be empty, consider filtering it out by returning null from
-   * the {@code mapper} function, which will then be ignored in the result stream.
+   * placeholder isn't expected to be empty, consider filtering it out by returning null from the
+   * {@code mapper} function, which will then be ignored in the result stream.
    */
-  public <R> Stream<R> scan(String input, Quinary<? super String, ? extends R> mapper) {
+  public final <R> Stream<R> scan(String input, Quinary<? super String, ? extends R> mapper) {
     requireNonNull(input);
     requireNonNull(mapper);
     checkPlaceholderCount(5);
@@ -610,20 +625,20 @@ abstract class AbstractStringFormat {
   }
 
   /**
-   * Scans the {@code input} string and extracts all matches of this string format.
-   * Returns the lazy stream of non-null results from passing the 6 placeholder values to
-   * the {@code mapper} function for each iteration, with null results skipped.
+   * Scans the {@code input} string and extracts all matches of this string format. Returns the lazy
+   * stream of non-null results from passing the 6 placeholder values to the {@code mapper} function
+   * for each iteration, with null results skipped.
    *
-   * <p>unlike {@link #parse(String, Senary)}, the input string isn't matched
-   * entirely: the pattern doesn't have to start from the beginning, and if there are some remaining
-   * characters that don't match the pattern any more, the stream stops. In particular, if there
-   * is no match, empty stream is returned.
+   * <p>unlike {@link #parse(String, Senary)}, the input string isn't matched entirely: the pattern
+   * doesn't have to start from the beginning, and if there are some remaining characters that don't
+   * match the pattern any more, the stream stops. In particular, if there is no match, empty stream
+   * is returned.
    *
    * <p>By default, placeholders are allowed to be matched against an empty string. If a certain
-   * placeholder isn't expected to be empty, consider filtering it out by returning null from
-   * the {@code mapper} function, which will then be ignored in the result stream.
+   * placeholder isn't expected to be empty, consider filtering it out by returning null from the
+   * {@code mapper} function, which will then be ignored in the result stream.
    */
-  public <R> Stream<R> scan(String input, Senary<? super String, ? extends R> mapper) {
+  public final <R> Stream<R> scan(String input, Senary<? super String, ? extends R> mapper) {
     requireNonNull(input);
     requireNonNull(mapper);
     checkPlaceholderCount(6);
@@ -631,17 +646,18 @@ abstract class AbstractStringFormat {
   }
 
   /**
-   * Returns the string formatted with placeholders filled using {@code args}.
-   * This is the reverse operation of the {@code parse(...)} methods. For example:
+   * Returns the string formatted with placeholders filled using {@code args}. This is the reverse
+   * operation of the {@code parse(...)} methods. For example:
    *
    * <pre>{@code
    * new StringFormat("Hello {who}").format("world")
    *     => "Hello world"
    * }</pre>
    *
-   * @throws IllegalArgumentException if the number of arguments doesn't match that of the placeholders
+   * @throws IllegalArgumentException if the number of arguments doesn't match that of the
+   *     placeholders
    */
-  public String format(Object... args) {
+  public final String format(Object... args) {
     checkFormatArgs(args);
     StringBuilder builder = new StringBuilder().append(fragments.get(0));
     for (int i = 0; i < args.length; i++) {
@@ -676,7 +692,8 @@ abstract class AbstractStringFormat {
                     .collect(collector));
   }
 
-  private <R> Optional<R> parseExpecting(int cardinality, String input, Collector<? super String, ?, R> collector) {
+  private <R> Optional<R> parseExpecting(
+      int cardinality, String input, Collector<? super String, ?, R> collector) {
     requireNonNull(input);
     checkPlaceholderCount(cardinality);
     return parse(input).map(values -> values.stream().map(Substring.Match::toString).collect(collector));
