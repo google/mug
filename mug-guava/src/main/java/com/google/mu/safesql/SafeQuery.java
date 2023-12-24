@@ -1,5 +1,6 @@
 package com.google.mu.safesql;
 
+import static com.google.common.base.CharMatcher.ascii;
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -232,7 +233,7 @@ public final class SafeQuery {
         quoteChar,
         placeholder,
         quoteChar);
-    return first(CharPredicate.is('\\').or(quoteChar).or('\n').or('\r'))
+    return first(CharPredicate.is('\\').or(quoteChar).or('\n').or('\r').or(ascii().negate()::matches))
         .repeatedly()
         .replaceAllFrom(
             value.toString(),
@@ -240,7 +241,7 @@ public final class SafeQuery {
               switch (c.charAt(0)) {
                 case '\r': return "\\r";
                 case '\n': return "\\n";
-                default: return "\\" + c;
+                default: return ascii().matches(c.charAt(0)) ? "\\" + c : toUnicodeHex(c.charAt(0));
               }
             });
   }
@@ -256,7 +257,13 @@ public final class SafeQuery {
         "placeholder value for `%s` (%s) contains illegal character",
         placeholder,
         name);
-    return name;
+    return Substring.first(CharMatcher.ascii().negate()::matches)
+        .repeatedly()
+        .replaceAllFrom(name, uni -> toUnicodeHex(uni.charAt(0)));
+  }
+
+  private static String toUnicodeHex(char c) {
+    return String.format("\\u%04X", (int) c);
   }
 
   private static boolean isTrusted(Object value) {
