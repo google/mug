@@ -242,7 +242,7 @@ public final class SafeQuery {
               switch (c.charAt(0)) {
                 case '\r': return "\\r";
                 case '\n': return "\\n";
-                default: return ascii().matches(c.charAt(0)) ? "\\" + c : toUnicodeHex(c.charAt(0));
+                default: return ascii().matches(c.charAt(0)) ? "\\" + c : escapeUnicode(c.charAt(0));
               }
             });
   }
@@ -260,10 +260,10 @@ public final class SafeQuery {
         name);
     return first(CharMatcher.ascii().negate()::matches)
         .repeatedly()
-        .replaceAllFrom(name, uni -> toUnicodeHex(uni.charAt(0)));
+        .replaceAllFrom(name, uni -> escapeUnicode(uni.charAt(0)));
   }
 
-  private static String toUnicodeHex(char c) {
+  private static String escapeUnicode(char c) {
     return String.format("\\u%04X", (int) c);
   }
 
