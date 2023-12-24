@@ -1,6 +1,8 @@
 package com.google.mu.safesql;
 
+import static com.google.common.base.CharMatcher.anyOf;
 import static com.google.common.base.CharMatcher.ascii;
+import static com.google.common.base.CharMatcher.is;
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -19,7 +21,6 @@ import com.google.common.base.CharMatcher;
 import com.google.common.collect.Iterables;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.errorprone.annotations.Immutable;
-import com.google.mu.util.CharPredicate;
 import com.google.mu.util.StringFormat;
 import com.google.mu.util.Substring;
 
@@ -233,7 +234,7 @@ public final class SafeQuery {
         quoteChar,
         placeholder,
         quoteChar);
-    return first(CharPredicate.is('\\').or(quoteChar).or('\n').or('\r').or(ascii().negate()::matches))
+    return first(anyOf("\\\n\r").or(is(quoteChar)).or(ascii().negate())::matches)
         .repeatedly()
         .replaceAllFrom(
             value.toString(),
@@ -257,7 +258,7 @@ public final class SafeQuery {
         "placeholder value for `%s` (%s) contains illegal character",
         placeholder,
         name);
-    return Substring.first(CharMatcher.ascii().negate()::matches)
+    return first(CharMatcher.ascii().negate()::matches)
         .repeatedly()
         .replaceAllFrom(name, uni -> toUnicodeHex(uni.charAt(0)));
   }

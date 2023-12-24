@@ -537,15 +537,13 @@ public final class SafeQueryTest {
 
   @Test
   public void unicodeSmugglingInStringLiteralNotEffective() {
-    String input = "ʻ OR TRUE OR ʼʼ=ʼ";
-    SafeQuery query = template("'{id}'").with(input);
+    SafeQuery query = template("'{id}'").with("ʻ OR TRUE OR ʼʼ=ʼ");
     assertThat(query.toString()).isEqualTo("'\\u02BB" + " OR TRUE OR \\u02BC\\u02BC=\\u02BC'");
   }
 
   @Test
   public void unicodeSmugglingInIdentifierNotEffective() {
-    String input = "ʻ OR TRUE OR ʼʼ=ʼ";
-    SafeQuery query = template("`{tbl}`").with(input);
+    SafeQuery query = template("`{tbl}`").with("ʻ OR TRUE OR ʼʼ=ʼ");
     assertThat(query.toString()).isEqualTo("`\\u02BB" + " OR TRUE OR \\u02BC\\u02BC=\\u02BC`");
   }
 
