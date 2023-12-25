@@ -536,6 +536,42 @@ public final class SafeQueryTest {
   }
 
   @Test
+  public void backspaceCharacterQuoted() {
+    SafeQuery query = template("'{id}'").with("\b");
+    assertThat(query.toString()).isEqualTo("'\\b'");
+  }
+
+  @Test
+  public void nulCharacterQuoted() {
+    SafeQuery query = template("'{id}'").with("\0");
+    assertThat(query.toString()).isEqualTo("'\\u0000'");
+  }
+
+  @Test
+  public void pageBreakCharacterQuoted() {
+    SafeQuery query = template("'{id}'").with("\f");
+    assertThat(query.toString()).isEqualTo("'\\f'");
+  }
+
+  @Test
+  public void backspaceCharacterBacktickQuoted() {
+    StringFormat.To<SafeQuery> query = template("`{name}`");
+    assertThrows(IllegalArgumentException.class, () -> query.with("\b"));
+  }
+
+  @Test
+  public void nulCharacterBacktickQuoted() {
+    StringFormat.To<SafeQuery> query = template("`{name}`");
+    assertThrows(IllegalArgumentException.class, () -> query.with("\0"));
+  }
+
+  @Test
+  public void pageBreakCharacterBacktickQuoted() {
+    StringFormat.To<SafeQuery> query = template("`{name}`");
+    assertThrows(IllegalArgumentException.class, () -> query.with("\f"));
+  }
+
+  @Test
   public void unicodeSmugglingInStringLiteralNotEffective() {
     SafeQuery query = template("'{id}'").with("ʻ OR TRUE OR ʼʼ=ʼ");
     assertThat(query.toString()).isEqualTo("'\\u02BB" + " OR TRUE OR \\u02BC\\u02BC=\\u02BC'");

@@ -234,14 +234,17 @@ public final class SafeQuery {
         quoteChar,
         placeholder,
         quoteChar);
-    return first(anyOf("\\\n\r").or(is(quoteChar)).or(ascii().negate())::matches)
+    return first(anyOf("\0\\\b\f\n\r").or(is(quoteChar)).or(ascii().negate())::matches)
         .repeatedly()
         .replaceAllFrom(
             value.toString(),
             c -> {
               switch (c.charAt(0)) {
-                case '\r': return "\\r";
+                case '\0': return "\\u0000";
+                case '\b': return "\\b";
+                case '\f': return "\\f";
                 case '\n': return "\\n";
+                case '\r': return "\\r";
                 default: return ascii().matches(c.charAt(0)) ? "\\" + c : escapeUnicode(c.charAt(0));
               }
             });
@@ -254,7 +257,7 @@ public final class SafeQuery {
     String name = removeQuotes('`', value.toString(), '`'); // ok if already backquoted
     // Make sure the backquoted string doesn't contain some special chars that may cause trouble.
     checkArgument(
-        CharMatcher.anyOf("'\"`()[]{}\\~!@$^*,/?;\r\n").matchesNoneOf(name),
+        CharMatcher.anyOf("'\"`()[]{}\\~!@$^*,/?;\r\n\f\b\0").matchesNoneOf(name),
         "placeholder value for `%s` (%s) contains illegal character",
         placeholder,
         name);
