@@ -1,5 +1,6 @@
 package com.google.mu.safesql;
 
+import static com.google.common.base.CharMatcher.anyOf;
 import static com.google.common.base.CharMatcher.javaIsoControl;
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -39,6 +40,8 @@ import com.google.mu.util.Substring;
  */
 @Immutable
 public final class SafeQuery {
+  private static final CharMatcher ILLEGAL_IDENTIFIER_CHARS =
+      anyOf("'\"`()[]{}\\~!@$^*,/?;").or(javaIsoControl());
   private static final String TRUSTED_SQL_TYPE_NAME =
       firstNonNull(
           System.getProperty("com.google.mu.safesql.SafeQuery.trusted_sql_type"),
@@ -241,7 +244,7 @@ public final class SafeQuery {
     String name = removeQuotes('`', value.toString(), '`'); // ok if already backquoted
     // Make sure the backquoted string doesn't contain some special chars that may cause trouble.
     checkArgument(
-        CharMatcher.anyOf("'\"`()[]{}\\~!@$^*,/?;\r\n\f\b\0").or(javaIsoControl()).matchesNoneOf(name),
+        ILLEGAL_IDENTIFIER_CHARS.matchesNoneOf(name),
         "placeholder value for `%s` (%s) contains illegal character",
         placeholder,
         name);
