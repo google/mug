@@ -258,6 +258,7 @@ public final class SafeQuery {
         builder.append("\\\\");
       } else if (codePoint >= 0x20 && codePoint < 0x7F || codePoint == '\t') {
         // 0x20 is space, \t is tab, keep. 0x7F is DEL control character, escape.
+        // <=0x1f and >=0x7F are ISO control characters.
         builder.appendCodePoint(codePoint);
       } else if (Character.charCount(codePoint) == 1) {
         builder.append(String.format("\\u%04X", codePoint));
