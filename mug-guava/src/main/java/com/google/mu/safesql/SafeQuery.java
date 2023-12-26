@@ -256,8 +256,8 @@ public final class SafeQuery {
         builder.append("\\").appendCodePoint(quoteChar);
       } else if (codePoint == '\\') {
         builder.append("\\\\");
-      } else if (32 <= codePoint && codePoint < 127 || codePoint == '\t') {
-        // 32 is space, \t is tab, keep. 127 is DEL control character, escape.
+      } else if (codePoint >= 0x20 && codePoint < 0x7F || codePoint == '\t') {
+        // 0x20 is space, \t is tab, keep. 0x7F is DEL control character, escape.
         builder.appendCodePoint(codePoint);
       } else if (Character.charCount(codePoint) == 1) {
         builder.append(String.format("\\u%04X", codePoint));
