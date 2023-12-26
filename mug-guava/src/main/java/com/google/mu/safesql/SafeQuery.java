@@ -1,12 +1,9 @@
 package com.google.mu.safesql;
 
-import static com.google.common.base.CharMatcher.anyOf;
-import static com.google.common.base.CharMatcher.ascii;
-import static com.google.common.base.CharMatcher.is;
+import static com.google.common.base.CharMatcher.javaIsoControl;
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.Substring.suffix;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -234,20 +231,7 @@ public final class SafeQuery {
         quoteChar,
         placeholder,
         quoteChar);
-    return first(anyOf("\0\\\b\f\n\r").or(is(quoteChar)).or(ascii().negate())::matches)
-        .repeatedly()
-        .replaceAllFrom(
-            value.toString(),
-            c -> {
-              switch (c.charAt(0)) {
-                case '\0': return "\\u0000";
-                case '\b': return "\\b";
-                case '\f': return "\\f";
-                case '\n': return "\\n";
-                case '\r': return "\\r";
-                default: return ascii().matches(c.charAt(0)) ? "\\" + c : escapeUnicode(c.charAt(0));
-              }
-            });
+    return escapeQuoted(quoteChar, value.toString());
   }
 
   private static String backquoted(Substring.Match placeholder, Object value) {
@@ -257,17 +241,34 @@ public final class SafeQuery {
     String name = removeQuotes('`', value.toString(), '`'); // ok if already backquoted
     // Make sure the backquoted string doesn't contain some special chars that may cause trouble.
     checkArgument(
-        CharMatcher.anyOf("'\"`()[]{}\\~!@$^*,/?;\r\n\f\b\0").matchesNoneOf(name),
+        CharMatcher.anyOf("'\"`()[]{}\\~!@$^*,/?;\r\n\f\b\0").or(javaIsoControl()).matchesNoneOf(name),
         "placeholder value for `%s` (%s) contains illegal character",
         placeholder,
         name);
-    return first(CharMatcher.ascii().negate()::matches)
-        .repeatedly()
-        .replaceAllFrom(name, uni -> escapeUnicode(uni.charAt(0)));
+    return escapeQuoted('`', name);
   }
 
-  private static String escapeUnicode(char c) {
-    return String.format("\\u%04X", (int) c);
+  private static String escapeQuoted(char quoteChar, String s) {
+    StringBuilder builder = new StringBuilder(s.length());
+    for (int i = 0; i < s.length(); i++) {
+      int codePoint = s.codePointAt(i);
+      if (codePoint == quoteChar) {
+        builder.append("\\").appendCodePoint(quoteChar);
+      } else if (codePoint == '\\') {
+        builder.append("\\\\");
+      } else if (32 <= codePoint && codePoint < 127 || codePoint == '\t') {
+        // 32 is space, \t is tab, keep. 127 is DEL control character, escape.
+        builder.appendCodePoint(codePoint);
+      } else if (Character.charCount(codePoint) == 1) {
+        builder.append(String.format("\\u%04X", codePoint));
+      } else {
+        char hi = Character.highSurrogate(codePoint);
+        char lo = Character.lowSurrogate(codePoint);
+        builder.append(String.format("\\u%04X\\u%04X", (int) hi, (int) lo));
+        i++;
+      }
+    }
+    return builder.toString();
   }
 
   private static boolean isTrusted(Object value) {

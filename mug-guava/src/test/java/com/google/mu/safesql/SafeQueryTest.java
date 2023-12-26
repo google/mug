@@ -68,13 +68,13 @@ public final class SafeQueryTest {
   @Test
   public void newLineEscapedWithinSingleQuote() {
     assertThat(template("SELECT * FROM tbl WHERE id = '{id}'").with("\n"))
-        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = '\\n'"));
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = '\\u000A'"));
   }
 
   @Test
   public void newLineEscapedWithinDoubleQuote() {
     assertThat(template("SELECT * FROM tbl WHERE id = \"{id}\"").with("\n"))
-        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = \"\\n\""));
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = \"\\u000A\""));
   }
 
   @Test
@@ -86,13 +86,13 @@ public final class SafeQueryTest {
   @Test
   public void carriageReturnEscapedWithinSingleQuote() {
     assertThat(template("SELECT * FROM tbl WHERE id = '{id}'").with("\r"))
-        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = '\\r'"));
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = '\\u000D'"));
   }
 
   @Test
   public void carriageReturnEscapedWithinDoubleQuote() {
     assertThat(template("SELECT * FROM tbl WHERE id = \"{id}\"").with("\r"))
-        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = \"\\r\""));
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = \"\\u000D\""));
   }
 
   @Test
@@ -104,7 +104,7 @@ public final class SafeQueryTest {
   @Test
   public void carriageReturnAndLineFeedEscapedWithinDoubleQuote() {
     assertThat(template("SELECT * FROM tbl WHERE id = \"{id}\"").with("a\r\nb"))
-        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = \"a\\r\\nb\""));
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = \"a\\u000D\\u000Ab\""));
   }
 
   @Test
@@ -538,7 +538,7 @@ public final class SafeQueryTest {
   @Test
   public void backspaceCharacterQuoted() {
     SafeQuery query = template("'{id}'").with("\b");
-    assertThat(query.toString()).isEqualTo("'\\b'");
+    assertThat(query.toString()).isEqualTo("'\\u0008'");
   }
 
   @Test
@@ -550,25 +550,25 @@ public final class SafeQueryTest {
   @Test
   public void pageBreakCharacterQuoted() {
     SafeQuery query = template("'{id}'").with("\f");
-    assertThat(query.toString()).isEqualTo("'\\f'");
+    assertThat(query.toString()).isEqualTo("'\\u000C'");
   }
 
   @Test
   public void backspaceCharacterBacktickQuoted() {
     StringFormat.To<SafeQuery> query = template("`{name}`");
-    assertThrows(IllegalArgumentException.class, () -> query.with("\b"));
+    assertThrows(IllegalArgumentException.class, () -> query.with(/* name */ "\b"));
   }
 
   @Test
   public void nulCharacterBacktickQuoted() {
     StringFormat.To<SafeQuery> query = template("`{name}`");
-    assertThrows(IllegalArgumentException.class, () -> query.with("\0"));
+    assertThrows(IllegalArgumentException.class, () -> query.with(/* name */ "\0"));
   }
 
   @Test
   public void pageBreakCharacterBacktickQuoted() {
     StringFormat.To<SafeQuery> query = template("`{name}`");
-    assertThrows(IllegalArgumentException.class, () -> query.with("\f"));
+    assertThrows(IllegalArgumentException.class, () -> query.with(/* name */ "\f"));
   }
 
   @Test
