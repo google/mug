@@ -34,7 +34,7 @@ import com.google.mu.util.Substring;
  * <p>In addition, a SafeQuery may represent a subquery, and can be passed through {@link
  * StringFormat.To#with} to compose larger queries.
  *
- * <p>This class is Android and J2CL compatible.
+ * <p>This class is Android compatible.
  *
  * @since 7.0
  */
