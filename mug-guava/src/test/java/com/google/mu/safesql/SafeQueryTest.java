@@ -274,6 +274,12 @@ public final class SafeQueryTest {
   }
 
   @Test
+  public void stringWithSpaceBackquoted() {
+    assertThat(template("SELECT * from `{tbl}` WHERE TRUE").with(/* tbl */ "foo"))
+        .isEqualTo(SafeQuery.of("SELECT * from `foo` WHERE TRUE"));
+  }
+
+  @Test
   public void stringWithDashBackquoted() {
     assertThat(template("SELECT * from `{tbl}` WHERE TRUE").with(/* tbl */ "foo-bar"))
         .isEqualTo(SafeQuery.of("SELECT * from `foo-bar` WHERE TRUE"));
