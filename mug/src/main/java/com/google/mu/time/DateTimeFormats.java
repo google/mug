@@ -375,7 +375,7 @@ public final class DateTimeFormats {
     MINUTE_CODES("mm"),
     SECOND_CODES("ss"),
     AM_PM("AM", "PM"),
-    AD_BC("ad", "bc", "AD", "BC"),
+    AD_BC("AD", "BC"),
     GENERIC_ZONE_NAME(
         "AT", "BT", "CT", "DT", "ET", "FT", "GT", "HT", "IT", "JT", "KT", "LT", "MT", "NT", "OT",
         "PT", "QT", "RT", "ST", "TT", "UT", "VT", "WT", "XT", "YT", "ZT"),

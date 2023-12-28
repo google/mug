@@ -271,7 +271,7 @@ public final class DateTimeFormatsTest {
   public void formatOf_12HourFormat() {
     ZonedDateTime zonedTime =
         ZonedDateTime.of(LocalDateTime.of(2023, 10, 20, 1, 2, 3), ZoneId.of("America/Los_Angeles"));
-    DateTimeFormatter formatter = formatOf("dd MM yyyy <ad> hh:mm <PM> <+08:00>");
+    DateTimeFormatter formatter = formatOf("dd MM yyyy <AD> hh:mm <PM> <+08:00>");
     assertThat(zonedTime.format(formatter)).isEqualTo("20 10 2023 AD 01:02 AM -07:00");
   }
 
