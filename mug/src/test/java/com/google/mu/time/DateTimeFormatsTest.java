@@ -56,15 +56,30 @@ public final class DateTimeFormatsTest {
   }
 
   @Test
+  public void singleDigitHourWithoutAmPm_throws() {
+    assertThrows(IllegalArgumentException.class, () -> formatOf("1"));
+  }
+
+  @Test
   public void singleDigitHourWithAmPm() {
     assertLocalTime("1AM", "ha").isEqualTo(LocalTime.of(1, 0, 0));
     assertLocalTime("2 PM", "h a").isEqualTo(LocalTime.of(14, 0, 0));
   }
 
   @Test
+  public void singleDigitHourMinuteWithoutAmPm_throws() {
+    assertThrows(IllegalArgumentException.class, () -> formatOf("1:10"));
+  }
+
+  @Test
   public void singleDigitHourMinuteWithAmPm() {
     assertLocalTime("1:10AM", "h:mma").isEqualTo(LocalTime.of(1, 10, 0));
     assertLocalTime("2:05 PM", "h:mm a").isEqualTo(LocalTime.of(14, 5, 0));
+  }
+
+  @Test
+  public void singleDigitHourMinuteSecondWithoutAmPm_throws() {
+    assertThrows(IllegalArgumentException.class, () -> formatOf("1:10:00"));
   }
 
   @Test
@@ -80,9 +95,29 @@ public final class DateTimeFormatsTest {
   }
 
   @Test
+  public void twoDigitHourMinuteWithoutAmPm() {
+    assertLocalTime("09:00", "HH:mm").isEqualTo(LocalTime.of(9, 0, 0));
+    assertLocalTime("15:00", "HH:mm").isEqualTo(LocalTime.of(15, 0, 0));
+  }
+
+  @Test
   public void twoDigitHourMinuteWithAmPm() {
     assertLocalTime("09:00AM", "HH:mma").isEqualTo(LocalTime.of(9, 0, 0));
     assertLocalTime("12:00 PM", "HH:mm a").isEqualTo(LocalTime.of(12, 0, 0));
+  }
+
+
+  @Test
+  public void twoDigitHourMinuteSecondWithAmPm() {
+    assertLocalTime("09:00:30AM", "HH:mm:ssa").isEqualTo(LocalTime.of(9, 0, 30));
+    assertLocalTime("15:00:30 PM", "HH:mm:ss a").isEqualTo(LocalTime.of(15, 0, 30));
+  }
+
+
+  @Test
+  public void twoDigitHourMinuteSecondWithoutAmPm() {
+    assertLocalTime("09:00:30", "HH:mm:ss").isEqualTo(LocalTime.of(9, 0, 30));
+    assertLocalTime("15:00:30", "HH:mm:ss").isEqualTo(LocalTime.of(15, 0, 30));
   }
 
   @Test
