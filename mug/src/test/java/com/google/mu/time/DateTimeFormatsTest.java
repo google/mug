@@ -95,7 +95,6 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void instantExample() {
-    Instant instant = Instant.parse("2023-10-05T15:30:05Z");
     assertThat(formatOf("2023-10-05T15:30:05Z").parse(Instant.now().toString())).isNotNull();
   }
 
