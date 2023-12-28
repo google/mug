@@ -56,6 +56,36 @@ public final class DateTimeFormatsTest {
   }
 
   @Test
+  public void singleDigitHourWithAmPm() {
+    assertLocalTime("1AM", "ha").isEqualTo(LocalTime.of(1, 0, 0));
+    assertLocalTime("2 PM", "h a").isEqualTo(LocalTime.of(14, 0, 0));
+  }
+
+  @Test
+  public void singleDigitHourMinuteWithAmPm() {
+    assertLocalTime("1:10AM", "h:mma").isEqualTo(LocalTime.of(1, 10, 0));
+    assertLocalTime("2:05 PM", "h:mm a").isEqualTo(LocalTime.of(14, 5, 0));
+  }
+
+  @Test
+  public void singleDigitHourMinuteSecondWithAmPm() {
+    assertLocalTime("1:10:30AM", "h:mm:ssa").isEqualTo(LocalTime.of(1, 10, 30));
+    assertLocalTime("2:05:00 PM", "h:mm:ss a").isEqualTo(LocalTime.of(14, 5, 0));
+  }
+
+  @Test
+  public void twoDigitHourWithAmPm() {
+    assertLocalTime("09AM", "HHa").isEqualTo(LocalTime.of(9, 0, 0));
+    assertLocalTime("12 PM", "HH a").isEqualTo(LocalTime.of(12, 0, 0));
+  }
+
+  @Test
+  public void twoDigitHourMinuteWithAmPm() {
+    assertLocalTime("09:00AM", "HH:mma").isEqualTo(LocalTime.of(9, 0, 0));
+    assertLocalTime("12:00 PM", "HH:mm a").isEqualTo(LocalTime.of(12, 0, 0));
+  }
+
+  @Test
   public void dateAndTimeExamples() {
     assertLocalDateTime("2023-10-20 15:30:05", "yyyy-MM-dd HH:mm:ss")
         .isEqualTo(LocalDateTime.of(2023, 10, 20, 15, 30, 5));
@@ -207,7 +237,7 @@ public final class DateTimeFormatsTest {
   public void formatOf_12HourFormat() {
     ZonedDateTime zonedTime =
         ZonedDateTime.of(LocalDateTime.of(2023, 10, 20, 1, 2, 3), ZoneId.of("America/Los_Angeles"));
-    DateTimeFormatter formatter = formatOf("dd MM yyyy <ad> hh:mm <pm> <+08:00>");
+    DateTimeFormatter formatter = formatOf("dd MM yyyy <ad> hh:mm <PM> <+08:00>");
     assertThat(zonedTime.format(formatter)).isEqualTo("20 10 2023 AD 01:02 AM -07:00");
   }
 

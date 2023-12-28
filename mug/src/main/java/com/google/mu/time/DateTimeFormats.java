@@ -172,6 +172,14 @@ public final class DateTimeFormats {
           .add(forExample("10:15:30.1234567"), "HH:mm:ss.SSSSSSS")
           .add(forExample("10:15:30.12345678"), "HH:mm:ss.SSSSSSSS")
           .add(forExample("10:15:30.123456789"), "HH:mm:ss.SSSSSSSSS")
+          .add(forExample("1 AM"), "h a")
+          .add(forExample("1AM"), "ha")
+          .add(forExample("10 AM"), "HH a")
+          .add(forExample("10AM"), "HHa")
+          .add(forExample("1:00 AM"), "h:mm a")
+          .add(forExample("1:00AM"), "h:mma")
+          .add(forExample("1:00:00 AM"), "h:mm:ss a")
+          .add(forExample("1:00:00AM"), "h:mm:ssa")
           .add(forExample("America/Los_Angeles"), "VV")
           .add(forExample("PST"), "zzz")
           .add(forExample("PT"), "zzz") // In Java 21 it can be "v"
@@ -366,7 +374,7 @@ public final class DateTimeFormats {
     HOUR_CODES("HH", "hh"),
     MINUTE_CODES("mm"),
     SECOND_CODES("ss"),
-    AM_PM("am", "pm", "AM", "PM"),
+    AM_PM("AM", "PM"),
     AD_BC("ad", "bc", "AD", "BC"),
     GENERIC_ZONE_NAME(
         "AT", "BT", "CT", "DT", "ET", "FT", "GT", "HT", "IT", "JT", "KT", "LT", "MT", "NT", "OT",
