@@ -19,6 +19,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toList;
 
+import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -166,6 +167,18 @@ public final class Parallelizer {
     this.executor = requireNonNull(executor);
     this.maxInFlight = maxInFlight;
     if (maxInFlight <= 0) throw new IllegalArgumentException("maxInFlight = " + maxInFlight);
+  }
+
+  /**
+   * Returns a {@link Parallelizer} using virtual threads for running tasks, with at most
+   * {@code maxInFlight} tasks running concurrently.
+   *
+   * <p>Only applicable in JDK 21 (throws if below JDK 21).
+   *
+   * @since 7.2
+   */
+  public static Parallelizer virtualThreadParallelizer(int maxInFlight) {
+    return new Parallelizer(VirtualThread.executor, maxInFlight);
   }
 
   /**
@@ -583,6 +596,17 @@ public final class Parallelizer {
       int remaining = maxInFlight - semaphore.drainPermits();
       propagateExceptions();
       return remaining;
+    }
+  }
+
+  private static final class VirtualThread {
+    private static final ExecutorService executor;
+    static {
+      try {
+        executor = (ExecutorService) Executors.class.getMethod("newVirtualThreadPerTaskExecutor").invoke(null);
+      } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+        throw new AssertionError(e);
+      }
     }
   }
 
