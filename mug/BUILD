@@ -7,7 +7,7 @@ java_library(
         "src/main/java/com/google/mu/function/*.java",
         "src/main/java/com/google/mu/collect/*.java",
       ],
-      exclude = ["src/main/java/com/google/mu/util/StringFormat.java"]),
+      exclude = glob(["src/main/java/com/google/mu/util/*StringFormat.java"])),
 )
 
 java_library(
@@ -27,7 +27,7 @@ java_library(
 java_library(
     name = "format",
     visibility = ["//visibility:public"],
-    srcs = ["src/main/java/com/google/mu/util/StringFormat.java"],
+    srcs = glob(["src/main/java/com/google/mu/util/*StringFormat.java"]),
     deps = [":base"],
     exported_plugins = ["//mug-errorprone:plugin"],
 )
