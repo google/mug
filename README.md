@@ -7,7 +7,7 @@ A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/
     `histogram = zip(times, counts).toMap();`
 * [Optionals](#optionals) provides extra utilities for Optional:  
     `optional(id.length() > 0, id)`
-* [Substring](https://github.com/google/mug/wiki/Substring-Explained) finds a substring in a string:  
+* [Substring](https://github.com/google/mug/wiki/Substring-Explained) fluent string manipulation library:  
     `String user = first('@').toEnd().removeFrom(email);`
 * [StringFormat](https://github.com/google/mug/wiki/StringFormat-Explained) extracts structured data from string:  
     `new StringFormat("{yyyy}/{mm}/{dd}").parse(dateStr, (yyyy, mm, dd) -> ...)`
