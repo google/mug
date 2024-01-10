@@ -291,16 +291,7 @@ List<List<StockPrice>> priceSequences =
         .collect(toList());
 ```
 
-**Example 2: to split a stream into smaller-size chunks (batches):**
-
-```java
-int batchSize = 5;
-MoreStreams.dice(requests, batchSize)
-    .map(BatchRequest::new)
-    .forEach(batchClient::sendBatchRequest);
-```
-
-**Example 3: to iterate over `Stream`s in the presence of checked exceptions or control flow:**
+**Example 2: to iterate over `Stream`s in the presence of checked exceptions or control flow:**
 
 The `Stream` API provides `forEach()` to iterate over a stream, if you don't have to throw checked exceptions.
 
@@ -321,13 +312,7 @@ for (Object obj : iterateOnce(stream)) {
 }
 ```
 
-**Example 4: to generate a BFS stream:**
-```java
-Stream<V> bfs = MoreStreams.generate(root, node -> node.children().stream())
-    .map(Node::value);
-```
-
-**Example 5: to merge maps:**
+**Example 3: to merge maps:**
 ```java
 interface Page {
   Map<Day, Long> getTrafficHistogram();
@@ -340,69 +325,4 @@ Map<Day, Long> siteTrafficHistogram = pages.stream()
     .map(Page::getTrafficHistogram)
     .collect(flatteningMaps(groupingBy(day -> day, Long::sum)))
     .toMap();
-```
-
-#### [BinarySearch](https://google.github.io/mug/mug-guava/apidocs/com/google/mu/util/BinarySearch.html)
-
-The JDK offers binary search algorithms out of the box, for sorted arrays and lists.
-
-But the binary search algorithm is applicable to more use cases. For example:
-
-* You may want to search in a `double` array with a tolerance factor.
-    ```java
-    Optional<Integer> index =
-        BinarySearch.inSortedArrayWithTolerance(doubles, 0.0001).find(3.14)
-    ```
-* Or search for the range of indexes when the array can have duplicates (at least according to the tolerance factor).
-    ```java
-    Range<Integer> indexRange =
-        BinarySearch.inSortedArrayWithTolerance(doubles, 0.0001).rangeOf(3.14)
-    ```
-* Or search for the solution to a monotonic polynomial equation.
-    ```java
-    long polynomial(int x) {
-      return 5 * x * x * x + 3 * x + 2;
-    }
-    
-    Optional<Integer> solvePolynomial(long y) {
-      return BinarySearch.forInts()
-          .find((low, x, high) -> Long.compare(y, polynomial(x));
-    }
-    ```
-
-#### [Iteration](https://google.github.io/mug/apidocs/com/google/mu/util/stream/Iteration.html)
-
-**Example 1: turn your recursive algorithm into a _lazy_ Stream:**
-
-```java
-class DepthFirst<N> extends Iteration<N> {
-  private final Set<N> visited = new HashSet<>();
-  
-  DepthFirst<N> postOrder(N node) {
-    if (visited.add(node)) {
-      for (N successor : node.successors()) {
-        yield(() -> postOrder(successor));
-      }
-      yield(node);
-    }
-    return this;
-  }
-}
-
-Stream<N> postOrder = new DepthFirst<N>().postOrder(root).iterate();
-```
-
-**Example 2: implement Fibonacci sequence as a stream:**
-
-```java
-class Fibonacci extends Iteration<Long> {
-  Fibonacci from(long v0, long v1) {
-    yield(v0);
-    yield(() -> from(v1, v0 + v1));
-    return this;
-  }
-}
-
-Stream<Long> fibonacci = new Fibonacci().from(0, 1).iterate();
-    => [0, 1, 2, 3, 5, 8, ...]
 ```
