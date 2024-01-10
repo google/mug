@@ -11,7 +11,7 @@ A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/
     `String user = first('@').toEnd().removeFrom(email);`
 * [StringFormat](https://github.com/google/mug/wiki/StringFormat-Explained) extracts structured data from string:  
     `new StringFormat("{yyyy}/{mm}/{dd}").parse(dateStr, (yyyy, mm, dd) -> ...)`
-* [DateTimeFormats](https://github.com/google/mug/wiki/DateTimeFormats-Explained) creates `DateTimeFormatter` from an example date time string (golang style but without magic dates):
+* [DateTimeFormats](https://github.com/google/mug/wiki/DateTimeFormats-Explained) creates `DateTimeFormatter` from an (_any_) example date time string (golang style but without magic dates):
     ```java
     DateTimeFormatter formatter =
         DateTimeFormats.formatOf("Tue, 10 Jan 2023 10:00:00.123 America/Los_Angeles")
