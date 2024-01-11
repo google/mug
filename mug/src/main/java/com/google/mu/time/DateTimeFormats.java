@@ -39,9 +39,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import com.google.mu.collect.PrefixSearchTable;
+import com.google.mu.util.BiOptional;
 import com.google.mu.util.CharPredicate;
 import com.google.mu.util.Substring;
 import com.google.mu.util.stream.BiStream;
@@ -66,9 +68,10 @@ import com.google.mu.util.stream.BiStream;
  * <p>Most ISO 8601 formats are supported, except BASIC_ISO_DATE, ISO_WEEK_DATE ('2012-W48-6')
  * and ISO_ORDINAL_DATE ('2012-337').
  *
- * <p>For the date part of custom patterns, {@code MM/dd/yyyy} or {@code dd/MM/yyyy} or any variant
- * where the {@code yyyy} is after the {@code MM} or {@code dd} are not supported. However if
- * localized month names such as {@code Jan} or {@code March} are used, all natural orders
+ * <p>For the date part of custom patterns, ambiguous examples like {@code 10/12/2024} or {@code
+ * 1/2/yyyy} are not supported. You should use unambiguous examples like {@code 10/30/2024}
+ * (which results in "MM/dd/yyyy"} or {@code 30/1/2024} (which results in "dd/M/yyyy}.
+ * In addition, localized month names such as {@code Jan} or {@code March} are used, all natural orders
  * ({@code year month day}, {@code month day year} or {@code day month year}) are supported.
  *
  * <p>For the time part of custom patterns, only {@code HH:mm}, {@code HH:mm:ss} and {@code
@@ -78,7 +81,7 @@ import com.google.mu.util.stream.BiStream;
  * <p>If the variant of the date time pattern you need exceeds the out-of-box support, you can
  * explicitly mix the {@link DateTimeFormatter} specifiers with example placeholders
  * (between a pair of pointy brackets) to be translated.
- *
+ *s
  * <p>For example the following code uses the {@code dd}, {@code MM} and {@code yyyy} specifiers as
  * is but translates the {@code Tue} and {@code America/New_York} example snippets into {@code E}
  * and {@code VV} specifiers respectively. It will then parse and format to datetime strings like
@@ -295,7 +298,12 @@ public final class DateTimeFormats {
                   })
               .orElse(0);
       if (consumed <= 0) {
-        throw new IllegalArgumentException("unsupported date time example: " + example);
+        consumed = LocalDateRule.resolve(signature)
+            .map((prefix, fmt) -> {
+              builder.append(fmt);
+              return prefix.size();
+            })
+            .orElseThrow(() -> new IllegalArgumentException("unsupported date time example: " + example));
       }
       index += consumed;
       matched = true;
@@ -326,7 +334,7 @@ public final class DateTimeFormats {
         .map(
             match -> {
               if (DIGIT.matchesAnyOf(match)) {
-                return match.length(); // the number of digits in the example matter
+                return new Numeric(match);
               }
               String name = match.toString();
               Token token = Token.ALL.get(name);
@@ -348,6 +356,96 @@ public final class DateTimeFormats {
         .in(example)
         .map(nanos -> example.substring(0, nanos.index() - 1) + nanos.after())
         .orElse(example);
+  }
+
+  private static final class LocalDateRule {
+    private static final PrefixSearchTable<Object, List<LocalDateRule>> RESOLUTION_TABLE =
+        PrefixSearchTable.<Object, List<LocalDateRule>>builder()
+            .add(
+                forExample("10-30-2014"),
+                asList(LocalDateRule.monthFirst("MM-dd-yyyy"), LocalDateRule.dayFirst("dd-MM-yyyy")))
+            .add(forExample("1-30-2014"), asList(LocalDateRule.monthFirst("M-dd-yyyy")))
+            .add(forExample("30-1-2014"), asList(LocalDateRule.dayFirst("dd-M-yyyy")))
+            .add(
+                forExample("10/30/2014"),
+                asList(LocalDateRule.monthFirst("MM/dd/yyyy"), LocalDateRule.dayFirst("dd/MM/yyyy")))
+            .add(forExample("1/30/2014"), asList(LocalDateRule.monthFirst("M/dd/yyyy")))
+            .add(forExample("30/1/2014"), asList(LocalDateRule.dayFirst("dd/M/yyyy")))
+            .build();
+
+    static BiOptional<List<Object>, String> resolve(List<?> signature) {
+      return RESOLUTION_TABLE.getAll(signature)
+          .flatMapValues(rules -> rules.stream().filter(rule -> rule.predicate.test(signature)).map(rule -> rule.format))
+          .findFirst();
+    }
+
+    private final Predicate<List<?>> predicate;
+    private final String format;
+
+    private LocalDateRule(Predicate<List<?>> predicate, String format) {
+      this.predicate = predicate;
+      this.format = format;
+    }
+
+    private static LocalDateRule dayFirst(String format) {
+      return new LocalDateRule(LocalDateRule::isDdmm, format);
+    }
+
+    private static LocalDateRule monthFirst(String format) {
+      return new LocalDateRule(LocalDateRule::isMmdd, format);
+    }
+
+    private static boolean isDdmm(List<?> signature) {
+      List<Numeric> numericParts = filterNumeric(signature);
+      return likelyDayOfMonth(numericParts.get(0).digits)
+          && likelyMonth(numericParts.get(1).digits);
+    }
+
+    private static boolean isMmdd(List<?> signature) {
+      List<Numeric> numericParts = filterNumeric(signature);
+      return likelyMonth(numericParts.get(0).digits)
+          && likelyDayOfMonth(numericParts.get(1).digits);
+    }
+
+    private static List<Numeric> filterNumeric(List<?> signature) {
+      return signature.stream()
+              .filter(part -> part instanceof Numeric)
+              .map(Numeric.class::cast)
+              .collect(toList());
+    }
+
+    private static boolean likelyDayOfMonth(String digits) {
+      if (digits.startsWith("0")) {
+        return false;
+      }
+      int n = Integer.parseInt(digits);
+      return n > 12 && n <= 31;
+    }
+
+    private static boolean likelyMonth(String digits) {
+      int n = Integer.parseInt(digits);
+      return n > 0 && n <= 12;
+    }
+  }
+
+  private static final class Numeric {
+    final String digits;
+
+    Numeric(CharSequence digits) {
+      this.digits = digits.toString();
+    }
+
+    @Override public int hashCode() {
+      return digits.length();
+    }
+
+    @Override public boolean equals(Object obj) {
+      if (obj instanceof Numeric) {
+        // only the number of digits in the example matter
+        return digits.length() == ((Numeric) obj).digits.length();
+      }
+      return false;
+    }
   }
 
   private enum Token {
