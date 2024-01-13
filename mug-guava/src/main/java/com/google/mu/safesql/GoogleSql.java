@@ -1,14 +1,10 @@
 package com.google.mu.safesql;
 
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.mapping;
-
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.stream.Collector;
 
 import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.mu.util.StringFormat;
@@ -29,7 +25,6 @@ public final class GoogleSql {
   private static final StringFormat DATE_EXPRESSION =
       new StringFormat("DATE({year}, {month}, {day})");
   private static final ZoneId GOOGLE_ZONE_ID = ZoneId.of("America/Los_Angeles");
-  private static final StringFormat.To<SafeQuery> PARENTHESIZED = template("({q})");
 
 
   /**
@@ -54,28 +49,6 @@ public final class GoogleSql {
         return super.unquoted(placeholder, value);
       }
     }.translate(formatString);
-  }
-
-  /**
-   * A collector that joins boolean query snippets using {@code AND} operator.
-   *
-   * @since 7.2
-   */
-  public static Collector<SafeQuery, ?, SafeQuery> and() {
-    return collectingAndThen(
-        mapping(PARENTHESIZED::with, SafeQuery.joining(" AND ")),
-        query -> query.toString().isEmpty() ? SafeQuery.of("TRUE") : query);
-  }
-
-  /**
-   * A collector that joins boolean query snippets using {@code OR} operator.
-   *
-   * @since 7.2
-   */
-  public static Collector<SafeQuery, ?, SafeQuery> or() {
-    return collectingAndThen(
-        mapping(PARENTHESIZED::with, SafeQuery.joining(" OR ")),
-        query -> query.toString().isEmpty() ? SafeQuery.of("FALSE") : query);
   }
 
 

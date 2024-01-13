@@ -45,6 +45,7 @@ public final class SafeQuery {
       firstNonNull(
           System.getProperty("com.google.mu.safesql.SafeQuery.trusted_sql_type"),
           "com.google.storage.googlesql.safesql.TrustedSqlString");
+  private static final StringFormat.To<SafeQuery> PARENTHESIZED = template("({q})");
 
   private final String query;
 
@@ -123,6 +124,28 @@ public final class SafeQuery {
    */
   public static StringFormat.To<SafeQuery> template(@CompileTimeConstant String formatString) {
     return new Translator().translate(formatString);
+  }
+
+  /**
+   * A collector that joins boolean query snippets using {@code AND} operator.
+   *
+   * @since 7.2
+   */
+  public static Collector<SafeQuery, ?, SafeQuery> and() {
+    return collectingAndThen(
+        mapping(PARENTHESIZED::with, joining(" AND ")),
+        query -> query.toString().isEmpty() ? of("TRUE") : query);
+  }
+
+  /**
+   * A collector that joins boolean query snippets using {@code OR} operator.
+   *
+   * @since 7.2
+   */
+  public static Collector<SafeQuery, ?, SafeQuery> or() {
+    return collectingAndThen(
+        mapping(PARENTHESIZED::with, joining(" OR ")),
+        query -> query.toString().isEmpty() ? of("FALSE") : query);
   }
 
   /** Returns the encapsulated SQL query. */

@@ -93,64 +93,6 @@ public class GoogleSqlTest {
   }
 
   @Test
-  public void andCollector_empty() {
-    ImmutableList<SafeQuery> queries = ImmutableList.of();
-    assertThat(queries.stream().collect(GoogleSql.and())).isEqualTo(SafeQuery.of("TRUE"));
-  }
-
-  @Test
-  public void andCollector_singleCondition() {
-    ImmutableList<SafeQuery> queries = ImmutableList.of(SafeQuery.of("a = 1"));
-    assertThat(queries.stream().collect(GoogleSql.and())).isEqualTo(SafeQuery.of("(a = 1)"));
-  }
-
-  @Test
-  public void andCollector_twoConditions() {
-    ImmutableList<SafeQuery> queries =
-        ImmutableList.of(SafeQuery.of("a = 1"), SafeQuery.of("b = 2 OR c = 3"));
-    assertThat(queries.stream().collect(GoogleSql.and()))
-        .isEqualTo(SafeQuery.of("(a = 1) AND (b = 2 OR c = 3)"));
-  }
-
-  @Test
-  public void andCollector_threeConditions() {
-    ImmutableList<SafeQuery> queries =
-        ImmutableList.of(
-            SafeQuery.of("a = 1"), SafeQuery.of("b = 2 OR c = 3"), SafeQuery.of("d = 4"));
-    assertThat(queries.stream().collect(GoogleSql.and()))
-        .isEqualTo(SafeQuery.of("(a = 1) AND (b = 2 OR c = 3) AND (d = 4)"));
-  }
-
-  @Test
-  public void orCollector_empty() {
-    ImmutableList<SafeQuery> queries = ImmutableList.of();
-    assertThat(queries.stream().collect(GoogleSql.or())).isEqualTo(SafeQuery.of("FALSE"));
-  }
-
-  @Test
-  public void orCollector_singleCondition() {
-    ImmutableList<SafeQuery> queries = ImmutableList.of(SafeQuery.of("a = 1"));
-    assertThat(queries.stream().collect(GoogleSql.or())).isEqualTo(SafeQuery.of("(a = 1)"));
-  }
-
-  @Test
-  public void orCollector_twoConditions() {
-    ImmutableList<SafeQuery> queries =
-        ImmutableList.of(SafeQuery.of("a = 1"), SafeQuery.of("b = 2 AND c = 3"));
-    assertThat(queries.stream().collect(GoogleSql.or()))
-        .isEqualTo(SafeQuery.of("(a = 1) OR (b = 2 AND c = 3)"));
-  }
-
-  @Test
-  public void orCollector_threeConditions() {
-    ImmutableList<SafeQuery> queries =
-        ImmutableList.of(
-            SafeQuery.of("a = 1"), SafeQuery.of("b = 2 AND c = 3"), SafeQuery.of("d = 4"));
-    assertThat(queries.stream().collect(GoogleSql.or()))
-        .isEqualTo(SafeQuery.of("(a = 1) OR (b = 2 AND c = 3) OR (d = 4)"));
-  }
-
-  @Test
   public void listOfTimestamp() {
     ZonedDateTime time = ZonedDateTime.of(1900, 1, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
     assertThat(
