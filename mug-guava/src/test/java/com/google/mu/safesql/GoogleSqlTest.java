@@ -13,6 +13,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import com.google.common.collect.ImmutableList;
+
 @RunWith(JUnit4.class)
 public class GoogleSqlTest {
   @BeforeClass  // Consistently set the system property across the test suite
@@ -88,5 +90,87 @@ public class GoogleSqlTest {
             template("SELECT * FROM tbl WHERE creation_date = {date}")
                 .with(LocalDate.of(2023, 10, 1)))
         .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE creation_date = DATE(2023, 10, 1)"));
+  }
+
+  @Test
+  public void andCollector_empty() {
+    ImmutableList<SafeQuery> queries = ImmutableList.of();
+    assertThat(queries.stream().collect(GoogleSql.and())).isEqualTo(SafeQuery.of("TRUE"));
+  }
+
+  @Test
+  public void andCollector_singleCondition() {
+    ImmutableList<SafeQuery> queries = ImmutableList.of(SafeQuery.of("a = 1"));
+    assertThat(queries.stream().collect(GoogleSql.and())).isEqualTo(SafeQuery.of("(a = 1)"));
+  }
+
+  @Test
+  public void andCollector_twoConditions() {
+    ImmutableList<SafeQuery> queries =
+        ImmutableList.of(SafeQuery.of("a = 1"), SafeQuery.of("b = 2 OR c = 3"));
+    assertThat(queries.stream().collect(GoogleSql.and()))
+        .isEqualTo(SafeQuery.of("(a = 1) AND (b = 2 OR c = 3)"));
+  }
+
+  @Test
+  public void andCollector_threeConditions() {
+    ImmutableList<SafeQuery> queries =
+        ImmutableList.of(
+            SafeQuery.of("a = 1"), SafeQuery.of("b = 2 OR c = 3"), SafeQuery.of("d = 4"));
+    assertThat(queries.stream().collect(GoogleSql.and()))
+        .isEqualTo(SafeQuery.of("(a = 1) AND (b = 2 OR c = 3) AND (d = 4)"));
+  }
+
+  @Test
+  public void orCollector_empty() {
+    ImmutableList<SafeQuery> queries = ImmutableList.of();
+    assertThat(queries.stream().collect(GoogleSql.or())).isEqualTo(SafeQuery.of("FALSE"));
+  }
+
+  @Test
+  public void orCollector_singleCondition() {
+    ImmutableList<SafeQuery> queries = ImmutableList.of(SafeQuery.of("a = 1"));
+    assertThat(queries.stream().collect(GoogleSql.or())).isEqualTo(SafeQuery.of("(a = 1)"));
+  }
+
+  @Test
+  public void orCollector_twoConditions() {
+    ImmutableList<SafeQuery> queries =
+        ImmutableList.of(SafeQuery.of("a = 1"), SafeQuery.of("b = 2 AND c = 3"));
+    assertThat(queries.stream().collect(GoogleSql.or()))
+        .isEqualTo(SafeQuery.of("(a = 1) OR (b = 2 AND c = 3)"));
+  }
+
+  @Test
+  public void orCollector_threeConditions() {
+    ImmutableList<SafeQuery> queries =
+        ImmutableList.of(
+            SafeQuery.of("a = 1"), SafeQuery.of("b = 2 AND c = 3"), SafeQuery.of("d = 4"));
+    assertThat(queries.stream().collect(GoogleSql.or()))
+        .isEqualTo(SafeQuery.of("(a = 1) OR (b = 2 AND c = 3) OR (d = 4)"));
+  }
+
+  @Test
+  public void listOfTimestamp() {
+    ZonedDateTime time = ZonedDateTime.of(1900, 1, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
+    assertThat(
+            template("SELECT * FROM tbl WHERE creation_time in ({instants})")
+                .with(/* instants */ ImmutableList.of(time.toInstant())))
+        .isEqualTo(
+            SafeQuery.of(
+                "SELECT * FROM tbl WHERE creation_time in "
+                    + "(TIMESTAMP('1900-01-01T00:00:00.000000', 'America/Los_Angeles'))"));
+  }
+
+  @Test
+  public void mixedWithDefaultTranslation() {
+    ZonedDateTime time = ZonedDateTime.of(1900, 1, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
+    assertThat(
+            template("SELECT * FROM tbl WHERE creation_time = {instant} AND id = {id}")
+                .with(time.toInstant(), /* id */ 1))
+        .isEqualTo(
+            SafeQuery.of(
+                "SELECT * FROM tbl WHERE creation_time = "
+                    + "TIMESTAMP('1900-01-01T00:00:00.000000', 'America/Los_Angeles') AND id = 1"));
   }
 }
