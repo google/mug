@@ -117,7 +117,9 @@ public final class SafeQuery {
   }
 
   /**
-   * A collector that joins boolean query snippets using {@code AND} operator.
+   * A collector that joins boolean query snippets using {@code AND} operator. The AND'ed sub-queries
+   * will be enclosed in pairs of parenthesis to avoid ambiguity. If the input is empty, the result
+   * will be "TRUE".
    *
    * @since 7.2
    */
@@ -128,7 +130,9 @@ public final class SafeQuery {
   }
 
   /**
-   * A collector that joins boolean query snippets using {@code OR} operator.
+   * A collector that joins boolean query snippets using {@code OR} operator. The OR'ed sub-queries
+   * will be enclosed in pairs of parenthesis to avoid ambiguity. If the input is empty, the result
+   * will be "FALSE".
    *
    * @since 7.2
    */
