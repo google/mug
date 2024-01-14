@@ -45,7 +45,6 @@ public final class SafeQuery {
       firstNonNull(
           System.getProperty("com.google.mu.safesql.SafeQuery.trusted_sql_type"),
           "com.google.storage.googlesql.safesql.TrustedSqlString");
-  private static final StringFormat.To<SafeQuery> PARENTHESIZED = template("({q})");
 
   private final String query;
 
@@ -56,15 +55,6 @@ public final class SafeQuery {
   /** Returns a query using a string constant. */
   public static SafeQuery of(@CompileTimeConstant String query) {
     return new SafeQuery(checkNotNull(query));
-  }
-
-  /**
-   * Returns a collector that can join {@link SafeQuery} objects using {@code delim} as the
-   * delimiter.
-   */
-  public static Collector<SafeQuery, ?, SafeQuery> joining(@CompileTimeConstant String delim) {
-    return collectingAndThen(
-        mapping(SafeQuery::toString, Collectors.joining(checkNotNull(delim))), SafeQuery::new);
   }
 
   /**
@@ -133,7 +123,7 @@ public final class SafeQuery {
    */
   public static Collector<SafeQuery, ?, SafeQuery> and() {
     return collectingAndThen(
-        mapping(PARENTHESIZED::with, joining(" AND ")),
+        mapping(SafeQuery::parenthesized, joining(" AND ")),
         query -> query.toString().isEmpty() ? of("TRUE") : query);
   }
 
@@ -144,8 +134,17 @@ public final class SafeQuery {
    */
   public static Collector<SafeQuery, ?, SafeQuery> or() {
     return collectingAndThen(
-        mapping(PARENTHESIZED::with, joining(" OR ")),
+        mapping(SafeQuery::parenthesized, joining(" OR ")),
         query -> query.toString().isEmpty() ? of("FALSE") : query);
+  }
+
+  /**
+   * Returns a collector that can join {@link SafeQuery} objects using {@code delim} as the
+   * delimiter.
+   */
+  public static Collector<SafeQuery, ?, SafeQuery> joining(@CompileTimeConstant String delim) {
+    return collectingAndThen(
+        mapping(SafeQuery::toString, Collectors.joining(checkNotNull(delim))), SafeQuery::new);
   }
 
   /** Returns the encapsulated SQL query. */
@@ -165,6 +164,10 @@ public final class SafeQuery {
   @Override
   public int hashCode() {
     return query.hashCode();
+  }
+
+  private SafeQuery parenthesized() {
+    return new SafeQuery("(" + query + ")");
   }
 
   /**
