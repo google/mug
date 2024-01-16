@@ -218,9 +218,22 @@ public abstract class BiOptional<A, B> {
       throws E;
 
   /**
+   * Ensures that the pair must be present or else throws {@link NoSuchElementException} with
+   * {@code message} formatted with {@code args}.
+   *
+   * @throws NullPointerException if {@code message} is null, or if
+   *     {@code exceptionFactory} returns null.
+   * @throws NoSuchElementException if the pair is absent.
+   * @since 7.2
+   */
+  public final <E extends Throwable> Both<A, B> orElseThrow(
+      String message, Object... args) throws E {
+    return orElseThrow(NoSuchElementException::new, message, args);
+  }
+
+  /**
    * Ensures that the pair must be present or else throws the exception returned by {@code
-   * exceptionFactory} with {@code message} formatted with {@code args} using {@link
-   * Strings#lenientFormat}.
+   * exceptionFactory} with {@code message} formatted with {@code args}.
    *
    * @throws NullPointerException if {@code exceptionFactory} or {@code message} is null, or if
    *     {@code exceptionFactory} returns null.
