@@ -1,7 +1,7 @@
 Disclaimer: This is not an official Google product.
 
 # Mug
-A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/index.html)), with 0 deps (Proto, BigQuery Guava addons are in separate artifacts). ![](https://travis-ci.org/google/mug.svg?branch=master)
+A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/index.html)), with 0 deps (Proto, BigQuery, Guava addons are in separate artifacts). ![](https://travis-ci.org/google/mug.svg?branch=master)
 
 * Stream utilities ([BiStream](https://github.com/google/mug/wiki/BiStream-Explained), [MoreStreams](#morestreams), [Iteration](https://github.com/google/mug/wiki/Iteration-Explained), [Guava Addons](https://google.github.io/mug/mug-guava/apidocs/index.html)):  
     `histogram = zip(times, counts).toMap();`
