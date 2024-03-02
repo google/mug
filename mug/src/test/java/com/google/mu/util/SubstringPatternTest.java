@@ -359,6 +359,16 @@ public class SubstringPatternTest {
   }
 
   @Test
+  public void repeatedly_cut_byBetweenInclusivePattern() {
+    Substring.Pattern comment = Substring.between("/*", INCLUSIVE, "*/", INCLUSIVE);
+    assertPattern(comment, "a").cutsTo("a");
+    assertPattern(comment, "a/*comment*/").cutsTo("a", "/*comment*/", "");
+    assertPattern(comment, "a/*comment*/b").cutsTo("a", "/*comment*/", "b");
+    assertPattern(comment, "a/*c1*/b/*c2*/").cutsTo("a", "/*c1*/", "b", "/*c2*/", "");
+    assertPattern(comment, "a/*c1*/b/*c2*/c").cutsTo("a", "/*c1*/", "b", "/*c2*/", "c");
+  }
+
+  @Test
   public void repeatedly_cut_beginning() {
     assertPattern(BEGINNING, "foo").cutsTo("", "", "f", "", "o", "", "o", "", "");
   }
@@ -443,8 +453,6 @@ public class SubstringPatternTest {
   public void betweenInclusive_matchesBetweenSameChar() {
     assertPattern(Substring.between('.', INCLUSIVE, '.', INCLUSIVE), "..").finds("..");
     assertPattern(Substring.between('.', INCLUSIVE, '.', INCLUSIVE), ".?.").finds(".?.");
-    assertPattern(Substring.between('.', INCLUSIVE, '.', EXCLUSIVE), "..").finds(".");
-    assertPattern(Substring.between('.', EXCLUSIVE, '.', INCLUSIVE), "..").finds(".");
   }
 
   @Test

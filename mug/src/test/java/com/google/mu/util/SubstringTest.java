@@ -2277,7 +2277,7 @@ public class SubstringTest {
   }
 
   @Test public void repeatedly_split_byBetweenPattern() {
-    Substring.Pattern comment = Substring.between(before(first("/*")), after(first("*/")));
+    Substring.Pattern comment = Substring.between("/*", INCLUSIVE, "*/", INCLUSIVE);
     assertThat(comment.repeatedly().split("a").map(Match::toString))
         .containsExactly("a")
         .inOrder();
@@ -2426,7 +2426,7 @@ public class SubstringTest {
     assertThat(match.after()).isEqualTo("end");
     assertThat(match.length()).isEqualTo(5);
     assertThat(
-            Substring.between(before(last('<')), after(last('>'))).repeatedly().match("begin<foo>end")
+            Substring.between(last('<'), INCLUSIVE, last('>'), INCLUSIVE).repeatedly().match("begin<foo>end")
                 .map(Object::toString))
         .containsExactly("<foo>");
   }
