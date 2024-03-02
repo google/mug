@@ -17,6 +17,7 @@ import static com.google.mu.util.Substring.spanningInOrder;
 import static com.google.mu.util.Substring.suffix;
 import static com.google.mu.util.Substring.trailing;
 import static com.google.mu.util.Substring.upToIncluding;
+import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static java.util.Collections.nCopies;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -2320,6 +2321,11 @@ public class SubstringTest {
         .isEqualTo("between(last('<'), last('>'))");
   }
 
+  @Test public void betweenInclusive_toString() {
+    assertThat(Substring.between(last("<"), INCLUSIVE, last(">"), INCLUSIVE).toString())
+        .isEqualTo("between(last('<'), INCLUSIVE, last('>'), INCLUSIVE)");
+  }
+
   @Test public void between_matchedInTheMiddle() {
     Substring.Match match = Substring.between(last('<'), last('>')).in("foo<bar>baz").get();
     assertThat(match.toString()).isEqualTo("bar");
@@ -2402,6 +2408,19 @@ public class SubstringTest {
   @Test public void between_matchedIncludingDelimiters() {
     Substring.Match match =
         Substring.between(before(last('<')), after(last('>'))).in("begin<foo>end").get();
+    assertThat(match.toString()).isEqualTo("<foo>");
+    assertThat(match.before()).isEqualTo("begin");
+    assertThat(match.after()).isEqualTo("end");
+    assertThat(match.length()).isEqualTo(5);
+    assertThat(
+            Substring.between(before(last('<')), after(last('>'))).repeatedly().match("begin<foo>end")
+                .map(Object::toString))
+        .containsExactly("<foo>");
+  }
+
+  @Test public void betweenInclusive_matchedIncludingDelimiters() {
+    Substring.Match match =
+        Substring.between(last('<'), INCLUSIVE, last('>'), INCLUSIVE).in("begin<foo>end").get();
     assertThat(match.toString()).isEqualTo("<foo>");
     assertThat(match.before()).isEqualTo("begin");
     assertThat(match.after()).isEqualTo("end");

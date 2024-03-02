@@ -2,6 +2,7 @@ package com.google.mu.util;
 
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.prefix;
+import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 
 import java.util.stream.Stream;
 
@@ -14,6 +15,11 @@ enum SubstringPatternVariant {
   BETWEEN_EMPTIES {
     @Override Substring.Pattern wrap(Substring.Pattern pattern) {
       return pattern.immediatelyBetween("", "");
+    }
+  },
+  BETWEEN_EMPTIES_INCLUSIVE {
+    @Override Substring.Pattern wrap(Substring.Pattern pattern) {
+      return pattern.immediatelyBetween("", INCLUSIVE, "", INCLUSIVE);
     }
   },
   FOLLOWED_BY_EMPTY {

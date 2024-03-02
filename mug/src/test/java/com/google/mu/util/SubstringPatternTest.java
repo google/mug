@@ -294,6 +294,16 @@ public class SubstringPatternTest {
   }
 
   @Test
+  public void repeatedly_split_byBetweenInclusivePattern() {
+    Substring.Pattern comment = Substring.between(first("/*"), INCLUSIVE, first("*/"), INCLUSIVE);
+    assertPattern(comment, "a").splitsTo("a");
+    assertPattern(comment, "a/*comment*/").splitsTo("a", "");
+    assertPattern(comment, "a/*comment*/b").splitsTo("a", "b");
+    assertPattern(comment, "a/*c1*/b/*c2*/").splitsTo("a", "b", "");
+    assertPattern(comment, "a/*c1*/b/*c2*/c").splitsTo("a", "b", "c");
+  }
+
+  @Test
   public void repeatedly_split_beginning() {
     assertPattern(BEGINNING, "foo").splitsTo("", "f", "o", "o", "");
   }
@@ -378,6 +388,18 @@ public class SubstringPatternTest {
   }
 
   @Test
+  public void between_matchesBetweenSameChar() {
+    assertPattern(Substring.between('.', '.'), "..").finds("");
+    assertPattern(Substring.between('.', '.'), ".?.").finds("?");
+  }
+
+  @Test
+  public void between_matchesBetweenDifferentChars() {
+    assertPattern(Substring.between('<', '>'), "<>").finds("");
+    assertPattern(Substring.between("<", ">"), "<?>").finds("?");
+  }
+
+  @Test
   public void between_nothingBetweenSameChar() {
     assertPattern(Substring.between('.', '.'), ".").findsNothing();
     assertPattern(Substring.between('.', '.'), ".").findsNothing();
@@ -416,6 +438,83 @@ public class SubstringPatternTest {
         .containsExactly("/abc", "/d", "")
         .inOrder();
   }
+
+  @Test
+  public void betweenInclusive_matchesBetweenSameChar() {
+    assertPattern(Substring.between('.', INCLUSIVE, '.', INCLUSIVE), "..").finds("..");
+    assertPattern(Substring.between('.', INCLUSIVE, '.', INCLUSIVE), ".?.").finds(".?.");
+    assertPattern(Substring.between('.', INCLUSIVE, '.', EXCLUSIVE), "..").finds(".");
+    assertPattern(Substring.between('.', EXCLUSIVE, '.', INCLUSIVE), "..").finds(".");
+  }
+
+  @Test
+  public void betweenInclusiveExclusive_matchesBetweenSameChar() {
+    assertPattern(Substring.between('.', INCLUSIVE, '.', EXCLUSIVE), "..").finds(".");
+  }
+
+  @Test
+  public void betweenExclusiveInclusive_matchesBetweenSameChar() {
+    assertPattern(Substring.between('.', EXCLUSIVE, '.', INCLUSIVE), "..").finds(".");
+  }
+
+  @Test
+  public void betweenInclusive_matchesBetweenDifferentChars() {
+    assertPattern(Substring.between('<', INCLUSIVE, '>', INCLUSIVE), "<>").finds("<>");
+    assertPattern(Substring.between("<", INCLUSIVE, ">", INCLUSIVE), "<?>").finds("<?>");
+  }
+
+  @Test
+  public void betweenInclusiveExclusive_matchesBetweenDifferentChars() {
+    assertPattern(Substring.between('<', INCLUSIVE, '>', EXCLUSIVE), "<>").finds("<");
+    assertPattern(Substring.between("<", INCLUSIVE, ">", EXCLUSIVE), "<?>").finds("<?");
+  }
+
+  @Test
+  public void betweenExclusiveInclusive_matchesBetweenDifferentChars() {
+    assertPattern(Substring.between('<', EXCLUSIVE, '>', INCLUSIVE), "<>").finds(">");
+    assertPattern(Substring.between("<", EXCLUSIVE, ">", INCLUSIVE), "<?>").finds("?>");
+  }
+
+  @Test
+  public void betweenInclusive_nothingBetweenSameChar() {
+    assertPattern(Substring.between('.', INCLUSIVE, '.', INCLUSIVE), ".").findsNothing();
+    assertPattern(Substring.between('.', INCLUSIVE, '.', INCLUSIVE), ".").findsNothing();
+  }
+
+  @Test
+  public void betweenInclusive_matchesOpenButNotClose() {
+    assertPattern(Substring.between('<', INCLUSIVE, '>', INCLUSIVE), "<foo").findsNothing();
+    assertPattern(Substring.between('<', INCLUSIVE, '>', INCLUSIVE), "<foo").findsNothing();
+  }
+
+  @Test
+  public void betweenInclusive_matchesCloseButNotOpen() {
+    assertPattern(Substring.between('<', INCLUSIVE, '>', INCLUSIVE), "foo>").findsNothing();
+    assertPattern(Substring.between('<', INCLUSIVE, '>', INCLUSIVE), "foo>").findsNothing();
+  }
+
+  @Test
+  public void betweenInclusive_closeIsBeforeOpen() {
+    assertPattern(Substring.between('<', INCLUSIVE, '>', INCLUSIVE), ">foo<").findsNothing();
+    assertPattern(Substring.between('<', INCLUSIVE, '>', INCLUSIVE), ">foo<").findsNothing();
+  }
+
+  @Test
+  public void betweenInclusive_matchesNone() {
+    assertPattern(Substring.between('<', INCLUSIVE, '>', INCLUSIVE), "foo").findsNothing();
+    assertPattern(Substring.between('<', INCLUSIVE, '>', INCLUSIVE), "foo").findsNothing();
+  }
+
+  @Test
+  public void betweenInclusive_withLimit() {
+    assertThat(
+            Substring.between(first("//").limit(1), INCLUSIVE, first("//").limit(1), INCLUSIVE)
+                .repeatedly()
+                .from("//abc//d////"))
+        .containsExactly("//abc/", "//")
+        .inOrder();
+  }
+
 
   @Test
   public void then_match() {
@@ -887,9 +986,22 @@ public class SubstringPatternTest {
   }
 
   @Test
+  public void betweenInclusive_betweenBacktrackingStartsWithoutDelimiter() {
+    Substring.Pattern pattern = Substring.between("(", INCLUSIVE, ")", INCLUSIVE).immediatelyBetween("[", "]");
+    assertPattern(pattern, "[(foo)]").finds("(foo)");
+    assertPattern(pattern, "[(foo)] [(bar)]").finds("(foo)", "(bar)");
+  }
+
+  @Test
   public void between_backtrackingAtOpeningDelimiter() {
     Substring.Pattern pattern = Substring.between("oo", "cc").immediatelyBetween("ooo", "ccc");
     assertPattern(pattern, "oofooccooobarccc").finds("bar");
+  }
+
+  @Test
+  public void betweenInclusive_backtrackingBeforeOpeningDelimiter() {
+    Substring.Pattern pattern = Substring.between("oo", INCLUSIVE, "cc", INCLUSIVE).immediatelyBetween("ooo", "ccc");
+    assertPattern(pattern, "oofooccooobarccc").findsNothing();
   }
 
   @Test

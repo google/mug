@@ -880,6 +880,16 @@ public final class Substring {
   }
 
   /**
+   * Similar to {@link #between(String, String}} but allows to use alternative bound styles
+   * to include or exclude the delimiters at both ends.
+   *
+   * @since 7.2
+   */
+  public static Pattern between(String open, BoundStyle openBound, String close, BoundStyle closeBound) {
+    return between(first(open), openBound, first(close), closeBound);
+  }
+
+  /**
    * Returns a {@code Pattern} that will match the substring between the first {@code open} and the
    * first {@code close} after it.
    *
@@ -893,6 +903,16 @@ public final class Substring {
   }
 
   /**
+   * Similar to {@link #between(char, char}} but allows to use alternative bound styles
+   * to include or exclude the delimiters at both ends.
+   *
+   * @since 7.2
+   */
+  public static Pattern between(char open, BoundStyle openBound, char close, BoundStyle closeBound) {
+    return between(first(open), openBound, first(close), closeBound);
+  }
+
+  /**
    * Returns a {@code Pattern} that will match the substring between {@code open} and {@code close}.
    * For example the following pattern finds the link text in markdown syntax:
    *
@@ -903,8 +923,20 @@ public final class Substring {
    * </pre>
    */
   public static Pattern between(Pattern open, Pattern close) {
+    return between(open, BoundStyle.EXCLUSIVE, close, BoundStyle.EXCLUSIVE);
+  }
+
+  /**
+   * Similar to {@link #between(Pattern, Pattern}} but allows to use alternative bound styles
+   * to include or exclude the delimiters at both ends.
+   *
+   * @since 7.2
+   */
+  public static Pattern between(Pattern open, BoundStyle openBound, Pattern close, BoundStyle closeBound) {
     requireNonNull(open);
+    requireNonNull(openBound);
     requireNonNull(close);
+    requireNonNull(closeBound);
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
         Match left = open.match(input, fromIndex);
@@ -915,8 +947,8 @@ public final class Substring {
         if (right == null) {
           return null;
         }
-        int startIndex = left.endIndex;
-        int len = right.startIndex - startIndex;
+        int startIndex = openBound == BoundStyle.INCLUSIVE ? left.startIndex : left.endIndex;
+        int len = (closeBound == BoundStyle.INCLUSIVE ? right.endIndex : right.startIndex) - startIndex;
         // Include the closing delimiter in the next iteration. This allows delimiters in
         // patterns like "/foo/bar/baz/" to be treated more intuitively.
         return Match.backtrackable(
@@ -927,7 +959,9 @@ public final class Substring {
       }
 
       @Override public String toString() {
-        return "between(" + open + ", " + close + ")";
+        return openBound == BoundStyle.EXCLUSIVE && closeBound == BoundStyle.EXCLUSIVE
+            ? "between(" + open + ", " + close + ")"
+            : "between(" + open + ", " + openBound + ", " + close + ", " + closeBound + ")";
       }
     };
   }
@@ -2745,7 +2779,7 @@ public final class Substring {
     /** The match includes the bound */
     INCLUSIVE,
     /** The match doesn't include the bound */
-    EXCLUSIVE
+    EXCLUSIVE;
   }
 
   abstract static class Last extends Pattern {
