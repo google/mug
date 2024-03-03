@@ -19,8 +19,8 @@ public final class DateTimeExampleStringCheckTest {
             "import java.time.format.DateTimeFormatter;",
             "class Test {",
             "  private static final DateTimeFormatter FORMAT = formatOf(",
-            "      // BUG: Diagnostic contains: unsupported date time example: 10/20/2023",
-            "      \"10/20/2023 10:10:10\");",
+            "      // BUG: Diagnostic contains: unsupported date time example: 10/2/2023",
+            "      \"10/2/2023 10:10:10\");",
             "}")
         .doTest();
   }

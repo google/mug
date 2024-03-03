@@ -56,6 +56,71 @@ public final class DateTimeFormatsTest {
   }
 
   @Test
+  public void singleDigitHourWithoutAmPm_throws() {
+    assertThrows(IllegalArgumentException.class, () -> formatOf("1"));
+  }
+
+  @Test
+  public void singleDigitHourWithAmPm() {
+    assertLocalTime("1AM", "ha").isEqualTo(LocalTime.of(1, 0, 0));
+    assertLocalTime("2 PM", "h a").isEqualTo(LocalTime.of(14, 0, 0));
+  }
+
+  @Test
+  public void singleDigitHourMinuteWithoutAmPm_throws() {
+    assertThrows(IllegalArgumentException.class, () -> formatOf("1:10"));
+  }
+
+  @Test
+  public void singleDigitHourMinuteWithAmPm() {
+    assertLocalTime("1:10AM", "h:mma").isEqualTo(LocalTime.of(1, 10, 0));
+    assertLocalTime("2:05 PM", "h:mm a").isEqualTo(LocalTime.of(14, 5, 0));
+  }
+
+  @Test
+  public void singleDigitHourMinuteSecondWithoutAmPm_throws() {
+    assertThrows(IllegalArgumentException.class, () -> formatOf("1:10:00"));
+  }
+
+  @Test
+  public void singleDigitHourMinuteSecondWithAmPm() {
+    assertLocalTime("1:10:30AM", "h:mm:ssa").isEqualTo(LocalTime.of(1, 10, 30));
+    assertLocalTime("2:05:00 PM", "h:mm:ss a").isEqualTo(LocalTime.of(14, 5, 0));
+  }
+
+  @Test
+  public void twoDigitHourWithAmPm() {
+    assertLocalTime("09AM", "HHa").isEqualTo(LocalTime.of(9, 0, 0));
+    assertLocalTime("12 PM", "HH a").isEqualTo(LocalTime.of(12, 0, 0));
+  }
+
+  @Test
+  public void twoDigitHourMinuteWithoutAmPm() {
+    assertLocalTime("09:00", "HH:mm").isEqualTo(LocalTime.of(9, 0, 0));
+    assertLocalTime("15:00", "HH:mm").isEqualTo(LocalTime.of(15, 0, 0));
+  }
+
+  @Test
+  public void twoDigitHourMinuteWithAmPm() {
+    assertLocalTime("09:00AM", "HH:mma").isEqualTo(LocalTime.of(9, 0, 0));
+    assertLocalTime("12:00 PM", "HH:mm a").isEqualTo(LocalTime.of(12, 0, 0));
+  }
+
+
+  @Test
+  public void twoDigitHourMinuteSecondWithAmPm() {
+    assertLocalTime("09:00:30AM", "HH:mm:ssa").isEqualTo(LocalTime.of(9, 0, 30));
+    assertLocalTime("15:00:30 PM", "HH:mm:ss a").isEqualTo(LocalTime.of(15, 0, 30));
+  }
+
+
+  @Test
+  public void twoDigitHourMinuteSecondWithoutAmPm() {
+    assertLocalTime("09:00:30", "HH:mm:ss").isEqualTo(LocalTime.of(9, 0, 30));
+    assertLocalTime("15:00:30", "HH:mm:ss").isEqualTo(LocalTime.of(15, 0, 30));
+  }
+
+  @Test
   public void dateAndTimeExamples() {
     assertLocalDateTime("2023-10-20 15:30:05", "yyyy-MM-dd HH:mm:ss")
         .isEqualTo(LocalDateTime.of(2023, 10, 20, 15, 30, 5));
@@ -65,7 +130,6 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void instantExample() {
-    Instant instant = Instant.parse("2023-10-05T15:30:05Z");
     assertThat(formatOf("2023-10-05T15:30:05Z").parse(Instant.now().toString())).isNotNull();
   }
 
@@ -167,8 +231,144 @@ public final class DateTimeFormatsTest {
 
   @Test
   @SuppressWarnings("DateTimeExampleStringCheck")
-  public void mmddyyyy_notSupported() {
-    assertThrows(IllegalArgumentException.class, () -> formatOf("10/20/2023 10:10:10"));
+  public void ambiguousMmddyyyy_notSupported() {
+    assertThrows(IllegalArgumentException.class, () -> formatOf("10/12/2023 10:10:10"));
+    assertThrows(IllegalArgumentException.class, () -> formatOf("01/12/2023 10:10:10"));
+    assertThrows(IllegalArgumentException.class, () -> formatOf("10/02/2023 10:10:10"));
+  }
+
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void ambiguousMddyyyy_notSupported() {
+    assertThrows(IllegalArgumentException.class, () -> formatOf("1/12/2023 10:10:10"));
+    assertThrows(IllegalArgumentException.class, () -> formatOf("1/02/2023 10:10:10"));
+  }
+
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void ambiguousDdmyyyy_notSupported() {
+    assertThrows(IllegalArgumentException.class, () -> formatOf("10/1/2023 10:10:10"));
+    assertThrows(IllegalArgumentException.class, () -> formatOf("01/1/2023 10:10:10"));
+  }
+
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void ambiguousDmyyyy_notSupported() {
+    assertThrows(IllegalArgumentException.class, () -> formatOf("1/2/2023 10:10:10"));
+  }
+
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void outOfRangeMmddyyyy_notSupported() {
+    assertThrows(IllegalArgumentException.class, () -> formatOf("10/32/2023 10:10:10"));
+    assertThrows(IllegalArgumentException.class, () -> formatOf("13/13/2023 10:10:10"));
+  }
+
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void outOfRangeMddyyyy_notSupported() {
+    assertThrows(IllegalArgumentException.class, () -> formatOf("1/32/2023 10:10:10"));
+    assertThrows(IllegalArgumentException.class, () -> formatOf("0/31/2023 10:10:10"));
+  }
+
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void outOfRangeDdmyyyy_notSupported() {
+    assertThrows(IllegalArgumentException.class, () -> formatOf("32/1/2023 10:10:10"));
+    assertThrows(IllegalArgumentException.class, () -> formatOf("31/0/2023 10:10:10"));
+  }
+
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void outOfRangemDdyyyy_notSupported() {
+    assertThrows(IllegalArgumentException.class, () -> formatOf("1/32/2023 10:10:10"));
+    assertThrows(IllegalArgumentException.class, () -> formatOf("0/31/2023 10:10:10"));
+  }
+
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void outOfRangeDmyyyy_notSupported() {
+    assertThrows(IllegalArgumentException.class, () -> formatOf("0/0/2023 10:10:10"));
+  }
+
+  @Test
+  public void mmddyyyy_supportedIfDayIsGreaterThan12() {
+    assertEquivalent(
+        formatOf("10/13/2023 10:10:10 Europe/Paris"),
+        ZonedDateTime.of(LocalDateTime.of(2023, 1, 2, 1, 2, 3), ZoneId.of("America/Los_Angeles")),
+        "MM/dd/yyyy HH:mm:ss VV");
+    assertEquivalent(
+        formatOf("10/31/2023 10:10:10 Europe/Paris"),
+        ZonedDateTime.of(LocalDateTime.of(2023, 1, 2, 1, 2, 3), ZoneId.of("America/Los_Angeles")),
+        "MM/dd/yyyy HH:mm:ss VV");
+    assertEquivalent(
+        formatOf("10-13-2023 10:10:10 Europe/Paris"),
+        ZonedDateTime.of(LocalDateTime.of(2023, 1, 2, 1, 2, 3), ZoneId.of("America/Los_Angeles")),
+        "MM-dd-yyyy HH:mm:ss VV");
+    assertEquivalent(
+        formatOf("10-31-2023 10:10:10 Europe/Paris"),
+        ZonedDateTime.of(LocalDateTime.of(2023, 1, 2, 1, 2, 3), ZoneId.of("America/Los_Angeles")),
+        "MM-dd-yyyy HH:mm:ss VV");
+  }
+
+  @Test
+  public void mddyyyy_supportedIfDayIsGreaterThan12() {
+    assertEquivalent(
+        formatOf("1/13/2023 10:10:10 Europe/Paris"),
+        ZonedDateTime.of(LocalDateTime.of(2023, 1, 2, 1, 2, 3), ZoneId.of("America/Los_Angeles")),
+        "M/dd/yyyy HH:mm:ss VV");
+    assertEquivalent(
+        formatOf("1/31/2023 10:10:10 Europe/Paris"),
+        ZonedDateTime.of(LocalDateTime.of(2023, 1, 2, 1, 2, 3), ZoneId.of("America/Los_Angeles")),
+        "M/dd/yyyy HH:mm:ss VV");
+    assertEquivalent(
+        formatOf("1-13-2023 10:10:10 Europe/Paris"),
+        ZonedDateTime.of(LocalDateTime.of(2023, 1, 2, 1, 2, 3), ZoneId.of("America/Los_Angeles")),
+        "M-dd-yyyy HH:mm:ss VV");
+    assertEquivalent(
+        formatOf("1-31-2023 10:10:10 Europe/Paris"),
+        ZonedDateTime.of(LocalDateTime.of(2023, 1, 2, 1, 2, 3), ZoneId.of("America/Los_Angeles")),
+        "M-dd-yyyy HH:mm:ss VV");
+  }
+
+  @Test
+  public void ddmmyyyy_supportedIfDayIsGreaterThan12() {
+    assertEquivalent(
+        formatOf("13/10/2023 10:10:10 Europe/Paris"),
+        ZonedDateTime.of(LocalDateTime.of(2023, 1, 2, 1, 2, 3), ZoneId.of("America/Los_Angeles")),
+        "dd/MM/yyyy HH:mm:ss VV");
+    assertEquivalent(
+        formatOf("31/10/2023 10:10:10 Europe/Paris"),
+        ZonedDateTime.of(LocalDateTime.of(2023, 1, 2, 1, 2, 3), ZoneId.of("America/Los_Angeles")),
+        "dd/MM/yyyy HH:mm:ss VV");
+    assertEquivalent(
+        formatOf("13-10-2023 10:10:10 Europe/Paris"),
+        ZonedDateTime.of(LocalDateTime.of(2023, 1, 2, 1, 2, 3), ZoneId.of("America/Los_Angeles")),
+        "dd-MM-yyyy HH:mm:ss VV");
+    assertEquivalent(
+        formatOf("31-10-2023 10:10:10 Europe/Paris"),
+        ZonedDateTime.of(LocalDateTime.of(2023, 1, 2, 1, 2, 3), ZoneId.of("America/Los_Angeles")),
+        "dd-MM-yyyy HH:mm:ss VV");
+  }
+
+  @Test
+  public void ddmyyyy_supportedIfDayIsGreaterThan12() {
+    assertEquivalent(
+        formatOf("13/1/2023 10:10:10 Europe/Paris"),
+        ZonedDateTime.of(LocalDateTime.of(2023, 1, 2, 1, 2, 3), ZoneId.of("America/Los_Angeles")),
+        "dd/M/yyyy HH:mm:ss VV");
+    assertEquivalent(
+        formatOf("31/1/2023 10:10:10 Europe/Paris"),
+        ZonedDateTime.of(LocalDateTime.of(2023, 1, 2, 1, 2, 3), ZoneId.of("America/Los_Angeles")),
+        "dd/M/yyyy HH:mm:ss VV");
+    assertEquivalent(
+        formatOf("13-1-2023 10:10:10 Europe/Paris"),
+        ZonedDateTime.of(LocalDateTime.of(2023, 1, 2, 1, 2, 3), ZoneId.of("America/Los_Angeles")),
+        "dd-M-yyyy HH:mm:ss VV");
+    assertEquivalent(
+        formatOf("31-1-2023 10:10:10 Europe/Paris"),
+        ZonedDateTime.of(LocalDateTime.of(2023, 1, 2, 1, 2, 3), ZoneId.of("America/Los_Angeles")),
+        "dd-M-yyyy HH:mm:ss VV");
   }
 
   @Test
@@ -207,7 +407,7 @@ public final class DateTimeFormatsTest {
   public void formatOf_12HourFormat() {
     ZonedDateTime zonedTime =
         ZonedDateTime.of(LocalDateTime.of(2023, 10, 20, 1, 2, 3), ZoneId.of("America/Los_Angeles"));
-    DateTimeFormatter formatter = formatOf("dd MM yyyy <ad> hh:mm <pm> <+08:00>");
+    DateTimeFormatter formatter = formatOf("dd MM yyyy <AD> hh:mm <PM> <+08:00>");
     assertThat(zonedTime.format(formatter)).isEqualTo("20 10 2023 AD 01:02 AM -07:00");
   }
 

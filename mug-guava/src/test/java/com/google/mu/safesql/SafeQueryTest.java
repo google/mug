@@ -13,6 +13,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import com.google.common.base.Ascii;
+import com.google.common.collect.ImmutableList;
 import com.google.common.testing.EqualsTester;
 import com.google.common.testing.NullPointerTester;
 import com.google.mu.util.StringFormat;
@@ -68,13 +69,13 @@ public final class SafeQueryTest {
   @Test
   public void newLineEscapedWithinSingleQuote() {
     assertThat(template("SELECT * FROM tbl WHERE id = '{id}'").with("\n"))
-        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = '\\n'"));
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = '\\u000A'"));
   }
 
   @Test
   public void newLineEscapedWithinDoubleQuote() {
     assertThat(template("SELECT * FROM tbl WHERE id = \"{id}\"").with("\n"))
-        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = \"\\n\""));
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = \"\\u000A\""));
   }
 
   @Test
@@ -86,13 +87,13 @@ public final class SafeQueryTest {
   @Test
   public void carriageReturnEscapedWithinSingleQuote() {
     assertThat(template("SELECT * FROM tbl WHERE id = '{id}'").with("\r"))
-        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = '\\r'"));
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = '\\u000D'"));
   }
 
   @Test
   public void carriageReturnEscapedWithinDoubleQuote() {
     assertThat(template("SELECT * FROM tbl WHERE id = \"{id}\"").with("\r"))
-        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = \"\\r\""));
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = \"\\u000D\""));
   }
 
   @Test
@@ -104,7 +105,7 @@ public final class SafeQueryTest {
   @Test
   public void carriageReturnAndLineFeedEscapedWithinDoubleQuote() {
     assertThat(template("SELECT * FROM tbl WHERE id = \"{id}\"").with("a\r\nb"))
-        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = \"a\\r\\nb\""));
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = \"a\\u000D\\u000Ab\""));
   }
 
   @Test
@@ -269,6 +270,12 @@ public final class SafeQueryTest {
 
   @Test
   public void stringBackquoted() {
+    assertThat(template("SELECT * from `{tbl}` WHERE TRUE").with(/* tbl */ "foo"))
+        .isEqualTo(SafeQuery.of("SELECT * from `foo` WHERE TRUE"));
+  }
+
+  @Test
+  public void stringWithSpaceBackquoted() {
     assertThat(template("SELECT * from `{tbl}` WHERE TRUE").with(/* tbl */ "foo"))
         .isEqualTo(SafeQuery.of("SELECT * from `foo` WHERE TRUE"));
   }
@@ -448,6 +455,64 @@ public final class SafeQueryTest {
   }
 
   @Test
+  public void andCollector_empty() {
+    ImmutableList<SafeQuery> queries = ImmutableList.of();
+    assertThat(queries.stream().collect(SafeQuery.and())).isEqualTo(SafeQuery.of("TRUE"));
+  }
+
+  @Test
+  public void andCollector_singleCondition() {
+    ImmutableList<SafeQuery> queries = ImmutableList.of(SafeQuery.of("a = 1"));
+    assertThat(queries.stream().collect(SafeQuery.and())).isEqualTo(SafeQuery.of("(a = 1)"));
+  }
+
+  @Test
+  public void andCollector_twoConditions() {
+    ImmutableList<SafeQuery> queries =
+        ImmutableList.of(SafeQuery.of("a = 1"), SafeQuery.of("b = 2 OR c = 3"));
+    assertThat(queries.stream().collect(SafeQuery.and()))
+        .isEqualTo(SafeQuery.of("(a = 1) AND (b = 2 OR c = 3)"));
+  }
+
+  @Test
+  public void andCollector_threeConditions() {
+    ImmutableList<SafeQuery> queries =
+        ImmutableList.of(
+            SafeQuery.of("a = 1"), SafeQuery.of("b = 2 OR c = 3"), SafeQuery.of("d = 4"));
+    assertThat(queries.stream().collect(SafeQuery.and()))
+        .isEqualTo(SafeQuery.of("(a = 1) AND (b = 2 OR c = 3) AND (d = 4)"));
+  }
+
+  @Test
+  public void orCollector_empty() {
+    ImmutableList<SafeQuery> queries = ImmutableList.of();
+    assertThat(queries.stream().collect(SafeQuery.or())).isEqualTo(SafeQuery.of("FALSE"));
+  }
+
+  @Test
+  public void orCollector_singleCondition() {
+    ImmutableList<SafeQuery> queries = ImmutableList.of(SafeQuery.of("a = 1"));
+    assertThat(queries.stream().collect(SafeQuery.or())).isEqualTo(SafeQuery.of("(a = 1)"));
+  }
+
+  @Test
+  public void orCollector_twoConditions() {
+    ImmutableList<SafeQuery> queries =
+        ImmutableList.of(SafeQuery.of("a = 1"), SafeQuery.of("b = 2 AND c = 3"));
+    assertThat(queries.stream().collect(SafeQuery.or()))
+        .isEqualTo(SafeQuery.of("(a = 1) OR (b = 2 AND c = 3)"));
+  }
+
+  @Test
+  public void orCollector_threeConditions() {
+    ImmutableList<SafeQuery> queries =
+        ImmutableList.of(
+            SafeQuery.of("a = 1"), SafeQuery.of("b = 2 AND c = 3"), SafeQuery.of("d = 4"));
+    assertThat(queries.stream().collect(SafeQuery.or()))
+        .isEqualTo(SafeQuery.of("(a = 1) OR (b = 2 AND c = 3) OR (d = 4)"));
+  }
+
+  @Test
   public void testEquals() {
     new EqualsTester()
         .addEqualityGroup(SafeQuery.of("SELECT *"), SafeQuery.of("SELECT *"))
@@ -533,6 +598,54 @@ public final class SafeQueryTest {
     assertThat(thrown)
         .hasMessageThat()
         .contains("TrustedSql should not be quoted: \"{value}\"");
+  }
+
+  @Test
+  public void backspaceCharacterQuoted() {
+    SafeQuery query = template("'{id}'").with("\b");
+    assertThat(query.toString()).isEqualTo("'\\u0008'");
+  }
+
+  @Test
+  public void nulCharacterQuoted() {
+    SafeQuery query = template("'{id}'").with("\0");
+    assertThat(query.toString()).isEqualTo("'\\u0000'");
+  }
+
+  @Test
+  public void pageBreakCharacterQuoted() {
+    SafeQuery query = template("'{id}'").with("\f");
+    assertThat(query.toString()).isEqualTo("'\\u000C'");
+  }
+
+  @Test
+  public void backspaceCharacterBacktickQuoted() {
+    StringFormat.To<SafeQuery> query = template("`{name}`");
+    assertThrows(IllegalArgumentException.class, () -> query.with(/* name */ "\b"));
+  }
+
+  @Test
+  public void nulCharacterBacktickQuoted() {
+    StringFormat.To<SafeQuery> query = template("`{name}`");
+    assertThrows(IllegalArgumentException.class, () -> query.with(/* name */ "\0"));
+  }
+
+  @Test
+  public void pageBreakCharacterBacktickQuoted() {
+    StringFormat.To<SafeQuery> query = template("`{name}`");
+    assertThrows(IllegalArgumentException.class, () -> query.with(/* name */ "\f"));
+  }
+
+  @Test
+  public void unicodeSmugglingInStringLiteralNotEffective() {
+    SafeQuery query = template("'{id}'").with("ʻ OR TRUE OR ʼʼ=ʼ");
+    assertThat(query.toString()).isEqualTo("'\\u02BB" + " OR TRUE OR \\u02BC\\u02BC=\\u02BC'");
+  }
+
+  @Test
+  public void unicodeSmugglingInIdentifierNotEffective() {
+    SafeQuery query = template("`{tbl}`").with("ʻ OR TRUE OR ʼʼ=ʼ");
+    assertThat(query.toString()).isEqualTo("`\\u02BB" + " OR TRUE OR \\u02BC\\u02BC=\\u02BC`");
   }
 
   static final class TrustedSql {

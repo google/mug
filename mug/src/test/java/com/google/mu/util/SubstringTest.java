@@ -17,6 +17,7 @@ import static com.google.mu.util.Substring.spanningInOrder;
 import static com.google.mu.util.Substring.suffix;
 import static com.google.mu.util.Substring.trailing;
 import static com.google.mu.util.Substring.upToIncluding;
+import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static java.util.Collections.nCopies;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -2276,7 +2277,7 @@ public class SubstringTest {
   }
 
   @Test public void repeatedly_split_byBetweenPattern() {
-    Substring.Pattern comment = Substring.between(before(first("/*")), after(first("*/")));
+    Substring.Pattern comment = Substring.between("/*", INCLUSIVE, "*/", INCLUSIVE);
     assertThat(comment.repeatedly().split("a").map(Match::toString))
         .containsExactly("a")
         .inOrder();
@@ -2318,6 +2319,11 @@ public class SubstringTest {
   @Test public void between_toString() {
     assertThat(Substring.between(last("<"), last(">")).toString())
         .isEqualTo("between(last('<'), last('>'))");
+  }
+
+  @Test public void betweenInclusive_toString() {
+    assertThat(Substring.between(last("<"), INCLUSIVE, last(">"), INCLUSIVE).toString())
+        .isEqualTo("between(last('<'), INCLUSIVE, last('>'), INCLUSIVE)");
   }
 
   @Test public void between_matchedInTheMiddle() {
@@ -2408,6 +2414,19 @@ public class SubstringTest {
     assertThat(match.length()).isEqualTo(5);
     assertThat(
             Substring.between(before(last('<')), after(last('>'))).repeatedly().match("begin<foo>end")
+                .map(Object::toString))
+        .containsExactly("<foo>");
+  }
+
+  @Test public void betweenInclusive_matchedIncludingDelimiters() {
+    Substring.Match match =
+        Substring.between(last('<'), INCLUSIVE, last('>'), INCLUSIVE).in("begin<foo>end").get();
+    assertThat(match.toString()).isEqualTo("<foo>");
+    assertThat(match.before()).isEqualTo("begin");
+    assertThat(match.after()).isEqualTo("end");
+    assertThat(match.length()).isEqualTo(5);
+    assertThat(
+            Substring.between(last('<'), INCLUSIVE, last('>'), INCLUSIVE).repeatedly().match("begin<foo>end")
                 .map(Object::toString))
         .containsExactly("<foo>");
   }
@@ -3932,6 +3951,18 @@ public class SubstringTest {
     assertThat(match.isSeparatedBy(Character::isLowerCase, Character::isLowerCase)).isTrue();
     assertThat(match.isSeparatedBy(Character::isLowerCase, Character::isWhitespace)).isFalse();
     assertThat(match.isSeparatedBy(Character::isWhitespace, Character::isLowerCase)).isFalse();
+  }
+
+  @Test public void match_notEmpty() {
+    Substring.Match match = first("foo").in("afood").get();
+    assertThat(match.isEmpty()).isFalse();
+    assertThat(match.isNotEmpty()).isTrue();
+  }
+
+  @Test public void match_empty() {
+    Substring.Match match = first("").in("afood").get();
+    assertThat(match.isEmpty()).isTrue();
+    assertThat(match.isNotEmpty()).isFalse();
   }
 
   @Test public void testNulls() throws Exception {

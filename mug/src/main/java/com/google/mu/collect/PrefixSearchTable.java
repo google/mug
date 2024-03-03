@@ -96,6 +96,17 @@ public final class PrefixSearchTable<K, V> {
             }));
   }
 
+  /**
+   * Returns a new builder initialized with the same prefix mappings in this table.
+   *
+   * @since 7.2
+   */
+  public Builder<K, V> toBuilder() {
+    Builder<K, V> builder = builder();
+    BiStream.from(nodes).mapValues(Node::toBuilder).forEach(builder.nodes::put);
+    return builder;
+  }
+
   /** Returns a new builder. */
   public static <K, V> Builder<K, V> builder() {
     return new Builder<>();
@@ -140,6 +151,13 @@ public final class PrefixSearchTable<K, V> {
     private Node(V value, Map<K, Node<K, V>> children) {
       this.value = value;
       this.children = children;
+    }
+
+    Builder<K, V> toBuilder() {
+      Builder<K, V> builder = new Builder<>();
+      builder.value = value;
+      BiStream.from(children).mapValues(Node::toBuilder).forEach(builder.children::put);
+      return builder;
     }
 
     static class Builder<K, V> {

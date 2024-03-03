@@ -1,16 +1,16 @@
 package com.google.mu.safesql;
 
+import static com.google.common.base.CharMatcher.anyOf;
+import static com.google.common.base.CharMatcher.javaIsoControl;
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.Substring.suffix;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.mapping;
 
 import java.util.Iterator;
-import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -18,7 +18,6 @@ import com.google.common.base.CharMatcher;
 import com.google.common.collect.Iterables;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.errorprone.annotations.Immutable;
-import com.google.mu.util.CharPredicate;
 import com.google.mu.util.StringFormat;
 import com.google.mu.util.Substring;
 
@@ -34,12 +33,14 @@ import com.google.mu.util.Substring;
  * <p>In addition, a SafeQuery may represent a subquery, and can be passed through {@link
  * StringFormat.To#with} to compose larger queries.
  *
- * <p>This class is Android and J2CL compatible.
+ * <p>This class is Android compatible.
  *
  * @since 7.0
  */
 @Immutable
 public final class SafeQuery {
+  private static final CharMatcher ILLEGAL_IDENTIFIER_CHARS =
+      anyOf("'\"`()[]{}\\~!@$^*,/?;").or(javaIsoControl());
   private static final String TRUSTED_SQL_TYPE_NAME =
       firstNonNull(
           System.getProperty("com.google.mu.safesql.SafeQuery.trusted_sql_type"),
@@ -54,15 +55,6 @@ public final class SafeQuery {
   /** Returns a query using a string constant. */
   public static SafeQuery of(@CompileTimeConstant String query) {
     return new SafeQuery(checkNotNull(query));
-  }
-
-  /**
-   * Returns a collector that can join {@link SafeQuery} objects using {@code delim} as the
-   * delimiter.
-   */
-  public static Collector<SafeQuery, ?, SafeQuery> joining(@CompileTimeConstant String delim) {
-    return collectingAndThen(
-        mapping(SafeQuery::toString, Collectors.joining(checkNotNull(delim))), SafeQuery::new);
   }
 
   /**
@@ -121,29 +113,42 @@ public final class SafeQuery {
    * </ul>
    */
   public static StringFormat.To<SafeQuery> template(@CompileTimeConstant String formatString) {
-    return template(
-        formatString,
-        value -> {
-          throw new IllegalArgumentException(
-              "Unsupported argument type: " + value.getClass().getName());
-        });
+    return new Translator().translate(formatString);
   }
 
-  static StringFormat.To<SafeQuery> template(
-      @CompileTimeConstant String formatString, Function<Object, String> defaultConverter) {
-    return StringFormat.template(
-        formatString,
-        (fragments, placeholders) -> {
-          Iterator<String> it = fragments.iterator();
-          return new SafeQuery(
-              placeholders
-                  .collect(
-                      new StringBuilder(),
-                      (b, p, v) ->
-                          b.append(it.next()).append(fillInPlaceholder(p, v, defaultConverter)))
-                  .append(it.next())
-                  .toString());
-        });
+  /**
+   * A collector that joins boolean query snippets using {@code AND} operator. The AND'ed sub-queries
+   * will be enclosed in pairs of parenthesis to avoid ambiguity. If the input is empty, the result
+   * will be "TRUE".
+   *
+   * @since 7.2
+   */
+  public static Collector<SafeQuery, ?, SafeQuery> and() {
+    return collectingAndThen(
+        mapping(SafeQuery::parenthesized, joining(" AND ")),
+        query -> query.toString().isEmpty() ? of("TRUE") : query);
+  }
+
+  /**
+   * A collector that joins boolean query snippets using {@code OR} operator. The OR'ed sub-queries
+   * will be enclosed in pairs of parenthesis to avoid ambiguity. If the input is empty, the result
+   * will be "FALSE".
+   *
+   * @since 7.2
+   */
+  public static Collector<SafeQuery, ?, SafeQuery> or() {
+    return collectingAndThen(
+        mapping(SafeQuery::parenthesized, joining(" OR ")),
+        query -> query.toString().isEmpty() ? of("FALSE") : query);
+  }
+
+  /**
+   * Returns a collector that can join {@link SafeQuery} objects using {@code delim} as the
+   * delimiter.
+   */
+  public static Collector<SafeQuery, ?, SafeQuery> joining(@CompileTimeConstant String delim) {
+    return collectingAndThen(
+        mapping(SafeQuery::toString, Collectors.joining(checkNotNull(delim))), SafeQuery::new);
   }
 
   /** Returns the encapsulated SQL query. */
@@ -165,116 +170,162 @@ public final class SafeQuery {
     return query.hashCode();
   }
 
-  private static String fillInPlaceholder(
-      Substring.Match placeholder, Object value, Function<Object, String> defaultConverter) {
-    validatePlaceholder(placeholder);
-    if (value instanceof Iterable) {
-      Iterable<?> iterable = (Iterable<?>) value;
-      if (placeholder.isImmediatelyBetween("`", "`")) { // If backquoted, it's a list of symbols
-        return String.join("`, `", Iterables.transform(iterable, v -> backquoted(placeholder, v)));
+  private SafeQuery parenthesized() {
+    return new SafeQuery("(" + query + ")");
+  }
+
+  /**
+   * An SPI class for subclasses to provide additional translation from placeholder values to safe
+   * query strings.
+   *
+   * @since 7.2
+   */
+  public static class Translator {
+    protected Translator() {}
+
+    /**
+     * Translates {@code template} to a factory of {@link SafeQuery} by filling the provided
+     * parameters in the place of corresponding placeholders.
+     */
+    public final StringFormat.To<SafeQuery> translate(@CompileTimeConstant String formatString) {
+      return StringFormat.template(
+          formatString,
+          (fragments, placeholders) -> {
+            Iterator<String> it = fragments.iterator();
+            return new SafeQuery(
+                placeholders
+                    .collect(
+                        new StringBuilder(),
+                        (b, p, v) ->
+                            b.append(it.next()).append(fillInPlaceholder(p, v)))
+                    .append(it.next())
+                    .toString());
+          });
+    }
+
+    private String fillInPlaceholder(Substring.Match placeholder, Object value) {
+      validatePlaceholder(placeholder);
+      if (value instanceof Iterable) {
+        Iterable<?> iterable = (Iterable<?>) value;
+        if (placeholder.isImmediatelyBetween("`", "`")) { // If backquoted, it's a list of symbols
+          return String.join("`, `", Iterables.transform(iterable, v -> backquoted(placeholder, v)));
+        }
+        if (placeholder.isImmediatelyBetween("'", "'")) {
+          return String.join(
+              "', '", Iterables.transform(iterable, v -> quotedBy('\'', placeholder, v)));
+        }
+        if (placeholder.isImmediatelyBetween("\"", "\"")) {
+          return String.join(
+              "\", \"", Iterables.transform(iterable, v -> quotedBy('"', placeholder, v)));
+        }
+        return String.join(", ", Iterables.transform(iterable, v -> unquoted(placeholder, v)));
       }
       if (placeholder.isImmediatelyBetween("'", "'")) {
-        return String.join(
-            "', '", Iterables.transform(iterable, v -> quotedBy('\'', placeholder, v)));
+        return quotedBy('\'', placeholder, value);
       }
       if (placeholder.isImmediatelyBetween("\"", "\"")) {
-        return String.join(
-            "\", \"", Iterables.transform(iterable, v -> quotedBy('"', placeholder, v)));
+        return quotedBy('"', placeholder, value);
       }
-      return String.join(
-          ", ", Iterables.transform(iterable, v -> unquoted(placeholder, v, defaultConverter)));
+      if (placeholder.isImmediatelyBetween("`", "`")) {
+        return backquoted(placeholder, value);
+      }
+      return unquoted(placeholder, value);
     }
-    if (placeholder.isImmediatelyBetween("'", "'")) {
-      return quotedBy('\'', placeholder, value);
-    }
-    if (placeholder.isImmediatelyBetween("\"", "\"")) {
-      return quotedBy('"', placeholder, value);
-    }
-    if (placeholder.isImmediatelyBetween("`", "`")) {
-      return backquoted(placeholder, value);
-    }
-    return unquoted(placeholder, value, defaultConverter);
-  }
 
-  private static String unquoted(
-      Substring.Match placeholder, Object value, Function<Object, String> byDefault) {
-    if (value == null) {
-      return "NULL";
+    protected String unquoted(Substring.Match placeholder, Object value) {
+      if (value == null) {
+        return "NULL";
+      }
+      if (value instanceof Boolean) {
+        return value.equals(Boolean.TRUE) ? "TRUE" : "FALSE";
+      }
+      if (value instanceof Number) {
+        return value.toString();
+      }
+      if (value instanceof Enum) {
+        return ((Enum<?>) value).name();
+      }
+      if (isTrusted(value)) {
+        return value.toString();
+      }
+      checkArgument(
+          !(value instanceof CharSequence || value instanceof Character),
+          "Symbols should be wrapped inside %s;\n"
+              + "subqueries must be wrapped in another SafeQuery object;\n"
+              + "and string literals must be quoted like '%s'",
+          TRUSTED_SQL_TYPE_NAME,
+          placeholder);
+      throw new IllegalArgumentException(
+          "Unsupported argument type: " + value.getClass().getName());
     }
-    if (value instanceof Boolean) {
-      return value.equals(Boolean.TRUE) ? "TRUE" : "FALSE";
-    }
-    if (value instanceof Number) {
-      return value.toString();
-    }
-    if (value instanceof Enum) {
-      return ((Enum<?>) value).name();
-    }
-    if (isTrusted(value)) {
-      return value.toString();
-    }
-    checkArgument(
-        !(value instanceof CharSequence || value instanceof Character),
-        "Symbols should be wrapped inside %s;\n"
-            + "subqueries must be wrapped in another SafeQuery object;\n"
-            + "and string literals must be quoted like '%s'",
-        TRUSTED_SQL_TYPE_NAME,
-        placeholder);
-    return byDefault.apply(value);
-  }
 
-  private static String quotedBy(char quoteChar, Substring.Match placeholder, Object value) {
-    checkNotNull(value, "Quoted placeholder cannot be null: '%s'", placeholder);
-    checkArgument(
-        !isTrusted(value),
-        "placeholder of type %s should not be quoted: %s%s%s",
-        value.getClass().getSimpleName(),
-        quoteChar,
-        placeholder,
-        quoteChar);
-    return first(CharPredicate.is('\\').or(quoteChar).or('\n').or('\r'))
-        .repeatedly()
-        .replaceAllFrom(
-            value.toString(),
-            c -> {
-              switch (c.charAt(0)) {
-                case '\r': return "\\r";
-                case '\n': return "\\n";
-                default: return "\\" + c;
-              }
-            });
-  }
-
-  private static String backquoted(Substring.Match placeholder, Object value) {
-    if (value instanceof Enum) {
-      return ((Enum<?>) value).name();
+    private static String quotedBy(char quoteChar, Substring.Match placeholder, Object value) {
+      checkNotNull(value, "Quoted placeholder cannot be null: '%s'", placeholder);
+      checkArgument(
+          !isTrusted(value),
+          "placeholder of type %s should not be quoted: %s%s%s",
+          value.getClass().getSimpleName(),
+          quoteChar,
+          placeholder,
+          quoteChar);
+      return escapeQuoted(quoteChar, value.toString());
     }
-    String name = removeQuotes('`', value.toString(), '`'); // ok if already backquoted
-    // Make sure the backquoted string doesn't contain some special chars that may cause trouble.
-    checkArgument(
-        CharMatcher.anyOf("'\"`()[]{}\\~!@$^*,/?;\r\n").matchesNoneOf(name),
-        "placeholder value for `%s` (%s) contains illegal character",
-        placeholder,
-        name);
-    return name;
-  }
 
-  private static boolean isTrusted(Object value) {
-    return value instanceof SafeQuery || value.getClass().getName().equals(TRUSTED_SQL_TYPE_NAME);
-  }
+    private static String backquoted(Substring.Match placeholder, Object value) {
+      if (value instanceof Enum) {
+        return ((Enum<?>) value).name();
+      }
+      String name = removeQuotes('`', value.toString(), '`'); // ok if already backquoted
+      // Make sure the backquoted string doesn't contain some special chars that may cause trouble.
+      checkArgument(
+          ILLEGAL_IDENTIFIER_CHARS.matchesNoneOf(name),
+          "placeholder value for `%s` (%s) contains illegal character",
+          placeholder,
+          name);
+      return escapeQuoted('`', name);
+    }
 
-  private static void validatePlaceholder(Substring.Match placeholder) {
-    checkArgument(
-        !placeholder.isImmediatelyBetween("`", "'"),
-        "Incorrectly quoted placeholder: `%s'",
-        placeholder);
-    checkArgument(
-        !placeholder.isImmediatelyBetween("'", "`"),
-        "Incorrectly quoted placeholder: '%s`",
-        placeholder);
-  }
+    private static String escapeQuoted(char quoteChar, String s) {
+      StringBuilder builder = new StringBuilder(s.length());
+      for (int i = 0; i < s.length(); i++) {
+        int codePoint = s.codePointAt(i);
+        if (codePoint == quoteChar) {
+          builder.append("\\").appendCodePoint(quoteChar);
+        } else if (codePoint == '\\') {
+          builder.append("\\\\");
+        } else if (codePoint >= 0x20 && codePoint < 0x7F || codePoint == '\t') {
+          // 0x20 is space, \t is tab, keep. 0x7F is DEL control character, escape.
+          // <=0x1f and >=0x7F are ISO control characters.
+          builder.appendCodePoint(codePoint);
+        } else if (Character.charCount(codePoint) == 1) {
+          builder.append(String.format("\\u%04X", codePoint));
+        } else {
+          char hi = Character.highSurrogate(codePoint);
+          char lo = Character.lowSurrogate(codePoint);
+          builder.append(String.format("\\u%04X\\u%04X", (int) hi, (int) lo));
+          i++;
+        }
+      }
+      return builder.toString();
+    }
 
-  private static String removeQuotes(char left, String s, char right) {
-    return Substring.between(prefix(left), suffix(right)).from(s).orElse(s);
+    private static boolean isTrusted(Object value) {
+      return value instanceof SafeQuery || value.getClass().getName().equals(TRUSTED_SQL_TYPE_NAME);
+    }
+
+    private static void validatePlaceholder(Substring.Match placeholder) {
+      checkArgument(
+          !placeholder.isImmediatelyBetween("`", "'"),
+          "Incorrectly quoted placeholder: `%s'",
+          placeholder);
+      checkArgument(
+          !placeholder.isImmediatelyBetween("'", "`"),
+          "Incorrectly quoted placeholder: '%s`",
+          placeholder);
+    }
+
+    private static String removeQuotes(char left, String s, char right) {
+      return Substring.between(prefix(left), suffix(right)).from(s).orElse(s);
+    }
   }
 }
