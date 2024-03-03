@@ -19,6 +19,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import com.google.mu.function.Quarternary;
@@ -441,6 +442,187 @@ abstract class AbstractStringFormat {
   }
 
   /**
+   * Scans {@code input} and replaces all matches using the {@code replacement} function.
+   *
+   * <p>If {@code replacement} returns null, the match is ignored as if it didn't match the format.
+   * This can be used to post-filter the match with custom predicates (e.g. a placeholder value must
+   * be digits only).
+   *
+   * <p>The {@code replacement} function accepts {@link Substring.Match} instead of String to avoid
+   * unnecessary copying of the characters. If you are passing in a method reference, it can also
+   * take CharSequence or Object as the parameter type.
+   *
+   * @throws IllegalArgumentException if the format string doesn't have exactly 1 named placeholder
+   *
+   * @since 7.2
+   */
+  public final String replaceAllFrom(
+      String input, Function<? super Substring.Match, ?> replacement) {
+    requireNonNull(input);
+    requireNonNull(replacement);
+    checkPlaceholderCount(1);
+    return replaceAllMatches(input, matches -> replacement.apply(matches.get(0)));
+  }
+
+  /**
+   * Scans {@code input} and replaces all matches using the {@code replacement} function.
+   *
+   * <p>If {@code replacement} returns null, the match is ignored as if it didn't match the format.
+   * This can be used to post-filter the match with custom predicates (e.g. a placeholder value must
+   * be digits only).
+   *
+   * <p>The {@code replacement} function accepts {@link Substring.Match} instead of String to avoid
+   * unnecessary copying of the characters. If you are passing in a method reference, it can also
+   * take CharSequence or Object as the parameter types.
+   *
+   * @throws IllegalArgumentException if the format string doesn't have exactly 2 named placeholder
+   *
+   * @since 7.2
+   */
+  public final String replaceAllFrom(
+      String input, BiFunction<? super Substring.Match, ? super Substring.Match, ?> replacement) {
+    requireNonNull(input);
+    requireNonNull(replacement);
+    checkPlaceholderCount(2);
+    return replaceAllMatches(input, matches -> replacement.apply(matches.get(0), matches.get(1)));
+  }
+
+  /**
+   * Scans {@code input} and replaces all matches using the {@code replacement} function.
+   *
+   * <p>If {@code replacement} returns null, the match is ignored as if it didn't match the format.
+   * This can be used to post-filter the match with custom predicates (e.g. a placeholder value must
+   * be digits only).
+   *
+   * <p>The {@code replacement} function accepts {@link Substring.Match} instead of String to avoid
+   * unnecessary copying of the characters. If you are passing in a method reference, it can also
+   * take CharSequence or Object as the parameter types.
+   *
+   * @throws IllegalArgumentException if the format string doesn't have exactly 3 named placeholder
+   *
+   * @since 7.2
+   */
+  public final String replaceAllFrom(
+      String input, Ternary<? super Substring.Match, ?> replacement) {
+    requireNonNull(input);
+    requireNonNull(replacement);
+    checkPlaceholderCount(3);
+    return replaceAllMatches(
+        input, matches -> replacement.apply(matches.get(0), matches.get(1), matches.get(2)));
+  }
+
+  /**
+   * Scans {@code input} and replaces all matches using the {@code replacement} function.
+   *
+   * <p>If {@code replacement} returns null, the match is ignored as if it didn't match the format.
+   * This can be used to post-filter the match with custom predicates (e.g. a placeholder value must
+   * be digits only).
+   *
+   * <p>The {@code replacement} function accepts {@link Substring.Match} instead of String to avoid
+   * unnecessary copying of the characters. If you are passing in a method reference, it can also
+   * take CharSequence or Object as the parameter types.
+   *
+   * @throws IllegalArgumentException if the format string doesn't have exactly 4 named placeholder
+   *
+   * @since 7.2
+   */
+  public final String replaceAllFrom(
+      String input, Quarternary<? super Substring.Match, ?> replacement) {
+    requireNonNull(input);
+    requireNonNull(replacement);
+    checkPlaceholderCount(4);
+    return replaceAllMatches(
+        input,
+        matches -> replacement.apply(matches.get(0), matches.get(1), matches.get(2), matches.get(3)));
+  }
+
+  /**
+   * Scans {@code input} and replaces all matches using the {@code replacement} function.
+   *
+   * <p>If {@code replacement} returns null, the match is ignored as if it didn't match the format.
+   * This can be used to post-filter the match with custom predicates (e.g. a placeholder value must
+   * be digits only).
+   *
+   * <p>The {@code replacement} function accepts {@link Substring.Match} instead of String to avoid
+   * unnecessary copying of the characters. If you are passing in a method reference, it can also
+   * take CharSequence or Object as the parameter types.
+   *
+   * @throws IllegalArgumentException if the format string doesn't have exactly 5 named placeholder
+   *
+   * @since 7.2
+   */
+  public final String replaceAllFrom(
+      String input, Quinary<? super Substring.Match, ?> replacement) {
+    requireNonNull(input);
+    requireNonNull(replacement);
+    checkPlaceholderCount(5);
+    return replaceAllMatches(
+        input,
+        matches ->
+            replacement.apply(
+                matches.get(0), matches.get(1), matches.get(2), matches.get(3), matches.get(4)));
+  }
+
+  /**
+   * Scans {@code input} and replaces all matches using the {@code replacement} function.
+   *
+   * <p>If {@code replacement} returns null, the match is ignored as if it didn't match the format.
+   * This can be used to post-filter the match with custom predicates (e.g. a placeholder value must
+   * be digits only).
+   *
+   * <p>The {@code replacement} function accepts {@link Substring.Match} instead of String to avoid
+   * unnecessary copying of the characters. If you are passing in a method reference, it can also
+   * take CharSequence or Object as the parameter types.
+   *
+   * @throws IllegalArgumentException if the format string doesn't have exactly 6 named placeholder
+   *
+   * @since 7.2
+   */
+  public final String replaceAllFrom(
+      String input, Senary<? super Substring.Match, ?> replacement) {
+    requireNonNull(input);
+    requireNonNull(replacement);
+    checkPlaceholderCount(6);
+    return replaceAllMatches(
+        input,
+        matches ->
+            replacement.apply(
+                matches.get(0),
+                matches.get(1),
+                matches.get(2),
+                matches.get(3),
+                matches.get(4),
+                matches.get(5)));
+  }
+
+  final String replaceAllMatches(
+      String input, Function<? super List<Substring.Match>, ?> replacement) {
+    List<int[]> matchIndices = new ArrayList<>();
+    List<List<Substring.Match>> matches =
+        matchRepeatedly(input, (start, end) -> matchIndices.add(new int[] {start, end}))
+            .collect(toImmutableList());
+    if (matchIndices.size() != matches.size()) {
+      throw new IllegalStateException(matchIndices.size() + " != " + matches.size());
+    }
+    StringBuilder builder = new StringBuilder();
+    int inputIndex = 0;
+    for (int i = 0; i < matches.size(); i++) {
+      Object replaceWith = replacement.apply(matches.get(i));
+      if (replaceWith == null) {
+        continue; // skip
+      }
+      int matchStart = matchIndices.get(i)[0];
+      int matchEnd = matchIndices.get(i)[1];
+      if (inputIndex < matchStart) {
+        builder.append(input, inputIndex, matchStart);
+      }
+      builder.append(replaceWith);
+      inputIndex = matchEnd;
+    }
+    return builder.append(input, inputIndex, input.length()).toString();
+  }
+
+  /**
    * Scans the {@code input} string and extracts all matched placeholders in this string format.
    *
    * <p>unlike {@link #parse(String)}, the input string isn't matched entirely: the pattern doesn't
@@ -449,50 +631,7 @@ abstract class AbstractStringFormat {
    * returned.
    */
   public final Stream<List<Substring.Match>> scan(String input) {
-    requireNonNull(input);
-    if (format.isEmpty()) {
-      return Stream.generate(() -> Collections.<Substring.Match>emptyList())
-          .limit(input.length() + 1);
-    }
-    int numPlaceholders = numPlaceholders();
-    return MoreStreams.whileNotNull(
-        new Supplier<List<Substring.Match>>() {
-          private int inputIndex = 0;
-          private boolean done = false;
-
-          @Override
-          public List<Substring.Match> get() {
-            if (done) {
-              return null;
-            }
-            inputIndex = input.indexOf(fragments.get(0), inputIndex);
-            if (inputIndex < 0) {
-              return null;
-            }
-            inputIndex += fragments.get(0).length();
-            List<Substring.Match> builder = new ArrayList<>(numCapturingPlaceholders);
-            for (int i = 1; i <= numPlaceholders; i++) {
-              String literal = fragments.get(i);
-              // Always search left-to-right. The last placeholder at the end of format is suffix.
-              Substring.Pattern literalLocator =
-                  i == numPlaceholders && fragments.get(i).isEmpty()
-                      ? Substring.END
-                      : first(fragments.get(i));
-              Substring.Match placeholder = before(literalLocator).match(input, inputIndex);
-              if (placeholder == null) {
-                return null;
-              }
-              if (toCapture.get(i - 1)) {
-                builder.add(placeholder);
-              }
-              inputIndex = placeholder.index() + placeholder.length() + literal.length();
-            }
-            if (inputIndex == input.length()) {
-              done = true;
-            }
-            return unmodifiableList(builder);
-          }
-        });
+    return matchRepeatedly(input, (start, end) -> {});
   }
 
   /**
@@ -726,6 +865,59 @@ abstract class AbstractStringFormat {
     return result;
   }
 
+  private Stream<List<Substring.Match>> matchRepeatedly(
+      String input, IndexRangeConsumer matchRanges) {
+    if (format.isEmpty()) {
+      return IntStream.range(0, input.length() + 1)
+          .mapToObj(
+              i -> {
+                matchRanges.acceptIndexRange(i, i);
+                return Collections.emptyList();
+              });
+    }
+    int numPlaceholders = numPlaceholders();
+    return MoreStreams.whileNotNull(
+        new Supplier<List<Substring.Match>>() {
+          private int inputIndex = 0;
+          private boolean done = false;
+
+          @Override
+          public List<Substring.Match> get() {
+            if (done) {
+              return null;
+            }
+            inputIndex = input.indexOf(fragments.get(0), inputIndex);
+            if (inputIndex < 0) {
+              return null;
+            }
+            final int startIndex = inputIndex;
+            inputIndex += fragments.get(0).length();
+            List<Substring.Match> builder = new ArrayList<>(numCapturingPlaceholders);
+            for (int i = 1; i <= numPlaceholders; i++) {
+              String literal = fragments.get(i);
+              // Always search left-to-right. The last placeholder at the end of format is suffix.
+              Substring.Pattern literalLocator =
+                  i == numPlaceholders && fragments.get(i).isEmpty()
+                      ? Substring.END
+                      : first(fragments.get(i));
+              Substring.Match placeholder = before(literalLocator).match(input, inputIndex);
+              if (placeholder == null) {
+                return null;
+              }
+              if (toCapture.get(i - 1)) {
+                builder.add(placeholder);
+              }
+              inputIndex = placeholder.index() + placeholder.length() + literal.length();
+            }
+            if (inputIndex == input.length()) {
+              done = true;
+            }
+            matchRanges.acceptIndexRange(startIndex, inputIndex);
+            return unmodifiableList(builder);
+          }
+        });
+  }
+
   private <R> Stream<R> scanAndCollect(String input, Collector<? super String, ?, R> collector) {
     return scan(input)
         .map(values -> values.stream().map(Substring.Match::toString).collect(collector))
@@ -792,5 +984,9 @@ abstract class AbstractStringFormat {
 
   private static <T> List<T> chop(List<T> list) {
     return list.subList(0, list.size() - 1);
+  }
+
+  private interface IndexRangeConsumer {
+    void acceptIndexRange(int startIndex, int endIndex);
   }
 }
