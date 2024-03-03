@@ -2552,6 +2552,15 @@ public final class Substring {
     }
 
     /**
+     * Returns true if the match is empty.
+     *
+     * @since 7.2
+     */
+    public boolean isEmpty() {
+      return length() == 0;
+    }
+
+    /**
      * Returns true if the match isn't empty.
      *
      * @since 6.0

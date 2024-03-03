@@ -3953,6 +3953,18 @@ public class SubstringTest {
     assertThat(match.isSeparatedBy(Character::isWhitespace, Character::isLowerCase)).isFalse();
   }
 
+  @Test public void match_notEmpty() {
+    Substring.Match match = first("foo").in("afood").get();
+    assertThat(match.isEmpty()).isFalse();
+    assertThat(match.isNotEmpty()).isTrue();
+  }
+
+  @Test public void match_empty() {
+    Substring.Match match = first("").in("afood").get();
+    assertThat(match.isEmpty()).isTrue();
+    assertThat(match.isNotEmpty()).isFalse();
+  }
+
   @Test public void testNulls() throws Exception {
     new NullPointerTester().testAllPublicInstanceMethods(prefix("foo").in("foobar").get());
     newClassSanityTester().testNulls(Substring.class);
