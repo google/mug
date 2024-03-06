@@ -49,6 +49,49 @@ public class StringFormatTest {
   }
 
   @Test
+  public void replaceAllFrom_placeholderOnly_emptyInput() {
+    assertThat(new StringFormat("{x}").replaceAllFrom("", x -> "")).isEqualTo("");
+    assertThat(new StringFormat("{x}").replaceAllFrom("", x -> "foo")).isEqualTo("foo");
+  }
+
+  @Test
+  public void replaceAllFrom_placeholderOnly_nonEmptyInput() {
+    assertThat(new StringFormat("{x}").replaceAllFrom("x", x -> "")).isEqualTo("");
+    assertThat(new StringFormat("{x}").replaceAllFrom("x", x -> "foo")).isEqualTo("foo");
+  }
+
+  @Test
+  public void replaceAllFrom_placeholderAtBeginning_found() {
+    assertThat(new StringFormat("{x}/").replaceAllFrom("/.", x -> "")).isEqualTo(".");
+    assertThat(new StringFormat("{x}/").replaceAllFrom("/.", x -> "foo")).isEqualTo("foo.");
+  }
+
+  @Test
+  public void replaceAllFrom_placeholderAtBeginning_notFound() {
+    assertThat(new StringFormat("{x}/").replaceAllFrom("", x -> "")).isEqualTo("");
+    assertThat(new StringFormat("{x}/").replaceAllFrom("..", x -> "")).isEqualTo("..");
+  }
+
+  @Test
+  public void replaceAllFrom_placeholderAtEnd_found() {
+    assertThat(new StringFormat(":{x}").replaceAllFrom(":.?", x -> "")).isEqualTo("");
+    assertThat(new StringFormat(":{x}").replaceAllFrom(":.?", x -> "foo")).isEqualTo("foo");
+    assertThat(new StringFormat(":{x}").replaceAllFrom(".:", x -> "foo")).isEqualTo(".foo");
+  }
+
+  @Test
+  public void replaceAllFrom_placeholderAtEnd_notFound() {
+    assertThat(new StringFormat(":{x}").replaceAllFrom("", x -> "")).isEqualTo("");
+    assertThat(new StringFormat(":{x}").replaceAllFrom("..", x -> "")).isEqualTo("..");
+  }
+
+  @Test
+  public void replaceAllFrom_noMatch_returnsInputStringAsIs() {
+    String input = "foo";
+    assertThat(new StringFormat(":{x}").replaceAllFrom(input, x -> "")).isSameInstanceAs(input);
+  }
+
+  @Test
   public void parse_singlePlaceholder() {
     StringFormat format = new StringFormat("Hello {v}!");
     assertThat(format.parse("Hello Tom!", v -> v)).hasValue("Tom");
