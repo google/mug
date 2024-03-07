@@ -4,7 +4,7 @@ Disclaimer: This is not an official Google product.
 A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/index.html)), with **0 deps** (Proto, BigQuery, Guava addons are in separate artifacts). ![](https://travis-ci.org/google/mug.svg?branch=master)
 
 Offers:
-* **Easy to use** (like to a 5-year-old) and powerful string utils ([StringFormat](https://github.com/google/mug/wiki/StringFormat-Explained), [Substring](https://github.com/google/mug/wiki/Substring-Explained))
+* **Easy to read** (like to a 5-year-old) and powerful string utils ([StringFormat](https://github.com/google/mug/wiki/StringFormat-Explained), [Substring](https://github.com/google/mug/wiki/Substring-Explained))
    * `new StringFormat("root/{yyyy}/{mm}/{dd}").parse(filepath, (yyyy, mm, dd) -> ...)`
    * `String user = first('@').toEnd().removeFrom(email);`
 * Streaming pairs ([BiStream](https://github.com/google/mug/wiki/BiStream-Explained))
