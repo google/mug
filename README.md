@@ -6,7 +6,7 @@ A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/
 Offers:
 * **Easy to read** (like to a 5-year-old), powerful string manipulation ([StringFormat](https://github.com/google/mug/wiki/StringFormat-Explained), [Substring](https://github.com/google/mug/wiki/Substring-Explained))
    * `new StringFormat("root/{yyyy}/{mm}/{dd}").parse(filepath, (yyyy, mm, dd) -> ...)`
-   * `String user = first('@').toEnd().removeFrom(email);`
+   * `String user = before(first('@')).from(email).orElseThrow();`
 * Streaming pairs ([BiStream](https://github.com/google/mug/wiki/BiStream-Explained))
    * `Map<Instant, Long> histogram = zip(times, counts).toMap();`
    * `Map<K, V> combined = concat(map1, map2).toMap();`
