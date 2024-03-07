@@ -11,7 +11,7 @@ Offers:
    * `Map<Instant, Long> histogram = zip(times, counts).toMap();`
    * `Map<K, V> combined = concat(map1, map2).toMap();`
    * `Map<Principal, V> keyedByPrincipal = BiStream.from(keyedByUserId).mapKeys(UserId::principal).toMap();`
-* More ([MoreStreams](#morestreams), [Optionals](#optionals), [Iteration](https://github.com/google/mug/wiki/Iteration-Explained)...)
+* More ([MoreStreams](#morestreams), [Optionals](#optionals), [DateTimeFormats](https://github.com/google/mug/wiki/DateTimeFormats-Explained)...)
   * `return optionally(count > 0, () -> total / sum);`
   * `DateTimeFormats.formatOf("Tue, 10 Jan 2023 10:00:00.123 America/Los_Angeles")`
 
