@@ -4,7 +4,7 @@ Disclaimer: This is not an official Google product.
 A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/index.html)), with **0 deps** (Proto, BigQuery, Guava addons are in separate artifacts). ![](https://travis-ci.org/google/mug.svg?branch=master)
 
 Offers:
-* Easy to use (like _to a 5-year-old_) and powerful string utils ([StringFormat](https://github.com/google/mug/wiki/StringFormat-Explained), [Substring](https://github.com/google/mug/wiki/Substring-Explained))
+* **Easy to use** (like to a 5-year-old) and powerful string utils ([StringFormat](https://github.com/google/mug/wiki/StringFormat-Explained), [Substring](https://github.com/google/mug/wiki/Substring-Explained))
    * `new StringFormat("root/{yyyy}/{mm}/{dd}").parse(filepath, (yyyy, mm, dd) -> ...)`
    * `String user = first('@').toEnd().removeFrom(email);`
 * Streaming pairs ([BiStream](https://github.com/google/mug/wiki/BiStream-Explained))
@@ -12,7 +12,7 @@ Offers:
    * `Map<K, V> combined = concat(map1, map2).toMap();`
    * `Map<Principal, V> keyedByPrincipal = BiStream.from(keyedByUserId).mapKeys(UserId::principal).toMap();`
 * More ([MoreStreams](#morestreams), [Optionals](#optionals), [DateTimeFormats](https://github.com/google/mug/wiki/DateTimeFormats-Explained), [...](https://github.com/google/mug/wiki))
-  * `return optionally(count > 0, () -> total / sum);`
+  * `return optionally(count > 0, () -> total / count);`
   * `DateTimeFormats.formatOf("Tue, 10 Jan 2023 10:00:00.123 America/Los_Angeles")`
 
 ## Installation
