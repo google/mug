@@ -1,26 +1,19 @@
 Disclaimer: This is not an official Google product.
 
 # Mug
-A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/index.html)), with 0 deps (Proto, BigQuery, Guava addons are in separate artifacts). ![](https://travis-ci.org/google/mug.svg?branch=master)
+A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/index.html)), with **0 deps** (Proto, BigQuery, Guava addons are in separate artifacts). ![](https://travis-ci.org/google/mug.svg?branch=master)
 
-* Stream utilities ([BiStream](https://github.com/google/mug/wiki/BiStream-Explained), [MoreStreams](#morestreams), [Iteration](https://github.com/google/mug/wiki/Iteration-Explained), [Guava Addons](https://google.github.io/mug/mug-guava/apidocs/index.html)):  
-    `histogram = zip(times, counts).toMap();`
-* [Optionals](#optionals) provides extra utilities for Optional:  
-    `optional(id.length() > 0, id)`
-* [Substring](https://github.com/google/mug/wiki/Substring-Explained) fluent string manipulation library:  
-    `String user = first('@').toEnd().removeFrom(email);`
-* [StringFormat](https://github.com/google/mug/wiki/StringFormat-Explained) extracts structured data from string:  
-    `new StringFormat("{yyyy}/{mm}/{dd}").parse(dateStr, (yyyy, mm, dd) -> ...)`
-* [DateTimeFormats](https://github.com/google/mug/wiki/DateTimeFormats-Explained) creates `DateTimeFormatter` from an (_any_) example date time string (golang style but without magic dates):
-    ```java
-    DateTimeFormatter formatter =
-        DateTimeFormats.formatOf("Tue, 10 Jan 2023 10:00:00.123 America/Los_Angeles")
-    ```
-* [SafeQuery](https://github.com/google/mug/wiki/SafeQuery-Explained) and [GoogleSql](https://google.github.io/mug/mug-guava/apidocs/com/google/mu/safesql/GoogleSql.html) for injection-safe SQL templating.
-* [Parallelizer](https://github.com/google/mug/wiki/Parallelizer-Explained) An _Executor-friendly_, _interruptible_ alternative to parallel streams.
-* Graph utilities ([Walker](https://google.github.io/mug/apidocs/com/google/mu/util/graph/Walker.html), [ShortestPath](https://google.github.io/mug/apidocs/com/google/mu/util/graph/ShortestPath.html))
-* [Google Protobuf Java 8 Utilities](https://google.github.io/mug/mug-protobuf/apidocs)
-* [BigQuery ParameterizedQuery](https://google.github.io/mug/mug-bigquery/apidocs/com/google/mu/bigquery/ParameterizedQuery.html)
+Offers:
+* Easy to use (like _to a 5-year-old_) and powerful string utils ([StringFormat](https://github.com/google/mug/wiki/StringFormat-Explained), [Substring](https://github.com/google/mug/wiki/Substring-Explained))
+   * `new StringFormat("{yyyy}/{mm}/{dd}").parse(dateStr, (yyyy, mm, dd) -> ...)`
+   * `String user = first('@').toEnd().removeFrom(email);`
+* Streaming pairs ([BiStream](https://github.com/google/mug/wiki/BiStream-Explained))
+   * `Map<Instant, Long> histogram = zip(times, counts).toMap();`
+   * `Map<K, V> combined = concat(map1, map2).toMap();`
+   * `Map<Principal, V> keyedByPrincipal = BiStream.from(keyedByUserId).mapKeys(UserId::principal).toMap();`
+* More ([MoreStreams](#morestreams), [Optionals](#optionals), [Iteration](https://github.com/google/mug/wiki/Iteration-Explained)...)
+  * `return optionally(count > 0, () -> total / sum);`
+  * `DateTimeFormats.formatOf("Tue, 10 Jan 2023 10:00:00.123 America/Los_Angeles")`
 
 ## Installation
 ### Maven
