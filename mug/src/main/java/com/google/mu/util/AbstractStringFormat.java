@@ -444,6 +444,20 @@ abstract class AbstractStringFormat {
   /**
    * Scans {@code input} and replaces all matches using the {@code replacement} function.
    *
+   * <p>Note that while the placeholder value(s) are passed to the {@code replacement} function, the
+   * full matching substring of the string format (including but not limited to the placeholders)
+   * are replaced by the return value of the {@code replacement} function. So for example if you are
+   * trying to rewrite every {@code "<{value}>"} to {@code "<v...>"}, be sure to include the angle
+   * bracket characters as in:
+   *
+   * <pre>{@code
+   * StringFormat bracketed = new StringFormat(""<{value}>"");
+   * String rewritten =
+   *     bracketed.replaceAllFrom(input, value -> bracketed.format(value.charAt(0) + "..."));
+   * }</pre>
+   *
+   * <p>If no match is found, the {@code input} string is returned.
+   *
    * <p>If {@code replacement} returns null, the match is ignored as if it didn't match the format.
    * This can be used to post-filter the match with custom predicates (e.g. a placeholder value must
    * be digits only).
@@ -467,6 +481,21 @@ abstract class AbstractStringFormat {
   /**
    * Scans {@code input} and replaces all matches using the {@code replacement} function.
    *
+   * <p>Note that while the placeholder value(s) are passed to the {@code replacement} function, the
+   * full matching substring of the string format (including but not limited to the placeholders)
+   * are replaced by the return value of the {@code replacement} function. So for example if you are
+   * trying to rewrite every {@code "[{key}:{value}]"} to {@code "[{key}={value}]"}, be sure to
+   * include the square bracket characters as in:
+   *
+   * <pre>{@code
+   * StringFormat oldFormat = new StringFormat("[{key}:{value}]");
+   * StringFormat newFormat = new StringFormat("[{key}={value}]");
+   * String rewritten =
+   *     oldFormat.replaceAllFrom(input, (key, value) -> newFormat.format(key, value));
+   * }</pre>
+   *
+   * <p>If no match is found, the {@code input} string is returned.
+   *
    * <p>If {@code replacement} returns null, the match is ignored as if it didn't match the format.
    * This can be used to post-filter the match with custom predicates (e.g. a placeholder value must
    * be digits only).
@@ -489,6 +518,8 @@ abstract class AbstractStringFormat {
 
   /**
    * Scans {@code input} and replaces all matches using the {@code replacement} function.
+   *
+   * <p>If no match is found, the {@code input} string is returned.
    *
    * <p>If {@code replacement} returns null, the match is ignored as if it didn't match the format.
    * This can be used to post-filter the match with custom predicates (e.g. a placeholder value must
@@ -514,6 +545,8 @@ abstract class AbstractStringFormat {
   /**
    * Scans {@code input} and replaces all matches using the {@code replacement} function.
    *
+   * <p>If no match is found, the {@code input} string is returned.
+   *
    * <p>If {@code replacement} returns null, the match is ignored as if it didn't match the format.
    * This can be used to post-filter the match with custom predicates (e.g. a placeholder value must
    * be digits only).
@@ -538,6 +571,8 @@ abstract class AbstractStringFormat {
 
   /**
    * Scans {@code input} and replaces all matches using the {@code replacement} function.
+   *
+   * <p>If no match is found, the {@code input} string is returned.
    *
    * <p>If {@code replacement} returns null, the match is ignored as if it didn't match the format.
    * This can be used to post-filter the match with custom predicates (e.g. a placeholder value must
@@ -565,6 +600,8 @@ abstract class AbstractStringFormat {
 
   /**
    * Scans {@code input} and replaces all matches using the {@code replacement} function.
+   *
+   * <p>If no match is found, the {@code input} string is returned.
    *
    * <p>If {@code replacement} returns null, the match is ignored as if it didn't match the format.
    * This can be used to post-filter the match with custom predicates (e.g. a placeholder value must
@@ -619,7 +656,9 @@ abstract class AbstractStringFormat {
       builder.append(replaceWith);
       inputIndex = matchEnd;
     }
-    return builder.append(input, inputIndex, input.length()).toString();
+    return inputIndex == 0 && builder.length() == 0
+        ? input // avoid copying
+        : builder.append(input, inputIndex, input.length()).toString();
   }
 
   /**

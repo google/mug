@@ -880,7 +880,7 @@ public final class Substring {
   }
 
   /**
-   * Similar to {@link #between(String, String}} but allows to use alternative bound styles
+   * Similar to {@link #between(String, String)} but allows to use alternative bound styles
    * to include or exclude the delimiters at both ends.
    *
    * @since 7.2
@@ -903,7 +903,7 @@ public final class Substring {
   }
 
   /**
-   * Similar to {@link #between(char, char}} but allows to use alternative bound styles
+   * Similar to {@link #between(char, char)} but allows to use alternative bound styles
    * to include or exclude the delimiters at both ends.
    *
    * @since 7.2
@@ -927,7 +927,7 @@ public final class Substring {
   }
 
   /**
-   * Similar to {@link #between(Pattern, Pattern}} but allows to use alternative bound styles
+   * Similar to {@link #between(Pattern, Pattern)} but allows to use alternative bound styles
    * to include or exclude the delimiters at both ends.
    *
    * @since 7.2
