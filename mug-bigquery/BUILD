@@ -6,7 +6,6 @@ java_library(
   deps = [
     "//mug:base",
     "//mug:format",
-    "//mug:time",
     "@maven//:com_google_errorprone_error_prone_annotations",
     "@maven//:com_google_cloud_google_cloud_bigquery",
   ]

@@ -1,6 +1,5 @@
 package com.google.mu.bigquery;
 
-import static com.google.mu.time.DateTimeFormats.formatOf;
 import static java.util.Collections.emptyMap;
 import static java.util.Objects.requireNonNull;
 
@@ -85,7 +84,7 @@ import com.google.mu.util.stream.BiStream;
 @Immutable
 public final class ParameterizedQuery {
   private static final DateTimeFormatter TIMESTAMP_FORMATTER =
-      formatOf("2023-12-28 14:31:00.123456-0700");
+      DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSSZZ");
   private final String query;
 
   @SuppressWarnings("Immutable")
