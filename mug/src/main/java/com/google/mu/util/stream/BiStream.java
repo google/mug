@@ -14,7 +14,6 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
-import static com.google.mu.function.BiComparator.comparingInOrder;
 import static com.google.mu.util.stream.MoreStreams.collectingAndThen;
 import static java.util.Map.Entry.comparingByKey;
 import static java.util.Map.Entry.comparingByValue;
@@ -63,7 +62,6 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import com.google.mu.function.BiComparator;
 import com.google.mu.util.BiOptional;
 import com.google.mu.util.Both;
 
@@ -1612,22 +1610,6 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * @since 4.7
-   * @deprecated Use {@link #sorted(Comparator, Comparator)} instead
-   */
-  @SafeVarargs
-  @Deprecated
-  public final BiStream<K, V> sorted(
-      BiComparator<? super K, ? super V> primary,
-      BiComparator<? super K, ? super V>... secondaries) {
-    return fromEntries(
-        mapToEntry()
-            .sorted(
-                comparingInOrder(primary, secondaries)
-                    .asComparator(Map.Entry::getKey, Map.Entry::getValue)));
-  }
-
-  /**
    * Returns a {@code BiStream} consisting of the pairs in this stream, in the order produced by
    * applying the {@code byKey} comparator on the keys of each pair, and then the {@code byValue}
    * comparator on the values of pairs with equal keys.
@@ -1647,44 +1629,6 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   @SuppressWarnings("unchecked") // Immutable Map.Entry<> is covariant.
   private BiStream<K, V> sorted(Comparator<? super Map.Entry< K, V>> entryComparator) {
     return fromEntries(((Stream<Map.Entry<K, V>>) mapToEntry()).sorted(entryComparator));
-  }
-
-  /**
-   * Returns the max pair according to the {@code primary} and {@code secondaries} (for tie-breaking
-   * purpose) comparators.
-   *
-   * @since 6.5
-   * @deprecated Use {@link BiCollectors#maxBy} instead.
-   */
-  @SafeVarargs
-  @Deprecated
-  public final BiOptional<K, V> max(
-      BiComparator<? super K, ? super V> primary,
-      BiComparator<? super K, ? super V>... secondaries) {
-    return fromOptionalEntry(
-        mapToEntry()
-            .max(
-                comparingInOrder(primary, secondaries)
-                    .asComparator(Map.Entry::getKey, Map.Entry::getValue)));
-  }
-
-  /**
-   * Returns the min pair according to {@code primary} and {@code secondaries} (for tie-breaking
-   * purpose) comparators.
-   *
-   * @since 6.5
-   * @deprecated Use {@link BiCollectors#minBy} instead
-   */
-  @Deprecated
-  @SafeVarargs
-  public final BiOptional<K, V> min(
-      BiComparator<? super K, ? super V> primary,
-      BiComparator<? super K, ? super V>... secondaries) {
-    return fromOptionalEntry(
-        mapToEntry()
-            .min(
-                comparingInOrder(primary, secondaries)
-                    .asComparator(Map.Entry::getKey, Map.Entry::getValue)));
   }
 
   /** Returns the count of pairs in this stream. */

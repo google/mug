@@ -2633,57 +2633,28 @@ public class SubstringTest {
 
   @Test
   public void peek_empty() {
-    assertThat(prefix("http").peek("").from("http")).hasValue("http");
-    assertThat(prefix("http").peek("").from("https")).hasValue("http");
+    assertThat(prefix("http").peek(prefix("")).from("http")).hasValue("http");
+    assertThat(prefix("http").peek(prefix("")).from("https")).hasValue("http");
   }
 
   @Test
   public void peek_match() {
-    assertThat(prefix("http").peek(":").from("http://")).hasValue("http");
-    assertThat(prefix("http").peek(":").repeatedly().from("http://")).containsExactly("http");
-    assertThat(before(first('/')).peek("/").repeatedly().from("foo/bar/"))
+    assertThat(prefix("http").peek(prefix(":")).from("http://")).hasValue("http");
+    assertThat(prefix("http").peek(prefix(":")).repeatedly().from("http://")).containsExactly("http");
+    assertThat(before(first('/')).peek(prefix("/")).repeatedly().from("foo/bar/"))
         .containsExactly("foo", "bar").inOrder();
   }
 
   @Test public void peek_firstPatternDoesNotMatch() {
-    assertThat(prefix("http").peek(":").from("ftp://")).isEmpty();
-    assertThat(prefix("http").peek(":").repeatedly().from("ftp://")).isEmpty();
+    assertThat(prefix("http").peek(prefix(":")).from("ftp://")).isEmpty();
+    assertThat(prefix("http").peek(prefix(":")).repeatedly().from("ftp://")).isEmpty();
   }
 
   @Test public void peek_peekedPatternDoesNotMatch() {
-    assertThat(prefix("http").peek(":").from("https://")).isEmpty();
-    assertThat(prefix("http").peek(":").repeatedly().from("https://")).isEmpty();
-    assertThat(BEGINNING.peek(":").repeatedly().split("foo").map(Match::toString))
+    assertThat(prefix("http").peek(prefix(":")).from("https://")).isEmpty();
+    assertThat(prefix("http").peek(prefix(":")).repeatedly().from("https://")).isEmpty();
+    assertThat(BEGINNING.peek(prefix(":")).repeatedly().split("foo").map(Match::toString))
         .containsExactly("foo");
-  }
-
-  @Test public void not_toString() {
-    assertThat(first("(").not().toString())
-        .isEqualTo("first('(').not()");
-  }
-
-  @Test public void not_match() {
-    assertThat(prefix("http").peek(prefix(':').not()).from("https://")).hasValue("http");
-    assertThat(prefix("http").peek(prefix(':').not()).repeatedly().from("https://"))
-        .containsExactly("http");
-    assertThat(before(first('/')).peek(prefix('?').not()).repeatedly().from("foo/bar/"))
-        .containsExactly("foo", "bar").inOrder();
-  }
-
-  @Test public void not_noMatch() {
-    assertThat(prefix("http").not().from("http://")).isEmpty();
-    assertThat(prefix("http").not().repeatedly().from("http://")).isEmpty();
-  }
-
-  @Test public void notOfNot_match() {
-    assertThat(prefix("http").not().not().from("http")).hasValue("");
-    assertThat(prefix("http").not().not().in("http").map(Match::after)).hasValue("http");
-    assertThat(prefix("http").not().not().repeatedly().from("http")).containsExactly("");
-  }
-
-  @Test public void notOfNot_noMatch() {
-    assertThat(prefix("http").not().not().from("ftp")).isEmpty();
-    assertThat(prefix("http").not().not().repeatedly().from("ftp")).isEmpty();
   }
 
   @Test public void patternFrom_noMatch() {
@@ -3056,7 +3027,7 @@ public class SubstringTest {
   @Test
   public void firstOccurrence_peek_alternativeBackTrackingNotTriggeredByPeek() {
     Substring.Pattern pattern =
-        Stream.of("foo", "ood").map(Substring::first).collect(firstOccurrence()).peek(" ");
+        Stream.of("foo", "ood").map(Substring::first).collect(firstOccurrence()).peek(prefix(" "));
     assertThat(pattern.from("food ")).isEmpty();
     assertThat(pattern.repeatedly().from("food ")).isEmpty();
   }
@@ -3064,7 +3035,7 @@ public class SubstringTest {
   @Test
   public void peekThenFirstOccurrence_alternativeBackTrackingTriggeredByPeek() {
     Substring.Pattern pattern =
-        Stream.of("foo", "ood").map(Substring::first).map(p -> p.peek(" ")).collect(firstOccurrence());
+        Stream.of("foo", "ood").map(Substring::first).map(p -> p.peek(prefix(" "))).collect(firstOccurrence());
     assertThat(pattern.from("food ")).hasValue("ood");
     assertThat(pattern.repeatedly().from("food ")).containsExactly("ood");
   }
@@ -3092,14 +3063,14 @@ public class SubstringTest {
 
   @Test
   public void or_peek_alternativeBackTrackingTriggeredByPeek() {
-    Substring.Pattern pattern = first("foo").or(first("food")).peek(" ");
+    Substring.Pattern pattern = first("foo").or(first("food")).peek(prefix(" "));
     assertThat(pattern.from("food ")).hasValue("food");
     assertThat(pattern.repeatedly().from("food ")).containsExactly("food");
   }
 
   @Test
   public void or_limitThenPeek_alternativeBackTrackingTriggeredByPeek() {
-    Substring.Pattern pattern = first("foo").or(first("food")).limit(4).peek(" ");
+    Substring.Pattern pattern = first("foo").or(first("food")).limit(4).peek(prefix(" "));
     assertThat(pattern.from("food ")).hasValue("food");
     assertThat(pattern.repeatedly().from("food ")).containsExactly("food");
   }
