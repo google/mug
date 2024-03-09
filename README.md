@@ -13,7 +13,7 @@ Offers:
    * `Map<Principal, V> keyedByPrincipal = BiStream.from(keyedByUserId).mapKeys(UserId::principal).toMap();`
 * More ([MoreStreams](#morestreams), [Optionals](#optionals), [DateTimeFormats](https://github.com/google/mug/wiki/DateTimeFormats-Explained), [...](https://github.com/google/mug/wiki))
   * `return optionally(count > 0, () -> total / count);`
-  * `DateTimeFormats.formatOf("Tue, 10 Jan 2023 10:00:00.123 America/Los_Angeles")`
+  * Infer `DateTimeFormatter` from example: `DateTimeFormats.formatOf("Tue, 10 Jan 2023 10:00:00.123 America/Los_Angeles")`
 
 ## Installation
 ### Maven
