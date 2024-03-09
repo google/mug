@@ -22,10 +22,12 @@ import java.util.stream.Collector;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import com.google.mu.function.MapFrom3;
 import com.google.mu.function.MapFrom4;
 import com.google.mu.function.MapFrom5;
 import com.google.mu.function.MapFrom6;
-import com.google.mu.function.MapFrom3;
+import com.google.mu.function.MapFrom7;
+import com.google.mu.function.MapFrom8;
 import com.google.mu.util.stream.MoreStreams;
 
 /**
@@ -145,6 +147,32 @@ abstract class AbstractStringFormat {
    */
   public final <R> Optional<R> parse(String input, MapFrom6<? super String, ? extends R> mapper) {
     return parseExpecting(6, input, combining(mapper));
+  }
+
+  /**
+   * Similar to {@link #parse(String, BiFunction)}, but parses {@code input} and applies {@code
+   * mapper} with the <em>7</em> placeholder values in this string format.
+   *
+   * @return the return value of the {@code mapper} function if not null. Returns empty if {@code
+   *     input} doesn't match the format, or {@code mapper} returns null.
+   * @throws IllegalArgumentException if or the format string doesn't have exactly 7 placeholders.
+   * @since 7.2
+   */
+  public final <R> Optional<R> parse(String input, MapFrom7<? super String, ? extends R> mapper) {
+    return parseExpecting(7, input, combining(mapper));
+  }
+
+  /**
+   * Similar to {@link #parse(String, BiFunction)}, but parses {@code input} and applies {@code
+   * mapper} with the <em>8</em> placeholder values in this string format.
+   *
+   * @return the return value of the {@code mapper} function if not null. Returns empty if {@code
+   *     input} doesn't match the format, or {@code mapper} returns null.
+   * @throws IllegalArgumentException if or the format string doesn't have exactly 8 placeholders.
+   * @since 7.2
+   */
+  public final <R> Optional<R> parse(String input, MapFrom8<? super String, ? extends R> mapper) {
+    return parseExpecting(8, input, combining(mapper));
   }
 
   /**
@@ -330,6 +358,48 @@ abstract class AbstractStringFormat {
    */
   public final <R> R parseOrThrow(String input, MapFrom6<? super String, R> mapper) {
     return parseOrThrowExpecting(6, input, combining(mapper));
+  }
+
+  /**
+   * Similar to {@link #parseOrThrow(String, BiFunction)}, but parses {@code input} and applies
+   * {@code mapper} with the <em>7</em> placeholder values in this string format.
+   *
+   * <p>Unlike {@link #parse(String, MapFrom6)}, {@code IllegalArgumentException} is thrown if the
+   * input string doesn't match the string format. The error message will include both the input
+   * string and the format string for ease of debugging, but is otherwise generic. If you need a
+   * different exception type, or need to customize the error message, consider using {@link
+   * parse(String, MapFrom6)} instead and call {@link Optional#orElseThrow} explicitly.
+   *
+   * @return the return value of the {@code mapper} function applied on the extracted placeholder
+   *     values.
+   * @throws IllegalArgumentException if the input string doesn't match the string format, or if the
+   *     format string doesn't have exactly 7 placeholders
+   * @throws NullPointerException if any of the parameter is null or {@code mapper} returns null.
+   * @since 7.2
+   */
+  public final <R> R parseOrThrow(String input, MapFrom7<? super String, R> mapper) {
+    return parseOrThrowExpecting(7, input, combining(mapper));
+  }
+
+  /**
+   * Similar to {@link #parseOrThrow(String, BiFunction)}, but parses {@code input} and applies
+   * {@code mapper} with the <em>8</em> placeholder values in this string format.
+   *
+   * <p>Unlike {@link #parse(String, MapFrom6)}, {@code IllegalArgumentException} is thrown if the
+   * input string doesn't match the string format. The error message will include both the input
+   * string and the format string for ease of debugging, but is otherwise generic. If you need a
+   * different exception type, or need to customize the error message, consider using {@link
+   * parse(String, MapFrom6)} instead and call {@link Optional#orElseThrow} explicitly.
+   *
+   * @return the return value of the {@code mapper} function applied on the extracted placeholder
+   *     values.
+   * @throws IllegalArgumentException if the input string doesn't match the string format, or if the
+   *     format string doesn't have exactly 8 placeholders
+   * @throws NullPointerException if any of the parameter is null or {@code mapper} returns null.
+   * @since 7.2
+   */
+  public final <R> R parseOrThrow(String input, MapFrom8<? super String, R> mapper) {
+    return parseOrThrowExpecting(8, input, combining(mapper));
   }
 
   /**
@@ -632,6 +702,75 @@ abstract class AbstractStringFormat {
                 matches.get(5)));
   }
 
+  /**
+   * Scans {@code input} and replaces all matches using the {@code replacement} function.
+   *
+   * <p>If no match is found, the {@code input} string is returned.
+   *
+   * <p>If {@code replacement} returns null, the match is ignored as if it didn't match the format.
+   * This can be used to post-filter the match with custom predicates (e.g. a placeholder value must
+   * be digits only).
+   *
+   * <p>The {@code replacement} function accepts {@link Substring.Match} instead of String to avoid
+   * unnecessary copying of the characters. If you are passing in a method reference, it can also
+   * take CharSequence or Object as the parameter types.
+   *
+   * @throws IllegalArgumentException if the format string doesn't have exactly 7 named placeholder
+   * @since 7.2
+   */
+  public final String replaceAllFrom(
+      String input, MapFrom7<? super Substring.Match, ?> replacement) {
+    requireNonNull(input);
+    requireNonNull(replacement);
+    checkPlaceholderCount(7);
+    return replaceAllMatches(
+        input,
+        matches ->
+            replacement.apply(
+                matches.get(0),
+                matches.get(1),
+                matches.get(2),
+                matches.get(3),
+                matches.get(4),
+                matches.get(5),
+                matches.get(6)));
+  }
+
+  /**
+   * Scans {@code input} and replaces all matches using the {@code replacement} function.
+   *
+   * <p>If no match is found, the {@code input} string is returned.
+   *
+   * <p>If {@code replacement} returns null, the match is ignored as if it didn't match the format.
+   * This can be used to post-filter the match with custom predicates (e.g. a placeholder value must
+   * be digits only).
+   *
+   * <p>The {@code replacement} function accepts {@link Substring.Match} instead of String to avoid
+   * unnecessary copying of the characters. If you are passing in a method reference, it can also
+   * take CharSequence or Object as the parameter types.
+   *
+   * @throws IllegalArgumentException if the format string doesn't have exactly 8 named placeholder
+   * @since 7.2
+   */
+  public final String replaceAllFrom(
+      String input, MapFrom8<? super Substring.Match, ?> replacement) {
+    requireNonNull(input);
+    requireNonNull(replacement);
+    checkPlaceholderCount(8);
+    return replaceAllMatches(
+        input,
+        matches ->
+            replacement.apply(
+                matches.get(0),
+                matches.get(1),
+                matches.get(2),
+                matches.get(3),
+                matches.get(4),
+                matches.get(5),
+                matches.get(6),
+                matches.get(7)));
+  }
+
   final String replaceAllMatches(
       String input, Function<? super List<Substring.Match>, ?> replacement) {
     List<int[]> matchIndices = new ArrayList<>();
@@ -820,6 +959,52 @@ abstract class AbstractStringFormat {
     requireNonNull(input);
     requireNonNull(mapper);
     checkPlaceholderCount(6);
+    return scanAndCollect(input, combining(mapper));
+  }
+
+  /**
+   * Scans the {@code input} string and extracts all matches of this string format. Returns the lazy
+   * stream of non-null results from passing the 7 placeholder values to the {@code mapper} function
+   * for each iteration, with null results skipped.
+   *
+   * <p>unlike {@link #parse(String, MapFrom6)}, the input string isn't matched entirely: the pattern
+   * doesn't have to start from the beginning, and if there are some remaining characters that don't
+   * match the pattern any more, the stream stops. In particular, if there is no match, empty stream
+   * is returned.
+   *
+   * <p>By default, placeholders are allowed to be matched against an empty string. If a certain
+   * placeholder isn't expected to be empty, consider filtering it out by returning null from the
+   * {@code mapper} function, which will then be ignored in the result stream.
+   *
+   * @since 7.2
+   */
+  public final <R> Stream<R> scan(String input, MapFrom7<? super String, ? extends R> mapper) {
+    requireNonNull(input);
+    requireNonNull(mapper);
+    checkPlaceholderCount(7);
+    return scanAndCollect(input, combining(mapper));
+  }
+
+  /**
+   * Scans the {@code input} string and extracts all matches of this string format. Returns the lazy
+   * stream of non-null results from passing the 8 placeholder values to the {@code mapper} function
+   * for each iteration, with null results skipped.
+   *
+   * <p>unlike {@link #parse(String, MapFrom6)}, the input string isn't matched entirely: the pattern
+   * doesn't have to start from the beginning, and if there are some remaining characters that don't
+   * match the pattern any more, the stream stops. In particular, if there is no match, empty stream
+   * is returned.
+   *
+   * <p>By default, placeholders are allowed to be matched against an empty string. If a certain
+   * placeholder isn't expected to be empty, consider filtering it out by returning null from the
+   * {@code mapper} function, which will then be ignored in the result stream.
+   *
+   * @since 7.2
+   */
+  public final <R> Stream<R> scan(String input, MapFrom8<? super String, ? extends R> mapper) {
+    requireNonNull(input);
+    requireNonNull(mapper);
+    checkPlaceholderCount(8);
     return scanAndCollect(input, combining(mapper));
   }
 
