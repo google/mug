@@ -178,8 +178,8 @@ abstract class AbstractStringFormat {
   /**
    * Parses {@code input} against the pattern.
    *
-   * <p>Returns an immutable list of placeholder values in the same order as {@link #placeholders},
-   * upon success; otherwise returns empty.
+   * <p>Returns an immutable list of placeholder values in the same order as the placeholders in
+   * the format string, upon success; otherwise returns empty.
    *
    * <p>The {@link Substring.Match} result type allows caller to inspect the characters around each
    * match, or to access the raw index in the input string.
@@ -284,7 +284,7 @@ abstract class AbstractStringFormat {
    * input string doesn't match the string format. The error message will include both the input
    * string and the format string for ease of debugging, but is otherwise generic. If you need a
    * different exception type, or need to customize the error message, consider using {@link
-   * parse(String, Ternary)} instead and call {@link Optional#orElseThrow} explicitly.
+   * parse(String, MapFrom3)} instead and call {@link Optional#orElseThrow} explicitly.
    *
    * @return the return value of the {@code mapper} function applied on the extracted placeholder
    *     values.
@@ -305,7 +305,7 @@ abstract class AbstractStringFormat {
    * the input string doesn't match the string format. The error message will include both the input
    * string and the format string for ease of debugging, but is otherwise generic. If you need a
    * different exception type, or need to customize the error message, consider using {@link
-   * parse(String, Quarternary)} instead and call {@link Optional#orElseThrow} explicitly.
+   * parse(String, MapFrom4)} instead and call {@link Optional#orElseThrow} explicitly.
    *
    * @return the return value of the {@code mapper} function applied on the extracted placeholder
    *     values.
@@ -326,7 +326,7 @@ abstract class AbstractStringFormat {
    * input string doesn't match the string format. The error message will include both the input
    * string and the format string for ease of debugging, but is otherwise generic. If you need a
    * different exception type, or need to customize the error message, consider using {@link
-   * parse(String, Quinary)} instead and call {@link Optional#orElseThrow} explicitly.
+   * parse(String, MapFrom5)} instead and call {@link Optional#orElseThrow} explicitly.
    *
    * @return the return value of the {@code mapper} function applied on the extracted placeholder
    *     values.
