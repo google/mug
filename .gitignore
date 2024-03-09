@@ -4,6 +4,8 @@
 *.releaseBackup
 *.pub
 *.properties
+.gitignore
+bazel-*
 
 
 ### Eclipse  ###
