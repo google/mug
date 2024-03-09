@@ -456,6 +456,12 @@ public class StringFormatTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> new StringFormat("1 is {what}").parse("bad input", (a, b, c, d, e, f) -> a));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new StringFormat("1 is {what}").parse("bad input", (a, b, c, d, e, f, g) -> a));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new StringFormat("1 is {what}").parse("bad input", (a, b, c, d, e, f, g, h) -> a));
   }
 
   @Test
@@ -1221,6 +1227,12 @@ public class StringFormatTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> new StringFormat("1 is {what}").scan("bad input", (a, b, c, d, e, f) -> a));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new StringFormat("1 is {what}").scan("bad input", (a, b, c, d, e, f, g) -> a));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new StringFormat("1 is {what}").scan("bad input", (a, b, c, d, e, f, g, h) -> a));
   }
 
   @Test
@@ -1245,6 +1257,16 @@ public class StringFormatTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> new StringFormat("1 is {what}").replaceAllFrom("bad input", (a, b, c, d, e, f) -> a));
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            new StringFormat("1 is {what}")
+                .replaceAllFrom("bad input", (a, b, c, d, e, f, g) -> a));
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            new StringFormat("1 is {what}")
+                .replaceAllFrom("bad input", (a, b, c, d, e, f, g, h) -> a));
   }
 
   @Test
