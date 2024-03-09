@@ -403,6 +403,114 @@ public class StringFormatTest {
   }
 
   @Test
+  public void parse_withSevenArgsLambda() {
+    assertThat(
+            new StringFormat("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}, 5 is {e}, 6 is {f}, 7 is {g}")
+                .parse(
+                    "1 is one, 2 is two, 3 is three, 4 is four, 5 is five, 6 is six, 7 is seven",
+                    (a, b, c, d, e, f, g) -> a + b + c + d + e + f + g))
+        .hasValue("onetwothreefourfivesixseven");
+    assertThat(
+            new StringFormat("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}, 5 is {e}, 6 is {f}, 7 is {g}")
+                .<String>parseOrThrow(
+                    "1 is one, 2 is two, 3 is three, 4 is four, 5 is five, 6 is six, 7 is seven",
+                    (a, b, c, d, e, f, g) -> a + b + c + d + e + f + g))
+        .isEqualTo("onetwothreefourfivesixseven");
+  }
+
+  @Test
+  public void parse_withSevenArgsLambda_emptyInput() {
+    assertThat(
+            new StringFormat("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}, 5 is {e}, 6 is {f}, 7 is {g}")
+                .parse("", (a, b, c, d, e, f, g) -> null))
+        .isEmpty();
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            new StringFormat("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}, 5 is {e}, 6 is {f}, 7 is {g}")
+                .parseOrThrow("", (a, b, c, d, e, f, g) -> null));
+  }
+
+  @Test
+  public void parse_withSevenArgsLambda_lambdaReturnsNull() {
+    assertThat(
+            new StringFormat("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}, 5 is {e}, 6 is {f}, 7 is {g}")
+                .parse(
+                    "1 is one, 2 is two, 3 is three, 4 is four, 5 is five, 6 is six, 7 is seven",
+                    (a, b, c, d, e, f, g) -> null))
+        .isEmpty();
+    assertThrows(
+        NullPointerException.class,
+        () ->
+            new StringFormat("1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}, 5 is {e}, 6 is {f}, 7 is {g}")
+                .parseOrThrow(
+                    "1 is one, 2 is two, 3 is three, 4 is four, 5 is five, 6 is six, 7 is seven",
+                    (a, b, c, d, e, f, g) -> null));
+  }
+
+  @Test
+  public void parse_withEightArgsLambda() {
+    assertThat(
+            new StringFormat(
+                    "1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}, 5 is {e}, 6 is {f}, 7 is {g}, 8 is"
+                        + " {h}")
+                .parse(
+                    "1 is one, 2 is two, 3 is three, 4 is four, 5 is five, 6 is six, 7 is seven, 8"
+                        + " is eight",
+                    (a, b, c, d, e, f, g, h) -> a + b + c + d + e + f + g + h))
+        .hasValue("onetwothreefourfivesixseveneight");
+    assertThat(
+            new StringFormat(
+                    "1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}, 5 is {e}, 6 is {f}, 7 is {g}, 8 is"
+                        + " {h}")
+                .<String>parseOrThrow(
+                    "1 is one, 2 is two, 3 is three, 4 is four, 5 is five, 6 is six, 7 is seven, 8"
+                        + " is eight",
+                    (a, b, c, d, e, f, g, h) -> a + b + c + d + e + f + g + h))
+        .isEqualTo("onetwothreefourfivesixseveneight");
+  }
+
+  @Test
+  public void parse_withEightArgsLambda_emptyInput() {
+    assertThat(
+            new StringFormat(
+                    "1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}, 5 is {e}, 6 is {f}, 7 is {g}, 8 is"
+                        + " {h}")
+                .parse("", (a, b, c, d, e, f, g, h) -> null))
+        .isEmpty();
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            new StringFormat(
+                    "1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}, 5 is {e}, 6 is {f}, 7 is {g}, 8 is"
+                        + " {h}")
+                .parseOrThrow("", (a, b, c, d, e, f, g, h) -> null));
+  }
+
+  @Test
+  public void parse_withEightArgsLambda_lambdaReturnsNull() {
+    assertThat(
+            new StringFormat(
+                    "1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}, 5 is {e}, 6 is {f}, 7 is {g}, 8 is"
+                        + " {h}")
+                .parse(
+                    "1 is one, 2 is two, 3 is three, 4 is four, 5 is five, 6 is six, 7 is seven, 8"
+                        + " is eight",
+                    (a, b, c, d, e, f, g, h) -> null))
+        .isEmpty();
+    assertThrows(
+        NullPointerException.class,
+        () ->
+            new StringFormat(
+                    "1 is {a}, 2 is {b}, 3 is {c}, 4 is {d}, 5 is {e}, 6 is {f}, 7 is {g}, 8 is"
+                        + " {h}")
+                .parseOrThrow(
+                    "1 is one, 2 is two, 3 is three, 4 is four, 5 is five, 6 is six, 7 is seven, 8"
+                        + " is eight",
+                    (a, b, c, d, e, f, g, h) -> null));
+  }
+
+  @Test
   public void parse_placeholderInsideCurlyBraces() {
     StringFormat format = new StringFormat("{key={key}, value={value}}");
     assertThat(format.parse("{key=one, value=1}", (key, value) -> key + ":" + value))
@@ -834,6 +942,100 @@ public class StringFormatTest {
   }
 
   @Test
+  public void scan_sevenPlaceholders() {
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}, g={g}]")
+                .scan(
+                    "a=1, b=2, c=3, d=4, e=5, f=6, g",
+                    (a, b, c, d, e, f, g) -> a + b + c + d + e + f + g))
+        .isEmpty();
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}, g={g}]")
+                .scan(
+                    "[a=1, b=2, c=3, d=4, e=5, f=6, g=7]",
+                    (a, b, c, d, e, f, g) -> a + b + c + d + e + f + g))
+        .containsExactly("1234567");
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}, g={g}]")
+                .scan(
+                    "[a=1, b=2, c=3, d=4, e=5, f=6, g=7] [a=z, b=y, c=x, d=w, e=v, f=u, g=t]",
+                    (a, b, c, d, e, f, g) -> a + b + c + d + e + f + g))
+        .containsExactly("1234567", "zyxwvut")
+        .inOrder();
+  }
+
+  @Test
+  public void scan_sevenPlaceholders_nullFiltered() {
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}, g={g}]")
+                .scan("[a=1, b=2, c=3, d=4, e=5, f=6, g=7]", (a, b, c, d, e, f, g) -> null))
+        .isEmpty();
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}, g={g}]")
+                .scan(
+                    "[a=1, b=2, c=3, d=, e=5, f=6, g=7] [a=z, b=y, c=x, d=w, e=v, f=u, g=t]",
+                    (a, b, c, d, e, f, g) -> d.isEmpty() ? null : a + b + c + d + e + f + g))
+        .containsExactly("zyxwvut")
+        .inOrder();
+  }
+
+  @Test
+  public void scan_sevenPlaceholders_emptyInput() {
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}, g={g}]")
+                .scan("", (a, b, c, d, e, f, g) -> a + b + c + d + e + f + g))
+        .isEmpty();
+  }
+
+  @Test
+  public void scan_eightPlaceholders() {
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}, g={g}, h={h}]")
+                .scan(
+                    "a=1, b=2, c=3, d=4, e=5, f=6, g=7, h",
+                    (a, b, c, d, e, f, g, h) -> a + b + c + d + e + f + g + h))
+        .isEmpty();
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}, g={g}, h={h}]")
+                .scan(
+                    "[a=1, b=2, c=3, d=4, e=5, f=6, g=7, h=8]",
+                    (a, b, c, d, e, f, g, h) -> a + b + c + d + e + f + g + h))
+        .containsExactly("12345678");
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}, g={g}, h={h}]")
+                .scan(
+                    "[a=1, b=2, c=3, d=4, e=5, f=6, g=7, h=8] [a=z, b=y, c=x, d=w, e=v, f=u, g=t,"
+                        + " h=s]",
+                    (a, b, c, d, e, f, g, h) -> a + b + c + d + e + f + g + h))
+        .containsExactly("12345678", "zyxwvuts")
+        .inOrder();
+  }
+
+  @Test
+  public void scan_eightPlaceholders_nullFiltered() {
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}, g={g}, h={h}]")
+                .scan("[a=1, b=2, c=3, d=4, e=5, f=6, g=7, h=8]", (a, b, c, d, e, f, g, h) -> null))
+        .isEmpty();
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}, g={g}, h={h}]")
+                .scan(
+                    "[a=1, b=2, c=3, d=, e=5, f=6, g=7, h=8] [a=z, b=y, c=x, d=w, e=v, f=u, g=t,"
+                        + " h=s]",
+                    (a, b, c, d, e, f, g, h) -> d.isEmpty() ? null : a + b + c + d + e + f + g + h))
+        .containsExactly("zyxwvuts")
+        .inOrder();
+  }
+
+  @Test
+  public void scan_eightPlaceholders_emptyInput() {
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}, g={g}, h={h}]")
+                .scan("", (a, b, c, d, e, f, g, h) -> a + b + c + d + e + f + g + h))
+        .isEmpty();
+  }
+
+  @Test
   @SuppressWarnings("StringUnformatArgsCheck")
   public void replaceAllFrom_emptyTemplate_nonEmptyInput() {
     assertThat(new StringFormat("").replaceAllMatches(".", x -> "foo")).isEqualTo("foo.foo");
@@ -1115,6 +1317,101 @@ public class StringFormatTest {
     assertThat(
             new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}]")
                 .replaceAllFrom("", (a, b, c, d, e, f) -> "got " + a + b + c + d + e + f))
+        .isEmpty();
+  }
+
+  @Test
+  public void replaceAllFrom_sevenPlaceholders() {
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}, g={g}]")
+                .replaceAllFrom(
+                    "a=1, b=2, c=3, d=4, e=5, f=6, g",
+                    (a, b, c, d, e, f, g) -> "got " + a + b + c + d + e + f + g))
+        .isEqualTo("a=1, b=2, c=3, d=4, e=5, f=6, g");
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}, g={g}]")
+                .replaceAllFrom(
+                    "[a=1, b=2, c=3, d=4, e=5, f=6, g=7]",
+                    (a, b, c, d, e, f, g) -> "got " + a + b + c + d + e + f + g))
+        .isEqualTo("got 1234567");
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}, g={g}]")
+                .replaceAllFrom(
+                    "[a=1, b=2, c=3, d=4, e=5, f=6, g=7]; [a=z, b=y, c=x, d=w, e=v, f=u, g=t]",
+                    (a, b, c, d, e, f, g) -> "got " + a + b + c + d + e + f + g))
+        .isEqualTo("got 1234567; got zyxwvut");
+  }
+
+  @Test
+  public void replaceAllFrom_sevenPlaceholders_nullFiltered() {
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}, g={g}]")
+                .replaceAllFrom(
+                    "[a=1, b=2, c=3, d=4, e=5, f=6, g=7]", (a, b, c, d, e, f, g) -> null))
+        .isEqualTo("[a=1, b=2, c=3, d=4, e=5, f=6, g=7]");
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}, g={g}]")
+                .replaceAllFrom(
+                    "[a=1, b=2, c=3, d=, e=5, f=6, g=7] [a=z, b=y, c=x, d=w, e=v, f=u, g=t]",
+                    (a, b, c, d, e, f, g) ->
+                        d.isEmpty() ? null : "got " + a + b + c + d + e + f + g))
+        .isEqualTo("[a=1, b=2, c=3, d=, e=5, f=6, g=7] got zyxwvut");
+  }
+
+  @Test
+  public void replaceAllFrom_sevenPlaceholders_emptyInput() {
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}, g={g}]")
+                .replaceAllFrom("", (a, b, c, d, e, f, g) -> "got " + a + b + c + d + e + f + g))
+        .isEmpty();
+  }
+
+  @Test
+  public void replaceAllFrom_eightPlaceholders() {
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}, g={g}, h={h}]")
+                .replaceAllFrom(
+                    "a=1, b=2, c=3, d=4, e=5, f=6, g=7, h",
+                    (a, b, c, d, e, f, g, h) -> "got " + a + b + c + d + e + f + g + h))
+        .isEqualTo("a=1, b=2, c=3, d=4, e=5, f=6, g=7, h");
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}, g={g}, h={h}]")
+                .replaceAllFrom(
+                    "[a=1, b=2, c=3, d=4, e=5, f=6, g=7, h=8]",
+                    (a, b, c, d, e, f, g, h) -> "got " + a + b + c + d + e + f + g + h))
+        .isEqualTo("got 12345678");
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}, g={g}, h={h}]")
+                .replaceAllFrom(
+                    "I [a=1, b=2, c=3, d=4, e=5, f=6, g=7, h=8]; [a=z, b=y, c=x, d=w, e=v, f=u,"
+                        + " g=t, h=s]",
+                    (a, b, c, d, e, f, g, h) -> "got " + a + b + c + d + e + f + g + h))
+        .isEqualTo("I got 12345678; got zyxwvuts");
+  }
+
+  @Test
+  public void replaceAllFrom_eightPlaceholders_nullFiltered() {
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}, g={g}, h={h}]")
+                .replaceAllFrom(
+                    "[a=1, b=2, c=3, d=4, e=5, f=6, g=7, h=8]", (a, b, c, d, e, f, g, h) -> null))
+        .isEqualTo("[a=1, b=2, c=3, d=4, e=5, f=6, g=7, h=8]");
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}, g={g}, h={h}]")
+                .replaceAllFrom(
+                    "[a=1, b=2, c=3, d=, e=5, f=6, g=7, h=8] [a=z, b=y, c=x, d=w, e=v, f=u, g=t,"
+                        + " h=s]",
+                    (a, b, c, d, e, f, g, h) ->
+                        d.isEmpty() ? null : "got " + a + b + c + d + e + f + g + h))
+        .isEqualTo("[a=1, b=2, c=3, d=, e=5, f=6, g=7, h=8] got zyxwvuts");
+  }
+
+  @Test
+  public void replaceAllFrom_eightPlaceholders_emptyInput() {
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}, g={g}, h={h}]")
+                .replaceAllFrom(
+                    "", (a, b, c, d, e, f, g, h) -> "got " + a + b + c + d + e + f + g + h))
         .isEmpty();
   }
 
