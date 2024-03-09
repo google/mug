@@ -239,40 +239,6 @@ A: When you already have a proper domain object, sure. But you might find it cum
 
 A: It's distracting to read code littered with opaque method names like `getFirst()` and `getSecond()`.
 
-## Optionals
-
-**Example 1: to combine two Optional instances into a single one:**
-```java
-Optional<Couple> couple = Optionals.both(optionalHusband, optionalWife).map(Couple::new);
-```
-
-**Example 2: to run code when two Optional instances are both present:**
-```java
-Optionals.both(findTeacher(), findStudent()).ifPresent(Teacher::teach);
-```
-
-**Example 3: or else run a fallback code block:**
-```java
-static import com.google.mu.util.Optionals.ifPresent;
-
-Optional<Teacher> teacher = findTeacher(...);
-Optional<Student> student = findStudent(...);
-ifPresent(teacher, student, Teacher::teach)             // teach if both present
-    .or(() -> ifPresent(teacher, Teacher::workOut))     // teacher work out if present
-    .or(() -> ifPresent(student, Student::doHomework))  // student do homework if present
-    .orElse(() -> log("no teacher. no student"));       // or else log
-```
-
-**Example 4: wrap a value in Optional if it exists:**
-```java
-static import com.google.mu.util.Optionals.optionally;
-
-Optional<String> id = optionally(request.hasId(), request::getId);
-```
-
-All Optionals utilites propagate checked exception from the the lambda/method references.
-
-
 #### [MoreStreams](https://google.github.io/mug/apidocs/com/google/mu/util/stream/MoreStreams.html)
 
 **Example 1: to group consecutive elements in a stream:**
@@ -321,3 +287,38 @@ Map<Day, Long> siteTrafficHistogram = pages.stream()
     .collect(flatteningMaps(groupingBy(day -> day, Long::sum)))
     .toMap();
 ```
+
+
+## Optionals
+
+**Example 1: to combine two Optional instances into a single one:**
+```java
+Optional<Couple> couple = Optionals.both(optionalHusband, optionalWife).map(Couple::new);
+```
+
+**Example 2: to run code when two Optional instances are both present:**
+```java
+Optionals.both(findTeacher(), findStudent()).ifPresent(Teacher::teach);
+```
+
+**Example 3: or else run a fallback code block:**
+```java
+static import com.google.mu.util.Optionals.ifPresent;
+
+Optional<Teacher> teacher = findTeacher(...);
+Optional<Student> student = findStudent(...);
+ifPresent(teacher, student, Teacher::teach)             // teach if both present
+    .or(() -> ifPresent(teacher, Teacher::workOut))     // teacher work out if present
+    .or(() -> ifPresent(student, Student::doHomework))  // student do homework if present
+    .orElse(() -> log("no teacher. no student"));       // or else log
+```
+
+**Example 4: wrap a value in Optional if it exists:**
+```java
+static import com.google.mu.util.Optionals.optionally;
+
+Optional<String> id = optionally(request.hasId(), request::getId);
+```
+
+All Optionals utilites propagate checked exception from the the lambda/method references.
+
