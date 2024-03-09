@@ -38,10 +38,12 @@ import com.google.errorprone.matchers.Matchers;
 import com.google.errorprone.matchers.method.MethodMatchers.MethodClassMatcher;
 import com.google.errorprone.util.ASTHelpers;
 import com.google.mu.errorprone.AbstractBugChecker.ErrorReport;
+import com.google.mu.function.MapFrom3;
 import com.google.mu.function.MapFrom4;
 import com.google.mu.function.MapFrom5;
 import com.google.mu.function.MapFrom6;
-import com.google.mu.function.MapFrom3;
+import com.google.mu.function.MapFrom7;
+import com.google.mu.function.MapFrom8;
 import com.google.mu.util.CaseBreaker;
 import com.google.mu.util.stream.BiCollector;
 import com.google.mu.util.stream.BiStream;
@@ -78,6 +80,8 @@ public final class StringUnformatArgsCheck extends AbstractBugChecker
           .append(MapFrom4.class, 4)
           .append(MapFrom5.class, 5)
           .append(MapFrom6.class, 6)
+          .append(MapFrom7.class, 7)
+          .append(MapFrom8.class, 8)
           .append(Collector.class, 1)
           .append(BiCollector.class, 2)
           .mapKeys(TypeName::of)
