@@ -3,7 +3,7 @@
   <parent>
       <groupId>com.google.mug</groupId>
       <artifactId>mug-root</artifactId>
-      <version>7.2</version>
+      <version>7.3-SNAPSHOT</version>
       <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>mug-examples</artifactId>
