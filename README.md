@@ -5,7 +5,7 @@ A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/
 
 Offers:
 * **Intuitive to read**, powerful string manipulation ([StringFormat](https://github.com/google/mug/wiki/StringFormat-Explained), [Substring](https://github.com/google/mug/wiki/Substring-Explained))
-   * `new StringFormat("root/{yyyy}/{mm}/{dd}").parse(filepath, (yyyy, mm, dd) -> ...)`
+   * `new StringFormat("file://{cohort}-home/{yyyy}/{mm}/{dd}").parse(filepath, (cohort, yyyy, mm, dd) -> ...)`
    * `String user = before(first('@')).from(email).orElseThrow();`
 * Streaming pairs ([BiStream](https://github.com/google/mug/wiki/BiStream-Explained))
    * `Map<Instant, Long> histogram = zip(times, counts).toMap();`
