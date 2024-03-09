@@ -7,6 +7,9 @@
   </parent>
   <artifactId>mug-errorprone</artifactId>
   <name>Compile-time Plugins</name>
+  <properties>
+    <maven.javadoc.skip>true</maven.javadoc.skip>
+  </properties>
   <build>
     <pluginManagement>
       <plugins>
