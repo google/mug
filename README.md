@@ -85,6 +85,69 @@ Add to build.gradle:
 ```
 
 
+## StringFormat
+
+Extracts structured data from string:
+
+```java
+new StringFormat("/users/{user}/.{hidden_file_name}")
+    .parse(filePath, (user, fileName) -> ...);
+```
+
+```java
+new StringFormat("{hour}:{minute}:{second}.{millis}")
+    .parse(“10:26:30.748”, (hour, minute, second, millis) -> ...);
+```
+
+An ErrorProne check is in place to check that the number of lambda parameters and
+the parameter names match the format string.
+
+This allows you to define `StringFormat` objects as private class constant, and safely use them
+many lines away.
+
+
+## Substring
+
+**Example 1: strip off a prefix if existent:**
+```java
+String httpStripped = Substring.prefix("http://").removeFrom(uri);
+```
+
+**Example 2: strip off any scheme prefix from a uri:**
+```java
+String schemeStripped = Substring.upToIncluding(first("://")).removeFrom(uri);
+```
+
+**Example 3: split a string in the format of "name=value" into `name` and `value`:**
+```java
+Substring.first('=').split("name=value").map((name, value) -> ...);
+```
+
+**Example 4: replace trailing "//" with "/" :**
+```java
+Substring.suffix("//").replaceFrom(path, "/");
+```
+
+
+**Example 5: strip off the suffix starting with a dash (-) character :**
+```java
+last('-').toEnd().removeFrom(str);
+```
+
+**Example 6: extract a substring using regex :**
+```java
+String quoted = Substring.first(Pattern.compile("'(.*?)'"), 1)
+    .from(str)
+    .orElseThrow(...);
+```
+
+**Example 7: find the substring between the first and last curly braces ({) :**
+```java
+String body = Substring.between(first('{'), last('}'))
+    .from(source)
+    .orElseThrow(...);
+```
+
 ## Stream
 
 #### [BiStream](https://google.github.io/mug/apidocs/com/google/mu/util/stream/BiStream.html) streams pairs of objects.
@@ -175,69 +238,6 @@ A: When you already have a proper domain object, sure. But you might find it cum
 **Q: Why not `Stream<Pair<Foo, Bar>>`?**
 
 A: It's distracting to read code littered with opaque method names like `getFirst()` and `getSecond()`.
-
-## StringFormat
-
-Extracts structured data from string:
-
-```java
-new StringFormat("/users/{user}/.{hidden_file_name}")
-    .parse(filePath, (user, fileName) -> ...);
-```
-
-```java
-new StringFormat("{hour}:{minute}:{second}.{millis}")
-    .parse(“10:26:30.748”, (hour, minute, second, millis) -> ...);
-```
-
-An ErrorProne check is in place to check that the number of lambda parameters and
-the parameter names match the format string.
-
-This allows you to define `StringFormat` objects as private class constant, and safely use them
-many lines away.
-
-
-## Substring
-
-**Example 1: strip off a prefix if existent:**
-```java
-String httpStripped = Substring.prefix("http://").removeFrom(uri);
-```
-
-**Example 2: strip off any scheme prefix from a uri:**
-```java
-String schemeStripped = Substring.upToIncluding(first("://")).removeFrom(uri);
-```
-
-**Example 3: split a string in the format of "name=value" into `name` and `value`:**
-```java
-Substring.first('=').split("name=value").map((name, value) -> ...);
-```
-
-**Example 4: replace trailing "//" with "/" :**
-```java
-Substring.suffix("//").replaceFrom(path, "/");
-```
-
-
-**Example 5: strip off the suffix starting with a dash (-) character :**
-```java
-last('-').toEnd().removeFrom(str);
-```
-
-**Example 6: extract a substring using regex :**
-```java
-String quoted = Substring.first(Pattern.compile("'(.*?)'"), 1)
-    .from(str)
-    .orElseThrow(...);
-```
-
-**Example 7: find the substring between the first and last curly braces ({) :**
-```java
-String body = Substring.between(first('{'), last('}'))
-    .from(source)
-    .orElseThrow(...);
-```
 
 ## Optionals
 
