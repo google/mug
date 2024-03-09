@@ -35,10 +35,10 @@ import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
-import com.google.mu.function.Quarternary;
-import com.google.mu.function.Quinary;
-import com.google.mu.function.Senary;
-import com.google.mu.function.Ternary;
+import com.google.mu.function.MapFrom4;
+import com.google.mu.function.MapFrom5;
+import com.google.mu.function.MapFrom6;
+import com.google.mu.function.MapFrom3;
 import com.google.mu.util.BiOptional;
 import com.google.mu.util.Both;
 import com.google.mu.util.MoreCollections;
@@ -227,13 +227,13 @@ public final class MoreCollectors {
    * IllegalArgumentExceptioin is thrown.
    *
    * <p>To handle the {@code size() != 3} case, consider to use the {@link
-   * MoreCollections#findOnlyElements(java.util.Collection, Ternary)
+   * MoreCollections#findOnlyElements(java.util.Collection, MapFrom3)
    * MoreCollections.findOnlyElements()} method,
    * which returns {@link Optional}.
    *
    * @since 6.6
    */
-  public static <T, R> FixedSizeCollector<T, ?, R> combining(Ternary<? super T, ? extends R> mapper) {
+  public static <T, R> FixedSizeCollector<T, ?, R> combining(MapFrom3<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new ShortListCollector<T, R>() {
       @Override R reduce(List<? extends T> list) {
@@ -251,13 +251,13 @@ public final class MoreCollectors {
    * IllegalArgumentExceptioin is thrown.
    *
    * <p>To handle the {@code size() != 4} case, consider to use the {@link
-   * MoreCollections#findOnlyElements(java.util.Collection, Quarternary)
+   * MoreCollections#findOnlyElements(java.util.Collection, MapFrom4)
    * MoreCollections.findOnlyElements()} method,
    * which returns {@link Optional}.
    *
    * @since 6.6
    */
-  public static <T, R> FixedSizeCollector<T, ?, R> combining(Quarternary<? super T, ? extends R> mapper) {
+  public static <T, R> FixedSizeCollector<T, ?, R> combining(MapFrom4<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new ShortListCollector<T, R>() {
       @Override R reduce(List<? extends T> list) {
@@ -275,13 +275,13 @@ public final class MoreCollectors {
    * IllegalArgumentExceptioin is thrown.
    *
    * <p>To handle the {@code size() != 5} case, consider to use the {@link
-   * MoreCollections#findOnlyElements(java.util.Collection, Quinary)
+   * MoreCollections#findOnlyElements(java.util.Collection, MapFrom5)
    * MoreCollections.findOnlyElements()} method,
    * which returns {@link Optional}.
    *
    * @since 6.6
    */
-  public static <T, R> FixedSizeCollector<T, ?, R> combining(Quinary<? super T, ? extends R> mapper) {
+  public static <T, R> FixedSizeCollector<T, ?, R> combining(MapFrom5<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new ShortListCollector<T, R>() {
       @Override R reduce(List<? extends T> list) {
@@ -299,13 +299,13 @@ public final class MoreCollectors {
    * IllegalArgumentExceptioin is thrown.
    *
    * <p>To handle the {@code size() != 6} case, consider to use the {@link
-   * MoreCollections#findOnlyElements(java.util.Collection, Senary)
+   * MoreCollections#findOnlyElements(java.util.Collection, MapFrom6)
    * MoreCollections.findOnlyElements()} method,
    * which returns {@link Optional}.
    *
    * @since 6.6
    */
-  public static <T, R> FixedSizeCollector<T, ?, R> combining(Senary<? super T, ? extends R> mapper) {
+  public static <T, R> FixedSizeCollector<T, ?, R> combining(MapFrom6<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new ShortListCollector<T, R>() {
       @Override R reduce(List<? extends T> list) {
@@ -347,42 +347,42 @@ public final class MoreCollectors {
   }
 
   /**
-   * Same as {@link #combining(Ternary)}.
+   * Same as {@link #combining(MapFrom3)}.
    *
    * @since 5.3
    */
   public static <T, R> FixedSizeCollector<T, ?, R> onlyElements(
-      Ternary<? super T, ? extends R> mapper) {
+      MapFrom3<? super T, ? extends R> mapper) {
     return combining(mapper);
   }
 
   /**
-   * Same as {@link #combining(Quarternary)}.
+   * Same as {@link #combining(MapFrom4)}.
    *
    * @since 5.3
    */
   public static <T, R> FixedSizeCollector<T, ?, R> onlyElements(
-      Quarternary<? super T, ? extends R> mapper) {
+      MapFrom4<? super T, ? extends R> mapper) {
     return combining(mapper);
   }
 
   /**
-   * Same as {@link #combining(Quinary)}.
+   * Same as {@link #combining(MapFrom5)}.
    *
    * @since 5.3
    */
   public static <T, R> FixedSizeCollector<T, ?, R> onlyElements(
-      Quinary<? super T, ? extends R> mapper) {
+      MapFrom5<? super T, ? extends R> mapper) {
     return combining(mapper);
   }
 
   /**
-   * Same as {@link #combining(Senary)}.
+   * Same as {@link #combining(MapFrom6)}.
    *
    * @since 5.3
    */
   public static <T, R> FixedSizeCollector<T, ?, R> onlyElements(
-      Senary<? super T, ? extends R> mapper) {
+      MapFrom6<? super T, ? extends R> mapper) {
     return combining(mapper);
   }
 

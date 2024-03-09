@@ -9,10 +9,10 @@ import java.util.Optional;
 import java.util.RandomAccess;
 import java.util.function.BiFunction;
 
-import com.google.mu.function.Quarternary;
-import com.google.mu.function.Quinary;
-import com.google.mu.function.Senary;
-import com.google.mu.function.Ternary;
+import com.google.mu.function.MapFrom4;
+import com.google.mu.function.MapFrom5;
+import com.google.mu.function.MapFrom6;
+import com.google.mu.function.MapFrom3;
 
 /**
  * Utilities pertaining to {@link Collection}.
@@ -49,7 +49,7 @@ public final class MoreCollections {
    *     {@code found} function returns null.
    */
   public static <T, R> Optional<R> findFirstElements(
-      Collection<T> collection, Ternary<? super T, ? extends R> found) {
+      Collection<T> collection, MapFrom3<? super T, ? extends R> found) {
     requireNonNull(found);
     if (collection.size() < 3) return Optional.empty();
     if (collection instanceof List && collection instanceof RandomAccess) {
@@ -69,7 +69,7 @@ public final class MoreCollections {
    *     {@code found} function returns null.
    */
   public static <T, R> Optional<R> findFirstElements(
-      Collection<T> collection, Quarternary<? super T, ? extends R> found) {
+      Collection<T> collection, MapFrom4<? super T, ? extends R> found) {
     requireNonNull(found);
     if (collection.size() < 4) return Optional.empty();
     if (collection instanceof List && collection instanceof RandomAccess) {
@@ -89,7 +89,7 @@ public final class MoreCollections {
    *     {@code found} function returns null.
    */
   public static <T, R> Optional<R> findFirstElements(
-      Collection<T> collection, Quinary<? super T, ? extends R> found) {
+      Collection<T> collection, MapFrom5<? super T, ? extends R> found) {
     requireNonNull(found);
     if (collection.size() < 5) return Optional.empty();
     if (collection instanceof List && collection instanceof RandomAccess) {
@@ -109,7 +109,7 @@ public final class MoreCollections {
    *     {@code found} function returns null.
    */
   public static <T, R> Optional<R> findFirstElements(
-      Collection<T> collection, Senary<? super T, ? extends R> found) {
+      Collection<T> collection, MapFrom6<? super T, ? extends R> found) {
     requireNonNull(found);
     if (collection.size() < 6) return Optional.empty();
     if (collection instanceof List && collection instanceof RandomAccess) {
@@ -149,7 +149,7 @@ public final class MoreCollections {
    *     {@code found} function returns null.
    */
   public static <T, R> Optional<R> findOnlyElements(
-      Collection<T> collection, Ternary<? super T, ? extends R> found) {
+      Collection<T> collection, MapFrom3<? super T, ? extends R> found) {
     requireNonNull(found);
     if (collection.size() != 3) return Optional.empty();
     if (collection instanceof List && collection instanceof RandomAccess) {
@@ -169,7 +169,7 @@ public final class MoreCollections {
    *     {@code found} function returns null.
    */
   public static <T, R> Optional<R> findOnlyElements(
-      Collection<T> collection, Quarternary<? super T, ? extends R> found) {
+      Collection<T> collection, MapFrom4<? super T, ? extends R> found) {
     requireNonNull(found);
     if (collection.size() != 4) return Optional.empty();
     if (collection instanceof List && collection instanceof RandomAccess) {
@@ -189,7 +189,7 @@ public final class MoreCollections {
    *     {@code found} function returns null.
    */
   public static <T, R> Optional<R> findOnlyElements(
-      Collection<T> collection, Quinary<? super T, ? extends R> found) {
+      Collection<T> collection, MapFrom5<? super T, ? extends R> found) {
     requireNonNull(found);
     if (collection.size() != 5) return Optional.empty();
     if (collection instanceof List && collection instanceof RandomAccess) {
@@ -209,7 +209,7 @@ public final class MoreCollections {
    *     {@code found} function returns null.
    */
   public static <T, R> Optional<R> findOnlyElements(
-      Collection<T> collection, Senary<? super T, ? extends R> found) {
+      Collection<T> collection, MapFrom6<? super T, ? extends R> found) {
     requireNonNull(found);
     if (collection.size() != 6) return Optional.empty();
     if (collection instanceof List && collection instanceof RandomAccess) {
