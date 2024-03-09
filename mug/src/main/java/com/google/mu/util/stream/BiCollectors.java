@@ -39,7 +39,6 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.google.mu.function.BiComparator;
 import com.google.mu.util.BiOptional;
 import com.google.mu.util.Both;
 
@@ -633,35 +632,6 @@ public final class BiCollectors {
     return flatMapping(
         flattener.andThen(BiStream::mapToEntry),
         downstream.<Map.Entry<? extends K1, ? extends V1>>collectorOf(Map.Entry::getKey, Map.Entry::getValue));
-  }
-
-  /**
-   * @since 6.0
-   * @deprecated Use {@link #maxByKey} or {@link #maxByValue}.
-   */
-  @Deprecated
-  public static <K, V> BiCollector<K, V, BiOptional<K, V>> maxBy(
-      BiComparator<? super K, ? super V> comparator) {
-    requireNonNull(comparator);
-    return new BiCollector<K, V, BiOptional<K, V>>() {
-      @Override
-      public <E> Collector<E, ?, BiOptional<K, V>> collectorOf(
-          Function<E, K> toKey, Function<E, V> toValue) {
-        return Collectors.collectingAndThen(
-            Collectors.maxBy((e1, e2) -> comparator.compare(toKey.apply(e1), toValue.apply(e1), toKey.apply(e2), toValue.apply(e2))),
-            optional -> BiOptional.from(optional).map(toKey, toValue));
-      }
-    };
-  }
-
-  /**
-   * @since 6.0
-   * @deprecated Use {@link #minBykey} or {@link #minByValue}.
-   */
-  @Deprecated
-  public static <K, V> BiCollector<K, V, BiOptional<K, V>> minBy(
-      BiComparator<? super K, ? super V> comparator) {
-    return maxBy(comparator.reversed());
   }
 
   /**

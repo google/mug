@@ -24,7 +24,6 @@ import java.util.OptionalLong;
 import java.util.Set;
 
 import com.google.mu.function.CheckedBiConsumer;
-import com.google.mu.function.CheckedBiFunction;
 import com.google.mu.function.CheckedConsumer;
 import com.google.mu.function.CheckedDoubleConsumer;
 import com.google.mu.function.CheckedIntConsumer;
@@ -282,50 +281,6 @@ public final class Optionals {
       return Conditional.TRUE;
     }
     return Conditional.FALSE;
-  }
-
-  /**
-   * Maps {@code left} and {@code right} using {@code mapper} if both are present.
-   * Returns an {@link Optional} wrapping the result of {@code mapper} if non-null, or else returns
-   * {@code Optional.empty()}.
-   *
-   * @since 3.8
-   * @deprecated Use {@link #both} instead.
-   */
-  @Deprecated
-  public static <A, B, R, E extends Throwable> Optional<R> mapBoth(
-      Optional<A> left, Optional<B> right, CheckedBiFunction<? super A, ? super B, ? extends R, E> mapper)
-      throws E {
-    requireNonNull(left);
-    requireNonNull(right);
-    requireNonNull(mapper);
-    if (left.isPresent() && right.isPresent()) {
-      return Optional.ofNullable(mapper.apply(left.get(), right.get()));
-    }
-    return Optional.empty();
-  }
-
-  /**
-   * Maps {@code left} and {@code right} using {@code mapper} if both are present.
-   * Returns the result of {@code mapper} or {@code Optional.empty()} if either {@code left} or {@code right}
-   * is empty.
-   *
-   * @throws NullPointerException if {@code mapper} returns null
-   * @since 3.8
-   * @deprecated Use {@link #both} instead.
-   */
-  @Deprecated
-  public static <A, B, R, E extends Throwable> Optional<R> flatMapBoth(
-      Optional<A> left, Optional<B> right,
-      CheckedBiFunction<? super A, ? super B, ? extends Optional<R>, E> mapper)
-      throws E {
-    requireNonNull(left);
-    requireNonNull(right);
-    requireNonNull(mapper);
-    if (left.isPresent() && right.isPresent()) {
-      return requireNonNull(mapper.apply(left.get(), right.get()));
-    }
-    return Optional.empty();
   }
 
   private static <A, B> A first(A a, B b) {

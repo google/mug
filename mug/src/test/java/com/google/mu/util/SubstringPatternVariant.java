@@ -54,7 +54,7 @@ enum SubstringPatternVariant {
   },
   PEEK_EMPTY {
     @Override Substring.Pattern wrap(Substring.Pattern pattern) {
-      return pattern.peek("");
+      return pattern.peek(prefix(""));
     }
   },
   PEEK_END {

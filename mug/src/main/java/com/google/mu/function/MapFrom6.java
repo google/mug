@@ -14,7 +14,7 @@
  *****************************************************************************/
 package com.google.mu.function;
 
-/** A 4-arg function of the signature of {@code (T, T, T, T) -> R}. */
-public interface Quarternary<T, R> {
-  R apply(T a, T b, T c, T d);
+/** A 6-arg function of the signature of {@code (T, T, T, T, T, T) -> R}. */
+public interface MapFrom6<T, R> {
+  R apply(T a, T b, T c, T d, T e, T f);
 }

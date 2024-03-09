@@ -155,7 +155,8 @@ public class MoreCollectorsTest {
     assertThrows(UnsupportedOperationException.class, list::clear);
   }
 
-  @Test public void testCombining_Two() {
+  @Test
+  public void testCombining_two() {
     assertThat(Stream.of(1, 10).collect(combining(Integer::sum)).intValue()).isEqualTo(11);
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
@@ -164,7 +165,8 @@ public class MoreCollectorsTest {
         .isEqualTo("Not true that input <[1, 2, 3]> has 2 elements.");
   }
 
-  @Test public void testCombining_Three() {
+  @Test
+  public void testCombining_three() {
     assertThat(Stream.of(1, 3, 5).collect(combining((a, b, c) -> a + b + c)).intValue()).isEqualTo(9);
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
@@ -173,7 +175,8 @@ public class MoreCollectorsTest {
         .isEqualTo("Not true that input <[1, 2]> has 3 elements.");
   }
 
-  @Test public void testCombining_Four() {
+  @Test
+  public void testCombining_four() {
     assertThat(Stream.of(1, 3, 5, 7).collect(combining((a, b, c, d) -> a + b + c + d)).intValue())
         .isEqualTo(16);
     IllegalArgumentException thrown = assertThrows(
@@ -183,7 +186,8 @@ public class MoreCollectorsTest {
         .isEqualTo("Not true that input <[1, 2]> has 4 elements.");
   }
 
-  @Test public void testCombining_Five() {
+  @Test
+  public void testCombining_five() {
     assertThat(Stream.of(1, 3, 5, 7, 9).collect(combining((a, b, c, d, e) -> a + b + c + d + e)).intValue())
         .isEqualTo(25);
     IllegalArgumentException thrown = assertThrows(
@@ -193,7 +197,8 @@ public class MoreCollectorsTest {
         .isEqualTo("Not true that input <[1, 2]> has 5 elements.");
   }
 
-  @Test public void testCombining_Six() {
+  @Test
+  public void testCombining_six() {
     assertThat(Stream.of(1, 3, 5, 7, 9, 11).collect(combining((a, b, c, d, e, f) -> a + b + c + d + e + f)).intValue())
         .isEqualTo(36);
     IllegalArgumentException thrown = assertThrows(
@@ -201,6 +206,34 @@ public class MoreCollectorsTest {
         () -> Stream.of(1, 2).collect(combining((a, b, c, d, e, f) -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Not true that input <[1, 2]> has 6 elements.");
+  }
+
+  @Test
+  public void testCombining_seven() {
+    assertThat(
+            Stream.of(1, 3, 5, 7, 9, 11, 13)
+                .collect(combining((a, b, c, d, e, f, g) -> a + b + c + d + e + f + g))
+                .intValue())
+        .isEqualTo(49);
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> Stream.of(1, 2).collect(combining((a, b, c, d, e, f, g) -> "ok")));
+    assertThat(thrown.getMessage()).isEqualTo("Not true that input <[1, 2]> has 7 elements.");
+  }
+
+  @Test
+  public void testCombining_eight() {
+    assertThat(
+            Stream.of(1, 3, 5, 7, 9, 11, 13, 15)
+                .collect(combining((a, b, c, d, e, f, g, h) -> a + b + c + d + e + f + g + h))
+                .intValue())
+        .isEqualTo(64);
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> Stream.of(1, 2).collect(combining((a, b, c, d, e, f, g, h) -> "ok")));
+    assertThat(thrown.getMessage()).isEqualTo("Not true that input <[1, 2]> has 8 elements.");
   }
 
   @Test public void testCombining_parallel_success() {

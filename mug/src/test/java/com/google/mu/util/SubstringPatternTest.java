@@ -548,48 +548,25 @@ public class SubstringPatternTest {
 
   @Test
   public void peek_empty() {
-    assertPattern(prefix("http").peek(""), "http").finds("http");
-    assertPattern(prefix("http").peek(""), "https").finds("http");
+    assertPattern(prefix("http").peek(prefix("")), "http").finds("http");
+    assertPattern(prefix("http").peek(prefix("")), "https").finds("http");
   }
 
   @Test
   public void peek_match() {
-    assertPattern(leading(LOWER).peek(":"), "http://").finds("http");
-    assertPattern(before(first('/')).peek("/"), "foo/bar/").finds("foo", "bar");
+    assertPattern(leading(LOWER).peek(prefix(":")), "http://").finds("http");
+    assertPattern(before(first('/')).peek(prefix("/")), "foo/bar/").finds("foo", "bar");
   }
 
   @Test
   public void peek_firstPatternDoesNotMatch() {
-    assertPattern(prefix("http").peek(":"), "ftp://").findsNothing();
+    assertPattern(prefix("http").peek(prefix(":")), "ftp://").findsNothing();
   }
 
   @Test
   public void peek_peekedPatternDoesNotMatch() {
-    assertPattern(prefix("http").peek(":"), "https://").findsNothing();
-    assertPattern(BEGINNING.peek(":"), "foo").splitsTo("foo");
-  }
-
-  @Test
-  public void not_match() {
-    assertPattern(prefix("http").peek(prefix(':').not()), "https://").finds("http");
-    assertPattern(before(first('/')).peek(prefix('?').not()), "foo/bar/").finds("foo", "bar");
-  }
-
-  @Test
-  public void not_noMatch() {
-    assertPattern(prefix("http").not(), "http://").findsNothing();
-  }
-
-  @Test
-  public void notOfNot_match() {
-    assertThat(variant.wrap(prefix("http").not().not()).in("http").map(Match::after))
-        .hasValue("http");
-    assertPattern(prefix("http").not().not(), "http").finds("");
-  }
-
-  @Test
-  public void notOfNot_noMatch() {
-    assertPattern(prefix("http").not().not(), "ftp").findsNothing();
+    assertPattern(prefix("http").peek(prefix(":")), "https://").findsNothing();
+    assertPattern(BEGINNING.peek(prefix(":")), "foo").splitsTo("foo");
   }
 
   @Test
@@ -639,14 +616,14 @@ public class SubstringPatternTest {
     Substring.Pattern pattern =
         Stream.of("foo", "ood")
             .map(Substring::first)
-            .map(p -> p.peek(" "))
+            .map(p -> p.peek(prefix(" ")))
             .collect(firstOccurrence());
     assertPattern(pattern, "food ").finds("ood");
   }
 
   @Test
   public void or_peek_alternativeBackTrackingTriggeredByBoundaryMismatch() {
-    Substring.Pattern pattern = first("foo").or(first("food")).peek(" ");
+    Substring.Pattern pattern = first("foo").or(first("food")).peek(prefix(" "));
     assertPattern(pattern, "food ").finds("food");
   }
 
@@ -659,13 +636,13 @@ public class SubstringPatternTest {
 
   @Test
   public void or_peek_alternativeBackTrackingTriggeredByPeek() {
-    Substring.Pattern pattern = first("foo").or(first("food")).peek(" ");
+    Substring.Pattern pattern = first("foo").or(first("food")).peek(prefix(" "));
     assertPattern(pattern, "food ").finds("food");
   }
 
   @Test
   public void or_limitThenPeek_alternativeBackTrackingTriggeredByPeek() {
-    Substring.Pattern pattern = first("foo").or(first("food")).limit(4).peek(" ");
+    Substring.Pattern pattern = first("foo").or(first("food")).limit(4).peek(prefix(" "));
     assertPattern(pattern, "food ").finds("food");
   }
 
@@ -2092,7 +2069,7 @@ public class SubstringPatternTest {
   @Test
   public void firstOccurrence_peek_alternativeBackTrackingNotTriggeredByPeek() {
     Substring.Pattern pattern =
-        Stream.of("foo", "ood").map(Substring::first).collect(firstOccurrence()).peek(" ");
+        Stream.of("foo", "ood").map(Substring::first).collect(firstOccurrence()).peek(prefix(" "));
     assertPattern(pattern, "food ").findsNothing();
     assertPattern(pattern, "food ").findsNothing();
   }

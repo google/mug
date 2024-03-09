@@ -1244,31 +1244,6 @@ public final class Substring {
 
     /**
      * Return a {@code Pattern} equivalent to this {@code Pattern}, except it will fail to match
-     * if it's not followed by the {@code following} string.
-     *
-     * <p>Useful in asserting that the current match is followed by the expected keyword. For example:
-     * {@code SCHEME_NAME.peek(":")} returns the URI scheme name.
-     *
-     * <p>Note that unlike regex lookahead, no backtracking is attempted. So {@code
-     * first("foo").peek("bar")} will match "bafoobar" but won't match "foofoobar".
-     *
-     * <p>If look-ahead is needed, you can use {@link #followedBy} as in {@code
-     * first("foo").followedBy("bar")}.
-     *
-     * <p>If you are trying to define a boundary around or after your pattern similar to regex
-     * anchor {@code '\b'}, consider using {@link #separatedBy} if the boundary can be detected by
-     * a character.
-     *
-     * @since 6.0
-     * @deprecated Use {@link #followedBy} instead.
-     */
-    @Deprecated
-    public final Pattern peek(String following) {
-      return peek(prefix(following));
-    }
-
-    /**
-     * Return a {@code Pattern} equivalent to this {@code Pattern}, except it will fail to match
      * if the {@code following} pattern can't find a match in the substring after the current match.
      *
      * <p>Useful in asserting that the current match is followed by the expected pattern. For example:
@@ -1303,24 +1278,6 @@ public final class Substring {
           return base + ".peek(" + following + ")";
         }
       };
-    }
-
-    /**
-     * @since 6.0
-     * @deprecated Use {@link #separatedBy(CharPredicate)} instead.
-     */
-    @Deprecated
-    public final Pattern withBoundary(CharPredicate boundary) {
-      return separatedBy(boundary);
-    }
-
-    /**
-     * @since 6.0
-     * @deprecated Use {@link #separatedBy(CharPredicate, CharPredicate)} instead.
-     */
-    @Deprecated
-    public final Pattern withBoundary(CharPredicate boundaryBefore, CharPredicate boundaryAfter) {
-      return separatedBy(boundaryBefore, boundaryAfter);
     }
 
     /**
@@ -1559,33 +1516,6 @@ public final class Substring {
      */
     public final Pattern notPrecededBy(String lookbehind) {
       return notImmediatelyBetween(lookbehind, "");
-    }
-
-    /**
-     * Returns a {@code Pattern} that asserts that this pattern must <em>not</em> match the input,
-     * in which case an empty match starting at the beginning of the input is returned.
-     *
-     * <p>Useful when combined with {@link #peek} to support negative lookahead.
-     *
-     * <p>Note that {@code pattern.not().not()} isn't equivalent to {@code pattern} because the
-     * result match is empty.
-     *
-     * @since 6.0
-     *
-     * @deprecated Use {@link #notFollowedBy} or {@link #notImmediatelyBetween} for negative lookahead and
-     *     negative lookbehind.
-     */
-    @Deprecated
-    public final Pattern not() {
-      Pattern base = this;
-      return new Pattern() {
-        @Override Match match(String input, int fromIndex) {
-          return base.match(input, fromIndex) == null ? BEGINNING.match(input, fromIndex) : null;
-        }
-        @Override public String toString() {
-          return base + ".not()";
-        }
-      };
     }
 
     /**

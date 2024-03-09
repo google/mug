@@ -56,6 +56,7 @@ public final class DateTimeFormatsTest {
   }
 
   @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
   public void singleDigitHourWithoutAmPm_throws() {
     assertThrows(IllegalArgumentException.class, () -> formatOf("1"));
   }
@@ -67,6 +68,7 @@ public final class DateTimeFormatsTest {
   }
 
   @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
   public void singleDigitHourMinuteWithoutAmPm_throws() {
     assertThrows(IllegalArgumentException.class, () -> formatOf("1:10"));
   }
@@ -78,6 +80,7 @@ public final class DateTimeFormatsTest {
   }
 
   @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
   public void singleDigitHourMinuteSecondWithoutAmPm_throws() {
     assertThrows(IllegalArgumentException.class, () -> formatOf("1:10:00"));
   }
