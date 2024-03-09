@@ -5,7 +5,7 @@ A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/
 
 Offers:
 * **Intuitive to read**, powerful string manipulation ([StringFormat](https://github.com/google/mug/wiki/StringFormat-Explained), [Substring](https://github.com/google/mug/wiki/Substring-Explained))
-   * `new StringFormat("file://{cohort}-home/{yyyy}/{mm}/{dd}").parse(filepath, (cohort, yyyy, mm, dd) -> ...)`
+   * `new StringFormat("/{user}-home/{yyyy}/{mm}/{dd}").parse(path, (user, yyyy, mm, dd) -> ...)`
    * `String user = before(first('@')).from(email).orElseThrow();`
 * Streaming pairs ([BiStream](https://github.com/google/mug/wiki/BiStream-Explained))
    * `Map<Instant, Long> histogram = zip(times, counts).toMap();`
@@ -14,7 +14,7 @@ Offers:
 * More ([MoreStreams](#morestreams), [Optionals](#optionals), [DateTimeFormats](https://github.com/google/mug/wiki/DateTimeFormats-Explained), [...](https://github.com/google/mug/wiki))
   * Create `Optional` with a guard condition:
     * `return optionally(count > 0, () -> total / count);`
-  * Infer `DateTimeFormatter` from an example date/time string:
+  * Infer `DateTimeFormatter` from a real date/time string:
     * `DateTimeFormats.formatOf("Tue, 10 Jan 2023 10:00:00.123 America/Los_Angeles")`
 
 ## Installation
