@@ -10,6 +10,9 @@
   <packaging>jar</packaging>
 
   <name>benchmarks</name>
+  <properties>
+    <maven.javadoc.skip>true</maven.javadoc.skip>
+  </properties>
 
   <dependencies>
     <dependency>
