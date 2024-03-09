@@ -13,6 +13,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import com.google.common.base.Ascii;
+import com.google.common.collect.ImmutableList;
 import com.google.common.testing.EqualsTester;
 import com.google.common.testing.NullPointerTester;
 import com.google.mu.util.StringFormat;
@@ -451,6 +452,64 @@ public final class SafeQueryTest {
   public void joiningByStringConstant() {
     assertThat(Stream.of(SafeQuery.of("a"), SafeQuery.of("b")).collect(SafeQuery.joining(" AND ")))
         .isEqualTo(SafeQuery.of("a AND b"));
+  }
+
+  @Test
+  public void andCollector_empty() {
+    ImmutableList<SafeQuery> queries = ImmutableList.of();
+    assertThat(queries.stream().collect(SafeQuery.and())).isEqualTo(SafeQuery.of("TRUE"));
+  }
+
+  @Test
+  public void andCollector_singleCondition() {
+    ImmutableList<SafeQuery> queries = ImmutableList.of(SafeQuery.of("a = 1"));
+    assertThat(queries.stream().collect(SafeQuery.and())).isEqualTo(SafeQuery.of("(a = 1)"));
+  }
+
+  @Test
+  public void andCollector_twoConditions() {
+    ImmutableList<SafeQuery> queries =
+        ImmutableList.of(SafeQuery.of("a = 1"), SafeQuery.of("b = 2 OR c = 3"));
+    assertThat(queries.stream().collect(SafeQuery.and()))
+        .isEqualTo(SafeQuery.of("(a = 1) AND (b = 2 OR c = 3)"));
+  }
+
+  @Test
+  public void andCollector_threeConditions() {
+    ImmutableList<SafeQuery> queries =
+        ImmutableList.of(
+            SafeQuery.of("a = 1"), SafeQuery.of("b = 2 OR c = 3"), SafeQuery.of("d = 4"));
+    assertThat(queries.stream().collect(SafeQuery.and()))
+        .isEqualTo(SafeQuery.of("(a = 1) AND (b = 2 OR c = 3) AND (d = 4)"));
+  }
+
+  @Test
+  public void orCollector_empty() {
+    ImmutableList<SafeQuery> queries = ImmutableList.of();
+    assertThat(queries.stream().collect(SafeQuery.or())).isEqualTo(SafeQuery.of("FALSE"));
+  }
+
+  @Test
+  public void orCollector_singleCondition() {
+    ImmutableList<SafeQuery> queries = ImmutableList.of(SafeQuery.of("a = 1"));
+    assertThat(queries.stream().collect(SafeQuery.or())).isEqualTo(SafeQuery.of("(a = 1)"));
+  }
+
+  @Test
+  public void orCollector_twoConditions() {
+    ImmutableList<SafeQuery> queries =
+        ImmutableList.of(SafeQuery.of("a = 1"), SafeQuery.of("b = 2 AND c = 3"));
+    assertThat(queries.stream().collect(SafeQuery.or()))
+        .isEqualTo(SafeQuery.of("(a = 1) OR (b = 2 AND c = 3)"));
+  }
+
+  @Test
+  public void orCollector_threeConditions() {
+    ImmutableList<SafeQuery> queries =
+        ImmutableList.of(
+            SafeQuery.of("a = 1"), SafeQuery.of("b = 2 AND c = 3"), SafeQuery.of("d = 4"));
+    assertThat(queries.stream().collect(SafeQuery.or()))
+        .isEqualTo(SafeQuery.of("(a = 1) OR (b = 2 AND c = 3) OR (d = 4)"));
   }
 
   @Test

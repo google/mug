@@ -15,6 +15,6 @@
 package com.google.mu.function;
 
 /** A 5-arg function of the signature of {@code (T, T, T, T, T) -> R}. */
-public interface Quinary<T, R> {
+public interface MapFrom5<T, R> {
   R apply(T a, T b, T c, T d, T e);
 }

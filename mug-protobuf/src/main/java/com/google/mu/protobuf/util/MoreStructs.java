@@ -26,7 +26,6 @@ import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.mu.util.stream.BiCollector;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.Struct;
-import com.google.protobuf.StructOrBuilder;
 import com.google.protobuf.Value;
 
 /**
@@ -152,7 +151,7 @@ public final class MoreStructs {
    *
    * @since 5.9
    */
-  public static Map<String, Object> asMap(StructOrBuilder struct) {
+  public static Map<String, Object> asMap(Struct struct) {
     return Maps.transformValues(struct.getFieldsMap(), MoreValues::fromValue);
   }
 

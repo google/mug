@@ -49,6 +49,49 @@ public class StringFormatTest {
   }
 
   @Test
+  public void replaceAllFrom_placeholderOnly_emptyInput() {
+    assertThat(new StringFormat("{x}").replaceAllFrom("", x -> "")).isEqualTo("");
+    assertThat(new StringFormat("{x}").replaceAllFrom("", x -> "foo")).isEqualTo("foo");
+  }
+
+  @Test
+  public void replaceAllFrom_placeholderOnly_nonEmptyInput() {
+    assertThat(new StringFormat("{x}").replaceAllFrom("x", x -> "")).isEqualTo("");
+    assertThat(new StringFormat("{x}").replaceAllFrom("x", x -> "foo")).isEqualTo("foo");
+  }
+
+  @Test
+  public void replaceAllFrom_placeholderAtBeginning_found() {
+    assertThat(new StringFormat("{x}/").replaceAllFrom("/.", x -> "")).isEqualTo(".");
+    assertThat(new StringFormat("{x}/").replaceAllFrom("/.", x -> "foo")).isEqualTo("foo.");
+  }
+
+  @Test
+  public void replaceAllFrom_placeholderAtBeginning_notFound() {
+    assertThat(new StringFormat("{x}/").replaceAllFrom("", x -> "")).isEqualTo("");
+    assertThat(new StringFormat("{x}/").replaceAllFrom("..", x -> "")).isEqualTo("..");
+  }
+
+  @Test
+  public void replaceAllFrom_placeholderAtEnd_found() {
+    assertThat(new StringFormat(":{x}").replaceAllFrom(":.?", x -> "")).isEqualTo("");
+    assertThat(new StringFormat(":{x}").replaceAllFrom(":.?", x -> "foo")).isEqualTo("foo");
+    assertThat(new StringFormat(":{x}").replaceAllFrom(".:", x -> "foo")).isEqualTo(".foo");
+  }
+
+  @Test
+  public void replaceAllFrom_placeholderAtEnd_notFound() {
+    assertThat(new StringFormat(":{x}").replaceAllFrom("", x -> "")).isEqualTo("");
+    assertThat(new StringFormat(":{x}").replaceAllFrom("..", x -> "")).isEqualTo("..");
+  }
+
+  @Test
+  public void replaceAllFrom_noMatch_returnsInputStringAsIs() {
+    String input = "foo";
+    assertThat(new StringFormat(":{x}").replaceAllFrom(input, x -> "")).isSameInstanceAs(input);
+  }
+
+  @Test
   public void parse_singlePlaceholder() {
     StringFormat format = new StringFormat("Hello {v}!");
     assertThat(format.parse("Hello Tom!", v -> v)).hasValue("Tom");
@@ -785,6 +828,291 @@ public class StringFormatTest {
   }
 
   @Test
+  @SuppressWarnings("StringUnformatArgsCheck")
+  public void replaceAllFrom_emptyTemplate_nonEmptyInput() {
+    assertThat(new StringFormat("").replaceAllMatches(".", x -> "foo")).isEqualTo("foo.foo");
+    assertThat(new StringFormat("").replaceAllMatches("bar", x -> "foo"))
+        .isEqualTo("foobfooafoorfoo");
+  }
+
+  @Test
+  @SuppressWarnings("StringUnformatArgsCheck")
+  public void replaceAllFrom_emptyTemplate_emptyInput() {
+    assertThat(new StringFormat("").replaceAllMatches("", x -> "foo")).isEqualTo("foo");
+  }
+
+  @Test
+  public void replaceAllFrom_singlePlaceholder() {
+    assertThat(new StringFormat("[id={id}]").replaceAllFrom("id=1", id -> id)).isEqualTo("id=1");
+    assertThat(new StringFormat("[id={id}]").replaceAllFrom("[id=foo]", id -> "found: " + id))
+        .isEqualTo("found: foo");
+    assertThat(new StringFormat("[id={id}]").replaceAllFrom("[id=foo],[id=bar]", id -> id))
+        .isEqualTo("foo,bar");
+    assertThat(
+            new StringFormat("[id={id}]").replaceAllFrom("[id=foo], [id=bar].", id -> "got: " + id))
+        .isEqualTo("got: foo, got: bar.");
+  }
+
+  @Test
+  @SuppressWarnings("StringUnformatArgsCheck")
+  public void replaceAllFrom_singlePlaceholder_withEllipsis() {
+    assertThat(new StringFormat("[id={...}]").replaceAllMatches("id=1", x -> "x"))
+        .isEqualTo("id=1");
+    assertThat(new StringFormat("[id={...}]").replaceAllMatches("[id=foo]", x -> "x"))
+        .isEqualTo("x");
+    assertThat(new StringFormat("[id={...}]").replaceAllMatches("[id=foo][id=bar]", x -> "x"))
+        .isEqualTo("xx");
+  }
+
+  @Test
+  public void replaceAllFrom_singlePlaceholder_emptyInput() {
+    assertThat(new StringFormat("[id={id}]").replaceAllFrom("", id -> id)).isEmpty();
+  }
+
+  @Test
+  public void replaceAllFrom_singlePlaceholder_nullFilteredOut() {
+    assertThat(new StringFormat("[id={id}]").replaceAllFrom("[id=foo]", id -> null))
+        .isEqualTo("[id=foo]");
+    assertThat(
+            new StringFormat("[id={id}]")
+                .replaceAllFrom("[id=foo][id=]", id -> id.isEmpty() ? null : id))
+        .isEqualTo("foo[id=]");
+  }
+
+  @Test
+  public void replaceAllFrom_emptyPlaceholderValue() {
+    assertThat(
+            new StringFormat("/{a}/{b}/").replaceAllFrom("/foo/bar//zoo//", (a, b) -> a + ":" + b))
+        .isEqualTo("foo:barzoo:");
+  }
+
+  @Test
+  public void replaceAllFrom_twoPlaceholders() {
+    assertThat(
+            new StringFormat("[id={id}, name={name}]")
+                .replaceAllFrom("id=1", (id, name) -> id + "," + name))
+        .isEqualTo("id=1");
+    assertThat(
+            new StringFormat("[id={id}, name={name}]")
+                .replaceAllFrom("[id=foo, name=bar]", (id, name) -> id + "," + name))
+        .isEqualTo("foo,bar");
+    assertThat(
+            new StringFormat("[id={id}, name={name}]")
+                .replaceAllFrom(
+                    "[id=foo, name=bar]; [id=zoo, name=boo]", (id, name) -> id + "," + name))
+        .isEqualTo("foo,bar; zoo,boo");
+  }
+
+  @Test
+  public void replaceAllFrom_twoPlaceholders_nullFilteredOut() {
+    assertThat(
+            new StringFormat("[id={id}, name={name}]")
+                .replaceAllFrom("[id=foo, name=bar]", (id, name) -> null))
+        .isEqualTo("[id=foo, name=bar]");
+    assertThat(
+            new StringFormat("[id={id}, name={name}]")
+                .replaceAllFrom(
+                    "[id=, name=bar] [id=zoo, name=boo]",
+                    (id, name) -> id.isEmpty() ? null : id + "," + name))
+        .isEqualTo("[id=, name=bar] zoo,boo");
+  }
+
+  @Test
+  public void replaceAllFrom_twoPlaceholders_emptyInput() {
+    assertThat(
+            new StringFormat("[id={id}, name={name}]")
+                .replaceAllFrom("", (id, name) -> id + "," + name))
+        .isEmpty();
+  }
+
+  @Test
+  public void replaceAllFrom_twoPlaceholders_withEllipsis() {
+    assertThat(
+            new StringFormat("[id={...}, name={name}]")
+                .replaceAllFrom("[id=foo, name=bar]", name -> "got " + name))
+        .isEqualTo("got bar");
+    assertThat(
+            new StringFormat("[id={...}, name={name}]")
+                .replaceAllFrom("I [id=, name=bar], [id=zoo, name=boo]", name -> "got " + name))
+        .isEqualTo("I got bar, got boo");
+  }
+
+  @Test
+  public void replaceAllFrom_twoPlaceholders_withEllipsis_usingLambda() {
+    assertThat(
+            new StringFormat("[id={id}, name={...}]")
+                .replaceAllFrom("[id=foo, name=bar]", id -> id))
+        .isEqualTo("foo");
+    assertThat(
+            new StringFormat("[id={...}, name={name}]")
+                .replaceAllFrom("[id=, name=bar], [id=zoo, name=boo]", name -> name))
+        .isEqualTo("bar, boo");
+  }
+
+  @Test
+  public void replaceAllFrom_threePlaceholders() {
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}]")
+                .replaceAllFrom("a=1,b=2,c", (a, b, c) -> "got " + a + b + c))
+        .isEqualTo("a=1,b=2,c");
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}]")
+                .replaceAllFrom("[a=1, b=2, c=3]", (a, b, c) -> "got " + a + b + c))
+        .isEqualTo("got 123");
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}]")
+                .replaceAllFrom("[a=1, b=2, c=3] [a=x, b=y, c=z]", (a, b, c) -> "got " + a + b + c))
+        .isEqualTo("got 123 got xyz");
+  }
+
+  @Test
+  public void replaceAllFrom_threePlaceholders_nullFilteredOut() {
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}]")
+                .replaceAllFrom("[a=1, b=2, c=3]", (a, b, c) -> null))
+        .isEqualTo("[a=1, b=2, c=3]");
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}]")
+                .replaceAllFrom(
+                    "[a=1, b=2, c=3] [a=x, b=, c=z]",
+                    (a, b, c) -> b.isEmpty() ? null : "got " + a + b + c))
+        .isEqualTo("got 123 [a=x, b=, c=z]");
+  }
+
+  @Test
+  public void replaceAllFrom_threePlaceholders_emptyInput() {
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}]")
+                .replaceAllFrom("", (a, b, c) -> "got " + a + b + c))
+        .isEmpty();
+  }
+
+  @Test
+  public void replaceAllFrom_fourPlaceholders() {
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}]")
+                .replaceAllFrom("a=1,b=2,c=3,d", (a, b, c, d) -> "got " + a + b + c + d))
+        .isEqualTo("a=1,b=2,c=3,d");
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}]")
+                .replaceAllFrom("[a=1, b=2, c=3, d=4]", (a, b, c, d) -> "got " + a + b + c + d))
+        .isEqualTo("got 1234");
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}]")
+                .replaceAllFrom(
+                    "[a=1, b=2, c=3, d=4] [a=z, b=y, c=x, d=w]",
+                    (a, b, c, d) -> "got " + a + b + c + d))
+        .isEqualTo("got 1234 got zyxw");
+  }
+
+  @Test
+  public void replaceAllFrom_fourPlaceholders_nullFilteredOut() {
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}]")
+                .replaceAllFrom("[a=1, b=2, c=3, d=4]", (a, b, c, d) -> null))
+        .isEqualTo("[a=1, b=2, c=3, d=4]");
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}]")
+                .replaceAllFrom(
+                    "[a=1, b=2, c=3, d=4] [a=z, b=y, c=x, d=]",
+                    (a, b, c, d) -> d.isEmpty() ? null : "got " + a + b + c + d))
+        .isEqualTo("got 1234 [a=z, b=y, c=x, d=]");
+  }
+
+  @Test
+  public void replaceAllFrom_fourPlaceholders_emptyInput() {
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}]")
+                .replaceAllFrom("", (a, b, c, d) -> "got " + a + b + c + d))
+        .isEmpty();
+  }
+
+  @Test
+  public void replaceAllFrom_fivePlaceholders() {
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}]")
+                .replaceAllFrom("a=1,b=2,c=3,d", (a, b, c, d, e) -> "got " + a + b + c + d + e))
+        .isEqualTo("a=1,b=2,c=3,d");
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}]")
+                .replaceAllFrom(
+                    "[a=1, b=2, c=3, d=4, e=5]", (a, b, c, d, e) -> "got " + a + b + c + d + e))
+        .isEqualTo("got 12345");
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}]")
+                .replaceAllFrom(
+                    "[a=1, b=2, c=3, d=4, e=5] [a=z, b=y, c=x, d=w, e=v]",
+                    (a, b, c, d, e) -> "got " + a + b + c + d + e))
+        .isEqualTo("got 12345 got zyxwv");
+  }
+
+  @Test
+  public void replaceAllFrom_fivePlaceholders_nullFilteredOut() {
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}]")
+                .replaceAllFrom("[a=1, b=2, c=3, d=4, e=5]", (a, b, c, d, e) -> null))
+        .isEqualTo("[a=1, b=2, c=3, d=4, e=5]");
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}]")
+                .replaceAllFrom(
+                    "[a=, b=2, c=3, d=4, e=5] [a=z, b=y, c=x, d=w, e=v]",
+                    (a, b, c, d, e) -> a.isEmpty() ? null : "got " + a + b + c + d + e))
+        .isEqualTo("[a=, b=2, c=3, d=4, e=5] got zyxwv");
+  }
+
+  @Test
+  public void replaceAllFrom_fivePlaceholders_emptyInput() {
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}]")
+                .replaceAllFrom("", (a, b, c, d, e) -> "got " + a + b + c + d + e))
+        .isEmpty();
+  }
+
+  @Test
+  public void replaceAllFrom_sixPlaceholders() {
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}]")
+                .replaceAllFrom(
+                    "a=1, b=2, c=3, d=4, e=5, f",
+                    (a, b, c, d, e, f) -> "got " + a + b + c + d + e + f))
+        .isEqualTo("a=1, b=2, c=3, d=4, e=5, f");
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}]")
+                .replaceAllFrom(
+                    "[a=1, b=2, c=3, d=4, e=5, f=6]",
+                    (a, b, c, d, e, f) -> "got " + a + b + c + d + e + f))
+        .isEqualTo("got 123456");
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}]")
+                .replaceAllFrom(
+                    "[a=1, b=2, c=3, d=4, e=5, f=6] [a=z, b=y, c=x, d=w, e=v, f=u]",
+                    (a, b, c, d, e, f) -> "got " + a + b + c + d + e + f))
+        .isEqualTo("got 123456 got zyxwvu");
+  }
+
+  @Test
+  public void replaceAllFrom_sixPlaceholders_nullFiltered() {
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}]")
+                .replaceAllFrom("[a=1, b=2, c=3, d=4, e=5, f=6]", (a, b, c, d, e, f) -> null))
+        .isEqualTo("[a=1, b=2, c=3, d=4, e=5, f=6]");
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}]")
+                .replaceAllFrom(
+                    "[a=1, b=2, c=3, d=, e=5, f=6] [a=z, b=y, c=x, d=w, e=v, f=u]",
+                    (a, b, c, d, e, f) -> d.isEmpty() ? null : "got " + a + b + c + d + e + f))
+        .isEqualTo("[a=1, b=2, c=3, d=, e=5, f=6] got zyxwvu");
+  }
+
+  @Test
+  public void replaceAllFrom_sixPlaceholders_emptyInput() {
+    assertThat(
+            new StringFormat("[a={a}, b={b}, c={c}, d={d}, e={e}, f={f}]")
+                .replaceAllFrom("", (a, b, c, d, e, f) -> "got " + a + b + c + d + e + f))
+        .isEmpty();
+  }
+
+  @Test
   public void scan_suffixConsumed() {
     assertThat(new StringFormat("/{a}/{b}/").scan("/foo/bar//zoo/boo/", (a, b) -> a + b))
         .containsExactly("foobar", "zooboo")
@@ -893,6 +1221,30 @@ public class StringFormatTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> new StringFormat("1 is {what}").scan("bad input", (a, b, c, d, e, f) -> a));
+  }
+
+  @Test
+  @SuppressWarnings("StringUnformatArgsCheck")
+  public void replaceAllFrom_throwsUponIncorrectNumLambdaParameters() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new StringFormat("1 is {a} or {b}").replaceAllFrom("bad input", Object::toString));
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            new StringFormat("1 is {what}").replaceAllFrom("bad input", (a, b) -> "got " + a + b));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new StringFormat("1 is {what}").replaceAllFrom("bad input", (a, b, c) -> a));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new StringFormat("1 is {what}").replaceAllFrom("bad input", (a, b, c, d) -> a));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new StringFormat("1 is {what}").replaceAllFrom("bad input", (a, b, c, d, e) -> a));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new StringFormat("1 is {what}").replaceAllFrom("bad input", (a, b, c, d, e, f) -> a));
   }
 
   @Test

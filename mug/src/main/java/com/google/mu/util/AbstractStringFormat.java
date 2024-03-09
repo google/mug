@@ -19,12 +19,13 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import com.google.mu.function.Quarternary;
-import com.google.mu.function.Quinary;
-import com.google.mu.function.Senary;
-import com.google.mu.function.Ternary;
+import com.google.mu.function.MapFrom4;
+import com.google.mu.function.MapFrom5;
+import com.google.mu.function.MapFrom6;
+import com.google.mu.function.MapFrom3;
 import com.google.mu.util.stream.MoreStreams;
 
 /**
@@ -105,7 +106,7 @@ abstract class AbstractStringFormat {
    *     input} doesn't match the format, or {@code mapper} returns null.
    * @throws IllegalArgumentException if or the format string doesn't have exactly 3 placeholders.
    */
-  public final <R> Optional<R> parse(String input, Ternary<? super String, ? extends R> mapper) {
+  public final <R> Optional<R> parse(String input, MapFrom3<? super String, ? extends R> mapper) {
     return parseExpecting(3, input, combining(mapper));
   }
 
@@ -118,7 +119,7 @@ abstract class AbstractStringFormat {
    * @throws IllegalArgumentException if or the format string doesn't have exactly 4 placeholders.
    */
   public final <R> Optional<R> parse(
-      String input, Quarternary<? super String, ? extends R> mapper) {
+      String input, MapFrom4<? super String, ? extends R> mapper) {
     return parseExpecting(4, input, combining(mapper));
   }
 
@@ -130,7 +131,7 @@ abstract class AbstractStringFormat {
    *     input} doesn't match the format, or {@code mapper} returns null.
    * @throws IllegalArgumentException if or the format string doesn't have exactly 5 placeholders.
    */
-  public final <R> Optional<R> parse(String input, Quinary<? super String, ? extends R> mapper) {
+  public final <R> Optional<R> parse(String input, MapFrom5<? super String, ? extends R> mapper) {
     return parseExpecting(5, input, combining(mapper));
   }
 
@@ -142,7 +143,7 @@ abstract class AbstractStringFormat {
    *     input} doesn't match the format, or {@code mapper} returns null.
    * @throws IllegalArgumentException if or the format string doesn't have exactly 6 placeholders.
    */
-  public final <R> Optional<R> parse(String input, Senary<? super String, ? extends R> mapper) {
+  public final <R> Optional<R> parse(String input, MapFrom6<? super String, ? extends R> mapper) {
     return parseExpecting(6, input, combining(mapper));
   }
 
@@ -251,7 +252,7 @@ abstract class AbstractStringFormat {
    *     .parseOrThrow(input, (jobId, errorCode, errorDetails) -> ...);
    * }</pre>
    *
-   * <p>Unlike {@link #parse(String, Ternary)}, {@code IllegalArgumentException} is thrown if the
+   * <p>Unlike {@link #parse(String, MapFrom3)}, {@code IllegalArgumentException} is thrown if the
    * input string doesn't match the string format. The error message will include both the input
    * string and the format string for ease of debugging, but is otherwise generic. If you need a
    * different exception type, or need to customize the error message, consider using {@link
@@ -264,7 +265,7 @@ abstract class AbstractStringFormat {
    * @throws NullPointerException if any of the parameter is null or {@code mapper} returns null.
    * @since 7.0
    */
-  public final <R> R parseOrThrow(String input, Ternary<? super String, R> mapper) {
+  public final <R> R parseOrThrow(String input, MapFrom3<? super String, R> mapper) {
     return parseOrThrowExpecting(3, input, combining(mapper));
   }
 
@@ -272,7 +273,7 @@ abstract class AbstractStringFormat {
    * Similar to {@link #parseOrThrow(String, BiFunction)}, but parses {@code input} and applies
    * {@code mapper} with the <em>4</em> placeholder values in this string format.
    *
-   * <p>Unlike {@link #parse(String, Quarternary)}, {@code IllegalArgumentException} is thrown if
+   * <p>Unlike {@link #parse(String, MapFrom4)}, {@code IllegalArgumentException} is thrown if
    * the input string doesn't match the string format. The error message will include both the input
    * string and the format string for ease of debugging, but is otherwise generic. If you need a
    * different exception type, or need to customize the error message, consider using {@link
@@ -285,7 +286,7 @@ abstract class AbstractStringFormat {
    * @throws NullPointerException if any of the parameter is null or {@code mapper} returns null.
    * @since 7.0
    */
-  public final <R> R parseOrThrow(String input, Quarternary<? super String, R> mapper) {
+  public final <R> R parseOrThrow(String input, MapFrom4<? super String, R> mapper) {
     return parseOrThrowExpecting(4, input, combining(mapper));
   }
 
@@ -293,7 +294,7 @@ abstract class AbstractStringFormat {
    * Similar to {@link #parseOrThrow(String, BiFunction)}, but parses {@code input} and applies
    * {@code mapper} with the <em>5</em> placeholder values in this string format.
    *
-   * <p>Unlike {@link #parse(String, Quinary)}, {@code IllegalArgumentException} is thrown if the
+   * <p>Unlike {@link #parse(String, MapFrom5)}, {@code IllegalArgumentException} is thrown if the
    * input string doesn't match the string format. The error message will include both the input
    * string and the format string for ease of debugging, but is otherwise generic. If you need a
    * different exception type, or need to customize the error message, consider using {@link
@@ -306,7 +307,7 @@ abstract class AbstractStringFormat {
    * @throws NullPointerException if any of the parameter is null or {@code mapper} returns null.
    * @since 7.0
    */
-  public final <R> R parseOrThrow(String input, Quinary<? super String, R> mapper) {
+  public final <R> R parseOrThrow(String input, MapFrom5<? super String, R> mapper) {
     return parseOrThrowExpecting(5, input, combining(mapper));
   }
 
@@ -327,7 +328,7 @@ abstract class AbstractStringFormat {
    * @throws NullPointerException if any of the parameter is null or {@code mapper} returns null.
    * @since 7.0
    */
-  public final <R> R parseOrThrow(String input, Senary<? super String, R> mapper) {
+  public final <R> R parseOrThrow(String input, MapFrom6<? super String, R> mapper) {
     return parseOrThrowExpecting(6, input, combining(mapper));
   }
 
@@ -378,7 +379,7 @@ abstract class AbstractStringFormat {
   }
 
   /**
-   * Similar to {@link #parse(String, Ternary)}, parses {@code input} and applies {@code mapper}
+   * Similar to {@link #parse(String, MapFrom3)}, parses {@code input} and applies {@code mapper}
    * with the 3 placeholder values in this format string, but matches the placeholders backwards
    * from the end to the beginning of the input string.
    *
@@ -391,12 +392,12 @@ abstract class AbstractStringFormat {
    * @since 7.0
    */
   public final <R> Optional<R> parseGreedy(
-      String input, Ternary<? super String, ? extends R> mapper) {
+      String input, MapFrom3<? super String, ? extends R> mapper) {
     return parseGreedyExpecting(3, input, combining(mapper));
   }
 
   /**
-   * Similar to {@link #parse(String, Quarternary)}, parses {@code input} and applies {@code mapper}
+   * Similar to {@link #parse(String, MapFrom4)}, parses {@code input} and applies {@code mapper}
    * with the 3 placeholder values in this format string, but matches the placeholders backwards
    * from the end to the beginning of the input string.
    *
@@ -409,12 +410,12 @@ abstract class AbstractStringFormat {
    * @since 7.0
    */
   public final <R> Optional<R> parseGreedy(
-      String input, Quarternary<? super String, ? extends R> mapper) {
+      String input, MapFrom4<? super String, ? extends R> mapper) {
     return parseGreedyExpecting(4, input, combining(mapper));
   }
 
   /**
-   * Similar to {@link #parse(String, Quinary)}, parses {@code input} and applies {@code mapper}
+   * Similar to {@link #parse(String, MapFrom5)}, parses {@code input} and applies {@code mapper}
    * with the 5 placeholder values in this format string, but matches the placeholders backwards
    * from the end to the beginning of the input string.
    *
@@ -427,7 +428,7 @@ abstract class AbstractStringFormat {
    * @since 7.0
    */
   public final <R> Optional<R> parseGreedy(
-      String input, Quinary<? super String, ? extends R> mapper) {
+      String input, MapFrom5<? super String, ? extends R> mapper) {
     return parseGreedyExpecting(5, input, combining(mapper));
   }
 
@@ -441,6 +442,226 @@ abstract class AbstractStringFormat {
   }
 
   /**
+   * Scans {@code input} and replaces all matches using the {@code replacement} function.
+   *
+   * <p>Note that while the placeholder value(s) are passed to the {@code replacement} function, the
+   * full matching substring of the string format (including but not limited to the placeholders)
+   * are replaced by the return value of the {@code replacement} function. So for example if you are
+   * trying to rewrite every {@code "<{value}>"} to {@code "<v...>"}, be sure to include the angle
+   * bracket characters as in:
+   *
+   * <pre>{@code
+   * StringFormat bracketed = new StringFormat(""<{value}>"");
+   * String rewritten =
+   *     bracketed.replaceAllFrom(input, value -> bracketed.format(value.charAt(0) + "..."));
+   * }</pre>
+   *
+   * <p>If no match is found, the {@code input} string is returned.
+   *
+   * <p>If {@code replacement} returns null, the match is ignored as if it didn't match the format.
+   * This can be used to post-filter the match with custom predicates (e.g. a placeholder value must
+   * be digits only).
+   *
+   * <p>The {@code replacement} function accepts {@link Substring.Match} instead of String to avoid
+   * unnecessary copying of the characters. If you are passing in a method reference, it can also
+   * take CharSequence or Object as the parameter type.
+   *
+   * @throws IllegalArgumentException if the format string doesn't have exactly 1 named placeholder
+   *
+   * @since 7.2
+   */
+  public final String replaceAllFrom(
+      String input, Function<? super Substring.Match, ?> replacement) {
+    requireNonNull(input);
+    requireNonNull(replacement);
+    checkPlaceholderCount(1);
+    return replaceAllMatches(input, matches -> replacement.apply(matches.get(0)));
+  }
+
+  /**
+   * Scans {@code input} and replaces all matches using the {@code replacement} function.
+   *
+   * <p>Note that while the placeholder value(s) are passed to the {@code replacement} function, the
+   * full matching substring of the string format (including but not limited to the placeholders)
+   * are replaced by the return value of the {@code replacement} function. So for example if you are
+   * trying to rewrite every {@code "[{key}:{value}]"} to {@code "[{key}={value}]"}, be sure to
+   * include the square bracket characters as in:
+   *
+   * <pre>{@code
+   * StringFormat oldFormat = new StringFormat("[{key}:{value}]");
+   * StringFormat newFormat = new StringFormat("[{key}={value}]");
+   * String rewritten =
+   *     oldFormat.replaceAllFrom(input, (key, value) -> newFormat.format(key, value));
+   * }</pre>
+   *
+   * <p>If no match is found, the {@code input} string is returned.
+   *
+   * <p>If {@code replacement} returns null, the match is ignored as if it didn't match the format.
+   * This can be used to post-filter the match with custom predicates (e.g. a placeholder value must
+   * be digits only).
+   *
+   * <p>The {@code replacement} function accepts {@link Substring.Match} instead of String to avoid
+   * unnecessary copying of the characters. If you are passing in a method reference, it can also
+   * take CharSequence or Object as the parameter types.
+   *
+   * @throws IllegalArgumentException if the format string doesn't have exactly 2 named placeholder
+   *
+   * @since 7.2
+   */
+  public final String replaceAllFrom(
+      String input, BiFunction<? super Substring.Match, ? super Substring.Match, ?> replacement) {
+    requireNonNull(input);
+    requireNonNull(replacement);
+    checkPlaceholderCount(2);
+    return replaceAllMatches(input, matches -> replacement.apply(matches.get(0), matches.get(1)));
+  }
+
+  /**
+   * Scans {@code input} and replaces all matches using the {@code replacement} function.
+   *
+   * <p>If no match is found, the {@code input} string is returned.
+   *
+   * <p>If {@code replacement} returns null, the match is ignored as if it didn't match the format.
+   * This can be used to post-filter the match with custom predicates (e.g. a placeholder value must
+   * be digits only).
+   *
+   * <p>The {@code replacement} function accepts {@link Substring.Match} instead of String to avoid
+   * unnecessary copying of the characters. If you are passing in a method reference, it can also
+   * take CharSequence or Object as the parameter types.
+   *
+   * @throws IllegalArgumentException if the format string doesn't have exactly 3 named placeholder
+   *
+   * @since 7.2
+   */
+  public final String replaceAllFrom(
+      String input, MapFrom3<? super Substring.Match, ?> replacement) {
+    requireNonNull(input);
+    requireNonNull(replacement);
+    checkPlaceholderCount(3);
+    return replaceAllMatches(
+        input, matches -> replacement.apply(matches.get(0), matches.get(1), matches.get(2)));
+  }
+
+  /**
+   * Scans {@code input} and replaces all matches using the {@code replacement} function.
+   *
+   * <p>If no match is found, the {@code input} string is returned.
+   *
+   * <p>If {@code replacement} returns null, the match is ignored as if it didn't match the format.
+   * This can be used to post-filter the match with custom predicates (e.g. a placeholder value must
+   * be digits only).
+   *
+   * <p>The {@code replacement} function accepts {@link Substring.Match} instead of String to avoid
+   * unnecessary copying of the characters. If you are passing in a method reference, it can also
+   * take CharSequence or Object as the parameter types.
+   *
+   * @throws IllegalArgumentException if the format string doesn't have exactly 4 named placeholder
+   *
+   * @since 7.2
+   */
+  public final String replaceAllFrom(
+      String input, MapFrom4<? super Substring.Match, ?> replacement) {
+    requireNonNull(input);
+    requireNonNull(replacement);
+    checkPlaceholderCount(4);
+    return replaceAllMatches(
+        input,
+        matches -> replacement.apply(matches.get(0), matches.get(1), matches.get(2), matches.get(3)));
+  }
+
+  /**
+   * Scans {@code input} and replaces all matches using the {@code replacement} function.
+   *
+   * <p>If no match is found, the {@code input} string is returned.
+   *
+   * <p>If {@code replacement} returns null, the match is ignored as if it didn't match the format.
+   * This can be used to post-filter the match with custom predicates (e.g. a placeholder value must
+   * be digits only).
+   *
+   * <p>The {@code replacement} function accepts {@link Substring.Match} instead of String to avoid
+   * unnecessary copying of the characters. If you are passing in a method reference, it can also
+   * take CharSequence or Object as the parameter types.
+   *
+   * @throws IllegalArgumentException if the format string doesn't have exactly 5 named placeholder
+   *
+   * @since 7.2
+   */
+  public final String replaceAllFrom(
+      String input, MapFrom5<? super Substring.Match, ?> replacement) {
+    requireNonNull(input);
+    requireNonNull(replacement);
+    checkPlaceholderCount(5);
+    return replaceAllMatches(
+        input,
+        matches ->
+            replacement.apply(
+                matches.get(0), matches.get(1), matches.get(2), matches.get(3), matches.get(4)));
+  }
+
+  /**
+   * Scans {@code input} and replaces all matches using the {@code replacement} function.
+   *
+   * <p>If no match is found, the {@code input} string is returned.
+   *
+   * <p>If {@code replacement} returns null, the match is ignored as if it didn't match the format.
+   * This can be used to post-filter the match with custom predicates (e.g. a placeholder value must
+   * be digits only).
+   *
+   * <p>The {@code replacement} function accepts {@link Substring.Match} instead of String to avoid
+   * unnecessary copying of the characters. If you are passing in a method reference, it can also
+   * take CharSequence or Object as the parameter types.
+   *
+   * @throws IllegalArgumentException if the format string doesn't have exactly 6 named placeholder
+   *
+   * @since 7.2
+   */
+  public final String replaceAllFrom(
+      String input, MapFrom6<? super Substring.Match, ?> replacement) {
+    requireNonNull(input);
+    requireNonNull(replacement);
+    checkPlaceholderCount(6);
+    return replaceAllMatches(
+        input,
+        matches ->
+            replacement.apply(
+                matches.get(0),
+                matches.get(1),
+                matches.get(2),
+                matches.get(3),
+                matches.get(4),
+                matches.get(5)));
+  }
+
+  final String replaceAllMatches(
+      String input, Function<? super List<Substring.Match>, ?> replacement) {
+    List<int[]> matchIndices = new ArrayList<>();
+    List<List<Substring.Match>> matches =
+        matchRepeatedly(input, (start, end) -> matchIndices.add(new int[] {start, end}))
+            .collect(toImmutableList());
+    if (matchIndices.size() != matches.size()) {
+      throw new IllegalStateException(matchIndices.size() + " != " + matches.size());
+    }
+    StringBuilder builder = new StringBuilder();
+    int inputIndex = 0;
+    for (int i = 0; i < matches.size(); i++) {
+      Object replaceWith = replacement.apply(matches.get(i));
+      if (replaceWith == null) {
+        continue; // skip
+      }
+      int matchStart = matchIndices.get(i)[0];
+      int matchEnd = matchIndices.get(i)[1];
+      if (inputIndex < matchStart) {
+        builder.append(input, inputIndex, matchStart);
+      }
+      builder.append(replaceWith);
+      inputIndex = matchEnd;
+    }
+    return inputIndex == 0 && builder.length() == 0
+        ? input // avoid copying
+        : builder.append(input, inputIndex, input.length()).toString();
+  }
+
+  /**
    * Scans the {@code input} string and extracts all matched placeholders in this string format.
    *
    * <p>unlike {@link #parse(String)}, the input string isn't matched entirely: the pattern doesn't
@@ -449,50 +670,7 @@ abstract class AbstractStringFormat {
    * returned.
    */
   public final Stream<List<Substring.Match>> scan(String input) {
-    requireNonNull(input);
-    if (format.isEmpty()) {
-      return Stream.generate(() -> Collections.<Substring.Match>emptyList())
-          .limit(input.length() + 1);
-    }
-    int numPlaceholders = numPlaceholders();
-    return MoreStreams.whileNotNull(
-        new Supplier<List<Substring.Match>>() {
-          private int inputIndex = 0;
-          private boolean done = false;
-
-          @Override
-          public List<Substring.Match> get() {
-            if (done) {
-              return null;
-            }
-            inputIndex = input.indexOf(fragments.get(0), inputIndex);
-            if (inputIndex < 0) {
-              return null;
-            }
-            inputIndex += fragments.get(0).length();
-            List<Substring.Match> builder = new ArrayList<>(numCapturingPlaceholders);
-            for (int i = 1; i <= numPlaceholders; i++) {
-              String literal = fragments.get(i);
-              // Always search left-to-right. The last placeholder at the end of format is suffix.
-              Substring.Pattern literalLocator =
-                  i == numPlaceholders && fragments.get(i).isEmpty()
-                      ? Substring.END
-                      : first(fragments.get(i));
-              Substring.Match placeholder = before(literalLocator).match(input, inputIndex);
-              if (placeholder == null) {
-                return null;
-              }
-              if (toCapture.get(i - 1)) {
-                builder.add(placeholder);
-              }
-              inputIndex = placeholder.index() + placeholder.length() + literal.length();
-            }
-            if (inputIndex == input.length()) {
-              done = true;
-            }
-            return unmodifiableList(builder);
-          }
-        });
+    return matchRepeatedly(input, (start, end) -> {});
   }
 
   /**
@@ -566,7 +744,7 @@ abstract class AbstractStringFormat {
    *     .parse(input, (lhs, rhs, result) -> ...);
    * }</pre>
    *
-   * <p>unlike {@link #parse(String, Ternary)}, the input string isn't matched entirely: the pattern
+   * <p>unlike {@link #parse(String, MapFrom3)}, the input string isn't matched entirely: the pattern
    * doesn't have to start from the beginning, and if there are some remaining characters that don't
    * match the pattern any more, the stream stops. In particular, if there is no match, empty stream
    * is returned.
@@ -575,7 +753,7 @@ abstract class AbstractStringFormat {
    * placeholder isn't expected to be empty, consider filtering it out by returning null from the
    * {@code mapper} function, which will then be ignored in the result stream.
    */
-  public final <R> Stream<R> scan(String input, Ternary<? super String, ? extends R> mapper) {
+  public final <R> Stream<R> scan(String input, MapFrom3<? super String, ? extends R> mapper) {
     requireNonNull(input);
     requireNonNull(mapper);
     checkPlaceholderCount(3);
@@ -587,7 +765,7 @@ abstract class AbstractStringFormat {
    * stream of non-null results from passing the 4 placeholder values to the {@code mapper} function
    * for each iteration, with null results skipped.
    *
-   * <p>unlike {@link #parse(String, Quarternary)}, the input string isn't matched entirely: the
+   * <p>unlike {@link #parse(String, MapFrom4)}, the input string isn't matched entirely: the
    * pattern doesn't have to start from the beginning, and if there are some remaining characters
    * that don't match the pattern any more, the stream stops. In particular, if there is no match,
    * empty stream is returned.
@@ -596,7 +774,7 @@ abstract class AbstractStringFormat {
    * placeholder isn't expected to be empty, consider filtering it out by returning null from the
    * {@code mapper} function, which will then be ignored in the result stream.
    */
-  public final <R> Stream<R> scan(String input, Quarternary<? super String, ? extends R> mapper) {
+  public final <R> Stream<R> scan(String input, MapFrom4<? super String, ? extends R> mapper) {
     requireNonNull(input);
     requireNonNull(mapper);
     checkPlaceholderCount(4);
@@ -608,7 +786,7 @@ abstract class AbstractStringFormat {
    * stream of non-null results from passing the 5 placeholder values to the {@code mapper} function
    * for each iteration, with null results skipped.
    *
-   * <p>unlike {@link #parse(String, Quinary)}, the input string isn't matched entirely: the pattern
+   * <p>unlike {@link #parse(String, MapFrom5)}, the input string isn't matched entirely: the pattern
    * doesn't have to start from the beginning, and if there are some remaining characters that don't
    * match the pattern any more, the stream stops. In particular, if there is no match, empty stream
    * is returned.
@@ -617,7 +795,7 @@ abstract class AbstractStringFormat {
    * placeholder isn't expected to be empty, consider filtering it out by returning null from the
    * {@code mapper} function, which will then be ignored in the result stream.
    */
-  public final <R> Stream<R> scan(String input, Quinary<? super String, ? extends R> mapper) {
+  public final <R> Stream<R> scan(String input, MapFrom5<? super String, ? extends R> mapper) {
     requireNonNull(input);
     requireNonNull(mapper);
     checkPlaceholderCount(5);
@@ -629,7 +807,7 @@ abstract class AbstractStringFormat {
    * stream of non-null results from passing the 6 placeholder values to the {@code mapper} function
    * for each iteration, with null results skipped.
    *
-   * <p>unlike {@link #parse(String, Senary)}, the input string isn't matched entirely: the pattern
+   * <p>unlike {@link #parse(String, MapFrom6)}, the input string isn't matched entirely: the pattern
    * doesn't have to start from the beginning, and if there are some remaining characters that don't
    * match the pattern any more, the stream stops. In particular, if there is no match, empty stream
    * is returned.
@@ -638,7 +816,7 @@ abstract class AbstractStringFormat {
    * placeholder isn't expected to be empty, consider filtering it out by returning null from the
    * {@code mapper} function, which will then be ignored in the result stream.
    */
-  public final <R> Stream<R> scan(String input, Senary<? super String, ? extends R> mapper) {
+  public final <R> Stream<R> scan(String input, MapFrom6<? super String, ? extends R> mapper) {
     requireNonNull(input);
     requireNonNull(mapper);
     checkPlaceholderCount(6);
@@ -726,6 +904,59 @@ abstract class AbstractStringFormat {
     return result;
   }
 
+  private Stream<List<Substring.Match>> matchRepeatedly(
+      String input, IndexRangeConsumer matchRanges) {
+    if (format.isEmpty()) {
+      return IntStream.range(0, input.length() + 1)
+          .mapToObj(
+              i -> {
+                matchRanges.acceptIndexRange(i, i);
+                return Collections.emptyList();
+              });
+    }
+    int numPlaceholders = numPlaceholders();
+    return MoreStreams.whileNotNull(
+        new Supplier<List<Substring.Match>>() {
+          private int inputIndex = 0;
+          private boolean done = false;
+
+          @Override
+          public List<Substring.Match> get() {
+            if (done) {
+              return null;
+            }
+            inputIndex = input.indexOf(fragments.get(0), inputIndex);
+            if (inputIndex < 0) {
+              return null;
+            }
+            final int startIndex = inputIndex;
+            inputIndex += fragments.get(0).length();
+            List<Substring.Match> builder = new ArrayList<>(numCapturingPlaceholders);
+            for (int i = 1; i <= numPlaceholders; i++) {
+              String literal = fragments.get(i);
+              // Always search left-to-right. The last placeholder at the end of format is suffix.
+              Substring.Pattern literalLocator =
+                  i == numPlaceholders && fragments.get(i).isEmpty()
+                      ? Substring.END
+                      : first(fragments.get(i));
+              Substring.Match placeholder = before(literalLocator).match(input, inputIndex);
+              if (placeholder == null) {
+                return null;
+              }
+              if (toCapture.get(i - 1)) {
+                builder.add(placeholder);
+              }
+              inputIndex = placeholder.index() + placeholder.length() + literal.length();
+            }
+            if (inputIndex == input.length()) {
+              done = true;
+            }
+            matchRanges.acceptIndexRange(startIndex, inputIndex);
+            return unmodifiableList(builder);
+          }
+        });
+  }
+
   private <R> Stream<R> scanAndCollect(String input, Collector<? super String, ?, R> collector) {
     return scan(input)
         .map(values -> values.stream().map(Substring.Match::toString).collect(collector))
@@ -792,5 +1023,9 @@ abstract class AbstractStringFormat {
 
   private static <T> List<T> chop(List<T> list) {
     return list.subList(0, list.size() - 1);
+  }
+
+  private interface IndexRangeConsumer {
+    void acceptIndexRange(int startIndex, int endIndex);
   }
 }

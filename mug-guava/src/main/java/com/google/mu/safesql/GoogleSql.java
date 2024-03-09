@@ -8,6 +8,7 @@ import java.time.format.DateTimeFormatter;
 
 import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.mu.util.StringFormat;
+import com.google.mu.util.Substring;
 
 /**
  * Facade class providing {@link SafeQuery} templates for GoogleSQL.
@@ -34,18 +35,20 @@ public final class GoogleSql {
    * and {@link LocalDate} are translated to `DATE()` GoogleSql function.
    */
   public static StringFormat.To<SafeQuery> template(@CompileTimeConstant String formatString) {
-    return SafeQuery.template(formatString, value -> {
-      if (value instanceof Instant) {
-        return timestampExpression((Instant) value);
+    return new SafeQuery.Translator() {
+      @Override protected String unquoted(Substring.Match placeholder, Object value) {
+        if (value instanceof Instant) {
+          return timestampExpression((Instant) value);
+        }
+        if (value instanceof ZonedDateTime) {
+          return dateTimeExpression((ZonedDateTime) value);
+        }
+        if (value instanceof LocalDate) {
+          return dateExpression((LocalDate) value);
+        }
+        return super.unquoted(placeholder, value);
       }
-      if (value instanceof ZonedDateTime) {
-        return dateTimeExpression((ZonedDateTime) value);
-      }
-      if (value instanceof LocalDate) {
-        return dateExpression((LocalDate) value);
-      }
-      throw new IllegalArgumentException("Unsupported argument type: " + value.getClass().getName());
-    });
+    }.translate(formatString);
   }
 
 

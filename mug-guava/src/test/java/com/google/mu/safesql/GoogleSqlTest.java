@@ -13,6 +13,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import com.google.common.collect.ImmutableList;
+
 @RunWith(JUnit4.class)
 public class GoogleSqlTest {
   @BeforeClass  // Consistently set the system property across the test suite
@@ -88,5 +90,29 @@ public class GoogleSqlTest {
             template("SELECT * FROM tbl WHERE creation_date = {date}")
                 .with(LocalDate.of(2023, 10, 1)))
         .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE creation_date = DATE(2023, 10, 1)"));
+  }
+
+  @Test
+  public void listOfTimestamp() {
+    ZonedDateTime time = ZonedDateTime.of(1900, 1, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
+    assertThat(
+            template("SELECT * FROM tbl WHERE creation_time in ({instants})")
+                .with(/* instants */ ImmutableList.of(time.toInstant())))
+        .isEqualTo(
+            SafeQuery.of(
+                "SELECT * FROM tbl WHERE creation_time in "
+                    + "(TIMESTAMP('1900-01-01T00:00:00.000000', 'America/Los_Angeles'))"));
+  }
+
+  @Test
+  public void mixedWithDefaultTranslation() {
+    ZonedDateTime time = ZonedDateTime.of(1900, 1, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
+    assertThat(
+            template("SELECT * FROM tbl WHERE creation_time = {instant} AND id = {id}")
+                .with(time.toInstant(), /* id */ 1))
+        .isEqualTo(
+            SafeQuery.of(
+                "SELECT * FROM tbl WHERE creation_time = "
+                    + "TIMESTAMP('1900-01-01T00:00:00.000000', 'America/Los_Angeles') AND id = 1"));
   }
 }
