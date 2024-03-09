@@ -320,5 +320,12 @@ static import com.google.mu.util.Optionals.optionally;
 Optional<String> id = optionally(request.hasId(), request::getId);
 ```
 
+**Example 5: add an optional element to a list if present:**
+```java
+static import com.google.mu.util.Optionals.asSet;
+
+names.addAll(asSet(optionalName));
+```
+
 All Optionals utilites propagate checked exception from the the lambda/method references.
 
