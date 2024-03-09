@@ -1869,8 +1869,8 @@ public final class Substring {
      *
      * <p>The returned {@code Match} objects are cheap "views" of the matched substring sequences.
      * Because {@code Match} implements {@code CharSequence}, the returned {@code Match} objects can
-     * be directly passed to {@code CharSequence}-accepting APIs such as {@link
-     * CharMatcher#trimFrom}, {@link Pattern#splitThenTrim}, etc.
+     * be directly passed to {@code CharSequence}-accepting APIs such as Guava {@code
+     * CharMatcher.trimFrom}, {@link Pattern#splitThenTrim}, etc.
      *
      * @since 7.1
      */

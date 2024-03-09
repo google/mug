@@ -33,8 +33,8 @@ public final class MoreIterables {
    * each pair of corresponding elements matches according to the {@code matcher} predicate. If both
    * iterables are empty, returns true.
    *
-   * <p>Note that this method performs a similar function for matching as {@link
-   * com.google.common.collect.Ordering#lexicographical} does for orderings.
+   * <p>Note that this method performs a similar function for matching as {@code
+   * com.google.common.collect.Ordering.lexicographical} does for orderings.
    *
    * <p>It can also be used to compare two {@code Optional} objects, by first converting the {@code
    * Optional} into a {@code Set} using {@link com.google.mu.util.Optionals#asSet}. For

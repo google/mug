@@ -390,7 +390,7 @@ public final class MoreCollectors {
   }
 
   /**
-   * Same as {@link #asIn(Function)}.
+   * Returns collector that collects the single element from the input. It will throw otherwise.
    *
    * @since 5.4
    */

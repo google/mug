@@ -29,7 +29,7 @@ import com.google.mu.util.stream.BiStream;
 import com.google.mu.util.stream.MoreStreams;
 
 /**
- * A lookup table that stores prefix (a list of keys of type {@code K}) -> value mappings.
+ * A lookup table that stores prefix (a list of keys of type {@code K}) -&gt; value mappings.
  *
  * <p>For example, if the table maps {@code [a, b]} prefix to a value "foo", when you search by
  * {@code [a, b, c]}, it will find the {@code [a, b] -> foo} mapping.
