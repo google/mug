@@ -83,7 +83,7 @@ public final class SafeQuery {
    *       </ul>
    *   <li>Unquoted placeholders are assumed to be symbols or subqueries. Strings (CharSequence) and
    *       characters cannot be used as placeholder value. If you have to pass a string, wrap it
-   *       inside a {@link TrustedSqlString} (you can configure the type you trust by setting the
+   *       inside a {@code TrustedSqlString} (you can configure the type you trust by setting the
    *       "com.google.mu.safesql.SafeQuery.trusted_sql_type" system property).
    *   <li>An Iterable's elements are auto expanded and joined by a comma and space (", ").
    *   <li>If the iterable's placeholder is quoted as in {@code WHERE id IN ('{ids}')}, every
@@ -107,7 +107,7 @@ public final class SafeQuery {
    *   <li>Numeric
    *   <li>Enum
    *   <li>String (must be quoted in the template)
-   *   <li>{@link TrustedSqlString}
+   *   <li>{@code TrustedSqlString}
    *   <li>{@link SafeQuery}
    *   <li>Iterable
    * </ul>
