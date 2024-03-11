@@ -4,7 +4,10 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.last;
+import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
+
+import java.util.List;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,13 +51,18 @@ public class HowToUseStringFormatTest {
   @Test public void parse2dArray() {
     String x = "{ {F, 40 , 40 , 2000},{L, 60 , 60 , 1000},{F, 40 , 40 , 2000}}";
     String nested = Substring.between(first('{'), last('}')).from(x).get();
-    System.out.println(
-        Substring.between('{', '}')
-            .repeatedly()
-            .from(nested)
-            .map(first(',').repeatedly()::splitThenTrim)
-            .map(elements -> elements.collect(toList()))
-            .collect(toList()));
+    List<List<String>> result =  Substring.between('{', '}')
+        .repeatedly()
+        .from(nested)
+        .map(first(',').repeatedly()::splitThenTrim)
+        .map(elements -> elements.map(Substring.Match::toString).collect(toList()))
+        .collect(toList());
+    assertThat(result)
+       .containsExactly(
+           asList("F", "40", "40", "2000"),
+           asList("L", "60", "60", "1000"),
+           asList("F", "40", "40", "2000"))
+       .inOrder();
   }
 
   @SuppressWarnings("StringUnformatArgsCheck")
