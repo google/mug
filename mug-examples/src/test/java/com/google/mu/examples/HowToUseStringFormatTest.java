@@ -47,10 +47,11 @@ public class HowToUseStringFormatTest {
 
   @Test public void parse2dArray() {
     String x = "{ {F, 40 , 40 , 2000},{L, 60 , 60 , 1000},{F, 40 , 40 , 2000}}";
-    Substring.Pattern braced = Substring.between(first('{'), last('}'));
+    String nested = Substring.between(first('{'), last('}')).from(x).get();
     System.out.println(
-        braced.repeatedly()
-            .from(braced.from(x).get())
+        Substring.between('{', '}')
+            .repeatedly()
+            .from(nested)
             .map(first(',').repeatedly()::splitThenTrim)
             .map(elements -> elements.collect(toList()))
             .collect(toList()));
