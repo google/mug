@@ -1,7 +1,10 @@
 package com.google.mu.examples;
 
-import static com.google.common.truth.Truth8.assertThat;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
+import static com.google.mu.util.Substring.first;
+import static com.google.mu.util.Substring.last;
+import static java.util.stream.Collectors.toList;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -9,6 +12,7 @@ import org.junit.runners.JUnit4;
 
 import com.google.mu.safesql.SafeQuery;
 import com.google.mu.util.StringFormat;
+import com.google.mu.util.Substring;
 
 @RunWith(JUnit4.class)
 public class HowToUseStringFormatTest {
@@ -41,6 +45,18 @@ public class HowToUseStringFormatTest {
         .isEqualTo(SafeQuery.of("WHERE id = 'foo'"));
   }
 
+  @Test public void parse2dArray() {
+    String x = "{ {F, 40 , 40 , 2000},{L, 60 , 60 , 1000},{F, 40 , 40 , 2000}}";
+    Substring.Pattern braced = Substring.between(first('{'), last('}'));
+    System.out.println(
+        braced.repeatedly()
+            .from(braced.from(x).get())
+            .map(first(',').repeatedly()::splitThenTrim)
+            .map(elements -> elements.collect(toList()))
+            .collect(toList()));
+
+  }
+
   @SuppressWarnings("StringUnformatArgsCheck")
   String failsBecauseTwoLambdaParametersAreExpected() {
 	  return new StringFormat("{key}:{value}").parseOrThrow("k:v", key -> key);
@@ -50,12 +66,12 @@ public class HowToUseStringFormatTest {
   String failsBecauseLambdaParameterNamesAreOutOfOrder() {
     return new StringFormat("{key}:{value}").parseOrThrow("k:v", (value, key) -> key);
   }
- 
+
   @SuppressWarnings("StringFormatPlaceholderNamesCheck")
   String failsDueToBadPlaceholderName() {
     return new StringFormat("{?}:{-}").parseOrThrow("k:v", (k, v) -> k);
   }
-  
+
   @SuppressWarnings("StringFormatArgsCheck")
   SafeQuery mismatchingPlaceholderInSafeQueryTemplate(String name) {
     return SafeQuery.template("WHERE id = '{id}'").with(name);
