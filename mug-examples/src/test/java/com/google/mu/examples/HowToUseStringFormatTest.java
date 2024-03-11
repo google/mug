@@ -54,7 +54,6 @@ public class HowToUseStringFormatTest {
             .map(first(',').repeatedly()::splitThenTrim)
             .map(elements -> elements.collect(toList()))
             .collect(toList()));
-
   }
 
   @SuppressWarnings("StringUnformatArgsCheck")
