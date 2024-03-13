@@ -1729,6 +1729,7 @@ public class SubstringTest {
     assertThat(match.charAt(2)).isEqualTo('=');
     assertThat(match.charAt(3)).isEqualTo(' ');
     assertThat(match.toString()).isEqualTo(" >= ");
+    assertThat(match.toString()).isEqualTo(" >= ");
     assertThrows(IndexOutOfBoundsException.class, () -> match.charAt(-1));
     assertThrows(IndexOutOfBoundsException.class, () -> match.charAt(4));
     assertThrows(IndexOutOfBoundsException.class, () -> match.charAt(Integer.MAX_VALUE));
