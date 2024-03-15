@@ -13,6 +13,608 @@ public final class StringFormatArgsCheckTest {
       CompilationTestHelper.newInstance(StringFormatArgsCheck.class, getClass());
 
   @Test
+  public void templateStringNotTheFirstParameter() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  @TemplateFormatMethod",
+            "  void report(String name, @TemplateString String template, Object... args) {}",
+            "  void test(int foo) {",
+            "    report(\"name\", \"{foo}\", foo);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateStringNotTheFirstParameter_doesNotMatchPlaceholder() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  @TemplateFormatMethod",
+            "  void report(String name, @TemplateString String template, Object... args) {}",
+            "  void test(int bar) {",
+            "    // BUG: Diagnostic contains: {foo}",
+            "    report(\"name\", \"{foo}\", bar);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_good() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test(String foo, String barId, String camelCase) {",
+            "    StringFormat.with(\"{foo}-{bar_id}-{camelCase}\", foo, barId, camelCase);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_goodInlinedFormat() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test(String foo, String barId, String camelCase) {",
+            "    StringFormat.with(\"{foo}-{bar_id}-{CamelCase}\", foo, barId, camelCase);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_concatenatedInlinedFormat() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test(String foo, String barId, String camelCase) {",
+            "    StringFormat.with(",
+            "        \"{foo}-{bar_id}\" + \"-{CamelCase}\", foo, barId, camelCase);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_usesPrintfStyle_fail() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test(String foo1, String foo2) {",
+            "    // BUG: Diagnostic contains: 0 placeholders defined",
+            "    StringFormat.with(\"%s=%s\", foo1, foo2);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_conflictingValueForTheSamePlaceholderNameDisallowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test(String foo1, String foo2) {",
+            "    // BUG: Diagnostic contains: {foo}",
+            "    StringFormat.with(\"{foo}={foo}\", foo1, foo2);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_okToUseSamePlaceholderNameIfArgExpressionsAreIdentical() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test(String foo) {",
+            "    StringFormat.with(\"{foo}={foo}\", foo, foo);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_okToUseSamePlaceholderNameIfArgExpressionsHaveSameTokens() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test(String foo) {",
+            "    StringFormat.with(\"{foo}={foo}\", foo.toString(), foo .toString());",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_argsOutOfOrder() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test(String foo, String barId) {",
+            "    // BUG: Diagnostic contains:",
+            "    StringFormat.with(\"{foo}-{bar_id}\", barId, foo);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_i18nArgsOutOfOrder() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test() {",
+            "    // BUG: Diagnostic contains:",
+            "    StringFormat.with(\"{用户}-{地址}\", \"地址\", \"用户\");",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_i18nArgsMatched() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test() {",
+            "    StringFormat.with(\"{用户}-{地址}\", \"用户\", \"地址\");",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_namedArgsCommented() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test(String foo, String barId, String camelCase) {",
+            "    StringFormat.with(",
+            "        \"{foo}-{bar_id}-{camelCase}\",",
+            "         /*foo=*/ barId, /*barId=*/ camelCase, /*camelCase=*/ foo);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_literalArgsCommented() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test() {",
+            "    StringFormat.with(",
+            "        \"{foo}-{bar_id}-{CamelCase}\", /*foo=*/ 1, /*bar_id=*/ 2, /*camelCase=*/ 3);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_argIsMethodInvocation() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  interface Bar {",
+            "    String id();",
+            "  }",
+            "  interface Camel {",
+            "    String cased();",
+            "  }",
+            "  void test(String foo, Bar bar, Camel camel) {",
+            "    StringFormat.with(\"{foo}-{bar_id}-{camelCased}\", foo, bar.id(), camel.cased());",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_usingStringConstant_argsMatchPlaceholders() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  private static final String FORMAT_STR =",
+            "      \"{foo}-{bar_id}-{camelCased}\";",
+            "  interface Bar {",
+            "    String id();",
+            "  }",
+            "  interface Camel {",
+            "    String cased();",
+            "  }",
+            "  void test(String foo, Bar bar, Camel camel) {",
+            "    StringFormat.with(FORMAT_STR, foo, bar.id(), camel.cased());",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_usingStringConstant_argsDoNotMatchPlaceholders() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  private static final String FORMAT_STR =",
+            "      \"{a}-{b}-{c}\";",
+            "  void test() {",
+            "    // BUG: Diagnostic contains:",
+            "    StringFormat.with(FORMAT_STR, 1, 2, 3);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_usingStringConstantConcatenated_argsDoNotMatchPlaceholders() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  private static final String FORMAT_STR =",
+            "      \"{a}-{b}-{c}\";",
+            "  void test() {",
+            "    // BUG: Diagnostic contains:",
+            "    StringFormat.with(FORMAT_STR + \"-{d}\", 1, 2, 3, 4);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_usingStringConstantInStringFormatConstant_argsDoNotMatchPlaceholders() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  private static final String FORMAT_STR =",
+            "      \"{a}-{b}\" + \"-{c}\";",
+            "  void test() {",
+            "    // BUG: Diagnostic contains:",
+            "    StringFormat.with(FORMAT_STR, 1, 2, 3);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_usingStringConstantInStringFormatConstant_argsCommented() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  private static final String FORMAT_STR =",
+            "      \"{a}-{b}\" + \"-{c}\";",
+            "  void test() {",
+            "    StringFormat.with(FORMAT_STR, /* a */ 1, /* b */ 2, /* c */ 3);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_getOrIsprefixIgnorableInArgs() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  interface Bar {",
+            "    String getId();",
+            "  }",
+            "  interface Camel {",
+            "    String isCase();",
+            "  }",
+            "  void test(String foo, Bar bar, Camel camel) {",
+            "    StringFormat.with(",
+            "        \"{foo}-{bar_id}-{camelCase}\", foo, bar.getId(), camel.isCase());",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_argIsLiteral() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test() {",
+            "    StringFormat.with(\"{foo}-{bar_id}\", \"foo\", \"bar id\");",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_inlinedFormatDoesNotRequireArgNameMatchingForLiterals() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test() {",
+            "    StringFormat.with(\"{foo}-{bar_id}\", 1, 2);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_3args_inlinedFormatRequiresArgNameMatchingForExpressions() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test(String x, String y, String z) {",
+            "    // BUG: Diagnostic contains:",
+            "    StringFormat.with(\"{foo}-{bar_id}-{z}\", x, y, z);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_3args_inlinedFormatAllowsLiteralArgs() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test() {",
+            "    StringFormat.with(\"{foo}-{bar_id}-{z}\", 1, 2, \"a\" + \"3\");",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_2args_inlinedFormatRequiresArgNameMatch() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test(String x, String y) {",
+            "    // BUG: Diagnostic contains:",
+            "    StringFormat.with(\"{foo}-{bar_id}\", x, y);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_2args_inlinedFormatWithMiscommentedLiteralArgs() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test() {",
+            "    // BUG: Diagnostic contains:",
+            "    StringFormat.with(\"{foo}-{bar_id}\", /* bar */ 1, 2);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_2args_inlinedFormatWithLiteralArgs() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test() {",
+            "    StringFormat.with(\"{foo}-{bar_id}\", 1, 2);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_2args_inlinedFormatWithCommentedLiteralArgs() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test() {",
+            "    StringFormat.with(\"{foo}-{bar_id}\", /* foo */ 1, /* bar id */ 2);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_parenthesizedInlinedFormatDoesNotRequireArgNameMatching() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test() {",
+            "    StringFormat.with((\"{foo}-{bar_id}\"), 1, 2);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_inlinedFormatWithOutOfOrderLiteralArgs() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test() {",
+            "    // BUG: Diagnostic contains:",
+            "    StringFormat.with(\"{foo}-{bar_id}\", /*bar*/ 1, /*foo*/ 2);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_inlinedFormatWithOutOfOrderNamedArgs() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test(String bar, String foo) {",
+            "    // BUG: Diagnostic contains:",
+            "    StringFormat.with(\"{foo}-{bar_id}\", bar, foo);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_inlinedFormatWithMoreThan3Args_requiresNameMatch() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test() {",
+            "    // BUG: Diagnostic contains:",
+            "    StringFormat.with(\"{a}-{b}-{c}-{d}\", 1, 2, 3, 4);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_inlinedFormatWithMoreThan3Args_argsMatchPlaceholderNames() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test(int a, int b, int c, int d) {",
+            "    StringFormat.with(\"{a}-{b}-{c}-{d}\", a, b, c, d);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_inlinedFormatChecksNumberOfArgs() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test(String foo, int barId, String baz) {",
+            "    // BUG: Diagnostic contains:",
+            "    StringFormat.with(\"{foo}-{bar_id}\", foo, barId, baz);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_tooManyArgs() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test(String foo, int barId, String baz) {",
+            "    // BUG: Diagnostic contains:",
+            "    StringFormat.with(\"{foo}-{bar_id}\", foo, barId, baz);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_tooFewArgs() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test(String foo) {",
+            "    // BUG: Diagnostic contains:",
+            "    StringFormat.with(\"{foo}-{bar_id}\", foo);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_nestingPlaceholderIsOk() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test() {",
+            "    StringFormat.with(\"{{foo}}\", 1);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void formatWith_cannotBeUsedForMethodReference() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "import java.util.stream.Stream;",
+            "class Test {",
+            "  // BUG: Diagnostic contains: format arguments cannot be validated",
+            "  private static final long COUNT = Stream.of(\"\").map(StringFormat::with).count();",
+            "}")
+        .doTest();
+  }
+
+  @Test
   public void goodFormat() {
     helper
         .addSourceLines(

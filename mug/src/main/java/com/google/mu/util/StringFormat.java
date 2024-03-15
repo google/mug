@@ -2,13 +2,18 @@ package com.google.mu.util;
 
 import static com.google.mu.util.InternalCollectors.toImmutableList;
 import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
+import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.function.Function;
 
+import com.google.mu.annotations.TemplateFormatMethod;
+import com.google.mu.annotations.TemplateString;
 import com.google.mu.util.stream.BiStream;
 
 /**
@@ -69,6 +74,64 @@ public final class StringFormat extends AbstractStringFormat {
       Substring.consecutive(c -> c != '{' && c != '}') // Find the inner-most pairs of curly braces.
           .immediatelyBetween("{", INCLUSIVE, "}", INCLUSIVE)
           .repeatedly();
+
+  /**
+   * Constructs a StringFormat with placeholders in the syntax of {@code "{foo}"}. For example:
+   *
+   * <pre>{@code
+   * new StringFormat("Dear {customer}, your confirmation number is {conf#}");
+   * }</pre>
+   *
+   * <p>Nesting "{placeholder}" syntax inside literal curly braces is supported. For example, you
+   * could use a format like: {@code "{name: {name}, age: {age}}"}, and it will be able to parse
+   * record-like strings such as "{name: Joe, age: 25}".
+   *
+   * @param format the template format with placeholders
+   * @throws IllegalArgumentException if {@code format} is invalid
+   *     (e.g. a placeholder immediately followed by another placeholder)
+   */
+  public StringFormat(String format) {
+    super(format, PLACEHOLDERS, "{...}");
+  }
+
+  /**
+   * {@code StringFormat.with("{foo}={bar}", foo, bar)} is equivalent to {@code
+   * new StringFormat("{foo}={bar}").format(foo, bar)} except that it's twice faster
+   * and syntactically shorter when the format string is inlined as opposed to being
+   * stored as a constant StringFormat object.
+   *
+   * <p>Compared to equivalent {@code String.format("%s=%s", foo, bar)}, using named placeholders
+   * works better if the template strings are public constants that are used across multiple
+   * classes. The compile-time placeholder name check helps to ensure that the arguments are passed
+   * correctly.
+   *
+   * <p>Among the different formatting APIs, in the order of efficiency:
+   * <ol>
+   *   <li>{@code FORMAT.format(...).
+   *   <li>{@String.format(...)}, {@code StringFormat.with(...)}.
+   *   <li>{@code new StringFormat().format(...)}.
+   * </ol>
+   *
+   * @since 7.2
+   */
+  @TemplateFormatMethod
+  public static String with(@TemplateString String format, Object... args) {
+    Iterator<Object> argsIterator = asList(args).iterator();
+    String result =
+        PLACEHOLDERS.replaceAllFrom(
+            format,
+            placeholder -> {
+              try {
+                return String.valueOf(argsIterator.next());
+              } catch (NoSuchElementException argExpected) {
+                throw incorrectNumberOfFormatArgs(format, args.length);
+              }
+            });
+    if (argsIterator.hasNext()) {
+      throw incorrectNumberOfFormatArgs(format, args.length);
+    }
+    return result;
+  }
 
   /**
    * Returns a {@link Substring.Pattern} spanning the substring matching {@code format}. For
@@ -188,25 +251,6 @@ public final class StringFormat extends AbstractStringFormat {
   }
 
   /**
-   * Constructs a StringFormat with placeholders in the syntax of {@code "{foo}"}. For example:
-   *
-   * <pre>{@code
-   * new StringFormat("Dear {customer}, your confirmation number is {conf#}");
-   * }</pre>
-   *
-   * <p>Nesting "{placeholder}" syntax inside literal curly braces is supported. For example, you
-   * could use a format like: {@code "{name: {name}, age: {age}}"}, and it will be able to parse
-   * record-like strings such as "{name: Joe, age: 25}".
-   *
-   * @param format the template format with placeholders
-   * @throws IllegalArgumentException if {@code format} is invalid
-   *     (e.g. a placeholder immediately followed by another placeholder)
-   */
-  public StringFormat(String format) {
-    super(format, PLACEHOLDERS, "{...}");
-  }
-
-  /**
    * A view of the {@code StringFormat} that returns an instance of {@code T}, after filling the
    * format with the given variadic parameters.
    *
@@ -234,5 +278,16 @@ public final class StringFormat extends AbstractStringFormat {
      * To#with}.
      */
     T interpolate(List<String> fragments, BiStream<Substring.Match, Object> placeholders);
+  }
+
+  private static IllegalArgumentException incorrectNumberOfFormatArgs(
+      String format, int providedArgsCount) {
+    return new IllegalArgumentException(
+        PLACEHOLDERS.match(format).count()
+            + " placeholders expected in "
+            + format
+            + "; "
+            + providedArgsCount
+            + " provided.");
   }
 }

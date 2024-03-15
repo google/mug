@@ -1569,32 +1569,44 @@ public class StringFormatTest {
   @Test
   public void format_placeholdersFilled() {
     assertThat(new StringFormat("{a} + {b} = {c}").format(1, 2, 3)).isEqualTo("1 + 2 = 3");
+    assertThat(StringFormat.with("{a} + {b} = {c}", 1, 2, 3)).isEqualTo("1 + 2 = 3");
   }
 
   @Test
   public void format_ellipsisFilled() {
     assertThat(new StringFormat("{a} + {b} = {...}").format(1, 2, 3)).isEqualTo("1 + 2 = 3");
+    assertThat(StringFormat.with("{a} + {b} = {...}", 1, 2, 3)).isEqualTo("1 + 2 = 3");
   }
 
   @Test
   public void format_nullValueAllowed() {
     assertThat(new StringFormat("{key} == {value}").format("x", null)).isEqualTo("x == null");
+    assertThat(StringFormat.with("{key} == {value}", "x", null)).isEqualTo("x == null");
   }
 
   @Test
   public void format_noPlaceholder() {
     assertThat(new StringFormat("hello").format()).isEqualTo("hello");
+    assertThat(StringFormat.with("hello")).isEqualTo("hello");
+  }
+
+  @Test
+  public void format_placeholderNextToEachOther() {
+    assertThat(new StringFormat("{foo}{bar}").format(1, 2)).isEqualTo("12");
+    assertThat(StringFormat.with("{foo}{bar}", 1, 2)).isEqualTo("12");
   }
 
   @Test
   public void format_withEmptyValue() {
     assertThat(new StringFormat("{a} + {b} = {c}").format(1, 2, "")).isEqualTo("1 + 2 = ");
+    assertThat(StringFormat.with("{a} + {b} = {c}", 1, 2, "")).isEqualTo("1 + 2 = ");
   }
 
   @Test
   @SuppressWarnings("StringFormatArgsCheck")
   public void format_tooFewArgs() {
     assertThrows(IllegalArgumentException.class, () -> new StringFormat("{foo}:{bar}").format(1));
+    assertThrows(IllegalArgumentException.class, () -> StringFormat.with("{foo}:{bar}", 1));
   }
 
   @Test
@@ -1602,6 +1614,7 @@ public class StringFormatTest {
   public void format_tooManyArgs() {
     assertThrows(
         IllegalArgumentException.class, () -> new StringFormat("{foo}:{bar}").format(1, 2, 3));
+    assertThrows(IllegalArgumentException.class, () -> StringFormat.with("{foo}:{bar}", 1, 2, 3));
   }
 
   @Test
