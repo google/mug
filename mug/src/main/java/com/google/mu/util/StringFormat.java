@@ -110,7 +110,10 @@ public final class StringFormat extends AbstractStringFormat {
 
   /**
    * Returns string with the "{placeholder}"s in {@code template} filled by {@code args}, in order.
-   * Often used when the format string is a public constant, for example: <pre>{@code
+   *
+   * <p>In the not-so-distant future when string interpolation is supported, you'll unlikely need
+   * String.format() or third-party templating. But you could still need to define some
+   * public template constants to be reused among multiple classes. For example: <pre>{@code
    *   throw new ApiException(
    *       StringFormat.with(StandardErrors.ACCOUNT_LOCKED, accountId, waitTime));
    * }</pre>
