@@ -38,7 +38,7 @@ import java.lang.annotation.Target;
  * {@code @TemplateFormatMethod} methods use named placeholders instead of the printf style "%s".
  * Such methods work better when the template strings are constants shared among multiple classes.
  *
- * <p>To minimize confusion, the template parameter must be annotated with {@code TemplateString}.
+ * <p>To minimize confusion, the template parameter must be annotated with {@code @TemplateString}.
  * It's not optional.
  *
  * @since 8.0
