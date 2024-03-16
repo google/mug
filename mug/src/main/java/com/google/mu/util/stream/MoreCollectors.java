@@ -35,6 +35,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
+import com.google.mu.collect.MoreCollections;
 import com.google.mu.function.MapFrom3;
 import com.google.mu.function.MapFrom4;
 import com.google.mu.function.MapFrom5;
@@ -43,7 +44,6 @@ import com.google.mu.function.MapFrom7;
 import com.google.mu.function.MapFrom8;
 import com.google.mu.util.BiOptional;
 import com.google.mu.util.Both;
-import com.google.mu.util.MoreCollections;
 
 /**
  * Static utilities pertaining to {@link Collector} in addition to relevant utilities in JDK and Guava.
