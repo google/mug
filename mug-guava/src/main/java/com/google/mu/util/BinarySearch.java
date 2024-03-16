@@ -36,6 +36,7 @@ import com.google.common.collect.Range;
 import com.google.common.math.DoubleMath;
 import com.google.common.math.IntMath;
 import com.google.common.math.LongMath;
+import com.google.mu.annotations.RequiresGuava;
 
 /**
  * Generic binary search algorithm with support for and <b>beyond</b> sorted lists and arrays,
@@ -101,6 +102,7 @@ import com.google.common.math.LongMath;
  *
  * @since 6.4
  */
+@RequiresGuava
 public final class BinarySearch {
   /**
    * Returns a {@link Table} to search for element indexes in the given sorted {@code list}.

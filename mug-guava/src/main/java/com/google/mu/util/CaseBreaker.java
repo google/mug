@@ -30,6 +30,7 @@ import com.google.common.base.Ascii;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.CharMatcher;
 import com.google.errorprone.annotations.CheckReturnValue;
+import com.google.mu.annotations.RequiresGuava;
 
 /**
  * Utility to {@link #breakCase break} and {@link #toCase convert} input strings (normally
@@ -46,6 +47,7 @@ import com.google.errorprone.annotations.CheckReturnValue;
  * @since 6.0
  */
 @CheckReturnValue
+@RequiresGuava
 public final class CaseBreaker {
   private static final CharPredicate NUM = CharPredicate.range('0', '9');
 

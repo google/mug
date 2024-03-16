@@ -18,6 +18,7 @@ import com.google.common.base.CharMatcher;
 import com.google.common.collect.Iterables;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.errorprone.annotations.Immutable;
+import com.google.mu.annotations.RequiresGuava;
 import com.google.mu.annotations.TemplateFormatMethod;
 import com.google.mu.annotations.TemplateString;
 import com.google.mu.util.StringFormat;
@@ -39,6 +40,7 @@ import com.google.mu.util.Substring;
  *
  * @since 7.0
  */
+@RequiresGuava
 @Immutable
 public final class SafeQuery {
   private static final CharMatcher ILLEGAL_IDENTIFIER_CHARS =
