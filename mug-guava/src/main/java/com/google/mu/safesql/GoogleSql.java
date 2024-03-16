@@ -7,6 +7,8 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 import com.google.errorprone.annotations.CompileTimeConstant;
+import com.google.mu.annotations.TemplateFormatMethod;
+import com.google.mu.annotations.TemplateString;
 import com.google.mu.util.StringFormat;
 import com.google.mu.util.Substring;
 
@@ -25,6 +27,18 @@ public final class GoogleSql {
   private static final StringFormat DATE_EXPRESSION =
       new StringFormat("DATE({year}, {month}, {day})");
   private static final ZoneId GOOGLE_ZONE_ID = ZoneId.of("America/Los_Angeles");
+
+  /**
+   * Returns a GoogleSql {@link SafeQuery} using {@code queryTemplate} filled with {@code args}.
+   *
+   * @since 8.0
+   */
+  @SuppressWarnings("StringFormatArgsCheck")  // protected by @@TemplateFormatMethod
+  @TemplateFormatMethod
+  public static SafeQuery query(
+      @CompileTimeConstant @TemplateString String queryTemplate, Object... args) {
+    return template(queryTemplate).with(args);
+  }
 
 
   /**
