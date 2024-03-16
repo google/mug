@@ -225,7 +225,7 @@
           <artifactId>maven-javadoc-plugin</artifactId>
           <version>3.6.3</version>
           <configuration>
-	        <sourcepath>${project.basedir}/mug/src/main/java;${project.basedir}/mug-guava/src/main/java;${project.basedir}/mug-protobuf/src/main/java</sourcepath>
+	        <sourcepath>mug/src/main/java;mug-guava/src/main/java;mug-protobuf/src/main/java;mug-bigquery/src/main/java</sourcepath>
 	        <includeDependencySources>true</includeDependencySources>
             <additionalDependencies>
               <additionalDependency>
@@ -247,6 +247,11 @@
                 <groupId>org.checkerframework</groupId>
                 <artifactId>checker-qual</artifactId>
                 <version>3.12.0</version>
+              </additionalDependency>
+              <additionalDependency>
+                <groupId>com.google.cloud</groupId>
+                <artifactId>google-cloud-bigquery</artifactId>
+                <version>2.34.2</version>
               </additionalDependency>
             </additionalDependencies>
           </configuration>
