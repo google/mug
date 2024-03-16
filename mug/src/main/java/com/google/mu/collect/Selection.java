@@ -33,8 +33,8 @@ import com.google.mu.function.CheckedFunction;
 import com.google.mu.util.Substring;
 
 /**
- * An immutable selection of choices supporting both {@link #only limited} and {@link #all
- * unlimited} selections.
+ * An immutable selection of choices for implementing allowlists or denylists,
+ * supporting both {@link #only limited} and {@link #all unlimited} selections.
  *
  * <p>Useful when you need to disambiguate and enforce correct handling of the
  * <b>implicitly selected all</b> concept, in replacement of the common and error prone
