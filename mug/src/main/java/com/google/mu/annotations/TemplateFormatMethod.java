@@ -25,7 +25,8 @@ import java.lang.annotation.Target;
  * Annotates a method that uses a template string and fills the "{placeholder}"s in the template
  * with arguments. Such methods expect a string parameter annotated with {@code @TemplateString}.
  *
- * <p>For example in: <pre>
+ * <p>For example with:
+ * <pre>
  * {@literal @}TemplateFormatMethod
  * BillingException reportBillingError(@TemplateString String template, Object... args) {
  *   ...
