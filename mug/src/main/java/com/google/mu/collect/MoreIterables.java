@@ -22,12 +22,10 @@ import java.util.List;
 import java.util.RandomAccess;
 import java.util.function.BiPredicate;
 
-import com.google.mu.util.Optionals;
-
 /**
  * Some additional utilities pertaining to {@code Iterable}.
  *
- * @since 6.4
+ * @since 8.0
  */
 public final class MoreIterables {
   /**

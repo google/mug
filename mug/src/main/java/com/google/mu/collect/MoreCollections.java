@@ -19,7 +19,7 @@ import com.google.mu.function.MapFrom8;
 /**
  * Utilities pertaining to {@link Collection}.
  *
- * @since 5.3
+ * @since 8.0
  */
 public final class MoreCollections {
   /**

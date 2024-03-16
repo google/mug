@@ -80,7 +80,7 @@ import com.google.mu.util.Substring;
  *
  * <p>Nulls are prohibited throughout this class.
  *
- * @since 4.1
+ * @since 8.0
  */
 public interface Selection<T> {
   /** Returns an unlimited selection of all (unspecified) choices. */
