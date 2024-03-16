@@ -12,9 +12,9 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.util;
+package com.google.mu.collect;
 
-import static com.google.mu.util.InternalCollectors.toImmutableSet;
+import static com.google.mu.collect.InternalUtils.toImmutableSet;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.reducing;
@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.stream.Collector;
 
 import com.google.mu.function.CheckedFunction;
+import com.google.mu.util.Substring;
 
 /**
  * An immutable selection of choices supporting both {@link #only limited} and {@link #all

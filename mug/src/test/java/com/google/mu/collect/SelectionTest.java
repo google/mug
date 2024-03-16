@@ -12,17 +12,17 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.util;
+package com.google.mu.collect;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static com.google.mu.util.Selection.all;
-import static com.google.mu.util.Selection.nonEmptyOrAll;
-import static com.google.mu.util.Selection.none;
-import static com.google.mu.util.Selection.only;
-import static com.google.mu.util.Selection.toIntersection;
-import static com.google.mu.util.Selection.toSelection;
-import static com.google.mu.util.Selection.toUnion;
+import static com.google.mu.collect.Selection.all;
+import static com.google.mu.collect.Selection.nonEmptyOrAll;
+import static com.google.mu.collect.Selection.none;
+import static com.google.mu.collect.Selection.only;
+import static com.google.mu.collect.Selection.toIntersection;
+import static com.google.mu.collect.Selection.toSelection;
+import static com.google.mu.collect.Selection.toUnion;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -34,6 +34,8 @@ import org.junit.runners.JUnit4;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.testing.EqualsTester;
+import com.google.mu.collect.Selection;
+import com.google.mu.util.Substring;
 
 @RunWith(JUnit4.class)
 public class SelectionTest {

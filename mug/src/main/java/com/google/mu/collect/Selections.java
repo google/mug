@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.util;
+package com.google.mu.collect;
 
 import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableSet;

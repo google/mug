@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.util;
+package com.google.mu.collect;
 
 import static com.google.common.truth.Truth8.assertThat;
-import static com.google.mu.util.MoreCollections.findFirstElements;
-import static com.google.mu.util.MoreCollections.findOnlyElements;
+import static com.google.mu.collect.MoreCollections.findFirstElements;
+import static com.google.mu.collect.MoreCollections.findOnlyElements;
 import static java.util.Arrays.asList;
 
 import java.util.Collection;
@@ -28,6 +28,7 @@ import org.junit.runner.RunWith;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.testing.NullPointerTester;
+import com.google.mu.collect.MoreCollections;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 

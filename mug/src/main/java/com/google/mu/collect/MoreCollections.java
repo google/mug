@@ -1,4 +1,4 @@
-package com.google.mu.util;
+package com.google.mu.collect;
 
 import static java.util.Objects.requireNonNull;
 

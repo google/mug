@@ -1,8 +1,8 @@
-package com.google.mu.util;
+package com.google.mu.collect;
 
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.mu.util.MoreIterables.pairwise;
+import static com.google.mu.collect.MoreIterables.pairwise;
 import static java.util.Arrays.asList;
 
 import java.util.List;
@@ -12,6 +12,7 @@ import org.junit.runner.RunWith;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.testing.NullPointerTester;
+import com.google.mu.collect.MoreIterables;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
