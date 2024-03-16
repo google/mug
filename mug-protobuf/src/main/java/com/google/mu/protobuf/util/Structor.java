@@ -29,7 +29,7 @@ import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.IntStream;
 
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;

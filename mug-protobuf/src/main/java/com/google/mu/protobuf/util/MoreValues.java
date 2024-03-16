@@ -19,7 +19,7 @@ import static java.util.Arrays.stream;
 import java.util.List;
 import java.util.stream.Collector;
 
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 import com.google.common.collect.Lists;
 import com.google.common.math.DoubleMath;
