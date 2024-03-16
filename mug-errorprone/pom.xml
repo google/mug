@@ -6,7 +6,7 @@
     <version>7.3-SNAPSHOT</version>
   </parent>
   <artifactId>mug-errorprone</artifactId>
-  <name>Compile-time Plugins</name>
+  <name>Compile-time plugins</name>
   <properties>
     <maven.javadoc.skip>true</maven.javadoc.skip>
   </properties>

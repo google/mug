@@ -8,7 +8,7 @@
   </parent>
   <artifactId>mug-bigquery</artifactId>
   <packaging>jar</packaging>
-  <name>BigQuery Utils</name>
+  <name>BigQuery Client Library</name>
 
   <build>
     <pluginManagement>
