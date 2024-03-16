@@ -7,7 +7,7 @@
   </parent>
   <artifactId>mug-protobuf</artifactId>
   <packaging>jar</packaging>
-  <name>protobuf-utils</name>
+  <name>Protobuf utils</name>
   <dependencies>
     <dependency>
       <groupId>com.google.protobuf</groupId>

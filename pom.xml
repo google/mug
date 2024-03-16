@@ -6,7 +6,7 @@
   <packaging>pom</packaging>
   <version>7.1-SNAPSHOT</version>
   <name>mug-root</name>
-  <description>Extra Lambda Utilities</description>
+  <description>Google Mug Library</description>
   <url>http://github.com/google/mug</url>
 
   <distributionManagement>

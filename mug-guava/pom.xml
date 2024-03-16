@@ -8,7 +8,7 @@
   </parent>
   <artifactId>mug-guava</artifactId>
   <packaging>jar</packaging>
-  <name>mug-guava</name>
+  <name>Guava add-ons</name>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
