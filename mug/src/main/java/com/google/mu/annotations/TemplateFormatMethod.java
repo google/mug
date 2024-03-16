@@ -22,8 +22,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
- * Annotates a method that uses a template string and fills the "{placeholder}"s with
- * arguments. Such methods expect a string parameter annotated with {@code @TemplateString}.
+ * Annotates a method that uses a template string and fills the "{placeholder}"s in the template
+ * with arguments. Such methods expect a string parameter annotated with {@code @TemplateString}.
  *
  * <p>For example in: <pre>
  * {@literal @}TemplateFormatMethod
