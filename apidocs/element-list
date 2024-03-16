@@ -1,8 +1,0 @@
-com.google.mu.annotations
-com.google.mu.collect
-com.google.mu.function
-com.google.mu.time
-com.google.mu.util
-com.google.mu.util.concurrent
-com.google.mu.util.graph
-com.google.mu.util.stream
