@@ -227,6 +227,10 @@
           <configuration>
 	        <sourcepath>${project.basedir}/mug/src/main/java;${project.basedir}/mug-guava/src/main/java;${project.basedir}/mug-protobuf/src/main/java</sourcepath>
 	        <includeDependencySources>true</includeDependencySources>
+	        <dependencySourceIncludes>
+	            <dependencySourceInclude>com.google.guava:guava</dependencySourceInclude>
+	            <dependencySourceInclude>com.google.protobuf:protobuf</dependencySourceInclude>
+	        </dependencySourceIncludes>
             <stylesheetfile>javadoc-stylesheet.css</stylesheetfile>
           </configuration>
           <executions>
