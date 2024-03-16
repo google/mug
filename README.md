@@ -57,7 +57,7 @@ Add `mug-errorprone` to your annotationProcessorPaths:
   </build>
 ```
 
-Protobuf utils ([javadoc](https://google.github.io/mug/mug-protobuf/apidocs)):
+Protobuf utils ([javadoc](https://google.github.io/mug/apidocs/com/google/mu/protobuf/util/package-summary.html)):
 ```
   <dependency>
     <groupId>com.google.mug</groupId>
@@ -66,7 +66,7 @@ Protobuf utils ([javadoc](https://google.github.io/mug/mug-protobuf/apidocs)):
   </dependency>
 ```
 
-Guava add-ons (with [`SafeQuery`](https://google.github.io/mug/mug-guava/apidocs/com/google/mu/safesql/SafeQuery.html) and [`GoogleSql`](https://google.github.io/mug/mug-guava/apidocs/com/google/mu/safesql/GoogleSql.html)):
+Guava add-ons (with [`SafeQuery`](https://google.github.io/mug/apidocs/com/google/mu/safesql/SafeQuery.html) and [`GoogleSql`](https://google.github.io/mug/apidocs/com/google/mu/safesql/GoogleSql.html)):
 ```
   <dependency>
     <groupId>com.google.mug</groupId>
