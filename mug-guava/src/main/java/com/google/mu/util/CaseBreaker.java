@@ -79,17 +79,6 @@ public final class CaseBreaker {
   }
 
   /**
-   * Returns a new instance using {@code caseDelimiter} to identify case delimiter characters, for
-   * example if you want to support dash-case using the en dash (–) character.
-   *
-   * @deprecated Use {@link #withPunctuationChars} instead.
-   */
-  @Deprecated
-  public CaseBreaker withCaseDelimiterChars(CharMatcher caseDelimiter) {
-    return withPunctuationChars(caseDelimiter);
-  }
-
-  /**
    * Returns a new instance using {@code camelLower} to identify lower case characters (don't forget
    * to include digits if they should also be treated as lower case).
    */

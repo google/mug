@@ -53,12 +53,6 @@ public abstract class BiOptional<A, B> {
     return new Present<>(requireNonNull(a), requireNonNull(b));
   }
 
-  /** @deprecated Use {@link Optionals#both} instead. */
-  @Deprecated
-  public static <A, B> BiOptional<A, B> both(Optional<A> a, Optional<B> b) {
-    return Optionals.both(a, b);
-  }
-
   /**
    * If {@code optional} is present with value {@code v}, adapts it to {@code BiOptional} containing
    * values {@code (v, v)}.
