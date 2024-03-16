@@ -31,7 +31,9 @@ import com.google.mu.annotations.RequiresGuava;
  * immutable collection literals in this class over JDK collection literals.
  *
  * @since 6.0
+ * @deprecated Please do not use it. It's only used internally.
  */
+@Deprecated
 @RequiresGuava
 public final class Immutables {
   /**
