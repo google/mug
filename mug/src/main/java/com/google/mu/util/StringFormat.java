@@ -1,3 +1,17 @@
+/*****************************************************************************
+ * ------------------------------------------------------------------------- *
+ * Licensed under the Apache License, Version 2.0 (the "License");           *
+ * you may not use this file except in compliance with the License.          *
+ * You may obtain a copy of the License at                                   *
+ *                                                                           *
+ * http://www.apache.org/licenses/LICENSE-2.0                                *
+ *                                                                           *
+ * Unless required by applicable law or agreed to in writing, software       *
+ * distributed under the License is distributed on an "AS IS" BASIS,         *
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+ * See the License for the specific language governing permissions and       *
+ * limitations under the License.                                            *
+ *****************************************************************************/
 package com.google.mu.util;
 
 import static com.google.mu.util.InternalCollectors.toImmutableList;
@@ -95,6 +109,7 @@ public final class StringFormat extends AbstractStringFormat {
   }
 
   /**
+   * Returns string with the "{placeholder}s" in {@code template} filled by {@code args}, in order.
    * Often used when the format string is a public constant, for example: <pre>{@code
    *   throw new ApiException(
    *       StringFormat.with(StandardErrors.ACCOUNT_LOCKED, accountId, waitTime));
@@ -112,7 +127,7 @@ public final class StringFormat extends AbstractStringFormat {
    *
    * <p>Among the different formatting APIs, in the order of efficiency:
    * <ol>
-   *   <li>{@code FORMAT.format(...).
+   *   <li>{@code FORMAT.format(...)}.
    *   <li>{@String.format(...)}, {@code StringFormat.with(...)}.
    *   <li>{@code new StringFormat().format(...)}.
    * </ol>
@@ -120,20 +135,20 @@ public final class StringFormat extends AbstractStringFormat {
    * @since 7.2
    */
   @TemplateFormatMethod
-  public static String with(@TemplateString String format, Object... args) {
+  public static String with(@TemplateString String template, Object... args) {
     Iterator<Object> argsIterator = asList(args).iterator();
     String result =
         PLACEHOLDERS.replaceAllFrom(
-            format,
+            template,
             placeholder -> {
               try {
                 return String.valueOf(argsIterator.next());
               } catch (NoSuchElementException argExpected) {
-                throw incorrectNumberOfFormatArgs(format, args.length);
+                throw incorrectNumberOfFormatArgs(template, args.length);
               }
             });
     if (argsIterator.hasNext()) {
-      throw incorrectNumberOfFormatArgs(format, args.length);
+      throw incorrectNumberOfFormatArgs(template, args.length);
     }
     return result;
   }
