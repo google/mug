@@ -54,7 +54,7 @@ public final class SafeQuery {
     this.query = query;
   }
 
-  /** Returns a query using a string constant. */
+  /** Returns a query using a constant query template filled with {@code args}. */
   @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
   @TemplateFormatMethod
   public static SafeQuery of(@CompileTimeConstant @TemplateString String query, Object... args) {
