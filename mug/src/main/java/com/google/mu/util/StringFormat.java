@@ -127,9 +127,10 @@ public final class StringFormat extends AbstractStringFormat {
    *
    * <p>Among the different formatting APIs, in the order of efficiency:
    * <ol>
-   *   <li>{@code FORMAT.format(...)}.
-   *   <li>{@String.format(...)}, {@code StringFormat.with(...)}.
-   *   <li>{@code new StringFormat().format(...)}.
+   *   <li>{@code FORMAT_CONSTANT.format(...)}.
+   *   <li>{@code StringFormat.with(...)} and {@code String.format(...)} in Java 21.
+   *   <li>{@code new StringFormat("{foo}={bar}").format(...)}.
+   *   <li>{@code String.format(...)} in Java 8
    * </ol>
    *
    * @since 7.2
