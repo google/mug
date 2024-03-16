@@ -24,6 +24,7 @@ import java.util.Map;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.mu.annotations.RequiresProtobuf;
 import com.google.mu.util.stream.BiStream;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.Struct;
@@ -37,6 +38,7 @@ import com.google.protobuf.Value;
  *
  * @since 5.8
  */
+@RequiresProtobuf
 public final class StructBuilder {
   private final LinkedHashMap<String, Value> fields = new LinkedHashMap<>();
 

@@ -47,6 +47,7 @@ import com.google.common.collect.Multimaps;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Tables;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.mu.annotations.RequiresGuava;
 import com.google.mu.util.Both;
 
 /**
@@ -54,6 +55,7 @@ import com.google.mu.util.Both;
  *
  * @since 4.7
  */
+@RequiresGuava
 public final class GuavaCollectors {
   /**
    * Returns a {@link BiCollector} that collects the key-value pairs into an {@link ImmutableMap}.

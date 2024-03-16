@@ -10,6 +10,7 @@ import com.google.common.collect.ImmutableMultiset;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.ImmutableTable;
+import com.google.mu.annotations.RequiresGuava;
 
 /**
  * Convenient factory methods of common immutable Guava data types that are concise yet
@@ -31,6 +32,7 @@ import com.google.common.collect.ImmutableTable;
  *
  * @since 6.0
  */
+@RequiresGuava
 public final class Immutables {
   /**
    * Returns the empty immutable list. This list behaves and performs comparably to {@link
