@@ -4,6 +4,7 @@ java_library(
     srcs = glob([
         "src/main/java/com/google/mu/annotations/*.java",
     ]),
+    exported_plugins = ["//mug-errorprone:plugin"],
 )
 
 java_library(
