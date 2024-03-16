@@ -95,8 +95,13 @@ public final class StringFormat extends AbstractStringFormat {
   }
 
   /**
-   * {@code StringFormat.with("{foo}={bar}", foo, bar)} is equivalent to {@code
-   * new StringFormat("{foo}={bar}").format(foo, bar)} except that it's twice faster
+   * Often used when the format string is a public constant, for example: <pre>{@code
+   *   throw new ApiException(
+   *       StringFormat.with(StandardErrors.ACCOUNT_LOCKED, accountId, waitTime));
+   * }</pre>
+   *
+   * <p>{@code StringFormat.with("{foo}={bar}", foo, bar)} is equivalent to {@code
+   * new StringFormat("{foo}={bar}").format(foo, bar)} except that it's twice as fast
    * and syntactically shorter when the format string is inlined as opposed to being
    * stored as a constant StringFormat object.
    *
