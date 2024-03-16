@@ -1,7 +1,9 @@
 com.google.mu.collect
 com.google.mu.collect
-com.google.mu.util
-com.google.mu.util
+com.google.mu.collect
+com.google.mu.collect
+com.google.mu.collect
+com.google.mu.collect
 com.google.mu.util
 com.google.mu.util
 com.google.mu.util
@@ -34,8 +36,6 @@ com.google.mu.util.concurrent
 com.google.mu.util.concurrent
 com.google.mu.util.concurrent
 com.google.mu.util.concurrent
-com.google.mu.util
-com.google.mu.util
 com.google.mu.util
 com.google.mu.util
 com.google.mu.util
