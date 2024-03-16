@@ -120,7 +120,7 @@ public final class PrefixSearchTable<K, V> {
      * Adds the mapping from {@code compoundKey} to {@code value}.
      *
      * @return this builder
-     * @throws IllegalArgument if {@code compoundKey} is empty, or it has already been mapped to a
+     * @throws IllegalArgumentException if {@code compoundKey} is empty, or it has already been mapped to a
      *     value that's not equal to {@code value}.
      * @throws NullPointerException if {@code compoundKey} is null, any of the key element is null
      *     or {@code value} is null
