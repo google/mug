@@ -1,13 +1,14 @@
+ANNOTATIONS_SRC = glob(["src/main/java/com/google/mu/annotations/*.java"])
 SAFE_SQL_SRCS = glob(["src/main/java/com/google/mu/safesql/*.java"])
 
 java_library(
     name = "annotations",
-    srcs = glob(["src/main/java/com/google/mu/annotations/*.java"]),
+    srcs = ANNOTATIONS_SRC,
 )
 
 java_library(
     name = "mug-guava",
-    srcs = glob(["src/main/java/**/*.java"], exclude = SAFE_SQL_SRCS),
+    srcs = glob(["src/main/java/**/*.java"], exclude = ANNOTATIONS_SRC + SAFE_SQL_SRCS),
     visibility = ["//visibility:public"],
     deps = [
         ":annotations",
