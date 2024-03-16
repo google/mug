@@ -109,7 +109,7 @@ public final class StringFormat extends AbstractStringFormat {
   }
 
   /**
-   * Returns string with the "{placeholder}s" in {@code template} filled by {@code args}, in order.
+   * Returns string with the "{placeholder}"s in {@code template} filled by {@code args}, in order.
    * Often used when the format string is a public constant, for example: <pre>{@code
    *   throw new ApiException(
    *       StringFormat.with(StandardErrors.ACCOUNT_LOCKED, accountId, waitTime));
