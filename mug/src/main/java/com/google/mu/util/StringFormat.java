@@ -133,7 +133,7 @@ public final class StringFormat extends AbstractStringFormat {
    *   <li>{@code String.format(...)} in Java 8
    * </ol>
    *
-   * @since 7.2
+   * @since 8.0
    */
   @TemplateFormatMethod
   public static String with(@TemplateString String template, Object... args) {

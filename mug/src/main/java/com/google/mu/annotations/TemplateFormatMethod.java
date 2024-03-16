@@ -26,20 +26,22 @@ import java.lang.annotation.Target;
  * that's annotated with {@code @TemplateString}.
  *
  * <p>For example in: <pre>{@code
- * @TemplateFormatMethod
- * BillingException reportBillingError(@TemplateString String template, Object... args) {...}
+ * &#064;TemplateFormatMethod
+ * BillingException reportBillingError(&#064;TemplateString String template, Object... args) {
+ *   ...
+ * }
  * }</pre>
  *
- * The method can be called like {@code reportBillingError("missing {field}", fieldName)}.
+ * The method can be called like {@code reportBillingError("id: {id}", id)}.
  *
- * <p>Similar to but different from ErrorProne's {@code @FormatMethod}, {@code
- * @TemplateFormatMethod} methods use named placeholders instead of the printf style "%s".
+ * <p>Similar to but different from ErrorProne's {@code &#064;FormatMethod}, {@code
+ * &#064;TemplateFormatMethod} methods use named placeholders instead of the printf style "%s".
  * Such methods work better when the template strings are constants shared among multiple classes.
  *
  * <p>To minimize confusion, the template parameter must be annotated with {@code TemplateString}.
  * It's not optional.
  *
- * @since 7.2
+ * @since 8.0
  */
 @Documented
 @Retention(CLASS)
