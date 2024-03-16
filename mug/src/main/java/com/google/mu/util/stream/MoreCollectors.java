@@ -239,7 +239,7 @@ public final class MoreCollectors {
     requireNonNull(mapper);
     return new ShortListCollector<T, R>() {
       @Override R reduce(List<? extends T> list) {
-        return mapper.apply(list.get(0), list.get(1), list.get(2));
+        return mapper.map(list.get(0), list.get(1), list.get(2));
       }
       @Override int arity() {
         return 3;
@@ -263,7 +263,7 @@ public final class MoreCollectors {
     requireNonNull(mapper);
     return new ShortListCollector<T, R>() {
       @Override R reduce(List<? extends T> list) {
-        return mapper.apply(list.get(0), list.get(1), list.get(2), list.get(3));
+        return mapper.map(list.get(0), list.get(1), list.get(2), list.get(3));
       }
       @Override int arity() {
         return 4;
@@ -287,7 +287,7 @@ public final class MoreCollectors {
     requireNonNull(mapper);
     return new ShortListCollector<T, R>() {
       @Override R reduce(List<? extends T> list) {
-        return mapper.apply(list.get(0), list.get(1), list.get(2), list.get(3), list.get(4));
+        return mapper.map(list.get(0), list.get(1), list.get(2), list.get(3), list.get(4));
       }
       @Override int arity() {
         return 5;
@@ -311,7 +311,7 @@ public final class MoreCollectors {
     requireNonNull(mapper);
     return new ShortListCollector<T, R>() {
       @Override R reduce(List<? extends T> list) {
-        return mapper.apply(
+        return mapper.map(
             list.get(0), list.get(1), list.get(2), list.get(3), list.get(4), list.get(5));
       }
       @Override int arity() {
@@ -337,7 +337,7 @@ public final class MoreCollectors {
     return new ShortListCollector<T, R>() {
       @Override
       R reduce(List<? extends T> list) {
-        return mapper.apply(
+        return mapper.map(
             list.get(0),
             list.get(1),
             list.get(2),
@@ -371,7 +371,7 @@ public final class MoreCollectors {
     return new ShortListCollector<T, R>() {
       @Override
       R reduce(List<? extends T> list) {
-        return mapper.apply(
+        return mapper.map(
             list.get(0),
             list.get(1),
             list.get(2),

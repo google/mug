@@ -648,6 +648,12 @@ public final class SafeQueryTest {
     assertThat(query.toString()).isEqualTo("`\\u02BB" + " OR TRUE OR \\u02BC\\u02BC=\\u02BC`");
   }
 
+  @Test
+  public void of_withArgs() {
+    SafeQuery query = SafeQuery.of("`{tbl}`", "ʻ OR TRUE OR ʼʼ=ʼ");
+    assertThat(query.toString()).isEqualTo("`\\u02BB" + " OR TRUE OR \\u02BC\\u02BC=\\u02BC`");
+  }
+
   static final class TrustedSql {
     private final String sql;
 

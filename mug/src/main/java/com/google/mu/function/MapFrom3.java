@@ -17,5 +17,5 @@ package com.google.mu.function;
 /** A 3-arg function of the signature of {@code (T, T, T) -> R}. */
 @FunctionalInterface
 public interface MapFrom3<T, R> {
-  R apply(T a, T b, T c);
+  R map(T a, T b, T c);
 }

@@ -56,10 +56,10 @@ public final class MoreCollections {
     if (collection.size() < 3) return Optional.empty();
     if (collection instanceof List && collection instanceof RandomAccess) {
       List<T> list = (List<T>) collection;
-      return Optional.of(found.apply(list.get(0), list.get(1), list.get(2)));
+      return Optional.of(found.map(list.get(0), list.get(1), list.get(2)));
     }
     Iterator<T> it = collection.iterator();
-    return Optional.of(found.apply(it.next(), it.next(), it.next()));
+    return Optional.of(found.map(it.next(), it.next(), it.next()));
   }
 
   /**
@@ -76,10 +76,10 @@ public final class MoreCollections {
     if (collection.size() < 4) return Optional.empty();
     if (collection instanceof List && collection instanceof RandomAccess) {
       List<T> list = (List<T>) collection;
-      return Optional.of(found.apply(list.get(0), list.get(1), list.get(2), list.get(3)));
+      return Optional.of(found.map(list.get(0), list.get(1), list.get(2), list.get(3)));
     }
     Iterator<T> it = collection.iterator();
-    return Optional.of(found.apply(it.next(), it.next(), it.next(), it.next()));
+    return Optional.of(found.map(it.next(), it.next(), it.next(), it.next()));
   }
 
   /**
@@ -96,10 +96,10 @@ public final class MoreCollections {
     if (collection.size() < 5) return Optional.empty();
     if (collection instanceof List && collection instanceof RandomAccess) {
       List<T> list = (List<T>) collection;
-      return Optional.of(found.apply(list.get(0), list.get(1), list.get(2), list.get(3), list.get(4)));
+      return Optional.of(found.map(list.get(0), list.get(1), list.get(2), list.get(3), list.get(4)));
     }
     Iterator<T> it = collection.iterator();
-    return Optional.of(found.apply(it.next(), it.next(), it.next(), it.next(), it.next()));
+    return Optional.of(found.map(it.next(), it.next(), it.next(), it.next(), it.next()));
   }
 
   /**
@@ -116,10 +116,10 @@ public final class MoreCollections {
     if (collection.size() < 6) return Optional.empty();
     if (collection instanceof List && collection instanceof RandomAccess) {
       List<T> list = (List<T>) collection;
-      return Optional.of(found.apply(list.get(0), list.get(1), list.get(2), list.get(3), list.get(4), list.get(5)));
+      return Optional.of(found.map(list.get(0), list.get(1), list.get(2), list.get(3), list.get(4), list.get(5)));
     }
     Iterator<T> it = collection.iterator();
-    return Optional.of(found.apply(it.next(), it.next(), it.next(), it.next(), it.next(), it.next()));
+    return Optional.of(found.map(it.next(), it.next(), it.next(), it.next(), it.next(), it.next()));
   }
 
   /**
@@ -138,7 +138,7 @@ public final class MoreCollections {
     if (collection instanceof List && collection instanceof RandomAccess) {
       List<T> list = (List<T>) collection;
       return Optional.of(
-          found.apply(
+          found.map(
               list.get(0),
               list.get(1),
               list.get(2),
@@ -149,7 +149,7 @@ public final class MoreCollections {
     }
     Iterator<T> it = collection.iterator();
     return Optional.of(
-        found.apply(it.next(), it.next(), it.next(), it.next(), it.next(), it.next(), it.next()));
+        found.map(it.next(), it.next(), it.next(), it.next(), it.next(), it.next(), it.next()));
   }
 
   /**
@@ -168,7 +168,7 @@ public final class MoreCollections {
     if (collection instanceof List && collection instanceof RandomAccess) {
       List<T> list = (List<T>) collection;
       return Optional.of(
-          found.apply(
+          found.map(
               list.get(0),
               list.get(1),
               list.get(2),
@@ -180,7 +180,7 @@ public final class MoreCollections {
     }
     Iterator<T> it = collection.iterator();
     return Optional.of(
-        found.apply(
+        found.map(
             it.next(), it.next(), it.next(), it.next(), it.next(), it.next(), it.next(),
             it.next()));
   }
@@ -219,10 +219,10 @@ public final class MoreCollections {
     if (collection.size() != 3) return Optional.empty();
     if (collection instanceof List && collection instanceof RandomAccess) {
       List<T> list = (List<T>) collection;
-      return Optional.of(found.apply(list.get(0), list.get(1), list.get(2)));
+      return Optional.of(found.map(list.get(0), list.get(1), list.get(2)));
     }
     Iterator<T> it = collection.iterator();
-    return Optional.of(found.apply(it.next(), it.next(), it.next()));
+    return Optional.of(found.map(it.next(), it.next(), it.next()));
   }
 
   /**
@@ -239,10 +239,10 @@ public final class MoreCollections {
     if (collection.size() != 4) return Optional.empty();
     if (collection instanceof List && collection instanceof RandomAccess) {
       List<T> list = (List<T>) collection;
-      return Optional.of(found.apply(list.get(0), list.get(1), list.get(2), list.get(3)));
+      return Optional.of(found.map(list.get(0), list.get(1), list.get(2), list.get(3)));
     }
     Iterator<T> it = collection.iterator();
-    return Optional.of(found.apply(it.next(), it.next(), it.next(), it.next()));
+    return Optional.of(found.map(it.next(), it.next(), it.next(), it.next()));
   }
 
   /**
@@ -259,10 +259,10 @@ public final class MoreCollections {
     if (collection.size() != 5) return Optional.empty();
     if (collection instanceof List && collection instanceof RandomAccess) {
       List<T> list = (List<T>) collection;
-      return Optional.of(found.apply(list.get(0), list.get(1), list.get(2), list.get(3), list.get(4)));
+      return Optional.of(found.map(list.get(0), list.get(1), list.get(2), list.get(3), list.get(4)));
     }
     Iterator<T> it = collection.iterator();
-    return Optional.of(found.apply(it.next(), it.next(), it.next(), it.next(), it.next()));
+    return Optional.of(found.map(it.next(), it.next(), it.next(), it.next(), it.next()));
   }
 
   /**
@@ -279,10 +279,10 @@ public final class MoreCollections {
     if (collection.size() != 6) return Optional.empty();
     if (collection instanceof List && collection instanceof RandomAccess) {
       List<T> list = (List<T>) collection;
-      return Optional.of(found.apply(list.get(0), list.get(1), list.get(2), list.get(3), list.get(4), list.get(5)));
+      return Optional.of(found.map(list.get(0), list.get(1), list.get(2), list.get(3), list.get(4), list.get(5)));
     }
     Iterator<T> it = collection.iterator();
-    return Optional.of(found.apply(it.next(), it.next(), it.next(), it.next(), it.next(), it.next()));
+    return Optional.of(found.map(it.next(), it.next(), it.next(), it.next(), it.next(), it.next()));
   }
 
   /**
@@ -301,7 +301,7 @@ public final class MoreCollections {
     if (collection instanceof List && collection instanceof RandomAccess) {
       List<T> list = (List<T>) collection;
       return Optional.of(
-          found.apply(
+          found.map(
               list.get(0),
               list.get(1),
               list.get(2),
@@ -312,7 +312,7 @@ public final class MoreCollections {
     }
     Iterator<T> it = collection.iterator();
     return Optional.of(
-        found.apply(it.next(), it.next(), it.next(), it.next(), it.next(), it.next(), it.next()));
+        found.map(it.next(), it.next(), it.next(), it.next(), it.next(), it.next(), it.next()));
   }
 
   /**
@@ -331,7 +331,7 @@ public final class MoreCollections {
     if (collection instanceof List && collection instanceof RandomAccess) {
       List<T> list = (List<T>) collection;
       return Optional.of(
-          found.apply(
+          found.map(
               list.get(0),
               list.get(1),
               list.get(2),
@@ -343,7 +343,7 @@ public final class MoreCollections {
     }
     Iterator<T> it = collection.iterator();
     return Optional.of(
-        found.apply(
+        found.map(
             it.next(), it.next(), it.next(), it.next(), it.next(), it.next(), it.next(),
             it.next()));
   }

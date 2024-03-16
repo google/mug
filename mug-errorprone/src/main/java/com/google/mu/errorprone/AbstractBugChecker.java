@@ -10,6 +10,7 @@ import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.matchers.Description;
 import com.sun.source.tree.MemberReferenceTree;
 import com.sun.source.tree.MethodInvocationTree;
+import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.NewClassTree;
 import com.sun.source.tree.Tree;
 
@@ -64,6 +65,20 @@ abstract class AbstractBugChecker extends BugChecker {
     }
 
     void checkMethodInvocation(MethodInvocationTree tree, VisitorState state) throws ErrorReport;
+  }
+
+  /**
+   * Mixin interface for checkers that check method invocations. Subclasses can implement the {@link
+   * #checkMethodInvocation} and throw {@code ErrorReport} to indicate failures.
+   */
+  interface MethodCheck extends MethodTreeMatcher {
+    /** DO NOT override this method. Implement {@link #checkMethod} instead. */
+    @Override
+    public default Description matchMethod(MethodTree tree, VisitorState state) {
+      return ErrorReport.checkAndReportError(tree, state, this::checkMethod);
+    }
+
+    void checkMethod(MethodTree tree, VisitorState state) throws ErrorReport;
   }
 
   /** Starts checking on {@code node}. Errors will be reported as pertaining to this node. */

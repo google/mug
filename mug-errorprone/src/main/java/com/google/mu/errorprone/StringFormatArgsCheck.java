@@ -3,8 +3,10 @@ package com.google.mu.errorprone;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.errorprone.BugPattern.SeverityLevel.ERROR;
 import static com.google.errorprone.matchers.Matchers.anyMethod;
+import static com.google.errorprone.matchers.Matchers.staticMethod;
 import static com.google.mu.util.stream.BiCollectors.groupingBy;
 import static com.google.mu.util.stream.GuavaCollectors.toImmutableListMultimap;
+import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static java.util.stream.Collectors.joining;
 
 import java.util.List;
@@ -23,6 +25,7 @@ import com.google.mu.util.Substring;
 import com.google.mu.util.stream.BiCollectors;
 import com.google.mu.util.stream.BiStream;
 import com.google.mu.util.stream.GuavaCollectors;
+import com.google.mu.util.stream.MoreStreams;
 import com.google.mu.util.CaseBreaker;
 import com.google.errorprone.BugPattern;
 import com.google.errorprone.BugPattern.LinkType;
@@ -36,6 +39,7 @@ import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MemberReferenceTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.Tree;
+import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.tree.JCTree.JCLiteral;
@@ -73,6 +77,14 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
       Matchers.anyOf(
           anyMethod().onDescendantOf("com.google.mu.util.StringFormat"),
           anyMethod().onDescendantOf("com.google.mu.util.StringFormat.To"));
+      //staticMethod().onClass("com.google.mu.util.StringFormat").named("with");
+  private static final String FORMAT_STRING_NOT_FOUND =
+      "Compile-time format string expected but definition not found. As a result, the"
+          + " format arguments cannot be validated at compile-time.\n"
+          + "If your format string is dynamically loaded or dynamically computed, and you"
+          + " opt to use the API despite the risk of not having comile-time guarantee,"
+          + " consider suppressing the error with"
+          + " @SuppressWarnings(\"StringFormatArgsCheck\").";
   private static final ImmutableSet<TypeName> FORMATTER_TYPES =
       ImmutableSet.of(
           new TypeName("com.google.mu.util.StringFormat"),
@@ -102,6 +114,8 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
   @Override
   public void checkMemberReference(MemberReferenceTree tree, VisitorState state)
       throws ErrorReport {
+    checkingOn(tree)
+        .require(!isTemplateFormatMethod(ASTHelpers.getSymbol(tree), state), FORMAT_STRING_NOT_FOUND);
     ExpressionTree receiver = tree.getQualifierExpression();
     Type receiverType = ASTHelpers.getType(receiver);
     if (FORMATTER_TYPES.stream().anyMatch(t -> t.isSameType(receiverType, state))) {
@@ -111,15 +125,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
           || memberName.equals("with")
           || memberName.equals("lenientFormat")) {
         String formatString = FormatStringUtils.findFormatString(receiver, state).orElse(null);
-        checkingOn(receiver)
-            .require(
-                formatString != null,
-                "Compile-time format string expected but definition not found. As a result, the"
-                    + " format arguments cannot be validated at compile-time.\n"
-                    + "If your format string is dynamically loaded or dynamically computed, and you"
-                    + " opt to use the API despite the risk of not having comile-time guarantee,"
-                    + " consider suppressing the error with"
-                    + " @SuppressWarnings(\"LabsStringFormatArgsCheck\").");
+        checkingOn(receiver).require(formatString != null, FORMAT_STRING_NOT_FOUND);
         Integer cardinality =
             BiStream.from(FUNCTION_CARDINALITIES)
                 .filterKeys(mapperType -> mapperType.isSameType(referenceType, state))
@@ -149,52 +155,81 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
   @Override
   public void checkMethodInvocation(MethodInvocationTree tree, VisitorState state)
       throws ErrorReport {
-    if (!MATCHER.matches(tree, state)) {
-      return;
+    MethodSymbol method = ASTHelpers.getSymbol(tree);
+    if (isTemplateFormatMethod(method, state)) {
+      int templateStringIndex = BiStream.zip(indexesFrom(0), method.getParameters().stream())
+          .filterValues(param -> ASTHelpers.hasAnnotation(
+              param, "com.google.mu.annotations.TemplateString", state))
+          .keys()
+          .findFirst()
+          .orElse(0);
+      ExpressionTree formatExpression =
+          ASTHelpers.stripParentheses(tree.getArguments().get(templateStringIndex));
+      String formatString = ASTHelpers.constValue(formatExpression, String.class);
+      checkingOn(tree).require(formatString != null, FORMAT_STRING_NOT_FOUND);
+      checkFormatArgs(
+          tree,
+          FormatStringUtils.placeholderVariableNames(formatString),
+          tree,
+          skip(tree.getArguments(), templateStringIndex + 1),
+          skip(argsAsTexts(tree, state), templateStringIndex + 1),
+          /* formatStringIsInlined= */ formatExpression instanceof JCLiteral,
+          state);
+    } else if (MATCHER.matches(tree, state)) {
+      MethodSymbol symbol = ASTHelpers.getSymbol(tree);
+      if (!symbol.isVarArgs() || symbol.getParameters().size() != 1) {
+        return;
+      }
+      ExpressionTree formatter = ASTHelpers.getReceiver(tree);
+      String formatString = FormatStringUtils.findFormatString(formatter, state).orElse(null);
+      checkingOn(formatter).require(formatString != null, FORMAT_STRING_NOT_FOUND);
+      // For inline format strings, the args and the placeholders are close to each other.
+      // With <= 3 args, we can give the author some leeway and don't ask for silly comments like:
+      // new StringFormat("{key}:{value}").format(/* key */ "one", /* value */ 1);
+      boolean formatStringIsInlined =
+          FormatStringUtils.getInlineStringArg(formatter, state).orElse(null) instanceof JCLiteral;
+      checkFormatArgs(
+          formatter,
+          FormatStringUtils.placeholderVariableNames(formatString),
+          tree,
+          tree.getArguments(),
+          argsAsTexts(tree, state),
+          formatStringIsInlined,
+          state);
     }
-    MethodSymbol symbol = ASTHelpers.getSymbol(tree);
-    if (!symbol.isVarArgs() || symbol.getParameters().size() != 1) {
-      return;
-    }
-    checkArgsFormattability(tree, state);
-    ExpressionTree formatter = ASTHelpers.getReceiver(tree);
-    String formatString = FormatStringUtils.findFormatString(formatter, state).orElse(null);
-    checkingOn(formatter)
+  }
+
+  private void checkFormatArgs(
+      ExpressionTree definition,
+      List<String> placeholderVariableNames,
+      MethodInvocationTree invocation,
+      List<? extends ExpressionTree> args,
+      List<String> argSources,
+      boolean formatStringIsInlined,
+      VisitorState state)
+      throws ErrorReport {
+    checkingOn(invocation)
         .require(
-            formatString != null,
-            "Compile-time format string expected but definition not found. As a result, the"
-                + " format arguments cannot be validated at compile-time.\n"
-                + "If your format string is dynamically loaded or dynamically computed, and you"
-                + " opt to use the API despite the risk of not having comile-time guarantee,"
-                + " consider suppressing the error with"
-                + " @SuppressWarnings(\"LabsStringFormatArgsCheck\").");
-    ImmutableList<String> placeholderVariableNames =
-        FormatStringUtils.placeholderVariableNames(formatString);
-    checkingOn(tree)
-        .require(
-            placeholderVariableNames.size() == tree.getArguments().size(),
+            placeholderVariableNames.size() == args.size(),
             "%s placeholders defined by: %s; %s provided by %s",
             placeholderVariableNames.size(),
-            formatter,
-            tree.getArguments().size(),
-            tree);
-    ImmutableList<String> args = argsAsTexts(tree, state);
+            definition,
+            args.size(),
+            invocation);
     if (args.size() != placeholderVariableNames.size()) {
       return; // This shouldn't happen. But if it did, we don't want to fail compilation.
     }
-    // For inline format strings, the args and the placeholders are close to each other.
-    // With <= 3 args, we can give the author some leeway and don't ask for silly comments like:
-    // new StringFormat("{key}:{value}").format(/* key */ "one", /* value */ 1);
-    boolean formatStringIsInlined =
-        FormatStringUtils.getInlineStringArg(formatter, state).orElse(null) instanceof JCLiteral;
+    for (ExpressionTree arg : args) {
+      checkArgFormattability(arg, state);
+    }
     ImmutableList<String> normalizedArgTexts =
-        args.stream().map(txt -> normalizeForComparison(txt)).collect(toImmutableList());
+        argSources.stream().map(txt -> normalizeForComparison(txt)).collect(toImmutableList());
     for (int i = 0; i < placeholderVariableNames.size(); i++) {
       String placeholderName = placeholderVariableNames.get(i);
       String normalizedPlacehoderName = normalizeForComparison(placeholderName);
+      ExpressionTree arg = args.get(i);
       if (!normalizedArgTexts.get(i).contains(normalizedPlacehoderName)) {
         // arg doesn't match placeholder
-        ExpressionTree arg = tree.getArguments().get(i);
         boolean trust =
             formatStringIsInlined
                 && args.size() <= 3
@@ -202,18 +237,18 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
                 && (args.size() <= 1
                     || normalizedArgTexts.stream() // out-of-order is suspicious
                         .noneMatch(txt -> txt.contains(normalizedPlacehoderName)));
-        checkingOn(tree)
+        checkingOn(invocation)
             .require(
-                trust && !ARG_COMMENT.in(args.get(i)).isPresent(),
+                trust && ARG_COMMENT.in(argSources.get(i)).isEmpty(),
                 "String format placeholder {%s} as defined in %s should appear in the format"
                     + " argument: %s. Or you could add a comment like /* %s */.",
                 placeholderVariableNames.get(i),
-                formatter,
+                definition,
                 arg,
                 placeholderName);
       }
     }
-    checkDuplicatePlaceholderNames(placeholderVariableNames, tree.getArguments(), state);
+    checkDuplicatePlaceholderNames(placeholderVariableNames, args, state);
   }
 
   private void checkDuplicatePlaceholderNames(
@@ -273,19 +308,20 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
     return builder.build();
   }
 
-  private void checkArgsFormattability(MethodInvocationTree tree, VisitorState state)
-      throws ErrorReport {
-    for (ExpressionTree arg : tree.getArguments()) {
-      Type type = ASTHelpers.getType(arg);
-      checkingOn(arg)
-          .require(
-              type.getKind() != TypeKind.ARRAY,
-              "arrays shouldn't be used as string format argument")
-          .require(
-              BAD_FORMAT_ARG_TYPES.stream().noneMatch(bad -> bad.isSameType(type, state)),
-              "%s shouldn't be used as string format argument",
-              type);
-    }
+  private void checkArgFormattability(ExpressionTree arg, VisitorState state) throws ErrorReport {
+    Type type = ASTHelpers.getType(arg);
+    checkingOn(arg)
+        .require(
+            type.getKind() != TypeKind.ARRAY, "arrays shouldn't be used as string format argument")
+        .require(
+            BAD_FORMAT_ARG_TYPES.stream().noneMatch(bad -> bad.isSameType(type, state)),
+            "%s shouldn't be used as string format argument",
+            type);
+  }
+
+  private static boolean isTemplateFormatMethod(Symbol method, VisitorState state) {
+    return ASTHelpers.hasAnnotation(
+        method, "com.google.mu.annotations.TemplateFormatMethod", state);
   }
 
   /**
@@ -307,5 +343,9 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
               .collect(toImmutableList());
     }
     return list;
+  }
+
+  private static <T> List<T> skip(List<T> list, int n) {
+    return n > list.size() ? ImmutableList.of() : list.subList(n, list.size());
   }
 }

@@ -27,6 +27,8 @@ import com.google.cloud.bigquery.TableResult;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.errorprone.annotations.Immutable;
+import com.google.mu.annotations.TemplateFormatMethod;
+import com.google.mu.annotations.TemplateString;
 import com.google.mu.util.StringFormat;
 import com.google.mu.util.stream.BiStream;
 
@@ -113,8 +115,10 @@ public final class ParameterizedQuery {
    * TableResult result = ParameterizedQuery.of("select * from JOBS where id = {id}", jobId).run();
    * }</pre>
    */
-  @SuppressWarnings("StringFormatArgsCheck") // Called immediately, runtime error is good enough.
-  public static ParameterizedQuery of(@CompileTimeConstant String query, Object... args) {
+  @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
+  @TemplateFormatMethod
+  public static ParameterizedQuery of(
+      @CompileTimeConstant @TemplateString String query, Object... args) {
     return template(query).with(args);
   }
 

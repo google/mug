@@ -18,6 +18,8 @@ import com.google.common.base.CharMatcher;
 import com.google.common.collect.Iterables;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.errorprone.annotations.Immutable;
+import com.google.mu.annotations.TemplateFormatMethod;
+import com.google.mu.annotations.TemplateString;
 import com.google.mu.util.StringFormat;
 import com.google.mu.util.Substring;
 
@@ -53,8 +55,10 @@ public final class SafeQuery {
   }
 
   /** Returns a query using a string constant. */
-  public static SafeQuery of(@CompileTimeConstant String query) {
-    return new SafeQuery(checkNotNull(query));
+  @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
+  @TemplateFormatMethod
+  public static SafeQuery of(@CompileTimeConstant @TemplateString String query, Object... args) {
+    return template(query).with(args);
   }
 
   /**

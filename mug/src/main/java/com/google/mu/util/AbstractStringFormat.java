@@ -609,7 +609,7 @@ abstract class AbstractStringFormat {
     requireNonNull(replacement);
     checkPlaceholderCount(3);
     return replaceAllMatches(
-        input, matches -> replacement.apply(matches.get(0), matches.get(1), matches.get(2)));
+        input, matches -> replacement.map(matches.get(0), matches.get(1), matches.get(2)));
   }
 
   /**
@@ -636,7 +636,7 @@ abstract class AbstractStringFormat {
     checkPlaceholderCount(4);
     return replaceAllMatches(
         input,
-        matches -> replacement.apply(matches.get(0), matches.get(1), matches.get(2), matches.get(3)));
+        matches -> replacement.map(matches.get(0), matches.get(1), matches.get(2), matches.get(3)));
   }
 
   /**
@@ -664,7 +664,7 @@ abstract class AbstractStringFormat {
     return replaceAllMatches(
         input,
         matches ->
-            replacement.apply(
+            replacement.map(
                 matches.get(0), matches.get(1), matches.get(2), matches.get(3), matches.get(4)));
   }
 
@@ -693,7 +693,7 @@ abstract class AbstractStringFormat {
     return replaceAllMatches(
         input,
         matches ->
-            replacement.apply(
+            replacement.map(
                 matches.get(0),
                 matches.get(1),
                 matches.get(2),
@@ -726,7 +726,7 @@ abstract class AbstractStringFormat {
     return replaceAllMatches(
         input,
         matches ->
-            replacement.apply(
+            replacement.map(
                 matches.get(0),
                 matches.get(1),
                 matches.get(2),
@@ -760,7 +760,7 @@ abstract class AbstractStringFormat {
     return replaceAllMatches(
         input,
         matches ->
-            replacement.apply(
+            replacement.map(
                 matches.get(0),
                 matches.get(1),
                 matches.get(2),

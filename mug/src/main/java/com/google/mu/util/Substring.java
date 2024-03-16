@@ -2392,6 +2392,8 @@ public final class Substring {
     /** When the match fails lookahead or lookbehind conditions, use this index to backtrack. */
     private final int backtrackIndex;
 
+    private String toString;
+
     private Match(String context, int startIndex, int length, int backtrackIndex, int repetitionStartIndex) {
       this.context = context;
       this.startIndex = startIndex;
@@ -2646,7 +2648,12 @@ public final class Substring {
 
     /** Returns the matched substring. */
     @Override public String toString() {
-      return context.substring(startIndex, endIndex);
+      // http://jeremymanson.blogspot.com/2008/12/benign-data-races-in-java.html
+      String str = toString;
+      if (str == null) {
+        toString = str = context.substring(startIndex, endIndex);
+      }
+      return str;
     }
 
     Match following() {

@@ -1,7 +1,13 @@
 package com.google.mu.examples;
 
-import static com.google.common.truth.Truth8.assertThat;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
+import static com.google.mu.util.Substring.first;
+import static com.google.mu.util.Substring.last;
+import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
+
+import java.util.List;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -9,6 +15,7 @@ import org.junit.runners.JUnit4;
 
 import com.google.mu.safesql.SafeQuery;
 import com.google.mu.util.StringFormat;
+import com.google.mu.util.Substring;
 
 @RunWith(JUnit4.class)
 public class HowToUseStringFormatTest {
@@ -41,6 +48,23 @@ public class HowToUseStringFormatTest {
         .isEqualTo(SafeQuery.of("WHERE id = 'foo'"));
   }
 
+  @Test public void parse2dArray() {
+    String x = "{ {F, 40 , 40 , 2000},{L, 60 , 60 , 1000},{F, 40 , 40 , 2000}}";
+    String nested = Substring.between(first('{'), last('}')).from(x).get();
+    List<List<String>> result =  Substring.between('{', '}')
+        .repeatedly()
+        .from(nested)
+        .map(first(',').repeatedly()::splitThenTrim)
+        .map(elements -> elements.map(Substring.Match::toString).collect(toList()))
+        .collect(toList());
+    assertThat(result)
+       .containsExactly(
+           asList("F", "40", "40", "2000"),
+           asList("L", "60", "60", "1000"),
+           asList("F", "40", "40", "2000"))
+       .inOrder();
+  }
+
   @SuppressWarnings("StringUnformatArgsCheck")
   String failsBecauseTwoLambdaParametersAreExpected() {
 	  return new StringFormat("{key}:{value}").parseOrThrow("k:v", key -> key);
@@ -50,12 +74,12 @@ public class HowToUseStringFormatTest {
   String failsBecauseLambdaParameterNamesAreOutOfOrder() {
     return new StringFormat("{key}:{value}").parseOrThrow("k:v", (value, key) -> key);
   }
- 
+
   @SuppressWarnings("StringFormatPlaceholderNamesCheck")
   String failsDueToBadPlaceholderName() {
     return new StringFormat("{?}:{-}").parseOrThrow("k:v", (k, v) -> k);
   }
-  
+
   @SuppressWarnings("StringFormatArgsCheck")
   SafeQuery mismatchingPlaceholderInSafeQueryTemplate(String name) {
     return SafeQuery.template("WHERE id = '{id}'").with(name);
