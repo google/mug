@@ -26,7 +26,7 @@ import java.lang.annotation.Target;
  * arguments. Such methods expect a string parameter annotated with {@code @TemplateString}.
  *
  * <p>For example in: <pre>
- * @TemplateFormatMethod
+ * {@literal @}TemplateFormatMethod
  * BillingException reportBillingError(@TemplateString String template, Object... args) {
  *   ...
  * }</pre>
