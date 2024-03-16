@@ -1,4 +1,12 @@
 java_library(
+    name = "annotations",
+    visibility = ["//visibility:public"],
+    srcs = glob([
+        "src/main/java/com/google/mu/annotations/*.java",
+    ]),
+)
+
+java_library(
     name = "base",
     visibility = ["//visibility:public"],
     srcs = glob([
@@ -28,7 +36,11 @@ java_library(
     name = "format",
     visibility = ["//visibility:public"],
     srcs = glob(["src/main/java/com/google/mu/util/*StringFormat.java"]),
-    deps = [":base"],
+    deps = [
+        ":annotations",
+        ":base"
+    ],
+    exports = [":annotations"],
     exported_plugins = ["//mug-errorprone:plugin"],
 )
 
