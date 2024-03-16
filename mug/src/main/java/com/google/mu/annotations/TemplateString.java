@@ -27,7 +27,7 @@ import java.lang.annotation.Target;
  * <p>IMPORTANT: the template string uses named placeholders like "{foo}", <em>not "%s"</em>.
  * Using "%s" in the place of a "{placeholder}" will cause compilation errors.
  *
- * @since 7.2
+ * @since 8.0
  */
 @Documented
 @Retention(CLASS)
