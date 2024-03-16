@@ -225,7 +225,7 @@
           <artifactId>maven-javadoc-plugin</artifactId>
           <version>3.1.0</version>
           <configuration>
-	        <sourcepath>${project.basedir}/mug/src/main/java</sourcepath>
+	        <sourcepath>${project.basedir}/mug/src/main/java;${project.basedir}/mug-guava/src/main/java;${project.basedir}/mug-protobuf/src/main/java</sourcepath>
 	        <includeDependencySources>true</includeDependencySources>
             <stylesheetfile>javadoc-stylesheet.css</stylesheetfile>
           </configuration>
