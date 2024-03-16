@@ -7,6 +7,7 @@ java_library(
         "@maven//:com_google_errorprone_error_prone_annotations",
         "@maven//:com_google_protobuf_protobuf_java",
         "@maven//:com_google_protobuf_protobuf_java_util",
+        "@maven//:org_checkerframework_checker_qual",
         "//mug:base",
     ],
 )
