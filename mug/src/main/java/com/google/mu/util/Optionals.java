@@ -106,6 +106,32 @@ public final class Optionals {
   }
 
   /**
+   * If both {@code a} and {@code b} return non-empty values, returns a {@code BiOptional} instance
+   * containing the non-empty values; otherwise returns an empty {@code BiOptional}.
+   *
+   * <p>Short-circuits if {@code a} returns empty.
+   *
+   * @throws NullPointerException if {@code a} or {@code b} is null
+   * @throws E if either {@code a} or {@code b} throws {@code E}
+   * @since 8.0
+   */
+  public static <A, B, E extends Throwable> BiOptional<A, B> both(
+      CheckedSupplier<? extends Optional<? extends A>, ? extends E> a,
+      CheckedSupplier<? extends Optional<? extends B>, ? extends E> b) throws E {
+    requireNonNull(a);
+    requireNonNull(b);
+    A r1 = a.get().orElse(null);
+    if (r1 == null) {
+      return BiOptional.empty();
+    }
+    B r2 = b.get().orElse(null);
+    if (r2 == null) {
+      return BiOptional.empty();
+    }
+    return BiOptional.of(r1, r2);
+  }
+
+  /**
    * Invokes {@code consumer} if {@code optional} is present. Returns a {@code Premise}
    * object to allow {@link Premise#orElse orElse()} and friends to be chained. For example:
    *
