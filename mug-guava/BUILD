@@ -1,14 +1,21 @@
+ANNOTATIONS_SRC = glob(["src/main/java/com/google/mu/annotations/*.java"])
 SAFE_SQL_SRCS = glob(["src/main/java/com/google/mu/safesql/*.java"])
 
 java_library(
+    name = "annotations",
+    srcs = ANNOTATIONS_SRC,
+)
+
+java_library(
     name = "mug-guava",
-    srcs = glob(["src/main/java/**/*.java"], exclude = SAFE_SQL_SRCS),
+    srcs = glob(["src/main/java/**/*.java"], exclude = ANNOTATIONS_SRC + SAFE_SQL_SRCS),
     visibility = ["//visibility:public"],
     deps = [
+        ":annotations",
+        "//mug:base",
         "@@maven//:com_google_guava_guava",
         "@maven//:org_checkerframework_checker_qual",
         "@maven//:com_google_errorprone_error_prone_annotations",
-        "//mug:base",
     ],
 )
 
@@ -17,10 +24,11 @@ java_library(
     srcs = SAFE_SQL_SRCS,
     visibility = ["//visibility:public"],
     deps = [
-        "@@maven//:com_google_guava_guava",
-        "@maven//:com_google_errorprone_error_prone_annotations",
+        ":annotations",
         "//mug:base",
         "//mug:format",
+        "@@maven//:com_google_guava_guava",
+        "@maven//:com_google_errorprone_error_prone_annotations",
     ],
 )
 
