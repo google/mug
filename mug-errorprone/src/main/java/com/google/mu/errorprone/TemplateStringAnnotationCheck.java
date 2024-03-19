@@ -16,7 +16,7 @@ import com.sun.tools.javac.code.Type;
 
 /** {@link BugChecker} to assert validity of methods calls with {@code @TemplateString} annotations. */
 @BugPattern(
-    summary = "Invalid tempalte string passed to template formatting method.",
+    summary = "Invalid template string passed to template formatting method.",
     severity = ERROR)
 @AutoService(BugChecker.class)
 public final class TemplateStringAnnotationCheck extends AbstractBugChecker
@@ -47,20 +47,4 @@ public final class TemplateStringAnnotationCheck extends AbstractBugChecker
           "Parameter annotated with @TemplateString but method isn't annotated with @TemplateFormatMethod");
     }
   }
-//
-//  private static int formatStringIndex(MethodSymbol symbol, VisitorState state) {
-//    Type stringType = state.getSymtab().stringType;
-//    List<VarSymbol> params = symbol.getParameters();
-//    int firstStringIndex = -1;
-//    for (int i = 0; i < params.size(); i++) {
-//      VarSymbol param = params.get(i);
-//      if (ASTHelpers.hasAnnotation(param, FormatString.class, state)) {
-//        return i;
-//      }
-//      if (firstStringIndex < 0 && ASTHelpers.isSameType(param.type, stringType, state)) {
-//        firstStringIndex = i;
-//      }
-//    }
-//    return firstStringIndex;
-//  }
 }

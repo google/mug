@@ -68,8 +68,8 @@ abstract class AbstractBugChecker extends BugChecker {
   }
 
   /**
-   * Mixin interface for checkers that check method invocations. Subclasses can implement the {@link
-   * #checkMethodInvocation} and throw {@code ErrorReport} to indicate failures.
+   * Mixin interface for checkers that check method definitions. Subclasses can implement the {@link
+   * #checkMethod} and throw {@code ErrorReport} to indicate failures.
    */
   interface MethodCheck extends MethodTreeMatcher {
     /** DO NOT override this method. Implement {@link #checkMethod} instead. */
