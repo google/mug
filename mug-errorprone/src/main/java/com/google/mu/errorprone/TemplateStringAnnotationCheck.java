@@ -14,10 +14,11 @@ import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.VariableTree;
 import com.sun.tools.javac.code.Type;
 
-/** {@link BugChecker} to assert validity of methods calls with {@code @TemplateString} annotations. */
-@BugPattern(
-    summary = "Invalid template string passed to template formatting method.",
-    severity = ERROR)
+/**
+ * {@link BugChecker} to assert validity of methods annotated with {@code @TemplateFormatMethod} and
+ * {@code TemplateString} annotations.
+ */
+@BugPattern(summary = "Invalid use of @TemplateString annotation.", severity = ERROR)
 @AutoService(BugChecker.class)
 public final class TemplateStringAnnotationCheck extends AbstractBugChecker
     implements AbstractBugChecker.MethodCheck {
