@@ -176,8 +176,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
           /* formatStringIsInlined= */ formatExpression instanceof JCLiteral,
           state);
     } else if (MATCHER.matches(tree, state)) {
-      MethodSymbol symbol = ASTHelpers.getSymbol(tree);
-      if (!symbol.isVarArgs() || symbol.getParameters().size() != 1) {
+      if (!method.isVarArgs() || method.getParameters().size() != 1) {
         return;
       }
       ExpressionTree formatter = ASTHelpers.getReceiver(tree);

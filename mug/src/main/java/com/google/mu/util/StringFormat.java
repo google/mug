@@ -112,16 +112,18 @@ public final class StringFormat extends AbstractStringFormat {
    * Returns string with the "{placeholder}"s in {@code template} filled by {@code args}, in order.
    *
    * <p>In the not-so-distant future when string interpolation is supported, you'll unlikely need
-   * String.format() or third-party templating. But you could still need to define some
-   * public template constants to be reused among multiple classes. For example: <pre>{@code
-   *   throw new ApiException(
-   *       StringFormat.with(StandardErrors.ACCOUNT_LOCKED, accountId, waitTime));
+   * String.format() or third-party templating. But you could still need to define some public
+   * template constants to be reused among multiple classes. For example:
+   *
+   * <pre>{@code
+   * throw new ApiException(
+   *     StringFormat.with(StandardErrors.ACCOUNT_LOCKED, accountId, waitTime));
    * }</pre>
    *
-   * <p>{@code StringFormat.with("{foo}={bar}", foo, bar)} is equivalent to {@code
-   * new StringFormat("{foo}={bar}").format(foo, bar)} except that it's twice as fast
-   * and syntactically shorter when the format string is inlined as opposed to being
-   * stored as a constant StringFormat object.
+   * <p>{@code StringFormat.with("{foo}={bar}", foo, bar)} is equivalent to {@code new
+   * StringFormat("{foo}={bar}").format(foo, bar)} except that it's twice as fast and syntactically
+   * shorter when the format string is inlined as opposed to being stored as a constant StringFormat
+   * object.
    *
    * <p>Compared to equivalent {@code String.format("%s=%s", foo, bar)}, using named placeholders
    * works better if the template strings are public constants that are used across multiple
@@ -129,11 +131,12 @@ public final class StringFormat extends AbstractStringFormat {
    * correctly.
    *
    * <p>Among the different formatting APIs, in the order of efficiency:
+   *
    * <ol>
    *   <li>{@code FORMAT_CONSTANT.format(...)}.
    *   <li>{@code StringFormat.with(...)} and {@code String.format(...)} in Java 21.
    *   <li>{@code new StringFormat("{foo}={bar}").format(...)}.
-   *   <li>{@code String.format(...)} in Java 8
+   *   <li>{@code String.format(...)} in Java 11
    * </ol>
    *
    * @since 8.0

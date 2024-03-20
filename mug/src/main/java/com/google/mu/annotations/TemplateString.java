@@ -14,11 +14,8 @@
  *****************************************************************************/
 package com.google.mu.annotations;
 
-import static java.lang.annotation.RetentionPolicy.CLASS;
-
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
@@ -30,6 +27,5 @@ import java.lang.annotation.Target;
  * @since 8.0
  */
 @Documented
-@Retention(CLASS)
 @Target({ElementType.PARAMETER})
 public @interface TemplateString {}

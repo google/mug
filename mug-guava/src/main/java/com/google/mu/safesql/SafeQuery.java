@@ -117,6 +117,9 @@ public final class SafeQuery {
    *   <li>{@link SafeQuery}
    *   <li>Iterable
    * </ul>
+   *
+   * <p>If you are trying to create SafeQuery inline like {@code SafeQuery.template(tmpl).with(a, b)},
+   * please use {@code SafeQuery.of(tmpl, a, b)} instead.
    */
   public static StringFormat.To<SafeQuery> template(@CompileTimeConstant String formatString) {
     return new Translator().translate(formatString);
