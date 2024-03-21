@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.util;
+package com.google.mu.collect;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -100,7 +100,7 @@ import com.google.mu.annotations.RequiresGuava;
  * targets if the comparator supports nulls, no other {@code BinarySearch.Table} implementations
  * allow null search targets.
  *
- * @since 6.4
+ * @since 8.0
  */
 @RequiresGuava
 public final class BinarySearch {
