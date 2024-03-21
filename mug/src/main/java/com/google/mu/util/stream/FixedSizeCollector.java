@@ -18,4 +18,6 @@ public abstract class FixedSizeCollector<T, A, R> implements Collector<T, A, R> 
 
   abstract int arity();
   abstract R reduce(List<? extends T> list);
+
+  FixedSizeCollector() {}
 }
