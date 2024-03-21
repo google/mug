@@ -64,7 +64,9 @@ public final class Funnel<T> {
    *
    * @param <F> batch input element type
    * @param <T> batch output element type
+   * @deprecated too niche
    */
+  @Deprecated
   public static final class Batch<F, T> implements Consumer<F> {
     private final Funnel<T> funnel;
     private final Function<? super List<F>, ? extends Collection<? extends T>> converter;
