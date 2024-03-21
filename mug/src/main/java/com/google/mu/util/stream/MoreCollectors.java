@@ -495,9 +495,9 @@ public final class MoreCollectors {
    * Substring.first('.').repeatedly().split(tableName)
    *     .collect(
    *         switching(
-   *             asIn((db, schema, table) -> ...),
-   *             asIn((schema, table) -> ...),
-   *             asIn(table -> ...)));
+   *             onlyElements((db, schema, table) -> ...),
+   *             onlyElements((schema, table) -> ...),
+   *             onlyElements(table -> ...)));
    * }</pre>
    *
    * @since 5.4
