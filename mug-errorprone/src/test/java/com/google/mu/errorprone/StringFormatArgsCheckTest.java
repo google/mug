@@ -13,6 +13,1539 @@ public final class StringFormatArgsCheckTest {
       CompilationTestHelper.newInstance(StringFormatArgsCheck.class, getClass());
 
   @Test
+  public void templateStringNotTheFirstParameter_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  @TemplateFormatMethod",
+            "  void report(String name, @TemplateString String template, Object... args) {}",
+            "  void test(int foo) {",
+            "    report(\"name\", \"{foo}\", foo);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateStringNotTheFirstParameter_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  @TemplateFormatMethod",
+            "  Test(String name, @TemplateString String template, Object... args) {}",
+            "  void test(int foo) {",
+            "    new Test(\"name\", \"{foo}\", foo);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateStringNotImmediatelyFollowedByVarargs_argsMatch_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, String name, Object... args) {}",
+            "  void test(int foo) {",
+            "    report(\"{name}: {foo}\", \"name\", foo);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateStringNotImmediatelyFollowedByVarargs_argsMatch_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, String name, Object... args) {}",
+            "  void test(int foo) {",
+            "    new Test(\"{name}: {foo}\", \"name\", foo);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateStringNotImmediatelyFollowedByVarargs_argsNotMatch_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, String name, Object... args) {}",
+            "  void test(int foo, String bar) {",
+            "    // BUG: Diagnostic contains: {name}",
+            "    report(\"{name}: {foo}\", bar, foo);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateStringNotImmediatelyFollowedByVarargs_argsNotMatch_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, String name, Object... args) {}",
+            "  void test(int foo, String bar) {",
+            "    // BUG: Diagnostic contains: {name}",
+            "    new Test(\"{name}: {foo}\", bar, foo);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateStringNotTheFirstParameter_doesNotMatchPlaceholder_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  @TemplateFormatMethod",
+            "  void report(String name, @TemplateString String template, Object... args) {}",
+            "  void test(int bar) {",
+            "    // BUG: Diagnostic contains: {foo}",
+            "    report(\"name\", \"{foo}\", bar);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateStringNotTheFirstParameter_doesNotMatchPlaceholder_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  @TemplateFormatMethod",
+            "  Test(String name, @TemplateString String template, Object... args) {}",
+            "  void test(int bar) {",
+            "    // BUG: Diagnostic contains: {foo}",
+            "    new Test(\"name\", \"{foo}\", bar);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_good_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String foo, String barId, String camelCase) {",
+            "    report(\"{foo}-{bar_id}-{camelCase}\", foo, barId, camelCase);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_good_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String foo, String barId, String camelCase) {",
+            "    new Test(\"{foo}-{bar_id}-{camelCase}\", foo, barId, camelCase);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_goodInlinedFormat_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String foo, String barId, String camelCase) {",
+            "    report(\"{foo}-{bar_id}-{CamelCase}\", foo, barId, camelCase);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_goodInlinedFormat_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String foo, String barId, String camelCase) {",
+            "    new Test(\"{foo}-{bar_id}-{CamelCase}\", foo, barId, camelCase);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_concatenatedInlinedFormat_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String foo, String barId, String camelCase) {",
+            "    report(\"{foo}-{bar_id}\" + \"-{CamelCase}\", foo, barId, camelCase);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_concatenatedInlinedFormat_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String foo, String barId, String camelCase) {",
+            "    new Test(\"{foo}-{bar_id}\" + \"-{CamelCase}\", foo, barId, camelCase);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_usesPrintfStyle_method_fail() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String foo1, String foo2) {",
+            "    // BUG: Diagnostic contains: 0 placeholders defined",
+            "    report(\"%s=%s\", foo1, foo2);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_usesPrintfStyle_constructor_fail() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String foo1, String foo2) {",
+            "    // BUG: Diagnostic contains: 0 placeholders defined",
+            "    new Test(\"%s=%s\", foo1, foo2);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_conflictingValueForTheSamePlaceholderNameDisallowed_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String foo1, String foo2) {",
+            "    // BUG: Diagnostic contains: {foo}",
+            "    report(\"{foo}={foo}\", foo1, foo2);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void
+      templateFormatMethod_conflictingValueForTheSamePlaceholderNameDisallowed_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String foo1, String foo2) {",
+            "    // BUG: Diagnostic contains: {foo}",
+            "    new Test(\"{foo}={foo}\", foo1, foo2);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void
+      templateFormatMethod_okToUseSamePlaceholderNameIfArgExpressionsAreIdentical_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String foo) {",
+            "    report(\"{foo}={foo}\", foo, foo);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void
+      templateFormatMethod_okToUseSamePlaceholderNameIfArgExpressionsAreIdentical_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String foo) {",
+            "    new Test(\"{foo}={foo}\", foo, foo);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void
+      templateFormatMethod_okToUseSamePlaceholderNameIfArgExpressionsHaveSameTokens_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String foo) {",
+            "    report(\"{foo}={foo}\", foo.toString(), foo .toString());",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void
+      templateFormatMethod_okToUseSamePlaceholderNameIfArgExpressionsHaveSameTokens_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String foo) {",
+            "    new Test(\"{foo}={foo}\", foo.toString(), foo .toString());",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_argsOutOfOrder_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String foo, String barId) {",
+            "    // BUG: Diagnostic contains:",
+            "    report(\"{foo}-{bar_id}\", barId, foo);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_argsOutOfOrder_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String foo, String barId) {",
+            "    // BUG: Diagnostic contains:",
+            "    new Test(\"{foo}-{bar_id}\", barId, foo);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_i18nArgsOutOfOrder_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test() {",
+            "    // BUG: Diagnostic contains:",
+            "    report(\"{用户}-{地址}\", \"地址\", \"用户\");",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_i18nArgsOutOfOrder_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test() {",
+            "    // BUG: Diagnostic contains:",
+            "    new Test(\"{用户}-{地址}\", \"地址\", \"用户\");",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_i18nArgsMatched_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test() {",
+            "    report(\"{用户}-{地址}\", \"用户\", \"地址\");",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_i18nArgsMatched_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test() {",
+            "    new Test(\"{用户}-{地址}\", \"用户\", \"地址\");",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_namedArgsCommented_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String foo, String barId, String camelCase) {",
+            "    report(",
+            "        \"{foo}-{bar_id}-{camelCase}\",",
+            "         /*foo=*/ barId, /*barId=*/ camelCase, /*camelCase=*/ foo);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_namedArgsCommented_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String foo, String barId, String camelCase) {",
+            "    new Test(",
+            "        \"{foo}-{bar_id}-{camelCase}\",",
+            "         /*foo=*/ barId, /*barId=*/ camelCase, /*camelCase=*/ foo);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_literalArgsCommented_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test() {",
+            "    report(",
+            "        \"{foo}-{bar_id}-{CamelCase}\", /*foo=*/ 1, /*bar_id=*/ 2, /*camelCase=*/ 3);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_literalArgsCommented_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test() {",
+            "    new Test(",
+            "        \"{foo}-{bar_id}-{CamelCase}\", /*foo=*/ 1, /*bar_id=*/ 2, /*camelCase=*/ 3);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_argIsMethodInvocation_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  interface Bar {",
+            "    String id();",
+            "  }",
+            "  interface Camel {",
+            "    String cased();",
+            "  }",
+            "  void test(String foo, Bar bar, Camel camel) {",
+            "    report(\"{foo}-{bar_id}-{camelCased}\", foo, bar.id(), camel.cased());",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_argIsMethodInvocation_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  interface Bar {",
+            "    String id();",
+            "  }",
+            "  interface Camel {",
+            "    String cased();",
+            "  }",
+            "  void test(String foo, Bar bar, Camel camel) {",
+            "    new Test(\"{foo}-{bar_id}-{camelCased}\", foo, bar.id(), camel.cased());",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_usingStringConstant_argsMatchPlaceholders_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  private static final String FORMAT_STR =",
+            "      \"{foo}-{bar_id}-{camelCased}\";",
+            "  interface Bar {",
+            "    String id();",
+            "  }",
+            "  interface Camel {",
+            "    String cased();",
+            "  }",
+            "  void test(String foo, Bar bar, Camel camel) {",
+            "    report(FORMAT_STR, foo, bar.id(), camel.cased());",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_usingStringConstant_argsMatchPlaceholders_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  private static final String FORMAT_STR =",
+            "      \"{foo}-{bar_id}-{camelCased}\";",
+            "  interface Bar {",
+            "    String id();",
+            "  }",
+            "  interface Camel {",
+            "    String cased();",
+            "  }",
+            "  void test(String foo, Bar bar, Camel camel) {",
+            "    new Test(FORMAT_STR, foo, bar.id(), camel.cased());",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_usingStringConstant_argsDoNotMatchPlaceholders_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  private static final String FORMAT_STR =",
+            "      \"{a}-{b}-{c}\";",
+            "  void test() {",
+            "    // BUG: Diagnostic contains:",
+            "    report(FORMAT_STR, 1, 2, 3);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_usingStringConstant_argsDoNotMatchPlaceholders_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  private static final String FORMAT_STR =",
+            "      \"{a}-{b}-{c}\";",
+            "  void test() {",
+            "    // BUG: Diagnostic contains:",
+            "    new Test(FORMAT_STR, 1, 2, 3);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void
+      templateFormatMethod_usingStringConstantConcatenated_argsDoNotMatchPlaceholders_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  private static final String FORMAT_STR =",
+            "      \"{a}-{b}-{c}\";",
+            "  void test() {",
+            "    // BUG: Diagnostic contains:",
+            "    report(FORMAT_STR + \"-{d}\", 1, 2, 3, 4);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void
+      templateFormatMethod_usingStringConstantConcatenated_argsDoNotMatchPlaceholders_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  private static final String FORMAT_STR =",
+            "      \"{a}-{b}-{c}\";",
+            "  void test() {",
+            "    // BUG: Diagnostic contains:",
+            "    new Test(FORMAT_STR + \"-{d}\", 1, 2, 3, 4);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void
+      templateFormatMethod_usingStringConstantInStringFormatConstant_argsDoNotMatchPlaceholders_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  private static final String FORMAT_STR =",
+            "      \"{a}-{b}\" + \"-{c}\";",
+            "  void test() {",
+            "    // BUG: Diagnostic contains:",
+            "    report(FORMAT_STR, 1, 2, 3);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void
+      templateFormatMethod_usingStringConstantInStringFormatConstant_argsDoNotMatchPlaceholders_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  private static final String FORMAT_STR =",
+            "      \"{a}-{b}\" + \"-{c}\";",
+            "  void test() {",
+            "    // BUG: Diagnostic contains:",
+            "    new Test(FORMAT_STR, 1, 2, 3);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void
+      templateFormatMethod_usingStringConstantInStringFormatConstant_argsCommented_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  private static final String FORMAT_STR =",
+            "      \"{a}-{b}\" + \"-{c}\";",
+            "  void test() {",
+            "    report(FORMAT_STR, /* a */ 1, /* b */ 2, /* c */ 3);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void
+      templateFormatMethod_usingStringConstantInStringFormatConstant_argsCommented_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  private static final String FORMAT_STR =",
+            "      \"{a}-{b}\" + \"-{c}\";",
+            "  void test() {",
+            "    new Test(FORMAT_STR, /* a */ 1, /* b */ 2, /* c */ 3);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_getOrIsprefixIgnorableInArgs_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  interface Bar {",
+            "    String getId();",
+            "  }",
+            "  interface Camel {",
+            "    String isCase();",
+            "  }",
+            "  void test(String foo, Bar bar, Camel camel) {",
+            "    report(\"{foo}-{bar_id}-{camelCase}\", foo, bar.getId(), camel.isCase());",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_getOrIsprefixIgnorableInArgs_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  interface Bar {",
+            "    String getId();",
+            "  }",
+            "  interface Camel {",
+            "    String isCase();",
+            "  }",
+            "  void test(String foo, Bar bar, Camel camel) {",
+            "    new Test(\"{foo}-{bar_id}-{camelCase}\", foo, bar.getId(), camel.isCase());",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_argIsLiteral_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test() {",
+            "    report(\"{foo}-{bar_id}\", \"foo\", \"bar id\");",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_argIsLiteral_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test() {",
+            "    new Test(\"{foo}-{bar_id}\", \"foo\", \"bar id\");",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void
+      templateFormatMethod_inlinedFormatDoesNotRequireArgNameMatchingForLiterals_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test() {",
+            "    report(\"{foo}-{bar_id}\", 1, 2);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void
+      templateFormatMethod_inlinedFormatDoesNotRequireArgNameMatchingForLiterals_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test() {",
+            "    new Test(\"{foo}-{bar_id}\", 1, 2);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void
+      templateFormatMethod_3args_inlinedFormatRequiresArgNameMatchingForExpressions_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String x, String y, String z) {",
+            "    // BUG: Diagnostic contains:",
+            "    report(\"{foo}-{bar_id}-{z}\", x, y, z);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void
+      templateFormatMethod_3args_inlinedFormatRequiresArgNameMatchingForExpressions_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String x, String y, String z) {",
+            "    // BUG: Diagnostic contains:",
+            "    new Test(\"{foo}-{bar_id}-{z}\", x, y, z);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_3args_inlinedFormatAllowsLiteralArgs_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test() {",
+            "    report(\"{foo}-{bar_id}-{z}\", 1, 2, \"a\" + \"3\");",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_3args_inlinedFormatAllowsLiteralArgs_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test() {",
+            "    new Test(\"{foo}-{bar_id}-{z}\", 1, 2, \"a\" + \"3\");",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_2args_inlinedFormatRequiresArgNameMatch_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String x, String y) {",
+            "    // BUG: Diagnostic contains:",
+            "    report(\"{foo}-{bar_id}\", x, y);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_2args_inlinedFormatRequiresArgNameMatch_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String x, String y) {",
+            "    // BUG: Diagnostic contains:",
+            "    new Test(\"{foo}-{bar_id}\", x, y);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_2args_inlinedFormatWithMiscommentedLiteralArgs_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test() {",
+            "    // BUG: Diagnostic contains:",
+            "    report(\"{foo}-{bar_id}\", /* bar */ 1, 2);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_2args_inlinedFormatWithMiscommentedLiteralArgs_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test() {",
+            "    // BUG: Diagnostic contains:",
+            "    new Test(\"{foo}-{bar_id}\", /* bar */ 1, 2);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_2args_inlinedFormatWithLiteralArgs_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test() {",
+            "    report(\"{foo}-{bar_id}\", 1, 2);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_2args_inlinedFormatWithLiteralArgs_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test() {",
+            "    new Test(\"{foo}-{bar_id}\", 1, 2);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_2args_inlinedFormatWithCommentedLiteralArgs_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test() {",
+            "    report(\"{foo}-{bar_id}\", /* foo */ 1, /* bar id */ 2);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_2args_inlinedFormatWithCommentedLiteralArgs_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test() {",
+            "    new Test(\"{foo}-{bar_id}\", /* foo */ 1, /* bar id */ 2);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void
+      templateFormatMethod_parenthesizedInlinedFormatDoesNotRequireArgNameMatching_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test() {",
+            "    report((\"{foo}-{bar_id}\"), 1, 2);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void
+      templateFormatMethod_parenthesizedInlinedFormatDoesNotRequireArgNameMatching_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test() {",
+            "    new Test((\"{foo}-{bar_id}\"), 1, 2);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_inlinedFormatWithOutOfOrderLiteralArgs_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test() {",
+            "    // BUG: Diagnostic contains:",
+            "    report(\"{foo}-{bar_id}\", /*bar*/ 1, /*foo*/ 2);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_inlinedFormatWithOutOfOrderLiteralArgs_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test() {",
+            "    // BUG: Diagnostic contains:",
+            "    new Test(\"{foo}-{bar_id}\", /*bar*/ 1, /*foo*/ 2);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_inlinedFormatWithOutOfOrderNamedArgs_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String bar, String foo) {",
+            "    // BUG: Diagnostic contains:",
+            "    report(\"{foo}-{bar_id}\", bar, foo);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_inlinedFormatWithOutOfOrderNamedArgs_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String bar, String foo) {",
+            "    // BUG: Diagnostic contains:",
+            "    new Test(\"{foo}-{bar_id}\", bar, foo);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_inlinedFormatWithMoreThan3Args_requiresNameMatch_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test() {",
+            "    // BUG: Diagnostic contains:",
+            "    report(\"{a}-{b}-{c}-{d}\", 1, 2, 3, 4);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void
+      templateFormatMethod_inlinedFormatWithMoreThan3Args_requiresNameMatch_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test() {",
+            "    // BUG: Diagnostic contains:",
+            "    new Test(\"{a}-{b}-{c}-{d}\", 1, 2, 3, 4);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void
+      templateFormatMethod_inlinedFormatWithMoreThan3Args_argsMatchPlaceholderNames_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(int a, int b, int c, int d) {",
+            "    report(\"{a}-{b}-{c}-{d}\", a, b, c, d);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void
+      templateFormatMethod_inlinedFormatWithMoreThan3Args_argsMatchPlaceholderNames_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(int a, int b, int c, int d) {",
+            "    new Test(\"{a}-{b}-{c}-{d}\", a, b, c, d);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_inlinedFormatChecksNumberOfArgs_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String foo, int barId, String baz) {",
+            "    // BUG: Diagnostic contains:",
+            "    report(\"{foo}-{bar_id}\", foo, barId, baz);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_inlinedFormatChecksNumberOfArgs_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String foo, int barId, String baz) {",
+            "    // BUG: Diagnostic contains:",
+            "    new Test(\"{foo}-{bar_id}\", foo, barId, baz);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_tooManyArgs_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String foo, int barId, String baz) {",
+            "    // BUG: Diagnostic contains:",
+            "    report(\"{foo}-{bar_id}\", foo, barId, baz);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_tooManyArgs_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String foo, int barId, String baz) {",
+            "    // BUG: Diagnostic contains:",
+            "    new Test(\"{foo}-{bar_id}\", foo, barId, baz);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_tooFewArgs_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String foo) {",
+            "    // BUG: Diagnostic contains:",
+            "    report(\"{foo}-{bar_id}\", foo);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_tooFewArgs_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String foo) {",
+            "    // BUG: Diagnostic contains:",
+            "    new Test(\"{foo}-{bar_id}\", foo);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_nestingPlaceholderIsOk_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test() {",
+            "    report(\"{{foo}}\", 1);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_nestingPlaceholderIsOk_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test() {",
+            "    new Test(\"{{foo}}\", 1);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_cannotBeUsedForMethodReference_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.stream.Stream;",
+            "class Test {",
+            "  void test() {",
+            "  // BUG: Diagnostic contains: format arguments cannot be validated",
+            "    Stream.of(\"\").forEach(this::report);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_cannotBeUsedForMethodReference_onConstructor() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.stream.Stream;",
+            "class Test {",
+            "  void test() {",
+            "  // BUG: Diagnostic contains: format arguments cannot be validated",
+            "    Stream.of(\"\").forEach(Test::new);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  Test(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void notTemplateFormatConstructor_noCheck() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  static void test(String foo1, String foo2) {",
+            "    new Test(\"{foo}={foo}\", foo1, foo2);",
+            "  }",
+            "  Test(String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+
+  @Test
   public void templateStringNotTheFirstParameter() {
     helper
         .addSourceLines(

@@ -38,9 +38,11 @@ import com.google.errorprone.util.ErrorProneTokens;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MemberReferenceTree;
 import com.sun.source.tree.MethodInvocationTree;
+import com.sun.source.tree.NewClassTree;
 import com.sun.source.tree.Tree;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
+import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.tree.JCTree.JCLiteral;
 import java.util.Optional;
@@ -72,8 +74,10 @@ import javax.lang.model.type.TypeKind;
     severity = ERROR)
 @AutoService(BugChecker.class)
 public final class StringFormatArgsCheck extends AbstractBugChecker
-    implements AbstractBugChecker.MethodInvocationCheck, AbstractBugChecker.MemberReferenceCheck {
-  private static final Matcher<MethodInvocationTree> MATCHER =
+    implements AbstractBugChecker.MethodInvocationCheck,
+        AbstractBugChecker.ConstructorCallCheck,
+        AbstractBugChecker.MemberReferenceCheck {
+  private static final Matcher<MethodInvocationTree> STRING_FORMAT_MATCHER =
       Matchers.anyOf(
           anyMethod().onDescendantOf("com.google.mu.util.StringFormat"),
           anyMethod().onDescendantOf("com.google.mu.util.StringFormat.To"));
@@ -153,6 +157,19 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
   }
 
   @Override
+  public void checkConstructorCall(NewClassTree tree, VisitorState state) throws ErrorReport {
+    MethodSymbol method = ASTHelpers.getSymbol(tree);
+    if (isTemplateFormatMethod(method, state)) {
+      checkTemplateFormatArgs(
+          tree,
+          method.getParameters(),
+          tree.getArguments(),
+          argsAsTexts(tree.getIdentifier(), tree.getArguments(), state),
+          state);
+    }
+  }
+
+  @Override
   public void checkMethodInvocation(MethodInvocationTree tree, VisitorState state)
       throws ErrorReport {
     MethodSymbol method = ASTHelpers.getSymbol(tree);
@@ -172,10 +189,10 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
           FormatStringUtils.placeholderVariableNames(formatString),
           tree,
           skip(tree.getArguments(), templateStringIndex + 1),
-          skip(argsAsTexts(tree, state), templateStringIndex + 1),
+          skip(argsAsTexts(tree.getMethodSelect(), tree.getArguments(), state), templateStringIndex + 1),
           /* formatStringIsInlined= */ formatExpression instanceof JCLiteral,
           state);
-    } else if (MATCHER.matches(tree, state)) {
+    } else if (STRING_FORMAT_MATCHER.matches(tree, state)) {
       if (!method.isVarArgs() || method.getParameters().size() != 1) {
         return;
       }
@@ -192,16 +209,45 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
           FormatStringUtils.placeholderVariableNames(formatString),
           tree,
           tree.getArguments(),
-          argsAsTexts(tree, state),
+          argsAsTexts(tree.getMethodSelect(), tree.getArguments(), state),
           formatStringIsInlined,
           state);
     }
   }
 
+  private void checkTemplateFormatArgs(
+      ExpressionTree tree,
+      List<? extends VarSymbol> params,
+      List<? extends ExpressionTree> args,
+      List<String> argSources,
+      VisitorState state)
+      throws ErrorReport {
+    int templateStringIndex =
+        BiStream.zip(indexesFrom(0), params.stream())
+            .filterValues(
+                param ->
+                    ASTHelpers.hasAnnotation(
+                        param, "com.google.mu.annotations.TemplateString", state))
+            .keys()
+            .findFirst()
+            .orElse(0);
+    ExpressionTree formatExpression = ASTHelpers.stripParentheses(args.get(templateStringIndex));
+    String formatString = ASTHelpers.constValue(formatExpression, String.class);
+    checkingOn(tree).require(formatString != null, FORMAT_STRING_NOT_FOUND);
+    checkFormatArgs(
+        tree,
+        FormatStringUtils.placeholderVariableNames(formatString),
+        tree,
+        skip(args, templateStringIndex + 1),
+        skip(argSources, templateStringIndex + 1),
+        /* formatStringIsInlined= */ formatExpression instanceof JCLiteral,
+        state);
+  }
+
   private void checkFormatArgs(
       ExpressionTree definition,
       List<String> placeholderVariableNames,
-      MethodInvocationTree invocation,
+      ExpressionTree invocation,
       List<? extends ExpressionTree> args,
       List<String> argSources,
       boolean formatStringIsInlined,
@@ -238,7 +284,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
                         .noneMatch(txt -> txt.contains(normalizedPlacehoderName)));
         checkingOn(invocation)
             .require(
-                trust && ARG_COMMENT.in(argSources.get(i)).isEmpty(),
+                trust && !ARG_COMMENT.in(argSources.get(i)).isPresent(),
                 "String format placeholder {%s} as defined in %s should appear in the format"
                     + " argument: %s. Or you could add a comment like /* %s */.",
                 placeholderVariableNames.get(i),
@@ -290,13 +336,13 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
   }
 
   private static ImmutableList<String> argsAsTexts(
-      MethodInvocationTree invocation, VisitorState state) {
-    int position = state.getEndPosition(invocation.getMethodSelect());
+      ExpressionTree invocationStart, List<? extends ExpressionTree> args, VisitorState state) {
+    int position = state.getEndPosition(invocationStart);
     if (position < 0) {
       return ImmutableList.of();
     }
     ImmutableList.Builder<String> builder = ImmutableList.builder();
-    for (ExpressionTree arg : invocation.getArguments()) {
+    for (ExpressionTree arg : args) {
       int next = state.getEndPosition(arg);
       if (next < 0) {
         return ImmutableList.of();

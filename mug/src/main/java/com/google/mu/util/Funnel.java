@@ -51,9 +51,10 @@ import java.util.function.Function;
  * conversion.
  *
  * @param <T> the output type
+ * @deprecated too niche
  */
+@Deprecated
 public final class Funnel<T> {
-
   private int size = 0;
   private final List<Batch<?, T>> batches = new ArrayList<>();
   private final Batch<T, T> passthrough = through(Function.identity());
