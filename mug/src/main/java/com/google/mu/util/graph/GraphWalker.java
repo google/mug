@@ -198,6 +198,8 @@ public abstract class GraphWalker<N> extends Walker<N> {
 
   abstract Walk<N> start();
 
+  GraphWalker() {}
+
   static final class Walk<N> implements Consumer<N> {
     private final Function<? super N, ? extends Stream<? extends N>> findSuccessors;
     private final Predicate<? super N> tracker;
