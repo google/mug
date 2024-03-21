@@ -1,4 +1,4 @@
-package com.google.mu.util;
+package com.google.mu.collect;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
@@ -14,6 +14,7 @@ import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
 import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.EqualsTester;
+import com.google.mu.collect.InsertionPoint;
 
 @RunWith(JUnit4.class)
 public class InsertionPointTest {
