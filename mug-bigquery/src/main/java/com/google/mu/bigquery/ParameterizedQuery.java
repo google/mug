@@ -223,10 +223,11 @@ public final class ParameterizedQuery {
   }
 
   /**
-   * Sends this query to BigQuery using the default options.
+   * Sends this query to BigQuery using the default client configuration with {@code options}
+   * to control BigQuery jobs.
    *
-   * <p>To use alternative options, pass {@link #jobConfiguration} to the {link BigQueryOptions} of
-   * your choice.
+   * <p>To use alternative configuration, pass the return value of {@link #jobConfiguration}
+   * to the {@link com.google.cloud.bigquery.BigQuery} object of your choice.
    */
   public TableResult run(JobOption... options) throws JobException, InterruptedException {
     return BigQueryOptions.getDefaultInstance().getService().query(jobConfiguration(), options);
