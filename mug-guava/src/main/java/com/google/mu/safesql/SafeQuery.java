@@ -218,8 +218,8 @@ public final class SafeQuery {
     /**
      * Called if {@code value} is a non-string literal appearing unquoted in the template.
      *
-     * <p>Subclasses should only translate trusted types and delegate to {@code
-     * super.translatedLiteral()} for other types.
+     * <p>Subclasses should translate their trusted types then delegate to {@code
+     * super.translateLiteral()} for other types.
      *
      * @since 8.0
      */
