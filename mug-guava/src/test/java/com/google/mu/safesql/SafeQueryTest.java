@@ -40,19 +40,19 @@ public final class SafeQueryTest {
 
   @Test
   public void singleQuoteEscapedWithinSingleQuote() {
-    assertThat(template("SELECT * FROM tbl WHERE id = '{id}'").with("'v'"))
+    assertThat(template("SELECT * FROM tbl WHERE id = '{value}'").with("'v'"))
         .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = '\\'v\\''"));
   }
 
   @Test
   public void backslashEscapedWithinSingleQuote() {
-    assertThat(template("SELECT * FROM tbl WHERE id = '{id}'").with("\\2"))
+    assertThat(template("SELECT * FROM tbl WHERE id = '{value}'").with("\\2"))
         .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = '\\\\2'"));
   }
 
   @Test
   public void doubleQuoteNotEscapedWithinSingleQuote() {
-    assertThat(template("SELECT * FROM tbl WHERE id = '{id}'").with("\"v\""))
+    assertThat(template("SELECT * FROM tbl WHERE id = '{value}'").with("\"v\""))
         .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = '\"v\"'"));
   }
 
@@ -70,7 +70,7 @@ public final class SafeQueryTest {
 
   @Test
   public void newLineEscapedWithinSingleQuote() {
-    assertThat(template("SELECT * FROM tbl WHERE id = '{id}'").with("\n"))
+    assertThat(template("SELECT * FROM tbl WHERE id = '{value}'").with("\n"))
         .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = '\\u000A'"));
   }
 
@@ -88,7 +88,7 @@ public final class SafeQueryTest {
 
   @Test
   public void carriageReturnEscapedWithinSingleQuote() {
-    assertThat(template("SELECT * FROM tbl WHERE id = '{id}'").with("\r"))
+    assertThat(template("SELECT * FROM tbl WHERE id = '{value}'").with("\r"))
         .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = '\\u000D'"));
   }
 
@@ -604,19 +604,19 @@ public final class SafeQueryTest {
 
   @Test
   public void backspaceCharacterQuoted() {
-    SafeQuery query = template("'{id}'").with("\b");
+    SafeQuery query = template("'{value}'").with("\b");
     assertThat(query.toString()).isEqualTo("'\\u0008'");
   }
 
   @Test
   public void nulCharacterQuoted() {
-    SafeQuery query = template("'{id}'").with("\0");
+    SafeQuery query = template("'{value}'").with("\0");
     assertThat(query.toString()).isEqualTo("'\\u0000'");
   }
 
   @Test
   public void pageBreakCharacterQuoted() {
-    SafeQuery query = template("'{id}'").with("\f");
+    SafeQuery query = template("'{value}'").with("\f");
     assertThat(query.toString()).isEqualTo("'\\u000C'");
   }
 
@@ -640,7 +640,7 @@ public final class SafeQueryTest {
 
   @Test
   public void unicodeSmugglingInStringLiteralNotEffective() {
-    SafeQuery query = template("'{id}'").with("ʻ OR TRUE OR ʼʼ=ʼ");
+    SafeQuery query = template("'{value}'").with("ʻ OR TRUE OR ʼʼ=ʼ");
     assertThat(query.toString()).isEqualTo("'\\u02BB" + " OR TRUE OR \\u02BC\\u02BC=\\u02BC'");
   }
 
@@ -688,7 +688,7 @@ public final class SafeQueryTest {
   @Test
   public void byteMinPlaceholderValueQuotedFilled() {
     byte value = Byte.MIN_VALUE;
-    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = '{id}'", value))
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = '{value}'", value))
         .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = '-128'"));
   }
 
@@ -730,7 +730,7 @@ public final class SafeQueryTest {
   @Test
   public void shortMinPlaceholderValueQuotedFilled() {
     short value = Short.MIN_VALUE;
-    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = '{id}'", value))
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = '{value}'", value))
         .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = '-32768'"));
   }
 
@@ -772,7 +772,7 @@ public final class SafeQueryTest {
   @Test
   public void intMinPlaceholderValueQuotedFilled() {
     int value = Integer.MIN_VALUE;
-    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = '{id}'", value))
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = '{value}'", value))
         .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = '-2147483648'"));
   }
 
@@ -814,7 +814,7 @@ public final class SafeQueryTest {
   @Test
   public void longMinPlaceholderValueQuotedFilled() {
     long value = Long.MIN_VALUE;
-    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = '{id}'", value))
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = '{value}'", value))
         .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = '-9223372036854775808'"));
   }
 
