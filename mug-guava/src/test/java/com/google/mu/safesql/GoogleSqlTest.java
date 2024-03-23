@@ -35,7 +35,7 @@ public class GoogleSqlTest {
                 "SELECT * FROM tbl WHERE creation_time = "
                     + "TIMESTAMP('1900-01-01T00:00:00.000000', 'America/Los_Angeles')"));
     assertThat(
-        GoogleSql.query(
+        GoogleSql.from(
             "SELECT * FROM tbl WHERE creation_time = {creation_time}", /* creation_time */ time.toInstant()))
     .isEqualTo(
         SafeQuery.of(
@@ -48,7 +48,7 @@ public class GoogleSqlTest {
     ZonedDateTime time =
         ZonedDateTime.of(2100, 12, 31, 23, 59, 59, 0, ZoneId.of("America/Los_Angeles"));
     assertThat(
-            GoogleSql.query(
+            GoogleSql.from(
                 "SELECT * FROM tbl WHERE creation_time = {creation_time}",
                 /* creation_time */ time.toInstant()))
         .isEqualTo(
@@ -67,7 +67,7 @@ public class GoogleSqlTest {
   @Test
   public void timestampMillisPlaceholder() {
     assertThat(
-            GoogleSql.query(
+            GoogleSql.from(
                 "SELECT * FROM tbl WHERE creation_time = {creation_time}",
                /* creation_time */ Instant.ofEpochMilli(123456)))
         .isEqualTo(
@@ -86,7 +86,7 @@ public class GoogleSqlTest {
   @Test
   public void timestampSecondsPlaceholder() {
     assertThat(
-            GoogleSql.query(
+            GoogleSql.from(
                 "SELECT * FROM tbl WHERE creation_time = {creation_time}",
                 /* creation_time */ Instant.ofEpochSecond(123456)))
         .isEqualTo(
@@ -105,7 +105,7 @@ public class GoogleSqlTest {
   @Test
   public void dateTimePlaceholder() {
     assertThat(
-            GoogleSql.query(
+            GoogleSql.from(
                 "SELECT * FROM tbl WHERE creation_time = {creation_time}",
                 /* creation_time */ ZonedDateTime.of(
                     2023, 10, 1, 8, 30, 0, 90000, ZoneId.of("America/Los_Angeles"))))
@@ -127,7 +127,7 @@ public class GoogleSqlTest {
   @Test
   public void datePlaceholder() {
     assertThat(
-            GoogleSql.query(
+            GoogleSql.from(
                 "SELECT * FROM tbl WHERE creation_date = {date}",
                 LocalDate.of(2023, 10, 1)))
         .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE creation_date = DATE(2023, 10, 1)"));
@@ -141,7 +141,7 @@ public class GoogleSqlTest {
   public void listOfTimestamp() {
     ZonedDateTime time = ZonedDateTime.of(1900, 1, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
     assertThat(
-           GoogleSql.query(
+           GoogleSql.from(
                "SELECT * FROM tbl WHERE creation_time in ({instants})",
                 /* instants */ ImmutableList.of(time.toInstant())))
         .isEqualTo(
@@ -161,7 +161,7 @@ public class GoogleSqlTest {
   public void mixedWithDefaultTranslation() {
     ZonedDateTime time = ZonedDateTime.of(1900, 1, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
     assertThat(
-            GoogleSql.query(
+            GoogleSql.from(
                 "SELECT * FROM tbl WHERE creation_time = {instant} AND id = {id}",
                 time.toInstant(), /* id */ 1))
         .isEqualTo(
