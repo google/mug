@@ -187,6 +187,17 @@ public final class SafeQuery {
   }
 
   /**
+   * when a sub-query starts with '-' (e.g. from a negative number), it can cause surprising
+   * semantics when combined with other subqueries. For example "{a} - {b}" when b is negative will
+   * result in "a -- b", where it becomes a line comment.
+   *
+   * <p>To be safe, we wrap the expression within a pair of parenthesis in such case.
+   */
+  private SafeQuery guardDashExpression() {
+    return query.startsWith("-") ? parenthesized() : this;
+  }
+
+  /**
    * An SPI class for subclasses to provide additional translation from placeholder values to safe
    * query strings.
    *
@@ -236,21 +247,16 @@ public final class SafeQuery {
           || value instanceof Short
           || value instanceof Integer
           || value instanceof Long) {
-        long longValue = ((Number) value).longValue();
-        SafeQuery sub = new SafeQuery(value.toString());
-        // Parenthesize negative value to prevent - injection.
-        return longValue >= 0 ? sub : sub.parenthesized();
+        return new SafeQuery(value.toString()).guardDashExpression();
       }
       if (value instanceof Float || value instanceof Double) {
         double doubleValue = ((Number) value).doubleValue();
         checkArgument(!Double.isNaN(doubleValue), "NaN value not supported");
         checkArgument(!Double.isInfinite(doubleValue), "Infinite value not supported");
-        DecimalFormat df = new DecimalFormat("#.#");
-        df.setMinimumIntegerDigits(1);
-        df.setMaximumFractionDigits(9);
-        SafeQuery sub = new SafeQuery(df.format(doubleValue));
-        // Parenthesize negative value to prevent - injection.
-        return doubleValue >= 0 ? sub : sub.parenthesized();
+        DecimalFormat fmt = new DecimalFormat("#.#");
+        fmt.setMinimumIntegerDigits(1);
+        fmt.setMaximumFractionDigits(9);
+        return new SafeQuery(fmt.format(doubleValue)).guardDashExpression();
       }
       if (value instanceof UnsignedInteger || value instanceof UnsignedLong) {
         return new SafeQuery(value.toString());
