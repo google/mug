@@ -138,7 +138,7 @@ public final class SafeQuery {
   public static Collector<SafeQuery, ?, SafeQuery> and() {
     return collectingAndThen(
         mapping(SafeQuery::parenthesized, joining(" AND ")),
-        query -> query.toString().isEmpty() ? of("TRUE") : query);
+        query -> query.toString().isEmpty() ? new SafeQuery("TRUE") : query);
   }
 
   /**
@@ -151,7 +151,7 @@ public final class SafeQuery {
   public static Collector<SafeQuery, ?, SafeQuery> or() {
     return collectingAndThen(
         mapping(SafeQuery::parenthesized, joining(" OR ")),
-        query -> query.toString().isEmpty() ? of("FALSE") : query);
+        query -> query.toString().isEmpty() ? new SafeQuery("FALSE") : query);
   }
 
   /**
@@ -223,20 +223,21 @@ public final class SafeQuery {
      *
      * @since 8.0
      */
-    protected String translateLiteral(Object value) {
+    protected SafeQuery translateLiteral(Object value) {
       if (value == null) {
-        return "NULL";
+        return new SafeQuery("NULL");
       }
       if (value instanceof Boolean) {
-        return value.equals(Boolean.TRUE) ? "TRUE" : "FALSE";
+        return new SafeQuery(value.equals(Boolean.TRUE) ? "TRUE" : "FALSE");
       }
       if (value instanceof Byte
           || value instanceof Short
           || value instanceof Integer
           || value instanceof Long) {
         long longValue = ((Number) value).longValue();
+        SafeQuery sub = new SafeQuery(value.toString());
         // Parenthesize negative value to prevent - injection.
-        return longValue >= 0 ? value.toString() : "(" + value + ")";
+        return longValue >= 0 ? sub : sub.parenthesized();
       }
       if (value instanceof Float || value instanceof Double) {
         double doubleValue = ((Number) value).doubleValue();
@@ -245,14 +246,15 @@ public final class SafeQuery {
         DecimalFormat df = new DecimalFormat("#.#");
         df.setMinimumIntegerDigits(1);
         df.setMaximumFractionDigits(9);
+        SafeQuery sub = new SafeQuery(df.format(doubleValue));
         // Parenthesize negative value to prevent - injection.
-        return doubleValue >= 0 ? df.format(doubleValue) : "(" + df.format(doubleValue) + ")";
+        return doubleValue >= 0 ? sub : sub.parenthesized();
       }
       if (value instanceof UnsignedInteger || value instanceof UnsignedLong) {
-        return value.toString();
+        return new SafeQuery(value.toString());
       }
       if (value instanceof Enum) {
-        return ((Enum<?>) value).name();
+        return new SafeQuery(((Enum<?>) value).name());
       }
       throw new IllegalArgumentException(
           "Unsupported argument type: " + value.getClass().getName());
@@ -298,7 +300,7 @@ public final class SafeQuery {
               + "and string literals must be quoted like '%s'",
           TRUSTED_SQL_TYPE_NAME,
           placeholder);
-      return translateLiteral(value);
+      return translateLiteral(value).toString();
     }
 
     private static String quotedBy(char quoteChar, Substring.Match placeholder, Object value) {
