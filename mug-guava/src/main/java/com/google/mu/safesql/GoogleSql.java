@@ -30,7 +30,11 @@ public final class GoogleSql {
   private static final ZoneId GOOGLE_ZONE_ID = ZoneId.of("America/Los_Angeles");
 
   /**
-   * Returns a GoogleSql {@link SafeQuery} using {@code queryTemplate} filled with {@code args}.
+   * Much like {@link SafeQuery#of}, but with additional GoogleSQL translation rules.
+   *
+   * <p>Specifically, {@link Instant} are translated to `TIMESTAMP()` GoogleSql function, {@link
+   * ZonedDateTime} are translated to `DATETIME()` GoogleSql function, and {@link LocalDate} are
+   * translated to `DATE()` GoogleSql function.
    *
    * @since 8.0
    */
