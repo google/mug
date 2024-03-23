@@ -241,7 +241,8 @@ public final class SafeQuery {
       return unquoted(placeholder, value);
     }
 
-    protected String unquoted(Substring.Match placeholder, Object value) {
+    /** Called if {@code value} is a non-string literal appearing unquoted in the template. */
+    protected String translateLiteral(Object value) {
       if (value == null) {
         return "NULL";
       }
@@ -254,7 +255,12 @@ public final class SafeQuery {
       if (value instanceof Enum) {
         return ((Enum<?>) value).name();
       }
-      if (isTrusted(value)) {
+      throw new IllegalArgumentException(
+          "Unsupported argument type: " + value.getClass().getName());
+    }
+
+    private String unquoted(Substring.Match placeholder, Object value) {
+      if (value != null && isTrusted(value)) {
         return value.toString();
       }
       checkArgument(
@@ -264,8 +270,7 @@ public final class SafeQuery {
               + "and string literals must be quoted like '%s'",
           TRUSTED_SQL_TYPE_NAME,
           placeholder);
-      throw new IllegalArgumentException(
-          "Unsupported argument type: " + value.getClass().getName());
+      return translateLiteral(value);
     }
 
     private static String quotedBy(char quoteChar, Substring.Match placeholder, Object value) {
