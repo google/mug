@@ -221,6 +221,8 @@ public final class SafeQuery {
      * <p>Subclasses should translate their trusted types then delegate to {@code
      * super.translateLiteral()} for other types.
      *
+     * @param value the literal value to fill in (not CharSequence or Char). Can be null.
+     *
      * @since 8.0
      */
     protected SafeQuery translateLiteral(Object value) {
