@@ -45,7 +45,6 @@ public final class GoogleSql {
     return template(queryTemplate).with(args);
   }
 
-
   /**
    * Much like {@link SafeQuery#template}, but with additional GoogleSQL translation rules.
    *
