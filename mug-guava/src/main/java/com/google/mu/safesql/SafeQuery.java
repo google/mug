@@ -212,6 +212,31 @@ public final class SafeQuery {
           });
     }
 
+    /**
+     * Called if {@code value} is a non-string literal appearing unquoted in the template.
+     *
+     * <p>Subclasses should only translate trusted types and delegate to {@code
+     * super.translatedLiteral()} for other types.
+     *
+     * @since 8.0
+     */
+    protected String translateLiteral(Object value) {
+      if (value == null) {
+        return "NULL";
+      }
+      if (value instanceof Boolean) {
+        return value.equals(Boolean.TRUE) ? "TRUE" : "FALSE";
+      }
+      if (value instanceof Number) {
+        return value.toString();
+      }
+      if (value instanceof Enum) {
+        return ((Enum<?>) value).name();
+      }
+      throw new IllegalArgumentException(
+          "Unsupported argument type: " + value.getClass().getName());
+    }
+
     private String fillInPlaceholder(Substring.Match placeholder, Object value) {
       validatePlaceholder(placeholder);
       if (value instanceof Iterable) {
@@ -239,29 +264,6 @@ public final class SafeQuery {
         return backquoted(placeholder, value);
       }
       return unquoted(placeholder, value);
-    }
-
-    /**
-     * Called if {@code value} is a non-string literal appearing unquoted in the template.
-     *
-     * <p>Subclasses should only translate trusted types and delegate to {@code
-     * super.translatedLiteral()} for other types.
-     */
-    protected String translateLiteral(Object value) {
-      if (value == null) {
-        return "NULL";
-      }
-      if (value instanceof Boolean) {
-        return value.equals(Boolean.TRUE) ? "TRUE" : "FALSE";
-      }
-      if (value instanceof Number) {
-        return value.toString();
-      }
-      if (value instanceof Enum) {
-        return ((Enum<?>) value).name();
-      }
-      throw new IllegalArgumentException(
-          "Unsupported argument type: " + value.getClass().getName());
     }
 
     private String unquoted(Substring.Match placeholder, Object value) {
