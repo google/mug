@@ -241,7 +241,12 @@ public final class SafeQuery {
       return unquoted(placeholder, value);
     }
 
-    /** Called if {@code value} is a non-string literal appearing unquoted in the template. */
+    /**
+     * Called if {@code value} is a non-string literal appearing unquoted in the template.
+     *
+     * <p>Subclasses should only translate trusted types and delegate to {@code
+     * super.translatedLiteral()}.
+     */
     protected String translateLiteral(Object value) {
       if (value == null) {
         return "NULL";
