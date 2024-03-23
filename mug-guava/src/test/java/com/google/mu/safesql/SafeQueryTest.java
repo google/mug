@@ -14,6 +14,8 @@ import org.junit.runner.RunWith;
 
 import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableList;
+import com.google.common.primitives.UnsignedInteger;
+import com.google.common.primitives.UnsignedLong;
 import com.google.common.testing.EqualsTester;
 import com.google.common.testing.NullPointerTester;
 import com.google.mu.util.StringFormat;
@@ -646,6 +648,300 @@ public final class SafeQueryTest {
   public void unicodeSmugglingInIdentifierNotEffective() {
     SafeQuery query = template("`{tbl}`").with("ʻ OR TRUE OR ʼʼ=ʼ");
     assertThat(query.toString()).isEqualTo("`\\u02BB" + " OR TRUE OR \\u02BC\\u02BC=\\u02BC`");
+  }
+
+  @Test
+  public void bytePositivePlaceholderValueFilled() {
+    byte value = 1;
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", value))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = 1"));
+  }
+
+  @Test
+  public void byteZeroPlaceholderValueFilled() {
+    byte value = 0;
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", value))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = 0"));
+  }
+
+  @Test
+  public void byteNegativePlaceholderValueFilled() {
+    byte value = -1;
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", value))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = (-1)"));
+  }
+
+  @Test
+  public void byteMaxPlaceholderValueFilled() {
+    byte value = Byte.MAX_VALUE;
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", value))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = 127"));
+  }
+
+  @Test
+  public void byteMinPlaceholderValueFilled() {
+    byte value = Byte.MIN_VALUE;
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", value))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = (-128)"));
+  }
+
+  @Test
+  public void byteMinPlaceholderValueQuotedFilled() {
+    byte value = Byte.MIN_VALUE;
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = '{id}'", value))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = '-128'"));
+  }
+
+  @Test
+  public void shortPositivePlaceholderValueFilled() {
+    short value = 1;
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", value))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = 1"));
+  }
+
+  @Test
+  public void shortZeroPlaceholderValueFilled() {
+    short value = 0;
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", value))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = 0"));
+  }
+
+  @Test
+  public void shortNegativePlaceholderValueFilled() {
+    short value = -1;
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", value))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = (-1)"));
+  }
+
+  @Test
+  public void shortMaxPlaceholderValueFilled() {
+    short value = Short.MAX_VALUE;
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", value))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = 32767"));
+  }
+
+  @Test
+  public void shortMinPlaceholderValueFilled() {
+    short value = Short.MIN_VALUE;
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", value))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = (-32768)"));
+  }
+
+  @Test
+  public void shortMinPlaceholderValueQuotedFilled() {
+    short value = Short.MIN_VALUE;
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = '{id}'", value))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = '-32768'"));
+  }
+
+  @Test
+  public void intPositivePlaceholderValueFilled() {
+    int value = 1;
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", value))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = 1"));
+  }
+
+  @Test
+  public void intZeroPlaceholderValueFilled() {
+    int value = 0;
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", value))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = 0"));
+  }
+
+  @Test
+  public void intNegativePlaceholderValueFilled() {
+    int value = -1;
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", value))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = (-1)"));
+  }
+
+  @Test
+  public void intMaxPlaceholderValueFilled() {
+    int value = Integer.MAX_VALUE;
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", value))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = 2147483647"));
+  }
+
+  @Test
+  public void intMinPlaceholderValueFilled() {
+    int value = Integer.MIN_VALUE;
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", value))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = (-2147483648)"));
+  }
+
+  @Test
+  public void intMinPlaceholderValueQuotedFilled() {
+    int value = Integer.MIN_VALUE;
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = '{id}'", value))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = '-2147483648'"));
+  }
+
+  @Test
+  public void longPositivePlaceholderValueFilled() {
+    int value = 1;
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", value))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = 1"));
+  }
+
+  @Test
+  public void longZeroPlaceholderValueFilled() {
+    long value = 0;
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", value))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = 0"));
+  }
+
+  @Test
+  public void longNegativePlaceholderValueFilled() {
+    long value = -1;
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", value))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = (-1)"));
+  }
+
+  @Test
+  public void longMaxPlaceholderValueFilled() {
+    long value = Long.MAX_VALUE;
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", value))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = 9223372036854775807"));
+  }
+
+  @Test
+  public void longMinPlaceholderValueFilled() {
+    long value = Long.MIN_VALUE;
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", value))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = (-9223372036854775808)"));
+  }
+
+  @Test
+  public void longMinPlaceholderValueQuotedFilled() {
+    long value = Long.MIN_VALUE;
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = '{id}'", value))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = '-9223372036854775808'"));
+  }
+
+  @Test
+  public void doublePositivePlaceholderValueFilled() {
+    double value = 1.5;
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", value))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = 1.5"));
+  }
+
+  @Test
+  public void doubleZeroPlaceholderValueFilled() {
+    double value = 0;
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", value))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = 0"));
+  }
+
+  @Test
+  public void doubleNegativePlaceholderValueFilled() {
+    double value = -1.5;
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", value))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = (-1.5)"));
+  }
+
+  @Test
+  public void doubleMaxPlaceholderValueFilled() {
+    double value = Double.MAX_VALUE;
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", value).toString())
+        .startsWith("SELECT * FROM tbl WHERE id = 17976931348623157000000");
+  }
+
+  @Test
+  public void doubleInfinitePlaceholderValue_disallowed() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", Double.NEGATIVE_INFINITY));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", Double.POSITIVE_INFINITY));
+  }
+
+  @Test
+  public void doubleNanPlaceholderValue_disallowed() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", Double.NaN));
+  }
+
+  @Test
+  public void floatPositivePlaceholderValueFilled() {
+    float value = 1.5F;
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", value))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = 1.5"));
+  }
+
+  @Test
+  public void floatZeroPlaceholderValueFilled() {
+    float value = 0;
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", value))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = 0"));
+  }
+
+  @Test
+  public void floatNegativePlaceholderValueFilled() {
+    float value = -1.5F;
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", value))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = (-1.5)"));
+  }
+
+  @Test
+  public void floatMaxPlaceholderValueFilled() {
+    float value = Float.MAX_VALUE;
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", value).toString())
+        .startsWith("SELECT * FROM tbl WHERE id = 34028234663852886000000");
+  }
+
+  @Test
+  public void floatInfinitePlaceholderValue_disallowed() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", Float.NEGATIVE_INFINITY));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", Float.POSITIVE_INFINITY));
+  }
+
+  @Test
+  public void floatNanPlaceholderValue_disallowed() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", Float.NaN));
+  }
+
+  @Test
+  public void unsignedLongPlaceholderValueFilled() {
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", UnsignedLong.ONE))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = 1"));
+  }
+
+  @Test
+  public void unsignedLongZeroPlaceholderValueFilled() {
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", UnsignedLong.ZERO))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = 0"));
+  }
+
+  @Test
+  public void unsignedLongMaxPlaceholderValueFilled() {
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", UnsignedLong.MAX_VALUE))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = 18446744073709551615"));
+  }
+
+  @Test
+  public void unsignedIntegerPlaceholderValueFilled() {
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", UnsignedInteger.ONE))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = 1"));
+  }
+
+  @Test
+  public void unsignedIntegerZeroPlaceholderValueFilled() {
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", UnsignedInteger.ZERO))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = 0"));
+  }
+
+  @Test
+  public void unsignedIntegerMaxPlaceholderValueFilled() {
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = {id}", UnsignedInteger.MAX_VALUE))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = 4294967295"));
   }
 
   @Test

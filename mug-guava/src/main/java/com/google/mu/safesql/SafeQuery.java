@@ -10,12 +10,15 @@ import static com.google.mu.util.Substring.suffix;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.mapping;
 
+import java.text.DecimalFormat;
 import java.util.Iterator;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.Iterables;
+import com.google.common.primitives.UnsignedInteger;
+import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.errorprone.annotations.Immutable;
 import com.google.mu.annotations.RequiresGuava;
@@ -227,7 +230,25 @@ public final class SafeQuery {
       if (value instanceof Boolean) {
         return value.equals(Boolean.TRUE) ? "TRUE" : "FALSE";
       }
-      if (value instanceof Number) {
+      if (value instanceof Byte
+          || value instanceof Short
+          || value instanceof Integer
+          || value instanceof Long) {
+        long longValue = ((Number) value).longValue();
+        // Parenthesize negative value to prevent - injection.
+        return longValue >= 0 ? value.toString() : "(" + value + ")";
+      }
+      if (value instanceof Float || value instanceof Double) {
+        double doubleValue = ((Number) value).doubleValue();
+        checkArgument(!Double.isNaN(doubleValue), "NaN value not supported");
+        checkArgument(!Double.isInfinite(doubleValue), "Infinite value not supported");
+        DecimalFormat df = new DecimalFormat("#.#");
+        df.setMinimumIntegerDigits(1);
+        df.setMaximumFractionDigits(9);
+        // Parenthesize negative value to prevent - injection.
+        return doubleValue >= 0 ? df.format(doubleValue) : "(" + df.format(doubleValue) + ")";
+      }
+      if (value instanceof UnsignedInteger || value instanceof UnsignedLong) {
         return value.toString();
       }
       if (value instanceof Enum) {
