@@ -11,6 +11,7 @@ import com.google.mu.annotations.RequiresGuava;
 import com.google.mu.annotations.TemplateFormatMethod;
 import com.google.mu.annotations.TemplateString;
 import com.google.mu.util.StringFormat;
+import com.google.mu.util.Substring;
 
 /**
  * Facade class providing {@link SafeQuery} templates for GoogleSQL.
@@ -54,7 +55,7 @@ public final class GoogleSql {
    */
   public static StringFormat.To<SafeQuery> template(@CompileTimeConstant String formatString) {
     return new SafeQuery.Translator() {
-      @Override protected SafeQuery translateLiteral(Object value) {
+      @Override protected SafeQuery translateLiteral(Substring.Match placeholder, Object value) {
         if (value instanceof Instant) {
           return timestampExpression((Instant) value);
         }
@@ -64,7 +65,7 @@ public final class GoogleSql {
         if (value instanceof LocalDate) {
           return dateExpression((LocalDate) value);
         }
-        return super.translateLiteral(value);
+        return super.translateLiteral(placeholder, value);
       }
     }.translate(formatString);
   }
