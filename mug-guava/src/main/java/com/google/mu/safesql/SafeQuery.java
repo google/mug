@@ -229,13 +229,15 @@ public final class SafeQuery {
     }
 
     /**
-     * Called if a placeholder {@code value} is a non-string literal appearing unquoted in the template.
+     * Called if a placeholder {@code value} is a non-string, non-Iterable literal appearing
+     * unquoted in the template.
      *
-     * <p>Subclasses should translate their trusted types then delegate to {@code
-     * super.translateLiteral()} for other types.
+     * <p>Subclasses should translate their trusted types or delegate to {@code
+     * super.translateLiteral()} for all other types.
      *
      * @param placeholder the placeholder in the template to be filled with {@code value}
      * @param value the literal value to fill in (not CharSequence or Character). Can be null.
+     * @return a sub-query to be filled into the result query in the place of {@code placeholder}
      *
      * @since 8.0
      */
