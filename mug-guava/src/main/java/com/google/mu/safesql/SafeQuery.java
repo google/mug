@@ -113,7 +113,7 @@ public final class SafeQuery {
    * <ul>
    *   <li>null (NULL)
    *   <li>Boolean
-   *   <li>Numeric
+   *   <li>Numeric (negative numbers will be enclosed in parenthesis to avoid semantic change)
    *   <li>Enum
    *   <li>String (must be quoted in the template)
    *   <li>{@code TrustedSqlString}
@@ -193,8 +193,10 @@ public final class SafeQuery {
    *
    * <p>To be safe, we wrap the expression within a pair of parenthesis in such case.
    */
-  private SafeQuery guardDashExpression() {
-    return query.startsWith("-") ? parenthesized() : this;
+  private SafeQuery guardDashExpression(Substring.Match placeholder) {
+    return query.startsWith("-") && !placeholder.isImmediatelyBetween("(", ")")
+        ? parenthesized()
+        : this;
   }
 
   /**
@@ -247,7 +249,7 @@ public final class SafeQuery {
           || value instanceof Short
           || value instanceof Integer
           || value instanceof Long) {
-        return new SafeQuery(value.toString()).guardDashExpression();
+        return new SafeQuery(value.toString()).guardDashExpression(placeholder);
       }
       if (value instanceof Float || value instanceof Double) {
         double doubleValue = ((Number) value).doubleValue();
@@ -256,7 +258,7 @@ public final class SafeQuery {
         DecimalFormat fmt = new DecimalFormat("#.#");
         fmt.setMinimumIntegerDigits(1);
         fmt.setMaximumFractionDigits(9);
-        return new SafeQuery(fmt.format(doubleValue)).guardDashExpression();
+        return new SafeQuery(fmt.format(doubleValue)).guardDashExpression(placeholder);
       }
       if (value instanceof UnsignedInteger || value instanceof UnsignedLong) {
         return new SafeQuery(value.toString());

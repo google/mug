@@ -515,6 +515,13 @@ public final class SafeQueryTest {
   }
 
   @Test
+  public void negativeNumberNotDoubleParenthesized() {
+    int value = -1;
+    assertThat(SafeQuery.of("SELECT * FROM tbl WHERE id = ({value})", value))
+        .isEqualTo(SafeQuery.of("SELECT * FROM tbl WHERE id = (-1)"));
+  }
+
+  @Test
   public void testEquals() {
     new EqualsTester()
         .addEqualityGroup(SafeQuery.of("SELECT *"), SafeQuery.of("SELECT *"))
