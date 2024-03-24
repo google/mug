@@ -11,7 +11,7 @@ public final class SafeQueryArgsCheckTest {
       CompilationTestHelper.newInstance(SafeQueryArgsCheck.class, getClass());
 
   @Test
-  public void stringArgCanBeSingleQuoted() {
+  public void with_stringArgCanBeSingleQuoted() {
     helper
         .addSourceLines(
             "Test.java",
@@ -28,7 +28,21 @@ public final class SafeQueryArgsCheckTest {
   }
 
   @Test
-  public void stringArgCanBeDoubleQuoted() {
+  public void templateFormatMethod_stringArgCanBeSingleQuoted() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.safesql.SafeQuery;",
+            "class Sql {",
+            "  SafeQuery test() {",
+            "    return SafeQuery.of(\"SELECT '{v}' FROM tbl\", \"value\");",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void with_stringArgCanBeDoubleQuoted() {
     helper
         .addSourceLines(
             "Test.java",
@@ -45,7 +59,21 @@ public final class SafeQueryArgsCheckTest {
   }
 
   @Test
-  public void charArgCanBeSingleQuoted() {
+  public void templateFormatMethod_stringArgCanBeDoubleQuoted() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.safesql.SafeQuery;",
+            "class Sql {",
+            "  SafeQuery test() {",
+            "    return SafeQuery.of(\"SELECT \\\"{v}\\\" FROM tbl\", \"value\");",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void with_charArgCanBeSingleQuoted() {
     helper
         .addSourceLines(
             "Test.java",
@@ -62,7 +90,21 @@ public final class SafeQueryArgsCheckTest {
   }
 
   @Test
-  public void charArgCanBeDoubleQuoted() {
+  public void templateFormatMethod_charArgCanBeSingleQuoted() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.safesql.SafeQuery;",
+            "class Sql {",
+            "  SafeQuery test() {",
+            "    return SafeQuery.of(\"SELECT '{v}' FROM tbl\", 'v');",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void with_charArgCanBeDoubleQuoted() {
     helper
         .addSourceLines(
             "Test.java",
@@ -79,7 +121,21 @@ public final class SafeQueryArgsCheckTest {
   }
 
   @Test
-  public void stringArgMustBeQuoted() {
+  public void templateFormatMethod_charArgCanBeDoubleQuoted() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.safesql.SafeQuery;",
+            "class Sql {",
+            "  SafeQuery test() {",
+            "    return SafeQuery.of(\"SELECT \\\"{v}\\\" FROM tbl\", 'v');",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void with_stringArgMustBeQuoted() {
     helper
         .addSourceLines(
             "Test.java",
@@ -97,7 +153,22 @@ public final class SafeQueryArgsCheckTest {
   }
 
   @Test
-  public void stringArgCanBeBackquoted() {
+  public void templateFormatMethod_stringArgMustBeQuoted() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.safesql.SafeQuery;",
+            "class Sql {",
+            "  SafeQuery test() {",
+            "    // BUG: Diagnostic contains: java.lang.String must be quoted",
+            "    return SafeQuery.of(\"SELECT {c} FROM tbl\", \"column\");",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void with_stringArgCanBeBackquoted() {
     helper
         .addSourceLines(
             "Test.java",
@@ -114,7 +185,21 @@ public final class SafeQueryArgsCheckTest {
   }
 
   @Test
-  public void charArgMustBeQuoted() {
+  public void templateFormatMethod_stringArgCanBeBackquoted() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.safesql.SafeQuery;",
+            "class Sql {",
+            "  SafeQuery test() {",
+            "    return SafeQuery.of(\"SELECT `{c}` FROM tbl\", \"column\");",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void with_charArgMustBeQuoted() {
     helper
         .addSourceLines(
             "Test.java",
@@ -124,7 +209,7 @@ public final class SafeQueryArgsCheckTest {
             "  private static final StringFormat.To<SafeQuery> SELECT =",
             "     SafeQuery.template(\"SELECT {c} FROM tbl\");",
             "  SafeQuery test() {",
-            "    // BUG: Diagnostic contains: char must be quoted (for example '{c}'",
+            "    // BUG: Diagnostic contains: for example '{c}'",
             "    return SELECT.with('x');",
             "  }",
             "}")
@@ -132,60 +217,22 @@ public final class SafeQueryArgsCheckTest {
   }
 
   @Test
-  public void safeQueryCannotBeSingleQuoted() {
+  public void templateFormatMethod_charArgMustBeQuoted() {
     helper
         .addSourceLines(
             "Test.java",
             "import com.google.mu.safesql.SafeQuery;",
-            "import com.google.mu.util.StringFormat;",
             "class Sql {",
-            "  private static final StringFormat.To<SafeQuery> UPDATE =",
-            "     SafeQuery.template(\"UPDATE '{c}' FROM tbl\");",
             "  SafeQuery test() {",
-            "    // BUG: Diagnostic contains: SafeQuery should not be quoted: '{c}'",
-            "    return UPDATE.with(SafeQuery.of(\"foo\"));",
+            "    // BUG: Diagnostic contains: for example '{c}'",
+            "    return SafeQuery.of(\"SELECT {c} FROM tbl\", 'x');",
             "  }",
             "}")
         .doTest();
   }
 
   @Test
-  public void safeQueryNotQuoted() {
-    helper
-        .addSourceLines(
-            "Test.java",
-            "import com.google.mu.safesql.SafeQuery;",
-            "import com.google.mu.util.StringFormat;",
-            "class Sql {",
-            "  private static final StringFormat.To<SafeQuery> SELECT =",
-            "     SafeQuery.template(\"SELECT {c} FROM tbl\");",
-            "  SafeQuery test() {",
-            "    return SELECT.with(SafeQuery.of(\"column\"));",
-            "  }",
-            "}")
-        .doTest();
-  }
-
-  @Test
-  public void safeQueryCannotBeDoubleQuoted() {
-    helper
-        .addSourceLines(
-            "Test.java",
-            "import com.google.mu.safesql.SafeQuery;",
-            "import com.google.mu.util.StringFormat;",
-            "class Sql {",
-            "  private static final StringFormat.To<SafeQuery> UPDATE =",
-            "     SafeQuery.template(\"UPDATE \\\"{c}\\\" FROM tbl\");",
-            "  SafeQuery test() {",
-            "    // BUG: Diagnostic contains: SafeQuery should not be quoted: '{c}'",
-            "    return UPDATE.with(SafeQuery.of(\"foo\"));",
-            "  }",
-            "}")
-        .doTest();
-  }
-
-  @Test
-  public void formatStringNotFound() {
+  public void with_formatStringNotFound() {
     helper
         .addSourceLines(
             "Test.java",
@@ -200,14 +247,29 @@ public final class SafeQueryArgsCheckTest {
   }
 
   @Test
-  public void nonSafeQuery_notChecked() {
+  public void templateFormatMethod_formatStringNotFound() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.safesql.SafeQuery;",
+            "import com.google.errorprone.annotations.CompileTimeConstant;",
+            "class Sql {",
+            "  SafeQuery test(@CompileTimeConstant String template) {",
+            "    return SafeQuery.of(template, 'x');",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void with_regularStringFormat_notChecked() {
     helper
         .addSourceLines(
             "Test.java",
             "import com.google.mu.util.StringFormat;",
             "class NotSafeQuery {",
             "  private static final StringFormat.To<NotSafeQuery> UPDATE =",
-            "     StringFormat.to(NotSafeQuery::new, \"update {c}\");",
+            "     StringFormat.to(NotSafeQuery::new, \"SELECT * FROM {c}\");",
             "  NotSafeQuery(String query) {} ",
             "  NotSafeQuery test() {",
             "    return UPDATE.with('x');",
