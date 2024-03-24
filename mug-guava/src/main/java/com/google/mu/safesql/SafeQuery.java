@@ -227,7 +227,7 @@ public final class SafeQuery {
     }
 
     /**
-     * Called if {@code value} is a non-string literal appearing unquoted in the template.
+     * Called if a placeholder {@code value} is a non-string literal appearing unquoted in the template.
      *
      * <p>Subclasses should translate their trusted types then delegate to {@code
      * super.translateLiteral()} for other types.
@@ -236,7 +236,7 @@ public final class SafeQuery {
      *
      * @since 8.0
      */
-    protected SafeQuery translateLiteral(Object value) {
+    protected SafeQuery translateLiteral(Substring.Match placeholder, Object value) {
       if (value == null) {
         return new SafeQuery("NULL");
       }
@@ -251,8 +251,8 @@ public final class SafeQuery {
       }
       if (value instanceof Float || value instanceof Double) {
         double doubleValue = ((Number) value).doubleValue();
-        checkArgument(!Double.isNaN(doubleValue), "NaN value not supported");
-        checkArgument(!Double.isInfinite(doubleValue), "Infinite value not supported");
+        checkArgument(!Double.isNaN(doubleValue), "%s: NaN value not supported", placeholder);
+        checkArgument(!Double.isInfinite(doubleValue), "%s: infinite value not supported", placeholder);
         DecimalFormat fmt = new DecimalFormat("#.#");
         fmt.setMinimumIntegerDigits(1);
         fmt.setMaximumFractionDigits(9);
@@ -265,7 +265,7 @@ public final class SafeQuery {
         return new SafeQuery(((Enum<?>) value).name());
       }
       throw new IllegalArgumentException(
-          "Unsupported argument type: " + value.getClass().getName());
+          placeholder + ": unsupported argument type " + value.getClass().getName());
     }
 
     private String fillInPlaceholder(Substring.Match placeholder, Object value) {
@@ -308,7 +308,7 @@ public final class SafeQuery {
               + "and string literals must be quoted like '%s'",
           TRUSTED_SQL_TYPE_NAME,
           placeholder);
-      return translateLiteral(value).toString();
+      return translateLiteral(placeholder, value).toString();
     }
 
     private static String quotedBy(char quoteChar, Substring.Match placeholder, Object value) {
