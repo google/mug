@@ -277,4 +277,45 @@ public final class SafeQueryArgsCheckTest {
             "}")
         .doTest();
   }
+
+  @Test
+  public void templateFormatMethod_templateStringNotTheFirstParameter_noError() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.safesql.SafeQuery;",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Sql {",
+            "  SafeQuery test() {",
+            "    return query(\"foo\", \"SELECT \\\"{v}\\\" FROM tbl\", 'v');",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  SafeQuery query(String base, @TemplateString String template, Object... args) {",
+            "    return SafeQuery.of(\"null\");",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_templateStringNotTheFirstParameter_withError() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.safesql.SafeQuery;",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Sql {",
+            "  SafeQuery test(String v) {",
+            "    // BUG: Diagnostic contains: argument of type java.lang.String must be quoted",
+            "    return query(\"foo\", \"SELECT {v} FROM tbl\", v);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  SafeQuery query(String base, @TemplateString String template, Object... args) {",
+            "    return SafeQuery.of(\"null\");",
+            "  }",
+            "}")
+        .doTest();
+  }
 }
