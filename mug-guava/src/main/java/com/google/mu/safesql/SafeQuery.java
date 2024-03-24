@@ -234,6 +234,7 @@ public final class SafeQuery {
      * <p>Subclasses should translate their trusted types then delegate to {@code
      * super.translateLiteral()} for other types.
      *
+     * @param placeholder the placeholder in the template to be filled with {@code value}
      * @param value the literal value to fill in (not CharSequence or Character). Can be null.
      *
      * @since 8.0
