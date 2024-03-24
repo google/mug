@@ -113,7 +113,7 @@ public final class SafeQuery {
    * <ul>
    *   <li>null (NULL)
    *   <li>Boolean
-   *   <li>Numeric
+   *   <li>Numeric (negative numbers will be enclosed in parenthesis to avoid semantic change)
    *   <li>Enum
    *   <li>String (must be quoted in the template)
    *   <li>{@code TrustedSqlString}
@@ -187,6 +187,19 @@ public final class SafeQuery {
   }
 
   /**
+   * when a sub-query starts with '-' (e.g. from a negative number), it can cause surprising
+   * semantics when combined with other subqueries. For example "{a} - {b}" when b is negative will
+   * result in "a -- b", where it becomes a line comment.
+   *
+   * <p>To be safe, we wrap the expression within a pair of parenthesis in such case.
+   */
+  private SafeQuery guardDashExpression(Substring.Match placeholder) {
+    return query.startsWith("-") && !placeholder.isImmediatelyBetween("(", ")")
+        ? parenthesized()
+        : this;
+  }
+
+  /**
    * An SPI class for subclasses to provide additional translation from placeholder values to safe
    * query strings.
    *
@@ -216,7 +229,7 @@ public final class SafeQuery {
     }
 
     /**
-     * Called if {@code value} is a non-string literal appearing unquoted in the template.
+     * Called if a placeholder {@code value} is a non-string literal appearing unquoted in the template.
      *
      * <p>Subclasses should translate their trusted types then delegate to {@code
      * super.translateLiteral()} for other types.
@@ -225,7 +238,7 @@ public final class SafeQuery {
      *
      * @since 8.0
      */
-    protected SafeQuery translateLiteral(Object value) {
+    protected SafeQuery translateLiteral(Substring.Match placeholder, Object value) {
       if (value == null) {
         return new SafeQuery("NULL");
       }
@@ -236,21 +249,16 @@ public final class SafeQuery {
           || value instanceof Short
           || value instanceof Integer
           || value instanceof Long) {
-        long longValue = ((Number) value).longValue();
-        SafeQuery sub = new SafeQuery(value.toString());
-        // Parenthesize negative value to prevent - injection.
-        return longValue >= 0 ? sub : sub.parenthesized();
+        return new SafeQuery(value.toString()).guardDashExpression(placeholder);
       }
       if (value instanceof Float || value instanceof Double) {
         double doubleValue = ((Number) value).doubleValue();
-        checkArgument(!Double.isNaN(doubleValue), "NaN value not supported");
-        checkArgument(!Double.isInfinite(doubleValue), "Infinite value not supported");
-        DecimalFormat df = new DecimalFormat("#.#");
-        df.setMinimumIntegerDigits(1);
-        df.setMaximumFractionDigits(9);
-        SafeQuery sub = new SafeQuery(df.format(doubleValue));
-        // Parenthesize negative value to prevent - injection.
-        return doubleValue >= 0 ? sub : sub.parenthesized();
+        checkArgument(!Double.isNaN(doubleValue), "%s: NaN value not supported", placeholder);
+        checkArgument(!Double.isInfinite(doubleValue), "%s: infinite value not supported", placeholder);
+        DecimalFormat fmt = new DecimalFormat("#.#");
+        fmt.setMinimumIntegerDigits(1);
+        fmt.setMaximumFractionDigits(9);
+        return new SafeQuery(fmt.format(doubleValue)).guardDashExpression(placeholder);
       }
       if (value instanceof UnsignedInteger || value instanceof UnsignedLong) {
         return new SafeQuery(value.toString());
@@ -259,7 +267,7 @@ public final class SafeQuery {
         return new SafeQuery(((Enum<?>) value).name());
       }
       throw new IllegalArgumentException(
-          "Unsupported argument type: " + value.getClass().getName());
+          placeholder + ": unsupported argument type " + value.getClass().getName());
     }
 
     private String fillInPlaceholder(Substring.Match placeholder, Object value) {
@@ -302,7 +310,7 @@ public final class SafeQuery {
               + "and string literals must be quoted like '%s'",
           TRUSTED_SQL_TYPE_NAME,
           placeholder);
-      return translateLiteral(value).toString();
+      return translateLiteral(placeholder, value).toString();
     }
 
     private static String quotedBy(char quoteChar, Substring.Match placeholder, Object value) {
