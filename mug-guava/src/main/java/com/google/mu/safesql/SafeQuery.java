@@ -36,8 +36,8 @@ import com.google.mu.util.Substring;
  * <p>A SafeQuery encapsulates the query string. You can use {@link #toString} to access the query
  * string.
  *
- * <p>In addition, a SafeQuery may represent a subquery, and can be passed through {@link
- * StringFormat.To#with} to compose larger queries.
+ * <p>In addition, a SafeQuery may represent a subquery, and can be passed through {@link #of} or
+ * {@link StringFormat.To#with} to compose larger queries.
  *
  * <p>This class is Android compatible.
  *
