@@ -80,8 +80,8 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
   private static final Matcher<MethodInvocationTree> STRING_FORMAT_MATCHER =
       Matchers.anyOf(
           anyMethod().onDescendantOf("com.google.mu.util.StringFormat"),
-          anyMethod().onDescendantOf("com.google.mu.util.StringFormat.To"));
-      //staticMethod().onClass("com.google.mu.util.StringFormat").named("with");
+          anyMethod().onDescendantOf("com.google.mu.util.StringFormat.To"),
+          anyMethod().onDescendantOf("com.google.mu.util.StringFormat.Template"));
   private static final String FORMAT_STRING_NOT_FOUND =
       "Compile-time format string expected but definition not found. As a result, the"
           + " format arguments cannot be validated at compile-time.\n"
@@ -92,7 +92,8 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
   private static final ImmutableSet<TypeName> FORMATTER_TYPES =
       ImmutableSet.of(
           new TypeName("com.google.mu.util.StringFormat"),
-          new TypeName("com.google.mu.util.StringFormat.To"));
+          new TypeName("com.google.mu.util.StringFormat.To"),
+          new TypeName("com.google.mu.util.StringFormat.Template"));
   private static final ImmutableMap<TypeName, Integer> FUNCTION_CARDINALITIES =
       ImmutableMap.of(
           TypeName.of(Function.class), 1,

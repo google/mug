@@ -43,7 +43,7 @@ public class HowToUseStringFormatTest {
 
   @Test public void safeQueryExample() {
     String id = "foo";
-    StringFormat.To<SafeQuery> whereClause = SafeQuery.template("WHERE id = '{id}'");
+    StringFormat.Template<SafeQuery> whereClause = SafeQuery.template("WHERE id = '{id}'");
     assertThat(whereClause.with(id))
         .isEqualTo(SafeQuery.of("WHERE id = 'foo'"));
   }

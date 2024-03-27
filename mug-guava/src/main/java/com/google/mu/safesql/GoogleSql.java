@@ -10,7 +10,7 @@ import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.mu.annotations.RequiresGuava;
 import com.google.mu.annotations.TemplateFormatMethod;
 import com.google.mu.annotations.TemplateString;
-import com.google.mu.util.StringFormat;
+import com.google.mu.util.StringFormat.Template;
 import com.google.mu.util.Substring;
 
 /**
@@ -22,11 +22,11 @@ import com.google.mu.util.Substring;
 public final class GoogleSql {
   private static final DateTimeFormatter LOCAL_DATE_TIME_FORMATTER =
       DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss[.SSSSSS]");
-  private static final StringFormat.To<SafeQuery> DATE_TIME_EXPRESSION =
+  private static final Template<SafeQuery> DATE_TIME_EXPRESSION =
       SafeQuery.template("DATETIME('{time}', '{zone}')");
-  private static final StringFormat.To<SafeQuery> TIMESTAMP_EXPRESSION =
+  private static final Template<SafeQuery> TIMESTAMP_EXPRESSION =
       SafeQuery.template("TIMESTAMP('{time}', '{zone}')");
-  private static final StringFormat.To<SafeQuery> DATE_EXPRESSION =
+  private static final Template<SafeQuery> DATE_EXPRESSION =
       SafeQuery.template("DATE({year}, {month}, {day})");
   private static final ZoneId GOOGLE_ZONE_ID = ZoneId.of("America/Los_Angeles");
 
@@ -53,7 +53,7 @@ public final class GoogleSql {
    * {@link ZonedDateTime} are translated to `DATETIME()` GoogleSql function,
    * and {@link LocalDate} are translated to `DATE()` GoogleSql function.
    */
-  public static StringFormat.To<SafeQuery> template(@CompileTimeConstant String formatString) {
+  public static Template<SafeQuery> template(@CompileTimeConstant String formatString) {
     return new SafeQuery.Translator() {
       @Override protected SafeQuery translateLiteral(Substring.Match placeholder, Object value) {
         if (value instanceof Instant) {

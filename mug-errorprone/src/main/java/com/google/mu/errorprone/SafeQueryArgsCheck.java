@@ -17,6 +17,7 @@ import com.google.errorprone.BugPattern.LinkType;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.matchers.Matcher;
+import com.google.errorprone.matchers.Matchers;
 import com.google.errorprone.util.ASTHelpers;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
@@ -40,7 +41,9 @@ import java.util.List;
 public final class SafeQueryArgsCheck extends AbstractBugChecker
     implements AbstractBugChecker.MethodInvocationCheck {
   private static final Matcher<ExpressionTree> STRING_FORMAT_TO_METHOD_MATCHER =
-      anyMethod().onDescendantOf("com.google.mu.util.StringFormat.To");
+      Matchers.anyOf(
+          anyMethod().onDescendantOf("com.google.mu.util.StringFormat.To"),
+          anyMethod().onDescendantOf("com.google.mu.util.StringFormat.Template"));
   private static final TypeName SAFE_QUERY_TYPE =
       new TypeName("com.google.mu.safesql.SafeQuery");
   private static final ImmutableSet<TypeName> ARG_TYPES_THAT_SHOULD_NOT_BE_QUOTED =

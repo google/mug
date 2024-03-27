@@ -31,6 +31,7 @@ import com.google.mu.annotations.RequiresBigQuery;
 import com.google.mu.annotations.TemplateFormatMethod;
 import com.google.mu.annotations.TemplateString;
 import com.google.mu.util.StringFormat;
+import com.google.mu.util.StringFormat.Template;
 import com.google.mu.util.stream.BiStream;
 
 /**
@@ -53,7 +54,7 @@ import com.google.mu.util.stream.BiStream;
  * "out of the way", you can define the query template as a class constant:
  *
  * <pre>{@code
- * private static final StringFormat.To<ParameterizedQuery> GET_STUDENT = ParameterizedQuery.template(
+ * private static final Template<ParameterizedQuery> GET_STUDENT = ParameterizedQuery.template(
  *     "SELECT name FROM Students WHERE id = {id} and status = {status}");
  *
  * // 200 lines later
@@ -73,7 +74,7 @@ import com.google.mu.util.stream.BiStream;
  * sub-queries. The following example allows you to use the same query on different datasets:
  *
  * <pre>{@code
- * private static final StringFormat.To<ParameterizedQuery> GET_TABLES = ParameterizedQuery.template(
+ * private static final Template<ParameterizedQuery> GET_TABLES = ParameterizedQuery.template(
  *     "SELECT table_name FROM `{dataset}.INFORMATION_SCHEMA.TABLES`");
  *
  * TableResult marketingTables = GET_TABLES.with(ParameterizedQuery.of("marketing")).run();
@@ -130,7 +131,7 @@ public final class ParameterizedQuery {
    * <p>For example:
    *
    * <pre>{@code
-   * private static final StringFormat.To<QueryJobConfiguration> GET_JOB_IDS_BY_QUERY =
+   * private static final Template<QueryJobConfiguration> GET_JOB_IDS_BY_QUERY =
    *     ParameterizedQuery.template(
    *         """
    *         SELECT job_id from INFORMATION_SCHEMA.JOBS_BY_PROJECT
@@ -161,7 +162,7 @@ public final class ParameterizedQuery {
    * If you need to supply other types, consider to wrap them explicitly using one of the static
    * factory methods of {@link QueryParameterValue}.
    */
-  public static StringFormat.To<ParameterizedQuery> template(@CompileTimeConstant String template) {
+  public static Template<ParameterizedQuery> template(@CompileTimeConstant String template) {
     return StringFormat.template(
         template,
         (fragments, placeholders) -> {
@@ -202,7 +203,7 @@ public final class ParameterizedQuery {
    * query the table names only, or read the project, dataset and table names:
    *
    * <pre>{@code
-   * private static final StringFormat.To<ParameterizedQuery> QUERY_TABLES =
+   * private static final Template<ParameterizedQuery> QUERY_TABLES =
    *     ParameterizedQuery.template("SELECT {columns} FROM {dataset}.INFORMATION_SCHEMA.TABLES");
    *
    * ParameterizedQuery getTableNames = QUERY_TABLES.with(ParameterizedQuery.of("table_name"));
