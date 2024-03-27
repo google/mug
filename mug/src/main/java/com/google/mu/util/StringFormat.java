@@ -134,7 +134,7 @@ public final class StringFormat extends AbstractStringFormat {
    *
    * <ol>
    *   <li>{@code FORMAT_CONSTANT.format(...)}.
-   *   <li>{@code StringFormat.with(...)} and {@code String.format(...)} in Java 21.
+   *   <li>{@code StringFormat.using(...)} and {@code String.format(...)} in Java 21.
    *   <li>{@code new StringFormat("{foo}={bar}").format(...)}.
    *   <li>{@code String.format(...)} in Java 11
    * </ol>
@@ -142,7 +142,7 @@ public final class StringFormat extends AbstractStringFormat {
    * @since 8.0
    */
   @TemplateFormatMethod
-  public static String with(@TemplateString String template, Object... args) {
+  public static String using(@TemplateString String template, Object... args) {
     Iterator<Object> argsIterator = asList(args).iterator();
     String result =
         PLACEHOLDERS.replaceAllFrom(
@@ -196,7 +196,7 @@ public final class StringFormat extends AbstractStringFormat {
    * exceptions filled with different parameter values. For example:
    *
    * <pre>{@code
-   * private static final StringFormat.To<IOException> JOB_FAILED =
+   * private static final StringFormat.Template<IOException> JOB_FAILED =
    *     StringFormat.to(
    *         IOException::new, "Job ({job_id}) failed with {error_code}, details: {details}");
    *
@@ -207,11 +207,11 @@ public final class StringFormat extends AbstractStringFormat {
    *
    * @since 7.0
    */
-  public static <T> To<T> to(
+  public static <T> Template<T> to(
       Function<? super String, ? extends T> creator, String format) {
     requireNonNull(creator);
     StringFormat fmt = new StringFormat(format);
-    return new To<T>() {
+    return new Template<T>() {
       @Override
       @SuppressWarnings("StringFormatArgsCheck")
       public T with(Object... params) {
@@ -236,13 +236,13 @@ public final class StringFormat extends AbstractStringFormat {
    * <pre>{@code
    * // Provided to the user:
    * public final class BigQuery {
-   *   public static StringFormat.To<QueryRequest> template(String template) {
+   *   public static Template<QueryRequest> template(String template) {
    *     return StringFormat.template(template, (fragments, placeholders) -> ...);
    *   }
    * }
    *
    * // At call site:
-   * private static final StringFormat.To<QueryRequest> GET_CASE_BY_ID = BigQuery.template(
+   * private static final Template<QueryRequest> GET_CASE_BY_ID = BigQuery.template(
    *     "SELECT CaseId, Description FROM tbl WHERE CaseId = '{case_id}'");
    *
    *    ....
@@ -257,12 +257,12 @@ public final class StringFormat extends AbstractStringFormat {
    *
    * @since 7.0
    */
-  public static <T> To<T> template(String template, Interpolator<? extends T> interpolator) {
+  public static <T> Template<T> template(String template, Interpolator<? extends T> interpolator) {
     requireNonNull(interpolator);
     StringFormat formatter = new StringFormat(template);
     List<Substring.Match> placeholders =
         PLACEHOLDERS.match(template).collect(toImmutableList());
-    return new To<T>() {
+    return new Template<T>() {
       @Override
       public T with(Object... params) {
         formatter.checkFormatArgs(params);
@@ -278,11 +278,29 @@ public final class StringFormat extends AbstractStringFormat {
   }
 
   /**
+   * A template that will produce instances of type {@code T}, after filling the
+   * template placeholders with the given variadic parameters.
+   *
+   * @since 8.0
+   */
+  public interface Template<T> extends To<T> {
+    /** Returns an instance of {@code T} from the string format filled with {@code params}. */
+    @Override
+    T with(Object... params);
+
+    /** Returns the string representation of the format. */
+    @Override
+    public abstract String toString();
+  }
+
+  /**
    * A view of the {@code StringFormat} that returns an instance of {@code T}, after filling the
    * format with the given variadic parameters.
    *
    * @since 7.0
+   * @deprecated Use {@link Template} instead
    */
+  @Deprecated
   public interface To<T> {
     /** Returns an instance of {@code T} from the string format filled with {@code params}. */
     T with(Object... params);

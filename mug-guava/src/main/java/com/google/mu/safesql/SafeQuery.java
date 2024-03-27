@@ -25,6 +25,7 @@ import com.google.mu.annotations.RequiresGuava;
 import com.google.mu.annotations.TemplateFormatMethod;
 import com.google.mu.annotations.TemplateString;
 import com.google.mu.util.StringFormat;
+import com.google.mu.util.StringFormat.Template;
 import com.google.mu.util.Substring;
 
 /**
@@ -71,7 +72,7 @@ public final class SafeQuery {
    * StringFormat.To#with} calls. For example:
    *
    * <pre>{@code
-   * private static final StringFormat.To<SafeQuery> FIND_CASE_BY_ID =
+   * private static final Template<SafeQuery> FIND_CASE_BY_ID =
    *     SafeQuery.template(
    *         "SELECT * FROM `{project_id}.{dataset}.Cases` WHERE CaseId = '{case_id}'");
    *
@@ -124,7 +125,7 @@ public final class SafeQuery {
    * <p>If you are trying to create SafeQuery inline like {@code SafeQuery.template(tmpl).with(a, b)},
    * please use {@code SafeQuery.of(tmpl, a, b)} instead.
    */
-  public static StringFormat.To<SafeQuery> template(@CompileTimeConstant String formatString) {
+  public static Template<SafeQuery> template(@CompileTimeConstant String formatString) {
     return new Translator().translate(formatString);
   }
 
@@ -212,7 +213,7 @@ public final class SafeQuery {
      * Translates {@code template} to a factory of {@link SafeQuery} by filling the provided
      * parameters in the place of corresponding placeholders.
      */
-    public final StringFormat.To<SafeQuery> translate(@CompileTimeConstant String formatString) {
+    public final Template<SafeQuery> translate(@CompileTimeConstant String formatString) {
       return StringFormat.template(
           formatString,
           (fragments, placeholders) -> {

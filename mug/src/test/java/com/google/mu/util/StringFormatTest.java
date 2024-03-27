@@ -18,6 +18,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.testing.ClassSanityTester;
 import com.google.common.truth.OptionalSubject;
 import com.google.errorprone.annotations.CompileTimeConstant;
+import com.google.mu.util.StringFormat.Template;
 import com.google.mu.util.stream.BiStream;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
@@ -1569,44 +1570,44 @@ public class StringFormatTest {
   @Test
   public void format_placeholdersFilled() {
     assertThat(new StringFormat("{a} + {b} = {c}").format(1, 2, 3)).isEqualTo("1 + 2 = 3");
-    assertThat(StringFormat.with("{a} + {b} = {c}", 1, 2, 3)).isEqualTo("1 + 2 = 3");
+    assertThat(StringFormat.using("{a} + {b} = {c}", 1, 2, 3)).isEqualTo("1 + 2 = 3");
   }
 
   @Test
   public void format_ellipsisFilled() {
     assertThat(new StringFormat("{a} + {b} = {...}").format(1, 2, 3)).isEqualTo("1 + 2 = 3");
-    assertThat(StringFormat.with("{a} + {b} = {...}", 1, 2, 3)).isEqualTo("1 + 2 = 3");
+    assertThat(StringFormat.using("{a} + {b} = {...}", 1, 2, 3)).isEqualTo("1 + 2 = 3");
   }
 
   @Test
   public void format_nullValueAllowed() {
     assertThat(new StringFormat("{key} == {value}").format("x", null)).isEqualTo("x == null");
-    assertThat(StringFormat.with("{key} == {value}", "x", null)).isEqualTo("x == null");
+    assertThat(StringFormat.using("{key} == {value}", "x", null)).isEqualTo("x == null");
   }
 
   @Test
   public void format_noPlaceholder() {
     assertThat(new StringFormat("hello").format()).isEqualTo("hello");
-    assertThat(StringFormat.with("hello")).isEqualTo("hello");
+    assertThat(StringFormat.using("hello")).isEqualTo("hello");
   }
 
   @Test
   public void format_placeholderNextToEachOther() {
     assertThat(new StringFormat("{foo}{bar}").format(1, 2)).isEqualTo("12");
-    assertThat(StringFormat.with("{foo}{bar}", 1, 2)).isEqualTo("12");
+    assertThat(StringFormat.using("{foo}{bar}", 1, 2)).isEqualTo("12");
   }
 
   @Test
   public void format_withEmptyValue() {
     assertThat(new StringFormat("{a} + {b} = {c}").format(1, 2, "")).isEqualTo("1 + 2 = ");
-    assertThat(StringFormat.with("{a} + {b} = {c}", 1, 2, "")).isEqualTo("1 + 2 = ");
+    assertThat(StringFormat.using("{a} + {b} = {c}", 1, 2, "")).isEqualTo("1 + 2 = ");
   }
 
   @Test
   @SuppressWarnings("StringFormatArgsCheck")
   public void format_tooFewArgs() {
     assertThrows(IllegalArgumentException.class, () -> new StringFormat("{foo}:{bar}").format(1));
-    assertThrows(IllegalArgumentException.class, () -> StringFormat.with("{foo}:{bar}", 1));
+    assertThrows(IllegalArgumentException.class, () -> StringFormat.using("{foo}:{bar}", 1));
   }
 
   @Test
@@ -1614,19 +1615,19 @@ public class StringFormatTest {
   public void format_tooManyArgs() {
     assertThrows(
         IllegalArgumentException.class, () -> new StringFormat("{foo}:{bar}").format(1, 2, 3));
-    assertThrows(IllegalArgumentException.class, () -> StringFormat.with("{foo}:{bar}", 1, 2, 3));
+    assertThrows(IllegalArgumentException.class, () -> StringFormat.using("{foo}:{bar}", 1, 2, 3));
   }
 
   @Test
   public void to_noPlaceholder() {
-    StringFormat.To<IllegalArgumentException> template =
+    Template<IllegalArgumentException> template =
         StringFormat.to(IllegalArgumentException::new, "foo");
     assertThat(template.with()).hasMessageThat().isEqualTo("foo");
   }
 
   @Test
   public void to_withPlaceholders() {
-    StringFormat.To<IllegalArgumentException> template =
+    Template<IllegalArgumentException> template =
         StringFormat.to(IllegalArgumentException::new, "bad user id: {id}, name: {name}");
     assertThat(template.with(/*id*/ 123, /*name*/ "Tom"))
         .hasMessageThat()
@@ -1635,7 +1636,7 @@ public class StringFormatTest {
 
   @Test
   public void to_withPlaceholders_multilines() {
-    StringFormat.To<IllegalArgumentException> template =
+    Template<IllegalArgumentException> template =
         StringFormat.to(IllegalArgumentException::new, "id: {id}, name: {name}, alias: {alias}");
     assertThat(
             template.with(
@@ -1649,7 +1650,7 @@ public class StringFormatTest {
   @Test
   @SuppressWarnings("StringFormatArgsCheck")
   public void to_tooFewArguments() {
-    StringFormat.To<IllegalArgumentException> template =
+    Template<IllegalArgumentException> template =
         StringFormat.to(IllegalArgumentException::new, "bad user id: {id}, name: {name}");
     assertThrows(IllegalArgumentException.class, () -> template.with(123));
   }
@@ -1657,20 +1658,20 @@ public class StringFormatTest {
   @Test
   @SuppressWarnings("StringFormatArgsCheck")
   public void to_tooManyArguments() {
-    StringFormat.To<IllegalArgumentException> template =
+    Template<IllegalArgumentException> template =
         StringFormat.to(IllegalArgumentException::new, "bad user id: {id}");
     assertThrows(IllegalArgumentException.class, () -> template.with(123, "Tom"));
   }
 
   @Test
   public void template_noPlaceholder() {
-    StringFormat.To<BigQuery> template = BigQuery.template("SELECT *");
+    Template<BigQuery> template = BigQuery.template("SELECT *");
     assertThat(template.with().toString()).isEqualTo("SELECT *");
   }
 
   @Test
   public void template_withPlaceholders() {
-    StringFormat.To<BigQuery> template =
+    Template<BigQuery> template =
         BigQuery.template("SELECT * FROM tbl WHERE id = '{id}' AND timestamp > '{time}'");
     assertThat(template.with(/* id */ "a'b", /* time */ "2023-10-01").toString())
         .isEqualTo("SELECT * FROM tbl WHERE id = 'a\\'b' AND timestamp > '2023-10-01'");
@@ -1678,7 +1679,7 @@ public class StringFormatTest {
 
   @Test
   public void template_withNullPlaceholderValue() {
-    StringFormat.To<BigQuery> template = BigQuery.template("id = {id}");
+    Template<BigQuery> template = BigQuery.template("id = {id}");
     String id = null;
     assertThat(template.with(id).toString()).isEqualTo("id = null");
   }
@@ -1686,7 +1687,7 @@ public class StringFormatTest {
   @SuppressWarnings("StringFormatArgsCheck")
   @Test
   public void template_tooFewArguments() {
-    StringFormat.To<BigQuery> template =
+    Template<BigQuery> template =
         BigQuery.template("SELECT * FROM tbl WHERE id in ({id1}, {id2})");
     assertThrows(IllegalArgumentException.class, () -> template.with(123));
   }
@@ -1694,7 +1695,7 @@ public class StringFormatTest {
   @SuppressWarnings("StringFormatArgsCheck")
   @Test
   public void template_tooManyArguments() {
-    StringFormat.To<BigQuery> template = BigQuery.template("SELECT * FROM tbl WHERE id = {id}");
+    Template<BigQuery> template = BigQuery.template("SELECT * FROM tbl WHERE id = {id}");
     assertThrows(IllegalArgumentException.class, () -> template.with(123, "Tom"));
   }
 
@@ -1825,7 +1826,7 @@ public class StringFormatTest {
   private static final class BigQuery {
     private final String query;
 
-    static StringFormat.To<BigQuery> template(@CompileTimeConstant String template) {
+    static Template<BigQuery> template(@CompileTimeConstant String template) {
       return StringFormat.template(template, BigQuery::safeInterpolate);
     }
 

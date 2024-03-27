@@ -18,7 +18,7 @@ import com.google.common.primitives.UnsignedInteger;
 import com.google.common.primitives.UnsignedLong;
 import com.google.common.testing.EqualsTester;
 import com.google.common.testing.NullPointerTester;
-import com.google.mu.util.StringFormat;
+import com.google.mu.util.StringFormat.Template;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 /**
@@ -82,7 +82,7 @@ public final class SafeQueryTest {
 
   @Test
   public void newLineDisallowedWithinBackticks() {
-    StringFormat.To<SafeQuery> template = template("SELECT * FROM `{tbl}`");
+    Template<SafeQuery> template = template("SELECT * FROM `{tbl}`");
     assertThrows(IllegalArgumentException.class, () -> template.with(/* tbl */ "a\nb"));
   }
 
@@ -100,7 +100,7 @@ public final class SafeQueryTest {
 
   @Test
   public void carriageReturnDisallowedWithinBackticks() {
-    StringFormat.To<SafeQuery> template = template("SELECT * FROM `{tbl}`");
+    Template<SafeQuery> template = template("SELECT * FROM `{tbl}`");
     assertThrows(IllegalArgumentException.class, () -> template.with(/* tbl */ "a\rb"));
   }
 
@@ -437,7 +437,7 @@ public final class SafeQueryTest {
   @SuppressWarnings("StringFormatArgsCheck")
   @Test
   public void placeholderNameDoesNotMatch() {
-    StringFormat.To<SafeQuery> template = template("SELECT * FROM {table} WHERE id = {id}");
+    Template<SafeQuery> template = template("SELECT * FROM {table} WHERE id = {id}");
     assertThat(template.with(/* table */ SafeQuery.of("jobs"), /* id */ SafeQuery.of("x")))
         .isEqualTo(SafeQuery.of("SELECT * FROM jobs WHERE id = x"));
   }
@@ -629,19 +629,19 @@ public final class SafeQueryTest {
 
   @Test
   public void backspaceCharacterBacktickQuoted() {
-    StringFormat.To<SafeQuery> query = template("`{name}`");
+    Template<SafeQuery> query = template("`{name}`");
     assertThrows(IllegalArgumentException.class, () -> query.with(/* name */ "\b"));
   }
 
   @Test
   public void nulCharacterBacktickQuoted() {
-    StringFormat.To<SafeQuery> query = template("`{name}`");
+    Template<SafeQuery> query = template("`{name}`");
     assertThrows(IllegalArgumentException.class, () -> query.with(/* name */ "\0"));
   }
 
   @Test
   public void pageBreakCharacterBacktickQuoted() {
-    StringFormat.To<SafeQuery> query = template("`{name}`");
+    Template<SafeQuery> query = template("`{name}`");
     assertThrows(IllegalArgumentException.class, () -> query.with(/* name */ "\f"));
   }
 
