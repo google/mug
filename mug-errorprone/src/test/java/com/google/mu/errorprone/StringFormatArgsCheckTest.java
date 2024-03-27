@@ -1588,7 +1588,7 @@ public final class StringFormatArgsCheckTest {
             "import com.google.mu.util.StringFormat;",
             "class Test {",
             "  void test(String foo, String barId, String camelCase) {",
-            "    StringFormat.with(\"{foo}-{bar_id}-{camelCase}\", foo, barId, camelCase);",
+            "    StringFormat.using(\"{foo}-{bar_id}-{camelCase}\", foo, barId, camelCase);",
             "  }",
             "}")
         .doTest();
@@ -1602,7 +1602,7 @@ public final class StringFormatArgsCheckTest {
             "import com.google.mu.util.StringFormat;",
             "class Test {",
             "  void test(String foo, String barId, String camelCase) {",
-            "    StringFormat.with(\"{foo}-{bar_id}-{CamelCase}\", foo, barId, camelCase);",
+            "    StringFormat.using(\"{foo}-{bar_id}-{CamelCase}\", foo, barId, camelCase);",
             "  }",
             "}")
         .doTest();
@@ -1616,7 +1616,7 @@ public final class StringFormatArgsCheckTest {
             "import com.google.mu.util.StringFormat;",
             "class Test {",
             "  void test(String foo, String barId, String camelCase) {",
-            "    StringFormat.with(",
+            "    StringFormat.using(",
             "        \"{foo}-{bar_id}\" + \"-{CamelCase}\", foo, barId, camelCase);",
             "  }",
             "}")
@@ -1632,7 +1632,7 @@ public final class StringFormatArgsCheckTest {
             "class Test {",
             "  void test(String foo1, String foo2) {",
             "    // BUG: Diagnostic contains: 0 placeholders defined",
-            "    StringFormat.with(\"%s=%s\", foo1, foo2);",
+            "    StringFormat.using(\"%s=%s\", foo1, foo2);",
             "  }",
             "}")
         .doTest();
@@ -1647,7 +1647,7 @@ public final class StringFormatArgsCheckTest {
             "class Test {",
             "  void test(String foo1, String foo2) {",
             "    // BUG: Diagnostic contains: {foo}",
-            "    StringFormat.with(\"{foo}={foo}\", foo1, foo2);",
+            "    StringFormat.using(\"{foo}={foo}\", foo1, foo2);",
             "  }",
             "}")
         .doTest();
@@ -1661,7 +1661,7 @@ public final class StringFormatArgsCheckTest {
             "import com.google.mu.util.StringFormat;",
             "class Test {",
             "  void test(String foo) {",
-            "    StringFormat.with(\"{foo}={foo}\", foo, foo);",
+            "    StringFormat.using(\"{foo}={foo}\", foo, foo);",
             "  }",
             "}")
         .doTest();
@@ -1675,7 +1675,7 @@ public final class StringFormatArgsCheckTest {
             "import com.google.mu.util.StringFormat;",
             "class Test {",
             "  void test(String foo) {",
-            "    StringFormat.with(\"{foo}={foo}\", foo.toString(), foo .toString());",
+            "    StringFormat.using(\"{foo}={foo}\", foo.toString(), foo .toString());",
             "  }",
             "}")
         .doTest();
@@ -1690,7 +1690,7 @@ public final class StringFormatArgsCheckTest {
             "class Test {",
             "  void test(String foo, String barId) {",
             "    // BUG: Diagnostic contains:",
-            "    StringFormat.with(\"{foo}-{bar_id}\", barId, foo);",
+            "    StringFormat.using(\"{foo}-{bar_id}\", barId, foo);",
             "  }",
             "}")
         .doTest();
@@ -1705,7 +1705,7 @@ public final class StringFormatArgsCheckTest {
             "class Test {",
             "  void test() {",
             "    // BUG: Diagnostic contains:",
-            "    StringFormat.with(\"{用户}-{地址}\", \"地址\", \"用户\");",
+            "    StringFormat.using(\"{用户}-{地址}\", \"地址\", \"用户\");",
             "  }",
             "}")
         .doTest();
@@ -1719,7 +1719,7 @@ public final class StringFormatArgsCheckTest {
             "import com.google.mu.util.StringFormat;",
             "class Test {",
             "  void test() {",
-            "    StringFormat.with(\"{用户}-{地址}\", \"用户\", \"地址\");",
+            "    StringFormat.using(\"{用户}-{地址}\", \"用户\", \"地址\");",
             "  }",
             "}")
         .doTest();
@@ -1733,7 +1733,7 @@ public final class StringFormatArgsCheckTest {
             "import com.google.mu.util.StringFormat;",
             "class Test {",
             "  void test(String foo, String barId, String camelCase) {",
-            "    StringFormat.with(",
+            "    StringFormat.using(",
             "        \"{foo}-{bar_id}-{camelCase}\",",
             "         /*foo=*/ barId, /*barId=*/ camelCase, /*camelCase=*/ foo);",
             "  }",
@@ -1749,7 +1749,7 @@ public final class StringFormatArgsCheckTest {
             "import com.google.mu.util.StringFormat;",
             "class Test {",
             "  void test() {",
-            "    StringFormat.with(",
+            "    StringFormat.using(",
             "        \"{foo}-{bar_id}-{CamelCase}\", /*foo=*/ 1, /*bar_id=*/ 2, /*camelCase=*/ 3);",
             "  }",
             "}")
@@ -1770,7 +1770,7 @@ public final class StringFormatArgsCheckTest {
             "    String cased();",
             "  }",
             "  void test(String foo, Bar bar, Camel camel) {",
-            "    StringFormat.with(\"{foo}-{bar_id}-{camelCased}\", foo, bar.id(), camel.cased());",
+            "    StringFormat.using(\"{foo}-{bar_id}-{camelCased}\", foo, bar.id(), camel.cased());",
             "  }",
             "}")
         .doTest();
@@ -1792,7 +1792,7 @@ public final class StringFormatArgsCheckTest {
             "    String cased();",
             "  }",
             "  void test(String foo, Bar bar, Camel camel) {",
-            "    StringFormat.with(FORMAT_STR, foo, bar.id(), camel.cased());",
+            "    StringFormat.using(FORMAT_STR, foo, bar.id(), camel.cased());",
             "  }",
             "}")
         .doTest();
@@ -1809,7 +1809,7 @@ public final class StringFormatArgsCheckTest {
             "      \"{a}-{b}-{c}\";",
             "  void test() {",
             "    // BUG: Diagnostic contains:",
-            "    StringFormat.with(FORMAT_STR, 1, 2, 3);",
+            "    StringFormat.using(FORMAT_STR, 1, 2, 3);",
             "  }",
             "}")
         .doTest();
@@ -1826,7 +1826,7 @@ public final class StringFormatArgsCheckTest {
             "      \"{a}-{b}-{c}\";",
             "  void test() {",
             "    // BUG: Diagnostic contains:",
-            "    StringFormat.with(FORMAT_STR + \"-{d}\", 1, 2, 3, 4);",
+            "    StringFormat.using(FORMAT_STR + \"-{d}\", 1, 2, 3, 4);",
             "  }",
             "}")
         .doTest();
@@ -1843,7 +1843,7 @@ public final class StringFormatArgsCheckTest {
             "      \"{a}-{b}\" + \"-{c}\";",
             "  void test() {",
             "    // BUG: Diagnostic contains:",
-            "    StringFormat.with(FORMAT_STR, 1, 2, 3);",
+            "    StringFormat.using(FORMAT_STR, 1, 2, 3);",
             "  }",
             "}")
         .doTest();
@@ -1859,7 +1859,7 @@ public final class StringFormatArgsCheckTest {
             "  private static final String FORMAT_STR =",
             "      \"{a}-{b}\" + \"-{c}\";",
             "  void test() {",
-            "    StringFormat.with(FORMAT_STR, /* a */ 1, /* b */ 2, /* c */ 3);",
+            "    StringFormat.using(FORMAT_STR, /* a */ 1, /* b */ 2, /* c */ 3);",
             "  }",
             "}")
         .doTest();
@@ -1879,7 +1879,7 @@ public final class StringFormatArgsCheckTest {
             "    String isCase();",
             "  }",
             "  void test(String foo, Bar bar, Camel camel) {",
-            "    StringFormat.with(",
+            "    StringFormat.using(",
             "        \"{foo}-{bar_id}-{camelCase}\", foo, bar.getId(), camel.isCase());",
             "  }",
             "}")
@@ -1894,7 +1894,7 @@ public final class StringFormatArgsCheckTest {
             "import com.google.mu.util.StringFormat;",
             "class Test {",
             "  void test() {",
-            "    StringFormat.with(\"{foo}-{bar_id}\", \"foo\", \"bar id\");",
+            "    StringFormat.using(\"{foo}-{bar_id}\", \"foo\", \"bar id\");",
             "  }",
             "}")
         .doTest();
@@ -1908,7 +1908,7 @@ public final class StringFormatArgsCheckTest {
             "import com.google.mu.util.StringFormat;",
             "class Test {",
             "  void test() {",
-            "    StringFormat.with(\"{foo}-{bar_id}\", 1, 2);",
+            "    StringFormat.using(\"{foo}-{bar_id}\", 1, 2);",
             "  }",
             "}")
         .doTest();
@@ -1923,7 +1923,7 @@ public final class StringFormatArgsCheckTest {
             "class Test {",
             "  void test(String x, String y, String z) {",
             "    // BUG: Diagnostic contains:",
-            "    StringFormat.with(\"{foo}-{bar_id}-{z}\", x, y, z);",
+            "    StringFormat.using(\"{foo}-{bar_id}-{z}\", x, y, z);",
             "  }",
             "}")
         .doTest();
@@ -1937,7 +1937,7 @@ public final class StringFormatArgsCheckTest {
             "import com.google.mu.util.StringFormat;",
             "class Test {",
             "  void test() {",
-            "    StringFormat.with(\"{foo}-{bar_id}-{z}\", 1, 2, \"a\" + \"3\");",
+            "    StringFormat.using(\"{foo}-{bar_id}-{z}\", 1, 2, \"a\" + \"3\");",
             "  }",
             "}")
         .doTest();
@@ -1952,7 +1952,7 @@ public final class StringFormatArgsCheckTest {
             "class Test {",
             "  void test(String x, String y) {",
             "    // BUG: Diagnostic contains:",
-            "    StringFormat.with(\"{foo}-{bar_id}\", x, y);",
+            "    StringFormat.using(\"{foo}-{bar_id}\", x, y);",
             "  }",
             "}")
         .doTest();
@@ -1967,7 +1967,7 @@ public final class StringFormatArgsCheckTest {
             "class Test {",
             "  void test() {",
             "    // BUG: Diagnostic contains:",
-            "    StringFormat.with(\"{foo}-{bar_id}\", /* bar */ 1, 2);",
+            "    StringFormat.using(\"{foo}-{bar_id}\", /* bar */ 1, 2);",
             "  }",
             "}")
         .doTest();
@@ -1981,7 +1981,7 @@ public final class StringFormatArgsCheckTest {
             "import com.google.mu.util.StringFormat;",
             "class Test {",
             "  void test() {",
-            "    StringFormat.with(\"{foo}-{bar_id}\", 1, 2);",
+            "    StringFormat.using(\"{foo}-{bar_id}\", 1, 2);",
             "  }",
             "}")
         .doTest();
@@ -1995,7 +1995,7 @@ public final class StringFormatArgsCheckTest {
             "import com.google.mu.util.StringFormat;",
             "class Test {",
             "  void test() {",
-            "    StringFormat.with(\"{foo}-{bar_id}\", /* foo */ 1, /* bar id */ 2);",
+            "    StringFormat.using(\"{foo}-{bar_id}\", /* foo */ 1, /* bar id */ 2);",
             "  }",
             "}")
         .doTest();
@@ -2009,7 +2009,7 @@ public final class StringFormatArgsCheckTest {
             "import com.google.mu.util.StringFormat;",
             "class Test {",
             "  void test() {",
-            "    StringFormat.with((\"{foo}-{bar_id}\"), 1, 2);",
+            "    StringFormat.using((\"{foo}-{bar_id}\"), 1, 2);",
             "  }",
             "}")
         .doTest();
@@ -2024,7 +2024,7 @@ public final class StringFormatArgsCheckTest {
             "class Test {",
             "  void test() {",
             "    // BUG: Diagnostic contains:",
-            "    StringFormat.with(\"{foo}-{bar_id}\", /*bar*/ 1, /*foo*/ 2);",
+            "    StringFormat.using(\"{foo}-{bar_id}\", /*bar*/ 1, /*foo*/ 2);",
             "  }",
             "}")
         .doTest();
@@ -2039,7 +2039,7 @@ public final class StringFormatArgsCheckTest {
             "class Test {",
             "  void test(String bar, String foo) {",
             "    // BUG: Diagnostic contains:",
-            "    StringFormat.with(\"{foo}-{bar_id}\", bar, foo);",
+            "    StringFormat.using(\"{foo}-{bar_id}\", bar, foo);",
             "  }",
             "}")
         .doTest();
@@ -2054,7 +2054,7 @@ public final class StringFormatArgsCheckTest {
             "class Test {",
             "  void test() {",
             "    // BUG: Diagnostic contains:",
-            "    StringFormat.with(\"{a}-{b}-{c}-{d}\", 1, 2, 3, 4);",
+            "    StringFormat.using(\"{a}-{b}-{c}-{d}\", 1, 2, 3, 4);",
             "  }",
             "}")
         .doTest();
@@ -2068,7 +2068,7 @@ public final class StringFormatArgsCheckTest {
             "import com.google.mu.util.StringFormat;",
             "class Test {",
             "  void test(int a, int b, int c, int d) {",
-            "    StringFormat.with(\"{a}-{b}-{c}-{d}\", a, b, c, d);",
+            "    StringFormat.using(\"{a}-{b}-{c}-{d}\", a, b, c, d);",
             "  }",
             "}")
         .doTest();
@@ -2083,7 +2083,7 @@ public final class StringFormatArgsCheckTest {
             "class Test {",
             "  void test(String foo, int barId, String baz) {",
             "    // BUG: Diagnostic contains:",
-            "    StringFormat.with(\"{foo}-{bar_id}\", foo, barId, baz);",
+            "    StringFormat.using(\"{foo}-{bar_id}\", foo, barId, baz);",
             "  }",
             "}")
         .doTest();
@@ -2098,7 +2098,7 @@ public final class StringFormatArgsCheckTest {
             "class Test {",
             "  void test(String foo, int barId, String baz) {",
             "    // BUG: Diagnostic contains:",
-            "    StringFormat.with(\"{foo}-{bar_id}\", foo, barId, baz);",
+            "    StringFormat.using(\"{foo}-{bar_id}\", foo, barId, baz);",
             "  }",
             "}")
         .doTest();
@@ -2113,7 +2113,7 @@ public final class StringFormatArgsCheckTest {
             "class Test {",
             "  void test(String foo) {",
             "    // BUG: Diagnostic contains:",
-            "    StringFormat.with(\"{foo}-{bar_id}\", foo);",
+            "    StringFormat.using(\"{foo}-{bar_id}\", foo);",
             "  }",
             "}")
         .doTest();
@@ -2127,7 +2127,7 @@ public final class StringFormatArgsCheckTest {
             "import com.google.mu.util.StringFormat;",
             "class Test {",
             "  void test() {",
-            "    StringFormat.with(\"{{foo}}\", 1);",
+            "    StringFormat.using(\"{{foo}}\", 1);",
             "  }",
             "}")
         .doTest();
@@ -2142,7 +2142,7 @@ public final class StringFormatArgsCheckTest {
             "import java.util.stream.Stream;",
             "class Test {",
             "  // BUG: Diagnostic contains: format arguments cannot be validated",
-            "  private static final long COUNT = Stream.of(\"\").map(StringFormat::with).count();",
+            "  private static final long COUNT = Stream.of(\"\").map(StringFormat::using).count();",
             "}")
         .doTest();
   }

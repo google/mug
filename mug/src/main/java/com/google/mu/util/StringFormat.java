@@ -134,7 +134,7 @@ public final class StringFormat extends AbstractStringFormat {
    *
    * <ol>
    *   <li>{@code FORMAT_CONSTANT.format(...)}.
-   *   <li>{@code StringFormat.with(...)} and {@code String.format(...)} in Java 21.
+   *   <li>{@code StringFormat.using(...)} and {@code String.format(...)} in Java 21.
    *   <li>{@code new StringFormat("{foo}={bar}").format(...)}.
    *   <li>{@code String.format(...)} in Java 11
    * </ol>
@@ -142,7 +142,7 @@ public final class StringFormat extends AbstractStringFormat {
    * @since 8.0
    */
   @TemplateFormatMethod
-  public static String with(@TemplateString String template, Object... args) {
+  public static String using(@TemplateString String template, Object... args) {
     Iterator<Object> argsIterator = asList(args).iterator();
     String result =
         PLACEHOLDERS.replaceAllFrom(
