@@ -130,7 +130,7 @@ public final class StringFormat extends AbstractStringFormat {
    * classes. The compile-time placeholder name check helps to ensure that the arguments are passed
    * correctly.
    *
-   * <p>Among the different formatting APIs, in the order of efficiency:
+   * <p>Among the different formatting APIs, in the order of efficiency (fastest first):
    *
    * <ol>
    *   <li>{@code FORMAT_CONSTANT.format(...)}.
@@ -327,12 +327,9 @@ public final class StringFormat extends AbstractStringFormat {
 
   private static IllegalArgumentException incorrectNumberOfFormatArgs(
       String format, int providedArgsCount) {
+    StringFormat message =
+        new StringFormat("{count} placeholders expected in {format}, {args} provided");
     return new IllegalArgumentException(
-        PLACEHOLDERS.match(format).count()
-            + " placeholders expected in "
-            + format
-            + "; "
-            + providedArgsCount
-            + " provided.");
+        message.format(PLACEHOLDERS.match(format).count(), format, providedArgsCount));
   }
 }
