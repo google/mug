@@ -162,6 +162,16 @@ public final class DateTimeFormatsTest {
                 LocalDateTime.of(2022, 10, 5, 0, 10, 0, 123456789), ZoneId.of("-08:00")));
   }
 
+  @Test public void offsetDateTimeExample() {
+    DateTimeFormatter formatter = formatOf("2001-10-30 00:00:00-07");
+    assertThat(OffsetDateTime.parse("1976-10-31 01:12:35-07", formatter))
+        .isEqualTo(OffsetDateTime.of(1976, 10, 31, 1, 12, 35, 0, ZoneOffset.ofHours(-7)));
+    assertThat(OffsetDateTime.parse("1976-10-31 01:12:35-18", formatter))
+    .isEqualTo(OffsetDateTime.of(1976, 10, 31, 1, 12, 35, 0, ZoneOffset.ofHours(-18)));
+    assertThat(OffsetDateTime.parse("2001-10-30 00:00:00+03", formatter))
+        .isEqualTo(OffsetDateTime.of(2001, 10, 30, 0, 0, 0, 0, ZoneOffset.ofHours(3)));
+  }
+
   @Test
   public void isoZonedDateTimeExample() {
     assertThat(
