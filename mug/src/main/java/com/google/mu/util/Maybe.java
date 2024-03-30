@@ -68,7 +68,7 @@ import com.google.mu.function.CheckedSupplier;
  *   }
  * }</pre>
  *
- * @depreccated doesn't work well with futures, promises. And tunneling exception away from the
+ * @deprecated doesn't work well with futures, promises. And tunneling exception away from the
  * call stack may cause confusing stack trace that misses the whereabout of the exception.
  */
 @Deprecated
