@@ -67,7 +67,11 @@ import com.google.mu.function.CheckedSupplier;
  *     return authenticated.thenApply(maybe -> maybe.orElse(e -> new AnonymousUser()));
  *   }
  * }</pre>
+ *
+ * @depreccated doesn't work well with futures, promises. And tunneling exception away from the
+ * call stack may cause confusing stack trace that misses the whereabout of the exception.
  */
+@Deprecated
 public abstract class Maybe<T, E extends Throwable> {
 
   /**
