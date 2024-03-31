@@ -296,7 +296,7 @@ public final class DateTimeFormats {
     try {
       return Instant.parse(dateTimeString);
     } catch (DateTimeParseException notInstant) {
-      return parseZonedDateTime(dateTimeString).toInstant();
+      return forDateTimeNoValidation(dateTimeString).parse(dateTimeString, Instant::from);
     }
   }
 
