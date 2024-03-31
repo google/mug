@@ -29,6 +29,7 @@ import static java.util.Comparator.comparingInt;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
+import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
@@ -217,7 +218,7 @@ public final class DateTimeFormats {
   /**
    * Infers and returns the {@link DateTimeFormatter} based on {@code example}.
    *
-   * @throws IllegalArgumentException if {@code example} is invalid or the pattern isn't supported.
+   * @throws DateTimeException if {@code example} is invalid or the pattern isn't supported.
    */
   public static DateTimeFormatter formatOf(String example) {
     List<?> signature = forExample(example);
@@ -233,7 +234,7 @@ public final class DateTimeFormats {
               try {
                 fmt.withResolverStyle(ResolverStyle.STRICT).parse(example);
               } catch (DateTimeParseException e) {
-                throw new IllegalArgumentException("invalid date time example: " + example, e);
+                throw new DateTimeException("invalid date time example: " + example, e);
               }
               return fmt;
             })
@@ -258,10 +259,20 @@ public final class DateTimeFormats {
                 fmt.withResolverStyle(ResolverStyle.STRICT).parse(example);
                 return fmt;
               } catch (DateTimeParseException e) {
-                throw new IllegalArgumentException(
+                throw new DateTimeException(
                     "invalid date time example: " + example + " (" + pattern + ")", e);
               }
             });
+  }
+
+  private static DateTimeFormatter inferNoValidation(String dateTimeString) {
+    List<?> signature = forExample(dateTimeString);
+    DateTimeFormatter rfc = lookup(RFC_1123_FORMATTERS, signature).orElse(null);
+    if (rfc != null) return rfc;
+    DateTimeFormatter iso = lookup(ISO_DATE_FORMATTERS, signature).orElse(null);
+    if (iso != null) return iso;
+    return lookup(ISO_DATE_TIME_FORMATTERS, forExample(removeNanosecondsPart(dateTimeString)))
+        .orElseGet(() -> DateTimeFormatter.ofPattern(inferDateTimePattern(dateTimeString, signature)));
   }
 
   /**
@@ -273,7 +284,7 @@ public final class DateTimeFormats {
    * better performance and earlier error report in case the example date time string cannot
    * be inferred.
    *
-   * @throws DateTimeParseException if {@code dateTimeString} cannot be parsed as {@link Instant}
+   * @throws DateTimeException if {@code dateTimeString} cannot be parsed as {@link Instant}
    * @since 8.0
    */
   public static Instant parseToInstant(String dateTimeString) {
@@ -292,11 +303,11 @@ public final class DateTimeFormats {
    * better performance and earlier error report in case the example date time string cannot
    * be inferred.
    *
-   * @throws DateTimeParseException if {@code dateTimeString} cannot be parsed as {@link ZonedDateTime}
+   * @throws DateTimeException if {@code dateTimeString} cannot be parsed as {@link ZonedDateTime}
    * @since 8.0
    */
   public static ZonedDateTime parseZonedDateTime(String dateTimeString) {
-    return ZonedDateTime.parse(dateTimeString, formatOf(dateTimeString));
+    return ZonedDateTime.parse(dateTimeString, inferNoValidation(dateTimeString));
   }
 
   /**
@@ -307,11 +318,11 @@ public final class DateTimeFormats {
    * better performance and earlier error report in case the example date time string cannot
    * be inferred.
    *
-   * @throws DateTimeParseException if {@code dateTimeString} cannot be parsed as {@link OffsetDateTime}
+   * @throws DateTimeException if {@code dateTimeString} cannot be parsed as {@link OffsetDateTime}
    * @since 8.0
    */
   public static OffsetDateTime parseOffsetDateTime(String dateTimeString) {
-    return OffsetDateTime.parse(dateTimeString, formatOf(dateTimeString));
+    return OffsetDateTime.parse(dateTimeString, inferNoValidation(dateTimeString));
   }
 
   static String inferDateTimePattern(String example) {
@@ -348,13 +359,13 @@ public final class DateTimeFormats {
               builder.append(fmt);
               return prefix.size();
             })
-            .orElseThrow(() -> new IllegalArgumentException("unsupported date time example: " + example));
+            .orElseThrow(() -> new DateTimeException("unsupported date time example: " + example));
       }
       index += consumed;
       matched = true;
     }
     if (!matched) {
-      throw new IllegalArgumentException("unsupported date time example: " + example);
+      throw new DateTimeException("unsupported date time example: " + example);
     }
     return builder.toString();
   }
