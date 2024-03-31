@@ -29,6 +29,9 @@ import static java.util.Comparator.comparingInt;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
@@ -217,14 +220,6 @@ public final class DateTimeFormats {
    * @throws IllegalArgumentException if {@code example} is invalid or the pattern isn't supported.
    */
   public static DateTimeFormatter formatOf(String example) {
-    return inferFromExample(example);
-  }
-
-  /**
-   * Just so that the parameterized tests can call it with test parameter strings that are
-   * not @CompileTimeConstant.
-   */
-  static DateTimeFormatter inferFromExample(String example) {
     List<?> signature = forExample(example);
     DateTimeFormatter rfc = lookup(RFC_1123_FORMATTERS, signature).orElse(null);
     if (rfc != null) return rfc;
@@ -267,6 +262,56 @@ public final class DateTimeFormats {
                     "invalid date time example: " + example + " (" + pattern + ")", e);
               }
             });
+  }
+
+  /**
+   * Parses {@code dateTimeString} to {@link Instant}. {@code dateTimeString} could be in the format
+   * of {@link ISO_INSTANT}, which is from {@link Instant#toString}; or it could be any valid date time
+   * with zone name or zone offset.
+   *
+   * <p>Prefer to pre-construct a {@link DateTimeFormatter} using {@link #formatOf} to get
+   * better performance and earlier error report in case the example date time string cannot
+   * be inferred.
+   *
+   * @throws DateTimeParseException if {@code dateTimeString} cannot be parsed as {@link Instant}
+   * @since 8.0
+   */
+  public static Instant parseToInstant(String dateTimeString) {
+    try {
+      return Instant.parse(dateTimeString);
+    } catch (DateTimeParseException notInstant) {
+      return parseZonedDateTime(dateTimeString).toInstant();
+    }
+  }
+
+  /**
+   * Parses {@code dateTimeString} to {@link ZonedDateTime} using heuristics in this class to
+   * infer the {@link DateTimeFormatter} for common formats.
+   *
+   * <p>Prefer to pre-construct a {@link DateTimeFormatter} using {@link #formatOf} to get
+   * better performance and earlier error report in case the example date time string cannot
+   * be inferred.
+   *
+   * @throws DateTimeParseException if {@code dateTimeString} cannot be parsed as {@link ZonedDateTime}
+   * @since 8.0
+   */
+  public static ZonedDateTime parseZonedDateTime(String dateTimeString) {
+    return ZonedDateTime.parse(dateTimeString, formatOf(dateTimeString));
+  }
+
+  /**
+   * Parses {@code dateTimeString} to {@link OffsetDateTime} using heuristics in this class to
+   * infer the {@link DateTimeFormatter} for common formats.
+   *
+   * <p>Prefer to pre-construct a {@link DateTimeFormatter} using {@link #formatOf} to get
+   * better performance and earlier error report in case the example date time string cannot
+   * be inferred.
+   *
+   * @throws DateTimeParseException if {@code dateTimeString} cannot be parsed as {@link OffsetDateTime}
+   * @since 8.0
+   */
+  public static OffsetDateTime parseOffsetDateTime(String dateTimeString) {
+    return OffsetDateTime.parse(dateTimeString, formatOf(dateTimeString));
   }
 
   static String inferDateTimePattern(String example) {
