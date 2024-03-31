@@ -272,6 +272,7 @@ public final class DateTimeFormats {
    * better performance and earlier error report in case the example date time string cannot
    * be inferred.
    *
+   * @throws DateTimeParseException if {@code dateTimeString} cannot be parsed as {@link Instant}
    * @since 8.0
    */
   public static Instant parseToInstant(String dateTimeString) {
@@ -290,6 +291,7 @@ public final class DateTimeFormats {
    * better performance and earlier error report in case the example date time string cannot
    * be inferred.
    *
+   * @throws DateTimeParseException if {@code dateTimeString} cannot be parsed as {@link ZonedDateTime}
    * @since 8.0
    */
   public static ZonedDateTime parseZonedDateTime(String dateTimeString) {
@@ -304,6 +306,7 @@ public final class DateTimeFormats {
    * better performance and earlier error report in case the example date time string cannot
    * be inferred.
    *
+   * @throws DateTimeParseException if {@code dateTimeString} cannot be parsed as {@link OffsetDateTime}
    * @since 8.0
    */
   public static OffsetDateTime parseOffsetDateTime(String dateTimeString) {
