@@ -265,14 +265,11 @@ public final class DateTimeFormats {
             });
   }
 
-  private static DateTimeFormatter inferNoValidation(String dateTimeString) {
+  private static DateTimeFormatter forDateTimeNoValidation(String dateTimeString) {
     List<?> signature = forExample(dateTimeString);
-    DateTimeFormatter rfc = lookup(RFC_1123_FORMATTERS, signature).orElse(null);
-    if (rfc != null) return rfc;
-    DateTimeFormatter iso = lookup(ISO_DATE_FORMATTERS, signature).orElse(null);
-    if (iso != null) return iso;
-    return lookup(ISO_DATE_TIME_FORMATTERS, forExample(removeNanosecondsPart(dateTimeString)))
-        .orElseGet(() -> DateTimeFormatter.ofPattern(inferDateTimePattern(dateTimeString, signature)));
+    return lookup(RFC_1123_FORMATTERS, signature)
+        .orElseGet(() -> lookup(ISO_DATE_TIME_FORMATTERS, forExample(removeNanosecondsPart(dateTimeString)))
+        .orElseGet(() -> DateTimeFormatter.ofPattern(inferDateTimePattern(dateTimeString, signature))));
   }
 
   /**
@@ -307,7 +304,7 @@ public final class DateTimeFormats {
    * @since 8.0
    */
   public static ZonedDateTime parseZonedDateTime(String dateTimeString) {
-    return ZonedDateTime.parse(dateTimeString, inferNoValidation(dateTimeString));
+    return ZonedDateTime.parse(dateTimeString, forDateTimeNoValidation(dateTimeString));
   }
 
   /**
@@ -322,7 +319,7 @@ public final class DateTimeFormats {
    * @since 8.0
    */
   public static OffsetDateTime parseOffsetDateTime(String dateTimeString) {
-    return OffsetDateTime.parse(dateTimeString, inferNoValidation(dateTimeString));
+    return OffsetDateTime.parse(dateTimeString, forDateTimeNoValidation(dateTimeString));
   }
 
   static String inferDateTimePattern(String example) {
