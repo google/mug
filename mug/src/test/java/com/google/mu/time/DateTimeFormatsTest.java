@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.time.DateTimeFormats.formatOf;
 import static org.junit.Assert.assertThrows;
 
+import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -58,7 +59,7 @@ public final class DateTimeFormatsTest {
   @Test
   @SuppressWarnings("DateTimeExampleStringCheck")
   public void singleDigitHourWithoutAmPm_throws() {
-    assertThrows(IllegalArgumentException.class, () -> formatOf("1"));
+    assertThrows(DateTimeException.class, () -> formatOf("1"));
   }
 
   @Test
@@ -70,7 +71,7 @@ public final class DateTimeFormatsTest {
   @Test
   @SuppressWarnings("DateTimeExampleStringCheck")
   public void singleDigitHourMinuteWithoutAmPm_throws() {
-    assertThrows(IllegalArgumentException.class, () -> formatOf("1:10"));
+    assertThrows(DateTimeException.class, () -> formatOf("1:10"));
   }
 
   @Test
@@ -82,7 +83,7 @@ public final class DateTimeFormatsTest {
   @Test
   @SuppressWarnings("DateTimeExampleStringCheck")
   public void singleDigitHourMinuteSecondWithoutAmPm_throws() {
-    assertThrows(IllegalArgumentException.class, () -> formatOf("1:10:00"));
+    assertThrows(DateTimeException.class, () -> formatOf("1:10:00"));
   }
 
   @Test
@@ -239,69 +240,69 @@ public final class DateTimeFormatsTest {
   @SuppressWarnings("DateTimeExampleStringCheck")
   public void monthOfYear_notSupported() {
     assertThrows(
-        IllegalArgumentException.class, () -> formatOf("Dec 31, 2023 12:00:00 America/New_York"));
+        DateTimeException.class, () -> formatOf("Dec 31, 2023 12:00:00 America/New_York"));
   }
 
   @Test
   @SuppressWarnings("DateTimeExampleStringCheck")
   public void ambiguousMmddyyyy_notSupported() {
-    assertThrows(IllegalArgumentException.class, () -> formatOf("10/12/2023 10:10:10"));
-    assertThrows(IllegalArgumentException.class, () -> formatOf("01/12/2023 10:10:10"));
-    assertThrows(IllegalArgumentException.class, () -> formatOf("10/02/2023 10:10:10"));
+    assertThrows(DateTimeException.class, () -> formatOf("10/12/2023 10:10:10"));
+    assertThrows(DateTimeException.class, () -> formatOf("01/12/2023 10:10:10"));
+    assertThrows(DateTimeException.class, () -> formatOf("10/02/2023 10:10:10"));
   }
 
   @Test
   @SuppressWarnings("DateTimeExampleStringCheck")
   public void ambiguousMddyyyy_notSupported() {
-    assertThrows(IllegalArgumentException.class, () -> formatOf("1/12/2023 10:10:10"));
-    assertThrows(IllegalArgumentException.class, () -> formatOf("1/02/2023 10:10:10"));
+    assertThrows(DateTimeException.class, () -> formatOf("1/12/2023 10:10:10"));
+    assertThrows(DateTimeException.class, () -> formatOf("1/02/2023 10:10:10"));
   }
 
   @Test
   @SuppressWarnings("DateTimeExampleStringCheck")
   public void ambiguousDdmyyyy_notSupported() {
-    assertThrows(IllegalArgumentException.class, () -> formatOf("10/1/2023 10:10:10"));
-    assertThrows(IllegalArgumentException.class, () -> formatOf("01/1/2023 10:10:10"));
+    assertThrows(DateTimeException.class, () -> formatOf("10/1/2023 10:10:10"));
+    assertThrows(DateTimeException.class, () -> formatOf("01/1/2023 10:10:10"));
   }
 
   @Test
   @SuppressWarnings("DateTimeExampleStringCheck")
   public void ambiguousDmyyyy_notSupported() {
-    assertThrows(IllegalArgumentException.class, () -> formatOf("1/2/2023 10:10:10"));
+    assertThrows(DateTimeException.class, () -> formatOf("1/2/2023 10:10:10"));
   }
 
   @Test
   @SuppressWarnings("DateTimeExampleStringCheck")
   public void outOfRangeMmddyyyy_notSupported() {
-    assertThrows(IllegalArgumentException.class, () -> formatOf("10/32/2023 10:10:10"));
-    assertThrows(IllegalArgumentException.class, () -> formatOf("13/13/2023 10:10:10"));
+    assertThrows(DateTimeException.class, () -> formatOf("10/32/2023 10:10:10"));
+    assertThrows(DateTimeException.class, () -> formatOf("13/13/2023 10:10:10"));
   }
 
   @Test
   @SuppressWarnings("DateTimeExampleStringCheck")
   public void outOfRangeMddyyyy_notSupported() {
-    assertThrows(IllegalArgumentException.class, () -> formatOf("1/32/2023 10:10:10"));
-    assertThrows(IllegalArgumentException.class, () -> formatOf("0/31/2023 10:10:10"));
+    assertThrows(DateTimeException.class, () -> formatOf("1/32/2023 10:10:10"));
+    assertThrows(DateTimeException.class, () -> formatOf("0/31/2023 10:10:10"));
   }
 
   @Test
   @SuppressWarnings("DateTimeExampleStringCheck")
   public void outOfRangeDdmyyyy_notSupported() {
-    assertThrows(IllegalArgumentException.class, () -> formatOf("32/1/2023 10:10:10"));
-    assertThrows(IllegalArgumentException.class, () -> formatOf("31/0/2023 10:10:10"));
+    assertThrows(DateTimeException.class, () -> formatOf("32/1/2023 10:10:10"));
+    assertThrows(DateTimeException.class, () -> formatOf("31/0/2023 10:10:10"));
   }
 
   @Test
   @SuppressWarnings("DateTimeExampleStringCheck")
   public void outOfRangemDdyyyy_notSupported() {
-    assertThrows(IllegalArgumentException.class, () -> formatOf("1/32/2023 10:10:10"));
-    assertThrows(IllegalArgumentException.class, () -> formatOf("0/31/2023 10:10:10"));
+    assertThrows(DateTimeException.class, () -> formatOf("1/32/2023 10:10:10"));
+    assertThrows(DateTimeException.class, () -> formatOf("0/31/2023 10:10:10"));
   }
 
   @Test
   @SuppressWarnings("DateTimeExampleStringCheck")
   public void outOfRangeDmyyyy_notSupported() {
-    assertThrows(IllegalArgumentException.class, () -> formatOf("0/0/2023 10:10:10"));
+    assertThrows(DateTimeException.class, () -> formatOf("0/0/2023 10:10:10"));
   }
 
   @Test
@@ -673,6 +674,12 @@ public final class DateTimeFormatsTest {
   }
 
   @Test
+  public void parseOffsetDateTime_invalid()
+      throws Exception {
+    assertThrows(DateTimeException.class, () -> DateTimeFormats.parseOffsetDateTime("2020-01-01T00:00:00.123 bad +08:00"));
+  }
+
+  @Test
   public void parseZonedDateTime_nonStandardFormat()
       throws Exception {
     assertThat(DateTimeFormats.parseZonedDateTime("2020-01-01T00:00:00.123  +08:00"))
@@ -684,6 +691,12 @@ public final class DateTimeFormatsTest {
   }
 
   @Test
+  public void parseZonedDateTime_invalid()
+      throws Exception {
+    assertThrows(DateTimeException.class, () -> DateTimeFormats.parseZonedDateTime("2020-01-01T00:00:00.123 bad +08:00"));
+  }
+
+  @Test
   public void parseToInstant_nonStandardFormat()
       throws Exception {
     assertThat(DateTimeFormats.parseToInstant("2020-01-01T00:00:00.123  +08:00"))
@@ -692,6 +705,12 @@ public final class DateTimeFormatsTest {
         .isEqualTo(ZonedDateTime.parse("2020-01-01T00:00:00.123+08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).toInstant());
     assertThat(DateTimeFormats.parseToInstant("2020/01/01T00:00, America/Los_Angeles"))
         .isEqualTo(ZonedDateTime.parse("2020-01-01T00:00:00-08:00[America/Los_Angeles]", DateTimeFormatter.ISO_ZONED_DATE_TIME).toInstant());
+  }
+
+  @Test
+  public void parseToInstant_invalid()
+      throws Exception {
+    assertThrows(DateTimeException.class, () -> DateTimeFormats.parseToInstant("2020-01-01T00:00:00.123 bad +08:00"));
   }
 
   @Test
@@ -799,47 +818,47 @@ public final class DateTimeFormatsTest {
   @Test
   public void timeZoneMixedIn_unsupportedZoneSpec() {
     assertThrows(
-        IllegalArgumentException.class, () -> DateTimeFormats.inferDateTimePattern("1234"));
+        DateTimeException.class, () -> DateTimeFormats.inferDateTimePattern("1234"));
     assertThrows(
-        IllegalArgumentException.class, () -> DateTimeFormats.inferDateTimePattern("12:34:5"));
+        DateTimeException.class, () -> DateTimeFormats.inferDateTimePattern("12:34:5"));
   }
 
   @Test
   @SuppressWarnings("DateTimeExampleStringCheck")
   public void emptyExample_disallowed() {
-    assertThrows(IllegalArgumentException.class, () -> formatOf(""));
+    assertThrows(DateTimeException.class, () -> formatOf(""));
   }
 
   @Test
   @SuppressWarnings("DateTimeExampleStringCheck")
   public void exampleWithOnlySpaces_disallowed() {
-    assertThrows(IllegalArgumentException.class, () -> formatOf("  "));
+    assertThrows(DateTimeException.class, () -> formatOf("  "));
   }
 
   @Test
   @SuppressWarnings("DateTimeExampleStringCheck")
   public void exampleWithOnlyPunctuations_disallowed() {
-    assertThrows(IllegalArgumentException.class, () -> formatOf("/"));
+    assertThrows(DateTimeException.class, () -> formatOf("/"));
   }
 
   @Test
   @SuppressWarnings("DateTimeExampleStringCheck")
   public void exampleWithOnlyNumbers_disallowed() {
-    assertThrows(IllegalArgumentException.class, () -> formatOf("1234"));
+    assertThrows(DateTimeException.class, () -> formatOf("1234"));
   }
 
   @Test
   @SuppressWarnings("DateTimeExampleStringCheck")
   public void exampleWithOnlyWords_disallowed() {
-    assertThrows(IllegalArgumentException.class, () -> formatOf("yyyy"));
-    assertThrows(IllegalArgumentException.class, () -> formatOf("America"));
+    assertThrows(DateTimeException.class, () -> formatOf("yyyy"));
+    assertThrows(DateTimeException.class, () -> formatOf("America"));
   }
 
   @Test
   @SuppressWarnings("DateTimeExampleStringCheck")
   public void typoInExample() {
     assertThrows(
-        IllegalArgumentException.class, () -> formatOf("<Febuary Wedenesday>, <2021/20/30>"));
+        DateTimeException.class, () -> formatOf("<Febuary Wedenesday>, <2021/20/30>"));
   }
 
   private static ComparableSubject<LocalDateTime> assertLocalDateTime(
