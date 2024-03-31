@@ -460,7 +460,7 @@ public final class DateTimeFormatsTest {
             "23:59:59.999999999"
           })
           String example) {
-    DateTimeFormatter formatter = DateTimeFormats.inferFromExample(example);
+    DateTimeFormatter formatter = DateTimeFormats.formatOf(example);
     LocalTime time = LocalTime.parse(example, formatter);
     assertThat(time.format(formatter)).isEqualTo(example);
   }
@@ -473,7 +473,7 @@ public final class DateTimeFormatsTest {
       throws Exception {
     LocalDate day = LocalDate.parse(date);
     String example = day.format(getFormatterByName(formatterName));
-    assertThat(LocalDate.parse(example, DateTimeFormats.inferFromExample(example))).isEqualTo(day);
+    assertThat(LocalDate.parse(example, DateTimeFormats.formatOf(example))).isEqualTo(day);
   }
 
   @Test
@@ -507,8 +507,7 @@ public final class DateTimeFormatsTest {
       throws Exception {
     ZonedDateTime zonedTime = OffsetDateTime.parse(datetime).toZonedDateTime();
     String example = zonedTime.format(getFormatterByName(formatterName));
-    assertThat(ZonedDateTime.parse(example, DateTimeFormats.inferFromExample(example)))
-        .isEqualTo(zonedTime);
+    assertThat(DateTimeFormats.parseZonedDateTime(example)).isEqualTo(zonedTime);
   }
 
   @Test
@@ -544,9 +543,7 @@ public final class DateTimeFormatsTest {
       throws Exception {
     ZonedDateTime zonedTime = ZonedDateTime.parse(datetime, DateTimeFormatter.ISO_DATE_TIME);
     String example = zonedTime.format(getFormatterByName(formatterName));
-    assertThat(
-            ZonedDateTime.parse(example, DateTimeFormats.inferFromExample(example))
-                .withFixedOffsetZone())
+    assertThat( DateTimeFormats.parseZonedDateTime(example).withFixedOffsetZone())
         .isEqualTo(zonedTime.withFixedOffsetZone());
   }
 
@@ -574,7 +571,7 @@ public final class DateTimeFormatsTest {
       throws Exception {
     ZonedDateTime zonedTime = ZonedDateTime.parse(datetime, DateTimeFormatter.ISO_DATE_TIME);
     String example = zonedTime.format(getFormatterByName(formatterName));
-    assertThat(ZonedDateTime.parse(example, DateTimeFormats.inferFromExample(example)))
+    assertThat(ZonedDateTime.parse(example, DateTimeFormats.formatOf(example)))
         .isEqualTo(zonedTime);
   }
 
@@ -605,8 +602,65 @@ public final class DateTimeFormatsTest {
       throws Exception {
     ZonedDateTime zonedTime = OffsetDateTime.parse(datetime).toZonedDateTime();
     String example = zonedTime.format(getFormatterByName(formatterName));
-    assertThat(ZonedDateTime.parse(example, DateTimeFormats.inferFromExample(example)))
-        .isEqualTo(zonedTime);
+    assertThat(DateTimeFormats.parseZonedDateTime(example)).isEqualTo(zonedTime);
+  }
+
+  @Test
+  public void offsetDateTimeWithNanosExamples(
+      @TestParameter({
+            "ISO_OFFSET_DATE_TIME",
+            "ISO_DATE_TIME",
+            "ISO_ZONED_DATE_TIME",
+          })
+          String formatterName,
+      @TestParameter({
+            "2020-01-01T00:00:00.123+08:00",
+            "1979-01-01T00:00:00.1+01:00",
+            "2035-12-31T00:00:01.123456-12:00"
+          })
+          String datetime)
+      throws Exception {
+    OffsetDateTime dateTime = DateTimeFormats.parseOffsetDateTime(datetime);
+    String example = dateTime.format(getFormatterByName(formatterName));
+    assertThat(DateTimeFormats.parseOffsetDateTime(example)).isEqualTo(dateTime);
+  }
+
+  @Test
+  public void parseToInstant_fromDateTimeString(
+      @TestParameter({
+            "ISO_OFFSET_DATE_TIME",
+            "ISO_DATE_TIME",
+            "ISO_ZONED_DATE_TIME",
+            "yyyy/MM/dd HH:mm:ss.SSSSSSX",
+            "yyyy/MM/dd HH:mm:ss.SSSSSSVV",
+            "yyyy/MM/dd HH:mm:ss.SSSSSSz",
+            "yyyy-MM-dd HH:mm:ss.SSSSSSzz",
+          })
+          String formatterName,
+      @TestParameter({
+            "2020-01-01T00:00:00.123+08:00",
+            "1979-01-01T00:00:00.1+01:00",
+            "2035-12-31T00:00:01.123456-12:00"
+          })
+          String datetime)
+      throws Exception {
+    ZonedDateTime dateTime = DateTimeFormats.parseZonedDateTime(datetime);
+    String example = dateTime.format(getFormatterByName(formatterName));
+    assertThat(DateTimeFormats.parseToInstant(example)).isEqualTo(dateTime.toInstant());
+  }
+
+  @Test
+  public void parseToInstant_fromInstantString(
+      @TestParameter({
+            "2020-01-01T00:00:00.123+08:00",
+            "1979-01-01T00:00:00.1+01:00",
+            "2035-12-31T00:00:01.123456-12:00"
+          })
+          String datetime)
+      throws Exception {
+    ZonedDateTime dateTime = DateTimeFormats.parseZonedDateTime(datetime);
+    assertThat(DateTimeFormats.parseToInstant(dateTime.toInstant().toString()))
+        .isEqualTo(dateTime.toInstant());
   }
 
   @Test
@@ -623,14 +677,14 @@ public final class DateTimeFormatsTest {
   public void offsetTimeExamples(
       @TestParameter({"00:00:00+18:00", "12:00-08:00", "23:59:59.999999999-18:00"})
           String example) {
-    DateTimeFormatter formatter = DateTimeFormats.inferFromExample(example);
+    DateTimeFormatter formatter = DateTimeFormats.formatOf(example);
     OffsetTime time = OffsetTime.parse(example, formatter);
     assertThat(time.format(formatter)).isEqualTo(example);
   }
 
   @Test
   public void timeZoneMixedIn_zeroOffset() {
-    DateTimeFormatter formatter = DateTimeFormats.inferFromExample("M dd yyyy HH:mm:ss<Z>");
+    DateTimeFormatter formatter = DateTimeFormats.formatOf("M dd yyyy HH:mm:ss<Z>");
     ZonedDateTime dateTime = ZonedDateTime.parse("1 10 2023 10:20:30Z", formatter);
     assertThat(dateTime)
         .isEqualTo(ZonedDateTime.of(LocalDateTime.of(2023, 1, 10, 10, 20, 30, 0), ZoneOffset.UTC));
@@ -638,7 +692,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void timeZoneMixedIn_offsetWithoutColon() {
-    DateTimeFormatter formatter = DateTimeFormats.inferFromExample("MM dd yyyy HH:mm:ss<+0100>");
+    DateTimeFormatter formatter = DateTimeFormats.formatOf("MM dd yyyy HH:mm:ss<+0100>");
     ZonedDateTime dateTime = ZonedDateTime.parse("01 10 2023 10:20:30-0800", formatter);
     assertThat(dateTime)
         .isEqualTo(
@@ -647,7 +701,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void timeZoneMixedIn_hourOffset() {
-    DateTimeFormatter formatter = DateTimeFormats.inferFromExample("M dd yyyy HH:mm:ss<+01>");
+    DateTimeFormatter formatter = DateTimeFormats.formatOf("M dd yyyy HH:mm:ss<+01>");
     ZonedDateTime dateTime = ZonedDateTime.parse("1 10 2023 10:20:30-08", formatter);
     assertThat(dateTime)
         .isEqualTo(
@@ -656,7 +710,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void timeZoneMixedIn_offsetWithColon() {
-    DateTimeFormatter formatter = DateTimeFormats.inferFromExample("M dd yyyy HH:mm:ss<-01:00>");
+    DateTimeFormatter formatter = DateTimeFormats.formatOf("M dd yyyy HH:mm:ss<-01:00>");
     ZonedDateTime dateTime = ZonedDateTime.parse("1 10 2023 10:20:30-08:00", formatter);
     assertThat(dateTime)
         .isEqualTo(
@@ -666,7 +720,7 @@ public final class DateTimeFormatsTest {
   @Test
   public void timeZoneMixedIn_zoneNameWithEuropeDateStyle() {
     DateTimeFormatter formatter =
-        DateTimeFormats.inferFromExample("dd MM yyyy HH:mm:ss.SSS <America/New_York>");
+        DateTimeFormats.formatOf("dd MM yyyy HH:mm:ss.SSS <America/New_York>");
     ZonedDateTime dateTime = ZonedDateTime.parse("30 10 2023 10:20:30.123 Europe/Paris", formatter);
     assertThat(dateTime)
         .isEqualTo(
@@ -676,7 +730,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void timeZoneMixedIn_offsetWithAmericanDateStyle() {
-    DateTimeFormatter formatter = DateTimeFormats.inferFromExample("M dd yyyy HH:mm:ss<+01:00>");
+    DateTimeFormatter formatter = DateTimeFormats.formatOf("M dd yyyy HH:mm:ss<+01:00>");
     ZonedDateTime dateTime = ZonedDateTime.parse("1 10 2023 10:20:30-07:00", formatter);
     assertThat(dateTime)
         .isEqualTo(
@@ -685,7 +739,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void timeZoneMixedIn_twoLetterZoneNameAbbreviation() {
-    DateTimeFormatter formatter = DateTimeFormats.inferFromExample("M dd yyyy HH:mm:ss<PT>");
+    DateTimeFormatter formatter = DateTimeFormats.formatOf("M dd yyyy HH:mm:ss<PT>");
     ZonedDateTime dateTime = ZonedDateTime.parse("1 10 2023 10:20:30PT", formatter);
     assertThat(dateTime)
         .isEqualTo(
@@ -695,7 +749,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void timeZoneMixedIn_fourLetterZoneNameAbbreviation() {
-    DateTimeFormatter formatter = DateTimeFormats.inferFromExample("M dd yyyy HH:mm:ss<CAST>");
+    DateTimeFormatter formatter = DateTimeFormats.formatOf("M dd yyyy HH:mm:ss<CAST>");
     ZonedDateTime dateTime = ZonedDateTime.parse("1 10 2023 10:20:30CAST", formatter);
     assertThat(dateTime.toLocalDateTime())
         .isEqualTo(LocalDateTime.of(2023, 1, 10, 10, 20, 30, 0));
@@ -703,7 +757,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void timeZoneMixedIn_abbreviatedZoneName() {
-    DateTimeFormatter formatter = DateTimeFormats.inferFromExample("MM dd yyyy HH:mm:ss<GMT>");
+    DateTimeFormatter formatter = DateTimeFormats.formatOf("MM dd yyyy HH:mm:ss<GMT>");
     ZonedDateTime dateTime = ZonedDateTime.parse("01 10 2023 10:20:30PST", formatter);
     assertThat(dateTime)
         .isEqualTo(
