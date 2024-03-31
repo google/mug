@@ -3,13 +3,16 @@
   <parent>
       <groupId>com.google.mug</groupId>
       <artifactId>mug-root</artifactId>
-      <version>5.8-SNAPSHOT</version>
+      <version>7.1-SNAPSHOT</version>
       <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>mug-benchmarks</artifactId>
   <packaging>jar</packaging>
 
   <name>benchmarks</name>
+  <properties>
+    <maven.javadoc.skip>true</maven.javadoc.skip>
+  </properties>
 
   <dependencies>
     <dependency>

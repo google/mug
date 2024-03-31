@@ -16,15 +16,21 @@ package com.google.mu.protobuf.util;
 
 import static java.util.Arrays.stream;
 
+import java.util.List;
 import java.util.stream.Collector;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
 
+import com.google.common.collect.Lists;
+import com.google.common.math.DoubleMath;
 import com.google.errorprone.annotations.CheckReturnValue;
+import com.google.mu.annotations.RequiresProtobuf;
 import com.google.protobuf.ListValue;
+import com.google.protobuf.ListValueOrBuilder;
 import com.google.protobuf.NullValue;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
+import com.google.protobuf.ValueOrBuilder;
 
 /**
  * Additional utilities to help create {@link Value} and {@link ListValue} messages.
@@ -32,6 +38,7 @@ import com.google.protobuf.Value;
  * @since 5.8
  */
 @CheckReturnValue
+@RequiresProtobuf
 public final class MoreValues {
   /** The {@link Value} for null. */
   public static final Value NULL =
@@ -44,7 +51,7 @@ public final class MoreValues {
   public static final Value FALSE = Value.newBuilder().setBoolValue(false).build();
 
   /** Returns {@link Value} wrapper for {@code string} if not null, or else returns {@link #NULL}. */
-  public static Value nullableValue(@Nullable String string) {
+  public static Value nullableValueOf(@Nullable String string) {
     return string == null ? NULL : valueOf(string);
   }
 
@@ -58,7 +65,7 @@ public final class MoreValues {
    * Null strings are converted to {@link NULL}.
    */
   public static ListValue listValueOf(@Nullable String... values) {
-    return stream(values).map(MoreValues::nullableValue).collect(toListValue());
+    return stream(values).map(MoreValues::nullableValueOf).collect(toListValue());
   }
 
   /**
@@ -66,7 +73,7 @@ public final class MoreValues {
    * Null structs are converted to {@link NULL}.
    */
   public static ListValue listValueOf(@Nullable Struct... values) {
-    return stream(values).map(MoreValues::nullableValue).collect(toListValue());
+    return stream(values).map(MoreValues::nullableValueOf).collect(toListValue());
   }
 
   /** Returns a {@link Collector} that collects the input values into {@link ListValue}. */
@@ -78,6 +85,71 @@ public final class MoreValues {
         ListValue.Builder::build);
   }
 
+  /**
+   * Unwraps {@code value}.
+   *
+   * <p>For example, {@code Values.of(1)} is unwrapped to {@code 1}; {@link ListValue} is
+   * unwrapped as {@code List<Object>}; {@link Struct} is unwrapped as {@code Map<String, Object>};
+   * and {@link NullValue} is unwrapped as {@code null}, etc.
+   *
+   * <p>Note that integral numbers in the range of {@code int} will be unwrapped as {@code Integer};
+   * while integral numbers otherwise in the range of {@code long} will be unwrapped as {@code Long}.
+   * All other numbers are unwrapped as {@code Double}. If you need to handle all number cases
+   * unconditionally, consider to use {@link Number#doubleValue}.
+   *
+   * <p>The returned object is immutable. Even if {@code value} is an instance of {@link
+   * Value.Builder}, and the underlying state is changed after this method returns,
+   * the returned object remains unchanged.
+   *
+   * @see MoreStructs#asMap
+   * @see #asList
+   * @since 5.9
+   */
+  @Nullable
+  public static Object fromValue(ValueOrBuilder value) {
+    switch (value.getKindCase()) {
+      case NULL_VALUE:
+        return null;
+      case BOOL_VALUE:
+        return value.getBoolValue();
+      case STRING_VALUE:
+        return value.getStringValue();
+      case NUMBER_VALUE: {
+        double v = value.getNumberValue();
+        if (v >= Long.MIN_VALUE && v <= Long.MAX_VALUE && DoubleMath.isMathematicalInteger(v)) {
+          if (v >= Integer.MIN_VALUE && v <= Integer.MAX_VALUE) {
+            return (int) v;
+          } else {
+            return (long) v;
+          }
+        } else {
+          return v;
+        }
+      }
+      case LIST_VALUE:
+        return asList(value.getListValue());
+      case STRUCT_VALUE:
+        return MoreStructs.asMap(value.getStructValue());
+      default:
+        throw new AssertionError("Unsupported value: " + value);
+    }
+  }
+
+  /**
+   * Returns a {@code List<Object>} <em>view</em> over {@code listValue}.
+   *
+   * <p>For example, {@code Values.of(1)} is unwrapped to {@code 1L};
+   * {@link Struct} is unwrapped as {@code Map<String, Object>};
+   * and {@link NullValue} is unwrapped as {@code null}, etc.
+   *
+   * @see MoreStructs#asMap
+   * @see #fromValue
+   * @since 5.9
+   */
+  public static List<Object> asList(ListValueOrBuilder listValue) {
+    return Lists.transform(listValue.getValuesList(), MoreValues::fromValue);
+  }
+
   static Value valueOf(double n) {
     return Value.newBuilder().setNumberValue(n).build();
   }
@@ -86,8 +158,8 @@ public final class MoreValues {
     return b ? TRUE : FALSE;
   }
 
-  static Value valueOf(CharSequence s) {
-    return Value.newBuilder().setStringValue(s.toString()).build();
+  static Value valueOf(String s) {
+    return Value.newBuilder().setStringValue(s).build();
   }
 
   static Value valueOf(Struct v) {
@@ -99,7 +171,9 @@ public final class MoreValues {
   }
 
   /** Returns {@link Value} wrapper for {@code struct} if not null, or else returns {@link #NULL}. */
-  private static Value nullableValue(@Nullable Struct struct) {
+  private static Value nullableValueOf(@Nullable Struct struct) {
     return struct == null ? NULL : valueOf(struct);
   }
+
+  private MoreValues() {}
 }

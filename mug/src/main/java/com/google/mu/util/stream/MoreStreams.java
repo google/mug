@@ -14,13 +14,12 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
-import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static java.util.Objects.requireNonNull;
 
+import java.util.AbstractMap;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -41,7 +40,6 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import com.google.mu.function.CheckedConsumer;
-import com.google.mu.util.Both;
 
 /**
  * Static utilities pertaining to {@link Stream} in addition to relevant utilities in JDK and Guava.
@@ -220,6 +218,53 @@ public final class MoreStreams {
   }
 
   /**
+   * Groups consecutive items in {@code stream} using the {@code sameGroup} predicate, along with
+   * the group's run length (number of items).
+   *
+   * <p>The following example encodes a stream of payloads with run length:
+   *
+   * <pre>{@code
+   * ImmutableList<RunLengthEncodedPayload> encodedPayloads =
+   *     runLengthEncode(payloads.stream(), payloadDiffer::isEquivalent)
+   *         .mapToObj(
+   *             (payload, count) ->
+   *                 RunLengthEncodedPayload.newBuilder()
+   *                     .setPayload(payload)
+   *                     .setCount(count)
+   *                     .build())
+   *         .collect(toImmutableList());
+   * }</pre>
+   *
+   * @return a BiStream with the first item of each group and the run length of that group.
+   * @since 7.0
+   */
+  public static <T> BiStream<T, Long> runLengthEncode(
+      Stream<T> stream, BiPredicate<? super T, ? super T> sameGroup) {
+    class Run {
+      private T firstValue;
+      private long count;
+
+      void add(T value) {
+        if (count++ == 0) {
+          firstValue = value;
+        }
+      }
+
+      Run merge(Run that) {
+        count += that.count;
+        return this;
+      }
+
+      Map.Entry<T, Long> toEntry() {
+        return new AbstractMap.SimpleImmutableEntry<>(firstValue, count);
+      }
+    }
+    return BiStream.fromEntries(
+        groupConsecutive(
+            stream, sameGroup, Collector.of(Run::new, Run::add, Run::merge, Run::toEntry)));
+  }
+
+  /**
    * Iterates through {@code stream} <em>only once</em>. It's strongly recommended
    * to avoid assigning the return value to a variable or passing it to any other method because
    * the returned {@code Iterable}'s {@link Iterable#iterator iterator()} method can only be called
@@ -308,107 +353,6 @@ public final class MoreStreams {
     return new DicedSpliterator<T>(spliterator, maxSize);
   }
 
-  /** @deprecated Use {@code maps.collect(flatteningMaps(toMap())} instead. */
-  @Deprecated
-  public static <K, V> Collector<Map<K, V>, ?, Map<K, V>> uniqueKeys() {
-    return MoreCollectors.flatteningMaps(toMap());
-  }
-
-  /**
-   * Analogous to {@link Collectors#mapping Collectors.mapping()}, applies a mapping function to
-   * each input element before accumulation, except that the {@code mapper} function returns a
-   * <em><b>pair of elements</b></em>, which are then accumulated by a <em>BiCollector</em>.
-   *
-   * <p>For example, you can parse key-value pairs in the form of "k1=v1,k2=v2" with:
-   *
-   * <pre>{@code
-   * Substring.first(',')
-   *     .delimit("k1=v2,k2=v2")
-   *     .collect(
-   *         mapping(
-   *             s -> first('=').split(s).orElseThrow(...),
-   *             toImmutableSetMultimap()));
-   * }</pre>
-   *
-   * @since 5.1
-   * @deprecated Moved to {@link MoreCollectors}.
-   */
-  @Deprecated
-  public static <T, A, B, R> Collector<T, ?, R> mapping(
-      Function<? super T, ? extends Both<? extends A, ? extends B>> mapper,
-      BiCollector<A, B, R> downstream) {
-    return MoreCollectors.mapping(mapper, downstream);
-  }
-
-  /**
-   * Similar but slightly different than {@link Collectors#flatMapping}, returns a {@link Collector}
-   * that first flattens the input stream of <em>pairs</em> (as opposed to single elements) and then
-   * collects the flattened pairs with the {@code downstream} BiCollector.
-   *
-   * @since 4.8
-   * @deprecated Moved to {@link MoreCollectors}.
-   */
-  @Deprecated
-  public static <T, K, V, R> Collector<T, ?, R> flatMapping(
-      Function<? super T, ? extends BiStream<? extends K, ? extends V>> flattener,
-      BiCollector<K, V, R> downstream) {
-    return MoreCollectors.flatMapping(flattener, downstream);
-  }
-
-  /**
-   * @since 3.6
-   * @deprecated If you need to flatten a stream of Multimap, use something like {@code
-   * flatMapping(m -> BiStream.from(m.asMap()), flatteningToImmutableSetMultimap())}.
-   */
-  @Deprecated
-  public static <T, K, V, R> Collector<T, ?, R> flattening(
-      Function<? super T, ? extends Collection<? extends Map.Entry<? extends K, ? extends V>>> flattener,
-      BiCollector<K, V, R> downstream) {
-    return flatMapping(flattener.andThen(BiStream::from), downstream);
-  }
-
-  /**
-   * Returns a {@code Collector} that flattens the input {@link Map} entries and collects them using
-   * the {@code downstream} BiCollector.
-   *
-   * <p>For example, you can flatten a list of multimaps:
-   *
-   * <pre>{@code
-   * ImmutableMap<EmployeeId, Task> billableTaskAssignments = projects.stream()
-   *     .map(Project::getTaskAssignments)
-   *     .collect(flatteningMaps(ImmutableMap::toImmutableMap)));
-   * }</pre>
-   *
-   * <p>To flatten a stream of multimaps, use {@link #flattening}.
-   *
-   * @since 4.6
-   * @deprecated Moved to {@link MoreCollectors}.
-   */
-  @Deprecated
-  public static <K, V, R> Collector<Map<K, V>, ?, R> flatteningMaps(
-      BiCollector<K, V, R> downstream) {
-    return flatMapping(BiStream::from, downstream);
-  }
-
-  /**
-   * Returns a collector that collects input elements into a list, which is then arranged by the
-   * {@code arranger} function before being wrapped as <em>immutable</em> list result.
-   * List elements are not allowed to be null.
-   *
-   * <p>Example usages: <ul>
-   * <li>{@code stream.collect(toListAndThen(Collections::reverse))} to collect to reverse order.
-   * <li>{@code stream.collect(toListAndThen(Collections::shuffle))} to collect and shuffle.
-   * <li>{@code stream.collect(toListAndThen(Collections::sort))} to collect and sort.
-   * </ul>
-   *
-   * @since 4.2
-   * @deprecated Moved to {@link MoreCollectors}.
-   */
-  @Deprecated
-  public static <T> Collector<T, ?, List<T>> toListAndThen(Consumer<? super List<T>> arranger) {
-    return MoreCollectors.toListAndThen(arranger);
-  }
-
   /**
    * Returns an infinite {@link Stream} starting from {@code firstIndex}.
    * Can be used together with {@link BiStream#zip} to iterate over a stream with index.
@@ -446,7 +390,7 @@ public final class MoreStreams {
   }
 
   /**
-   * Similar to {@link Stream#generate}, returns an infinite, sequential, unordered, and non-null
+   * Similar to {@link Stream#generate}, returns an infinite, sequential, ordered, and non-null
    * stream where each element is generated by the provided Supplier. The stream however will
    * terminate as soon as the Supplier returns null, in which case the null is treated as the
    * terminal condition and doesn't constitute a stream element.
@@ -456,7 +400,7 @@ public final class MoreStreams {
    *
    * <pre>{@code
    * return StreamSupport.stream(
-   *     new AbstractSpliterator<T>(MAX_VALUE, NONNULL) {
+   *     new AbstractSpliterator<T>(MAX_VALUE, NONNULL | ORDERED) {
    *       public boolean tryAdvance(Consumer<? super T> action) {
    *         if (hasData) {
    *           action.accept(data);
@@ -507,14 +451,26 @@ public final class MoreStreams {
   public static <T> Stream<T> whileNotNull(Supplier<? extends T> supplier) {
     requireNonNull(supplier);
     return StreamSupport.stream(
-        new AbstractSpliterator<T>(Long.MAX_VALUE, Spliterator.NONNULL) {
+        new Spliterator<T>() {
           @Override public boolean tryAdvance(Consumer<? super T> action) {
-            T element = supplier.get();
-            if (element == null) return false;
-            action.accept(element);
+            T generated = supplier.get();
+            if (generated == null) {
+              return false;
+            }
+            action.accept(generated);
             return true;
           }
-        }, false);
+          @Override public int characteristics() {
+            return Spliterator.NONNULL | Spliterator.ORDERED;
+          }
+          @Override public long estimateSize() {
+            return Long.MAX_VALUE;
+          }
+          @Override public Spliterator<T> trySplit() {
+            return null;
+          }
+        },
+        false);
   }
 
   /**
@@ -563,8 +519,7 @@ public final class MoreStreams {
     requireNonNull(mapper);
     Stream<T> mapped = StreamSupport.stream(
         () -> mapper.apply(stream.spliterator()), characteristics, stream.isParallel());
-    mapped.onClose(stream::close);
-    return mapped;
+    return mapped.onClose(stream::close);
   }
 
   /** Copying input elements into another stream. */

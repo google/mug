@@ -2,12 +2,9 @@ package com.google.mu.util;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static com.google.mu.util.Optionals.flatMapBoth;
 import static com.google.mu.util.Optionals.ifPresent;
-import static com.google.mu.util.Optionals.mapBoth;
 import static com.google.mu.util.Optionals.optional;
 import static com.google.mu.util.Optionals.optionally;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -37,8 +34,7 @@ public class OptionalsTest {
     MockitoAnnotations.initMocks(this);
   }
 
-  @Test
-  public void optionally_empty() {
+  @Test public void optionally_empty() {
     assertThat(
             optionally(
                 false,
@@ -48,30 +44,33 @@ public class OptionalsTest {
         .isEmpty();
   }
 
-  @Test
-  public void optionally_supplierReturnsNull() {
+  @Test public void optionally_supplierReturnsNull() {
     assertThat(optionally(true, () -> null)).isEmpty();
   }
 
-  @Test
-  public void optionally_notEmpty() {
+  @Test public void optionally_notEmpty() {
     assertThat(optionally(true, () -> "v")).hasValue("v");
   }
 
-  @Test
-  public void optional_empty() {
+  @Test public void optional_empty() {
     assertThat(optional(false, "whatever")).isEmpty();
     assertThat(optional(false, null)).isEmpty();
   }
 
-  @Test
-  public void optional_nullValueIsTranslatedToEmpty() {
+  @Test public void optional_nullValueIsTranslatedToEmpty() {
     assertThat(optional(true, null)).isEmpty();
   }
 
-  @Test
-  public void optional_notEmpty() {
+  @Test public void optional_notEmpty() {
     assertThat(optional(true, "v")).hasValue("v");
+  }
+
+  @Test public void asSet_empty() {
+    assertThat(Optionals.asSet(Optional.empty())).isEmpty();
+  }
+
+  @Test public void asSet_notEmpty() {
+    assertThat(Optionals.asSet(Optional.of(123))).containsExactly(123);
   }
 
   @Test public void ifPresent_or_firstIsAbsent_secondSupplierIsPresent() {
@@ -191,64 +190,16 @@ public class OptionalsTest {
     verify(action).run("foo", "bar");
   }
 
-  @Test public void map_leftIsEmpty() {
-    assertThat(mapBoth(Optional.empty(), Optional.of("bar"), action::run)).isEqualTo(Optional.empty());
-    verify(action, never()).run(any(), any());
-  }
-
-  @Test public void map_rightIsEmpty() {
-    assertThat(mapBoth(Optional.of("foo"), Optional.empty(), action::run)).isEqualTo(Optional.empty());
-    verify(action, never()).run(any(), any());
-  }
-
-  @Test public void map_bothArePresent_mapperReturnsNull() {
-    assertThat(mapBoth(Optional.of("foo"), Optional.empty(), (a, b) -> null))
-        .isEqualTo(Optional.empty());
-  }
-
-  @Test public void map_bothArePresent_mapperReturnsNonNull() {
-    assertThat(mapBoth(Optional.of("foo"), Optional.of("bar"), (a, b) -> a + b))
-        .isEqualTo(Optional.of("foobar"));
-  }
-
-  @Test public void flatMap_leftIsEmpty() {
-    assertThat(flatMapBoth(
-             Optional.empty(), Optional.of("bar"),(a, b) -> Optional.of(action.run(a, b))))
-        .isEqualTo(Optional.empty());
-    verify(action, never()).run(any(), any());
-  }
-
-  @Test public void flatMap_rightIsEmpty() {
-    assertThat(flatMapBoth(
-             Optional.of("foo"), Optional.empty(),(a, b) -> Optional.of(action.run(a, b))))
-        .isEqualTo(Optional.empty());
-    verify(action, never()).run(any(), any());
-  }
-
-  @Test public void flatMap_bothPresent_mapperReturnsNull() {
-    assertThrows(
-        NullPointerException.class,
-        () -> flatMapBoth(Optional.of("foo"), Optional.of("bar"), (a, b) -> null));
-  }
-
-  @Test public void flatMap_bothPresent_mapperReturnsNonNull() {
-    assertThat(flatMapBoth(Optional.of("foo"), Optional.of("bar"), (a, b) -> Optional.of(a + b)))
-        .isEqualTo(Optional.of("foobar"));
-  }
-
-  @Test
-  public void both_bothEmpty() {
+  @Test public void both_bothEmpty() {
     assertThat(Optionals.both(Optional.empty(), Optional.empty())).isEqualTo(BiOptional.empty());
   }
 
-  @Test
-  public void both_oneIsEmpty() {
+  @Test public void both_oneIsEmpty() {
     assertThat(Optionals.both(Optional.empty(), Optional.of("one"))).isEqualTo(BiOptional.empty());
     assertThat(Optionals.both(Optional.of(1), Optional.empty())).isEqualTo(BiOptional.empty());
   }
 
-  @Test
-  public void both_noneEmpty() {
+  @Test public void both_noneEmpty() {
     assertThat(Optionals.both(Optional.of(1), Optional.of("one")))
         .isEqualTo(BiOptional.of(1, "one"));
   }

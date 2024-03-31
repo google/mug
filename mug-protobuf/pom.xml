@@ -3,22 +3,22 @@
   <parent>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-root</artifactId>
-    <version>5.8-SNAPSHOT</version>
+    <version>7.1-SNAPSHOT</version>
   </parent>
   <artifactId>mug-protobuf</artifactId>
   <packaging>jar</packaging>
-  <name>protobuf-utils</name>
+  <name>Protobuf utils</name>
   <dependencies>
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
-      <version>3.19.1</version>
+      <version>[3.0.0,)</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java-util</artifactId>
-      <version>3.19.1</version>
+      <version>[3.0.0,)</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -38,27 +38,26 @@
       <version>${project.version}</version>
       <scope>compile</scope>
     </dependency>
-
     <dependency>
       <groupId>com.google.truth</groupId>
       <artifactId>truth</artifactId>
       <scope>test</scope>
     </dependency>
-
     <dependency>
       <groupId>com.google.truth.extensions</groupId>
       <artifactId>truth-java8-extension</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
-        <groupId>com.google.guava</groupId>
-        <artifactId>guava-testlib</artifactId>
-        <scope>test</scope>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava-testlib</artifactId>
+      <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>org.checkerframework</groupId>
-      <artifactId>checker-qual</artifactId>
-      <classifier>sources</classifier>
-    </dependency>
+	<dependency>
+		<groupId>com.google.mug</groupId>
+		<artifactId>mug-guava</artifactId>
+		<scope>test</scope>
+		<version>${project.version}</version>
+	</dependency>
   </dependencies>
 </project>

@@ -51,9 +51,10 @@ import java.util.function.Function;
  * conversion.
  *
  * @param <T> the output type
+ * @deprecated too niche
  */
+@Deprecated
 public final class Funnel<T> {
-
   private int size = 0;
   private final List<Batch<?, T>> batches = new ArrayList<>();
   private final Batch<T, T> passthrough = through(Function.identity());
@@ -63,7 +64,9 @@ public final class Funnel<T> {
    *
    * @param <F> batch input element type
    * @param <T> batch output element type
+   * @deprecated too niche
    */
+  @Deprecated
   public static final class Batch<F, T> implements Consumer<F> {
     private final Funnel<T> funnel;
     private final Function<? super List<F>, ? extends Collection<? extends T>> converter;

@@ -42,8 +42,12 @@ import java.util.stream.Collector;
 @FunctionalInterface
 public interface BiCollector<K, V, R> {
   /**
-   * Returns a {@code Collector} that will first split the input elements using {@code toKey} and
-   * {@code toValue} and subsequently collect the bisected parts through this {@code BiCollector}.
+   * Returns a {@code Collector} such that the keys (as returned by the {@code toKey} function) and
+   * values (as returned by the {@code toValue} function) of the input elements are collected by
+   * this {@code BiCollector}.
+   *
+   * <p>Conceptually {@code toImmutableMap(Employee::id, Employee::manager)} is equivalent to {@code
+   * BiCollectors.toImmutableMap().collectorOf(Employee::id, Employee::manager)}.
    *
    * @param toKey
    *        The function to read the key from the input entry.
@@ -56,11 +60,12 @@ public interface BiCollector<K, V, R> {
    *        Because input entries could be ephemeral like {@link java.util.Map.Entry},
    *        applying the function on a previous input entry has undefined result.
    * @param <E> used to abstract away the underlying pair/entry type used by {@link BiStream}.
+   * @since 6.6
    */
   // Deliberately avoid wildcards for toKey and toValue, because we don't expect
   // users to call this method. Instead, users will typically provide method references matching
   // this signature.
   // Signatures with or without wildcards should both match.
   // In other words, this signature optimizes flexibility for implementors, not callers.
-  <E> Collector<E, ?, R> splitting(Function<E, K> toKey, Function<E, V> toValue);
+  <E> Collector<E, ?, R> collectorOf(Function<E, K> toKey, Function<E, V> toValue);
 }

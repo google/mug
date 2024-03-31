@@ -187,16 +187,14 @@ public class WalkerAsTraverserTest {
   private static final SuccessorsFunction<Character> GRAPH_CONTAINING_TREE_AND_DIAMOND =
       createDirectedGraph("ab", "fe", "fg", "bc", "bd", "ed", "eh", "gh");
 
-  @Test
-  public void forGraph_breadthFirst_javadocExample_canBeIteratedMultipleTimes() {
+  @Test public void forGraph_breadthFirst_javadocExample_canBeIteratedMultipleTimes() {
     Iterable<Character> result = WalkerAsTraverser.forGraph(JAVADOC_GRAPH).breadthFirst('a');
 
     assertEqualCharNodes(result, "abcdef");
     assertEqualCharNodes(result, "abcdef");
   }
 
-  @Test
-  public void forGraph_breadthFirstIterable_javadocExample_canBeIteratedMultipleTimes() {
+  @Test public void forGraph_breadthFirstIterable_javadocExample_canBeIteratedMultipleTimes() {
     Iterable<Character> result =
         WalkerAsTraverser.forGraph(JAVADOC_GRAPH).breadthFirst(charactersOf("bf"));
 
@@ -204,8 +202,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(result, "bfaecd");
   }
 
-  @Test
-  public void forGraph_breadthFirst_diamond() {
+  @Test public void forGraph_breadthFirst_diamond() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forGraph(DIAMOND_GRAPH);
     assertEqualCharNodes(traverser.breadthFirst('a'), "abcd");
     assertEqualCharNodes(traverser.breadthFirst('b'), "bd");
@@ -213,8 +210,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.breadthFirst('d'), "d");
   }
 
-  @Test
-  public void forGraph_breadthFirstIterable_diamond() {
+  @Test public void forGraph_breadthFirstIterable_diamond() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forGraph(DIAMOND_GRAPH);
     assertEqualCharNodes(traverser.breadthFirst(charactersOf("")), "");
     assertEqualCharNodes(traverser.breadthFirst(charactersOf("bc")), "bcd");
@@ -223,8 +219,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.breadthFirst(charactersOf("db")), "db");
   }
 
-  @Test
-  public void forGraph_breadthFirst_multiGraph() {
+  @Test public void forGraph_breadthFirst_multiGraph() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forGraph(MULTI_GRAPH);
     assertEqualCharNodes(traverser.breadthFirst('a'), "abcd");
     assertEqualCharNodes(traverser.breadthFirst('b'), "bd");
@@ -232,8 +227,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.breadthFirst('d'), "d");
   }
 
-  @Test
-  public void forGraph_breadthFirstIterable_multiGraph() {
+  @Test public void forGraph_breadthFirstIterable_multiGraph() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forGraph(MULTI_GRAPH);
     assertEqualCharNodes(traverser.breadthFirst(charactersOf("ac")), "acbd");
     assertEqualCharNodes(traverser.breadthFirst(charactersOf("cb")), "cbad");
@@ -241,8 +235,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.breadthFirst(charactersOf("d")), "d");
   }
 
-  @Test
-  public void forGraph_breadthFirst_cycle() {
+  @Test public void forGraph_breadthFirst_cycle() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forGraph(CYCLE_GRAPH);
     assertEqualCharNodes(traverser.breadthFirst('a'), "abcd");
     assertEqualCharNodes(traverser.breadthFirst('b'), "bcda");
@@ -250,8 +243,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.breadthFirst('d'), "dabc");
   }
 
-  @Test
-  public void forGraph_breadthFirstIterable_cycle() {
+  @Test public void forGraph_breadthFirstIterable_cycle() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forGraph(CYCLE_GRAPH);
     assertEqualCharNodes(traverser.breadthFirst(charactersOf("a")), "abcd");
     assertEqualCharNodes(traverser.breadthFirst(charactersOf("bd")), "bdca");
@@ -259,8 +251,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.breadthFirst(charactersOf("bc")), "bcda");
   }
 
-  @Test
-  public void forGraph_breadthFirst_twoCycles() {
+  @Test public void forGraph_breadthFirst_twoCycles() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forGraph(TWO_CYCLES_GRAPH);
     assertEqualCharNodes(traverser.breadthFirst('a'), "abcd");
     assertEqualCharNodes(traverser.breadthFirst('b'), "bcda");
@@ -268,8 +259,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.breadthFirst('d'), "dabc");
   }
 
-  @Test
-  public void forGraph_breadthFirstIterable_twoCycles() {
+  @Test public void forGraph_breadthFirstIterable_twoCycles() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forGraph(TWO_CYCLES_GRAPH);
     assertEqualCharNodes(traverser.breadthFirst(charactersOf("a")), "abcd");
     assertEqualCharNodes(traverser.breadthFirst(charactersOf("bd")), "bdca");
@@ -277,8 +267,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.breadthFirst(charactersOf("bc")), "bcda");
   }
 
-  @Test
-  public void forGraph_breadthFirst_tree() {
+  @Test public void forGraph_breadthFirst_tree() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forGraph(TREE);
 
     assertEqualCharNodes(traverser.breadthFirst('h'), "hdegabcf");
@@ -286,8 +275,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.breadthFirst('a'), "a");
   }
 
-  @Test
-  public void forGraph_breadthFirstIterable_tree() {
+  @Test public void forGraph_breadthFirstIterable_tree() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forGraph(TREE);
 
     assertEqualCharNodes(traverser.breadthFirst(charactersOf("hg")), "hgdefabc");
@@ -295,30 +283,26 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.breadthFirst(charactersOf("bdgh")), "bdghacfe");
   }
 
-  @Test
-  public void forGraph_breadthFirst_twoTrees() {
+  @Test public void forGraph_breadthFirst_twoTrees() {
     Iterable<Character> result = WalkerAsTraverser.forGraph(TWO_TREES).breadthFirst('a');
 
     assertEqualCharNodes(result, "ab");
   }
 
-  @Test
-  public void forGraph_breadthFirstIterable_twoTrees() {
+  @Test public void forGraph_breadthFirstIterable_twoTrees() {
     assertEqualCharNodes(
         WalkerAsTraverser.forGraph(TWO_TREES).breadthFirst(charactersOf("a")), "ab");
     assertEqualCharNodes(
         WalkerAsTraverser.forGraph(TWO_TREES).breadthFirst(charactersOf("ac")), "acbd");
   }
 
-  @Test
-  public void forGraph_breadthFirst_singleRoot() {
+  @Test public void forGraph_breadthFirst_singleRoot() {
     Iterable<Character> result = WalkerAsTraverser.forGraph(SINGLE_ROOT).breadthFirst('a');
 
     assertEqualCharNodes(result, "a");
   }
 
-  @Test
-  public void forGraph_breadthFirstIterable_singleRoot() {
+  @Test public void forGraph_breadthFirstIterable_singleRoot() {
     Iterable<Character> result =
         WalkerAsTraverser.forGraph(SINGLE_ROOT).breadthFirst(charactersOf("a"));
 
@@ -329,8 +313,7 @@ public class WalkerAsTraverserTest {
    * Checks that the elements of the iterable are calculated on the fly. Concretely, that means that
    * {@link SuccessorsFunction#successors(Object)} can only be called for a subset of all nodes.
    */
-  @Test
-  public void forGraph_breadthFirstIterable_emptyGraph() {
+  @Test public void forGraph_breadthFirstIterable_emptyGraph() {
     assertEqualCharNodes(
         WalkerAsTraverser.forGraph(createDirectedGraph()).breadthFirst(charactersOf("")), "");
   }
@@ -339,8 +322,7 @@ public class WalkerAsTraverserTest {
    * Checks that the elements of the iterable are calculated on the fly. Concretely, that means that
    * {@link SuccessorsFunction#successors(Object)} can only be called for a subset of all nodes.
    */
-  @Test
-  public void forGraph_breadthFirst_iterableIsLazy() {
+  @Test public void forGraph_breadthFirst_iterableIsLazy() {
     RequestSavingGraph graph = new RequestSavingGraph(DIAMOND_GRAPH);
     Iterable<Character> result = WalkerAsTraverser.forGraph(graph).breadthFirst('a');
 
@@ -348,8 +330,7 @@ public class WalkerAsTraverserTest {
     assertThat(graph.requestedNodes).containsExactly('a', 'b');
   }
 
-  @Test
-  public void forGraph_breadthFirstIterable_iterableIsLazy() {
+  @Test public void forGraph_breadthFirstIterable_iterableIsLazy() {
     RequestSavingGraph graph = new RequestSavingGraph(DIAMOND_GRAPH);
     Iterable<Character> result = WalkerAsTraverser.forGraph(graph).breadthFirst(charactersOf("ab"));
 
@@ -357,16 +338,14 @@ public class WalkerAsTraverserTest {
     assertThat(graph.requestedNodes).containsExactly('a', 'b');
   }
 
-  @Test
-  public void forGraph_depthFirstPreOrder_javadocExample_canBeIteratedMultipleTimes() {
+  @Test public void forGraph_depthFirstPreOrder_javadocExample_canBeIteratedMultipleTimes() {
     Iterable<Character> result = WalkerAsTraverser.forGraph(JAVADOC_GRAPH).depthFirstPreOrder('a');
 
     assertEqualCharNodes(result, "abecfd");
     assertEqualCharNodes(result, "abecfd");
   }
 
-  @Test
-  public void forGraph_depthFirstPreOrderIterable_javadocExample_canBeIteratedMultipleTimes() {
+  @Test public void forGraph_depthFirstPreOrderIterable_javadocExample_canBeIteratedMultipleTimes() {
     Iterable<Character> result =
         WalkerAsTraverser.forGraph(JAVADOC_GRAPH).depthFirstPreOrder(charactersOf("bc"));
 
@@ -374,8 +353,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(result, "bacefd");
   }
 
-  @Test
-  public void forGraph_depthFirstPreOrder_diamond() {
+  @Test public void forGraph_depthFirstPreOrder_diamond() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forGraph(DIAMOND_GRAPH);
     assertEqualCharNodes(traverser.depthFirstPreOrder('a'), "abdc");
     assertEqualCharNodes(traverser.depthFirstPreOrder('b'), "bd");
@@ -383,8 +361,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.depthFirstPreOrder('d'), "d");
   }
 
-  @Test
-  public void forGraph_depthFirstPreOrderIterable_diamond() {
+  @Test public void forGraph_depthFirstPreOrderIterable_diamond() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forGraph(DIAMOND_GRAPH);
     assertEqualCharNodes(traverser.depthFirstPreOrder(charactersOf("")), "");
     assertEqualCharNodes(traverser.depthFirstPreOrder(charactersOf("bc")), "bdc");
@@ -393,8 +370,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.depthFirstPreOrder(charactersOf("db")), "db");
   }
 
-  @Test
-  public void forGraph_depthFirstPreOrder_multigraph() {
+  @Test public void forGraph_depthFirstPreOrder_multigraph() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forGraph(MULTI_GRAPH);
     assertEqualCharNodes(traverser.depthFirstPreOrder('a'), "abdc");
     assertEqualCharNodes(traverser.depthFirstPreOrder('b'), "bd");
@@ -402,8 +378,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.depthFirstPreOrder('d'), "d");
   }
 
-  @Test
-  public void forGraph_depthFirstPreOrderIterable_multigraph() {
+  @Test public void forGraph_depthFirstPreOrderIterable_multigraph() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forGraph(MULTI_GRAPH);
     assertEqualCharNodes(traverser.depthFirstPreOrder(charactersOf("ac")), "abdc");
     assertEqualCharNodes(traverser.depthFirstPreOrder(charactersOf("cb")), "cabd");
@@ -411,8 +386,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.depthFirstPreOrder(charactersOf("d")), "d");
   }
 
-  @Test
-  public void forGraph_depthFirstPreOrder_cycle() {
+  @Test public void forGraph_depthFirstPreOrder_cycle() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forGraph(CYCLE_GRAPH);
     assertEqualCharNodes(traverser.depthFirstPreOrder('a'), "abcd");
     assertEqualCharNodes(traverser.depthFirstPreOrder('b'), "bcda");
@@ -420,8 +394,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.depthFirstPreOrder('d'), "dabc");
   }
 
-  @Test
-  public void forGraph_depthFirstPreOrderIterable_cycle() {
+  @Test public void forGraph_depthFirstPreOrderIterable_cycle() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forGraph(CYCLE_GRAPH);
     assertEqualCharNodes(traverser.depthFirstPreOrder(charactersOf("a")), "abcd");
     assertEqualCharNodes(traverser.depthFirstPreOrder(charactersOf("bd")), "bcda");
@@ -429,8 +402,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.depthFirstPreOrder(charactersOf("bc")), "bcda");
   }
 
-  @Test
-  public void forGraph_depthFirstPreOrder_twoCycles() {
+  @Test public void forGraph_depthFirstPreOrder_twoCycles() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forGraph(TWO_CYCLES_GRAPH);
     assertEqualCharNodes(traverser.depthFirstPreOrder('a'), "abcd");
     assertEqualCharNodes(traverser.depthFirstPreOrder('b'), "bcda");
@@ -438,8 +410,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.depthFirstPreOrder('d'), "dabc");
   }
 
-  @Test
-  public void forGraph_depthFirstPreOrderIterable_twoCycles() {
+  @Test public void forGraph_depthFirstPreOrderIterable_twoCycles() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forGraph(TWO_CYCLES_GRAPH);
     assertEqualCharNodes(traverser.depthFirstPreOrder(charactersOf("a")), "abcd");
     assertEqualCharNodes(traverser.depthFirstPreOrder(charactersOf("bd")), "bcda");
@@ -447,8 +418,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.depthFirstPreOrder(charactersOf("bc")), "bcda");
   }
 
-  @Test
-  public void forGraph_depthFirstPreOrder_tree() {
+  @Test public void forGraph_depthFirstPreOrder_tree() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forGraph(TREE);
 
     assertEqualCharNodes(traverser.depthFirstPreOrder('h'), "hdabcegf");
@@ -456,8 +426,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.depthFirstPreOrder('a'), "a");
   }
 
-  @Test
-  public void forGraph_depthFirstPreOrderIterable_tree() {
+  @Test public void forGraph_depthFirstPreOrderIterable_tree() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forGraph(TREE);
 
     assertEqualCharNodes(traverser.depthFirstPreOrder(charactersOf("hg")), "hdabcegf");
@@ -465,44 +434,38 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.depthFirstPreOrder(charactersOf("bdgh")), "bdacgfhe");
   }
 
-  @Test
-  public void forGraph_depthFirstPreOrder_twoTrees() {
+  @Test public void forGraph_depthFirstPreOrder_twoTrees() {
     Iterable<Character> result = WalkerAsTraverser.forGraph(TWO_TREES).depthFirstPreOrder('a');
 
     assertEqualCharNodes(result, "ab");
   }
 
-  @Test
-  public void forGraph_depthFirstPreOrderIterable_twoTrees() {
+  @Test public void forGraph_depthFirstPreOrderIterable_twoTrees() {
     assertEqualCharNodes(
         WalkerAsTraverser.forGraph(TWO_TREES).depthFirstPreOrder(charactersOf("a")), "ab");
     assertEqualCharNodes(
         WalkerAsTraverser.forGraph(TWO_TREES).depthFirstPreOrder(charactersOf("ac")), "abcd");
   }
 
-  @Test
-  public void forGraph_depthFirstPreOrder_singleRoot() {
+  @Test public void forGraph_depthFirstPreOrder_singleRoot() {
     Iterable<Character> result = WalkerAsTraverser.forGraph(SINGLE_ROOT).depthFirstPreOrder('a');
 
     assertEqualCharNodes(result, "a");
   }
 
-  @Test
-  public void forGraph_depthFirstPreOrderIterable_singleRoot() {
+  @Test public void forGraph_depthFirstPreOrderIterable_singleRoot() {
     Iterable<Character> result =
         WalkerAsTraverser.forGraph(SINGLE_ROOT).depthFirstPreOrder(charactersOf("a"));
 
     assertEqualCharNodes(result, "a");
   }
 
-  @Test
-  public void forGraph_depthFirstPreOrderIterable_emptyGraph() {
+  @Test public void forGraph_depthFirstPreOrderIterable_emptyGraph() {
     assertEqualCharNodes(
         WalkerAsTraverser.forGraph(createDirectedGraph()).depthFirstPreOrder(charactersOf("")), "");
   }
 
-  @Test
-  public void forGraph_depthFirstPreOrder_iterableIsLazy() {
+  @Test public void forGraph_depthFirstPreOrder_iterableIsLazy() {
     RequestSavingGraph graph = new RequestSavingGraph(DIAMOND_GRAPH);
     Iterable<Character> result = WalkerAsTraverser.forGraph(graph).depthFirstPreOrder('a');
 
@@ -510,8 +473,7 @@ public class WalkerAsTraverserTest {
     assertThat(graph.requestedNodes).containsExactly('a', 'b');
   }
 
-  @Test
-  public void forGraph_depthFirstPreOrderIterable_iterableIsLazy() {
+  @Test public void forGraph_depthFirstPreOrderIterable_iterableIsLazy() {
     RequestSavingGraph graph = new RequestSavingGraph(DIAMOND_GRAPH);
     Iterable<Character> result =
         WalkerAsTraverser.forGraph(graph).depthFirstPreOrder(charactersOf("ac"));
@@ -520,23 +482,20 @@ public class WalkerAsTraverserTest {
     assertThat(graph.requestedNodes).containsExactly('a', 'b');
   }
 
-  @Test
-  public void forGraph_depthFirstPostOrder_javadocExample_canBeIteratedMultipleTimes() {
+  @Test public void forGraph_depthFirstPostOrder_javadocExample_canBeIteratedMultipleTimes() {
     Iterable<Character> result = WalkerAsTraverser.forGraph(JAVADOC_GRAPH).depthFirstPostOrder('a');
     assertEqualCharNodes(result, "fcebda");
     assertEqualCharNodes(result, "fcebda");
   }
 
-  @Test
-  public void forGraph_depthFirstPostOrderIterable_javadocExample_canBeIteratedMultipleTimes() {
+  @Test public void forGraph_depthFirstPostOrderIterable_javadocExample_canBeIteratedMultipleTimes() {
     Iterable<Character> result =
         WalkerAsTraverser.forGraph(JAVADOC_GRAPH).depthFirstPostOrder(charactersOf("bf"));
     assertEqualCharNodes(result, "efcdab");
     assertEqualCharNodes(result, "efcdab");
   }
 
-  @Test
-  public void forGraph_depthFirstPostOrder_diamond() {
+  @Test public void forGraph_depthFirstPostOrder_diamond() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forGraph(DIAMOND_GRAPH);
     assertEqualCharNodes(traverser.depthFirstPostOrder('a'), "dbca");
     assertEqualCharNodes(traverser.depthFirstPostOrder('b'), "db");
@@ -544,8 +503,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.depthFirstPostOrder('d'), "d");
   }
 
-  @Test
-  public void forGraph_depthFirstPostOrderIterable_diamond() {
+  @Test public void forGraph_depthFirstPostOrderIterable_diamond() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forGraph(DIAMOND_GRAPH);
     assertEqualCharNodes(traverser.depthFirstPostOrder(charactersOf("")), "");
     assertEqualCharNodes(traverser.depthFirstPostOrder(charactersOf("bc")), "dbc");
@@ -554,8 +512,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.depthFirstPostOrder(charactersOf("db")), "db");
   }
 
-  @Test
-  public void forGraph_depthFirstPostOrder_multigraph() {
+  @Test public void forGraph_depthFirstPostOrder_multigraph() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forGraph(MULTI_GRAPH);
     assertEqualCharNodes(traverser.depthFirstPostOrder('a'), "dbca");
     assertEqualCharNodes(traverser.depthFirstPostOrder('b'), "db");
@@ -563,8 +520,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.depthFirstPostOrder('d'), "d");
   }
 
-  @Test
-  public void forGraph_depthFirstPostOrderIterable_multigraph() {
+  @Test public void forGraph_depthFirstPostOrderIterable_multigraph() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forGraph(MULTI_GRAPH);
     assertEqualCharNodes(traverser.depthFirstPostOrder(charactersOf("ac")), "dbca");
     assertEqualCharNodes(traverser.depthFirstPostOrder(charactersOf("cb")), "dbac");
@@ -572,8 +528,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.depthFirstPostOrder(charactersOf("d")), "d");
   }
 
-  @Test
-  public void forGraph_depthFirstPostOrder_cycle() {
+  @Test public void forGraph_depthFirstPostOrder_cycle() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forGraph(CYCLE_GRAPH);
     assertEqualCharNodes(traverser.depthFirstPostOrder('a'), "dcba");
     assertEqualCharNodes(traverser.depthFirstPostOrder('b'), "adcb");
@@ -581,8 +536,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.depthFirstPostOrder('d'), "cbad");
   }
 
-  @Test
-  public void forGraph_depthFirstPostOrderIterable_cycle() {
+  @Test public void forGraph_depthFirstPostOrderIterable_cycle() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forGraph(CYCLE_GRAPH);
     assertEqualCharNodes(traverser.depthFirstPostOrder(charactersOf("a")), "dcba");
     assertEqualCharNodes(traverser.depthFirstPostOrder(charactersOf("bd")), "adcb");
@@ -590,8 +544,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.depthFirstPostOrder(charactersOf("bc")), "adcb");
   }
 
-  @Test
-  public void forGraph_depthFirstPostOrder_twoCycles() {
+  @Test public void forGraph_depthFirstPostOrder_twoCycles() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forGraph(TWO_CYCLES_GRAPH);
     assertEqualCharNodes(traverser.depthFirstPostOrder('a'), "dcba");
     assertEqualCharNodes(traverser.depthFirstPostOrder('b'), "adcb");
@@ -599,8 +552,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.depthFirstPostOrder('d'), "cbad");
   }
 
-  @Test
-  public void forGraph_depthFirstPostOrderIterable_twoCycles() {
+  @Test public void forGraph_depthFirstPostOrderIterable_twoCycles() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forGraph(TWO_CYCLES_GRAPH);
     assertEqualCharNodes(traverser.depthFirstPostOrder(charactersOf("a")), "dcba");
     assertEqualCharNodes(traverser.depthFirstPostOrder(charactersOf("bd")), "adcb");
@@ -608,8 +560,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.depthFirstPostOrder(charactersOf("bc")), "adcb");
   }
 
-  @Test
-  public void forGraph_depthFirstPostOrder_tree() {
+  @Test public void forGraph_depthFirstPostOrder_tree() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forGraph(TREE);
 
     assertEqualCharNodes(traverser.depthFirstPostOrder('h'), "abcdefgh");
@@ -617,8 +568,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.depthFirstPostOrder('a'), "a");
   }
 
-  @Test
-  public void forGraph_depthFirstPostOrderIterable_tree() {
+  @Test public void forGraph_depthFirstPostOrderIterable_tree() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forGraph(TREE);
 
     assertEqualCharNodes(traverser.depthFirstPostOrder(charactersOf("hg")), "abcdefgh");
@@ -626,45 +576,39 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.depthFirstPostOrder(charactersOf("bdgh")), "bacdfgeh");
   }
 
-  @Test
-  public void forGraph_depthFirstPostOrder_twoTrees() {
+  @Test public void forGraph_depthFirstPostOrder_twoTrees() {
     Iterable<Character> result = WalkerAsTraverser.forGraph(TWO_TREES).depthFirstPostOrder('a');
 
     assertEqualCharNodes(result, "ba");
   }
 
-  @Test
-  public void forGraph_depthFirstPostOrderIterable_twoTrees() {
+  @Test public void forGraph_depthFirstPostOrderIterable_twoTrees() {
     assertEqualCharNodes(
         WalkerAsTraverser.forGraph(TWO_TREES).depthFirstPostOrder(charactersOf("a")), "ba");
     assertEqualCharNodes(
         WalkerAsTraverser.forGraph(TWO_TREES).depthFirstPostOrder(charactersOf("ac")), "badc");
   }
 
-  @Test
-  public void forGraph_depthFirstPostOrder_singleRoot() {
+  @Test public void forGraph_depthFirstPostOrder_singleRoot() {
     Iterable<Character> result = WalkerAsTraverser.forGraph(SINGLE_ROOT).depthFirstPostOrder('a');
 
     assertEqualCharNodes(result, "a");
   }
 
-  @Test
-  public void forGraph_depthFirstPostOrderIterable_singleRoot() {
+  @Test public void forGraph_depthFirstPostOrderIterable_singleRoot() {
     Iterable<Character> result =
         WalkerAsTraverser.forGraph(SINGLE_ROOT).depthFirstPostOrder(charactersOf("a"));
 
     assertEqualCharNodes(result, "a");
   }
 
-  @Test
-  public void forGraph_depthFirstPostOrderIterable_emptyGraph() {
+  @Test public void forGraph_depthFirstPostOrderIterable_emptyGraph() {
     assertEqualCharNodes(
         WalkerAsTraverser.forGraph(createDirectedGraph()).depthFirstPostOrder(charactersOf("")),
         "");
   }
 
-  @Test
-  public void forGraph_depthFirstPostOrder_iterableIsLazy() {
+  @Test public void forGraph_depthFirstPostOrder_iterableIsLazy() {
     RequestSavingGraph graph = new RequestSavingGraph(DIAMOND_GRAPH);
     Iterable<Character> result = WalkerAsTraverser.forGraph(graph).depthFirstPostOrder('a');
 
@@ -672,8 +616,7 @@ public class WalkerAsTraverserTest {
     assertThat(graph.requestedNodes).containsExactly('a', 'b', 'd');
   }
 
-  @Test
-  public void forGraph_depthFirstPostOrderIterable_iterableIsLazy() {
+  @Test public void forGraph_depthFirstPostOrderIterable_iterableIsLazy() {
     RequestSavingGraph graph = new RequestSavingGraph(DIAMOND_GRAPH);
     Iterable<Character> result =
         WalkerAsTraverser.forGraph(graph).depthFirstPostOrder(charactersOf("ac"));
@@ -682,32 +625,28 @@ public class WalkerAsTraverserTest {
     assertThat(graph.requestedNodes).containsExactly('a', 'b', 'd');
   }
 
-  @Test
-  public void forTree_acceptsDirectedGraph() {
+  @Test public void forTree_acceptsDirectedGraph() {
     MutableGraph<String> graph = GraphBuilder.directed().build();
     graph.putEdge("a", "b");
 
     WalkerAsTraverser.forTree(graph); // Does not throw
   }
 
-  @Test
-  public void forTree_acceptsDirectedValueGraph() {
+  @Test public void forTree_acceptsDirectedValueGraph() {
     MutableValueGraph<String, Integer> valueGraph = ValueGraphBuilder.directed().build();
     valueGraph.putEdgeValue("a", "b", 11);
 
     WalkerAsTraverser.forTree(valueGraph); // Does not throw
   }
 
-  @Test
-  public void forTree_acceptsDirectedNetwork() {
+  @Test public void forTree_acceptsDirectedNetwork() {
     MutableNetwork<String, Integer> network = NetworkBuilder.directed().build();
     network.addEdge("a", "b", 11);
 
     WalkerAsTraverser.forTree(network); // Does not throw
   }
 
-  @Test
-  public void forTree_breadthFirst_tree() {
+  @Test public void forTree_breadthFirst_tree() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forTree(TREE);
 
     assertEqualCharNodes(traverser.breadthFirst('h'), "hdegabcf");
@@ -715,8 +654,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.breadthFirst('a'), "a");
   }
 
-  @Test
-  public void forTree_breadthFirstIterable_tree() {
+  @Test public void forTree_breadthFirstIterable_tree() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forTree(TREE);
 
     assertEqualCharNodes(traverser.breadthFirst(charactersOf("")), "");
@@ -725,8 +663,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.breadthFirst(charactersOf("age")), "agef");
   }
 
-  @Test
-  public void forTree_breadthFirst_cyclicGraphContainingTree() {
+  @Test public void forTree_breadthFirst_cyclicGraphContainingTree() {
     WalkerAsTraverser<Character> traverser =
         WalkerAsTraverser.forTree(CYCLIC_GRAPH_CONTAINING_TREE);
 
@@ -735,8 +672,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.breadthFirst('d'), "d");
   }
 
-  @Test
-  public void forTree_breadthFirstIterable_cyclicGraphContainingTree() {
+  @Test public void forTree_breadthFirstIterable_cyclicGraphContainingTree() {
     WalkerAsTraverser<Character> traverser =
         WalkerAsTraverser.forTree(CYCLIC_GRAPH_CONTAINING_TREE);
 
@@ -745,8 +681,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.breadthFirst(charactersOf("cd")), "cd");
   }
 
-  @Test
-  public void forTree_breadthFirst_graphContainingTreeAndDiamond() {
+  @Test public void forTree_breadthFirst_graphContainingTreeAndDiamond() {
     WalkerAsTraverser<Character> traverser =
         WalkerAsTraverser.forTree(GRAPH_CONTAINING_TREE_AND_DIAMOND);
 
@@ -755,8 +690,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.breadthFirst('d'), "d");
   }
 
-  @Test
-  public void forTree_breadthFirstIterable_graphContainingTreeAndDiamond() {
+  @Test public void forTree_breadthFirstIterable_graphContainingTreeAndDiamond() {
     WalkerAsTraverser<Character> traverser =
         WalkerAsTraverser.forTree(GRAPH_CONTAINING_TREE_AND_DIAMOND);
 
@@ -765,44 +699,38 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.breadthFirst(charactersOf("ga")), "gahbcd");
   }
 
-  @Test
-  public void forTree_breadthFirst_twoTrees() {
+  @Test public void forTree_breadthFirst_twoTrees() {
     Iterable<Character> result = WalkerAsTraverser.forTree(TWO_TREES).breadthFirst('a');
 
     assertEqualCharNodes(result, "ab");
   }
 
-  @Test
-  public void forTree_breadthFirstIterable_twoTrees() {
+  @Test public void forTree_breadthFirstIterable_twoTrees() {
     assertEqualCharNodes(
         WalkerAsTraverser.forTree(TWO_TREES).breadthFirst(charactersOf("a")), "ab");
     assertEqualCharNodes(
         WalkerAsTraverser.forTree(TWO_TREES).breadthFirst(charactersOf("ca")), "cadb");
   }
 
-  @Test
-  public void forTree_breadthFirst_singleRoot() {
+  @Test public void forTree_breadthFirst_singleRoot() {
     Iterable<Character> result = WalkerAsTraverser.forTree(SINGLE_ROOT).breadthFirst('a');
 
     assertEqualCharNodes(result, "a");
   }
 
-  @Test
-  public void forTree_breadthFirstIterable_singleRoot() {
+  @Test public void forTree_breadthFirstIterable_singleRoot() {
     Iterable<Character> result =
         WalkerAsTraverser.forTree(SINGLE_ROOT).breadthFirst(charactersOf("a"));
 
     assertEqualCharNodes(result, "a");
   }
 
-  @Test
-  public void forTree_breadthFirstIterable_emptyGraph() {
+  @Test public void forTree_breadthFirstIterable_emptyGraph() {
     assertEqualCharNodes(
         WalkerAsTraverser.forTree(createDirectedGraph()).breadthFirst(charactersOf("")), "");
   }
 
-  @Test
-  public void forTree_breadthFirst_iterableIsLazy() {
+  @Test public void forTree_breadthFirst_iterableIsLazy() {
     RequestSavingGraph graph = new RequestSavingGraph(TREE);
     Iterable<Character> result = WalkerAsTraverser.forGraph(graph).breadthFirst('h');
 
@@ -810,8 +738,7 @@ public class WalkerAsTraverserTest {
     assertThat(graph.requestedNodes).containsExactly('h', 'd');
   }
 
-  @Test
-  public void forTree_breadthFirstIterable_iterableIsLazy() {
+  @Test public void forTree_breadthFirstIterable_iterableIsLazy() {
     RequestSavingGraph graph = new RequestSavingGraph(TREE);
     Iterable<Character> result = WalkerAsTraverser.forGraph(graph).breadthFirst(charactersOf("dg"));
 
@@ -819,8 +746,7 @@ public class WalkerAsTraverserTest {
     assertThat(graph.requestedNodes).containsExactly('a', 'd', 'g');
   }
 
-  @Test
-  public void forTree_depthFirstPreOrderIterable_tree() {
+  @Test public void forTree_depthFirstPreOrderIterable_tree() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forTree(TREE);
 
     assertEqualCharNodes(traverser.depthFirstPreOrder(charactersOf("h")), "hdabcegf");
@@ -828,8 +754,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.depthFirstPreOrder(charactersOf("a")), "a");
   }
 
-  @Test
-  public void forTree_depthFirstPreOrderIterableIterable_tree() {
+  @Test public void forTree_depthFirstPreOrderIterableIterable_tree() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forTree(TREE);
 
     assertEqualCharNodes(traverser.depthFirstPreOrder(charactersOf("")), "");
@@ -838,8 +763,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.depthFirstPreOrder(charactersOf("age")), "agfe");
   }
 
-  @Test
-  public void forTree_depthFirstPreOrder_cyclicGraphContainingTree() {
+  @Test public void forTree_depthFirstPreOrder_cyclicGraphContainingTree() {
     WalkerAsTraverser<Character> traverser =
         WalkerAsTraverser.forTree(CYCLIC_GRAPH_CONTAINING_TREE);
 
@@ -848,8 +772,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.depthFirstPreOrder('d'), "d");
   }
 
-  @Test
-  public void forTree_depthFirstPreOrderIterable_cyclicGraphContainingTree() {
+  @Test public void forTree_depthFirstPreOrderIterable_cyclicGraphContainingTree() {
     WalkerAsTraverser<Character> traverser =
         WalkerAsTraverser.forTree(CYCLIC_GRAPH_CONTAINING_TREE);
 
@@ -858,8 +781,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.depthFirstPreOrder(charactersOf("cd")), "cd");
   }
 
-  @Test
-  public void forTree_depthFirstPreOrder_graphContainingTreeAndDiamond() {
+  @Test public void forTree_depthFirstPreOrder_graphContainingTreeAndDiamond() {
     WalkerAsTraverser<Character> traverser =
         WalkerAsTraverser.forTree(GRAPH_CONTAINING_TREE_AND_DIAMOND);
 
@@ -868,8 +790,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.depthFirstPreOrder('d'), "d");
   }
 
-  @Test
-  public void forTree_depthFirstPreOrderIterable_graphContainingTreeAndDiamond() {
+  @Test public void forTree_depthFirstPreOrderIterable_graphContainingTreeAndDiamond() {
     WalkerAsTraverser<Character> traverser =
         WalkerAsTraverser.forTree(GRAPH_CONTAINING_TREE_AND_DIAMOND);
 
@@ -878,44 +799,38 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.depthFirstPreOrder(charactersOf("ga")), "ghabcd");
   }
 
-  @Test
-  public void forTree_depthFirstPreOrder_twoTrees() {
+  @Test public void forTree_depthFirstPreOrder_twoTrees() {
     Iterable<Character> result = WalkerAsTraverser.forTree(TWO_TREES).depthFirstPreOrder('a');
 
     assertEqualCharNodes(result, "ab");
   }
 
-  @Test
-  public void forTree_depthFirstPreOrderIterable_twoTrees() {
+  @Test public void forTree_depthFirstPreOrderIterable_twoTrees() {
     assertEqualCharNodes(
         WalkerAsTraverser.forTree(TWO_TREES).depthFirstPreOrder(charactersOf("a")), "ab");
     assertEqualCharNodes(
         WalkerAsTraverser.forTree(TWO_TREES).depthFirstPreOrder(charactersOf("ca")), "cdab");
   }
 
-  @Test
-  public void forTree_depthFirstPreOrder_singleRoot() {
+  @Test public void forTree_depthFirstPreOrder_singleRoot() {
     Iterable<Character> result = WalkerAsTraverser.forTree(SINGLE_ROOT).depthFirstPreOrder('a');
 
     assertEqualCharNodes(result, "a");
   }
 
-  @Test
-  public void forTree_depthFirstPreOrderIterable_singleRoot() {
+  @Test public void forTree_depthFirstPreOrderIterable_singleRoot() {
     Iterable<Character> result =
         WalkerAsTraverser.forTree(SINGLE_ROOT).depthFirstPreOrder(charactersOf("a"));
 
     assertEqualCharNodes(result, "a");
   }
 
-  @Test
-  public void forTree_depthFirstPreOrderIterable_emptyGraph() {
+  @Test public void forTree_depthFirstPreOrderIterable_emptyGraph() {
     assertEqualCharNodes(
         WalkerAsTraverser.forTree(createDirectedGraph()).depthFirstPreOrder(charactersOf("")), "");
   }
 
-  @Test
-  public void forTree_depthFirstPreOrder_iterableIsLazy() {
+  @Test public void forTree_depthFirstPreOrder_iterableIsLazy() {
     RequestSavingGraph graph = new RequestSavingGraph(TREE);
     Iterable<Character> result = WalkerAsTraverser.forGraph(graph).depthFirstPreOrder('h');
 
@@ -923,8 +838,7 @@ public class WalkerAsTraverserTest {
     assertThat(graph.requestedNodes).containsExactly('h', 'd');
   }
 
-  @Test
-  public void forTree_depthFirstPreOrderIterable_iterableIsLazy() {
+  @Test public void forTree_depthFirstPreOrderIterable_iterableIsLazy() {
     RequestSavingGraph graph = new RequestSavingGraph(TREE);
     Iterable<Character> result =
         WalkerAsTraverser.forGraph(graph).depthFirstPreOrder(charactersOf("dg"));
@@ -933,8 +847,7 @@ public class WalkerAsTraverserTest {
     assertThat(graph.requestedNodes).containsExactly('a', 'd');
   }
 
-  @Test
-  public void forTree_depthFirstPostOrder_tree() {
+  @Test public void forTree_depthFirstPostOrder_tree() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forTree(TREE);
 
     assertEqualCharNodes(traverser.depthFirstPostOrder('h'), "abcdefgh");
@@ -942,8 +855,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.depthFirstPostOrder('a'), "a");
   }
 
-  @Test
-  public void forTree_depthFirstPostOrderIterable_tree() {
+  @Test public void forTree_depthFirstPostOrderIterable_tree() {
     WalkerAsTraverser<Character> traverser = WalkerAsTraverser.forTree(TREE);
 
     assertEqualCharNodes(traverser.depthFirstPostOrder(charactersOf("")), "");
@@ -952,8 +864,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.depthFirstPostOrder(charactersOf("age")), "afge");
   }
 
-  @Test
-  public void forTree_depthFirstPostOrder_cyclicGraphContainingTree() {
+  @Test public void forTree_depthFirstPostOrder_cyclicGraphContainingTree() {
     WalkerAsTraverser<Character> traverser =
         WalkerAsTraverser.forTree(CYCLIC_GRAPH_CONTAINING_TREE);
 
@@ -962,8 +873,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.depthFirstPostOrder('d'), "d");
   }
 
-  @Test
-  public void forTree_depthFirstPostOrderIterable_cyclicGraphContainingTree() {
+  @Test public void forTree_depthFirstPostOrderIterable_cyclicGraphContainingTree() {
     WalkerAsTraverser<Character> traverser =
         WalkerAsTraverser.forTree(CYCLIC_GRAPH_CONTAINING_TREE);
 
@@ -972,8 +882,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.depthFirstPostOrder(charactersOf("cd")), "cd");
   }
 
-  @Test
-  public void forTree_depthFirstPostOrder_graphContainingTreeAndDiamond() {
+  @Test public void forTree_depthFirstPostOrder_graphContainingTreeAndDiamond() {
     WalkerAsTraverser<Character> traverser =
         WalkerAsTraverser.forTree(GRAPH_CONTAINING_TREE_AND_DIAMOND);
 
@@ -982,8 +891,7 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.depthFirstPostOrder('d'), "d");
   }
 
-  @Test
-  public void forTree_depthFirstPostOrderIterable_graphContainingTreeAndDiamond() {
+  @Test public void forTree_depthFirstPostOrderIterable_graphContainingTreeAndDiamond() {
     WalkerAsTraverser<Character> traverser =
         WalkerAsTraverser.forTree(GRAPH_CONTAINING_TREE_AND_DIAMOND);
 
@@ -992,41 +900,35 @@ public class WalkerAsTraverserTest {
     assertEqualCharNodes(traverser.depthFirstPostOrder(charactersOf("ga")), "hgcdba");
   }
 
-  @Test
-  public void forTree_depthFirstPostOrder_twoTrees() {
+  @Test public void forTree_depthFirstPostOrder_twoTrees() {
     Iterable<Character> result = WalkerAsTraverser.forTree(TWO_TREES).depthFirstPostOrder('a');
     assertEqualCharNodes(result, "ba");
   }
 
-  @Test
-  public void forTree_depthFirstPostOrderIterable_twoTrees() {
+  @Test public void forTree_depthFirstPostOrderIterable_twoTrees() {
     assertEqualCharNodes(
         WalkerAsTraverser.forTree(TWO_TREES).depthFirstPostOrder(charactersOf("a")), "ba");
     assertEqualCharNodes(
         WalkerAsTraverser.forTree(TWO_TREES).depthFirstPostOrder(charactersOf("ca")), "dcba");
   }
 
-  @Test
-  public void forTree_depthFirstPostOrder_singleRoot() {
+  @Test public void forTree_depthFirstPostOrder_singleRoot() {
     Iterable<Character> result = WalkerAsTraverser.forTree(SINGLE_ROOT).depthFirstPostOrder('a');
     assertEqualCharNodes(result, "a");
   }
 
-  @Test
-  public void forTree_depthFirstPostOrderIterable_singleRoot() {
+  @Test public void forTree_depthFirstPostOrderIterable_singleRoot() {
     Iterable<Character> result =
         WalkerAsTraverser.forTree(SINGLE_ROOT).depthFirstPostOrder(charactersOf("a"));
     assertEqualCharNodes(result, "a");
   }
 
-  @Test
-  public void forTree_depthFirstPostOrderIterable_emptyGraph() {
+  @Test public void forTree_depthFirstPostOrderIterable_emptyGraph() {
     assertEqualCharNodes(
         WalkerAsTraverser.forTree(createDirectedGraph()).depthFirstPostOrder(charactersOf("")), "");
   }
 
-  @Test
-  public void forTree_depthFirstPostOrder_iterableIsLazy() {
+  @Test public void forTree_depthFirstPostOrder_iterableIsLazy() {
     RequestSavingGraph graph = new RequestSavingGraph(TREE);
     Iterable<Character> result = WalkerAsTraverser.forGraph(graph).depthFirstPostOrder('h');
 
@@ -1034,8 +936,7 @@ public class WalkerAsTraverserTest {
     assertThat(graph.requestedNodes).containsExactly('h', 'd', 'a', 'b');
   }
 
-  @Test
-  public void forTree_depthFirstPostOrderIterable_iterableIsLazy() {
+  @Test public void forTree_depthFirstPostOrderIterable_iterableIsLazy() {
     RequestSavingGraph graph = new RequestSavingGraph(TREE);
     Iterable<Character> result =
         WalkerAsTraverser.forGraph(graph).depthFirstPostOrder(charactersOf("dg"));

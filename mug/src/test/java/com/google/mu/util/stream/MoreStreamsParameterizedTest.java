@@ -30,8 +30,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import com.google.mu.util.stream.MoreStreams;
-
 @RunWith(Parameterized.class)
 public class MoreStreamsParameterizedTest {
 
@@ -79,8 +77,7 @@ public class MoreStreamsParameterizedTest {
   @Test public void close() {
     Stream<?> stream = kind.natural(0);
     AtomicBoolean closed = new AtomicBoolean();
-    stream.onClose(() -> closed.set(true));
-    try (Stream<?> diced = MoreStreams.dice(stream, 1)) {}
+    try (Stream<?> diced = MoreStreams.dice(stream.onClose(() -> closed.set(true)), 1)) {}
     assertThat(closed.get()).isTrue();
   }
 
@@ -102,7 +99,7 @@ public class MoreStreamsParameterizedTest {
       }
     },
     ;
-    
+
     abstract Stream<Integer> natural(int numbers);
   }
 }

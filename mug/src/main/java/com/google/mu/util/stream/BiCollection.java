@@ -32,7 +32,9 @@ import java.util.stream.Collectors;
  * or {@code Multimap}.
  *
  * @since 1.4
+ * @deprecated too niche
  */
+@Deprecated
 public final class BiCollection<L, R> {
   private static final BiCollection<?, ?> EMPTY = new BiCollection<>(Collections.emptyList());
 

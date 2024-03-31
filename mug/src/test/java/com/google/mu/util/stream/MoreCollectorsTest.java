@@ -18,23 +18,31 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.stream.BiCollectors.groupingBy;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.MoreCollectors.allMax;
 import static com.google.mu.util.stream.MoreCollectors.allMin;
+import static com.google.mu.util.stream.MoreCollectors.combining;
 import static com.google.mu.util.stream.MoreCollectors.flatMapping;
 import static com.google.mu.util.stream.MoreCollectors.flatteningMaps;
 import static com.google.mu.util.stream.MoreCollectors.mapping;
+import static com.google.mu.util.stream.MoreCollectors.minMax;
 import static com.google.mu.util.stream.MoreCollectors.onlyElement;
 import static com.google.mu.util.stream.MoreCollectors.onlyElements;
+import static com.google.mu.util.stream.MoreCollectors.partitioningBy;
 import static com.google.mu.util.stream.MoreCollectors.switching;
 import static com.google.mu.util.stream.MoreCollectors.toListAndThen;
+import static com.google.mu.util.stream.MoreCollectors.toMap;
 import static java.util.Comparator.naturalOrder;
 import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.summingInt;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -47,6 +55,7 @@ import org.junit.runners.JUnit4;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.testing.NullPointerTester;
+import com.google.mu.util.BiOptional;
 
 @RunWith(JUnit4.class)
 public class MoreCollectorsTest {
@@ -117,10 +126,16 @@ public class MoreCollectorsTest {
         new Translation(ImmutableMap.of(1, "one")),
         new Translation(ImmutableMap.of(2, "two", 1, "1")));
     assertThrows(
-        IllegalStateException.class,
+        IllegalArgumentException.class,
         () -> translations.stream()
             .map(Translation::dictionary)
             .collect(flatteningMaps(toMap())));
+  }
+
+  @Test public void testToMap_withMapSupplier() {
+    LinkedHashMap<String, Integer> map =
+        Stream.of(1, 2).collect(toMap(Object::toString, i -> i * 10, LinkedHashMap::new));
+    assertThat(map).containsExactly("1", 10, "2", 20).inOrder();
   }
 
   @Test public void toListAndThen_reversed() {
@@ -140,58 +155,108 @@ public class MoreCollectorsTest {
     assertThrows(UnsupportedOperationException.class, list::clear);
   }
 
-  @Test public void testOnlyElements_Two() {
-    assertThat(Stream.of(1, 10).collect(onlyElements(Integer::sum)).intValue()).isEqualTo(11);
+  @Test
+  public void testCombining_two() {
+    assertThat(Stream.of(1, 10).collect(combining(Integer::sum)).intValue()).isEqualTo(11);
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.of(1, 2, 3).collect(onlyElements((a, b) -> "ok")));
+        () -> Stream.of(1, 2, 3).collect(combining((a, b) -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Not true that input <[1, 2, 3]> has 2 elements.");
   }
 
-  @Test public void testOnlyElements_Three() {
-    assertThat(Stream.of(1, 3, 5).collect(onlyElements((a, b, c) -> a + b + c)).intValue()).isEqualTo(9);
+  @Test
+  public void testCombining_three() {
+    assertThat(Stream.of(1, 3, 5).collect(combining((a, b, c) -> a + b + c)).intValue()).isEqualTo(9);
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.of(1, 2).collect(onlyElements((a, b, c) -> "ok")));
+        () -> Stream.of(1, 2).collect(combining((a, b, c) -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Not true that input <[1, 2]> has 3 elements.");
   }
 
-  @Test public void testOnlyElements_Four() {
-    assertThat(Stream.of(1, 3, 5, 7).collect(onlyElements((a, b, c, d) -> a + b + c + d)).intValue())
+  @Test
+  public void testCombining_four() {
+    assertThat(Stream.of(1, 3, 5, 7).collect(combining((a, b, c, d) -> a + b + c + d)).intValue())
         .isEqualTo(16);
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.of(1, 2).collect(onlyElements((a, b, c, d) -> "ok")));
+        () -> Stream.of(1, 2).collect(combining((a, b, c, d) -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Not true that input <[1, 2]> has 4 elements.");
   }
 
-  @Test public void testOnlyElements_Five() {
-    assertThat(Stream.of(1, 3, 5, 7, 9).collect(onlyElements((a, b, c, d, e) -> a + b + c + d + e)).intValue())
+  @Test
+  public void testCombining_five() {
+    assertThat(Stream.of(1, 3, 5, 7, 9).collect(combining((a, b, c, d, e) -> a + b + c + d + e)).intValue())
         .isEqualTo(25);
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.of(1, 2).collect(onlyElements((a, b, c, d, e) -> "ok")));
+        () -> Stream.of(1, 2).collect(combining((a, b, c, d, e) -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Not true that input <[1, 2]> has 5 elements.");
   }
 
-  @Test public void testOnlyElements_Six() {
-    assertThat(Stream.of(1, 3, 5, 7, 9, 11).collect(onlyElements((a, b, c, d, e, f) -> a + b + c + d + e + f)).intValue())
+  @Test
+  public void testCombining_six() {
+    assertThat(Stream.of(1, 3, 5, 7, 9, 11).collect(combining((a, b, c, d, e, f) -> a + b + c + d + e + f)).intValue())
         .isEqualTo(36);
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.of(1, 2).collect(onlyElements((a, b, c, d, e, f) -> "ok")));
+        () -> Stream.of(1, 2).collect(combining((a, b, c, d, e, f) -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Not true that input <[1, 2]> has 6 elements.");
+  }
+
+  @Test
+  public void testCombining_seven() {
+    assertThat(
+            Stream.of(1, 3, 5, 7, 9, 11, 13)
+                .collect(combining((a, b, c, d, e, f, g) -> a + b + c + d + e + f + g))
+                .intValue())
+        .isEqualTo(49);
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> Stream.of(1, 2).collect(combining((a, b, c, d, e, f, g) -> "ok")));
+    assertThat(thrown.getMessage()).isEqualTo("Not true that input <[1, 2]> has 7 elements.");
+  }
+
+  @Test
+  public void testCombining_eight() {
+    assertThat(
+            Stream.of(1, 3, 5, 7, 9, 11, 13, 15)
+                .collect(combining((a, b, c, d, e, f, g, h) -> a + b + c + d + e + f + g + h))
+                .intValue())
+        .isEqualTo(64);
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> Stream.of(1, 2).collect(combining((a, b, c, d, e, f, g, h) -> "ok")));
+    assertThat(thrown.getMessage()).isEqualTo("Not true that input <[1, 2]> has 8 elements.");
+  }
+
+  @Test public void testCombining_parallel_success() {
+    String result =
+        Stream.of(1, 3, 5, 7, 9, 11)
+            .parallel()
+            .map(Object::toString)
+            .collect(combining((a, b, c, d, e, f) -> a + b + c + d + e + f));
+    assertThat(result).isEqualTo("1357911");
+  }
+
+  @Test public void testCombining_parallel_failure() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> Stream.of(1, 2, 3, 4, 5, 6, 7, 8).parallel().collect(combining((a, b, c, d, e, f) -> "ok")));
+    assertThat(thrown.getMessage())
+        .isEqualTo("Not true that input of size = 8 <[1, 2, 3, 4, 5, 6, 7, ...]> has 6 elements.");
   }
 
   @Test public void testLongListInErrorMessage() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
-        () -> Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).collect(onlyElements((a, b) -> "ok")));
+        () -> Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).collect(combining((a, b) -> "ok")));
     assertThat(thrown.getMessage())
         .isEqualTo("Not true that input of size = 10 <[1, 2, 3, ...]> has 2 elements.");
   }
@@ -229,34 +294,88 @@ public class MoreCollectorsTest {
         .isEqualTo("Unexpected input elements of size = 4 <[1, 2, 3, ...]>.");
   }
 
-  @Test public void testGreatest_empty() {
+  @Test public void testAllMax_empty() {
     assertThat(Stream.<Integer>empty().collect(allMax(naturalOrder(), toImmutableList())))
         .isEmpty();
   }
 
-  @Test public void testGreatest_toOnlyElement() {
+  @Test public void testAllMax_toOnlyElement() {
     assertThat(Stream.of(1, 1, 1, 1, 1, 1, 2).collect(allMax(naturalOrder(), onlyElement())))
         .isEqualTo(2);
   }
 
-  @Test public void testGreatest_multiple() {
+  @Test public void testAllMax_multiple() {
     assertThat(Stream.of(1, 1, 2, 1, 2).collect(allMax(naturalOrder(), toImmutableList())))
         .containsExactly(2, 2);
   }
 
-  @Test public void testLeast_empty() {
-    assertThat(Stream.<String>empty().collect(allMin(naturalOrder(), toImmutableSet())))
+  @Test public void testAllMin_empty() {
+    assertThat(Stream.<String>empty().collect(MoreCollectors.allMin(naturalOrder(), toImmutableSet())))
         .isEmpty();
   }
 
-  @Test public void testLeast_toOnlyElement() {
+  @Test public void testAllMin_toOnlyElement() {
     assertThat(Stream.of(2, 2, 2, 2, 2, 2, 1).collect(allMin(naturalOrder(), onlyElement())))
         .isEqualTo(1);
   }
 
-  @Test public void testLeast_multiple() {
+  @Test public void testAllMin_multiple() {
     assertThat(Stream.of(1, 1, 2, 1, 2).collect(allMin(naturalOrder(), toImmutableList())))
         .containsExactly(1, 1, 1);
+  }
+
+  @Test public void testPartitioningBy_sameDownstreamCollector() {
+    String result =
+        Stream.of(1, 2, 3, 4, 5)
+            .collect(partitioningBy(n -> n % 2 == 1, toImmutableList()))
+            .andThen((odd, even) -> "odd:" + odd + "; even:" + even);
+    assertThat(result).isEqualTo("odd:[1, 3, 5]; even:[2, 4]");
+  }
+
+  @Test public void testPartitioningBy_differentDownstreamCollectors() {
+    String result =
+        Stream.of(1, 2, 3, 4, 5)
+            .collect(
+                partitioningBy(n -> n % 2 == 1, toImmutableList(), summingInt(Integer::intValue)))
+            .andThen((odd, even) -> "odd:" + odd + "; sum of even:" + even);
+    assertThat(result).isEqualTo("odd:[1, 3, 5]; sum of even:6");
+  }
+
+  @Test public void testMinMax_empty() {
+    assertThat(Stream.<String>empty().collect(minMax(naturalOrder())))
+        .isEqualTo(BiOptional.empty());
+  }
+
+  @Test public void testMinMax_singleElement() {
+    assertThat(Stream.of("foo").collect(minMax(naturalOrder())))
+        .isEqualTo(BiOptional.of("foo", "foo"));
+  }
+
+  @Test public void testMinMax_twoUnequalElements() {
+    assertThat(Stream.of("foo", "bar").collect(minMax(naturalOrder())))
+        .isEqualTo(BiOptional.of("bar", "foo"));
+  }
+
+  @Test public void testMinMax_twoEqualElements() {
+    assertThat(Stream.of("foo", "foo").collect(minMax(naturalOrder())))
+        .isEqualTo(BiOptional.of("foo", "foo"));
+  }
+
+  @Test public void testMinMax_threeEqualElements() {
+    assertThat(Stream.of("foo", "foo", "foo").collect(minMax(naturalOrder())))
+        .isEqualTo(BiOptional.of("foo", "foo"));
+  }
+
+  @Test public void testMinMax_threeUnequalElements() {
+    assertThat(Stream.of("foo", "bar", "zoo").collect(minMax(naturalOrder())))
+        .isEqualTo(BiOptional.of("bar", "zoo"));
+  }
+
+  @Test public void testMinMax_withNullElements() {
+    BiOptional<String, String> minMax =
+        Stream.of("foo", null, "zoo").collect(minMax(Comparator.nullsFirst(naturalOrder())));
+    assertThat(minMax.map((a, b) -> a)).isEmpty();
+    assertThat(minMax.map((a, b) -> b)).hasValue("zoo");
   }
 
   @Test public void testNulls() throws Exception {

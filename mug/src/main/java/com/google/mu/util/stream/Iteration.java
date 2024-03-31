@@ -48,8 +48,9 @@ import java.util.stream.Stream;
  * }
  * }</pre>
  *
- * You can turn the above code to a lazy stream using Iteration so that callers can short-circuit
- * when they need to:
+ * To turn the above code into a lazy stream using Iteration, the key is to wrap the recursive
+ * calls into a lambda and pass it to {@link #yield(Continuation) yield(() -> recursiveCall())}.
+ * This allows callers to short-circuit when they need to:
  *
  * <pre>{@code
  * Stream<Foo> listAllFoos() {
@@ -83,7 +84,8 @@ import java.util.stream.Stream;
  * }</pre>
  *
  * Instead of traversing eagerly and hard coding {@code System.out.println()}, it can be intuitively
- * transformed to a lazy stream as in:
+ * transformed to a lazy stream, again, by wrapping the recursive {@code inOrder()} calls in a
+ * lambda and passing it to {@code yeidl()}:
  *
  * <pre>{@code
  * class DepthFirst<T> extends Iteration<T> {

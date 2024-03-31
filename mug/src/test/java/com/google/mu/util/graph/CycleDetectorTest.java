@@ -34,62 +34,53 @@ import com.google.common.testing.NullPointerTester;
 import com.google.mu.util.stream.BiStream;
 
 public class CycleDetectorTest {
-  @Test
-  public void detectCycle_noChildren() {
+  @Test public void detectCycle_noChildren() {
     assertThat(Walker.inGraph(n -> null).detectCycleFrom("root")).isEmpty();
   }
 
-  @Test
-  public void detectCycle_trivialCycle() {
+  @Test public void detectCycle_trivialCycle() {
     assertThat(Walker.inGraph(Stream::of).detectCycleFrom("root").get())
         .containsExactly("root", "root");
   }
 
-  @Test
-  public void detectCycle_oneUndirectedEdge() {
+  @Test public void detectCycle_oneUndirectedEdge() {
     Stream<String> cycle =
         detectCycle(toUndirectedGraph(ImmutableListMultimap.of("foo", "bar")), "foo");
     assertThat(cycle).containsExactly("foo", "bar", "foo").inOrder();
   }
 
-  @Test
-  public void detectCycle_oneDirectedEdge() {
+  @Test public void detectCycle_oneDirectedEdge() {
     assertThat(detectCycle(toDirectedGraph(ImmutableListMultimap.of("foo", "bar")), "foo"))
         .isEmpty();
   }
 
-  @Test
-  public void detectCycle_twoDirectedEdges_noCycle() {
+  @Test public void detectCycle_twoDirectedEdges_noCycle() {
     assertThat(detectCycle(toDirectedGraph(
             ImmutableListMultimap.of("foo", "bar", "bar", "baz")), "foo"))
         .isEmpty();
   }
 
-  @Test
-  public void detectCycle_threeDirectedEdges_withCycle() {
+  @Test public void detectCycle_threeDirectedEdges_withCycle() {
     Graph<String> graph =
         toDirectedGraph(ImmutableListMultimap.of("foo", "bar", "bar", "baz", "baz", "foo"));
     assertThat(detectCycle(graph, "foo"))
         .containsExactly("foo", "bar", "baz", "foo").inOrder();
   }
 
-  @Test
-  public void detectCycle_innerDirectedEdges_withCycle() {
+  @Test public void detectCycle_innerDirectedEdges_withCycle() {
     Graph<String> graph = toDirectedGraph(
         ImmutableListMultimap.of("foo", "bar", "bar", "baz", "baz", "zoo", "zoo", "bar"));
     assertThat(detectCycle(graph, "foo"))
         .containsExactly("foo", "bar", "baz", "zoo", "bar").inOrder();
   }
 
-  @Test
-  public void detectCycle_dag_noCycle() {
+  @Test public void detectCycle_dag_noCycle() {
     Graph<String> graph = toDirectedGraph(ImmutableListMultimap.of(
         "foo", "bar", "bar", "baz", "baz", "zoo", "bar", "tea", "tea", "zoo"));
     assertThat(detectCycle(graph, "foo")).isEmpty();
   }
 
-  @Test
-  public void detectCycle_diamondCycle() {
+  @Test public void detectCycle_diamondCycle() {
     Graph<String> graph = toDirectedGraph(ImmutableMap.of(
         "foo", asList("bar"),
         "bar", asList("baz", "tea"),
@@ -100,14 +91,12 @@ public class CycleDetectorTest {
         .containsExactly("bar", "baz", "zoo", "foo", "bar").inOrder();
   }
 
-  @Test
-  public void detectCycle_noStartingNodes() {
+  @Test public void detectCycle_noStartingNodes() {
     assertThat(detectCycle(toUndirectedGraph(ImmutableListMultimap.of("foo", "bar"))))
         .isEmpty();
   }
 
-  @Test
-  public void detectCycle_multipleStartingNodes() {
+  @Test public void detectCycle_multipleStartingNodes() {
     Graph<String> graph = toDirectedGraph(
         ImmutableListMultimap.of("a", "b", "foo", "bar", "bar", "baz", "baz", "foo"));
     assertThat(detectCycle(graph, "a", "foo")).containsExactly("foo", "bar", "baz", "foo")
@@ -116,8 +105,7 @@ public class CycleDetectorTest {
         .inOrder();
   }
 
-  @Test
-  public void instanceMethods_nullCheck()
+  @Test public void instanceMethods_nullCheck()
       throws Exception {
     new NullPointerTester().testAllPublicInstanceMethods(Walker.inGraph(n -> null));
   }

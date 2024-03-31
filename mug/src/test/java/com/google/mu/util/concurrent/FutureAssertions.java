@@ -34,7 +34,7 @@ public final class FutureAssertions {
     return cancelled;
   }
 
-  public static Subject<?, Object> assertCompleted(CompletionStage<?> stage)
+  public static Subject assertCompleted(CompletionStage<?> stage)
       throws InterruptedException, ExecutionException {
     assertThat(stage.toCompletableFuture().isDone()).isTrue();
     Object result = stage.toCompletableFuture().get();
@@ -43,7 +43,7 @@ public final class FutureAssertions {
     return assertThat(result);
   }
 
-  public static Subject<?, Object> assertAfterCompleted(CompletionStage<?> stage)
+  public static Subject assertAfterCompleted(CompletionStage<?> stage)
       throws InterruptedException, ExecutionException {
     Object result = stage.toCompletableFuture().get();
     assertThat(stage.toCompletableFuture().isDone()).isTrue();

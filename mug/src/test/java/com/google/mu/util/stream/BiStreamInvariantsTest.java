@@ -18,9 +18,17 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.Substring.first;
+import static com.google.mu.util.stream.BiCollectors.maxBy;
+import static com.google.mu.util.stream.BiCollectors.maxByKey;
+import static com.google.mu.util.stream.BiCollectors.maxByValue;
+import static com.google.mu.util.stream.BiCollectors.minBy;
+import static com.google.mu.util.stream.BiCollectors.minByKey;
+import static com.google.mu.util.stream.BiCollectors.minByValue;
 import static com.google.mu.util.stream.BiCollectors.toMap;
+import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.BiStream.toBiStream;
 import static java.util.Arrays.asList;
+import static java.util.Comparator.naturalOrder;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -28,7 +36,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -77,13 +84,11 @@ public class BiStreamInvariantsTest {
         .collect(toImmutableList());
   }
 
-  @Test
-  public void empty() {
+  @Test public void empty() {
     assertKeyValues(of()).isEmpty();
   }
 
-  @Test
-  public void nonEmpty() {
+  @Test public void nonEmpty() {
     assertKeyValues(of("one", 1))
         .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1))
         .inOrder();
@@ -95,8 +100,7 @@ public class BiStreamInvariantsTest {
         .inOrder();
   }
 
-  @Test
-  public void mapKeys() {
+  @Test public void mapKeys() {
     assertKeyValues(of("one", 1).mapKeys((k, v) -> k + v))
         .containsExactlyEntriesIn(ImmutableMultimap.of("one1", 1))
         .inOrder();
@@ -108,8 +112,7 @@ public class BiStreamInvariantsTest {
         .inOrder();
   }
 
-  @Test
-  public void mapValues() {
+  @Test public void mapValues() {
     assertKeyValues(of("one", 1).mapValues((k, v) -> k + v))
         .containsExactlyEntriesIn(ImmutableMultimap.of("one", "one1"))
         .inOrder();
@@ -121,22 +124,19 @@ public class BiStreamInvariantsTest {
         .inOrder();
   }
 
-  @Test
-  public void distinct_byKey() {
+  @Test public void distinct_byKey() {
     BiStream<Integer, ?> distinct =
-        BiStream.from(Stream.of(1, 1, 2, 2, 3), k -> k, x -> null).distinct();
+        biStream(Stream.of(1, 1, 2, 2, 3), x -> null).distinct();
     assertKeyValues(distinct).containsExactlyEntriesIn(keyValues(1, null, 2, null, 3, null));
   }
 
-  @Test
-  public void distinct_byValue() {
+  @Test public void distinct_byValue() {
     BiStream<?, Integer> distinct =
-        BiStream.from(Stream.of(1, 1, 2, 2, 3), k -> null, v -> v).distinct();
+        biStream(k -> null, Stream.of(1, 1, 2, 2, 3)).distinct();
     assertKeyValues(distinct).containsExactlyEntriesIn(keyValues(null, 1, null, 2, null, 3));
   }
 
-  @Test
-  public void flatMap() {
+  @Test public void flatMap() {
     assertKeyValues(of("one", 1).flatMap((k, v) -> of(k, v * 10, k, v * 11)))
         .containsExactlyEntriesIn(ImmutableMultimap.of("one", 10, "one", 11))
         .inOrder();
@@ -145,13 +145,11 @@ public class BiStreamInvariantsTest {
         .inOrder();
   }
 
-  @Test
-  public void flatMap_mapperReturnsNull() {
+  @Test public void flatMap_mapperReturnsNull() {
     assertKeyValues(of(1, 2, 3, 4).flatMap((k, v) -> null)).isEmpty();
   }
 
-  @Test
-  public void flatMapKeys() {
+  @Test public void flatMapKeys() {
     assertKeyValues(of("one", 1).flatMapKeys((k, v) -> Stream.of(k, v)))
         .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1, 1, 1))
         .inOrder();
@@ -163,51 +161,43 @@ public class BiStreamInvariantsTest {
         .inOrder();
   }
 
-  @Test
-  public void flatMapKeys_mapperReturnsNull() {
+  @Test public void flatMapKeys_mapperReturnsNull() {
     assertKeyValues(of(1, 2, 3, 4).flatMapKeys(k -> null)).isEmpty();
   }
 
-  @Test
-  public void mapKeysIfPresent_found() {
+  @Test public void mapKeysIfPresent_found() {
     assertKeyValues(BiStream.of("uno", 1, "dos", 2).mapKeysIfPresent(ImmutableMap.of("uno", "one")))
         .containsExactly("one", 1)
         .inOrder();
   }
 
-  @Test
-  public void mapKeysIfPresent_notFound() {
+  @Test public void mapKeysIfPresent_notFound() {
     assertKeyValues(BiStream.of("uno", 1).mapKeysIfPresent(ImmutableMap.of("tres", "san"))).isEmpty();
   }
 
-  @Test
-  public void mapKeysIfPresent_present() {
+  @Test public void mapKeysIfPresent_present() {
     assertKeyValues(BiStream.of("uno", 1, "dos", 2).mapKeysIfPresent(k -> Optional.of("found:" + k)))
         .containsExactly("found:uno", 1, "found:dos", 2)
         .inOrder();
   }
 
-  @Test
-  public void mapKeysIfPresent_absent() {
+  @Test public void mapKeysIfPresent_absent() {
     assertKeyValues(BiStream.of("uno", 1, "dos", 2).mapKeysIfPresent(k -> Optional.empty()))
         .isEmpty();
   }
 
-  @Test
-  public void mapKeysIfPresent_biFunction_present() {
+  @Test public void mapKeysIfPresent_biFunction_present() {
     assertKeyValues(BiStream.of("uno", 1, "dos", 2).mapKeysIfPresent((k, v) -> Optional.of(k + "->" + v)))
         .containsExactly("uno->1", 1, "dos->2", 2)
         .inOrder();
   }
 
-  @Test
-  public void mapKeysIfPresent_biFunction_absent() {
+  @Test public void mapKeysIfPresent_biFunction_absent() {
     assertKeyValues(BiStream.of("uno", 1, "dos", 2).mapKeysIfPresent((k, v) -> Optional.empty()))
         .isEmpty();
   }
 
-  @Test
-  public void flatMapValues() {
+  @Test public void flatMapValues() {
     assertKeyValues(of("one", 1).flatMapValues((k, v) -> Stream.of(k, v)))
         .containsExactlyEntriesIn(ImmutableMultimap.of("one", "one", "one", 1))
         .inOrder();
@@ -219,87 +209,73 @@ public class BiStreamInvariantsTest {
         .inOrder();
   }
 
-  @Test
-  public void flatMapValues_mapperReturnsNull() {
+  @Test public void flatMapValues_mapperReturnsNull() {
     assertKeyValues(of(1, 2, 3, 4).flatMapValues(v -> null)).isEmpty();
   }
 
-  @Test
-  public void mapValuesIfPresent_found() {
+  @Test public void mapValuesIfPresent_found() {
     assertKeyValues(BiStream.of("uno", 1, "dos", 2).mapValuesIfPresent(ImmutableMap.of(1, "one")))
         .containsExactly("uno", "one")
         .inOrder();
   }
 
-  @Test
-  public void mapValuesIfPresent_notFound() {
+  @Test public void mapValuesIfPresent_notFound() {
     assertKeyValues(BiStream.of("uno", 1).mapValuesIfPresent(ImmutableMap.of(4, "four"))).isEmpty();
   }
 
-  @Test
-  public void mapValuesIfPresent_present() {
+  @Test public void mapValuesIfPresent_present() {
     assertKeyValues(BiStream.of("uno", 1, "dos", 2).mapValuesIfPresent(v -> Optional.of("found:" + v)))
         .containsExactly("uno", "found:1", "dos", "found:2")
         .inOrder();
   }
 
-  @Test
-  public void mapValuesIfPresent_absent() {
+  @Test public void mapValuesIfPresent_absent() {
     assertKeyValues(BiStream.of("uno", 1, "dos", 2).mapValuesIfPresent(v -> Optional.empty()))
         .isEmpty();
   }
 
-  @Test
-  public void mapValuesIfPresent_biFunction_present() {
+  @Test public void mapValuesIfPresent_biFunction_present() {
     assertKeyValues(BiStream.of("uno", 1, "dos", 2).mapValuesIfPresent((k, v) -> Optional.of(k + "->" + v)))
         .containsExactly("uno", "uno->1", "dos", "dos->2")
         .inOrder();
   }
 
-  @Test
-  public void mapValuesIfPresent_biFunction_absent() {
+  @Test public void mapValuesIfPresent_biFunction_absent() {
     assertKeyValues(BiStream.of("uno", 1, "dos", 2).mapValuesIfPresent((k, v) -> Optional.empty()))
         .isEmpty();
   }
 
-  @Test
-  public void filter() {
+  @Test public void filter() {
     assertKeyValues(of("one", 1, "two", "two").filter((k, v) -> k.equals(v)))
         .containsExactlyEntriesIn(ImmutableMultimap.of("two", "two"));
   }
 
-  @Test
-  public void filterKeys() {
+  @Test public void filterKeys() {
     assertKeyValues(of("one", 1, "two", 2).filterKeys("one"::equals))
         .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1));
   }
 
-  @Test
-  public void filterValues() {
+  @Test public void filterValues() {
     assertKeyValues(of("one", 1, "two", 2).filterValues(v -> v == 2))
         .containsExactlyEntriesIn(ImmutableMultimap.of("two", 2));
   }
 
-  @Test
-  public void skipIf() {
+  @Test public void skipIf() {
     assertKeyValues(of("one", 1, "two", "two").skipIf((k, v) -> k.equals(v)))
         .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1));
   }
 
-  @Test
-  public void skipKeysIf() {
+  @Test public void skipKeysIf() {
     assertKeyValues(of("one", 1, "two", 2).skipKeysIf("one"::equals))
         .containsExactlyEntriesIn(ImmutableMultimap.of("two", 2));
   }
 
-  @Test
-  public void skipValuesIf() {
+  @Test public void skipValuesIf() {
     assertKeyValues(of("one", 1, "two", 2).skipValuesIf(v -> v == 2))
         .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1));
   }
 
-  @Test
-  public void append() {
+  @Test public void append() {
     assertKeyValues(of("one", 1).append(of("two", 2, "three", 3)))
         .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1, "two", 2, "three", 3))
         .inOrder();
@@ -311,8 +287,7 @@ public class BiStreamInvariantsTest {
         .inOrder();
   }
 
-  @Test
-  public void peek() {
+  @Test public void peek() {
     AtomicInteger sum = new AtomicInteger();
     assertKeyValues(of(1, 2, 3, 4).peek((k, v) -> sum.addAndGet(k + v)))
         .containsExactlyEntriesIn(ImmutableMultimap.of(1, 2, 3, 4))
@@ -320,92 +295,77 @@ public class BiStreamInvariantsTest {
     assertThat(sum.get()).isEqualTo(10);
   }
 
-  @Test
-  public void allMatch() {
+  @Test public void allMatch() {
     assertThat(of("one", 1, "two", 2).allMatch((k, v) -> k.equals("one") && v == 1)).isFalse();
     assertThat(of("one", 1, "two", 2).allMatch((k, v) -> k != null && v != null)).isTrue();
   }
 
-  @Test
-  public void anyMatch() {
+  @Test public void anyMatch() {
     assertThat(of("one", 1, "two", 2).anyMatch((k, v) -> k.equals("one") && v == 1)).isTrue();
     assertThat(of("one", 1, "two", 2).anyMatch((k, v) -> k == null && v == null)).isFalse();
   }
 
-  @Test
-  public void noneMatch() {
+  @Test public void noneMatch() {
     assertThat(of("one", 1, "two", 2).noneMatch((k, v) -> k.equals("one") && v == 1)).isFalse();
     assertThat(of("one", 1, "two", 2).noneMatch((k, v) -> k == null && v == null)).isTrue();
   }
 
-  @Test
-  public void findFirst() {
+  @Test public void findFirst() {
     assertThat(of("one", 1, "two", 2).findFirst()).isEqualTo(BiOptional.of("one", 1));
     assertThat(of().findFirst()).isEqualTo(BiOptional.empty());
   }
 
-  @Test
-  public void findFirst_nullKeyThrowx() {
+  @Test public void findFirst_nullKeyThrowx() {
     assertThrows(NullPointerException.class, of(null, 1, "two", 2)::findFirst);
     assertThrows(NullPointerException.class, of("one", 1, "two", 2).mapKeys(k -> null)::findFirst);
   }
 
-  @Test
-  public void findFirst_nullValueThrowx() {
+  @Test public void findFirst_nullValueThrowx() {
     assertThrows(NullPointerException.class, of("one", null, "two", 2)::findFirst);
     assertThrows(
         NullPointerException.class, of("one", 1, "two", 2).mapValues(v -> null)::findFirst);
   }
 
-  @Test
-  public void findFirst_nullKeyMapsToNonNull() {
+  @Test public void findFirst_nullKeyMapsToNonNull() {
     assertThat(of(null, 1, "two", 2).mapKeys(k -> Objects.toString(k)).findFirst())
         .isEqualTo(BiOptional.of("null", 1));
   }
 
-  @Test
-  public void findFirst_nullValueMapsToNonNull() {
+  @Test public void findFirst_nullValueMapsToNonNull() {
     assertThat(of("one", null, "two", 2).mapValues(v -> Objects.toString(v)).findFirst())
         .isEqualTo(BiOptional.of("one", "null"));
   }
 
-  @Test
-  public void findAny() {
+  @Test public void findAny() {
     assertThat(of("one", 1).findAny()).isEqualTo(BiOptional.of("one", 1));
     assertThat(of().findAny()).isEqualTo(BiOptional.empty());
   }
 
-  @Test
-  public void findAny_nullKeyThrowx() {
+  @Test public void findAny_nullKeyThrowx() {
     assertThrows(NullPointerException.class, of(null, 1)::findAny);
     assertThrows(NullPointerException.class, of("one", 1).mapKeys(k -> null)::findAny);
   }
 
-  @Test
-  public void findAny_nullValueThrowx() {
+  @Test public void findAny_nullValueThrowx() {
     assertThrows(NullPointerException.class, of("one", null)::findAny);
     assertThrows(NullPointerException.class, of("one", 1).mapValues(v -> null)::findAny);
   }
 
-  @Test
-  public void findAny_nullKeyMapsToNonNull() {
+  @Test public void findAny_nullKeyMapsToNonNull() {
     assertThat(of(null, 1).mapKeys(k -> Objects.toString(k)).findAny())
         .isEqualTo(BiOptional.of("null", 1));
   }
 
-  @Test
-  public void findAny_nullValueMapsToNonNull() {
+  @Test public void findAny_nullValueMapsToNonNull() {
     assertThat(of("one", null).mapValues(v -> Objects.toString(v)).findAny())
         .isEqualTo(BiOptional.of("one", "null"));
   }
 
-  @Test
-  public void keys() {
+  @Test public void keys() {
     assertThat(of("one", 1, "two", 2).keys()).containsExactly("one", "two").inOrder();
   }
 
-  @Test
-  public void keys_mapValuesEvaluatedToo() {
+  @Test public void keys_mapValuesEvaluatedToo() {
     List<Object> mappedValues = new ArrayList<>();
     assertThat(
             of("one", 1, "two", 2)
@@ -420,13 +380,11 @@ public class BiStreamInvariantsTest {
     assertThat(mappedValues).containsExactly(1, 2).inOrder();
   }
 
-  @Test
-  public void values() {
+  @Test public void values() {
     assertThat(of("one", 1, "two", 2).values()).containsExactly(1, 2).inOrder();
   }
 
-  @Test
-  public void values_mapKeysEvaluatedToo() {
+  @Test public void values_mapKeysEvaluatedToo() {
     List<Object> mappedKeys = new ArrayList<>();
     assertThat(
             of("one", 1, "two", 2)
@@ -441,47 +399,40 @@ public class BiStreamInvariantsTest {
     assertThat(mappedKeys).containsExactly("one", "two").inOrder();
   }
 
-  @Test
-  public void testMapToObj() {
+  @Test public void testMapToObj() {
     assertThat(of("one", 1, "two", 2).mapToObj(Joiner.on(':')::join))
         .containsExactly("one:1", "two:2");
   }
 
-  @Test
-  public void testMapToObjIfPresent_present() {
+  @Test public void testMapToObjIfPresent_present() {
     assertThat(of("one", 1, "two", 2).mapToObjIfPresent((k, v) -> Optional.of(k + ":" + v)))
         .containsExactly("one:1", "two:2");
   }
 
-  @Test
-  public void testMapToObjIfPresent_absent() {
+  @Test public void testMapToObjIfPresent_absent() {
     assertThat(of("one", 1, "two", 2).mapToObjIfPresent((k, v) -> Optional.empty()))
         .isEmpty();
   }
 
-  @Test
-  public void collectToMap() {
+  @Test public void collectToMap() {
     assertThat(of("one", 1, "two", 2).collect(toMap())).containsExactly("one", 1, "two", 2);
   }
 
-  @Test
-  public void toCollect_toMapMergingValues() {
+  @Test public void toCollect_toMapMergingValues() {
     assertThat(of("k", 1, "k", 2).collect(toMap((v1, v2) -> v1 * 10 + v2)))
         .containsExactly("k", 12);
   }
 
-  @Test
-  public void collect() {
+  @Test public void collect() {
     Map<String, Integer> map = of("one", 1, "two", 2).collect(toMap());
     assertThat(map).containsExactly("one", 1, "two", 2);
   }
 
-  @Test
-  public void collect_toImmutableListMultimapWithInflexibleMapperTypes() {
+  @Test public void collect_toImmutableListMultimapWithInflexibleMapperTypes() {
     ImmutableListMultimap<String, Integer> multimap =
         of("one", 1, "one", 10, "two", 2).collect(new BiCollector<String, Integer, ImmutableListMultimap<String, Integer>>() {
           @Override
-          public <E> Collector<E, ?, ImmutableListMultimap<String, Integer>> splitting(Function<E, String> toKey, Function<E, Integer> toValue) {
+          public <E> Collector<E, ?, ImmutableListMultimap<String, Integer>> collectorOf(Function<E, String> toKey, Function<E, Integer> toValue) {
             return BiStreamInvariantsTest.toImmutableMultimap(toKey,toValue);
           }
         });
@@ -489,15 +440,13 @@ public class BiStreamInvariantsTest {
         .containsExactlyEntriesIn(ImmutableListMultimap.of("one", 1, "one", 10, "two", 2));
   }
 
-  @Test
-  public void forEach() {
+  @Test public void forEach() {
     AtomicInteger sum = new AtomicInteger();
     of(1, 2, 3, 4).forEach((k, v) -> sum.addAndGet(k + v));
     assertThat(sum.get()).isEqualTo(10);
   }
 
-  @Test
-  public void forEachOrdered() {
+  @Test public void forEachOrdered() {
     List<Integer> list = new ArrayList<>();
     of(1, 2, 3, 4)
         .forEachOrdered(
@@ -508,96 +457,65 @@ public class BiStreamInvariantsTest {
     assertThat(list).containsExactly(1, 2, 3, 4).inOrder();
   }
 
-  @Test
-  public void count() {
+  @Test public void count() {
     assertThat(of(1, 2, 3, 4).count()).isEqualTo(2);
   }
 
-  @Test
-  public void map() {
+  @Test public void map() {
     assertKeyValues(of(1, "one", 2, "two").map(Joiner.on(':')::join, (k, v) -> v + ":" + k))
         .containsExactly("1:one", "one:1", "2:two", "two:2")
         .inOrder();
   }
 
-  @Test
-  public void map_toPair() {
+  @Test public void map_toPair() {
     assertKeyValues(of(1, "a:foo", 2, "b:bar").map((l, t) -> first(':').split(t).orElseThrow()))
         .containsExactly("a", "foo", "b", "bar")
         .inOrder();
   }
 
-  @Test
-  public void map_present() {
-    assertKeyValues(of(1, "one", 2, "two").mapIfPresent((k, v) -> Optional.of(k + ":" + v), (k, v) -> Optional.of(v + ":" + k)))
-        .containsExactly("1:one", "one:1", "2:two", "two:2")
-        .inOrder();
-  }
-
-  @Test
-  public void map_firstAbsent() {
-    assertKeyValues(of(1, "one", 2, "two").mapIfPresent((k, v) -> Optional.empty(), (k, v) -> Optional.of(v + ":" + k)))
-        .isEmpty();
-  }
-
-  @Test
-  public void map_secondAbsent() {
-    assertKeyValues(of(1, "one", 2, "two").mapIfPresent((k, v) -> Optional.empty(), (k, v) -> Optional.empty()))
-        .isEmpty();
-  }
-
-  @Test
-  public void mapIfPresent_mapToPresent() {
+  @Test public void mapIfPresent_mapToPresent() {
     assertKeyValues(of(1, "one", 2, "two").mapIfPresent((k, v) -> BiOptional.of(k + ":" + v, v + ":" + k)))
         .containsExactly("1:one", "one:1", "2:two", "two:2")
         .inOrder();
   }
 
-  @Test
-  public void mapIfPresent_mapToEnty() {
+  @Test public void mapIfPresent_mapToEnty() {
     assertKeyValues(of(1, "one", 2, "two").mapIfPresent((k, v) -> BiOptional.empty())).isEmpty();
   }
 
-  @Test
-  public void mapToObj() {
+  @Test public void mapToObj() {
     assertThat(of(1, 2, 3, 4).mapToObj((k, v) -> k * 10 + v)).containsExactly(12, 34).inOrder();
   }
 
-  @Test
-  public void mapToInt() {
+  @Test public void mapToInt() {
     assertThat(of(1, 2, 3, 4).mapToInt((k, v) -> k * 10 + v).boxed())
         .containsExactly(12, 34)
         .inOrder();
   }
 
-  @Test
-  public void mapToLong() {
+  @Test public void mapToLong() {
     assertThat(of(1, 2, 3, 4).mapToLong((k, v) -> k * 10 + v).boxed())
         .containsExactly(12L, 34L)
         .inOrder();
   }
 
-  @Test
-  public void mapToDouble() {
+  @Test public void mapToDouble() {
     assertThat(of(1, 2, 3, 4).mapToDouble((k, v) -> k * 10 + v).boxed())
         .containsExactly(12D, 34D)
         .inOrder();
   }
 
-  @Test
-  public void flatMapToObj() {
+  @Test public void flatMapToObj() {
     assertThat(of(1, 2, 3, 4).flatMapToObj((k, n) -> Collections.nCopies(n, k).stream()))
         .containsExactly(1, 1, 3, 3, 3, 3)
         .inOrder();
   }
 
-  @Test
-  public void flatMapToObj_mapperReturnsNull() {
+  @Test public void flatMapToObj_mapperReturnsNull() {
     assertThat(of(1, 2, 3, 4).flatMapToObj((k, n) -> null)).isEmpty();
   }
 
-  @Test
-  public void flatMapToInt() {
+  @Test public void flatMapToInt() {
     assertThat(
             of(1, 2, 3, 4)
                 .flatMapToInt((k, n) -> Collections.nCopies(n, k).stream().mapToInt(i -> i))
@@ -606,13 +524,11 @@ public class BiStreamInvariantsTest {
         .inOrder();
   }
 
-  @Test
-  public void flatMapToInt_mapperReturnsNull() {
+  @Test public void flatMapToInt_mapperReturnsNull() {
     assertThat(of(1, 2, 3, 4).flatMapToInt((k, n) -> null)).isEmpty();
   }
 
-  @Test
-  public void flatMapToLong() {
+  @Test public void flatMapToLong() {
     assertThat(
             of(1, 2, 3, 4)
                 .flatMapToLong((k, n) -> Collections.nCopies(n, k).stream().mapToLong(i -> i))
@@ -621,13 +537,11 @@ public class BiStreamInvariantsTest {
         .inOrder();
   }
 
-  @Test
-  public void flatMapToLong_mapperReturnsNull() {
+  @Test public void flatMapToLong_mapperReturnsNull() {
     assertThat(of(1, 2, 3, 4).flatMapToLong((k, n) -> null)).isEmpty();
   }
 
-  @Test
-  public void flatMapToDouble() {
+  @Test public void flatMapToDouble() {
     assertThat(
             of(1, 2, 3, 4)
                 .flatMapToDouble((k, n) -> Collections.nCopies(n, k).stream().mapToDouble(i -> i))
@@ -636,41 +550,134 @@ public class BiStreamInvariantsTest {
         .inOrder();
   }
 
-  @Test
-  public void flatMapToDouble_mapperReturnsNull() {
+  @Test public void flatMapToDouble_mapperReturnsNull() {
     assertThat(of(1, 2, 3, 4).flatMapToDouble((k, v) -> null).boxed()).isEmpty();
   }
 
-  @Test
-  public void limit() {
+  @Test public void limit() {
     assertKeyValues(of("one", 1, "two", 2, "three", 3).limit(2))
         .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1, "two", 2))
         .inOrder();
   }
 
-  @Test
-  public void skip() {
+  @Test public void skip() {
     assertKeyValues(of("one", 1, "two", 2, "three", 3).skip(1))
         .containsExactlyEntriesIn(ImmutableMultimap.of("two", 2, "three", 3))
         .inOrder();
   }
 
-  @Test
-  public void sortedByKeys() {
-    assertKeyValues(of("a", 1, "c", 2, "b", 3).sortedByKeys(Comparator.naturalOrder()))
-        .containsExactlyEntriesIn(ImmutableMultimap.of("a", 1, "b", 3, "c", 2))
-        .inOrder();
+  @Test public void sortedByKeys() {
+    assertKeyValues(of("a", 1, "c", 2, "b", 3).sortedByKeys(naturalOrder()))
+        .containsExactlyEntriesIn(ImmutableMultimap.of("a", 1, "b", 3, "c", 2));
   }
 
-  @Test
-  public void sortedByValues() {
-    assertKeyValues(of("a", 3, "b", 1, "c", 2).sortedByValues(Comparator.naturalOrder()))
+  @Test public void sortedByValues() {
+    assertKeyValues(of("a", 3, "b", 1, "c", 2).sortedByValues(naturalOrder()))
         .containsExactlyEntriesIn(ImmutableMultimap.of("b", 1, "c", 2, "a", 3))
         .inOrder();
   }
 
-  @Test
-  public void distinct() {
+  @Test public void testMaxByKey_found() {
+    assertThat(of(1, "y", 2, "x").collect(maxByKey(naturalOrder())))
+        .isEqualTo(BiOptional.of(2, "x"));
+  }
+
+ @Test public void testMaxByKey_multipleMax_firstWins() {
+    assertThat(of(1, "y", 2, "x", 2, "a").collect(maxByKey(naturalOrder())))
+        .isEqualTo(BiOptional.of(2, "x"));
+  }
+
+ @Test public void testMaxByKey_notFound() {
+    assertThat(this.<String, Integer>of().collect(maxByKey(naturalOrder())))
+        .isEqualTo(BiOptional.empty());
+  }
+
+ @Test public void testMinByKey_found() {
+    assertThat(of(1, "y", 2, "x").collect(minByKey(naturalOrder())))
+        .isEqualTo(BiOptional.of(1, "y"));
+  }
+
+ @Test public void testMinByKey_multipleMin_firstWins() {
+    assertThat(of(1, "y", 2, "x", 1, "a").collect(minByKey(naturalOrder())))
+        .isEqualTo(BiOptional.of(1, "y"));
+  }
+
+ @Test public void testMinByKey_notFound() {
+    assertThat(this.<String, Integer>of().collect(minByKey(naturalOrder())))
+        .isEqualTo(BiOptional.empty());
+  }
+
+ @Test public void testMaxByValue_found() {
+   assertThat(of(1, "y", 2, "x").collect(maxByValue(naturalOrder())))
+       .isEqualTo(BiOptional.of(1, "y"));
+ }
+
+@Test public void testMaxByValue_multipleMax_firstWins() {
+   assertThat(of(1, "x", 2, "y", 3, "y").collect(maxByValue(naturalOrder())))
+       .isEqualTo(BiOptional.of(2, "y"));
+ }
+
+@Test public void testMaxByValue_notFound() {
+   assertThat(this.<String, Integer>of().collect(maxByValue(naturalOrder())))
+       .isEqualTo(BiOptional.empty());
+ }
+
+@Test public void testMinByValue_found() {
+   assertThat(of(1, "y", 2, "x").collect(minByValue(naturalOrder())))
+       .isEqualTo(BiOptional.of(2, "x"));
+ }
+
+@Test public void testMinByValue_multipleMin_firstWins() {
+   assertThat(of(1, "y", 3, "x", 2, "x").collect(minByValue(naturalOrder())))
+       .isEqualTo(BiOptional.of(3, "x"));
+ }
+
+@Test public void testMinByValue_notFound() {
+   assertThat(this.<String, Integer>of().collect(minByValue(naturalOrder())))
+       .isEqualTo(BiOptional.empty());
+ }
+
+@Test
+public void testMinBy_found() {
+  assertThat(of(1, "y", 2, "x").collect(minBy(naturalOrder(), naturalOrder())))
+      .isEqualTo(BiOptional.of(1, "y"));
+  assertThat(of(1, "y", 1, "x").collect(minBy(naturalOrder(), naturalOrder())))
+      .isEqualTo(BiOptional.of(1, "x"));
+}
+
+@Test
+public void testMinBy_breakTieByValue() {
+  assertThat(of(1, "y", 2, "x", 1, "a").collect(minBy(naturalOrder(), naturalOrder())))
+      .isEqualTo(BiOptional.of(1, "a"));
+}
+
+@Test
+public void testMinBy_notFound() {
+  assertThat(this.<String, Integer>of().collect(minBy(naturalOrder(), naturalOrder())))
+      .isEqualTo(BiOptional.empty());
+}
+
+@Test
+public void testMaxBy_found() {
+  assertThat(of(1, "y", 2, "x").collect(maxBy(naturalOrder(), naturalOrder())))
+      .isEqualTo(BiOptional.of(2, "x"));
+  assertThat(of(1, "y", 1, "x").collect(maxBy(naturalOrder(), naturalOrder())))
+      .isEqualTo(BiOptional.of(1, "y"));
+}
+
+@Test
+public void testMaxBy_breakTieByValue() {
+  assertThat(of(3, "x", 2, "y", 3, "y").collect(maxBy(naturalOrder(), naturalOrder())))
+      .isEqualTo(BiOptional.of(3, "y"));
+}
+
+@Test
+public void testMaxBy_notFound() {
+  assertThat(this.<String, Integer>of().collect(maxBy(naturalOrder(), naturalOrder())))
+      .isEqualTo(BiOptional.empty());
+}
+
+  @Test public void distinct() {
     assertKeyValues(of("a", 1, "b", 2, "a", 1).distinct())
         .containsExactlyEntriesIn(ImmutableMultimap.of("a", 1, "b", 2))
         .inOrder();
@@ -691,106 +698,89 @@ public class BiStreamInvariantsTest {
         .inOrder();
   }
 
-  @Test
-  public void inverse() {
+  @Test public void inverse() {
     assertKeyValues(of("a", 1).inverse())
         .containsExactlyEntriesIn(ImmutableMultimap.of(1, "a"))
         .inOrder();
   }
 
-  @Test
-  public void testGroupConsecutiveBy_emptyStream() {
+  @Test public void testGroupConsecutiveBy_emptyStream() {
     assertKeyValues(of().groupConsecutiveBy(identity(), toList())).isEmpty();
   }
 
-  @Test
-  public void testGroupConsecutiveBy_singleElement() {
+  @Test public void testGroupConsecutiveBy_singleElement() {
     assertKeyValues(of("1", 1).groupConsecutiveBy(identity(), toList()))
         .containsExactly("1", asList(1));
   }
 
-  @Test
-  public void testGroupConsecutiveBy_twoElementsSameRun() {
+  @Test public void testGroupConsecutiveBy_twoElementsSameRun() {
     assertKeyValues(of("k", "a", "k", "b").groupConsecutiveBy(identity(), toList()))
         .containsExactly("k", asList("a", "b"));
   }
 
-  @Test
-  public void testGroupConsecutiveBy_twoElementsDifferentRuns() {
+  @Test public void testGroupConsecutiveBy_twoElementsDifferentRuns() {
     assertKeyValues(of("k1", 1, "k2", 2).groupConsecutiveBy(identity(), toList()))
         .containsExactly("k1", asList(1), "k2", asList(2))
         .inOrder();
   }
 
-  @Test
-  public void testGroupConsecutiveIf_emptyStream() {
+  @Test public void testGroupConsecutiveIf_emptyStream() {
     assertThat(of().groupConsecutiveIf(Object::equals, toList())).isEmpty();
   }
 
-  @Test
-  public void testGroupConsecutiveIf_singleElement() {
+  @Test public void testGroupConsecutiveIf_singleElement() {
     assertThat(of("1", 1).groupConsecutiveIf(Object::equals, toList()))
         .containsExactly(asList(1));
   }
 
-  @Test
-  public void testGroupConsecutiveIf_twoElementsSameRun() {
+  @Test public void testGroupConsecutiveIf_twoElementsSameRun() {
     assertThat(of("k", "a", "k", "b").groupConsecutiveIf(Object::equals, toList()))
         .containsExactly(asList("a", "b"));
   }
 
-  @Test
-  public void testGroupConsecutiveIf_twoElementsDifferentRuns() {
+  @Test public void testGroupConsecutiveIf_twoElementsDifferentRuns() {
     assertThat(of("k1", 1, "k2", 2).groupConsecutiveIf(Object::equals, Integer::sum))
         .containsExactly(1, 2)
         .inOrder();
   }
 
-  @Test
-  public void testGroupConsecutiveBy_withGroupReducer_emptyStream() {
+  @Test public void testGroupConsecutiveBy_withGroupReducer_emptyStream() {
     assertKeyValues(of().groupConsecutiveBy(identity(), (a, b) -> a)).isEmpty();
   }
 
-  @Test
-  public void testGroupConsecutiveBy_withGroupReducer_singleElement() {
+  @Test public void testGroupConsecutiveBy_withGroupReducer_singleElement() {
     assertKeyValues(of("1", 1).groupConsecutiveBy(identity(), Integer::sum))
         .containsExactly("1", 1);
   }
 
-  @Test
-  public void testGroupConsecutiveBy_withGroupReducer_twoElementsSameRun() {
+  @Test public void testGroupConsecutiveBy_withGroupReducer_twoElementsSameRun() {
     assertKeyValues(of("k", "a", "k", "b").groupConsecutiveBy(identity(), String::concat))
         .containsExactly("k", "ab");
   }
 
-  @Test
-  public void testGroupConsecutiveBy_withGroupReducer_twoElementsDifferentRuns() {
+  @Test public void testGroupConsecutiveBy_withGroupReducer_twoElementsDifferentRuns() {
     assertKeyValues(of("k1", 1, "k2", 2).groupConsecutiveBy(identity(), Integer::sum))
         .containsExactly("k1", 1, "k2", 2)
         .inOrder();
   }
 
-  @Test
-  public void testGroupConsecutiveBy_groupWithBiCollector_emptyStream() {
+  @Test public void testGroupConsecutiveBy_groupWithBiCollector_emptyStream() {
     assertKeyValues(of().groupConsecutiveBy((k, v) -> k, toMap())).isEmpty();
   }
 
-  @Test
-  public void testGroupConsecutiveBy_groupWithBiCollector_singleElement() {
+  @Test public void testGroupConsecutiveBy_groupWithBiCollector_singleElement() {
     assertKeyValues(
             of("1", 1).groupConsecutiveBy((k, v) -> Integer.parseInt(k), toMap()))
         .containsExactly(1, ImmutableMap.of("1", 1));
   }
 
-  @Test
-  public void testGroupConsecutiveBy_groupWithBiCollector_twoElementsSameRun() {
+  @Test public void testGroupConsecutiveBy_groupWithBiCollector_twoElementsSameRun() {
     assertKeyValues(
             of("k", "a", "k", "b").groupConsecutiveBy((k, v) -> k, ImmutableListMultimap::toImmutableListMultimap))
         .containsExactly("k", ImmutableListMultimap.of("k", "a", "k", "b"));
   }
 
-  @Test
-  public void testGroupConsecutiveBy_groupWithBiCollector_twoElementsDifferentRuns() {
+  @Test public void testGroupConsecutiveBy_groupWithBiCollector_twoElementsDifferentRuns() {
     assertKeyValues(of("k1", 1, "k2", 2).groupConsecutiveBy((k, v) -> k, toMap()))
         .containsExactly("k1", ImmutableMap.of("k1", 1), "k2", ImmutableMap.of("k2", 2))
         .inOrder();
@@ -815,7 +805,7 @@ public class BiStreamInvariantsTest {
   static<K, V> MultimapSubject assertKeyValues(BiStream<K, V> stream) {
     Multimap<?, ?> multimap = stream.collect(new BiCollector<K, V, Multimap<K,V>>() {
       @Override
-      public <E> Collector<E, ?, Multimap<K, V>> splitting(Function<E, K> toKey, Function<E, V> toValue) {
+      public <E> Collector<E, ?, Multimap<K, V>> collectorOf(Function<E, K> toKey, Function<E, V> toValue) {
         return BiStreamInvariantsTest.toLinkedListMultimap(toKey,toValue);
       }
     });

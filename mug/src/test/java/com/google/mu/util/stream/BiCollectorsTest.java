@@ -18,13 +18,20 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.stream.BiCollectors.collectingAndThen;
 import static com.google.mu.util.stream.BiCollectors.groupingBy;
+import static com.google.mu.util.stream.BiCollectors.maxByKey;
+import static com.google.mu.util.stream.BiCollectors.maxByValue;
+import static com.google.mu.util.stream.BiCollectors.minByKey;
+import static com.google.mu.util.stream.BiCollectors.minByValue;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.BiStreamTest.assertKeyValues;
 import static java.util.Collections.nCopies;
+import static java.util.Comparator.naturalOrder;
 import static java.util.stream.Collectors.summingInt;
 import static java.util.stream.Collectors.toList;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -41,12 +48,17 @@ import com.google.mu.util.BiOptional;
 @RunWith(JUnit4.class)
 public class BiCollectorsTest {
 
+  @Test public void testToMap_nullKey() {
+    ImmutableList<Integer> list = ImmutableList.of(1, 2, 3, 4);
+    assertThat(biStream(t -> null, list).collect(toMap(Integer::sum)))
+        .containsExactly(null, 10)
+        .inOrder();
+  }
+
   @Test public void testToMap_valuesCollected() {
     ImmutableList<Town> towns =
         ImmutableList.of(new Town("WA", 100), new Town("WA", 50), new Town("IL", 200));
-    assertThat(
-            BiStream.from(towns, Town::getState, town -> town)
-                .collect(toMap(summingInt(Town::getPopulation))))
+    assertThat(biStream(Town::getState, towns).collect(toMap(summingInt(Town::getPopulation))))
         .containsExactly("WA", 150, "IL", 200)
         .inOrder();
   }
@@ -63,19 +75,90 @@ public class BiCollectorsTest {
             new Town("IN", 7),
             new Town("CA", 8),
             new Town("CA", 9));
-    assertThat(
-            BiStream.from(towns, Town::getState, town -> town)
-                .collect(toMap(summingInt(Town::getPopulation))))
+    assertThat(biStream(Town::getState, towns).collect(toMap(summingInt(Town::getPopulation))))
         .containsExactly("WA", 4, "FL", 2, "IL", 4, "AZ", 5, "OH", 6, "IN", 7, "CA", 17)
         .inOrder();
   }
 
   @Test public void testToMap_empty() {
     ImmutableList<Town> towns = ImmutableList.of();
-    assertThat(
-            BiStream.from(towns, Town::getState, town -> town)
-                .collect(toMap(summingInt(Town::getPopulation))))
+    assertThat(biStream(Town::getState, towns).collect(toMap(summingInt(Town::getPopulation))))
         .isEmpty();
+  }
+
+  @Test public void testToMap_withSupplier() {
+    LinkedHashMap<String, Integer> map =
+        BiStream.of("one", 1, "two", 2).collect(toLinkedHashMap());
+    assertThat(map).containsExactly("one", 1, "two", 2).inOrder();
+  }
+
+  @Test public void testToMap_withSupplier_empty() {
+    assertThat(BiStream.empty().collect(toLinkedHashMap())).isEmpty();
+  }
+
+  @Test public void testToMap_withSupplier_nullKey() {
+    LinkedHashMap<String, String> map =
+        BiStream.of((String) null, "nonnull").collect(toLinkedHashMap());
+    assertThat(map).containsExactly(null, "nonnull").inOrder();
+  }
+
+  @Test public void testToMap_withSupplier_nullKey_orderPreserved() {
+    LinkedHashMap<String, String> map =
+        BiStream.of("foo", "x", (String) null, "nonnull", "bar", "y").collect(toLinkedHashMap());
+    assertThat(map).containsExactly("foo", "x", null, "nonnull", "bar", "y").inOrder();
+  }
+
+  @Test public void testToMap_withSupplier_nullValue() {
+    LinkedHashMap<String, String> map =
+        BiStream.of("foo", (String) null).collect(toLinkedHashMap());
+    assertThat(map).containsExactly("foo", null).inOrder();
+  }
+
+  @Test public void testToMap_withSupplier_nullValue_orderPreserved() {
+    LinkedHashMap<String, String> map =
+        BiStream.of("foo", "x", "bar", (String) null, "zoo", "y").collect(toLinkedHashMap());
+    assertThat(map).containsExactly("foo", "x", "bar", null, "zoo", "y").inOrder();
+  }
+
+  @Test public void testToMap_withSupplier_duplicateKey() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> BiStream.of("foo", 1, "foo", 2).collect(toLinkedHashMap()));
+    assertThat(thrown).hasMessageThat().contains("Duplicate key: [foo]");
+  }
+
+  @Test public void testToMap_withSupplier_duplicateNullKey() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> BiStream.of(null, 1, null, 2).collect(toLinkedHashMap()));
+    assertThat(thrown).hasMessageThat().contains("Duplicate key: [null]");
+  }
+
+  @Test public void testToMap_withSupplier_duplicateKeys_nullThenNull() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> BiStream.of("foo", null, "foo", null).collect(toLinkedHashMap()));
+    assertThat(thrown).hasMessageThat().contains("Duplicate key: [foo]");
+  }
+
+  @Test public void testToMap_withSupplier_duplicateKeys_nullThenNonNull() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> BiStream.of("foo", null, "foo", "nonnull").collect(toLinkedHashMap()));
+    assertThat(thrown).hasMessageThat().contains("Duplicate key: [foo]");
+  }
+
+  @Test public void testToMap_withSupplier_duplicateKeys_nonNullThenNull() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> BiStream.of("foo", "nonnull", "foo", null).collect(toLinkedHashMap()));
+    assertThat(thrown).hasMessageThat().contains("Duplicate key: [foo]");
+  }
+
+  @Test public void testToMap_withSupplier_mapSupplierReturnsNull() {
+    assertThrows(
+        NullPointerException.class,
+        () -> BiStream.of("foo", "nonnull", "foo", null).collect(toMap(() -> null)));
   }
 
   @Test public void testToImmutableMap_covariance() {
@@ -187,6 +270,18 @@ public class BiCollectorsTest {
         .containsExactly(2, ImmutableSetMultimap.of(1, 3, 2, 4), 100, ImmutableSetMultimap.of(11, 111));
   }
 
+  @Test public void testGroupingBy_toNestedBiStream() {
+    Map<Integer, Map<Integer, Integer>> nested =
+        BiStream.of(1, 3, 2, 4, 11, 111)
+            .collect(groupingBy((a, b) -> b - a))
+            .mapValues(BiStream::toMap)
+            .toMap();
+    assertThat(nested)
+        .containsExactly(
+            2, ImmutableMap.of(1, 3, 2, 4),
+            100, ImmutableMap.of(11, 111));
+  }
+
   @Test public void testGroupingBy_withReducer_empty() {
     BiStream<String, Integer> salaries = BiStream.empty();
     assertKeyValues(salaries.collect(groupingBy(s -> s.charAt(0), (a, b) -> a + b))).isEmpty();
@@ -264,6 +359,70 @@ public class BiCollectorsTest {
     assertThat(result)
         .containsExactly("Joe:1", "Tom:2")
         .inOrder();
+  }
+
+  @Test public void testMaxByKey_found() {
+    assertThat(BiStream.of(1, "y", 2, "x").collect(maxByKey(naturalOrder())))
+        .isEqualTo(BiOptional.of(2, "x"));
+  }
+
+ @Test public void testMaxByKey_multipleMax_firstWins() {
+    assertThat(BiStream.of(1, "y", 2, "x", 2, "a").collect(maxByKey(naturalOrder())))
+        .isEqualTo(BiOptional.of(2, "x"));
+  }
+
+ @Test public void testMaxByKey_notFound() {
+    assertThat(BiStream.<String, Integer>empty().collect(maxByKey(naturalOrder())))
+        .isEqualTo(BiOptional.empty());
+  }
+
+ @Test public void testMinByKey_found() {
+    assertThat(BiStream.of(1, "y", 2, "x").collect(minByKey(naturalOrder())))
+        .isEqualTo(BiOptional.of(1, "y"));
+  }
+
+ @Test public void testMinByKey_multipleMin_firstWins() {
+    assertThat(BiStream.of(1, "y", 2, "x", 1, "a").collect(minByKey(naturalOrder())))
+        .isEqualTo(BiOptional.of(1, "y"));
+  }
+
+ @Test public void testMinByKey_notFound() {
+    assertThat(BiStream.<String, Integer>empty().collect(minByKey(naturalOrder())))
+        .isEqualTo(BiOptional.empty());
+  }
+
+ @Test public void testMaxByValue_found() {
+    assertThat(BiStream.of(1, "y", 2, "x").collect(maxByValue(naturalOrder())))
+        .isEqualTo(BiOptional.of(1, "y"));
+  }
+
+ @Test public void testMaxByValue_multipleMax_firstWins() {
+    assertThat(BiStream.of(1, "y", 2, "x", 3, "y").collect(maxByValue(naturalOrder())))
+        .isEqualTo(BiOptional.of(1, "y"));
+  }
+
+ @Test public void testMaxByValue_notFound() {
+    assertThat(BiStream.<String, Integer>empty().collect(maxByValue(naturalOrder())))
+        .isEqualTo(BiOptional.empty());
+  }
+
+ @Test public void testMinByValue_found() {
+    assertThat(BiStream.of(1, "y", 2, "x").collect(minByValue(naturalOrder())))
+        .isEqualTo(BiOptional.of(2, "x"));
+  }
+
+ @Test public void testMinByValue_multipleMin_firstWins() {
+    assertThat(BiStream.of(1, "y", 2, "x", 3, "x").collect(minByValue(naturalOrder())))
+        .isEqualTo(BiOptional.of(2, "x"));
+  }
+
+ @Test public void testMinByValue_notFound() {
+    assertThat(BiStream.<String, Integer>empty().collect(minByValue(naturalOrder())))
+        .isEqualTo(BiOptional.empty());
+  }
+
+  private static <K, V> BiCollector<K, V, LinkedHashMap<K, V>> toLinkedHashMap() {
+    return BiCollectors.toMap(() -> new LinkedHashMap<>());
   }
 
   private static final class Town {

@@ -76,7 +76,7 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
    *   Collections.reverse(nodes);                         // 4. reverse to get post-order
    * }</pre>
    *
-   * Or, use the {@link com.google.mu.util.stream.MoreStreams#toListAndThen toListAndThen()}
+   * Or, use the {@link com.google.mu.util.stream.MoreCollectors#toListAndThen toListAndThen()}
    * collector to do it in one-liner:
    * <pre>{@code
    *   List<Node> nodes =

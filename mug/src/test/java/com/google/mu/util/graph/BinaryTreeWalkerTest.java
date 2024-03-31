@@ -20,36 +20,31 @@ import static com.google.mu.util.graph.BinaryTreeWalkerTest.Tree.tree;
 import org.junit.Test;
 
 public class BinaryTreeWalkerTest {
-  @Test
-  public void preOrder_noRoot() {
+  @Test public void preOrder_noRoot() {
     assertThat(Tree.<String>walker().preOrderFrom().map(Tree::value))
         .isEmpty();
   }
 
-  @Test
-  public void preOrder_singleNode() {
+  @Test public void preOrder_singleNode() {
     assertThat(Tree.<String>walker().preOrderFrom(tree("foo")).map(Tree::value))
         .containsExactly("foo");
   }
 
-  @Test
-  public void preOrder_leftNodeIsNull() {
+  @Test public void preOrder_leftNodeIsNull() {
     Tree<String> tree = tree("foo").setRight("right");
     assertThat(Tree.<String>walker().preOrderFrom(tree).map(Tree::value))
         .containsExactly("foo", "right")
         .inOrder();
   }
 
-  @Test
-  public void preOrder_rightNodeIsNull() {
+  @Test public void preOrder_rightNodeIsNull() {
     Tree<String> tree = tree("foo").setLeft("left");
     assertThat(Tree.<String>walker().preOrderFrom(tree).map(Tree::value))
         .containsExactly("foo", "left")
         .inOrder();
   }
 
-  @Test
-  public void preOrder_deep() {
+  @Test public void preOrder_deep() {
     Tree<String> tree = tree("a")
         .setLeft(tree("b")
             .setLeft("c")
@@ -61,29 +56,25 @@ public class BinaryTreeWalkerTest {
         .inOrder();
   }
 
-  @Test
-  public void preOrder_infiniteLeft() {
+  @Test public void preOrder_infiniteLeft() {
     assertThat(Tree.<Integer>walker().preOrderFrom(Tree.leftFrom(1)).map(Tree::value).limit(3))
         .containsExactly(1, 2, 3)
         .inOrder();
   }
 
-  @Test
-  public void preOrder_infiniteRight() {
+  @Test public void preOrder_infiniteRight() {
     assertThat(Tree.<Integer>walker().preOrderFrom(Tree.rightFrom(1)).map(Tree::value).limit(3))
         .containsExactly(1, 2, 3)
         .inOrder();
   }
 
-  @Test
-  public void preOrder_infiniteAlternating() {
+  @Test public void preOrder_infiniteAlternating() {
     assertThat(Tree.<Integer>walker().preOrderFrom(Tree.leftThenRight(1)).map(Tree::value).limit(3))
         .containsExactly(1, 2, 3)
         .inOrder();
   }
 
-  @Test
-  public void preOrder_twoRoots() {
+  @Test public void preOrder_twoRoots() {
     Tree<String> tree1 = tree("a")
         .setLeft("b")
         .setRight(tree("c").setRight("d"));
@@ -95,36 +86,31 @@ public class BinaryTreeWalkerTest {
         .containsExactly("a", "b", "c", "d", "e", "f", "g", "h")
         .inOrder();
   }
-  @Test
-  public void inOrder_noRoot() {
+  @Test public void inOrder_noRoot() {
     assertThat(Tree.<String>walker().inOrderFrom().map(Tree::value))
         .isEmpty();
   }
 
-  @Test
-  public void inOrder_singleNode() {
+  @Test public void inOrder_singleNode() {
     assertThat(Tree.<String>walker().inOrderFrom(tree("foo")).map(Tree::value))
         .containsExactly("foo");
   }
 
-  @Test
-  public void inOrder_leftNodeIsNull() {
+  @Test public void inOrder_leftNodeIsNull() {
     Tree<String> tree = tree("foo").setRight("right");
     assertThat(Tree.<String>walker().inOrderFrom(tree).map(Tree::value))
         .containsExactly("foo", "right")
         .inOrder();
   }
 
-  @Test
-  public void inOrder_rightNodeIsNull() {
+  @Test public void inOrder_rightNodeIsNull() {
     Tree<String> tree = tree("foo").setLeft("left");
     assertThat(Tree.<String>walker().inOrderFrom(tree).map(Tree::value))
         .containsExactly("left", "foo")
         .inOrder();
   }
 
-  @Test
-  public void inOrder_deep() {
+  @Test public void inOrder_deep() {
     Tree<String> tree = tree("a")
         .setLeft(tree("b")
             .setLeft("c")
@@ -136,8 +122,7 @@ public class BinaryTreeWalkerTest {
         .inOrder();
   }
 
-  @Test
-  public void inOrder_twoRoots() {
+  @Test public void inOrder_twoRoots() {
     Tree<String> tree1 = tree("a")
         .setLeft("b")
         .setRight(tree("c").setRight("d"));
@@ -150,56 +135,48 @@ public class BinaryTreeWalkerTest {
         .inOrder();
   }
 
-  @Test
-  public void inOrder_infiniteLeft() {
+  @Test public void inOrder_infiniteLeft() {
     assertThat(Tree.<Integer>walker().inOrderFrom(Tree.leftFrom(1)).map(Tree::value).limit(0))
         .isEmpty();
   }
 
-  @Test
-  public void inOrder_infiniteRight() {
+  @Test public void inOrder_infiniteRight() {
     assertThat(Tree.<Integer>walker().inOrderFrom(Tree.rightFrom(1)).map(Tree::value).limit(3))
         .containsExactly(1, 2, 3)
         .inOrder();
   }
 
-  @Test
-  public void inOrder_infiniteAlternating() {
+  @Test public void inOrder_infiniteAlternating() {
     assertThat(Tree.<Integer>walker().inOrderFrom(Tree.leftThenRight(1)).map(Tree::value).limit(5))
         .containsExactly(2, 4, 6, 8, 10)
         .inOrder();
   }
 
-  @Test
-  public void postOrder_noRoot() {
+  @Test public void postOrder_noRoot() {
     assertThat(Tree.<String>walker().postOrderFrom().map(Tree::value))
         .isEmpty();
   }
 
-  @Test
-  public void postOrder_singleNode() {
+  @Test public void postOrder_singleNode() {
     assertThat(Tree.<String>walker().postOrderFrom(tree("foo")).map(Tree::value))
         .containsExactly("foo");
   }
 
-  @Test
-  public void postOrder_leftNodeIsNull() {
+  @Test public void postOrder_leftNodeIsNull() {
     Tree<String> tree = tree("foo").setRight("right");
     assertThat(Tree.<String>walker().postOrderFrom(tree).map(Tree::value))
         .containsExactly("right", "foo")
         .inOrder();
   }
 
-  @Test
-  public void postOrder_rightNodeIsNull() {
+  @Test public void postOrder_rightNodeIsNull() {
     Tree<String> tree = tree("foo").setLeft("left");
     assertThat(Tree.<String>walker().inOrderFrom(tree).map(Tree::value))
         .containsExactly("left", "foo")
         .inOrder();
   }
 
-  @Test
-  public void postOrder_deep() {
+  @Test public void postOrder_deep() {
     Tree<String> tree = tree("a")
         .setLeft(tree("b")
             .setLeft("c")
@@ -212,8 +189,7 @@ public class BinaryTreeWalkerTest {
         .inOrder();
   }
 
-  @Test
-  public void postOrder_twoRoots() {
+  @Test public void postOrder_twoRoots() {
     Tree<String> tree1 = tree("a")
         .setLeft("b")
         .setRight(tree("c").setRight("d"));
@@ -226,63 +202,54 @@ public class BinaryTreeWalkerTest {
         .inOrder();
   }
 
-  @Test
-  public void postOrder_infiniteLeft() {
+  @Test public void postOrder_infiniteLeft() {
     assertThat(Tree.<Integer>walker().postOrderFrom(Tree.leftFrom(1)).map(Tree::value).limit(0))
         .isEmpty();
   }
 
-  @Test
-  public void postOrder_infiniteRight() {
+  @Test public void postOrder_infiniteRight() {
     assertThat(Tree.<Integer>walker().postOrderFrom(Tree.rightFrom(1)).map(Tree::value).limit(0))
         .isEmpty();
   }
 
-  @Test
-  public void postOrder_alternating() {
+  @Test public void postOrder_alternating() {
     assertThat(Tree.<Integer>walker().postOrderFrom(Tree.leftThenRight(1)).map(Tree::value).limit(0))
         .isEmpty();
   }
 
-  @Test
-  public void postOrder_finiteLeft_infiniteRight() {
+  @Test public void postOrder_finiteLeft_infiniteRight() {
     Tree<Integer> tree = tree(1).setLeft(2).setRight(Tree.leftFrom(3));
     assertThat(Tree.<Integer>walker().postOrderFrom(tree).map(Tree::value).limit(1))
         .containsExactly(2)
         .inOrder();
   }
 
-  @Test
-  public void breadthFirst_noRoot() {
+  @Test public void breadthFirst_noRoot() {
     assertThat(Tree.<String>walker().breadthFirstFrom().map(Tree::value))
         .isEmpty();
   }
 
-  @Test
-  public void breadthFirst_singleNode() {
+  @Test public void breadthFirst_singleNode() {
     Tree<String> tree = tree("foo");
     assertThat(Tree.<String>walker().breadthFirstFrom(tree).map(Tree::value))
         .containsExactly("foo");
   }
 
-  @Test
-  public void breadthFirst_leftNodeIsNull() {
+  @Test public void breadthFirst_leftNodeIsNull() {
     Tree<String> tree = tree("foo").setRight("right");
     assertThat(Tree.<String>walker().breadthFirstFrom(tree).map(Tree::value))
         .containsExactly("foo", "right")
         .inOrder();
   }
 
-  @Test
-  public void breadthFirst_rightNodeIsNull() {
+  @Test public void breadthFirst_rightNodeIsNull() {
     Tree<String> tree = tree("foo").setLeft("left");
     assertThat(Tree.<String>walker().breadthFirstFrom(tree).map(Tree::value))
         .containsExactly("foo", "left")
         .inOrder();
   }
 
-  @Test
-  public void breadthFirst_deep() {
+  @Test public void breadthFirst_deep() {
     Tree<String> tree = tree("a")
         .setLeft(tree("b")
             .setLeft("c")
@@ -295,8 +262,7 @@ public class BinaryTreeWalkerTest {
         .inOrder();
   }
 
-  @Test
-  public void breadthFirst_twoRoots() {
+  @Test public void breadthFirst_twoRoots() {
     Tree<String> tree1 = tree("a")
         .setLeft("b")
         .setRight(tree("c").setRight("d"));
@@ -309,24 +275,21 @@ public class BinaryTreeWalkerTest {
         .inOrder();
   }
 
-  @Test
-  public void breadthFirst_infiniteLeft() {
+  @Test public void breadthFirst_infiniteLeft() {
     Tree<Integer> tree = Tree.leftFrom(1);
     assertThat(Tree.<Integer>walker().breadthFirstFrom(tree).map(Tree::value).limit(3))
         .containsExactly(1, 2, 3)
         .inOrder();
   }
 
-  @Test
-  public void breadthFirst_infiniteRight() {
+  @Test public void breadthFirst_infiniteRight() {
     Tree<Integer> tree = Tree.rightFrom(1);
     assertThat(Tree.<Integer>walker().breadthFirstFrom(tree).map(Tree::value).limit(3))
         .containsExactly(1, 2, 3)
         .inOrder();
   }
 
-  @Test
-  public void breadthFirst_alternating() {
+  @Test public void breadthFirst_alternating() {
     Tree<Integer> tree = Tree.leftThenRight(1);
     assertThat(Tree.<Integer>walker().breadthFirstFrom(tree).map(Tree::value).limit(3))
         .containsExactly(1, 2, 3)

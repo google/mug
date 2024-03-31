@@ -14,14 +14,13 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
-import static com.google.mu.function.BiComparator.comparingKey;
-import static com.google.mu.function.BiComparator.comparingValue;
 import static com.google.mu.util.stream.MoreStreams.collectingAndThen;
+import static java.util.Map.Entry.comparingByKey;
+import static java.util.Map.Entry.comparingByValue;
 import static java.util.Objects.requireNonNull;
 import static java.util.Spliterator.ORDERED;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.doubleStream;
 import static java.util.stream.StreamSupport.intStream;
@@ -63,7 +62,6 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import com.google.mu.function.BiComparator;
 import com.google.mu.util.BiOptional;
 import com.google.mu.util.Both;
 
@@ -223,32 +221,99 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    */
   public static <T, K, V> Collector<T, ?, BiStream<K, V>> groupingBy(
       Function<? super T, ? extends K> classifier, Collector<? super T, ?, V> valueCollector) {
+    requireNonNull(classifier);
     Collector<T, ?, Map<K, V>> grouping =
         Collectors.groupingBy(classifier, LinkedHashMap::new, valueCollector);
     return collectingAndThen(grouping, BiStream::from);
   }
 
   /**
-   * @deprecated Use {@code MoreStreams.flatMapping(toKeyValues, BiCollectors.groupingBy(k -> k, reducer))}.
+   * Returns a {@link Collector} grouping input elements by each of the multiple keys returned by
+   * the {@code keysFunction}. It's similar to {@link #groupingBy(Function, Collector)} except each
+   * element can belong to multiple groups. For example:
+   *
+   * <pre>{@code
+   * ImmutableMap<Person, ImmutableList<Club>> clubMemberships =
+   *     clubs.stream()
+   *         .collect(
+   *             groupingByEach(club -> club.getMembers().stream(), toImmutableList()))
+   *         .toMap();
+   * }</pre>
+   *
+   * <p>Entries are collected in encounter order.
+   *
+   * @since 6.5
    */
-  @Deprecated
-  public static <T, K, V, R> Collector<T, ?, BiStream<K, R>> grouping(
-      Function<? super T, ? extends BiStream<? extends K, ? extends V>> toKeyValues,
-      Collector<? super V, ?, R> valueCollector) {
-    requireNonNull(toKeyValues);
+  public static <T, K, V> Collector<T, ?, BiStream<K, V>> groupingByEach(
+      Function<? super T, ? extends Stream<? extends K>> keysFunction,
+      Collector<T, ?, V> groupCollector) {
+    requireNonNull(keysFunction);
     return Java9Collectors.flatMapping(
-        e -> toKeyValues.apply(e).mapToEntry(),
-        groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, valueCollector)));
+        (T e) -> keysFunction.apply(e).map(k -> kv(k, e)),
+        groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, groupCollector)));
   }
 
   /**
-   * @deprecated Use {@code MoreStreams.flatMapping(toKeyValues, BiCollectors.groupingBy(k -> k, reducer))}.
+   * Returns a {@link Collector} grouping input elements by each of the multiple keys returned by
+   * the {@code keysFunction}. The input element is passed to the {@code valueFunction} and the
+   * return value is added to every group it belongs to. And finally each group is collected using
+   * {@code groupCollector}. For example:
+   *
+   * <pre>{@code
+   * ImmutableMap<EmployeeId, ImmutableList<ProjectId>> projectIdsPerEmployee =
+   *     projects.stream()
+   *         .collect(
+   *             groupingByEach(
+   *                 project -> project.getOwnersList().stream(),
+   *                 Project::id,
+   *                 toImmutableList()))
+   *         .toMap();
+   * }</pre>
+   *
+   * <p>Entries are collected in encounter order.
+   *
+   * @since 6.5
    */
-  @Deprecated
-  public static <T, K, V> Collector<T, ?, BiStream<K, V>> grouping(
-      Function<? super T, ? extends BiStream<? extends K, ? extends V>> toKeyValues,
-      BinaryOperator<V> reducer) {
-    return grouping(toKeyValues, reducingGroupMembers(reducer));
+  public static <T, K, V, G> Collector<T, ?, BiStream<K, G>> groupingByEach(
+      Function<? super T, ? extends Stream<? extends K>> keysFunction,
+      Function<? super T, ? extends V> valueFunction,
+      Collector<V, ?, G> groupCollector) {
+    requireNonNull(keysFunction);
+    requireNonNull(valueFunction);
+    requireNonNull(groupCollector);
+    return Java9Collectors.flatMapping(
+        (T e) -> {
+          V v = valueFunction.apply(e);
+          return keysFunction.apply(e).map(k -> kv(k, v));
+        },
+        groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, groupCollector)));
+  }
+
+  /**
+   * Returns a {@link Collector} grouping input elements by each of the multiple keys returned by
+   * the {@code keysFunction}. It's similar to {@link #groupingBy(Function, Function,
+   * BinaryOperator)} except each element can belong to multiple groups. For example:
+   *
+   * <pre>{@code
+   * ImmutableMap<Person, Money> clubMembershipFees =
+   *     clubs.stream()
+   *         .collect(
+   *             groupingByEach(
+   *                 club -> club.getMembers().stream(),
+   *                 Club::getMembershipFee,
+   *                 Money::add))
+   *         .toMap();
+   * }</pre>
+   *
+   * <p>Entries are collected in encounter order.
+   *
+   * @since 6.5
+   */
+  public static <T, K, V> Collector<T, ?, BiStream<K, V>> groupingByEach(
+      Function<? super T, ? extends Stream<? extends K>> keysFunction,
+      Function<? super T, ? extends V> valueFunction,
+      BinaryOperator<V> groupReducer) {
+    return groupingByEach(keysFunction, valueFunction, reducingGroupMembers(groupReducer));
   }
 
   /**
@@ -296,7 +361,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     requireNonNull(right);
     return collectingAndThen(
         toList(),
-        left ->
+        (List<L> left) ->
             // If `right` is infinite, even limit(1) will result in infinite loop otherwise.
             left.isEmpty() ? empty() : concat(right.map(r -> from(left, identity(), l -> r))));
   }
@@ -903,70 +968,6 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Returns a lazy {@code BiStream} of the consecutive runs of equal elements and their run-lengths
-   * from the input {@code stream}.
-   *
-   * <p>For example, {@code consecutiveRunsFrom([a, a, b, b, b, a])} will result in
-   * {@code [{a, 2}, {b, 3}, {a, 1}]}.
-   *
-   * <p>Null elements are allowed.
-   *
-   * @param stream the stream of input elements
-   * @since 5.3
-   * @deprecated Use {@code biStream(stream).groupConsecutiveBy(identity(), counting())} instead.
-   */
-  @Deprecated
-  public static <T> BiStream<T, Long> consecutiveRunsFrom(Stream<T> stream) {
-    return consecutiveRunsFrom(stream, identity(), counting());
-  }
-
-  /**
-   * Returns a {@code BiStream} of the consecutive runs of equal elements from the input
-   * {@code stream}.
-   *
-   * <p>Consecutive null elements will be grouped in a "run" with null as the key.
-   *
-   * @since 5.2
-   * @deprecated Use {@link #consecutiveRunsFrom(Stream)} for run-length encoding, or {@link
-   *     #consecutiveRunsFrom(Stream, Function, Collector)}.
-   */
-  @Deprecated
-  public static <T, R> BiStream<T, R> consecutiveRunsFrom(
-      Stream<T> stream, Collector<? super T, ?, R> runSummarizer) {
-    return consecutiveRunsFrom(stream, identity(), runSummarizer);
-  }
-
-  /**
-   * Returns a lazy {@code BiStream} of the consecutive runs of elements from the input {@code stream}.
-   * Elements in the same consecutive run share the same "key" according to the {@code by} function.
-   *
-   * <p>The {@code runSummarizer} Collector is used to summarize the elements of each "run".
-   * For example you could use {@code Collectors.summarizingDouble()} to summarize stock price per
-   * day:
-   *
-   * <pre>{@code
-   * consecutiveRunsFrom(stockPriceData, PriceDatum::day, summarizingDouble(PriceDatum::price)):
-   * }</pre>
-   *
-   * <p>For run-length encoding, use {@link #consecutiveRunsFrom(Stream)}.
-   *
-   * <p>Null elements are allowed as long as the {@code by} function allows nulls.
-   *
-   * @param stream the stream of input elements
-   * @param by the function to compute the key of each element
-   * @param runSummarizer collector to summarize elements of the same "run"
-   * @since 5.2
-   * @deprecated Use {@code biStream(stream).groupConsecutiveBy(by, runSummarizer)} instead.
-   */
-  @Deprecated
-  public static <K, T, A, R> BiStream<K, R> consecutiveRunsFrom(
-      Stream<T> stream,
-      Function<? super T, ? extends K> by,
-      Collector<? super T, A, R> runSummarizer) {
-    return biStream(stream).groupConsecutiveBy(by, runSummarizer);
-  }
-
-  /**
    * A predicate used to partition a {@code BiStream} into sub-groups of consecutive pairs.
    *
    * <p>Aside from that it operates on pairs, logically a "Partitioner" is unlike {@code
@@ -984,7 +985,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     boolean belong(A a1, B b1, A a2, B b2);
   }
 
-  static <K, V, E extends Map.Entry<? extends K, ? extends V>> BiStream<K, V> fromEntries(
+  /** @since 7.1 */
+  public static <K, V, E extends Map.Entry<? extends K, ? extends V>> BiStream<K, V> fromEntries(
       Stream<E> entryStream) {
     return new GenericEntryStream<E, K, V>(entryStream, Map.Entry::getKey, Map.Entry::getValue) {
       @Override public <K2, V2> BiStream<K2, V2> map(
@@ -1073,25 +1075,6 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   public final <K2, V2> BiStream<K2, V2> map(
       BiFunction<? super K, ? super V, ? extends Both<? extends K2, ? extends V2>> mapper) {
     return from(mapToObj(mapper));
-  }
-
-  /**
-   * Returns a {@code BiStream} consisting of the results of applying {@code keyMapper} and {@code
-   * valueMapper} to the pairs in this {@code BiStream}. If either {@code keyMapper} function or
-   * {@code valueMapper} function returns empty, the pair is discarded.
-   *
-   * @since 4.7
-   * @deprecated Use {@link #mapIfPresent(BiFunction)} instead.
-   */
-  @Deprecated
-  public final <K2, V2> BiStream<K2, V2> mapIfPresent(
-      BiFunction<? super K, ? super V, ? extends Optional<? extends K2>> keyMapper,
-      BiFunction<? super K, ? super V, ? extends Optional<? extends V2>> valueMapper) {
-    return map(keyMapper, valueMapper)
-        .<K2>mapKeys(BiStream::orElseNull)
-        .filterKeys(Objects::nonNull)
-        .<V2>mapValues(BiStream::orElseNull)
-        .filterValues(Objects::nonNull);
   }
 
   /**
@@ -1600,24 +1583,10 @@ public abstract class BiStream<K, V> implements AutoCloseable {
 
   /**
    * Returns a {@code BiStream} consisting of the pairs in this stream, in the order produced by
-   * applying {@code keyComparator} on the keys of each pair, and then for equal keys,
-   * applying {@code valueComparator} on the values of each pair.
-   *
-   * @deprecated Use {@link #sorted(BiComparator)} instead.
-   */
-  @Deprecated
-  public final BiStream<K, V> sorted(
-      Comparator<? super K> keyComparator, Comparator<? super V> valueComparator) {
-    return sorted(comparingKey(keyComparator).then(comparingValue(valueComparator)));
-  }
-
-  /**
-   * Returns a {@code BiStream} consisting of the pairs in this stream, in the order produced by
    * applying {@code comparator} on the keys of each pair.
    */
   public final BiStream<K, V> sortedByKeys(Comparator<? super K> comparator) {
-    requireNonNull(comparator);
-    return fromEntries(mapToEntry().sorted(Comparator.comparing(Map.Entry::getKey, comparator)));
+    return sorted(comparingByKey(comparator));
   }
 
   /**
@@ -1625,32 +1594,41 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * applying {@code comparator} on the values of each pair.
    */
   public final BiStream<K, V> sortedByValues(Comparator<? super V> comparator) {
-    requireNonNull(comparator);
-    return fromEntries(mapToEntry().sorted(Comparator.comparing(Map.Entry::getValue, comparator)));
+    return sorted(comparingByValue(comparator));
   }
 
   /**
    * Returns a {@code BiStream} consisting of the pairs in this stream, in the order produced by
-   * applying {@code ordering} BiComparator between each pair.
+   * applying {@code comparator} on the result of applying the {@code sortKeyFunction}.
    *
-   * <p>The following example first sorts by household income and then by address:
-   *
-   * <pre>{@code
-   * import static com.google.mu.function.BiComparator.comparingKey;
-   * import static com.google.mu.function.BiComparator.comparingValue;
-   *
-   * Map<Address, Household> households = ...;
-   * List<Household> householdsByIncomeThenAddress =
-   *     BiStream.from(households)
-   *         .sorted(comparingValue(Household::income).then(comparingKey(naturalOrder()))
-   *         .values()
-   *         .collect(toList());
-   * }</pre>
-   *
-   * @since 4.7
+   * @since 6.6
    */
-  public final BiStream<K, V> sorted(BiComparator<? super K, ? super V> ordering) {
-    return fromEntries(mapToEntry().sorted(ordering.asComparator(Map.Entry::getKey, Map.Entry::getValue)));
+  public final <T> BiStream<K, V> sortedBy(
+      BiFunction<? super K, ? super V, T> sortKeyFunction, Comparator<? super T> comparator) {
+    requireNonNull(sortKeyFunction);
+    return sorted(Comparator.comparing((Map.Entry<K, V> e) -> sortKeyFunction.apply(e.getKey(), e.getValue()), comparator));
+  }
+
+  /**
+   * Returns a {@code BiStream} consisting of the pairs in this stream, in the order produced by
+   * applying the {@code byKey} comparator on the keys of each pair, and then the {@code byValue}
+   * comparator on the values of pairs with equal keys.
+   *
+   * <p>To sort by value then by key, consider using {@link #inverse} first.
+   */
+  public final BiStream<K, V> sorted(Comparator<? super K> byKey, Comparator<? super V> byValue) {
+    return sorted(
+        Comparator.<Map.Entry<? extends K, ? extends V>, K>comparing(Map.Entry::getKey, byKey)
+            .thenComparing(Map.Entry::getValue, byValue));
+  }
+
+  /**
+   * Returns a {@code BiStream} consisting of the pairs in this stream, in the order produced by
+   * applying the {@code entryComparator} comparator between key-value pairs.
+   */
+  @SuppressWarnings("unchecked") // Immutable Map.Entry<> is covariant.
+  private BiStream<K, V> sorted(Comparator<? super Map.Entry< K, V>> entryComparator) {
+    return fromEntries(((Stream<Map.Entry<K, V>>) mapToEntry()).sorted(entryComparator));
   }
 
   /** Returns the count of pairs in this stream. */
@@ -1879,7 +1857,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
       BiCollector<? super K, ? super V, R> groupCollector) {
     return this
         .<G, Map.Entry<K, V>>map(classifier, BiStream::kv)
-        .groupConsecutiveByKeys(groupCollector.splitting(Map.Entry::getKey, Map.Entry::getValue));
+        .groupConsecutiveByKeys(groupCollector.collectorOf(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   /**
@@ -1918,7 +1896,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     return biStream(mapToEntry())
         .groupConsecutiveIf(
             (p1, p2) -> sameGroup.belong(p1.getKey(), p1.getValue(), p2.getKey(), p2.getValue()),
-            groupCollector.splitting(Map.Entry::getKey, Map.Entry::getValue));
+            groupCollector.collectorOf(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   /**
@@ -2178,7 +2156,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     }
 
     @Override public final <R> R collect(BiCollector<? super K, ? super V, R> collector) {
-      return underlying.collect(collector.splitting(toKey::apply, toValue::apply));
+      return underlying.collect(collector.collectorOf(toKey::apply, toValue::apply));
     }
 
     @Override public final <A> A collect(A container, BiAccumulator<? super A, ? super K, ? super V> accumulator) {
@@ -2379,7 +2357,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
       }
 
       <R> R collectWith(BiCollector<? super K, ? super V, R> collector) {
-        return collectWith(collector.splitting(x -> currentLeft.value, x -> currentRight.value));
+        return collectWith(collector.collectorOf(x -> currentLeft.value, x -> currentRight.value));
       }
 
       /** {@code collector} internally reads from {@link #currentLeft} and {@link #currentRight}. */
@@ -2436,6 +2414,13 @@ public abstract class BiStream<K, V> implements AutoCloseable {
 
   static <T> T right(Both<?, T> both) {
     return both.andThen((l, r) -> r);
+  }
+
+  private static <K, V> BiOptional<K, V> fromOptionalEntry(
+      Optional<? extends Map.Entry<? extends K, ? extends V>> optional) {
+    return optional.isPresent()
+        ? BiOptional.of(optional.get().getKey(), optional.get().getValue())
+        : BiOptional.empty();
   }
 
   private BiStream() {}

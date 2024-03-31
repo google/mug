@@ -48,7 +48,6 @@ import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.EqualsTester;
 import com.google.common.testing.NullPointerTester;
 import com.google.common.truth.IterableSubject;
-import com.google.mu.util.Maybe;
 
 @RunWith(JUnit4.class)
 public class MaybeTest {
@@ -66,7 +65,7 @@ public class MaybeTest {
     MyException exception = new MyException("test");
     Maybe<?, MyException> maybe = Maybe.except(exception);
     MyException thrown = assertThrows(MyException.class, maybe::orElseThrow);
-    assertThat(thrown).isSameAs(exception);
+    assertThat(thrown).isSameInstanceAs(exception);
   }
 
   @Test public void testOrElseThrow_failureWithCause() throws Throwable {
@@ -75,7 +74,7 @@ public class MaybeTest {
     exception.initCause(cause);
     Maybe<?, MyException> maybe = Maybe.except(exception);
     MyException thrown = assertThrows(MyException.class, maybe::orElseThrow);
-    assertThat(thrown).isSameAs(exception);
+    assertThat(thrown).isSameInstanceAs(exception);
   }
 
   @Test public void testOrElseThrow_interruptedException() throws Throwable {
@@ -107,7 +106,7 @@ public class MaybeTest {
     MyException exception = new MyException("test");
     Maybe<?, MyException> maybe = Maybe.except(exception).map(Object::toString);
     MyException thrown = assertThrows(MyException.class, maybe::orElseThrow);
-    assertThat(thrown).isSameAs(exception);
+    assertThat(thrown).isSameInstanceAs(exception);
   }
 
   @Test public void testFlatMap_success() {
@@ -119,7 +118,7 @@ public class MaybeTest {
     MyException exception = new MyException("test");
     Maybe<?, MyException> maybe = Maybe.except(exception).flatMap(o -> Maybe.of(o.toString()));
     MyException thrown = assertThrows(MyException.class, maybe::orElseThrow);
-    assertThat(thrown).isSameAs(exception);
+    assertThat(thrown).isSameInstanceAs(exception);
     assertThat(thrown.getSuppressed()).isEmpty();
   }
 
@@ -155,7 +154,7 @@ public class MaybeTest {
     MyException exception = new MyException("test");
     AtomicReference<Throwable> failed = new AtomicReference<>();
     Maybe.except(exception).catching(e -> {failed.set(e);});
-    assertThat(failed.get()).isSameAs(exception);
+    assertThat(failed.get()).isSameInstanceAs(exception);
   }
 
   @Test public void testNulls_staticMethods() {
@@ -263,6 +262,186 @@ public class MaybeTest {
         .isEqualTo("friend");
   }
 
+  @Test public void maybeToList_empty() throws Exception {
+    assertThat(Stream.<Maybe<String, Exception>>of().collect(Maybe.maybeToList()).orElseThrow())
+        .isEmpty();
+  }
+
+  @Test public void maybeToList_singleValue() throws Throwable {
+    assertThat(Stream.of(Maybe.of(1)).collect(Maybe.maybeToList()).orElseThrow()).containsExactly(1);
+  }
+
+  @Test public void maybeToList_singleException() throws Throwable {
+    IOException exception = new IOException("intentional");
+    IOException thrown =
+        assertThrows(
+            IOException.class,
+            () -> Stream.of(Maybe.except(exception)).collect(Maybe.maybeToList()).orElseThrow(e -> e));
+    assertThat(thrown).isSameInstanceAs(exception);
+  }
+
+  @Test public void maybeToList_twoValues() throws Throwable {
+    assertThat(Stream.of(Maybe.of(1), Maybe.of(3)).collect(Maybe.maybeToList()).orElseThrow())
+        .containsExactly(1, 3)
+        .inOrder();
+  }
+
+  @Test public void maybeToList_twoExceptions() throws Throwable {
+    IOException e1 = new IOException("intentional");
+    IOException thrown =
+        assertThrows(
+            IOException.class,
+            () -> Stream.of(Maybe.except(e1), Maybe.except(new IOException())).collect(Maybe.maybeToList()).orElseThrow(e -> e));
+    assertThat(thrown).isSameInstanceAs(e1);
+  }
+
+  @Test public void maybeToList_exceptionAndValue() throws Throwable {
+    IOException e = new IOException("intentional");
+    IOException thrown =
+        assertThrows(
+            IOException.class,
+            () -> Stream.<Maybe<Integer, Throwable>>of(
+                Maybe.except(e), Maybe.of(123)).collect(Maybe.maybeToList()).orElseThrow(x -> x));
+    assertThat(thrown).isSameInstanceAs(e);
+  }
+
+  @Test public void maybeToList_exceptionAndValue_parallel() throws Throwable {
+    IOException e = new IOException("intentional");
+    IOException thrown =
+        assertThrows(
+            IOException.class,
+            () -> Stream.<Maybe<Integer, Throwable>>of(
+                Maybe.except(e), Maybe.of(123)).parallel().collect(Maybe.maybeToList()).orElseThrow(x -> x));
+    assertThat(thrown).isSameInstanceAs(e);
+  }
+
+  @Test public void maybeToList_valueAndException() throws Throwable {
+    IOException e = new IOException("intentional");
+    IOException thrown =
+        assertThrows(
+            IOException.class,
+            () -> Stream.<Maybe<Integer, Throwable>>of(
+                Maybe.of(123), Maybe.except(e)).collect(Maybe.maybeToList()).orElseThrow(x -> x));
+    assertThat(thrown).isSameInstanceAs(e);
+  }
+
+  @Test public void maybeToList_valueAndException_parallel() throws Throwable {
+    IOException e = new IOException("intentional");
+    IOException thrown =
+        assertThrows(
+            IOException.class,
+            () -> Stream.<Maybe<Integer, Throwable>>of(
+                Maybe.of(123), Maybe.except(e)).parallel().collect(Maybe.maybeToList()).orElseThrow(x -> x));
+    assertThat(thrown).isSameInstanceAs(e);
+  }
+
+  @Test public void maybeToList_exceptional_parallel() throws Throwable {
+    assertThrows(
+        IOException.class,
+        () -> Stream.<Maybe<Integer, Throwable>>of(
+                    Maybe.of(123), Maybe.except(new IOException("e1")), Maybe.of(456), Maybe.except(new IOException()))
+                .parallel()
+                .collect(Maybe.maybeToList()).orElseThrow(x -> x));
+  }
+
+  @Test public void maybeToList_succeeded_parallel() throws Throwable {
+    assertThat(Stream.of(Maybe.of(1), Maybe.of(2), Maybe.of(3), Maybe.of(4))
+                .parallel()
+                .collect(Maybe.maybeToList()).orElseThrow(x -> x))
+        .containsExactly(1, 2, 3, 4)
+        .inOrder();
+  }
+
+  @Test public void maybeToSet_empty() throws Exception {
+    assertThat(Stream.<Maybe<String, Exception>>of().collect(Maybe.maybeToSet()).orElseThrow())
+        .isEmpty();
+  }
+
+  @Test public void maybeToSet_singleValue() throws Throwable {
+    assertThat(Stream.of(Maybe.of(1)).collect(Maybe.maybeToSet()).orElseThrow()).containsExactly(1);
+  }
+
+  @Test public void maybeToSet_singleException() throws Throwable {
+    IOException exception = new IOException("intentional");
+    IOException thrown =
+        assertThrows(
+            IOException.class,
+            () -> Stream.of(Maybe.except(exception)).collect(Maybe.maybeToSet()).orElseThrow(e -> e));
+    assertThat(thrown).isSameInstanceAs(exception);
+  }
+
+  @Test public void maybeToSet_twoValues() throws Throwable {
+    assertThat(Stream.of(Maybe.of(1), Maybe.of(3)).collect(Maybe.maybeToSet()).orElseThrow())
+        .containsExactly(1, 3)
+        .inOrder();
+  }
+
+  @Test public void maybeToSet_twoExceptions() throws Throwable {
+    IOException e1 = new IOException("intentional");
+    IOException thrown =
+        assertThrows(
+            IOException.class,
+            () -> Stream.of(Maybe.except(e1), Maybe.except(new IOException())).collect(Maybe.maybeToSet()).orElseThrow(e -> e));
+    assertThat(thrown).isSameInstanceAs(e1);
+  }
+
+  @Test public void maybeToSet_exceptionAndValue() throws Throwable {
+    IOException e = new IOException("intentional");
+    IOException thrown =
+        assertThrows(
+            IOException.class,
+            () -> Stream.<Maybe<Integer, Throwable>>of(
+                Maybe.except(e), Maybe.of(123)).collect(Maybe.maybeToSet()).orElseThrow(x -> x));
+    assertThat(thrown).isSameInstanceAs(e);
+  }
+
+  @Test public void maybeToSet_exceptionAndValue_parallel() throws Throwable {
+    IOException e = new IOException("intentional");
+    IOException thrown =
+        assertThrows(
+            IOException.class,
+            () -> Stream.<Maybe<Integer, Throwable>>of(
+                Maybe.except(e), Maybe.of(123)).parallel().collect(Maybe.maybeToSet()).orElseThrow(x -> x));
+    assertThat(thrown).isSameInstanceAs(e);
+  }
+
+  @Test public void maybeToSet_valueAndException() throws Throwable {
+    IOException e = new IOException("intentional");
+    IOException thrown =
+        assertThrows(
+            IOException.class,
+            () -> Stream.<Maybe<Integer, Throwable>>of(
+                Maybe.of(123), Maybe.except(e)).collect(Maybe.maybeToSet()).orElseThrow(x -> x));
+    assertThat(thrown).isSameInstanceAs(e);
+  }
+
+  @Test public void maybeToSet_valueAndException_parallel() throws Throwable {
+    IOException e = new IOException("intentional");
+    IOException thrown =
+        assertThrows(
+            IOException.class,
+            () -> Stream.<Maybe<Integer, Throwable>>of(
+                Maybe.of(123), Maybe.except(e)).parallel().collect(Maybe.maybeToSet()).orElseThrow(x -> x));
+    assertThat(thrown).isSameInstanceAs(e);
+  }
+
+  @Test public void maybeToSet_exceptional_parallel() throws Throwable {
+    assertThrows(
+        IOException.class,
+        () -> Stream.<Maybe<Integer, Throwable>>of(
+                    Maybe.of(123), Maybe.except(new IOException("e1")), Maybe.of(456), Maybe.except(new IOException()))
+                .parallel()
+                .collect(Maybe.maybeToSet()).orElseThrow(x -> x));
+  }
+
+  @Test public void maybeToSet_succeeded_parallel() throws Throwable {
+    assertThat(Stream.of(Maybe.of(1), Maybe.of(2), Maybe.of(3), Maybe.of(4))
+                .parallel()
+                .collect(Maybe.maybeToSet()).orElseThrow(x -> x))
+        .containsExactly(1, 2, 3, 4)
+        .inOrder();
+  }
+
   @Test public void wrapFuture_futureIsSuccess() throws Exception {
     CompletionStage<Maybe<String, Exception>> stage =
         Maybe.catchException(Exception.class, completedFuture("good"));
@@ -295,7 +474,7 @@ public class MaybeTest {
     RuntimeException exception = new RuntimeException("test");
     CompletionStage<Maybe<String, MyException>> stage =
         Maybe.catchException(MyException.class, exceptionally(exception));
-    assertCauseOf(ExecutionException.class, stage).isSameAs(exception);
+    assertCauseOf(ExecutionException.class, stage).isSameInstanceAs(exception);
   }
 
   @Test public void wrapFuture_futureIsCancelledWithInterruption() throws Exception {
@@ -316,7 +495,7 @@ public class MaybeTest {
         Maybe.catchException(IOException.class, exceptionally(exception));
     stage = Maybe.catchException(IOException.class, stage);
     stage = Maybe.catchException(MyUncheckedException.class, stage);
-    assertCauseOf(ExecutionException.class, stage).isSameAs(exception);
+    assertCauseOf(ExecutionException.class, stage).isSameInstanceAs(exception);
   }
 
   @Test public void wrapFuture_futureIsUnexpectedUncheckedException_idempotence() throws Exception {
@@ -326,7 +505,7 @@ public class MaybeTest {
     stage = Maybe.catchException(IOException.class, stage);
     stage = Maybe.catchException(MyException.class, stage);
     stage = Maybe.catchException(Error.class, stage);
-    assertCauseOf(ExecutionException.class, stage).isSameAs(exception);
+    assertCauseOf(ExecutionException.class, stage).isSameInstanceAs(exception);
   }
 
   @Test public void wrapFuture_futureIsUnexpectedError_idempotence() throws Exception {
@@ -336,13 +515,13 @@ public class MaybeTest {
     stage = Maybe.catchException(IOException.class, stage);
     stage = Maybe.catchException(MyException.class, stage);
     stage = Maybe.catchException(MyUncheckedException.class, stage);
-    assertCauseOf(ExecutionException.class, stage).isSameAs(error);
+    assertCauseOf(ExecutionException.class, stage).isSameInstanceAs(error);
   }
 
   @Test public void wrapFuture_futureIsUnexpectedFailure_notApplied() throws Exception {
     RuntimeException exception = new RuntimeException("test");
     CompletionStage<?> stage = exceptionally(exception);
-    assertCauseOf(ExecutionException.class, stage).isSameAs(exception);
+    assertCauseOf(ExecutionException.class, stage).isSameInstanceAs(exception);
   }
 
   @Test public void wrapFuture_futureBecomesSuccess() throws Exception {
@@ -407,7 +586,7 @@ public class MaybeTest {
     CompletionStage<String> stage = future.handle((v, e) -> {
       throw new CompletionException(e);
     });
-    assertCauseOf(ExecutionException.class, stage).isSameAs(exception);
+    assertCauseOf(ExecutionException.class, stage).isSameInstanceAs(exception);
   }
 
   @Test public void testCompletionStage_exceptionally_wraps() throws Exception {
@@ -417,7 +596,7 @@ public class MaybeTest {
     CompletionStage<String> stage = future.exceptionally(e -> {
       throw new CompletionException(e);
     });
-    assertCauseOf(ExecutionException.class, stage).isSameAs(exception);
+    assertCauseOf(ExecutionException.class, stage).isSameInstanceAs(exception);
   }
 
   @Test public void wrapFuture_futureBecomesUnexpectedFailure() throws Exception {
@@ -427,13 +606,13 @@ public class MaybeTest {
     assertPending(stage);
     RuntimeException exception = new RuntimeException("test");
     future.completeExceptionally(exception);
-    assertCauseOf(ExecutionException.class, stage).isSameAs(exception);
+    assertCauseOf(ExecutionException.class, stage).isSameInstanceAs(exception);
   }
 
   @Test public void testExecutionExceptionally() {
     RuntimeException exception = new RuntimeException("test");
     assertCauseOf(ExecutionException.class, executionExceptionally(exception))
-        .isSameAs(exception);
+        .isSameInstanceAs(exception);
   }
 
   private static <T> CompletionStage<T> exceptionally(Throwable e) {

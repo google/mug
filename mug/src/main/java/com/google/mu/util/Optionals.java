@@ -16,13 +16,14 @@ package com.google.mu.util;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Collections;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import java.util.Set;
 
 import com.google.mu.function.CheckedBiConsumer;
-import com.google.mu.function.CheckedBiFunction;
 import com.google.mu.function.CheckedConsumer;
 import com.google.mu.function.CheckedDoubleConsumer;
 import com.google.mu.function.CheckedIntConsumer;
@@ -60,6 +61,35 @@ public final class Optionals {
    */
   public static <T> Optional<T> optional(boolean condition, T value) {
     return condition ? Optional.ofNullable(value) : Optional.empty();
+  }
+
+  /**
+   * Returns an immutable singleton {@link Set} whose only element is the contained instance if it
+   * is present; an empty immutable {@link Set} otherwise.
+   *
+   * <p>This is useful when you are trying to apply some side-effects on the value contained in the
+   * {@code Optional}: <pre>{@code
+   * for (Foo foo : asSet(optionalFoo)) {
+   *   // ...
+   * }
+   * }</pre>
+   *
+   * While you could use {@code optional.ifPresent(v -> ...)}, the lambda has limitations
+   * (no checked exceptions etc.). The body of the lambda can also become unwieldy if there are
+   * more than 5 lines of code, with conditionals and what not.
+   *
+   * <p>If you need to add the Optional's contained value into another collection, consider
+   * {@code results.addAll(asSet(optional))}. The {@code addAll()} side effect stands out
+   * more crisply than in {@code optional.ifPresent(results::add)} where the important data
+   * flow into the {@code results} collection is somewhat buried and easy to miss.
+   *
+   * <p>Lastly, if you need to check whether the optional contains a particular value, consider using
+   * {@code asSet(optional).contains(value)}.
+   *
+   * @since 6.1
+   */
+  public static <T> Set<T> asSet(Optional<? extends T> optional) {
+    return optional.isPresent() ? Collections.singleton(optional.get()) : Collections.emptySet();
   }
 
   /**
@@ -251,50 +281,6 @@ public final class Optionals {
       return Conditional.TRUE;
     }
     return Conditional.FALSE;
-  }
-
-  /**
-   * Maps {@code left} and {@code right} using {@code mapper} if both are present.
-   * Returns an {@link Optional} wrapping the result of {@code mapper} if non-null, or else returns
-   * {@code Optional.empty()}.
-   *
-   * @since 3.8
-   * @deprecated Use {@link BiOptional#both} instead.
-   */
-  @Deprecated
-  public static <A, B, R, E extends Throwable> Optional<R> mapBoth(
-      Optional<A> left, Optional<B> right, CheckedBiFunction<? super A, ? super B, ? extends R, E> mapper)
-      throws E {
-    requireNonNull(left);
-    requireNonNull(right);
-    requireNonNull(mapper);
-    if (left.isPresent() && right.isPresent()) {
-      return Optional.ofNullable(mapper.apply(left.get(), right.get()));
-    }
-    return Optional.empty();
-  }
-
-  /**
-   * Maps {@code left} and {@code right} using {@code mapper} if both are present.
-   * Returns the result of {@code mapper} or {@code Optional.empty()} if either {@code left} or {@code right}
-   * is empty.
-   *
-   * @throws NullPointerException if {@code mapper} returns null
-   * @since 3.8
-   * @deprecated Use {@link BiOptional#both} instead.
-   */
-  @Deprecated
-  public static <A, B, R, E extends Throwable> Optional<R> flatMapBoth(
-      Optional<A> left, Optional<B> right,
-      CheckedBiFunction<? super A, ? super B, ? extends Optional<R>, E> mapper)
-      throws E {
-    requireNonNull(left);
-    requireNonNull(right);
-    requireNonNull(mapper);
-    if (left.isPresent() && right.isPresent()) {
-      return requireNonNull(mapper.apply(left.get(), right.get()));
-    }
-    return Optional.empty();
   }
 
   private static <A, B> A first(A a, B b) {

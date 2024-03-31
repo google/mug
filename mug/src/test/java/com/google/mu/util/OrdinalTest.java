@@ -45,7 +45,7 @@ public class OrdinalTest {
         Ordinal.natural().limit(100).collect(Collectors.toCollection(ArrayList::new));
     Collections.shuffle(ordinals);
     Collections.sort(ordinals);
-    assertThat(ordinals).isStrictlyOrdered();
+    assertThat(ordinals).isInOrder();
     assertThat(ordinals.stream().map(Ordinal::toString).limit(7))
         .containsExactly("1st", "2nd", "3rd", "4th", "5th", "6th", "7th")
         .inOrder();
@@ -126,16 +126,23 @@ public class OrdinalTest {
     assertThrows(IllegalArgumentException.class, () -> Ordinal.of(-1));
   }
 
-  @Test public void of() {
+  @Test public void testOf() {
     for (int i = 1; i < 1000; i++) {
       assertThat(Ordinal.of(i).toIndex()).isEqualTo(i - 1);
     }
   }
 
+  @Test public void testOf_enum() {
+    assertThat(Ordinal.of(Fruit.APPLE)).isEqualTo(Ordinal.first());
+    assertThat(Ordinal.of(Fruit.ORANGE)).isEqualTo(Ordinal.second());
+    assertThat(Ordinal.of(Fruit.APPLE).next()).isEqualTo(Ordinal.of(Fruit.ORANGE));
+    assertThat(Ordinal.of(Fruit.ORANGE).previous()).isEqualTo(Ordinal.of(Fruit.APPLE));
+  }
+
   @Test public void interning() {
-    assertThat(Ordinal.first()).isSameAs(Ordinal.first());
+    assertThat(Ordinal.first()).isSameInstanceAs(Ordinal.first());
     for (int i = 1; i < 100; i++) {
-      assertThat(Ordinal.of(i)).isSameAs(Ordinal.of(i));
+      assertThat(Ordinal.of(i)).isSameInstanceAs(Ordinal.of(i));
     }
   }
 
@@ -145,18 +152,61 @@ public class OrdinalTest {
     }
   }
 
+  @Test public void fromIndex_overflow() {
+    assertThrows(IllegalArgumentException.class, () -> Ordinal.fromIndex(Integer.MAX_VALUE));
+  }
+
+  @Test public void fromIndex_negative() {
+    assertThrows(IllegalArgumentException.class, () -> Ordinal.fromIndex(-1));
+    assertThrows(IllegalArgumentException.class, () -> Ordinal.fromIndex(-2));
+    assertThrows(IllegalArgumentException.class, () -> Ordinal.fromIndex(Integer.MIN_VALUE));
+  }
+
   @Test public void toIndex() {
     List<Ordinal> ordinals = Ordinal.natural().limit(100).collect(toList());
     for (Ordinal ordinal : ordinals) {
-      assertThat(ordinals.get(ordinal.toIndex())).isSameAs(ordinal);
+      assertThat(ordinals.get(ordinal.toIndex())).isSameInstanceAs(ordinal);
     }
   }
 
   @Test public void maxValue() {
     assertThat(name(Integer.MAX_VALUE)).isEqualTo(Integer.MAX_VALUE + "th");
+    assertThat(Ordinal.first().previous().next()).isEqualTo(Ordinal.first());
+  }
+
+  @Test public void testNext() {
+    assertThat(Ordinal.first().next()).isEqualTo(Ordinal.second());
+    assertThat(Ordinal.first().previous().next()).isEqualTo(Ordinal.first());
+  }
+
+  @Test public void testNext_overflow() {
+    assertThat(Ordinal.MAX_VALUE.next()).isEqualTo(Ordinal.first());
+  }
+
+  @Test public void testPrevious() {
+    assertThat(Ordinal.first().next().previous()).isEqualTo(Ordinal.first());
+    assertThat(Ordinal.MAX_VALUE.next().previous()).isEqualTo(Ordinal.MAX_VALUE);
+  }
+
+  @Test public void testPrevious_underflow() {
+    assertThat(Ordinal.first().previous()).isEqualTo(Ordinal.MAX_VALUE);
+  }
+
+  @Test public void testMinus_sameValue() {
+    assertThat(Ordinal.first().minus(Ordinal.first())).isEqualTo(0);
+    assertThat(Ordinal.MAX_VALUE.minus(Ordinal.MAX_VALUE)).isEqualTo(0);
+  }
+
+  @Test public void testMinus() {
+    assertThat(Ordinal.first().minus(Ordinal.second())).isEqualTo(-1);
+    assertThat(Ordinal.second().minus(Ordinal.of(1))).isEqualTo(1);
+    assertThat(Ordinal.MAX_VALUE.minus(Ordinal.first())).isEqualTo(Integer.MAX_VALUE - 1);
+    assertThat(Ordinal.first().minus(Ordinal.MAX_VALUE)).isEqualTo(1 - Integer.MAX_VALUE);
   }
 
   private static String name(int n) {
     return Ordinal.of(n).toString();
   }
+
+  private enum Fruit {APPLE, ORANGE}
 }
