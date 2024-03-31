@@ -53,8 +53,16 @@ import com.google.mu.util.Substring;
 import com.google.mu.util.stream.BiStream;
 
 /**
- * A facade class providing convenient {@link DateTimeFormatter} instances by inferring from an
- * example date/time/datetime string in the expected format.
+ * Utility class with one-stop {@link Instant} and {@link ZonedDateTime} parsing for all common
+ * date time strings, without needing a {@link DateTimeFormatter}:
+ *
+ * <pre>{@code
+ * Instant timestamp = DateTimeFormats.parseToInstant(timestampString);
+ * ZonedDateTime dateTime = DateTimeFormats.parseZonedDateTime(dateTimeString);
+ * }</pre>
+ *
+ * <p>For more advanced use cases, the {@link DateTimeFormatter} can be inferred from an
+ * example date/time/datetime string (similar to the golang time library style).
  *
  * <p>For example:
  *
