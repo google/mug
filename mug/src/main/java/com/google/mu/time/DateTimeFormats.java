@@ -78,7 +78,7 @@ import com.google.mu.util.stream.BiStream;
  * }</pre>
  *
  * <p>Most ISO 8601 formats are supported, except BASIC_ISO_DATE, ISO_WEEK_DATE ('2012-W48-6')
- * and ISO_ORDINAL_DATE ('2012-337').
+ * and ISO_ORDINAL_DATE ('2012-337'), which are rarely used.
  *
  * <p>For the date part of custom patterns, ambiguous examples like {@code 10/12/2024} or {@code
  * 1/2/yyyy} are not supported. You should use unambiguous examples like {@code 10/30/2024}
