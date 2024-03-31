@@ -664,6 +664,37 @@ public final class DateTimeFormatsTest {
   }
 
   @Test
+  public void parseOffsetDateTime_nonStandardFormat()
+      throws Exception {
+    assertThat(DateTimeFormats.parseOffsetDateTime("2020-01-01T00:00:00.123  +08:00"))
+        .isEqualTo(OffsetDateTime.parse("2020-01-01T00:00:00.123+08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+    assertThat(DateTimeFormats.parseOffsetDateTime("2020-01-01 00:00:00.123  +08:00"))
+        .isEqualTo(OffsetDateTime.parse("2020-01-01T00:00:00.123+08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+  }
+
+  @Test
+  public void parseZonedDateTime_nonStandardFormat()
+      throws Exception {
+    assertThat(DateTimeFormats.parseZonedDateTime("2020-01-01T00:00:00.123  +08:00"))
+        .isEqualTo(ZonedDateTime.parse("2020-01-01T00:00:00.123+08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+    assertThat(DateTimeFormats.parseZonedDateTime("2020-01-01 00:00:00.123  +08:00"))
+        .isEqualTo(ZonedDateTime.parse("2020-01-01T00:00:00.123+08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+    assertThat(DateTimeFormats.parseZonedDateTime("2020/01/01T00:00, America/Los_Angeles"))
+        .isEqualTo(ZonedDateTime.parse("2020-01-01T00:00:00-08:00[America/Los_Angeles]", DateTimeFormatter.ISO_ZONED_DATE_TIME));
+  }
+
+  @Test
+  public void parseToInstant_nonStandardFormat()
+      throws Exception {
+    assertThat(DateTimeFormats.parseToInstant("2020-01-01T00:00:00.123  +08:00"))
+        .isEqualTo(ZonedDateTime.parse("2020-01-01T00:00:00.123+08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).toInstant());
+    assertThat(DateTimeFormats.parseToInstant("2020-01-01 00:00:00.123  +08:00"))
+        .isEqualTo(ZonedDateTime.parse("2020-01-01T00:00:00.123+08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).toInstant());
+    assertThat(DateTimeFormats.parseToInstant("2020/01/01T00:00, America/Los_Angeles"))
+        .isEqualTo(ZonedDateTime.parse("2020-01-01T00:00:00-08:00[America/Los_Angeles]", DateTimeFormatter.ISO_ZONED_DATE_TIME).toInstant());
+  }
+
+  @Test
   public void tIsRecognizedAndEscaped() {
     assertThat(
             ZonedDateTime.parse(

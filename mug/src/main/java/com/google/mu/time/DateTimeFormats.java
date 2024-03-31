@@ -265,8 +265,9 @@ public final class DateTimeFormats {
   }
 
   /**
-   * Parses {@code dateTimeString} to {@link Instant} using heuristics in this class to
-   * infer the {@link DateTimeFormatter} for common formats.
+   * Parses {@code dateTimeString} to {@link Instant}. {@code dateTimeString} could be in the format
+   * of {@link ISO_INSTANT}, which is from {@link Instant#toString}; or it could be any valid date time
+   * with zone name or zone offset.
    *
    * <p>Prefer to pre-construct a {@link DateTimeFormatter} using {@link #formatOf} to get
    * better performance and earlier error report in case the example date time string cannot
