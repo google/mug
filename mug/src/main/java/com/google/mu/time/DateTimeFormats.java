@@ -62,9 +62,9 @@ import com.google.mu.util.stream.BiStream;
  * ZonedDateTime dateTime = DateTimeFormats.parseZonedDateTime(dateTimeString);
  * }</pre>
  *
- * <p>For more flexible use cases, where you might want to reuse or conform to a known format,
- * the {@link DateTimeFormatter} can be inferred from an example date/time/datetime string
- * (similar to the golang time library style).
+ * <p>For more flexible use cases, where you might want to reuse or conform to a format known at
+ * compile-time, the {@link DateTimeFormatter} can be inferred from an example date/time/datetime
+ * string (similar to the golang time library style).
  *
  * <p>For example:
  *
