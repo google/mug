@@ -36,6 +36,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
+import java.time.temporal.TemporalQuery;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -61,8 +62,9 @@ import com.google.mu.util.stream.BiStream;
  * ZonedDateTime dateTime = DateTimeFormats.parseZonedDateTime(dateTimeString);
  * }</pre>
  *
- * <p>For more advanced use cases, the {@link DateTimeFormatter} can be inferred from an
- * example date/time/datetime string (similar to the golang time library style).
+ * <p>For more flexible use cases, where you might want to reuse or conform to a known format,
+ * the {@link DateTimeFormatter} can be inferred from an example date/time/datetime string
+ * (similar to the golang time library style).
  *
  * <p>For example:
  *
@@ -273,11 +275,12 @@ public final class DateTimeFormats {
             });
   }
 
-  private static DateTimeFormatter forDateTimeNoValidation(String dateTimeString) {
+  private static <T> T parseDateTime(String dateTimeString, TemporalQuery<T> query) {
     List<?> signature = forExample(dateTimeString);
     return lookup(RFC_1123_FORMATTERS, signature)
         .orElseGet(() -> lookup(ISO_DATE_TIME_FORMATTERS, forExample(removeNanosecondsPart(dateTimeString)))
-        .orElseGet(() -> DateTimeFormatter.ofPattern(inferDateTimePattern(dateTimeString, signature))));
+        .orElseGet(() -> DateTimeFormatter.ofPattern(inferDateTimePattern(dateTimeString, signature))))
+        .parse(dateTimeString, query);
   }
 
   /**
@@ -293,11 +296,7 @@ public final class DateTimeFormats {
    * @since 8.0
    */
   public static Instant parseToInstant(String dateTimeString) {
-    try {
-      return Instant.parse(dateTimeString);
-    } catch (DateTimeParseException notInstant) {
-      return forDateTimeNoValidation(dateTimeString).parse(dateTimeString, Instant::from);
-    }
+    return parseDateTime(dateTimeString, Instant::from);
   }
 
   /**
@@ -312,7 +311,7 @@ public final class DateTimeFormats {
    * @since 8.0
    */
   public static ZonedDateTime parseZonedDateTime(String dateTimeString) {
-    return ZonedDateTime.parse(dateTimeString, forDateTimeNoValidation(dateTimeString));
+    return parseDateTime(dateTimeString, ZonedDateTime::from);
   }
 
   /**
@@ -327,7 +326,7 @@ public final class DateTimeFormats {
    * @since 8.0
    */
   public static OffsetDateTime parseOffsetDateTime(String dateTimeString) {
-    return OffsetDateTime.parse(dateTimeString, forDateTimeNoValidation(dateTimeString));
+    return parseDateTime(dateTimeString, OffsetDateTime::from);
   }
 
   static String inferDateTimePattern(String example) {
