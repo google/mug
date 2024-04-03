@@ -29,16 +29,16 @@ import com.google.mu.util.StringFormat.Template;
 import com.google.mu.util.Substring;
 
 /**
- * Facade class to generate queries based on a string template in the syntax of {@link
- * StringFormat}, with compile-time guard rails and runtime protection against SQL injection and
- * programmer mistakes. Special characters of string expressions are automatically escaped to
- * prevent SQL injection errors.
+ * A SafeQuery is a piece of provably-safe (from SQL injection) query string constructed by the
+ * combination of a compile-time string constant, other SafeQuery, safe literal values (booleans,
+ * enum constant names, positive numbers etc.), and/or mandatorily-quoted, auto-escaped string values.
  *
- * <p>A SafeQuery encapsulates the query string. You can use {@link #toString} to access the query
- * string.
+ * <p>It's best practice for your db layer API to require SafeQuery instead of String as the
+ * parameter to ensure safety. Internally, you can use {@link #toString} to access the query string.
  *
- * <p>In addition, a SafeQuery may represent a subquery, and can be passed through {@link #of} or
- * {@link StringFormat.To#with} to compose larger queries.
+ * <p>This class supports generating SQL based on a string template in the syntax of {@link
+ * TemplateString}, and with the same compile-time protection. Special characters of string
+ * expressions are automatically escaped to prevent SQL injection errors.
  *
  * <p>This class is Android compatible.
  *

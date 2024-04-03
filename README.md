@@ -11,7 +11,7 @@ Offers:
    * `Map<Instant, Long> histogram = zip(times, counts).toMap();`
    * `Map<K, V> combined = concat(map1, map2).toMap();`
    * `Map<Principal, V> keyedByPrincipal = BiStream.from(keyedByUserId).mapKeys(UserId::principal).toMap();`
-* More ([MoreStreams](#morestreams), [Optionals](#optionals), [DateTimeFormats](https://github.com/google/mug/wiki/DateTimeFormats-Explained), [...](https://github.com/google/mug/wiki))
+* More ([MoreStreams](#morestreams), [Optionals](#optionals), [DateTimeFormats](https://github.com/google/mug/wiki/Parsing-Date-Time-Should-Be-10x-Easier), [...](https://github.com/google/mug/wiki))
   * Create `Optional` with a guard condition:
     * `return optionally(count > 0, () -> total / count);`
   * Parse any legit date/time string (without a pattern string):
