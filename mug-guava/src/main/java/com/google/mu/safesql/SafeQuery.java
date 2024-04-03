@@ -29,7 +29,6 @@ import com.google.mu.util.StringFormat.Template;
 import com.google.mu.util.Substring;
 
 /**
- *
  * A SafeQuery is a piece of provably-safe (from SQL injection) query string constructed by the
  * combination of a compile-time string constant, other SafeQuery, safe literal values (booleans,
  * enum constant names, positive numbers etc.), and/or mandatorily-quoted, auto-escaped string values.
