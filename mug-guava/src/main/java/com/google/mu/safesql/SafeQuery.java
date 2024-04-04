@@ -223,8 +223,7 @@ public final class SafeQuery {
                 placeholders
                     .collect(
                         new StringBuilder(),
-                        (b, p, v) ->
-                            b.append(it.next()).append(fillInPlaceholder(p, v)))
+                        (b, p, v) -> b.append(it.next()).append(fillInPlaceholder(p, v)))
                     .append(it.next())
                     .toString());
           });
