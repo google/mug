@@ -585,7 +585,7 @@ public final class MoreStreams {
     private int chunkSize() {
       long estimate = underlying.estimateSize();
       if (estimate <= maxSize) return (int) estimate;
-      // The user could set a large chunk size for an unknown-size stream, don't blow up memory.
+      // The user could set a large maxSize for an unknown-size stream, don't blow up memory.
       return estimate == Long.MAX_VALUE ? Math.min(maxSize, 8192) : maxSize;
     }
 
