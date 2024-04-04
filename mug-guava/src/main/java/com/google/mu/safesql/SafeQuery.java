@@ -29,16 +29,17 @@ import com.google.mu.util.StringFormat.Template;
 import com.google.mu.util.Substring;
 
 /**
- * A SafeQuery is a piece of provably-safe (from SQL injection) query string constructed by the
+ * A piece of provably-safe (from SQL injection) query string constructed by the
  * combination of a compile-time string constant, other SafeQuery, safe literal values (booleans,
- * enum constant names, positive numbers etc.), and/or mandatorily-quoted, auto-escaped string values.
+ * enum constant names, numbers etc.), and/or mandatorily-quoted, auto-escaped string values.
  *
  * <p>It's best practice for your db layer API to require SafeQuery instead of String as the
  * parameter to ensure safety. Internally, you can use {@link #toString} to access the query string.
  *
  * <p>This class supports generating SQL based on a string template in the syntax of {@link
  * TemplateString}, and with the same compile-time protection. Special characters of string
- * expressions are automatically escaped to prevent SQL injection errors.
+ * expressions are automatically escaped to prevent SQL injection errors. And negative numbers are
+ * enclosed by parenthesis.
  *
  * <p>This class is Android compatible.
  *
