@@ -37,9 +37,9 @@ import com.google.mu.util.Substring;
  * parameter to ensure safety. Internally, you can use {@link #toString} to access the query string.
  *
  * <p>This class supports generating SQL based on a string template in the syntax of {@link
- * TemplateString}, and with the same compile-time protection. Special characters of string
- * expressions are automatically escaped to prevent SQL injection errors. And negative numbers are
- * enclosed by parenthesis.
+ * TemplateString}, and with the same compile-time protection. To prevent SQL injection errors,
+ * special characters of string values are automatically escaped; and negative numbers
+ * are automatically enclosed by parenthesis.
  *
  * <p>This class is Android compatible.
  *
