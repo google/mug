@@ -212,11 +212,11 @@ public final class SafeQuery {
 
     /**
      * Translates {@code template} to a factory of {@link SafeQuery} by filling the provided
-     * parameters in the place of corresponding placeholders.
+     * parameters in the places of corresponding placeholders.
      */
-    public final Template<SafeQuery> translate(@CompileTimeConstant String formatString) {
+    public final Template<SafeQuery> translate(@CompileTimeConstant String template) {
       return StringFormat.template(
-          formatString,
+          template,
           (fragments, placeholders) -> {
             Iterator<String> it = fragments.iterator();
             return new SafeQuery(
