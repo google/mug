@@ -558,7 +558,7 @@ public final class MoreStreams {
 
     @Override public boolean tryAdvance(Consumer<? super List<T>> action) {
       requireNonNull(action);
-      List<T> chunk = new ArrayList<>(chunkSize());
+      List<T> chunk = new ArrayList<>(initialCapacity());
       for (int i = 0; i < maxSize && underlying.tryAdvance(chunk::add); i++) {}
       if (chunk.isEmpty()) return false;
       action.accept(chunk);
@@ -582,11 +582,17 @@ public final class MoreStreams {
       return Spliterator.NONNULL;
     }
 
-    private int chunkSize() {
-      long estimate = underlying.estimateSize();
-      if (estimate <= maxSize) return (int) estimate;
-      // The user could set a large maxSize for an unknown-size stream, don't blow up memory.
-      return estimate == Long.MAX_VALUE ? Math.min(maxSize, 8192) : maxSize;
+    private int initialCapacity() {
+      if ((underlying.characteristics() & Spliterator.SIZED) != 0) {
+        // Only use estimateSize() if it's SIZED
+        long estimate = underlying.estimateSize();
+        if (estimate <= maxSize) {
+          return (int) estimate;
+        }
+      }
+      // In case the user has set a very large maxSize, don't create a super large List
+      // If there are really that many elements, the List will grow anyways.
+      return Math.min(maxSize, 8192);
     }
 
     private long estimateChunks(long size) {
