@@ -35,11 +35,12 @@ import com.google.mu.util.StringFormat.Template;
 import com.google.mu.util.stream.BiStream;
 
 /**
- * Facade class to create <a href="https://cloud.google.com/bigquery/docs/parameterized-queries">
- * BigQuery parameterized queries</a> using a template string and parameters.
+ * Encapsulates a <a href="https://cloud.google.com/bigquery/docs/parameterized-queries">
+ * BigQuery parameterized query</a>.
  *
- * <p>The string template syntax is defined by {@link StringFormat} and protected by the same set of
- * compile-time checks.
+ * <p>Instances of this class are created from a compile-time {@link TemplateString template}.
+ * Template arguments are protected by the same set of compile-time checks that protect {@link
+ * StringFormat}.
  *
  * <p>For simple use cases, a one-liner is enough to construct a parameterized query. For example:
  *

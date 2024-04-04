@@ -124,7 +124,9 @@ public final class MoreStreams {
    * flatten infinite streams.
    *
    * @since 1.9
+   * @deprecated Use {@code flatMap()} in Java 10+
    */
+  @Deprecated
   public static <T> Stream<T> flatten(Stream<? extends Stream<? extends T>> streamOfStream) {
     return mapBySpliterator(streamOfStream.sequential(), 0, FlattenedSpliterator<T>::new);
   }
