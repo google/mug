@@ -307,6 +307,7 @@ public final class DateTimeFormats {
    * better performance and earlier error report in case the example date time string cannot
    * be inferred.
    *
+   * @param dateTimeString must be a string with valid date, time and the zone name or UTC offset
    * @throws DateTimeException if {@code dateTimeString} cannot be parsed as {@link ZonedDateTime}
    * @since 8.0
    */
@@ -322,6 +323,8 @@ public final class DateTimeFormats {
    * better performance and earlier error report in case the example date time string cannot
    * be inferred.
    *
+   * @param dateTimeString must be a string with valid date, time and the UTC offset
+   *   (cannot be zone name)
    * @throws DateTimeException if {@code dateTimeString} cannot be parsed as {@link OffsetDateTime}
    * @since 8.0
    */
