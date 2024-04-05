@@ -292,6 +292,8 @@ public final class DateTimeFormats {
    * better performance and earlier error report in case the example date time string cannot
    * be inferred.
    *
+   * @param dateTimeString can be the result of {@link Instant#toString}, or any other valid
+   *   date time with either zone name or UTC offset.
    * @throws DateTimeException if {@code dateTimeString} cannot be parsed as {@link Instant}
    * @since 8.0
    */
