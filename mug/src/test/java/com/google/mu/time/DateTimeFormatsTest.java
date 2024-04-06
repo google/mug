@@ -110,7 +110,6 @@ public final class DateTimeFormatsTest {
     assertLocalTime("12:00 PM", "HH:mm a").isEqualTo(LocalTime.of(12, 0, 0));
   }
 
-
   @Test
   public void twoDigitHourMinuteSecondWithAmPm() {
     assertLocalTime("09:00:30AM", "HH:mm:ssa").isEqualTo(LocalTime.of(9, 0, 30));
@@ -694,6 +693,19 @@ public final class DateTimeFormatsTest {
   public void parseZonedDateTime_invalid()
       throws Exception {
     assertThrows(DateTimeException.class, () -> DateTimeFormats.parseZonedDateTime("2020-01-01T00:00:00.123 bad +08:00"));
+  }
+
+  @Test
+  public void parseZonedDateTime_unknownZoneName() {
+    assertThrows(
+        DateTimeException.class,
+        () -> DateTimeFormats.parseZonedDateTime("2020-01-01T12:00:00 China/Beijing"));
+  }
+
+  @Test
+  public void parseZonedDateTime_knownZoneName() {
+    ZonedDateTime dateTime = DateTimeFormats.parseZonedDateTime("2020-01-01T12:00:00 Asia/Shanghai");
+    assertThat(dateTime.getZone()).isEqualTo(ZoneId.of("Asia/Shanghai"));
   }
 
   @Test
