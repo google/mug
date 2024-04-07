@@ -1009,9 +1009,9 @@ abstract class AbstractStringFormat {
    * <p>For example:
    *
    * <pre>{@code
-   * ImmutableList<String> fileNames =
+   * List<String> fileNames =
    *     new StringFormat("/home/usr/myname/{file_name}\n")
-   *         .scanAndCollectFrom(multiLineInput, toImmutableList());
+   *         .scanAndCollectFrom(multiLineInput, toList());
    * }</pre>
    *
    * @throws IllegalArgumentException if the format string doesn't have exactly one placeholder.
@@ -1029,9 +1029,9 @@ abstract class AbstractStringFormat {
    * <p>For example:
    *
    * <pre>{@code
-   * ImmutableMap<String, String> keyValues =
+   * Map<String, String> keyValues =
    *     new StringFormat("{{key}: {value}}")
-   *         .scanAndCollectFrom(input, toImmutableMap());
+   *         .scanAndCollectFrom(input, Collectors::toMap);
    * }</pre>
    *
    * <p>If you need to apply intermediary operations before collecting to the final result, consider
