@@ -8,6 +8,8 @@ import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -83,5 +85,15 @@ public class HowToUseStringFormatTest {
   @SuppressWarnings("StringFormatArgsCheck")
   SafeQuery mismatchingPlaceholderInSafeQueryTemplate(String name) {
     return SafeQuery.template("WHERE id = '{id}'").with(name);
+  }
+
+  @SuppressWarnings("StringUnformatArgsCheck")
+  List<String> failsScanningTwoPlaceholdersToList() {
+    return new StringFormat("{key}:{value}").scanAndCollectFrom("k:v", toList());
+  }
+
+  @SuppressWarnings("StringUnformatArgsCheck")
+  Map<String, String> failsScanningSinglePlaceholderToMap() {
+    return new StringFormat("({v})").scanAndCollectFrom("(1), (2)", Collectors::toMap);
   }
 }

@@ -69,7 +69,7 @@ import javax.lang.model.type.TypeKind;
     summary =
         "Checks that StringFormat.format() receives the expected number of arguments,"
             + " and the argument expressions look to be in the right order.",
-    link = "go/java-tips/024#safer-string-format-reuse",
+    link = "https://github.com/google/mug/wiki/StringFormat-Explained",
     linkType = LinkType.CUSTOM,
     severity = ERROR)
 @AutoService(BugChecker.class)

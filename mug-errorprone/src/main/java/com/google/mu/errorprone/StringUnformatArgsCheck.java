@@ -57,7 +57,7 @@ import com.google.mu.util.stream.BiStream;
     summary =
         "Checks that StringFormat and ResourceNamePattern callers pass in lambda"
             + " that accept the same number of placeholders as defined in the string format.",
-    link = "go/java-tips/024#compile-time-check",
+    link = "https://github.com/google/mug/wiki/StringFormat-Explained",
     linkType = LinkType.CUSTOM,
     severity = ERROR)
 @AutoService(BugChecker.class)

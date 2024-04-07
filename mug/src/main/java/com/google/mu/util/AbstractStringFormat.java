@@ -23,11 +23,14 @@ import static com.google.mu.util.stream.MoreCollectors.combining;
 import static com.google.mu.util.stream.MoreCollectors.onlyElement;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Objects.requireNonNull;
+import static java.util.function.Function.identity;
 
 import java.util.AbstractList;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -42,6 +45,7 @@ import com.google.mu.function.MapFrom5;
 import com.google.mu.function.MapFrom6;
 import com.google.mu.function.MapFrom7;
 import com.google.mu.function.MapFrom8;
+import com.google.mu.util.stream.BiCollector;
 import com.google.mu.util.stream.MoreStreams;
 
 /**
@@ -848,10 +852,7 @@ abstract class AbstractStringFormat {
    * {@code mapper} function, which will then be ignored in the result stream.
    */
   public final <R> Stream<R> scan(String input, Function<? super String, ? extends R> mapper) {
-    requireNonNull(input);
-    requireNonNull(mapper);
-    checkPlaceholderCount(1);
-    return scanAndCollect(input, onlyElement(mapper));
+    return scanExpecting(1, input, onlyElement(mapper));
   }
 
   /**
@@ -878,10 +879,7 @@ abstract class AbstractStringFormat {
    */
   public final <R> Stream<R> scan(
       String input, BiFunction<? super String, ? super String, ? extends R> mapper) {
-    requireNonNull(input);
-    requireNonNull(mapper);
-    checkPlaceholderCount(2);
-    return scanAndCollect(input, combining(mapper));
+    return scanExpecting(2, input, combining(mapper));
   }
 
   /**
@@ -907,10 +905,7 @@ abstract class AbstractStringFormat {
    * {@code mapper} function, which will then be ignored in the result stream.
    */
   public final <R> Stream<R> scan(String input, MapFrom3<? super String, ? extends R> mapper) {
-    requireNonNull(input);
-    requireNonNull(mapper);
-    checkPlaceholderCount(3);
-    return scanAndCollect(input, combining(mapper));
+    return scanExpecting(3, input, combining(mapper));
   }
 
   /**
@@ -928,10 +923,7 @@ abstract class AbstractStringFormat {
    * {@code mapper} function, which will then be ignored in the result stream.
    */
   public final <R> Stream<R> scan(String input, MapFrom4<? super String, ? extends R> mapper) {
-    requireNonNull(input);
-    requireNonNull(mapper);
-    checkPlaceholderCount(4);
-    return scanAndCollect(input, combining(mapper));
+    return scanExpecting(4, input, combining(mapper));
   }
 
   /**
@@ -949,10 +941,7 @@ abstract class AbstractStringFormat {
    * {@code mapper} function, which will then be ignored in the result stream.
    */
   public final <R> Stream<R> scan(String input, MapFrom5<? super String, ? extends R> mapper) {
-    requireNonNull(input);
-    requireNonNull(mapper);
-    checkPlaceholderCount(5);
-    return scanAndCollect(input, combining(mapper));
+    return scanExpecting(5, input, combining(mapper));
   }
 
   /**
@@ -970,10 +959,7 @@ abstract class AbstractStringFormat {
    * {@code mapper} function, which will then be ignored in the result stream.
    */
   public final <R> Stream<R> scan(String input, MapFrom6<? super String, ? extends R> mapper) {
-    requireNonNull(input);
-    requireNonNull(mapper);
-    checkPlaceholderCount(6);
-    return scanAndCollect(input, combining(mapper));
+    return scanExpecting(6, input, combining(mapper));
   }
 
   /**
@@ -993,10 +979,7 @@ abstract class AbstractStringFormat {
    * @since 7.2
    */
   public final <R> Stream<R> scan(String input, MapFrom7<? super String, ? extends R> mapper) {
-    requireNonNull(input);
-    requireNonNull(mapper);
-    checkPlaceholderCount(7);
-    return scanAndCollect(input, combining(mapper));
+    return scanExpecting(7, input, combining(mapper));
   }
 
   /**
@@ -1016,10 +999,61 @@ abstract class AbstractStringFormat {
    * @since 7.2
    */
   public final <R> Stream<R> scan(String input, MapFrom8<? super String, ? extends R> mapper) {
-    requireNonNull(input);
-    requireNonNull(mapper);
-    checkPlaceholderCount(8);
-    return scanAndCollect(input, combining(mapper));
+    return scanExpecting(8, input, combining(mapper));
+  }
+
+  /**
+   * Scans the {@code input} string and collects all matches of this string format using {@code
+   * collector}.
+   *
+   * <p>For example:
+   *
+   * <pre>{@code
+   * ImmutableList<String> fileNames =
+   *     new StringFormat("/home/usr/myname/{file_name}\n")
+   *         .scanAndCollectFrom(multiLineInput, toImmutableList());
+   * }</pre>
+   *
+   * @throws IllegalArgumentException if the format string doesn't have exactly one placeholder.
+   * @since 8.0
+   */
+  public final <R> R scanAndCollectFrom(String input, Collector<? super String, ?, R> collector) {
+    requireNonNull(collector);
+    return scan(input, identity()).collect(collector);
+  }
+
+  /**
+   * Scans the {@code input} string and collects all pairs of placeholders defined by this string
+   * format using {@code collector}.
+   *
+   * <p>For example:
+   *
+   * <pre>{@code
+   * ImmutableMap<String, String> keyValues =
+   *     new StringFormat("{{key}: {value}}")
+   *         .scanAndCollectFrom(input, toImmutableMap());
+   * }</pre>
+   *
+   * <p>If you need to apply intermediary operations before collecting to the final result, consider
+   * using {@code BiStream::toBiStream} like the following code:
+   *
+   * <pre>{@code
+   * ImmutableMap<UserId, EmailAddress> userEmails =
+   *     new StringFormat("{{key}: {value}}")
+   *         .scanAndCollectFrom(input, BiStream::toBiStream)
+   *         .mapKeys(UserId::of)
+   *         .mapValues(EmailAddress::parse)
+   *         .toMap();
+   * }</pre>
+   *
+   * @throws IllegalArgumentException if the format string doesn't have exactly two placeholders.
+   * @since 8.0
+   */
+  public final <R> R scanAndCollectFrom(
+      String input, BiCollector<? super String, ? super String, R> collector) {
+    requireNonNull(collector);
+    return scan(input, (l, r) -> new AbstractMap.SimpleImmutableEntry<>(l, r))
+        .collect(collector.collectorOf(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   /**
@@ -1156,7 +1190,10 @@ abstract class AbstractStringFormat {
         });
   }
 
-  private <R> Stream<R> scanAndCollect(String input, Collector<? super String, ?, R> collector) {
+  private <R> Stream<R> scanExpecting(
+      int cardinality, String input, Collector<? super String, ?, R> collector) {
+    requireNonNull(input);
+    checkPlaceholderCount(cardinality);
     return scan(input)
         .map(values -> values.stream().map(Substring.Match::toString).collect(collector))
         .filter(v -> v != null);

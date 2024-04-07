@@ -15,10 +15,12 @@ import org.junit.runner.RunWith;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.testing.ClassSanityTester;
 import com.google.common.truth.OptionalSubject;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.mu.util.StringFormat.Template;
+import com.google.mu.util.stream.BiCollector;
 import com.google.mu.util.stream.BiStream;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
@@ -1037,6 +1039,50 @@ public class StringFormatTest {
   }
 
   @Test
+  public void scanAndCollectFrom_singlePlaceholder() {
+    assertThat(new StringFormat("[id={id}]").scanAndCollectFrom("id=1", toImmutableList()))
+        .isEmpty();
+    assertThat(new StringFormat("[id={id}]").scanAndCollectFrom("[id=foo]", toImmutableList()))
+        .containsExactly("foo");
+    assertThat(
+            new StringFormat("[id={id}]").scanAndCollectFrom("[id=foo][id=bar]", toImmutableList()))
+        .containsExactly("foo", "bar")
+        .inOrder();
+  }
+
+  @SuppressWarnings("StringUnformatArgsCheck")
+  @Test
+  public void scanAndCollectFrom_singlePlaceholder_withBiCollector() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new StringFormat("[id={id}]").scanAndCollectFrom("id=1", toImmutableMap()));
+  }
+
+  @Test
+  public void scanAndCollectFrom_twoPlaceholders() {
+    assertThat(
+            new StringFormat("[id={id}, name={name}]").scanAndCollectFrom("id=1", toImmutableMap()))
+        .isEmpty();
+    assertThat(
+            new StringFormat("[id={id}, name={name}]")
+                .scanAndCollectFrom("[id=foo, name=bar]", toImmutableMap()))
+        .containsExactly("foo", "bar");
+    assertThat(
+            new StringFormat("[id={id}, name={name}]")
+                .scanAndCollectFrom("[id=foo, name=bar][id=zoo, name=boo]", toImmutableMap()))
+        .containsExactly("foo", "bar", "zoo", "boo")
+        .inOrder();
+  }
+
+  @SuppressWarnings("StringUnformatArgsCheck")
+  @Test
+  public void scanAndCollectFrom_twoPlaceholders_withCollector() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new StringFormat("[id={id}, name={name}]").scanAndCollectFrom("id=1", toImmutableList()));
+  }
+
+  @Test
   @SuppressWarnings("StringUnformatArgsCheck")
   public void replaceAllFrom_emptyTemplate_nonEmptyInput() {
     assertThat(new StringFormat("").replaceAllMatches(".", x -> "foo")).isEqualTo("foo.foo");
@@ -1820,6 +1866,10 @@ public class StringFormatTest {
     return assertWithMessage(pattern.toString())
         .about(OptionalSubject.optionals())
         .that(pattern.in(input).map(m -> m.before() + "[" + m + "]" + m.after()));
+  }
+
+  private static <K, V> BiCollector<K, V, ImmutableMap<K, V>> toImmutableMap() {
+    return ImmutableMap::toImmutableMap;
   }
 
   /** How we expect SPI providers to use {@link StringFormat#template}. */
