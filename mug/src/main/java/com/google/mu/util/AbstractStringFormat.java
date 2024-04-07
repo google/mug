@@ -1035,7 +1035,8 @@ abstract class AbstractStringFormat {
    * }</pre>
    *
    * <p>If you need to apply intermediary operations before collecting to the final result, consider
-   * using {@code BiStream::toBiStream} like the following code:
+   * using {@link com.google.mu.util.stream.BiStream#toBiStream(Function, Function) BiStream::toBiStream}
+   * like the following code:
    *
    * <pre>{@code
    * ImmutableMap<UserId, EmailAddress> userEmails =
