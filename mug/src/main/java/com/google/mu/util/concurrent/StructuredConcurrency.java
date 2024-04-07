@@ -32,7 +32,8 @@ public final class StructuredConcurrency {
   /**
    * Runs {@code a} and {@code b} concurrently in their own virtual threads
    * (i.e. structured concurrency).
-   * Once they are done, invoke the {@code join} function on the results.
+   * After all of the concurrent operations return successfully, invoke the {@code join} function
+   * on the results in the caller's thread.
    *
    * <p>For example: <pre>{@code
    * Result result = concurrently(
@@ -46,6 +47,8 @@ public final class StructuredConcurrency {
    * of this method.
    *
    * @throws InterruptedException if the current thread is interrupted while running
+   * @throws RuntimeException wrapping the original exception from the virtual thread
+   *     if any concurrent operation fails
    * @throws X thrown by the {@code join} function
    */
   public static <A, B, R, X extends Throwable> R concurrently(
@@ -62,7 +65,8 @@ public final class StructuredConcurrency {
   /**
    * Runs {@code a}, {@code b} and {@code c} concurrently in their own virtual threads
    * (i.e. structured concurrency).
-   * Once they are done, invoke the {@code join} function on the results.
+   * After all of the concurrent operations return successfully, invoke the {@code join} function
+   * on the results in the caller's thread.
    *
    * <p>For example: <pre>{@code
    * Result result = concurrently(
@@ -77,6 +81,8 @@ public final class StructuredConcurrency {
    * of this method.
    *
    * @throws InterruptedException if the current thread is interrupted while running
+   * @throws RuntimeException wrapping the original exception from the virtual thread
+   *     if any concurrent operation fails
    * @throws X thrown by the {@code join} function
    */
   public static <A, B, C, R, X extends Throwable> R concurrently(
@@ -94,7 +100,8 @@ public final class StructuredConcurrency {
   /**
    * Runs {@code a}, {@code b}, {@code c} and {@code d} concurrently in their own virtual threads
    * (i.e. structured concurrency).
-   * Once they are done, invoke the {@code join} function on the results.
+   * After all of the concurrent operations return successfully, invoke the {@code join} function
+   * on the results in the caller's thread.
    *
    * <p>For example: <pre>{@code
    * Result result = concurrently(
@@ -110,6 +117,8 @@ public final class StructuredConcurrency {
    * of this method.
    *
    * @throws InterruptedException if the current thread is interrupted while running
+   * @throws RuntimeException wrapping the original exception from the virtual thread
+   *     if any concurrent operation fails
    * @throws X thrown by the {@code join} function
    */
   public static <A, B, C, D, R, X extends Throwable> R concurrently(
@@ -128,7 +137,8 @@ public final class StructuredConcurrency {
   /**
    * Runs {@code a}, {@code b}, {@code c}, {@code d} and {@code e} concurrently
    * in their own virtual threads (i.e. structured concurrency).
-   * Once they are done, invoke the {@code join} function on the results.
+   * After all of the concurrent operations return successfully, invoke the {@code join} function
+   * on the results in the caller's thread.
    *
    * <p>For example: <pre>{@code
    * Result result = concurrently(
@@ -145,6 +155,8 @@ public final class StructuredConcurrency {
    * of this method.
    *
    * @throws InterruptedException if the current thread is interrupted while running
+   * @throws RuntimeException wrapping the original exception from the virtual thread
+   *     if any concurrent operation fails
    * @throws X thrown by the {@code join} function
    */
   public static <A, B, C, D, E, R, X extends Throwable> R concurrently(
@@ -166,7 +178,8 @@ public final class StructuredConcurrency {
   /**
    * Runs {@code a} and {@code b} concurrently and <em>uninterruptibly</em>
    * in their own virtual threads (i.e. structured concurrency).
-   * Once they are done, invoke the {@code join} function on the results.
+   * After all of the concurrent operations return successfully, invoke the {@code join} function
+   * on the results in the caller's thread.
    *
    * <p>For example: <pre>{@code
    * Result result = uninterruptibly(
@@ -179,6 +192,8 @@ public final class StructuredConcurrency {
    * exception tunneling (wrapped in a special unchecked exception) and handled by the caller
    * of this method.
    *
+   * @throws RuntimeException wrapping the original exception from the virtual thread
+   *     if any concurrent operation fails
    * @throws X thrown by the {@code join} function
    */
 
@@ -196,7 +211,8 @@ public final class StructuredConcurrency {
   /**
    * Runs {@code a}, {@code b} and {@code c} concurrently and <em>uninterruptibly</em>
    * in their own virtual threads (i.e. structured concurrency).
-   * Once they are done, invoke the {@code join} function on the results.
+   * After all of the concurrent operations return successfully, invoke the {@code join} function
+   * on the results in the caller's thread.
    *
    * <p>For example: <pre>{@code
    * Result result = uninterruptibly(
@@ -210,6 +226,8 @@ public final class StructuredConcurrency {
    * exception tunneling (wrapped in a special unchecked exception) and handled by the caller
    * of this method.
    *
+   * @throws RuntimeException wrapping the original exception from the virtual thread
+   *     if any concurrent operation fails
    * @throws X thrown by the {@code join} function
    */
   public static <A, B, C, R, X extends Throwable> R uninterruptibly(
@@ -228,7 +246,8 @@ public final class StructuredConcurrency {
   /**
    * Runs {@code a}, {@code b}, {@code c} and {@code d} concurrently and <em>uninterruptibly</em>
    * in their own virtual threads (i.e. structured concurrency).
-   * Once they are done, invoke the {@code join} function on the results.
+   * After all of the concurrent operations return successfully, invoke the {@code join} function
+   * on the results in the caller's thread.
    *
    * <p>For example: <pre>{@code
    * Result result = uninterruptibly(
@@ -243,6 +262,8 @@ public final class StructuredConcurrency {
    * exception tunneling (wrapped in a special unchecked exception) and handled by the caller
    * of this method.
    *
+   * @throws RuntimeException wrapping the original exception from the virtual thread
+   *     if any concurrent operation fails
    * @throws X thrown by the {@code join} function
    */
   public static <A, B, C, D, R, X extends Throwable> R uninterruptibly(
@@ -262,7 +283,8 @@ public final class StructuredConcurrency {
   /**
    * Runs {@code a}, {@code b}, {@code c}, {@code d} and {@code e} concurrently and
    * <em>uninterruptibly<em> in their own virtual threads (i.e. structured concurrency).
-   * Once they are done, invoke the {@code join} function on the results.
+   * After all of the concurrent operations return successfully, invoke the {@code join}
+   * function on the results in the caller's thread.
    *
    * <p>For example: <pre>{@code
    * Result result = uninterruptibly(
@@ -278,6 +300,8 @@ public final class StructuredConcurrency {
    * exception tunneling (wrapped in a special unchecked exception) and handled by the caller
    * of this method.
    *
+   * @throws RuntimeException wrapping the original exception from the virtual thread
+   *     if any concurrent operation fails
    * @throws X thrown by the {@code join} function
    */
   public static <A, B, C, D, E, R, X extends Throwable> R uninterruptibly(
