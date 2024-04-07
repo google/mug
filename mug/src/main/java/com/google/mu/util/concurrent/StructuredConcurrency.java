@@ -30,8 +30,7 @@ import java.util.stream.Stream;
  */
 public final class StructuredConcurrency {
   /**
-   * Runs {@code a} and {@code b} concurrently in their own virtual threads
-   * (i.e. structured concurrency).
+   * Runs {@code a} and {@code b} concurrently in their own virtual threads.
    * After all of the concurrent operations return successfully, invoke the {@code join} function
    * on the results in the caller's thread.
    *
@@ -64,8 +63,7 @@ public final class StructuredConcurrency {
   }
 
   /**
-   * Runs {@code a}, {@code b} and {@code c} concurrently in their own virtual threads
-   * (i.e. structured concurrency).
+   * Runs {@code a}, {@code b} and {@code c} concurrently in their own virtual threads.
    * After all of the concurrent operations return successfully, invoke the {@code join} function
    * on the results in the caller's thread.
    *
@@ -100,8 +98,7 @@ public final class StructuredConcurrency {
   }
 
   /**
-   * Runs {@code a}, {@code b}, {@code c} and {@code d} concurrently in their own virtual threads
-   * (i.e. structured concurrency).
+   * Runs {@code a}, {@code b}, {@code c} and {@code d} concurrently in their own virtual threads.
    * After all of the concurrent operations return successfully, invoke the {@code join} function
    * on the results in the caller's thread.
    *
@@ -139,7 +136,7 @@ public final class StructuredConcurrency {
 
   /**
    * Runs {@code a}, {@code b}, {@code c}, {@code d} and {@code e} concurrently
-   * in their own virtual threads (i.e. structured concurrency).
+   * in their own virtual threads.
    * After all of the concurrent operations return successfully, invoke the {@code join} function
    * on the results in the caller's thread.
    *
@@ -181,7 +178,7 @@ public final class StructuredConcurrency {
 
   /**
    * Runs {@code a} and {@code b} concurrently and <em>uninterruptibly</em>
-   * in their own virtual threads (i.e. structured concurrency).
+   * in their own virtual threads.
    * After all of the concurrent operations return successfully, invoke the {@code join} function
    * on the results in the caller's thread.
    *
@@ -214,7 +211,7 @@ public final class StructuredConcurrency {
 
   /**
    * Runs {@code a}, {@code b} and {@code c} concurrently and <em>uninterruptibly</em>
-   * in their own virtual threads (i.e. structured concurrency).
+   * in their own virtual threads.
    * After all of the concurrent operations return successfully, invoke the {@code join} function
    * on the results in the caller's thread.
    *
@@ -249,7 +246,7 @@ public final class StructuredConcurrency {
 
   /**
    * Runs {@code a}, {@code b}, {@code c} and {@code d} concurrently and <em>uninterruptibly</em>
-   * in their own virtual threads (i.e. structured concurrency).
+   * in their own virtual threads.
    * After all of the concurrent operations return successfully, invoke the {@code join} function
    * on the results in the caller's thread.
    *
@@ -286,7 +283,7 @@ public final class StructuredConcurrency {
 
   /**
    * Runs {@code a}, {@code b}, {@code c}, {@code d} and {@code e} concurrently and
-   * <em>uninterruptibly<em> in their own virtual threads (i.e. structured concurrency).
+   * <em>uninterruptibly<em> in their own virtual threads.
    * After all of the concurrent operations return successfully, invoke the {@code join}
    * function on the results in the caller's thread.
    *
