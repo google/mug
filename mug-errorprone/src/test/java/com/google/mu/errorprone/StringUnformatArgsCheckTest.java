@@ -610,7 +610,6 @@ public class StringUnformatArgsCheckTest {
         .doTest();
   }
 
-  @Ignore("scanAndCollectFrom() doesn't exist?")
   @Test
   public void scanAndCollectFromMethodChecked_withCollector() {
     helper
@@ -627,7 +626,6 @@ public class StringUnformatArgsCheckTest {
         .doTest();
   }
 
-  @Ignore("scanAndCollectFrom() doesn't exist?")
   @Test
   public void scanAndCollectFromMethodChecked_withBiCollector() {
     helper
@@ -644,7 +642,7 @@ public class StringUnformatArgsCheckTest {
         .doTest();
   }
 
-  @Test	
+  @Test
   public void methodWithoutMapperParameterIsIgnored() {
     helper
         .addSourceLines(
