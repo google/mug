@@ -57,10 +57,10 @@ public final class StructuredConcurrency {
       Supplier<A> a, Supplier<B> b, Join2<? super A, ? super B, R, X> join)
       throws InterruptedException, X {
     requireNonNull(join);
-    AtomicReference<A> aResult = new AtomicReference<>();
-    AtomicReference<B> bResult = new AtomicReference<>();
-    parallelizer().parallelize(Stream.of(toRun(a, aResult), toRun(b, bResult)));
-    return join.join(aResult.get(), bResult.get());
+    AtomicReference<A> r1 = new AtomicReference<>();
+    AtomicReference<B> r2 = new AtomicReference<>();
+    parallelizer().parallelize(Stream.of(toRun(a, r1), toRun(b, r2)));
+    return join.join(r1.get(), r2.get());
   }
 
   /**
@@ -95,11 +95,11 @@ public final class StructuredConcurrency {
       Join3<? super A, ? super B, ? super C, R, X> join)
       throws InterruptedException, X {
     requireNonNull(join);
-    AtomicReference<A> aResult = new AtomicReference<>();
-    AtomicReference<B> bResult = new AtomicReference<>();
-    AtomicReference<C> cResult = new AtomicReference<>();
-    parallelizer().parallelize(Stream.of(toRun(a, aResult), toRun(b, bResult), toRun(c, cResult)));
-    return join.join(aResult.get(), bResult.get(), cResult.get());
+    AtomicReference<A> r1 = new AtomicReference<>();
+    AtomicReference<B> r2 = new AtomicReference<>();
+    AtomicReference<C> r3 = new AtomicReference<>();
+    parallelizer().parallelize(Stream.of(toRun(a, r1), toRun(b, r2), toRun(c, r3)));
+    return join.join(r1.get(), r2.get(), r3.get());
   }
 
   /**
@@ -136,14 +136,12 @@ public final class StructuredConcurrency {
       Join4<? super A, ? super B, ? super C, ? super D, R, X> join)
       throws InterruptedException, X {
     requireNonNull(join);
-    AtomicReference<A> aResult = new AtomicReference<>();
-    AtomicReference<B> bResult = new AtomicReference<>();
-    AtomicReference<C> cResult = new AtomicReference<>();
-    AtomicReference<D> dResult = new AtomicReference<>();
-    parallelizer()
-        .parallelize(
-            Stream.of(toRun(a, aResult), toRun(b, bResult), toRun(c, cResult), toRun(d, dResult)));
-    return join.join(aResult.get(), bResult.get(), cResult.get(), dResult.get());
+    AtomicReference<A> r1 = new AtomicReference<>();
+    AtomicReference<B> r2 = new AtomicReference<>();
+    AtomicReference<C> r3 = new AtomicReference<>();
+    AtomicReference<D> r4 = new AtomicReference<>();
+    parallelizer().parallelize(Stream.of(toRun(a, r1), toRun(b, r2), toRun(c, r3), toRun(d, r4)));
+    return join.join(r1.get(), r2.get(), r3.get(), r4.get());
   }
 
   /**
@@ -182,20 +180,15 @@ public final class StructuredConcurrency {
       Join5<? super A, ? super B, ? super C, ? super D, ? super E, R, X> join)
       throws InterruptedException, X {
     requireNonNull(join);
-    AtomicReference<A> aResult = new AtomicReference<>();
-    AtomicReference<B> bResult = new AtomicReference<>();
-    AtomicReference<C> cResult = new AtomicReference<>();
-    AtomicReference<D> dResult = new AtomicReference<>();
-    AtomicReference<E> eResult = new AtomicReference<>();
+    AtomicReference<A> r1 = new AtomicReference<>();
+    AtomicReference<B> r2 = new AtomicReference<>();
+    AtomicReference<C> r3 = new AtomicReference<>();
+    AtomicReference<D> r4 = new AtomicReference<>();
+    AtomicReference<E> r5 = new AtomicReference<>();
     parallelizer()
         .parallelize(
-            Stream.of(
-                toRun(a, aResult),
-                toRun(b, bResult),
-                toRun(c, cResult),
-                toRun(d, dResult),
-                toRun(e, eResult)));
-    return join.join(aResult.get(), bResult.get(), cResult.get(), dResult.get(), eResult.get());
+            Stream.of(toRun(a, r1), toRun(b, r2), toRun(c, r3), toRun(d, r4), toRun(e, r5)));
+    return join.join(r1.get(), r2.get(), r3.get(), r4.get(), r5.get());
   }
 
   /**
@@ -224,10 +217,10 @@ public final class StructuredConcurrency {
       Supplier<A> a, Supplier<B> b, Join2<? super A, ? super B, R, X> join)
       throws X {
     requireNonNull(join);
-    AtomicReference<A> aResult = new AtomicReference<>();
-    AtomicReference<B> bResult = new AtomicReference<>();
-    parallelizer().parallelizeUninterruptibly(Stream.of(toRun(a, aResult), toRun(b, bResult)));
-    return join.join(aResult.get(), bResult.get());
+    AtomicReference<A> r1 = new AtomicReference<>();
+    AtomicReference<B> r2 = new AtomicReference<>();
+    parallelizer().parallelizeUninterruptibly(Stream.of(toRun(a, r1), toRun(b, r2)));
+    return join.join(r1.get(), r2.get());
   }
 
   /**
@@ -260,13 +253,11 @@ public final class StructuredConcurrency {
       Join3<? super A, ? super B, ? super C, R, X> join)
       throws X {
     requireNonNull(join);
-    AtomicReference<A> aResult = new AtomicReference<>();
-    AtomicReference<B> bResult = new AtomicReference<>();
-    AtomicReference<C> cResult = new AtomicReference<>();
-    parallelizer()
-        .parallelizeUninterruptibly(
-            Stream.of(toRun(a, aResult), toRun(b, bResult), toRun(c, cResult)));
-    return join.join(aResult.get(), bResult.get(), cResult.get());
+    AtomicReference<A> r1 = new AtomicReference<>();
+    AtomicReference<B> r2 = new AtomicReference<>();
+    AtomicReference<C> r3 = new AtomicReference<>();
+    parallelizer().parallelizeUninterruptibly(Stream.of(toRun(a, r1), toRun(b, r2), toRun(c, r3)));
+    return join.join(r1.get(), r2.get(), r3.get());
   }
 
   /**
@@ -301,14 +292,14 @@ public final class StructuredConcurrency {
       Join4<? super A, ? super B, ? super C, ? super D, R, X> join)
       throws X {
     requireNonNull(join);
-    AtomicReference<A> aResult = new AtomicReference<>();
-    AtomicReference<B> bResult = new AtomicReference<>();
-    AtomicReference<C> cResult = new AtomicReference<>();
-    AtomicReference<D> dResult = new AtomicReference<>();
+    AtomicReference<A> r1 = new AtomicReference<>();
+    AtomicReference<B> r2 = new AtomicReference<>();
+    AtomicReference<C> r3 = new AtomicReference<>();
+    AtomicReference<D> r4 = new AtomicReference<>();
     parallelizer()
         .parallelizeUninterruptibly(
-            Stream.of(toRun(a, aResult), toRun(b, bResult), toRun(c, cResult), toRun(d, dResult)));
-    return join.join(aResult.get(), bResult.get(), cResult.get(), dResult.get());
+            Stream.of(toRun(a, r1), toRun(b, r2), toRun(c, r3), toRun(d, r4)));
+    return join.join(r1.get(), r2.get(), r3.get(), r4.get());
   }
 
   /**
@@ -345,20 +336,15 @@ public final class StructuredConcurrency {
       Join5<? super A, ? super B, ? super C, ? super D, ? super E, R, X> join)
       throws X {
     requireNonNull(join);
-    AtomicReference<A> aResult = new AtomicReference<>();
-    AtomicReference<B> bResult = new AtomicReference<>();
-    AtomicReference<C> cResult = new AtomicReference<>();
-    AtomicReference<D> dResult = new AtomicReference<>();
-    AtomicReference<E> eResult = new AtomicReference<>();
+    AtomicReference<A> r1 = new AtomicReference<>();
+    AtomicReference<B> r2 = new AtomicReference<>();
+    AtomicReference<C> r3 = new AtomicReference<>();
+    AtomicReference<D> r4 = new AtomicReference<>();
+    AtomicReference<E> r5 = new AtomicReference<>();
     parallelizer()
         .parallelizeUninterruptibly(
-            Stream.of(
-                toRun(a, aResult),
-                toRun(b, bResult),
-                toRun(c, cResult),
-                toRun(d, dResult),
-                toRun(e, eResult)));
-    return join.join(aResult.get(), bResult.get(), cResult.get(), dResult.get(), eResult.get());
+            Stream.of(toRun(a, r1), toRun(b, r2), toRun(c, r3), toRun(d, r4), toRun(e, r5)));
+    return join.join(r1.get(), r2.get(), r3.get(), r4.get(), r5.get());
   }
 
   /** Function to join two results from concurrent computation. */
