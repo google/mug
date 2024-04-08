@@ -30,11 +30,13 @@ import java.util.stream.Stream;
  */
 public final class StructuredConcurrency {
   /**
-   * Runs {@code a} and {@code b} concurrently in their own virtual threads.
-   * After all of the concurrent operations return successfully, invoke the {@code join} function
-   * on the results in the caller's thread.
+   * Runs {@code a} and {@code b} concurrently in their own virtual threads. After all of the
+   * concurrent operations return successfully, invoke the {@code join} function on the results in
+   * the caller's thread.
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * Result result = concurrently(
    *   () -> fetchArm(),
    *   () -> fetchLeg(),
@@ -42,32 +44,33 @@ public final class StructuredConcurrency {
    * }</pre>
    *
    * <p>Exceptions thrown by these concurrent suppliers are expected to be propagated through
-   * exception tunneling (wrapped in a special unchecked exception) and handled by the caller
-   * of this method.
+   * exception tunneling (wrapped in a special unchecked exception) and handled by the caller of
+   * this method.
    *
    * @throws InterruptedException if the current thread is interrupted while waiting for the
    *     concurrent operations to complete. The unfinished concurrent operations will be canceled.
-   * @throws RuntimeException wrapping the original exception from the virtual thread
-   *     if any concurrent operation failed
+   * @throws RuntimeException wrapping the original exception from the virtual thread if any
+   *     concurrent operation failed
    * @throws X thrown by the {@code join} function
    */
   public static <A, B, R, X extends Throwable> R concurrently(
       Supplier<A> a, Supplier<B> b, Join2<? super A, ? super B, R, X> join)
       throws InterruptedException, X {
     requireNonNull(join);
-    AtomicReference<A> aResult = new AtomicReference<>();
-    AtomicReference<B> bResult = new AtomicReference<>();
-    virtualThreadParallelizer(2)
-        .parallelize(Stream.of(toRun(a, aResult), toRun(b, bResult)));
-    return join.join(aResult.get(), bResult.get());
+    AtomicReference<A> r1 = new AtomicReference<>();
+    AtomicReference<B> r2 = new AtomicReference<>();
+    parallelizer().parallelize(Stream.of(toRun(a, r1), toRun(b, r2)));
+    return join.join(r1.get(), r2.get());
   }
 
   /**
-   * Runs {@code a}, {@code b} and {@code c} concurrently in their own virtual threads.
-   * After all of the concurrent operations return successfully, invoke the {@code join} function
-   * on the results in the caller's thread.
+   * Runs {@code a}, {@code b} and {@code c} concurrently in their own virtual threads. After all of
+   * the concurrent operations return successfully, invoke the {@code join} function on the results
+   * in the caller's thread.
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * Result result = concurrently(
    *   () -> fetchHead(),
    *   () -> fetchArm(),
@@ -76,33 +79,37 @@ public final class StructuredConcurrency {
    * }</pre>
    *
    * <p>Exceptions thrown by these concurrent suppliers are expected to be propagated through
-   * exception tunneling (wrapped in a special unchecked exception) and handled by the caller
-   * of this method.
+   * exception tunneling (wrapped in a special unchecked exception) and handled by the caller of
+   * this method.
    *
    * @throws InterruptedException if the current thread is interrupted while waiting for the
    *     concurrent operations to complete. The unfinished concurrent operations will be canceled.
-   * @throws RuntimeException wrapping the original exception from the virtual thread
-   *     if any concurrent operation failed
+   * @throws RuntimeException wrapping the original exception from the virtual thread if any
+   *     concurrent operation failed
    * @throws X thrown by the {@code join} function
    */
   public static <A, B, C, R, X extends Throwable> R concurrently(
-      Supplier<A> a, Supplier<B> b, Supplier<C> c,
-      Join3<? super A, ? super B, ? super C, R, X> join) throws InterruptedException, X {
+      Supplier<A> a,
+      Supplier<B> b,
+      Supplier<C> c,
+      Join3<? super A, ? super B, ? super C, R, X> join)
+      throws InterruptedException, X {
     requireNonNull(join);
-    AtomicReference<A> aResult = new AtomicReference<>();
-    AtomicReference<B> bResult = new AtomicReference<>();
-    AtomicReference<C> cResult = new AtomicReference<>();
-    virtualThreadParallelizer(3)
-        .parallelize(Stream.of(toRun(a, aResult), toRun(b, bResult), toRun(c, cResult)));
-    return join.join(aResult.get(), bResult.get(), cResult.get());
+    AtomicReference<A> r1 = new AtomicReference<>();
+    AtomicReference<B> r2 = new AtomicReference<>();
+    AtomicReference<C> r3 = new AtomicReference<>();
+    parallelizer().parallelize(Stream.of(toRun(a, r1), toRun(b, r2), toRun(c, r3)));
+    return join.join(r1.get(), r2.get(), r3.get());
   }
 
   /**
    * Runs {@code a}, {@code b}, {@code c} and {@code d} concurrently in their own virtual threads.
-   * After all of the concurrent operations return successfully, invoke the {@code join} function
-   * on the results in the caller's thread.
+   * After all of the concurrent operations return successfully, invoke the {@code join} function on
+   * the results in the caller's thread.
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * Result result = concurrently(
    *   () -> fetchHead(),
    *   () -> fetchShoulder(),
@@ -112,35 +119,39 @@ public final class StructuredConcurrency {
    * }</pre>
    *
    * <p>Exceptions thrown by these concurrent suppliers are expected to be propagated through
-   * exception tunneling (wrapped in a special unchecked exception) and handled by the caller
-   * of this method.
+   * exception tunneling (wrapped in a special unchecked exception) and handled by the caller of
+   * this method.
    *
    * @throws InterruptedException if the current thread is interrupted while waiting for the
    *     concurrent operations to complete. The unfinished concurrent operations will be canceled.
-   * @throws RuntimeException wrapping the original exception from the virtual thread
-   *     if any concurrent operation failed
+   * @throws RuntimeException wrapping the original exception from the virtual thread if any
+   *     concurrent operation failed
    * @throws X thrown by the {@code join} function
    */
   public static <A, B, C, D, R, X extends Throwable> R concurrently(
-      Supplier<A> a, Supplier<B> b, Supplier<C> c, Supplier<D> d,
-      Join4<? super A, ? super B, ? super C, ? super D, R, X> join) throws InterruptedException, X {
+      Supplier<A> a,
+      Supplier<B> b,
+      Supplier<C> c,
+      Supplier<D> d,
+      Join4<? super A, ? super B, ? super C, ? super D, R, X> join)
+      throws InterruptedException, X {
     requireNonNull(join);
-    AtomicReference<A> aResult = new AtomicReference<>();
-    AtomicReference<B> bResult = new AtomicReference<>();
-    AtomicReference<C> cResult = new AtomicReference<>();
-    AtomicReference<D> dResult = new AtomicReference<>();
-    virtualThreadParallelizer(4)
-        .parallelize(Stream.of(toRun(a, aResult), toRun(b, bResult), toRun(c, cResult)));
-    return join.join(aResult.get(), bResult.get(), cResult.get(), dResult.get());
+    AtomicReference<A> r1 = new AtomicReference<>();
+    AtomicReference<B> r2 = new AtomicReference<>();
+    AtomicReference<C> r3 = new AtomicReference<>();
+    AtomicReference<D> r4 = new AtomicReference<>();
+    parallelizer().parallelize(Stream.of(toRun(a, r1), toRun(b, r2), toRun(c, r3), toRun(d, r4)));
+    return join.join(r1.get(), r2.get(), r3.get(), r4.get());
   }
 
   /**
-   * Runs {@code a}, {@code b}, {@code c}, {@code d} and {@code e} concurrently
-   * in their own virtual threads.
-   * After all of the concurrent operations return successfully, invoke the {@code join} function
-   * on the results in the caller's thread.
+   * Runs {@code a}, {@code b}, {@code c}, {@code d} and {@code e} concurrently in their own virtual
+   * threads. After all of the concurrent operations return successfully, invoke the {@code join}
+   * function on the results in the caller's thread.
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * Result result = concurrently(
    *   () -> fetchHead(),
    *   () -> fetchShoulder(),
@@ -151,38 +162,43 @@ public final class StructuredConcurrency {
    * }</pre>
    *
    * <p>Exceptions thrown by these concurrent suppliers are expected to be propagated through
-   * exception tunneling (wrapped in a special unchecked exception) and handled by the caller
-   * of this method.
+   * exception tunneling (wrapped in a special unchecked exception) and handled by the caller of
+   * this method.
    *
    * @throws InterruptedException if the current thread is interrupted while waiting for the
    *     concurrent operations to complete. The unfinished concurrent operations will be canceled.
-   * @throws RuntimeException wrapping the original exception from the virtual thread
-   *     if any concurrent operation failed
+   * @throws RuntimeException wrapping the original exception from the virtual thread if any
+   *     concurrent operation failed
    * @throws X thrown by the {@code join} function
    */
   public static <A, B, C, D, E, R, X extends Throwable> R concurrently(
-      Supplier<A> a, Supplier<B> b, Supplier<C> c, Supplier<D> d, Supplier<E> e,
+      Supplier<A> a,
+      Supplier<B> b,
+      Supplier<C> c,
+      Supplier<D> d,
+      Supplier<E> e,
       Join5<? super A, ? super B, ? super C, ? super D, ? super E, R, X> join)
       throws InterruptedException, X {
     requireNonNull(join);
-    AtomicReference<A> aResult = new AtomicReference<>();
-    AtomicReference<B> bResult = new AtomicReference<>();
-    AtomicReference<C> cResult = new AtomicReference<>();
-    AtomicReference<D> dResult = new AtomicReference<>();
-    AtomicReference<E> eResult = new AtomicReference<>();
-    virtualThreadParallelizer(5)
+    AtomicReference<A> r1 = new AtomicReference<>();
+    AtomicReference<B> r2 = new AtomicReference<>();
+    AtomicReference<C> r3 = new AtomicReference<>();
+    AtomicReference<D> r4 = new AtomicReference<>();
+    AtomicReference<E> r5 = new AtomicReference<>();
+    parallelizer()
         .parallelize(
-            Stream.of(toRun(a, aResult), toRun(b, bResult), toRun(c, cResult), toRun(e, eResult)));
-    return join.join(aResult.get(), bResult.get(), cResult.get(), dResult.get(), eResult.get());
+            Stream.of(toRun(a, r1), toRun(b, r2), toRun(c, r3), toRun(d, r4), toRun(e, r5)));
+    return join.join(r1.get(), r2.get(), r3.get(), r4.get(), r5.get());
   }
 
   /**
-   * Runs {@code a} and {@code b} concurrently and <em>uninterruptibly</em>
-   * in their own virtual threads.
-   * After all of the concurrent operations return successfully, invoke the {@code join} function
-   * on the results in the caller's thread.
+   * Runs {@code a} and {@code b} concurrently and <em>uninterruptibly</em> in their own virtual
+   * threads. After all of the concurrent operations return successfully, invoke the {@code join}
+   * function on the results in the caller's thread.
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * Result result = uninterruptibly(
    *   () -> fetchArm(),
    *   () -> fetchLeg(),
@@ -190,32 +206,31 @@ public final class StructuredConcurrency {
    * }</pre>
    *
    * <p>Exceptions thrown by these concurrent suppliers are expected to be propagated through
-   * exception tunneling (wrapped in a special unchecked exception) and handled by the caller
-   * of this method.
+   * exception tunneling (wrapped in a special unchecked exception) and handled by the caller of
+   * this method.
    *
-   * @throws RuntimeException wrapping the original exception from the virtual thread
-   *     if any concurrent operation failed
+   * @throws RuntimeException wrapping the original exception from the virtual thread if any
+   *     concurrent operation failed
    * @throws X thrown by the {@code join} function
    */
-
   public static <A, B, R, X extends Throwable> R uninterruptibly(
       Supplier<A> a, Supplier<B> b, Join2<? super A, ? super B, R, X> join)
       throws X {
     requireNonNull(join);
-    AtomicReference<A> aResult = new AtomicReference<>();
-    AtomicReference<B> bResult = new AtomicReference<>();
-    virtualThreadParallelizer(2)
-        .parallelizeUninterruptibly(Stream.of(toRun(a, aResult), toRun(b, bResult)));
-    return join.join(aResult.get(), bResult.get());
+    AtomicReference<A> r1 = new AtomicReference<>();
+    AtomicReference<B> r2 = new AtomicReference<>();
+    parallelizer().parallelizeUninterruptibly(Stream.of(toRun(a, r1), toRun(b, r2)));
+    return join.join(r1.get(), r2.get());
   }
 
   /**
-   * Runs {@code a}, {@code b} and {@code c} concurrently and <em>uninterruptibly</em>
-   * in their own virtual threads.
-   * After all of the concurrent operations return successfully, invoke the {@code join} function
-   * on the results in the caller's thread.
+   * Runs {@code a}, {@code b} and {@code c} concurrently and <em>uninterruptibly</em> in their own
+   * virtual threads. After all of the concurrent operations return successfully, invoke the {@code
+   * join} function on the results in the caller's thread.
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * Result result = uninterruptibly(
    *   () -> fetchHead(),
    *   () -> fetchArm(),
@@ -224,33 +239,35 @@ public final class StructuredConcurrency {
    * }</pre>
    *
    * <p>Exceptions thrown by these concurrent suppliers are expected to be propagated through
-   * exception tunneling (wrapped in a special unchecked exception) and handled by the caller
-   * of this method.
+   * exception tunneling (wrapped in a special unchecked exception) and handled by the caller of
+   * this method.
    *
-   * @throws RuntimeException wrapping the original exception from the virtual thread
-   *     if any concurrent operation failed
+   * @throws RuntimeException wrapping the original exception from the virtual thread if any
+   *     concurrent operation failed
    * @throws X thrown by the {@code join} function
    */
   public static <A, B, C, R, X extends Throwable> R uninterruptibly(
-      Supplier<A> a, Supplier<B> b, Supplier<C> c,
-      Join3<? super A, ? super B, ? super C, R, X> join) throws InterruptedException, X {
+      Supplier<A> a,
+      Supplier<B> b,
+      Supplier<C> c,
+      Join3<? super A, ? super B, ? super C, R, X> join)
+      throws X {
     requireNonNull(join);
-    AtomicReference<A> aResult = new AtomicReference<>();
-    AtomicReference<B> bResult = new AtomicReference<>();
-    AtomicReference<C> cResult = new AtomicReference<>();
-    virtualThreadParallelizer(3)
-        .parallelizeUninterruptibly(
-            Stream.of(toRun(a, aResult), toRun(b, bResult), toRun(c, cResult)));
-    return join.join(aResult.get(), bResult.get(), cResult.get());
+    AtomicReference<A> r1 = new AtomicReference<>();
+    AtomicReference<B> r2 = new AtomicReference<>();
+    AtomicReference<C> r3 = new AtomicReference<>();
+    parallelizer().parallelizeUninterruptibly(Stream.of(toRun(a, r1), toRun(b, r2), toRun(c, r3)));
+    return join.join(r1.get(), r2.get(), r3.get());
   }
 
   /**
-   * Runs {@code a}, {@code b}, {@code c} and {@code d} concurrently and <em>uninterruptibly</em>
-   * in their own virtual threads.
-   * After all of the concurrent operations return successfully, invoke the {@code join} function
-   * on the results in the caller's thread.
+   * Runs {@code a}, {@code b}, {@code c} and {@code d} concurrently and <em>uninterruptibly</em> in
+   * their own virtual threads. After all of the concurrent operations return successfully, invoke
+   * the {@code join} function on the results in the caller's thread.
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * Result result = uninterruptibly(
    *   () -> fetchHead(),
    *   () -> fetchShoulder(),
@@ -260,34 +277,39 @@ public final class StructuredConcurrency {
    * }</pre>
    *
    * <p>Exceptions thrown by these concurrent suppliers are expected to be propagated through
-   * exception tunneling (wrapped in a special unchecked exception) and handled by the caller
-   * of this method.
+   * exception tunneling (wrapped in a special unchecked exception) and handled by the caller of
+   * this method.
    *
-   * @throws RuntimeException wrapping the original exception from the virtual thread
-   *     if any concurrent operation failed
+   * @throws RuntimeException wrapping the original exception from the virtual thread if any
+   *     concurrent operation failed
    * @throws X thrown by the {@code join} function
    */
   public static <A, B, C, D, R, X extends Throwable> R uninterruptibly(
-      Supplier<A> a, Supplier<B> b, Supplier<C> c, Supplier<D> d,
-      Join4<? super A, ? super B, ? super C, ? super D, R, X> join) throws X {
+      Supplier<A> a,
+      Supplier<B> b,
+      Supplier<C> c,
+      Supplier<D> d,
+      Join4<? super A, ? super B, ? super C, ? super D, R, X> join)
+      throws X {
     requireNonNull(join);
-    AtomicReference<A> aResult = new AtomicReference<>();
-    AtomicReference<B> bResult = new AtomicReference<>();
-    AtomicReference<C> cResult = new AtomicReference<>();
-    AtomicReference<D> dResult = new AtomicReference<>();
-    virtualThreadParallelizer(4)
+    AtomicReference<A> r1 = new AtomicReference<>();
+    AtomicReference<B> r2 = new AtomicReference<>();
+    AtomicReference<C> r3 = new AtomicReference<>();
+    AtomicReference<D> r4 = new AtomicReference<>();
+    parallelizer()
         .parallelizeUninterruptibly(
-            Stream.of(toRun(a, aResult), toRun(b, bResult), toRun(c, cResult)));
-    return join.join(aResult.get(), bResult.get(), cResult.get(), dResult.get());
+            Stream.of(toRun(a, r1), toRun(b, r2), toRun(c, r3), toRun(d, r4)));
+    return join.join(r1.get(), r2.get(), r3.get(), r4.get());
   }
 
   /**
    * Runs {@code a}, {@code b}, {@code c}, {@code d} and {@code e} concurrently and
-   * <em>uninterruptibly<em> in their own virtual threads.
-   * After all of the concurrent operations return successfully, invoke the {@code join}
-   * function on the results in the caller's thread.
+   * <em>uninterruptibly<em> in their own virtual threads. After all of the concurrent operations
+   * return successfully, invoke the {@code join} function on the results in the caller's thread.
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * Result result = uninterruptibly(
    *   () -> fetchHead(),
    *   () -> fetchShoulder(),
@@ -298,27 +320,31 @@ public final class StructuredConcurrency {
    * }</pre>
    *
    * <p>Exceptions thrown by these concurrent suppliers are expected to be propagated through
-   * exception tunneling (wrapped in a special unchecked exception) and handled by the caller
-   * of this method.
+   * exception tunneling (wrapped in a special unchecked exception) and handled by the caller of
+   * this method.
    *
-   * @throws RuntimeException wrapping the original exception from the virtual thread
-   *     if any concurrent operation failed
+   * @throws RuntimeException wrapping the original exception from the virtual thread if any
+   *     concurrent operation failed
    * @throws X thrown by the {@code join} function
    */
   public static <A, B, C, D, E, R, X extends Throwable> R uninterruptibly(
-      Supplier<A> a, Supplier<B> b, Supplier<C> c, Supplier<D> d, Supplier<E> e,
+      Supplier<A> a,
+      Supplier<B> b,
+      Supplier<C> c,
+      Supplier<D> d,
+      Supplier<E> e,
       Join5<? super A, ? super B, ? super C, ? super D, ? super E, R, X> join)
       throws X {
     requireNonNull(join);
-    AtomicReference<A> aResult = new AtomicReference<>();
-    AtomicReference<B> bResult = new AtomicReference<>();
-    AtomicReference<C> cResult = new AtomicReference<>();
-    AtomicReference<D> dResult = new AtomicReference<>();
-    AtomicReference<E> eResult = new AtomicReference<>();
-    virtualThreadParallelizer(5)
+    AtomicReference<A> r1 = new AtomicReference<>();
+    AtomicReference<B> r2 = new AtomicReference<>();
+    AtomicReference<C> r3 = new AtomicReference<>();
+    AtomicReference<D> r4 = new AtomicReference<>();
+    AtomicReference<E> r5 = new AtomicReference<>();
+    parallelizer()
         .parallelizeUninterruptibly(
-            Stream.of(toRun(a, aResult), toRun(b, bResult), toRun(c, cResult), toRun(e, eResult)));
-    return join.join(aResult.get(), bResult.get(), cResult.get(), dResult.get(), eResult.get());
+            Stream.of(toRun(a, r1), toRun(b, r2), toRun(c, r3), toRun(d, r4), toRun(e, r5)));
+    return join.join(r1.get(), r2.get(), r3.get(), r4.get(), r5.get());
   }
 
   /** Function to join two results from concurrent computation. */
@@ -344,6 +370,10 @@ public final class StructuredConcurrency {
   private static <T> Runnable toRun(Supplier<T> supplier, AtomicReference<? super T> result) {
     requireNonNull(supplier);
     return () -> result.set(supplier.get());
+  }
+
+  private static Parallelizer parallelizer() {
+    return virtualThreadParallelizer(100);  // a sufficiently large parallelism
   }
 
   private StructuredConcurrency() {}
