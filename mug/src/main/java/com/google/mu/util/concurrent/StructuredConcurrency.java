@@ -26,8 +26,6 @@ import java.util.stream.Stream;
  * Convenient utilities to help with structured concurrency on top of an {@link ExecutorService}
  * (most preferably with virtual threads).
  *
- * <p>Requires Java 21+.
- *
  * @since 8.0
  */
 public final class StructuredConcurrency {
