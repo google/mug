@@ -40,7 +40,7 @@ public final class StructuredConcurrency {
     return new StructuredConcurrency(executor);
   }
 
-  /*
+  /**
    * Constructor using the default virtual thread pool to run the concurrent operations.
    *
    * <p>Requires Java 21+
