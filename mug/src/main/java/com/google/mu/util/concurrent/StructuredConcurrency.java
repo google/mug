@@ -17,18 +17,40 @@ package com.google.mu.util.concurrent;
 import static com.google.mu.util.concurrent.Parallelizer.virtualThreadParallelizer;
 import static java.util.Objects.requireNonNull;
 
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
- * Convenient utilities to help with structured concurrency on top of virtual threads.
+ * Convenient utilities to help with structured concurrency on top of an {@link ExecutorService}
+ * (most preferably with virtual threads).
  *
  * <p>Requires Java 21+.
  *
  * @since 8.0
  */
 public final class StructuredConcurrency {
+  private final Parallelizer parallelizer;
+
+  /**
+   * Returns an instance using {@code executor} to run concurrent operations.
+   * Note that if {@code executor} doesn't use virtual threads, it can cause throughput issues
+   * by blocking in one of the platform threads.
+   */
+  public static StructuredConcurrency using(ExecutorService executor) {
+    return new StructuredConcurrency(executor);
+  }
+
+  /* Constructor using the default virtual thread pool to run the concurrent operations. */
+  public StructuredConcurrency() {
+    this.parallelizer = virtualThreadParallelizer(100);
+  }
+
+  private StructuredConcurrency(ExecutorService executor) {
+    this.parallelizer = new Parallelizer(executor, 100);
+  }
+
   /**
    * Runs {@code a} and {@code b} concurrently in their own virtual threads. After all of the
    * concurrent operations return successfully, invoke the {@code join} function on the results in
@@ -37,7 +59,8 @@ public final class StructuredConcurrency {
    * <p>For example:
    *
    * <pre>{@code
-   * Result result = concurrently(
+   * StructuredConcurrency fanout = ...;
+   * Result result = fanout.concurrently(
    *   () -> fetchArm(),
    *   () -> fetchLeg(),
    *   (arm, leg) -> new Result(arm, leg));
@@ -53,13 +76,13 @@ public final class StructuredConcurrency {
    *     concurrent operation failed
    * @throws X thrown by the {@code join} function
    */
-  public static <A, B, R, X extends Throwable> R concurrently(
+  public <A, B, R, X extends Throwable> R concurrently(
       Supplier<A> a, Supplier<B> b, Join2<? super A, ? super B, R, X> join)
       throws InterruptedException, X {
     requireNonNull(join);
     AtomicReference<A> r1 = new AtomicReference<>();
     AtomicReference<B> r2 = new AtomicReference<>();
-    parallelizer().parallelize(Stream.of(toRun(a, r1), toRun(b, r2)));
+    parallelizer.parallelize(Stream.of(toRun(a, r1), toRun(b, r2)));
     return join.join(r1.get(), r2.get());
   }
 
@@ -71,7 +94,8 @@ public final class StructuredConcurrency {
    * <p>For example:
    *
    * <pre>{@code
-   * Result result = concurrently(
+   * StructuredConcurrency fanout = ...;
+   * Result result = fanout.concurrently(
    *   () -> fetchHead(),
    *   () -> fetchArm(),
    *   () -> fetchLeg(),
@@ -88,7 +112,7 @@ public final class StructuredConcurrency {
    *     concurrent operation failed
    * @throws X thrown by the {@code join} function
    */
-  public static <A, B, C, R, X extends Throwable> R concurrently(
+  public <A, B, C, R, X extends Throwable> R concurrently(
       Supplier<A> a,
       Supplier<B> b,
       Supplier<C> c,
@@ -98,7 +122,7 @@ public final class StructuredConcurrency {
     AtomicReference<A> r1 = new AtomicReference<>();
     AtomicReference<B> r2 = new AtomicReference<>();
     AtomicReference<C> r3 = new AtomicReference<>();
-    parallelizer().parallelize(Stream.of(toRun(a, r1), toRun(b, r2), toRun(c, r3)));
+    parallelizer.parallelize(Stream.of(toRun(a, r1), toRun(b, r2), toRun(c, r3)));
     return join.join(r1.get(), r2.get(), r3.get());
   }
 
@@ -110,7 +134,8 @@ public final class StructuredConcurrency {
    * <p>For example:
    *
    * <pre>{@code
-   * Result result = concurrently(
+   * StructuredConcurrency fanout = ...;
+   * Result result = fanout.concurrently(
    *   () -> fetchHead(),
    *   () -> fetchShoulder(),
    *   () -> fetchArm(),
@@ -128,7 +153,7 @@ public final class StructuredConcurrency {
    *     concurrent operation failed
    * @throws X thrown by the {@code join} function
    */
-  public static <A, B, C, D, R, X extends Throwable> R concurrently(
+  public <A, B, C, D, R, X extends Throwable> R concurrently(
       Supplier<A> a,
       Supplier<B> b,
       Supplier<C> c,
@@ -140,7 +165,7 @@ public final class StructuredConcurrency {
     AtomicReference<B> r2 = new AtomicReference<>();
     AtomicReference<C> r3 = new AtomicReference<>();
     AtomicReference<D> r4 = new AtomicReference<>();
-    parallelizer().parallelize(Stream.of(toRun(a, r1), toRun(b, r2), toRun(c, r3), toRun(d, r4)));
+    parallelizer.parallelize(Stream.of(toRun(a, r1), toRun(b, r2), toRun(c, r3), toRun(d, r4)));
     return join.join(r1.get(), r2.get(), r3.get(), r4.get());
   }
 
@@ -152,7 +177,8 @@ public final class StructuredConcurrency {
    * <p>For example:
    *
    * <pre>{@code
-   * Result result = concurrently(
+   * StructuredConcurrency fanout = ...;
+   * Result result = fanout.concurrently(
    *   () -> fetchHead(),
    *   () -> fetchShoulder(),
    *   () -> fetchArm(),
@@ -171,7 +197,7 @@ public final class StructuredConcurrency {
    *     concurrent operation failed
    * @throws X thrown by the {@code join} function
    */
-  public static <A, B, C, D, E, R, X extends Throwable> R concurrently(
+  public <A, B, C, D, E, R, X extends Throwable> R concurrently(
       Supplier<A> a,
       Supplier<B> b,
       Supplier<C> c,
@@ -185,7 +211,7 @@ public final class StructuredConcurrency {
     AtomicReference<C> r3 = new AtomicReference<>();
     AtomicReference<D> r4 = new AtomicReference<>();
     AtomicReference<E> r5 = new AtomicReference<>();
-    parallelizer()
+    parallelizer
         .parallelize(
             Stream.of(toRun(a, r1), toRun(b, r2), toRun(c, r3), toRun(d, r4), toRun(e, r5)));
     return join.join(r1.get(), r2.get(), r3.get(), r4.get(), r5.get());
@@ -199,7 +225,8 @@ public final class StructuredConcurrency {
    * <p>For example:
    *
    * <pre>{@code
-   * Result result = uninterruptibly(
+   * StructuredConcurrency fanout = ...;
+   * Result result = fanout.uninterruptibly(
    *   () -> fetchArm(),
    *   () -> fetchLeg(),
    *   (arm, leg) -> new Result(arm, leg));
@@ -213,13 +240,13 @@ public final class StructuredConcurrency {
    *     concurrent operation failed
    * @throws X thrown by the {@code join} function
    */
-  public static <A, B, R, X extends Throwable> R uninterruptibly(
+  public <A, B, R, X extends Throwable> R uninterruptibly(
       Supplier<A> a, Supplier<B> b, Join2<? super A, ? super B, R, X> join)
       throws X {
     requireNonNull(join);
     AtomicReference<A> r1 = new AtomicReference<>();
     AtomicReference<B> r2 = new AtomicReference<>();
-    parallelizer().parallelizeUninterruptibly(Stream.of(toRun(a, r1), toRun(b, r2)));
+    parallelizer.parallelizeUninterruptibly(Stream.of(toRun(a, r1), toRun(b, r2)));
     return join.join(r1.get(), r2.get());
   }
 
@@ -231,7 +258,8 @@ public final class StructuredConcurrency {
    * <p>For example:
    *
    * <pre>{@code
-   * Result result = uninterruptibly(
+   * StructuredConcurrency fanout = ...;
+   * Result result = fanout.uninterruptibly(
    *   () -> fetchHead(),
    *   () -> fetchArm(),
    *   () -> fetchLeg(),
@@ -246,7 +274,7 @@ public final class StructuredConcurrency {
    *     concurrent operation failed
    * @throws X thrown by the {@code join} function
    */
-  public static <A, B, C, R, X extends Throwable> R uninterruptibly(
+  public <A, B, C, R, X extends Throwable> R uninterruptibly(
       Supplier<A> a,
       Supplier<B> b,
       Supplier<C> c,
@@ -256,7 +284,7 @@ public final class StructuredConcurrency {
     AtomicReference<A> r1 = new AtomicReference<>();
     AtomicReference<B> r2 = new AtomicReference<>();
     AtomicReference<C> r3 = new AtomicReference<>();
-    parallelizer().parallelizeUninterruptibly(Stream.of(toRun(a, r1), toRun(b, r2), toRun(c, r3)));
+    parallelizer.parallelizeUninterruptibly(Stream.of(toRun(a, r1), toRun(b, r2), toRun(c, r3)));
     return join.join(r1.get(), r2.get(), r3.get());
   }
 
@@ -268,7 +296,8 @@ public final class StructuredConcurrency {
    * <p>For example:
    *
    * <pre>{@code
-   * Result result = uninterruptibly(
+   * StructuredConcurrency fanout = ...;
+   * Result result = fanout.uninterruptibly(
    *   () -> fetchHead(),
    *   () -> fetchShoulder(),
    *   () -> fetchArm(),
@@ -284,7 +313,7 @@ public final class StructuredConcurrency {
    *     concurrent operation failed
    * @throws X thrown by the {@code join} function
    */
-  public static <A, B, C, D, R, X extends Throwable> R uninterruptibly(
+  public <A, B, C, D, R, X extends Throwable> R uninterruptibly(
       Supplier<A> a,
       Supplier<B> b,
       Supplier<C> c,
@@ -296,7 +325,7 @@ public final class StructuredConcurrency {
     AtomicReference<B> r2 = new AtomicReference<>();
     AtomicReference<C> r3 = new AtomicReference<>();
     AtomicReference<D> r4 = new AtomicReference<>();
-    parallelizer()
+    parallelizer
         .parallelizeUninterruptibly(
             Stream.of(toRun(a, r1), toRun(b, r2), toRun(c, r3), toRun(d, r4)));
     return join.join(r1.get(), r2.get(), r3.get(), r4.get());
@@ -310,7 +339,8 @@ public final class StructuredConcurrency {
    * <p>For example:
    *
    * <pre>{@code
-   * Result result = uninterruptibly(
+   * StructuredConcurrency fanout = ...;
+   * Result result = fanout.uninterruptibly(
    *   () -> fetchHead(),
    *   () -> fetchShoulder(),
    *   () -> fetchArm(),
@@ -327,7 +357,7 @@ public final class StructuredConcurrency {
    *     concurrent operation failed
    * @throws X thrown by the {@code join} function
    */
-  public static <A, B, C, D, E, R, X extends Throwable> R uninterruptibly(
+  public <A, B, C, D, E, R, X extends Throwable> R uninterruptibly(
       Supplier<A> a,
       Supplier<B> b,
       Supplier<C> c,
@@ -341,7 +371,7 @@ public final class StructuredConcurrency {
     AtomicReference<C> r3 = new AtomicReference<>();
     AtomicReference<D> r4 = new AtomicReference<>();
     AtomicReference<E> r5 = new AtomicReference<>();
-    parallelizer()
+    parallelizer
         .parallelizeUninterruptibly(
             Stream.of(toRun(a, r1), toRun(b, r2), toRun(c, r3), toRun(d, r4), toRun(e, r5)));
     return join.join(r1.get(), r2.get(), r3.get(), r4.get(), r5.get());
@@ -371,10 +401,4 @@ public final class StructuredConcurrency {
     requireNonNull(supplier);
     return () -> result.set(supplier.get());
   }
-
-  private static Parallelizer parallelizer() {
-    return virtualThreadParallelizer(100);  // a sufficiently large parallelism
-  }
-
-  private StructuredConcurrency() {}
 }
