@@ -59,7 +59,7 @@ public final class StructuredConcurrency {
    * <p>For example:
    *
    * <pre>{@code
-   * StructuredConcurrency fanout = ...;
+   * StructuredConcurrency fanout = using(executor);
    * Result result = fanout.concurrently(
    *   () -> fetchArm(),
    *   () -> fetchLeg(),
@@ -94,7 +94,7 @@ public final class StructuredConcurrency {
    * <p>For example:
    *
    * <pre>{@code
-   * StructuredConcurrency fanout = ...;
+   * StructuredConcurrency fanout = using(executor);
    * Result result = fanout.concurrently(
    *   () -> fetchHead(),
    *   () -> fetchArm(),
@@ -134,7 +134,7 @@ public final class StructuredConcurrency {
    * <p>For example:
    *
    * <pre>{@code
-   * StructuredConcurrency fanout = ...;
+   * StructuredConcurrency fanout = using(executor);
    * Result result = fanout.concurrently(
    *   () -> fetchHead(),
    *   () -> fetchShoulder(),
@@ -177,7 +177,7 @@ public final class StructuredConcurrency {
    * <p>For example:
    *
    * <pre>{@code
-   * StructuredConcurrency fanout = ...;
+   * StructuredConcurrency fanout = using(executor);
    * Result result = fanout.concurrently(
    *   () -> fetchHead(),
    *   () -> fetchShoulder(),
@@ -225,7 +225,7 @@ public final class StructuredConcurrency {
    * <p>For example:
    *
    * <pre>{@code
-   * StructuredConcurrency fanout = ...;
+   * StructuredConcurrency fanout = using(executor);
    * Result result = fanout.uninterruptibly(
    *   () -> fetchArm(),
    *   () -> fetchLeg(),
@@ -258,7 +258,7 @@ public final class StructuredConcurrency {
    * <p>For example:
    *
    * <pre>{@code
-   * StructuredConcurrency fanout = ...;
+   * StructuredConcurrency fanout = using(executor);
    * Result result = fanout.uninterruptibly(
    *   () -> fetchHead(),
    *   () -> fetchArm(),
@@ -296,7 +296,7 @@ public final class StructuredConcurrency {
    * <p>For example:
    *
    * <pre>{@code
-   * StructuredConcurrency fanout = ...;
+   * StructuredConcurrency fanout = using(executor);
    * Result result = fanout.uninterruptibly(
    *   () -> fetchHead(),
    *   () -> fetchShoulder(),
@@ -339,7 +339,7 @@ public final class StructuredConcurrency {
    * <p>For example:
    *
    * <pre>{@code
-   * StructuredConcurrency fanout = ...;
+   * StructuredConcurrency fanout = using(executor);
    * Result result = fanout.uninterruptibly(
    *   () -> fetchHead(),
    *   () -> fetchShoulder(),
