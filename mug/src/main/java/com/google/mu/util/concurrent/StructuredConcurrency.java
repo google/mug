@@ -34,7 +34,7 @@ import java.util.stream.Stream;
  * <p>If you need to customize the virtual threads or the executor, you can use any custom
  * ExecutorService like: <pre>{@code
  * ExecutorService executor = ...;
- * StructuredConcurrency.using(executor)
+ * new StructuredConcurrency(executor)
  *     .concurrently(...);
  * }</pre>
  *
@@ -48,7 +48,7 @@ public final class StructuredConcurrency {
   private final Parallelizer parallelizer;
 
   /**
-   * Returns an instance using {@code executor} to run concurrent operations.
+   * Constructor using {@code executor} to run concurrent operations.
    * Note that if {@code executor} doesn't use virtual threads, it can cause throughput issues
    * by blocking in one of the platform threads.
    *
@@ -56,8 +56,8 @@ public final class StructuredConcurrency {
    * It's strongly recommended to use {@code Thread.ofVitual()} for the thread factory
    * because otherwise you risk blocking the platform threads.
    */
-  public static StructuredConcurrency using(ExecutorService executor) {
-    return new StructuredConcurrency(executor);
+  public StructuredConcurrency(ExecutorService executor) {
+    this.parallelizer = new Parallelizer(executor, MAX_CONCURRENCY);
   }
 
   /**
@@ -69,9 +69,6 @@ public final class StructuredConcurrency {
     this.parallelizer = virtualThreadParallelizer(MAX_CONCURRENCY);
   }
 
-  private StructuredConcurrency(ExecutorService executor) {
-    this.parallelizer = new Parallelizer(executor, MAX_CONCURRENCY);
-  }
 
   /**
    * Runs {@code a} and {@code b} concurrently in their own virtual threads. After all of the
@@ -81,7 +78,7 @@ public final class StructuredConcurrency {
    * <p>For example:
    *
    * <pre>{@code
-   * StructuredConcurrency fanout = using(executor);
+   * var fanout = new StructuredConcurrency(executor);
    * Result result = fanout.concurrently(
    *   () -> fetchArm(),
    *   () -> fetchLeg(),
@@ -116,7 +113,7 @@ public final class StructuredConcurrency {
    * <p>For example:
    *
    * <pre>{@code
-   * StructuredConcurrency fanout = using(executor);
+   * var fanout = new StructuredConcurrency(executor);
    * Result result = fanout.concurrently(
    *   () -> fetchHead(),
    *   () -> fetchArm(),
@@ -156,7 +153,7 @@ public final class StructuredConcurrency {
    * <p>For example:
    *
    * <pre>{@code
-   * StructuredConcurrency fanout = using(executor);
+   * var fanout = new StructuredConcurrency(executor);
    * Result result = fanout.concurrently(
    *   () -> fetchHead(),
    *   () -> fetchShoulder(),
@@ -199,7 +196,7 @@ public final class StructuredConcurrency {
    * <p>For example:
    *
    * <pre>{@code
-   * StructuredConcurrency fanout = using(executor);
+   * var fanout = new StructuredConcurrency(executor);
    * Result result = fanout.concurrently(
    *   () -> fetchHead(),
    *   () -> fetchShoulder(),
@@ -247,7 +244,7 @@ public final class StructuredConcurrency {
    * <p>For example:
    *
    * <pre>{@code
-   * StructuredConcurrency fanout = using(executor);
+   * var fanout = new StructuredConcurrency(executor);
    * Result result = fanout.uninterruptibly(
    *   () -> fetchArm(),
    *   () -> fetchLeg(),
@@ -280,7 +277,7 @@ public final class StructuredConcurrency {
    * <p>For example:
    *
    * <pre>{@code
-   * StructuredConcurrency fanout = using(executor);
+   * var fanout = new StructuredConcurrency(executor);
    * Result result = fanout.uninterruptibly(
    *   () -> fetchHead(),
    *   () -> fetchArm(),
@@ -318,7 +315,7 @@ public final class StructuredConcurrency {
    * <p>For example:
    *
    * <pre>{@code
-   * StructuredConcurrency fanout = using(executor);
+   * var fanout = new StructuredConcurrency(executor);
    * Result result = fanout.uninterruptibly(
    *   () -> fetchHead(),
    *   () -> fetchShoulder(),
@@ -361,7 +358,7 @@ public final class StructuredConcurrency {
    * <p>For example:
    *
    * <pre>{@code
-   * StructuredConcurrency fanout = using(executor);
+   * var fanout = new StructuredConcurrency(executor);
    * Result result = fanout.uninterruptibly(
    *   () -> fetchHead(),
    *   () -> fetchShoulder(),
