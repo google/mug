@@ -196,7 +196,7 @@ public class StructuredConcurrencyTest {
   }
 
   private StructuredConcurrency fanout() {
-    return new StructuredConcurrency(executor);
+    return StructuredConcurrency.using(executor);
   }
 
   private static String failToRead(String file) throws IOException {

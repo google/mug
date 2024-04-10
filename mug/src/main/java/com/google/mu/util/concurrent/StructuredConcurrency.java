@@ -25,7 +25,7 @@ import java.util.stream.Stream;
 /**
  * Convenient utilities to help with structured concurrency on top of an {@link ExecutorService}
  * (preferably with virtual threads). For example: <pre>{@code
- * new StructuredConcurrency().concurrently(
+ * usingVirtualThreads().concurrently(
  *     () -> ListFoos(),
  *     () -> listBars(),
  *     (foos, bars) -> ...);
@@ -34,7 +34,7 @@ import java.util.stream.Stream;
  * <p>If you need to customize the virtual threads or the executor, you can use any custom
  * ExecutorService like: <pre>{@code
  * ExecutorService executor = ...;
- * new StructuredConcurrency(executor)
+ * StructuredConcurrency.using(executor)
  *     .concurrently(...);
  * }</pre>
  *
@@ -47,8 +47,21 @@ public final class StructuredConcurrency {
   private static final int MAX_CONCURRENCY = 100;  // sufficient for all overloads
   private final Parallelizer parallelizer;
 
+  private StructuredConcurrency(Parallelizer parallelizer) {
+    this.parallelizer = parallelizer;
+  }
+
   /**
-   * Constructor using {@code executor} to run concurrent operations.
+   * Returns an instance using the default virtual thread executor to run the concurrent operations.
+   *
+   * <p>Requires Java 21+ Fails if running below Java 21.
+   */
+  public static StructuredConcurrency usingVirtualThreads() {
+    return new StructuredConcurrency(virtualThreadParallelizer(MAX_CONCURRENCY));
+  }
+
+  /**
+   * Returns an instance using {@code executor} to run concurrent operations.
    * Note that if {@code executor} doesn't use virtual threads, it can cause throughput issues
    * by blocking in one of the platform threads.
    *
@@ -56,17 +69,8 @@ public final class StructuredConcurrency {
    * It's strongly recommended to use {@code Thread.ofVitual()} for the thread factory
    * because otherwise you risk blocking the platform threads.
    */
-  public StructuredConcurrency(ExecutorService executor) {
-    this.parallelizer = new Parallelizer(executor, MAX_CONCURRENCY);
-  }
-
-  /**
-   * Constructor using the default virtual thread executor to run the concurrent operations.
-   *
-   * <p>Requires Java 21+ Fails if running below Java 21.
-   */
-  public StructuredConcurrency() {
-    this.parallelizer = virtualThreadParallelizer(MAX_CONCURRENCY);
+  public static StructuredConcurrency using(ExecutorService executor) {
+    return new StructuredConcurrency(new Parallelizer(executor, MAX_CONCURRENCY));
   }
 
 
@@ -78,7 +82,7 @@ public final class StructuredConcurrency {
    * <p>For example:
    *
    * <pre>{@code
-   * var fanout = new StructuredConcurrency(executor);
+   * StructuredConcurrency fanout = using(executor);
    * Result result = fanout.concurrently(
    *   () -> fetchArm(),
    *   () -> fetchLeg(),
@@ -113,7 +117,7 @@ public final class StructuredConcurrency {
    * <p>For example:
    *
    * <pre>{@code
-   * var fanout = new StructuredConcurrency(executor);
+   * StructuredConcurrency fanout = using(executor);
    * Result result = fanout.concurrently(
    *   () -> fetchHead(),
    *   () -> fetchArm(),
@@ -153,7 +157,7 @@ public final class StructuredConcurrency {
    * <p>For example:
    *
    * <pre>{@code
-   * var fanout = new StructuredConcurrency(executor);
+   * StructuredConcurrency fanout = using(executor);
    * Result result = fanout.concurrently(
    *   () -> fetchHead(),
    *   () -> fetchShoulder(),
@@ -196,7 +200,7 @@ public final class StructuredConcurrency {
    * <p>For example:
    *
    * <pre>{@code
-   * var fanout = new StructuredConcurrency(executor);
+   * StructuredConcurrency fanout = using(executor);
    * Result result = fanout.concurrently(
    *   () -> fetchHead(),
    *   () -> fetchShoulder(),
@@ -244,7 +248,7 @@ public final class StructuredConcurrency {
    * <p>For example:
    *
    * <pre>{@code
-   * var fanout = new StructuredConcurrency(executor);
+   * StructuredConcurrency fanout = using(executor);
    * Result result = fanout.uninterruptibly(
    *   () -> fetchArm(),
    *   () -> fetchLeg(),
@@ -277,7 +281,7 @@ public final class StructuredConcurrency {
    * <p>For example:
    *
    * <pre>{@code
-   * var fanout = new StructuredConcurrency(executor);
+   * StructuredConcurrency fanout = using(executor);
    * Result result = fanout.uninterruptibly(
    *   () -> fetchHead(),
    *   () -> fetchArm(),
@@ -315,7 +319,7 @@ public final class StructuredConcurrency {
    * <p>For example:
    *
    * <pre>{@code
-   * var fanout = new StructuredConcurrency(executor);
+   * StructuredConcurrency fanout = using(executor);
    * Result result = fanout.uninterruptibly(
    *   () -> fetchHead(),
    *   () -> fetchShoulder(),
@@ -358,7 +362,7 @@ public final class StructuredConcurrency {
    * <p>For example:
    *
    * <pre>{@code
-   * var fanout = new StructuredConcurrency(executor);
+   * StructuredConcurrency fanout = using(executor);
    * Result result = fanout.uninterruptibly(
    *   () -> fetchHead(),
    *   () -> fetchShoulder(),
