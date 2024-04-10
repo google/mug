@@ -401,22 +401,22 @@ public final class StructuredConcurrency {
     return join.join(r1.get(), r2.get(), r3.get(), r4.get(), r5.get());
   }
 
-  /** Function to join two results from concurrent computation. */
+  /** Function to join two results from concurrent operations. */
   public interface Join2<A, B, R, X extends Throwable> {
     R join(A a, B b) throws X;
   }
 
-  /** Function to join three results from concurrent computation. */
+  /** Function to join three results from concurrent operations. */
   public interface Join3<A, B, C, R, X extends Throwable> {
     R join(A a, B b, C c) throws X;
   }
 
-  /** Function to join four results from concurrent computation. */
+  /** Function to join four results from concurrent operations. */
   public interface Join4<A, B, C, D, R, X extends Throwable> {
     R join(A a, B b, C c, D d) throws X;
   }
 
-  /** Function to join five results from concurrent computation. */
+  /** Function to join five results from concurrent operations. */
   public interface Join5<A, B, C, D, E, R, X extends Throwable> {
     R join(A a, B b, C c, D d, E e) throws X;
   }
