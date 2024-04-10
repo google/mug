@@ -35,8 +35,8 @@ import java.util.stream.Stream;
  * <p>If you need to customize the virtual threads or the executor, you can use any custom
  * ExecutorService like: <pre>{@code
  * ExecutorService executor = ...;
- * StructuredConcurrency.using(executor)
- *     .concurrently(...);
+ * var fanout = StructuredConcurrency.using(executor);
+ * Result result = fanout.concurrently(...);
  * }</pre>
  *
  * <p>If using a virtual thread executor, it's safe to define StructuredConcurrency as
