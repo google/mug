@@ -24,7 +24,12 @@ import java.util.stream.Stream;
 
 /**
  * Convenient utilities to help with structured concurrency on top of an {@link ExecutorService}
- * (most preferably with virtual threads).
+ * (most preferably with virtual threads). For example: <pre>{@code
+ * new StructuredConcurrency().concurrently(
+ *     () -> ListFoos(),
+ *     () -> listBars(),
+ *     (foos, bars) -> ...);
+ * }</pre>
  *
  * @since 8.0
  */
@@ -35,6 +40,10 @@ public final class StructuredConcurrency {
    * Returns an instance using {@code executor} to run concurrent operations.
    * Note that if {@code executor} doesn't use virtual threads, it can cause throughput issues
    * by blocking in one of the platform threads.
+   *
+   * <p>Useful if your project needs specific setting (such as thread name) for the threads .
+   * It's still strongly recommended to use {@code Thread.ofVitual()} for the thread factory
+   * because otherwise you risk blocking the platform threads.
    */
   public static StructuredConcurrency using(ExecutorService executor) {
     return new StructuredConcurrency(executor);
@@ -43,7 +52,7 @@ public final class StructuredConcurrency {
   /**
    * Constructor using the default virtual thread pool to run the concurrent operations.
    *
-   * <p>Requires Java 21+
+   * <p>Requires Java 21+ Failss if running below Java 21.
    */
   public StructuredConcurrency() {
     this.parallelizer = virtualThreadParallelizer(100);
