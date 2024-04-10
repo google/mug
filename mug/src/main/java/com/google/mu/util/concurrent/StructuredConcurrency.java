@@ -51,9 +51,9 @@ public final class StructuredConcurrency {
   }
 
   /**
-   * Constructor using the default virtual thread pool to run the concurrent operations.
+   * Constructor using the default virtual thread executor to run the concurrent operations.
    *
-   * <p>Requires Java 21+ Failss if running below Java 21.
+   * <p>Requires Java 21+ Fails if running below Java 21.
    */
   public StructuredConcurrency() {
     this.parallelizer = virtualThreadParallelizer(MAX_CONCURRENCY);
