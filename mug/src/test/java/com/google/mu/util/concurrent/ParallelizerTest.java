@@ -23,11 +23,13 @@ import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
@@ -122,6 +124,31 @@ public class ParallelizerTest {
     @Test public void testNulls() {
       Parallelizer parallelizer = new Parallelizer(threadPool, 3);
       assertThrows(NullPointerException.class, () -> parallelizer.inParallel(null));
+    }
+  }
+
+  @RunWith(TestParameterInjector.class)
+  public static class ExceptionTest {
+    @Test
+    public void exceptionTunnelingWorks() throws InterruptedException, TimeoutException {
+      IOException exception = new IOException("deliberate");
+      ExecutorService threadPool = Executors.newCachedThreadPool();
+      Parallelizer parallelizer = new Parallelizer(threadPool, 3);
+      try {
+        parallelizer.parallelize(
+            Stream.of(
+                () ->
+                    tunnel(
+                        () -> {
+                          raise(exception);
+                          return "na";
+                        })));
+        throw new AssertionError("should have thrown");
+      } catch (TunnelException e) {
+        assertThat(e.getCause()).isSameInstanceAs(exception);
+      } finally {
+        threadPool.shutdownNow();
+      }
     }
   }
 
@@ -506,5 +533,23 @@ public class ParallelizerTest {
     },
     ;
     abstract ExecutorService newExecutorService();
+  }
+
+  private static <E extends Throwable> void raise(E throwable) throws E {
+    throw throwable;
+  }
+
+  private static <T> T tunnel(Callable<T> callable) {
+    try {
+      return callable.call();
+    } catch (Exception e) {
+      throw new TunnelException(e);
+    }
+  }
+
+  private static final class TunnelException extends RuntimeException {
+    TunnelException(Throwable cause) {
+      super(cause);
+    }
   }
 }

@@ -149,7 +149,6 @@ import com.google.mu.util.stream.BiStream;
  * @since 1.1
  */
 public final class Parallelizer {
-
   private static final Logger logger = Logger.getLogger(Parallelizer.class.getName());
 
   private final ExecutorService executor;
@@ -578,17 +577,22 @@ public final class Parallelizer {
     /** If any task has thrown, propagate all task exceptions. */
     private void propagateExceptions() {
       ConcurrentLinkedQueue<Throwable> toPropagate = thrown;
-      UncheckedExecutionException executionException = null;
+      RuntimeException wrapperException = null;
       for (Throwable exception : toPropagate) {
-        if (executionException == null) {
-          executionException = new UncheckedExecutionException(exception);
+        if (wrapperException == null) {
+          if (exception instanceof RuntimeException
+              && exception.getClass().getSimpleName().equals("TunnelException")) {
+            wrapperException = (RuntimeException) exception;
+          } else {
+            wrapperException = new UncheckedExecutionException(exception);
+          }
         } else {
-          executionException.addSuppressed(exception);
+          wrapperException.addSuppressed(exception);
         }
       }
-      if (executionException != null) {
+      if (wrapperException != null) {
         thrown = null;
-        throw executionException;
+        throw wrapperException;
       }
     }
 
