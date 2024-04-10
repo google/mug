@@ -31,6 +31,13 @@ import java.util.stream.Stream;
  *     (foos, bars) -> ...);
  * }</pre>
  *
+ * <p>If you need to customize the virtual threads or the executor, you can use any custom
+ * ExecutorService like: <pre>{@code
+ * ExecutorService executor = ...;
+ * StructuredConcurrency.using(executor)
+ *     .concurrently(...);
+ * }</pre>
+ *
  * @since 8.0
  */
 public final class StructuredConcurrency {
