@@ -24,7 +24,7 @@ import java.util.stream.Stream;
 
 /**
  * Convenient utilities to help with structured concurrency on top of an {@link ExecutorService}
- * (most preferably with virtual threads). For example: <pre>{@code
+ * (preferably with virtual threads). For example: <pre>{@code
  * new StructuredConcurrency().concurrently(
  *     () -> ListFoos(),
  *     () -> listBars(),
@@ -43,7 +43,7 @@ public final class StructuredConcurrency {
    * by blocking in one of the platform threads.
    *
    * <p>Useful if your project needs specific setting (such as thread name) for the threads .
-   * It's still strongly recommended to use {@code Thread.ofVitual()} for the thread factory
+   * It's strongly recommended to use {@code Thread.ofVitual()} for the thread factory
    * because otherwise you risk blocking the platform threads.
    */
   public static StructuredConcurrency using(ExecutorService executor) {
