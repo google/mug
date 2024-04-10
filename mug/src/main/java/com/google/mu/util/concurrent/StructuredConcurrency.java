@@ -25,7 +25,8 @@ import java.util.stream.Stream;
 /**
  * Convenient utilities to help with structured concurrency on top of an {@link ExecutorService}
  * (preferably with virtual threads). For example: <pre>{@code
- * usingVirtualThreads().concurrently(
+ * var fanout = usingVirtualThreads();
+ * Result result = fanout.concurrently(
  *     () -> ListFoos(),
  *     () -> listBars(),
  *     (foos, bars) -> ...);
