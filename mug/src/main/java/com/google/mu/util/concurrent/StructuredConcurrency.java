@@ -38,6 +38,9 @@ import java.util.stream.Stream;
  *     .concurrently(...);
  * }</pre>
  *
+ * <p>If using a virtual thread executor, it's safe to define StructuredConcurrency as
+ * a static final constant because it's stateless as long as the executor is stateless.
+ *
  * @since 8.0
  */
 public final class StructuredConcurrency {
