@@ -34,6 +34,7 @@ import java.util.stream.Stream;
  * @since 8.0
  */
 public final class StructuredConcurrency {
+  private static final int MAX_CONCURRENCY = 100;  // sufficient for all overloads
   private final Parallelizer parallelizer;
 
   /**
@@ -55,11 +56,11 @@ public final class StructuredConcurrency {
    * <p>Requires Java 21+ Failss if running below Java 21.
    */
   public StructuredConcurrency() {
-    this.parallelizer = virtualThreadParallelizer(100);
+    this.parallelizer = virtualThreadParallelizer(MAX_CONCURRENCY);
   }
 
   private StructuredConcurrency(ExecutorService executor) {
-    this.parallelizer = new Parallelizer(executor, 100);
+    this.parallelizer = new Parallelizer(executor, MAX_CONCURRENCY);
   }
 
   /**
