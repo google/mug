@@ -54,7 +54,7 @@ public final class StructuredConcurrency {
   /**
    * Returns an instance using the default virtual thread executor to run the concurrent operations.
    *
-   * <p>Requires Java 21+ Fails if running below Java 21.
+   * <p>Fails if runtime is lower than Java 21.
    */
   public static StructuredConcurrency usingVirtualThreads() {
     return new StructuredConcurrency(virtualThreadParallelizer(MAX_CONCURRENCY));
