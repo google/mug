@@ -4,7 +4,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -167,58 +166,15 @@ public class StructuredConcurrencyTest {
   }
 
   @Test
-  public void concurrently_tunneledException() throws IOException, InterruptedException {
-    try {
-      Object unused =
-          fanout().concurrently(
-              () -> tunnel(() -> failToRead("badfile")), () -> "bar", String::concat);
-      throw new AssertionError("should have failed");
-    } catch (TunnelException e) {
-      assertThat(e.getCauseAs(IOException.class)).hasMessageThat().contains("badfile");
-    }
-  }
-
-  @Test
-  public void uninterruptibly_tunneledException() throws IOException {
-    try {
-      Object unused =
-          fanout().uninterruptibly(
-              () -> tunnel(() -> failToRead("badfile")), () -> "bar", String::concat);
-      throw new AssertionError("should have failed");
-    } catch (TunnelException e) {
-      assertThat(e.getCauseAs(IOException.class)).hasMessageThat().contains("badfile");
-    }
-  }
-
-  @Test
   public void testNulls() {
     new ClassSanityTester().testNulls(StructuredConcurrency.class);
   }
 
   private StructuredConcurrency fanout() {
-    return StructuredConcurrency.using(executor);
+    return new StructuredConcurrency(executor);
   }
 
   private static String failToRead(String file) throws IOException {
     throw new IOException("deliberately fail to read " + file);
-  }
-
-  private static <T> T tunnel(Callable<T> callable) {
-    try {
-      return callable.call();
-    } catch (Exception e) {
-      throw new TunnelException(e);
-    }
-  }
-
-  private static final class TunnelException extends RuntimeException {
-    TunnelException(Throwable cause) {
-      super(cause);
-    }
-
-    <X extends Throwable> X getCauseAs(Class<X> type) {
-      assertThat(getCause()).isInstanceOf(type);
-      return type.cast(getCause());
-    }
   }
 }

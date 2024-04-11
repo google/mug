@@ -580,12 +580,7 @@ public final class Parallelizer {
       RuntimeException wrapperException = null;
       for (Throwable exception : toPropagate) {
         if (wrapperException == null) {
-          if (exception instanceof RuntimeException
-              && exception.getClass().getSimpleName().equals("TunnelException")) {
-            wrapperException = (RuntimeException) exception;
-          } else {
-            wrapperException = new UncheckedExecutionException(exception);
-          }
+          wrapperException = new UncheckedExecutionException(exception);
         } else {
           wrapperException.addSuppressed(exception);
         }

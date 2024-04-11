@@ -25,7 +25,7 @@ import java.util.stream.Stream;
 /**
  * Convenient utilities to help with structured concurrency on top of an {@link ExecutorService}
  * (preferably with virtual threads). For example: <pre>{@code
- * var fanout = usingVirtualThreads();
+ * var fanout = new StructuredConcurrency();
  * Result result = fanout.concurrently(
  *     () -> ListFoos(),
  *     () -> listBars(),
@@ -35,7 +35,7 @@ import java.util.stream.Stream;
  * <p>If you need to customize the virtual threads or the executor, you can use any custom
  * ExecutorService like: <pre>{@code
  * ExecutorService executor = ...;
- * var fanout = StructuredConcurrency.using(executor);
+ * var fanout = new StructuredConcurrency(executor);
  * Result result = fanout.concurrently(...);
  * }</pre>
  *
@@ -53,16 +53,16 @@ public final class StructuredConcurrency {
   }
 
   /**
-   * Returns an instance using the default virtual thread executor to run the concurrent operations.
+   * Constructor using the default virtual thread executor to run the concurrent operations.
    *
    * <p>Fails if runtime is lower than Java 21.
    */
-  public static StructuredConcurrency usingVirtualThreads() {
-    return new StructuredConcurrency(virtualThreadParallelizer(MAX_CONCURRENCY));
+  public StructuredConcurrency() {
+    this(virtualThreadParallelizer(MAX_CONCURRENCY));
   }
 
   /**
-   * Returns an instance using {@code executor} to run concurrent operations.
+   * Constructor using {@code executor} to run concurrent operations.
    * Note that if {@code executor} doesn't use virtual threads, it can cause throughput issues
    * by blocking in one of the platform threads.
    *
@@ -70,8 +70,8 @@ public final class StructuredConcurrency {
    * It's strongly recommended to use {@code Thread.ofVitual()} for the thread factory
    * because otherwise you risk blocking the platform threads.
    */
-  public static StructuredConcurrency using(ExecutorService executor) {
-    return new StructuredConcurrency(new Parallelizer(executor, MAX_CONCURRENCY));
+  public StructuredConcurrency(ExecutorService executor) {
+    this(new Parallelizer(executor, MAX_CONCURRENCY));
   }
 
 
@@ -401,22 +401,22 @@ public final class StructuredConcurrency {
     return join.join(r1.get(), r2.get(), r3.get(), r4.get(), r5.get());
   }
 
-  /** Function to join two results from concurrent computation. */
+  /** Function to join two results from concurrent operations. */
   public interface Join2<A, B, R, X extends Throwable> {
     R join(A a, B b) throws X;
   }
 
-  /** Function to join three results from concurrent computation. */
+  /** Function to join three results from concurrent operations. */
   public interface Join3<A, B, C, R, X extends Throwable> {
     R join(A a, B b, C c) throws X;
   }
 
-  /** Function to join four results from concurrent computation. */
+  /** Function to join four results from concurrent operations. */
   public interface Join4<A, B, C, D, R, X extends Throwable> {
     R join(A a, B b, C c, D d) throws X;
   }
 
-  /** Function to join five results from concurrent computation. */
+  /** Function to join five results from concurrent operations. */
   public interface Join5<A, B, C, D, E, R, X extends Throwable> {
     R join(A a, B b, C c, D d, E e) throws X;
   }
