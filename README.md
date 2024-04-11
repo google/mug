@@ -26,7 +26,7 @@ Add the following to pom.xml:
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug</artifactId>
-    <version>7.2</version>
+    <version>8.0</version>
   </dependency>
 ```
 
@@ -48,7 +48,7 @@ Add `mug-errorprone` to your annotationProcessorPaths:
               <path>
                 <groupId>com.google.mug</groupId>
                 <artifactId>mug-errorprone</artifactId>
-                <version>7.2</version>
+                <version>8.0</version>
               </path>
             </annotationProcessorPaths>
           </configuration>
@@ -63,7 +63,7 @@ Protobuf utils ([javadoc](https://google.github.io/mug/apidocs/com/google/mu/pro
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-protobuf</artifactId>
-    <version>7.2</version>
+    <version>8.0</version>
   </dependency>
 ```
 
@@ -72,7 +72,7 @@ Guava add-ons (with [`SafeQuery`](https://google.github.io/mug/apidocs/com/googl
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-guava</artifactId>
-    <version>7.2</version>
+    <version>8.0</version>
   </dependency>
 ```
 
@@ -80,9 +80,9 @@ Guava add-ons (with [`SafeQuery`](https://google.github.io/mug/apidocs/com/googl
 
 Add to build.gradle:
 ```
-  implementation 'com.google.mug:mug:7.2'
-  implementation 'com.google.mug:mug-guava:7.2'
-  implementation 'com.google.mug:mug-protobuf:7.2'
+  implementation 'com.google.mug:mug:8.0'
+  implementation 'com.google.mug:mug-guava:8.0'
+  implementation 'com.google.mug:mug-protobuf:8.0'
 ```
 
 
