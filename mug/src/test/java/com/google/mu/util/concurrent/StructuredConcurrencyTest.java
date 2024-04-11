@@ -3,7 +3,6 @@ package com.google.mu.util.concurrent;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -172,9 +171,5 @@ public class StructuredConcurrencyTest {
 
   private StructuredConcurrency fanout() {
     return new StructuredConcurrency(executor);
-  }
-
-  private static String failToRead(String file) throws IOException {
-    throw new IOException("deliberately fail to read " + file);
   }
 }
