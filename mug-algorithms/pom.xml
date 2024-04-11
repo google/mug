@@ -4,7 +4,11 @@
   <parent>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-root</artifactId>
+<<<<<<< HEAD
     <version>7.3-SNAPSHOT</version>
+=======
+    <version>8.1-SNAPSHOT</version>
+>>>>>>> master
   </parent>
   <artifactId>mug-algorithms</artifactId>
   <name>algorithms</name>
