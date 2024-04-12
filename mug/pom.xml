@@ -4,9 +4,13 @@
 		<groupId>com.google.mug</groupId>
 		<artifactId>mug-root</artifactId>
 <<<<<<< HEAD
+<<<<<<< HEAD
 		<version>7.3-SNAPSHOT</version>
 =======
 		<version>8.1-SNAPSHOT</version>
+>>>>>>> master
+=======
+		<version>8.0-SNAPSHOT</version>
 >>>>>>> master
 		<relativePath>../pom.xml</relativePath>
 	</parent>
