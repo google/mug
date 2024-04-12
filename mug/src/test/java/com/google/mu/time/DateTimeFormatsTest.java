@@ -676,6 +676,8 @@ public final class DateTimeFormatsTest {
   public void parseOffsetDateTime_invalid()
       throws Exception {
     assertThrows(DateTimeException.class, () -> DateTimeFormats.parseOffsetDateTime("2020-01-01T00:00:00.123 bad +08:00"));
+    assertThrows(DateTimeException.class, () -> DateTimeFormats.parseOffsetDateTime("2020-01-01"));
+    assertThrows(DateTimeException.class, () -> DateTimeFormats.parseOffsetDateTime("2020/01/01"));
   }
 
   @Test
@@ -693,6 +695,8 @@ public final class DateTimeFormatsTest {
   public void parseZonedDateTime_invalid()
       throws Exception {
     assertThrows(DateTimeException.class, () -> DateTimeFormats.parseZonedDateTime("2020-01-01T00:00:00.123 bad +08:00"));
+    assertThrows(DateTimeException.class, () -> DateTimeFormats.parseZonedDateTime("2020-01-01"));
+    assertThrows(DateTimeException.class, () -> DateTimeFormats.parseZonedDateTime("2020/01/02"));
   }
 
   @Test
@@ -723,6 +727,86 @@ public final class DateTimeFormatsTest {
   public void parseToInstant_invalid()
       throws Exception {
     assertThrows(DateTimeException.class, () -> DateTimeFormats.parseToInstant("2020-01-01T00:00:00.123 bad +08:00"));
+    assertThrows(DateTimeException.class, () -> DateTimeFormats.parseToInstant("2020-01-01"));
+    assertThrows(DateTimeException.class, () -> DateTimeFormats.parseToInstant("2020/01/01"));
+  }
+
+  @Test
+  public void parseLocalDate_basicIsoDate() {
+    assertThat(DateTimeFormats.parseToLocalDate("20211020")).isEqualTo(LocalDate.of(2021, 10, 20));
+    assertThat(DateTimeFormats.parseToLocalDate("20211001")).isEqualTo(LocalDate.of(2021, 10, 1));
+    assertThat(DateTimeFormats.parseToLocalDate("20210101")).isEqualTo(LocalDate.of(2021, 1, 1));
+  }
+
+  @Test
+  public void parseLocalDate_isoDate() {
+    assertThat(DateTimeFormats.parseToLocalDate("2021-10-20")).isEqualTo(LocalDate.of(2021, 10, 20));
+    assertThat(DateTimeFormats.parseToLocalDate("2021-10-01")).isEqualTo(LocalDate.of(2021, 10, 1));
+    assertThat(DateTimeFormats.parseToLocalDate("2021-01-01")).isEqualTo(LocalDate.of(2021, 1, 1));
+    assertThat(DateTimeFormats.parseToLocalDate("2021-01-2")).isEqualTo(LocalDate.of(2021, 1, 2));
+  }
+
+  @Test
+  public void parseLocalDate_euDate_mmddyyyy() {
+    assertThat(DateTimeFormats.parseToLocalDate("10-30-2021")).isEqualTo(LocalDate.of(2021, 10, 30));
+    assertThat(DateTimeFormats.parseToLocalDate("1-30-2021")).isEqualTo(LocalDate.of(2021, 1, 30));
+    assertThat(DateTimeFormats.parseToLocalDate("10/20/2021")).isEqualTo(LocalDate.of(2021, 10, 20));
+    assertThat(DateTimeFormats.parseToLocalDate("1/20/2021")).isEqualTo(LocalDate.of(2021, 1, 20));
+  }
+
+  @Test
+  public void parseLocalDate_euDate_ddmmyyyy() {
+    assertThat(DateTimeFormats.parseToLocalDate("30-10-2021")).isEqualTo(LocalDate.of(2021, 10, 30));
+    assertThat(DateTimeFormats.parseToLocalDate("20/10/2021")).isEqualTo(LocalDate.of(2021, 10, 20));
+  }
+
+  @Test
+  public void parseLocalDate_withMonthName_yyyymmdd() {
+    assertThat(DateTimeFormats.parseToLocalDate("2021 Oct 20")).isEqualTo(LocalDate.of(2021, 10, 20));
+    assertThat(DateTimeFormats.parseToLocalDate("2021 October 1")).isEqualTo(LocalDate.of(2021, 10, 1));
+  }
+
+  @Test
+  public void parseLocalDate_withMonthName_mmddyyyy() {
+    assertThat(DateTimeFormats.parseToLocalDate("Oct 20 2021")).isEqualTo(LocalDate.of(2021, 10, 20));
+    assertThat(DateTimeFormats.parseToLocalDate("October 1 2021")).isEqualTo(LocalDate.of(2021, 10, 1));
+  }
+
+  @Test
+  public void parseLocalDate_isoDateWithSlash() {
+    assertThat(DateTimeFormats.parseToLocalDate("2021/10/20")).isEqualTo(LocalDate.of(2021, 10, 20));
+    assertThat(DateTimeFormats.parseToLocalDate("2021/10/01")).isEqualTo(LocalDate.of(2021, 10, 1));
+    assertThat(DateTimeFormats.parseToLocalDate("2021/01/01")).isEqualTo(LocalDate.of(2021, 1, 1));
+    assertThat(DateTimeFormats.parseToLocalDate("2021/01/2")).isEqualTo(LocalDate.of(2021, 1, 2));
+  }
+
+  @Test
+  public void parseLocalDate_instantHasNoDate() {
+    Instant time = OffsetDateTime.of(2024, 4, 1, 10, 05, 30, 0, ZoneOffset.UTC).toInstant();
+    assertThrows(
+        DateTimeException.class,
+        () -> DateTimeFormats.parseToLocalDate(time.toString()));
+  }
+
+  @Test
+  public void parseLocalDate_fromZonedDateTimeString() {
+    ZonedDateTime time = ZonedDateTime.of(2024, 4, 1, 10, 05, 30, 0, ZoneId.of("America/New_York"));
+    assertThat(DateTimeFormats.parseToLocalDate(time.toString())).isEqualTo(LocalDate.of(2024, 4, 1));
+  }
+
+  @Test
+  public void parseLocalDate_fromOffsetDateTimeString() {
+    OffsetDateTime time = OffsetDateTime.of(2024, 4, 1, 10, 05, 30, 0, ZoneOffset.of("-08:30"));
+    assertThat(DateTimeFormats.parseToLocalDate(time.toString())).isEqualTo(LocalDate.of(2024, 4, 1));
+  }
+
+  @Test
+  public void parseLocalDate_incorrectDate() {
+    assertThrows(DateTimeException.class, () -> DateTimeFormats.parseToLocalDate("20213001"));
+    assertThrows(DateTimeException.class, () -> DateTimeFormats.parseToLocalDate("2021/30/01"));
+    assertThrows(DateTimeException.class, () -> DateTimeFormats.parseToLocalDate("2021-30-01"));
+    assertThrows(DateTimeException.class, () -> DateTimeFormats.parseToLocalDate("01-01-2021"));
+    assertThrows(DateTimeException.class, () -> DateTimeFormats.parseToLocalDate("01/01/2021"));
   }
 
   @Test

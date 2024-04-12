@@ -31,6 +31,7 @@ import static java.util.stream.Collectors.toMap;
 
 import java.time.DateTimeException;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -128,7 +129,8 @@ public final class DateTimeFormats {
       BiStream.of(
           forExample("2011-12-03"), DateTimeFormatter.ISO_LOCAL_DATE,
           forExample("2011-12-03+08:00"), DateTimeFormatter.ISO_DATE,
-          forExample("2011-12-03-08:00"), DateTimeFormatter.ISO_DATE).toMap();
+          forExample("2011-12-03-08:00"), DateTimeFormatter.ISO_DATE,
+          forExample("20111203"), DateTimeFormatter.BASIC_ISO_DATE).toMap();
 
   /** These ISO formats all support optional nanoseconds in the format of ".nnnnnnnnn". */
   private static final Map<List<?>, DateTimeFormatter> ISO_DATE_TIME_FORMATTERS =
@@ -278,9 +280,28 @@ public final class DateTimeFormats {
   private static <T> T parseDateTime(String dateTimeString, TemporalQuery<T> query) {
     List<?> signature = forExample(dateTimeString);
     return lookup(RFC_1123_FORMATTERS, signature)
+        .orElseGet(() -> lookup(ISO_DATE_FORMATTERS, signature)
         .orElseGet(() -> lookup(ISO_DATE_TIME_FORMATTERS, forExample(removeNanosecondsPart(dateTimeString)))
-        .orElseGet(() -> DateTimeFormatter.ofPattern(inferDateTimePattern(dateTimeString, signature))))
+        .orElseGet(() -> DateTimeFormatter.ofPattern(inferDateTimePattern(dateTimeString, signature)))))
         .parse(dateTimeString, query);
+  }
+
+  /**
+   * Parses {@code dateString} to {@link LocalDate}. {@code dateString} could be in the format
+   * of {@link DateTimeFormatter#ISO_DATE}, {@link DateTimeFormatter#BASIC_ISO_DATE}
+   * or dates with natural month names like "Jan" or "January".
+   *
+   * <p>If {@code dateString} has valid time and timezone, they'll be ignored.
+   *
+   * <p>Prefer to pre-construct a {@link DateTimeFormatter} using {@link #formatOf} to get
+   * better performance and earlier error report in case the example date time string cannot
+   * be inferred.
+   *
+   * @throws DateTimeException if {@code dateTimeString} cannot be parsed to {@link LocalDate}
+   * @since 8.0
+   */
+  public static LocalDate parseToLocalDate(String dateString) {
+    return parseDateTime(dateString, LocalDate::from);
   }
 
   /**
