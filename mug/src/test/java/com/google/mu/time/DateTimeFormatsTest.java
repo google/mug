@@ -773,6 +773,13 @@ public final class DateTimeFormatsTest {
   }
 
   @Test
+  public void parseLocalDate_withMonthName_ddmmyyyy() {
+    assertThat(DateTimeFormats.parseLocalDate("20 Oct 2021")).isEqualTo(LocalDate.of(2021, 10, 20));
+    assertThat(DateTimeFormats.parseLocalDate("1 October 2021")).isEqualTo(LocalDate.of(2021, 10, 1));
+    assertThat(DateTimeFormats.parseLocalDate("01 October 2021")).isEqualTo(LocalDate.of(2021, 10, 1));
+  }
+
+  @Test
   public void parseLocalDate_isoDateWithSlash() {
     assertThat(DateTimeFormats.parseLocalDate("2021/10/20")).isEqualTo(LocalDate.of(2021, 10, 20));
     assertThat(DateTimeFormats.parseLocalDate("2021/10/01")).isEqualTo(LocalDate.of(2021, 10, 1));
