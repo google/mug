@@ -138,12 +138,12 @@ public final class PrefixSearchTable<K, V> {
     }
 
     /**
-     * Adds all of {@code prefixMappings} into this builder.
+     * Adds all of {@code mappings} into this builder.
      *
      * @since 8.0
      */
-    public Builder<K, V> addAll(Map<? extends List<? extends K>, ? extends V> prefixMappings) {
-      BiStream.from(prefixMappings).forEachOrdered(this::add);
+    public Builder<K, V> addAll(Map<? extends List<? extends K>, ? extends V> mappings) {
+      BiStream.from(mappings).forEachOrdered(this::add);
       return this;
     }
 
