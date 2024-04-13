@@ -125,12 +125,12 @@ public final class DateTimeFormats {
           .repeatedly();
   private static final Substring.RepeatingPattern PLACEHOLDERS =
       consecutive(noneOf("<>")).immediatelyBetween("<", INCLUSIVE, ">", INCLUSIVE).repeatedly();
+
   private static final Map<List<?>, DateTimeFormatter> ISO_DATE_FORMATTERS =
       BiStream.of(
           forExample("2011-12-03"), DateTimeFormatter.ISO_LOCAL_DATE,
           forExample("2011-12-03+08:00"), DateTimeFormatter.ISO_DATE,
-          forExample("2011-12-03-08:00"), DateTimeFormatter.ISO_DATE,
-          forExample("20111203"), DateTimeFormatter.BASIC_ISO_DATE).toMap();
+          forExample("2011-12-03-08:00"), DateTimeFormatter.ISO_DATE).toMap();
 
   /** These ISO formats all support optional nanoseconds in the format of ".nnnnnnnnn". */
   private static final Map<List<?>, DateTimeFormatter> ISO_DATE_TIME_FORMATTERS =
@@ -157,28 +157,36 @@ public final class DateTimeFormats {
               "Tue, 10 Jun 2008 11:05:30 -0800",
               "1 Jun 2008 11:05:30 +0800",
               "10 Jun 2008 11:05:30 +0800")
-          .collect(
-              toMap(
-                  DateTimeFormats::forExample, ex -> DateTimeFormatter.RFC_1123_DATE_TIME));
+          .collect(toMap(DateTimeFormats::forExample, ex -> DateTimeFormatter.RFC_1123_DATE_TIME));
+
+  private static final Map<List<?>, String> DATE_PREFIXES = BiStream.<List<?>, String>builder()
+      .add(forExample("2011-12-03"), "yyyy-MM-dd")
+      .add(forExample("2011-12-3"), "yyyy-MM-d")
+      .add(forExample("2011/12/03"), "yyyy/MM/dd")
+      .add(forExample("2011/12/3"), "yyyy/MM/d")
+      .add(forExample("Jan 11 2011"), "LLL dd yyyy")
+      .add(forExample("Jan 1 2011"), "LLL d yyyy")
+      .add(forExample("11 Jan 2011"), "dd LLL yyyy")
+      .add(forExample("1 Jan 2011"), "d LLL yyyy")
+      .add(forExample("2011 Jan 1"), "yyyy LLL d")
+      .add(forExample("2011 Jan 11"), "yyyy LLL dd")
+      .add(forExample("January 11 2011"), "LLLL dd yyyy")
+      .add(forExample("January 1 2011"), "LLLL d yyyy")
+      .add(forExample("11 January 2011"), "dd LLLL yyyy")
+      .add(forExample("1 January 2011"), "d LLLL yyyy")
+      .add(forExample("2011 January 1"), "yyyy LLLL d")
+      .add(forExample("2011 January 11"), "yyyy LLLL dd")
+      .build()
+      .toMap();
+
+  private static final Map<List<?>, DateTimeFormatter> LOCAL_DATE_FORMATTERS =
+      BiStream.from(DATE_PREFIXES).mapValues(p -> DateTimeFormatter.ofPattern(p))
+          .append(forExample("20111203"), DateTimeFormatter.BASIC_ISO_DATE)
+          .toMap();
 
   private static final PrefixSearchTable<Object, String> PREFIX_TABLE =
       PrefixSearchTable.<Object, String>builder()
-          .add(forExample("2011-12-03"), "yyyy-MM-dd")
-          .add(forExample("2011-12-3"), "yyyy-MM-d")
-          .add(forExample("2011/12/03"), "yyyy/MM/dd")
-          .add(forExample("2011/12/3"), "yyyy/MM/d")
-          .add(forExample("Jan 11 2011"), "LLL dd yyyy")
-          .add(forExample("Jan 1 2011"), "LLL d yyyy")
-          .add(forExample("11 Jan 2011"), "dd LLL yyyy")
-          .add(forExample("1 Jan 2011"), "d LLL yyyy")
-          .add(forExample("2011 Jan 1"), "yyyy LLL d")
-          .add(forExample("2011 Jan 11"), "yyyy LLL dd")
-          .add(forExample("January 11 2011"), "LLLL dd yyyy")
-          .add(forExample("January 1 2011"), "LLLL d yyyy")
-          .add(forExample("11 January 2011"), "dd LLLL yyyy")
-          .add(forExample("1 January 2011"), "d LLLL yyyy")
-          .add(forExample("2011 January 1"), "yyyy LLLL d")
-          .add(forExample("2011 January 11"), "yyyy LLLL dd")
+          .addAll(DATE_PREFIXES)
           .add(forExample("T"), "'T'")
           .add(forExample("10:15"), "HH:mm")
           .add(forExample("10:15:30"), "HH:mm:ss")
@@ -287,11 +295,11 @@ public final class DateTimeFormats {
   }
 
   /**
-   * Parses {@code dateString} to {@link LocalDate}. {@code dateString} could be in the format
-   * of {@link DateTimeFormatter#ISO_DATE}, {@link DateTimeFormatter#BASIC_ISO_DATE}
-   * or dates with natural month names like "Jan" or "January".
+   * Parses {@code dateString} as {@link LocalDate}.
    *
-   * <p>If {@code dateString} has valid time and timezone, they'll be ignored.
+   * <p>Acceptable formats include dates like "2024/04/11", "2024-04-11", "2024 April 11",
+   * "Apr 11 2024", "20240401", or even with "10/30/2024", "30/01/2024" etc. as long as it's
+   * not ambiguous.
    *
    * <p>Prefer to pre-construct a {@link DateTimeFormatter} using {@link #formatOf} to get
    * better performance and earlier error report in case the example date time string cannot
@@ -300,8 +308,12 @@ public final class DateTimeFormats {
    * @throws DateTimeException if {@code dateTimeString} cannot be parsed to {@link LocalDate}
    * @since 8.0
    */
-  public static LocalDate parseToLocalDate(String dateString) {
-    return parseDateTime(dateString, LocalDate::from);
+  public static LocalDate parseLocalDate(String dateString) {
+    List<?> signature = forExample(dateString);
+    return lookup(LOCAL_DATE_FORMATTERS, signature)
+        .orElseGet(() -> LocalDateRule.resolveFormat(signature)
+            .orElseThrow(() -> new DateTimeException("unsupported local date: " + dateString)))
+        .parse(dateString, LocalDate::from);
   }
 
   /**
@@ -463,6 +475,12 @@ public final class DateTimeFormats {
       return RESOLUTION_TABLE.getAll(signature)
           .flatMapValues(rules -> rules.stream().filter(rule -> rule.predicate.test(signature)).map(rule -> rule.format))
           .findFirst();
+    }
+
+    static Optional<DateTimeFormatter> resolveFormat(List<?> signature) {
+      return resolve(signature)
+          .filter((prefix, p) -> prefix.size() == 5)
+          .map((prefix, p) -> DateTimeFormatter.ofPattern(p));
     }
 
     private final Predicate<List<?>> predicate;
