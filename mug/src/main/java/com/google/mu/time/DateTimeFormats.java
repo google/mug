@@ -302,8 +302,7 @@ public final class DateTimeFormats {
    * not ambiguous.
    *
    * <p>Prefer to pre-construct a {@link DateTimeFormatter} using {@link #formatOf} to get
-   * better performance and earlier error report in case the example date time string cannot
-   * be inferred.
+   * better performance and earlier error report in case the format cannot be inferred.
    *
    * @throws DateTimeException if {@code dateTimeString} cannot be parsed to {@link LocalDate}
    * @since 8.0
@@ -322,8 +321,7 @@ public final class DateTimeFormats {
    * or it could be any valid date time with zone name or zone offset.
    *
    * <p>Prefer to pre-construct a {@link DateTimeFormatter} using {@link #formatOf} to get
-   * better performance and earlier error report in case the example date time string cannot
-   * be inferred.
+   * better performance and earlier error report in case the format cannot be inferred.
    *
    * @param dateTimeString can be the result of {@link Instant#toString}, or any other valid
    *   date time with either zone name or UTC offset.
@@ -339,8 +337,7 @@ public final class DateTimeFormats {
    * infer the {@link DateTimeFormatter} for common formats.
    *
    * <p>Prefer to pre-construct a {@link DateTimeFormatter} using {@link #formatOf} to get
-   * better performance and earlier error report in case the example date time string cannot
-   * be inferred.
+   * better performance and earlier error report in case the format cannot be inferred.
    *
    * @param dateTimeString must be a string with valid date, time, and zone name or UTC offset
    * @throws DateTimeException if {@code dateTimeString} cannot be parsed as {@link ZonedDateTime}
@@ -355,8 +352,7 @@ public final class DateTimeFormats {
    * infer the {@link DateTimeFormatter} for common formats.
    *
    * <p>Prefer to pre-construct a {@link DateTimeFormatter} using {@link #formatOf} to get
-   * better performance and earlier error report in case the example date time string cannot
-   * be inferred.
+   * better performance and earlier error report in case the format cannot be inferred.
    *
    * @param dateTimeString must be a string with valid date, time, and UTC offset
    *   (cannot be zone name)
