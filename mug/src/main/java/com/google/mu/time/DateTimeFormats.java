@@ -159,7 +159,7 @@ public final class DateTimeFormats {
               "10 Jun 2008 11:05:30 +0800")
           .collect(toMap(DateTimeFormats::forExample, ex -> DateTimeFormatter.RFC_1123_DATE_TIME));
 
-  private static final Map<List<?>, String> DATE_PREFIXES = BiStream.<List<?>, String>builder()
+  private static final Map<List<?>, String> LOCAL_DATE_PATTERNS = BiStream.<List<?>, String>builder()
       .add(forExample("2011-12-03"), "yyyy-MM-dd")
       .add(forExample("2011-12-3"), "yyyy-MM-d")
       .add(forExample("2011/12/03"), "yyyy/MM/dd")
@@ -180,13 +180,13 @@ public final class DateTimeFormats {
       .toMap();
 
   private static final Map<List<?>, DateTimeFormatter> LOCAL_DATE_FORMATTERS =
-      BiStream.from(DATE_PREFIXES).mapValues(p -> DateTimeFormatter.ofPattern(p))
+      BiStream.from(LOCAL_DATE_PATTERNS).mapValues(p -> DateTimeFormatter.ofPattern(p))
           .append(forExample("20111203"), DateTimeFormatter.BASIC_ISO_DATE)
           .toMap();
 
   private static final PrefixSearchTable<Object, String> PREFIX_TABLE =
       PrefixSearchTable.<Object, String>builder()
-          .addAll(DATE_PREFIXES)
+          .addAll(LOCAL_DATE_PATTERNS)
           .add(forExample("T"), "'T'")
           .add(forExample("10:15"), "HH:mm")
           .add(forExample("10:15:30"), "HH:mm:ss")
@@ -298,8 +298,8 @@ public final class DateTimeFormats {
    * Parses {@code dateString} as {@link LocalDate}.
    *
    * <p>Acceptable formats include dates like "2024/04/11", "2024-04-11", "2024 April 11",
-   * "Apr 11 2024", "20240401", or even with "10/30/2024", "30/01/2024" etc. as long as it's
-   * not ambiguous.
+   * "Apr 11 2024", "11 April 2024", "20240401", or even with "10/30/2024", "30/01/2024" etc.
+   * as long as it's not ambiguous.
    *
    * <p>Prefer to pre-construct a {@link DateTimeFormatter} using {@link #formatOf} to get
    * better performance and earlier error report in case the format cannot be inferred.
