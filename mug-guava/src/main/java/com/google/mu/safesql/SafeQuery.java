@@ -158,6 +158,19 @@ public final class SafeQuery {
    * Creates a SafeQuery with a single CTE (Common Table Expression). That is,
    * the query in {@code template} refers to {@code subquery} by {@code subqueryName}.
    *
+   * <p>For example: <pre>{@code
+   * SafeQuery.with(
+   *     "jobs", SafeQuery.of("SELECT * FROM INFO_SCHEMA.JOBS WHERE id = {project}", projectId),
+   *     "SELECT `{columns}` FROM jobs", columns);
+   * }</pre>
+   *
+   * is equivalent to: <pre>{@code
+   * WITH jobs AS (
+   *   SELECT * FROM INFO_SCHEMA.JOBS WHERE id = ...
+   * )
+   * SELECT ... FROM jobs
+   * }</pre>
+   *
    * @since 8.1
    */
   @TemplateFormatMethod
@@ -169,9 +182,26 @@ public final class SafeQuery {
   }
 
   /**
-   * Creates a SafeQuery with a two CTEs (Common Table Expression). That is,
+   * Creates a SafeQuery with two CTEs (Common Table Expression). That is,
    * the query in {@code template} refers to {@code subquery1} by {@code name1} and
    * {@code subquery2} by {@code name2}.
+   *
+   * <p>For example: <pre>{@code
+   * SafeQuery.with(
+   *     "jobs", SafeQuery.of("SELECT * FROM INFO_SCHEMA.JOBS WHERE id = {project}", projectId),
+   *     "days", SafeQuery.of("SELECT ..."),
+   *     "SELECT `{columns}` FROM jobs, days", columns);
+   * }</pre>
+   *
+   * is equivalent to: <pre>{@code
+   * WITH jobs AS (
+   *   SELECT * FROM INFO_SCHEMA.JOBS WHERE id = ...
+   * ),
+   * days AS (
+   *   SELECT ...
+   * )
+   * SELECT ... FROM jobs, days
+   * }</pre>
    *
    * @since 8.1
    */
@@ -188,9 +218,30 @@ public final class SafeQuery {
   }
 
   /**
-   * Creates a SafeQuery with a two CTEs (Common Table Expression). That is,
+   * Creates a SafeQuery with 3 CTEs (Common Table Expression). That is,
    * the query in {@code template} refers to {@code subquery1} by {@code name1},
    * {@code subquery2} by {@code name2} and {@code subquery3} by {@code name3}.
+   *
+   * <p>For example: <pre>{@code
+   * SafeQuery.with(
+   *     "jobs", SafeQuery.of("SELECT * FROM INFO_SCHEMA.JOBS WHERE id = {project}", projectId),
+   *     "days", SafeQuery.of("SELECT ..."),
+   *     "editions", SafeQuery.of("SELECT ..."),
+   *     "SELECT `{columns}` FROM jobs, days, editions", columns);
+   * }</pre>
+   *
+   * is equivalent to: <pre>{@code
+   * WITH jobs AS (
+   *   SELECT * FROM INFO_SCHEMA.JOBS WHERE id = ...
+   * ),
+   * days AS (
+   *   SELECT ...
+   * ),
+   * editions AS (
+   *   SELECT ...
+   * )
+   * SELECT ... FROM jobs, days, editions
+   * }</pre>
    *
    * @since 8.1
    */
