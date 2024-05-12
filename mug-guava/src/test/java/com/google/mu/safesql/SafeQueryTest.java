@@ -530,8 +530,17 @@ public final class SafeQueryTest {
   }
 
   @Test
-  public void testNulls() {
-    new NullPointerTester().testAllPublicStaticMethods(SafeQuery.class);
+  public void testNulls() throws Exception {
+    new NullPointerTester()
+        .ignore(SafeQuery.class.getMethod(
+            "with", String.class, SafeQuery.class, String.class, SafeQuery.class, String.class, Object[].class))
+        .ignore(SafeQuery.class.getMethod(
+            "with",
+            String.class, SafeQuery.class, String.class, SafeQuery.class, String.class, SafeQuery.class,
+            String.class, Object[].class))
+        .setDefault(SafeQuery.class, SafeQuery.of("select 1"))
+        .setDefault(String.class, "nonEmpty")
+        .testAllPublicStaticMethods(SafeQuery.class);
   }
 
   private enum JobType {
@@ -955,6 +964,94 @@ public final class SafeQueryTest {
   public void of_withArgs() {
     SafeQuery query = SafeQuery.of("`{tbl}`", "ʻ OR TRUE OR ʼʼ=ʼ");
     assertThat(query.toString()).isEqualTo("`\\u02BB" + " OR TRUE OR \\u02BC\\u02BC=\\u02BC`");
+  }
+
+  @Test
+  public void with_oneSubquery() {
+    assertThat(
+            SafeQuery.with(
+                "deduped", SafeQuery.of("select * from underlying"), "select * from deduped"))
+        .isEqualTo(
+            SafeQuery.of(
+                "WITH `deduped` AS (\n  select * from underlying\n)\nselect * from deduped"));
+  }
+
+  @Test
+  public void with_twoSubqueries() {
+    assertThat(
+            SafeQuery.with(
+                "deduped",
+                SafeQuery.of("select * from underlying"),
+                "joined",
+                SafeQuery.of("select * from deduped d join d.items"),
+                "select * from joined"))
+        .isEqualTo(
+            SafeQuery.of(
+                "WITH `deduped` AS (\n  select * from underlying\n),\n"
+                    + "`joined` AS (\n  select * from deduped d join d.items\n)\n"
+                    + "select * from joined"));
+  }
+
+  @Test
+  public void with_threeSubqueries() {
+    assertThat(
+            SafeQuery.with(
+                "a",
+                SafeQuery.of("select 1 as a"),
+                "b",
+                SafeQuery.of("select 2 as b"),
+                "c",
+                SafeQuery.of("select 3 as c"),
+                "select * from a, b, c"))
+        .isEqualTo(
+            SafeQuery.of(
+                "WITH `a` AS (\n  select 1 as a\n),\n"
+                    + "`b` AS (\n  select 2 as b\n),\n"
+                    + "`c` AS (\n  select 3 as c\n)\n"
+                    + "select * from a, b, c"));
+  }
+
+  @Test
+  public void with_emptyNameNotAllowed() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeQuery.with( "", SafeQuery.of("select 1"), "select * from x"));
+    assertThat(thrown).hasMessageThat().contains("empty");
+  }
+
+  @Test
+  public void with_conflictingSubqueryNamesDisallowed() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                SafeQuery.with(
+                    "foo", SafeQuery.of("select 1"),
+                    "foo", SafeQuery.of("select 2"),
+                    "select * from `foo`"));
+    assertThat(thrown).hasMessageThat().contains("foo");
+  }
+
+  @Test
+  public void cte_withSubqueryNamesDifferingOnlyByCases() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                SafeQuery.with(
+                    "foo", SafeQuery.of("select 1"),
+                    "Foo", SafeQuery.of("select 2"),
+                    "select * from `foo`"));
+    assertThat(thrown).hasMessageThat().contains("Foo");
+  }
+
+  @Test
+  public void with_invalidNameChar() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> SafeQuery.with("a?", SafeQuery.of("select * from underlying"), "select * from tbl"));
+    assertThat(thrown).hasMessageThat().contains("a?");
   }
 
   static final class TrustedSql {
