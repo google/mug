@@ -1,1 +1,0 @@
-typeSearchIndex = [{"l":"All Classes and Interfaces","u":"allclasses-index.html"},{"p":"com.google.mu.protobuf.util","l":"MoreStructs"},{"p":"com.google.mu.protobuf.util","l":"MoreValues"},{"p":"com.google.mu.protobuf.util","l":"StructBuilder"},{"p":"com.google.mu.protobuf.util","l":"StructMaker"}];updateSearchResults();
