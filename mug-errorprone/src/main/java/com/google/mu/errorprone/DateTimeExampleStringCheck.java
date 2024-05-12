@@ -3,6 +3,8 @@ package com.google.mu.errorprone;
 import static com.google.errorprone.BugPattern.SeverityLevel.ERROR;
 import static com.google.errorprone.matchers.Matchers.staticMethod;
 
+import java.time.DateTimeException;
+
 import com.google.auto.service.AutoService;
 import com.google.mu.time.DateTimeFormats;
 import com.google.errorprone.BugPattern;
@@ -37,7 +39,7 @@ public final class DateTimeExampleStringCheck extends AbstractBugChecker
     checkingOn(exampleArg).require(exampleString != null, "compile-time string constant expected");
     try {
       Object verified = DateTimeFormats.formatOf(exampleString);
-    } catch (IllegalArgumentException e) {
+    } catch (IllegalArgumentException | DateTimeException e) {
       throw checkingOn(exampleArg).report(e.getMessage());
     }
   }

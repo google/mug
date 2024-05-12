@@ -4,7 +4,7 @@
   <groupId>com.google.mug</groupId>
   <artifactId>mug-root</artifactId>
   <packaging>pom</packaging>
-  <version>7.1-SNAPSHOT</version>
+  <version>8.1-SNAPSHOT</version>
   <name>mug-root</name>
   <description>Google Mug Library</description>
   <url>http://github.com/google/mug</url>
@@ -211,7 +211,19 @@
         </plugin>
         <plugin>
           <artifactId>maven-jar-plugin</artifactId>
-          <version>2.3.2</version>
+          <version>3.1.0</version>
+            <executions>
+                <execution>
+                    <id>javadoc-jar</id>
+                    <phase>package</phase>
+                    <goals>
+                        <goal>jar</goal>
+                    </goals>
+                    <configuration>
+                        <classifier>javadoc</classifier>
+                    </configuration>
+                </execution>
+            </executions>
         </plugin>
         <plugin>
           <artifactId>maven-deploy-plugin</artifactId>
@@ -225,8 +237,8 @@
           <artifactId>maven-javadoc-plugin</artifactId>
           <version>3.6.3</version>
           <configuration>
-	        <sourcepath>mug/src/main/java;mug-guava/src/main/java;mug-protobuf/src/main/java;mug-bigquery/src/main/java</sourcepath>
-	        <includeDependencySources>true</includeDependencySources>
+            <sourcepath>mug/src/main/java;mug-guava/src/main/java;mug-protobuf/src/main/java;mug-bigquery/src/main/java;</sourcepath>
+            <includeDependencySources>true</includeDependencySources>
             <additionalDependencies>
               <additionalDependency>
                 <groupId>com.google.guava</groupId>
@@ -259,9 +271,7 @@
           <execution>
             <id>attach-docs</id>
             <phase>post-integration-test</phase>
-            <goals>
-            <goal>jar</goal>
-            </goals>
+            <goals><goal>jar</goal></goals>
           </execution>
           </executions>
         </plugin>
@@ -318,6 +328,31 @@
             <goals>
               <goal>javadoc</goal>
             </goals>
+          </execution>
+          <execution>
+            <id>generate-javadoc-jar</id>
+            <phase>package</phase>
+            <goals>
+              <goal>javadoc</goal>
+            </goals>
+            <configuration>
+                <classifier>root-javadoc</classifier>
+                <show>protected</show>
+                <detectLinks>true</detectLinks>
+            </configuration>
+          </execution>
+          <execution>
+            <id>generate-mug-javadoc-jar</id>
+            <phase>package</phase>
+            <goals>
+              <goal>javadoc</goal>
+            </goals>
+            <configuration>
+                <classifier>mug-javadoc</classifier>
+                <destDir>${project.basedir}/mug</destDir>
+                <show>protected</show>
+                <detectLinks>true</detectLinks>
+            </configuration>
           </execution>
           <execution>
             <goals>

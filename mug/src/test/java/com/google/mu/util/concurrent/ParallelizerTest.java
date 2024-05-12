@@ -507,4 +507,8 @@ public class ParallelizerTest {
     ;
     abstract ExecutorService newExecutorService();
   }
+
+  private static <E extends Throwable> void raise(E throwable) throws E {
+    throw throwable;
+  }
 }

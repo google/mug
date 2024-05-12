@@ -49,7 +49,7 @@ public final class PrefixSearchTable<K, V> {
   /**
    * Searches the table for the longest prefix match of {@code compoundKey}.
    *
-   * @return the value mapped to the longest prefix of {@code compoundKey} if present
+   * @return the value mapped to the longest (non-empty) prefix of {@code compoundKey} if present
    * @throws IllegalArgumentException if {@code compoundKey} is empty
    * @throws NullPointerException if {@code compoundKey} is null or any key element is null
    */
@@ -134,6 +134,16 @@ public final class PrefixSearchTable<K, V> {
         node = node.child(compoundKey.get(i));
       }
       checkArgument(node.set(value), "conflicting key: %s", compoundKey);
+      return this;
+    }
+
+    /**
+     * Adds all of {@code mappings} into this builder.
+     *
+     * @since 8.0
+     */
+    public Builder<K, V> addAll(Map<? extends List<? extends K>, ? extends V> mappings) {
+      BiStream.from(mappings).forEachOrdered(this::add);
       return this;
     }
 

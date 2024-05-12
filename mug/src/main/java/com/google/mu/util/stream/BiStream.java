@@ -384,7 +384,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * Returns a {@code Collector} that splits each input element as a pair and collects them into a
    * {@link BiStream}.
    *
-   * <p>Note that it's more efficient to use {@code BiStream.(stream, toKey, toValue)} than
+   * <p>Note that it's more efficient to use {@code BiStream.from(stream, toKey, toValue)} than
    * {@code stream.collect(toBiStream(toKey, toValue))}. The latter is intended to be used in the
    * middle of a long stream pipeline, when performance isn't critical.
    *
@@ -1670,7 +1670,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * syntactic noise.
    *
    * <p>This is mainly used for "return" statements where you have a long BiStream chain, only the
-   * last* step needs to pass the return value of {@code collect()} to a final method cqll, for
+   * last* step needs to pass the return value of {@code collect()} to a final method call, for
    * example: <pre>{@code
    *   return new Ledger(
    *       BiStream.from(...)

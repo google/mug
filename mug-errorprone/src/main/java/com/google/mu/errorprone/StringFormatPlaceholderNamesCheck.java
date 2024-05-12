@@ -24,7 +24,7 @@ import com.sun.source.tree.NewClassTree;
 /** Restricts the placeholder names used in StringFormat and ResourceNamePattern. */
 @BugPattern(
     summary = "Checks that valid placeholder names are used in string format.",
-    link = "go/java-tips/024#safer-string-format-reuse",
+    link = "https://github.com/google/mug/wiki/StringFormat-Explained",
     linkType = LinkType.CUSTOM,
     severity = ERROR)
 @AutoService(BugChecker.class)

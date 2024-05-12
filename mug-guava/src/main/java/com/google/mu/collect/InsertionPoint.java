@@ -34,7 +34,7 @@ import com.google.mu.annotations.RequiresGuava;
 
 /**
  * Represents a result of {@link BinarySearch}. An insertion point in a sequence of elements
- * (normally of indexes), which is either an exact element, or in between two adjacent elements
+ * (normally of indexes) is either an exact element, or in between two adjacent elements
  * in a discrete domain, or before or after all elements of the discrete domain.
  *
  * <p>If representing an exact point, {@link #exact}, {@link #floor()} and {@link #ceiling()} all

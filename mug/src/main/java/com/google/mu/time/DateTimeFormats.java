@@ -31,11 +31,13 @@ import static java.util.stream.Collectors.toMap;
 
 import java.time.DateTimeException;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
+import java.time.temporal.TemporalQuery;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -61,8 +63,9 @@ import com.google.mu.util.stream.BiStream;
  * ZonedDateTime dateTime = DateTimeFormats.parseZonedDateTime(dateTimeString);
  * }</pre>
  *
- * <p>For more advanced use cases, the {@link DateTimeFormatter} can be inferred from an
- * example date/time/datetime string (similar to the golang time library style).
+ * <p>For more flexible use cases, where you might want to reuse or conform to a format known at
+ * compile-time, the {@link DateTimeFormatter} can be inferred from an example date/time/datetime
+ * string (similar to the golang time library style).
  *
  * <p>For example:
  *
@@ -78,7 +81,7 @@ import com.google.mu.util.stream.BiStream;
  * }</pre>
  *
  * <p>Most ISO 8601 formats are supported, except BASIC_ISO_DATE, ISO_WEEK_DATE ('2012-W48-6')
- * and ISO_ORDINAL_DATE ('2012-337').
+ * and ISO_ORDINAL_DATE ('2012-337'), which are rarely used.
  *
  * <p>For the date part of custom patterns, ambiguous examples like {@code 10/12/2024} or {@code
  * 1/2/yyyy} are not supported. You should use unambiguous examples like {@code 10/30/2024}
@@ -122,6 +125,7 @@ public final class DateTimeFormats {
           .repeatedly();
   private static final Substring.RepeatingPattern PLACEHOLDERS =
       consecutive(noneOf("<>")).immediatelyBetween("<", INCLUSIVE, ">", INCLUSIVE).repeatedly();
+
   private static final Map<List<?>, DateTimeFormatter> ISO_DATE_FORMATTERS =
       BiStream.of(
           forExample("2011-12-03"), DateTimeFormatter.ISO_LOCAL_DATE,
@@ -153,28 +157,36 @@ public final class DateTimeFormats {
               "Tue, 10 Jun 2008 11:05:30 -0800",
               "1 Jun 2008 11:05:30 +0800",
               "10 Jun 2008 11:05:30 +0800")
-          .collect(
-              toMap(
-                  DateTimeFormats::forExample, ex -> DateTimeFormatter.RFC_1123_DATE_TIME));
+          .collect(toMap(DateTimeFormats::forExample, ex -> DateTimeFormatter.RFC_1123_DATE_TIME));
+
+  private static final Map<List<?>, String> LOCAL_DATE_PATTERNS = BiStream.<List<?>, String>builder()
+      .add(forExample("2011-12-03"), "yyyy-MM-dd")
+      .add(forExample("2011-12-3"), "yyyy-MM-d")
+      .add(forExample("2011/12/03"), "yyyy/MM/dd")
+      .add(forExample("2011/12/3"), "yyyy/MM/d")
+      .add(forExample("Jan 11 2011"), "LLL dd yyyy")
+      .add(forExample("Jan 1 2011"), "LLL d yyyy")
+      .add(forExample("11 Jan 2011"), "dd LLL yyyy")
+      .add(forExample("1 Jan 2011"), "d LLL yyyy")
+      .add(forExample("2011 Jan 1"), "yyyy LLL d")
+      .add(forExample("2011 Jan 11"), "yyyy LLL dd")
+      .add(forExample("January 11 2011"), "LLLL dd yyyy")
+      .add(forExample("January 1 2011"), "LLLL d yyyy")
+      .add(forExample("11 January 2011"), "dd LLLL yyyy")
+      .add(forExample("1 January 2011"), "d LLLL yyyy")
+      .add(forExample("2011 January 1"), "yyyy LLLL d")
+      .add(forExample("2011 January 11"), "yyyy LLLL dd")
+      .build()
+      .toMap();
+
+  private static final Map<List<?>, DateTimeFormatter> LOCAL_DATE_FORMATTERS =
+      BiStream.from(LOCAL_DATE_PATTERNS).mapValues(p -> DateTimeFormatter.ofPattern(p))
+          .append(forExample("20111203"), DateTimeFormatter.BASIC_ISO_DATE)
+          .toMap();
 
   private static final PrefixSearchTable<Object, String> PREFIX_TABLE =
       PrefixSearchTable.<Object, String>builder()
-          .add(forExample("2011-12-03"), "yyyy-MM-dd")
-          .add(forExample("2011-12-3"), "yyyy-MM-d")
-          .add(forExample("2011/12/03"), "yyyy/MM/dd")
-          .add(forExample("2011/12/3"), "yyyy/MM/d")
-          .add(forExample("Jan 11 2011"), "LLL dd yyyy")
-          .add(forExample("Jan 1 2011"), "LLL d yyyy")
-          .add(forExample("11 Jan 2011"), "dd LLL yyyy")
-          .add(forExample("1 Jan 2011"), "d LLL yyyy")
-          .add(forExample("2011 Jan 1"), "yyyy LLL d")
-          .add(forExample("2011 Jan 11"), "yyyy LLL dd")
-          .add(forExample("January 11 2011"), "LLLL dd yyyy")
-          .add(forExample("January 1 2011"), "LLLL d yyyy")
-          .add(forExample("11 January 2011"), "dd LLLL yyyy")
-          .add(forExample("1 January 2011"), "d LLLL yyyy")
-          .add(forExample("2011 January 1"), "yyyy LLLL d")
-          .add(forExample("2011 January 11"), "yyyy LLLL dd")
+          .addAll(LOCAL_DATE_PATTERNS)
           .add(forExample("T"), "'T'")
           .add(forExample("10:15"), "HH:mm")
           .add(forExample("10:15:30"), "HH:mm:ss")
@@ -273,11 +285,34 @@ public final class DateTimeFormats {
             });
   }
 
-  private static DateTimeFormatter forDateTimeNoValidation(String dateTimeString) {
+  private static <T> T parseDateTime(String dateTimeString, TemporalQuery<T> query) {
     List<?> signature = forExample(dateTimeString);
     return lookup(RFC_1123_FORMATTERS, signature)
+        .orElseGet(() -> lookup(ISO_DATE_FORMATTERS, signature)
         .orElseGet(() -> lookup(ISO_DATE_TIME_FORMATTERS, forExample(removeNanosecondsPart(dateTimeString)))
-        .orElseGet(() -> DateTimeFormatter.ofPattern(inferDateTimePattern(dateTimeString, signature))));
+        .orElseGet(() -> DateTimeFormatter.ofPattern(inferDateTimePattern(dateTimeString, signature)))))
+        .parse(dateTimeString, query);
+  }
+
+  /**
+   * Parses {@code dateString} as {@link LocalDate}.
+   *
+   * <p>Acceptable formats include dates like "2024/04/11", "2024-04-11", "2024 April 11",
+   * "Apr 11 2024", "11 April 2024", "20240401", or even with "10/30/2024", "30/01/2024" etc.
+   * as long as it's not ambiguous.
+   *
+   * <p>Prefer to pre-construct a {@link DateTimeFormatter} using {@link #formatOf} to get
+   * better performance and earlier error report in case the format cannot be inferred.
+   *
+   * @throws DateTimeException if {@code dateTimeString} cannot be parsed to {@link LocalDate}
+   * @since 8.0
+   */
+  public static LocalDate parseLocalDate(String dateString) {
+    List<?> signature = forExample(dateString);
+    return lookup(LOCAL_DATE_FORMATTERS, signature)
+        .orElseGet(() -> LocalDateRule.resolveFormat(signature)
+            .orElseThrow(() -> new DateTimeException("unsupported local date: " + dateString)))
+        .parse(dateString, LocalDate::from);
   }
 
   /**
@@ -286,18 +321,15 @@ public final class DateTimeFormats {
    * or it could be any valid date time with zone name or zone offset.
    *
    * <p>Prefer to pre-construct a {@link DateTimeFormatter} using {@link #formatOf} to get
-   * better performance and earlier error report in case the example date time string cannot
-   * be inferred.
+   * better performance and earlier error report in case the format cannot be inferred.
    *
+   * @param dateTimeString can be the result of {@link Instant#toString}, or any other valid
+   *   date time with either zone name or UTC offset.
    * @throws DateTimeException if {@code dateTimeString} cannot be parsed as {@link Instant}
    * @since 8.0
    */
   public static Instant parseToInstant(String dateTimeString) {
-    try {
-      return Instant.parse(dateTimeString);
-    } catch (DateTimeParseException notInstant) {
-      return parseZonedDateTime(dateTimeString).toInstant();
-    }
+    return parseDateTime(dateTimeString, Instant::from);
   }
 
   /**
@@ -305,14 +337,14 @@ public final class DateTimeFormats {
    * infer the {@link DateTimeFormatter} for common formats.
    *
    * <p>Prefer to pre-construct a {@link DateTimeFormatter} using {@link #formatOf} to get
-   * better performance and earlier error report in case the example date time string cannot
-   * be inferred.
+   * better performance and earlier error report in case the format cannot be inferred.
    *
+   * @param dateTimeString must be a string with valid date, time, and zone name or UTC offset
    * @throws DateTimeException if {@code dateTimeString} cannot be parsed as {@link ZonedDateTime}
    * @since 8.0
    */
   public static ZonedDateTime parseZonedDateTime(String dateTimeString) {
-    return ZonedDateTime.parse(dateTimeString, forDateTimeNoValidation(dateTimeString));
+    return parseDateTime(dateTimeString, ZonedDateTime::from);
   }
 
   /**
@@ -320,14 +352,15 @@ public final class DateTimeFormats {
    * infer the {@link DateTimeFormatter} for common formats.
    *
    * <p>Prefer to pre-construct a {@link DateTimeFormatter} using {@link #formatOf} to get
-   * better performance and earlier error report in case the example date time string cannot
-   * be inferred.
+   * better performance and earlier error report in case the format cannot be inferred.
    *
+   * @param dateTimeString must be a string with valid date, time, and UTC offset
+   *   (cannot be zone name)
    * @throws DateTimeException if {@code dateTimeString} cannot be parsed as {@link OffsetDateTime}
    * @since 8.0
    */
   public static OffsetDateTime parseOffsetDateTime(String dateTimeString) {
-    return OffsetDateTime.parse(dateTimeString, forDateTimeNoValidation(dateTimeString));
+    return parseDateTime(dateTimeString, OffsetDateTime::from);
   }
 
   static String inferDateTimePattern(String example) {
@@ -438,6 +471,12 @@ public final class DateTimeFormats {
       return RESOLUTION_TABLE.getAll(signature)
           .flatMapValues(rules -> rules.stream().filter(rule -> rule.predicate.test(signature)).map(rule -> rule.format))
           .findFirst();
+    }
+
+    static Optional<DateTimeFormatter> resolveFormat(List<?> signature) {
+      return resolve(signature)
+          .filter((prefix, p) -> prefix.size() == 5)
+          .map((prefix, p) -> DateTimeFormatter.ofPattern(p));
     }
 
     private final Predicate<List<?>> predicate;
