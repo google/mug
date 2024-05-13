@@ -81,16 +81,13 @@ public final class SafeQuery {
    * Creates a template with the placeholders to be filled by subsequent
    * {@link StringFormat.To#with} calls. For example:
    *
-   * <pre>
-   * {
-   *   &#64;code
+   * <pre>{@code
    *   private static final Template<SafeQuery> FIND_CASE_BY_ID = SafeQuery
    *       .template("SELECT * FROM `{project_id}.{dataset}.Cases` WHERE CaseId = '{case_id}'");
    *
    *   // ...
    *   SafeQuery query = FIND_CASE_BY_ID.with(projectId, dataset, caseId);
-   * }
-   * </pre>
+   * }</pre>
    *
    * <p>
    * Placeholders must follow the following rules:
