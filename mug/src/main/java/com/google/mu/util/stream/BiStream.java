@@ -1670,7 +1670,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * syntactic noise.
    *
    * <p>This is mainly used for "return" statements where you have a long BiStream chain, only the
-   * last* step needs to pass the return value of {@code collect()} to a final method cqll, for
+   * last* step needs to pass the return value of {@code collect()} to a final method call, for
    * example: <pre>{@code
    *   return new Ledger(
    *       BiStream.from(...)
