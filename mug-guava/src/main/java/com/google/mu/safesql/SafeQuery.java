@@ -11,14 +11,10 @@ import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.mapping;
 
 import java.text.DecimalFormat;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.Set;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
-import com.google.common.base.Ascii;
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.Iterables;
 import com.google.common.primitives.UnsignedInteger;
@@ -31,7 +27,6 @@ import com.google.mu.annotations.TemplateString;
 import com.google.mu.util.StringFormat;
 import com.google.mu.util.StringFormat.Template;
 import com.google.mu.util.Substring;
-import com.google.mu.util.stream.BiStream;
 
 /**
  * A piece of provably-safe (from SQL injection) query string constructed by the
@@ -149,111 +144,6 @@ public final class SafeQuery {
    */
   public static Template<SafeQuery> template(@CompileTimeConstant String formatString) {
     return new Translator().translate(formatString);
-  }
-
-  /**
-   * Creates a SafeQuery with a single CTE (Common Table Expression). That is,
-   * the query in {@code template} refers to {@code subquery} by {@code subqueryName}.
-   *
-   * <p>For example: <pre>{@code
-   * SafeQuery.with(
-   *     "jobs", SafeQuery.of("SELECT * FROM INFO_SCHEMA.JOBS WHERE id = {project}", projectId),
-   *     "SELECT `{columns}` FROM jobs", columns);
-   * }</pre>
-   *
-   * is equivalent to: <pre>{@code
-   * WITH jobs AS (
-   *   SELECT * FROM INFO_SCHEMA.JOBS WHERE id = ...
-   * )
-   * SELECT ... FROM jobs
-   * }</pre>
-   *
-   * @since 8.1
-   */
-  @TemplateFormatMethod
-  @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
-  public static SafeQuery with(
-      @CompileTimeConstant String subqueryName, SafeQuery subquery,
-      @TemplateString @CompileTimeConstant String template, Object... args) {
-    return new Scope().withQuery(subqueryName, subquery).build(template, args);
-  }
-
-  /**
-   * Creates a SafeQuery with two CTEs (Common Table Expression). That is,
-   * the query in {@code template} refers to {@code subquery1} by {@code name1} and
-   * {@code subquery2} by {@code name2}.
-   *
-   * <p>For example: <pre>{@code
-   * SafeQuery.with(
-   *     "jobs", SafeQuery.of("SELECT * FROM INFO_SCHEMA.JOBS WHERE id = {project}", projectId),
-   *     "days", SafeQuery.of("SELECT ..."),
-   *     "SELECT `{columns}` FROM jobs, days", columns);
-   * }</pre>
-   *
-   * is equivalent to: <pre>{@code
-   * WITH jobs AS (
-   *   SELECT * FROM INFO_SCHEMA.JOBS WHERE id = ...
-   * ),
-   * days AS (
-   *   SELECT ...
-   * )
-   * SELECT ... FROM jobs, days
-   * }</pre>
-   *
-   * @since 8.1
-   */
-  @TemplateFormatMethod
-  @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
-  public static SafeQuery with(
-      @CompileTimeConstant String name1, SafeQuery subquery1,
-      @CompileTimeConstant String name2, SafeQuery subquery2,
-      @TemplateString @CompileTimeConstant String template, Object... args) {
-    return new Scope()
-        .withQuery(name1, subquery1)
-        .withQuery(name2, subquery2)
-        .build(template, args);
-  }
-
-  /**
-   * Creates a SafeQuery with 3 CTEs (Common Table Expression). That is,
-   * the query in {@code template} refers to {@code subquery1} by {@code name1},
-   * {@code subquery2} by {@code name2} and {@code subquery3} by {@code name3}.
-   *
-   * <p>For example: <pre>{@code
-   * SafeQuery.with(
-   *     "jobs", SafeQuery.of("SELECT * FROM INFO_SCHEMA.JOBS WHERE id = {project}", projectId),
-   *     "days", SafeQuery.of("SELECT ..."),
-   *     "editions", SafeQuery.of("SELECT ..."),
-   *     "SELECT `{columns}` FROM jobs, days, editions", columns);
-   * }</pre>
-   *
-   * is equivalent to: <pre>{@code
-   * WITH jobs AS (
-   *   SELECT * FROM INFO_SCHEMA.JOBS WHERE id = ...
-   * ),
-   * days AS (
-   *   SELECT ...
-   * ),
-   * editions AS (
-   *   SELECT ...
-   * )
-   * SELECT ... FROM jobs, days, editions
-   * }</pre>
-   *
-   * @since 8.1
-   */
-  @TemplateFormatMethod
-  @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
-  public static SafeQuery with(
-      @CompileTimeConstant String name1, SafeQuery subquery1,
-      @CompileTimeConstant String name2, SafeQuery subquery2,
-      @CompileTimeConstant String name3, SafeQuery subquery3,
-      @TemplateString @CompileTimeConstant String template, Object... args) {
-    return new Scope()
-        .withQuery(name1, subquery1)
-        .withQuery(name2, subquery2)
-        .withQuery(name3, subquery3)
-        .build(template, args);
   }
 
   /**
@@ -484,85 +374,6 @@ public final class SafeQuery {
 
     private static String removeQuotes(char left, String s, char right) {
       return Substring.between(prefix(left), suffix(right)).from(s).orElse(s);
-    }
-  }
-
-  /**
-   * Supports adding named subqueries using {@link #withQuery}.
-   *
-   * <p>
-   * For a sql query with subqueries that looks like:
-   *
-   * <pre>
-   * {@code
-   * WITH `foo` AS (
-   *   select * from foo_tbl where creation_time > @time
-   * ),
-   * `bar` AS (
-   *   select day, max(traffic) as peak from foo group by day
-   * )
-   * select * from foo, bar
-   * }
-   * </pre>
-   *
-   * You can build it with the following code (for now let's assume there are
-   * dynamically determined placeholders so you can't hardcode the above sql):
-   *
-   * <pre>
-   * {
-   *   &#64;code
-   *   SafeQuery.Scope scope = SafeQuery.scope();
-   *   var foo = scope.withQuery("foo", SafeQuery.of("select * from foo_tbl where creation_time > {time}", time));
-   *   var bar = scope.withQuery("bar", SafeQuery.of("select day, max(traffic) as peak from {foo} group by day", foo));
-   *   SafeQuery query = scope.build("select * from {foo}, {bar}", foo, bar);
-   * }
-   * </pre>
-   */
-  private static final class Scope {
-    private static final StringFormat.Template<SafeQuery> NAMED_SUBQUERY = template("`{name}` AS (\n  {subquery}\n)");
-    private final Set<String> usedSubqueryNames = new HashSet<>();
-    private final LinkedHashMap<String, SafeQuery> subqueries = new LinkedHashMap<>();
-
-    /**
-     * Adds {@code subquery} to be referenced by {@code name} in subsequent
-     * subqueries or the main query.
-     *
-     * @return the TrustedSqlString object that can be used to reference this
-     *         subquery
-     * @throws IllegalArgumentException if {@code name} has already been used in
-     *                                  this builder for another subquery, or if
-     *                                  {@code name} isn't a valid identifier.
-     */
-    public Scope withQuery(@CompileTimeConstant String name, SafeQuery subquery) {
-      checkArgument(ILLEGAL_IDENTIFIER_CHARS.matchesNoneOf(name), "Illegal subquery name: %s", name);
-      checkArgument(name.length() > 0, "name cannot be empty");
-      checkArgument(usedSubqueryNames.add(Ascii.toLowerCase(name)), "Subquery with name `%s` already added", name);
-      subqueries.put(name, checkNotNull(subquery));
-      return this;
-    }
-
-    /**
-     * Returns the full query using all the subqueries whose names may be referenced
-     * in {@code
-     * mainQuery}.
-     */
-    public SafeQuery build(SafeQuery mainQuery) {
-      if (subqueries.isEmpty()) {
-        return mainQuery;
-      }
-      return SafeQuery.of("WITH {subqueries}\n{main}",
-          BiStream.from(subqueries).mapToObj(NAMED_SUBQUERY::with).collect(SafeQuery.joining(",\n")), mainQuery);
-    }
-
-    /**
-     * Returns the full query using all the subqueries whose names may be referenced
-     * in {@code
-     * mainQuery} or one of the {@code args}.
-     */
-    @TemplateFormatMethod
-    @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
-    public SafeQuery build(@CompileTimeConstant @TemplateString String mainQuery, Object... args) {
-      return build(of(mainQuery, args));
     }
   }
 }
