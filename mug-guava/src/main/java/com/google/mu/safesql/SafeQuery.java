@@ -12,6 +12,7 @@ import static java.util.stream.Collectors.mapping;
 
 import java.text.DecimalFormat;
 import java.util.Iterator;
+import java.util.Optional;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -54,6 +55,12 @@ import com.google.mu.util.Substring;
 @RequiresGuava
 @Immutable
 public final class SafeQuery {
+  /**
+   * An empty query string.
+   *
+   * @since 8.1
+   */
+  public static final SafeQuery EMPTY = new SafeQuery("");
   private static final CharMatcher ILLEGAL_IDENTIFIER_CHARS = anyOf("'\"`()[]{}\\~!@$^*,/?;").or(javaIsoControl());
   private static final String TRUSTED_SQL_TYPE_NAME = firstNonNull(
       System.getProperty("com.google.mu.safesql.SafeQuery.trusted_sql_type"),
@@ -70,6 +77,51 @@ public final class SafeQuery {
   @TemplateFormatMethod
   public static SafeQuery of(@CompileTimeConstant @TemplateString String query, Object... args) {
     return template(query).with(args);
+  }
+
+  /**
+   * An optional query that's only rendered if {@code condition} is true; otherwise returns {@link
+   * #EMPTY}. It's for use cases where a subquery is only conditionally added, for example the
+   * following query will only include the userEmail column under super user mode:
+   *
+   * <pre>{@code
+   * SafeQuery query = SafeQuery.of(
+   *     "SELECT job_id, start_timestamp {user_email} FROM jobs",
+   *     SafeQuery.when(isSuperUser, ", user_email"));
+   * );
+   * }</pre>
+   *
+   * @since 8.1
+   */
+  @TemplateFormatMethod
+  @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
+  public static SafeQuery when(
+      boolean condition, @TemplateString @CompileTimeConstant String query, Object... args) {
+    checkNotNull(query);
+    checkNotNull(args);
+    return condition ? of(query, args) : EMPTY;
+  }
+
+  /**
+   * An optional query that's only rendered if {@code arg} is present; otherwise returns {@link
+   * #EMPTY}. It's for use cases where a subquery is only added when present, for example the
+   * following query will add the WHERE clause if the filter is present:
+   *
+   * <pre>{@code
+   * SafeQuery query = SafeQuery.of(
+   *     "SELECT * FROM jobs {where}",
+   *     SafeQuery.optionally("WHERE {filter}", getOptionalFilter()));
+   * );
+   * }</pre>
+   *
+   * @since 8.1
+   */
+  @TemplateFormatMethod
+  @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
+  public static SafeQuery optionally(
+      @TemplateString @CompileTimeConstant String query, Optional<?> arg) {
+    checkNotNull(query);
+    return arg.map(v -> of(query, v)).orElse(EMPTY);
   }
 
   /**

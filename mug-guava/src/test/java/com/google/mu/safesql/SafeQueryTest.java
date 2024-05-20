@@ -6,6 +6,7 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
 
 import java.time.LocalDate;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.junit.BeforeClass;
@@ -958,6 +959,29 @@ public final class SafeQueryTest {
   public void of_withArgs() {
     SafeQuery query = SafeQuery.of("`{tbl}`", "ʻ OR TRUE OR ʼʼ=ʼ");
     assertThat(query.toString()).isEqualTo("`\\u02BB" + " OR TRUE OR \\u02BC\\u02BC=\\u02BC`");
+  }
+
+  @Test
+  public void when_conditionalIsFalse_returnsEmpty() {
+    assertThat(SafeQuery.when(false, "WHERE id = {id}", 1)).isEqualTo(SafeQuery.EMPTY);
+  }
+
+  @Test
+  public void when_conditionalIsTrue_returnsQuery() {
+    assertThat(SafeQuery.when(true, "WHERE id = {id}", 1))
+        .isEqualTo(SafeQuery.of("WHERE id = 1"));
+  }
+
+  @Test
+  public void optionally_optionalArgIsEmpty_returnsEmpty() {
+    assertThat(SafeQuery.optionally("WHERE id = {id}", /* id */ Optional.empty()))
+        .isEqualTo(SafeQuery.EMPTY);
+  }
+
+  @Test
+  public void optionally_optionalArgIsPresent_returnsQuery() {
+    assertThat(SafeQuery.optionally("WHERE id = {id}", /* id */ Optional.of(1)))
+        .isEqualTo(SafeQuery.of("WHERE id = 1"));
   }
 
   static final class TrustedSql {
