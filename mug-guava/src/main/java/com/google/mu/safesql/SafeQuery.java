@@ -13,7 +13,10 @@ import static java.util.stream.Collectors.mapping;
 import java.text.DecimalFormat;
 import java.util.Iterator;
 import java.util.Optional;
+import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 import java.util.stream.Collector;
+import java.util.stream.Collector.Characteristics;
 import java.util.stream.Collectors;
 
 import com.google.common.base.CharMatcher;
@@ -203,10 +206,13 @@ public final class SafeQuery {
    * AND'ed sub-queries will be enclosed in pairs of parenthesis to avoid
    * ambiguity. If the input is empty, the result will be "TRUE".
    *
+   * <p>Empty SafeQuery elements are ignored and not joined.
+   *
    * @since 7.2
    */
   public static Collector<SafeQuery, ?, SafeQuery> and() {
-    return collectingAndThen(mapping(SafeQuery::parenthesized, joining(" AND ")),
+    return collectingAndThen(
+        nonEmptyQueries(mapping(SafeQuery::parenthesized, joining(" AND "))),
         query -> query.toString().isEmpty() ? new SafeQuery("TRUE") : query);
   }
 
@@ -215,19 +221,25 @@ public final class SafeQuery {
    * OR'ed sub-queries will be enclosed in pairs of parenthesis to avoid
    * ambiguity. If the input is empty, the result will be "FALSE".
    *
+   * <p>Empty SafeQuery elements are ignored and not joined.
+   *
    * @since 7.2
    */
   public static Collector<SafeQuery, ?, SafeQuery> or() {
-    return collectingAndThen(mapping(SafeQuery::parenthesized, joining(" OR ")),
+    return collectingAndThen(
+        nonEmptyQueries(mapping(SafeQuery::parenthesized, joining(" OR "))),
         query -> query.toString().isEmpty() ? new SafeQuery("FALSE") : query);
   }
 
   /**
    * Returns a collector that can join {@link SafeQuery} objects using
    * {@code delim} as the delimiter.
+   *
+   * <p>Empty SafeQuery elements are ignored and not joined.
    */
   public static Collector<SafeQuery, ?, SafeQuery> joining(@CompileTimeConstant String delim) {
-    return collectingAndThen(mapping(SafeQuery::toString, Collectors.joining(checkNotNull(delim))), SafeQuery::new);
+    return collectingAndThen(
+        nonEmptyQueries(mapping(SafeQuery::toString, Collectors.joining(checkNotNull(delim)))), SafeQuery::new);
   }
 
   /** Returns the encapsulated SQL query. */
@@ -264,6 +276,22 @@ public final class SafeQuery {
    */
   private SafeQuery guardDashExpression(Substring.Match placeholder) {
     return query.startsWith("-") && !placeholder.isImmediatelyBetween("(", ")") ? parenthesized() : this;
+  }
+
+  private static <R> Collector<SafeQuery, ?, R> nonEmptyQueries(
+      Collector<SafeQuery, ?, R> downstream) {
+    return filtering(q -> !q.query.isEmpty(), downstream);
+  }
+
+  private static <T, A, R> Collector<T, A, R> filtering(
+      Predicate<? super T> filter, Collector<? super T, A, R> collector) {
+    BiConsumer<A, ? super T> accumulator = collector.accumulator();
+    return Collector.of(
+        collector.supplier(),
+        (a, input) -> {if (filter.test(input)) {accumulator.accept(a, input);}},
+        collector.combiner(),
+        collector.finisher(),
+        collector.characteristics().toArray(new Characteristics[0]));
   }
 
   /**

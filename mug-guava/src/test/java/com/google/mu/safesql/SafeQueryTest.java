@@ -458,6 +458,12 @@ public final class SafeQueryTest {
   }
 
   @Test
+  public void joining_ignoresEmpty() {
+    assertThat(Stream.of(SafeQuery.of("a"), SafeQuery.EMPTY).collect(SafeQuery.joining(" AND ")))
+        .isEqualTo(SafeQuery.of("a"));
+  }
+
+  @Test
   public void andCollector_empty() {
     ImmutableList<SafeQuery> queries = ImmutableList.of();
     assertThat(queries.stream().collect(SafeQuery.and())).isEqualTo(SafeQuery.of("TRUE"));
@@ -487,6 +493,14 @@ public final class SafeQueryTest {
   }
 
   @Test
+  public void andCollector_ignoresEmpty() {
+    ImmutableList<SafeQuery> queries =
+        ImmutableList.of(SafeQuery.EMPTY, SafeQuery.of("b = 2 OR c = 3"), SafeQuery.of("d = 4"));
+    assertThat(queries.stream().collect(SafeQuery.and()))
+        .isEqualTo(SafeQuery.of("(b = 2 OR c = 3) AND (d = 4)"));
+  }
+
+  @Test
   public void orCollector_empty() {
     ImmutableList<SafeQuery> queries = ImmutableList.of();
     assertThat(queries.stream().collect(SafeQuery.or())).isEqualTo(SafeQuery.of("FALSE"));
@@ -513,6 +527,14 @@ public final class SafeQueryTest {
             SafeQuery.of("a = 1"), SafeQuery.of("b = 2 AND c = 3"), SafeQuery.of("d = 4"));
     assertThat(queries.stream().collect(SafeQuery.or()))
         .isEqualTo(SafeQuery.of("(a = 1) OR (b = 2 AND c = 3) OR (d = 4)"));
+  }
+
+  @Test
+  public void orCollector_ignoresEmpty() {
+    ImmutableList<SafeQuery> queries =
+        ImmutableList.of(SafeQuery.EMPTY, SafeQuery.of("b = 2 AND c = 3"), SafeQuery.of("d = 4"));
+    assertThat(queries.stream().collect(SafeQuery.or()))
+        .isEqualTo(SafeQuery.of("(b = 2 AND c = 3) OR (d = 4)"));
   }
 
   @Test
