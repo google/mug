@@ -6,6 +6,7 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
 
 import java.time.LocalDate;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.junit.BeforeClass;
@@ -532,12 +533,6 @@ public final class SafeQueryTest {
   @Test
   public void testNulls() throws Exception {
     new NullPointerTester()
-        .ignore(SafeQuery.class.getMethod(
-            "with", String.class, SafeQuery.class, String.class, SafeQuery.class, String.class, Object[].class))
-        .ignore(SafeQuery.class.getMethod(
-            "with",
-            String.class, SafeQuery.class, String.class, SafeQuery.class, String.class, SafeQuery.class,
-            String.class, Object[].class))
         .setDefault(SafeQuery.class, SafeQuery.of("select 1"))
         .setDefault(String.class, "nonEmpty")
         .testAllPublicStaticMethods(SafeQuery.class);
@@ -967,91 +962,26 @@ public final class SafeQueryTest {
   }
 
   @Test
-  public void with_oneSubquery() {
-    assertThat(
-            SafeQuery.with(
-                "deduped", SafeQuery.of("select * from underlying"), "select * from deduped"))
-        .isEqualTo(
-            SafeQuery.of(
-                "WITH `deduped` AS (\n  select * from underlying\n)\nselect * from deduped"));
+  public void when_conditionalIsFalse_returnsEmpty() {
+    assertThat(SafeQuery.when(false, "WHERE id = {id}", 1)).isEqualTo(SafeQuery.EMPTY);
   }
 
   @Test
-  public void with_twoSubqueries() {
-    assertThat(
-            SafeQuery.with(
-                "deduped",
-                SafeQuery.of("select * from underlying"),
-                "joined",
-                SafeQuery.of("select * from deduped d join d.items"),
-                "select * from joined"))
-        .isEqualTo(
-            SafeQuery.of(
-                "WITH `deduped` AS (\n  select * from underlying\n),\n"
-                    + "`joined` AS (\n  select * from deduped d join d.items\n)\n"
-                    + "select * from joined"));
+  public void when_conditionalIsTrue_returnsQuery() {
+    assertThat(SafeQuery.when(true, "WHERE id = {id}", 1))
+        .isEqualTo(SafeQuery.of("WHERE id = 1"));
   }
 
   @Test
-  public void with_threeSubqueries() {
-    assertThat(
-            SafeQuery.with(
-                "a",
-                SafeQuery.of("select 1 as a"),
-                "b",
-                SafeQuery.of("select 2 as b"),
-                "c",
-                SafeQuery.of("select 3 as c"),
-                "select * from a, b, c"))
-        .isEqualTo(
-            SafeQuery.of(
-                "WITH `a` AS (\n  select 1 as a\n),\n"
-                    + "`b` AS (\n  select 2 as b\n),\n"
-                    + "`c` AS (\n  select 3 as c\n)\n"
-                    + "select * from a, b, c"));
+  public void optionally_optionalArgIsEmpty_returnsEmpty() {
+    assertThat(SafeQuery.optionally("WHERE id = {id}", /* id */ Optional.empty()))
+        .isEqualTo(SafeQuery.EMPTY);
   }
 
   @Test
-  public void with_emptyNameNotAllowed() {
-    IllegalArgumentException thrown = assertThrows(
-        IllegalArgumentException.class,
-        () -> SafeQuery.with( "", SafeQuery.of("select 1"), "select * from x"));
-    assertThat(thrown).hasMessageThat().contains("empty");
-  }
-
-  @Test
-  public void with_conflictingSubqueryNamesDisallowed() {
-    IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () ->
-                SafeQuery.with(
-                    "foo", SafeQuery.of("select 1"),
-                    "foo", SafeQuery.of("select 2"),
-                    "select * from `foo`"));
-    assertThat(thrown).hasMessageThat().contains("foo");
-  }
-
-  @Test
-  public void cte_withSubqueryNamesDifferingOnlyByCases() {
-    IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () ->
-                SafeQuery.with(
-                    "foo", SafeQuery.of("select 1"),
-                    "Foo", SafeQuery.of("select 2"),
-                    "select * from `foo`"));
-    assertThat(thrown).hasMessageThat().contains("Foo");
-  }
-
-  @Test
-  public void with_invalidNameChar() {
-    IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> SafeQuery.with("a?", SafeQuery.of("select * from underlying"), "select * from tbl"));
-    assertThat(thrown).hasMessageThat().contains("a?");
+  public void optionally_optionalArgIsPresent_returnsQuery() {
+    assertThat(SafeQuery.optionally("WHERE id = {id}", /* id */ Optional.of(1)))
+        .isEqualTo(SafeQuery.of("WHERE id = 1"));
   }
 
   static final class TrustedSql {

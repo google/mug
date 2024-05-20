@@ -2770,7 +2770,7 @@ public final class StringFormatArgsCheckTest {
   }
 
   @Test
-  public void optionalArgDisallowed() {
+  public void optionalArgAllowed() {
     helper
         .addSourceLines(
             "Test.java",
@@ -2779,8 +2779,7 @@ public final class StringFormatArgsCheckTest {
             "class Test {",
             "  void test() {",
             "    new StringFormat(\"{foo}\")",
-            "        // BUG: Diagnostic contains:",
-            "        .format(Optional.empty());",
+            "        .format(Optional.of(\"foo\"));",
             "  }",
             "}")
         .doTest();
@@ -2797,7 +2796,7 @@ public final class StringFormatArgsCheckTest {
             "  void test() {",
             "    new StringFormat(\"{foo}\")",
             "        // BUG: Diagnostic contains:",
-            "        .format(OptionalInt.empty());",
+            "        .format(/* foo */ OptionalInt.empty());",
             "  }",
             "}")
         .doTest();
@@ -2814,7 +2813,7 @@ public final class StringFormatArgsCheckTest {
             "  void test() {",
             "    new StringFormat(\"{foo}\")",
             "        // BUG: Diagnostic contains:",
-            "        .format(OptionalLong.empty());",
+            "        .format(/* foo */ OptionalLong.empty());",
             "  }",
             "}")
         .doTest();
@@ -2831,7 +2830,7 @@ public final class StringFormatArgsCheckTest {
             "  void test() {",
             "    new StringFormat(\"{foo}\")",
             "        // BUG: Diagnostic contains:",
-            "        .format(OptionalDouble.empty());",
+            "        .format(/* foo */ OptionalDouble.empty());",
             "  }",
             "}")
         .doTest();
@@ -2848,7 +2847,7 @@ public final class StringFormatArgsCheckTest {
             "  void test() {",
             "    new StringFormat(\"{foo}\")",
             "        // BUG: Diagnostic contains:",
-            "        .format(Stream.empty());",
+            "        .format(Stream.of(\"foo\"));",
             "  }",
             "}")
         .doTest();
@@ -2865,7 +2864,7 @@ public final class StringFormatArgsCheckTest {
             "  void test() {",
             "    new StringFormat(\"{foo}\")",
             "        // BUG: Diagnostic contains:",
-            "        .format(IntStream.empty());",
+            "        .format(/* foo */ IntStream.empty());",
             "  }",
             "}")
         .doTest();
@@ -2882,7 +2881,7 @@ public final class StringFormatArgsCheckTest {
             "  void test() {",
             "    new StringFormat(\"{foo}\")",
             "        // BUG: Diagnostic contains:",
-            "        .format(LongStream.empty());",
+            "        .format(/* foo */ LongStream.empty());",
             "  }",
             "}")
         .doTest();
@@ -2899,7 +2898,7 @@ public final class StringFormatArgsCheckTest {
             "  void test() {",
             "    new StringFormat(\"{foo}\")",
             "        // BUG: Diagnostic contains:",
-            "        .format(DoubleStream.empty());",
+            "        .format(/* foo */ DoubleStream.empty());",
             "  }",
             "}")
         .doTest();
@@ -2915,7 +2914,7 @@ public final class StringFormatArgsCheckTest {
             "  void test() {",
             "    new StringFormat(\"{foo}\")",
             "        // BUG: Diagnostic contains:",
-            "        .format(new int[] {1});",
+            "        .format(/* foo */ new int[] {1});",
             "  }",
             "}")
         .doTest();

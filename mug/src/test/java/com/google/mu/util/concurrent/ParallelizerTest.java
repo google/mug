@@ -56,7 +56,6 @@ import org.junit.runners.Parameterized.Parameters;
 import com.google.common.base.Preconditions;
 import com.google.common.truth.IterableSubject;
 import com.google.common.util.concurrent.MoreExecutors;
-import com.google.mu.util.concurrent.Parallelizer.UncheckedExecutionException;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
@@ -108,8 +107,8 @@ public class ParallelizerTest {
 
     @Test public void testInParallel_failure() {
       Parallelizer parallelizer = new Parallelizer(threadPool, 3);
-      UncheckedExecutionException thrown = assertThrows(
-          UncheckedExecutionException.class,
+      RuntimeException thrown = assertThrows(
+          RuntimeException.class,
           () -> Stream.of(1, 2, 3)
               .collect(
                   parallelizer.inParallel(i -> {
@@ -208,8 +207,8 @@ public class ParallelizerTest {
 
     @Test public void testTaskExceptionDismissesPendingTasks() {
       maxInFlight = 2;
-      UncheckedExecutionException exception = assertThrows(
-          UncheckedExecutionException.class,
+      RuntimeException exception = assertThrows(
+          RuntimeException.class,
           () -> parallelize(Stream.of(
               // With maxInflight=2, at least one will print, even if a fail() task races it.
               () -> translateToString(1), () -> translateToString(1),
@@ -223,8 +222,8 @@ public class ParallelizerTest {
     @Test public void testTaskExceptionCancelsInFlightTasks() throws InterruptedException {
       assumeFalse(threading == Threading.DIRECT);
       maxInFlight = 2;
-      UncheckedExecutionException exception = assertThrows(
-          UncheckedExecutionException.class,
+      RuntimeException exception = assertThrows(
+          RuntimeException.class,
           () -> parallelize(serialTasks(
               () -> translateToString(1),  // should print
               () -> blockFor(2), // Will be interrupted
@@ -333,16 +332,16 @@ public class ParallelizerTest {
 
     @Test public void testErrorPropagated() {
       Error error = new Error();
-      UncheckedExecutionException exception = assertThrows(
-          UncheckedExecutionException.class,
+      RuntimeException exception = assertThrows(
+          RuntimeException.class,
           () -> parallelize(Stream.of(() -> raise(error))));
       assertThat(exception.getCause()).isSameInstanceAs(error);
     }
 
     @Test public void testExceptionPropagated() {
       RuntimeException exception = new RuntimeException();
-      UncheckedExecutionException caught = assertThrows(
-          UncheckedExecutionException.class,
+      RuntimeException caught = assertThrows(
+          RuntimeException.class,
           () -> parallelize(Stream.of(() -> raise(exception))));
       assertThat(caught.getCause()).isSameInstanceAs(exception);
     }

@@ -104,7 +104,6 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
           TypeName.of(DoubleFunction.class), 1);
   private static final ImmutableSet<TypeName> BAD_FORMAT_ARG_TYPES =
       ImmutableSet.of(
-          TypeName.of(Optional.class),
           TypeName.of(OptionalInt.class),
           TypeName.of(OptionalLong.class),
           TypeName.of(OptionalDouble.class),
