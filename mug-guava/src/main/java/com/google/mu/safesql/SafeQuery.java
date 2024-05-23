@@ -91,7 +91,6 @@ public final class SafeQuery {
    * SafeQuery query = SafeQuery.of(
    *     "SELECT job_id, start_timestamp {user_email} FROM jobs",
    *     SafeQuery.when(isSuperUser, ", user_email"));
-   * );
    * }</pre>
    *
    * @since 8.1
@@ -114,7 +113,6 @@ public final class SafeQuery {
    * SafeQuery query = SafeQuery.of(
    *     "SELECT * FROM jobs {where}",
    *     SafeQuery.optionally("WHERE {filter}", getOptionalFilter()));
-   * );
    * }</pre>
    *
    * @since 8.1
