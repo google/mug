@@ -70,18 +70,17 @@ public final class Sequence<T> extends AbstractList<T> {
     return concat(this, of(lastElement));
   }
 
-  /** Returns the size of the sequence. This is an O(1) operation. */
-  @Override public int size() {
-    return 1 + sizeOf(tail);
-  }
-
   /** Convenience method for {@code stream().collect(collector)}. */
   public <R> R collect(Collector<T, ?, R> collector) {
     return stream().collect(collector);
   }
 
-  @Override
-  public Stream<T> stream() {
+  /** Returns the size of the sequence. This is an O(1) operation. */
+  @Override public int size() {
+    return 1 + sizeOf(tail);
+  }
+
+  @Override public Stream<T> stream() {
     return elements().stream();
   }
 
@@ -89,18 +88,15 @@ public final class Sequence<T> extends AbstractList<T> {
     return elements().get(i);
   }
 
-  @Override
-  public ListIterator<T> listIterator() {
+  @Override public ListIterator<T> listIterator() {
     return elements().listIterator();
   }
 
-  @Override
-  public ListIterator<T> listIterator(int index) {
+  @Override public ListIterator<T> listIterator(int index) {
     return elements().listIterator(index);
   }
 
-  @Override
-  public List<T> subList(int fromIndex, int toIndex) {
+  @Override public List<T> subList(int fromIndex, int toIndex) {
     return elements().subList(fromIndex, toIndex);
   }
 
@@ -109,7 +105,7 @@ public final class Sequence<T> extends AbstractList<T> {
     this.tail = tail;
   }
 
-  // Visible for testing the idempotence
+  // Visible for idempotence test
   List<T> elements() {
     List<T> elements = lazyElements;
     if (elements == null) {
