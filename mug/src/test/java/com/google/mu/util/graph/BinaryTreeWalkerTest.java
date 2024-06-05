@@ -16,6 +16,7 @@ package com.google.mu.util.graph;
 
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.graph.BinaryTreeWalkerTest.Tree.tree;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.Test;
 
@@ -294,6 +295,14 @@ public class BinaryTreeWalkerTest {
     assertThat(Tree.<Integer>walker().breadthFirstFrom(tree).map(Tree::value).limit(3))
         .containsExactly(1, 2, 3)
         .inOrder();
+  }
+
+  @Test public void nullProhibited() {
+    Tree<Integer> nullNode = null;
+    assertThrows(NullPointerException.class, () -> Tree.<Integer>walker().preOrderFrom(nullNode));
+    assertThrows(NullPointerException.class, () -> Tree.<Integer>walker().postOrderFrom(nullNode));
+    assertThrows(NullPointerException.class, () -> Tree.<Integer>walker().inOrderFrom(nullNode));
+    assertThrows(NullPointerException.class, () -> Tree.<Integer>walker().breadthFirstFrom(nullNode));
   }
 
   interface Tree<T> {
