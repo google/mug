@@ -18,7 +18,6 @@ import static com.google.mu.collect.InternalUtils.toImmutableList;
 import static java.util.Objects.requireNonNull;
 
 import java.util.AbstractList;
-import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.stream.Collector;
@@ -31,8 +30,8 @@ import com.google.mu.util.graph.Walker;
  *
  * <p>The expected use case is to perform frequent concatenations using the {@code concat()}
  * methods. O(n) materialization cost will be (lazily) paid before the first time accessing the
- * elements either through the {@link List} methods such as {@link List#get}, {@link List#equals}
- * or {@link #stream}, {@link #collect}.
+ * elements either through the {@link List} methods such as {@link List#get}, {@link List#equals},
+ * {@link #toString}, or {@link #collect}.
  *
  * <p>On the other hand, it's inefficient to materialize and then concatenate (rinse and repeat).
  *
@@ -70,9 +69,13 @@ public final class Sequence<T> extends AbstractList<T> {
     return concat(this, of(lastElement));
   }
 
-  /** Convenience method for {@code stream().collect(collector)}. */
+  /**
+   * Convenience method equivalent to {@code stream().collect(collector)}. In addition,
+   * elements are materialized so after return this List can be efficiently accessed as
+   * a regular immutable List without extra cost.
+   */
   public <R> R collect(Collector<T, ?, R> collector) {
-    return stream().collect(collector);
+    return elements().stream().collect(collector);
   }
 
   /** Returns the size of the sequence. This is an O(1) operation. */
@@ -80,8 +83,11 @@ public final class Sequence<T> extends AbstractList<T> {
     return 1 + sizeOf(tail);
   }
 
+  /** Returns a <em>lazy</em> stream of the elements. */
   @Override public Stream<T> stream() {
-    return elements().stream();
+    return tail == null
+        ? Stream.of(head)
+        : Stream.concat(Stream.of(head), tail.stream());
   }
 
   @Override public T get(int i) {
@@ -109,12 +115,7 @@ public final class Sequence<T> extends AbstractList<T> {
   List<T> elements() {
     List<T> elements = lazyElements;
     if (elements == null) {
-      if (tail == null) {
-        elements = Collections.singletonList(head);
-      } else {
-        elements = Stream.concat(Stream.of(head), tail.stream()).collect(toImmutableList());
-      }
-      lazyElements = elements;
+      lazyElements = elements = stream().collect(toImmutableList());
     }
     return elements;
   }
