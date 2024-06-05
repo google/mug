@@ -59,12 +59,21 @@ public final class Sequence<T> extends AbstractList<T> {
     return new Sequence<>(first, tail);
   }
 
-  /** Returns a new Sequence concatenating {@code left} and {@code right} in <em>O(1)</em> time. */
+  /**
+   * Returns a new Sequence concatenating elements from the {@code left} Sequence and the
+   * {@code right} Sequence, in <em>O(1)</em> time.
+   *
+   * <p>Encounter order of elements is preserved. That is, {@code concat([1, 2], [3, 4])}
+   * returns {@code [1, 2, 3, 4]}.
+   */
   public static <T> Sequence<T> concat(Sequence<? extends T> left, Sequence<? extends T> right) {
     return new Sequence<>(left.head, new Tree<>(right.head, left.tail, right.tail));
   }
 
-  /** Returns a new Sequence concatenating {@code this} and {@code lastElement} in <em>O(1)</em> time. */
+  /**
+   * Returns a new Sequence concatenating elements from {@code this} Sequence followed by {@code
+   * lastElement}, in <em>O(1)</em> time.
+   */
   public Sequence<T> concat(T lastElement) {
     return concat(this, of(lastElement));
   }
