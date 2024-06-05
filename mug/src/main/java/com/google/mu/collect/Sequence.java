@@ -83,7 +83,7 @@ public final class Sequence<T> extends AbstractList<T> {
     return 1 + sizeOf(tail);
   }
 
-  /** Returns a <em>lazy</em> stream of the elements. */
+  /** Returns a <em>lazy</em> stream of the elements in this list. */
   @Override public Stream<T> stream() {
     return tail == null
         ? Stream.of(head)
@@ -91,7 +91,7 @@ public final class Sequence<T> extends AbstractList<T> {
   }
 
   @Override public T get(int i) {
-    return elements().get(i);
+    return i == 0 ? head : elements().get(i);
   }
 
   @Override public ListIterator<T> listIterator() {

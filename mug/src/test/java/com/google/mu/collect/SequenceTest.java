@@ -30,6 +30,13 @@ public class SequenceTest {
     assertThat(Sequence.of("foo", "bar", "baz")).containsExactly("foo", "bar", "baz").inOrder();
   }
 
+  @Test public void multipleElements_get() {
+    Sequence<String> sequence = Sequence.of("foo", "bar", "baz");
+    assertThat(sequence.get(0)).isEqualTo("foo");
+    assertThat(sequence.get(1)).isEqualTo("bar");
+    assertThat(sequence.get(2)).isEqualTo("baz");
+  }
+
   @Test public void concatSingleElement_afterSingleElement() {
     assertThat(Sequence.of("foo").concat("bar")).containsExactly("foo", "bar").inOrder();
   }
