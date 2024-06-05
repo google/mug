@@ -30,7 +30,7 @@ import com.google.mu.util.graph.Walker;
  *
  * <p>The expected use case is to perform frequent concatenations using the {@code concat()}
  * methods. O(n) materialization cost will be (lazily) paid before the first time accessing the
- * elements either through the {@link List} methods such as {@link List#get}, {@link List#equals},
+ * elements either through the {@link List} interface such as {@link List#get}, {@link List#equals},
  * {@link #toString}, or {@link #collect}.
  *
  * <p>On the other hand, it's inefficient to materialize and then concatenate (rinse and repeat).
@@ -83,7 +83,11 @@ public final class Sequence<T> extends AbstractList<T> {
     return 1 + sizeOf(tail);
   }
 
-  /** Returns a <em>lazy</em> stream of the elements in this list. */
+  /**
+   * Returns a <em>lazy</em> stream of the elements in this list.
+   * The returned stream is lazy in that concatenated sequences aren't consumed until the stream
+   * reaches their elements.
+   */
   @Override public Stream<T> stream() {
     return tail == null
         ? Stream.of(head)
