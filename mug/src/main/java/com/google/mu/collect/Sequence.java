@@ -146,7 +146,7 @@ public final class Sequence<T> extends AbstractList<T> {
       this.size = 1 + sizeOf(before) + sizeOf(after);
     }
 
-    Stream<? extends T> stream() {
+    Stream<T> stream() {
       return Walker.<Tree<? extends T>>inBinaryTree(t -> t.before, t -> t.after)
           .inOrderFrom(this)
           .map(t -> t.value);
