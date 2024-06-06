@@ -15,6 +15,7 @@ import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 public class SequenceTest {
   @Test public void singleElement() {
     assertThat(Sequence.of("foo")).containsExactly("foo");
+    assertThat(Sequence.of("foo")).isNotEmpty();
   }
 
   @Test public void singleElement_varargs() {
@@ -76,13 +77,13 @@ public class SequenceTest {
   }
 
   @Test public void concatTwoSequences_collect() {
-    assertThat(concat(Sequence.of("foo", "bar"), Sequence.of("baz", "zoo")).collect(toImmutableSet()))
+    assertThat(concat(Sequence.of("foo", "bar"), Sequence.of("baz", "zoo")).stream().collect(toImmutableSet()))
         .containsExactly("foo", "bar", "baz", "zoo")
         .inOrder();
-    assertThat(concat(concat(Sequence.of("foo", "bar"), Sequence.of("baz", "zoo")), Sequence.of("dash")).collect(toImmutableSet()))
+    assertThat(concat(concat(Sequence.of("foo", "bar"), Sequence.of("baz", "zoo")), Sequence.of("dash")).stream().collect(toImmutableSet()))
         .containsExactly("foo", "bar", "baz", "zoo", "dash")
         .inOrder();
-    assertThat(concat(Sequence.of("zero", "one"), concat(Sequence.of("foo", "bar"), Sequence.of("baz", "zoo"))).collect(toImmutableSet()))
+    assertThat(concat(Sequence.of("zero", "one"), concat(Sequence.of("foo", "bar"), Sequence.of("baz", "zoo"))).stream().collect(toImmutableSet()))
         .containsExactly("zero", "one", "foo", "bar", "baz", "zoo")
         .inOrder();
   }

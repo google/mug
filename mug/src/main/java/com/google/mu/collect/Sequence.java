@@ -20,7 +20,6 @@ import static java.util.Objects.requireNonNull;
 import java.util.AbstractList;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import com.google.mu.util.graph.Walker;
@@ -78,18 +77,13 @@ public final class Sequence<T> extends AbstractList<T> {
     return concat(this, of(lastElement));
   }
 
-  /**
-   * Convenience method equivalent to {@code stream().collect(collector)}. In addition,
-   * elements are materialized so after return this List can be efficiently accessed as
-   * a regular immutable List without extra cost.
-   */
-  public <R> R collect(Collector<T, ?, R> collector) {
-    return elements().stream().collect(collector);
-  }
-
   /** Returns the size of the sequence. This is an O(1) operation. */
   @Override public int size() {
     return 1 + sizeOf(tail);
+  }
+
+  @Override public boolean isEmpty() {
+    return false;
   }
 
   /**
@@ -137,7 +131,7 @@ public final class Sequence<T> extends AbstractList<T> {
     private final T value;
     private final Tree<? extends T> before;
     private final Tree<? extends T> after;
-    private final int size;
+    final int size;
 
     Tree(T value, Tree<? extends T> before, Tree<? extends T> after) {
       this.value = requireNonNull(value);
