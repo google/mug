@@ -146,20 +146,10 @@ public final class Sequence<T> extends AbstractList<T> {
       this.size = 1 + sizeOf(before) + sizeOf(after);
     }
 
-    Stream<T> stream() {
-      return Walker.inBinaryTree(Tree<T>::before, Tree<T>::after)
+    Stream<? extends T> stream() {
+      return Walker.<Tree<? extends T>>inBinaryTree(t -> t.before, t -> t.after)
           .inOrderFrom(this)
           .map(t -> t.value);
-    }
-
-    @SuppressWarnings("unchecked")  // Tree<T> is covariant (immutable)
-    Tree<T> before() {
-      return (Tree<T>) before;
-    }
-
-    @SuppressWarnings("unchecked")  // Tree<T> is covariant (immutable)
-    Tree<T> after() {
-      return (Tree<T>) after;
     }
   }
 
