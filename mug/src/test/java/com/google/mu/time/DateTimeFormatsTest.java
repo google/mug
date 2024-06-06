@@ -449,6 +449,7 @@ public final class DateTimeFormatsTest {
   }
 
   @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
   public void localTimeExamples(
       @TestParameter({
             "00:00",
@@ -466,6 +467,7 @@ public final class DateTimeFormatsTest {
   }
 
   @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
   public void localDateExamplesFromDifferentFormatters(
       @TestParameter({"ISO_LOCAL_DATE", "yyyy/MM/dd"})
           String formatterName,
@@ -548,6 +550,7 @@ public final class DateTimeFormatsTest {
   }
 
   @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
   public void zoneIdRetainedExamples(
       @TestParameter({
             "ISO_DATE_TIME",
@@ -827,6 +830,7 @@ public final class DateTimeFormatsTest {
   }
 
   @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
   public void offsetTimeExamples(
       @TestParameter({"00:00:00+18:00", "12:00-08:00", "23:59:59.999999999-18:00"})
           String example) {

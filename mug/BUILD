@@ -16,7 +16,20 @@ java_library(
         "src/main/java/com/google/mu/function/*.java",
         "src/main/java/com/google/mu/collect/*.java",
       ],
-      exclude = glob(["src/main/java/com/google/mu/util/*StringFormat.java"])),
+      exclude = glob([
+          "src/main/java/com/google/mu/util/*StringFormat.java",
+          "src/main/java/com/google/mu/collect/Sequence.java",
+      ])),
+)
+
+java_library(
+    name = "sequence",
+    visibility = ["//visibility:public"],
+    srcs = ["src/main/java/com/google/mu/collect/Sequence.java"],
+    deps = [
+        ":base",
+        ":graph",
+    ],
 )
 
 java_library(
@@ -88,6 +101,7 @@ junit_tests(
         ":concurrent",
         ":format",
         ":graph",
+        ":sequence",
         ":tests",
         ":time",
         "@maven//:com_google_guava_guava",
