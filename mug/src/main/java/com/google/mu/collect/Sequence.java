@@ -147,7 +147,9 @@ public final class Sequence<T> extends AbstractList<T> {
     }
 
     Stream<T> stream() {
-      return Walker.<Tree<T>>inBinaryTree(Tree::before, Tree::after).inOrderFrom(this).map(t -> t.value);
+      return Walker.inBinaryTree(Tree<T>::before, Tree<T>::after)
+          .inOrderFrom(this)
+          .map(t -> t.value);
     }
 
     @SuppressWarnings("unchecked")  // Tree<T> is covariant (immutable)
