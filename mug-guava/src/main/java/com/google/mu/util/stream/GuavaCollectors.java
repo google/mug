@@ -580,8 +580,10 @@ public final class GuavaCollectors {
    * Map<Range<Integer, String>> rangeMap = ...; // [1, 3] -> foo, [2, 4] -> bar
    *
    * // [1, 2) -> [foo], [2, 3] -> [foo, bar], (3, 4] -> [bar]
-   * ImmutableRangeMap<Integer, String> result =
-   *     BiStream.from(rangeMap).collect(toDisjointRanges(toImmutableSet()));
+   * Map<Integer, ImmutableSet<String>> result =
+   *     BiStream.from(rangeMap)
+   *         .collect(toDisjointRanges(toImmutableSet()))
+   *         .toMap();
    * }</pre>
    *
    * @since 8.1
