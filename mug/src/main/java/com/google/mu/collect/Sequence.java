@@ -30,7 +30,7 @@ import com.google.mu.util.graph.Walker;
  * <p>The expected use case is to perform frequent concatenations using the {@code concat()}
  * methods. O(n) materialization cost will be (lazily) paid before the first time accessing the
  * elements either through the {@link List} interface such as {@link List#get}, {@link List#equals},
- * {@link #toString}, or {@link #collect}.
+ * or {@link #toString}.
  *
  * <p>On the other hand, it's inefficient to materialize and then concatenate (rinse and repeat).
  *
