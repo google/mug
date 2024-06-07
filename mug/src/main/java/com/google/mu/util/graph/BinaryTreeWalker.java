@@ -150,7 +150,7 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
       }
       return !leftPath.isEmpty();
     }
-  };
+  }
 
   private final class PostOrder {
     private final Queue<N> roots;

@@ -31,6 +31,7 @@ import static com.google.mu.util.stream.GuavaCollectors.toImmutableListMultimap;
 import static com.google.mu.util.stream.GuavaCollectors.toImmutableMap;
 import static com.google.mu.util.stream.GuavaCollectors.toImmutableMapIgnoringDuplicateEntries;
 import static com.google.mu.util.stream.GuavaCollectors.toImmutableMultiset;
+import static com.google.mu.util.stream.GuavaCollectors.toImmutableRangeMap;
 import static com.google.mu.util.stream.GuavaCollectors.toImmutableSetMultimap;
 import static com.google.mu.util.stream.GuavaCollectors.toImmutableSortedMap;
 import static com.google.mu.util.stream.GuavaCollectors.toImmutableTable;
@@ -41,6 +42,7 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertThrows;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import org.junit.Test;
@@ -51,9 +53,11 @@ import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableRangeMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.ImmutableTable;
+import com.google.common.collect.Range;
 import com.google.common.collect.TreeMultimap;
 import com.google.common.testing.NullPointerTester;
 import com.google.mu.util.Both;
@@ -363,6 +367,32 @@ public class GuavaCollectorsTest {
         Stream.of("x", "y", "z")
             .collect(toImmutableTable(s -> "row", s -> "col", toImmutableSet()));
     assertThat(table).isEqualTo(ImmutableTable.of("row", "col", ImmutableSet.of("x", "y", "z")));
+  }
+
+  @Test public void testToImmutableRangeMap() {
+    ImmutableMap<Range<Integer>, String> mappings = ImmutableMap.of(
+        Range.closed(1, 3), "foo",
+        Range.closed(2, 4), "bar");
+    ImmutableRangeMap<Integer, String> merged = BiStream.from(mappings)
+        .collect(toImmutableRangeMap((a, b) -> a + "," + b));
+    assertThat(merged.asMapOfRanges())
+        .containsExactly(Range.closedOpen(1, 2), "foo", Range.closed(2, 3), "foo,bar", Range.openClosed(3, 4), "bar")
+        .inOrder();
+  }
+
+  @Test public void testToDisjointRanges() {
+    ImmutableMap<Range<Integer>, String> mappings = ImmutableMap.of(
+        Range.closed(1, 3), "foo",
+        Range.closed(2, 4), "bar");
+    Map<Range<Integer>, ImmutableSet<String>> disjoint = BiStream.from(mappings)
+        .collect(GuavaCollectors.toDisjointRanges(toImmutableSet()))
+        .toMap();
+    assertThat(disjoint)
+        .containsExactly(
+            Range.closedOpen(1, 2), ImmutableSet.of("foo"),
+            Range.closed(2, 3), ImmutableSet.of("foo", "bar"),
+            Range.openClosed(3, 4), ImmutableSet.of("bar"))
+        .inOrder();
   }
 
   @Test public void testNulls() throws Exception {
