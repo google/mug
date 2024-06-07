@@ -594,6 +594,11 @@ public final class GuavaCollectors {
    *         .toMap();
    * }</pre>
    *
+   * <p>Performance note: when a range is repetitively detected to overlap with another range,
+   * and the mapped values are re-mapped to each split sub-range, the re-mapping takes O(1) time
+   * even when there have been N mapped values. The final mapped values for each disjoint range
+   * will be eventually collected using the {@code valueCollector}, once per disjoint range.
+   *
    * @since 8.1
    */
   public static <K extends Comparable<K>, V, R> BiCollector<Range<K>, V, BiStream<Range<K>, R>>
