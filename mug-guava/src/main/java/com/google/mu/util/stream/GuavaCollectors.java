@@ -527,7 +527,7 @@ public final class GuavaCollectors {
   }
 
   /**
-   * Returns a BiCollector that takes input (disjoint) ranges and their corresponding values
+   * Returns a BiCollector that takes input (disjoint) ranges and the corresponding values
    * and builds a {@link ImmutableRangeMap}.
    *
    * @since 8.1
@@ -539,7 +539,8 @@ public final class GuavaCollectors {
 
   /**
    * Returns a BiCollector that merges values mapped to overlapping ranges using the {@code merger}
-   * function and builds an {@link ImmutableRangeMap} with disjoint ranges and merged values.
+   * function and builds an {@link ImmutableRangeMap} with disjoint ranges and the corresponding
+   * merged values.
    *
    * <p>For example: <pre>{@code
    * Map<Range<Integer>, String> rangeMap = ...; // [1..3] -> foo, [2..4] -> bar
@@ -558,7 +559,7 @@ public final class GuavaCollectors {
 
   /**
    * Returns a BiCollector that merges values mapped to overlapping ranges using the {@code merger}
-   * function and builds an {@link BiStream} with disjoint ranges and the corresponding merged
+   * function and builds a {@link BiStream} with disjoint ranges and the corresponding merged
    * values.
 
    * <p>For example: <pre>{@code
@@ -580,8 +581,8 @@ public final class GuavaCollectors {
 
   /**
    * Returns a BiCollector that collects values mapped to overlapping ranges using {@code
-   * valueCollector}, and builds a {@link BiStream} with disjoint ranges and their collector
-   * results.
+   * valueCollector}, and builds a {@link BiStream} with disjoint ranges and the corresponding
+   * collector results.
    *
    * <p>For example: <pre>{@code
    * Map<Range<Integer>, String> rangeMap = ...; // [1..3] -> foo, [2..4] -> bar
