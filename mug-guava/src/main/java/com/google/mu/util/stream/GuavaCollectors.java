@@ -528,7 +528,7 @@ public final class GuavaCollectors {
 
   /**
    * Returns a BiCollector that takes input (disjoint) ranges and the corresponding values
-   * and builds a {@link ImmutableRangeMap}.
+   * and builds an {@link ImmutableRangeMap}.
    *
    * @since 8.1
    */
