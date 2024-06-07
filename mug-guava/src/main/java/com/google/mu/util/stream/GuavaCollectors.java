@@ -550,6 +550,9 @@ public final class GuavaCollectors {
    *     BiStream.from(rangeMap).collect(toImmutableRangeMap(String::concat));
    * }</pre>
    *
+   * <p>To avoid quadratic range split, it's generally safer to arrange the input ranges
+   * longer range first.
+   *
    * @since 8.1
    */
   public static <K extends Comparable<K>, V> BiCollector<Range<K>, V, ImmutableRangeMap<K, V>>
@@ -571,6 +574,9 @@ public final class GuavaCollectors {
    *         .collect(toDisjointRanges(String::concat))
    *         .toMap();
    * }</pre>
+   *
+   * <p>To avoid quadratic range split, it's generally safer to arrange the input ranges
+   * longer range first.
    *
    * @since 8.1
    */
@@ -598,6 +604,12 @@ public final class GuavaCollectors {
    * and the mapped values are re-mapped to each split sub-range, the re-mapping takes O(1) time
    * even when there have been N mapped values. The final mapped values for each disjoint range
    * will be eventually collected using the {@code valueCollector}, once per disjoint range.
+   * In other words, if {@code valueCollector} is O(n), toDisjointRanges() is an O(nlogn) operation,
+   * while the worst-case runtime of a naive implementation that recombines the mapped values on
+   * each re-mapping will be O(n^2).
+   *
+   * <p>Also, to avoid quadratic range split, it's generally safer to arrange the input ranges
+   * longer range first.
    *
    * @since 8.1
    */
