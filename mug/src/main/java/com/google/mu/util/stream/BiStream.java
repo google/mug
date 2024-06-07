@@ -1863,7 +1863,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   /**
    * Returns a lazy {@code Stream} of the consecutive groups of values from this stream. Two
    * consecutive entries belong to the same group if {@code sameGroup.belong(key1, value1, key2,
-   * valuue2)} is true. Pairs belonging to the same group are grouped together using {@code
+   * value2)} is true. Pairs belonging to the same group are grouped together using {@code
    * groupCollector}.
    *
    * <p>The {@code sameGroup} predicate is always evaluated with two consecutive pairs in encounter

@@ -24,6 +24,7 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.collectingAndThen;
 
 import java.util.Comparator;
+import java.util.Map;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -38,6 +39,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultiset;
+import com.google.common.collect.ImmutableRangeMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.ImmutableSortedMap;
@@ -45,9 +47,12 @@ import com.google.common.collect.ImmutableTable;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Multiset;
+import com.google.common.collect.Range;
 import com.google.common.collect.Tables;
+import com.google.common.collect.TreeRangeMap;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.mu.annotations.RequiresGuava;
+import com.google.mu.collect.Sequence;
 import com.google.mu.util.Both;
 
 /**
@@ -518,6 +523,78 @@ public final class GuavaCollectors {
   public static <F, T> Collector<F, ?, ImmutableSet<T>> toSetOf(
       Function<? super F, ? extends T> mapper) {
     return Collectors.mapping(requireNonNull(mapper), toImmutableSet());
+  }
+
+  /**
+   * Returns a BiCollector that merges values mapped to overlapping ranges using the {@code merger}
+   * function and builds an {@link ImmutableRangeMap} with disjoint ranges and merged values.
+   *
+   * <p>For example: <pre>{@code
+   * Map<Range<Integer, String>> rangeMap = ...; // [1, 3] -> foo, [2, 4] -> bar
+   *
+   * // [1, 2) -> foo, [2, 3] -> foobar, (3, 4] -> bar
+   * ImmutableRangeMap<Integer, String> result =
+   *     BiStream.from(rangeMap).collect(toImmutableRangeMap(String::concat));
+   * }</pre>
+   *
+   * @since 8.1
+   */
+  public static <K extends Comparable<K>, V> BiCollector<Range<K>, V, ImmutableRangeMap<K, V>>
+  toImmutableRangeMap(BinaryOperator<V> merger) {
+    requireNonNull(merger);
+    return new BiCollector<Range<K>, V, ImmutableRangeMap<K, V>>() {
+      @Override
+      public <E> Collector<E, ?, ImmutableRangeMap<K, V>> collectorOf(
+          Function<E, Range<K>> toRange, Function<E, V> toValue) {
+        class Builder {
+          private final TreeRangeMap<K, V> map = TreeRangeMap.create();
+
+          void add(E element) {
+            Range<K> range = toRange.apply(element);
+            V value = toValue.apply(element);
+            map.merge(range, value, merger);
+          }
+
+          Builder addAll(Builder that) {
+            for (Map.Entry<Range<K>, V> entry : that.map.asMapOfRanges().entrySet()) {
+              map.merge(entry.getKey(), entry.getValue(), merger);
+            }
+            return this;
+          }
+
+          ImmutableRangeMap<K, V> build() {
+            return ImmutableRangeMap.copyOf(map);
+          }
+        }
+        return Collector.of(Builder::new, Builder::add, Builder::addAll, Builder::build);
+      }
+    };
+  }
+
+  /**
+   * Returns a BiCollector that collects values mapped to overlapping ranges using {@code
+   * valueCollector}, and builds a {@link BiStream} with disjoint ranges and their collector
+   * results.
+   *
+   * <p>For example: <pre>{@code
+   * Map<Range<Integer, String>> rangeMap = ...; // [1, 3] -> foo, [2, 4] -> bar
+   *
+   * // [1, 2) -> [foo], [2, 3] -> [foo, bar], (3, 4] -> [bar]
+   * ImmutableRangeMap<Integer, String> result =
+   *     BiStream.from(rangeMap).collect(toDisjointRanges(toImmutableSet()));
+   * }</pre>
+   *
+   * @since 8.1
+   */
+  public static <K extends Comparable<K>, V, R> BiCollector<Range<K>, V, BiStream<Range<K>, R>>
+  toDisjointRanges(Collector<V, ?, R> valueCollector) {
+    requireNonNull(valueCollector);
+    return BiCollectors.mapping(
+        (k, v) -> k, (k, v) -> Sequence.of(v),
+        BiCollectors.collectingAndThen(
+            toImmutableRangeMap(Sequence::concat),
+            m -> BiStream.from(m.asMapOfRanges())
+                .mapValues(s -> s.stream().collect(valueCollector))));
   }
 
   private static <K, V, T, R> BiCollector<K, V, R> mappingValues(
