@@ -543,9 +543,9 @@ public final class GuavaCollectors {
    * merged values.
    *
    * <p>For example: <pre>{@code
-   * Map<Range<Integer>, String> rangeMap = ...; // [1..3] -> foo, [2..4] -> bar
+   * Map<Range<Integer>, String> rangeMap = ...; // [1..3] -> "foo", [2..4] -> "bar"
    *
-   * // [1..2) -> foo, [2..3] -> foobar, (3..4] -> bar
+   * // [1..2) -> "foo", [2..3] -> "foobar", (3..4] -> "bar"
    * ImmutableRangeMap<Integer, String> result =
    *     BiStream.from(rangeMap).collect(toImmutableRangeMap(String::concat));
    * }</pre>
@@ -563,10 +563,10 @@ public final class GuavaCollectors {
    * values.
 
    * <p>For example: <pre>{@code
-   * Map<Range<Integer>, String> rangeMap = ...; // [1..3] -> foo, [2..4] -> bar
+   * Map<Range<Integer>, String> rangeMap = ...; // [1..3] -> "foo", [2..4] -> "bar"
    *
-   * // [1..2) -> foo, [2..3] -> foobar, (3..4] -> bar
-   * Map<Integer, ImmutableSet<String>> result =
+   * // [1..2) -> "foo", [2..3] -> "foobar", (3..4] -> "bar"
+   * Map<Range<Integer>, String> result =
    *     BiStream.from(rangeMap)
    *         .collect(toDisjointRanges(String::concat))
    *         .toMap();
@@ -588,7 +588,7 @@ public final class GuavaCollectors {
    * Map<Range<Integer>, String> rangeMap = ...; // [1..3] -> foo, [2..4] -> bar
    *
    * // [1..2) -> [foo], [2..3] -> [foo, bar], (3..4] -> [bar]
-   * Map<Integer, ImmutableSet<String>> result =
+   * Map<Range<Integer>, ImmutableSet<String>> result =
    *     BiStream.from(rangeMap)
    *         .collect(toDisjointRanges(toImmutableSet()))
    *         .toMap();
