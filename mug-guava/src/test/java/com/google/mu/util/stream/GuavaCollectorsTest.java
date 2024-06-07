@@ -369,7 +369,18 @@ public class GuavaCollectorsTest {
     assertThat(table).isEqualTo(ImmutableTable.of("row", "col", ImmutableSet.of("x", "y", "z")));
   }
 
-  @Test public void testToImmutableRangeMap() {
+  @Test public void testToImmutableRangeMap_withoutMerger() {
+    ImmutableMap<Range<Integer>, String> mappings = ImmutableMap.of(
+        Range.closed(1, 2), "foo",
+        Range.closed(4, 5), "bar");
+    ImmutableRangeMap<Integer, String> merged = BiStream.from(mappings)
+        .collect(toImmutableRangeMap());
+    assertThat(merged.asMapOfRanges())
+        .containsExactly(Range.closed(1, 2), "foo", Range.closed(4, 5), "bar")
+        .inOrder();
+  }
+
+  @Test public void testToImmutableRangeMap_withMerger() {
     ImmutableMap<Range<Integer>, String> mappings = ImmutableMap.of(
         Range.closed(1, 3), "foo",
         Range.closed(2, 4), "bar");
@@ -380,7 +391,22 @@ public class GuavaCollectorsTest {
         .inOrder();
   }
 
-  @Test public void testToDisjointRanges() {
+  @Test public void testToDisjointRanges_withMerger() {
+    ImmutableMap<Range<Integer>, String> mappings = ImmutableMap.of(
+        Range.closed(1, 3), "foo",
+        Range.closed(2, 4), "bar");
+    Map<Range<Integer>, String> disjoint = BiStream.from(mappings)
+        .collect(GuavaCollectors.toDisjointRanges(String::concat))
+        .toMap();
+    assertThat(disjoint)
+        .containsExactly(
+            Range.closedOpen(1, 2), "foo",
+            Range.closed(2, 3), "foobar",
+            Range.openClosed(3, 4), "bar")
+        .inOrder();
+  }
+
+  @Test public void testToDisjointRanges_withCollector() {
     ImmutableMap<Range<Integer>, String> mappings = ImmutableMap.of(
         Range.closed(1, 3), "foo",
         Range.closed(2, 4), "bar");

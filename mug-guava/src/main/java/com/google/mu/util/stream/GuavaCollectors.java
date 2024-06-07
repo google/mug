@@ -48,6 +48,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Range;
+import com.google.common.collect.RangeMap;
 import com.google.common.collect.Tables;
 import com.google.common.collect.TreeRangeMap;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
@@ -526,6 +527,17 @@ public final class GuavaCollectors {
   }
 
   /**
+   * Returns a BiCollector that takes input (disjoint) ranges and their corresponding values
+   * and builds a {@link ImmutableRangeMap}.
+   *
+   * @since 8.1
+   */
+  public static <K extends Comparable<K>, V> BiCollector<Range<K>, V, ImmutableRangeMap<K, V>>
+  toImmutableRangeMap() {
+    return ImmutableRangeMap::toImmutableRangeMap;
+  }
+
+  /**
    * Returns a BiCollector that merges values mapped to overlapping ranges using the {@code merger}
    * function and builds an {@link ImmutableRangeMap} with disjoint ranges and merged values.
    *
@@ -541,34 +553,29 @@ public final class GuavaCollectors {
    */
   public static <K extends Comparable<K>, V> BiCollector<Range<K>, V, ImmutableRangeMap<K, V>>
   toImmutableRangeMap(BinaryOperator<V> merger) {
-    requireNonNull(merger);
-    return new BiCollector<Range<K>, V, ImmutableRangeMap<K, V>>() {
-      @Override
-      public <E> Collector<E, ?, ImmutableRangeMap<K, V>> collectorOf(
-          Function<E, Range<K>> toRange, Function<E, V> toValue) {
-        class Builder {
-          private final TreeRangeMap<K, V> map = TreeRangeMap.create();
+    return BiCollectors.collectingAndThen(toRangeMap(merger), ImmutableRangeMap::copyOf);
+  }
 
-          void add(E element) {
-            Range<K> range = toRange.apply(element);
-            V value = toValue.apply(element);
-            map.merge(range, value, merger);
-          }
+  /**
+   * Returns a BiCollector that merges values mapped to overlapping ranges using the {@code merger}
+   * function and builds an {@link BiStream} with disjoint ranges and the corresponding merged
+   * values.
 
-          Builder addAll(Builder that) {
-            for (Map.Entry<Range<K>, V> entry : that.map.asMapOfRanges().entrySet()) {
-              map.merge(entry.getKey(), entry.getValue(), merger);
-            }
-            return this;
-          }
-
-          ImmutableRangeMap<K, V> build() {
-            return ImmutableRangeMap.copyOf(map);
-          }
-        }
-        return Collector.of(Builder::new, Builder::add, Builder::addAll, Builder::build);
-      }
-    };
+   * <p>For example: <pre>{@code
+   * Map<Range<Integer>, String> rangeMap = ...; // [1..3] -> foo, [2..4] -> bar
+   *
+   * // [1..2) -> foo, [2..3] -> foobar, (3..4] -> bar
+   * Map<Integer, ImmutableSet<String>> result =
+   *     BiStream.from(rangeMap)
+   *         .collect(toDisjointRanges(String::concat))
+   *         .toMap();
+   * }</pre>
+   *
+   * @since 8.1
+   */
+  public static <K extends Comparable<K>, V> BiCollector<Range<K>, V, BiStream<Range<K>, V>>
+  toDisjointRanges(BinaryOperator<V> merger) {
+    return BiCollectors.collectingAndThen(toRangeMap(merger),  m -> BiStream.from(m.asMapOfRanges()));
   }
 
   /**
@@ -591,24 +598,43 @@ public final class GuavaCollectors {
   public static <K extends Comparable<K>, V, R> BiCollector<Range<K>, V, BiStream<Range<K>, R>>
   toDisjointRanges(Collector<V, ?, R> valueCollector) {
     requireNonNull(valueCollector);
-    return BiCollectors.mapping(
-        (k, v) -> k, (k, v) -> Sequence.of(v),
+    return mappingValues(
+        Sequence::of,
         BiCollectors.collectingAndThen(
-            toImmutableRangeMap(Sequence::concat),
-            m -> BiStream.from(m.asMapOfRanges())
-                .mapValues(s -> s.stream().collect(valueCollector))));
+            toDisjointRanges(Sequence::concat),
+            m -> m.mapValues(s -> s.stream().collect(valueCollector))));
+  }
+
+  private static <K extends Comparable<K>, V> BiCollector<Range<K>, V, RangeMap<K, V>>
+  toRangeMap(BinaryOperator<V> merger) {
+    requireNonNull(merger);
+    return new BiCollector<Range<K>, V, RangeMap<K, V>>() {
+      @Override
+      public <E> Collector<E, ?, RangeMap<K, V>> collectorOf(
+          Function<E, Range<K>> toRange, Function<E, V> toValue) {
+        class Buffer {
+          private final TreeRangeMap<K, V> map = TreeRangeMap.create();
+
+          void add(E element) {
+            map.merge(toRange.apply(element), toValue.apply(element), merger);
+          }
+
+          Buffer addAll(Buffer that) {
+            for (Map.Entry<Range<K>, V> entry : that.map.asMapOfRanges().entrySet()) {
+              map.merge(entry.getKey(), entry.getValue(), merger);
+            }
+            return this;
+          }
+        }
+        return Collector.of(Buffer::new, Buffer::add, Buffer::addAll, buffer -> buffer.map);
+      }
+    };
   }
 
   private static <K, V, T, R> BiCollector<K, V, R> mappingValues(
       Function<? super V, ? extends T> mapper, BiCollector<K, T, R> downstream) {
     requireNonNull(mapper);
-    requireNonNull(downstream);
-    return new BiCollector<K, V, R>() {
-      @Override
-      public <E> Collector<E, ?, R> collectorOf(Function<E, K> toKey, Function<E, V> toValue) {
-        return downstream.collectorOf(toKey, toValue.andThen(mapper));
-      }
-    };
+    return BiCollectors.mapping((k, v) -> k, (k, v) -> mapper.apply(v), downstream);
   }
 
   private GuavaCollectors() {}
