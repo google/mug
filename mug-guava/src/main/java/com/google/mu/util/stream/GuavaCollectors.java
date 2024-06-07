@@ -591,8 +591,8 @@ public final class GuavaCollectors {
   public static <K extends Comparable<K>, V, R> BiCollector<Range<K>, V, BiStream<Range<K>, R>>
   toDisjointRanges(Collector<V, ?, R> valueCollector) {
     requireNonNull(valueCollector);
-    return BiCollectors.mapping(
-        (k, v) -> k, (k, v) -> Sequence.of(v),
+    return mappingValues(
+        Sequence::of,
         BiCollectors.collectingAndThen(
             toImmutableRangeMap(Sequence::concat),
             m -> BiStream.from(m.asMapOfRanges())
@@ -602,13 +602,7 @@ public final class GuavaCollectors {
   private static <K, V, T, R> BiCollector<K, V, R> mappingValues(
       Function<? super V, ? extends T> mapper, BiCollector<K, T, R> downstream) {
     requireNonNull(mapper);
-    requireNonNull(downstream);
-    return new BiCollector<K, V, R>() {
-      @Override
-      public <E> Collector<E, ?, R> collectorOf(Function<E, K> toKey, Function<E, V> toValue) {
-        return downstream.collectorOf(toKey, toValue.andThen(mapper));
-      }
-    };
+    return BiCollectors.mapping((k, v) -> k, (k, v) -> mapper.apply(v), downstream);
   }
 
   private GuavaCollectors() {}
