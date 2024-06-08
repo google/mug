@@ -36,6 +36,7 @@ import static com.google.mu.util.stream.GuavaCollectors.toImmutableSetMultimap;
 import static com.google.mu.util.stream.GuavaCollectors.toImmutableSortedMap;
 import static com.google.mu.util.stream.GuavaCollectors.toImmutableTable;
 import static com.google.mu.util.stream.GuavaCollectors.toMultimap;
+import static com.google.mu.util.stream.GuavaCollectors.toRangeMap;
 import static java.util.Comparator.naturalOrder;
 import static java.util.stream.Collectors.summingInt;
 import static java.util.stream.Collectors.toList;
@@ -59,6 +60,7 @@ import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.ImmutableTable;
 import com.google.common.collect.Range;
 import com.google.common.collect.TreeMultimap;
+import com.google.common.collect.TreeRangeMap;
 import com.google.common.testing.NullPointerTester;
 import com.google.mu.util.Both;
 
@@ -386,6 +388,17 @@ public class GuavaCollectorsTest {
         Range.closed(2, 4), "bar");
     ImmutableRangeMap<Integer, String> merged = BiStream.from(mappings)
         .collect(toImmutableRangeMap((a, b) -> a + "," + b));
+    assertThat(merged.asMapOfRanges())
+        .containsExactly(Range.closedOpen(1, 2), "foo", Range.closed(2, 3), "foo,bar", Range.openClosed(3, 4), "bar")
+        .inOrder();
+  }
+
+  @Test public void testToRangeMap_withMerger() {
+    ImmutableMap<Range<Integer>, String> mappings = ImmutableMap.of(
+        Range.closed(1, 3), "foo",
+        Range.closed(2, 4), "bar");
+    TreeRangeMap<Integer, String> merged = BiStream.from(mappings)
+        .collect(toRangeMap(TreeRangeMap::create, (a, b) -> a + "," + b));
     assertThat(merged.asMapOfRanges())
         .containsExactly(Range.closedOpen(1, 2), "foo", Range.closed(2, 3), "foo,bar", Range.openClosed(3, 4), "bar")
         .inOrder();
