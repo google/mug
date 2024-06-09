@@ -62,6 +62,7 @@ import com.google.common.collect.Range;
 import com.google.common.collect.TreeMultimap;
 import com.google.common.collect.TreeRangeMap;
 import com.google.common.testing.NullPointerTester;
+import com.google.mu.collect.Sequence;
 import com.google.mu.util.Both;
 
 @RunWith(JUnit4.class)
@@ -431,6 +432,21 @@ public class GuavaCollectorsTest {
             Range.closedOpen(1, 2), ImmutableSet.of("foo"),
             Range.closed(2, 3), ImmutableSet.of("foo", "bar"),
             Range.openClosed(3, 4), ImmutableSet.of("bar"))
+        .inOrder();
+  }
+
+  @Test public void testToDisjointRanges() {
+    ImmutableMap<Range<Integer>, String> mappings = ImmutableMap.of(
+        Range.closed(1, 3), "foo",
+        Range.closed(2, 4), "bar");
+    Map<Range<Integer>, Sequence<String>> disjoint = BiStream.from(mappings)
+        .collect(GuavaCollectors.toDisjointRanges())
+        .toMap();
+    assertThat(disjoint)
+        .containsExactly(
+            Range.closedOpen(1, 2), Sequence.of("foo"),
+            Range.closed(2, 3), Sequence.of("foo", "bar"),
+            Range.openClosed(3, 4), Sequence.of("bar"))
         .inOrder();
   }
 
