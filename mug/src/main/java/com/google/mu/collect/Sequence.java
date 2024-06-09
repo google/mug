@@ -36,9 +36,10 @@ import com.google.mu.util.graph.Walker;
  * concatenated Sequence...
  *
  * <p>On the high level, this class provides similar behavior as {@link
- * com.google.common.collect.Iterables#concat}, with the exception that it's not recursive. That is,
- * if your Sequence is the result of 1 million concatenations, you won't run into stack overflow
- * error because under the hood, it's a heap-allocated tree structure.
+ * com.google.common.collect.Iterables#concat} or {@link Stream#concat},
+ * with the exception that it's not recursive. That is, if your Sequence is the result of 1 million
+ * concatenations, you won't run into stack overflow error because under the hood, it's a
+ * heap-allocated tree structure.
  *
  * <p>Null elements are not allowed.
  *
