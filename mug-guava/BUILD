@@ -13,7 +13,7 @@ java_library(
     deps = [
         ":annotations",
         "//mug:base",
-        "//mug:sequence",
+        "//mug:chain",
         "@@maven//:com_google_guava_guava",
         "@maven//:org_checkerframework_checker_qual",
         "@maven//:com_google_errorprone_error_prone_annotations",

@@ -53,7 +53,7 @@ import com.google.common.collect.Tables;
 import com.google.common.collect.TreeRangeMap;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.mu.annotations.RequiresGuava;
-import com.google.mu.collect.Sequence;
+import com.google.mu.collect.Chain;
 import com.google.mu.util.Both;
 
 /**
@@ -600,9 +600,9 @@ public final class GuavaCollectors {
   }
 
   /**
-   * Returns a BiCollector that merges values mapped to overlapping ranges into a {@link Sequence},
+   * Returns a BiCollector that merges values mapped to overlapping ranges into a {@link Chain},
    * which is an immutable {@link java.util.List List} that can be cheaply {@link
-   * Sequence#concat(Sequence, Sequence) concatenated}. The result is a {@link BiStream} with
+   * Chain#concat(Chain, Chain) concatenated}. The result is a {@link BiStream} with
    * disjoint ranges and the corresponding merged list of values.
 
    * <p>For example: <pre>{@code
@@ -620,9 +620,9 @@ public final class GuavaCollectors {
    *
    * @since 8.1
    */
-  public static <K extends Comparable<K>, V> BiCollector<Range<K>, V, BiStream<Range<K>, Sequence<V>>>
+  public static <K extends Comparable<K>, V> BiCollector<Range<K>, V, BiStream<Range<K>, Chain<V>>>
   toDisjointRanges() {
-    return mappingValues(Sequence::of, toDisjointRanges(Sequence::concat));
+    return mappingValues(Chain::of, toDisjointRanges(Chain::concat));
   }
 
   /**

@@ -29,63 +29,63 @@ import com.google.mu.util.graph.Walker;
  *
  * <p>At high level, this class provides similar behavior as {@link Stream#concat Stream.concat()}
  * or {@link com.google.common.collect.Iterables#concat Guava Iterables.concat()}, except it's not
- * recursive. That is, if your Sequence is the result of 1 million concatenations, you won't run
+ * recursive. That is, if your Chain is the result of 1 million concatenations, you won't run
  * into stack overflow error because under the hood, it's a heap-allocated immutable tree structure.
  *
- * <p>The expected use case is to concatenate lots of smaller {@code Sequence}s using the {@code
- * concat()} methods to create the final Sequence. O(n) materialization cost will be (lazily) paid
- * before the first time accessing the elements of the final Sequence through the {@link List}
+ * <p>The expected use case is to concatenate lots of smaller {@code Chain}s using the {@code
+ * concat()} methods to create the final Chain. O(n) materialization cost will be (lazily) paid
+ * before the first time accessing the elements of the final Chain through the {@link List}
  * interface such as {@link List#get}, {@link List#equals}, {@link #toString} etc. You may also
- * want to copy the final Sequence into a more conventional List such as {@link
+ * want to copy the final Chain into a more conventional List such as {@link
  * com.google.common.collect.ImmutableList#copyOf Guava ImmutableList}.
  *
  * <p>On the other hand, it's inefficient to materialize, concatenate then materialize the
- * concatenated Sequence...
+ * concatenated Chain...
  *
  * <p>Null elements are not allowed.
  *
  * @since 8.1
  */
-public final class Sequence<T> extends AbstractList<T> {
+public final class Chain<T> extends AbstractList<T> {
   private final T head;
   private final Tree<T> tail;
   private List<T> lazyElements;
 
-  /** Returns a Sequence with a single element. */
-  public static <T> Sequence<T> of(T element) {
-    return new Sequence<>(element, null);
+  /** Returns a Chain with a single element. */
+  public static <T> Chain<T> of(T element) {
+    return new Chain<>(element, null);
   }
 
-  /** Returns a Sequence with {@code first} followed by {@code remaining}. */
+  /** Returns a Chain with {@code first} followed by {@code remaining}. */
   @SafeVarargs // remaining are copied into immutable object
-  public static <T> Sequence<T> of(T first, T... remaining) {
+  public static <T> Chain<T> of(T first, T... remaining) {
     Tree<T> tail = null;
     for (int i = remaining.length - 1; i >= 0; i--) {
       tail = new Tree<>(remaining[i], null, tail);
     }
-    return new Sequence<>(first, tail);
+    return new Chain<>(first, tail);
   }
 
   /**
-   * Returns a new Sequence concatenating elements from the {@code left} Sequence and the
-   * {@code right} Sequence, in <em>O(1)</em> time.
+   * Returns a new Chain concatenating elements from the {@code left} Chain and the
+   * {@code right} Chain, in <em>O(1)</em> time.
    *
    * <p>Encounter order of elements is preserved. That is, {@code concat([1, 2], [3, 4])}
    * returns {@code [1, 2, 3, 4]}.
    */
-  public static <T> Sequence<T> concat(Sequence<? extends T> left, Sequence<? extends T> right) {
-    return new Sequence<>(left.head, new Tree<>(right.head, left.tail, right.tail));
+  public static <T> Chain<T> concat(Chain<? extends T> left, Chain<? extends T> right) {
+    return new Chain<>(left.head, new Tree<>(right.head, left.tail, right.tail));
   }
 
   /**
-   * Returns a new Sequence concatenating elements from {@code this} Sequence followed by {@code
+   * Returns a new Chain concatenating elements from {@code this} Chain followed by {@code
    * lastElement}, in <em>O(1)</em> time.
    */
-  public Sequence<T> concat(T lastElement) {
+  public Chain<T> concat(T lastElement) {
     return concat(this, of(lastElement));
   }
 
-  /** Returns the size of the sequence. This is an O(1) operation. */
+  /** Returns the size of the chain. This is an O(1) operation. */
   @Override public int size() {
     return 1 + sizeOf(tail);
   }
@@ -96,7 +96,7 @@ public final class Sequence<T> extends AbstractList<T> {
 
   /**
    * Returns a <em>lazy</em> stream of the elements in this list.
-   * The returned stream is lazy in that concatenated sequences aren't consumed until the stream
+   * The returned stream is lazy in that concatenated chains aren't consumed until the stream
    * reaches their elements.
    */
   @Override public Stream<T> stream() {
@@ -121,7 +121,7 @@ public final class Sequence<T> extends AbstractList<T> {
     return elements().subList(fromIndex, toIndex);
   }
 
-  private Sequence(T head, Tree<T> tail) {
+  private Chain(T head, Tree<T> tail) {
     this.head = requireNonNull(head);
     this.tail = tail;
   }
