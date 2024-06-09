@@ -550,7 +550,7 @@ public final class GuavaCollectors {
    *     BiStream.from(rangeMap).collect(toImmutableRangeMap(String::concat));
    * }</pre>
    *
-   * <p>To avoid quadratic range split, it's generally safer to arrange the input ranges
+   * <p>To avoid quadratic range merging, it's generally safer to arrange the input ranges
    * longer range first.
    *
    * @since 8.1
@@ -574,7 +574,7 @@ public final class GuavaCollectors {
    *     BiStream.from(rangeMap).collect(toRangeMap(TreeRangeMap::create, String::concat));
    * }</pre>
    *
-   * <p>To avoid quadratic range split, it's generally safer to arrange the input ranges
+   * <p>To avoid quadratic range merging, it's generally safer to arrange the input ranges
    * longer range first.
    *
    * @since 8.1
@@ -615,7 +615,7 @@ public final class GuavaCollectors {
    *         .collect(toImmutableMap());
    * }</pre>
    *
-   * <p>To avoid quadratic range split, it's generally safer to arrange the input ranges
+   * <p>To avoid quadratic range merging, it's generally safer to arrange the input ranges
    * longer range first.
    *
    * @since 8.1
@@ -640,7 +640,7 @@ public final class GuavaCollectors {
    *         .toMap();
    * }</pre>
    *
-   * <p>To avoid quadratic range split, it's generally safer to arrange the input ranges
+   * <p>To avoid quadratic range merging, it's generally safer to arrange the input ranges
    * longer range first.
    *
    * @since 8.1
@@ -674,7 +674,7 @@ public final class GuavaCollectors {
    * while the worst-case runtime of a naive implementation that recombines the mapped values on
    * each re-mapping will be O(n^2).
    *
-   * <p>Also, to avoid quadratic range split, it's generally safer to arrange the input ranges
+   * <p>Also, to avoid quadratic range merging, it's generally safer to arrange the input ranges
    * longer range first.
    *
    * @since 8.1
