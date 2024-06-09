@@ -28,7 +28,7 @@ import com.google.mu.util.graph.Walker;
  * Immutable {@link List} implementation that supports O(1) concatenation.
  *
  * <p>At high level, this class provides similar behavior as {@link Stream#concat} or {@link
- * com.google.common.collect.Iterables#concat}, with the exception that it's not recursive.
+ * com.google.common.collect.Iterables#concat}, except it's not recursive.
  * That is, if your Sequence is the result of 1 million concatenations, you won't run into stack
  * overflow error because under the hood, it's a heap-allocated immutable tree structure.
  *
