@@ -603,7 +603,7 @@ public final class GuavaCollectors {
    * Returns a BiCollector that merges values mapped to overlapping ranges into a {@link Chain},
    * which is an immutable {@link java.util.List List} that can be cheaply {@link
    * Chain#concat(Chain, Chain) concatenated}. The result is a {@link BiStream} with
-   * disjoint ranges and the corresponding merged list of values.
+   * disjoint ranges and the corresponding merged list (Chain) of values.
 
    * <p>For example: <pre>{@code
    * Map<Range<Integer>, String> rangeMap = ...; // [1..3] -> "foo", [2..4] -> "bar"
@@ -683,8 +683,7 @@ public final class GuavaCollectors {
   toDisjointRanges(Collector<V, ?, R> valueCollector) {
     requireNonNull(valueCollector);
     return BiCollectors.collectingAndThen(
-        toDisjointRanges(),
-        m -> m.mapValues(s -> s.stream().collect(valueCollector)));
+        toDisjointRanges(), m -> m.mapValues(chain -> chain.stream().collect(valueCollector)));
   }
 
   private static <K, V, T, R> BiCollector<K, V, R> mappingValues(
