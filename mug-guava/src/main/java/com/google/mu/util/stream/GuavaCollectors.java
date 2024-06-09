@@ -600,6 +600,32 @@ public final class GuavaCollectors {
   }
 
   /**
+   * Returns a BiCollector that merges values mapped to overlapping ranges into a {@link Sequence},
+   * which is an immutable {@link List} that can be cheaply {@link
+   * Sequence#concat(Sequence, Sequence) concatenated}. The result is a {@link BiStream} with
+   * disjoint ranges and the corresponding merged list of values.
+
+   * <p>For example: <pre>{@code
+   * Map<Range<Integer>, String> rangeMap = ...; // [1..3] -> "foo", [2..4] -> "bar"
+   *
+   * // [1..2) -> ["foo"], [2..3] -> ["foo", "bar"], (3..4] -> ["bar"]
+   * ImmutableMap<Range<Integer>, List<String>> result =
+   *     BiStream.from(rangeMap)
+   *         .collect(toDisjointRanges())
+   *         .collect(toImmutableMap());
+   * }</pre>
+   *
+   * <p>To avoid quadratic range split, it's generally safer to arrange the input ranges
+   * longer range first.
+   *
+   * @since 8.1
+   */
+  public static <K extends Comparable<K>, V> BiCollector<Range<K>, V, BiStream<Range<K>, Sequence<V>>>
+  toDisjointRanges() {
+    return mappingValues(Sequence::of, toDisjointRanges(Sequence::concat));
+  }
+
+  /**
    * Returns a BiCollector that merges values mapped to overlapping ranges using the {@code merger}
    * function and builds a {@link BiStream} with disjoint ranges and the corresponding merged
    * values.
@@ -656,11 +682,9 @@ public final class GuavaCollectors {
   public static <K extends Comparable<K>, V, R> BiCollector<Range<K>, V, BiStream<Range<K>, R>>
   toDisjointRanges(Collector<V, ?, R> valueCollector) {
     requireNonNull(valueCollector);
-    return mappingValues(
-        Sequence::of,
-        BiCollectors.collectingAndThen(
-            toDisjointRanges(Sequence::concat),
-            m -> m.mapValues(s -> s.stream().collect(valueCollector))));
+    return BiCollectors.collectingAndThen(
+        toDisjointRanges(),
+        m -> m.mapValues(s -> s.stream().collect(valueCollector)));
   }
 
   private static <K, V, T, R> BiCollector<K, V, R> mappingValues(
