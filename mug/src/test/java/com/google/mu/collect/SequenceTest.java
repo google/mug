@@ -1,14 +1,20 @@
 package com.google.mu.collect;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.collect.Sequence.concat;
+
+import java.util.List;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.testing.EqualsTester;
 import com.google.common.testing.NullPointerTester;
+import com.google.mu.util.stream.MoreStreams;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 @RunWith(TestParameterInjector.class)
@@ -94,6 +100,16 @@ public class SequenceTest {
         .inOrder();
   }
 
+  @Test public void concatFromBeginning() {
+    ImmutableList<Integer> list = MoreStreams.indexesFrom(1).limit(100).collect(toImmutableList());
+    assertThat(list.stream().map(Sequence::of).reduce(Sequence::concat)).hasValue(list);
+  }
+
+  @Test public void concatInTheMiddle() {
+    ImmutableList<Integer> list = MoreStreams.indexesFrom(1).limit(100).collect(toImmutableList());
+    assertThat(toSequence(list)).containsExactlyElementsIn(list).inOrder();
+  }
+
   @Test public void elementsIsIdempotent() {
     Sequence<?> sequence = concat(Sequence.of("foo", "bar"), Sequence.of("bar", "baz"));
     assertThat(sequence.elements()).isSameInstanceAs(sequence.elements());
@@ -111,5 +127,14 @@ public class SequenceTest {
     NullPointerTester tester = new NullPointerTester().setDefault(Sequence.class, Sequence.of("dummy"));
     tester.testAllPublicStaticMethods(Sequence.class);
     tester.testAllPublicInstanceMethods(Sequence.of(1));
+  }
+
+  private static <T> Sequence<T> toSequence(List<T> list) {
+    assertThat(list).isNotEmpty();
+    if (list.size() == 1) {
+      return Sequence.of(list.get(0));
+    }
+    int mid = list.size() / 2;
+    return Sequence.concat(toSequence(list.subList(0, mid)), toSequence(list.subList(mid, list.size())));
   }
 }
