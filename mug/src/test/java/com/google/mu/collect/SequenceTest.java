@@ -105,6 +105,12 @@ public class SequenceTest {
     assertThat(list.stream().map(Sequence::of).reduce(Sequence::concat)).hasValue(list);
   }
 
+  @Test public void concatFromEnd() {
+    ImmutableList<Integer> list = MoreStreams.indexesFrom(1).limit(100).collect(toImmutableList());
+    assertThat(list.stream().map(Sequence::of).reduce((a, b) -> Sequence.concat(b, a)))
+        .hasValue(list.reverse());
+  }
+
   @Test public void concatInTheMiddle() {
     ImmutableList<Integer> list = MoreStreams.indexesFrom(1).limit(100).collect(toImmutableList());
     assertThat(toSequence(list)).containsExactlyElementsIn(list).inOrder();
