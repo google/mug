@@ -23,9 +23,9 @@ java_library(
 )
 
 java_library(
-    name = "sequence",
+    name = "chain",
     visibility = ["//visibility:public"],
-    srcs = ["src/main/java/com/google/mu/collect/Sequence.java"],
+    srcs = ["src/main/java/com/google/mu/collect/Chain.java"],
     deps = [
         ":base",
         ":graph",
@@ -98,10 +98,10 @@ junit_tests(
     srcs = glob(["src/test/java/**/*Test.java"]),
     deps = [
         ":base",
+        ":chain",
         ":concurrent",
         ":format",
         ":graph",
-        ":sequence",
         ":tests",
         ":time",
         "@maven//:com_google_guava_guava",
