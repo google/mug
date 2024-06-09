@@ -601,7 +601,7 @@ public final class GuavaCollectors {
 
   /**
    * Returns a BiCollector that merges values mapped to overlapping ranges into a {@link Sequence},
-   * which is an immutable {@link List} that can be cheaply {@link
+   * which is an immutable {@link java.util.List List} that can be cheaply {@link
    * Sequence#concat(Sequence, Sequence) concatenated}. The result is a {@link BiStream} with
    * disjoint ranges and the corresponding merged list of values.
 
