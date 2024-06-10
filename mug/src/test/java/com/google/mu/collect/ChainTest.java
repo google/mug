@@ -5,13 +5,18 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.collect.Chain.concat;
+import static java.util.Arrays.asList;
 
+import java.util.Iterator;
 import java.util.List;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.testing.IteratorFeature;
+import com.google.common.collect.testing.IteratorTester;
+import com.google.common.collect.testing.SpliteratorTester;
 import com.google.common.testing.EqualsTester;
 import com.google.common.testing.NullPointerTester;
 import com.google.mu.util.stream.MoreStreams;
@@ -20,66 +25,49 @@ import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 @RunWith(TestParameterInjector.class)
 public class ChainTest {
   @Test public void singleElement() {
-    assertThat(Chain.of("foo")).containsExactly("foo");
-    assertThat(Chain.of("foo")).isNotEmpty();
+    assertChain(Chain.of("foo"), "foo");
   }
 
   @Test public void singleElement_varargs() {
     String[] noMore = {};
-    assertThat(Chain.of("foo", noMore)).containsExactly("foo");
-  }
-
-  @Test public void singleElement_size() {
-    assertThat(Chain.of("foo").size()).isEqualTo(1);
+    assertChain(Chain.of("foo", noMore), "foo");
   }
 
   @Test public void multipleElements() {
-    assertThat(Chain.of("foo", "bar", "baz")).containsExactly("foo", "bar", "baz").inOrder();
+    assertChain(Chain.of("foo", "bar", "baz"), "foo", "bar", "baz");
   }
 
   @Test public void multipleElements_get() {
-    Chain<String> sequence = Chain.of("foo", "bar", "baz");
-    assertThat(sequence.get(0)).isEqualTo("foo");
-    assertThat(sequence.get(1)).isEqualTo("bar");
-    assertThat(sequence.get(2)).isEqualTo("baz");
+    Chain<String> chain = Chain.of("foo", "bar", "baz");
+    assertThat(chain.get(0)).isEqualTo("foo");
+    assertThat(chain.get(1)).isEqualTo("bar");
+    assertThat(chain.get(2)).isEqualTo("baz");
+    assertChain(chain, "foo", "bar", "baz");
   }
 
   @Test public void concatSingleElement_afterSingleElement() {
-    assertThat(Chain.of("foo").concat("bar")).containsExactly("foo", "bar").inOrder();
+    assertChain(Chain.of("foo").concat("bar"), "foo", "bar");
   }
 
   @Test public void concatSingleElement_varargs() {
     String[] noMore = {};
-    assertThat(Chain.of("foo", noMore).concat("bar")).containsExactly("foo", "bar").inOrder();
+    assertChain(Chain.of("foo", noMore).concat("bar"), "foo", "bar");
   }
 
   @Test public void concatSingleElement_afterMultipleElements() {
-    assertThat(Chain.of("foo", "bar").concat("baz")).containsExactly("foo", "bar", "baz").inOrder();
-  }
-
-  @Test public void concatSingleElementsize() {
-    assertThat(Chain.of("foo").concat("bar").size()).isEqualTo(2);
+    assertChain(Chain.of("foo", "bar").concat("baz"), "foo", "bar", "baz");
   }
 
   @Test public void concatTwoSequences() {
-    assertThat(concat(Chain.of("foo", "bar"), Chain.of("baz", "zoo")))
-        .containsExactly("foo", "bar", "baz", "zoo")
-        .inOrder();
-    assertThat(concat(concat(Chain.of("foo", "bar"), Chain.of("baz", "zoo")), Chain.of("dash")))
-        .containsExactly("foo", "bar", "baz", "zoo", "dash")
-        .inOrder();
-    assertThat(concat(Chain.of("zero"), concat(Chain.of("foo", "bar"), Chain.of("baz", "zoo"))))
-        .containsExactly("zero", "foo", "bar", "baz", "zoo")
-        .inOrder();
-  }
-
-  @Test public void concatTwoSequences_size() {
-    assertThat(concat(Chain.of("foo", "bar"), Chain.of("baz", "zoo")).size())
-        .isEqualTo(4);
-    assertThat(concat(concat(Chain.of("foo", "bar"), Chain.of("baz", "zoo")), Chain.of("dash")).size())
-        .isEqualTo(5);
-    assertThat(concat(Chain.of("zero", "one"), concat(Chain.of("foo", "bar"), Chain.of("baz", "zoo"))).size())
-        .isEqualTo(6);
+    assertChain(
+        concat(Chain.of("foo", "bar"), Chain.of("baz", "zoo")),
+        "foo", "bar", "baz", "zoo");
+    assertChain(
+        concat(concat(Chain.of("foo", "bar"), Chain.of("baz", "zoo")), Chain.of("dash")),
+        "foo", "bar", "baz", "zoo", "dash");
+    assertChain(concat(
+        Chain.of("zero"), concat(Chain.of("foo", "bar"), Chain.of("baz", "zoo"))),
+        "zero", "foo", "bar", "baz", "zoo");
   }
 
   @Test public void concatTwoSequences_collect() {
@@ -113,12 +101,31 @@ public class ChainTest {
 
   @Test public void concatInTheMiddle() {
     ImmutableList<Integer> list = MoreStreams.indexesFrom(1).limit(100).collect(toImmutableList());
-    assertThat(toSequence(list)).containsExactlyElementsIn(list).inOrder();
+    assertThat(toChain(list)).containsExactlyElementsIn(list).inOrder();
   }
 
   @Test public void elementsIsIdempotent() {
-    Chain<?> sequence = concat(Chain.of("foo", "bar"), Chain.of("bar", "baz"));
-    assertThat(sequence.elements()).isSameInstanceAs(sequence.elements());
+    Chain<?> chain = concat(Chain.of("foo", "bar"), Chain.of("bar", "baz"));
+    assertThat(chain.elements()).isSameInstanceAs(chain.elements());
+  }
+
+  private static <T> void assertChain(Chain<T> chain, T... expected) {
+    assertThat(chain).containsExactlyElementsIn(asList(expected)).inOrder();
+    IteratorTester<T> tester =
+         new IteratorTester<T>(
+             6,
+             IteratorFeature.UNMODIFIABLE,
+             asList(expected),
+             IteratorTester.KnownOrder.KNOWN_ORDER) {
+           @Override protected Iterator<T> newTargetIterator() {
+             return chain.iterator();
+           }
+         };
+         tester.test();
+         tester.testForEachRemaining();
+     SpliteratorTester.of(chain::spliterator).expect(expected).inOrder();
+     assertThat(chain.size()).isEqualTo(expected.length);
+     assertThat(chain).isNotEmpty();
   }
 
   @Test public void testEquals() {
@@ -135,12 +142,12 @@ public class ChainTest {
     tester.testAllPublicInstanceMethods(Chain.of(1));
   }
 
-  private static <T> Chain<T> toSequence(List<T> list) {
+  private static <T> Chain<T> toChain(List<T> list) {
     assertThat(list).isNotEmpty();
     if (list.size() == 1) {
       return Chain.of(list.get(0));
     }
     int mid = list.size() / 2;
-    return Chain.concat(toSequence(list.subList(0, mid)), toSequence(list.subList(mid, list.size())));
+    return Chain.concat(toChain(list.subList(0, mid)), toChain(list.subList(mid, list.size())));
   }
 }

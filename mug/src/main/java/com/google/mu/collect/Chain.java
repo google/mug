@@ -18,8 +18,10 @@ import static com.google.mu.collect.InternalUtils.toImmutableList;
 import static java.util.Objects.requireNonNull;
 
 import java.util.AbstractList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Spliterator;
 import java.util.stream.Stream;
 
 import com.google.mu.util.graph.Walker;
@@ -42,8 +44,8 @@ import com.google.mu.util.graph.Walker;
  * <p>On the other hand, it's inefficient to materialize, concatenate then materialize the
  * concatenated Chain...
  *
- * <p>Unless explicitly documented otherwise, all {@link List} methods will materialize the elements
- * if not already.
+ * <p>Unless explicitly documented as lazy or an O(1) operation, all {@link List} methods will
+ * materialize the elements eagerly if not already.
  *
  * <p>Null elements are not allowed.
  *
@@ -107,6 +109,16 @@ public final class Chain<T> extends AbstractList<T> {
     return tail == null
         ? Stream.of(head)
         : Stream.concat(Stream.of(head), tail.stream());
+  }
+
+  /** Rerturns a iterator that <em>lazily</em> traverses the elements in the chain. */
+  @Override public Iterator<T> iterator() {
+    return stream().iterator();
+  }
+
+  /** Rerturns a spliterator that <em>lazily</em> traverses the elements in the chain. */
+  @Override public Spliterator<T> spliterator() {
+    return stream().spliterator();
   }
 
   @Override public T get(int i) {
