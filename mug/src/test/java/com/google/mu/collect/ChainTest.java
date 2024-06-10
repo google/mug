@@ -110,6 +110,12 @@ public class ChainTest {
   }
 
   private static <T> void assertChain(Chain<T> chain, T... expected) {
+    // Before materialization
+    assertThat(chain.stream()).containsExactlyElementsIn(asList(expected)).inOrder();
+    assertThat(chain.size()).isEqualTo(expected.length);
+    assertThat(chain).isNotEmpty();
+
+    // Materialize
     assertThat(chain).containsExactlyElementsIn(asList(expected)).inOrder();
     assertThat(chain.stream()).containsExactlyElementsIn(asList(expected)).inOrder();
     assertThat(chain.size()).isEqualTo(expected.length);
