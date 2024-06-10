@@ -93,6 +93,7 @@ public final class Chain<T> extends AbstractList<T> {
     return 1 + sizeOf(tail);
   }
 
+  /** Always false. O(1) operation. */
   @Override public boolean isEmpty() {
     return false;
   }
