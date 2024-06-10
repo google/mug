@@ -111,6 +111,9 @@ public class ChainTest {
 
   private static <T> void assertChain(Chain<T> chain, T... expected) {
     assertThat(chain).containsExactlyElementsIn(asList(expected)).inOrder();
+    assertThat(chain.stream()).containsExactlyElementsIn(asList(expected)).inOrder();
+    assertThat(chain.size()).isEqualTo(expected.length);
+    assertThat(chain).isNotEmpty();
     IteratorTester<T> tester =
          new IteratorTester<T>(
              6,
@@ -124,8 +127,6 @@ public class ChainTest {
          tester.test();
          tester.testForEachRemaining();
      SpliteratorTester.of(chain::spliterator).expect(expected).inOrder();
-     assertThat(chain.size()).isEqualTo(expected.length);
-     assertThat(chain).isNotEmpty();
   }
 
   @Test public void testEquals() {

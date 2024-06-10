@@ -18,10 +18,8 @@ import static com.google.mu.collect.InternalUtils.toImmutableList;
 import static java.util.Objects.requireNonNull;
 
 import java.util.AbstractList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Spliterator;
 import java.util.stream.Stream;
 
 import com.google.mu.util.graph.Walker;
@@ -115,16 +113,12 @@ public final class Chain<T> extends AbstractList<T> {
         : Stream.concat(Stream.of(head), tail.stream());
   }
 
-  /** Rerturns a iterator that <em>lazily</em> traverses the elements in the chain. */
-  @Override public Iterator<T> iterator() {
-    return stream().iterator();
-  }
-
-  /** Rerturns a spliterator that <em>lazily</em> traverses the elements in the chain. */
-  @Override public Spliterator<T> spliterator() {
-    return stream().spliterator();
-  }
-
+  /**
+   * {@inheritDoc}
+   *
+   * <p>Performance note: {@code get(0)} always takes O(1) time; otherwise will first materialize
+   * all elements if not already.
+   */
   @Override public T get(int i) {
     return i == 0 ? head : elements().get(i);
   }
