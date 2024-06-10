@@ -106,6 +106,10 @@ public final class Chain<T> extends AbstractList<T> {
    * reaches their elements.
    */
   @Override public Stream<T> stream() {
+    List<T> elements = lazyElements;
+    if (elements != null) {
+      return elements.stream();
+    }
     return tail == null
         ? Stream.of(head)
         : Stream.concat(Stream.of(head), tail.stream());
