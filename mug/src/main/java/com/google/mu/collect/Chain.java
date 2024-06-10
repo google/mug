@@ -33,14 +33,17 @@ import com.google.mu.util.graph.Walker;
  * into stack overflow error because under the hood, it's a heap-allocated immutable tree structure.
  *
  * <p>The expected use case is to concatenate lots of smaller {@code Chain}s using the {@code
- * concat()} methods to create the final Chain. O(n) materialization cost will be (lazily) paid
- * before the first time accessing the elements of the final Chain through the {@link List}
+ * concat()} methods to create the final Chain. O(n) materialization cost will be (lazily) incurred
+ * upon the first time accessing the elements of the final Chain through the {@link List}
  * interface such as {@link List#get}, {@link List#equals}, {@link #toString} etc. You may also
  * want to copy the final Chain into a more conventional List such as {@link
  * com.google.common.collect.ImmutableList#copyOf Guava ImmutableList}.
  *
  * <p>On the other hand, it's inefficient to materialize, concatenate then materialize the
  * concatenated Chain...
+ *
+ * <p>Unless explicitly documented otherwise, all {@link List} methods will materialize the elements
+ * if not already.
  *
  * <p>Null elements are not allowed.
  *
