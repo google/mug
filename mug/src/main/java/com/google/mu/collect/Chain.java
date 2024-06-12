@@ -54,11 +54,12 @@ import com.google.mu.util.graph.Walker;
 public final class Chain<T> extends AbstractList<T> {
   private final T head;
   private final Tree<T> tail;
+  private final int size;
   private List<T> materialized;
 
   /** Returns a Chain with a single element. */
   public static <T> Chain<T> of(T element) {
-    return new Chain<>(element, null);
+    return new Chain<>(element, null, 1);
   }
 
   /** Returns a Chain with {@code first} followed by {@code remaining}. */
@@ -68,7 +69,7 @@ public final class Chain<T> extends AbstractList<T> {
     for (int i = remaining.length - 1; i >= 0; i--) {
       tail = new Tree<>(remaining[i], null, tail);
     }
-    return new Chain<>(first, tail);
+    return new Chain<>(first, tail, 1 + remaining.length);
   }
 
   /**
@@ -79,7 +80,8 @@ public final class Chain<T> extends AbstractList<T> {
    * returns {@code [1, 2, 3, 4]}.
    */
   public static <T> Chain<T> concat(Chain<? extends T> left, Chain<? extends T> right) {
-    return new Chain<>(left.head, new Tree<>(right.head, left.tail, right.tail));
+    return new Chain<>(
+        left.head, new Tree<>(right.head, left.tail, right.tail), left.size + right.size);
   }
 
   /**
@@ -92,7 +94,7 @@ public final class Chain<T> extends AbstractList<T> {
 
   /** Returns the size of the chain. This is an O(1) operation. */
   @Override public int size() {
-    return 1 + sizeOf(tail);
+    return size;
   }
 
   /** Always false. O(1) operation. */
@@ -145,9 +147,10 @@ public final class Chain<T> extends AbstractList<T> {
     return elements().subList(fromIndex, toIndex);
   }
 
-  private Chain(T head, Tree<T> tail) {
+  private Chain(T head, Tree<T> tail, int size) {
     this.head = requireNonNull(head);
     this.tail = tail;
+    this.size = size;
   }
 
   // Visible for idempotence test
@@ -163,13 +166,11 @@ public final class Chain<T> extends AbstractList<T> {
     private final T value;
     private final Tree<? extends T> before;
     private final Tree<? extends T> after;
-    final int size;
 
     Tree(T value, Tree<? extends T> before, Tree<? extends T> after) {
       this.value = requireNonNull(value);
       this.before = before;
       this.after = after;
-      this.size = 1 + sizeOf(before) + sizeOf(after);
     }
 
     Stream<T> stream() {
@@ -177,9 +178,5 @@ public final class Chain<T> extends AbstractList<T> {
           .inOrderFrom(this)
           .map(t -> t.value);
     }
-  }
-
-  private static int sizeOf(Tree<?> tree) {
-    return tree == null ? 0 : tree.size;
   }
 }
