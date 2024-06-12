@@ -54,7 +54,7 @@ import com.google.mu.util.graph.Walker;
 public final class Chain<T> extends AbstractList<T> {
   private final T head;
   private final Tree<T> tail;
-  private List<T> lazyElements;
+  private List<T> materialized;
 
   /** Returns a Chain with a single element. */
   public static <T> Chain<T> of(T element) {
@@ -106,7 +106,7 @@ public final class Chain<T> extends AbstractList<T> {
    * reaches their elements.
    */
   @Override public Stream<T> stream() {
-    List<T> elements = lazyElements;
+    List<T> elements = materialized;
     if (elements != null) {
       return elements.stream();
     }
@@ -152,9 +152,9 @@ public final class Chain<T> extends AbstractList<T> {
 
   // Visible for idempotence test
   List<T> elements() {
-    List<T> elements = lazyElements;
+    List<T> elements = materialized;
     if (elements == null) {
-      lazyElements = elements = stream().collect(toImmutableList());
+      materialized = elements = stream().collect(toImmutableList());
     }
     return elements;
   }
