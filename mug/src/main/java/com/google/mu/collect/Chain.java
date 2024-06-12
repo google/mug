@@ -153,8 +153,8 @@ public final class Chain<T> extends AbstractList<T> {
     return elements().subList(fromIndex, toIndex);
   }
 
-  private Chain(T first, Tree<T> tail, int size) {
-    this.head = requireNonNull(first);
+  private Chain(T head, Tree<T> tail, int size) {
+    this.head = requireNonNull(head);
     this.tail = tail;
     this.size = size;
   }
