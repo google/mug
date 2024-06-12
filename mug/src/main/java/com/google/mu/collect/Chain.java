@@ -123,14 +123,8 @@ public final class Chain<T> extends AbstractList<T> {
     return head;
   }
 
-  /**
-   * {@inheritDoc}
-   *
-   * <p>Performance note: {@code get(0)} always takes O(1) time; otherwise will first materialize
-   * all elements if not already.
-   */
   @Override public T get(int i) {
-    return i == 0 ? head : elements().get(i);
+    return elements().get(i);
   }
 
   @Override public Iterator<T> iterator() {
