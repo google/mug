@@ -117,7 +117,7 @@ public final class Chain<T> extends AbstractList<T> {
         : Stream.concat(Stream.of(head), tail.stream());
   }
 
-  /** Returns the first element. Will override the SequencedCollection method. */
+  /** Returns the first element. Will override the SequencedCollection method. Takes O(1) time. */
   // @Override
   public T getFirst() {
     return head;
