@@ -44,6 +44,7 @@ junit_tests(
         ":mug-guava",
         ":safe_sql",
         "//mug:base",
+        "//mug:chain",
         "//mug:format",
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_guava_guava_testlib",

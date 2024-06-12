@@ -18,7 +18,7 @@ java_library(
       ],
       exclude = glob([
           "src/main/java/com/google/mu/util/*StringFormat.java",
-          "src/main/java/com/google/mu/collect/Sequence.java",
+          "src/main/java/com/google/mu/collect/Chain.java",
       ])),
 )
 
