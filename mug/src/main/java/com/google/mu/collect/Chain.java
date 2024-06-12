@@ -57,6 +57,12 @@ public final class Chain<T> extends AbstractList<T> {
   private final int size;
   private List<T> materialized;
 
+  private Chain(T head, Tree<T> tail, int size) {
+    this.head = requireNonNull(head);
+    this.tail = tail;
+    this.size = size;
+  }
+
   /** Returns a Chain with a single element. */
   public static <T> Chain<T> of(T element) {
     return new Chain<>(element, null, 1);
@@ -145,12 +151,6 @@ public final class Chain<T> extends AbstractList<T> {
 
   @Override public List<T> subList(int fromIndex, int toIndex) {
     return elements().subList(fromIndex, toIndex);
-  }
-
-  private Chain(T head, Tree<T> tail, int size) {
-    this.head = requireNonNull(head);
-    this.tail = tail;
-    this.size = size;
   }
 
   // Visible for idempotence test
