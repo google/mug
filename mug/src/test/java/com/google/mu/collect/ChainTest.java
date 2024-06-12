@@ -115,7 +115,6 @@ public class ChainTest {
     assertThat(chain.size()).isEqualTo(expected.length);
     assertThat(chain).isNotEmpty();
     assertThat(chain.getFirst()).isEqualTo(expected[0]);
-    assertThat(chain.getLast()).isEqualTo(expected[expected.length - 1]);
     assertThat(chain.get(0)).isEqualTo(expected[0]);
     assertThat(chain.get(expected.length - 1)).isEqualTo(expected[expected.length - 1]);
 
@@ -125,7 +124,6 @@ public class ChainTest {
     assertThat(chain.size()).isEqualTo(expected.length);
     assertThat(chain).isNotEmpty();
     assertThat(chain.getFirst()).isEqualTo(expected[0]);
-    assertThat(chain.getLast()).isEqualTo(expected[expected.length - 1]);
     assertThat(chain.get(0)).isEqualTo(expected[0]);
     assertThat(chain.get(expected.length - 1)).isEqualTo(expected[expected.length - 1]);
     IteratorTester<T> tester =

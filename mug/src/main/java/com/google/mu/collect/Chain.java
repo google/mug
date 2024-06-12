@@ -52,26 +52,24 @@ import com.google.mu.util.graph.Walker;
  * @since 8.1
  */
 public final class Chain<T> extends AbstractList<T> {
-  private final T first;
-  private final T last;
+  private final T head;
   private final Tree<T> tail;
   private final int size;
   private List<T> materialized;
 
   /** Returns a Chain with a single element. */
   public static <T> Chain<T> of(T element) {
-    return new Chain<>(element, null, element, 1);
+    return new Chain<>(element, null, 1);
   }
 
   /** Returns a Chain with {@code first} followed by {@code remaining}. */
   @SafeVarargs // remaining are copied into immutable object
   public static <T> Chain<T> of(T first, T... remaining) {
     Tree<T> tail = null;
-    T last = remaining.length == 0 ? first : remaining[remaining.length - 1];
     for (int i = remaining.length - 1; i >= 0; i--) {
       tail = new Tree<>(remaining[i], null, tail);
     }
-    return new Chain<>(first, tail, last, 1 + remaining.length);
+    return new Chain<>(first, tail, 1 + remaining.length);
   }
 
   /**
@@ -83,7 +81,7 @@ public final class Chain<T> extends AbstractList<T> {
    */
   public static <T> Chain<T> concat(Chain<? extends T> left, Chain<? extends T> right) {
     return new Chain<>(
-        left.first, new Tree<>(right.first, left.tail, right.tail), right.last, left.size + right.size);
+        left.head, new Tree<>(right.head, left.tail, right.tail), left.size + right.size);
   }
 
   /**
@@ -115,34 +113,24 @@ public final class Chain<T> extends AbstractList<T> {
       return elements.stream();
     }
     return tail == null
-        ? Stream.of(first)
-        : Stream.concat(Stream.of(first), tail.stream());
+        ? Stream.of(head)
+        : Stream.concat(Stream.of(head), tail.stream());
   }
 
-  /** Returns the first element. Will override the SequencedCollection method. Takes O(1) time.  */
+  /** Returns the first element. Will override the SequencedCollection method. */
+  // @Override
   public T getFirst() {
-    return first;
-  }
-
-  /** Returns the last element. Will override the SequencedCollection method. Takes O(1) time. */
-  public T getLast() {
-    return last;
+    return head;
   }
 
   /**
    * {@inheritDoc}
    *
-   * <p>Performance note: {@code get(0)} and {@code get(size - 1)} always take O(1) time;
-   * otherwise will first materialize all elements if not already.
+   * <p>Performance note: {@code get(0)} always takes O(1) time; otherwise will first materialize
+   * all elements if not already.
    */
   @Override public T get(int i) {
-    if (i == 0) {
-      return first;
-    }
-    if (i == size - 1) {
-      return last;
-    }
-    return elements().get(i);
+    return i == 0 ? head : elements().get(i);
   }
 
   @Override public Iterator<T> iterator() {
@@ -165,9 +153,8 @@ public final class Chain<T> extends AbstractList<T> {
     return elements().subList(fromIndex, toIndex);
   }
 
-  private Chain(T first, Tree<T> tail, T last, int size) {
-    this.first = requireNonNull(first);
-    this.last = requireNonNull(last);
+  private Chain(T first, Tree<T> tail, int size) {
+    this.head = requireNonNull(first);
     this.tail = tail;
     this.size = size;
   }
