@@ -110,7 +110,22 @@ public class ChainTest {
   }
 
   private static <T> void assertChain(Chain<T> chain, T... expected) {
+    // Before materialization
+    assertThat(chain.stream()).containsExactlyElementsIn(asList(expected)).inOrder();
+    assertThat(chain.size()).isEqualTo(expected.length);
+    assertThat(chain).isNotEmpty();
+    assertThat(chain.getFirst()).isEqualTo(expected[0]);
+    assertThat(chain.get(0)).isEqualTo(expected[0]);
+    assertThat(chain.get(expected.length - 1)).isEqualTo(expected[expected.length - 1]);
+
+    // Materialize
     assertThat(chain).containsExactlyElementsIn(asList(expected)).inOrder();
+    assertThat(chain.stream()).containsExactlyElementsIn(asList(expected)).inOrder();
+    assertThat(chain.size()).isEqualTo(expected.length);
+    assertThat(chain).isNotEmpty();
+    assertThat(chain.getFirst()).isEqualTo(expected[0]);
+    assertThat(chain.get(0)).isEqualTo(expected[0]);
+    assertThat(chain.get(expected.length - 1)).isEqualTo(expected[expected.length - 1]);
     IteratorTester<T> tester =
          new IteratorTester<T>(
              6,
@@ -124,8 +139,6 @@ public class ChainTest {
          tester.test();
          tester.testForEachRemaining();
      SpliteratorTester.of(chain::spliterator).expect(expected).inOrder();
-     assertThat(chain.size()).isEqualTo(expected.length);
-     assertThat(chain).isNotEmpty();
   }
 
   @Test public void testEquals() {
