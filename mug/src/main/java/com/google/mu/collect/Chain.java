@@ -49,6 +49,12 @@ import com.google.mu.util.graph.Walker;
  *
  * <p>Null elements are not allowed.
  *
+ * <p>While bearing a bit of similarity, this class isn't a <a
+ * href="https://en.wikipedia.org/wiki/Persistent_data_structure">persistent data structure</pre>.
+ * Besides the O(1) concatenation, it's a traditional immutable {@link java.util.List} supporting
+ * no other functional updates. Concatenation is O(1) as opposed to O(logn) in persistent lists;
+ * and random access is also O(1) (after one-time lazy materialization).
+ *
  * @since 8.1
  */
 public final class Chain<T> extends AbstractList<T> {
@@ -73,7 +79,7 @@ public final class Chain<T> extends AbstractList<T> {
   public static <T> Chain<T> of(T first, T... remaining) {
     Tree<T> tail = null;
     for (int i = remaining.length - 1; i >= 0; i--) {
-      tail = new Tree<>(remaining[i], null, tail);
+      tail = new Tree<>(null, remaining[i], tail);
     }
     return new Chain<>(first, tail, 1 + remaining.length);
   }
@@ -87,7 +93,7 @@ public final class Chain<T> extends AbstractList<T> {
    */
   public static <T> Chain<T> concat(Chain<? extends T> left, Chain<? extends T> right) {
     return new Chain<>(
-        left.head, new Tree<>(right.head, left.tail, right.tail), left.size + right.size);
+        left.head, new Tree<>(left.tail, right.head, right.tail), left.size + right.size);
   }
 
   /**
@@ -98,7 +104,7 @@ public final class Chain<T> extends AbstractList<T> {
     return concat(this, of(lastElement));
   }
 
-  /** Returns the size of the chain. This is an O(1) operation. */
+  /** Returns the size of the chain. O(1) operation. */
   @Override public int size() {
     return size;
   }
@@ -129,26 +135,32 @@ public final class Chain<T> extends AbstractList<T> {
     return head;
   }
 
+  /** {@inheritDoc} */
   @Override public T get(int i) {
     return elements().get(i);
   }
 
+  /** {@inheritDoc} */
   @Override public Iterator<T> iterator() {
     return elements().iterator();
   }
 
+  /** {@inheritDoc} */
   @Override public Spliterator<T> spliterator() {
     return elements().spliterator();
   }
 
+  /** {@inheritDoc} */
   @Override public ListIterator<T> listIterator() {
     return elements().listIterator();
   }
 
+  /** {@inheritDoc} */
   @Override public ListIterator<T> listIterator(int index) {
     return elements().listIterator(index);
   }
 
+  /** {@inheritDoc} */
   @Override public List<T> subList(int fromIndex, int toIndex) {
     return elements().subList(fromIndex, toIndex);
   }
@@ -167,7 +179,7 @@ public final class Chain<T> extends AbstractList<T> {
     private final Tree<? extends T> before;
     private final Tree<? extends T> after;
 
-    Tree(T value, Tree<? extends T> before, Tree<? extends T> after) {
+    Tree(Tree<? extends T> before, T value, Tree<? extends T> after) {
       this.value = requireNonNull(value);
       this.before = before;
       this.after = after;
