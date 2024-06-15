@@ -50,7 +50,7 @@ import com.google.mu.util.graph.Walker;
  * <p>Null elements are not allowed.
  *
  * <p>While bearing a bit of similarity, this class isn't a <a
- * href="https://en.wikipedia.org/wiki/Persistent_data_structure">persistent data structure</pre>.
+ * href="https://en.wikipedia.org/wiki/Persistent_data_structure">persistent data structure</a>.
  * Besides the O(1) concatenation, it's a traditional immutable {@link java.util.List} supporting
  * no other functional updates. Concatenation is O(1) as opposed to O(logn) in persistent lists;
  * and random access is also O(1) (after one-time lazy materialization).
