@@ -28,11 +28,25 @@ import com.google.mu.util.stream.Iteration.Continuation;
 public class BiIteration<L, R> {
   private final Iteration<Map.Entry<L, R>> iteration = new Iteration<>();
 
-  /** Yields the pair of {@code left} and {@code right} to the result {@code BiStream}. */
-  public final BiIteration<L, R> yield(L left, R right) {
-    iteration.yield(
+  /**
+   * Generates the pair of {@code left} and {@code right} to the result {@code BiStream}.
+   *
+   * @since 8.1
+   */
+  public final BiIteration<L, R> generate(L left, R right) {
+    iteration.generate(
         new AbstractMap.SimpleImmutableEntry<>(requireNonNull(left), requireNonNull(right)));
     return this;
+  }
+
+  /**
+   * Yields the pair of {@code left} and {@code right} to the result {@code BiStream}.
+   *
+   * @deprecated use {@link #generate} instead.
+   */
+  @Deprecated
+  public final BiIteration<L, R> yield(L left, R right) {
+    return generate(left, right);
   }
 
   /**

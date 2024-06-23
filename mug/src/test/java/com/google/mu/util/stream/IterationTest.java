@@ -31,7 +31,7 @@ public class IterationTest {
   }
 
   @Test public void yield_eagerElements() {
-    assertThat(new Iteration<>().yield(1).yield(2).iterate()).containsExactly(1, 2).inOrder();
+    assertThat(new Iteration<>().generate(1).generate(2).iterate()).containsExactly(1, 2).inOrder();
   }
 
   @Test public void preOrder_deep() {
@@ -118,7 +118,7 @@ public class IterationTest {
   private static final class DepthFirst<T> extends Iteration<T> {
     DepthFirst<T> preOrder(Tree<T> tree) {
       if (tree == null) return this;
-      yield(tree.value());
+      generate(tree.value());
       yield(() -> preOrder(tree.left()));
       yield(() -> preOrder(tree.right()));
       return this;
@@ -127,7 +127,7 @@ public class IterationTest {
     DepthFirst<T> inOrder(Tree<T> tree) {
       if (tree == null) return this;
       yield(() -> inOrder(tree.left()));
-      yield(tree.value());
+      generate(tree.value());
       yield(() -> inOrder(tree.right()));
       return this;
     }
@@ -136,7 +136,7 @@ public class IterationTest {
       if (tree == null) return this;
       yield(() -> postOrder(tree.left()));
       yield(() -> postOrder(tree.right()));
-      yield(tree.value());
+      generate(tree.value());
       return this;
     }
   }
@@ -271,7 +271,7 @@ public class IterationTest {
          return this;
        }
        int mid = (low + high) / 2;
-       yield(mid);
+       generate(mid);
        if (mid < number) {
          yield(() -> guess(mid + 1, high, number));
        } else if (mid > number) {

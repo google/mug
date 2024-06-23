@@ -188,13 +188,27 @@ public class Iteration<T> {
   private final Deque<Object> stackFrame = new ArrayDeque<>(8);
   private final AtomicBoolean started = new AtomicBoolean();
 
-  /** Yields {@code element} to the result stream. */
-  public final Iteration<T> yield(T element) {
+  /**
+   * Generates {@code element} to the result stream.
+   *
+   * @since 8.1
+   */
+  public final Iteration<T> generate(T element) {
     if (element instanceof Continuation) {
       throw new IllegalArgumentException("Do not stream Continuation objects");
     }
     stackFrame.push(element);
     return this;
+  }
+
+  /**
+   * Yields {@code element} to the result stream.
+   *
+   * @deprecated use {@link #generate} instead
+   */
+  @Deprecated
+  public final Iteration<T> yield(T element) {
+    return generate(element);
   }
 
   /**
@@ -250,7 +264,7 @@ public class Iteration<T> {
     return this.yield(() -> {
       T result = computation.get();
       consumer.accept(result);
-      this.yield(result);
+      generate(result);
     });
   }
 
@@ -258,10 +272,21 @@ public class Iteration<T> {
    * Yields all of {@code elements} to the result stream.
    *
    * @since 5.4
+   * @deprecated use {@link #generateAll} instead
    */
+  @Deprecated
   public final Iteration<T> yieldAll(Iterable<? extends T> elements) {
+    return generateAll(elements);
+  }
+
+  /**
+   * Generates all of {@code elements} to the result stream.
+   *
+   * @since 8.1
+   */
+  public final Iteration<T> generateAll(Iterable<? extends T> elements) {
     for (T element : elements) {
-      this.yield(element);
+      this.generate(element);
     }
     return this;
   }
