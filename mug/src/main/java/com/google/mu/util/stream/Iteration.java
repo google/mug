@@ -19,6 +19,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.Queue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -185,8 +186,7 @@ import java.util.stream.Stream;
  * @since 4.4
  */
 public class Iteration<T> {
-  private final Deque<Object> stack = new ArrayDeque<>();
-  private final Deque<Object> stackFrame = new ArrayDeque<>(8);
+  private final Deque<Queue<Object>> stack = new ArrayDeque<>();
   private final AtomicBoolean started = new AtomicBoolean();
 
   /**
@@ -198,7 +198,7 @@ public class Iteration<T> {
     if (element instanceof Continuation) {
       throw new IllegalArgumentException("Do not stream Continuation objects");
     }
-    stackFrame.push(element);
+    enqueue(element);
     return this;
   }
 
@@ -217,7 +217,7 @@ public class Iteration<T> {
    * wrapped in {@code continuation}.
    */
   public final Iteration<T> yield(Continuation continuation) {
-    stackFrame.push(continuation);
+    enqueue(continuation);
     return this;
   }
 
@@ -322,28 +322,47 @@ public class Iteration<T> {
     void run();
   }
 
+  private void enqueue(Object obj) {
+    Queue<Object> top = stack.peek();
+    if(top == null) {
+      top = newFrame();
+      stack.push(top);
+    }
+    top.add(obj);
+  }
+
   private T next() {
     for (; ;) {
-      Object top = poll();
-      if (top instanceof Continuation) {
-        ((Continuation) top).run();
+      Object first = poll();
+      if (first instanceof Continuation) {
+        Queue<Object> top = stack.peek();
+        if (top == null || !top.isEmpty()) {
+          stack.push(newFrame());
+        }
+        ((Continuation) first).run();
       } else {
         @SuppressWarnings("unchecked")  // we only put either T or Continuation in the stack.
-        T element = (T) top;
+        T element = (T) first;
         return element;
       }
     }
   }
 
   private Object poll() {
-    Object top = stackFrame.poll();
-    if (top == null) {
-      return stack.poll();
+    for (Queue<Object> top = stack.peek(); top != null; top = stack.peek()) {
+      Object v = top.poll();
+      if (v != null) {
+        return v;
+      }
+      if (stack.size() == 1) {  // reuse the last empty frame.
+        return null;
+      }
+      stack.pop();
     }
-    for (Object second = stackFrame.poll(); second != null; second = stackFrame.poll()) {
-      stack.push(top);
-      top = second;
-    }
-    return top;
+    return null;
+  }
+
+  private static Queue<Object> newFrame() {
+    return new ArrayDeque<>(8);
   }
 }
