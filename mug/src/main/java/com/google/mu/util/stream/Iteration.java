@@ -25,9 +25,10 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
- * Transforms eager, recursive algorithms into <em>lazy</em> streams. {@link #yield yield()} is used
- * to <a href="https://en.wikipedia.org/wiki/Generator_(computer_programming)">generate</a> a
- * sequence that computes each value on-demand.
+ * Transforms eager, recursive algorithms into <em>lazy</em> streams. {@link #generate generate()}
+ * is used to <a href="https://en.wikipedia.org/wiki/Generator_(computer_programming)">generate</a>
+ * a sequence of values; and {@link #yield yield()} is used to yield control back to the stream,
+ * with elements lazily generated on-demand.
  *
  * <p>{@code Iteration} can be used to adapt iterative or recursive algorithms to lazy streams. The
  * size of the stack is O(1) and execution is deferred.
@@ -57,7 +58,7 @@ import java.util.stream.Stream;
  *   class Pagination extends new Iteration<Foo>() {
  *     Pagination paginate(ListFooRequest request) {
  *       ListFooResponse response = service.listFoos(request);
- *       yieldAll(response.getFoos());
+ *       generateAll(response.getFoos());
  *       String nextPage = response.getNextPageToken();
  *       if (!nextPage.isEmpty()) {
  *         yield(() -> paginate(request.toBuilder().setNextPageToken(nextPage).build()));
@@ -92,7 +93,7 @@ import java.util.stream.Stream;
  *   DepthFirst<T> inOrder(Tree<T> tree) {
  *     if (tree == null) return this;
  *     yield(() -> inOrder(tree.left));
- *     yield(tree.value);
+ *     generate(tree.value);
  *     yield(() -> inOrder(tree.right));
  *   }
  * }
@@ -148,7 +149,7 @@ import java.util.stream.Stream;
  *       for (N successor : node.getSuccessors()) {
  *         yield(() -> postOrder(successor));
  *       }
- *       yield(node);
+ *       generate(node);
  *     }
  *     return this;
  *   }
@@ -292,7 +293,7 @@ public class Iteration<T> {
   }
 
   /**
-   * Starts iteration over the {@link #yield yielded} elements.
+   * Starts iteration over the {@link #generate generated} elements.
    *
    * <p>Because an {@code Iteration} instance is stateful and mutable, {@code iterate()} can be
    * called at most once per instance.

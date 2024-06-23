@@ -22,8 +22,8 @@ import java.util.Map;
 import com.google.mu.util.stream.Iteration.Continuation;
 
 /**
- * Similar to {@link Iteration}, but is used to iteratively {@link #yield yield()} pairs into a
- * lazy {@link BiStream}.
+ * Similar to {@link Iteration}, but is used to iteratively {@link #generate generate()} pairs into
+ * a lazy {@link BiStream}.
  */
 public class BiIteration<L, R> {
   private final Iteration<Map.Entry<L, R>> iteration = new Iteration<>();
