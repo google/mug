@@ -305,7 +305,7 @@ public class Iteration<T> {
     if (started.getAndSet(true)) {
       throw new IllegalStateException("Iteration already started.");
     }
-    return whileNotNull(this::next);
+    return whileNotNull(this::nextOrNull);
   }
 
   /**
@@ -322,7 +322,7 @@ public class Iteration<T> {
     void run();
   }
 
-  private T next() {
+  private T nextOrNull() {
     for (; ; ) {
       Object top = poll();
       if (top instanceof Continuation) {
