@@ -25,9 +25,10 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
- * Transforms eager, recursive algorithms into <em>lazy</em> streams. {@link #yield yield()} is used
- * to <a href="https://en.wikipedia.org/wiki/Generator_(computer_programming)">generate</a> a
- * sequence that computes each value on-demand.
+ * Transforms eager, recursive algorithms into <em>lazy</em> streams. {@link #generate generate()}
+ * is used to <a href="https://en.wikipedia.org/wiki/Generator_(computer_programming)">generate</a>
+ * a sequence of values; and {@link #yield yield()} is used to yield control back to the stream,
+ * with elements lazily generated on-demand.
  *
  * <p>{@code Iteration} can be used to adapt iterative or recursive algorithms to lazy streams. The
  * size of the stack is O(1) and execution is deferred.
@@ -57,7 +58,7 @@ import java.util.stream.Stream;
  *   class Pagination extends new Iteration<Foo>() {
  *     Pagination paginate(ListFooRequest request) {
  *       ListFooResponse response = service.listFoos(request);
- *       yieldAll(response.getFoos());
+ *       generateAll(response.getFoos());
  *       String nextPage = response.getNextPageToken();
  *       if (!nextPage.isEmpty()) {
  *         yield(() -> paginate(request.toBuilder().setNextPageToken(nextPage).build()));
@@ -92,7 +93,7 @@ import java.util.stream.Stream;
  *   DepthFirst<T> inOrder(Tree<T> tree) {
  *     if (tree == null) return this;
  *     yield(() -> inOrder(tree.left));
- *     yield(tree.value);
+ *     generate(tree.value);
  *     yield(() -> inOrder(tree.right));
  *   }
  * }
@@ -148,7 +149,7 @@ import java.util.stream.Stream;
  *       for (N successor : node.getSuccessors()) {
  *         yield(() -> postOrder(successor));
  *       }
- *       yield(node);
+ *       generate(node);
  *     }
  *     return this;
  *   }
@@ -184,17 +185,43 @@ import java.util.stream.Stream;
  * @since 4.4
  */
 public class Iteration<T> {
-  private final Deque<Object> stack = new ArrayDeque<>();
-  private final Deque<Object> stackFrame = new ArrayDeque<>(8);
+  private final Deque<Object> outbox = new ArrayDeque<>();
+  private final Deque<Object> inbox = new ArrayDeque<>(8);
   private final AtomicBoolean started = new AtomicBoolean();
 
-  /** Yields {@code element} to the result stream. */
-  public final Iteration<T> yield(T element) {
+  /**
+   * Generates {@code element} to the result stream.
+   *
+   * @since 8.1
+   */
+  public final Iteration<T> generate(T element) {
     if (element instanceof Continuation) {
       throw new IllegalArgumentException("Do not stream Continuation objects");
     }
-    stackFrame.push(element);
+    inbox.push(element);
     return this;
+  }
+
+  /**
+   * Generates all of {@code elements} to the result stream.
+   *
+   * @since 8.1
+   */
+  public final Iteration<T> generate(Iterable<? extends T> elements) {
+    for (T element : elements) {
+      generate(element);
+    }
+    return this;
+  }
+
+  /**
+   * Yields {@code element} to the result stream.
+   *
+   * @deprecated use {@link #generate} instead
+   */
+  @Deprecated
+  public final Iteration<T> yield(T element) {
+    return generate(element);
   }
 
   /**
@@ -202,7 +229,7 @@ public class Iteration<T> {
    * wrapped in {@code continuation}.
    */
   public final Iteration<T> yield(Continuation continuation) {
-    stackFrame.push(continuation);
+    inbox.push(continuation);
     return this;
   }
 
@@ -250,7 +277,7 @@ public class Iteration<T> {
     return this.yield(() -> {
       T result = computation.get();
       consumer.accept(result);
-      this.yield(result);
+      generate(result);
     });
   }
 
@@ -258,16 +285,15 @@ public class Iteration<T> {
    * Yields all of {@code elements} to the result stream.
    *
    * @since 5.4
+   * @deprecated use {@link #generateAll} instead
    */
+  @Deprecated
   public final Iteration<T> yieldAll(Iterable<? extends T> elements) {
-    for (T element : elements) {
-      this.yield(element);
-    }
-    return this;
+    return generate(elements);
   }
 
   /**
-   * Starts iteration over the {@link #yield yielded} elements.
+   * Starts iteration over the {@link #generate generated} elements.
    *
    * <p>Because an {@code Iteration} instance is stateful and mutable, {@code iterate()} can be
    * called at most once per instance.
@@ -279,7 +305,7 @@ public class Iteration<T> {
     if (started.getAndSet(true)) {
       throw new IllegalStateException("Iteration already started.");
     }
-    return whileNotNull(this::next);
+    return whileNotNull(this::nextOrNull);
   }
 
   /**
@@ -296,13 +322,13 @@ public class Iteration<T> {
     void run();
   }
 
-  private T next() {
-    for (; ;) {
+  private T nextOrNull() {
+    for (; ; ) {
       Object top = poll();
       if (top instanceof Continuation) {
         ((Continuation) top).run();
       } else {
-        @SuppressWarnings("unchecked")  // we only put either T or Continuation in the stack.
+        @SuppressWarnings("unchecked") // we only put either T or Continuation in the stack.
         T element = (T) top;
         return element;
       }
@@ -310,12 +336,12 @@ public class Iteration<T> {
   }
 
   private Object poll() {
-    Object top = stackFrame.poll();
+    Object top = inbox.poll();
     if (top == null) {
-      return stack.poll();
+      return outbox.poll();
     }
-    for (Object second = stackFrame.poll(); second != null; second = stackFrame.poll()) {
-      stack.push(top);
+    for (Object second = inbox.poll(); second != null; second = inbox.poll()) {
+      outbox.push(top);
       top = second;
     }
     return top;

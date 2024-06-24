@@ -50,7 +50,7 @@ public class BiIterationTest {
        if (low > high) {
          return this;
        }
-       yield(low, high);
+       generate(low, high);
        int mid = (low + high) / 2;
        if (arr[mid] < target) {
          yield(() -> search(arr, mid + 1, high, target));
