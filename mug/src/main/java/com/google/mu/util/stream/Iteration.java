@@ -302,7 +302,7 @@ public class Iteration<T> {
    * Yields all of {@code elements} to the result stream.
    *
    * @since 5.4
-   * @deprecated use {@link #generate} instead
+   * @deprecated use {@link #generate(Iterable)} instead
    */
   @Deprecated
   public final Iteration<T> yieldAll(Iterable<? extends T> elements) {
