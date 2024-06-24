@@ -185,8 +185,8 @@ import java.util.stream.Stream;
  * @since 4.4
  */
 public class Iteration<T> {
-  private final Deque<Object> stack = new ArrayDeque<>();
-  private final Deque<Object> stackFrame = new ArrayDeque<>(8);
+  private final Deque<Object> outbox = new ArrayDeque<>();
+  private final Deque<Object> inbox = new ArrayDeque<>(8);
   private final AtomicBoolean started = new AtomicBoolean();
 
   /**
@@ -198,7 +198,7 @@ public class Iteration<T> {
     if (element instanceof Continuation) {
       throw new IllegalArgumentException("Do not stream Continuation objects");
     }
-    stackFrame.push(element);
+    inbox.push(element);
     return this;
   }
 
@@ -229,7 +229,7 @@ public class Iteration<T> {
    * wrapped in {@code continuation}.
    */
   public final Iteration<T> yield(Continuation continuation) {
-    stackFrame.push(continuation);
+    inbox.push(continuation);
     return this;
   }
 
@@ -336,12 +336,12 @@ public class Iteration<T> {
   }
 
   private Object poll() {
-    Object top = stackFrame.poll();
+    Object top = inbox.poll();
     if (top == null) {
-      return stack.poll();
+      return outbox.poll();
     }
-    for (Object second = stackFrame.poll(); second != null; second = stackFrame.poll()) {
-      stack.push(top);
+    for (Object second = inbox.poll(); second != null; second = inbox.poll()) {
+      outbox.push(top);
       top = second;
     }
     return top;
