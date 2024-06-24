@@ -39,8 +39,7 @@ import java.util.stream.Stream;
  * For example, if you have a list API with pagination support, the following
  * code retrieves all pages eagerly:
  *
- * <pre>
- * {@code
+ * <pre>{@code
  * ImmutableList<Foo> listAllFoos() {
  *   ImmutableList.Builder<Foo> builder = ImmutableList.builder();
  *   ListFooRequest.Builder request = ListFooRequest.newBuilder()...;
@@ -51,16 +50,14 @@ import java.util.stream.Stream;
  *     } while (!request.getPageToken().isEmpty());
  *   return builder.build();
  * }
- * }
- * </pre>
+ * }</pre>
  *
  * To turn the above code into a lazy stream using Iteration, the key is to wrap
  * the recursive calls into a lambda and pass it to {@link #yield(Continuation)
  * yield(() -> recursiveCall())}. This allows callers to short-circuit when they
  * need to:
  *
- * <pre>
- * {@code
+ * <pre>{@code
  * Stream<Foo> listAllFoos() {
  *   class Pagination extends new Iteration<Foo>() {
  *     Pagination paginate(ListFooRequest request) {
@@ -77,58 +74,49 @@ import java.util.stream.Stream;
  *       .paginate(ListFooRequest.newBuilder()...build())
  *       .iterate();
  * }
- * }
- * </pre>
+ * }</pre>
  *
  * <p>
  * Another common use case is to traverse recursive data structures lazily.
  * Imagine if you have a recursive binary tree traversal algorithm:
  *
- * <pre>
- * {@code
+ * <pre>{@code
  * void inOrder(Tree<T> tree) {
  *   if (tree == null) return;
  *   inOrder(tree.left);
  *   System.out.println(tree.value);
  *   inOrder(tree.right);
  * }
- * }
- * </pre>
+ * }</pre>
  *
  * Instead of traversing eagerly and hard coding {@code System.out.println()},
  * it can be intuitively transformed to a lazy stream, again, by wrapping the
  * recursive {@code inOrder()} calls in a lambda and passing it to
- * {@code yeidl()}:
+ * {@code yield()}:
  *
- * <pre>
- * {
- *   &#64;code
- *   class DepthFirst<T> extends Iteration<T> {
- *     DepthFirst<T> inOrder(Tree<T> tree) {
- *       if (tree == null)
- *         return this;
- *       yield(() -> inOrder(tree.left));
- *       generate(tree.value);
- *       yield(() -> inOrder(tree.right));
- *     }
+ * <pre>{@code
+ * class DepthFirst<T> extends Iteration<T> {
+ *   DepthFirst<T> inOrder(Tree<T> tree) {
+ *     if (tree == null) return this;
+ *     yield(() -> inOrder(tree.left));
+ *     generate(tree.value);
+ *     yield(() -> inOrder(tree.right));
  *   }
- *
- *   new DepthFirst<>().inOrder(root).iterate().forEachOrdered(System.out::println);
  * }
- * </pre>
+ *
+ * new DepthFirst<>().inOrder(root).iterate().forEachOrdered(System.out::println);
+ * }</pre>
  *
  * <p>
  * One may ask why not use {@code flatMap()} like the following?
  *
- * <pre>
- * {@code
+ * <pre>{@code
  * <T> Stream<T> inOrder(Tree<T> tree) {
  *  if (tree == null) return Stream.empty();
  *  return Stream.of(inOrder(tree.left), Stream.of(tree.value), inOrder(tree.right))
  *      .flatMap(identity());
  * }
- * }
- * </pre>
+ * }</pre>
  *
  * This unfortunately doesn't scale, for two reasons:
  * <ol>
@@ -142,46 +130,40 @@ import java.util.stream.Stream;
  * <p>
  * Similarly, the following recursive graph post-order traversal code:
  *
- * <pre>
- * {
- *   &#64;code
- *   class DepthFirst<N> {
- *     private final Set<N> visited = new HashSet<>();
+ * <pre>{@code
+ * class DepthFirst<N> {
+ *   private final Set<N> visited = new HashSet<>();
  *
- *     void postOrder(N node) {
- *       if (visited.add(node)) {
- *         for (N successor : node.getSuccessors()) {
- *           postOrder(successor);
- *         }
- *         System.out.println("node: " + node);
+ *   void postOrder(N node) {
+ *     if (visited.add(node)) {
+ *       for (N successor : node.getSuccessors()) {
+ *          postOrder(successor);
  *       }
+ *       System.out.println("node: " + node);
  *     }
  *   }
  * }
- * </pre>
+ * }</pre>
  *
  * can be transformed to an iterative stream using:
  *
- * <pre>
- * {
- *   &#64;code
- *   class DepthFirst<N> extends Iteration<N> {
- *     private final Set<N> visited = new HashSet<>();
+ * <pre>{@code
+ * class DepthFirst<N> extends Iteration<N> {
+ *   private final Set<N> visited = new HashSet<>();
  *
- *     DepthFirst<N> postOrder(N node) {
- *       if (visited.add(node)) {
- *         for (N successor : node.getSuccessors()) {
- *           yield(() -> postOrder(successor));
- *         }
- *         generate(node);
+ *   DepthFirst<N> postOrder(N node) {
+ *     if (visited.add(node)) {
+ *       for (N successor : node.getSuccessors()) {
+ *         yield(() -> postOrder(successor));
  *       }
- *       return this;
+ *       generate(node);
  *     }
+ *     return this;
  *   }
- *
- *   new DepthFirst<>().postOrder(startNode).iterate().forEachOrdered(System.out::println);
  * }
- * </pre>
+ *
+ * new DepthFirst<>().postOrder(startNode).iterate().forEachOrdered(System.out::println);
+ * }</pre>
  *
  * <p>
  * If transforming tail-recursive algorithms, the space requirement is O(1) and
