@@ -476,28 +476,6 @@ public final class MoreStreams {
   }
 
   /**
-   * Returns a Stream wrapping {@code element} if it's not null; otherwise empty.
-   *
-   * <p>Useful if you'll chain it with further {@code flatMap()}, {@code anyMatch()} etc. For
-   * example:
-   *
-   * <pre>{@code
-   * boolean hasKeyword =
-   *     MoreStreams.ifNotNull(type.getAnnotation(MyAnnotation.class))
-   *         .flatMap(annotation -> annotation.keywords().stream())
-   *         .anyMatch(currentKeyword::equals);
-   * }</pre>
-   *
-   * <p>It's the Stream counterpart of {@link java.util.Optional#ofNullable}, and is more concise
-   * and efficient than {@code Optional.ofNullable(element).stream()}.
-   *
-   * @since 8.1
-   */
-  public static <T> Stream<T> ifNotNull(T element) {
-    return element == null ? Stream.empty() : Stream.of(element);
-  }
-
-  /**
    * Returns a sequential stream with {@code sideEfect} attached on every element.
    *
    * <p>Unlike {@link Stream#peek}, which should only be used for debugging purpose,

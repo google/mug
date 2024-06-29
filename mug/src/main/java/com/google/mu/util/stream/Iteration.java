@@ -198,8 +198,8 @@ import java.util.stream.Stream;
  * @since 4.4
  */
 public class Iteration<T> {
-  private final Deque<Object> outbox = new ArrayDeque<>();
   private final Deque<Object> inbox = new ArrayDeque<>(8);
+  private final Deque<Object> outbox = new ArrayDeque<>();
   private final AtomicBoolean started = new AtomicBoolean();
 
   /**

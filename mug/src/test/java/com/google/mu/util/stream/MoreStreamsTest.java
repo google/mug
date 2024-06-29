@@ -346,7 +346,7 @@ public class MoreStreamsTest {
   @Test public void testNulls() throws Exception {
     NullPointerTester tester = new NullPointerTester();
     asList(MoreStreams.class.getDeclaredMethods()).stream()
-        .filter(m -> m.getName().equals("generate") || m.getName().equals("ifNotNull"))
+        .filter(m -> m.getName().equals("generate"))
         .forEach(tester::ignore);
     tester.testAllPublicStaticMethods(MoreStreams.class);
   }
@@ -386,15 +386,5 @@ public class MoreStreamsTest {
     assertThat(encoded)
         .containsExactly(10, 2L, 9, 3L, 8, 1L)
         .inOrder();
-  }
-
-  @Test public void testIfNotNull_fromNull() {
-    Object element = null;
-    assertThat(MoreStreams.ifNotNull(element)).isEmpty();
-  }
-
-  @Test public void testIfNotNull_fromNonNull() {
-    Object element = 1;
-    assertThat(MoreStreams.ifNotNull(element)).containsExactly(1);
   }
 }
