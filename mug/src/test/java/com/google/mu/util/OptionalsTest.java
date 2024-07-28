@@ -204,6 +204,40 @@ public class OptionalsTest {
         .isEqualTo(BiOptional.of(1, "one"));
   }
 
+  @Test
+  public void inOrder_firstStepIsEmpty_secondStepNotEvaluated() {
+    assertThat(
+            Optionals.inOrder(
+                    Optional.empty(),
+                    () -> {
+                      throw new AssertionError();
+                    })
+                .isPresent())
+        .isFalse();
+    assertThat(
+            Optionals.inOrder(
+                    Optional.empty(),
+                    x -> {
+                      throw new AssertionError();
+                    })
+                .isPresent())
+        .isFalse();
+  }
+
+  @Test
+  public void inOrder_secondStepEvaluatesToEmpty() {
+    assertThat(Optionals.inOrder(Optional.of(1), Optional::empty).isPresent()).isFalse();
+    assertThat(Optionals.inOrder(Optional.empty(), x -> Optional.empty()).isPresent()).isFalse();
+  }
+
+  @Test
+  public void inOrder_bothStepsArePresent() {
+    assertThat(Optionals.inOrder(Optional.of(1), () -> Optional.of(2)).map((a, b) -> a + b))
+        .hasValue(3);
+    assertThat(Optionals.inOrder(Optional.of(10), a -> Optional.of(a * 20)).map((a, b) -> a + b))
+        .hasValue(210);
+  }
+
   @Test public void testNulls() throws Exception {
     new NullPointerTester()
         .setDefault(Optional.class, Optional.empty())
