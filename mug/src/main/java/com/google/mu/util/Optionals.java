@@ -22,6 +22,8 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import com.google.mu.function.CheckedBiConsumer;
 import com.google.mu.function.CheckedConsumer;
@@ -103,6 +105,67 @@ public final class Optionals {
     requireNonNull(a);
     requireNonNull(b);
     return a.isPresent() && b.isPresent() ? BiOptional.of(a.get(), b.get()) : BiOptional.empty();
+  }
+
+  /**
+   * Similar to {@link #both}, but only evaluates {@code step2} if {@code step1} is present.
+   *
+   * <p>Useful if {@code step2} is expensive or has side effects. For example, instead of:
+   *
+   * <pre>{@code
+   * return parseUserId(userIdString)
+   *     .flatMap(userId ->
+   *         extractActiveWorklog()
+   *             .flatMap(worklog -> applyBusinessLogic(userId, worklog)));
+   * }</pre>
+   *
+   * Do: <pre>{@code
+   * return inOrder(parseUserId(userIdString), this::extractActiveWorklog)
+   *     .flatMap((userId, worklog) -> processUserWorklog(userId, worklog));
+   * }</pre>
+   *
+   * @throws NullPointerException if {@code step1} or {@code step2} is null
+   * @since 8.1
+   */
+  public static <A, B> BiOptional<A, B> inOrder(
+      Optional<? extends A> step1, Supplier<? extends Optional<? extends B>> step2) {
+    requireNonNull(step2);
+    if (!step1.isPresent()) {
+      return BiOptional.empty();
+    }
+    Optional<? extends B> b = step2.get();
+    return b.isPresent() ? BiOptional.of(step1.get(), b.get()) : BiOptional.empty();
+  }
+
+  /**
+   * Similar to {@link #both}, but only evaluates {@code step2} if {@code step1} is present.
+   *
+   * <p>Useful if {@code step2} is expensive or has side effects. For example, instead of:
+   *
+   * <pre>{@code
+   * return parseUserId(userIdString)
+   *     .flatMap(userId ->
+   *         extractActiveWorklog(userId)
+   *             .flatMap(worklog -> applyBusinessLogic(userId, worklog)));
+   * }</pre>
+   *
+   * Do: <pre>{@code
+   * return inOrder(parseUserId(userIdString), this::extractActiveWorklog)
+   *     .flatMap((userId, worklog) -> processUserWorklog(userId, worklog));
+   * }</pre>
+   *
+   * @throws NullPointerException if {@code step1} or {@code step2} is null
+   * @since 8.1
+   */
+  public static <A, B> BiOptional<A, B> inOrder(
+      Optional<? extends A> step1, Function<? super A, ? extends Optional<? extends B>> step2) {
+    requireNonNull(step2);
+    if (!step1.isPresent()) {
+      return BiOptional.empty();
+    }
+    A a = step1.get();
+    Optional<? extends B> b = step2.apply(a);
+    return b.isPresent() ? BiOptional.of(a, b.get()) : BiOptional.empty();
   }
 
   /**
