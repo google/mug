@@ -116,7 +116,7 @@ public final class Optionals {
    * return parseUserId(userIdString)
    *     .flatMap(userId ->
    *         extractActiveWorklog()
-   *             .flatMap(worklog -> applyBusinessLogic(userId, worklog)));
+   *             .flatMap(worklog -> processUserWorklog(userId, worklog)));
    * }</pre>
    *
    * Do: <pre>{@code
@@ -146,7 +146,7 @@ public final class Optionals {
    * return parseUserId(userIdString)
    *     .flatMap(userId ->
    *         extractActiveWorklog(userId)
-   *             .flatMap(worklog -> applyBusinessLogic(userId, worklog)));
+   *             .flatMap(worklog -> processUserWorklog(userId, worklog)));
    * }</pre>
    *
    * Do: <pre>{@code
