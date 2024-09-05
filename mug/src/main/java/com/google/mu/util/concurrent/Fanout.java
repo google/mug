@@ -347,6 +347,29 @@ public final class Fanout {
     return join.join(r1.get(), r2.get(), r3.get(), r4.get(), r5.get());
   }
 
+  /**
+   * Returns a concurrency-limited {@link Parallelizer} that can be used to run a potentially large
+   * number of fanout concurrent tasks using the currently configured standard (virtual thread)
+   * executor.
+   *
+   * <p>For example, if you have a list of user ids to fetch from UserService, and you want to avoid
+   * DOSing it, the following code performs at most 10 queries at the same time:
+   *
+   * <pre>{@code
+   * Parallelizer parallelizer = Fanout.withMaxConcurrency(10);
+   * Map<UserId, User> users =
+   *     userIds.stream()
+   *         .collect(parallelizer.inParallel(userService::fetchUser))
+   *         .toMap();
+   * }</pre>
+   *
+   * Compared to parallel streams, you can control the concurrency, and retains the full stack trace
+   * from both the main thread and the virtual thread.
+   */
+  public static Parallelizer withMaxConcurrency(int maxConcurrency) {
+    return new Parallelizer(Scope.executor, maxConcurrency);
+  }
+
   /** Function to join two results from concurrent computation. */
   public interface Join2<A, B, R, X extends Throwable> {
     R join(A a, B b) throws X;
