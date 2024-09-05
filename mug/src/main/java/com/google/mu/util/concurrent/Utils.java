@@ -24,9 +24,22 @@ import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /** Some relatively trivial re-invented wheels as cost of 0-dependency. */
 final class Utils {
+
+  static void checkState(boolean condition, String message, Object... args) {
+    if (!condition) {
+      throw new IllegalStateException(String.format(message, args));
+    }
+  }
+
+  static <T> Stream<T> stream(Iterable<T> iterable) {
+    return StreamSupport.stream(iterable.spliterator(), false);
+  }
+
   /** Only need it because we don't have Guava Lists.transform(). */
   static <F, T> List<T> mapList(List<F> list, Function<? super F, ? extends T> mapper) {
     requireNonNull(list);
