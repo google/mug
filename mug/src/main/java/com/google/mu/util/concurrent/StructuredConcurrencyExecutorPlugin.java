@@ -35,7 +35,7 @@ public abstract class StructuredConcurrencyExecutorPlugin {
    * Plugin priority from low to high. A plugin with higher priority will be picked over lower
    * priority.
    */
-  enum Priority {
+  public enum Priority {
     /** For server framework authors to implement a framework-configured standard plugin. */
     FRAMEWORK_STANDARD,
 
