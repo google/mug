@@ -14,8 +14,6 @@ import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
-import com.google.mu.util.concurrent.Parallelizer.UncheckedExecutionException;
-
 /**
  * Supports structured concurrency for the common case where all concurrent operations are required
  * (as if you are running them sequentially).
@@ -75,16 +73,10 @@ public final class Fanout {
    *   (arm, leg) -> new Result(arm, leg));
    * }</pre>
    *
-   * <p>Exceptions thrown by these concurrent suppliers are expected to be propagated through
-   * exception tunneling (wrapped in a special unchecked exception) and handled by the caller of
-   * this method.
-   *
    * @throws InterruptedException if the current thread is interrupted while waiting for the
    *     concurrent operations to complete. The unfinished concurrent operations will be canceled.
-   * @throws UncheckedExecutionException wrapping the original exception from the virtual thread if
+   * @throws RuntimeException wrapping the original exception from the virtual thread if
    *     any concurrent operation failed
-   * @throws com.google.common.base.TunnelException if the failing operation is wrapped by {@link
-   *     com.google.common.base.TunnelException#tunnel}.
    * @throws X thrown by the {@code join} function
    */
   public static <A, B, R, X extends Throwable> R concurrently(
@@ -113,16 +105,10 @@ public final class Fanout {
    *   (head, arm, leg) -> new Result(head, arm, leg));
    * }</pre>
    *
-   * <p>Exceptions thrown by these concurrent suppliers are expected to be propagated through
-   * exception tunneling (wrapped in a special unchecked exception) and handled by the caller of
-   * this method.
-   *
    * @throws InterruptedException if the current thread is interrupted while waiting for the
    *     concurrent operations to complete. The unfinished concurrent operations will be canceled.
-   * @throws UncheckedExecutionException wrapping the original exception from the virtual thread if
+   * @throws RuntimeException wrapping the original exception from the virtual thread if
    *     any concurrent operation failed
-   * @throws com.google.common.base.TunnelException if the failing operation is wrapped by {@link
-   *     com.google.common.base.TunnelException#tunnel}.
    * @throws X thrown by the {@code join} function
    */
   public static <A, B, C, R, X extends Throwable> R concurrently(
@@ -156,16 +142,10 @@ public final class Fanout {
    *   (head, shoulder, arm, leg) -> new Result(head, shoulder, arm, leg));
    * }</pre>
    *
-   * <p>Exceptions thrown by these concurrent suppliers are expected to be propagated through
-   * exception tunneling (wrapped in a special unchecked exception) and handled by the caller of
-   * this method.
-   *
    * @throws InterruptedException if the current thread is interrupted while waiting for the
    *     concurrent operations to complete. The unfinished concurrent operations will be canceled.
-   * @throws UncheckedExecutionException wrapping the original exception from the virtual thread if
+   * @throws RuntimeException wrapping the original exception from the virtual thread if
    *     any concurrent operation failed
-   * @throws com.google.common.base.TunnelException if the failing operation is wrapped by {@link
-   *     com.google.common.base.TunnelException#tunnel}.
    * @throws X thrown by the {@code join} function
    */
   public static <A, B, C, D, R, X extends Throwable> R concurrently(
@@ -202,16 +182,10 @@ public final class Fanout {
    *   (head, shoulder, arm, leg, feet) -> new Result(head, shoulder, arm, leg, feet));
    * }</pre>
    *
-   * <p>Exceptions thrown by these concurrent suppliers are expected to be propagated through
-   * exception tunneling (wrapped in a special unchecked exception) and handled by the caller of
-   * this method.
-   *
    * @throws InterruptedException if the current thread is interrupted while waiting for the
    *     concurrent operations to complete. The unfinished concurrent operations will be canceled.
-   * @throws UncheckedExecutionException wrapping the original exception from the virtual thread if
+   * @throws RuntimeException wrapping the original exception from the virtual thread if
    *     any concurrent operation failed
-   * @throws com.google.common.base.TunnelException if the failing operation is wrapped by {@link
-   *     com.google.common.base.TunnelException#tunnel}.
    * @throws X thrown by the {@code join} function
    */
   public static <A, B, C, D, E, R, X extends Throwable> R concurrently(
@@ -247,14 +221,8 @@ public final class Fanout {
    *   (arm, leg) -> new Result(arm, leg));
    * }</pre>
    *
-   * <p>Exceptions thrown by these concurrent suppliers are expected to be propagated through
-   * exception tunneling (wrapped in a special unchecked exception) and handled by the caller of
-   * this method.
-   *
-   * @throws UncheckedExecutionException wrapping the original exception from the virtual thread if
+   * @throws RuntimeException wrapping the original exception from the virtual thread if
    *     any concurrent operation failed
-   * @throws com.google.common.base.TunnelException if the failing operation is wrapped by {@link
-   *     com.google.common.base.TunnelException#tunnel}.
    * @throws X thrown by the {@code join} function
    */
   public static <A, B, R, X extends Throwable> R uninterruptibly(
@@ -283,14 +251,8 @@ public final class Fanout {
    *   (head, arm, leg) -> new Result(head, arm, leg));
    * }</pre>
    *
-   * <p>Exceptions thrown by these concurrent suppliers are expected to be propagated through
-   * exception tunneling (wrapped in a special unchecked exception) and handled by the caller of
-   * this method.
-   *
-   * @throws UncheckedExecutionException wrapping the original exception from the virtual thread if
+   * @throws RuntimeException wrapping the original exception from the virtual thread if
    *     any concurrent operation failed
-   * @throws com.google.common.base.TunnelException if the failing operation is wrapped by {@link
-   *     com.google.common.base.TunnelException#tunnel}.
    * @throws X thrown by the {@code join} function
    */
   public static <A, B, C, R, X extends Throwable> R uninterruptibly(
@@ -324,14 +286,8 @@ public final class Fanout {
    *   (head, shoulder, arm, leg) -> new Result(head, shoulder, arm, leg));
    * }</pre>
    *
-   * <p>Exceptions thrown by these concurrent suppliers are expected to be propagated through
-   * exception tunneling (wrapped in a special unchecked exception) and handled by the caller of
-   * this method.
-   *
-   * @throws UncheckedExecutionException wrapping the original exception from the virtual thread if
+   * @throws RuntimeException wrapping the original exception from the virtual thread if
    *     any concurrent operation failed
-   * @throws com.google.common.base.TunnelException if the failing operation is wrapped by {@link
-   *     com.google.common.base.TunnelException#tunnel}.
    * @throws X thrown by the {@code join} function
    */
   public static <A, B, C, D, R, X extends Throwable> R uninterruptibly(
@@ -368,14 +324,8 @@ public final class Fanout {
    *   (head, shoulder, arm, leg, feet) -> new Result(head, shoulder, arm, leg, feet));
    * }</pre>
    *
-   * <p>Exceptions thrown by these concurrent suppliers are expected to be propagated through
-   * exception tunneling (wrapped in a special unchecked exception) and handled by the caller of
-   * this method.
-   *
-   * @throws UncheckedExecutionException wrapping the original exception from the virtual thread if
+   * @throws RuntimeException wrapping the original exception from the virtual thread if
    *     any concurrent operation failed
-   * @throws com.google.common.base.TunnelException if the failing operation is wrapped by {@link
-   *     com.google.common.base.TunnelException#tunnel}.
    * @throws X thrown by the {@code join} function
    */
   public static <A, B, C, D, E, R, X extends Throwable> R uninterruptibly(
