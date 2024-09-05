@@ -363,8 +363,8 @@ public final class Fanout {
    *         .toMap();
    * }</pre>
    *
-   * Compared to parallel streams, you can control the concurrency, and retains the full stack trace
-   * from both the main thread and the virtual thread.
+   * Compared to parallel streams, you can control the concurrency. Exceptions also retain the
+   * full stack trace from both the main thread and the virtual thread.
    */
   public static Parallelizer withMaxConcurrency(int maxConcurrency) {
     return new Parallelizer(Scope.executor, maxConcurrency);
