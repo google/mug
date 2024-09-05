@@ -29,22 +29,15 @@ import com.google.mu.util.concurrent.Parallelizer.UncheckedExecutionException;
  *
  * <p>If the main thread is interrupted (when you use {@code concurrently()} to allow interruption),
  * pending and currently running operations are canceled and the main thread will throw
- * InterruptedException.
- *
- * <p>Checked exceptions from the concurrent operations should be propagated and handled using
- * go/tunnelexception. For example:
+ * InterruptedException. For example:
  *
  * <pre>{@code
  * import static com.google.mu.util.concurrent.Fanout.concurrently;
  *
- * try {
- *   return concurrently(
- *       () -> tunnel(() -> getProjectAncestry(...)), // may throw RpcException
- *       () -> tunnel(() -> readJobTimeline()),       // may throw SpannerException
- *       (ancestry, timeline) -> ...);
- * } catch (TunnelException e) {
- *   throw e.rethrow(RpcException.class, SpannerException.class);
- * }
+ * return concurrently(
+ *     () -> getProjectAncestry(...),
+ *     () -> readJobTimeline(),
+ *     (ancestry, timeline) -> ...);
  * }</pre>
  *
  * <p>Memory consistency effects: Actions before starting the concurrent operations (including
@@ -56,11 +49,11 @@ import com.google.mu.util.concurrent.Parallelizer.UncheckedExecutionException;
  * relationship between the concurrent operations themselves).
  *
  * <p>By default, the JDK {@link Executors#newVirtualThreadPerTaskExecutor} is used to run all
- * structured concurrency tasks (so requires Java 21 and virtual threads)
+ * structured concurrency tasks (thus requires Java 21 and virtual threads).
  * To use an alternative executor (say, you don't want to use virtual threads), implement a {@link
- * StructuredConcurrencyExecutorPlugin} and package it up for {@link ServiceLoader}. You can use
- * Google <a href="http://github.com/google/auto/tree/main/service">@AutoService</a> to generate
- * the META-INF/services files.
+ * StructuredConcurrencyExecutorPlugin} and package it up for {@link ServiceLoader}. You could also
+ * use Google <a href="http://github.com/google/auto/tree/main/service">@AutoService</a> to help
+ * automate the generation of the META-INF/services files.
  *
  * @since 8.1
  */
