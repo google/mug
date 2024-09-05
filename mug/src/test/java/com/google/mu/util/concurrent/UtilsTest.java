@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.util.concurrent.FutureAssertions.assertCauseOf;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -50,6 +50,7 @@ public class UtilsTest {
     for (Method method : Utils.class.getDeclaredMethods()) {
       if (method.isSynthetic()) continue;
       if (method.getName().equals("cast")) continue;
+      if (method.getName().equals("checkState")) continue;
       new NullPointerTester().testMethod(null, method);
     }
   }

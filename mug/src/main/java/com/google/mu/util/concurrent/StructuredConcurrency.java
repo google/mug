@@ -43,7 +43,9 @@ import java.util.stream.Stream;
  * a static final constant because it's stateless as long as the executor is stateless.
  *
  * @since 8.0
+ * @deprecated Use {@link Fanout} instead.
  */
+@Deprecated
 public final class StructuredConcurrency {
   private static final int MAX_CONCURRENCY = 100;  // sufficient for all overloads
   private final Parallelizer parallelizer;

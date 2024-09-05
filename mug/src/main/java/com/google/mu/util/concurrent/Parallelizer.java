@@ -598,8 +598,8 @@ public final class Parallelizer {
     }
   }
 
-  private static final class VirtualThread {
-    private static final ExecutorService executor;
+  static final class VirtualThread {
+    static final ExecutorService executor;
     static {
       try {
         executor = (ExecutorService) Executors.class.getMethod("newVirtualThreadPerTaskExecutor").invoke(null);
