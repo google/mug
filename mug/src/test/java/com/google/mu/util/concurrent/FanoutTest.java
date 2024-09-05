@@ -4,7 +4,11 @@ package com.google.mu.util.concurrent;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.util.concurrent.Fanout.concurrently;
 import static com.google.mu.util.concurrent.Fanout.uninterruptibly;
+import static com.google.mu.util.concurrent.Fanout.withMaxConcurrency;
 import static org.junit.Assert.assertThrows;
+
+import java.util.Map;
+import java.util.stream.Stream;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -166,5 +170,36 @@ public final class FanoutTest {
                     },
                     (a, b) -> b));
     assertThat(thrown).hasMessageThat().contains("bar");
+  }
+
+  @Test
+  public void withMaxConcurrency_zeroConcurrencyDisallowed() {
+    assertThrows(IllegalArgumentException.class, () -> withMaxConcurrency(0));
+  }
+
+  @Test
+  public void withMaxConcurrency_negativeConcurrencyDisallowed() {
+    assertThrows(IllegalArgumentException.class, () -> withMaxConcurrency(-1));
+  }
+
+  @Test
+  public void withMaxConcurrency_inputSizeGreaterThanMaxConcurrency() {
+    Map<Integer, String> results =
+        Stream.of(1, 2, 3, 4, 5).collect(withMaxConcurrency(3).inParallel(Object::toString)).toMap();
+    assertThat(results).containsExactly(1, "1", 2, "2", 3, "3", 4, "4", 5, "5").inOrder();
+  }
+
+  @Test
+  public void withMaxConcurrency_inputSizeSmallerThanMaxConcurrency() {
+    Map<Integer, String> results =
+        Stream.of(1, 2).collect(withMaxConcurrency(3).inParallel(Object::toString)).toMap();
+    assertThat(results).containsExactly(1, "1", 2, "2").inOrder();
+  }
+
+  @Test
+  public void withMaxConcurrency_inputSizeEqualToMaxConcurrency() {
+    Map<Integer, String> results =
+        Stream.of(1, 2, 3).collect(withMaxConcurrency(3).inParallel(Object::toString)).toMap();
+    assertThat(results).containsExactly(1, "1", 2, "2", 3, "3").inOrder();
   }
 }
