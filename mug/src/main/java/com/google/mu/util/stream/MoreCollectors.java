@@ -534,7 +534,7 @@ public final class MoreCollectors {
    * @since 6.0
    */
   public static <E, R> Collector<E, ?, Both<R, R>> partitioningBy(
-      Predicate<? super E> predicate, Collector<E, ?, R> downstream) {
+      Predicate<? super E> predicate, Collector<E, ?, ? extends R> downstream) {
     return partitioningBy(predicate, downstream, downstream);
   }
 
@@ -564,8 +564,8 @@ public final class MoreCollectors {
    */
   public static <E, A1, A2, T, F> Collector<E, ?, Both<T, F>> partitioningBy(
       Predicate<? super E> predicate,
-      Collector<E, A1, T> downstreamIfTrue,
-      Collector<E, A2, F> downstreamIfFalse) {
+      Collector<E, A1, ? extends T> downstreamIfTrue,
+      Collector<E, A2, ? extends F> downstreamIfFalse) {
     requireNonNull(predicate);
     Supplier<A1> factory1 = downstreamIfTrue.supplier();
     Supplier<A2> factory2 = downstreamIfFalse.supplier();

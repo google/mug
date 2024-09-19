@@ -17,11 +17,13 @@ package com.google.mu.util.stream;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.stream.BiCollectors.collectingAndThen;
+import static com.google.mu.util.stream.BiCollectors.counting;
 import static com.google.mu.util.stream.BiCollectors.groupingBy;
 import static com.google.mu.util.stream.BiCollectors.maxByKey;
 import static com.google.mu.util.stream.BiCollectors.maxByValue;
 import static com.google.mu.util.stream.BiCollectors.minByKey;
 import static com.google.mu.util.stream.BiCollectors.minByValue;
+import static com.google.mu.util.stream.BiCollectors.partitioningBy;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.BiStreamTest.assertKeyValues;
@@ -304,6 +306,22 @@ public class BiCollectorsTest {
     assertKeyValues(salaries.collect(groupingBy(s -> s.charAt(0), Integer::sum)))
         .containsExactly('J', 100, 'T', 200)
         .inOrder();
+  }
+
+  @Test public void testPartitioningBy_sameDownstreamCollector() {
+    String result =
+        BiStream.of(1, "one", 2, "two", 3, "three", 4, "four", 5, "five")
+            .collect(partitioningBy((i, n) -> i % 2 == 1))
+            .andThen((odds, evens) -> "odd:" + odds.toMap() + "; even:" + evens.toMap());
+    assertThat(result).isEqualTo("odd:{1=one, 3=three, 5=five}; even:{2=two, 4=four}");
+  }
+
+  @Test public void testPartitioningBy_differentDownstreamCollectors() {
+    String result =
+        BiStream.of(1, "one", 2, "two", 3, "three", 4, "four", 5, "five")
+            .collect(partitioningBy((i, n) -> i % 2 == 1, toMap(), counting()))
+            .andThen((odds, evens) -> "odd:" + odds + "; count of even:" + evens);
+    assertThat(result).isEqualTo("odd:{1=one, 3=three, 5=five}; count of even:2");
   }
 
   @Test public void testMapping_downstreamCollector() {
