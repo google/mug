@@ -712,6 +712,16 @@ public static <K, V, T, F> BiCollector<K, V, Both<T, F>> partitioningBy(
   }
 
   /**
+   * Returns a BiCollector that inverses the input pairs of {@code (a, b)} into {@code (b, a)}
+   * before passing it to {@code downstream} collector.
+   *
+   * @since 8.1
+   */
+  public static <A, B, R> BiCollector<A, B, R> inverse(BiCollector<B, A, R> downstream) {
+    return mapping((k, v) -> v, (k, v) -> k, downstream);
+  }
+
+  /**
    * Returns a {@link BiCollector} that finds the pair with the maximum key according to {@code
    * comparator}.
    *

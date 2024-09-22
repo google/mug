@@ -19,6 +19,7 @@ import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.stream.BiCollectors.collectingAndThen;
 import static com.google.mu.util.stream.BiCollectors.counting;
 import static com.google.mu.util.stream.BiCollectors.groupingBy;
+import static com.google.mu.util.stream.BiCollectors.inverse;
 import static com.google.mu.util.stream.BiCollectors.maxByKey;
 import static com.google.mu.util.stream.BiCollectors.maxByValue;
 import static com.google.mu.util.stream.BiCollectors.minByKey;
@@ -376,6 +377,13 @@ public class BiCollectorsTest {
             stream -> stream.mapToObj((name, salary) -> name + ":" + salary)));
     assertThat(result)
         .containsExactly("Joe:1", "Tom:2")
+        .inOrder();
+  }
+
+  @Test public void testInverse_toStream() {
+    BiStream<String, Integer> salaries = BiStream.of("Joe", 1, "Tom", 2);
+    assertThat(salaries.collect(inverse(toMap())))
+        .containsExactly(1, "Joe", 2, "Tom")
         .inOrder();
   }
 
