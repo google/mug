@@ -552,6 +552,12 @@ public static <K, V, T, F> BiCollector<K, V, Both<T, F>> partitioningBy(
    * Returns a {@link BiCollector} that maps the result of {@code collector} using the {@code
    * finisher} BiFunction. Useful when combined with BiCollectors like {@link #partitioningBy}.
    *
+   * <p>For example: <pre>{@code
+   * collectingAndThen(
+   *     partitioningBy((time, request) -> isAllowed(time, request), toMap(), counting()),
+   *     (allowedRequests, disallowed) -> ...)
+   * }</pre>
+   *
    * @since 8.1
    */
   public static <K, V, A, B, R> BiCollector<K, V, R> collectingAndThen(

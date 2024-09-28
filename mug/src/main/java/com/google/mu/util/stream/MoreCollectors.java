@@ -201,6 +201,10 @@ public final class MoreCollectors {
    * Returns a {@link Collector} that maps the result of {@code upstream} collector using the {@code
    * finisher} BiFunction. Useful when combined with collectors like {@link #partitioningBy}.
    *
+   * <p>For example: <pre>{@code
+   * collectingAndThen(partitioningBy(Person::isGood), (good, evil) -> ...)
+   * }</pre>
+   *
    * @since 8.1
    */
   public static <T, A, B, R> Collector<T, ?, R> collectingAndThen(
