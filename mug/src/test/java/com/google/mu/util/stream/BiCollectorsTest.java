@@ -17,11 +17,14 @@ package com.google.mu.util.stream;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.stream.BiCollectors.collectingAndThen;
+import static com.google.mu.util.stream.BiCollectors.counting;
 import static com.google.mu.util.stream.BiCollectors.groupingBy;
+import static com.google.mu.util.stream.BiCollectors.inverse;
 import static com.google.mu.util.stream.BiCollectors.maxByKey;
 import static com.google.mu.util.stream.BiCollectors.maxByValue;
 import static com.google.mu.util.stream.BiCollectors.minByKey;
 import static com.google.mu.util.stream.BiCollectors.minByValue;
+import static com.google.mu.util.stream.BiCollectors.partitioningBy;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.BiStreamTest.assertKeyValues;
@@ -306,6 +309,22 @@ public class BiCollectorsTest {
         .inOrder();
   }
 
+  @Test public void testPartitioningBy_sameDownstreamCollector() {
+    String result =
+        BiStream.of(1, "one", 2, "two", 3, "three", 4, "four", 5, "five")
+            .collect(partitioningBy((i, n) -> i % 2 == 1))
+            .andThen((odds, evens) -> "odd:" + odds.toMap() + "; even:" + evens.toMap());
+    assertThat(result).isEqualTo("odd:{1=one, 3=three, 5=five}; even:{2=two, 4=four}");
+  }
+
+  @Test public void testPartitioningBy_differentDownstreamCollectors() {
+    String result =
+        BiStream.of(1, "one", 2, "two", 3, "three", 4, "four", 5, "five")
+            .collect(partitioningBy((i, n) -> i % 2 == 1, toMap(), counting()))
+            .andThen((odds, evens) -> "odd:" + odds + "; count of even:" + evens);
+    assertThat(result).isEqualTo("odd:{1=one, 3=three, 5=five}; count of even:2");
+  }
+
   @Test public void testMapping_downstreamCollector() {
     BiStream<String, Integer> salaries = BiStream.of("Joe", 100, "Tom", 200);
     assertThat(salaries.collect(BiCollectors.mapping(Joiner.on(':')::join, toList())))
@@ -358,6 +377,23 @@ public class BiCollectorsTest {
             stream -> stream.mapToObj((name, salary) -> name + ":" + salary)));
     assertThat(result)
         .containsExactly("Joe:1", "Tom:2")
+        .inOrder();
+  }
+
+  @Test public void testCollectingAndThen_fomPair() {
+    String result =
+        BiStream.of(1, "one", 2, "two", 3, "three", 4, "four", 5, "five")
+            .collect(
+                collectingAndThen(
+                    partitioningBy((i, n) -> i % 2 == 1),
+                    (odds, evens) -> "odd:" + odds.toMap() + "; even:" + evens.toMap()));
+    assertThat(result).isEqualTo("odd:{1=one, 3=three, 5=five}; even:{2=two, 4=four}");
+  }
+
+  @Test public void testInverse_toStream() {
+    BiStream<String, Integer> salaries = BiStream.of("Joe", 1, "Tom", 2);
+    assertThat(salaries.collect(inverse(toMap())))
+        .containsExactly(1, "Joe", 2, "Tom")
         .inOrder();
   }
 

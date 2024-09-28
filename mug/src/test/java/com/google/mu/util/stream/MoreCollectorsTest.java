@@ -24,6 +24,7 @@ import static com.google.mu.util.stream.BiCollectors.groupingBy;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.MoreCollectors.allMax;
 import static com.google.mu.util.stream.MoreCollectors.allMin;
+import static com.google.mu.util.stream.MoreCollectors.collectingAndThen;
 import static com.google.mu.util.stream.MoreCollectors.combining;
 import static com.google.mu.util.stream.MoreCollectors.flatMapping;
 import static com.google.mu.util.stream.MoreCollectors.flatteningMaps;
@@ -153,6 +154,17 @@ public class MoreCollectorsTest {
   @Test public void toListAndThen_immutable() {
     List<Integer> list = Stream.of(1, 2).collect(toListAndThen(Collections::reverse));
     assertThrows(UnsupportedOperationException.class, list::clear);
+  }
+
+  @Test public void testCollectingAndThen_fromPair() {
+    String result =
+        Stream.of(1, 2, 3, 4, 5)
+            .collect(
+                collectingAndThen(
+                    partitioningBy(
+                        n -> n % 2 == 1, toImmutableList(), summingInt(Integer::intValue)),
+                    (odd, even) -> "odd:" + odd + "; sum of even:" + even));
+    assertThat(result).isEqualTo("odd:[1, 3, 5]; sum of even:6");
   }
 
   @Test

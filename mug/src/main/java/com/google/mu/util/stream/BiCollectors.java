@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -453,6 +454,82 @@ public final class BiCollectors {
     };
   }
 
+/**
+ * Returns a BiCollector that partitions the incoming pairs into two groups: elements that match
+ * {@code predicate}, and those that don't. Both groups are stored in a BiStream.
+ *
+ * <p>For example:
+ *
+ * <pre>{@code
+ * timeSeries
+ *     .collect(partitioningBy((time, event) -> event.isImportant()))
+ *     .andThen((importantEvents, unimportantEvents) -> ...);
+ * }</pre>
+ *
+ * @since 8.1
+ */
+public static <K, V> BiCollector<K, V, Both<BiStream<K, V>, BiStream<K, V>>> partitioningBy(
+    BiPredicate<? super K, ? super V> predicate) {
+  return partitioningBy(predicate, BiStream::toBiStream);
+}
+
+/**
+ * Returns a BiCollector that partitions the incoming pairs into two groups: elements that match
+ * {@code predicate}, and those that don't, and use {@code downstream} collector to collect the
+ * pairs.
+ *
+ * <p>For example:
+ *
+ * <pre>{@code
+ * timeSeries
+ *     .collect(partitioningBy((time, event) -> event.isImportant(), toSortedImmutableMap()))
+ *     .andThen((importantEvents, unimportantEvents) -> ...);
+ * }</pre>
+ *
+ * @param <K> the input key type
+ * @param <V> the input value type
+ * @param <R> the result type of the downstream collector
+ * @since 8.1
+ */
+public static <K, V, R> BiCollector<K, V, Both<R, R>> partitioningBy(
+    BiPredicate<? super K, ? super V> predicate,
+    BiCollector<? super K, ? super V, ? extends R> downstream) {
+  return partitioningBy(predicate, downstream, downstream);
+}
+
+/**
+ * Returns a BiCollector that partitions the incoming pairs into two groups: elements that match
+ * {@code predicate}, and those that don't, and use {@code ifTrue} and {@code ifFalse} downstream
+ * collectors respectively to collect the pairs.
+ *
+ * <p>For example:
+ *
+ * <pre>{@code
+ * timeSeries
+ *     .collect(
+ *         partitioningBy((time, event) -> event.isImportant(), toImmutableMap(), counting()))
+ *     .andThen((importantEvents, unimportantCount) -> ...);
+ * }</pre>
+ *
+ * @param <K> the input key type
+ * @param <V> the input value type
+ * @param <T> the result type for the pairs that evaluate to true
+ * @param <F> the result type for the pairs that evaluate to false
+ * @since 8.1
+ */
+public static <K, V, T, F> BiCollector<K, V, Both<T, F>> partitioningBy(
+    BiPredicate<? super K, ? super V> predicate,
+    BiCollector<? super K, ? super V, ? extends T> ifTrue,
+    BiCollector<? super K, ? super V, ? extends F> ifFalse) {
+  requireNonNull(predicate);
+  return mapping(
+      AbstractMap.SimpleImmutableEntry<K, V>::new,
+      MoreCollectors.partitioningBy(
+          (Map.Entry<K, V> e) -> predicate.test(e.getKey(), e.getValue()),
+          ifTrue.collectorOf(Map.Entry::getKey, Map.Entry::getValue),
+          ifFalse.collectorOf(Map.Entry::getKey, Map.Entry::getValue)));
+}
+
   /**
    * Returns a {@link BiCollector} that maps the result of {@code upstream} collector using
    * {@code finisher}.
@@ -469,6 +546,19 @@ public final class BiCollectors {
         return Collectors.collectingAndThen(upstream.collectorOf(toKey, toValue), finisher::apply);
       }
     };
+  }
+
+  /**
+   * Returns a {@link BiCollector} that maps the result of {@code collector} using the {@code
+   * finisher} BiFunction. Useful when combined with BiCollectors like {@link #partitioningBy}.
+   *
+   * @since 8.1
+   */
+  public static <K, V, A, B, R> BiCollector<K, V, R> collectingAndThen(
+      BiCollector<K, V, ? extends Both<? extends A, ? extends B>> collector,
+      BiFunction<? super A, ? super B, ? extends R> finisher) {
+    requireNonNull(finisher);
+    return collectingAndThen(collector, ab -> ab.andThen(finisher));
   }
 
   /**
@@ -632,6 +722,16 @@ public final class BiCollectors {
     return flatMapping(
         flattener.andThen(BiStream::mapToEntry),
         downstream.<Map.Entry<? extends K1, ? extends V1>>collectorOf(Map.Entry::getKey, Map.Entry::getValue));
+  }
+
+  /**
+   * Returns a BiCollector that inverses the input pairs of {@code (a, b)} into {@code (b, a)}
+   * before passing it to {@code downstream} collector.
+   *
+   * @since 8.1
+   */
+  public static <A, B, R> BiCollector<A, B, R> inverse(BiCollector<B, A, R> downstream) {
+    return mapping((k, v) -> v, (k, v) -> k, downstream);
   }
 
   /**
