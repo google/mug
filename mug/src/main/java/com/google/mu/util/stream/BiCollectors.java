@@ -549,6 +549,19 @@ public static <K, V, T, F> BiCollector<K, V, Both<T, F>> partitioningBy(
   }
 
   /**
+   * Returns a {@link BiCollector} that maps the result of {@code collector} using the {@code
+   * finisher} BiFunction. Useful when combined with BiCollectors like {@link #partitioningBy}.
+   *
+   * @since 8.1
+   */
+  public static <K, V, A, B, R> BiCollector<K, V, R> collectingAndThen(
+      BiCollector<K, V, ? extends Both<? extends A, ? extends B>> collector,
+      BiFunction<? super A, ? super B, ? extends R> finisher) {
+    requireNonNull(finisher);
+    return collectingAndThen(collector, ab -> ab.andThen(finisher));
+  }
+
+  /**
    * Returns a {@link BiCollector} that first collects the input pairs into a {@link BiStream} and then applies
    * {@code finisher} on the intermediary BiStream.
    *

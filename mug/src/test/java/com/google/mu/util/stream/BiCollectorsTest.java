@@ -380,6 +380,16 @@ public class BiCollectorsTest {
         .inOrder();
   }
 
+  @Test public void testCollectingAndThen_fomPair() {
+    String result =
+        BiStream.of(1, "one", 2, "two", 3, "three", 4, "four", 5, "five")
+            .collect(
+                collectingAndThen(
+                    partitioningBy((i, n) -> i % 2 == 1),
+                    (odds, evens) -> "odd:" + odds.toMap() + "; even:" + evens.toMap()));
+    assertThat(result).isEqualTo("odd:{1=one, 3=three, 5=five}; even:{2=two, 4=four}");
+  }
+
   @Test public void testInverse_toStream() {
     BiStream<String, Integer> salaries = BiStream.of("Joe", 1, "Tom", 2);
     assertThat(salaries.collect(inverse(toMap())))

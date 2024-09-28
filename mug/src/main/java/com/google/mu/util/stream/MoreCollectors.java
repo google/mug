@@ -16,7 +16,6 @@ package com.google.mu.util.stream;
 
 import static java.lang.Math.max;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
@@ -196,6 +195,19 @@ public final class MoreCollectors {
       arranger.accept(list);
       return Collections.unmodifiableList(list);
     });
+  }
+
+  /**
+   * Returns a {@link Collector} that maps the result of {@code upstream} collector using the {@code
+   * finisher} BiFunction. Useful when combined with collectors like {@link #partitioningBy}.
+   *
+   * @since 8.1
+   */
+  public static <T, A, B, R> Collector<T, ?, R> collectingAndThen(
+      Collector<T, ?, ? extends Both<? extends A, ? extends B>> upstream,
+      BiFunction<? super A, ? super B, ? extends R> finisher) {
+    requireNonNull(finisher);
+    return Collectors.collectingAndThen(upstream, ab -> ab.andThen(finisher));
   }
 
   /**
@@ -717,7 +729,7 @@ public final class MoreCollectors {
     if (cases.size() == 1) {
       return cases.get(0);
     }
-    return collectingAndThen(toList(), list -> {
+    return Collectors.collectingAndThen(toList(), list -> {
       int elementsToShow = 1;
       for (FixedSizeCollector<T, ?, R> c : cases) {
         if (c.appliesTo(list)) {
