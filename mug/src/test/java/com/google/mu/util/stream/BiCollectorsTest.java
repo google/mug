@@ -34,7 +34,9 @@ import static java.util.stream.Collectors.summingInt;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -339,6 +341,51 @@ public class BiCollectorsTest {
     assertThat(salaries.collect(toReverseMap))
         .containsExactly(100, "Joe", 200, "Tom")
         .inOrder();
+  }
+
+  @Test public void testMapping_twoWay_withBiFunctions() {
+    BiStream<String, Integer> salaries = BiStream.of("Joe", 100, "Tom", 200);
+    BiCollector<String, Integer, ImmutableMap<Integer, String>> toReverseMap =
+        BiCollectors.mapping((k, v) -> v, (k, v) -> k, ImmutableMap::toImmutableMap);
+    assertThat(salaries.collect(toReverseMap)).containsExactly(100, "Joe", 200, "Tom").inOrder();
+  }
+
+  @Test public void testMapping_twoWay_withBiFunctions_callsMethodsOnce() {
+    List<String> calls = new ArrayList<>();
+    BiStream<String, Integer> salaries =
+        BiStream.of("Joe", 100, "Tom", 200)
+            .mapKeys(
+                k -> {
+                  calls.add(k);
+                  return k;
+                });
+    BiCollector<String, Integer, ImmutableMap<Integer, String>> toReverseMap =
+        BiCollectors.mapping((k, v) -> v, (k, v) -> k, ImmutableMap::toImmutableMap);
+    ImmutableMap<Integer, String> reversed = salaries.collect(toReverseMap);
+    assertThat(calls).containsExactly("Joe", "Tom");
+    assertThat(reversed).containsExactly(100, "Joe", 200, "Tom").inOrder();
+  }
+
+  @Test public void testMapping_twoWay_withFunctions() {
+    BiStream<String, Integer> salaries = BiStream.of("Joe", 100, "Tom", 200);
+    BiCollector<String, Integer, ImmutableMap<String, Integer>> doubled =
+        BiCollectors.mapping(k -> k + k, v -> v + v, ImmutableMap::toImmutableMap);
+    assertThat(salaries.collect(doubled)).containsExactly("JoeJoe", 200, "TomTom", 400).inOrder();
+  }
+
+  @Test public void testMapping_twoWay_withFunctions_callsMethodsOnce() {
+    List<String> calls = new ArrayList<>();
+    BiStream<String, Integer> salaries =
+        BiStream.of("Joe", 100, "Tom", 200)
+            .mapKeys(
+                k -> {
+                  calls.add(k);
+                  return k;
+                });
+    BiCollector<String, Integer, ImmutableMap<String, Integer>> doubled =
+        BiCollectors.mapping(k -> k + k, v -> v + v, ImmutableMap::toImmutableMap);
+    assertThat(salaries.collect(doubled)).containsExactly("JoeJoe", 200, "TomTom", 400).inOrder();
+    assertThat(calls).containsExactly("Joe", "Tom");
   }
 
   @Test public void testMapping_pairWise() {
