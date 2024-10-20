@@ -20,10 +20,11 @@ import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.Optionals.optional;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.BiStream.biStream;
-import static com.google.mu.util.stream.BiStream.crossJoining;
 import static com.google.mu.util.stream.BiStream.concatenating;
+import static com.google.mu.util.stream.BiStream.crossJoining;
 import static com.google.mu.util.stream.BiStream.groupingByEach;
 import static com.google.mu.util.stream.BiStream.toAdjacentPairs;
+import static com.google.mu.util.stream.BiStream.toBiStream;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static java.util.Arrays.asList;
 import static java.util.function.Function.identity;
@@ -66,6 +67,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.truth.IterableSubject;
 import com.google.common.truth.MultimapSubject;
 import com.google.mu.util.BiOptional;
+import com.google.mu.util.Both;
 import com.google.mu.util.Substring;
 
 @RunWith(JUnit4.class)
@@ -742,6 +744,15 @@ public class BiStreamTest {
             .collect(toImmutableListMultimap()))
         .containsExactly("name", "joe", "age", "10")
         .inOrder();
+  }
+
+  @Test public void testToBiStream_exceptionThrownEagerly() {
+    assertThrows(
+        NumberFormatException.class,
+        () -> Stream.of("1", "b").collect(toBiStream(identity(), v -> Integer.parseInt(v))));
+    assertThrows(
+        NumberFormatException.class,
+        () -> Stream.of("1", "b").collect(toBiStream(v -> Both.of(v, Integer.parseInt(v)))));
   }
 
   @Test public void testGroupingBy() {

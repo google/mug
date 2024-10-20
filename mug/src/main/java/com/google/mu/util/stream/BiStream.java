@@ -14,7 +14,7 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
-import static com.google.mu.util.stream.MoreStreams.collectingAndThen;
+import static com.google.mu.util.stream.MoreStreams.toStream;
 import static java.util.Map.Entry.comparingByKey;
 import static java.util.Map.Entry.comparingByValue;
 import static java.util.Objects.requireNonNull;
@@ -333,7 +333,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    */
   public static <T, K, V> Collector<T, ?, BiStream<K, V>> concatenating(
       Function<? super T, ? extends BiStream<? extends K, ? extends V>> toBiStream) {
-    return collectingAndThen(stream -> concat(stream.map(toBiStream)));
+    return collectingAndThen(Collectors.mapping(toBiStream, toStream()), BiStream::concat);
   }
 
   /**
@@ -394,7 +394,9 @@ public abstract class BiStream<K, V> implements AutoCloseable {
       Function<? super E, ? extends K> toKey, Function<? super E, ? extends V> toValue) {
     requireNonNull(toKey);
     requireNonNull(toValue);
-    return collectingAndThen(stream -> from(stream, toKey, toValue));
+    return collectingAndThen(
+        Collectors.mapping(e -> kv(toKey.apply(e), toValue.apply(e)), toStream()),
+        BiStream::fromEntries);
   }
 
   /**
@@ -409,8 +411,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    */
   public static <E, K, V> Collector<E, ?, BiStream<K, V>> toBiStream(
       Function<? super E, ? extends Both<? extends K, ? extends V>> toPair) {
-    requireNonNull(toPair);;
-    return collectingAndThen(stream -> from(stream.map(toPair)));
+    return collectingAndThen(Collectors.mapping(toPair, toStream()), BiStream::from);
   }
 
   /**
