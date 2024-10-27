@@ -17,6 +17,7 @@ package com.google.mu.util.stream;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static com.google.mu.util.stream.BiCollectors.mapping;
 import static com.google.mu.util.stream.BiStream.groupingBy;
 import static com.google.mu.util.stream.MoreCollectors.mapping;
 import static java.util.Objects.requireNonNull;
@@ -216,7 +217,7 @@ public final class GuavaCollectors {
   public static <K, T, V>
       BiCollector<K, T, ImmutableListMultimap<K, V>> flatteningToImmutableListMultimap(
           Function<? super T, ? extends Stream<? extends V>> flattener) {
-    return mappingValues(flattener, ImmutableListMultimap::flatteningToImmutableListMultimap);
+    return mapping(identity(), flattener, ImmutableListMultimap::flatteningToImmutableListMultimap);
   }
 
   /**
@@ -243,7 +244,7 @@ public final class GuavaCollectors {
   public static <K, T, V>
       BiCollector<K, T, ImmutableSetMultimap<K, V>> flatteningToImmutableSetMultimap(
           Function<? super T, ? extends Stream<? extends V>> flattener) {
-    return mappingValues(flattener, ImmutableSetMultimap::flatteningToImmutableSetMultimap);
+    return mapping(identity(), flattener, ImmutableSetMultimap::flatteningToImmutableSetMultimap);
   }
 
   /**
@@ -622,7 +623,7 @@ public final class GuavaCollectors {
    */
   public static <K extends Comparable<K>, V> BiCollector<Range<K>, V, BiStream<Range<K>, Chain<V>>>
   toDisjointRanges() {
-    return mappingValues(Chain::of, toDisjointRanges(Chain::concat));
+    return mapping(identity(), Chain::of, toDisjointRanges(Chain::concat));
   }
 
   /**
@@ -684,12 +685,6 @@ public final class GuavaCollectors {
     requireNonNull(valueCollector);
     return BiCollectors.collectingAndThen(
         toDisjointRanges(), m -> m.mapValues(chain -> chain.stream().collect(valueCollector)));
-  }
-
-  private static <K, V, T, R> BiCollector<K, V, R> mappingValues(
-      Function<? super V, ? extends T> mapper, BiCollector<K, T, R> downstream) {
-    requireNonNull(mapper);
-    return BiCollectors.mapping((k, v) -> k, (k, v) -> mapper.apply(v), downstream);
   }
 
   private GuavaCollectors() {}

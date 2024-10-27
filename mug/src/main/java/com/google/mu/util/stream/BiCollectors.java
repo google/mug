@@ -621,11 +621,31 @@ public static <K, V, T, F> BiCollector<K, V, Both<T, F>> partitioningBy(
     requireNonNull(keyMapper);
     requireNonNull(valueMapper);
     requireNonNull(downstream);
+    return mapping(
+        AbstractMap.SimpleImmutableEntry<K, V>::new,
+        downstream.collectorOf(
+            kv -> keyMapper.apply(kv.getKey(), kv.getValue()),
+            kv -> valueMapper.apply(kv.getKey(), kv.getValue())));
+  }
+
+  /**
+   * Returns a {@link BiCollector} that first maps the input pair using {@code keyMapper} and {@code
+   * valueMapper}, then collects the results using the {@code downstream} collector.
+   *
+   * @since 8.2
+   */
+  public static <K, V, K1, V1, R> BiCollector<K, V, R> mapping(
+      Function<? super K, ? extends K1> keyMapper,
+      Function<? super V, ? extends V1> valueMapper,
+      BiCollector<K1, V1, R> downstream) {
+    requireNonNull(keyMapper);
+    requireNonNull(valueMapper);
+    requireNonNull(downstream);
     return new BiCollector<K, V, R>() {
       @Override public <E> Collector<E, ?, R> collectorOf(Function<E, K> toKey, Function<E, V> toValue) {
         return downstream.collectorOf(
-            e -> keyMapper.apply(toKey.apply(e), toValue.apply(e)),
-            e -> valueMapper.apply(toKey.apply(e), toValue.apply(e)));
+            e -> keyMapper.apply(toKey.apply(e)),
+            e -> valueMapper.apply(toValue.apply(e)));
       }
     };
   }

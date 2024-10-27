@@ -14,7 +14,7 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
-import static com.google.mu.util.stream.MoreStreams.collectingAndThen;
+import static com.google.mu.util.stream.MoreStreams.toStream;
 import static java.util.Map.Entry.comparingByKey;
 import static java.util.Map.Entry.comparingByValue;
 import static java.util.Objects.requireNonNull;
@@ -333,7 +333,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    */
   public static <T, K, V> Collector<T, ?, BiStream<K, V>> concatenating(
       Function<? super T, ? extends BiStream<? extends K, ? extends V>> toBiStream) {
-    return collectingAndThen(stream -> concat(stream.map(toBiStream)));
+    return collectingAndThen(Collectors.mapping(toBiStream, toStream()), BiStream::concat);
   }
 
   /**
@@ -394,7 +394,9 @@ public abstract class BiStream<K, V> implements AutoCloseable {
       Function<? super E, ? extends K> toKey, Function<? super E, ? extends V> toValue) {
     requireNonNull(toKey);
     requireNonNull(toValue);
-    return collectingAndThen(stream -> from(stream, toKey, toValue));
+    return collectingAndThen(
+        Collectors.mapping(e -> kv(toKey.apply(e), toValue.apply(e)), toStream()),
+        BiStream::fromEntries);
   }
 
   /**
@@ -409,8 +411,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    */
   public static <E, K, V> Collector<E, ?, BiStream<K, V>> toBiStream(
       Function<? super E, ? extends Both<? extends K, ? extends V>> toPair) {
-    requireNonNull(toPair);;
-    return collectingAndThen(stream -> from(stream.map(toPair)));
+    return collectingAndThen(Collectors.mapping(toPair, toStream()), BiStream::from);
   }
 
   /**
@@ -438,20 +439,13 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /** Returns a {@code BiStream} of two pairs, containing the supplied keys and values. */
-  public static <K, V> BiStream<K, V> of(
-      K key1, V value1, K key2, V value2) {
-    return fromEntries(Stream.of(kv(key1, value1), kv(key2, value2)));
+  public static <K, V> BiStream<K, V> of(K k1, V v1, K k2, V v2) {
+    return fromEntries(Stream.of(kv(k1, v1), kv(k2, v2)));
   }
 
   /** Returns a {@code BiStream} of three pairs, containing the supplied keys and values. */
-  public static <K, V> BiStream<K, V> of(
-      K key1,
-      V value1,
-      K key2,
-      V value2,
-      K key3,
-      V value3) {
-    return fromEntries(Stream.of(kv(key1, value1), kv(key2, value2), kv(key3, value3)));
+  public static <K, V> BiStream<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3) {
+    return fromEntries(Stream.of(kv(k1, v1), kv(k2, v2), kv(k3, v3)));
   }
 
   /**
@@ -459,15 +453,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *
    * @since 5.6
    */
-  public static <K, V> BiStream<K, V> of(
-      K k1,
-      V v1,
-      K k2,
-      V v2,
-      K k3,
-      V v3,
-      K k4,
-      V v4) {
+  public static <K, V> BiStream<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4) {
     return fromEntries(Stream.of(kv(k1, v1), kv(k2, v2), kv(k3, v3), kv(k4, v4)));
   }
 
@@ -477,16 +463,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * @since 5.6
    */
   public static <K, V> BiStream<K, V> of(
-      K k1,
-      V v1,
-      K k2,
-      V v2,
-      K k3,
-      V v3,
-      K k4,
-      V v4,
-      K k5,
-      V v5) {
+      K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5) {
     return fromEntries(Stream.of(kv(k1, v1), kv(k2, v2), kv(k3, v3), kv(k4, v4), kv(k5, v5)));
   }
 
@@ -496,18 +473,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * @since 5.6
    */
   public static <K, V> BiStream<K, V> of(
-      K k1,
-      V v1,
-      K k2,
-      V v2,
-      K k3,
-      V v3,
-      K k4,
-      V v4,
-      K k5,
-      V v5,
-      K k6,
-      V v6) {
+      K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6) {
     return fromEntries(
         Stream.of(kv(k1, v1), kv(k2, v2), kv(k3, v3), kv(k4, v4), kv(k5, v5), kv(k6, v6)));
   }
@@ -518,20 +484,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * @since 5.6
    */
   public static <K, V> BiStream<K, V> of(
-      K k1,
-      V v1,
-      K k2,
-      V v2,
-      K k3,
-      V v3,
-      K k4,
-      V v4,
-      K k5,
-      V v5,
-      K k6,
-      V v6,
-      K k7,
-      V v7) {
+      K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7) {
     return fromEntries(
         Stream.of(
             kv(k1, v1), kv(k2, v2), kv(k3, v3), kv(k4, v4), kv(k5, v5), kv(k6, v6), kv(k7, v7)));
@@ -543,22 +496,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * @since 5.6
    */
   public static <K, V> BiStream<K, V> of(
-      K k1,
-      V v1,
-      K k2,
-      V v2,
-      K k3,
-      V v3,
-      K k4,
-      V v4,
-      K k5,
-      V v5,
-      K k6,
-      V v6,
-      K k7,
-      V v7,
-      K k8,
-      V v8) {
+      K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8) {
     return fromEntries(
         Stream.of(
             kv(k1, v1),
@@ -577,24 +515,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * @since 5.6
    */
   public static <K, V> BiStream<K, V> of(
-      K k1,
-      V v1,
-      K k2,
-      V v2,
-      K k3,
-      V v3,
-      K k4,
-      V v4,
-      K k5,
-      V v5,
-      K k6,
-      V v6,
-      K k7,
-      V v7,
-      K k8,
-      V v8,
-      K k9,
-      V v9) {
+      K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5,
+      K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9) {
     return fromEntries(
         Stream.of(
             kv(k1, v1),
@@ -614,26 +536,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * @since 5.6
    */
   public static <K, V> BiStream<K, V> of(
-      K k1,
-      V v1,
-      K k2,
-      V v2,
-      K k3,
-      V v3,
-      K k4,
-      V v4,
-      K k5,
-      V v5,
-      K k6,
-      V v6,
-      K k7,
-      V v7,
-      K k8,
-      V v8,
-      K k9,
-      V v9,
-      K k10,
-      V v10) {
+      K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5,
+      K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10) {
     return fromEntries(
         Stream.of(
             kv(k1, v1),

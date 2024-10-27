@@ -525,7 +525,7 @@ public final class MoreStreams {
   }
 
   /** Copying input elements into another stream. */
-  private static <T> Collector<T, ?, Stream<T>> toStream() {
+  static <T> Collector<T, ?, Stream<T>> toStream() {
     return Collector.of(
         Stream::<T>builder,
         Stream.Builder::add,
