@@ -15,6 +15,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 
@@ -110,6 +111,13 @@ public final class ParameterizedQuery {
   }
 
   /**
+   * An empty query
+   *
+   * @since 8.2
+   */
+  public static ParameterizedQuery EMPTY = of("");
+
+  /**
    * Convenience method when you need to create the {@link ParameterizedQuery} inline, with both the
    * query template and the arguments.
    *
@@ -124,6 +132,26 @@ public final class ParameterizedQuery {
   public static ParameterizedQuery of(
       @CompileTimeConstant @TemplateString String query, Object... args) {
     return template(query).with(args);
+  }
+
+  /**
+   * An optional query that's only rendered if {@code arg} is present; otherwise returns {@link
+   * #EMPTY}. It's for use cases where a subquery is only added when present, for example the
+   * following query will add the WHERE clause if the filter is present:
+   *
+   * <pre>{@code
+   * SafeQuery query = ParameterizedQuery.of(
+   *     "SELECT * FROM jobs {where}",
+   *     ParameterizedQuery.optionally("WHERE {filter}", getOptionalFilter()));
+   * }</pre>
+   *
+   * @since 8.2
+   */
+  @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
+  @TemplateFormatMethod
+  public static ParameterizedQuery optionally(
+      @CompileTimeConstant @TemplateString String query, Optional<?> arg) {
+    return arg.map(v -> of(query, v)).orElse(EMPTY);
   }
 
   /**

@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.junit.Test;
@@ -222,6 +223,27 @@ public class ParameterizedQueryTest {
   public void template_iterableArgNotSupported() {
     Template<ParameterizedQuery> query = template("SELECT * WHERE status = {status}");
     assertThrows(IllegalArgumentException.class, () -> query.with(asList(Status.ACTIVE)));
+  }
+
+  @Test
+  public void optionally_argIsEmpty() {
+    ParameterizedQuery query =
+        ParameterizedQuery.of(
+            "SELECT * FROM tbl {where}",
+            ParameterizedQuery.optionally("where id = {id}", /* id */ Optional.empty()));
+    assertThat(query.jobConfiguration())
+        .isEqualTo(QueryJobConfiguration.newBuilder("SELECT * FROM tbl ").build());
+  }
+
+  @Test
+  public void optionally_argIsNotEmpty() {
+    ParameterizedQuery query =
+        ParameterizedQuery.optionally("SELECT * FROM tbl where id = {id}", /* id */ Optional.of(123));
+    assertThat(query.jobConfiguration())
+        .isEqualTo(
+            QueryJobConfiguration.newBuilder("SELECT * FROM tbl where id = @id")
+                .addNamedParameter("id", QueryParameterValue.int64(123))
+                .build());
   }
 
   @Test
