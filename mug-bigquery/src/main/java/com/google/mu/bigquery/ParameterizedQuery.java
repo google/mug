@@ -105,6 +105,12 @@ public final class ParameterizedQuery {
   @SuppressWarnings("Immutable")
   private final Map<String, Object> originalValues;
 
+  private ParameterizedQuery(String query) {
+    this.query = requireNonNull(query);
+    this.parameters = emptyMap();
+    this.originalValues = emptyMap();
+  }
+
   private ParameterizedQuery(
       String query,
       Map<String, QueryParameterValue> parameters,
@@ -129,7 +135,7 @@ public final class ParameterizedQuery {
    */
   @TemplateFormatMethod
   public static ParameterizedQuery of(@CompileTimeConstant @TemplateString String query) {
-    return new ParameterizedQuery(query, emptyMap(), emptyMap());
+    return new ParameterizedQuery(query);
   }
 
   /**
@@ -237,7 +243,7 @@ public final class ParameterizedQuery {
    */
   public static Stream<ParameterizedQuery> enumConstants(Class<? extends Enum<?>> enumClass) {
     return Arrays.stream(enumClass.getEnumConstants())
-        .map(e -> new ParameterizedQuery(e.name(), emptyMap(), emptyMap()));
+        .map(e -> new ParameterizedQuery(e.name()));
   }
 
   /**
@@ -438,7 +444,7 @@ public final class ParameterizedQuery {
   }
 
   private ParameterizedQuery parenthesized() {
-    return new ParameterizedQuery("(" + query + ")", emptyMap(), emptyMap());
+    return new ParameterizedQuery("(" + query + ")");
   }
 
   private static <R> Collector<ParameterizedQuery, ?, R> nonEmptyQueries(
