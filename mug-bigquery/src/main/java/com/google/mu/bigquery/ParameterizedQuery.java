@@ -2,6 +2,8 @@ package com.google.mu.bigquery;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.mapping;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -16,7 +18,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 import java.util.stream.Collector;
+import java.util.stream.Collector.Characteristics;
 import java.util.stream.Stream;
 
 import com.google.cloud.bigquery.BigQuery.JobOption;
@@ -116,6 +121,16 @@ public final class ParameterizedQuery {
    * @since 8.2
    */
   public static ParameterizedQuery EMPTY = of("");
+
+  /**
+   * Returns a query using a compile-time constant query with no parameters.
+   *
+   * @since 8.2
+   */
+  @TemplateFormatMethod
+  public static ParameterizedQuery of(@CompileTimeConstant @TemplateString String query) {
+    return new ParameterizedQuery(query, emptyMap(), emptyMap());
+  }
 
   /**
    * Convenience method when you need to create the {@link ParameterizedQuery} inline, with both the
@@ -223,6 +238,36 @@ public final class ParameterizedQuery {
   public static Stream<ParameterizedQuery> enumConstants(Class<? extends Enum<?>> enumClass) {
     return Arrays.stream(enumClass.getEnumConstants())
         .map(e -> new ParameterizedQuery(e.name(), emptyMap(), emptyMap()));
+  }
+
+  /**
+   * A collector that joins boolean query snippets using {@code AND} operator. The
+   * AND'ed sub-queries will be enclosed in pairs of parenthesis to avoid
+   * ambiguity. If the input is empty, the result will be "TRUE".
+   *
+   * <p>Empty ParameterizedQuery elements are ignored and not joined.
+   *
+   * @since 8.2
+   */
+  public static Collector<ParameterizedQuery, ?, ParameterizedQuery> and() {
+    return collectingAndThen(
+        nonEmptyQueries(mapping(ParameterizedQuery::parenthesized, joining(" AND "))),
+        query -> query.query.isEmpty() ? of("TRUE") : query);
+  }
+
+  /**
+   * A collector that joins boolean query snippets using {@code OR} operator. The
+   * OR'ed sub-queries will be enclosed in pairs of parenthesis to avoid
+   * ambiguity. If the input is empty, the result will be "FALSE".
+   *
+   * <p>Empty ParameterizedQuery elements are ignored and not joined.
+   *
+   * @since 8.2
+   */
+  public static Collector<ParameterizedQuery, ?, ParameterizedQuery> or() {
+    return collectingAndThen(
+        nonEmptyQueries(mapping(ParameterizedQuery::parenthesized, joining(" OR "))),
+        query -> query.query.isEmpty() ? of("FALSE") : query);
   }
 
   /**
@@ -390,5 +435,26 @@ public final class ParameterizedQuery {
   @Override
   public String toString() {
     return query;
+  }
+
+  private ParameterizedQuery parenthesized() {
+    return new ParameterizedQuery("(" + query + ")", emptyMap(), emptyMap());
+  }
+
+  private static <R> Collector<ParameterizedQuery, ?, R> nonEmptyQueries(
+      Collector<ParameterizedQuery, ?, R> downstream) {
+    return filtering(q -> !q.query.isEmpty(), downstream);
+  }
+
+  // Not in Java 8
+  private static <T, A, R> Collector<T, A, R> filtering(
+      Predicate<? super T> filter, Collector<? super T, A, R> collector) {
+    BiConsumer<A, ? super T> accumulator = collector.accumulator();
+    return Collector.of(
+        collector.supplier(),
+        (a, input) -> {if (filter.test(input)) {accumulator.accept(a, input);}},
+        collector.combiner(),
+        collector.finisher(),
+        collector.characteristics().toArray(new Characteristics[0]));
   }
 }
