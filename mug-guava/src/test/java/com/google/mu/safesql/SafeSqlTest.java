@@ -13,6 +13,7 @@ import org.junit.runner.RunWith;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.testing.EqualsTester;
+import com.google.common.testing.NullPointerTester;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 @RunWith(TestParameterInjector.class)
@@ -299,5 +300,11 @@ public class SafeSqlTest {
         .addEqualityGroup(SafeSql.of("select id from tbl where id = 1"))
         .addEqualityGroup(SafeSql.of("select id from tbl where id = {id}", 2))
         .testEquals();
+  }
+
+  @Test
+  public void testNulls() {
+    new NullPointerTester().testAllPublicStaticMethods(SafeSql.class);
+    new NullPointerTester().testAllPublicInstanceMethods(SafeSql.of("select *"));
   }
 }
