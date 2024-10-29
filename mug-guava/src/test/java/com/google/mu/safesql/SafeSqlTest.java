@@ -12,6 +12,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.testing.EqualsTester;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 @RunWith(TestParameterInjector.class)
@@ -284,5 +285,19 @@ public class SafeSqlTest {
         IllegalArgumentException.class,
         () -> SafeSql.of("select * from {tbl}", SafeQuery.of("tbl")));
     assertThat(thrown).hasMessageThat().contains("SafeQuery");
+  }
+
+  @Test
+  public void testEquals() {
+    new EqualsTester()
+        .addEqualityGroup(
+            SafeSql.of("select * from tbl"),
+            SafeSql.of("select * from {tbl}", SafeSql.of("tbl")))
+        .addEqualityGroup(
+            SafeSql.of("select id from tbl where id = {id}", 1),
+            SafeSql.of("select id from tbl where id = {i}", 1))
+        .addEqualityGroup(SafeSql.of("select id from tbl where id = 1"))
+        .addEqualityGroup(SafeSql.of("select id from tbl where id = {id}", 2))
+        .testEquals();
   }
 }
