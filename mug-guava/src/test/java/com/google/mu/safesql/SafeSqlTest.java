@@ -74,9 +74,9 @@ public class SafeSqlTest {
   @Test
   public void twoParametersWithSameName() {
     SafeSql sql =
-        SafeSql.of("select * where id = {id} and partner_id = {id}", /* id */ 123, /* id */ 123);
+        SafeSql.of("select * where id = {id} and partner_id = {id}", 123, 456);
     assertThat(sql.toString()).isEqualTo("select * where id = ? and partner_id = ?");
-    assertThat(sql.getParameters()).containsExactly(123, 123).inOrder();
+    assertThat(sql.getParameters()).containsExactly(123, 456).inOrder();
   }
 
   @Test

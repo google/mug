@@ -58,7 +58,7 @@ public final class SafeSql {
   public static SafeSql EMPTY = new SafeSql("");
 
   @TemplateFormatMethod
-  public static SafeSql of(@CompileTimeConstant @TemplateString String sql) {
+  public static SafeSql of(@TemplateString @CompileTimeConstant String sql) {
     return new SafeSql(validate(sql));
   }
 
@@ -74,7 +74,7 @@ public final class SafeSql {
    */
   @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
   @TemplateFormatMethod
-  public static SafeSql of(@CompileTimeConstant @TemplateString String query, Object... args) {
+  public static SafeSql of(@TemplateString @CompileTimeConstant String query, Object... args) {
     return template(query).with(args);
   }
 
