@@ -196,6 +196,9 @@ public final class SafeSql {
                       builder.addSubQuery((SafeSql) value);
                     } else {
                       checkArgument(!(value instanceof SafeQuery), "Don't mix SafeQuery with SafeSql.");
+                      checkArgument(
+                          !(value instanceof Optional),
+                          "Optional parameter not supported. Consider to use SafeSql.optionally() or SafeSql.when()?");
                       builder.addParameter(paramName, value);
                     }
                   })
