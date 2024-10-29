@@ -252,15 +252,12 @@ public final class SafeSql {
    */
   public static Collector<SafeSql, ?, SafeSql> joining(@CompileTimeConstant String delimiter) {
     validate(delimiter);
-    return Collector.of(
-        Builder::new,
-        (b, q) -> {
-          if (!q.sql.isEmpty()) {  // ignore empty
-            b.appendDelimiter(delimiter).addSubQuery(q);
-          }
-        },
-        (b1, b2) -> b1.appendDelimiter(delimiter).addSubQuery(b2.build()),
-        Builder::build);
+    return nonEmptyQueries(
+        Collector.of(
+            Builder::new,
+            (b, q) -> b.appendDelimiter(delimiter).addSubQuery(q),
+            (b1, b2) -> b1.appendDelimiter(delimiter).addSubQuery(b2.build()),
+            Builder::build));
   }
 
   /**
