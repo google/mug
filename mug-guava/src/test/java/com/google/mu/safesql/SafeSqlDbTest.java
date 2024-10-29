@@ -6,6 +6,8 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.sql.DataSource;
 
@@ -15,8 +17,6 @@ import org.h2.jdbcx.JdbcDataSource;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-
-import com.google.common.collect.ImmutableList;
 
 @RunWith(JUnit4.class)
 public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
@@ -52,18 +52,25 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .containsExactly("bar");
   }
 
+  @Test public void nullParameter() throws Exception {
+    assertThat(update(SafeSql.of("insert into ITEMS(id, title, time) VALUES({id}, {title}, {time})", 11, "foo", null)))
+        .isEqualTo(1);
+    assertThat(queryColumn(SafeSql.of("select time from ITEMS where id = {id}", 11), "time"))
+        .containsExactly(null);
+  }
+
   private int update(SafeSql sql) throws Exception {
     return sql.prepareStatement(connection()).executeUpdate();
   }
 
-  private ImmutableList<?> queryColumn(SafeSql sql, String column) throws Exception {
-    ImmutableList.Builder<Object> builder = ImmutableList.builder();
+  private List<?> queryColumn(SafeSql sql, String column) throws Exception {
+    List<Object> values = new ArrayList<>();
     try (ResultSet resultSet = sql.prepareStatement(connection()).executeQuery()) {
       while (resultSet.next()) {
-        builder.add(resultSet.getObject(column));
+        values.add(resultSet.getObject(column));
       }
     }
-    return builder.build();
+    return values;
   }
 
   private Connection connection() throws Exception {

@@ -22,6 +22,7 @@ import java.util.stream.Collector;
 import java.util.stream.Collector.Characteristics;
 
 import com.google.errorprone.annotations.CompileTimeConstant;
+import com.google.errorprone.annotations.MustBeClosed;
 import com.google.mu.annotations.TemplateFormatMethod;
 import com.google.mu.annotations.TemplateString;
 import com.google.mu.util.StringFormat;
@@ -31,7 +32,7 @@ import com.google.mu.util.stream.MoreStreams;
 
 /**
  * An injection-safe parameterized SQL, constructed using compile-time enforced templates and can be
- * used to create {@link java.sql.PreparedStatement}.
+ * used to {@link #prepareStatement create} {@link java.sql.PreparedStatement}.
  *
  * <p>This class is intended to work with JDBC {@link Connection} and {@link PreparedStatement} API
  * with parameters set through the {@link PreparedStatement#setObject(int, Object) setObject()} method.
@@ -224,6 +225,7 @@ public final class SafeSql {
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    */
+  @MustBeClosed
   public PreparedStatement prepareStatement(Connection connection) {
     try {
       PreparedStatement statement = connection.prepareStatement(sql);
@@ -239,6 +241,7 @@ public final class SafeSql {
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    */
+  @MustBeClosed
   public CallableStatement prepareCall(Connection connection) {
     try {
       CallableStatement statement = connection.prepareCall(sql);
