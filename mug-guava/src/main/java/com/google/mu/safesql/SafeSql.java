@@ -41,6 +41,12 @@ import com.google.mu.util.stream.MoreStreams;
  * An injection-safe parameterized SQL, constructed using compile-time enforced templates and can be
  * used to create {@link java.sql.PreparedStatement}.
  *
+ * <p>This class is intended to work with JDBC {@link Connection} and {@link PreparedStatement} API
+ * with parameters set through the {@link PreparedStatement#setObject(int, Object) setObject()} method.
+ *
+ * <p>In contrast, {@link SafeQuery} directly escapes string parameters and is intended for SQL engines
+ * that don't provide native safe parameterized queries support.
+ *
  * @since 8.2
  */
 public final class SafeSql {
@@ -154,9 +160,6 @@ public final class SafeSql {
                     String paramName = placeholder.skip(1, 1).toString().trim();
                     if (value instanceof SafeSql) {
                       builder.addSubQuery(paramName, (SafeSql) value);
-                    } else if (value != null && SafeQuery.isTrusted(value)) {
-                      // SafeSql or TrustedSqlString are directly embedded.
-                      builder.appendSql(value.toString());
                     } else {
                       builder.appendPlaceholder(paramName);
                       builder.addParameter(paramName, value);

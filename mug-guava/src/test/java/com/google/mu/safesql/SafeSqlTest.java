@@ -71,7 +71,7 @@ public class SafeSqlTest {
   @Test
   public void parameterizeByTableName() {
     SafeSql sql =
-        SafeSql.of("select * from {tbl} where id = {id}", /* tbl */ SafeQuery.of("Users"), /* id */ 123);
+        SafeSql.of("select * from {tbl} where id = {id}", /* tbl */ SafeSql.of("Users"), /* id */ 123);
     assertThat(sql.getSql()).isEqualTo("select * from Users where id = ?");
     assertThat(sql.params().mapToObj((n, v) -> n)).containsExactly("id");
     assertThat(sql.getParameters()).containsExactly(123);
@@ -147,7 +147,7 @@ public class SafeSqlTest {
   public void subqueryHasQuestionMark_throws() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
-        () -> SafeSql.of("select * from {tbl}", SafeQuery.of("?")));
+        () -> SafeSql.of("select * from {tbl}", SafeSql.of("?")));
     assertThat(thrown).hasMessageThat().contains("instead of '?'");
   }
 
