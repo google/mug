@@ -2,6 +2,7 @@ package com.google.mu.safesql;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -12,6 +13,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -21,6 +23,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collector.Characteristics;
 
+import com.google.common.collect.ImmutableList;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.errorprone.annotations.MustBeClosed;
 import com.google.mu.annotations.TemplateFormatMethod;
@@ -36,6 +39,42 @@ import com.google.mu.util.stream.MoreStreams;
  *
  * <p>This class is intended to work with JDBC {@link Connection} and {@link PreparedStatement} API
  * with parameters set through the {@link PreparedStatement#setObject(int, Object) setObject()} method.
+ * The main use case though, is to be able to compose subqueries and leaf-level parameters with a
+ * consistent templating API. For trivial parameterization, you can use:
+ * <pre>{@code
+ *   SafeSql sql = SafeSql.of(
+ *       "select id from Employees where firstName = {first_name} and lastName = {last_name}",
+ *       firstName, lastName);
+ *   try (var statement = sql.prepareStatement(connection),
+ *       var resultSet = statement.executeQuery()) {
+ *     ...
+ *   }
+ * }</pre>
+ *
+ * But by composing smaller SafeSql objects that encapsulate subqueries, you can use the
+ * templating syntax to parameterize by table name, column names or dynamic queries.
+ * For example, the following code builds sql to query the User table with flexible
+ * number of columns and a flexible WHERE clause depending on the user's input:
+ * <pre>{@code
+ * import static com.google.mu.safesql.SafeSql.optionally;
+ *
+ *   class UserInput {
+ *     Optional<String> userId();
+ *     Optional<String> firstName();
+ *   }
+ *
+ *   SafeSql queryUserColumns(UserInput where, @CompileTimeConstant String... columns) {
+ *     SafeSql sql = SafeSql.of(
+ *         "select {columns} from Users where {where}",
+ *         SafeSql.listOf(columns).stream().collect(SafeSql.joining(", ")),
+ *         Stream.of(
+ *               optionally("id = {id}", where.userId()),
+ *               optionally("firstName = {first_name}", where.firstName()))
+ *           .collect(SafeSql.and()));
+ *   }
+ *
+ *   SafeSql userQuery = queryUserColumns(userInput, "firstName", "lastName");
+ * }</pre>
  *
  * <p>In contrast, {@link SafeQuery} directly escapes string parameters and is intended for SQL engines
  * that don't provide native safe parameterized queries support.
@@ -117,6 +156,12 @@ public final class SafeSql {
     checkNotNull(query);
     return arg.map(v -> of(query, v)).orElse(EMPTY);
   }
+
+  /** Wraps the compile-time string constants as SafeSql objects. */
+  public static ImmutableList<SafeSql> listOf(@CompileTimeConstant String... texts) {
+    return Arrays.stream(texts).map(t -> new SafeSql(validate(t))).collect(toImmutableList());
+  }
+
 
   /**
    * Returns a template of {@link SafeSql} based on the {@code template} string.

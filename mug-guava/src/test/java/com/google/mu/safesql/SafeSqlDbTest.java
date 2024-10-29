@@ -3,6 +3,7 @@ package com.google.mu.safesql;
 import static com.google.common.truth.Truth.assertThat;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -60,12 +61,15 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
   }
 
   private int update(SafeSql sql) throws Exception {
-    return sql.prepareStatement(connection()).executeUpdate();
+    try (PreparedStatement statement = sql.prepareStatement(connection())) {
+      return statement.executeUpdate();
+    }
   }
 
   private List<?> queryColumn(SafeSql sql, String column) throws Exception {
     List<Object> values = new ArrayList<>();
-    try (ResultSet resultSet = sql.prepareStatement(connection()).executeQuery()) {
+    try (PreparedStatement statement = sql.prepareStatement(connection());
+        ResultSet resultSet = statement.executeQuery()) {
       while (resultSet.next()) {
         values.add(resultSet.getObject(column));
       }
