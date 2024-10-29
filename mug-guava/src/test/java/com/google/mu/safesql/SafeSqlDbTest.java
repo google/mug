@@ -69,10 +69,4 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
   private Connection connection() throws Exception {
     return getConnection().getConnection();
   }
-
-  private static int numberOfRows(ResultSet resultSet) throws Exception {
-    int c = 0;
-    while (resultSet.next()) c++;
-    return c;
-  }
 }
