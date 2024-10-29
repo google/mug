@@ -307,4 +307,12 @@ public class SafeSqlTest {
     assertThat(sql.getSql()).isEqualTo("select * from (select * from tbl where id = ?), (select * from tbl where id = ?) where id = ?");
     assertThat(sql.getParameters()).containsExactly(1, 2, 3).inOrder();
   }
+
+  @Test
+  public void cannotUseSafeQueryAsSubquery() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.of("select * from {tbl}", SafeQuery.of("tbl")));
+    assertThat(thrown).hasMessageThat().contains("SafeQuery");
+  }
 }

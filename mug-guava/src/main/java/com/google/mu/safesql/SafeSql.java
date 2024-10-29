@@ -161,6 +161,7 @@ public final class SafeSql {
                     if (value instanceof SafeSql) {
                       builder.addSubQuery(paramName, (SafeSql) value);
                     } else {
+                      checkArgument(!(value instanceof SafeQuery), "Don't mix SafeQuery with SafeSql.");
                       builder.appendPlaceholder(paramName);
                       builder.addParameter(paramName, value);
                     }
