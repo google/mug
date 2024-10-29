@@ -30,8 +30,6 @@ import com.google.mu.annotations.TemplateFormatMethod;
 import com.google.mu.annotations.TemplateString;
 import com.google.mu.util.StringFormat;
 import com.google.mu.util.StringFormat.Template;
-import com.google.mu.util.stream.BiStream;
-import com.google.mu.util.stream.MoreStreams;
 
 /**
  * An injection-safe parameterized SQL, constructed using compile-time enforced templates and can be
@@ -273,9 +271,7 @@ public final class SafeSql {
   @MustBeClosed
   public PreparedStatement prepareStatement(Connection connection) {
     try {
-      PreparedStatement statement = connection.prepareStatement(sql);
-      setArgs(statement);
-      return statement;
+      return setArgs(connection.prepareStatement(sql));
     } catch (SQLException e) {
       throw new UncheckedSqlException(e);
     }
@@ -289,9 +285,7 @@ public final class SafeSql {
   @MustBeClosed
   public CallableStatement prepareCall(Connection connection) {
     try {
-      CallableStatement statement = connection.prepareCall(sql);
-      setArgs(statement);
-      return statement;
+      return setArgs(connection.prepareCall(sql));
     } catch (SQLException e) {
       throw new UncheckedSqlException(e);
     }
@@ -323,15 +317,11 @@ public final class SafeSql {
     return false;
   }
 
-  private void setArgs(PreparedStatement statement) {
-    BiStream.zip(MoreStreams.indexesFrom(1), paramValues.stream())
-        .forEach((index, value) -> {
-          try {
-            statement.setObject(index, value);
-          } catch (SQLException e) {
-            throw new UncheckedSqlException(e);
-          }
-        });
+  private <S extends PreparedStatement> S setArgs(S statement) throws SQLException {
+    for (int i = 0; i < paramValues.size(); i++) {
+      statement.setObject(i + 1, paramValues.get(i));
+    }
+    return statement;
   }
 
   private static String validate(String sql) {
