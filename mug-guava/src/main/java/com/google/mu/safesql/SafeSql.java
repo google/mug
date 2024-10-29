@@ -2,38 +2,30 @@ package com.google.mu.safesql;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.mu.util.stream.BiStream.biStream;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.mapping;
-import static java.util.stream.Collectors.toList;
 
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collector.Characteristics;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterators;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.mu.annotations.TemplateFormatMethod;
 import com.google.mu.annotations.TemplateString;
 import com.google.mu.util.StringFormat;
 import com.google.mu.util.StringFormat.Template;
-import com.google.mu.util.Substring;
 import com.google.mu.util.stream.BiStream;
 import com.google.mu.util.stream.MoreStreams;
 
@@ -51,18 +43,15 @@ import com.google.mu.util.stream.MoreStreams;
  */
 public final class SafeSql {
   private final String sql;
-  private final ImmutableList<String> paramNamesInOrder;
-  private final ImmutableMap<String, ?> paramValues;
+  private final List<?> paramValues;
 
   private SafeSql(String sql) {
-    this(sql, ImmutableList.of(), ImmutableMap.of());
+    this(sql, emptyList());
   }
 
-  private SafeSql(String sql, ImmutableList<String> paramNamesInOrder, ImmutableMap<String, ?> params) {
+  private SafeSql(String sql, List<?> paramValues) {
     this.sql = sql;
-    this.paramNamesInOrder = paramNamesInOrder;
-    this.paramValues = params;
-    checkArgument(Substring.first("?").repeatedly().from(sql).count() == paramNamesInOrder.size(), "SQL %s dosesn't match %s", sql, paramNamesInOrder);
+    this.paramValues = paramValues;
   }
 
   /** An empty SQL */
@@ -159,11 +148,12 @@ public final class SafeSql {
                     builder.appendSql(it.next());
                     String paramName = placeholder.skip(1, 1).toString().trim();
                     if (value instanceof SafeSql) {
-                      builder.addSubQuery(paramName, (SafeSql) value);
+                      validate(paramName);
+                      builder.addSubQuery((SafeSql) value);
                     } else {
                       checkArgument(!(value instanceof SafeQuery), "Don't mix SafeQuery with SafeSql.");
                       builder.appendPlaceholder(paramName);
-                      builder.addParameter(paramName, value);
+                      builder.addParameter(value);
                     }
                   })
               .appendSql(it.next())
@@ -223,10 +213,10 @@ public final class SafeSql {
         Builder::new,
         (b, q) -> {
           if (!q.sql.isEmpty()) {  // ignore empty
-            b.appendDelimiter(delimiter).addAnonymousSubQuery(q);
+            b.appendDelimiter(delimiter).addSubQuery(q);
           }
         },
-        (b1, b2) -> b1.appendDelimiter(delimiter).addAnonymousSubQuery(b2.build()),
+        (b1, b2) -> b1.appendDelimiter(delimiter).addSubQuery(b2.build()),
         Builder::build);
   }
 
@@ -260,19 +250,20 @@ public final class SafeSql {
     }
   }
 
-  /** Returns the sql string with "?" in place of parameters. */
-  public String getSql() {
-    return sql;
-  }
-
   /** Returns the parameter values in the order they occur in the sql. */
   public List<?> getParameters() {
-    return params().mapToObj((n, v) -> v).collect(toList());
+    return paramValues;
+  }
+
+  /** Returns the SQL text that can be used to create {@link PreparedStatement}. */
+  @Override
+  public String toString() {
+    return sql;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(sql, paramNamesInOrder);
+    return Objects.hash(sql, paramValues);
   }
 
   @Override
@@ -280,30 +271,16 @@ public final class SafeSql {
     if (obj instanceof SafeSql) {
       SafeSql that = (SafeSql) obj;
       return sql.equals(that.sql)
-          && paramValues.equals(that.paramValues)
-          && paramNamesInOrder.equals(that.paramNamesInOrder);
+          && paramValues.equals(that.paramValues);
     }
     return false;
   }
 
-  @Override
-  public String toString() {
-    Iterator<String> placeholder = paramNamesInOrder.stream().map(n -> '{' + n + ')').iterator();
-    return Substring.first('?')
-        .repeatedly()
-        .replaceAllFrom(sql, m -> Iterators.getNext(placeholder, "{?}"));
-  }
-
-  /** Returns the parameter values along with their placeholder names as appear in the SQL template. */
-  @VisibleForTesting BiStream<String, ?> params() {
-    return biStream(paramNamesInOrder).mapValues(paramValues::get);
-  }
-
   private void setArgs(PreparedStatement statement) {
-    BiStream.zip(MoreStreams.indexesFrom(1), paramNamesInOrder.stream())
-        .forEach((index, name) -> {
+    BiStream.zip(MoreStreams.indexesFrom(1), paramValues.stream())
+        .forEach((index, value) -> {
           try {
-            statement.setObject(index, paramValues.get(name));
+            statement.setObject(index, value);
           } catch (SQLException e) {
             throw new UncheckedSqlException(e);
           }
@@ -316,7 +293,7 @@ public final class SafeSql {
   }
 
   private SafeSql parenthesized() {
-    return new SafeSql("(" + sql + ")", paramNamesInOrder, paramValues);
+    return new SafeSql("(" + sql + ")", paramValues);
   }
 
   private static <R> Collector<SafeSql, ?, R> nonEmptyQueries(
@@ -338,10 +315,7 @@ public final class SafeSql {
 
   private static final class Builder {
     private final StringBuilder queryText = new StringBuilder();
-    private final ImmutableList.Builder<String> paramNamesInOrder = ImmutableList.builder();
-    private final Set<String> usedParamNames = new HashSet<>();
-    private final Map<String, Object> paramValues = new HashMap<>();
-    private int anonymousSubQueryCount = 0;
+    private final List<Object> paramValues = new ArrayList<>();
 
     Builder appendSql(String snippet) {
       queryText.append(validate(snippet));
@@ -361,31 +335,19 @@ public final class SafeSql {
       return this;
     }
 
-    Builder addSubQuery(String paramName, SafeSql subQuery) {
+    Builder addSubQuery(SafeSql subQuery) {
       queryText.append(subQuery.sql);
-      subQuery.params().forEachOrdered((n, v) -> addParameter("{" + paramName + "}." + n, v));
+      subQuery.getParameters().forEach(this::addParameter);
       return this;
     }
 
-    Builder addAnonymousSubQuery(SafeSql subQuery) {
-      return addSubQuery("#" + (++anonymousSubQueryCount), subQuery);
-    }
-
-    Builder addParameter(String name, Object value) {
-      validate(name);
-      if (value == null) {
-        checkArgument(paramValues.get(name) == null, "placeholder {%s} is already set to a non-null value", name);
-      } else {
-        Object oldValue = paramValues.put(name, value);
-        checkArgument(!usedParamNames.contains(name) || value.equals(oldValue), "duplicate placeholder {%s}", name);
-      }
-      usedParamNames.add(name);
-      paramNamesInOrder.add(name);
+    Builder addParameter(Object value) {
+      paramValues.add(value);
       return this;
     }
 
     SafeSql build() {
-      return new SafeSql(queryText.toString(), paramNamesInOrder.build(), ImmutableMap.copyOf(paramValues));
+      return new SafeSql(queryText.toString(), unmodifiableList(new ArrayList<>(paramValues)));
     }
   }
 }

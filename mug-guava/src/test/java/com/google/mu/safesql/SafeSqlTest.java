@@ -1,7 +1,6 @@
 package com.google.mu.safesql;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.safesql.SafeSql.template;
 import static org.junit.Assert.assertThrows;
 
@@ -31,31 +30,28 @@ public class SafeSqlTest {
 
   @Test
   public void emptySql() {
-    assertThat(SafeSql.EMPTY.getSql()).isEmpty();
-    assertThat(SafeSql.EMPTY.params().mapToObj((n, v) -> n)).isEmpty();
+    assertThat(SafeSql.EMPTY.toString()).isEmpty();
+    assertThat(SafeSql.EMPTY.getParameters()).isEmpty();
   }
 
   @Test
   public void singleStringParameter() {
     SafeSql sql = SafeSql.of("select {str}", "foo");
-    assertThat(sql.getSql()).isEqualTo("select ?");
-    assertThat(sql.params().mapToObj((n, v) -> n)).containsExactly("str");
+    assertThat(sql.toString()).isEqualTo("select ?");
     assertThat(sql.getParameters()).containsExactly("foo");
   }
 
   @Test
   public void singleIntParameter() {
     SafeSql sql = SafeSql.of("select {i}", 123);
-    assertThat(sql.getSql()).isEqualTo("select ?");
-    assertThat(sql.params().mapToObj((n, v) -> n)).containsExactly("i");
+    assertThat(sql.toString()).isEqualTo("select ?");
     assertThat(sql.getParameters()).containsExactly(123);
   }
 
   @Test
   public void singleNullParameter() {
     SafeSql sql = SafeSql.of("select {i}", /* i */ (Integer) null);
-    assertThat(sql.getSql()).isEqualTo("select ?");
-    assertThat(sql.params().mapToObj((n, v) -> n)).containsExactly("i");
+    assertThat(sql.toString()).isEqualTo("select ?");
     assertThat(sql.getParameters()).containsExactly(null);
   }
 
@@ -63,8 +59,7 @@ public class SafeSqlTest {
   public void twoParameters() {
     SafeSql sql =
         SafeSql.of("select {label} where id = {id}", /* label */ "foo", /* id */ 123);
-    assertThat(sql.getSql()).isEqualTo("select ? where id = ?");
-    assertThat(sql.params().mapToObj((n, v) -> n)).containsExactly("label", "id").inOrder();
+    assertThat(sql.toString()).isEqualTo("select ? where id = ?");
     assertThat(sql.getParameters()).containsExactly("foo", 123).inOrder();
   }
 
@@ -72,17 +67,15 @@ public class SafeSqlTest {
   public void parameterizeByTableName() {
     SafeSql sql =
         SafeSql.of("select * from {tbl} where id = {id}", /* tbl */ SafeSql.of("Users"), /* id */ 123);
-    assertThat(sql.getSql()).isEqualTo("select * from Users where id = ?");
-    assertThat(sql.params().mapToObj((n, v) -> n)).containsExactly("id");
+    assertThat(sql.toString()).isEqualTo("select * from Users where id = ?");
     assertThat(sql.getParameters()).containsExactly(123);
   }
 
   @Test
-  public void twoParametersWithSameNameAndValue() {
+  public void twoParametersWithSameName() {
     SafeSql sql =
         SafeSql.of("select * where id = {id} and partner_id = {id}", /* id */ 123, /* id */ 123);
-    assertThat(sql.getSql()).isEqualTo("select * where id = ? and partner_id = ?");
-    assertThat(sql.params().mapToObj((n, v) -> n)).containsExactly("id", "id").inOrder();
+    assertThat(sql.toString()).isEqualTo("select * where id = ? and partner_id = ?");
     assertThat(sql.getParameters()).containsExactly(123, 123).inOrder();
   }
 
@@ -90,33 +83,8 @@ public class SafeSqlTest {
   public void twoParametersWithSameNameAndBothAreNulls() {
     SafeSql sql =
         SafeSql.of("select * where id = {id} and partner_id = {id}", /* id */ null, /* id */ null);
-    assertThat(sql.getSql()).isEqualTo("select * where id = ? and partner_id = ?");
-    assertThat(sql.params().mapToObj((n, v) -> n)).containsExactly("id", "id").inOrder();
+    assertThat(sql.toString()).isEqualTo("select * where id = ? and partner_id = ?");
     assertThat(sql.getParameters()).containsExactly(null, null).inOrder();
-  }
-
-  @Test
-  public void twoParametersWithSameName_differentValues_throws() {
-    IllegalArgumentException thrown = assertThrows(
-        IllegalArgumentException.class,
-        () -> SafeSql.of("select * where id = {id} and partner_id = {id}", /* id */ 123, /* id */ 456));
-    assertThat(thrown).hasMessageThat().contains("placeholder {id}");
-  }
-
-  @Test
-  public void twoParametersWithSameName_firstValueIsNull_throws() {
-    IllegalArgumentException thrown = assertThrows(
-        IllegalArgumentException.class,
-        () -> SafeSql.of("select * where id = {id} and partner_id = {id}", /* id */ null, /* id */ 456));
-    assertThat(thrown).hasMessageThat().contains("placeholder {id}");
-  }
-
-  @Test
-  public void twoParametersWithSameName_secondValueIsNull_throws() {
-    IllegalArgumentException thrown = assertThrows(
-        IllegalArgumentException.class,
-        () -> SafeSql.of("select * where id = {id} and partner_id = {id}", /* id */ 123, /* id */ null));
-    assertThat(thrown).hasMessageThat().contains("placeholder {id}");
   }
 
   @Test
@@ -138,8 +106,7 @@ public class SafeSqlTest {
   @Test
   public void singleStringParameterValueHasQuestionMark() {
     SafeSql sql = SafeSql.of("select {str}", "?");
-    assertThat(sql.getSql()).isEqualTo("select ?");
-    assertThat(sql.params().mapToObj((n, v) -> n)).containsExactly("str");
+    assertThat(sql.toString()).isEqualTo("select ?");
     assertThat(sql.getParameters()).containsExactly("?");
   }
 
@@ -223,7 +190,7 @@ public class SafeSqlTest {
         ImmutableList.of(
             SafeSql.of("a = {v1}", 1), SafeSql.of("b = {v2} OR c = {v3}", 2, 3), SafeSql.of("d = {v4}", 4));
     SafeSql sql = queries.stream().collect(SafeSql.and());
-    assertThat(sql.getSql()).isEqualTo("(a = ?) AND (b = ? OR c = ?) AND (d = ?)");
+    assertThat(sql.toString()).isEqualTo("(a = ?) AND (b = ? OR c = ?) AND (d = ?)");
     assertThat(sql.getParameters()).containsExactly(1, 2, 3, 4).inOrder();
   }
 
@@ -270,7 +237,7 @@ public class SafeSqlTest {
         ImmutableList.of(
             SafeSql.of("a = {v1}", 1), SafeSql.of("b = {v2} AND c = {v3}", 2, 3), SafeSql.of("d = {v4}", 4));
     SafeSql sql = queries.stream().collect(SafeSql.or());
-    assertThat(sql.getSql()).isEqualTo("(a = ?) OR (b = ? AND c = ?) OR (d = ?)");
+    assertThat(sql.toString()).isEqualTo("(a = ?) OR (b = ? AND c = ?) OR (d = ?)");
     assertThat(sql.getParameters()).containsExactly(1, 2, 3, 4).inOrder();
   }
 
@@ -286,14 +253,14 @@ public class SafeSqlTest {
   public void namesInAnonymousSubqueriesAreIndependent() {
     SafeSql sql =
         Stream.of(1, 2, 3).map(id -> SafeSql.of("id = {id}", id)).collect(SafeSql.or());
-    assertThat(sql.getSql()).isEqualTo("(id = ?) OR (id = ?) OR (id = ?)");
+    assertThat(sql.toString()).isEqualTo("(id = ?) OR (id = ?) OR (id = ?)");
     assertThat(sql.getParameters()).containsExactly(1, 2, 3);
   }
 
   @Test
   public void namesInSubqueryAndParentQueryDontConflict() {
     SafeSql sql = SafeSql.of("select * from ({tbl}) where id = {id}", SafeSql.of("select * from tbl where id = {id}", 1), 2);
-    assertThat(sql.getSql()).isEqualTo("select * from (select * from tbl where id = ?) where id = ?");
+    assertThat(sql.toString()).isEqualTo("select * from (select * from tbl where id = ?) where id = ?");
     assertThat(sql.getParameters()).containsExactly(1, 2).inOrder();
   }
 
@@ -304,7 +271,7 @@ public class SafeSqlTest {
         /* tbl1 */ SafeSql.of("select * from tbl where id = {id}", 1),
         /* tbl1 */ SafeSql.of("select * from tbl where id = {id}", 2),
         3);
-    assertThat(sql.getSql()).isEqualTo("select * from (select * from tbl where id = ?), (select * from tbl where id = ?) where id = ?");
+    assertThat(sql.toString()).isEqualTo("select * from (select * from tbl where id = ?), (select * from tbl where id = ?) where id = ?");
     assertThat(sql.getParameters()).containsExactly(1, 2, 3).inOrder();
   }
 
