@@ -72,6 +72,7 @@ public class SafeSqlTest {
   }
 
   @Test
+  @SuppressWarnings("StringFormatArgsCheck")
   public void twoParametersWithSameName() {
     SafeSql sql =
         SafeSql.of("select * where id = {id} and partner_id = {id}", 123, 456);
@@ -114,7 +115,7 @@ public class SafeSqlTest {
   public void subqueryHasQuestionMark_throws() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
-        () -> SafeSql.of("select * from {tbl}", SafeSql.of("?")));
+        () -> SafeSql.of("select * from {tbl}", /* tbl */ SafeSql.of("?")));
     assertThat(thrown).hasMessageThat().contains("instead of '?'");
   }
 
@@ -259,7 +260,9 @@ public class SafeSqlTest {
 
   @Test
   public void namesInSubqueryAndParentQueryDontConflict() {
-    SafeSql sql = SafeSql.of("select * from ({tbl}) where id = {id}", SafeSql.of("select * from tbl where id = {id}", 1), 2);
+    SafeSql sql = SafeSql.of(
+        "select * from ({tbl}) where id = {id}",
+        SafeSql.of("select * from tbl where id = {id}", 1), /* id */ 2);
     assertThat(sql.toString()).isEqualTo("select * from (select * from tbl where id = ?) where id = ?");
     assertThat(sql.getParameters()).containsExactly(1, 2).inOrder();
   }
@@ -269,8 +272,8 @@ public class SafeSqlTest {
     SafeSql sql = SafeSql.of(
         "select * from ({tbl1}), ({tbl2}) where id = {id}",
         /* tbl1 */ SafeSql.of("select * from tbl where id = {id}", 1),
-        /* tbl1 */ SafeSql.of("select * from tbl where id = {id}", 2),
-        3);
+        /* tbl2 */ SafeSql.of("select * from tbl where id = {id}", 2),
+        /* id */ 3);
     assertThat(sql.toString()).isEqualTo("select * from (select * from tbl where id = ?), (select * from tbl where id = ?) where id = ?");
     assertThat(sql.getParameters()).containsExactly(1, 2, 3).inOrder();
   }
