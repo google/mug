@@ -152,8 +152,7 @@ public final class SafeSql {
                       builder.addSubQuery((SafeSql) value);
                     } else {
                       checkArgument(!(value instanceof SafeQuery), "Don't mix SafeQuery with SafeSql.");
-                      builder.appendPlaceholder(paramName);
-                      builder.addParameter(value);
+                      builder.addParameter(paramName, value);
                     }
                   })
               .appendSql(it.next())
@@ -322,9 +321,16 @@ public final class SafeSql {
       return this;
     }
 
-    Builder appendPlaceholder(String name) {
+    Builder addParameter(String name, Object value) {
       validate(name);
       queryText.append("?");
+      paramValues.add(value);
+      return this;
+    }
+
+    Builder addSubQuery(SafeSql subQuery) {
+      queryText.append(subQuery.sql);
+      paramValues.addAll(subQuery.getParameters());
       return this;
     }
 
@@ -332,17 +338,6 @@ public final class SafeSql {
       if (queryText.length() > 0) {
         queryText.append(delim);
       }
-      return this;
-    }
-
-    Builder addSubQuery(SafeSql subQuery) {
-      queryText.append(subQuery.sql);
-      subQuery.getParameters().forEach(this::addParameter);
-      return this;
-    }
-
-    Builder addParameter(Object value) {
-      paramValues.add(value);
       return this;
     }
 
