@@ -273,14 +273,14 @@ public final class SafeSql {
    *
    * <pre>{@code
    * private static final Template<SafeSql> QUERY_TABLES =
-   *     SafeSql.template("SELECT {columns} FROM {dataset}.INFORMATION_SCHEMA.TABLES");
+   *     SafeSql.template("SELECT {columns} FROM {schema}.INFORMATION_SCHEMA.TABLES");
    *
    * SafeSql getTableNames = QUERY_TABLES.with(SafeSql.of("table_name"));
    * SafeSql getFullyQualified = QUERY_TABLES.with(
-   *     Stream.of("table_catalog", "table_schema", "table_name")
-   *         .map(SafeSql::of)
+   *     SafeSql.listOf("table_catalog", "table_schema", "table_name")
+   *         .stream()
    *         .collect(SafeSql.joining(", ")),
-   *     SafeSql.of("my-dataset"));
+   *     SafeSql.of("my-schema"));
    * }</pre>
    *
    * <p>Empty SafeSql elements are ignored and not joined.
