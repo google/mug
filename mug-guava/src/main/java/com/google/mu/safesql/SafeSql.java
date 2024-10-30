@@ -4,6 +4,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.Substring.suffix;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
@@ -20,7 +21,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
@@ -222,48 +222,64 @@ public final class SafeSql {
    * other placeholder arguments are passed into the PreparedStatement as query parameters.
    */
   public static Template<SafeSql> template(@CompileTimeConstant String template) {
-    return StringFormat.template(
-        template,
-        (fragments, placeholders) -> {
-          Iterator<String> it = fragments.iterator();
-          AtomicReference<String> next = new AtomicReference<>(it.next());
-          Builder builder = new Builder();
-          placeholders.forEachOrdered((placeholder, value) -> {
-            String paramName = placeholder.skip(1, 1).toString().trim();
-            if (value instanceof SafeSql) {
-              validate(paramName);
-              builder.appendSql(next.getAndSet(it.next())).addSubQuery((SafeSql) value);
-              return;
-            }
-            checkArgument(!(value instanceof SafeQuery), "Don't mix SafeQuery with SafeSql.");
-            checkArgument(
-                !(value instanceof Optional),
-                "Optional parameter not supported. Consider using SafeSql.optionally() or SafeSql.when()?");
-            if (placeholder.isImmediatelyBetween("'%", "%'")) {
-              checkArgument(value instanceof String, "Placeholder '%%s%' must be String", placeholder);
-              builder.appendSql(suffix("'%").removeFrom(next.getAndSet(it.next().substring(2))));
-              builder.addParameter(paramName, "%" + escapePercent((String) value) + "%");
-            } else if (placeholder.isImmediatelyBetween("'%", "'")) {
-              checkArgument(value instanceof String, "Placeholder '%%s' must be String", placeholder);
-              builder.appendSql(suffix("'%").removeFrom(next.getAndSet(it.next().substring(1))));
-              builder.addParameter(paramName, "%" + escapePercent((String) value));
-            } else if (placeholder.isImmediatelyBetween("'", "%'")) {
-              checkArgument(value instanceof String, "Placeholder '%s%' must be String", placeholder);
-              builder.appendSql(suffix("'").removeFrom(next.getAndSet(it.next().substring(2))));
-              builder.addParameter(paramName, escapePercent((String) value) + "%");
-            } else if (placeholder.isImmediatelyBetween("'", "'")) {
-              checkArgument(value instanceof String, "Placeholder '%s' must be String", placeholder);
-              builder.appendSql(suffix("'").removeFrom(next.getAndSet(it.next().substring(1))));
-              builder.addParameter(paramName, value);
-            } else {
-              builder.appendSql(next.getAndSet(it.next()));
-              builder.addParameter(paramName, value);
-            }
-          });
-          builder.appendSql(next.get());
+    return StringFormat.template(template, (fragments, placeholders) -> {
+      class Composer {
+        private final Iterator<String> it = fragments.iterator();
+        private final Builder builder = new Builder();
+        private String next = it.next();
+
+        SafeSql compose() {
+          placeholders.forEachOrdered(this::composeForPlaceholder);
+          builder.appendSql(next);
           checkState(!it.hasNext());
           return builder.build();
-        });
+        }
+
+        private void composeForPlaceholder(Substring.Match placeholder, Object value) {
+          String paramName = placeholder.skip(1, 1).toString().trim();
+          if (value instanceof SafeSql) {
+            validate(paramName);
+            builder.appendSql(nextFragment()).addSubQuery((SafeSql) value);
+            return;
+          }
+          checkArgument(!(value instanceof SafeQuery), "Don't mix SafeQuery with SafeSql.");
+          checkArgument(
+              !(value instanceof Optional),
+              "Optional parameter not supported. Consider using SafeSql.optionally() or SafeSql.when()?");
+          if (appendBeforeQuotedPlaceholder("'%", placeholder, "%'", value)) {
+            builder.addParameter(paramName, "%" + escapePercent((String) value) + "%");
+          } else if (appendBeforeQuotedPlaceholder("'%", placeholder, "'", value)) {
+            builder.addParameter(paramName, "%" + escapePercent((String) value));
+          } else if (appendBeforeQuotedPlaceholder("'", placeholder, "%'", value)) {
+            builder.addParameter(paramName, escapePercent((String) value) + "%");
+          } else if (appendBeforeQuotedPlaceholder("'", placeholder, "'", value)) {
+            builder.addParameter(paramName, value);
+          } else {
+            builder.appendSql(nextFragment());
+            builder.addParameter(paramName, value);
+          }
+        }
+
+        private boolean appendBeforeQuotedPlaceholder(
+            String open, Substring.Match placeholder, String close, Object value) {
+          boolean quoted = placeholder.isImmediatelyBetween(open, close);
+          if (quoted) {
+            checkArgument(
+                value instanceof String, "Placeholder %s%s%s must be String", open, placeholder, close);
+            builder.appendSql(suffix(open).removeFrom(nextFragment()));
+            next = prefix(close).removeFrom(next);
+          }
+          return quoted;
+        }
+
+        private String nextFragment() {
+          String fragment = next;
+          next = it.next();
+          return fragment;
+        }
+      }
+      return new Composer().compose();
+    });
   }
 
   /**
