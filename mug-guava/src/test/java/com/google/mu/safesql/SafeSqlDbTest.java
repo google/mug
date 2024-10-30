@@ -3,6 +3,7 @@ package com.google.mu.safesql;
 import static com.google.common.truth.Truth.assertThat;
 
 import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -18,12 +19,18 @@ import org.dbunit.dataset.IDataSet;
 import org.dbunit.dataset.xml.FlatXmlDataSetBuilder;
 import org.dbunit.operation.DatabaseOperation;
 import org.h2.jdbcx.JdbcDataSource;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import com.google.common.hash.Hashing;
+
 @RunWith(JUnit4.class)
 public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
+  @Rule public final TestName testName = new TestName();
+
   @Override
   protected DataSource getDataSource() {
       JdbcDataSource dataSource = new JdbcDataSource();
@@ -63,107 +70,119 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
   }
 
   @Test public void likeExpressionWithWildcardInArg() throws Exception {
-    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", 202, "foo")))
+    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")))
         .isEqualTo(1);
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title like {t} and id = {id}", "%o%", 202), "title"))
+            SafeSql.of("select title from ITEMS where title like {t} and id = {id}", "%o%", testId()), "title"))
         .containsExactly("foo");
   }
 
   @Test public void likeExpressionWithWildcardInSql() throws Exception {
-    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", 303, "foo")))
+    String title = "What's that?";
+    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), title)))
         .isEqualTo(1);
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title like '%{t}%' and id = {id}", "o", 303), "title"))
-        .containsExactly("foo");
+            SafeSql.of("select title from ITEMS where title like '%{t}%' and id = {id}", "'s", testId()), "title"))
+        .containsExactly(title);
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '%{t}%' and id = {id}", "at?", testId()), "title"))
+        .containsExactly(title);
   }
 
   @Test public void withPercentCharacterValue() throws Exception {
-    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", 304, "%")))
+    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "%")))
         .isEqualTo(1);
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title = '{t}' and id = {id}", "%", 304), "title"))
+            SafeSql.of("select title from ITEMS where title = '{t}' and id = {id}", "%", testId()), "title"))
         .containsExactly("%");
   }
 
   @Test public void withBackslashCharacterValue() throws Exception {
-    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", 305, "\\")))
+    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "\\")))
         .isEqualTo(1);
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title = '{t}' and id = {id}", "\\", 305), "title"))
+            SafeSql.of("select title from ITEMS where title = '{t}' and id = {id}", "\\", testId()), "title"))
         .containsExactly("\\");
   }
 
   @Test public void likeExpressionWithPrefixWildcardInSql() throws Exception {
-    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", 404, "foo")))
+    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")))
         .isEqualTo(1);
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title like '{t}%' and id = {id}", "fo", 404), "title"))
+            SafeSql.of("select title from ITEMS where title like '{t}%' and id = {id}", "fo", testId()), "title"))
         .containsExactly("foo");
   }
 
   @Test public void likeExpressionWithSuffixWildcardInSql() throws Exception {
-    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", 505, "foo")))
+    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")))
         .isEqualTo(1);
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title like '%{t}' and id = {id}", "oo", 505), "title"))
+            SafeSql.of("select title from ITEMS where title like '%{t}' and id = {id}", "oo", testId()), "title"))
         .containsExactly("foo");
   }
 
   @Test public void quotedStringExpression() throws Exception {
-    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", 606, "foo")))
+    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")))
         .isEqualTo(1);
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title = '{t}' and id = {id}", "foo", 606), "title"))
+            SafeSql.of("select title from ITEMS where title = '{t}' and id = {id}", "foo", testId()), "title"))
         .containsExactly("foo");
   }
 
   @Test public void likeExpressionWithPercentValue() throws Exception {
-    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", 700, "foo")))
+    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")))
         .isEqualTo(1);
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title like '%{t}%' and id = {id}", "%", 700), "title"))
+            SafeSql.of("select title from ITEMS where title like '%{t}%' and id = {id}", "%", testId()), "title"))
         .isEmpty();
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title like '%{t}' and id = {id}", "%", 700), "title"))
+            SafeSql.of("select title from ITEMS where title like '%{t}' and id = {id}", "%", testId()), "title"))
         .isEmpty();
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title like '{t}%' and id = {id}", "%", 700), "title"))
+            SafeSql.of("select title from ITEMS where title like '{t}%' and id = {id}", "%", testId()), "title"))
         .isEmpty();
   }
 
   @Test public void likeExpressionWithBackslashValue() throws Exception {
-    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", 701, "foo")))
+    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")))
         .isEqualTo(1);
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title like '%{t}%' and id = {id}", "\\", 701), "title"))
+            SafeSql.of("select title from ITEMS where title like '%{t}%' and id = {id}", "\\", testId()), "title"))
         .isEmpty();
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title like '%{t}' and id = {id}", "\\", 701), "title"))
+            SafeSql.of("select title from ITEMS where title like '%{t}' and id = {id}", "\\", testId()), "title"))
         .isEmpty();
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title like '{t}%' and id = {id}", "\\", 701), "title"))
+            SafeSql.of("select title from ITEMS where title like '{t}%' and id = {id}", "\\", testId()), "title"))
         .isEmpty();
   }
+
   @Test public void literalBackslashMatches() throws Exception {
-    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", 702, "a\\b")))
+    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "a\\b")))
         .isEqualTo(1);
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title like '%{t}%' and id = {id}", "\\", 702), "title"))
+            SafeSql.of("select title from ITEMS where title like '%{t}%' and id = {id}", "\\", testId()), "title"))
         .containsExactly("a\\b");
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title like '%{t}' and id = {id}", "\\b", 702), "title"))
+            SafeSql.of("select title from ITEMS where title like '%{t}' and id = {id}", "\\b", testId()), "title"))
         .containsExactly("a\\b");
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title like '{t}%' and id = {id}", "a\\", 702), "title"))
+            SafeSql.of("select title from ITEMS where title like '{t}%' and id = {id}", "a\\", testId()), "title"))
         .containsExactly("a\\b");
   }
 
   @Test public void nullParameter() throws Exception {
-    assertThat(update(SafeSql.of("insert into ITEMS(id, title, time) VALUES({id}, {title}, {time})", 11, "foo", null)))
+    assertThat(
+            update(SafeSql.of(
+                "insert into ITEMS(id, title, time) VALUES({id}, {title}, {time})", testId(),
+                "foo", null)))
         .isEqualTo(1);
-    assertThat(queryColumn(SafeSql.of("select time from ITEMS where id = {id}", 11), "time"))
-        .containsExactly(null);
+    assertThat(queryColumn(SafeSql.of("select time from ITEMS where id = {id}", testId()), "time"))
+        .containsExactly((Object) null);
+  }
+
+  private int testId() {
+    return Hashing.goodFastHash(32).hashString(testName.getMethodName(), StandardCharsets.UTF_8).asInt();
   }
 
   private int update(SafeSql sql) throws Exception {
