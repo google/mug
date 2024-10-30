@@ -92,6 +92,17 @@ import com.google.mu.util.StringFormat.Template;
  *   SafeSql usersQuery = queryUsers(userCriteria, "firstName", "lastName");
  * }</pre>
  *
+ * If {@code UserCriteria} has specified {@code firstName()} but {@code userId()} is
+ * unspecified (empty), the resulting SQL will look like:
+ *
+ * <pre>{@code
+ * select firstName, lastName from Users where firstName = ?
+ * }</pre>
+ *
+ * And when you call {@code usersQuery.prepareStatement(connection)},
+ * {@code statement.setObject(1, criteria.firstName().get())} will be called to populate
+ * the PreparedStatement.
+ *
  * <p>In contrast, {@link SafeQuery} directly escapes string parameters and is intended
  * to be used with SQL engines that don't have native support for parameterized queries.
  *
