@@ -3,6 +3,7 @@ package com.google.mu.safesql;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.mu.util.Substring.suffix;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -232,8 +233,7 @@ public final class SafeSql {
                     String paramName = placeholder.skip(1, 1).toString().trim();
                     if (value instanceof SafeSql) {
                       validate(paramName);
-                      builder.appendSql(next.get()).addSubQuery((SafeSql) value);
-                      next.set(it.next());
+                      builder.appendSql(next.getAndSet(it.next())).addSubQuery((SafeSql) value);
                     } else {
                       checkArgument(!(value instanceof SafeQuery), "Don't mix SafeQuery with SafeSql.");
                       checkArgument(
@@ -241,27 +241,22 @@ public final class SafeSql {
                           "Optional parameter not supported. Consider using SafeSql.optionally() or SafeSql.when()?");
                       if (placeholder.isImmediatelyBetween("'%", "%'")) {
                         checkArgument(value instanceof String, "Placeholder '%%s%' must be String", placeholder);
-                        builder.appendSql(chop(next.get(), 2));  // skip the trailing '%
-                        next.set(it.next().substring(2));  // skip the leading %'
+                        builder.appendSql(suffix("'%").removeFrom(next.getAndSet(it.next().substring(2))));
                         builder.addParameter(paramName, "%" + escapePercent((String) value) + "%");
                       } else if (placeholder.isImmediatelyBetween("'%", "'")) {
                         checkArgument(value instanceof String, "Placeholder '%%s' must be String", placeholder);
-                        builder.appendSql(chop(next.get(), 2));  // skip the trailing '%
-                        next.set(it.next().substring(1));  // skip the leading '
+                        builder.appendSql(suffix("'%").removeFrom(next.getAndSet(it.next().substring(1))));
                         builder.addParameter(paramName, "%" + escapePercent((String) value));
                       } else if (placeholder.isImmediatelyBetween("'", "%'")) {
                         checkArgument(value instanceof String, "Placeholder '%s%' must be String", placeholder);
-                        builder.appendSql(chop(next.get(), 1));  // skip the trailing '
-                        next.set(it.next().substring(2));  // skip the leading '%
+                        builder.appendSql(suffix("'").removeFrom(next.getAndSet(it.next().substring(2))));
                         builder.addParameter(paramName, escapePercent((String) value) + "%");
                       } else if (placeholder.isImmediatelyBetween("'", "'")) {
                         checkArgument(value instanceof String, "Placeholder '%s' must be String", placeholder);
-                        builder.appendSql(chop(next.get(), 1));  // skip the trailing '
-                        next.set(it.next().substring(1));  // skip the leading '
+                        builder.appendSql(suffix("'").removeFrom(next.getAndSet(it.next().substring(1))));
                         builder.addParameter(paramName, value);
                       } else {
-                        builder.appendSql(next.get());
-                        next.set(it.next());
+                        builder.appendSql(next.getAndSet(it.next()));
                         builder.addParameter(paramName, value);
                       }
                     }
@@ -407,10 +402,6 @@ public final class SafeSql {
 
   private static String escapePercent(String s) {
     return Substring.first(c -> c == '\\' || c == '%').repeatedly().replaceAllFrom(s, c -> "\\" + c);
-  }
-
-  private static String chop(String s, int chars) {
-    return s.substring(0, s.length() - chars);
   }
 
   private static <R> Collector<SafeSql, ?, R> nonEmptyQueries(
