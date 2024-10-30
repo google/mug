@@ -228,7 +228,7 @@ public final class SafeSql {
           Iterator<String> it = fragments.iterator();
           AtomicReference<String> next = new AtomicReference<>(it.next());
           Builder builder = new Builder();
-          placeholders.forEach((placeholder, value) -> {
+          placeholders.forEachOrdered((placeholder, value) -> {
             String paramName = placeholder.skip(1, 1).toString().trim();
             if (value instanceof SafeSql) {
               validate(paramName);
