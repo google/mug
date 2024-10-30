@@ -157,6 +157,11 @@ public final class SafeSql {
     return template(query).with(args);
   }
 
+  /** Returns a SafeSql wrapping the name of {@code enumConstant}. */
+  public static SafeSql of(Enum<?> enumConstant) {
+    return new SafeSql(enumConstant.name());
+  }
+
   /**
    * An optional query that's only rendered if {@code condition} is true; otherwise returns {@link
    * #EMPTY}. It's for use cases where a subquery is only conditionally added, for example the
@@ -223,8 +228,8 @@ public final class SafeSql {
    */
   public static Template<SafeSql> template(@CompileTimeConstant String template) {
     return StringFormat.template(template, (fragments, placeholders) -> {
+      Iterator<String> it = fragments.iterator();
       class SqlComposer {
-        private final Iterator<String> it = fragments.iterator();
         private final Builder builder = new Builder();
         private String next = it.next();
 
