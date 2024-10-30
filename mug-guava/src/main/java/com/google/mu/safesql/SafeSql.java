@@ -38,10 +38,15 @@ import com.google.mu.util.StringFormat.Template;
  * <p>This class is intended to work with JDBC {@link Connection} and {@link PreparedStatement} API
  * with parameters set through the {@link PreparedStatement#setObject(int, Object) setObject()} method.
  * The main use case though, is to be able to compose subqueries and leaf-level parameters with a
- * consistent templating API. For trivial parameterization, you can use:
+ * consistent templating API.
+ *
+ * <p>For trivial parameterization, you can use:
  * <pre>{@code
  *   SafeSql sql = SafeSql.of(
- *       "select id from Employees where firstName = {first_name} and lastName = {last_name}",
+ *       """
+ *       select id from Employees
+ *       where firstName = {first_name} and lastName = {last_name}
+ *       """,
  *       firstName, lastName);
  *   try (var statement = sql.prepareStatement(connection),
  *       var resultSet = statement.executeQuery()) {
@@ -49,33 +54,46 @@ import com.google.mu.util.StringFormat.Template;
  *   }
  * }</pre>
  *
- * But by composing smaller SafeSql objects that encapsulate subqueries, you can use the
- * templating syntax to parameterize by table name, column names or dynamic queries.
- * For example, the following code builds sql to query the User table with flexible
- * number of columns and a flexible WHERE clause depending on the user's input:
+ * The code internally uses the JDBC {@code '?'} placeholder in the SQL text, and calls
+ * {@link PreparedStatement#setObject(int, Object) PreparedStatement.setObject()} to
+ * set all the parameter values for you so you don't have to keep track of the parameter
+ * indices or risk forgetting to set a parameter value. The templating engine also uses
+ * compile-time checks to make sure you don't pass {@code lastName} in the place of
+ * {@code first_name}, for example.
+ *
+ * <p>That said, the main benefit of this library lies in flexible and dynamic query
+ * composition. By composing smaller SafeSql objects that encapsulate subqueries,
+ * you can parameterize by table name, by column names or by arbitrary sub-queries
+ * that may be computed dynamically.
+ *
+ * <p>For example, the following code builds sql to query the Users table with flexible
+ * number of columns and a flexible WHERE clause depending on the {@code UserCriteria}
+ * object's state:
+ *
  * <pre>{@code
  * import static com.google.mu.safesql.SafeSql.optionally;
  *
- *   class UserInput {
+ *   class UserCriteria {
  *     Optional<String> userId();
  *     Optional<String> firstName();
+ *     ...
  *   }
  *
- *   SafeSql queryUserColumns(UserInput where, @CompileTimeConstant String... columns) {
+ *   SafeSql queryUsers(UserCriteria criteria, @CompileTimeConstant String... columns) {
  *     SafeSql sql = SafeSql.of(
- *         "select {columns} from Users where {where}",
+ *         "select {columns} from Users where {criteria}",
  *         SafeSql.listOf(columns).stream().collect(SafeSql.joining(", ")),
  *         Stream.of(
- *               optionally("id = {id}", where.userId()),
- *               optionally("firstName = {first_name}", where.firstName()))
+ *               optionally("id = {id}", criteria.userId()),
+ *               optionally("firstName = {first_name}", criteria.firstName()))
  *           .collect(SafeSql.and()));
  *   }
  *
- *   SafeSql userQuery = queryUserColumns(userInput, "firstName", "lastName");
+ *   SafeSql usersQuery = queryUsers(userCriteria, "firstName", "lastName");
  * }</pre>
  *
- * <p>In contrast, {@link SafeQuery} directly escapes string parameters and is intended for SQL engines
- * that don't provide native safe parameterized queries support.
+ * <p>In contrast, {@link SafeQuery} directly escapes string parameters and is intended
+ * to be used with SQL engines that don't have native support for parameterized queries.
  *
  * @since 8.2
  */
@@ -95,6 +113,7 @@ public final class SafeSql {
   /** An empty SQL */
   public static SafeSql EMPTY = new SafeSql("");
 
+  /** Returns a SafeSql with compile-time {@code sql} text with no parameter. */
   @TemplateFormatMethod
   public static SafeSql of(@TemplateString @CompileTimeConstant String sql) {
     return new SafeSql(validate(sql));
@@ -107,7 +126,8 @@ public final class SafeSql {
    * <p>For example:
    *
    * <pre>{@code
-   * PreparedStatement statement = SafeSql.of("select * from JOBS where id = {id}", jobId).prepare(connection);
+   * PreparedStatement statement =
+   *     SafeSql.of("select * from JOBS where id = {id}", jobId).prepare(connection);
    * }</pre>
    */
   @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
@@ -144,7 +164,7 @@ public final class SafeSql {
    * <pre>{@code
    * SafeSql query = SafeSql.of(
    *     "SELECT * FROM jobs {where}",
-   *     SafeSql.optionally("WHERE {filter}", getOptionalFilter()));
+   *     SafeSql.optionally("WHERE {filter}", getOptionalWhereClause()));
    * }</pre>
    */
   @TemplateFormatMethod
@@ -198,7 +218,7 @@ public final class SafeSql {
                       checkArgument(!(value instanceof SafeQuery), "Don't mix SafeQuery with SafeSql.");
                       checkArgument(
                           !(value instanceof Optional),
-                          "Optional parameter not supported. Consider to use SafeSql.optionally() or SafeSql.when()?");
+                          "Optional parameter not supported. Consider using SafeSql.optionally() or SafeSql.when()?");
                       builder.addParameter(paramName, value);
                     }
                   })
@@ -291,12 +311,20 @@ public final class SafeSql {
     }
   }
 
-  /** Returns the parameter values in the order they occur in the sql. */
+  /**
+   * Returns the parameter values in the order they occur in the SQL.
+   * They are used by methods like {@link #prepareStatement} and {@link #prepareCall}
+   * to create and populate the returned {@link PreparedStatement}
+   */
   public List<?> getParameters() {
     return paramValues;
   }
 
-  /** Returns the SQL text that can be used to create {@link PreparedStatement}. */
+  /**
+   * Returns the SQL text with {@code '?'} as the placeholders.
+   * It's used by methods like {@link #prepareStatement} and {@link #prepareCall}
+   * to create and populate the returned {@link PreparedStatement}.
+   */
   @Override
   public String toString() {
     return sql;
