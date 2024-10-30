@@ -89,6 +89,24 @@ public final class SafeQuery {
   }
 
   /**
+   * Returns a SafeQuery wrapping {@code tableName}.
+   *
+   * @since 8.2
+   */
+  public static SafeQuery of(TableName tableName) {
+    return new SafeQuery(tableName.value());
+  }
+
+  /**
+   * Returns a SafeQuery wrapping the name of {@code enumConstant}.
+   *
+   * @since 8.2
+   */
+  public static SafeQuery of(Enum<?> enumConstant) {
+    return new SafeQuery(enumConstant.name());
+  }
+
+  /**
    * An optional query that's only rendered if {@code condition} is true; otherwise returns {@link
    * #EMPTY}. It's for use cases where a subquery is only conditionally added, for example the
    * following query will only include the userEmail column under super user mode:
