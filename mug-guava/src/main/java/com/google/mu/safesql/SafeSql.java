@@ -57,8 +57,13 @@ import com.google.mu.util.StringFormat.Template;
  * The code internally uses the JDBC {@code '?'} placeholder in the SQL text, and calls
  * {@link PreparedStatement#setObject(int, Object) PreparedStatement.setObject()} to
  * set all the parameter values for you so you don't have to keep track of the parameter
- * indices or risk forgetting to set a parameter value. The templating engine also uses
- * compile-time checks to make sure you don't pass {@code lastName} in the place of
+ * indices or risk forgetting to set a parameter value.
+ *
+ * <p>The templating engine uses compile-time checks to guard against accidental use of
+ * untrusted strings in the SQL, ensuring that they can only be sent as parameters:
+ * try to use a dynamically generated String as the SQL and you'll get a compilation error.
+ * In addition, the same set of compile-time guardrails from the {@link StringFormat} class
+ * are in effect to make sure that you don't pass {@code lastName} in the place of
  * {@code first_name}, for example.
  *
  * <p>That said, the main benefit of this library lies in flexible and dynamic query
