@@ -53,12 +53,13 @@ import com.google.mu.util.StringFormat.Template;
  * {@link PreparedStatement#setObject(int, Object) PreparedStatement.setObject()} to
  * set all the parameter values for you so you don't have to keep track of the parameter
  * indices or risk forgetting to set a parameter value. The templating engine also uses
- * compile-time check to make sure you pass don't pass {@code lastName} in the place of
+ * compile-time checks to make sure you don't pass {@code lastName} in the place of
  * {@code first_name}, for example.
  *
- * <p>That said, the main benefit of this library lies in dynamic query composition.
- * By composing smaller SafeSql objects that encapsulate subqueries, you can parameterize
- * by table name, by column names or arbitrary sub-queries that may be computed dynamically.
+ * <p>That said, the main benefit of this library lies in flexible and dynamic query
+ * composition. By composing smaller SafeSql objects that encapsulate subqueries,
+ * you can parameterize by table name, by column names or by arbitrary sub-queries
+ * that may be computed dynamically.
  *
  * <p>For example, the following code builds sql to query the Users table with flexible
  * number of columns and a flexible WHERE clause depending on the {@code UserCriteria}
