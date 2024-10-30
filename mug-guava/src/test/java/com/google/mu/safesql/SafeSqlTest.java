@@ -292,7 +292,7 @@ public class SafeSqlTest {
   public void optionalParameterDisallowed() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
-        () -> SafeSql.of("select * where id = {id}", Optional.of(1)));
+        () -> SafeSql.of("select * where id = {id}", /* id */ Optional.of(1)));
     assertThat(thrown).hasMessageThat().contains("optionally()");
   }
 

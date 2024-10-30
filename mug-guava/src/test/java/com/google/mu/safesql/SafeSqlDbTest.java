@@ -2,6 +2,7 @@ package com.google.mu.safesql;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.io.ByteArrayInputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -13,6 +14,8 @@ import java.util.List;
 import javax.sql.DataSource;
 
 import org.dbunit.DataSourceBasedDBTestCase;
+import org.dbunit.dataset.IDataSet;
+import org.dbunit.dataset.xml.FlatXmlDataSetBuilder;
 import org.dbunit.operation.DatabaseOperation;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.Test;
@@ -32,6 +35,11 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
   }
 
   @Override
+  protected IDataSet getDataSet() throws Exception {
+    return new FlatXmlDataSetBuilder().build(new ByteArrayInputStream(new byte[0]));
+  }
+
+  @Override
   protected DatabaseOperation getSetUpOperation() {
       return DatabaseOperation.REFRESH;
   }
@@ -47,7 +55,8 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .isEqualTo(1);
     assertThat(update(SafeSql.of("insert into ITEMS(id, title, time) VALUES({id}, {title}, {time})", 2, "bar", barTime)))
         .isEqualTo(1);
-    assertThat(queryColumn(SafeSql.of("select title from {tbl} where id = {id}", SafeSql.of("ITEMS"), 1), "title"))
+    assertThat(queryColumn(
+            SafeSql.of("select title from {tbl} where id = {id}", /* tbl */ SafeSql.of("ITEMS"), 1), "title"))
         .containsExactly("foo");
     assertThat(queryColumn(SafeSql.of("select title from ITEMS where id = {id}", 2), "title"))
         .containsExactly("bar");
