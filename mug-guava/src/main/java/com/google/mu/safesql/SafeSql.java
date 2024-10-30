@@ -38,10 +38,15 @@ import com.google.mu.util.StringFormat.Template;
  * <p>This class is intended to work with JDBC {@link Connection} and {@link PreparedStatement} API
  * with parameters set through the {@link PreparedStatement#setObject(int, Object) setObject()} method.
  * The main use case though, is to be able to compose subqueries and leaf-level parameters with a
- * consistent templating API. For trivial parameterization, you can use:
+ * consistent templating API.
+ *
+ * <p>For trivial parameterization, you can use:
  * <pre>{@code
  *   SafeSql sql = SafeSql.of(
- *       "select id from Employees where firstName = {first_name} and lastName = {last_name}",
+ *       """
+ *       select id from Employees
+ *       where firstName = {first_name} and lastName = {last_name}
+ *       """,
  *       firstName, lastName);
  *   try (var statement = sql.prepareStatement(connection),
  *       var resultSet = statement.executeQuery()) {
@@ -87,8 +92,8 @@ import com.google.mu.util.StringFormat.Template;
  *   SafeSql usersQuery = queryUsers(userCriteria, "firstName", "lastName");
  * }</pre>
  *
- * <p>In contrast, {@link SafeQuery} directly escapes string parameters and is intended for SQL engines
- * that don't provide native safe parameterized queries support.
+ * <p>In contrast, {@link SafeQuery} directly escapes string parameters and is intended
+ * to be used with SQL engines that don't have native support for parameterized queries.
  *
  * @since 8.2
  */
@@ -121,7 +126,8 @@ public final class SafeSql {
    * <p>For example:
    *
    * <pre>{@code
-   * PreparedStatement statement = SafeSql.of("select * from JOBS where id = {id}", jobId).prepare(connection);
+   * PreparedStatement statement =
+   *     SafeSql.of("select * from JOBS where id = {id}", jobId).prepare(connection);
    * }</pre>
    */
   @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
@@ -158,7 +164,7 @@ public final class SafeSql {
    * <pre>{@code
    * SafeSql query = SafeSql.of(
    *     "SELECT * FROM jobs {where}",
-   *     SafeSql.optionally("WHERE {filter}", getOptionalFilter()));
+   *     SafeSql.optionally("WHERE {filter}", getOptionalWhereClause()));
    * }</pre>
    */
   @TemplateFormatMethod
