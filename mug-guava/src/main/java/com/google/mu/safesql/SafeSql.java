@@ -311,12 +311,20 @@ public final class SafeSql {
     }
   }
 
-  /** Returns the parameter values in the order they occur in the sql. */
+  /**
+   * Returns the parameter values in the order they occur in the SQL.
+   * They are used by methods like {@link #prepareStatement} and {@link #prepareCall}
+   * to create and populate the returned {@link PreparedStatement}
+   */
   public List<?> getParameters() {
     return paramValues;
   }
 
-  /** Returns the SQL text that can be used to create {@link PreparedStatement}. */
+  /**
+   * Returns the SQL text with {@code '?'} as the placeholders.
+   * It's used by methods like {@link #prepareStatement} and {@link #prepareCall}
+   * to create and populate the returned {@link PreparedStatement}.
+   */
   @Override
   public String toString() {
     return sql;
