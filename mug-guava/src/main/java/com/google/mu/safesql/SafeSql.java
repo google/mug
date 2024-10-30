@@ -2,6 +2,7 @@ package com.google.mu.safesql;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.mu.util.Substring.suffix;
 import static java.util.Collections.emptyList;
@@ -226,43 +227,42 @@ public final class SafeSql {
         (fragments, placeholders) -> {
           Iterator<String> it = fragments.iterator();
           AtomicReference<String> next = new AtomicReference<>(it.next());
-          return placeholders
-              .collect(
-                  new Builder(),
-                  (builder, placeholder, value) -> {
-                    String paramName = placeholder.skip(1, 1).toString().trim();
-                    if (value instanceof SafeSql) {
-                      validate(paramName);
-                      builder.appendSql(next.getAndSet(it.next())).addSubQuery((SafeSql) value);
-                    } else {
-                      checkArgument(!(value instanceof SafeQuery), "Don't mix SafeQuery with SafeSql.");
-                      checkArgument(
-                          !(value instanceof Optional),
-                          "Optional parameter not supported. Consider using SafeSql.optionally() or SafeSql.when()?");
-                      if (placeholder.isImmediatelyBetween("'%", "%'")) {
-                        checkArgument(value instanceof String, "Placeholder '%%s%' must be String", placeholder);
-                        builder.appendSql(suffix("'%").removeFrom(next.getAndSet(it.next().substring(2))));
-                        builder.addParameter(paramName, "%" + escapePercent((String) value) + "%");
-                      } else if (placeholder.isImmediatelyBetween("'%", "'")) {
-                        checkArgument(value instanceof String, "Placeholder '%%s' must be String", placeholder);
-                        builder.appendSql(suffix("'%").removeFrom(next.getAndSet(it.next().substring(1))));
-                        builder.addParameter(paramName, "%" + escapePercent((String) value));
-                      } else if (placeholder.isImmediatelyBetween("'", "%'")) {
-                        checkArgument(value instanceof String, "Placeholder '%s%' must be String", placeholder);
-                        builder.appendSql(suffix("'").removeFrom(next.getAndSet(it.next().substring(2))));
-                        builder.addParameter(paramName, escapePercent((String) value) + "%");
-                      } else if (placeholder.isImmediatelyBetween("'", "'")) {
-                        checkArgument(value instanceof String, "Placeholder '%s' must be String", placeholder);
-                        builder.appendSql(suffix("'").removeFrom(next.getAndSet(it.next().substring(1))));
-                        builder.addParameter(paramName, value);
-                      } else {
-                        builder.appendSql(next.getAndSet(it.next()));
-                        builder.addParameter(paramName, value);
-                      }
-                    }
-                  })
-              .appendSql(next.get())
-              .build();
+          Builder builder = new Builder();
+          placeholders.forEach((placeholder, value) -> {
+            String paramName = placeholder.skip(1, 1).toString().trim();
+            if (value instanceof SafeSql) {
+              validate(paramName);
+              builder.appendSql(next.getAndSet(it.next())).addSubQuery((SafeSql) value);
+            } else {
+              checkArgument(!(value instanceof SafeQuery), "Don't mix SafeQuery with SafeSql.");
+              checkArgument(
+                  !(value instanceof Optional),
+                  "Optional parameter not supported. Consider using SafeSql.optionally() or SafeSql.when()?");
+              if (placeholder.isImmediatelyBetween("'%", "%'")) {
+                checkArgument(value instanceof String, "Placeholder '%%s%' must be String", placeholder);
+                builder.appendSql(suffix("'%").removeFrom(next.getAndSet(it.next().substring(2))));
+                builder.addParameter(paramName, "%" + escapePercent((String) value) + "%");
+              } else if (placeholder.isImmediatelyBetween("'%", "'")) {
+                checkArgument(value instanceof String, "Placeholder '%%s' must be String", placeholder);
+                builder.appendSql(suffix("'%").removeFrom(next.getAndSet(it.next().substring(1))));
+                builder.addParameter(paramName, "%" + escapePercent((String) value));
+              } else if (placeholder.isImmediatelyBetween("'", "%'")) {
+                checkArgument(value instanceof String, "Placeholder '%s%' must be String", placeholder);
+                builder.appendSql(suffix("'").removeFrom(next.getAndSet(it.next().substring(2))));
+                builder.addParameter(paramName, escapePercent((String) value) + "%");
+              } else if (placeholder.isImmediatelyBetween("'", "'")) {
+                checkArgument(value instanceof String, "Placeholder '%s' must be String", placeholder);
+                builder.appendSql(suffix("'").removeFrom(next.getAndSet(it.next().substring(1))));
+                builder.addParameter(paramName, value);
+              } else {
+                builder.appendSql(next.getAndSet(it.next()));
+                builder.addParameter(paramName, value);
+              }
+            }
+          });
+          builder.appendSql(next.get());
+          checkState(!it.hasNext());
+          return builder.build();
         });
   }
 
