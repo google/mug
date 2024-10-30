@@ -223,12 +223,12 @@ public final class SafeSql {
    */
   public static Template<SafeSql> template(@CompileTimeConstant String template) {
     return StringFormat.template(template, (fragments, placeholders) -> {
-      class Composer {
+      class SqlComposer {
         private final Iterator<String> it = fragments.iterator();
         private final Builder builder = new Builder();
         private String next = it.next();
 
-        SafeSql compose() {
+        SafeSql composeSql() {
           placeholders.forEachOrdered(this::composeForPlaceholder);
           builder.appendSql(next);
           checkState(!it.hasNext());
@@ -278,7 +278,7 @@ public final class SafeSql {
           return fragment;
         }
       }
-      return new Composer().compose();
+      return new SqlComposer().composeSql();
     });
   }
 
