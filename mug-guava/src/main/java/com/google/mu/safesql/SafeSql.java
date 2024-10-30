@@ -138,7 +138,8 @@ public final class SafeSql {
    *
    * <pre>{@code
    * PreparedStatement statement =
-   *     SafeSql.of("select * from JOBS where id = {id}", jobId).prepare(connection);
+   *     SafeSql.of("select * from JOBS where id = {id}", jobId)
+   *         .prepareStatement(connection);
    * }</pre>
    */
   @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
