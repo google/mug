@@ -63,7 +63,7 @@ import com.google.mu.util.StringFormat.Template;
  * untrusted strings in the SQL, ensuring that they can only be sent as parameters:
  * try to use a dynamically generated String as the SQL and you'll get a compilation error.
  * In addition, the same set of compile-time guardrails from the {@link StringFormat} class
- * are also in effect to make sure that you don't pass {@code lastName} in the place of
+ * are in effect to make sure that you don't pass {@code lastName} in the place of
  * {@code first_name}, for example.
  *
  * <p>That said, the main benefit of this library lies in flexible and dynamic query
