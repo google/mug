@@ -3,6 +3,7 @@ package com.google.mu.safesql;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.mu.util.Substring.suffix;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -18,6 +19,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
@@ -30,6 +32,7 @@ import com.google.mu.annotations.TemplateFormatMethod;
 import com.google.mu.annotations.TemplateString;
 import com.google.mu.util.StringFormat;
 import com.google.mu.util.StringFormat.Template;
+import com.google.mu.util.Substring;
 
 /**
  * An injection-safe parameterized SQL, constructed using compile-time enforced templates and can be
@@ -90,7 +93,7 @@ import com.google.mu.util.StringFormat.Template;
  *         SafeSql.listOf(columns).stream().collect(SafeSql.joining(", ")),
  *         Stream.of(
  *               optionally("id = {id}", criteria.userId()),
- *               optionally("firstName = {first_name}", criteria.firstName()))
+ *               optionally("firstName LIKE '%{first_name}%'", criteria.firstName()))
  *           .collect(SafeSql.and()));
  *   }
  *
@@ -101,12 +104,12 @@ import com.google.mu.util.StringFormat.Template;
  * unspecified (empty), the resulting SQL will look like:
  *
  * <pre>{@code
- * select firstName, lastName from Users where firstName = ?
+ * select firstName, lastName from Users where firstName LIKE ?
  * }</pre>
  *
  * And when you call {@code usersQuery.prepareStatement(connection)},
- * {@code statement.setObject(1, criteria.firstName().get())} will be called to populate
- * the PreparedStatement.
+ * {@code statement.setObject(1, "%" + criteria.firstName().get() + "%")} will be called
+ * to populate the PreparedStatement.
  *
  * <p>In contrast, {@link SafeQuery} directly escapes string parameters and is intended
  * to be used with SQL engines that don't have native support for parameterized queries.
@@ -222,24 +225,43 @@ public final class SafeSql {
         template,
         (fragments, placeholders) -> {
           Iterator<String> it = fragments.iterator();
+          AtomicReference<String> next = new AtomicReference<>(it.next());
           return placeholders
               .collect(
                   new Builder(),
                   (builder, placeholder, value) -> {
-                    builder.appendSql(it.next());
                     String paramName = placeholder.skip(1, 1).toString().trim();
                     if (value instanceof SafeSql) {
                       validate(paramName);
-                      builder.addSubQuery((SafeSql) value);
+                      builder.appendSql(next.getAndSet(it.next())).addSubQuery((SafeSql) value);
                     } else {
                       checkArgument(!(value instanceof SafeQuery), "Don't mix SafeQuery with SafeSql.");
                       checkArgument(
                           !(value instanceof Optional),
                           "Optional parameter not supported. Consider using SafeSql.optionally() or SafeSql.when()?");
-                      builder.addParameter(paramName, value);
+                      if (placeholder.isImmediatelyBetween("'%", "%'")) {
+                        checkArgument(value instanceof String, "Placeholder '%%s%' must be String", placeholder);
+                        builder.appendSql(suffix("'%").removeFrom(next.getAndSet(it.next().substring(2))));
+                        builder.addParameter(paramName, "%" + escapePercent((String) value) + "%");
+                      } else if (placeholder.isImmediatelyBetween("'%", "'")) {
+                        checkArgument(value instanceof String, "Placeholder '%%s' must be String", placeholder);
+                        builder.appendSql(suffix("'%").removeFrom(next.getAndSet(it.next().substring(1))));
+                        builder.addParameter(paramName, "%" + escapePercent((String) value));
+                      } else if (placeholder.isImmediatelyBetween("'", "%'")) {
+                        checkArgument(value instanceof String, "Placeholder '%s%' must be String", placeholder);
+                        builder.appendSql(suffix("'").removeFrom(next.getAndSet(it.next().substring(2))));
+                        builder.addParameter(paramName, escapePercent((String) value) + "%");
+                      } else if (placeholder.isImmediatelyBetween("'", "'")) {
+                        checkArgument(value instanceof String, "Placeholder '%s' must be String", placeholder);
+                        builder.appendSql(suffix("'").removeFrom(next.getAndSet(it.next().substring(1))));
+                        builder.addParameter(paramName, value);
+                      } else {
+                        builder.appendSql(next.getAndSet(it.next()));
+                        builder.addParameter(paramName, value);
+                      }
                     }
                   })
-              .appendSql(it.next())
+              .appendSql(next.get())
               .build();
         });
   }
@@ -376,6 +398,10 @@ public final class SafeSql {
 
   private SafeSql parenthesized() {
     return new SafeSql("(" + sql + ")", paramValues);
+  }
+
+  private static String escapePercent(String s) {
+    return Substring.first(c -> c == '\\' || c == '%').repeatedly().replaceAllFrom(s, c -> "\\" + c);
   }
 
   private static <R> Collector<SafeSql, ?, R> nonEmptyQueries(

@@ -76,6 +76,7 @@ public final class SafeQuery {
   }
 
   /** Returns a query using a compile-time constant query. */
+  @TemplateFormatMethod
   public static SafeQuery of(@CompileTimeConstant @TemplateString String query) {
     return new SafeQuery(checkNotNull(query));
   }

@@ -58,6 +58,126 @@ public class SafeSqlTest {
   }
 
   @Test
+  public void singleLikeParameterWithWildcardAtBothEnds() {
+    SafeSql sql = SafeSql.of("select * from tbl where name like '%{s}%'", "foo");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ?");
+    assertThat(sql.getParameters()).containsExactly("%foo%");
+  }
+
+  @Test
+  public void literalPercentValueWithWildcardAtBothEnds() {
+    SafeSql sql = SafeSql.of("select * from tbl where name like '%{s}%'", "%");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ?");
+    assertThat(sql.getParameters()).containsExactly("%\\%%");
+  }
+
+  @Test
+  public void literalBackslashValueWithWildcardAtBothEnds() {
+    SafeSql sql = SafeSql.of("select * from tbl where name like '%{s}%'", "\\");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ?");
+    assertThat(sql.getParameters()).containsExactly("%\\\\%");
+  }
+
+  @Test
+  public void stringRequiredWhenWildcardsAtBothEnds() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.of("select * from tbl where name like '%{s}%'", 1));
+    assertThat(thrown).hasMessageThat().contains("String");
+    assertThat(thrown).hasMessageThat().contains("'%{s}%'");
+  }
+
+  @Test
+  public void singleLikeParameterWithWildcardAsPrefix() {
+    SafeSql sql = SafeSql.of("select * from tbl where name like '%{s}'", "foo");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ?");
+    assertThat(sql.getParameters()).containsExactly("%foo");
+  }
+
+  @Test
+  public void literalPercentValueWithWildcardAtPrefix() {
+    SafeSql sql = SafeSql.of("select * from tbl where name like '%{s}'", "%");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ?");
+    assertThat(sql.getParameters()).containsExactly("%\\%");
+  }
+
+  @Test
+  public void literalBackslashValueWithWildcardAtPrefix() {
+    SafeSql sql = SafeSql.of("select * from tbl where name like '%{s}'", "\\");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ?");
+    assertThat(sql.getParameters()).containsExactly("%\\\\");
+  }
+
+  @Test
+  public void stringRequiredWhenWildcardsAsPrefix() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.of("select * from tbl where name like '%{s}'", 1));
+    assertThat(thrown).hasMessageThat().contains("String");
+    assertThat(thrown).hasMessageThat().contains("'%{s}'");
+  }
+
+  @Test
+  public void singleLikeParameterWithWildcardAsSuffix() {
+    SafeSql sql = SafeSql.of("select * from tbl where name like '{s}%'", "foo");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ?");
+    assertThat(sql.getParameters()).containsExactly("foo%");
+  }
+
+  @Test
+  public void literalPercentValueWithWildcardAtSuffix() {
+    SafeSql sql = SafeSql.of("select * from tbl where name like '{s}%'", "%");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ?");
+    assertThat(sql.getParameters()).containsExactly("\\%%");
+  }
+
+  @Test
+  public void literalBackslashValueWithWildcardAtSuffix() {
+    SafeSql sql = SafeSql.of("select * from tbl where name like '{s}%'", "\\");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ?");
+    assertThat(sql.getParameters()).containsExactly("\\\\%");
+  }
+
+  @Test
+  public void stringRequiredWhenWildcardsAsSuffix() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.of("select * from tbl where name like '{s}%'", 1));
+    assertThat(thrown).hasMessageThat().contains("String");
+    assertThat(thrown).hasMessageThat().contains("'{s}%'");
+  }
+
+  @Test
+  public void stringParameterQuoted() {
+    SafeSql sql = SafeSql.of("select * from tbl where name = '{s}'", "foo");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name = ?");
+    assertThat(sql.getParameters()).containsExactly("foo");
+  }
+
+  @Test
+  public void literalPercentValueQuoted() {
+    SafeSql sql = SafeSql.of("select * from tbl where name = '{s}'", "%");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name = ?");
+    assertThat(sql.getParameters()).containsExactly("%");
+  }
+
+  @Test
+  public void literalBackslashValueQuoted() {
+    SafeSql sql = SafeSql.of("select * from tbl where name = '{s}'", "\\");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name = ?");
+    assertThat(sql.getParameters()).containsExactly("\\");
+  }
+
+  @Test
+  public void nonStringParameterQuoted_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.of("select * from tbl where name like '{s}'", 1));
+    assertThat(thrown).hasMessageThat().contains("String");
+    assertThat(thrown).hasMessageThat().contains("'{s}'");
+  }
+
+  @Test
   public void twoParameters() {
     SafeSql sql =
         SafeSql.of("select {label} where id = {id}", /* label */ "foo", /* id */ 123);
@@ -292,7 +412,7 @@ public class SafeSqlTest {
   public void optionalParameterDisallowed() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
-        () -> SafeSql.of("select * where id = {id}", Optional.of(1)));
+        () -> SafeSql.of("select * where id = {id}", /* id */ Optional.of(1)));
     assertThat(thrown).hasMessageThat().contains("optionally()");
   }
 
