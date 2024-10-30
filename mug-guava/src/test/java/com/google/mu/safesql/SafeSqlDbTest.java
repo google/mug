@@ -73,7 +73,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")))
         .isEqualTo(1);
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title like {t} and id = {id}", "%o%", testId()), "title"))
+            SafeSql.of("select title from ITEMS where title like {...} and id = {id}", "%o%", testId()), "title"))
         .containsExactly("foo");
   }
 
@@ -82,10 +82,10 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), title)))
         .isEqualTo(1);
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title like '%{t}%' and id = {id}", "'s", testId()), "title"))
+            SafeSql.of("select title from ITEMS where title like '%{...}%' and id = {id}", "'s", testId()), "title"))
         .containsExactly(title);
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title like '%{t}%' and id = {id}", "at?", testId()), "title"))
+            SafeSql.of("select title from ITEMS where title like '%{...}%' and id = {id}", "at?", testId()), "title"))
         .containsExactly(title);
   }
 
@@ -93,7 +93,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "%")))
         .isEqualTo(1);
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title = '{t}' and id = {id}", "%", testId()), "title"))
+            SafeSql.of("select title from ITEMS where title = '{...}' and id = {id}", "%", testId()), "title"))
         .containsExactly("%");
   }
 
@@ -101,7 +101,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "\\")))
         .isEqualTo(1);
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title = '{t}' and id = {id}", "\\", testId()), "title"))
+            SafeSql.of("select title from ITEMS where title = '{...}' and id = {id}", "\\", testId()), "title"))
         .containsExactly("\\");
   }
 
@@ -109,7 +109,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")))
         .isEqualTo(1);
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title like '{t}%' and id = {id}", "fo", testId()), "title"))
+            SafeSql.of("select title from ITEMS where title like '{...}%' and id = {id}", "fo", testId()), "title"))
         .containsExactly("foo");
   }
 
@@ -117,7 +117,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")))
         .isEqualTo(1);
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title like '%{t}' and id = {id}", "oo", testId()), "title"))
+            SafeSql.of("select title from ITEMS where title like '%{...}' and id = {id}", "oo", testId()), "title"))
         .containsExactly("foo");
   }
 
@@ -125,7 +125,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")))
         .isEqualTo(1);
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title = '{t}' and id = {id}", "foo", testId()), "title"))
+            SafeSql.of("select title from ITEMS where title = '{...}' and id = {id}", "foo", testId()), "title"))
         .containsExactly("foo");
   }
 
@@ -133,13 +133,13 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")))
         .isEqualTo(1);
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title like '%{t}%' and id = {id}", "%", testId()), "title"))
+            SafeSql.of("select title from ITEMS where title like '%{...}%' and id = {id}", "%", testId()), "title"))
         .isEmpty();
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title like '%{t}' and id = {id}", "%", testId()), "title"))
+            SafeSql.of("select title from ITEMS where title like '%{...}' and id = {id}", "%", testId()), "title"))
         .isEmpty();
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title like '{t}%' and id = {id}", "%", testId()), "title"))
+            SafeSql.of("select title from ITEMS where title like '{...}%' and id = {id}", "%", testId()), "title"))
         .isEmpty();
   }
 
@@ -147,13 +147,13 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")))
         .isEqualTo(1);
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title like '%{t}%' and id = {id}", "\\", testId()), "title"))
+            SafeSql.of("select title from ITEMS where title like '%{...}%' and id = {id}", "\\", testId()), "title"))
         .isEmpty();
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title like '%{t}' and id = {id}", "\\", testId()), "title"))
+            SafeSql.of("select title from ITEMS where title like '%{...}' and id = {id}", "\\", testId()), "title"))
         .isEmpty();
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title like '{t}%' and id = {id}", "\\", testId()), "title"))
+            SafeSql.of("select title from ITEMS where title like '{...}%' and id = {id}", "\\", testId()), "title"))
         .isEmpty();
   }
 
@@ -161,13 +161,13 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "a\\b")))
         .isEqualTo(1);
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title like '%{t}%' and id = {id}", "\\", testId()), "title"))
+            SafeSql.of("select title from ITEMS where title like '%{...}%' and id = {id}", "\\", testId()), "title"))
         .containsExactly("a\\b");
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title like '%{t}' and id = {id}", "\\b", testId()), "title"))
+            SafeSql.of("select title from ITEMS where title like '%{...}' and id = {id}", "\\b", testId()), "title"))
         .containsExactly("a\\b");
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title like '{t}%' and id = {id}", "a\\", testId()), "title"))
+            SafeSql.of("select title from ITEMS where title like '{...}%' and id = {id}", "a\\", testId()), "title"))
         .containsExactly("a\\b");
   }
 
