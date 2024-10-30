@@ -264,6 +264,10 @@ public final class SafeQuery {
     return query.hashCode();
   }
 
+  static boolean isTrusted(Object value) {
+    return value instanceof SafeQuery || value.getClass().getName().equals(TRUSTED_SQL_TYPE_NAME);
+  }
+
   private SafeQuery parenthesized() {
     return new SafeQuery("(" + query + ")");
   }
@@ -443,10 +447,6 @@ public final class SafeQuery {
         }
       }
       return builder.toString();
-    }
-
-    private static boolean isTrusted(Object value) {
-      return value instanceof SafeQuery || value.getClass().getName().equals(TRUSTED_SQL_TYPE_NAME);
     }
 
     private static void validatePlaceholder(Substring.Match placeholder) {
