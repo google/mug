@@ -127,6 +127,65 @@ import com.google.mu.util.Substring;
  * <p>In contrast, {@link SafeQuery} directly escapes string parameters and is intended
  * to be used with SQL engines that don't have native support for parameterized queries.
  *
+ * <p>Note that with straight JDBC, if you try to use the LIKE operator to match a user-provided
+ * substring, i.e. using {@code LIKE '%foo%'} to search for "foo", this seemingly intuitive
+ * syntax is actually incorect: <pre>{@code
+ *   String searchBy = ...;
+ *   PreparedStatement statement =
+ *       connection.prepareStatement("select * from Users where firstName LIKE '%?%'");
+ *   statement.setString(1, searchBy);
+ * }</pre>
+ *
+ * JDBC considers the quoted question mark as a literal so the {@code setString()}
+ * call will fail. You'll need to use the following workaround: <pre>{@code
+ *   PreparedStatement statement =
+ *       connection.prepareStatement("select * from Users where firstName LIKE ?");
+ *   statement.setString(1, "%" + searchBy + "%");
+ * }</pre>
+ *
+ * And even then, if the {@code searchTerm} includes special characters like '%' or backslash ('\'),
+ * they'll be interepreted as wildcards and escape characters, opening it up to a form of
+ * SQL injection despite already using the parameterized SQL.
+ *
+ * <p>The SafeSql template protects you from this caveat. The most intuitive syntax does exactly
+ * what you'd expect (and it escapes special characters too): <pre>{@code
+ *   String searchBy = ...;
+ *   SafeSql sql = SafeSql.of(
+ *       "select * from Users where firstName LIKE '%{search_term}%'", searchTerm);
+ *   try (PreparedStatement statement = sql.prepareStatement(connection)) {
+ *     ...
+ *   }
+ * }</pre>
+ *
+ * And even when you don't use LIKE operator or the percent sign (%), it may still be more readable
+ * to quote the string parameters just so the SQL template explicitly tells readers that
+ * the parameter is a string. The following template works with or without the quotes: <pre>{@code
+ *   // Reads more clearly that the {id} is a string
+ *   SafeSql sql = SafeSql.of("select * from Users where id = '{id}'", userId);
+ * }</pre>
+ *
+ * <p>A useful tip: the compile-time check tries to be helpful and checks that if you use the
+ * same parameter name more than once in the template, the same value must be used for it.
+ *
+ * So for example, if you are trying to generate a SQL that looks like: <pre>{@code
+ *   SELECT u.firstName, p.profileId
+ *   FROM (select firstName FROM Users where id = 'foo') u,
+ *        (select profileId FROM Profiles where userId = 'foo') p
+ * }</pre>
+ *
+ * It'll be important to use the same user id for both subqueries. And you can use the following
+ * template to make sure of it at compile time: <pre>{@code
+ *   SafeSql sql = SafeSql.of(
+ *       """
+ *       SELECT u.firstName, p.profileId
+ *       FROM (select firstName FROM Users where id = {user_id}) u,
+ *            (select profileId FROM Profiles where userId = {user_id}) p
+ *       """,
+ *       userId, userId);
+ * }</pre>
+ *
+ * If someone mistakenly passes in inconsistent ids, they'll get a compilation error.
+ *
  * @since 8.2
  */
 public final class SafeSql {
