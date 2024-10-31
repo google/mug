@@ -2,6 +2,7 @@ package com.google.mu.safesql;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.safesql.SafeSql.template;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
 
 import java.util.Optional;
@@ -48,6 +49,52 @@ public class SafeSqlTest {
     SafeSql sql = SafeSql.of("select {i}", 123);
     assertThat(sql.toString()).isEqualTo("select ?");
     assertThat(sql.getParameters()).containsExactly(123);
+  }
+
+  @Test
+  public void listOfSafeSqlParameter() {
+    SafeSql sql = SafeSql.of(
+        "select {columns} from tbl",
+        /* columns */ SafeSql.listOf("c1", "c2"));
+    assertThat(sql.toString()).isEqualTo("select c1, c2 from tbl");
+    assertThat(sql.getParameters()).isEmpty();
+  }
+
+  @Test
+  public void emptyListParameter_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () ->SafeSql.of("select {columns} from tbl", /* columns */ asList()));
+    assertThat(thrown).hasMessageThat().contains("{columns} cannot be empty");
+  }
+
+  @Test
+  public void listWithNullSafeSql_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.of(
+            "select {columns} from tbl",
+            /* columns */ asList(SafeSql.of("c1"), null, SafeSql.of("c3"))));
+    assertThat(thrown).hasMessageThat().contains("{columns}[1] expected to be SafeSql, but is null");
+  }
+
+  @Test
+  public void listWithNonSafeSql_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.of(
+            "select {columns} from tbl",
+            /* columns */ asList(SafeSql.of("c1"), SafeSql.of("c2"), "c3")));
+    assertThat(thrown)
+        .hasMessageThat().contains("{columns}[2] expected to be SafeSql, but is class java.lang.String");
+  }
+
+  @Test
+  public void emptyListParameter_placeholderWithQuestionMark() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.of("select {columns?} from tbl", /* columns */ SafeSql.listOf("c1")));
+    assertThat(thrown).hasMessageThat().contains("'?'");
   }
 
   @Test

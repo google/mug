@@ -317,10 +317,17 @@ public final class SafeSql {
         }
 
         private void composeForPlaceholder(Substring.Match placeholder, Object value) {
-          String paramName = placeholder.skip(1, 1).toString().trim();
+          String paramName = validate(placeholder.skip(1, 1).toString().trim());
           if (value instanceof SafeSql) {
-            validate(paramName);
             builder.appendSql(nextFragment()).addSubQuery((SafeSql) value);
+            return;
+          }
+          if (value instanceof Iterable) {
+            builder
+                .appendSql(nextFragment())
+                .addSubQuery(
+                    toNonEmptySubQueries(
+                        placeholder, (Iterable<?>) value).stream().collect(joining(", ")));
             return;
           }
           checkArgument(!(value instanceof SafeQuery), "Don't mix SafeQuery with SafeSql.");
@@ -488,6 +495,23 @@ public final class SafeSql {
     return statement;
   }
 
+  private static ImmutableList<SafeSql> toNonEmptySubQueries(
+      CharSequence placeholder, Iterable<?> arg) {
+    ImmutableList.Builder<SafeSql> builder = ImmutableList.builder();
+    int index = 0;
+    for (Object element : arg) {
+      checkArgument(
+          element != null, "%s[%s] expected to be SafeSql, but is null", placeholder, index);
+      checkArgument(
+          element instanceof SafeSql,
+          "%s[%s] expected to be SafeSql, but is %s", placeholder, index, element.getClass());
+      builder.add((SafeSql) element);
+      index++;
+    }
+    checkArgument(index > 0, "%s cannot be empty list", placeholder);
+    return builder.build();
+  }
+
   private static String validate(String sql) {
     checkArgument(sql.indexOf('?') < 0, "please use named {placeholder} instead of '?'");
     return sql;
@@ -511,7 +535,6 @@ public final class SafeSql {
     }
 
     Builder addParameter(String name, Object value) {
-      validate(name);
       queryText.append("?");
       paramValues.add(value);
       return this;
