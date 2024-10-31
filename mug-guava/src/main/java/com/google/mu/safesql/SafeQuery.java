@@ -19,7 +19,7 @@ import static com.google.common.base.CharMatcher.javaIsoControl;
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.mu.safesql.Java9.filtering;
+import static com.google.mu.safesql.InternalCollectors.skippingEmpty;
 import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.Substring.suffix;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -237,7 +237,7 @@ public final class SafeQuery {
    */
   public static Collector<SafeQuery, ?, SafeQuery> and() {
     return collectingAndThen(
-        nonEmptyQueries(mapping(SafeQuery::parenthesized, joining(" AND "))),
+        skippingEmpty(mapping(SafeQuery::parenthesized, joining(" AND "))),
         query -> query.toString().isEmpty() ? new SafeQuery("TRUE") : query);
   }
 
@@ -252,7 +252,7 @@ public final class SafeQuery {
    */
   public static Collector<SafeQuery, ?, SafeQuery> or() {
     return collectingAndThen(
-        nonEmptyQueries(mapping(SafeQuery::parenthesized, joining(" OR "))),
+        skippingEmpty(mapping(SafeQuery::parenthesized, joining(" OR "))),
         query -> query.toString().isEmpty() ? new SafeQuery("FALSE") : query);
   }
 
@@ -264,7 +264,7 @@ public final class SafeQuery {
    */
   public static Collector<SafeQuery, ?, SafeQuery> joining(@CompileTimeConstant String delim) {
     return collectingAndThen(
-        nonEmptyQueries(mapping(SafeQuery::toString, Collectors.joining(checkNotNull(delim)))), SafeQuery::new);
+        skippingEmpty(mapping(SafeQuery::toString, Collectors.joining(checkNotNull(delim)))), SafeQuery::new);
   }
 
   /** Returns the encapsulated SQL query. */
@@ -305,11 +305,6 @@ public final class SafeQuery {
    */
   private SafeQuery guardDashExpression(Substring.Match placeholder) {
     return query.startsWith("-") && !placeholder.isImmediatelyBetween("(", ")") ? parenthesized() : this;
-  }
-
-  private static <R> Collector<SafeQuery, ?, R> nonEmptyQueries(
-      Collector<SafeQuery, ?, R> downstream) {
-    return filtering(q -> !q.query.isEmpty(), downstream);
   }
 
   /**

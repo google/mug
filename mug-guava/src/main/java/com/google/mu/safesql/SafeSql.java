@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.mu.safesql.Java9.filtering;
+import static com.google.mu.safesql.InternalCollectors.skippingEmpty;
 import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.Substring.suffix;
 import static java.util.Collections.emptyList;
@@ -313,7 +313,7 @@ public final class SafeSql {
    */
   public static Collector<SafeSql, ?, SafeSql> and() {
     return collectingAndThen(
-        nonEmptyQueries(mapping(SafeSql::parenthesized, joining(" AND "))),
+        skippingEmpty(mapping(SafeSql::parenthesized, joining(" AND "))),
         query -> query.sql.isEmpty() ? of("1 = 1") : query);
   }
 
@@ -326,7 +326,7 @@ public final class SafeSql {
    */
   public static Collector<SafeSql, ?, SafeSql> or() {
     return collectingAndThen(
-        nonEmptyQueries(mapping(SafeSql::parenthesized, joining(" OR "))),
+        skippingEmpty(mapping(SafeSql::parenthesized, joining(" OR "))),
         query -> query.sql.isEmpty() ? of("1 = 0") : query);
   }
 
@@ -352,7 +352,7 @@ public final class SafeSql {
    */
   public static Collector<SafeSql, ?, SafeSql> joining(@CompileTimeConstant String delimiter) {
     validate(delimiter);
-    return nonEmptyQueries(
+    return skippingEmpty(
         Collector.of(
             Builder::new,
             (b, q) -> b.appendDelimiter(delimiter).addSubQuery(q),
@@ -440,11 +440,6 @@ public final class SafeSql {
 
   private static String escapePercent(String s) {
     return Substring.first(c -> c == '\\' || c == '%').repeatedly().replaceAllFrom(s, c -> "\\" + c);
-  }
-
-  private static <R> Collector<SafeSql, ?, R> nonEmptyQueries(
-      Collector<SafeSql, ?, R> downstream) {
-    return filtering(q -> !q.sql.isEmpty(), downstream);
   }
 
   private static final class Builder {
