@@ -326,11 +326,11 @@ public final class SafeSql {
             return;
           }
           if (value instanceof Iterable) {
-            ImmutableList<SafeSql> subQueries = toSubQueries(placeholder, (Iterable<?>) value);
-            checkArgument(subQueries.size() > 0, "%s cannot be empty list", placeholder);
+            ImmutableList<SafeSql> subqueries = mustBeSubqueries(placeholder, (Iterable<?>) value);
+            checkArgument(subqueries.size() > 0, "%s cannot be empty list", placeholder);
             builder
                 .appendSql(nextFragment())
-                .addSubQuery(subQueries.stream().collect(joining(", ")));
+                .addSubQuery(subqueries.stream().collect(joining(", ")));
             return;
           }
           checkArgument(!(value instanceof SafeQuery), "Don't mix SafeQuery with SafeSql.");
@@ -498,7 +498,8 @@ public final class SafeSql {
     return statement;
   }
 
-  private static ImmutableList<SafeSql> toSubQueries(CharSequence placeholder, Iterable<?> arg) {
+  private static ImmutableList<SafeSql> mustBeSubqueries(
+      CharSequence placeholder, Iterable<?> arg) {
     return BiStream.zip(indexesFrom(0), stream(arg))
         .mapToObj((index, element) -> {
             checkArgument(
