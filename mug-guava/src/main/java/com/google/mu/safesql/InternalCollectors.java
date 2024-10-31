@@ -14,18 +14,24 @@
  *****************************************************************************/
 package com.google.mu.safesql;
 
-import java.sql.SQLException;
+import java.util.function.BiConsumer;
+import java.util.function.Predicate;
+import java.util.stream.Collector;
+import java.util.stream.Collector.Characteristics;
 
-/** A simple unchecked wrapper of {@link SQLException}. */
-public class UncheckedSqlException extends RuntimeException {
-  private final SQLException sqlException;
-
-  public UncheckedSqlException(SQLException sqlException) {
-    super(sqlException);
-    this.sqlException = sqlException;
+final class InternalCollectors {
+  static <Q, R> Collector<Q, ?, R> skippingEmpty(Collector<Q, ?, R> downstream) {
+    return filtering(q -> !q.toString().isEmpty(), downstream);
   }
 
-  public SQLException asChecked() {
-    return sqlException;
+  private static <T, A, R> Collector<T, A, R> filtering(
+      Predicate<? super T> filter, Collector<? super T, A, R> collector) {
+    BiConsumer<A, ? super T> accumulator = collector.accumulator();
+    return Collector.of(
+        collector.supplier(),
+        (a, input) -> {if (filter.test(input)) {accumulator.accept(a, input);}},
+        collector.combiner(),
+        collector.finisher(),
+        collector.characteristics().toArray(new Characteristics[0]));
   }
 }

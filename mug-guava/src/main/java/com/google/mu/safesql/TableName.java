@@ -14,18 +14,19 @@
  *****************************************************************************/
 package com.google.mu.safesql;
 
-import java.sql.SQLException;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
-/** A simple unchecked wrapper of {@link SQLException}. */
-public class UncheckedSqlException extends RuntimeException {
-  private final SQLException sqlException;
+import java.lang.annotation.Retention;
 
-  public UncheckedSqlException(SQLException sqlException) {
-    super(sqlException);
-    this.sqlException = sqlException;
-  }
-
-  public SQLException asChecked() {
-    return sqlException;
-  }
+/**
+ * Used to configure trusted table name to be used in safe SQL.
+ *
+ * <p>Frameworks can use this annotation to configure table names on classes, methods,
+ * enum constants etc. at compile time.
+ *
+ * @since 8.2
+ */
+@Retention(RUNTIME)
+public @interface TableName {
+  String value();
 }

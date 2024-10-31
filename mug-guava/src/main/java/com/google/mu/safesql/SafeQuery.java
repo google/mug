@@ -1,3 +1,17 @@
+/*****************************************************************************
+ * ------------------------------------------------------------------------- *
+ * Licensed under the Apache License, Version 2.0 (the "License");           *
+ * you may not use this file except in compliance with the License.          *
+ * You may obtain a copy of the License at                                   *
+ *                                                                           *
+ * http://www.apache.org/licenses/LICENSE-2.0                                *
+ *                                                                           *
+ * Unless required by applicable law or agreed to in writing, software       *
+ * distributed under the License is distributed on an "AS IS" BASIS,         *
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+ * See the License for the specific language governing permissions and       *
+ * limitations under the License.                                            *
+ *****************************************************************************/
 package com.google.mu.safesql;
 
 import static com.google.common.base.CharMatcher.anyOf;
@@ -5,6 +19,7 @@ import static com.google.common.base.CharMatcher.javaIsoControl;
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.mu.safesql.InternalCollectors.skippingEmpty;
 import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.Substring.suffix;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -13,10 +28,7 @@ import static java.util.stream.Collectors.mapping;
 import java.text.DecimalFormat;
 import java.util.Iterator;
 import java.util.Optional;
-import java.util.function.BiConsumer;
-import java.util.function.Predicate;
 import java.util.stream.Collector;
-import java.util.stream.Collector.Characteristics;
 import java.util.stream.Collectors;
 
 import com.google.common.base.CharMatcher;
@@ -86,6 +98,15 @@ public final class SafeQuery {
   @TemplateFormatMethod
   public static SafeQuery of(@CompileTimeConstant @TemplateString String query, Object... args) {
     return template(query).with(args);
+  }
+
+  /**
+   * Returns a SafeQuery wrapping {@code tableName}.
+   *
+   * @since 8.2
+   */
+  public static SafeQuery of(TableName tableName) {
+    return new SafeQuery(tableName.value());
   }
 
   /**
@@ -216,7 +237,7 @@ public final class SafeQuery {
    */
   public static Collector<SafeQuery, ?, SafeQuery> and() {
     return collectingAndThen(
-        nonEmptyQueries(mapping(SafeQuery::parenthesized, joining(" AND "))),
+        skippingEmpty(mapping(SafeQuery::parenthesized, joining(" AND "))),
         query -> query.toString().isEmpty() ? new SafeQuery("TRUE") : query);
   }
 
@@ -231,7 +252,7 @@ public final class SafeQuery {
    */
   public static Collector<SafeQuery, ?, SafeQuery> or() {
     return collectingAndThen(
-        nonEmptyQueries(mapping(SafeQuery::parenthesized, joining(" OR "))),
+        skippingEmpty(mapping(SafeQuery::parenthesized, joining(" OR "))),
         query -> query.toString().isEmpty() ? new SafeQuery("FALSE") : query);
   }
 
@@ -243,7 +264,7 @@ public final class SafeQuery {
    */
   public static Collector<SafeQuery, ?, SafeQuery> joining(@CompileTimeConstant String delim) {
     return collectingAndThen(
-        nonEmptyQueries(mapping(SafeQuery::toString, Collectors.joining(checkNotNull(delim)))), SafeQuery::new);
+        skippingEmpty(mapping(SafeQuery::toString, Collectors.joining(checkNotNull(delim)))), SafeQuery::new);
   }
 
   /** Returns the encapsulated SQL query. */
@@ -284,22 +305,6 @@ public final class SafeQuery {
    */
   private SafeQuery guardDashExpression(Substring.Match placeholder) {
     return query.startsWith("-") && !placeholder.isImmediatelyBetween("(", ")") ? parenthesized() : this;
-  }
-
-  private static <R> Collector<SafeQuery, ?, R> nonEmptyQueries(
-      Collector<SafeQuery, ?, R> downstream) {
-    return filtering(q -> !q.query.isEmpty(), downstream);
-  }
-
-  private static <T, A, R> Collector<T, A, R> filtering(
-      Predicate<? super T> filter, Collector<? super T, A, R> collector) {
-    BiConsumer<A, ? super T> accumulator = collector.accumulator();
-    return Collector.of(
-        collector.supplier(),
-        (a, input) -> {if (filter.test(input)) {accumulator.accept(a, input);}},
-        collector.combiner(),
-        collector.finisher(),
-        collector.characteristics().toArray(new Characteristics[0]));
   }
 
   /**

@@ -1,8 +1,25 @@
+/*****************************************************************************
+ * ------------------------------------------------------------------------- *
+ * Licensed under the Apache License, Version 2.0 (the "License");           *
+ * you may not use this file except in compliance with the License.          *
+ * You may obtain a copy of the License at                                   *
+ *                                                                           *
+ * http://www.apache.org/licenses/LICENSE-2.0                                *
+ *                                                                           *
+ * Unless required by applicable law or agreed to in writing, software       *
+ * distributed under the License is distributed on an "AS IS" BASIS,         *
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+ * See the License for the specific language governing permissions and       *
+ * limitations under the License.                                            *
+ *****************************************************************************/
 package com.google.mu.safesql;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.mu.safesql.InternalCollectors.skippingEmpty;
+import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.Substring.suffix;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
@@ -19,11 +36,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
-import java.util.function.Predicate;
 import java.util.stream.Collector;
-import java.util.stream.Collector.Characteristics;
 
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.annotations.CompileTimeConstant;
@@ -156,6 +169,16 @@ public final class SafeSql {
     return template(query).with(args);
   }
 
+  /** Returns a SafeSql wrapping {@code tableName}. */
+  public static SafeSql of(TableName tableName) {
+    return new SafeSql(tableName.value());
+  }
+
+  /** Returns a SafeSql wrapping the name of {@code enumConstant}. */
+  public static SafeSql of(Enum<?> enumConstant) {
+    return new SafeSql(enumConstant.name());
+  }
+
   /**
    * An optional query that's only rendered if {@code condition} is true; otherwise returns {@link
    * #EMPTY}. It's for use cases where a subquery is only conditionally added, for example the
@@ -221,49 +244,64 @@ public final class SafeSql {
    * other placeholder arguments are passed into the PreparedStatement as query parameters.
    */
   public static Template<SafeSql> template(@CompileTimeConstant String template) {
-    return StringFormat.template(
-        template,
-        (fragments, placeholders) -> {
-          Iterator<String> it = fragments.iterator();
-          AtomicReference<String> next = new AtomicReference<>(it.next());
-          return placeholders
-              .collect(
-                  new Builder(),
-                  (builder, placeholder, value) -> {
-                    String paramName = placeholder.skip(1, 1).toString().trim();
-                    if (value instanceof SafeSql) {
-                      validate(paramName);
-                      builder.appendSql(next.getAndSet(it.next())).addSubQuery((SafeSql) value);
-                    } else {
-                      checkArgument(!(value instanceof SafeQuery), "Don't mix SafeQuery with SafeSql.");
-                      checkArgument(
-                          !(value instanceof Optional),
-                          "Optional parameter not supported. Consider using SafeSql.optionally() or SafeSql.when()?");
-                      if (placeholder.isImmediatelyBetween("'%", "%'")) {
-                        checkArgument(value instanceof String, "Placeholder '%%s%' must be String", placeholder);
-                        builder.appendSql(suffix("'%").removeFrom(next.getAndSet(it.next().substring(2))));
-                        builder.addParameter(paramName, "%" + escapePercent((String) value) + "%");
-                      } else if (placeholder.isImmediatelyBetween("'%", "'")) {
-                        checkArgument(value instanceof String, "Placeholder '%%s' must be String", placeholder);
-                        builder.appendSql(suffix("'%").removeFrom(next.getAndSet(it.next().substring(1))));
-                        builder.addParameter(paramName, "%" + escapePercent((String) value));
-                      } else if (placeholder.isImmediatelyBetween("'", "%'")) {
-                        checkArgument(value instanceof String, "Placeholder '%s%' must be String", placeholder);
-                        builder.appendSql(suffix("'").removeFrom(next.getAndSet(it.next().substring(2))));
-                        builder.addParameter(paramName, escapePercent((String) value) + "%");
-                      } else if (placeholder.isImmediatelyBetween("'", "'")) {
-                        checkArgument(value instanceof String, "Placeholder '%s' must be String", placeholder);
-                        builder.appendSql(suffix("'").removeFrom(next.getAndSet(it.next().substring(1))));
-                        builder.addParameter(paramName, value);
-                      } else {
-                        builder.appendSql(next.getAndSet(it.next()));
-                        builder.addParameter(paramName, value);
-                      }
-                    }
-                  })
-              .appendSql(next.get())
-              .build();
-        });
+    return StringFormat.template(template, (fragments, placeholders) -> {
+      Iterator<String> it = fragments.iterator();
+      class SqlComposer {
+        private final Builder builder = new Builder();
+        private String next = it.next();
+
+        SafeSql composeSql() {
+          placeholders.forEachOrdered(this::composeForPlaceholder);
+          builder.appendSql(next);
+          checkState(!it.hasNext());
+          return builder.build();
+        }
+
+        private void composeForPlaceholder(Substring.Match placeholder, Object value) {
+          String paramName = placeholder.skip(1, 1).toString().trim();
+          if (value instanceof SafeSql) {
+            validate(paramName);
+            builder.appendSql(nextFragment()).addSubQuery((SafeSql) value);
+            return;
+          }
+          checkArgument(!(value instanceof SafeQuery), "Don't mix SafeQuery with SafeSql.");
+          checkArgument(
+              !(value instanceof Optional),
+              "Optional parameter not supported. Consider using SafeSql.optionally() or SafeSql.when()?");
+          if (appendBeforeQuotedPlaceholder("'%", placeholder, "%'", value)) {
+            builder.addParameter(paramName, "%" + escapePercent((String) value) + "%");
+          } else if (appendBeforeQuotedPlaceholder("'%", placeholder, "'", value)) {
+            builder.addParameter(paramName, "%" + escapePercent((String) value));
+          } else if (appendBeforeQuotedPlaceholder("'", placeholder, "%'", value)) {
+            builder.addParameter(paramName, escapePercent((String) value) + "%");
+          } else if (appendBeforeQuotedPlaceholder("'", placeholder, "'", value)) {
+            builder.addParameter(paramName, value);
+          } else {
+            builder.appendSql(nextFragment());
+            builder.addParameter(paramName, value);
+          }
+        }
+
+        private boolean appendBeforeQuotedPlaceholder(
+            String open, Substring.Match placeholder, String close, Object value) {
+          boolean quoted = placeholder.isImmediatelyBetween(open, close);
+          if (quoted) {
+            checkArgument(
+                value instanceof String, "Placeholder %s%s%s must be String", open, placeholder, close);
+            builder.appendSql(suffix(open).removeFrom(nextFragment()));
+            next = prefix(close).removeFrom(next);
+          }
+          return quoted;
+        }
+
+        private String nextFragment() {
+          String fragment = next;
+          next = it.next();
+          return fragment;
+        }
+      }
+      return new SqlComposer().composeSql();
+    });
   }
 
   /**
@@ -275,7 +313,7 @@ public final class SafeSql {
    */
   public static Collector<SafeSql, ?, SafeSql> and() {
     return collectingAndThen(
-        nonEmptyQueries(mapping(SafeSql::parenthesized, joining(" AND "))),
+        skippingEmpty(mapping(SafeSql::parenthesized, joining(" AND "))),
         query -> query.sql.isEmpty() ? of("1 = 1") : query);
   }
 
@@ -288,7 +326,7 @@ public final class SafeSql {
    */
   public static Collector<SafeSql, ?, SafeSql> or() {
     return collectingAndThen(
-        nonEmptyQueries(mapping(SafeSql::parenthesized, joining(" OR "))),
+        skippingEmpty(mapping(SafeSql::parenthesized, joining(" OR "))),
         query -> query.sql.isEmpty() ? of("1 = 0") : query);
   }
 
@@ -314,7 +352,7 @@ public final class SafeSql {
    */
   public static Collector<SafeSql, ?, SafeSql> joining(@CompileTimeConstant String delimiter) {
     validate(delimiter);
-    return nonEmptyQueries(
+    return skippingEmpty(
         Collector.of(
             Builder::new,
             (b, q) -> b.appendDelimiter(delimiter).addSubQuery(q),
@@ -402,23 +440,6 @@ public final class SafeSql {
 
   private static String escapePercent(String s) {
     return Substring.first(c -> c == '\\' || c == '%').repeatedly().replaceAllFrom(s, c -> "\\" + c);
-  }
-
-  private static <R> Collector<SafeSql, ?, R> nonEmptyQueries(
-      Collector<SafeSql, ?, R> downstream) {
-    return filtering(q -> !q.sql.isEmpty(), downstream);
-  }
-
-  // Not in Java 8
-  private static <T, A, R> Collector<T, A, R> filtering(
-      Predicate<? super T> filter, Collector<? super T, A, R> collector) {
-    BiConsumer<A, ? super T> accumulator = collector.accumulator();
-    return Collector.of(
-        collector.supplier(),
-        (a, input) -> {if (filter.test(input)) {accumulator.accept(a, input);}},
-        collector.combiner(),
-        collector.finisher(),
-        collector.characteristics().toArray(new Characteristics[0]));
   }
 
   private static final class Builder {
