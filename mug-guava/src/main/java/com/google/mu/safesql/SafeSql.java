@@ -18,9 +18,11 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.Streams.stream;
 import static com.google.mu.safesql.InternalCollectors.skippingEmpty;
 import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.Substring.suffix;
+import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -46,6 +48,7 @@ import com.google.mu.annotations.TemplateString;
 import com.google.mu.util.StringFormat;
 import com.google.mu.util.StringFormat.Template;
 import com.google.mu.util.Substring;
+import com.google.mu.util.stream.BiStream;
 
 /**
  * An injection-safe parameterized SQL, constructed using compile-time enforced templates and can be
@@ -323,11 +326,11 @@ public final class SafeSql {
             return;
           }
           if (value instanceof Iterable) {
+            ImmutableList<SafeSql> subQueries = toSubQueries(placeholder, (Iterable<?>) value);
+            checkArgument(subQueries.size() > 0, "%s cannot be empty list", placeholder);
             builder
                 .appendSql(nextFragment())
-                .addSubQuery(
-                    toNonEmptySubQueries(
-                        placeholder, (Iterable<?>) value).stream().collect(joining(", ")));
+                .addSubQuery(subQueries.stream().collect(joining(", ")));
             return;
           }
           checkArgument(!(value instanceof SafeQuery), "Don't mix SafeQuery with SafeSql.");
@@ -495,21 +498,19 @@ public final class SafeSql {
     return statement;
   }
 
-  private static ImmutableList<SafeSql> toNonEmptySubQueries(
-      CharSequence placeholder, Iterable<?> arg) {
-    ImmutableList.Builder<SafeSql> builder = ImmutableList.builder();
-    int index = 0;
-    for (Object element : arg) {
-      checkArgument(
-          element != null, "%s[%s] expected to be SafeSql, but is null", placeholder, index);
-      checkArgument(
-          element instanceof SafeSql,
-          "%s[%s] expected to be SafeSql, but is %s", placeholder, index, element.getClass());
-      builder.add((SafeSql) element);
-      index++;
-    }
-    checkArgument(index > 0, "%s cannot be empty list", placeholder);
-    return builder.build();
+  private static ImmutableList<SafeSql> toSubQueries(CharSequence placeholder, Iterable<?> arg) {
+    return BiStream.zip(indexesFrom(0), stream(arg))
+        .mapToObj((index, element) -> {
+            checkArgument(
+                element != null,
+                "%s[%s] expected to be SafeSql, but is null", placeholder, index);
+            checkArgument(
+              element instanceof SafeSql,
+              "%s[%s] expected to be SafeSql, but is %s",
+              placeholder, index, element.getClass());
+            return (SafeSql) element;
+        })
+        .collect(toImmutableList());
   }
 
   private static String validate(String sql) {
