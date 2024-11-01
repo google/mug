@@ -14,13 +14,13 @@
  *****************************************************************************/
 package com.google.mu.safesql;
 
-import static com.google.common.base.CharMatcher.anyOf;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Streams.stream;
 import static com.google.mu.safesql.InternalCollectors.skippingEmpty;
+import static com.google.mu.safesql.SafeQuery.checkIdentifier;
 import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.Substring.suffix;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
@@ -128,8 +128,21 @@ import com.google.mu.util.stream.BiStream;
  * {@code statement.setObject(1, "%" + criteria.firstName().get() + "%")} will be called
  * to populate the PreparedStatement.
  *
- * <p>In contrast, {@link SafeQuery} directly escapes string parameters and is intended
- * to be used with SQL engines that don't have native support for parameterized queries.
+ * <p>Sometimes you may wish to parameterize by table names, column names etc.
+ * for which JDBC has no support.
+ *
+ * If the identifiers can come from compile-time literals or enum values, prefer to wrap
+ * them using {@code SafeSql.of(identifier)} which can then be composed as subqueries.
+ *
+ * <p>But what if the identifier string is loaded from a resource file, or is specified by a
+ * request field?
+ *
+ * While such strings are inherently dynamic and untrusted, you can still parameterize them
+ * if you backtick-quote the placeholder in the SQL template. For example: <pre>{@code
+ *   SafeSql.of("select * from `{table_name}`", request.getTableName())
+ * }</pre>
+ * The backticks tell SafeSql that the string is supposed to be an identifier and SafeSql will
+ * sanity-check the string to make sure injection isn't possible.
  *
  * <p>Note that with straight JDBC, if you try to use the LIKE operator to match a user-provided
  * substring, i.e. using {@code LIKE '%foo%'} to search for "foo", this seemingly intuitive
@@ -189,6 +202,9 @@ import com.google.mu.util.stream.BiStream;
  * }</pre>
  *
  * If someone mistakenly passes in inconsistent ids, they'll get a compilation error.
+ *
+ * <p>This class serves a different purpose than {@link SafeQuery}, which is to directly escape
+ * string parameters when the SQL backend has no native support for parameterized queries.
  *
  * @since 8.2
  */
@@ -355,12 +371,9 @@ public final class SafeSql {
           } else if (appendBeforeQuotedPlaceholder("'", placeholder, "'", value)) {
             builder.addParameter(paramName, value);
           } else if (appendBeforeQuotedPlaceholder("`", placeholder, "`", value)) {
-            String str = (String) value;
-            checkArgument(str.length() > 0, "`%s` cannot be empty", placeholder);
-            checkArgument(
-                anyOf("`\\'\"").matchesNoneOf(str), "Illegal character(s) for `%s`: '%s'",
-                placeholder, str);
-            builder.appendSql("`" + str + "`");
+            String identifier = checkIdentifier(placeholder, (String) value);
+            checkArgument(identifier.length() > 0, "`%s` cannot be empty", placeholder);
+            builder.appendSql("`" + identifier + "`");
           } else {
             builder.appendSql(nextFragment());
             builder.addParameter(paramName, value);

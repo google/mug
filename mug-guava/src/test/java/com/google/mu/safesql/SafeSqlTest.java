@@ -279,6 +279,14 @@ public class SafeSqlTest {
   }
 
   @Test
+  public void quotedIdentifier_containsNewLine_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class, () -> SafeSql.of("select * from `{tbl}`", "a\nb"));
+    assertThat(thrown).hasMessageThat().contains("`{tbl}`");
+    assertThat(thrown).hasMessageThat().contains("a\nb");
+  }
+
+  @Test
   public void twoParameters() {
     SafeSql sql =
         SafeSql.of("select {label} where id = {id}", /* label */ "foo", /* id */ 123);
