@@ -462,9 +462,9 @@ public final class SafeQuery {
   }
 
   static String checkIdentifier(Substring.Match placeholder, String name) {
-    // Make sure the backquoted string doesn't contain some special chars that may
-    // cause trouble.
-    checkArgument(ILLEGAL_IDENTIFIER_CHARS.matchesNoneOf(name),
+    // Make sure the backquoted string doesn't contain some special chars that may cause trouble.
+    checkArgument(
+        ILLEGAL_IDENTIFIER_CHARS.matchesNoneOf(name),
         "placeholder value for `%s` (%s) contains illegal character", placeholder, name);
     return name;
   }
