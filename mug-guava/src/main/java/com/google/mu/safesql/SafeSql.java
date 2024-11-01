@@ -14,6 +14,7 @@
  *****************************************************************************/
 package com.google.mu.safesql;
 
+import static com.google.common.base.CharMatcher.anyOf;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -215,7 +216,7 @@ public final class SafeSql {
 
   /**
    * Convenience method when you need to create the {@link SafeSql} inline, with both the
-   * query template and the arguments.
+   * query template and the parameters.
    *
    * <p>For example:
    *
@@ -224,11 +225,19 @@ public final class SafeSql {
    *     SafeSql.of("select * from JOBS where id = {id}", jobId)
    *         .prepareStatement(connection);
    * }</pre>
+   *
+   * @param template the sql template
+   * @param params The template parameters. {@link SafeSql} args are considered trusted
+   * subqueries and are appended directly. Other types are passed through JDBC {@link
+   * PreparedStatement#setObject}, with one exception: when the corresponding placeholder is quoted
+   * by backticks like {@code `{table_name}`}, its string parameter is directly appended
+   * (but quotes, backticks and backslash characters are disallowed). This allows convenient
+   * parameterization by table names, column names etc.
    */
   @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
   @TemplateFormatMethod
-  public static SafeSql of(@TemplateString @CompileTimeConstant String query, Object... args) {
-    return template(query).with(args);
+  public static SafeSql of(@TemplateString @CompileTimeConstant String template, Object... params) {
+    return template(template).with(params);
   }
 
   /** Returns a SafeSql wrapping {@code tableName}. */
@@ -345,6 +354,13 @@ public final class SafeSql {
             builder.addParameter(paramName, escapePercent((String) value) + "%");
           } else if (appendBeforeQuotedPlaceholder("'", placeholder, "'", value)) {
             builder.addParameter(paramName, value);
+          } else if (appendBeforeQuotedPlaceholder("`", placeholder, "`", value)) {
+            String str = (String) value;
+            checkArgument(str.length() > 0, "`%s` cannot be empty", placeholder);
+            checkArgument(
+                anyOf("`\\'\"").matchesNoneOf(str), "Illegal character(s) for `%s`: '%s'",
+                placeholder, str);
+            builder.appendSql("`" + str + "`");
           } else {
             builder.appendSql(nextFragment());
             builder.addParameter(paramName, value);

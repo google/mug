@@ -225,6 +225,60 @@ public class SafeSqlTest {
   }
 
   @Test
+  public void quotedIdentifier_string() {
+    SafeSql sql = SafeSql.of("select * from `{tbl}`", "Users");
+    assertThat(sql.toString()).isEqualTo("select * from `Users`");
+    assertThat(sql.getParameters()).isEmpty();
+  }
+
+  @Test
+  public void quotedIdentifier_notString_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class, () -> SafeSql.of("select * from `{tbl}`", 1));
+    assertThat(thrown).hasMessageThat().contains("`{tbl}`");
+  }
+
+  @Test
+  public void quotedIdentifier_emptyValue_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class, () -> SafeSql.of("select * from `{tbl}`", ""));
+    assertThat(thrown).hasMessageThat().contains("`{tbl}`");
+    assertThat(thrown).hasMessageThat().contains("empty");
+  }
+
+  @Test
+  public void quotedIdentifier_containsBacktick_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class, () -> SafeSql.of("select * from `{tbl}`", "`a`b`"));
+    assertThat(thrown).hasMessageThat().contains("`{tbl}`");
+    assertThat(thrown).hasMessageThat().contains("`a`b`");
+  }
+
+  @Test
+  public void quotedIdentifier_containsBackslash_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class, () -> SafeSql.of("select * from `{tbl}`", "a\\b"));
+    assertThat(thrown).hasMessageThat().contains("`{tbl}`");
+    assertThat(thrown).hasMessageThat().contains("a\\b");
+  }
+
+  @Test
+  public void quotedIdentifier_containsSingleQuote_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class, () -> SafeSql.of("select * from `{tbl}`", "a'b"));
+    assertThat(thrown).hasMessageThat().contains("`{tbl}`");
+    assertThat(thrown).hasMessageThat().contains("a'b");
+  }
+
+  @Test
+  public void quotedIdentifier_containsDoubleQuote_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class, () -> SafeSql.of("select * from `{tbl}`", "a\"b"));
+    assertThat(thrown).hasMessageThat().contains("`{tbl}`");
+    assertThat(thrown).hasMessageThat().contains("a\"b");
+  }
+
+  @Test
   public void twoParameters() {
     SafeSql sql =
         SafeSql.of("select {label} where id = {id}", /* label */ "foo", /* id */ 123);

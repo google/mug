@@ -171,6 +171,14 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .containsExactly("a\\b");
   }
 
+  @Test public void withBacktickQuotedIdentifierParameter() throws Exception {
+    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")))
+        .isEqualTo(1);
+    assertThat(queryColumn(
+            SafeSql.of("select title from `{table}` where id = {id}", "ITEMS", testId()), "title"))
+        .containsExactly("foo");
+  }
+
   @Test public void nullParameter() throws Exception {
     assertThat(
             update(SafeSql.of(
