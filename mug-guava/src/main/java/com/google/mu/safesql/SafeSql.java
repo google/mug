@@ -362,7 +362,11 @@ public final class SafeSql {
           checkArgument(
               !(value instanceof Optional),
               "Optional parameter not supported. Consider using SafeSql.optionally() or SafeSql.when()?");
-          if (appendBeforeQuotedPlaceholder("'%", placeholder, "%'", value)) {
+          if (appendBeforeQuotedPlaceholder("`", placeholder, "`", value)) {
+            String identifier = checkIdentifier(placeholder, (String) value);
+            checkArgument(identifier.length() > 0, "`%s` cannot be empty", placeholder);
+            builder.appendSql("`" + identifier + "`");
+          } else if (appendBeforeQuotedPlaceholder("'%", placeholder, "%'", value)) {
             builder.addParameter(paramName, "%" + escapePercent((String) value) + "%");
           } else if (appendBeforeQuotedPlaceholder("'%", placeholder, "'", value)) {
             builder.addParameter(paramName, "%" + escapePercent((String) value));
@@ -370,10 +374,6 @@ public final class SafeSql {
             builder.addParameter(paramName, escapePercent((String) value) + "%");
           } else if (appendBeforeQuotedPlaceholder("'", placeholder, "'", value)) {
             builder.addParameter(paramName, value);
-          } else if (appendBeforeQuotedPlaceholder("`", placeholder, "`", value)) {
-            String identifier = checkIdentifier(placeholder, (String) value);
-            checkArgument(identifier.length() > 0, "`%s` cannot be empty", placeholder);
-            builder.appendSql("`" + identifier + "`");
           } else {
             builder.appendSql(nextFragment());
             builder.addParameter(paramName, value);
