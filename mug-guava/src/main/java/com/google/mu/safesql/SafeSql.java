@@ -161,7 +161,7 @@ import com.google.mu.util.stream.BiStream;
  * }</pre>
  *
  * And even then, if the {@code searchTerm} includes special characters like '%' or backslash ('\'),
- * they'll be interepreted as wildcards and escape characters, opening it up to a form of
+ * they'll be interepreted as wildcards and escape characters, opening it up to a form of minor
  * SQL injection despite already using the parameterized SQL.
  *
  * <p>The SafeSql template protects you from this caveat. The most intuitive syntax does exactly
