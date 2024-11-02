@@ -18,9 +18,13 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.Streams.stream;
 import static com.google.mu.safesql.InternalCollectors.skippingEmpty;
+import static com.google.mu.safesql.SafeQuery.checkIdentifier;
 import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.Substring.suffix;
+import static com.google.mu.util.stream.MoreStreams.indexesFrom;
+import static java.util.Arrays.stream;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -31,12 +35,13 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.annotations.CompileTimeConstant;
@@ -46,6 +51,7 @@ import com.google.mu.annotations.TemplateString;
 import com.google.mu.util.StringFormat;
 import com.google.mu.util.StringFormat.Template;
 import com.google.mu.util.Substring;
+import com.google.mu.util.stream.BiStream;
 
 /**
  * An injection-safe parameterized SQL, constructed using compile-time enforced templates and can be
@@ -124,8 +130,21 @@ import com.google.mu.util.Substring;
  * {@code statement.setObject(1, "%" + criteria.firstName().get() + "%")} will be called
  * to populate the PreparedStatement.
  *
- * <p>In contrast, {@link SafeQuery} directly escapes string parameters and is intended
- * to be used with SQL engines that don't have native support for parameterized queries.
+ * <p>Sometimes you may wish to parameterize by table names, column names etc.
+ * for which JDBC has no support.
+ *
+ * If the identifiers can come from compile-time literals or enum values, prefer to wrap
+ * them using {@code SafeSql.of(identifier)} which can then be composed as subqueries.
+ *
+ * <p>But what if the identifier string is loaded from a resource file, or is specified by a
+ * request field?
+ *
+ * While such strings are inherently dynamic and untrusted, you can still parameterize them
+ * if you backtick-quote the placeholder in the SQL template. For example: <pre>{@code
+ *   SafeSql.of("select * from `{table_name}`", request.getTableName())
+ * }</pre>
+ * The backticks tell SafeSql that the string is supposed to be an identifier and SafeSql will
+ * sanity-check the string to make sure injection isn't possible.
  *
  * <p>Note that with straight JDBC, if you try to use the LIKE operator to match a user-provided
  * substring, i.e. using {@code LIKE '%foo%'} to search for "foo", this seemingly intuitive
@@ -144,7 +163,7 @@ import com.google.mu.util.Substring;
  * }</pre>
  *
  * And even then, if the {@code searchTerm} includes special characters like '%' or backslash ('\'),
- * they'll be interepreted as wildcards and escape characters, opening it up to a form of
+ * they'll be interepreted as wildcards and escape characters, opening it up to a form of minor
  * SQL injection despite already using the parameterized SQL.
  *
  * <p>The SafeSql template protects you from this caveat. The most intuitive syntax does exactly
@@ -186,6 +205,9 @@ import com.google.mu.util.Substring;
  *
  * If someone mistakenly passes in inconsistent ids, they'll get a compilation error.
  *
+ * <p>This class serves a different purpose than {@link SafeQuery}, which is to directly escape
+ * string parameters when the SQL backend has no native support for parameterized queries.
+ *
  * @since 8.2
  */
 public final class SafeSql {
@@ -212,7 +234,7 @@ public final class SafeSql {
 
   /**
    * Convenience method when you need to create the {@link SafeSql} inline, with both the
-   * query template and the arguments.
+   * query template and the parameters.
    *
    * <p>For example:
    *
@@ -221,11 +243,19 @@ public final class SafeSql {
    *     SafeSql.of("select * from JOBS where id = {id}", jobId)
    *         .prepareStatement(connection);
    * }</pre>
+   *
+   * @param template the sql template
+   * @param params The template parameters. {@link SafeSql} args are considered trusted
+   * subqueries and are appended directly. Other types are passed through JDBC {@link
+   * PreparedStatement#setObject}, with one exception: when the corresponding placeholder is quoted
+   * by backticks like {@code `{table_name}`}, its string parameter (or iterable of string parameters)
+   * are directly appended (but quotes, backticks and backslash characters are disallowed).
+   * This allows convenient parameterization by table names, column names etc.
    */
   @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
   @TemplateFormatMethod
-  public static SafeSql of(@TemplateString @CompileTimeConstant String query, Object... args) {
-    return template(query).with(args);
+  public static SafeSql of(@TemplateString @CompileTimeConstant String template, Object... params) {
+    return template(template).with(params);
   }
 
   /** Returns a SafeSql wrapping {@code tableName}. */
@@ -248,14 +278,18 @@ public final class SafeSql {
    *     "SELECT job_id, start_timestamp {user_email} FROM jobs",
    *     SafeSql.when(isSuperUser, ", user_email"));
    * }</pre>
+   *
+   * @param condition the guard condition to determine if {@code template} should be renderd
+   * @param template the template to render if {@code condition} is true
+   * @param args see {@link #of(String, Object...)} for discussion on the template arguments
    */
   @TemplateFormatMethod
   @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
   public static SafeSql when(
-      boolean condition, @TemplateString @CompileTimeConstant String query, Object... args) {
-    checkNotNull(query);
+      boolean condition, @TemplateString @CompileTimeConstant String template, Object... args) {
+    checkNotNull(template);
     checkNotNull(args);
-    return condition ? of(query, args) : EMPTY;
+    return condition ? of(template, args) : EMPTY;
   }
 
   /**
@@ -279,7 +313,7 @@ public final class SafeSql {
 
   /** Wraps the compile-time string constants as SafeSql objects. */
   public static ImmutableList<SafeSql> listOf(@CompileTimeConstant String... texts) {
-    return Arrays.stream(texts).map(t -> new SafeSql(validate(t))).collect(toImmutableList());
+    return stream(texts).map(t -> new SafeSql(validate(t))).collect(toImmutableList());
   }
 
 
@@ -299,8 +333,7 @@ public final class SafeSql {
    * PreparedStatement stmt = GET_JOB_IDS_BY_QUERY.with("sensitive word").prepareStatement(conn);
    * }</pre>
    *
-   * <p>Except {@link SafeSql} itself, which are directly substituted into the query, all
-   * other placeholder arguments are passed into the PreparedStatement as query parameters.
+   * <p>See {@link #of(String, Object...)} for discussion on the template arguments.
    */
   public static Template<SafeSql> template(@CompileTimeConstant String template) {
     return StringFormat.template(template, (fragments, placeholders) -> {
@@ -317,9 +350,8 @@ public final class SafeSql {
         }
 
         private void composeForPlaceholder(Substring.Match placeholder, Object value) {
-          String paramName = placeholder.skip(1, 1).toString().trim();
+          String paramName = validate(placeholder.skip(1, 1).toString().trim());
           if (value instanceof SafeSql) {
-            validate(paramName);
             builder.appendSql(nextFragment()).addSubQuery((SafeSql) value);
             return;
           }
@@ -327,7 +359,23 @@ public final class SafeSql {
           checkArgument(
               !(value instanceof Optional),
               "Optional parameter not supported. Consider using SafeSql.optionally() or SafeSql.when()?");
-          if (appendBeforeQuotedPlaceholder("'%", placeholder, "%'", value)) {
+          if (value instanceof Iterable) {
+            Iterator<?> elements = ((Iterable<?>) value).iterator();
+            checkArgument(elements.hasNext(), "%s cannot be empty list", placeholder);
+            builder.appendSql(nextFragment());
+            if (placeholder.isImmediatelyBetween("`", "`")) {
+              builder.appendSql(
+                  mustBeIdentifiers(placeholder, elements).collect(Collectors.joining("`, `")));
+            } else {
+              builder.addSubQuery(mustBeSubqueries(placeholder, elements).collect(joining(", ")));
+            }
+            return;
+          }
+          if (appendBeforeQuotedPlaceholder("`", placeholder, "`", value)) {
+            String identifier = checkIdentifier(placeholder, (String) value);
+            checkArgument(identifier.length() > 0, "`%s` cannot be empty", placeholder);
+            builder.appendSql("`" + identifier + "`");
+          } else if (appendBeforeQuotedPlaceholder("'%", placeholder, "%'", value)) {
             builder.addParameter(paramName, "%" + escapePercent((String) value) + "%");
           } else if (appendBeforeQuotedPlaceholder("'%", placeholder, "'", value)) {
             builder.addParameter(paramName, "%" + escapePercent((String) value));
@@ -488,6 +536,35 @@ public final class SafeSql {
     return statement;
   }
 
+  private static Stream<SafeSql> mustBeSubqueries(
+      CharSequence placeholder, Iterator<?> elements) {
+    return BiStream.zip(indexesFrom(0), stream(elements))
+        .mapToObj((index, element) -> {
+          checkArgument(
+              element != null,
+              "%s[%s] expected to be SafeSql, but is null", placeholder, index);
+          checkArgument(
+            element instanceof SafeSql,
+            "%s[%s] expected to be SafeSql, but is %s",
+            placeholder, index, element.getClass());
+          return (SafeSql) element;
+        });
+  }
+
+  private static Stream<String> mustBeIdentifiers(
+      CharSequence placeholder, Iterator<?> elements) {
+    StringFormat elementNameFormat = new StringFormat("{placeholder}[{index}]");
+    return BiStream.zip(indexesFrom(0), stream(elements))
+        .mapToObj((index, element) -> {
+          String name = elementNameFormat.format(placeholder, index);
+          checkArgument(element != null, "%s expected to be an identifier, but is null", name);
+          checkArgument(
+              element instanceof String,
+              "%s expected to be String, but is %s", name, element.getClass());
+          return checkIdentifier(name, (String) element);
+        });
+  }
+
   private static String validate(String sql) {
     checkArgument(sql.indexOf('?') < 0, "please use named {placeholder} instead of '?'");
     return sql;
@@ -511,7 +588,6 @@ public final class SafeSql {
     }
 
     Builder addParameter(String name, Object value) {
-      validate(name);
       queryText.append("?");
       paramValues.add(value);
       return this;

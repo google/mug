@@ -424,11 +424,7 @@ public final class SafeQuery {
         return ((Enum<?>) value).name();
       }
       String name = removeQuotes('`', value.toString(), '`'); // ok if already backquoted
-      // Make sure the backquoted string doesn't contain some special chars that may
-      // cause trouble.
-      checkArgument(ILLEGAL_IDENTIFIER_CHARS.matchesNoneOf(name),
-          "placeholder value for `%s` (%s) contains illegal character", placeholder, name);
-      return escapeQuoted('`', name);
+      return escapeQuoted('`', checkIdentifier(placeholder, name));
     }
 
     private static String escapeQuoted(char quoteChar, String s) {
@@ -463,5 +459,13 @@ public final class SafeQuery {
     private static String removeQuotes(char left, String s, char right) {
       return Substring.between(prefix(left), suffix(right)).from(s).orElse(s);
     }
+  }
+
+  static String checkIdentifier(CharSequence placeholder, String name) {
+    // Make sure the backquoted string doesn't contain some special chars that may cause trouble.
+    checkArgument(
+        ILLEGAL_IDENTIFIER_CHARS.matchesNoneOf(name),
+        "placeholder value for `%s` (%s) contains illegal character", placeholder, name);
+    return name;
   }
 }

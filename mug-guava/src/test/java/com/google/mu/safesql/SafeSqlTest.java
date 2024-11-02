@@ -2,6 +2,7 @@ package com.google.mu.safesql;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.safesql.SafeSql.template;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
 
 import java.util.Optional;
@@ -48,6 +49,120 @@ public class SafeSqlTest {
     SafeSql sql = SafeSql.of("select {i}", 123);
     assertThat(sql.toString()).isEqualTo("select ?");
     assertThat(sql.getParameters()).containsExactly(123);
+  }
+
+  @Test
+  public void listOfBackquotedStringParameters_singleParameter() {
+    SafeSql sql = SafeSql.of(
+        "select `{columns}` from tbl",
+        /* columns */ asList("phone number"));
+    assertThat(sql.toString()).isEqualTo("select `phone number` from tbl");
+    assertThat(sql.getParameters()).isEmpty();
+  }
+
+  @Test
+  public void listOfBackquotedStringParameters() {
+    SafeSql sql = SafeSql.of(
+        "select `{columns}` from tbl",
+        /* columns */ asList("c1", "c2", "c3"));
+    assertThat(sql.toString()).isEqualTo("select `c1`, `c2`, `c3` from tbl");
+    assertThat(sql.getParameters()).isEmpty();
+  }
+
+  @Test
+  public void emptyListOfBackquotedStringParameter_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () ->SafeSql.of("select `{columns}` from tbl", /* columns */ asList()));
+    assertThat(thrown).hasMessageThat().contains("{columns} cannot be empty");
+  }
+
+  @Test
+  public void listOfBackquotedStringParameters_withNullString_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.of(
+            "select `{columns}` from tbl",
+            /* columns */ asList("c1", null, "c3")));
+    assertThat(thrown).hasMessageThat()
+        .contains("{columns}[1] expected to be an identifier, but is null");
+  }
+
+  @Test
+  public void listOfBackquotedStringParameters_withNonString_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.of(
+            "select `{columns}` from tbl",
+            /* columns */ asList("c1", "c2", 3)));
+    assertThat(thrown)
+        .hasMessageThat().contains("{columns}[2] expected to be String, but is class java.lang.Integer");
+  }
+
+  @Test
+  public void listOfBackquotedStringParameters_placeholderWithQuestionMark() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.of("select `{columns?}` from tbl", /* columns */ asList("c1")));
+    assertThat(thrown).hasMessageThat().contains("'?'");
+  }
+
+  @Test
+  public void listOfBackquotedStringParameters_withIllegalChars_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.of(
+            "select `{columns}` from tbl",
+            /* columns */ asList("c1", "c2", "c3`")));
+    assertThat(thrown).hasMessageThat().contains("{columns}[2]");
+    assertThat(thrown).hasMessageThat().contains("c3`");
+    assertThat(thrown).hasMessageThat().contains("illegal");
+  }
+
+  @Test
+  public void listOfSafeSqlParameter() {
+    SafeSql sql = SafeSql.of(
+        "select {columns} from tbl",
+        /* columns */ SafeSql.listOf("c1", "c2"));
+    assertThat(sql.toString()).isEqualTo("select c1, c2 from tbl");
+    assertThat(sql.getParameters()).isEmpty();
+  }
+
+  @Test
+  public void emptyListParameter_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () ->SafeSql.of("select {columns} from tbl", /* columns */ asList()));
+    assertThat(thrown).hasMessageThat().contains("{columns} cannot be empty");
+  }
+
+  @Test
+  public void listWithNullSafeSql_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.of(
+            "select {columns} from tbl",
+            /* columns */ asList(SafeSql.of("c1"), null, SafeSql.of("c3"))));
+    assertThat(thrown).hasMessageThat().contains("{columns}[1] expected to be SafeSql, but is null");
+  }
+
+  @Test
+  public void listWithNonSafeSql_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.of(
+            "select {columns} from tbl",
+            /* columns */ asList(SafeSql.of("c1"), SafeSql.of("c2"), "c3")));
+    assertThat(thrown)
+        .hasMessageThat().contains("{columns}[2] expected to be SafeSql, but is class java.lang.String");
+  }
+
+  @Test
+  public void listParameter_placeholderWithQuestionMark() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.of("select {columns?} from tbl", /* columns */ SafeSql.listOf("c1")));
+    assertThat(thrown).hasMessageThat().contains("'?'");
   }
 
   @Test
@@ -175,6 +290,68 @@ public class SafeSqlTest {
         () -> SafeSql.of("select * from tbl where name like '{s}'", 1));
     assertThat(thrown).hasMessageThat().contains("String");
     assertThat(thrown).hasMessageThat().contains("'{s}'");
+  }
+
+  @Test
+  public void quotedIdentifier_string() {
+    SafeSql sql = SafeSql.of("select * from `{tbl}`", "Users");
+    assertThat(sql.toString()).isEqualTo("select * from `Users`");
+    assertThat(sql.getParameters()).isEmpty();
+  }
+
+  @Test
+  public void quotedIdentifier_notString_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class, () -> SafeSql.of("select * from `{tbl}`", 1));
+    assertThat(thrown).hasMessageThat().contains("`{tbl}`");
+  }
+
+  @Test
+  public void quotedIdentifier_emptyValue_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class, () -> SafeSql.of("select * from `{tbl}`", ""));
+    assertThat(thrown).hasMessageThat().contains("`{tbl}`");
+    assertThat(thrown).hasMessageThat().contains("empty");
+  }
+
+  @Test
+  public void quotedIdentifier_containsBacktick_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class, () -> SafeSql.of("select * from `{tbl}`", "`a`b`"));
+    assertThat(thrown).hasMessageThat().contains("`{tbl}`");
+    assertThat(thrown).hasMessageThat().contains("`a`b`");
+  }
+
+  @Test
+  public void quotedIdentifier_containsBackslash_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class, () -> SafeSql.of("select * from `{tbl}`", "a\\b"));
+    assertThat(thrown).hasMessageThat().contains("`{tbl}`");
+    assertThat(thrown).hasMessageThat().contains("a\\b");
+  }
+
+  @Test
+  public void quotedIdentifier_containsSingleQuote_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class, () -> SafeSql.of("select * from `{tbl}`", "a'b"));
+    assertThat(thrown).hasMessageThat().contains("`{tbl}`");
+    assertThat(thrown).hasMessageThat().contains("a'b");
+  }
+
+  @Test
+  public void quotedIdentifier_containsDoubleQuote_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class, () -> SafeSql.of("select * from `{tbl}`", "a\"b"));
+    assertThat(thrown).hasMessageThat().contains("`{tbl}`");
+    assertThat(thrown).hasMessageThat().contains("a\"b");
+  }
+
+  @Test
+  public void quotedIdentifier_containsNewLine_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class, () -> SafeSql.of("select * from `{tbl}`", "a\nb"));
+    assertThat(thrown).hasMessageThat().contains("`{tbl}`");
+    assertThat(thrown).hasMessageThat().contains("a\nb");
   }
 
   @Test
