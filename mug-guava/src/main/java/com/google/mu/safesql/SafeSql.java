@@ -24,6 +24,7 @@ import static com.google.mu.safesql.SafeQuery.checkIdentifier;
 import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.Substring.suffix;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
+import static java.util.Arrays.stream;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -34,13 +35,13 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.annotations.CompileTimeConstant;
@@ -312,7 +313,7 @@ public final class SafeSql {
 
   /** Wraps the compile-time string constants as SafeSql objects. */
   public static ImmutableList<SafeSql> listOf(@CompileTimeConstant String... texts) {
-    return Arrays.stream(texts).map(t -> new SafeSql(validate(t))).collect(toImmutableList());
+    return stream(texts).map(t -> new SafeSql(validate(t))).collect(toImmutableList());
   }
 
 
@@ -359,22 +360,14 @@ public final class SafeSql {
               !(value instanceof Optional),
               "Optional parameter not supported. Consider using SafeSql.optionally() or SafeSql.when()?");
           if (value instanceof Iterable) {
+            Iterator<?> elements = ((Iterable<?>) value).iterator();
+            checkArgument(elements.hasNext(), "%s cannot be empty list", placeholder);
+            builder.appendSql(nextFragment());
             if (placeholder.isImmediatelyBetween("`", "`")) {
-              ImmutableList<String> identifiers = mustBeIdentifiers(placeholder, (Iterable<?>) value);
-              checkArgument(identifiers.size() > 0, "%s cannot be empty list", placeholder);
-              builder
-                  .appendSql(suffix("`").removeFrom(nextFragment()))
-                  .appendSql(
-                      identifiers.stream()
-                          .map(new StringFormat("`{...}`")::format)
-                          .collect(Collectors.joining(", ")));
-              next = prefix("`").removeFrom(next);
+              builder.appendSql(
+                  mustBeIdentifiers(placeholder, elements).collect(Collectors.joining("`, `")));
             } else {
-              ImmutableList<SafeSql> subqueries = mustBeSubqueries(placeholder, (Iterable<?>) value);
-              checkArgument(subqueries.size() > 0, "%s cannot be empty list", placeholder);
-              builder
-                  .appendSql(nextFragment())
-                  .addSubQuery(subqueries.stream().collect(joining(", ")));
+              builder.addSubQuery(mustBeSubqueries(placeholder, elements).collect(joining(", ")));
             }
             return;
           }
@@ -543,9 +536,9 @@ public final class SafeSql {
     return statement;
   }
 
-  private static ImmutableList<SafeSql> mustBeSubqueries(
-      CharSequence placeholder, Iterable<?> arg) {
-    return BiStream.zip(indexesFrom(0), stream(arg))
+  private static Stream<SafeSql> mustBeSubqueries(
+      CharSequence placeholder, Iterator<?> elements) {
+    return BiStream.zip(indexesFrom(0), stream(elements))
         .mapToObj((index, element) -> {
           checkArgument(
               element != null,
@@ -555,23 +548,21 @@ public final class SafeSql {
             "%s[%s] expected to be SafeSql, but is %s",
             placeholder, index, element.getClass());
           return (SafeSql) element;
-        })
-        .collect(toImmutableList());
+        });
   }
 
-  private static ImmutableList<String> mustBeIdentifiers(
-      CharSequence placeholder, Iterable<?> arg) {
+  private static Stream<String> mustBeIdentifiers(
+      CharSequence placeholder, Iterator<?> elements) {
     StringFormat elementNameFormat = new StringFormat("{placeholder}[{index}]");
-    return BiStream.zip(indexesFrom(0), stream(arg))
-        .<String>mapToObj((index, element) -> {
+    return BiStream.zip(indexesFrom(0), stream(elements))
+        .mapToObj((index, element) -> {
           String name = elementNameFormat.format(placeholder, index);
           checkArgument(element != null, "%s expected to be an identifier, but is null", name);
           checkArgument(
               element instanceof String,
               "%s expected to be String, but is %s", name, element.getClass());
           return checkIdentifier(name, (String) element);
-        })
-        .collect(toImmutableList());
+        });
   }
 
   private static String validate(String sql) {
