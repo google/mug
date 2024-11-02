@@ -34,7 +34,9 @@ import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -342,7 +344,7 @@ public final class SafeSql {
    */
   public static Template<SafeSql> template(@CompileTimeConstant String template) {
     return StringFormat.template(template, (fragments, placeholders) -> {
-      Stack<String> texts = Stack.from(fragments.iterator());
+      Deque<String> texts = new ArrayDeque<>(fragments);
       Builder builder = new Builder();
       class SqlWriter {
         void writePlaceholder(Substring.Match placeholder, Object value) {
