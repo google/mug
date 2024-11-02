@@ -8,8 +8,8 @@ import java.util.Iterator;
 
 /** A very simple stack with nothing but push-and-pop. */
 abstract class Stack<T> {
-  abstract T pop();
   abstract void push(T element);
+  abstract T pop();
   abstract boolean isEmpty();
 
   static <T> Stack<T> from(Iterator<? extends T> iterator) {
