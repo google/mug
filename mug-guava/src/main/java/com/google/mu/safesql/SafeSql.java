@@ -276,14 +276,18 @@ public final class SafeSql {
    *     "SELECT job_id, start_timestamp {user_email} FROM jobs",
    *     SafeSql.when(isSuperUser, ", user_email"));
    * }</pre>
+   *
+   * @param condition the guard condition to determine if {@code template} should be renderd
+   * @param template the template to render if {@code condition} is true
+   * @param args see {@link #of(String, Object...)} for discussion on the template arguments
    */
   @TemplateFormatMethod
   @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
   public static SafeSql when(
-      boolean condition, @TemplateString @CompileTimeConstant String query, Object... args) {
-    checkNotNull(query);
+      boolean condition, @TemplateString @CompileTimeConstant String template, Object... args) {
+    checkNotNull(template);
     checkNotNull(args);
-    return condition ? of(query, args) : EMPTY;
+    return condition ? of(template, args) : EMPTY;
   }
 
   /**
@@ -327,8 +331,7 @@ public final class SafeSql {
    * PreparedStatement stmt = GET_JOB_IDS_BY_QUERY.with("sensitive word").prepareStatement(conn);
    * }</pre>
    *
-   * <p>Except {@link SafeSql} itself, which are directly substituted into the query, all
-   * other placeholder arguments are passed into the PreparedStatement as query parameters.
+   * <p>See {@link #of(String, Object...)} for discussion on the template arguments.
    */
   public static Template<SafeSql> template(@CompileTimeConstant String template) {
     return StringFormat.template(template, (fragments, placeholders) -> {
