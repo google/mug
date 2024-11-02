@@ -549,9 +549,9 @@ public final class SafeSql {
               element != null,
               "%s[%s] expected to be SafeSql, but is null", placeholder, index);
           checkArgument(
-            element instanceof SafeSql,
-            "%s[%s] expected to be SafeSql, but is %s",
-            placeholder, index, element.getClass());
+              element instanceof SafeSql,
+              "%s[%s] expected to be SafeSql, but is %s",
+              placeholder, index, element.getClass());
           return (SafeSql) element;
         });
   }
