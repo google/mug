@@ -382,8 +382,7 @@ public final class SafeSql {
           } else if (appendBeforeQuotedPlaceholder("'", placeholder, "'", value)) {
             builder.addParameter(paramName, value);
           } else {
-            builder.appendSql(texts.pop());
-            builder.addParameter(paramName, value);
+            builder.appendSql(texts.pop()).addParameter(paramName, value);
           }
         }
 
