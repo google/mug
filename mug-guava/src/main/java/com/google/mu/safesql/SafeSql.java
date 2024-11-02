@@ -342,22 +342,13 @@ public final class SafeSql {
    */
   public static Template<SafeSql> template(@CompileTimeConstant String template) {
     return StringFormat.template(template, (fragments, placeholders) -> {
-      Iterator<String> it = fragments.iterator();
-      class SqlComposer {
-        private final Builder builder = new Builder();
-        private String next = it.next();
-
-        SafeSql composeSql() {
-          placeholders.forEachOrdered(this::composeForPlaceholder);
-          builder.appendSql(next);
-          checkState(!it.hasNext());
-          return builder.build();
-        }
-
-        private void composeForPlaceholder(Substring.Match placeholder, Object value) {
+      Stack<String> texts = Stack.from(fragments.iterator());
+      Builder builder = new Builder();
+      class SqlWriter {
+        void writePlaceholder(Substring.Match placeholder, Object value) {
           String paramName = validate(placeholder.skip(1, 1).toString().trim());
           if (value instanceof SafeSql) {
-            builder.appendSql(nextFragment()).addSubQuery((SafeSql) value);
+            builder.appendSql(texts.pop()).addSubQuery((SafeSql) value);
             return;
           }
           checkArgument(!(value instanceof SafeQuery), "Don't mix SafeQuery with SafeSql.");
@@ -367,7 +358,7 @@ public final class SafeSql {
           if (value instanceof Iterable) {
             Iterator<?> elements = ((Iterable<?>) value).iterator();
             checkArgument(elements.hasNext(), "%s cannot be empty list", placeholder);
-            builder.appendSql(nextFragment());
+            builder.appendSql(texts.pop());
             if (placeholder.isImmediatelyBetween("`", "`")) {
               builder.appendSql(
                   mustBeIdentifiers(placeholder, elements).collect(Collectors.joining("`, `")));
@@ -389,7 +380,7 @@ public final class SafeSql {
           } else if (appendBeforeQuotedPlaceholder("'", placeholder, "'", value)) {
             builder.addParameter(paramName, value);
           } else {
-            builder.appendSql(nextFragment());
+            builder.appendSql(texts.pop());
             builder.addParameter(paramName, value);
           }
         }
@@ -400,19 +391,16 @@ public final class SafeSql {
           if (quoted) {
             checkArgument(
                 value instanceof String, "Placeholder %s%s%s must be String", open, placeholder, close);
-            builder.appendSql(suffix(open).removeFrom(nextFragment()));
-            next = prefix(close).removeFrom(next);
+            builder.appendSql(suffix(open).removeFrom(texts.pop()));
+            texts.push(prefix(close).removeFrom(texts.pop()));
           }
           return quoted;
         }
-
-        private String nextFragment() {
-          String fragment = next;
-          next = it.next();
-          return fragment;
-        }
       }
-      return new SqlComposer().composeSql();
+      placeholders.forEachOrdered(new SqlWriter()::writePlaceholder);
+      builder.appendSql(texts.pop());
+      checkState(texts.isEmpty());
+      return builder.build();
     });
   }
 
