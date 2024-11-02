@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.annotations.CompileTimeConstant;
@@ -246,9 +247,9 @@ public final class SafeSql {
    * @param params The template parameters. {@link SafeSql} args are considered trusted
    * subqueries and are appended directly. Other types are passed through JDBC {@link
    * PreparedStatement#setObject}, with one exception: when the corresponding placeholder is quoted
-   * by backticks like {@code `{table_name}`}, its string parameter is directly appended
-   * (but quotes, backticks and backslash characters are disallowed). This allows convenient
-   * parameterization by table names, column names etc.
+   * by backticks like {@code `{table_name}`}, its string parameter (or iterable of string parameters)
+   * are directly appended (but quotes, backticks and backslash characters are disallowed).
+   * This allows convenient parameterization by table names, column names etc.
    */
   @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
   @TemplateFormatMethod
@@ -353,18 +354,30 @@ public final class SafeSql {
             builder.appendSql(nextFragment()).addSubQuery((SafeSql) value);
             return;
           }
-          if (value instanceof Iterable) {
-            ImmutableList<SafeSql> subqueries = mustBeSubqueries(placeholder, (Iterable<?>) value);
-            checkArgument(subqueries.size() > 0, "%s cannot be empty list", placeholder);
-            builder
-                .appendSql(nextFragment())
-                .addSubQuery(subqueries.stream().collect(joining(", ")));
-            return;
-          }
           checkArgument(!(value instanceof SafeQuery), "Don't mix SafeQuery with SafeSql.");
           checkArgument(
               !(value instanceof Optional),
               "Optional parameter not supported. Consider using SafeSql.optionally() or SafeSql.when()?");
+          if (value instanceof Iterable) {
+            if (placeholder.isImmediatelyBetween("`", "`")) {
+              ImmutableList<String> identifiers = mustBeIdentifiers(placeholder, (Iterable<?>) value);
+              checkArgument(identifiers.size() > 0, "%s cannot be empty list", placeholder);
+              builder
+                  .appendSql(suffix("`").removeFrom(nextFragment()))
+                  .appendSql(
+                      identifiers.stream()
+                          .map(new StringFormat("`{...}`")::format)
+                          .collect(Collectors.joining(", ")));
+              next = prefix("`").removeFrom(next);
+            } else {
+              ImmutableList<SafeSql> subqueries = mustBeSubqueries(placeholder, (Iterable<?>) value);
+              checkArgument(subqueries.size() > 0, "%s cannot be empty list", placeholder);
+              builder
+                  .appendSql(nextFragment())
+                  .addSubQuery(subqueries.stream().collect(joining(", ")));
+            }
+            return;
+          }
           if (appendBeforeQuotedPlaceholder("`", placeholder, "`", value)) {
             String identifier = checkIdentifier(placeholder, (String) value);
             checkArgument(identifier.length() > 0, "`%s` cannot be empty", placeholder);
@@ -534,14 +547,29 @@ public final class SafeSql {
       CharSequence placeholder, Iterable<?> arg) {
     return BiStream.zip(indexesFrom(0), stream(arg))
         .mapToObj((index, element) -> {
-            checkArgument(
-                element != null,
-                "%s[%s] expected to be SafeSql, but is null", placeholder, index);
-            checkArgument(
-              element instanceof SafeSql,
-              "%s[%s] expected to be SafeSql, but is %s",
-              placeholder, index, element.getClass());
-            return (SafeSql) element;
+          checkArgument(
+              element != null,
+              "%s[%s] expected to be SafeSql, but is null", placeholder, index);
+          checkArgument(
+            element instanceof SafeSql,
+            "%s[%s] expected to be SafeSql, but is %s",
+            placeholder, index, element.getClass());
+          return (SafeSql) element;
+        })
+        .collect(toImmutableList());
+  }
+
+  private static ImmutableList<String> mustBeIdentifiers(
+      CharSequence placeholder, Iterable<?> arg) {
+    StringFormat elementNameFormat = new StringFormat("{placeholder}[{index}]");
+    return BiStream.zip(indexesFrom(0), stream(arg))
+        .<String>mapToObj((index, element) -> {
+          String name = elementNameFormat.format(placeholder, index);
+          checkArgument(element != null, "%s expected to be an identifier, but is null", name);
+          checkArgument(
+              element instanceof String,
+              "%s expected to be String, but is %s", name, element.getClass());
+          return checkIdentifier(name, (String) element);
         })
         .collect(toImmutableList());
   }

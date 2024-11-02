@@ -461,7 +461,7 @@ public final class SafeQuery {
     }
   }
 
-  static String checkIdentifier(Substring.Match placeholder, String name) {
+  static String checkIdentifier(CharSequence placeholder, String name) {
     // Make sure the backquoted string doesn't contain some special chars that may cause trouble.
     checkArgument(
         ILLEGAL_IDENTIFIER_CHARS.matchesNoneOf(name),

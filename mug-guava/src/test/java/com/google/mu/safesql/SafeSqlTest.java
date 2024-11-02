@@ -52,6 +52,74 @@ public class SafeSqlTest {
   }
 
   @Test
+  public void listOfBackquotedStringParameters_singleParameter() {
+    SafeSql sql = SafeSql.of(
+        "select `{columns}` from tbl",
+        /* columns */ asList("phone number"));
+    assertThat(sql.toString()).isEqualTo("select `phone number` from tbl");
+    assertThat(sql.getParameters()).isEmpty();
+  }
+
+  @Test
+  public void listOfBackquotedStringParameters() {
+    SafeSql sql = SafeSql.of(
+        "select `{columns}` from tbl",
+        /* columns */ asList("c1", "c2", "c3"));
+    assertThat(sql.toString()).isEqualTo("select `c1`, `c2`, `c3` from tbl");
+    assertThat(sql.getParameters()).isEmpty();
+  }
+
+  @Test
+  public void emptyListOfBackquotedStringParameter_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () ->SafeSql.of("select `{columns}` from tbl", /* columns */ asList()));
+    assertThat(thrown).hasMessageThat().contains("{columns} cannot be empty");
+  }
+
+  @Test
+  public void listOfBackquotedStringParameters_withNullString_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.of(
+            "select `{columns}` from tbl",
+            /* columns */ asList("c1", null, "c3")));
+    assertThat(thrown).hasMessageThat()
+        .contains("{columns}[1] expected to be an identifier, but is null");
+  }
+
+  @Test
+  public void listOfBackquotedStringParameters_withNonString_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.of(
+            "select `{columns}` from tbl",
+            /* columns */ asList("c1", "c2", 3)));
+    assertThat(thrown)
+        .hasMessageThat().contains("{columns}[2] expected to be String, but is class java.lang.Integer");
+  }
+
+  @Test
+  public void listOfBackquotedStringParameters_placeholderWithQuestionMark() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.of("select `{columns?}` from tbl", /* columns */ asList("c1")));
+    assertThat(thrown).hasMessageThat().contains("'?'");
+  }
+
+  @Test
+  public void listOfBackquotedStringParameters_withIllegalChars_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.of(
+            "select `{columns}` from tbl",
+            /* columns */ asList("c1", "c2", "c3`")));
+    assertThat(thrown).hasMessageThat().contains("{columns}[2]");
+    assertThat(thrown).hasMessageThat().contains("c3`");
+    assertThat(thrown).hasMessageThat().contains("illegal");
+  }
+
+  @Test
   public void listOfSafeSqlParameter() {
     SafeSql sql = SafeSql.of(
         "select {columns} from tbl",
@@ -90,7 +158,7 @@ public class SafeSqlTest {
   }
 
   @Test
-  public void emptyListParameter_placeholderWithQuestionMark() {
+  public void listParameter_placeholderWithQuestionMark() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
         () -> SafeSql.of("select {columns?} from tbl", /* columns */ SafeSql.listOf("c1")));
