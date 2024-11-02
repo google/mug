@@ -282,19 +282,19 @@ public final class SafeSql {
    *
    * @param condition the guard condition to determine if {@code template} should be renderd
    * @param template the template to render if {@code condition} is true
-   * @param args see {@link #of(String, Object...)} for discussion on the template arguments
+   * @param params see {@link #of(String, Object...)} for discussion on the template arguments
    */
   @TemplateFormatMethod
   @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
   public static SafeSql when(
-      boolean condition, @TemplateString @CompileTimeConstant String template, Object... args) {
+      boolean condition, @TemplateString @CompileTimeConstant String template, Object... params) {
     checkNotNull(template);
-    checkNotNull(args);
-    return condition ? of(template, args) : EMPTY;
+    checkNotNull(params);
+    return condition ? of(template, params) : EMPTY;
   }
 
   /**
-   * An optional query that's only rendered if {@code arg} is present; otherwise returns {@link
+   * An optional query that's only rendered if {@code param} is present; otherwise returns {@link
    * #EMPTY}. It's for use cases where a subquery is only added when present, for example the
    * following query will add the WHERE clause if the filter is present:
    *
@@ -307,9 +307,9 @@ public final class SafeSql {
   @TemplateFormatMethod
   @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
   public static SafeSql optionally(
-      @TemplateString @CompileTimeConstant String query, Optional<?> arg) {
+      @TemplateString @CompileTimeConstant String query, Optional<?> param) {
     checkNotNull(query);
-    return arg.map(v -> of(query, v)).orElse(EMPTY);
+    return param.map(v -> of(query, v)).orElse(EMPTY);
   }
 
   /** Wraps the compile-time string constants as SafeSql objects. */
