@@ -347,6 +347,58 @@ public class SafeSqlTest {
   }
 
   @Test
+  public void safeSqlShouldNotBeSingleQuoted() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> SafeSql.of("SELECT '{query}' WHERE TRUE", SafeSql.of("1")));
+    assertThat(thrown).hasMessageThat().contains("SafeSql should not be quoted: '{query}'");
+  }
+
+  @Test
+  public void safeSqlShouldNotBeDoubleQuoted() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> SafeSql.of("SELECT \"{query}\" WHERE TRUE", SafeSql.of("1")));
+    assertThat(thrown).hasMessageThat().contains("SafeSql should not be quoted: \"{query}\"");
+  }
+
+  @Test
+  public void safeSqlListShouldNotBeSingleQuoted() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> SafeSql.of("SELECT '{query}' WHERE TRUE", SafeSql.listOf("1")));
+    assertThat(thrown).hasMessageThat().contains("SafeSql should not be quoted: '{query}'");
+  }
+
+  @Test
+  public void safeSqlListShouldNotBeDoubleQuoted() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> SafeSql.of("SELECT \"{query}\" WHERE TRUE", SafeSql.listOf("1")));
+    assertThat(thrown).hasMessageThat().contains("SafeSql should not be quoted: \"{query}\"");
+  }
+
+  @Test
+  public void backquoteAndSingleQuoteMixed() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class, () -> SafeSql.of("SELECT * FROM `{tbl}'", "jobs"));
+    assertThat(thrown).hasMessageThat().contains("`{tbl}'");
+  }
+
+  @Test
+  public void singleQuoteAndBackquoteMixed() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class, () -> SafeSql.of("SELECT * FROM '{tbl}`", "jobs"));
+    assertThat(thrown).hasMessageThat().contains("'{tbl}`");
+  }
+
+  @Test
   public void twoParameters() {
     SafeSql sql =
         SafeSql.of("select {label} where id = {id}", /* label */ "foo", /* id */ 123);

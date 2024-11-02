@@ -21,6 +21,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Streams.stream;
 import static com.google.mu.safesql.InternalCollectors.skippingEmpty;
 import static com.google.mu.safesql.SafeQuery.checkIdentifier;
+import static com.google.mu.safesql.SafeQuery.validatePlaceholder;
 import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.Substring.suffix;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
@@ -348,6 +349,7 @@ public final class SafeSql {
       Builder builder = new Builder();
       class SqlWriter {
         void writePlaceholder(Substring.Match placeholder, Object value) {
+          validatePlaceholder(placeholder);
           String paramName = validate(placeholder.skip(1, 1).toString().trim());
           checkArgument(
               !(value instanceof SafeQuery),
@@ -366,9 +368,11 @@ public final class SafeSql {
                   mustBeIdentifiers(placeholder, elements).collect(Collectors.joining("`, `")));
             } else {
               builder.addSubQuery(mustBeSubqueries(placeholder, elements).collect(joining(", ")));
+              validateSubqueryPlaceholder(placeholder);
             }
           } else if (value instanceof SafeSql) {
             builder.appendSql(texts.pop()).addSubQuery((SafeSql) value);
+            validateSubqueryPlaceholder(placeholder);
           } else if (appendBeforeQuotedPlaceholder("`", placeholder, "`", value)) {
             String identifier = checkIdentifier(placeholder, (String) value);
             checkArgument(identifier.length() > 0, "`%s` cannot be empty", placeholder);
@@ -529,6 +533,15 @@ public final class SafeSql {
       statement.setObject(i + 1, paramValues.get(i));
     }
     return statement;
+  }
+
+  private static void validateSubqueryPlaceholder(Substring.Match placeholder) {
+    checkArgument(
+        !placeholder.isImmediatelyBetween("'", "'"),
+        "SafeSql should not be quoted: '%s'", placeholder);
+    checkArgument(
+        !placeholder.isImmediatelyBetween("\"", "\""),
+        "SafeSql should not be quoted: \"%s\"", placeholder);
   }
 
   private static Stream<SafeSql> mustBeSubqueries(

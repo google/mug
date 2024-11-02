@@ -445,14 +445,14 @@ public final class SafeQuery {
       return builder.toString();
     }
 
-    private static void validatePlaceholder(Substring.Match placeholder) {
-      checkArgument(!placeholder.isImmediatelyBetween("`", "'"), "Incorrectly quoted placeholder: `%s'", placeholder);
-      checkArgument(!placeholder.isImmediatelyBetween("'", "`"), "Incorrectly quoted placeholder: '%s`", placeholder);
-    }
-
     private static String removeQuotes(char left, String s, char right) {
       return Substring.between(prefix(left), suffix(right)).from(s).orElse(s);
     }
+  }
+
+  static void validatePlaceholder(Substring.Match placeholder) {
+    checkArgument(!placeholder.isImmediatelyBetween("`", "'"), "Incorrectly quoted placeholder: `%s'", placeholder);
+    checkArgument(!placeholder.isImmediatelyBetween("'", "`"), "Incorrectly quoted placeholder: '%s`", placeholder);
   }
 
   static String checkIdentifier(CharSequence placeholder, String name) {
