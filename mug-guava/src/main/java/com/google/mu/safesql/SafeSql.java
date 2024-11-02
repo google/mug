@@ -390,7 +390,8 @@ public final class SafeSql {
           boolean quoted = placeholder.isImmediatelyBetween(open, close);
           if (quoted) {
             checkArgument(
-                value instanceof String, "Placeholder %s%s%s must be String", open, placeholder, close);
+                value instanceof String,
+                "Placeholder %s%s%s must be String", open, placeholder, close);
             builder.appendSql(suffix(open).removeFrom(texts.pop()));
             texts.push(prefix(close).removeFrom(texts.pop()));
           }
