@@ -367,9 +367,7 @@ public final class SafeSql {
             } else {
               builder.addSubQuery(mustBeSubqueries(placeholder, elements).collect(joining(", ")));
             }
-            return;
-          }
-          if (appendBeforeQuotedPlaceholder("`", placeholder, "`", value)) {
+          } else if (appendBeforeQuotedPlaceholder("`", placeholder, "`", value)) {
             String identifier = checkIdentifier(placeholder, (String) value);
             checkArgument(identifier.length() > 0, "`%s` cannot be empty", placeholder);
             builder.appendSql("`" + identifier + "`");
