@@ -141,10 +141,10 @@ import com.google.mu.util.stream.BiStream;
  *
  * While such strings are inherently dynamic and untrusted, you can still parameterize them
  * if you backtick-quote the placeholder in the SQL template. For example: <pre>{@code
- *   SafeSql.of("select * from `{table_name}`", request.getTableName())
+ *   SafeSql.of("select `{columns}` from Users", request.getColumns())
  * }</pre>
- * The backticks tell SafeSql that the string is supposed to be an identifier and SafeSql will
- * sanity-check the string to make sure injection isn't possible.
+ * The backticks tell SafeSql that the string is supposed to be an identifier (or a list of
+ * identifiers). SafeSql will sanity-check the string(s) to make sure injection isn't possible.
  *
  * <p>Note that with straight JDBC, if you try to use the LIKE operator to match a user-provided
  * substring, i.e. using {@code LIKE '%foo%'} to search for "foo", this seemingly intuitive
@@ -245,12 +245,13 @@ public final class SafeSql {
    * }</pre>
    *
    * @param template the sql template
-   * @param params The template parameters. {@link SafeSql} args are considered trusted
-   * subqueries and are appended directly. Other types are passed through JDBC {@link
-   * PreparedStatement#setObject}, with one exception: when the corresponding placeholder is quoted
-   * by backticks like {@code `{table_name}`}, its string parameter (or iterable of string parameters)
-   * are directly appended (but quotes, backticks and backslash characters are disallowed).
-   * This allows convenient parameterization by table names, column names etc.
+   * @param params The template parameters. Parameters that are themselves {@link SafeSql} are
+   * considered trusted subqueries and are appended directly. Other types are passed through JDBC
+   * {@link PreparedStatement#setObject}, with one exception: when the corresponding placeholder
+   * is quoted by backticks like {@code `{columns}`}, its string parameter value
+   * (or {@code Iterable<String>} parameter value) are directly appended (quotes, backticks,
+   * backslash and other special characters are disallowed).
+   * This makes it easy to parameterize by table names, column names etc.
    */
   @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
   @TemplateFormatMethod
