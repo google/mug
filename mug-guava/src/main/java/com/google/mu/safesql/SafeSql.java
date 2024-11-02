@@ -349,14 +349,14 @@ public final class SafeSql {
       class SqlWriter {
         void writePlaceholder(Substring.Match placeholder, Object value) {
           String paramName = validate(placeholder.skip(1, 1).toString().trim());
-          if (value instanceof SafeSql) {
-            builder.appendSql(texts.pop()).addSubQuery((SafeSql) value);
-            return;
-          }
-          checkArgument(!(value instanceof SafeQuery), "Don't mix SafeQuery with SafeSql.");
+          checkArgument(
+              !(value instanceof SafeQuery),
+              "%s: don't mix in SafeQuery with SafeSql.", placeholder);
           checkArgument(
               !(value instanceof Optional),
-              "Optional parameter not supported. Consider using SafeSql.optionally() or SafeSql.when()?");
+              "%s: optional parameter not supported." +
+              " Consider using SafeSql.optionally() or SafeSql.when()?",
+              placeholder);
           if (value instanceof Iterable) {
             Iterator<?> elements = ((Iterable<?>) value).iterator();
             checkArgument(elements.hasNext(), "%s cannot be empty list", placeholder);
@@ -367,6 +367,8 @@ public final class SafeSql {
             } else {
               builder.addSubQuery(mustBeSubqueries(placeholder, elements).collect(joining(", ")));
             }
+          } else if (value instanceof SafeSql) {
+            builder.appendSql(texts.pop()).addSubQuery((SafeSql) value);
           } else if (appendBeforeQuotedPlaceholder("`", placeholder, "`", value)) {
             String identifier = checkIdentifier(placeholder, (String) value);
             checkArgument(identifier.length() > 0, "`%s` cannot be empty", placeholder);
