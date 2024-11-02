@@ -8,7 +8,6 @@ import static org.junit.Assert.assertThrows;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -19,13 +18,6 @@ import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 @RunWith(TestParameterInjector.class)
 public class SafeSqlTest {
-  @BeforeClass  // Consistently set the system property across the test suite
-  public static void setUpTrustedType() {
-    System.setProperty(
-        "com.google.mu.safesql.SafeQuery.trusted_sql_type",
-        SafeQueryTest.TrustedSql.class.getName());
-  }
-
   @Test
   public void emptyTemplate() {
     assertThat(template("").with()).isEqualTo(SafeSql.of(""));

@@ -16,10 +16,11 @@ package com.google.mu.safesql;
 
 import static com.google.common.base.CharMatcher.anyOf;
 import static com.google.common.base.CharMatcher.javaIsoControl;
-import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.mu.safesql.InternalCollectors.skippingEmpty;
+import static com.google.mu.safesql.TrustedTypes.TRUSTED_SQL_TYPE_NAME;
+import static com.google.mu.safesql.TrustedTypes.isTrusted;
 import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.Substring.suffix;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -77,9 +78,6 @@ public final class SafeQuery {
    */
   public static final SafeQuery EMPTY = new SafeQuery("");
   private static final CharMatcher ILLEGAL_IDENTIFIER_CHARS = anyOf("'\"`()[]{}\\~!@$^*,/?;").or(javaIsoControl());
-  private static final String TRUSTED_SQL_TYPE_NAME = firstNonNull(
-      System.getProperty("com.google.mu.safesql.SafeQuery.trusted_sql_type"),
-      "com.google.storage.googlesql.safesql.TrustedSqlString");
 
   private final String query;
 
@@ -284,10 +282,6 @@ public final class SafeQuery {
   @Override
   public int hashCode() {
     return query.hashCode();
-  }
-
-  static boolean isTrusted(Object value) {
-    return value instanceof SafeQuery || value.getClass().getName().equals(TRUSTED_SQL_TYPE_NAME);
   }
 
   private SafeQuery parenthesized() {
