@@ -46,6 +46,8 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.errorprone.annotations.MustBeClosed;
@@ -269,6 +271,22 @@ public final class SafeSql {
   /** Returns a SafeSql wrapping the name of {@code enumConstant}. */
   public static SafeSql of(Enum<?> enumConstant) {
     return new SafeSql(enumConstant.name());
+  }
+
+  /**
+   * Convenience method equivalent to {@code of("{param}", param)}, which
+   * is translated to a single question mark ('?') with {@code param} being the value.
+   *
+   * <p>If you have a list of candidate ids that need to be passed to the IN opertor, you can use:
+   * <pre>{@code
+   *   List<Long> userIds = ...;
+   *   SafeSql.of(
+   *       "SELECT * FROM Users WHERE id IN ({user_ids})",
+   *       userIds.stream().map(SafeSql::ofParameter).toList())
+   * }</pre>
+   */
+  public static SafeSql ofParameter(@Nullable Object param) {
+    return of("{param}", param);
   }
 
   /**

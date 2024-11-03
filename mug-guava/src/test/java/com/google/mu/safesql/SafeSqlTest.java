@@ -1,5 +1,6 @@
 package com.google.mu.safesql;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.safesql.SafeSql.template;
 import static java.util.Arrays.asList;
@@ -480,6 +481,14 @@ public class SafeSqlTest {
     assertThat(thrown).hasMessageThat().contains("instead of '?'");
   }
 
+  @Test
+  public void ofParameter_inList() {
+    SafeSql sql = SafeSql.of(
+        "select ({...})",
+        Stream.of(1, null, 3).map(SafeSql::ofParameter).collect(toImmutableList()));
+    assertThat(sql.toString()).isEqualTo("select (?, ?, ?)");
+    assertThat(sql.getParameters()).containsExactly(1, null, 3).inOrder();
+  }
 
   @Test
   public void when_conditionalIsFalse_returnsEmpty() {

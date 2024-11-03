@@ -1,6 +1,8 @@
 package com.google.mu.safesql;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
+import static java.util.stream.Collectors.toList;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
@@ -11,6 +13,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import javax.sql.DataSource;
 
@@ -198,6 +201,16 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .isEqualTo(1);
     assertThat(queryColumn(SafeSql.of("select time from ITEMS where id = {id}", testId()), "time"))
         .containsExactly((Object) null);
+  }
+
+  @Test public void inExpressionUsingList() throws Exception {
+    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")))
+        .isEqualTo(1);
+    SafeSql query = SafeSql.of(
+        "select title from ITEMS where title in ({...}) and id in ({id})",
+        Stream.of("foo", "bar").map(SafeSql::ofParameter).collect(toImmutableList()),
+        Stream.of(testId(), null).map(SafeSql::ofParameter).collect(toList()));
+    assertThat(queryColumn(query, "title")).containsExactly("foo");
   }
 
   private int testId() {
