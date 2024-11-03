@@ -19,7 +19,6 @@ import org.dbunit.dataset.IDataSet;
 import org.dbunit.dataset.xml.FlatXmlDataSetBuilder;
 import org.dbunit.operation.DatabaseOperation;
 import org.h2.jdbcx.JdbcDataSource;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -31,13 +30,6 @@ import com.google.common.hash.Hashing;
 @RunWith(JUnit4.class)
 public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
   @Rule public final TestName testName = new TestName();
-
-  @BeforeClass  // Consistently set the system property across the test suite
-  public static void setUpTrustedType() {
-    System.setProperty(
-        "com.google.mu.safesql.SafeQuery.trusted_sql_type",
-        SafeQueryTest.TrustedSql.class.getName());
-  }
 
   @Override
   protected DataSource getDataSource() {
@@ -137,7 +129,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .containsExactly("foo");
   }
 
-  @Test public void likeExpressionWithPercentValue() throws Exception {
+  @Test public void likeExpressionWithPercentValue_notFound() throws Exception {
     assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")))
         .isEqualTo(1);
     assertThat(queryColumn(
@@ -148,6 +140,17 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .isEmpty();
     assertThat(queryColumn(
             SafeSql.of("select title from ITEMS where title like '{...}%' and id = {id}", "%", testId()), "title"))
+        .isEmpty();
+  }
+
+  @Test public void likeExpressionWithPercentValue_found() throws Exception {
+    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "30%")))
+        .isEqualTo(1);
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '%{...}' and id = {id}", "0%", testId()), "title"))
+        .containsExactly("30%");
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '%{...}' and id = {id}", "3%%", testId()), "title"))
         .isEmpty();
   }
 

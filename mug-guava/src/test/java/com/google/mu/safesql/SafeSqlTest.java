@@ -8,7 +8,6 @@ import static org.junit.Assert.assertThrows;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -19,13 +18,6 @@ import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 @RunWith(TestParameterInjector.class)
 public class SafeSqlTest {
-  @BeforeClass  // Consistently set the system property across the test suite
-  public static void setUpTrustedType() {
-    System.setProperty(
-        "com.google.mu.safesql.SafeQuery.trusted_sql_type",
-        SafeQueryTest.TrustedSql.class.getName());
-  }
-
   @Test
   public void emptyTemplate() {
     assertThat(template("").with()).isEqualTo(SafeSql.of(""));
@@ -352,6 +344,76 @@ public class SafeSqlTest {
         IllegalArgumentException.class, () -> SafeSql.of("select * from `{tbl}`", "a\nb"));
     assertThat(thrown).hasMessageThat().contains("`{tbl}`");
     assertThat(thrown).hasMessageThat().contains("a\nb");
+  }
+
+  @Test
+  public void safeSqlShouldNotBeSingleQuoted() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> SafeSql.of("SELECT '{query}' WHERE TRUE", /* query */ SafeSql.of("1")));
+    assertThat(thrown).hasMessageThat().contains("SafeSql should not be quoted: '{query}'");
+  }
+
+  @Test
+  public void safeSqlShouldNotBeDoubleQuoted() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> SafeSql.of("SELECT \"{query}\" WHERE TRUE", /* query */ SafeSql.of("1")));
+    assertThat(thrown).hasMessageThat().contains("SafeSql should not be quoted: \"{query}\"");
+  }
+
+  @Test
+  public void safeSqlListShouldNotBeSingleQuoted() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> SafeSql.of("SELECT '{query}' WHERE TRUE", /* query */ SafeSql.listOf("1")));
+    assertThat(thrown).hasMessageThat().contains("SafeSql should not be quoted: '{query}'");
+  }
+
+  @Test
+  public void safeSqlListShouldNotBeDoubleQuoted() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> SafeSql.of("SELECT \"{...}\" WHERE TRUE", SafeSql.listOf("1")));
+    assertThat(thrown).hasMessageThat().contains("SafeSql should not be quoted: \"{...}\"");
+  }
+
+  @Test
+  public void safeSqlListShouldNotBeBackquoted() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> SafeSql.of("SELECT `{query}` WHERE TRUE", /* query */ SafeSql.listOf("1")));
+    assertThat(thrown).hasMessageThat().contains("{query}[0] expected to be String");
+  }
+
+  @Test
+  public void safeSqlShouldNotBeBackquoted() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> SafeSql.of("SELECT `{query}` WHERE TRUE", /* query */ SafeSql.of("1")));
+    assertThat(thrown).hasMessageThat().contains("SafeSql should not be backtick quoted: `{query}`");
+  }
+
+  @Test
+  public void backquoteAndSingleQuoteMixed() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class, () -> SafeSql.of("SELECT * FROM `{tbl}'", "jobs"));
+    assertThat(thrown).hasMessageThat().contains("`{tbl}'");
+  }
+
+  @Test
+  public void singleQuoteAndBackquoteMixed() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class, () -> SafeSql.of("SELECT * FROM '{tbl}`", "jobs"));
+    assertThat(thrown).hasMessageThat().contains("'{tbl}`");
   }
 
   @Test

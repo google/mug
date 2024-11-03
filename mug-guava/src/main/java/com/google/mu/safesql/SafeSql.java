@@ -21,6 +21,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Streams.stream;
 import static com.google.mu.safesql.InternalCollectors.skippingEmpty;
 import static com.google.mu.safesql.SafeQuery.checkIdentifier;
+import static com.google.mu.safesql.SafeQuery.validatePlaceholder;
 import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.Substring.suffix;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
@@ -34,7 +35,9 @@ import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -263,11 +266,6 @@ public final class SafeSql {
     return template(template).with(params);
   }
 
-  /** Returns a SafeSql wrapping {@code tableName}. */
-  public static SafeSql of(TableName tableName) {
-    return new SafeSql(tableName.value());
-  }
-
   /** Returns a SafeSql wrapping the name of {@code enumConstant}. */
   public static SafeSql of(Enum<?> enumConstant) {
     return new SafeSql(enumConstant.name());
@@ -342,41 +340,35 @@ public final class SafeSql {
    */
   public static Template<SafeSql> template(@CompileTimeConstant String template) {
     return StringFormat.template(template, (fragments, placeholders) -> {
-      Iterator<String> it = fragments.iterator();
-      class SqlComposer {
-        private final Builder builder = new Builder();
-        private String next = it.next();
-
-        SafeSql composeSql() {
-          placeholders.forEachOrdered(this::composeForPlaceholder);
-          builder.appendSql(next);
-          checkState(!it.hasNext());
-          return builder.build();
-        }
-
-        private void composeForPlaceholder(Substring.Match placeholder, Object value) {
+      Deque<String> texts = new ArrayDeque<>(fragments);
+      Builder builder = new Builder();
+      class SqlWriter {
+        void writePlaceholder(Substring.Match placeholder, Object value) {
+          validatePlaceholder(placeholder);
           String paramName = validate(placeholder.skip(1, 1).toString().trim());
-          if (value instanceof SafeSql) {
-            builder.appendSql(nextFragment()).addSubQuery((SafeSql) value);
-            return;
-          }
-          checkArgument(!(value instanceof SafeQuery), "Don't mix SafeQuery with SafeSql.");
+          checkArgument(
+              !(value instanceof SafeQuery),
+              "%s: don't mix in SafeQuery with SafeSql.", placeholder);
           checkArgument(
               !(value instanceof Optional),
-              "Optional parameter not supported. Consider using SafeSql.optionally() or SafeSql.when()?");
+              "%s: optional parameter not supported." +
+              " Consider using SafeSql.optionally() or SafeSql.when()?",
+              placeholder);
           if (value instanceof Iterable) {
             Iterator<?> elements = ((Iterable<?>) value).iterator();
             checkArgument(elements.hasNext(), "%s cannot be empty list", placeholder);
-            builder.appendSql(nextFragment());
+            builder.appendSql(texts.pop());
             if (placeholder.isImmediatelyBetween("`", "`")) {
               builder.appendSql(
                   mustBeIdentifiers(placeholder, elements).collect(Collectors.joining("`, `")));
             } else {
               builder.addSubQuery(mustBeSubqueries(placeholder, elements).collect(joining(", ")));
+              validateSubqueryPlaceholder(placeholder);
             }
-            return;
-          }
-          if (appendBeforeQuotedPlaceholder("`", placeholder, "`", value)) {
+          } else if (value instanceof SafeSql) {
+            builder.appendSql(texts.pop()).addSubQuery((SafeSql) value);
+            validateSubqueryPlaceholder(placeholder);
+          } else if (appendBeforeQuotedPlaceholder("`", placeholder, "`", value)) {
             String identifier = checkIdentifier(placeholder, (String) value);
             checkArgument(identifier.length() > 0, "`%s` cannot be empty", placeholder);
             builder.appendSql("`" + identifier + "`");
@@ -389,8 +381,7 @@ public final class SafeSql {
           } else if (appendBeforeQuotedPlaceholder("'", placeholder, "'", value)) {
             builder.addParameter(paramName, value);
           } else {
-            builder.appendSql(nextFragment());
-            builder.addParameter(paramName, value);
+            builder.appendSql(texts.pop()).addParameter(paramName, value);
           }
         }
 
@@ -399,20 +390,18 @@ public final class SafeSql {
           boolean quoted = placeholder.isImmediatelyBetween(open, close);
           if (quoted) {
             checkArgument(
-                value instanceof String, "Placeholder %s%s%s must be String", open, placeholder, close);
-            builder.appendSql(suffix(open).removeFrom(nextFragment()));
-            next = prefix(close).removeFrom(next);
+                value instanceof String,
+                "Placeholder %s%s%s must be String", open, placeholder, close);
+            builder.appendSql(suffix(open).removeFrom(texts.pop()));
+            texts.push(prefix(close).removeFrom(texts.pop()));
           }
           return quoted;
         }
-
-        private String nextFragment() {
-          String fragment = next;
-          next = it.next();
-          return fragment;
-        }
       }
-      return new SqlComposer().composeSql();
+      placeholders.forEachOrdered(new SqlWriter()::writePlaceholder);
+      builder.appendSql(texts.pop());
+      checkState(texts.isEmpty());
+      return builder.build();
     });
   }
 
@@ -541,6 +530,18 @@ public final class SafeSql {
     return statement;
   }
 
+  private static void validateSubqueryPlaceholder(Substring.Match placeholder) {
+    checkArgument(
+        !placeholder.isImmediatelyBetween("'", "'"),
+        "SafeSql should not be quoted: '%s'", placeholder);
+    checkArgument(
+        !placeholder.isImmediatelyBetween("\"", "\""),
+        "SafeSql should not be quoted: \"%s\"", placeholder);
+    checkArgument(
+        !placeholder.isImmediatelyBetween("`", "`"),
+        "SafeSql should not be backtick quoted: `%s`", placeholder);
+  }
+
   private static Stream<SafeSql> mustBeSubqueries(
       CharSequence placeholder, Iterator<?> elements) {
     return BiStream.zip(indexesFrom(0), stream(elements))
@@ -549,9 +550,9 @@ public final class SafeSql {
               element != null,
               "%s[%s] expected to be SafeSql, but is null", placeholder, index);
           checkArgument(
-            element instanceof SafeSql,
-            "%s[%s] expected to be SafeSql, but is %s",
-            placeholder, index, element.getClass());
+              element instanceof SafeSql,
+              "%s[%s] expected to be SafeSql, but is %s",
+              placeholder, index, element.getClass());
           return (SafeSql) element;
         });
   }
