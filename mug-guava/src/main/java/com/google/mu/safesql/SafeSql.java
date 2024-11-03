@@ -229,8 +229,12 @@ public final class SafeSql {
     this.paramValues = paramValues;
   }
 
+  private static final SafeSql FALSE = new SafeSql("(1 = 0)");
+  private static final SafeSql TRUE = new SafeSql("(1 = 1)");
+
+
   /** An empty SQL */
-  public static SafeSql EMPTY = new SafeSql("");
+  public static final SafeSql EMPTY = new SafeSql("");
 
   /**
    * Convenience method when you need to create the {@link SafeSql} inline, with both the
@@ -412,27 +416,27 @@ public final class SafeSql {
   /**
    * A collector that joins boolean query snippets using {@code AND} operator. The
    * AND'ed sub-queries will be enclosed in pairs of parenthesis to avoid
-   * ambiguity. If the input is empty, the result will be "TRUE".
+   * ambiguity. If the input is empty, the result will be "(1 = 1)".
    *
    * <p>Empty SafeSql elements are ignored and not joined.
    */
   public static Collector<SafeSql, ?, SafeSql> and() {
     return collectingAndThen(
         skippingEmpty(mapping(SafeSql::parenthesized, joining(" AND "))),
-        query -> query.sql.isEmpty() ? of("1 = 1") : query);
+        query -> query.sql.isEmpty() ? TRUE : query);
   }
 
   /**
    * A collector that joins boolean query snippets using {@code OR} operator. The
    * OR'ed sub-queries will be enclosed in pairs of parenthesis to avoid
-   * ambiguity. If the input is empty, the result will be "FALSE".
+   * ambiguity. If the input is empty, the result will be "(1 = 0)".
    *
    * <p>Empty SafeSql elements are ignored and not joined.
    */
   public static Collector<SafeSql, ?, SafeSql> or() {
     return collectingAndThen(
         skippingEmpty(mapping(SafeSql::parenthesized, joining(" OR "))),
-        query -> query.sql.isEmpty() ? of("1 = 0") : query);
+        query -> query.sql.isEmpty() ? FALSE : query);
   }
 
   /**

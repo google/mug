@@ -529,7 +529,7 @@ public class SafeSqlTest {
   @Test
   public void andCollector_empty() {
     ImmutableList<SafeSql> queries = ImmutableList.of();
-    assertThat(queries.stream().collect(SafeSql.and())).isEqualTo(SafeSql.of("1 = 1"));
+    assertThat(queries.stream().collect(SafeSql.and())).isEqualTo(SafeSql.of("(1 = 1)"));
   }
 
   @Test
@@ -576,7 +576,7 @@ public class SafeSqlTest {
   @Test
   public void orCollector_empty() {
     ImmutableList<SafeSql> queries = ImmutableList.of();
-    assertThat(queries.stream().collect(SafeSql.or())).isEqualTo(SafeSql.of("1 = 0"));
+    assertThat(queries.stream().collect(SafeSql.or())).isEqualTo(SafeSql.of("(1 = 0)"));
   }
 
   @Test
