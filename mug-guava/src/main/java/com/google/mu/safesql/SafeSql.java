@@ -232,12 +232,6 @@ public final class SafeSql {
   /** An empty SQL */
   public static SafeSql EMPTY = new SafeSql("");
 
-  /** Returns a SafeSql with compile-time {@code sql} text with no parameter. */
-  @TemplateFormatMethod
-  public static SafeSql of(@TemplateString @CompileTimeConstant String sql) {
-    return new SafeSql(validate(sql));
-  }
-
   /**
    * Convenience method when you need to create the {@link SafeSql} inline, with both the
    * query template and the parameters.
