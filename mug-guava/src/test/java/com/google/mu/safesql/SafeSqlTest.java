@@ -383,6 +383,24 @@ public class SafeSqlTest {
   }
 
   @Test
+  public void safeSqlListShouldNotBeBackquoted() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> SafeSql.of("SELECT `{query}` WHERE TRUE", SafeSql.listOf("1")));
+    assertThat(thrown).hasMessageThat().contains("{query}[0] expected to be String");
+  }
+
+  @Test
+  public void safeSqlShouldNotBeBackquoted() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> SafeSql.of("SELECT `{query}` WHERE TRUE", SafeSql.of("1")));
+    assertThat(thrown).hasMessageThat().contains("SafeSql should not be backtick quoted: `{query}`");
+  }
+
+  @Test
   public void backquoteAndSingleQuoteMixed() {
     IllegalArgumentException thrown =
         assertThrows(

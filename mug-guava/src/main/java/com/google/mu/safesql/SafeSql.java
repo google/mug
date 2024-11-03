@@ -542,6 +542,9 @@ public final class SafeSql {
     checkArgument(
         !placeholder.isImmediatelyBetween("\"", "\""),
         "SafeSql should not be quoted: \"%s\"", placeholder);
+    checkArgument(
+        !placeholder.isImmediatelyBetween("`", "`"),
+        "SafeSql should not be backtick quoted: `%s`", placeholder);
   }
 
   private static Stream<SafeSql> mustBeSubqueries(
