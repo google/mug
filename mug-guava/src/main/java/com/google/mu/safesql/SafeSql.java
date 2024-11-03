@@ -229,12 +229,12 @@ public final class SafeSql {
     this.paramValues = paramValues;
   }
 
-  private static SafeSql FALSE = new SafeSql("(1 = 0)");
-  private static SafeSql TRUE = new SafeSql("(1 = 1)");
+  private static final SafeSql FALSE = new SafeSql("(1 = 0)");
+  private static final SafeSql TRUE = new SafeSql("(1 = 1)");
 
 
   /** An empty SQL */
-  public static SafeSql EMPTY = new SafeSql("");
+  public static final SafeSql EMPTY = new SafeSql("");
 
   /**
    * Convenience method when you need to create the {@link SafeSql} inline, with both the
