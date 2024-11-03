@@ -351,7 +351,7 @@ public class SafeSqlTest {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> SafeSql.of("SELECT '{query}' WHERE TRUE", SafeSql.of("1")));
+            () -> SafeSql.of("SELECT '{query}' WHERE TRUE", /* query */ SafeSql.of("1")));
     assertThat(thrown).hasMessageThat().contains("SafeSql should not be quoted: '{query}'");
   }
 
@@ -360,7 +360,7 @@ public class SafeSqlTest {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> SafeSql.of("SELECT \"{query}\" WHERE TRUE", SafeSql.of("1")));
+            () -> SafeSql.of("SELECT \"{query}\" WHERE TRUE", /* query */ SafeSql.of("1")));
     assertThat(thrown).hasMessageThat().contains("SafeSql should not be quoted: \"{query}\"");
   }
 
@@ -369,7 +369,7 @@ public class SafeSqlTest {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> SafeSql.of("SELECT '{query}' WHERE TRUE", SafeSql.listOf("1")));
+            () -> SafeSql.of("SELECT '{query}' WHERE TRUE", /* query */ SafeSql.listOf("1")));
     assertThat(thrown).hasMessageThat().contains("SafeSql should not be quoted: '{query}'");
   }
 
@@ -378,8 +378,8 @@ public class SafeSqlTest {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> SafeSql.of("SELECT \"{query}\" WHERE TRUE", SafeSql.listOf("1")));
-    assertThat(thrown).hasMessageThat().contains("SafeSql should not be quoted: \"{query}\"");
+            () -> SafeSql.of("SELECT \"{...}\" WHERE TRUE", SafeSql.listOf("1")));
+    assertThat(thrown).hasMessageThat().contains("SafeSql should not be quoted: \"{...}\"");
   }
 
   @Test
@@ -387,7 +387,7 @@ public class SafeSqlTest {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> SafeSql.of("SELECT `{query}` WHERE TRUE", SafeSql.listOf("1")));
+            () -> SafeSql.of("SELECT `{query}` WHERE TRUE", /* query */ SafeSql.listOf("1")));
     assertThat(thrown).hasMessageThat().contains("{query}[0] expected to be String");
   }
 
@@ -396,7 +396,7 @@ public class SafeSqlTest {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> SafeSql.of("SELECT `{query}` WHERE TRUE", SafeSql.of("1")));
+            () -> SafeSql.of("SELECT `{query}` WHERE TRUE", /* query */ SafeSql.of("1")));
     assertThat(thrown).hasMessageThat().contains("SafeSql should not be backtick quoted: `{query}`");
   }
 

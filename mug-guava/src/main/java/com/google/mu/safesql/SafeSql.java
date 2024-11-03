@@ -266,11 +266,6 @@ public final class SafeSql {
     return template(template).with(params);
   }
 
-  /** Returns a SafeSql wrapping {@code tableName}. */
-  public static SafeSql of(TableName tableName) {
-    return new SafeSql(tableName.value());
-  }
-
   /** Returns a SafeSql wrapping the name of {@code enumConstant}. */
   public static SafeSql of(Enum<?> enumConstant) {
     return new SafeSql(enumConstant.name());
