@@ -1,5 +1,6 @@
 package com.google.mu.safesql;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.safesql.SafeSql.template;
 import static java.util.Arrays.asList;
@@ -115,7 +116,7 @@ public class SafeSqlTest {
   public void listOfSafeSqlParameter() {
     SafeSql sql = SafeSql.of(
         "select {columns} from tbl",
-        /* columns */ SafeSql.listOf("c1", "c2"));
+        /* columns */ asList(SafeSql.of("c1"), SafeSql.of("c2")));
     assertThat(sql.toString()).isEqualTo("select c1, c2 from tbl");
     assertThat(sql.getParameters()).isEmpty();
   }
@@ -153,7 +154,7 @@ public class SafeSqlTest {
   public void listParameter_placeholderWithQuestionMark() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
-        () -> SafeSql.of("select {columns?} from tbl", /* columns */ SafeSql.listOf("c1")));
+        () -> SafeSql.of("select `{columns?}` from tbl", /* columns */ asList("c1")));
     assertThat(thrown).hasMessageThat().contains("'?'");
   }
 
@@ -369,7 +370,7 @@ public class SafeSqlTest {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> SafeSql.of("SELECT '{query}' WHERE TRUE", /* query */ SafeSql.listOf("1")));
+            () -> SafeSql.of("SELECT '{query}' WHERE TRUE", /* query */ asList(SafeSql.of("1"))));
     assertThat(thrown).hasMessageThat().contains("SafeSql should not be quoted: '{query}'");
   }
 
@@ -378,7 +379,7 @@ public class SafeSqlTest {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> SafeSql.of("SELECT \"{...}\" WHERE TRUE", SafeSql.listOf("1")));
+            () -> SafeSql.of("SELECT \"{...}\" WHERE TRUE", asList(SafeSql.of("1"))));
     assertThat(thrown).hasMessageThat().contains("SafeSql should not be quoted: \"{...}\"");
   }
 
@@ -387,7 +388,7 @@ public class SafeSqlTest {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> SafeSql.of("SELECT `{query}` WHERE TRUE", /* query */ SafeSql.listOf("1")));
+            () -> SafeSql.of("SELECT `{query}` WHERE TRUE", /* query */ asList(SafeSql.of("1"))));
     assertThat(thrown).hasMessageThat().contains("{query}[0] expected to be String");
   }
 
@@ -480,6 +481,14 @@ public class SafeSqlTest {
     assertThat(thrown).hasMessageThat().contains("instead of '?'");
   }
 
+  @Test
+  public void ofParam_inList() {
+    SafeSql sql = SafeSql.of(
+        "select ({...})",
+        Stream.of(1, null, 3).map(SafeSql::ofParam).collect(toImmutableList()));
+    assertThat(sql.toString()).isEqualTo("select (?, ?, ?)");
+    assertThat(sql.getParameters()).containsExactly(1, null, 3).inOrder();
+  }
 
   @Test
   public void when_conditionalIsFalse_returnsEmpty() {

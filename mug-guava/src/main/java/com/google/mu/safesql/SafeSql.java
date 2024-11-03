@@ -17,7 +17,6 @@ package com.google.mu.safesql;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Streams.stream;
 import static com.google.mu.safesql.InternalCollectors.skippingEmpty;
 import static com.google.mu.safesql.SafeQuery.checkIdentifier;
@@ -25,7 +24,6 @@ import static com.google.mu.safesql.SafeQuery.validatePlaceholder;
 import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.Substring.suffix;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
-import static java.util.Arrays.stream;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -46,7 +44,8 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.google.common.collect.ImmutableList;
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.errorprone.annotations.MustBeClosed;
 import com.google.mu.annotations.TemplateFormatMethod;
@@ -111,8 +110,8 @@ import com.google.mu.util.stream.BiStream;
  *
  *   SafeSql queryUsers(UserCriteria criteria, @CompileTimeConstant String... columns) {
  *     SafeSql sql = SafeSql.of(
- *         "select {columns} from Users where {criteria}",
- *         SafeSql.listOf(columns).stream().collect(SafeSql.joining(", ")),
+ *         "select `{columns}` from Users where {criteria}",
+ *         asList(columns),
  *         Stream.of(
  *               optionally("id = {id}", criteria.userId()),
  *               optionally("firstName LIKE '%{first_name}%'", criteria.firstName()))
@@ -126,7 +125,7 @@ import com.google.mu.util.stream.BiStream;
  * unspecified (empty), the resulting SQL will look like:
  *
  * <pre>{@code
- * select firstName, lastName from Users where firstName LIKE ?
+ * select `firstName`, `lastName` from Users where firstName LIKE ?
  * }</pre>
  *
  * And when you call {@code usersQuery.prepareStatement(connection)},
@@ -233,12 +232,6 @@ public final class SafeSql {
   /** An empty SQL */
   public static SafeSql EMPTY = new SafeSql("");
 
-  /** Returns a SafeSql with compile-time {@code sql} text with no parameter. */
-  @TemplateFormatMethod
-  public static SafeSql of(@TemplateString @CompileTimeConstant String sql) {
-    return new SafeSql(validate(sql));
-  }
-
   /**
    * Convenience method when you need to create the {@link SafeSql} inline, with both the
    * query template and the parameters.
@@ -272,27 +265,19 @@ public final class SafeSql {
   }
 
   /**
-   * An optional query that's only rendered if {@code condition} is true; otherwise returns {@link
-   * #EMPTY}. It's for use cases where a subquery is only conditionally added, for example the
-   * following query will only include the userEmail column under super user mode:
+   * Convenience method equivalent to {@code of("{param}", param)}, which
+   * is translated to a single question mark ('?') with {@code param} being the value.
    *
+   * <p>If you have a list of candidate ids that need to be passed to the IN opertor, you can use:
    * <pre>{@code
-   * SafeSql query = SafeSql.of(
-   *     "SELECT job_id, start_timestamp {user_email} FROM jobs",
-   *     SafeSql.when(isSuperUser, ", user_email"));
+   *   List<Long> userIds = ...;
+   *   SafeSql.of(
+   *       "SELECT * FROM Users WHERE id IN ({user_ids})",
+   *       userIds.stream().map(SafeSql::ofParam).toList())
    * }</pre>
-   *
-   * @param condition the guard condition to determine if {@code template} should be renderd
-   * @param template the template to render if {@code condition} is true
-   * @param params see {@link #of(String, Object...)} for discussion on the template arguments
    */
-  @TemplateFormatMethod
-  @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
-  public static SafeSql when(
-      boolean condition, @TemplateString @CompileTimeConstant String template, Object... params) {
-    checkNotNull(template);
-    checkNotNull(params);
-    return condition ? of(template, params) : EMPTY;
+  public static SafeSql ofParam(@Nullable Object param) {
+    return of("{param}", param);
   }
 
   /**
@@ -314,9 +299,28 @@ public final class SafeSql {
     return param.map(v -> of(query, v)).orElse(EMPTY);
   }
 
-  /** Wraps the compile-time string constants as SafeSql objects. */
-  public static ImmutableList<SafeSql> listOf(@CompileTimeConstant String... texts) {
-    return stream(texts).map(t -> new SafeSql(validate(t))).collect(toImmutableList());
+  /**
+   * An optional query that's only rendered if {@code condition} is true; otherwise returns {@link
+   * #EMPTY}. It's for use cases where a subquery is only conditionally added, for example the
+   * following query will only include the userEmail column under super user mode:
+   *
+   * <pre>{@code
+   * SafeSql query = SafeSql.of(
+   *     "SELECT job_id, start_timestamp {user_email} FROM jobs",
+   *     SafeSql.when(isSuperUser, ", user_email"));
+   * }</pre>
+   *
+   * @param condition the guard condition to determine if {@code template} should be renderd
+   * @param template the template to render if {@code condition} is true
+   * @param params see {@link #of(String, Object...)} for discussion on the template arguments
+   */
+  @TemplateFormatMethod
+  @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
+  public static SafeSql when(
+      boolean condition, @TemplateString @CompileTimeConstant String template, Object... params) {
+    checkNotNull(template);
+    checkNotNull(params);
+    return condition ? of(template, params) : EMPTY;
   }
 
 
@@ -433,21 +437,6 @@ public final class SafeSql {
 
   /**
    * Returns a collector that joins SafeSql elements using {@code delimiter}.
-   *
-   * <p>Useful if you need to parameterize by a set of columns to select. Say, you might need to
-   * query the table names only, or read the project, dataset and table names:
-   *
-   * <pre>{@code
-   * private static final Template<SafeSql> QUERY_TABLES =
-   *     SafeSql.template("SELECT {columns} FROM {schema}.INFORMATION_SCHEMA.TABLES");
-   *
-   * SafeSql getTableNames = QUERY_TABLES.with(SafeSql.of("table_name"));
-   * SafeSql getFullyQualified = QUERY_TABLES.with(
-   *     SafeSql.listOf("table_catalog", "table_schema", "table_name")
-   *         .stream()
-   *         .collect(SafeSql.joining(", ")),
-   *     SafeSql.of("my-schema"));
-   * }</pre>
    *
    * <p>Empty SafeSql elements are ignored and not joined.
    */
