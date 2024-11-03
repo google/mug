@@ -482,10 +482,10 @@ public class SafeSqlTest {
   }
 
   @Test
-  public void ofParameter_inList() {
+  public void ofParam_inList() {
     SafeSql sql = SafeSql.of(
         "select ({...})",
-        Stream.of(1, null, 3).map(SafeSql::ofParameter).collect(toImmutableList()));
+        Stream.of(1, null, 3).map(SafeSql::ofParam).collect(toImmutableList()));
     assertThat(sql.toString()).isEqualTo("select (?, ?, ?)");
     assertThat(sql.getParameters()).containsExactly(1, null, 3).inOrder();
   }

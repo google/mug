@@ -282,11 +282,35 @@ public final class SafeSql {
    *   List<Long> userIds = ...;
    *   SafeSql.of(
    *       "SELECT * FROM Users WHERE id IN ({user_ids})",
-   *       userIds.stream().map(SafeSql::ofParameter).toList())
+   *       userIds.stream().map(SafeSql::ofParam).toList())
    * }</pre>
    */
-  public static SafeSql ofParameter(@Nullable Object param) {
+  public static SafeSql ofParam(@Nullable Object param) {
     return of("{param}", param);
+  }
+
+  /** Wraps the compile-time string constants as SafeSql objects. */
+  public static ImmutableList<SafeSql> listOf(@CompileTimeConstant String... texts) {
+    return stream(texts).map(t -> new SafeSql(validate(t))).collect(toImmutableList());
+  }
+
+  /**
+   * An optional query that's only rendered if {@code param} is present; otherwise returns {@link
+   * #EMPTY}. It's for use cases where a subquery is only added when present, for example the
+   * following query will add the WHERE clause if the filter is present:
+   *
+   * <pre>{@code
+   * SafeSql query = SafeSql.of(
+   *     "SELECT * FROM jobs {where}",
+   *     SafeSql.optionally("WHERE {filter}", getOptionalWhereClause()));
+   * }</pre>
+   */
+  @TemplateFormatMethod
+  @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
+  public static SafeSql optionally(
+      @TemplateString @CompileTimeConstant String query, Optional<?> param) {
+    checkNotNull(query);
+    return param.map(v -> of(query, v)).orElse(EMPTY);
   }
 
   /**
@@ -311,30 +335,6 @@ public final class SafeSql {
     checkNotNull(template);
     checkNotNull(params);
     return condition ? of(template, params) : EMPTY;
-  }
-
-  /**
-   * An optional query that's only rendered if {@code param} is present; otherwise returns {@link
-   * #EMPTY}. It's for use cases where a subquery is only added when present, for example the
-   * following query will add the WHERE clause if the filter is present:
-   *
-   * <pre>{@code
-   * SafeSql query = SafeSql.of(
-   *     "SELECT * FROM jobs {where}",
-   *     SafeSql.optionally("WHERE {filter}", getOptionalWhereClause()));
-   * }</pre>
-   */
-  @TemplateFormatMethod
-  @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
-  public static SafeSql optionally(
-      @TemplateString @CompileTimeConstant String query, Optional<?> param) {
-    checkNotNull(query);
-    return param.map(v -> of(query, v)).orElse(EMPTY);
-  }
-
-  /** Wraps the compile-time string constants as SafeSql objects. */
-  public static ImmutableList<SafeSql> listOf(@CompileTimeConstant String... texts) {
-    return stream(texts).map(t -> new SafeSql(validate(t))).collect(toImmutableList());
   }
 
 

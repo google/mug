@@ -208,8 +208,8 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .isEqualTo(1);
     SafeSql query = SafeSql.of(
         "select title from ITEMS where title in ({...}) and id in ({id})",
-        Stream.of("foo", "bar").map(SafeSql::ofParameter).collect(toImmutableList()),
-        Stream.of(testId(), null).map(SafeSql::ofParameter).collect(toList()));
+        Stream.of("foo", "bar").map(SafeSql::ofParam).collect(toImmutableList()),
+        Stream.of(testId(), null).map(SafeSql::ofParam).collect(toList()));
     assertThat(queryColumn(query, "title")).containsExactly("foo");
   }
 
