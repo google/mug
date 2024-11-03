@@ -129,7 +129,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .containsExactly("foo");
   }
 
-  @Test public void likeExpressionWithPercentValue() throws Exception {
+  @Test public void likeExpressionWithPercentValue_notFound() throws Exception {
     assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")))
         .isEqualTo(1);
     assertThat(queryColumn(
@@ -140,6 +140,17 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .isEmpty();
     assertThat(queryColumn(
             SafeSql.of("select title from ITEMS where title like '{...}%' and id = {id}", "%", testId()), "title"))
+        .isEmpty();
+  }
+
+  @Test public void likeExpressionWithPercentValue_found() throws Exception {
+    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "30%")))
+        .isEqualTo(1);
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '%{...}' and id = {id}", "0%", testId()), "title"))
+        .containsExactly("30%");
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '%{...}' and id = {id}", "3%%", testId()), "title"))
         .isEmpty();
   }
 
