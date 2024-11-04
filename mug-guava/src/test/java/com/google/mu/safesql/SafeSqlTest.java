@@ -12,6 +12,7 @@ import java.util.stream.Stream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableList;
 import com.google.common.testing.EqualsTester;
 import com.google.common.testing.NullPointerTester;
@@ -50,6 +51,15 @@ public class SafeSqlTest {
         "select `{columns}` from tbl",
         /* columns */ asList("phone number"));
     assertThat(sql.toString()).isEqualTo("select `phone number` from tbl");
+    assertThat(sql.getParameters()).isEmpty();
+  }
+
+  @Test
+  public void listOfBackquotedEnumParameters() {
+    SafeSql sql = SafeSql.of(
+        "select `{columns}` from Users",
+        /* columns */ asList(Pii.values()));
+    assertThat(sql.toString()).isEqualTo("select `ssn`, `email` from Users");
     assertThat(sql.getParameters()).isEmpty();
   }
 
@@ -682,5 +692,13 @@ public class SafeSqlTest {
   public void testNulls() {
     new NullPointerTester().testAllPublicStaticMethods(SafeSql.class);
     new NullPointerTester().testAllPublicInstanceMethods(SafeSql.of("select *"));
+  }
+
+  private enum Pii {
+    SSN, EMAIL;
+
+    @Override public String toString() {
+      return Ascii.toLowerCase(name());
+    }
   }
 }

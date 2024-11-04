@@ -262,11 +262,6 @@ public final class SafeSql {
     return template(template).with(params);
   }
 
-  /** Returns a SafeSql wrapping the name of {@code enumConstant}. */
-  public static SafeSql of(Enum<?> enumConstant) {
-    return new SafeSql(enumConstant.name());
-  }
-
   /**
    * Convenience method equivalent to {@code of("{param}", param)}, which
    * is translated to a single question mark ('?') with {@code param} being the value.
@@ -557,9 +552,9 @@ public final class SafeSql {
           String name = elementNameFormat.format(placeholder, index);
           checkArgument(element != null, "%s expected to be an identifier, but is null", name);
           checkArgument(
-              element instanceof String,
+              element instanceof String || element instanceof Enum,
               "%s expected to be String, but is %s", name, element.getClass());
-          return checkIdentifier(name, (String) element);
+          return checkIdentifier(name, element.toString());
         });
   }
 
