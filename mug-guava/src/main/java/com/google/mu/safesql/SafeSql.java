@@ -38,7 +38,6 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -501,7 +500,7 @@ public final class SafeSql {
 
   @Override
   public int hashCode() {
-    return Objects.hash(sql, paramValues);
+    return sql.hashCode();
   }
 
   @Override
