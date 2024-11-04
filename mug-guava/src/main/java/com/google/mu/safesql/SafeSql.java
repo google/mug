@@ -280,6 +280,21 @@ public final class SafeSql {
   }
 
   /**
+   * Wraps non-negative {@code number} as a SafeSql object.
+   *
+   * <p>For example, the following SQL Server query allows parameterization by the TOP n number:
+   * <pre>{@code
+   *   SafeSql.of("select top {...} UserId from Users", nonNegative(pageSize))
+   * }</pre>
+   *
+   * <p>This is needed because in SQL Server the TOP number can't be parameterized by JDBC.
+   */
+  public static SafeSql nonNegative(long number) {
+    checkArgument(number >= 0, "negative number disallowed: %s", number);
+    return new SafeSql(Long.toString(number));
+  }
+
+  /**
    * An optional query that's only rendered if {@code param} is present; otherwise returns {@link
    * #EMPTY}. It's for use cases where a subquery is only added when present, for example the
    * following query will add the WHERE clause if the filter is present:
