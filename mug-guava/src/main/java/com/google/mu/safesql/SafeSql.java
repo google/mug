@@ -229,6 +229,7 @@ public final class SafeSql {
     this.paramValues = paramValues;
   }
 
+  private static final StringFormat.Template<SafeSql> PARAM = template("{param}");
   private static final SafeSql FALSE = new SafeSql("(1 = 0)");
   private static final SafeSql TRUE = new SafeSql("(1 = 1)");
 
@@ -275,7 +276,7 @@ public final class SafeSql {
    * }</pre>
    */
   public static SafeSql ofParam(@Nullable Object param) {
-    return of("{param}", param);
+    return PARAM.with(param);
   }
 
   /**
