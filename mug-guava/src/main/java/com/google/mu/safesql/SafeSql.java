@@ -228,7 +228,8 @@ public final class SafeSql {
     this.paramValues = paramValues;
   }
 
-  private static final StringFormat PLACEHOLDER_ELEMENT = new StringFormat("{placeholder}[{index}]");
+  private static final StringFormat PLACEHOLDER_ELEMENT_NAME =
+      new StringFormat("{placeholder}[{index}]");
   private static final StringFormat.Template<SafeSql> PARAM = template("{param}");
   private static final SafeSql FALSE = new SafeSql("(1 = 0)");
   private static final SafeSql TRUE = new SafeSql("(1 = 1)");
@@ -516,11 +517,20 @@ public final class SafeSql {
     return false;
   }
 
+  private SafeSql parenthesized() {
+    return new SafeSql("(" + sql + ")", paramValues);
+  }
+
   private <S extends PreparedStatement> S setArgs(S statement) throws SQLException {
     for (int i = 0; i < paramValues.size(); i++) {
       statement.setObject(i + 1, paramValues.get(i));
     }
     return statement;
+  }
+
+  private static String validate(String sql) {
+    checkArgument(sql.indexOf('?') < 0, "please use named {placeholder} instead of '?'");
+    return sql;
   }
 
   private static void validateSubqueryPlaceholder(Substring.Match placeholder) {
@@ -554,16 +564,7 @@ public final class SafeSql {
   private static BiStream<String, ?> eachPlaceholderValue(
       CharSequence placeholder, Iterator<?> elements) {
     return BiStream.zip(indexesFrom(0), stream(elements))
-        .mapKeys((index, element) -> PLACEHOLDER_ELEMENT.format(placeholder, index));
-  }
-
-  private static String validate(String sql) {
-    checkArgument(sql.indexOf('?') < 0, "please use named {placeholder} instead of '?'");
-    return sql;
-  }
-
-  private SafeSql parenthesized() {
-    return new SafeSql("(" + sql + ")", paramValues);
+        .mapKeys((index, element) -> PLACEHOLDER_ELEMENT_NAME.format(placeholder, index));
   }
 
   private static String escapePercent(String s) {
