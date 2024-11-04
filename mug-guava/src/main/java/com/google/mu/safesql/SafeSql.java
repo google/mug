@@ -42,7 +42,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
 
@@ -364,9 +363,14 @@ public final class SafeSql {
             builder.appendSql(texts.pop());
             if (placeholder.isImmediatelyBetween("`", "`")) {
               builder.appendSql(
-                  mustBeIdentifiers(placeholder, elements).collect(Collectors.joining("`, `")));
+                  eachPlaceholderValue(placeholder, elements)
+                      .mapToObj(SafeSql::mustBeIdentifier)
+                      .collect(Collectors.joining("`, `")));
             } else {
-              builder.addSubQuery(mustBeSubqueries(placeholder, elements).collect(joining(", ")));
+              builder.addSubQuery(
+                  eachPlaceholderValue(placeholder, elements)
+                      .mapToObj(SafeSql::mustBeSubquery)
+                      .collect(joining(", ")));
               validateSubqueryPlaceholder(placeholder);
             }
           } else if (value instanceof SafeSql) {
@@ -531,30 +535,26 @@ public final class SafeSql {
         "SafeSql should not be backtick quoted: `%s`", placeholder);
   }
 
-  private static Stream<SafeSql> mustBeSubqueries(
-      CharSequence placeholder, Iterator<?> elements) {
-    return BiStream.zip(indexesFrom(0), stream(elements))
-        .mapToObj((index, element) -> {
-          String name = PLACEHOLDER_ELEMENT.format(placeholder, index);
-          checkArgument(element != null, "%s expected to be SafeSql, but is null", name);
-          checkArgument(
-              element instanceof SafeSql,
-              "%s expected to be SafeSql, but is %s", name, element.getClass());
-          return (SafeSql) element;
-        });
+  private static String mustBeIdentifier(String name, Object element) {
+    checkArgument(element != null, "%s expected to be an identifier, but is null", name);
+    checkArgument(
+        element instanceof String || element instanceof Enum,
+        "%s expected to be String, but is %s", name, element.getClass());
+    return checkIdentifier(name, element.toString());
   }
 
-  private static Stream<String> mustBeIdentifiers(
+  private static SafeSql mustBeSubquery(String name, Object element) {
+    checkArgument(element != null, "%s expected to be SafeSql, but is null", name);
+    checkArgument(
+        element instanceof SafeSql,
+        "%s expected to be SafeSql, but is %s", name, element.getClass());
+    return (SafeSql) element;
+  }
+
+  private static BiStream<String, ?> eachPlaceholderValue(
       CharSequence placeholder, Iterator<?> elements) {
     return BiStream.zip(indexesFrom(0), stream(elements))
-        .mapToObj((index, element) -> {
-          String name = PLACEHOLDER_ELEMENT.format(placeholder, index);
-          checkArgument(element != null, "%s expected to be an identifier, but is null", name);
-          checkArgument(
-              element instanceof String || element instanceof Enum,
-              "%s expected to be String, but is %s", name, element.getClass());
-          return checkIdentifier(name, element.toString());
-        });
+        .mapKeys((index, element) -> PLACEHOLDER_ELEMENT.format(placeholder, index));
   }
 
   private static String validate(String sql) {
