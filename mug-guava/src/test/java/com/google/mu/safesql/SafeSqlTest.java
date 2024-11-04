@@ -46,6 +46,15 @@ public class SafeSqlTest {
   }
 
   @Test
+  public void backquotedEnumParameter() {
+    SafeSql sql = SafeSql.of(
+        "select `{column}` from Users",
+        /* columns */ Pii.EMAIL);
+    assertThat(sql.toString()).isEqualTo("select `email` from Users");
+    assertThat(sql.getParameters()).isEmpty();
+  }
+
+  @Test
   public void listOfBackquotedStringParameters_singleParameter() {
     SafeSql sql = SafeSql.of(
         "select `{columns}` from tbl",
@@ -202,7 +211,7 @@ public class SafeSqlTest {
         IllegalArgumentException.class,
         () -> SafeSql.of("select * from tbl where name like '%{s}%'", 1));
     assertThat(thrown).hasMessageThat().contains("String");
-    assertThat(thrown).hasMessageThat().contains("'%{s}%'");
+    assertThat(thrown).hasMessageThat().contains("{s}");
   }
 
   @Test
@@ -232,7 +241,7 @@ public class SafeSqlTest {
         IllegalArgumentException.class,
         () -> SafeSql.of("select * from tbl where name like '%{s}'", 1));
     assertThat(thrown).hasMessageThat().contains("String");
-    assertThat(thrown).hasMessageThat().contains("'%{s}'");
+    assertThat(thrown).hasMessageThat().contains("{s}");
   }
 
   @Test
@@ -262,7 +271,7 @@ public class SafeSqlTest {
         IllegalArgumentException.class,
         () -> SafeSql.of("select * from tbl where name like '{s}%'", 1));
     assertThat(thrown).hasMessageThat().contains("String");
-    assertThat(thrown).hasMessageThat().contains("'{s}%'");
+    assertThat(thrown).hasMessageThat().contains("{s}");
   }
 
   @Test

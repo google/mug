@@ -377,30 +377,28 @@ public final class SafeSql {
           } else if (value instanceof SafeSql) {
             builder.appendSql(texts.pop()).addSubQuery((SafeSql) value);
             validateSubqueryPlaceholder(placeholder);
-          } else if (appendBeforeQuotedPlaceholder("`", placeholder, "`", value)) {
-            String identifier = checkIdentifier(placeholder, (String) value);
+          } else if (appendBeforeQuotedPlaceholder("`", placeholder, "`")) {
+            String identifier = mustBeIdentifier("`" + placeholder + "`", value);
             checkArgument(identifier.length() > 0, "`%s` cannot be empty", placeholder);
             builder.appendSql("`" + identifier + "`");
-          } else if (appendBeforeQuotedPlaceholder("'%", placeholder, "%'", value)) {
-            builder.addParameter(paramName, "%" + escapePercent((String) value) + "%");
-          } else if (appendBeforeQuotedPlaceholder("'%", placeholder, "'", value)) {
-            builder.addParameter(paramName, "%" + escapePercent((String) value));
-          } else if (appendBeforeQuotedPlaceholder("'", placeholder, "%'", value)) {
-            builder.addParameter(paramName, escapePercent((String) value) + "%");
-          } else if (appendBeforeQuotedPlaceholder("'", placeholder, "'", value)) {
-            builder.addParameter(paramName, value);
+          } else if (appendBeforeQuotedPlaceholder("'%", placeholder, "%'")) {
+            builder.addParameter(
+                paramName, "%" + escapePercent(mustBeString(placeholder, value)) + "%");
+          } else if (appendBeforeQuotedPlaceholder("'%", placeholder, "'")) {
+            builder.addParameter(paramName, "%" + escapePercent(mustBeString(placeholder, value)));
+          } else if (appendBeforeQuotedPlaceholder("'", placeholder, "%'")) {
+            builder.addParameter(paramName, escapePercent(mustBeString(placeholder, value)) + "%");
+          } else if (appendBeforeQuotedPlaceholder("'", placeholder, "'")) {
+            builder.addParameter(paramName, mustBeString("'" + placeholder + "'", value));
           } else {
             builder.appendSql(texts.pop()).addParameter(paramName, value);
           }
         }
 
         private boolean appendBeforeQuotedPlaceholder(
-            String open, Substring.Match placeholder, String close, Object value) {
+            String open, Substring.Match placeholder, String close) {
           boolean quoted = placeholder.isImmediatelyBetween(open, close);
           if (quoted) {
-            checkArgument(
-                value instanceof String,
-                "Placeholder %s%s%s must be String", open, placeholder, close);
             builder.appendSql(suffix(open).removeFrom(texts.pop()));
             texts.push(prefix(close).removeFrom(texts.pop()));
           }
@@ -545,7 +543,7 @@ public final class SafeSql {
         "SafeSql should not be backtick quoted: `%s`", placeholder);
   }
 
-  private static String mustBeIdentifier(String name, Object element) {
+  private static String mustBeIdentifier(CharSequence name, Object element) {
     checkArgument(element != null, "%s expected to be an identifier, but is null", name);
     checkArgument(
         element instanceof String || element instanceof Enum,
@@ -553,12 +551,20 @@ public final class SafeSql {
     return checkIdentifier(name, element.toString());
   }
 
-  private static SafeSql mustBeSubquery(String name, Object element) {
+  private static SafeSql mustBeSubquery(CharSequence name, Object element) {
     checkArgument(element != null, "%s expected to be SafeSql, but is null", name);
     checkArgument(
         element instanceof SafeSql,
         "%s expected to be SafeSql, but is %s", name, element.getClass());
     return (SafeSql) element;
+  }
+
+  private static String mustBeString(CharSequence name, Object element) {
+    checkArgument(element != null, "%s expected to be String, but is null", name);
+    checkArgument(
+        element instanceof String,
+        "%s expected to be String, but is %s", name, element.getClass());
+    return (String) element;
   }
 
   private static BiStream<String, ?> eachPlaceholderValue(
