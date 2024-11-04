@@ -210,12 +210,22 @@ import com.google.mu.util.stream.BiStream;
  *
  * If someone mistakenly passes in inconsistent ids, they'll get a compilation error.
  *
- * <p>This class serves a different purpose than {@link SafeQuery}, which is to directly escape
+ * <p>Immutable if the template parameters you pass to it are immutable.
+ *
+ * <p>This class serves a different purpose than {@link SafeQuery}. The latter is to directly escape
  * string parameters when the SQL backend has no native support for parameterized queries.
  *
  * @since 8.2
  */
 public final class SafeSql {
+  /** An empty SQL */
+  public static final SafeSql EMPTY = new SafeSql("");
+  private static final SafeSql FALSE = new SafeSql("(1 = 0)");
+  private static final SafeSql TRUE = new SafeSql("(1 = 1)");
+  private static final StringFormat.Template<SafeSql> PARAM = template("{param}");
+  private static final StringFormat PLACEHOLDER_ELEMENT_NAME =
+      new StringFormat("{placeholder}[{index}]");
+
   private final String sql;
   private final List<?> paramValues;
 
@@ -227,16 +237,6 @@ public final class SafeSql {
     this.sql = sql;
     this.paramValues = paramValues;
   }
-
-  private static final StringFormat PLACEHOLDER_ELEMENT_NAME =
-      new StringFormat("{placeholder}[{index}]");
-  private static final StringFormat.Template<SafeSql> PARAM = template("{param}");
-  private static final SafeSql FALSE = new SafeSql("(1 = 0)");
-  private static final SafeSql TRUE = new SafeSql("(1 = 1)");
-
-
-  /** An empty SQL */
-  public static final SafeSql EMPTY = new SafeSql("");
 
   /**
    * Returns {@link SafeSql} using {@code template} and {@code params}.
@@ -322,7 +322,6 @@ public final class SafeSql {
     checkNotNull(params);
     return condition ? of(template, params) : EMPTY;
   }
-
 
   /**
    * Returns a template of {@link SafeSql} based on the {@code template} string.
@@ -509,14 +508,13 @@ public final class SafeSql {
   public boolean equals(Object obj) {
     if (obj instanceof SafeSql) {
       SafeSql that = (SafeSql) obj;
-      return sql.equals(that.sql)
-          && paramValues.equals(that.paramValues);
+      return sql.equals(that.sql) && paramValues.equals(that.paramValues);
     }
     return false;
   }
 
   private SafeSql parenthesized() {
-    return new SafeSql("(" + sql + ")", paramValues);
+    return new SafeSql('(' + sql + ')', paramValues);
   }
 
   private <S extends PreparedStatement> S setArgs(S statement) throws SQLException {
@@ -551,20 +549,20 @@ public final class SafeSql {
     return checkIdentifier(name, element.toString());
   }
 
-  private static SafeSql mustBeSubquery(CharSequence name, Object element) {
-    checkArgument(element != null, "%s expected to be SafeSql, but is null", name);
-    checkArgument(
-        element instanceof SafeSql,
-        "%s expected to be SafeSql, but is %s", name, element.getClass());
-    return (SafeSql) element;
-  }
-
   private static String mustBeString(CharSequence name, Object element) {
     checkArgument(element != null, "%s expected to be String, but is null", name);
     checkArgument(
         element instanceof String,
         "%s expected to be String, but is %s", name, element.getClass());
     return (String) element;
+  }
+
+  private static SafeSql mustBeSubquery(CharSequence name, Object element) {
+    checkArgument(element != null, "%s expected to be SafeSql, but is null", name);
+    checkArgument(
+        element instanceof SafeSql,
+        "%s expected to be SafeSql, but is %s", name, element.getClass());
+    return (SafeSql) element;
   }
 
   private static BiStream<String, ?> eachPlaceholderValue(
