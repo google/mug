@@ -562,7 +562,7 @@ public final class SafeSql {
   }
 
   private static BiStream<String, ?> eachPlaceholderValue(
-      CharSequence placeholder, Iterator<?> elements) {
+      Substring.Match placeholder, Iterator<?> elements) {
     return BiStream.zip(indexesFrom(0), stream(elements))
         .mapKeys((index, element) -> PLACEHOLDER_ELEMENT_NAME.format(placeholder, index));
   }
