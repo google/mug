@@ -203,8 +203,8 @@ import com.google.mu.util.stream.BiStream;
  *   SafeSql sql = SafeSql.of(
  *       """
  *       SELECT u.firstName, p.profileId
- *       FROM (select firstName FROM Users where id = {user_id}) u,
- *            (select profileId FROM Profiles where userId = {user_id}) p
+ *       FROM (select firstName FROM Users where id = '{user_id}') u,
+ *            (select profileId FROM Profiles where userId = '{user_id}') p
  *       """,
  *       userId, userId);
  * }</pre>
