@@ -229,6 +229,7 @@ public final class SafeSql {
     this.paramValues = paramValues;
   }
 
+  private static final StringFormat PLACEHOLDER_ELEMENT = new StringFormat("{placeholder}[{index}]");
   private static final StringFormat.Template<SafeSql> PARAM = template("{param}");
   private static final SafeSql FALSE = new SafeSql("(1 = 0)");
   private static final SafeSql TRUE = new SafeSql("(1 = 1)");
@@ -534,23 +535,20 @@ public final class SafeSql {
       CharSequence placeholder, Iterator<?> elements) {
     return BiStream.zip(indexesFrom(0), stream(elements))
         .mapToObj((index, element) -> {
-          checkArgument(
-              element != null,
-              "%s[%s] expected to be SafeSql, but is null", placeholder, index);
+          String name = PLACEHOLDER_ELEMENT.format(placeholder, index);
+          checkArgument(element != null, "%s expected to be SafeSql, but is null", name);
           checkArgument(
               element instanceof SafeSql,
-              "%s[%s] expected to be SafeSql, but is %s",
-              placeholder, index, element.getClass());
+              "%s expected to be SafeSql, but is %s", name, element.getClass());
           return (SafeSql) element;
         });
   }
 
   private static Stream<String> mustBeIdentifiers(
       CharSequence placeholder, Iterator<?> elements) {
-    StringFormat elementNameFormat = new StringFormat("{placeholder}[{index}]");
     return BiStream.zip(indexesFrom(0), stream(elements))
         .mapToObj((index, element) -> {
-          String name = elementNameFormat.format(placeholder, index);
+          String name = PLACEHOLDER_ELEMENT.format(placeholder, index);
           checkArgument(element != null, "%s expected to be an identifier, but is null", name);
           checkArgument(
               element instanceof String || element instanceof Enum,
