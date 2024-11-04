@@ -237,8 +237,7 @@ public final class SafeSql {
   public static final SafeSql EMPTY = new SafeSql("");
 
   /**
-   * Convenience method when you need to create the {@link SafeSql} inline, with both the
-   * query template and the parameters.
+   * Returns {@link SafeSql} using {@code template} and {@code params}.
    *
    * <p>For example:
    *
