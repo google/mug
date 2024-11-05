@@ -479,8 +479,8 @@ public final class SafeSql {
    * will be iterated through, transformed by {@code rowMapper} and finally closed before returning.
    *
    * <p>For example: <pre>{@code
-   * List<String> names = SafeSql.of("SELECT name from Users where id = {id}", id)
-   *     .query(connection, row -> row.getString("name"));
+   * List<Long> ids = SafeSql.of("SELECT id FROM Users WHERE name LIKE '%{name}%'", name)
+   *     .query(connection, row -> row.getLong("id"));
    * }</pre>
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
@@ -554,11 +554,11 @@ public final class SafeSql {
    * <p>Allows callers to take advantage of the performance benefit of PreparedStatement
    * without having to re-create the statement for each call. For example: <pre>{@code
    *   try (var connection = ...) {
-   *     var queryFirstName = SafeSql.prepareToQuery(
-   *         connection, "select FirstName FROM Users where id = {id}",
-   *         row -> row.getString("FirstName"));
-   *     for (long id : ids) {
-   *       for (String firstName : queryFirstName.with(id))) {
+   *     var queryByName = SafeSql.prepareToQuery(
+   *         connection, "SELECT id FROM Users WHERE name LIKE '%{name}%'",
+   *         row -> row.getLong("id"));
+   *     for (String name : names) {
+   *       for (long id : queryByName.with(name))) {
    *         ...
    *       }
    *     }
