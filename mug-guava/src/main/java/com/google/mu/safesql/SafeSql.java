@@ -39,6 +39,7 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Logger;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -217,6 +218,8 @@ import com.google.mu.util.stream.BiStream;
  * @since 8.2
  */
 public final class SafeSql {
+  private static final Logger logger = Logger.getLogger(SafeSql.class.getName());
+
   /** An empty SQL */
   public static final SafeSql EMPTY = new SafeSql("");
   private static final SafeSql FALSE = new SafeSql("(1 = 0)");
@@ -335,6 +338,61 @@ public final class SafeSql {
     checkNotNull(template);
     checkNotNull(params);
     return condition ? of(template, params) : EMPTY;
+  }
+
+  /**
+   * Returns a lazy template of {@link PreparedStatement} that will reuse the same cached
+   * {@code PreparedStatement} for repeated calls of {@link Template#with} using different
+   * parameters.
+   *
+   * <p>Allows callers to take advantage of the performance benefit of PreparedStatement
+   * without having to re-create the statement for each call. For example: <pre>{@code
+   *   try (var connection = ...) {
+   *     var query =
+   *         SafeSql.toPrepare(connection, "select FirstName FROM Users where id = {id}");
+   *     for (long id : ids) {
+   *       try (ResultSet resultSet = query.with(id).executeQuery()) {
+   *         ...
+   *       }
+   *     }
+   *   }
+   * }</pre>
+   *
+   * <p>The returned object is <em>not</em> thread safe.
+   *
+   * <p>Caller can either close the statement after done, or close the connection.
+   */
+  public static Template<PreparedStatement> toPrepare(
+      Connection connection, @CompileTimeConstant String template) {
+    checkNotNull(connection);
+    Template<SafeSql> sqlTemplate = template(template);
+    return new Template<PreparedStatement>() {
+      private PreparedStatement statement;
+      private String cachedSql;
+      @SuppressWarnings("StringFormatArgsCheck")  // The returned is also a Template<>
+      @Override public PreparedStatement with(Object... params) {
+        SafeSql sql = sqlTemplate.with(params);
+        try {
+          if (statement == null) {
+            statement = connection.prepareStatement(sql.toString());
+          } else if (!sql.toString().equals(cachedSql)) {
+            logger.warning(
+                "cached PreparedStatement invalided due to sql change from:\n  "
+                    + cachedSql + "\nto:\n  " + sql);
+            statement = connection.prepareStatement(sql.toString());
+          }
+          cachedSql = sql.toString();
+          return sql.setArgs(statement);
+        } catch (SQLException e) {
+          throw new UncheckedSqlException(e);
+        }
+      }
+
+      @Override
+      public String toString() {
+        return sqlTemplate.toString();
+      }
+    };
   }
 
   /**
