@@ -594,8 +594,7 @@ public final class SafeSql {
    *   try (var connection = ...) {
    *     var insertUser = SafeSql.prepareToUpdate(
    *         connection, "INSERT INTO Users(id, name) VALUES({id}, '{name}')");
-   *     insertUser.with(1, "Tom");
-   *     insertUser.with(2, "Emma");
+   *     int totalRowsAffected = insertUser.with(1, "Tom") + insertUser.with(2, "Emma");
    *   }
    * }</pre>
    *
