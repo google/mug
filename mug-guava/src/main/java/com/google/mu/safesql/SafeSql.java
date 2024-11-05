@@ -478,6 +478,30 @@ public final class SafeSql {
   }
 
   /**
+   * Executes the encapsulated SQL as a query against {@code connection}. The {@link ResultSet}
+   * will be iterated through, transformed by {@code mapper} and finally closed before returning.
+   *
+   * <p>For example: <pre>{@code
+   * List<String> names = SafeSql.of("SELECT name from Users where id = {id}", id)
+   *     .query(connection, resultSet -> resultSet.getString("name"));
+   * }</pre>
+   *
+   * @throws UncheckedSqlException wraps {@link SQLException} if failed
+   */
+  public <T> List<T> query(
+      Connection connection, SqlFunction<? super ResultSet, ? extends T> mapper) {
+    checkNotNull(mapper);
+    try {
+      try (PreparedStatement stmt = prepareStatement(connection);
+          ResultSet resultSet = stmt.executeQuery()) {
+        return mapResults(resultSet, mapper);
+      }
+    } catch (SQLException e) {
+      throw new UncheckedSqlException(e);
+    }
+  }
+
+  /**
    * Returns a {@link PreparedStatement} with the encapsulated sql and parameters.
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
@@ -512,10 +536,11 @@ public final class SafeSql {
    * <p>Allows callers to take advantage of the performance benefit of PreparedStatement
    * without having to re-create the statement for each call. For example: <pre>{@code
    *   try (var connection = ...) {
-   *     var query =
-   *         SafeSql.prepareQuery(connection, "select FirstName FROM Users where id = {id}");
+   *     var queryFirstName = SafeSql.prepareQuery(
+   *         connection, "select FirstName FROM Users where id = {id}",
+   *         resultSet -> resultSet.getString("FirstName"));
    *     for (long id : ids) {
-   *       try (ResultSet resultSet = query.with(id))) {
+   *       for (String firstName : queryFirstName.with(id))) {
    *         ...
    *       }
    *     }
@@ -524,19 +549,22 @@ public final class SafeSql {
    *
    * <p>The returned Template is <em>not</em> thread safe.
    *
-   * <p>The caller is expected to close the {@code connection} after done, which will close all
-   * attached resources.
+   * <p>The caller is expected to close the {@code connection} after done, which will close the
+   * cached PreparedStatement.
    */
-  public static Template<ResultSet> prepareQuery(
-      Connection connection, @CompileTimeConstant String template) {
+  public static <T> Template<List<T>> prepareQuery(
+      Connection connection,
+      @CompileTimeConstant String template,
+      SqlFunction<? super ResultSet, ? extends T> mapper) {
     checkNotNull(connection);
+    checkNotNull(mapper);
     Template<SafeSql> sqlTemplate = template(template);
-    return new Template<ResultSet>() {
+    return new Template<List<T>>() {
       private PreparedStatement statement;
       private String cachedSql;
 
       @SuppressWarnings("StringFormatArgsCheck")  // The returned is also a Template<>
-      @Override public ResultSet with(Object... params) {
+      @Override public List<T> with(Object... params) {
         SafeSql sql = sqlTemplate.with(params);
         try {
           if (statement == null) {
@@ -548,7 +576,9 @@ public final class SafeSql {
             statement = connection.prepareStatement(sql.toString());
           }
           cachedSql = sql.toString();
-          return sql.setArgs(statement).executeQuery();
+          try (ResultSet resultSet = sql.setArgs(statement).executeQuery()) {
+            return mapResults(resultSet, mapper);
+          }
         } catch (SQLException e) {
           throw new UncheckedSqlException(e);
         }
@@ -654,6 +684,15 @@ public final class SafeSql {
 
   private static String escapePercent(String s) {
     return Substring.first(c -> c == '\\' || c == '%').repeatedly().replaceAllFrom(s, c -> "\\" + c);
+  }
+
+  private static <T> List<T> mapResults(
+      ResultSet resultSet, SqlFunction<? super ResultSet, ? extends T> mapper) throws SQLException {
+    List<T> values = new ArrayList<>();
+    while (resultSet.next()) {
+      values.add(mapper.apply(resultSet));
+    }
+    return unmodifiableList(values);
   }
 
   private static final class Builder {
