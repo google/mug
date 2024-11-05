@@ -284,7 +284,14 @@ public final class StringFormat extends AbstractStringFormat {
    * @since 8.0
    */
   public interface Template<T> {
-    /** Returns an instance of {@code T} from the string format filled with {@code params}. */
+    /**
+     * Returns an instance of {@code T} from the string format filled with {@code params}.
+     *
+     * <p>The correctness of the number of parameters and them being in the expected order
+     * (as defined by the template's placeholders) is checked by a compile-time plugin so for
+     * example {@code template("WHERE id = {user_id} AND name = {name}").with(name, userId)}
+     * will fail to compile.
+     */
     T with(Object... params);
 
     /** Returns the string representation of the format. */
