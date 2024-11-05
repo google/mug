@@ -7,7 +7,6 @@ import static java.util.stream.Collectors.toList;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -60,9 +59,13 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
 
   @Test public void roundtrip() throws Exception {
     ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 40, ZoneId.of("UTC"));
-    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", 1, "foo")))
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", 1, "foo")
+                .update(connection()))
         .isEqualTo(1);
-    assertThat(update(SafeSql.of("insert into ITEMS(id, title, time) VALUES({id}, {title}, {time})", 2, "bar", barTime)))
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title, time) VALUES({id}, {title}, {time})", 2, "bar", barTime)
+                .update(connection()))
         .isEqualTo(1);
     assertThat(queryColumn(
             SafeSql.of("select title from {tbl} where id = {id}", /* tbl */ SafeSql.of("ITEMS"), 1), "title"))
@@ -72,7 +75,9 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
   }
 
   @Test public void likeExpressionWithWildcardInArg() throws Exception {
-    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")))
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")
+                .update(connection()))
         .isEqualTo(1);
     assertThat(queryColumn(
             SafeSql.of("select title from ITEMS where title like {...} and id = {id}", "%o%", testId()), "title"))
@@ -81,7 +86,9 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
 
   @Test public void likeExpressionWithWildcardInSql() throws Exception {
     String title = "What's that?";
-    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), title)))
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), title)
+                .update(connection()))
         .isEqualTo(1);
     assertThat(queryColumn(
             SafeSql.of("select title from ITEMS where title like '%{...}%' and id = {id}", "'s", testId()), "title"))
@@ -92,7 +99,9 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
   }
 
   @Test public void withPercentCharacterValue() throws Exception {
-    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "%")))
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "%")
+                .update(connection()))
         .isEqualTo(1);
     assertThat(queryColumn(
             SafeSql.of("select title from ITEMS where title = '{...}' and id = {id}", "%", testId()), "title"))
@@ -100,7 +109,9 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
   }
 
   @Test public void withBackslashCharacterValue() throws Exception {
-    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "\\")))
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "\\")
+                .update(connection()))
         .isEqualTo(1);
     assertThat(queryColumn(
             SafeSql.of("select title from ITEMS where title = '{...}' and id = {id}", "\\", testId()), "title"))
@@ -108,7 +119,9 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
   }
 
   @Test public void likeExpressionWithPrefixWildcardInSql() throws Exception {
-    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")))
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")
+                .update(connection()))
         .isEqualTo(1);
     assertThat(queryColumn(
             SafeSql.of("select title from ITEMS where title like '{...}%' and id = {id}", "fo", testId()), "title"))
@@ -116,7 +129,9 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
   }
 
   @Test public void likeExpressionWithSuffixWildcardInSql() throws Exception {
-    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")))
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")
+                .update(connection()))
         .isEqualTo(1);
     assertThat(queryColumn(
             SafeSql.of("select title from ITEMS where title like '%{...}' and id = {id}", "oo", testId()), "title"))
@@ -124,7 +139,9 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
   }
 
   @Test public void quotedStringExpression() throws Exception {
-    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")))
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")
+                .update(connection()))
         .isEqualTo(1);
     assertThat(queryColumn(
             SafeSql.of("select title from ITEMS where title = '{...}' and id = {id}", "foo", testId()), "title"))
@@ -132,7 +149,9 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
   }
 
   @Test public void likeExpressionWithPercentValue_notFound() throws Exception {
-    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")))
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")
+                .update(connection()))
         .isEqualTo(1);
     assertThat(queryColumn(
             SafeSql.of("select title from ITEMS where title like '%{...}%' and id = {id}", "%", testId()), "title"))
@@ -146,7 +165,9 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
   }
 
   @Test public void likeExpressionWithPercentValue_found() throws Exception {
-    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "30%")))
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "30%")
+                .update(connection()))
         .isEqualTo(1);
     assertThat(queryColumn(
             SafeSql.of("select title from ITEMS where title like '%{...}' and id = {id}", "0%", testId()), "title"))
@@ -157,7 +178,9 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
   }
 
   @Test public void likeExpressionWithBackslashValue() throws Exception {
-    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")))
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")
+                .update(connection()))
         .isEqualTo(1);
     assertThat(queryColumn(
             SafeSql.of("select title from ITEMS where title like '%{...}%' and id = {id}", "\\", testId()), "title"))
@@ -171,7 +194,9 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
   }
 
   @Test public void literalBackslashMatches() throws Exception {
-    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "a\\b")))
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "a\\b")
+                .update(connection()))
         .isEqualTo(1);
     assertThat(queryColumn(
             SafeSql.of("select title from ITEMS where title like '%{...}%' and id = {id}", "\\", testId()), "title"))
@@ -185,7 +210,9 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
   }
 
   @Test public void withBacktickQuotedIdentifierParameter() throws Exception {
-    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")))
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")
+                .update(connection()))
         .isEqualTo(1);
     assertThat(queryColumn(
             SafeSql.of("select title from `{table}` where id = {id}", "ITEMS", testId()), "title"))
@@ -194,16 +221,18 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
 
   @Test public void nullParameter() throws Exception {
     assertThat(
-            update(SafeSql.of(
+            SafeSql.of(
                 "insert into ITEMS(id, title, time) VALUES({id}, {title}, {time})", testId(),
-                "foo", null)))
+                "foo", null).update(connection()))
         .isEqualTo(1);
     assertThat(queryColumn(SafeSql.of("select time from ITEMS where id = {id}", testId()), "time"))
         .containsExactly((Object) null);
   }
 
   @Test public void inExpressionUsingList() throws Exception {
-    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")))
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")
+                .update(connection()))
         .isEqualTo(1);
     SafeSql query = SafeSql.of(
         "select title from ITEMS where title in ({...}) and id in ({id})",
@@ -212,10 +241,12 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     assertThat(queryColumn(query, "title")).containsExactly("foo");
   }
 
-  @Test public void prepareQuery_sameArgTypes() throws Exception {
-    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")))
+  @Test public void prepareToQuery_sameArgTypes() throws Exception {
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")
+                .update(connection()))
         .isEqualTo(1);
-    StringFormat.Template<List<String>> template = SafeSql.prepareQuery(
+    StringFormat.Template<List<String>> template = SafeSql.prepareToQuery(
         connection(),
         "select title from ITEMS where title = '{...}' and id in ({id})",
         resultSet -> resultSet.getString("title"));
@@ -224,10 +255,12 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     assertThat(template.with("bar", testId())).isEmpty();
   }
 
-  @Test public void prepareQuery_differentArgTypes() throws Exception {
-    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")))
+  @Test public void prepareToQuery_differentArgTypes() throws Exception {
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")
+                .update(connection()))
         .isEqualTo(1);
-    StringFormat.Template<List<String>> template = SafeSql.prepareQuery(
+    StringFormat.Template<List<String>> template = SafeSql.prepareToQuery(
         connection(),
         "select title from ITEMS where title = {...} and id in ({id})",
         resultSet -> resultSet.getString("title"));
@@ -238,14 +271,34 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     assertThat(template.with(SafeSql.of("'bar'"), testId())).isEmpty();
   }
 
-  private int testId() {
-    return Hashing.goodFastHash(32).hashString(testName.getMethodName(), StandardCharsets.UTF_8).asInt();
+  @Test public void prepareToUpdate_sameArgTypes() throws Exception {
+    StringFormat.Template<Integer> insertUser =
+        SafeSql.prepareToUpdate(connection(), "insert into ITEMS(id, title) VALUES({id}, {...})");
+    assertThat(insertUser.with(testId(), "foo")).isEqualTo(1);
+    assertThat(insertUser.with(testId() + 1, "bar")).isEqualTo(1);
+    StringFormat.Template<List<String>> template = SafeSql.prepareToQuery(
+        connection(),
+        "select title from ITEMS where title = '{...}' and id in ({id})",
+        resultSet -> resultSet.getString("title"));
+    assertThat(template.with("foo", testId())).containsExactly("foo");
+    assertThat(template.with("bar", testId() + 1)).containsExactly("bar");
   }
 
-  private int update(SafeSql sql) throws Exception {
-    try (PreparedStatement statement = sql.prepareStatement(connection())) {
-      return statement.executeUpdate();
-    }
+  @Test public void prepareToUpdate_differentArgTypes() throws Exception {
+    StringFormat.Template<Integer> insertUser =
+        SafeSql.prepareToUpdate(connection(), "insert into ITEMS(id, title) VALUES({id}, {...})");
+    assertThat(insertUser.with(testId(), "foo")).isEqualTo(1);
+    assertThat(insertUser.with(testId() + 1, SafeSql.of("'bar'"))).isEqualTo(1);
+    StringFormat.Template<List<String>> template = SafeSql.prepareToQuery(
+        connection(),
+        "select title from ITEMS where title = '{...}' and id in ({id})",
+        resultSet -> resultSet.getString("title"));
+    assertThat(template.with("foo", testId())).containsExactly("foo");
+    assertThat(template.with("bar", testId() + 1)).containsExactly("bar");
+  }
+
+  private int testId() {
+    return Hashing.goodFastHash(32).hashString(testName.getMethodName(), StandardCharsets.UTF_8).asInt();
   }
 
   private List<?> queryColumn(SafeSql sql, String column) throws Exception {
