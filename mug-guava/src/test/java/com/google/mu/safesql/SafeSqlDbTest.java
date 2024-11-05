@@ -8,10 +8,8 @@ import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -217,24 +215,27 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
   @Test public void prepareQuery_sameArgTypes() throws Exception {
     assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")))
         .isEqualTo(1);
-    StringFormat.Template<ResultSet> template = SafeSql.prepareQuery(
-        connection(), "select title from ITEMS where title = '{...}' and id in ({id})");
-    assertThat(fromResultSet(template.with("foo", testId()), "title")).containsExactly("foo");
-    assertThat(fromResultSet(template.with("foo", testId()), "title")).containsExactly("foo");
-    assertThat(fromResultSet(template.with("bar", testId()), "title")).isEmpty();
+    StringFormat.Template<List<String>> template = SafeSql.prepareQuery(
+        connection(),
+        "select title from ITEMS where title = '{...}' and id in ({id})",
+        resultSet -> resultSet.getString("title"));
+    assertThat(template.with("foo", testId())).containsExactly("foo");
+    assertThat(template.with("foo", testId())).containsExactly("foo");
+    assertThat(template.with("bar", testId())).isEmpty();
   }
 
   @Test public void prepareQuery_differentArgTypes() throws Exception {
     assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")))
         .isEqualTo(1);
-    StringFormat.Template<ResultSet> template = SafeSql.prepareQuery(
-        connection(), "select title from ITEMS where title = {...} and id in ({id})");
-    assertThat(fromResultSet(template.with("foo", testId()), "title")).containsExactly("foo");
-    assertThat(fromResultSet(template.with(SafeSql.of("'foo'"), testId()), "title"))
-        .containsExactly("foo");
-    assertThat(fromResultSet(template.with("foo", testId()), "title")).containsExactly("foo");
-    assertThat(fromResultSet(template.with("bar", testId()), "title")).isEmpty();
-    assertThat(fromResultSet(template.with(SafeSql.of("'bar'"), testId()), "title")).isEmpty();
+    StringFormat.Template<List<String>> template = SafeSql.prepareQuery(
+        connection(),
+        "select title from ITEMS where title = {...} and id in ({id})",
+        resultSet -> resultSet.getString("title"));
+    assertThat(template.with("foo", testId())).containsExactly("foo");
+    assertThat(template.with(SafeSql.of("'foo'"), testId())).containsExactly("foo");
+    assertThat(template.with("foo", testId())).containsExactly("foo");
+    assertThat(template.with("bar", testId())).isEmpty();
+    assertThat(template.with(SafeSql.of("'bar'"), testId())).isEmpty();
   }
 
   private int testId() {
@@ -248,23 +249,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
   }
 
   private List<?> queryColumn(SafeSql sql, String column) throws Exception {
-    try (PreparedStatement statement = sql.prepareStatement(connection())) {
-      return queryColumn(statement, column);
-    }
-  }
-
-  private List<?> queryColumn(PreparedStatement statement, String column) throws Exception {
-    try (ResultSet resultSet = statement.executeQuery()) {
-      return fromResultSet(resultSet, column);
-    }
-  }
-
-  private List<?> fromResultSet(ResultSet resultSet, String column) throws Exception {
-    List<Object> values = new ArrayList<>();
-    while (resultSet.next()) {
-      values.add(resultSet.getObject(column));
-    }
-    return values;
+    return sql.query(connection(), resultSet -> resultSet.getObject(column));
   }
 
   private Connection connection() throws Exception {
