@@ -502,6 +502,27 @@ public final class SafeSql {
   }
 
   /**
+   * Executes the encapsulated DML against {@code connection} and returns the number of affected
+   * rows.
+   *
+   * <p>For example: <pre>{@code
+   * SafeSql.of("INSERT INTO Users(id, name) VALUES({id}, '{name}')", id, name)
+   *     .update(connection, row -> row.getString("name"));
+   * }</pre>
+   *
+   * @throws UncheckedSqlException wraps {@link SQLException} if failed
+   */
+  public int update(Connection connection) {
+    try {
+      try (PreparedStatement stmt = prepareStatement(connection)) {
+        return stmt.executeUpdate();
+      }
+    } catch (SQLException e) {
+      throw new UncheckedSqlException(e);
+    }
+  }
+
+  /**
    * Returns a {@link PreparedStatement} with the encapsulated sql and parameters.
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
@@ -536,7 +557,7 @@ public final class SafeSql {
    * <p>Allows callers to take advantage of the performance benefit of PreparedStatement
    * without having to re-create the statement for each call. For example: <pre>{@code
    *   try (var connection = ...) {
-   *     var queryFirstName = SafeSql.prepareQuery(
+   *     var queryFirstName = SafeSql.prepareToQuery(
    *         connection, "select FirstName FROM Users where id = {id}",
    *         row -> row.getString("FirstName"));
    *     for (long id : ids) {
@@ -552,43 +573,41 @@ public final class SafeSql {
    * <p>The caller is expected to close the {@code connection} after done, which will close the
    * cached PreparedStatement.
    */
-  public static <T> Template<List<T>> prepareQuery(
+  public static <T> Template<List<T>> prepareToQuery(
       Connection connection,
       @CompileTimeConstant String template,
       SqlFunction<? super ResultSet, ? extends T> rowMapper) {
-    checkNotNull(connection);
     checkNotNull(rowMapper);
-    Template<SafeSql> sqlTemplate = template(template);
-    return new Template<List<T>>() {
-      private PreparedStatement statement;
-      private String cachedSql;
-
-      @SuppressWarnings("StringFormatArgsCheck")  // The returned is also a Template<>
-      @Override public List<T> with(Object... params) {
-        SafeSql sql = sqlTemplate.with(params);
-        try {
-          if (statement == null) {
-            statement = connection.prepareStatement(sql.toString());
-          } else if (!sql.toString().equals(cachedSql)) {
-            logger.warning(
-                "cached PreparedStatement invalided due to sql change from:\n  "
-                    + cachedSql + "\nto:\n  " + sql);
-            statement = connection.prepareStatement(sql.toString());
-          }
-          cachedSql = sql.toString();
-          try (ResultSet resultSet = sql.setArgs(statement).executeQuery()) {
-            return mapResults(resultSet, rowMapper);
-          }
-        } catch (SQLException e) {
-          throw new UncheckedSqlException(e);
-        }
+    return prepare(connection, template, stmt -> {
+      try (ResultSet resultSet = stmt.executeQuery()) {
+        return mapResults(resultSet, rowMapper);
       }
+    });
+  }
 
-      @Override
-      public String toString() {
-        return sqlTemplate.toString();
-      }
-    };
+  /**
+   * Returns a DML template that will reuse the same cached {@code PreparedStatement}
+   * for repeated calls of {@link Template#with} using different parameters.
+   *
+   * <p>Allows callers to take advantage of the performance benefit of PreparedStatement
+   * without having to re-create the statement for each call. For example: <pre>{@code
+   *   try (var connection = ...) {
+   *     var insertUser = SafeSql.prepareToUpdate(
+   *         connection, "INSERT INTO Users(id, name) VALUES({id}, '{name}')");
+   *     insertUser.with(1, "Tom");
+   *     insertUser.with(2, "Emma");
+   *   }
+   * }</pre>
+   *
+   * <p>The returned Template is <em>not</em> thread safe.
+   *
+   * <p>The caller is expected to close the {@code connection} after done, which will close the
+   * cached PreparedStatement.
+   */
+  public static Template<Integer> prepareToUpdate(
+      Connection connection,
+      @CompileTimeConstant String template) {
+    return prepare(connection, template, PreparedStatement::executeUpdate);
   }
 
   /**
@@ -684,6 +703,42 @@ public final class SafeSql {
 
   private static String escapePercent(String s) {
     return Substring.first(c -> c == '\\' || c == '%').repeatedly().replaceAllFrom(s, c -> "\\" + c);
+  }
+
+  private static <T> Template<T> prepare(
+      Connection connection,
+      @CompileTimeConstant String template,
+      SqlFunction<? super PreparedStatement, ? extends T> action) {
+    checkNotNull(connection);
+    Template<SafeSql> sqlTemplate = template(template);
+    return new Template<T>() {
+      private PreparedStatement statement;
+      private String cachedSql;
+
+      @SuppressWarnings("StringFormatArgsCheck")  // The returned is also a Template<>
+      @Override public T with(Object... params) {
+        SafeSql sql = sqlTemplate.with(params);
+        try {
+          if (statement == null) {
+            statement = connection.prepareStatement(sql.toString());
+          } else if (!sql.toString().equals(cachedSql)) {
+            logger.warning(
+                "cached PreparedStatement invalided due to sql change from:\n  "
+                    + cachedSql + "\nto:\n  " + sql);
+            statement = connection.prepareStatement(sql.toString());
+          }
+          cachedSql = sql.toString();
+          return action.apply(sql.setArgs(statement));
+        } catch (SQLException e) {
+          throw new UncheckedSqlException(e);
+        }
+      }
+
+      @Override
+      public String toString() {
+        return sqlTemplate.toString();
+      }
+    };
   }
 
   private static <T> List<T> mapResults(
