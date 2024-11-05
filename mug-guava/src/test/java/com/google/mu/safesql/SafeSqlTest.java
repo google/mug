@@ -469,6 +469,22 @@ public class SafeSqlTest {
   }
 
   @Test
+  public void missingOpeningDoubleQuote() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class, () -> SafeSql.of("SELECT {tbl}\"", "jobs"));
+    assertThat(thrown).hasMessageThat().contains("{tbl}\"");
+  }
+
+  @Test
+  public void missingClosingDoubleQuote() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class, () -> SafeSql.of("SELECT \"{tbl}", "jobs"));
+    assertThat(thrown).hasMessageThat().contains("\"{tbl}");
+  }
+
+  @Test
   public void listMissingOpeningQuote() {
     IllegalArgumentException thrown =
         assertThrows(

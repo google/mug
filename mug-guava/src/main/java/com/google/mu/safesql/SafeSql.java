@@ -655,10 +655,14 @@ public final class SafeSql {
   }
 
   private static void checkMissingPlaceholderQuotes(Substring.Match placeholder) {
-    checkArgument(!placeholder.isPrecededBy("'"), "Incorrectly quoted placeholder: '%s", placeholder);
-    checkArgument(!placeholder.isFollowedBy("'"), "Incorrectly quoted placeholder: %s'", placeholder);
-    checkArgument(!placeholder.isPrecededBy("`"), "Incorrectly quoted placeholder: `%s", placeholder);
-    checkArgument(!placeholder.isFollowedBy("`"), "Incorrectly quoted placeholder: %s`", placeholder);
+    rejectHalfQuotes(placeholder, "'");
+    rejectHalfQuotes(placeholder, "`");
+    rejectHalfQuotes(placeholder, "\"");
+  }
+
+  private static void rejectHalfQuotes(Substring.Match placeholder, String quote) {
+    checkArgument(!placeholder.isPrecededBy(quote), "half quoted placeholder: %s%s", quote, placeholder);
+    checkArgument(!placeholder.isFollowedBy(quote), "half quoted placeholder: %s%s", placeholder, quote);
   }
 
   private static void validateSubqueryPlaceholder(Substring.Match placeholder) {
