@@ -483,7 +483,7 @@ public final class SafeSql {
    *
    * <p>For example: <pre>{@code
    * List<String> names = SafeSql.of("SELECT name from Users where id = {id}", id)
-   *     .query(connection, resultSet -> resultSet.getString("name"));
+   *     .query(connection, row -> row.getString("name"));
    * }</pre>
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
@@ -538,7 +538,7 @@ public final class SafeSql {
    *   try (var connection = ...) {
    *     var queryFirstName = SafeSql.prepareQuery(
    *         connection, "select FirstName FROM Users where id = {id}",
-   *         resultSet -> resultSet.getString("FirstName"));
+   *         row -> row.getString("FirstName"));
    *     for (long id : ids) {
    *       for (String firstName : queryFirstName.with(id))) {
    *         ...
