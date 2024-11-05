@@ -29,6 +29,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import com.google.common.hash.Hashing;
+import com.google.mu.util.StringFormat;
 
 @RunWith(JUnit4.class)
 public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
@@ -213,6 +214,29 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     assertThat(queryColumn(query, "title")).containsExactly("foo");
   }
 
+  @Test public void toPrepare_sameArgTypes() throws Exception {
+    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")))
+        .isEqualTo(1);
+    StringFormat.Template<PreparedStatement> template = SafeSql.toPrepare(
+        connection(), "select title from ITEMS where title = '{...}' and id in ({id})");
+    assertThat(queryColumn(template.with("foo", testId()), "title")).containsExactly("foo");
+    assertThat(queryColumn(template.with("foo", testId()), "title")).containsExactly("foo");
+    assertThat(queryColumn(template.with("bar", testId()), "title")).isEmpty();
+  }
+
+  @Test public void toPrepare_differentArgTypes() throws Exception {
+    assertThat(update(SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")))
+        .isEqualTo(1);
+    StringFormat.Template<PreparedStatement> template = SafeSql.toPrepare(
+        connection(), "select title from ITEMS where title = {...} and id in ({id})");
+    assertThat(queryColumn(template.with("foo", testId()), "title")).containsExactly("foo");
+    assertThat(queryColumn(template.with(SafeSql.of("'foo'"), testId()), "title"))
+        .containsExactly("foo");
+    assertThat(queryColumn(template.with("foo", testId()), "title")).containsExactly("foo");
+    assertThat(queryColumn(template.with("bar", testId()), "title")).isEmpty();
+    assertThat(queryColumn(template.with(SafeSql.of("'bar'"), testId()), "title")).isEmpty();
+  }
+
   private int testId() {
     return Hashing.goodFastHash(32).hashString(testName.getMethodName(), StandardCharsets.UTF_8).asInt();
   }
@@ -224,9 +248,14 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
   }
 
   private List<?> queryColumn(SafeSql sql, String column) throws Exception {
+    try (PreparedStatement statement = sql.prepareStatement(connection())) {
+      return queryColumn(statement, column);
+    }
+  }
+
+  private List<?> queryColumn(PreparedStatement statement, String column) throws Exception {
     List<Object> values = new ArrayList<>();
-    try (PreparedStatement statement = sql.prepareStatement(connection());
-        ResultSet resultSet = statement.executeQuery()) {
+    try (ResultSet resultSet = statement.executeQuery()) {
       while (resultSet.next()) {
         values.add(resultSet.getObject(column));
       }

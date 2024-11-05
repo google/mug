@@ -283,25 +283,7 @@ public final class StringFormat extends AbstractStringFormat {
    *
    * @since 8.0
    */
-  public interface Template<T> extends To<T> {
-    /** Returns an instance of {@code T} from the string format filled with {@code params}. */
-    @Override
-    T with(Object... params);
-
-    /** Returns the string representation of the format. */
-    @Override
-    public abstract String toString();
-  }
-
-  /**
-   * A view of the {@code StringFormat} that returns an instance of {@code T}, after filling the
-   * format with the given variadic parameters.
-   *
-   * @since 7.0
-   * @deprecated Use {@link Template} instead
-   */
-  @Deprecated
-  public interface To<T> {
+  public interface Template<T> {
     /** Returns an instance of {@code T} from the string format filled with {@code params}. */
     T with(Object... params);
 

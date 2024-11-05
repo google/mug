@@ -38,11 +38,10 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
+import java.util.logging.Logger;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
 
@@ -211,12 +210,24 @@ import com.google.mu.util.stream.BiStream;
  *
  * If someone mistakenly passes in inconsistent ids, they'll get a compilation error.
  *
- * <p>This class serves a different purpose than {@link SafeQuery}, which is to directly escape
+ * <p>Immutable if the template parameters you pass to it are immutable.
+ *
+ * <p>This class serves a different purpose than {@link SafeQuery}. The latter is to directly escape
  * string parameters when the SQL backend has no native support for parameterized queries.
  *
  * @since 8.2
  */
 public final class SafeSql {
+  private static final Logger logger = Logger.getLogger(SafeSql.class.getName());
+
+  /** An empty SQL */
+  public static final SafeSql EMPTY = new SafeSql("");
+  private static final SafeSql FALSE = new SafeSql("(1 = 0)");
+  private static final SafeSql TRUE = new SafeSql("(1 = 1)");
+  private static final StringFormat.Template<SafeSql> PARAM = template("{param}");
+  private static final StringFormat PLACEHOLDER_ELEMENT_NAME =
+      new StringFormat("{placeholder}[{index}]");
+
   private final String sql;
   private final List<?> paramValues;
 
@@ -228,13 +239,6 @@ public final class SafeSql {
     this.sql = sql;
     this.paramValues = paramValues;
   }
-
-  private static final SafeSql FALSE = new SafeSql("(1 = 0)");
-  private static final SafeSql TRUE = new SafeSql("(1 = 1)");
-
-
-  /** An empty SQL */
-  public static final SafeSql EMPTY = new SafeSql("");
 
   /**
    * Returns {@link SafeSql} using {@code template} and {@code params}.
@@ -275,7 +279,22 @@ public final class SafeSql {
    * }</pre>
    */
   public static SafeSql ofParam(@Nullable Object param) {
-    return of("{param}", param);
+    return PARAM.with(param);
+  }
+
+  /**
+   * Wraps non-negative {@code number} as a SafeSql object.
+   *
+   * <p>For example, the following SQL Server query allows parameterization by the TOP n number:
+   * <pre>{@code
+   *   SafeSql.of("select top {page_size} UserId from Users", nonNegative(pageSize))
+   * }</pre>
+   *
+   * <p>This is needed because in SQL Server the TOP number can't be parameterized by JDBC.
+   */
+  public static SafeSql nonNegative(long number) {
+    checkArgument(number >= 0, "negative number disallowed: %s", number);
+    return new SafeSql(Long.toString(number));
   }
 
   /**
@@ -321,6 +340,60 @@ public final class SafeSql {
     return condition ? of(template, params) : EMPTY;
   }
 
+  /**
+   * Returns a lazy template of {@link PreparedStatement} that will reuse the same cached
+   * {@code PreparedStatement} for repeated calls of {@link Template#with} using different
+   * parameters.
+   *
+   * <p>Allows callers to take advantage of the performance benefit of PreparedStatement
+   * without having to re-create the statement for each call. For example: <pre>{@code
+   *   try (var connection = ...) {
+   *     var query =
+   *         SafeSql.toPrepare(connection, "select FirstName FROM Users where id = {id}");
+   *     for (long id : ids) {
+   *       try (ResultSet resultSet = query.with(id).executeQuery()) {
+   *         ...
+   *       }
+   *     }
+   *   }
+   * }</pre>
+   *
+   * <p>The returned object is <em>not</em> thread safe.
+   *
+   * <p>Caller can either close the statement after done, or close the connection.
+   */
+  public static Template<PreparedStatement> toPrepare(
+      Connection connection, @CompileTimeConstant String template) {
+    checkNotNull(connection);
+    Template<SafeSql> sqlTemplate = template(template);
+    return new Template<PreparedStatement>() {
+      private PreparedStatement statement;
+      private String cachedSql;
+      @SuppressWarnings("StringFormatArgsCheck")  // The returned is also a Template<>
+      @Override public PreparedStatement with(Object... params) {
+        SafeSql sql = sqlTemplate.with(params);
+        try {
+          if (statement == null) {
+            statement = connection.prepareStatement(sql.toString());
+          } else if (!sql.toString().equals(cachedSql)) {
+            logger.warning(
+                "cached PreparedStatement invalided due to sql change from:\n  "
+                    + cachedSql + "\nto:\n  " + sql);
+            statement = connection.prepareStatement(sql.toString());
+          }
+          cachedSql = sql.toString();
+          return sql.setArgs(statement);
+        } catch (SQLException e) {
+          throw new UncheckedSqlException(e);
+        }
+      }
+
+      @Override
+      public String toString() {
+        return sqlTemplate.toString();
+      }
+    };
+  }
 
   /**
    * Returns a template of {@link SafeSql} based on the {@code template} string.
@@ -362,38 +435,41 @@ public final class SafeSql {
             builder.appendSql(texts.pop());
             if (placeholder.isImmediatelyBetween("`", "`")) {
               builder.appendSql(
-                  mustBeIdentifiers(placeholder, elements).collect(Collectors.joining("`, `")));
+                  eachPlaceholderValue(placeholder, elements)
+                      .mapToObj(SafeSql::mustBeIdentifier)
+                      .collect(Collectors.joining("`, `")));
             } else {
-              builder.addSubQuery(mustBeSubqueries(placeholder, elements).collect(joining(", ")));
+              builder.addSubQuery(
+                  eachPlaceholderValue(placeholder, elements)
+                      .mapToObj(SafeSql::mustBeSubquery)
+                      .collect(joining(", ")));
               validateSubqueryPlaceholder(placeholder);
             }
           } else if (value instanceof SafeSql) {
             builder.appendSql(texts.pop()).addSubQuery((SafeSql) value);
             validateSubqueryPlaceholder(placeholder);
-          } else if (appendBeforeQuotedPlaceholder("`", placeholder, "`", value)) {
-            String identifier = checkIdentifier(placeholder, (String) value);
+          } else if (appendBeforeQuotedPlaceholder("`", placeholder, "`")) {
+            String identifier = mustBeIdentifier("`" + placeholder + "`", value);
             checkArgument(identifier.length() > 0, "`%s` cannot be empty", placeholder);
             builder.appendSql("`" + identifier + "`");
-          } else if (appendBeforeQuotedPlaceholder("'%", placeholder, "%'", value)) {
-            builder.addParameter(paramName, "%" + escapePercent((String) value) + "%");
-          } else if (appendBeforeQuotedPlaceholder("'%", placeholder, "'", value)) {
-            builder.addParameter(paramName, "%" + escapePercent((String) value));
-          } else if (appendBeforeQuotedPlaceholder("'", placeholder, "%'", value)) {
-            builder.addParameter(paramName, escapePercent((String) value) + "%");
-          } else if (appendBeforeQuotedPlaceholder("'", placeholder, "'", value)) {
-            builder.addParameter(paramName, value);
+          } else if (appendBeforeQuotedPlaceholder("'%", placeholder, "%'")) {
+            builder.addParameter(
+                paramName, "%" + escapePercent(mustBeString(placeholder, value)) + "%");
+          } else if (appendBeforeQuotedPlaceholder("'%", placeholder, "'")) {
+            builder.addParameter(paramName, "%" + escapePercent(mustBeString(placeholder, value)));
+          } else if (appendBeforeQuotedPlaceholder("'", placeholder, "%'")) {
+            builder.addParameter(paramName, escapePercent(mustBeString(placeholder, value)) + "%");
+          } else if (appendBeforeQuotedPlaceholder("'", placeholder, "'")) {
+            builder.addParameter(paramName, mustBeString("'" + placeholder + "'", value));
           } else {
             builder.appendSql(texts.pop()).addParameter(paramName, value);
           }
         }
 
         private boolean appendBeforeQuotedPlaceholder(
-            String open, Substring.Match placeholder, String close, Object value) {
+            String open, Substring.Match placeholder, String close) {
           boolean quoted = placeholder.isImmediatelyBetween(open, close);
           if (quoted) {
-            checkArgument(
-                value instanceof String,
-                "Placeholder %s%s%s must be String", open, placeholder, close);
             builder.appendSql(suffix(open).removeFrom(texts.pop()));
             texts.push(prefix(close).removeFrom(texts.pop()));
           }
@@ -497,17 +573,20 @@ public final class SafeSql {
 
   @Override
   public int hashCode() {
-    return Objects.hash(sql, paramValues);
+    return sql.hashCode();
   }
 
   @Override
   public boolean equals(Object obj) {
     if (obj instanceof SafeSql) {
       SafeSql that = (SafeSql) obj;
-      return sql.equals(that.sql)
-          && paramValues.equals(that.paramValues);
+      return sql.equals(that.sql) && paramValues.equals(that.paramValues);
     }
     return false;
+  }
+
+  private SafeSql parenthesized() {
+    return new SafeSql('(' + sql + ')', paramValues);
   }
 
   private <S extends PreparedStatement> S setArgs(S statement) throws SQLException {
@@ -515,6 +594,11 @@ public final class SafeSql {
       statement.setObject(i + 1, paramValues.get(i));
     }
     return statement;
+  }
+
+  private static String validate(String sql) {
+    checkArgument(sql.indexOf('?') < 0, "please use named {placeholder} instead of '?'");
+    return sql;
   }
 
   private static void validateSubqueryPlaceholder(Substring.Match placeholder) {
@@ -529,42 +613,34 @@ public final class SafeSql {
         "SafeSql should not be backtick quoted: `%s`", placeholder);
   }
 
-  private static Stream<SafeSql> mustBeSubqueries(
-      CharSequence placeholder, Iterator<?> elements) {
+  private static String mustBeIdentifier(CharSequence name, Object element) {
+    checkArgument(element != null, "%s expected to be an identifier, but is null", name);
+    checkArgument(
+        element instanceof String || element instanceof Enum,
+        "%s expected to be String, but is %s", name, element.getClass());
+    return checkIdentifier(name, element.toString());
+  }
+
+  private static String mustBeString(CharSequence name, Object element) {
+    checkArgument(element != null, "%s expected to be String, but is null", name);
+    checkArgument(
+        element instanceof String,
+        "%s expected to be String, but is %s", name, element.getClass());
+    return (String) element;
+  }
+
+  private static SafeSql mustBeSubquery(CharSequence name, Object element) {
+    checkArgument(element != null, "%s expected to be SafeSql, but is null", name);
+    checkArgument(
+        element instanceof SafeSql,
+        "%s expected to be SafeSql, but is %s", name, element.getClass());
+    return (SafeSql) element;
+  }
+
+  private static BiStream<String, ?> eachPlaceholderValue(
+      Substring.Match placeholder, Iterator<?> elements) {
     return BiStream.zip(indexesFrom(0), stream(elements))
-        .mapToObj((index, element) -> {
-          checkArgument(
-              element != null,
-              "%s[%s] expected to be SafeSql, but is null", placeholder, index);
-          checkArgument(
-              element instanceof SafeSql,
-              "%s[%s] expected to be SafeSql, but is %s",
-              placeholder, index, element.getClass());
-          return (SafeSql) element;
-        });
-  }
-
-  private static Stream<String> mustBeIdentifiers(
-      CharSequence placeholder, Iterator<?> elements) {
-    StringFormat elementNameFormat = new StringFormat("{placeholder}[{index}]");
-    return BiStream.zip(indexesFrom(0), stream(elements))
-        .mapToObj((index, element) -> {
-          String name = elementNameFormat.format(placeholder, index);
-          checkArgument(element != null, "%s expected to be an identifier, but is null", name);
-          checkArgument(
-              element instanceof String || element instanceof Enum,
-              "%s expected to be String, but is %s", name, element.getClass());
-          return checkIdentifier(name, element.toString());
-        });
-  }
-
-  private static String validate(String sql) {
-    checkArgument(sql.indexOf('?') < 0, "please use named {placeholder} instead of '?'");
-    return sql;
-  }
-
-  private SafeSql parenthesized() {
-    return new SafeSql("(" + sql + ")", paramValues);
+        .mapKeys(index -> PLACEHOLDER_ELEMENT_NAME.format(placeholder, index));
   }
 
   private static String escapePercent(String s) {

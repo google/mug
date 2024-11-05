@@ -46,6 +46,15 @@ public class SafeSqlTest {
   }
 
   @Test
+  public void backquotedEnumParameter() {
+    SafeSql sql = SafeSql.of(
+        "select `{column}` from Users",
+        /* columns */ Pii.EMAIL);
+    assertThat(sql.toString()).isEqualTo("select `email` from Users");
+    assertThat(sql.getParameters()).isEmpty();
+  }
+
+  @Test
   public void listOfBackquotedStringParameters_singleParameter() {
     SafeSql sql = SafeSql.of(
         "select `{columns}` from tbl",
@@ -202,7 +211,7 @@ public class SafeSqlTest {
         IllegalArgumentException.class,
         () -> SafeSql.of("select * from tbl where name like '%{s}%'", 1));
     assertThat(thrown).hasMessageThat().contains("String");
-    assertThat(thrown).hasMessageThat().contains("'%{s}%'");
+    assertThat(thrown).hasMessageThat().contains("{s}");
   }
 
   @Test
@@ -232,7 +241,7 @@ public class SafeSqlTest {
         IllegalArgumentException.class,
         () -> SafeSql.of("select * from tbl where name like '%{s}'", 1));
     assertThat(thrown).hasMessageThat().contains("String");
-    assertThat(thrown).hasMessageThat().contains("'%{s}'");
+    assertThat(thrown).hasMessageThat().contains("{s}");
   }
 
   @Test
@@ -262,7 +271,7 @@ public class SafeSqlTest {
         IllegalArgumentException.class,
         () -> SafeSql.of("select * from tbl where name like '{s}%'", 1));
     assertThat(thrown).hasMessageThat().contains("String");
-    assertThat(thrown).hasMessageThat().contains("'{s}%'");
+    assertThat(thrown).hasMessageThat().contains("{s}");
   }
 
   @Test
@@ -672,6 +681,43 @@ public class SafeSqlTest {
         IllegalArgumentException.class,
         () -> SafeSql.of("select * where id = {id}", /* id */ Optional.of(1)));
     assertThat(thrown).hasMessageThat().contains("optionally()");
+  }
+
+  @Test
+  public void nonNegative_maxValue_allowed() {
+    SafeSql sql = SafeSql.nonNegative(Long.MAX_VALUE);
+    assertThat(sql.toString()).isEqualTo(Long.toString(Long.MAX_VALUE));
+    assertThat(sql.getParameters()).isEmpty();
+  }
+
+  @Test
+  public void nonNegative_positive_allowed() {
+    SafeSql sql = SafeSql.nonNegative(123);
+    assertThat(sql.toString()).isEqualTo("123");
+    assertThat(sql.getParameters()).isEmpty();
+  }
+
+  @Test
+  public void nonNegative_zero_allowed() {
+    SafeSql sql = SafeSql.nonNegative(0);
+    assertThat(sql.toString()).isEqualTo("0");
+    assertThat(sql.getParameters()).isEmpty();
+  }
+
+  @Test
+  public void nonNegative_negativeNumber_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.nonNegative(-1));
+    assertThat(thrown).hasMessageThat().contains("negative number disallowed: -1");
+  }
+
+  @Test
+  public void nonNegative_minValue_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.nonNegative(Long.MIN_VALUE));
+    assertThat(thrown).hasMessageThat().contains("negative number disallowed");
   }
 
   @Test
