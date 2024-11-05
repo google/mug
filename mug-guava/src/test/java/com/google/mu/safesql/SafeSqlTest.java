@@ -437,6 +437,74 @@ public class SafeSqlTest {
   }
 
   @Test
+  public void missingOpeningQuote() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class, () -> SafeSql.of("SELECT {tbl}'", "jobs"));
+    assertThat(thrown).hasMessageThat().contains("{tbl}'");
+  }
+
+  @Test
+  public void missingClosingQuote() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class, () -> SafeSql.of("SELECT '{tbl}", "jobs"));
+    assertThat(thrown).hasMessageThat().contains("'{tbl}");
+  }
+
+  @Test
+  public void missingOpeningBackquote() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class, () -> SafeSql.of("SELECT * FROM {tbl}`", "jobs"));
+    assertThat(thrown).hasMessageThat().contains("{tbl}`");
+  }
+
+  @Test
+  public void missingClosingBackquote() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class, () -> SafeSql.of("SELECT * FROM `{tbl}", "jobs"));
+    assertThat(thrown).hasMessageThat().contains("`{tbl}");
+  }
+
+  @Test
+  public void listMissingOpeningQuote() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> SafeSql.of("SELECT {id}'", asList(SafeSql.of("id"))));
+    assertThat(thrown).hasMessageThat().contains("{id}'");
+  }
+
+  @Test
+  public void listMissingClosingQuote() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> SafeSql.of("SELECT '{id}", asList(SafeSql.of("id"))));
+    assertThat(thrown).hasMessageThat().contains("'{id}");
+  }
+
+  @Test
+  public void listMissingOpeningBackquote() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> SafeSql.of("SELECT * FROM {id}`", asList(SafeSql.of("id"))));
+    assertThat(thrown).hasMessageThat().contains("{id}`");
+  }
+
+  @Test
+  public void listMissingClosingBackquote() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> SafeSql.of("SELECT * FROM `{id}", asList(SafeSql.of("id"))));
+    assertThat(thrown).hasMessageThat().contains("`{id}");
+  }
+
+  @Test
   public void twoParameters() {
     SafeSql sql =
         SafeSql.of("select {label} where id = {id}", /* label */ "foo", /* id */ 123);

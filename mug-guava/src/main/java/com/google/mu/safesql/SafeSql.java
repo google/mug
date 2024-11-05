@@ -412,6 +412,7 @@ public final class SafeSql {
           } else if (appendBeforeQuotedPlaceholder("'", placeholder, "'")) {
             builder.addParameter(paramName, mustBeString("'" + placeholder + "'", value));
           } else {
+            checkMissingPlaceholderQuotes(placeholder);
             builder.appendSql(texts.pop()).addParameter(paramName, value);
           }
         }
@@ -653,6 +654,13 @@ public final class SafeSql {
     return sql;
   }
 
+  private static void checkMissingPlaceholderQuotes(Substring.Match placeholder) {
+    checkArgument(!placeholder.isPrecededBy("'"), "Incorrectly quoted placeholder: '%s", placeholder);
+    checkArgument(!placeholder.isFollowedBy("'"), "Incorrectly quoted placeholder: %s'", placeholder);
+    checkArgument(!placeholder.isPrecededBy("`"), "Incorrectly quoted placeholder: `%s", placeholder);
+    checkArgument(!placeholder.isFollowedBy("`"), "Incorrectly quoted placeholder: %s`", placeholder);
+  }
+
   private static void validateSubqueryPlaceholder(Substring.Match placeholder) {
     checkArgument(
         !placeholder.isImmediatelyBetween("'", "'"),
@@ -663,6 +671,7 @@ public final class SafeSql {
     checkArgument(
         !placeholder.isImmediatelyBetween("`", "`"),
         "SafeSql should not be backtick quoted: `%s`", placeholder);
+    checkMissingPlaceholderQuotes(placeholder);
   }
 
   private static String mustBeIdentifier(CharSequence name, Object element) {
