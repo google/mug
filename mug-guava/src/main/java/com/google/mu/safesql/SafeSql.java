@@ -253,9 +253,9 @@ public final class SafeSql {
    * }</pre>
    *
    * <p>Note that if you plan to use the {@link PreparedStatement} multiple times with different
-   * sets of parameters, it's more efficient to use {@link #prepareQuery}, which will reuse the same
-   * PreparedStatement for multiple calls. Both methods are protected at compile-time against
-   * incorrect varargs.
+   * sets of parameters, it's more efficient to use {@link #prepareToQuery} or {@ink #prepareToUpdate},
+   * which will reuse the same PreparedStatement for multiple calls.
+   * The returned {@link Template}s are protected at compile-time against incorrect varargs.
    *
    * @param template the sql template
    * @param params The template parameters. Parameters that are themselves {@link SafeSql} are
