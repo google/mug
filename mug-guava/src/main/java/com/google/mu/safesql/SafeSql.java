@@ -284,7 +284,7 @@ public final class SafeSql {
    *
    * <p>For example, the following SQL Server query allows parameterization by the TOP n number:
    * <pre>{@code
-   *   SafeSql.of("select top {...} UserId from Users", nonNegative(pageSize))
+   *   SafeSql.of("select top {page_size} UserId from Users", nonNegative(pageSize))
    * }</pre>
    *
    * <p>This is needed because in SQL Server the TOP number can't be parameterized by JDBC.
