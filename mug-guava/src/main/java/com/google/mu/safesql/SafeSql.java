@@ -32,6 +32,7 @@ import static java.util.stream.Collectors.mapping;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -251,6 +252,11 @@ public final class SafeSql {
    *         .prepareStatement(connection);
    * }</pre>
    *
+   * <p>Note that if you plan to use the {@link PreparedStatement} multiple times with different
+   * sets of parameters, it's more efficient to use {@link #prepareQuery}, which will reuse the same
+   * PreparedStatement for multiple calls. Both methods are protected at compile-time against
+   * incorrect varargs.
+   *
    * @param template the sql template
    * @param params The template parameters. Parameters that are themselves {@link SafeSql} are
    * considered trusted subqueries and are appended directly. Other types are passed through JDBC
@@ -341,61 +347,6 @@ public final class SafeSql {
   }
 
   /**
-   * Returns a lazy template of {@link PreparedStatement} that will reuse the same cached
-   * {@code PreparedStatement} for repeated calls of {@link Template#with} using different
-   * parameters.
-   *
-   * <p>Allows callers to take advantage of the performance benefit of PreparedStatement
-   * without having to re-create the statement for each call. For example: <pre>{@code
-   *   try (var connection = ...) {
-   *     var query =
-   *         SafeSql.toPrepare(connection, "select FirstName FROM Users where id = {id}");
-   *     for (long id : ids) {
-   *       try (ResultSet resultSet = query.with(id).executeQuery()) {
-   *         ...
-   *       }
-   *     }
-   *   }
-   * }</pre>
-   *
-   * <p>The returned object is <em>not</em> thread safe.
-   *
-   * <p>Caller can either close the statement after done, or close the connection.
-   */
-  public static Template<PreparedStatement> toPrepare(
-      Connection connection, @CompileTimeConstant String template) {
-    checkNotNull(connection);
-    Template<SafeSql> sqlTemplate = template(template);
-    return new Template<PreparedStatement>() {
-      private PreparedStatement statement;
-      private String cachedSql;
-      @SuppressWarnings("StringFormatArgsCheck")  // The returned is also a Template<>
-      @Override public PreparedStatement with(Object... params) {
-        SafeSql sql = sqlTemplate.with(params);
-        try {
-          if (statement == null) {
-            statement = connection.prepareStatement(sql.toString());
-          } else if (!sql.toString().equals(cachedSql)) {
-            logger.warning(
-                "cached PreparedStatement invalided due to sql change from:\n  "
-                    + cachedSql + "\nto:\n  " + sql);
-            statement = connection.prepareStatement(sql.toString());
-          }
-          cachedSql = sql.toString();
-          return sql.setArgs(statement);
-        } catch (SQLException e) {
-          throw new UncheckedSqlException(e);
-        }
-      }
-
-      @Override
-      public String toString() {
-        return sqlTemplate.toString();
-      }
-    };
-  }
-
-  /**
    * Returns a template of {@link SafeSql} based on the {@code template} string.
    *
    * <p>For example:
@@ -412,6 +363,8 @@ public final class SafeSql {
    * }</pre>
    *
    * <p>See {@link #of(String, Object...)} for discussion on the template arguments.
+   *
+   * <p>The returned template is immutable and thread safe.
    */
   public static Template<SafeSql> template(@CompileTimeConstant String template) {
     return StringFormat.template(template, (fragments, placeholders) -> {
@@ -550,6 +503,62 @@ public final class SafeSql {
     } catch (SQLException e) {
       throw new UncheckedSqlException(e);
     }
+  }
+
+  /**
+   * Returns a query template that will reuse the same cached {@code PreparedStatement}
+   * for repeated calls of {@link Template#with} using different parameters.
+   *
+   * <p>Allows callers to take advantage of the performance benefit of PreparedStatement
+   * without having to re-create the statement for each call. For example: <pre>{@code
+   *   try (var connection = ...) {
+   *     var query =
+   *         SafeSql.prepareQuery(connection, "select FirstName FROM Users where id = {id}");
+   *     for (long id : ids) {
+   *       try (ResultSet resultSet = query.with(id))) {
+   *         ...
+   *       }
+   *     }
+   *   }
+   * }</pre>
+   *
+   * <p>The returned Template is <em>not</em> thread safe.
+   *
+   * <p>The caller is expected to close the {@code connection} after done, which will close all
+   * attached resources.
+   */
+  public static Template<ResultSet> prepareQuery(
+      Connection connection, @CompileTimeConstant String template) {
+    checkNotNull(connection);
+    Template<SafeSql> sqlTemplate = template(template);
+    return new Template<ResultSet>() {
+      private PreparedStatement statement;
+      private String cachedSql;
+
+      @SuppressWarnings("StringFormatArgsCheck")  // The returned is also a Template<>
+      @Override public ResultSet with(Object... params) {
+        SafeSql sql = sqlTemplate.with(params);
+        try {
+          if (statement == null) {
+            statement = connection.prepareStatement(sql.toString());
+          } else if (!sql.toString().equals(cachedSql)) {
+            logger.warning(
+                "cached PreparedStatement invalided due to sql change from:\n  "
+                    + cachedSql + "\nto:\n  " + sql);
+            statement = connection.prepareStatement(sql.toString());
+          }
+          cachedSql = sql.toString();
+          return sql.setArgs(statement).executeQuery();
+        } catch (SQLException e) {
+          throw new UncheckedSqlException(e);
+        }
+      }
+
+      @Override
+      public String toString() {
+        return sqlTemplate.toString();
+      }
+    };
   }
 
   /**
