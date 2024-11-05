@@ -504,7 +504,7 @@ public final class SafeSql {
    *
    * <p>For example: <pre>{@code
    * SafeSql.of("INSERT INTO Users(id, name) VALUES({id}, '{name}')", id, name)
-   *     .update(connection, row -> row.getString("name"));
+   *     .update(connection);
    * }</pre>
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
