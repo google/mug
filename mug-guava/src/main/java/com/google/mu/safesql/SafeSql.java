@@ -72,10 +72,7 @@ import com.google.mu.util.stream.BiStream;
  *       where firstName = {first_name} and lastName = {last_name}
  *       """,
  *       firstName, lastName);
- *   try (var statement = sql.prepareStatement(connection),
- *       var resultSet = statement.executeQuery()) {
- *     ...
- *   }
+ *   List<Long> ids = sql.query(connection, row -> row.getLong("id"));
  * }</pre>
  *
  * The code internally uses the JDBC {@code '?'} placeholder in the SQL text, and calls
@@ -128,9 +125,9 @@ import com.google.mu.util.stream.BiStream;
  * select `firstName`, `lastName` from Users where firstName LIKE ?
  * }</pre>
  *
- * And when you call {@code usersQuery.prepareStatement(connection)},
- * {@code statement.setObject(1, "%" + criteria.firstName().get() + "%")} will be called
- * to populate the PreparedStatement.
+ * And when you call {@code usersQuery.prepareStatement(connection)} or one of the similar
+ * convenience methods, {@code statement.setObject(1, "%" + criteria.firstName().get() + "%")}
+ * will be called to populate the PreparedStatement.
  *
  * <p>Sometimes you may wish to parameterize by table names, column names etc.
  * for which JDBC has no support.
@@ -157,14 +154,14 @@ import com.google.mu.util.stream.BiStream;
  * syntax is actually incorect: <pre>{@code
  *   String searchBy = ...;
  *   PreparedStatement statement =
- *       connection.prepareStatement("select * from Users where firstName LIKE '%?%'");
+ *       connection.prepareStatement("select id from Users where firstName LIKE '%?%'");
  *   statement.setString(1, searchBy);
  * }</pre>
  *
  * JDBC considers the quoted question mark as a literal so the {@code setString()}
  * call will fail. You'll need to use the following workaround: <pre>{@code
  *   PreparedStatement statement =
- *       connection.prepareStatement("select * from Users where firstName LIKE ?");
+ *       connection.prepareStatement("select id from Users where firstName LIKE ?");
  *   statement.setString(1, "%" + searchBy + "%");
  * }</pre>
  *
@@ -176,10 +173,8 @@ import com.google.mu.util.stream.BiStream;
  * what you'd expect (and it escapes special characters too): <pre>{@code
  *   String searchBy = ...;
  *   SafeSql sql = SafeSql.of(
- *       "select * from Users where firstName LIKE '%{search_term}%'", searchTerm);
- *   try (PreparedStatement statement = sql.prepareStatement(connection)) {
- *     ...
- *   }
+ *       "select id from Users where firstName LIKE '%{search_term}%'", searchTerm);
+ *   List<Long> ids = sql.query(connection, row -> row.getLong("id"));
  * }</pre>
  *
  * And even when you don't use LIKE operator or the percent sign (%), it may still be more readable
@@ -247,16 +242,17 @@ public final class SafeSql {
    * <p>For example:
    *
    * <pre>{@code
-   * PreparedStatement statement =
-   *     SafeSql.of("select * from JOBS where id = {id}", jobId)
-   *         .prepareStatement(connection);
+   * List<Long> jobIds = SafeSql.of(
+   *         "SELECT id FROM Jobs WHERE timestamp BETWEEN {start} AND {end}",
+   *         startTime, endTime)
+   *     .query(connection, row -> row.getLong("id"));
    * }</pre>
    *
-   * <p>Note that if you plan to use the {@link PreparedStatement} multiple times with different
-   * sets of parameters, it's more efficient to use {@link #prepareToQuery prepareToQuery()} or
-   * {@link #prepareToUpdate prepareToUpdate()}, which will reuse the same PreparedStatement for
-   * multiple calls. The returned {@link Template}s are protected at compile-time against incorrect
-   * varargs.
+   * <p>Note that if you plan to create a {@link PreparedStatement} and use it multiple times
+   * with different sets of parameters, it's more efficient to use {@link #prepareToQuery
+   * prepareToQuery()} or {@link #prepareToUpdate prepareToUpdate()}, which will reuse the same
+   * PreparedStatement for multiple calls. The returned {@link Template}s are protected at
+   * compile-time against incorrect varargs.
    *
    * @param template the sql template
    * @param params The template parameters. Parameters that are themselves {@link SafeSql} are
@@ -280,9 +276,9 @@ public final class SafeSql {
    * <p>If you have a list of candidate ids that need to be passed to the IN opertor, you can use:
    * <pre>{@code
    *   List<Long> userIds = ...;
-   *   SafeSql.of(
+   *   SafeSql query = SafeSql.of(
    *       "SELECT * FROM Users WHERE id IN ({user_ids})",
-   *       userIds.stream().map(SafeSql::ofParam).toList())
+   *       userIds.stream().map(SafeSql::ofParam).toList());
    * }</pre>
    */
   public static SafeSql ofParam(@Nullable Object param) {
@@ -360,7 +356,7 @@ public final class SafeSql {
    *         WHERE query LIKE '%{keyword}%'
    *         """);
    *
-   * PreparedStatement stmt = GET_JOB_IDS_BY_QUERY.with("sensitive word").prepareStatement(conn);
+   * SafeSql sensitiveJobsQuery = GET_JOB_IDS_BY_QUERY.with("sensitive word");
    * }</pre>
    *
    * <p>See {@link #of(String, Object...)} for discussion on the template arguments.
@@ -575,8 +571,7 @@ public final class SafeSql {
    * cached PreparedStatement.
    */
   public static <T> Template<List<T>> prepareToQuery(
-      Connection connection,
-      @CompileTimeConstant String template,
+      Connection connection, @CompileTimeConstant String template,
       SqlFunction<? super ResultSet, ? extends T> rowMapper) {
     checkNotNull(rowMapper);
     return prepare(connection, template, stmt -> {
@@ -605,8 +600,7 @@ public final class SafeSql {
    * cached PreparedStatement.
    */
   public static Template<Integer> prepareToUpdate(
-      Connection connection,
-      @CompileTimeConstant String template) {
+      Connection connection, @CompileTimeConstant String template) {
     return prepare(connection, template, PreparedStatement::executeUpdate);
   }
 
@@ -706,8 +700,7 @@ public final class SafeSql {
   }
 
   private static <T> Template<T> prepare(
-      Connection connection,
-      @CompileTimeConstant String template,
+      Connection connection, @CompileTimeConstant String template,
       SqlFunction<? super PreparedStatement, ? extends T> action) {
     checkNotNull(connection);
     Template<SafeSql> sqlTemplate = template(template);
