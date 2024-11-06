@@ -73,7 +73,7 @@ import com.google.mu.util.stream.BiStream;
  * <pre>{@code
  *   SafeSql sql = SafeSql.of(
  *       """
- *       SELECT id FROM Employees
+ *       SELECT id FROM Users
  *       WHERE firstName = {first_name} AND lastName IN ({last_names})
  *       """,
  *       firstName, lastNamesList);
@@ -94,13 +94,13 @@ import com.google.mu.util.stream.BiStream;
  *
  * <p>The templating engine uses compile-time checks to guard against accidental use of
  * untrusted strings in the SQL, ensuring that they can only be sent as parameters:
- * try to use a dynamically generated String as the SQL and you'll get a compilation error.
+ * try to use a dynamically generated String as the SQL template and you'll get a compilation error.
  * In addition, the same set of compile-time guardrails from the {@link StringFormat} class
  * are in effect to make sure that you don't pass {@code lastName} in the place of
  * {@code first_name}, for example.
  *
- * <p>By composing smaller SafeSql objects that encapsulate subqueries, you can also parameterize
- * by table name, by column names or by arbitrary sub-queries that are computed dynamically.
+ * <p>Through composing SafeSql objects that encapsulate subqueries, you can also parameterize by
+ * table name, by column names or by arbitrary sub-queries that are computed dynamically.
  *
  * <p>For example, the following code builds SQL to query the Users table with flexible
  * number of columns and a flexible WHERE clause depending on the {@code UserCriteria}
