@@ -189,9 +189,11 @@ import com.google.mu.util.stream.BiStream;
  *   List<Long> ids = sql.query(connection, row -> row.getLong("id"));
  * }</pre>
  *
- * And even when you don't use LIKE operator or the percent sign (%), it may still be more readable
- * to quote the string parameters just so the SQL template explicitly tells readers that
- * the parameter is a string. The following template works with or without the quotes: <pre>{@code
+ * And even when you don't use the {@code LIKE} operator or the percent sign (%), it may still be
+ * more readable to quote the string parameters just so the SQL template explicitly tells readers
+ * that the parameter is a string. The following template works with or without the quotes:
+ *
+ * <pre>{@code
  *   // Reads more clearly that the {id} is a string
  *   SafeSql sql = SafeSql.of("select * from Users where id = '{id}'", userId);
  * }</pre>
