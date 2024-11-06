@@ -473,12 +473,14 @@ public final class Substring {
   public static RepeatingPattern topLevelGroups(java.util.regex.Pattern regexPattern) {
     requireNonNull(regexPattern);
     return new RepeatingPattern() {
-      @Override public Stream<Match> match(String string) {
+      @Override public Stream<Match> match(String input, int fromIndex) {
+        String string = input.substring(fromIndex);
         Matcher matcher = regexPattern.matcher(string);
         if (!matcher.find()) return Stream.empty();
         int groups = matcher.groupCount();
         if (groups == 0) {
-          return Stream.of(Match.backtrackable(1, string, matcher.start(), matcher.end() - matcher.start()));
+          return Stream.of(
+              Match.backtrackable(1, string, matcher.start(), matcher.end() - matcher.start()));
         } else {
           return MoreStreams.whileNotNull(new Supplier<Match>() {
             private int next = 0;
@@ -631,12 +633,12 @@ public final class Substring {
               return best;
             }
 
-            @Override Stream<Match> iterate(String input) {
+            @Override Stream<Match> iterate(String input, int fromIndex) {
               PriorityQueue<Occurrence> occurrences =
                   new PriorityQueue<>(max(1, candidates.size()), byIndex);
               for (int i = 0; i < candidates.size(); i++) {
                 Pattern candidate = candidates.get(i);
-                Match match = candidate.match(input, 0);
+                Match match = candidate.match(input, fromIndex);
                 if (match != null) {
                   occurrences.add(new Occurrence(candidate, match, i));
                 }
@@ -1148,8 +1150,8 @@ public final class Substring {
 
         // For, firstOccurrence().limit().repeatedly(), apply firstOccurrence().iterate()
         // and then apply limit() on the result matches to take advantage of the optimization.
-        @Override Stream<Match> iterate(String input) {
-          return base.iterate(input).map(m -> m.limit(maxChars));
+        @Override Stream<Match> iterate(String input, int fromIndex) {
+          return base.iterate(input, fromIndex).map(m -> m.limit(maxChars));
         }
 
         @Override public String toString() {
@@ -1180,8 +1182,8 @@ public final class Substring {
         // For firstOccurrence().skiip().repeatedly(), apply
         // firstOccurrence().iterate() to take advantage of the optimization and then apply
         // skip() on the result matches.
-        @Override Stream<Match> iterate(String input) {
-          return original.iterate(input).map(m -> m.skip(fromBeginning, fromEnd));
+        @Override Stream<Match> iterate(String input, int fromIndex) {
+          return original.iterate(input, fromIndex).map(m -> m.skip(fromBeginning, fromEnd));
         }
 
         @Override public String toString() {
@@ -1627,8 +1629,8 @@ public final class Substring {
      */
     public RepeatingPattern repeatedly() {
       return new RepeatingPattern() {
-        @Override public Stream<Match> match(String input) {
-          return iterate(requireNonNull(input));
+        @Override public Stream<Match> match(String input, int fromIndex) {
+          return iterate(requireNonNull(input), fromIndex);
         }
 
         @Override public String toString() {
@@ -1644,11 +1646,11 @@ public final class Substring {
     abstract Match match(String string, int fromIndex);
 
     /** Applies this pattern repeatedly against {@code input} and returns all iterations. */
-    Stream<Match> iterate(String input) {
+    Stream<Match> iterate(String input, int fromIndex) {
       return MoreStreams.whileNotNull(
           new Supplier<Match>() {
             private final int end = input.length();
-            private int nextIndex = 0;
+            private int nextIndex = fromIndex;
 
             @Override public Match get() {
               if (nextIndex > end) {
@@ -1733,6 +1735,25 @@ public final class Substring {
    */
   public abstract static class RepeatingPattern {
     /**
+     * Applies this pattern against {@code string} starting from {@code fromIndex} and returns a
+     * stream of each iteration.
+     *
+     * <p>Iterations happen in strict character encounter order, from the beginning of the input
+     * string to the end, with no overlapping. When a match is found, the next iteration is
+     * guaranteed to be in the substring after the current match. For example, {@code
+     * between(first('/'), first('/')).repeatedly().match("/foo/bar/baz/")} will return {@code
+     * ["foo", "bar", "baz"]}. On the other hand, {@code
+     * after(last('/')).repeatedly().match("/foo/bar")} will only return "bar".
+     *
+     * <p>Pattern matching is lazy and doesn't start until the returned stream is consumed.
+     *
+     * <p>An empty stream is returned if this pattern has no matches in the {@code input} string.
+     *
+     * @since 8.2
+     */
+    public abstract Stream<Match> match(String input, int fromIndex);
+
+    /**
      * Applies this pattern against {@code string} and returns a stream of each iteration.
      *
      * <p>Iterations happen in strict character encounter order, from the beginning of the input
@@ -1746,7 +1767,9 @@ public final class Substring {
      *
      * <p>An empty stream is returned if this pattern has no matches in the {@code input} string.
      */
-    public abstract Stream<Match> match(String input);
+    public final Stream<Match> match(String input) {
+      return match(input, 0);
+    }
 
     /**
      * Applies this pattern against {@code string} and returns a stream of each iteration.
@@ -2488,6 +2511,7 @@ public final class Substring {
      *
      * @since 7.2
      */
+    @Override
     public boolean isEmpty() {
       return length() == 0;
     }

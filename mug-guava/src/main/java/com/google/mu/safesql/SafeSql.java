@@ -754,8 +754,11 @@ public final class SafeSql {
   static boolean matchesPattern(String left, Substring.Match placeholder, String right) {
     ImmutableList<String> leftTokensToMatch = TOKENS.from(left).collect(toImmutableList());
     ImmutableList<String> rightTokensToMatch = TOKENS.from(right).collect(toImmutableList());
-    // Matches right side first because it's lazy and more efficient
-    return BiStream.zip(rightTokensToMatch.stream(), TOKENS.from(placeholder.after()))
+    // Matches right side first because we can lazily scan the right side without copying
+    return BiStream.zip(
+               rightTokensToMatch.stream(),
+               TOKENS.match(placeholder.fullString(), placeholder.index() + placeholder.length())
+                   .map(Object::toString))
             .filter(String::equalsIgnoreCase)
             .count() == rightTokensToMatch.size()
         && BiStream.zip(
