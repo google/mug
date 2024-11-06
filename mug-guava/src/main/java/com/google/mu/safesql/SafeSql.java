@@ -202,8 +202,9 @@ import com.google.mu.util.stream.BiStream;
  * <dl><dt><STRONG>Quote String Placeholders</STRONG></dt></dl>
  *
  * Even when you don't use the {@code LIKE} operator or the percent sign (%), it may still be
- * more readable to quote the string parameters just so the SQL template explicitly tells readers
- * that the parameter is a string. The following template works with or without the quotes:
+ * more readable to quote the string placeholders just so the SQL template explicitly tells readers
+ * that the parameter is a string. The following template works with or without the quotes around
+ * the <code>{id}</code> placeholder:
  *
  * <pre>{@code
  *   // Reads more clearly that the {id} is a string
