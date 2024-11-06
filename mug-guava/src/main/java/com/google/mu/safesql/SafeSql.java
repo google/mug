@@ -68,7 +68,9 @@ import com.google.mu.util.stream.BiStream;
  * The main use case though, is to be able to compose subqueries and leaf-level parameters with an
  * intuitive templating API.
  *
- * <p>A common dynamic SQL use case is to use the {@code IN} SQL operator:
+ * <dl><dt><span class="strong">The {@code IN} Operator</span></dt></dl>
+ *
+ * A common dynamic SQL use case is to use the {@code IN} SQL operator:
  *
  * <pre>{@code
  *   SafeSql sql = SafeSql.of(
@@ -99,7 +101,9 @@ import com.google.mu.util.stream.BiStream;
  * are in effect to make sure that you don't pass {@code lastName} in the place of
  * {@code first_name}, for example.
  *
- * <p>Through composing SafeSql objects that encapsulate subqueries, you can also parameterize by
+ * <dl><dt><span class="strong">Conditional Subqueries</span></dt></dl>
+ *
+ * By composing SafeSql objects that encapsulate subqueries, you can also parameterize by
  * arbitrary sub-queries that are computed dynamically.
  *
  * <p>For example, the following code builds SQL to query the Users table with flexible
@@ -135,11 +139,13 @@ import com.google.mu.util.stream.BiStream;
  * select `firstName`, `lastName` from Users where firstName LIKE ?
  * }</pre>
  *
- * And when you call {@code usersQuery.prepareStatement(connection)} or one of the similar
+ * <p>And when you call {@code usersQuery.prepareStatement(connection)} or one of the similar
  * convenience methods, {@code statement.setObject(1, "%" + criteria.firstName().get() + "%")}
  * will be called to populate the PreparedStatement.
  *
- * <p>Sometimes you may wish to parameterize by table names, column names etc.
+ * <dl><dt><span class="strong">Parameterize by Column Names or Table Names</span></dt></dl>
+ *
+ * Sometimes you may wish to parameterize by table names, column names etc.
  * for which JDBC has no support.
  *
  * If the identifiers can come from compile-time literals, you can wrap them using
@@ -160,6 +166,8 @@ import com.google.mu.util.stream.BiStream;
  * <p>In the above example, if {@code getColumns()} returns {@code ["id", "age"]}, the genereated
  * SQL will be {@code select `id`, `age` from Users}. That is, each individual string will
  * be backtick-quoted and then joined by ", ".
+ *
+ * <dl><dt><span class="strong">The {@code LIKE} Operator</span></dt></dl>
  *
  * <p>Note that with straight JDBC, if you try to use the LIKE operator to match a user-provided
  * substring, i.e. using {@code LIKE '%foo%'} to search for "foo", this seemingly intuitive
@@ -198,7 +206,9 @@ import com.google.mu.util.stream.BiStream;
  *   SafeSql sql = SafeSql.of("select * from Users where id = '{id}'", userId);
  * }</pre>
  *
- * <p>A useful tip: the compile-time check tries to be helpful and checks that if you use the
+ * <dl><dt><span class="strong">A Useful Tip</span></dt></dl>
+ *
+ * <p>The compile-time check tries to be helpful and checks that if you use the
  * same parameter name more than once in the template, the same value must be used for it.
  *
  * So for example, if you are trying to generate a SQL that looks like: <pre>{@code
