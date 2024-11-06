@@ -227,6 +227,8 @@ public final class SafeSql {
   private static final StringFormat.Template<SafeSql> PARAM = template("{param}");
   private static final StringFormat PLACEHOLDER_ELEMENT_NAME =
       new StringFormat("{placeholder}[{index}]");
+  private static final Substring.RepeatingPattern TOKENS =
+      Substring.first(Pattern.compile("(\\w+)|(\\S)")).repeatedly();
 
   private final String sql;
   private final List<?> paramValues;
@@ -708,9 +710,6 @@ public final class SafeSql {
     return BiStream.zip(indexesFrom(0), stream(elements))
         .mapKeys(index -> PLACEHOLDER_ELEMENT_NAME.format(placeholder, index));
   }
-
-  private static final Substring.RepeatingPattern TOKENS =
-      Substring.first(Pattern.compile("(\\w+)|(\\S)")).repeatedly();
 
   @VisibleForTesting
   static boolean matchesAround(String left, Substring.Match placeholder, String right) {
