@@ -373,18 +373,28 @@ public final class SafeSql {
           if (value instanceof Iterable) {
             Iterator<?> elements = ((Iterable<?>) value).iterator();
             checkArgument(elements.hasNext(), "%s cannot be empty list", placeholder);
-            builder.appendSql(texts.pop());
             if (placeholder.isImmediatelyBetween("`", "`")) {
+              builder.appendSql(texts.pop());
               builder.appendSql(
                   eachPlaceholderValue(placeholder, elements)
                       .mapToObj(SafeSql::mustBeIdentifier)
                       .collect(Collectors.joining("`, `")));
             } else if (matchesPattern("IN (", placeholder, ")")) {
+              builder.appendSql(texts.pop());
               builder.addSubQuery(
                   eachPlaceholderValue(placeholder, elements)
                       .mapToObj(SafeSql::subqueryOrParameter)
                       .collect(joining(", ")));
+            } else if (placeholder.isImmediatelyBetween("'", "'")
+                && matchesPattern("IN ('", placeholder, "')")
+                && appendBeforeQuotedPlaceholder("'", placeholder, "'")) {
+              builder.addSubQuery(
+                  eachPlaceholderValue(placeholder, elements)
+                      .mapToObj(SafeSql::mustBeString)
+                      .map(PARAM::with)
+                      .collect(joining(", ")));
             } else {
+              builder.appendSql(texts.pop());
               builder.addSubQuery(
                   eachPlaceholderValue(placeholder, elements)
                       .mapToObj(SafeSql::mustBeSubquery)
