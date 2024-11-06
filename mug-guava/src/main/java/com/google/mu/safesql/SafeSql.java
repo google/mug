@@ -373,19 +373,7 @@ public final class SafeSql {
           if (value instanceof Iterable) {
             Iterator<?> elements = ((Iterable<?>) value).iterator();
             checkArgument(elements.hasNext(), "%s cannot be empty list", placeholder);
-            if (placeholder.isImmediatelyBetween("`", "`")) {
-              builder.appendSql(texts.pop());
-              builder.appendSql(
-                  eachPlaceholderValue(placeholder, elements)
-                      .mapToObj(SafeSql::mustBeIdentifier)
-                      .collect(Collectors.joining("`, `")));
-            } else if (matchesPattern("IN (", placeholder, ")")) {
-              builder.appendSql(texts.pop());
-              builder.addSubQuery(
-                  eachPlaceholderValue(placeholder, elements)
-                      .mapToObj(SafeSql::subqueryOrParameter)
-                      .collect(joining(", ")));
-            } else if (placeholder.isImmediatelyBetween("'", "'")
+            if (placeholder.isImmediatelyBetween("'", "'")
                 && matchesPattern("IN ('", placeholder, "')")
                 && appendBeforeQuotedPlaceholder("'", placeholder, "'")) {
               builder.addSubQuery(
@@ -393,8 +381,20 @@ public final class SafeSql {
                       .mapToObj(SafeSql::mustBeString)
                       .map(PARAM::with)
                       .collect(joining(", ")));
+              return;
+            }
+            builder.appendSql(texts.pop());
+            if (placeholder.isImmediatelyBetween("`", "`")) {
+              builder.appendSql(
+                  eachPlaceholderValue(placeholder, elements)
+                      .mapToObj(SafeSql::mustBeIdentifier)
+                      .collect(Collectors.joining("`, `")));
+            } else if (matchesPattern("IN (", placeholder, ")")) {
+              builder.addSubQuery(
+                  eachPlaceholderValue(placeholder, elements)
+                      .mapToObj(SafeSql::subqueryOrParameter)
+                      .collect(joining(", ")));
             } else {
-              builder.appendSql(texts.pop());
               builder.addSubQuery(
                   eachPlaceholderValue(placeholder, elements)
                       .mapToObj(SafeSql::mustBeSubquery)
