@@ -121,7 +121,7 @@ import com.google.mu.util.stream.BiStream;
  *
  *   SafeSql queryUsers(UserCriteria criteria, @CompileTimeConstant String... columns) {
  *     SafeSql sql = SafeSql.of(
- *         "select `{columns}` from Users where {criteria}",
+ *         "SELECT `{columns}` FROM Users WHERE {criteria}",
  *         asList(columns),
  *         Stream.of(
  *               optionally("id = {id}", criteria.userId()),
@@ -136,7 +136,7 @@ import com.google.mu.util.stream.BiStream;
  * unspecified (empty), the resulting SQL will look like:
  *
  * <pre>{@code
- * select `firstName`, `lastName` from Users where firstName LIKE ?
+ * SELECT `firstName`, `lastName` FROM Users WHERE firstName LIKE ?
  * }</pre>
  *
  * <p>And when you call {@code usersQuery.prepareStatement(connection)} or one of the similar
@@ -158,13 +158,13 @@ import com.google.mu.util.stream.BiStream;
  *
  * <p>The safe way to parameterize dynamic strings as identifiers is to backtick-quote their
  * placeholders in the SQL template. For example: <pre>{@code
- *   SafeSql.of("select `{columns}` from Users", request.getColumns())
+ *   SafeSql.of("SELECT `{columns}` FROM Users", request.getColumns())
  * }</pre>
  * The backticks tell SafeSql that the string is supposed to be an identifier (or a list of
  * identifiers). SafeSql will sanity-check the string(s) to make sure injection isn't possible.
  *
  * <p>In the above example, if {@code getColumns()} returns {@code ["id", "age"]}, the genereated
- * SQL will be {@code select `id`, `age` from Users}. That is, each individual string will
+ * SQL will be {@code SELECT `id`, `age` FROM Users}. That is, each individual string will
  * be backtick-quoted and then joined by ", ".
  *
  * <dl><dt><STRONG>The {@code LIKE} Operator</STRONG></dt></dl>
@@ -174,14 +174,14 @@ import com.google.mu.util.stream.BiStream;
  * syntax is actually incorect: <pre>{@code
  *   String searchBy = ...;
  *   PreparedStatement statement =
- *       connection.prepareStatement("select id from Users where firstName LIKE '%?%'");
+ *       connection.prepareStatement("SELECT id FROM Users WHERE firstName LIKE '%?%'");
  *   statement.setString(1, searchBy);
  * }</pre>
  *
  * JDBC considers the quoted question mark as a literal so the {@code setString()}
  * call will fail. You'll need to use the following workaround: <pre>{@code
  *   PreparedStatement statement =
- *       connection.prepareStatement("select id from Users where firstName LIKE ?");
+ *       connection.prepareStatement("SELECT id FROM Users WHERE firstName LIKE ?");
  *   statement.setString(1, "%" + searchBy + "%");
  * }</pre>
  *
@@ -193,7 +193,7 @@ import com.google.mu.util.stream.BiStream;
  * what you'd expect (and it escapes special characters too): <pre>{@code
  *   String searchBy = ...;
  *   SafeSql sql = SafeSql.of(
- *       "select id from Users where firstName LIKE '%{search_term}%'", searchTerm);
+ *       "SELECT id FROM Users WHERE firstName LIKE '%{search_term}%'", searchTerm);
  *   List<Long> ids = sql.query(connection, row -> row.getLong("id"));
  * }</pre>
  *
@@ -205,7 +205,7 @@ import com.google.mu.util.stream.BiStream;
  *
  * <pre>{@code
  *   // Reads more clearly that the {id} is a string
- *   SafeSql sql = SafeSql.of("select * from Users where id = '{id}'", userId);
+ *   SafeSql sql = SafeSql.of("SELECT * FROM Users WHERE id = '{id}'", userId);
  * }</pre>
  *
  * <dl><dt><STRONG>Enforce Identical Parameter</STRONG></dt></dl>
@@ -215,8 +215,8 @@ import com.google.mu.util.stream.BiStream;
  *
  * So for example, if you are trying to generate a SQL that looks like: <pre>{@code
  *   SELECT u.firstName, p.profileId
- *   FROM (select firstName FROM Users where id = 'foo') u,
- *        (select profileId FROM Profiles where userId = 'foo') p
+ *   FROM (SELECT firstName FROM Users WHERE id = 'foo') u,
+ *        (SELECT profileId FROM Profiles WHERE userId = 'foo') p
  * }</pre>
  *
  * It'll be important to use the same user id for both subqueries. And you can use the following
@@ -224,8 +224,8 @@ import com.google.mu.util.stream.BiStream;
  *   SafeSql sql = SafeSql.of(
  *       """
  *       SELECT u.firstName, p.profileId
- *       FROM (select firstName FROM Users where id = '{user_id}') u,
- *            (select profileId FROM Profiles where userId = '{user_id}') p
+ *       FROM (SELECT firstName FROM Users WHERE id = '{user_id}') u,
+ *            (SELECT profileId FROM Profiles WHERE userId = '{user_id}') p
  *       """,
  *       userId, userId);
  * }</pre>
@@ -302,7 +302,7 @@ public final class SafeSql {
    *
    * <p>For example, the following SQL Server query allows parameterization by the TOP n number:
    * <pre>{@code
-   *   SafeSql.of("select top {page_size} UserId from Users", nonNegative(pageSize))
+   *   SafeSql.of("SELECT TOP {page_size} UserId FROM Users", nonNegative(pageSize))
    * }</pre>
    *
    * <p>This is needed because in SQL Server the TOP number can't be parameterized by JDBC.
@@ -364,7 +364,7 @@ public final class SafeSql {
    * private static final Template<SafeSql> GET_JOB_IDS_BY_QUERY =
    *     SafeSql.template(
    *         """
-   *         SELECT JobId from Jobs
+   *         SELECT JobId FROM Jobs
    *         WHERE query LIKE '%{keyword}%'
    *         """);
    *
