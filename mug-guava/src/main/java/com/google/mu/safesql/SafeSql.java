@@ -149,7 +149,7 @@ import com.google.mu.util.stream.BiStream;
  * for which JDBC has no support.
  *
  * If the identifiers can come from compile-time literals, you can wrap them using
- * {@code SafeSql.of(identifier)}, which can then be composed as subqueries.
+ * {@code SafeSql.of(COLUMN_NAME)}, which can then be composed as subqueries.
  *
  * <p>But what if the identifier string is loaded from a resource file, or is specified by a
  * request field? Passing the string directly as a template parameter will only generate the JDBC
