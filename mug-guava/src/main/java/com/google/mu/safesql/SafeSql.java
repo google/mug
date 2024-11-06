@@ -17,10 +17,12 @@ package com.google.mu.safesql;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Streams.stream;
 import static com.google.mu.safesql.InternalCollectors.skippingEmpty;
 import static com.google.mu.safesql.SafeQuery.checkIdentifier;
 import static com.google.mu.safesql.SafeQuery.validatePlaceholder;
+import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.Substring.suffix;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
@@ -41,11 +43,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
-import org.checkerframework.checker.nullness.qual.Nullable;
-
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Ascii;
+import com.google.common.collect.ImmutableList;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.errorprone.annotations.MustBeClosed;
 import com.google.mu.annotations.TemplateFormatMethod;
@@ -56,7 +60,7 @@ import com.google.mu.util.Substring;
 import com.google.mu.util.stream.BiStream;
 
 /**
- * An injection-safe parameterized SQL, constructed using compile-time enforced templates and can be
+ * An injection-safe dynamic SQL, constructed using compile-time enforced templates and can be
  * used to {@link #prepareStatement create} {@link java.sql.PreparedStatement}.
  *
  * <p>This class is intended to work with JDBC {@link Connection} and {@link PreparedStatement} API
@@ -68,10 +72,10 @@ import com.google.mu.util.stream.BiStream;
  * <pre>{@code
  *   SafeSql sql = SafeSql.of(
  *       """
- *       select id from Employees
- *       where firstName = {first_name} and lastName = {last_name}
+ *       SELECT id FROM Employees
+ *       WHERE firstName = {first_name} AND lastName IN ({last_names})
  *       """,
- *       firstName, lastName);
+ *       firstName, lastNamesList);
  *   List<Long> ids = sql.query(connection, row -> row.getLong("id"));
  * }</pre>
  *
@@ -270,22 +274,6 @@ public final class SafeSql {
   }
 
   /**
-   * Convenience method equivalent to {@code of("{param}", param)}, which
-   * is translated to a single question mark ('?') with {@code param} being the value.
-   *
-   * <p>If you have a list of candidate ids that need to be passed to the IN opertor, you can use:
-   * <pre>{@code
-   *   List<Long> userIds = ...;
-   *   SafeSql query = SafeSql.of(
-   *       "SELECT * FROM Users WHERE id IN ({user_ids})",
-   *       userIds.stream().map(SafeSql::ofParam).toList());
-   * }</pre>
-   */
-  public static SafeSql ofParam(@Nullable Object param) {
-    return PARAM.with(param);
-  }
-
-  /**
    * Wraps non-negative {@code number} as a SafeSql object.
    *
    * <p>For example, the following SQL Server query allows parameterization by the TOP n number:
@@ -389,6 +377,11 @@ public final class SafeSql {
                   eachPlaceholderValue(placeholder, elements)
                       .mapToObj(SafeSql::mustBeIdentifier)
                       .collect(Collectors.joining("`, `")));
+            } else if (matchesAround("IN (", placeholder, ")")) {
+              builder.addSubQuery(
+                  eachPlaceholderValue(placeholder, elements)
+                      .mapToObj(SafeSql::subqueryOrParameter)
+                      .collect(joining(", ")));
             } else {
               builder.addSubQuery(
                   eachPlaceholderValue(placeholder, elements)
@@ -662,8 +655,10 @@ public final class SafeSql {
   }
 
   private static void rejectHalfQuotes(Substring.Match placeholder, String quote) {
-    checkArgument(!placeholder.isPrecededBy(quote), "half quoted placeholder: %s%s", quote, placeholder);
-    checkArgument(!placeholder.isFollowedBy(quote), "half quoted placeholder: %s%s", placeholder, quote);
+    checkArgument(
+        !placeholder.isPrecededBy(quote), "half quoted placeholder: %s%s", quote, placeholder);
+    checkArgument(
+        !placeholder.isFollowedBy(quote), "half quoted placeholder: %s%s", placeholder, quote);
   }
 
   private static void validateSubqueryPlaceholder(Substring.Match placeholder) {
@@ -703,14 +698,41 @@ public final class SafeSql {
     return (SafeSql) element;
   }
 
+  private static SafeSql subqueryOrParameter(CharSequence name, Object param) {
+    checkArgument(param != null, "%s must not be null", name);
+    return param instanceof SafeSql ? (SafeSql) param : PARAM.with(param);
+  }
+
   private static BiStream<String, ?> eachPlaceholderValue(
       Substring.Match placeholder, Iterator<?> elements) {
     return BiStream.zip(indexesFrom(0), stream(elements))
         .mapKeys(index -> PLACEHOLDER_ELEMENT_NAME.format(placeholder, index));
   }
 
+  private static final Substring.RepeatingPattern TOKENS =
+      Substring.first(Pattern.compile("(\\w+)|(\\S)")).repeatedly();
+
+  @VisibleForTesting
+  static boolean matchesAround(String left, Substring.Match placeholder, String right) {
+    ImmutableList<String> leftTokensToMatch =
+        TOKENS.from(Ascii.toUpperCase(left)).collect(toImmutableList());
+    ImmutableList<String> rightTokensToMatch =
+        TOKENS.from(Ascii.toUpperCase(right)).collect(toImmutableList());
+    return BiStream.zip(
+                rightTokensToMatch.stream(),
+                TOKENS.from(Ascii.toUpperCase(placeholder.after())))
+            .filter(String::equals)
+            .count() == rightTokensToMatch.size()
+        && BiStream.zip(
+                leftTokensToMatch.reverse(),
+                TOKENS.from(Ascii.toUpperCase(placeholder.before()))
+                    .collect(toImmutableList()).reverse())
+            .filter(String::equals)
+            .count() == leftTokensToMatch.size();
+  }
+
   private static String escapePercent(String s) {
-    return Substring.first(c -> c == '\\' || c == '%').repeatedly().replaceAllFrom(s, c -> "\\" + c);
+    return first(c -> c == '\\' || c == '%').repeatedly().replaceAllFrom(s, c -> "\\" + c);
   }
 
   private static <T> Template<T> prepare(

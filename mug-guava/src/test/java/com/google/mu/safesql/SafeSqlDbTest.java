@@ -1,8 +1,7 @@
 package com.google.mu.safesql;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
-import static java.util.stream.Collectors.toList;
+import static java.util.Arrays.asList;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
@@ -10,7 +9,6 @@ import java.sql.Connection;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.stream.Stream;
 
 import javax.sql.DataSource;
 
@@ -236,8 +234,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .isEqualTo(1);
     SafeSql query = SafeSql.of(
         "select title from ITEMS where title in ({...}) and id in ({id})",
-        Stream.of("foo", "bar").map(SafeSql::ofParam).collect(toImmutableList()),
-        Stream.of(testId(), null).map(SafeSql::ofParam).collect(toList()));
+        asList("foo", "bar"), asList(testId()));
     assertThat(queryColumn(query, "title")).containsExactly("foo");
   }
 
