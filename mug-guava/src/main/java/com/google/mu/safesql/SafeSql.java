@@ -100,7 +100,7 @@ import com.google.mu.util.stream.BiStream;
  * {@code first_name}, for example.
  *
  * <p>Through composing SafeSql objects that encapsulate subqueries, you can also parameterize by
- * table name, by column names or by arbitrary sub-queries that are computed dynamically.
+ * arbitrary sub-queries that are computed dynamically.
  *
  * <p>For example, the following code builds SQL to query the Users table with flexible
  * number of columns and a flexible WHERE clause depending on the {@code UserCriteria}
@@ -142,14 +142,16 @@ import com.google.mu.util.stream.BiStream;
  * <p>Sometimes you may wish to parameterize by table names, column names etc.
  * for which JDBC has no support.
  *
- * If the identifiers can come from compile-time literals or enum values, prefer to wrap
+ * If the identifiers can come from compile-time literals or enum values, you can wrap
  * them using {@code SafeSql.of(identifier)} which can then be composed as subqueries.
  *
  * <p>But what if the identifier string is loaded from a resource file, or is specified by a
- * request field?
+ * request field? Passing the string directly as a template parameter will only generate the JDBC
+ * "?" in its place, not what's needed; {@code SafeSql.of(theString)} will fail to compile
+ * because such strings are inherently dynamic and untrusted.
  *
- * While such strings are inherently dynamic and untrusted, you can still parameterize them
- * if you backtick-quote the placeholder in the SQL template. For example: <pre>{@code
+ * <p>The safe way to parameterize dynamic strings as identifiers is to backtick-quote their
+ * placeholders in the SQL template. For example: <pre>{@code
  *   SafeSql.of("select `{columns}` from Users", request.getColumns())
  * }</pre>
  * The backticks tell SafeSql that the string is supposed to be an identifier (or a list of
