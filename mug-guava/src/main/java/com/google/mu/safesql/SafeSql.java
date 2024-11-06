@@ -143,7 +143,7 @@ import com.google.mu.util.stream.BiStream;
  * convenience methods, {@code statement.setObject(1, "%" + criteria.firstName().get() + "%")}
  * will be called to populate the PreparedStatement.
  *
- * <dl><dt><span class="strong">Parameterize by Column Names or Table Names</span></dt></dl>
+ * <dl><dt><STRONG>Parameterize by Column Names or Table Names</STRONG></dt></dl>
  *
  * Sometimes you may wish to parameterize by table names, column names etc.
  * for which JDBC has no support.
