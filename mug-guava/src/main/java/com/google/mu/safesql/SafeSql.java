@@ -352,11 +352,12 @@ public final class SafeSql {
    * private static final Template<SafeSql> GET_JOB_IDS_BY_QUERY =
    *     SafeSql.template(
    *         """
-   *         SELECT job_id from Jobs
+   *         SELECT JobId from Jobs
    *         WHERE query LIKE '%{keyword}%'
    *         """);
    *
-   * SafeSql sensitiveJobsQuery = GET_JOB_IDS_BY_QUERY.with("sensitive word");
+   * List<String> sensitiveJobIds = GET_JOB_IDS_BY_QUERY.with("sensitive word")
+   *     .query(connection, row -> row.getString("JobId"));
    * }</pre>
    *
    * <p>See {@link #of(String, Object...)} for discussion on the template arguments.
@@ -435,7 +436,7 @@ public final class SafeSql {
   }
 
   /**
-   * A collector that joins boolean query snippets using {@code AND} operator. The
+   * A collector that joins boolean query snippet using {@code AND} operator. The
    * AND'ed sub-queries will be enclosed in pairs of parenthesis to avoid
    * ambiguity. If the input is empty, the result will be "(1 = 1)".
    *
@@ -448,7 +449,7 @@ public final class SafeSql {
   }
 
   /**
-   * A collector that joins boolean query snippets using {@code OR} operator. The
+   * A collector that joins boolean query snippet using {@code OR} operator. The
    * OR'ed sub-queries will be enclosed in pairs of parenthesis to avoid
    * ambiguity. If the input is empty, the result will be "(1 = 0)".
    *
