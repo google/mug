@@ -68,7 +68,7 @@ import com.google.mu.util.stream.BiStream;
  * The main use case though, is to be able to compose subqueries and leaf-level parameters with an
  * intuitive templating API.
  *
- * <dl><dt><span class="strong">The {@code IN} Operator</span></dt></dl>
+ * <dl><dt><STRONG>The {@code IN} Operator</STRONG></dt></dl>
  *
  * A common dynamic SQL use case is to use the {@code IN} SQL operator:
  *
@@ -101,7 +101,7 @@ import com.google.mu.util.stream.BiStream;
  * are in effect to make sure that you don't pass {@code lastName} in the place of
  * {@code first_name}, for example.
  *
- * <dl><dt><span class="strong">Conditional Subqueries</span></dt></dl>
+ * <dl><dt><STRONG>Conditional Subqueries</STRONG></dt></dl>
  *
  * By composing SafeSql objects that encapsulate subqueries, you can also parameterize by
  * arbitrary sub-queries that are computed dynamically.
@@ -167,7 +167,7 @@ import com.google.mu.util.stream.BiStream;
  * SQL will be {@code select `id`, `age` from Users}. That is, each individual string will
  * be backtick-quoted and then joined by ", ".
  *
- * <dl><dt><span class="strong">The {@code LIKE} Operator</span></dt></dl>
+ * <dl><dt><STRONG>The {@code LIKE} Operator</STRONG></dt></dl>
  *
  * <p>Note that with straight JDBC, if you try to use the LIKE operator to match a user-provided
  * substring, i.e. using {@code LIKE '%foo%'} to search for "foo", this seemingly intuitive
@@ -206,7 +206,7 @@ import com.google.mu.util.stream.BiStream;
  *   SafeSql sql = SafeSql.of("select * from Users where id = '{id}'", userId);
  * }</pre>
  *
- * <dl><dt><span class="strong">A Useful Tip</span></dt></dl>
+ * <dl><dt><STRONG>A Useful Tip</STRONG></dt></dl>
  *
  * <p>The compile-time check tries to be helpful and checks that if you use the
  * same parameter name more than once in the template, the same value must be used for it.
