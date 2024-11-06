@@ -17,10 +17,12 @@ package com.google.mu.safesql;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Streams.stream;
 import static com.google.mu.safesql.InternalCollectors.skippingEmpty;
 import static com.google.mu.safesql.SafeQuery.checkIdentifier;
 import static com.google.mu.safesql.SafeQuery.validatePlaceholder;
+import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.Substring.suffix;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
@@ -41,11 +43,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
-import org.checkerframework.checker.nullness.qual.Nullable;
-
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Ascii;
+import com.google.common.collect.ImmutableList;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.errorprone.annotations.MustBeClosed;
 import com.google.mu.annotations.TemplateFormatMethod;
@@ -56,7 +60,7 @@ import com.google.mu.util.Substring;
 import com.google.mu.util.stream.BiStream;
 
 /**
- * An injection-safe parameterized SQL, constructed using compile-time enforced templates and can be
+ * An injection-safe dynamic SQL, constructed using compile-time enforced templates and can be
  * used to {@link #prepareStatement create} {@link java.sql.PreparedStatement}.
  *
  * <p>This class is intended to work with JDBC {@link Connection} and {@link PreparedStatement} API
@@ -68,14 +72,11 @@ import com.google.mu.util.stream.BiStream;
  * <pre>{@code
  *   SafeSql sql = SafeSql.of(
  *       """
- *       select id from Employees
- *       where firstName = {first_name} and lastName = {last_name}
+ *       SELECT id FROM Employees
+ *       WHERE firstName = {first_name} AND lastName IN ({last_names})
  *       """,
- *       firstName, lastName);
- *   try (var statement = sql.prepareStatement(connection),
- *       var resultSet = statement.executeQuery()) {
- *     ...
- *   }
+ *       firstName, lastNamesList);
+ *   List<Long> ids = sql.query(connection, row -> row.getLong("id"));
  * }</pre>
  *
  * The code internally uses the JDBC {@code '?'} placeholder in the SQL text, and calls
@@ -128,9 +129,9 @@ import com.google.mu.util.stream.BiStream;
  * select `firstName`, `lastName` from Users where firstName LIKE ?
  * }</pre>
  *
- * And when you call {@code usersQuery.prepareStatement(connection)},
- * {@code statement.setObject(1, "%" + criteria.firstName().get() + "%")} will be called
- * to populate the PreparedStatement.
+ * And when you call {@code usersQuery.prepareStatement(connection)} or one of the similar
+ * convenience methods, {@code statement.setObject(1, "%" + criteria.firstName().get() + "%")}
+ * will be called to populate the PreparedStatement.
  *
  * <p>Sometimes you may wish to parameterize by table names, column names etc.
  * for which JDBC has no support.
@@ -157,14 +158,14 @@ import com.google.mu.util.stream.BiStream;
  * syntax is actually incorect: <pre>{@code
  *   String searchBy = ...;
  *   PreparedStatement statement =
- *       connection.prepareStatement("select * from Users where firstName LIKE '%?%'");
+ *       connection.prepareStatement("select id from Users where firstName LIKE '%?%'");
  *   statement.setString(1, searchBy);
  * }</pre>
  *
  * JDBC considers the quoted question mark as a literal so the {@code setString()}
  * call will fail. You'll need to use the following workaround: <pre>{@code
  *   PreparedStatement statement =
- *       connection.prepareStatement("select * from Users where firstName LIKE ?");
+ *       connection.prepareStatement("select id from Users where firstName LIKE ?");
  *   statement.setString(1, "%" + searchBy + "%");
  * }</pre>
  *
@@ -176,10 +177,8 @@ import com.google.mu.util.stream.BiStream;
  * what you'd expect (and it escapes special characters too): <pre>{@code
  *   String searchBy = ...;
  *   SafeSql sql = SafeSql.of(
- *       "select * from Users where firstName LIKE '%{search_term}%'", searchTerm);
- *   try (PreparedStatement statement = sql.prepareStatement(connection)) {
- *     ...
- *   }
+ *       "select id from Users where firstName LIKE '%{search_term}%'", searchTerm);
+ *   List<Long> ids = sql.query(connection, row -> row.getLong("id"));
  * }</pre>
  *
  * And even when you don't use LIKE operator or the percent sign (%), it may still be more readable
@@ -228,6 +227,8 @@ public final class SafeSql {
   private static final StringFormat.Template<SafeSql> PARAM = template("{param}");
   private static final StringFormat PLACEHOLDER_ELEMENT_NAME =
       new StringFormat("{placeholder}[{index}]");
+  private static final Substring.RepeatingPattern TOKENS =
+      Substring.first(Pattern.compile("(\\w+)|(\\S)")).repeatedly();
 
   private final String sql;
   private final List<?> paramValues;
@@ -247,16 +248,17 @@ public final class SafeSql {
    * <p>For example:
    *
    * <pre>{@code
-   * PreparedStatement statement =
-   *     SafeSql.of("select * from JOBS where id = {id}", jobId)
-   *         .prepareStatement(connection);
+   * List<Long> jobIds = SafeSql.of(
+   *         "SELECT id FROM Jobs WHERE timestamp BETWEEN {start} AND {end}",
+   *         startTime, endTime)
+   *     .query(connection, row -> row.getLong("id"));
    * }</pre>
    *
-   * <p>Note that if you plan to use the {@link PreparedStatement} multiple times with different
-   * sets of parameters, it's more efficient to use {@link #prepareToQuery prepareToQuery()} or
-   * {@link #prepareToUpdate prepareToUpdate()}, which will reuse the same PreparedStatement for
-   * multiple calls. The returned {@link Template}s are protected at compile-time against incorrect
-   * varargs.
+   * <p>Note that if you plan to create a {@link PreparedStatement} and use it multiple times
+   * with different sets of parameters, it's more efficient to use {@link #prepareToQuery
+   * prepareToQuery()} or {@link #prepareToUpdate prepareToUpdate()}, which will reuse the same
+   * PreparedStatement for multiple calls. The returned {@link Template}s are protected at
+   * compile-time against incorrect varargs.
    *
    * @param template the sql template
    * @param params The template parameters. Parameters that are themselves {@link SafeSql} are
@@ -271,22 +273,6 @@ public final class SafeSql {
   @TemplateFormatMethod
   public static SafeSql of(@TemplateString @CompileTimeConstant String template, Object... params) {
     return template(template).with(params);
-  }
-
-  /**
-   * Convenience method equivalent to {@code of("{param}", param)}, which
-   * is translated to a single question mark ('?') with {@code param} being the value.
-   *
-   * <p>If you have a list of candidate ids that need to be passed to the IN opertor, you can use:
-   * <pre>{@code
-   *   List<Long> userIds = ...;
-   *   SafeSql.of(
-   *       "SELECT * FROM Users WHERE id IN ({user_ids})",
-   *       userIds.stream().map(SafeSql::ofParam).toList())
-   * }</pre>
-   */
-  public static SafeSql ofParam(@Nullable Object param) {
-    return PARAM.with(param);
   }
 
   /**
@@ -356,11 +342,12 @@ public final class SafeSql {
    * private static final Template<SafeSql> GET_JOB_IDS_BY_QUERY =
    *     SafeSql.template(
    *         """
-   *         SELECT job_id from Jobs
+   *         SELECT JobId from Jobs
    *         WHERE query LIKE '%{keyword}%'
    *         """);
    *
-   * PreparedStatement stmt = GET_JOB_IDS_BY_QUERY.with("sensitive word").prepareStatement(conn);
+   * List<String> sensitiveJobIds = GET_JOB_IDS_BY_QUERY.with("sensitive word")
+   *     .query(connection, row -> row.getString("JobId"));
    * }</pre>
    *
    * <p>See {@link #of(String, Object...)} for discussion on the template arguments.
@@ -392,6 +379,11 @@ public final class SafeSql {
                   eachPlaceholderValue(placeholder, elements)
                       .mapToObj(SafeSql::mustBeIdentifier)
                       .collect(Collectors.joining("`, `")));
+            } else if (matchesPattern("IN (", placeholder, ")")) {
+              builder.addSubQuery(
+                  eachPlaceholderValue(placeholder, elements)
+                      .mapToObj(SafeSql::subqueryOrParameter)
+                      .collect(joining(", ")));
             } else {
               builder.addSubQuery(
                   eachPlaceholderValue(placeholder, elements)
@@ -416,6 +408,7 @@ public final class SafeSql {
           } else if (appendBeforeQuotedPlaceholder("'", placeholder, "'")) {
             builder.addParameter(paramName, mustBeString("'" + placeholder + "'", value));
           } else {
+            checkMissingPlaceholderQuotes(placeholder);
             builder.appendSql(texts.pop()).addParameter(paramName, value);
           }
         }
@@ -438,7 +431,7 @@ public final class SafeSql {
   }
 
   /**
-   * A collector that joins boolean query snippets using {@code AND} operator. The
+   * A collector that joins boolean query snippet using {@code AND} operator. The
    * AND'ed sub-queries will be enclosed in pairs of parenthesis to avoid
    * ambiguity. If the input is empty, the result will be "(1 = 1)".
    *
@@ -451,7 +444,7 @@ public final class SafeSql {
   }
 
   /**
-   * A collector that joins boolean query snippets using {@code OR} operator. The
+   * A collector that joins boolean query snippet using {@code OR} operator. The
    * OR'ed sub-queries will be enclosed in pairs of parenthesis to avoid
    * ambiguity. If the input is empty, the result will be "(1 = 0)".
    *
@@ -483,8 +476,8 @@ public final class SafeSql {
    * will be iterated through, transformed by {@code rowMapper} and finally closed before returning.
    *
    * <p>For example: <pre>{@code
-   * List<String> names = SafeSql.of("SELECT name from Users where id = {id}", id)
-   *     .query(connection, row -> row.getString("name"));
+   * List<Long> ids = SafeSql.of("SELECT id FROM Users WHERE name LIKE '%{name}%'", name)
+   *     .query(connection, row -> row.getLong("id"));
    * }</pre>
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
@@ -508,7 +501,7 @@ public final class SafeSql {
    *
    * <p>For example: <pre>{@code
    * SafeSql.of("INSERT INTO Users(id, name) VALUES({id}, '{name}')", id, name)
-   *     .update(connection, row -> row.getString("name"));
+   *     .update(connection);
    * }</pre>
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
@@ -558,11 +551,11 @@ public final class SafeSql {
    * <p>Allows callers to take advantage of the performance benefit of PreparedStatement
    * without having to re-create the statement for each call. For example: <pre>{@code
    *   try (var connection = ...) {
-   *     var queryFirstName = SafeSql.prepareToQuery(
-   *         connection, "select FirstName FROM Users where id = {id}",
-   *         row -> row.getString("FirstName"));
-   *     for (long id : ids) {
-   *       for (String firstName : queryFirstName.with(id))) {
+   *     var queryByName = SafeSql.prepareToQuery(
+   *         connection, "SELECT id FROM Users WHERE name LIKE '%{name}%'",
+   *         row -> row.getLong("id"));
+   *     for (String name : names) {
+   *       for (long id : queryByName.with(name))) {
    *         ...
    *       }
    *     }
@@ -575,8 +568,7 @@ public final class SafeSql {
    * cached PreparedStatement.
    */
   public static <T> Template<List<T>> prepareToQuery(
-      Connection connection,
-      @CompileTimeConstant String template,
+      Connection connection, @CompileTimeConstant String template,
       SqlFunction<? super ResultSet, ? extends T> rowMapper) {
     checkNotNull(rowMapper);
     return prepare(connection, template, stmt -> {
@@ -605,8 +597,7 @@ public final class SafeSql {
    * cached PreparedStatement.
    */
   public static Template<Integer> prepareToUpdate(
-      Connection connection,
-      @CompileTimeConstant String template) {
+      Connection connection, @CompileTimeConstant String template) {
     return prepare(connection, template, PreparedStatement::executeUpdate);
   }
 
@@ -659,6 +650,19 @@ public final class SafeSql {
     return sql;
   }
 
+  private static void checkMissingPlaceholderQuotes(Substring.Match placeholder) {
+    rejectHalfQuotes(placeholder, "'");
+    rejectHalfQuotes(placeholder, "`");
+    rejectHalfQuotes(placeholder, "\"");
+  }
+
+  private static void rejectHalfQuotes(Substring.Match placeholder, String quote) {
+    checkArgument(
+        !placeholder.isPrecededBy(quote), "half quoted placeholder: %s%s", quote, placeholder);
+    checkArgument(
+        !placeholder.isFollowedBy(quote), "half quoted placeholder: %s%s", placeholder, quote);
+  }
+
   private static void validateSubqueryPlaceholder(Substring.Match placeholder) {
     checkArgument(
         !placeholder.isImmediatelyBetween("'", "'"),
@@ -669,6 +673,7 @@ public final class SafeSql {
     checkArgument(
         !placeholder.isImmediatelyBetween("`", "`"),
         "SafeSql should not be backtick quoted: `%s`", placeholder);
+    checkMissingPlaceholderQuotes(placeholder);
   }
 
   private static String mustBeIdentifier(CharSequence name, Object element) {
@@ -695,19 +700,43 @@ public final class SafeSql {
     return (SafeSql) element;
   }
 
+  private static SafeSql subqueryOrParameter(CharSequence name, Object param) {
+    checkArgument(param != null, "%s must not be null", name);
+    return param instanceof SafeSql ? (SafeSql) param : PARAM.with(param);
+  }
+
   private static BiStream<String, ?> eachPlaceholderValue(
       Substring.Match placeholder, Iterator<?> elements) {
     return BiStream.zip(indexesFrom(0), stream(elements))
         .mapKeys(index -> PLACEHOLDER_ELEMENT_NAME.format(placeholder, index));
   }
 
+  @VisibleForTesting
+  static boolean matchesPattern(String left, Substring.Match placeholder, String right) {
+    ImmutableList<String> leftTokensToMatch =
+        TOKENS.from(Ascii.toUpperCase(left)).collect(toImmutableList());
+    ImmutableList<String> rightTokensToMatch =
+        TOKENS.from(Ascii.toUpperCase(right)).collect(toImmutableList());
+    // Matches right side first because it's lazy and more efficient
+    return BiStream.zip(
+                rightTokensToMatch.stream(),
+                TOKENS.from(Ascii.toUpperCase(placeholder.after())))
+            .filter(String::equals)
+            .count() == rightTokensToMatch.size()
+        && BiStream.zip(
+                leftTokensToMatch.reverse(),
+                TOKENS.from(Ascii.toUpperCase(placeholder.before()))
+                    .collect(toImmutableList()).reverse())
+            .filter(String::equals)
+            .count() == leftTokensToMatch.size();
+  }
+
   private static String escapePercent(String s) {
-    return Substring.first(c -> c == '\\' || c == '%').repeatedly().replaceAllFrom(s, c -> "\\" + c);
+    return first(c -> c == '\\' || c == '%').repeatedly().replaceAllFrom(s, c -> "\\" + c);
   }
 
   private static <T> Template<T> prepare(
-      Connection connection,
-      @CompileTimeConstant String template,
+      Connection connection, @CompileTimeConstant String template,
       SqlFunction<? super PreparedStatement, ? extends T> action) {
     checkNotNull(connection);
     Template<SafeSql> sqlTemplate = template(template);

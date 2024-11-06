@@ -1,6 +1,5 @@
 package com.google.mu.safesql;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.safesql.SafeSql.template;
 import static java.util.Arrays.asList;
@@ -16,6 +15,7 @@ import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableList;
 import com.google.common.testing.EqualsTester;
 import com.google.common.testing.NullPointerTester;
+import com.google.mu.util.Substring;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 @RunWith(TestParameterInjector.class)
@@ -305,21 +305,21 @@ public class SafeSqlTest {
   }
 
   @Test
-  public void quotedIdentifier_string() {
+  public void backquotedIdentifier_string() {
     SafeSql sql = SafeSql.of("select * from `{tbl}`", "Users");
     assertThat(sql.toString()).isEqualTo("select * from `Users`");
     assertThat(sql.getParameters()).isEmpty();
   }
 
   @Test
-  public void quotedIdentifier_notString_throws() {
+  public void backquotedIdentifier_notString_throws() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class, () -> SafeSql.of("select * from `{tbl}`", 1));
     assertThat(thrown).hasMessageThat().contains("`{tbl}`");
   }
 
   @Test
-  public void quotedIdentifier_emptyValue_throws() {
+  public void backquotedIdentifier_emptyValue_throws() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class, () -> SafeSql.of("select * from `{tbl}`", ""));
     assertThat(thrown).hasMessageThat().contains("`{tbl}`");
@@ -327,7 +327,7 @@ public class SafeSqlTest {
   }
 
   @Test
-  public void quotedIdentifier_containsBacktick_throws() {
+  public void backquotedIdentifier_containsBacktick_throws() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class, () -> SafeSql.of("select * from `{tbl}`", "`a`b`"));
     assertThat(thrown).hasMessageThat().contains("`{tbl}`");
@@ -335,7 +335,7 @@ public class SafeSqlTest {
   }
 
   @Test
-  public void quotedIdentifier_containsBackslash_throws() {
+  public void backquotedIdentifier_containsBackslash_throws() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class, () -> SafeSql.of("select * from `{tbl}`", "a\\b"));
     assertThat(thrown).hasMessageThat().contains("`{tbl}`");
@@ -343,7 +343,7 @@ public class SafeSqlTest {
   }
 
   @Test
-  public void quotedIdentifier_containsSingleQuote_throws() {
+  public void backquotedIdentifier_containsSingleQuote_throws() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class, () -> SafeSql.of("select * from `{tbl}`", "a'b"));
     assertThat(thrown).hasMessageThat().contains("`{tbl}`");
@@ -351,7 +351,7 @@ public class SafeSqlTest {
   }
 
   @Test
-  public void quotedIdentifier_containsDoubleQuote_throws() {
+  public void backquotedIdentifier_containsDoubleQuote_throws() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class, () -> SafeSql.of("select * from `{tbl}`", "a\"b"));
     assertThat(thrown).hasMessageThat().contains("`{tbl}`");
@@ -359,7 +359,7 @@ public class SafeSqlTest {
   }
 
   @Test
-  public void quotedIdentifier_containsNewLine_throws() {
+  public void backquotedIdentifier_containsNewLine_throws() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class, () -> SafeSql.of("select * from `{tbl}`", "a\nb"));
     assertThat(thrown).hasMessageThat().contains("`{tbl}`");
@@ -437,6 +437,90 @@ public class SafeSqlTest {
   }
 
   @Test
+  public void missingOpeningQuote() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class, () -> SafeSql.of("SELECT {tbl}'", "jobs"));
+    assertThat(thrown).hasMessageThat().contains("{tbl}'");
+  }
+
+  @Test
+  public void missingClosingQuote() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class, () -> SafeSql.of("SELECT '{tbl}", "jobs"));
+    assertThat(thrown).hasMessageThat().contains("'{tbl}");
+  }
+
+  @Test
+  public void missingOpeningBackquote() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class, () -> SafeSql.of("SELECT * FROM {tbl}`", "jobs"));
+    assertThat(thrown).hasMessageThat().contains("{tbl}`");
+  }
+
+  @Test
+  public void missingClosingBackquote() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class, () -> SafeSql.of("SELECT * FROM `{tbl}", "jobs"));
+    assertThat(thrown).hasMessageThat().contains("`{tbl}");
+  }
+
+  @Test
+  public void missingOpeningDoubleQuote() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class, () -> SafeSql.of("SELECT {tbl}\"", "jobs"));
+    assertThat(thrown).hasMessageThat().contains("{tbl}\"");
+  }
+
+  @Test
+  public void missingClosingDoubleQuote() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class, () -> SafeSql.of("SELECT \"{tbl}", "jobs"));
+    assertThat(thrown).hasMessageThat().contains("\"{tbl}");
+  }
+
+  @Test
+  public void listMissingOpeningQuote() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> SafeSql.of("SELECT {id}'", asList(SafeSql.of("id"))));
+    assertThat(thrown).hasMessageThat().contains("{id}'");
+  }
+
+  @Test
+  public void listMissingClosingQuote() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> SafeSql.of("SELECT '{id}", asList(SafeSql.of("id"))));
+    assertThat(thrown).hasMessageThat().contains("'{id}");
+  }
+
+  @Test
+  public void listMissingOpeningBackquote() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> SafeSql.of("SELECT * FROM {id}`", asList(SafeSql.of("id"))));
+    assertThat(thrown).hasMessageThat().contains("{id}`");
+  }
+
+  @Test
+  public void listMissingClosingBackquote() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> SafeSql.of("SELECT * FROM `{id}", asList(SafeSql.of("id"))));
+    assertThat(thrown).hasMessageThat().contains("`{id}");
+  }
+
+  @Test
   public void twoParameters() {
     SafeSql sql =
         SafeSql.of("select {label} where id = {id}", /* label */ "foo", /* id */ 123);
@@ -501,12 +585,26 @@ public class SafeSqlTest {
   }
 
   @Test
-  public void ofParam_inList() {
+  public void inListOfParameters_withParameterValues() {
+    SafeSql sql = SafeSql.of("select * from tbl where id in ({ids})", /* ids */ asList(1, 2, 3));
+    assertThat(sql.toString()).isEqualTo("select * from tbl where id in (?, ?, ?)");
+    assertThat(sql.getParameters()).containsExactly(1, 2, 3).inOrder();
+  }
+
+  @Test
+  public void inListOfParameters_withParameterValuesAndSubqueries() {
     SafeSql sql = SafeSql.of(
-        "select ({...})",
-        Stream.of(1, null, 3).map(SafeSql::ofParam).collect(toImmutableList()));
-    assertThat(sql.toString()).isEqualTo("select (?, ?, ?)");
-    assertThat(sql.getParameters()).containsExactly(1, null, 3).inOrder();
+        "select * from tbl where id in ({ids})", /* ids */ asList(1, SafeSql.nonNegative(2), 3));
+    assertThat(sql.toString()).isEqualTo("select * from tbl where id in (?, 2, ?)");
+    assertThat(sql.getParameters()).containsExactly(1, 3).inOrder();
+  }
+
+  @Test
+  public void inListOfParameters_emptyList() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.of("select * from tbl where id in ({ids})", /* ids */ asList()));
+    assertThat(thrown).hasMessageThat().contains("{ids} cannot be empty list");
   }
 
   @Test
@@ -718,6 +816,69 @@ public class SafeSqlTest {
         IllegalArgumentException.class,
         () -> SafeSql.nonNegative(Long.MIN_VALUE));
     assertThat(thrown).hasMessageThat().contains("negative number disallowed");
+  }
+
+  @Test
+  public void matchesPattern_matchesWithoutWhitespaces() {
+    Substring.Match placeholder = Substring.spanningInOrder("{", "}").in("IN({ids})").get();
+    assertThat(SafeSql.matchesPattern("IN(", placeholder, ")")).isTrue();
+    assertThat(SafeSql.matchesPattern("IN (", placeholder, ")")).isTrue();
+  }
+
+  @Test
+  public void matchesPattern_matchesWithWhitespaces() {
+    Substring.Match placeholder = Substring.spanningInOrder("{", "}").in("id IN (\n {ids} \n)").get();
+    assertThat(SafeSql.matchesPattern("IN(", placeholder, ")")).isTrue();
+  }
+
+  @Test
+  public void matchesPattern_matchesIgnoreCase() {
+    Substring.Match placeholder =
+        Substring.spanningInOrder("{", "}").in("id not in (\n {ids} ) or {...}").get();
+    assertThat(SafeSql.matchesPattern("IN(", placeholder, ")")).isTrue();
+    assertThat(SafeSql.matchesPattern("In (", placeholder, " ) ")).isTrue();
+  }
+
+  @Test
+  public void matchesPattern_leftDoesNotMatch() {
+    Substring.Match placeholder =
+        Substring.spanningInOrder("{", "}").in("min({ids})").get();
+    assertThat(SafeSql.matchesPattern("in(", placeholder, ")")).isFalse();
+  }
+
+  @Test
+  public void matchesPattern_rightDoesNotMatch() {
+    Substring.Match placeholder =
+        Substring.spanningInOrder("{", "}").in("in({ids},)").get();
+    assertThat(SafeSql.matchesPattern("in(", placeholder, ")")).isFalse();
+  }
+
+  @Test
+  public void matchesPattern_leftSideNone() {
+    Substring.Match placeholder =
+        Substring.spanningInOrder("{", "}").in("{ids}) or true").get();
+    assertThat(SafeSql.matchesPattern("in(", placeholder, ")")).isFalse();
+  }
+
+  @Test
+  public void matchesPattern_rightSideNone() {
+    Substring.Match placeholder =
+        Substring.spanningInOrder("{", "}").in("in ({ids}").get();
+    assertThat(SafeSql.matchesPattern("in(", placeholder, ")")).isFalse();
+  }
+
+  @Test
+  public void matchesPattern_neitherSide() {
+    Substring.Match placeholder =
+        Substring.spanningInOrder("{", "}").in("{ids}").get();
+    assertThat(SafeSql.matchesPattern("in(", placeholder, ")")).isFalse();
+  }
+
+  @Test
+  public void matchesPattern_matchesWithQuotes() {
+    Substring.Match placeholder =
+        Substring.spanningInOrder("{", "}").in("in ('{ids}')").get();
+    assertThat(SafeSql.matchesPattern("in('", placeholder, "')")).isTrue();
   }
 
   @Test
