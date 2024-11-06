@@ -14,6 +14,7 @@
  *****************************************************************************/
 package com.google.mu.safesql;
 
+import static com.google.common.base.CharMatcher.breakingWhitespace;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -50,7 +51,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.CharMatcher;
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.errorprone.annotations.MustBeClosed;
@@ -62,8 +62,7 @@ import com.google.mu.util.Substring;
 import com.google.mu.util.stream.BiStream;
 
 /**
- * An injection-safe dynamic SQL, constructed using compile-time enforced templates and can be
- * used to {@link #prepareStatement create} {@link java.sql.PreparedStatement}.
+ * An injection-safe <em>dynamic SQL</em>, constructed using compile-time enforced templates.
  *
  * <p>This class is intended to work with JDBC {@link Connection} API with parameters set through
  * the {@link PreparedStatement#setObject(int, Object) setObject()} method.
@@ -156,12 +155,14 @@ import com.google.mu.util.stream.BiStream;
  * {@code SafeSql.of(COLUMN_NAME)}, which can then be composed as subqueries.
  *
  * <p>But what if the identifier string is loaded from a resource file, or is specified by a
- * request field? Passing the string directly as a template parameter will only generate the JDBC
- * <code>'?'</code> in its place, not what's needed; {@code SafeSql.of(theString)} will fail to
- * compile because such strings are inherently dynamic and untrusted.
+ * request field?
+ * <br>Passing the string directly as a template parameter will only generate the JDBC
+ * <code>'?'</code> in its place, not what's needed;
+ * <br>{@code SafeSql.of(theString)} will fail to compile because such strings are inherently
+ * dynamic and untrusted.
  *
- * <p>The safe way to parameterize dynamic strings as identifiers is to backtick-quote their
- * placeholders in the SQL template. For example: <pre>{@code
+ * <p>The safe way to parameterize dynamic strings as <em>identifiers</em> is to backtick-quote
+ * their placeholders in the SQL template. For example: <pre>{@code
  *   SafeSql.of("SELECT `{columns}` FROM Users", request.getColumns())
  * }</pre>
  * The backticks tell SafeSql that the string is supposed to be an identifier (or a list of
@@ -218,7 +219,7 @@ import com.google.mu.util.stream.BiStream;
  * <p>The compile-time check tries to be helpful and checks that if you use the
  * same parameter name more than once in the template, the same value must be used for it.
  *
- * So for example, if you are trying to generate a SQL that looks like: <pre>{@code
+ * <p>So for example, if you are trying to generate a SQL that looks like: <pre>{@code
  *   SELECT u.firstName, p.profileId
  *   FROM (SELECT firstName FROM Users WHERE id = 'foo') u,
  *        (SELECT profileId FROM Profiles WHERE userId = 'foo') p
@@ -237,6 +238,7 @@ import com.google.mu.util.stream.BiStream;
  *
  * If someone mistakenly passes in inconsistent ids, they'll get a compilation error.
  *
+ * <hr width = "100% size = "2"></hr>
  * <p>Immutable if the template parameters you pass to it are immutable.
  *
  * <p>This class serves a different purpose than {@link SafeQuery}. The latter is to directly escape
@@ -255,7 +257,7 @@ public final class SafeSql {
   private static final StringFormat PLACEHOLDER_ELEMENT_NAME =
       new StringFormat("{placeholder}[{index}]");
   private static final Substring.RepeatingPattern TOKENS =
-      Stream.of(word(), first(CharMatcher.breakingWhitespace().negate()::matches))
+      Stream.of(word(), first(breakingWhitespace().negate()::matches))
           .collect(firstOccurrence())
           .repeatedly();
 
