@@ -157,7 +157,7 @@ import com.google.mu.util.stream.BiStream;
  * The backticks tell SafeSql that the string is supposed to be an identifier (or a list of
  * identifiers). SafeSql will sanity-check the string(s) to make sure injection isn't possible.
  *
- * In the above example, if {@code getColumns()} returns {@code ["id", "age"]}, the genereated
+ * <p>In the above example, if {@code getColumns()} returns {@code ["id", "age"]}, the genereated
  * SQL will be {@code select `id`, `age` from Users}. That is, each individual string will
  * be backtick-quoted and then joined by ", ".
  *
