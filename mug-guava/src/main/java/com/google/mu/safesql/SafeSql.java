@@ -142,8 +142,8 @@ import com.google.mu.util.stream.BiStream;
  * <p>Sometimes you may wish to parameterize by table names, column names etc.
  * for which JDBC has no support.
  *
- * If the identifiers can come from compile-time literals or enum values, you can wrap
- * them using {@code SafeSql.of(identifier)} which can then be composed as subqueries.
+ * If the identifiers can come from compile-time literals, you can wrap them using
+ * {@code SafeSql.of(identifier)}, which can then be composed as subqueries.
  *
  * <p>But what if the identifier string is loaded from a resource file, or is specified by a
  * request field? Passing the string directly as a template parameter will only generate the JDBC
