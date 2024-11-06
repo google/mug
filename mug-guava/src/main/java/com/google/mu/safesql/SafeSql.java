@@ -74,7 +74,7 @@ import com.google.mu.util.stream.BiStream;
  *   SafeSql sql = SafeSql.of(
  *       """
  *       SELECT id FROM Employees
- *       WHERE firstName = '{first_name}' AND lastName IN ('{last_names}')
+ *       WHERE firstName = {first_name} AND lastName IN ({last_names})
  *       """,
  *       firstName, lastNamesList);
  *   List<Long> ids = sql.query(connection, row -> row.getLong("id"));
