@@ -50,7 +50,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Ascii;
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.annotations.CompileTimeConstant;
@@ -753,21 +752,16 @@ public final class SafeSql {
 
   @VisibleForTesting
   static boolean matchesPattern(String left, Substring.Match placeholder, String right) {
-    ImmutableList<String> leftTokensToMatch =
-        TOKENS.from(Ascii.toUpperCase(left)).collect(toImmutableList());
-    ImmutableList<String> rightTokensToMatch =
-        TOKENS.from(Ascii.toUpperCase(right)).collect(toImmutableList());
+    ImmutableList<String> leftTokensToMatch = TOKENS.from(left).collect(toImmutableList());
+    ImmutableList<String> rightTokensToMatch = TOKENS.from(right).collect(toImmutableList());
     // Matches right side first because it's lazy and more efficient
-    return BiStream.zip(
-                rightTokensToMatch.stream(),
-                TOKENS.from(Ascii.toUpperCase(placeholder.after())))
-            .filter(String::equals)
+    return BiStream.zip(rightTokensToMatch.stream(), TOKENS.from(placeholder.after()))
+            .filter(String::equalsIgnoreCase)
             .count() == rightTokensToMatch.size()
         && BiStream.zip(
                 leftTokensToMatch.reverse(),
-                TOKENS.from(Ascii.toUpperCase(placeholder.before()))
-                    .collect(toImmutableList()).reverse())
-            .filter(String::equals)
+                TOKENS.from(placeholder.before()).collect(toImmutableList()).reverse())
+            .filter(String::equalsIgnoreCase)
             .count() == leftTokensToMatch.size();
   }
 
