@@ -73,7 +73,7 @@ import com.google.mu.util.stream.BiStream;
  *   SafeSql sql = SafeSql.of(
  *       """
  *       SELECT id FROM Employees
- *       WHERE firstName = {first_name} AND lastName IN ({last_names})
+ *       WHERE firstName = '{first_name}' AND lastName IN ('{last_names}')
  *       """,
  *       firstName, lastNamesList);
  *   List<Long> ids = sql.query(connection, row -> row.getLong("id"));
@@ -373,18 +373,28 @@ public final class SafeSql {
           if (value instanceof Iterable) {
             Iterator<?> elements = ((Iterable<?>) value).iterator();
             checkArgument(elements.hasNext(), "%s cannot be empty list", placeholder);
-            builder.appendSql(texts.pop());
             if (placeholder.isImmediatelyBetween("`", "`")) {
+              builder.appendSql(texts.pop());
               builder.appendSql(
                   eachPlaceholderValue(placeholder, elements)
                       .mapToObj(SafeSql::mustBeIdentifier)
                       .collect(Collectors.joining("`, `")));
             } else if (matchesPattern("IN (", placeholder, ")")) {
+              builder.appendSql(texts.pop());
               builder.addSubQuery(
                   eachPlaceholderValue(placeholder, elements)
                       .mapToObj(SafeSql::subqueryOrParameter)
                       .collect(joining(", ")));
+            } else if (placeholder.isImmediatelyBetween("'", "'")
+                && matchesPattern("IN ('", placeholder, "')")
+                && appendBeforeQuotedPlaceholder("'", placeholder, "'")) {
+              builder.addSubQuery(
+                  eachPlaceholderValue(placeholder, elements)
+                      .mapToObj(SafeSql::mustBeString)
+                      .map(PARAM::with)
+                      .collect(joining(", ")));
             } else {
+              builder.appendSql(texts.pop());
               builder.addSubQuery(
                   eachPlaceholderValue(placeholder, elements)
                       .mapToObj(SafeSql::mustBeSubquery)

@@ -600,6 +600,29 @@ public class SafeSqlTest {
   }
 
   @Test
+  public void inListOfQuotedStringParameters() {
+    SafeSql sql = SafeSql.of("select * from tbl where id in ('{ids}')", /* ids */ asList("foo", "bar"));
+    assertThat(sql.toString()).isEqualTo("select * from tbl where id in (?, ?)");
+    assertThat(sql.getParameters()).containsExactly("foo", "bar").inOrder();
+  }
+
+  @Test
+  public void inListOfQuotedNonStringParameters_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () ->  SafeSql.of("select * from tbl where id in ('{ids}')", /* ids */ asList("foo", 2)));
+    assertThat(thrown).hasMessageThat().contains("{ids}[1] expected to be String");
+  }
+
+  @Test
+  public void inListOfQuotedStringParametersWithChars_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () ->  SafeSql.of("select * from tbl where id in ('%{ids}%')", /* ids */ asList("foo", "bar")));
+    assertThat(thrown).hasMessageThat().contains("{ids}[0]");
+  }
+
+  @Test
   public void inListOfParameters_emptyList() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
