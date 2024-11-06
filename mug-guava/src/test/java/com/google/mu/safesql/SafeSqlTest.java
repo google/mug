@@ -585,10 +585,18 @@ public class SafeSqlTest {
   }
 
   @Test
-  public void inListOfParameters() {
+  public void inListOfParameters_withParameterValues() {
     SafeSql sql = SafeSql.of("select * from tbl where id in ({ids})", /* ids */ asList(1, 2, 3));
     assertThat(sql.toString()).isEqualTo("select * from tbl where id in (?, ?, ?)");
     assertThat(sql.getParameters()).containsExactly(1, 2, 3).inOrder();
+  }
+
+  @Test
+  public void inListOfParameters_withParameterValuesAndSubqueries() {
+    SafeSql sql = SafeSql.of(
+        "select * from tbl where id in ({ids})", /* ids */ asList(1, SafeSql.nonNegative(2), 3));
+    assertThat(sql.toString()).isEqualTo("select * from tbl where id in (?, 2, ?)");
+    assertThat(sql.getParameters()).containsExactly(1, 3).inOrder();
   }
 
   @Test
