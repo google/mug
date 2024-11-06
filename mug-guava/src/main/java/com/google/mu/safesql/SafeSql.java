@@ -74,7 +74,7 @@ import com.google.mu.util.stream.BiStream;
  *   SafeSql sql = SafeSql.of(
  *       """
  *       SELECT id FROM Employees
- *       WHERE firstName = '{first_name}' AND lastName IN ('{last_names}')
+ *       WHERE firstName = {first_name} AND lastName IN ({last_names})
  *       """,
  *       firstName, lastNamesList);
  *   List<Long> ids = sql.query(connection, row -> row.getLong("id"));
@@ -91,9 +91,6 @@ import com.google.mu.util.stream.BiStream;
  *   statement.setObject(2, "Watson");
  *   statement.setObject(3, "Lin");
  * }</pre>
- *
- * You won't have to keep track of the parameter indices and there is no risk forgetting to set a
- * parameter value.
  *
  * <p>The templating engine uses compile-time checks to guard against accidental use of
  * untrusted strings in the SQL, ensuring that they can only be sent as parameters:
