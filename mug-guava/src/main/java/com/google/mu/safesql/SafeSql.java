@@ -23,8 +23,10 @@ import static com.google.mu.safesql.InternalCollectors.skippingEmpty;
 import static com.google.mu.safesql.SafeQuery.checkIdentifier;
 import static com.google.mu.safesql.SafeQuery.validatePlaceholder;
 import static com.google.mu.util.Substring.first;
+import static com.google.mu.util.Substring.firstOccurrence;
 import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.Substring.suffix;
+import static com.google.mu.util.Substring.word;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
@@ -43,12 +45,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Ascii;
+import com.google.common.base.CharMatcher;
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.errorprone.annotations.MustBeClosed;
@@ -253,7 +256,9 @@ public final class SafeSql {
   private static final StringFormat PLACEHOLDER_ELEMENT_NAME =
       new StringFormat("{placeholder}[{index}]");
   private static final Substring.RepeatingPattern TOKENS =
-      Substring.first(Pattern.compile("(\\w+)|(\\S)")).repeatedly();
+      Stream.of(word(), first(CharMatcher.breakingWhitespace().negate()::matches))
+          .collect(firstOccurrence())
+          .repeatedly();
 
   private final String sql;
   private final List<?> paramValues;
