@@ -157,7 +157,7 @@ import com.google.mu.util.stream.BiStream;
  * <p>But what if the identifier string is loaded from a resource file, or is specified by a
  * request field?
  * <br>Passing the string directly as a template parameter will only generate the JDBC
- * <code>'?'</code> in its place, not what's needed;
+ * <code>'?'</code> in its place, not what you need;
  * <br>{@code SafeSql.of(theString)} will fail to compile because such strings are inherently
  * dynamic and untrusted.
  *
