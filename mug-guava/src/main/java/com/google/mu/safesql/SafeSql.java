@@ -92,9 +92,6 @@ import com.google.mu.util.stream.BiStream;
  *   statement.setObject(3, "Lin");
  * }</pre>
  *
- * You won't have to keep track of the parameter indices and there is no risk forgetting to set a
- * parameter value.
- *
  * <p>The templating engine uses compile-time checks to guard against accidental use of
  * untrusted strings in the SQL, ensuring that they can only be sent as parameters:
  * try to use a dynamically generated String as the SQL and you'll get a compilation error.
