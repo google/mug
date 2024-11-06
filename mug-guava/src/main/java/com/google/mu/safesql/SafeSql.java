@@ -155,8 +155,8 @@ import com.google.mu.util.stream.BiStream;
  *
  * <p>But what if the identifier string is loaded from a resource file, or is specified by a
  * request field? Passing the string directly as a template parameter will only generate the JDBC
- * "?" in its place, not what's needed; {@code SafeSql.of(theString)} will fail to compile
- * because such strings are inherently dynamic and untrusted.
+ * <code>'?'</code> in its place, not what's needed; {@code SafeSql.of(theString)} will fail to
+ * compile because such strings are inherently dynamic and untrusted.
  *
  * <p>The safe way to parameterize dynamic strings as identifiers is to backtick-quote their
  * placeholders in the SQL template. For example: <pre>{@code
