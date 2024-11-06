@@ -197,7 +197,9 @@ import com.google.mu.util.stream.BiStream;
  *   List<Long> ids = sql.query(connection, row -> row.getLong("id"));
  * }</pre>
  *
- * And even when you don't use the {@code LIKE} operator or the percent sign (%), it may still be
+ * <dl><dt><STRONG>Quote String Placeholders</STRONG></dt></dl>
+ *
+ * Even when you don't use the {@code LIKE} operator or the percent sign (%), it may still be
  * more readable to quote the string parameters just so the SQL template explicitly tells readers
  * that the parameter is a string. The following template works with or without the quotes:
  *
@@ -206,7 +208,7 @@ import com.google.mu.util.stream.BiStream;
  *   SafeSql sql = SafeSql.of("select * from Users where id = '{id}'", userId);
  * }</pre>
  *
- * <dl><dt><STRONG>A Useful Tip</STRONG></dt></dl>
+ * <dl><dt><STRONG>Enforce Identical Parameter</STRONG></dt></dl>
  *
  * <p>The compile-time check tries to be helpful and checks that if you use the
  * same parameter name more than once in the template, the same value must be used for it.
