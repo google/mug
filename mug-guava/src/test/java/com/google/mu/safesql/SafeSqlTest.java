@@ -811,66 +811,66 @@ public class SafeSqlTest {
   }
 
   @Test
-  public void matchesAround_matchesWithoutWhitespaces() {
+  public void matchesPattern_matchesWithoutWhitespaces() {
     Substring.Match placeholder = Substring.spanningInOrder("{", "}").in("IN({ids})").get();
-    assertThat(SafeSql.matchesAround("IN(", placeholder, ")")).isTrue();
-    assertThat(SafeSql.matchesAround("IN (", placeholder, ")")).isTrue();
+    assertThat(SafeSql.matchesPattern("IN(", placeholder, ")")).isTrue();
+    assertThat(SafeSql.matchesPattern("IN (", placeholder, ")")).isTrue();
   }
 
   @Test
-  public void matchesAround_matchesWithWhitespaces() {
+  public void matchesPattern_matchesWithWhitespaces() {
     Substring.Match placeholder = Substring.spanningInOrder("{", "}").in("id IN (\n {ids} \n)").get();
-    assertThat(SafeSql.matchesAround("IN(", placeholder, ")")).isTrue();
+    assertThat(SafeSql.matchesPattern("IN(", placeholder, ")")).isTrue();
   }
 
   @Test
-  public void matchesAround_matchesIgnoreCase() {
+  public void matchesPattern_matchesIgnoreCase() {
     Substring.Match placeholder =
         Substring.spanningInOrder("{", "}").in("id not in (\n {ids} ) or {...}").get();
-    assertThat(SafeSql.matchesAround("IN(", placeholder, ")")).isTrue();
-    assertThat(SafeSql.matchesAround("In (", placeholder, " ) ")).isTrue();
+    assertThat(SafeSql.matchesPattern("IN(", placeholder, ")")).isTrue();
+    assertThat(SafeSql.matchesPattern("In (", placeholder, " ) ")).isTrue();
   }
 
   @Test
-  public void matchesAround_leftDoesNotMatch() {
+  public void matchesPattern_leftDoesNotMatch() {
     Substring.Match placeholder =
         Substring.spanningInOrder("{", "}").in("min({ids})").get();
-    assertThat(SafeSql.matchesAround("in(", placeholder, ")")).isFalse();
+    assertThat(SafeSql.matchesPattern("in(", placeholder, ")")).isFalse();
   }
 
   @Test
-  public void matchesAround_rightDoesNotMatch() {
+  public void matchesPattern_rightDoesNotMatch() {
     Substring.Match placeholder =
         Substring.spanningInOrder("{", "}").in("in({ids},)").get();
-    assertThat(SafeSql.matchesAround("in(", placeholder, ")")).isFalse();
+    assertThat(SafeSql.matchesPattern("in(", placeholder, ")")).isFalse();
   }
 
   @Test
-  public void matchesAround_leftSideNone() {
+  public void matchesPattern_leftSideNone() {
     Substring.Match placeholder =
         Substring.spanningInOrder("{", "}").in("{ids}) or true").get();
-    assertThat(SafeSql.matchesAround("in(", placeholder, ")")).isFalse();
+    assertThat(SafeSql.matchesPattern("in(", placeholder, ")")).isFalse();
   }
 
   @Test
-  public void matchesAround_rightSideNone() {
+  public void matchesPattern_rightSideNone() {
     Substring.Match placeholder =
         Substring.spanningInOrder("{", "}").in("in ({ids}").get();
-    assertThat(SafeSql.matchesAround("in(", placeholder, ")")).isFalse();
+    assertThat(SafeSql.matchesPattern("in(", placeholder, ")")).isFalse();
   }
 
   @Test
-  public void matchesAround_neitherSide() {
+  public void matchesPattern_neitherSide() {
     Substring.Match placeholder =
         Substring.spanningInOrder("{", "}").in("{ids}").get();
-    assertThat(SafeSql.matchesAround("in(", placeholder, ")")).isFalse();
+    assertThat(SafeSql.matchesPattern("in(", placeholder, ")")).isFalse();
   }
 
   @Test
-  public void matchesAround_matchesWithQuotes() {
+  public void matchesPattern_matchesWithQuotes() {
     Substring.Match placeholder =
         Substring.spanningInOrder("{", "}").in("in ('{ids}')").get();
-    assertThat(SafeSql.matchesAround("in('", placeholder, "')")).isTrue();
+    assertThat(SafeSql.matchesPattern("in('", placeholder, "')")).isTrue();
   }
 
   @Test

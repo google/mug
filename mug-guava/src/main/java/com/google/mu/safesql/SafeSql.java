@@ -379,7 +379,7 @@ public final class SafeSql {
                   eachPlaceholderValue(placeholder, elements)
                       .mapToObj(SafeSql::mustBeIdentifier)
                       .collect(Collectors.joining("`, `")));
-            } else if (matchesAround("IN (", placeholder, ")")) {
+            } else if (matchesPattern("IN (", placeholder, ")")) {
               builder.addSubQuery(
                   eachPlaceholderValue(placeholder, elements)
                       .mapToObj(SafeSql::subqueryOrParameter)
@@ -712,11 +712,12 @@ public final class SafeSql {
   }
 
   @VisibleForTesting
-  static boolean matchesAround(String left, Substring.Match placeholder, String right) {
+  static boolean matchesPattern(String left, Substring.Match placeholder, String right) {
     ImmutableList<String> leftTokensToMatch =
         TOKENS.from(Ascii.toUpperCase(left)).collect(toImmutableList());
     ImmutableList<String> rightTokensToMatch =
         TOKENS.from(Ascii.toUpperCase(right)).collect(toImmutableList());
+    // Matches right side first because it's lazy and more efficient
     return BiStream.zip(
                 rightTokensToMatch.stream(),
                 TOKENS.from(Ascii.toUpperCase(placeholder.after())))
