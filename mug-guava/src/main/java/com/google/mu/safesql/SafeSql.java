@@ -63,12 +63,13 @@ import com.google.mu.util.stream.BiStream;
  * An injection-safe dynamic SQL, constructed using compile-time enforced templates and can be
  * used to {@link #prepareStatement create} {@link java.sql.PreparedStatement}.
  *
- * <p>This class is intended to work with JDBC {@link Connection} and {@link PreparedStatement} API
- * with parameters set through the {@link PreparedStatement#setObject(int, Object) setObject()} method.
- * The main use case though, is to be able to compose subqueries and leaf-level parameters with a
- * consistent templating API.
+ * <p>This class is intended to work with JDBC {@link Connection} API with parameters set through
+ * the {@link PreparedStatement#setObject(int, Object) setObject()} method.
+ * The main use case though, is to be able to compose subqueries and leaf-level parameters with an
+ * intuitive templating API.
  *
- * <p>For trivial parameterization, you can use:
+ * <p>A common dynamic SQL use case is to use the {@code IN} SQL operator:
+ *
  * <pre>{@code
  *   SafeSql sql = SafeSql.of(
  *       """
@@ -79,10 +80,20 @@ import com.google.mu.util.stream.BiStream;
  *   List<Long> ids = sql.query(connection, row -> row.getLong("id"));
  * }</pre>
  *
- * The code internally uses the JDBC {@code '?'} placeholder in the SQL text, and calls
- * {@link PreparedStatement#setObject(int, Object) PreparedStatement.setObject()} to
- * set all the parameter values for you so you don't have to keep track of the parameter
- * indices or risk forgetting to set a parameter value.
+ * In the above example if {@code firstName} is "Emma" and {@code lastNamesList} is
+ * {@code ["Watson", "Lin"]}, the generated SQL will be: <pre>{@code
+ *   SELECT id FROM Employees
+ *   WHERE firstName = ? AND lastName IN (?, ?)
+ * }</pre>
+ *
+ * And the parameters will be set as: <pre>{@code
+ *   statement.setObject(1, "Emma");
+ *   statement.setObject(2, "Watson");
+ *   statement.setObject(3, "Lin");
+ * }</pre>
+ *
+ * You won't have to keep track of the parameter indices and there is no risk forgetting to set a
+ * parameter value.
  *
  * <p>The templating engine uses compile-time checks to guard against accidental use of
  * untrusted strings in the SQL, ensuring that they can only be sent as parameters:
@@ -91,12 +102,10 @@ import com.google.mu.util.stream.BiStream;
  * are in effect to make sure that you don't pass {@code lastName} in the place of
  * {@code first_name}, for example.
  *
- * <p>That said, the main benefit of this library lies in flexible and dynamic query
- * composition. By composing smaller SafeSql objects that encapsulate subqueries,
- * you can parameterize by table name, by column names or by arbitrary sub-queries
- * that may be computed dynamically.
+ * <p>By composing smaller SafeSql objects that encapsulate subqueries, you can also parameterize
+ * by table name, by column names or by arbitrary sub-queries that are computed dynamically.
  *
- * <p>For example, the following code builds sql to query the Users table with flexible
+ * <p>For example, the following code builds SQL to query the Users table with flexible
  * number of columns and a flexible WHERE clause depending on the {@code UserCriteria}
  * object's state:
  *
@@ -373,19 +382,7 @@ public final class SafeSql {
           if (value instanceof Iterable) {
             Iterator<?> elements = ((Iterable<?>) value).iterator();
             checkArgument(elements.hasNext(), "%s cannot be empty list", placeholder);
-            if (placeholder.isImmediatelyBetween("`", "`")) {
-              builder.appendSql(texts.pop());
-              builder.appendSql(
-                  eachPlaceholderValue(placeholder, elements)
-                      .mapToObj(SafeSql::mustBeIdentifier)
-                      .collect(Collectors.joining("`, `")));
-            } else if (matchesPattern("IN (", placeholder, ")")) {
-              builder.appendSql(texts.pop());
-              builder.addSubQuery(
-                  eachPlaceholderValue(placeholder, elements)
-                      .mapToObj(SafeSql::subqueryOrParameter)
-                      .collect(joining(", ")));
-            } else if (placeholder.isImmediatelyBetween("'", "'")
+            if (placeholder.isImmediatelyBetween("'", "'")
                 && matchesPattern("IN ('", placeholder, "')")
                 && appendBeforeQuotedPlaceholder("'", placeholder, "'")) {
               builder.addSubQuery(
@@ -393,8 +390,20 @@ public final class SafeSql {
                       .mapToObj(SafeSql::mustBeString)
                       .map(PARAM::with)
                       .collect(joining(", ")));
+              return;
+            }
+            builder.appendSql(texts.pop());
+            if (placeholder.isImmediatelyBetween("`", "`")) {
+              builder.appendSql(
+                  eachPlaceholderValue(placeholder, elements)
+                      .mapToObj(SafeSql::mustBeIdentifier)
+                      .collect(Collectors.joining("`, `")));
+            } else if (matchesPattern("IN (", placeholder, ")")) {
+              builder.addSubQuery(
+                  eachPlaceholderValue(placeholder, elements)
+                      .mapToObj(SafeSql::subqueryOrParameter)
+                      .collect(joining(", ")));
             } else {
-              builder.appendSql(texts.pop());
               builder.addSubQuery(
                   eachPlaceholderValue(placeholder, elements)
                       .mapToObj(SafeSql::mustBeSubquery)
