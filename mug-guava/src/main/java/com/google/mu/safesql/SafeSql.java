@@ -478,16 +478,13 @@ public final class SafeSql {
           ImmutableList<String> lookahead = TOKENS.from(rightPattern).collect(toImmutableList());
           int closingBraceIndex = placeholder.index() + placeholder.length() - 1;
           int nextTokenIndex = charIndexToTokenIndex.get(closingBraceIndex) + 1;
-          ImmutableList<Substring.Match> rightTokens =
-              allTokens.subList(nextTokenIndex, allTokens.size());
-          return BiStream.zip(lookahead, rightTokens)
+          return BiStream.zip(lookahead, allTokens.subList(nextTokenIndex, allTokens.size()))
                   .filter((s, t) -> s.equalsIgnoreCase(t.toString()))
                   .count() == lookahead.size()
               && lookbehind(leftPattern, placeholder);
         }
 
-        private boolean lookbehind(
-            String leftPattern, Substring.Match placeholder) {
+        private boolean lookbehind(String leftPattern, Substring.Match placeholder) {
           ImmutableList<String> lookbehind = TOKENS.from(leftPattern).collect(toImmutableList());
           ImmutableList<Substring.Match> leftTokens =
               allTokens.subList(0, charIndexToTokenIndex.get(placeholder.index()));
