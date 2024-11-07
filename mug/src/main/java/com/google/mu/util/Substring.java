@@ -1623,7 +1623,7 @@ public final class Substring {
     public RepeatingPattern repeatedly() {
       return new RepeatingPattern() {
         @Override public Stream<Match> match(String input, int fromIndex) {
-          return iterate(requireNonNull(input), checkFromIndex(fromIndex, input));
+          return iterate(input, checkFromIndex(fromIndex, input));
         }
 
         @Override public String toString() {
@@ -2793,12 +2793,12 @@ public final class Substring {
   }
 
   private static int checkFromIndex(int index, CharSequence s) {
-    if (index < 0) {
-      throw new IndexOutOfBoundsException("invalid index (" + index + ") < 0");
-    }
     if (index > s.length()) {
       throw new IndexOutOfBoundsException(
           "invalid index (" + index + ") > length (" + s.length() + ")");
+    }
+    if (index < 0) {
+      throw new IndexOutOfBoundsException("invalid index (" + index + ") < 0");
     }
     return index;
   }
