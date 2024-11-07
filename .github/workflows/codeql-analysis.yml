@@ -63,7 +63,7 @@ jobs:
     #    uses a compiled language
 
     - run: |
-        mvn test
+        mvn clean test
     #   make bootstrap
     #   make release
 
