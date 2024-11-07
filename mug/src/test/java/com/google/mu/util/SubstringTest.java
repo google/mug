@@ -3991,6 +3991,18 @@ public class SubstringTest {
     assertThat(match.isNotEmpty()).isFalse();
   }
 
+  @Test public void repeatingPattern_matchWithNegativeFromIndex() {
+    assertThrows(
+        IndexOutOfBoundsException.class,
+        () -> Substring.between('-', '-').repeatedly().match("-foo-bar", -1));
+  }
+
+  @Test public void repeatingPattern_matchWithTooLargeFromIndex() {
+    assertThrows(
+        IndexOutOfBoundsException.class,
+        () -> Substring.between('-', '-').repeatedly().match("foo", 4));
+  }
+
   @Test public void testNulls() throws Exception {
     new NullPointerTester().testAllPublicInstanceMethods(prefix("foo").in("foobar").get());
     newClassSanityTester().testNulls(Substring.class);

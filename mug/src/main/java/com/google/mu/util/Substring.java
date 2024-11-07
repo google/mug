@@ -994,14 +994,7 @@ public final class Substring {
      * @since 7.0
      */
     public final Optional<Match> in(String string, int fromIndex) {
-      if (fromIndex < 0) {
-        throw new IndexOutOfBoundsException("Invalid index (" + fromIndex + ") < 0");
-      }
-      if (fromIndex > string.length()) {
-        throw new IndexOutOfBoundsException(
-            "Invalid index (" + fromIndex + ") > length (" + string.length() + ")");
-      }
-      return Optional.ofNullable(match(string, fromIndex));
+      return Optional.ofNullable(match(string, checkFromIndex(fromIndex, string)));
     }
 
     /**
@@ -1630,7 +1623,7 @@ public final class Substring {
     public RepeatingPattern repeatedly() {
       return new RepeatingPattern() {
         @Override public Stream<Match> match(String input, int fromIndex) {
-          return iterate(requireNonNull(input), fromIndex);
+          return iterate(requireNonNull(input), checkFromIndex(fromIndex, input));
         }
 
         @Override public String toString() {
@@ -2634,11 +2627,11 @@ public final class Substring {
      */
     @Override public char charAt(int i) {
       if (i < 0) {
-        throw new IndexOutOfBoundsException("Invalid index (" + i + ") < 0");
+        throw new IndexOutOfBoundsException("invalid index (" + i + ") < 0");
       }
       if (i >= length()) {
         throw new IndexOutOfBoundsException(
-            "Invalid index (" + i + ") >= length (" + length() + ")");
+            "invalid index (" + i + ") >= length (" + length() + ")");
       }
       return context.charAt(startIndex + i);
     }
@@ -2795,6 +2788,17 @@ public final class Substring {
       throw new IllegalArgumentException("Number of characters (" + maxChars + ") cannot be negative.");
     }
     return maxChars;
+  }
+
+  private static int checkFromIndex(int index, CharSequence s) {
+    if (index < 0) {
+      throw new IndexOutOfBoundsException("invalid index (" + index + ") < 0");
+    }
+    if (index > s.length()) {
+      throw new IndexOutOfBoundsException(
+          "invalid index (" + index + ") > length (" + s.length() + ")");
+    }
+    return index;
   }
 
   private Substring() {}
