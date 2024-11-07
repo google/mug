@@ -121,6 +121,7 @@ public class SubstringTest {
     assertThat(prefix("foo").in("")).isEmpty();
     assertThat(prefix("foo").repeatedly().match("notfoo")).isEmpty();
     assertThat(prefix("foo").repeatedly().match("")).isEmpty();
+    assertThat(prefix("foo").repeatedly().match("notfoo", 1)).isEmpty();
   }
 
   @Test public void prefix_matchesFullString() {
@@ -2361,7 +2362,13 @@ public class SubstringTest {
     assertThat(
             Substring.between(delimiter, delimiter).repeatedly().match("-foo-bar-baz-")
                 .map(Object::toString))
-        .containsExactly("foo", "bar", "baz");
+        .containsExactly("foo", "bar", "baz")
+        .inOrder();
+    assertThat(
+            Substring.between(delimiter, delimiter).repeatedly().match("-foo-bar-baz-", 1)
+                .map(Object::toString))
+        .containsExactly("bar", "baz")
+        .inOrder();;
   }
 
   @Test public void between_matchedFully() {
@@ -2404,6 +2411,14 @@ public class SubstringTest {
             Substring.between(last('<'), last('>')).repeatedly().match("<foo><bar> <baz>")
                 .map(Object::toString))
         .containsExactly("baz");
+    assertThat(
+            Substring.between(last('<'), last('>')).repeatedly().match("<foo><bar> <baz>", 11)
+                .map(Object::toString))
+        .containsExactly("baz");
+    assertThat(
+            Substring.between(last('<'), last('>')).repeatedly().match("<foo><bar> <baz>", 12)
+                .map(Object::toString))
+        .isEmpty();
   }
 
   @Test public void between_matchedIncludingDelimiters() {
@@ -2430,6 +2445,14 @@ public class SubstringTest {
             Substring.between(last('<'), INCLUSIVE, last('>'), INCLUSIVE).repeatedly().match("begin<foo>end")
                 .map(Object::toString))
         .containsExactly("<foo>");
+    assertThat(
+            Substring.between(last('<'), INCLUSIVE, last('>'), INCLUSIVE).repeatedly().match("begin<foo>end", 5)
+                .map(Object::toString))
+        .containsExactly("<foo>");
+    assertThat(
+            Substring.between(last('<'), INCLUSIVE, last('>'), INCLUSIVE).repeatedly().match("begin<foo>end", 6)
+                .map(Object::toString))
+        .isEmpty();
   }
 
   @Test public void between_nothingBetweenSameChar() {
@@ -2510,16 +2533,19 @@ public class SubstringTest {
   @Test public void between_closeOverlapsWithOpen() {
     assertThat(Substring.between(first("abc"), last("cde")).in("abcde")).isEmpty();
     assertThat(Substring.between(first("abc"), last("cde")).repeatedly().match("abcde")).isEmpty();
+    assertThat(Substring.between(first("abc"), last("cde")).repeatedly().match("abcde", 1)).isEmpty();
     assertThat(Substring.between(first("abc"), last('c')).in("abc")).isEmpty();
     assertThat(Substring.between(first("abc"), last('c')).repeatedly().match("abc")).isEmpty();
     assertThat(Substring.between(first("abc"), suffix("cde")).in("abcde")).isEmpty();
     assertThat(Substring.between(first("abc"), suffix("cde")).repeatedly().match("abcde")).isEmpty();
+    assertThat(Substring.between(first("abc"), suffix("cde")).repeatedly().match("abcde", 2)).isEmpty();
     assertThat(Substring.between(first("abc"), suffix('c')).in("abc")).isEmpty();
     assertThat(Substring.between(first("abc"), suffix('c')).repeatedly().match("abc")).isEmpty();
     assertThat(Substring.between(first("abc"), prefix("a")).in("abc")).isEmpty();
     assertThat(Substring.between(first("abc"), prefix("a")).repeatedly().match("abc")).isEmpty();
     assertThat(Substring.between(first("abc"), prefix('a')).in("abc")).isEmpty();
     assertThat(Substring.between(first("abc"), prefix('a')).repeatedly().match("abc")).isEmpty();
+    assertThat(Substring.between(first("abc"), prefix('a')).repeatedly().match("abc", 3)).isEmpty();
     assertThat(Substring.between("abc", "a").in("abc")).isEmpty();
     assertThat(Substring.between("abc", "a").repeatedly().match("abc")).isEmpty();
     assertThat(Substring.between(first("abc"), first('a')).in("abc")).isEmpty();
@@ -2580,6 +2606,18 @@ public class SubstringTest {
             Substring.between("-", "-").repeatedly().match("foo-bar-baz-duh")
                 .map(Object::toString))
         .containsExactly("bar", "baz");
+    assertThat(
+            Substring.between("-", "-").repeatedly().match("foo-bar-baz-duh", 1)
+                .map(Object::toString))
+        .containsExactly("bar", "baz");
+    assertThat(
+            Substring.between("-", "-").repeatedly().match("foo-bar-baz-duh", 3)
+                .map(Object::toString))
+        .containsExactly("bar", "baz");
+    assertThat(
+            Substring.between("-", "-").repeatedly().match("foo-bar-baz-duh", 4)
+                .map(Object::toString))
+        .containsExactly("baz");
   }
 
   @Test public void between_closeBeforeOpenIgnored() {
@@ -2614,6 +2652,9 @@ public class SubstringTest {
         .hasValue("GET:http");
     assertThat(
             before(first('/')).then(prefix("")).repeatedly().match("foo/bar/").map(Match::before))
+        .containsExactly("foo", "foo/bar");
+    assertThat(
+            before(first('/')).then(prefix("")).repeatedly().match("foo/bar/", 1).map(Match::before))
         .containsExactly("foo", "foo/bar");
   }
 
@@ -3793,6 +3834,19 @@ public class SubstringTest {
         .isEmpty();
   }
 
+  @Test public void testRegexTopLevelGroups_matchWithFromIndex() {
+    assertThat(
+            Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+                .match("fffcde", 1)
+                .map(Object::toString))
+        .containsExactly("ff", "cde");
+    assertThat(
+            Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+                .match("fffcde", 2)
+                .map(Object::toString))
+        .containsExactly("f", "cde");
+  }
+
   @Test
   public void match_contentEquals_false() {
     Substring.Match match = first("bar").in("foobarbaz").get();
@@ -3935,6 +3989,18 @@ public class SubstringTest {
     Substring.Match match = first("").in("afood").get();
     assertThat(match.isEmpty()).isTrue();
     assertThat(match.isNotEmpty()).isFalse();
+  }
+
+  @Test public void repeatingPattern_matchWithNegativeFromIndex() {
+    assertThrows(
+        IndexOutOfBoundsException.class,
+        () -> Substring.between('-', '-').repeatedly().match("-foo-bar", -1));
+  }
+
+  @Test public void repeatingPattern_matchWithTooLargeFromIndex() {
+    assertThrows(
+        IndexOutOfBoundsException.class,
+        () -> Substring.between('-', '-').repeatedly().match("foo", 4));
   }
 
   @Test public void testNulls() throws Exception {
