@@ -45,6 +45,8 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -387,6 +389,7 @@ public final class SafeSql {
    * <p>The returned template is immutable and thread safe.
    */
   public static Template<SafeSql> template(@CompileTimeConstant String template) {
+    ConcurrentMap<String, Boolean> placeholderSurroundings = new ConcurrentHashMap<>();
     return StringFormat.template(template, (fragments, placeholders) -> {
       Deque<String> texts = new ArrayDeque<>(fragments);
       Builder builder = new Builder();
@@ -406,7 +409,7 @@ public final class SafeSql {
             Iterator<?> elements = ((Iterable<?>) value).iterator();
             checkArgument(elements.hasNext(), "%s cannot be empty list", placeholder);
             if (placeholder.isImmediatelyBetween("'", "'")
-                && matchesPattern("IN ('", placeholder, "')")
+                && lookaround("IN ('", placeholder, "')")
                 && appendBeforeQuotedPlaceholder("'", placeholder, "'")) {
               builder.addSubQuery(
                   eachPlaceholderValue(placeholder, elements)
@@ -421,7 +424,7 @@ public final class SafeSql {
                   eachPlaceholderValue(placeholder, elements)
                       .mapToObj(SafeSql::mustBeIdentifier)
                       .collect(Collectors.joining("`, `")));
-            } else if (matchesPattern("IN (", placeholder, ")")) {
+            } else if (lookaround("IN (", placeholder, ")")) {
               builder.addSubQuery(
                   eachPlaceholderValue(placeholder, elements)
                       .mapToObj(SafeSql::subqueryOrParameter)
@@ -463,6 +466,13 @@ public final class SafeSql {
             texts.push(prefix(close).removeFrom(texts.pop()));
           }
           return quoted;
+        }
+
+        private boolean lookaround(
+            String leftPattern, Substring.Match placeholder, String rightPattern) {
+          return placeholderSurroundings.computeIfAbsent(
+              leftPattern + "{" + placeholder.index() + "}" + rightPattern,
+              k -> matchesPattern(leftPattern, placeholder, rightPattern));
         }
       }
       placeholders.forEachOrdered(new SqlWriter()::writePlaceholder);
