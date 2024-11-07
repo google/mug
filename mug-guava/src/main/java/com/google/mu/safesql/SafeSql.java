@@ -238,7 +238,7 @@ import com.google.mu.util.stream.BiStream;
  *
  * If someone mistakenly passes in inconsistent ids, they'll get a compilation error.
  *
- * <hr width = "100% size = "2"></hr>
+ * <hr width = "100%" size = "2"></hr>
  *
  * <p>Immutable if the template parameters you pass to it are immutable.
  *
