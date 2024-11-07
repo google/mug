@@ -45,15 +45,13 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.errorprone.annotations.MustBeClosed;
 import com.google.mu.annotations.TemplateFormatMethod;
@@ -254,15 +252,15 @@ public final class SafeSql {
 
   /** An empty SQL */
   public static final SafeSql EMPTY = new SafeSql("");
+  private static final Substring.RepeatingPattern TOKENS =
+      Stream.of(word(), first(breakingWhitespace().negate()::matches))
+          .collect(firstOccurrence())
+          .repeatedly();
   private static final SafeSql FALSE = new SafeSql("(1 = 0)");
   private static final SafeSql TRUE = new SafeSql("(1 = 1)");
   private static final StringFormat.Template<SafeSql> PARAM = template("{param}");
   private static final StringFormat PLACEHOLDER_ELEMENT_NAME =
       new StringFormat("{placeholder}[{index}]");
-  private static final Substring.RepeatingPattern TOKENS =
-      Stream.of(word(), first(breakingWhitespace().negate()::matches))
-          .collect(firstOccurrence())
-          .repeatedly();
 
   private final String sql;
   private final List<?> paramValues;
@@ -389,7 +387,11 @@ public final class SafeSql {
    * <p>The returned template is immutable and thread safe.
    */
   public static Template<SafeSql> template(@CompileTimeConstant String template) {
-    ConcurrentMap<String, Boolean> placeholderSurroundings = new ConcurrentHashMap<>();
+    ImmutableList<Substring.Match> allTokens = TOKENS.match(template).collect(toImmutableList());
+    ImmutableMap<Integer, Integer> charIndexToTokenIndex =
+        BiStream.zip(allTokens.stream(), indexesFrom(0))
+            .mapKeys(Substring.Match::index)
+            .collect(ImmutableMap::toImmutableMap);
     return StringFormat.template(template, (fragments, placeholders) -> {
       Deque<String> texts = new ArrayDeque<>(fragments);
       Builder builder = new Builder();
@@ -470,9 +472,19 @@ public final class SafeSql {
 
         private boolean lookaround(
             String leftPattern, Substring.Match placeholder, String rightPattern) {
-          return placeholderSurroundings.computeIfAbsent(
-              leftPattern + "{" + placeholder.index() + "}" + rightPattern,
-              k -> matchesPattern(leftPattern, placeholder, rightPattern));
+          ImmutableList<String> lookbehind = TOKENS.from(leftPattern).collect(toImmutableList());
+          ImmutableList<String> lookahead = TOKENS.from(rightPattern).collect(toImmutableList());
+          ImmutableList<Substring.Match> leftTokens = allTokens.subList(
+              0, charIndexToTokenIndex.get(placeholder.index()));
+          ImmutableList<Substring.Match> rightTokens = allTokens.subList(
+              charIndexToTokenIndex.get(placeholder.index() + placeholder.length() - 1) + 1,
+              allTokens.size());
+          return BiStream.zip(lookbehind.reverse(), leftTokens.reverse())  // right-to-left
+                  .filter((s, t) -> s.equalsIgnoreCase(t.toString()))
+                  .count() == lookbehind.size()
+              && BiStream.zip(lookahead, rightTokens)
+                  .filter((s, t) -> s.equalsIgnoreCase(t.toString()))
+                  .count() == lookahead.size();
         }
       }
       placeholders.forEachOrdered(new SqlWriter()::writePlaceholder);
@@ -761,24 +773,6 @@ public final class SafeSql {
       Substring.Match placeholder, Iterator<?> elements) {
     return BiStream.zip(indexesFrom(0), stream(elements))
         .mapKeys(index -> PLACEHOLDER_ELEMENT_NAME.format(placeholder, index));
-  }
-
-  @VisibleForTesting
-  static boolean matchesPattern(String left, Substring.Match placeholder, String right) {
-    ImmutableList<String> leftTokensToMatch = TOKENS.from(left).collect(toImmutableList());
-    ImmutableList<String> rightTokensToMatch = TOKENS.from(right).collect(toImmutableList());
-    // Matches right side first because we can lazily scan the right side without copying
-    return BiStream.zip(
-               rightTokensToMatch.stream(),
-               TOKENS.match(placeholder.fullString(), placeholder.index() + placeholder.length())
-                   .map(Object::toString))
-            .filter(String::equalsIgnoreCase)
-            .count() == rightTokensToMatch.size()
-        && BiStream.zip(
-                leftTokensToMatch.reverse(),
-                TOKENS.from(placeholder.before()).collect(toImmutableList()).reverse())
-            .filter(String::equalsIgnoreCase)
-            .count() == leftTokensToMatch.size();
   }
 
   private static String escapePercent(String s) {
