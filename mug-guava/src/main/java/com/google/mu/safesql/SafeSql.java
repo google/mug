@@ -22,7 +22,6 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Streams.stream;
 import static com.google.mu.safesql.InternalCollectors.skippingEmpty;
 import static com.google.mu.safesql.SafeQuery.checkIdentifier;
-import static com.google.mu.safesql.SafeQuery.validatePlaceholder;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.firstOccurrence;
 import static com.google.mu.util.Substring.prefix;
@@ -397,16 +396,7 @@ public final class SafeSql {
       Builder builder = new Builder();
       class SqlWriter {
         void writePlaceholder(Substring.Match placeholder, Object value) {
-          validatePlaceholder(placeholder);
           String paramName = validate(placeholder.skip(1, 1).toString().trim());
-          checkArgument(
-              !(value instanceof SafeQuery),
-              "%s: don't mix in SafeQuery with SafeSql.", placeholder);
-          checkArgument(
-              !(value instanceof Optional),
-              "%s: optional parameter not supported." +
-              " Consider using SafeSql.optionally() or SafeSql.when()?",
-              placeholder);
           if (value instanceof Iterable) {
             Iterator<?> elements = ((Iterable<?>) value).iterator();
             checkArgument(elements.hasNext(), "%s cannot be empty list", placeholder);
@@ -493,7 +483,9 @@ public final class SafeSql {
                   .count() == lookbehind.size();
         }
       }
-      placeholders.forEachOrdered(new SqlWriter()::writePlaceholder);
+      placeholders
+          .peek(SafeSql::validatePlaceholder)
+          .forEachOrdered(new SqlWriter()::writePlaceholder);
       builder.appendSql(texts.pop());
       checkState(texts.isEmpty());
       return builder.build();
@@ -731,6 +723,16 @@ public final class SafeSql {
         !placeholder.isPrecededBy(quote), "half quoted placeholder: %s%s", quote, placeholder);
     checkArgument(
         !placeholder.isFollowedBy(quote), "half quoted placeholder: %s%s", placeholder, quote);
+  }
+
+  private static void validatePlaceholder(Substring.Match placeholder, Object value) {
+    SafeQuery.validatePlaceholder(placeholder);
+    checkArgument(
+        !(value instanceof SafeQuery), "%s: don't mix in SafeQuery with SafeSql.", placeholder);
+    checkArgument(
+        !(value instanceof Optional),
+        "%s: optional parameter not supported. Consider using SafeSql.optionally() or SafeSql.when()?",
+        placeholder);
   }
 
   private static void validateSubqueryPlaceholder(Substring.Match placeholder) {
