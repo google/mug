@@ -179,17 +179,17 @@ import com.google.mu.util.stream.BiStream;
  * <p>Note that with straight JDBC, if you try to use the LIKE operator to match a user-provided
  * substring, i.e. using {@code LIKE '%foo%'} to search for "foo", this seemingly intuitive
  * syntax is actually incorect: <pre>{@code
- *   String searchBy = ...;
+ *   String searchTerm = ...;
  *   PreparedStatement statement =
  *       connection.prepareStatement("SELECT id FROM Users WHERE firstName LIKE '%?%'");
- *   statement.setString(1, searchBy);
+ *   statement.setString(1, searchTerm);
  * }</pre>
  *
  * JDBC considers the quoted question mark as a literal so the {@code setString()}
  * call will fail. You'll need to use the following workaround: <pre>{@code
  *   PreparedStatement statement =
  *       connection.prepareStatement("SELECT id FROM Users WHERE firstName LIKE ?");
- *   statement.setString(1, "%" + searchBy + "%");
+ *   statement.setString(1, "%" + searchTerm + "%");
  * }</pre>
  *
  * And even then, if the {@code searchTerm} includes special characters like '%' or backslash ('\'),
