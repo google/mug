@@ -1742,6 +1742,8 @@ public final class Substring {
      *
      * <p>An empty stream is returned if this pattern has no matches in the {@code input} string.
      *
+     * @throws IndexOutOfBoundsException if {@code fromIndex} is negative or greater than
+     *     {@code input.length()}
      * @since 8.2
      */
     public abstract Stream<Match> match(String input, int fromIndex);
