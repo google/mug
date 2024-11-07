@@ -2506,7 +2506,6 @@ public final class Substring {
      *
      * @since 7.2
      */
-    @Override
     public boolean isEmpty() {
       return length() == 0;
     }
