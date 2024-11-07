@@ -308,16 +308,16 @@ public final class SafeSql {
   }
 
   /**
-   * Wraps non-negative {@code number} as a SafeSql object.
+   * Wraps non-negative {@code number} as a literal SQL snippet in a SafeSql object.
    *
    * <p>For example, the following SQL Server query allows parameterization by the TOP n number:
    * <pre>{@code
-   *   SafeSql.of("SELECT TOP {page_size} UserId FROM Users", nonNegative(pageSize))
+   *   SafeSql.of("SELECT TOP {page_size} UserId FROM Users", nonNegativeLiteral(pageSize))
    * }</pre>
    *
-   * <p>This is needed because in SQL Server the TOP number can't be parameterized by JDBC.
+   * <p>This is needed because in SQL Server the TOP number can't be parameterized through JDBC.
    */
-  public static SafeSql nonNegative(long number) {
+  public static SafeSql nonNegativeLiteral(long number) {
     checkArgument(number >= 0, "negative number disallowed: %s", number);
     return new SafeSql(Long.toString(number));
   }
