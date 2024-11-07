@@ -445,12 +445,15 @@ public final class SafeSql {
             String identifier = mustBeIdentifier("`" + placeholder + "`", value);
             checkArgument(identifier.length() > 0, "`%s` cannot be empty", placeholder);
             builder.appendSql("`" + identifier + "`");
-          } else if (appendBeforeQuotedPlaceholder("'%", placeholder, "%'")) {
+          } else if (lookbehind("LIKE '%", placeholder)
+              && appendBeforeQuotedPlaceholder("'%", placeholder, "%'")) {
             builder.addParameter(
                 paramName, "%" + escapePercent(mustBeString(placeholder, value)) + "%");
-          } else if (appendBeforeQuotedPlaceholder("'%", placeholder, "'")) {
+          } else if (lookbehind("LIKE '%", placeholder)
+              && appendBeforeQuotedPlaceholder("'%", placeholder, "'")) {
             builder.addParameter(paramName, "%" + escapePercent(mustBeString(placeholder, value)));
-          } else if (appendBeforeQuotedPlaceholder("'", placeholder, "%'")) {
+          } else if (lookbehind("LIKE '", placeholder)
+              && appendBeforeQuotedPlaceholder("'", placeholder, "%'")) {
             builder.addParameter(paramName, escapePercent(mustBeString(placeholder, value)) + "%");
           } else if (appendBeforeQuotedPlaceholder("'", placeholder, "'")) {
             builder.addParameter(paramName, mustBeString("'" + placeholder + "'", value));
@@ -472,18 +475,23 @@ public final class SafeSql {
 
         private boolean lookaround(
             String leftPattern, Substring.Match placeholder, String rightPattern) {
-          ImmutableList<String> lookbehind = TOKENS.from(leftPattern).collect(toImmutableList());
           ImmutableList<String> lookahead = TOKENS.from(rightPattern).collect(toImmutableList());
           int closingBraceIndex = placeholder.index() + placeholder.length() - 1;
           int nextTokenIndex = charIndexToTokenIndex.get(closingBraceIndex) + 1;
-          ImmutableList<Substring.Match> leftTokens =
-              allTokens.subList(0, charIndexToTokenIndex.get(placeholder.index()));
           ImmutableList<Substring.Match> rightTokens =
               allTokens.subList(nextTokenIndex, allTokens.size());
           return BiStream.zip(lookahead, rightTokens)
                   .filter((s, t) -> s.equalsIgnoreCase(t.toString()))
                   .count() == lookahead.size()
-              && BiStream.zip(lookbehind.reverse(), leftTokens.reverse())  // right-to-left
+              && lookbehind(leftPattern, placeholder);
+        }
+
+        private boolean lookbehind(
+            String leftPattern, Substring.Match placeholder) {
+          ImmutableList<String> lookbehind = TOKENS.from(leftPattern).collect(toImmutableList());
+          ImmutableList<Substring.Match> leftTokens =
+              allTokens.subList(0, charIndexToTokenIndex.get(placeholder.index()));
+          return BiStream.zip(lookbehind.reverse(), leftTokens.reverse())  // right-to-left
                   .filter((s, t) -> s.equalsIgnoreCase(t.toString()))
                   .count() == lookbehind.size();
         }
