@@ -195,7 +195,7 @@ import com.google.mu.util.stream.BiStream;
  *
  * <p>The SafeSql template protects you from this caveat. The most intuitive syntax does exactly
  * what you'd expect (and it escapes special characters too): <pre>{@code
- *   String searchBy = ...;
+ *   String searchTerm = ...;
  *   SafeSql sql = SafeSql.of(
  *       "SELECT id FROM Users WHERE firstName LIKE '%{search_term}%'", searchTerm);
  *   List<Long> ids = sql.query(connection, row -> row.getLong("id"));
