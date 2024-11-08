@@ -139,7 +139,7 @@ import com.google.mu.util.stream.BiStream;
  * unspecified (empty), the resulting SQL will look like:
  *
  * <pre>{@code
- *   SELECT `firstName`, `lastName` FROM Users WHERE firstName LIKE ?
+ *   SELECT `email`, `lastName` FROM Users WHERE firstName LIKE ?
  * }</pre>
  *
  * <p>And when you call {@code usersQuery.prepareStatement(connection)} or one of the similar
