@@ -15,7 +15,6 @@ import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableList;
 import com.google.common.testing.EqualsTester;
 import com.google.common.testing.NullPointerTester;
-import com.google.mu.util.Substring;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 @RunWith(TestParameterInjector.class)
@@ -594,7 +593,7 @@ public class SafeSqlTest {
   @Test
   public void inListOfParameters_withParameterValuesAndSubqueries() {
     SafeSql sql = SafeSql.of(
-        "select * from tbl where id in ({ids})", /* ids */ asList(1, SafeSql.nonNegative(2), 3));
+        "select * from tbl where id in ({ids})", /* ids */ asList(1, SafeSql.nonNegativeLiteral(2), 3));
     assertThat(sql.toString()).isEqualTo("select * from tbl where id in (?, 2, ?)");
     assertThat(sql.getParameters()).containsExactly(1, 3).inOrder();
   }
@@ -806,21 +805,21 @@ public class SafeSqlTest {
 
   @Test
   public void nonNegative_maxValue_allowed() {
-    SafeSql sql = SafeSql.nonNegative(Long.MAX_VALUE);
+    SafeSql sql = SafeSql.nonNegativeLiteral(Long.MAX_VALUE);
     assertThat(sql.toString()).isEqualTo(Long.toString(Long.MAX_VALUE));
     assertThat(sql.getParameters()).isEmpty();
   }
 
   @Test
   public void nonNegative_positive_allowed() {
-    SafeSql sql = SafeSql.nonNegative(123);
+    SafeSql sql = SafeSql.nonNegativeLiteral(123);
     assertThat(sql.toString()).isEqualTo("123");
     assertThat(sql.getParameters()).isEmpty();
   }
 
   @Test
   public void nonNegative_zero_allowed() {
-    SafeSql sql = SafeSql.nonNegative(0);
+    SafeSql sql = SafeSql.nonNegativeLiteral(0);
     assertThat(sql.toString()).isEqualTo("0");
     assertThat(sql.getParameters()).isEmpty();
   }
@@ -829,7 +828,7 @@ public class SafeSqlTest {
   public void nonNegative_negativeNumber_throws() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
-        () -> SafeSql.nonNegative(-1));
+        () -> SafeSql.nonNegativeLiteral(-1));
     assertThat(thrown).hasMessageThat().contains("negative number disallowed: -1");
   }
 
@@ -837,71 +836,8 @@ public class SafeSqlTest {
   public void nonNegative_minValue_throws() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
-        () -> SafeSql.nonNegative(Long.MIN_VALUE));
+        () -> SafeSql.nonNegativeLiteral(Long.MIN_VALUE));
     assertThat(thrown).hasMessageThat().contains("negative number disallowed");
-  }
-
-  @Test
-  public void matchesPattern_matchesWithoutWhitespaces() {
-    Substring.Match placeholder = Substring.spanningInOrder("{", "}").in("IN({ids})").get();
-    assertThat(SafeSql.matchesPattern("IN(", placeholder, ")")).isTrue();
-    assertThat(SafeSql.matchesPattern("IN (", placeholder, ")")).isTrue();
-  }
-
-  @Test
-  public void matchesPattern_matchesWithWhitespaces() {
-    Substring.Match placeholder = Substring.spanningInOrder("{", "}").in("id IN (\n {ids} \n)").get();
-    assertThat(SafeSql.matchesPattern("IN(", placeholder, ")")).isTrue();
-  }
-
-  @Test
-  public void matchesPattern_matchesIgnoreCase() {
-    Substring.Match placeholder =
-        Substring.spanningInOrder("{", "}").in("id not in (\n {ids} ) or {...}").get();
-    assertThat(SafeSql.matchesPattern("IN(", placeholder, ")")).isTrue();
-    assertThat(SafeSql.matchesPattern("In (", placeholder, " ) ")).isTrue();
-  }
-
-  @Test
-  public void matchesPattern_leftDoesNotMatch() {
-    Substring.Match placeholder =
-        Substring.spanningInOrder("{", "}").in("min({ids})").get();
-    assertThat(SafeSql.matchesPattern("in(", placeholder, ")")).isFalse();
-  }
-
-  @Test
-  public void matchesPattern_rightDoesNotMatch() {
-    Substring.Match placeholder =
-        Substring.spanningInOrder("{", "}").in("in({ids},)").get();
-    assertThat(SafeSql.matchesPattern("in(", placeholder, ")")).isFalse();
-  }
-
-  @Test
-  public void matchesPattern_leftSideNone() {
-    Substring.Match placeholder =
-        Substring.spanningInOrder("{", "}").in("{ids}) or true").get();
-    assertThat(SafeSql.matchesPattern("in(", placeholder, ")")).isFalse();
-  }
-
-  @Test
-  public void matchesPattern_rightSideNone() {
-    Substring.Match placeholder =
-        Substring.spanningInOrder("{", "}").in("in ({ids}").get();
-    assertThat(SafeSql.matchesPattern("in(", placeholder, ")")).isFalse();
-  }
-
-  @Test
-  public void matchesPattern_neitherSide() {
-    Substring.Match placeholder =
-        Substring.spanningInOrder("{", "}").in("{ids}").get();
-    assertThat(SafeSql.matchesPattern("in(", placeholder, ")")).isFalse();
-  }
-
-  @Test
-  public void matchesPattern_matchesWithQuotes() {
-    Substring.Match placeholder =
-        Substring.spanningInOrder("{", "}").in("in ('{ids}')").get();
-    assertThat(SafeSql.matchesPattern("in('", placeholder, "')")).isTrue();
   }
 
   @Test

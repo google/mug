@@ -22,7 +22,6 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Streams.stream;
 import static com.google.mu.safesql.InternalCollectors.skippingEmpty;
 import static com.google.mu.safesql.SafeQuery.checkIdentifier;
-import static com.google.mu.safesql.SafeQuery.validatePlaceholder;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.firstOccurrence;
 import static com.google.mu.util.Substring.prefix;
@@ -50,8 +49,8 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.errorprone.annotations.MustBeClosed;
 import com.google.mu.annotations.TemplateFormatMethod;
@@ -177,17 +176,17 @@ import com.google.mu.util.stream.BiStream;
  * <p>Note that with straight JDBC, if you try to use the LIKE operator to match a user-provided
  * substring, i.e. using {@code LIKE '%foo%'} to search for "foo", this seemingly intuitive
  * syntax is actually incorect: <pre>{@code
- *   String searchBy = ...;
+ *   String searchTerm = ...;
  *   PreparedStatement statement =
  *       connection.prepareStatement("SELECT id FROM Users WHERE firstName LIKE '%?%'");
- *   statement.setString(1, searchBy);
+ *   statement.setString(1, searchTerm);
  * }</pre>
  *
  * JDBC considers the quoted question mark as a literal so the {@code setString()}
  * call will fail. You'll need to use the following workaround: <pre>{@code
  *   PreparedStatement statement =
  *       connection.prepareStatement("SELECT id FROM Users WHERE firstName LIKE ?");
- *   statement.setString(1, "%" + searchBy + "%");
+ *   statement.setString(1, "%" + searchTerm + "%");
  * }</pre>
  *
  * And even then, if the {@code searchTerm} includes special characters like '%' or backslash ('\'),
@@ -252,15 +251,15 @@ public final class SafeSql {
 
   /** An empty SQL */
   public static final SafeSql EMPTY = new SafeSql("");
+  private static final Substring.RepeatingPattern TOKENS =
+      Stream.of(word(), first(breakingWhitespace().negate()::matches))
+          .collect(firstOccurrence())
+          .repeatedly();
   private static final SafeSql FALSE = new SafeSql("(1 = 0)");
   private static final SafeSql TRUE = new SafeSql("(1 = 1)");
   private static final StringFormat.Template<SafeSql> PARAM = template("{param}");
   private static final StringFormat PLACEHOLDER_ELEMENT_NAME =
       new StringFormat("{placeholder}[{index}]");
-  private static final Substring.RepeatingPattern TOKENS =
-      Stream.of(word(), first(breakingWhitespace().negate()::matches))
-          .collect(firstOccurrence())
-          .repeatedly();
 
   private final String sql;
   private final List<?> paramValues;
@@ -308,16 +307,16 @@ public final class SafeSql {
   }
 
   /**
-   * Wraps non-negative {@code number} as a SafeSql object.
+   * Wraps non-negative {@code number} as a literal SQL snippet in a SafeSql object.
    *
    * <p>For example, the following SQL Server query allows parameterization by the TOP n number:
    * <pre>{@code
-   *   SafeSql.of("SELECT TOP {page_size} UserId FROM Users", nonNegative(pageSize))
+   *   SafeSql.of("SELECT TOP {page_size} UserId FROM Users", nonNegativeLiteral(pageSize))
    * }</pre>
    *
-   * <p>This is needed because in SQL Server the TOP number can't be parameterized by JDBC.
+   * <p>This is needed because in SQL Server the TOP number can't be parameterized through JDBC.
    */
-  public static SafeSql nonNegative(long number) {
+  public static SafeSql nonNegativeLiteral(long number) {
     checkArgument(number >= 0, "negative number disallowed: %s", number);
     return new SafeSql(Long.toString(number));
   }
@@ -387,26 +386,22 @@ public final class SafeSql {
    * <p>The returned template is immutable and thread safe.
    */
   public static Template<SafeSql> template(@CompileTimeConstant String template) {
+    ImmutableList<Substring.Match> allTokens = TOKENS.match(template).collect(toImmutableList());
+    ImmutableMap<Integer, Integer> charIndexToTokenIndex =
+        BiStream.zip(allTokens.stream(), indexesFrom(0))
+            .mapKeys(Substring.Match::index)
+            .collect(ImmutableMap::toImmutableMap);
     return StringFormat.template(template, (fragments, placeholders) -> {
       Deque<String> texts = new ArrayDeque<>(fragments);
       Builder builder = new Builder();
       class SqlWriter {
         void writePlaceholder(Substring.Match placeholder, Object value) {
-          validatePlaceholder(placeholder);
           String paramName = validate(placeholder.skip(1, 1).toString().trim());
-          checkArgument(
-              !(value instanceof SafeQuery),
-              "%s: don't mix in SafeQuery with SafeSql.", placeholder);
-          checkArgument(
-              !(value instanceof Optional),
-              "%s: optional parameter not supported." +
-              " Consider using SafeSql.optionally() or SafeSql.when()?",
-              placeholder);
           if (value instanceof Iterable) {
             Iterator<?> elements = ((Iterable<?>) value).iterator();
             checkArgument(elements.hasNext(), "%s cannot be empty list", placeholder);
             if (placeholder.isImmediatelyBetween("'", "'")
-                && matchesPattern("IN ('", placeholder, "')")
+                && lookaround("IN ('", placeholder, "')")
                 && appendBeforeQuotedPlaceholder("'", placeholder, "'")) {
               builder.addSubQuery(
                   eachPlaceholderValue(placeholder, elements)
@@ -421,7 +416,7 @@ public final class SafeSql {
                   eachPlaceholderValue(placeholder, elements)
                       .mapToObj(SafeSql::mustBeIdentifier)
                       .collect(Collectors.joining("`, `")));
-            } else if (matchesPattern("IN (", placeholder, ")")) {
+            } else if (lookaround("IN (", placeholder, ")")) {
               builder.addSubQuery(
                   eachPlaceholderValue(placeholder, elements)
                       .mapToObj(SafeSql::subqueryOrParameter)
@@ -440,12 +435,15 @@ public final class SafeSql {
             String identifier = mustBeIdentifier("`" + placeholder + "`", value);
             checkArgument(identifier.length() > 0, "`%s` cannot be empty", placeholder);
             builder.appendSql("`" + identifier + "`");
-          } else if (appendBeforeQuotedPlaceholder("'%", placeholder, "%'")) {
+          } else if (lookbehind("LIKE '%", placeholder)
+              && appendBeforeQuotedPlaceholder("'%", placeholder, "%'")) {
             builder.addParameter(
                 paramName, "%" + escapePercent(mustBeString(placeholder, value)) + "%");
-          } else if (appendBeforeQuotedPlaceholder("'%", placeholder, "'")) {
+          } else if (lookbehind("LIKE '%", placeholder)
+              && appendBeforeQuotedPlaceholder("'%", placeholder, "'")) {
             builder.addParameter(paramName, "%" + escapePercent(mustBeString(placeholder, value)));
-          } else if (appendBeforeQuotedPlaceholder("'", placeholder, "%'")) {
+          } else if (lookbehind("LIKE '", placeholder)
+              && appendBeforeQuotedPlaceholder("'", placeholder, "%'")) {
             builder.addParameter(paramName, escapePercent(mustBeString(placeholder, value)) + "%");
           } else if (appendBeforeQuotedPlaceholder("'", placeholder, "'")) {
             builder.addParameter(paramName, mustBeString("'" + placeholder + "'", value));
@@ -464,8 +462,30 @@ public final class SafeSql {
           }
           return quoted;
         }
+
+        private boolean lookaround(
+            String leftPattern, Substring.Match placeholder, String rightPattern) {
+          ImmutableList<String> lookahead = TOKENS.from(rightPattern).collect(toImmutableList());
+          int closingBraceIndex = placeholder.index() + placeholder.length() - 1;
+          int nextTokenIndex = charIndexToTokenIndex.get(closingBraceIndex) + 1;
+          return BiStream.zip(lookahead, allTokens.subList(nextTokenIndex, allTokens.size()))
+                  .filter((s, t) -> s.equalsIgnoreCase(t.toString()))
+                  .count() == lookahead.size()
+              && lookbehind(leftPattern, placeholder);
+        }
+
+        private boolean lookbehind(String leftPattern, Substring.Match placeholder) {
+          ImmutableList<String> lookbehind = TOKENS.from(leftPattern).collect(toImmutableList());
+          ImmutableList<Substring.Match> leftTokens =
+              allTokens.subList(0, charIndexToTokenIndex.get(placeholder.index()));
+          return BiStream.zip(lookbehind.reverse(), leftTokens.reverse())  // right-to-left
+                  .filter((s, t) -> s.equalsIgnoreCase(t.toString()))
+                  .count() == lookbehind.size();
+        }
       }
-      placeholders.forEachOrdered(new SqlWriter()::writePlaceholder);
+      placeholders
+          .peek(SafeSql::validatePlaceholder)
+          .forEachOrdered(new SqlWriter()::writePlaceholder);
       builder.appendSql(texts.pop());
       checkState(texts.isEmpty());
       return builder.build();
@@ -705,6 +725,16 @@ public final class SafeSql {
         !placeholder.isFollowedBy(quote), "half quoted placeholder: %s%s", placeholder, quote);
   }
 
+  private static void validatePlaceholder(Substring.Match placeholder, Object value) {
+    SafeQuery.validatePlaceholder(placeholder);
+    checkArgument(
+        !(value instanceof SafeQuery), "%s: don't mix in SafeQuery with SafeSql.", placeholder);
+    checkArgument(
+        !(value instanceof Optional),
+        "%s: optional parameter not supported. Consider using SafeSql.optionally() or SafeSql.when()?",
+        placeholder);
+  }
+
   private static void validateSubqueryPlaceholder(Substring.Match placeholder) {
     checkArgument(
         !placeholder.isImmediatelyBetween("'", "'"),
@@ -751,24 +781,6 @@ public final class SafeSql {
       Substring.Match placeholder, Iterator<?> elements) {
     return BiStream.zip(indexesFrom(0), stream(elements))
         .mapKeys(index -> PLACEHOLDER_ELEMENT_NAME.format(placeholder, index));
-  }
-
-  @VisibleForTesting
-  static boolean matchesPattern(String left, Substring.Match placeholder, String right) {
-    ImmutableList<String> leftTokensToMatch = TOKENS.from(left).collect(toImmutableList());
-    ImmutableList<String> rightTokensToMatch = TOKENS.from(right).collect(toImmutableList());
-    // Matches right side first because we can lazily scan the right side without copying
-    return BiStream.zip(
-               rightTokensToMatch.stream(),
-               TOKENS.match(placeholder.fullString(), placeholder.index() + placeholder.length())
-                   .map(Object::toString))
-            .filter(String::equalsIgnoreCase)
-            .count() == rightTokensToMatch.size()
-        && BiStream.zip(
-                leftTokensToMatch.reverse(),
-                TOKENS.from(placeholder.before()).collect(toImmutableList()).reverse())
-            .filter(String::equalsIgnoreCase)
-            .count() == leftTokensToMatch.size();
   }
 
   private static String escapePercent(String s) {
