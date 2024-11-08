@@ -122,7 +122,7 @@ import com.google.mu.util.stream.BiStream;
  *   }
  *
  *   SafeSql queryUsers(UserCriteria criteria, @CompileTimeConstant String... columns) {
- *     SafeSql sql = SafeSql.of(
+ *     return SafeSql.of(
  *         "SELECT `{columns}` FROM Users WHERE {criteria}",
  *         asList(columns),
  *         Stream.of(
