@@ -150,12 +150,12 @@ import com.google.mu.util.stream.BiStream;
  * Sometimes you may wish to parameterize by table names, column names etc.
  * for which JDBC has no support.
  *
- * If the identifiers can come from compile-time literals, you can wrap them using
+ * <p>If the identifiers are compile-time string literals, you can wrap them using
  * {@code SafeSql.of(COLUMN_NAME)}, which can then be composed as subqueries.
- *
- * <p>But what if the identifier string is loaded from a resource file, or is specified by a
+ * But what if the identifier string is loaded from a resource file, or is specified by a
  * request field?
- * <br>Passing the string directly as a template parameter will only generate the JDBC
+ *
+ * <p>Passing the string directly as a template parameter will only generate the JDBC
  * <code>'?'</code> parameter in its place, which won't work (JDBC can't parameterize identifiers);
  * {@code SafeSql.of(theString)} will fail to compile because such strings are inherently
  * dynamic and untrusted.
@@ -170,7 +170,9 @@ import com.google.mu.util.stream.BiStream;
  * <p>In the above example, if {@code getColumns()} returns {@code ["id", "age"]}, the genereated
  * SQL will be:
  *
- * <pre>{@code SELECT `id`, `age` FROM Users}</pre>
+ * <pre>{@code
+ *   SELECT `id`, `age` FROM Users
+ * }</pre>
  *
  * <p>That is, each individual string will be backtick-quoted and then joined by ", ".
  *
