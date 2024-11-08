@@ -121,8 +121,8 @@ import com.google.mu.util.stream.BiStream;
  *     ...
  *   }
  *
- *   SafeSql queryUsers(UserCriteria criteria, @CompileTimeConstant String... columns) {
- *     SafeSql sql = SafeSql.of(
+ *   SafeSql usersQuery(UserCriteria criteria, @CompileTimeConstant String... columns) {
+ *     return SafeSql.of(
  *         "SELECT `{columns}` FROM Users WHERE {criteria}",
  *         asList(columns),
  *         Stream.of(
@@ -131,7 +131,8 @@ import com.google.mu.util.stream.BiStream;
  *           .collect(SafeSql.and()));
  *   }
  *
- *   SafeSql usersQuery = queryUsers(userCriteria, "firstName", "lastName");
+ *   List<User> users = usersQuery(userCriteria, "email", "lastName")
+ *       .query(connection, row -> new User(row.getString("email"), row.getString("lastName")));
  * }</pre>
  *
  * If {@code UserCriteria} has specified {@code firstName()} but {@code userId()} is
