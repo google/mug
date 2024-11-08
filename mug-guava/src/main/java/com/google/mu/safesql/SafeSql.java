@@ -138,7 +138,7 @@ import com.google.mu.util.stream.BiStream;
  * unspecified (empty), the resulting SQL will look like:
  *
  * <pre>{@code
- * SELECT `firstName`, `lastName` FROM Users WHERE firstName LIKE ?
+ *   SELECT `firstName`, `lastName` FROM Users WHERE firstName LIKE ?
  * }</pre>
  *
  * <p>And when you call {@code usersQuery.prepareStatement(connection)} or one of the similar
@@ -156,8 +156,8 @@ import com.google.mu.util.stream.BiStream;
  * <p>But what if the identifier string is loaded from a resource file, or is specified by a
  * request field?
  * <br>Passing the string directly as a template parameter will only generate the JDBC
- * <code>'?'</code> in its place, not what you need;
- * <br>{@code SafeSql.of(theString)} will fail to compile because such strings are inherently
+ * <code>'?'</code> parameter in its place, which won't work (JDBC can't parameterize identifiers);
+ * {@code SafeSql.of(theString)} will fail to compile because such strings are inherently
  * dynamic and untrusted.
  *
  * <p>The safe way to parameterize dynamic strings as <em>identifiers</em> is to backtick-quote
@@ -165,11 +165,14 @@ import com.google.mu.util.stream.BiStream;
  *   SafeSql.of("SELECT `{columns}` FROM Users", request.getColumns())
  * }</pre>
  * The backticks tell SafeSql that the string is supposed to be an identifier (or a list of
- * identifiers). SafeSql will sanity-check the string(s) to make sure injection isn't possible.
+ * identifiers). SafeSql will sanity-check the string(s) to ensure injection safety.
  *
  * <p>In the above example, if {@code getColumns()} returns {@code ["id", "age"]}, the genereated
- * SQL will be {@code SELECT `id`, `age` FROM Users}. That is, each individual string will
- * be backtick-quoted and then joined by ", ".
+ * SQL will be:
+ *
+ * <pre>{@code SELECT `id`, `age` FROM Users}</pre>
+ *
+ * <p>That is, each individual string will be backtick-quoted and then joined by ", ".
  *
  * <dl><dt><STRONG>The {@code LIKE} Operator</STRONG></dt></dl>
  *
