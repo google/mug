@@ -324,9 +324,9 @@ public final class SafeSql {
    *
    * <p>This is needed because in SQL Server the TOP number can't be parameterized through JDBC.
    */
-  public static SafeSql nonNegativeLiteral(long number) {
+  public static SafeSql nonNegativeLiteral(int number) {
     checkArgument(number >= 0, "negative number disallowed: %s", number);
-    return new SafeSql(Long.toString(number));
+    return new SafeSql(Integer.toString(number));
   }
 
   /**
