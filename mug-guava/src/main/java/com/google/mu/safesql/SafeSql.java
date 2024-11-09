@@ -589,6 +589,9 @@ public final class SafeSql {
   /**
    * Returns a {@link PreparedStatement} with the encapsulated sql and parameters.
    *
+   * <p>It's often more convenient to use {@link #query} or {@link #update} unless you need to
+   * directly operate on the PreparedStatement.
+   *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    */
   @MustBeClosed
