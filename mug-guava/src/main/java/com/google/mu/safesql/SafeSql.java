@@ -326,7 +326,7 @@ public final class SafeSql {
    */
   public static SafeSql nonNegativeLiteral(int number) {
     checkArgument(number >= 0, "negative number disallowed: %s", number);
-    return new SafeSql(Long.toString(number));
+    return new SafeSql(Integer.toString(number));
   }
 
   /**
