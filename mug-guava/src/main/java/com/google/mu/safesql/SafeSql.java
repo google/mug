@@ -323,6 +323,8 @@ public final class SafeSql {
    * }</pre>
    *
    * <p>This is needed because in SQL Server the TOP number can't be parameterized through JDBC.
+   *
+   * @throws IllegalArgumentException if {@code number} is negative
    */
   public static SafeSql nonNegativeLiteral(int number) {
     checkArgument(number >= 0, "negative number disallowed: %s", number);
