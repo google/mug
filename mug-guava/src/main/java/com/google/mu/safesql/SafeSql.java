@@ -33,11 +33,11 @@ import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.mapping;
 
-import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -556,6 +556,12 @@ public final class SafeSql {
       Connection connection, SqlFunction<? super ResultSet, ? extends T> rowMapper) {
     checkNotNull(rowMapper);
     try {
+      if (paramValues.isEmpty()) {
+        try (Statement stmt = connection.createStatement();
+            ResultSet resultSet = stmt.executeQuery(sql)) {
+          return mapResults(resultSet, rowMapper);
+        }
+      }
       try (PreparedStatement stmt = prepareStatement(connection);
           ResultSet resultSet = stmt.executeQuery()) {
         return mapResults(resultSet, rowMapper);
@@ -578,6 +584,11 @@ public final class SafeSql {
    */
   public int update(Connection connection) {
     try {
+      if (paramValues.isEmpty()) {
+        try (Statement stmt = connection.createStatement()) {
+          return stmt.executeUpdate(sql);
+        }
+      }
       try (PreparedStatement stmt = prepareStatement(connection)) {
         return stmt.executeUpdate();
       }
@@ -598,20 +609,6 @@ public final class SafeSql {
   public PreparedStatement prepareStatement(Connection connection) {
     try {
       return setArgs(connection.prepareStatement(sql));
-    } catch (SQLException e) {
-      throw new UncheckedSqlException(e);
-    }
-  }
-
-  /**
-   * Returns a {@link CallableStatement} with the encapsulated sql and parameters.
-   *
-   * @throws UncheckedSqlException wraps {@link SQLException} if failed
-   */
-  @MustBeClosed
-  public CallableStatement prepareCall(Connection connection) {
-    try {
-      return setArgs(connection.prepareCall(sql));
     } catch (SQLException e) {
       throw new UncheckedSqlException(e);
     }
@@ -675,18 +672,17 @@ public final class SafeSql {
   }
 
   /**
-   * Returns the parameter values in the order they occur in the SQL.
-   * They are used by methods like {@link #prepareStatement} and {@link #prepareCall}
-   * to create and populate the returned {@link PreparedStatement}
+   * Returns the parameter values in the order they occur in the SQL. They are used by methods
+   * like {@link #query query()}, {@link #update update()} or {@link #prepareStatement}  to
+   * populate the {@link PreparedStatement}.
    */
   public List<?> getParameters() {
     return paramValues;
   }
 
   /**
-   * Returns the SQL text with {@code '?'} as the placeholders.
-   * It's used by methods like {@link #prepareStatement} and {@link #prepareCall}
-   * to create and populate the returned {@link PreparedStatement}.
+   * Returns the SQL text with the template parameters translated to the JDBC {@code '?'}
+   * placeholders.
    */
   @Override
   public String toString() {
