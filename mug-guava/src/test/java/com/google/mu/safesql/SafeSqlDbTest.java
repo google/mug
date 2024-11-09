@@ -294,6 +294,16 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     assertThat(template.with("bar", testId() + 1)).containsExactly("bar");
   }
 
+  @Test public void query_noParameter() throws Exception {
+    assertThat(queryColumn(SafeSql.of("select count(*) as cnt from ITEMS"), "cnt")).hasSize(1);
+  }
+
+  @Test public void update_noParameter() throws Exception {
+    assertThat(
+            SafeSql.of("UPDATE ITEMS SET title = 'foo' where id = NULL").update(connection()))
+        .isEqualTo(0);
+  }
+
   private int testId() {
     return Hashing.goodFastHash(32).hashString(testName.getMethodName(), StandardCharsets.UTF_8).asInt();
   }
