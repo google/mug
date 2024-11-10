@@ -53,6 +53,7 @@ import com.google.common.collect.RangeMap;
 import com.google.common.collect.Tables;
 import com.google.common.collect.TreeRangeMap;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.mu.annotations.RequiresGuava;
 import com.google.mu.collect.Chain;
 import com.google.mu.util.Both;
@@ -63,6 +64,7 @@ import com.google.mu.util.Both;
  * @since 4.7
  */
 @RequiresGuava
+@CheckReturnValue
 public final class GuavaCollectors {
   /**
    * Returns a {@link BiCollector} that collects the key-value pairs into an {@link ImmutableMap}.

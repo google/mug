@@ -36,6 +36,7 @@ import com.google.common.base.CharMatcher;
 import com.google.common.collect.Iterables;
 import com.google.common.primitives.UnsignedInteger;
 import com.google.common.primitives.UnsignedLong;
+import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.errorprone.annotations.Immutable;
 import com.google.mu.annotations.RequiresGuava;
@@ -72,6 +73,7 @@ import com.google.mu.util.Substring;
  */
 @RequiresGuava
 @Immutable
+@CheckReturnValue
 public final class SafeQuery {
   /**
    * An empty query string.

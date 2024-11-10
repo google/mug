@@ -51,6 +51,8 @@ import java.util.stream.Stream;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.errorprone.annotations.MustBeClosed;
 import com.google.errorprone.annotations.ThreadSafe;
@@ -283,8 +285,9 @@ import com.google.mu.util.stream.BiStream;
  *
  * @since 8.2
  */
-@ThreadSafe
 @RequiresGuava
+@ThreadSafe
+@CheckReturnValue
 public final class SafeSql {
   private static final Logger logger = Logger.getLogger(SafeSql.class.getName());
   private static final Substring.RepeatingPattern TOKENS =
@@ -621,6 +624,7 @@ public final class SafeSql {
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    */
+  @CanIgnoreReturnValue
   public int update(Connection connection) {
     if (paramValues.isEmpty()) {
       try (Statement stmt = connection.createStatement()) {
@@ -780,6 +784,7 @@ public final class SafeSql {
         placeholder);
   }
 
+  @CanIgnoreReturnValue
   private static String rejectQuestionMark(String sql) {
     checkArgument(sql.indexOf('?') < 0, "please use named {placeholder} instead of '?'");
     return sql;
@@ -898,23 +903,27 @@ public final class SafeSql {
     private final StringBuilder queryText = new StringBuilder();
     private final List<Object> paramValues = new ArrayList<>();
 
+    @CanIgnoreReturnValue
     Builder appendSql(String snippet) {
       queryText.append(rejectQuestionMark(snippet));
       return this;
     }
 
+    @CanIgnoreReturnValue
     Builder addParameter(String name, Object value) {
       queryText.append("?");
       paramValues.add(value);
       return this;
     }
 
+    @CanIgnoreReturnValue
     Builder addSubQuery(SafeSql subQuery) {
       queryText.append(subQuery.sql);
       paramValues.addAll(subQuery.getParameters());
       return this;
     }
 
+    @CanIgnoreReturnValue
     Builder delimit(String delim) {
       if (queryText.length() > 0) {
         queryText.append(delim);
