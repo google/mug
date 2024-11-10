@@ -85,12 +85,6 @@ public final class SafeQuery {
     this.query = query;
   }
 
-  /** Returns a query using a compile-time constant query. */
-  @TemplateFormatMethod
-  public static SafeQuery of(@CompileTimeConstant @TemplateString String query) {
-    return new SafeQuery(checkNotNull(query));
-  }
-
   /** Returns a query using a constant query template filled with {@code args}. */
   @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
   @TemplateFormatMethod
