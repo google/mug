@@ -256,18 +256,18 @@ import com.google.mu.util.stream.BiStream;
 @ThreadSafe
 public final class SafeSql {
   private static final Logger logger = Logger.getLogger(SafeSql.class.getName());
-
-  /** An empty SQL */
-  public static final SafeSql EMPTY = new SafeSql("");
   private static final Substring.RepeatingPattern TOKENS =
       Stream.of(word(), first(breakingWhitespace().negate()::matches))
           .collect(firstOccurrence())
           .repeatedly();
+  private static final StringFormat PLACEHOLDER_ELEMENT_NAME =
+      new StringFormat("{placeholder}[{index}]");
   private static final SafeSql FALSE = new SafeSql("(1 = 0)");
   private static final SafeSql TRUE = new SafeSql("(1 = 1)");
   private static final StringFormat.Template<SafeSql> PARAM = template("{param}");
-  private static final StringFormat PLACEHOLDER_ELEMENT_NAME =
-      new StringFormat("{placeholder}[{index}]");
+
+  /** An empty SQL */
+  public static final SafeSql EMPTY = new SafeSql("");
 
   private final String sql;
   private final List<?> paramValues;
