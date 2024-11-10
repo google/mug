@@ -1006,6 +1006,16 @@ public final class SafeQueryTest {
         .isEqualTo(SafeQuery.of("WHERE id = 1"));
   }
 
+  @Test
+  @SuppressWarnings("StringFormatArgsCheck")
+  public void of_forgetToAddVarargs() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> SafeQuery.of("SELECT * FROM tbl WHERE id = '{id}'"));
+    assertThat(thrown).hasMessageThat().contains("1 placeholders");
+  }
+
   static final class TrustedSql {
     private final String sql;
 
