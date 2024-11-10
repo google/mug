@@ -406,7 +406,7 @@ public final class SafeSql {
       Builder builder = new Builder();
       class SqlWriter {
         void writePlaceholder(Substring.Match placeholder, Object value) {
-          String paramName = validate(placeholder.skip(1, 1).toString().trim());
+          String paramName = rejectQuestionMark(placeholder.skip(1, 1).toString().trim());
           if (value instanceof Iterable) {
             Iterator<?> elements = ((Iterable<?>) value).iterator();
             checkArgument(elements.hasNext(), "%s cannot be empty list", placeholder);
@@ -494,7 +494,7 @@ public final class SafeSql {
         }
       }
       placeholders
-          .peek(SafeSql::validatePlaceholder)
+          .peek(SafeSql::checkMisuse)
           .forEachOrdered(new SqlWriter()::writePlaceholder);
       builder.appendSql(texts.pop());
       checkState(texts.isEmpty());
@@ -534,7 +534,7 @@ public final class SafeSql {
    * <p>Empty SafeSql elements are ignored and not joined.
    */
   public static Collector<SafeSql, ?, SafeSql> joining(@CompileTimeConstant String delimiter) {
-    validate(delimiter);
+    rejectQuestionMark(delimiter);
     return skippingEmpty(
         Collector.of(
             Builder::new,
@@ -716,25 +716,7 @@ public final class SafeSql {
     return statement;
   }
 
-  private static String validate(String sql) {
-    checkArgument(sql.indexOf('?') < 0, "please use named {placeholder} instead of '?'");
-    return sql;
-  }
-
-  private static void checkMissingPlaceholderQuotes(Substring.Match placeholder) {
-    rejectHalfQuotes(placeholder, "'");
-    rejectHalfQuotes(placeholder, "`");
-    rejectHalfQuotes(placeholder, "\"");
-  }
-
-  private static void rejectHalfQuotes(Substring.Match placeholder, String quote) {
-    checkArgument(
-        !placeholder.isPrecededBy(quote), "half quoted placeholder: %s%s", quote, placeholder);
-    checkArgument(
-        !placeholder.isFollowedBy(quote), "half quoted placeholder: %s%s", placeholder, quote);
-  }
-
-  private static void validatePlaceholder(Substring.Match placeholder, Object value) {
+  private static void checkMisuse(Substring.Match placeholder, Object value) {
     SafeQuery.validatePlaceholder(placeholder);
     checkArgument(
         !(value instanceof SafeQuery), "%s: don't mix in SafeQuery with SafeSql.", placeholder);
@@ -742,6 +724,11 @@ public final class SafeSql {
         !(value instanceof Optional),
         "%s: optional parameter not supported. Consider using SafeSql.optionally() or SafeSql.when()?",
         placeholder);
+  }
+
+  private static String rejectQuestionMark(String sql) {
+    checkArgument(sql.indexOf('?') < 0, "please use named {placeholder} instead of '?'");
+    return sql;
   }
 
   private static void validateSubqueryPlaceholder(Substring.Match placeholder) {
@@ -755,6 +742,19 @@ public final class SafeSql {
         !placeholder.isImmediatelyBetween("`", "`"),
         "SafeSql should not be backtick quoted: `%s`", placeholder);
     checkMissingPlaceholderQuotes(placeholder);
+  }
+
+  private static void checkMissingPlaceholderQuotes(Substring.Match placeholder) {
+    rejectHalfQuotes(placeholder, "'");
+    rejectHalfQuotes(placeholder, "`");
+    rejectHalfQuotes(placeholder, "\"");
+  }
+
+  private static void rejectHalfQuotes(Substring.Match placeholder, String quote) {
+    checkArgument(
+        !placeholder.isPrecededBy(quote), "half quoted placeholder: %s%s", quote, placeholder);
+    checkArgument(
+        !placeholder.isFollowedBy(quote), "half quoted placeholder: %s%s", placeholder, quote);
   }
 
   private static String mustBeIdentifier(CharSequence name, Object element) {
@@ -845,7 +845,7 @@ public final class SafeSql {
     private final List<Object> paramValues = new ArrayList<>();
 
     Builder appendSql(String snippet) {
-      queryText.append(validate(snippet));
+      queryText.append(rejectQuestionMark(snippet));
       return this;
     }
 
