@@ -105,6 +105,35 @@ import com.google.mu.util.stream.BiStream;
  * are in effect to make sure that you don't pass {@code lastName} in the place of
  * {@code first_name}, for example.
  *
+ * <p>To use it, copy the {@code <configuration>} of the "maven-compiler-plugin" section from the
+ * following pom.xml file snippet:
+ *
+ * <pre>{@code
+ * <build>
+ *   <pluginManagement>
+ *     <plugins>
+ *       <plugin>
+ *         <artifactId>maven-compiler-plugin</artifactId>
+ *         <configuration>
+ *           <annotationProcessorPaths>
+ *             <path>
+ *               <groupId>com.google.errorprone</groupId>
+ *               <artifactId>error_prone_core</artifactId>
+ *               <version>2.23.0</version>
+ *             </path>
+ *             <path>
+ *               <groupId>com.google.mug</groupId>
+ *               <artifactId>mug-errorprone</artifactId>
+ *               <version>8.1</version>
+ *             </path>
+ *           </annotationProcessorPaths>
+ *         </configuration>
+ *       </plugin>
+ *     </plugins>
+ *   </pluginManagement>
+ * </build>
+ * }</pre>
+ *
  * <dl><dt><STRONG>Conditional Subqueries</STRONG></dt></dl>
  *
  * By composing SafeSql objects that encapsulate subqueries, you can also parameterize by
