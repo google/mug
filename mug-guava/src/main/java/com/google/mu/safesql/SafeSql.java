@@ -54,6 +54,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.errorprone.annotations.MustBeClosed;
 import com.google.errorprone.annotations.ThreadSafe;
+import com.google.mu.annotations.RequiresGuava;
 import com.google.mu.annotations.TemplateFormatMethod;
 import com.google.mu.annotations.TemplateString;
 import com.google.mu.util.StringFormat;
@@ -254,6 +255,7 @@ import com.google.mu.util.stream.BiStream;
  * @since 8.2
  */
 @ThreadSafe
+@RequiresGuava
 public final class SafeSql {
   private static final Logger logger = Logger.getLogger(SafeSql.class.getName());
   private static final Substring.RepeatingPattern TOKENS =

@@ -51,20 +51,22 @@ import com.google.mu.util.Substring;
  * values (booleans, enum constant names, numbers etc.), and/or
  * mandatorily-quoted, auto-escaped string values.
  *
- * <p>
- * It's best practice for your db layer API to require SafeQuery instead of
+ * <p>It's best practice for your db layer API to require SafeQuery instead of
  * String as the parameter to ensure safety. Internally, you can use
  * {@link #toString} to access the query string.
  *
- * <p>
- * This class supports generating SQL based on a string template in the syntax
+ * <p>This class supports generating SQL based on a string template in the syntax
  * of {@link TemplateString}, and with the same compile-time protection. To
  * prevent SQL injection errors, special characters of string values are
  * automatically escaped; and negative numbers are automatically enclosed by
  * parenthesis.
  *
- * <p>
- * This class is Android compatible.
+ * <p>Compared to {@link SafeSql}, SafeQuery is independent of the underlying DB engine.
+ * It simply wraps a sanitized query string, using auto-escaping and unicode encoding to prevent SQL
+ * injection. It can be used for databases that don't support JDBC parameterization, or if you
+ * prefer dynamic SQL over parameterization for debugging reasons etc.
+ *
+ * <p>This class is Android compatible.
  *
  * @since 7.0
  */
