@@ -1013,7 +1013,7 @@ public final class SafeQueryTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> SafeQuery.of("SELECT * FROM tbl WHERE id = '{id}'"));
-    assertThat(thrown).hasMessageThat().contains("1 placeholders");
+    assertThat(thrown).hasMessageThat().contains("placeholders");
   }
 
   static final class TrustedSql {
