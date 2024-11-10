@@ -497,9 +497,8 @@ public final class SafeSql {
       placeholders
           .peek(SafeSql::checkMisuse)
           .forEachOrdered(new SqlWriter()::writePlaceholder);
-      builder.appendSql(texts.pop());
-      checkState(texts.isEmpty());
-      return builder.build();
+      checkState(texts.size() == 1);
+      return builder.appendSql(texts.pop()).build();
     });
   }
 
