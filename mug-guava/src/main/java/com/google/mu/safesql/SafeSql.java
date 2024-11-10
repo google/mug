@@ -322,7 +322,8 @@ public final class SafeSql {
    *   SafeSql.of("SELECT TOP {page_size} UserId FROM Users", nonNegativeLiteral(pageSize))
    * }</pre>
    *
-   * <p>This is needed because in SQL Server the TOP number can't be parameterized through JDBC.
+   * <p>Needed because the SQL Server JDBC driver doesn't support parameterizing the TOP number
+   * through {@link PreparedStatement} API.
    *
    * @throws IllegalArgumentException if {@code number} is negative
    */
