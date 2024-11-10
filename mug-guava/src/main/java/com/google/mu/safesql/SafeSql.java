@@ -542,8 +542,8 @@ public final class SafeSql {
     return skippingEmpty(
         Collector.of(
             Builder::new,
-            (b, q) -> b.appendDelimiter(delimiter).addSubQuery(q),
-            (b1, b2) -> b1.appendDelimiter(delimiter).addSubQuery(b2.build()),
+            (b, q) -> b.delimit(delimiter).addSubQuery(q),
+            (b1, b2) -> b1.delimit(delimiter).addSubQuery(b2.build()),
             Builder::build));
   }
 
@@ -886,7 +886,7 @@ public final class SafeSql {
       return this;
     }
 
-    Builder appendDelimiter(String delim) {
+    Builder delimit(String delim) {
       if (queryText.length() > 0) {
         queryText.append(delim);
       }
