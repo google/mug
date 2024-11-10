@@ -392,7 +392,9 @@ public final class SafeSql {
    *
    * <p>If you don't need a reusable template, consider using {@link #of} instead, which is simpler.
    *
-   * <p>The template arguments follow the same rules as discussed in {@link #of(String, Object...)}.
+   * <p>The template arguments follow the same rules as discussed in {@link #of(String, Object...)}
+   * and receives the same compile-time protection against mismatch or out-of-order human mistakes,
+   * so it's safe to use the template as a constant.
    *
    * <p>The returned template is immutable and thread safe.
    */
@@ -643,6 +645,9 @@ public final class SafeSql {
    * cached PreparedStatement object and just calls {@link PreparedStatement#setObject(int, Object)}
    * with the new set of parameters before calling {@link PreparedStatement#executeQuery}.
    *
+   * <p>The template arguments follow the same rules as discussed in {@link #of(String, Object...)}
+   * and receives the same compile-time protection against mismatch or out-of-order human mistakes.
+   *
    * <p>The returned Template is <em>not</em> thread safe.
    *
    * <p>The caller is expected to close the {@code connection} after done, which will close the
@@ -677,6 +682,9 @@ public final class SafeSql {
    * Internally it reuses the cached PreparedStatement object and just calls {@link
    * PreparedStatement#setObject(int, Object)} with the new set of parameters before calling
    * {@link PreparedStatement#executeUpdate}.
+   *
+   * <p>The template arguments follow the same rules as discussed in {@link #of(String, Object...)}
+   * and receives the same compile-time protection against mismatch or out-of-order human mistakes.
    *
    * <p>The returned Template is <em>not</em> thread safe.
    *
