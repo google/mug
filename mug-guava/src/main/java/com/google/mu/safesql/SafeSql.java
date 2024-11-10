@@ -703,7 +703,7 @@ public final class SafeSql {
    * like {@link #query query()}, {@link #update update()} or {@link #prepareStatement}  to
    * populate the {@link PreparedStatement}.
    */
-  public List<?> getParameters() {
+  List<?> getParameters() {
     return paramValues;
   }
 
