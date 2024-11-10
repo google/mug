@@ -376,21 +376,21 @@ public final class SafeSql {
   }
 
   /**
-   * Returns a template of {@link SafeSql} based on the {@code template} string.
+   * Returns a {@link Template} of {@link SafeSql} based on the {@code template} string.
+   * Useful for creating a constant to be reused with different parameters.
    *
    * <p>For example:
    *
    * <pre>{@code
-   * private static final Template<SafeSql> GET_JOB_IDS_BY_QUERY =
-   *     SafeSql.template(
-   *         """
-   *         SELECT JobId FROM Jobs
-   *         WHERE query LIKE '%{keyword}%'
-   *         """);
+   * private static final Template<SafeSql> FIND_USERS_BY_NAME =
+   *     SafeSql.template("SELECT `{columns}` FROM Users WHERE name LIKE '%{name}%'");
    *
-   * List<String> sensitiveJobIds = GET_JOB_IDS_BY_QUERY.with("sensitive word")
-   *     .query(connection, row -> row.getString("JobId"));
+   * String searchBy = ...;
+   * List<User> userIds = FIND_USERS_BY_NAME.with(asList("id", "name"), searchBy)
+   *     .query(connection, row -> new User(row.getLong("id"), row.getString("name")));
    * }</pre>
+   *
+   * <p>If you don't need a reusable template, consider to use {@link #of}, which is simpler.
    *
    * <p>See {@link #of(String, Object...)} for discussion on the template arguments.
    *
