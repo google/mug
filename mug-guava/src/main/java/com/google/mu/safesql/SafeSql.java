@@ -105,8 +105,8 @@ import com.google.mu.util.stream.BiStream;
  * are in effect to make sure that you don't pass {@code lastName} in the place of
  * {@code first_name}, for example.
  *
- * <p>To use it, copy the {@code <configuration>} of the "maven-compiler-plugin" section from the
- * following pom.xml file snippet:
+ * <p>To use the compile-time plugin, copy the {@code <configuration>} of the
+ * "maven-compiler-plugin" section from the following pom.xml file snippet:
  *
  * <pre>{@code
  * <build>
