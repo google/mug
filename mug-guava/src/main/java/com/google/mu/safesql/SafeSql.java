@@ -552,6 +552,8 @@ public final class SafeSql {
    *     .query(connection, row -> row.getLong("id"));
    * }</pre>
    *
+   * <p>Internally it delegates to {@link PreparedStatement#executeQuery}.
+   *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    */
   public <T> List<T> query(
@@ -574,13 +576,15 @@ public final class SafeSql {
   }
 
   /**
-   * Executes the encapsulated DML against {@code connection} and returns the number of affected
-   * rows.
+   * Executes the encapsulated DML (create, update, delete statements) against {@code connection}
+   * and returns the number of affected rows.
    *
    * <p>For example: <pre>{@code
    * SafeSql.of("INSERT INTO Users(id, name) VALUES({id}, '{name}')", id, name)
    *     .update(connection);
    * }</pre>
+   *
+   * <p>Internally it delegates to {@link PreparedStatement#executeUpdate}.
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    */
@@ -651,8 +655,8 @@ public final class SafeSql {
   }
 
   /**
-   * Returns a DML template that will reuse the same cached {@code PreparedStatement}
-   * for repeated calls of {@link Template#with} using different parameters.
+   * Returns a DML (create, update, delete) template that will reuse the same cached {@code
+   * PreparedStatement} for repeated calls of {@link Template#with} using different parameters.
    *
    * <p>Allows callers to take advantage of the performance benefit of PreparedStatement
    * without having to re-create the statement for each call. For example: <pre>{@code
