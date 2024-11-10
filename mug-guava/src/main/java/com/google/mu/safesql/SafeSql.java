@@ -390,9 +390,9 @@ public final class SafeSql {
    *     .query(connection, row -> new User(row.getLong("id"), row.getString("name")));
    * }</pre>
    *
-   * <p>If you don't need a reusable template, consider to use {@link #of}, which is simpler.
+   * <p>If you don't need a reusable template, consider using {@link #of} instead, which is simpler.
    *
-   * <p>See {@link #of(String, Object...)} for discussion on the template arguments.
+   * <p>The template arguments follow the same rules as discussed in {@link #of(String, Object...)}.
    *
    * <p>The returned template is immutable and thread safe.
    */
@@ -545,7 +545,7 @@ public final class SafeSql {
 
   /**
    * Executes the encapsulated SQL as a query against {@code connection}. The {@link ResultSet}
-   * will be iterated through, transformed by {@code rowMapper} and finally closed before returning.
+   * will be consumed, transformed by {@code rowMapper} and then closed before returning.
    *
    * <p>For example: <pre>{@code
    * List<Long> ids = SafeSql.of("SELECT id FROM Users WHERE name LIKE '%{name}%'", name)
