@@ -610,7 +610,7 @@ public final class SafeSql {
   @MustBeClosed
   public PreparedStatement prepareStatement(Connection connection) {
     try {
-      return setArgs(connection.prepareStatement(sql));
+      return setParameters(connection.prepareStatement(sql));
     } catch (SQLException e) {
       throw new UncheckedSqlException(e);
     }
@@ -709,7 +709,7 @@ public final class SafeSql {
     return new SafeSql('(' + sql + ')', paramValues);
   }
 
-  private PreparedStatement setArgs(PreparedStatement statement) throws SQLException {
+  private PreparedStatement setParameters(PreparedStatement statement) throws SQLException {
     for (int i = 0; i < paramValues.size(); i++) {
       statement.setObject(i + 1, paramValues.get(i));
     }
@@ -818,7 +818,7 @@ public final class SafeSql {
             statement = connection.prepareStatement(sql.toString());
           }
           cachedSql = sql.toString();
-          return action.apply(sql.setArgs(statement));
+          return action.apply(sql.setParameters(statement));
         } catch (SQLException e) {
           throw new UncheckedSqlException(e);
         }
