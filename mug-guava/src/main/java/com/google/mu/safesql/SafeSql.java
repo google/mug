@@ -709,7 +709,7 @@ public final class SafeSql {
     return new SafeSql('(' + sql + ')', paramValues);
   }
 
-  private <S extends PreparedStatement> S setArgs(S statement) throws SQLException {
+  private PreparedStatement setArgs(PreparedStatement statement) throws SQLException {
     for (int i = 0; i < paramValues.size(); i++) {
       statement.setObject(i + 1, paramValues.get(i));
     }
