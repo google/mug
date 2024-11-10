@@ -552,6 +552,8 @@ public final class SafeSql {
    *     .query(connection, row -> row.getLong("id"));
    * }</pre>
    *
+   * <p>Internally it delegates to {@link PreparedStatement#executeQuery}.
+   *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    */
   public <T> List<T> query(
@@ -574,13 +576,15 @@ public final class SafeSql {
   }
 
   /**
-   * Executes the encapsulated DML against {@code connection} and returns the number of affected
-   * rows.
+   * Executes the encapsulated DML (create, update, delete statements) against {@code connection}
+   * and returns the number of affected rows.
    *
    * <p>For example: <pre>{@code
    * SafeSql.of("INSERT INTO Users(id, name) VALUES({id}, '{name}')", id, name)
    *     .update(connection);
    * }</pre>
+   *
+   * <p>Internally it delegates to {@link PreparedStatement#executeUpdate}.
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    */
@@ -621,7 +625,7 @@ public final class SafeSql {
    * for repeated calls of {@link Template#with} using different parameters.
    *
    * <p>Allows callers to take advantage of the performance benefit of PreparedStatement
-   * without having to re-create the statement for each call. For example: <pre>{@code
+   * without having to re-create the statement for each call. For example in: <pre>{@code
    *   try (var connection = ...) {
    *     var queryByName = SafeSql.prepareToQuery(
    *         connection, "SELECT id FROM Users WHERE name LIKE '%{name}%'",
@@ -633,6 +637,11 @@ public final class SafeSql {
    *     }
    *   }
    * }</pre>
+   *
+   * Each time {@code queryByName.with(name)} is called, it executes the same query template
+   * against the connection, but with a different {@code name} parameter. Internally it reuses the
+   * cached PreparedStatement object and just calls {@link PreparedStatement#setObject(int, Object)}
+   * with the new set of parameters before calling {@link PreparedStatement#executeQuery}.
    *
    * <p>The returned Template is <em>not</em> thread safe.
    *
@@ -651,17 +660,23 @@ public final class SafeSql {
   }
 
   /**
-   * Returns a DML template that will reuse the same cached {@code PreparedStatement}
-   * for repeated calls of {@link Template#with} using different parameters.
+   * Returns a DML (create, update, delete) template that will reuse the same cached {@code
+   * PreparedStatement} for repeated calls of {@link Template#with} using different parameters.
    *
    * <p>Allows callers to take advantage of the performance benefit of PreparedStatement
-   * without having to re-create the statement for each call. For example: <pre>{@code
+   * without having to re-create the statement for each call. For example in: <pre>{@code
    *   try (var connection = ...) {
    *     var insertUser = SafeSql.prepareToUpdate(
    *         connection, "INSERT INTO Users(id, name) VALUES({id}, '{name}')");
    *     int totalRowsAffected = insertUser.with(1, "Tom") + insertUser.with(2, "Emma");
    *   }
    * }</pre>
+   *
+   * Each time {@code insertUser.with(...)} is called, it executes the same DML template
+   * against the connection, but with different {@code id} and {@code name} parameters.
+   * Internally it reuses the cached PreparedStatement object and just calls {@link
+   * PreparedStatement#setObject(int, Object)} with the new set of parameters before calling
+   * {@link PreparedStatement#executeUpdate}.
    *
    * <p>The returned Template is <em>not</em> thread safe.
    *
