@@ -87,15 +87,6 @@ public final class SafeQuery {
     this.query = query;
   }
 
-  /** Returns a query using a constant query. */
-  @TemplateFormatMethod
-  public static SafeQuery of(@CompileTimeConstant @TemplateString String query) {
-    checkArgument(
-        anyOf("{}").matchesNoneOf(query),
-        "curly braces are reserved for template placeholders: %s", query);
-    return new SafeQuery(query);
-  }
-
   /** Returns a query using a constant query template filled with {@code args}. */
   @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
   @TemplateFormatMethod
