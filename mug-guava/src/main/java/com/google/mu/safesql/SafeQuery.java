@@ -137,7 +137,7 @@ public final class SafeQuery {
 
   /**
    * Creates a template with the placeholders to be filled by subsequent
-   * {@link StringFormat.To#with} calls. For example:
+   * {@link StringFormat.Template#with} calls. For example:
    *
    * <pre>{@code
    *   private static final Template<SafeQuery> FIND_CASE_BY_ID = SafeQuery
@@ -181,7 +181,7 @@ public final class SafeQuery {
    * </ul>
    *
    * <p>
-   * The placeholder values passed through {@link StringFormat.To#with} are
+   * The placeholder values passed through {@link StringFormat.Template#with} are
    * checked by ErrorProne to ensure the correct number of arguments are passed,
    * and in the expected order.
    *
