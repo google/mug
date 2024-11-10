@@ -805,8 +805,8 @@ public class SafeSqlTest {
 
   @Test
   public void nonNegative_maxValue_allowed() {
-    SafeSql sql = SafeSql.nonNegativeLiteral(Long.MAX_VALUE);
-    assertThat(sql.toString()).isEqualTo(Long.toString(Long.MAX_VALUE));
+    SafeSql sql = SafeSql.nonNegativeLiteral(Integer.MAX_VALUE);
+    assertThat(sql.toString()).isEqualTo(Long.toString(Integer.MAX_VALUE));
     assertThat(sql.getParameters()).isEmpty();
   }
 
@@ -836,7 +836,7 @@ public class SafeSqlTest {
   public void nonNegative_minValue_throws() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
-        () -> SafeSql.nonNegativeLiteral(Long.MIN_VALUE));
+        () -> SafeSql.nonNegativeLiteral(Integer.MIN_VALUE));
     assertThat(thrown).hasMessageThat().contains("negative number disallowed");
   }
 

@@ -252,7 +252,7 @@ public final class StringFormat extends AbstractStringFormat {
    * <p>This way, the StringFormat API provides compile-time safety, and the SPI plugs in custom
    * interpolation logic.
    *
-   * <p>Calling {@link To#with} with unexpected number of parameters will throw {@link
+   * <p>Calling {@link Template#with} with unexpected number of parameters will throw {@link
    * IllegalArgumentException} without invoking {@code interpolator}.
    *
    * @since 7.0
@@ -309,7 +309,7 @@ public final class StringFormat extends AbstractStringFormat {
      * Interpolates with {@code fragments} of size {@code N + 1} and {@code placeholders} of size
      * {@code N}. The {@code placeholders} BiStream includes pairs of placeholder names in the form
      * of "{foo}" and their corresponding values passed through the varargs parameter of {@link
-     * To#with}.
+     * Template#with}.
      */
     T interpolate(List<String> fragments, BiStream<Substring.Match, Object> placeholders);
   }

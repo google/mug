@@ -256,18 +256,18 @@ import com.google.mu.util.stream.BiStream;
 @ThreadSafe
 public final class SafeSql {
   private static final Logger logger = Logger.getLogger(SafeSql.class.getName());
-
-  /** An empty SQL */
-  public static final SafeSql EMPTY = new SafeSql("");
   private static final Substring.RepeatingPattern TOKENS =
       Stream.of(word(), first(breakingWhitespace().negate()::matches))
           .collect(firstOccurrence())
           .repeatedly();
+  private static final StringFormat PLACEHOLDER_ELEMENT_NAME =
+      new StringFormat("{placeholder}[{index}]");
   private static final SafeSql FALSE = new SafeSql("(1 = 0)");
   private static final SafeSql TRUE = new SafeSql("(1 = 1)");
   private static final StringFormat.Template<SafeSql> PARAM = template("{param}");
-  private static final StringFormat PLACEHOLDER_ELEMENT_NAME =
-      new StringFormat("{placeholder}[{index}]");
+
+  /** An empty SQL */
+  public static final SafeSql EMPTY = new SafeSql("");
 
   private final String sql;
   private final List<?> paramValues;
@@ -406,7 +406,7 @@ public final class SafeSql {
       Builder builder = new Builder();
       class SqlWriter {
         void writePlaceholder(Substring.Match placeholder, Object value) {
-          String paramName = validate(placeholder.skip(1, 1).toString().trim());
+          String paramName = rejectQuestionMark(placeholder.skip(1, 1).toString().trim());
           if (value instanceof Iterable) {
             Iterator<?> elements = ((Iterable<?>) value).iterator();
             checkArgument(elements.hasNext(), "%s cannot be empty list", placeholder);
@@ -494,7 +494,7 @@ public final class SafeSql {
         }
       }
       placeholders
-          .peek(SafeSql::validatePlaceholder)
+          .peek(SafeSql::checkMisuse)
           .forEachOrdered(new SqlWriter()::writePlaceholder);
       builder.appendSql(texts.pop());
       checkState(texts.isEmpty());
@@ -534,7 +534,7 @@ public final class SafeSql {
    * <p>Empty SafeSql elements are ignored and not joined.
    */
   public static Collector<SafeSql, ?, SafeSql> joining(@CompileTimeConstant String delimiter) {
-    validate(delimiter);
+    rejectQuestionMark(delimiter);
     return skippingEmpty(
         Collector.of(
             Builder::new,
@@ -557,17 +557,17 @@ public final class SafeSql {
   public <T> List<T> query(
       Connection connection, SqlFunction<? super ResultSet, ? extends T> rowMapper) {
     checkNotNull(rowMapper);
-    try {
-      if (paramValues.isEmpty()) {
-        try (Statement stmt = connection.createStatement();
-            ResultSet resultSet = stmt.executeQuery(sql)) {
-          return mapResults(resultSet, rowMapper);
-        }
-      }
-      try (PreparedStatement stmt = prepareStatement(connection);
-          ResultSet resultSet = stmt.executeQuery()) {
+    if (paramValues.isEmpty()) {
+      try (Statement stmt = connection.createStatement();
+          ResultSet resultSet = stmt.executeQuery(sql)) {
         return mapResults(resultSet, rowMapper);
+      } catch (SQLException e) {
+        throw new UncheckedSqlException(e);
       }
+    }
+    try (PreparedStatement stmt = prepareStatement(connection);
+        ResultSet resultSet = stmt.executeQuery()) {
+      return mapResults(resultSet, rowMapper);
     } catch (SQLException e) {
       throw new UncheckedSqlException(e);
     }
@@ -585,15 +585,15 @@ public final class SafeSql {
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    */
   public int update(Connection connection) {
-    try {
-      if (paramValues.isEmpty()) {
-        try (Statement stmt = connection.createStatement()) {
-          return stmt.executeUpdate(sql);
-        }
+    if (paramValues.isEmpty()) {
+      try (Statement stmt = connection.createStatement()) {
+        return stmt.executeUpdate(sql);
+      } catch (SQLException e) {
+        throw new UncheckedSqlException(e);
       }
-      try (PreparedStatement stmt = prepareStatement(connection)) {
-        return stmt.executeUpdate();
-      }
+    }
+    try (PreparedStatement stmt = prepareStatement(connection)) {
+      return stmt.executeUpdate();
     } catch (SQLException e) {
       throw new UncheckedSqlException(e);
     }
@@ -610,7 +610,7 @@ public final class SafeSql {
   @MustBeClosed
   public PreparedStatement prepareStatement(Connection connection) {
     try {
-      return setArgs(connection.prepareStatement(sql));
+      return setParameters(connection.prepareStatement(sql));
     } catch (SQLException e) {
       throw new UncheckedSqlException(e);
     }
@@ -709,32 +709,14 @@ public final class SafeSql {
     return new SafeSql('(' + sql + ')', paramValues);
   }
 
-  private <S extends PreparedStatement> S setArgs(S statement) throws SQLException {
+  private PreparedStatement setParameters(PreparedStatement statement) throws SQLException {
     for (int i = 0; i < paramValues.size(); i++) {
       statement.setObject(i + 1, paramValues.get(i));
     }
     return statement;
   }
 
-  private static String validate(String sql) {
-    checkArgument(sql.indexOf('?') < 0, "please use named {placeholder} instead of '?'");
-    return sql;
-  }
-
-  private static void checkMissingPlaceholderQuotes(Substring.Match placeholder) {
-    rejectHalfQuotes(placeholder, "'");
-    rejectHalfQuotes(placeholder, "`");
-    rejectHalfQuotes(placeholder, "\"");
-  }
-
-  private static void rejectHalfQuotes(Substring.Match placeholder, String quote) {
-    checkArgument(
-        !placeholder.isPrecededBy(quote), "half quoted placeholder: %s%s", quote, placeholder);
-    checkArgument(
-        !placeholder.isFollowedBy(quote), "half quoted placeholder: %s%s", placeholder, quote);
-  }
-
-  private static void validatePlaceholder(Substring.Match placeholder, Object value) {
+  private static void checkMisuse(Substring.Match placeholder, Object value) {
     SafeQuery.validatePlaceholder(placeholder);
     checkArgument(
         !(value instanceof SafeQuery), "%s: don't mix in SafeQuery with SafeSql.", placeholder);
@@ -742,6 +724,11 @@ public final class SafeSql {
         !(value instanceof Optional),
         "%s: optional parameter not supported. Consider using SafeSql.optionally() or SafeSql.when()?",
         placeholder);
+  }
+
+  private static String rejectQuestionMark(String sql) {
+    checkArgument(sql.indexOf('?') < 0, "please use named {placeholder} instead of '?'");
+    return sql;
   }
 
   private static void validateSubqueryPlaceholder(Substring.Match placeholder) {
@@ -755,6 +742,19 @@ public final class SafeSql {
         !placeholder.isImmediatelyBetween("`", "`"),
         "SafeSql should not be backtick quoted: `%s`", placeholder);
     checkMissingPlaceholderQuotes(placeholder);
+  }
+
+  private static void checkMissingPlaceholderQuotes(Substring.Match placeholder) {
+    rejectHalfQuotes(placeholder, "'");
+    rejectHalfQuotes(placeholder, "`");
+    rejectHalfQuotes(placeholder, "\"");
+  }
+
+  private static void rejectHalfQuotes(Substring.Match placeholder, String quote) {
+    checkArgument(
+        !placeholder.isPrecededBy(quote), "half quoted placeholder: %s%s", quote, placeholder);
+    checkArgument(
+        !placeholder.isFollowedBy(quote), "half quoted placeholder: %s%s", placeholder, quote);
   }
 
   private static String mustBeIdentifier(CharSequence name, Object element) {
@@ -818,7 +818,7 @@ public final class SafeSql {
             statement = connection.prepareStatement(sql.toString());
           }
           cachedSql = sql.toString();
-          return action.apply(sql.setArgs(statement));
+          return action.apply(sql.setParameters(statement));
         } catch (SQLException e) {
           throw new UncheckedSqlException(e);
         }
@@ -845,7 +845,7 @@ public final class SafeSql {
     private final List<Object> paramValues = new ArrayList<>();
 
     Builder appendSql(String snippet) {
-      queryText.append(validate(snippet));
+      queryText.append(rejectQuestionMark(snippet));
       return this;
     }
 
