@@ -625,7 +625,7 @@ public final class SafeSql {
    * for repeated calls of {@link Template#with} using different parameters.
    *
    * <p>Allows callers to take advantage of the performance benefit of PreparedStatement
-   * without having to re-create the statement for each call. For example: <pre>{@code
+   * without having to re-create the statement for each call. For example in: <pre>{@code
    *   try (var connection = ...) {
    *     var queryByName = SafeSql.prepareToQuery(
    *         connection, "SELECT id FROM Users WHERE name LIKE '%{name}%'",
@@ -637,6 +637,11 @@ public final class SafeSql {
    *     }
    *   }
    * }</pre>
+   *
+   * Each time {@code queryByName.with(name)} is called, it executes the same query template
+   * against the connection, but with a different {@code name} parameter. Internally it reuses the
+   * same PreparedStatement object and just calls {@link PreparedStatement#setObject(int, Object)}
+   * with the new set of parameters before calling {@link PreparedStatement#executeQuery}.
    *
    * <p>The returned Template is <em>not</em> thread safe.
    *
@@ -659,13 +664,19 @@ public final class SafeSql {
    * PreparedStatement} for repeated calls of {@link Template#with} using different parameters.
    *
    * <p>Allows callers to take advantage of the performance benefit of PreparedStatement
-   * without having to re-create the statement for each call. For example: <pre>{@code
+   * without having to re-create the statement for each call. For example in: <pre>{@code
    *   try (var connection = ...) {
    *     var insertUser = SafeSql.prepareToUpdate(
    *         connection, "INSERT INTO Users(id, name) VALUES({id}, '{name}')");
    *     int totalRowsAffected = insertUser.with(1, "Tom") + insertUser.with(2, "Emma");
    *   }
    * }</pre>
+   *
+   * Each time {@code insertUser.with(...)} is called, it executes the same DML template
+   * against the connection, but with different {@code id} and {@code name} parameters.
+   * Internally it reuses the same PreparedStatement object and just calls {@link
+   * PreparedStatement#setObject(int, Object)} with the new set of parameters before calling
+   * {@link PreparedStatement#executeUpdate}.
    *
    * <p>The returned Template is <em>not</em> thread safe.
    *
