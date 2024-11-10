@@ -640,7 +640,7 @@ public final class SafeSql {
    *
    * Each time {@code queryByName.with(name)} is called, it executes the same query template
    * against the connection, but with a different {@code name} parameter. Internally it reuses the
-   * same PreparedStatement object and just calls {@link PreparedStatement#setObject(int, Object)}
+   * cached PreparedStatement object and just calls {@link PreparedStatement#setObject(int, Object)}
    * with the new set of parameters before calling {@link PreparedStatement#executeQuery}.
    *
    * <p>The returned Template is <em>not</em> thread safe.
@@ -674,7 +674,7 @@ public final class SafeSql {
    *
    * Each time {@code insertUser.with(...)} is called, it executes the same DML template
    * against the connection, but with different {@code id} and {@code name} parameters.
-   * Internally it reuses the same PreparedStatement object and just calls {@link
+   * Internally it reuses the cached PreparedStatement object and just calls {@link
    * PreparedStatement#setObject(int, Object)} with the new set of parameters before calling
    * {@link PreparedStatement#executeUpdate}.
    *
