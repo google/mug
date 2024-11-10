@@ -557,17 +557,17 @@ public final class SafeSql {
   public <T> List<T> query(
       Connection connection, SqlFunction<? super ResultSet, ? extends T> rowMapper) {
     checkNotNull(rowMapper);
-    try {
-      if (paramValues.isEmpty()) {
-        try (Statement stmt = connection.createStatement();
-            ResultSet resultSet = stmt.executeQuery(sql)) {
-          return mapResults(resultSet, rowMapper);
-        }
-      }
-      try (PreparedStatement stmt = prepareStatement(connection);
-          ResultSet resultSet = stmt.executeQuery()) {
+    if (paramValues.isEmpty()) {
+      try (Statement stmt = connection.createStatement();
+          ResultSet resultSet = stmt.executeQuery(sql)) {
         return mapResults(resultSet, rowMapper);
+      } catch (SQLException e) {
+        throw new UncheckedSqlException(e);
       }
+    }
+    try (PreparedStatement stmt = prepareStatement(connection);
+        ResultSet resultSet = stmt.executeQuery()) {
+      return mapResults(resultSet, rowMapper);
     } catch (SQLException e) {
       throw new UncheckedSqlException(e);
     }
@@ -585,15 +585,15 @@ public final class SafeSql {
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    */
   public int update(Connection connection) {
-    try {
-      if (paramValues.isEmpty()) {
-        try (Statement stmt = connection.createStatement()) {
-          return stmt.executeUpdate(sql);
-        }
+    if (paramValues.isEmpty()) {
+      try (Statement stmt = connection.createStatement()) {
+        return stmt.executeUpdate(sql);
+      } catch (SQLException e) {
+        throw new UncheckedSqlException(e);
       }
-      try (PreparedStatement stmt = prepareStatement(connection)) {
-        return stmt.executeUpdate();
-      }
+    }
+    try (PreparedStatement stmt = prepareStatement(connection)) {
+      return stmt.executeUpdate();
     } catch (SQLException e) {
       throw new UncheckedSqlException(e);
     }
