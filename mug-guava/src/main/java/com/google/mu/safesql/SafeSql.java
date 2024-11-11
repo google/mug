@@ -44,7 +44,8 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Logger;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -289,7 +290,6 @@ import com.google.mu.util.stream.BiStream;
 @ThreadSafe
 @CheckReturnValue
 public final class SafeSql {
-  private static final Logger logger = Logger.getLogger(SafeSql.class.getName());
   private static final Substring.RepeatingPattern TOKENS =
       Stream.of(word(), first(breakingWhitespace().negate()::matches))
           .collect(firstOccurrence())
@@ -861,23 +861,20 @@ public final class SafeSql {
     checkNotNull(connection);
     Template<SafeSql> sqlTemplate = template(template);
     return new Template<T>() {
-      private PreparedStatement statement;
-      private String cachedSql;
+      private final ConcurrentMap<String, PreparedStatement> cached = new ConcurrentHashMap<>();
 
       @SuppressWarnings("StringFormatArgsCheck")  // The returned is also a Template<>
       @Override public T with(Object... params) {
         SafeSql sql = sqlTemplate.with(params);
-        try {
-          if (statement == null) {
-            statement = connection.prepareStatement(sql.toString());
-          } else if (!sql.toString().equals(cachedSql)) {
-            logger.warning(
-                "cached PreparedStatement invalided due to sql change from:\n  "
-                    + cachedSql + "\nto:\n  " + sql);
-            statement = connection.prepareStatement(sql.toString());
+        PreparedStatement stmt = cached.computeIfAbsent(sql.toString(), s -> {
+          try {
+            return connection.prepareStatement(s);
+          } catch (SQLException e) {
+            throw new UncheckedSqlException(e);
           }
-          cachedSql = sql.toString();
-          return action.apply(sql.setParameters(statement));
+        });
+        try {
+          return action.apply(sql.setParameters(stmt));
         } catch (SQLException e) {
           throw new UncheckedSqlException(e);
         }
