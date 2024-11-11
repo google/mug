@@ -102,9 +102,11 @@ import com.google.mu.util.stream.BiStream;
  * <dl><dt><STRONG>Compile-time Protection</STRONG></dt></dl>
  *
  * <p>The templating engine uses compile-time checks to guard against accidental use of
- * untrusted strings in the SQL, ensuring that they can only be sent as parameters:
- * try to use a dynamically generated String as the SQL template and you'll get a compilation error.
- * In addition, the same set of compile-time guardrails from the {@link StringFormat} class
+ * untrusted strings in the SQL, ensuring that they can only be sent as parameters of
+ * PreparedStatement: try to use a dynamically generated String as the SQL template and
+ * you'll get a compilation error.
+ *
+ * <p>In addition, the same set of compile-time guardrails from the {@link StringFormat} class
  * are in effect to make sure that you don't pass {@code lastName} in the place of
  * {@code first_name}, for example.
  *
@@ -127,7 +129,7 @@ import com.google.mu.util.stream.BiStream;
  *             <path>
  *               <groupId>com.google.mug</groupId>
  *               <artifactId>mug-errorprone</artifactId>
- *               <version>8.1</version>
+ *               <version>8.2</version>
  *             </path>
  *           </annotationProcessorPaths>
  *         </configuration>
