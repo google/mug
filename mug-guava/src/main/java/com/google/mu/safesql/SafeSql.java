@@ -183,7 +183,7 @@ import com.google.mu.util.stream.BiStream;
  * <dl><dt><STRONG>Parameterize by Column Names or Table Names</STRONG></dt></dl>
  *
  * Sometimes you may wish to parameterize by table names, column names etc.
- * for which JDBC has no support.
+ * for which JDBC parameterization has no support.
  *
  * <p>If the identifiers are compile-time string literals, you can wrap them using
  * {@code SafeSql.of(COLUMN_NAME)}, which can then be composed as subqueries.
@@ -191,9 +191,9 @@ import com.google.mu.util.stream.BiStream;
  * request field?
  *
  * <p>Passing the string directly as a template parameter will only generate the JDBC
- * <code>'?'</code> parameter in its place, which won't work (JDBC can't parameterize identifiers);
- * {@code SafeSql.of(theString)} will fail to compile because such strings are inherently
- * dynamic and untrusted.
+ * <code>'?'</code> parameter in its place, which won't work (PreparedStatement can't parameterize
+ * identifiers); {@code SafeSql.of(theString)} will fail to compile because such strings are
+ * inherently dynamic and untrusted.
  *
  * <p>The safe way to parameterize dynamic strings as <em>identifiers</em> is to backtick-quote
  * their placeholders in the SQL template. For example: <pre>{@code
@@ -213,7 +213,7 @@ import com.google.mu.util.stream.BiStream;
  *
  * <dl><dt><STRONG>The {@code LIKE} Operator</STRONG></dt></dl>
  *
- * <p>Note that with straight JDBC, if you try to use the LIKE operator to match a user-provided
+ * <p>Note that with straight JDBC API, if you try to use the LIKE operator to match a user-provided
  * substring, i.e. using {@code LIKE '%foo%'} to search for "foo", this seemingly intuitive
  * syntax is actually incorect: <pre>{@code
  *   String searchTerm = ...;
@@ -222,7 +222,7 @@ import com.google.mu.util.stream.BiStream;
  *   statement.setString(1, searchTerm);
  * }</pre>
  *
- * JDBC considers the quoted question mark as a literal so the {@code setString()}
+ * JDBC PreparedStatement considers the quoted question mark as a literal so the {@code setString()}
  * call will fail. You'll need to use the following workaround: <pre>{@code
  *   PreparedStatement statement =
  *       connection.prepareStatement("SELECT id FROM Users WHERE firstName LIKE ?");
