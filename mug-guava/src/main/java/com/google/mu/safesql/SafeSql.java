@@ -44,13 +44,16 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Logger;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.errorprone.annotations.MustBeClosed;
 import com.google.errorprone.annotations.ThreadSafe;
@@ -99,9 +102,11 @@ import com.google.mu.util.stream.BiStream;
  * <dl><dt><STRONG>Compile-time Protection</STRONG></dt></dl>
  *
  * <p>The templating engine uses compile-time checks to guard against accidental use of
- * untrusted strings in the SQL, ensuring that they can only be sent as parameters:
- * try to use a dynamically generated String as the SQL template and you'll get a compilation error.
- * In addition, the same set of compile-time guardrails from the {@link StringFormat} class
+ * untrusted strings in the SQL, ensuring that they can only be sent as parameters of
+ * PreparedStatement: try to use a dynamically generated String as the SQL template and
+ * you'll get a compilation error.
+ *
+ * <p>In addition, the same set of compile-time guardrails from the {@link StringFormat} class
  * are in effect to make sure that you don't pass {@code lastName} in the place of
  * {@code first_name}, for example.
  *
@@ -124,7 +129,7 @@ import com.google.mu.util.stream.BiStream;
  *             <path>
  *               <groupId>com.google.mug</groupId>
  *               <artifactId>mug-errorprone</artifactId>
- *               <version>8.1</version>
+ *               <version>8.2</version>
  *             </path>
  *           </annotationProcessorPaths>
  *         </configuration>
@@ -180,7 +185,7 @@ import com.google.mu.util.stream.BiStream;
  * <dl><dt><STRONG>Parameterize by Column Names or Table Names</STRONG></dt></dl>
  *
  * Sometimes you may wish to parameterize by table names, column names etc.
- * for which JDBC has no support.
+ * for which JDBC parameterization has no support.
  *
  * <p>If the identifiers are compile-time string literals, you can wrap them using
  * {@code SafeSql.of(COLUMN_NAME)}, which can then be composed as subqueries.
@@ -188,9 +193,9 @@ import com.google.mu.util.stream.BiStream;
  * request field?
  *
  * <p>Passing the string directly as a template parameter will only generate the JDBC
- * <code>'?'</code> parameter in its place, which won't work (JDBC can't parameterize identifiers);
- * {@code SafeSql.of(theString)} will fail to compile because such strings are inherently
- * dynamic and untrusted.
+ * <code>'?'</code> parameter in its place, which won't work (PreparedStatement can't parameterize
+ * identifiers); {@code SafeSql.of(theString)} will fail to compile because such strings are
+ * inherently dynamic and untrusted.
  *
  * <p>The safe way to parameterize dynamic strings as <em>identifiers</em> is to backtick-quote
  * their placeholders in the SQL template. For example: <pre>{@code
@@ -210,7 +215,7 @@ import com.google.mu.util.stream.BiStream;
  *
  * <dl><dt><STRONG>The {@code LIKE} Operator</STRONG></dt></dl>
  *
- * <p>Note that with straight JDBC, if you try to use the LIKE operator to match a user-provided
+ * <p>Note that with straight JDBC API, if you try to use the LIKE operator to match a user-provided
  * substring, i.e. using {@code LIKE '%foo%'} to search for "foo", this seemingly intuitive
  * syntax is actually incorect: <pre>{@code
  *   String searchTerm = ...;
@@ -219,7 +224,7 @@ import com.google.mu.util.stream.BiStream;
  *   statement.setString(1, searchTerm);
  * }</pre>
  *
- * JDBC considers the quoted question mark as a literal so the {@code setString()}
+ * JDBC PreparedStatement considers the quoted question mark as a literal so the {@code setString()}
  * call will fail. You'll need to use the following workaround: <pre>{@code
  *   PreparedStatement statement =
  *       connection.prepareStatement("SELECT id FROM Users WHERE firstName LIKE ?");
@@ -283,10 +288,10 @@ import com.google.mu.util.stream.BiStream;
  *
  * @since 8.2
  */
-@ThreadSafe
 @RequiresGuava
+@ThreadSafe
+@CheckReturnValue
 public final class SafeSql {
-  private static final Logger logger = Logger.getLogger(SafeSql.class.getName());
   private static final Substring.RepeatingPattern TOKENS =
       Stream.of(word(), first(breakingWhitespace().negate()::matches))
           .collect(firstOccurrence())
@@ -621,6 +626,7 @@ public final class SafeSql {
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    */
+  @CanIgnoreReturnValue
   public int update(Connection connection) {
     if (paramValues.isEmpty()) {
       try (Statement stmt = connection.createStatement()) {
@@ -780,6 +786,7 @@ public final class SafeSql {
         placeholder);
   }
 
+  @CanIgnoreReturnValue
   private static String rejectQuestionMark(String sql) {
     checkArgument(sql.indexOf('?') < 0, "please use named {placeholder} instead of '?'");
     return sql;
@@ -856,23 +863,20 @@ public final class SafeSql {
     checkNotNull(connection);
     Template<SafeSql> sqlTemplate = template(template);
     return new Template<T>() {
-      private PreparedStatement statement;
-      private String cachedSql;
+      private final ConcurrentMap<String, PreparedStatement> cached = new ConcurrentHashMap<>();
 
       @SuppressWarnings("StringFormatArgsCheck")  // The returned is also a Template<>
       @Override public T with(Object... params) {
         SafeSql sql = sqlTemplate.with(params);
-        try {
-          if (statement == null) {
-            statement = connection.prepareStatement(sql.toString());
-          } else if (!sql.toString().equals(cachedSql)) {
-            logger.warning(
-                "cached PreparedStatement invalided due to sql change from:\n  "
-                    + cachedSql + "\nto:\n  " + sql);
-            statement = connection.prepareStatement(sql.toString());
+        PreparedStatement stmt = cached.computeIfAbsent(sql.toString(), s -> {
+          try {
+            return connection.prepareStatement(s);
+          } catch (SQLException e) {
+            throw new UncheckedSqlException(e);
           }
-          cachedSql = sql.toString();
-          return action.apply(sql.setParameters(statement));
+        });
+        try {
+          return action.apply(sql.setParameters(stmt));
         } catch (SQLException e) {
           throw new UncheckedSqlException(e);
         }
@@ -898,23 +902,27 @@ public final class SafeSql {
     private final StringBuilder queryText = new StringBuilder();
     private final List<Object> paramValues = new ArrayList<>();
 
+    @CanIgnoreReturnValue
     Builder appendSql(String snippet) {
       queryText.append(rejectQuestionMark(snippet));
       return this;
     }
 
+    @CanIgnoreReturnValue
     Builder addParameter(String name, Object value) {
       queryText.append("?");
       paramValues.add(value);
       return this;
     }
 
+    @CanIgnoreReturnValue
     Builder addSubQuery(SafeSql subQuery) {
       queryText.append(subQuery.sql);
       paramValues.addAll(subQuery.getParameters());
       return this;
     }
 
+    @CanIgnoreReturnValue
     Builder delimit(String delim) {
       if (queryText.length() > 0) {
         queryText.append(delim);

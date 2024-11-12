@@ -29,6 +29,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
+import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.errorprone.annotations.Immutable;
 import com.google.mu.annotations.RequiresGuava;
 
@@ -56,8 +57,9 @@ import com.google.mu.annotations.RequiresGuava;
  * @param <C> the domain type
  * @since 8.0
  */
-@Immutable(containerOf = "C")
 @RequiresGuava
+@Immutable(containerOf = "C")
+@CheckReturnValue
 public final class InsertionPoint<C extends Comparable<C>> implements Comparable<InsertionPoint<C>> {
   @SuppressWarnings("unchecked") // Curiously recursive generics doesn't play nicely with wildcard.
   private static final Comparator<Comparable<?>> NULL_FIRST = (Comparator<Comparable<?>>) Comparator
