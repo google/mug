@@ -852,7 +852,7 @@ public final class SafeSql {
   }
 
   private static String escapePercent(String s) {
-    return first(c -> c == '\\' || c == '%').repeatedly().replaceAllFrom(s, c -> "\\" + c);
+    return first(c -> c == '\\' || c == '%' || c == '_').repeatedly().replaceAllFrom(s, c -> "\\" + c);
   }
 
   private static <T> Template<T> prepare(
