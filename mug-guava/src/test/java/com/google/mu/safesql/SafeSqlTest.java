@@ -194,7 +194,7 @@ public class SafeSqlTest {
   public void likeWithEscapeNotSuppoted_surroundedByPercentSign() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
-        () -> SafeSql.of("select * from tbl where name like '%{s}%' ESCAPE '\'", "foo"));
+        () -> SafeSql.of("select * from tbl where name like '%{s}%' ESCAPE  '\'", "foo"));
     assertThat(thrown).hasMessageThat().contains("ESCAPE");
   }
 
@@ -202,7 +202,7 @@ public class SafeSqlTest {
   public void likeWithEscapeNotSuppoted_precededByPercentSign() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
-        () -> SafeSql.of("select * from tbl where name like '%{s}' ESCAPE '\'", "foo"));
+        () -> SafeSql.of("select * from tbl where name like '%{s}' \n ESCAPE '\'", "foo"));
     assertThat(thrown).hasMessageThat().contains("ESCAPE");
   }
 
