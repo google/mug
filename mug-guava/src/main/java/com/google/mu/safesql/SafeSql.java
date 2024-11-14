@@ -626,8 +626,7 @@ public final class SafeSql {
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    */
-  @CanIgnoreReturnValue
-  public int update(Connection connection) {
+  @CanIgnoreReturnValue public int update(Connection connection) {
     if (paramValues.isEmpty()) {
       try (Statement stmt = connection.createStatement()) {
         return stmt.executeUpdate(sql);
@@ -786,8 +785,7 @@ public final class SafeSql {
         placeholder);
   }
 
-  @CanIgnoreReturnValue
-  private static String rejectQuestionMark(String sql) {
+  @CanIgnoreReturnValue private static String rejectQuestionMark(String sql) {
     checkArgument(sql.indexOf('?') < 0, "please use named {placeholder} instead of '?'");
     return sql;
   }
@@ -902,28 +900,24 @@ public final class SafeSql {
     private final StringBuilder queryText = new StringBuilder();
     private final List<Object> paramValues = new ArrayList<>();
 
-    @CanIgnoreReturnValue
-    Builder appendSql(String snippet) {
+    @CanIgnoreReturnValue Builder appendSql(String snippet) {
       queryText.append(rejectQuestionMark(snippet));
       return this;
     }
 
-    @CanIgnoreReturnValue
-    Builder addParameter(String name, Object value) {
+    @CanIgnoreReturnValue Builder addParameter(String name, Object value) {
       queryText.append("?");
       paramValues.add(value);
       return this;
     }
 
-    @CanIgnoreReturnValue
-    Builder addSubQuery(SafeSql subQuery) {
+    @CanIgnoreReturnValue Builder addSubQuery(SafeSql subQuery) {
       queryText.append(subQuery.sql);
       paramValues.addAll(subQuery.getParameters());
       return this;
     }
 
-    @CanIgnoreReturnValue
-    Builder delimit(String delim) {
+    @CanIgnoreReturnValue Builder delimit(String delim) {
       if (queryText.length() > 0) {
         queryText.append(delim);
       }

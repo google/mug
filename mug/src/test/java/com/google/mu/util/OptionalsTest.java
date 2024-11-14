@@ -5,6 +5,7 @@ import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.Optionals.ifPresent;
 import static com.google.mu.util.Optionals.optional;
 import static com.google.mu.util.Optionals.optionally;
+import static java.util.Arrays.asList;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -71,6 +72,14 @@ public class OptionalsTest {
 
   @Test public void asSet_notEmpty() {
     assertThat(Optionals.asSet(Optional.of(123))).containsExactly(123);
+  }
+
+  @Test public void nonEmpty_emptyCollection() {
+    assertThat(Optionals.nonEmpty(asList())).isEmpty();
+  }
+
+  @Test public void nonEmpty_nonEmptyCollection() {
+    assertThat(Optionals.nonEmpty(asList(1))).hasValue(asList(1));
   }
 
   @Test public void ifPresent_or_firstIsAbsent_secondSupplierIsPresent() {

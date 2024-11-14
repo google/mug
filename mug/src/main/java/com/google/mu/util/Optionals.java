@@ -16,6 +16,7 @@ package com.google.mu.util;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.OptionalDouble;
@@ -92,6 +93,16 @@ public final class Optionals {
    */
   public static <T> Set<T> asSet(Optional<? extends T> optional) {
     return optional.isPresent() ? Collections.singleton(optional.get()) : Collections.emptySet();
+  }
+
+  /**
+   * Returns {@code Optional.empty()} if {@code collection} is empty;
+   * otherwise wraps it with {@link Optional#of}.
+   *
+   * @since 8.3
+   */
+  public static <C extends Collection<?>> Optional<C> nonEmpty(C collection) {
+    return collection.isEmpty() ? Optional.empty() : Optional.of(collection);
   }
 
   /**
