@@ -486,13 +486,16 @@ public final class SafeSql {
             builder.appendSql("`" + identifier + "`");
           } else if (lookbehind("LIKE '%", placeholder)
               && appendBeforeQuotedPlaceholder("'%", placeholder, "%'")) {
+            rejectEscapeAfter(placeholder);
             builder.addParameter(
                 paramName, "%" + escapePercent(mustBeString(placeholder, value)) + "%");
           } else if (lookbehind("LIKE '%", placeholder)
               && appendBeforeQuotedPlaceholder("'%", placeholder, "'")) {
+            rejectEscapeAfter(placeholder);
             builder.addParameter(paramName, "%" + escapePercent(mustBeString(placeholder, value)));
           } else if (lookbehind("LIKE '", placeholder)
               && appendBeforeQuotedPlaceholder("'", placeholder, "%'")) {
+            rejectEscapeAfter(placeholder);
             builder.addParameter(paramName, escapePercent(mustBeString(placeholder, value)) + "%");
           } else if (appendBeforeQuotedPlaceholder("'", placeholder, "'")) {
             builder.addParameter(paramName, mustBeString("'" + placeholder + "'", value));
@@ -512,15 +515,25 @@ public final class SafeSql {
           return quoted;
         }
 
+        private void rejectEscapeAfter(Substring.Match placeholder) {
+          checkArgument(
+              !lookahead(placeholder, "%' ESCAPE") && !lookahead(placeholder, "' ESCAPE"),
+              "ESCAPE not supported after %s. Just leave the placeholder alone and SafeSql will auto escape.",
+              placeholder);
+        }
+
         private boolean lookaround(
             String leftPattern, Substring.Match placeholder, String rightPattern) {
+          return lookahead(placeholder, rightPattern) && lookbehind(leftPattern, placeholder);
+        }
+
+        private boolean lookahead(Substring.Match placeholder, String rightPattern) {
           ImmutableList<String> lookahead = TOKENS.from(rightPattern).collect(toImmutableList());
           int closingBraceIndex = placeholder.index() + placeholder.length() - 1;
           int nextTokenIndex = charIndexToTokenIndex.get(closingBraceIndex) + 1;
           return BiStream.zip(lookahead, allTokens.subList(nextTokenIndex, allTokens.size()))
                   .filter((s, t) -> s.equalsIgnoreCase(t.toString()))
-                  .count() == lookahead.size()
-              && lookbehind(leftPattern, placeholder);
+                  .count() == lookahead.size();
         }
 
         private boolean lookbehind(String leftPattern, Substring.Match placeholder) {
