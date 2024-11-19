@@ -865,6 +865,18 @@ public class SafeSqlTest {
   }
 
   @Test
+  public void orElse_empty_returnsFallbackQuery() {
+    assertThat(SafeSql.EMPTY.orElse("WHERE id = {id}", 1))
+        .isEqualTo(SafeSql.of("WHERE id = {id}", 1));
+  }
+
+  @Test
+  public void orElse_nonEmpty_returnsTheMainlineQuery() {
+    assertThat(SafeSql.of("select *").orElse("WHERE id = {id}", 1))
+        .isEqualTo(SafeSql.of("select *"));
+  }
+
+  @Test
   public void testEquals() {
     new EqualsTester()
         .addEqualityGroup(

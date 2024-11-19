@@ -29,6 +29,7 @@ import static java.util.stream.Collectors.mapping;
 import java.text.DecimalFormat;
 import java.util.Iterator;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -252,6 +253,56 @@ public final class SafeQuery {
   public static Collector<SafeQuery, ?, SafeQuery> joining(@CompileTimeConstant String delim) {
     return collectingAndThen(
         skippingEmpty(mapping(SafeQuery::toString, Collectors.joining(checkNotNull(delim)))), SafeQuery::new);
+  }
+
+  /**
+   * If {@code this} query is empty (likely from a call to {@link #optionally} or {@link #when}),
+   * returns the SafeQuery produced from the {@code fallback} template and {@code args}.
+   *
+   * <p>Using this method, you can create a chain of optional queries like:
+   *
+   * <pre>{@code
+   * import static c.g.common.labs.base.Optionals.nonEmpty;
+   *
+   * SafeQuery.of(
+   *     """
+   *     CREATE TABLE ...
+   *     {cluster_by}
+   *     """,
+   *     optionally("CLUSTER BY (`{cluster_columns}`)", nonEmpty(clusterColumns))
+   *         .orElse("-- no cluster"));
+   * }</pre>
+   *
+   * @since 8.3
+   */
+  @TemplateFormatMethod
+  @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
+  public SafeQuery orElse(@TemplateString @CompileTimeConstant String fallback, Object... args) {
+    checkNotNull(fallback);
+    checkNotNull(args);
+    return orElse(() -> of(fallback, args));
+  }
+
+  /**
+   * If {@code this} query is empty (likely from a call to {@link #optionally} or {@link #when}),
+   * returns the {@code fallback} query.
+   *
+   * @since 8.3
+   */
+  public SafeQuery orElse(SafeQuery fallback) {
+    checkNotNull(fallback);
+    return orElse(() -> fallback);
+  }
+
+  /**
+   * If {@code this} query is empty (likely from a call to {@link #optionally} or {@link #when}),
+   * returns the query produced by the {@code fallback} supplier.
+   *
+   * @since 8.3
+   */
+  public SafeQuery orElse(Supplier<SafeQuery> fallback) {
+    checkNotNull(fallback);
+    return query.isEmpty() ? fallback.get() : this;
   }
 
   /** Returns the encapsulated SQL query. */

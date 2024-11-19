@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -592,6 +593,56 @@ public final class SafeSql {
             (b, q) -> b.delimit(delimiter).addSubQuery(q),
             (b1, b2) -> b1.delimit(delimiter).addSubQuery(b2.build()),
             Builder::build));
+  }
+
+  /**
+   * If {@code this} query is empty (likely from a call to {@link #optionally} or {@link #when}),
+   * returns the SafeSql produced from the {@code fallback} template and {@code args}.
+   *
+   * <p>Using this method, you can create a chain of optional queries like:
+   *
+   * <pre>{@code
+   * import static ....Optionals.nonEmpty;
+   *
+   * SafeSql.of(
+   *     """
+   *     CREATE TABLE ...
+   *     {cluster_by}
+   *     """,
+   *     optionally("CLUSTER BY (`{cluster_columns}`)", nonEmpty(clusterColumns))
+   *         .orElse("-- no cluster"));
+   * }</pre>
+   *
+   * @since 8.3
+   */
+  @TemplateFormatMethod
+  @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
+  public SafeSql orElse(@TemplateString @CompileTimeConstant String fallback, Object... args) {
+    checkNotNull(fallback);
+    checkNotNull(args);
+    return orElse(() -> of(fallback, args));
+  }
+
+  /**
+   * If {@code this} query is empty (likely from a call to {@link #optionally} or {@link #when}),
+   * returns the {@code fallback} query.
+   *
+   * @since 8.3
+   */
+  public SafeSql orElse(SafeSql fallback) {
+    checkNotNull(fallback);
+    return orElse(() -> fallback);
+  }
+
+  /**
+   * If {@code this} query is empty (likely from a call to {@link #optionally} or {@link #when}),
+   * returns the query produced by the {@code fallback} supplier.
+   *
+   * @since 8.3
+   */
+  public SafeSql orElse(Supplier<SafeSql> fallback) {
+    checkNotNull(fallback);
+    return sql.isEmpty() ? fallback.get() : this;
   }
 
   /**
