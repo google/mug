@@ -29,13 +29,13 @@ public class StringFormatTest {
   @Test
   public void parse_noPlaceholder() {
     StringFormat format = new StringFormat("this is literal");
-    assertThat(format.parse("this is literal").get()).isEmpty();
+    assertThat(format.parseAsList("this is literal").get()).isEmpty();
   }
 
   @Test
   public void parse_emptyCurlyBrace_doesNotCountAsPlaceholder() {
     StringFormat format = new StringFormat("curly brace: {}");
-    assertThat(format.parse("curly brace: {}").get()).isEmpty();
+    assertThat(format.parseAsList("curly brace: {}").get()).isEmpty();
   }
 
   @Test
@@ -48,7 +48,7 @@ public class StringFormatTest {
   @Test
   public void parse_onlyEllipsis() {
     StringFormat format = new StringFormat("{...}");
-    assertThat(format.parse("Hello Tom!")).hasValue(ImmutableList.of());
+    assertThat(format.parseAsList("Hello Tom!")).hasValue(ImmutableList.of());
   }
 
   @Test
@@ -104,14 +104,14 @@ public class StringFormatTest {
   @Test
   public void parse_singlePlaceholder_withEllipsis() {
     StringFormat format = new StringFormat("Hello {...}!");
-    assertThat(format.parse("Hello Tom!")).hasValue(ImmutableList.of());
+    assertThat(format.parseAsList("Hello Tom!")).hasValue(ImmutableList.of());
   }
 
   @Test
   public void parse_multiplePlaceholders() {
     StringFormat format = new StringFormat("Hello {person}, welcome to {place}!");
     assertThat(
-            format.parse("Hello Gandolf, welcome to Isengard!").get().stream()
+            format.parseAsList("Hello Gandolf, welcome to Isengard!").get().stream()
                 .map(Object::toString))
         .containsExactly("Gandolf", "Isengard")
         .inOrder();
@@ -121,7 +121,7 @@ public class StringFormatTest {
   public void parse_multiplePlaceholders_withEllipsis() {
     StringFormat format = new StringFormat("Hello {...}, welcome to {place}!");
     assertThat(
-            format.parse("Hello Gandolf, welcome to Isengard!").get().stream()
+            format.parseAsList("Hello Gandolf, welcome to Isengard!").get().stream()
                 .map(Object::toString))
         .containsExactly("Isengard");
   }
@@ -137,7 +137,7 @@ public class StringFormatTest {
   @Test
   public void parse_multiplePlaceholdersWithSameName() {
     StringFormat format = new StringFormat("Hello {name} and {name}!");
-    assertThat(format.parse("Hello Gandolf and Aragon!").get().stream().map(Object::toString))
+    assertThat(format.parseAsList("Hello Gandolf and Aragon!").get().stream().map(Object::toString))
         .containsExactly("Gandolf", "Aragon")
         .inOrder();
   }
@@ -145,40 +145,40 @@ public class StringFormatTest {
   @Test
   public void parse_emptyPlaceholderValue() {
     StringFormat format = new StringFormat("Hello {what}!");
-    assertThat(format.parse("Hello !").get().stream().map(Substring.Match::toString))
+    assertThat(format.parseAsList("Hello !").get().stream().map(Substring.Match::toString))
         .containsExactly("");
   }
 
   @Test
   public void parse_preludeFailsToMatch() {
     StringFormat format = new StringFormat("Hello {person}!");
-    assertThat(format.parse("Hell Tom!")).isEmpty();
-    assertThat(format.parse("elloh Tom!")).isEmpty();
-    assertThat(format.parse(" Hello Tom!")).isEmpty();
+    assertThat(format.parseAsList("Hell Tom!")).isEmpty();
+    assertThat(format.parseAsList("elloh Tom!")).isEmpty();
+    assertThat(format.parseAsList(" Hello Tom!")).isEmpty();
   }
 
   @Test
   public void parse_postludeFailsToMatch() {
     StringFormat format = new StringFormat("Hello {person}!");
-    assertThat(format.parse("Hello Tom?")).isEmpty();
-    assertThat(format.parse("Hello Tom! ")).isEmpty();
-    assertThat(format.parse("Hello Tom")).isEmpty();
+    assertThat(format.parseAsList("Hello Tom?")).isEmpty();
+    assertThat(format.parseAsList("Hello Tom! ")).isEmpty();
+    assertThat(format.parseAsList("Hello Tom")).isEmpty();
   }
 
   @Test
   public void parse_nonEmptyTemplate_emptyInput() {
     StringFormat format = new StringFormat("Hello {person}!");
-    assertThat(format.parse("")).isEmpty();
+    assertThat(format.parseAsList("")).isEmpty();
   }
 
   @Test
   public void parse_emptyTemplate_nonEmptyInput() {
-    assertThat(new StringFormat("").parse(".")).isEmpty();
+    assertThat(new StringFormat("").parseAsList(".")).isEmpty();
   }
 
   @Test
   public void parse_emptyTemplate_emptyInput() {
-    assertThat(new StringFormat("").parse("")).hasValue(ImmutableList.of());
+    assertThat(new StringFormat("").parseAsList("")).hasValue(ImmutableList.of());
   }
 
   @Test
@@ -538,7 +538,7 @@ public class StringFormatTest {
   @Test
   @SuppressWarnings("StringUnformatArgsCheck")
   public void twoPlaceholdersNextToEachOther_invalid() {
-    assertThrows(IllegalArgumentException.class, () -> new StringFormat("{a}{b}").parse("ab"));
+    assertThrows(IllegalArgumentException.class, () -> new StringFormat("{a}{b}").parseAsList("ab"));
   }
 
   @Test
@@ -677,16 +677,16 @@ public class StringFormatTest {
 
   @Test
   public void scan_emptyTemplate_nonEmptyInput() {
-    assertThat(new StringFormat("").scan("."))
+    assertThat(new StringFormat("").scanAsLists("."))
         .containsExactly(ImmutableList.of(), ImmutableList.of());
-    assertThat(new StringFormat("").scan("foo"))
+    assertThat(new StringFormat("").scanAsLists("foo"))
         .containsExactly(
             ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), ImmutableList.of());
   }
 
   @Test
   public void scan_emptyTemplate_emptyInput() {
-    assertThat(new StringFormat("").scan("")).containsExactly(ImmutableList.of());
+    assertThat(new StringFormat("").scanAsLists("")).containsExactly(ImmutableList.of());
   }
 
   @Test
@@ -700,9 +700,9 @@ public class StringFormatTest {
 
   @Test
   public void scan_singlePlaceholder_withEllipsis() {
-    assertThat(new StringFormat("[id={...}]").scan("id=1")).isEmpty();
-    assertThat(new StringFormat("[id={...}]").scan("[id=foo]")).containsExactly(ImmutableList.of());
-    assertThat(new StringFormat("[id={...}]").scan("[id=foo][id=bar]"))
+    assertThat(new StringFormat("[id={...}]").scanAsLists("id=1")).isEmpty();
+    assertThat(new StringFormat("[id={...}]").scanAsLists("[id=foo]")).containsExactly(ImmutableList.of());
+    assertThat(new StringFormat("[id={...}]").scanAsLists("[id=foo][id=bar]"))
         .containsExactly(ImmutableList.of(), ImmutableList.of())
         .inOrder();
   }
@@ -745,13 +745,11 @@ public class StringFormatTest {
   @Test
   public void scan_twoPlaceholders_withEllipsis() {
     assertThat(
-            new StringFormat("[id={...}, name={name}]")
-                .scan("[id=foo, name=bar]")
+            new StringFormat("[id={...}, name={name}]").scanAsLists("[id=foo, name=bar]")
                 .map(l -> l.stream().map(Substring.Match::toString).collect(toImmutableList())))
         .containsExactly(ImmutableList.of("bar"));
     assertThat(
-            new StringFormat("[id={...}, name={name}]")
-                .scan("[id=, name=bar][id=zoo, name=boo]")
+            new StringFormat("[id={...}, name={name}]").scanAsLists("[id=, name=bar][id=zoo, name=boo]")
                 .map(l -> l.stream().map(Substring.Match::toString).collect(toImmutableList())))
         .containsExactly(ImmutableList.of("bar"), ImmutableList.of("boo"))
         .inOrder();
@@ -1522,8 +1520,8 @@ public class StringFormatTest {
 
   @Test
   public void scan_singleEllipsisOnly() {
-    assertThat(new StringFormat("{...}").scan("whatever")).containsExactly(ImmutableList.of());
-    assertThat(new StringFormat("{...}").scan("")).containsExactly(ImmutableList.of());
+    assertThat(new StringFormat("{...}").scanAsLists("whatever")).containsExactly(ImmutableList.of());
+    assertThat(new StringFormat("{...}").scanAsLists("")).containsExactly(ImmutableList.of());
   }
 
   @Test
