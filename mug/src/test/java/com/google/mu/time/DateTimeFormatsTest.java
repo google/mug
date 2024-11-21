@@ -239,7 +239,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void invalid_rfc3339Example() {
-    assertThrows(DateTimeParseException.class, () -> Instant.parse("2000-40-01T00:00:00Z"));
+    assertThrows(DateTimeParseException.class, () -> DateTimeFormats.parseToInstant("2000-40-01T00:00:00Z"));
 
   }
 
