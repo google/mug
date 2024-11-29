@@ -23,7 +23,6 @@ import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.BiStream.concatenating;
 import static com.google.mu.util.stream.BiStream.crossJoining;
 import static com.google.mu.util.stream.BiStream.groupingByEach;
-import static com.google.mu.util.stream.BiStream.innerJoining;
 import static com.google.mu.util.stream.BiStream.toAdjacentPairs;
 import static com.google.mu.util.stream.BiStream.toBiStream;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
@@ -958,33 +957,6 @@ public class BiStreamTest {
                 .collect(crossJoining(indexesFrom(0)))
                 .limit(4))
         .containsExactly("foo", 0, "bar", 0, "foo", 1, "bar", 1)
-        .inOrder();
-  }
-
-  @Test public void testInnerJoining() {
-    assertKeyValues(Stream.of(0, 2, 1).collect(innerJoining(asList("1", "2", "3"), i -> i, Integer::parseInt)))
-        .containsExactly(1, "1", 2, "2")
-        .inOrder();
-  }
-
-  @Test public void testInnerJoining_leftEmpty() {
-    assertKeyValues(Stream.of().collect(innerJoining(asList("1", "2"), i -> i, Integer::parseInt)))
-        .isEmpty();
-  }
-
-  @Test public void testInnerJoining_rightEmpty() {
-    assertKeyValues(Stream.of(2, 1).collect(innerJoining(asList(), i -> i, r -> r)))
-        .isEmpty();
-  }
-
-  @Test public void testInnerJoining_infiniteRight_thenLimit() {
-    assertKeyValues(Stream.empty().collect(crossJoining(indexesFrom(0))).limit(2))
-        .isEmpty();
-    assertKeyValues(
-            Stream.of("a", "bc")
-                .collect(innerJoining(indexesFrom(0), String::length, i -> i))
-                .limit(2))
-        .containsExactly("a", 1, "bc", 2)
         .inOrder();
   }
 
