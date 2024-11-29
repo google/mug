@@ -105,12 +105,6 @@ public final class ParameterizedQuery {
   @SuppressWarnings("Immutable")
   private final Map<String, Object> originalValues;
 
-  private ParameterizedQuery(String query) {
-    this.query = requireNonNull(query);
-    this.parameters = emptyMap();
-    this.originalValues = emptyMap();
-  }
-
   private ParameterizedQuery(
       String query,
       Map<String, QueryParameterValue> parameters,
@@ -126,17 +120,7 @@ public final class ParameterizedQuery {
    *
    * @since 8.2
    */
-  public static ParameterizedQuery EMPTY = of("");
-
-  /**
-   * Returns a query using a compile-time constant query with no parameters.
-   *
-   * @since 8.2
-   */
-  @TemplateFormatMethod
-  public static ParameterizedQuery of(@CompileTimeConstant @TemplateString String query) {
-    return new ParameterizedQuery(query);
-  }
+  public static final ParameterizedQuery EMPTY = of("");
 
   /**
    * Convenience method when you need to create the {@link ParameterizedQuery} inline, with both the
@@ -239,11 +223,11 @@ public final class ParameterizedQuery {
 
   /**
    * Returns the stream of enum constants defined by {@code enumClass},
-   * with the names wrapped in ParameterizedQuery}.
+   * with the names wrapped in ParameterizedQuery.
    */
   public static Stream<ParameterizedQuery> enumConstants(Class<? extends Enum<?>> enumClass) {
     return Arrays.stream(enumClass.getEnumConstants())
-        .map(e -> new ParameterizedQuery(e.name()));
+        .map(e -> new ParameterizedQuery(e.name(), emptyMap(), emptyMap()));
   }
 
   /**
@@ -444,7 +428,7 @@ public final class ParameterizedQuery {
   }
 
   private ParameterizedQuery parenthesized() {
-    return new ParameterizedQuery("(" + query + ")");
+    return new ParameterizedQuery("(" + query + ")", parameters, originalValues);
   }
 
   private static <R> Collector<ParameterizedQuery, ?, R> nonEmptyQueries(

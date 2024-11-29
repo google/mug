@@ -366,6 +366,27 @@ public abstract class BiStream<K, V> implements AutoCloseable {
             left.isEmpty() ? empty() : concat(right.map(r -> from(left, identity(), l -> r))));
   }
 
+  public static <L, R> Collector<L, ?, BiStream<L, R>> innerJoining(
+      Stream<R> right, Function<? super L, ?> leftToKey, Function<? super R, ?> rightToKey) {
+    requireNonNull(right);
+    requireNonNull(leftToKey);
+    requireNonNull(rightToKey);
+    return Collectors.collectingAndThen(
+        Collectors.toMap(leftToKey, identity()),
+        leftMap -> biStream(right).mapKeys(rightToKey).mapKeysIfPresent(leftMap));
+  }
+
+  /**
+   * A collector that joins input elements with elements in {@code right} if the return value
+   * of {@code leftToKey} and {@code rightToKey} are equal.
+   *
+   * @since 8.3
+   */
+  public static <L, R> Collector<L, ?, BiStream<L, R>> innerJoining(
+      Collection<R> right, Function<? super L, ?> leftToKey, Function<? super R, ?> rightToKey) {
+    return innerJoining(right.stream(), leftToKey, rightToKey);
+  }
+
   /**
    * Returns a {@code Collector} that accumulates every neighboring pair of elements into a new
    * {@code BiStream}. For example {@code Stream.of(1, 2, 3, 4).collect(toAdjacentPairs())} will
