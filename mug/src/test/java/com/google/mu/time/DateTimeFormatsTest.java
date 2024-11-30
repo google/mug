@@ -29,6 +29,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 import org.junit.Ignore;
 import org.junit.Test;
@@ -234,6 +235,12 @@ public final class DateTimeFormatsTest {
         .isEqualTo(ZonedDateTime.of(LocalDateTime.of(2008, 6, 20, 3, 10, 10, 0), ZoneOffset.UTC));
     assertThat(ZonedDateTime.parse("13 Jun 2008 03:10:10 GMT", formatOf("3 Jun 2008 11:05:30 GMT")))
         .isEqualTo(ZonedDateTime.of(LocalDateTime.of(2008, 6, 13, 3, 10, 10, 0), ZoneOffset.UTC));
+  }
+
+  @Test
+  public void invalid_rfc3339Example() {
+    assertThrows(DateTimeParseException.class, () -> DateTimeFormats.parseToInstant("2000-40-01T00:00:00Z"));
+
   }
 
   @Test

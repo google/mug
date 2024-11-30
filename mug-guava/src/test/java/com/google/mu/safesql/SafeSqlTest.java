@@ -191,6 +191,30 @@ public class SafeSqlTest {
   }
 
   @Test
+  public void likeWithEscapeNotSuppoted_surroundedByPercentSign() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.of("select * from tbl where name like '%{s}%' ESCAPE  '\'", "foo"));
+    assertThat(thrown).hasMessageThat().contains("ESCAPE");
+  }
+
+  @Test
+  public void likeWithEscapeNotSuppoted_precededByPercentSign() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.of("select * from tbl where name like '%{s}' \n ESCAPE '\'", "foo"));
+    assertThat(thrown).hasMessageThat().contains("ESCAPE");
+  }
+
+  @Test
+  public void likeWithEscapeNotSuppoted_followedByPercentSign() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.of("select * from tbl where name like '{s}%' ESCAPE '\'", "foo"));
+    assertThat(thrown).hasMessageThat().contains("ESCAPE");
+  }
+
+  @Test
   public void literalPercentValueWithWildcardAtBothEnds() {
     SafeSql sql = SafeSql.of("select * from tbl where name like '%{s}%'", "%");
     assertThat(sql.toString()).isEqualTo("select * from tbl where name like ?");
@@ -838,6 +862,18 @@ public class SafeSqlTest {
         IllegalArgumentException.class,
         () -> SafeSql.nonNegativeLiteral(Integer.MIN_VALUE));
     assertThat(thrown).hasMessageThat().contains("negative number disallowed");
+  }
+
+  @Test
+  public void orElse_empty_returnsFallbackQuery() {
+    assertThat(SafeSql.EMPTY.orElse("WHERE id = {id}", 1))
+        .isEqualTo(SafeSql.of("WHERE id = {id}", 1));
+  }
+
+  @Test
+  public void orElse_nonEmpty_returnsTheMainlineQuery() {
+    assertThat(SafeSql.of("select *").orElse("WHERE id = {id}", 1))
+        .isEqualTo(SafeSql.of("select *"));
   }
 
   @Test

@@ -1007,6 +1007,18 @@ public final class SafeQueryTest {
   }
 
   @Test
+  public void orElse_empty_returnsFallbackQuery() {
+    assertThat(SafeQuery.EMPTY.orElse("WHERE id = {id}", 1))
+        .isEqualTo(SafeQuery.of("WHERE id = 1"));
+  }
+
+  @Test
+  public void orElse_nonEmpty_returnsTheMainlineQuery() {
+    assertThat(SafeQuery.of("select *").orElse("WHERE id = {id}", 1))
+        .isEqualTo(SafeQuery.of("select *"));
+  }
+
+  @Test
   @SuppressWarnings("StringFormatArgsCheck")
   public void of_forgetToAddVarargs() {
     IllegalArgumentException thrown =

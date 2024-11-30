@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -486,13 +487,16 @@ public final class SafeSql {
             builder.appendSql("`" + identifier + "`");
           } else if (lookbehind("LIKE '%", placeholder)
               && appendBeforeQuotedPlaceholder("'%", placeholder, "%'")) {
+            rejectEscapeAfter(placeholder);
             builder.addParameter(
                 paramName, "%" + escapePercent(mustBeString(placeholder, value)) + "%");
           } else if (lookbehind("LIKE '%", placeholder)
               && appendBeforeQuotedPlaceholder("'%", placeholder, "'")) {
+            rejectEscapeAfter(placeholder);
             builder.addParameter(paramName, "%" + escapePercent(mustBeString(placeholder, value)));
           } else if (lookbehind("LIKE '", placeholder)
               && appendBeforeQuotedPlaceholder("'", placeholder, "%'")) {
+            rejectEscapeAfter(placeholder);
             builder.addParameter(paramName, escapePercent(mustBeString(placeholder, value)) + "%");
           } else if (appendBeforeQuotedPlaceholder("'", placeholder, "'")) {
             builder.addParameter(paramName, mustBeString("'" + placeholder + "'", value));
@@ -512,15 +516,25 @@ public final class SafeSql {
           return quoted;
         }
 
+        private void rejectEscapeAfter(Substring.Match placeholder) {
+          checkArgument(
+              !lookahead(placeholder, "%' ESCAPE") && !lookahead(placeholder, "' ESCAPE"),
+              "ESCAPE not supported after %s. Just leave the placeholder alone and SafeSql will auto escape.",
+              placeholder);
+        }
+
         private boolean lookaround(
             String leftPattern, Substring.Match placeholder, String rightPattern) {
+          return lookahead(placeholder, rightPattern) && lookbehind(leftPattern, placeholder);
+        }
+
+        private boolean lookahead(Substring.Match placeholder, String rightPattern) {
           ImmutableList<String> lookahead = TOKENS.from(rightPattern).collect(toImmutableList());
           int closingBraceIndex = placeholder.index() + placeholder.length() - 1;
           int nextTokenIndex = charIndexToTokenIndex.get(closingBraceIndex) + 1;
           return BiStream.zip(lookahead, allTokens.subList(nextTokenIndex, allTokens.size()))
                   .filter((s, t) -> s.equalsIgnoreCase(t.toString()))
-                  .count() == lookahead.size()
-              && lookbehind(leftPattern, placeholder);
+                  .count() == lookahead.size();
         }
 
         private boolean lookbehind(String leftPattern, Substring.Match placeholder) {
@@ -579,6 +593,56 @@ public final class SafeSql {
             (b, q) -> b.delimit(delimiter).addSubQuery(q),
             (b1, b2) -> b1.delimit(delimiter).addSubQuery(b2.build()),
             Builder::build));
+  }
+
+  /**
+   * If {@code this} query is empty (likely from a call to {@link #optionally} or {@link #when}),
+   * returns the SafeSql produced from the {@code fallback} template and {@code args}.
+   *
+   * <p>Using this method, you can create a chain of optional queries like:
+   *
+   * <pre>{@code
+   * import static ....Optionals.nonEmpty;
+   *
+   * SafeSql.of(
+   *     """
+   *     CREATE TABLE ...
+   *     {cluster_by}
+   *     """,
+   *     optionally("CLUSTER BY (`{cluster_columns}`)", nonEmpty(clusterColumns))
+   *         .orElse("-- no cluster"));
+   * }</pre>
+   *
+   * @since 8.3
+   */
+  @TemplateFormatMethod
+  @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
+  public SafeSql orElse(@TemplateString @CompileTimeConstant String fallback, Object... args) {
+    checkNotNull(fallback);
+    checkNotNull(args);
+    return orElse(() -> of(fallback, args));
+  }
+
+  /**
+   * If {@code this} query is empty (likely from a call to {@link #optionally} or {@link #when}),
+   * returns the {@code fallback} query.
+   *
+   * @since 8.3
+   */
+  public SafeSql orElse(SafeSql fallback) {
+    checkNotNull(fallback);
+    return orElse(() -> fallback);
+  }
+
+  /**
+   * If {@code this} query is empty (likely from a call to {@link #optionally} or {@link #when}),
+   * returns the query produced by the {@code fallback} supplier.
+   *
+   * @since 8.3
+   */
+  public SafeSql orElse(Supplier<SafeSql> fallback) {
+    checkNotNull(fallback);
+    return sql.isEmpty() ? fallback.get() : this;
   }
 
   /**
@@ -852,7 +916,7 @@ public final class SafeSql {
   }
 
   private static String escapePercent(String s) {
-    return first(c -> c == '\\' || c == '%').repeatedly().replaceAllFrom(s, c -> "\\" + c);
+    return first(c -> c == '\\' || c == '%' || c == '_').repeatedly().replaceAllFrom(s, c -> "\\" + c);
   }
 
   private static <T> Template<T> prepare(
