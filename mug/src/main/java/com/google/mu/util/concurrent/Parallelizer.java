@@ -187,7 +187,9 @@ public final class Parallelizer {
    * <p>Typically used by the {@code main()} method or as a static final field.
    *
    * @since 6.5
+   * @deprecated Use {@link Fanout#withMaxConcurrency(int)} on virtual threads instead
    */
+  @Deprecated
   public static Parallelizer newDaemonParallelizer(int maxInFlight) {
     AtomicInteger threadCount = new AtomicInteger();
     return new Parallelizer(
