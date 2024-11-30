@@ -5,6 +5,7 @@ import static java.util.Comparator.comparing;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.ExecutorService;
@@ -12,7 +13,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
-import java.util.stream.Stream;
 
 /**
  * Supports structured concurrency for the common case where all concurrent operations are required
@@ -208,6 +208,27 @@ public final class Fanout {
   }
 
   /**
+   * Runs {@code task1}, {@code task2} and {@code moreTasks} concurrently in their own virtual
+   * threads.
+   *
+   * <p>For example:
+   *
+   * <pre>{@code
+   * Fanout.concurrently(() -> uploadFile(), () -> sendMessageToQueue());
+   * }</pre>
+   *
+   * @throws InterruptedException if the current thread is interrupted while waiting for the
+   *     concurrent operations to complete. The unfinished concurrent operations will be canceled.
+   * @throws RuntimeException wrapping the original exception from the virtual thread if
+   *     any concurrent operation failed
+   * @since 8.3
+   */
+  public static void concurrently(Runnable task1, Runnable task2, Runnable... moreTasks)
+      throws InterruptedException {
+    new Scope().add(task1, task2).add(moreTasks).run();
+  }
+
+  /**
    * Runs {@code a} and {@code b} concurrently and <em>uninterruptibly</em> in their own virtual
    * threads. After all of the concurrent operations return successfully, invoke the {@code join}
    * function on the results in the caller's thread.
@@ -348,6 +369,24 @@ public final class Fanout {
   }
 
   /**
+   * Runs {@code task1}, {@code task2} and {@code moreTasks} concurrently and
+   * <em>uninterruptibly<em> in their own virtual threads.
+   *
+   * <p>For example:
+   *
+   * <pre>{@code
+   * Fanout.uninterruptibly(() -> uploadFile(), () -> sendMessageToQueue());
+   * }</pre>
+   *
+   * @throws RuntimeException wrapping the original exception from the virtual thread if
+   *     any concurrent operation failed
+   * @since 8.3
+   */
+  public static void uninterruptibly(Runnable task1, Runnable task2, Runnable... moreTasks) {
+    new Scope().add(task1, task2).add(moreTasks).runUninterruptibly();
+  }
+
+  /**
    * Returns a concurrency-limited {@link Parallelizer} that can be used to run a potentially large
    * number of fanout concurrent tasks using the currently configured standard (virtual thread)
    * executor.
@@ -392,26 +431,28 @@ public final class Fanout {
 
   private static final class Scope {
     private static final ExecutorService executor = EXECUTOR_PLUGIN.createExecutor();
-    private final Stream.Builder<Runnable> tasks = Stream.builder();
+    private final List<Runnable> runnables = new ArrayList<>();
 
     <T> AtomicReference<T> add(Supplier<T> task) {
       requireNonNull(task);
       AtomicReference<T> result = new AtomicReference<>();
-      tasks.add(() -> result.set(task.get()));
+      runnables.add(() -> result.set(task.get()));
       return result;
     }
 
+    Scope add(Runnable... tasks) {
+      for (Runnable task : tasks) {
+        runnables.add(requireNonNull(task));
+      }
+      return this;
+    }
+
     void run() throws InterruptedException {
-      parallelizer().parallelize(tasks.build());
+      new Parallelizer(executor, runnables.size()).parallelize(runnables.stream());
     }
 
     void runUninterruptibly() {
-      parallelizer().parallelizeUninterruptibly(tasks.build());
-    }
-
-    private static Parallelizer parallelizer() {
-      int maxConcurrency = 100; // sufficient for all overloads
-      return new Parallelizer(executor, maxConcurrency);
+      new Parallelizer(executor, runnables.size()).parallelizeUninterruptibly(runnables.stream());
     }
   }
 

@@ -5,6 +5,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.util.concurrent.Fanout.concurrently;
 import static com.google.mu.util.concurrent.Fanout.uninterruptibly;
 import static com.google.mu.util.concurrent.Fanout.withMaxConcurrency;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
 
 import java.util.Map;
@@ -75,6 +76,20 @@ public final class FanoutTest {
   }
 
   @Test
+  public void concurrently_twoTasks() throws InterruptedException {
+    String[] results = new String[2];
+    concurrently(() -> results[0] = "foo", () -> results[1] = "bar");
+    assertThat(asList(results)).containsExactly("foo", "bar").inOrder();
+  }
+
+  @Test
+  public void concurrently_threeTasks() throws InterruptedException {
+    String[] results = new String[3];
+    concurrently(() -> results[0] = "a", () -> results[1] = "b", () -> results[2] = "c");
+    assertThat(asList(results)).containsExactly("a", "b", "c").inOrder();
+  }
+
+  @Test
   public void uninterruptibly_twoOperations() {
     assertThat(uninterruptibly(() -> "foo", () -> "bar", String::concat)).isEqualTo("foobar");
   }
@@ -110,6 +125,20 @@ public final class FanoutTest {
                 () -> "e",
                 (String a, String b, String c, String d, String e) -> a + b + c + d + e))
         .isEqualTo("abcde");
+  }
+
+  @Test
+  public void uninterruptibly_twoTasks() {
+    String[] results = new String[2];
+    uninterruptibly(() -> results[0] = "foo", () -> results[1] = "bar");
+    assertThat(asList(results)).containsExactly("foo", "bar").inOrder();
+  }
+
+  @Test
+  public void uninterruptibly_threeTasks() {
+    String[] results = new String[3];
+    uninterruptibly(() -> results[0] = "a", () -> results[1] = "b", () -> results[2] = "c");
+    assertThat(asList(results)).containsExactly("a", "b", "c").inOrder();
   }
 
   @Test
