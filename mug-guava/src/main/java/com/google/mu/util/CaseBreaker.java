@@ -112,7 +112,7 @@ public final class CaseBreaker {
    * returned words.
    *
    * <p>If the default setting doesn't work for you, it can be customized by using {@link
-   * #withCaseDelimiterChars} and/or {@link #withLowerCaseChars}.
+   * #withPunctuationChars} and/or {@link #withLowerCaseChars}.
    */
   public Stream<String> breakCase(CharSequence text) {
     Substring.Pattern lowerTail = // The 'l' in 'camelCase', 'CamelCase', 'camel' or 'Camel'.

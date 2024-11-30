@@ -214,7 +214,7 @@ public final class Fanout {
    * <p>For example:
    *
    * <pre>{@code
-   * Fanout.concurrently(() -> uploadFile(), () -> sendMessageToQueue());
+   * concurrently(() -> uploadFile(), () -> sendMessageToQueue());
    * }</pre>
    *
    * @throws InterruptedException if the current thread is interrupted while waiting for the
@@ -375,7 +375,7 @@ public final class Fanout {
    * <p>For example:
    *
    * <pre>{@code
-   * Fanout.uninterruptibly(() -> uploadFile(), () -> sendMessageToQueue());
+   * uninterruptibly(() -> uploadFile(), () -> sendMessageToQueue());
    * }</pre>
    *
    * @throws RuntimeException wrapping the original exception from the virtual thread if
@@ -448,11 +448,15 @@ public final class Fanout {
     }
 
     void run() throws InterruptedException {
-      new Parallelizer(executor, runnables.size()).parallelize(runnables.stream());
+      parallelizer().parallelize(runnables.stream());
     }
 
     void runUninterruptibly() {
-      new Parallelizer(executor, runnables.size()).parallelizeUninterruptibly(runnables.stream());
+      parallelizer().parallelizeUninterruptibly(runnables.stream());
+    }
+
+    private Parallelizer parallelizer() {
+      return new Parallelizer(executor, runnables.size());
     }
   }
 
