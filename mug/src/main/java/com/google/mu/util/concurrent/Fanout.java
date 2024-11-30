@@ -448,11 +448,15 @@ public final class Fanout {
     }
 
     void run() throws InterruptedException {
-      new Parallelizer(executor, runnables.size()).parallelize(runnables.stream());
+      parallelizer().parallelize(runnables.stream());
     }
 
     void runUninterruptibly() {
-      new Parallelizer(executor, runnables.size()).parallelizeUninterruptibly(runnables.stream());
+      parallelizer().parallelizeUninterruptibly(runnables.stream());
+    }
+
+    private Parallelizer parallelizer() {
+      return new Parallelizer(executor, runnables.size());
     }
   }
 
