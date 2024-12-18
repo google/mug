@@ -965,31 +965,43 @@ public final class SafeSql {
     private final List<Object> paramValues = new ArrayList<>();
 
     @CanIgnoreReturnValue Builder appendSql(String snippet) {
-      queryText.append(rejectQuestionMark(snippet));
+      safeAppend(rejectQuestionMark(snippet));
       return this;
     }
 
     @CanIgnoreReturnValue Builder addParameter(String name, Object value) {
-      queryText.append("?");
+      safeAppend("?");
       paramValues.add(value);
       return this;
     }
 
     @CanIgnoreReturnValue Builder addSubQuery(SafeSql subQuery) {
-      queryText.append(subQuery.sql);
+      safeAppend(subQuery.sql);
       paramValues.addAll(subQuery.getParameters());
       return this;
     }
 
     @CanIgnoreReturnValue Builder delimit(String delim) {
       if (queryText.length() > 0) {
-        queryText.append(delim);
+        safeAppend(delim);
       }
       return this;
     }
 
     SafeSql build() {
       return new SafeSql(queryText.toString(), unmodifiableList(new ArrayList<>(paramValues)));
+    }
+
+    private void safeAppend(String snippet) {
+      checkArgument(
+          !(endsWith('-') && snippet.startsWith("-")), "accidental line comment: -%s", snippet);
+      checkArgument(
+          !(endsWith('/') && snippet.startsWith("*")), "accidental block comment: /%s", snippet);
+      queryText.append(snippet);
+    }
+
+    private boolean endsWith(char c) {
+      return queryText.length() > 0 && queryText.charAt(queryText.length() - 1) == c;
     }
   }
 }

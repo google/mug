@@ -877,6 +877,22 @@ public class SafeSqlTest {
   }
 
   @Test
+  public void accidentalBlockComment_disallowed() {
+    SafeSql sub = SafeSql.of("*1");
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> SafeSql.of("/{sub}", sub));
+    assertThat(thrown).hasMessageThat().contains("/*1");
+  }
+
+  @Test
+  public void accidentalLineComment_disallowed() {
+    SafeSql sub = SafeSql.of("-1");
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> SafeSql.of("-{sub}", sub));
+    assertThat(thrown).hasMessageThat().contains("--1");
+  }
+
+  @Test
   public void testEquals() {
     new EqualsTester()
         .addEqualityGroup(

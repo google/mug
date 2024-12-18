@@ -1028,6 +1028,24 @@ public final class SafeQueryTest {
     assertThat(thrown).hasMessageThat().contains("placeholders");
   }
 
+  @Test
+  public void accidentalBlockComment_disallowed() {
+    SafeQuery sub = SafeQuery.of("*1");
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> SafeQuery.of("/{sub}", sub));
+    assertThat(thrown).hasMessageThat().contains("/*1");
+    assertThat(thrown).hasMessageThat().contains("{sub}");
+  }
+
+  @Test
+  public void accidentalLineComment_disallowed() {
+    SafeQuery sub = SafeQuery.of("-1");
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> SafeQuery.of("-{sub}", sub));
+    assertThat(thrown).hasMessageThat().contains("--1");
+    assertThat(thrown).hasMessageThat().contains("{sub}");
+  }
+
   static final class TrustedSql {
     private final String sql;
 

@@ -437,7 +437,18 @@ public final class SafeQuery {
 
     private String unquoted(Substring.Match placeholder, Object value) {
       if (value != null && isTrusted(value)) {
-        return value.toString();
+        String s = value.toString();
+        checkArgument(
+            !(placeholder.isPrecededBy("-") && s.startsWith("-")),
+            "subquery in the place of %s appears to cause a line comment: -%s",
+            placeholder,
+            s);
+        checkArgument(
+            !(placeholder.isPrecededBy("/") && s.startsWith("*")),
+            "subquery in the place of %s appears to cause a block comment: /%s",
+            placeholder,
+            s);
+        return s;
       }
       checkArgument(!(value instanceof CharSequence || value instanceof Character),
           "Symbols should be wrapped inside %s;\n" + "subqueries must be wrapped in another SafeQuery object;\n"
