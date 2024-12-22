@@ -22,7 +22,6 @@ import static java.util.stream.Collectors.toList;
 import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -176,7 +175,9 @@ public final class Parallelizer {
    * <p>Only applicable in JDK 21 (throws if below JDK 21).
    *
    * @since 7.2
+   * @deprecated Use {@link Fanout#withMaxConcurrency} instead
    */
+  @Deprecated
   public static Parallelizer virtualThreadParallelizer(int maxInFlight) {
     return new Parallelizer(VirtualThread.executor, maxInFlight);
   }
