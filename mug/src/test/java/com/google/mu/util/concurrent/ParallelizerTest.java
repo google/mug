@@ -75,21 +75,15 @@ public class ParallelizerTest {
       threadPool.shutdownNow();
     }
 
-    @Test public void testInParallel_emptyInputStream() {
+    @Test public void testInParallel_emptyInputStream() throws InterruptedException{
       Parallelizer parallelizer = new Parallelizer(threadPool, 3);
-      assertThat(
-              Stream.empty()
-                  .collect(parallelizer.inParallel(Object::toString))
-                  .toMap())
+      assertThat(parallelizer.inParallel(asList(), Object::toString).toMap())
           .isEmpty();
     }
 
-    @Test public void testInParallel_fromSequentialStream() {
+    @Test public void testInParallel_fromSequentialStream() throws InterruptedException {
       Parallelizer parallelizer = new Parallelizer(threadPool, 3);
-      assertThat(
-              Stream.of(1, 2, 3)
-                  .collect(parallelizer.inParallel(Object::toString))
-                  .toMap())
+      assertThat(parallelizer.inParallel(asList(1, 2, 3), Object::toString).toMap())
           .containsExactly(1, "1", 2, "2", 3, "3")
           .inOrder();
     }
@@ -105,16 +99,16 @@ public class ParallelizerTest {
           .inOrder();
     }
 
-    @Test public void testInParallel_failure() {
+    @Test public void testInParallel_failure() throws InterruptedException {
       Parallelizer parallelizer = new Parallelizer(threadPool, 3);
       RuntimeException thrown = assertThrows(
           RuntimeException.class,
-          () -> Stream.of(1, 2, 3)
-              .collect(
-                  parallelizer.inParallel(i -> {
+          () ->  parallelizer.inParallel(
+                 asList(1, 2, 3),
+                 i -> {
                     Preconditions.checkState(i < 3);
                     return i.toString();
-                  })));
+                  }));
       assertThat(thrown).hasCauseThat().isInstanceOf(IllegalStateException.class);
     }
 

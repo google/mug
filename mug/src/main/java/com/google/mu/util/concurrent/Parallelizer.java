@@ -22,6 +22,7 @@ import static java.util.stream.Collectors.toList;
 import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -435,18 +436,20 @@ public final class Parallelizer {
   }
 
   /**
-   * Returns a {@link Collector} that runs {@code concurrentFunction} in parallel using this {@code
-   * Parallelizer} and returns the inputs and outputs in a {@link BiStream}, in encounter order of
-   * the input elements.
+   * Applies {@code concurrentFunction} on each element of {@code inputs} in parallel, using this
+   * {@code Parallelizer} and returns the inputs and outputs in a {@link BiStream}, in encounter
+   * order of the input elements.
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * ImmutableListMultimap<String, Asset> resourceAssets =
-   *     resources.stream()
-   *         .collect(parallelizer.inParallel(this::listAssets))
+   *     parallelizer.inParallel(resources, this::listAssets)
    *         .collect(flatteningToImmutableListMultimap(List::stream));
    * }</pre>
    *
-   * <p>In Java 20 using structured concurrency, it can be implemented equivalently as in:
+   * <p>In Java 22 using structured concurrency, it can be implemented equivalently as in:
+   *
    * <pre>{@code
    * ImmutableListMultimap<String, Asset> resourceAssets;
    * try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
@@ -464,7 +467,30 @@ public final class Parallelizer {
    *
    * @param concurrentFunction a function that's safe to be run concurrently, and is usually
    *     IO-intensive (such as an outgoing RPC or reading distributed storage).
+   * @throws InterruptedException if the thread is interrupted while blocking for parallel results.
+   * @since 8.3
+   */
+  public <I, O> BiStream<I, O> inParallel(
+      Collection<? extends I> inputs, Function<? super I, ? extends O> concurrentFunction)
+      throws InterruptedException {
+    List<I> list = new ArrayList<>(inputs);
+    requireNonNull(concurrentFunction);
+    List<O> outputs = new ArrayList<>(list.size());
+    outputs.addAll(Collections.nCopies(list.size(), (O) null));
+    parallelize(
+        IntStream.range(0, list.size()).boxed(),
+        i -> outputs.set(i, concurrentFunction.apply(list.get(i))));
+    return BiStream.zip(list, outputs);
+  }
+
+  /**
+   * Returns a {@link Collector} that runs {@code concurrentFunction} in parallel using this {@code
+   * Parallelizer} and returns the inputs and outputs in a {@link BiStream}, in encounter order of
+   * the input elements.
    *
+   * @deprecated Use {@link #inParallel(Iterable, Function)} instead. This method doesn't propagate
+   *     cancellation from the main thread to the concurrent threads, thus isn't composable in a
+   *     structured concurrency tree of concurrent operations.
    * @since 6.5
    */
   public <I, O> Collector<I, ?, BiStream<I, O>> inParallel(

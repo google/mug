@@ -9,7 +9,6 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
 
 import java.util.Map;
-import java.util.stream.Stream;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -212,23 +211,23 @@ public final class FanoutTest {
   }
 
   @Test
-  public void withMaxConcurrency_inputSizeGreaterThanMaxConcurrency() {
+  public void withMaxConcurrency_inputSizeGreaterThanMaxConcurrency() throws InterruptedException {
     Map<Integer, String> results =
-        Stream.of(1, 2, 3, 4, 5).collect(withMaxConcurrency(3).inParallel(Object::toString)).toMap();
+        withMaxConcurrency(3).inParallel(asList(1, 2, 3, 4, 5), Object::toString).toMap();
     assertThat(results).containsExactly(1, "1", 2, "2", 3, "3", 4, "4", 5, "5").inOrder();
   }
 
   @Test
-  public void withMaxConcurrency_inputSizeSmallerThanMaxConcurrency() {
+  public void withMaxConcurrency_inputSizeSmallerThanMaxConcurrency() throws InterruptedException {
     Map<Integer, String> results =
-        Stream.of(1, 2).collect(withMaxConcurrency(3).inParallel(Object::toString)).toMap();
+        withMaxConcurrency(3).inParallel(asList(1, 2), Object::toString).toMap();
     assertThat(results).containsExactly(1, "1", 2, "2").inOrder();
   }
 
   @Test
-  public void withMaxConcurrency_inputSizeEqualToMaxConcurrency() {
+  public void withMaxConcurrency_inputSizeEqualToMaxConcurrency() throws InterruptedException {
     Map<Integer, String> results =
-        Stream.of(1, 2, 3).collect(withMaxConcurrency(3).inParallel(Object::toString)).toMap();
+        withMaxConcurrency(3).inParallel(asList(1, 2, 3), Object::toString).toMap();
     assertThat(results).containsExactly(1, "1", 2, "2", 3, "3").inOrder();
   }
 }
