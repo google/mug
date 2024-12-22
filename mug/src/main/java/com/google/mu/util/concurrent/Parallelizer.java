@@ -152,25 +152,25 @@ public final class Parallelizer {
   private static final Logger logger = Logger.getLogger(Parallelizer.class.getName());
 
   private final ExecutorService executor;
-  private final int maxInFlight;
+  private final int maxConcurrency;
 
   /**
    * Constructs a {@code Parallelizer} that runs tasks with {@code executor}.
-   * At any given time, at most {@code maxInFlight} tasks are allowed to be submitted to
+   * At any given time, at most {@code maxConcurrency} tasks are allowed to be submitted to
    * {@code executor}.
    *
    * <p>Note that a task being submitted to {@code executor} doesn't guarantee immediate
    * execution, if for example all worker threads in {@code executor} are busy.
    */
-  public Parallelizer(ExecutorService executor, int maxInFlight) {
+  public Parallelizer(ExecutorService executor, int maxConcurrency) {
     this.executor = requireNonNull(executor);
-    this.maxInFlight = maxInFlight;
-    if (maxInFlight <= 0) throw new IllegalArgumentException("maxInFlight = " + maxInFlight);
+    this.maxConcurrency = maxConcurrency;
+    if (maxConcurrency <= 0) throw new IllegalArgumentException("maxConcurrency = " + maxConcurrency);
   }
 
   /**
    * Returns a {@link Parallelizer} using virtual threads for running tasks, with at most
-   * {@code maxInFlight} tasks running concurrently.
+   * {@code maxConcurrency} tasks running concurrently.
    *
    * <p>Only applicable in JDK 21 (throws if below JDK 21).
    *
@@ -178,8 +178,8 @@ public final class Parallelizer {
    * @deprecated Use {@link Fanout#withMaxConcurrency} instead
    */
   @Deprecated
-  public static Parallelizer virtualThreadParallelizer(int maxInFlight) {
-    return new Parallelizer(VirtualThread.executor, maxInFlight);
+  public static Parallelizer virtualThreadParallelizer(int maxConcurrency) {
+    return new Parallelizer(VirtualThread.executor, maxConcurrency);
   }
 
   /**
@@ -192,18 +192,18 @@ public final class Parallelizer {
    * @deprecated Use {@link Fanout#withMaxConcurrency(int)} on virtual threads instead
    */
   @Deprecated
-  public static Parallelizer newDaemonParallelizer(int maxInFlight) {
+  public static Parallelizer newDaemonParallelizer(int maxConcurrency) {
     AtomicInteger threadCount = new AtomicInteger();
     return new Parallelizer(
         Executors.newFixedThreadPool(
-            maxInFlight,
+            maxConcurrency,
             runnable -> {
               Thread thread = new Thread(runnable);
               thread.setDaemon(true);
               thread.setName("DaemonParallelizer#" + threadCount.getAndIncrement());
               return thread;
             }),
-        maxInFlight);
+        maxConcurrency);
   }
 
   /**
@@ -496,7 +496,7 @@ public final class Parallelizer {
 
   private final class Flight {
     // fairness is irrelevant here since only the main thread ever calls acquire().
-    private final Semaphore semaphore = new Semaphore(maxInFlight);
+    private final Semaphore semaphore = new Semaphore(maxConcurrency);
     private final ConcurrentMap<Object, Future<?>> onboard = new ConcurrentHashMap<>();
     private volatile ConcurrentLinkedQueue<Throwable> thrown = new ConcurrentLinkedQueue<>();
 
@@ -580,7 +580,7 @@ public final class Parallelizer {
 
     private void checkInFlight() {
       int inflight = onboard.size();
-      if (inflight > maxInFlight) throw new IllegalStateException("inflight = " + inflight);
+      if (inflight > maxConcurrency) throw new IllegalStateException("inflight = " + inflight);
     }
 
     /** If any task has thrown, propagate all task exceptions. */
@@ -601,7 +601,7 @@ public final class Parallelizer {
     }
 
     private int freeze() {
-      int remaining = maxInFlight - semaphore.drainPermits();
+      int remaining = maxConcurrency - semaphore.drainPermits();
       propagateExceptions();
       return remaining;
     }
