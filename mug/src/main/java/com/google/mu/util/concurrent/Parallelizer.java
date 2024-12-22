@@ -468,7 +468,6 @@ public final class Parallelizer {
    * @param concurrentFunction a function that's safe to be run concurrently, and is usually
    *     IO-intensive (such as an outgoing RPC or reading distributed storage).
    * @throws InterruptedException if the thread is interrupted while blocking for parallel results.
-   *
    * @since 8.3
    */
   public <I, O> BiStream<I, O> inParallel(
@@ -492,7 +491,6 @@ public final class Parallelizer {
    * @deprecated Use {@link #inParallel(Iterable, Function)} instead. This method doesn't propagate
    *     cancellation from the main thread to the concurrent threads, thus isn't composable in a
    *     structured concurrency tree of concurrent operations.
-   *
    * @since 6.5
    */
   public <I, O> Collector<I, ?, BiStream<I, O>> inParallel(
