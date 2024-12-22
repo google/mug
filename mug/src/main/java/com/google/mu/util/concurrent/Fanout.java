@@ -421,6 +421,16 @@ public final class Fanout {
     return new Parallelizer(Scope.executor, maxConcurrency);
   }
 
+  /**
+   * Returns a {@link Parallelizer} that can be used to run any number of fanout concurrent tasks
+   * using the currently configured standard (virtual thread) executor.
+   *
+   * @since 8.3
+   */
+  public static Parallelizer withUnlimitedConcurrency() {
+    return withMaxConcurrency(Integer.MAX_VALUE);
+  }
+
   /** Function to join two results from concurrent computation. */
   public interface Join2<A, B, R, X extends Throwable> {
     R join(A a, B b) throws X;
@@ -461,7 +471,7 @@ public final class Fanout {
 
     void run() throws StructuredConcurrencyInterruptedException {
       try {
-        parallelizer().parallelize(runnables.stream());
+        withUnlimitedConcurrency().parallelize(runnables.stream());
       } catch (InterruptedException e) {
         throw new StructuredConcurrencyInterruptedException(e);
       }
@@ -469,11 +479,7 @@ public final class Fanout {
 
     @Deprecated
     void runUninterruptibly() {
-      parallelizer().parallelizeUninterruptibly(runnables.stream());
-    }
-
-    private Parallelizer parallelizer() {
-      return new Parallelizer(executor, runnables.size());
+      withUnlimitedConcurrency().parallelizeUninterruptibly(runnables.stream());
     }
   }
 
