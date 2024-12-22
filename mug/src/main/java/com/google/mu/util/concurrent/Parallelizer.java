@@ -436,15 +436,17 @@ public final class Parallelizer {
   }
 
   /**
-   * Applies {@code concurrentFunction} on each element of {@code inputs} in parallel, using this
-   * {@code Parallelizer} and returns the inputs and outputs in a {@link BiStream}, in encounter
-   * order of the input elements.
+   * Returns a {@link Collector} that runs {@code concurrentFunction} in parallel using this {@code
+   * Parallelizer} and returns the inputs and outputs in a {@link BiStream}, in encounter order of
+   * the input elements.
    *
    * <p>For example:
    *
    * <pre>{@code
+   * int concurrency = ...;
    * ImmutableListMultimap<String, Asset> resourceAssets =
-   *     parallelizer.inParallel(resources, this::listAssets)
+   *     resources.stream()
+   *         .collect(withMaxConcurrency(concurrency).inParallel(this::listAssets))
    *         .collect(flatteningToImmutableListMultimap(List::stream));
    * }</pre>
    *
@@ -465,33 +467,6 @@ public final class Parallelizer {
    * }
    * }</pre>
    *
-   * @param inputs the input parameters to pass to {@code concurrentFunction}.
-   * @param concurrentFunction a function that's safe to be run concurrently, and is usually
-   *     IO-intensive (such as an outgoing RPC or reading distributed storage).
-   * @throws InterruptedException if the thread is interrupted while blocking for parallel results.
-   * @since 8.3
-   */
-  public <I, O> BiStream<I, O> inParallel(
-      Collection<? extends I> inputs, Function<? super I, ? extends O> concurrentFunction)
-      throws InterruptedException {
-    List<I> list = new ArrayList<>(inputs);
-    requireNonNull(concurrentFunction);
-    List<O> outputs = new ArrayList<>(list.size());
-    outputs.addAll(Collections.nCopies(list.size(), (O) null));
-    parallelize(
-        IntStream.range(0, list.size()).boxed(),
-        i -> outputs.set(i, concurrentFunction.apply(list.get(i))));
-    return BiStream.zip(list, outputs);
-  }
-
-  /**
-   * Returns a {@link Collector} that runs {@code concurrentFunction} in parallel using this {@code
-   * Parallelizer} and returns the inputs and outputs in a {@link BiStream}, in encounter order of
-   * the input elements.
-   *
-   * @deprecated Use {@link #inParallel(Collection, Function)} instead. This method doesn't propagate
-   *     cancellation from the main thread to the concurrent threads, thus isn't composable in a
-   *     structured concurrency tree of concurrent operations.
    * @since 6.5
    */
   public <I, O> Collector<I, ?, BiStream<I, O>> inParallel(
@@ -502,9 +477,13 @@ public final class Parallelizer {
         inputs -> {
           List<O> outputs = new ArrayList<>(inputs.size());
           outputs.addAll(Collections.nCopies(inputs.size(), null));
-          parallelizeUninterruptibly(
-              IntStream.range(0, inputs.size()).boxed(),
-              i -> outputs.set(i, concurrentFunction.apply(inputs.get(i))));
+          try {
+            parallelize(
+                IntStream.range(0, inputs.size()).boxed(),
+                i -> outputs.set(i, concurrentFunction.apply(inputs.get(i))));
+          } catch (InterruptedException e) {
+            throw new StructuredConcurrencyInterruptedException(e);
+          }
           return BiStream.zip(inputs, outputs);
         });
   }

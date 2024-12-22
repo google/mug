@@ -73,15 +73,16 @@ public final class Fanout {
    *   (arm, leg) -> new Result(arm, leg));
    * }</pre>
    *
-   * @throws InterruptedException if the current thread is interrupted while waiting for the
-   *     concurrent operations to complete. The unfinished concurrent operations will be canceled.
+   * @throws StructuredConcurrencyInterruptedException if the current thread is interrupted while
+   *     waiting for the concurrent operations to complete. The unfinished concurrent operations
+   *     will be canceled.
    * @throws RuntimeException wrapping the original exception from the virtual thread if
    *     any concurrent operation failed
    * @throws X thrown by the {@code join} function
    */
   public static <A, B, R, X extends Throwable> R concurrently(
       Supplier<A> a, Supplier<B> b, Join2<? super A, ? super B, R, X> join)
-      throws InterruptedException, X {
+      throws X {
     requireNonNull(join);
     Scope scope = new Scope();
     AtomicReference<A> r1 = scope.add(a);
@@ -105,8 +106,9 @@ public final class Fanout {
    *   (head, arm, leg) -> new Result(head, arm, leg));
    * }</pre>
    *
-   * @throws InterruptedException if the current thread is interrupted while waiting for the
-   *     concurrent operations to complete. The unfinished concurrent operations will be canceled.
+   * @throws StructuredConcurrencyInterruptedException if the current thread is interrupted while
+   *     waiting for the concurrent operations to complete. The unfinished concurrent operations
+   *     will be canceled.
    * @throws RuntimeException wrapping the original exception from the virtual thread if
    *     any concurrent operation failed
    * @throws X thrown by the {@code join} function
@@ -116,7 +118,7 @@ public final class Fanout {
       Supplier<B> b,
       Supplier<C> c,
       Join3<? super A, ? super B, ? super C, R, X> join)
-      throws InterruptedException, X {
+      throws X {
     requireNonNull(join);
     Scope scope = new Scope();
     AtomicReference<A> r1 = scope.add(a);
@@ -142,8 +144,9 @@ public final class Fanout {
    *   (head, shoulder, arm, leg) -> new Result(head, shoulder, arm, leg));
    * }</pre>
    *
-   * @throws InterruptedException if the current thread is interrupted while waiting for the
-   *     concurrent operations to complete. The unfinished concurrent operations will be canceled.
+   * @throws StructuredConcurrencyInterruptedException if the current thread is interrupted while
+   *     waiting for the concurrent operations to complete. The unfinished concurrent operations
+   *     will be canceled.
    * @throws RuntimeException wrapping the original exception from the virtual thread if
    *     any concurrent operation failed
    * @throws X thrown by the {@code join} function
@@ -154,7 +157,7 @@ public final class Fanout {
       Supplier<C> c,
       Supplier<D> d,
       Join4<? super A, ? super B, ? super C, ? super D, R, X> join)
-      throws InterruptedException, X {
+      throws X {
     requireNonNull(join);
     Scope scope = new Scope();
     AtomicReference<A> r1 = scope.add(a);
@@ -182,8 +185,9 @@ public final class Fanout {
    *   (head, shoulder, arm, leg, feet) -> new Result(head, shoulder, arm, leg, feet));
    * }</pre>
    *
-   * @throws InterruptedException if the current thread is interrupted while waiting for the
-   *     concurrent operations to complete. The unfinished concurrent operations will be canceled.
+   * @throws StructuredConcurrencyInterruptedException if the current thread is interrupted while
+   *     waiting for the concurrent operations to complete. The unfinished concurrent operations
+   *     will be canceled.
    * @throws RuntimeException wrapping the original exception from the virtual thread if
    *     any concurrent operation failed
    * @throws X thrown by the {@code join} function
@@ -195,7 +199,7 @@ public final class Fanout {
       Supplier<D> d,
       Supplier<E> e,
       Join5<? super A, ? super B, ? super C, ? super D, ? super E, R, X> join)
-      throws InterruptedException, X {
+      throws X {
     requireNonNull(join);
     Scope scope = new Scope();
     AtomicReference<A> r1 = scope.add(a);
@@ -217,14 +221,14 @@ public final class Fanout {
    * concurrently(() -> uploadFile(), () -> sendMessageToQueue());
    * }</pre>
    *
-   * @throws InterruptedException if the current thread is interrupted while waiting for the
-   *     concurrent operations to complete. The unfinished concurrent operations will be canceled.
+   * @throws StructuredConcurrencyInterruptedException if the current thread is interrupted while
+   *     waiting for the concurrent operations to complete. The unfinished concurrent operations
+   *     will be canceled.
    * @throws RuntimeException wrapping the original exception from the virtual thread if
    *     any concurrent operation failed
    * @since 8.3
    */
-  public static void concurrently(Runnable task1, Runnable task2, Runnable... moreTasks)
-      throws InterruptedException {
+  public static void concurrently(Runnable task1, Runnable task2, Runnable... moreTasks) {
     new Scope().add(task1, task2).add(moreTasks).run();
   }
 
@@ -245,7 +249,9 @@ public final class Fanout {
    * @throws RuntimeException wrapping the original exception from the virtual thread if
    *     any concurrent operation failed
    * @throws X thrown by the {@code join} function
+   * @deprecated prefer using the concurrently() overloads that allow cancellation
    */
+  @Deprecated
   public static <A, B, R, X extends Throwable> R uninterruptibly(
       Supplier<A> a, Supplier<B> b, Join2<? super A, ? super B, R, X> join)
       throws X {
@@ -275,7 +281,9 @@ public final class Fanout {
    * @throws RuntimeException wrapping the original exception from the virtual thread if
    *     any concurrent operation failed
    * @throws X thrown by the {@code join} function
+   * @deprecated prefer using the concurrently() overloads that allow cancellation
    */
+  @Deprecated
   public static <A, B, C, R, X extends Throwable> R uninterruptibly(
       Supplier<A> a,
       Supplier<B> b,
@@ -310,7 +318,9 @@ public final class Fanout {
    * @throws RuntimeException wrapping the original exception from the virtual thread if
    *     any concurrent operation failed
    * @throws X thrown by the {@code join} function
+   * @deprecated prefer using the concurrently() overloads that allow cancellation
    */
+  @Deprecated
   public static <A, B, C, D, R, X extends Throwable> R uninterruptibly(
       Supplier<A> a,
       Supplier<B> b,
@@ -348,7 +358,9 @@ public final class Fanout {
    * @throws RuntimeException wrapping the original exception from the virtual thread if
    *     any concurrent operation failed
    * @throws X thrown by the {@code join} function
+   * @deprecated prefer using the concurrently() overloads that allow cancellation
    */
+  @Deprecated
   public static <A, B, C, D, E, R, X extends Throwable> R uninterruptibly(
       Supplier<A> a,
       Supplier<B> b,
@@ -381,7 +393,9 @@ public final class Fanout {
    * @throws RuntimeException wrapping the original exception from the virtual thread if
    *     any concurrent operation failed
    * @since 8.3
+   * @deprecated prefer using the concurrently() overloads that allow cancellation
    */
+  @Deprecated
   public static void uninterruptibly(Runnable task1, Runnable task2, Runnable... moreTasks) {
     new Scope().add(task1, task2).add(moreTasks).runUninterruptibly();
   }
@@ -446,10 +460,15 @@ public final class Fanout {
       return this;
     }
 
-    void run() throws InterruptedException {
-      parallelizer().parallelize(runnables.stream());
+    void run() throws StructuredConcurrencyInterruptedException {
+      try {
+        parallelizer().parallelize(runnables.stream());
+      } catch (InterruptedException e) {
+        throw new StructuredConcurrencyInterruptedException(e);
+      }
     }
 
+    @Deprecated
     void runUninterruptibly() {
       parallelizer().parallelizeUninterruptibly(runnables.stream());
     }

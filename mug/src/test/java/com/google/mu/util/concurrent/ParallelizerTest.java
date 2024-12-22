@@ -77,13 +77,13 @@ public class ParallelizerTest {
 
     @Test public void testInParallel_emptyInputStream() throws InterruptedException{
       Parallelizer parallelizer = new Parallelizer(threadPool, 3);
-      assertThat(parallelizer.inParallel(asList(), Object::toString).toMap())
+      assertThat(Stream.empty().collect(parallelizer.inParallel(Object::toString)).toMap())
           .isEmpty();
     }
 
     @Test public void testInParallel_fromSequentialStream() throws InterruptedException {
       Parallelizer parallelizer = new Parallelizer(threadPool, 3);
-      assertThat(parallelizer.inParallel(asList(1, 2, 3), Object::toString).toMap())
+      assertThat(Stream.of(1, 2, 3).collect(parallelizer.inParallel(Object::toString)).toMap())
           .containsExactly(1, "1", 2, "2", 3, "3")
           .inOrder();
     }
@@ -103,12 +103,10 @@ public class ParallelizerTest {
       Parallelizer parallelizer = new Parallelizer(threadPool, 3);
       RuntimeException thrown = assertThrows(
           RuntimeException.class,
-          () ->  parallelizer.inParallel(
-                 asList(1, 2, 3),
-                 i -> {
-                    Preconditions.checkState(i < 3);
-                    return i.toString();
-                  }));
+          () ->  Stream.of(1, 2, 3).collect(parallelizer.inParallel(i -> {
+            Preconditions.checkState(i < 3);
+            return i.toString();
+          })));
       assertThat(thrown).hasCauseThat().isInstanceOf(IllegalStateException.class);
     }
 
