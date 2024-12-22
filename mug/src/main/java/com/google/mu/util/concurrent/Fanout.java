@@ -18,9 +18,8 @@ import java.util.logging.Logger;
  * Supports structured concurrency for the common case where all concurrent operations are required
  * (as if you are running them sequentially).
  *
- * <p>You can use either {@link #concurrently} or {@link #uninterruptibly} to fan out a few
- * concurrent operations, with a lambda to combine the results after the concurrent operations have
- * completed.
+ * <p>You can use either {@link #concurrently} to fan out a few concurrent operations, with a
+ * lambda to combine the results after the concurrent operations have completed.
  *
  * <p>Any exception thrown by any of the concurrent operation will cancel all the other pending
  * operations and propagate back to the main thread.
@@ -41,10 +40,10 @@ import java.util.logging.Logger;
  * <p>Memory consistency effects: Actions before starting the concurrent operations (including
  * unsynchronized side effects) <i>happen-before</i> the concurrent operations running in the
  * virtual threads, which happen-before the join functions, which then happen-before the {@code
- * concurrently()} or {@code uninterruptibly()} method returns. As a result, thread-safe or
- * concurrent data structure isn't required to pass data between the caller and callee: they will
- * work the same way as if running in a single thread (except obviously there is no happens-before
- * relationship between the concurrent operations themselves).
+ * concurrently()} method returns. As a result, thread-safe or concurrent data structure isn't
+ * required to pass data between the caller and callee: they will work the same way as if running
+ * in a single thread (except obviously there is no happens-before relationship between the
+ * concurrent operations themselves).
  *
  * <p>By default, the JDK {@link Executors#newVirtualThreadPerTaskExecutor} is used to run all
  * structured concurrency tasks (thus requires Java 21 and virtual threads).
