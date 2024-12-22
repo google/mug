@@ -465,6 +465,7 @@ public final class Parallelizer {
    * }
    * }</pre>
    *
+   * @param inputs the input parameters to pass to {@code concurrentFunction}.
    * @param concurrentFunction a function that's safe to be run concurrently, and is usually
    *     IO-intensive (such as an outgoing RPC or reading distributed storage).
    * @throws InterruptedException if the thread is interrupted while blocking for parallel results.
