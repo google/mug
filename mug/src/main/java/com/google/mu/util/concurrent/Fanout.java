@@ -26,8 +26,8 @@ import java.util.logging.Logger;
  * operations and propagate back to the main thread.
  *
  * <p>If the main thread is interrupted (when you use {@code concurrently()} to allow interruption),
- * pending and currently running operations are canceled and the main thread will throw
- * InterruptedException. For example:
+ * pending and currently running operations are canceled and the main thread will throw the
+ * unchecked {@link StructuredConcurrencyInterruptedException}. For example:
  *
  * <pre>{@code
  * import static com.google.mu.util.concurrent.Fanout.concurrently;
