@@ -489,7 +489,7 @@ public final class Parallelizer {
    * Parallelizer} and returns the inputs and outputs in a {@link BiStream}, in encounter order of
    * the input elements.
    *
-   * @deprecated Use {@link #inParallel(Iterable, Function)} instead. This method doesn't propagate
+   * @deprecated Use {@link #inParallel(Collection, Function)} instead. This method doesn't propagate
    *     cancellation from the main thread to the concurrent threads, thus isn't composable in a
    *     structured concurrency tree of concurrent operations.
    * @since 6.5
