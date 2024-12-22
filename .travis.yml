@@ -5,5 +5,3 @@ jdk:
 
 sudo: false
 
-env:
-  JAVA_TOOL_OPTIONS: "--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED"
