@@ -395,11 +395,10 @@ public final class Fanout {
    * DOSing it, the following code performs at most 10 queries at the same time:
    *
    * <pre>{@code
-   * Parallelizer parallelizer = Fanout.withMaxConcurrency(10);
-   * Map<UserId, User> users =
-   *     userIds.stream()
-   *         .collect(parallelizer.inParallel(userService::fetchUser))
-   *         .toMap();
+   * List<UserId> userIds = ;
+   * Map<UserId, User> users = Fanout.withMaxConcurrency(10)
+   *     .inParallel(userIds, userService::fetchUser)
+   *     .toMap();
    * }</pre>
    *
    * Compared to parallel streams, you can control the concurrency. Exceptions also retain the
