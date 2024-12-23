@@ -408,8 +408,8 @@ public final class Fanout {
    *
    * <pre>{@code
    * List<UserId> userIds = ;
-   * Map<UserId, User> users = Fanout.withMaxConcurrency(10)
-   *     .inParallel(userIds, userService::fetchUser)
+   * Map<UserId, User> users = userIds.stream()
+   *     .collect(withMaxConcurrency(10).inParallel(userService::fetchUser))
    *     .toMap();
    * }</pre>
    *
