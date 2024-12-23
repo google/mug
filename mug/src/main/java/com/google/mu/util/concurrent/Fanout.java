@@ -413,8 +413,18 @@ public final class Fanout {
    *     .toMap();
    * }</pre>
    *
-   * Compared to parallel streams, you can control the concurrency. Exceptions also retain the
-   * full stack trace from both the main thread and the virtual thread.
+   * Functionally, the {@link Parallelizer#inParallel} collector is very similar to the Java 25
+   * {@code mapConcurrent()} Gatherer:
+   *
+   * <pre>{@code
+   * List<UserId> userIds = ;
+   * List<User> users = userIds.stream()
+   *     .gather(mapConcurrent(userService::fetchUser, 10))
+   *     .toList();
+   * }</pre>
+   *
+   * But it provides extra flexibility because with {@code Fanout} you can customize the executor
+   * by using {@link StructuredConcurrencyExecutorPlugin}.
    */
   public static Parallelizer withMaxConcurrency(int maxConcurrency) {
     return new Parallelizer(Scope.executor, maxConcurrency);
