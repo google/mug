@@ -414,7 +414,7 @@ public final class Fanout {
    * }</pre>
    *
    * Functionally, the {@link Parallelizer#inParallel} collector is very similar to the Java 25
-   * {@code mapConcurrent()} Gatherer:
+   * {@code mapConcurrent()} gatherer:
    *
    * <pre>{@code
    * List<UserId> userIds = ;
@@ -423,8 +423,10 @@ public final class Fanout {
    *     .toList();
    * }</pre>
    *
-   * Except it provides extra flexibility because with {@code Fanout} you can customize the executor
-   * by using {@link StructuredConcurrencyExecutorPlugin}.
+   * Except it supports extra flexibility: you can customize the executor or the ThreadFactory used
+   * for the concurrent operations by plugging in a {@link StructuredConcurrencyExecutorPlugin}.
+   * This in turn makes it possible to hook in org-specific monitoring, debugging and/or context
+   * propagation etc.
    */
   public static Parallelizer withMaxConcurrency(int maxConcurrency) {
     return new Parallelizer(Scope.executor, maxConcurrency);
