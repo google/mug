@@ -32,7 +32,7 @@ import java.util.logging.Logger;
  * <pre>{@code
  * import static com.google.mu.util.concurrent.Fanout.concurrently;
  *
- * return concurrently(() -> fetchArm(...), () -> fetchLeg(), (arm, leg) -> ...);
+ * return concurrently(() -> fetchArm(...), () -> fetchLeg(...), (arm, leg) -> ...);
  * }</pre>
  *
  * <p>Memory consistency effects: Actions before starting the concurrent operations (including
