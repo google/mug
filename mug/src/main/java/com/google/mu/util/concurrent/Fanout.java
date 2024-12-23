@@ -423,7 +423,7 @@ public final class Fanout {
    *     .toList();
    * }</pre>
    *
-   * But it provides extra flexibility because with {@code Fanout} you can customize the executor
+   * Except it provides extra flexibility because with {@code Fanout} you can customize the executor
    * by using {@link StructuredConcurrencyExecutorPlugin}.
    */
   public static Parallelizer withMaxConcurrency(int maxConcurrency) {
