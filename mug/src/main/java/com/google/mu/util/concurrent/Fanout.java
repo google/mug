@@ -21,7 +21,7 @@ import java.util.logging.Logger;
  * <p>You can use one of the {@code concurrently()} methods to fan out a few concurrent operations,
  * with a lambda to combine the results after the concurrent operations have completed.
  *
- * <p>Any exception thrown by any of the concurrent operation will cancel all the other pending
+ * <p>Any exception thrown by any of the concurrent operations will cancel all the other pending
  * operations and propagate back to the main thread.
  *
  * <p>If the main thread is interrupted, pending and currently running operations are canceled and
