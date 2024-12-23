@@ -18,24 +18,21 @@ import java.util.logging.Logger;
  * Supports structured concurrency for the common case where all concurrent operations are required
  * (as if you are running them sequentially).
  *
- * <p>You can use either {@link #concurrently} to fan out a few concurrent operations, with a
- * lambda to combine the results after the concurrent operations have completed.
+ * <p>You can use one of the {@code concurrently()} methods to fan out a few concurrent operations,
+ * with a lambda to combine the results after the concurrent operations have completed.
  *
- * <p>Any exception thrown by any of the concurrent operation will cancel all the other pending
+ * <p>Any exception thrown by any of the concurrent operations will cancel all the other pending
  * operations and propagate back to the main thread.
  *
  * <p>If the main thread is interrupted, pending and currently running operations are canceled and
- * the main thread will throw the unchecked {@link StructuredConcurrencyInterruptedException}.
+ * the main thread will throw an unchecked exception (with the thread's interrupted bit set).
  *
  * <p>For example:
  *
  * <pre>{@code
  * import static com.google.mu.util.concurrent.Fanout.concurrently;
  *
- * return concurrently(
- *     () -> getProjectAncestry(...),
- *     () -> readJobTimeline(),
- *     (ancestry, timeline) -> ...);
+ * return concurrently(() -> fetchArm(...), () -> fetchLeg(), (arm, leg) -> ...);
  * }</pre>
  *
  * <p>Memory consistency effects: Actions before starting the concurrent operations (including
@@ -48,9 +45,10 @@ import java.util.logging.Logger;
  *
  * <p>By default, the JDK {@link Executors#newVirtualThreadPerTaskExecutor} is used to run all
  * structured concurrency tasks (thus requires Java 21 and virtual threads).
- * To use an alternative executor (say, you don't want to use virtual threads), implement a {@link
- * StructuredConcurrencyExecutorPlugin} and package it up for {@link ServiceLoader}. You could also
- * use Google <a href="http://github.com/google/auto/tree/main/service">@AutoService</a> to help
+ * To use an alternative executor (say, you need a custom ThreadFactory, or don't want to use
+ * virtual threads at all), implement a {@link StructuredConcurrencyExecutorPlugin} and package it
+ * up for {@link ServiceLoader}. You could also use Google
+ * <a href="http://github.com/google/auto/tree/main/service">@AutoService</a> to help
  * automate the generation of the META-INF/services files.
  *
  * @since 8.1
