@@ -1,7 +1,7 @@
 Disclaimer: This is not an official Google product.
 
 # Mug
-A small Java 8 utilities library ([javadoc](http://google.github.io/mug/apidocs/index.html)), with **0 deps** (Proto, BigQuery, Guava addons are in separate artifacts). ![](https://travis-ci.org/google/mug.svg?branch=master)
+A small Java 8+ utilities library ([javadoc](http://google.github.io/mug/apidocs/index.html)), with **0 deps** (Proto, BigQuery, Guava addons are in separate artifacts). ![](https://travis-ci.org/google/mug.svg?branch=master)
 
 Offers:
 * **Intuitive to read**, powerful string manipulation ([StringFormat](https://github.com/google/mug/wiki/StringFormat-Explained), [Substring](https://github.com/google/mug/wiki/Substring-Explained))
