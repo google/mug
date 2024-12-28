@@ -341,6 +341,10 @@ public final class SafeQuery {
     return query.startsWith("-") && !placeholder.isImmediatelyBetween("(", ")") ? parenthesized() : this;
   }
 
+  private static Iterable<?> skipEmptySubqueries(Iterable<?> iterable) {
+    return Iterables.filter(iterable, v -> !(v instanceof SafeQuery && v.toString().isEmpty()));
+  }
+
   /**
    * An SPI class for subclasses to provide additional translation from
    * placeholder values to safe query strings.
@@ -411,7 +415,7 @@ public final class SafeQuery {
     private String fillInPlaceholder(Substring.Match placeholder, Object value) {
       validatePlaceholder(placeholder);
       if (value instanceof Iterable) {
-        Iterable<?> iterable = (Iterable<?>) value;
+        Iterable<?> iterable = skipEmptySubqueries((Iterable<?>) value);
         if (placeholder.isImmediatelyBetween("`", "`")) { // If backquoted, it's a list of symbols
           return String.join("`, `", Iterables.transform(iterable, v -> backquoted(placeholder, v)));
         }
