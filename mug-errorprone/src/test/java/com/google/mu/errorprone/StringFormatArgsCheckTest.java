@@ -2208,6 +2208,22 @@ public final class StringFormatArgsCheckTest {
   }
 
   @Test
+  public void to_wildcardDoesNotCountAsDuplicateName() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  private static final StringFormat.Template<IllegalArgumentException> TEMPLATE =",
+            "      StringFormat.to(IllegalArgumentException::new, \"{...}={...}\");",
+            "  void test() {",
+            "    TEMPLATE.with(1, 2);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
   public void format_duplicatePlaceholderNameWithConsistentValues() {
     helper
         .addSourceLines(

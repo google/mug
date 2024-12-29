@@ -306,7 +306,9 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
       VisitorState state)
       throws ErrorReport {
     ImmutableListMultimap<String, ExpressionTree> allPlaceholders =
-        BiStream.zip(placeholderVariableNames, args).collect(toImmutableListMultimap());
+        BiStream.zip(placeholderVariableNames, args)
+            .skipKeysIf("..."::equals) // wildcard doesn't count as duplicate name
+            .collect(toImmutableListMultimap());
     for (Map.Entry<String, List<ExpressionTree>> entry :
         Multimaps.asMap(allPlaceholders).entrySet()) {
       List<ExpressionTree> conflicts =
