@@ -36,7 +36,7 @@ public class CompletionTest {
     AtomicBoolean done = new AtomicBoolean();
     try (Completion completion = new Completion()) {
       completion.run(() -> {});
-      new Thread(completion.wrap(() -> {
+      new Thread(completion.toRun(() -> {
         done.set(true);
       })).start();
     }
@@ -46,7 +46,7 @@ public class CompletionTest {
   @Test public void twoTasks_failed() throws Exception {
     AtomicBoolean done = new AtomicBoolean();
     try (Completion completion = new Completion()) {
-      new Thread(completion.wrap(() -> {
+      new Thread(completion.toRun(() -> {
         done.set(true);
       })).start();
       completion.run(() -> {

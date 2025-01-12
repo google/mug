@@ -21,10 +21,10 @@ final class Completion implements AutoCloseable {
   private final Phaser phaser = new Phaser(1);
 
   void run(Runnable task) {
-    wrap(task).run();
+    toRun(task).run();
   }
 
-  Runnable wrap(Runnable task) {
+  Runnable toRun(Runnable task) {
     phaser.register();
     return () -> {
       try {
