@@ -413,6 +413,15 @@ public final class SafeSql {
   }
 
   /**
+   * Returns this SafeSql if {@code condition} is true; otherwise returns {@link #EMPTY}.
+   *
+   * @since 8.4
+   */
+  public SafeSql when(boolean condition) {
+    return condition ? this : EMPTY;
+  }
+
+  /**
    * Returns a {@link Template} of {@link SafeSql} based on the {@code template} string.
    * Useful for creating a constant to be reused with different parameters.
    *

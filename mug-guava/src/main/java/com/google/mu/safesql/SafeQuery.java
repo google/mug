@@ -120,6 +120,15 @@ public final class SafeQuery {
   }
 
   /**
+   * Returns this SafeQuery if {@code condition} is true; otherwise returns {@link #EMPTY}.
+   *
+   * @since 8.4
+   */
+  public SafeQuery when(boolean condition) {
+    return condition ? this : EMPTY;
+  }
+
+  /**
    * An optional query that's only rendered if {@code arg} is present; otherwise returns {@link
    * #EMPTY}. It's for use cases where a subquery is only added when present, for example the
    * following query will add the WHERE clause if the filter is present:
