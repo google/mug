@@ -3,7 +3,11 @@
   <parent>
       <groupId>com.google.mug</groupId>
       <artifactId>mug-root</artifactId>
+<<<<<<< HEAD
       <version>8.3-SNAPSHOT</version>
+=======
+      <version>8.4-SNAPSHOT</version>
+>>>>>>> master
       <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>mug-benchmarks</artifactId>

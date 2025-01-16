@@ -253,17 +253,6 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
       boolean formatStringIsInlined,
       VisitorState state)
       throws ErrorReport {
-    checkingOn(invocation)
-        .require(
-            placeholderVariableNames.size() == args.size(),
-            "%s placeholders defined by: %s; %s provided by %s",
-            placeholderVariableNames.size(),
-            definition,
-            args.size(),
-            invocation);
-    if (args.size() != placeholderVariableNames.size()) {
-      return; // This shouldn't happen. But if it did, we don't want to fail compilation.
-    }
     for (ExpressionTree arg : args) {
       checkArgFormattability(arg, state);
     }
@@ -272,6 +261,13 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
     for (int i = 0; i < placeholderVariableNames.size(); i++) {
       String placeholderName = placeholderVariableNames.get(i);
       String normalizedPlacehoderName = normalizeForComparison(placeholderName);
+      checkingOn(invocation)
+          .require(
+              args.size() > i,
+              "No value is provided for placeholder #%s {%s} as defined by: %s",
+              (i + 1),
+              placeholderName,
+              definition);
       ExpressionTree arg = args.get(i);
       if (!normalizedArgTexts.get(i).contains(normalizedPlacehoderName)) {
         // arg doesn't match placeholder
@@ -293,6 +289,14 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
                 placeholderName);
       }
     }
+    checkingOn(invocation)
+        .require(
+            placeholderVariableNames.size() == args.size(),
+            "%s placeholders defined by: %s; %s provided by %s",
+            placeholderVariableNames.size(),
+            definition,
+            args.size(),
+            invocation);
     checkDuplicatePlaceholderNames(placeholderVariableNames, args, state);
   }
 
@@ -302,7 +306,9 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
       VisitorState state)
       throws ErrorReport {
     ImmutableListMultimap<String, ExpressionTree> allPlaceholders =
-        BiStream.zip(placeholderVariableNames, args).collect(toImmutableListMultimap());
+        BiStream.zip(placeholderVariableNames, args)
+            .skipKeysIf("..."::equals) // wildcard doesn't count as duplicate name
+            .collect(toImmutableListMultimap());
     for (Map.Entry<String, List<ExpressionTree>> entry :
         Multimaps.asMap(allPlaceholders).entrySet()) {
       List<ExpressionTree> conflicts =

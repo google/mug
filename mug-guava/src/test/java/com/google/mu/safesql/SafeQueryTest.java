@@ -246,7 +246,7 @@ public final class SafeQueryTest {
   }
 
   @Test
-  public void listOfSafeBigQueriesPlaceholder() {
+  public void listOfSafeQueriesPlaceholder() {
     assertThat(
             template("SELECT foo FROM {tbls}")
                 .with(/* tbls */ asList(SafeQuery.of("a"), SafeQuery.of("b"))))
@@ -254,7 +254,25 @@ public final class SafeQueryTest {
   }
 
   @Test
-  public void listOfSafeBigQueries_disallowed() {
+  public void listOfSubqueries() {
+    assertThat(
+            SafeQuery.of(
+                "SELECT {exprs} FROM tbl", /* exprs */
+                asList(SafeQuery.of("123"), SafeQuery.of("foo"))))
+        .isEqualTo(SafeQuery.of("SELECT 123, foo FROM tbl"));
+  }
+
+  @Test
+  public void listOfSubqueries_emptySubqueryIgnored() {
+    assertThat(
+            SafeQuery.of(
+                "SELECT {exprs} FROM tbl", /* exprs */
+                asList(SafeQuery.of("123"), SafeQuery.EMPTY)))
+        .isEqualTo(SafeQuery.of("SELECT 123 FROM tbl"));
+  }
+
+  @Test
+  public void listOfSafeQueries_disallowed() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -991,6 +1009,17 @@ public final class SafeQueryTest {
   @Test
   public void when_conditionalIsTrue_returnsQuery() {
     assertThat(SafeQuery.when(true, "WHERE id = {id}", 1))
+        .isEqualTo(SafeQuery.of("WHERE id = 1"));
+  }
+
+  @Test
+  public void postfixWhen_conditionalIsFalse_returnsEmpty() {
+    assertThat(SafeQuery.of("WHERE id = {id}", 1).when(false)).isEqualTo(SafeQuery.EMPTY);
+  }
+
+  @Test
+  public void postfixWhen_conditionalIsTrue_returnsQuery() {
+    assertThat(SafeQuery.of("WHERE id = {id}", 1).when(true))
         .isEqualTo(SafeQuery.of("WHERE id = 1"));
   }
 

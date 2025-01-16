@@ -665,6 +665,17 @@ public class SafeSqlTest {
   }
 
   @Test
+  public void postfixWhen_conditionalIsFalse_returnsEmpty() {
+    assertThat(SafeSql.of("WHERE id = {id}", 1).when(false)).isEqualTo(SafeSql.EMPTY);
+  }
+
+  @Test
+  public void postfixWhen_conditionalIsTrue_returnsQuery() {
+    assertThat(SafeSql.of("WHERE id = {id}", 1).when(true))
+        .isEqualTo(SafeSql.of("WHERE id = {id}", 1));
+  }
+
+  @Test
   public void optionally_optionalArgIsEmpty_returnsEmpty() {
     assertThat(SafeSql.optionally("WHERE id = {id}", /* id */ Optional.empty()))
         .isEqualTo(SafeSql.EMPTY);

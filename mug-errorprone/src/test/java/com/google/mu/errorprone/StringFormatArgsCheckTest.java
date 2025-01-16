@@ -1393,7 +1393,7 @@ public final class StringFormatArgsCheckTest {
             "import com.google.mu.annotations.TemplateString;",
             "class Test {",
             "  void test(String foo, int barId, String baz) {",
-            "    // BUG: Diagnostic contains:",
+            "    // BUG: Diagnostic contains: 3 provided",
             "    report(\"{foo}-{bar_id}\", foo, barId, baz);",
             "  }",
             "  @TemplateFormatMethod",
@@ -1411,7 +1411,7 @@ public final class StringFormatArgsCheckTest {
             "import com.google.mu.annotations.TemplateString;",
             "class Test {",
             "  void test(String foo, int barId, String baz) {",
-            "    // BUG: Diagnostic contains:",
+            "    // BUG: Diagnostic contains: 3 provided",
             "    new Test(\"{foo}-{bar_id}\", foo, barId, baz);",
             "  }",
             "  @TemplateFormatMethod",
@@ -1429,7 +1429,7 @@ public final class StringFormatArgsCheckTest {
             "import com.google.mu.annotations.TemplateString;",
             "class Test {",
             "  void test(String foo) {",
-            "    // BUG: Diagnostic contains:",
+            "    // BUG: Diagnostic contains: No value is provided for placeholder #2 {bar_id}",
             "    report(\"{foo}-{bar_id}\", foo);",
             "  }",
             "  @TemplateFormatMethod",
@@ -1447,7 +1447,7 @@ public final class StringFormatArgsCheckTest {
             "import com.google.mu.annotations.TemplateString;",
             "class Test {",
             "  void test(String foo) {",
-            "    // BUG: Diagnostic contains:",
+            "    // BUG: Diagnostic contains: No value is provided for placeholder #2 {bar_id}",
             "    new Test(\"{foo}-{bar_id}\", foo);",
             "  }",
             "  @TemplateFormatMethod",
@@ -2097,7 +2097,7 @@ public final class StringFormatArgsCheckTest {
             "import com.google.mu.util.StringFormat;",
             "class Test {",
             "  void test(String foo, int barId, String baz) {",
-            "    // BUG: Diagnostic contains:",
+            "    // BUG: Diagnostic contains: 3 provided",
             "    StringFormat.using(\"{foo}-{bar_id}\", foo, barId, baz);",
             "  }",
             "}")
@@ -2112,7 +2112,7 @@ public final class StringFormatArgsCheckTest {
             "import com.google.mu.util.StringFormat;",
             "class Test {",
             "  void test(String foo) {",
-            "    // BUG: Diagnostic contains:",
+            "    // BUG: Diagnostic contains: placeholder #2 {bar_id}",
             "    StringFormat.using(\"{foo}-{bar_id}\", foo);",
             "  }",
             "}")
@@ -2202,6 +2202,22 @@ public final class StringFormatArgsCheckTest {
             "  void test(String foo1, String foo2) {",
             "    // BUG: Diagnostic contains: {foo}",
             "    new StringFormat(\"{foo}={foo}\").format(foo1, foo2);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void to_wildcardDoesNotCountAsDuplicateName() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  private static final StringFormat.Template<IllegalArgumentException> TEMPLATE =",
+            "      StringFormat.to(IllegalArgumentException::new, \"{...}={...}\");",
+            "  void test() {",
+            "    TEMPLATE.with(1, 2);",
             "  }",
             "}")
         .doTest();
@@ -2681,7 +2697,7 @@ public final class StringFormatArgsCheckTest {
             "import com.google.mu.util.StringFormat;",
             "class Test {",
             "  void test(String foo, int barId, String baz) {",
-            "    // BUG: Diagnostic contains:",
+            "    // BUG: Diagnostic contains: 3 provided",
             "    new StringFormat(\"{foo}-{bar_id}\").format(foo, barId, baz);",
             "  }",
             "}")
@@ -2696,7 +2712,7 @@ public final class StringFormatArgsCheckTest {
             "import com.google.mu.util.StringFormat;",
             "class Test {",
             "  void test(String foo) {",
-            "    // BUG: Diagnostic contains:",
+            "    // BUG: Diagnostic contains: placeholder #2 {bar_id}",
             "    new StringFormat(\"{foo}-{bar_id}\").format(foo);",
             "  }",
             "}")
@@ -2731,7 +2747,7 @@ public final class StringFormatArgsCheckTest {
             "class Test {",
             "  void test(String foo, int barId, String baz) {",
             "    StringFormat.to(IllegalArgumentException::new, \"{foo}-{bar_id}\")",
-            "        // BUG: Diagnostic contains:",
+            "        // BUG: Diagnostic contains: 3 provided",
             "        .with(foo, barId, baz);",
             "  }",
             "}")
@@ -2748,7 +2764,7 @@ public final class StringFormatArgsCheckTest {
             "class Test {",
             "  void test(String foo, int barId, String baz) {",
             "    StringFormat.to(IllegalArgumentException::new, \"{foo}-{bar_id}\")",
-            "        // BUG: Diagnostic contains:",
+            "        // BUG: Diagnostic contains: placeholder #2 {bar_id}",
             "        .with(foo);",
             "  }",
             "}")

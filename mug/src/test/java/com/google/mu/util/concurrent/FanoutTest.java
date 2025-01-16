@@ -80,36 +80,38 @@ public final class FanoutTest {
   @Test
   public void concurrently_interruptionPropagated() throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
-    AtomicBoolean operationInterrupted = new AtomicBoolean();
+    CountDownLatch concurrentOperationInterrupted = new CountDownLatch(1);
     AtomicBoolean interruptionSwallowed = new AtomicBoolean();
     AtomicBoolean interruptionPropagated = new AtomicBoolean();
-    Thread thread = new Thread(() -> {
-      try {
-      concurrently(
-          () -> {},
-          () -> {
-            try {
-              latch.await();
-            } catch (InterruptedException e) {
-              operationInterrupted.set(true);
-            }
-          });
-      } catch (StructuredConcurrencyInterruptedException e) {
-        interruptionSwallowed.set(true);
-      }
-      try {
-        latch.await();
-      } catch (InterruptedException e) {
-        interruptionPropagated.set(true);
-      }
-    });
+    Thread thread =
+        new Thread(
+            () -> {
+              try {
+                concurrently(
+                    () -> {},
+                    () -> {
+                      try {
+                        latch.await();
+                      } catch (InterruptedException e) {
+                        concurrentOperationInterrupted.countDown();
+                      }
+                    });
+              } catch (StructuredConcurrencyInterruptedException e) {
+                interruptionSwallowed.set(true);
+              }
+              try {
+                latch.await();
+              } catch (InterruptedException e) {
+                interruptionPropagated.set(true);
+              }
+            });
     thread.start();
     Thread.sleep(100);
     assertThat(thread.isAlive()).isTrue();
     assertThat(thread.isInterrupted()).isFalse();
     thread.interrupt();
     thread.join();
-    assertThat(operationInterrupted.get()).isTrue();
+    concurrentOperationInterrupted.await();
     assertThat(interruptionSwallowed.get()).isTrue();
     assertThat(interruptionPropagated.get()).isTrue();
   }
