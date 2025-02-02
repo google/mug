@@ -33,7 +33,7 @@ import com.sun.tools.javac.code.Symbol.VarSymbol;
 final class FormatStringUtils {
   static final Substring.Pattern PLACEHOLDER_PATTERN =
       consecutive(CharMatcher.noneOf("{}")::matches).immediatelyBetween("{", INCLUSIVE, "}", INCLUSIVE);
-  static final Substring.Pattern PLACEHOLDER_SEPARATOR =
+  private static final Substring.Pattern PLACEHOLDER_SEPARATOR =
       Stream.of("=", "->").map(Substring::first).collect(firstOccurrence());
   static final Substring.RepeatingPattern PLACEHOLDER_NAMES_PATTERN =
       consecutive(CharMatcher.noneOf("{}")::matches).immediatelyBetween("{", "}").repeatedly();
