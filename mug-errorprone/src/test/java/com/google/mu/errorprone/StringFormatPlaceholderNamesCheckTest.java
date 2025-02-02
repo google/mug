@@ -232,27 +232,27 @@ public final class StringFormatPlaceholderNamesCheckTest {
   }
 
   @Test
-  public void trailingSpacesBeforeEqualSignIgnored() {
+  public void equalSignBeforeArrow() {
     helper
         .addSourceLines(
             "Test.java",
             "import com.google.mu.util.StringFormat;",
             "class Test {",
             "  private static final StringFormat FORMAT =",
-            "      new StringFormat(\"{shows_id => id,}\");",
+            "      new StringFormat(\"{pattern=a->b}\");",
             "}")
         .doTest();
   }
 
   @Test
-  public void trailingSpacesBeforeArrowIgnored() {
+  public void trailingSpacesBeforeArrowSignIgnored() {
     helper
         .addSourceLines(
             "Test.java",
             "import com.google.mu.util.StringFormat;",
             "class Test {",
             "  private static final StringFormat FORMAT =",
-            "      new StringFormat(\"{shows_id -> id,}\");",
+            "      new StringFormat(\"{only_active -> status = 'ACTIVE'}\");",
             "}")
         .doTest();
   }

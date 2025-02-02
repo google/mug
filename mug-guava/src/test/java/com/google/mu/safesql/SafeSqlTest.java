@@ -45,6 +45,58 @@ public class SafeSqlTest {
   }
 
   @Test
+  public void singleBoolParameter() {
+    SafeSql sql = SafeSql.of("select {bool}", true);
+    assertThat(sql.toString()).isEqualTo("select ?");
+    assertThat(sql.getParameters()).containsExactly(true);
+  }
+
+  @Test
+  public void conditionalOperator_evaluateToTrue() {
+    boolean showsId = true;
+    assertThat(SafeSql.of("SELECT {shows_id->id,} name FROM tbl", showsId))
+        .isEqualTo(SafeSql.of("SELECT id, name FROM tbl"));
+  }
+
+  @Test
+  public void conditionalOperator_evaluateToFalse() {
+    boolean showsId = false;
+    assertThat(SafeSql.of("SELECT {shows_id->id,} name FROM tbl", showsId))
+        .isEqualTo(SafeSql.of("SELECT  name FROM tbl"));
+  }
+
+  @Test
+  public void conditionalOperator_nonBooleanArg_disallowed() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> SafeSql.of("SELECT {shows_id->id,} name FROM tbl", SafeQuery.of("showsId")));
+    assertThat(thrown).hasMessageThat().contains("{shows_id->");
+    assertThat(thrown).hasMessageThat().contains("SafeQuery");
+  }
+
+  @Test
+  public void conditionalOperator_nullArg_disallowed() {
+    Boolean showsId = null;
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> SafeSql.of("SELECT {shows_id->id,} name FROM tbl", showsId));
+    assertThat(thrown).hasMessageThat().contains("{shows_id->");
+    assertThat(thrown).hasMessageThat().contains("null");
+  }
+
+  @Test
+  public void conditionalOperator_cannotBeBacktickQuoted() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> SafeSql.of("SELECT `{shows_id->id}` name FROM tbl", true));
+    assertThat(thrown).hasMessageThat().contains("{shows_id->");
+    assertThat(thrown).hasMessageThat().contains("backtick quoted");
+  }
+
+  @Test
   public void backquotedEnumParameter() {
     SafeSql sql = SafeSql.of(
         "select `{column}` from Users",

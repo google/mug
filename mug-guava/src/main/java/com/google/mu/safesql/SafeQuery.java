@@ -16,11 +16,13 @@ package com.google.mu.safesql;
 
 import static com.google.common.base.CharMatcher.anyOf;
 import static com.google.common.base.CharMatcher.javaIsoControl;
+import static com.google.common.base.CharMatcher.whitespace;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.mu.safesql.InternalCollectors.skippingEmpty;
 import static com.google.mu.safesql.TrustedTypes.TRUSTED_SQL_TYPE_NAME;
 import static com.google.mu.safesql.TrustedTypes.isTrusted;
+import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.Substring.suffix;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -67,6 +69,13 @@ import com.google.mu.util.Substring;
  * It simply wraps a sanitized query string, using auto-escaping and unicode encoding to prevent SQL
  * injection. It can be used for databases that don't support JDBC parameterization, or if you
  * prefer dynamic SQL over parameterization for debugging reasons etc.
+ *
+ * <p>API Note: it's common that a piece of the query needs to be conditionally guarded, you can use
+ * the conditional query operator {@code ->} in the placeholder, for example:
+ *
+ * <pre>{@code
+ * SafeQuery.of("SELECT {shows_id -> id,} name FROM tbl", showsId());
+ * }</pre>
  *
  * <p>This class is Android compatible.
  *
@@ -423,6 +432,23 @@ public final class SafeQuery {
 
     private String fillInPlaceholder(Substring.Match placeholder, Object value) {
       validatePlaceholder(placeholder);
+      Substring.Match conditional = first("->").in(placeholder.skip(1, 1).toString()).orElse(null);
+      if (conditional != null) {
+        checkArgument(
+            !placeholder.isImmediatelyBetween("`", "`"),
+            "boolean placeholder {%s->} shouldn't be backtick quoted",
+            conditional.before());
+        checkArgument(
+            value != null,
+            "boolean placeholder {%s->} cannot be used with a null value",
+            conditional.before());
+        checkArgument(
+            value instanceof Boolean,
+            "boolean placeholder {%s->} can only be used with a boolean value; %s encountered.",
+            conditional.before(),
+            value.getClass().getName());
+        return (Boolean) value ? whitespace().trimFrom(conditional.after()) : "";
+      }
       if (value instanceof Iterable) {
         Iterable<?> iterable = skipEmptySubqueries((Iterable<?>) value);
         if (placeholder.isImmediatelyBetween("`", "`")) { // If backquoted, it's a list of symbols
