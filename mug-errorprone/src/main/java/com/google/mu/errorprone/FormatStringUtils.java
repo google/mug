@@ -1,6 +1,7 @@
 package com.google.mu.errorprone;
 
 
+import static com.google.common.base.CharMatcher.whitespace;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.mu.util.Optionals.optionally;
 import static com.google.mu.util.Substring.consecutive;
@@ -36,9 +37,11 @@ final class FormatStringUtils {
       consecutive(CharMatcher.noneOf("{}")::matches).immediatelyBetween("{", "}").repeatedly();
 
   static ImmutableList<String> placeholderVariableNames(String formatString) {
+    Substring.Pattern beforeEqualSign = Substring.before(first('='));
     return PLACEHOLDER_NAMES_PATTERN
         .from(formatString)
-        .map(first('=').toEnd()::removeFrom) // for Cloud resource name syntax
+        // for Cloud resource name syntax
+        .map(n -> beforeEqualSign.from(n).map(whitespace()::trimTrailingFrom).orElse(n))
         .collect(toImmutableList());
   }
 
