@@ -33,15 +33,17 @@ import com.sun.tools.javac.code.Symbol.VarSymbol;
 final class FormatStringUtils {
   static final Substring.Pattern PLACEHOLDER_PATTERN =
       consecutive(CharMatcher.noneOf("{}")::matches).immediatelyBetween("{", INCLUSIVE, "}", INCLUSIVE);
+  static final Substring.Pattern PLACEHOLDER_SEPARATOR =
+      Stream.of("=", "->").map(Substring::first).collect(firstOccurrence());
   static final Substring.RepeatingPattern PLACEHOLDER_NAMES_PATTERN =
       consecutive(CharMatcher.noneOf("{}")::matches).immediatelyBetween("{", "}").repeatedly();
 
   static ImmutableList<String> placeholderVariableNames(String formatString) {
-    Substring.Pattern beforeEqualSign = Substring.before(first('='));
+    Substring.Pattern beforeSeparator = Substring.before(PLACEHOLDER_SEPARATOR);
     return PLACEHOLDER_NAMES_PATTERN
         .from(formatString)
         // for Cloud resource name syntax
-        .map(n -> beforeEqualSign.from(n).map(whitespace()::trimTrailingFrom).orElse(n))
+        .map(n -> beforeSeparator.from(n).map(whitespace()::trimTrailingFrom).orElse(n))
         .collect(toImmutableList());
   }
 

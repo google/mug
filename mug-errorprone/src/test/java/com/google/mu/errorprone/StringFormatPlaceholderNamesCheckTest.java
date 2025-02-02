@@ -244,6 +244,19 @@ public final class StringFormatPlaceholderNamesCheckTest {
         .doTest();
   }
 
+  @Test
+  public void trailingSpacesBeforeArrowIgnored() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  private static final StringFormat FORMAT =",
+            "      new StringFormat(\"{shows_id -> id,}\");",
+            "}")
+        .doTest();
+  }
+
   @Ignore
   @Test
   public void squareBracketedPlaceholdersChecked() {
