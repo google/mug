@@ -42,7 +42,6 @@ final class FormatStringUtils {
   static ImmutableList<String> placeholderVariableNames(String formatString) {
     return PLACEHOLDER_NAMES_PATTERN
         .from(formatString)
-        // for Cloud resource name syntax
         .map(n -> before(PLACEHOLDER_NAME_END).from(n).map(whitespace()::trimTrailingFrom).orElse(n))
         .collect(toImmutableList());
   }
