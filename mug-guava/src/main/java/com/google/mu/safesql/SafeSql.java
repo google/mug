@@ -15,6 +15,7 @@
 package com.google.mu.safesql;
 
 import static com.google.common.base.CharMatcher.breakingWhitespace;
+import static com.google.common.base.CharMatcher.whitespace;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -182,6 +183,23 @@ import com.google.mu.util.stream.BiStream;
  * <p>And when you call {@code usersQuery.prepareStatement(connection)} or one of the similar
  * convenience methods, {@code statement.setObject(1, "%" + criteria.firstName().get() + "%")}
  * will be called to populate the PreparedStatement.
+ *
+ * <dl><dt><STRONG>Trivial Conditional Subqueries</STRONG></dt></dl>
+ *
+ * SafeSql's template syntax is designed to avoid control flows that could obfuscate SQL. Instead,
+ * complex control flow such as {@code if-else}, nested {@code if}, loops etc. should be performed
+ * in Java and passed in as subqueries.
+ *
+ * <p>That said, for trivial conditional subqueries such as selecting a column only if a flag is
+ * enabled, you can use the special conditional subquery operator {@code ->} in the template:
+ *
+ * <pre>{@code
+ *   SafeSql sql = SafeSql.of(
+ *       "SELECT {shows_email -> email,} name FROM Users", showsEmail());
+ * }</pre>
+ *
+ * The text after the {@code ->} operator is the conditional subquery that's only included if
+ * {@code showEmail()} returns true.
  *
  * <dl><dt><STRONG>Parameterize by Column Names or Table Names</STRONG></dt></dl>
  *
@@ -456,6 +474,27 @@ public final class SafeSql {
       class SqlWriter {
         void writePlaceholder(Substring.Match placeholder, Object value) {
           String paramName = rejectQuestionMark(placeholder.skip(1, 1).toString().trim());
+          Substring.Match conditional = first("->").in(paramName).orElse(null);
+          if (conditional != null) {
+            checkArgument(
+                !placeholder.isImmediatelyBetween("`", "`"),
+                "boolean placeholder {%s->} shouldn't be backtick quoted",
+                conditional.before());
+            checkArgument(
+                value != null,
+                "boolean placeholder {%s->} cannot be used with a null value",
+                conditional.before());
+            checkArgument(
+                value instanceof Boolean,
+                "boolean placeholder {%s->} can only be used with a boolean value; %s encountered.",
+                conditional.before(),
+                value.getClass().getName());
+            builder.appendSql(texts.pop());
+            if ((Boolean) value) {
+              builder.appendSql(whitespace().trimFrom(conditional.after()));
+            }
+            return;
+          }
           if (value instanceof Iterable) {
             Iterator<?> elements = ((Iterable<?>) value).iterator();
             checkArgument(elements.hasNext(), "%s cannot be empty list", placeholder);

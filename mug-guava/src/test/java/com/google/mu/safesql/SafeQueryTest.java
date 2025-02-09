@@ -143,6 +143,51 @@ public final class SafeQueryTest {
   }
 
   @Test
+  public void conditionalOperator_evaluateToTrue() {
+    boolean showsId = true;
+    assertThat(SafeQuery.of("SELECT {shows_id->id,} name FROM tbl", showsId))
+        .isEqualTo(SafeQuery.of("SELECT id, name FROM tbl"));
+  }
+
+  @Test
+  public void conditionalOperator_evaluateToFalse() {
+    boolean showsId = false;
+    assertThat(SafeQuery.of("SELECT {shows_id->id,} name FROM tbl", showsId))
+        .isEqualTo(SafeQuery.of("SELECT  name FROM tbl"));
+  }
+
+  @Test
+  public void conditionalOperator_nonBooleanArg_disallowed() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> SafeQuery.of("SELECT {shows_id->id,} name FROM tbl", SafeQuery.of("showsId")));
+    assertThat(thrown).hasMessageThat().contains("{shows_id->");
+    assertThat(thrown).hasMessageThat().contains("SafeQuery");
+  }
+
+  @Test
+  public void conditionalOperator_nullArg_disallowed() {
+    Boolean showsId = null;
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> SafeQuery.of("SELECT {shows_id->id,} name FROM tbl", showsId));
+    assertThat(thrown).hasMessageThat().contains("{shows_id->");
+    assertThat(thrown).hasMessageThat().contains("null");
+  }
+
+  @Test
+  public void conditionalOperator_cannotBeBacktickQuoted() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> SafeQuery.of("SELECT `{shows_id->id}` name FROM tbl", true));
+    assertThat(thrown).hasMessageThat().contains("{shows_id->");
+    assertThat(thrown).hasMessageThat().contains("backtick quoted");
+  }
+
+  @Test
   @SuppressWarnings("SafeQueryArgsCheck")
   public void charPlaceholder_notAllowed() {
     IllegalArgumentException thrown =

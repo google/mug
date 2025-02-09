@@ -1,8 +1,10 @@
 package com.google.mu.errorprone;
 
 
+import static com.google.common.base.CharMatcher.whitespace;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.mu.util.Optionals.optionally;
+import static com.google.mu.util.Substring.before;
 import static com.google.mu.util.Substring.consecutive;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.firstOccurrence;
@@ -32,13 +34,15 @@ import com.sun.tools.javac.code.Symbol.VarSymbol;
 final class FormatStringUtils {
   static final Substring.Pattern PLACEHOLDER_PATTERN =
       consecutive(CharMatcher.noneOf("{}")::matches).immediatelyBetween("{", INCLUSIVE, "}", INCLUSIVE);
+  private static final Substring.Pattern PLACEHOLDER_NAME_END =
+      Stream.of("=", "->").map(Substring::first).collect(firstOccurrence());
   static final Substring.RepeatingPattern PLACEHOLDER_NAMES_PATTERN =
       consecutive(CharMatcher.noneOf("{}")::matches).immediatelyBetween("{", "}").repeatedly();
 
   static ImmutableList<String> placeholderVariableNames(String formatString) {
     return PLACEHOLDER_NAMES_PATTERN
         .from(formatString)
-        .map(first('=').toEnd()::removeFrom) // for Cloud resource name syntax
+        .map(n -> before(PLACEHOLDER_NAME_END).from(n).map(whitespace()::trimTrailingFrom).orElse(n))
         .collect(toImmutableList());
   }
 
