@@ -3,49 +3,12 @@ package com.google.mu.errorprone;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.errorprone.BugPattern.SeverityLevel.ERROR;
 import static com.google.errorprone.matchers.Matchers.anyMethod;
-import static com.google.errorprone.matchers.Matchers.staticMethod;
-import static com.google.mu.util.stream.BiCollectors.groupingBy;
 import static com.google.mu.util.stream.GuavaCollectors.toImmutableListMultimap;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static java.util.stream.Collectors.joining;
 
 import java.util.List;
 import java.util.Map;
-
-import com.google.auto.service.AutoService;
-import com.google.common.base.Ascii;
-import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Multimaps;
-import com.google.common.collect.Table;
-import com.google.mu.util.Substring;
-import com.google.mu.util.stream.BiCollectors;
-import com.google.mu.util.stream.BiStream;
-import com.google.mu.util.stream.GuavaCollectors;
-import com.google.mu.util.stream.MoreStreams;
-import com.google.mu.util.CaseBreaker;
-import com.google.errorprone.BugPattern;
-import com.google.errorprone.BugPattern.LinkType;
-import com.google.errorprone.VisitorState;
-import com.google.errorprone.bugpatterns.BugChecker;
-import com.google.errorprone.matchers.Matcher;
-import com.google.errorprone.matchers.Matchers;
-import com.google.errorprone.util.ASTHelpers;
-import com.google.errorprone.util.ErrorProneTokens;
-import com.sun.source.tree.ExpressionTree;
-import com.sun.source.tree.MemberReferenceTree;
-import com.sun.source.tree.MethodInvocationTree;
-import com.sun.source.tree.NewClassTree;
-import com.sun.source.tree.Tree;
-import com.sun.tools.javac.code.Symbol;
-import com.sun.tools.javac.code.Symbol.MethodSymbol;
-import com.sun.tools.javac.code.Symbol.VarSymbol;
-import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.tree.JCTree.JCLiteral;
-import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
@@ -59,7 +22,37 @@ import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
+
 import javax.lang.model.type.TypeKind;
+
+import com.google.auto.service.AutoService;
+import com.google.common.base.Ascii;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Multimaps;
+import com.google.errorprone.BugPattern;
+import com.google.errorprone.BugPattern.LinkType;
+import com.google.errorprone.VisitorState;
+import com.google.errorprone.bugpatterns.BugChecker;
+import com.google.errorprone.matchers.Matcher;
+import com.google.errorprone.matchers.Matchers;
+import com.google.errorprone.util.ASTHelpers;
+import com.google.errorprone.util.ErrorProneTokens;
+import com.google.mu.util.CaseBreaker;
+import com.google.mu.util.Substring;
+import com.google.mu.util.stream.BiStream;
+import com.sun.source.tree.ExpressionTree;
+import com.sun.source.tree.MemberReferenceTree;
+import com.sun.source.tree.MethodInvocationTree;
+import com.sun.source.tree.NewClassTree;
+import com.sun.source.tree.Tree;
+import com.sun.tools.javac.code.Symbol;
+import com.sun.tools.javac.code.Symbol.MethodSymbol;
+import com.sun.tools.javac.code.Symbol.VarSymbol;
+import com.sun.tools.javac.code.Type;
+import com.sun.tools.javac.tree.JCTree.JCLiteral;
 
 /**
  * Checks that the {@code StringFormat.format()} method is invoked with the correct lambda according
@@ -113,6 +106,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
           TypeName.of(DoubleStream.class),
           new TypeName("com.google.mu.util.BiStream"),
           new TypeName("com.google.mu.util.Both"));
+  private static final TypeName BOOLEAN_TYPE = TypeName.of(Boolean.class);
   private static final Substring.Pattern ARG_COMMENT = Substring.spanningInOrder("/*", "*/");
 
   @Override
@@ -185,8 +179,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
       String formatString = ASTHelpers.constValue(formatExpression, String.class);
       checkingOn(tree).require(formatString != null, FORMAT_STRING_NOT_FOUND);
       checkFormatArgs(
-          tree,
-          FormatStringUtils.placeholderVariableNames(formatString),
+          FormatStringUtils.placeholdersFrom(formatString),
           tree,
           skip(tree.getArguments(), templateStringIndex + 1),
           skip(argsAsTexts(tree.getMethodSelect(), tree.getArguments(), state), templateStringIndex + 1),
@@ -205,8 +198,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
       boolean formatStringIsInlined =
           FormatStringUtils.getInlineStringArg(formatter, state).orElse(null) instanceof JCLiteral;
       checkFormatArgs(
-          formatter,
-          FormatStringUtils.placeholderVariableNames(formatString),
+          FormatStringUtils.placeholdersFrom(formatString),
           tree,
           tree.getArguments(),
           argsAsTexts(tree.getMethodSelect(), tree.getArguments(), state),
@@ -235,8 +227,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
     String formatString = ASTHelpers.constValue(formatExpression, String.class);
     checkingOn(tree).require(formatString != null, FORMAT_STRING_NOT_FOUND);
     checkFormatArgs(
-        tree,
-        FormatStringUtils.placeholderVariableNames(formatString),
+        FormatStringUtils.placeholdersFrom(formatString),
         tree,
         skip(args, templateStringIndex + 1),
         skip(argSources, templateStringIndex + 1),
@@ -245,8 +236,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
   }
 
   private void checkFormatArgs(
-      ExpressionTree definition,
-      List<String> placeholderVariableNames,
+      List<Placeholder> placeholders,
       ExpressionTree invocation,
       List<? extends ExpressionTree> args,
       List<String> argSources,
@@ -258,16 +248,16 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
     }
     ImmutableList<String> normalizedArgTexts =
         argSources.stream().map(txt -> normalizeForComparison(txt)).collect(toImmutableList());
-    for (int i = 0; i < placeholderVariableNames.size(); i++) {
-      String placeholderName = placeholderVariableNames.get(i);
-      String normalizedPlacehoderName = normalizeForComparison(placeholderName);
+    for (int i = 0; i < placeholders.size(); i++) {
+      Placeholder placeholder = placeholders.get(i);
+      String normalizedPlacehoderName = normalizeForComparison(placeholder.name());
       checkingOn(invocation)
           .require(
               args.size() > i,
-              "No value is provided for placeholder #%s {%s} as defined by: %s",
+              "No value is provided for placeholder #%s {%s} (defined as in \"%s\")",
               (i + 1),
-              placeholderName,
-              definition);
+              placeholder.name(),
+              placeholder);
       ExpressionTree arg = args.get(i);
       if (!normalizedArgTexts.get(i).contains(normalizedPlacehoderName)) {
         // arg doesn't match placeholder
@@ -278,35 +268,57 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
                 && (args.size() <= 1
                     || normalizedArgTexts.stream() // out-of-order is suspicious
                         .noneMatch(txt -> txt.contains(normalizedPlacehoderName)));
-        checkingOn(invocation)
+        checkingOn(arg)
             .require(
-                trust && !ARG_COMMENT.in(argSources.get(i)).isPresent(),
-                "String format placeholder {%s} as defined in %s should appear in the format"
-                    + " argument: %s. Or you could add a comment like /* %s */.",
-                placeholderVariableNames.get(i),
-                definition,
+                trust && ARG_COMMENT.in(argSources.get(i)).isEmpty(),
+                "String format placeholder {%s} (defined as in \"%s\") should appear in the format"
+                    + " argument: %s. Consider the following to address this error:\n"
+                    + "  1. Ensure the argument isn't passed in out of order.\n"
+                    + "  2. If the argument does correspond to the placeholder positionally, rename"
+                    + " either the placeholder {%s} or local variable used in the argument, if any,"
+                    + " to make the argument expression include the placeholder name word-by-word"
+                    + " (case insensitive)\n"
+                    + "  3. If you can't make them organically match, as the last resort, add a"
+                    + " comment like /* %s */ before the argument. You only need to add the comment"
+                    + " for non-matching placeholders. Don't add redundant comments for the"
+                    + " placeholders that already match.",
+                placeholder.name(),
+                placeholder,
                 arg,
-                placeholderName);
+                placeholder.name(),
+                placeholder.name());
+      }
+      if (placeholder.requiresBooleanArg()) {
+        Type argType = ASTHelpers.getType(arg);
+        checkingOn(arg)
+            .require(
+                ASTHelpers.isSameType(argType, state.getSymtab().booleanType, state)
+                    || BOOLEAN_TYPE.isSameType(argType, state),
+                "String format placeholder {%s} (defined as in \"%s\") is expected to be boolean,"
+                    + " whereas argument <%s> is of type %s",
+                placeholder.name(),
+                placeholder,
+                arg,
+                argType);
       }
     }
     checkingOn(invocation)
         .require(
-            placeholderVariableNames.size() == args.size(),
-            "%s placeholders defined by: %s; %s provided by %s",
-            placeholderVariableNames.size(),
-            definition,
-            args.size(),
-            invocation);
-    checkDuplicatePlaceholderNames(placeholderVariableNames, args, state);
+            placeholders.size() == args.size(),
+            "%s placeholders defined; %s provided",
+            placeholders.size(),
+            args.size());
+    checkDuplicatePlaceholderNames(placeholders, args, state);
   }
 
   private void checkDuplicatePlaceholderNames(
-      List<String> placeholderVariableNames,
+      List<Placeholder> placeholders,
       List<? extends ExpressionTree> args,
       VisitorState state)
       throws ErrorReport {
     ImmutableListMultimap<String, ExpressionTree> allPlaceholders =
-        BiStream.zip(placeholderVariableNames, args)
+        BiStream.zip(placeholders, args)
+            .mapKeys(Placeholder::name)
             .skipKeysIf("..."::equals) // wildcard doesn't count as duplicate name
             .collect(toImmutableListMultimap());
     for (Map.Entry<String, List<ExpressionTree>> entry :
