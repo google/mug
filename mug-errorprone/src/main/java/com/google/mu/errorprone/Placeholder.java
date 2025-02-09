@@ -53,10 +53,10 @@ final class Placeholder {
     // Find the full line surrounding the placeholder.
     int snippetStart = match.index();
     int snippetEnd = match.index() + match.length();
-    while (snippetStart > 0 && context.codePointAt(snippetStart - 1) != '\n') {
+    while (snippetStart > 0 && context.charAt(snippetStart - 1) != '\n') {
       snippetStart--;
     }
-    while (snippetEnd < context.length() && context.codePointAt(snippetEnd) != '\n') {
+    while (snippetEnd < context.length() && context.charAt(snippetEnd) != '\n') {
       snippetEnd++;
     }
 
