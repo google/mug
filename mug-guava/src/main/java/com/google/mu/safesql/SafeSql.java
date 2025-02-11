@@ -734,11 +734,11 @@ public final class SafeSql {
    *
    * <p>The returned {@code Stream} includes results transformed by {@code rowMapper}.
    * The caller must close it using try-with-resources idiom, which will close the associated
-   * statement and {@link ResultSet}.
+   * {@link Statement} and {@link ResultSet}.
    *
    * <p>For example: <pre>{@code
    * SafeSql sql = SafeSql.of("SELECT name FROM Users WHERE name LIKE '%{name}%'", name);
-   * try (Stream<String> names = sql.query(connection, row -> row.getLong("id"))) {
+   * try (Stream<String> names = sql.queryLazily(connection, row -> row.getLong("id"))) {
    *   return names.findFirst();
    * }
    * }</pre>
