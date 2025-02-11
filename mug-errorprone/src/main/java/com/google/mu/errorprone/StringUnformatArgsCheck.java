@@ -127,12 +127,9 @@ public final class StringUnformatArgsCheck extends AbstractBugChecker
     checkingOn(tree)
         .require(
             formatString == null
-                || FormatStringUtils
-                    .PLACEHOLDER_NAMES_PATTERN
-                    .match(formatString)
-                    .collect(toAdjacentPairs())
-                    // In "{foo}{bar}", bar.index() - 2 is at the end of foo.
-                    .noneMatch((p1, p2) -> p2.index() - 2 <= p1.index() + p1.length()),
+                || FormatStringUtils.placeholdersFrom(formatString).stream()
+                .collect(toAdjacentPairs())
+                .noneMatch(Placeholder::isFollowedBy),
             "Format string defined by %s with two placeholders immediately next to each other is"
                 + " inherently ambiguous to parse.",
             unformatter);

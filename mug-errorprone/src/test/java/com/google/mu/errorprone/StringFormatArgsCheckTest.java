@@ -2921,6 +2921,61 @@ public final class StringFormatArgsCheckTest {
   }
 
   @Test
+  public void templateFormatMethod_nonBooleanForArrowOperator_disallowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.stream.Stream;",
+            "class Test {",
+            "  void test(int isFoo) {",
+            "    // BUG: Diagnostic contains: \"SELECT <{is_foo -> foo}>\") is expected to be boolean",
+            "    query(\"SELECT {is_foo -> foo}\", isFoo);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_primitiveBooleanForArrowOperator_allowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.stream.Stream;",
+            "class Test {",
+            "  void test(boolean isFoo) {",
+            "    query(\"SELECT {is_foo -> foo}\", isFoo);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_wrapperBooleanForArrowOperator_allowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.stream.Stream;",
+            "class Test {",
+            "  void test(Boolean isFoo) {",
+            "    query(\"SELECT {is_foo -> foo}\", isFoo);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
   public void arrayArgDisallowed() {
     helper
         .addSourceLines(
