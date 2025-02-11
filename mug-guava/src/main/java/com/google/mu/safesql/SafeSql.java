@@ -29,6 +29,7 @@ import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.Substring.suffix;
 import static com.google.mu.util.Substring.word;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
+import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -47,6 +48,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -702,7 +704,8 @@ public final class SafeSql {
    *     .query(connection, row -> row.getLong("id"));
    * }</pre>
    *
-   * <p>Internally it delegates to {@link PreparedStatement#executeQuery}.
+   * <p>Internally it delegates to {@link PreparedStatement#executeQuery} or {@link
+   * Statement#executeQuery} if this sql contains no JDBC binding parameters.
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    */
@@ -720,6 +723,64 @@ public final class SafeSql {
     try (PreparedStatement stmt = prepareStatement(connection);
         ResultSet resultSet = stmt.executeQuery()) {
       return mapResults(resultSet, rowMapper);
+    } catch (SQLException e) {
+      throw new UncheckedSqlException(e);
+    }
+  }
+
+  /**
+   * Executes the encapsulated SQL as a query against {@code connection}, sets {@code fetchSize}
+   * using {@link Statement#setFetchSize}, and then fetches the results lazily in a stream.
+   *
+   * <p>The returned {@code Stream} includes results transformed by {@code rowMapper}.
+   * The caller must close it using try-with-resources idiom, which will close the associated
+   * statement and {@link ResultSet}.
+   *
+   * <p>For example: <pre>{@code
+   * SafeSql sql = SafeSql.of("SELECT name FROM Users WHERE name LIKE '%{name}%'", name);
+   * try (Stream<String> names = sql.query(connection, row -> row.getLong("id"))) {
+   *   return names.findFirst();
+   * }
+   * }</pre>
+   *
+   * <p>Internally it delegates to {@link PreparedStatement#executeQuery} or {@link
+   * Statement#executeQuery} if this sql contains no JDBC binding parameters.
+   *
+   * @throws UncheckedSqlException wraps {@link SQLException} if failed
+   * @since 8.4
+   */
+  @MustBeClosed
+  @SuppressWarnings("MustBeClosedChecker")
+  public <T> Stream<T> queryLazily(
+      Connection connection, int fetchSize, SqlFunction<? super ResultSet, ? extends T> rowMapper) {
+    checkNotNull(rowMapper);
+    if (paramValues.isEmpty()) {
+      return lazy(connection::createStatement, fetchSize, stmt -> stmt.executeQuery(sql), rowMapper);
+    }
+    return lazy(() -> prepareStatement(connection), fetchSize, PreparedStatement::executeQuery, rowMapper);
+  }
+
+  @MustBeClosed
+  private static <S extends Statement, T> Stream<T> lazy(
+      SqlSupplier<? extends S> createStatement,
+      int fetchSize,
+      SqlFunction<? super S, ResultSet> execute,
+      SqlFunction<? super ResultSet, ? extends T> rowMapper) {
+    try (JdbcCloser closer = new JdbcCloser()) {
+      S stmt = createStatement.get();
+      closer.register(stmt::close);
+      stmt.setFetchSize(fetchSize);
+      ResultSet resultSet = execute.apply(stmt);
+      closer.register(resultSet::close);
+      return closer.attachTo(
+          whileNotNull(() -> {
+            try {
+              return resultSet.next() ? new AtomicReference<T>(rowMapper.apply(resultSet)) : null;
+            } catch (SQLException e) {
+              throw new UncheckedSqlException(e);
+            }
+          })
+          .map(AtomicReference::get));
     } catch (SQLException e) {
       throw new UncheckedSqlException(e);
     }

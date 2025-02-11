@@ -9,6 +9,8 @@ import java.sql.Connection;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.sql.DataSource;
 
@@ -69,6 +71,23 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
             SafeSql.of("select title from {tbl} where id = {id}", /* tbl */ SafeSql.of("ITEMS"), 1), "title"))
         .containsExactly("foo");
     assertThat(queryColumn(SafeSql.of("select title from ITEMS where id = {id}", 2), "title"))
+        .containsExactly("bar");
+  }
+
+  @Test public void queryLazily() throws Exception {
+    ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 40, ZoneId.of("UTC"));
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")
+                .update(connection()))
+        .isEqualTo(1);
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title, time) VALUES({id}, {title}, {time})", testId() + 1, "bar", barTime)
+                .update(connection()))
+        .isEqualTo(1);
+    assertThat(queryColumnStream(
+            SafeSql.of("select title from {tbl} where id = {id}", /* tbl */ SafeSql.of("ITEMS"), testId()), "title"))
+        .containsExactly("foo");
+    assertThat(queryColumnStream(SafeSql.of("select title from ITEMS where id = {id}", testId() + 1), "title"))
         .containsExactly("bar");
   }
 
@@ -310,6 +329,12 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
 
   private List<?> queryColumn(SafeSql sql, String column) throws Exception {
     return sql.query(connection(), resultSet -> resultSet.getObject(column));
+  }
+
+  private List<?> queryColumnStream(SafeSql sql, String column) throws Exception {
+    try (Stream<?> stream = sql.queryLazily(connection(), 1, resultSet -> resultSet.getObject(column))) {
+      return stream.collect(Collectors.toList());
+    }
   }
 
   private Connection connection() throws Exception {
