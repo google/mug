@@ -729,6 +729,34 @@ public final class SafeSql {
   }
 
   /**
+   * Executes the encapsulated SQL as a query against {@code connection},
+   * and then fetches the results lazily in a stream.
+   *
+   * <p>The returned {@code Stream} includes results transformed by {@code rowMapper}.
+   * The caller must close it using try-with-resources idiom, which will close the associated
+   * {@link Statement} and {@link ResultSet}.
+   *
+   * <p>For example: <pre>{@code
+   * SafeSql sql = SafeSql.of("SELECT name FROM Users WHERE name LIKE '%{name}%'", name);
+   * try (Stream<String> names = sql.queryLazily(connection, row -> row.getLong("id"))) {
+   *   return names.findFirst();
+   * }
+   * }</pre>
+   *
+   * <p>Internally it delegates to {@link PreparedStatement#executeQuery} or {@link
+   * Statement#executeQuery} if this sql contains no JDBC binding parameters.
+   *
+   * @throws UncheckedSqlException wraps {@link SQLException} if failed
+   * @since 8.4
+   */
+  @MustBeClosed
+  @SuppressWarnings("MustBeClosedChecker")
+  public <T> Stream<T> queryLazily(
+      Connection connection, SqlFunction<? super ResultSet, ? extends T> rowMapper) {
+    return queryLazily(connection, 0, rowMapper);
+  }
+
+  /**
    * Executes the encapsulated SQL as a query against {@code connection}, sets {@code fetchSize}
    * using {@link Statement#setFetchSize}, and then fetches the results lazily in a stream.
    *

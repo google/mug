@@ -334,7 +334,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
   }
 
   private List<?> queryColumnStream(SafeSql sql, String column) throws Exception {
-    try (Stream<?> stream = sql.queryLazily(connection(), 1, resultSet -> resultSet.getObject(column))) {
+    try (Stream<?> stream = sql.queryLazily(connection(), resultSet -> resultSet.getObject(column))) {
       return stream.collect(Collectors.toList());
     }
   }
