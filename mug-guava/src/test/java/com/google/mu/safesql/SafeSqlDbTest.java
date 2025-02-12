@@ -77,18 +77,20 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
   @Test public void queryLazily() throws Exception {
     ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 40, ZoneId.of("UTC"));
     assertThat(
-            SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")
+            SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "lazyfoo")
                 .update(connection()))
         .isEqualTo(1);
     assertThat(
-            SafeSql.of("insert into ITEMS(id, title, time) VALUES({id}, {title}, {time})", testId() + 1, "bar", barTime)
+            SafeSql.of("insert into ITEMS(id, title, time) VALUES({id}, {title}, {time})", testId() + 1, "lazybar", barTime)
                 .update(connection()))
         .isEqualTo(1);
     assertThat(queryColumnStream(
             SafeSql.of("select title from {tbl} where id = {id}", /* tbl */ SafeSql.of("ITEMS"), testId()), "title"))
-        .containsExactly("foo");
+        .containsExactly("lazyfoo");
     assertThat(queryColumnStream(SafeSql.of("select title from ITEMS where id = {id}", testId() + 1), "title"))
-        .containsExactly("bar");
+        .containsExactly("lazybar");
+    assertThat(queryColumnStream(SafeSql.of("select title from ITEMS"), "title"))
+        .containsAtLeast("lazyfoo", "lazybar");
   }
 
   @Test public void likeExpressionWithWildcardInArg() throws Exception {
@@ -332,7 +334,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
   }
 
   private List<?> queryColumnStream(SafeSql sql, String column) throws Exception {
-    try (Stream<?> stream = sql.queryLazily(connection(), 1, resultSet -> resultSet.getObject(column))) {
+    try (Stream<?> stream = sql.queryLazily(connection(), resultSet -> resultSet.getObject(column))) {
       return stream.collect(Collectors.toList());
     }
   }
