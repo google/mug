@@ -133,7 +133,7 @@ import com.google.mu.util.stream.BiStream;
  *             <path>
  *               <groupId>com.google.mug</groupId>
  *               <artifactId>mug-errorprone</artifactId>
- *               <version>8.4</version>
+ *               <version>8.5</version>
  *             </path>
  *           </annotationProcessorPaths>
  *         </configuration>
