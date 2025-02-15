@@ -3,11 +3,7 @@
   <parent>
       <groupId>com.google.mug</groupId>
       <artifactId>mug-root</artifactId>
-<<<<<<< HEAD
-      <version>8.5-SNAPSHOT</version>
-=======
       <version>8.6-SNAPSHOT</version>
->>>>>>> master
       <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>mug-bigquery</artifactId>
