@@ -149,8 +149,8 @@ import com.google.mu.util.stream.BiStream;
  * complex control flow such as {@code if-else}, nested {@code if}, loops etc. should be performed
  * in Java and passed in as subqueries.
  *
- * <p>That said, for trivial conditional subqueries such as selecting a column only if a flag is
- * enabled, you can use the special conditional subquery operator {@code ->} in the template:
+ * <p>That said, starting from v8.4, simple conditional subqueries, such as selecting a column
+ * if a flag is enabled, can use the conditional subquery operator {@code ->} in the template:
  *
  * <pre>{@code
  *   SafeSql sql = SafeSql.of(
