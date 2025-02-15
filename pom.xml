@@ -4,7 +4,7 @@
   <groupId>com.google.mug</groupId>
   <artifactId>mug-root</artifactId>
   <packaging>pom</packaging>
-  <version>8.5</version>
+  <version>8.6-SNAPSHOT</version>
   <name>mug-root</name>
   <description>Google Mug Library</description>
   <url>http://github.com/google/mug</url>
@@ -33,7 +33,7 @@
     <url>http://github.com/google/mug</url>
     <connection>scm:git:git@github.com:google/mug.git</connection>
     <developerConnection>scm:git:git@github.com:google/mug.git</developerConnection>
-    <tag>mug-root-8.5</tag>
+    <tag>mug-root-1.0</tag>
   </scm>
 
   <developers>
