@@ -66,6 +66,7 @@ public class SafeSqlTest {
   }
 
   @Test
+  @SuppressWarnings("StringFormatArgsCheck")
   public void conditionalOperator_nonBooleanArg_disallowed() {
     IllegalArgumentException thrown =
         assertThrows(
