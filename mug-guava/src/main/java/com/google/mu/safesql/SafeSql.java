@@ -145,6 +145,24 @@ import com.google.mu.util.stream.BiStream;
  *
  * <dl><dt><STRONG>Conditional Subqueries</STRONG></dt></dl>
  *
+ * SafeSql's template syntax is designed to avoid control flows that could obfuscate SQL. Instead,
+ * complex control flow such as {@code if-else}, nested {@code if}, loops etc. should be performed
+ * in Java and passed in as subqueries.
+ *
+ * <p>That said, for trivial conditional subqueries such as selecting a column only if a flag is
+ * enabled, you can use the special conditional subquery operator {@code ->} in the template:
+ *
+ * <pre>{@code
+ *   SafeSql sql = SafeSql.of(
+ *       "SELECT {shows_email -> email,} name FROM Users", showsEmail());
+ * }</pre>
+ *
+ * The text after the {@code ->} operator is the conditional subquery that's only included if
+ * {@code showEmail()} returns true. The subquery can include arbitrary characters except curly
+ * braces, so for example you can have multi-line conditional subqueries too.
+ *
+ * <dl><dt><STRONG>Complex Dynamic Subqueries</STRONG></dt></dl>
+ *
  * By composing SafeSql objects that encapsulate subqueries, you can also parameterize by
  * arbitrary sub-queries that are computed dynamically.
  *
@@ -185,23 +203,6 @@ import com.google.mu.util.stream.BiStream;
  * <p>And when you call {@code usersQuery.prepareStatement(connection)} or one of the similar
  * convenience methods, {@code statement.setObject(1, "%" + criteria.firstName().get() + "%")}
  * will be called to populate the PreparedStatement.
- *
- * <dl><dt><STRONG>Trivial Conditional Subqueries</STRONG></dt></dl>
- *
- * SafeSql's template syntax is designed to avoid control flows that could obfuscate SQL. Instead,
- * complex control flow such as {@code if-else}, nested {@code if}, loops etc. should be performed
- * in Java and passed in as subqueries.
- *
- * <p>That said, for trivial conditional subqueries such as selecting a column only if a flag is
- * enabled, you can use the special conditional subquery operator {@code ->} in the template:
- *
- * <pre>{@code
- *   SafeSql sql = SafeSql.of(
- *       "SELECT {shows_email -> email,} name FROM Users", showsEmail());
- * }</pre>
- *
- * The text after the {@code ->} operator is the conditional subquery that's only included if
- * {@code showEmail()} returns true.
  *
  * <dl><dt><STRONG>Parameterize by Column Names or Table Names</STRONG></dt></dl>
  *
