@@ -73,7 +73,6 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
   private static final Matcher<MethodInvocationTree> STRING_FORMAT_MATCHER =
       Matchers.anyOf(
           anyMethod().onDescendantOf("com.google.mu.util.StringFormat"),
-          anyMethod().onDescendantOf("com.google.mu.util.StringFormat.To"),
           anyMethod().onDescendantOf("com.google.mu.util.StringFormat.Template"));
   private static final String FORMAT_STRING_NOT_FOUND =
       "Compile-time format string expected but definition not found. As a result, the"
@@ -85,7 +84,6 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
   private static final ImmutableSet<TypeName> FORMATTER_TYPES =
       ImmutableSet.of(
           new TypeName("com.google.mu.util.StringFormat"),
-          new TypeName("com.google.mu.util.StringFormat.To"),
           new TypeName("com.google.mu.util.StringFormat.Template"));
   private static final ImmutableMap<TypeName, Integer> FUNCTION_CARDINALITIES =
       ImmutableMap.of(
@@ -179,6 +177,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
       String formatString = ASTHelpers.constValue(formatExpression, String.class);
       checkingOn(tree).require(formatString != null, FORMAT_STRING_NOT_FOUND);
       checkFormatArgs(
+          formatExpression,
           FormatStringUtils.placeholdersFrom(formatString),
           tree,
           skip(tree.getArguments(), templateStringIndex + 1),
@@ -198,6 +197,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
       boolean formatStringIsInlined =
           FormatStringUtils.getInlineStringArg(formatter, state).orElse(null) instanceof JCLiteral;
       checkFormatArgs(
+          ASTHelpers.stripParentheses(formatter),
           FormatStringUtils.placeholdersFrom(formatString),
           tree,
           tree.getArguments(),
@@ -227,6 +227,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
     String formatString = ASTHelpers.constValue(formatExpression, String.class);
     checkingOn(tree).require(formatString != null, FORMAT_STRING_NOT_FOUND);
     checkFormatArgs(
+        formatExpression,
         FormatStringUtils.placeholdersFrom(formatString),
         tree,
         skip(args, templateStringIndex + 1),
@@ -236,6 +237,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
   }
 
   private void checkFormatArgs(
+      ExpressionTree formatExpression,
       List<Placeholder> placeholders,
       ExpressionTree invocation,
       List<? extends ExpressionTree> args,
@@ -251,13 +253,9 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
     for (int i = 0; i < placeholders.size(); i++) {
       Placeholder placeholder = placeholders.get(i);
       String normalizedPlacehoderName = normalizeForComparison(placeholder.name());
-      checkingOn(invocation)
+      checkingOn(() -> placeholder.sourcePosition(formatExpression, state))
           .require(
-              args.size() > i,
-              "No value is provided for placeholder #%s {%s} (defined as in \"%s\")",
-              (i + 1),
-              placeholder.name(),
-              placeholder);
+              args.size() > i, "No value is provided for placeholder {%s}", placeholder.name());
       ExpressionTree arg = args.get(i);
       if (!normalizedArgTexts.get(i).contains(normalizedPlacehoderName)) {
         // arg doesn't match placeholder
@@ -290,7 +288,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
       }
       if (placeholder.requiresBooleanArg()) {
         Type argType = ASTHelpers.getType(arg);
-        checkingOn(arg)
+        checkingOn(() -> placeholder.sourcePosition(formatExpression, state))
             .require(
                 ASTHelpers.isSameType(argType, state.getSymtab().booleanType, state)
                     || BOOLEAN_TYPE.isSameType(argType, state),
