@@ -19,10 +19,10 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 final class Placeholder {
   /**
    * For cloud resource names, '=' is used to denote the sub-pattern; For SQL templates, "->" is
-   * used to denote a conditional subquery.
+   * used to denote a conditional subquery; and ":" leads the subquery as the tranformation target.
    */
   private static final Substring.Pattern PLACEHOLDER_NAME_END =
-      Stream.of("=", "->").map(Substring::first).collect(firstOccurrence());
+      Stream.of("=", "->", ":").map(Substring::first).collect(firstOccurrence());
 
   private final Substring.Match match;
   private final String name;
