@@ -14,7 +14,7 @@ Offers:
 * Parse any legit date/time string (without a pattern string):
   * `Instant timestamp = DateTimeFormats.parseToInstant("2024-01-30 15:30:00-08")`
   * `DateTimeFormats.formatOf("Tue, 10 Jan 2023 10:00:00.123 America/Los_Angeles")`
-* SQL template safe from SQL injection:
+* Injection-safe SQL templates:
   ```java
   List<String> emails = SafeSql.of("SELECT email from Users where user_name = {user_name}", user.name())
       .query(connection, row -> row.getString("email"));
