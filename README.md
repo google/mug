@@ -11,12 +11,17 @@ Offers:
    * `Map<Instant, Long> histogram = zip(times, counts).toMap();`
    * `Map<K, V> combined = concat(map1, map2).toMap();`
    * `Map<Principal, V> keyedByPrincipal = BiStream.from(keyedByUserId).mapKeys(UserId::principal).toMap();`
+* Parse any legit date/time string (without a pattern string):
+  * `Instant timestamp = DateTimeFormats.parseToInstant("2024-01-30 15:30:00-08")`
+  * `DateTimeFormats.formatOf("Tue, 10 Jan 2023 10:00:00.123 America/Los_Angeles")`
+* SQL template safe from SQL injection:
+  * ```java
+    List<String> emails = SafeSql.of("SELECT email from Users where user_name = {user_name}", user.name())
+        .query(connection, row -> row.getString("email"));
+    ```
 * More ([MoreStreams](#morestreams), [Optionals](#optionals), [DateTimeFormats](https://github.com/google/mug/wiki/Parsing-Date-Time-Should-Be-10x-Easier), [...](https://github.com/google/mug/wiki))
   * Create `Optional` with a guard condition:
     * `return optionally(count > 0, () -> total / count);`
-  * Parse any legit date/time string (without a pattern string):
-    * `Instant timestamp = DateTimeFormats.parseToInstant("2024-01-30 15:30:00-08")`
-    * `DateTimeFormats.formatOf("Tue, 10 Jan 2023 10:00:00.123 America/Los_Angeles")`
 
 ## Installation
 ### Maven
