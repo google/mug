@@ -453,6 +453,39 @@ public final class Substring {
   }
 
   /**
+   * Returns a {@link RepeatingPattern} that matches all occurrences of {@code substr} in the input
+   * string. It's equivalent to {@code first(substr).repeatedly()}.
+   *
+   * <p>Note that overlapping occurrences are not matched. For example, if you have {@code "aaa"},
+   * {@code each("aa").from("aaa")} will return only the first {@code "aa"}.
+   *
+   * @since 8.6
+   */
+  public static RepeatingPattern each(String substr) {
+    return first(substr).repeatedly();
+  }
+
+  /**
+   * Returns a {@link RepeatingPattern} that matches all occurrences of {@code ch} in the input
+   * string. It's equivalent to {@code first(ch).repeatedly()}.
+   *
+   * @since 8.6
+   */
+  public static RepeatingPattern each(char ch) {
+    return first(ch).repeatedly();
+  }
+
+  /**
+   * Returns a {@link RepeatingPattern} that matches all characters that match {@code matcher} in
+   * the input string. It's equivalent to {@code first(matcher).repeatedly()}.
+   *
+   * @since 8.6
+   */
+  public static RepeatingPattern each(CharPredicate matcher) {
+    return first(matcher).repeatedly();
+  }
+
+  /**
    * Returns a repeating pattern representing all the top-level groups from {@code regexPattern}.
    * If {@code regexPattern} has no capture group, the entire pattern is considered the only group.
    *
