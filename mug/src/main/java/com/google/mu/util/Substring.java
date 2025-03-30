@@ -457,11 +457,11 @@ public final class Substring {
    * string. It's equivalent to {@code first(substr).repeatedly()}.
    *
    * <p>Note that overlapping occurrences are not matched. For example, if you have {@code "aaa"},
-   * {@code each("aa").from("aaa")} will return only the first {@code "aa"}.
+   * {@code all("aa").from("aaa")} will return only the first {@code "aa"}.
    *
    * @since 8.6
    */
-  public static RepeatingPattern each(String substr) {
+  public static RepeatingPattern all(String substr) {
     return first(substr).repeatedly();
   }
 
@@ -471,7 +471,7 @@ public final class Substring {
    *
    * @since 8.6
    */
-  public static RepeatingPattern each(char ch) {
+  public static RepeatingPattern all(char ch) {
     return first(ch).repeatedly();
   }
 
@@ -481,7 +481,7 @@ public final class Substring {
    *
    * @since 8.6
    */
-  public static RepeatingPattern each(CharPredicate matcher) {
+  public static RepeatingPattern all(CharPredicate matcher) {
     return first(matcher).repeatedly();
   }
 
