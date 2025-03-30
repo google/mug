@@ -102,6 +102,30 @@ public final class PlaceholderTest {
     assertThat(bar.isFollowedBy(foo)).isFalse();
   }
 
+  @Test
+  public void getStartIndexInSource_firstPlaceholder() {
+    Placeholder placeholder = placeholder("{foo}", "{foo}");
+    assertThat(placeholder.getStartIndexInSource("my {foo}")).isEqualTo(3);
+  }
+
+  @Test
+  public void getStartIndexInSource_secondPlaceholder() {
+    Placeholder placeholder = placeholder("{bar}", "{foo} {bar}");
+    assertThat(placeholder.getStartIndexInSource("my {foo} {bar} and {baz}")).isEqualTo(9);
+  }
+
+  @Test
+  public void getStartIndexInSource_nestedPlaceholder() {
+    Placeholder placeholder = placeholder("{bar}", "my {foo = {bar}}");
+    assertThat(placeholder.getStartIndexInSource("my {foo = {bar}} and...")).isEqualTo(10);
+  }
+
+  @Test
+  public void getStartIndexInSource_notFoundInsource() {
+    Placeholder placeholder = placeholder("{bar}", "my {foo = {bar}}");
+    assertThat(placeholder.getStartIndexInSource("my {bar} and...")).isEqualTo(0);
+  }
+
   private static Placeholder placeholder(Substring.Pattern pattern, String template) {
     return new Placeholder(pattern.in(template).orElseThrow());
   }

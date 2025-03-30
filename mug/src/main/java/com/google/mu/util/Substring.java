@@ -94,8 +94,7 @@ import com.google.mu.util.stream.MoreStreams;
  * import static com.google.mu.util.stream.GuavaCollectors.toImmutableListMultimap;
  *
  * ImmutableListMultimap<String, String> tags =
- *     first(',')
- *         .repeatedly()
+ *     all(',')
  *         .splitThenTrimKeyValuesAround(first('='), "k1=v1, k2=v2")  // => [(k1, v1), (k2, v2)]
  *         .collect(toImmutableListMultimap());
  * }</pre>
@@ -450,6 +449,39 @@ public final class Substring {
         return "consecutive(" + matcher + ")";
       }
     };
+  }
+
+  /**
+   * Returns a {@link RepeatingPattern} that matches all occurrences of {@code substr} in the input
+   * string. It's equivalent to {@code first(substr).repeatedly()}.
+   *
+   * <p>Note that overlapping occurrences are not matched. For example, if you have {@code "aaa"},
+   * {@code all("aa").from("aaa")} will return only the first {@code "aa"}.
+   *
+   * @since 8.6
+   */
+  public static RepeatingPattern all(String substr) {
+    return first(substr).repeatedly();
+  }
+
+  /**
+   * Returns a {@link RepeatingPattern} that matches all occurrences of {@code ch} in the input
+   * string. It's equivalent to {@code first(ch).repeatedly()}.
+   *
+   * @since 8.6
+   */
+  public static RepeatingPattern all(char ch) {
+    return first(ch).repeatedly();
+  }
+
+  /**
+   * Returns a {@link RepeatingPattern} that matches all characters that match {@code matcher} in
+   * the input string. It's equivalent to {@code first(matcher).repeatedly()}.
+   *
+   * @since 8.6
+   */
+  public static RepeatingPattern all(CharPredicate matcher) {
+    return first(matcher).repeatedly();
   }
 
   /**
@@ -1592,8 +1624,7 @@ public final class Substring {
      * import static com.google.mu.util.stream.MoreCollectors.mapping;
      *
      * String toSplit = " x -> y, z-> a, x -> t ";
-     * ImmutableListMultimap<String, String> result = first(',')
-     *     .repeatedly()
+     * ImmutableListMultimap<String, String> result = all(',')
      *     .split(toSplit)
      *     .map(first("->")::splitThenTrim)
      *     .collect(
@@ -1934,9 +1965,7 @@ public final class Substring {
      * Although whitespaces are not trimmed. For example:
      *
      * <pre>{@code
-     * first(',')
-     *     .repeatedly()
-     *     .splitKeyValuesAround(first('='), "k1=v1,,k2=v2,")
+     * all(',').splitKeyValuesAround(first('='), "k1=v1,,k2=v2,")
      * }</pre>
      * will result in a {@code BiStream} equivalent to {@code [(k1, v1), (k2, v2)]},
      * but {@code "k1=v1, ,k2=v2"} will fail to be split due to the whitespace after the first
@@ -1950,8 +1979,7 @@ public final class Substring {
      * such as:
      *
      * <pre>{@code
-     * first(',')
-     *     .repeatedly()
+     * all(',')
      *     .split("k1=v1,,k2=v2,")  // the redundant ',' will throw IAE
      *     .collect(
      *         GuavaCollectors.toImmutableMap(
@@ -1961,8 +1989,7 @@ public final class Substring {
      * Or, if you want to ignore unparsable parts:
      *
      * <pre>{@code
-     * first(',')
-     *     .repeatedly()
+     * all(',')
      *     .split("k1=v1,k2>v2")  // Ignore the unknown "k2>v2"
      *     .map(first('=')::split)
      *     .collect(
@@ -1995,9 +2022,7 @@ public final class Substring {
      * separator) ignored. For example:
      *
      * <pre>{@code
-     * first(',')
-     *     .repeatedly()
-     *     .splitThenTrimKeyValuesAround(first('='), "k1 = v1, , k2=v2,")
+     * all(',').splitThenTrimKeyValuesAround(first('='), "k1 = v1, , k2=v2,")
      * }</pre>
      * will result in a {@code BiStream} equivalent to {@code [(k1, v1), (k2, v2)]}.
      *
@@ -2009,8 +2034,7 @@ public final class Substring {
      * such as:
      *
      * <pre>{@code
-     * first(',')
-     *     .repeatedly()
+     * all(',')
      *     .split("k1 = v1, , k2=v2,")  // the redundant ',' will throw IAE
      *     .collect(
      *         GuavaCollectors.toImmutableMap(
@@ -2020,8 +2044,7 @@ public final class Substring {
      * Or, if you want to ignore unparsable parts:
      *
      * <pre>{@code
-     * first(',')
-     *     .repeatedly()
+     * all(',')
      *     .split("k1 = v1, k2 > v2")  // Ignore the unknown "k2 > v2"
      *     .map(first('=')::splitThenTrim)
      *     .collect(

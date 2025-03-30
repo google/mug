@@ -2,20 +2,27 @@ package com.google.mu.errorprone;
 
 import static com.google.common.base.CharMatcher.whitespace;
 import static com.google.mu.util.Substring.before;
+import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.firstOccurrence;
 
 import java.util.stream.Stream;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.mu.util.Substring;
+import com.google.errorprone.VisitorState;
+import com.google.errorprone.fixes.FixedPosition;
+import com.google.errorprone.util.ASTHelpers;
+import com.sun.source.tree.ExpressionTree;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
 /** Represents a single placeholder enclosed by curly braces or square brackets. */
 final class Placeholder {
   /**
    * For cloud resource names, '=' is used to denote the sub-pattern; For SQL templates, "->" is
-   * used to denote a conditional subquery.
+   * used to denote a conditional subquery; and ":" leads the subquery as the tranformation target.
    */
   private static final Substring.Pattern PLACEHOLDER_NAME_END =
-      Stream.of("=", "->").map(Substring::first).collect(firstOccurrence());
+      Stream.of("=", "->", ":").map(Substring::first).collect(firstOccurrence());
 
   private final Substring.Match match;
   private final String name;
@@ -32,6 +39,34 @@ final class Placeholder {
 
   String name() {
     return name;
+  }
+
+  Substring.Match match() {
+    return match;
+  }
+
+  /**
+   * Returns the source position of this placeholder by looking in {@code node}.
+   *
+   * <p>It's required that this placeholder must be within {@code node} or else the result won't
+   * be correct.
+   */
+  DiagnosticPosition sourcePosition(ExpressionTree node, VisitorState state) {
+    return new FixedPosition(
+        node,
+        ASTHelpers.getStartPosition(node) + getStartIndexInSource(state.getSourceForNode(node)));
+  }
+
+  @VisibleForTesting
+  int getStartIndexInSource(String source) {
+    Substring.RepeatingPattern placeholderOpenings = first(match.charAt(0)).repeatedly();
+    long placeholderOpeningsBeforeMe = placeholderOpenings.match(match.before()).count();
+    return placeholderOpenings
+        .match(source)
+        .skip(placeholderOpeningsBeforeMe)
+        .map(Substring.Match::index)
+        .findFirst()
+        .orElse(0);
   }
 
   boolean requiresBooleanArg() {

@@ -13,6 +13,8 @@ import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.NewClassTree;
 import com.sun.source.tree.Tree;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
+import java.util.function.Supplier;
 
 /**
  * A convenience base class allowing subclasses to use precondition-style checking such as {@code
@@ -85,6 +87,14 @@ abstract class AbstractBugChecker extends BugChecker {
   final NodeCheck checkingOn(Tree node) {
     checkNotNull(node);
     return (message, args) -> new ErrorReport(buildDescription(node), message, args);
+  }
+
+  /**
+   * Starts node checking chain. Errors will be reported as pertaining to the returned position from
+   * {@code lazyPosition}.
+   */
+  final NodeCheck checkingOn(Supplier<? extends DiagnosticPosition> lazyPosition) {
+    return (message, args) -> new ErrorReport(buildDescription(lazyPosition.get()), message, args);
   }
 
   /** Fluently checking on a tree node. */
