@@ -53,11 +53,16 @@
       <artifactId>guava-testlib</artifactId>
       <scope>test</scope>
     </dependency>
-	<dependency>
-		<groupId>com.google.mug</groupId>
-		<artifactId>mug-guava</artifactId>
-		<scope>test</scope>
-		<version>${project.version}</version>
-	</dependency>
+    <dependency>
+      <groupId>org.checkerframework</groupId>
+      <artifactId>checker-qual</artifactId>
+      <version>3.12.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.mug</groupId>
+      <artifactId>mug-guava</artifactId>
+      <scope>test</scope>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
 </project>
