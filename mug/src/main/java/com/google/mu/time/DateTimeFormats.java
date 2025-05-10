@@ -107,6 +107,8 @@ import com.google.mu.util.stream.BiStream;
  *     formatOf("<Tue>, dd MM yyyy HH:mm:ss.SSS <America/New_York>");
  * }</pre>
  *
+ * <p>i18n isn't supported.
+ *
  * @since 7.1
  */
 public final class DateTimeFormats {
