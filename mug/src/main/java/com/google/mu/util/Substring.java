@@ -1223,6 +1223,9 @@ public final class Substring {
      * pattern after it has matched this pattern. For example {@code first('/').then(first('/'))}
      * finds the second '/' character.
      *
+     * <p>This method is soft-deprecated. It's prone to misuse. You should usually use other methods
+     * to achieve similar effects.
+     *
      * @since 5.7
      */
     public final Pattern then(Pattern following) {
@@ -1286,6 +1289,9 @@ public final class Substring {
      * <p>If you are trying to define a boundary around or after your pattern similar to regex
      * anchor {@code '\b'}, consider using {@link #separatedBy} if the boundary can be detected by
      * a character.
+     *
+     * <p>This method is soft-deprecated. It's prone to misuse. You should usually use other methods
+     * to achieve similar effects.
      *
      * @since 6.0
      */
