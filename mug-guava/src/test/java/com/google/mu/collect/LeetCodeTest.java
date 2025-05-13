@@ -16,11 +16,23 @@ public class LeetCodeTest {
 
   static abstract class Koko {
     @Test public void verify() {
-      assertThat(minEatingSpeed(new int[] {3,6,7,11}, 8)).isEqualTo(4);
-      assertThat(minEatingSpeed(new int[] {30,11,23,4,20}, 5)).isEqualTo(30);;
+      assertThat(minEatingSpeed(new int[] {7}, 1)).isEqualTo(7);
+      assertThat(minEatingSpeed(new int[] {3, 6, 7, 11}, 100)).isEqualTo(1);
+      assertThat(minEatingSpeed(new int[] {30, 11, 23, 4, 20}, 5)).isEqualTo(30);
+      assertThat(minEatingSpeed(new int[] {9}, 2)).isEqualTo(5);
+      assertThat(minEatingSpeed(new int[] {1, 1, 1, 1}, 4)).isEqualTo(1);
+      assertThat(minEatingSpeed(new int[] {1000000000}, 2)).isEqualTo(500000000);
     }
 
     abstract int minEatingSpeed(int[] piles, int h);
+
+    static int eat(int[] piles, int speed) {
+      int time = 0;
+      for (int pile : piles) {
+        time += (pile + speed - 1) / speed;
+      }
+      return time;
+    }
   }
 
   public static class ManualKoKo extends Koko {
@@ -28,15 +40,11 @@ public class LeetCodeTest {
     @Override int minEatingSpeed(int[] piles, int h) {
       int low = 1, high = Arrays.stream(piles).max().getAsInt();
       while (low < high) {
-          int mid = low + (high - low) / 2;
-          int hours = 0;
-          for (int pile : piles) {
-              hours += (pile + mid - 1) / mid;
-          }
-          if (hours > h) {
-              low = mid + 1;
+        int mid = low + (high - low) / 2;
+          if (eat(piles, mid) <= h) {
+            high = mid;
           } else {
-              high = mid;
+            low = mid + 1;
           }
       }
       return low;
@@ -46,12 +54,8 @@ public class LeetCodeTest {
   public static class MugKoko extends Koko {
     @Override int minEatingSpeed(int[] piles, final int h) {
       return BinarySearch.forInts(Range.closed(1, Arrays.stream(piles).max().getAsInt()))
-          .insertionPointFor(
-              (lo, speed, hi) ->
-                  Integer.compare(
-                      Arrays.stream(piles).map(pile ->  (pile + speed - 1) / speed).sum(),
-                      h))
-          .floor();
+          .insertionPointFor((lo, speed, hi) -> eat(piles, speed) <= h ? -1 : 1)
+          .ceiling();
     }
   }
 
