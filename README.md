@@ -24,6 +24,7 @@ A small Java 8+ utilities library ([javadoc](http://google.github.io/mug/apidocs
 
 </details>
 
+<details>
 ## Installation
 ### Maven
 
@@ -90,5 +91,6 @@ Add to build.gradle:
   implementation 'com.google.mug:mug-guava:8.5'
   implementation 'com.google.mug:mug-protobuf:8.5'
 ```
+</details>
 
 
