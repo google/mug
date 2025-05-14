@@ -5,7 +5,7 @@ A small Java 8+ utilities library ([javadoc](http://google.github.io/mug/apidocs
 
 ## Highlights
 
-- ✅ `BiStream` – streams `Map` and pair-wise collections 
+- ✅ `BiStream` – streams `Map` and pair-wise collections  
   → `BiStream.map(map).filterKeys(...).mapValues(...).toMap()`
 - ✅ `Substring` – composable substring extraction  
   → `Substring.between("(", ")").from("call(foo)") → "foo"`
@@ -18,16 +18,16 @@ A small Java 8+ utilities library ([javadoc](http://google.github.io/mug/apidocs
 
 ## Docs
 
-- [`BiStream`](./mu/util/stream/README.md) 
+- 📄 [`BiStream`](./mug/src/main/java/com/google/mu/util/stream/README.md) 
 - 📄 [`Substring`](https://github.com/google/mug/wiki/Substring-Explained)  
 - 📄 [`StringFormat`](https://github.com/google/mug/wiki/StringFormat-Explained)  
-- 📄 [`SafeSql`](./mu/util/safesql/README.md)  
-- 📄 [`DateTimeFormats`](./mu/time/README.md)  
+- 📄 [`SafeSql`](./mug-guava/src/main/java/com/google/mu/util/safesql/README.md)  
+- 📄 [`DateTimeFormats`](./mug/src/main/java/com/google/mu/time/README.md)  
 
 <details>
 <summary>More tools</summary>
  
-- [`BinarySearch`](./mu/util/collect/README.md)  
+- [`BinarySearch`](./mug-guava/src/main/java/com/google/mu/util/collect/README.md)  
 - [`StructuredConcurrency`](https://github.com/google/mug/wiki/Structured-Concurrency-Explained)
 
 </details>
