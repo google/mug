@@ -21,7 +21,7 @@ A small Java 8+ utilities library ([javadoc](http://google.github.io/mug/apidocs
 - 📄 [`BiStream`](./mug/src/main/java/com/google/mu/util/stream/README.md) 
 - 📄 [`Substring`](https://github.com/google/mug/wiki/Substring-Explained)  
 - 📄 [`StringFormat`](https://github.com/google/mug/wiki/StringFormat-Explained)  
-- 📄 [`SafeSql`](./mug-guava/src/main/java/com/google/mu/util/safesql/README.md)  
+- 📄 [`SafeSql`](./mug-guava/src/main/java/com/google/mu/safesql/README.md)  
 - 📄 [`DateTimeFormats`](./mug/src/main/java/com/google/mu/time/README.md)  
 
 <details>
