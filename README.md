@@ -10,7 +10,7 @@ A small Java 8+ utilities library ([javadoc](http://google.github.io/mug/apidocs
 - ✅ [`Substring`](https://github.com/google/mug/wiki/Substring-Explained) – composable substring extraction & manipulation  
   → `Substring.between("(", ")").from("call(foo)") → "foo"`
 - ✅ [`StringFormat`](https://github.com/google/mug/wiki/StringFormat-Explained) – compile-time-safe bidirectional parsing/formatting  
-  → `new StringFormat("/home/{user}/{year}-{month}-{day}").parse(filePath, (user, year, month, day) -> ...)`
+  → `new StringFormat("/home/{user}/{date}").parse(filePath, (user, date) -> ...)`
 - ✅ [`SafeSql`](./mug-guava/src/main/java/com/google/mu/safesql/README.md) – SQL template (***0 injection risk***)  
   → ```SafeSql.of("select id, `{col}` from Users where id = {id}", col, id)```
 - ✅ [`DateTimeFormats`](./mug/src/main/java/com/google/mu/time/README.md) – parse datetimes by example  
