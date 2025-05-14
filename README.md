@@ -5,24 +5,16 @@ A small Java 8+ utilities library ([javadoc](http://google.github.io/mug/apidocs
 
 ## Highlights
 
-- ✅ `BiStream` – streams `Map` and pair-wise collections  
+- ✅ [`BiStream`](./mug/src/main/java/com/google/mu/util/stream/README.md) – streams `Map` and pair-wise collections  
   → `BiStream.map(map).filterKeys(...).mapValues(...).toMap()`
-- ✅ `Substring` – composable substring extraction  
+- ✅ [`Substring`](https://github.com/google/mug/wiki/Substring-Explained) – composable substring extraction  
   → `Substring.between("(", ")").from("call(foo)") → "foo"`
-- ✅ `StringFormat` – compile-time-safe bidirectional formatting  
+- ✅ [`StringFormat`](https://github.com/google/mug/wiki/StringFormat-Explained) – compile-time-safe bidirectional formatting  
   → `new StringFormat("/home/{user}/{year}-{month}-{day}").parse(filePath, (user, year, month, day) -> ...)`
-- ✅ `SafeSql` – SQL string interpolation with injection protection  
+- ✅ [`SafeSql`](./mug-guava/src/main/java/com/google/mu/safesql/README.md) – SQL string interpolation with injection protection  
   → `SafeSql.of("select id, ``{col}`` from Users where id = {id}", col, id)` (injection impossible!)
-- ✅ `DateTimeFormats` – parse datetimes by example  
+- ✅ [`DateTimeFormats`](./mug/src/main/java/com/google/mu/time/README.md) – parse datetimes by example  
   → `DateTimeFormatter format = formatOf("2024-03-14 10:00:00.123 America/New_York")`
-
-## Docs
-
-- 📄 [`BiStream`](./mug/src/main/java/com/google/mu/util/stream/README.md) 
-- 📄 [`Substring`](https://github.com/google/mug/wiki/Substring-Explained)  
-- 📄 [`StringFormat`](https://github.com/google/mug/wiki/StringFormat-Explained)  
-- 📄 [`SafeSql`](./mug-guava/src/main/java/com/google/mu/safesql/README.md)  
-- 📄 [`DateTimeFormats`](./mug/src/main/java/com/google/mu/time/README.md)  
 
 <details>
 <summary>More tools</summary>
