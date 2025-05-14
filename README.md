@@ -7,9 +7,9 @@ A small Java 8+ utilities library ([javadoc](http://google.github.io/mug/apidocs
 
 - ✅ [`BiStream`](./mug/src/main/java/com/google/mu/util/stream/README.md) – streams `Map` and pair-wise collections  
   → `BiStream.map(map).filterKeys(...).mapValues(...).toMap()`
-- ✅ [`Substring`](https://github.com/google/mug/wiki/Substring-Explained) – composable substring extraction  
+- ✅ [`Substring`](https://github.com/google/mug/wiki/Substring-Explained) – composable substring manipulation  
   → `Substring.between("(", ")").from("call(foo)") → "foo"`
-- ✅ [`StringFormat`](https://github.com/google/mug/wiki/StringFormat-Explained) – compile-time-safe bidirectional formatting  
+- ✅ [`StringFormat`](https://github.com/google/mug/wiki/StringFormat-Explained) – compile-time-safe bidirectional parsing/formatting  
   → `new StringFormat("/home/{user}/{year}-{month}-{day}").parse(filePath, (user, year, month, day) -> ...)`
 - ✅ [`SafeSql`](./mug-guava/src/main/java/com/google/mu/safesql/README.md) – SQL template (***0 injection risk***)  
   → ```SafeSql.of("select id, `{col}` from Users where id = {id}", col, id)```
