@@ -28,7 +28,7 @@ A small Java 8+ utilities library ([javadoc](http://google.github.io/mug/apidocs
 <summary>More tools</summary>
  
 - [`BinarySearch`](./mug-guava/src/main/java/com/google/mu/util/collect/README.md)  
-- [`StructuredConcurrency`](https://github.com/google/mug/wiki/Structured-Concurrency-Explained)
+- [`StructuredConcurrency`](./mug/src/main/java/com/google/mu/util/concurrent/README.md)
 
 </details>
 
