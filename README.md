@@ -34,7 +34,7 @@ A small Java 8+ utilities library ([javadoc](http://google.github.io/mug/apidocs
 <details>
 <summary>Installation</summary>
 
-### Maven
+##### Maven
 
 Add the following to pom.xml:
 ```
@@ -91,7 +91,7 @@ Guava add-ons (with [`SafeSql`](https://google.github.io/mug/apidocs/com/google/
   </dependency>
 ```
 
-### Gradle
+##### Gradle
 
 Add to build.gradle:
 ```
