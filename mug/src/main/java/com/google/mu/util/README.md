@@ -100,12 +100,12 @@ Optional<String> quotedBy(String open, String close) {
 
 ### Comparison to StringUtils
 
-| Task                        | Apache StringUtils             | Substring API                        |
-|----------------------------|----------------------------------|--------------------------------------a
-| After last `.`             | `substringAfterLast(name, ".")` | `after(last('.')).from(name)` |
-| Between delimiters         | `substringBetween(...)`         | `between(...).from(...)`   |
-| Safe fallback              | Null check                      | `Optional<String>`                   |
-| Pattern composition        | ❌                               | ✅ Chainable                          |
+| Task                       | Apache StringUtils              | Substring API                       |
+|----------------------------|---------------------------------|-------------------------------------|
+| After last `.`             | `substringAfterLast(name, ".")` | `after(last('.')).from(name)`       |
+| Between delimiters         | `substringBetween(...)`         | `between(...).from(...)`            |
+| Safe fallback              | Null check                      | `Optional<String>`                  |
+| Pattern composition        | ❌                              | ✅ Chainable                       |
 
 ### Optional-safe chaining
 
