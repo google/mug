@@ -19,15 +19,15 @@ A small Java 8+ utilities library ([javadoc](http://google.github.io/mug/apidocs
 <details>
 <summary>More tools</summary>
  
-- [`BinarySearch`](./mug-guava/src/main/java/com/google/mu/collect/README.md)  
+- [`BinarySearch`](./mug-guava/src/main/java/com/google/mu/collect/README.md) - solves LeetCode binary search problems  
   → `BinarySearch.inSortedArrayWithTolerance(doubleArray, 0.0001).find(target)`
-- [`StructuredConcurrency`](./mug/src/main/java/com/google/mu/util/concurrent/README.md)  
+- [`StructuredConcurrency`](./mug/src/main/java/com/google/mu/util/concurrent/README.md) - simple structured concurrency on virtual threads  
   → `concurrently(() -> fetchArm(), () -> fetchLeg(), (arm, leg) -> makeRobot(arm, leg))`
 - [`MoreStreams`](https://google.github.io/mug/apidocs/com/google/mu/util/stream/MoreStreams.html)  
   → `whileNotNull(queue::poll).filter(...).map(...)`
-- [`MoreStreams`](https://google.github.io/mug/apidocs/com/google/mu/util/Optionals.html)  
+- [`Optionals`](https://google.github.io/mug/apidocs/com/google/mu/util/Optionals.html)  
   → `return optionally(obj.hasFoo(), obj::getFoo);`
-- [`Iteration`](https://github.com/google/mug/wiki/Iteration-Explained)
+- [`Iteration`](https://github.com/google/mug/wiki/Iteration-Explained) - implement lazy stream with recursive code
 
 </details>
 
