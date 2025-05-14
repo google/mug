@@ -12,7 +12,7 @@ A small Java 8+ utilities library ([javadoc](http://google.github.io/mug/apidocs
 - ✅ [`StringFormat`](https://github.com/google/mug/wiki/StringFormat-Explained) – compile-time-safe bidirectional formatting  
   → `new StringFormat("/home/{user}/{year}-{month}-{day}").parse(filePath, (user, year, month, day) -> ...)`
 - ✅ [`SafeSql`](./mug-guava/src/main/java/com/google/mu/safesql/README.md) – SQL string interpolation with injection protection  
-  → `SafeSql.of("select id, \`{col}\` from Users where id = {id}", col, id)` (injection impossible!)
+  → `SafeSql.of("select id, ``{col}`` from Users where id = {id}", col, id)` (injection impossible!)
 - ✅ [`DateTimeFormats`](./mug/src/main/java/com/google/mu/time/README.md) – parse datetimes by example  
   → `DateTimeFormatter format = formatOf("2024-03-14 10:00:00.123 America/New_York")`
 
