@@ -25,7 +25,8 @@ A small Java 8+ utilities library ([javadoc](http://google.github.io/mug/apidocs
 </details>
 
 <details>
-## Installation
+<summary>Installation</summary>
+
 ### Maven
 
 Add the following to pom.xml:
