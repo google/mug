@@ -6,7 +6,7 @@ A small Java 8+ utilities library ([javadoc](http://google.github.io/mug/apidocs
 ## Highlights
 
 - ✅ [`BiStream`](./mug/src/main/java/com/google/mu/util/stream/README.md) – streams `Map` and pair-wise collections  
-  → `BiStream.map(map).filterKeys(...).mapValues(...).toMap()`
+  → `BiStream.zip(keys, values).toMap()`
 - ✅ [`Substring`](https://github.com/google/mug/wiki/Substring-Explained) – composable substring extraction & manipulation  
   → `Substring.between("(", ")").from("call(foo)") → "foo"`
 - ✅ [`StringFormat`](https://github.com/google/mug/wiki/StringFormat-Explained) – compile-time-safe bidirectional parsing/formatting  
