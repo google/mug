@@ -111,9 +111,11 @@ Problem solved.
 With IO (calling the WebPageUrlService) being the bottleneck, it may make sense to crawl the pages
 concurrently, as long as the service tolerates the extra load.
 
-To make the code thread safe, we need to create a concurrent `Set<String>` (using `ConcurrentHashSet.newKeySet()`).
-Each thread can then create their own Walker instance. The concurrent set will ensure that no two threads
-will attempt to visit the same url.
+To make the code thread safe, we need to use `ConcurrentHashSet.newKeySet()`.
+Each thread can then create their own Walker instance, sharing the same concurrent set instance
+in the lambda passed to `inGraph()`.
+
+The concurrent set will ensure that no two threads will attempt to visit the same url.
 
 ---
 
