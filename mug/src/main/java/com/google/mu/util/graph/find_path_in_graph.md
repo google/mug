@@ -106,6 +106,15 @@ By using the `visitedUrls` from each page's url, we can still detect already vis
 
 Problem solved.
 
+## Concurrent Graph Walking
+
+With IO (calling the WebPageUrlService) being the bottleneck, it may make sense to crawl the pages
+concurrently, as long as the service tolerates the extra load.
+
+To make the code thread safe, we need to create a concurrent `Set<String>` (using `ConcurrentHashSet.newKeySet()`).
+Each thread can then create their own Walker instance. The concurrent set will ensure that no two threads
+will attempt to visit the same url.
+
 ---
 
 ## Traverser
