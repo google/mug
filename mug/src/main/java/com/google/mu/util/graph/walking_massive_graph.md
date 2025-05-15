@@ -1,6 +1,8 @@
 # Walking Massive Graphs with BloomFilter-Based Tracking
 
-When working with massive graphs—such as web link graphs, social networks, or distributed dependency graphs—the cost of tracking visited nodes can dominate the memory budget. Traditional `Set<T>` may not be able to hold all nodes in memory.
+In [Find a Path in a Graph](./find_path_in_graph.md), we discussed an algorithm to find a path from a set of urls to phishing sites.
+When working with massive graphs—such as web link graphs, social networks, or distributed dependency graphs—the cost of tracking visited nodes
+can dominate the memory budget. Traditional `Set<T>` may not be able to hold all nodes in memory.
 
 In scenarios where the graph is discovered lazily (e.g. via RPC or streaming edge discovery), a Bloom filter offers an appealing trade-off: sublinear memory in exchange for a controlled false positive rate.
 
