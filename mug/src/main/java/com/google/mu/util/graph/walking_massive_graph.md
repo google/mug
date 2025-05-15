@@ -50,7 +50,7 @@ To mitigate this, we adopt a hybrid approach:
        - If we trust Bloom, prune the node
        - Otherwise visit it
 
-By configuring the probability (say 50%), we can achieve a few things:
+By configuring the probability (say 75%), we can achieve a few things:
 
 1. A frequently reached node is unlikely to be false positively pruned.
 2. Even if a few-visited node is false positively pruned this time, it won't be forever lost on the next run of the program.
