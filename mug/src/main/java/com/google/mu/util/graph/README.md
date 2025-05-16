@@ -51,8 +51,11 @@ List<Location> nearbySushiPlaces = ShortestPath.shortestPathsFrom(myLocation, Lo
 
 ---
 
-## More Discussions
+<details>
+<summary>More Discussions</summary>
 
-**➡️ [Finding a Path in a Graph](./find_path_in_graph.md)**
-**➡️ [Walking a Super Massive Graph](./walking_massive_graph.md)**
+* ➡️ [Finding a Path in a Graph](./find_path_in_graph.md)
+* ➡️ [Walking a Super Massive Graph](./walking_massive_graph.md)
+
+</details>
 
