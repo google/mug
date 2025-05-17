@@ -556,16 +556,21 @@ public final class SafeSql {
           } else if (lookbehind("LIKE '%", placeholder)
               && appendBeforeQuotedPlaceholder("'%", placeholder, "%'")) {
             rejectEscapeAfter(placeholder);
-            builder.addParameter(
-                paramName, "%" + escapePercent(mustBeString(placeholder, value)) + "%");
+            builder
+                .addParameter(paramName, "%" + escapePercent(mustBeString(placeholder, value)) + "%")
+                .appendSql(" ESCAPE '^'");
           } else if (lookbehind("LIKE '%", placeholder)
               && appendBeforeQuotedPlaceholder("'%", placeholder, "'")) {
             rejectEscapeAfter(placeholder);
-            builder.addParameter(paramName, "%" + escapePercent(mustBeString(placeholder, value)));
+            builder
+                .addParameter(paramName, "%" + escapePercent(mustBeString(placeholder, value)))
+                .appendSql(" ESCAPE '^'");
           } else if (lookbehind("LIKE '", placeholder)
               && appendBeforeQuotedPlaceholder("'", placeholder, "%'")) {
             rejectEscapeAfter(placeholder);
-            builder.addParameter(paramName, escapePercent(mustBeString(placeholder, value)) + "%");
+            builder
+                .addParameter(paramName, escapePercent(mustBeString(placeholder, value)) + "%")
+                .appendSql(" ESCAPE '^'");
           } else if (appendBeforeQuotedPlaceholder("'", placeholder, "'")) {
             builder.addParameter(paramName, mustBeString("'" + placeholder + "'", value));
           } else {
@@ -1072,7 +1077,7 @@ public final class SafeSql {
   }
 
   private static String escapePercent(String s) {
-    return first(c -> c == '\\' || c == '%' || c == '_').repeatedly().replaceAllFrom(s, c -> "\\" + c);
+    return first(c -> c == '^' || c == '%' || c == '_').repeatedly().replaceAllFrom(s, c -> "^" + c);
   }
 
   private static <T> Template<T> prepare(
