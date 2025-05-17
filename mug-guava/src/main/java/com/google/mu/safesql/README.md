@@ -6,6 +6,8 @@ SQL Injection has long dominated the OWASP Top 10, yet most Java developers are 
 
 That’s half true. And the other half is exactly where things fall apart.
 
+---
+
 ## What is Identifier Injection?
 
 PreparedStatement binds **values** safely using `?` placeholders.
@@ -32,6 +34,8 @@ SELECT * FROM users ORDER BY name desc; DROP TABLE users --
 ```
 
 > This is identifier injection: your values are protected, but your structure is not.
+
+---
 
 ## How do frameworks fail to protect this?
 
@@ -95,6 +99,8 @@ Looks like you're using `?`—safe, right? But the **table name** is user-contro
   > "Never, under any circumstances, pass untrusted user input to string-concatenated SQL identifiers such as table names or column names."  
   — [SQLAlchemy SQL Expression Language](https://docs.sqlalchemy.org/en/20/core/tutorial.html)
 
+---
+
 ## How SafeSql solves this
 
 [SafeSql](https://google.github.io/mug/apidocs/com/google/mu/safesql/SafeSql.html) is a 
@@ -111,7 +117,6 @@ Highlights:
 - ✅ **Identifier safety**: ````{columns}```` only accepts safe column names (strict validation).
 - ✅ **LIKE safety**: auto-escapes `%`, `_`, and `\` for pattern queries.
 - ✅ **Compile-time template checks**: mismatched parameters? Compilation fails.
-- ✅ **No fragment injection**: disallows raw string SQL composition—only nested SafeSql templates.
 
 Resulting SQL:
 
@@ -124,6 +129,71 @@ And parameters:
 ```java
 statement.setObject(1, "%100\\%%")
 ```
+
+What if you forgot to quote the `{columns}` placeholder with raw string?
+
+The template will pass all unquoted placeholders as JDBC parameters and JDBC will reject
+them in the place of columns.
+
+---
+
+## Conditional Subqueries: The Underrated Injection Vector
+
+One of the most common sources of dynamic SQL is conditional logic:
+
+- Filtering by optional fields (e.g., keyword, status, type)
+- Adding nested subqueries depending on user input
+- Switching between JOINs or SELECT fields based on context
+
+These are structurally dynamic — and thus **prone to injection** if not composed carefully.
+
+### ❌ What this looks like in Spring or JDBC:
+
+```java
+String sql = "SELECT * FROM users WHERE 1=1";
+if (keyword != null) {
+  sql += " AND name LIKE '%" + keyword + "%'";
+}
+```
+
+Even if you bind the "keyword" as parameter,
+the `AND ...` clause itself is dynamically generated,
+and it opens up the door to the dangerous string concatenation that can be user
+influenced, through enough indirections and parameter passing.
+
+### ❌ What this looks like in MyBatis:
+
+```xml
+<select id="listUsers">
+  SELECT * FROM users WHERE 1=1
+  <where>
+    <if test="keyword != null">
+      AND name LIKE CONCAT('%', #{keyword}, '%')
+    </if>
+  </where>
+</select>
+```
+
+While `#{}` safely binds values, **the conditional logic is entangled with markup**, and doesn’t compose well.
+The XML-based logic also makes it hard to abstract and reuse subqueries without duplicating or scattering the logic.
+
+### ✅ What this looks like in SafeSql:
+
+The [`SafeSql.optionally()`](https://google.github.io/mug/apidocs/com/google/mu/safesql/SafeSql.html#optionally(java.lang.String,java.util.Optional))
+utility renders an optional template only when the Java `Optional` parameter is present.
+
+```java
+SafeSql query = SafeSql.of(
+  "SELECT * FROM Users WHERE 1=1 {optionally_and_name}",
+  optionally("AND name LIKE '%{keyword}%'", keyword));
+```
+
+This syntax is:
+- ✅ Declarative
+- ✅ Directly readable as SQL
+- ✅ Easy to refactor into reusable subquery `SafeSql` objects
+
+---
 
 ## Conclusion: SafeSql is safe, for real, whether you are careful or not.
 
