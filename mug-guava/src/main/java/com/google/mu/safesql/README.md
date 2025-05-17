@@ -103,7 +103,7 @@ compile-time-safe SQL templating system that addresses structure injection head-
 ```java
 SafeSql query = SafeSql.of(
   "SELECT `{columns}` FROM users WHERE name LIKE '%{keyword}%'",
-  List.of("id", "email"), keyword);
+  /* columns */ List.of("id", "email"), /* keyword */ "100%");
 ```
 
 Highlights:
@@ -122,7 +122,7 @@ SELECT `id`, `email` FROM users WHERE name LIKE ?
 And parameters:
 
 ```java
-statement.setObject(1, "%keyword%")
+statement.setObject(1, "%100\\%%")
 ```
 
 ## Conclusion: SafeSql is safe from injection, whether you are careful or not.
