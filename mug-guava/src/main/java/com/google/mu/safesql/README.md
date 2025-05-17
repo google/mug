@@ -125,7 +125,7 @@ And parameters:
 statement.setObject(1, "%100\\%%")
 ```
 
-## Conclusion: SafeSql is safe from injection, whether you are careful or not.
+## Conclusion: SafeSql is safe, for real, whether you are careful or not.
 
 Try to shoot yourself in the foot and `SafeSql` will stop you.
 
