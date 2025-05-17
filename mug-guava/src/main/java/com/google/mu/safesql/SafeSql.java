@@ -286,7 +286,7 @@ import com.google.mu.util.stream.BiStream;
  * template system.
  *
  * <p>That said, this only applies when template placeholder is used in the LIKE string.
- * You can use any valid SQL LIKE syntax if placeholder isn't used in the LIKE expression.
+ * You can use any valid SQL ESCAPE syntax if placeholder isn't used in the LIKE expression.
  *
  * <dl><dt><STRONG>Quote String Placeholders</STRONG></dt></dl>
  *
