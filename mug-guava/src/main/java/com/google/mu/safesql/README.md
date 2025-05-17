@@ -114,7 +114,7 @@ SafeSql query = SafeSql.of(
 
 Highlights:
 
-- ✅ **Identifier safety**: ````{columns}```` only accepts safe column names (strict validation).
+- ✅ **Identifier safety**: `````{columns}````` only accepts safe column names (strict validation).
 - ✅ **LIKE safety**: auto-escapes `%`, `_`, and `\` for pattern queries.
 - ✅ **Compile-time template checks**: mismatched parameters? Compilation fails.
 
@@ -130,7 +130,7 @@ And parameters:
 statement.setObject(1, "%100\\%%")
 ```
 
-What if you forgot to quote the `{columns}` placeholder with raw string?
+What if you forgot to quote the `{columns}` placeholder with backticks?
 
 The template will pass all unquoted placeholders as JDBC parameters and JDBC will reject
 them in the place of columns.
