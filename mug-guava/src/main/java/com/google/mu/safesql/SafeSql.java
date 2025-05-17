@@ -265,6 +265,26 @@ import com.google.mu.util.stream.BiStream;
  *   List<Long> ids = sql.query(connection, row -> row.getLong("id"));
  * }</pre>
  *
+ * <p><strong>Automatic Escaping: No Need for ESCAPE Clause</strong></p>
+ *
+ * <p>This means you <em>do not</em> need to (and in fact, must not) write SQL
+ * using {@code ESCAPE} clauses. Any such attempt, like:
+ *
+ * <pre>{@code
+ *   SELECT name FROM Users WHERE name LIKE '%{term}%' ESCAPE '\'
+ * }</pre>
+ *
+ * <p>...will be rejected, because SafeSql already performs all necessary escaping internally
+ * and automatically uses {@code ESCAPE '^'}. In other words, LIKE <em>just works</em>.
+ *
+ * <p>This eliminates the need for developers to deal with brittle double-escaping
+ * (like {@code '\\'}), or any cross-dialect compatibility issues.
+ * The template is also more readable.
+ *
+ * <p>If you find yourself wanting to use {@code ESCAPE}, consider whether you are
+ * manually escaping strings that could instead be safely passed as-is to SafeSql's
+ * template system.
+ *
  * <dl><dt><STRONG>Quote String Placeholders</STRONG></dt></dl>
  *
  * Even when you don't use the {@code LIKE} operator or the percent sign (%), it may still be
@@ -539,16 +559,21 @@ public final class SafeSql {
           } else if (lookbehind("LIKE '%", placeholder)
               && appendBeforeQuotedPlaceholder("'%", placeholder, "%'")) {
             rejectEscapeAfter(placeholder);
-            builder.addParameter(
-                paramName, "%" + escapePercent(mustBeString(placeholder, value)) + "%");
+            builder
+                .addParameter(paramName, "%" + escapePercent(mustBeString(placeholder, value)) + "%")
+                .appendSql(" ESCAPE '^'");
           } else if (lookbehind("LIKE '%", placeholder)
               && appendBeforeQuotedPlaceholder("'%", placeholder, "'")) {
             rejectEscapeAfter(placeholder);
-            builder.addParameter(paramName, "%" + escapePercent(mustBeString(placeholder, value)));
+            builder
+                .addParameter(paramName, "%" + escapePercent(mustBeString(placeholder, value)))
+                .appendSql(" ESCAPE '^'");
           } else if (lookbehind("LIKE '", placeholder)
               && appendBeforeQuotedPlaceholder("'", placeholder, "%'")) {
             rejectEscapeAfter(placeholder);
-            builder.addParameter(paramName, escapePercent(mustBeString(placeholder, value)) + "%");
+            builder
+                .addParameter(paramName, escapePercent(mustBeString(placeholder, value)) + "%")
+                .appendSql(" ESCAPE '^'");
           } else if (appendBeforeQuotedPlaceholder("'", placeholder, "'")) {
             builder.addParameter(paramName, mustBeString("'" + placeholder + "'", value));
           } else {
@@ -924,7 +949,8 @@ public final class SafeSql {
    * <p>The template arguments follow the same rules as discussed in {@link #of(String, Object...)}
    * and receives the same compile-time protection against mismatch or out-of-order human mistakes.
    *
-   * <p>The returned Template is <em>not</em> thread safe.
+   * <p>The returned Template is <em>not</em> thread safe because the cached {@link
+   * PreparedStatement} objects aren't.
    *
    * <p>The caller is expected to close the {@code connection} after done, which will close the
    * cached PreparedStatement.
@@ -1054,7 +1080,7 @@ public final class SafeSql {
   }
 
   private static String escapePercent(String s) {
-    return first(c -> c == '\\' || c == '%' || c == '_').repeatedly().replaceAllFrom(s, c -> "\\" + c);
+    return first(c -> c == '^' || c == '%' || c == '_').repeatedly().replaceAllFrom(s, c -> "^" + c);
   }
 
   private static <T> Template<T> prepare(

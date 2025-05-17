@@ -239,7 +239,7 @@ public class SafeSqlTest {
   @Test
   public void singleLikeParameterWithWildcardAtBothEnds() {
     SafeSql sql = SafeSql.of("select * from tbl where name like '%{s}%'", "foo");
-    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ?");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
     assertThat(sql.getParameters()).containsExactly("%foo%");
   }
 
@@ -270,15 +270,29 @@ public class SafeSqlTest {
   @Test
   public void literalPercentValueWithWildcardAtBothEnds() {
     SafeSql sql = SafeSql.of("select * from tbl where name like '%{s}%'", "%");
-    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ?");
-    assertThat(sql.getParameters()).containsExactly("%\\%%");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
+    assertThat(sql.getParameters()).containsExactly("%^%%");
   }
 
   @Test
   public void literalBackslashValueWithWildcardAtBothEnds() {
     SafeSql sql = SafeSql.of("select * from tbl where name like '%{s}%'", "\\");
-    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ?");
-    assertThat(sql.getParameters()).containsExactly("%\\\\%");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
+    assertThat(sql.getParameters()).containsExactly("%\\%");
+  }
+
+  @Test
+  public void literalCaretValueWithWildcardAtBothEnds() {
+    SafeSql sql = SafeSql.of("select * from tbl where name like '%{s}%'", "^");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
+    assertThat(sql.getParameters()).containsExactly("%^^%");
+  }
+
+  @Test
+  public void literalSingleQuoteValueWithWildcardAtBothEnds() {
+    SafeSql sql = SafeSql.of("select * from tbl where name like '%{s}%'", "'");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
+    assertThat(sql.getParameters()).containsExactly("%'%");
   }
 
   @Test
@@ -293,22 +307,36 @@ public class SafeSqlTest {
   @Test
   public void singleLikeParameterWithWildcardAsPrefix() {
     SafeSql sql = SafeSql.of("select * from tbl where name like '%{s}'", "foo");
-    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ?");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
     assertThat(sql.getParameters()).containsExactly("%foo");
   }
 
   @Test
   public void literalPercentValueWithWildcardAtPrefix() {
     SafeSql sql = SafeSql.of("select * from tbl where name like '%{s}'", "%");
-    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ?");
-    assertThat(sql.getParameters()).containsExactly("%\\%");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
+    assertThat(sql.getParameters()).containsExactly("%^%");
   }
 
   @Test
   public void literalBackslashValueWithWildcardAtPrefix() {
     SafeSql sql = SafeSql.of("select * from tbl where name like '%{s}'", "\\");
-    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ?");
-    assertThat(sql.getParameters()).containsExactly("%\\\\");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
+    assertThat(sql.getParameters()).containsExactly("%\\");
+  }
+
+  @Test
+  public void literalCaretValueWithWildcardAtPrefix() {
+    SafeSql sql = SafeSql.of("select * from tbl where name like '%{s}'", "^");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
+    assertThat(sql.getParameters()).containsExactly("%^^");
+  }
+
+  @Test
+  public void literalSingleQuoteValueWithWildcardAtPrefix() {
+    SafeSql sql = SafeSql.of("select * from tbl where name like '%{s}'", "'");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
+    assertThat(sql.getParameters()).containsExactly("%'");
   }
 
   @Test
@@ -323,22 +351,36 @@ public class SafeSqlTest {
   @Test
   public void singleLikeParameterWithWildcardAsSuffix() {
     SafeSql sql = SafeSql.of("select * from tbl where name like '{s}%'", "foo");
-    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ?");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
     assertThat(sql.getParameters()).containsExactly("foo%");
   }
 
   @Test
   public void literalPercentValueWithWildcardAtSuffix() {
     SafeSql sql = SafeSql.of("select * from tbl where name like '{s}%'", "%");
-    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ?");
-    assertThat(sql.getParameters()).containsExactly("\\%%");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
+    assertThat(sql.getParameters()).containsExactly("^%%");
   }
 
   @Test
   public void literalBackslashValueWithWildcardAtSuffix() {
     SafeSql sql = SafeSql.of("select * from tbl where name like '{s}%'", "\\");
-    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ?");
-    assertThat(sql.getParameters()).containsExactly("\\\\%");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
+    assertThat(sql.getParameters()).containsExactly("\\%");
+  }
+
+  @Test
+  public void literalCaretValueWithWildcardAtSuffix() {
+    SafeSql sql = SafeSql.of("select * from tbl where name like '{s}%'", "^");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
+    assertThat(sql.getParameters()).containsExactly("^^%");
+  }
+
+  @Test
+  public void literalSingleQuoteValueWithWildcardAtSuffix() {
+    SafeSql sql = SafeSql.of("select * from tbl where name like '{s}%'", "'");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
+    assertThat(sql.getParameters()).containsExactly("'%");
   }
 
   @Test

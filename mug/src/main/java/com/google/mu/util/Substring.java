@@ -115,6 +115,256 @@ import com.google.mu.util.stream.MoreStreams;
  * assertThat(rendered).isEqualTo("Arya Stark went to Braavos.");
  * }</pre>
  *
+ * <h2>From Apache StringUtils to Substring</h2>
+ * <table border="1" cellpadding="6" cellspacing="0">
+ * <thead><tr><th>StringUtils Style</th><th>Substring Style</th></tr></thead>
+ *
+ * <tr>
+ *   <td><pre>{@code
+ * // Success
+ * String username = substringBefore("user@gmail.com", "@");
+ *     // => "user"
+ *
+ * // '.' not found in "readme", returns empty
+ * String filename = substringBefore("readme", ".");
+ *     // => ""
+ * }</pre></td>
+ *   <td><pre>{@code
+ * // Success
+ * String username = before(first("@"))
+ *     .from("user@gmail.com");
+ *     // => "user"
+ *
+ * // explicitly specify "readme" as fallback
+ * String filename = before(first("."))
+ *     .from("readme")
+ *     .orElse("readme");
+ *     // => "readme"
+ * }</pre></td>
+ * </tr>
+ *
+ * <tr>
+ *   <td><pre>{@code
+ * // Success
+ * String emailDomain = substringAfter("user@gmail.com", "@");
+ *     // => "gmail.com"
+ *
+ * // '.' not found in "myfile": full name is assumed to be extension
+ * String extension = substringAfter("myfile", ".");
+ *     // => "myfile"
+ * }</pre></td>
+ *   <td><pre>{@code
+ * // Success
+ * String emailDomain = after(first("@"))
+ *     .from("user@gmail.com");
+ *     // => "gmail.com"
+ *
+ * // explicitly specify "n/a" as fallback
+ * String extension = after(first("."))
+ *     .from("myfile")
+ *     .orElse("n/a");
+ *     // => "n/a"
+ * }</pre></td>
+ * </tr>
+ *
+ * <tr>
+ *   <td><pre>{@code
+ * // Success
+ * String extension = substringAfterLast("myfile.txt", ".");
+ *     // => "txt"
+ *
+ * // '.' not found in "myfile": full name is assumed to be extension
+ * String extension = substringAfterLast("myfile", ".");
+ *     // => "myfile"
+ * }</pre></td>
+ *   <td><pre>{@code
+ * // Success
+ * String extension = after(last("."))
+ *     .from("myfile.txt");
+ *     // => "txt"
+ *
+ * // explicitly specify "n/a" as fallback
+ * String extension = after(last("."))
+ *     .from("myfile")
+ *     .orElse("n/a");
+ *     // => "n/a"
+ * }</pre></td>
+ * </tr>
+ *
+ * <tr>
+ *   <td><pre>{@code
+ * // Success
+ * String value = substringBetween("<a>hello</a>", "<a>", "</a>");
+ *     // => "hello"
+ *
+ * // Tags not matched in "value": returns null
+ * String fallback = substringBetween("value", "<a>", "</a>");
+ *     // => null
+ * }</pre></td>
+ *   <td><pre>{@code
+ * // Success
+ * String value = between("<a>", "</a>")
+ *     .from("<a>hello</a>");
+ *     // => "hello"
+ *
+ * // explicitly specify "n/a" as fallback
+ * String fallback = between("<a>", "</a>")
+ *     .from("value")
+ *     .orElse("n/a");
+ *     // => "n/a"
+ * }</pre></td>
+ * </tr>
+ *
+ * <tr>
+ *   <td><pre>{@code
+ * // Success
+ * String[] values = substringsBetween("<a>1</a><a>2</a>", "<a>", "</a>");
+ *     // => ["1", "2"]
+ *
+ * // Tag mismatch: returns null
+ * String[] values = substringsBetween("value", "<a>", "</a>");
+ *     // => null
+ * }</pre></td>
+ *   <td><pre>{@code
+ * // Returns [] if not found
+ * List<String> values = between("<a>", "</a>")
+ *     .repeatedly()
+ *     .from("<a>1</a><a>2</a>")
+ *     .toList();
+ *     // => ["1", "2"]
+ * }</pre></td>
+ * </tr>
+ *
+ * <tr>
+ *   <td><pre>{@code
+ * String result = replacePattern("v1.2.3", "\\d+", "x");
+ *     // => "vx.x.x"
+ * }</pre></td>
+ *   <td><pre>{@code
+ * // Always use repeatedly() to apply to all occurrences
+ * String result = first(Pattern.compile("\\d+"))
+ *     .repeatedly()
+ *     .replaceAllFrom("v1.2.3", m -> "x");
+ *     // => "vx.x.x"
+ * }</pre></td>
+ * </tr>
+ *
+ * <tr>
+ *   <td><pre>{@code
+ * String result = replaceEachRepeatedly("a-b-a", new String[]{"a", "b"}, new String[]{"x", "y"});
+ *     // => "x-y-x"
+ * }</pre></td>
+ *   <td><pre>{@code
+ * // Always use repeatedly() to apply to all occurrences
+ * Map<String, String> replacements = Map.of("a", "x", "b", "y");
+ * String result = replacements.keySet().stream()
+ *     .map(Substring::first)
+ *     .collect(firstOccurrence())
+ *     .replaceAllFrom("a-b-a", m -> replacements.get(m.toString()));
+ *     // => "x-y-x"
+ * }</pre></td>
+ * </tr>
+ *
+ * <tr>
+ *   <td><pre>{@code
+ * String name = removeStart("Mr.Bond", "Mr.");
+ *     // => "Bond"
+ * }</pre></td>
+ *   <td><pre>{@code
+ * String name = prefix("Mr.").removeFrom("Mr.Bond");
+ *     // => "Bond"
+ * }</pre></td>
+ * </tr>
+ *
+ * <tr>
+ *   <td><pre>{@code
+ * String name = removeEnd("file.txt", ".txt");
+ *     // => "file"
+ * }</pre></td>
+ *   <td><pre>{@code
+ * String name = suffix(".txt").removeFrom("file.txt");
+ *     // => "file"
+ * }</pre></td>
+ * </tr>
+ *
+ * <tr>
+ *   <td><pre>{@code
+ * // Filters out empty
+ * String[] parts = split("a,b,c,", ",");
+ *     // => ["a", "b", "c"]
+ * }</pre></td>
+ *   <td><pre>{@code
+ * // Explicitly filter out empty matches
+ * List<String> parts = all(",")
+ *     .split("a,b,c,")
+ *     .filter(Match::isNotEmpty)
+ *     .map(Match::toString)
+ *     .toList();
+ *     // => ["a", "b", "c"]
+ * }</pre></td>
+ * </tr>
+ *
+ * <tr>
+ *   <td><pre>{@code
+ * // Retains empty
+ * String[] parts = splitPreserveAllTokens("a,,b", ",");
+ *     // => ["a", "", "b"]
+ * }</pre></td>
+ *   <td><pre>{@code
+ * List<String> parts = all(",")
+ *     .split("a,,b")
+ *     .map(Match::toString)
+ *     .toList();
+ *     // => ["a", "", "b"]
+ * }</pre></td>
+ * </tr>
+ *
+ * <tr>
+ *   <td><pre>{@code
+ * // By -, --, --- etc. Ignores empty.
+ * String[] parts = splitByWholeSeparator("a--b-c-", "-");
+ *     // => ["a", "b", "c"]
+ * }</pre></td>
+ *   <td><pre>{@code
+ * // Explicitly filter out empty matches
+ * List<String> parts = consecutive(is('-'))
+ *     .repeatedly()
+ *     .split("a--b-c-")
+ *     .filter(Match::isNotEmpty)
+ *     .map(Match::toString)
+ *     .toList();
+ *     // => ["a", "b", "c"]
+ * }</pre></td>
+ * </tr>
+ *
+ * <tr>
+ *   <td><pre>{@code
+ * // By -, --, --- etc. Retains empty.
+ * String[] parts = splitByWholeSeparatorPreserveAllTokens("a--", "-");
+ *     // => ["a", ""]
+ * }</pre></td>
+ *   <td><pre>{@code
+ * List<String> parts = consecutive(is('-'))
+ *     .repeatedly()
+ *     .split("a--")
+ *     .map(Match::toString)
+ *     .toList();
+ *     // => ["a", ""]
+ * }</pre></td>
+ * </tr>
+ *
+ * <tr>
+ *   <td><pre>{@code
+ * int count = countMatches("a,b,c", ",");
+ *     // => 2
+ * }</pre></td>
+ *   <td><pre>{@code
+ * long count = all(",").match("a,b,c").count();
+ *     // => 2
+ * }</pre></td>
+ * </tr>
+ * </table>
+ *
  * @since 2.0
  */
 public final class Substring {
@@ -1223,6 +1473,9 @@ public final class Substring {
      * pattern after it has matched this pattern. For example {@code first('/').then(first('/'))}
      * finds the second '/' character.
      *
+     * <p>This method is soft-deprecated. It's prone to misuse. You should usually use other methods
+     * to achieve similar effects.
+     *
      * @since 5.7
      */
     public final Pattern then(Pattern following) {
@@ -1286,6 +1539,9 @@ public final class Substring {
      * <p>If you are trying to define a boundary around or after your pattern similar to regex
      * anchor {@code '\b'}, consider using {@link #separatedBy} if the boundary can be detected by
      * a character.
+     *
+     * <p>This method is soft-deprecated. It's prone to misuse. You should usually use other methods
+     * to achieve similar effects.
      *
      * @since 6.0
      */
