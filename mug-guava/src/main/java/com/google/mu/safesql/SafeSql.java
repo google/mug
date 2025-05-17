@@ -268,7 +268,7 @@ import com.google.mu.util.stream.BiStream;
  * <p><strong>Automatic Escaping: No Need for ESCAPE Clause</strong></p>
  *
  * <p>This means you <em>do not</em> need to (and in fact, must not) write SQL
- * using {@code ESCAPE} clauses. Any such attempt, like:
+ * using {@code ESCAPE} clauses after {@code LIKE '%{foo}%'}. Any such attempt, as in:
  *
  * <pre>{@code
  *   SELECT name FROM Users WHERE name LIKE '%{term}%' ESCAPE '\'
@@ -284,6 +284,9 @@ import com.google.mu.util.stream.BiStream;
  * <p>If you find yourself wanting to use {@code ESCAPE}, consider whether you are
  * manually escaping strings that could instead be safely passed as-is to SafeSql's
  * template system.
+ *
+ * <p>That said, this only applies when template placeholder is used in the LIKE string.
+ * You can use any valid SQL ESCAPE syntax if placeholder isn't used in the LIKE expression.
  *
  * <dl><dt><STRONG>Quote String Placeholders</STRONG></dt></dl>
  *
