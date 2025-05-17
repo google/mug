@@ -114,7 +114,7 @@ SafeSql query = SafeSql.of(
 
 Highlights:
 
-- ✅ **Identifier safety**: `````{columns}````` only accepts safe column names (strict validation).
+- ✅ **Identifier safety**: ``{columns}`` only accepts safe column names (strict validation).
 - ✅ **LIKE safety**: auto-escapes `%`, `_`, and `\` for pattern queries.
 - ✅ **Compile-time template checks**: mismatched parameters? Compilation fails.
 
