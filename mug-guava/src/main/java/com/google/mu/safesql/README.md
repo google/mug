@@ -127,6 +127,7 @@ statement.setObject(1, "%keyword%")
 
 ## Conclusion: SafeSql is safe from injection, whether you are careful or not.
 
-Try to shoot yourself in the foot and the `SafeSql` will stop you.
+Try to shoot yourself in the foot and `SafeSql` will stop you.
 
-This is because PreparedStatement guards your values, but SafeSql guards the entire SQL query.
+This is because PreparedStatement guards your values,
+but `SafeSql` guards the entire SQL query through Java's strong type and SQL template semantic analysis.
