@@ -110,6 +110,9 @@ compile-time-safe SQL templating system that addresses structure injection head-
 SafeSql query = SafeSql.of(
   "SELECT `{columns}` FROM users WHERE name LIKE '%{keyword}%'",
   /* columns */ List.of("id", "email"), /* keyword */ "100%");
+  
+SafeSql query = SafeSql.of(
+    "SELECT * FROM `{table}` WHERE status = {status}", table, status);
 ```
 
 Highlights:
