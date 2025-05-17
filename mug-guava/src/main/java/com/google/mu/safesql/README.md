@@ -184,8 +184,8 @@ utility renders an optional template only when the Java `Optional` parameter is 
 
 ```java
 SafeSql query = SafeSql.of(
-  "SELECT * FROM Users WHERE 1=1 {optionally_and_name}",
-  optionally("AND name LIKE '%{keyword}%'", keyword));
+    "SELECT * FROM Users WHERE 1=1 {optionally_and_name}",
+    optionally("AND name LIKE '%{keyword}%'", keyword));
 ```
 
 This syntax is:
@@ -195,7 +195,7 @@ This syntax is:
 
 ---
 
-## Conclusion: SafeSql is safe, for real, whether you are careful or not.
+## Conclusion: SafeSql is safe, unconditionally, careful or not.
 
 Try to shoot yourself in the foot and `SafeSql` will stop you.
 
