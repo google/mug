@@ -363,4 +363,28 @@ public class LeetCodeTest {
           .floor();
     }
   }
+
+  static abstract class FindSmallestLetterGreaterThanTarget {
+    abstract char find(char[] letters, char target);
+
+    @Test public void verify() {
+      assertThat(find(new char[]{'c','f','j'}, 'a')).isEqualTo('c');
+      assertThat(find(new char[]{'c','f','j'}, 'c')).isEqualTo('f');
+      assertThat(find(new char[]{'c','f','j'}, 'd')).isEqualTo('f');
+      assertThat(find(new char[]{'c','f','j'}, 'g')).isEqualTo('j');
+      assertThat(find(new char[]{'c','f','j'}, 'j')).isEqualTo('c'); // wrap
+      assertThat(find(new char[]{'c','f','j'}, 'k')).isEqualTo('c'); // wrap
+    }
+  }
+
+  public static class MugFindSmallestLetterGreaterThanTarget extends FindSmallestLetterGreaterThanTarget {
+    @Override char find(char[] letters, char target) {
+      int index = BinarySearch.forInts(Range.closed(0, letters.length - 1))
+          // greater? move left; else move right
+          .insertionPointFor((lo, mid, hi) -> letters[mid] > target ? -1 : 1)
+          .ceiling();
+
+      return index == letters.length ? letters[0] : letters[index];
+    }
+  }
 }
