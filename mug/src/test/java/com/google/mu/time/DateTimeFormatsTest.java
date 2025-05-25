@@ -1179,17 +1179,20 @@ public final class DateTimeFormatsTest {
   }
 
   @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
   public void singleDigitSecond_notSupported() {
     assertThrows(DateTimeException.class, () -> formatOf("12:00:1"));
   }
 
   @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
   public void ambiguousMonthAndDay() {
     assertThrows(DateTimeException.class, () -> formatOf("01/02/03"));
     assertThrows(DateTimeException.class, () -> formatOf("01/02/2003"));
   }
 
   @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
   public void trailingDotAfterSecond_notSupported() {
     assertThrows(DateTimeException.class, () -> formatOf("2023-01-01T00:00:00."));
   }

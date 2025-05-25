@@ -1,8 +1,15 @@
 /Users/sophieyu/mug/mug-guava/src/main/java/com/google/mu/util/CaseBreaker.java
-/Users/sophieyu/mug/mug-guava/src/main/java/com/google/mu/collect/InsertionPoint.java
+/Users/sophieyu/mug/mug-guava/src/main/java/com/google/mu/safesql/UncheckedSqlException.java
+/Users/sophieyu/mug/mug-guava/src/main/java/com/google/mu/safesql/SqlFunction.java
+/Users/sophieyu/mug/mug-guava/src/main/java/com/google/mu/safesql/TrustedTypes.java
 /Users/sophieyu/mug/mug-guava/src/main/java/com/google/mu/annotations/RequiresGuava.java
+/Users/sophieyu/mug/mug-guava/src/main/java/com/google/mu/collect/BinarySearch.java
+/Users/sophieyu/mug/mug-guava/src/main/java/com/google/mu/collect/InsertionPoint.java
+/Users/sophieyu/mug/mug-guava/src/main/java/com/google/mu/safesql/SqlSupplier.java
 /Users/sophieyu/mug/mug-guava/src/main/java/com/google/mu/safesql/GoogleSql.java
+/Users/sophieyu/mug/mug-guava/src/main/java/com/google/mu/safesql/JdbcCloser.java
 /Users/sophieyu/mug/mug-guava/src/main/java/com/google/mu/safesql/SafeQuery.java
+/Users/sophieyu/mug/mug-guava/src/main/java/com/google/mu/safesql/InternalCollectors.java
+/Users/sophieyu/mug/mug-guava/src/main/java/com/google/mu/safesql/SafeSql.java
 /Users/sophieyu/mug/mug-guava/src/main/java/com/google/mu/collect/Immutables.java
 /Users/sophieyu/mug/mug-guava/src/main/java/com/google/mu/util/stream/GuavaCollectors.java
-/Users/sophieyu/mug/mug-guava/src/main/java/com/google/mu/collect/BinarySearch.java
