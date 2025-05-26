@@ -3,7 +3,6 @@ package com.google.mu.util.concurrent;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.util.concurrent.Fanout.concurrently;
-import static com.google.mu.util.concurrent.Fanout.uninterruptibly;
 import static com.google.mu.util.concurrent.Fanout.withMaxConcurrency;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
@@ -131,58 +130,6 @@ public final class FanoutTest {
   }
 
   @Test
-  public void uninterruptibly_twoOperations() {
-    assertThat(uninterruptibly(() -> "foo", () -> "bar", String::concat)).isEqualTo("foobar");
-  }
-
-  @Test
-  public void uninterruptibly_threeOperations() {
-    assertThat(
-            uninterruptibly(
-                () -> "a", () -> "b", () -> "c", (String a, String b, String c) -> a + b + c))
-        .isEqualTo("abc");
-  }
-
-  @Test
-  public void uninterruptibly_fourOperations() {
-    assertThat(
-            uninterruptibly(
-                () -> "a",
-                () -> "b",
-                () -> "c",
-                () -> "d",
-                (String a, String b, String c, String d) -> a + b + c + d))
-        .isEqualTo("abcd");
-  }
-
-  @Test
-  public void uninterruptibly_fiveOperations() {
-    assertThat(
-            uninterruptibly(
-                () -> "a",
-                () -> "b",
-                () -> "c",
-                () -> "d",
-                () -> "e",
-                (String a, String b, String c, String d, String e) -> a + b + c + d + e))
-        .isEqualTo("abcde");
-  }
-
-  @Test
-  public void uninterruptibly_twoTasks() {
-    String[] results = new String[2];
-    uninterruptibly(() -> results[0] = "foo", () -> results[1] = "bar");
-    assertThat(asList(results)).containsExactly("foo", "bar").inOrder();
-  }
-
-  @Test
-  public void uninterruptibly_threeTasks() {
-    String[] results = new String[3];
-    uninterruptibly(() -> results[0] = "a", () -> results[1] = "b", () -> results[2] = "c");
-    assertThat(asList(results)).containsExactly("a", "b", "c").inOrder();
-  }
-
-  @Test
   public void concurrently_firstOperationThrows_exceptionPropagated() {
     RuntimeException thrown =
         assertThrows(
@@ -204,36 +151,6 @@ public final class FanoutTest {
             RuntimeException.class,
             () ->
                 concurrently(
-                    () -> "foo",
-                    () -> {
-                      throw new IllegalStateException("bar");
-                    },
-                    (a, b) -> b));
-    assertThat(thrown).hasMessageThat().contains("bar");
-  }
-
-  @Test
-  public void uninterruptibly_firstOperationThrows_exceptionPropagated() {
-    RuntimeException thrown =
-        assertThrows(
-            RuntimeException.class,
-            () ->
-                uninterruptibly(
-                    () -> {
-                      throw new IllegalStateException("bad");
-                    },
-                    () -> "bar",
-                    (a, b) -> b));
-    assertThat(thrown).hasMessageThat().contains("bad");
-  }
-
-  @Test
-  public void uninterruptibly_secondOperationThrows_exceptionPropagated() {
-    RuntimeException thrown =
-        assertThrows(
-            RuntimeException.class,
-            () ->
-                uninterruptibly(
                     () -> "foo",
                     () -> {
                       throw new IllegalStateException("bar");

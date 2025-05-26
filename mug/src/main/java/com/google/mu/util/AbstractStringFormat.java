@@ -202,22 +202,6 @@ abstract class AbstractStringFormat {
    * <p>The {@link Substring.Match} result type allows caller to inspect the characters around each
    * match, or to access the raw index in the input string.
    *
-   * @deprecated use {@link #parseAsList} instead.
-   */
-  @Deprecated
-  public final Optional<List<Substring.Match>> parse(String input) {
-    return parseAsList(input);
-  }
-
-  /**
-   * Parses {@code input} against the pattern.
-   *
-   * <p>Returns an immutable list of placeholder values in the same order as the placeholders in
-   * the format string, upon success; otherwise returns empty.
-   *
-   * <p>The {@link Substring.Match} result type allows caller to inspect the characters around each
-   * match, or to access the raw index in the input string.
-   *
    * @since 8.3
    */
   public final Optional<List<Substring.Match>> parseAsList(String input) {
@@ -848,21 +832,6 @@ abstract class AbstractStringFormat {
    */
   public final Stream<List<Substring.Match>> scanAsLists(String input) {
     return matchRepeatedly(input, (start, end) -> {});
-  }
-
-  /**
-   * Scans the {@code input} string and extracts all matched placeholders in this string format.
-   *
-   * <p>unlike {@link #parse(String)}, the input string isn't matched entirely: the pattern doesn't
-   * have to start from the beginning, and if there are some remaining characters that don't match
-   * the pattern any more, the stream stops. In particular, if there is no match, empty stream is
-   * returned.
-   *
-   * @deprecated use {@link #scanAsLists} instead
-   */
-  @Deprecated
-  public final Stream<List<Substring.Match>> scan(String input) {
-    return scanAsLists(input);
   }
 
   /**

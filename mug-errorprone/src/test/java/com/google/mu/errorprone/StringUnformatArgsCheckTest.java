@@ -650,7 +650,7 @@ public class StringUnformatArgsCheckTest {
             "import com.google.mu.util.StringFormat;",
             "class Test {",
             "  void test(String s) {",
-            "    new StringFormat(\"{foo}-{bar_id}\").parse(s);",
+            "    new StringFormat(\"{foo}-{bar_id}\").parse(s, (foo, barId) -> foo);",
             "  }",
             "}")
         .doTest();
@@ -665,7 +665,7 @@ public class StringUnformatArgsCheckTest {
             "class Test {",
             "  void test(String s) {",
             "    // BUG: Diagnostic contains:",
-            "    new StringFormat(\"{foo}{bar_id}\").parse(s);",
+            "    new StringFormat(\"{foo}{bar_id}\").parse(s, (foo, barId) -> foo);",
             "  }",
             "}")
         .doTest();
@@ -680,7 +680,7 @@ public class StringUnformatArgsCheckTest {
             "class Test {",
             "  void test(String s) {",
             "    // BUG: Diagnostic contains:",
-            "    new StringFormat(\"{...}{...}\").parse(s);",
+            "    new StringFormat(\"{...}{...}\").parseAsList(s);",
             "  }",
             "}")
         .doTest();
@@ -695,7 +695,7 @@ public class StringUnformatArgsCheckTest {
             "class Test {",
             "  void test(String s) {",
             "    // BUG: Diagnostic contains:",
-            "    new StringFormat(\"{foo}{...}\").parse(s);",
+            "    new StringFormat(\"{foo}{...}\").parse(s, foo -> foo);",
             "  }",
             "}")
         .doTest();
@@ -709,7 +709,7 @@ public class StringUnformatArgsCheckTest {
             "import com.google.mu.util.StringFormat;",
             "class Test {",
             "  void test(String s) {",
-            "    new StringFormat(\"{{foo}}\").parse(s);",
+            "    new StringFormat(\"{{foo}}\").parse(s, foo -> foo);",
             "  }",
             "}")
         .doTest();
@@ -738,7 +738,7 @@ public class StringUnformatArgsCheckTest {
             "import com.google.mu.util.StringFormat;",
             "class Test {",
             "  void test(StringFormat format) {",
-            "    format.parse(\"foo\");",
+            "    format.parseAsList(\"foo\");",
             "  }",
             "}")
         .doTest();
