@@ -40,6 +40,7 @@ load("@com_googlesource_gerrit_bazlets//tools:junit.bzl", "junit_tests")
 junit_tests(
     name = "AllTests",
     srcs = glob(["src/test/java/**/*Test.java"]),
+    resources = ["src/test/resources/com/google/mu/safesql/schema.sql"],
     deps = [
         ":mug-guava",
         ":safe_sql",
@@ -49,6 +50,8 @@ junit_tests(
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_guava_guava_testlib",
         "@maven//:com_google_truth_truth",
+        "@maven//:com_h2database_h2",
+        "@maven//:org_dbunit_dbunit",
         "@maven//:org_mockito_mockito_core",
         "@maven//:com_google_testparameterinjector_test_parameter_injector",
         "@maven//:org_junit_jupiter_junit_jupiter_api",

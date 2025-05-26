@@ -38,7 +38,6 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -166,44 +165,6 @@ public final class Parallelizer {
     this.executor = requireNonNull(executor);
     this.maxConcurrency = maxConcurrency;
     if (maxConcurrency <= 0) throw new IllegalArgumentException("maxConcurrency = " + maxConcurrency);
-  }
-
-  /**
-   * Returns a {@link Parallelizer} using virtual threads for running tasks, with at most
-   * {@code maxConcurrency} tasks running concurrently.
-   *
-   * <p>Only applicable in JDK 21 (throws if below JDK 21).
-   *
-   * @since 7.2
-   * @deprecated Use {@link Fanout#withMaxConcurrency} instead
-   */
-  @Deprecated
-  public static Parallelizer virtualThreadParallelizer(int maxConcurrency) {
-    return new Parallelizer(VirtualThread.executor, maxConcurrency);
-  }
-
-  /**
-   * Returns a new {@link Parallelizer} based on an ExecutorService that exits when the application
-   * is complete. It does so by using daemon threads.
-   *
-   * <p>Typically used by the {@code main()} method or as a static final field.
-   *
-   * @since 6.5
-   * @deprecated Use {@link Fanout#withMaxConcurrency(int)} on virtual threads instead
-   */
-  @Deprecated
-  public static Parallelizer newDaemonParallelizer(int maxConcurrency) {
-    AtomicInteger threadCount = new AtomicInteger();
-    return new Parallelizer(
-        Executors.newFixedThreadPool(
-            maxConcurrency,
-            runnable -> {
-              Thread thread = new Thread(runnable);
-              thread.setDaemon(true);
-              thread.setName("DaemonParallelizer#" + threadCount.getAndIncrement());
-              return thread;
-            }),
-        maxConcurrency);
   }
 
   /**
