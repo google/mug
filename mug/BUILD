@@ -77,7 +77,7 @@ load("@com_googlesource_gerrit_bazlets//tools:junit.bzl", "junit_tests")
 java_library(
     name = "tests",
     srcs = glob(["src/test/java/**/*.java"], exclude =  glob(["src/test/java/**/*Test.java"])),
-    resources = glob(["src/test/resources/*"]),
+    resources = glob(["src/test/resources/**"]),
     deps = [
         ":base",
         ":concurrent",
