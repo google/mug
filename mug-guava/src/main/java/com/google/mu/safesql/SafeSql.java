@@ -737,7 +737,7 @@ public final class SafeSql {
    * }
    * }</pre>
    *
-   * <p>The class of {@code targetType} must define a non-private constructor that accepts
+   * <p>The class of {@code resultType} must define a non-private constructor that accepts
    * the same number of parameters as returned by the query. The parameter order doesn't
    * matter but the parameter <em>names</em> and types must match.
    *
@@ -755,8 +755,8 @@ public final class SafeSql {
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    * @since 8.7
    */
-  public <T> List<T> query(Connection connection, Class<T> targetType) {
-    return query(connection, new ResultMapper<T>(targetType)::from);
+  public <T> List<T> query(Connection connection, Class<T> resultType) {
+    return query(connection, new ResultMapper<T>(resultType)::from);
   }
 
   /**
@@ -796,7 +796,7 @@ public final class SafeSql {
    * Executes the encapsulated SQL as a query against {@code connection},
    * and then fetches the results lazily in a stream.
    *
-   * <p>Each result row is transformed into {@code targetType}.
+   * <p>Each result row is transformed into {@code resultType}.
    *
    * <p>The caller must close it using try-with-resources idiom, which will close the associated
    * {@link Statement} and {@link ResultSet}.
@@ -812,7 +812,7 @@ public final class SafeSql {
    * }
    * }</pre>
    *
-   * <p>The class of {@code targetType} must define a non-private constructor that accepts
+   * <p>The class of {@code resultType} must define a non-private constructor that accepts
    * the same number of parameters as returned by the query. The parameter order doesn't
    * matter but the parameter <em>names</em> and types must match.
    *
@@ -831,8 +831,8 @@ public final class SafeSql {
    */
   @MustBeClosed
   @SuppressWarnings("MustBeClosedChecker")
-  public <T> Stream<T> queryLazily(Connection connection, Class<T> targetType) {
-    return queryLazily(connection, new ResultMapper<T>(targetType)::from);
+  public <T> Stream<T> queryLazily(Connection connection, Class<T> resultType) {
+    return queryLazily(connection, new ResultMapper<T>(resultType)::from);
   }
 
   /**
@@ -867,7 +867,7 @@ public final class SafeSql {
    * Executes the encapsulated SQL as a query against {@code connection}, sets {@code fetchSize}
    * using {@link Statement#setFetchSize}, and then fetches the results lazily in a stream.
    *
-   * <p>Each result row is transformed into {@code targetType}.
+   * <p>Each result row is transformed into {@code resultType}.
    *
    * <p>The caller must close it using try-with-resources idiom, which will close the associated
    * {@link Statement} and {@link ResultSet}.
@@ -883,7 +883,7 @@ public final class SafeSql {
    * }
    * }</pre>
    *
-   * <p>The class of {@code targetType} must define a non-private constructor that accepts
+   * <p>The class of {@code resultType} must define a non-private constructor that accepts
    * the same number of parameters as returned by the query. The parameter order doesn't
    * matter but the parameter <em>names</em> and types must match.
    *
@@ -902,8 +902,8 @@ public final class SafeSql {
    */
   @MustBeClosed
   @SuppressWarnings("MustBeClosedChecker")
-  public <T> Stream<T> queryLazily(Connection connection, int fetchSize, Class<T> targetType) {
-    return queryLazily(connection, fetchSize, new ResultMapper<T>(targetType)::from);
+  public <T> Stream<T> queryLazily(Connection connection, int fetchSize, Class<T> resultType) {
+    return queryLazily(connection, fetchSize, new ResultMapper<T>(resultType)::from);
   }
 
   /**
@@ -1047,8 +1047,8 @@ public final class SafeSql {
    * @since 8.7
    */
   public static <T> Template<List<T>> prepareToQuery(
-      Connection connection, @CompileTimeConstant String template, Class<T> targetType) {
-    return prepareToQuery(connection, template, new ResultMapper<T>(targetType)::from);
+      Connection connection, @CompileTimeConstant String template, Class<T> resultType) {
+    return prepareToQuery(connection, template, new ResultMapper<T>(resultType)::from);
   }
 
   /**
