@@ -190,7 +190,7 @@ import com.google.mu.util.stream.BiStream;
  *   }
  *
  *   List<User> users = usersQuery(userCriteria, "email", "lastName")
- *       .query(connection, row -> new User(row.getString("email"), row.getString("lastName")));
+ *       .query(connection, User.class);
  * }</pre>
  *
  * If {@code UserCriteria} has specified {@code firstName()} but {@code userId()} is
@@ -477,7 +477,7 @@ public final class SafeSql {
    *
    * String searchBy = ...;
    * List<User> userIds = FIND_USERS_BY_NAME.with(asList("id", "name"), searchBy)
-   *     .query(connection, row -> new User(row.getLong("id"), row.getString("name")));
+   *     .query(connection, User.class);
    * }</pre>
    *
    * <p>If you don't need a reusable template, consider using {@link #of} instead, which is simpler.
