@@ -726,6 +726,41 @@ public final class SafeSql {
 
   /**
    * Executes the encapsulated SQL as a query against {@code connection}. The {@link ResultSet}
+   * will be consumed, transformed to a list of {@code T} and then closed before returning.
+   *
+   * <p>For example: <pre>{@code
+   * List<User> users = SafeSql.of("SELECT id, name FROM Users WHERE name LIKE '%{name}%'", name)
+   *     .query(connection, User.class);
+   *
+   * static class User {
+   *   User(long id, String name) {...}
+   * }
+   * }</pre>
+   *
+   * <p>The class of {@code targetType} must define a non-private constructor that accepts
+   * the same number of parameters as returned by the query. The parameter order doesn't
+   * matter but the parameter <em>names</em> and types must match.
+   *
+   * <p>Note that if you've enabled the {@code -parameters} javac flag, the above example code
+   * will just work. If you can't enable {@code -parameters}, consider explicitly annotating
+   * the constructor parameters as in:
+   *
+   * <pre>{@code
+   * static class User {
+   *   User(@SqlName("id") long id, @SqlName("name") String name) {...}
+   * }
+   * }</pre>
+   *
+   *
+   * @throws UncheckedSqlException wraps {@link SQLException} if failed
+   * @since 8.7
+   */
+  public <T> List<T> query(Connection connection, Class<T> targetType) {
+    return query(connection, new ResultMapper<T>(targetType)::from);
+  }
+
+  /**
+   * Executes the encapsulated SQL as a query against {@code connection}. The {@link ResultSet}
    * will be consumed, transformed by {@code rowMapper} and then closed before returning.
    *
    * <p>For example: <pre>{@code
@@ -761,6 +796,49 @@ public final class SafeSql {
    * Executes the encapsulated SQL as a query against {@code connection},
    * and then fetches the results lazily in a stream.
    *
+   * <p>Each result row is transformed into {@code targetType}.
+   *
+   * <p>The caller must close it using try-with-resources idiom, which will close the associated
+   * {@link Statement} and {@link ResultSet}.
+   *
+   * <p>For example: <pre>{@code
+   * SafeSql sql = SafeSql.of("SELECT id, name FROM Users WHERE name LIKE '%{name}%'", name);
+   * try (Stream<User> users = sql.queryLazily(connection, User.class)) {
+   *   return users.findFirst();
+   * }
+   *
+   * static class User {
+   *   User(long id, String name) {...}
+   * }
+   * }</pre>
+   *
+   * <p>The class of {@code targetType} must define a non-private constructor that accepts
+   * the same number of parameters as returned by the query. The parameter order doesn't
+   * matter but the parameter <em>names</em> and types must match.
+   *
+   * <p>Note that if you've enabled the {@code -parameters} javac flag, the above example code
+   * will just work. If you can't enable {@code -parameters}, consider explicitly annotating
+   * the constructor parameters as in:
+   *
+   * <pre>{@code
+   * static class User {
+   *   User(@SqlName("id") long id, @SqlName("name") String name) {...}
+   * }
+   * }</pre>
+   *
+   * @throws UncheckedSqlException wraps {@link SQLException} if failed
+   * @since 8.7
+   */
+  @MustBeClosed
+  @SuppressWarnings("MustBeClosedChecker")
+  public <T> Stream<T> queryLazily(Connection connection, Class<T> targetType) {
+    return queryLazily(connection, new ResultMapper<T>(targetType)::from);
+  }
+
+  /**
+   * Executes the encapsulated SQL as a query against {@code connection},
+   * and then fetches the results lazily in a stream.
+   *
    * <p>The returned {@code Stream} includes results transformed by {@code rowMapper}.
    * The caller must close it using try-with-resources idiom, which will close the associated
    * {@link Statement} and {@link ResultSet}.
@@ -783,6 +861,49 @@ public final class SafeSql {
   public <T> Stream<T> queryLazily(
       Connection connection, SqlFunction<? super ResultSet, ? extends T> rowMapper) {
     return queryLazily(connection, 0, rowMapper);
+  }
+
+  /**
+   * Executes the encapsulated SQL as a query against {@code connection}, sets {@code fetchSize}
+   * using {@link Statement#setFetchSize}, and then fetches the results lazily in a stream.
+   *
+   * <p>Each result row is transformed into {@code targetType}.
+   *
+   * <p>The caller must close it using try-with-resources idiom, which will close the associated
+   * {@link Statement} and {@link ResultSet}.
+   *
+   * <p>For example: <pre>{@code
+   * SafeSql sql = SafeSql.of("SELECT id, name FROM Users WHERE name LIKE '%{name}%'", name);
+   * try (Stream<User> users = sql.queryLazily(connection, User.class)) {
+   *   return users.findFirst();
+   * }
+   *
+   * static class User {
+   *   User(long id, String name) {...}
+   * }
+   * }</pre>
+   *
+   * <p>The class of {@code targetType} must define a non-private constructor that accepts
+   * the same number of parameters as returned by the query. The parameter order doesn't
+   * matter but the parameter <em>names</em> and types must match.
+   *
+   * <p>Note that if you've enabled the {@code -parameters} javac flag, the above example code
+   * will just work. If you can't enable {@code -parameters}, consider explicitly annotating
+   * the constructor parameters as in:
+   *
+   * <pre>{@code
+   * static class User {
+   *   User(@SqlName("id") long id, @SqlName("name") String name) {...}
+   * }
+   * }</pre>
+   *
+   * @throws UncheckedSqlException wraps {@link SQLException} if failed
+   * @since 8.7
+   */
+  @MustBeClosed
+  @SuppressWarnings("MustBeClosedChecker")
+  public <T> Stream<T> queryLazily(Connection connection, int fetchSize, Class<T> targetType) {
+    return queryLazily(connection, fetchSize, new ResultMapper<T>(targetType)::from);
   }
 
   /**

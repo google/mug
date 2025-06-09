@@ -2,10 +2,13 @@ package com.google.mu.safesql;
 
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
+import static org.junit.Assert.assertThrows;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -323,6 +326,178 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     assertThat(
             SafeSql.of("UPDATE ITEMS SET title = 'foo' where id = NULL").update(connection()))
         .isEqualTo(0);
+  }
+
+  @Test public void query_withTargetType_parametersAnnotatedWithSqlName() throws Exception {
+    ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title, time) VALUES({id}, {title}, {time})", testId(), "bar", barTime)
+                .update(connection()))
+        .isEqualTo(1);
+    assertThat(
+            SafeSql.of("select id, time, title from ITEMS where id = {id}", testId())
+                .query(connection(), Item.class))
+        .containsExactly(new Item(testId(), "bar", barTime.toInstant()));
+  }
+
+  @Test public void query_withTargetType_usingParameterNames() throws Exception {
+    ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title, time) VALUES({id}, {title}, {time})", testId(), "bar", barTime)
+                .update(connection()))
+        .isEqualTo(1);
+    assertThat(
+            SafeSql.of("select time, id, title from ITEMS where id = {id}", testId())
+                .query(connection(), UnannotatedItem.class))
+        .containsExactly(new UnannotatedItem(testId(), "bar", barTime.toInstant()));
+  }
+
+  @Test public void query_withTargetType_nullSupported() throws Exception {
+    ZonedDateTime time = null;
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "bar")
+                .update(connection()))
+        .isEqualTo(1);
+    assertThat(
+            SafeSql.of("select id, time, title from ITEMS where id = {id}", testId())
+                .query(connection(), Item.class))
+        .containsExactly(new Item(testId(), "bar", null));
+  }
+
+  @Test public void queryLazily_withTargetType_parametersAnnotatedWithSqlName() throws Exception {
+    ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title, time) VALUES({id}, {title}, {time})", testId(), "bar", barTime)
+                .update(connection()))
+        .isEqualTo(1);
+    assertThat(
+            SafeSql.of("select id, time, title from ITEMS where id = {id}", testId())
+                .queryLazily(connection(), Item.class)
+                .collect(toList()))
+        .containsExactly(new Item(testId(), "bar", barTime.toInstant()));
+    assertThat(
+        SafeSql.of("select id, time, title from ITEMS where id = {id}", testId())
+            .queryLazily(connection(), 2, Item.class)
+            .collect(toList()))
+    .containsExactly(new Item(testId(), "bar", barTime.toInstant()));
+  }
+
+  @Test public void query_withTargetType_noNamedParameters_disallowed() throws Exception {
+    SafeSql sql = SafeSql.of("select id, time, title from ITEMS where id = {id}", testId());
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class, () -> sql.query(connection(), WithNoNamedParams.class));
+    assertThat(thrown).hasMessageThat().contains("arg0");
+  }
+
+  @Test public void query_withTargetType_noAccessibleConstructor_disallowed() throws Exception {
+    SafeSql sql = SafeSql.of("select id, time, title from ITEMS where id = {id}", testId());
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class, () -> sql.query(connection(), NoAccessibleConstructor.class));
+    assertThat(thrown).hasMessageThat().contains("NoAccessibleConstructor");
+  }
+
+  @Test public void query_withTargetType_ambiguousConstructors_disallowed() throws Exception {
+    SafeSql sql = SafeSql.of("select id, time, title from ITEMS where id = {id}", testId());
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class, () -> sql.query(connection(), WithAmbiguousConstructors.class));
+    assertThat(thrown).hasMessageThat().contains("Ambiguous");
+  }
+
+  @Test public void query_withTargetType_duplicateColumnNames_disallowed() throws Exception {
+    SafeSql sql = SafeSql.of("select id from ITEMS where id = {id}", testId());
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class, () -> sql.query(connection(), WithDuplicateColumnNames.class));
+    assertThat(thrown).hasMessageThat().contains("Duplicate");
+    assertThat(thrown).hasMessageThat().contains("id");
+  }
+
+  @Test public void query_withTargetType_emptyColumnName_disallowed() throws Exception {
+    SafeSql sql = SafeSql.of("select id from ITEMS where id = {id}", testId());
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class, () -> sql.query(connection(), WithEmptyColumnName.class));
+    assertThat(thrown).hasMessageThat().contains("empty");
+    assertThat(thrown).hasMessageThat().contains("WithEmptyColumnName");
+  }
+
+  @Test public void query_withTargetType_blankColumnName_disallowed() throws Exception {
+    SafeSql sql = SafeSql.of("select id from ITEMS where id = {id}", testId());
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class, () -> sql.query(connection(), WithBlankColumnName.class));
+    assertThat(thrown).hasMessageThat().contains("blank");
+    assertThat(thrown).hasMessageThat().contains("WithBlankColumnName");
+  }
+
+  @Test public void query_withTargetType_duplicateQueryColumnNames_disallowed() throws Exception {
+    ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title, time) VALUES({id}, {title}, {time})", testId(), "bar", barTime)
+                .update(connection()))
+        .isEqualTo(1);
+    SafeSql sql = SafeSql.of("select id, id, time, title from ITEMS where id = {id}", testId());
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class, () -> sql.query(connection(), Item.class));
+    assertThat(thrown).hasMessageThat().contains("Duplicate column");
+    assertThat(thrown).hasMessageThat().contains("ID at index 2");
+  }
+
+  static class Item {
+    private final int id;
+    private final String title;
+    private final Instant time;
+
+    Item(@SqlName("id") int id, @SqlName("title") String title, @SqlName("time") Instant t) {
+      this.id = id;
+      this.title = title;
+      this.time = t;
+    }
+
+    @Override public boolean equals(Object that) {
+      return that != null && toString().equals(that.toString());
+    }
+
+    @Override public int hashCode() {
+      return toString().hashCode();
+    }
+
+    @Override public String toString() {
+      return "id=" + id + ", title=" + title + ", time=" + time;
+    }
+  }
+
+  static class UnannotatedItem extends Item {
+    UnannotatedItem(int id, String title, Instant time) {
+      super(id, title, time);
+    }
+  }
+
+  static class WithNoNamedParams {
+    WithNoNamedParams(int arg0, String arg1, Instant arg2) {}
+  }
+
+  static class NoAccessibleConstructor {
+    private NoAccessibleConstructor(
+        @SqlName("id") int id, @SqlName("title") String title, @SqlName("time") Instant t) {
+    }
+  }
+
+  static class WithAmbiguousConstructors {
+    WithAmbiguousConstructors(
+        @SqlName("id") int id, @SqlName("title") String title, @SqlName("time") Instant t) {}
+
+    WithAmbiguousConstructors(
+        @SqlName("id") int id, @SqlName("time") Instant t,  @SqlName("title") String title) {}
+  }
+
+  static class WithDuplicateColumnNames {
+    WithDuplicateColumnNames(@SqlName("id") int id, @SqlName("id") String id2) {}
+  }
+
+  static class WithEmptyColumnName {
+    WithEmptyColumnName(@SqlName("") int id) {}
+  }
+
+  static class WithBlankColumnName {
+    WithBlankColumnName(@SqlName(" ") int id) {}
   }
 
   private int testId() {
