@@ -1017,6 +1017,48 @@ public final class SafeSql {
    * without having to re-create the statement for each call. For example in: <pre>{@code
    *   try (var connection = ...) {
    *     var queryByName = SafeSql.prepareToQuery(
+   *         connection, "SELECT id, name FROM Users WHERE name LIKE '%{name}%'",
+   *         User.class);
+   *     for (String name : names) {
+   *       for (User user : queryByName.with(name))) {
+   *         ...
+   *       }
+   *     }
+   *   }
+   *
+   *   static class User {
+   *     User(long id, String name) {...}
+   *   }
+   * }</pre>
+   *
+   * Each time {@code queryByName.with(name)} is called, it executes the same query template
+   * against the connection, but with a different {@code name} parameter. Internally it reuses the
+   * cached PreparedStatement object and just calls {@link PreparedStatement#setObject(int, Object)}
+   * with the new set of parameters before calling {@link PreparedStatement#executeQuery}.
+   *
+   * <p>The template arguments follow the same rules as discussed in {@link #of(String, Object...)}
+   * and receives the same compile-time protection against mismatch or out-of-order human mistakes.
+   *
+   * <p>The returned Template is <em>not</em> thread safe.
+   *
+   * <p>The caller is expected to close the {@code connection} after done, which will close the
+   * cached PreparedStatement.
+   *
+   * @since 8.7
+   */
+  public static <T> Template<List<T>> prepareToQuery(
+      Connection connection, @CompileTimeConstant String template, Class<T> targetType) {
+    return prepareToQuery(connection, template, new ResultMapper<T>(targetType)::from);
+  }
+
+  /**
+   * Returns a query template that will reuse the same cached {@code PreparedStatement}
+   * for repeated calls of {@link Template#with} using different parameters.
+   *
+   * <p>Allows callers to take advantage of the performance benefit of PreparedStatement
+   * without having to re-create the statement for each call. For example in: <pre>{@code
+   *   try (var connection = ...) {
+   *     var queryByName = SafeSql.prepareToQuery(
    *         connection, "SELECT id FROM Users WHERE name LIKE '%{name}%'",
    *         row -> row.getLong("id"));
    *     for (String name : names) {

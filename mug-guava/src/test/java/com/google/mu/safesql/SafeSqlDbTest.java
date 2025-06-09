@@ -440,6 +440,18 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     assertThat(thrown).hasMessageThat().contains("ID at index 2");
   }
 
+  @Test public void prepareToQuery_withTargetType() throws Exception {
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")
+                .update(connection()))
+        .isEqualTo(1);
+    StringFormat.Template<List<Item>> template = SafeSql.prepareToQuery(
+        connection(),
+        "select id, title from ITEMS where title = {...} and id in ({id})",
+        Item.class);
+    assertThat(template.with("foo", testId())).containsExactly(new Item(testId(), "foo"));
+  }
+
   static class Item {
     private final int id;
     private final String title;
@@ -449,6 +461,10 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
       this.id = id;
       this.title = title;
       this.time = t;
+    }
+
+    Item(@SqlName("id") int id, @SqlName("title") String title) {
+      this(id, title, null);
     }
 
     @Override public boolean equals(Object that) {
