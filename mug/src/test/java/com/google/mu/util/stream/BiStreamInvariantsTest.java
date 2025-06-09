@@ -275,15 +275,27 @@ public class BiStreamInvariantsTest {
         .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1));
   }
 
-  @Test public void append() {
+  @Test
+  public void append_biStream() {
     assertKeyValues(of("one", 1).append(of("two", 2, "three", 3)))
         .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1, "two", 2, "three", 3))
         .inOrder();
+  }
+
+  @Test
+  public void append_pair() {
     assertKeyValues(of("one", 1).append("two", 2).append("three", 3))
         .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1, "two", 2, "three", 3))
         .inOrder();
     assertKeyValues(of("one", 1).append("two", null).append(null, 3))
         .containsExactlyEntriesIn(keyValues("one", 1, "two", null, null, 3))
+        .inOrder();
+  }
+
+  @Test
+  public void append_map() {
+    assertKeyValues(of("one", 1).append(ImmutableMap.of("two", 2, "three", 3)))
+        .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1, "two", 2, "three", 3))
         .inOrder();
   }
 

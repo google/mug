@@ -1401,6 +1401,20 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
+   * Returns a {@code BiStream} consisting of the pairs in this stream, followed by the pairs in
+   * {@code map}.
+   *
+   * <p>NOTE: This method is implemented using {@link Stream#concat}; therefore, the same warnings
+   *     about deeply-nested combined streams also apply to this method. In particular, avoid
+   *     calling this method in a loop to combine many streams together.
+   *
+   * @since 8.7
+   */
+  public final BiStream<K, V> append(Map<? extends K, ? extends V> map) {
+    return fromEntries(Stream.concat(mapToEntry(), map.entrySet().stream()));
+  }
+
+  /**
    * Returns a {@code BiStream} consisting of the pairs in this stream, followed by the pair of
    * {@code key} and {@code value}.
    *
