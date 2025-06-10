@@ -752,7 +752,7 @@ public final class SafeSql {
    * @since 8.7
    */
   public <T> List<T> query(Connection connection, Class<T> resultType) {
-    return query(connection, new ResultMapper<T>(resultType)::from);
+    return query(connection, ResultMapper.toResultOf(resultType)::from);
   }
 
   /**
@@ -824,7 +824,7 @@ public final class SafeSql {
   @MustBeClosed
   @SuppressWarnings("MustBeClosedChecker")
   public <T> Stream<T> queryLazily(Connection connection, Class<T> resultType) {
-    return queryLazily(connection, new ResultMapper<T>(resultType)::from);
+    return queryLazily(connection, ResultMapper.toResultOf(resultType)::from);
   }
 
   /**
@@ -891,7 +891,7 @@ public final class SafeSql {
   @MustBeClosed
   @SuppressWarnings("MustBeClosedChecker")
   public <T> Stream<T> queryLazily(Connection connection, int fetchSize, Class<T> resultType) {
-    return queryLazily(connection, fetchSize, new ResultMapper<T>(resultType)::from);
+    return queryLazily(connection, fetchSize, ResultMapper.toResultOf(resultType)::from);
   }
 
   /**
@@ -1034,7 +1034,7 @@ public final class SafeSql {
    */
   public static <T> Template<List<T>> prepareToQuery(
       Connection connection, @CompileTimeConstant String template, Class<T> resultType) {
-    return prepareToQuery(connection, template, new ResultMapper<T>(resultType)::from);
+    return prepareToQuery(connection, template, ResultMapper.toResultOf(resultType)::from);
   }
 
   /**

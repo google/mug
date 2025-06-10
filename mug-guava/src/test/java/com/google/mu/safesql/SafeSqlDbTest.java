@@ -1,5 +1,6 @@
 package com.google.mu.safesql;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
@@ -9,6 +10,9 @@ import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -328,7 +332,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .isEqualTo(0);
   }
 
-  @Test public void query_withTargetType_parametersAnnotatedWithSqlName() throws Exception {
+  @Test public void query_withResultType_parametersAnnotatedWithSqlName() throws Exception {
     ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
     assertThat(
             SafeSql.of("insert into ITEMS(id, title, time) VALUES({id}, {title}, {time})", testId(), "bar", barTime)
@@ -340,7 +344,119 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .containsExactly(new Item(testId(), "bar", barTime.toInstant()));
   }
 
-  @Test public void query_withTargetType_usingParameterNames() throws Exception {
+  @Test public void query_withResultType_toStringResults() throws Exception {
+    ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title, time) VALUES({id}, {title}, {time})", testId(), "bar", barTime)
+                .update(connection()))
+        .isEqualTo(1);
+    assertThat(
+            SafeSql.of("select title from ITEMS where id = {id}", testId())
+                .query(connection(), String.class))
+        .containsExactly("bar");
+  }
+
+  @Test public void query_withResultType_toBooleanResults() throws Exception {
+    assertThat(
+            SafeSql.of("select (1 = 1)")
+                .query(connection(), Boolean.class))
+        .containsExactly(true);
+  }
+
+  @Test public void query_withResultType_toIntResults() throws Exception {
+    ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title, time) VALUES({id}, {title}, {time})", testId(), "bar", barTime)
+                .update(connection()))
+        .isEqualTo(1);
+    assertThat(
+            SafeSql.of("select id from ITEMS where id = {id}", testId())
+                .query(connection(), Integer.class))
+        .containsExactly(testId());
+  }
+
+  @Test public void query_withResultType_toShortResults() throws Exception {
+    assertThat(SafeSql.of("select 123").query(connection(), Short.class))
+        .containsExactly((short) 123);
+  }
+
+  @Test public void query_withResultType_toByteResults() throws Exception {
+    assertThat(SafeSql.of("select 123").query(connection(), Byte.class))
+        .containsExactly((byte) 123);
+  }
+
+  @Test public void query_withResultType_toLongResults() throws Exception {
+    assertThat(SafeSql.of("select 123").query(connection(), Long.class))
+        .containsExactly(123L);
+  }
+
+  @Test public void query_withResultType_toLocalDateResults() throws Exception {
+    assertThat(SafeSql.of("select CAST('2025-10-01' AS DATE)").query(connection(), LocalDate.class))
+        .containsExactly(LocalDate.of(2025, 10, 1));
+  }
+
+  @Test public void query_withResultType_toLocalTimeResults() throws Exception {
+    assertThat(SafeSql.of("select CAST('08:30:00' AS TIME)").query(connection(), LocalTime.class))
+        .containsExactly(LocalTime.of(8, 30, 0));
+  }
+
+  @Test public void query_withResultType_toInstantResults() throws Exception {
+    ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title, time) VALUES({id}, {title}, {time})", testId(), "bar", barTime)
+                .update(connection()))
+        .isEqualTo(1);
+    assertThat(
+            SafeSql.of("select time from ITEMS where id = {id}", testId())
+                .query(connection(), Instant.class))
+        .containsExactly(barTime.toInstant());
+  }
+
+  @Test public void query_withResultType_toPrimitiveType_disallowed() throws Exception {
+    SafeSql sql = SafeSql.of("select id from ITEMS where id = {id}", testId());
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> sql.query(connection(), int.class));
+    assertThat(thrown).hasMessageThat().contains("int");
+  }
+
+  @Test public void query_withResultType_toVoidType_disallowed() throws Exception {
+    SafeSql sql = SafeSql.of("select id from ITEMS where id = {id}", testId());
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> sql.query(connection(), Void.class));
+    assertThat(thrown).hasMessageThat().contains("Void");
+  }
+
+  @Test public void queryLazily_withResultType_toZonedDateTimeResults() throws Exception {
+    ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title, time) VALUES({id}, {title}, {time})", testId(), "bar", barTime)
+                .update(connection()))
+        .isEqualTo(1);
+    assertThat(
+            SafeSql.of("select time from ITEMS where id = {id}", testId())
+                .queryLazily(connection(), ZonedDateTime.class)
+                .map(ZonedDateTime::toInstant)
+                .collect(toImmutableList()))
+        .containsExactly(barTime.toInstant());
+  }
+
+  @Test public void queryLazily_withResultType_toOffsetDateTimeResults() throws Exception {
+    ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title, time) VALUES({id}, {title}, {time})", testId(), "bar", barTime)
+                .update(connection()))
+        .isEqualTo(1);
+    assertThat(
+            SafeSql.of("select time from ITEMS where id = {id}", testId())
+                .queryLazily(connection(), OffsetDateTime.class)
+                .map(OffsetDateTime::toInstant)
+                .collect(toImmutableList()))
+        .containsExactly(barTime.toInstant());
+  }
+
+  @Test public void query_withResultType_usingParameterNames() throws Exception {
     ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
     assertThat(
             SafeSql.of("insert into ITEMS(id, title, time) VALUES({id}, {title}, {time})", testId(), "bar", barTime)
@@ -352,7 +468,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .containsExactly(new UnannotatedItem(testId(), "bar", barTime.toInstant()));
   }
 
-  @Test public void query_withTargetType_nullSupported() throws Exception {
+  @Test public void query_withResultType_nullSupported() throws Exception {
     ZonedDateTime time = null;
     assertThat(
             SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "bar")
@@ -364,7 +480,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .containsExactly(new Item(testId(), "bar", null));
   }
 
-  @Test public void queryLazily_withTargetType_parametersAnnotatedWithSqlName() throws Exception {
+  @Test public void queryLazily_withResultType_parametersAnnotatedWithSqlName() throws Exception {
     ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
     assertThat(
             SafeSql.of("insert into ITEMS(id, title, time) VALUES({id}, {title}, {time})", testId(), "bar", barTime)
@@ -382,28 +498,28 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     .containsExactly(new Item(testId(), "bar", barTime.toInstant()));
   }
 
-  @Test public void query_withTargetType_noNamedParameters_disallowed() throws Exception {
+  @Test public void query_withResultType_noNamedParameters_disallowed() throws Exception {
     SafeSql sql = SafeSql.of("select id, time, title from ITEMS where id = {id}", testId());
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class, () -> sql.query(connection(), WithNoNamedParams.class));
     assertThat(thrown).hasMessageThat().contains("arg0");
   }
 
-  @Test public void query_withTargetType_noAccessibleConstructor_disallowed() throws Exception {
+  @Test public void query_withResultType_noAccessibleConstructor_disallowed() throws Exception {
     SafeSql sql = SafeSql.of("select id, time, title from ITEMS where id = {id}", testId());
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class, () -> sql.query(connection(), NoAccessibleConstructor.class));
     assertThat(thrown).hasMessageThat().contains("NoAccessibleConstructor");
   }
 
-  @Test public void query_withTargetType_ambiguousConstructors_disallowed() throws Exception {
+  @Test public void query_withResultType_ambiguousConstructors_disallowed() throws Exception {
     SafeSql sql = SafeSql.of("select id, time, title from ITEMS where id = {id}", testId());
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class, () -> sql.query(connection(), WithAmbiguousConstructors.class));
     assertThat(thrown).hasMessageThat().contains("Ambiguous");
   }
 
-  @Test public void query_withTargetType_duplicateColumnNames_disallowed() throws Exception {
+  @Test public void query_withResultType_duplicateColumnNames_disallowed() throws Exception {
     SafeSql sql = SafeSql.of("select id from ITEMS where id = {id}", testId());
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class, () -> sql.query(connection(), WithDuplicateColumnNames.class));
@@ -411,7 +527,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     assertThat(thrown).hasMessageThat().contains("id");
   }
 
-  @Test public void query_withTargetType_emptyColumnName_disallowed() throws Exception {
+  @Test public void query_withResultType_emptyColumnName_disallowed() throws Exception {
     SafeSql sql = SafeSql.of("select id from ITEMS where id = {id}", testId());
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class, () -> sql.query(connection(), WithEmptyColumnName.class));
@@ -419,7 +535,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     assertThat(thrown).hasMessageThat().contains("WithEmptyColumnName");
   }
 
-  @Test public void query_withTargetType_blankColumnName_disallowed() throws Exception {
+  @Test public void query_withResultType_blankColumnName_disallowed() throws Exception {
     SafeSql sql = SafeSql.of("select id from ITEMS where id = {id}", testId());
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class, () -> sql.query(connection(), WithBlankColumnName.class));
@@ -427,7 +543,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     assertThat(thrown).hasMessageThat().contains("WithBlankColumnName");
   }
 
-  @Test public void query_withTargetType_duplicateQueryColumnNames_disallowed() throws Exception {
+  @Test public void query_withResultType_duplicateQueryColumnNames_disallowed() throws Exception {
     ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
     assertThat(
             SafeSql.of("insert into ITEMS(id, title, time) VALUES({id}, {title}, {time})", testId(), "bar", barTime)
@@ -440,7 +556,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     assertThat(thrown).hasMessageThat().contains("ID at index 2");
   }
 
-  @Test public void prepareToQuery_withTargetType() throws Exception {
+  @Test public void prepareToQuery_withResultType() throws Exception {
     assertThat(
             SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")
                 .update(connection()))
