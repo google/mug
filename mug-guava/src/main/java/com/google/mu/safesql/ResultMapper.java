@@ -19,11 +19,6 @@ import java.lang.reflect.Parameter;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.OffsetDateTime;
-import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -46,17 +41,10 @@ import com.google.mu.util.stream.BiStream;
  * {@link SqlName @SqlName}.
  */
 abstract class ResultMapper<T> {
-  private static final ImmutableSet<Class<?>> SQL_PRIMITIVE_TYPES =
-      ImmutableSet.of(
-          ZonedDateTime.class, OffsetDateTime.class, Instant.class,
-          LocalDate.class, LocalTime.class, String.class);
-
   static <T> ResultMapper<T> toResultOf(Class<T> resultType) {
-    checkArgument(
-        !Primitives.allPrimitiveTypes().contains(resultType), "resultType cannot be primitive: %s",
-        resultType);
-    checkArgument(resultType != Void.class, "resultType cannot be Void");
-    if (SQL_PRIMITIVE_TYPES.contains(resultType) || Primitives.isWrapperType(resultType)) {
+    if (Primitives.allPrimitiveTypes().contains(resultType) || resultType.isArray()
+        || resultType.getName().startsWith("java.")
+        || resultType.getName().startsWith("javax.")) {
       return new ResultMapper<T>() {
         @Override T from(ResultSet row) throws SQLException {
           return row.getObject(1, resultType);
