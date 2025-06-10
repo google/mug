@@ -133,7 +133,7 @@ import com.google.mu.util.stream.BiStream;
  *             <path>
  *               <groupId>com.google.mug</groupId>
  *               <artifactId>mug-errorprone</artifactId>
- *               <version>8.5</version>
+ *               <version>8.6</version>
  *             </path>
  *           </annotationProcessorPaths>
  *         </configuration>
@@ -732,9 +732,7 @@ public final class SafeSql {
    * List<User> users = SafeSql.of("SELECT id, name FROM Users WHERE name LIKE '%{name}%'", name)
    *     .query(connection, User.class);
    *
-   * static class User {
-   *   User(long id, String name) {...}
-   * }
+   * record User(long id, String name) {...}
    * }</pre>
    *
    * <p>The class of {@code resultType} must define a non-private constructor that accepts
@@ -746,9 +744,7 @@ public final class SafeSql {
    * the constructor parameters as in:
    *
    * <pre>{@code
-   * static class User {
-   *   User(@SqlName("id") long id, @SqlName("name") String name) {...}
-   * }
+   * record User(@SqlName("id") long id, @SqlName("name") String name) {...}
    * }</pre>
    *
    *
@@ -807,9 +803,7 @@ public final class SafeSql {
    *   return users.findFirst();
    * }
    *
-   * static class User {
-   *   User(long id, String name) {...}
-   * }
+   * record User(long id, String name) {...}
    * }</pre>
    *
    * <p>The class of {@code resultType} must define a non-private constructor that accepts
@@ -821,9 +815,7 @@ public final class SafeSql {
    * the constructor parameters as in:
    *
    * <pre>{@code
-   * static class User {
-   *   User(@SqlName("id") long id, @SqlName("name") String name) {...}
-   * }
+   * record User(@SqlName("id") long id, @SqlName("name") String name) {...}
    * }</pre>
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
@@ -878,9 +870,7 @@ public final class SafeSql {
    *   return users.findFirst();
    * }
    *
-   * static class User {
-   *   User(long id, String name) {...}
-   * }
+   * record User(long id, String name) {...}
    * }</pre>
    *
    * <p>The class of {@code resultType} must define a non-private constructor that accepts
@@ -892,9 +882,7 @@ public final class SafeSql {
    * the constructor parameters as in:
    *
    * <pre>{@code
-   * static class User {
-   *   User(@SqlName("id") long id, @SqlName("name") String name) {...}
-   * }
+   * record User(@SqlName("id") long id, @SqlName("name") String name) {...}
    * }</pre>
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
@@ -1026,9 +1014,7 @@ public final class SafeSql {
    *     }
    *   }
    *
-   *   static class User {
-   *     User(long id, String name) {...}
-   *   }
+   *   record User(long id, String name) {...}
    * }</pre>
    *
    * Each time {@code queryByName.with(name)} is called, it executes the same query template
@@ -1061,7 +1047,7 @@ public final class SafeSql {
    *     var queryByName = SafeSql.prepareToQuery(
    *         connection, "SELECT id FROM Users WHERE name LIKE '%{name}%'",
    *         row -> row.getLong("id"));
-   *     for (long id : ids) {
+   *     for (String name : names) {
    *       for (long id : queryByName.with(name))) {
    *         ...
    *       }
