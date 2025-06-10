@@ -747,6 +747,12 @@ public final class SafeSql {
    * record User(@SqlName("id") long id, @SqlName("name") String name) {...}
    * }</pre>
    *
+   * <p>Alternatively, if your query only selects one column, you could also use this method
+   * to read the results: <pre>{@code
+   * List<String> names = SafeSql.of("SELECT name FROM Users WHERE name LIKE '%{name}%'", name)
+   *     .query(connection, String.class);
+   * }</pre>
+   *
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    * @since 8.7
@@ -818,6 +824,14 @@ public final class SafeSql {
    * record User(@SqlName("id") long id, @SqlName("name") String name) {...}
    * }</pre>
    *
+   * <p>Alternatively, if your query only selects one column, you could also use this method
+   * to read the results: <pre>{@code
+   * SafeSql sql = SafeSql.of("SELECT id FROM Users WHERE name LIKE '%{name}%'", name);
+   * try (Stream<Long> ids = sql.queryLazily(connection, Long.class)) {
+   *   return ids.findFirst();
+   * }
+   * }</pre>
+   *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    * @since 8.7
    */
@@ -866,7 +880,7 @@ public final class SafeSql {
    *
    * <p>For example: <pre>{@code
    * SafeSql sql = SafeSql.of("SELECT id, name FROM Users WHERE name LIKE '%{name}%'", name);
-   * try (Stream<User> users = sql.queryLazily(connection, User.class)) {
+   * try (Stream<User> users = sql.queryLazily(connection, fetchSize, User.class)) {
    *   return users.findFirst();
    * }
    *
@@ -883,6 +897,14 @@ public final class SafeSql {
    *
    * <pre>{@code
    * record User(@SqlName("id") long id, @SqlName("name") String name) {...}
+   * }</pre>
+   *
+   * <p>Alternatively, if your query only selects one column, you could also use this method
+   * to read the results: <pre>{@code
+   * SafeSql sql = SafeSql.of("SELECT birthday FROM Users WHERE name LIKE '%{name}%'", name);
+   * try (Stream<LocalDate> birthdays = sql.queryLazily(connection, fetchSize, LocalDate.class)) {
+   *   return birthdays.findFirst();
+   * }
    * }</pre>
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
