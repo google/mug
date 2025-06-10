@@ -363,16 +363,6 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .containsExactly(true);
   }
 
-  @Test public void query_withResultType_toPrimitiveType() throws Exception {
-    ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
-    assertThat(
-            SafeSql.of("insert into ITEMS(id, title, time) VALUES({id}, {title}, {time})", testId(), "bar", barTime)
-                .update(connection()))
-        .isEqualTo(1);
-    SafeSql sql = SafeSql.of("select id from ITEMS where id = {id}", testId());
-    assertThrows(UncheckedSqlException.class, () -> sql.query(connection(), int.class));
-  }
-
   @Test public void query_withResultType_toIntResults() throws Exception {
     ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
     assertThat(
@@ -425,6 +415,22 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
             SafeSql.of("select time from ITEMS where id = {id}", testId())
                 .query(connection(), Instant.class))
         .containsExactly(barTime.toInstant());
+  }
+
+  @Test public void query_withResultType_toPrimitiveType_disallowed() throws Exception {
+    SafeSql sql = SafeSql.of("select id from ITEMS where id = {id}", testId());
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> sql.query(connection(), int.class));
+    assertThat(thrown).hasMessageThat().contains("int");
+  }
+
+  @Test public void query_withResultType_toVoidType_disallowed() throws Exception {
+    SafeSql sql = SafeSql.of("select id from ITEMS where id = {id}", testId());
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> sql.query(connection(), Void.class));
+    assertThat(thrown).hasMessageThat().contains("Void");
   }
 
   @Test public void queryLazily_withResultType_toZonedDateTimeResults() throws Exception {

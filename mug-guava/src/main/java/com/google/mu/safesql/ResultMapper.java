@@ -42,9 +42,12 @@ import com.google.mu.util.stream.BiStream;
  */
 abstract class ResultMapper<T> {
   static <T> ResultMapper<T> toResultOf(Class<T> resultType) {
+    checkArgument(
+        !Primitives.allPrimitiveTypes().contains(resultType),
+        "resultType cannot be primitive: %s", resultType);
+    checkArgument(resultType != Void.class, "resultType cannot be Void");
     if (resultType.getName().startsWith("java.")
         || resultType.getName().startsWith("javax.")
-        || Primitives.allPrimitiveTypes().contains(resultType)
         || resultType.isArray()) {
       return new ResultMapper<T>() {
         @Override T from(ResultSet row) throws SQLException {
