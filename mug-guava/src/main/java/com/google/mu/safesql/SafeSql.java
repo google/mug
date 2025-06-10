@@ -845,7 +845,7 @@ public final class SafeSql {
    *
    * <p>For example: <pre>{@code
    * SafeSql sql = SafeSql.of("SELECT name FROM Users WHERE name LIKE '%{name}%'", name);
-   * try (Stream<String> names = sql.queryLazily(connection, row -> row.getLong("id"))) {
+   * try (Stream<String> names = sql.queryLazily(connection, row -> row.getString("name"))) {
    *   return names.findFirst();
    * }
    * }</pre>
@@ -916,7 +916,7 @@ public final class SafeSql {
    *
    * <p>For example: <pre>{@code
    * SafeSql sql = SafeSql.of("SELECT name FROM Users WHERE name LIKE '%{name}%'", name);
-   * try (Stream<String> names = sql.queryLazily(connection, row -> row.getLong("id"))) {
+   * try (Stream<String> names = sql.queryLazily(connection, row -> row.getString("name"))) {
    *   return names.findFirst();
    * }
    * }</pre>
@@ -1061,7 +1061,7 @@ public final class SafeSql {
    *     var queryByName = SafeSql.prepareToQuery(
    *         connection, "SELECT id FROM Users WHERE name LIKE '%{name}%'",
    *         row -> row.getLong("id"));
-   *     for (String name : names) {
+   *     for (long id : ids) {
    *       for (long id : queryByName.with(name))) {
    *         ...
    *       }
