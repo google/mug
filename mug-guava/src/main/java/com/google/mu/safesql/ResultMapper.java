@@ -19,6 +19,11 @@ import java.lang.reflect.Parameter;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -40,53 +45,77 @@ import com.google.mu.util.stream.BiStream;
  * Java parameter names (if javac enables -parameters), or names annotated using
  * {@link SqlName @SqlName}.
  */
-final class ResultMapper<T> {
-  private final Class<T> type;
-  private final ImmutableListMultimap<Integer, Creator<T>> creators;
+abstract class ResultMapper<T> {
+  private static final ImmutableSet<Class<?>> SQL_PRIMITIVE_TYPES =
+      ImmutableSet.of(
+          ZonedDateTime.class, OffsetDateTime.class, Instant.class,
+          LocalDate.class, LocalTime.class, String.class);
 
-  @SuppressWarnings("unchecked")  // T.getDeclaredConstructors() should return Constructor<T>'s
-  ResultMapper(Class<T> type) {
-    this.type = type;
-    this.creators = stream(type.getDeclaredConstructors())
-        .map(ctor -> (Constructor<T>) ctor)
-        .filter(ctor -> !Modifier.isPrivate(ctor.getModifiers()))
-        .collect(BiStream.groupingBy(ctor -> ctor.getParameterCount(), toListOf(Creator::new)))
-        .collect(flatteningToImmutableListMultimap(List::stream));
-    checkArgument(creators.size() > 0, "No accessible constructor from %s", type);
-    checkAmbiguities();
-  }
-
-  T from(ResultSet row) throws SQLException {
-    ImmutableSet<String> canonicalColumnNames = getCanonicalColumnNames(row.getMetaData());
-    List<Creator<T>> candidates = creators.get(canonicalColumnNames.size()).stream()
-        .collect(partitioningBy(Creator::isExplicitlyAnnotated, toImmutableList()))
-        .andThen(
-            (annotated, unannotated) -> annotated.size() > 0 ? annotated : unannotated);
-    return resolve(candidates, canonicalColumnNames).create(row);
-  }
-
-  private Creator<T> resolve(List<Creator<T>> candidates, Set<String> columnNames) {
-    ImmutableList<Creator<T>> matched =
-        candidates.stream()
-            .filter(candidate -> candidate.getCanonicalColumnNames().equals(columnNames))
-            .collect(toImmutableList());
+  static <T> ResultMapper<T> toResultOf(Class<T> resultType) {
     checkArgument(
-        matched.size() > 0, "No matching constructor found in %s for columns: %s",
-        type, columnNames);
-    checkArgument(
-        matched.size() == 1, "Ambiguous constructors found in %s for columns: %s",
-        type, columnNames);
-    return matched.get(0);
+        !Primitives.allPrimitiveTypes().contains(resultType), "resultType cannot be primitive: %s",
+        resultType);
+    checkArgument(resultType != Void.class, "resultType cannot be Void");
+    if (SQL_PRIMITIVE_TYPES.contains(resultType) || Primitives.isWrapperType(resultType)) {
+      return new ResultMapper<T>() {
+        @Override T from(ResultSet row) throws SQLException {
+          return row.getObject(1, resultType);
+        }
+      };
+    }
+    return new UsingConstructor<T>(resultType);
   }
 
-  private void checkAmbiguities() {
-    Map<ImmutableSet<String>, Creator<?>> byCanonicalColumNames = new HashMap<>();
-    for (Creator<?> creator : creators.values()) {
-      ImmutableSet<String> names = creator.getCanonicalColumnNames();
-      Creator<?> dup = byCanonicalColumNames.putIfAbsent(names, creator);
+  abstract T from(ResultSet row) throws SQLException;
+
+  static final class UsingConstructor<T> extends ResultMapper<T> {
+    private final Class<T> type;
+    private final ImmutableListMultimap<Integer, Creator<T>> creators;
+
+    @SuppressWarnings("unchecked")  // T.getDeclaredConstructors() should return Constructor<T>'s
+    UsingConstructor(Class<T> type) {
+      this.type = type;
+      this.creators = stream(type.getDeclaredConstructors())
+          .map(ctor -> (Constructor<T>) ctor)
+          .filter(ctor -> !Modifier.isPrivate(ctor.getModifiers()))
+          .collect(BiStream.groupingBy(ctor -> ctor.getParameterCount(), toListOf(Creator::new)))
+          .collect(flatteningToImmutableListMultimap(List::stream));
+      checkArgument(creators.size() > 0, "No accessible constructor from %s", type);
+      checkAmbiguities();
+    }
+
+    @Override T from(ResultSet row) throws SQLException {
+      ImmutableSet<String> canonicalColumnNames = getCanonicalColumnNames(row.getMetaData());
+      List<Creator<T>> candidates = creators.get(canonicalColumnNames.size()).stream()
+          .collect(partitioningBy(Creator::isExplicitlyAnnotated, toImmutableList()))
+          .andThen(
+              (annotated, unannotated) -> annotated.size() > 0 ? annotated : unannotated);
+      return resolve(candidates, canonicalColumnNames).create(row);
+    }
+
+    private Creator<T> resolve(List<Creator<T>> candidates, Set<String> columnNames) {
+      ImmutableList<Creator<T>> matched =
+          candidates.stream()
+              .filter(candidate -> candidate.getCanonicalColumnNames().equals(columnNames))
+              .collect(toImmutableList());
       checkArgument(
-          dup == null,
-          "Ambiguous constructors in %s matching the same set of column names: %s", type, names);
+          matched.size() > 0, "No matching constructor found in %s for columns: %s",
+          type, columnNames);
+      checkArgument(
+          matched.size() == 1, "Ambiguous constructors found in %s for columns: %s",
+          type, columnNames);
+      return matched.get(0);
+    }
+
+    private void checkAmbiguities() {
+      Map<ImmutableSet<String>, Creator<?>> byCanonicalColumNames = new HashMap<>();
+      for (Creator<?> creator : creators.values()) {
+        ImmutableSet<String> names = creator.getCanonicalColumnNames();
+        Creator<?> dup = byCanonicalColumNames.putIfAbsent(names, creator);
+        checkArgument(
+            dup == null,
+            "Ambiguous constructors in %s matching the same set of column names: %s", type, names);
+      }
     }
   }
 
