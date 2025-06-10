@@ -385,6 +385,11 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .containsExactly((byte) 123);
   }
 
+  @Test public void query_withResultType_toCharResults() throws Exception {
+    assertThat(SafeSql.of("select 'a'").query(connection(), Character.class))
+        .containsExactly('a');
+  }
+
   @Test public void query_withResultType_toLongResults() throws Exception {
     assertThat(SafeSql.of("select 123").query(connection(), Long.class))
         .containsExactly(123L);
