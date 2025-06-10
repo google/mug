@@ -88,7 +88,7 @@ import com.google.mu.util.stream.BiStream;
  *       WHERE firstName = {first_name} AND lastName IN ({last_names})
  *       """,
  *       firstName, lastNamesList);
- *   List<Long> ids = sql.query(connection, row -> row.getLong("id"));
+ *   List<Long> ids = sql.query(connection, Long.class);
  * }</pre>
  *
  * In the above example if {@code firstName} is "Emma" and {@code lastNamesList} is
@@ -262,7 +262,7 @@ import com.google.mu.util.stream.BiStream;
  *   String searchTerm = ...;
  *   SafeSql sql = SafeSql.of(
  *       "SELECT id FROM Users WHERE firstName LIKE '%{search_term}%'", searchTerm);
- *   List<Long> ids = sql.query(connection, row -> row.getLong("id"));
+ *   List<Long> ids = sql.query(connection, Long.class);
  * }</pre>
  *
  * <p><strong>Automatic Escaping: No Need for ESCAPE Clause</strong></p>
@@ -371,7 +371,7 @@ public final class SafeSql {
    * List<Long> jobIds = SafeSql.of(
    *         "SELECT id FROM Jobs WHERE timestamp BETWEEN {start} AND {end}",
    *         startTime, endTime)
-   *     .query(connection, row -> row.getLong("id"));
+   *     .query(connection, Long.class);
    * }</pre>
    *
    * <p>Note that if you plan to create a {@link PreparedStatement} and use it multiple times
