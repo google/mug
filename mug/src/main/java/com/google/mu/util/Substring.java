@@ -661,6 +661,16 @@ public final class Substring {
   }
 
   /**
+   * Returns a {@code Pattern} that matches the first non-empty sequence of consecutive {@code ch}
+   * characters.
+   *
+   * @since 8.7
+   */
+  public static Pattern consecutive(char ch) {
+    return consecutive(CharPredicate.is(ch));
+  }
+
+  /**
    * Returns a {@code Pattern} that matches the first non-empty sequence of consecutive characters
    * identified by {@code matcher}.
    *
