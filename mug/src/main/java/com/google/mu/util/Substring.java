@@ -327,7 +327,7 @@ import com.google.mu.util.stream.MoreStreams;
  * }</pre></td>
  *   <td><pre>{@code
  * // Explicitly filter out empty matches
- * List<String> parts = consecutive(is('-'))
+ * List<String> parts = consecutive('-')
  *     .repeatedly()
  *     .split("a--b-c-")
  *     .filter(Match::isNotEmpty)
@@ -344,7 +344,7 @@ import com.google.mu.util.stream.MoreStreams;
  *     // => ["a", ""]
  * }</pre></td>
  *   <td><pre>{@code
- * List<String> parts = consecutive(is('-'))
+ * List<String> parts = consecutive('-')
  *     .repeatedly()
  *     .split("a--")
  *     .map(Match::toString)
