@@ -439,10 +439,10 @@ public final class Parallelizer {
         inputs -> {
           List<O> outputs = new ArrayList<>(inputs.size());
           outputs.addAll(Collections.nCopies(inputs.size(), null));
-          try (Completion completion = new Completion()){
+          try {
             parallelize(
                 IntStream.range(0, inputs.size()).boxed(),
-                i -> completion.run(() -> outputs.set(i, concurrentFunction.apply(inputs.get(i)))));
+                i -> outputs.set(i, concurrentFunction.apply(inputs.get(i))));
           } catch (InterruptedException e) {
             throw new StructuredConcurrencyInterruptedException(e);
           }

@@ -327,7 +327,7 @@ import com.google.mu.util.stream.MoreStreams;
  * }</pre></td>
  *   <td><pre>{@code
  * // Explicitly filter out empty matches
- * List<String> parts = consecutive(is('-'))
+ * List<String> parts = consecutive('-')
  *     .repeatedly()
  *     .split("a--b-c-")
  *     .filter(Match::isNotEmpty)
@@ -344,7 +344,7 @@ import com.google.mu.util.stream.MoreStreams;
  *     // => ["a", ""]
  * }</pre></td>
  *   <td><pre>{@code
- * List<String> parts = consecutive(is('-'))
+ * List<String> parts = consecutive('-')
  *     .repeatedly()
  *     .split("a--")
  *     .map(Match::toString)
@@ -658,6 +658,16 @@ public final class Substring {
         return "trailing(" + matcher + ")";
       }
     };
+  }
+
+  /**
+   * Returns a {@code Pattern} that matches the first non-empty sequence of consecutive {@code ch}
+   * characters.
+   *
+   * @since 8.7
+   */
+  public static Pattern consecutive(char ch) {
+    return consecutive(CharPredicate.is(ch));
   }
 
   /**

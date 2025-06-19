@@ -481,8 +481,8 @@ public final class Fanout {
     }
 
     void run() throws StructuredConcurrencyInterruptedException {
-      try (Completion completion = new Completion()) {
-        withUnlimitedConcurrency().parallelize(runnables.stream().map(completion::toRun));
+      try {
+        withUnlimitedConcurrency().parallelize(runnables.stream());
       } catch (InterruptedException e) {
         throw new StructuredConcurrencyInterruptedException(e);
       }
@@ -490,9 +490,7 @@ public final class Fanout {
 
     @Deprecated
     void runUninterruptibly() {
-      try (Completion completion = new Completion()) {
-        withUnlimitedConcurrency().parallelizeUninterruptibly(runnables.stream().map(completion::toRun));
-      }
+      withUnlimitedConcurrency().parallelizeUninterruptibly(runnables.stream());
     }
   }
 
