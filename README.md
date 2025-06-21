@@ -11,7 +11,7 @@ A small Java 8+ utilities library ([javadoc](http://google.github.io/mug/apidocs
   → `Substring.between("(", ")").from("call(foo)") → "foo"`
 - ✅ [`StringFormat`](https://github.com/google/mug/wiki/StringFormat-Explained) – compile-time-safe bidirectional parsing/formatting  
   → `new StringFormat("/home/{user}/{date}").parse(filePath, (user, date) -> ...)`
-- ✅ [`SafeSql`](./mug-guava/src/main/java/com/google/mu/safesql/README.md) – _library-enforced_ safe SQL template
+- ✅ [`SafeSql`](./mug-guava/src/main/java/com/google/mu/safesql/README.md) – _library-enforced_ safe SQL template 
   → ```SafeSql.of("select id, `{col}` from Users where id = {id}", col, id)```
 - ✅ [`DateTimeFormats`](./mug/src/main/java/com/google/mu/time/README.md) – parse datetimes by example  
   → `DateTimeFormatter format = formatOf("2024-03-14 10:00:00.123 America/New_York")`
