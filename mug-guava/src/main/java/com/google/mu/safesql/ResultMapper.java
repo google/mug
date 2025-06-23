@@ -25,13 +25,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.google.common.base.Ascii;
+import com.google.common.base.CaseFormat;
 import com.google.common.base.VerifyException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Primitives;
+import com.google.mu.util.CaseBreaker;
 import com.google.mu.util.stream.BiStream;
 
 /**
@@ -191,6 +192,7 @@ abstract class ResultMapper<T> {
   }
 
   private static String canonicalize(String name) {
-    return Ascii.toUpperCase(name);
+    // Most dbms will use UPPER CASE. And if the java name is fooBar, it needs to be FOO_BAR.
+    return CaseBreaker.toCase(CaseFormat.UPPER_UNDERSCORE, name);
   }
 }
