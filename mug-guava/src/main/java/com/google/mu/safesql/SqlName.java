@@ -9,12 +9,15 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
- * Annotates a constructor parameter's name corresponding to the name in SQL query.
+ * Annotation to facilitate mapping from a result set row to a pojo through the
+ * {@link SafeSql#query(java.sql.Connection, Class)} method and friends.
  *
- * <p>If you can enable the javac {@code -parameters} flag, you do not need this annotation.
+ * <p>For records, you can use it to annotate a constructor parameter's name to match the
+ * corresponding result set column name from a SQL query, although, if you can enable the javac
+ * {@code -parameters} flag, you likely do not need this annotation.
  *
- * <p>Otherwise, you can annotate your result type's constructor parameters so that they can be
- * used as result type of {@link SafeSql#query(java.sql.Connection, Class)} and friends.
+ * <p>For Java beans, you can annotate a setter method when the property name doesn't otherwise
+ * match the result set column name.
  *
  * @since 8.7
  */
@@ -22,6 +25,10 @@ import java.lang.annotation.Target;
 @Retention(RUNTIME)
 @Target({METHOD, PARAMETER})
 public @interface SqlName {
-  /** The name to fetch the corresponding value from a {@link java.sql.ResultSet}. */
+  /**
+   * The name to fetch the corresponding value from a {@link java.sql.ResultSet}.
+   *
+   * <p>Case (camelCase, snake_case etc.) doesn't matter.
+   */
   String value();
 }
