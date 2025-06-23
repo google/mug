@@ -561,6 +561,146 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     assertThat(thrown).hasMessageThat().contains("ID at index 2");
   }
 
+  @Test public void query_withResultBeanType_populated() throws Exception {
+    ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title, time, item_uuid) VALUES({id}, {title}, {time}, {uuid})",
+                    testId(), "bar", barTime, "uuid")
+                .update(connection()))
+        .isEqualTo(1);
+    ItemBean bean = new ItemBean();
+    bean.setId(testId());
+    bean.setItemUuid("uuid");
+    bean.setTime(barTime.toInstant());
+    bean.setTitle("bar");
+    assertThat(
+            SafeSql.of("select id, time, title, item_uuid from ITEMS where id = {id}", testId())
+                .query(connection(), ItemBean.class))
+        .containsExactly(bean);
+    assertThat(
+            SafeSql.of("select id, time, title, item_uuid from ITEMS where id = {id}", testId())
+                .queryLazily(connection(), 2, ItemBean.class)
+                .collect(toList()))
+        .containsExactly(bean);
+  }
+
+  @Test public void query_withResultBeanType_columnsFewerThanProperties() throws Exception {
+    ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title, time, item_uuid) VALUES({id}, {title}, {time}, {uuid})",
+                    testId(), "bar", barTime, "uuid")
+                .update(connection()))
+        .isEqualTo(1);
+    ItemBean bean = new ItemBean();
+    bean.setId(testId());
+    bean.setTime(barTime.toInstant());
+    bean.setTitle("bar");
+    assertThat(
+            SafeSql.of("select id, time, title from ITEMS where id = {id}", testId())
+                .query(connection(), ItemBean.class))
+        .containsExactly(bean);
+    assertThat(
+            SafeSql.of("select id, time, title from ITEMS where id = {id}", testId())
+                .queryLazily(connection(), 2, ItemBean.class)
+                .collect(toList()))
+        .containsExactly(bean);
+  }
+
+  @Test public void query_withResultBeanType_columnsMoreThanProperties() throws Exception {
+    ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title, time, item_uuid) VALUES({id}, {title}, {time}, {uuid})",
+                    testId(), "bar", barTime, "uuid")
+                .update(connection()))
+        .isEqualTo(1);
+    BaseItemBean bean = new BaseItemBean();
+    bean.setId(testId());
+    bean.setTime(barTime.toInstant());
+    assertThat(
+            SafeSql.of("select id, time, item_uuid from ITEMS where id = {id}", testId())
+                .query(connection(), BaseItemBean.class))
+        .containsExactly(bean);
+    assertThat(
+            SafeSql.of("select id, time, item_uuid from ITEMS where id = {id}", testId())
+                .queryLazily(connection(), 2, BaseItemBean.class)
+                .collect(toList()))
+        .containsExactly(bean);
+  }
+
+  @Test public void query_withResultBeanType_columnNotFoundInBean() throws Exception {
+    ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title, time, item_uuid) VALUES({id}, {title}, {time}, {uuid})",
+                    testId(), "bar", barTime, "uuid")
+                .update(connection()))
+        .isEqualTo(1);
+    SafeSql sql = SafeSql.of("select time from ITEMS where id = {id}", testId());
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> sql.query(connection(), AnotherItemBean.class));
+    assertThat(thrown).hasMessageThat().contains("column TIME");
+  }
+
+  @Test public void query_withResultBeanType_propertyNotInColumns() throws Exception {
+    ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title, time, item_uuid) VALUES({id}, {title}, {time}, {uuid})",
+                    testId(), "bar", barTime, "uuid")
+                .update(connection()))
+        .isEqualTo(1);
+    SafeSql sql = SafeSql.of("select id, time, title from ITEMS where id = {id}", testId());
+    UncheckedSqlException thrown = assertThrows(
+        UncheckedSqlException.class,
+        () -> sql.query(connection(), AnotherItemBean.class));
+    assertThat(thrown).hasMessageThat().contains("CREATION_TIME");
+  }
+
+  @Test public void query_withResultBeanType_nullPrimitiveColumn() throws Exception {
+    ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title, time, item_uuid) VALUES({id}, {title}, {time}, {uuid})",
+                    testId(), "bar", barTime, "uuid")
+                .update(connection()))
+        .isEqualTo(1);
+    BaseItemBean bean = new BaseItemBean();
+    bean.setTime(barTime.toInstant());
+    assertThat(
+            SafeSql.of("select NULL AS id, time, item_uuid from ITEMS where id = {id}", testId())
+                .query(connection(), BaseItemBean.class))
+        .containsExactly(bean);
+  }
+
+  @Test public void query_withResultBeanType_nullNonPrimitiveColumn() throws Exception {
+    ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title, time, item_uuid) VALUES({id}, {title}, {time}, {uuid})",
+                    testId(), "bar", barTime, "uuid")
+                .update(connection()))
+        .isEqualTo(1);
+    BaseItemBean bean = new BaseItemBean();
+    bean.setId(testId());
+    assertThat(
+            SafeSql.of("select id, NULL AS time, item_uuid from ITEMS where id = {id}", testId())
+                .query(connection(), BaseItemBean.class))
+        .containsExactly(bean);
+  }
+
+  @Test public void query_withResultBeanType_setterAnnotatedWithSqlName() throws Exception {
+    ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title, time, item_uuid) VALUES({id}, {title}, {time}, {uuid})",
+                    testId(), "bar", barTime, "uuid")
+                .update(connection()))
+        .isEqualTo(1);
+    AnnotatedItemBean bean = new AnnotatedItemBean();
+    bean.setId(testId());
+    bean.setCreationTime(barTime.toInstant());
+    assertThat(
+            SafeSql.of("select id, time, item_uuid from ITEMS where id = {id}", testId())
+                .query(connection(), AnnotatedItemBean.class))
+        .containsExactly(bean);
+  }
+
   @Test public void prepareToQuery_withResultType() throws Exception {
     assertThat(
             SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")
@@ -635,6 +775,107 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
 
   static class WithBlankColumnName {
     WithBlankColumnName(@SqlName(" ") int id) {}
+  }
+
+  static class BaseItemBean {
+    private int id;
+    private Instant time;
+
+    public void setId(int id) {
+      this.id = id;
+    }
+
+    public void setTime(Instant time) {
+      this.time = time;
+    }
+
+    @Override public boolean equals(Object that) {
+      return that != null && toString().equals(that.toString());
+    }
+
+    @Override public int hashCode() {
+      return toString().hashCode();
+    }
+
+    @Override public String toString() {
+      return "id=" + id + ", time=" + time;
+    }
+  }
+
+  static class ItemBean extends BaseItemBean {
+    private String title;
+    private String itemUuid;
+
+    public void setTitle(String title) {
+      this.title = title;
+    }
+
+    public void setItemUuid(String itemUuid) {
+      this.itemUuid = itemUuid;
+    }
+
+    @Override public boolean equals(Object that) {
+      return that != null && toString().equals(that.toString());
+    }
+
+    @Override public int hashCode() {
+      return toString().hashCode();
+    }
+
+    @Override public String toString() {
+      return super.toString() + ", title=" + title + ", itemUuid=" + itemUuid;
+    }
+  }
+
+  static class AnotherItemBean {
+    private int id;
+    private Instant time;
+
+    public void setId(int id) {
+      this.id = id;
+    }
+
+    public void setCreationTime(Instant time) {
+      this.time = time;
+    }
+
+    @Override public boolean equals(Object that) {
+      return that != null && toString().equals(that.toString());
+    }
+
+    @Override public int hashCode() {
+      return toString().hashCode();
+    }
+
+    @Override public String toString() {
+      return "id=" + id + ", time=" + time;
+    }
+  }
+
+  static class AnnotatedItemBean {
+    private int id;
+    private Instant time;
+
+    public void setId(int id) {
+      this.id = id;
+    }
+
+    @SqlName("time")
+    public void setCreationTime(Instant time) {
+      this.time = time;
+    }
+
+    @Override public boolean equals(Object that) {
+      return that != null && toString().equals(that.toString());
+    }
+
+    @Override public int hashCode() {
+      return toString().hashCode();
+    }
+
+    @Override public String toString() {
+      return "id=" + id + ", time=" + time;
+    }
   }
 
   private int testId() {

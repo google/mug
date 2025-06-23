@@ -56,7 +56,8 @@ abstract class ResultMapper<T> {
         }
       };
     }
-    return new UsingConstructor<T>(resultType);
+    return JavaBeanMapper.ofBeanClass(resultType)
+        .orElseGet(() -> new UsingConstructor<T>(resultType));
   }
 
   abstract T from(ResultSet row) throws SQLException;
@@ -156,7 +157,7 @@ abstract class ResultMapper<T> {
 
 
   /** Returns the label-to-typename mapping of all columns, in encounter order. */
-  private static ImmutableSet<String> getCanonicalColumnNames(ResultSetMetaData metadata)
+  static ImmutableSet<String> getCanonicalColumnNames(ResultSetMetaData metadata)
       throws SQLException {
     LinkedHashSet<String> mappings = new LinkedHashSet<>();
     int columnCount = metadata.getColumnCount();
@@ -191,7 +192,7 @@ abstract class ResultMapper<T> {
     return paramName;
   }
 
-  private static String canonicalize(String name) {
+  static String canonicalize(String name) {
     // Most dbms will use UPPER CASE. And if the java name is fooBar, it needs to be FOO_BAR.
     return CaseBreaker.toCase(CaseFormat.UPPER_UNDERSCORE, name);
   }

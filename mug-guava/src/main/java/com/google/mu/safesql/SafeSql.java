@@ -767,6 +767,18 @@ public final class SafeSql {
    *     .query(connection, String.class);
    * }</pre>
    *
+   * <p>You can also map the result rows to Java Beans, like:
+   *
+   * <p>For example: <pre>{@code
+   * List<UserBean> users = SafeSql.of("SELECT id, name FROM Users WHERE name LIKE '%{name}%'", name)
+   *     .query(connection, UserBean.class);
+   *
+   * public class UserBean {
+   *   public void setId(long id) {...}
+   *   public void setName(String name) {...}
+   * }
+   * }</pre>
+   *
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    * @since 8.7
@@ -846,6 +858,8 @@ public final class SafeSql {
    * }
    * }</pre>
    *
+   * <p>You can also map the result rows to Java Beans, similar to {@link #query(Connection, Class)}.
+   *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    * @since 8.7
    */
@@ -920,6 +934,8 @@ public final class SafeSql {
    *   return birthdays.findFirst();
    * }
    * }</pre>
+   *
+   * <pYou can also map the result rows to Java Beans, similar to {@link #query(Connection, Class)}.
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    * @since 8.7

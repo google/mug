@@ -1,5 +1,6 @@
 package com.google.mu.safesql;
 
+import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
@@ -19,7 +20,7 @@ import java.lang.annotation.Target;
  */
 @Documented
 @Retention(RUNTIME)
-@Target(PARAMETER)
+@Target({METHOD, PARAMETER})
 public @interface SqlName {
   /** The name to fetch the corresponding value from a {@link java.sql.ResultSet}. */
   String value();
