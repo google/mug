@@ -770,8 +770,9 @@ public final class SafeSql {
    * <p>You can also map the result rows to Java Beans, like:
    *
    * <p>For example: <pre>{@code
-   * List<UserBean> users = SafeSql.of("SELECT id, name FROM Users WHERE name LIKE '%{name}%'", name)
-   *     .query(connection, UserBean.class);
+   * List<UserBean> users =
+   *     SafeSql.of("SELECT id, name FROM Users WHERE name LIKE '%{name}%'", name)
+   *         .query(connection, UserBean.class);
    *
    * public class UserBean {
    *   public void setId(long id) {...}
@@ -779,6 +780,18 @@ public final class SafeSql {
    * }
    * }</pre>
    *
+   * <p>The rules of mapping query columns to Java Bean properties are:
+   * <ul>
+   * <li>Case doesn't matter. {@code job_id} will match {@code jobId} or {@code JOB_ID}.
+   * <li>It's okay if a query column doesn't map to a bean property, as long as all settable
+   *     bean properties are mapped to a query column. The column value will just be ignored.
+   * <li>It's okay if a bean property doesn't map to a query column, as long as all query
+   *     columns have been mapped to a bean property.
+   * <li>If a bean property is of primitive type, and the corresponding query column value
+   *     is null, the property will be left as is.
+   * <li>If you can't make a bean property match a query column, you can annotate the setter method
+   *     with the {@code @SqlName} annotation to customize the column name.
+   * </ul>
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    * @since 8.7
