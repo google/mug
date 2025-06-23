@@ -792,7 +792,7 @@ public final class SafeSql {
    * <li>If you can't make a bean property match a query column, you can annotate the setter method
    *     with the {@code @SqlName} annotation to customize the column name.
    * <li>Exception will be thrown if a column doesn't map to a settable property, yet
-   *     there are property not being populated, because this often is a result of
+   *     there are properties not being populated, because this often is a result of
    *     programming error. For example, you may have renamed a property but forgot to rename the
    *     corresponding query column. In such case, failing loudly and clearly is safer than letting
    *     the program silently run with corrupted state.
