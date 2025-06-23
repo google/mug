@@ -220,7 +220,8 @@ import com.google.mu.util.stream.BiStream;
  * inherently dynamic and untrusted.
  *
  * <p>The safe way to parameterize dynamic strings as <em>identifiers</em> is to backtick-quote
- * their placeholders in the SQL template. For example: <pre>{@code
+ * their placeholders in the SQL template (if you use Oracle, PostgreSQL that use double quotes for
+ * identifier, use double quotes instead). For example: <pre>{@code
  *   SafeSql.of("SELECT `{columns}` FROM Users", request.getColumns())
  * }</pre>
  * The backticks tell SafeSql that the string is supposed to be an identifier (or a list of
@@ -507,6 +508,10 @@ public final class SafeSql {
                 "boolean placeholder {%s->} shouldn't be backtick quoted",
                 conditional.before());
             checkArgument(
+                !placeholder.isImmediatelyBetween("\"", "\""),
+                "boolean placeholder {%s->} shouldn't be double quoted",
+                conditional.before());
+            checkArgument(
                 value != null,
                 "boolean placeholder {%s->} cannot be used with a null value",
                 conditional.before());
@@ -540,6 +545,11 @@ public final class SafeSql {
                   eachPlaceholderValue(placeholder, elements)
                       .mapToObj(SafeSql::mustBeIdentifier)
                       .collect(Collectors.joining("`, `")));
+            } else if (placeholder.isImmediatelyBetween("\"", "\"")) {
+              builder.appendSql(
+                  eachPlaceholderValue(placeholder, elements)
+                      .mapToObj(SafeSql::mustBeIdentifier)
+                      .collect(Collectors.joining("\", \"")));
             } else if (lookaround("IN (", placeholder, ")")) {
               builder.addSubQuery(
                   eachPlaceholderValue(placeholder, elements)
@@ -559,6 +569,10 @@ public final class SafeSql {
             String identifier = mustBeIdentifier("`" + placeholder + "`", value);
             checkArgument(identifier.length() > 0, "`%s` cannot be empty", placeholder);
             builder.appendSql("`" + identifier + "`");
+          } else if (appendBeforeQuotedPlaceholder("\"", placeholder, "\"")) {
+            String identifier = mustBeIdentifier("\"" + placeholder + "\"", value);
+            checkArgument(identifier.length() > 0, "\"%s\" cannot be empty", placeholder);
+            builder.appendSql("\"" + identifier + "\"");
           } else if (lookbehind("LIKE '%", placeholder)
               && appendBeforeQuotedPlaceholder("'%", placeholder, "%'")) {
             rejectEscapeAfter(placeholder);

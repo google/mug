@@ -423,6 +423,68 @@ public class SafeSqlTest {
   }
 
   @Test
+  public void doubleQuotedIdentifier_string() {
+    SafeSql sql = SafeSql.of("select * from \"{tbl}\"", "Users");
+    assertThat(sql.toString()).isEqualTo("select * from \"Users\"");
+    assertThat(sql.getParameters()).isEmpty();
+  }
+
+  @Test
+  public void doubleQuotedIdentifier_notString_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class, () -> SafeSql.of("select * from \"{tbl}\"", 1));
+    assertThat(thrown).hasMessageThat().contains("\"{tbl}\"");
+  }
+
+  @Test
+  public void doubleQuotedIdentifier_emptyValue_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class, () -> SafeSql.of("select * from \"{tbl}\"", ""));
+    assertThat(thrown).hasMessageThat().contains("\"{tbl}\"");
+    assertThat(thrown).hasMessageThat().contains("empty");
+  }
+
+  @Test
+  public void doubleQuotedIdentifier_containsBacktick_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class, () -> SafeSql.of("select * from \"{tbl}\"", "`a`b`"));
+    assertThat(thrown).hasMessageThat().contains("\"{tbl}\"");
+    assertThat(thrown).hasMessageThat().contains("a`b");
+  }
+
+  @Test
+  public void doubleQuotedIdentifier_containsDoubleQuote_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class, () -> SafeSql.of("select * from \"{tbl}\"", "a\"b"));
+    assertThat(thrown).hasMessageThat().contains("\"{tbl}\"");
+    assertThat(thrown).hasMessageThat().contains("a\"b");
+  }
+
+  @Test
+  public void doubleQuotedIdentifier_containsBackslash_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class, () -> SafeSql.of("select * from \"{tbl}\"", "a\\b"));
+    assertThat(thrown).hasMessageThat().contains("\"{tbl}\"");
+    assertThat(thrown).hasMessageThat().contains("a\\b");
+  }
+
+  @Test
+  public void doubleQuotedIdentifier_containsSingleQuote_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class, () -> SafeSql.of("select * from \"{tbl}\"", "a'b"));
+    assertThat(thrown).hasMessageThat().contains("\"{tbl}\"");
+    assertThat(thrown).hasMessageThat().contains("a'b");
+  }
+
+  @Test
+  public void doubleQuotedIdentifier_containsNewLine_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class, () -> SafeSql.of("select * from \"{tbl}\"", "a\nb"));
+    assertThat(thrown).hasMessageThat().contains("\"{tbl}\"");
+    assertThat(thrown).hasMessageThat().contains("a\nb");
+  }
+
+  @Test
   public void backquotedIdentifier_string() {
     SafeSql sql = SafeSql.of("select * from `{tbl}`", "Users");
     assertThat(sql.toString()).isEqualTo("select * from `Users`");
@@ -517,7 +579,7 @@ public class SafeSqlTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> SafeSql.of("SELECT \"{...}\" WHERE TRUE", asList(SafeSql.of("1"))));
-    assertThat(thrown).hasMessageThat().contains("SafeSql should not be quoted: \"{...}\"");
+    assertThat(thrown).hasMessageThat().contains("{...}[0] expected to be String");
   }
 
   @Test
