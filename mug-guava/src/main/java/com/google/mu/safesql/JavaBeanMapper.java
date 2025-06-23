@@ -61,30 +61,30 @@ final class JavaBeanMapper<T> extends ResultMapper<T> {
 
   @Override T from(ResultSet row) throws SQLException {
     ImmutableSet<String> columnNames = getCanonicalColumnNames(row.getMetaData());
-    T bean;
     try {
-      bean = defaultConstructor.newInstance();
+      T bean = defaultConstructor.newInstance();
+      if (columnNames.size() >= setters.size()) { // full population
+        for (Map.Entry<String, Populator> property : setters.entrySet()) {
+          property.getValue().populate(bean, row, property.getKey());
+        }
+      } else { // sparsely populate from the columns
+        for (String name : columnNames) {
+          Populator populator = setters.get(name);
+          checkArgument(
+              populator != null,
+              "No settable property is defined by %s for column %s", beanClass, name);
+          populator.populate(bean, row, name);
+        }
+      }
+      return bean;
     } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
       throw new VerifyException(e);
     }
-    if (columnNames.size() >= setters.size()) { // full population
-      for (Map.Entry<String, Populator> property : setters.entrySet()) {
-        property.getValue().populate(bean, row, property.getKey());
-      }
-    } else { // sparsely populate from the columns
-      for (String name : columnNames) {
-        Populator populator = setters.get(name);
-        checkArgument(
-            populator != null,
-            "No settable property is defined by %s for column %s", beanClass, name);
-        populator.populate(bean, row, name);
-      }
-    }
-    return bean;
   }
 
   private interface Populator {
-    void populate(Object bean, ResultSet row, String columnName) throws SQLException;
+    void populate(Object bean, ResultSet row, String columnName)
+        throws SQLException, InvocationTargetException, IllegalAccessException;
 
     static Populator of(PropertyDescriptor property) {
       Method setter = requireNonNull(property.getWriteMethod());
@@ -92,14 +92,9 @@ final class JavaBeanMapper<T> extends ResultMapper<T> {
       Class<?> type = property.getPropertyType();
       return (bean, row, columnName) -> {
         Object value = row.getObject(columnName, Primitives.wrap(type));
-        if (value == null && type.isPrimitive()) {
-          // for primitive, if the value is null, don't call setter.
-          return;
-        }
-        try {
+        // for primitive, if the value is null, don't call setter.
+        if (value != null || !type.isPrimitive()) {
           setter.invoke(bean, value);
-        } catch (InvocationTargetException | IllegalAccessException e) {
-          throw new VerifyException(e);
         }
       };
     }
