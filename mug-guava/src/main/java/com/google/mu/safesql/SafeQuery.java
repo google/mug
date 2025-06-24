@@ -80,10 +80,12 @@ import com.google.mu.util.Substring;
  * <p>This class is Android compatible.
  *
  * @since 7.0
+ * @deprecated You most likely need {@link SafeSql}. The SafeQuery use case is too niche
  */
 @RequiresGuava
 @Immutable
 @CheckReturnValue
+@Deprecated
 public final class SafeQuery {
   /**
    * An empty query string.
