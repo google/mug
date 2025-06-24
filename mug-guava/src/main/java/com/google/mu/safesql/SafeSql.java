@@ -807,17 +807,15 @@ public final class SafeSql {
    * <p>The rules of mapping query columns to Java Bean properties are:
    * <ul>
    * <li>Case doesn't matter. {@code job_id} will match {@code jobId} or {@code JOB_ID}.
-   * <li>It's okay if a query column doesn't map to a bean property, as long as all settable
-   *     bean properties are mapped to a query column. The column value will just be ignored.
-   * <li>It's okay if a bean property doesn't map to a query column, as long as all query
-   *     columns have been mapped to a bean property.
+   * <li>The column names can be a superset, or a subset of the bean property names.
+   *     This allows you to use "select *" in the query (when performance isn't a concern),
+   *     or use a generic Java bean that may have more properties than some individual queries.
    * <li>If a bean property is of primitive type, and the corresponding query column value
    *     is null, the property will be left as is.
-   * <li>If you can't make a bean property match a query column, you can annotate the setter method
-   *     with the {@code @SqlName} annotation to customize the column name.
-   * <li>Exception will be thrown if a column doesn't map to a settable property, yet
-   *     there are properties not being populated, because this often is a result of
-   *     programming error. For example, you may have renamed a property but forgot to rename the
+   * <li>If you can't make a bean property match a query column, consider annotating the setter
+   *     method with the {@code @SqlName} annotation to customize the column name.
+   * <li>Exception will be thrown if a column doesn't map to a settable property, and the columns
+   *     aren't a superset. For example, you may have renamed a property but forgot to rename the
    *     corresponding query column. In such case, failing loudly and clearly is safer than letting
    *     the program silently run with corrupted state.
    * </ul>
