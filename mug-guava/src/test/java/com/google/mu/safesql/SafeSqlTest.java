@@ -98,6 +98,117 @@ public class SafeSqlTest {
   }
 
   @Test
+  @SuppressWarnings("LabsStringFormatArgsCheck")
+  public void optionalOperator_present() {
+    Optional<Integer> id = Optional.of(123);
+    assertThat(SafeSql.of("SELECT {id? -> id? AS id,} name FROM tbl", id))
+        .isEqualTo(SafeSql.of("SELECT {id} AS id, name FROM tbl", id.get()));
+  }
+
+  @Test
+  @SuppressWarnings("StringFormatArgsCheck")
+  public void optionalOperator_absent() {
+    Optional<Integer> id = Optional.empty();
+    assertThat(SafeSql.of("SELECT { id? -> id? AS id,} name FROM tbl", id))
+        .isEqualTo(SafeSql.of("SELECT  name FROM tbl"));
+  }
+
+  @Test
+  @SuppressWarnings("LabsStringFormatArgsCheck")
+  public void optionalOperator_withLikeOperator_present() {
+    Optional<String> name = Optional.of("foo");
+    assertThat(SafeSql.of("SELECT * FROM tbl WHERE 1=1 {name? -> AND name LIKE '%name?%'}", name))
+        .isEqualTo(SafeSql.of("SELECT * FROM tbl WHERE 1=1 AND name LIKE '%{name}%'", name.get()));
+  }
+
+  @Test
+  @SuppressWarnings("LabsStringFormatArgsCheck")
+  public void optionalOperator_withLikeOperator_absent() {
+    Optional<String> name = Optional.empty();
+    assertThat(SafeSql.of("SELECT * FROM tbl WHERE 1=1 {name? -> AND name LIKE '%name?%'}", name))
+        .isEqualTo(SafeSql.of("SELECT * FROM tbl WHERE 1=1 "));
+  }
+
+  @Test
+  @SuppressWarnings("StringFormatArgsCheck")
+  public void optionalOperator_trailingSpaceAndNewlinesIgnored() {
+    Optional<Integer> id = Optional.of(123);
+    assertThat(SafeSql.of("SELECT {id? -> id? AS id, \n} name FROM tbl", id))
+        .isEqualTo(SafeSql.of("SELECT {id} AS id, name FROM tbl", id.get()));
+  }
+
+  @Test
+  @SuppressWarnings("StringFormatArgsCheck")
+  public void optionalOperator_parameterReferencedMoreThanOnce() {
+    Optional<Integer> id = Optional.of(123);
+    assertThat(
+            SafeSql.of(
+                "SELECT {id? -> IFNULL(id?, NULL, id?) AS id,} name FROM tbl", id))
+        .isEqualTo(
+            SafeSql.of(
+                "SELECT IFNULL({id}, NULL, {id}) AS id, name FROM tbl", id.get(), id.get()));
+  }
+
+  @Test
+  @SuppressWarnings("StringFormatArgsCheck")
+  public void optionalOperator_missingQuestionMark() {
+    Optional<Integer> id = Optional.empty();
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> SafeSql.of("SELECT {id -> id AS id,} name FROM tbl", id));
+    assertThat(thrown).hasMessageThat().contains("{id->}");
+    assertThat(thrown).hasMessageThat().contains("followed by '?'");
+  }
+
+  @Test
+  @SuppressWarnings("StringFormatArgsCheck")
+  public void optionalOperator_redundantQuestionMark() {
+    Optional<Integer> id = Optional.empty();
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> SafeSql.of("SELECT {id?? -> id AS id,} name FROM tbl", id));
+    assertThat(thrown).hasMessageThat().contains("{id??->}");
+    assertThat(thrown).hasMessageThat().contains("followed by '?'");
+  }
+
+  @Test
+  @SuppressWarnings("StringFormatArgsCheck")
+  public void optionalOperator_spaceInTheMiddleOfName() {
+    Optional<Integer> id = Optional.empty();
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> SafeSql.of("SELECT {the id? -> id AS id,} name FROM tbl", id));
+    assertThat(thrown).hasMessageThat().contains("{the id?->}");
+    assertThat(thrown).hasMessageThat().contains("followed by '?'");
+  }
+
+  @Test
+  @SuppressWarnings("StringFormatArgsCheck")
+  public void optionalOperator_typoInParameterName() {
+    Optional<Integer> id = Optional.empty();
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> SafeSql.of("SELECT {id? -> bad_id? AS id,} name FROM tbl", id));
+    assertThat(thrown).hasMessageThat().contains("bad_id?");
+  }
+
+  @Test
+  @SuppressWarnings("StringFormatArgsCheck")
+  public void optionalOperator_missingQuestionMarkInReference() {
+    Optional<Integer> id = Optional.empty();
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> SafeSql.of("SELECT {id? -> id AS id,} name FROM tbl", id));
+    assertThat(thrown).hasMessageThat().contains("{id?->}");
+    assertThat(thrown).hasMessageThat().contains("at least once");
+  }
+
+  @Test
   public void backquotedEnumParameter() {
     SafeSql sql = SafeSql.of(
         "select `{column}` from Users",
