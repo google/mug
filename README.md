@@ -82,7 +82,7 @@ Protobuf utils ([javadoc](https://google.github.io/mug/apidocs/com/google/mu/pro
   </dependency>
 ```
 
-Guava add-ons (with [`SafeSql`](https://google.github.io/mug/apidocs/com/google/mu/safesql/SafeSql.html), [`SafeQuery`](https://google.github.io/mug/apidocs/com/google/mu/safesql/SafeQuery.html) and [`GoogleSql`](https://google.github.io/mug/apidocs/com/google/mu/safesql/GoogleSql.html)):
+Guava add-ons ([`SafeSql`](https://google.github.io/mug/apidocs/com/google/mu/safesql/SafeSql.html)):
 ```
   <dependency>
     <groupId>com.google.mug</groupId>

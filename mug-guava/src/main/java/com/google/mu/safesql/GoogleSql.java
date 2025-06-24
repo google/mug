@@ -32,9 +32,11 @@ import com.google.mu.util.Substring;
  * Facade class providing {@link SafeQuery} templates for GoogleSQL.
  *
  * @since 7.0
+ * @deprecated You most likely need {@link SafeSql}. The GoogleSql use case is too niche
  */
 @RequiresGuava
 @CheckReturnValue
+@Deprecated
 public final class GoogleSql {
   private static final DateTimeFormatter LOCAL_DATE_TIME_FORMATTER =
       DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss[.SSSSSS]");
