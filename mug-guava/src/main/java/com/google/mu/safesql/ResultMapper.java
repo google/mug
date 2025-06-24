@@ -163,7 +163,6 @@ abstract class ResultMapper<T> {
     }
   }
 
-
   /** Returns the label-to-typename mapping of all columns, in encounter order. */
   static ImmutableSet<String> getCanonicalColumnNames(ResultSetMetaData metadata)
       throws SQLException {
