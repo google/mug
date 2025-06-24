@@ -979,7 +979,7 @@ public final class SafeSql {
    * }
    * }</pre>
    *
-   * <pYou can also map the result rows to Java Beans, similar to {@link #query(Connection, Class)}.
+   * <p>You can also map the result rows to Java Beans, similar to {@link #query(Connection, Class)}.
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    * @since 8.7
