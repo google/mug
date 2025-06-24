@@ -793,9 +793,7 @@ public final class SafeSql {
    *     .query(connection, String.class);
    * }</pre>
    *
-   * <p>You can also map the result rows to Java Beans, like:
-   *
-   * <p>For example: <pre>{@code
+   * <p>You can also map the result rows to Java Beans, for example: <pre>{@code
    * List<UserBean> users =
    *     SafeSql.of("SELECT id, name FROM Users WHERE name LIKE '%{name}%'", name)
    *         .query(connection, UserBean.class);
