@@ -77,6 +77,32 @@ import com.google.mu.util.stream.BiStream;
  * The main use case though, is to be able to compose subqueries and leaf-level parameters with an
  * intuitive templating API.
  *
+ * <p>The syntax to create a SQL with JDBC parameters, and potentially with dynamic SQL arguments (such
+ * as column names) is as simple and intuitive as the following example: <pre>{@code
+ * List<String> groupColumns = ...;
+ * SafeSql sql = SafeSql.of(
+ *     """
+ *     SELECT `{group_columns}`, SUM(revenue) AS revenue
+ *     FROM Sales
+ *     WHERE sku = {sku}
+ *     GROUP BY `{group_columns}`
+ *     """,
+ *     groupColumns, sku, groupColumns);
+ * List<RevenueRecord> results = sql.query(connection, RevenueRecord.class);
+ * }</pre>
+ *
+ * <p>By default, all placeholder values are passed as JDBC parameters, unless quoted by backticks
+ * (used by databases like BigQuery, Databricks) or double quotes (used by databases like Oracle,
+ * Microsoft SQL Server or PostgreSQL). These are validated and interpreted as identifiers.
+ *
+ * <p>In the above example, placeholder {@code sku} will be passed as JDBC parameter,
+ * whereas the backtick-quoted {@code groupColumns} string list will be validated and then
+ * used as identifiers.
+ *
+ * <p>Except the placeholders, everything outside the curly braces are strictly WYSIWYG
+ * (what you see is what you get), so you can copy paste them between the Java code and your SQL
+ * console for quick testing and debugging.
+ *
  * <dl><dt><STRONG>The {@code IN} Operator</STRONG></dt></dl>
  *
  * A common dynamic SQL use case is to use the {@code IN} SQL operator:
@@ -133,7 +159,7 @@ import com.google.mu.util.stream.BiStream;
  *             <path>
  *               <groupId>com.google.mug</groupId>
  *               <artifactId>mug-errorprone</artifactId>
- *               <version>8.6</version>
+ *               <version>8.7</version>
  *             </path>
  *           </annotationProcessorPaths>
  *         </configuration>
