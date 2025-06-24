@@ -9,6 +9,7 @@ import static java.util.stream.Collectors.joining;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
@@ -32,6 +33,7 @@ import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimaps;
+import com.google.common.collect.Sets;
 import com.google.errorprone.BugPattern;
 import com.google.errorprone.BugPattern.LinkType;
 import com.google.errorprone.VisitorState;
@@ -105,6 +107,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
           new TypeName("com.google.mu.util.BiStream"),
           new TypeName("com.google.mu.util.Both"));
   private static final TypeName BOOLEAN_TYPE = TypeName.of(Boolean.class);
+  private static final TypeName OPTIONAL_TYPE = TypeName.of(Optional.class);
   private static final Substring.Pattern ARG_COMMENT = Substring.spanningInOrder("/*", "*/");
 
   @Override
@@ -286,18 +289,41 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
                 placeholder.name(),
                 placeholder.name());
       }
-      if (placeholder.requiresBooleanArg()) {
+      if (placeholder.hasConditionalOperator()) {
         Type argType = ASTHelpers.getType(arg);
         checkingOn(() -> placeholder.sourcePosition(formatExpression, state))
             .require(
                 ASTHelpers.isSameType(argType, state.getSymtab().booleanType, state)
-                    || BOOLEAN_TYPE.isSameType(argType, state),
-                "String format placeholder {%s} (defined as in \"%s\") is expected to be boolean,"
-                    + " whereas argument <%s> is of type %s",
+                    || BOOLEAN_TYPE.isSameType(argType, state)
+                    || OPTIONAL_TYPE.isSameType(argType, state),
+                "String format placeholder {%s} (defined as in \"%s\") is expected to be boolean or"
+                    + " Optional, whereas argument <%s> is of type %s",
                 placeholder.name(),
                 placeholder,
                 arg,
                 argType);
+        if (OPTIONAL_TYPE.isSameType(argType, state)) {
+          checkingOn(() -> placeholder.sourcePosition(formatExpression, state))
+              .require(
+                  placeholder.hasOptionalParameter(),
+                  "optional parameter {%s->} must be an identifier followed by a '?'",
+                  placeholder.name())
+              .require(
+                  !placeholder.optionalParametersFromOperatorRhs().isEmpty(),
+                  "optional parameter %s must be referenced at least once to the right of"
+                      + " {%s->}",
+                  placeholder.name(),
+                  placeholder.name())
+              .require(
+                  placeholder
+                      .optionalParametersFromOperatorRhs()
+                      .equals(ImmutableSet.of(placeholder.name())),
+                  "unexpected optional parameters to the right of {%s->}: %s",
+                  placeholder.name(),
+                  Sets.difference(
+                      placeholder.optionalParametersFromOperatorRhs(),
+                      ImmutableSet.of(placeholder.name())));
+        }
       }
     }
     checkingOn(invocation)
