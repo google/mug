@@ -77,6 +77,32 @@ import com.google.mu.util.stream.BiStream;
  * The main use case though, is to be able to compose subqueries and leaf-level parameters with an
  * intuitive templating API.
  *
+ * <p>The syntax to create a SQL with JDBC parameters, and potentially with dynamic SQL arguments (such
+ * as column names) is as simple and intuitive as the following example: <pre>{@code
+ * List<String> groupColumns = ...;
+ * SafeSql sql = SafeSql.of(
+ *     """
+ *     SELECT `{group_columns}`, SUM(revenue) AS revenue
+ *     FROM Sales
+ *     WHERE sku = {sku}
+ *     GROUP BY `{group_columns}`
+ *     """,
+ *     groupColumns, sku, groupColumns);
+ * List<RevenueRecord> results = sql.query(connection, RevenueRecord.class);
+ * }</pre>
+ *
+ * <p>By default, all placeholder values are passed as JDBC parameters, unless quoted by backticks
+ * (used by databases like BigQuery, Databricks) or double quotes (used by databases like Oracle,
+ * Microsoft SQL Server or PostgreSQL). These are validated and interpreted as identifiers.
+ *
+ * <p>In the above example, placeholder {@code sku} will be passed as JDBC parameter,
+ * whereas the backtick-quoted {@code groupColumns} string list will be validated and then
+ * used as identifiers.
+ *
+ * <p>Except the placeholders, everything outside the curly braces are strictly WYSIWYG
+ * (what you see is what you get), so you can copy paste them between the Java code and your SQL
+ * console for quick testing and debugging.
+ *
  * <dl><dt><STRONG>The {@code IN} Operator</STRONG></dt></dl>
  *
  * A common dynamic SQL use case is to use the {@code IN} SQL operator:
@@ -133,7 +159,7 @@ import com.google.mu.util.stream.BiStream;
  *             <path>
  *               <groupId>com.google.mug</groupId>
  *               <artifactId>mug-errorprone</artifactId>
- *               <version>8.6</version>
+ *               <version>8.7</version>
  *             </path>
  *           </annotationProcessorPaths>
  *         </configuration>
@@ -220,7 +246,8 @@ import com.google.mu.util.stream.BiStream;
  * inherently dynamic and untrusted.
  *
  * <p>The safe way to parameterize dynamic strings as <em>identifiers</em> is to backtick-quote
- * their placeholders in the SQL template. For example: <pre>{@code
+ * their placeholders in the SQL template (if you use Oracle, PostgreSQL that use double quotes for
+ * identifier, use double quotes instead). For example: <pre>{@code
  *   SafeSql.of("SELECT `{columns}` FROM Users", request.getColumns())
  * }</pre>
  * The backticks tell SafeSql that the string is supposed to be an identifier (or a list of
@@ -507,6 +534,10 @@ public final class SafeSql {
                 "boolean placeholder {%s->} shouldn't be backtick quoted",
                 conditional.before());
             checkArgument(
+                !placeholder.isImmediatelyBetween("\"", "\""),
+                "boolean placeholder {%s->} shouldn't be double quoted",
+                conditional.before());
+            checkArgument(
                 value != null,
                 "boolean placeholder {%s->} cannot be used with a null value",
                 conditional.before());
@@ -540,6 +571,11 @@ public final class SafeSql {
                   eachPlaceholderValue(placeholder, elements)
                       .mapToObj(SafeSql::mustBeIdentifier)
                       .collect(Collectors.joining("`, `")));
+            } else if (placeholder.isImmediatelyBetween("\"", "\"")) {
+              builder.appendSql(
+                  eachPlaceholderValue(placeholder, elements)
+                      .mapToObj(SafeSql::mustBeIdentifier)
+                      .collect(Collectors.joining("\", \"")));
             } else if (lookaround("IN (", placeholder, ")")) {
               builder.addSubQuery(
                   eachPlaceholderValue(placeholder, elements)
@@ -559,6 +595,10 @@ public final class SafeSql {
             String identifier = mustBeIdentifier("`" + placeholder + "`", value);
             checkArgument(identifier.length() > 0, "`%s` cannot be empty", placeholder);
             builder.appendSql("`" + identifier + "`");
+          } else if (appendBeforeQuotedPlaceholder("\"", placeholder, "\"")) {
+            String identifier = mustBeIdentifier("\"" + placeholder + "\"", value);
+            checkArgument(identifier.length() > 0, "\"%s\" cannot be empty", placeholder);
+            builder.appendSql("\"" + identifier + "\"");
           } else if (lookbehind("LIKE '%", placeholder)
               && appendBeforeQuotedPlaceholder("'%", placeholder, "%'")) {
             rejectEscapeAfter(placeholder);
@@ -753,6 +793,36 @@ public final class SafeSql {
    *     .query(connection, String.class);
    * }</pre>
    *
+   * <p>You can also map the result rows to Java Beans, like:
+   *
+   * <p>For example: <pre>{@code
+   * List<UserBean> users =
+   *     SafeSql.of("SELECT id, name FROM Users WHERE name LIKE '%{name}%'", name)
+   *         .query(connection, UserBean.class);
+   *
+   * public class UserBean {
+   *   public void setId(long id) {...}
+   *   public void setName(String name) {...}
+   * }
+   * }</pre>
+   *
+   * <p>The rules of mapping query columns to Java Bean properties are:
+   * <ul>
+   * <li>Case doesn't matter. {@code job_id} will match {@code jobId} or {@code JOB_ID}.
+   * <li>It's okay if a query column doesn't map to a bean property, as long as all settable
+   *     bean properties are mapped to a query column. The column value will just be ignored.
+   * <li>It's okay if a bean property doesn't map to a query column, as long as all query
+   *     columns have been mapped to a bean property.
+   * <li>If a bean property is of primitive type, and the corresponding query column value
+   *     is null, the property will be left as is.
+   * <li>If you can't make a bean property match a query column, you can annotate the setter method
+   *     with the {@code @SqlName} annotation to customize the column name.
+   * <li>Exception will be thrown if a column doesn't map to a settable property, yet
+   *     there are properties not being populated, because this often is a result of
+   *     programming error. For example, you may have renamed a property but forgot to rename the
+   *     corresponding query column. In such case, failing loudly and clearly is safer than letting
+   *     the program silently run with corrupted state.
+   * </ul>
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    * @since 8.7
@@ -832,6 +902,8 @@ public final class SafeSql {
    * }
    * }</pre>
    *
+   * <p>You can also map the result rows to Java Beans, similar to {@link #query(Connection, Class)}.
+   *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    * @since 8.7
    */
@@ -906,6 +978,8 @@ public final class SafeSql {
    *   return birthdays.findFirst();
    * }
    * }</pre>
+   *
+   * <pYou can also map the result rows to Java Beans, similar to {@link #query(Connection, Class)}.
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    * @since 8.7
