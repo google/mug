@@ -448,6 +448,8 @@ public final class SafeSql {
    * <p>Needed because the SQL Server JDBC driver doesn't support parameterizing the TOP number
    * through {@link PreparedStatement} API.
    *
+   * <p>Although, you should generally use the OFFSET-FETCH syntax, which supports parameterization.
+   *
    * @throws IllegalArgumentException if {@code number} is negative
    */
   public static SafeSql nonNegativeLiteral(int number) {
@@ -1144,7 +1146,7 @@ public final class SafeSql {
             }
             checkArgument(
                 value instanceof Boolean,
-                "boolean placeholder {%s->} can only be used with a boolean or Optional value; %s encountered.",
+                "conditional placeholder {%s->} can only be used with a boolean or Optional value; %s encountered.",
                 conditional.before(),
                 value.getClass().getName());
             builder.appendSql(texts.pop());
