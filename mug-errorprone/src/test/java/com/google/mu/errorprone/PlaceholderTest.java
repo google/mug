@@ -53,37 +53,63 @@ public final class PlaceholderTest {
   }
 
   @Test
-  public void toString_multiLinePlaceholder() {
-    Placeholder placeholder =
-        placeholder(
-            Substring.spanningInOrder("{", "}"), "SELECT\n {foo -> \nbar,\nbaz,}\n FROM tbl");
-    assertThat(placeholder.toString()).isEqualTo("... <{foo -> \nbar,\nbaz,}>...");
-  }
-
-  @Test
-  public void requiresBooleanArg_regularPlaceholder() {
+  public void hasConditionalOperator_regularPlaceholder() {
     Placeholder placeholder = placeholder("{foo}", "my {foo}-{bar}");
-    assertThat(placeholder.requiresBooleanArg()).isFalse();
+    assertThat(placeholder.hasConditionalOperator()).isFalse();
   }
 
   @Test
-  public void requiresBooleanArg_equalOperatorIsNotBooleanType() {
-    assertThat(placeholder("{foo=bar}").requiresBooleanArg()).isFalse();
+  public void hasConditionalOperator_equalOperatorIsNotBooleanType() {
+    assertThat(placeholder("{foo=bar}").hasConditionalOperator()).isFalse();
   }
 
   @Test
-  public void requiresBooleanArg_arrowOperatorIsBooleanType() {
-    assertThat(placeholder("{foo->bar}").requiresBooleanArg()).isTrue();
+  public void hasConditionalOperator_arrowOperatorIsBooleanType() {
+    assertThat(placeholder("{foo->bar}").hasConditionalOperator()).isTrue();
   }
 
   @Test
-  public void requiresBooleanArg_arrowOperatorAfterEqualOperatorIsNotBooleanType() {
-    assertThat(placeholder("{foo=a->b}").requiresBooleanArg()).isFalse();
+  public void hasConditionalOperator_arrowOperatorAfterEqualOperatorIsNotBooleanType() {
+    assertThat(placeholder("{foo=a->b}").hasConditionalOperator()).isFalse();
   }
 
   @Test
-  public void requiresBooleanArg_arrowOperatorBeforeEqualOperatorIsBooleanType() {
-    assertThat(placeholder("{foo->a=b}").requiresBooleanArg()).isTrue();
+  public void hasConditionalOperator_arrowOperatorBeforeEqualOperatorIsBooleanType() {
+    assertThat(placeholder("{foo->a=b}").hasConditionalOperator()).isTrue();
+  }
+
+  @Test
+  public void hasOptionalParameter_noQuestionMark_not() {
+    assertThat(placeholder("{foo->a=b}").hasOptionalParameter()).isFalse();
+  }
+
+  @Test
+  public void hasOptionalParameter_notProperWord_not() {
+    assertThat(placeholder("{foo-bar?->a=b}").hasOptionalParameter()).isFalse();
+  }
+
+  @Test
+  public void hasOptionalParameter_properWordWithQuestionMark_yes() {
+    assertThat(placeholder("{optional_bar? -> a=b}").hasOptionalParameter()).isTrue();
+  }
+
+  @Test
+  public void optionalParametersFromOperatorRhs_none() {
+    assertThat(placeholder("{optional_bar? -> a=b}").optionalParametersFromOperatorRhs()).isEmpty();
+  }
+
+  @Test
+  public void optionalParametersFromOperatorRhs_one() {
+    assertThat(placeholder("{optional_bar? -> optional_bar?}").optionalParametersFromOperatorRhs())
+        .containsExactly("optional_bar?")
+        .inOrder();
+  }
+
+  @Test
+  public void optionalParametersFromOperatorRhs_two() {
+    assertThat(placeholder("{optional_bar? -> a?=b?}").optionalParametersFromOperatorRhs())
+        .containsExactly("a?", "b?")
+        .inOrder();
   }
 
   @Test

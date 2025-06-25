@@ -1,13 +1,17 @@
 package com.google.mu.errorprone;
 
 import static com.google.common.base.CharMatcher.whitespace;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.mu.util.Substring.before;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.firstOccurrence;
+import static com.google.mu.util.Substring.word;
+import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 
 import java.util.stream.Stream;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableSet;
 import com.google.mu.util.Substring;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.fixes.FixedPosition;
@@ -24,11 +28,15 @@ final class Placeholder {
   private static final Substring.Pattern PLACEHOLDER_NAME_END =
       Stream.of("=", "->", ":").map(Substring::first).collect(firstOccurrence());
 
+  private static final Substring.Pattern OPTIONAL_PARAMETER =
+      word().immediatelyBetween("", INCLUSIVE, "?", INCLUSIVE);
+
+  private final String placeholderText;
   private final Substring.Match match;
   private final String name;
 
   Placeholder(Substring.Match match) {
-    String placeholderText = match.skip(1, 1).toString();
+    this.placeholderText = match.skip(1, 1).toString();
     this.match = match;
     this.name =
         before(PLACEHOLDER_NAME_END)
@@ -43,6 +51,19 @@ final class Placeholder {
 
   Substring.Match match() {
     return match;
+  }
+
+  /** Returns true if the placeholder is of the form {foo? -> ...} */
+  boolean hasOptionalParameter() {
+    return hasConditionalOperator() && OPTIONAL_PARAMETER.from(name).orElse("").equals(name);
+  }
+
+  /** Returns all the foo?, bar? references from the rhs of the -> operator */
+  ImmutableSet<String> optionalParametersFromOperatorRhs() {
+    return PLACEHOLDER_NAME_END
+        .in(placeholderText)
+        .map(op -> OPTIONAL_PARAMETER.repeatedly().from(op.after()).collect(toImmutableSet()))
+        .orElse(ImmutableSet.of());
   }
 
   /**
@@ -69,7 +90,7 @@ final class Placeholder {
         .orElse(0);
   }
 
-  boolean requiresBooleanArg() {
+  boolean hasConditionalOperator() {
     return PLACEHOLDER_NAME_END.from(match).orElse("").equals("->");
   }
 

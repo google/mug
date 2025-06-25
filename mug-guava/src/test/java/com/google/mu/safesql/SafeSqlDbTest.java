@@ -344,6 +344,20 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .containsExactly(new Item(testId(), "bar", barTime.toInstant()));
   }
 
+  @Test public void query_withResultType_superfluousColumnIgnored() throws Exception {
+    ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
+    assertThat(
+            SafeSql.of(
+                "insert into ITEMS(id, title, time, item_uuid) VALUES({id}, {title}, {time}, {uuid})",
+                testId(), "bar", barTime, "uuid")
+                .update(connection()))
+        .isEqualTo(1);
+    assertThat(
+            SafeSql.of("select id, time, title, item_uuid from ITEMS where id = {id}", testId())
+                .query(connection(), Item.class))
+        .containsExactly(new Item(testId(), "bar", barTime.toInstant()));
+  }
+
   @Test public void query_withResultType_toStringResults() throws Exception {
     ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
     assertThat(
@@ -584,6 +598,29 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .containsExactly(bean);
   }
 
+  @Test public void query_withResultBeanType_columnLabelInCamelCase() throws Exception {
+    ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title, time, item_uuid) VALUES({id}, {title}, {time}, {uuid})",
+                    testId(), "bar", barTime, "uuid")
+                .update(connection()))
+        .isEqualTo(1);
+    ItemBean bean = new ItemBean();
+    bean.setId(testId());
+    bean.setItemUuid("uuid");
+    bean.setTime(barTime.toInstant());
+    bean.setTitle("bar");
+    assertThat(
+            SafeSql.of("select id, time, title, item_uuid AS itemUuid from ITEMS where id = {id}", testId())
+                .query(connection(), ItemBean.class))
+        .containsExactly(bean);
+    assertThat(
+            SafeSql.of("select id, time, title, item_uuid AS ItemUuid from ITEMS where id = {id}", testId())
+                .queryLazily(connection(), 2, ItemBean.class)
+                .collect(toList()))
+        .containsExactly(bean);
+  }
+
   @Test public void query_withResultBeanType_columnsFewerThanProperties() throws Exception {
     ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
     assertThat(
@@ -726,6 +763,10 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
 
     Item(@SqlName("id") int id, @SqlName("title") String title) {
       this(id, title, null);
+    }
+
+    Item() {
+      this(0, "", Instant.EPOCH);
     }
 
     @Override public boolean equals(Object that) {

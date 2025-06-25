@@ -6,10 +6,11 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.mu.util.Substring.after;
 import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.stream.BiStream.groupingBy;
-import static com.google.mu.util.stream.GuavaCollectors.flatteningToImmutableListMultimap;
+import static com.google.mu.util.stream.GuavaCollectors.toImmutableSortedMap;
 import static com.google.mu.util.stream.GuavaCollectors.toListOf;
 import static com.google.mu.util.stream.MoreCollectors.partitioningBy;
 import static java.util.Arrays.stream;
+import static java.util.Comparator.naturalOrder;
 import static java.util.stream.Collectors.counting;
 
 import java.lang.reflect.Constructor;
@@ -28,8 +29,8 @@ import java.util.Set;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.VerifyException;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Primitives;
 import com.google.mu.util.CaseBreaker;
@@ -64,7 +65,7 @@ abstract class ResultMapper<T> {
 
   static final class UsingConstructor<T> extends ResultMapper<T> {
     private final Class<T> type;
-    private final ImmutableListMultimap<Integer, Creator<T>> creators;
+    private final ImmutableSortedMap<Integer, List<Creator<T>>> creators;
 
     @SuppressWarnings("unchecked")  // T.getDeclaredConstructors() should return Constructor<T>'s
     UsingConstructor(Class<T> type) {
@@ -73,14 +74,19 @@ abstract class ResultMapper<T> {
           .map(ctor -> (Constructor<T>) ctor)
           .filter(ctor -> !Modifier.isPrivate(ctor.getModifiers()))
           .collect(BiStream.groupingBy(ctor -> ctor.getParameterCount(), toListOf(Creator::new)))
-          .collect(flatteningToImmutableListMultimap(List::stream));
+          .collect(toImmutableSortedMap(naturalOrder()));
       checkArgument(creators.size() > 0, "No accessible constructor from %s", type);
       checkAmbiguities();
     }
 
     @Override T from(ResultSet row) throws SQLException {
       ImmutableSet<String> canonicalColumnNames = getCanonicalColumnNames(row.getMetaData());
-      List<Creator<T>> candidates = creators.get(canonicalColumnNames.size()).stream()
+      Map.Entry<Integer, List<Creator<T>>> band =
+          creators.floorEntry(canonicalColumnNames.size());
+      checkArgument(
+          band != null,
+          "No constructor found from %s suitable for mapping columns: %s", type, canonicalColumnNames);
+      List<Creator<T>> candidates = band.getValue().stream()
           .collect(partitioningBy(Creator::isExplicitlyAnnotated, toImmutableList()))
           .andThen(
               (annotated, unannotated) -> annotated.size() > 0 ? annotated : unannotated);
@@ -90,7 +96,7 @@ abstract class ResultMapper<T> {
     private Creator<T> resolve(List<Creator<T>> candidates, Set<String> columnNames) {
       ImmutableList<Creator<T>> matched =
           candidates.stream()
-              .filter(candidate -> candidate.getCanonicalColumnNames().equals(columnNames))
+              .filter(candidate -> columnNames.containsAll(candidate.getCanonicalColumnNames()))
               .collect(toImmutableList());
       checkArgument(
           matched.size() > 0, "No matching constructor found in %s for columns: %s",
@@ -102,13 +108,15 @@ abstract class ResultMapper<T> {
     }
 
     private void checkAmbiguities() {
-      Map<ImmutableSet<String>, Creator<?>> byCanonicalColumNames = new HashMap<>();
-      for (Creator<?> creator : creators.values()) {
-        ImmutableSet<String> names = creator.getCanonicalColumnNames();
-        Creator<?> dup = byCanonicalColumNames.putIfAbsent(names, creator);
-        checkArgument(
-            dup == null,
-            "Ambiguous constructors in %s matching the same set of column names: %s", type, names);
+      for (List<Creator<T>> candidates : creators.values()) {
+        Map<ImmutableSet<String>, Creator<?>> byCanonicalColumNames = new HashMap<>();
+        for (Creator<?> creator : candidates) {
+          ImmutableSet<String> names = creator.getCanonicalColumnNames();
+          Creator<?> dup = byCanonicalColumNames.putIfAbsent(names, creator);
+          checkArgument(
+              dup == null,
+              "Ambiguous constructors in %s matching the same set of column names: %s", type, names);
+        }
       }
     }
   }
@@ -154,7 +162,6 @@ abstract class ResultMapper<T> {
       return constructor.toString();
     }
   }
-
 
   /** Returns the label-to-typename mapping of all columns, in encounter order. */
   static ImmutableSet<String> getCanonicalColumnNames(ResultSetMetaData metadata)

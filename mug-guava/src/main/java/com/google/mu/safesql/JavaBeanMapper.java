@@ -36,27 +36,26 @@ final class JavaBeanMapper<T> extends ResultMapper<T> {
 
   @SuppressWarnings("unchecked")  // Class<T>.getDeclaredConstructors() must return Constructor<T>
   static <T> Optional<ResultMapper<T>> ofBeanClass(Class<T> beanClass) {
-    return stream(beanClass.getDeclaredConstructors())
-        .filter(ctor -> ctor.getParameterCount() == 0 && !Modifier.isPrivate(ctor.getModifiers()))
-        .findAny()
-        .map(ctor -> {
-          ctor.setAccessible(true);
-          try {
-            return new JavaBeanMapper<T>(
-                beanClass,
-                (Constructor<T>) ctor,
-                biStream(stream(Introspector.getBeanInfo(beanClass).getPropertyDescriptors()))
-                    .filterValues(property -> property.getWriteMethod() != null)
-                    .mapKeys(property -> {
-                      SqlName sqlName = property.getWriteMethod().getAnnotation(SqlName.class);
-                      return canonicalize(sqlName == null ? property.getName() : sqlName.value());
-                    })
-                    .mapValues(Populator::of)
-                    .toMap());
-          } catch (IntrospectionException e) {
-            throw new VerifyException(e);
-          }
-        });
+    try {
+      Map<String, Populator> setters = biStream(stream(Introspector.getBeanInfo(beanClass).getPropertyDescriptors()))
+          .filterValues(property -> property.getWriteMethod() != null)
+          .mapKeys(property -> {
+            SqlName sqlName = property.getWriteMethod().getAnnotation(SqlName.class);
+            return canonicalize(sqlName == null ? property.getName() : sqlName.value());
+          })
+          .mapValues(Populator::of)
+          .toMap();
+      if (setters.isEmpty()) { // no setter? not a Java Bean
+        return Optional.empty();
+      }
+      return stream(beanClass.getDeclaredConstructors())
+          .filter(ctor -> ctor.getParameterCount() == 0 && !Modifier.isPrivate(ctor.getModifiers()))
+          .peek(ctor -> ctor.setAccessible(true))
+          .findAny()
+          .map(ctor -> new JavaBeanMapper<T>(beanClass, (Constructor<T>) ctor, setters));
+    } catch (IntrospectionException e) {
+      throw new VerifyException(e);
+    }
   }
 
   @Override T from(ResultSet row) throws SQLException {
