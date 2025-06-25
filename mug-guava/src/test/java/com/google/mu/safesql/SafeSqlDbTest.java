@@ -732,6 +732,21 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .containsExactly(bean);
   }
 
+  @Test public void query_withResultType_genericBean() throws Exception {
+    StringBean bean = new StringBean();
+    bean.setId(testId());
+    bean.setData("foo");
+    assertThat(
+            SafeSql.of("select {id} AS id, 'foo' AS data", testId())
+                .query(connection(), StringBean.class))
+        .containsExactly(bean);
+    assertThat(
+        SafeSql.of("select {id} AS id, 'foo' AS data", testId())
+            .queryLazily(connection(), StringBean.class)
+            .collect(toList()))
+        .containsExactly(bean);
+  }
+
   @Test public void queryLazily_withResultType_parametersAnnotatedWithSqlName() throws Exception {
     ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
     assertThat(
@@ -944,6 +959,33 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
       return "id=" + id + ", time=" + time;
     }
   }
+
+  static class GenericBean<T> {
+    private int id;
+    private T data;
+
+    public void setId(int id) {
+      this.id = id;
+    }
+
+    public void setData(T data) {
+      this.data = data;
+    }
+
+    @Override public boolean equals(Object that) {
+      return that != null && toString().equals(that.toString());
+    }
+
+    @Override public int hashCode() {
+      return toString().hashCode();
+    }
+
+    @Override public String toString() {
+      return "id=" + id + ", data=" + data;
+    }
+  }
+
+  static class StringBean extends GenericBean<String> {}
 
   private int testId() {
     return Hashing.goodFastHash(32).hashString(testName.getMethodName(), StandardCharsets.UTF_8).asInt();
