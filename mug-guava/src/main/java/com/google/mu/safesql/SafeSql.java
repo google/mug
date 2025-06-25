@@ -712,6 +712,7 @@ public final class SafeSql {
 
   /**
    * Similar to {@link #query(Connection, Class), but with {@code settings}
+   * (can be set via lambda like {@code stmt -> stmt.setMaxRows(100)})
    * to allow customization.
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
@@ -725,7 +726,8 @@ public final class SafeSql {
   }
 
   /**
-   * Executes the encapsulated SQL as a query against {@code connection}, using {@code settings}.
+   * Executes the encapsulated SQL as a query against {@code connection}, using {@code settings}
+   * (can be set via lambda like {@code stmt -> stmt.setMaxRows(100)}).
    * The {@link ResultSet} will be consumed, transformed by {@code rowMapper} and then closed
    * before returning.
    *
@@ -844,7 +846,7 @@ public final class SafeSql {
 
   /**
    * Executes the encapsulated SQL as a query against {@code connection}, with {@code settings}
-   * (can be set via lambda like {@code stmt -> stmt.setFetchSize(100)}, and then fetches the
+   * (can be set via lambda like {@code stmt -> stmt.setFetchSize(100)}), and then fetches the
    * results lazily in a stream.
    *
    * <p>Each result row is transformed into {@code resultType}.
