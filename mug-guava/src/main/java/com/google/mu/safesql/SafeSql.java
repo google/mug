@@ -24,6 +24,7 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Streams.stream;
 import static com.google.mu.safesql.InternalCollectors.skippingEmpty;
 import static com.google.mu.safesql.SafeQuery.checkIdentifier;
+import static com.google.mu.util.Substring.all;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.firstOccurrence;
 import static com.google.mu.util.Substring.prefix;
@@ -1068,12 +1069,16 @@ public final class SafeSql {
   }
 
   /**
-   * Returns the parameter values in the order they occur in the SQL. They are used by methods
-   * like {@link #query query()}, {@link #update update()} or {@link #prepareStatement}  to
-   * populate the {@link PreparedStatement}.
+   * Returns a query string with the parameter values embedded for easier debugging (logging,
+   * testing, golden file etc.). DO NOT use it as the production SQL query because embedding the
+   * parameter values isn't safe from SQL injection.
+   *
+   * @since 8.8
    */
-  List<?> getParameters() {
-    return paramValues;
+  public String debugString() {
+    StringFormat placeholderWithValue = new StringFormat("? /* {...} */");
+    Iterator<?> args = paramValues.iterator();
+    return all("?").replaceAllFrom(sql, q -> placeholderWithValue.format(args.next()));
   }
 
   /**
@@ -1448,7 +1453,7 @@ public final class SafeSql {
 
     @CanIgnoreReturnValue Builder addSubQuery(SafeSql subQuery) {
       safeAppend(subQuery.sql);
-      paramValues.addAll(subQuery.getParameters());
+      paramValues.addAll(subQuery.paramValues);
       return this;
     }
 
