@@ -688,7 +688,7 @@ public final class SafeSql {
    * @since 8.7
    */
   public <T> List<T> query(Connection connection, Class<? extends T> resultType) {
-    return query(connection, ResultMapper.toResultOf(resultType)::from);
+    return query(connection, stmt -> {}, resultType);
   }
 
   /**
@@ -813,7 +813,7 @@ public final class SafeSql {
   @MustBeClosed
   @SuppressWarnings("MustBeClosedChecker")
   public <T> Stream<T> queryLazily(Connection connection, Class<? extends T> resultType) {
-    return queryLazily(connection, ResultMapper.toResultOf(resultType)::from);
+    return queryLazily(connection, stmt -> {}, resultType);
   }
 
   /**
