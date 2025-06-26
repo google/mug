@@ -469,7 +469,7 @@ public final class SafeSql {
    *     SafeSql.optionally("WHERE {filter}", getOptionalWhereClause()));
    * }</pre>
    *
-   * @deprecated Use {@code SafeSql.of("{foo? -> OR foo?}", optionalFoo)} intead of
+   * @deprecated Use {@code SafeSql.of("{foo? -> OR foo?}", optionalFoo)} instead of
    *             {@code optionally("or {foo}", optionalFoo)} because the former allows
    *             you to reference {@code foo?} multiple times in the right hand side snippet.
    */
