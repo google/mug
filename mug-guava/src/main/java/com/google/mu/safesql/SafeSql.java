@@ -468,8 +468,13 @@ public final class SafeSql {
    *     "SELECT * FROM jobs {where}",
    *     SafeSql.optionally("WHERE {filter}", getOptionalWhereClause()));
    * }</pre>
+   *
+   * @deprecated Use {@code SafeSql.of("{foo? -> OR foo?}", optionalFoo)} intead of
+   *             {@code optionally("or {foo}", optionalFoo)} because the former allows
+   *             you to reference {@code foo?} multiple times in the right hand side snippet.
    */
   @TemplateFormatMethod
+  @Deprecated
   @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
   public static SafeSql optionally(
       @TemplateString @CompileTimeConstant String query, Optional<?> param) {
@@ -592,7 +597,7 @@ public final class SafeSql {
    *     CREATE TABLE ...
    *     {cluster_by}
    *     """,
-   *     optionally("CLUSTER BY (`{cluster_columns}`)", nonEmpty(clusterColumns))
+   *     when(enableCluster, "CLUSTER BY (`{cluster_columns}`)", clusterColumns)
    *         .orElse("-- no cluster"));
    * }</pre>
    *
