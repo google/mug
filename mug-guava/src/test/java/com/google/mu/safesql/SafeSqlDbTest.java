@@ -447,6 +447,18 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     assertThat(thrown).hasMessageThat().contains("Void");
   }
 
+  @Test public void query_withMaxRows() throws Exception {
+    ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
+    assertThat(
+            SafeSql.of("select title from (select '{v}' as title union all select 'b' as title) order by title", "a")
+                .query(connection(), stmt -> stmt.setMaxRows(1), String.class))
+        .containsExactly("a");
+    assertThat(
+            SafeSql.of("select title from (select '{v}' as title union all select 'b' as title) order by title", "c")
+                .query(connection(), stmt -> stmt.setMaxRows(1), String.class))
+        .containsExactly("b");
+  }
+
   @Test public void queryLazily_withResultType_toZonedDateTimeResults() throws Exception {
     ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
     assertThat(
@@ -497,24 +509,6 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
             SafeSql.of("select id, time, title from ITEMS where id = {id}", testId())
                 .query(connection(), Item.class))
         .containsExactly(new Item(testId(), "bar", null));
-  }
-
-  @Test public void queryLazily_withResultType_parametersAnnotatedWithSqlName() throws Exception {
-    ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
-    assertThat(
-            SafeSql.of("insert into ITEMS(id, title, time) VALUES({id}, {title}, {time})", testId(), "bar", barTime)
-                .update(connection()))
-        .isEqualTo(1);
-    assertThat(
-            SafeSql.of("select id, time, title from ITEMS where id = {id}", testId())
-                .queryLazily(connection(), Item.class)
-                .collect(toList()))
-        .containsExactly(new Item(testId(), "bar", barTime.toInstant()));
-    assertThat(
-        SafeSql.of("select id, time, title from ITEMS where id = {id}", testId())
-            .queryLazily(connection(), 2, Item.class)
-            .collect(toList()))
-    .containsExactly(new Item(testId(), "bar", barTime.toInstant()));
   }
 
   @Test public void query_withResultType_noNamedParameters_disallowed() throws Exception {
@@ -593,7 +587,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .containsExactly(bean);
     assertThat(
             SafeSql.of("select id, time, title, item_uuid from ITEMS where id = {id}", testId())
-                .queryLazily(connection(), 2, ItemBean.class)
+                .queryLazily(connection(), stmt -> stmt.setFetchSize(2), ItemBean.class)
                 .collect(toList()))
         .containsExactly(bean);
   }
@@ -616,7 +610,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .containsExactly(bean);
     assertThat(
             SafeSql.of("select id, time, title, item_uuid AS ItemUuid from ITEMS where id = {id}", testId())
-                .queryLazily(connection(), 2, ItemBean.class)
+                .queryLazily(connection(), stmt -> stmt.setFetchSize(2), ItemBean.class)
                 .collect(toList()))
         .containsExactly(bean);
   }
@@ -638,7 +632,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .containsExactly(bean);
     assertThat(
             SafeSql.of("select id, time, title from ITEMS where id = {id}", testId())
-                .queryLazily(connection(), 2, ItemBean.class)
+                .queryLazily(connection(), stmt -> stmt.setFetchSize(2), ItemBean.class)
                 .collect(toList()))
         .containsExactly(bean);
   }
@@ -659,7 +653,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .containsExactly(bean);
     assertThat(
             SafeSql.of("select id, time, item_uuid from ITEMS where id = {id}", testId())
-                .queryLazily(connection(), 2, BaseItemBean.class)
+                .queryLazily(connection(), stmt -> stmt.setFetchSize(2), BaseItemBean.class)
                 .collect(toList()))
         .containsExactly(bean);
   }
@@ -736,6 +730,53 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
             SafeSql.of("select id, time, item_uuid from ITEMS where id = {id}", testId())
                 .query(connection(), AnnotatedItemBean.class))
         .containsExactly(bean);
+  }
+
+  @Test public void query_withResultType_genericBean() throws Exception {
+    StringBean bean = new StringBean();
+    bean.setId(testId());
+    bean.setData("foo");
+    assertThat(
+            SafeSql.of("select {id} AS id, 'foo' AS data", testId())
+                .query(connection(), StringBean.class))
+        .containsExactly(bean);
+    assertThat(
+        SafeSql.of("select {id} AS id, 'foo' AS data", testId())
+            .queryLazily(connection(), StringBean.class)
+            .collect(toList()))
+        .containsExactly(bean);
+  }
+
+  @Test public void queryLazily_withResultType_parametersAnnotatedWithSqlName() throws Exception {
+    ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title, time) VALUES({id}, {title}, {time})", testId(), "bar", barTime)
+                .update(connection()))
+        .isEqualTo(1);
+    assertThat(
+            SafeSql.of("select id, time, title from ITEMS where id = {id}", testId())
+                .queryLazily(connection(), Item.class)
+                .collect(toList()))
+        .containsExactly(new Item(testId(), "bar", barTime.toInstant()));
+    assertThat(
+        SafeSql.of("select id, time, title from ITEMS where id = {id}", testId())
+            .queryLazily(connection(), stmt -> stmt.setFetchSize(2), Item.class)
+            .collect(toList()))
+    .containsExactly(new Item(testId(), "bar", barTime.toInstant()));
+  }
+
+  @Test public void queryLazily_withMaxRows() throws Exception {
+    ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
+    assertThat(
+            SafeSql.of("select title from (select '{v}' as title union all select 'b' as title) order by title", "a")
+                .queryLazily(connection(), stmt -> stmt.setMaxRows(1), String.class)
+                .collect(toList()))
+        .containsExactly("a");
+    assertThat(
+            SafeSql.of("select title from (select '{v}' as title union all select 'b' as title) order by title", "c")
+                .queryLazily(connection(), stmt -> stmt.setMaxRows(1), String.class)
+                .collect(toList()))
+        .containsExactly("b");
   }
 
   @Test public void prepareToQuery_withResultType() throws Exception {
@@ -918,6 +959,33 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
       return "id=" + id + ", time=" + time;
     }
   }
+
+  static class GenericBean<T> {
+    private int id;
+    private T data;
+
+    public void setId(int id) {
+      this.id = id;
+    }
+
+    public void setData(T data) {
+      this.data = data;
+    }
+
+    @Override public boolean equals(Object that) {
+      return that != null && toString().equals(that.toString());
+    }
+
+    @Override public int hashCode() {
+      return toString().hashCode();
+    }
+
+    @Override public String toString() {
+      return "id=" + id + ", data=" + data;
+    }
+  }
+
+  static class StringBean extends GenericBean<String> {}
 
   private int testId() {
     return Hashing.goodFastHash(32).hashString(testName.getMethodName(), StandardCharsets.UTF_8).asInt();

@@ -27,28 +27,28 @@ public class SafeSqlTest {
   @Test
   public void emptySql() {
     assertThat(SafeSql.EMPTY.toString()).isEmpty();
-    assertThat(SafeSql.EMPTY.getParameters()).isEmpty();
+    assertThat(SafeSql.EMPTY.debugString()).isEmpty();
   }
 
   @Test
   public void singleStringParameter() {
     SafeSql sql = SafeSql.of("select {str}", "foo");
     assertThat(sql.toString()).isEqualTo("select ?");
-    assertThat(sql.getParameters()).containsExactly("foo");
+    assertThat(sql.debugString()).isEqualTo("select ? /* foo */");
   }
 
   @Test
   public void singleIntParameter() {
     SafeSql sql = SafeSql.of("select {i}", 123);
     assertThat(sql.toString()).isEqualTo("select ?");
-    assertThat(sql.getParameters()).containsExactly(123);
+    assertThat(sql.debugString()).isEqualTo("select ? /* 123 */");
   }
 
   @Test
   public void singleBoolParameter() {
     SafeSql sql = SafeSql.of("select {bool}", true);
     assertThat(sql.toString()).isEqualTo("select ?");
-    assertThat(sql.getParameters()).containsExactly(true);
+    assertThat(sql.debugString()).isEqualTo("select ? /* true */");
   }
 
   @Test
@@ -214,7 +214,7 @@ public class SafeSqlTest {
         "select `{column}` from Users",
         /* columns */ Pii.EMAIL);
     assertThat(sql.toString()).isEqualTo("select `email` from Users");
-    assertThat(sql.getParameters()).isEmpty();
+    assertThat(sql.debugString()).isEqualTo("select `email` from Users");
   }
 
   @Test
@@ -223,7 +223,7 @@ public class SafeSqlTest {
         "select `{columns}` from tbl",
         /* columns */ asList("phone number"));
     assertThat(sql.toString()).isEqualTo("select `phone number` from tbl");
-    assertThat(sql.getParameters()).isEmpty();
+    assertThat(sql.debugString()).isEqualTo("select `phone number` from tbl");
   }
 
   @Test
@@ -232,7 +232,7 @@ public class SafeSqlTest {
         "select `{columns}` from Users",
         /* columns */ asList(Pii.values()));
     assertThat(sql.toString()).isEqualTo("select `ssn`, `email` from Users");
-    assertThat(sql.getParameters()).isEmpty();
+    assertThat(sql.debugString()).isEqualTo("select `ssn`, `email` from Users");
   }
 
   @Test
@@ -241,7 +241,7 @@ public class SafeSqlTest {
         "select `{columns}` from tbl",
         /* columns */ asList("c1", "c2", "c3"));
     assertThat(sql.toString()).isEqualTo("select `c1`, `c2`, `c3` from tbl");
-    assertThat(sql.getParameters()).isEmpty();
+    assertThat(sql.debugString()).isEqualTo("select `c1`, `c2`, `c3` from tbl");
   }
 
   @Test
@@ -300,7 +300,7 @@ public class SafeSqlTest {
         "select {columns} from tbl",
         /* columns */ asList(SafeSql.of("c1"), SafeSql.of("c2")));
     assertThat(sql.toString()).isEqualTo("select c1, c2 from tbl");
-    assertThat(sql.getParameters()).isEmpty();
+    assertThat(sql.debugString()).isEqualTo("select c1, c2 from tbl");
   }
 
   @Test
@@ -344,14 +344,14 @@ public class SafeSqlTest {
   public void singleNullParameter() {
     SafeSql sql = SafeSql.of("select {i}", /* i */ (Integer) null);
     assertThat(sql.toString()).isEqualTo("select ?");
-    assertThat(sql.getParameters()).containsExactly(null);
+    assertThat(sql.debugString()).isEqualTo("select ? /* null */");
   }
 
   @Test
   public void singleLikeParameterWithWildcardAtBothEnds() {
     SafeSql sql = SafeSql.of("select * from tbl where name like '%{s}%'", "foo");
     assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
-    assertThat(sql.getParameters()).containsExactly("%foo%");
+    assertThat(sql.debugString()).isEqualTo("select * from tbl where name like ? /* %foo% */ ESCAPE '^'");
   }
 
   @Test
@@ -382,28 +382,28 @@ public class SafeSqlTest {
   public void literalPercentValueWithWildcardAtBothEnds() {
     SafeSql sql = SafeSql.of("select * from tbl where name like '%{s}%'", "%");
     assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
-    assertThat(sql.getParameters()).containsExactly("%^%%");
+    assertThat(sql.debugString()).isEqualTo("select * from tbl where name like ? /* %^%% */ ESCAPE '^'");
   }
 
   @Test
   public void literalBackslashValueWithWildcardAtBothEnds() {
     SafeSql sql = SafeSql.of("select * from tbl where name like '%{s}%'", "\\");
     assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
-    assertThat(sql.getParameters()).containsExactly("%\\%");
+    assertThat(sql.debugString()).isEqualTo("select * from tbl where name like ? /* %\\% */ ESCAPE '^'");
   }
 
   @Test
   public void literalCaretValueWithWildcardAtBothEnds() {
     SafeSql sql = SafeSql.of("select * from tbl where name like '%{s}%'", "^");
     assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
-    assertThat(sql.getParameters()).containsExactly("%^^%");
+    assertThat(sql.debugString()).isEqualTo("select * from tbl where name like ? /* %^^% */ ESCAPE '^'");
   }
 
   @Test
   public void literalSingleQuoteValueWithWildcardAtBothEnds() {
     SafeSql sql = SafeSql.of("select * from tbl where name like '%{s}%'", "'");
     assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
-    assertThat(sql.getParameters()).containsExactly("%'%");
+    assertThat(sql.debugString()).isEqualTo("select * from tbl where name like ? /* %'% */ ESCAPE '^'");
   }
 
   @Test
@@ -419,35 +419,35 @@ public class SafeSqlTest {
   public void singleLikeParameterWithWildcardAsPrefix() {
     SafeSql sql = SafeSql.of("select * from tbl where name like '%{s}'", "foo");
     assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
-    assertThat(sql.getParameters()).containsExactly("%foo");
+    assertThat(sql.debugString()).isEqualTo("select * from tbl where name like ? /* %foo */ ESCAPE '^'");
   }
 
   @Test
   public void literalPercentValueWithWildcardAtPrefix() {
     SafeSql sql = SafeSql.of("select * from tbl where name like '%{s}'", "%");
     assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
-    assertThat(sql.getParameters()).containsExactly("%^%");
+    assertThat(sql.debugString()).isEqualTo("select * from tbl where name like ? /* %^% */ ESCAPE '^'");
   }
 
   @Test
   public void literalBackslashValueWithWildcardAtPrefix() {
     SafeSql sql = SafeSql.of("select * from tbl where name like '%{s}'", "\\");
     assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
-    assertThat(sql.getParameters()).containsExactly("%\\");
+    assertThat(sql.debugString()).isEqualTo("select * from tbl where name like ? /* %\\ */ ESCAPE '^'");
   }
 
   @Test
   public void literalCaretValueWithWildcardAtPrefix() {
     SafeSql sql = SafeSql.of("select * from tbl where name like '%{s}'", "^");
     assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
-    assertThat(sql.getParameters()).containsExactly("%^^");
+    assertThat(sql.debugString()).isEqualTo("select * from tbl where name like ? /* %^^ */ ESCAPE '^'");
   }
 
   @Test
   public void literalSingleQuoteValueWithWildcardAtPrefix() {
     SafeSql sql = SafeSql.of("select * from tbl where name like '%{s}'", "'");
     assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
-    assertThat(sql.getParameters()).containsExactly("%'");
+    assertThat(sql.debugString()).isEqualTo("select * from tbl where name like ? /* %' */ ESCAPE '^'");
   }
 
   @Test
@@ -463,35 +463,35 @@ public class SafeSqlTest {
   public void singleLikeParameterWithWildcardAsSuffix() {
     SafeSql sql = SafeSql.of("select * from tbl where name like '{s}%'", "foo");
     assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
-    assertThat(sql.getParameters()).containsExactly("foo%");
+    assertThat(sql.debugString()).isEqualTo("select * from tbl where name like ? /* foo% */ ESCAPE '^'");
   }
 
   @Test
   public void literalPercentValueWithWildcardAtSuffix() {
     SafeSql sql = SafeSql.of("select * from tbl where name like '{s}%'", "%");
     assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
-    assertThat(sql.getParameters()).containsExactly("^%%");
+    assertThat(sql.debugString()).isEqualTo("select * from tbl where name like ? /* ^%% */ ESCAPE '^'");
   }
 
   @Test
   public void literalBackslashValueWithWildcardAtSuffix() {
     SafeSql sql = SafeSql.of("select * from tbl where name like '{s}%'", "\\");
     assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
-    assertThat(sql.getParameters()).containsExactly("\\%");
+    assertThat(sql.debugString()).isEqualTo("select * from tbl where name like ? /* \\% */ ESCAPE '^'");
   }
 
   @Test
   public void literalCaretValueWithWildcardAtSuffix() {
     SafeSql sql = SafeSql.of("select * from tbl where name like '{s}%'", "^");
     assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
-    assertThat(sql.getParameters()).containsExactly("^^%");
+    assertThat(sql.debugString()).isEqualTo("select * from tbl where name like ? /* ^^% */ ESCAPE '^'");
   }
 
   @Test
   public void literalSingleQuoteValueWithWildcardAtSuffix() {
     SafeSql sql = SafeSql.of("select * from tbl where name like '{s}%'", "'");
     assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
-    assertThat(sql.getParameters()).containsExactly("'%");
+    assertThat(sql.debugString()).isEqualTo("select * from tbl where name like ? /* '% */ ESCAPE '^'");
   }
 
   @Test
@@ -507,21 +507,21 @@ public class SafeSqlTest {
   public void stringParameterQuoted() {
     SafeSql sql = SafeSql.of("select * from tbl where name = '{s}'", "foo");
     assertThat(sql.toString()).isEqualTo("select * from tbl where name = ?");
-    assertThat(sql.getParameters()).containsExactly("foo");
+    assertThat(sql.debugString()).isEqualTo("select * from tbl where name = ? /* foo */");
   }
 
   @Test
   public void literalPercentValueQuoted() {
     SafeSql sql = SafeSql.of("select * from tbl where name = '{s}'", "%");
     assertThat(sql.toString()).isEqualTo("select * from tbl where name = ?");
-    assertThat(sql.getParameters()).containsExactly("%");
+    assertThat(sql.debugString()).isEqualTo("select * from tbl where name = ? /* % */");
   }
 
   @Test
   public void literalBackslashValueQuoted() {
     SafeSql sql = SafeSql.of("select * from tbl where name = '{s}'", "\\");
     assertThat(sql.toString()).isEqualTo("select * from tbl where name = ?");
-    assertThat(sql.getParameters()).containsExactly("\\");
+    assertThat(sql.debugString()).isEqualTo("select * from tbl where name = ? /* \\ */");
   }
 
   @Test
@@ -537,7 +537,7 @@ public class SafeSqlTest {
   public void doubleQuotedIdentifier_string() {
     SafeSql sql = SafeSql.of("select * from \"{tbl}\"", "Users");
     assertThat(sql.toString()).isEqualTo("select * from \"Users\"");
-    assertThat(sql.getParameters()).isEmpty();
+    assertThat(sql.debugString()).isEqualTo("select * from \"Users\"");
   }
 
   @Test
@@ -599,7 +599,7 @@ public class SafeSqlTest {
   public void backquotedIdentifier_string() {
     SafeSql sql = SafeSql.of("select * from `{tbl}`", "Users");
     assertThat(sql.toString()).isEqualTo("select * from `Users`");
-    assertThat(sql.getParameters()).isEmpty();
+    assertThat(sql.debugString()).isEqualTo("select * from `Users`");
   }
 
   @Test
@@ -816,7 +816,7 @@ public class SafeSqlTest {
     SafeSql sql =
         SafeSql.of("select {label} where id = {id}", /* label */ "foo", /* id */ 123);
     assertThat(sql.toString()).isEqualTo("select ? where id = ?");
-    assertThat(sql.getParameters()).containsExactly("foo", 123).inOrder();
+    assertThat(sql.debugString()).isEqualTo("select ? /* foo */ where id = ? /* 123 */");
   }
 
   @Test
@@ -824,7 +824,7 @@ public class SafeSqlTest {
     SafeSql sql =
         SafeSql.of("select * from {tbl} where id = {id}", /* tbl */ SafeSql.of("Users"), /* id */ 123);
     assertThat(sql.toString()).isEqualTo("select * from Users where id = ?");
-    assertThat(sql.getParameters()).containsExactly(123);
+    assertThat(sql.debugString()).isEqualTo("select * from Users where id = ? /* 123 */");
   }
 
   @Test
@@ -833,7 +833,7 @@ public class SafeSqlTest {
     SafeSql sql =
         SafeSql.of("select * where id = {id} and partner_id = {id}", 123, 456);
     assertThat(sql.toString()).isEqualTo("select * where id = ? and partner_id = ?");
-    assertThat(sql.getParameters()).containsExactly(123, 456).inOrder();
+    assertThat(sql.debugString()).isEqualTo("select * where id = ? /* 123 */ and partner_id = ? /* 456 */");
   }
 
   @Test
@@ -841,7 +841,7 @@ public class SafeSqlTest {
     SafeSql sql =
         SafeSql.of("select * where id = {id} and partner_id = {id}", /* id */ null, /* id */ null);
     assertThat(sql.toString()).isEqualTo("select * where id = ? and partner_id = ?");
-    assertThat(sql.getParameters()).containsExactly(null, null).inOrder();
+    assertThat(sql.debugString()).isEqualTo("select * where id = ? /* null */ and partner_id = ? /* null */");
   }
 
   @Test
@@ -864,7 +864,7 @@ public class SafeSqlTest {
   public void singleStringParameterValueHasQuestionMark() {
     SafeSql sql = SafeSql.of("select {str}", "?");
     assertThat(sql.toString()).isEqualTo("select ?");
-    assertThat(sql.getParameters()).containsExactly("?");
+    assertThat(sql.debugString()).isEqualTo("select ? /* ? */");
   }
 
   @Test
@@ -879,7 +879,7 @@ public class SafeSqlTest {
   public void inListOfParameters_withParameterValues() {
     SafeSql sql = SafeSql.of("select * from tbl where id in ({ids})", /* ids */ asList(1, 2, 3));
     assertThat(sql.toString()).isEqualTo("select * from tbl where id in (?, ?, ?)");
-    assertThat(sql.getParameters()).containsExactly(1, 2, 3).inOrder();
+    assertThat(sql.debugString()).isEqualTo("select * from tbl where id in (? /* 1 */, ? /* 2 */, ? /* 3 */)");
   }
 
   @Test
@@ -887,14 +887,14 @@ public class SafeSqlTest {
     SafeSql sql = SafeSql.of(
         "select * from tbl where id in ({ids})", /* ids */ asList(1, SafeSql.nonNegativeLiteral(2), 3));
     assertThat(sql.toString()).isEqualTo("select * from tbl where id in (?, 2, ?)");
-    assertThat(sql.getParameters()).containsExactly(1, 3).inOrder();
+    assertThat(sql.debugString()).isEqualTo("select * from tbl where id in (? /* 1 */, 2, ? /* 3 */)");
   }
 
   @Test
   public void inListOfQuotedStringParameters() {
     SafeSql sql = SafeSql.of("select * from tbl where id in ('{ids}')", /* ids */ asList("foo", "bar"));
     assertThat(sql.toString()).isEqualTo("select * from tbl where id in (?, ?)");
-    assertThat(sql.getParameters()).containsExactly("foo", "bar").inOrder();
+    assertThat(sql.debugString()).isEqualTo("select * from tbl where id in (? /* foo */, ? /* bar */)");
   }
 
   @Test
@@ -1004,7 +1004,7 @@ public class SafeSqlTest {
             SafeSql.of("a = {v1}", 1), SafeSql.of("b = {v2} OR c = {v3}", 2, 3), SafeSql.of("d = {v4}", 4));
     SafeSql sql = queries.stream().collect(SafeSql.and());
     assertThat(sql.toString()).isEqualTo("(a = ?) AND (b = ? OR c = ?) AND (d = ?)");
-    assertThat(sql.getParameters()).containsExactly(1, 2, 3, 4).inOrder();
+    assertThat(sql.debugString()).isEqualTo("(a = ? /* 1 */) AND (b = ? /* 2 */ OR c = ? /* 3 */) AND (d = ? /* 4 */)");
   }
 
   @Test
@@ -1051,7 +1051,7 @@ public class SafeSqlTest {
             SafeSql.of("a = {v1}", 1), SafeSql.of("b = {v2} AND c = {v3}", 2, 3), SafeSql.of("d = {v4}", 4));
     SafeSql sql = queries.stream().collect(SafeSql.or());
     assertThat(sql.toString()).isEqualTo("(a = ?) OR (b = ? AND c = ?) OR (d = ?)");
-    assertThat(sql.getParameters()).containsExactly(1, 2, 3, 4).inOrder();
+    assertThat(sql.debugString()).isEqualTo("(a = ? /* 1 */) OR (b = ? /* 2 */ AND c = ? /* 3 */) OR (d = ? /* 4 */)");
   }
 
   @Test
@@ -1067,7 +1067,7 @@ public class SafeSqlTest {
     SafeSql sql =
         Stream.of(1, 2, 3).map(id -> SafeSql.of("id = {id}", id)).collect(SafeSql.or());
     assertThat(sql.toString()).isEqualTo("(id = ?) OR (id = ?) OR (id = ?)");
-    assertThat(sql.getParameters()).containsExactly(1, 2, 3);
+    assertThat(sql.debugString()).isEqualTo("(id = ? /* 1 */) OR (id = ? /* 2 */) OR (id = ? /* 3 */)");
   }
 
   @Test
@@ -1076,7 +1076,8 @@ public class SafeSqlTest {
         "select * from ({tbl}) where id = {id}",
         SafeSql.of("select * from tbl where id = {id}", 1), /* id */ 2);
     assertThat(sql.toString()).isEqualTo("select * from (select * from tbl where id = ?) where id = ?");
-    assertThat(sql.getParameters()).containsExactly(1, 2).inOrder();
+    assertThat(sql.debugString())
+        .isEqualTo("select * from (select * from tbl where id = ? /* 1 */) where id = ? /* 2 */");
   }
 
   @Test
@@ -1087,7 +1088,8 @@ public class SafeSqlTest {
         /* tbl2 */ SafeSql.of("select * from tbl where id = {id}", 2),
         /* id */ 3);
     assertThat(sql.toString()).isEqualTo("select * from (select * from tbl where id = ?), (select * from tbl where id = ?) where id = ?");
-    assertThat(sql.getParameters()).containsExactly(1, 2, 3).inOrder();
+    assertThat(sql.debugString())
+        .isEqualTo("select * from (select * from tbl where id = ? /* 1 */), (select * from tbl where id = ? /* 2 */) where id = ? /* 3 */");
   }
 
   @Test
@@ -1110,21 +1112,21 @@ public class SafeSqlTest {
   public void nonNegative_maxValue_allowed() {
     SafeSql sql = SafeSql.nonNegativeLiteral(Integer.MAX_VALUE);
     assertThat(sql.toString()).isEqualTo(Long.toString(Integer.MAX_VALUE));
-    assertThat(sql.getParameters()).isEmpty();
+    assertThat(sql.debugString()).isEqualTo(Long.toString(Integer.MAX_VALUE));
   }
 
   @Test
   public void nonNegative_positive_allowed() {
     SafeSql sql = SafeSql.nonNegativeLiteral(123);
     assertThat(sql.toString()).isEqualTo("123");
-    assertThat(sql.getParameters()).isEmpty();
+    assertThat(sql.debugString()).isEqualTo("123");
   }
 
   @Test
   public void nonNegative_zero_allowed() {
     SafeSql sql = SafeSql.nonNegativeLiteral(0);
     assertThat(sql.toString()).isEqualTo("0");
-    assertThat(sql.getParameters()).isEmpty();
+    assertThat(sql.debugString()).isEqualTo("0");
   }
 
   @Test
