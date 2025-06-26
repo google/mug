@@ -184,7 +184,7 @@ And it doesn't auto-escape the `keyword` value if it includes wildcard or escape
 
 ### ✅ What this looks like in SafeSql:
 
-You use the conditional `->` operator:
+You use the guard `->` syntax:
 
 ```java
 Optional<String> keyword = ...;
