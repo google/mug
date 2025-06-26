@@ -179,8 +179,8 @@ influenced, through enough indirections and parameter passing.
 </select>
 ```
 
-While `#{}` safely binds values, **the conditional logic is entangled with markup**, and doesn’t compose well.
-The XML-based logic also makes it hard to abstract and reuse subqueries without duplicating or scattering the logic.
+This isn't too bad. But, man, that XML spaghetti. And you have to manually use `CONCAT()`.
+And it doesn't auto-escape the `keyword` value if it includes wildcard or escape characters.
 
 ### ✅ What this looks like in SafeSql:
 
@@ -199,11 +199,10 @@ with the `keyword` value.
 This syntax is:
 - ✅ Declarative
 - ✅ Directly readable as SQL
-- ✅ Easy to refactor into reusable subquery `SafeSql` objects
 
 ---
 
-## Conclusion: SafeSql is safe, unconditionally, careful or not.
+## Conclusion: Safety is enforced in SafeSql. There is no "you need to be careful". 
 
 Try to shoot yourself in the foot and `SafeSql` will stop you.
 
