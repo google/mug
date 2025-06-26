@@ -128,8 +128,11 @@ public class SafeSqlTest {
   @SuppressWarnings("LabsStringFormatArgsCheck")
   public void optionalOperator_withLikeOperator_present() {
     Optional<String> name = Optional.of("foo");
-    assertThat(SafeSql.of("SELECT * FROM tbl WHERE 1=1 {name? -> AND name LIKE '%name?%'}", name))
+    SafeSql sql = SafeSql.of("SELECT * FROM tbl WHERE 1=1 {name? -> AND name LIKE '%name?%'}", name);
+    assertThat(sql)
         .isEqualTo(SafeSql.of("SELECT * FROM tbl WHERE 1=1 AND name LIKE '%{name}%'", name.get()));
+    assertThat(sql.debugString())
+        .isEqualTo("SELECT * FROM tbl WHERE 1=1 AND name LIKE ? /* %foo% */ ESCAPE '^'");
   }
 
   @Test
