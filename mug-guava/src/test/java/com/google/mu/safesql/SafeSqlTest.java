@@ -115,6 +115,17 @@ public class SafeSqlTest {
 
   @Test
   @SuppressWarnings("LabsStringFormatArgsCheck")
+  public void optionalOperator_optionalParameterReferencedMultipleTimes() {
+    Optional<String> id = Optional.of("myId");
+    SafeSql sql = SafeSql.of("SELECT {id? -> id? AS id, UPPER('id?') AS title, } name FROM tbl", id);
+    assertThat(sql)
+        .isEqualTo(SafeSql.of("SELECT {id} AS id, UPPER('{id}') AS title, name FROM tbl", "myId", "myId"));
+    assertThat(sql.debugString())
+        .isEqualTo("SELECT ? /* myId */ AS id, UPPER(? /* myId */) AS title, name FROM tbl");
+  }
+
+  @Test
+  @SuppressWarnings("LabsStringFormatArgsCheck")
   public void optionalOperator_withLikeOperator_present() {
     Optional<String> name = Optional.of("foo");
     assertThat(SafeSql.of("SELECT * FROM tbl WHERE 1=1 {name? -> AND name LIKE '%name?%'}", name))
