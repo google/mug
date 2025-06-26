@@ -184,14 +184,17 @@ The XML-based logic also makes it hard to abstract and reuse subqueries without 
 
 ### ✅ What this looks like in SafeSql:
 
-The [`SafeSql.optionally()`](https://google.github.io/mug/apidocs/com/google/mu/safesql/SafeSql.html#optionally(java.lang.String,java.util.Optional))
-utility renders an optional template only when the Java `Optional` parameter is present.
+You use the conditional `->` operator:
 
 ```java
+Optional<String> keyword = ...;
 SafeSql query = SafeSql.of(
-    "SELECT * FROM Users WHERE 1=1 {optionally_and_name}",
-    optionally("AND name LIKE '%{keyword}%'", keyword));
+    "SELECT * FROM Users WHERE 1=1 {keyword? -> AND name LIKE '%keyword?%'}",
+    keyword);
 ```
+The `keyword?` placeholder name indicates that it's an `Optional` and when present, renders the
+snippet to the right of the `->` operator, with all of the `keyword?` occurrences parameterized
+with the `keyword` value.
 
 This syntax is:
 - ✅ Declarative
