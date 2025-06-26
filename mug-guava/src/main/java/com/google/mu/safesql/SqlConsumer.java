@@ -3,7 +3,7 @@ package com.google.mu.safesql;
 import java.sql.SQLException;
 
 /**
- * An action that could throw {@link SqlException}.
+ * Similar to {@link java.util.function.Consumer} but can throw {@link SQLException}.
  *
  * @since 8.8
  */
