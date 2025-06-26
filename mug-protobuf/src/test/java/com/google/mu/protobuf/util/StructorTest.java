@@ -1,9 +1,6 @@
 package com.google.mu.protobuf.util;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.mu.collect.Immutables.list;
-import static com.google.mu.collect.Immutables.map;
-import static com.google.mu.collect.Immutables.table;
 import static com.google.mu.protobuf.util.MoreStructs.struct;
 import static com.google.mu.protobuf.util.MoreValues.toListValue;
 import static org.junit.Assert.assertThrows;
@@ -21,6 +18,8 @@ import org.junit.runners.JUnit4;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableTable;
 import com.google.common.primitives.ImmutableDoubleArray;
 import com.google.common.primitives.ImmutableIntArray;
 import com.google.common.primitives.ImmutableLongArray;
@@ -37,7 +36,7 @@ public class StructorTest {
   private final Structor maker = new Structor();
 
   @Test public void toValue_fromMap() {
-    assertThat(maker.toValue(map("one", 1, "two", 2)))
+    assertThat(maker.toValue(ImmutableMap.of("one", 1, "two", 2)))
         .isEqualTo(
             Value.newBuilder()
                 .setStructValue(
@@ -53,17 +52,17 @@ public class StructorTest {
         .isEqualTo(
             Value.newBuilder()
                 .setStructValue(
-                    Struct.newBuilder().putFields("1", maker.toValue(list("uno", "one"))).build())
+                    Struct.newBuilder().putFields("1", maker.toValue(ImmutableList.of("uno", "one"))).build())
                 .build());
   }
 
   @Test public void toValue_fromTable() {
-    assertThat(maker.toValue(table("one", "uno", 1)))
+    assertThat(maker.toValue(ImmutableTable.of("one", "uno", 1)))
         .isEqualTo(
             Value.newBuilder()
                 .setStructValue(
                     Struct.newBuilder()
-                        .putFields("one", maker.toValue(map("uno", 1)))
+                        .putFields("one", maker.toValue(ImmutableMap.of("uno", 1)))
                         .build())
                 .build());
   }
@@ -79,7 +78,7 @@ public class StructorTest {
   }
 
   @Test public void toValue_fromIterable() {
-    assertThat(maker.toValue(list(10, 20)))
+    assertThat(maker.toValue(ImmutableList.of(10, 20)))
         .isEqualTo(
             Value.newBuilder()
                 .setListValue(ListValue.newBuilder().addValues(Values.of(10)).addValues(Values.of(20)))
@@ -210,7 +209,7 @@ public class StructorTest {
       @Override public Value toValue(Object obj) {
         if (obj instanceof Hero) {
           Hero hero = (Hero) obj;
-          return toValue(map("name", hero.name, "titles", hero.titles, "friends", hero.friends));
+          return toValue(ImmutableMap.of("name", hero.name, "titles", hero.titles, "friends", hero.friends));
         }
         return super.toValue(obj);
       }
@@ -311,7 +310,7 @@ public class StructorTest {
   }
 
   @Test public void struct_fromMap() {
-    assertThat(new Structor().struct(map("int", 1, "string", "two")))
+    assertThat(new Structor().struct(ImmutableMap.of("int", 1, "string", "two")))
         .isEqualTo(
             Struct.newBuilder()
                 .putFields("int", Values.of(1))
@@ -320,13 +319,13 @@ public class StructorTest {
   }
 
   @Test public void nestedStruct_fromTable() {
-    assertThat(new Structor().nestedStruct(table("row", "col", 1)))
+    assertThat(new Structor().nestedStruct(ImmutableTable.of("row", "col", 1)))
         .isEqualTo(struct("row", struct("col", 1)));
   }
 
 
   @Test public void toStruct_biCollector() {
-    Struct struct = BiStream.of("foo", 1, "bar", map("one", true)).collect(new Structor().toStruct());
+    Struct struct = BiStream.of("foo", 1, "bar", ImmutableMap.of("one", true)).collect(new Structor().toStruct());
     assertThat(struct)
         .isEqualTo(
             Struct.newBuilder()

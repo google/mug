@@ -65,7 +65,6 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.errorprone.annotations.MustBeClosed;
-import com.google.errorprone.annotations.ThreadSafe;
 import com.google.mu.annotations.RequiresGuava;
 import com.google.mu.annotations.TemplateFormatMethod;
 import com.google.mu.annotations.TemplateString;
@@ -375,7 +374,6 @@ import com.google.mu.util.stream.BiStream;
  * @since 8.2
  */
 @RequiresGuava
-@ThreadSafe
 @CheckReturnValue
 public final class SafeSql {
   private static final Substring.Pattern OPTIONAL_PARAMETER =

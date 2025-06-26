@@ -91,6 +91,7 @@
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
       <scope>compile</scope>
+      <version>33.1.0-jre</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
