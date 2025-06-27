@@ -718,7 +718,7 @@ public final class SafeSql {
    * to allow customization.
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
-   * @since 8.8
+   * @since 9.0
    */
   public <T> List<T> query(
       Connection connection,
@@ -742,7 +742,7 @@ public final class SafeSql {
    * Statement#executeQuery} if this sql contains no JDBC binding parameters.
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
-   * @since 8.8
+   * @since 9.0
    */
   public <T> List<T> query(
       Connection connection,
@@ -865,7 +865,7 @@ public final class SafeSql {
    * Statement#executeQuery} if this sql contains no JDBC binding parameters.
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
-   * @since 8.8
+   * @since 9.0
    */
   @MustBeClosed
   @SuppressWarnings("MustBeClosedChecker")
@@ -897,7 +897,7 @@ public final class SafeSql {
    * Statement#executeQuery} if this sql contains no JDBC binding parameters.
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
-   * @since 8.8
+   * @since 9.0
    */
   @MustBeClosed
   @SuppressWarnings("MustBeClosedChecker")
@@ -1103,7 +1103,7 @@ public final class SafeSql {
    * testing, golden file etc.). DO NOT use it as the production SQL query because embedding the
    * parameter values isn't safe from SQL injection.
    *
-   * @since 8.8
+   * @since 9.0
    */
   public String debugString() {
     StringFormat placeholderWithValue = new StringFormat("? /* {...} */");
