@@ -126,7 +126,6 @@ abstract class ResultMapper<T> {
     private final List<Class<?>> paramTypes;
     private final List<String> sqlColumnNames;
 
-
     Creator(Constructor<T> constructor) {
       this.constructor = constructor;
       this.paramTypes = unmodifiableList(asList(constructor.getParameterTypes()));
