@@ -24,7 +24,7 @@ import com.google.errorprone.annotations.MustBeClosed;
 @CheckReturnValue
 final class JdbcCloser implements AutoCloseable {
   interface JdbcCloseable {
-    void run() throws SQLException;
+    void close() throws SQLException;
   }
 
   private JdbcCloseable all = () -> {};
@@ -33,7 +33,7 @@ final class JdbcCloser implements AutoCloseable {
     JdbcCloseable upper = all;
     all = () -> {
       try {
-        closeable.run();
+        closeable.close();
       } catch (SQLException e) {
         throw closeForException(upper, e);
       } catch (RuntimeException e) {
@@ -57,7 +57,7 @@ final class JdbcCloser implements AutoCloseable {
 
   private static void close(JdbcCloseable closebale) {
     try {
-      closebale.run();
+      closebale.close();
     } catch (SQLException e) {
       throw new UncheckedSqlException(e);
     }
@@ -66,7 +66,7 @@ final class JdbcCloser implements AutoCloseable {
   private static <E extends Throwable> E closeForException(
       JdbcCloseable closeable, E exception) {
     try {
-      closeable.run();
+      closeable.close();
     } catch (Throwable e) {
       exception.addSuppressed(e);
     }

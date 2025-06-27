@@ -215,6 +215,9 @@ abstract class ResultMapper<T> {
 
   // Since we don't want to use Guava
   static Class<?> wrapperType(Class<?> type) {
+    if (type == boolean.class) {
+      return Boolean.class;
+    }
     if (type == double.class) {
       return Double.class;
     }
