@@ -47,7 +47,6 @@
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
         <scope>compile</scope>
-        <optional>true</optional>
         <version>28.1-jre</version>
       </dependency>
     <dependency>
