@@ -71,9 +71,9 @@ public class SafeSqlTest {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> SafeSql.of("SELECT {shows_id->id,} name FROM tbl", SafeQuery.of("showsId")));
+            () -> SafeSql.of("SELECT {shows_id->id,} name FROM tbl", SafeSql.of("showsId")));
     assertThat(thrown).hasMessageThat().contains("{shows_id->");
-    assertThat(thrown).hasMessageThat().contains("SafeQuery");
+    assertThat(thrown).hasMessageThat().contains("SafeSql");
   }
 
   @Test
@@ -1110,7 +1110,7 @@ public class SafeSqlTest {
   public void cannotUseSafeQueryAsSubquery() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
-        () -> SafeSql.of("select * from {tbl}", SafeQuery.of("tbl")));
+        () -> SafeSql.of("select * from {tbl}", new SafeQuery()));
     assertThat(thrown).hasMessageThat().contains("SafeQuery");
   }
 
@@ -1214,4 +1214,6 @@ public class SafeSqlTest {
       return Ascii.toLowerCase(name());
     }
   }
+
+  private static class SafeQuery {}
 }

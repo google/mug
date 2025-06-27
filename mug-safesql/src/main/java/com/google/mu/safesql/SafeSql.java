@@ -14,16 +14,9 @@
  *****************************************************************************/
 package com.google.mu.safesql;
 
-import static com.google.common.base.CharMatcher.breakingWhitespace;
-import static com.google.common.base.CharMatcher.whitespace;
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static com.google.common.collect.Streams.stream;
-import static com.google.mu.safesql.InternalCollectors.skippingEmpty;
-import static com.google.mu.safesql.SafeQuery.checkIdentifier;
+import static com.google.mu.safesql.SafeSqlUtils.checkArgument;
+import static com.google.mu.safesql.SafeSqlUtils.checkState;
+import static com.google.mu.safesql.SafeSqlUtils.skippingEmpty;
 import static com.google.mu.util.Substring.all;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.firstOccurrence;
@@ -35,20 +28,28 @@ import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.toCollection;
+import static java.util.stream.Collectors.toList;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.AbstractList;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.Spliterators;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -56,19 +57,16 @@ import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.errorprone.annotations.Immutable;
 import com.google.errorprone.annotations.MustBeClosed;
-import com.google.mu.annotations.RequiresGuava;
 import com.google.mu.annotations.TemplateFormatMethod;
 import com.google.mu.annotations.TemplateString;
+import com.google.mu.util.CharPredicate;
 import com.google.mu.util.StringFormat;
 import com.google.mu.util.StringFormat.Template;
 import com.google.mu.util.Substring;
@@ -374,14 +372,13 @@ import com.google.mu.util.stream.BiStream;
  *
  * @since 8.2
  */
-@RequiresGuava
 @Immutable
 @CheckReturnValue
 public final class SafeSql {
   private static final Substring.Pattern OPTIONAL_PARAMETER =
       word().immediatelyBetween("", INCLUSIVE, "?", INCLUSIVE);
   private static final Substring.RepeatingPattern TOKENS =
-      Stream.of(word(), first(breakingWhitespace().negate()::matches))
+      Stream.of(word(), first(c -> !Character.isWhitespace(c)))
           .collect(firstOccurrence())
           .repeatedly();
   private static final StringFormat PLACEHOLDER_ELEMENT_NAME =
@@ -478,7 +475,7 @@ public final class SafeSql {
   @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
   public static SafeSql optionally(
       @TemplateString @CompileTimeConstant String query, Optional<?> param) {
-    checkNotNull(query);
+    requireNonNull(query);
     return param.map(v -> of(query, v)).orElse(EMPTY);
   }
 
@@ -501,8 +498,8 @@ public final class SafeSql {
   @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
   public static SafeSql when(
       boolean condition, @TemplateString @CompileTimeConstant String template, Object... params) {
-    checkNotNull(template);
-    checkNotNull(params);
+    requireNonNull(template);
+    requireNonNull(params);
     return condition ? of(template, params) : EMPTY;
   }
 
@@ -606,8 +603,8 @@ public final class SafeSql {
   @TemplateFormatMethod
   @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
   public SafeSql orElse(@TemplateString @CompileTimeConstant String fallback, Object... args) {
-    checkNotNull(fallback);
-    checkNotNull(args);
+    requireNonNull(fallback);
+    requireNonNull(args);
     return orElse(() -> of(fallback, args));
   }
 
@@ -618,7 +615,7 @@ public final class SafeSql {
    * @since 8.3
    */
   public SafeSql orElse(SafeSql fallback) {
-    checkNotNull(fallback);
+    requireNonNull(fallback);
     return orElse(() -> fallback);
   }
 
@@ -629,7 +626,7 @@ public final class SafeSql {
    * @since 8.3
    */
   public SafeSql orElse(Supplier<SafeSql> fallback) {
-    checkNotNull(fallback);
+    requireNonNull(fallback);
     return sql.isEmpty() ? fallback.get() : this;
   }
 
@@ -751,7 +748,7 @@ public final class SafeSql {
       Connection connection,
       SqlConsumer<? super Statement> settings,
       SqlFunction<? super ResultSet, ? extends T> rowMapper) {
-    checkNotNull(rowMapper);
+    requireNonNull(rowMapper);
     if (paramValues.isEmpty()) {
       try (Statement stmt = connection.createStatement()) {
         settings.accept(stmt);
@@ -908,7 +905,7 @@ public final class SafeSql {
       Connection connection,
       SqlConsumer<? super Statement> settings,
       SqlFunction<? super ResultSet, ? extends T> rowMapper) {
-    checkNotNull(rowMapper);
+    requireNonNull(rowMapper);
     if (paramValues.isEmpty()) {
       return lazy(connection::createStatement, settings, stmt -> stmt.executeQuery(sql), rowMapper);
     }
@@ -1060,7 +1057,7 @@ public final class SafeSql {
   public static <T> Template<List<T>> prepareToQuery(
       Connection connection, @CompileTimeConstant String template,
       SqlFunction<? super ResultSet, ? extends T> rowMapper) {
-    checkNotNull(rowMapper);
+    requireNonNull(rowMapper);
     return prepare(connection, template, stmt -> {
       try (ResultSet resultSet = stmt.executeQuery()) {
         return mapResults(resultSet, rowMapper);
@@ -1149,11 +1146,11 @@ public final class SafeSql {
   }
 
   private static Template<SafeSql> unsafeTemplate(String template) {
-    ImmutableList<Substring.Match> allTokens = TOKENS.match(template).collect(toImmutableList());
-    ImmutableMap<Integer, Integer> charIndexToTokenIndex =
+    List<Substring.Match> allTokens = TOKENS.match(template).collect(toList());
+    Map<Integer, Integer> charIndexToTokenIndex =
         BiStream.zip(allTokens.stream(), indexesFrom(0))
             .mapKeys(Substring.Match::index)
-            .collect(ImmutableMap::toImmutableMap);
+            .collect(Collectors::toMap);
     return StringFormat.template(template, (fragments, placeholders) -> {
       Deque<String> texts = new ArrayDeque<>(fragments);
       Builder builder = new Builder();
@@ -1189,7 +1186,7 @@ public final class SafeSql {
                 value.getClass().getName());
             builder.appendSql(texts.pop());
             if ((Boolean) value) {
-              builder.appendSql(whitespace().trimFrom(conditional.after()));
+              builder.appendSql(conditional.after().trim());
             }
             return;
           }
@@ -1294,7 +1291,7 @@ public final class SafeSql {
         }
 
         private boolean lookahead(Substring.Match placeholder, String rightPattern) {
-          ImmutableList<String> lookahead = TOKENS.from(rightPattern).collect(toImmutableList());
+          List<String> lookahead = TOKENS.from(rightPattern).collect(toList());
           int closingBraceIndex = placeholder.index() + placeholder.length() - 1;
           int nextTokenIndex = charIndexToTokenIndex.get(closingBraceIndex) + 1;
           return BiStream.zip(lookahead, allTokens.subList(nextTokenIndex, allTokens.size()))
@@ -1303,10 +1300,10 @@ public final class SafeSql {
         }
 
         private boolean lookbehind(String leftPattern, Substring.Match placeholder) {
-          ImmutableList<String> lookbehind = TOKENS.from(leftPattern).collect(toImmutableList());
-          ImmutableList<Substring.Match> leftTokens =
+          List<String> lookbehind = TOKENS.from(leftPattern).collect(toList());
+          List<Substring.Match> leftTokens =
               allTokens.subList(0, charIndexToTokenIndex.get(placeholder.index()));
-          return BiStream.zip(lookbehind.reverse(), leftTokens.reverse())  // right-to-left
+          return BiStream.zip(reverse(lookbehind), reverse(leftTokens))  // right-to-left
                   .filter((s, t) -> s.equalsIgnoreCase(t.toString()))
                   .count() == lookbehind.size();
         }
@@ -1314,7 +1311,7 @@ public final class SafeSql {
       placeholders
           .peek(SafeSql::checkMisuse)
           .forEachOrdered(new SqlWriter()::writePlaceholder);
-      checkState(texts.size() == 1);
+      checkState(texts.size() == 1, "should have only one text left, got: %s", texts);
       return builder.appendSql(texts.pop()).build();
     });
   }
@@ -1325,18 +1322,17 @@ public final class SafeSql {
         name.length() > 0 && OPTIONAL_PARAMETER.from(name).orElse("").equals(name),
         "optional placeholder {%s->} must be an identifier followed by '?'",
         name);
-    String rhs = whitespace().trimFrom(operator.after());
-    ImmutableSet<String> toReplace =
-        OPTIONAL_PARAMETER.repeatedly().from(rhs).collect(toImmutableSet());
+    String rhs = operator.after().trim();
+    Set<String> referencedNames =
+        OPTIONAL_PARAMETER.repeatedly().from(rhs).collect(toCollection(LinkedHashSet::new));
     checkArgument(
-        !toReplace.isEmpty(),
+        !referencedNames.isEmpty(),
         "optional parameter %s must be referenced at least once to the" + " right of {%s->}",
         name,
         name);
+    referencedNames.remove(name);
     checkArgument(
-        toReplace.equals(ImmutableSet.of(name)),
-        "Unexpected optional placeholders: %s",
-        Sets.difference(toReplace, ImmutableSet.of(name)));
+        referencedNames.isEmpty(), "Unexpected optional placeholders: %s", referencedNames);
     return rhs;
   }
 
@@ -1353,9 +1349,10 @@ public final class SafeSql {
   }
 
   private static void checkMisuse(Substring.Match placeholder, Object value) {
-    SafeQuery.validatePlaceholder(placeholder);
+    validatePlaceholder(placeholder);
     checkArgument(
-        !(value instanceof SafeQuery), "%s: don't mix in SafeQuery with SafeSql.", placeholder);
+        value == null || !value.getClass().getName().endsWith("SafeQuery"),
+        "%s: don't mix in SafeQuery with SafeSql.", placeholder);
   }
 
   @CanIgnoreReturnValue private static String rejectQuestionMark(String sql) {
@@ -1431,7 +1428,7 @@ public final class SafeSql {
   private static <T> Template<T> prepare(
       Connection connection, @CompileTimeConstant String template,
       SqlFunction<? super PreparedStatement, ? extends T> action) {
-    checkNotNull(connection);
+    requireNonNull(connection);
     Template<SafeSql> sqlTemplate = template(template);
     return new Template<T>() {
       private final ConcurrentMap<String, PreparedStatement> cached = new ConcurrentHashMap<>();
@@ -1467,6 +1464,40 @@ public final class SafeSql {
       values.add(mapper.apply(resultSet));
     }
     return unmodifiableList(values);
+  }
+
+  private static String checkIdentifier(CharSequence placeholder, String name) {
+    // Make sure the backquoted string doesn't contain some special chars that may cause trouble.
+    CharPredicate illegal = c -> Character.isISOControl(c) || "'\"`()[]{}\\~!@$^*,/?;".indexOf(c) >= 0;
+    checkArgument(
+        illegal.matchesNoneOf(name),
+        "placeholder value for `%s` (%s) contains illegal character", placeholder, name);
+    return name;
+  }
+
+  private static void validatePlaceholder(Substring.Match placeholder) {
+    checkArgument(
+        !placeholder.isImmediatelyBetween("`", "'"),
+        "Incorrectly quoted placeholder: `%s'", placeholder);
+    checkArgument(
+        !placeholder.isImmediatelyBetween("'", "`"),
+        "Incorrectly quoted placeholder: '%s`", placeholder);
+  }
+
+  private static <T> Stream<T> stream(Iterator<T> iterator) {
+    return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, 0), false);
+  }
+
+  private static <T> List<T> reverse(List<T> list) {
+    return new AbstractList<T>() {
+      @Override public T get(int i) {
+        return list.get(list.size() - i - 1);
+      }
+
+      @Override public int size() {
+        return list.size();
+      }
+    };
   }
 
   private static final class Builder {

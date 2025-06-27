@@ -1,6 +1,5 @@
 package com.google.mu.safesql;
 
-import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -58,12 +57,12 @@ public class JdbcCloserTest {
   }
 
   @SuppressWarnings("MustBeClosedChecker")
-  @Test public void cannotAttachTwice() throws Exception {
+  @Test public void attachTwice_noOpTheSecondTime() throws Exception {
     Stream<String> stream = Stream.of("foo", "bar");
     try (JdbcCloser closer = new JdbcCloser()) {
       closer.register(statement::close);
       stream = closer.attachTo(stream);
-      assertThrows(IllegalStateException.class, () -> closer.attachTo(Stream.empty()));
+      closer.attachTo(Stream.empty());
     }
     verify(statement, never()).close();
     try (Stream<?> closeMe = stream) {}

@@ -54,6 +54,7 @@
     <module>mug-protobuf</module>
     <module>mug-errorprone</module>
     <module>mug-bigquery</module>
+    <module>mug-safesql</module>
   </modules>
 
   <properties>

@@ -14,14 +14,9 @@
  *****************************************************************************/
 package com.google.mu.safesql;
 
-import static com.google.common.base.Preconditions.checkState;
-
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.stream.Stream;
 
-import com.google.common.base.VerifyException;
-import com.google.common.io.Closer;
 import com.google.errorprone.annotations.MustBeClosed;
 
 /** Helps manage JDBC resources that need to be closed now or lazily. */
@@ -30,37 +25,49 @@ final class JdbcCloser implements AutoCloseable {
     void run() throws SQLException;
   }
 
-  private final Closer closer = Closer.create();
-  private boolean owned = true;
+  private JdbcCloseable all = () -> {};
 
   void register(JdbcCloseable closeable) {
-    closer.register(() -> {
+    JdbcCloseable upper = all;
+    all = () -> {
       try {
         closeable.run();
       } catch (SQLException e) {
-        throw new UncheckedSqlException(e);
+        closeThenThrow(upper, e);
+      } catch (RuntimeException e) {
+        closeThenThrow(upper, e);
+      } catch (Error e) {
+        closeThenThrow(upper, e);
       }
-    });
+    };
   }
 
   @MustBeClosed
   <T> Stream<T> attachTo(Stream<T> stream) {
-    checkState(owned);
-    owned = false;
-    return stream.onClose(this::closeNow);
+    JdbcCloseable detached = all;
+    all = () -> {};
+    return stream.onClose(() -> close(detached));
   }
 
   @Override public void close() {
-    if (owned) {
-      closeNow();
+     close(all);
+  }
+
+  private static void close(JdbcCloseable closebale) {
+    try {
+      closebale.run();
+    } catch (SQLException e) {
+      throw new UncheckedSqlException(e);
     }
   }
 
-  private void closeNow() {
+  private static <E extends Throwable> void closeThenThrow(
+      JdbcCloseable closeable, E exception) throws E {
     try {
-      closer.close();
-    } catch (IOException e) {
-      throw new VerifyException(e);
+      closeable.run();
+    } catch (Throwable e) {
+      exception.addSuppressed(e);
     }
+    throw exception;
   }
 }
