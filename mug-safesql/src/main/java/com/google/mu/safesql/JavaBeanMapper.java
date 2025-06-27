@@ -18,6 +18,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import com.google.errorprone.annotations.CheckReturnValue;
+
+@CheckReturnValue
 final class JavaBeanMapper<T> extends ResultMapper<T> {
   private final Class<T> beanClass;
   private final Constructor<T> defaultConstructor;

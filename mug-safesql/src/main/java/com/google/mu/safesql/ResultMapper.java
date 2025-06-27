@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Set;
 
+import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.mu.util.CaseBreaker;
 import com.google.mu.util.stream.BiStream;
 
@@ -40,6 +41,7 @@ import com.google.mu.util.stream.BiStream;
  * Java parameter names (if javac enables -parameters), or names annotated using
  * {@link SqlName @SqlName}.
  */
+@CheckReturnValue
 abstract class ResultMapper<T> {
   static <T> ResultMapper<T> toResultOf(Class<T> resultType) {
     checkArgument(

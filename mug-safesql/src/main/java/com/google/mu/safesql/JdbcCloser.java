@@ -17,9 +17,11 @@ package com.google.mu.safesql;
 import java.sql.SQLException;
 import java.util.stream.Stream;
 
+import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.errorprone.annotations.MustBeClosed;
 
 /** Helps manage JDBC resources that need to be closed now or lazily. */
+@CheckReturnValue
 final class JdbcCloser implements AutoCloseable {
   interface JdbcCloseable {
     void run() throws SQLException;
@@ -33,11 +35,11 @@ final class JdbcCloser implements AutoCloseable {
       try {
         closeable.run();
       } catch (SQLException e) {
-        closeThenThrow(upper, e);
+        throw closeForException(upper, e);
       } catch (RuntimeException e) {
-        closeThenThrow(upper, e);
+        throw closeForException(upper, e);
       } catch (Error e) {
-        closeThenThrow(upper, e);
+        throw closeForException(upper, e);
       }
     };
   }
@@ -61,13 +63,13 @@ final class JdbcCloser implements AutoCloseable {
     }
   }
 
-  private static <E extends Throwable> void closeThenThrow(
-      JdbcCloseable closeable, E exception) throws E {
+  private static <E extends Throwable> E closeForException(
+      JdbcCloseable closeable, E exception) {
     try {
       closeable.run();
     } catch (Throwable e) {
       exception.addSuppressed(e);
     }
-    throw exception;
+    return exception;
   }
 }
