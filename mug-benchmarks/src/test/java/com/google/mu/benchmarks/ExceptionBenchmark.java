@@ -20,7 +20,6 @@ import java.util.concurrent.CompletableFuture;
 import com.google.caliper.Benchmark;
 import com.google.common.testing.SerializableTester;
 import com.google.common.util.concurrent.Futures;
-import com.google.mu.util.Maybe;
 
 /**
  * Benchmarks for checking and throwing exceptions.
@@ -36,22 +35,6 @@ public class ExceptionBenchmark {
     for (int i = 0; i < n; i++) {
       try {
         Futures.getChecked(future, IOException.class);
-        throw new AssertionError();
-      } catch (IOException rethrow) {
-        throw new AssertionError(rethrow); // rethrow the exception with a more descriptive message
-      } catch (Exception e) {
-        throw new AssertionError(e); // handle other exceptions in some other way
-      }
-    }
-  }
-
-    // Benchmark for Maybe#orElseThrow.
-  @Benchmark
-  void maybeGet(int n) {
-    IOException exception = new IOException();
-    for (int i = 0; i < n; i++) {
-      try {
-        Maybe.except(exception).orElseThrow();
         throw new AssertionError();
       } catch (IOException rethrow) {
         throw new AssertionError(rethrow); // rethrow the exception with a more descriptive message
@@ -78,36 +61,5 @@ public class ExceptionBenchmark {
       SerializableTester.reserialize(string);
     }
     // Benchmark for wrapping an exception.
-  }
-
-  @Benchmark
-  void manualWrapper(int n) {
-    IOException exception = new IOException();
-    for (int i = 0; i < n; i++) {
-      try {
-        Maybe.except(exception).orElseThrow(IOException::new);
-        throw new AssertionError();
-      } catch (IOException rethrow) {
-        throw new AssertionError(rethrow); // rethrow the exception with a more descriptive message
-      } catch (Exception e) {
-        throw new AssertionError(e); // handle other exceptions in some other way
-      }
-    }
-  }
-
-    // Benchmark for not wrapping an exception.
-  @Benchmark
-  void noWrapper(int n) {
-    IOException exception = new IOException();
-    for (int i = 0; i < n; i++) {
-      try {
-        Maybe.except(exception).orElseThrow(e -> e);
-        throw new AssertionError();
-      } catch (IOException rethrow) {
-        throw new AssertionError(rethrow); // rethrow the exception with a more descriptive message
-      } catch (Exception e) {
-        throw new AssertionError(e); // handle other exceptions in some other way
-      }
-    }
   }
 }
