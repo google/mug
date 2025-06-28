@@ -174,7 +174,8 @@ SafeSql whereClause = ...;
 SafeSql.of("SELECT department_id, {computation} FROM Sales WHERE {where_clause}", computation, whereClause);
 ```
 Each fragment’s parameters are managed in isolation by SafeSql, so you can safely compose and reuse query parts
-without worrying about accidental overwrites or binding mistakes.
+without worrying about accidental overwrites or binding mistakes. They are guaranteed to be eventually sent
+through `PreparedStatement` in the correct order.
 
 ---
 
