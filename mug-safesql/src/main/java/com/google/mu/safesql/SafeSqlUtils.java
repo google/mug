@@ -23,19 +23,20 @@ import java.util.stream.Collector;
 import java.util.stream.Collector.Characteristics;
 
 import com.google.errorprone.annotations.FormatMethod;
+import com.google.errorprone.annotations.FormatString;
 import com.google.mu.util.stream.BiCollector;
 import com.google.mu.util.stream.BiCollectors;
 
 final class SafeSqlUtils {
   @FormatMethod static void checkArgument(
-      boolean good, String message, Object... args) {
+      boolean good, @FormatString String message, Object... args) {
     if (!good) {
       throw new IllegalArgumentException(String.format(message, args));
     }
   }
 
   @FormatMethod static void checkState(
-      boolean good, String message, Object... args) {
+      boolean good, @FormatString String message, Object... args) {
     if (!good) {
       throw new IllegalStateException(String.format(message, args));
     }

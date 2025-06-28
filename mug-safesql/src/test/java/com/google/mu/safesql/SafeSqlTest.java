@@ -1119,7 +1119,7 @@ public class SafeSqlTest {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
         () -> SafeSql.of("select * where id = {id}", /* id */ Optional.of(1)));
-    assertThat(thrown).hasMessageThat().contains("optionally()");
+    assertThat(thrown).hasMessageThat().contains("{id? -> ...}");
   }
 
   @Test

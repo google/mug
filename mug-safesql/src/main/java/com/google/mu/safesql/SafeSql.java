@@ -367,9 +367,6 @@ import com.google.mu.util.stream.BiStream;
  *
  * <p>Immutable if the template parameters you pass to it are immutable.
  *
- * <p>This class serves a different purpose than {@link SafeQuery}. The latter is to directly escape
- * string parameters when the SQL backend has no native support for parameterized queries.
- *
  * <p>Starting from v9.0, SafeSql is moved to the mug-safesql artifact, which no longer requires Guava
  * as a dependency.
  *
@@ -1196,8 +1193,9 @@ public final class SafeSql {
           rejectQuestionMark(paramName);
           checkArgument(
               !(value instanceof Optional),
-              "%s: optional parameter not supported. Consider using SafeSql.optionally() or SafeSql.when()?",
-              placeholder);
+              "%s: optional parameter not supported. " +
+              "Consider using the {%s? -> ...} syntax, or SafeSql.when()?",
+              paramName, paramName);
           if (value instanceof Iterable) {
             Iterator<?> elements = ((Iterable<?>) value).iterator();
             checkArgument(elements.hasNext(), "%s cannot be empty list", placeholder);
