@@ -34,6 +34,10 @@ import java.util.stream.Stream;
  * href="https://docs.oracle.com/javase/8/docs/api/java/lang/Character.html#supplementary">supplementary
  * code points</a>.
  *
+ * <p>Starting from v9.0, CaseBreaker is moved to the core mug artifact, and no longer requires
+ * Guava as a dependency. The old {@code toCase(CaseFormat, Strig)} method is moved to a new
+ * class {@code CaseFormats} in the mug-guava artifact.
+ *
  * @since 9.0
  */
 public final class CaseBreaker {
