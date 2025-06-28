@@ -124,8 +124,8 @@ SELECT department_id, date, price, currency, discount FROM Sales
 
 **With SafeSql:**
 
-Simply backtick-quote (**or double-quote**, depending on your DB) the placeholder and SafeSql will recognize the
-intention to use it as an identifier:
+Simply backtick-quote (**or double-quote**, whichever your DB uses to quote identifiers)
+the placeholder and SafeSql will recognize the intention to use it as an identifier:
  
 ```java {.good}
 List<String> metricColumns = List.of("price", "currency", "discount");
