@@ -367,7 +367,7 @@ import com.google.mu.util.stream.BiStream;
  *
  * <p>Immutable if the template parameters you pass to it are immutable.
  *
- * <p>Starting from v9.0, SafeSql is moved to the mug-safesql artifact, which no longer requires Guava
+ * <p>Starting from v9.0, SafeSql is moved to the mug-safesql artifact, and no longer requires Guava
  * as a dependency.
  *
  * @since 8.2
