@@ -28,11 +28,7 @@ import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.mu.annotations.RequiresGuava;
 
 /**
- * Utility to {@link #toCase convert} input strings (normally identifier strings) in {@code camelCase},
- * {@code UpperCamelCase}, {@code snake_case}, {@code UPPER_SNAKE_CASE} and {@code dash-case} etc.
- *
- * <p>Unlike {@link CaseFormat}, this class doesn't require you to know the input casing. You can
- * take any string and then extract or convert into the target casing.
+ * Additional utilities pertaining to {@link CaseFormat}.
  *
  * <p><b>Warning:</b> This class doesn't recognize <a
  * href="https://docs.oracle.com/javase/8/docs/api/java/lang/Character.html#supplementary">supplementary
