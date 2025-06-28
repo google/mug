@@ -615,6 +615,29 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .containsExactly(bean);
   }
 
+  @Test public void query_withResultBeanType_columnLabelWithSpace() throws Exception {
+    ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title, time, item_uuid) VALUES({id}, {title}, {time}, {uuid})",
+                    testId(), "bar", barTime, "uuid")
+                .update(connection()))
+        .isEqualTo(1);
+    ItemBean bean = new ItemBean();
+    bean.setId(testId());
+    bean.setItemUuid("uuid");
+    bean.setTime(barTime.toInstant());
+    bean.setTitle("bar");
+    assertThat(
+            SafeSql.of("select id, time, title, item_uuid AS \"item uuid\" from ITEMS where id = {id}", testId())
+                .query(connection(), ItemBean.class))
+        .containsExactly(bean);
+    assertThat(
+            SafeSql.of("select id, time, title, item_uuid AS \"Item  Uuid\" from ITEMS where id = {id}", testId())
+                .queryLazily(connection(), stmt -> stmt.setFetchSize(2), ItemBean.class)
+                .collect(toList()))
+        .containsExactly(bean);
+  }
+
   @Test public void query_withResultBeanType_columnsFewerThanProperties() throws Exception {
     ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
     assertThat(
