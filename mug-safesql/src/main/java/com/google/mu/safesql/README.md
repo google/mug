@@ -7,6 +7,7 @@ developers write direct, readable SQL, compose dynamic SQL, and at the same time
 SQL injection **impossible**. For example:
 
 ```java {.good}
+// Construct a SafeSql with a template and two placeholder values {id} and {name}.
 SafeSql sql = SafeSql.of(
     "select id, name, age from users where id = {id} OR name LIKE '%{name}%'",
     userId, userName);
@@ -17,6 +18,9 @@ List<User> users = sql.query(connection, User.class);
 
 This template-based syntax allows you to parameterize the SQL safely and conveniently,
 using the `{placeholder}` syntax.
+
+The template placeholder values are automatically sent through JDBC `PreparedStatement`
+when `sql.query()` is called.
 
 ---
 
