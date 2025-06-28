@@ -10,14 +10,13 @@ SQL injection **impossible**. For example:
 SafeSql sql = SafeSql.of(
     "select id, name, age from users where id = {id} OR name LIKE '%{name}%'",
     userId, userName);
+
+// convenience method to map `ResultSet` to a list of records or Java beans.
 List<User> users = sql.query(connection, User.class);
 ```
 
 This template-based syntax allows you to parameterize the SQL safely and conveniently,
 using the `{placeholder}` syntax.
-
-As shown in the example, convenience methods like `query()` will map the `ResultSet`
-back into Java records or Java beans.
 
 ---
 
