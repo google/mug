@@ -3,7 +3,6 @@ com.google.mu.bigquery
 com.google.mu.collect
 com.google.mu.function
 com.google.mu.protobuf.util
-com.google.mu.safesql
 com.google.mu.time
 com.google.mu.util
 com.google.mu.util.concurrent
