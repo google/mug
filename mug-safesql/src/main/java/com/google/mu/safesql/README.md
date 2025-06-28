@@ -206,7 +206,7 @@ SafeSql.of(
 ```
 
 Such compile-time check is very useful when your SQL is large and you need to change or move a
-snippet around, which then causes the placeholders not matching the template arguments.
+snippet around, which can cause the placeholders no longer matching the template arguments.
 
 Sometimes you may run into a placeholder name that doesn't match the corresponding argument expression.
 If renaming the placeholder isn't an option, consider using an explicit comment like the following:
@@ -230,9 +230,9 @@ your code and SQL consoles, and often obscures the actual query.
 
 With SafeSql, what you write in the SQL template is real SQL. Everything outside of the `{placeholders}`
 are _what-you-see-is-what-you-get_.
-There’s no intermediate layer or DSL to learn. Queries are copy-pasteable between code and database
-consoles with little or no modification. This keeps the workflow free of friction,
-debugging simple, and ensures your SQL remains transparent and maintainable.
+There’s no intermediate layer or DSL to learn and two-way translate in your head.
+Queries are copy-pasteable between code and database consoles with minimal manual change required.
+This keeps the workflow free of friction, simplifies debugging, and helps to make your SQL transparent and maintainable.
 
 ---
 
