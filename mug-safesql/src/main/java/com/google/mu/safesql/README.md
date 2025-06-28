@@ -195,7 +195,7 @@ This kind of error won’t always be caught during development, and can be diffi
 **With SafeSql:**
 SafeSql integrates with ErrorProne to check at compile time that the template placeholders and the
 template arguments match.
-If you get the order or number of arguments wrong, you’ll get a clear compilation error message.
+If you get the order or number of arguments wrong, you’ll get a clear compilation error.
 
 For example, the following code will fail to compile because the order of the two arguments is wrong:
 
@@ -208,9 +208,8 @@ SafeSql.of(
 Such compile-time check is very useful when your SQL is large and you need to change or move a
 snippet around, which then causes the placeholders not matching the template arguments.
 
-Sometimes you may find that the placeholder name is slightly off and isn't easy to match the
-corresponding argument expression. In such case, use an explicit comment like the following:
-
+Sometimes you may run into a placeholder name that doesn't match the corresponding argument expression.
+If renaming the placeholder isn't an option, consider using an explicit comment like the following:
 
 ```java
 SafeSql.of(
@@ -218,7 +217,7 @@ SafeSql.of(
     /* user_id */ userRequest.getUuid(), userRequest.getUserName());
 ```
 
-The explicit `/* user_id */ confirm your intention to both SafeSql **and to your readers**
+The explicit `/* user_id */ confirms your intention to both SafeSql **and to your readers**
 that you do mean to use the uuid as the `user_id`. 
 
 ---
