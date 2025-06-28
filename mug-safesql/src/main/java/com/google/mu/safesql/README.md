@@ -3,10 +3,10 @@
 ## Introduction
 
 SafeSql is a compile-time checked SQL template library for Java. Its purpose is to let
-developers write direct, readable SQL, while eliminating a category of bugs and risks that
-are common in hand-written queries. For example:
+developers write direct, readable SQL, compose dynamic SQL, and at the same time make accidental
+SQL injection **impossible**. For example:
 
-```java
+```java {.good}
 SafeSql sql = SafeSql.of(
     "select id, name, age from users where id = {id} OR name LIKE '%{name}%'",
     userId, userName);
@@ -15,9 +15,6 @@ List<User> users = sql.query(connection, User.class);
 
 This template-based syntax allows you to parameterize the SQL safely and conveniently,
 using the `{placeholder}` syntax.
-
-And in case you are worrying: there is no risk mixing up argument order or missing placeholders.
-Try to swap the order of `userId` and `userName` and you'll get a **compilation error**.
 
 As shown in the example, convenience methods like `query()` will map the `ResultSet`
 back into Java records or Java beans.
@@ -193,9 +190,33 @@ preparedStatement.setString(2, userId);
 This kind of error won’t always be caught during development, and can be difficult to debug.
 
 **With SafeSql:**
-SafeSql integrates with ErrorProne to check that placeholders and argument names match at compile time.
-If you get the order or names wrong, you’ll see a clear error before running your code.
-This helps eliminate a class of silent, logic-level bugs.
+SafeSql integrates with ErrorProne to check at compile time that the template placeholders and the
+template arguments match.
+If you get the order or number of arguments wrong, you’ll get a clear compilation error message.
+
+For example, the following code will fail to compile because the order of the two arguments is wrong:
+
+```java
+SafeSql.of(
+    "select id, name, age from users where id = {id} OR name LIKE '%{name}%'",
+    userName, userId);
+```
+
+Such compile-time check is very useful when your SQL is large and you need to change or move a
+snippet around, which then causes the placeholders not matching the template arguments.
+
+Sometimes you may find that the placeholder name is slightly off and isn't easy to match the
+corresponding argument expression. In such case, use an explicit comment like the following:
+
+
+```java
+SafeSql.of(
+    "select id, name, age from users where id = {user_id} OR name LIKE '%{user_name}%'",
+    /* user_id */ userRequest.getUuid(), userRequest.getUserName());
+```
+
+The explicit `/* user_id */ confirm your intention to both SafeSql **and to your readers**
+that you do mean to use the uuid as the `user_id`. 
 
 ---
 
