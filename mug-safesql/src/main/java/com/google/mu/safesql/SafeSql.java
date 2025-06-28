@@ -954,14 +954,29 @@ public final class SafeSql {
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    */
   @CanIgnoreReturnValue public int update(Connection connection) {
+    return update(connection, stmt -> {});
+  }
+
+  /**
+   * Similar to {@link #update(Connection)}, but with {@code settings}
+   * (can be set via lambda like {@code stmt -> stmt.setQueryTimeout(100)})
+   * to allow customization.
+   *
+   * @throws UncheckedSqlException wraps {@link SQLException} if failed
+   * @since 9.0
+   */
+  @CanIgnoreReturnValue public int update(
+      Connection connection, SqlConsumer<? super Statement> settings) {
     if (paramValues.isEmpty()) {
       try (Statement stmt = connection.createStatement()) {
+        settings.accept(stmt);
         return stmt.executeUpdate(sql);
       } catch (SQLException e) {
         throw new UncheckedSqlException(e);
       }
     }
     try (PreparedStatement stmt = prepareStatement(connection)) {
+      settings.accept(stmt);
       return stmt.executeUpdate();
     } catch (SQLException e) {
       throw new UncheckedSqlException(e);
