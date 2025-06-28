@@ -15,7 +15,7 @@ List<User> users = sql.query(connection, User.class);
 
 This template-based syntax allows you to inject parameters safely into SQL, using placeholder names,
 without the risk of mixing up argument order or missing placeholders:
-**try to swap the order of `userId` and `userName` and you'll get a compilation error**.
+swap the order of `userId` and `userName` and you'll get a **compilation error**.
 
 And convenience methods like `query()` are provided to map the `ResultSet` back into Java records or Java beans.
 
