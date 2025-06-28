@@ -13,11 +13,14 @@ SafeSql sql = SafeSql.of(
 List<User> users = sql.query(connection, User.class);
 ```
 
-This template-based syntax allows you to inject parameters safely into SQL, using placeholder names,
-without the risk of mixing up argument order or missing placeholders:
-swap the order of `userId` and `userName` and you'll get a **compilation error**.
+This template-based syntax allows you to parameterize the SQL safely and conveniently,
+using the `{placeholder}` syntax.
 
-And convenience methods like `query()` are provided to map the `ResultSet` back into Java records or Java beans.
+And in case you are worrying: there is no risk mixing up argument order or missing placeholders.
+Try to swap the order of `userId` and `userName` and you'll get a **compilation error**.
+
+As shown in the example, convenience methods like `query()` will map the `ResultSet`
+back into Java records or Java beans.
 
 ---
 
