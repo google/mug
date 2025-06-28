@@ -370,6 +370,9 @@ import com.google.mu.util.stream.BiStream;
  * <p>This class serves a different purpose than {@link SafeQuery}. The latter is to directly escape
  * string parameters when the SQL backend has no native support for parameterized queries.
  *
+ * <p>Starting from v9.0, SafeSql is moved to the mug-safesql artifact, which no longer requires Guava
+ * as a dependency.
+ *
  * @since 8.2
  */
 @Immutable
@@ -1326,11 +1329,10 @@ public final class SafeSql {
     Set<String> referencedNames =
         OPTIONAL_PARAMETER.repeatedly().from(rhs).collect(toCollection(LinkedHashSet::new));
     checkArgument(
-        !referencedNames.isEmpty(),
+        referencedNames.remove(name),
         "optional parameter %s must be referenced at least once to the" + " right of {%s->}",
         name,
         name);
-    referencedNames.remove(name);
     checkArgument(
         referencedNames.isEmpty(), "Unexpected optional placeholders: %s", referencedNames);
     return rhs;

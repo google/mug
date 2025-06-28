@@ -207,7 +207,7 @@ public class SafeSqlTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> SafeSql.of("SELECT {id? -> bad_id? AS id,} name FROM tbl", id));
-    assertThat(thrown).hasMessageThat().contains("bad_id?");
+    assertThat(thrown).hasMessageThat().contains("{id?->}");
   }
 
   @Test
