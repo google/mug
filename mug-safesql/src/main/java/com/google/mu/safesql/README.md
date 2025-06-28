@@ -217,7 +217,7 @@ SafeSql.of(
     /* user_id */ userRequest.getUuid(), userRequest.getUserName());
 ```
 
-The explicit `/* user_id */ confirms your intention to both SafeSql **and to your readers**
+The explicit `/* user_id */` confirms your intention to both SafeSql **and to your readers**
 that you do mean to use the uuid as the `user_id`. 
 
 ---
