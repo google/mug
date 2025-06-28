@@ -56,8 +56,8 @@ public final class CaseFormats {
    * <p>Given that {@link CaseFormat} only handles ascii, characters outside of the range of {@code
    * [a-zA-Z0-9_-]} (e.g. whitespaces, parenthesis, non-ascii) are passed through as is. If you need
    * to support non-ascii camel case such as Greek upper case ('Β') and lower case ('β'), consider
-   * using {@link #breakCase} to break up words in the source and then apply target casing manually
-   * using e.g. {@link Character#toLowerCase}.
+   * using {@link CaseBreaker#breakCase} to break up words in the source and then apply target casing
+   * manually using e.g. {@link Character#toLowerCase}.
    */
   public static String toCase(CaseFormat caseFormat, String input) {
     // Ascii char matchers are faster than the default.
