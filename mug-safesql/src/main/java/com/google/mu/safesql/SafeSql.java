@@ -713,7 +713,7 @@ public final class SafeSql {
   }
 
   /**
-   * Similar to {@link #query(Connection, Class), but with {@code settings}
+   * Similar to {@link #query(Connection, Class)}, but with {@code settings}
    * (can be set via lambda like {@code stmt -> stmt.setMaxRows(100)})
    * to allow customization.
    *
