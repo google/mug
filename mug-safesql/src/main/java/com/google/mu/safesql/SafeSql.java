@@ -449,7 +449,9 @@ public final class SafeSql {
    * <p>Although, you should generally use the OFFSET-FETCH syntax, which supports parameterization.
    *
    * @throws IllegalArgumentException if {@code number} is negative
+   * @deprecated Prefer {@code OFFSET-FETCH} clause, which is parameterizable
    */
+  @Deprecated
   public static SafeSql nonNegativeLiteral(int number) {
     checkArgument(number >= 0, "negative number disallowed: %s", number);
     return new SafeSql(Integer.toString(number));
