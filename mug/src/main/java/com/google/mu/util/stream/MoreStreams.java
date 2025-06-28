@@ -113,25 +113,6 @@ public final class MoreStreams {
   }
 
   /**
-   * Flattens {@code streamOfStream} and returns an unordered sequential stream of the nested
-   * elements.
-   *
-   * <p>Logically, {@code stream.flatMap(fanOut)} is equivalent to
-   * {@code MoreStreams.flatten(stream.map(fanOut))}.
-   * Due to this <a href="https://bugs.openjdk.java.net/browse/JDK-8075939">JDK bug</a>,
-   * {@code flatMap()} uses {@code forEach()} internally and doesn't support short-circuiting for
-   * the passed-in stream. {@code flatten()} supports short-circuiting and can be used to
-   * flatten infinite streams.
-   *
-   * @since 1.9
-   * @deprecated Use {@code flatMap()} in Java 10+
-   */
-  @Deprecated
-  public static <T> Stream<T> flatten(Stream<? extends Stream<? extends T>> streamOfStream) {
-    return mapBySpliterator(streamOfStream.sequential(), 0, FlattenedSpliterator<T>::new);
-  }
-
-  /**
    * Groups consecutive elements from {@code stream} lazily. Two consecutive elements belong to the
    * same group if {@code sameGroup} evaluates to true. Consecutive elements belonging to the same
    * group will be collected together using {@code groupCollector}.

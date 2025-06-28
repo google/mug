@@ -31,8 +31,6 @@ import com.google.common.collect.Range;
 import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.NullPointerTester;
 import com.google.common.truth.Expect;
-import com.google.mu.collect.BinarySearch;
-import com.google.mu.collect.InsertionPoint;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
@@ -1514,7 +1512,7 @@ public class BinarySearchTest {
       builder.put(mid, times.incrementAndGet());
       return Double.compare(secret, mid);
     })).hasValue(secret);
-    assertThat(builder.buildOrThrow().size()).isAtMost(65);
+    assertThat(builder.build().size()).isAtMost(65);
     assertThat(times.get()).isAtMost(65);
   }
 
@@ -1527,7 +1525,7 @@ public class BinarySearchTest {
       builder.put(mid, times.incrementAndGet());
       return Double.compare(secret, mid);
     })).hasValue(secret);
-    assertThat(builder.buildOrThrow().size()).isAtMost(65);
+    assertThat(builder.build().size()).isAtMost(65);
     assertThat(times.get()).isAtMost(65);
   }
 

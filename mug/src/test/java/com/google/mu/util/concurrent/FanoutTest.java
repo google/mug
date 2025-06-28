@@ -3,7 +3,6 @@ package com.google.mu.util.concurrent;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.util.concurrent.Fanout.concurrently;
-import static com.google.mu.util.concurrent.Fanout.uninterruptibly;
 import static com.google.mu.util.concurrent.Fanout.withMaxConcurrency;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;

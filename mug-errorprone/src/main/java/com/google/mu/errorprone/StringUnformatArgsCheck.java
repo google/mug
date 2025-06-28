@@ -44,7 +44,7 @@ import com.google.mu.function.MapFrom5;
 import com.google.mu.function.MapFrom6;
 import com.google.mu.function.MapFrom7;
 import com.google.mu.function.MapFrom8;
-import com.google.mu.util.CaseBreaker;
+import com.google.mu.util.CaseFormats;
 import com.google.mu.util.stream.BiCollector;
 import com.google.mu.util.stream.BiStream;
 
@@ -265,7 +265,7 @@ public final class StringUnformatArgsCheck extends AbstractBugChecker
 
   private static ImmutableList<String> normalizeNamesForComparison(List<String> names) {
     return names.stream()
-        .map(name -> CaseBreaker.toCase(CaseFormat.UPPER_CAMEL, name)) // id and jobId should match
+        .map(name -> CaseFormats.toCase(CaseFormat.UPPER_CAMEL, name)) // id and jobId should match
         .map(ALPHA_NUM.negate()::removeFrom)
         .collect(toImmutableList());
   }
