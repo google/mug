@@ -11,6 +11,13 @@ A SQL template library with: <ul>
 <li>Compile-time semantic check - never worry about passing template parameters wrong.
 <li><em>Real, actual</em> SQL - not DSL; not XML; not StringBuilder.
 </ul>
+
+Example: <pre>
+SafeSql sql = SafeSql.of("select id, name, age from Users where id = {id}", userId);
+for (User user : sql.query(connection, User.class)) {
+  // ...
+}
+</pre>
 <br>
 
 <h2>Package Specification</h2>
