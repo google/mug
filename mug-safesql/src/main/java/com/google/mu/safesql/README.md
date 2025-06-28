@@ -9,13 +9,14 @@ are common in hand-written queries. For example:
 ```java
 SafeSql sql = SafeSql.of(
     "select id, name, age from users where id = {id} OR name LIKE '%{name}%'",
-    userId, userName
-);
+    userId, userName);
 List<User> users = sql.query(connection, User.class);
 ```
 
 This template-based syntax allows you to inject parameters safely into SQL, using placeholder names,
 without the risk of mixing up argument order or missing placeholders.
+
+And convenience methods like `query()` are provided to map the `ResultSet` back into Java records or Java beans.
 
 ---
 
@@ -51,8 +52,7 @@ It's safe from SQL injection (if you correctly used `#{}`, not `${}`). But it re
 List<Integer> departmentIds = List.of(1, 2, 3);
 SafeSql.of(
     "SELECT * FROM Sales WHERE department_id IN ({department_ids})",
-    departmentIds
-);
+    departmentIds);
 ```
 SafeSql automatically expands the list parameter `{department_ids}` to the correct number of
 placeholders and binds the values, eliminating manual string work and preventing common mistakes.
