@@ -14,8 +14,11 @@ A SQL template library with: <ul>
 
 Example: <pre>
 SafeSql sql = SafeSql.of("select id, name, age from Users where id = {id}", userId);
-for (User user : sql.query(connection, User.class)) {
-  // ...
+
+try (Connection connection = dataSource.getConnection()) {
+  for (User user : sql.query(connection, User.class)) {
+    // ...
+  }
 }
 </pre>
 <br>
