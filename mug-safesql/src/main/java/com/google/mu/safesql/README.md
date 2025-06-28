@@ -232,23 +232,23 @@ With SafeSql, what you write in the SQL template is real SQL. Everything outside
 are _what-you-see-is-what-you-get_.
 There’s no intermediate layer or DSL to learn and two-way translate in your head.
 Queries are copy-pasteable between code and database consoles with minimal manual change required.
-This keeps the workflow free of friction, simplifies debugging, and helps to make your SQL transparent and maintainable.
+This keeps the workflow frictionless, simplifies debugging, and helps to make your SQL transparent and maintainable.
 
 ---
 
 ### 8. Type Safety
 
-SafeSql does not know your database schema so cannot check for column types or column name typos.
+SafeSql doesn't know your database schema so cannot check for column types or column name typos.
 
 But typos and superficial type mismatch (like using int for the `name` column) are the easy kind of errors:
 
 - If you test your SQL (and you should), the DB will instantly catch these errors for you.
   - In fact, it's best if you've copied the SQL from the DB console where the correctness is already verified.
   - And you should have automated tests to ensure the SQL not only type checks, but gives you the right result.
-- Most db types are numbers and strings. So the type checking can only provide marginal protection. 
+- Most db types are numbers and strings. So the type checking can only provide marginal protection anyways. 
 
 The main safety advantages of SafeSql are in its industry-strength SQL injection prevention, parameter wiring,
-and dynamic query construction—areas where mistakes are easy to make and hard to find otherwise.
+and convenient dynamic query construction—areas where mistakes are easy to make and hard to find otherwise.
 
 ---
 
