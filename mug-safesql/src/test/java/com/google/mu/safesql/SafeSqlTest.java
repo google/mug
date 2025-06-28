@@ -98,6 +98,13 @@ public class SafeSqlTest {
   }
 
   @Test
+  public void conditionalOperator_questionMarkInParameterName() {
+    boolean showsId = true;
+    assertThat(SafeSql.of("SELECT {shows_id?->id,} name FROM tbl", showsId))
+        .isEqualTo(SafeSql.of("SELECT id, name FROM tbl"));
+  }
+
+  @Test
   @SuppressWarnings("LabsStringFormatArgsCheck")
   public void optionalOperator_present() {
     Optional<Integer> id = Optional.of(123);
