@@ -162,9 +162,8 @@ You don’t have to think about escaping rules or risk mistakes—user input is 
 Composing queries from reusable fragments often leads to parameter name clashes or incorrect bindings,
 especially as code grows.
 
-**Example (with manual tracking):**
-You have to carefully manage names and argument lists, often by inventing your own conventions,
-which can break during refactoring or code sharing.
+With manual tracking, you have to carefully manage names and argument lists, often by inventing your
+own conventions, which makes code hard to read and can break during refactorings.
 
 It’s easy to accidentally overwrite or mismatch parameters, leading to subtle bugs or unexpected results.
 
