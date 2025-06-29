@@ -13,7 +13,7 @@ SafeSql sql = SafeSql.of(
     userId, userName);
 
 // convenience method to map `ResultSet` to a list of records or Java beans.
-List<User> users = sql.query(connection, User.class);
+List<User> users = sql.query(dataSource, User.class);
 ```
 
 This template-based syntax allows you to parameterize the SQL safely and conveniently,
