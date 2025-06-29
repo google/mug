@@ -704,10 +704,10 @@ public final class SafeSql {
    * to manage the JDBC resources. Use this method if you need to reuse a connection
    * (mostly for multi-statement transactions).
    *
-   * @throws UncheckedSqlException wraps {@link SQLException} if failed
    * @since 8.7
    */
-  public <T> List<T> query(Connection connection, Class<? extends T> resultType) {
+  public <T> List<T> query(Connection connection, Class<? extends T> resultType)
+      throws SQLException {
     return query(connection, stmt -> {}, resultType);
   }
 
@@ -745,11 +745,10 @@ public final class SafeSql {
    *
    * <p>Internally it delegates to {@link PreparedStatement#executeQuery} or {@link
    * Statement#executeQuery} if this sql contains no JDBC binding parameters.
-   *
-   * @throws UncheckedSqlException wraps {@link SQLException} if failed
    */
   public <T> List<T> query(
-      Connection connection, SqlFunction<? super ResultSet, ? extends T> rowMapper) {
+      Connection connection, SqlFunction<? super ResultSet, ? extends T> rowMapper)
+      throws SQLException {
     return query(connection, stmt -> {}, rowMapper);
   }
 
@@ -775,13 +774,12 @@ public final class SafeSql {
    * to manage the JDBC resources. Use this method if you need to reuse a connection
    * (mostly for multi-statement transactions).
    *
-   * @throws UncheckedSqlException wraps {@link SQLException} if failed
    * @since 9.0
    */
   public <T> List<T> query(
       Connection connection,
       SqlConsumer<? super Statement> settings,
-      Class<? extends T> resultType) {
+      Class<? extends T> resultType) throws SQLException {
     return query(connection, settings, ResultMapper.toResultOf(resultType)::from);
   }
 
@@ -828,13 +826,12 @@ public final class SafeSql {
    * <p>Internally it delegates to {@link PreparedStatement#executeQuery} or {@link
    * Statement#executeQuery} if this sql contains no JDBC binding parameters.
    *
-   * @throws UncheckedSqlException wraps {@link SQLException} if failed
    * @since 9.0
    */
   public <T> List<T> query(
       Connection connection,
       SqlConsumer<? super Statement> settings,
-      SqlFunction<? super ResultSet, ? extends T> rowMapper) {
+      SqlFunction<? super ResultSet, ? extends T> rowMapper) throws SQLException {
     requireNonNull(rowMapper);
     if (paramValues.isEmpty()) {
       try (Statement stmt = connection.createStatement()) {
@@ -842,8 +839,6 @@ public final class SafeSql {
         try (ResultSet resultSet = stmt.executeQuery(sql)) {
           return mapResults(resultSet, rowMapper);
         }
-      } catch (SQLException e) {
-        throw new UncheckedSqlException(e);
       }
     }
     try (PreparedStatement stmt = prepareStatement(connection)) {
@@ -851,8 +846,6 @@ public final class SafeSql {
       try (ResultSet resultSet = stmt.executeQuery()) {
         return mapResults(resultSet, rowMapper);
       }
-    } catch (SQLException e) {
-      throw new UncheckedSqlException(e);
     }
   }
 
@@ -896,12 +889,12 @@ public final class SafeSql {
    *
    * <p>You can also map the result rows to Java Beans, similar to {@link #query(Connection, Class)}.
    *
-   * @throws UncheckedSqlException wraps {@link SQLException} if failed
    * @since 8.7
    */
   @MustBeClosed
   @SuppressWarnings("MustBeClosedChecker")
-  public <T> Stream<T> queryLazily(Connection connection, Class<? extends T> resultType) {
+  public <T> Stream<T> queryLazily(Connection connection, Class<? extends T> resultType)
+      throws SQLException {
     return queryLazily(connection, stmt -> {}, resultType);
   }
 
@@ -929,7 +922,8 @@ public final class SafeSql {
   @MustBeClosed
   @SuppressWarnings("MustBeClosedChecker")
   public <T> Stream<T> queryLazily(
-      Connection connection, SqlFunction<? super ResultSet, ? extends T> rowMapper) {
+      Connection connection, SqlFunction<? super ResultSet, ? extends T> rowMapper)
+      throws SQLException {
     return queryLazily(connection, stmt -> {}, rowMapper);
   }
 
@@ -951,7 +945,6 @@ public final class SafeSql {
    * <p>Internally it delegates to {@link PreparedStatement#executeQuery} or {@link
    * Statement#executeQuery} if this sql contains no JDBC binding parameters.
    *
-   * @throws UncheckedSqlException wraps {@link SQLException} if failed
    * @since 9.0
    */
   @MustBeClosed
@@ -959,7 +952,7 @@ public final class SafeSql {
   public <T> Stream<T> queryLazily(
       Connection connection,
       SqlConsumer<? super Statement> settings,
-      Class<? extends T> resultType) {
+      Class<? extends T> resultType) throws SQLException {
     return queryLazily(connection, settings, ResultMapper.toResultOf(resultType)::from);
   }
 
@@ -983,7 +976,6 @@ public final class SafeSql {
    * <p>Internally it delegates to {@link PreparedStatement#executeQuery} or {@link
    * Statement#executeQuery} if this sql contains no JDBC binding parameters.
    *
-   * @throws UncheckedSqlException wraps {@link SQLException} if failed
    * @since 9.0
    */
   @MustBeClosed
@@ -991,7 +983,7 @@ public final class SafeSql {
   public <T> Stream<T> queryLazily(
       Connection connection,
       SqlConsumer<? super Statement> settings,
-      SqlFunction<? super ResultSet, ? extends T> rowMapper) {
+      SqlFunction<? super ResultSet, ? extends T> rowMapper) throws SQLException {
     requireNonNull(rowMapper);
     if (paramValues.isEmpty()) {
       return lazy(connection::createStatement, settings, stmt -> stmt.executeQuery(sql), rowMapper);
@@ -1004,7 +996,7 @@ public final class SafeSql {
       SqlSupplier<? extends S> createStatement,
       SqlConsumer<? super Statement> settings,
       SqlFunction<? super S, ResultSet> execute,
-      SqlFunction<? super ResultSet, ? extends T> rowMapper) {
+      SqlFunction<? super ResultSet, ? extends T> rowMapper) throws SQLException {
     try (JdbcCloser closer = new JdbcCloser()) {
       S stmt = createStatement.get();
       closer.register(stmt::close);
@@ -1020,8 +1012,6 @@ public final class SafeSql {
             }
           })
           .map(AtomicReference::get));
-    } catch (SQLException e) {
-      throw new UncheckedSqlException(e);
     }
   }
 
@@ -1035,10 +1025,8 @@ public final class SafeSql {
    * }</pre>
    *
    * <p>Internally it delegates to {@link PreparedStatement#executeUpdate}.
-   *
-   * @throws UncheckedSqlException wraps {@link SQLException} if failed
    */
-  @CanIgnoreReturnValue public int update(Connection connection) {
+  @CanIgnoreReturnValue public int update(Connection connection) throws SQLException {
     return update(connection, stmt -> {});
   }
 
@@ -1047,24 +1035,19 @@ public final class SafeSql {
    * (can be set via lambda like {@code stmt -> stmt.setQueryTimeout(100)})
    * to allow customization.
    *
-   * @throws UncheckedSqlException wraps {@link SQLException} if failed
    * @since 9.0
    */
   @CanIgnoreReturnValue public int update(
-      Connection connection, SqlConsumer<? super Statement> settings) {
+      Connection connection, SqlConsumer<? super Statement> settings) throws SQLException {
     if (paramValues.isEmpty()) {
       try (Statement stmt = connection.createStatement()) {
         settings.accept(stmt);
         return stmt.executeUpdate(sql);
-      } catch (SQLException e) {
-        throw new UncheckedSqlException(e);
       }
     }
     try (PreparedStatement stmt = prepareStatement(connection)) {
       settings.accept(stmt);
       return stmt.executeUpdate();
-    } catch (SQLException e) {
-      throw new UncheckedSqlException(e);
     }
   }
 
@@ -1073,16 +1056,10 @@ public final class SafeSql {
    *
    * <p>It's often more convenient to use {@link #query} or {@link #update} unless you need to
    * directly operate on the PreparedStatement.
-   *
-   * @throws UncheckedSqlException wraps {@link SQLException} if failed
    */
   @MustBeClosed
-  public PreparedStatement prepareStatement(Connection connection) {
-    try {
-      return setParameters(connection.prepareStatement(sql));
-    } catch (SQLException e) {
-      throw new UncheckedSqlException(e);
-    }
+  public PreparedStatement prepareStatement(Connection connection) throws SQLException {
+    return setParameters(connection.prepareStatement(sql));
   }
 
   /**
