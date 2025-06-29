@@ -9,6 +9,7 @@ import static org.junit.Assert.assertThrows;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -703,10 +704,10 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
                 .update(connection()))
         .isEqualTo(1);
     SafeSql sql = SafeSql.of("select id, time, title from ITEMS where id = {id}", testId());
-    UncheckedSqlException thrown = assertThrows(
-        UncheckedSqlException.class,
+    SQLException thrown = assertThrows(
+        SQLException.class,
         () -> sql.query(connection(), AnotherItemBean.class));
-    assertThat(thrown).hasMessageThat().contains("CREATION_TIME");
+    assertThat((Exception) thrown).hasMessageThat().contains("CREATION_TIME");
   }
 
   @Test public void query_withResultBeanType_nullPrimitiveColumn() throws Exception {
