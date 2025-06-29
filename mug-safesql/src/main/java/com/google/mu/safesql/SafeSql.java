@@ -382,7 +382,7 @@ import com.google.mu.util.stream.BiStream;
  * calling from outside of a transaction, by using try-with-resources to close the connection:
  *
  * <pre>{@code
- * // Use Java 16 record for brevity
+ * // Use Java 16 record for brevity. You can use a regular class too.
  * @Component
  * public record SafeSqlBridge(DataSource dataSource, SQLExceptionTranslator translator) {
  *   public int executeUpdate(String task, SafeSql sql) {
@@ -405,7 +405,7 @@ import com.google.mu.util.stream.BiStream;
  * }</pre>
  *
  * You can then dependency-inject SafeSqlBridge to execute SafeSql queries: <pre>{@code
- * // Use Java 16 record for brevity
+ * // Use Java 16 record for brevity. You can use a regular class too.
  * @Service
  * record MyService(SafeSqlBridge bridge) {
  *   @Transactional void transferCredit(String fromAccount, String toAccount) {
