@@ -367,7 +367,8 @@ import com.google.mu.util.stream.BiStream;
  *
  * <hr width = "100%" size = "2"></hr>
  *
- * <p>To participate in Spring declarative transaction (methods annotated with {@code @Transactional}),
+ * <p><em>For Spring users:</em> in order to participate in Spring declarative transaction
+ * (methods annotated with {@code @Transactional}),
  * you need to call one of the methods that accept a {@link Connection}, such as the
  * {@link #update(Connection)} method. In a nutshell, it takes calling
  * {@code DataSourceUtils.getConnection(dataSource)} to get the connection in the current transaction,
