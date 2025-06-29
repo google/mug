@@ -59,11 +59,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import javax.sql.DataSource;
+
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.errorprone.annotations.CompileTimeConstant;
-import com.google.errorprone.annotations.Immutable;
 import com.google.errorprone.annotations.MustBeClosed;
+import com.google.errorprone.annotations.ThreadSafe;
 import com.google.mu.annotations.TemplateFormatMethod;
 import com.google.mu.annotations.TemplateString;
 import com.google.mu.util.CharPredicate;
@@ -91,7 +93,7 @@ import com.google.mu.util.stream.BiStream;
  *     GROUP BY `{group_columns}`
  *     """,
  *     groupColumns, sku, groupColumns);
- * List<RevenueRecord> results = sql.query(connection, RevenueRecord.class);
+ * List<RevenueRecord> results = sql.query(dataSource, RevenueRecord.class);
  * }</pre>
  *
  * <p>By default, all placeholder values are passed as JDBC parameters, unless quoted by backticks
@@ -117,7 +119,7 @@ import com.google.mu.util.stream.BiStream;
  *       WHERE firstName = {first_name} AND lastName IN ({last_names})
  *       """,
  *       firstName, lastNamesList);
- *   List<Long> ids = sql.query(connection, Long.class);
+ *   List<Long> ids = sql.query(dataSource, Long.class);
  * }</pre>
  *
  * In the above example if {@code firstName} is "Emma" and {@code lastNamesList} is
@@ -223,7 +225,7 @@ import com.google.mu.util.stream.BiStream;
  *   }
  *
  *   List<User> users = usersQuery(userCriteria, "email", "lastName")
- *       .query(connection, User.class);
+ *       .query(dataSource, User.class);
  * }</pre>
  *
  * <p>The special "{foo? -> ...}" guard syntax informs the template engine that the
@@ -301,7 +303,7 @@ import com.google.mu.util.stream.BiStream;
  *   String searchTerm = ...;
  *   SafeSql sql = SafeSql.of(
  *       "SELECT id FROM Users WHERE firstName LIKE '%{search_term}%'", searchTerm);
- *   List<Long> ids = sql.query(connection, Long.class);
+ *   List<Long> ids = sql.query(dataSource, Long.class);
  * }</pre>
  *
  * <p><strong>Automatic Escaping: No Need for ESCAPE Clause</strong></p>
@@ -372,7 +374,7 @@ import com.google.mu.util.stream.BiStream;
  *
  * @since 8.2
  */
-@Immutable
+@ThreadSafe
 @CheckReturnValue
 public final class SafeSql {
   private static final Substring.Pattern OPTIONAL_PARAMETER =
@@ -411,7 +413,7 @@ public final class SafeSql {
    * List<Long> jobIds = SafeSql.of(
    *         "SELECT id FROM Jobs WHERE timestamp BETWEEN {start} AND {end}",
    *         startTime, endTime)
-   *     .query(connection, Long.class);
+   *     .query(dataSource, Long.class);
    * }</pre>
    *
    * <p>Note that if you plan to create a {@link PreparedStatement} and use it multiple times
@@ -526,7 +528,7 @@ public final class SafeSql {
    *
    * String searchBy = ...;
    * List<User> userIds = FIND_USERS_BY_NAME.with(asList("id", "name"), searchBy)
-   *     .query(connection, User.class);
+   *     .query(dataSource, User.class);
    * }</pre>
    *
    * <p>If you don't need a reusable template, consider using {@link #of} instead, which is simpler.
@@ -633,12 +635,12 @@ public final class SafeSql {
   }
 
   /**
-   * Executes the encapsulated SQL as a query against {@code connection}. The {@link ResultSet}
-   * will be consumed, transformed to a list of {@code T} and then closed before returning.
+   * Executes the encapsulated SQL as a query against {@code dataSource.getConnection()}.
+   * The {@link ResultSet} will be consumed, transformed to a list of {@code T} and then closed before returning.
    *
    * <p>For example: <pre>{@code
    * List<User> users = SafeSql.of("SELECT id, name FROM Users WHERE name LIKE '%{name}%'", name)
-   *     .query(connection, User.class);
+   *     .query(dataSource, User.class);
    *
    * record User(long id, String name) {...}
    * }</pre>
@@ -658,13 +660,13 @@ public final class SafeSql {
    * <p>Alternatively, if your query only selects one column, you could also use this method
    * to read the results: <pre>{@code
    * List<String> names = SafeSql.of("SELECT name FROM Users WHERE name LIKE '%{name}%'", name)
-   *     .query(connection, String.class);
+   *     .query(dataSource, String.class);
    * }</pre>
    *
    * <p>You can also map the result rows to Java Beans, for example: <pre>{@code
    * List<UserBean> users =
    *     SafeSql.of("SELECT id, name FROM Users WHERE name LIKE '%{name}%'", name)
-   *         .query(connection, UserBean.class);
+   *         .query(dataSource, UserBean.class);
    *
    * public class UserBean {
    *   public void setId(long id) {...}
@@ -689,6 +691,20 @@ public final class SafeSql {
    * </ul>
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
+   * @since 9.0
+   */
+  public <T> List<T> query(DataSource dataSource, Class<? extends T> resultType) {
+    return query(dataSource, stmt -> {}, resultType);
+  }
+
+  /**
+   * Similar to {@link #query(DataSource, Class)}, but uses an existing connection.
+   *
+   * <p>It's usually more convenient to use the {@code DataSource} overload because you won't have
+   * to manage the JDBC resources. Use this method if you need to reuse a connection
+   * (mostly for multi-statement transactions).
+   *
+   * @throws UncheckedSqlException wraps {@link SQLException} if failed
    * @since 8.7
    */
   public <T> List<T> query(Connection connection, Class<? extends T> resultType) {
@@ -696,8 +712,31 @@ public final class SafeSql {
   }
 
   /**
-   * Executes the encapsulated SQL as a query against {@code connection}. The {@link ResultSet}
-   * will be consumed, transformed by {@code rowMapper} and then closed before returning.
+   * Executes the encapsulated SQL as a query against {@code dataSource.getConnection()}.
+   * The {@link ResultSet} will be consumed, transformed by {@code rowMapper} and then closed before returning.
+   *
+   * <p>For example: <pre>{@code
+   * List<Long> ids = SafeSql.of("SELECT id FROM Users WHERE name LIKE '%{name}%'", name)
+   *     .query(dataSource, row -> row.getLong("id"));
+   * }</pre>
+   *
+   * <p>Internally it delegates to {@link PreparedStatement#executeQuery} or {@link
+   * Statement#executeQuery} if this sql contains no JDBC binding parameters.
+   *
+   * @throws UncheckedSqlException wraps {@link SQLException} if failed
+   * @since 9.0
+   */
+  public <T> List<T> query(
+      DataSource dataSource, SqlFunction<? super ResultSet, ? extends T> rowMapper) {
+    return query(dataSource, stmt -> {}, rowMapper);
+  }
+
+  /**
+   * Similar to {@link #query(DataSource, SqlFunction)}, but uses an existing connection.
+   *
+   * <p>It's usually more convenient to use the {@code DataSource} overload because you won't have
+   * to manage the JDBC resources. Use this method if you need to reuse a connection
+   * (mostly for multi-statement transactions).
    *
    * <p>For example: <pre>{@code
    * List<Long> ids = SafeSql.of("SELECT id FROM Users WHERE name LIKE '%{name}%'", name)
@@ -715,9 +754,26 @@ public final class SafeSql {
   }
 
   /**
-   * Similar to {@link #query(Connection, Class)}, but with {@code settings}
+   * Similar to {@link #query(DataSource, Class)}, but with {@code settings}
    * (can be set via lambda like {@code stmt -> stmt.setMaxRows(100)})
    * to allow customization.
+   *
+   * @throws UncheckedSqlException wraps {@link SQLException} if failed
+   * @since 9.0
+   */
+  public <T> List<T> query(
+      DataSource dataSource,
+      SqlConsumer<? super Statement> settings,
+      Class<? extends T> resultType) {
+    return query(dataSource, settings, ResultMapper.toResultOf(resultType)::from);
+  }
+
+  /**
+   * Similar to {@link #query(DataSource, SqlConsumer, Class)}, but uses an existing connection.
+   *
+   * <p>It's usually more convenient to use the {@code DataSource} overload because you won't have
+   * to manage the JDBC resources. Use this method if you need to reuse a connection
+   * (mostly for multi-statement transactions).
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    * @since 9.0
@@ -730,10 +786,39 @@ public final class SafeSql {
   }
 
   /**
-   * Executes the encapsulated SQL as a query against {@code connection}, using {@code settings}
-   * (can be set via lambda like {@code stmt -> stmt.setMaxRows(100)}).
+   * Executes the encapsulated SQL as a query against {@code dataSource.getConnection()},
+   * using {@code settings} (can be set via lambda like {@code stmt -> stmt.setMaxRows(100)}).
    * The {@link ResultSet} will be consumed, transformed by {@code rowMapper} and then closed
    * before returning.
+   *
+   * <p>For example: <pre>{@code
+   * List<Long> ids = SafeSql.of("SELECT id FROM Users WHERE name LIKE '%{name}%'", name)
+   *     .query(dataSource, stmt -> stmt.setMaxRows(100000), row -> row.getLong("id"));
+   * }</pre>
+   *
+   * <p>Internally it delegates to {@link PreparedStatement#executeQuery} or {@link
+   * Statement#executeQuery} if this sql contains no JDBC binding parameters.
+   *
+   * @throws UncheckedSqlException wraps {@link SQLException} if failed
+   * @since 9.0
+   */
+  public <T> List<T> query(
+      DataSource dataSource,
+      SqlConsumer<? super Statement> settings,
+      SqlFunction<? super ResultSet, ? extends T> rowMapper) {
+    try (Connection connection = dataSource.getConnection()) {
+      return query(connection, settings, rowMapper);
+    } catch (SQLException e) {
+      throw new UncheckedSqlException(e);
+    }
+  }
+
+  /**
+   * Similar to {@link #query(DataSource, SqlConsumer, SqlFunction)}, but uses an existing connection.
+   *
+   * <p>It's usually more convenient to use the {@code DataSource} overload because you won't have
+   * to manage the JDBC resources. Use this method if you need to reuse a connection
+   * (mostly for multi-statement transactions).
    *
    * <p>For example: <pre>{@code
    * List<Long> ids = SafeSql.of("SELECT id FROM Users WHERE name LIKE '%{name}%'", name)

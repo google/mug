@@ -1,210 +1,265 @@
-# Think your SQL is safe from injection? Think again
+# SafeSql: Injection-Safe SQL Templates for Java
 
-SQL Injection has long dominated the OWASP Top 10, yet most Java developers are quick to dismiss it:
+## Introduction
 
-> “We’ve been using PreparedStatement for years—no way we’re vulnerable.”
+SafeSql is a compile-time checked SQL template library for Java. Its purpose is to let
+developers write direct, readable SQL, compose dynamic SQL, and at the same time make accidental
+SQL injection **impossible**. For example:
 
-That’s half true. And the other half is exactly where things fall apart.
+```java {.good}
+// Construct a SafeSql with a template and two placeholder values {id} and {name}.
+SafeSql sql = SafeSql.of(
+    "select id, name, age from users where id = {id} OR name LIKE '%{name}%'",
+    userId, userName);
+
+// convenience method to map `ResultSet` to a list of records or Java beans.
+List<User> users = sql.query(dataSource, User.class);
+```
+
+This template-based syntax allows you to parameterize the SQL safely and conveniently,
+using the `{placeholder}` syntax.
+
+The template placeholder values are automatically sent through JDBC `PreparedStatement`
+when `sql.query()` is called.
 
 ---
 
-## What is Identifier Injection?
+## Common Pain Points in SQL-First Java Development
 
-PreparedStatement binds **values** safely using `?` placeholders.
-But it can’t bind **SQL structure**: table names, column names,
-order-by fields, or control keywords.
+### 1. Dynamic `IN` Clauses with Collections
 
-That means as soon as you write something like this:
+When using an `IN` clause, most frameworks require you to manually construct the right number of
+placeholders, which can be cumbersome and error-prone.
 
-```java
-String orderBy = request.getParameter("sort");
-String sql = "SELECT * FROM users ORDER BY " + orderBy;
-```
+**Example (MyBatis XML):**
 
-You've opened the door to:
-
-```http
-GET /users?sort=name desc; DROP TABLE users --
-```
-
-Which produces:
-
-```sql
-SELECT * FROM users ORDER BY name desc; DROP TABLE users --
-```
-
-> This is identifier injection: your values are protected, but your structure is not.
-
----
-
-## How do frameworks fail to protect this?
-
-Here’s a real-world scenario using MyBatis + Spring JDBC.
-
-### Vulnerable MyBatis Example:
-
-```xml
-<select id="listUsers" resultType="User">
-  SELECT * FROM users
-  <where>
-    <if test="name != null">
-      AND name = #{name}
-    </if>
-  </where>
-  ORDER BY ${sortField}
+```xml {.bad}
+<!-- Using MyBatis <foreach> to handle dynamic IN lists -->
+<select id="findByDepartmentIds" resultType="User">
+  SELECT * FROM Sales
+  WHERE department_id IN
+  <foreach item="id" collection="departmentIds" open="(" separator="," close=")">
+    #{id}
+  </foreach>
 </select>
 ```
-
-Java code:
-
-```java
-Map<String, Object> params = Map.of("name", name, "sortField", sort);
-List<User> users = sqlSession.selectList("listUsers", params);
+```java {.bad}
+// Called with:
+sqlSession.selectList("findByDepartmentIds", Map.of("departmentIds", List.of(1, 2, 3)));
 ```
 
-`#{}` safely binds values.
+It's safe from SQL injection (if you correctly used `#{}`, not `${}`). But it requires the special
+`<foreach>` XML syntax, which adds visual clutter and complexity compared to writing plain SQL. 
 
-But `${}` directly injects unescaped user input. MyBatis documentation says:
-
-> “The `$` sign is not safe and can lead to SQL injection.”  
-> — [MyBatis XML Reference](https://mybatis.org/mybatis-3/sqlmap-xml.html#Dynamic_SQL)
-
-### A Spring JDBC Variant:
-
-```java
-String table = request.getParameter("table");
-String sql = "SELECT * FROM " + table + " WHERE status = ?";
-jdbcTemplate.query(sql, status);
+**With SafeSql:**
+```java {.good}
+List<Integer> departmentIds = List.of(1, 2, 3);
+SafeSql.of(
+    "SELECT * FROM Sales WHERE department_id IN ({department_ids})",
+    departmentIds);
 ```
-
-Looks like you're using `?`—safe, right? But the **table name** is user-controlled and unvalidated.
-
-## Why is identifier injection so overlooked?
-
-1. **No errors, no warnings, no scans** – Static analyzers rarely catch structure-level risks.
-2. **No logs** – Unlike value injection, structure injection happens quietly during string composition.
-3. **Frameworks allow it** – MyBatis lets you use `${}`; Spring JDBC doesn’t warn on concatenated identifiers.
-
-## Is it a real threat?
-
-- **OWASP Cheat Sheet**:  
-  > "Bind variables cannot be used for identifiers like table or column names... use whitelisting."  
-  — [SQL Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html)
-
-- **PostgreSQL Documentation**:  
-  > "Never concatenate unchecked input into dynamic queries. Use quote_ident() for identifiers."  
-  — [PL/pgSQL Docs](https://www.postgresql.org/docs/current/plpgsql-statements.html#PLPGSQL-STATEMENTS-EXECUTING-DYN)
-
-- **SQLAlchemy Docs**:  
-  > "Never, under any circumstances, pass untrusted user input to string-concatenated SQL identifiers such as table names or column names."  
-  — [SQLAlchemy SQL Expression Language](https://docs.sqlalchemy.org/en/20/core/tutorial.html)
+SafeSql automatically expands the list parameter `{department_ids}` to the correct number of
+placeholders and binds the values, eliminating manual string work and preventing common mistakes.
 
 ---
 
-## How SafeSql solves this
+### 2. Conditional Query Fragments
 
-[SafeSql](https://google.github.io/mug/apidocs/com/google/mu/safesql/SafeSql.html) is a 
-compile-time-safe SQL templating system that addresses structure injection head-on:
+Adding optional filters or groupings usually means string concatenation or awkward branching in your code.
 
-```java
-SafeSql query = SafeSql.of(
-  "SELECT `{columns}` FROM users WHERE name LIKE '%{keyword}%'",
-  /* columns */ List.of("id", "email"), /* keyword */ "100%");
-```
-
-```java
-SafeSql query = SafeSql.of(
-    "SELECT * FROM `{table}` WHERE status = {status}", table, status);
-```
-
-Highlights:
-
-- ✅ **Identifier safety**: ``{columns}`` only accepts safe column names (strict validation).
-- ✅ **LIKE safety**: auto-escapes `%`, `_`, and `\` for pattern queries.
-- ✅ **Compile-time template checks**: mismatched parameters? Compilation fails.
-
-Resulting SQL:
-
-```sql
-SELECT `id`, `email` FROM users WHERE name LIKE ?
-```
-
-And parameters:
-
-```java
-statement.setObject(1, "%100\\%%")
-```
-
-What if you forgot to quote the `{columns}` placeholder with backticks?
-
-The template will pass all unquoted placeholders as JDBC parameters and JDBC will reject
-them in the place of columns.
-
----
-
-## Conditional Subqueries: The Underrated Injection Vector
-
-One of the most common sources of dynamic SQL is conditional logic:
-
-- Filtering by optional fields (e.g., keyword, status, type)
-- Adding nested subqueries depending on user input
-- Switching between JOINs or SELECT fields based on context
-
-These are structurally dynamic — and thus **prone to injection** if not composed carefully.
-
-### ❌ What this looks like in Spring or JDBC:
-
-```java
-String sql = "SELECT * FROM users WHERE 1=1";
-if (keyword != null) {
-  sql += " AND name LIKE '%" + keyword + "%'";
+**Example (with manual concatenation):**
+```java {.bad}
+String sql = "SELECT * FROM Sales";
+if (groupByDay) {
+    sql += " GROUP BY department_id, date";
+} else {
+    sql += " GROUP BY department_id";
 }
 ```
+Manually stitching together query fragments can quickly become hard to read and maintain,
+and makes errors or injection bugs more likely.
 
-Even if you bind the "keyword" as parameter,
-the `AND ...` clause itself is dynamically generated,
-and it opens up the door to the dangerous string concatenation that can be user
-influenced, through enough indirections and parameter passing.
-
-### ❌ What this looks like in MyBatis:
-
-```xml
-<select id="listUsers">
-  SELECT * FROM users WHERE 1=1
-  <where>
-    <if test="keyword != null">
-      AND name LIKE CONCAT('%', #{keyword}, '%')
-    </if>
-  </where>
-</select>
+**With SafeSql:**
+```java {.good}
+SafeSql.of(
+    """
+    SELECT department_id {group_by_day -> , date}, COUNT(*) AS cnt
+    FROM Sales
+    WHERE department_id IN ({department_ids})
+    GROUP BY department_id {group_by_day -> , date},
+    """,
+    groupByDay, departmentIds, groupByDay);
 ```
-
-This isn't too bad. But, man, that XML spaghetti. And you have to manually use `CONCAT()`.
-And it doesn't auto-escape the `keyword` value if it includes wildcard or escape characters.
-
-### ✅ What this looks like in SafeSql:
-
-You use the guard `->` syntax:
-
-```java
-Optional<String> keyword = ...;
-SafeSql query = SafeSql.of(
-    "SELECT * FROM Users WHERE 1=1 {keyword? -> AND name LIKE '%keyword?%'}",
-    keyword);
-```
-The `keyword?` placeholder name indicates that it's an `Optional` and when present, renders the
-snippet to the right of the `->` operator, with all of the `keyword?` occurrences parameterized
-with the `keyword` value.
-
-This syntax is:
-- ✅ Declarative
-- ✅ Directly readable as SQL
+The `->` guard in `{group_by_day -> , date}` tells SafeSql to conditionally include `, date`
+wherever needed based on the value of `groupByDay`. This keeps dynamic queries clean and makes
+logic explicit at the SQL level, not hidden in string operations.
 
 ---
 
-## Conclusion: Safety is enforced in SafeSql. There is no "you need to be careful". 
+### 3. Injecting Identifiers like Column or Table Names
 
-Try to shoot yourself in the foot and `SafeSql` will stop you.
+Most frameworks only allow safe parameterization for values, because the JDBC `PreparedStatement`
+only supports value parameterization. When it comes to parameterizing SQL identifiers,
+such as table names or column names, developers are forced to fall back to direct string concatenation.
 
-This is because PreparedStatement guards your values,
-but `SafeSql` guards the entire SQL query through Java's strong type and SQL template semantic analysis.
+**Example (in MyBatis XML):**
+```xml {.bad}
+<select id="findMetrics" resultType="Map">
+  SELECT department_id, date, ${metricColumns}
+  FROM Sales
+</select>
+```
+```java {.bad}
+// When called as:
+sqlSession.selectList("findMetrics", Map.of("metricColumns", "price, currency, discount"));
+// Generates:
+SELECT department_id, date, price, currency, discount FROM Sales
+```
+
+- In MyBatis, `#{}` is for safe value parameterization—these become JDBC parameters and are properly escaped.
+- `${}` is direct string substitution—**raw and unescaped**.
+- Using `${metricColumns}` means *whatever string is supplied* is injected as-is into the SQL.
+    - This creates a **serious SQL injection risk** if any part of the input comes from user data.
+- The similarity between `#{}` (JDBC parameterized) and `${}` (please inject me!) is a frequent source of confusion and mistakes.
+
+**With SafeSql:**
+
+Simply backtick-quote (**or double-quote**, whichever your DB uses to quote identifiers)
+the placeholder and SafeSql will recognize the intention to use it as an identifier:
+ 
+```java {.good}
+List<String> metricColumns = List.of("price", "currency", "discount");
+SafeSql.of("SELECT department_id, date, `{metric_columns}` FROM Sales", metricColumns);
+```
+SafeSql expands `{metric_columns}` into a comma-separated, properly quoted, and validated list of identifiers.
+Unsafe or invalid names are rejected, which removes a whole class of injection risks and makes the query easy to audit.
+
+---
+
+### 4. Proper Escaping for LIKE Patterns
+
+When user input is used in `LIKE` queries, forgetting to escape `%` or `_` can cause accidental matches or security issues.
+
+**Example (with manual escaping):**
+```java {.bad}
+String term = userInput.replace("%", "\%").replace("_", "\_");
+String sql = "SELECT * FROM users WHERE name LIKE ?";
+jdbcTemplate.query(sql, term);
+```
+Manual escaping is repetitive and easy to forget, leading to unpredictable results or vulnerabilities.
+
+**With SafeSql:**
+```java {.good}
+SafeSql.of("SELECT * FROM users WHERE name LIKE '%{name}%'", userName);
+```
+SafeSql escapes any special characters in parameters used within `LIKE` expressions automatically.
+You don’t have to think about escaping rules or risk mistakes—user input is always treated literally.
+
+---
+
+### 5. Query Composition and Parameter Isolation
+
+Composing queries from reusable fragments often leads to parameter name clashes or incorrect bindings,
+especially as code grows.
+
+With manual tracking, you have to carefully manage names and argument lists, often by inventing your
+own conventions, which makes code hard to read and can break during refactorings.
+
+It’s easy to accidentally overwrite or mismatch parameters, leading to subtle bugs or unexpected results.
+
+**With SafeSql:**
+```java {.good}
+SafeSql computation = SafeSql.of("CASE ... END as computed, {from_time}", fromTime);
+SafeSql whereClause = ...;
+SafeSql.of("SELECT department_id, {computation} FROM Sales WHERE {where_clause}", computation, whereClause);
+```
+Each fragment’s parameters are managed in isolation by SafeSql, so you can safely compose and reuse query parts
+without worrying about accidental overwrites or binding mistakes. They are guaranteed to be eventually sent
+through `PreparedStatement` in the correct order.
+
+---
+
+### 6. Parameter Name and Order Checking
+
+In traditional frameworks, parameter order or name mismatches can slip by the compiler
+and only fail at runtime—or worse, silently produce incorrect results.
+
+**Example (with JDBC):**
+```java {.bad}
+String sql = "SELECT * FROM users WHERE id = ? AND name = ?";
+preparedStatement.setInt(1, userName); // mistake: wrong order
+preparedStatement.setString(2, userId);
+```
+This kind of error won’t always be caught during development, and can be difficult to debug.
+
+**With SafeSql:**
+SafeSql integrates with ErrorProne to check at compile time that the template placeholders and the
+template arguments match.
+If you get the order or number of arguments wrong, you’ll get a clear compilation error.
+
+For example, the following code will fail to compile because the order of the two arguments is wrong:
+
+```java
+SafeSql.of(
+    "select id, name, age from users where id = {id} OR name LIKE '%{name}%'",
+    userName, userId);
+```
+
+Such compile-time check is very useful when your SQL is large and you need to change or move a
+snippet around, which can cause the placeholders no longer matching the template arguments.
+
+Sometimes you may run into a placeholder name that doesn't match the corresponding argument expression.
+If renaming the placeholder isn't an option, consider using an explicit comment like the following:
+
+```java
+SafeSql.of(
+    "select id, name, age from users where id = {user_id} OR name LIKE '%{user_name}%'",
+    /* user_id */ userRequest.getUuid(), userRequest.getUserName());
+```
+
+The explicit `/* user_id */` confirms your intention to both SafeSql **and to your readers**
+that you do mean to use the uuid as the `user_id`. 
+
+---
+
+### 7. Real, Actual SQL. No DSL; No XML
+
+A common pain point with many Java data frameworks is that you end up writing SQL as a domain-specific language (DSL),
+verbose XML, or by assembling fragments with string builders. This creates a barrier when trying to move between
+your code and SQL consoles, and often obscures the actual query.
+
+With SafeSql, what you write in the SQL template is real SQL. Everything outside of the `{placeholders}`
+are _what-you-see-is-what-you-get_.
+There’s no intermediate layer or DSL to learn and two-way translate in your head.
+Queries are copy-pasteable between code and database consoles with minimal manual change required.
+This keeps the workflow frictionless, simplifies debugging, and helps to make your SQL transparent and maintainable.
+
+---
+
+### 8. Type Safety
+
+SafeSql doesn't know your database schema so cannot check for column types or column name typos.
+
+But typos and superficial type mismatch (like using int for the `name` column) are the easy kind of errors:
+
+- If you test your SQL (and you should), the DB will instantly catch these errors for you.
+  - In fact, it's best if you've copied the SQL from the DB console where the correctness is already verified.
+  - And you should have automated tests to ensure the SQL not only type checks, but gives you the right result.
+- Most db types are numbers and strings. So the type checking can only provide marginal protection anyways. 
+
+The main safety advantages of SafeSql are in its industry-strength SQL injection prevention, parameter wiring,
+and convenient dynamic query construction—areas where mistakes are easy to make and hard to find otherwise.
+
+---
+
+## Security Best Practices
+
+No additional best practices are needed: if your code compiles and runs, your SQL is safe from injection.
+
+But just as a tip to avoid running into safety-related runtime errors during test: remember to identifier-quote
+(double-quote or backtick-quote) your `{table_name}`.
+
+And if you like explicitness, consider quoting all string-typed placeholders:
+either it's a table or column name and needs identifier-quotes, or it's a string value,
+which you can single-quote like `'{user_name}'`. It doesn't change runtime behavior,
+but makes the SQL read less ambiguous.
