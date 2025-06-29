@@ -704,10 +704,10 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
                 .update(connection()))
         .isEqualTo(1);
     SafeSql sql = SafeSql.of("select id, time, title from ITEMS where id = {id}", testId());
-    SQLException thrown = assertThrows(
+    Exception thrown = assertThrows(
         SQLException.class,
         () -> sql.query(connection(), AnotherItemBean.class));
-    assertThat((Exception) thrown).hasMessageThat().contains("CREATION_TIME");
+    assertThat(thrown).hasMessageThat().contains("CREATION_TIME");
   }
 
   @Test public void query_withResultBeanType_nullPrimitiveColumn() throws Exception {
