@@ -369,13 +369,19 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
             SafeSql.of("select title from ITEMS where id = {id}", testId())
                 .query(connection(), String.class))
         .containsExactly("bar");
+    assertThat(
+            SafeSql.of("select NULL AS title from ITEMS where id = {id}", testId())
+                .query(connection(), String.class))
+        .containsExactly(null);
   }
 
   @Test public void query_withResultType_toBooleanResults() throws Exception {
     assertThat(
-            SafeSql.of("select (1 = 1)")
-                .query(connection(), Boolean.class))
+            SafeSql.of("select (1 = 1)").query(connection(), Boolean.class))
         .containsExactly(true);
+    assertThat(
+            SafeSql.of("select NULL").query(connection(), Boolean.class))
+        .containsExactly(null);
   }
 
   @Test public void query_withResultType_toIntResults() throws Exception {
@@ -388,26 +394,37 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
             SafeSql.of("select id from ITEMS where id = {id}", testId())
                 .query(connection(), Integer.class))
         .containsExactly(testId());
+    assertThat(
+            SafeSql.of("select NULL AS id").query(connection(), Integer.class))
+        .containsExactly(null);
   }
 
   @Test public void query_withResultType_toShortResults() throws Exception {
     assertThat(SafeSql.of("select 123").query(connection(), Short.class))
         .containsExactly((short) 123);
+    assertThat(SafeSql.of("select NULL").query(connection(), Short.class))
+        .containsExactly(null);
   }
 
   @Test public void query_withResultType_toByteResults() throws Exception {
     assertThat(SafeSql.of("select 123").query(connection(), Byte.class))
         .containsExactly((byte) 123);
+    assertThat(SafeSql.of("select NULL").query(connection(), Byte.class))
+        .containsExactly(null);
   }
 
   @Test public void query_withResultType_toCharResults() throws Exception {
     assertThat(SafeSql.of("select 'a'").query(connection(), Character.class))
         .containsExactly('a');
+    assertThat(SafeSql.of("select NULL").query(connection(), Character.class))
+        .containsExactly(null);
   }
 
   @Test public void query_withResultType_toLongResults() throws Exception {
     assertThat(SafeSql.of("select 123").query(connection(), Long.class))
         .containsExactly(123L);
+    assertThat(SafeSql.of("select NULL").query(connection(), Long.class))
+        .containsExactly(null);
   }
 
   @Test public void query_withResultType_toLocalDateResults() throws Exception {
