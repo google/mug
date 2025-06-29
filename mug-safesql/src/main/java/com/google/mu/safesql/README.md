@@ -1,4 +1,4 @@
-# SafeSql: Compile-Time Safe SQL Templates for Java
+# SafeSql: Injection-Safe SQL Templates for Java
 
 ## Introduction
 
