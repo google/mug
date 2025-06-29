@@ -291,26 +291,18 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
       }
       if (placeholder.hasConditionalOperator()) {
         Type argType = ASTHelpers.getType(arg);
-        boolean isBooleanArg =
-            ASTHelpers.isSameType(argType, state.getSymtab().booleanType, state)
-                || BOOLEAN_TYPE.isSameType(argType, state);
-        checkingOn(() -> placeholder.sourcePosition(formatExpression, state))
-            .require(isBooleanArg || OPTIONAL_TYPE.isSameType(argType, state),
-                "String format placeholder {%s} (defined as in \"%s\") is expected to be boolean or"
-                    + " Optional, whereas argument <%s> is of type %s",
-                placeholder.name(),
-                placeholder,
-                arg,
-                argType);
+        NodeCheck onPlaceholder = checkingOn(() -> placeholder.sourcePosition(formatExpression, state));
         ImmutableSet<String> references = placeholder.optionalParametersFromOperatorRhs();
-        if (isBooleanArg) {
-          checkingOn(() -> placeholder.sourcePosition(formatExpression, state))
-              .require(
-                  references.isEmpty(),
-                  "placeholder {%s ->} is of type boolean, right-hand-side references not supported: %s",
-                  placeholder.name(), references);
+        if (ASTHelpers.isSameType(argType, state.getSymtab().booleanType, state)
+            || BOOLEAN_TYPE.isSameType(argType, state)) {
+          onPlaceholder.require(
+              references.isEmpty(),
+              "placeholder {%s ->} is of type boolean, right-hand-side references are only"
+                  + " applicable to optional placeholders: %s",
+              placeholder.name(),
+              references);
         } else if (OPTIONAL_TYPE.isSameType(argType, state)) {
-          checkingOn(() -> placeholder.sourcePosition(formatExpression, state))
+          onPlaceholder
               .require(
                   placeholder.hasOptionalParameter(),
                   "optional parameter {%s->} must be an identifier followed by a '?'",
@@ -326,6 +318,11 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
                   "unexpected optional parameters to the right of {%s->}: %s",
                   placeholder.name(),
                   Sets.difference(references, ImmutableSet.of(placeholder.name())));
+        } else {
+          throw onPlaceholder.report(
+              "String format placeholder {%s} (defined as in \"%s\") is expected to be boolean"
+                  + " or Optional, whereas argument <%s> is of type %s",
+              placeholder.name(), placeholder, arg, argType);
         }
       }
     }
