@@ -2976,6 +2976,45 @@ public final class StringFormatArgsCheckTest {
   }
 
   @Test
+  public void templateFormatMethod_booleanWithArrowOperator_questionMarkAllowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.stream.Stream;",
+            "class Test {",
+            "  void test(boolean isFoo) {",
+            "    query(\"SELECT {is_foo? -> foo}\", isFoo);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_booleanWithArrowOperator_questionMarkReferenceDisallowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.stream.Stream;",
+            "class Test {",
+            "  void test(boolean isFoo) {",
+            "    query(",
+            "        // BUG: Diagnostic contains: placeholder {is_foo? ->} is of type boolean, right-hand-side references not supported: [is_foo?]",
+            "        \"SELECT {is_foo? -> is_foo?}\",",
+            "        isFoo);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
   public void templateFormatMethod_optionalParameterForArrowOperator_allowed() {
     helper
         .addSourceLines(

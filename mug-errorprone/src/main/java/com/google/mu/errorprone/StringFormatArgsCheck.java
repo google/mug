@@ -291,38 +291,41 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
       }
       if (placeholder.hasConditionalOperator()) {
         Type argType = ASTHelpers.getType(arg);
+        boolean isBooleanArg =
+            ASTHelpers.isSameType(argType, state.getSymtab().booleanType, state)
+                || BOOLEAN_TYPE.isSameType(argType, state);
         checkingOn(() -> placeholder.sourcePosition(formatExpression, state))
-            .require(
-                ASTHelpers.isSameType(argType, state.getSymtab().booleanType, state)
-                    || BOOLEAN_TYPE.isSameType(argType, state)
-                    || OPTIONAL_TYPE.isSameType(argType, state),
+            .require(isBooleanArg || OPTIONAL_TYPE.isSameType(argType, state),
                 "String format placeholder {%s} (defined as in \"%s\") is expected to be boolean or"
                     + " Optional, whereas argument <%s> is of type %s",
                 placeholder.name(),
                 placeholder,
                 arg,
                 argType);
-        if (OPTIONAL_TYPE.isSameType(argType, state)) {
+        ImmutableSet<String> references = placeholder.optionalParametersFromOperatorRhs();
+        if (isBooleanArg) {
+          checkingOn(() -> placeholder.sourcePosition(formatExpression, state))
+              .require(
+                  references.isEmpty(),
+                  "placeholder {%s ->} is of type boolean, right-hand-side references not supported: %s",
+                  placeholder.name(), references);
+        } else if (OPTIONAL_TYPE.isSameType(argType, state)) {
           checkingOn(() -> placeholder.sourcePosition(formatExpression, state))
               .require(
                   placeholder.hasOptionalParameter(),
                   "optional parameter {%s->} must be an identifier followed by a '?'",
                   placeholder.name())
               .require(
-                  !placeholder.optionalParametersFromOperatorRhs().isEmpty(),
+                  !references.isEmpty(),
                   "optional parameter %s must be referenced at least once to the right of"
                       + " {%s->}",
                   placeholder.name(),
                   placeholder.name())
               .require(
-                  placeholder
-                      .optionalParametersFromOperatorRhs()
-                      .equals(ImmutableSet.of(placeholder.name())),
+                  references.equals(ImmutableSet.of(placeholder.name())),
                   "unexpected optional parameters to the right of {%s->}: %s",
                   placeholder.name(),
-                  Sets.difference(
-                      placeholder.optionalParametersFromOperatorRhs(),
-                      ImmutableSet.of(placeholder.name())));
+                  Sets.difference(references, ImmutableSet.of(placeholder.name())));
         }
       }
     }
