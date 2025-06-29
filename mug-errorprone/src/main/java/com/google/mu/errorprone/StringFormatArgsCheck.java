@@ -314,8 +314,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
                   placeholder.name())
               .require(
                   !references.isEmpty(),
-                  "optional parameter %s must be referenced at least once to the right of"
-                      + " {%s->}",
+                  "optional parameter %s must be referenced at least once to the right of {%s->}",
                   placeholder.name(),
                   placeholder.name())
               .require(
