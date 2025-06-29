@@ -263,11 +263,3 @@ And if you like explicitness, consider quoting all string-typed placeholders:
 either it's a table or column name and needs identifier-quotes, or it's a string value,
 which you can single-quote like `'{user_name}'`. It doesn't change runtime behavior,
 but makes the SQL read less ambiguous.
-
----
-
-## Conclusion
-
-SafeSql helps keep handwritten SQL expressive and robust, while removing many sources of subtle errors and security risks.
-Its template syntax and compile-time checks make query development safer and more maintainable,
-so you can focus on business logic—not boilerplate or defensive programming.
