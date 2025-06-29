@@ -386,9 +386,10 @@ import com.google.mu.util.stream.BiStream;
  * // Use Java 16 record for brevity. You can use a regular class too.
  * @Component
  * public record SafeSqlBridge(DataSource dataSource, SQLExceptionTranslator translator) {
- *   public int executeUpdate(String task, SafeSql sql) {
+ *   public int executeUpdate(SafeSql sql) {
  *     try {
  *       if (TransactionSynchronizationManager.isActualTransactionActive()) {
+ *         // in an active transaction, don't close or release the connection.
  *         return sql.update(DataSourceUtils.getConnection(dataSource()));
  *       } else {
  *         // not in active transaction, should close the connection.
@@ -397,7 +398,8 @@ import com.google.mu.util.stream.BiStream;
  *         }
  *       }
  *     } catch (SQLException e) {
- *       DataAccessException dae = translator().translate(task, sql.debugString(), e);
+ *       DataAccessException dae =
+ *           translator().translate("executeUpdate(SafeSql)", sql.debugString(), e);
  *       if (dae == null) throw new UncheckedSqlException(e);
  *       throw dae;
  *     }
