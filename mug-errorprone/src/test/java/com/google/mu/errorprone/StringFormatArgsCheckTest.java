@@ -3004,7 +3004,7 @@ public final class StringFormatArgsCheckTest {
             "class Test {",
             "  void test(boolean isFoo) {",
             "    query(",
-            "        // BUG: Diagnostic contains: placeholder {is_foo? ->} is of type boolean",
+            " // BUG: Diagnostic contains: placeholder {is_foo? ->} maps to boolean expression <isFoo>",
             "        \"SELECT {is_foo? -> is_foo?}\",",
             "        isFoo);",
             "  }",

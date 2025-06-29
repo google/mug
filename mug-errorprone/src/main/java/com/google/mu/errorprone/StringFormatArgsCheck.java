@@ -46,6 +46,7 @@ import com.google.mu.util.CaseBreaker;
 import com.google.mu.util.Substring;
 import com.google.mu.util.stream.BiStream;
 import com.sun.source.tree.ExpressionTree;
+import com.sun.source.tree.LineMap;
 import com.sun.source.tree.MemberReferenceTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.NewClassTree;
@@ -253,6 +254,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
     }
     ImmutableList<String> normalizedArgTexts =
         argSources.stream().map(txt -> normalizeForComparison(txt)).collect(toImmutableList());
+    LineMap lineMap = state.getPath().getCompilationUnit().getLineMap();
     for (int i = 0; i < placeholders.size(); i++) {
       Placeholder placeholder = placeholders.get(i);
       String normalizedPlacehoderName = normalizeForComparison(placeholder.name());
@@ -297,10 +299,13 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
             || BOOLEAN_TYPE.isSameType(argType, state)) {
           onPlaceholder.require(
               references.isEmpty(),
-              "placeholder {%s ->} is of type boolean, right-hand-side references are only"
-                  + " applicable to optional placeholders: %s",
-              placeholder.name(),
-              references);
+              "placeholder {%s ->} maps to boolean expression <%s> at line %s. The optional"
+                  + " placeholder references %s to the right of the `->` operator should only be"
+                  + " used for an optional placeholder.",
+                  placeholder.name(),
+                  arg,
+                  lineMap.getLineNumber(ASTHelpers.getStartPosition(arg)),
+                  references);
         } else if (OPTIONAL_TYPE.isSameType(argType, state)) {
           onPlaceholder
               .require(
@@ -321,8 +326,12 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
         } else {
           throw onPlaceholder.report(
               "String format placeholder {%s} (defined as in \"%s\") is expected to be boolean"
-                  + " or Optional, whereas argument <%s> is of type %s",
-              placeholder.name(), placeholder, arg, argType);
+                  + " or Optional, whereas argument <%s> at line %s is of type %s",
+              placeholder.name(),
+              placeholder,
+              arg,
+              lineMap.getLineNumber(ASTHelpers.getStartPosition(arg)),
+              argType);
         }
       }
     }
