@@ -257,10 +257,10 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
     LineMap lineMap = state.getPath().getCompilationUnit().getLineMap();
     for (int i = 0; i < placeholders.size(); i++) {
       Placeholder placeholder = placeholders.get(i);
+      NodeCheck onPlaceholder = checkingOn(() -> placeholder.sourcePosition(formatExpression, state));
       String normalizedPlacehoderName = normalizeForComparison(placeholder.name());
-      checkingOn(() -> placeholder.sourcePosition(formatExpression, state))
-          .require(
-              args.size() > i, "No value is provided for placeholder {%s}", placeholder.name());
+      onPlaceholder.require(
+          args.size() > i, "No value is provided for placeholder {%s}", placeholder.name());
       ExpressionTree arg = args.get(i);
       if (!normalizedArgTexts.get(i).contains(normalizedPlacehoderName)) {
         // arg doesn't match placeholder
@@ -293,7 +293,6 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
       }
       if (placeholder.hasConditionalOperator()) {
         Type argType = ASTHelpers.getType(arg);
-        NodeCheck onPlaceholder = checkingOn(() -> placeholder.sourcePosition(formatExpression, state));
         ImmutableSet<String> references = placeholder.optionalParametersFromOperatorRhs();
         if (ASTHelpers.isSameType(argType, state.getSymtab().booleanType, state)
             || BOOLEAN_TYPE.isSameType(argType, state)) {
