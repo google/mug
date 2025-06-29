@@ -258,9 +258,9 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
     for (int i = 0; i < placeholders.size(); i++) {
       Placeholder placeholder = placeholders.get(i);
       NodeCheck onPlaceholder = checkingOn(() -> placeholder.sourcePosition(formatExpression, state));
-      String normalizedPlacehoderName = normalizeForComparison(placeholder.name());
       onPlaceholder.require(
           args.size() > i, "No value is provided for placeholder {%s}", placeholder.name());
+      String normalizedPlacehoderName = normalizeForComparison(placeholder.name());
       ExpressionTree arg = args.get(i);
       if (!normalizedArgTexts.get(i).contains(normalizedPlacehoderName)) {
         // arg doesn't match placeholder
