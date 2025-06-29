@@ -249,8 +249,8 @@ But typos and superficial type mismatch (like using int for the `name` column) a
 - False sense of security is dangerous. If you ever wish to skip testing your SQL because it "type checks",
   then it's a liability.
 
-The main safety advantages of SafeSql are in its zero-backdoor SQL injection prevention,
-compile-time *semantic check* such that you can't pass `user.name()` in the place of `{ssn}`
+The main safety advantages of SafeSql are in its **zero-backdoor** SQL injection prevention,
+compile-time **semantic check** such that you can't pass `user.name()` in the place of `{ssn}`
 despite both being string, as well as automatic parameter wiring, and convenient dynamic query
 construction—areas where mistakes are easy to make and hard to find otherwise.
 
