@@ -376,7 +376,7 @@ import com.google.mu.util.stream.BiStream;
  * For that you need Spring's {@code SQLExceptionTranslator}, which has some quirks to use.
  * At this point, it may be easier to create a smaller wrapper class to execute SafeSql within Spring
  * transactions, like the following: <pre>{@code
- * // Use record for brevity
+ * // Use Java 16 record for brevity
  * @Component
  * public record SafeSqlBridge(DataSource dataSource, SQLExceptionTranslator translator) {
  *   public int executeUpdate(String task, SafeSql sql) {
@@ -399,7 +399,7 @@ import com.google.mu.util.stream.BiStream;
  * }</pre>
  *
  * You can then dependency-inject SafeSqlBridge to execute SafeSql queries: <pre>{@code
- * // Use record for brevity
+ * // Use Java 16 record for brevity
  * @Service
  * record MyService(SafeSqlBridge bridge) {
  *   @Transactional void transferCredit(String fromAccount, String toAccount) {
