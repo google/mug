@@ -254,8 +254,15 @@ and convenient dynamic query construction—areas where mistakes are easy to mak
 
 ## Security Best Practices
 
-No additional best practices are needed: if your code compiles and runs, your SQL is safe from injection
-(and most likely safe from programming errors too).
+No additional best practices are needed: if your code compiles and runs, your SQL is safe from injection.
+
+But just as a tip to avoid running into safety-related runtime errors during test: remember to identifier-quote
+(double-quote or backtick-quote) your `{table_name}`.
+
+And if you like explicitness, consider quoting all string-typed placeholders:
+either it's a table ro column name and needs identifier-quotes, or it's a string value,
+which you can single-quote like `'{user_name}'`. It doesn't change runtime behavior,
+but makes the SQL read less ambiguous.
 
 ---
 
