@@ -374,7 +374,7 @@ import com.google.mu.util.stream.BiStream;
  *
  * <p>Note that you will also need to catch {@link SQLException} and turn it into a Spring DataAccessException.
  * For that you need Spring's {@code SQLExceptionTranslator}, which has some quirks to use.
- * At this point, it may be easier to create a smaller wrapper class to execute SafeSql within Spring
+ * At this point, it may be easier to create a small wrapper class to execute SafeSql within Spring
  * transactions, like the following: <pre>{@code
  * // Use Java 16 record for brevity
  * @Component
