@@ -299,7 +299,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
             || BOOLEAN_TYPE.isSameType(argType, state)) {
           onPlaceholder.require(
               references.isEmpty(),
-              "placeholder {%s ->} maps to boolean expression <%s> at line %s. The optional"
+              "guard placeholder {%s ->} maps to boolean expression <%s> at line %s. The optional"
                   + " placeholder references %s to the right of the `->` operator should only be"
                   + " used for an optional placeholder.",
                   placeholder.name(),
@@ -325,10 +325,9 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
                   Sets.difference(references, ImmutableSet.of(placeholder.name())));
         } else {
           throw onPlaceholder.report(
-              "String format placeholder {%s} (defined as in \"%s\") is expected to be boolean"
-                  + " or Optional, whereas argument <%s> at line %s is of type %s",
+              "guard placeholder {%s ->} is expected to be boolean or Optional, whereas"
+                  + " argument <%s> at line %s is of type %s",
               placeholder.name(),
-              placeholder,
               arg,
               lineMap.getLineNumber(ASTHelpers.getStartPosition(arg)),
               argType);
