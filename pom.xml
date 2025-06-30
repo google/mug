@@ -55,6 +55,7 @@
     <module>mug-errorprone</module>
     <module>mug-bigquery</module>
     <module>mug-safesql</module>
+    <module>mug-gatherers</module>
   </modules>
 
   <properties>
