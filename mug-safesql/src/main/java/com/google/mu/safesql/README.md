@@ -245,10 +245,14 @@ But typos and superficial type mismatch (like using int for the `name` column) a
 - If you test your SQL (and you should), the DB will instantly catch these errors for you.
   - In fact, it's best if you've copied the SQL from the DB console where the correctness is already verified.
   - And you should have automated tests to ensure the SQL not only type checks, but gives you the right result.
-- Most db types are numbers and strings. So the type checking can only provide marginal protection anyways. 
+- Most db types are numbers and strings. So the type checking can only provide marginal protection anyways.
+- False sense of security is dangerous. If you ever wish to skip testing your SQL because it "type checks",
+  then it's a liability.
 
-The main safety advantages of SafeSql are in its industry-strength SQL injection prevention, parameter wiring,
-and convenient dynamic query construction—areas where mistakes are easy to make and hard to find otherwise.
+The main safety advantages of SafeSql are in its **zero-backdoor** SQL injection prevention,
+compile-time **semantic check** such that you can't pass `user.name()` in the place of `{ssn}`
+despite both being string, as well as automatic parameter wiring, and convenient dynamic query
+construction—areas where mistakes are easy to make and hard to find otherwise.
 
 ---
 
@@ -257,9 +261,9 @@ and convenient dynamic query construction—areas where mistakes are easy to mak
 No additional best practices are needed: if your code compiles and runs, your SQL is safe from injection.
 
 But just as a tip to avoid running into safety-related runtime errors during test: remember to identifier-quote
-(double-quote or backtick-quote) your `{table_name}`.
+(double-quote or backtick-quote) your `"{table_name}"`.
 
 And if you like explicitness, consider quoting all string-typed placeholders:
-either it's a table or column name and needs identifier-quotes, or it's a string value,
+either it's a table/column name and needs identifier-quotes, or it's a string value,
 which you can single-quote like `'{user_name}'`. It doesn't change runtime behavior,
 but makes the SQL read less ambiguous.

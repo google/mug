@@ -2929,9 +2929,11 @@ public final class StringFormatArgsCheckTest {
             "import com.google.mu.annotations.TemplateString;",
             "import java.util.stream.Stream;",
             "class Test {",
-            "  void test(int isFoo) {",
-            "    // BUG: Diagnostic contains: \"SELECT <{is_foo -> foo}>\") is expected to be boolean",
-            "    query(\"SELECT {is_foo -> foo}\", isFoo);",
+            "  void test(int fooId) {",
+            "    // BUG: Diagnostic contains: guard placeholder {foo_id ->} is",
+            "    // expected to be boolean or Optional,",
+            "    // whereas argument <fooId> at line 9 is of type int",
+            "    query(\"SELECT {foo_id -> foo_id}\", fooId);",
             "  }",
             "  @TemplateFormatMethod",
             "  void query(@TemplateString String template, Object... args) {}",
@@ -2968,6 +2970,47 @@ public final class StringFormatArgsCheckTest {
             "class Test {",
             "  void test(Boolean isFoo) {",
             "    query(\"SELECT {is_foo -> foo}\", isFoo);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_booleanWithArrowOperator_questionMarkAllowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.stream.Stream;",
+            "class Test {",
+            "  void test(boolean isFoo) {",
+            "    query(\"SELECT {is_foo? -> foo}\", isFoo);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_booleanWithArrowOperator_questionMarkReferenceDisallowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.stream.Stream;",
+            "class Test {",
+            "  void test(boolean isFoo) {",
+            "    query(",
+            "        // BUG: Diagnostic contains: placeholder {is_foo? ->}",
+            "        // <isFoo> at line 11. The optional placeholder references [is_foo?] to the",
+            "        // right of the `->` operator should only be used for an optional placeholder",
+            "        \"SELECT {is_foo? -> is_foo?}\",",
+            "        isFoo);",
             "  }",
             "  @TemplateFormatMethod",
             "  void query(@TemplateString String template, Object... args) {}",

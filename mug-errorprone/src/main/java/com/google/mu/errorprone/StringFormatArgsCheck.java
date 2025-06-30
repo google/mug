@@ -46,6 +46,7 @@ import com.google.mu.util.CaseBreaker;
 import com.google.mu.util.Substring;
 import com.google.mu.util.stream.BiStream;
 import com.sun.source.tree.ExpressionTree;
+import com.sun.source.tree.LineMap;
 import com.sun.source.tree.MemberReferenceTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.NewClassTree;
@@ -253,12 +254,13 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
     }
     ImmutableList<String> normalizedArgTexts =
         argSources.stream().map(txt -> normalizeForComparison(txt)).collect(toImmutableList());
+    LineMap lineMap = state.getPath().getCompilationUnit().getLineMap();
     for (int i = 0; i < placeholders.size(); i++) {
       Placeholder placeholder = placeholders.get(i);
+      NodeCheck onPlaceholder = checkingOn(() -> placeholder.sourcePosition(formatExpression, state));
+      onPlaceholder.require(
+          args.size() > i, "No value is provided for placeholder {%s}", placeholder.name());
       String normalizedPlacehoderName = normalizeForComparison(placeholder.name());
-      checkingOn(() -> placeholder.sourcePosition(formatExpression, state))
-          .require(
-              args.size() > i, "No value is provided for placeholder {%s}", placeholder.name());
       ExpressionTree arg = args.get(i);
       if (!normalizedArgTexts.get(i).contains(normalizedPlacehoderName)) {
         // arg doesn't match placeholder
@@ -291,38 +293,42 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
       }
       if (placeholder.hasConditionalOperator()) {
         Type argType = ASTHelpers.getType(arg);
-        checkingOn(() -> placeholder.sourcePosition(formatExpression, state))
-            .require(
-                ASTHelpers.isSameType(argType, state.getSymtab().booleanType, state)
-                    || BOOLEAN_TYPE.isSameType(argType, state)
-                    || OPTIONAL_TYPE.isSameType(argType, state),
-                "String format placeholder {%s} (defined as in \"%s\") is expected to be boolean or"
-                    + " Optional, whereas argument <%s> is of type %s",
-                placeholder.name(),
-                placeholder,
-                arg,
-                argType);
-        if (OPTIONAL_TYPE.isSameType(argType, state)) {
-          checkingOn(() -> placeholder.sourcePosition(formatExpression, state))
+        ImmutableSet<String> references = placeholder.optionalParametersFromOperatorRhs();
+        if (ASTHelpers.isSameType(argType, state.getSymtab().booleanType, state)
+            || BOOLEAN_TYPE.isSameType(argType, state)) {
+          onPlaceholder.require(
+              references.isEmpty(),
+              "guard placeholder {%s ->} maps to boolean expression <%s> at line %s. The optional"
+                  + " placeholder references %s to the right of the `->` operator should only be"
+                  + " used for an optional placeholder.",
+                  placeholder.name(),
+                  arg,
+                  lineMap.getLineNumber(ASTHelpers.getStartPosition(arg)),
+                  references);
+        } else if (OPTIONAL_TYPE.isSameType(argType, state)) {
+          onPlaceholder
               .require(
                   placeholder.hasOptionalParameter(),
                   "optional parameter {%s->} must be an identifier followed by a '?'",
                   placeholder.name())
               .require(
-                  !placeholder.optionalParametersFromOperatorRhs().isEmpty(),
-                  "optional parameter %s must be referenced at least once to the right of"
-                      + " {%s->}",
+                  !references.isEmpty(),
+                  "optional parameter %s must be referenced at least once to the right of {%s->}",
                   placeholder.name(),
                   placeholder.name())
               .require(
-                  placeholder
-                      .optionalParametersFromOperatorRhs()
-                      .equals(ImmutableSet.of(placeholder.name())),
+                  references.equals(ImmutableSet.of(placeholder.name())),
                   "unexpected optional parameters to the right of {%s->}: %s",
                   placeholder.name(),
-                  Sets.difference(
-                      placeholder.optionalParametersFromOperatorRhs(),
-                      ImmutableSet.of(placeholder.name())));
+                  Sets.difference(references, ImmutableSet.of(placeholder.name())));
+        } else {
+          throw onPlaceholder.report(
+              "guard placeholder {%s ->} is expected to be boolean or Optional, whereas"
+                  + " argument <%s> at line %s is of type %s",
+              placeholder.name(),
+              arg,
+              lineMap.getLineNumber(ASTHelpers.getStartPosition(arg)),
+              argType);
         }
       }
     }
