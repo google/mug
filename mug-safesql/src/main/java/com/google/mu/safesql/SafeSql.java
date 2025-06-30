@@ -1146,7 +1146,8 @@ public final class SafeSql {
    * <p>The returned Template is <em>not</em> thread safe.
    *
    * <p>The caller is expected to close the {@code connection} after done, which will close the
-   * cached PreparedStatement. The {@link ResultSet} objects are guaranteed to be closed after each use.
+   * cached PreparedStatement. The {@link ResultSet} objects are guaranteed to be closed after each use
+   * before the PreparedStatement is closed.
    *
    * @since 8.7
    */
