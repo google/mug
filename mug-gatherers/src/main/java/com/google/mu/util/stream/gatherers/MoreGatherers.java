@@ -54,11 +54,16 @@ public final class MoreGatherers {
 
     class Window {
       private final Semaphore semaphore = new Semaphore(maxConcurrency);
+
       /** Only the main thread adds. Virtual threads may remove upon done to free space. */
       private final ConcurrentMap<Object, Future<?>> running = new ConcurrentHashMap<>();
+
+      /** Main thread reads (consumes) results; virtual threads add upon success. */
       private final ConcurrentLinkedQueue<Result<R>> results = new ConcurrentLinkedQueue<>();
-      // Only Error or RuntimeException
+
+      /** Main thread reads (consumes) exceptions; virtual threads add upon failure. */
       private final ConcurrentLinkedQueue<Throwable> exceptions = new ConcurrentLinkedQueue<>();
+
       boolean integrate(T element, Downstream<? super R> downstream) {
         if (!flush(downstream)) {
           return false;
