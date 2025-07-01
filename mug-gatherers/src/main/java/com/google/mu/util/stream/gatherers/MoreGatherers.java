@@ -6,7 +6,11 @@ import static java.util.stream.Collectors.toCollection;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.Semaphore;
 import java.util.function.Function;
 import java.util.stream.Gatherer;
@@ -39,8 +43,19 @@ public final class MoreGatherers {
       throw new IllegalArgumentException("maxConcurrency must be greater than 0");
     }
 
+    class Work extends FutureTask<Void> {
+      final Thread thread;
+
+      Work(Runnable task) {
+        super(() -> {task.run(); return null;});
+        this.thread = Thread.ofVirtual().unstarted(this);
+      }
+    }
+
     class Window {
       private final Semaphore semaphore = new Semaphore(maxConcurrency);
+      /** Only the main thread adds. Virtual threads may remove upon done to free space. */
+      private final ConcurrentMap<Object, Future<?>> running = new ConcurrentHashMap<>();
       private final ConcurrentLinkedQueue<Result<R>> results = new ConcurrentLinkedQueue<>();
       // Only Error or RuntimeException
       private final ConcurrentLinkedQueue<Throwable> exceptions = new ConcurrentLinkedQueue<>();
@@ -49,15 +64,23 @@ public final class MoreGatherers {
           return false;
         }
         acquireOrFail();
-        Thread.ofVirtual().start(() -> {
+        Object key = new Object();
+        Work work = new Work(() -> {
           try {
             results.add(new Result<>(mapper.apply(element)));
-          } catch (Throwable e) {
+          } catch (RuntimeException e) {
             exceptions.add(e);
+            throw e;
+          } catch (Error e) {
+            exceptions.add(e);
+            throw e;
           } finally {
+            running.remove(key);
             semaphore.release();
           }
         });
+        running.put(key, work);
+        work.thread.start();
         return flush(downstream);
       }
 
@@ -79,6 +102,7 @@ public final class MoreGatherers {
       private void propagateErrors() {
         List<Throwable> thrown = whileNotNull(exceptions::poll).collect(toCollection(ArrayList::new));
         if (thrown.size() > 0) {
+          cancelAll();
           Throwable first = thrown.get(0);
           UncheckedExecutionException executionException = new UncheckedExecutionException(first);
           thrown.stream().skip(1).forEach(executionException::addSuppressed);
@@ -90,8 +114,13 @@ public final class MoreGatherers {
         try {
           semaphore.acquire();
         } catch (InterruptedException e) {
+          cancelAll();
           throw new StructuredConcurrencyInterruptedException(e);
         }
+      }
+
+      private void cancelAll() {
+        running.values().stream().forEach(work -> work.cancel(true));
       }
     }
     return Gatherer.ofSequential(
