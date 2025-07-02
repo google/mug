@@ -90,16 +90,14 @@ public final class MoreGatherers {
 
       private void propagateExceptions() {
         List<Throwable> thrown = whileNotNull(exceptions::poll).toList();
-        if (thrown.size() > 0) {
-          propagateInterruption();
-          for (Thread thread : running.values()) {
-            joinUninterruptibly(thread);
-          }
-          Throwable first = thrown.get(0);
-          var executionException = new UncheckedExecutionException(first);
-          thrown.stream().skip(1).forEach(executionException::addSuppressed);
-          throw executionException;
+        if (thrown.isEmpty()) return;
+        propagateInterruption();
+        for (Thread thread : running.values()) {
+          joinUninterruptibly(thread);
         }
+        var executionException = new UncheckedExecutionException(thrown.get(0));
+        thrown.stream().skip(1).forEach(executionException::addSuppressed);
+        throw executionException;
       }
 
       /** Acquires a semaphore. If interrupted, propagate cancellation then retry. */
