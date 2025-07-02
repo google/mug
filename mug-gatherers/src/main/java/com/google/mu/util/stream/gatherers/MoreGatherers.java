@@ -3,6 +3,7 @@ package com.google.mu.util.stream.gatherers;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toCollection;
+import static java.util.stream.Gatherer.ofSequential;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -74,7 +75,7 @@ public final class MoreGatherers {
 
       @CanIgnoreReturnValue
       boolean flush(Downstream<? super R> downstream) {
-        propagateErrors();
+        propagateExceptions();
         return whileNotNull(results::poll).allMatch(r -> downstream.push(r.value()));
       }
 
@@ -87,15 +88,15 @@ public final class MoreGatherers {
         }
       }
 
-      private void propagateErrors() {
-        List<Throwable> thrown = whileNotNull(exceptions::poll).collect(toCollection(ArrayList::new));
+      private void propagateExceptions() {
+        List<Throwable> thrown = whileNotNull(exceptions::poll).toList();
         if (thrown.size() > 0) {
           propagateInterruption();
           for (Thread thread : running.values()) {
             joinUninterruptibly(thread);
           }
           Throwable first = thrown.get(0);
-          UncheckedExecutionException executionException = new UncheckedExecutionException(first);
+          var executionException = new UncheckedExecutionException(first);
           thrown.stream().skip(1).forEach(executionException::addSuppressed);
           throw executionException;
         }
@@ -113,10 +114,7 @@ public final class MoreGatherers {
         running.values().stream().forEach(Thread::interrupt);
       }
     }
-    return Gatherer.ofSequential(
-        Window::new,
-        Integrator.<Window, T, R>ofGreedy(Window::integrate),
-        Window::finish);
+    return ofSequential(Window::new, Integrator.ofGreedy(Window::integrate), Window::finish);
   }
 
   /**
