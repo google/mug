@@ -81,6 +81,42 @@ public class MoreGatherersTest {
     assertThat(thrown).hasCauseThat().isInstanceOf(NumberFormatException.class);
   }
 
+  @Test public void mapConcurrently_findFirstCancelsPending() {
+    ConcurrentLinkedQueue<Integer> started = new ConcurrentLinkedQueue<>();
+    ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
+    assertThat(
+        Stream.of(10, 1, 3, 0).gather(mapConcurrently(3, n -> {
+              started.add(n);
+              try {
+                Thread.sleep(n);
+              } catch (InterruptedException e) {
+                interrupted.add(n);
+              }
+              return n;
+            })).findFirst())
+        .hasValue(1);
+    assertThat(started).containsExactly(10, 1, 3);
+    assertThat(interrupted).containsExactly(3, 10);
+  }
+
+  @Test public void mapConcurrently_findAnyCancelsPending() {
+    ConcurrentLinkedQueue<Integer> started = new ConcurrentLinkedQueue<>();
+    ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
+    assertThat(
+        Stream.of(10, 1, 3, 0).gather(mapConcurrently(3, n -> {
+              started.add(n);
+              try {
+                Thread.sleep(n);
+              } catch (InterruptedException e) {
+                interrupted.add(n);
+              }
+              return n;
+            })).findAny())
+        .hasValue(1);
+    assertThat(started).containsExactly(10, 1, 3);
+    assertThat(interrupted).containsExactly(3, 10);
+  }
+
   @Test public void mapConcurrently_threadsInterruptedUponException() {
     ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
     RuntimeException thrown = assertThrows(

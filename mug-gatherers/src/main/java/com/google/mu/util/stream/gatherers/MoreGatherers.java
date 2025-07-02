@@ -18,8 +18,6 @@ import java.util.stream.Gatherer.Integrator;
 import java.util.stream.Gatherers;
 import java.util.stream.Stream;
 
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
-
 /**
  * More {@link Gatherer} implementations. Notably, {@link #mapConcurrently}
  * and {@link #flatMapConcurrently}.
@@ -55,10 +53,13 @@ public final class MoreGatherers {
       private final ConcurrentLinkedQueue<Throwable> exceptions = new ConcurrentLinkedQueue<>();
 
       boolean integrate(T element, Downstream<? super R> downstream) {
-        if (!flush(downstream)) {
+        if (!flushOrStop(downstream)) { // push down available before potentially blocking.
           return false;
         }
         acquireWithInterruptionPropagation();
+        if (!flushOrStop(downstream)) { // available concurrency. But downstream may not need more.
+          return false;
+        }
         Object key = new Object();
         running.put(key, Thread.ofVirtual().start(() -> {
           try {
@@ -70,46 +71,57 @@ public final class MoreGatherers {
             semaphore.release();
           }
         }));
-        return flush(downstream);
+        return true;
       }
 
-      @CanIgnoreReturnValue
-      boolean flush(Downstream<? super R> downstream) {
+      boolean flushOrStop(Downstream<? super R> downstream) {
         propagateExceptions();
-        return whileNotNull(results::poll).allMatch(r -> downstream.push(r.value()));
+        boolean accepted = whileNotNull(results::poll).allMatch(r -> downstream.push(r.value()));
+        if (!accepted) {
+          stop();
+        }
+        return accepted;
       }
 
       void finish(Downstream<? super R> downstream) {
         int inFlight = maxConcurrency - semaphore.drainPermits();
-        flush(downstream);  // Flush after every happens-before point
+        if (!flushOrStop(downstream)) {  // Flush after every happens-before point
+          return;
+        }
         for (; inFlight > 0; --inFlight) {
           acquireWithInterruptionPropagation();
-          flush(downstream);
+          if (!flushOrStop(downstream)) {
+            return;
+          }
         }
       }
 
       private void propagateExceptions() {
         List<Throwable> thrown = whileNotNull(exceptions::poll).toList();
         if (thrown.isEmpty()) return;
-        propagateInterruption();
-        for (Thread thread : running.values()) {
-          joinUninterruptibly(thread);
-        }
+        stop();
         var executionException = new UncheckedExecutionException(thrown.get(0));
         thrown.stream().skip(1).forEach(executionException::addSuppressed);
         throw executionException;
       }
 
+      private void stop() {
+        cancel();
+        for (Thread thread : running.values()) {
+          joinUninterruptibly(thread);
+        }
+      }
+
+      private void cancel() {
+        running.values().stream().forEach(Thread::interrupt);
+      }
+
       /** Acquires a semaphore. If interrupted, propagate cancellation then retry. */
       private void acquireWithInterruptionPropagation() {
         if (Thread.currentThread().isInterrupted()) {
-          propagateInterruption();
+          cancel();
         }
         semaphore.acquireUninterruptibly();
-      }
-
-      private void propagateInterruption() {
-        running.values().stream().forEach(Thread::interrupt);
       }
     }
     return ofSequential(Window::new, Integrator.ofGreedy(Window::integrate), Window::finish);
