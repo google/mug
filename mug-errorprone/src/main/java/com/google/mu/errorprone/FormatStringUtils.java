@@ -57,18 +57,22 @@ final class FormatStringUtils {
   }
 
   static Optional<String> findFormatString(Tree unformatter, VisitorState state) {
+    return findFormatStringNode(unformatter, state)
+        .map(tree -> ASTHelpers.constValue(tree, String.class));
+  }
+
+  static Optional<ExpressionTree> findFormatStringNode(Tree unformatter, VisitorState state) {
     if (unformatter instanceof IdentifierTree) {
       Symbol symbol = ASTHelpers.getSymbol(unformatter);
       if (symbol instanceof VarSymbol) {
         Tree def = JavacTrees.instance(state.context).getTree(symbol);
         if (def instanceof VariableTree) {
-          return findFormatString(((VariableTree) def).getInitializer(), state);
+          return findFormatStringNode(((VariableTree) def).getInitializer(), state);
         }
       }
       return Optional.empty();
     }
-    return getInlineStringArg(unformatter, state)
-        .map(tree -> ASTHelpers.constValue(tree, String.class));
+    return getInlineStringArg(unformatter, state);
   }
 
   static boolean looksLikeSql(String template) {

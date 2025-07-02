@@ -193,16 +193,16 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
         return;
       }
       ExpressionTree formatter = ASTHelpers.getReceiver(tree);
-      String formatString = FormatStringUtils.findFormatString(formatter, state).orElse(null);
-      checkingOn(formatter).require(formatString != null, FORMAT_STRING_NOT_FOUND);
+      ExpressionTree formatExpression = FormatStringUtils.findFormatStringNode(formatter, state).orElse(null);
+      checkingOn(formatter).require(formatExpression != null, FORMAT_STRING_NOT_FOUND);
       // For inline format strings, the args and the placeholders are close to each other.
       // With <= 3 args, we can give the author some leeway and don't ask for silly comments like:
       // new StringFormat("{key}:{value}").format(/* key */ "one", /* value */ 1);
       boolean formatStringIsInlined =
           FormatStringUtils.getInlineStringArg(formatter, state).orElse(null) instanceof JCLiteral;
       checkFormatArgs(
-          ASTHelpers.stripParentheses(formatter),
-          FormatStringUtils.placeholdersFrom(formatString),
+          formatExpression,
+          FormatStringUtils.placeholdersFrom(ASTHelpers.constValue(formatExpression, String.class)),
           tree,
           tree.getArguments(),
           argsAsTexts(tree.getMethodSelect(), tree.getArguments(), state),
@@ -274,7 +274,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
         checkingOn(arg)
             .require(
                 trust && ARG_COMMENT.in(argSources.get(i)).isEmpty(),
-                "String format placeholder {%s} (defined as in \"%s\") should appear in the format"
+                "String format placeholder {%s} at line %s (defined as in \"%s\") should appear in the format"
                     + " argument: %s. Consider the following to address this error:\n"
                     + "  1. Ensure the argument isn't passed in out of order.\n"
                     + "  2. If the argument does correspond to the placeholder positionally, rename"
@@ -286,6 +286,10 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
                     + " for non-matching placeholders. Don't add redundant comments for the"
                     + " placeholders that already match.",
                 placeholder.name(),
+                lineMap.getLineNumber(
+                    placeholder
+                        .sourcePosition(formatExpression, state)
+                        .getPreferredPosition()),
                 placeholder,
                 arg,
                 placeholder.name(),
