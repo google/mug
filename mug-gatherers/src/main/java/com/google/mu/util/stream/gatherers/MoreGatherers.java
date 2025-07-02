@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.FutureTask;
 import java.util.concurrent.Semaphore;
 import java.util.function.Function;
 import java.util.stream.Gatherer;
@@ -41,21 +40,12 @@ public final class MoreGatherers {
       throw new IllegalArgumentException("maxConcurrency must be greater than 0");
     }
 
-    class Work extends FutureTask<Void> {
-      final Thread thread;
-
-      Work(Runnable task) {
-        super(() -> {task.run(); return null;});
-        this.thread = Thread.ofVirtual().unstarted(this);
-      }
-    }
-
     // Every methods of this class are called only by the main thread.
     class Window {
       private final Semaphore semaphore = new Semaphore(maxConcurrency);
 
       /** Only the main thread adds. Virtual threads may remove upon done to free space. */
-      private final ConcurrentMap<Object, Work> running = new ConcurrentHashMap<>();
+      private final ConcurrentMap<Object, Thread> running = new ConcurrentHashMap<>();
 
       /** Main thread reads (consumes) results; virtual threads add upon success. */
       private final ConcurrentLinkedQueue<Result<R>> results = new ConcurrentLinkedQueue<>();
@@ -67,9 +57,9 @@ public final class MoreGatherers {
         if (!flush(downstream)) {
           return false;
         }
-        acquirePropagatingCancellation();
+        acquireWithInterruptionPropagation();
         Object key = new Object();
-        Work work = new Work(() -> {
+        running.put(key, Thread.ofVirtual().start(() -> {
           try {
             results.add(new Result<>(mapper.apply(element)));
           } catch (Throwable e) {
@@ -78,9 +68,7 @@ public final class MoreGatherers {
             running.remove(key);
             semaphore.release();
           }
-        });
-        running.put(key, work);
-        work.thread.start();
+        }));
         return flush(downstream);
       }
 
@@ -90,20 +78,22 @@ public final class MoreGatherers {
         return whileNotNull(results::poll).allMatch(r -> downstream.push(r.value()));
       }
 
-      void close(Downstream<? super R> downstream) {
-        flush(downstream);  // Flush before blocking
-        for (int inFlight = maxConcurrency - semaphore.drainPermits(); inFlight > 0; --inFlight) {
-          acquirePropagatingCancellation();
+      void finish(Downstream<? super R> downstream) {
+        int inFlight = maxConcurrency - semaphore.drainPermits();
+        flush(downstream);  // Flush after every happens-before point
+        for (; inFlight > 0; --inFlight) {
+          acquireWithInterruptionPropagation();
           flush(downstream);
         }
-        flush(downstream);  // after drainPermits(), we have another happens-before
       }
 
       private void propagateErrors() {
         List<Throwable> thrown = whileNotNull(exceptions::poll).collect(toCollection(ArrayList::new));
         if (thrown.size() > 0) {
-          cancelAll();
-          joinAll();
+          propagateInterruption();
+          for (Thread thread : running.values()) {
+            joinUninterruptibly(thread);
+          }
           Throwable first = thrown.get(0);
           UncheckedExecutionException executionException = new UncheckedExecutionException(first);
           thrown.stream().skip(1).forEach(executionException::addSuppressed);
@@ -112,33 +102,21 @@ public final class MoreGatherers {
       }
 
       /** Acquires a semaphore. If interrupted, propagate cancellation then retry. */
-      private void acquirePropagatingCancellation() {
-        try {
-          semaphore.acquire();
-        } catch (InterruptedException e) {
-          cancelAll();
-          // Even if interrupted, we defer to the concurrent operations to respond to interruption.
-          // If any has exited due to interruption, they'd have released semaphore.
-          // And if the interruption caused exception, we'll be able to propagate later in
-          // propageErrors()
-          uninterruptibly(semaphore::acquire);
+      private void acquireWithInterruptionPropagation() {
+        if (Thread.currentThread().isInterrupted()) {
+          propagateInterruption();
         }
+        semaphore.acquireUninterruptibly();
       }
 
-      private void cancelAll() {
-        running.values().stream().forEach(work -> work.cancel(true));
-      }
-
-      private void joinAll() {
-        for (Work work : running.values()) {
-          uninterruptibly(work.thread::join);
-        }
+      private void propagateInterruption() {
+        running.values().stream().forEach(Thread::interrupt);
       }
     }
     return Gatherer.ofSequential(
         Window::new,
         Integrator.<Window, T, R>ofGreedy(Window::integrate),
-        Window::close);
+        Window::finish);
   }
 
   /**
@@ -200,12 +178,12 @@ public final class MoreGatherers {
     return results -> results.stream().allMatch(downstream::push);
   }
 
-  private static void uninterruptibly(Interruptible interruptible) {
+  private static void joinUninterruptibly(Thread thread) {
     boolean interrupted = false;
     try {
       for (; ;) {
         try {
-          interruptible.run();
+          thread.join();
           return;
         } catch (InterruptedException e) {
           interrupted = true;
@@ -220,10 +198,6 @@ public final class MoreGatherers {
 
   // Allows to store null in ConcurrentLinkedQueue, and immutable object to help publish.
   private static record Result<R>(R value) {}
-
-  private interface Interruptible {
-    void run() throws InterruptedException;
-  }
 
   /** While we don't pull in Guava for its {@code UncheckedExecutionException}. */
   static class UncheckedExecutionException extends RuntimeException {

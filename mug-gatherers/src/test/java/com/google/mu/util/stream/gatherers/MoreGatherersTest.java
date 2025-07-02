@@ -7,8 +7,11 @@ import static com.google.mu.util.stream.gatherers.MoreGatherers.mapConcurrently;
 import static org.junit.Assert.assertThrows;
 
 import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Gatherers;
 import java.util.stream.Stream;
 
@@ -76,6 +79,49 @@ public class MoreGatherersTest {
         RuntimeException.class,
         () -> Stream.of("1", "two", "three", "four").gather(mapConcurrently(2, Integer::parseInt)).toList());
     assertThat(thrown).hasCauseThat().isInstanceOf(NumberFormatException.class);
+  }
+
+  @Test public void mapConcurrently_threadsInterruptedUponException() {
+    ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
+    RuntimeException thrown = assertThrows(
+        RuntimeException.class,
+        () -> Stream.of(10, 2, 3, 1).gather(mapConcurrently(4, n -> {
+          try {
+            Thread.sleep(n);
+          } catch (InterruptedException e) {
+            interrupted.add(n);
+          }
+          throw new ApplicationException(String.valueOf(n));
+        })).toList());
+    assertThat(thrown).hasCauseThat().hasMessageThat().isEqualTo("1");
+    assertThat(interrupted).containsExactly(2, 3, 10);
+  }
+
+  @Test public void mapConcurrently_mainThreadInterrupted_propagatedInterruption()
+      throws InterruptedException {
+    ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
+    AtomicReference<List<String>> results = new AtomicReference<>();
+    Thread mainThread = new Thread(
+        () -> {
+          try {
+            results.set(
+              Stream.of(10, 30, 40, 20).gather(mapConcurrently(2, n -> {
+                try {
+                  Thread.sleep(n);
+                } catch (InterruptedException e) {
+                  interrupted.add(n);
+                }
+                return String.valueOf(n);
+              })).toList());
+          } catch (Throwable e) {
+            e.printStackTrace();
+          }
+        });
+    mainThread.start();
+    mainThread.interrupt();
+    mainThread.join();
+    assertThat(results.get()).containsExactly("10", "20", "30", "40");
+    assertThat(interrupted).containsExactly(10, 20, 30, 40);
   }
 
   /**
@@ -156,5 +202,11 @@ public class MoreGatherersTest {
         RuntimeException.class,
         () -> Stream.of("1", "2", "3", "four").gather(flatMapConcurrently(2, s -> Stream.of(Integer.parseInt(s)))).toList());
     assertThat(thrown).hasCauseThat().isInstanceOf(NumberFormatException.class);
+  }
+
+  private static class ApplicationException extends RuntimeException {
+    ApplicationException(String s) {
+      super(s);
+    }
   }
 }
