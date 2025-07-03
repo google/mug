@@ -166,6 +166,10 @@ public final class Race {
    * <p>This is more suitable for production usage because you rarely want to blindly
    * swallow all exceptions. Things like NullPointerException, IllegalArgumentException,
    * StackOverflowError etc. should almost never be swallowed.
+   *
+   * @see {@link #race} for a more production-ready utility that allows you to control what
+   *      exceptions are allowed to recover from, and eventually propagate them if all
+   *      have failed or a non-recoverable exception is thrown (like IllegalArgumentException).
    */
   public static <T, R> Gatherer<T, ?, R> flatMapConcurrently(
       int maxConcurrency, Function<? super T, ? extends Stream<? extends R>> mapper) {
