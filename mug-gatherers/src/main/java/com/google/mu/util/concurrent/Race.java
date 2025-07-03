@@ -210,11 +210,11 @@ public final class Race {
                   recoverable.add(e);
                   return Stream.empty();
                 }
-                return Stream.of(Result.<T>failure(e));  // plumb it to the main thread to wrap
+                return Stream.of(new Failure<T>(e));  // plumb it to the main thread to wrap
               }
             }))
         .map((Result<T> x) -> switch (x) {
-          case Failure failure ->
+          case Failure<T> failure ->
               throw new UncheckedExecutionException(failure.exception(), recoverable);
           case Success(T v) -> v;
         })
@@ -257,13 +257,9 @@ public final class Race {
   }
 
   // Allows to store null in ConcurrentLinkedQueue, and immutable object to help publish.
-  private sealed interface Result<R> permits Success, Failure {
-    static <R> Result<R> failure(Throwable exception) {
-      return new Failure(exception);
-    }
-  }
+  private sealed interface Result<R> permits Success, Failure {}
   private record Success<R>(R value) implements Result<R> {}
-  private record Failure(Throwable exception) implements Result {}
+  private record Failure<R>(Throwable exception) implements Result<R> {}
 
   /** While we don't pull in Guava for its {@code UncheckedExecutionException}. */
   static class UncheckedExecutionException extends RuntimeException {
