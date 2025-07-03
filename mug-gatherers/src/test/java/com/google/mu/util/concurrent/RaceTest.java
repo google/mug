@@ -229,7 +229,6 @@ public class RaceTest {
     assertThat(interrupted).containsExactly(3, 10);
   }
 
-
   @Test public void mapConcurrently_failurePropagated() {
     ConcurrentLinkedQueue<Integer> started = new ConcurrentLinkedQueue<>();
     ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
