@@ -179,18 +179,6 @@ public final class Race {
 
   /**
    * Races {@code tasks} with {@code maxConcurrency} and return the first success,
-   * and cancel the remaining.
-   *
-   * @param maxConcurrency at most running this number of tasks concurrently
-   * @param tasks at least one must be provided
-   */
-  public static <T> T race(
-      int maxConcurrency, Collection<? extends Callable<? extends T>> tasks) {
-    return race(maxConcurrency, tasks, _ -> false);
-  }
-
-  /**
-   * Races {@code tasks} with {@code maxConcurrency} and return the first success,
    * and cancel the remaining. Upon exception, the {@code isRecoverable} predicate
    * is used to check whether the exception is recoverable (thus allowing the other
    * tasks to continue to run.

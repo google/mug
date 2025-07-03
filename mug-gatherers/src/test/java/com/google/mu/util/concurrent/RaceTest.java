@@ -209,6 +209,48 @@ public class RaceTest {
     assertThat(thrown).hasCauseThat().isInstanceOf(AssertionError.class);
   }
 
+  @Test public void mapConcurrently_firstSuccessInterruptsTheRest() {
+    ConcurrentLinkedQueue<Integer> started = new ConcurrentLinkedQueue<>();
+    ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
+    assertThat(
+        Stream.of(10, 1, 3, 0)
+            .gather(mapConcurrently(3, n -> {
+              started.add(n);
+              try {
+                Thread.sleep(n * 1000);
+              } catch (InterruptedException e) {
+                interrupted.add(n);
+              }
+              return String.valueOf(n);
+            }))
+            .findAny())
+        .hasValue("1");
+    assertThat(started).containsExactly(10, 1, 3);
+    assertThat(interrupted).containsExactly(3, 10);
+  }
+
+
+  @Test public void mapConcurrently_failurePropagated() {
+    ConcurrentLinkedQueue<Integer> started = new ConcurrentLinkedQueue<>();
+    ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
+    Race.UncheckedExecutionException thrown = assertThrows(
+        Race.UncheckedExecutionException.class,
+        () -> Stream.of(10, 1, 3, 0)
+            .gather(mapConcurrently(3, n -> {
+              started.add(n);
+              try {
+                Thread.sleep(n * 1000);
+              } catch (InterruptedException e) {
+                interrupted.add(n);
+              }
+              throw new IllegalArgumentException(String.valueOf(n));
+            }))
+            .findAny());
+    assertThat(thrown).hasCauseThat().hasMessageThat().isEqualTo("1");
+    assertThat(started).containsExactly(10, 1, 3);
+    assertThat(interrupted).containsExactly(3, 10);
+  }
+
   @Test public void flatMapConcurrently_concurrencySmallerThanElements() {
     assertThat(Stream.of(1, 2, 3, 4).gather(flatMapConcurrently(3, n -> Collections.nCopies(n, n).stream())))
         .containsExactly(1, 2, 2, 3, 3, 3, 4, 4, 4, 4);
@@ -241,42 +283,6 @@ public class RaceTest {
         RuntimeException.class,
         () -> Stream.of("1", "2", "3", "four").gather(flatMapConcurrently(2, s -> Stream.of(Integer.parseInt(s)))).toList());
     assertThat(thrown).hasCauseThat().isInstanceOf(NumberFormatException.class);
-  }
-
-  @Test public void race_firstSuccessInterruptsTheRest() {
-    ConcurrentLinkedQueue<Integer> started = new ConcurrentLinkedQueue<>();
-    ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
-    List<Callable<String>> tasks = Stream.of(10, 1, 3, 0).<Callable<String>>map(n -> () -> {
-      started.add(n);
-      try {
-        Thread.sleep(n * 1000);
-      } catch (InterruptedException e) {
-        interrupted.add(n);
-      }
-      return String.valueOf(n);
-    }).toList();
-    assertThat(race(3, tasks)).isEqualTo("1");
-    assertThat(started).containsExactly(10, 1, 3);
-    assertThat(interrupted).containsExactly(3, 10);
-  }
-
-  @Test public void race_unrecoverableFailuresPropagated() {
-    ConcurrentLinkedQueue<Integer> started = new ConcurrentLinkedQueue<>();
-    ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
-    List<Callable<String>> tasks = Stream.of(10, 1, 3, 0).<Callable<String>>map(n -> () -> {
-      started.add(n);
-      try {
-        Thread.sleep(n * 1000);
-      } catch (InterruptedException e) {
-        interrupted.add(n);
-      }
-      throw new IllegalArgumentException(String.valueOf(n));
-    }).toList();
-    Race.UncheckedExecutionException thrown = assertThrows(
-        Race.UncheckedExecutionException.class, () -> race(3, tasks));
-    assertThat(thrown).hasCauseThat().hasMessageThat().isEqualTo("1");
-    assertThat(started).containsExactly(10, 1, 3);
-    assertThat(interrupted).containsExactly(3, 10);
   }
 
   @Test public void race_recoverableFailuresIgnored() {
