@@ -127,7 +127,7 @@ public final class Race {
         if (Thread.currentThread().isInterrupted()) {
           cancel();
         }
-        semaphore.acquireUninterruptibly();
+        semaphore.acquireUninterruptibly(); // acquire even if interrupted
       }
     }
     return ofSequential(Window::new, Integrator.ofGreedy(Window::integrate), Window::finish);
