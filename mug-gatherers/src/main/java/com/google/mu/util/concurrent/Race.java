@@ -48,7 +48,7 @@ public final class Race {
       private final ConcurrentMap<Object, Thread> running = new ConcurrentHashMap<>();
 
       /** Main thread reads (consumes) results; virtual threads add upon success. */
-      private final ConcurrentLinkedQueue<Result<R>> results = new ConcurrentLinkedQueue<>();
+      private final ConcurrentLinkedQueue<Success<R>> results = new ConcurrentLinkedQueue<>();
 
       /** Main thread reads (consumes) exceptions; virtual threads add upon failure. */
       private final ConcurrentLinkedQueue<Throwable> exceptions = new ConcurrentLinkedQueue<>();
@@ -66,7 +66,7 @@ public final class Race {
         Object key = new Object();
         running.put(key, Thread.ofVirtual().start(() -> {
           try {
-            results.add(new Result<>(mapper.apply(element)));
+            results.add(new Success<>(mapper.apply(element)));
           } catch (Throwable e) {
             exceptions.add(e);
           } finally {
@@ -270,7 +270,7 @@ public final class Race {
   }
 
   // Allows to store null in ConcurrentLinkedQueue, and immutable object to help publish.
-  private static record Result<R>(R value) {}
+  private static record Success<R>(R value) {}
 
   private static record Failure(Throwable exception) {}
 
