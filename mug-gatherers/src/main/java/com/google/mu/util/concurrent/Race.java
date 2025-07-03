@@ -77,19 +77,6 @@ public final class Race {
         return true;
       }
 
-      boolean flushOrStop(Downstream<? super R> downstream) {
-        propagateExceptions();
-        boolean accepted = false;
-        try {
-          accepted = whileNotNull(results::poll).allMatch(r -> downstream.push(r.value()));
-        } finally {
-          if (!accepted) {
-            stop();  // Even at exception, we need to interrupt the virtual threads.
-          }
-        }
-        return accepted;
-      }
-
       void finish(Downstream<? super R> downstream) {
         int inFlight = maxConcurrency - semaphore.drainPermits();
         if (!flushOrStop(downstream)) {  // Flush after every happens-before point
@@ -101,6 +88,19 @@ public final class Race {
             return;
           }
         }
+      }
+
+      private boolean flushOrStop(Downstream<? super R> downstream) {
+        propagateExceptions();
+        boolean accepted = false;
+        try {
+          accepted = whileNotNull(results::poll).allMatch(r -> downstream.push(r.value()));
+        } finally {
+          if (!accepted) {
+            stop();  // Even at exception, we need to interrupt the virtual threads.
+          }
+        }
+        return accepted;
       }
 
       private void propagateExceptions() {
