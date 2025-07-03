@@ -22,8 +22,7 @@ import java.util.stream.Gatherers;
 import java.util.stream.Stream;
 
 /**
- * More {@link Gatherer} implementations. Notably, {@link #mapConcurrently}
- * and {@link #flatMapConcurrently}.
+ * Race semantics. Notably, {@link #mapConcurrently}, {@link #flatMapConcurrently} and {@link #race}.
  *
  * @since 9.0
  */
@@ -31,9 +30,10 @@ public final class Race {
   /**
    * Similar to {@link Gatherers#mapConcurrent}, runs {@code mapper} in virtual threads limited by
    * {@code maxConcurrency}. But maximizes concurrency without letting earlier slower operations
-   * block later operations, as long as concurrency doesn't exceed {@code maxConcurrency}.
+   * block later operations.
    *
-   * <p>This gatherer doesn't ensure encounter order. Instead, operations can race concurrently.
+   * <p>This gatherer doesn't guarantee encounter order; operations are allowed to race freely,
+   * within the limit of {@code maxConcurrency}.
    */
   public static <T, R> Gatherer<T, ?, R> mapConcurrently(
       int maxConcurrency, Function<? super T, ? extends R> mapper) {
