@@ -1,4 +1,4 @@
-package com.google.mu.util.stream.gatherers;
+package com.google.mu.util.concurrent;
 
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Objects.requireNonNull;
@@ -6,12 +6,15 @@ import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Gatherer.ofSequential;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Semaphore;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Gatherer;
 import java.util.stream.Gatherer.Downstream;
 import java.util.stream.Gatherer.Integrator;
@@ -24,7 +27,7 @@ import java.util.stream.Stream;
  *
  * @since 9.0
  */
-public final class MoreGatherers {
+public final class Race {
   /**
    * Similar to {@link Gatherers#mapConcurrent}, runs {@code mapper} in virtual threads limited by
    * {@code maxConcurrency}. But maximizes concurrency without letting earlier slower operations
@@ -35,9 +38,7 @@ public final class MoreGatherers {
   public static <T, R> Gatherer<T, ?, R> mapConcurrently(
       int maxConcurrency, Function<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
-    if (maxConcurrency < 1) {
-      throw new IllegalArgumentException("maxConcurrency must be greater than 0");
-    }
+    checkArgument(maxConcurrency >= 1, "maxConcurrency must be greater than 0");
 
     // Every methods of this class are called only by the main thread.
     class Window {
@@ -58,6 +59,8 @@ public final class MoreGatherers {
         }
         acquireWithInterruptionPropagation();
         if (!flushOrStop(downstream)) { // available concurrency. But downstream may not need more.
+          // don't need to release on exception because integrate won't be called again.
+          semaphore.release();
           return false;
         }
         Object key = new Object();
@@ -76,9 +79,13 @@ public final class MoreGatherers {
 
       boolean flushOrStop(Downstream<? super R> downstream) {
         propagateExceptions();
-        boolean accepted = whileNotNull(results::poll).allMatch(r -> downstream.push(r.value()));
-        if (!accepted) {
-          stop();
+        boolean accepted = false;
+        try {
+          accepted = whileNotNull(results::poll).allMatch(r -> downstream.push(r.value()));
+        } finally {
+          if (!accepted) {
+            stop();  // Even at exception, we need to interrupt the virtual threads.
+          }
         }
         return accepted;
       }
@@ -100,9 +107,8 @@ public final class MoreGatherers {
         List<Throwable> thrown = whileNotNull(exceptions::poll).toList();
         if (thrown.isEmpty()) return;
         stop();
-        var executionException = new UncheckedExecutionException(thrown.get(0));
-        thrown.stream().skip(1).forEach(executionException::addSuppressed);
-        throw executionException;
+        throw new UncheckedExecutionException(
+            thrown.get(0), thrown.subList(1, thrown.size()));
       }
 
       private void stop() {
@@ -171,6 +177,65 @@ public final class MoreGatherers {
             input -> mapper.apply(input).collect(toCollection(ArrayList::new))));
   }
 
+  /**
+   * Races {@code tasks} with {@code maxConcurrency} and return the first success,
+   * and cancel the remaining.
+   *
+   * @param maxConcurrency at most running this number of tasks concurrently
+   * @param tasks at least one must be provided
+   */
+  public static <T> T race(
+      int maxConcurrency, Collection<? extends Callable<? extends T>> tasks) {
+    return race(maxConcurrency, tasks, _ -> false);
+  }
+
+  /**
+   * Races {@code tasks} with {@code maxConcurrency} and return the first success,
+   * and cancel the remaining. Upon exception, the {@code isRecoverable} predicate
+   * is used to check whether the exception is recoverable (thus allowing the other
+   * tasks to continue to run.
+   *
+   * <p>When all tasks throw an recoverable exception, without any success,
+   * the recoverable exceptions are propagated as the causal exception (the first)
+   * and suppressed (thereafter).
+   *
+   * @param maxConcurrency at most running this number of tasks concurrently
+   * @param tasks at least one must be provided
+   * @param isRecoverable tests whether an exception is recoverable and thus the
+   *     other tasks should continue running.
+   */
+  @SuppressWarnings("unchecked")
+  public static <T> T race(
+      int maxConcurrency,
+      Collection<? extends Callable<? extends T>> tasks,
+      Predicate<? super Throwable> isRecoverable) {
+    checkArgument(tasks.size() > 0, "At least one task should have been provided");
+    requireNonNull(isRecoverable);
+    ConcurrentLinkedQueue<Throwable> recoverable = new ConcurrentLinkedQueue<>();
+    return tasks.stream()
+        .gather(flatMapConcurrently(
+            maxConcurrency,
+            task -> {
+              try {
+                return Stream.of(task.call());
+              } catch (Throwable e) {
+                if (isRecoverable.test(e)) {
+                  recoverable.add(e);
+                  return Stream.empty();
+                }
+                return Stream.of(new Failure(e));  // plumb it to the main thread to wrap
+              }
+            }))
+        .map(x -> switch (x) {
+          case Failure failure ->
+              throw new UncheckedExecutionException(failure.exception(), recoverable);
+          default -> (T) x; // Safe because we only emits either Failure or T
+        })
+        .findAny()
+        .orElseThrow(
+            () -> new UncheckedExecutionException(recoverable.remove(), recoverable));
+  }
+
   private static <T, A, R> Gatherer<T, ?, R> flattening(
       Gatherer<? super T, A, List<R>> upstream) {
     var integrator = upstream.integrator();
@@ -207,13 +272,29 @@ public final class MoreGatherers {
   // Allows to store null in ConcurrentLinkedQueue, and immutable object to help publish.
   private static record Result<R>(R value) {}
 
+  private static record Failure(Throwable exception) {}
+
   /** While we don't pull in Guava for its {@code UncheckedExecutionException}. */
   static class UncheckedExecutionException extends RuntimeException {
     UncheckedExecutionException(Throwable cause) {
       super(cause);
     }
+
+    UncheckedExecutionException(Throwable cause, Iterable<? extends Throwable> suppressed) {
+      super(cause);
+      for (Throwable t : suppressed) {
+        addSuppressed(t);
+      }
+    }
+
     private static final long serialVersionUID = 1L;
   }
 
-  private MoreGatherers() {}
+  private static void checkArgument(boolean condition, String message) {
+    if (!condition) {
+      throw new IllegalArgumentException(message);
+    }
+  }
+
+  private Race() {}
 }

@@ -1,13 +1,16 @@
-package com.google.mu.util.stream.gatherers;
+package com.google.mu.util.concurrent;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static com.google.mu.util.stream.gatherers.MoreGatherers.flatMapConcurrently;
-import static com.google.mu.util.stream.gatherers.MoreGatherers.mapConcurrently;
+import static com.google.mu.util.concurrent.Race.flatMapConcurrently;
+import static com.google.mu.util.concurrent.Race.mapConcurrently;
+import static com.google.mu.util.concurrent.Race.race;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -21,7 +24,7 @@ import org.junit.runner.RunWith;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 @RunWith(TestParameterInjector.class)
-public class MoreGatherersTest {
+public class RaceTest {
 
   @Test public void mapConcurrently_emptyInput() {
     assertThat(Stream.empty().gather(mapConcurrently(3, Object::toString)))
@@ -238,6 +241,103 @@ public class MoreGatherersTest {
         RuntimeException.class,
         () -> Stream.of("1", "2", "3", "four").gather(flatMapConcurrently(2, s -> Stream.of(Integer.parseInt(s)))).toList());
     assertThat(thrown).hasCauseThat().isInstanceOf(NumberFormatException.class);
+  }
+
+  @Test public void race_firstSuccessInterruptsTheRest() {
+    ConcurrentLinkedQueue<Integer> started = new ConcurrentLinkedQueue<>();
+    ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
+    List<Callable<String>> tasks = Stream.of(10, 1, 3, 0).<Callable<String>>map(n -> () -> {
+      started.add(n);
+      try {
+        Thread.sleep(n * 1000);
+      } catch (InterruptedException e) {
+        interrupted.add(n);
+      }
+      return String.valueOf(n);
+    }).toList();
+    assertThat(race(3, tasks)).isEqualTo("1");
+    assertThat(started).containsExactly(10, 1, 3);
+    assertThat(interrupted).containsExactly(3, 10);
+  }
+
+  @Test public void race_unrecoverableFailuresPropagated() {
+    ConcurrentLinkedQueue<Integer> started = new ConcurrentLinkedQueue<>();
+    ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
+    List<Callable<String>> tasks = Stream.of(10, 1, 3, 0).<Callable<String>>map(n -> () -> {
+      started.add(n);
+      try {
+        Thread.sleep(n * 1000);
+      } catch (InterruptedException e) {
+        interrupted.add(n);
+      }
+      throw new IllegalArgumentException(String.valueOf(n));
+    }).toList();
+    Race.UncheckedExecutionException thrown = assertThrows(
+        Race.UncheckedExecutionException.class, () -> race(3, tasks));
+    assertThat(thrown).hasCauseThat().hasMessageThat().isEqualTo("1");
+    assertThat(started).containsExactly(10, 1, 3);
+    assertThat(interrupted).containsExactly(3, 10);
+  }
+
+  @Test public void race_recoverableFailuresIgnored() {
+    ConcurrentLinkedQueue<Integer> started = new ConcurrentLinkedQueue<>();
+    ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
+    List<Callable<String>> tasks = Stream.of(10, 1, 0, 3).<Callable<String>>map(n -> () -> {
+      started.add(n);
+      try {
+        Thread.sleep(n * 1000);
+      } catch (InterruptedException e) {
+        interrupted.add(n);
+      }
+      assertThat(n).isEqualTo(0);
+      return "0";
+    }).toList();
+    assertThat(race(3, tasks, e -> true)).isEqualTo("0");
+    assertThat(started).containsExactly(10, 0, 1);
+    assertThat(interrupted).containsExactly(10, 1);
+  }
+
+  @Test public void race_noSuccess_recoverableFailuresPropagated() {
+    ConcurrentLinkedQueue<Integer> started = new ConcurrentLinkedQueue<>();
+    ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
+    List<Callable<String>> tasks = Stream.of(10, 1, 0, 3).<Callable<String>>map(n -> () -> {
+      started.add(n);
+      try {
+        Thread.sleep(n * 100);
+      } catch (InterruptedException e) {
+        interrupted.add(n);
+      }
+      throw new ApplicationException(String.valueOf(n));
+    }).toList();
+    RuntimeException thrown =
+        assertThrows(RuntimeException.class, () -> race(3, tasks, e -> true));
+    assertThat(thrown).hasMessageThat().contains("0");
+    assertThat(thrown).hasCauseThat().hasMessageThat().isEqualTo("0");
+    assertThat(asList(thrown.getSuppressed())).hasSize(3);
+    assertThat(started).containsExactly(10, 0, 1, 3);
+    assertThat(interrupted).isEmpty();
+  }
+
+  @Test public void race_noSuccess_unrecoverableFailuresPropagatedWithRecoverableErrorsSuppressed() {
+    ConcurrentLinkedQueue<Integer> started = new ConcurrentLinkedQueue<>();
+    ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
+    List<Callable<String>> tasks = Stream.of(1, 0, 2, 10).<Callable<String>>map(n -> () -> {
+      started.add(n);
+      try {
+        Thread.sleep(n * 100);
+      } catch (InterruptedException e) {
+        interrupted.add(n);
+      }
+      assertThat(n).isNotEqualTo(2); // 3rd is not recoverable
+      throw new ApplicationException(String.valueOf(n));
+    }).toList();
+    RuntimeException thrown = assertThrows(
+        RuntimeException.class,
+        () -> race(3, tasks, ApplicationException.class::isInstance));
+    assertThat(thrown).hasCauseThat().isInstanceOf(AssertionError.class);
+    assertThat(asList(thrown.getSuppressed())).hasSize(2);
+    assertThat(started).containsExactly(1, 0, 2, 10);
+    assertThat(interrupted).containsExactly(10);
   }
 
   private static class ApplicationException extends RuntimeException {
