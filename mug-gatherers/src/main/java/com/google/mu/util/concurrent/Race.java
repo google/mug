@@ -182,18 +182,17 @@ public final class Race {
   }
 
   /**
-   * Races {@code tasks} with {@code maxConcurrency} and return the first success,
-   * and cancel the remaining. Upon exception, the {@code isRecoverable} predicate
-   * is used to check whether the exception is recoverable (thus allowing the other
+   * Races {@code tasks} with {@code maxConcurrency} and returns the first success,
+   * then cancels the remaining. Upon exception, the {@code isRecoverable} predicate
+   * is tested to check whether the exception is recoverable (thus allowing the other
    * tasks to continue to run.
    *
-   * <p>When all tasks throw an recoverable exception, without any success,
-   * the recoverable exceptions are propagated as the causal exception (the first)
-   * and suppressed (thereafter).
+   * <p>When all tasks throw an recoverable exception, without any success, all recoverable
+   *  exceptions are propagated as {@link Throwable#addSuppressed suppressed}.
    *
    * @param maxConcurrency at most running this number of tasks concurrently
    * @param tasks at least one must be provided
-   * @param isRecoverable tests whether an exception is recoverable and thus the
+   * @param isRecoverable tests whether an exception is recoverable so that the
    *     other tasks should continue running.
    */
   public static <T> T race(
