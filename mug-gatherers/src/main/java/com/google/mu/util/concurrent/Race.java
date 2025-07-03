@@ -192,7 +192,6 @@ public final class Race {
    * @param isRecoverable tests whether an exception is recoverable and thus the
    *     other tasks should continue running.
    */
-  @SuppressWarnings("unchecked")
   public static <T> T race(
       int maxConcurrency,
       Collection<? extends Callable<? extends T>> tasks,
@@ -205,19 +204,19 @@ public final class Race {
             maxConcurrency,
             task -> {
               try {
-                return Stream.of(task.call());
+                return Stream.of(new Success<T>(task.call()));
               } catch (Throwable e) {
                 if (isRecoverable.test(e)) {
                   recoverable.add(e);
                   return Stream.empty();
                 }
-                return Stream.of(new Failure(e));  // plumb it to the main thread to wrap
+                return Stream.of(Result.<T>failure(e));  // plumb it to the main thread to wrap
               }
             }))
-        .map(x -> switch (x) {
+        .map((Result<T> x) -> switch (x) {
           case Failure failure ->
               throw new UncheckedExecutionException(failure.exception(), recoverable);
-          default -> (T) x; // Safe because we only emits either Failure or T
+          case Success(T v) -> v;
         })
         .findAny()
         .orElseThrow(
@@ -258,9 +257,13 @@ public final class Race {
   }
 
   // Allows to store null in ConcurrentLinkedQueue, and immutable object to help publish.
-  private static record Success<R>(R value) {}
-
-  private static record Failure(Throwable exception) {}
+  private sealed interface Result<R> permits Success, Failure {
+    static <R> Result<R> failure(Throwable exception) {
+      return new Failure(exception);
+    }
+  }
+  private record Success<R>(R value) implements Result<R> {}
+  private record Failure(Throwable exception) implements Result {}
 
   /** While we don't pull in Guava for its {@code UncheckedExecutionException}. */
   static class UncheckedExecutionException extends RuntimeException {
