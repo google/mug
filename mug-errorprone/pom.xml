@@ -114,10 +114,11 @@
       <artifactId>guava-testlib</artifactId>
       <scope>test</scope>
     </dependency>
-	<dependency>
-	  <groupId>com.google.mug</groupId>
-	  <artifactId>mug-guava</artifactId>
-	  <version>${project.version}</version>
-	</dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>mug-guava</artifactId>
+      <version>${project.version}</version>
+      <scope>compile</scope>
+    </dependency>
   </dependencies>
 </project>

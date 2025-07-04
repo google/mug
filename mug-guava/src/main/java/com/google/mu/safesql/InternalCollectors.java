@@ -12,20 +12,27 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.util.concurrent;
+package com.google.mu.safesql;
 
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
+import java.util.function.BiConsumer;
+import java.util.function.Predicate;
+import java.util.stream.Collector;
+import java.util.stream.Collector.Characteristics;
 
-/** Some relatively trivial re-invented wheels as cost of 0-dependency. */
-final class Utils {
-  static void checkState(boolean condition, String message, Object... args) {
-    if (!condition) {
-      throw new IllegalStateException(String.format(message, args));
-    }
+@Deprecated
+final class InternalCollectors {
+  static <Q, R> Collector<Q, ?, R> skippingEmpty(Collector<Q, ?, R> downstream) {
+    return filtering(q -> !q.toString().isEmpty(), downstream);
   }
 
-  static <T> Stream<T> stream(Iterable<T> iterable) {
-    return StreamSupport.stream(iterable.spliterator(), false);
+  private static <T, A, R> Collector<T, A, R> filtering(
+      Predicate<? super T> filter, Collector<? super T, A, R> collector) {
+    BiConsumer<A, ? super T> accumulator = collector.accumulator();
+    return Collector.of(
+        collector.supplier(),
+        (a, input) -> {if (filter.test(input)) {accumulator.accept(a, input);}},
+        collector.combiner(),
+        collector.finisher(),
+        collector.characteristics().toArray(new Characteristics[0]));
   }
 }
