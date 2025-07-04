@@ -2,6 +2,7 @@ package com.google.mu.util.concurrent;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static com.google.mu.util.concurrent.Race.concurrently;
 import static com.google.mu.util.concurrent.Race.flatMapConcurrently;
 import static com.google.mu.util.concurrent.Race.mapConcurrently;
 import static com.google.mu.util.concurrent.Race.race;
@@ -10,6 +11,7 @@ import static org.junit.Assert.assertThrows;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
@@ -25,6 +27,143 @@ import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 @RunWith(TestParameterInjector.class)
 public class RaceTest {
+
+  @Test public void concurrently_emptyInput() {
+    assertThat(Stream.empty().collect(concurrently(3, Object::toString)).toMap())
+        .isEmpty();
+    assertThat(Stream.empty().collect(concurrently(1, Object::toString)).toMap())
+        .isEmpty();
+  }
+
+  @Test public void concurrently_concurrencySmallerThanElements() {
+    assertThat(Stream.of("1", "2", "3", "4").collect(concurrently(3, Integer::parseInt)).toMap())
+        .containsExactly("1", 1, "2", 2, "3", 3, "4", 4);
+  }
+
+  @Test public void concurrently_concurrencyLargerThanElements() {
+    assertThat(Stream.of("1", "2", "3", "4").collect(concurrently(5, Integer::parseInt)).toMap())
+        .containsExactly("1", 1, "2", 2, "3", 3, "4", 4);
+  }
+
+  @Test public void concurrently_concurrencyEqualToElements() {
+    assertThat(Stream.of("1", "2", "3", "4").collect(concurrently(4, Integer::parseInt)).toMap())
+        .containsExactly("1", 1, "2", 2, "3", 3, "4", 4);
+  }
+
+  @Test public void concurrently_concurrencyEqualToOne() {
+    assertThat(Stream.of("1", "2", "3", "4").collect(concurrently(1, Integer::parseInt)).toMap())
+        .containsExactly("1", 1, "2", 2, "3", 3, "4", 4);
+  }
+
+  @Test public void concurrently_maxConcurrency() {
+    assertThat(Stream.of("1", "2", "3", "4").collect(concurrently(Integer.MAX_VALUE, Integer::parseInt)).toMap())
+        .containsExactly("1", 1, "2", 2, "3", 3, "4", 4);
+  }
+
+  @Test public void concurrently_zeroConcurrencyDisallowed() {
+    assertThrows(IllegalArgumentException.class, () -> concurrently(0, Object::toString));
+  }
+
+  @Test public void concurrently_negativeConcurrencyDisallowed() {
+    assertThrows(IllegalArgumentException.class, () -> concurrently(-1, Object::toString));
+  }
+
+  @Test public void concurrently_minConcurrencyDisallowed() {
+    assertThrows(IllegalArgumentException.class, () -> concurrently(Integer.MIN_VALUE, Object::toString));
+  }
+
+  @Test public void concurrently_exceptionPropagated() {
+    RuntimeException thrown = assertThrows(
+        RuntimeException.class,
+        () -> Stream.of("1", "2", "3", "four").collect(concurrently(2, Integer::parseInt)).toMap());
+    assertThat(thrown).hasCauseThat().isInstanceOf(NumberFormatException.class);
+  }
+
+  @Test public void concurrently_multipleEsxceptionsPropagated() {
+    RuntimeException thrown = assertThrows(
+        RuntimeException.class,
+        () -> Stream.of("1", "two", "three", "four").collect(concurrently(2, Integer::parseInt)).toMap());
+    assertThat(thrown).hasCauseThat().isInstanceOf(NumberFormatException.class);
+  }
+
+  @Test public void concurrently_findFirstCancelsPending() {
+    ConcurrentLinkedQueue<Integer> started = new ConcurrentLinkedQueue<>();
+    ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
+    assertThat(
+        Stream.of(10, 1, 3, 0).collect(concurrently(3, n -> {
+              started.add(n);
+              try {
+                Thread.sleep(n);
+              } catch (InterruptedException e) {
+                interrupted.add(n);
+              }
+              return n;
+            })).keys().findFirst())
+        .hasValue(1);
+    assertThat(started).containsExactly(10, 1, 3);
+    assertThat(interrupted).containsExactly(3, 10);
+  }
+
+  @Test public void concurrently_findAnyCancelsPending() {
+    ConcurrentLinkedQueue<Integer> started = new ConcurrentLinkedQueue<>();
+    ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
+    assertThat(
+        Stream.of(10, 1, 3, 0).collect(concurrently(3, n -> {
+              started.add(n);
+              try {
+                Thread.sleep(n);
+              } catch (InterruptedException e) {
+                interrupted.add(n);
+              }
+              return n;
+            })).values().findAny())
+        .hasValue(1);
+    assertThat(started).containsExactly(10, 1, 3);
+    assertThat(interrupted).containsExactly(3, 10);
+  }
+
+  @Test public void concurrently_threadsInterruptedUponException() {
+    ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
+    RuntimeException thrown = assertThrows(
+        RuntimeException.class,
+        () -> Stream.of(10, 2, 3, 1).collect(concurrently(4, n -> {
+          try {
+            Thread.sleep(n);
+          } catch (InterruptedException e) {
+            interrupted.add(n);
+          }
+          throw new ApplicationException(String.valueOf(n));
+        })).toMap());
+    assertThat(thrown).hasCauseThat().hasMessageThat().isEqualTo("1");
+    assertThat(interrupted).containsExactly(2, 3, 10);
+  }
+
+  @Test public void concurrently_mainThreadInterrupted_propagatedInterruption()
+      throws InterruptedException {
+    ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
+    AtomicReference<Map<Integer,String>> results = new AtomicReference<>();
+    Thread mainThread = new Thread(
+        () -> {
+          try {
+            results.set(
+              Stream.of(10, 30, 40, 20).collect(concurrently(2, n -> {
+                try {
+                  Thread.sleep(n);
+                } catch (InterruptedException e) {
+                  interrupted.add(n);
+                }
+                return String.valueOf(n);
+              })).toMap());
+          } catch (Throwable e) {
+            e.printStackTrace();
+          }
+        });
+    mainThread.start();
+    mainThread.interrupt();
+    mainThread.join();
+    assertThat(results.get()).containsExactly(10, "10", 20, "20", 30, "30", 40, "40");
+    assertThat(interrupted).containsExactly(10, 20, 30, 40);
+  }
 
   @Test public void mapConcurrently_emptyInput() {
     assertThat(Stream.empty().gather(mapConcurrently(3, Object::toString)))
@@ -291,9 +430,10 @@ public class RaceTest {
     assertThat(thrown).hasMessageThat().isEqualTo("1");
   }
 
-  @Test public void mapConcurrent_downstreamFailureInterrupts() {
+  @Test public void mapConcurrent_downstreamFailureInterrupts() throws Exception {
     ConcurrentLinkedQueue<Integer> started = new ConcurrentLinkedQueue<>();
     ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
+    CountDownLatch latch = new CountDownLatch(2);
     RuntimeException thrown = assertThrows(
         RuntimeException.class,
         () -> Stream.of(1, 10, 3, 0)
@@ -304,6 +444,7 @@ public class RaceTest {
               } catch (InterruptedException e) {
                 interrupted.add(n);
               }
+              latch.countDown();
               return n;
             }))
             .peek(n -> {
@@ -314,17 +455,19 @@ public class RaceTest {
     assertThat(started).containsExactly(10, 1, 3);
     assertThat(interrupted).containsExactly(3, 10);
     assertThat(thrown).hasMessageThat().isEqualTo("1");
+    latch.await();
   }
 
-  @Test public void mapConcurrently_upstreamFailureDoesNotInterrupt() {
+  @Test public void mapConcurrently_upstreamFailureDoesNotInterrupt() throws Exception {
     ConcurrentLinkedQueue<Integer> started = new ConcurrentLinkedQueue<>();
     ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
+    CountDownLatch latch = new CountDownLatch(2);
     RuntimeException thrown = assertThrows(
         RuntimeException.class,
         () -> Stream.of(1, 10, 3, 0)
             .peek(n -> {
               if (n == 3) {
-                try { // give 1 and 3 some time to have at least started
+                try { // give 1 and 10 some time to have at least started
                   Thread.sleep(100);
                 } catch (InterruptedException e) {
                   interrupted.add(n);
@@ -339,12 +482,14 @@ public class RaceTest {
               } catch (InterruptedException e) {
                 interrupted.add(n);
               }
+              latch.countDown();
               return n;
             }))
             .findAny());
     assertThat(started).containsExactly(10, 1);
     assertThat(interrupted).isEmpty();
     assertThat(thrown).hasMessageThat().isEqualTo("3");
+    // latch.await();
   }
 
   @Test public void mapConcurrently_downstreamFailurePropagated() {

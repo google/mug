@@ -3,6 +3,7 @@ package com.google.mu.util.concurrent;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toCollection;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Gatherer.ofSequential;
 
 import java.util.ArrayList;
@@ -15,11 +16,16 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Semaphore;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import java.util.stream.Gatherer;
 import java.util.stream.Gatherer.Downstream;
 import java.util.stream.Gatherer.Integrator;
 import java.util.stream.Gatherers;
 import java.util.stream.Stream;
+
+import com.google.mu.util.Both;
+import com.google.mu.util.stream.BiStream;
 
 /**
  * Race semantics. Notably, {@link #mapConcurrently}, {@link #flatMapConcurrently} and {@link #race}.
@@ -27,6 +33,30 @@ import java.util.stream.Stream;
  * @since 9.0
  */
 public final class Race {
+
+  /**
+   * Applies {@code work} on each input element concurrently with {@code maxConcurrency}, and <em>lazily</em>.
+   *
+   * <p>At any given time, at most {@code maxConcurrency} concurrent work are running. With the intermediary
+   * buffer size bounded by {@code maxConcurrency}. The result {@link BiStream} is lazy: concurrent work only
+   * starts upon requested.
+   *
+   * <p>Unlike the {@link #mapConcurrently} gatherer, upstream exceptions won't leak zombie virtual threads
+   * and will guarantee strong happens-before relationship at termination operation of the stream.
+   */
+  public static <I, O> Collector<I, ?, BiStream<I, O>> concurrently(
+      int maxConcurrency, Function<? super I, ? extends O> work) {
+    requireNonNull(work);
+    checkArgument(maxConcurrency >= 1, "maxConcurrency must be greater than 0");
+    return Collectors.collectingAndThen(
+        toList(),
+        inputs -> BiStream.from(
+            inputs.stream()
+                .gather(mapConcurrently(
+                    maxConcurrency,
+                    input -> Both.of(input, work.apply(input))))));
+  }
+
   /**
    * Similar to {@link Gatherers#mapConcurrent}, runs {@code mapper} in virtual threads limited by
    * {@code maxConcurrency}. But maximizes concurrency without letting earlier slower operations
@@ -35,7 +65,7 @@ public final class Race {
    * <p>This gatherer doesn't guarantee encounter order; operations are allowed to race freely,
    * within the limit of {@code maxConcurrency}.
    */
-  public static <T, R> Gatherer<T, ?, R> mapConcurrently(
+  static <T, R> Gatherer<T, ?, R> mapConcurrently(
       int maxConcurrency, Function<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     checkArgument(maxConcurrency >= 1, "maxConcurrency must be greater than 0");
@@ -171,7 +201,7 @@ public final class Race {
    *      exceptions are allowed to recover from, and eventually propagate them if all
    *      have failed or a non-recoverable exception is thrown (like IllegalArgumentException).
    */
-  public static <T, R> Gatherer<T, ?, R> flatMapConcurrently(
+  static <T, R> Gatherer<T, ?, R> flatMapConcurrently(
       int maxConcurrency, Function<? super T, ? extends Stream<? extends R>> mapper) {
     requireNonNull(mapper);
     return flattening(
