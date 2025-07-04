@@ -291,7 +291,7 @@ public class RaceTest {
     assertThat(thrown).hasMessageThat().isEqualTo("1");
   }
 
-  @Test public void mapConcurrent_downstreamFailurePropagated() {
+  @Test public void mapConcurrent_downstreamFailureInterrupts() {
     ConcurrentLinkedQueue<Integer> started = new ConcurrentLinkedQueue<>();
     ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
     RuntimeException thrown = assertThrows(
@@ -307,12 +307,44 @@ public class RaceTest {
               return n;
             }))
             .peek(n -> {
+              // When 0 throws here, [3, 10] are still running
               throw new IllegalArgumentException(String.valueOf(n));
             })
             .findAny());
     assertThat(started).containsExactly(10, 1, 3);
     assertThat(interrupted).containsExactly(3, 10);
     assertThat(thrown).hasMessageThat().isEqualTo("1");
+  }
+
+  @Test public void mapConcurrently_upstreamFailureDoesNotInterrupt() {
+    ConcurrentLinkedQueue<Integer> started = new ConcurrentLinkedQueue<>();
+    ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
+    RuntimeException thrown = assertThrows(
+        RuntimeException.class,
+        () -> Stream.of(1, 10, 3, 0)
+            .peek(n -> {
+              if (n == 3) {
+                try { // give 1 and 3 some time to have at least started
+                  Thread.sleep(100);
+                } catch (InterruptedException e) {
+                  interrupted.add(n);
+                }
+                throw new IllegalArgumentException(String.valueOf(n));
+              }
+            })
+            .gather(mapConcurrently(3, n -> {
+              started.add(n);
+              try {
+                Thread.sleep(n * 10000);
+              } catch (InterruptedException e) {
+                interrupted.add(n);
+              }
+              return n;
+            }))
+            .findAny());
+    assertThat(started).containsExactly(10, 1);
+    assertThat(interrupted).isEmpty();
+    assertThat(thrown).hasMessageThat().isEqualTo("3");
   }
 
   @Test public void mapConcurrently_downstreamFailurePropagated() {
@@ -356,37 +388,6 @@ public class RaceTest {
               }
             })
             .gather(Gatherers.mapConcurrent(3, n -> {
-              started.add(n);
-              try {
-                Thread.sleep(n * 10000);
-              } catch (InterruptedException e) {
-                interrupted.add(n);
-              }
-              return n;
-            }))
-            .findAny());
-    assertThat(started).containsExactly(10, 1);
-    assertThat(interrupted).isEmpty();
-    assertThat(thrown).hasMessageThat().isEqualTo("3");
-  }
-
-  @Test public void mapConcurrently_upstreamFailurePropagated() {
-    ConcurrentLinkedQueue<Integer> started = new ConcurrentLinkedQueue<>();
-    ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
-    RuntimeException thrown = assertThrows(
-        RuntimeException.class,
-        () -> Stream.of(1, 10, 3, 0)
-            .peek(n -> {
-              if (n == 3) {
-                try {
-                  Thread.sleep(100);
-                } catch (InterruptedException e) {
-                  interrupted.add(n);
-                }
-                throw new IllegalArgumentException(String.valueOf(n));
-              }
-            })
-            .gather(mapConcurrently(3, n -> {
               started.add(n);
               try {
                 Thread.sleep(n * 10000);
