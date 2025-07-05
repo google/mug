@@ -29,7 +29,11 @@ import com.google.mu.util.Both;
 import com.google.mu.util.stream.BiStream;
 
 /**
- * A track with a fixed size (concurrency limit) for running tasks concurrently.
+ * A Track for structured concurrent processing, with a fixed concurrency limit.
+ *
+ * <p>It enables the parallel transformation of input elements, guaranteeing that all concurrent
+ * operations either complete and their results are gathered, or are fully cancelled and joined
+ * upon interruption or exception.
  *
  * @since 9.0
  */
