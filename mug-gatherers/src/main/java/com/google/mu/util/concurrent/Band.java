@@ -60,7 +60,6 @@ public final class Band {
   public static Band withMaxConcurrency(int maxConcurrency) {
     return withMaxConcurrency(maxConcurrency, runnable -> {
       Thread thread = Thread.ofVirtual().unstarted(runnable);
-      thread.setDaemon(true);
       thread.setName("Band thread #" + defaultThreadCount.getAndIncrement());
       return thread;
     });
