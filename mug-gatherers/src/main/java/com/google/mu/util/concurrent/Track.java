@@ -60,7 +60,7 @@ public final class Track {
   }
 
   /**
-   * Applies {@code work} on each input element concurrently with {@code maxConcurrency}, and <em>lazily</em>.
+   * Applies {@code work} on each input element concurrently and <em>lazily</em>.
    *
    * <p>At any given time, at most {@code maxConcurrency} concurrent work are running. With the intermediary
    * buffer size bounded by {@code maxConcurrency}. The result {@link BiStream} is lazy: concurrent work only
@@ -229,10 +229,9 @@ public final class Track {
   }
 
   /**
-   * Races {@code tasks} with {@code maxConcurrency} and returns the first success,
-   * then cancels the remaining. Upon exception, the {@code isRecoverable} predicate
-   * is tested to check whether the exception is recoverable (thus allowing the other
-   * tasks to continue to run.
+   * Races {@code tasks} and returns the first success, then cancels the remaining.
+   * Upon exception, the {@code isRecoverable} predicate is tested to check whether the
+   * exception is recoverable (thus allowing the other tasks to continue to run.
    *
    * <p>When all tasks throw an recoverable exception, without any success, all recoverable
    *  exceptions are propagated as {@link Throwable#addSuppressed suppressed}.
