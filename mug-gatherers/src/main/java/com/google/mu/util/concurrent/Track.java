@@ -2,7 +2,6 @@ package com.google.mu.util.concurrent;
 
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Gatherer.ofSequential;
 
@@ -14,6 +13,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
@@ -28,11 +29,35 @@ import com.google.mu.util.Both;
 import com.google.mu.util.stream.BiStream;
 
 /**
- * Race semantics. Notably, {@link #mapConcurrently}, {@link #flatMapConcurrently} and {@link #race}.
+ * Provides concurrency utilities based by running multiple threads up to a fixed limit.
  *
  * @since 9.0
  */
-public final class Race {
+public final class Track {
+  private static final AtomicInteger defaultThreadCount = new AtomicInteger();
+  private final int maxConcurrency;
+  private final ThreadFactory threadFactory;
+
+  private Track(int maxConcurrency, ThreadFactory threadFactory) {
+    checkArgument(maxConcurrency >= 1, "maxConcurrency must be greater than 0");
+    this.maxConcurrency = maxConcurrency;
+    this.threadFactory = requireNonNull(threadFactory);
+  }
+
+  /** Returns a {@link Track} using {@code maxConcurrency} and {@code threadFactor}. */
+  public static Track withMaxConcurrency(int maxConcurrency, ThreadFactory threadFactory) {
+    return new Track(maxConcurrency, threadFactory);
+  }
+
+  /** Returns a {@link Track} using {@code maxConcurrency}. Uses virtual threads to run concurrent work.*/
+  public static Track withMaxConcurrency(int maxConcurrency) {
+    return withMaxConcurrency(maxConcurrency, runnable -> {
+      Thread thread = Thread.ofVirtual().unstarted(runnable);
+      thread.setDaemon(true);
+      thread.setName("Track thread #" + defaultThreadCount.getAndIncrement());
+      return thread;
+    });
+  }
 
   /**
    * Applies {@code work} on each input element concurrently with {@code maxConcurrency}, and <em>lazily</em>.
@@ -44,17 +69,12 @@ public final class Race {
    * <p>Unlike the {@link #mapConcurrently} gatherer, upstream exceptions won't leak zombie virtual threads
    * and will guarantee strong happens-before relationship at termination operation of the stream.
    */
-  public static <I, O> Collector<I, ?, BiStream<I, O>> concurrently(
-      int maxConcurrency, Function<? super I, ? extends O> work) {
+  public <I, O> Collector<I, ?, BiStream<I, O>> concurrently(
+      Function<? super I, ? extends O> work) {
     requireNonNull(work);
-    checkArgument(maxConcurrency >= 1, "maxConcurrency must be greater than 0");
     return Collectors.collectingAndThen(
         toList(),
-        inputs -> BiStream.from(
-            inputs.stream()
-                .gather(mapConcurrently(
-                    maxConcurrency,
-                    input -> Both.of(input, work.apply(input))))));
+        inputs -> BiStream.from(inputs.stream().gather(mapConcurrently(input -> Both.of(input, work.apply(input))))));
   }
 
   /**
@@ -65,11 +85,7 @@ public final class Race {
    * <p>This gatherer doesn't guarantee encounter order; operations are allowed to race freely,
    * within the limit of {@code maxConcurrency}.
    */
-  static <T, R> Gatherer<T, ?, R> mapConcurrently(
-      int maxConcurrency, Function<? super T, ? extends R> mapper) {
-    requireNonNull(mapper);
-    checkArgument(maxConcurrency >= 1, "maxConcurrency must be greater than 0");
-
+  <T, R> Gatherer<T, ?, R> mapConcurrently(Function<? super T, ? extends R> mapper) {
     // Every methods of this class are called only by the main thread.
     class Window {
       private final Semaphore semaphore = new Semaphore(maxConcurrency);
@@ -94,7 +110,7 @@ public final class Race {
           return false;
         }
         Object key = new Object();
-        running.put(key, Thread.ofVirtual().start(() -> {
+        Thread thread = threadFactory.newThread(() -> {
           try {
             results.add(new Success<>(mapper.apply(element)));
           } catch (Throwable e) {
@@ -103,7 +119,9 @@ public final class Race {
             running.remove(key);
             semaphore.release();
           }
-        }));
+        });
+        thread.start();
+        running.put(key, thread);
         return true;
       }
 
@@ -201,14 +219,13 @@ public final class Race {
    *      exceptions are allowed to recover from, and eventually propagate them if all
    *      have failed or a non-recoverable exception is thrown (like IllegalArgumentException).
    */
-  static <T, R> Gatherer<T, ?, R> flatMapConcurrently(
-      int maxConcurrency, Function<? super T, ? extends Stream<? extends R>> mapper) {
+  <T, R> Gatherer<T, ?, R> flatMapConcurrently(
+      Function<? super T, ? extends Stream<? extends R>> mapper) {
     requireNonNull(mapper);
     return flattening(
-        mapConcurrently(
-            maxConcurrency,
+        this.<T, List<R>>mapConcurrently(
             // Must fully consume the stream in the virtual thread
-            input -> mapper.apply(input).collect(toCollection(ArrayList::new))));
+            input -> mapper.apply(input).collect(Collectors.toCollection(ArrayList::new))));
   }
 
   /**
@@ -225,8 +242,7 @@ public final class Race {
    * @param isRecoverable tests whether an exception is recoverable so that the
    *     other tasks should continue running.
    */
-  public static <T> T race(
-      int maxConcurrency,
+  public <T> T race(
       Collection<? extends Callable<? extends T>> tasks,
       Predicate<? super Throwable> isRecoverable) {
     checkArgument(tasks.size() > 0, "At least one task should have been provided");
@@ -234,7 +250,6 @@ public final class Race {
     ConcurrentLinkedQueue<Throwable> recoverable = new ConcurrentLinkedQueue<>();
     return tasks.stream()
         .gather(flatMapConcurrently(
-            maxConcurrency,
             task -> {
               try {
                 return Stream.of(new Success<T>(task.call()));
@@ -315,6 +330,4 @@ public final class Race {
       throw new IllegalArgumentException(message);
     }
   }
-
-  private Race() {}
 }
