@@ -29,7 +29,7 @@ import com.google.mu.util.Both;
 import com.google.mu.util.stream.BiStream;
 
 /**
- * A Track for structured concurrent processing, with a fixed concurrency limit.
+ * A band with a fixed bandwidth (concurrency limit) for structured concurrent IO-intentive operations.
  *
  * <p>It enables the parallel transformation of input elements, guaranteeing that all concurrent
  * operations either complete and their results are gathered, or are fully cancelled and joined
@@ -37,28 +37,28 @@ import com.google.mu.util.stream.BiStream;
  *
  * @since 9.0
  */
-public final class Track {
+public final class Band {
   private static final AtomicInteger defaultThreadCount = new AtomicInteger();
   private final int maxConcurrency;
   private final ThreadFactory threadFactory;
 
-  private Track(int maxConcurrency, ThreadFactory threadFactory) {
+  private Band(int maxConcurrency, ThreadFactory threadFactory) {
     checkArgument(maxConcurrency >= 1, "maxConcurrency must be greater than 0");
     this.maxConcurrency = maxConcurrency;
     this.threadFactory = requireNonNull(threadFactory);
   }
 
-  /** Returns a {@link Track} using {@code maxConcurrency} and {@code threadFactor}. */
-  public static Track withMaxConcurrency(int maxConcurrency, ThreadFactory threadFactory) {
-    return new Track(maxConcurrency, threadFactory);
+  /** Returns a {@link Band} using {@code maxConcurrency} and {@code threadFactor}. */
+  public static Band withMaxConcurrency(int maxConcurrency, ThreadFactory threadFactory) {
+    return new Band(maxConcurrency, threadFactory);
   }
 
-  /** Returns a {@link Track} using {@code maxConcurrency}. Uses virtual threads to run concurrent work.*/
-  public static Track withMaxConcurrency(int maxConcurrency) {
+  /** Returns a {@link Band} using {@code maxConcurrency}. Uses virtual threads to run concurrent work.*/
+  public static Band withMaxConcurrency(int maxConcurrency) {
     return withMaxConcurrency(maxConcurrency, runnable -> {
       Thread thread = Thread.ofVirtual().unstarted(runnable);
       thread.setDaemon(true);
-      thread.setName("Track thread #" + defaultThreadCount.getAndIncrement());
+      thread.setName("Band thread #" + defaultThreadCount.getAndIncrement());
       return thread;
     });
   }
