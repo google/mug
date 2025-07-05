@@ -190,6 +190,14 @@ String sql = "SELECT * FROM users WHERE id = ? AND name = ?";
 preparedStatement.setInt(1, userName); // mistake: wrong order
 preparedStatement.setString(2, userId);
 ```
+
+**Example (with Spring NamedParameterJdbcTemplate):**
+```java {.bad}
+new NamedParameterJdbcTemplate(dataSource)
+    .queryForList(
+        "SELECT * FROM users WHERE id = :id AND name = :name",
+        Map.of("nmae", userName, "id", userId));  // type!
+```
 This kind of error won’t always be caught during development, and can be difficult to debug.
 
 **With SafeSql:**
