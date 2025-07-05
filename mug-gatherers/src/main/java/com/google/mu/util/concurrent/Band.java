@@ -53,7 +53,10 @@ public final class Band {
     return new Band(maxConcurrency, threadFactory);
   }
 
-  /** Returns a {@link Band} using {@code maxConcurrency}. Uses virtual threads to run concurrent work.*/
+  /**
+   * Returns a {@link Band} using {@code maxConcurrency}.
+   * Uses virtual threads to run concurrent work.
+   */
   public static Band withMaxConcurrency(int maxConcurrency) {
     return withMaxConcurrency(maxConcurrency, runnable -> {
       Thread thread = Thread.ofVirtual().unstarted(runnable);
@@ -66,12 +69,13 @@ public final class Band {
   /**
    * Applies {@code work} on each input element concurrently and <em>lazily</em>.
    *
-   * <p>At any given time, at most {@code maxConcurrency} concurrent work are running. With the intermediary
-   * buffer size bounded by {@code maxConcurrency}. The result {@link BiStream} is lazy: concurrent work only
-   * starts upon requested.
+   * <p>At any given time, at most {@code maxConcurrency} concurrent work are running.
+   * With the intermediary buffer size bounded by {@code maxConcurrency}.
+   * The result {@link BiStream} is lazy: concurrent work only starts upon requested.
    *
-   * <p>Unlike the {@link #mapConcurrently} gatherer, upstream exceptions won't leak zombie virtual threads
-   * and will guarantee strong happens-before relationship at termination operation of the stream.
+   * <p>Unlike the {@link Gatherers#mapConcurrent} gatherer, upstream exceptions won't leak
+   * uninterrupted virtual threads and will guarantee strong happens-before relationship
+   * at termination operation of the stream.
    */
   public <I, O> Collector<I, ?, BiStream<I, O>> concurrently(
       Function<? super I, ? extends O> work) {
