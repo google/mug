@@ -29,7 +29,7 @@ import com.google.mu.util.Both;
 import com.google.mu.util.stream.BiStream;
 
 /**
- * Provides concurrency utilities based by running multiple threads up to a fixed limit.
+ * A track with a fixed size (concurrency limit) for running tasks concurrently.
  *
  * @since 9.0
  */
