@@ -29,7 +29,7 @@ when `sql.query()` is called.
 ### 1. SQL Injection: Beyond PreparedStatement – Catastrophic Costs of Dynamic SQL
 
 While JDBC `PreparedStatement` is a vital defense against SQL Injection (SQLi),
-relying on it alone against is a critical flaw, especially with **dynamic SQL construction**.
+relying on it alone is a critical flaw, especially with **dynamic SQL construction**.
 When query components like table names or `ORDER BY` clauses are built from user input using raw string concatenation
 (or `JdbcTemplate`, or MyBatis `${}` interpolation, jooq's escape hatch etc.) a wide-open door for injection is created.
 
