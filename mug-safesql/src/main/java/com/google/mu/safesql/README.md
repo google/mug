@@ -26,7 +26,7 @@ when `sql.query()` is called.
 
 ## Common Pain Points in SQL-First Java Development
 
-### 1. SQL Injection: Beyond PreparedStatement – Catastrophic Costs of Dynamic SQL
+### 1. SQL Injection
 
 While JDBC `PreparedStatement` is a vital defense against SQL Injection (SQLi),
 relying on it alone is a critical flaw, especially with **dynamic SQL construction**.
