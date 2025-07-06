@@ -37,7 +37,7 @@ When query components like table names or `ORDER BY` clauses are built from user
 * **NotPetya (2017) – Up to $10 Billion:** This ransomware attack, which exploited initial vulnerabilities that could include web application flaws, caused unprecedented global disruption and staggering financial losses for giants like Maersk and FedEx.
 * **Equifax (2017) – Over $1.4 Billion:** A failure to patch a known web application vulnerability exposed sensitive data for 147 million people, leading to massive settlements, fines, and enduring reputational damage.
 
-These represent company-altering disasters. When large, complex systems rely on "programmer caution and code reviews" for dynamic SQL string concatenation, the risk is a timed bomb. Human errors, vast codebase, developer turnover, and rushed reviews make it impossible to manually prevent every subtle SQLi vulnerability. Humans make mistake, they always do.
+These represent company-altering disasters. When large, complex systems rely on *programmer caution and code reviews* for dynamic SQL string concatenation, the risk is a timed bomb. Human errors, vast codebase, developer turnover, and rushed reviews make it impossible to manually prevent every subtle SQLi vulnerability. Humans make mistake, they always do.
 
 #### How Does SafeSql Prevent SQLi?
 
