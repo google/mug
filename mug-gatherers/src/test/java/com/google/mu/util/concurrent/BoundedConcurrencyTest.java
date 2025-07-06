@@ -2,7 +2,7 @@ package com.google.mu.util.concurrent;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static com.google.mu.util.concurrent.Band.withMaxConcurrency;
+import static com.google.mu.util.concurrent.BoundedConcurrency.withMaxConcurrency;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
 
@@ -23,7 +23,7 @@ import org.junit.runner.RunWith;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 @RunWith(TestParameterInjector.class)
-public class BandTest {
+public class BoundedConcurrencyTest {
 
   @Test public void concurrently_emptyInput() {
     assertThat(Stream.empty().collect(withMaxConcurrency(3).concurrently(Object::toString)).toMap())
@@ -356,8 +356,8 @@ public class BandTest {
   @Test public void mapConcurrently_failurePropagated() {
     ConcurrentLinkedQueue<Integer> started = new ConcurrentLinkedQueue<>();
     ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
-    Band.UncheckedExecutionException thrown = assertThrows(
-        Band.UncheckedExecutionException.class,
+    BoundedConcurrency.UncheckedExecutionException thrown = assertThrows(
+        BoundedConcurrency.UncheckedExecutionException.class,
         () -> Stream.of(10, 1, 3, 0)
             .gather(withMaxConcurrency(3).mapConcurrently(n -> {
               started.add(n);
