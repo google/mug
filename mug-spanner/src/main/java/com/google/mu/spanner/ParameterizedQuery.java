@@ -475,10 +475,11 @@ public final class ParameterizedQuery {
   @TemplateFormatMethod
   @TemplateStringArgsMustBeQuoted
   @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
-  public ParameterizedQuery orElse(@TemplateString @CompileTimeConstant String fallback, Object... args) {
+  public ParameterizedQuery orElse(
+      @TemplateString @CompileTimeConstant String fallback, Object... params) {
     requireNonNull(fallback);
-    requireNonNull(args);
-    return orElse(() -> of(fallback, args));
+    requireNonNull(params);
+    return orElse(() -> of(fallback, params));
   }
 
   /**
@@ -499,7 +500,11 @@ public final class ParameterizedQuery {
     return sql.isEmpty() ? fallback.get() : this;
   }
 
-  /** Creates an equivalent {@link Statement} to be passed to Spanner. */
+  /**
+   * Creates an equivalent {@link Statement} to be passed to Spanner.
+   *
+   * <p>This is how ParameterizedQuery is eventually consumed.
+   */
   public Statement statement() {
     List<String> bindingNames = toBindingNames();
     Iterator<String> atNames = bindingNames.stream().map("@"::concat).iterator();
