@@ -35,7 +35,6 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 import java.math.BigDecimal;
-import java.sql.PreparedStatement;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -120,9 +119,8 @@ import com.google.protobuf.ProtocolMessageEnum;
  * <dl><dt><STRONG>Compile-time Protection</STRONG></dt></dl>
  *
  * <p>The templating engine uses compile-time checks to guard against accidental use of
- * untrusted strings in the SQL, ensuring that they can only be sent as parameters of
- * PreparedStatement: try to use a dynamically generated String as the SQL template and
- * you'll get a compilation error.
+ * untrusted strings in the SQL, ensuring that they can only be sent as Spanner query parameters:
+ * try to use a dynamically generated String as the SQL template and you'll get a compilation error.
  *
  * <p>In addition, the same set of compile-time guardrails from the {@link StringFormat} class
  * are in effect to make sure that you don't pass {@code lastName} in the place of
@@ -250,8 +248,8 @@ import com.google.protobuf.ProtocolMessageEnum;
  *       .build();
  * }</pre>
  *
- * Spanner considers the quoted "@searchTerm" as a literal so the {@code setString()}
- * call will fail. You'll need to use the following workaround: <pre>{@code
+ * Spanner considers the quoted "@searchTerm" as a literal so the query won't work as expected.
+ * You'll need to use the following workaround: <pre>{@code
  *   String searchTerm = ...;
  *   Statement.newBuilder("SELECT id FROM Users WHERE firstName LIKE @searchTerm")
  *       .bind("searchTerm", "%" + searchTerm + "%")
@@ -340,16 +338,10 @@ public final class ParameterizedQuery {
    *     .query(dataSource, Long.class);
    * }</pre>
    *
-   * <p>Note that if you plan to create a {@link PreparedStatement} and use it multiple times
-   * with different sets of parameters, it's more efficient to use {@link #prepareToQuery
-   * prepareToQuery()} or {@link #prepareToUpdate prepareToUpdate()}, which will reuse the same
-   * PreparedStatement for multiple calls. The returned {@link Template}s are protected at
-   * compile-time against incorrect varargs.
-   *
    * @param template the sql template
    * @param params The template parameters. Parameters that are themselves {@link ParameterizedQuery} are
-   * considered trusted subqueries and are appended directly. Other types are passed through JDBC
-   * {@link PreparedStatement#setObject}, with one exception: when the corresponding placeholder
+   * considered trusted subqueries and are appended directly. Other types are passed through as
+   * Spanner query parameters, with one exception: when the corresponding placeholder
    * is quoted by backticks like {@code `{columns}`}, its string parameter value
    * (or {@code Iterable<String>} parameter value) are directly appended (quotes, backticks,
    * backslash and other special characters are disallowed).
