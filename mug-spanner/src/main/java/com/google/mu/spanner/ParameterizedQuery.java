@@ -463,8 +463,6 @@ public final class ParameterizedQuery {
    * <p>Using this method, you can create a chain of optional queries like:
    *
    * <pre>{@code
-   * import static ....Optionals.nonEmpty;
-   *
    * ParameterizedQuery.of(
    *     """
    *     CREATE TABLE ...
