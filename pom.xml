@@ -285,11 +285,11 @@
                 <version>2.58.0</version>
               </additionalDependency>
             </additionalDependencies>
-                    <links>
-                        <link>https://cloud.google.com/java/docs/reference/google-cloud-spanner/latest/overview</link>
-                        <link>https://cloud.google.com/java/docs/reference/gax/latest/overview</link>
-                        <link>https://cloud.google.com/java/docs/reference/google-cloud-core/latest/overview</link>
-                    </links>
+            <links>
+              <link>https://cloud.google.com/java/docs/reference/google-cloud-spanner/latest/overview</link>
+              <link>https://cloud.google.com/java/docs/reference/gax/latest/overview</link>
+              <link>https://cloud.google.com/java/docs/reference/google-cloud-core/latest/overview</link>
+            </links>
           </configuration>
           <executions>
           <execution>
