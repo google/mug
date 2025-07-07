@@ -99,8 +99,7 @@ import com.google.protobuf.ProtocolMessageEnum;
  *     GROUP BY `{group_columns}`
  *     """,
  *     groupColumns, sku, groupColumns);
- * try (ReadOnlyTransaction tx = dbClient.readOnlyTransaction()) {
- *   ResultSet resultSet = txn.executeQuery(query.toStatement());
+ * try (ResultSet resultSet = dbClient.singleUse().executeQuery(query.statement())) {
  *   ...
  * }
  * }</pre>
@@ -502,7 +501,8 @@ public final class ParameterizedQuery {
     return sql.isEmpty() ? fallback.get() : this;
   }
 
-  public Statement toStatement() {
+  /** Creates an equivalent {@link Statement} to be passed to Spanner. */
+  public Statement statement() {
     List<String> bindingNames = toBindingNames();
     Iterator<String> atNames = bindingNames.stream().map("@"::concat).iterator();
     Statement.Builder builder =
@@ -516,7 +516,7 @@ public final class ParameterizedQuery {
 
   /**
    * Returns the SQL text with the template parameters translated to named Spanner
-   * parameters, annotated with paramter values.
+   * parameters, annotated with parameter values.
    */
   @Override
   public String toString() {

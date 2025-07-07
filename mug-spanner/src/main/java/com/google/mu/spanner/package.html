@@ -17,8 +17,7 @@ Example: <pre>
 ParameterizedQuery query = ParameterizedQuery.of(
     "SELECT id, name, age FROM Users WHERE id = {id}", userId);
 
-try (var tx = databaseClient.readOnlyTransaction()) {
-  ResultSet resultSet = tx.executeQuery(query.toStatement());
+try (ResultSet resultSet = dbClient.singleUse().executeQuery(query.statement())) {
   ...
 }
 </pre>

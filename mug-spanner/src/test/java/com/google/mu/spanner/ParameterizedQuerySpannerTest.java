@@ -23,7 +23,6 @@ import com.google.cloud.spanner.InstanceConfigId;
 import com.google.cloud.spanner.InstanceId;
 import com.google.cloud.spanner.InstanceInfo;
 import com.google.cloud.spanner.Mutation;
-import com.google.cloud.spanner.ReadOnlyTransaction;
 import com.google.cloud.spanner.ResultSet;
 import com.google.cloud.spanner.Spanner;
 import com.google.cloud.spanner.SpannerOptions;
@@ -36,7 +35,7 @@ public class ParameterizedQuerySpannerTest {
       DockerImageName.parse("gcr.io/cloud-spanner-emulator/emulator:latest"));
 
   private static Spanner spanner;
-  private static DatabaseClient databaseClient;
+  private static DatabaseClient dbClient;
   private static final String PROJECT_ID = "test-project";
   private static final String INSTANCE_ID = "test-instance";
   private static final String DATABASE_ID = "test-database";
@@ -99,8 +98,8 @@ public class ParameterizedQuerySpannerTest {
       }
     }
 
-    databaseClient = spanner.getDatabaseClient(dbId);
-    assertNotNull("Database client should not be null", databaseClient);
+    dbClient = spanner.getDatabaseClient(dbId);
+    assertNotNull("Database client should not be null", dbClient);
   }
 
   @AfterClass
@@ -122,7 +121,7 @@ public class ParameterizedQuerySpannerTest {
   @Test
   public void withStringParameters() {
     // Insert a user
-    databaseClient.readWriteTransaction().run(txn -> {
+    dbClient.readWriteTransaction().run(txn -> {
       Mutation mutation = Mutation.newInsertBuilder("Users")
           .set("UserId").to("user-123")
           .set("Name").to("Alice")
@@ -135,8 +134,7 @@ public class ParameterizedQuerySpannerTest {
     ParameterizedQuery query = ParameterizedQuery.of(
         "SELECT UserId, Name, Email FROM Users WHERE UserId = '{user}'", "user-123");
     // Read the user
-    try (ReadOnlyTransaction txn = databaseClient.readOnlyTransaction()) {
-      ResultSet resultSet = txn.executeQuery(query.toStatement());
+    try (ResultSet resultSet = execute(query)) {
       assertEquals(true, resultSet.next()); // Should find a row
       assertEquals("user-123", resultSet.getString("UserId"));
       assertEquals("Alice", resultSet.getString("Name"));
@@ -148,7 +146,7 @@ public class ParameterizedQuerySpannerTest {
   @Test
   public void stringLike() {
     // Insert a user
-    databaseClient.readWriteTransaction().run(txn -> {
+    dbClient.readWriteTransaction().run(txn -> {
       Mutation mutation = Mutation.newInsertBuilder("Users")
           .set("UserId").to("user-4\\56")
           .set("Name").to("Alice")
@@ -165,28 +163,30 @@ public class ParameterizedQuerySpannerTest {
     //        .build();
 
     // Read the user
-    try (ReadOnlyTransaction txn = databaseClient.readOnlyTransaction()) {
-      ParameterizedQuery query = ParameterizedQuery.of(
-          "SELECT UserId, Name, Email FROM Users WHERE UserId LIKE '%{searchTerm}%'",
-          "er-");
-      ResultSet resultSet = txn.executeQuery(query.toStatement());
+    try (ResultSet resultSet = execute(
+        ParameterizedQuery.of(
+            "SELECT UserId, Name, Email FROM Users WHERE UserId LIKE '%{searchTerm}%'",
+            "er-"))) {
       assertEquals(true, resultSet.next()); // Should find a row
       assertEquals("user-4\\56", resultSet.getString("UserId"));
       assertEquals("Alice", resultSet.getString("Name"));
       assertEquals("alice@example.com", resultSet.getString("Email"));
     }
-    try (ReadOnlyTransaction txn = databaseClient.readOnlyTransaction()) {
+    try (ResultSet resultSet = dbClient.singleUse().executeQuery(
+        ParameterizedQuery.of(
+          "SELECT UserId, Name, Email FROM Users WHERE UserId LIKE '%{searchTerm}%'",
+          // % should be literal, so shouldn't match
+          "er%").statement())) {
       ParameterizedQuery query = ParameterizedQuery.of(
           "SELECT UserId, Name, Email FROM Users WHERE UserId LIKE '%{searchTerm}%'",
-          "er%");  // % should be literal, so shouldn't match
-      ResultSet resultSet = txn.executeQuery(query.toStatement());
+          "er%");
       assertEquals(false, resultSet.next()); // Should not find because % is literal
     }
-    try (ReadOnlyTransaction txn = databaseClient.readOnlyTransaction()) {
-      ParameterizedQuery query = ParameterizedQuery.of(
-          "SELECT UserId, Name, Email FROM Users WHERE UserId LIKE '%{searchTerm}%'",
-          "er-4\\");  // backslash should be literal, not escape the following wildcard
-      ResultSet resultSet = txn.executeQuery(query.toStatement());
+    try (ResultSet resultSet = dbClient.singleUse().executeQuery(
+        ParameterizedQuery.of(
+            "SELECT UserId, Name, Email FROM Users WHERE UserId LIKE '%{searchTerm}%'",
+            // backslash should be literal, not escape the following wildcard
+            "er-4\\").statement())) {
       assertEquals(true, resultSet.next()); // Should find a row
       assertEquals("user-4\\56", resultSet.getString("UserId"));
       assertEquals("Alice", resultSet.getString("Name"));
@@ -197,7 +197,7 @@ public class ParameterizedQuerySpannerTest {
   @Test
   public void withArrayParameter() {
     // Insert a user
-    databaseClient.readWriteTransaction().run(txn -> {
+    dbClient.readWriteTransaction().run(txn -> {
       Mutation mutation = Mutation.newInsertBuilder("Users")
           .set("UserId").to("user-7")
           .set("Name").to("Alice")
@@ -207,11 +207,10 @@ public class ParameterizedQuerySpannerTest {
       return null;
     });
     // Read the user
-    try (ReadOnlyTransaction txn = databaseClient.readOnlyTransaction()) {
-      ParameterizedQuery query = ParameterizedQuery.of(
-          "SELECT UserId, Name, Email FROM Users WHERE UserId IN UNNEST('{ids}')",
-          /* ids */ asList("user-6", "user-7"));
-      ResultSet resultSet = txn.executeQuery(query.toStatement());
+    ParameterizedQuery query = ParameterizedQuery.of(
+        "SELECT UserId, Name, Email FROM Users WHERE UserId IN UNNEST('{ids}')",
+        /* ids */ asList("user-6", "user-7"));
+    try (ResultSet resultSet = execute(query)) {
       assertEquals(true, resultSet.next()); // Should find a row
       assertEquals("user-7", resultSet.getString("UserId"));
       assertEquals("Alice", resultSet.getString("Name"));
@@ -223,7 +222,7 @@ public class ParameterizedQuerySpannerTest {
   @Test
   public void identifierParameterized() {
     // Insert a product
-    databaseClient.readWriteTransaction().run(txn -> {
+    dbClient.readWriteTransaction().run(txn -> {
       Mutation mutation = Mutation.newInsertBuilder("Products")
           .set("ProductId").to("prod-abc")
           .set("Name").to("Test Product")
@@ -235,10 +234,13 @@ public class ParameterizedQuerySpannerTest {
 
     ParameterizedQuery query = ParameterizedQuery.of("SELECT COUNT(*) FROM `{table}`", "Products");
     // Verify insertion (count all products)
-    try (ReadOnlyTransaction txn = databaseClient.readOnlyTransaction()) {
-      ResultSet resultSet = txn.executeQuery(query.toStatement());
+    try (ResultSet resultSet = execute(query)) {
       assertEquals(true, resultSet.next());
       assertEquals(1, resultSet.getLong(0));
     }
+  }
+
+  private ResultSet execute(ParameterizedQuery query) {
+    return dbClient.singleUse().executeQuery(query.statement());
   }
 }
