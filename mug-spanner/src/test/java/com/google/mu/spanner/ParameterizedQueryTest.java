@@ -47,7 +47,7 @@ public class ParameterizedQueryTest {
   @Test
   public void singleStringParameter() {
     ParameterizedQuery sql = ParameterizedQuery.of("select '{str}'", "foo");
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select @str").bind("str").to("foo").build());
     assertThat(sql.toString()).isEqualTo("select @str /* foo */");
   }
@@ -55,35 +55,35 @@ public class ParameterizedQueryTest {
   @Test
   public void singleIntParameter() {
     ParameterizedQuery sql = ParameterizedQuery.of("select {i}", 123);
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select @i").bind("i").to(123L).build());
   }
 
   @Test
   public void singleLongParameter() {
     ParameterizedQuery sql = ParameterizedQuery.of("select {i}", 123L);
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select @i").bind("i").to(123L).build());
   }
 
   @Test
   public void singleFloatParameter() {
     ParameterizedQuery sql = ParameterizedQuery.of("select {i}", 1.5F);
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select @i").bind("i").to(1.5F).build());
   }
 
   @Test
   public void singleDoubleParameter() {
     ParameterizedQuery sql = ParameterizedQuery.of("select {i}", 1.5D);
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select @i").bind("i").to(1.5D).build());
   }
 
   @Test
   public void singleBigDecimalParameter() {
     ParameterizedQuery sql = ParameterizedQuery.of("select {i}", /* i */ BigDecimal.valueOf(1.5));
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select @i").bind("i").to(BigDecimal.valueOf(1.5)).build());
   }
 
@@ -91,7 +91,7 @@ public class ParameterizedQueryTest {
   public void singleInstantParameter() {
     Instant time = Instant.ofEpochSecond(12345, 678);
     ParameterizedQuery sql = ParameterizedQuery.of("select {i}", /* i */ time);
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select @i").bind("i").to(Timestamp.parseTimestamp(time.toString())).build());
   }
 
@@ -99,7 +99,7 @@ public class ParameterizedQueryTest {
   public void singleZonedDateTimeParameter() {
     Instant time = Instant.ofEpochSecond(12345, 678);
     ParameterizedQuery sql = ParameterizedQuery.of("select {i}", /* i */ time.atZone(ZoneId.of("America/New_York")));
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select @i").bind("i").to(Timestamp.parseTimestamp(time.toString())).build());
   }
 
@@ -107,7 +107,7 @@ public class ParameterizedQueryTest {
   public void singleOffsetDateTimeParameter() {
     Instant time = Instant.ofEpochSecond(12345, 678);
     ParameterizedQuery sql = ParameterizedQuery.of("select {i}", /* i */ time.atOffset(ZoneOffset.ofHours(-7)));
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select @i").bind("i").to(Timestamp.parseTimestamp(time.toString())).build());
   }
 
@@ -115,14 +115,14 @@ public class ParameterizedQueryTest {
   public void singleLocalDateParameter() {
     LocalDate date = LocalDate.of(1997, 1, 15);
     ParameterizedQuery sql = ParameterizedQuery.of("select {i}", /* i */ date);
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select @i").bind("i").to(Date.parseDate(date.toString())).build());
   }
 
   @Test
   public void singleBoolParameter() {
     ParameterizedQuery sql = ParameterizedQuery.of("select {bool}", true);
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select @bool").bind("bool").to(true).build());
     assertThat(sql.toString()).isEqualTo("select @bool /* true */");
   }
@@ -131,7 +131,7 @@ public class ParameterizedQueryTest {
   public void singleUuidParameter() {
     UUID uuid = UUID.randomUUID();
     ParameterizedQuery sql = ParameterizedQuery.of("select {i}", /* i */ uuid);
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select @i").bind("i").to(uuid).build());
   }
 
@@ -139,7 +139,7 @@ public class ParameterizedQueryTest {
   public void singleByteArrayParameter() {
     ByteArray bytes = ByteArray.copyFrom(new byte[] {1, 3, 5});
     ParameterizedQuery sql = ParameterizedQuery.of("select {i}", /* i */ bytes);
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select @i").bind("i").to(bytes).build());
   }
 
@@ -147,7 +147,7 @@ public class ParameterizedQueryTest {
   public void singleIntervalParameter() {
     Interval interval = Interval.ofDays(3);
     ParameterizedQuery sql = ParameterizedQuery.of("select {i}", /* i */ interval);
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select @i").bind("i").to(interval).build());
   }
 
@@ -155,7 +155,7 @@ public class ParameterizedQueryTest {
   public void singleStructParameter() {
     Struct struct = Struct.newBuilder().add(Value.string("foo")).add(Value.bool(true)).build();
     ParameterizedQuery sql = ParameterizedQuery.of("select {i}", /* i */ struct);
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select @i").bind("i").to(struct).build());
   }
 
@@ -164,7 +164,7 @@ public class ParameterizedQueryTest {
   public void singleLongArrayParameter() {
     long[] a = new long[] {1, 3, 5};
     ParameterizedQuery sql = ParameterizedQuery.of("select {i}", /* i */ a);
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select @i").bind("i").toInt64Array(a).build());
   }
 
@@ -173,7 +173,7 @@ public class ParameterizedQueryTest {
   public void singleFloatArrayParameter() {
     float[] a = new float[] {1, 3, 5};
     ParameterizedQuery sql = ParameterizedQuery.of("select {i}", /* i */ a);
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select @i").bind("i").toFloat32Array(a).build());
   }
 
@@ -182,7 +182,7 @@ public class ParameterizedQueryTest {
   public void singleDoubleArrayParameter() {
     double[] a = new double[] {1, 3, 5};
     ParameterizedQuery sql = ParameterizedQuery.of("select {i}", /* i */ a);
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select @i").bind("i").toFloat64Array(a).build());
   }
 
@@ -191,7 +191,7 @@ public class ParameterizedQueryTest {
   public void singleBooleanArrayParameter() {
     boolean[] a = new boolean[] {true, false};
     ParameterizedQuery sql = ParameterizedQuery.of("select {i}", /* i */ a);
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select @i").bind("i").toBoolArray(a).build());
   }
 
@@ -199,7 +199,7 @@ public class ParameterizedQueryTest {
   public void singleValueParameter() {
     Value value = Value.timestamp(Timestamp.MAX_VALUE);
     ParameterizedQuery sql = ParameterizedQuery.of("select {i}", /* i */ value);
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select @i").bind("i").to(value).build());
   }
 
@@ -290,7 +290,7 @@ public class ParameterizedQueryTest {
     ParameterizedQuery sql = ParameterizedQuery.of("SELECT * FROM tbl WHERE 1=1 {name? -> AND name LIKE '%name?%'}", name);
     assertThat(sql)
         .isEqualTo(ParameterizedQuery.of("SELECT * FROM tbl WHERE 1=1 AND name LIKE '%{name}%'", name.get()));
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("SELECT * FROM tbl WHERE 1=1 AND name LIKE @name")
             .bind("name").to("%" + name.get() + "%")
             .build());
@@ -524,7 +524,7 @@ public class ParameterizedQueryTest {
   @Test
   public void singleLikeParameterWithWildcardAtBothEnds() {
     ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '%{s}%'", "foo");
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select * from tbl where name like @s")
             .bind("s").to("%foo%")
             .build());
@@ -558,7 +558,7 @@ public class ParameterizedQueryTest {
   @Test
   public void literalPercentValueWithWildcardAtBothEnds() {
     ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '%{s}%'", "%");
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select * from tbl where name like @s")
             .bind("s").to("%\\%%")
             .build());
@@ -568,7 +568,7 @@ public class ParameterizedQueryTest {
   @Test
   public void literalBackslashValueWithWildcardAtBothEnds() {
     ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '%{s}%'", "\\");
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select * from tbl where name like @s")
             .bind("s").to("%\\\\%")
             .build());
@@ -599,21 +599,21 @@ public class ParameterizedQueryTest {
   @Test
   public void literalPercentValueWithWildcardAtPrefix() {
     ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '%{s}'", "%");
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select * from tbl where name like @s").bind("s").to("%\\%").build());
   }
 
   @Test
   public void literalBackslashValueWithWildcardAtPrefix() {
     ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '%{s}'", "\\");
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select * from tbl where name like @s").bind("s").to("%\\\\").build());
   }
 
   @Test
   public void literalSingleQuoteValueWithWildcardAtPrefix() {
     ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '%{s}'", "'");
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select * from tbl where name like @s").bind("s").to("%'").build());
     assertThat(sql.toString()).isEqualTo("select * from tbl where name like @s /* %' */");
   }
@@ -636,21 +636,21 @@ public class ParameterizedQueryTest {
   @Test
   public void literalPercentValueWithWildcardAtSuffix() {
     ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '{s}%'", "%");
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select * from tbl where name like @s").bind("s").to("\\%%").build());
   }
 
   @Test
   public void literalBackslashValueWithWildcardAtSuffix() {
     ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '{s}%'", "\\");
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select * from tbl where name like @s").bind("s").to("\\\\%").build());
   }
 
   @Test
   public void literalSingleQuoteValueWithWildcardAtSuffix() {
     ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '{s}%'", "'");
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select * from tbl where name like @s").bind("s").to("'%").build());
     assertThat(sql.toString()).isEqualTo("select * from tbl where name like @s /* '% */");
   }
@@ -667,7 +667,7 @@ public class ParameterizedQueryTest {
   @Test
   public void stringParameterQuoted() {
     ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name = '{s}'", "foo");
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select * from tbl where name = @s").bind("s").to("foo").build());
     assertThat(sql.toString()).isEqualTo("select * from tbl where name = @s /* foo */");
   }
@@ -675,14 +675,14 @@ public class ParameterizedQueryTest {
   @Test
   public void literalPercentValueQuoted() {
     ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name = '{s}'", "%");
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select * from tbl where name = @s").bind("s").to("%").build());
   }
 
   @Test
   public void literalBackslashValueQuoted() {
     ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name = '{s}'", "\\");
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select * from tbl where name = @s").bind("s").to("\\").build());
     assertThat(sql.toString()).isEqualTo("select * from tbl where name = @s /* \\ */");
   }
@@ -977,7 +977,7 @@ public class ParameterizedQueryTest {
   public void twoParameters_whitespaceSeparated() {
     ParameterizedQuery sql =
         ParameterizedQuery.of("select {label} where id = {id}", /* label */ "foo", /* id */ 123);
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select @label where id = @id")
             .bind("label").to("foo")
             .bind("id").to(123L)
@@ -989,7 +989,7 @@ public class ParameterizedQueryTest {
   public void twoParameters_connectedByOperator() {
     ParameterizedQuery sql =
         ParameterizedQuery.of("select label where size={a}-{b}", /* a */ 100, /* b */ 50);
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select label where size=@a-@b")
             .bind("a").to(100)
             .bind("b").to(50)
@@ -1001,7 +1001,7 @@ public class ParameterizedQueryTest {
   public void twoParameters_followedWord_whitespaceInsertedAfterParameterName() {
     ParameterizedQuery sql =
         ParameterizedQuery.of("select label where {a}is null", /* a */ 100);
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select label where @a is null")
             .bind("a").to(100)
             .build());
@@ -1012,7 +1012,7 @@ public class ParameterizedQueryTest {
   public void parameterizeByTableName() {
     ParameterizedQuery sql =
         ParameterizedQuery.of("select * from {tbl} where id = {id}", /* tbl */ ParameterizedQuery.of("Users"), /* id */ 123);
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select * from Users where id = @id").bind("id").to(123L).build());
   }
 
@@ -1059,14 +1059,14 @@ public class ParameterizedQueryTest {
   @Test
   public void singleStringParameterValueHasQuestionMark() {
     ParameterizedQuery sql = ParameterizedQuery.of("select {str}", "?");
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select @str").bind("str").to("?").build());
   }
 
   @Test
   public void singleStringParameterValueHasAtSign() {
     ParameterizedQuery sql = ParameterizedQuery.of("select {str}", "@");
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select @str").bind("str").to("@").build());
   }
 
@@ -1082,7 +1082,7 @@ public class ParameterizedQueryTest {
   public void inListOfParameters_withBoolParameterValues() {
     ParameterizedQuery sql = ParameterizedQuery.of(
         "select * from tbl where active in ({statuses})", /* statuses */ asList(true, false));
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select * from tbl where active in (@statuses)")
             .bind("statuses").toBoolArray(asList(true, false))
             .build());
@@ -1092,7 +1092,7 @@ public class ParameterizedQueryTest {
   @Test
   public void inListOfParameters_withStringValues() {
     ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where id in ({ids})", /* ids */ asList("foo", "bar"));
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select * from tbl where id in (@ids)")
             .bind("ids").toStringArray(asList("foo", "bar"))
             .build());
@@ -1102,7 +1102,7 @@ public class ParameterizedQueryTest {
   @Test
   public void inListOfParameters_withInt32ParameterValues() {
     ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where id in ({ids})", /* ids */ asList(1, 2, 3));
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select * from tbl where id in (@ids)")
             .bind("ids").toInt64Array(asList(1L, 2L, 3L))
             .build());
@@ -1112,7 +1112,7 @@ public class ParameterizedQueryTest {
   @Test
   public void inListOfParameters_withInt64ParameterValues() {
     ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where id in ({ids})", /* ids */ asList(1L, 2L, 3L));
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select * from tbl where id in (@ids)")
             .bind("ids").toInt64Array(asList(1L, 2L, 3L))
             .build());
@@ -1122,7 +1122,7 @@ public class ParameterizedQueryTest {
   @Test
   public void inListOfParameters_withFloatParameterValues() {
     ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where id in ({ids})", /* ids */ asList(1F, 2F));
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select * from tbl where id in (@ids)")
             .bind("ids").toFloat32Array(asList(1F, 2F))
             .build());
@@ -1132,7 +1132,7 @@ public class ParameterizedQueryTest {
   @Test
   public void inListOfParameters_withDoubleParameterValues() {
     ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where id in ({ids})", /* ids */ asList(1D, 2D));
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select * from tbl where id in (@ids)")
             .bind("ids").toFloat64Array(asList(1D, 2D))
             .build());
@@ -1144,7 +1144,7 @@ public class ParameterizedQueryTest {
     ParameterizedQuery sql = ParameterizedQuery.of(
         "select * from tbl where id in ({ids})",
         /* ids */ asList(BigDecimal.valueOf(1), BigDecimal.valueOf(2)));
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select * from tbl where id in (@ids)")
             .bind("ids").toNumericArray(asList(BigDecimal.valueOf(1), BigDecimal.valueOf(2)))
             .build());
@@ -1156,7 +1156,7 @@ public class ParameterizedQueryTest {
     Instant t1 = Instant.ofEpochSecond(10000);
     Instant t2 = Instant.ofEpochSecond(30000);
     ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where ts in ({times})", /* times */ asList(t1, t2));
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select * from tbl where ts in (@times)")
             .bind("times").toTimestampArray(asList(parseTimestamp(t1.toString()), parseTimestamp(t2.toString())))
             .build());
@@ -1169,7 +1169,7 @@ public class ParameterizedQueryTest {
     ParameterizedQuery sql = ParameterizedQuery.of(
         "select * from tbl where ts in ({times})",
         /* times */ asList(t1.atZone(ZoneId.of("UTC")), t2.atZone(ZoneId.of("America/New_York"))));
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select * from tbl where ts in (@times)")
             .bind("times").toTimestampArray(asList(parseTimestamp(t1.toString()), parseTimestamp(t2.toString())))
             .build());
@@ -1182,7 +1182,7 @@ public class ParameterizedQueryTest {
     ParameterizedQuery sql = ParameterizedQuery.of(
         "select * from tbl where ts in ({times})",
         /* times */ asList(t1.atOffset(ZoneOffset.UTC), t2.atOffset(ZoneOffset.ofHours(7))));
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select * from tbl where ts in (@times)")
             .bind("times").toTimestampArray(asList(parseTimestamp(t1.toString()), parseTimestamp(t2.toString())))
             .build());
@@ -1195,7 +1195,7 @@ public class ParameterizedQueryTest {
     ParameterizedQuery sql = ParameterizedQuery.of(
         "select * from tbl where ts in ({days})",
         /* days */ asList(day1, day2));
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select * from tbl where ts in (@days)")
             .bind("days").toDateArray(asList(Date.parseDate(day1.toString()), Date.parseDate(day2.toString())))
             .build());
@@ -1208,7 +1208,7 @@ public class ParameterizedQueryTest {
     ParameterizedQuery sql = ParameterizedQuery.of(
         "select * from tbl where id in ({ids})",
         /* ids */ asList(id1, id2));
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select * from tbl where id in (@ids)")
             .bind("ids").toUuidArray(asList(id1, id2))
             .build());
@@ -1221,7 +1221,7 @@ public class ParameterizedQueryTest {
     ParameterizedQuery sql = ParameterizedQuery.of(
         "select * from tbl where id in ({ids})",
         /* ids */ asList(bytes1, bytes2));
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select * from tbl where id in (@ids)")
             .bind("ids").toBytesArray(asList(bytes1, bytes2))
             .build());
@@ -1232,7 +1232,7 @@ public class ParameterizedQueryTest {
     ParameterizedQuery sql = ParameterizedQuery.of(
         "select * from tbl where id in ({ids})",
         /* ids */ asList(Interval.ofDays(1), Interval.ofMonths(2)));
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select * from tbl where id in (@ids)")
             .bind("ids").toIntervalArray(asList(Interval.ofDays(1), Interval.ofMonths(2)))
             .build());
@@ -1245,7 +1245,7 @@ public class ParameterizedQueryTest {
     ParameterizedQuery sql = ParameterizedQuery.of(
         "select * from tbl where id in ({ids})",
         /* ids */ asList(struct1, struct2));
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select * from tbl where id in (@ids)")
             .bind("ids").toStructArray(struct1.getType(), asList(struct1, struct2))
             .build());
@@ -1278,7 +1278,7 @@ public class ParameterizedQueryTest {
   @Test
   public void inListOfQuotedStringParameters() {
     ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where id in ('{ids}')", /* ids */ asList("foo", "bar"));
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select * from tbl where id in (@ids)")
             .bind("ids").toStringArray(asList("foo", "bar"))
             .build());
@@ -1441,7 +1441,7 @@ public class ParameterizedQueryTest {
     ParameterizedQuery sql = ParameterizedQuery.of(
         "select * from ({tbl}) where id = {id}",
         ParameterizedQuery.of("select * from tbl where id = {id}", 1), /* id */ 2);
-    assertThat(sql.toStatement())
+    assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select * from (select * from tbl where id = @id) where id = @id_1")
             .bind("id").to(1L)
             .bind("id_1").to(2L)
