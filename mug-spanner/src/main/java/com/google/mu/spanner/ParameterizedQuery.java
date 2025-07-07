@@ -102,7 +102,7 @@ import com.google.protobuf.ProtocolMessageEnum;
  * try (ReadOnlyTransaction tx = dbClient.readOnlyTransaction()) {
  *   ResultSet resultSet = txn.executeQuery(query.toStatement());
  *   ...
-   }
+ * }
  * }</pre>
  *
  * <p>If a placeholder is quoted by backticks (`) or double quotes, it's interpreted and
