@@ -59,7 +59,7 @@ public final class TemplateStringArgsMustBeQuotedCheck extends AbstractBugChecke
       checkingOn(tree)
           .require(
               ASTHelpers.hasAnnotation(
-                  method, "com.google.common.labs.text.TemplateFormatMethod", state),
+                  method, "com.google.mu.annotations.TemplateFormatMethod", state),
               "Methods annotated with @TemplateStringArgsMustBeQuoted must also be annotated with"
                   + " @TemplateFormatMethod.");
     }
@@ -90,7 +90,7 @@ public final class TemplateStringArgsMustBeQuotedCheck extends AbstractBugChecke
             .filterValues(
                 param ->
                     ASTHelpers.hasAnnotation(
-                        param, "com.google.common.labs.text.TemplateString", state))
+                        param, "com.google.mu.annotations.TemplateString", state))
             .keys()
             .findFirst()
             .orElse(0);
@@ -135,7 +135,7 @@ public final class TemplateStringArgsMustBeQuotedCheck extends AbstractBugChecke
 
   private static boolean shouldCheck(Symbol method, VisitorState state) {
     return ASTHelpers.hasAnnotation(
-        method, "com.google.common.labs.text.TemplateStringArgsMustBeQuoted", state);
+        method, "com.google.mu.annotations.TemplateStringArgsMustBeQuoted", state);
   }
 
   private static <T> List<T> skip(List<T> list, int n) {
