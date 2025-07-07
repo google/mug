@@ -350,7 +350,8 @@ public final class ParameterizedQuery {
   @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
   @TemplateFormatMethod
   @TemplateStringArgsMustBeQuoted
-  public static ParameterizedQuery of(@TemplateString @CompileTimeConstant String template, Object... params) {
+  public static ParameterizedQuery of(
+      @TemplateString @CompileTimeConstant String template, Object... params) {
     return template(template).with(params);
   }
 
@@ -444,7 +445,8 @@ public final class ParameterizedQuery {
    *
    * <p>Empty ParameterizedQuery elements are ignored and not joined.
    */
-  public static Collector<ParameterizedQuery, ?, ParameterizedQuery> joining(@CompileTimeConstant String delimiter) {
+  public static Collector<ParameterizedQuery, ?, ParameterizedQuery> joining(
+      @CompileTimeConstant String delimiter) {
     rejectReservedChars(delimiter);
     return skippingEmpty(
         Collector.of(
@@ -455,7 +457,7 @@ public final class ParameterizedQuery {
   }
 
   /**
-   * If {@code this} query is empty (likely from a call to {@link #optionally} or {@link #when}),
+   * If {@code this} query is empty (likely from a call to {@link #when}),
    * returns the ParameterizedQuery produced from the {@code fallback} template and {@code args}.
    *
    * <p>Using this method, you can create a chain of optional queries like:
@@ -482,7 +484,7 @@ public final class ParameterizedQuery {
   }
 
   /**
-   * If {@code this} query is empty (likely from a call to {@link #optionally} or {@link #when}),
+   * If {@code this} query is empty (likely from a call to {@link #when}),
    * returns the {@code fallback} query.
    */
   public ParameterizedQuery orElse(ParameterizedQuery fallback) {
@@ -491,7 +493,7 @@ public final class ParameterizedQuery {
   }
 
   /**
-   * If {@code this} query is empty (likely from a call to {@link #optionally} or {@link #when}),
+   * If {@code this} query is empty (likely from a call to {@link #when}),
    * returns the query produced by the {@code fallback} supplier.
    */
   public ParameterizedQuery orElse(Supplier<ParameterizedQuery> fallback) {

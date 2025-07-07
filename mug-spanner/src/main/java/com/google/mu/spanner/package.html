@@ -1,0 +1,32 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+Google Cloud Spanner Safe SQL Template
+</head>
+<body bgcolor="white">
+
+A SQL template library with: <ul>
+<li>Industry-strength library-enforced SQL injection safety - you cannot shoot yourself in the foot.
+<li>Powerful dynamic SQL capability - compose subqueries flexibly (and <b>safe from SQL injection</b>, again).
+<li>Compile-time semantic check - never worry about passing template parameters wrong.
+<li><em>Real, actual</em> SQL that you can copy/paste - no DSL; no XML; no StringBuilder.
+<li>Extremely low learning curve.
+</ul>
+
+Example: <pre>
+ParameterizedQuery query = ParameterizedQuery.of(
+    "SELECT id, name, age FROM Users WHERE id = {id}", userId);
+
+try (var tx = databaseClient.readOnlyTransaction()) {
+  ResultSet resultSet = tx.executeQuery(query.toStatement());
+  ...
+}
+</pre>
+<br>
+
+<h2>Package Specification</h2>
+
+The code is developed and tested under Java 8.0. 
+
+</body>
+</html>
