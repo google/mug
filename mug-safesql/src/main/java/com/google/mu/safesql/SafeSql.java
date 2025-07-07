@@ -181,7 +181,7 @@ import com.google.mu.util.stream.BiStream;
  * in Java and passed in as subqueries.
  *
  * <p>Starting from v8.4, simple conditional subqueries (e.g. selecting a column if a flag is
- * enabled) can use the conditional subquery operator {@code ->} inside template placeholders:
+ * enabled) can use the guard operator {@code ->} inside template placeholders:
  *
  * <pre>{@code
  *   SafeSql sql = SafeSql.of(
