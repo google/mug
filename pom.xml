@@ -67,6 +67,13 @@
   <dependencyManagement>
   <dependencies>
     <dependency>
+      <groupId>com.google.cloud</groupId>
+      <artifactId>libraries-bom</artifactId>
+      <version>26.63.0</version>
+      <type>pom</type>
+      <scope>import</scope>
+    </dependency>
+    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>4.13.1</version>
@@ -267,7 +274,16 @@
                 <artifactId>google-cloud-bigquery</artifactId>
                 <version>2.34.2</version>
               </additionalDependency>
+              <additionalDependency>
+                <groupId>com.google.cloud</groupId>
+                <artifactId>google-cloud-spanner</artifactId>
+              </additionalDependency>
             </additionalDependencies>
+                    <links>
+                        <link>https://cloud.google.com/java/docs/reference/google-cloud-spanner/latest/overview</link>
+                        <link>https://cloud.google.com/java/docs/reference/gax/latest/overview</link>
+                        <link>https://cloud.google.com/java/docs/reference/google-cloud-core/latest/overview</link>
+                    </links>
           </configuration>
           <executions>
           <execution>
