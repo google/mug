@@ -642,8 +642,6 @@ public final class SafeSql {
    * <p>Using this method, you can create a chain of optional queries like:
    *
    * <pre>{@code
-   * import static ....Optionals.nonEmpty;
-   *
    * SafeSql.of(
    *     """
    *     CREATE TABLE ...
