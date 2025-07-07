@@ -81,13 +81,14 @@ import com.google.protobuf.AbstractMessage;
 import com.google.protobuf.ProtocolMessageEnum;
 
 /**
- * An injection-safe wrapper of Google Cloud Spanner client library.
+ * An injection-safe SQL template for Google Cloud Spanner.
  *
- * <p>Spanner SQL is constructed using compile-time enforced templates and support dynamic SQL
- * and flexible subquery composition without you having to manage the SQL and parameters separately.
+ * <p>Spanner SQL is constructed using compile-time enforced templates, with support for dynamic SQL
+ * and flexible subquery composition. The library manages the parameterized query and the query
+ * parameters automatically, across all subqueries.
  *
- * <p>You can use this class to create Spanner SQL template with parameters, compose subqueries,
- * and even parameterize by identifiers (table names, column names) safe from injection.
+ * <p>Use this class to create Spanner SQL template with parameters, to compose subqueries,
+ * and even to parameterize by identifiers (table names, column names), without risking injection.
  * For example: <pre>{@code
  * List<String> groupColumns = ...;
  * ParameterizedQuery query = ParameterizedQuery.of(
