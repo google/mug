@@ -225,12 +225,20 @@ public interface CharPredicate {
     return true;
   }
 
-  /** Returns true if {@code sequence} starts with a character that matches this predicate. */
+  /**
+   * Returns true if {@code sequence} starts with a character that matches this predicate.
+   *
+   * @since 9.0
+   */
   default boolean isPrefixOf(CharSequence sequence) {
     return !sequence.isEmpty() && test(sequence.charAt(0));
   }
 
-  /** Returns true if {@code sequence} ends with a character that matches this predicate. */
+  /**
+   * Returns true if {@code sequence} ends with a character that matches this predicate.
+   *
+   * @since 9.0
+   */
   default boolean isSuffixOf(CharSequence sequence) {
     return !sequence.isEmpty() && test(sequence.charAt(sequence.length() - 1));
   }

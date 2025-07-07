@@ -510,7 +510,7 @@ public final class ParameterizedQuery {
     Iterator<String> atNames = bindingNames.stream().map("@"::concat).iterator();
     Statement.Builder builder =
         Statement.newBuilder(
-            all("?").replaceAllFrom(sql, q -> atNames.next() + (needsSeparator(q) ? " " : "")));
+            all("?").replaceAllFrom(sql, q -> atNames.next() + (q.isFollowedBy(CharPredicate.ALPHA) ? " " : "")));
     for (int i = 0; i < bindingNames.size(); i++) {
       builder.bind(bindingNames.get(i)).to(parameters.get(i).value);
     }
@@ -816,12 +816,6 @@ public final class ParameterizedQuery {
     checkArgument(
         !placeholder.isImmediatelyBetween("'", "`"),
         "Incorrectly quoted placeholder: '%s`", placeholder);
-  }
-
-  private static boolean needsSeparator(Substring.Match placeholder) {
-    int endIndex = placeholder.index() + placeholder.length();
-    return endIndex < placeholder.fullString().length()
-        && CharPredicate.ALPHA.test(placeholder.fullString().charAt(endIndex));
   }
 
   private static Value toValue(String name, Object obj) {

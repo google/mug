@@ -3914,6 +3914,17 @@ public class SubstringTest {
     assertThat(match.isFollowedBy("")).isTrue();
   }
 
+  @Test public void match_isFollowedByChar_notAtTheEnd() {
+    Substring.Match match = first("foo").in("foobar").get();
+    assertThat(match.isFollowedBy(c -> c == 'a')).isFalse();
+    assertThat(match.isFollowedBy(c -> c == 'b')).isTrue();
+  }
+
+  @Test public void match_isFollowedByByChar_atTheEnd() {
+    Substring.Match match = first("bar").in("foobar").get();
+    assertThat(match.isFollowedBy(c -> true)).isFalse();
+  }
+
   @Test public void match_isPrecededBy_notAtTheBeginning() {
     Substring.Match match = first("bar").in("foobar").get();
     assertThat(match.isPrecededBy("b")).isFalse();
@@ -3931,6 +3942,17 @@ public class SubstringTest {
     assertThat(match.isPrecededBy("foo")).isFalse();
     assertThat(match.isPrecededBy("bar")).isFalse();
     assertThat(match.isPrecededBy("")).isTrue();
+  }
+
+  @Test public void match_isPrecededByChar_notAtTheBeginning() {
+    Substring.Match match = first("bar").in("foobar").get();
+    assertThat(match.isPrecededBy(c -> c == 'b')).isFalse();
+    assertThat(match.isPrecededBy(c -> c == 'o')).isTrue();
+  }
+
+  @Test public void match_isPrecededByChar_atTheBeginning() {
+    Substring.Match match = first("foo").in("foobar").get();
+    assertThat(match.isPrecededBy(c -> true)).isFalse();
   }
 
   @Test public void match_isImmediatelyBetween_inTheMiddle() {
