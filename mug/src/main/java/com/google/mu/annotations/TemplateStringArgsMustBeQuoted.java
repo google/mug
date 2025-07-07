@@ -38,6 +38,8 @@ import java.lang.annotation.Target;
  *
  * <p>The single quotes will be elided when the placeholder value is sent through the
  * underlying parameterization API.
+ *
+ * @since 9.0
  */
 @Documented
 @Target({ElementType.METHOD, ElementType.CONSTRUCTOR})
