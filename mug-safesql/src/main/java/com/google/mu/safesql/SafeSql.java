@@ -655,10 +655,10 @@ public final class SafeSql {
    */
   @TemplateFormatMethod
   @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
-  public SafeSql orElse(@TemplateString @CompileTimeConstant String fallback, Object... args) {
+  public SafeSql orElse(@TemplateString @CompileTimeConstant String fallback, Object... params) {
     requireNonNull(fallback);
-    requireNonNull(args);
-    return orElse(() -> of(fallback, args));
+    requireNonNull(params);
+    return orElse(() -> of(fallback, params));
   }
 
   /**
