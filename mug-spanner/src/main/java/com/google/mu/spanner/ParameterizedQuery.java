@@ -1,3 +1,17 @@
+/*****************************************************************************
+ * ------------------------------------------------------------------------- *
+ * Licensed under the Apache License, Version 2.0 (the "License");           *
+ * you may not use this file except in compliance with the License.          *
+ * You may obtain a copy of the License at                                   *
+ *                                                                           *
+ * http://www.apache.org/licenses/LICENSE-2.0                                *
+ *                                                                           *
+ * Unless required by applicable law or agreed to in writing, software       *
+ * distributed under the License is distributed on an "AS IS" BASIS,         *
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+ * See the License for the specific language governing permissions and       *
+ * limitations under the License.                                            *
+ *****************************************************************************/
 package com.google.mu.spanner;
 
 import static com.google.mu.spanner.InternalUtils.checkArgument;
@@ -67,6 +81,223 @@ import com.google.mu.util.stream.BiStream;
 import com.google.protobuf.AbstractMessage;
 import com.google.protobuf.ProtocolMessageEnum;
 
+/**
+ * An injection-safe wrapper of Google Cloud Spanner client library.
+ *
+ * <p>Spanner SQL is constructed using compile-time enforced templates and support dynamic SQL
+ * and flexible subquery composition without you having to manage the SQL and parameters separately.
+ *
+ * <p>You can use this class to create Spanner SQL template with parameters, compose subqueries,
+ * and even parameterize by identifiers (table names, column names) safe from injection.
+ * For example: <pre>{@code
+ * List<String> groupColumns = ...;
+ * ParameterizedQuery query = ParameterizedQuery.of(
+ *     """
+ *     SELECT `{group_columns}`, SUM(revenue) AS revenue
+ *     FROM Sales
+ *     WHERE sku = '{sku}'
+ *     GROUP BY `{group_columns}`
+ *     """,
+ *     groupColumns, sku, groupColumns);
+ * try (ReadOnlyTransaction tx = dbClient.readOnlyTransaction()) {
+ *   ResultSet resultSet = txn.executeQuery(query.toStatement());
+ *   ...
+   }
+ * }</pre>
+ *
+ * <p>If a placeholder is quoted by backticks (`) or double quotes, it's interpreted and
+ * validated as an identifier; all other placeholder values (except `ParameterizedQuery` objects,
+ * which are subqueries) are passed through Spanner's parameterization query.
+ *
+ * <p>To be explicit, a compile-time check is in place to require all non-identifier string
+ * placeholders to be single-quoted: this makes the template more self-evident, and helps to avoid
+ * the mistake of forgetting the quotes and then sending the column name as a query parameter.
+ *
+ * <p>Except the placeholders, everything outside the curly braces are strictly WYSIWYG
+ * (what you see is what you get), so you can copy paste them between the Java code and your SQL
+ * console for quick testing and debugging.
+ *
+ * <dl><dt><STRONG>Compile-time Protection</STRONG></dt></dl>
+ *
+ * <p>The templating engine uses compile-time checks to guard against accidental use of
+ * untrusted strings in the SQL, ensuring that they can only be sent as parameters of
+ * PreparedStatement: try to use a dynamically generated String as the SQL template and
+ * you'll get a compilation error.
+ *
+ * <p>In addition, the same set of compile-time guardrails from the {@link StringFormat} class
+ * are in effect to make sure that you don't pass {@code lastName} in the place of
+ * {@code first_name}, for example.
+ *
+ * <p>To enable the compile-time plugin, copy the {@code <annotationProcessorPaths>} in the
+ * "maven-compiler-plugin" section from the following pom.xml file snippet:
+ *
+ * <pre>{@code
+ * <build>
+ *   <pluginManagement>
+ *     <plugins>
+ *       <plugin>
+ *         <artifactId>maven-compiler-plugin</artifactId>
+ *         <configuration>
+ *           <annotationProcessorPaths>
+ *             <path>
+ *               <groupId>com.google.errorprone</groupId>
+ *               <artifactId>error_prone_core</artifactId>
+ *               <version>2.23.0</version>
+ *             </path>
+ *             <path>
+ *               <groupId>com.google.mug</groupId>
+ *               <artifactId>mug-errorprone</artifactId>
+ *               <version>8.7</version>
+ *             </path>
+ *           </annotationProcessorPaths>
+ *         </configuration>
+ *       </plugin>
+ *     </plugins>
+ *   </pluginManagement>
+ * </build>
+ * }</pre>
+ *
+ * <dl><dt><STRONG>Conditional Subqueries</STRONG></dt></dl>
+ *
+ * ParameterizedQuery's template syntax is designed to avoid control flows that could obfuscate SQL.
+ * Instead, complex control flow such as {@code if-else}, nested {@code if}, loops etc. should be
+ * performed in Java and passed in as subqueries.
+ *
+ * <p>Simple conditional subqueries (e.g. selecting a column if a flag is enabled) can use the
+ * guard operator {@code ->} inside template placeholders:
+ *
+ * <pre>{@code
+ *   ParameterizedQuery sql = ParameterizedQuery.of(
+ *       "SELECT {shows_email -> email,} name FROM Users", showsEmail());
+ * }</pre>
+ *
+ * The query text after the {@code ->} operator is the conditional subquery that's only included if
+ * {@code showEmail()} returns true. The subquery can include arbitrary characters except curly
+ * braces, so you can also have multi-line conditional subqueries.
+ *
+ * <dl><dt><STRONG>Complex Dynamic Subqueries</STRONG></dt></dl>
+ *
+ * By composing ParameterizedQuery objects that encapsulate subqueries, you can also parameterize by
+ * arbitrary sub-queries that are computed dynamically.
+ *
+ * <p>For example, the following code builds SQL to query the Users table with flexible
+ * number of columns and a flexible WHERE clause depending on the {@code UserCriteria}
+ * object's state:
+ *
+ * <pre>{@code
+ *   class UserCriteria {
+ *     Optional<String> userId();
+ *     Optional<String> firstName();
+ *     ...
+ *   }
+ *
+ *   ParameterizedQuery usersQuery(UserCriteria criteria, @CompileTimeConstant String... columns) {
+ *     return ParameterizedQuery.of(
+ *         """
+ *         SELECT `{columns}`
+ *         FROM Users
+ *         WHERE 1 = 1
+ *             {user_id? -> AND id = user_id?}
+ *             {first_name? -> AND firstName LIKE '%first_name?%'}
+ *         """,
+ *         asList(columns),
+ *         criteria.userId()),
+ *         criteria.firstName());
+ *   }
+ * }</pre>
+ *
+ * <p>The special "{foo? -> ...}" guard syntax informs the template engine that the
+ * right hand side query snippet is only rendered if the {@code Optional} arg corresponding to the
+ * "foo?" placeholder is present, in which case the value of the Optional will be used in the right
+ * hand side snippet as if it were a regular template argument.
+ *
+ * <p>If {@code UserCriteria} has specified {@code firstName()} but {@code userId()} is
+ * unspecified (empty), the resulting SQL will look like:
+ *
+ * <pre>{@code
+ *   SELECT `email`, `lastName` FROM Users WHERE firstName LIKE @first_name
+ * }</pre>
+ *
+ * <dl><dt><STRONG>Parameterize by Column Names or Table Names</STRONG></dt></dl>
+ *
+ * Sometimes you may wish to parameterize by table names, column names etc.
+ * for which Spanner parameterization has no support.
+ *
+ * <p>The safe way to parameterize dynamic strings as <em>identifiers</em> is to backtick-quote
+ * their placeholders in the SQL template. For example: <pre>{@code
+ *   ParameterizedQuery.of("SELECT `{columns}` FROM Users", request.getColumns())
+ * }</pre>
+ * The backticks tell ParameterizedQuery that the string is supposed to be an identifier (or a list of
+ * identifiers). ParameterizedQuery will sanity-check the string(s) to ensure injection safety.
+ *
+ * <p>In the above example, if {@code getColumns()} returns {@code ["id", "age"]}, the genereated
+ * SQL will be:
+ *
+ * <pre>{@code
+ *   SELECT `id`, `age` FROM Users
+ * }</pre>
+ *
+ * <p>That is, each individual string will be backtick-quoted and then joined by ", ".
+ *
+ * <dl><dt><STRONG>The {@code LIKE} Operator</STRONG></dt></dl>
+ *
+ * <p>Note that with straight Spanner SQL, if you try to use the LIKE operator to match a user-provided
+ * substring, i.e. using {@code LIKE '%foo%'} to search for "foo", this seemingly intuitive
+ * syntax is actually incorect: <pre>{@code
+ *   String searchTerm = ...;
+ *   Statement.newBuilder("SELECT id FROM Users WHERE firstName LIKE '%@searchTerm%'")
+ *       .bind("searchTerm", searchTerm)
+ *       .build();
+ * }</pre>
+ *
+ * Spanner considers the quoted "@searchTerm" as a literal so the {@code setString()}
+ * call will fail. You'll need to use the following workaround: <pre>{@code
+ *   String searchTerm = ...;
+ *   Statement.newBuilder("SELECT id FROM Users WHERE firstName LIKE @searchTerm")
+ *       .bind("searchTerm", "%" + searchTerm + "%")
+ *       .build();
+ * }</pre>
+ *
+ * And even then, if the {@code searchTerm} includes special characters like '%' or backslash ('\'),
+ * they'll be interepreted as wildcards and escape characters, opening it up to a form of minor
+ * SQL injection despite already using the parameterized SQL.
+ *
+ * <p>The ParameterizedQuery template protects you from this caveat. The most intuitive syntax does
+ * exactly what you'd expect (and it escapes special characters too): <pre>{@code
+ *   String searchTerm = ...;
+ *   ParameterizedQuery sql = ParameterizedQuery.of(
+ *       "SELECT id FROM Users WHERE firstName LIKE '%{search_term}%'", searchTerm);
+ * }</pre>
+ *
+ * <dl><dt><STRONG>Enforce Identical Parameter</STRONG></dt></dl>
+ *
+ * <p>The compile-time check tries to be helpful and checks that if you use the
+ * same parameter name more than once in the template, the same value must be used for it.
+ *
+ * <p>So for example, if you are trying to generate a SQL that looks like: <pre>{@code
+ *   SELECT u.firstName, p.profileId
+ *   FROM (SELECT firstName FROM Users WHERE id = 'foo') u,
+ *        (SELECT profileId FROM Profiles WHERE userId = 'foo') p
+ * }</pre>
+ *
+ * It'll be important to use the same user id for both subqueries. And you can use the following
+ * template to make sure of it at compile time: <pre>{@code
+ *   ParameterizedQuery sql = ParameterizedQuery.of(
+ *       """
+ *       SELECT u.firstName, p.profileId
+ *       FROM (SELECT firstName FROM Users WHERE id = '{user_id}') u,
+ *            (SELECT profileId FROM Profiles WHERE userId = '{user_id}') p
+ *       """,
+ *       userId, userId);
+ * }</pre>
+ *
+ * If someone mistakenly passes in inconsistent ids, they'll get a compilation error.
+ *
+ * <p>That said, placeholder names used in different subqueries are completely independent.
+ * There is no risk of name clash. The template will ensure the final parameter name uniqueness.
+ *
+ * @since 9.0
+ */
 @Immutable
 public final class ParameterizedQuery {
   private final String sql;
@@ -413,20 +644,17 @@ public final class ParameterizedQuery {
               && appendBeforeQuotedPlaceholder("'%", placeholder, "%'")) {
             rejectEscapeAfter(placeholder);
             builder
-                .addParameter(paramName, "%" + escapePercent(mustBeString(placeholder, value)) + "%")
-                .appendSql(" ESCAPE '^'");
+                .addParameter(paramName, "%" + escapePercent(mustBeString(placeholder, value)) + "%");
           } else if (lookbehind("LIKE '%", placeholder)
               && appendBeforeQuotedPlaceholder("'%", placeholder, "'")) {
             rejectEscapeAfter(placeholder);
             builder
-                .addParameter(paramName, "%" + escapePercent(mustBeString(placeholder, value)))
-                .appendSql(" ESCAPE '^'");
+                .addParameter(paramName, "%" + escapePercent(mustBeString(placeholder, value)));
           } else if (lookbehind("LIKE '", placeholder)
               && appendBeforeQuotedPlaceholder("'", placeholder, "%'")) {
             rejectEscapeAfter(placeholder);
             builder
-                .addParameter(paramName, escapePercent(mustBeString(placeholder, value)) + "%")
-                .appendSql(" ESCAPE '^'");
+                .addParameter(paramName, escapePercent(mustBeString(placeholder, value)) + "%");
           } else if (appendBeforeQuotedPlaceholder("'", placeholder, "'")) {
             builder.addParameter(paramName, mustBeString("'" + placeholder + "'", value));
           } else {
@@ -564,19 +792,6 @@ public final class ParameterizedQuery {
     return (String) element;
   }
 
-  private static ParameterizedQuery mustBeSubquery(CharSequence name, Object element) {
-    checkArgument(element != null, "%s expected to be ParameterizedQuery, but is null", name);
-    checkArgument(
-        element instanceof ParameterizedQuery,
-        "%s expected to be ParameterizedQuery, but is %s", name, element.getClass());
-    return (ParameterizedQuery) element;
-  }
-
-  private static ParameterizedQuery subqueryOrParameter(CharSequence name, Object param) {
-    checkArgument(param != null, "%s must not be null", name);
-    return param instanceof ParameterizedQuery ? (ParameterizedQuery) param : PARAM.with(param);
-  }
-
   private static BiStream<String, ?> eachPlaceholderValue(
       Substring.Match placeholder, Collection<?> elements) {
     return BiStream.zip(indexesFrom(0), elements.stream())
@@ -584,7 +799,7 @@ public final class ParameterizedQuery {
   }
 
   private static String escapePercent(String s) {
-    return first(c -> c == '^' || c == '%' || c == '_').repeatedly().replaceAllFrom(s, c -> "^" + c);
+    return first(c -> c == '\\' || c == '%' || c == '_').repeatedly().replaceAllFrom(s, c -> "\\" + c);
   }
 
   private static String checkIdentifier(CharSequence placeholder, String name) {

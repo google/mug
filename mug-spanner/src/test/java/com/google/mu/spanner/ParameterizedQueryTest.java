@@ -291,7 +291,7 @@ public class ParameterizedQueryTest {
     assertThat(sql)
         .isEqualTo(ParameterizedQuery.of("SELECT * FROM tbl WHERE 1=1 AND name LIKE '%{name}%'", name.get()));
     assertThat(sql.toStatement())
-        .isEqualTo(Statement.newBuilder("SELECT * FROM tbl WHERE 1=1 AND name LIKE @name ESCAPE '^'")
+        .isEqualTo(Statement.newBuilder("SELECT * FROM tbl WHERE 1=1 AND name LIKE @name")
             .bind("name").to("%" + name.get() + "%")
             .build());
   }
@@ -525,10 +525,10 @@ public class ParameterizedQueryTest {
   public void singleLikeParameterWithWildcardAtBothEnds() {
     ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '%{s}%'", "foo");
     assertThat(sql.toStatement())
-        .isEqualTo(Statement.newBuilder("select * from tbl where name like @s ESCAPE '^'")
+        .isEqualTo(Statement.newBuilder("select * from tbl where name like @s")
             .bind("s").to("%foo%")
             .build());
-    assertThat(sql.toString()).isEqualTo("select * from tbl where name like @s /* %foo% */ ESCAPE '^'");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like @s /* %foo% */");
   }
 
   @Test
@@ -559,33 +559,26 @@ public class ParameterizedQueryTest {
   public void literalPercentValueWithWildcardAtBothEnds() {
     ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '%{s}%'", "%");
     assertThat(sql.toStatement())
-        .isEqualTo(Statement.newBuilder("select * from tbl where name like @s ESCAPE '^'")
-            .bind("s").to("%^%%")
+        .isEqualTo(Statement.newBuilder("select * from tbl where name like @s")
+            .bind("s").to("%\\%%")
             .build());
-    assertThat(sql.toString()).isEqualTo("select * from tbl where name like @s /* %^%% */ ESCAPE '^'");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like @s /* %\\%% */");
   }
 
   @Test
   public void literalBackslashValueWithWildcardAtBothEnds() {
     ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '%{s}%'", "\\");
     assertThat(sql.toStatement())
-        .isEqualTo(Statement.newBuilder("select * from tbl where name like @s ESCAPE '^'")
-            .bind("s").to("%\\%")
+        .isEqualTo(Statement.newBuilder("select * from tbl where name like @s")
+            .bind("s").to("%\\\\%")
             .build());
-    assertThat(sql.toString()).isEqualTo("select * from tbl where name like @s /* %\\% */ ESCAPE '^'");
-  }
-
-  @Test
-  public void literalCaretValueWithWildcardAtBothEnds() {
-    ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '%{s}%'", "^");
-    assertThat(sql.toStatement())
-        .isEqualTo(Statement.newBuilder("select * from tbl where name like @s ESCAPE '^'").bind("s").to("%^^%").build());
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like @s /* %\\\\% */");
   }
 
   @Test
   public void literalSingleQuoteValueWithWildcardAtBothEnds() {
     ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '%{s}%'", "'");
-    assertThat(sql.toString()).isEqualTo("select * from tbl where name like @s /* %'% */ ESCAPE '^'");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like @s /* %'% */");
   }
 
   @Test
@@ -600,35 +593,29 @@ public class ParameterizedQueryTest {
   @Test
   public void singleLikeParameterWithWildcardAsPrefix() {
     ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '%{s}'", "foo");
-    assertThat(sql.toString()).isEqualTo("select * from tbl where name like @s /* %foo */ ESCAPE '^'");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like @s /* %foo */");
   }
 
   @Test
   public void literalPercentValueWithWildcardAtPrefix() {
     ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '%{s}'", "%");
     assertThat(sql.toStatement())
-        .isEqualTo(Statement.newBuilder("select * from tbl where name like @s ESCAPE '^'").bind("s").to("%^%").build());
+        .isEqualTo(Statement.newBuilder("select * from tbl where name like @s").bind("s").to("%\\%").build());
   }
 
   @Test
   public void literalBackslashValueWithWildcardAtPrefix() {
     ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '%{s}'", "\\");
     assertThat(sql.toStatement())
-        .isEqualTo(Statement.newBuilder("select * from tbl where name like @s ESCAPE '^'").bind("s").to("%\\").build());
-  }
-
-  @Test
-  public void literalCaretValueWithWildcardAtPrefix() {
-    ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '%{s}'", "^");
-    assertThat(sql.toString()).isEqualTo("select * from tbl where name like @s /* %^^ */ ESCAPE '^'");
+        .isEqualTo(Statement.newBuilder("select * from tbl where name like @s").bind("s").to("%\\\\").build());
   }
 
   @Test
   public void literalSingleQuoteValueWithWildcardAtPrefix() {
     ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '%{s}'", "'");
     assertThat(sql.toStatement())
-        .isEqualTo(Statement.newBuilder("select * from tbl where name like @s ESCAPE '^'").bind("s").to("%'").build());
-    assertThat(sql.toString()).isEqualTo("select * from tbl where name like @s /* %' */ ESCAPE '^'");
+        .isEqualTo(Statement.newBuilder("select * from tbl where name like @s").bind("s").to("%'").build());
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like @s /* %' */");
   }
 
   @Test
@@ -643,35 +630,29 @@ public class ParameterizedQueryTest {
   @Test
   public void singleLikeParameterWithWildcardAsSuffix() {
     ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '{s}%'", "foo");
-    assertThat(sql.toString()).isEqualTo("select * from tbl where name like @s /* foo% */ ESCAPE '^'");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like @s /* foo% */");
   }
 
   @Test
   public void literalPercentValueWithWildcardAtSuffix() {
     ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '{s}%'", "%");
     assertThat(sql.toStatement())
-        .isEqualTo(Statement.newBuilder("select * from tbl where name like @s ESCAPE '^'").bind("s").to("^%%").build());
+        .isEqualTo(Statement.newBuilder("select * from tbl where name like @s").bind("s").to("\\%%").build());
   }
 
   @Test
   public void literalBackslashValueWithWildcardAtSuffix() {
     ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '{s}%'", "\\");
     assertThat(sql.toStatement())
-        .isEqualTo(Statement.newBuilder("select * from tbl where name like @s ESCAPE '^'").bind("s").to("\\%").build());
-  }
-
-  @Test
-  public void literalCaretValueWithWildcardAtSuffix() {
-    ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '{s}%'", "^");
-    assertThat(sql.toString()).isEqualTo("select * from tbl where name like @s /* ^^% */ ESCAPE '^'");
+        .isEqualTo(Statement.newBuilder("select * from tbl where name like @s").bind("s").to("\\\\%").build());
   }
 
   @Test
   public void literalSingleQuoteValueWithWildcardAtSuffix() {
     ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '{s}%'", "'");
     assertThat(sql.toStatement())
-        .isEqualTo(Statement.newBuilder("select * from tbl where name like @s ESCAPE '^'").bind("s").to("'%").build());
-    assertThat(sql.toString()).isEqualTo("select * from tbl where name like @s /* '% */ ESCAPE '^'");
+        .isEqualTo(Statement.newBuilder("select * from tbl where name like @s").bind("s").to("'%").build());
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like @s /* '% */");
   }
 
   @Test
@@ -993,7 +974,7 @@ public class ParameterizedQueryTest {
   }
 
   @Test
-  public void twoParameters() {
+  public void twoParameters_whitespaceSeparated() {
     ParameterizedQuery sql =
         ParameterizedQuery.of("select {label} where id = {id}", /* label */ "foo", /* id */ 123);
     assertThat(sql.toStatement())
@@ -1002,6 +983,29 @@ public class ParameterizedQueryTest {
             .bind("id").to(123L)
             .build());
     assertThat(sql.toString()).isEqualTo("select @label /* foo */ where id = @id /* 123 */");
+  }
+
+  @Test
+  public void twoParameters_connectedByOperator() {
+    ParameterizedQuery sql =
+        ParameterizedQuery.of("select label where size={a}-{b}", /* a */ 100, /* b */ 50);
+    assertThat(sql.toStatement())
+        .isEqualTo(Statement.newBuilder("select label where size=@a-@b")
+            .bind("a").to(100)
+            .bind("b").to(50)
+            .build());
+    assertThat(sql.toString()).isEqualTo("select label where size=@a /* 100 */-@b /* 50 */");
+  }
+
+  @Test
+  public void twoParameters_followedWord_whitespaceInsertedAfterParameterName() {
+    ParameterizedQuery sql =
+        ParameterizedQuery.of("select label where {a}is null", /* a */ 100);
+    assertThat(sql.toStatement())
+        .isEqualTo(Statement.newBuilder("select label where @a is null")
+            .bind("a").to(100)
+            .build());
+    assertThat(sql.toString()).isEqualTo("select label where @a /* 100 */is null");
   }
 
   @Test
@@ -1526,7 +1530,7 @@ public class ParameterizedQueryTest {
     ParameterizedQuery query = ParameterizedQuery.of(
         "SELECT * FROM Users where id = {id} AND name LIKE '%{name}%'", id, name);
     assertThat(query.toString())
-        .isEqualTo("SELECT * FROM Users where id = @id /* 123 */ AND name LIKE @name /* %foo% */ ESCAPE '^'");
+        .isEqualTo("SELECT * FROM Users where id = @id /* 123 */ AND name LIKE @name /* %foo% */");
   }
 
 }

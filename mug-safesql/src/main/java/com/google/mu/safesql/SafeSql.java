@@ -202,8 +202,6 @@ import com.google.mu.util.stream.BiStream;
  * object's state:
  *
  * <pre>{@code
- * import static com.google.mu.safesql.SafeSql.optionally;
- *
  *   class UserCriteria {
  *     Optional<String> userId();
  *     Optional<String> firstName();

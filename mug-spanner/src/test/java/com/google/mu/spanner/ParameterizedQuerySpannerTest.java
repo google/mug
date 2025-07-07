@@ -146,6 +146,81 @@ public class ParameterizedQuerySpannerTest {
   }
 
   @Test
+  public void stringLike() {
+    // Insert a user
+    databaseClient.readWriteTransaction().run(txn -> {
+      Mutation mutation = Mutation.newInsertBuilder("Users")
+          .set("UserId").to("user-4\\56")
+          .set("Name").to("Alice")
+          .set("Email").to("alice@example.com")
+          .build();
+      txn.buffer(mutation);
+      return null;
+    });
+
+    // This does not work
+    //    Statement statement = Statement.newBuilder(
+    //        "SELECT UserId, Name, Email FROM Users WHERE UserId LIKE '%@searchTerm%'")
+    //        .bind("searchTerm").to("er-")
+    //        .build();
+
+    // Read the user
+    try (ReadOnlyTransaction txn = databaseClient.readOnlyTransaction()) {
+      ParameterizedQuery query = ParameterizedQuery.of(
+          "SELECT UserId, Name, Email FROM Users WHERE UserId LIKE '%{searchTerm}%'",
+          "er-");
+      ResultSet resultSet = txn.executeQuery(query.toStatement());
+      assertEquals(true, resultSet.next()); // Should find a row
+      assertEquals("user-4\\56", resultSet.getString("UserId"));
+      assertEquals("Alice", resultSet.getString("Name"));
+      assertEquals("alice@example.com", resultSet.getString("Email"));
+    }
+    try (ReadOnlyTransaction txn = databaseClient.readOnlyTransaction()) {
+      ParameterizedQuery query = ParameterizedQuery.of(
+          "SELECT UserId, Name, Email FROM Users WHERE UserId LIKE '%{searchTerm}%'",
+          "er%");  // % should be literal, so shouldn't match
+      ResultSet resultSet = txn.executeQuery(query.toStatement());
+      assertEquals(false, resultSet.next()); // Should not find because % is literal
+    }
+    try (ReadOnlyTransaction txn = databaseClient.readOnlyTransaction()) {
+      ParameterizedQuery query = ParameterizedQuery.of(
+          "SELECT UserId, Name, Email FROM Users WHERE UserId LIKE '%{searchTerm}%'",
+          "er-4\\");  // backslash should be literal, not escape the following wildcard
+      ResultSet resultSet = txn.executeQuery(query.toStatement());
+      assertEquals(true, resultSet.next()); // Should find a row
+      assertEquals("user-4\\56", resultSet.getString("UserId"));
+      assertEquals("Alice", resultSet.getString("Name"));
+      assertEquals("alice@example.com", resultSet.getString("Email"));
+    }
+  }
+
+  @Test
+  public void withArrayParameter() {
+    // Insert a user
+    databaseClient.readWriteTransaction().run(txn -> {
+      Mutation mutation = Mutation.newInsertBuilder("Users")
+          .set("UserId").to("user-7")
+          .set("Name").to("Alice")
+          .set("Email").to("alice@example.com")
+          .build();
+      txn.buffer(mutation);
+      return null;
+    });
+    // Read the user
+    try (ReadOnlyTransaction txn = databaseClient.readOnlyTransaction()) {
+      ParameterizedQuery query = ParameterizedQuery.of(
+          "SELECT UserId, Name, Email FROM Users WHERE UserId IN UNNEST('{ids}')",
+          /* ids */ asList("user-6", "user-7"));
+      ResultSet resultSet = txn.executeQuery(query.toStatement());
+      assertEquals(true, resultSet.next()); // Should find a row
+      assertEquals("user-7", resultSet.getString("UserId"));
+      assertEquals("Alice", resultSet.getString("Name"));
+      assertEquals("alice@example.com", resultSet.getString("Email"));
+      assertEquals(false, resultSet.next()); // No more rows
+    }
+  }
+
+  @Test
   public void identifierParameterized() {
     // Insert a product
     databaseClient.readWriteTransaction().run(txn -> {
