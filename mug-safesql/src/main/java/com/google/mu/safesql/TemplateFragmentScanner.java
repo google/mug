@@ -25,6 +25,7 @@ import static java.util.stream.Collectors.toList;
 
 import java.util.AbstractList;
 import java.util.ArrayDeque;
+import java.util.Collection;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
@@ -43,19 +44,19 @@ final class TemplateFragmentScanner {
           .repeatedly();
   private final List<Substring.Match> allTokens;
   private final Map<Integer, Integer> charIndexToTokenIndex;
-  private final Deque<String> texts;
+  private final Deque<String> fragments;
 
-  TemplateFragmentScanner(String template, List<String> fragments) {
+  TemplateFragmentScanner(String template, Collection<String> fragments) {
     this.allTokens = TOKENS.match(template).collect(toList());
     this.charIndexToTokenIndex =
         BiStream.zip(allTokens.stream(), indexesFrom(0))
             .mapKeys(Substring.Match::index)
             .collect(Collectors::toMap);
-    this.texts = new ArrayDeque<>(fragments);
+    this.fragments = new ArrayDeque<>(fragments);
   }
 
   String nextFragment() {
-    return texts.pop();
+    return fragments.pop();
   }
 
   Optional<String> nextFragmentIfQuoted(
@@ -63,8 +64,8 @@ final class TemplateFragmentScanner {
     return optionally(
         placeholder.isImmediatelyBetween(open, close),
         () -> {
-          String fragment = suffix(open).removeFrom(texts.pop());
-          texts.push(prefix(close).removeFrom(texts.pop()));
+          String fragment = suffix(open).removeFrom(fragments.pop());
+          fragments.push(prefix(close).removeFrom(fragments.pop()));
           return fragment;
         });
   }

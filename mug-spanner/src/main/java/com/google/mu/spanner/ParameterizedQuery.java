@@ -1106,7 +1106,7 @@ public final class ParameterizedQuery {
   @Immutable
   private static final class Parameter {
     private final String name;
-    @SuppressWarnings("Immutable") // it's immutable
+    @SuppressWarnings("Immutable") // it's annotated with javax.annotation.concurrent.Immutable
     private final Value value;
 
     Parameter(String name, Value value) {
