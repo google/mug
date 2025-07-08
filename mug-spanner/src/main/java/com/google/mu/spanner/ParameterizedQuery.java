@@ -262,6 +262,7 @@ import com.google.protobuf.ProtocolMessageEnum;
  */
 @Immutable
 public final class ParameterizedQuery {
+  private static final CharPredicate ALPHA_NUM = CharPredicate.ALPHA.orRange('0', '9').or('_');
   private final String sql;
   @SuppressWarnings("Immutable") // it's an immutable list
   private final List<Parameter> parameters;
@@ -442,7 +443,7 @@ public final class ParameterizedQuery {
     Iterator<String> atNames = bindingNames.stream().map("@"::concat).iterator();
     Statement.Builder builder =
         Statement.newBuilder(
-            all("?").replaceAllFrom(sql, q -> atNames.next() + (q.isFollowedBy(CharPredicate.ALPHA) ? " " : "")));
+            all("?").replaceAllFrom(sql, q -> atNames.next() + (q.isFollowedBy(ALPHA_NUM) ? " " : "")));
     for (int i = 0; i < bindingNames.size(); i++) {
       builder.bind(bindingNames.get(i)).to(parameters.get(i).value);
     }
