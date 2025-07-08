@@ -538,113 +538,109 @@ public final class ParameterizedQuery {
   private static Template<ParameterizedQuery> unsafeTemplate(String template) {
     return StringFormat.template(template, (fragments, placeholders) -> {
       TemplateFragmentScanner scanner = new TemplateFragmentScanner(template, fragments);
-      Builder builder = new Builder();
-      class SqlWriter {
-        void writePlaceholder(Substring.Match placeholder, Object value) {
-          String paramName = placeholder.skip(1, 1).toString().trim();
-          Substring.Match conditional = first("->").in(paramName).orElse(null);
-          if (conditional != null) {
-            checkArgument(
-                !placeholder.isImmediatelyBetween("`", "`"),
-                "boolean placeholder {%s->} shouldn't be backtick quoted",
-                conditional.before());
-            checkArgument(
-                !placeholder.isImmediatelyBetween("\"", "\""),
-                "boolean placeholder {%s->} shouldn't be double quoted",
-                conditional.before());
-            checkArgument(
-                value != null,
-                "boolean placeholder {%s->} cannot be used with a null value",
-                conditional.before());
-            if (value instanceof Optional) {
-              String rhs = validateOptionalOperatorRhs(conditional);
-              builder.appendSql(scanner.nextFragment());
-              ((Optional<?>) value)
-                  .map(present -> innerSubquery(rhs, present))
-                  .ifPresent(builder::addSubQuery);
-              return;
-            }
-            checkArgument(
-                value instanceof Boolean,
-                "conditional placeholder {%s->} can only be used with a boolean or Optional value; %s encountered.",
-                conditional.before(),
-                value.getClass().getName());
+      return placeholders.collect(new Builder(), (builder, placeholder, value) -> {
+        validatePlaceholder(placeholder);
+        String paramName = placeholder.skip(1, 1).toString().trim();
+        Substring.Match conditional = first("->").in(paramName).orElse(null);
+        if (conditional != null) {
+          checkArgument(
+              !placeholder.isImmediatelyBetween("`", "`"),
+              "boolean placeholder {%s->} shouldn't be backtick quoted",
+              conditional.before());
+          checkArgument(
+              !placeholder.isImmediatelyBetween("\"", "\""),
+              "boolean placeholder {%s->} shouldn't be double quoted",
+              conditional.before());
+          checkArgument(
+              value != null,
+              "boolean placeholder {%s->} cannot be used with a null value",
+              conditional.before());
+          if (value instanceof Optional) {
+            String rhs = validateOptionalOperatorRhs(conditional);
             builder.appendSql(scanner.nextFragment());
-            if ((Boolean) value) {
-              builder.appendSql(conditional.after().trim());
-            }
+            ((Optional<?>) value)
+                .map(present -> innerSubquery(rhs, present))
+                .ifPresent(builder::addSubQuery);
             return;
           }
-          rejectReservedChars(paramName);
           checkArgument(
-              !(value instanceof Optional),
-              "%s: optional parameter not supported. " +
-              "Consider using the {%s? -> ...} syntax, or ParameterizedQuery.when()?",
-              paramName, paramName);
-          if (value instanceof Collection) {
-            Collection<?> elements = (Collection<?>) value;
-            checkArgument(
-                elements.size() > 0,
-                "Cannot infer type from empty collection. Use explicit Value instead for %s", placeholder);
-            if (placeholder.isImmediatelyBetween("'", "'")
-                && scanner.nextFragmentIfQuoted("'", placeholder, "'").map(builder::appendSql).isPresent()) {
-              eachPlaceholderValue(placeholder, elements)
-                  .forEach(ParameterizedQuery::mustBeString);
-              builder.addArrayParameter(paramName, elements);
-              return;
-            }
-            builder.appendSql(scanner.nextFragment());
-            if (placeholder.isImmediatelyBetween("`", "`")) {
-              builder.appendSql(
-                  eachPlaceholderValue(placeholder, elements)
-                      .mapToObj(ParameterizedQuery::mustBeIdentifier)
-                      .collect(Collectors.joining("`, `")));
-            } else if (placeholder.isImmediatelyBetween("\"", "\"")) {
-              builder.appendSql(
-                  eachPlaceholderValue(placeholder, elements)
-                      .mapToObj(ParameterizedQuery::mustBeIdentifier)
-                      .collect(Collectors.joining("\", \"")));
-            } else if (elements.stream().allMatch(ParameterizedQuery.class::isInstance)) {
-              builder.addSubQuery(elements.stream().map(ParameterizedQuery.class::cast).collect(joining(", ")));
-              validateSubqueryPlaceholder(placeholder);
-            } else {
-              builder.addArrayParameter(paramName, elements);
-            }
-          } else if (value instanceof ParameterizedQuery) {
-            builder.appendSql(scanner.nextFragment()).addSubQuery((ParameterizedQuery) value);
-            validateSubqueryPlaceholder(placeholder);
-          } else if (scanner.nextFragmentIfQuoted("`", placeholder, "`").map(builder::appendSql).isPresent()) {
-            String identifier = mustBeIdentifier("`" + placeholder + "`", value);
-            checkArgument(identifier.length() > 0, "`%s` cannot be empty", placeholder);
-            builder.appendSql("`" + identifier + "`");
-          } else if (scanner.nextFragmentIfQuoted("\"", placeholder, "\"").map(builder::appendSql).isPresent()) {
-            String identifier = mustBeIdentifier("\"" + placeholder + "\"", value);
-            checkArgument(identifier.length() > 0, "\"%s\" cannot be empty", placeholder);
-            builder.appendSql("\"" + identifier + "\"");
-          } else if (scanner.lookbehind("LIKE '%", placeholder)
-              && scanner.nextFragmentIfQuoted("'%", placeholder, "%'").map(builder::appendSql).isPresent()) {
-            builder
-                .addParameter(paramName, "%" + escapePercent(mustBeString(placeholder, value)) + "%");
-          } else if (scanner.lookbehind("LIKE '%", placeholder)
-              && scanner.nextFragmentIfQuoted("'%", placeholder, "'").map(builder::appendSql).isPresent()) {
-            builder
-                .addParameter(paramName, "%" + escapePercent(mustBeString(placeholder, value)));
-          } else if (scanner.lookbehind("LIKE '", placeholder)
-              && scanner.nextFragmentIfQuoted("'", placeholder, "%'").map(builder::appendSql).isPresent()) {
-            builder
-                .addParameter(paramName, escapePercent(mustBeString(placeholder, value)) + "%");
-          } else if (scanner.nextFragmentIfQuoted("'", placeholder, "'").map(builder::appendSql).isPresent()) {
-            builder.addParameter(paramName, mustBeString("'" + placeholder + "'", value));
-          } else {
-            checkMissingPlaceholderQuotes(placeholder);
-            builder.appendSql(scanner.nextFragment()).addParameter(paramName, value);
+              value instanceof Boolean,
+              "conditional placeholder {%s->} can only be used with a boolean or Optional value; %s encountered.",
+              conditional.before(),
+              value.getClass().getName());
+          builder.appendSql(scanner.nextFragment());
+          if ((Boolean) value) {
+            builder.appendSql(conditional.after().trim());
           }
+          return;
         }
-      }
-      placeholders
-          .peek(ParameterizedQuery::checkMisuse)
-          .forEachOrdered(new SqlWriter()::writePlaceholder);
-      return builder.appendSql(scanner.nextFragment()).build();
+        rejectReservedChars(paramName);
+        checkArgument(
+            !(value instanceof Optional),
+            "%s: optional parameter not supported. " +
+            "Consider using the {%s? -> ...} syntax, or ParameterizedQuery.when()?",
+            paramName, paramName);
+        if (value instanceof Collection) {
+          Collection<?> elements = (Collection<?>) value;
+          checkArgument(
+              elements.size() > 0,
+              "Cannot infer type from empty collection. Use explicit Value instead for %s", placeholder);
+          if (placeholder.isImmediatelyBetween("'", "'")
+              && scanner.nextFragmentIfQuoted("'", placeholder, "'").map(builder::appendSql).isPresent()) {
+            eachPlaceholderValue(placeholder, elements)
+                .forEach(ParameterizedQuery::mustBeString);
+            builder.addArrayParameter(paramName, elements);
+            return;
+          }
+          builder.appendSql(scanner.nextFragment());
+          if (placeholder.isImmediatelyBetween("`", "`")) {
+            builder.appendSql(
+                eachPlaceholderValue(placeholder, elements)
+                    .mapToObj(ParameterizedQuery::mustBeIdentifier)
+                    .collect(Collectors.joining("`, `")));
+          } else if (placeholder.isImmediatelyBetween("\"", "\"")) {
+            builder.appendSql(
+                eachPlaceholderValue(placeholder, elements)
+                    .mapToObj(ParameterizedQuery::mustBeIdentifier)
+                    .collect(Collectors.joining("\", \"")));
+          } else if (elements.stream().allMatch(ParameterizedQuery.class::isInstance)) {
+            builder.addSubQuery(elements.stream().map(ParameterizedQuery.class::cast).collect(joining(", ")));
+            validateSubqueryPlaceholder(placeholder);
+          } else {
+            builder.addArrayParameter(paramName, elements);
+          }
+        } else if (value instanceof ParameterizedQuery) {
+          builder.appendSql(scanner.nextFragment()).addSubQuery((ParameterizedQuery) value);
+          validateSubqueryPlaceholder(placeholder);
+        } else if (scanner.nextFragmentIfQuoted("`", placeholder, "`").map(builder::appendSql).isPresent()) {
+          String identifier = mustBeIdentifier("`" + placeholder + "`", value);
+          checkArgument(identifier.length() > 0, "`%s` cannot be empty", placeholder);
+          builder.appendSql("`" + identifier + "`");
+        } else if (scanner.nextFragmentIfQuoted("\"", placeholder, "\"").map(builder::appendSql).isPresent()) {
+          String identifier = mustBeIdentifier("\"" + placeholder + "\"", value);
+          checkArgument(identifier.length() > 0, "\"%s\" cannot be empty", placeholder);
+          builder.appendSql("\"" + identifier + "\"");
+        } else if (scanner.lookbehind("LIKE '%", placeholder)
+            && scanner.nextFragmentIfQuoted("'%", placeholder, "%'").map(builder::appendSql).isPresent()) {
+          builder
+              .addParameter(paramName, "%" + escapePercent(mustBeString(placeholder, value)) + "%");
+        } else if (scanner.lookbehind("LIKE '%", placeholder)
+            && scanner.nextFragmentIfQuoted("'%", placeholder, "'").map(builder::appendSql).isPresent()) {
+          builder
+              .addParameter(paramName, "%" + escapePercent(mustBeString(placeholder, value)));
+        } else if (scanner.lookbehind("LIKE '", placeholder)
+            && scanner.nextFragmentIfQuoted("'", placeholder, "%'").map(builder::appendSql).isPresent()) {
+          builder
+              .addParameter(paramName, escapePercent(mustBeString(placeholder, value)) + "%");
+        } else if (scanner.nextFragmentIfQuoted("'", placeholder, "'").map(builder::appendSql).isPresent()) {
+          builder.addParameter(paramName, mustBeString("'" + placeholder + "'", value));
+        } else {
+          checkMissingPlaceholderQuotes(placeholder);
+          builder.appendSql(scanner.nextFragment()).addParameter(paramName, value);
+        }
+      })
+      .appendSql(scanner.nextFragment())
+      .build();
     });
   }
 
@@ -677,13 +673,6 @@ public final class ParameterizedQuery {
     Object[] innerArgs =
         OPTIONAL_PARAMETER.repeatedly().match(optionalTemplate).map(m -> arg).toArray();
     return innerTemplate.with(innerArgs);
-  }
-
-  private static void checkMisuse(Substring.Match placeholder, Object value) {
-    validatePlaceholder(placeholder);
-    checkArgument(
-        value == null || !value.getClass().getName().endsWith("SafeQuery"),
-        "%s: don't mix in SafeQuery with ParameterizedQuery.", placeholder);
   }
 
   @CanIgnoreReturnValue private static String rejectReservedChars(String sql) {

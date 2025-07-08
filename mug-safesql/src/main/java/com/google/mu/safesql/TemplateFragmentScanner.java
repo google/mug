@@ -14,6 +14,7 @@
  *****************************************************************************/
 package com.google.mu.safesql;
 
+import static com.google.mu.safesql.SafeSqlUtils.checkArgument;
 import static com.google.mu.util.Optionals.optionally;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.firstOccurrence;
@@ -91,6 +92,13 @@ final class TemplateFragmentScanner {
     return BiStream.zip(reverse(lookbehind), reverse(leftTokens))  // right-to-left
             .filter((s, t) -> s.equalsIgnoreCase(t.toString()))
             .count() == lookbehind.size();
+  }
+
+  void rejectEscapeAfter(Substring.Match placeholder) {
+    checkArgument(
+        !lookahead(placeholder, "%' ESCAPE") && !lookahead(placeholder, "' ESCAPE"),
+        "ESCAPE not supported after %s. Just leave the placeholder alone and SafeSql will auto escape.",
+        placeholder);
   }
 
   private static <T> List<T> reverse(List<T> list) {
