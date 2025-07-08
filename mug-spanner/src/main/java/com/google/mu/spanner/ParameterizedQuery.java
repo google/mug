@@ -911,7 +911,7 @@ public final class ParameterizedQuery {
     abstract Value toArrayValue(Collection<?> elements);
 
     @Override public String toString() {
-      return javaType.getSimpleName();
+      return javaType.getName();
     }
   }
 
