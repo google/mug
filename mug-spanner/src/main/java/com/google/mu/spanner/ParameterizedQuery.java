@@ -15,13 +15,9 @@
 package com.google.mu.spanner;
 
 import static com.google.mu.spanner.InternalUtils.checkArgument;
-import static com.google.mu.spanner.InternalUtils.checkState;
 import static com.google.mu.spanner.InternalUtils.skippingEmpty;
 import static com.google.mu.util.Substring.all;
 import static com.google.mu.util.Substring.first;
-import static com.google.mu.util.Substring.firstOccurrence;
-import static com.google.mu.util.Substring.prefix;
-import static com.google.mu.util.Substring.suffix;
 import static com.google.mu.util.Substring.word;
 import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
@@ -40,10 +36,8 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.util.AbstractList;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -57,7 +51,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import com.google.cloud.ByteArray;
 import com.google.cloud.Date;
@@ -313,15 +306,10 @@ public final class ParameterizedQuery {
 
   private static final Substring.Pattern OPTIONAL_PARAMETER =
       word().immediatelyBetween("", INCLUSIVE, "?", INCLUSIVE);
-  private static final Substring.RepeatingPattern TOKENS =
-      Stream.of(word(), first(c -> !Character.isWhitespace(c)))
-          .collect(firstOccurrence())
-          .repeatedly();
   private static final StringFormat PLACEHOLDER_ELEMENT_NAME =
       new StringFormat("{placeholder}[{index}]");
   private static final ParameterizedQuery FALSE = new ParameterizedQuery("(1 = 0)");
   private static final ParameterizedQuery TRUE = new ParameterizedQuery("(1 = 1)");
-  private static final StringFormat.Template<ParameterizedQuery> PARAM = template("{param}");
 
   /** An empty SQL */
   public static final ParameterizedQuery EMPTY = new ParameterizedQuery("");
@@ -548,13 +536,8 @@ public final class ParameterizedQuery {
   }
 
   private static Template<ParameterizedQuery> unsafeTemplate(String template) {
-    List<Substring.Match> allTokens = TOKENS.match(template).collect(toList());
-    Map<Integer, Integer> charIndexToTokenIndex =
-        BiStream.zip(allTokens.stream(), indexesFrom(0))
-            .mapKeys(Substring.Match::index)
-            .collect(Collectors::toMap);
     return StringFormat.template(template, (fragments, placeholders) -> {
-      Deque<String> texts = new ArrayDeque<>(fragments);
+      TemplateFragmentScanner scanner = new TemplateFragmentScanner(template, fragments);
       Builder builder = new Builder();
       class SqlWriter {
         void writePlaceholder(Substring.Match placeholder, Object value) {
@@ -575,7 +558,7 @@ public final class ParameterizedQuery {
                 conditional.before());
             if (value instanceof Optional) {
               String rhs = validateOptionalOperatorRhs(conditional);
-              builder.appendSql(texts.pop());
+              builder.appendSql(scanner.nextFragment());
               ((Optional<?>) value)
                   .map(present -> innerSubquery(rhs, present))
                   .ifPresent(builder::addSubQuery);
@@ -586,7 +569,7 @@ public final class ParameterizedQuery {
                 "conditional placeholder {%s->} can only be used with a boolean or Optional value; %s encountered.",
                 conditional.before(),
                 value.getClass().getName());
-            builder.appendSql(texts.pop());
+            builder.appendSql(scanner.nextFragment());
             if ((Boolean) value) {
               builder.appendSql(conditional.after().trim());
             }
@@ -604,13 +587,13 @@ public final class ParameterizedQuery {
                 elements.size() > 0,
                 "Cannot infer type from empty collection. Use explicit Value instead for %s", placeholder);
             if (placeholder.isImmediatelyBetween("'", "'")
-                && appendBeforeQuotedPlaceholder("'", placeholder, "'")) {
+                && scanner.nextFragmentIfQuoted("'", placeholder, "'").map(builder::appendSql).isPresent()) {
               eachPlaceholderValue(placeholder, elements)
                   .forEach(ParameterizedQuery::mustBeString);
               builder.addArrayParameter(paramName, elements);
               return;
             }
-            builder.appendSql(texts.pop());
+            builder.appendSql(scanner.nextFragment());
             if (placeholder.isImmediatelyBetween("`", "`")) {
               builder.appendSql(
                   eachPlaceholderValue(placeholder, elements)
@@ -628,79 +611,40 @@ public final class ParameterizedQuery {
               builder.addArrayParameter(paramName, elements);
             }
           } else if (value instanceof ParameterizedQuery) {
-            builder.appendSql(texts.pop()).addSubQuery((ParameterizedQuery) value);
+            builder.appendSql(scanner.nextFragment()).addSubQuery((ParameterizedQuery) value);
             validateSubqueryPlaceholder(placeholder);
-          } else if (appendBeforeQuotedPlaceholder("`", placeholder, "`")) {
+          } else if (scanner.nextFragmentIfQuoted("`", placeholder, "`").map(builder::appendSql).isPresent()) {
             String identifier = mustBeIdentifier("`" + placeholder + "`", value);
             checkArgument(identifier.length() > 0, "`%s` cannot be empty", placeholder);
             builder.appendSql("`" + identifier + "`");
-          } else if (appendBeforeQuotedPlaceholder("\"", placeholder, "\"")) {
+          } else if (scanner.nextFragmentIfQuoted("\"", placeholder, "\"").map(builder::appendSql).isPresent()) {
             String identifier = mustBeIdentifier("\"" + placeholder + "\"", value);
             checkArgument(identifier.length() > 0, "\"%s\" cannot be empty", placeholder);
             builder.appendSql("\"" + identifier + "\"");
-          } else if (lookbehind("LIKE '%", placeholder)
-              && appendBeforeQuotedPlaceholder("'%", placeholder, "%'")) {
-            rejectEscapeAfter(placeholder);
+          } else if (scanner.lookbehind("LIKE '%", placeholder)
+              && scanner.nextFragmentIfQuoted("'%", placeholder, "%'").map(builder::appendSql).isPresent()) {
             builder
                 .addParameter(paramName, "%" + escapePercent(mustBeString(placeholder, value)) + "%");
-          } else if (lookbehind("LIKE '%", placeholder)
-              && appendBeforeQuotedPlaceholder("'%", placeholder, "'")) {
-            rejectEscapeAfter(placeholder);
+          } else if (scanner.lookbehind("LIKE '%", placeholder)
+              && scanner.nextFragmentIfQuoted("'%", placeholder, "'").map(builder::appendSql).isPresent()) {
             builder
                 .addParameter(paramName, "%" + escapePercent(mustBeString(placeholder, value)));
-          } else if (lookbehind("LIKE '", placeholder)
-              && appendBeforeQuotedPlaceholder("'", placeholder, "%'")) {
-            rejectEscapeAfter(placeholder);
+          } else if (scanner.lookbehind("LIKE '", placeholder)
+              && scanner.nextFragmentIfQuoted("'", placeholder, "%'").map(builder::appendSql).isPresent()) {
             builder
                 .addParameter(paramName, escapePercent(mustBeString(placeholder, value)) + "%");
-          } else if (appendBeforeQuotedPlaceholder("'", placeholder, "'")) {
+          } else if (scanner.nextFragmentIfQuoted("'", placeholder, "'").map(builder::appendSql).isPresent()) {
             builder.addParameter(paramName, mustBeString("'" + placeholder + "'", value));
           } else {
             checkMissingPlaceholderQuotes(placeholder);
-            builder.appendSql(texts.pop()).addParameter(paramName, value);
+            builder.appendSql(scanner.nextFragment()).addParameter(paramName, value);
           }
-        }
-
-        private boolean appendBeforeQuotedPlaceholder(
-            String open, Substring.Match placeholder, String close) {
-          boolean quoted = placeholder.isImmediatelyBetween(open, close);
-          if (quoted) {
-            builder.appendSql(suffix(open).removeFrom(texts.pop()));
-            texts.push(prefix(close).removeFrom(texts.pop()));
-          }
-          return quoted;
-        }
-
-        private void rejectEscapeAfter(Substring.Match placeholder) {
-          checkArgument(
-              !lookahead(placeholder, "%' ESCAPE") && !lookahead(placeholder, "' ESCAPE"),
-              "ESCAPE not supported after %s. Just leave the placeholder alone and ParameterizedQuery will auto escape.",
-              placeholder);
-        }
-
-        private boolean lookahead(Substring.Match placeholder, String rightPattern) {
-          List<String> lookahead = TOKENS.from(rightPattern).collect(toList());
-          int closingBraceIndex = placeholder.index() + placeholder.length() - 1;
-          int nextTokenIndex = charIndexToTokenIndex.get(closingBraceIndex) + 1;
-          return BiStream.zip(lookahead, allTokens.subList(nextTokenIndex, allTokens.size()))
-                  .filter((s, t) -> s.equalsIgnoreCase(t.toString()))
-                  .count() == lookahead.size();
-        }
-
-        private boolean lookbehind(String leftPattern, Substring.Match placeholder) {
-          List<String> lookbehind = TOKENS.from(leftPattern).collect(toList());
-          List<Substring.Match> leftTokens =
-              allTokens.subList(0, charIndexToTokenIndex.get(placeholder.index()));
-          return BiStream.zip(reverse(lookbehind), reverse(leftTokens))  // right-to-left
-                  .filter((s, t) -> s.equalsIgnoreCase(t.toString()))
-                  .count() == lookbehind.size();
         }
       }
       placeholders
           .peek(ParameterizedQuery::checkMisuse)
           .forEachOrdered(new SqlWriter()::writePlaceholder);
-      checkState(texts.size() == 1, "should have only one text left, got: %s", texts);
-      return builder.appendSql(texts.pop()).build();
+      return builder.appendSql(scanner.nextFragment()).build();
     });
   }
 

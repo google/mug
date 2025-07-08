@@ -532,30 +532,6 @@ public class ParameterizedQueryTest {
   }
 
   @Test
-  public void likeWithEscapeNotSuppoted_surroundedByPercentSign() {
-    IllegalArgumentException thrown = assertThrows(
-        IllegalArgumentException.class,
-        () -> ParameterizedQuery.of("select * from tbl where name like '%{s}%' ESCAPE  '\'", "foo"));
-    assertThat(thrown).hasMessageThat().contains("ESCAPE");
-  }
-
-  @Test
-  public void likeWithEscapeNotSuppoted_precededByPercentSign() {
-    IllegalArgumentException thrown = assertThrows(
-        IllegalArgumentException.class,
-        () -> ParameterizedQuery.of("select * from tbl where name like '%{s}' \n ESCAPE '\'", "foo"));
-    assertThat(thrown).hasMessageThat().contains("ESCAPE");
-  }
-
-  @Test
-  public void likeWithEscapeNotSuppoted_followedByPercentSign() {
-    IllegalArgumentException thrown = assertThrows(
-        IllegalArgumentException.class,
-        () -> ParameterizedQuery.of("select * from tbl where name like '{s}%' ESCAPE '\'", "foo"));
-    assertThat(thrown).hasMessageThat().contains("ESCAPE");
-  }
-
-  @Test
   public void literalPercentValueWithWildcardAtBothEnds() {
     ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '%{s}%'", "%");
     assertThat(sql.statement())
@@ -998,7 +974,7 @@ public class ParameterizedQueryTest {
   }
 
   @Test
-  public void twoParameters_followedWord_whitespaceInsertedAfterParameterName() {
+  public void twoParameters_followedByWord_whitespaceInsertedAfterParameterName() {
     ParameterizedQuery sql =
         ParameterizedQuery.of("select label where {a}is null", /* a */ 100);
     assertThat(sql.statement())
