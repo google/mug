@@ -70,20 +70,6 @@ final class TemplateFragmentScanner {
         });
   }
 
-  boolean lookaround(
-      String leftPattern, Substring.Match placeholder, String rightPattern) {
-    return lookahead(placeholder, rightPattern) && lookbehind(leftPattern, placeholder);
-  }
-
-  boolean lookahead(Substring.Match placeholder, String rightPattern) {
-    List<String> lookahead = TOKENS.from(rightPattern).collect(toList());
-    int closingBraceIndex = placeholder.index() + placeholder.length() - 1;
-    int nextTokenIndex = charIndexToTokenIndex.get(closingBraceIndex) + 1;
-    return BiStream.zip(lookahead, allTokens.subList(nextTokenIndex, allTokens.size()))
-            .filter((s, t) -> s.equalsIgnoreCase(t.toString()))
-            .count() == lookahead.size();
-  }
-
   boolean lookbehind(String leftPattern, Substring.Match placeholder) {
     List<String> lookbehind = TOKENS.from(leftPattern).collect(toList());
     List<Substring.Match> leftTokens =

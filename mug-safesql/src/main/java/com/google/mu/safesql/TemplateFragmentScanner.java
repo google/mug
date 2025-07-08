@@ -76,7 +76,7 @@ final class TemplateFragmentScanner {
     return lookahead(placeholder, rightPattern) && lookbehind(leftPattern, placeholder);
   }
 
-  boolean lookahead(Substring.Match placeholder, String rightPattern) {
+  private boolean lookahead(Substring.Match placeholder, String rightPattern) {
     List<String> lookahead = TOKENS.from(rightPattern).collect(toList());
     int closingBraceIndex = placeholder.index() + placeholder.length() - 1;
     int nextTokenIndex = charIndexToTokenIndex.get(closingBraceIndex) + 1;
