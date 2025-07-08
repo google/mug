@@ -883,6 +883,10 @@ public final class ParameterizedQuery {
 
     private static final Map<Class<?>, ValueType> ALL_TYPES =
         Arrays.stream(values()).collect(Collectors.toMap(vt -> vt.javaType, vt -> vt));
+    private static final StringFormat.Template<IllegalArgumentException> FAIL_TO_CONVERT = StringFormat.to(
+        IllegalArgumentException::new,
+        "Cannot convert object of {class} to Value for {{name}}. " +
+        "Consider using the static factory methods in Value class to convert explicitly.");
 
     private final Class<?> javaType;
 
@@ -899,12 +903,7 @@ public final class ParameterizedQuery {
           .filterKeys(cls -> cls.isInstance(obj))
           .values()
           .findFirst()
-          .orElseThrow(() -> {
-            StringFormat message = new StringFormat(
-                "Cannot convert object of {class} to Value for {{name}}. " +
-                "Consider using the static factory methods in Value class to convert explicitly.");
-            return new IllegalArgumentException(message.format(obj.getClass(), name));
-          });
+          .orElseThrow(() -> FAIL_TO_CONVERT.with(obj.getClass(), name));
 }
 
     abstract Value toValue(Object obj);
