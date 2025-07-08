@@ -15,13 +15,10 @@
 package com.google.mu.safesql;
 
 import static com.google.mu.safesql.SafeSqlUtils.checkArgument;
-import static com.google.mu.safesql.SafeSqlUtils.checkState;
 import static com.google.mu.safesql.SafeSqlUtils.skippingEmpty;
+import static com.google.mu.util.CharPredicate.is;
 import static com.google.mu.util.Substring.all;
 import static com.google.mu.util.Substring.first;
-import static com.google.mu.util.Substring.firstOccurrence;
-import static com.google.mu.util.Substring.prefix;
-import static com.google.mu.util.Substring.suffix;
 import static com.google.mu.util.Substring.word;
 import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
@@ -32,21 +29,16 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toCollection;
-import static java.util.stream.Collectors.toList;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.AbstractList;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterators;
@@ -430,10 +422,6 @@ import com.google.mu.util.stream.BiStream;
 public final class SafeSql {
   private static final Substring.Pattern OPTIONAL_PARAMETER =
       word().immediatelyBetween("", INCLUSIVE, "?", INCLUSIVE);
-  private static final Substring.RepeatingPattern TOKENS =
-      Stream.of(word(), first(c -> !Character.isWhitespace(c)))
-          .collect(firstOccurrence())
-          .repeatedly();
   private static final StringFormat PLACEHOLDER_ELEMENT_NAME =
       new StringFormat("{placeholder}[{index}]");
   private static final SafeSql FALSE = new SafeSql("(1 = 0)");
@@ -1276,174 +1264,125 @@ public final class SafeSql {
   }
 
   private static Template<SafeSql> unsafeTemplate(String template) {
-    List<Substring.Match> allTokens = TOKENS.match(template).collect(toList());
-    Map<Integer, Integer> charIndexToTokenIndex =
-        BiStream.zip(allTokens.stream(), indexesFrom(0))
-            .mapKeys(Substring.Match::index)
-            .collect(Collectors::toMap);
+    TemplatePlaceholdersContext context = new TemplatePlaceholdersContext(template);
     return StringFormat.template(template, (fragments, placeholders) -> {
-      Deque<String> texts = new ArrayDeque<>(fragments);
-      Builder builder = new Builder();
-      class SqlWriter {
-        void writePlaceholder(Substring.Match placeholder, Object value) {
-          String paramName = placeholder.skip(1, 1).toString().trim();
-          Substring.Match conditional = first("->").in(paramName).orElse(null);
-          if (conditional != null) {
-            checkArgument(
-                !placeholder.isImmediatelyBetween("`", "`"),
-                "boolean placeholder {%s->} shouldn't be backtick quoted",
-                conditional.before());
-            checkArgument(
-                !placeholder.isImmediatelyBetween("\"", "\""),
-                "boolean placeholder {%s->} shouldn't be double quoted",
-                conditional.before());
-            checkArgument(
-                value != null,
-                "boolean placeholder {%s->} cannot be used with a null value",
-                conditional.before());
-            if (value instanceof Optional) {
-              String rhs = validateOptionalOperatorRhs(conditional);
-              builder.appendSql(texts.pop());
-              ((Optional<?>) value)
-                  .map(present -> innerSubquery(rhs, present))
-                  .ifPresent(builder::addSubQuery);
-              return;
-            }
-            checkArgument(
-                value instanceof Boolean,
-                "conditional placeholder {%s->} can only be used with a boolean or Optional value; %s encountered.",
-                conditional.before(),
-                value.getClass().getName());
-            builder.appendSql(texts.pop());
-            if ((Boolean) value) {
-              builder.appendSql(conditional.after().trim());
-            }
+      TemplateFragmentScanner scanner = new TemplateFragmentScanner(fragments);
+      return placeholders.collect(new Builder(), (builder, placeholder, value) -> {
+        checkMisuse(placeholder, value);
+        String paramName = placeholder.skip(1, 1).toString().trim();
+        Substring.Match conditional = first("->").in(paramName).orElse(null);
+        if (conditional != null) {
+          checkArgument(
+              !placeholder.isImmediatelyBetween("`", "`"),
+              "boolean placeholder {%s->} shouldn't be backtick quoted",
+              conditional.before());
+          checkArgument(
+              !placeholder.isImmediatelyBetween("\"", "\""),
+              "boolean placeholder {%s->} shouldn't be double quoted",
+              conditional.before());
+          checkArgument(
+              value != null,
+              "boolean placeholder {%s->} cannot be used with a null value",
+              conditional.before());
+          if (value instanceof Optional) {
+            String rhs = validateOptionalOperatorRhs(conditional);
+            builder.appendSql(scanner.nextFragment());
+            ((Optional<?>) value)
+                .map(present -> innerSubquery(rhs, present))
+                .ifPresent(builder::addSubQuery);
             return;
           }
-          rejectQuestionMark(paramName);
           checkArgument(
-              !(value instanceof Optional),
-              "%s: optional parameter not supported. " +
-              "Consider using the {%s? -> ...} syntax, or SafeSql.when()?",
-              paramName, paramName);
-          if (value instanceof Iterable) {
-            Iterator<?> elements = ((Iterable<?>) value).iterator();
-            checkArgument(elements.hasNext(), "%s cannot be empty list", placeholder);
-            if (placeholder.isImmediatelyBetween("'", "'")
-                && lookaround("IN ('", placeholder, "')")
-                && appendBeforeQuotedPlaceholder("'", placeholder, "'")) {
-              builder.addSubQuery(
-                  eachPlaceholderValue(placeholder, elements)
-                      .mapToObj(SafeSql::mustBeString)
-                      .map(PARAM::with)
-                      .collect(joining(", ")));
-              return;
-            }
-            builder.appendSql(texts.pop());
-            if (placeholder.isImmediatelyBetween("`", "`")) {
-              builder.appendSql(
-                  eachPlaceholderValue(placeholder, elements)
-                      .mapToObj(SafeSql::mustBeIdentifier)
-                      .collect(Collectors.joining("`, `")));
-            } else if (placeholder.isImmediatelyBetween("\"", "\"")) {
-              builder.appendSql(
-                  eachPlaceholderValue(placeholder, elements)
-                      .mapToObj(SafeSql::mustBeIdentifier)
-                      .collect(Collectors.joining("\", \"")));
-            } else if (lookaround("IN (", placeholder, ")")) {
-              builder.addSubQuery(
-                  eachPlaceholderValue(placeholder, elements)
-                      .mapToObj(SafeSql::subqueryOrParameter)
-                      .collect(joining(", ")));
-            } else {
-              builder.addSubQuery(
-                  eachPlaceholderValue(placeholder, elements)
-                      .mapToObj(SafeSql::mustBeSubquery)
-                      .collect(joining(", ")));
-              validateSubqueryPlaceholder(placeholder);
-            }
-          } else if (value instanceof SafeSql) {
-            builder.appendSql(texts.pop()).addSubQuery((SafeSql) value);
-            validateSubqueryPlaceholder(placeholder);
-          } else if (appendBeforeQuotedPlaceholder("`", placeholder, "`")) {
-            String identifier = mustBeIdentifier("`" + placeholder + "`", value);
-            checkArgument(identifier.length() > 0, "`%s` cannot be empty", placeholder);
-            builder.appendSql("`" + identifier + "`");
-          } else if (appendBeforeQuotedPlaceholder("\"", placeholder, "\"")) {
-            String identifier = mustBeIdentifier("\"" + placeholder + "\"", value);
-            checkArgument(identifier.length() > 0, "\"%s\" cannot be empty", placeholder);
-            builder.appendSql("\"" + identifier + "\"");
-          } else if (lookbehind("LIKE '%", placeholder)
-              && appendBeforeQuotedPlaceholder("'%", placeholder, "%'")) {
-            rejectEscapeAfter(placeholder);
-            builder
-                .addParameter(paramName, "%" + escapePercent(mustBeString(placeholder, value)) + "%")
-                .appendSql(" ESCAPE '^'");
-          } else if (lookbehind("LIKE '%", placeholder)
-              && appendBeforeQuotedPlaceholder("'%", placeholder, "'")) {
-            rejectEscapeAfter(placeholder);
-            builder
-                .addParameter(paramName, "%" + escapePercent(mustBeString(placeholder, value)))
-                .appendSql(" ESCAPE '^'");
-          } else if (lookbehind("LIKE '", placeholder)
-              && appendBeforeQuotedPlaceholder("'", placeholder, "%'")) {
-            rejectEscapeAfter(placeholder);
-            builder
-                .addParameter(paramName, escapePercent(mustBeString(placeholder, value)) + "%")
-                .appendSql(" ESCAPE '^'");
-          } else if (appendBeforeQuotedPlaceholder("'", placeholder, "'")) {
-            builder.addParameter(paramName, mustBeString("'" + placeholder + "'", value));
+              value instanceof Boolean,
+              "conditional placeholder {%s->} can only be used with a boolean or Optional value; %s encountered.",
+              conditional.before(),
+              value.getClass().getName());
+          builder.appendSql(scanner.nextFragment());
+          if ((Boolean) value) {
+            builder.appendSql(conditional.after().trim());
+          }
+          return;
+        }
+        rejectQuestionMark(paramName);
+        checkArgument(
+            !(value instanceof Optional),
+            "%s: optional parameter not supported. " +
+            "Consider using the {%s? -> ...} syntax, or SafeSql.when()?",
+            paramName, paramName);
+        if (value instanceof Iterable) {
+          Iterator<?> elements = ((Iterable<?>) value).iterator();
+          checkArgument(elements.hasNext(), "%s cannot be empty list", placeholder);
+          if (placeholder.isImmediatelyBetween("'", "'")
+              && context.lookaround("IN ('", placeholder, "')")
+              && scanner.nextFragmentIfQuoted("'", placeholder, "'").map(builder::appendSql).isPresent()) {
+            builder.addSubQuery(
+                eachPlaceholderValue(placeholder, elements)
+                    .mapToObj(SafeSql::mustBeString)
+                    .map(PARAM::with)
+                    .collect(joining(", ")));
+            return;
+          }
+          builder.appendSql(scanner.nextFragment());
+          if (placeholder.isImmediatelyBetween("`", "`")) {
+            builder.appendSql(
+                eachPlaceholderValue(placeholder, elements)
+                    .mapToObj(SafeSql::mustBeIdentifier)
+                    .collect(Collectors.joining("`, `")));
+          } else if (placeholder.isImmediatelyBetween("\"", "\"")) {
+            builder.appendSql(
+                eachPlaceholderValue(placeholder, elements)
+                    .mapToObj(SafeSql::mustBeIdentifier)
+                    .collect(Collectors.joining("\", \"")));
+          } else if (context.lookaround("IN (", placeholder, ")")) {
+            builder.addSubQuery(
+                eachPlaceholderValue(placeholder, elements)
+                    .mapToObj(SafeSql::subqueryOrParameter)
+                    .collect(joining(", ")));
           } else {
-            checkMissingPlaceholderQuotes(placeholder);
-            builder.appendSql(texts.pop()).addParameter(paramName, value);
+            builder.addSubQuery(
+                eachPlaceholderValue(placeholder, elements)
+                    .mapToObj(SafeSql::mustBeSubquery)
+                    .collect(joining(", ")));
+            validateSubqueryPlaceholder(placeholder);
           }
+        } else if (value instanceof SafeSql) {
+          builder.appendSql(scanner.nextFragment()).addSubQuery((SafeSql) value);
+          validateSubqueryPlaceholder(placeholder);
+        } else if (scanner.nextFragmentIfQuoted("`", placeholder, "`").map(builder::appendSql).isPresent()) {
+          String identifier = mustBeIdentifier("`" + placeholder + "`", value);
+          checkArgument(identifier.length() > 0, "`%s` cannot be empty", placeholder);
+          builder.appendSql("`" + identifier + "`");
+        } else if (scanner.nextFragmentIfQuoted("\"", placeholder, "\"").map(builder::appendSql).isPresent()) {
+          String identifier = mustBeIdentifier("\"" + placeholder + "\"", value);
+          checkArgument(identifier.length() > 0, "\"%s\" cannot be empty", placeholder);
+          builder.appendSql("\"" + identifier + "\"");
+        } else if (context.lookbehind("LIKE '%", placeholder)
+            && scanner.nextFragmentIfQuoted("'%", placeholder, "%'").map(builder::appendSql).isPresent()) {
+          context.rejectEscapeAfter(placeholder);
+          builder
+              .addParameter(paramName, "%" + escapePercent(mustBeString(placeholder, value)) + "%")
+              .appendSql(" ESCAPE '^'");
+        } else if (context.lookbehind("LIKE '%", placeholder)
+            && scanner.nextFragmentIfQuoted("'%", placeholder, "'").map(builder::appendSql).isPresent()) {
+          context.rejectEscapeAfter(placeholder);
+          builder
+              .addParameter(paramName, "%" + escapePercent(mustBeString(placeholder, value)))
+              .appendSql(" ESCAPE '^'");
+        } else if (context.lookbehind("LIKE '", placeholder)
+            && scanner.nextFragmentIfQuoted("'", placeholder, "%'").map(builder::appendSql).isPresent()) {
+          context.rejectEscapeAfter(placeholder);
+          builder
+              .addParameter(paramName, escapePercent(mustBeString(placeholder, value)) + "%")
+              .appendSql(" ESCAPE '^'");
+        } else if (scanner.nextFragmentIfQuoted("'", placeholder, "'").map(builder::appendSql).isPresent()) {
+          builder.addParameter(paramName, mustBeString("'" + placeholder + "'", value));
+        } else {
+          checkMissingPlaceholderQuotes(placeholder);
+          builder.appendSql(scanner.nextFragment()).addParameter(paramName, value);
         }
-
-        private boolean appendBeforeQuotedPlaceholder(
-            String open, Substring.Match placeholder, String close) {
-          boolean quoted = placeholder.isImmediatelyBetween(open, close);
-          if (quoted) {
-            builder.appendSql(suffix(open).removeFrom(texts.pop()));
-            texts.push(prefix(close).removeFrom(texts.pop()));
-          }
-          return quoted;
-        }
-
-        private void rejectEscapeAfter(Substring.Match placeholder) {
-          checkArgument(
-              !lookahead(placeholder, "%' ESCAPE") && !lookahead(placeholder, "' ESCAPE"),
-              "ESCAPE not supported after %s. Just leave the placeholder alone and SafeSql will auto escape.",
-              placeholder);
-        }
-
-        private boolean lookaround(
-            String leftPattern, Substring.Match placeholder, String rightPattern) {
-          return lookahead(placeholder, rightPattern) && lookbehind(leftPattern, placeholder);
-        }
-
-        private boolean lookahead(Substring.Match placeholder, String rightPattern) {
-          List<String> lookahead = TOKENS.from(rightPattern).collect(toList());
-          int closingBraceIndex = placeholder.index() + placeholder.length() - 1;
-          int nextTokenIndex = charIndexToTokenIndex.get(closingBraceIndex) + 1;
-          return BiStream.zip(lookahead, allTokens.subList(nextTokenIndex, allTokens.size()))
-                  .filter((s, t) -> s.equalsIgnoreCase(t.toString()))
-                  .count() == lookahead.size();
-        }
-
-        private boolean lookbehind(String leftPattern, Substring.Match placeholder) {
-          List<String> lookbehind = TOKENS.from(leftPattern).collect(toList());
-          List<Substring.Match> leftTokens =
-              allTokens.subList(0, charIndexToTokenIndex.get(placeholder.index()));
-          return BiStream.zip(reverse(lookbehind), reverse(leftTokens))  // right-to-left
-                  .filter((s, t) -> s.equalsIgnoreCase(t.toString()))
-                  .count() == lookbehind.size();
-        }
-      }
-      placeholders
-          .peek(SafeSql::checkMisuse)
-          .forEachOrdered(new SqlWriter()::writePlaceholder);
-      checkState(texts.size() == 1, "should have only one text left, got: %s", texts);
-      return builder.appendSql(texts.pop()).build();
+      })
+      .appendSql(scanner.nextFragment())
+      .build();
     });
   }
 
@@ -1618,18 +1557,6 @@ public final class SafeSql {
     return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, 0), false);
   }
 
-  private static <T> List<T> reverse(List<T> list) {
-    return new AbstractList<T>() {
-      @Override public T get(int i) {
-        return list.get(list.size() - i - 1);
-      }
-
-      @Override public int size() {
-        return list.size();
-      }
-    };
-  }
-
   private static final class Builder {
     private final StringBuilder queryText = new StringBuilder();
     private final List<Object> paramValues = new ArrayList<>();
@@ -1664,14 +1591,12 @@ public final class SafeSql {
 
     private void safeAppend(String snippet) {
       checkArgument(
-          !(endsWith('-') && snippet.startsWith("-")), "accidental line comment: -%s", snippet);
+          !(is('-').isSuffixOf(queryText) && snippet.startsWith("-")),
+          "accidental line comment: -%s", snippet);
       checkArgument(
-          !(endsWith('/') && snippet.startsWith("*")), "accidental block comment: /%s", snippet);
+          !(is('/').isSuffixOf(queryText) && snippet.startsWith("*")),
+          "accidental block comment: /%s", snippet);
       queryText.append(snippet);
-    }
-
-    private boolean endsWith(char c) {
-      return queryText.length() > 0 && queryText.charAt(queryText.length() - 1) == c;
     }
   }
 }
