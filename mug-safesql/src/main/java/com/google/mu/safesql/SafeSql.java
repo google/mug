@@ -16,6 +16,7 @@ package com.google.mu.safesql;
 
 import static com.google.mu.safesql.SafeSqlUtils.checkArgument;
 import static com.google.mu.safesql.SafeSqlUtils.skippingEmpty;
+import static com.google.mu.util.CharPredicate.is;
 import static com.google.mu.util.Substring.all;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.word;
@@ -1589,14 +1590,12 @@ public final class SafeSql {
 
     private void safeAppend(String snippet) {
       checkArgument(
-          !(endsWith('-') && snippet.startsWith("-")), "accidental line comment: -%s", snippet);
+          !(is('-').isSuffixOf(queryText) && snippet.startsWith("-")),
+          "accidental line comment: -%s", snippet);
       checkArgument(
-          !(endsWith('/') && snippet.startsWith("*")), "accidental block comment: /%s", snippet);
+          !(is('/').isSuffixOf(queryText) && snippet.startsWith("*")),
+          "accidental block comment: /%s", snippet);
       queryText.append(snippet);
-    }
-
-    private boolean endsWith(char c) {
-      return queryText.length() > 0 && queryText.charAt(queryText.length() - 1) == c;
     }
   }
 }
