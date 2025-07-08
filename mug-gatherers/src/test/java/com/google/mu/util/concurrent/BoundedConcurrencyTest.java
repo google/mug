@@ -532,6 +532,43 @@ public class BoundedConcurrencyTest {
     assertThat(thrown).hasMessageThat().isEqualTo("3");
   }
 
+  @Test public void parallelStream_upstreamFailureInterrupts() throws Exception {
+    ConcurrentLinkedQueue<Integer> started = new ConcurrentLinkedQueue<>();
+    ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
+    boolean[] failed = new boolean[1];
+    boolean[] seen = new boolean[1];
+    RuntimeException thrown = assertThrows(
+        RuntimeException.class,
+        () -> asList(10, 3, 1)
+            .parallelStream()
+            .peek(n -> {})
+            .map(n -> {
+              if (n == 3) {
+                try { // give 1 and 3 some time to have at least started
+                  Thread.sleep(100);
+                } catch (InterruptedException e) {
+                  interrupted.add(n);
+                }
+                failed[0] = true;
+                throw new IllegalArgumentException(String.valueOf(n));
+              }
+              started.add(n);
+              try {
+                Thread.sleep(n * 1000);
+              } catch (InterruptedException e) {
+                interrupted.add(n);
+              }
+              seen[0] = true;
+              return n;
+            })
+            .findAny());
+    assertThat(started).containsExactly(10, 1);
+    assertThat(interrupted).isEmpty();
+    assertThat(thrown).hasMessageThat().contains("3");
+    assertThat(failed[0]).isTrue();
+    assertThat(seen[0]).isTrue();
+  }
+
   @Test public void flatMapConcurrently_concurrencySmallerThanElements() {
     assertThat(Stream.of(1, 2, 3, 4).gather(withMaxConcurrency(3).flatMapConcurrently(n -> Collections.nCopies(n, n).stream())))
         .containsExactly(1, 2, 2, 3, 3, 3, 4, 4, 4, 4);
