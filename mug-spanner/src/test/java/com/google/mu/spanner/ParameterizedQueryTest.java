@@ -2,7 +2,6 @@ package com.google.mu.spanner;
 
 import static com.google.cloud.Timestamp.parseTimestamp;
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.mu.spanner.ParameterizedQuery.template;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
 
@@ -36,7 +35,7 @@ public class ParameterizedQueryTest {
 
   @Test
   public void emptyTemplate() {
-    assertThat(template("").with()).isEqualTo(ParameterizedQuery.of(""));
+    assertThat(ParameterizedQuery.of("")).isEqualTo(ParameterizedQuery.of(""));
   }
 
   @Test
@@ -286,13 +285,13 @@ public class ParameterizedQueryTest {
   @Test
   @SuppressWarnings("StringFormatArgsCheck")
   public void optionalOperator_withLikeOperator_present() {
-    Optional<String> name = Optional.of("foo");
-    ParameterizedQuery sql = ParameterizedQuery.of("SELECT * FROM tbl WHERE 1=1 {name? -> AND name LIKE '%name?%'}", name);
+    Optional<String> name = Optional.of("%foo");
+    ParameterizedQuery sql = ParameterizedQuery.of("SELECT * FROM tbl WHERE 1=1 {name? -> AND name LIKE 'name?'}", name);
     assertThat(sql)
-        .isEqualTo(ParameterizedQuery.of("SELECT * FROM tbl WHERE 1=1 AND name LIKE '%{name}%'", name.get()));
+        .isEqualTo(ParameterizedQuery.of("SELECT * FROM tbl WHERE 1=1 AND name LIKE '{name}'", name.get()));
     assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("SELECT * FROM tbl WHERE 1=1 AND name LIKE @name")
-            .bind("name").to("%" + name.get() + "%")
+            .bind("name").to(name.get())
             .build());
   }
 
@@ -519,125 +518,6 @@ public class ParameterizedQueryTest {
         IllegalArgumentException.class,
         () -> ParameterizedQuery.of("select {i}", /* i */ (Integer) null));
     assertThat(thrown).hasMessageThat().contains("Cannot infer type from null");
-  }
-
-  @Test
-  public void singleLikeParameterWithWildcardAtBothEnds() {
-    ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '%{s}%'", "foo");
-    assertThat(sql.statement())
-        .isEqualTo(Statement.newBuilder("select * from tbl where name like @s")
-            .bind("s").to("%foo%")
-            .build());
-    assertThat(sql.toString()).isEqualTo("select * from tbl where name like @s /* %foo% */");
-  }
-
-  @Test
-  public void literalPercentValueWithWildcardAtBothEnds() {
-    ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '%{s}%'", "%");
-    assertThat(sql.statement())
-        .isEqualTo(Statement.newBuilder("select * from tbl where name like @s")
-            .bind("s").to("%\\%%")
-            .build());
-    assertThat(sql.toString()).isEqualTo("select * from tbl where name like @s /* %\\%% */");
-  }
-
-  @Test
-  public void literalBackslashValueWithWildcardAtBothEnds() {
-    ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '%{s}%'", "\\");
-    assertThat(sql.statement())
-        .isEqualTo(Statement.newBuilder("select * from tbl where name like @s")
-            .bind("s").to("%\\\\%")
-            .build());
-    assertThat(sql.toString()).isEqualTo("select * from tbl where name like @s /* %\\\\% */");
-  }
-
-  @Test
-  public void literalSingleQuoteValueWithWildcardAtBothEnds() {
-    ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '%{s}%'", "'");
-    assertThat(sql.toString()).isEqualTo("select * from tbl where name like @s /* %'% */");
-  }
-
-  @Test
-  public void stringRequiredWhenWildcardsAtBothEnds() {
-    IllegalArgumentException thrown = assertThrows(
-        IllegalArgumentException.class,
-        () -> ParameterizedQuery.of("select * from tbl where name like '%{s}%'", 1));
-    assertThat(thrown).hasMessageThat().contains("String");
-    assertThat(thrown).hasMessageThat().contains("{s}");
-  }
-
-  @Test
-  public void singleLikeParameterWithWildcardAsPrefix() {
-    ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '%{s}'", "foo");
-    assertThat(sql.toString()).isEqualTo("select * from tbl where name like @s /* %foo */");
-  }
-
-  @Test
-  public void literalPercentValueWithWildcardAtPrefix() {
-    ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '%{s}'", "%");
-    assertThat(sql.statement())
-        .isEqualTo(Statement.newBuilder("select * from tbl where name like @s").bind("s").to("%\\%").build());
-  }
-
-  @Test
-  public void literalBackslashValueWithWildcardAtPrefix() {
-    ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '%{s}'", "\\");
-    assertThat(sql.statement())
-        .isEqualTo(Statement.newBuilder("select * from tbl where name like @s").bind("s").to("%\\\\").build());
-  }
-
-  @Test
-  public void literalSingleQuoteValueWithWildcardAtPrefix() {
-    ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '%{s}'", "'");
-    assertThat(sql.statement())
-        .isEqualTo(Statement.newBuilder("select * from tbl where name like @s").bind("s").to("%'").build());
-    assertThat(sql.toString()).isEqualTo("select * from tbl where name like @s /* %' */");
-  }
-
-  @Test
-  public void stringRequiredWhenWildcardsAsPrefix() {
-    IllegalArgumentException thrown = assertThrows(
-        IllegalArgumentException.class,
-        () -> ParameterizedQuery.of("select * from tbl where name like '%{s}'", 1));
-    assertThat(thrown).hasMessageThat().contains("String");
-    assertThat(thrown).hasMessageThat().contains("{s}");
-  }
-
-  @Test
-  public void singleLikeParameterWithWildcardAsSuffix() {
-    ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '{s}%'", "foo");
-    assertThat(sql.toString()).isEqualTo("select * from tbl where name like @s /* foo% */");
-  }
-
-  @Test
-  public void literalPercentValueWithWildcardAtSuffix() {
-    ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '{s}%'", "%");
-    assertThat(sql.statement())
-        .isEqualTo(Statement.newBuilder("select * from tbl where name like @s").bind("s").to("\\%%").build());
-  }
-
-  @Test
-  public void literalBackslashValueWithWildcardAtSuffix() {
-    ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '{s}%'", "\\");
-    assertThat(sql.statement())
-        .isEqualTo(Statement.newBuilder("select * from tbl where name like @s").bind("s").to("\\\\%").build());
-  }
-
-  @Test
-  public void literalSingleQuoteValueWithWildcardAtSuffix() {
-    ParameterizedQuery sql = ParameterizedQuery.of("select * from tbl where name like '{s}%'", "'");
-    assertThat(sql.statement())
-        .isEqualTo(Statement.newBuilder("select * from tbl where name like @s").bind("s").to("'%").build());
-    assertThat(sql.toString()).isEqualTo("select * from tbl where name like @s /* '% */");
-  }
-
-  @Test
-  public void stringRequiredWhenWildcardsAsSuffix() {
-    IllegalArgumentException thrown = assertThrows(
-        IllegalArgumentException.class,
-        () -> ParameterizedQuery.of("select * from tbl where name like '{s}%'", 1));
-    assertThat(thrown).hasMessageThat().contains("String");
-    assertThat(thrown).hasMessageThat().contains("{s}");
   }
 
   @Test
@@ -1502,9 +1382,9 @@ public class ParameterizedQueryTest {
 
   @Test public void withTwoParameters() {
     long id = 123;
-    String name = "foo";
+    String name = "%foo%";
     ParameterizedQuery query = ParameterizedQuery.of(
-        "SELECT * FROM Users where id = {id} AND name LIKE '%{name}%'", id, name);
+        "SELECT * FROM Users where id = {id} AND name LIKE '{name}'", id, name);
     assertThat(query.toString())
         .isEqualTo("SELECT * FROM Users where id = @id /* 123 */ AND name LIKE @name /* %foo% */");
   }

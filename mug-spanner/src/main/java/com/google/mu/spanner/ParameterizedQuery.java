@@ -189,7 +189,7 @@ import com.google.protobuf.ProtocolMessageEnum;
  *         FROM Users
  *         WHERE 1 = 1
  *             {user_id? -> AND id = user_id?}
- *             {first_name? -> AND firstName LIKE '%first_name?%'}
+ *             {first_name? -> AND firstName = 'first_name?'}
  *         """,
  *         asList(columns),
  *         criteria.userId()),
@@ -206,7 +206,7 @@ import com.google.protobuf.ProtocolMessageEnum;
  * unspecified (empty), the resulting SQL will look like:
  *
  * <pre>{@code
- *   SELECT `email`, `lastName` FROM Users WHERE firstName LIKE @first_name
+ *   SELECT `email`, `lastName` FROM Users WHERE firstName = @first_name
  * }</pre>
  *
  * <dl><dt><STRONG>Parameterize by Column Names or Table Names</STRONG></dt></dl>
@@ -229,36 +229,6 @@ import com.google.protobuf.ProtocolMessageEnum;
  * }</pre>
  *
  * <p>That is, each individual string will be backtick-quoted and then joined by ", ".
- *
- * <dl><dt><STRONG>The {@code LIKE} Operator</STRONG></dt></dl>
- *
- * <p>Note that with straight Spanner SQL, if you try to use the LIKE operator to match a user-provided
- * substring, i.e. using {@code LIKE '%foo%'} to search for "foo", this seemingly intuitive
- * syntax is actually incorect: <pre>{@code
- *   String searchTerm = ...;
- *   Statement.newBuilder("SELECT id FROM Users WHERE firstName LIKE '%@searchTerm%'")
- *       .bind("searchTerm", searchTerm)
- *       .build();
- * }</pre>
- *
- * Spanner considers the quoted "@searchTerm" as a literal so the query won't work as expected.
- * You'll need to use the following workaround: <pre>{@code
- *   String searchTerm = ...;
- *   Statement.newBuilder("SELECT id FROM Users WHERE firstName LIKE @searchTerm")
- *       .bind("searchTerm", "%" + searchTerm + "%")
- *       .build();
- * }</pre>
- *
- * And even then, if the {@code searchTerm} includes special characters like '%' or backslash ('\'),
- * they'll be interepreted as wildcards and escape characters, opening it up to a form of minor
- * SQL injection despite already using the parameterized SQL.
- *
- * <p>The ParameterizedQuery template protects you from this caveat. The most intuitive syntax does
- * exactly what you'd expect (and it escapes special characters too): <pre>{@code
- *   String searchTerm = ...;
- *   ParameterizedQuery sql = ParameterizedQuery.of(
- *       "SELECT id FROM Users WHERE firstName LIKE '%{search_term}%'", searchTerm);
- * }</pre>
  *
  * <dl><dt><STRONG>Enforce Identical Parameter</STRONG></dt></dl>
  *
@@ -373,33 +343,6 @@ public final class ParameterizedQuery {
    */
   public ParameterizedQuery when(boolean condition) {
     return condition ? this : EMPTY;
-  }
-
-  /**
-   * Returns a {@link Template} of {@link ParameterizedQuery} based on the {@code template} string.
-   * Useful for creating a constant to be reused with different parameters.
-   *
-   * <p>For example:
-   *
-   * <pre>{@code
-   * private static final Template<ParameterizedQuery> FIND_USERS_BY_NAME =
-   *     ParameterizedQuery.template("SELECT `{columns}` FROM Users WHERE name LIKE '%{name}%'");
-   *
-   * String searchBy = ...;
-   * List<User> userIds = FIND_USERS_BY_NAME.with(asList("id", "name"), searchBy)
-   *     .query(dataSource, User.class);
-   * }</pre>
-   *
-   * <p>If you don't need a reusable template, consider using {@link #of} instead, which is simpler.
-   *
-   * <p>The template arguments follow the same rules as discussed in {@link #of(String, Object...)}
-   * and receives the same compile-time protection against mismatch or out-of-order human mistakes,
-   * so it's safe to use the template as a constant.
-   *
-   * <p>The returned template is immutable and thread safe.
-   */
-  static Template<ParameterizedQuery> template(@CompileTimeConstant String template) {
-    return unsafeTemplate(template);
   }
 
   /**
@@ -535,9 +478,9 @@ public final class ParameterizedQuery {
     return new ParameterizedQuery('(' + sql + ')', parameters);
   }
 
-  private static Template<ParameterizedQuery> unsafeTemplate(String template) {
+  private static Template<ParameterizedQuery> template(String template) {
     return StringFormat.template(template, (fragments, placeholders) -> {
-      TemplateFragmentScanner scanner = new TemplateFragmentScanner(template, fragments);
+      TemplateFragmentScanner scanner = new TemplateFragmentScanner(fragments);
       return placeholders.collect(new Builder(), (builder, placeholder, value) -> {
         validatePlaceholder(placeholder);
         String paramName = placeholder.skip(1, 1).toString().trim();
@@ -620,18 +563,6 @@ public final class ParameterizedQuery {
           String identifier = mustBeIdentifier("\"" + placeholder + "\"", value);
           checkArgument(identifier.length() > 0, "\"%s\" cannot be empty", placeholder);
           builder.appendSql("\"" + identifier + "\"");
-        } else if (scanner.lookbehind("LIKE '%", placeholder)
-            && scanner.nextFragmentIfQuoted("'%", placeholder, "%'").map(builder::appendSql).isPresent()) {
-          builder
-              .addParameter(paramName, "%" + escapePercent(mustBeString(placeholder, value)) + "%");
-        } else if (scanner.lookbehind("LIKE '%", placeholder)
-            && scanner.nextFragmentIfQuoted("'%", placeholder, "'").map(builder::appendSql).isPresent()) {
-          builder
-              .addParameter(paramName, "%" + escapePercent(mustBeString(placeholder, value)));
-        } else if (scanner.lookbehind("LIKE '", placeholder)
-            && scanner.nextFragmentIfQuoted("'", placeholder, "%'").map(builder::appendSql).isPresent()) {
-          builder
-              .addParameter(paramName, escapePercent(mustBeString(placeholder, value)) + "%");
         } else if (scanner.nextFragmentIfQuoted("'", placeholder, "'").map(builder::appendSql).isPresent()) {
           builder.addParameter(paramName, mustBeString("'" + placeholder + "'", value));
         } else {
@@ -666,7 +597,7 @@ public final class ParameterizedQuery {
   @SuppressWarnings("StringFormatArgsCheck")
   private static ParameterizedQuery innerSubquery(String optionalTemplate, Object arg) {
     Template<ParameterizedQuery> innerTemplate =
-        unsafeTemplate(
+        template(
             OPTIONAL_PARAMETER
                 .repeatedly()
                 .replaceAllFrom(optionalTemplate, p -> "{" + p.skip(0, 1) + "}"));
@@ -727,10 +658,6 @@ public final class ParameterizedQuery {
       Substring.Match placeholder, Collection<?> elements) {
     return BiStream.zip(indexesFrom(0), elements.stream())
         .mapKeys(index -> PLACEHOLDER_ELEMENT_NAME.format(placeholder, index));
-  }
-
-  private static String escapePercent(String s) {
-    return first(c -> c == '\\' || c == '%' || c == '_').repeatedly().replaceAllFrom(s, c -> "\\" + c);
   }
 
   private static String checkIdentifier(CharSequence placeholder, String name) {

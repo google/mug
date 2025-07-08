@@ -156,37 +156,11 @@ public class ParameterizedQuerySpannerTest {
       return null;
     });
 
-    // This does not work
-    //    Statement statement = Statement.newBuilder(
-    //        "SELECT UserId, Name, Email FROM Users WHERE UserId LIKE '%@searchTerm%'")
-    //        .bind("searchTerm").to("er-")
-    //        .build();
-
+    ParameterizedQuery query = ParameterizedQuery.of(
+        "SELECT UserId, Name, Email FROM Users WHERE UserId LIKE '{searchTerm}'",
+        "%er-%");
     // Read the user
-    try (ResultSet resultSet = execute(
-        ParameterizedQuery.of(
-            "SELECT UserId, Name, Email FROM Users WHERE UserId LIKE '%{searchTerm}%'",
-            "er-"))) {
-      assertEquals(true, resultSet.next()); // Should find a row
-      assertEquals("user-4\\56", resultSet.getString("UserId"));
-      assertEquals("Alice", resultSet.getString("Name"));
-      assertEquals("alice@example.com", resultSet.getString("Email"));
-    }
-    try (ResultSet resultSet = dbClient.singleUse().executeQuery(
-        ParameterizedQuery.of(
-          "SELECT UserId, Name, Email FROM Users WHERE UserId LIKE '%{searchTerm}%'",
-          // % should be literal, so shouldn't match
-          "er%").statement())) {
-      ParameterizedQuery query = ParameterizedQuery.of(
-          "SELECT UserId, Name, Email FROM Users WHERE UserId LIKE '%{searchTerm}%'",
-          "er%");
-      assertEquals(false, resultSet.next()); // Should not find because % is literal
-    }
-    try (ResultSet resultSet = dbClient.singleUse().executeQuery(
-        ParameterizedQuery.of(
-            "SELECT UserId, Name, Email FROM Users WHERE UserId LIKE '%{searchTerm}%'",
-            // backslash should be literal, not escape the following wildcard
-            "er-4\\").statement())) {
+    try (ResultSet resultSet = execute(query)) {
       assertEquals(true, resultSet.next()); // Should find a row
       assertEquals("user-4\\56", resultSet.getString("UserId"));
       assertEquals("Alice", resultSet.getString("Name"));
