@@ -1264,8 +1264,9 @@ public final class SafeSql {
   }
 
   private static Template<SafeSql> unsafeTemplate(String template) {
+    TemplatePlaceholdersContext context = new TemplatePlaceholdersContext(template);
     return StringFormat.template(template, (fragments, placeholders) -> {
-      TemplateFragmentScanner scanner = new TemplateFragmentScanner(template, fragments);
+      TemplateFragmentScanner scanner = new TemplateFragmentScanner(fragments);
       return placeholders.collect(new Builder(), (builder, placeholder, value) -> {
         checkMisuse(placeholder, value);
         String paramName = placeholder.skip(1, 1).toString().trim();
@@ -1312,7 +1313,7 @@ public final class SafeSql {
           Iterator<?> elements = ((Iterable<?>) value).iterator();
           checkArgument(elements.hasNext(), "%s cannot be empty list", placeholder);
           if (placeholder.isImmediatelyBetween("'", "'")
-              && scanner.lookaround("IN ('", placeholder, "')")
+              && context.lookaround("IN ('", placeholder, "')")
               && scanner.nextFragmentIfQuoted("'", placeholder, "'").map(builder::appendSql).isPresent()) {
             builder.addSubQuery(
                 eachPlaceholderValue(placeholder, elements)
@@ -1332,7 +1333,7 @@ public final class SafeSql {
                 eachPlaceholderValue(placeholder, elements)
                     .mapToObj(SafeSql::mustBeIdentifier)
                     .collect(Collectors.joining("\", \"")));
-          } else if (scanner.lookaround("IN (", placeholder, ")")) {
+          } else if (context.lookaround("IN (", placeholder, ")")) {
             builder.addSubQuery(
                 eachPlaceholderValue(placeholder, elements)
                     .mapToObj(SafeSql::subqueryOrParameter)
@@ -1355,21 +1356,21 @@ public final class SafeSql {
           String identifier = mustBeIdentifier("\"" + placeholder + "\"", value);
           checkArgument(identifier.length() > 0, "\"%s\" cannot be empty", placeholder);
           builder.appendSql("\"" + identifier + "\"");
-        } else if (scanner.lookbehind("LIKE '%", placeholder)
+        } else if (context.lookbehind("LIKE '%", placeholder)
             && scanner.nextFragmentIfQuoted("'%", placeholder, "%'").map(builder::appendSql).isPresent()) {
-          scanner.rejectEscapeAfter(placeholder);
+          context.rejectEscapeAfter(placeholder);
           builder
               .addParameter(paramName, "%" + escapePercent(mustBeString(placeholder, value)) + "%")
               .appendSql(" ESCAPE '^'");
-        } else if (scanner.lookbehind("LIKE '%", placeholder)
+        } else if (context.lookbehind("LIKE '%", placeholder)
             && scanner.nextFragmentIfQuoted("'%", placeholder, "'").map(builder::appendSql).isPresent()) {
-          scanner.rejectEscapeAfter(placeholder);
+          context.rejectEscapeAfter(placeholder);
           builder
               .addParameter(paramName, "%" + escapePercent(mustBeString(placeholder, value)))
               .appendSql(" ESCAPE '^'");
-        } else if (scanner.lookbehind("LIKE '", placeholder)
+        } else if (context.lookbehind("LIKE '", placeholder)
             && scanner.nextFragmentIfQuoted("'", placeholder, "%'").map(builder::appendSql).isPresent()) {
-          scanner.rejectEscapeAfter(placeholder);
+          context.rejectEscapeAfter(placeholder);
           builder
               .addParameter(paramName, escapePercent(mustBeString(placeholder, value)) + "%")
               .appendSql(" ESCAPE '^'");

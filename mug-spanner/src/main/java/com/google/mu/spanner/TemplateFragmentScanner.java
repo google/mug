@@ -25,7 +25,7 @@ import java.util.Optional;
 
 import com.google.mu.util.Substring;
 
-/** Used to scan fragments around placeholders in a string template. */
+/** Used to scan fragments around placeholders. */
 final class TemplateFragmentScanner {
   private final Deque<String> fragments;
 
