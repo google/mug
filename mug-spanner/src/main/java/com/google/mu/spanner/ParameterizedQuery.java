@@ -37,6 +37,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -717,7 +718,7 @@ public final class ParameterizedQuery {
   }
 
   private enum ValueType {
-    BOOL {
+    BOOL(Boolean.class) {
       @Override public Value toValue(Object obj) {
         return Value.bool((Boolean) obj);
       }
@@ -726,7 +727,7 @@ public final class ParameterizedQuery {
         return Value.boolArray((Collection<Boolean>) elements);
       }
     },
-    STRING {
+    STRING(String.class) {
       @Override public Value toValue(Object obj) {
         return Value.string((String) obj);
       }
@@ -735,7 +736,7 @@ public final class ParameterizedQuery {
         return Value.stringArray((Collection<String>) elements);
       }
     },
-    INT {
+    INT(Integer.class) {
       @Override public Value toValue(Object obj) {
         return Value.int64(((Integer) obj).longValue());
       }
@@ -745,7 +746,7 @@ public final class ParameterizedQuery {
         return Value.int64Array(ints.stream().map(Integer::longValue).collect(toList()));
       }
     },
-    LONG {
+    LONG(Long.class) {
       @Override public Value toValue(Object obj) {
         return Value.int64(((Long) obj));
       }
@@ -754,7 +755,7 @@ public final class ParameterizedQuery {
         return Value.int64Array((Collection<Long>) elements);
       }
     },
-    FLOAT {
+    FLOAT(Float.class) {
       @Override public Value toValue(Object obj) {
         return Value.float32((Float) obj);
       }
@@ -763,7 +764,7 @@ public final class ParameterizedQuery {
         return Value.float32Array((Collection<Float>) elements);
       }
     },
-    DOUBLE {
+    DOUBLE(Double.class) {
       @Override public Value toValue(Object obj) {
         return Value.float64((Double) obj);
       }
@@ -772,7 +773,7 @@ public final class ParameterizedQuery {
         return Value.float64Array((Collection<Double>) elements);
       }
     },
-    BIG_DECIMAL {
+    BIG_DECIMAL(BigDecimal.class) {
       @Override public Value toValue(Object obj) {
         return Value.numeric((BigDecimal) obj);
       }
@@ -781,7 +782,7 @@ public final class ParameterizedQuery {
         return Value.numericArray((Collection<BigDecimal>) elements);
       }
     },
-    INSTANT {
+    INSTANT(Instant.class) {
       @Override public Value toValue(Object obj) {
         return Value.timestamp(toTimestamp((Instant) obj));
       }
@@ -791,7 +792,7 @@ public final class ParameterizedQuery {
         return Value.timestampArray(instants.stream().map(t -> toTimestamp(t)).collect(toList()));
       }
     },
-    ZONED_DATE_TIME {
+    ZONED_DATE_TIME(ZonedDateTime.class) {
       @Override public Value toValue(Object obj) {
         return Value.timestamp(toTimestamp((((ZonedDateTime) obj).toInstant())));
       }
@@ -801,7 +802,7 @@ public final class ParameterizedQuery {
         return Value.timestampArray(times.stream().map(t -> toTimestamp(t.toInstant())).collect(toList()));
       }
     },
-    OFFSET_DATE_TIME {
+    OFFSET_DATE_TIME(OffsetDateTime.class) {
       @Override public Value toValue(Object obj) {
         return Value.timestamp(toTimestamp((((OffsetDateTime) obj).toInstant())));
       }
@@ -811,7 +812,7 @@ public final class ParameterizedQuery {
         return Value.timestampArray(times.stream().map(t -> toTimestamp(t.toInstant())).collect(toList()));
       }
     },
-    LOCAL_DATE {
+    LOCAL_DATE(LocalDate.class) {
       @Override public Value toValue(Object obj) {
         return Value.date(toDate((LocalDate) obj));
       }
@@ -821,7 +822,7 @@ public final class ParameterizedQuery {
         return Value.dateArray(dates.stream().map(d -> toDate(d)).collect(toList()));
       }
     },
-    UUID {
+    UUID(UUID.class) {
       @Override public Value toValue(Object obj) {
         return Value.uuid((UUID) obj);
       }
@@ -830,7 +831,7 @@ public final class ParameterizedQuery {
         return Value.uuidArray((Collection<UUID>) elements);
       }
     },
-    BYTE_ARRAY {
+    BYTE_ARRAY(ByteArray.class) {
       @Override public Value toValue(Object obj) {
         return Value.bytes((ByteArray) obj);
       }
@@ -839,7 +840,7 @@ public final class ParameterizedQuery {
         return Value.bytesArray((Collection<ByteArray>) elements);
       }
     },
-    INTERVAL {
+    INTERVAL(Interval.class) {
       @Override public Value toValue(Object obj) {
         return Value.interval((Interval) obj);
       }
@@ -848,7 +849,7 @@ public final class ParameterizedQuery {
         return Value.intervalArray((Collection<Interval>) elements);
       }
     },
-    PROTO_ENUM {
+    PROTO_ENUM(ProtocolMessageEnum.class) {
       @Override public Value toValue(Object obj) {
         return Value.protoEnum((ProtocolMessageEnum) obj);
       }
@@ -858,7 +859,7 @@ public final class ParameterizedQuery {
         return Value.protoEnumArray(enums, enums.iterator().next().getDescriptorForType());
       }
     },
-    PROTO {
+    PROTO(AbstractMessage.class) {
       @Override public Value toValue(Object obj) {
         return Value.protoMessage((AbstractMessage) obj);
       }
@@ -868,7 +869,7 @@ public final class ParameterizedQuery {
         return Value.protoMessageArray(messages, messages.iterator().next().getDescriptorForType());
       }
     },
-    STRUCT {
+    STRUCT(Struct.class) {
       @Override public Value toValue(Object obj) {
         return Value.struct((Struct) obj);
       }
@@ -880,66 +881,38 @@ public final class ParameterizedQuery {
     },
     ;
 
-    static ValueType inferFromPojo(String name, Object obj) {
-      if (obj instanceof Boolean) {
-        return BOOL;
-      }
-      if (obj instanceof String) {
-        return STRING;
-      }
-      if (obj instanceof Long) {
-        return LONG;
-      }
-      if (obj instanceof Integer) {
-        return INT;
-      }
-      if (obj instanceof Float) {
-        return FLOAT;
-      }
-      if (obj instanceof Double) {
-        return DOUBLE;
-      }
-      if (obj instanceof BigDecimal) {
-        return BIG_DECIMAL;
-      }
-      if (obj instanceof Instant) {
-        return INSTANT;
-      }
-      if (obj instanceof ZonedDateTime) {
-        return ZONED_DATE_TIME;
-      }
-      if (obj instanceof OffsetDateTime) {
-        return OFFSET_DATE_TIME;
-      }
-      if (obj instanceof LocalDate) {
-        return LOCAL_DATE;
-      }
-      if (obj instanceof UUID) {
-        return UUID;
-      }
-      if (obj instanceof AbstractMessage) {
-        return PROTO;
-      }
-      if (obj instanceof ProtocolMessageEnum) {
-        return PROTO_ENUM;
-      }
-      if (obj instanceof Struct) {
-        return STRUCT;
-      }
-      if (obj instanceof ByteArray) {
-        return BYTE_ARRAY;
-      }
-      if (obj instanceof Interval) {
-        return INTERVAL;
-      }
-      StringFormat message = new StringFormat(
-          "Cannot convert object of {class} to Value for {{name}}. " +
-          "Consider using the static factory methods in Value class to convert explicitly.");
-      throw new IllegalArgumentException(message.format(obj.getClass(), name));
+    private static final Map<Class<?>, ValueType> ALL_TYPES =
+        Arrays.stream(values()).collect(Collectors.toMap(vt -> vt.javaType, vt -> vt));
+
+    private final Class<?> javaType;
+
+    ValueType(Class<?> javaType) {
+      this.javaType = javaType;
     }
+
+    static ValueType inferFromPojo(String name, Object obj) {
+      ValueType inferred = ALL_TYPES.get(obj.getClass());
+      if (inferred != null) {
+        return inferred;
+      }
+      return BiStream.from(ALL_TYPES)
+          .filterKeys(cls -> cls.isInstance(obj))
+          .values()
+          .findFirst()
+          .orElseThrow(() -> {
+            StringFormat message = new StringFormat(
+                "Cannot convert object of {class} to Value for {{name}}. " +
+                "Consider using the static factory methods in Value class to convert explicitly.");
+            return new IllegalArgumentException(message.format(obj.getClass(), name));
+          });
+}
 
     abstract Value toValue(Object obj);
     abstract Value toArrayValue(Collection<?> elements);
+
+    @Override public String toString() {
+      return javaType.getSimpleName();
+    }
   }
 
   private static final class Builder {

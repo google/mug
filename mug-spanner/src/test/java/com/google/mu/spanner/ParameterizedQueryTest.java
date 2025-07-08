@@ -1112,8 +1112,8 @@ public class ParameterizedQueryTest {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
         () -> ParameterizedQuery.of("select * from tbl where id in ({ids})", /* ids */ asList(1, 2L, 3L)));
-    assertThat(thrown).hasMessageThat().contains("LONG");
-    assertThat(thrown).hasMessageThat().contains("INT");
+    assertThat(thrown).hasMessageThat().contains("Long");
+    assertThat(thrown).hasMessageThat().contains("Integer");
   }
 
   @Test
