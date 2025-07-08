@@ -35,7 +35,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
-import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -1013,18 +1012,6 @@ public final class ParameterizedQuery {
 
     abstract Value toValue(Object obj);
     abstract Value toArrayValue(Collection<?> elements);
-  }
-
-  private static <T> List<T> reverse(List<T> list) {
-    return new AbstractList<T>() {
-      @Override public T get(int i) {
-        return list.get(list.size() - i - 1);
-      }
-
-      @Override public int size() {
-        return list.size();
-      }
-    };
   }
 
   private static final class Builder {
