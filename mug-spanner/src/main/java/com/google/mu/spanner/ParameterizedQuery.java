@@ -878,15 +878,15 @@ public final class ParameterizedQuery {
         Collection<Struct> structs = (Collection<Struct>) elements;
         return Value.structArray(structs.iterator().next().getType(), structs);
       }
-    },
-    ;
+    };
 
     private static final Map<Class<?>, ValueType> ALL_TYPES =
         Arrays.stream(values()).collect(Collectors.toMap(vt -> vt.javaType, vt -> vt));
-    private static final StringFormat.Template<IllegalArgumentException> FAIL_TO_CONVERT = StringFormat.to(
-        IllegalArgumentException::new,
-        "Cannot convert object of {class} to Value for {{name}}. " +
-        "Consider using the static factory methods in Value class to convert explicitly.");
+    private static final StringFormat.Template<IllegalArgumentException> FAIL_TO_CONVERT =
+        StringFormat.to(
+            IllegalArgumentException::new,
+            "Cannot convert object of {class} to Value for {{name}}. " +
+            "Consider using the static factory methods in Value class to convert explicitly.");
 
     private final Class<?> javaType;
 
