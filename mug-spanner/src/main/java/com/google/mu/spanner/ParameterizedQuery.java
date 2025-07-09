@@ -905,7 +905,7 @@ public final class ParameterizedQuery {
           .values()
           .findFirst()
           .orElseThrow(() -> FAIL_TO_CONVERT.with(obj.getClass(), name));
-}
+    }
 
     abstract Value toValue(Object obj);
     abstract Value toArrayValue(Collection<?> elements);
