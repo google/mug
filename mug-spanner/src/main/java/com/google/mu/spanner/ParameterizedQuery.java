@@ -463,6 +463,17 @@ public final class ParameterizedQuery {
     return new ParameterizedQuery('(' + sql + ')', parameters);
   }
 
+  private List<String> toBindingNames() {
+    Map<String, AtomicInteger> nameCounts = new HashMap<>();
+    List<String> bindingNames = new ArrayList<>();
+    for (Parameter param : parameters) {
+      int duplicates =
+          nameCounts.computeIfAbsent(param.name, n -> new AtomicInteger()).getAndIncrement();
+      bindingNames.add(duplicates == 0 ? param.name : param.name + "_" + duplicates);
+    }
+    return bindingNames;
+  }
+
   private static Template<ParameterizedQuery> template(String template) {
     return StringFormat.template(template, (fragments, placeholders) -> {
       TemplateFragmentScanner scanner = new TemplateFragmentScanner(fragments);
@@ -713,17 +724,6 @@ public final class ParameterizedQuery {
           "accidental block comment: /%s", snippet);
       queryText.append(snippet);
     }
-  }
-
-  private List<String> toBindingNames() {
-    Map<String, AtomicInteger> nameCounts = new HashMap<>();
-    List<String> bindingNames = new ArrayList<>();
-    for (Parameter param : parameters) {
-      int duplicates =
-          nameCounts.computeIfAbsent(param.name, n -> new AtomicInteger()).getAndIncrement();
-      bindingNames.add(duplicates == 0 ? param.name : param.name + "_" + duplicates);
-    }
-    return bindingNames;
   }
 
   @Immutable
