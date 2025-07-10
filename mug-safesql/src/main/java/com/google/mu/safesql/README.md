@@ -321,4 +321,4 @@ In a nutshell, use `SafeSql` if any of the following applies to you:
 * A low learning curve and a *what-you-see-is-what-you-get* (WYSIWYG) approach are important to you. No Domain Specific Language (DSL) to learn.
 * You need to parameterize by **table names**, **column names**, all while preventing injection risks.
 * You have **dynamic and complex subqueries** to compose. And you find it error prone managing the subquery parameters manually.
-* You value compile-time semantic error prevention so you won't accidentally use `getSsn()` in a place intended for `{user_name}`, even if both are strings.
+* You value **compile-time semantic error prevention** so you won't accidentally use `getSsn()` in a place intended for `{user_name}`, even if both are strings.
