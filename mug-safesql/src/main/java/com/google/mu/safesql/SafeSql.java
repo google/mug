@@ -238,7 +238,7 @@ import com.google.mu.util.stream.BiStream;
  * arbitrary sub-queries that are computed dynamically.
  *
  * <p>Imagine if you need to translate a user-facing structured search expression like
- * {@code location:US AND name:jing OR status:urgent} into SQL. And you already have the search
+ * {@code location:US AND name:jing OR status:active} into SQL. And you already have the search
  * expression parser that turns the search expression into an AST (abstract syntax tree).
  * The following code uses SafeSql template to turn it into SQL where clause that can be used to
  * query the database for the results: <pre>{@code

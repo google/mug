@@ -197,7 +197,7 @@ import com.google.mu.util.stream.BiStream;
  * arbitrary sub-queries that are computed dynamically.
  *
  * <p>Imagine if you need to translate a user-facing structured search expression like
- * {@code location:US AND name:jing OR status:urgent} into SQL. And you already have the search
+ * {@code location:US AND name:jing OR status:active} into SQL. And you already have the search
  * expression parser that turns the search expression into an AST (abstract syntax tree).
  * The following code uses ParameterizedQuery template to turn it into a spanner SQL filter that
  * can be used in a where clause to query Spanner for the results: <pre>{@code
