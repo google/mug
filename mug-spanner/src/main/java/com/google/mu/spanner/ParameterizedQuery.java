@@ -199,27 +199,30 @@ import com.google.mu.util.stream.BiStream;
  * <p>Imagine if you need to translate a user-facing structured search expression like
  * {@code location:US AND name:jing OR status:urgent} into SQL. And you already have the search
  * expression parser that turns the search expression into an AST (abstract syntax tree).
- * The following code uses ParameterizedQuery template to turn it into a SafeSql in order to query
- * the DB for the results: <pre>{@code
+ * The following code uses ParameterizedQuery template to turn it into a spanner SQL filter that
+ * can be used in a where clause to query Spanner for the results: <pre>{@code
  *
  * // The AST
- * interface Expression permits AndExpression, HasExpression {}
+ * interface Expression permits AndExpression, OrExpression, MatchExpression {}
  *
  * record AndExpression(Expression left, Expression right) implements Expression {}
  * record OrExpression(Expression left, Expression right) implements Expression {}
- * record HasExpression(String field, String text) implements Expression {}
+ * record MatchExpression(String field, String text) implements Expression {}
  *
- * // AST -> SafeSql
- * SafeSql toSafeSql(Expression expression) {
+ * // AST -> ParameterizedQuery
+ * ParameterizedQuery toSqlFilter(Expression expression) {
  *   return switch (expression) {
- *     case HasExpression(String field, String text) ->
- *         SafeSql.of("`{field}` LIKE '%{text}%', field, text);
+ *     case MatchExpression(String field, String text) ->
+ *         ParameterizedQuery.of("`{field}` = '{text}'", field, text);
  *     case AndExpression(Expression left, Expression right) ->
- *         SafeSql.of("({left}) AND ({right})", toSafeSql(left), toSafeSql(right));
+ *         ParameterizedQuery.of("({left}) AND ({right})", toSqlFilter(left), toSqlFilter(right));
  *     case OrExpression(Expression left, Expression right) ->
- *         SafeSql.of("({left}) OR ({right})", toSafeSql(left), toSafeSql(right));
+ *         ParameterizedQuery.of("({left}) OR ({right})", toSqlFilter(left), toSqlFilter(right));
  *   };
  * }
+ *
+ * ParameterizedQuery query = ParameterizedQuery.of(
+ *     "SELECT * FROM Foos WHERE {filter}", toSqlFilter(expression));
  * }</pre>
  *
  * <dl><dt><STRONG>Parameterize by Column Names or Table Names</STRONG></dt></dl>

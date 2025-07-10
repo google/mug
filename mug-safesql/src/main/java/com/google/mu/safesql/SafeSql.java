@@ -240,27 +240,29 @@ import com.google.mu.util.stream.BiStream;
  * <p>Imagine if you need to translate a user-facing structured search expression like
  * {@code location:US AND name:jing OR status:urgent} into SQL. And you already have the search
  * expression parser that turns the search expression into an AST (abstract syntax tree).
- * The following code uses SafeSql template to turn it into Spanner SQL in order to query
- * Spanner for the results: <pre>{@code
+ * The following code uses SafeSql template to turn it into SQL where clause that can be used to
+ * query the database for the results: <pre>{@code
  *
  * // The AST
- * interface Expression permits AndExpression, HasExpression {}
+ * interface Expression permits AndExpression, OrExpression, HasExpression {}
  *
  * record AndExpression(Expression left, Expression right) implements Expression {}
  * record OrExpression(Expression left, Expression right) implements Expression {}
  * record HasExpression(String field, String text) implements Expression {}
  *
- * // AST -> ParamterizedQuery
- * ParamterizedQuery toSpannerQuery(Expression expression) {
+ * // AST -> SafeSql
+ * SafeSql toSqlFilter(Expression expression) {
  *   return switch (expression) {
  *     case HasExpression(String field, String text) ->
- *         ParamterizedQuery.of("`{field}` LIKE '%{text}%', field, text);
+ *         SafeSql.of("`{field}` LIKE '%{text}%'", field, text);
  *     case AndExpression(Expression left, Expression right) ->
- *         ParamterizedQuery.of("({left}) AND ({right})", toSafeSql(left), toSafeSql(right));
+ *         SafeSql.of("({left}) AND ({right})", toSqlFilter(left), toSqlFilter(right));
  *     case OrExpression(Expression left, Expression right) ->
- *         ParamterizedQuery.of("({left}) OR ({right})", toSafeSql(left), toSafeSql(right));
+ *         SafeSql.of("({left}) OR ({right})", toSqlFilter(left), toSqlFilter(right));
  *   };
  * }
+ *
+ * SafeSql query = SafeSql.of("SELECT * FROM Foos WHERE {filter}", toSqlFilter(expression));
  * }</pre>
  *
  * <dl><dt><STRONG>Parameterize by Column Names or Table Names</STRONG></dt></dl>
