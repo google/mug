@@ -865,6 +865,61 @@ public class ParameterizedQueryTest {
   }
 
   @Test
+  public void twoParameters_followedByNumber_whitespaceInsertedAfterParameterName() {
+    ParameterizedQuery sql =
+        ParameterizedQuery.of("select label where {a}1", /* a */ 100);
+    assertThat(sql.statement())
+        .isEqualTo(Statement.newBuilder("select label where @a 1")
+            .bind("a").to(100)
+            .build());
+    assertThat(sql.toString()).isEqualTo("select label where @a /* 100 */1");
+  }
+
+  @Test
+  public void twoParameters_followedByUnderscore_whitespaceInsertedAfterParameterName() {
+    ParameterizedQuery sql =
+        ParameterizedQuery.of("select label where {a}_1", /* a */ 100);
+    assertThat(sql.statement())
+        .isEqualTo(Statement.newBuilder("select label where @a _1")
+            .bind("a").to(100)
+            .build());
+    assertThat(sql.toString()).isEqualTo("select label where @a /* 100 */_1");
+  }
+
+  @Test
+  public void twoParameters_followedByDash_whitespaceInsertedAfterParameterName() {
+    ParameterizedQuery sql =
+        ParameterizedQuery.of("select label where {a}-1", /* a */ 100);
+    assertThat(sql.statement())
+        .isEqualTo(Statement.newBuilder("select label where @a-1")
+            .bind("a").to(100)
+            .build());
+    assertThat(sql.toString()).isEqualTo("select label where @a /* 100 */-1");
+  }
+
+  @Test
+  public void twoParameters_followedByEqualSign_whitespaceInsertedAfterParameterName() {
+    ParameterizedQuery sql =
+        ParameterizedQuery.of("select label where {a}=1", /* a */ 100);
+    assertThat(sql.statement())
+        .isEqualTo(Statement.newBuilder("select label where @a=1")
+            .bind("a").to(100)
+            .build());
+    assertThat(sql.toString()).isEqualTo("select label where @a /* 100 */=1");
+  }
+
+  @Test
+  public void twoParameters_followedByComma_whitespaceInsertedAfterParameterName() {
+    ParameterizedQuery sql =
+        ParameterizedQuery.of("select label where {a},1", /* a */ 100);
+    assertThat(sql.statement())
+        .isEqualTo(Statement.newBuilder("select label where @a,1")
+            .bind("a").to(100)
+            .build());
+    assertThat(sql.toString()).isEqualTo("select label where @a /* 100 */,1");
+  }
+
+  @Test
   public void parameterizeByTableName() {
     ParameterizedQuery sql =
         ParameterizedQuery.of("select * from {tbl} where id = {id}", /* tbl */ ParameterizedQuery.of("Users"), /* id */ 123);
@@ -1112,8 +1167,8 @@ public class ParameterizedQueryTest {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
         () -> ParameterizedQuery.of("select * from tbl where id in ({ids})", /* ids */ asList(1, 2L, 3L)));
-    assertThat(thrown).hasMessageThat().contains("LONG");
-    assertThat(thrown).hasMessageThat().contains("INT");
+    assertThat(thrown).hasMessageThat().contains("Long");
+    assertThat(thrown).hasMessageThat().contains("Integer");
   }
 
   @Test

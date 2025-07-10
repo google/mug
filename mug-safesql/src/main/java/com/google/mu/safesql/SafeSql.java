@@ -184,10 +184,8 @@ import com.google.mu.util.stream.BiStream;
  * {@code showEmail()} returns true. The subquery can include arbitrary characters except curly
  * braces, so you can also have multi-line conditional subqueries.
  *
- * <dl><dt><STRONG>Complex Dynamic Subqueries</STRONG></dt></dl>
- *
- * By composing SafeSql objects that encapsulate subqueries, you can also parameterize by
- * arbitrary sub-queries that are computed dynamically.
+ * <p>The {@code ->} guard operator can also be used for {@link Optional} parameters such that
+ * the right-hand-side SQL will only render if the optional value is present.
  *
  * <p>For example, the following code builds SQL to query the Users table with flexible
  * number of columns and a flexible WHERE clause depending on the {@code UserCriteria}
@@ -233,6 +231,39 @@ import com.google.mu.util.stream.BiStream;
  * <p>And when you call {@code usersQuery.prepareStatement(connection)} or one of the similar
  * convenience methods, {@code statement.setObject(1, "%" + criteria.firstName().get() + "%")}
  * will be called to populate the PreparedStatement.
+ *
+ * <dl><dt><STRONG>Complex Dynamic Subqueries</STRONG></dt></dl>
+ *
+ * By composing SafeSql objects that encapsulate subqueries, you can parameterize by
+ * arbitrary sub-queries that are computed dynamically.
+ *
+ * <p>Imagine if you need to translate a user-facing structured search expression like
+ * {@code location:US AND name:jing OR status:active} into SQL. And you already have the search
+ * expression parser that turns the search expression into an AST (abstract syntax tree).
+ * The following code uses SafeSql template to turn it into SQL where clause that can be used to
+ * query the database for the results: <pre>{@code
+ *
+ * // The AST
+ * interface Expression permits AndExpression, OrExpression, HasExpression {}
+ *
+ * record AndExpression(Expression left, Expression right) implements Expression {}
+ * record OrExpression(Expression left, Expression right) implements Expression {}
+ * record HasExpression(String field, String text) implements Expression {}
+ *
+ * // AST -> SafeSql
+ * SafeSql toSqlFilter(Expression expression) {
+ *   return switch (expression) {
+ *     case HasExpression(String field, String text) ->
+ *         SafeSql.of("`{field}` LIKE '%{text}%'", field, text);
+ *     case AndExpression(Expression left, Expression right) ->
+ *         SafeSql.of("({left}) AND ({right})", toSqlFilter(left), toSqlFilter(right));
+ *     case OrExpression(Expression left, Expression right) ->
+ *         SafeSql.of("({left}) OR ({right})", toSqlFilter(left), toSqlFilter(right));
+ *   };
+ * }
+ *
+ * SafeSql query = SafeSql.of("SELECT * FROM Foos WHERE {filter}", toSqlFilter(expression));
+ * }</pre>
  *
  * <dl><dt><STRONG>Parameterize by Column Names or Table Names</STRONG></dt></dl>
  *

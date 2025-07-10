@@ -335,7 +335,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
                   placeholder.name(),
                   placeholder.name())
               .require(
-                  references.equals(ImmutableSet.of(placeholder.name())),
+                  references.equals(ImmutableSet.of(placeholder.cleanName())),
                   "unexpected optional parameters to the right of {%s->}: %s",
                   placeholder.name(),
                   Sets.difference(references, ImmutableSet.of(placeholder.name())));

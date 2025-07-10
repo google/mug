@@ -28,14 +28,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toCollection;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
 
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -43,21 +36,14 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
-import com.google.cloud.ByteArray;
-import com.google.cloud.Date;
-import com.google.cloud.Timestamp;
-import com.google.cloud.spanner.Interval;
 import com.google.cloud.spanner.Statement;
-import com.google.cloud.spanner.Struct;
 import com.google.cloud.spanner.Value;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.CompileTimeConstant;
@@ -70,8 +56,6 @@ import com.google.mu.util.StringFormat;
 import com.google.mu.util.StringFormat.Template;
 import com.google.mu.util.Substring;
 import com.google.mu.util.stream.BiStream;
-import com.google.protobuf.AbstractMessage;
-import com.google.protobuf.ProtocolMessageEnum;
 
 /**
  * An injection-safe SQL template for Google Cloud Spanner.
@@ -166,10 +150,8 @@ import com.google.protobuf.ProtocolMessageEnum;
  * {@code showEmail()} returns true. The subquery can include arbitrary characters except curly
  * braces, so you can also have multi-line conditional subqueries.
  *
- * <dl><dt><STRONG>Complex Dynamic Subqueries</STRONG></dt></dl>
- *
- * By composing ParameterizedQuery objects that encapsulate subqueries, you can also parameterize by
- * arbitrary sub-queries that are computed dynamically.
+ * <p>The {@code ->} guard operator can also be used for {@link Optional} parameters such that
+ * the right-hand-side SQL will only render if the optional value is present.
  *
  * <p>For example, the following code builds SQL to query the Users table with flexible
  * number of columns and a flexible WHERE clause depending on the {@code UserCriteria}
@@ -198,15 +180,49 @@ import com.google.protobuf.ProtocolMessageEnum;
  * }</pre>
  *
  * <p>The special "{foo? -> ...}" guard syntax informs the template engine that the
- * right hand side query snippet is only rendered if the {@code Optional} arg corresponding to the
- * "foo?" placeholder is present, in which case the value of the Optional will be used in the right
- * hand side snippet as if it were a regular template argument.
+ * right hand side query snippet is only rendered if the {@code Optional} parameter corresponding
+ * to the "foo?" placeholder is present, in which case the value of the Optional will be used in
+ * the right hand side snippet as if it were a regular template argument.
  *
  * <p>If {@code UserCriteria} has specified {@code firstName()} but {@code userId()} is
  * unspecified (empty), the resulting SQL will look like:
  *
  * <pre>{@code
  *   SELECT `email`, `lastName` FROM Users WHERE firstName = @first_name
+ * }</pre>
+ *
+ * <dl><dt><STRONG>Complex Dynamic Subqueries</STRONG></dt></dl>
+ *
+ * By composing ParameterizedQuery objects that encapsulate subqueries, you can also parameterize by
+ * arbitrary sub-queries that are computed dynamically.
+ *
+ * <p>Imagine if you need to translate a user-facing structured search expression like
+ * {@code location:US AND name:jing OR status:active} into SQL. And you already have the search
+ * expression parser that turns the search expression into an AST (abstract syntax tree).
+ * The following code uses ParameterizedQuery template to turn it into a spanner SQL filter that
+ * can be used in a where clause to query Spanner for the results: <pre>{@code
+ *
+ * // The AST
+ * interface Expression permits AndExpression, OrExpression, MatchExpression {}
+ *
+ * record AndExpression(Expression left, Expression right) implements Expression {}
+ * record OrExpression(Expression left, Expression right) implements Expression {}
+ * record MatchExpression(String field, String text) implements Expression {}
+ *
+ * // AST -> ParameterizedQuery
+ * ParameterizedQuery toSqlFilter(Expression expression) {
+ *   return switch (expression) {
+ *     case MatchExpression(String field, String text) ->
+ *         ParameterizedQuery.of("`{field}` = '{text}'", field, text);
+ *     case AndExpression(Expression left, Expression right) ->
+ *         ParameterizedQuery.of("({left}) AND ({right})", toSqlFilter(left), toSqlFilter(right));
+ *     case OrExpression(Expression left, Expression right) ->
+ *         ParameterizedQuery.of("({left}) OR ({right})", toSqlFilter(left), toSqlFilter(right));
+ *   };
+ * }
+ *
+ * ParameterizedQuery query = ParameterizedQuery.of(
+ *     "SELECT * FROM Foos WHERE {filter}", toSqlFilter(expression));
  * }</pre>
  *
  * <dl><dt><STRONG>Parameterize by Column Names or Table Names</STRONG></dt></dl>
@@ -261,6 +277,7 @@ import com.google.protobuf.ProtocolMessageEnum;
  */
 @Immutable
 public final class ParameterizedQuery {
+  private static final CharPredicate ALPHA_NUM = CharPredicate.ALPHA.orRange('0', '9').or('_');
   private final String sql;
   @SuppressWarnings("Immutable") // it's an immutable list
   private final List<Parameter> parameters;
@@ -441,7 +458,7 @@ public final class ParameterizedQuery {
     Iterator<String> atNames = bindingNames.stream().map("@"::concat).iterator();
     Statement.Builder builder =
         Statement.newBuilder(
-            all("?").replaceAllFrom(sql, q -> atNames.next() + (q.isFollowedBy(CharPredicate.ALPHA) ? " " : "")));
+            all("?").replaceAllFrom(sql, q -> atNames.next() + (q.isFollowedBy(ALPHA_NUM) ? " " : "")));
     for (int i = 0; i < bindingNames.size(); i++) {
       builder.bind(bindingNames.get(i)).to(parameters.get(i).value);
     }
@@ -476,6 +493,17 @@ public final class ParameterizedQuery {
 
   private ParameterizedQuery parenthesized() {
     return new ParameterizedQuery('(' + sql + ')', parameters);
+  }
+
+  private List<String> toBindingNames() {
+    Map<String, AtomicInteger> nameCounts = new HashMap<>();
+    List<String> bindingNames = new ArrayList<>();
+    for (Parameter param : parameters) {
+      int duplicates =
+          nameCounts.computeIfAbsent(param.name, n -> new AtomicInteger()).getAndIncrement();
+      bindingNames.add(duplicates == 0 ? param.name : param.name + "_" + duplicates);
+    }
+    return bindingNames;
   }
 
   private static Template<ParameterizedQuery> template(String template) {
@@ -678,270 +706,6 @@ public final class ParameterizedQuery {
         "Incorrectly quoted placeholder: '%s`", placeholder);
   }
 
-  private static Value toValue(String name, Object obj) {
-    checkArgument(obj != null, "Cannot infer type from null. Use explicit Value instead for {%s}", name);
-    if (obj instanceof Value) {
-      return (Value) obj;
-    }
-    if (obj instanceof boolean[]) {
-      return Value.boolArray((boolean[]) obj);
-    }
-    if (obj instanceof long[]) {
-      return Value.int64Array((long[]) obj);
-    }
-    if (obj instanceof float[]) {
-      return Value.float32Array((float[]) obj);
-    }
-    if (obj instanceof double[]) {
-      return Value.float64Array((double[]) obj);
-    }
-    return ValueType.inferFromPojo(name, obj).toValue(obj);
-  }
-
-  private static Value toArrayValue(String name, Collection<?> elements) {
-    Set<ValueType> inferred = elements.stream()
-        .filter(Objects::nonNull)
-        .map(obj -> ValueType.inferFromPojo(name, obj))
-        .collect(toSet());
-    checkArgument(inferred.size() > 0, "Failed to infer array type for {%s}", name);
-    checkArgument(inferred.size() == 1, "Conflicting array type inferred: %s", inferred);
-    return inferred.iterator().next().toArrayValue(elements);
-  }
-
-  private static Timestamp toTimestamp(Instant time) {
-    return Timestamp.ofTimeSecondsAndNanos(time.getEpochSecond(), time.getNano());
-  }
-
-  private static Date toDate(LocalDate date) {
-    return Date.fromYearMonthDay(date.getYear(), date.getMonthValue(), date.getDayOfMonth());
-  }
-
-  private enum ValueType {
-    BOOL {
-      @Override public Value toValue(Object obj) {
-        return Value.bool((Boolean) obj);
-      }
-      @SuppressWarnings("unchecked")  // checked by toArrayValue static method
-      @Override public Value toArrayValue(Collection<?> elements) {
-        return Value.boolArray((Collection<Boolean>) elements);
-      }
-    },
-    STRING {
-      @Override public Value toValue(Object obj) {
-        return Value.string((String) obj);
-      }
-      @SuppressWarnings("unchecked")  // checked by toArrayValue static method
-      @Override public Value toArrayValue(Collection<?> elements) {
-        return Value.stringArray((Collection<String>) elements);
-      }
-    },
-    INT {
-      @Override public Value toValue(Object obj) {
-        return Value.int64(((Integer) obj).longValue());
-      }
-      @Override public Value toArrayValue(Collection<?> elements) {
-        @SuppressWarnings("unchecked")  // checked by toArrayValue static method
-        Collection<Integer> ints = (Collection<Integer>) elements;
-        return Value.int64Array(ints.stream().map(Integer::longValue).collect(toList()));
-      }
-    },
-    LONG {
-      @Override public Value toValue(Object obj) {
-        return Value.int64(((Long) obj));
-      }
-      @SuppressWarnings("unchecked")  // checked by toArrayValue static method
-      @Override public Value toArrayValue(Collection<?> elements) {
-        return Value.int64Array((Collection<Long>) elements);
-      }
-    },
-    FLOAT {
-      @Override public Value toValue(Object obj) {
-        return Value.float32((Float) obj);
-      }
-      @SuppressWarnings("unchecked")  // checked by toArrayValue static method
-      @Override public Value toArrayValue(Collection<?> elements) {
-        return Value.float32Array((Collection<Float>) elements);
-      }
-    },
-    DOUBLE {
-      @Override public Value toValue(Object obj) {
-        return Value.float64((Double) obj);
-      }
-      @SuppressWarnings("unchecked")  // checked by toArrayValue static method
-      @Override public Value toArrayValue(Collection<?> elements) {
-        return Value.float64Array((Collection<Double>) elements);
-      }
-    },
-    BIG_DECIMAL {
-      @Override public Value toValue(Object obj) {
-        return Value.numeric((BigDecimal) obj);
-      }
-      @SuppressWarnings("unchecked")  // checked by toArrayValue static method
-      @Override public Value toArrayValue(Collection<?> elements) {
-        return Value.numericArray((Collection<BigDecimal>) elements);
-      }
-    },
-    INSTANT {
-      @Override public Value toValue(Object obj) {
-        return Value.timestamp(toTimestamp((Instant) obj));
-      }
-      @Override public Value toArrayValue(Collection<?> elements) {
-        @SuppressWarnings("unchecked")  // checked by toArrayValue static method
-        Collection<Instant> instants = (Collection<Instant>) elements;
-        return Value.timestampArray(instants.stream().map(t -> toTimestamp(t)).collect(toList()));
-      }
-    },
-    ZONED_DATE_TIME {
-      @Override public Value toValue(Object obj) {
-        return Value.timestamp(toTimestamp((((ZonedDateTime) obj).toInstant())));
-      }
-      @Override public Value toArrayValue(Collection<?> elements) {
-        @SuppressWarnings("unchecked")  // checked by toArrayValue static method
-        Collection<ZonedDateTime> times = (Collection<ZonedDateTime>) elements;
-        return Value.timestampArray(times.stream().map(t -> toTimestamp(t.toInstant())).collect(toList()));
-      }
-    },
-    OFFSET_DATE_TIME {
-      @Override public Value toValue(Object obj) {
-        return Value.timestamp(toTimestamp((((OffsetDateTime) obj).toInstant())));
-      }
-      @Override public Value toArrayValue(Collection<?> elements) {
-        @SuppressWarnings("unchecked")  // checked by toArrayValue static method
-        Collection<OffsetDateTime> times = (Collection<OffsetDateTime>) elements;
-        return Value.timestampArray(times.stream().map(t -> toTimestamp(t.toInstant())).collect(toList()));
-      }
-    },
-    LOCAL_DATE {
-      @Override public Value toValue(Object obj) {
-        return Value.date(toDate((LocalDate) obj));
-      }
-      @Override public Value toArrayValue(Collection<?> elements) {
-        @SuppressWarnings("unchecked")  // checked by toArrayValue static method
-        Collection<LocalDate> dates = (Collection<LocalDate>) elements;
-        return Value.dateArray(dates.stream().map(d -> toDate(d)).collect(toList()));
-      }
-    },
-    UUID {
-      @Override public Value toValue(Object obj) {
-        return Value.uuid((UUID) obj);
-      }
-      @SuppressWarnings("unchecked")  // checked by toArrayValue static method
-      @Override public Value toArrayValue(Collection<?> elements) {
-        return Value.uuidArray((Collection<UUID>) elements);
-      }
-    },
-    BYTE_ARRAY {
-      @Override public Value toValue(Object obj) {
-        return Value.bytes((ByteArray) obj);
-      }
-      @SuppressWarnings("unchecked")  // checked by toArrayValue static method
-      @Override public Value toArrayValue(Collection<?> elements) {
-        return Value.bytesArray((Collection<ByteArray>) elements);
-      }
-    },
-    INTERVAL {
-      @Override public Value toValue(Object obj) {
-        return Value.interval((Interval) obj);
-      }
-      @SuppressWarnings("unchecked")  // checked by toArrayValue static method
-      @Override public Value toArrayValue(Collection<?> elements) {
-        return Value.intervalArray((Collection<Interval>) elements);
-      }
-    },
-    PROTO_ENUM {
-      @Override public Value toValue(Object obj) {
-        return Value.protoEnum((ProtocolMessageEnum) obj);
-      }
-      @Override public Value toArrayValue(Collection<?> elements) {
-        @SuppressWarnings("unchecked")  // checked by toArrayValue static method
-        Collection<ProtocolMessageEnum> enums = (Collection<ProtocolMessageEnum>) elements;
-        return Value.protoEnumArray(enums, enums.iterator().next().getDescriptorForType());
-      }
-    },
-    PROTO {
-      @Override public Value toValue(Object obj) {
-        return Value.protoMessage((AbstractMessage) obj);
-      }
-      @Override public Value toArrayValue(Collection<?> elements) {
-        @SuppressWarnings("unchecked")  // checked by toArrayValue static method
-        Collection<AbstractMessage> messages = (Collection<AbstractMessage>) elements;
-        return Value.protoMessageArray(messages, messages.iterator().next().getDescriptorForType());
-      }
-    },
-    STRUCT {
-      @Override public Value toValue(Object obj) {
-        return Value.struct((Struct) obj);
-      }
-      @Override public Value toArrayValue(Collection<?> elements) {
-        @SuppressWarnings("unchecked")  // checked by toArrayValue static method
-        Collection<Struct> structs = (Collection<Struct>) elements;
-        return Value.structArray(structs.iterator().next().getType(), structs);
-      }
-    },
-    ;
-
-    static ValueType inferFromPojo(String name, Object obj) {
-      if (obj instanceof Boolean) {
-        return BOOL;
-      }
-      if (obj instanceof String) {
-        return STRING;
-      }
-      if (obj instanceof Long) {
-        return LONG;
-      }
-      if (obj instanceof Integer) {
-        return INT;
-      }
-      if (obj instanceof Float) {
-        return FLOAT;
-      }
-      if (obj instanceof Double) {
-        return DOUBLE;
-      }
-      if (obj instanceof BigDecimal) {
-        return BIG_DECIMAL;
-      }
-      if (obj instanceof Instant) {
-        return INSTANT;
-      }
-      if (obj instanceof ZonedDateTime) {
-        return ZONED_DATE_TIME;
-      }
-      if (obj instanceof OffsetDateTime) {
-        return OFFSET_DATE_TIME;
-      }
-      if (obj instanceof LocalDate) {
-        return LOCAL_DATE;
-      }
-      if (obj instanceof UUID) {
-        return UUID;
-      }
-      if (obj instanceof AbstractMessage) {
-        return PROTO;
-      }
-      if (obj instanceof ProtocolMessageEnum) {
-        return PROTO_ENUM;
-      }
-      if (obj instanceof Struct) {
-        return STRUCT;
-      }
-      if (obj instanceof ByteArray) {
-        return BYTE_ARRAY;
-      }
-      if (obj instanceof Interval) {
-        return INTERVAL;
-      }
-      StringFormat message = new StringFormat(
-          "Cannot convert object of {class} to Value for {{name}}. " +
-          "Consider using the static factory methods in Value class to convert explicitly.");
-      throw new IllegalArgumentException(message.format(obj.getClass(), name));
-    }
-
-    abstract Value toValue(Object obj);
-    abstract Value toArrayValue(Collection<?> elements);
-  }
-
   private static final class Builder {
     private final StringBuilder queryText = new StringBuilder();
     private final List<Parameter> parameters = new ArrayList<>();
@@ -952,14 +716,14 @@ public final class ParameterizedQuery {
     }
 
     @CanIgnoreReturnValue Builder addParameter(String name, Object value) {
-      Parameter parameter = new Parameter(name, toValue(name, value));
+      Parameter parameter = new Parameter(name, ValueType.inferValue(name, value));
       safeAppend("?");  // Will be replaced later if duplicative
       parameters.add(parameter);
       return this;
     }
 
     @CanIgnoreReturnValue Builder addArrayParameter(String name, Collection<?> elements) {
-      Parameter parameter = new Parameter(name, toArrayValue(name, elements));
+      Parameter parameter = new Parameter(name, ValueType.inferArrayValue(name, elements));
       queryText.append("?");
       parameters.add(parameter);
       return this;
@@ -992,17 +756,6 @@ public final class ParameterizedQuery {
           "accidental block comment: /%s", snippet);
       queryText.append(snippet);
     }
-  }
-
-  private List<String> toBindingNames() {
-    Map<String, AtomicInteger> nameCounts = new HashMap<>();
-    List<String> bindingNames = new ArrayList<>();
-    for (Parameter param : parameters) {
-      int duplicates =
-          nameCounts.computeIfAbsent(param.name, n -> new AtomicInteger()).getAndIncrement();
-      bindingNames.add(duplicates == 0 ? param.name : param.name + "_" + duplicates);
-    }
-    return bindingNames;
   }
 
   @Immutable
