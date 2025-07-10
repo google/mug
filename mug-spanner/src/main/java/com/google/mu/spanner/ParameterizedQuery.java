@@ -150,10 +150,8 @@ import com.google.mu.util.stream.BiStream;
  * {@code showEmail()} returns true. The subquery can include arbitrary characters except curly
  * braces, so you can also have multi-line conditional subqueries.
  *
- * <dl><dt><STRONG>Complex Dynamic Subqueries</STRONG></dt></dl>
- *
- * By composing ParameterizedQuery objects that encapsulate subqueries, you can also parameterize by
- * arbitrary sub-queries that are computed dynamically.
+ * <p>The {@code ->} guard operator can also be used for {@link Optional} parameters such that
+ * the right-hand-side SQL will only render if the optional value is present.
  *
  * <p>For example, the following code builds SQL to query the Users table with flexible
  * number of columns and a flexible WHERE clause depending on the {@code UserCriteria}
@@ -182,15 +180,46 @@ import com.google.mu.util.stream.BiStream;
  * }</pre>
  *
  * <p>The special "{foo? -> ...}" guard syntax informs the template engine that the
- * right hand side query snippet is only rendered if the {@code Optional} arg corresponding to the
- * "foo?" placeholder is present, in which case the value of the Optional will be used in the right
- * hand side snippet as if it were a regular template argument.
+ * right hand side query snippet is only rendered if the {@code Optional} parameter corresponding
+ * to the "foo?" placeholder is present, in which case the value of the Optional will be used in
+ * the right hand side snippet as if it were a regular template argument.
  *
  * <p>If {@code UserCriteria} has specified {@code firstName()} but {@code userId()} is
  * unspecified (empty), the resulting SQL will look like:
  *
  * <pre>{@code
  *   SELECT `email`, `lastName` FROM Users WHERE firstName = @first_name
+ * }</pre>
+ *
+ * <dl><dt><STRONG>Complex Dynamic Subqueries</STRONG></dt></dl>
+ *
+ * By composing ParameterizedQuery objects that encapsulate subqueries, you can also parameterize by
+ * arbitrary sub-queries that are computed dynamically.
+ *
+ * <p>Imagine if you need to translate a user-facing structured search expression like
+ * {@code location:US AND name:jing OR status:urgent} into SQL. And you already have the search
+ * expression parser that turns the search expression into an AST (abstract syntax tree).
+ * The following code uses ParameterizedQuery template to turn it into a SafeSql in order to query
+ * the DB for the results: <pre>{@code
+ *
+ * // The AST
+ * interface Expression permits AndExpression, HasExpression {}
+ *
+ * record AndExpression(Expression left, Expression right) implements Expression {}
+ * record OrExpression(Expression left, Expression right) implements Expression {}
+ * record HasExpression(String field, String text) implements Expression {}
+ *
+ * // AST -> SafeSql
+ * SafeSql toSafeSql(Expression expression) {
+ *   return switch (expression) {
+ *     case HasExpression(String field, String text) ->
+ *         SafeSql.of("`{field}` LIKE '%{text}%', field, text);
+ *     case AndExpression(Expression left, Expression right) ->
+ *         SafeSql.of("({left}) AND ({right})", toSafeSql(left), toSafeSql(right));
+ *     case OrExpression(Expression left, Expression right) ->
+ *         SafeSql.of("({left}) OR ({right})", toSafeSql(left), toSafeSql(right));
+ *   };
+ * }
  * }</pre>
  *
  * <dl><dt><STRONG>Parameterize by Column Names or Table Names</STRONG></dt></dl>
