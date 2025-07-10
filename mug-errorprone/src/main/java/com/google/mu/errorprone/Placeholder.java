@@ -63,13 +63,17 @@ final class Placeholder {
     return name;
   }
 
+  String cleanName() {
+    return name.trim();
+  }
+
   Substring.Match match() {
     return match;
   }
 
   /** Returns true if the placeholder is of the form {foo? -> ...} */
   boolean hasOptionalParameter() {
-    return hasConditionalOperator() && OPTIONAL_PARAMETER.from(name).orElse("").equals(name);
+    return hasConditionalOperator() && OPTIONAL_PARAMETER.from(cleanName()).orElse("").equals(cleanName());
   }
 
   /** Returns all the foo?, bar? references from the rhs of the -> operator */
