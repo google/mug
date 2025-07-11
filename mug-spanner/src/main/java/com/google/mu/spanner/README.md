@@ -48,7 +48,6 @@ ParameterizedQuery.of(
 - No string concatenation  
 - No SQL injection risk  
 - **Minimal SQL fragmentation**—the entire query stays in one piece, making it easier to read, reason about, and maintain  
-- SQL stays clear and readable
 
 ---
 
