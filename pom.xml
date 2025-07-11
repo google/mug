@@ -9,19 +9,6 @@
   <description>Google Mug Library</description>
   <url>http://github.com/google/mug</url>
 
-  <distributionManagement>
-    <repository>
-      <id>sonatype-nexus-staging</id>
-      <name>Sonatype Nexus release repository</name>
-      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-    </repository>
-    <snapshotRepository>
-      <id>ossrh</id>
-      <name>Sonatype Nexus snapshot repository</name>
-      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-    </snapshotRepository>
-  </distributionManagement>
-
   <licenses>
     <license>
       <name>Apache License 2.0</name>
@@ -300,14 +287,15 @@
           </executions>
         </plugin>
         <plugin>
-          <groupId>org.sonatype.plugins</groupId>
-          <artifactId>nexus-staging-maven-plugin</artifactId>
-          <version>1.6.6</version>
+          <groupId>org.sonatype.central</groupId>
+          <artifactId>central-publishing-maven-plugin</artifactId>
+          <version>0.8.0</version> <!-- or latest -->
           <extensions>true</extensions>
           <configuration>
-          <serverId>ossrh</serverId>
-          <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-          <autoReleaseAfterClose>true</autoReleaseAfterClose>
+            <publishingServerId>central</publishingServerId>
+            <!-- optional but recommended in CI -->
+            <autoPublish>true</autoPublish>
+            <waitUntil>published</waitUntil>
           </configuration>
         </plugin>
       </plugins>
