@@ -9,6 +9,7 @@ import java.util.List;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -28,6 +29,7 @@ import com.google.cloud.spanner.Spanner;
 import com.google.cloud.spanner.SpannerOptions;
 
 @RunWith(JUnit4.class)
+@Ignore("Run manually with Docker image")
 public class ParameterizedQuerySpannerTest {
 
   @ClassRule
