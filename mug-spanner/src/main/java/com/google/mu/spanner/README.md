@@ -1,4 +1,4 @@
-## Why Use ParameterizedQuery over Native Cloud Spanner Statement?
+## When to Use ParameterizedQuery?
 
 ### If your Spanner query is simple enough…
 If you’re just running a straightforward query with a couple of parameters, the native `Statement` API is fine:
