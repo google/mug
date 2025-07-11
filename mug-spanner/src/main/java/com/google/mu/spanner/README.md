@@ -31,8 +31,7 @@ Statement stmt = Statement.newBuilder(sql.toString())
 ```
 - **Risks:**
   - String concatenation (SQL injection risk)
-  - Code is messy and error-prone
-  - Query logic is scattered (SQL fragmentation)
+  - Your SQL is fragmented and error-prone
 
 **With ParameterizedQuery:**
 ```java
