@@ -90,7 +90,7 @@ Statement stmt = Statement.of(sql);
 ```
 - **Risks:**
   - If any of `keyColumns` comes from the user, injection can happen
-  - No validation for identifier correctness or safety
+  - String concatenation
 
 **With ParameterizedQuery:**
 ```java
