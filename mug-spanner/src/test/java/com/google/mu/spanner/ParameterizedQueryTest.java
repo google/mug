@@ -277,7 +277,7 @@ public class ParameterizedQueryTest {
     Optional<String> id = Optional.of("myId");
     ParameterizedQuery sql = ParameterizedQuery.of("SELECT {id? -> id? AS id, UPPER('id?') AS title, } name FROM tbl", id);
     assertThat(sql)
-        .isEqualTo(ParameterizedQuery.of("SELECT {id} AS id, UPPER('{id}') AS title, name FROM tbl", "myId", "myId"));
+        .isEqualTo(ParameterizedQuery.of("SELECT '{id}' AS id, UPPER('{id}') AS title, name FROM tbl", "myId", "myId"));
     assertThat(sql.toString())
         .isEqualTo("SELECT @id /* myId */ AS id, UPPER(@id_1 /* myId */) AS title, name FROM tbl");
   }
@@ -730,6 +730,7 @@ public class ParameterizedQueryTest {
   }
 
   @Test
+  @SuppressWarnings("TemplateStringArgsMustBeQuotedCheck")
   public void backquoteAndSingleQuoteMixed() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -738,6 +739,7 @@ public class ParameterizedQueryTest {
   }
 
   @Test
+  @SuppressWarnings("TemplateStringArgsMustBeQuotedCheck")
   public void singleQuoteAndBackquoteMixed() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -746,6 +748,7 @@ public class ParameterizedQueryTest {
   }
 
   @Test
+  @SuppressWarnings("TemplateStringArgsMustBeQuotedCheck")
   public void missingOpeningQuote() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -754,6 +757,7 @@ public class ParameterizedQueryTest {
   }
 
   @Test
+  @SuppressWarnings("TemplateStringArgsMustBeQuotedCheck")
   public void missingClosingQuote() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -762,6 +766,7 @@ public class ParameterizedQueryTest {
   }
 
   @Test
+  @SuppressWarnings("TemplateStringArgsMustBeQuotedCheck")
   public void missingOpeningBackquote() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -770,6 +775,7 @@ public class ParameterizedQueryTest {
   }
 
   @Test
+  @SuppressWarnings("TemplateStringArgsMustBeQuotedCheck")
   public void missingClosingBackquote() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -778,6 +784,7 @@ public class ParameterizedQueryTest {
   }
 
   @Test
+  @SuppressWarnings("TemplateStringArgsMustBeQuotedCheck")
   public void missingOpeningDoubleQuote() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -786,6 +793,7 @@ public class ParameterizedQueryTest {
   }
 
   @Test
+  @SuppressWarnings("TemplateStringArgsMustBeQuotedCheck")
   public void missingClosingDoubleQuote() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -832,7 +840,7 @@ public class ParameterizedQueryTest {
   @Test
   public void twoParameters_whitespaceSeparated() {
     ParameterizedQuery sql =
-        ParameterizedQuery.of("select {label} where id = {id}", /* label */ "foo", /* id */ 123);
+        ParameterizedQuery.of("select '{label}' where id = {id}", /* label */ "foo", /* id */ 123);
     assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select @label where id = @id")
             .bind("label").to("foo")
@@ -969,14 +977,14 @@ public class ParameterizedQueryTest {
 
   @Test
   public void singleStringParameterValueHasQuestionMark() {
-    ParameterizedQuery sql = ParameterizedQuery.of("select {str}", "?");
+    ParameterizedQuery sql = ParameterizedQuery.of("select '{str}'", "?");
     assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select @str").bind("str").to("?").build());
   }
 
   @Test
   public void singleStringParameterValueHasAtSign() {
-    ParameterizedQuery sql = ParameterizedQuery.of("select {str}", "@");
+    ParameterizedQuery sql = ParameterizedQuery.of("select '{str}'", "@");
     assertThat(sql.statement())
         .isEqualTo(Statement.newBuilder("select @str").bind("str").to("@").build());
   }
