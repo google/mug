@@ -79,7 +79,7 @@ import com.google.mu.util.Substring;
  * <p>This class is Android compatible.
  *
  * @since 7.0
- * @deprecated You most likely need {@link SafeSql} to work with JDBC
+ * @deprecated You most likely need {@link com.google.mu.safesql.SafeSql} to work with JDBC
  */
 @Immutable
 @CheckReturnValue
