@@ -31,7 +31,7 @@ import com.google.mu.util.Substring;
  * Facade class providing {@link SafeQuery} templates for GoogleSQL.
  *
  * @since 7.0
- * @deprecated You most likely need {@link SafeSql} to work with JDBC
+ * @deprecated You most likely need {@link com.google.mu.safesql.SafeSql} to work with JDBC
  */
 @CheckReturnValue
 @Deprecated
