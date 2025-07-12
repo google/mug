@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.collect;
+package com.google.guava.labs.collect;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -37,7 +37,6 @@ import com.google.common.math.DoubleMath;
 import com.google.common.math.IntMath;
 import com.google.common.math.LongMath;
 import com.google.errorprone.annotations.CheckReturnValue;
-import com.google.mu.annotations.RequiresGuava;
 
 /**
  * Generic binary search algorithm with support for and <b>beyond</b> sorted lists and arrays,
@@ -103,7 +102,6 @@ import com.google.mu.annotations.RequiresGuava;
  *
  * @since 8.0
  */
-@RequiresGuava
 @CheckReturnValue
 public final class BinarySearch {
   /**

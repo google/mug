@@ -1,7 +1,7 @@
-package com.google.mu.safesql;
+package com.google.guava.labs.safesql;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.mu.safesql.SafeQuery.template;
+import static com.google.guava.labs.safesql.SafeQuery.template;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
 
@@ -19,6 +19,7 @@ import com.google.common.primitives.UnsignedInteger;
 import com.google.common.primitives.UnsignedLong;
 import com.google.common.testing.EqualsTester;
 import com.google.common.testing.NullPointerTester;
+import com.google.guava.labs.safesql.SafeQuery;
 import com.google.mu.util.StringFormat.Template;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 

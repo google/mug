@@ -12,16 +12,16 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.safesql;
+package com.google.guava.labs.safesql;
 
 import static com.google.common.base.CharMatcher.anyOf;
 import static com.google.common.base.CharMatcher.javaIsoControl;
 import static com.google.common.base.CharMatcher.whitespace;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.mu.safesql.InternalCollectors.skippingEmpty;
-import static com.google.mu.safesql.TrustedTypes.TRUSTED_SQL_TYPE_NAME;
-import static com.google.mu.safesql.TrustedTypes.isTrusted;
+import static com.google.guava.labs.safesql.InternalCollectors.skippingEmpty;
+import static com.google.guava.labs.safesql.TrustedTypes.TRUSTED_SQL_TYPE_NAME;
+import static com.google.guava.labs.safesql.TrustedTypes.isTrusted;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.Substring.suffix;
@@ -42,7 +42,6 @@ import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.errorprone.annotations.Immutable;
-import com.google.mu.annotations.RequiresGuava;
 import com.google.mu.annotations.TemplateFormatMethod;
 import com.google.mu.annotations.TemplateString;
 import com.google.mu.util.StringFormat;
@@ -82,7 +81,6 @@ import com.google.mu.util.Substring;
  * @since 7.0
  * @deprecated You most likely need {@link SafeSql} to work with JDBC
  */
-@RequiresGuava
 @Immutable
 @CheckReturnValue
 @Deprecated

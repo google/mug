@@ -1,4 +1,4 @@
-package com.google.mu.util;
+package com.google.guava.labs.base;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -8,6 +8,7 @@ import org.junit.runners.JUnit4;
 
 import com.google.common.base.CaseFormat;
 import com.google.common.testing.NullPointerTester;
+import com.google.guava.labs.base.CaseFormats;
 
 @RunWith(JUnit4.class)
 public final class CaseFormatsTest {

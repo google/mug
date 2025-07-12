@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.collect;
+package com.google.guava.labs.collect;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -31,7 +31,6 @@ import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
 import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.errorprone.annotations.Immutable;
-import com.google.mu.annotations.RequiresGuava;
 
 /**
  * Represents a result of {@link BinarySearch}. An insertion point in a sequence of elements
@@ -57,7 +56,6 @@ import com.google.mu.annotations.RequiresGuava;
  * @param <C> the domain type
  * @since 8.0
  */
-@RequiresGuava
 @Immutable(containerOf = "C")
 @CheckReturnValue
 public final class InsertionPoint<C extends Comparable<C>> implements Comparable<InsertionPoint<C>> {

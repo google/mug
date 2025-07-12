@@ -17,7 +17,7 @@ package com.google.mu.errorprone;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.errorprone.BugPattern.SeverityLevel.ERROR;
 import static com.google.errorprone.matchers.Matchers.anyMethod;
-import static com.google.mu.util.stream.GuavaCollectors.toImmutableListMultimap;
+import static com.google.guava.labs.collect.GuavaCollectors.toImmutableListMultimap;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static java.util.stream.Collectors.joining;
 

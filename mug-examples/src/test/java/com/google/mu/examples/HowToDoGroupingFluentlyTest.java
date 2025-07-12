@@ -2,8 +2,8 @@ package com.google.mu.examples;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.guava.labs.collect.GuavaCollectors.toImmutableListMultimap;
 import static com.google.mu.util.stream.BiStream.groupingBy;
-import static com.google.mu.util.stream.GuavaCollectors.toImmutableListMultimap;
 import static com.google.mu.util.stream.MoreCollectors.flatteningMaps;
 import static java.util.Arrays.asList;
 

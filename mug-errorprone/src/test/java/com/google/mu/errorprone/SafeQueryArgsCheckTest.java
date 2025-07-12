@@ -15,7 +15,7 @@ public final class SafeQueryArgsCheckTest {
     helper
         .addSourceLines(
             "Test.java",
-            "import com.google.mu.safesql.SafeQuery;",
+            "import com.google.guava.labs.safesql.SafeQuery;",
             "import com.google.mu.util.StringFormat;",
             "class Sql {",
             "  private static final StringFormat.Template<SafeQuery> SELECT =",
@@ -32,7 +32,7 @@ public final class SafeQueryArgsCheckTest {
     helper
         .addSourceLines(
             "Test.java",
-            "import com.google.mu.safesql.SafeQuery;",
+            "import com.google.guava.labs.safesql.SafeQuery;",
             "class Sql {",
             "  SafeQuery test() {",
             "    return SafeQuery.of(\"SELECT '{v}' FROM tbl\", \"value\");",
@@ -46,7 +46,7 @@ public final class SafeQueryArgsCheckTest {
     helper
         .addSourceLines(
             "Test.java",
-            "import com.google.mu.safesql.SafeQuery;",
+            "import com.google.guava.labs.safesql.SafeQuery;",
             "import com.google.mu.util.StringFormat;",
             "class Sql {",
             "  private static final StringFormat.Template<SafeQuery> SELECT =",
@@ -63,7 +63,7 @@ public final class SafeQueryArgsCheckTest {
     helper
         .addSourceLines(
             "Test.java",
-            "import com.google.mu.safesql.SafeQuery;",
+            "import com.google.guava.labs.safesql.SafeQuery;",
             "class Sql {",
             "  SafeQuery test() {",
             "    return SafeQuery.of(\"SELECT \\\"{v}\\\" FROM tbl\", \"value\");",
@@ -77,7 +77,7 @@ public final class SafeQueryArgsCheckTest {
     helper
         .addSourceLines(
             "Test.java",
-            "import com.google.mu.safesql.SafeQuery;",
+            "import com.google.guava.labs.safesql.SafeQuery;",
             "import com.google.mu.util.StringFormat;",
             "class Sql {",
             "  private static final StringFormat.Template<SafeQuery> SELECT =",
@@ -94,7 +94,7 @@ public final class SafeQueryArgsCheckTest {
     helper
         .addSourceLines(
             "Test.java",
-            "import com.google.mu.safesql.SafeQuery;",
+            "import com.google.guava.labs.safesql.SafeQuery;",
             "class Sql {",
             "  SafeQuery test() {",
             "    return SafeQuery.of(\"SELECT '{v}' FROM tbl\", 'v');",
@@ -108,7 +108,7 @@ public final class SafeQueryArgsCheckTest {
     helper
         .addSourceLines(
             "Test.java",
-            "import com.google.mu.safesql.SafeQuery;",
+            "import com.google.guava.labs.safesql.SafeQuery;",
             "import com.google.mu.util.StringFormat;",
             "class Sql {",
             "  private static final StringFormat.Template<SafeQuery> SELECT =",
@@ -125,7 +125,7 @@ public final class SafeQueryArgsCheckTest {
     helper
         .addSourceLines(
             "Test.java",
-            "import com.google.mu.safesql.SafeQuery;",
+            "import com.google.guava.labs.safesql.SafeQuery;",
             "class Sql {",
             "  SafeQuery test() {",
             "    return SafeQuery.of(\"SELECT \\\"{v}\\\" FROM tbl\", 'v');",
@@ -139,7 +139,7 @@ public final class SafeQueryArgsCheckTest {
     helper
         .addSourceLines(
             "Test.java",
-            "import com.google.mu.safesql.SafeQuery;",
+            "import com.google.guava.labs.safesql.SafeQuery;",
             "import com.google.mu.util.StringFormat;",
             "class Sql {",
             "  private static final StringFormat.Template<SafeQuery> SELECT =",
@@ -157,7 +157,7 @@ public final class SafeQueryArgsCheckTest {
     helper
         .addSourceLines(
             "Test.java",
-            "import com.google.mu.safesql.SafeQuery;",
+            "import com.google.guava.labs.safesql.SafeQuery;",
             "class Sql {",
             "  SafeQuery test() {",
             "    // BUG: Diagnostic contains: java.lang.String must be quoted",
@@ -172,7 +172,7 @@ public final class SafeQueryArgsCheckTest {
     helper
         .addSourceLines(
             "Test.java",
-            "import com.google.mu.safesql.SafeQuery;",
+            "import com.google.guava.labs.safesql.SafeQuery;",
             "import com.google.mu.util.StringFormat;",
             "class Sql {",
             "  private static final StringFormat.Template<SafeQuery> SELECT =",
@@ -189,7 +189,7 @@ public final class SafeQueryArgsCheckTest {
     helper
         .addSourceLines(
             "Test.java",
-            "import com.google.mu.safesql.SafeQuery;",
+            "import com.google.guava.labs.safesql.SafeQuery;",
             "class Sql {",
             "  SafeQuery test() {",
             "    return SafeQuery.of(\"SELECT `{c}` FROM tbl\", \"column\");",
@@ -203,7 +203,7 @@ public final class SafeQueryArgsCheckTest {
     helper
         .addSourceLines(
             "Test.java",
-            "import com.google.mu.safesql.SafeQuery;",
+            "import com.google.guava.labs.safesql.SafeQuery;",
             "import com.google.mu.util.StringFormat;",
             "class Sql {",
             "  private static final StringFormat.Template<SafeQuery> SELECT =",
@@ -221,7 +221,7 @@ public final class SafeQueryArgsCheckTest {
     helper
         .addSourceLines(
             "Test.java",
-            "import com.google.mu.safesql.SafeQuery;",
+            "import com.google.guava.labs.safesql.SafeQuery;",
             "class Sql {",
             "  SafeQuery test() {",
             "    // BUG: Diagnostic contains: for example '{c}'",
@@ -236,7 +236,7 @@ public final class SafeQueryArgsCheckTest {
     helper
         .addSourceLines(
             "Test.java",
-            "import com.google.mu.safesql.SafeQuery;",
+            "import com.google.guava.labs.safesql.SafeQuery;",
             "import com.google.mu.util.StringFormat;",
             "class Sql {",
             "  SafeQuery test(StringFormat.Template<SafeQuery> select) {",
@@ -251,7 +251,7 @@ public final class SafeQueryArgsCheckTest {
     helper
         .addSourceLines(
             "Test.java",
-            "import com.google.mu.safesql.SafeQuery;",
+            "import com.google.guava.labs.safesql.SafeQuery;",
             "import com.google.errorprone.annotations.CompileTimeConstant;",
             "class Sql {",
             "  SafeQuery test(@CompileTimeConstant String template) {",
@@ -283,7 +283,7 @@ public final class SafeQueryArgsCheckTest {
     helper
         .addSourceLines(
             "Test.java",
-            "import com.google.mu.safesql.SafeQuery;",
+            "import com.google.guava.labs.safesql.SafeQuery;",
             "import com.google.mu.annotations.TemplateFormatMethod;",
             "import com.google.mu.annotations.TemplateString;",
             "class Sql {",
@@ -303,7 +303,7 @@ public final class SafeQueryArgsCheckTest {
     helper
         .addSourceLines(
             "Test.java",
-            "import com.google.mu.safesql.SafeQuery;",
+            "import com.google.guava.labs.safesql.SafeQuery;",
             "import com.google.mu.annotations.TemplateFormatMethod;",
             "import com.google.mu.annotations.TemplateString;",
             "class Sql {",

@@ -1,7 +1,7 @@
-package com.google.mu.safesql;
+package com.google.guava.labs.safesql;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.mu.safesql.GoogleSql.template;
+import static com.google.guava.labs.safesql.GoogleSql.template;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -14,6 +14,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import com.google.common.collect.ImmutableList;
+import com.google.guava.labs.safesql.GoogleSql;
+import com.google.guava.labs.safesql.SafeQuery;
 
 @RunWith(JUnit4.class)
 public class GoogleSqlTest {
