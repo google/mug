@@ -42,7 +42,7 @@
               <path>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>mug-errorprone</artifactId>
-                <version>8.5</version>
+                <version>9.0</version>
               </path>
             <!-- Other annotation processors go here.
             If 'annotationProcessorPaths' is set, processors will no longer be
