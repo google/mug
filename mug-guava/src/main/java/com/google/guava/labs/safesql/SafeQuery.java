@@ -368,7 +368,7 @@ public final class SafeQuery {
    * placeholder values to safe query strings.
    *
    * @since 7.2
-   * @deprecated You most likely need {@link SafeSql} to work with JDBC
+   * @deprecated You most likely need {@link com.google.mu.safesql.SafeSql} to work with JDBC
    */
   @Deprecated
   public static class Translator {
