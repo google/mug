@@ -50,7 +50,16 @@
     <powermock.version>1.6.6</powermock.version>
     <maven.javadoc.failOnError>false</maven.javadoc.failOnError>
   </properties>
-
+  <distributionManagement>
+    <snapshotRepository>
+      <id>central</id>
+      <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+    </snapshotRepository>
+    <repository>
+      <id>central</id>
+      <url>https://central.sonatype.com/content/repositories/releases/</url>
+    </repository>
+  </distributionManagement>
   <dependencyManagement>
   <dependencies>
     <dependency>
@@ -140,6 +149,18 @@
   <build>
     <pluginManagement>
       <plugins>
+          <plugin>
+            <groupId>org.sonatype.central</groupId>
+            <artifactId>central-publishing-maven-plugin</artifactId>
+            <version>0.8.0</version> <!-- or latest -->
+            <extensions>true</extensions>
+            <configuration>
+              <publishingServerId>central</publishingServerId>
+              <!-- optional but recommended in CI -->
+              <autoPublish>true</autoPublish>
+              <waitUntil>published</waitUntil>
+            </configuration>
+          </plugin>
         <plugin>
           <artifactId>maven-release-plugin</artifactId>
           <version>3.0.0-M1</version>
@@ -376,6 +397,10 @@
       </activation>
       <build>
         <plugins>
+          <plugin>
+            <groupId>org.sonatype.central</groupId>
+            <artifactId>central-publishing-maven-plugin</artifactId>
+          </plugin>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
