@@ -24,7 +24,6 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import com.google.common.collect.Lists;
 import com.google.common.math.DoubleMath;
 import com.google.errorprone.annotations.CheckReturnValue;
-import com.google.mu.annotations.RequiresProtobuf;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.ListValueOrBuilder;
 import com.google.protobuf.NullValue;
@@ -38,7 +37,6 @@ import com.google.protobuf.ValueOrBuilder;
  * @since 5.8
  */
 @CheckReturnValue
-@RequiresProtobuf
 public final class MoreValues {
   /** The {@link Value} for null. */
   public static final Value NULL =

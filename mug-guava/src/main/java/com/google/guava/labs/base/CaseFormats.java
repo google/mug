@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.util;
+package com.google.guava.labs.base;
 
 import static com.google.common.base.CaseFormat.LOWER_UNDERSCORE;
 import static com.google.mu.util.CharPredicate.ALPHA;
@@ -25,7 +25,9 @@ import com.google.common.base.Ascii;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.CharMatcher;
 import com.google.errorprone.annotations.CheckReturnValue;
-import com.google.mu.annotations.RequiresGuava;
+import com.google.mu.util.CaseBreaker;
+import com.google.mu.util.CharPredicate;
+import com.google.mu.util.Substring;
 
 /**
  * Additional utilities pertaining to {@link CaseFormat}.
@@ -37,7 +39,6 @@ import com.google.mu.annotations.RequiresGuava;
  * @since 9.0
  */
 @CheckReturnValue
-@RequiresGuava
 public final class CaseFormats {
   private static final CharPredicate NUM = CharPredicate.range('0', '9');
 

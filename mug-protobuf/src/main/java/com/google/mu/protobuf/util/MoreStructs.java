@@ -23,7 +23,6 @@ import java.util.stream.Collector;
 
 import com.google.common.collect.Maps;
 import com.google.errorprone.annotations.CheckReturnValue;
-import com.google.mu.annotations.RequiresProtobuf;
 import com.google.mu.util.stream.BiCollector;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.Struct;
@@ -45,7 +44,6 @@ import com.google.protobuf.Value;
  * @since 5.8
  */
 @CheckReturnValue
-@RequiresProtobuf
 public final class MoreStructs {
   /**
    * Returns a Struct with {@code name} and {@code value}.

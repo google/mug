@@ -1,4 +1,4 @@
-package com.google.mu.collect;
+package com.google.guava.labs.collect;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -9,6 +9,7 @@ import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
 
 import com.google.common.collect.Range;
+import com.google.guava.labs.collect.BinarySearch;
 
 /** Shows how some LeetCode binary search algorithms are solved with this library. */
 @RunWith(Enclosed.class)

@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.safesql;
+package com.google.guava.labs.safesql;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -22,7 +22,6 @@ import java.time.format.DateTimeFormatter;
 
 import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.errorprone.annotations.CompileTimeConstant;
-import com.google.mu.annotations.RequiresGuava;
 import com.google.mu.annotations.TemplateFormatMethod;
 import com.google.mu.annotations.TemplateString;
 import com.google.mu.util.StringFormat.Template;
@@ -34,7 +33,6 @@ import com.google.mu.util.Substring;
  * @since 7.0
  * @deprecated You most likely need {@link SafeSql} to work with JDBC
  */
-@RequiresGuava
 @CheckReturnValue
 @Deprecated
 public final class GoogleSql {

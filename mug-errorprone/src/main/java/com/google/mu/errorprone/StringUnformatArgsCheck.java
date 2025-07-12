@@ -14,11 +14,11 @@
  *****************************************************************************/
 package com.google.mu.errorprone;
 
-import static com.google.mu.util.stream.GuavaCollectors.toImmutableMap;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.mu.util.stream.BiStream.toAdjacentPairs;
 import static com.google.errorprone.BugPattern.SeverityLevel.ERROR;
 import static com.google.errorprone.matchers.Matchers.instanceMethod;
+import static com.google.guava.labs.collect.GuavaCollectors.toImmutableMap;
 
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -51,6 +51,7 @@ import com.google.errorprone.matchers.Matcher;
 import com.google.errorprone.matchers.Matchers;
 import com.google.errorprone.matchers.method.MethodMatchers.MethodClassMatcher;
 import com.google.errorprone.util.ASTHelpers;
+import com.google.guava.labs.base.CaseFormats;
 import com.google.mu.errorprone.AbstractBugChecker.ErrorReport;
 import com.google.mu.function.MapFrom3;
 import com.google.mu.function.MapFrom4;
@@ -58,7 +59,6 @@ import com.google.mu.function.MapFrom5;
 import com.google.mu.function.MapFrom6;
 import com.google.mu.function.MapFrom7;
 import com.google.mu.function.MapFrom8;
-import com.google.mu.util.CaseFormats;
 import com.google.mu.util.stream.BiCollector;
 import com.google.mu.util.stream.BiStream;
 

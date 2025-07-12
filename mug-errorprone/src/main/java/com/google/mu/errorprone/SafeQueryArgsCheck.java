@@ -59,7 +59,7 @@ public final class SafeQueryArgsCheck extends AbstractBugChecker
           anyMethod().onDescendantOf("com.google.mu.util.StringFormat.To"),
           anyMethod().onDescendantOf("com.google.mu.util.StringFormat.Template"));
   private static final TypeName SAFE_QUERY_TYPE =
-      new TypeName("com.google.mu.safesql.SafeQuery");
+      new TypeName("com.google.guava.labs.safesql.SafeQuery");
   private static final ImmutableSet<TypeName> ARG_TYPES_THAT_SHOULD_NOT_BE_QUOTED =
       ImmutableSet.of(
           new TypeName("com.google.storage.googlesql.safesql.TrustedSqlString"),

@@ -12,29 +12,29 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.util.stream;
+package com.google.guava.labs.collect;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.guava.labs.collect.GuavaCollectors.countingBy;
+import static com.google.guava.labs.collect.GuavaCollectors.flatteningToImmutableListMultimap;
+import static com.google.guava.labs.collect.GuavaCollectors.flatteningToImmutableSetMultimap;
+import static com.google.guava.labs.collect.GuavaCollectors.indexingBy;
+import static com.google.guava.labs.collect.GuavaCollectors.partitioningBy;
+import static com.google.guava.labs.collect.GuavaCollectors.toImmutableBiMap;
+import static com.google.guava.labs.collect.GuavaCollectors.toImmutableListMultimap;
+import static com.google.guava.labs.collect.GuavaCollectors.toImmutableMap;
+import static com.google.guava.labs.collect.GuavaCollectors.toImmutableMapIgnoringDuplicateEntries;
+import static com.google.guava.labs.collect.GuavaCollectors.toImmutableMultiset;
+import static com.google.guava.labs.collect.GuavaCollectors.toImmutableRangeMap;
+import static com.google.guava.labs.collect.GuavaCollectors.toImmutableSetMultimap;
+import static com.google.guava.labs.collect.GuavaCollectors.toImmutableSortedMap;
+import static com.google.guava.labs.collect.GuavaCollectors.toImmutableTable;
+import static com.google.guava.labs.collect.GuavaCollectors.toMultimap;
+import static com.google.guava.labs.collect.GuavaCollectors.toRangeMap;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.stream.BiCollectors.groupingBy;
 import static com.google.mu.util.stream.BiStream.biStream;
-import static com.google.mu.util.stream.GuavaCollectors.countingBy;
-import static com.google.mu.util.stream.GuavaCollectors.flatteningToImmutableListMultimap;
-import static com.google.mu.util.stream.GuavaCollectors.flatteningToImmutableSetMultimap;
-import static com.google.mu.util.stream.GuavaCollectors.indexingBy;
-import static com.google.mu.util.stream.GuavaCollectors.partitioningBy;
-import static com.google.mu.util.stream.GuavaCollectors.toImmutableBiMap;
-import static com.google.mu.util.stream.GuavaCollectors.toImmutableListMultimap;
-import static com.google.mu.util.stream.GuavaCollectors.toImmutableMap;
-import static com.google.mu.util.stream.GuavaCollectors.toImmutableMapIgnoringDuplicateEntries;
-import static com.google.mu.util.stream.GuavaCollectors.toImmutableMultiset;
-import static com.google.mu.util.stream.GuavaCollectors.toImmutableRangeMap;
-import static com.google.mu.util.stream.GuavaCollectors.toImmutableSetMultimap;
-import static com.google.mu.util.stream.GuavaCollectors.toImmutableSortedMap;
-import static com.google.mu.util.stream.GuavaCollectors.toImmutableTable;
-import static com.google.mu.util.stream.GuavaCollectors.toMultimap;
-import static com.google.mu.util.stream.GuavaCollectors.toRangeMap;
 import static java.util.Comparator.naturalOrder;
 import static java.util.stream.Collectors.summingInt;
 import static java.util.stream.Collectors.toList;
@@ -60,8 +60,10 @@ import com.google.common.collect.Range;
 import com.google.common.collect.TreeMultimap;
 import com.google.common.collect.TreeRangeMap;
 import com.google.common.testing.NullPointerTester;
+import com.google.guava.labs.collect.GuavaCollectors;
 import com.google.mu.collect.Chain;
 import com.google.mu.util.Both;
+import com.google.mu.util.stream.BiStream;
 
 @RunWith(JUnit4.class)
 public class GuavaCollectorsTest {

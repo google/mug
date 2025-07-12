@@ -1,4 +1,4 @@
-package com.google.mu.safesql;
+package com.google.guava.labs.safesql;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 

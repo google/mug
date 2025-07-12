@@ -1,4 +1,4 @@
-package com.google.mu.collect;
+package com.google.guava.labs.collect;
 
 import static com.google.common.collect.Range.atLeast;
 import static com.google.common.collect.Range.atMost;
@@ -8,10 +8,10 @@ import static com.google.common.collect.Range.greaterThan;
 import static com.google.common.collect.Range.lessThan;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static com.google.mu.collect.BinarySearch.inSortedArray;
-import static com.google.mu.collect.BinarySearch.inSortedArrayWithTolerance;
-import static com.google.mu.collect.BinarySearch.inSortedList;
-import static com.google.mu.collect.BinarySearch.inSortedListWithTolerance;
+import static com.google.guava.labs.collect.BinarySearch.inSortedArray;
+import static com.google.guava.labs.collect.BinarySearch.inSortedArrayWithTolerance;
+import static com.google.guava.labs.collect.BinarySearch.inSortedList;
+import static com.google.guava.labs.collect.BinarySearch.inSortedListWithTolerance;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
 
@@ -31,6 +31,8 @@ import com.google.common.collect.Range;
 import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.NullPointerTester;
 import com.google.common.truth.Expect;
+import com.google.guava.labs.collect.BinarySearch;
+import com.google.guava.labs.collect.InsertionPoint;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 

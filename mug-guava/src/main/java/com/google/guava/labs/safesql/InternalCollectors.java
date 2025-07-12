@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.safesql;
+package com.google.guava.labs.safesql;
 
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;

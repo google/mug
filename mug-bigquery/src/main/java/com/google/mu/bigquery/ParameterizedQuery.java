@@ -33,7 +33,6 @@ import com.google.cloud.bigquery.TableResult;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.errorprone.annotations.Immutable;
-import com.google.mu.annotations.RequiresBigQuery;
 import com.google.mu.annotations.TemplateFormatMethod;
 import com.google.mu.annotations.TemplateString;
 import com.google.mu.util.StringFormat;
@@ -93,7 +92,6 @@ import com.google.mu.util.stream.BiStream;
  * @since 7.1
  */
 @Immutable
-@RequiresBigQuery
 public final class ParameterizedQuery {
   private static final DateTimeFormatter TIMESTAMP_FORMATTER =
       DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSSZZ");

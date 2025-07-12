@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.util.stream;
+package com.google.guava.labs.collect;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
@@ -54,16 +54,18 @@ import com.google.common.collect.Tables;
 import com.google.common.collect.TreeRangeMap;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.CheckReturnValue;
-import com.google.mu.annotations.RequiresGuava;
 import com.google.mu.collect.Chain;
 import com.google.mu.util.Both;
+import com.google.mu.util.stream.BiCollector;
+import com.google.mu.util.stream.BiCollectors;
+import com.google.mu.util.stream.BiStream;
+import com.google.mu.util.stream.MoreCollectors;
 
 /**
  * Guava-specific Collectors and BiCollectors.
  *
  * @since 4.7
  */
-@RequiresGuava
 @CheckReturnValue
 public final class GuavaCollectors {
   /**
