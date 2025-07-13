@@ -3,7 +3,6 @@ package com.google.mu.util.concurrent24;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Gatherer.ofSequential;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -185,7 +184,8 @@ public final class BoundedConcurrency {
         semaphore.acquireUninterruptibly(); // acquire even if interrupted
       }
     }
-    return ofSequential(Window::new, Integrator.ofGreedy(Window::integrate), Window::finish);
+    return Gatherer.<T, Window, R>ofSequential(
+        Window::new, Integrator.<Window, T, R>ofGreedy(Window::integrate), Window::finish);
   }
 
   /**
