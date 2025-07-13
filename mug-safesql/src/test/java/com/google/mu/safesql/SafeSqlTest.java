@@ -105,7 +105,6 @@ public class SafeSqlTest {
   }
 
   @Test
-  @SuppressWarnings("LabsStringFormatArgsCheck")
   public void optionalOperator_present() {
     Optional<Integer> id = Optional.of(123);
     assertThat(SafeSql.of("SELECT {id? -> id? AS id,} name FROM tbl", id))
@@ -113,7 +112,6 @@ public class SafeSqlTest {
   }
 
   @Test
-  @SuppressWarnings("StringFormatArgsCheck")
   public void optionalOperator_absent() {
     Optional<Integer> id = Optional.empty();
     assertThat(SafeSql.of("SELECT { id? -> id? AS id,} name FROM tbl", id))
@@ -121,7 +119,6 @@ public class SafeSqlTest {
   }
 
   @Test
-  @SuppressWarnings("LabsStringFormatArgsCheck")
   public void optionalOperator_optionalParameterReferencedMultipleTimes() {
     Optional<String> id = Optional.of("myId");
     SafeSql sql = SafeSql.of("SELECT {id? -> id? AS id, UPPER('id?') AS title, } name FROM tbl", id);
@@ -132,7 +129,6 @@ public class SafeSqlTest {
   }
 
   @Test
-  @SuppressWarnings("LabsStringFormatArgsCheck")
   public void optionalOperator_withLikeOperator_present() {
     Optional<String> name = Optional.of("foo");
     SafeSql sql = SafeSql.of("SELECT * FROM tbl WHERE 1=1 {name? -> AND name LIKE '%name?%'}", name);
@@ -143,7 +139,6 @@ public class SafeSqlTest {
   }
 
   @Test
-  @SuppressWarnings("LabsStringFormatArgsCheck")
   public void optionalOperator_withLikeOperator_absent() {
     Optional<String> name = Optional.empty();
     assertThat(SafeSql.of("SELECT * FROM tbl WHERE 1=1 {name? -> AND name LIKE '%name?%'}", name))
@@ -151,7 +146,6 @@ public class SafeSqlTest {
   }
 
   @Test
-  @SuppressWarnings("StringFormatArgsCheck")
   public void optionalOperator_trailingSpaceAndNewlinesIgnored() {
     Optional<Integer> id = Optional.of(123);
     assertThat(SafeSql.of("SELECT {id? -> id? AS id, \n} name FROM tbl", id))
@@ -159,7 +153,6 @@ public class SafeSqlTest {
   }
 
   @Test
-  @SuppressWarnings("StringFormatArgsCheck")
   public void optionalOperator_parameterReferencedMoreThanOnce() {
     Optional<Integer> id = Optional.of(123);
     assertThat(
@@ -171,7 +164,6 @@ public class SafeSqlTest {
   }
 
   @Test
-  @SuppressWarnings("StringFormatArgsCheck")
   public void optionalOperator_missingQuestionMark() {
     Optional<Integer> id = Optional.empty();
     IllegalArgumentException thrown =

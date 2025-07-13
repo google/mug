@@ -5,12 +5,8 @@
     <artifactId>mug-root</artifactId>
     <version>9.2-SNAPSHOT</version>
   </parent>
-  <artifactId>mug-safesql</artifactId>
-  <packaging>jar</packaging>
-  <name>SafeSql</name>
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
+  <artifactId>mug-concurrent24</artifactId>
+  
   <build>
     <pluginManagement>
       <plugins>
@@ -26,30 +22,6 @@
             <waitUntil>published</waitUntil>
           </configuration>
         </plugin>
-        <plugin>
-          <artifactId>maven-compiler-plugin</artifactId>
-          <configuration>
-            <compilerArgs>
-              <arg>-parameters</arg>
-            </compilerArgs>
-            <annotationProcessorPaths>
-              <path>
-                <groupId>com.google.errorprone</groupId>
-                <artifactId>error_prone_core</artifactId>
-                <version>${error_prone.version}</version>
-              </path>
-              <path>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>mug-errorprone</artifactId>
-                <version>9.1</version>
-              </path>
-            <!-- Other annotation processors go here.
-            If 'annotationProcessorPaths' is set, processors will no longer be
-            discovered on the regular -classpath; see also 'Using Error Prone
-            together with other annotation processors' below. -->
-            </annotationProcessorPaths>
-          </configuration>
-        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
@@ -59,9 +31,28 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Automatic-Module-Name>com.google.mu.safesql</Automatic-Module-Name>
+              <Automatic-Module-Name>com.google.mu.util.concurrent24</Automatic-Module-Name>
             </manifestEntries>
           </archive>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.12.0</version>
+        <configuration>
+          <release>24</release>
+            <compilerArgs>
+              <arg>--enable-preview</arg>
+            </compilerArgs>
+          </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.2.5</version>
+        <configuration>
+          <argLine>--enable-preview</argLine>
         </configuration>
       </plugin>
     </plugins>
@@ -99,30 +90,6 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava-testlib</artifactId>
-      <scope>test</scope>
-    </dependency>
-    
-    <dependency>
-      <groupId>org.checkerframework</groupId>
-      <artifactId>checker-qual</artifactId>
-      <version>3.12.0</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.h2database</groupId>
-      <artifactId>h2</artifactId>
-      <version>2.3.232</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.dbunit</groupId>
-      <artifactId>dbunit</artifactId>
-      <version>2.7.0</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

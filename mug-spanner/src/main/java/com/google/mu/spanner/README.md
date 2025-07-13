@@ -53,6 +53,11 @@ ParameterizedQuery.of(
 
 ### 2. **Managing subquery parameters**
 
+Imagine you have a user-specified boolean expression (like that of Google CEL expression),
+and you need to translate to a Spanner where clause. You'll need to recursively walk down the AST
+(abstract syntax tree) returned by the parser, and each step may include its own query parameters
+to be bound to the final `Statement`.
+
 **Native Spanner:**  
 You must manually gather and merge parameter maps from every subquery, invent unique names, and ensure consistency—tedious and error-prone.
 - **Risks:**
@@ -97,8 +102,7 @@ Statement stmt = Statement.of(sql);
 List<String> keyColumns = ...;
 ParameterizedQuery.of(
     "SELECT `{key_columns}`, COUNT(*) AS cnt FROM Users GROUP BY `{key_columns}`",
-    keyColumns
-);
+    keyColumns);
 ```
 - Backtick-quoted placeholders are strictly validated as identifiers. No string concat or injection risk.
 

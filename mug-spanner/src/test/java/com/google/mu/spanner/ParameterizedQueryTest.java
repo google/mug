@@ -256,7 +256,6 @@ public class ParameterizedQueryTest {
   }
 
   @Test
-  @SuppressWarnings("StringFormatArgsCheck")
   public void optionalOperator_present() {
     Optional<Integer> id = Optional.of(123);
     assertThat(ParameterizedQuery.of("SELECT {id? -> id? AS id,} name FROM tbl", id))
@@ -264,7 +263,6 @@ public class ParameterizedQueryTest {
   }
 
   @Test
-  @SuppressWarnings("StringFormatArgsCheck")
   public void optionalOperator_absent() {
     Optional<Integer> id = Optional.empty();
     assertThat(ParameterizedQuery.of("SELECT { id? -> id? AS id,} name FROM tbl", id))
@@ -272,7 +270,6 @@ public class ParameterizedQueryTest {
   }
 
   @Test
-  @SuppressWarnings("StringFormatArgsCheck")
   public void optionalOperator_optionalParameterReferencedMultipleTimes() {
     Optional<String> id = Optional.of("myId");
     ParameterizedQuery sql = ParameterizedQuery.of("SELECT {id? -> id? AS id, UPPER('id?') AS title, } name FROM tbl", id);
@@ -283,7 +280,6 @@ public class ParameterizedQueryTest {
   }
 
   @Test
-  @SuppressWarnings("StringFormatArgsCheck")
   public void optionalOperator_withLikeOperator_present() {
     Optional<String> name = Optional.of("%foo");
     ParameterizedQuery sql = ParameterizedQuery.of("SELECT * FROM tbl WHERE 1=1 {name? -> AND name LIKE 'name?'}", name);
@@ -296,7 +292,6 @@ public class ParameterizedQueryTest {
   }
 
   @Test
-  @SuppressWarnings("StringFormatArgsCheck")
   public void optionalOperator_withLikeOperator_absent() {
     Optional<String> name = Optional.empty();
     assertThat(ParameterizedQuery.of("SELECT * FROM tbl WHERE 1=1 {name? -> AND name LIKE '%name?%'}", name))
@@ -304,7 +299,6 @@ public class ParameterizedQueryTest {
   }
 
   @Test
-  @SuppressWarnings("StringFormatArgsCheck")
   public void optionalOperator_trailingSpaceAndNewlinesIgnored() {
     Optional<Integer> id = Optional.of(123);
     assertThat(ParameterizedQuery.of("SELECT {id? -> id? AS id, \n} name FROM tbl", id))
@@ -312,7 +306,6 @@ public class ParameterizedQueryTest {
   }
 
   @Test
-  @SuppressWarnings("StringFormatArgsCheck")
   public void optionalOperator_parameterReferencedMoreThanOnce() {
     Optional<Integer> id = Optional.of(123);
     assertThat(
