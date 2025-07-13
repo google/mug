@@ -1,75 +1,88 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<parent>
-		<groupId>com.google.mug</groupId>
-		<artifactId>mug-root</artifactId>
-		<version>9.0</version>
-		<relativePath>../pom.xml</relativePath>
-	</parent>
-	<artifactId>mug</artifactId>
-	<packaging>jar</packaging>
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.google.mug</groupId>
+    <artifactId>mug-root</artifactId>
+    <version>9.2-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+  <artifactId>mug</artifactId>
+  <packaging>jar</packaging>
 
-	<name>core</name>
-    <build>
-      <pluginManagement>
-        <plugins>
-          <plugin>
-            <groupId>org.sonatype.central</groupId>
-            <artifactId>central-publishing-maven-plugin</artifactId>
-            <version>0.8.0</version> <!-- or latest -->
-            <extensions>true</extensions>
-            <configuration>
-              <publishingServerId>central</publishingServerId>
-              <!-- optional but recommended in CI -->
-              <autoPublish>true</autoPublish>
-              <waitUntil>published</waitUntil>
-            </configuration>
-          </plugin>
-        </plugins>
-      </pluginManagement>
-    </build>
+  <name>core</name>
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.sonatype.central</groupId>
+          <artifactId>central-publishing-maven-plugin</artifactId>
+          <version>0.8.0</version> <!-- or latest -->
+          <extensions>true</extensions>
+          <configuration>
+            <publishingServerId>central</publishingServerId>
+            <!-- optional but recommended in CI -->
+            <autoPublish>true</autoPublish>
+            <waitUntil>published</waitUntil>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
 
-	<dependencies>
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-		</dependency>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifestEntries>
+              <Automatic-Module-Name>com.google.mu</Automatic-Module-Name>
+            </manifestEntries>
+          </archive>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 
-		<dependency>
-			<groupId>org.junit.jupiter</groupId>
-			<artifactId>junit-jupiter-api</artifactId>
-		</dependency>
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+    </dependency>
 
-		<dependency>
-			<groupId>com.google.truth</groupId>
-			<artifactId>truth</artifactId>
-		</dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+    </dependency>
 
-		<dependency>
-			<groupId>com.google.truth.extensions</groupId>
-			<artifactId>truth-java8-extension</artifactId>
-		</dependency>
+    <dependency>
+      <groupId>com.google.truth</groupId>
+      <artifactId>truth</artifactId>
+    </dependency>
 
-		<dependency>
-			<groupId>com.google.testparameterinjector</groupId>
-			<artifactId>test-parameter-injector</artifactId>
-		</dependency>
+    <dependency>
+      <groupId>com.google.truth.extensions</groupId>
+      <artifactId>truth-java8-extension</artifactId>
+    </dependency>
 
-		<dependency>
-			<groupId>com.google.guava</groupId>
-			<artifactId>guava-testlib</artifactId>
-		</dependency>
+    <dependency>
+      <groupId>com.google.testparameterinjector</groupId>
+      <artifactId>test-parameter-injector</artifactId>
+    </dependency>
 
-		<dependency>
-			<groupId>com.google.guava</groupId>
-			<artifactId>guava</artifactId>
-		</dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava-testlib</artifactId>
+    </dependency>
 
-		<dependency>
-			<groupId>org.mockito</groupId>
-			<artifactId>mockito-core</artifactId>
-			<scope>test</scope>
-		</dependency>
-	</dependencies>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+    </dependency>
 
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
 </project>

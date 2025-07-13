@@ -3,7 +3,7 @@
   <parent>
       <groupId>com.google.mug</groupId>
       <artifactId>mug-root</artifactId>
-      <version>9.0</version>
+      <version>9.2-SNAPSHOT</version>
       <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>mug-bigquery</artifactId>
@@ -48,6 +48,19 @@
         </plugin>
       </plugins>
     </pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifestEntries>
+              <Automatic-Module-Name>com.google.mu.bigquery</Automatic-Module-Name>
+            </manifestEntries>
+          </archive>
+        </configuration>
+      </plugin>
+    </plugins>
   </build>
   <dependencies>
     <dependency>

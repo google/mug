@@ -231,7 +231,7 @@ public interface CharPredicate {
    * @since 9.0
    */
   default boolean isPrefixOf(CharSequence sequence) {
-    return !sequence.isEmpty() && test(sequence.charAt(0));
+    return sequence.length() > 0 && test(sequence.charAt(0));
   }
 
   /**
@@ -240,6 +240,7 @@ public interface CharPredicate {
    * @since 9.0
    */
   default boolean isSuffixOf(CharSequence sequence) {
-    return !sequence.isEmpty() && test(sequence.charAt(sequence.length() - 1));
+    int len = sequence.length();
+    return len > 0 && test(sequence.charAt(len - 1));
   }
 }
