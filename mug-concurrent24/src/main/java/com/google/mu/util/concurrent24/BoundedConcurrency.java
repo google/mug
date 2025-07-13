@@ -240,8 +240,9 @@ public final class BoundedConcurrency {
    * Upon exception, the {@code isRecoverable} predicate is tested to check whether the
    * exception is recoverable (thus allowing the other tasks to continue to run).
    *
-   * <p>When all tasks throw recoverable exceptions, without any success, the recoverable
-   *  exceptions are propagated as {@link Throwable#addSuppressed suppressed}.
+   * <p>When all tasks throw recoverable exceptions, or if any task failed with
+   * unrecoverable exception, the recoverable exceptions are propagated as {@link
+   * Throwable#addSuppressed suppressed}.
    *
    * @param maxConcurrency at most running this number of tasks concurrently
    * @param tasks at least one must be provided
@@ -249,7 +250,7 @@ public final class BoundedConcurrency {
    *     other tasks should continue running.
    * @throws IllegalArgumentException if {@code tasks} is empty
    * @throws NullPointerException if {@code tasks} or {@code isRecoverable} is null
-   * @throws RuntimeException if the all tasks failed, or any task failed with unrecoverable exception.
+   * @throws RuntimeException if all tasks failed, or any task failed with unrecoverable exception.
    */
   public <T> T race(
       Collection<? extends Callable<? extends T>> tasks,
