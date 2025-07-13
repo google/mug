@@ -15,6 +15,7 @@
     <maven.javadoc.failOnError>false</maven.javadoc.failOnError>
     <error_prone.version>2.40.0</error_prone.version>
     <error_prone_annotations.version>2.40.0</error_prone_annotations.version>
+    <maven_compiler_plugin.version>3.14.0</maven_compiler_plugin.version>
   </properties>
 
   <licenses>
@@ -176,7 +177,7 @@
         </plugin>
         <plugin>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.14.0</version>
+          <version>${maven_compiler_plugin.version}</version>
           <configuration>
             <fork>true</fork>
             <source>8</source>
