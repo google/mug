@@ -156,7 +156,7 @@ import com.google.mu.util.stream.BiStream;
  *             <path>
  *               <groupId>com.google.mug</groupId>
  *               <artifactId>mug-errorprone</artifactId>
- *               <version>9.0</version>
+ *               <version>9.1</version>
  *             </path>
  *           </annotationProcessorPaths>
  *         </configuration>
