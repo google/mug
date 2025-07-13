@@ -238,9 +238,9 @@ public final class BoundedConcurrency {
   /**
    * Races {@code tasks} and returns the first success, then cancels the remaining.
    * Upon exception, the {@code isRecoverable} predicate is tested to check whether the
-   * exception is recoverable (thus allowing the other tasks to continue to run.
+   * exception is recoverable (thus allowing the other tasks to continue to run).
    *
-   * <p>When all tasks throw an recoverable exception, without any success, all recoverable
+   * <p>When all tasks throw recoverable exceptions, without any success, the recoverable
    *  exceptions are propagated as {@link Throwable#addSuppressed suppressed}.
    *
    * @param maxConcurrency at most running this number of tasks concurrently
