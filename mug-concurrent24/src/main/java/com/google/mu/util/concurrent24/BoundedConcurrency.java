@@ -65,6 +65,52 @@ public final class BoundedConcurrency {
   }
 
   /**
+   * Races {@code tasks} and returns the first success, then cancels the remaining.
+   * Upon exception, the {@code isRecoverable} predicate is tested to check whether the
+   * exception is recoverable (thus allowing the other tasks to continue to run).
+   *
+   * <p>When all tasks throw recoverable exceptions, or if any task failed with
+   * unrecoverable exception, the recoverable exceptions are propagated as {@link
+   * Throwable#addSuppressed suppressed}.
+   *
+   * @param maxConcurrency at most running this number of tasks concurrently
+   * @param tasks at least one must be provided
+   * @param isRecoverable tests whether an exception is recoverable so that the
+   *     other tasks should continue running.
+   * @throws IllegalArgumentException if {@code tasks} is empty
+   * @throws NullPointerException if {@code tasks} or {@code isRecoverable} is null
+   * @throws RuntimeException if all tasks failed, or any task failed with unrecoverable exception.
+   */
+  public <T> T race(
+      Collection<? extends Callable<? extends T>> tasks,
+      Predicate<? super Throwable> isRecoverable) {
+    checkArgument(tasks.size() > 0, "At least one task should have been provided");
+    requireNonNull(isRecoverable);
+    ConcurrentLinkedQueue<Throwable> recoverable = new ConcurrentLinkedQueue<>();
+    return tasks.stream()
+        .gather(flatMapConcurrently(
+            task -> {
+              try {
+                return Stream.of(new Success<T>(task.call()));
+              } catch (Throwable e) {
+                if (isRecoverable.test(e)) {
+                  recoverable.add(e);
+                  return Stream.empty();
+                }
+                return Stream.of(new Failure<T>(e));  // plumb it to the main thread to wrap
+              }
+            }))
+        .map((Result<T> x) -> switch (x) {
+          case Failure<T> failure ->
+              throw new UncheckedExecutionException(failure.exception(), recoverable);
+          case Success(T v) -> v;
+        })
+        .findAny()
+        .orElseThrow(
+            () -> new UncheckedExecutionException(recoverable.remove(), recoverable));
+  }
+
+  /**
    * Applies {@code work} on each input element concurrently and <em>lazily</em>.
    *
    * <p>At any given time, at most {@code maxConcurrency} concurrent work are running.
@@ -233,51 +279,6 @@ public final class BoundedConcurrency {
         this.<T, List<R>>mapConcurrently(
             // Must fully consume the stream in the virtual thread
             input -> mapper.apply(input).collect(Collectors.toCollection(ArrayList::new))));
-  }
-
-  /**
-   * Races {@code tasks} and returns the first success, then cancels the remaining.
-   * Upon exception, the {@code isRecoverable} predicate is tested to check whether the
-   * exception is recoverable (thus allowing the other tasks to continue to run).
-   *
-   * <p>When all tasks throw recoverable exceptions, without any success, the recoverable
-   *  exceptions are propagated as {@link Throwable#addSuppressed suppressed}.
-   *
-   * @param maxConcurrency at most running this number of tasks concurrently
-   * @param tasks at least one must be provided
-   * @param isRecoverable tests whether an exception is recoverable so that the
-   *     other tasks should continue running.
-   * @throws IllegalArgumentException if {@code tasks} is empty
-   * @throws NullPointerException if {@code tasks} or {@code isRecoverable} is null
-   * @throws RuntimeException if the all tasks failed, or any task failed with unrecoverable exception.
-   */
-  public <T> T race(
-      Collection<? extends Callable<? extends T>> tasks,
-      Predicate<? super Throwable> isRecoverable) {
-    checkArgument(tasks.size() > 0, "At least one task should have been provided");
-    requireNonNull(isRecoverable);
-    ConcurrentLinkedQueue<Throwable> recoverable = new ConcurrentLinkedQueue<>();
-    return tasks.stream()
-        .gather(flatMapConcurrently(
-            task -> {
-              try {
-                return Stream.of(new Success<T>(task.call()));
-              } catch (Throwable e) {
-                if (isRecoverable.test(e)) {
-                  recoverable.add(e);
-                  return Stream.empty();
-                }
-                return Stream.of(new Failure<T>(e));  // plumb it to the main thread to wrap
-              }
-            }))
-        .map((Result<T> x) -> switch (x) {
-          case Failure<T> failure ->
-              throw new UncheckedExecutionException(failure.exception(), recoverable);
-          case Success(T v) -> v;
-        })
-        .findAny()
-        .orElseThrow(
-            () -> new UncheckedExecutionException(recoverable.remove(), recoverable));
   }
 
   private static <T, A, R> Gatherer<T, ?, R> flattening(
