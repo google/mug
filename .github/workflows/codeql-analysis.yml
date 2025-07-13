@@ -51,13 +51,18 @@ jobs:
         # queries: ./path/to/local/query, your-org/your-repo/queries@main
 
     steps:
-      - uses: actions/checkout@v4
+      # - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Set up JDK 24
         uses: actions/setup-java@v4
         with:
           java-version: '24' # Specify Java 24
-          distribution: 'temurin' # Or 'zulu', 'oracle', etc.
+          distribution: 'oracle' # Or 'zulu', '', etc.
           cache: maven
+    - name: Build with Maven
+      - run: |
+        mvn clean test
+    #  run: mvn -B package --file pom.xml
 
     # Autobuild attempts to build any compiled languages  (C/C++, C#, or Java).
     # If this step fails, then you should remove it and run the build manually (see below)
@@ -71,8 +76,8 @@ jobs:
     #    and modify them (or add more) to build your code if your project
     #    uses a compiled language
 
-    - run: |
-        mvn clean test
+    # - run: |
+    #    mvn clean test
     #   make bootstrap
     #   make release
 
