@@ -191,11 +191,12 @@ abstract class ResultMapper<T> {
   private static String getNameForSql(Parameter param) {
     SqlName sqlName = param.getAnnotation(SqlName.class);
     if (sqlName != null) {
+      String name = sqlName.value().trim();
       checkArgument(
-          !sqlName.value().isBlank(),
+          name.length() > 0,
           "@SqlName defined in %s shouldn't be empty or blank: %s",
           param.getDeclaringExecutable().getDeclaringClass(), param);
-      return sqlName.value().trim();
+      return name;
     }
     String paramName = param.getName();
     boolean noRealName =
