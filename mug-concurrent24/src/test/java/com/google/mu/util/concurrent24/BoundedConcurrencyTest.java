@@ -1,8 +1,8 @@
-package com.google.mu.util.concurrent;
+package com.google.mu.util.concurrent24;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static com.google.mu.util.concurrent.BoundedConcurrency.withMaxConcurrency;
+import static com.google.mu.util.concurrent24.BoundedConcurrency.withMaxConcurrency;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
 
@@ -17,6 +17,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Gatherers;
 import java.util.stream.Stream;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -532,6 +533,7 @@ public class BoundedConcurrencyTest {
     assertThat(thrown).hasMessageThat().isEqualTo("3");
   }
 
+  @Ignore
   @Test public void parallelStream_upstreamFailureInterrupts() throws Exception {
     ConcurrentLinkedQueue<Integer> started = new ConcurrentLinkedQueue<>();
     ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();

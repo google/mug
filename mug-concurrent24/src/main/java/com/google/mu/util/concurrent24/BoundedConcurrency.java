@@ -1,4 +1,4 @@
-package com.google.mu.util.concurrent;
+package com.google.mu.util.concurrent24;
 
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Objects.requireNonNull;
@@ -29,13 +29,13 @@ import com.google.mu.util.Both;
 import com.google.mu.util.stream.BiStream;
 
 /**
- * A fixed concurrency limit for structured concurrent IO-intentive operations.
+ * A fixed concurrency limit for structured concurrent IO-intensive operations.
  *
  * <p>It enables the parallel transformation of input elements, guaranteeing that all concurrent
  * operations either complete and their results are gathered, or are fully cancelled and joined
  * upon interruption or exception.
  *
- * @since 9.0
+ * @since 9.2
  */
 public final class BoundedConcurrency {
   private static final AtomicInteger defaultThreadCount = new AtomicInteger();
