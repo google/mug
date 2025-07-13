@@ -88,7 +88,7 @@ public class BoundedConcurrencyTest {
     ConcurrentLinkedQueue<Integer> started = new ConcurrentLinkedQueue<>();
     ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
     assertThat(
-        Stream.of(10, 1, 3, 0).collect(withMaxConcurrency(3).concurrently(n -> {
+        Stream.of(10, 1, 5, 0).collect(withMaxConcurrency(3).concurrently(n -> {
               started.add(n);
               try {
                 Thread.sleep(n);
@@ -98,8 +98,8 @@ public class BoundedConcurrencyTest {
               return n;
             })).keys().findFirst())
         .hasValue(1);
-    assertThat(started).containsExactly(10, 1, 3);
-    assertThat(interrupted).containsExactly(3, 10);
+    assertThat(started).containsExactly(10, 1, 5);
+    assertThat(interrupted).containsExactly(5, 10);
   }
 
   @Test public void concurrently_findAnyCancelsPending() {
