@@ -9,6 +9,14 @@
   <description>Google Mug Library</description>
   <url>http://github.com/google/mug</url>
 
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <powermock.version>1.6.6</powermock.version>
+    <maven.javadoc.failOnError>false</maven.javadoc.failOnError>
+    <error_prone.version>2.35.1</error_prone.version>
+    <error_prone_annotations.version>2.40.0</error_prone_annotations.version>
+  </properties>
+
   <licenses>
     <license>
       <name>Apache License 2.0</name>
@@ -44,12 +52,6 @@
     <module>mug-safesql</module>
     <module>mug-spanner</module>
   </modules>
-
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <powermock.version>1.6.6</powermock.version>
-    <maven.javadoc.failOnError>false</maven.javadoc.failOnError>
-  </properties>
   <distributionManagement>
     <snapshotRepository>
       <id>central</id>
@@ -126,14 +128,14 @@
       <groupId>com.google.errorprone</groupId>
       <artifactId>error_prone_annotation</artifactId>
       <scope>compile</scope>
-      <version>2.39.0</version>
+      <version>${error_prone_annotations.version}</version>
       <classifier>sources</classifier>
     </dependency>
     <dependency>
       <groupId>com.google.errorprone</groupId>
       <artifactId>error_prone_annotations</artifactId>
       <scope>compile</scope>
-      <version>2.39.0</version>
+      <version>${error_prone_annotations.version}</version>
       <classifier>sources</classifier>
     </dependency>
     <dependency>
@@ -197,7 +199,7 @@
               <path>
                 <groupId>com.google.errorprone</groupId>
                 <artifactId>error_prone_core</artifactId>
-                <version>2.27.0</version>
+                <version>${error_prone.version}</version>
               </path>
             <!-- Other annotation processors go here.
             If 'annotationProcessorPaths' is set, processors will no longer be
