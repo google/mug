@@ -48,10 +48,6 @@ jobs:
         distribution: 'temurin' # Changed to 'temurin' - 'oracle' requires licensing for production use. 'temurin' is a good open-source choice.
         cache: maven
 
-    # Build with Maven (CodeQL needs a successful build to analyze compiled languages like Java)
-    - name: Build with Maven
-      run: mvn clean test # Or mvn -B package --file pom.xml, depending on your build needs for CodeQL
-
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v3
@@ -61,6 +57,10 @@ jobs:
         # By default, queries listed here will override any specified in a config file.
         # Prefix the list here with "+" to use these queries and those in the config file.
         # queries: ./path/to/local/query, your-org/your-repo/queries@main
+
+    # Build with Maven (CodeQL needs a successful build to analyze compiled languages like Java)
+    - name: Build with Maven
+      run: mvn clean test # Or mvn -B package --file pom.xml, depending on your build needs for CodeQL
 
     # Autobuild attempts to build any compiled languages (C/C++, C#, or Java).
     # If this step fails, then you should remove it and run the build manually (see below)
