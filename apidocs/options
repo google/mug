@@ -1,0 +1,31 @@
+-classpath
+'/Users/yinglei/.m2/repository/com/google/guava/guava/33.1.0-jre/guava-33.1.0-jre.jar:/Users/yinglei/.m2/repository/com/google/errorprone/error_prone_annotations/2.39.0/error_prone_annotations-2.39.0.jar:/Users/yinglei/.m2/repository/com/google/protobuf/protobuf-java/4.26.0/protobuf-java-4.26.0.jar:/Users/yinglei/.m2/repository/org/checkerframework/checker-qual/3.12.0/checker-qual-3.12.0.jar:/Users/yinglei/.m2/repository/com/google/cloud/google-cloud-bigquery/2.34.2/google-cloud-bigquery-2.34.2.jar:/Users/yinglei/.m2/repository/com/google/cloud/google-cloud-spanner/6.96.1/google-cloud-spanner-6.96.1.jar:/Users/yinglei/.m2/repository/com/google/cloud/google-cloud-core/2.58.0/google-cloud-core-2.58.0.jar'
+-encoding
+'UTF-8'
+-protected
+-sourcepath
+'/Users/yinglei/mug/mug/src/main/java:/Users/yinglei/mug/mug-safesql/src/main/java:/Users/yinglei/mug/mug-guava/src/main/java:/Users/yinglei/mug/mug-spanner/src/main/java:/Users/yinglei/mug/mug-protobuf/src/main/java:/Users/yinglei/mug/mug-bigquery/src/main/java:/Users/yinglei/mug/mug-concurrent24/src/main/java'
+-author
+-bottom
+'Copyright &#169; 2025. All rights reserved.'
+-charset
+'UTF-8'
+-d
+'/Users/yinglei/mug/target/site/apidocs'
+-docencoding
+'UTF-8'
+-Xdoclint:none
+-doctitle
+'mug-root 9.2-SNAPSHOT API'
+-link
+'https://cloud.google.com/java/docs/reference/google-cloud-spanner/latest/overview'
+-link
+'https://cloud.google.com/java/docs/reference/gax/latest/overview'
+-link
+'https://cloud.google.com/java/docs/reference/google-cloud-core/latest/overview'
+-linkoffline
+'https://docs.oracle.com/javase/8/docs/api' '/Users/yinglei/mug/target/javadoc-bundle-options'
+-use
+-version
+-windowtitle
+'mug-root 9.2-SNAPSHOT API'
