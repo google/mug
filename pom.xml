@@ -13,7 +13,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <powermock.version>1.6.6</powermock.version>
     <maven.javadoc.failOnError>false</maven.javadoc.failOnError>
-    <error_prone.version>2.35.1</error_prone.version>
+    <error_prone.version>2.40.0</error_prone.version>
     <error_prone_annotations.version>2.40.0</error_prone_annotations.version>
   </properties>
 
@@ -175,7 +175,7 @@
         </plugin>
         <plugin>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.8.1</version>
+          <version>3.14.0</version>
           <configuration>
             <fork>true</fork>
             <source>8</source>
@@ -184,6 +184,7 @@
             <compilerArgs>
               <arg>-XDcompilePolicy=simple</arg>
               <arg>-Xplugin:ErrorProne</arg>
+              <arg>--should-stop=ifError=FLOW</arg>
               <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>
               <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>
               <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</arg>
