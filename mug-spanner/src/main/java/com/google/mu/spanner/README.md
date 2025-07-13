@@ -14,6 +14,9 @@ It gets more difficult when the query grows complex.
 
 ### 1. **Dynamic subqueries or conditional fragments**
 
+Imagine you have a user-specified boolean expression (like that of Google CEL expression),
+and you need to translate to a Spanner where clause.
+
 **Native Spanner:**
 ```java
 StringBuilder sql = new StringBuilder("SELECT e.id, e.name");
@@ -97,8 +100,7 @@ Statement stmt = Statement.of(sql);
 List<String> keyColumns = ...;
 ParameterizedQuery.of(
     "SELECT `{key_columns}`, COUNT(*) AS cnt FROM Users GROUP BY `{key_columns}`",
-    keyColumns
-);
+    keyColumns);
 ```
 - Backtick-quoted placeholders are strictly validated as identifiers. No string concat or injection risk.
 
