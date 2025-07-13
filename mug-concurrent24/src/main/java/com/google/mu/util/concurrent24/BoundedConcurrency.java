@@ -247,6 +247,9 @@ public final class BoundedConcurrency {
    * @param tasks at least one must be provided
    * @param isRecoverable tests whether an exception is recoverable so that the
    *     other tasks should continue running.
+   * @throws IllegalArgumentException if {@code tasks} is empty
+   * @throws NullPointerException if {@code tasks} or {@code isRecoverable} is null
+   * @throws RuntimeException if the all tasks failed, or any task failed with unrecoverable exception.
    */
   public <T> T race(
       Collection<? extends Callable<? extends T>> tasks,
