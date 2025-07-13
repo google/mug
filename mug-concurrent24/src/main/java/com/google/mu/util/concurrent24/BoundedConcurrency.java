@@ -47,14 +47,11 @@ public final class BoundedConcurrency {
     this.threadFactory = requireNonNull(threadFactory);
   }
 
-  /** Returns a {@link BoundedConcurrency} using {@code maxConcurrency} and {@code threadFactor}. */
-  public static BoundedConcurrency withMaxConcurrency(int maxConcurrency, ThreadFactory threadFactory) {
-    return new BoundedConcurrency(maxConcurrency, threadFactory);
-  }
-
   /**
    * Returns a {@link BoundedConcurrency} using {@code maxConcurrency}.
    * Uses virtual threads to run concurrent work.
+   *
+   * @throws IllegalArgumentException if {@code maxConcurrency <= 0}
    */
   public static BoundedConcurrency withMaxConcurrency(int maxConcurrency) {
     return withMaxConcurrency(maxConcurrency, runnable -> {
@@ -62,6 +59,15 @@ public final class BoundedConcurrency {
       thread.setName("BoundedConcurrency thread #" + defaultThreadCount.getAndIncrement());
       return thread;
     });
+  }
+
+  /**
+   * Returns a {@link BoundedConcurrency} using {@code maxConcurrency} and {@code threadFactor}.
+   *
+   * @throws IllegalArgumentException if {@code maxConcurrency <= 0}
+   */
+  public static BoundedConcurrency withMaxConcurrency(int maxConcurrency, ThreadFactory threadFactory) {
+    return new BoundedConcurrency(maxConcurrency, threadFactory);
   }
 
   /**
