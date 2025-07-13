@@ -53,9 +53,9 @@ public class BiIterationTest {
        generate(low, high);
        int mid = (low + high) / 2;
        if (arr[mid] < target) {
-         yield(() -> search(arr, mid + 1, high, target));
+        this.yield(() -> search(arr, mid + 1, high, target));
        } else if (arr[mid] > target) {
-         yield(() -> search(arr, low, mid - 1, target));
+        this.yield(() -> search(arr, low, mid - 1, target));
        }
        return this;
      }

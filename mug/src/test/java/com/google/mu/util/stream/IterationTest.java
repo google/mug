@@ -106,9 +106,9 @@ public class IterationTest {
         if (tree == null) return this;
         AtomicInteger fromLeft = new AtomicInteger();
         AtomicInteger fromRight = new AtomicInteger();
-        yield(() -> sum(tree.left(), fromLeft));
-        yield(() -> sum(tree.right(), fromRight));
-        yield(() -> tree.value() + fromLeft.get() + fromRight.get(), result::set);
+       this.yield(() -> sum(tree.left(), fromLeft));
+       this.yield(() -> sum(tree.right(), fromRight));
+       this.yield(() -> tree.value() + fromLeft.get() + fromRight.get(), result::set);
         return this;
       }
     }
@@ -119,23 +119,23 @@ public class IterationTest {
     DepthFirst<T> preOrder(Tree<T> tree) {
       if (tree == null) return this;
       generate(tree.value());
-      yield(() -> preOrder(tree.left()));
-      yield(() -> preOrder(tree.right()));
+     this.yield(() -> preOrder(tree.left()));
+     this.yield(() -> preOrder(tree.right()));
       return this;
     }
 
     DepthFirst<T> inOrder(Tree<T> tree) {
       if (tree == null) return this;
-      yield(() -> inOrder(tree.left()));
+     this.yield(() -> inOrder(tree.left()));
       generate(tree.value());
-      yield(() -> inOrder(tree.right()));
+     this.yield(() -> inOrder(tree.right()));
       return this;
     }
 
     DepthFirst<T> postOrder(Tree<T> tree) {
       if (tree == null) return this;
-      yield(() -> postOrder(tree.left()));
-      yield(() -> postOrder(tree.right()));
+     this.yield(() -> postOrder(tree.left()));
+     this.yield(() -> postOrder(tree.right()));
       generate(tree.value());
       return this;
     }
@@ -273,9 +273,9 @@ public class IterationTest {
        int mid = (low + high) / 2;
        generate(mid);
        if (mid < number) {
-         yield(() -> guess(mid + 1, high, number));
+        this.yield(() -> guess(mid + 1, high, number));
        } else if (mid > number) {
-         yield(() -> guess(low, mid - 1, number));
+        this.yield(() -> guess(low, mid - 1, number));
        }
        return this;
      }
