@@ -2885,11 +2885,34 @@ public final class Substring {
     }
 
     /**
+     * Returns true if the match is immediately followed by a character that matches the
+     * {@code lookahead} predicate.
+     *
+     * @since 9.0
+     */
+
+    public boolean isFollowedBy(CharPredicate lookahead) {
+      requireNonNull(lookahead);
+      return context.length() > endIndex && lookahead.test(context.charAt(endIndex));
+    }
+
+    /**
      * Returns true if the match immediately follows the {@code lookbehind} string. Note that {@code
      * isPrecededBy("")} is always true.
      */
     public boolean isPrecededBy(String lookbehind) {
       return context.startsWith(lookbehind, startIndex - lookbehind.length());
+    }
+
+    /**
+     * Returns true if the match immediately follows a character that matches the {@code lookbehind}
+     * predicate.
+     *
+     * @since 9.0
+     */
+    public boolean isPrecededBy(CharPredicate lookbehind) {
+      requireNonNull(lookbehind);
+      return startIndex > 0 && lookbehind.test(context.charAt(startIndex - 1));
     }
 
     /**

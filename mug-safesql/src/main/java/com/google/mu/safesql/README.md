@@ -26,7 +26,40 @@ when `sql.query()` is called.
 
 ## Common Pain Points in SQL-First Java Development
 
-### 1. Dynamic `IN` Clauses with Collections
+### 1. SQL Injection
+
+While JDBC `PreparedStatement` is a vital defense against SQL Injection (SQLi),
+relying on it alone is often insufficient thanks to **dynamic SQL construction**.
+
+When query components like table names or `ORDER BY` clauses are built from user input using raw string concatenation
+(or `JdbcTemplate`, or MyBatis `${}` interpolation, jooq's escape hatch etc.) a wide-open door for injection is created.
+
+* **NotPetya (2017) – Up to $10 Billion:** This ransomware attack, which exploited initial vulnerabilities that could include web application flaws, caused unprecedented global disruption and staggering financial losses for giants like Maersk and FedEx.
+* **Equifax (2017) – Over $1.4 Billion:** A failure to patch a known web application vulnerability exposed sensitive data for 147 million people, leading to massive settlements, fines, and enduring reputational damage.
+
+These represent company-altering disasters. When large, complex systems rely on *programmer caution and code reviews* for dynamic SQL string concatenation, the risk is a timed bomb. Human errors, vast codebase, developer turnover, and rushed reviews make it impossible to manually prevent every subtle SQLi vulnerability. Humans make mistake, they always do.
+
+#### How Does SafeSql Prevent SQLi?
+
+`SafeSql` delivers **100% strong SQL injection safety**, eliminating human errors as a cause of injection.
+It achieves this through an easily enforceable, "safe by construction" approach:
+
+1.  **Forbid Unsafe APIs:** Change your database access layer to only accept `SafeSql` as queries, never raw `String`s.
+    * This closes all other doors to SQLi. If the `SafeSql` library is safe, your entire codebase is safe.
+
+2.  **Provably Safe by Construction Guarantees:**
+    * The SQL template string is required to be a `@CompileTimeConstant`, enforced by ErrorProne.
+        * Use dynamic `String` as SQL template $\to$ **Compilation Error.**
+    * All parameters passed to the template are automatically sent as JDBC `PreparedStatement` parameters by default.
+        * Pass untrusted `String` where identifier/dynamic SQL needed $\to$ **JDBC Runtime Error.**
+    * SafeSql performs strict validation for `String` placeholders used as table/column names (backtick-quoted or double-quoted as identifiers).
+        * Pass a string with malicious characters $\to$ **Immediate Runtime Exception.**
+    * Subqueries are only embedded from other `SafeSql` objects that are already provably safe from injection.
+
+There is simply no way to accidentally inject malicious code. If `SafeSql` compiles and runs, it's provably safe from SQLi.
+
+
+### 2. Dynamic `IN` Clauses with Collections
 
 When using an `IN` clause, most frameworks require you to manually construct the right number of
 placeholders, which can be cumbersome and error-prone.
@@ -63,7 +96,7 @@ placeholders and binds the values, eliminating manual string work and preventing
 
 ---
 
-### 2. Conditional Query Fragments
+### 3. Conditional Query Fragments
 
 Adding optional filters or groupings usually means string concatenation or awkward branching in your code.
 
@@ -96,7 +129,7 @@ logic explicit at the SQL level, not hidden in string operations.
 
 ---
 
-### 3. Injecting Identifiers like Column or Table Names
+### 4. Injecting Identifiers like Column or Table Names
 
 Most frameworks only allow safe parameterization for values, because the JDBC `PreparedStatement`
 only supports value parameterization. When it comes to parameterizing SQL identifiers,
@@ -136,7 +169,7 @@ Unsafe or invalid names are rejected, which removes a whole class of injection r
 
 ---
 
-### 4. Proper Escaping for LIKE Patterns
+### 5. Proper Escaping for LIKE Patterns
 
 When user input is used in `LIKE` queries, forgetting to escape `%` or `_` can cause accidental matches or security issues.
 
@@ -157,7 +190,7 @@ You don’t have to think about escaping rules or risk mistakes—user input is 
 
 ---
 
-### 5. Query Composition and Parameter Isolation
+### 6. Query Composition and Parameter Isolation
 
 Composing queries from reusable fragments often leads to parameter name clashes or incorrect bindings,
 especially as code grows.
@@ -179,7 +212,7 @@ through `PreparedStatement` in the correct order.
 
 ---
 
-### 6. Parameter Name and Order Checking
+### 7. Parameter Name and Order Checking
 
 In traditional frameworks, parameter order or name mismatches can slip by the compiler
 and only fail at runtime—or worse, silently produce incorrect results.
@@ -189,6 +222,14 @@ and only fail at runtime—or worse, silently produce incorrect results.
 String sql = "SELECT * FROM users WHERE id = ? AND name = ?";
 preparedStatement.setInt(1, userName); // mistake: wrong order
 preparedStatement.setString(2, userId);
+```
+
+**Example (with Spring NamedParameterJdbcTemplate):**
+```java {.bad}
+new NamedParameterJdbcTemplate(dataSource)
+    .queryForList(
+        "SELECT * FROM users WHERE id = :id AND name = :name",
+        Map.of("nmae", userName, "id", userId));  // type!
 ```
 This kind of error won’t always be caught during development, and can be difficult to debug.
 
@@ -222,7 +263,7 @@ that you do mean to use the uuid as the `user_id`.
 
 ---
 
-### 7. Real, Actual SQL. No DSL; No XML
+### 8. Real, Actual SQL. No DSL; No XML
 
 A common pain point with many Java data frameworks is that you end up writing SQL as a domain-specific language (DSL),
 verbose XML, or by assembling fragments with string builders. This creates a barrier when trying to move between
@@ -236,7 +277,7 @@ This keeps the workflow frictionless, simplifies debugging, and helps to make yo
 
 ---
 
-### 8. Type Safety
+### 9. Type Safety
 
 SafeSql doesn't know your database schema so cannot check for column types or column name typos.
 
@@ -268,3 +309,16 @@ And if you like explicitness, consider quoting all string-typed placeholders:
 either it's a table/column name and needs identifier-quotes, or it's a string value,
 which you can single-quote like `'{user_name}'`. It doesn't change runtime behavior,
 but makes the SQL read less ambiguous.
+
+---
+
+## Summary
+
+In a nutshell, use `SafeSql` if any of the following applies to you:
+
+* You are a large enterprise. Relying on developer vigilance to avoid SQL injection isn't an option. Instead, you need **systematically enforced safety**.
+* You prefer to write actual SQL, and appreciate the ability to directly **copy-paste queries** between your code and the database console for easy debugging and testing.
+* A low learning curve and a *what-you-see-is-what-you-get* (WYSIWYG) approach are important to you. No Domain Specific Language (DSL) to learn.
+* You need to parameterize by **table names**, **column names**, all while preventing injection risks.
+* You have **dynamic and complex subqueries** to compose. And you find it error prone managing the subquery parameters manually.
+* You value **compile-time semantic error prevention** so you won't accidentally use `user.name()` in a place intended for `{ssn}`, even if both are strings.

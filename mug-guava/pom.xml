@@ -4,7 +4,7 @@
   <parent>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-root</artifactId>
-    <version>8.8-SNAPSHOT</version>
+    <version>9.2-SNAPSHOT</version>
   </parent>
   <artifactId>mug-guava</artifactId>
   <packaging>jar</packaging>
@@ -16,6 +16,18 @@
     <pluginManagement>
       <plugins>
         <plugin>
+          <groupId>org.sonatype.central</groupId>
+          <artifactId>central-publishing-maven-plugin</artifactId>
+          <version>0.8.0</version> <!-- or latest -->
+          <extensions>true</extensions>
+          <configuration>
+            <publishingServerId>central</publishingServerId>
+            <!-- optional but recommended in CI -->
+            <autoPublish>true</autoPublish>
+            <waitUntil>published</waitUntil>
+          </configuration>
+        </plugin>
+        <plugin>
           <artifactId>maven-compiler-plugin</artifactId>
           <configuration>
             <compilerArgs>
@@ -25,12 +37,12 @@
               <path>
                 <groupId>com.google.errorprone</groupId>
                 <artifactId>error_prone_core</artifactId>
-                <version>2.23.0</version>
+                <version>2.27.0</version>
               </path>
               <path>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>mug-errorprone</artifactId>
-                <version>8.5</version>
+                <version>9.0</version>
               </path>
             <!-- Other annotation processors go here.
             If 'annotationProcessorPaths' is set, processors will no longer be
@@ -41,6 +53,19 @@
         </plugin>
       </plugins>
     </pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifestEntries>
+              <Automatic-Module-Name>com.google.mu.guava</Automatic-Module-Name>
+            </manifestEntries>
+          </archive>
+        </configuration>
+      </plugin>
+    </plugins>
   </build>
   <dependencies>
       <dependency>

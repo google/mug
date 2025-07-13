@@ -108,6 +108,18 @@ public class CharPredicateTest {
     assertThat(CharPredicate.anyOf("ab").matchesAllOf("c")).isFalse();
   }
 
+  @Test public void testIsPrefixOf() {
+    assertThat(CharPredicate.range('0', '9').isPrefixOf("0-")).isTrue();
+    assertThat(CharPredicate.range('0', '9').isPrefixOf("1-")).isTrue();
+    assertThat(CharPredicate.range('0', '9').isPrefixOf("-1")).isFalse();
+  }
+
+  @Test public void testIsSuffixOf() {
+    assertThat(CharPredicate.range('0', '9').isSuffixOf("10")).isTrue();
+    assertThat(CharPredicate.range('0', '9').isSuffixOf("a1")).isTrue();
+    assertThat(CharPredicate.range('0', '9').isSuffixOf("1a")).isFalse();
+  }
+
   @Test public void testNulls() throws Throwable {
     CharPredicate p = CharPredicate.is('a');
     new NullPointerTester().testAllPublicInstanceMethods(p);
