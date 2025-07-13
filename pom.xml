@@ -115,14 +115,14 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava-testlib</artifactId>
-      <version>33.1.0-jre</version>
+      <version>33.4.0-jre</version>
       <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>33.1.0-jre</version>
+      <version>33.4.0-jre</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -269,7 +269,7 @@
               <additionalDependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>33.1.0-jre</version>
+                <version>33.4.0-jre</version>
               </additionalDependency>
               <additionalDependency>
                 <groupId>com.google.errorprone</groupId>
