@@ -45,7 +45,6 @@
     <module>mug</module>
     <module>mug-benchmarks</module>
     <module>mug-examples</module>
-    <module>mug-algorithms</module>
     <module>mug-guava</module>
     <module>mug-protobuf</module>
     <module>mug-errorprone</module>
