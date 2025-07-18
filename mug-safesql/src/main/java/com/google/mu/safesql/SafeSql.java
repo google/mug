@@ -928,6 +928,8 @@ public final class SafeSql {
    * }</pre>
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
+   * @throws NullPointerException if the first column value is null, and {@code resultType}
+   *   isn't a record or Java Bean.
    * @since 9.2
    */
   public <T> Optional<T> queryForOne(DataSource dataSource, Class<? extends T> resultType) {
@@ -944,6 +946,8 @@ public final class SafeSql {
    *         .queryForOne(connection, User.class);
    * }</pre>
    *
+   * @throws NullPointerException if the first column value is null, and {@code resultType}
+   *   isn't a record or Java Bean.
    * @since 9.2
    */
   public <T> Optional<T> queryForOne(Connection connection, Class<? extends T> resultType)
@@ -958,6 +962,7 @@ public final class SafeSql {
    * <p>Suitable for queries that search by the primary key.
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
+   * @throws NullPointerException if {@code rowMapper} returns null
    * @since 9.2
    */
   public <T> Optional<T> queryForOne(
@@ -975,6 +980,7 @@ public final class SafeSql {
    *
    * <p>Suitable for queries that search by the primary key.
    *
+   * @throws NullPointerException if {@code rowMapper} returns null
    * @since 9.2
    */
   public <T> Optional<T> queryForOne(
@@ -982,7 +988,13 @@ public final class SafeSql {
       throws SQLException {
     try (Stream<T> stream =
         queryLazily(connection, stmt -> { stmt.setMaxRows(1); stmt.setFetchSize(1); }, rowMapper)) {
-      return stream.findFirst();
+      return stream.peek(r -> {
+        if (r == null) {
+          throw new NullPointerException(
+              "Null result not supported. Consider using a record or Java Bean as the result type, " +
+              "or using queryLazily() or query() that support nulls.");
+        }
+      }).findFirst();
     }
   }
 

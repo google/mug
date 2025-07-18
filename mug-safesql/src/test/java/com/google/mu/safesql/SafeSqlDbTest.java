@@ -820,11 +820,16 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .hasValue(barTime.toInstant());
   }
 
-  @Test public void queryForOne_nowRowIsReturned() throws Exception {
+  @Test public void queryForOne_noRowIsReturned() throws Exception {
     assertThat(
             SafeSql.of("select time from ITEMS where id IN ({id})", testId())
                 .queryForOne(connection(), ZonedDateTime.class))
         .isEmpty();
+  }
+
+  @Test public void queryForOne_nullCausesNpe() throws Exception {
+    SafeSql sql = SafeSql.of("select null AS id");
+    assertThrows(NullPointerException.class, () -> sql.queryForOne(connection(), Long.class));
   }
 
   @Test public void queryLazily_withResultType_parametersAnnotatedWithSqlName() throws Exception {
