@@ -800,27 +800,6 @@ public final class SafeSql {
   }
 
   /**
-   * Similar to {@link #query(DataSource, SqlFunction)}, but uses an existing connection.
-   *
-   * <p>It's usually more convenient to use the {@code DataSource} overload because you won't have
-   * to manage the JDBC resources. Use this method if you need to reuse a connection
-   * (mostly for multi-statement transactions).
-   *
-   * <p>For example: <pre>{@code
-   * List<Long> ids = SafeSql.of("SELECT id FROM Users WHERE name LIKE '%{name}%'", name)
-   *     .query(connection, row -> row.getLong("id"));
-   * }</pre>
-   *
-   * <p>Internally it delegates to {@link PreparedStatement#executeQuery} or {@link
-   * Statement#executeQuery} if this sql contains no JDBC binding parameters.
-   */
-  public <T> List<T> query(
-      Connection connection, SqlFunction<? super ResultSet, ? extends T> rowMapper)
-      throws SQLException {
-    return query(connection, stmt -> {}, rowMapper);
-  }
-
-  /**
    * Similar to {@link #query(DataSource, Class)}, but with {@code settings}
    * (can be set via lambda like {@code stmt -> stmt.setMaxRows(100)})
    * to allow customization.
@@ -914,6 +893,96 @@ public final class SafeSql {
       try (ResultSet resultSet = stmt.executeQuery()) {
         return mapResults(resultSet, rowMapper);
       }
+    }
+  }
+
+  /**
+   * Similar to {@link #query(DataSource, SqlFunction)}, but uses an existing connection.
+   *
+   * <p>It's usually more convenient to use the {@code DataSource} overload because you won't have
+   * to manage the JDBC resources. Use this method if you need to reuse a connection
+   * (mostly for multi-statement transactions).
+   *
+   * <p>For example: <pre>{@code
+   * List<Long> ids = SafeSql.of("SELECT id FROM Users WHERE name LIKE '%{name}%'", name)
+   *     .query(connection, row -> row.getLong("id"));
+   * }</pre>
+   *
+   * <p>Internally it delegates to {@link PreparedStatement#executeQuery} or {@link
+   * Statement#executeQuery} if this sql contains no JDBC binding parameters.
+   */
+  public <T> List<T> query(
+      Connection connection, SqlFunction<? super ResultSet, ? extends T> rowMapper)
+      throws SQLException {
+    return query(connection, stmt -> {}, rowMapper);
+  }
+
+  /**
+   * Similar to {@link #query(DataSource, Class)}, but only fetches one row if the query
+   * result includes at least one rows, or else returns {@code Optional.empty()}.
+   *
+   * <p>Suitable for queries that search by the primary key, for example: <pre>{@code
+   * Optional<User> user =
+   *     SafeSql.of("select id, name from Users where id = {id}", userId)
+   *         .queryForOne(dataSource, User.class);
+   * }</pre>
+   *
+   * @throws UncheckedSqlException wraps {@link SQLException} if failed
+   * @since 9.2
+   */
+  public <T> Optional<T> queryForOne(DataSource dataSource, Class<? extends T> resultType) {
+    return queryForOne(dataSource, ResultMapper.toResultOf(resultType)::from);
+  }
+
+  /**
+   * Similar to {@link #query(Connection, Class)}, but only fetches one row if the query
+   * result includes at least one rows, or else returns {@code Optional.empty()}.
+   *
+   * <p>Suitable for queries that search by the primary key, for example: <pre>{@code
+   * Optional<User> user =
+   *     SafeSql.of("select id, name from Users where id = {id}", userId)
+   *         .queryForOne(connection, User.class);
+   * }</pre>
+   *
+   * @since 9.2
+   */
+  public <T> Optional<T> queryForOne(Connection connection, Class<? extends T> resultType)
+      throws SQLException {
+    return queryForOne(connection, ResultMapper.toResultOf(resultType)::from);
+  }
+
+  /**
+   * Similar to {@link #query(DataSource, SqlFunction)}, but only fetches one row if the query
+   * result includes at least one rows, or else returns {@code Optional.empty()}.
+   *
+   * <p>Suitable for queries that search by the primary key.
+   *
+   * @throws UncheckedSqlException wraps {@link SQLException} if failed
+   * @since 9.2
+   */
+  public <T> Optional<T> queryForOne(
+      DataSource dataSource, SqlFunction<? super ResultSet, ? extends T> rowMapper) {
+    try (Connection connection = dataSource.getConnection()) {
+      return queryForOne(connection, rowMapper);
+    } catch (SQLException e) {
+      throw new UncheckedSqlException(e);
+    }
+  }
+
+  /**
+   * Similar to {@link #query(Connection, SqlFunction)}, but only fetches one row if the query
+   * result includes at least one rows, or else returns {@code Optional.empty()}.
+   *
+   * <p>Suitable for queries that search by the primary key.
+   *
+   * @since 9.2
+   */
+  public <T> Optional<T> queryForOne(
+      Connection connection, SqlFunction<? super ResultSet, ? extends T> rowMapper)
+      throws SQLException {
+    try (Stream<T> stream =
+        queryLazily(connection, stmt -> { stmt.setMaxRows(1); stmt.setFetchSize(1); }, rowMapper)) {
+      return stream.findFirst();
     }
   }
 

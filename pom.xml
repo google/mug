@@ -279,7 +279,7 @@
               <additionalDependency>
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-java</artifactId>
-                <version>4.26.0</version>
+                <version>4.31.1</version>
               </additionalDependency>
               <additionalDependency>
                 <groupId>org.checkerframework</groupId>

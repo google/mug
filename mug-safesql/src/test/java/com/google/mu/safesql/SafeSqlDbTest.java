@@ -2,6 +2,7 @@ package com.google.mu.safesql;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertThrows;
@@ -489,6 +490,11 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
                 .map(ZonedDateTime::toInstant)
                 .collect(toImmutableList()))
         .containsExactly(barTime.toInstant());
+    assertThat(
+            SafeSql.of("select time from ITEMS where id = {id}", testId())
+                .queryForOne(connection(), ZonedDateTime.class)
+                .map(ZonedDateTime::toInstant))
+        .hasValue(barTime.toInstant());
   }
 
   @Test public void queryLazily_withResultType_toOffsetDateTimeResults() throws Exception {
@@ -503,6 +509,11 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
                 .map(OffsetDateTime::toInstant)
                 .collect(toImmutableList()))
         .containsExactly(barTime.toInstant());
+    assertThat(
+            SafeSql.of("select time from ITEMS where id = {id}", testId())
+                .queryForOne(connection(), OffsetDateTime.class)
+                .map(OffsetDateTime::toInstant))
+        .hasValue(barTime.toInstant());
   }
 
   @Test public void query_withResultType_usingParameterNames() throws Exception {
@@ -786,6 +797,34 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
             .queryLazily(connection(), StringBean.class)
             .collect(toList()))
         .containsExactly(bean);
+    assertThat(
+        SafeSql.of("select {id} AS id, 'foo' AS data", testId())
+            .queryForOne(connection(), StringBean.class))
+        .hasValue(bean);
+  }
+
+  @Test public void queryForOne_firstRowIsTurned() throws Exception {
+    ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title, time) VALUES({id}, {title}, {time})", testId(), "bar", barTime)
+                .update(connection()))
+        .isEqualTo(1);
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title, time) VALUES({id}, {title}, {time})", testId() + 1, "bar2", barTime)
+                .update(connection()))
+      .isEqualTo(1);
+    assertThat(
+            SafeSql.of("select time from ITEMS where id IN ({id}, {id2}) order by id", testId(), /* id2 */ testId() + 1)
+                .queryForOne(connection(), ZonedDateTime.class)
+                .map(ZonedDateTime::toInstant))
+        .hasValue(barTime.toInstant());
+  }
+
+  @Test public void queryForOne_nowRowIsReturned() throws Exception {
+    assertThat(
+            SafeSql.of("select time from ITEMS where id IN ({id})", testId())
+                .queryForOne(connection(), ZonedDateTime.class))
+        .isEmpty();
   }
 
   @Test public void queryLazily_withResultType_parametersAnnotatedWithSqlName() throws Exception {
