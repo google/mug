@@ -991,8 +991,8 @@ public final class SafeSql {
       return stream.peek(r -> {
         if (r == null) {
           throw new NullPointerException(
-              "Null result not supported. Consider using a record or Java Bean as the result type, " +
-              "or using queryLazily() or query() that support nulls.");
+              "Null result not supported. Consider using a record or Java Bean with a nullable property " +
+              "as the result type, or using queryLazily() or query() that support nulls.");
         }
       }).findFirst();
     }
