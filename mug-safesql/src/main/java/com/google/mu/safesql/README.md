@@ -1,4 +1,4 @@
-# SafeSql: Injection-Safe SQL Templates for Java
+# SafeSql: The Only Injection-Safe SQL Templates for Java
 
 ## Introduction
 
@@ -57,6 +57,8 @@ It achieves this through an easily enforceable, "safe by construction" approach:
     * Subqueries are only embedded from other `SafeSql` objects that are already provably safe from injection.
 
 There is simply no way to accidentally inject malicious code. If `SafeSql` compiles and runs, it's provably safe from SQLi.
+
+No other SQL framework offers **100% guaranteed safety**.
 
 
 ### 2. Dynamic `IN` Clauses with Collections
