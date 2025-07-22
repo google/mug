@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterators;
@@ -1382,35 +1383,26 @@ public final class SafeSql {
       Builder builder = new Builder();
       class Liker {
         Optional<String> like(Substring.Match placeholder, Object value) {
-          // poor man's Optional.or() since we cannot require Java 9.
-          String liked = likedStartingWith("%", placeholder, value);
-          if (liked != null) return Optional.of(liked);
-          liked = likedStartingWith("_", placeholder, value);
-          if (liked != null) return Optional.of(liked);
-          return Optional.ofNullable(likedStartingWith("", placeholder, value));
+          return Stream.of("%", "_", "")
+              .map(prefix -> likedStartingWith(prefix, placeholder, value))
+              .filter(Objects::nonNull)
+              .findFirst();
         }
 
-        private String likedStartingWith(String left, Substring.Match placeholder, Object value) {
-          String leftQuote = "'" + left;
-          if (!context.lookbehind("LIKE " + leftQuote, placeholder)) return null;
+        private String likedStartingWith(String prefix, Substring.Match placeholder, Object value) {
+          String left = "'" + prefix;
+          if (!context.lookbehind("LIKE " + left, placeholder)) return null;
           context.rejectEscapeAfter(placeholder);
-          String escaped = left + escapePercent(mustBeString(placeholder, value));
-          if (scanner.nextFragmentIfQuoted(leftQuote, placeholder, "'")
-              .map(builder::appendSql)
-              .isPresent()) {
-            return escaped;
-          }
-          if (scanner.nextFragmentIfQuoted(leftQuote, placeholder, "%'")
-              .map(builder::appendSql)
-              .isPresent()) {
-            return escaped + "%";
-          }
-          if (scanner.nextFragmentIfQuoted(leftQuote, placeholder, "_'")
-              .map(builder::appendSql)
-              .isPresent()) {
-            return escaped + "_";
-          }
-          throw new IllegalArgumentException("unsupported wildcard in LIKE " + leftQuote + placeholder);
+          String escaped = prefix + escapePercent(mustBeString(placeholder, value));
+          return BiStream.biStream(Stream.of("%", "_", ""))
+              .mapValuesIfPresent(
+                  suffix -> scanner.nextFragmentIfQuoted(left, placeholder, suffix + "'"))
+              .findFirst()
+              .peek((suffix, fragment) -> builder.appendSql(fragment))
+              .map((suffix, fragment) -> escaped + suffix)
+              .orElseThrow(
+                  () -> new IllegalArgumentException(
+                      "unsupported wildcard in LIKE " + left + placeholder));
         }
       }
       Liker liker = new Liker();
