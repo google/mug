@@ -1521,7 +1521,7 @@ public final class SafeSql {
                 .map((prefix, suffix) ->
                     builder.addParameter(
                         paramName,
-                        prefix + escapePercent(mustBeString(placeholder, value)) + suffix))
+                        prefix + escapeLikeWildcards(mustBeString(placeholder, value)) + suffix))
                 .isPresent()) {
           builder.appendSql(" ESCAPE '^'");
         } else {
@@ -1637,7 +1637,7 @@ public final class SafeSql {
         .mapKeys(index -> PLACEHOLDER_ELEMENT_NAME.format(placeholder, index));
   }
 
-  private static String escapePercent(String s) {
+  private static String escapeLikeWildcards(String s) {
     return first(c -> c == '^' || c == '%' || c == '_').repeatedly().replaceAllFrom(s, c -> "^" + c);
   }
 
