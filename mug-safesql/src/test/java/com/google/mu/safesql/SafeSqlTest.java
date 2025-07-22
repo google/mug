@@ -361,6 +361,14 @@ public class SafeSqlTest {
   }
 
   @Test
+  public void singleLikeParameterWithWildcardAtBeginningButNotProperlyEnded() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.of("select * from tbl where name like '%{foo}unsupported'", "foo"));
+    assertThat(thrown).hasMessageThat().contains("wildcard in LIKE '%{foo}");
+  }
+
+  @Test
   public void singleLikeParameterWithWildcardAtBothEnds() {
     SafeSql sql = SafeSql.of("select * from tbl where name like '%{s}%'", "foo");
     assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");

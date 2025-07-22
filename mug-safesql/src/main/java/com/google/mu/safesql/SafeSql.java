@@ -1468,18 +1468,17 @@ public final class SafeSql {
           String identifier = mustBeIdentifier("\"" + placeholder + "\"", value);
           checkArgument(identifier.length() > 0, "\"%s\" cannot be empty", placeholder);
           builder.appendSql("\"" + identifier + "\"");
-        } else if (context.lookbehind("LIKE '%", placeholder)
-            && scanner.nextFragmentIfQuoted("'%", placeholder, "%'").map(builder::appendSql).isPresent()) {
+        } else if (context.lookbehind("LIKE '%", placeholder)) {
           context.rejectEscapeAfter(placeholder);
-          builder
-              .addParameter(paramName, "%" + escapePercent(mustBeString(placeholder, value)) + "%")
-              .appendSql(" ESCAPE '^'");
-        } else if (context.lookbehind("LIKE '%", placeholder)
-            && scanner.nextFragmentIfQuoted("'%", placeholder, "'").map(builder::appendSql).isPresent()) {
-          context.rejectEscapeAfter(placeholder);
-          builder
-              .addParameter(paramName, "%" + escapePercent(mustBeString(placeholder, value)))
-              .appendSql(" ESCAPE '^'");
+          String escaped = "%" + escapePercent(mustBeString(placeholder, value));
+          if (scanner.nextFragmentIfQuoted("'%", placeholder, "%'").map(builder::appendSql).isPresent()) {
+            escaped += "%";
+          } else {
+            checkArgument(
+                scanner.nextFragmentIfQuoted("'%", placeholder, "'").map(builder::appendSql).isPresent(),
+                "Unsupported wildcard in LIKE '%%%s", placeholder);
+          }
+          builder.addParameter(paramName, escaped) .appendSql(" ESCAPE '^'");
         } else if (context.lookbehind("LIKE '", placeholder)
             && scanner.nextFragmentIfQuoted("'", placeholder, "%'").map(builder::appendSql).isPresent()) {
           context.rejectEscapeAfter(placeholder);
