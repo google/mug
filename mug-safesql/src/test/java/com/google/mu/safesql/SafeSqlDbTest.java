@@ -126,6 +126,20 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .containsExactly(title);
   }
 
+  @Test public void likeExpressionWithUnderscoreInSql() throws Exception {
+    String title = "What's that?";
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), title)
+                .update(connection()))
+        .isEqualTo(1);
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '_{...}_' and id = {id}", "hat's that", testId()), "title"))
+        .containsExactly(title);
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '%{...}_' and id = {id}", "'s that", testId()), "title"))
+        .containsExactly(title);
+  }
+
   @Test public void withPercentCharacterValue() throws Exception {
     assertThat(
             SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "%")
@@ -156,14 +170,40 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .containsExactly("foo");
   }
 
+  @Test public void likeExpressionWithPrefixUnderscoreInSql() throws Exception {
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")
+                .update(connection()))
+        .isEqualTo(1);
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '{...}_' and id = {id}", "fo", testId()), "title"))
+        .containsExactly("foo");
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '{...}_' and id = {id}", "f", testId()), "title"))
+        .isEmpty();
+  }
+
   @Test public void likeExpressionWithSuffixWildcardInSql() throws Exception {
     assertThat(
             SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")
                 .update(connection()))
         .isEqualTo(1);
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title like '%{...}' and id = {id}", "oo", testId()), "title"))
+            SafeSql.of("select title from ITEMS where title like '%{...}' and id = {id}", "o", testId()), "title"))
         .containsExactly("foo");
+  }
+
+  @Test public void likeExpressionWithSuffixUnderscoreInSql() throws Exception {
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")
+                .update(connection()))
+        .isEqualTo(1);
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '_{...}' and id = {id}", "oo", testId()), "title"))
+        .containsExactly("foo");
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '_{...}' and id = {id}", "o", testId()), "title"))
+        .isEmpty();
   }
 
   @Test public void quotedStringExpression() throws Exception {
@@ -190,6 +230,12 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     assertThat(queryColumn(
             SafeSql.of("select title from ITEMS where title like '{...}%' and id = {id}", "%", testId()), "title"))
         .isEmpty();
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '{...}_' and id = {id}", "%", testId()), "title"))
+        .isEmpty();
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '_{...}' and id = {id}", "%", testId()), "title"))
+        .isEmpty();
   }
 
   @Test public void likeExpressionWithPercentValue_found() throws Exception {
@@ -202,6 +248,12 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .containsExactly("30%");
     assertThat(queryColumn(
             SafeSql.of("select title from ITEMS where title like '%{...}' and id = {id}", "3%%", testId()), "title"))
+        .isEmpty();
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '_{...}' and id = {id}", "0%", testId()), "title"))
+        .containsExactly("30%");
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '_{...}' and id = {id}", "0%%", testId()), "title"))
         .isEmpty();
   }
 

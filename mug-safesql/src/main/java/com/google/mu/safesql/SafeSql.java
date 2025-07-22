@@ -1379,7 +1379,41 @@ public final class SafeSql {
     TemplatePlaceholdersContext context = new TemplatePlaceholdersContext(template);
     return StringFormat.template(template, (fragments, placeholders) -> {
       TemplateFragmentScanner scanner = new TemplateFragmentScanner(fragments);
-      return placeholders.collect(new Builder(), (builder, placeholder, value) -> {
+      Builder builder = new Builder();
+      class Liker {
+        Optional<String> like(Substring.Match placeholder, Object value) {
+          String liked = getLikedStartingWith("%", placeholder, value);
+          if (liked != null) {
+            return Optional.of(liked);
+          }
+          liked = getLikedStartingWith("_", placeholder, value);
+          if (liked != null) {
+            return Optional.of(liked);
+          }
+          return Optional.ofNullable(getLikedStartingWith("", placeholder, value));
+        }
+
+        private String getLikedStartingWith(String left, Substring.Match placeholder, Object value) {
+          String leftQuote = "'" + left;
+          if (context.lookbehind("LIKE " + leftQuote, placeholder)) {
+            context.rejectEscapeAfter(placeholder);
+            String escaped = left + escapePercent(mustBeString(placeholder, value));
+            if (scanner.nextFragmentIfQuoted(leftQuote, placeholder, "'").map(builder::appendSql).isPresent()) {
+              return escaped;
+            }
+            if (scanner.nextFragmentIfQuoted(leftQuote, placeholder, "%'").map(builder::appendSql).isPresent()) {
+              return escaped + "%";
+            }
+            if (scanner.nextFragmentIfQuoted(leftQuote, placeholder, "_'").map(builder::appendSql).isPresent()) {
+              return escaped + "_";
+            }
+            throw new IllegalArgumentException("Unsupported wildcard in LIKE " + leftQuote + placeholder);
+          }
+          return null;
+        }
+      }
+      Liker liker = new Liker();
+      placeholders.forEach((placeholder, value) -> {
         checkMisuse(placeholder, value);
         String paramName = placeholder.skip(1, 1).toString().trim();
         Substring.Match conditional = first("->").in(paramName).orElse(null);
@@ -1426,7 +1460,9 @@ public final class SafeSql {
           checkArgument(elements.hasNext(), "%s cannot be empty list", placeholder);
           if (placeholder.isImmediatelyBetween("'", "'")
               && context.lookaround("IN ('", placeholder, "')")
-              && scanner.nextFragmentIfQuoted("'", placeholder, "'").map(builder::appendSql).isPresent()) {
+              && scanner.nextFragmentIfQuoted("'", placeholder, "'")
+                  .map(builder::appendSql)
+                  .isPresent()) {
             builder.addSubQuery(
                 eachPlaceholderValue(placeholder, elements)
                     .mapToObj(SafeSql::mustBeString)
@@ -1460,40 +1496,36 @@ public final class SafeSql {
         } else if (value instanceof SafeSql) {
           builder.appendSql(scanner.nextFragment()).addSubQuery((SafeSql) value);
           validateSubqueryPlaceholder(placeholder);
-        } else if (scanner.nextFragmentIfQuoted("`", placeholder, "`").map(builder::appendSql).isPresent()) {
+        } else if (
+            scanner.nextFragmentIfQuoted("`", placeholder, "`")
+                .map(builder::appendSql)
+                .isPresent()) {
           String identifier = mustBeIdentifier("`" + placeholder + "`", value);
           checkArgument(identifier.length() > 0, "`%s` cannot be empty", placeholder);
           builder.appendSql("`" + identifier + "`");
-        } else if (scanner.nextFragmentIfQuoted("\"", placeholder, "\"").map(builder::appendSql).isPresent()) {
+        } else if (
+            scanner.nextFragmentIfQuoted("\"", placeholder, "\"")
+                .map(builder::appendSql)
+                .isPresent()) {
           String identifier = mustBeIdentifier("\"" + placeholder + "\"", value);
           checkArgument(identifier.length() > 0, "\"%s\" cannot be empty", placeholder);
           builder.appendSql("\"" + identifier + "\"");
-        } else if (context.lookbehind("LIKE '%", placeholder)) {
-          context.rejectEscapeAfter(placeholder);
-          String escaped = "%" + escapePercent(mustBeString(placeholder, value));
-          if (scanner.nextFragmentIfQuoted("'%", placeholder, "%'").map(builder::appendSql).isPresent()) {
-            escaped += "%";
-          } else {
-            checkArgument(
-                scanner.nextFragmentIfQuoted("'%", placeholder, "'").map(builder::appendSql).isPresent(),
-                "Unsupported wildcard in LIKE '%%%s", placeholder);
-          }
-          builder.addParameter(paramName, escaped) .appendSql(" ESCAPE '^'");
-        } else if (context.lookbehind("LIKE '", placeholder)
-            && scanner.nextFragmentIfQuoted("'", placeholder, "%'").map(builder::appendSql).isPresent()) {
-          context.rejectEscapeAfter(placeholder);
-          builder
-              .addParameter(paramName, escapePercent(mustBeString(placeholder, value)) + "%")
-              .appendSql(" ESCAPE '^'");
-        } else if (scanner.nextFragmentIfQuoted("'", placeholder, "'").map(builder::appendSql).isPresent()) {
+        } else if (
+            scanner.nextFragmentIfQuoted("'", placeholder, "'")
+                .map(builder::appendSql)
+                .isPresent()) {
           builder.addParameter(paramName, mustBeString("'" + placeholder + "'", value));
+        } else if (
+            liker.like(placeholder, value)
+                .map(liked -> builder.addParameter(paramName, liked))
+                .isPresent()) {
+          builder.appendSql(" ESCAPE '^'");
         } else {
           checkMissingPlaceholderQuotes(placeholder);
           builder.appendSql(scanner.nextFragment()).addParameter(paramName, value);
         }
-      })
-      .appendSql(scanner.nextFragment())
-      .build();
+      });
+      return builder.appendSql(scanner.nextFragment()).build();
     });
   }
 

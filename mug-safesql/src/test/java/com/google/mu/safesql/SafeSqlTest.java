@@ -369,6 +369,14 @@ public class SafeSqlTest {
   }
 
   @Test
+  public void singleLikeParameterWithUnderscoreAtBeginningButNotProperlyEnded() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.of("select * from tbl where name like '_{foo}unsupported'", "foo"));
+    assertThat(thrown).hasMessageThat().contains("wildcard in LIKE '_{foo}");
+  }
+
+  @Test
   public void singleLikeParameterWithWildcardAtBothEnds() {
     SafeSql sql = SafeSql.of("select * from tbl where name like '%{s}%'", "foo");
     assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
@@ -384,10 +392,26 @@ public class SafeSqlTest {
   }
 
   @Test
+  public void likeWithEscapeNotSuppoted_surroundedByUnderscoreSign() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.of("select * from tbl where name like '_{s}_' ESCAPE  '\'", "foo"));
+    assertThat(thrown).hasMessageThat().contains("ESCAPE");
+  }
+
+  @Test
   public void likeWithEscapeNotSuppoted_precededByPercentSign() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
         () -> SafeSql.of("select * from tbl where name like '%{s}' \n ESCAPE '\'", "foo"));
+    assertThat(thrown).hasMessageThat().contains("ESCAPE");
+  }
+
+  @Test
+  public void likeWithEscapeNotSuppoted_precededByUnderscoreSign() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.of("select * from tbl where name like '_{s}' \n ESCAPE '\'", "foo"));
     assertThat(thrown).hasMessageThat().contains("ESCAPE");
   }
 
@@ -400,10 +424,25 @@ public class SafeSqlTest {
   }
 
   @Test
+  public void likeWithEscapeNotSuppoted_followedByUnderscoreSign() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.of("select * from tbl where name like '{s}_' ESCAPE '\'", "foo"));
+    assertThat(thrown).hasMessageThat().contains("ESCAPE");
+  }
+
+  @Test
   public void literalPercentValueWithWildcardAtBothEnds() {
     SafeSql sql = SafeSql.of("select * from tbl where name like '%{s}%'", "%");
     assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
     assertThat(sql.debugString()).isEqualTo("select * from tbl where name like ? /* %^%% */ ESCAPE '^'");
+  }
+
+  @Test
+  public void literalUnderscoreValueWithWildcardAtBothEnds() {
+    SafeSql sql = SafeSql.of("select * from tbl where name like '_{s}_'", "_");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
+    assertThat(sql.debugString()).isEqualTo("select * from tbl where name like ? /* _^__ */ ESCAPE '^'");
   }
 
   @Test
@@ -437,6 +476,15 @@ public class SafeSqlTest {
   }
 
   @Test
+  public void stringRequiredWhenUnderstoreAtBothEnds() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.of("select * from tbl where name like '_{s}_'", 1));
+    assertThat(thrown).hasMessageThat().contains("String");
+    assertThat(thrown).hasMessageThat().contains("{s}");
+  }
+
+  @Test
   public void singleLikeParameterWithWildcardAsPrefix() {
     SafeSql sql = SafeSql.of("select * from tbl where name like '%{s}'", "foo");
     assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
@@ -444,10 +492,24 @@ public class SafeSqlTest {
   }
 
   @Test
+  public void singleLikeParameterWithUnderscoreAsPrefix() {
+    SafeSql sql = SafeSql.of("select * from tbl where name like '_{s}'", "foo");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
+    assertThat(sql.debugString()).isEqualTo("select * from tbl where name like ? /* _foo */ ESCAPE '^'");
+  }
+
+  @Test
   public void literalPercentValueWithWildcardAtPrefix() {
     SafeSql sql = SafeSql.of("select * from tbl where name like '%{s}'", "%");
     assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
     assertThat(sql.debugString()).isEqualTo("select * from tbl where name like ? /* %^% */ ESCAPE '^'");
+  }
+
+  @Test
+  public void literalPercentValueWithUnderscoreAtPrefix() {
+    SafeSql sql = SafeSql.of("select * from tbl where name like '_{s}'", "%");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
+    assertThat(sql.debugString()).isEqualTo("select * from tbl where name like ? /* _^% */ ESCAPE '^'");
   }
 
   @Test
@@ -481,6 +543,15 @@ public class SafeSqlTest {
   }
 
   @Test
+  public void stringRequiredWhenUnderscoreAsPrefix() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.of("select * from tbl where name like '_{s}'", 1));
+    assertThat(thrown).hasMessageThat().contains("String");
+    assertThat(thrown).hasMessageThat().contains("{s}");
+  }
+
+  @Test
   public void singleLikeParameterWithWildcardAsSuffix() {
     SafeSql sql = SafeSql.of("select * from tbl where name like '{s}%'", "foo");
     assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
@@ -488,10 +559,24 @@ public class SafeSqlTest {
   }
 
   @Test
+  public void singleLikeParameterWithUnderscoreAsSuffix() {
+    SafeSql sql = SafeSql.of("select * from tbl where name like '{s}_'", "foo");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
+    assertThat(sql.debugString()).isEqualTo("select * from tbl where name like ? /* foo_ */ ESCAPE '^'");
+  }
+
+  @Test
   public void literalPercentValueWithWildcardAtSuffix() {
     SafeSql sql = SafeSql.of("select * from tbl where name like '{s}%'", "%");
     assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
     assertThat(sql.debugString()).isEqualTo("select * from tbl where name like ? /* ^%% */ ESCAPE '^'");
+  }
+
+  @Test
+  public void literalPercentValueWithUnderscoreAtSuffix() {
+    SafeSql sql = SafeSql.of("select * from tbl where name like '{s}_'", "%");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name like ? ESCAPE '^'");
+    assertThat(sql.debugString()).isEqualTo("select * from tbl where name like ? /* ^%_ */ ESCAPE '^'");
   }
 
   @Test
@@ -525,6 +610,15 @@ public class SafeSqlTest {
   }
 
   @Test
+  public void stringRequiredWhenUnderscoreAsSuffix() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () -> SafeSql.of("select * from tbl where name like '{s}_'", 1));
+    assertThat(thrown).hasMessageThat().contains("String");
+    assertThat(thrown).hasMessageThat().contains("{s}");
+  }
+
+  @Test
   public void stringParameterQuoted() {
     SafeSql sql = SafeSql.of("select * from tbl where name = '{s}'", "foo");
     assertThat(sql.toString()).isEqualTo("select * from tbl where name = ?");
@@ -536,6 +630,13 @@ public class SafeSqlTest {
     SafeSql sql = SafeSql.of("select * from tbl where name = '{s}'", "%");
     assertThat(sql.toString()).isEqualTo("select * from tbl where name = ?");
     assertThat(sql.debugString()).isEqualTo("select * from tbl where name = ? /* % */");
+  }
+
+  @Test
+  public void literalUnderscoreValueQuoted() {
+    SafeSql sql = SafeSql.of("select * from tbl where name = '{s}'", "_");
+    assertThat(sql.toString()).isEqualTo("select * from tbl where name = ?");
+    assertThat(sql.debugString()).isEqualTo("select * from tbl where name = ? /* _ */");
   }
 
   @Test
