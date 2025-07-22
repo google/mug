@@ -28,6 +28,7 @@ import org.dbunit.dataset.IDataSet;
 import org.dbunit.dataset.xml.FlatXmlDataSetBuilder;
 import org.dbunit.operation.DatabaseOperation;
 import org.h2.jdbcx.JdbcDataSource;
+import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -40,6 +41,10 @@ import com.google.mu.util.StringFormat;
 @RunWith(JUnit4.class)
 public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
   @Rule public final TestName testName = new TestName();
+
+  @After public void cleanDb() throws Exception {
+    SafeSql.of("TRUNCATE TABLE ITEMS").update(connection());
+  }
 
   @Override
   protected DataSource getDataSource() {
@@ -124,6 +129,26 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     assertThat(queryColumn(
             SafeSql.of("select title from ITEMS where title like '%{...}%' and id = {id}", "at?", testId()), "title"))
         .containsExactly(title);
+  }
+
+  @Test public void likeExpressionWithWildcardAndUnderscoreMixed() throws Exception {
+    String title = "What's that?";
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), title)
+                .update(connection()))
+        .isEqualTo(1);
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '%{...}_' and id = {id}", "at", testId()), "title"))
+        .containsExactly(title);
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '%{...}_' and id = {id}", "th", testId()), "title"))
+        .isEmpty();
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '_{...}%' and id = {id}", "hat'", testId()), "title"))
+        .containsExactly(title);
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '_{...}%' and id = {id}", "What", testId()), "title"))
+        .isEmpty();
   }
 
   @Test public void likeExpressionWithUnderscoreInSql() throws Exception {
