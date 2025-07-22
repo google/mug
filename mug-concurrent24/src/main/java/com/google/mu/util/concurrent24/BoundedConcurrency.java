@@ -120,12 +120,44 @@ public final class BoundedConcurrency {
    * Applies {@code work} on each input element concurrently and <em>lazily</em>.
    *
    * <p>At any given time, at most {@code maxConcurrency} concurrent work are running.
-   * With the intermediary buffer size bounded by {@code maxConcurrency}.
-   * The result {@link BiStream} is lazy: concurrent work only starts upon requested.
    *
-   * <p>Unlike the {@link Gatherers#mapConcurrent} gatherer, upstream exceptions won't leak
-   * uninterrupted virtual threads and will guarantee strong happens-before relationship
-   * at termination operation of the stream.
+   * <p>To avoid leaking virtual threads caused by upstream exceptions, input elements are
+   * first computed and consumed into a List before any concurrent work is started (such that
+   * if any upstream element throws, no virtual thread is ever started).
+   * But the result {@link BiStream} is lazy: concurrent work only starts upon requested by
+   * downstream. Specifically, if you short-circuit using {@link Stream#findAny} or
+   * {@link BiStream#findAny}, at most {@code maxConcurrency} virtual threads will be started.
+   *
+   * <p>Compared to the {@link Gatherers#mapConcurrent} gatherer: <ul>
+   * <li>{@code mapConcurrent()} only interrupts and joins the on-the-fly virtual threads upon
+   * downstream exceptions, but is unable to interrupt or join when an <em>upstream </em> exception
+   * is thrown; whereas {@code concurrently()} will always interrupt and join. As a result,
+   * actions in the virtual threads <em>happens-before</em> actions after the collector returns or throws.
+   * <li>{@code mapConcurrent()} guarantees encounter-order. If an input element takes
+   * a long time or forever to process, it can potentially block or halt the program
+   * when there are more than {@code maxConcurrency} elements following it, even if
+   * {@code maxConcurrency - 1} virtual threads have already completed with the long-running task
+   * being the only virtual thread still running. Whereas {@code concurrently()}
+   * allows {@code maxConcurrency} virtual threads to run concurrently regardless of input order.
+   * This means if you have a long-running virtual thread (for instance: a heart-beat worker or a
+   * monitoring subtask etc.), it won't compromise throughput or starve the workers after it.
+   * <li>If encounter order is important to you, consider to use {@link BiStream#sorted} or
+   * friends to re-introduce ordering.
+   * </ul>
+   *
+   * <p>Compared to {@link com.google.mu.util.concurrent.Parallelizer#inParallel}: <ul>
+   * <li>{@code inParallel()} fails fast. When an exception is thrown, it interrupts on-the-fly
+   * threads, but doesn't wait for their completion. Thus there is no happens-before guarantee
+   * when an exception is thrown. {@code concurrently()} on the other hand always joins the virtual
+   * threads and guarantees strong <em>happens-before</em> relationship.
+   * <li>The {@code inParallel()} collector blocks until all parallel tasks are complete before
+   * returning; whereas {@code concurrently()} utilizes Java 24 Gatherer and will stream results
+   * to the downstream as soon as one is computed.
+   * <li>{@code inParallel()} can be used with any {@link java.util.concurrent.ExecutorService}
+   * (for example you could use {@link java.util.concurrent.Executors#newCachedThreadPool} if
+   * virtual threads isn't important to you); whereas {@code concurrently()} strictly runs one
+   * task per thread, although you could use a customized {@link ThreadFactory}.
+   * </ul>
    */
   public <I, O> Collector<I, ?, BiStream<I, O>> concurrently(
       Function<? super I, ? extends O> work) {
