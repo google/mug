@@ -46,7 +46,6 @@ import java.util.Spliterators;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -1385,12 +1384,9 @@ public final class SafeSql {
       Builder builder = new Builder();
       class Liker {
         BiOptional<String, String> like(Substring.Match placeholder) {
-          return BiOptional.flatMap(
-              Stream.of("%", "_", "")
-                  .map(prefix -> likedStartingWith(prefix, placeholder))
-                  .filter(BiOptional::isPresent)
-                  .findFirst(),
-              Function.identity());
+          return biStream(allowedAffixes())
+              .mapIfPresent((prefix, unused) -> likedStartingWith(prefix, placeholder))
+              .findFirst();
         }
 
         private BiOptional<String, String> likedStartingWith(
@@ -1398,15 +1394,19 @@ public final class SafeSql {
           String left = "'" + prefix;
           if (!context.lookbehind("LIKE " + left, placeholder)) return BiOptional.empty();
           context.rejectEscapeAfter(placeholder);
-          return biStream(Stream.of("%", "_", ""))
-              .mapValuesIfPresent(
+          return biStream(allowedAffixes())
+              .mapKeysIfPresent(
                   suffix -> scanner.nextFragmentIfQuoted(left, placeholder, suffix + "'"))
               .findFirst()
-              .peek((suffix, fragment) -> builder.appendSql(fragment))
-              .map((suffix, fragment) -> BiOptional.of(prefix, suffix))
+              .peek((fragment, suffix) -> builder.appendSql(fragment))
+              .map((fragment, suffix) -> BiOptional.of(prefix, suffix))
               .orElseThrow(
                   () -> new IllegalArgumentException(
                       "unsupported wildcard in LIKE " + left + placeholder));
+        }
+
+        private Stream<String> allowedAffixes() {
+          return Stream.of("%", "_", "");
         }
       }
       Liker liker = new Liker();
