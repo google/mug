@@ -21,6 +21,7 @@ import static com.google.mu.util.Substring.all;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.word;
 import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
+import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Collections.emptyList;
@@ -39,13 +40,13 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterators;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -61,6 +62,7 @@ import com.google.errorprone.annotations.MustBeClosed;
 import com.google.errorprone.annotations.ThreadSafe;
 import com.google.mu.annotations.TemplateFormatMethod;
 import com.google.mu.annotations.TemplateString;
+import com.google.mu.util.BiOptional;
 import com.google.mu.util.CharPredicate;
 import com.google.mu.util.StringFormat;
 import com.google.mu.util.StringFormat.Template;
@@ -1382,24 +1384,26 @@ public final class SafeSql {
       TemplateFragmentScanner scanner = new TemplateFragmentScanner(fragments);
       Builder builder = new Builder();
       class Liker {
-        Optional<String> like(Substring.Match placeholder, Object value) {
-          return Stream.of("%", "_", "")
-              .map(prefix -> likedStartingWith(prefix, placeholder, value))
-              .filter(Objects::nonNull)
-              .findFirst();
+        BiOptional<String, String> like(Substring.Match placeholder) {
+          return BiOptional.flatMap(
+              Stream.of("%", "_", "")
+                  .map(prefix -> likedStartingWith(prefix, placeholder))
+                  .filter(BiOptional::isPresent)
+                  .findFirst(),
+              Function.identity());
         }
 
-        private String likedStartingWith(String prefix, Substring.Match placeholder, Object value) {
+        private BiOptional<String, String> likedStartingWith(
+            String prefix, Substring.Match placeholder) {
           String left = "'" + prefix;
-          if (!context.lookbehind("LIKE " + left, placeholder)) return null;
+          if (!context.lookbehind("LIKE " + left, placeholder)) return BiOptional.empty();
           context.rejectEscapeAfter(placeholder);
-          String escaped = prefix + escapePercent(mustBeString(placeholder, value));
-          return BiStream.biStream(Stream.of("%", "_", ""))
+          return biStream(Stream.of("%", "_", ""))
               .mapValuesIfPresent(
                   suffix -> scanner.nextFragmentIfQuoted(left, placeholder, suffix + "'"))
               .findFirst()
               .peek((suffix, fragment) -> builder.appendSql(fragment))
-              .map((suffix, fragment) -> escaped + suffix)
+              .map((suffix, fragment) -> BiOptional.of(prefix, suffix))
               .orElseThrow(
                   () -> new IllegalArgumentException(
                       "unsupported wildcard in LIKE " + left + placeholder));
@@ -1509,8 +1513,11 @@ public final class SafeSql {
                 .isPresent()) {
           builder.addParameter(paramName, mustBeString("'" + placeholder + "'", value));
         } else if (
-            liker.like(placeholder, value)
-                .map(liked -> builder.addParameter(paramName, liked))
+            liker.like(placeholder)
+                .map((prefix, suffix) ->
+                    builder.addParameter(
+                        paramName,
+                        prefix + escapePercent(mustBeString(placeholder, value)) + suffix))
                 .isPresent()) {
           builder.appendSql(" ESCAPE '^'");
         } else {
