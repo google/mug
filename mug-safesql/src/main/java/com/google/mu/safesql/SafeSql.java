@@ -1382,34 +1382,35 @@ public final class SafeSql {
       Builder builder = new Builder();
       class Liker {
         Optional<String> like(Substring.Match placeholder, Object value) {
-          String liked = getLikedStartingWith("%", placeholder, value);
-          if (liked != null) {
-            return Optional.of(liked);
-          }
-          liked = getLikedStartingWith("_", placeholder, value);
-          if (liked != null) {
-            return Optional.of(liked);
-          }
-          return Optional.ofNullable(getLikedStartingWith("", placeholder, value));
+          // poor man's Optional.or() since we cannot require Java 9.
+          String liked = likedStartingWith("%", placeholder, value);
+          if (liked != null) return Optional.of(liked);
+          liked = likedStartingWith("_", placeholder, value);
+          if (liked != null) return Optional.of(liked);
+          return Optional.ofNullable(likedStartingWith("", placeholder, value));
         }
 
-        private String getLikedStartingWith(String left, Substring.Match placeholder, Object value) {
+        private String likedStartingWith(String left, Substring.Match placeholder, Object value) {
           String leftQuote = "'" + left;
-          if (context.lookbehind("LIKE " + leftQuote, placeholder)) {
-            context.rejectEscapeAfter(placeholder);
-            String escaped = left + escapePercent(mustBeString(placeholder, value));
-            if (scanner.nextFragmentIfQuoted(leftQuote, placeholder, "'").map(builder::appendSql).isPresent()) {
-              return escaped;
-            }
-            if (scanner.nextFragmentIfQuoted(leftQuote, placeholder, "%'").map(builder::appendSql).isPresent()) {
-              return escaped + "%";
-            }
-            if (scanner.nextFragmentIfQuoted(leftQuote, placeholder, "_'").map(builder::appendSql).isPresent()) {
-              return escaped + "_";
-            }
-            throw new IllegalArgumentException("Unsupported wildcard in LIKE " + leftQuote + placeholder);
+          if (!context.lookbehind("LIKE " + leftQuote, placeholder)) return null;
+          context.rejectEscapeAfter(placeholder);
+          String escaped = left + escapePercent(mustBeString(placeholder, value));
+          if (scanner.nextFragmentIfQuoted(leftQuote, placeholder, "'")
+              .map(builder::appendSql)
+              .isPresent()) {
+            return escaped;
           }
-          return null;
+          if (scanner.nextFragmentIfQuoted(leftQuote, placeholder, "%'")
+              .map(builder::appendSql)
+              .isPresent()) {
+            return escaped + "%";
+          }
+          if (scanner.nextFragmentIfQuoted(leftQuote, placeholder, "_'")
+              .map(builder::appendSql)
+              .isPresent()) {
+            return escaped + "_";
+          }
+          throw new IllegalArgumentException("unsupported wildcard in LIKE " + leftQuote + placeholder);
         }
       }
       Liker liker = new Liker();
