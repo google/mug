@@ -124,7 +124,7 @@ public class BoundedConcurrencyTest {
     ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
     RuntimeException thrown = assertThrows(
         RuntimeException.class,
-        () -> Stream.of(10, 2, 3, 1).collect(withMaxConcurrency(4).concurrently(n -> {
+        () -> Stream.of(10, 5, 7, 1).collect(withMaxConcurrency(4).concurrently(n -> {
           try {
             Thread.sleep(n);
           } catch (InterruptedException e) {
@@ -133,7 +133,7 @@ public class BoundedConcurrencyTest {
           throw new ApplicationException(String.valueOf(n));
         })).toMap());
     assertThat(thrown).hasCauseThat().hasMessageThat().isEqualTo("1");
-    assertThat(interrupted).containsExactly(2, 3, 10);
+    assertThat(interrupted).containsExactly(5, 7, 10);
   }
 
   @Test public void concurrently_mainThreadInterrupted_propagatedInterruption()

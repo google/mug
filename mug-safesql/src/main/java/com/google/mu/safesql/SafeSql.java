@@ -1413,7 +1413,6 @@ public final class SafeSql {
           return Stream.of("%", "_", "");
         }
       }
-      Liker liker = new Liker();
       placeholders.forEach((placeholder, value) -> {
         checkMisuse(placeholder, value);
         String paramName = placeholder.skip(1, 1).toString().trim();
@@ -1517,7 +1516,7 @@ public final class SafeSql {
                 .isPresent()) {
           builder.addParameter(paramName, mustBeString("'" + placeholder + "'", value));
         } else if (
-            liker.like(placeholder)
+            new Liker().like(placeholder)
                 .map((prefix, suffix) ->
                     builder.addParameter(
                         paramName,
