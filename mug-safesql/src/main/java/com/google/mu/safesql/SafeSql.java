@@ -63,6 +63,7 @@ import com.google.mu.annotations.TemplateFormatMethod;
 import com.google.mu.annotations.TemplateString;
 import com.google.mu.util.BiOptional;
 import com.google.mu.util.CharPredicate;
+import com.google.mu.util.Optionals;
 import com.google.mu.util.StringFormat;
 import com.google.mu.util.StringFormat.Template;
 import com.google.mu.util.Substring;
@@ -1385,24 +1386,27 @@ public final class SafeSql {
       class Liker {
         BiOptional<String, String> like(Substring.Match placeholder) {
           return biStream(allowedAffixes())
-              .mapIfPresent((prefix, unused) -> likedStartingWith(prefix, placeholder))
+              .mapValuesIfPresent(prefix -> suffixIfLikedStartingWith(prefix, placeholder))
               .findFirst();
         }
 
-        private BiOptional<String, String> likedStartingWith(
+        private Optional<String> suffixIfLikedStartingWith(
             String prefix, Substring.Match placeholder) {
           String left = "'" + prefix;
-          if (!context.lookbehind("LIKE " + left, placeholder)) return BiOptional.empty();
-          context.rejectEscapeAfter(placeholder);
-          return biStream(allowedAffixes())
-              .mapKeysIfPresent(
-                  suffix -> scanner.nextFragmentIfQuoted(left, placeholder, suffix + "'"))
-              .findFirst()
-              .peek((fragment, suffix) -> builder.appendSql(fragment))
-              .map((fragment, suffix) -> BiOptional.of(prefix, suffix))
-              .orElseThrow(
-                  () -> new IllegalArgumentException(
-                      "unsupported wildcard in LIKE " + left + placeholder));
+          return Optionals.optionally(
+              context.lookbehind("LIKE " + left, placeholder),
+              () -> {
+                context.rejectEscapeAfter(placeholder);
+                return biStream(allowedAffixes())
+                    .mapKeysIfPresent(
+                        suffix -> scanner.nextFragmentIfQuoted(left, placeholder, suffix + "'"))
+                    .findFirst()
+                    .peek((fragment, suffix) -> builder.appendSql(fragment))
+                    .map((fragment, suffix) -> suffix)
+                    .orElseThrow(
+                        () -> new IllegalArgumentException(
+                            "unsupported wildcard in LIKE " + left + placeholder));
+              });
         }
 
         private Stream<String> allowedAffixes() {
