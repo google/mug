@@ -140,8 +140,8 @@ public final class BoundedConcurrency {
    * being the only virtual thread still running. Whereas {@code concurrently()}
    * allows {@code maxConcurrency} virtual threads to run concurrently regardless of input order.
    * This means if you have a long-running virtual thread (for instance: a heart-beat worker or a
-   * monitoring subtask etc.), it won't compromise throughput or starve the workers after it.
-   * <li>If encounter order is important to you, consider to use {@link BiStream#sorted} or
+   * monitoring subtask etc.), it won't reduce throughput or starve the workers after it.
+   * <li>If encounter order is important to you, consider using {@link BiStream#sorted} or
    * friends to re-introduce ordering.
    * </ul>
    *
