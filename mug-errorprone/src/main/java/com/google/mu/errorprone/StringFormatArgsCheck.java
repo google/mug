@@ -21,6 +21,7 @@ import static com.google.guava.labs.collect.GuavaCollectors.toImmutableListMulti
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static java.util.stream.Collectors.joining;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -123,6 +124,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
           new TypeName("com.google.mu.util.Both"));
   private static final TypeName BOOLEAN_TYPE = TypeName.of(Boolean.class);
   private static final TypeName OPTIONAL_TYPE = TypeName.of(Optional.class);
+  private static final TypeName COLLECTION_TYPE = TypeName.of(Collection.class);
   private static final Substring.Pattern ARG_COMMENT = Substring.spanningInOrder("/*", "*/");
 
   @Override
@@ -323,7 +325,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
                   arg,
                   lineMap.getLineNumber(ASTHelpers.getStartPosition(arg)),
                   references);
-        } else if (OPTIONAL_TYPE.isSameType(argType, state)) {
+        } else if (OPTIONAL_TYPE.isSameType(argType, state) || COLLECTION_TYPE.isSupertypeOf(argType, state)) {
           onPlaceholder
               .require(
                   placeholder.hasOptionalParameter(),
@@ -341,7 +343,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
                   Sets.difference(references, ImmutableSet.of(placeholder.name())));
         } else {
           throw onPlaceholder.report(
-              "guard placeholder {%s ->} is expected to be boolean or Optional, whereas"
+              "guard placeholder {%s ->} is expected to be boolean, Optional or Collection, whereas"
                   + " argument <%s> at line %s is of type %s",
               placeholder.name(),
               arg,

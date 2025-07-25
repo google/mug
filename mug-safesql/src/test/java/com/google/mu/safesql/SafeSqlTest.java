@@ -222,6 +222,20 @@ public class SafeSqlTest {
   }
 
   @Test
+  public void optionalOperator_nonEmpty() {
+    ImmutableList<String> columns = ImmutableList.of("foo", "bar");
+    assertThat(SafeSql.of("SELECT {columns? -> `columns?`, } name FROM tbl", columns))
+        .isEqualTo(SafeSql.of("SELECT `{columns}`, name FROM tbl", columns));
+  }
+
+  @Test
+  public void optionalOperator_empty() {
+    ImmutableList<String> columns = ImmutableList.of();
+    assertThat(SafeSql.of("SELECT {columns? -> `columns?`, } name FROM tbl", columns))
+        .isEqualTo(SafeSql.of("SELECT  name FROM tbl"));
+  }
+
+  @Test
   public void backquotedEnumParameter() {
     SafeSql sql = SafeSql.of(
         "select `{column}` from Users",

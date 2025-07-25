@@ -39,6 +39,10 @@ final class TypeName {
     return ASTHelpers.isSameType(memoized.get(state), type, state);
   }
 
+  boolean isSupertypeOf(Type type, VisitorState state) {
+    return ASTHelpers.isSubtype(type, memoized.get(state), state);
+  }
+
   @Override
   public boolean equals(Object obj) {
     if (obj instanceof TypeName) {

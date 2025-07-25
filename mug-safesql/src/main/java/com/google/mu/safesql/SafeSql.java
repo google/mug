@@ -37,6 +37,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -198,6 +199,7 @@ import com.google.mu.util.stream.BiStream;
  *   class UserCriteria {
  *     Optional<String> userId();
  *     Optional<String> firstName();
+ *     List<String> aliases();
  *     ...
  *   }
  *
@@ -209,10 +211,12 @@ import com.google.mu.util.stream.BiStream;
  *         WHERE 1 = 1
  *             {user_id? -> AND id = user_id?}
  *             {first_name? -> AND firstName LIKE '%first_name?%'}
+ *             {aliases? -> AND name IN (aliases?)}
  *         """,
  *         asList(columns),
  *         criteria.userId()),
- *         criteria.firstName());
+ *         criteria.firstName(),
+ *         criteria.aliases());
  *   }
  *
  *   List<User> users = usersQuery(userCriteria, "email", "lastName")
@@ -1438,9 +1442,18 @@ public final class SafeSql {
                 .ifPresent(builder::addSubQuery);
             return;
           }
+          if (value instanceof Collection) {
+            String rhs = validateOptionalOperatorRhs(conditional);
+            builder.appendSql(scanner.nextFragment());
+            Collection<?> collectionValue = ((Collection<?>) value);
+            if (!collectionValue.isEmpty()) {
+              builder.addSubQuery(innerSubquery(rhs, collectionValue));
+            }
+            return;
+          }
           checkArgument(
               value instanceof Boolean,
-              "conditional placeholder {%s->} can only be used with a boolean or Optional value; %s encountered.",
+              "conditional placeholder {%s->} can only be used with a boolean, Optional or Collection value; %s encountered.",
               conditional.before(),
               value.getClass().getName());
           builder.appendSql(scanner.nextFragment());
