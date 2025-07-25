@@ -224,9 +224,10 @@ import com.google.mu.util.stream.BiStream;
  * }</pre>
  *
  * <p>The special "{foo? -> ...}" guard syntax informs the template engine that the
- * right hand side query snippet is only rendered if the {@code Optional} arg corresponding to the
- * "foo?" placeholder is present, in which case the value of the Optional will be used in the right
- * hand side snippet as if it were a regular template argument.
+ * right hand side query snippet is only rendered if the {@code Optional} parameter corresponding
+ * to the "foo?" placeholder is present, or the {@code Collection} paameter corresponding to it
+ * isn't empty, in which case the value of the Optional or Collection will be used in
+ * the right hand side snippet as if it were a regular template argument.
  *
  * <p>If {@code UserCriteria} has specified {@code firstName()} but {@code userId()} is
  * unspecified (empty), the resulting SQL will look like:
