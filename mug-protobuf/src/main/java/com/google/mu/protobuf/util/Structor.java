@@ -356,7 +356,7 @@ public class Structor {
       return convertNonNull(((Optional<?>) object).orElse(null));
     }
     if (object instanceof Enum) {
-      return valueOf((((Enum<?>) object).name()));
+      return valueOf(((Enum<?>) object).name());
     }
     if (object instanceof int[]) {
       return stream((int[]) object)

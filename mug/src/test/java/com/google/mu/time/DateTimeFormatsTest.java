@@ -1197,7 +1197,7 @@ public final class DateTimeFormatsTest {
     assertThrows(DateTimeException.class, () -> formatOf("2023-01-01T00:00:00."));
   }
 
-  private static <T> ComparableSubject<ZonedDateTime> assertZonedDateTime(
+  private static ComparableSubject<ZonedDateTime> assertZonedDateTime(
       @CompileTimeConstant String example, String equivalentPattern) {
     String pattern = DateTimeFormats.inferDateTimePattern(example);
     assertThat(pattern).isEqualTo(equivalentPattern);

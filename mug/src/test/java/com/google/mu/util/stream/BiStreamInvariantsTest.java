@@ -863,7 +863,7 @@ public void testMaxBy_notFound() {
     return multimap;
   }
 
-  /** Different ways of creating a logical {@BiStream}. */
+  /** Different ways of creating a logical {@code BiStream}. */
   private enum BiStreamFactory {
     DEFAULT {
       @Override

@@ -440,7 +440,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
   /**
    * Elides elements in {@code list}.
    *
-   * <p>Elements mapping to the same key using one of {@code elideFunctions} will be elided and only
+   * <p>Elements mapping to the same key using one of {@code elidingFunctions} will be elided and only
    * the first element is retained.
    */
   @SafeVarargs
