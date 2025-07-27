@@ -1003,6 +1003,8 @@ public final class SafeSql {
               "as the result type, or using queryLazily() or query() that support nulls.");
         }
       }).findFirst();
+    } catch (UncheckedSqlException e) {
+      throw e.asChecked();
     }
   }
 
