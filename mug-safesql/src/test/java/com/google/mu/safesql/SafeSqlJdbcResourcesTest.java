@@ -225,4 +225,49 @@ public class SafeSqlJdbcResourcesTest {
     inOrder.verify(preparedStatement, never()).close();
     inOrder.verify(resultSet, never()).close();
   }
+
+
+  @Test public void update_noParameter_usesCreateStatement() throws SQLException {
+    SafeSql.of("UPDATE Users set status = 'ACTIVE'").update(dataSource);
+    inOrder.verify(connection).createStatement();
+    inOrder.verify(statement).executeUpdate("UPDATE Users set status = 'ACTIVE'");
+    inOrder.verify(resultSet, never()).close();
+    inOrder.verify(statement).close();
+    inOrder.verify(connection).close();
+  }
+
+
+  @Test public void update_noParameter_usesPrepareStatement() throws SQLException {
+    SafeSql.of("UPDATE Users set status = {status}", "active").update(dataSource);
+    inOrder.verify(connection).prepareStatement("UPDATE Users set status = ?");
+    inOrder.verify(preparedStatement).setObject(1, "active");
+    inOrder.verify(resultSet, never()).close();
+    inOrder.verify(preparedStatement).close();
+    inOrder.verify(connection).close();
+  }
+
+
+  @Test public void update_usingDataSource_uncheckedSqlExceptionPropagated() throws SQLException {
+    SafeSql sql = SafeSql.of("UPDATE Users SET id = {id}", 123);
+    SQLException exception = new SQLException("test");
+    Mockito.doThrow(exception).when(preparedStatement).executeUpdate();
+    UncheckedSqlException thrown =
+        assertThrows(UncheckedSqlException.class, () -> sql.update(dataSource));
+    assertThat(thrown).hasCauseThat().isSameInstanceAs(exception);
+    inOrder.verify(resultSet, never()).close();
+    inOrder.verify(preparedStatement).close();
+    inOrder.verify(connection).close();
+  }
+
+
+  @Test public void update_usingConnection_sqlExceptionPropagated() throws SQLException {
+    SafeSql sql = SafeSql.of("UPDATE Users SET id = {id}", 123);
+    SQLException exception = new SQLException("test");
+    Mockito.doThrow(exception).when(preparedStatement).executeUpdate();
+    Exception thrown =
+        assertThrows(SQLException.class, () -> sql.update(connection));
+    assertThat(thrown).isSameInstanceAs(exception);
+    inOrder.verify(resultSet, never()).close();
+    inOrder.verify(preparedStatement).close();
+  }
 }

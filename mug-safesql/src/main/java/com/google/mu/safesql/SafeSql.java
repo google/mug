@@ -1048,6 +1048,7 @@ public final class SafeSql {
    *
    * <p>You can also map the result rows to Java Beans, similar to {@link #query(Connection, Class)}.
    *
+   * @throws UncheckedSqlException wraps {@link SQLException} if failed
    * @since 9.2
    */
   @MustBeClosed
@@ -1102,6 +1103,7 @@ public final class SafeSql {
    * <p>Internally it delegates to {@link PreparedStatement#executeQuery} or {@link
    * Statement#executeQuery} if this sql contains no JDBC binding parameters.
    *
+   * @throws UncheckedSqlException wraps {@link SQLException} if failed
    * @since 9.2
    */
   @MustBeClosed
@@ -1133,6 +1135,7 @@ public final class SafeSql {
    * <p>Internally it delegates to {@link PreparedStatement#executeQuery} or {@link
    * Statement#executeQuery} if this sql contains no JDBC binding parameters.
    *
+   * @throws UncheckedSqlException wraps {@link SQLException} if failed
    * @since 9.2
    */
   @MustBeClosed
@@ -1312,6 +1315,41 @@ public final class SafeSql {
             }
           })
           .map(AtomicReference::get));
+    }
+  }
+
+  /**
+   * Executes the encapsulated DML (create, update, delete statements) against {@code dataSource}
+   * and returns the number of affected rows.
+   *
+   * <p>For example: <pre>{@code
+   * SafeSql.of("INSERT INTO Users(id, name) VALUES({id}, '{name}')", id, name)
+   *     .update(dataSource);
+   * }</pre>
+   *
+   * <p>Internally it delegates to {@link PreparedStatement#executeUpdate}.
+   *
+   * @throws UncheckedSqlException wraps {@link SQLException} if failed
+   * @since 9.2
+   */
+  @CanIgnoreReturnValue public int update(DataSource dataSource) {
+    return update(dataSource, stmt -> {});
+  }
+
+  /**
+   * Similar to {@link #update(DataSource)}, but with {@code settings}
+   * (can be set via lambda like {@code stmt -> stmt.setQueryTimeout(100)})
+   * to allow customization.
+   *
+   * @throws UncheckedSqlException wraps {@link SQLException} if failed
+   * @since 9.2
+   */
+  @CanIgnoreReturnValue public int update(
+      DataSource dataSource, SqlConsumer<? super Statement> settings) {
+    try (Connection connection = dataSource.getConnection()) {
+      return update(connection, settings);
+    } catch (SQLException e) {
+      throw new UncheckedSqlException(e);
     }
   }
 
