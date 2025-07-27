@@ -429,8 +429,7 @@ import com.google.mu.util.stream.BiStream;
  *     } catch (SQLException e) {
  *       DataAccessException dae =
  *           translator().translate("executeUpdate(SafeSql)", sql.debugString(), e);
- *       if (dae == null) throw new UncheckedSqlException(e);
- *       throw dae;
+ *       throw dae == null ? throw new UncheckedSqlException(e) : dae;
  *     }
  *   }
  * }
