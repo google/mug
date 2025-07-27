@@ -1136,10 +1136,10 @@ public final class SafeSql {
       DataSource dataSource,
       SqlConsumer<? super Statement> settings,
       SqlFunction<? super ResultSet, ? extends T> rowMapper) {
-    try (JdbcScope scoope = new JdbcScope()) {
+    try (JdbcScope scope = new JdbcScope()) {
       Connection connection = dataSource.getConnection();
-      scoope.onClose(connection::close);
-      return scoope.deferTo(queryLazily(connection, settings, rowMapper));
+      scope.onClose(connection::close);
+      return scope.deferTo(queryLazily(connection, settings, rowMapper));
     } catch (SQLException e) {
       throw new UncheckedSqlException(e);
     }
@@ -1284,21 +1284,20 @@ public final class SafeSql {
       SqlConsumer<? super Statement> settings,
       SqlFunction<? super S, ResultSet> execute,
       SqlFunction<? super ResultSet, ? extends T> rowMapper) throws SQLException {
-    try (JdbcScope scoope = new JdbcScope()) {
+    try (JdbcScope scope = new JdbcScope()) {
       S stmt = createStatement.get();
-      scoope.onClose(stmt::close);
+      scope.onClose(stmt::close);
       settings.accept(stmt);
       ResultSet resultSet = execute.apply(stmt);
-      scoope.onClose(resultSet::close);
-      return scoope.deferTo(
+      scope.onClose(resultSet::close);
+      return scope.deferTo(
           whileNotNull(() -> {
             try {
               return resultSet.next() ? new AtomicReference<T>(rowMapper.apply(resultSet)) : null;
             } catch (SQLException e) {
               throw new UncheckedSqlException(e);
             }
-          })
-          .map(AtomicReference::get));
+          }).map(AtomicReference::get));
     }
   }
 
