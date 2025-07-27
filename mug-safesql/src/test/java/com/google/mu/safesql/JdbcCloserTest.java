@@ -35,27 +35,27 @@ public class JdbcCloserTest {
   }
 
   @SuppressWarnings("MustBeClosedChecker")
-  @Test public void attachTo_nothingRegistered() {
+  @Test public void deferTo_nothingRegistered() {
     Stream<String> stream = Stream.of("foo", "bar");
     try (JdbcCloser closer = new JdbcCloser()) {
-      stream = closer.attachTo(stream);
+      stream = closer.deferTo(stream);
     }
     try (Stream<String> closeMe = stream) {}
   }
 
   @Test public void resourceClosed() throws Exception {
     try (JdbcCloser closer = new JdbcCloser()) {
-      closer.register(statement::close);
+      closer.onClose(statement::close);
     }
     verify(statement).close();
   }
 
   @SuppressWarnings("MustBeClosedChecker")
-  @Test public void resourceAttached() throws Exception {
+  @Test public void resourceDeferred() throws Exception {
     Stream<String> stream = Stream.of("foo", "bar");
     try (JdbcCloser closer = new JdbcCloser()) {
-      closer.register(statement::close);
-      stream = closer.attachTo(stream);
+      closer.onClose(statement::close);
+      stream = closer.deferTo(stream);
     }
     verify(statement, never()).close();
 
@@ -65,12 +65,12 @@ public class JdbcCloserTest {
   }
 
   @SuppressWarnings("MustBeClosedChecker")
-  @Test public void attachTwice_noOpTheSecondTime() throws Exception {
+  @Test public void deferTwice_noOpTheSecondTime() throws Exception {
     Stream<String> stream = Stream.of("foo", "bar");
     try (JdbcCloser closer = new JdbcCloser()) {
-      closer.register(statement::close);
-      stream = closer.attachTo(stream);
-      closer.attachTo(Stream.empty());
+      closer.onClose(statement::close);
+      stream = closer.deferTo(stream);
+      closer.deferTo(Stream.empty());
     }
     verify(statement, never()).close();
     try (Stream<?> closeMe = stream) {}
@@ -81,9 +81,9 @@ public class JdbcCloserTest {
     Connection connection = mock(Connection.class);
     ResultSet resultSet = mock(ResultSet.class);
     try (JdbcCloser closer = new JdbcCloser()) {
-      closer.register(connection::close);
-      closer.register(statement::close);
-      closer.register(resultSet::close);
+      closer.onClose(connection::close);
+      closer.onClose(statement::close);
+      closer.onClose(resultSet::close);
     }
     InOrder inOrder = Mockito.inOrder(connection, statement, resultSet);
     inOrder.verify(resultSet).close();
@@ -102,9 +102,9 @@ public class JdbcCloserTest {
         UncheckedSqlException.class,
         () -> {
           try (JdbcCloser closer = new JdbcCloser()) {
-            closer.register(connection::close);
-            closer.register(statement::close);
-            closer.register(resultSet::close);
+            closer.onClose(connection::close);
+            closer.onClose(statement::close);
+            closer.onClose(resultSet::close);
           }
         });
     assertThat(thrown).hasCauseThat().isSameInstanceAs(resultSetException);

@@ -1141,8 +1141,8 @@ public final class SafeSql {
       SqlFunction<? super ResultSet, ? extends T> rowMapper) {
     try (JdbcCloser closer = new JdbcCloser()) {
       Connection connection = dataSource.getConnection();
-      closer.register(connection::close);
-      return closer.attachTo(queryLazily(connection, settings, rowMapper));
+      closer.onClose(connection::close);
+      return closer.deferTo(queryLazily(connection, settings, rowMapper));
     } catch (SQLException e) {
       throw new UncheckedSqlException(e);
     }
@@ -1293,11 +1293,11 @@ public final class SafeSql {
       SqlFunction<? super ResultSet, ? extends T> rowMapper) throws SQLException {
     try (JdbcCloser closer = new JdbcCloser()) {
       S stmt = createStatement.get();
-      closer.register(stmt::close);
+      closer.onClose(stmt::close);
       settings.accept(stmt);
       ResultSet resultSet = execute.apply(stmt);
-      closer.register(resultSet::close);
-      return closer.attachTo(
+      closer.onClose(resultSet::close);
+      return closer.deferTo(
           whileNotNull(() -> {
             try {
               return resultSet.next() ? new AtomicReference<T>(rowMapper.apply(resultSet)) : null;

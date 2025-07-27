@@ -29,7 +29,7 @@ final class JdbcCloser implements AutoCloseable {
 
   private JdbcCloseable all = () -> {};
 
-  void register(JdbcCloseable closeable) {
+  void onClose(JdbcCloseable closeable) {
     JdbcCloseable upper = all;
     all = () -> {
       try {
@@ -46,7 +46,7 @@ final class JdbcCloser implements AutoCloseable {
   }
 
   @MustBeClosed
-  <T> Stream<T> attachTo(Stream<T> stream) {
+  <T> Stream<T> deferTo(Stream<T> stream) {
     JdbcCloseable detached = all;
     Stream<T> attached = stream.onClose(() -> close(detached));
     all = () -> {};
