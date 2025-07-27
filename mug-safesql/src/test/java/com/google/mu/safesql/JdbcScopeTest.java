@@ -23,7 +23,7 @@ import org.mockito.MockitoAnnotations;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 @RunWith(TestParameterInjector.class)
-public class JdbcCloserTest {
+public class JdbcScopeTest {
   @Mock private Statement statement;
 
   @Before public void setUpMocks() {
@@ -31,20 +31,20 @@ public class JdbcCloserTest {
   }
 
   @Test public void nothingRegistered() {
-    try (JdbcCloser closer = new JdbcCloser()) {}
+    try (JdbcScope closer = new JdbcScope()) {}
   }
 
   @SuppressWarnings("MustBeClosedChecker")
   @Test public void deferTo_nothingRegistered() {
     Stream<String> stream = Stream.of("foo", "bar");
-    try (JdbcCloser closer = new JdbcCloser()) {
+    try (JdbcScope closer = new JdbcScope()) {
       stream = closer.deferTo(stream);
     }
     try (Stream<String> closeMe = stream) {}
   }
 
   @Test public void resourceClosed() throws Exception {
-    try (JdbcCloser closer = new JdbcCloser()) {
+    try (JdbcScope closer = new JdbcScope()) {
       closer.onClose(statement::close);
     }
     verify(statement).close();
@@ -53,7 +53,7 @@ public class JdbcCloserTest {
   @SuppressWarnings("MustBeClosedChecker")
   @Test public void resourceDeferred() throws Exception {
     Stream<String> stream = Stream.of("foo", "bar");
-    try (JdbcCloser closer = new JdbcCloser()) {
+    try (JdbcScope closer = new JdbcScope()) {
       closer.onClose(statement::close);
       stream = closer.deferTo(stream);
     }
@@ -67,7 +67,7 @@ public class JdbcCloserTest {
   @SuppressWarnings("MustBeClosedChecker")
   @Test public void deferTwice_noOpTheSecondTime() throws Exception {
     Stream<String> stream = Stream.of("foo", "bar");
-    try (JdbcCloser closer = new JdbcCloser()) {
+    try (JdbcScope closer = new JdbcScope()) {
       closer.onClose(statement::close);
       stream = closer.deferTo(stream);
       closer.deferTo(Stream.empty());
@@ -80,7 +80,7 @@ public class JdbcCloserTest {
   @Test public void moreThanOneReousrces_allClosed() throws Exception {
     Connection connection = mock(Connection.class);
     ResultSet resultSet = mock(ResultSet.class);
-    try (JdbcCloser closer = new JdbcCloser()) {
+    try (JdbcScope closer = new JdbcScope()) {
       closer.onClose(connection::close);
       closer.onClose(statement::close);
       closer.onClose(resultSet::close);
@@ -101,7 +101,7 @@ public class JdbcCloserTest {
     Exception thrown = assertThrows(
         UncheckedSqlException.class,
         () -> {
-          try (JdbcCloser closer = new JdbcCloser()) {
+          try (JdbcScope closer = new JdbcScope()) {
             closer.onClose(connection::close);
             closer.onClose(statement::close);
             closer.onClose(resultSet::close);

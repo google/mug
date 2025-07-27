@@ -1136,10 +1136,10 @@ public final class SafeSql {
       DataSource dataSource,
       SqlConsumer<? super Statement> settings,
       SqlFunction<? super ResultSet, ? extends T> rowMapper) {
-    try (JdbcCloser closer = new JdbcCloser()) {
+    try (JdbcScope scoope = new JdbcScope()) {
       Connection connection = dataSource.getConnection();
-      closer.onClose(connection::close);
-      return closer.deferTo(queryLazily(connection, settings, rowMapper));
+      scoope.onClose(connection::close);
+      return scoope.deferTo(queryLazily(connection, settings, rowMapper));
     } catch (SQLException e) {
       throw new UncheckedSqlException(e);
     }
@@ -1284,13 +1284,13 @@ public final class SafeSql {
       SqlConsumer<? super Statement> settings,
       SqlFunction<? super S, ResultSet> execute,
       SqlFunction<? super ResultSet, ? extends T> rowMapper) throws SQLException {
-    try (JdbcCloser closer = new JdbcCloser()) {
+    try (JdbcScope scoope = new JdbcScope()) {
       S stmt = createStatement.get();
-      closer.onClose(stmt::close);
+      scoope.onClose(stmt::close);
       settings.accept(stmt);
       ResultSet resultSet = execute.apply(stmt);
-      closer.onClose(resultSet::close);
-      return closer.deferTo(
+      scoope.onClose(resultSet::close);
+      return scoope.deferTo(
           whileNotNull(() -> {
             try {
               return resultSet.next() ? new AtomicReference<T>(rowMapper.apply(resultSet)) : null;

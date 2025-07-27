@@ -20,14 +20,19 @@ import java.util.stream.Stream;
 import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.errorprone.annotations.MustBeClosed;
 
-/** Helps manage JDBC resources that need to be closed now or lazily. */
+/**
+ * A scope of JDBC resources to be closed using try-with-resources,
+ * or {@link #deferTo deferred} to a lazy stream.
+ */
 @CheckReturnValue
-final class JdbcCloser implements AutoCloseable {
+final class JdbcScope implements AutoCloseable {
   interface JdbcCloseable {
     void close() throws SQLException;
   }
 
   private JdbcCloseable all = () -> {};
+
+  @MustBeClosed JdbcScope() {}
 
   void onClose(JdbcCloseable closeable) {
     JdbcCloseable upper = all;
