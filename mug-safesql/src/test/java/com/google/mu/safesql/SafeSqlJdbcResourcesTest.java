@@ -121,10 +121,35 @@ public class SafeSqlJdbcResourcesTest {
   }
 
 
+  @Test public void query_usingDataSource_closeSqlExceptionPropagatedAsUnchecked() throws SQLException {
+    SafeSql sql = SafeSql.of("SELECT count(*) from Users WHERE id = {id}", 123);
+    SQLException exception = new SQLException("test");
+    Mockito.doThrow(exception).when(resultSet).close();
+    UncheckedSqlException thrown =
+        assertThrows(UncheckedSqlException.class, () -> sql.query(dataSource, Long.class));
+    assertThat(thrown).hasCauseThat().isSameInstanceAs(exception);
+    inOrder.verify(resultSet).close();
+    inOrder.verify(preparedStatement).close();
+    inOrder.verify(connection).close();
+  }
+
+
   @Test public void query_usingConnection_sqlExceptionPropagated() throws SQLException {
     SafeSql sql = SafeSql.of("SELECT count(*) from Users WHERE id = {id}", 123);
     SQLException exception = new SQLException("test");
     Mockito.doThrow(exception).when(resultSet).next();
+    Exception thrown =
+        assertThrows(SQLException.class, () -> sql.query(connection, Long.class));
+    assertThat(thrown).isSameInstanceAs(exception);
+    inOrder.verify(resultSet).close();
+    inOrder.verify(preparedStatement).close();
+  }
+
+
+  @Test public void query_usingConnection_closeSqlExceptionPropagatedAsIs() throws SQLException {
+    SafeSql sql = SafeSql.of("SELECT count(*) from Users WHERE id = {id}", 123);
+    SQLException exception = new SQLException("test");
+    Mockito.doThrow(exception).when(resultSet).close();
     Exception thrown =
         assertThrows(SQLException.class, () -> sql.query(connection, Long.class));
     assertThat(thrown).isSameInstanceAs(exception);
@@ -146,10 +171,35 @@ public class SafeSqlJdbcResourcesTest {
   }
 
 
+  @Test public void queryForOne_usingDataSource_closeSqlExceptionPropagatedAsUnchecked() throws SQLException {
+    SafeSql sql = SafeSql.of("SELECT count(*) from Users WHERE id = {id}", 123);
+    SQLException exception = new SQLException("test");
+    Mockito.doThrow(exception).when(resultSet).close();
+    UncheckedSqlException thrown =
+        assertThrows(UncheckedSqlException.class, () -> sql.queryForOne(dataSource, Long.class));
+    assertThat(thrown).hasCauseThat().isSameInstanceAs(exception);
+    inOrder.verify(resultSet).close();
+    inOrder.verify(preparedStatement).close();
+    inOrder.verify(connection).close();
+  }
+
+
   @Test public void queryForOne_usingConnection_sqlExceptionPropagated() throws SQLException {
     SafeSql sql = SafeSql.of("SELECT count(*) from Users WHERE id = {id}", 123);
     SQLException exception = new SQLException("test");
     Mockito.doThrow(exception).when(resultSet).next();
+    Exception thrown =
+        assertThrows(SQLException.class, () -> sql.queryForOne(connection, Long.class));
+    assertThat(thrown).isSameInstanceAs(exception);
+    inOrder.verify(resultSet).close();
+    inOrder.verify(preparedStatement).close();
+  }
+
+
+  @Test public void queryForOne_usingConnection_closeSqlExceptionPropagatedAsIs() throws SQLException {
+    SafeSql sql = SafeSql.of("SELECT count(*) from Users WHERE id = {id}", 123);
+    SQLException exception = new SQLException("test");
+    Mockito.doThrow(exception).when(resultSet).close();
     Exception thrown =
         assertThrows(SQLException.class, () -> sql.queryForOne(connection, Long.class));
     assertThat(thrown).isSameInstanceAs(exception);
@@ -166,7 +216,25 @@ public class SafeSqlJdbcResourcesTest {
         UncheckedSqlException.class,
         () -> {
           try (Stream<Long> stream = sql.queryLazily(dataSource, Long.class)) {
-            long unused = stream.count();
+            stream.forEach(i -> {});
+          }
+        });
+    assertThat(thrown).hasCauseThat().isSameInstanceAs(exception);
+    inOrder.verify(resultSet).close();
+    inOrder.verify(preparedStatement).close();
+    inOrder.verify(connection).close();
+  }
+
+
+  @Test public void queryLazily_usingDataSource_closeSqlExceptionPropagatedAsUnchecked() throws SQLException {
+    SafeSql sql = SafeSql.of("SELECT count(*) from Users WHERE id = {id}", 123);
+    SQLException exception = new SQLException("test");
+    Mockito.doThrow(exception).when(resultSet).close();
+    UncheckedSqlException thrown = assertThrows(
+        UncheckedSqlException.class,
+        () -> {
+          try (Stream<Long> stream = sql.queryLazily(dataSource, Long.class)) {
+            stream.forEach(i -> {});
           }
         });
     assertThat(thrown).hasCauseThat().isSameInstanceAs(exception);
@@ -193,6 +261,23 @@ public class SafeSqlJdbcResourcesTest {
   }
 
 
+  @Test public void queryLazily_usingConnection_closeSqlExceptionPropagatedAsUnchecked() throws SQLException {
+    SafeSql sql = SafeSql.of("SELECT count(*) from Users WHERE id = {id}", 123);
+    SQLException exception = new SQLException("test");
+    Mockito.doThrow(exception).when(resultSet).close();
+    UncheckedSqlException thrown = assertThrows(
+        UncheckedSqlException.class,
+        () -> {
+          try (Stream<Long> stream = sql.queryLazily(connection, Long.class)) {
+            stream.forEach(i -> {});
+          }
+        });
+    assertThat(thrown).hasCauseThat().isSameInstanceAs(exception);
+    inOrder.verify(resultSet).close();
+    inOrder.verify(preparedStatement).close();
+  }
+
+
   @Test public void queryLazily_usingConnection_statementdSqlExceptionPropagated() throws SQLException {
     SafeSql sql = SafeSql.of("SELECT count(*) from Users WHERE id = {id}", 123);
     SQLException exception = new SQLException("test");
@@ -201,7 +286,7 @@ public class SafeSqlJdbcResourcesTest {
         SQLException.class,
         () -> {
           try (Stream<Long> stream = sql.queryLazily(connection, Long.class)) {
-            long unused = stream.count();
+            stream.forEach(i -> {});
           }
         });
     assertThat(thrown).isSameInstanceAs(exception);
@@ -260,10 +345,35 @@ public class SafeSqlJdbcResourcesTest {
   }
 
 
+  @Test public void update_usingDataSource_closeSqlExceptionPropagatedAsUnchecked() throws SQLException {
+    SafeSql sql = SafeSql.of("UPDATE Users SET id = {id}", 123);
+    SQLException exception = new SQLException("test");
+    Mockito.doThrow(exception).when(preparedStatement).close();
+    UncheckedSqlException thrown =
+        assertThrows(UncheckedSqlException.class, () -> sql.update(dataSource));
+    assertThat(thrown).hasCauseThat().isSameInstanceAs(exception);
+    inOrder.verify(resultSet, never()).close();
+    inOrder.verify(preparedStatement).close();
+    inOrder.verify(connection).close();
+  }
+
+
   @Test public void update_usingConnection_sqlExceptionPropagated() throws SQLException {
     SafeSql sql = SafeSql.of("UPDATE Users SET id = {id}", 123);
     SQLException exception = new SQLException("test");
     Mockito.doThrow(exception).when(preparedStatement).executeUpdate();
+    Exception thrown =
+        assertThrows(SQLException.class, () -> sql.update(connection));
+    assertThat(thrown).isSameInstanceAs(exception);
+    inOrder.verify(resultSet, never()).close();
+    inOrder.verify(preparedStatement).close();
+  }
+
+
+  @Test public void update_usingConnection_closeSqlExceptionPropagatedAsIs() throws SQLException {
+    SafeSql sql = SafeSql.of("UPDATE Users SET id = {id}", 123);
+    SQLException exception = new SQLException("test");
+    Mockito.doThrow(exception).when(preparedStatement).close();
     Exception thrown =
         assertThrows(SQLException.class, () -> sql.update(connection));
     assertThat(thrown).isSameInstanceAs(exception);
