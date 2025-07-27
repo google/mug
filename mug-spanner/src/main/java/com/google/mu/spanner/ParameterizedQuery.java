@@ -473,21 +473,18 @@ public final class ParameterizedQuery {
    * Returns the SQL text with the template parameters translated to named Spanner
    * parameters, annotated with parameter values.
    */
-  @Override
-  public String toString() {
+  @Override public String toString() {
     Iterator<String> names = toBindingNames().iterator();
     StringFormat placeholderWithValue = new StringFormat("@{name} /* {...} */");
     Iterator<Value> values = parameters.stream().map(param -> param.value).iterator();
     return all("?").replaceAllFrom(sql, q -> placeholderWithValue.format(names.next(), values.next()));
   }
 
-  @Override
-  public int hashCode() {
+  @Override public int hashCode() {
     return sql.hashCode();
   }
 
-  @Override
-  public boolean equals(Object obj) {
+  @Override public boolean equals(Object obj) {
     if (obj instanceof ParameterizedQuery) {
       ParameterizedQuery that = (ParameterizedQuery) obj;
       return sql.equals(that.sql) && parameters.equals(that.parameters);

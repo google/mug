@@ -1518,18 +1518,15 @@ public final class SafeSql {
    * Returns the SQL text with the template parameters translated to the JDBC {@code '?'}
    * placeholders.
    */
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return sql;
   }
 
-  @Override
-  public int hashCode() {
+  @Override public int hashCode() {
     return sql.hashCode();
   }
 
-  @Override
-  public boolean equals(Object obj) {
+  @Override public boolean equals(Object obj) {
     if (obj instanceof SafeSql) {
       SafeSql that = (SafeSql) obj;
       return sql.equals(that.sql) && paramValues.equals(that.paramValues);
@@ -1844,8 +1841,7 @@ public final class SafeSql {
         }
       }
 
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return sqlTemplate.toString();
       }
     };
