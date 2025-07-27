@@ -1052,7 +1052,6 @@ public final class SafeSql {
    * @since 9.2
    */
   @MustBeClosed
-  @SuppressWarnings("MustBeClosedChecker")
   public <T> Stream<T> queryLazily(DataSource dataSource, Class<? extends T> resultType) {
     return queryLazily(dataSource, stmt -> {}, resultType);
   }
@@ -1079,7 +1078,6 @@ public final class SafeSql {
    * @since 9.2
    */
   @MustBeClosed
-  @SuppressWarnings("MustBeClosedChecker")
   public <T> Stream<T> queryLazily(
       DataSource dataSource, SqlFunction<? super ResultSet, ? extends T> rowMapper) {
     return queryLazily(dataSource, stmt -> {}, rowMapper);
@@ -1107,7 +1105,6 @@ public final class SafeSql {
    * @since 9.2
    */
   @MustBeClosed
-  @SuppressWarnings("MustBeClosedChecker")
   public <T> Stream<T> queryLazily(
       DataSource dataSource,
       SqlConsumer<? super Statement> settings,
@@ -1139,7 +1136,6 @@ public final class SafeSql {
    * @since 9.2
    */
   @MustBeClosed
-  @SuppressWarnings("MustBeClosedChecker")
   public <T> Stream<T> queryLazily(
       DataSource dataSource,
       SqlConsumer<? super Statement> settings,
@@ -1196,7 +1192,6 @@ public final class SafeSql {
    * @since 8.7
    */
   @MustBeClosed
-  @SuppressWarnings("MustBeClosedChecker")
   public <T> Stream<T> queryLazily(Connection connection, Class<? extends T> resultType)
       throws SQLException {
     return queryLazily(connection, stmt -> {}, resultType);
@@ -1223,7 +1218,6 @@ public final class SafeSql {
    * @since 8.4
    */
   @MustBeClosed
-  @SuppressWarnings("MustBeClosedChecker")
   public <T> Stream<T> queryLazily(
       Connection connection, SqlFunction<? super ResultSet, ? extends T> rowMapper)
       throws SQLException {
@@ -1251,7 +1245,6 @@ public final class SafeSql {
    * @since 9.0
    */
   @MustBeClosed
-  @SuppressWarnings("MustBeClosedChecker")
   public <T> Stream<T> queryLazily(
       Connection connection,
       SqlConsumer<? super Statement> settings,
@@ -1282,7 +1275,6 @@ public final class SafeSql {
    * @since 9.0
    */
   @MustBeClosed
-  @SuppressWarnings("MustBeClosedChecker")
   public <T> Stream<T> queryLazily(
       Connection connection,
       SqlConsumer<? super Statement> settings,
