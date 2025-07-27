@@ -1076,8 +1076,7 @@ public final class SafeSql {
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    * @since 9.2
    */
-  @MustBeClosed
-  public <T> Stream<T> queryLazily(
+  @MustBeClosed public <T> Stream<T> queryLazily(
       DataSource dataSource, SqlFunction<? super ResultSet, ? extends T> rowMapper) {
     return queryLazily(dataSource, stmt -> {}, rowMapper);
   }
@@ -1214,8 +1213,7 @@ public final class SafeSql {
    *
    * @since 8.4
    */
-  @MustBeClosed
-  public <T> Stream<T> queryLazily(
+  @MustBeClosed public <T> Stream<T> queryLazily(
       Connection connection, SqlFunction<? super ResultSet, ? extends T> rowMapper)
       throws SQLException {
     return queryLazily(connection, stmt -> {}, rowMapper);
@@ -1381,8 +1379,8 @@ public final class SafeSql {
    * <p>It's often more convenient to use {@link #query} or {@link #update} unless you need to
    * directly operate on the PreparedStatement.
    */
-  @MustBeClosed
-  public PreparedStatement prepareStatement(Connection connection) throws SQLException {
+  @MustBeClosed public PreparedStatement prepareStatement(Connection connection)
+      throws SQLException {
     return setParameters(connection.prepareStatement(sql));
   }
 
