@@ -1039,6 +1039,148 @@ public final class SafeSql {
    * <p>Alternatively, if your query only selects one column, you could also use this method
    * to read the results: <pre>{@code
    * SafeSql sql = SafeSql.of("SELECT id FROM Users WHERE name LIKE '%{name}%'", name);
+   * try (Stream<Long> ids = sql.queryLazily(dataSource, Long.class)) {
+   *   return ids.findFirst();
+   * }
+   * }</pre>
+   *
+   * <p>You can also map the result rows to Java Beans, similar to {@link #query(Connection, Class)}.
+   *
+   * @since 9.2
+   */
+  @MustBeClosed
+  @SuppressWarnings("MustBeClosedChecker")
+  public <T> Stream<T> queryLazily(DataSource dataSource, Class<? extends T> resultType) {
+    return queryLazily(dataSource, stmt -> {}, resultType);
+  }
+
+  /**
+   * Executes the encapsulated SQL as a query against {@code connection},
+   * and then fetches the results lazily in a stream.
+   *
+   * <p>The returned {@code Stream} includes results transformed by {@code rowMapper}.
+   * The caller must close it using try-with-resources idiom, which will close the associated
+   * {@link Connection}, {@link Statement} and {@link ResultSet}.
+   *
+   * <p>For example: <pre>{@code
+   * SafeSql sql = SafeSql.of("SELECT name FROM Users WHERE name LIKE '%{name}%'", name);
+   * try (Stream<String> names = sql.queryLazily(dataSource, row -> row.getString("name"))) {
+   *   return names.findFirst();
+   * }
+   * }</pre>
+   *
+   * <p>Internally it delegates to {@link PreparedStatement#executeQuery} or {@link
+   * Statement#executeQuery} if this sql contains no JDBC binding parameters.
+   *
+   * @throws UncheckedSqlException wraps {@link SQLException} if failed
+   * @since 9.2
+   */
+  @MustBeClosed
+  @SuppressWarnings("MustBeClosedChecker")
+  public <T> Stream<T> queryLazily(
+      DataSource dataSource, SqlFunction<? super ResultSet, ? extends T> rowMapper) {
+    return queryLazily(dataSource, stmt -> {}, rowMapper);
+  }
+
+  /**
+   * Executes the encapsulated SQL as a query against {@code connection}, with {@code settings}
+   * (can be set via lambda like {@code stmt -> stmt.setFetchSize(100)}), and then fetches the
+   * results lazily in a stream.
+   *
+   * <p>Each result row is transformed into {@code resultType}.
+   *
+   * <p>For example: <pre>{@code
+   * SafeSql sql = SafeSql.of("SELECT name FROM Users WHERE name LIKE '%{name}%'", name);
+   * try (Stream<String> names = sql.queryLazily(
+   *     dataSource, stmt -> stmt.setFetchSize(100), String.class)) {
+   *   return names.findFirst();
+   * }
+   * }</pre>
+   *
+   * <p>Internally it delegates to {@link PreparedStatement#executeQuery} or {@link
+   * Statement#executeQuery} if this sql contains no JDBC binding parameters.
+   *
+   * @since 9.2
+   */
+  @MustBeClosed
+  @SuppressWarnings("MustBeClosedChecker")
+  public <T> Stream<T> queryLazily(
+      DataSource dataSource,
+      SqlConsumer<? super Statement> settings,
+      Class<? extends T> resultType) {
+    return queryLazily(dataSource, settings, ResultMapper.toResultOf(resultType)::from);
+  }
+
+  /**
+   * Executes the encapsulated SQL as a query against {@code dataSource}, with {@code settings}
+   * (can be set via lambda like {@code stmt -> stmt.setFetchSize(100)}, and then fetches the
+   * results lazily in a stream.
+   *
+   * <p>The returned {@code Stream} includes results transformed by {@code rowMapper}.
+   * The caller must close it using try-with-resources idiom, which will close the associated
+   * {@link Connection}, {@link Statement} and {@link ResultSet}.
+   *
+   * <p>For example: <pre>{@code
+   * SafeSql sql = SafeSql.of("SELECT name FROM Users WHERE name LIKE '%{name}%'", name);
+   * try (Stream<String> names = sql.queryLazily(
+   *     dataSource, stmt -> stmt.setFetchSize(100), row -> row.getString("name"))) {
+   *   return names.findFirst();
+   * }
+   * }</pre>
+   *
+   * <p>Internally it delegates to {@link PreparedStatement#executeQuery} or {@link
+   * Statement#executeQuery} if this sql contains no JDBC binding parameters.
+   *
+   * @since 9.2
+   */
+  @MustBeClosed
+  @SuppressWarnings("MustBeClosedChecker")
+  public <T> Stream<T> queryLazily(
+      DataSource dataSource,
+      SqlConsumer<? super Statement> settings,
+      SqlFunction<? super ResultSet, ? extends T> rowMapper) {
+    try (JdbcCloser closer = new JdbcCloser()) {
+      Connection connection = dataSource.getConnection();
+      closer.register(connection::close);
+      return closer.attachTo(queryLazily(connection, settings, rowMapper));
+    } catch (SQLException e) {
+      throw new UncheckedSqlException(e);
+    }
+  }
+
+  /**
+   * Executes the encapsulated SQL as a query against {@code connection},
+   * and then fetches the results lazily in a stream.
+   *
+   * <p>Each result row is transformed into {@code resultType}.
+   *
+   * <p>The caller must close it using try-with-resources idiom, which will close the associated
+   * {@link Statement} and {@link ResultSet}.
+   *
+   * <p>For example: <pre>{@code
+   * SafeSql sql = SafeSql.of("SELECT id, name FROM Users WHERE name LIKE '%{name}%'", name);
+   * try (Stream<User> users = sql.queryLazily(connection, User.class)) {
+   *   return users.findFirst();
+   * }
+   *
+   * record User(long id, String name) {...}
+   * }</pre>
+   *
+   * <p>The class of {@code resultType} must define a non-private constructor that accepts
+   * the same number of parameters as returned by the query. The parameter order doesn't
+   * matter but the parameter <em>names</em> and types must match.
+   *
+   * <p>Note that if you've enabled the {@code -parameters} javac flag, the above example code
+   * will just work. If you can't enable {@code -parameters}, consider explicitly annotating
+   * the constructor parameters as in:
+   *
+   * <pre>{@code
+   * record User(@SqlName("id") long id, @SqlName("name") String name) {...}
+   * }</pre>
+   *
+   * <p>Alternatively, if your query only selects one column, you could also use this method
+   * to read the results: <pre>{@code
+   * SafeSql sql = SafeSql.of("SELECT id FROM Users WHERE name LIKE '%{name}%'", name);
    * try (Stream<Long> ids = sql.queryLazily(connection, Long.class)) {
    *   return ids.findFirst();
    * }
@@ -1073,7 +1215,6 @@ public final class SafeSql {
    * <p>Internally it delegates to {@link PreparedStatement#executeQuery} or {@link
    * Statement#executeQuery} if this sql contains no JDBC binding parameters.
    *
-   * @throws UncheckedSqlException wraps {@link SQLException} if failed
    * @since 8.4
    */
   @MustBeClosed
