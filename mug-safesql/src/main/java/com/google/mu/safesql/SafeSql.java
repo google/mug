@@ -1103,8 +1103,7 @@ public final class SafeSql {
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    * @since 9.2
    */
-  @MustBeClosed
-  public <T> Stream<T> queryLazily(
+  @MustBeClosed public <T> Stream<T> queryLazily(
       DataSource dataSource,
       SqlConsumer<? super Statement> settings,
       Class<? extends T> resultType) {
@@ -1134,8 +1133,7 @@ public final class SafeSql {
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    * @since 9.2
    */
-  @MustBeClosed
-  public <T> Stream<T> queryLazily(
+  @MustBeClosed public <T> Stream<T> queryLazily(
       DataSource dataSource,
       SqlConsumer<? super Statement> settings,
       SqlFunction<? super ResultSet, ? extends T> rowMapper) {
@@ -1243,8 +1241,7 @@ public final class SafeSql {
    *
    * @since 9.0
    */
-  @MustBeClosed
-  public <T> Stream<T> queryLazily(
+  @MustBeClosed public <T> Stream<T> queryLazily(
       Connection connection,
       SqlConsumer<? super Statement> settings,
       Class<? extends T> resultType) throws SQLException {
@@ -1273,8 +1270,7 @@ public final class SafeSql {
    *
    * @since 9.0
    */
-  @MustBeClosed
-  public <T> Stream<T> queryLazily(
+  @MustBeClosed public <T> Stream<T> queryLazily(
       Connection connection,
       SqlConsumer<? super Statement> settings,
       SqlFunction<? super ResultSet, ? extends T> rowMapper) throws SQLException {
@@ -1285,8 +1281,7 @@ public final class SafeSql {
     return lazy(() -> prepareStatement(connection), settings, PreparedStatement::executeQuery, rowMapper);
   }
 
-  @MustBeClosed
-  private static <S extends Statement, T> Stream<T> lazy(
+  @MustBeClosed private static <S extends Statement, T> Stream<T> lazy(
       SqlSupplier<? extends S> createStatement,
       SqlConsumer<? super Statement> settings,
       SqlFunction<? super S, ResultSet> execute,
