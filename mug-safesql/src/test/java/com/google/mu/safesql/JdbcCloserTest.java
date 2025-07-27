@@ -1,15 +1,20 @@
 package com.google.mu.safesql;
 
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.stream.Stream;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InOrder;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
@@ -67,5 +72,19 @@ public class JdbcCloserTest {
     verify(statement, never()).close();
     try (Stream<?> closeMe = stream) {}
     verify(statement).close();
+  }
+
+  @Test public void moreThanOneReousrces_allClosed() throws Exception {
+    Connection connection = mock(Connection.class);
+    ResultSet resultSet = mock(ResultSet.class);
+    try (JdbcCloser closer = new JdbcCloser()) {
+      closer.register(connection::close);
+      closer.register(statement::close);
+      closer.register(resultSet::close);
+    }
+    InOrder inOrder = Mockito.inOrder(connection, statement, resultSet);
+    inOrder.verify(resultSet).close();
+    inOrder.verify(statement).close();
+    inOrder.verify(connection).close();
   }
 }

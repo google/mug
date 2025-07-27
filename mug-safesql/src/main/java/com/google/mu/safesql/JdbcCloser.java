@@ -41,6 +41,7 @@ final class JdbcCloser implements AutoCloseable {
       } catch (Error e) {
         throw closeForException(upper, e);
       }
+      upper.close();
     };
   }
 
