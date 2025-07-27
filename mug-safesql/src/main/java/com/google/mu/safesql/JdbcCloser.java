@@ -45,8 +45,7 @@ final class JdbcCloser implements AutoCloseable {
     };
   }
 
-  @MustBeClosed
-  <T> Stream<T> deferTo(Stream<T> stream) {
+  @MustBeClosed <T> Stream<T> deferTo(Stream<T> stream) {
     JdbcCloseable detached = all;
     Stream<T> attached = stream.onClose(() -> close(detached));
     all = () -> {};
