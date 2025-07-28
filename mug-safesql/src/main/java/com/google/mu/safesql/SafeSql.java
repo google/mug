@@ -1137,8 +1137,7 @@ public final class SafeSql {
       SqlConsumer<? super Statement> settings,
       SqlFunction<? super ResultSet, ? extends T> rowMapper) {
     try (JdbcScope scope = new JdbcScope()) {
-      Connection connection = dataSource.getConnection();
-      scope.onClose(connection::close);
+      Connection connection = scope.connection(dataSource);
       return scope.deferTo(queryLazily(connection, settings, rowMapper));
     } catch (SQLException e) {
       throw new UncheckedSqlException(e);
@@ -1285,11 +1284,9 @@ public final class SafeSql {
       SqlFunction<? super S, ResultSet> execute,
       SqlFunction<? super ResultSet, ? extends T> rowMapper) throws SQLException {
     try (JdbcScope scope = new JdbcScope()) {
-      S stmt = createStatement.get();
-      scope.onClose(stmt::close);
+      S stmt = scope.statement(createStatement);
       settings.accept(stmt);
-      ResultSet resultSet = execute.apply(stmt);
-      scope.onClose(resultSet::close);
+      ResultSet resultSet = scope.resultSet(() -> execute.apply(stmt));
       return scope.deferTo(
           whileNotNull(() -> {
             try {

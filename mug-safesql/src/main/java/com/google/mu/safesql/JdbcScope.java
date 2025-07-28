@@ -14,8 +14,13 @@
  *****************************************************************************/
 package com.google.mu.safesql;
 
+import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.stream.Stream;
+
+import javax.sql.DataSource;
 
 import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.errorprone.annotations.MustBeClosed;
@@ -33,6 +38,24 @@ final class JdbcScope implements AutoCloseable {
   private JdbcCloseable all = () -> {};
 
   @MustBeClosed JdbcScope() {}
+
+  Connection connection(DataSource dataSource) throws SQLException {
+    Connection connection = dataSource.getConnection();
+    onClose(connection::close);
+    return connection;
+  }
+
+  <S extends Statement> S statement(SqlSupplier<S> supplier) throws SQLException {
+    S statement = supplier.get();
+    onClose(statement::close);
+    return statement;
+  }
+
+  ResultSet resultSet(SqlSupplier<ResultSet> supplier) throws SQLException {
+    ResultSet resultSet = supplier.get();
+    onClose(resultSet::close);
+    return resultSet;
+  }
 
   void onClose(JdbcCloseable closeable) {
     JdbcCloseable upper = all;
