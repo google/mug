@@ -35,7 +35,7 @@ final class JdbcScope implements AutoCloseable {
     void close() throws SQLException;
   }
 
-  private JdbcCloseable all = () -> {};
+  private JdbcCloseable stack = () -> {};
 
   @MustBeClosed JdbcScope() {}
 
@@ -58,30 +58,30 @@ final class JdbcScope implements AutoCloseable {
   }
 
   void onClose(JdbcCloseable closeable) {
-    JdbcCloseable upper = all;
-    all = () -> {
+    JdbcCloseable top = stack;
+    stack = () -> {
       try {
         closeable.close();
       } catch (SQLException e) {
-        throw closeForException(upper, e);
+        throw closeForException(top, e);
       } catch (RuntimeException e) {
-        throw closeForException(upper, e);
+        throw closeForException(top, e);
       } catch (Error e) {
-        throw closeForException(upper, e);
+        throw closeForException(top, e);
       }
-      upper.close();
+      top.close();
     };
   }
 
   @MustBeClosed <T> Stream<T> deferTo(Stream<T> stream) {
-    JdbcCloseable detached = all;
+    JdbcCloseable detached = stack;
     Stream<T> attached = stream.onClose(() -> close(detached));
-    all = () -> {};
+    stack = () -> {};
     return attached;
   }
 
   @Override public void close() {
-     close(all);
+     close(stack);
   }
 
   private static void close(JdbcCloseable closebale) {
