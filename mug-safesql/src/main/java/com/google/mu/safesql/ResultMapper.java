@@ -47,7 +47,6 @@ import java.util.Set;
 
 import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.mu.util.CaseBreaker;
-import com.google.mu.util.stream.BiStream;
 
 /**
  * Utility to map from a {@code ResultSet} to a pojo by invoking constructor from
@@ -87,7 +86,7 @@ abstract class ResultMapper<T> {
       this.creators = stream(type.getDeclaredConstructors())
           .map(ctor -> (Constructor<T>) ctor)
           .filter(ctor -> !Modifier.isPrivate(ctor.getModifiers()))
-          .collect(BiStream.groupingBy(ctor -> ctor.getParameterCount(), mapping(Creator::new, toList())))
+          .collect(groupingBy(ctor -> ctor.getParameterCount(), mapping(Creator::new, toList())))
           .collect(toImmutableNavigableMap());
       checkArgument(creators.size() > 0, "No accessible constructor from %s", type);
       checkAmbiguities();
@@ -99,7 +98,8 @@ abstract class ResultMapper<T> {
           creators.floorEntry(canonicalColumnNames.size());
       checkArgument(
           band != null,
-          "No constructor found from %s suitable for mapping columns: %s", type, canonicalColumnNames);
+          "No constructor found from %s suitable for mapping columns: %s", type,
+          canonicalColumnNames);
       List<Creator<T>> candidates = band.getValue().stream()
           .collect(partitioningBy(Creator::isExplicitlyAnnotated, toList()))
           .andThen(
@@ -129,7 +129,8 @@ abstract class ResultMapper<T> {
           Creator<?> dup = byCanonicalColumNames.putIfAbsent(names, creator);
           checkArgument(
               dup == null,
-              "Ambiguous constructors in %s matching the same set of column names: %s", type, names);
+              "Ambiguous constructors in %s matching the same set of column names: %s", type,
+              names);
         }
       }
     }
@@ -145,7 +146,8 @@ abstract class ResultMapper<T> {
       this.paramTypes = unmodifiableList(asList(constructor.getParameterTypes()));
       this.sqlColumnNames = stream(constructor.getParameters())
           .collect(groupingBy(param -> getNameForSql(param), counting()))
-          .peek((name, cnt) -> checkArgument(cnt == 1, "Duplicate parameter name for sql: %s", name))
+          .peek((name, cnt) ->
+              checkArgument(cnt == 1, "Duplicate parameter name for sql: %s", name))
           .keys()
           .collect(toList());
       constructor.setAccessible(true);
@@ -164,11 +166,14 @@ abstract class ResultMapper<T> {
     }
 
     boolean isExplicitlyAnnotated() {
-      return stream(constructor.getParameters()).anyMatch(param -> param.isAnnotationPresent(SqlName.class));
+      return stream(constructor.getParameters())
+          .anyMatch(param -> param.isAnnotationPresent(SqlName.class));
     }
 
     Set<String> getCanonicalColumnNames() {
-      return sqlColumnNames.stream().map(ResultMapper::canonicalize).collect(toCollection(LinkedHashSet::new));
+      return sqlColumnNames.stream()
+          .map(ResultMapper::canonicalize)
+          .collect(toCollection(LinkedHashSet::new));
     }
 
     @Override public String toString() {
