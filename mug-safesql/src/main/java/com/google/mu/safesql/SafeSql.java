@@ -1629,7 +1629,10 @@ public final class SafeSql {
             paramName, paramName);
         if (value instanceof Iterable) {
           Iterator<?> elements = ((Iterable<?>) value).iterator();
-          checkArgument(elements.hasNext(), "%s cannot be empty list", placeholder);
+          checkArgument(
+              elements.hasNext(),
+              "%s cannot be empty list. To guard against empty list, consider using {%s? -> } syntax.",
+              placeholder, paramName);
           if (placeholder.isImmediatelyBetween("'", "'")
               && context.lookaround("IN ('", placeholder, "')")
               && scanner.nextFragmentIfQuoted("'", placeholder, "'")
