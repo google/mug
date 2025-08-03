@@ -124,6 +124,7 @@ final class JavaBeanMapper<T> extends ResultMapper<T> {
     }
 
     static Populator of(Field field) {
+      field.setAccessible(true);
       Class<?> type = field.getType();
       return (bean, row, columnName) -> {
         Object value = row.getObject(columnName, wrapperType(type));
