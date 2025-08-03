@@ -675,6 +675,29 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     assertThat(thrown).hasMessageThat().contains("ID at index 2");
   }
 
+  @Test public void query_resultTypeWithPublicFields_populated() throws Exception {
+    ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title, time, item_uuid) VALUES({id}, {title}, {time}, {uuid})",
+                    testId(), "bar", barTime, "uuid")
+                .update(connection()))
+        .isEqualTo(1);
+    ItemFields.title = "static title";  // static field not populated
+    ItemFields bean = new ItemFields();
+    bean.id = testId();
+    bean.time = barTime.toInstant();
+    assertThat(
+            SafeSql.of("select id, time, title, item_uuid from ITEMS where id = {id}", testId())
+                .query(connection(), ItemFields.class))
+        .containsExactly(bean);
+    assertThat(
+            SafeSql.of("select id, time, title, item_uuid from ITEMS where id = {id}", testId())
+                .queryLazily(connection(), stmt -> stmt.setFetchSize(2), ItemFields.class)
+                .collect(toList()))
+        .containsExactly(bean);
+    assertThat(ItemFields.title).isEqualTo("static title");
+  }
+
   @Test public void query_withResultBeanType_populated() throws Exception {
     ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
     assertThat(
@@ -684,7 +707,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .isEqualTo(1);
     ItemBean bean = new ItemBean();
     bean.setId(testId());
-    bean.setItemUuid("uuid");
+    bean.itemUuid = "uuid";
     bean.setTime(barTime.toInstant());
     bean.setTitle("bar");
     assertThat(
@@ -707,7 +730,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .isEqualTo(1);
     ItemBean bean = new ItemBean();
     bean.setId(testId());
-    bean.setItemUuid("uuid");
+    bean.itemUuid = "uuid";
     bean.setTime(barTime.toInstant());
     bean.setTitle("bar");
     assertThat(
@@ -730,7 +753,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .isEqualTo(1);
     ItemBean bean = new ItemBean();
     bean.setId(testId());
-    bean.setItemUuid("uuid");
+    bean.itemUuid = "uuid";
     bean.setTime(barTime.toInstant());
     bean.setTitle("bar");
     assertThat(
@@ -853,7 +876,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
                 .update(connection()))
         .isEqualTo(1);
     AnnotatedItemBean bean = new AnnotatedItemBean();
-    bean.setId(testId());
+    bean.itemId = testId();
     bean.setCreationTime(barTime.toInstant());
     assertThat(
             SafeSql.of("select id, time, item_uuid from ITEMS where id = {id}", testId())
@@ -1021,6 +1044,25 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     WithBlankColumnName(@SqlName(" ") int id) {}
   }
 
+  static class ItemFields {
+    public int id;
+    public Instant time;
+    public static String title;
+    public final String itemUuid = "uuid";
+
+    @Override public boolean equals(Object that) {
+      return that != null && toString().equals(that.toString());
+    }
+
+    @Override public int hashCode() {
+      return toString().hashCode();
+    }
+
+    @Override public String toString() {
+      return "id=" + id + ", time=" + time;
+    }
+  }
+
   static class BaseItemBean {
     private int id;
     private Instant time;
@@ -1048,14 +1090,10 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
 
   static class ItemBean extends BaseItemBean {
     private String title;
-    private String itemUuid;
+    public String itemUuid;
 
     public void setTitle(String title) {
       this.title = title;
-    }
-
-    public void setItemUuid(String itemUuid) {
-      this.itemUuid = itemUuid;
     }
 
     @Override public boolean equals(Object that) {
@@ -1097,12 +1135,9 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
   }
 
   static class AnnotatedItemBean {
-    private int id;
+    @SqlName("id")
+    public int itemId;
     private Instant time;
-
-    public void setId(int id) {
-      this.id = id;
-    }
 
     @SqlName("time")
     public void setCreationTime(Instant time) {
@@ -1118,7 +1153,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     }
 
     @Override public String toString() {
-      return "id=" + id + ", time=" + time;
+      return "id=" + itemId + ", time=" + time;
     }
   }
 
