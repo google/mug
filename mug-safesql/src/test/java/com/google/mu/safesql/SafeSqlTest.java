@@ -1310,6 +1310,37 @@ public class SafeSqlTest {
   }
 
   @Test
+  public void chineseAllowed() {
+    SafeSql sql = SafeSql.of("select 学号，生日 from 学院目录 where 学号={学号}", 1234);
+    assertThat(sql.toString())
+        .isEqualTo("select 学号，生日 from 学院目录 where 学号=?");
+    assertThat(sql.debugString())
+        .isEqualTo("select 学号，生日 from 学院目录 where 学号=? /* 1234 */");
+  }
+
+  @Test
+  public void backtickQuotedChineseIdentifierPlaceholdersAllowed() {
+    SafeSql sql = SafeSql.of(
+        "select 学号, `{其它列名}` from `{表名}` where 学号={学号}",
+        /*其它列名*/ asList("姓名", "生日"), /* 表名 */ "学院目录", /* 学号 */ 1234);
+    assertThat(sql.toString())
+        .isEqualTo("select 学号, `姓名`, `生日` from `学院目录` where 学号=?");
+    assertThat(sql.debugString())
+        .isEqualTo("select 学号, `姓名`, `生日` from `学院目录` where 学号=? /* 1234 */");
+  }
+
+  @Test
+  public void doubleQuotedChineseIdentifierPlaceholdersAllowed() {
+    SafeSql sql = SafeSql.of(
+        "select 学号, \"{其它列名}\" from \"{表名}\" where 学号={学号}",
+        /*其它列名*/ asList("姓名", "生日"), /* 表名 */ "学院目录", /* 学号 */ 1234);
+    assertThat(sql.toString())
+        .isEqualTo("select 学号, \"姓名\", \"生日\" from \"学院目录\" where 学号=?");
+    assertThat(sql.debugString())
+        .isEqualTo("select 学号, \"姓名\", \"生日\" from \"学院目录\" where 学号=? /* 1234 */");
+  }
+
+  @Test
   public void testEquals() {
     new EqualsTester()
         .addEqualityGroup(
