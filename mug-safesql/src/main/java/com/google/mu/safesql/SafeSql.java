@@ -816,13 +816,13 @@ public final class SafeSql {
    */
   public <T> List<T> query(
       DataSource dataSource,
-      SqlConsumer<? super Statement> settings,
+      StatementSettings settings,
       Class<? extends T> resultType) {
     return query(dataSource, settings, ResultMapper.toResultOf(resultType)::from);
   }
 
   /**
-   * Similar to {@link #query(DataSource, SqlConsumer, Class)}, but uses an existing connection.
+   * Similar to {@link #query(DataSource, StatementSettings, Class)}, but uses an existing connection.
    *
    * <p>It's usually more convenient to use the {@code DataSource} overload because you won't have
    * to manage the JDBC resources. Use this method if you need to reuse a connection
@@ -832,7 +832,7 @@ public final class SafeSql {
    */
   public <T> List<T> query(
       Connection connection,
-      SqlConsumer<? super Statement> settings,
+      StatementSettings settings,
       Class<? extends T> resultType) throws SQLException {
     return query(connection, settings, ResultMapper.toResultOf(resultType)::from);
   }
@@ -856,7 +856,7 @@ public final class SafeSql {
    */
   public <T> List<T> query(
       DataSource dataSource,
-      SqlConsumer<? super Statement> settings,
+      StatementSettings settings,
       SqlFunction<? super ResultSet, ? extends T> rowMapper) {
     try (Connection connection = dataSource.getConnection()) {
       return query(connection, settings, rowMapper);
@@ -866,7 +866,7 @@ public final class SafeSql {
   }
 
   /**
-   * Similar to {@link #query(DataSource, SqlConsumer, SqlFunction)}, but uses an existing connection.
+   * Similar to {@link #query(DataSource, StatementSettings, SqlFunction)}, but uses an existing connection.
    *
    * <p>It's usually more convenient to use the {@code DataSource} overload because you won't have
    * to manage the JDBC resources. Use this method if you need to reuse a connection
@@ -884,19 +884,19 @@ public final class SafeSql {
    */
   public <T> List<T> query(
       Connection connection,
-      SqlConsumer<? super Statement> settings,
+      StatementSettings settings,
       SqlFunction<? super ResultSet, ? extends T> rowMapper) throws SQLException {
     requireNonNull(rowMapper);
     if (paramValues.isEmpty()) {
       try (Statement stmt = connection.createStatement()) {
-        settings.accept(stmt);
+        settings.apply(stmt);
         try (ResultSet resultSet = stmt.executeQuery(sql)) {
           return mapResults(resultSet, rowMapper);
         }
       }
     }
     try (PreparedStatement stmt = prepareStatement(connection)) {
-      settings.accept(stmt);
+      settings.apply(stmt);
       try (ResultSet resultSet = stmt.executeQuery()) {
         return mapResults(resultSet, rowMapper);
       }
@@ -1104,7 +1104,7 @@ public final class SafeSql {
    */
   @MustBeClosed public <T> Stream<T> queryLazily(
       DataSource dataSource,
-      SqlConsumer<? super Statement> settings,
+      StatementSettings settings,
       Class<? extends T> resultType) {
     return queryLazily(dataSource, settings, ResultMapper.toResultOf(resultType)::from);
   }
@@ -1134,7 +1134,7 @@ public final class SafeSql {
    */
   @MustBeClosed public <T> Stream<T> queryLazily(
       DataSource dataSource,
-      SqlConsumer<? super Statement> settings,
+      StatementSettings settings,
       SqlFunction<? super ResultSet, ? extends T> rowMapper) {
     try (JdbcScope scope = new JdbcScope()) {
       Connection connection = scope.connection(dataSource);
@@ -1240,7 +1240,7 @@ public final class SafeSql {
    */
   @MustBeClosed public <T> Stream<T> queryLazily(
       Connection connection,
-      SqlConsumer<? super Statement> settings,
+      StatementSettings settings,
       Class<? extends T> resultType) throws SQLException {
     return queryLazily(connection, settings, ResultMapper.toResultOf(resultType)::from);
   }
@@ -1269,7 +1269,7 @@ public final class SafeSql {
    */
   @MustBeClosed public <T> Stream<T> queryLazily(
       Connection connection,
-      SqlConsumer<? super Statement> settings,
+      StatementSettings settings,
       SqlFunction<? super ResultSet, ? extends T> rowMapper) throws SQLException {
     requireNonNull(rowMapper);
     if (paramValues.isEmpty()) {
@@ -1280,12 +1280,12 @@ public final class SafeSql {
 
   @MustBeClosed private static <S extends Statement, T> Stream<T> lazy(
       SqlSupplier<? extends S> createStatement,
-      SqlConsumer<? super Statement> settings,
+      StatementSettings settings,
       SqlFunction<? super S, ResultSet> execute,
       SqlFunction<? super ResultSet, ? extends T> rowMapper) throws SQLException {
     try (JdbcScope scope = new JdbcScope()) {
       S stmt = scope.statement(createStatement);
-      settings.accept(stmt);
+      settings.apply(stmt);
       ResultSet resultSet = scope.resultSet(() -> execute.apply(stmt));
       return scope.deferTo(
           whileNotNull(() -> {
@@ -1325,7 +1325,7 @@ public final class SafeSql {
    * @since 9.2
    */
   @CanIgnoreReturnValue public int update(
-      DataSource dataSource, SqlConsumer<? super Statement> settings) {
+      DataSource dataSource, StatementSettings settings) {
     try (Connection connection = dataSource.getConnection()) {
       return update(connection, settings);
     } catch (SQLException e) {
@@ -1356,15 +1356,15 @@ public final class SafeSql {
    * @since 9.0
    */
   @CanIgnoreReturnValue public int update(
-      Connection connection, SqlConsumer<? super Statement> settings) throws SQLException {
+      Connection connection, StatementSettings settings) throws SQLException {
     if (paramValues.isEmpty()) {
       try (Statement stmt = connection.createStatement()) {
-        settings.accept(stmt);
+        settings.apply(stmt);
         return stmt.executeUpdate(sql);
       }
     }
     try (PreparedStatement stmt = prepareStatement(connection)) {
-      settings.accept(stmt);
+      settings.apply(stmt);
       return stmt.executeUpdate();
     }
   }
