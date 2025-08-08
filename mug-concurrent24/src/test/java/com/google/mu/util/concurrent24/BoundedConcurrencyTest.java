@@ -91,7 +91,7 @@ public class BoundedConcurrencyTest {
         Stream.of(10, 1, 5, 0).collect(withMaxConcurrency(3).concurrently(n -> {
               started.add(n);
               try {
-                Thread.sleep(n);
+                Thread.sleep(n * 100);
               } catch (InterruptedException e) {
                 interrupted.add(n);
               }
@@ -109,7 +109,7 @@ public class BoundedConcurrencyTest {
         Stream.of(10, 1, 3, 0).collect(withMaxConcurrency(3).concurrently(n -> {
               started.add(n);
               try {
-                Thread.sleep(n);
+                Thread.sleep(n * 100);
               } catch (InterruptedException e) {
                 interrupted.add(n);
               }
@@ -126,7 +126,7 @@ public class BoundedConcurrencyTest {
         RuntimeException.class,
         () -> Stream.of(10, 5, 7, 1).collect(withMaxConcurrency(4).concurrently(n -> {
           try {
-            Thread.sleep(n);
+            Thread.sleep(n * 100);
           } catch (InterruptedException e) {
             interrupted.add(n);
           }
@@ -146,7 +146,7 @@ public class BoundedConcurrencyTest {
             results.set(
               Stream.of(10, 30, 40, 20).collect(withMaxConcurrency(2).concurrently(n -> {
                 try {
-                  Thread.sleep(n);
+                  Thread.sleep(n * 100);
                 } catch (InterruptedException e) {
                   interrupted.add(n);
                 }
@@ -216,7 +216,7 @@ public class BoundedConcurrencyTest {
         Stream.of(10, 1, 3, 0).gather(withMaxConcurrency(3).mapConcurrently(n -> {
               started.add(n);
               try {
-                Thread.sleep(n);
+                Thread.sleep(n * 100);
               } catch (InterruptedException e) {
                 interrupted.add(n);
               }
@@ -234,7 +234,7 @@ public class BoundedConcurrencyTest {
         Stream.of(10, 1, 3, 0).gather(withMaxConcurrency(3).mapConcurrently(n -> {
               started.add(n);
               try {
-                Thread.sleep(n);
+                Thread.sleep(n * 100);
               } catch (InterruptedException e) {
                 interrupted.add(n);
               }
@@ -251,7 +251,7 @@ public class BoundedConcurrencyTest {
         RuntimeException.class,
         () -> Stream.of(10, 20, 30, 1).gather(withMaxConcurrency(4).mapConcurrently(n -> {
           try {
-            Thread.sleep(n);
+            Thread.sleep(n * 100);
           } catch (InterruptedException e) {
             interrupted.add(n);
           }
@@ -271,7 +271,7 @@ public class BoundedConcurrencyTest {
             results.set(
               Stream.of(10, 30, 40, 20).gather(withMaxConcurrency(2).mapConcurrently(n -> {
                 try {
-                  Thread.sleep(n);
+                  Thread.sleep(n * 100);
                 } catch (InterruptedException e) {
                   interrupted.add(n);
                 }
@@ -342,7 +342,7 @@ public class BoundedConcurrencyTest {
             .gather(withMaxConcurrency(3).mapConcurrently(n -> {
               started.add(n);
               try {
-                Thread.sleep(n * 1000);
+                Thread.sleep(n * 100);
               } catch (InterruptedException e) {
                 interrupted.add(n);
               }
@@ -363,7 +363,7 @@ public class BoundedConcurrencyTest {
             .gather(withMaxConcurrency(3).mapConcurrently(n -> {
               started.add(n);
               try {
-                Thread.sleep(n * 1000);
+                Thread.sleep(n * 100);
               } catch (InterruptedException e) {
                 interrupted.add(n);
               }
@@ -383,7 +383,7 @@ public class BoundedConcurrencyTest {
             .gather(Gatherers.mapConcurrent(3, n -> {
               started.add(n);
               try {
-                Thread.sleep(n * 1000);
+                Thread.sleep(n * 100);
               } catch (InterruptedException e) {
                 interrupted.add(n);
               }
@@ -404,7 +404,7 @@ public class BoundedConcurrencyTest {
             .gather(Gatherers.mapConcurrent(3, n -> {
               started.add(n);
               try {
-                Thread.sleep(n * 1000);
+                Thread.sleep(n * 100);
               } catch (InterruptedException e) {
                 interrupted.add(n);
               }
@@ -426,7 +426,7 @@ public class BoundedConcurrencyTest {
             .gather(Gatherers.mapConcurrent(3, n -> {
               started.add(n);
               try {
-                Thread.sleep(n * 1000);
+                Thread.sleep(n * 100);
               } catch (InterruptedException e) {
                 interrupted.add(n);
               }
@@ -487,7 +487,7 @@ public class BoundedConcurrencyTest {
             .gather(withMaxConcurrency(3).mapConcurrently(n -> {
               started.add(n);
               try {
-                Thread.sleep(n * 1000);
+                Thread.sleep(n * 100);
               } catch (InterruptedException e) {
                 interrupted.add(n);
               }
@@ -556,7 +556,7 @@ public class BoundedConcurrencyTest {
               }
               started.add(n);
               try {
-                Thread.sleep(n * 1000);
+                Thread.sleep(n * 100);
               } catch (InterruptedException e) {
                 interrupted.add(n);
               }
@@ -611,7 +611,7 @@ public class BoundedConcurrencyTest {
     List<Callable<String>> tasks = Stream.of(10, 1, 0, 3).<Callable<String>>map(n -> () -> {
       started.add(n);
       try {
-        Thread.sleep(n * 1000);
+        Thread.sleep(n * 100);
       } catch (InterruptedException e) {
         interrupted.add(n);
       }
