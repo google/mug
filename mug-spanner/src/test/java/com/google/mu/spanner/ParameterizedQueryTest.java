@@ -376,6 +376,22 @@ public class ParameterizedQueryTest {
   }
 
   @Test
+  @SuppressWarnings("StringFormatArgsCheck")
+  public void optionalOperator_nonEmpty() {
+    ImmutableList<String> columns = ImmutableList.of("foo", "bar");
+    assertThat(ParameterizedQuery.of("SELECT {columns? -> `columns?`, } name FROM tbl", columns))
+        .isEqualTo(ParameterizedQuery.of("SELECT `{columns}`, name FROM tbl", columns));
+  }
+
+  @Test
+  @SuppressWarnings("StringFormatArgsCheck")
+  public void optionalOperator_empty() {
+    ImmutableList<String> columns = ImmutableList.of();
+    assertThat(ParameterizedQuery.of("SELECT {columns? -> `columns?`, } name FROM tbl", columns))
+        .isEqualTo(ParameterizedQuery.of("SELECT  name FROM tbl"));
+  }
+
+  @Test
   public void backquotedEnumParameter() {
     ParameterizedQuery sql = ParameterizedQuery.of(
         "select `{column}` from Users",

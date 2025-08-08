@@ -88,7 +88,7 @@ public class BoundedConcurrencyTest {
     ConcurrentLinkedQueue<Integer> started = new ConcurrentLinkedQueue<>();
     ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
     assertThat(
-        Stream.of(10, 1, 3, 0).collect(withMaxConcurrency(3).concurrently(n -> {
+        Stream.of(10, 1, 5, 0).collect(withMaxConcurrency(3).concurrently(n -> {
               started.add(n);
               try {
                 Thread.sleep(n);
@@ -98,8 +98,8 @@ public class BoundedConcurrencyTest {
               return n;
             })).keys().findFirst())
         .hasValue(1);
-    assertThat(started).containsExactly(10, 1, 3);
-    assertThat(interrupted).containsExactly(3, 10);
+    assertThat(started).containsExactly(10, 1, 5);
+    assertThat(interrupted).containsExactly(5, 10);
   }
 
   @Test public void concurrently_findAnyCancelsPending() {
@@ -124,7 +124,7 @@ public class BoundedConcurrencyTest {
     ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
     RuntimeException thrown = assertThrows(
         RuntimeException.class,
-        () -> Stream.of(10, 2, 3, 1).collect(withMaxConcurrency(4).concurrently(n -> {
+        () -> Stream.of(10, 5, 7, 1).collect(withMaxConcurrency(4).concurrently(n -> {
           try {
             Thread.sleep(n);
           } catch (InterruptedException e) {
@@ -133,7 +133,7 @@ public class BoundedConcurrencyTest {
           throw new ApplicationException(String.valueOf(n));
         })).toMap());
     assertThat(thrown).hasCauseThat().hasMessageThat().isEqualTo("1");
-    assertThat(interrupted).containsExactly(2, 3, 10);
+    assertThat(interrupted).containsExactly(5, 7, 10);
   }
 
   @Test public void concurrently_mainThreadInterrupted_propagatedInterruption()
@@ -249,7 +249,7 @@ public class BoundedConcurrencyTest {
     ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
     RuntimeException thrown = assertThrows(
         RuntimeException.class,
-        () -> Stream.of(10, 2, 3, 1).gather(withMaxConcurrency(4).mapConcurrently(n -> {
+        () -> Stream.of(10, 20, 30, 1).gather(withMaxConcurrency(4).mapConcurrently(n -> {
           try {
             Thread.sleep(n);
           } catch (InterruptedException e) {
@@ -258,7 +258,7 @@ public class BoundedConcurrencyTest {
           throw new ApplicationException(String.valueOf(n));
         })).toList());
     assertThat(thrown).hasCauseThat().hasMessageThat().isEqualTo("1");
-    assertThat(interrupted).containsExactly(2, 3, 10);
+    assertThat(interrupted).containsExactly(20, 30, 10);
   }
 
   @Test public void mapConcurrently_mainThreadInterrupted_propagatedInterruption()

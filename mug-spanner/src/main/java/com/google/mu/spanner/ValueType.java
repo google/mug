@@ -130,7 +130,7 @@ enum ValueType {
   },
   OFFSET_DATE_TIME(OffsetDateTime.class) {
     @Override public Value toValue(Object obj) {
-      return Value.timestamp(toTimestamp((((OffsetDateTime) obj).toInstant())));
+      return Value.timestamp(toTimestamp(((OffsetDateTime) obj).toInstant()));
     }
     @Override public Value toArrayValue(Collection<?> elements) {
       @SuppressWarnings("unchecked")  // checked by toArrayValue static method

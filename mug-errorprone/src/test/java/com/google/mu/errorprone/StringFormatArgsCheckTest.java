@@ -2931,7 +2931,7 @@ public final class StringFormatArgsCheckTest {
             "class Test {",
             "  void test(int fooId) {",
             "    // BUG: Diagnostic contains: guard placeholder {foo_id ->} is",
-            "    // expected to be boolean or Optional,",
+            "    // expected to be boolean, Optional or Collection,",
             "    // whereas argument <fooId> at line 9 is of type int",
             "    query(\"SELECT {foo_id -> foo_id}\", fooId);",
             "  }",
@@ -3090,6 +3090,88 @@ public final class StringFormatArgsCheckTest {
 
             "class Test {",
             "  void test(Optional<String> foo) {",
+            "    // BUG: Diagnostic contains: to the right of {foo?->}: [food?]",
+            "    query(\"SELECT {foo? -> , concat(food?, 'foo')}\", foo);",
+            "  }",
+
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_collectionParameterForArrowOperator_allowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.Set;",
+            "class Test {",
+            "  void test(Set<String> foo) {",
+            "    query(\"SELECT {foo? -> , concat(foo?, 'foo?')}\", foo);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_collectionParameterForArrowOperator_notProperWord_disallowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.List;",
+
+            "class Test {",
+            "  void test(List<String> foo) {",
+            "    // BUG: Diagnostic contains: {foo->} must be an identifier followed by a '?'",
+            "    query(\"SELECT {foo -> , concat(foo, 'foo')}\", foo);",
+            "  }",
+
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void
+      templateFormatMethod_collectionParameterForArrowOperator_missingQuestionMark_disallowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.List;",
+
+            "class Test {",
+            "  void test(List<String> foo) {",
+            "    // BUG: Diagnostic contains: {foo->} must be an identifier followed by a '?'",
+            "    query(\"SELECT {foo -> , concat(foo, 'foo')}\", foo);",
+            "  }",
+
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_collectionParameterForArrowOperator_typoInReference_disallowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.List;",
+
+            "class Test {",
+            "  void test(List<String> foo) {",
             "    // BUG: Diagnostic contains: to the right of {foo?->}: [food?]",
             "    query(\"SELECT {foo? -> , concat(food?, 'foo')}\", foo);",
             "  }",

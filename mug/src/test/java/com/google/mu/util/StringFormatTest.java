@@ -217,10 +217,9 @@ public class StringFormatTest {
   @Test
   public void parse_withTwoArgsLambda_emptyInput() {
     assertThat(new StringFormat("1 is {x}, 2 is {y}").parse("", (x, y) -> null)).isEmpty();
-    IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> new StringFormat("1 is {x}, 2 is {y}").parseOrThrow("", (x, y) -> null));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new StringFormat("1 is {x}, 2 is {y}").parseOrThrow("", (x, y) -> null));
   }
 
   @Test

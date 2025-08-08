@@ -355,7 +355,7 @@ public class ParallelizerTest {
       }
     }
 
-    // Returns a consumer that delegates to {@code consumer} after {@code delay}. */
+    /** Returns a consumer that delegates to {@code consumer} after {@code delay}. */
     private static <T> Consumer<T> delayed(Duration delay, Consumer<T> consumer) {
       return input -> {
         try {
@@ -472,9 +472,5 @@ public class ParallelizerTest {
     },
     ;
     abstract ExecutorService newExecutorService();
-  }
-
-  private static <E extends Throwable> void raise(E throwable) throws E {
-    throw throwable;
   }
 }

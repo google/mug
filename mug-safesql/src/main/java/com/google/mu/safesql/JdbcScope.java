@@ -14,45 +14,74 @@
  *****************************************************************************/
 package com.google.mu.safesql;
 
+import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.stream.Stream;
+
+import javax.sql.DataSource;
 
 import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.errorprone.annotations.MustBeClosed;
 
-/** Helps manage JDBC resources that need to be closed now or lazily. */
+/**
+ * A scope of JDBC resources to be closed using try-with-resources,
+ * or {@link #deferTo deferred} to a lazy stream.
+ */
 @CheckReturnValue
-final class JdbcCloser implements AutoCloseable {
+final class JdbcScope implements AutoCloseable {
   interface JdbcCloseable {
     void close() throws SQLException;
   }
 
-  private JdbcCloseable all = () -> {};
+  private JdbcCloseable stack = () -> {};
 
-  void register(JdbcCloseable closeable) {
-    JdbcCloseable upper = all;
-    all = () -> {
+  @MustBeClosed JdbcScope() {}
+
+  Connection connection(DataSource dataSource) throws SQLException {
+    Connection connection = dataSource.getConnection();
+    onClose(connection::close);
+    return connection;
+  }
+
+  <S extends Statement> S statement(SqlSupplier<S> supplier) throws SQLException {
+    S statement = supplier.get();
+    onClose(statement::close);
+    return statement;
+  }
+
+  ResultSet resultSet(SqlSupplier<ResultSet> supplier) throws SQLException {
+    ResultSet resultSet = supplier.get();
+    onClose(resultSet::close);
+    return resultSet;
+  }
+
+  void onClose(JdbcCloseable closeable) {
+    JdbcCloseable top = stack;
+    stack = () -> {
       try {
         closeable.close();
       } catch (SQLException e) {
-        throw closeForException(upper, e);
+        throw closeForException(top, e);
       } catch (RuntimeException e) {
-        throw closeForException(upper, e);
+        throw closeForException(top, e);
       } catch (Error e) {
-        throw closeForException(upper, e);
+        throw closeForException(top, e);
       }
+      top.close();
     };
   }
 
-  @MustBeClosed
-  <T> Stream<T> attachTo(Stream<T> stream) {
-    JdbcCloseable detached = all;
-    all = () -> {};
-    return stream.onClose(() -> close(detached));
+  @MustBeClosed <T> Stream<T> deferTo(Stream<T> stream) {
+    JdbcCloseable detached = stack;
+    Stream<T> attached = stream.onClose(() -> close(detached));
+    stack = () -> {};
+    return attached;
   }
 
   @Override public void close() {
-     close(all);
+     close(stack);
   }
 
   private static void close(JdbcCloseable closebale) {

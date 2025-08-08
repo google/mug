@@ -1,4 +1,4 @@
-# SafeSql: Injection-Safe SQL Templates for Java
+# SafeSql: The Only Injection-Safe SQL Templates for Java
 
 ## Introduction
 
@@ -50,13 +50,15 @@ It achieves this through an easily enforceable, "safe by construction" approach:
 2.  **Provably Safe by Construction Guarantees:**
     * The SQL template string is required to be a `@CompileTimeConstant`, enforced by ErrorProne.
         * Use dynamic `String` as SQL template $\to$ **Compilation Error.**
-    * All parameters passed to the template are automatically sent as JDBC `PreparedStatement` parameters by default.
+    * By default, all parameters passed to the template are automatically sent as JDBC `PreparedStatement` parameters.
         * Pass untrusted `String` where identifier/dynamic SQL needed $\to$ **JDBC Runtime Error.**
     * SafeSql performs strict validation for `String` placeholders used as table/column names (backtick-quoted or double-quoted as identifiers).
         * Pass a string with malicious characters $\to$ **Immediate Runtime Exception.**
-    * Subqueries are only embedded from other `SafeSql` objects that are already provably safe from injection.
+    * Subqueries are only embedded from other `SafeSql` objects or enums that are already provably safe from injection.
 
 There is simply no way to accidentally inject malicious code. If `SafeSql` compiles and runs, it's provably safe from SQLi.
+
+No other SQL framework offers **100% guaranteed safety**.
 
 
 ### 2. Dynamic `IN` Clauses with Collections

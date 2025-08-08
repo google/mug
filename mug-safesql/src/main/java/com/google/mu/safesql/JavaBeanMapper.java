@@ -23,6 +23,7 @@ import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -58,14 +59,25 @@ final class JavaBeanMapper<T> extends ResultMapper<T> {
           })
           .mapValues(Populator::of)
           .toMap();
-      if (setters.isEmpty()) { // no setter? not a Java Bean
+      Map<String, Populator> populators = biStream(stream(beanClass.getFields()))
+          .skipValuesIf(field -> Modifier.isStatic(field.getModifiers()))
+          .skipValuesIf(field -> Modifier.isFinal(field.getModifiers()))
+          .mapKeys(field -> {
+            SqlName sqlName = field.getAnnotation(SqlName.class);
+            return canonicalize(sqlName == null ? field.getName() : sqlName.value());
+          })
+          .skipKeysIf(setters::containsKey)
+          .mapValues(Populator::of)
+          .append(setters)
+          .toMap();
+      if (populators.isEmpty()) { // no setter or public field? not a Java Bean
         return Optional.empty();
       }
       return stream(beanClass.getDeclaredConstructors())
           .filter(ctor -> ctor.getParameterCount() == 0 && !Modifier.isPrivate(ctor.getModifiers()))
           .peek(ctor -> ctor.setAccessible(true))
           .findAny()
-          .map(ctor -> new JavaBeanMapper<T>(beanClass, (Constructor<T>) ctor, setters));
+          .map(ctor -> new JavaBeanMapper<T>(beanClass, (Constructor<T>) ctor, populators));
     } catch (IntrospectionException e) {
       throw new RuntimeException(e);
     }
@@ -107,6 +119,18 @@ final class JavaBeanMapper<T> extends ResultMapper<T> {
         // for primitive, if the value is null, don't call setter.
         if (value != null || !type.isPrimitive()) {
           setter.invoke(bean, value);
+        }
+      };
+    }
+
+    static Populator of(Field field) {
+      field.setAccessible(true);
+      Class<?> type = field.getType();
+      return (bean, row, columnName) -> {
+        Object value = row.getObject(columnName, wrapperType(type));
+        // for primitive, if the value is null, don't call setter.
+        if (value != null || !type.isPrimitive()) {
+          field.set(bean, value);
         }
       };
     }

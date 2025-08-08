@@ -2,6 +2,7 @@ package com.google.mu.safesql;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertThrows;
@@ -27,6 +28,7 @@ import org.dbunit.dataset.IDataSet;
 import org.dbunit.dataset.xml.FlatXmlDataSetBuilder;
 import org.dbunit.operation.DatabaseOperation;
 import org.h2.jdbcx.JdbcDataSource;
+import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -39,6 +41,10 @@ import com.google.mu.util.StringFormat;
 @RunWith(JUnit4.class)
 public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
   @Rule public final TestName testName = new TestName();
+
+  @After public void cleanDb() throws Exception {
+    SafeSql.of("TRUNCATE TABLE ITEMS").update(connection());
+  }
 
   @Override
   protected DataSource getDataSource() {
@@ -125,6 +131,40 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .containsExactly(title);
   }
 
+  @Test public void likeExpressionWithWildcardAndUnderscoreMixed() throws Exception {
+    String title = "What's that?";
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), title)
+                .update(connection()))
+        .isEqualTo(1);
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '%{...}_' and id = {id}", "at", testId()), "title"))
+        .containsExactly(title);
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '%{...}_' and id = {id}", "th", testId()), "title"))
+        .isEmpty();
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '_{...}%' and id = {id}", "hat'", testId()), "title"))
+        .containsExactly(title);
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '_{...}%' and id = {id}", "What", testId()), "title"))
+        .isEmpty();
+  }
+
+  @Test public void likeExpressionWithUnderscoreInSql() throws Exception {
+    String title = "What's that?";
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), title)
+                .update(connection()))
+        .isEqualTo(1);
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '_{...}_' and id = {id}", "hat's that", testId()), "title"))
+        .containsExactly(title);
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '%{...}_' and id = {id}", "'s that", testId()), "title"))
+        .containsExactly(title);
+  }
+
   @Test public void withPercentCharacterValue() throws Exception {
     assertThat(
             SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "%")
@@ -155,14 +195,40 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .containsExactly("foo");
   }
 
+  @Test public void likeExpressionWithPrefixUnderscoreInSql() throws Exception {
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")
+                .update(connection()))
+        .isEqualTo(1);
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '{...}_' and id = {id}", "fo", testId()), "title"))
+        .containsExactly("foo");
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '{...}_' and id = {id}", "f", testId()), "title"))
+        .isEmpty();
+  }
+
   @Test public void likeExpressionWithSuffixWildcardInSql() throws Exception {
     assertThat(
             SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")
                 .update(connection()))
         .isEqualTo(1);
     assertThat(queryColumn(
-            SafeSql.of("select title from ITEMS where title like '%{...}' and id = {id}", "oo", testId()), "title"))
+            SafeSql.of("select title from ITEMS where title like '%{...}' and id = {id}", "o", testId()), "title"))
         .containsExactly("foo");
+  }
+
+  @Test public void likeExpressionWithSuffixUnderscoreInSql() throws Exception {
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title) VALUES({id}, {title})", testId(), "foo")
+                .update(connection()))
+        .isEqualTo(1);
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '_{...}' and id = {id}", "oo", testId()), "title"))
+        .containsExactly("foo");
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '_{...}' and id = {id}", "o", testId()), "title"))
+        .isEmpty();
   }
 
   @Test public void quotedStringExpression() throws Exception {
@@ -189,6 +255,12 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     assertThat(queryColumn(
             SafeSql.of("select title from ITEMS where title like '{...}%' and id = {id}", "%", testId()), "title"))
         .isEmpty();
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '{...}_' and id = {id}", "%", testId()), "title"))
+        .isEmpty();
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '_{...}' and id = {id}", "%", testId()), "title"))
+        .isEmpty();
   }
 
   @Test public void likeExpressionWithPercentValue_found() throws Exception {
@@ -201,6 +273,12 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .containsExactly("30%");
     assertThat(queryColumn(
             SafeSql.of("select title from ITEMS where title like '%{...}' and id = {id}", "3%%", testId()), "title"))
+        .isEmpty();
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '_{...}' and id = {id}", "0%", testId()), "title"))
+        .containsExactly("30%");
+    assertThat(queryColumn(
+            SafeSql.of("select title from ITEMS where title like '_{...}' and id = {id}", "0%%", testId()), "title"))
         .isEmpty();
   }
 
@@ -489,6 +567,11 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
                 .map(ZonedDateTime::toInstant)
                 .collect(toImmutableList()))
         .containsExactly(barTime.toInstant());
+    assertThat(
+            SafeSql.of("select time from ITEMS where id = {id}", testId())
+                .queryForOne(connection(), ZonedDateTime.class)
+                .map(ZonedDateTime::toInstant))
+        .hasValue(barTime.toInstant());
   }
 
   @Test public void queryLazily_withResultType_toOffsetDateTimeResults() throws Exception {
@@ -503,6 +586,11 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
                 .map(OffsetDateTime::toInstant)
                 .collect(toImmutableList()))
         .containsExactly(barTime.toInstant());
+    assertThat(
+            SafeSql.of("select time from ITEMS where id = {id}", testId())
+                .queryForOne(connection(), OffsetDateTime.class)
+                .map(OffsetDateTime::toInstant))
+        .hasValue(barTime.toInstant());
   }
 
   @Test public void query_withResultType_usingParameterNames() throws Exception {
@@ -587,6 +675,29 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     assertThat(thrown).hasMessageThat().contains("ID at index 2");
   }
 
+  @Test public void query_resultTypeWithPublicFields_populated() throws Exception {
+    ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title, time, item_uuid) VALUES({id}, {title}, {time}, {uuid})",
+                    testId(), "bar", barTime, "uuid")
+                .update(connection()))
+        .isEqualTo(1);
+    ItemFields.title = "static title";  // static field not populated
+    ItemFields bean = new ItemFields();
+    bean.id = testId();
+    bean.time = barTime.toInstant();
+    assertThat(
+            SafeSql.of("select id, time, title, item_uuid from ITEMS where id = {id}", testId())
+                .query(connection(), ItemFields.class))
+        .containsExactly(bean);
+    assertThat(
+            SafeSql.of("select id, time, title, item_uuid from ITEMS where id = {id}", testId())
+                .queryLazily(connection(), stmt -> stmt.setFetchSize(2), ItemFields.class)
+                .collect(toList()))
+        .containsExactly(bean);
+    assertThat(ItemFields.title).isEqualTo("static title");
+  }
+
   @Test public void query_withResultBeanType_populated() throws Exception {
     ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
     assertThat(
@@ -596,7 +707,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .isEqualTo(1);
     ItemBean bean = new ItemBean();
     bean.setId(testId());
-    bean.setItemUuid("uuid");
+    bean.itemUuid = "uuid";
     bean.setTime(barTime.toInstant());
     bean.setTitle("bar");
     assertThat(
@@ -619,7 +730,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .isEqualTo(1);
     ItemBean bean = new ItemBean();
     bean.setId(testId());
-    bean.setItemUuid("uuid");
+    bean.itemUuid = "uuid";
     bean.setTime(barTime.toInstant());
     bean.setTitle("bar");
     assertThat(
@@ -642,7 +753,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         .isEqualTo(1);
     ItemBean bean = new ItemBean();
     bean.setId(testId());
-    bean.setItemUuid("uuid");
+    bean.itemUuid = "uuid";
     bean.setTime(barTime.toInstant());
     bean.setTitle("bar");
     assertThat(
@@ -765,7 +876,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
                 .update(connection()))
         .isEqualTo(1);
     AnnotatedItemBean bean = new AnnotatedItemBean();
-    bean.setId(testId());
+    bean.itemId = testId();
     bean.setCreationTime(barTime.toInstant());
     assertThat(
             SafeSql.of("select id, time, item_uuid from ITEMS where id = {id}", testId())
@@ -786,6 +897,39 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
             .queryLazily(connection(), StringBean.class)
             .collect(toList()))
         .containsExactly(bean);
+    assertThat(
+        SafeSql.of("select {id} AS id, 'foo' AS data", testId())
+            .queryForOne(connection(), StringBean.class))
+        .hasValue(bean);
+  }
+
+  @Test public void queryForOne_firstRowIsTurned() throws Exception {
+    ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title, time) VALUES({id}, {title}, {time})", testId(), "bar", barTime)
+                .update(connection()))
+        .isEqualTo(1);
+    assertThat(
+            SafeSql.of("insert into ITEMS(id, title, time) VALUES({id}, {title}, {time})", testId() + 1, "bar2", barTime)
+                .update(connection()))
+      .isEqualTo(1);
+    assertThat(
+            SafeSql.of("select time from ITEMS where id IN ({id}, {id2}) order by id", testId(), /* id2 */ testId() + 1)
+                .queryForOne(connection(), ZonedDateTime.class)
+                .map(ZonedDateTime::toInstant))
+        .hasValue(barTime.toInstant());
+  }
+
+  @Test public void queryForOne_noRowIsReturned() throws Exception {
+    assertThat(
+            SafeSql.of("select time from ITEMS where id IN ({id})", testId())
+                .queryForOne(connection(), ZonedDateTime.class))
+        .isEmpty();
+  }
+
+  @Test public void queryForOne_nullCausesNpe() throws Exception {
+    SafeSql sql = SafeSql.of("select null AS id");
+    assertThrows(NullPointerException.class, () -> sql.queryForOne(connection(), Long.class));
   }
 
   @Test public void queryLazily_withResultType_parametersAnnotatedWithSqlName() throws Exception {
@@ -900,6 +1044,25 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     WithBlankColumnName(@SqlName(" ") int id) {}
   }
 
+  static class ItemFields {
+    public int id;
+    public Instant time;
+    public static String title;
+    public final String itemUuid = "uuid";
+
+    @Override public boolean equals(Object that) {
+      return that != null && toString().equals(that.toString());
+    }
+
+    @Override public int hashCode() {
+      return toString().hashCode();
+    }
+
+    @Override public String toString() {
+      return "id=" + id + ", time=" + time;
+    }
+  }
+
   static class BaseItemBean {
     private int id;
     private Instant time;
@@ -927,14 +1090,10 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
 
   static class ItemBean extends BaseItemBean {
     private String title;
-    private String itemUuid;
+    public String itemUuid;
 
     public void setTitle(String title) {
       this.title = title;
-    }
-
-    public void setItemUuid(String itemUuid) {
-      this.itemUuid = itemUuid;
     }
 
     @Override public boolean equals(Object that) {
@@ -976,12 +1135,9 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
   }
 
   static class AnnotatedItemBean {
-    private int id;
+    @SqlName("id")
+    public int itemId;
     private Instant time;
-
-    public void setId(int id) {
-      this.id = id;
-    }
 
     @SqlName("time")
     public void setCreationTime(Instant time) {
@@ -997,7 +1153,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     }
 
     @Override public String toString() {
-      return "id=" + id + ", time=" + time;
+      return "id=" + itemId + ", time=" + time;
     }
   }
 

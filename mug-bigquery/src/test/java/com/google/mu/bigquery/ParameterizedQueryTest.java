@@ -226,7 +226,7 @@ public class ParameterizedQueryTest {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> ParameterizedQuery.of(("SELECT * WHERE status in ({status}, {status})"), 123, 456));
+            () -> ParameterizedQuery.of("SELECT * WHERE status in ({status}, {status})", 123, 456));
     assertThat(thrown).hasMessageThat().contains("status");
   }
 

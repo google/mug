@@ -161,6 +161,7 @@ import com.google.mu.util.stream.BiStream;
  *   class UserCriteria {
  *     Optional<String> userId();
  *     Optional<String> firstName();
+ *     List<String> aliases();
  *     ...
  *   }
  *
@@ -172,16 +173,19 @@ import com.google.mu.util.stream.BiStream;
  *         WHERE 1 = 1
  *             {user_id? -> AND id = user_id?}
  *             {first_name? -> AND firstName = 'first_name?'}
+ *             {alises? -> AND name IN (aliases?)}
  *         """,
  *         asList(columns),
  *         criteria.userId()),
- *         criteria.firstName());
+ *         criteria.firstName(),
+ *         criteria.aliases());
  *   }
  * }</pre>
  *
  * <p>The special "{foo? -> ...}" guard syntax informs the template engine that the
  * right hand side query snippet is only rendered if the {@code Optional} parameter corresponding
- * to the "foo?" placeholder is present, in which case the value of the Optional will be used in
+ * to the "foo?" placeholder is present, or the {@code Collection} paameter corresponding to it
+ * isn't empty, in which case the value of the Optional or Collection will be used in
  * the right hand side snippet as if it were a regular template argument.
  *
  * <p>If {@code UserCriteria} has specified {@code firstName()} but {@code userId()} is
@@ -469,21 +473,18 @@ public final class ParameterizedQuery {
    * Returns the SQL text with the template parameters translated to named Spanner
    * parameters, annotated with parameter values.
    */
-  @Override
-  public String toString() {
+  @Override public String toString() {
     Iterator<String> names = toBindingNames().iterator();
     StringFormat placeholderWithValue = new StringFormat("@{name} /* {...} */");
     Iterator<Value> values = parameters.stream().map(param -> param.value).iterator();
     return all("?").replaceAllFrom(sql, q -> placeholderWithValue.format(names.next(), values.next()));
   }
 
-  @Override
-  public int hashCode() {
+  @Override public int hashCode() {
     return sql.hashCode();
   }
 
-  @Override
-  public boolean equals(Object obj) {
+  @Override public boolean equals(Object obj) {
     if (obj instanceof ParameterizedQuery) {
       ParameterizedQuery that = (ParameterizedQuery) obj;
       return sql.equals(that.sql) && parameters.equals(that.parameters);
@@ -532,6 +533,15 @@ public final class ParameterizedQuery {
             ((Optional<?>) value)
                 .map(present -> innerSubquery(rhs, present))
                 .ifPresent(builder::addSubQuery);
+            return;
+          }
+          if (value instanceof Collection) {
+            String rhs = validateOptionalOperatorRhs(conditional);
+            builder.appendSql(scanner.nextFragment());
+            Collection<?> collectionValue = ((Collection<?>) value);
+            if (!collectionValue.isEmpty()) {
+              builder.addSubQuery(innerSubquery(rhs, collectionValue));
+            }
             return;
           }
           checkArgument(

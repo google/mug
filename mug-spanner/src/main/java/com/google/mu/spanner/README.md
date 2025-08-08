@@ -1,14 +1,14 @@
 ## When to Use ParameterizedQuery?
 
-### If your Spanner query is simple enough…
-If you’re just running a straightforward query with a couple of parameters, the native `Statement` API is fine:
+If your Spanner query is mostly a static, compile-time string with a few parameters,
+the native `Statement` API is sufficient:
 ```java
 Statement stmt = Statement.newBuilder("SELECT name FROM Users WHERE id = @id")
     .bind("id").to(user.id())
     .build();
 ```
 
-It gets more difficult when the query grows complex.
+It gets more difficult when the query grows complex and dynamic.
 
 ---
 

@@ -35,14 +35,12 @@ import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.truth.MultimapSubject;
 
-import junit.framework.TestCase;
-
 /**
  * Tests to ensure {@link BiStream#from(Stream, Function, Function)} maintains the invariant that
  * the functions are invoked at most once per entry.
  */
 @RunWith(JUnit4.class)
-public final class BiStreamFunctionEvaluationTest extends TestCase {
+public final class BiStreamFunctionEvaluationTest {
   private final List<Object> evaluatedKeys = new ArrayList<>();
   private final List<Object> evaluatedValues = new ArrayList<>();
 

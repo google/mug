@@ -15,6 +15,7 @@
     <maven.javadoc.failOnError>false</maven.javadoc.failOnError>
     <error_prone.version>2.40.0</error_prone.version>
     <error_prone_annotations.version>2.40.0</error_prone_annotations.version>
+    <maven_compiler_plugin.version>3.14.0</maven_compiler_plugin.version>
   </properties>
 
   <licenses>
@@ -44,7 +45,6 @@
     <module>mug</module>
     <module>mug-benchmarks</module>
     <module>mug-examples</module>
-    <module>mug-algorithms</module>
     <module>mug-guava</module>
     <module>mug-protobuf</module>
     <module>mug-errorprone</module>
@@ -115,14 +115,14 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava-testlib</artifactId>
-      <version>33.1.0-jre</version>
+      <version>33.4.0-jre</version>
       <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>33.1.0-jre</version>
+      <version>33.4.0-jre</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -176,7 +176,7 @@
         </plugin>
         <plugin>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.14.0</version>
+          <version>${maven_compiler_plugin.version}</version>
           <configuration>
             <fork>true</fork>
             <source>8</source>
@@ -269,7 +269,7 @@
               <additionalDependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>33.1.0-jre</version>
+                <version>33.4.0-jre</version>
               </additionalDependency>
               <additionalDependency>
                 <groupId>com.google.errorprone</groupId>
@@ -279,7 +279,7 @@
               <additionalDependency>
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-java</artifactId>
-                <version>4.26.0</version>
+                <version>4.31.1</version>
               </additionalDependency>
               <additionalDependency>
                 <groupId>org.checkerframework</groupId>

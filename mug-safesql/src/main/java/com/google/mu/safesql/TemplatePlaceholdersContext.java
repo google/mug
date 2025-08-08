@@ -74,7 +74,9 @@ final class TemplatePlaceholdersContext {
 
   void rejectEscapeAfter(Substring.Match placeholder) {
     checkArgument(
-        !lookahead(placeholder, "%' ESCAPE") && !lookahead(placeholder, "' ESCAPE"),
+        !lookahead(placeholder, "%' ESCAPE")
+            && !lookahead(placeholder, "_' ESCAPE")
+            && !lookahead(placeholder, "' ESCAPE"),
         "ESCAPE not supported after %s. Just leave the placeholder alone and SafeSql will auto escape.",
         placeholder);
   }
