@@ -4,7 +4,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 /**
- * Encapsulates the settings on a JDBC statement.
+ * Functional interface to apply settings onto a JDBC {@link Statement}.
+ *
+ * <p>For example: {@code stmt -> stmt.setMaxRows(100)}.
  *
  * @since 9.2
  */
