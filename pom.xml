@@ -4,7 +4,7 @@
   <groupId>com.google.mug</groupId>
   <artifactId>mug-root</artifactId>
   <packaging>pom</packaging>
-  <version>9.2-SNAPSHOT</version>
+  <version>9.3-SNAPSHOT</version>
   <name>mug-root</name>
   <description>Google Mug Library</description>
   <url>http://github.com/google/mug</url>
@@ -303,9 +303,8 @@
               </additionalDependency>
             </additionalDependencies>
             <links>
-              <link>https://cloud.google.com/java/docs/reference/google-cloud-spanner/latest/overview</link>
-              <link>https://cloud.google.com/java/docs/reference/gax/latest/overview</link>
-              <link>https://cloud.google.com/java/docs/reference/google-cloud-core/latest/overview</link>
+              <link>https://javadoc.io/doc/com.google.cloud/google-cloud-spanner/latest</link>
+              <link>https://javadoc.io/doc/com.google.cloud/google-cloud-core/latest</link>
             </links>
           </configuration>
           <executions>

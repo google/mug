@@ -256,21 +256,21 @@ public class ParameterizedQueryTest {
   }
 
   @Test
-  public void optionalOperator_present() {
+  public void guardOperator_present() {
     Optional<Integer> id = Optional.of(123);
     assertThat(ParameterizedQuery.of("SELECT {id? -> id? AS id,} name FROM tbl", id))
         .isEqualTo(ParameterizedQuery.of("SELECT {id} AS id, name FROM tbl", id.get()));
   }
 
   @Test
-  public void optionalOperator_absent() {
+  public void guardOperator_absent() {
     Optional<Integer> id = Optional.empty();
     assertThat(ParameterizedQuery.of("SELECT { id? -> id? AS id,} name FROM tbl", id))
         .isEqualTo(ParameterizedQuery.of("SELECT  name FROM tbl"));
   }
 
   @Test
-  public void optionalOperator_optionalParameterReferencedMultipleTimes() {
+  public void guardOperator_optionalParameterReferencedMultipleTimes() {
     Optional<String> id = Optional.of("myId");
     ParameterizedQuery sql = ParameterizedQuery.of("SELECT {id? -> id? AS id, UPPER('id?') AS title, } name FROM tbl", id);
     assertThat(sql)
@@ -280,7 +280,7 @@ public class ParameterizedQueryTest {
   }
 
   @Test
-  public void optionalOperator_withLikeOperator_present() {
+  public void guardOperator_withLikeOperator_present() {
     Optional<String> name = Optional.of("%foo");
     ParameterizedQuery sql = ParameterizedQuery.of("SELECT * FROM tbl WHERE 1=1 {name? -> AND name LIKE 'name?'}", name);
     assertThat(sql)
@@ -292,21 +292,21 @@ public class ParameterizedQueryTest {
   }
 
   @Test
-  public void optionalOperator_withLikeOperator_absent() {
+  public void guardOperator_withLikeOperator_absent() {
     Optional<String> name = Optional.empty();
     assertThat(ParameterizedQuery.of("SELECT * FROM tbl WHERE 1=1 {name? -> AND name LIKE '%name?%'}", name))
         .isEqualTo(ParameterizedQuery.of("SELECT * FROM tbl WHERE 1=1 "));
   }
 
   @Test
-  public void optionalOperator_trailingSpaceAndNewlinesIgnored() {
+  public void guardOperator_trailingSpaceAndNewlinesIgnored() {
     Optional<Integer> id = Optional.of(123);
     assertThat(ParameterizedQuery.of("SELECT {id? -> id? AS id, \n} name FROM tbl", id))
         .isEqualTo(ParameterizedQuery.of("SELECT {id} AS id, name FROM tbl", id.get()));
   }
 
   @Test
-  public void optionalOperator_parameterReferencedMoreThanOnce() {
+  public void guardOperator_parameterReferencedMoreThanOnce() {
     Optional<Integer> id = Optional.of(123);
     assertThat(
             ParameterizedQuery.of(
@@ -318,7 +318,7 @@ public class ParameterizedQueryTest {
 
   @Test
   @SuppressWarnings("StringFormatArgsCheck")
-  public void optionalOperator_missingQuestionMark() {
+  public void guardOperator_missingQuestionMark() {
     Optional<Integer> id = Optional.empty();
     IllegalArgumentException thrown =
         assertThrows(
@@ -330,7 +330,7 @@ public class ParameterizedQueryTest {
 
   @Test
   @SuppressWarnings("StringFormatArgsCheck")
-  public void optionalOperator_redundantQuestionMark() {
+  public void guardOperator_redundantQuestionMark() {
     Optional<Integer> id = Optional.empty();
     IllegalArgumentException thrown =
         assertThrows(
@@ -342,7 +342,7 @@ public class ParameterizedQueryTest {
 
   @Test
   @SuppressWarnings("StringFormatArgsCheck")
-  public void optionalOperator_spaceInTheMiddleOfName() {
+  public void guardOperator_spaceInTheMiddleOfName() {
     Optional<Integer> id = Optional.empty();
     IllegalArgumentException thrown =
         assertThrows(
@@ -354,7 +354,7 @@ public class ParameterizedQueryTest {
 
   @Test
   @SuppressWarnings("StringFormatArgsCheck")
-  public void optionalOperator_typoInParameterName() {
+  public void guardOperator_typoInParameterName() {
     Optional<Integer> id = Optional.empty();
     IllegalArgumentException thrown =
         assertThrows(
@@ -365,7 +365,7 @@ public class ParameterizedQueryTest {
 
   @Test
   @SuppressWarnings("StringFormatArgsCheck")
-  public void optionalOperator_missingQuestionMarkInReference() {
+  public void guardOperator_missingQuestionMarkInReference() {
     Optional<Integer> id = Optional.empty();
     IllegalArgumentException thrown =
         assertThrows(
@@ -376,16 +376,14 @@ public class ParameterizedQueryTest {
   }
 
   @Test
-  @SuppressWarnings("StringFormatArgsCheck")
-  public void optionalOperator_nonEmpty() {
+  public void guardOperator_nonEmpty() {
     ImmutableList<String> columns = ImmutableList.of("foo", "bar");
     assertThat(ParameterizedQuery.of("SELECT {columns? -> `columns?`, } name FROM tbl", columns))
         .isEqualTo(ParameterizedQuery.of("SELECT `{columns}`, name FROM tbl", columns));
   }
 
   @Test
-  @SuppressWarnings("StringFormatArgsCheck")
-  public void optionalOperator_empty() {
+  public void guardOperator_empty() {
     ImmutableList<String> columns = ImmutableList.of();
     assertThat(ParameterizedQuery.of("SELECT {columns? -> `columns?`, } name FROM tbl", columns))
         .isEqualTo(ParameterizedQuery.of("SELECT  name FROM tbl"));

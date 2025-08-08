@@ -105,21 +105,21 @@ public class SafeSqlTest {
   }
 
   @Test
-  public void optionalOperator_present() {
+  public void guardOperator_present() {
     Optional<Integer> id = Optional.of(123);
     assertThat(SafeSql.of("SELECT {id? -> id? AS id,} name FROM tbl", id))
         .isEqualTo(SafeSql.of("SELECT {id} AS id, name FROM tbl", id.get()));
   }
 
   @Test
-  public void optionalOperator_absent() {
+  public void guardOperator_absent() {
     Optional<Integer> id = Optional.empty();
     assertThat(SafeSql.of("SELECT { id? -> id? AS id,} name FROM tbl", id))
         .isEqualTo(SafeSql.of("SELECT  name FROM tbl"));
   }
 
   @Test
-  public void optionalOperator_optionalParameterReferencedMultipleTimes() {
+  public void guardOperator_optionalParameterReferencedMultipleTimes() {
     Optional<String> id = Optional.of("myId");
     SafeSql sql = SafeSql.of("SELECT {id? -> id? AS id, UPPER('id?') AS title, } name FROM tbl", id);
     assertThat(sql)
@@ -129,7 +129,7 @@ public class SafeSqlTest {
   }
 
   @Test
-  public void optionalOperator_withLikeOperator_present() {
+  public void guardOperator_withLikeOperator_present() {
     Optional<String> name = Optional.of("foo");
     SafeSql sql = SafeSql.of("SELECT * FROM tbl WHERE 1=1 {name? -> AND name LIKE '%name?%'}", name);
     assertThat(sql)
@@ -139,21 +139,21 @@ public class SafeSqlTest {
   }
 
   @Test
-  public void optionalOperator_withLikeOperator_absent() {
+  public void guardOperator_withLikeOperator_absent() {
     Optional<String> name = Optional.empty();
     assertThat(SafeSql.of("SELECT * FROM tbl WHERE 1=1 {name? -> AND name LIKE '%name?%'}", name))
         .isEqualTo(SafeSql.of("SELECT * FROM tbl WHERE 1=1 "));
   }
 
   @Test
-  public void optionalOperator_trailingSpaceAndNewlinesIgnored() {
+  public void guardOperator_trailingSpaceAndNewlinesIgnored() {
     Optional<Integer> id = Optional.of(123);
     assertThat(SafeSql.of("SELECT {id? -> id? AS id, \n} name FROM tbl", id))
         .isEqualTo(SafeSql.of("SELECT {id} AS id, name FROM tbl", id.get()));
   }
 
   @Test
-  public void optionalOperator_parameterReferencedMoreThanOnce() {
+  public void guardOperator_parameterReferencedMoreThanOnce() {
     Optional<Integer> id = Optional.of(123);
     assertThat(
             SafeSql.of(
@@ -164,7 +164,7 @@ public class SafeSqlTest {
   }
 
   @Test
-  public void optionalOperator_missingQuestionMark() {
+  public void guardOperator_missingQuestionMark() {
     Optional<Integer> id = Optional.empty();
     IllegalArgumentException thrown =
         assertThrows(
@@ -176,7 +176,7 @@ public class SafeSqlTest {
 
   @Test
   @SuppressWarnings("StringFormatArgsCheck")
-  public void optionalOperator_redundantQuestionMark() {
+  public void guardOperator_redundantQuestionMark() {
     Optional<Integer> id = Optional.empty();
     IllegalArgumentException thrown =
         assertThrows(
@@ -188,7 +188,7 @@ public class SafeSqlTest {
 
   @Test
   @SuppressWarnings("StringFormatArgsCheck")
-  public void optionalOperator_spaceInTheMiddleOfName() {
+  public void guardOperator_spaceInTheMiddleOfName() {
     Optional<Integer> id = Optional.empty();
     IllegalArgumentException thrown =
         assertThrows(
@@ -200,7 +200,7 @@ public class SafeSqlTest {
 
   @Test
   @SuppressWarnings("StringFormatArgsCheck")
-  public void optionalOperator_typoInParameterName() {
+  public void guardOperator_typoInParameterName() {
     Optional<Integer> id = Optional.empty();
     IllegalArgumentException thrown =
         assertThrows(
@@ -211,7 +211,7 @@ public class SafeSqlTest {
 
   @Test
   @SuppressWarnings("StringFormatArgsCheck")
-  public void optionalOperator_missingQuestionMarkInReference() {
+  public void guardOperator_missingQuestionMarkInReference() {
     Optional<Integer> id = Optional.empty();
     IllegalArgumentException thrown =
         assertThrows(
@@ -222,14 +222,14 @@ public class SafeSqlTest {
   }
 
   @Test
-  public void optionalOperator_nonEmpty() {
+  public void guardOperator_nonEmpty() {
     ImmutableList<String> columns = ImmutableList.of("foo", "bar");
     assertThat(SafeSql.of("SELECT {columns? -> `columns?`, } name FROM tbl", columns))
         .isEqualTo(SafeSql.of("SELECT `{columns}`, name FROM tbl", columns));
   }
 
   @Test
-  public void optionalOperator_empty() {
+  public void guardOperator_empty() {
     ImmutableList<String> columns = ImmutableList.of();
     assertThat(SafeSql.of("SELECT {columns? -> `columns?`, } name FROM tbl", columns))
         .isEqualTo(SafeSql.of("SELECT  name FROM tbl"));

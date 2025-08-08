@@ -79,7 +79,6 @@ public final class BoundedConcurrency {
    * unrecoverable exception, the recoverable exceptions are propagated as {@link
    * Throwable#addSuppressed suppressed}.
    *
-   * @param maxConcurrency at most running this number of tasks concurrently
    * @param tasks at least one must be provided
    * @param isRecoverable tests whether an exception is recoverable so that the
    *     other tasks should continue running.

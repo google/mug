@@ -64,7 +64,7 @@ import com.google.mu.util.Substring;
  * automatically escaped; and negative numbers are automatically enclosed by
  * parenthesis.
  *
- * <p>Compared to {@link SafeSql}, SafeQuery is independent of the underlying DB engine.
+ * <p>Compared to {@link com.google.mu.safesql.SafeSql}, SafeQuery is independent of the underlying DB engine.
  * It simply wraps a sanitized query string, using auto-escaping and unicode encoding to prevent SQL
  * injection. It can be used for databases that don't support JDBC parameterization, or if you
  * prefer dynamic SQL over parameterization for debugging reasons etc.
