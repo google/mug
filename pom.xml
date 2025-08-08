@@ -302,6 +302,7 @@
                 <version>2.58.0</version>
               </additionalDependency>
             </additionalDependencies>
+            <directLink>true</directLink>
             <links>
               <link>https://cloud.google.com/java/docs/reference/google-cloud-spanner/latest/overview</link>
               <link>https://cloud.google.com/java/docs/reference/gax/latest/overview</link>
