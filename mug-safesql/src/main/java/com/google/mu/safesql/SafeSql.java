@@ -1132,6 +1132,7 @@ public final class SafeSql {
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    * @since 9.2
    */
+  @SuppressWarnings("MustBeClosedChecker")
   @MustBeClosed public <T> Stream<T> queryLazily(
       DataSource dataSource,
       StatementSettings settings,
@@ -1267,6 +1268,7 @@ public final class SafeSql {
    *
    * @since 9.0
    */
+  @SuppressWarnings("MustBeClosedChecker")
   @MustBeClosed public <T> Stream<T> queryLazily(
       Connection connection,
       StatementSettings settings,

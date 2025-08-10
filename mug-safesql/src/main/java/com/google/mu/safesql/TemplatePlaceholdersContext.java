@@ -38,7 +38,9 @@ final class TemplatePlaceholdersContext {
       Stream.of(word(), first(c -> !Character.isWhitespace(c)))
           .collect(firstOccurrence())
           .repeatedly();
+  @SuppressWarnings("Immutable")  // It's an immutable list
   private final List<Substring.Match> allTokens;
+  @SuppressWarnings("Immutable")  // It's an immutable map
   private final Map<Integer, Integer> charIndexToTokenIndex;
 
   TemplatePlaceholdersContext(String template) {

@@ -70,7 +70,7 @@ public class JdbcScopeTest {
     try (JdbcScope closer = new JdbcScope()) {
       closer.onClose(statement::close);
       stream = closer.deferTo(stream);
-      closer.deferTo(Stream.empty());
+      Stream<?> unused = closer.deferTo(Stream.empty());
     }
     verify(statement, never()).close();
     try (Stream<?> closeMe = stream) {}

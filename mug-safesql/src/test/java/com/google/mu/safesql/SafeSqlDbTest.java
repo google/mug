@@ -428,7 +428,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     assertThat(
             SafeSql.of(
                 "insert into ITEMS(id, title, time, item_uuid) VALUES({id}, {title}, {time}, {uuid})",
-                testId(), "bar", barTime, "uuid")
+                testId(), /* title */ "bar", barTime, "uuid")
                 .update(connection()))
         .isEqualTo(1);
     assertThat(
@@ -561,12 +561,12 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
             SafeSql.of("insert into ITEMS(id, title, time) VALUES({id}, {title}, {time})", testId(), "bar", barTime)
                 .update(connection()))
         .isEqualTo(1);
-    assertThat(
-            SafeSql.of("select time from ITEMS where id = {id}", testId())
-                .queryLazily(connection(), ZonedDateTime.class)
-                .map(ZonedDateTime::toInstant)
-                .collect(toImmutableList()))
-        .containsExactly(barTime.toInstant());
+    try (Stream<ZonedDateTime> stream =
+        SafeSql.of("select time from ITEMS where id = {id}", testId())
+            .queryLazily(connection(), ZonedDateTime.class)) {
+      assertThat(stream.map(ZonedDateTime::toInstant).collect(toImmutableList()))
+          .containsExactly(barTime.toInstant());
+    }
     assertThat(
             SafeSql.of("select time from ITEMS where id = {id}", testId())
                 .queryForOne(connection(), ZonedDateTime.class)
@@ -580,12 +580,14 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
             SafeSql.of("insert into ITEMS(id, title, time) VALUES({id}, {title}, {time})", testId(), "bar", barTime)
                 .update(connection()))
         .isEqualTo(1);
-    assertThat(
-            SafeSql.of("select time from ITEMS where id = {id}", testId())
-                .queryLazily(connection(), OffsetDateTime.class)
-                .map(OffsetDateTime::toInstant)
-                .collect(toImmutableList()))
-        .containsExactly(barTime.toInstant());
+    try (Stream<OffsetDateTime> stream = SafeSql.of("select time from ITEMS where id = {id}", testId())
+        .queryLazily(connection(), OffsetDateTime.class)) {
+      assertThat(
+           stream
+                  .map(OffsetDateTime::toInstant)
+                  .collect(toImmutableList()))
+          .containsExactly(barTime.toInstant());
+    }
     assertThat(
             SafeSql.of("select time from ITEMS where id = {id}", testId())
                 .queryForOne(connection(), OffsetDateTime.class)
@@ -679,7 +681,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
     assertThat(
             SafeSql.of("insert into ITEMS(id, title, time, item_uuid) VALUES({id}, {title}, {time}, {uuid})",
-                    testId(), "bar", barTime, "uuid")
+                    testId(), /* title */ "bar", barTime, "uuid")
                 .update(connection()))
         .isEqualTo(1);
     ItemFields.title = "static title";  // static field not populated
@@ -690,11 +692,11 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
             SafeSql.of("select id, time, title, item_uuid from ITEMS where id = {id}", testId())
                 .query(connection(), ItemFields.class))
         .containsExactly(bean);
-    assertThat(
-            SafeSql.of("select id, time, title, item_uuid from ITEMS where id = {id}", testId())
-                .queryLazily(connection(), stmt -> stmt.setFetchSize(2), ItemFields.class)
-                .collect(toList()))
-        .containsExactly(bean);
+    try (Stream<ItemFields> stream =
+        SafeSql.of("select id, time, title, item_uuid from ITEMS where id = {id}", testId())
+            .queryLazily(connection(), stmt -> stmt.setFetchSize(2), ItemFields.class)) {
+      assertThat(stream.collect(toList())).containsExactly(bean);
+    }
     assertThat(ItemFields.title).isEqualTo("static title");
   }
 
@@ -702,7 +704,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
     assertThat(
             SafeSql.of("insert into ITEMS(id, title, time, item_uuid) VALUES({id}, {title}, {time}, {uuid})",
-                    testId(), "bar", barTime, "uuid")
+                    testId(), /* title */ "bar", barTime, "uuid")
                 .update(connection()))
         .isEqualTo(1);
     ItemBean bean = new ItemBean();
@@ -714,18 +716,18 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
             SafeSql.of("select id, time, title, item_uuid from ITEMS where id = {id}", testId())
                 .query(connection(), ItemBean.class))
         .containsExactly(bean);
-    assertThat(
-            SafeSql.of("select id, time, title, item_uuid from ITEMS where id = {id}", testId())
-                .queryLazily(connection(), stmt -> stmt.setFetchSize(2), ItemBean.class)
-                .collect(toList()))
-        .containsExactly(bean);
+    try (Stream<ItemBean> stream =
+        SafeSql.of("select id, time, title, item_uuid from ITEMS where id = {id}", testId())
+            .queryLazily(connection(), stmt -> stmt.setFetchSize(2), ItemBean.class)) {
+      assertThat(stream.collect(toList())).containsExactly(bean);
+    }
   }
 
   @Test public void query_withResultBeanType_columnLabelInCamelCase() throws Exception {
     ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
     assertThat(
             SafeSql.of("insert into ITEMS(id, title, time, item_uuid) VALUES({id}, {title}, {time}, {uuid})",
-                    testId(), "bar", barTime, "uuid")
+                    testId(), /* title */ "bar", barTime, "uuid")
                 .update(connection()))
         .isEqualTo(1);
     ItemBean bean = new ItemBean();
@@ -737,18 +739,18 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
             SafeSql.of("select id, time, title, item_uuid AS itemUuid from ITEMS where id = {id}", testId())
                 .query(connection(), ItemBean.class))
         .containsExactly(bean);
-    assertThat(
-            SafeSql.of("select id, time, title, item_uuid AS ItemUuid from ITEMS where id = {id}", testId())
-                .queryLazily(connection(), stmt -> stmt.setFetchSize(2), ItemBean.class)
-                .collect(toList()))
-        .containsExactly(bean);
+    try (Stream<ItemBean> stream =
+        SafeSql.of("select id, time, title, item_uuid AS ItemUuid from ITEMS where id = {id}", testId())
+            .queryLazily(connection(), stmt -> stmt.setFetchSize(2), ItemBean.class)) {
+      assertThat(stream.collect(toList())).containsExactly(bean);
+    }
   }
 
   @Test public void query_withResultBeanType_columnLabelWithSpace() throws Exception {
     ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
     assertThat(
             SafeSql.of("insert into ITEMS(id, title, time, item_uuid) VALUES({id}, {title}, {time}, {uuid})",
-                    testId(), "bar", barTime, "uuid")
+                    testId(), /* title */ "bar", barTime, "uuid")
                 .update(connection()))
         .isEqualTo(1);
     ItemBean bean = new ItemBean();
@@ -760,18 +762,18 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
             SafeSql.of("select id, time, title, item_uuid AS \"item uuid\" from ITEMS where id = {id}", testId())
                 .query(connection(), ItemBean.class))
         .containsExactly(bean);
-    assertThat(
-            SafeSql.of("select id, time, title, item_uuid AS \"Item  Uuid\" from ITEMS where id = {id}", testId())
-                .queryLazily(connection(), stmt -> stmt.setFetchSize(2), ItemBean.class)
-                .collect(toList()))
-        .containsExactly(bean);
+    try (Stream<ItemBean> stream =
+        SafeSql.of("select id, time, title, item_uuid AS \"Item  Uuid\" from ITEMS where id = {id}", testId())
+           .queryLazily(connection(), stmt -> stmt.setFetchSize(2), ItemBean.class)) {
+      assertThat(stream.collect(toList())).containsExactly(bean);
+    }
   }
 
   @Test public void query_withResultBeanType_columnsFewerThanProperties() throws Exception {
     ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
     assertThat(
             SafeSql.of("insert into ITEMS(id, title, time, item_uuid) VALUES({id}, {title}, {time}, {uuid})",
-                    testId(), "bar", barTime, "uuid")
+                    testId(), /* title */ "bar", barTime, "uuid")
                 .update(connection()))
         .isEqualTo(1);
     ItemBean bean = new ItemBean();
@@ -782,18 +784,18 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
             SafeSql.of("select id, time, title from ITEMS where id = {id}", testId())
                 .query(connection(), ItemBean.class))
         .containsExactly(bean);
-    assertThat(
-            SafeSql.of("select id, time, title from ITEMS where id = {id}", testId())
-                .queryLazily(connection(), stmt -> stmt.setFetchSize(2), ItemBean.class)
-                .collect(toList()))
-        .containsExactly(bean);
+    try (Stream<ItemBean> stream =
+        SafeSql.of("select id, time, title from ITEMS where id = {id}", testId())
+            .queryLazily(connection(), stmt -> stmt.setFetchSize(2), ItemBean.class)) {
+      assertThat(stream.collect(toList())).containsExactly(bean);
+    }
   }
 
   @Test public void query_withResultBeanType_columnsMoreThanProperties() throws Exception {
     ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
     assertThat(
             SafeSql.of("insert into ITEMS(id, title, time, item_uuid) VALUES({id}, {title}, {time}, {uuid})",
-                    testId(), "bar", barTime, "uuid")
+                    testId(), /* title */ "bar", barTime, "uuid")
                 .update(connection()))
         .isEqualTo(1);
     BaseItemBean bean = new BaseItemBean();
@@ -803,18 +805,17 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
             SafeSql.of("select id, time, item_uuid from ITEMS where id = {id}", testId())
                 .query(connection(), BaseItemBean.class))
         .containsExactly(bean);
-    assertThat(
-            SafeSql.of("select id, time, item_uuid from ITEMS where id = {id}", testId())
-                .queryLazily(connection(), stmt -> stmt.setFetchSize(2), BaseItemBean.class)
-                .collect(toList()))
-        .containsExactly(bean);
+    try (Stream<BaseItemBean> stream = SafeSql.of("select id, time, item_uuid from ITEMS where id = {id}", testId())
+        .queryLazily(connection(), stmt -> stmt.setFetchSize(2), BaseItemBean.class)) {
+      assertThat(stream.collect(toList())).containsExactly(bean);
+    }
   }
 
   @Test public void query_withResultBeanType_columnNotFoundInBean() throws Exception {
     ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
     assertThat(
             SafeSql.of("insert into ITEMS(id, title, time, item_uuid) VALUES({id}, {title}, {time}, {uuid})",
-                    testId(), "bar", barTime, "uuid")
+                    testId(), /* title */ "bar", barTime, "uuid")
                 .update(connection()))
         .isEqualTo(1);
     SafeSql sql = SafeSql.of("select time from ITEMS where id = {id}", testId());
@@ -828,7 +829,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
     assertThat(
             SafeSql.of("insert into ITEMS(id, title, time, item_uuid) VALUES({id}, {title}, {time}, {uuid})",
-                    testId(), "bar", barTime, "uuid")
+                    testId(), /* title */ "bar", barTime, "uuid")
                 .update(connection()))
         .isEqualTo(1);
     SafeSql sql = SafeSql.of("select id, time, title from ITEMS where id = {id}", testId());
@@ -842,7 +843,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
     assertThat(
             SafeSql.of("insert into ITEMS(id, title, time, item_uuid) VALUES({id}, {title}, {time}, {uuid})",
-                    testId(), "bar", barTime, "uuid")
+                    testId(), /* title */ "bar", barTime, "uuid")
                 .update(connection()))
         .isEqualTo(1);
     BaseItemBean bean = new BaseItemBean();
@@ -857,7 +858,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
     assertThat(
             SafeSql.of("insert into ITEMS(id, title, time, item_uuid) VALUES({id}, {title}, {time}, {uuid})",
-                    testId(), "bar", barTime, "uuid")
+                    testId(), /* title */ "bar", barTime, "uuid")
                 .update(connection()))
         .isEqualTo(1);
     BaseItemBean bean = new BaseItemBean();
@@ -872,7 +873,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
     assertThat(
             SafeSql.of("insert into ITEMS(id, title, time, item_uuid) VALUES({id}, {title}, {time}, {uuid})",
-                    testId(), "bar", barTime, "uuid")
+                    testId(), /* title */ "bar", barTime, "uuid")
                 .update(connection()))
         .isEqualTo(1);
     AnnotatedItemBean bean = new AnnotatedItemBean();
@@ -892,11 +893,11 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
             SafeSql.of("select {id} AS id, 'foo' AS data", testId())
                 .query(connection(), StringBean.class))
         .containsExactly(bean);
-    assertThat(
+    try (Stream<StringBean> stream =
         SafeSql.of("select {id} AS id, 'foo' AS data", testId())
-            .queryLazily(connection(), StringBean.class)
-            .collect(toList()))
-        .containsExactly(bean);
+            .queryLazily(connection(), StringBean.class)) {
+      assertThat(stream.collect(toList())).containsExactly(bean);
+    }
     assertThat(
         SafeSql.of("select {id} AS id, 'foo' AS data", testId())
             .queryForOne(connection(), StringBean.class))
@@ -938,30 +939,31 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
             SafeSql.of("insert into ITEMS(id, title, time) VALUES({id}, {title}, {time})", testId(), "bar", barTime)
                 .update(connection()))
         .isEqualTo(1);
-    assertThat(
-            SafeSql.of("select id, time, title from ITEMS where id = {id}", testId())
-                .queryLazily(connection(), Item.class)
-                .collect(toList()))
-        .containsExactly(new Item(testId(), "bar", barTime.toInstant()));
-    assertThat(
+    try (Stream<Item> stream =
         SafeSql.of("select id, time, title from ITEMS where id = {id}", testId())
-            .queryLazily(connection(), stmt -> stmt.setFetchSize(2), Item.class)
-            .collect(toList()))
-    .containsExactly(new Item(testId(), "bar", barTime.toInstant()));
+            .queryLazily(connection(), Item.class)) {
+      assertThat(stream.collect(toList()))
+          .containsExactly(new Item(testId(), "bar", barTime.toInstant()));
+    }
+    try (Stream<Item> stream =
+        SafeSql.of("select id, time, title from ITEMS where id = {id}", testId())
+            .queryLazily(connection(), stmt -> stmt.setFetchSize(2), Item.class)) {
+      assertThat(stream.collect(toList()))
+          .containsExactly(new Item(testId(), "bar", barTime.toInstant()));
+    }
   }
 
   @Test public void queryLazily_withMaxRows() throws Exception {
-    ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
-    assertThat(
-            SafeSql.of("select title from (select '{v}' as title union all select 'b' as title) order by title", "a")
-                .queryLazily(connection(), stmt -> stmt.setMaxRows(1), String.class)
-                .collect(toList()))
-        .containsExactly("a");
-    assertThat(
-            SafeSql.of("select title from (select '{v}' as title union all select 'b' as title) order by title", "c")
-                .queryLazily(connection(), stmt -> stmt.setMaxRows(1), String.class)
-                .collect(toList()))
-        .containsExactly("b");
+    try (Stream<String> stream =
+        SafeSql.of("select title from (select '{v}' as title union all select 'b' as title) order by title", "a")
+            .queryLazily(connection(), stmt -> stmt.setMaxRows(1), String.class)) {
+      assertThat(stream.collect(toList())).containsExactly("a");
+    }
+    try (Stream<String> stream =
+        SafeSql.of("select title from (select '{v}' as title union all select 'b' as title) order by title", "c")
+        .queryLazily(connection(), stmt -> stmt.setMaxRows(1), String.class)) {
+      assertThat(stream.collect(toList())).containsExactly("b");
+    }
   }
 
   @Test public void prepareToQuery_withResultType() throws Exception {

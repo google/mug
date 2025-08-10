@@ -1,6 +1,7 @@
 package com.google.mu.safesql;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -47,7 +48,8 @@ public class SafeSqlJdbcResourcesTest {
   }
 
   @Test public void query_noParameter_usesCreateStatement() throws SQLException {
-    SafeSql.of("SELECT count(*) from Users").query(dataSource, Long.class);
+    assertThat(SafeSql.of("SELECT count(*) from Users").query(dataSource, Long.class))
+        .isEmpty();
     inOrder.verify(connection).createStatement();
     inOrder.verify(statement).executeQuery("SELECT count(*) from Users");
     inOrder.verify(resultSet).close();
@@ -57,7 +59,8 @@ public class SafeSqlJdbcResourcesTest {
 
 
   @Test public void query_noParameter_usesPrepareStatement() throws SQLException {
-    SafeSql.of("SELECT count(*) from Users WHERE id = {id}", 123).query(dataSource, Long.class);
+    assertThat(SafeSql.of("SELECT count(*) from Users WHERE id = {id}", 123).query(dataSource, Long.class))
+        .isEmpty();
     inOrder.verify(connection).prepareStatement("SELECT count(*) from Users WHERE id = ?");
     inOrder.verify(preparedStatement).setObject(1, 123);
     inOrder.verify(resultSet).close();
@@ -179,7 +182,8 @@ public class SafeSqlJdbcResourcesTest {
 
 
   @Test public void queryForOne_noParameter_usesCreateStatement() throws SQLException {
-    SafeSql.of("SELECT count(*) from Users").queryForOne(dataSource, Long.class);
+    assertThat(SafeSql.of("SELECT count(*) from Users").queryForOne(dataSource, Long.class))
+        .isEmpty();
     inOrder.verify(connection).createStatement();
     inOrder.verify(statement).executeQuery("SELECT count(*) from Users");
     inOrder.verify(resultSet).close();
@@ -189,8 +193,10 @@ public class SafeSqlJdbcResourcesTest {
 
 
   @Test public void queryForOne_noParameter_usesPrepareStatement() throws SQLException {
-    SafeSql.of("SELECT count(*) from Users WHERE id = {id}", 123)
-        .queryForOne(dataSource, Long.class);
+    assertThat(
+        SafeSql.of("SELECT count(*) from Users WHERE id = {id}", 123)
+            .queryForOne(dataSource, Long.class))
+        .isEmpty();
     inOrder.verify(connection).prepareStatement("SELECT count(*) from Users WHERE id = ?");
     inOrder.verify(preparedStatement).setObject(1, 123);
     inOrder.verify(resultSet).close();
