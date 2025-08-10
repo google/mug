@@ -158,11 +158,13 @@ import static com.google.mu.util.stream.BiStream.groupingBy;
 import java.util.stream.Collectors.counting;
 
 Map<City, Long> cityHouseholds = addresses.stream()
-    .collect(groupingBy(Address::city, counting()));
+    .collect(groupingBy(Address::city, counting()))
+    .toMap();
 
 // Using a BiFunction to reduce group members is more convenient than JDK's groupingBy()
 Map<City, Household> richestHouseholds = households.stream()
-    .collect(groupingBy(Household::city, this::richerHousehold));
+    .collect(groupingBy(Household::city, this::richerHousehold))
+    .toMap();
 ```
 
 By splitting strings:
