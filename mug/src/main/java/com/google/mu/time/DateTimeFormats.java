@@ -229,7 +229,7 @@ public final class DateTimeFormats {
           .add(forExample("GMT-12"), "O")
           .add(forExample("GMT+08:00"), "OOOO")
           .add(forExample("GMT-08:00"), "OOOO")
-          .add(forExample("Fri"), "E")
+          .add(forExample("Fri"), "EEE")
           .add(forExample("Friday"), "EEEE")
           .add(forExample("Jan"), "LLL")
           .add(forExample("January"), "LLLL")
@@ -553,7 +553,7 @@ public final class DateTimeFormats {
   private enum Token {
     WEEKDAY_ABBREVIATION("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"),
     WEEKDAY("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"),
-    WEEKDAY_CODES("E", "EEEE"),
+    WEEKDAY_CODES("E", "EE", "EEE", "EEEE"),
     MONTH_ABBREVIATION("Jan", "Feb", "Mar", "Apr", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"),
     MONTH(
         "January",
@@ -568,7 +568,7 @@ public final class DateTimeFormats {
         "October",
         "November",
         "December"),
-    MONTH_CODES("L", "LLL", "LLLL"),
+    MONTH_CODES("L", "LL", "LLL", "LLLL"),
     YEAR_CODES("yyyy", "YYYY"),
     DAY_CODES("dd", "d"),
     HOUR_CODES("HH", "hh"),

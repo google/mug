@@ -1010,29 +1010,29 @@ public final class DateTimeFormatsTest {
     assertLocalDate("2005-04-27", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2005-04-27"));
     assertLocalDate("2004-10-27", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2004-10-27"));
     assertLocalDate("1993/07/05", "yyyy/MM/dd").isEqualTo(LocalDate.parse("1993-07-05"));
-    assertLocalDate("Tue, 2016-09-20", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2016-09-20"));
+    assertLocalDate("Tue, 2016-09-20", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2016-09-20"));
     assertLocalDate("2009/09/23", "yyyy/MM/dd").isEqualTo(LocalDate.parse("2009-09-23"));
     assertLocalDate("2027-04-02", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2027-04-02"));
     assertZonedDateTime("1994-08-03 19:32:42 UTC", "yyyy-MM-dd HH:mm:ss zzz")
         .isEqualTo(ZonedDateTime.parse("1994-08-03T19:32:42+00:00[UTC]"));
-    assertLocalDate("Thu, 2011-06-09", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2011-06-09"));
+    assertLocalDate("Thu, 2011-06-09", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2011-06-09"));
     assertLocalDate("2021-01-11", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2021-01-11"));
     assertZonedDateTime("2000-04-28 19:32 UTC", "yyyy-MM-dd HH:mm zzz")
         .isEqualTo(ZonedDateTime.parse("2000-04-28T19:32:00+00:00[UTC]"));
     assertLocalDate("2018-08-13", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2018-08-13"));
-    assertLocalDate("Mon, 2022-07-25", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2022-07-25"));
-    assertLocalDate("Mon, 2019-09-09", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2019-09-09"));
+    assertLocalDate("Mon, 2022-07-25", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2022-07-25"));
+    assertLocalDate("Mon, 2019-09-09", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2019-09-09"));
     assertLocalDate("2024-08-04", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2024-08-04"));
     assertLocalDate("2027/11/13", "yyyy/MM/dd").isEqualTo(LocalDate.parse("2027-11-13"));
     assertLocalDate("2008-06-03", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2008-06-03"));
-    assertLocalDate("Wed, 2014-01-08", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2014-01-08"));
-    assertLocalDate("Wed, 2004-03-24", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2004-03-24"));
+    assertLocalDate("Wed, 2014-01-08", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2014-01-08"));
+    assertLocalDate("Wed, 2004-03-24", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2004-03-24"));
     assertLocalDate("2023/06/04", "yyyy/MM/dd").isEqualTo(LocalDate.parse("2023-06-04"));
     assertLocalDate("2023-12-18", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2023-12-18"));
     assertLocalDate("1998-05-17", "yyyy-MM-dd").isEqualTo(LocalDate.parse("1998-05-17"));
-    assertLocalDate("Fri, 2023-05-05", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2023-05-05"));
-    assertLocalDate("Wed, 1991-11-27", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("1991-11-27"));
-    assertZonedDateTime("Sat, 2027-06-05 19:32 UTC", "E, yyyy-MM-dd HH:mm zzz")
+    assertLocalDate("Fri, 2023-05-05", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2023-05-05"));
+    assertLocalDate("Wed, 1991-11-27", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("1991-11-27"));
+    assertZonedDateTime("Sat, 2027-06-05 19:32 UTC", "EEE, yyyy-MM-dd HH:mm zzz")
         .isEqualTo(ZonedDateTime.parse("2027-06-05T19:32:00+00:00[UTC]"));
     assertLocalDate("2002/03/04", "yyyy/MM/dd").isEqualTo(LocalDate.parse("2002-03-04"));
     assertZonedDateTime("2003-01-12 19:32 UTC", "yyyy-MM-dd HH:mm zzz")
@@ -1042,65 +1042,65 @@ public final class DateTimeFormatsTest {
     assertLocalDate("2015-03-23", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2015-03-23"));
     assertLocalDate("2019/01/25", "yyyy/MM/dd").isEqualTo(LocalDate.parse("2019-01-25"));
     assertLocalDate("2005/05/14", "yyyy/MM/dd").isEqualTo(LocalDate.parse("2005-05-14"));
-    assertZonedDateTime("Sun, 2011-09-18 19:32:42 UTC", "E, yyyy-MM-dd HH:mm:ss zzz")
+    assertZonedDateTime("Sun, 2011-09-18 19:32:42 UTC", "EEE, yyyy-MM-dd HH:mm:ss zzz")
         .isEqualTo(ZonedDateTime.parse("2011-09-18T19:32:42+00:00[UTC]"));
     assertLocalDate("1992/05/10", "yyyy/MM/dd").isEqualTo(LocalDate.parse("1992-05-10"));
-    assertLocalDate("Fri, 2027-12-03", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2027-12-03"));
-    assertLocalDate("Fri, 2020-05-15", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2020-05-15"));
-    assertLocalDate("Sun, 2020-10-25", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2020-10-25"));
+    assertLocalDate("Fri, 2027-12-03", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2027-12-03"));
+    assertLocalDate("Fri, 2020-05-15", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2020-05-15"));
+    assertLocalDate("Sun, 2020-10-25", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2020-10-25"));
     assertLocalDate("1999/12/15", "yyyy/MM/dd").isEqualTo(LocalDate.parse("1999-12-15"));
-    assertZonedDateTime("Thu, 1997-02-06 19:32:42 UTC", "E, yyyy-MM-dd HH:mm:ss zzz")
+    assertZonedDateTime("Thu, 1997-02-06 19:32:42 UTC", "EEE, yyyy-MM-dd HH:mm:ss zzz")
         .isEqualTo(ZonedDateTime.parse("1997-02-06T19:32:42+00:00[UTC]"));
-    assertLocalDate("Thu, 2021-08-05", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2021-08-05"));
-    assertLocalDate("Wed, 2007-01-10", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2007-01-10"));
+    assertLocalDate("Thu, 2021-08-05", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2021-08-05"));
+    assertLocalDate("Wed, 2007-01-10", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2007-01-10"));
     assertLocalDate("1998/11/17", "yyyy/MM/dd").isEqualTo(LocalDate.parse("1998-11-17"));
     assertLocalDate("2026-08-27", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2026-08-27"));
-    assertLocalDate("Tue, 2016-08-02", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2016-08-02"));
+    assertLocalDate("Tue, 2016-08-02", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2016-08-02"));
     assertLocalDate("1991/07/24", "yyyy/MM/dd").isEqualTo(LocalDate.parse("1991-07-24"));
     assertLocalDate("1994-06-06", "yyyy-MM-dd").isEqualTo(LocalDate.parse("1994-06-06"));
     assertLocalDate("2007/05/06", "yyyy/MM/dd").isEqualTo(LocalDate.parse("2007-05-06"));
     assertLocalDate("2020/07/07", "yyyy/MM/dd").isEqualTo(LocalDate.parse("2020-07-07"));
     assertZonedDateTime("2025-08-06 19:32:42.4 UTC", "yyyy-MM-dd HH:mm:ss.S zzz")
         .isEqualTo(ZonedDateTime.parse("2025-08-06T19:32:42.4+00:00[UTC]"));
-    assertLocalDate("Tue, 1992-08-04", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("1992-08-04"));
+    assertLocalDate("Tue, 1992-08-04", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("1992-08-04"));
     assertLocalDate("2014/01/20", "yyyy/MM/dd").isEqualTo(LocalDate.parse("2014-01-20"));
     assertLocalDate("2028/03/09", "yyyy/MM/dd").isEqualTo(LocalDate.parse("2028-03-09"));
     assertZonedDateTime("2003-09-08 19:32 UTC", "yyyy-MM-dd HH:mm zzz")
         .isEqualTo(ZonedDateTime.parse("2003-09-08T19:32:00+00:00[UTC]"));
-    assertLocalDate("Sat, 2020-04-11", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2020-04-11"));
+    assertLocalDate("Sat, 2020-04-11", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2020-04-11"));
     assertLocalDate("2029-05-03", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2029-05-03"));
     assertLocalDate("2001/10/17", "yyyy/MM/dd").isEqualTo(LocalDate.parse("2001-10-17"));
     assertLocalDate("2029/06/04", "yyyy/MM/dd").isEqualTo(LocalDate.parse("2029-06-04"));
-    assertLocalDate("Thu, 2023-03-16", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2023-03-16"));
+    assertLocalDate("Thu, 2023-03-16", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2023-03-16"));
     assertLocalDate("2022/12/01", "yyyy/MM/dd").isEqualTo(LocalDate.parse("2022-12-01"));
-    assertLocalDate("Thu, 2024-08-01", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2024-08-01"));
+    assertLocalDate("Thu, 2024-08-01", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2024-08-01"));
     assertZonedDateTime("2001-04-25 19:32:42.47 UTC", "yyyy-MM-dd HH:mm:ss.SS zzz")
         .isEqualTo(ZonedDateTime.parse("2001-04-25T19:32:42.47+00:00[UTC]"));
     assertLocalDate("1997/02/28", "yyyy/MM/dd").isEqualTo(LocalDate.parse("1997-02-28"));
     assertLocalDate("2014-01-17", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2014-01-17"));
-    assertLocalDate("Thu, 2022-07-14", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2022-07-14"));
+    assertLocalDate("Thu, 2022-07-14", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2022-07-14"));
     assertLocalDate("2013-05-26", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2013-05-26"));
     assertLocalDate("2026/07/14", "yyyy/MM/dd").isEqualTo(LocalDate.parse("2026-07-14"));
     assertLocalDate("2003-01-11", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2003-01-11"));
-    assertZonedDateTime("Mon, 2003-10-20 19:32 UTC", "E, yyyy-MM-dd HH:mm zzz")
+    assertZonedDateTime("Mon, 2003-10-20 19:32 UTC", "EEE, yyyy-MM-dd HH:mm zzz")
         .isEqualTo(ZonedDateTime.parse("2003-10-20T19:32:00+00:00[UTC]"));
-    assertLocalDate("Sun, 2023-12-03", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2023-12-03"));
+    assertLocalDate("Sun, 2023-12-03", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2023-12-03"));
     assertLocalDate("2007-12-07", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2007-12-07"));
     assertLocalDate("1993/08/09", "yyyy/MM/dd").isEqualTo(LocalDate.parse("1993-08-09"));
     assertLocalDate("2000-03-09", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2000-03-09"));
     assertLocalDate("2003/08/12", "yyyy/MM/dd").isEqualTo(LocalDate.parse("2003-08-12"));
-    assertLocalDate("Sun, 1995-12-03", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("1995-12-03"));
-    assertZonedDateTime("Tue, 2014-08-05 19:32:42 UTC", "E, yyyy-MM-dd HH:mm:ss zzz")
+    assertLocalDate("Sun, 1995-12-03", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("1995-12-03"));
+    assertZonedDateTime("Tue, 2014-08-05 19:32:42 UTC", "EEE, yyyy-MM-dd HH:mm:ss zzz")
         .isEqualTo(ZonedDateTime.parse("2014-08-05T19:32:42+00:00[UTC]"));
     assertLocalDate("1998/05/05", "yyyy/MM/dd").isEqualTo(LocalDate.parse("1998-05-05"));
-    assertLocalDate("Tue, 2014-02-04", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2014-02-04"));
+    assertLocalDate("Tue, 2014-02-04", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2014-02-04"));
     assertLocalDate("2017/06/28", "yyyy/MM/dd").isEqualTo(LocalDate.parse("2017-06-28"));
-    assertLocalDate("Fri, 2027-02-12", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2027-02-12"));
-    assertLocalDate("Wed, 2007-08-08", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2007-08-08"));
-    assertLocalDate("Sat, 2004-06-05", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2004-06-05"));
+    assertLocalDate("Fri, 2027-02-12", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2027-02-12"));
+    assertLocalDate("Wed, 2007-08-08", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2007-08-08"));
+    assertLocalDate("Sat, 2004-06-05", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2004-06-05"));
     assertLocalDate("2009-04-17", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2009-04-17"));
-    assertLocalDate("Wed, 2028-12-20", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2028-12-20"));
-    assertZonedDateTime("Fri, 1999-01-22 19:32 UTC", "E, yyyy-MM-dd HH:mm zzz")
+    assertLocalDate("Wed, 2028-12-20", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2028-12-20"));
+    assertZonedDateTime("Fri, 1999-01-22 19:32 UTC", "EEE, yyyy-MM-dd HH:mm zzz")
         .isEqualTo(ZonedDateTime.parse("1999-01-22T19:32:00+00:00[UTC]"));
     assertLocalDate("2010-05-23", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2010-05-23"));
     assertLocalDate("2012/02/18", "yyyy/MM/dd").isEqualTo(LocalDate.parse("2012-02-18"));
@@ -1111,7 +1111,7 @@ public final class DateTimeFormatsTest {
     assertLocalDate("2019-11-04", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2019-11-04"));
     assertLocalDate("2020-07-01", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2020-07-01"));
     assertLocalDate("2025/03/23", "yyyy/MM/dd").isEqualTo(LocalDate.parse("2025-03-23"));
-    assertLocalDate("Wed, 2013-10-02", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2013-10-02"));
+    assertLocalDate("Wed, 2013-10-02", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2013-10-02"));
     assertLocalDate("2003/12/14", "yyyy/MM/dd").isEqualTo(LocalDate.parse("2003-12-14"));
     assertLocalDate("2014-06-23", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2014-06-23"));
     assertLocalDate("1992-04-21", "yyyy-MM-dd").isEqualTo(LocalDate.parse("1992-04-21"));
@@ -1122,31 +1122,31 @@ public final class DateTimeFormatsTest {
     assertLocalDate("2005-04-27", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2005-04-27"));
     assertLocalDate("2004-10-27", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2004-10-27"));
     assertLocalDate("1993/07/05", "yyyy/MM/dd").isEqualTo(LocalDate.parse("1993-07-05"));
-    assertLocalDate("Tue, 2016-09-20", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2016-09-20"));
+    assertLocalDate("Tue, 2016-09-20", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2016-09-20"));
     assertLocalDate("2009/09/23", "yyyy/MM/dd").isEqualTo(LocalDate.parse("2009-09-23"));
     assertLocalDate("2027-04-02", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2027-04-02"));
     assertZonedDateTime("1994-08-03 19:32:42 UTC", "yyyy-MM-dd HH:mm:ss zzz")
         .isEqualTo(ZonedDateTime.parse("1994-08-03T19:32:42+00:00[UTC]"));
-    assertLocalDate("Thu, 2011-06-09", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2011-06-09"));
+    assertLocalDate("Thu, 2011-06-09", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2011-06-09"));
     assertLocalDate("2021-01-11", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2021-01-11"));
     assertZonedDateTime("2000-04-28 19:32 UTC", "yyyy-MM-dd HH:mm zzz")
         .isEqualTo(ZonedDateTime.parse("2000-04-28T19:32:00+00:00[UTC]"));
     assertLocalDate("2018-08-13", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2018-08-13"));
-    assertLocalDate("Mon, 2022-07-25", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2022-07-25"));
-    assertLocalDate("Mon, 2019-09-09", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2019-09-09"));
+    assertLocalDate("Mon, 2022-07-25", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2022-07-25"));
+    assertLocalDate("Mon, 2019-09-09", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2019-09-09"));
     assertLocalDate("2024-08-04", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2024-08-04"));
     assertLocalDate("2027/11/13", "yyyy/MM/dd").isEqualTo(LocalDate.parse("2027-11-13"));
     assertLocalDate("2008-06-03", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2008-06-03"));
-    assertLocalDate("Wed, 2014-01-08", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2014-01-08"));
-    assertLocalDate("Wed, 2004-03-24", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2004-03-24"));
+    assertLocalDate("Wed, 2014-01-08", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2014-01-08"));
+    assertLocalDate("Wed, 2004-03-24", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2004-03-24"));
     assertLocalDate("2023/06/04", "yyyy/MM/dd").isEqualTo(LocalDate.parse("2023-06-04"));
-    assertZonedDateTime("Thu, 1994-03-24 19:32:42.4 UTC", "E, yyyy-MM-dd HH:mm:ss.S zzz")
+    assertZonedDateTime("Thu, 1994-03-24 19:32:42.4 UTC", "EEE, yyyy-MM-dd HH:mm:ss.S zzz")
         .isEqualTo(ZonedDateTime.parse("1994-03-24T19:32:42.4+00:00[UTC]"));
     assertLocalDate("2023-12-18", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2023-12-18"));
     assertLocalDate("1998-05-17", "yyyy-MM-dd").isEqualTo(LocalDate.parse("1998-05-17"));
-    assertLocalDate("Fri, 2023-05-05", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2023-05-05"));
-    assertLocalDate("Wed, 1991-11-27", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("1991-11-27"));
-    assertZonedDateTime("Sat, 2027-06-05 19:32 UTC", "E, yyyy-MM-dd HH:mm zzz")
+    assertLocalDate("Fri, 2023-05-05", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2023-05-05"));
+    assertLocalDate("Wed, 1991-11-27", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("1991-11-27"));
+    assertZonedDateTime("Sat, 2027-06-05 19:32 UTC", "EEE, yyyy-MM-dd HH:mm zzz")
         .isEqualTo(ZonedDateTime.parse("2027-06-05T19:32:00+00:00[UTC]"));
     assertLocalDate("2002/03/04", "yyyy/MM/dd").isEqualTo(LocalDate.parse("2002-03-04"));
     assertZonedDateTime("2003-01-12 19:32 UTC", "yyyy-MM-dd HH:mm zzz")
@@ -1154,27 +1154,27 @@ public final class DateTimeFormatsTest {
     assertLocalDate("2020-06-11", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2020-06-11"));
     assertLocalDate("1991/08/20", "yyyy/MM/dd").isEqualTo(LocalDate.parse("1991-08-20"));
     assertLocalDate("2015-03-23", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2015-03-23"));
-    assertZonedDateTime("Sun, 2011-09-18 19:32:42 UTC", "E, yyyy-MM-dd HH:mm:ss zzz")
+    assertZonedDateTime("Sun, 2011-09-18 19:32:42 UTC", "EEE, yyyy-MM-dd HH:mm:ss zzz")
         .isEqualTo(ZonedDateTime.parse("2011-09-18T19:32:42+00:00[UTC]"));
-    assertLocalDate("Fri, 2027-12-03", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2027-12-03"));
-    assertLocalDate("Fri, 2020-05-15", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2020-05-15"));
-    assertLocalDate("Sun, 2020-10-25", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2020-10-25"));
-    assertZonedDateTime("Thu, 1997-02-06 19:32:42 UTC", "E, yyyy-MM-dd HH:mm:ss zzz")
+    assertLocalDate("Fri, 2027-12-03", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2027-12-03"));
+    assertLocalDate("Fri, 2020-05-15", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2020-05-15"));
+    assertLocalDate("Sun, 2020-10-25", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2020-10-25"));
+    assertZonedDateTime("Thu, 1997-02-06 19:32:42 UTC", "EEE, yyyy-MM-dd HH:mm:ss zzz")
         .isEqualTo(ZonedDateTime.parse("1997-02-06T19:32:42+00:00[UTC]"));
-    assertLocalDate("Tue, 2016-08-02", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2016-08-02"));
+    assertLocalDate("Tue, 2016-08-02", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2016-08-02"));
     assertZonedDateTime("2025-08-06 19:32:42.4 UTC", "yyyy-MM-dd HH:mm:ss.S zzz")
         .isEqualTo(ZonedDateTime.parse("2025-08-06T19:32:42.4+00:00[UTC]"));
     assertZonedDateTime("2003-09-08 19:32 UTC", "yyyy-MM-dd HH:mm zzz")
         .isEqualTo(ZonedDateTime.parse("2003-09-08T19:32:00+00:00[UTC]"));
-    assertLocalDate("Sat, 2020-04-11", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2020-04-11"));
-    assertLocalDate("Thu, 2024-08-01", "E, yyyy-MM-dd").isEqualTo(LocalDate.parse("2024-08-01"));
+    assertLocalDate("Sat, 2020-04-11", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2020-04-11"));
+    assertLocalDate("Thu, 2024-08-01", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2024-08-01"));
     assertZonedDateTime("2001-04-25 19:32:42.47 UTC", "yyyy-MM-dd HH:mm:ss.SS zzz")
         .isEqualTo(ZonedDateTime.parse("2001-04-25T19:32:42.47+00:00[UTC]"));
-    assertZonedDateTime("Mon, 2003-10-20 19:32 UTC", "E, yyyy-MM-dd HH:mm zzz")
+    assertZonedDateTime("Mon, 2003-10-20 19:32 UTC", "EEE, yyyy-MM-dd HH:mm zzz")
         .isEqualTo(ZonedDateTime.parse("2003-10-20T19:32:00+00:00[UTC]"));
-    assertZonedDateTime("Tue, 2014-08-05 19:32:42 UTC", "E, yyyy-MM-dd HH:mm:ss zzz")
+    assertZonedDateTime("Tue, 2014-08-05 19:32:42 UTC", "EEE, yyyy-MM-dd HH:mm:ss zzz")
         .isEqualTo(ZonedDateTime.parse("2014-08-05T19:32:42+00:00[UTC]"));
-    assertZonedDateTime("Fri, 1999-01-22 19:32 UTC", "E, yyyy-MM-dd HH:mm zzz")
+    assertZonedDateTime("Fri, 1999-01-22 19:32 UTC", "EEE, yyyy-MM-dd HH:mm zzz")
         .isEqualTo(ZonedDateTime.parse("1999-01-22T19:32:00+00:00[UTC]"));
   }
 
