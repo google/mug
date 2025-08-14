@@ -1007,6 +1007,18 @@ public final class DateTimeFormatsTest {
         DateTimeException.class, () -> formatOf("<Febuary Wedenesday>, <2021/20/30>"));
   }
 
+  @Test
+  public void parseLocalDate_chinese() {
+    assertThat(DateTimeFormats.parseLocalDate("2025年8月13日"))
+        .isEqualTo(LocalDate.of(2025, 8, 13));
+    assertThat(DateTimeFormats.parseLocalDate("2025年8月1日"))
+        .isEqualTo(LocalDate.of(2025, 8, 1));
+    assertThat(DateTimeFormats.parseLocalDate("2025年10月1日"))
+        .isEqualTo(LocalDate.of(2025, 10, 1));
+    assertThat(DateTimeFormats.parseLocalDate("2025年10月13日"))
+        .isEqualTo(LocalDate.of(2025, 10, 13));
+  }
+
   @Test public void chineseDates() {
     assertLocalDate("2020年08月10日", "yyyy年MM月dd日")
         .isEqualTo(LocalDate.parse("2020年08月10日", DateTimeFormatter.ofPattern("yyyy年MM月dd日")));

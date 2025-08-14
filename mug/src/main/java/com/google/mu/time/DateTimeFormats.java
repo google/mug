@@ -165,6 +165,10 @@ public final class DateTimeFormats {
       .add(forExample("2011-12-3"), "yyyy-MM-d")
       .add(forExample("2011/12/03"), "yyyy/MM/dd")
       .add(forExample("2011/12/3"), "yyyy/MM/d")
+      .add(forExample("2011年2月1日"), "yyyy年M月d日")
+      .add(forExample("2011年12月1日"), "yyyy年MM月d日")
+      .add(forExample("2011年2月10日"), "yyyy年M月dd日")
+      .add(forExample("2011年12月11日"), "yyyy年MM月dd日")
       .add(forExample("2011年"), "yyyy年")
       .add(forExample("2月"), "M月")
       .add(forExample("12月"), "MM月")
@@ -485,14 +489,14 @@ public final class DateTimeFormats {
         PrefixSearchTable.<Object, List<LocalDateRule>>builder()
             .add(
                 forExample("10-30-2014"),
-                asList(LocalDateRule.monthFirst("MM-dd-yyyy"), LocalDateRule.dayFirst("dd-MM-yyyy")))
-            .add(forExample("1-30-2014"), asList(LocalDateRule.monthFirst("M-dd-yyyy")))
-            .add(forExample("30-1-2014"), asList(LocalDateRule.dayFirst("dd-M-yyyy")))
+                asList(monthFirst("MM-dd-yyyy"), dayFirst("dd-MM-yyyy")))
+            .add(forExample("1-30-2014"), asList(monthFirst("M-dd-yyyy")))
+            .add(forExample("30-1-2014"), asList(dayFirst("dd-M-yyyy")))
             .add(
                 forExample("10/30/2014"),
-                asList(LocalDateRule.monthFirst("MM/dd/yyyy"), LocalDateRule.dayFirst("dd/MM/yyyy")))
-            .add(forExample("1/30/2014"), asList(LocalDateRule.monthFirst("M/dd/yyyy")))
-            .add(forExample("30/1/2014"), asList(LocalDateRule.dayFirst("dd/M/yyyy")))
+                asList(monthFirst("MM/dd/yyyy"), dayFirst("dd/MM/yyyy")))
+            .add(forExample("1/30/2014"), asList(monthFirst("M/dd/yyyy")))
+            .add(forExample("30/1/2014"), asList(dayFirst("dd/M/yyyy")))
             .build();
 
     static BiOptional<List<Object>, String> resolve(List<?> signature) {
