@@ -32,6 +32,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.Locale;
 
 import org.junit.Ignore;
 import org.junit.Test;
@@ -1006,6 +1007,45 @@ public final class DateTimeFormatsTest {
         DateTimeException.class, () -> formatOf("<Febuary Wedenesday>, <2021/20/30>"));
   }
 
+  @Test public void chineseDates() {
+    assertLocalDate("2020年08月10日", "yyyy年MM月dd日")
+        .isEqualTo(LocalDate.parse("2020年08月10日", DateTimeFormatter.ofPattern("yyyy年MM月dd日")));
+    assertLocalDate("2020年08月1日", "yyyy年MM月d日")
+       .isEqualTo(LocalDate.parse("2020年08月1日", DateTimeFormatter.ofPattern("yyyy年MM月d日")));
+    assertLocalDate("2020年8月10日", "yyyy年M月dd日")
+         .isEqualTo(LocalDate.parse("2020年8月10日", DateTimeFormatter.ofPattern("yyyy年M月dd日")));
+    assertLocalDate("2020年8月1日", "yyyy年M月d日")
+        .isEqualTo(LocalDate.parse("2020年8月1日", DateTimeFormatter.ofPattern("yyyy年M月d日")));
+    assertLocalDate("8月1日2020年", "M月d日yyyy年")
+        .isEqualTo(LocalDate.parse("8月1日2020年", DateTimeFormatter.ofPattern("M月d日yyyy年")));
+  }
+
+  @Test public void chineseZonedDateTimeWithWeekdays() {
+    assertLocalDate("2025年8月13日 星期三", "yyyy年M月dd日 EEEE", Locale.CHINA)
+        .isEqualTo(LocalDate.parse("2025年8月13日 星期三", DateTimeFormatter.ofPattern("yyyy年M月dd日 EEEE").withLocale(Locale.CHINA)));
+    assertLocalDate("2025年8月10日 周日", "yyyy年M月dd日 EEE", Locale.CHINA)
+        .isEqualTo(LocalDate.parse("2025年8月10日 周日", DateTimeFormatter.ofPattern("yyyy年M月dd日 EEE").withLocale(Locale.CHINA)));
+  }
+
+  @Test public void chineseLocalDateTimes() {
+    assertLocalDateTime("2020年08月10日 15点19分", "yyyy年MM月dd日 HH点mm分")
+        .isEqualTo(LocalDateTime.parse("2020年08月10日 15点19分", DateTimeFormatter.ofPattern("yyyy年MM月dd日 HH点mm分")));
+    assertLocalDateTime("2020年08月10日 15点19分01秒", "yyyy年MM月dd日 HH点mm分ss秒")
+       .isEqualTo(LocalDateTime.parse("2020年08月10日 15点19分01秒", DateTimeFormatter.ofPattern("yyyy年MM月dd日 HH点mm分ss秒")));
+    assertLocalDateTime("2020年08月10日 5点9分", "yyyy年MM月dd日 H点m分")
+        .isEqualTo(LocalDateTime.parse("2020年08月10日 5点9分", DateTimeFormatter.ofPattern("yyyy年MM月dd日 H点m分")));
+    assertLocalDateTime("2020年08月10日 5点9分8秒", "yyyy年MM月dd日 H点m分s秒")
+        .isEqualTo(LocalDateTime.parse("2020年08月10日 5点9分8秒", DateTimeFormatter.ofPattern("yyyy年MM月dd日 H点m分s秒")));
+    assertLocalDateTime("2020年08月10日 15时19分", "yyyy年MM月dd日 HH时mm分")
+        .isEqualTo(LocalDateTime.parse("2020年08月10日 15时19分", DateTimeFormatter.ofPattern("yyyy年MM月dd日 HH时mm分")));
+    assertLocalDateTime("2020年08月10日 15时19分01秒", "yyyy年MM月dd日 HH时mm分ss秒")
+       .isEqualTo(LocalDateTime.parse("2020年08月10日 15时19分01秒", DateTimeFormatter.ofPattern("yyyy年MM月dd日 HH时mm分ss秒")));
+    assertLocalDateTime("2020年08月10日 5时9分", "yyyy年MM月dd日 H时m分")
+        .isEqualTo(LocalDateTime.parse("2020年08月10日 5时9分", DateTimeFormatter.ofPattern("yyyy年MM月dd日 H时m分")));
+    assertLocalDateTime("2020年08月10日 5时9分8秒", "yyyy年MM月dd日 H时m分s秒")
+        .isEqualTo(LocalDateTime.parse("2020年08月10日 5时9分8秒", DateTimeFormatter.ofPattern("yyyy年MM月dd日 H时m分s秒")));
+  }
+
   @Test public void fuzzTests() {
     assertLocalDate("2005-04-27", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2005-04-27"));
     assertLocalDate("2004-10-27", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2004-10-27"));
@@ -1222,6 +1262,16 @@ public final class DateTimeFormatsTest {
     String pattern = DateTimeFormats.inferDateTimePattern(example);
     assertThat(pattern).isEqualTo(equivalentPattern);
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern(pattern);
+    LocalDate date = LocalDate.parse(example, formatter);
+    assertThat(date.format(formatter)).isEqualTo(example);
+    return assertThat(date);
+  }
+
+  private static ComparableSubject<LocalDate> assertLocalDate(
+      @CompileTimeConstant String example, String equivalentPattern, Locale locale) {
+    String pattern = DateTimeFormats.inferDateTimePattern(example);
+    assertThat(pattern).isEqualTo(equivalentPattern);
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern(pattern).withLocale(locale);
     LocalDate date = LocalDate.parse(example, formatter);
     assertThat(date.format(formatter)).isEqualTo(example);
     return assertThat(date);
