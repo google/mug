@@ -219,9 +219,10 @@ public final class DateTimeFormats {
           .add(forExample("13秒"), "ss秒")
           .add(forExample("3秒"), "s秒")
           .add(forExample("上午"), "a")
-          .add(forExample("下午"), "a")
-          .add(forExample("下午2点"), "ah点")  // only single-digit PM use h; all others use H.
+          .add(forExample("下午2点"), "ah点")
           .add(forExample("下午2时"), "ah时")
+          .add(forExample("下午2:10:10"), "ah:mm:ss")
+          .add(forExample("下午2:10"), "ah:mm")
           .add(forExample("1 AM"), "h a")
           .add(forExample("1AM"), "ha")
           .add(forExample("10 AM"), "HH a")
@@ -320,7 +321,7 @@ public final class DateTimeFormats {
   }
 
   private static DateTimeFormatter inferLocaleIfNeeded(DateTimeFormatter fmt, List<?> signature) {
-    return signature.contains(Token.XINGQI) || signature.contains(Token.ZHOU) || signature.contains(Token.SHANGWU) || signature.contains(Token.XIAWU)
+    return signature.contains(Token.XINGQI) || signature.contains(Token.ZHOU) || signature.contains(Token.WU)
         ? fmt.withLocale(Locale.CHINA)
         : fmt;
   }
@@ -630,8 +631,7 @@ public final class DateTimeFormats {
     MINUTE_CODES("mm"),
     SECOND_CODES("ss"),
     AM_PM("AM", "PM"),
-    SHANGWU("上午"),
-    XIAWU("下午"),
+    WU("上午", "下午"),
     AD_BC("AD", "BC"),
     GENERIC_ZONE_NAME(
         "AT", "BT", "CT", "DT", "ET", "FT", "GT", "HT", "IT", "JT", "KT", "LT", "MT", "NT", "OT",
