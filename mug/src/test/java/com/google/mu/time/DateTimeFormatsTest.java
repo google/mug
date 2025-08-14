@@ -741,6 +741,14 @@ public final class DateTimeFormatsTest {
         .isEqualTo(ZonedDateTime.parse("2025-08-13T00:00:00+08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME));
     assertThat(DateTimeFormats.parseZonedDateTime("星期三 2025年8月13日 0点0分0秒 +08:00"))
         .isEqualTo(ZonedDateTime.parse("2025-08-13T00:00:00+08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+    assertThat(DateTimeFormats.parseZonedDateTime("星期三 2025年8月13日 上午10点 +08:00"))
+        .isEqualTo(ZonedDateTime.parse("2025-08-13T10:00:00+08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+    assertThat(DateTimeFormats.parseZonedDateTime("星期三 2025年8月13日 下午14点 +08:00"))
+        .isEqualTo(ZonedDateTime.parse("2025-08-13T14:00:00+08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+    assertThat(DateTimeFormats.parseZonedDateTime("星期三 2025年8月13日 下午2点 +08:00"))
+        .isEqualTo(ZonedDateTime.parse("2025-08-13T14:00:00+08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+    assertThat(DateTimeFormats.parseZonedDateTime("星期三 2025年8月13日 下午2时 +08:00"))
+        .isEqualTo(ZonedDateTime.parse("2025-08-13T14:00:00+08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME));
   }
 
   @Test
@@ -786,6 +794,14 @@ public final class DateTimeFormatsTest {
         .isEqualTo(ZonedDateTime.parse("2025-08-13T00:00:00+08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).toInstant());
     assertThat(DateTimeFormats.parseToInstant("2025年08月13日 0点0分 +08:00"))
         .isEqualTo(ZonedDateTime.parse("2025-08-13T00:00:00+08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).toInstant());
+    assertThat(DateTimeFormats.parseToInstant("星期三 2025年8月13日 上午10点 +08:00"))
+        .isEqualTo(ZonedDateTime.parse("2025-08-13T10:00:00+08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).toInstant());
+    assertThat(DateTimeFormats.parseToInstant("星期三 2025年8月13日 下午14点 +08:00"))
+        .isEqualTo(ZonedDateTime.parse("2025-08-13T14:00:00+08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).toInstant());
+    assertThat(DateTimeFormats.parseToInstant("星期三 2025年8月13日 下午2点 +08:00"))
+        .isEqualTo(ZonedDateTime.parse("2025-08-13T14:00:00+08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).toInstant());
+    assertThat(DateTimeFormats.parseToInstant("星期三 2025年8月13日 下午2时30分 +08:00"))
+        .isEqualTo(ZonedDateTime.parse("2025-08-13T14:30:00+08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).toInstant());
   }
 
   @Test
