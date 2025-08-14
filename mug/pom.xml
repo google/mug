@@ -25,6 +25,27 @@
             <waitUntil>published</waitUntil>
           </configuration>
         </plugin>
+        <plugin>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <configuration>
+            <annotationProcessorPaths>
+              <path>
+                <groupId>com.google.errorprone</groupId>
+                <artifactId>error_prone_core</artifactId>
+                <version>${error_prone.version}</version>
+              </path>
+              <path>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>mug-errorprone</artifactId>
+                <version>9.2</version>
+              </path>
+            <!-- Other annotation processors go here.
+            If 'annotationProcessorPaths' is set, processors will no longer be
+            discovered on the regular -classpath; see also 'Using Error Prone
+            together with other annotation processors' below. -->
+            </annotationProcessorPaths>
+          </configuration>
+        </plugin>
       </plugins>
     </pluginManagement>
 
