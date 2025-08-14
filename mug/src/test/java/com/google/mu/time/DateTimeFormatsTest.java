@@ -583,7 +583,7 @@ public final class DateTimeFormatsTest {
       throws Exception {
     ZonedDateTime zonedTime = ZonedDateTime.parse(datetime, DateTimeFormatter.ISO_DATE_TIME);
     String example = zonedTime.format(getFormatterByName(formatterName));
-    assertThat( DateTimeFormats.parseZonedDateTime(example).withFixedOffsetZone())
+    assertThat(DateTimeFormats.parseZonedDateTime(example).withFixedOffsetZone())
         .isEqualTo(zonedTime.withFixedOffsetZone());
   }
 
@@ -733,6 +733,17 @@ public final class DateTimeFormatsTest {
   }
 
   @Test
+  public void parseZonedDateTime_chinese()
+      throws Exception {
+    assertThat(DateTimeFormats.parseZonedDateTime("2025年8月13日 0点0分0秒 +08:00"))
+        .isEqualTo(ZonedDateTime.parse("2025-08-13T00:00:00+08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+    assertThat(DateTimeFormats.parseZonedDateTime("周三 2025年8月13日 0点0分0秒 +08:00"))
+        .isEqualTo(ZonedDateTime.parse("2025-08-13T00:00:00+08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+    assertThat(DateTimeFormats.parseZonedDateTime("星期三 2025年8月13日 0点0分0秒 +08:00"))
+        .isEqualTo(ZonedDateTime.parse("2025-08-13T00:00:00+08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+  }
+
+  @Test
   public void parseZonedDateTime_invalid()
       throws Exception {
     assertThrows(DateTimeException.class, () -> DateTimeFormats.parseZonedDateTime("2020-01-01T00:00:00.123 bad +08:00"));
@@ -762,6 +773,15 @@ public final class DateTimeFormatsTest {
         .isEqualTo(ZonedDateTime.parse("2020-01-01T00:00:00.123+08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).toInstant());
     assertThat(DateTimeFormats.parseToInstant("2020/01/01T00:00, America/Los_Angeles"))
         .isEqualTo(ZonedDateTime.parse("2020-01-01T00:00:00-08:00[America/Los_Angeles]", DateTimeFormatter.ISO_ZONED_DATE_TIME).toInstant());
+  }
+
+  @Test
+  public void parseToInstant_chinese()
+      throws Exception {
+    assertThat(DateTimeFormats.parseToInstant("星期三 2025年8月13日 0点0分 +08:00"))
+        .isEqualTo(ZonedDateTime.parse("2025-08-13T00:00:00+08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).toInstant());
+    assertThat(DateTimeFormats.parseToInstant("周三 2025年08月13日 0点0分 +08:00"))
+        .isEqualTo(ZonedDateTime.parse("2025-08-13T00:00:00+08:00", DateTimeFormatter.ISO_OFFSET_DATE_TIME).toInstant());
   }
 
   @Test
@@ -1073,6 +1093,7 @@ public final class DateTimeFormatsTest {
         .isEqualTo(ZonedDateTime.parse("2000-04-28T19:32:00+00:00[UTC]"));
     assertLocalDate("2018-08-13", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2018-08-13"));
     assertLocalDate("Mon, 2022-07-25", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2022-07-25"));
+    assertLocalDate("周一, 2022-07-25", "EEE, yyyy-MM-dd", Locale.CHINA).isEqualTo(LocalDate.parse("2022-07-25"));
     assertLocalDate("Mon, 2019-09-09", "EEE, yyyy-MM-dd").isEqualTo(LocalDate.parse("2019-09-09"));
     assertLocalDate("2024-08-04", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2024-08-04"));
     assertLocalDate("2027/11/13", "yyyy/MM/dd").isEqualTo(LocalDate.parse("2027-11-13"));

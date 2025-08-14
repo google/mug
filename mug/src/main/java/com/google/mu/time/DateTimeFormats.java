@@ -41,6 +41,7 @@ import java.time.temporal.TemporalQuery;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -295,7 +296,7 @@ public final class DateTimeFormats {
                   return DateTimeFormatter.ofPattern(pattern);
                 }
                 pattern = inferDateTimePattern(example, signature);
-                DateTimeFormatter fmt = DateTimeFormatter.ofPattern(pattern);
+                DateTimeFormatter fmt = inferLocaleIfNeeded(DateTimeFormatter.ofPattern(pattern), signature);
                 fmt.withResolverStyle(ResolverStyle.STRICT).parse(example);
                 return fmt;
               } catch (DateTimeParseException e) {
@@ -310,8 +311,14 @@ public final class DateTimeFormats {
     return lookup(RFC_1123_FORMATTERS, signature)
         .orElseGet(() -> lookup(ISO_DATE_FORMATTERS, signature)
         .orElseGet(() -> lookup(ISO_DATE_TIME_FORMATTERS, forExample(removeNanosecondsPart(dateTimeString)))
-        .orElseGet(() -> DateTimeFormatter.ofPattern(inferDateTimePattern(dateTimeString, signature)))))
+        .orElseGet(() -> inferDateTimeFormatter(dateTimeString, signature))))
         .parse(dateTimeString, query);
+  }
+
+  private static DateTimeFormatter inferLocaleIfNeeded(DateTimeFormatter fmt, List<?> signature) {
+    return signature.contains(Token.XINGQI) || signature.contains(Token.ZHOU)
+        ? fmt.withLocale(Locale.CHINA)
+        : fmt;
   }
 
   /**
@@ -385,6 +392,11 @@ public final class DateTimeFormats {
 
   static String inferDateTimePattern(String example) {
     return inferDateTimePattern(example, forExample(example));
+  }
+
+  private static DateTimeFormatter inferDateTimeFormatter(String example, List<?> signature) {
+    return inferLocaleIfNeeded(
+        DateTimeFormatter.ofPattern(inferDateTimePattern(example, signature)), signature);
   }
 
   private static String inferDateTimePattern(String example, List<?> signature) {
