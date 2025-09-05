@@ -4,7 +4,6 @@ import static com.google.common.labs.regex.RegexPattern.toSequence;
 import static java.util.Arrays.stream;
 
 import com.google.common.labs.regex.RegexPattern.Anchor;
-import com.google.common.labs.regex.RegexPattern.AnyChar;
 import com.google.common.labs.regex.RegexPattern.AtLeast;
 import com.google.common.labs.regex.RegexPattern.AtMost;
 import com.google.common.labs.regex.RegexPattern.CharSetElement;
@@ -30,9 +29,8 @@ final class RegexParsers {
     Parser<RegexPattern> atomicParser =
         Parser.anyOf(
             literalChars(),
-            charClass(),
+            characterSet(),
             groupOrLookaround(lazy),
-            Parser.literal(".").thenReturn(new AnyChar()),
             predefinedCharClass(),
             anchor());
     Parser<RegexPattern> sequenceParser =
@@ -76,7 +74,7 @@ final class RegexParsers {
     return greedy.followedBy("?").map(RegexParsers::makeNonGreedy).or(greedy);
   }
 
-  private static Parser<RegexPattern.CharacterClass> charClass() {
+  private static Parser<RegexPattern.CharacterSet> characterSet() {
     Parser<LiteralChar> escaped =
         Parser.literal("\\").then(Parser.single(c -> true).map(LiteralChar::new));
     Parser<LiteralChar> literal = Parser.single(CharPredicate.noneOf("-]\\")).map(LiteralChar::new);

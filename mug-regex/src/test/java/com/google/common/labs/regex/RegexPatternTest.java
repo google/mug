@@ -14,7 +14,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import com.google.common.labs.regex.RegexPattern.Anchor;
-import com.google.common.labs.regex.RegexPattern.AnyChar;
 import com.google.common.labs.regex.RegexPattern.Group;
 import com.google.common.labs.regex.RegexPattern.Literal;
 import com.google.common.labs.regex.RegexPattern.PredefinedCharClass;
@@ -120,17 +119,12 @@ public final class RegexPatternTest {
   }
 
   @Test
-  public void anyCharToString() {
-    assertThat(new AnyChar().toString()).isEqualTo(".");
-  }
-
-  @Test
   public void predefinedCharClassToString() {
     assertThat(PredefinedCharClass.DIGIT.toString()).isEqualTo("\\d");
   }
 
   @Test
-  public void characterClassToString() {
+  public void characterSetToString() {
     assertThat(RegexPattern.parse("[ab0-9]").toString()).isEqualTo("[ab0-9]");
   }
 
@@ -159,11 +153,6 @@ public final class RegexPatternTest {
   }
 
   @Test
-  public void parse_anyChar() {
-    assertThat(RegexPattern.parse(".")).isEqualTo(new AnyChar());
-  }
-
-  @Test
   public void parse_predefinedCharClass(@TestParameter PredefinedCharClass charClass) {
     assertThat(RegexPattern.parse(charClass.toString())).isEqualTo(charClass);
   }
@@ -176,7 +165,7 @@ public final class RegexPatternTest {
   @Test
   public void parse_sequence() {
     assertThat(RegexPattern.parse("ab")).isEqualTo(new Literal("ab"));
-    assertThat(RegexPattern.parse("a.")).isEqualTo(sequence(new Literal("a"), new AnyChar()));
+    assertThat(RegexPattern.parse("a.")).isEqualTo(sequence(new Literal("a"), PredefinedCharClass.ANY_CHAR));
   }
 
   @Test
@@ -228,7 +217,7 @@ public final class RegexPatternTest {
   }
 
   @Test
-  public void parse_characterClass() {
+  public void parse_characterSet() {
     assertThat(RegexPattern.parse("[a]")).isEqualTo(anyOf(new RegexPattern.LiteralChar('a')));
     assertThat(RegexPattern.parse("[ab]"))
         .isEqualTo(anyOf(new RegexPattern.LiteralChar('a'), new RegexPattern.LiteralChar('b')));

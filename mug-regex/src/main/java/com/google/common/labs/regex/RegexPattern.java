@@ -26,9 +26,8 @@ public sealed interface RegexPattern
         RegexPattern.Quantified,
         RegexPattern.Group,
         RegexPattern.Literal,
-        RegexPattern.AnyChar,
         RegexPattern.PredefinedCharClass,
-        RegexPattern.CharacterClass,
+        RegexPattern.CharacterSet,
         RegexPattern.Anchor,
         RegexPattern.Lookaround {
   /** Returns a {@link Sequence} of the given elements. */
@@ -51,26 +50,26 @@ public sealed interface RegexPattern
     return collectingAndThen(toUnmodifiableList(), Alternation::new);
   }
 
-  /** Returns a {@link CharacterClass} of the given elements. */
+  /** Returns a {@link CharacterSet} of the given elements. */
   @SafeVarargs
-  static CharacterClass.AnyOf anyOf(CharSetElement... elements) {
-    return new CharacterClass.AnyOf(Arrays.stream(elements).collect(toUnmodifiableList()));
+  static CharacterSet.AnyOf anyOf(CharSetElement... elements) {
+    return new CharacterSet.AnyOf(Arrays.stream(elements).collect(toUnmodifiableList()));
   }
 
-  /** Returns a {@link CharacterClass} of the given elements. */
-  static CharacterClass.AnyOf anyOf(Collection<? extends CharSetElement> elements) {
-    return new CharacterClass.AnyOf(elements.stream().collect(toUnmodifiableList()));
+  /** Returns a {@link CharacterSet} of the given elements. */
+  static CharacterSet.AnyOf anyOf(Collection<? extends CharSetElement> elements) {
+    return new CharacterSet.AnyOf(elements.stream().collect(toUnmodifiableList()));
   }
 
-  /** Returns a negated {@link CharacterClass} of the given elements. */
+  /** Returns a negated {@link CharacterSet} of the given elements. */
   @SafeVarargs
-  static CharacterClass.NoneOf noneOf(CharSetElement... elements) {
-    return new CharacterClass.NoneOf(Arrays.stream(elements).collect(toUnmodifiableList()));
+  static CharacterSet.NoneOf noneOf(CharSetElement... elements) {
+    return new CharacterSet.NoneOf(Arrays.stream(elements).collect(toUnmodifiableList()));
   }
 
-  /** Returns a negated {@link CharacterClass} of the given elements. */
-  static CharacterClass.NoneOf noneOf(Collection<? extends CharSetElement> elements) {
-    return new CharacterClass.NoneOf(elements.stream().collect(toUnmodifiableList()));
+  /** Returns a negated {@link CharacterSet} of the given elements. */
+  static CharacterSet.NoneOf noneOf(Collection<? extends CharSetElement> elements) {
+    return new CharacterSet.NoneOf(elements.stream().collect(toUnmodifiableList()));
   }
 
   /**
@@ -267,16 +266,9 @@ public sealed interface RegexPattern
     }
   }
 
-  /** Represents the dot ('.') character, which matches any character. */
-  record AnyChar() implements RegexPattern {
-    @Override
-    public String toString() {
-      return ".";
-    }
-  }
-
   /** Represents a predefined character class like {@code \d} or {@code \w}. */
   public enum PredefinedCharClass implements RegexPattern {
+    ANY_CHAR("."),
     DIGIT("\\d"),
     NON_DIGIT("\\D"),
     WHITESPACE("\\s"),
@@ -297,11 +289,11 @@ public sealed interface RegexPattern
   }
 
   /** Represents a custom character class, like {@code [a-z]} or {@code [^0-9]}. */
-  sealed interface CharacterClass extends RegexPattern
-      permits CharacterClass.AnyOf, CharacterClass.NoneOf {
+  sealed interface CharacterSet extends RegexPattern
+      permits CharacterSet.AnyOf, CharacterSet.NoneOf {
 
     /** A positive character class, like {@code [a-z]}. */
-    record AnyOf(List<CharSetElement> elements) implements CharacterClass {
+    record AnyOf(List<CharSetElement> elements) implements CharacterSet {
       public AnyOf {
         checkArgument(elements.size() > 0, "elements cannot be empty");
       }
@@ -313,7 +305,7 @@ public sealed interface RegexPattern
     }
 
     /** A negated character class, like {@code [^a-z]}. */
-    record NoneOf(List<CharSetElement> elements) implements CharacterClass {
+    record NoneOf(List<CharSetElement> elements) implements CharacterSet {
       public NoneOf {
         checkArgument(elements.size() > 0, "elements cannot be empty");
       }
@@ -325,7 +317,7 @@ public sealed interface RegexPattern
     }
   }
 
-  /** Base interface for elements within a {@link CharacterClass}. */
+  /** Base interface for elements within a {@link CharacterSet}. */
   sealed interface CharSetElement permits LiteralChar, CharRange {}
 
   /** Represents a single literal character within a character class. */
