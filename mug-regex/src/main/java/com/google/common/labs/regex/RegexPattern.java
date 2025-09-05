@@ -282,7 +282,9 @@ public sealed interface RegexPattern
     WHITESPACE("\\s"),
     NON_WHITESPACE("\\S"),
     WORD("\\w"),
-    NON_WORD("\\W");
+    NON_WORD("\\W"),
+    WORD_BOUNDARY("\\b"),
+    NON_WORD_BOUNDARY("\\B");
 
     private final String pattern;
 

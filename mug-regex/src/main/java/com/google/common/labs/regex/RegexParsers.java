@@ -121,7 +121,9 @@ final class RegexParsers {
         Parser.literal("\\s").thenReturn(PredefinedCharClass.WHITESPACE),
         Parser.literal("\\S").thenReturn(PredefinedCharClass.NON_WHITESPACE),
         Parser.literal("\\w").thenReturn(PredefinedCharClass.WORD),
-        Parser.literal("\\W").thenReturn(PredefinedCharClass.NON_WORD));
+        Parser.literal("\\W").thenReturn(PredefinedCharClass.NON_WORD),
+        Parser.literal("\\b").thenReturn(PredefinedCharClass.WORD_BOUNDARY),
+        Parser.literal("\\B").thenReturn(PredefinedCharClass.NON_WORD_BOUNDARY));
   }
 
   private static Parser<Anchor> anchor() {

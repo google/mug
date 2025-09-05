@@ -176,6 +176,8 @@ public final class RegexPatternTest {
     assertThat(RegexPattern.parse("\\S")).isEqualTo(PredefinedCharClass.NON_WHITESPACE);
     assertThat(RegexPattern.parse("\\w")).isEqualTo(PredefinedCharClass.WORD);
     assertThat(RegexPattern.parse("\\W")).isEqualTo(PredefinedCharClass.NON_WORD);
+    assertThat(RegexPattern.parse("\\b")).isEqualTo(PredefinedCharClass.WORD_BOUNDARY);
+    assertThat(RegexPattern.parse("\\B")).isEqualTo(PredefinedCharClass.NON_WORD_BOUNDARY);
   }
 
   @Test
