@@ -71,7 +71,7 @@ final class RegexParsers {
                 (min, max) -> Quantifier.repeated(min, max))
             .immediatelyBetween("{", "}");
     Parser<Quantifier> greedy = Parser.anyOf(question, star, plus, exact, atLeast, atMost, range);
-    return greedy.followedBy("?").map(RegexParsers::makeNonGreedy).or(greedy);
+    return greedy.optionallyFollowedBy("?", RegexParsers::makeNonGreedy);
   }
 
   private static Parser<RegexPattern.CharacterSet> characterSet() {

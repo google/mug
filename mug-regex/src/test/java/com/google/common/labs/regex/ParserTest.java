@@ -166,6 +166,38 @@ public class ParserTest {
   }
 
   @Test
+  public void optionallyFollowedBy_suffixCannotBeEmpty() {
+    assertThrows(
+        IllegalArgumentException.class, () -> literal("123").optionallyFollowedBy("", n -> n));
+  }
+
+  @Test
+  public void optionallyFollowedBy_success() {
+    Parser<Integer> parser =
+        literal("123").map(Integer::parseInt).optionallyFollowedBy("++", n -> n + 1);
+    assertThat(parser.parse("123++")).isEqualTo(124);
+    assertThat(parser.parse("123")).isEqualTo(123);
+  }
+
+  @Test
+  public void optionallyFollowedBy_unconsumedInput() {
+    Parser<Integer> parser =
+        literal("123").map(Integer::parseInt).optionallyFollowedBy("++", n -> n + 1);
+    Parser.ParseException thrown =
+        assertThrows(Parser.ParseException.class, () -> parser.parse("123+"));
+    assertThat(thrown).hasMessageThat().contains("at 3: +");
+  }
+
+  @Test
+  public void optionallyFollowedBy_failedToMatch() {
+    Parser<Integer> parser =
+        literal("123").map(Integer::parseInt).optionallyFollowedBy("++", n -> n + 1);
+    Parser.ParseException thrown =
+        assertThrows(Parser.ParseException.class, () -> parser.parse("abc"));
+    assertThat(thrown).hasMessageThat().contains("at 0: expected: 123");
+  }
+
+  @Test
   public void sequence_success() {
     Parser<String> parser =
         sequence(

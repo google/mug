@@ -260,6 +260,23 @@ interface Parser<T> {
   }
 
   /**
+   * If this parser matches, optionally applies the {@code op} function if the pattern is followed
+   * by {@code suffix}.
+   */
+  default Parser<T> optionallyFollowedBy(String suffix, UnaryOperator<T> op) {
+    requireNonNull(op);
+    checkArgument(suffix.length() > 0, "follower cannot be empty");
+    return (input, start) -> {
+      ParseResult<T> result = parse(input, start);
+      if (result instanceof ParseResult.Success<T>(int head, int tail, T value)
+          && input.startsWith(suffix, tail)) {
+        return new ParseResult.Success<>(head, tail + suffix.length(), op.apply(value));
+      }
+      return result;
+    };
+  }
+
+  /**
    * Parses the entire input string and returns the result. Upon successful return, the {@code
    * input} is fully consumed.
    */
