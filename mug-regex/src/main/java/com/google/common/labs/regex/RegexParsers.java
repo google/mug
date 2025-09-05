@@ -1,6 +1,7 @@
 package com.google.common.labs.regex;
 
 import static com.google.common.labs.regex.RegexPattern.toSequence;
+import static java.util.Arrays.stream;
 
 import com.google.common.labs.regex.RegexPattern.Anchor;
 import com.google.common.labs.regex.RegexPattern.AnyChar;
@@ -115,15 +116,9 @@ final class RegexParsers {
   }
 
   private static Parser<PredefinedCharClass> predefinedCharClass() {
-    return Parser.anyOf(
-        Parser.literal("\\d").thenReturn(PredefinedCharClass.DIGIT),
-        Parser.literal("\\D").thenReturn(PredefinedCharClass.NON_DIGIT),
-        Parser.literal("\\s").thenReturn(PredefinedCharClass.WHITESPACE),
-        Parser.literal("\\S").thenReturn(PredefinedCharClass.NON_WHITESPACE),
-        Parser.literal("\\w").thenReturn(PredefinedCharClass.WORD),
-        Parser.literal("\\W").thenReturn(PredefinedCharClass.NON_WORD),
-        Parser.literal("\\b").thenReturn(PredefinedCharClass.WORD_BOUNDARY),
-        Parser.literal("\\B").thenReturn(PredefinedCharClass.NON_WORD_BOUNDARY));
+    return stream(PredefinedCharClass.values())
+        .map(charClass -> Parser.literal(charClass.toString()).thenReturn(charClass))
+        .collect(Parser.or());
   }
 
   private static Parser<Anchor> anchor() {

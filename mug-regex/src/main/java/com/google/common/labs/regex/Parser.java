@@ -2,8 +2,11 @@ package com.google.common.labs.regex;
 
 import static com.google.common.labs.regex.InternalUtils.checkArgument;
 import static com.google.common.labs.regex.InternalUtils.checkState;
+import static java.util.Arrays.stream;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.toUnmodifiableList;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,6 +16,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collector;
 
 import com.google.mu.util.CharPredicate;
 
@@ -74,22 +78,34 @@ interface Parser<T> {
   /** Matches if any of the given {@code parsers} match. */
   @SafeVarargs
   static <T> Parser<T> anyOf(Parser<? extends T>... parsers) {
-    checkArgument(parsers.length > 0, "parsers cannot be empty");
-    return (input, start) -> {
-      List<ParseResult.Failure<?>> failures = new ArrayList<>();
-      for (Parser<? extends T> parser : parsers) {
-        switch (parser.parse(input, start)) {
-          case ParseResult.Success<? extends T>(int head, int tail, T value) -> {
-            return new ParseResult.Success<>(head, tail, value);
-          }
-          case ParseResult.Failure<?> failure -> failures.add(failure);
-        }
-      }
-      return failures.stream()
-          .max(Comparator.comparingInt(ParseResult.Failure<?>::at))
-          .get()
-          .safeCast();
-    };
+    return stream(parsers).collect(or());
+  }
+
+  /**
+   * Returns a collector that results in a parser that matches if any of the input {@code parsers}
+   * match.
+   */
+  static <T> Collector<Parser<? extends T>, ?, Parser<T>> or() {
+    return collectingAndThen(
+        toUnmodifiableList(),
+        parsers -> {
+          checkArgument(parsers.size() > 0, "parsers cannot be empty");
+          return (input, start) -> {
+            List<ParseResult.Failure<?>> failures = new ArrayList<>();
+            for (Parser<? extends T> parser : parsers) {
+              switch (parser.parse(input, start)) {
+                case ParseResult.Success<? extends T>(int head, int tail, T value) -> {
+                  return new ParseResult.Success<>(head, tail, value);
+                }
+                case ParseResult.Failure<?> failure -> failures.add(failure);
+              }
+            }
+            return failures.stream()
+                .max(Comparator.comparingInt(ParseResult.Failure<?>::at))
+                .get()
+                .safeCast();
+          };
+        });
   }
 
   /** Matches if {@code this} or {@code that} matches. */
