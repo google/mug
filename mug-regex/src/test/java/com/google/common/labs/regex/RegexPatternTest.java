@@ -12,7 +12,6 @@ import static org.junit.Assert.assertThrows;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 
 import com.google.common.labs.regex.RegexPattern.Anchor;
 import com.google.common.labs.regex.RegexPattern.AnyChar;
@@ -21,8 +20,10 @@ import com.google.common.labs.regex.RegexPattern.Literal;
 import com.google.common.labs.regex.RegexPattern.PredefinedCharClass;
 import com.google.common.labs.regex.RegexPattern.Quantified;
 import com.google.common.labs.regex.RegexPattern.Quantifier;
+import com.google.testing.junit.testparameterinjector.TestParameter;
+import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
-@RunWith(JUnit4.class)
+@RunWith(TestParameterInjector.class)
 public final class RegexPatternTest {
 
   @Test
@@ -139,12 +140,6 @@ public final class RegexPatternTest {
   }
 
   @Test
-  public void anchorToString() {
-    assertThat(new Anchor.AtBeginning().toString()).isEqualTo("^");
-    assertThat(new Anchor.AtEnd().toString()).isEqualTo("$");
-  }
-
-  @Test
   public void complexRegexToString() {
     assertThat(RegexPattern.parse("^(foo|bar.+)$").toString()).isEqualTo("^(foo|bar.+)$");
   }
@@ -169,21 +164,13 @@ public final class RegexPatternTest {
   }
 
   @Test
-  public void parse_predefinedCharClass() {
-    assertThat(RegexPattern.parse("\\d")).isEqualTo(PredefinedCharClass.DIGIT);
-    assertThat(RegexPattern.parse("\\D")).isEqualTo(PredefinedCharClass.NON_DIGIT);
-    assertThat(RegexPattern.parse("\\s")).isEqualTo(PredefinedCharClass.WHITESPACE);
-    assertThat(RegexPattern.parse("\\S")).isEqualTo(PredefinedCharClass.NON_WHITESPACE);
-    assertThat(RegexPattern.parse("\\w")).isEqualTo(PredefinedCharClass.WORD);
-    assertThat(RegexPattern.parse("\\W")).isEqualTo(PredefinedCharClass.NON_WORD);
-    assertThat(RegexPattern.parse("\\b")).isEqualTo(PredefinedCharClass.WORD_BOUNDARY);
-    assertThat(RegexPattern.parse("\\B")).isEqualTo(PredefinedCharClass.NON_WORD_BOUNDARY);
+  public void parse_predefinedCharClass(@TestParameter PredefinedCharClass charClass) {
+    assertThat(RegexPattern.parse(charClass.toString())).isEqualTo(charClass);
   }
 
   @Test
-  public void parse_anchor() {
-    assertThat(RegexPattern.parse("^")).isEqualTo(new Anchor.AtBeginning());
-    assertThat(RegexPattern.parse("$")).isEqualTo(new Anchor.AtEnd());
+  public void parse_anchor(@TestParameter Anchor anchor) {
+    assertThat(RegexPattern.parse(anchor.toString())).isEqualTo(anchor);
   }
 
   @Test
@@ -289,13 +276,13 @@ public final class RegexPatternTest {
     assertThat(RegexPattern.parse("^(a|b)+[c-e]?$"))
         .isEqualTo(
             sequence(
-                new Anchor.AtBeginning(),
+                Anchor.BEGINNING,
                 new Quantified(
                     new Group.Capturing(alternation(new Literal("a"), new Literal("b"))),
                     RegexPattern.Quantifier.atLeast(1)),
                 new Quantified(
                     anyOf(new RegexPattern.CharRange('c', 'e')), RegexPattern.Quantifier.atMost(1)),
-                new Anchor.AtEnd()));
+                Anchor.END));
   }
 
   @Test

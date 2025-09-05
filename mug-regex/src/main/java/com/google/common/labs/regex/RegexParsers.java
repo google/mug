@@ -115,9 +115,9 @@ final class RegexParsers {
   }
 
   private static Parser<Anchor> anchor() {
-    return Parser.anyOf(
-        Parser.literal("^").thenReturn(new Anchor.AtBeginning()),
-        Parser.literal("$").thenReturn(new Anchor.AtEnd()));
+    return stream(Anchor.values())
+        .map(anchor -> Parser.literal(anchor.toString()).thenReturn(anchor))
+        .collect(Parser.or());
   }
 
   private static Parser<Literal> literalChars() {

@@ -282,9 +282,7 @@ public sealed interface RegexPattern
     WHITESPACE("\\s"),
     NON_WHITESPACE("\\S"),
     WORD("\\w"),
-    NON_WORD("\\W"),
-    WORD_BOUNDARY("\\b"),
-    NON_WORD_BOUNDARY("\\B");
+    NON_WORD("\\W");
 
     private final String pattern;
 
@@ -355,21 +353,24 @@ public sealed interface RegexPattern
   }
 
   /** Represents an anchor, which matches a position like start or end of a line. */
-  sealed interface Anchor extends RegexPattern permits Anchor.AtBeginning, Anchor.AtEnd {
-    /** Represents the start of the input string anchor (^). */
-    record AtBeginning() implements Anchor {
-      @Override
-      public String toString() {
-        return "^";
-      }
+  enum Anchor implements RegexPattern {
+    BEGINNING("^"),
+    END("$"),
+    DOC_BEGINNING("\\A"),
+    DOC_END("\\Z"),
+    DOC_ABSOLUTE_END("\\z"),
+    WORD_BOUNDARY("\\b"),
+    NON_WORD_BOUNDARY("\\B");
+
+    private final String pattern;
+
+    Anchor(String pattern) {
+      this.pattern = pattern;
     }
 
-    /** Represents the end of the input string anchor ($). */
-    record AtEnd() implements Anchor {
-      @Override
-      public String toString() {
-        return "$";
-      }
+    @Override
+    public String toString() {
+      return pattern;
     }
   }
 
