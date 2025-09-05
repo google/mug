@@ -110,14 +110,7 @@ interface Parser<T> {
 
   /** Matches if {@code this} or {@code that} matches. */
   default Parser<T> or(Parser<T> that) {
-    requireNonNull(that);
-    return (input, start) -> {
-      ParseResult<T> result = parse(input, start);
-      if (result instanceof ParseResult.Success) {
-        return result;
-      }
-      return that.parse(input, start);
-    };
+    return anyOf(this, that);
   }
 
   /** Returns a parser that applies this parser at least once, greedily. */
@@ -151,8 +144,6 @@ interface Parser<T> {
    * {@code close}, which are non-empty string delimiters.
    */
   default Parser<T> immediatelyBetween(String open, String close) {
-    requireNonNull(open);
-    requireNonNull(close);
     return literal(open).then(this).followedBy(literal(close));
   }
 
