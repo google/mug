@@ -129,7 +129,7 @@ public final class RegexPatternTest {
   }
 
   @Test
-  public void negatedCharacterClassToString() {
+  public void negatedCharacterSetToString() {
     assertThat(RegexPattern.parse("[^ab0-9]").toString()).isEqualTo("[^ab0-9]");
   }
 
