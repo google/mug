@@ -26,30 +26,23 @@ final class RegexParsers {
 
   static Parser<RegexPattern> pattern() {
     var lazy = new Parser.Lazy<RegexPattern>();
-    Parser<RegexPattern> groupOrLookaround = groupOrLookaround(lazy);
 
     Parser<RegexPattern> atomicParser =
         Parser.anyOf(
             literalChars(),
             charClass(),
-            groupOrLookaround,
+            groupOrLookaround(lazy),
             Parser.literal(".").thenReturn(new AnyChar()),
             predefinedCharClass(),
             anchor());
-
-    @SuppressWarnings("nullness") // error doesn't make sense
-    Parser<RegexPattern> quantifiedParser =
-        atomicParser.postfix(quantifier().map(q -> p -> new Quantified(p, q)));
-
     Parser<RegexPattern> sequenceParser =
-        quantifiedParser
+        atomicParser.postfix(quantifier().map(q -> p -> new Quantified(p, q)))
             .atLeastOnce()
             .map(
                 elements ->
                     elements.size() == 1
                         ? elements.get(0)
                         : elements.stream().collect(toSequence()));
-
     Parser<RegexPattern> alternationParser =
         sequenceParser
             .delimitedBy("|")
