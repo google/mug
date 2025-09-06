@@ -9,7 +9,6 @@ import com.google.common.labs.regex.RegexPattern.Literal;
 import com.google.common.labs.regex.RegexPattern.LiteralChar;
 import com.google.common.labs.regex.RegexPattern.Lookaround;
 import com.google.common.labs.regex.RegexPattern.PredefinedCharClass;
-import com.google.common.labs.regex.RegexPattern.Quantified;
 import com.google.common.labs.regex.RegexPattern.Quantifier;
 import com.google.mu.util.CharPredicate;
 
@@ -29,8 +28,7 @@ final class RegexParsers {
             anyOf(PredefinedCharClass.values()),
             anyOf(Anchor.values()));
     Parser<RegexPattern> sequence =
-        atomic.postfix(quantifier().map(q -> p -> new Quantified(p, q)))
-            .atLeastOnce(RegexPattern.inSequence());
+        atomic.postfix(quantifier()).atLeastOnce(RegexPattern.inSequence());
     return lazy.delegateTo(sequence.delimitedBy("|", RegexPattern.asAlternation()));
   }
 
@@ -39,17 +37,13 @@ final class RegexParsers {
     Parser<Quantifier> question = Parser.literal("?").thenReturn(Quantifier.atMost(1));
     Parser<Quantifier> star = Parser.literal("*").thenReturn(Quantifier.repeated());
     Parser<Quantifier> plus = Parser.literal("+").thenReturn(Quantifier.atLeast(1));
-    Parser<Quantifier> exact =
-        number.immediatelyBetween("{", "}").map(n -> Quantifier.repeated(n, n));
+    Parser<Quantifier> exact = number.immediatelyBetween("{", "}").map(Quantifier::repeated);
     Parser<Quantifier> atLeast =
         number.followedBy(",").immediatelyBetween("{", "}").map(Quantifier::atLeast);
     Parser<Quantifier> atMost =
         Parser.literal(",").then(number).immediatelyBetween("{", "}").map(Quantifier::atMost);
     Parser<Quantifier> range =
-        Parser.sequence(
-                number,
-                Parser.literal(",").then(number),
-                (min, max) -> Quantifier.repeated(min, max))
+        Parser.sequence(number, Parser.literal(",").then(number), Quantifier::repeated)
             .immediatelyBetween("{", "}");
     return Parser.anyOf(question, star, plus, exact, atLeast, atMost, range)
         .optionallyFollowedBy("?", Quantifier::reluctant);

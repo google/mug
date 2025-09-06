@@ -8,6 +8,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
 
 import com.google.mu.util.CharPredicate;
@@ -145,10 +146,15 @@ public sealed interface RegexPattern
   }
 
   /** Base interface for all quantifier types. */
-  sealed interface Quantifier permits AtLeast, AtMost, Limited {
+  sealed interface Quantifier extends UnaryOperator<RegexPattern> permits AtLeast, AtMost, Limited {
     boolean isReluctant();
 
     Quantifier reluctant();
+
+    @Override
+    default Quantified apply(RegexPattern pattern) {
+      return new Quantified(pattern, this);
+    }
 
     static AtLeast atLeast(int n) {
       checkArgument(n >= 0, "min must be non-negative");
@@ -162,6 +168,10 @@ public sealed interface RegexPattern
 
     static AtLeast repeated() {
       return new AtLeast(0, false);
+    }
+
+    static Quantifier repeated(int times) {
+      return repeated(times, times);
     }
 
     static Quantifier repeated(int min, int max) {
