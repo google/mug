@@ -265,7 +265,7 @@ interface Parser<T> {
    */
   default Parser<T> optionallyFollowedBy(String suffix, Function<? super T, ? extends T> op) {
     requireNonNull(op);
-    checkArgument(suffix.length() > 0, "follower cannot be empty");
+    checkArgument(suffix.length() > 0, "suffix cannot be empty");
     return (input, start) -> {
       ParseResult<T> result = parse(input, start);
       if (result instanceof ParseResult.Success<T>(int head, int tail, T value)
