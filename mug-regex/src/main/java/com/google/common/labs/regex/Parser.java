@@ -263,7 +263,7 @@ interface Parser<T> {
    * If this parser matches, optionally applies the {@code op} function if the pattern is followed
    * by {@code suffix}.
    */
-  default Parser<T> optionallyFollowedBy(String suffix, UnaryOperator<T> op) {
+  default Parser<T> optionallyFollowedBy(String suffix, Function<? super T, ? extends T> op) {
     requireNonNull(op);
     checkArgument(suffix.length() > 0, "follower cannot be empty");
     return (input, start) -> {
