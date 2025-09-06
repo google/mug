@@ -3,11 +3,8 @@ package com.google.common.labs.regex;
 import static java.util.Arrays.stream;
 
 import com.google.common.labs.regex.RegexPattern.Anchor;
-import com.google.common.labs.regex.RegexPattern.AtLeast;
-import com.google.common.labs.regex.RegexPattern.AtMost;
 import com.google.common.labs.regex.RegexPattern.CharSetElement;
 import com.google.common.labs.regex.RegexPattern.Group;
-import com.google.common.labs.regex.RegexPattern.Limited;
 import com.google.common.labs.regex.RegexPattern.Literal;
 import com.google.common.labs.regex.RegexPattern.LiteralChar;
 import com.google.common.labs.regex.RegexPattern.Lookaround;
@@ -24,21 +21,17 @@ final class RegexParsers {
 
   static Parser<RegexPattern> pattern() {
     var lazy = new Parser.Lazy<RegexPattern>();
-
-    Parser<RegexPattern> atomicParser =
+    Parser<RegexPattern> atomic =
         Parser.anyOf(
             literalChars(),
             characterSet(),
             groupOrLookaround(lazy),
-            predefinedCharClass(),
-            anchor());
-    Parser<RegexPattern> sequenceParser =
-        atomicParser.postfix(quantifier().map(q -> p -> new Quantified(p, q)))
+            anyOf(PredefinedCharClass.values()),
+            anyOf(Anchor.values()));
+    Parser<RegexPattern> sequence =
+        atomic.postfix(quantifier().map(q -> p -> new Quantified(p, q)))
             .atLeastOnce(RegexPattern.inSequence());
-    Parser<RegexPattern> alternationParser =
-        sequenceParser.delimitedBy("|", RegexPattern.asAlternation());
-
-    return lazy.delegateTo(alternationParser);
+    return lazy.delegateTo(sequence.delimitedBy("|", RegexPattern.asAlternation()));
   }
 
   private static Parser<Quantifier> quantifier() {
@@ -58,8 +51,8 @@ final class RegexParsers {
                 Parser.literal(",").then(number),
                 (min, max) -> Quantifier.repeated(min, max))
             .immediatelyBetween("{", "}");
-    Parser<Quantifier> greedy = Parser.anyOf(question, star, plus, exact, atLeast, atMost, range);
-    return greedy.optionallyFollowedBy("?", RegexParsers::makeNonGreedy);
+    return Parser.anyOf(question, star, plus, exact, atLeast, atMost, range)
+        .optionallyFollowedBy("?", Quantifier::reluctant);
   }
 
   private static Parser<RegexPattern.CharacterSet> characterSet() {
@@ -95,28 +88,13 @@ final class RegexParsers {
         content.immediatelyBetween("(", ")").map(Group.Capturing::new));
   }
 
-  private static Parser<PredefinedCharClass> predefinedCharClass() {
-    return stream(PredefinedCharClass.values())
-        .map(charClass -> Parser.literal(charClass.toString()).thenReturn(charClass))
-        .collect(Parser.or());
-  }
-
-  private static Parser<Anchor> anchor() {
-    return stream(Anchor.values())
-        .map(anchor -> Parser.literal(anchor.toString()).thenReturn(anchor))
-        .collect(Parser.or());
+  @SafeVarargs
+  private static <E extends Enum<E>> Parser<E> anyOf(E... values) {
+    return stream(values).map(e -> Parser.literal(e.toString()).thenReturn(e)).collect(Parser.or());
   }
 
   private static Parser<Literal> literalChars() {
     return Parser.consecutive(
         CharPredicate.noneOf(".[]{}()*+-?^$|\\"), "literal character").map(Literal::new);
-  }
-
-  private static Quantifier makeNonGreedy(Quantifier q) {
-    return switch (q) {
-      case AtLeast atLeast -> new AtLeast(atLeast.min(), false);
-      case AtMost atMost -> new AtMost(atMost.max(), false);
-      case Limited limited -> new Limited(limited.min(), limited.max(), false);
-    };
   }
 }

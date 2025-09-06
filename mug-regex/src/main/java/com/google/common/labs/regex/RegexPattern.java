@@ -146,20 +146,22 @@ public sealed interface RegexPattern
 
   /** Base interface for all quantifier types. */
   sealed interface Quantifier permits AtLeast, AtMost, Limited {
-    boolean isGreedy();
+    boolean isReluctant();
+
+    Quantifier reluctant();
 
     static AtLeast atLeast(int n) {
       checkArgument(n >= 0, "min must be non-negative");
-      return new AtLeast(n, true);
+      return new AtLeast(n, false);
     }
 
     static AtMost atMost(int n) {
       checkArgument(n >= 0, "max must be non-negative");
-      return new AtMost(n, true);
+      return new AtMost(n, false);
     }
 
     static AtLeast repeated() {
-      return new AtLeast(0, true);
+      return new AtLeast(0, false);
     }
 
     static Quantifier repeated(int min, int max) {
@@ -171,21 +173,21 @@ public sealed interface RegexPattern
       if (max == Integer.MAX_VALUE) {
         return atLeast(min);
       }
-      return new Limited(min, max, true);
+      return new Limited(min, max, false);
     }
   }
 
   /** Represents a quantifier with a minimum bound, like {@code {min,}}, {@code *}, or {@code +}. */
-  record AtLeast(int min, boolean greedy) implements Quantifier {
+  record AtLeast(int min, boolean isReluctant) implements Quantifier {
     @Override
-    public boolean isGreedy() {
-      return greedy;
+    public AtLeast reluctant() {
+      return new AtLeast(min, true);
     }
 
     @Override
     public String toString() {
       String s = (min == 0) ? "*" : (min == 1) ? "+" : "{" + min + ",}";
-      return greedy ? s : s + "?";
+      return isReluctant ? s + "?": s;
     }
   }
 
@@ -193,16 +195,16 @@ public sealed interface RegexPattern
    * Represents a quantifier with a maximum bound and a minimum of 0, like {@code {0,max}} or {@code
    * ?}.
    */
-  record AtMost(int max, boolean greedy) implements Quantifier {
+  record AtMost(int max, boolean isReluctant) implements Quantifier {
     @Override
-    public boolean isGreedy() {
-      return greedy;
+    public AtMost reluctant() {
+      return new AtMost(max, true);
     }
 
     @Override
     public String toString() {
       String s = (max == 1) ? "?" : "{0," + max + "}";
-      return greedy ? s : s + "?";
+      return isReluctant ? s + "?" : s;
     }
   }
 
@@ -210,16 +212,16 @@ public sealed interface RegexPattern
    * Represents a quantifier with both minimum and maximum bounds, like {@code {n}} or {@code
    * {min,max}}.
    */
-  record Limited(int min, int max, boolean greedy) implements Quantifier {
+  record Limited(int min, int max, boolean isReluctant) implements Quantifier {
     @Override
-    public boolean isGreedy() {
-      return greedy;
+    public Limited reluctant() {
+      return new Limited(min, max, true);
     }
 
     @Override
     public String toString() {
       String s = (min == max) ? "{" + min + "}" : "{" + min + "," + max + "}";
-      return greedy ? s : s + "?";
+      return isReluctant ? s + "?" : s;
     }
   }
 

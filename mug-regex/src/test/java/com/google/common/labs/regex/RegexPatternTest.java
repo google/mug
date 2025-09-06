@@ -233,19 +233,19 @@ public final class RegexPatternTest {
   }
 
   @Test
-  public void parse_quantifier_nonGreedy() {
+  public void parse_quantifier_reluctant() {
     assertThat(RegexPattern.parse("a??"))
-        .isEqualTo(new Quantified(new Literal("a"), new RegexPattern.AtMost(1, false)));
+        .isEqualTo(new Quantified(new Literal("a"), Quantifier.atMost(1).reluctant()));
     assertThat(RegexPattern.parse("a*?"))
-        .isEqualTo(new Quantified(new Literal("a"), new RegexPattern.AtLeast(0, false)));
+        .isEqualTo(new Quantified(new Literal("a"), Quantifier.atLeast(0).reluctant()));
     assertThat(RegexPattern.parse("a+?"))
-        .isEqualTo(new Quantified(new Literal("a"), new RegexPattern.AtLeast(1, false)));
+        .isEqualTo(new Quantified(new Literal("a"), Quantifier.atLeast(1).reluctant()));
     assertThat(RegexPattern.parse("a{2}?"))
-        .isEqualTo(new Quantified(new Literal("a"), new RegexPattern.Limited(2, 2, false)));
+        .isEqualTo(new Quantified(new Literal("a"), Quantifier.repeated(2, 2).reluctant()));
     assertThat(RegexPattern.parse("a{2,}?"))
-        .isEqualTo(new Quantified(new Literal("a"), new RegexPattern.AtLeast(2, false)));
+        .isEqualTo(new Quantified(new Literal("a"), Quantifier.atLeast(2).reluctant()));
     assertThat(RegexPattern.parse("a{2,5}?"))
-        .isEqualTo(new Quantified(new Literal("a"), new RegexPattern.Limited(2, 5, false)));
+        .isEqualTo(new Quantified(new Literal("a"), Quantifier.repeated(2, 5).reluctant()));
   }
 
   @Test

@@ -77,6 +77,7 @@ interface Parser<T> {
   }
 
   /** Matches if any of the given {@code parsers} match. */
+  @SafeVarargs
   static <T> Parser<T> anyOf(Parser<? extends T>... parsers) {
     return stream(parsers).collect(or());
   }
