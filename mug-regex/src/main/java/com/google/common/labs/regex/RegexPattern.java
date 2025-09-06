@@ -36,8 +36,10 @@ public sealed interface RegexPattern
     return new Sequence(Arrays.stream(elements).collect(toUnmodifiableList()));
   }
 
-  static Collector<RegexPattern, ?, Sequence> toSequence() {
-    return collectingAndThen(toUnmodifiableList(), Sequence::new);
+  /** A collector that collects the input {@code RegexPattern} as a sequence. */
+  static Collector<RegexPattern, ?, RegexPattern> inSequence() {
+    return collectingAndThen(
+        toUnmodifiableList(), list -> list.size() == 1 ? list.get(0) : new Sequence(list));
   }
 
   /** Returns an {@link Alternation} of the given alternatives. */
@@ -46,8 +48,10 @@ public sealed interface RegexPattern
     return new Alternation(Arrays.stream(alternatives).collect(toUnmodifiableList()));
   }
 
-  static Collector<RegexPattern, ?, Alternation> toAlternation() {
-    return collectingAndThen(toUnmodifiableList(), Alternation::new);
+  /** A collector that collects the input {@code RegexPattern} as an alternation. */
+  static Collector<RegexPattern, ?, RegexPattern> asAlternation() {
+    return collectingAndThen(
+        toUnmodifiableList(), list -> list.size() == 1 ? list.get(0) : new Alternation(list));
   }
 
   /** Returns a {@link CharacterSet} of the given elements. */

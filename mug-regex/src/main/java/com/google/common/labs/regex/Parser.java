@@ -29,25 +29,27 @@ import com.google.mu.util.CharPredicate;
 @FunctionalInterface
 interface Parser<T> {
   /** Matches a character as specified by {@code matcher}. */
-  static Parser<Character> single(CharPredicate matcher) {
+  static Parser<Character> single(CharPredicate matcher, String name) {
     requireNonNull(matcher);
+    requireNonNull(name);
     return (String input, int start) -> {
       if (input.length() > start && matcher.test(input.charAt(start))) {
         return new ParseResult.Success<>(start, start + 1, input.charAt(start));
       }
-      return ParseResult.failAt(start, "expected: %s", matcher);
+      return ParseResult.failAt(start, "expecting %s", name);
     };
   }
 
   /** Matches one or more consecutive characters as specified by {@code matcher}. */
-  static Parser<String> consecutive(CharPredicate matcher) {
+  static Parser<String> consecutive(CharPredicate matcher, String name) {
     requireNonNull(matcher);
+    requireNonNull(name);
     return (String input, int start) -> {
       int end = start;
       for (; end < input.length() && matcher.test(input.charAt(end)); end++) {}
       return end > start
           ? new ParseResult.Success<>(start, end, input.substring(start, end))
-          : ParseResult.failAt(end, "expected: consecutive(%s)", matcher);
+          : ParseResult.failAt(end, "expecting one or more %s", name);
     };
   }
 
@@ -58,7 +60,7 @@ interface Parser<T> {
       if (input.startsWith(value, start)) {
         return new ParseResult.Success<>(start, start + value.length(), value);
       }
-      return ParseResult.failAt(start, "expected: %s", value);
+      return ParseResult.failAt(start, "expecting `%s`", value);
     };
   }
 
@@ -76,7 +78,6 @@ interface Parser<T> {
   }
 
   /** Matches if any of the given {@code parsers} match. */
-  @SafeVarargs
   static <T> Parser<T> anyOf(Parser<? extends T>... parsers) {
     return stream(parsers).collect(or());
   }
@@ -113,6 +114,14 @@ interface Parser<T> {
     return anyOf(this, that);
   }
 
+  /**
+   * Returns a parser that applies this parser at least once, greedily, and collects the return
+   * values using {@code collector}.
+   */
+  default <R> Parser<R> atLeastOnce(Collector<T, ?, R> collector) {
+    return atLeastOnce().map(elements -> elements.stream().collect(collector));
+  }
+
   /** Returns a parser that applies this parser at least once, greedily. */
   default Parser<List<T>> atLeastOnce() {
     return (input, start) -> {
@@ -140,11 +149,14 @@ interface Parser<T> {
   }
 
   /**
-   * Returns a parser that matches the current parser immediately enclosed between {@code open} and
-   * {@code close}, which are non-empty string delimiters.
+   * Returns a parser that matches the current parser repeatedly, delimited by the given delimiter.
+   *
+   * <p>For example if you want to express the regex pattern {@code (a|b|c)}, you can use: {@code
+   * Parser.anyOf(literal("a"), literal("b"), literal("c")).delimitedBy("|",
+   * RegexPattern.asAlternation())}.
    */
-  default Parser<T> immediatelyBetween(String open, String close) {
-    return literal(open).then(this).followedBy(literal(close));
+  default <R> Parser<R> delimitedBy(String delimiter, Collector<T, ?, R> collector) {
+    return delimitedBy(delimiter).map(elements -> elements.stream().collect(collector));
   }
 
   /**
@@ -209,6 +221,14 @@ interface Parser<T> {
     };
   }
 
+  /**
+   * Returns a parser that matches the current parser immediately enclosed between {@code open} and
+   * {@code close}, which are non-empty string delimiters.
+   */
+  default Parser<T> immediatelyBetween(String open, String close) {
+    return literal(open).then(this).followedBy(literal(close));
+  }
+
   /** If this parser matches, returns the result of applying the given function to the match. */
   default <R> Parser<R> map(Function<? super T, ? extends R> f) {
     requireNonNull(f);
@@ -243,6 +263,7 @@ interface Parser<T> {
   }
 
   /** If this parser matches, applies the given parser on the remaining input. */
+  @SuppressWarnings("nullness")
   default <R> Parser<R> then(Parser<R> next) {
     requireNonNull(next);
     return flatMap(unused -> next);
@@ -254,7 +275,9 @@ interface Parser<T> {
     return flatMap(value -> next.thenReturn(value));
   }
 
-  /** If this parser matches, applies the given parser on the remaining input. */
+  /**
+   * Ensures that the pattern represented by this parser must be followed by {@code next} string.
+   */
   default Parser<T> followedBy(String next) {
     return followedBy(literal(next));
   }
@@ -330,7 +353,7 @@ interface Parser<T> {
    *
    * <pre>{@code
    * var lazy = new Parser.Lazy<Integer>();
-   * Parser<Integer> num = Parser.single(CharMatcher.inRange('0', '9')).map(c -> c - '0');
+   * Parser<Integer> num = Parser.single(CharPredicate.inRange('0', '9')).map(c -> c - '0');
    * Parser<Integer> atomic = lazy.immediatelyBetween("(", ")").or(num);
    * Parser<Integer> expr =
    *     atomic.delimitedBy("+").map(nums -> nums.stream().mapToInt(n -> n).sum());

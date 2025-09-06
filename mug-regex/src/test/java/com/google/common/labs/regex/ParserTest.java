@@ -85,9 +85,9 @@ public class ParserTest {
         keywordParser.flatMap(
             keyword -> {
               if (keyword.equals("name:")) {
-                return consecutive(ALPHA);
+                return consecutive(ALPHA, "letter");
               } else {
-                return consecutive(NUM);
+                return consecutive(NUM, "digit");
               }
             });
     assertThat(parser.parse("name:john")).isEqualTo("john");
@@ -101,9 +101,9 @@ public class ParserTest {
         keywordParser.flatMap(
             keyword -> {
               if (keyword.equals("name:")) {
-                return consecutive(ALPHA.or(NUM));
+                return consecutive(ALPHA, "letter");
               } else {
-                return consecutive(NUM);
+                return consecutive(NUM, "digit");
               }
             });
     assertThrows(ParseException.class, () -> parser.parse("name:johna "));
@@ -117,9 +117,9 @@ public class ParserTest {
         keywordParser.flatMap(
             keyword -> {
               if (keyword.equals("name:")) {
-                return consecutive(ALPHA);
+                return consecutive(ALPHA, "letter");
               } else {
-                return consecutive(NUM);
+                return consecutive(NUM, "digit");
               }
             });
     assertThrows(ParseException.class, () -> parser.parse("name:123"));
@@ -194,7 +194,7 @@ public class ParserTest {
         literal("123").map(Integer::parseInt).optionallyFollowedBy("++", n -> n + 1);
     Parser.ParseException thrown =
         assertThrows(Parser.ParseException.class, () -> parser.parse("abc"));
-    assertThat(thrown).hasMessageThat().contains("at 0: expected: 123");
+    assertThat(thrown).hasMessageThat().contains("at 0: expecting `123`");
   }
 
   @Test
@@ -274,7 +274,7 @@ public class ParserTest {
     assertThat(literal("a").atLeastOnce().parse("a")).containsExactly("a").inOrder();
     assertThat(literal("a").atLeastOnce().parse("aa")).containsExactly("a", "a").inOrder();
     assertThat(literal("a").atLeastOnce().parse("aaa")).containsExactly("a", "a", "a").inOrder();
-    assertThat(consecutive(CharPredicate.range('0', '9')).atLeastOnce().parse("1230"))
+    assertThat(consecutive(CharPredicate.range('0', '9'), "digit").atLeastOnce().parse("1230"))
         .containsExactly("1230")
         .inOrder();
   }
@@ -356,20 +356,20 @@ public class ParserTest {
 
   @Test
   public void single_success() {
-    Parser<Character> parser = single(NUM);
+    Parser<Character> parser = single(NUM, "digit");
     assertThat(parser.parse("1")).isEqualTo('1');
     assertThat(parser.parse("9")).isEqualTo('9');
   }
 
   @Test
   public void single_failure_withLeftover() {
-    Parser<Character> parser = single(NUM);
+    Parser<Character> parser = single(NUM, "digit");
     assertThrows(ParseException.class, () -> parser.parse("1a"));
   }
 
   @Test
   public void single_failure() {
-    Parser<Character> parser = single(NUM);
+    Parser<Character> parser = single(NUM, "digit");
     assertThrows(ParseException.class, () -> parser.parse("a"));
     assertThrows(ParseException.class, () -> parser.parse("12"));
     assertThrows(ParseException.class, () -> parser.parse(""));
@@ -377,21 +377,21 @@ public class ParserTest {
 
   @Test
   public void consecutive_success() {
-    Parser<String> parser = consecutive(NUM);
+    Parser<String> parser = consecutive(NUM, "digit");
     assertThat(parser.parse("1")).isEqualTo("1");
     assertThat(parser.parse("123")).isEqualTo("123");
   }
 
   @Test
   public void consecutive_failure_withLeftover() {
-    Parser<String> parser = consecutive(NUM);
+    Parser<String> parser = consecutive(NUM, "digit");
     assertThrows(ParseException.class, () -> parser.parse("1a"));
     assertThrows(ParseException.class, () -> parser.parse("123a"));
   }
 
   @Test
   public void consecutive_failure() {
-    Parser<String> parser = consecutive(NUM);
+    Parser<String> parser = consecutive(NUM, "digit");
     assertThrows(ParseException.class, () -> parser.parse("a"));
     assertThrows(ParseException.class, () -> parser.parse("12a"));
     assertThrows(ParseException.class, () -> parser.parse(""));
@@ -399,7 +399,7 @@ public class ParserTest {
 
   @Test
   public void postfix_success() {
-    Parser<Integer> number = consecutive(NUM).map(Integer::parseInt);
+    Parser<Integer> number = consecutive(NUM, "digit").map(Integer::parseInt);
     Parser<UnaryOperator<Integer>> inc = literal("++").thenReturn(i -> i + 1);
     Parser<UnaryOperator<Integer>> dec = literal("--").thenReturn(i -> i - 1);
     Parser<UnaryOperator<Integer>> op = anyOf(inc, dec);
@@ -412,7 +412,7 @@ public class ParserTest {
 
   @Test
   public void postfix_failure() {
-    Parser<Integer> number = consecutive(NUM).map(Integer::parseInt);
+    Parser<Integer> number = consecutive(NUM, "digit").map(Integer::parseInt);
     Parser<UnaryOperator<Integer>> inc = literal("++").thenReturn(i -> i + 1);
     Parser<UnaryOperator<Integer>> dec = literal("--").thenReturn(i -> i - 1);
     Parser<UnaryOperator<Integer>> op = anyOf(inc, dec);
@@ -424,7 +424,7 @@ public class ParserTest {
 
   @Test
   public void postfix_failure_withLeftover() {
-    Parser<Integer> number = consecutive(NUM).map(Integer::parseInt);
+    Parser<Integer> number = consecutive(NUM, "digit").map(Integer::parseInt);
     Parser<UnaryOperator<Integer>> inc = literal("++").thenReturn(i -> i + 1);
     Parser<UnaryOperator<Integer>> dec = literal("--").thenReturn(i -> i - 1);
     Parser<UnaryOperator<Integer>> op = anyOf(inc, dec);
@@ -432,6 +432,7 @@ public class ParserTest {
     assertThrows(ParseException.class, () -> parser.parse("10++a"));
     assertThrows(ParseException.class, () -> parser.parse("10 a"));
   }
+
   @Test
   public void recursiveGrammar() {
     assertThat(simpleCalculator().parse("1")).isEqualTo(1);
@@ -443,7 +444,7 @@ public class ParserTest {
 
   private static Parser<Integer> simpleCalculator() {
     Parser.Lazy<Integer> lazy = new Parser.Lazy<>();
-    Parser<Integer> num = Parser.single(CharPredicate.range('0', '9')).map(c -> c - '0');
+    Parser<Integer> num = Parser.single(CharPredicate.range('0', '9'), "digit").map(c -> c - '0');
     Parser<Integer> atomic = lazy.immediatelyBetween("(", ")").or(num);
     Parser<Integer> expr =
         atomic.delimitedBy("+").map(nums -> nums.stream().mapToInt(n -> n).sum());

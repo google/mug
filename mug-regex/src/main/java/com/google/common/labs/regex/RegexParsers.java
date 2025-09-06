@@ -1,6 +1,5 @@
 package com.google.common.labs.regex;
 
-import static com.google.common.labs.regex.RegexPattern.toSequence;
 import static java.util.Arrays.stream;
 
 import com.google.common.labs.regex.RegexPattern.Anchor;
@@ -35,26 +34,15 @@ final class RegexParsers {
             anchor());
     Parser<RegexPattern> sequenceParser =
         atomicParser.postfix(quantifier().map(q -> p -> new Quantified(p, q)))
-            .atLeastOnce()
-            .map(
-                elements ->
-                    elements.size() == 1
-                        ? elements.get(0)
-                        : elements.stream().collect(toSequence()));
+            .atLeastOnce(RegexPattern.inSequence());
     Parser<RegexPattern> alternationParser =
-        sequenceParser
-            .delimitedBy("|")
-            .map(
-                alternatives ->
-                    alternatives.size() == 1
-                        ? alternatives.get(0)
-                        : alternatives.stream().collect(RegexPattern.toAlternation()));
+        sequenceParser.delimitedBy("|", RegexPattern.asAlternation());
 
     return lazy.delegateTo(alternationParser);
   }
 
   private static Parser<Quantifier> quantifier() {
-    Parser<Integer> number = Parser.consecutive(NUM).map(Integer::parseInt);
+    Parser<Integer> number = Parser.consecutive(NUM, "digit for quantifier").map(Integer::parseInt);
     Parser<Quantifier> question = Parser.literal("?").thenReturn(Quantifier.atMost(1));
     Parser<Quantifier> star = Parser.literal("*").thenReturn(Quantifier.repeated());
     Parser<Quantifier> plus = Parser.literal("+").thenReturn(Quantifier.atLeast(1));
@@ -76,8 +64,9 @@ final class RegexParsers {
 
   private static Parser<RegexPattern.CharacterSet> characterSet() {
     Parser<LiteralChar> escaped =
-        Parser.literal("\\").then(Parser.single(c -> true).map(LiteralChar::new));
-    Parser<LiteralChar> literal = Parser.single(CharPredicate.noneOf("-]\\")).map(LiteralChar::new);
+        Parser.literal("\\").then(Parser.single(c -> true, "escaped character").map(LiteralChar::new));
+    Parser<LiteralChar> literal =
+        Parser.single(CharPredicate.noneOf("-]\\"), "literal character").map(LiteralChar::new);
     Parser<LiteralChar> literalChar = Parser.anyOf(escaped, literal);
     Parser<CharSetElement> range =
         Parser.sequence(
@@ -92,7 +81,7 @@ final class RegexParsers {
 
   private static Parser<RegexPattern> groupOrLookaround(Parser<RegexPattern> content) {
     Parser<Group.Named> named =
-        Parser.consecutive(ALPHA.or(NUM))
+        Parser.consecutive(ALPHA.or(NUM), "alphanumeric for group name")
             .immediatelyBetween("?<", ">")
             .flatMap(n -> content.map(c -> new Group.Named(n, c)))
             .immediatelyBetween("(", ")");
@@ -119,7 +108,8 @@ final class RegexParsers {
   }
 
   private static Parser<Literal> literalChars() {
-    return Parser.consecutive(CharPredicate.noneOf(".[]{}()*+-?^$|\\")).map(Literal::new);
+    return Parser.consecutive(
+        CharPredicate.noneOf(".[]{}()*+-?^$|\\"), "literal character").map(Literal::new);
   }
 
   private static Quantifier makeNonGreedy(Quantifier q) {

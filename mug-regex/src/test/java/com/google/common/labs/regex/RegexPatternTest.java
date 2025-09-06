@@ -10,6 +10,8 @@ import static com.google.common.labs.regex.RegexPattern.Quantifier.repeated;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
+import java.util.stream.Stream;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -35,6 +37,44 @@ public final class RegexPatternTest {
   public void alternationToString() {
     RegexPattern alternation = alternation(new Literal("a"), new Literal("b"));
     assertThat(alternation.toString()).isEqualTo("a|b");
+  }
+
+  @Test
+  public void inSequence_collector_success() {
+    assertThat(Stream.of(new Literal("a"), new Literal("b")).collect(RegexPattern.inSequence()))
+        .isEqualTo(sequence(new Literal("a"), new Literal("b")));
+  }
+
+  @Test
+  public void inSequence_collector_singleElement_success() {
+    assertThat(Stream.of(new Literal("a")).collect(RegexPattern.inSequence()))
+        .isEqualTo(new Literal("a"));
+  }
+
+  @Test
+  public void inSequence_collector_emptyStream_throwsException() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Stream.<RegexPattern>of().collect(RegexPattern.inSequence()));
+  }
+
+  @Test
+  public void asAlternation_collector_success() {
+    assertThat(Stream.of(new Literal("a"), new Literal("b")).collect(RegexPattern.asAlternation()))
+        .isEqualTo(alternation(new Literal("a"), new Literal("b")));
+  }
+
+  @Test
+  public void asAlternation_collector_singleElement_success() {
+    assertThat(Stream.of(new Literal("a")).collect(RegexPattern.asAlternation()))
+        .isEqualTo(new Literal("a"));
+  }
+
+  @Test
+  public void asAlternation_collector_emptyStream_throwsException() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Stream.<RegexPattern>of().collect(RegexPattern.asAlternation()));
   }
 
   @Test
@@ -323,7 +363,7 @@ public final class RegexPatternTest {
   public void parse_group_missingRightParen() {
     Parser.ParseException e =
         assertThrows(Parser.ParseException.class, () -> RegexPattern.parse("(?:a|b"));
-    assertThat(e).hasMessageThat().contains("at 6: expected: )");
+    assertThat(e).hasMessageThat().contains("at 6: expecting `)`");
   }
 
   @Test
