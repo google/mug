@@ -3,7 +3,6 @@ package com.google.common.labs.regex;
 import static com.google.common.labs.regex.InternalUtils.checkArgument;
 import static com.google.common.labs.regex.InternalUtils.checkState;
 import static java.util.Arrays.stream;
-import static java.util.Collections.unmodifiableList;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -118,25 +117,22 @@ interface Parser<T> {
    * Returns a parser that applies this parser at least once, greedily, and collects the return
    * values using {@code collector}.
    */
-  default <R> Parser<R> atLeastOnce(Collector<T, ?, R> collector) {
-    return atLeastOnce().map(elements -> elements.stream().collect(collector));
-  }
-
-  /** Returns a parser that applies this parser at least once, greedily. */
-  default Parser<List<T>> atLeastOnce() {
+  default <A, R> Parser<R> atLeastOnce(Collector<T, A, R> collector) {
+    requireNonNull(collector);
     return (input, start) -> {
-      List<T> results = new ArrayList<>();
+      A buffer = collector.supplier().get();
+      var accumulator = collector.accumulator();
       switch (parse(input, start)) {
         case ParseResult.Success<T>(int head, int tail, T value) -> {
-          results.add(value);
+          accumulator.accept(buffer, value);
           for (int from = tail; ; ) {
             switch (parse(input, from)) {
               case ParseResult.Success<T>(int head2, int tail2, T value2) -> {
-                results.add(value2);
+                accumulator.accept(buffer, value2);
                 from = tail2;
               }
               case ParseResult.Failure<?> failure -> {
-                return new ParseResult.Success<>(start, from, unmodifiableList(results));
+                return new ParseResult.Success<>(start, from, collector.finisher().apply(buffer));
               }
             }
           }
@@ -148,6 +144,11 @@ interface Parser<T> {
     };
   }
 
+  /** Returns a parser that applies this parser at least once, greedily. */
+  default Parser<List<T>> atLeastOnce() {
+    return atLeastOnce(toUnmodifiableList());
+  }
+
   /**
    * Returns a parser that matches the current parser repeatedly, delimited by the given delimiter.
    *
@@ -155,26 +156,18 @@ interface Parser<T> {
    * Parser.anyOf(literal("a"), literal("b"), literal("c")).delimitedBy("|",
    * RegexPattern.asAlternation())}.
    */
-  default <R> Parser<R> delimitedBy(String delimiter, Collector<T, ?, R> collector) {
-    return delimitedBy(delimiter).map(elements -> elements.stream().collect(collector));
-  }
-
-  /**
-   * Returns a parser that matches the current parser repeatedly, delimited by the given delimiter.
-   *
-   * <p>For example if you want to express the regex pattern {@code (a|b|c)}, you can use: {@code
-   * Parser.anyOf(literal("a"), literal("b"), literal("c")).delimitedBy("|")}.
-   */
-  default Parser<List<T>> delimitedBy(String delimiter) {
+  default <A, R> Parser<R> delimitedBy(String delimiter, Collector<T, A, R> collector) {
     checkArgument(delimiter.length() > 0, "delimiter cannot be empty");
+    requireNonNull(collector);
     return (input, start) -> {
-      List<T> results = new ArrayList<>();
+      A buffer = collector.supplier().get();
+      var accumulator = collector.accumulator();
       for (int from = start; ; ) {
         switch (parse(input, from)) {
           case ParseResult.Success<T>(int head, int tail, T value) -> {
-            results.add(value);
+            accumulator.accept(buffer, value);
             if (!input.startsWith(delimiter, tail)) {
-              return new ParseResult.Success<>(start, tail, unmodifiableList(results));
+              return new ParseResult.Success<>(start, tail, collector.finisher().apply(buffer));
             }
             from = tail + delimiter.length();
           }
@@ -184,6 +177,16 @@ interface Parser<T> {
         }
       }
     };
+  }
+
+  /**
+   * Returns a parser that matches the current parser repeatedly, delimited by the given delimiter.
+   *
+   * <p>For example if you want to express the regex pattern {@code (a|b|c)}, you can use: {@code
+   * Parser.anyOf(literal("a"), literal("b"), literal("c")).delimitedBy("|")}.
+   */
+  default Parser<List<T>> delimitedBy(String delimiter) {
+    return delimitedBy(delimiter, toUnmodifiableList());
   }
 
   /**
