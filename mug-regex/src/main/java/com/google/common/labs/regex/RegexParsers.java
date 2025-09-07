@@ -3,7 +3,7 @@ package com.google.common.labs.regex;
 import static java.util.Arrays.stream;
 
 import com.google.common.labs.regex.RegexPattern.Anchor;
-import com.google.common.labs.regex.RegexPattern.CharSetElement;
+import com.google.common.labs.regex.RegexPattern.CharRange;
 import com.google.common.labs.regex.RegexPattern.Group;
 import com.google.common.labs.regex.RegexPattern.Literal;
 import com.google.common.labs.regex.RegexPattern.LiteralChar;
@@ -54,13 +54,13 @@ final class RegexParsers {
         Parser.anyOf(
             Parser.literal("\\").then(Parser.single(c -> true, "escaped character")),
             Parser.single(CharPredicate.noneOf("-]\\"), "literal character"));
-    Parser<CharSetElement> range =
+    Parser<CharRange> range =
         Parser.sequence(
             literalChar, Parser.literal("-").then(literalChar), RegexPattern.CharRange::new);
-    Parser<CharSetElement> element = Parser.anyOf(range, literalChar.map(LiteralChar::new));
+    var charOrRange = Parser.anyOf(range, literalChar.map(LiteralChar::new));
     return Parser.anyOf(
-        element.atLeastOnce().immediatelyBetween("[^", "]").map(RegexPattern::noneOf),
-        element.atLeastOnce().immediatelyBetween("[", "]").map(RegexPattern::anyOf));
+        charOrRange.atLeastOnce().immediatelyBetween("[^", "]").map(RegexPattern::noneOf),
+        charOrRange.atLeastOnce().immediatelyBetween("[", "]").map(RegexPattern::anyOf));
   }
 
   private static Parser<RegexPattern> groupOrLookaround(Parser<RegexPattern> content) {
