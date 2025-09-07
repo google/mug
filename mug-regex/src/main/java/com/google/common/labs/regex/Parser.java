@@ -205,10 +205,7 @@ interface Parser<T> {
           T operand = value;
           for (int end = operandEnd; ; ) {
             switch (op.match(input, end)) {
-              case MatchResult.Success<? extends Function<? super T, ? extends T>>(
-                      int opBegin,
-                      int opEnd,
-                      Function<? super T, ? extends T> unary) -> {
+              case MatchResult.Success(int opBegin, int opEnd, UnaryOperator<T> unary) -> {
                 operand = unary.apply(operand);
                 end = opEnd;
               }
@@ -218,8 +215,8 @@ interface Parser<T> {
             }
           }
         }
-        case MatchResult.Failure<?> failure -> {
-          return failure.safeCast();
+        case MatchResult.Failure<T> failure -> {
+          return failure;
         }
       }
     };
