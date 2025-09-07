@@ -95,7 +95,7 @@ interface Parser<T> {
             List<MatchResult.Failure<?>> failures = new ArrayList<>();
             for (Parser<? extends T> parser : parsers) {
               switch (parser.match(input, start)) {
-                case MatchResult.Success<? extends T>(int head, int tail, T value) -> {
+                case MatchResult.Success(int head, int tail, T value) -> {
                   return new MatchResult.Success<>(head, tail, value);
                 }
                 case MatchResult.Failure<?> failure -> failures.add(failure);
@@ -124,11 +124,11 @@ interface Parser<T> {
       A buffer = collector.supplier().get();
       var accumulator = collector.accumulator();
       switch (match(input, start)) {
-        case MatchResult.Success<T>(int head, int tail, T value) -> {
+        case MatchResult.Success(int head, int tail, T value) -> {
           accumulator.accept(buffer, value);
           for (int from = tail; ; ) {
             switch (match(input, from)) {
-              case MatchResult.Success<T>(int head2, int tail2, T value2) -> {
+              case MatchResult.Success(int head2, int tail2, T value2) -> {
                 accumulator.accept(buffer, value2);
                 from = tail2;
               }
@@ -165,7 +165,7 @@ interface Parser<T> {
       var accumulator = collector.accumulator();
       for (int from = start; ; ) {
         switch (match(input, from)) {
-          case MatchResult.Success<T>(int head, int tail, T value) -> {
+          case MatchResult.Success(int head, int tail, T value) -> {
             accumulator.accept(buffer, value);
             if (!input.startsWith(delimiter, tail)) {
               return new MatchResult.Success<>(start, tail, collector.finisher().apply(buffer));
@@ -201,7 +201,7 @@ interface Parser<T> {
     requireNonNull(op);
     return (input, start) -> {
       switch (match(input, start)) {
-        case MatchResult.Success<T>(int operandBegin, int operandEnd, T value) -> {
+        case MatchResult.Success(int operandBegin, int operandEnd, T value) -> {
           T operand = value;
           for (int end = operandEnd; ; ) {
             switch (op.match(input, end)) {
@@ -235,7 +235,7 @@ interface Parser<T> {
     requireNonNull(f);
     return (input, start) ->
         switch (match(input, start)) {
-          case MatchResult.Success<T>(int head, int tail, T value) ->
+          case MatchResult.Success(int head, int tail, T value) ->
               new MatchResult.Success<>(head, tail, f.apply(value));
           case MatchResult.Failure<?> failure -> failure.safeCast();
         };
@@ -248,9 +248,9 @@ interface Parser<T> {
     requireNonNull(f);
     return (input, start) ->
         switch (match(input, start)) {
-          case MatchResult.Success<T>(int head, int tail, T value) ->
+          case MatchResult.Success(int head, int tail, T value) ->
               switch (f.apply(value).match(input, tail)) {
-                case MatchResult.Success<R>(int head2, int tail2, R value2) ->
+                case MatchResult.Success(int head2, int tail2, R value2) ->
                     new MatchResult.Success<>(head, tail2, value2);
                 case MatchResult.Failure<?> failure -> failure.safeCast();
               };
@@ -307,13 +307,13 @@ interface Parser<T> {
   default T parse(String input) throws ParseException {
     MatchResult<T> result = match(input, 0);
     switch (result) {
-      case MatchResult.Success<T>(int head, int tail, T value) -> {
+      case MatchResult.Success(int head, int tail, T value) -> {
         if (tail != input.length()) {
           throw new ParseException("unmatched input at " + tail + ": " + input.substring(tail));
         }
         return value;
       }
-      case MatchResult.Failure<T>(int at, String message, List<?> args) -> {
+      case MatchResult.Failure(int at, String message, List<?> args) -> {
         throw new ParseException(
             String.format("at %s: %s", at, String.format(message, args.toArray())));
       }
