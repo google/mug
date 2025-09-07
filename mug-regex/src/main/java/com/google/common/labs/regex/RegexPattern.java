@@ -390,37 +390,37 @@ public sealed interface RegexPattern
           Lookaround.NegativeLookbehind {
 
     /** Returns the AST node representing the pattern inside the lookaround. */
-    RegexPattern subject();
+    RegexPattern target();
 
     /** Positive lookahead: {@code (?=pattern)}. */
-    record Lookahead(RegexPattern subject) implements Lookaround {
+    record Lookahead(RegexPattern target) implements Lookaround {
       @Override
       public String toString() {
-        return "(?=" + subject + ")";
+        return "(?=" + target + ")";
       }
     }
 
     /** Negative lookahead: {@code (?!pattern)}. */
-    record NegativeLookahead(RegexPattern subject) implements Lookaround {
+    record NegativeLookahead(RegexPattern target) implements Lookaround {
       @Override
       public String toString() {
-        return "(?!" + subject + ")";
+        return "(?!" + target + ")";
       }
     }
 
     /** Positive lookbehind: {@code (?<=pattern)}. */
-    record Lookbehind(RegexPattern subject) implements Lookaround {
+    record Lookbehind(RegexPattern target) implements Lookaround {
       @Override
       public String toString() {
-        return "(?<=" + subject + ")";
+        return "(?<=" + target + ")";
       }
     }
 
     /** Negative lookbehind: {@code (?<!pattern)}. */
-    record NegativeLookbehind(RegexPattern subject) implements Lookaround {
+    record NegativeLookbehind(RegexPattern target) implements Lookaround {
       @Override
       public String toString() {
-        return "(?<!" + subject + ")";
+        return "(?<!" + target + ")";
       }
     }
   }
