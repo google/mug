@@ -50,14 +50,18 @@ final class RegexParsers {
   }
 
   private static Parser<RegexPattern.CharacterSet> characterSet() {
+    Parser<Character> escapedChar =
+        Parser.literal("\\").then(Parser.single(c -> true, "escaped character"));
     Parser<Character> literalChar =
         Parser.anyOf(
-            Parser.literal("\\").then(Parser.single(c -> true, "escaped character")),
-            Parser.single(CharPredicate.noneOf("-]\\"), "literal character"));
+            escapedChar, Parser.single(CharPredicate.noneOf("-]\\"), "literal character"));
+    Parser<Character> literalCharOrDash =
+        Parser.anyOf(
+            escapedChar, Parser.single(CharPredicate.noneOf("]\\"), "literal character or dash"));
     Parser<CharRange> range =
         Parser.sequence(
             literalChar, Parser.literal("-").then(literalChar), RegexPattern.CharRange::new);
-    var charOrRange = Parser.anyOf(range, literalChar.map(LiteralChar::new));
+    var charOrRange = Parser.anyOf(range, literalCharOrDash.map(LiteralChar::new));
     return Parser.anyOf(
         charOrRange.atLeastOnce().immediatelyBetween("[^", "]").map(RegexPattern::noneOf),
         charOrRange.atLeastOnce().immediatelyBetween("[", "]").map(RegexPattern::anyOf));

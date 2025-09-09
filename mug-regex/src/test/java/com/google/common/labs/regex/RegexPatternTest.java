@@ -274,6 +274,22 @@ public final class RegexPatternTest {
   }
 
   @Test
+  public void parse_characterSet_withHyphen() {
+    assertThat(RegexPattern.parse("[-a]"))
+        .isEqualTo(
+            anyOf(new RegexPattern.LiteralChar('-'), new RegexPattern.LiteralChar('a')));
+    assertThat(RegexPattern.parse("[a-]"))
+        .isEqualTo(
+            anyOf(new RegexPattern.LiteralChar('a'), new RegexPattern.LiteralChar('-')));
+    assertThat(RegexPattern.parse("[a-b-c]"))
+        .isEqualTo(
+            anyOf(
+                new RegexPattern.CharRange('a', 'b'),
+                new RegexPattern.LiteralChar('-'),
+                new RegexPattern.LiteralChar('c')));
+  }
+
+  @Test
   public void lookaroundToString() {
     assertThat(new Literal("a").followedBy(new Literal("b")).toString()).isEqualTo("a(?=b)");
     assertThat(new Literal("a").notFollowedBy(new Literal("b")).toString()).isEqualTo("a(?!b)");
