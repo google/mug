@@ -257,6 +257,19 @@ public final class RegexPatternTest {
   }
 
   @Test
+  public void parse_group_nested() {
+    assertThat(RegexPattern.parse("((a))"))
+        .isEqualTo(new Group.Capturing(new Group.Capturing(new Literal("a"))));
+    assertThat(RegexPattern.parse("(a(b))"))
+        .isEqualTo(
+            new Group.Capturing(sequence(new Literal("a"), new Group.Capturing(new Literal("b")))));
+    assertThat(RegexPattern.parse("(?<n1>(?<n2>a))"))
+        .isEqualTo(new Group.Named("n1", new Group.Named("n2", new Literal("a"))));
+    assertThat(RegexPattern.parse("(?:(a))"))
+        .isEqualTo(new Group.NonCapturing(new Group.Capturing(new Literal("a"))));
+  }
+
+  @Test
   public void parse_characterSet() {
     assertThat(RegexPattern.parse("[a]")).isEqualTo(anyOf(new RegexPattern.LiteralChar('a')));
     assertThat(RegexPattern.parse("[ab]"))

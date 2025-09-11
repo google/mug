@@ -264,7 +264,6 @@ interface Parser<T> {
   }
 
   /** If this parser matches, applies the given parser on the remaining input. */
-  @SuppressWarnings("nullness")
   default <R> Parser<R> then(Parser<R> next) {
     requireNonNull(next);
     return flatMap(unused -> next);
