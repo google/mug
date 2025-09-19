@@ -49,20 +49,22 @@ public sealed interface RegexPattern
     return collectingAndThen(
         toList(),
         list -> {
+          // First flatten the nested Sequence elements
+          var flattened =
+              list.stream()
+                  .flatMap(
+                      pattern ->
+                          pattern instanceof Sequence seq
+                              ? seq.elements().stream()
+                              : Stream.of(pattern));
+          // Then merge adjacent literals
           List<RegexPattern> segments =
               groupConsecutive(
-                      // First flatten the nested Sequence elements
-                      list.stream()
-                          .flatMap(
-                              pattern ->
-                                  pattern instanceof Sequence seq
-                                      ? seq.elements().stream()
-                                      : Stream.of(pattern)),
-                      // Then merge adjacent literals
+                      flattened,
                       (a, b) -> a instanceof Literal && b instanceof Literal,
                       (a, b) -> new Literal(((Literal) a).value() + ((Literal) b).value()))
                   .collect(toUnmodifiableList());
-          // Unwrap single-element sequence.
+          // Wrap in sequence if needed.
           return segments.size() == 1 ? segments.get(0) : new Sequence(segments);
         });
   }
