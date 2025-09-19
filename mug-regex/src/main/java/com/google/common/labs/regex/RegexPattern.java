@@ -52,11 +52,7 @@ public sealed interface RegexPattern
           // First flatten the nested Sequence elements
           var flattened =
               list.stream()
-                  .flatMap(
-                      pattern ->
-                          pattern instanceof Sequence seq
-                              ? seq.elements().stream()
-                              : Stream.of(pattern));
+                  .flatMap(p -> p instanceof Sequence seq ? seq.elements().stream() : Stream.of(p));
           // Then merge adjacent literals
           List<RegexPattern> segments =
               groupConsecutive(
