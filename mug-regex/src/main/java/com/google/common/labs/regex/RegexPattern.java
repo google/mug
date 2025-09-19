@@ -5,6 +5,7 @@ import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -37,10 +38,42 @@ public sealed interface RegexPattern
     return new Sequence(Arrays.stream(elements).collect(toUnmodifiableList()));
   }
 
-  /** A collector that collects the input {@code RegexPattern} as a sequence. */
+
+  /**
+   * A collector that collects the input {@code RegexPattern} as a sequence. Nested sequences are
+   * flattened and adjacent literals are concatenated as a single literal.
+   */
   static Collector<RegexPattern, ?, RegexPattern> inSequence() {
-    return collectingAndThen(
-        toUnmodifiableList(), list -> list.size() == 1 ? list.get(0) : new Sequence(list));
+    class Builder {
+      private final List<RegexPattern> buffer = new ArrayList<>();
+
+      Builder add(RegexPattern element) {
+        switch (element) {
+          case Sequence seq -> seq.elements().forEach(this::add);
+          case Literal literal
+              when buffer.size() > 0 && buffer.getLast() instanceof Literal prev -> {
+            buffer.removeLast();
+            buffer.add(new Literal(prev.value() + literal.value()));
+          }
+          default -> buffer.add(element);
+        }
+        return this;
+      }
+
+      Builder addAll(Builder that) {
+        for (var element : that.buffer) {
+          add(element);
+        }
+        return this;
+      }
+
+      RegexPattern build() {
+        return buffer.size() == 1
+            ? buffer.getLast()
+            : new Sequence(buffer.stream().collect(toUnmodifiableList()));
+      }
+    }
+    return Collector.of(Builder::new, Builder::add, Builder::addAll, Builder::build);
   }
 
   /** Returns an {@link Alternation} of the given alternatives. */

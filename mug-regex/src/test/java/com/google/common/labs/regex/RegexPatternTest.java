@@ -40,9 +40,28 @@ public final class RegexPatternTest {
   }
 
   @Test
-  public void inSequence_collector_success() {
+  public void inSequence_collector_merged() {
     assertThat(Stream.of(new Literal("a"), new Literal("b")).collect(RegexPattern.inSequence()))
-        .isEqualTo(sequence(new Literal("a"), new Literal("b")));
+        .isEqualTo(new Literal("ab"));
+    assertThat(
+            Stream.of(new Literal("a"), sequence(new Literal("b"), new Literal("c")))
+                .collect(RegexPattern.inSequence()))
+        .isEqualTo(new Literal("abc"));
+  }
+
+  @Test
+  public void inSequence_collector_notMerged() {
+    assertThat(
+            Stream.of(
+                    new Literal("a"),
+                    alternation(new Literal("b"), new Literal("c")),
+                    new Literal("d"))
+                .collect(RegexPattern.inSequence()))
+        .isEqualTo(
+            sequence(
+                new Literal("a"),
+                alternation(new Literal("b"), new Literal("c")),
+                new Literal("d")));
   }
 
   @Test
@@ -407,6 +426,6 @@ public final class RegexPatternTest {
     assertThrows(Parser.ParseException.class, () -> RegexPattern.parse("("));
     assertThrows(Parser.ParseException.class, () -> RegexPattern.parse("[a-"));
     assertThrows(IllegalArgumentException.class, () -> RegexPattern.parse("a{1,0}"));
-    assertThrows(Parser.ParseException.class, () -> RegexPattern.parse("\\\\"));
+    assertThrows(Parser.ParseException.class, () -> RegexPattern.parse("\\"));
   }
 }

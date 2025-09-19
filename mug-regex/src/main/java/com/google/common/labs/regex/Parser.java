@@ -26,8 +26,8 @@ import com.google.mu.util.CharPredicate;
  * A simple recursive descent parser combinator intended to parse simple grammars such as regex, csv
  * format string patterns etc.
  *
- * <p>To avoid risk of infinite loop caused by repetitive greedy grammar, all parsers are required
- * to consume at least one character upon success.
+ * <p>To avoid risk of infinite loop caused by grammar bugs, all parsers are required to consume at
+ * least one character upon success.
  */
 abstract class Parser<T> {
   /** Matches a character as specified by {@code matcher}. */

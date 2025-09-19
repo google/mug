@@ -17,16 +17,20 @@ final class RegexParsers {
   private static final CharPredicate NUM = CharPredicate.range('0', '9');
   private static final CharPredicate ALPHA =
       CharPredicate.range('a', 'z').orRange('A', 'Z').or('_');
+  private static final Parser<Character> ESCAPED_CHAR =
+      Parser.literal("\\").then(Parser.single(c -> true, "escaped char"));
 
   static Parser<RegexPattern> pattern() {
     var lazy = new Parser.Lazy<RegexPattern>();
     Parser<RegexPattern> atomic =
         Parser.anyOf(
-            literalChars(),
-            characterSet(),
+            charClass(),
             groupOrLookaround(lazy),
             anyOf(PredefinedCharClass.values()),
-            anyOf(Anchor.values()));
+            anyOf(Anchor.values()),
+            Parser.consecutive(CharPredicate.noneOf(".[]{}()*+-?^$|\\"), "literal char")
+                .map(Literal::new),
+            ESCAPED_CHAR.map(c -> new Literal(Character.toString(c))));
     Parser<RegexPattern> sequence =
         atomic.postfix(quantifier()).atLeastOnce(RegexPattern.inSequence());
     return lazy.delegateTo(sequence.delimitedBy("|", RegexPattern.asAlternation()));
@@ -49,15 +53,13 @@ final class RegexParsers {
         .optionallyFollowedBy("?", Quantifier::reluctant);
   }
 
-  private static Parser<RegexPattern.CharacterSet> characterSet() {
-    Parser<Character> escapedChar =
-        Parser.literal("\\").then(Parser.single(c -> true, "escaped character"));
+  private static Parser<RegexPattern.CharacterSet> charClass() {
     Parser<Character> literalChar =
         Parser.anyOf(
-            escapedChar, Parser.single(CharPredicate.noneOf("-]\\"), "literal character"));
+            ESCAPED_CHAR, Parser.single(CharPredicate.noneOf("-]\\"), "literal char"));
     Parser<Character> literalCharOrDash =
         Parser.anyOf(
-            escapedChar, Parser.single(CharPredicate.noneOf("]\\"), "literal character or dash"));
+            ESCAPED_CHAR, Parser.single(CharPredicate.noneOf("]\\"), "literal char or dash"));
     Parser<CharRange> range =
         Parser.sequence(
             literalChar, Parser.literal("-").then(literalChar), RegexPattern.CharRange::new);
@@ -86,10 +88,5 @@ final class RegexParsers {
   @SafeVarargs
   private static <E extends Enum<E>> Parser<E> anyOf(E... values) {
     return stream(values).map(e -> Parser.literal(e.toString()).thenReturn(e)).collect(Parser.or());
-  }
-
-  private static Parser<Literal> literalChars() {
-    return Parser.consecutive(
-        CharPredicate.noneOf(".[]{}()*+-?^$|\\"), "literal character").map(Literal::new);
   }
 }
