@@ -24,6 +24,10 @@ final class RegexParsers {
       CharPredicate.range('a', 'z').orRange('A', 'Z').or('_');
   private static final Parser<Character> ESCAPED_CHAR =
       Parser.literal("\\").then(Parser.single(c -> true, "escaped char"));
+  private static final Map<String, RegexPattern.CharacterProperty> POSIX_CHAR_CLASS_MAP =
+      stream(RegexPattern.PosixCharClass.values())
+          .collect(groupingByEach(charClass -> charClass.names().stream(), onlyElement(c -> c)))
+          .collect(BiCollectors.toMap());
 
   static Parser<RegexPattern> pattern() {
     var lazy = new Parser.Lazy<RegexPattern>();
@@ -57,7 +61,8 @@ final class RegexParsers {
         Parser.sequence(number, Parser.literal(",").then(number), Quantifier::repeated)
             .immediatelyBetween("{", "}");
     return Parser.anyOf(question, star, plus, exact, atLeast, atMost, range)
-        .optionallyFollowedBy("?", Quantifier::reluctant);
+        .optionallyFollowedBy("?", Quantifier::reluctant)
+        .optionallyFollowedBy("+", Quantifier::possessive);
   }
 
   private static Parser<RegexPattern.CharacterProperty> positiveCharacterProperty() {
@@ -71,13 +76,9 @@ final class RegexParsers {
   }
 
   private static Parser<RegexPattern.CharacterProperty> characterPropertySuffix() {
-    Map<String, RegexPattern.CharacterProperty> posixMap =
-        stream(RegexPattern.PosixCharClass.values())
-            .collect(groupingByEach(charClass -> charClass.names().stream(), onlyElement(c -> c)))
-            .collect(BiCollectors.toMap());
     return Parser.consecutive(ALPHA.or(NUM), "character property name")
         .immediatelyBetween("{", "}")
-        .map(name -> posixMap.getOrDefault(name, new RegexPattern.UnicodeProperty(name)));
+        .map(name -> POSIX_CHAR_CLASS_MAP.getOrDefault(name, new RegexPattern.UnicodeProperty(name)));
   }
 
 
