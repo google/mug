@@ -231,8 +231,15 @@ public sealed interface RegexPattern
 
     @Override
     public String toString() {
-      String s = (min == 0) ? "*" : (min == 1) ? "+" : "{" + min + ",}";
-      return isReluctant ? s + "?": s;
+      StringBuilder builder =
+          new StringBuilder((min == 0) ? "*" : (min == 1) ? "+" : "{" + min + ",}");
+      if (isReluctant) {
+        builder.append('?');
+      }
+      if (isPossessive) {
+        builder.append('+');
+      }
+      return builder.toString();
     }
   }
 
@@ -253,8 +260,14 @@ public sealed interface RegexPattern
 
     @Override
     public String toString() {
-      String s = (max == 1) ? "?" : "{0," + max + "}";
-      return isReluctant ? s + "?" : s;
+      StringBuilder builder = new StringBuilder((max == 1) ? "?" : "{0," + max + "}");
+      if (isReluctant) {
+        builder.append('?');
+      }
+      if (isPossessive) {
+        builder.append('+');
+      }
+      return builder.toString();
     }
   }
 
@@ -275,8 +288,15 @@ public sealed interface RegexPattern
 
     @Override
     public String toString() {
-      String s = (min == max) ? "{" + min + "}" : "{" + min + "," + max + "}";
-      return isReluctant ? s + "?" : s;
+      StringBuilder builder =
+          new StringBuilder((min == max) ? "{" + min + "}" : "{" + min + "," + max + "}");
+      if (isReluctant) {
+        builder.append('?');
+      }
+      if (isPossessive) {
+        builder.append('+');
+      }
+      return builder.toString();
     }
   }
 

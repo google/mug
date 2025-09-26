@@ -132,6 +132,16 @@ public final class RegexPatternTest {
   }
 
   @Test
+  public void possessiveToString() {
+    assertThat(atMost(1).possessive().toString()).isEqualTo("?+");
+    assertThat(repeated().possessive().toString()).isEqualTo("*+");
+    assertThat(atLeast(1).possessive().toString()).isEqualTo("++");
+    assertThat(repeated(2, 2).possessive().toString()).isEqualTo("{2}+");
+    assertThat(atLeast(2).possessive().toString()).isEqualTo("{2,}+");
+    assertThat(repeated(2, 5).possessive().toString()).isEqualTo("{2,5}+");
+  }
+
+  @Test
   public void repeatedDelegation() {
     assertThat(repeated(0, 5)).isEqualTo(atMost(5));
     assertThat(repeated(0, Integer.MAX_VALUE)).isEqualTo(atMost(Integer.MAX_VALUE));
