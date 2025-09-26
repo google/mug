@@ -18,9 +18,11 @@ import org.junit.runner.RunWith;
 import com.google.common.labs.regex.RegexPattern.Anchor;
 import com.google.common.labs.regex.RegexPattern.Group;
 import com.google.common.labs.regex.RegexPattern.Literal;
+import com.google.common.labs.regex.RegexPattern.PosixCharClass;
 import com.google.common.labs.regex.RegexPattern.PredefinedCharClass;
 import com.google.common.labs.regex.RegexPattern.Quantified;
 import com.google.common.labs.regex.RegexPattern.Quantifier;
+import com.google.common.labs.regex.RegexPattern.UnicodeProperty;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
@@ -319,6 +321,191 @@ public final class RegexPatternTest {
                 new RegexPattern.CharRange('a', 'b'),
                 new RegexPattern.LiteralChar('-'),
                 new RegexPattern.LiteralChar('c')));
+  }
+
+  @Test
+  public void parse_alternation() {
+    assertThat(RegexPattern.parse("a|b"))
+        .isEqualTo(alternation(new Literal("a"), new Literal("b")));
+    assertThat(RegexPattern.parse("a|b|c"))
+        .isEqualTo(alternation(new Literal("a"), new Literal("b"), new Literal("c")));
+  }
+
+  @Test
+  public void parse_quantifier_greedy() {
+    assertThat(RegexPattern.parse("a?"))
+        .isEqualTo(new Quantified(new Literal("a"), Quantifier.atMost(1)));
+    assertThat(RegexPattern.parse("a*"))
+        .isEqualTo(new Quantified(new Literal("a"), Quantifier.repeated()));
+    assertThat(RegexPattern.parse("a+"))
+        .isEqualTo(new Quantified(new Literal("a"), Quantifier.atLeast(1)));
+    assertThat(RegexPattern.parse("a{2}"))
+        .isEqualTo(new Quantified(new Literal("a"), Quantifier.repeated(2, 2)));
+    assertThat(RegexPattern.parse("a{2,}"))
+        .isEqualTo(new Quantified(new Literal("a"), Quantifier.atLeast(2)));
+    assertThat(RegexPattern.parse("a{2,5}"))
+        .isEqualTo(new Quantified(new Literal("a"), Quantifier.repeated(2, 5)));
+  }
+
+  @Test
+  public void parse_quantifier_reluctant() {
+    assertThat(RegexPattern.parse("a??"))
+        .isEqualTo(new Quantified(new Literal("a"), Quantifier.atMost(1).reluctant()));
+    assertThat(RegexPattern.parse("a*?"))
+        .isEqualTo(new Quantified(new Literal("a"), Quantifier.atLeast(0).reluctant()));
+    assertThat(RegexPattern.parse("a+?"))
+        .isEqualTo(new Quantified(new Literal("a"), Quantifier.atLeast(1).reluctant()));
+    assertThat(RegexPattern.parse("a{2}?"))
+        .isEqualTo(new Quantified(new Literal("a"), Quantifier.repeated(2, 2).reluctant()));
+    assertThat(RegexPattern.parse("a{2,}?"))
+        .isEqualTo(new Quantified(new Literal("a"), Quantifier.atLeast(2).reluctant()));
+    assertThat(RegexPattern.parse("a{2,5}?"))
+        .isEqualTo(new Quantified(new Literal("a"), Quantifier.repeated(2, 5).reluctant()));
+  }
+
+  @Test
+  public void parse_group() {
+    assertThat(RegexPattern.parse("(a)")).isEqualTo(new Group.Capturing(new Literal("a")));
+    assertThat(RegexPattern.parse("(?:a)")).isEqualTo(new Group.NonCapturing(new Literal("a")));
+    assertThat(RegexPattern.parse("(?<name>a)"))
+        .isEqualTo(new Group.Named("name", new Literal("a")));
+  }
+
+  @Test
+  public void parse_group_nested() {
+    assertThat(RegexPattern.parse("((a))"))
+        .isEqualTo(new Group.Capturing(new Group.Capturing(new Literal("a"))));
+    assertThat(RegexPattern.parse("(a(b))"))
+        .isEqualTo(
+            new Group.Capturing(sequence(new Literal("a"), new Group.Capturing(new Literal("b")))));
+    assertThat(RegexPattern.parse("(?<n1>(?<n2>a))"))
+        .isEqualTo(new Group.Named("n1", new Group.Named("n2", new Literal("a"))));
+    assertThat(RegexPattern.parse("(?:(a))"))
+        .isEqualTo(new Group.NonCapturing(new Group.Capturing(new Literal("a"))));
+  }
+
+  @Test
+  public void parse_characterSet() {
+    assertThat(RegexPattern.parse("[a]")).isEqualTo(anyOf(new RegexPattern.LiteralChar('a')));
+    assertThat(RegexPattern.parse("[ab]"))
+        .isEqualTo(anyOf(new RegexPattern.LiteralChar('a'), new RegexPattern.LiteralChar('b')));
+    assertThat(RegexPattern.parse("[a-z]")).isEqualTo(anyOf(new RegexPattern.CharRange('a', 'z')));
+    assertThat(RegexPattern.parse("[^a-z]"))
+        .isEqualTo(noneOf(new RegexPattern.CharRange('a', 'z')));
+    assertThat(RegexPattern.parse("[^a-z0-9]"))
+        .isEqualTo(
+            noneOf(new RegexPattern.CharRange('a', 'z'), new RegexPattern.CharRange('0', '9')));
+    assertThat(RegexPattern.parse("[^a]"))
+        .isEqualTo(RegexPattern.noneOf(new RegexPattern.LiteralChar('a')));
+    assertThat(RegexPattern.parse("[^a-z]"))
+        .isEqualTo(RegexPattern.noneOf(new RegexPattern.CharRange('a', 'z')));
+  }
+
+  @Test
+  public void parse_characterSet_withHyphen() {
+    assertThat(RegexPattern.parse("[-a]"))
+        .isEqualTo(anyOf(new RegexPattern.LiteralChar('-'), new RegexPattern.LiteralChar('a')));
+    assertThat(RegexPattern.parse("[a-]"))
+        .isEqualTo(anyOf(new RegexPattern.LiteralChar('a'), new RegexPattern.LiteralChar('-')));
+    assertThat(RegexPattern.parse("[a-b-c]"))
+        .isEqualTo(
+            anyOf(
+                new RegexPattern.CharRange('a', 'b'),
+                new RegexPattern.LiteralChar('-'),
+                new RegexPattern.LiteralChar('c')));
+  }
+
+  @Test
+  public void parse_literalHyphen() {
+    assertThat(RegexPattern.parse("-+help(short)?(=true)?"))
+        .isEqualTo(
+            sequence(
+                new Quantified(new Literal("-"), atLeast(1)),
+                new Literal("help"),
+                new Quantified(new Group.Capturing(new Literal("short")), atMost(1)),
+                new Quantified(new Group.Capturing(new Literal("=true")), atMost(1))));
+  }
+
+  @Test
+  public void parse_posixCharClassInSet() {
+    assertThat(RegexPattern.parse("[\\p{Lower}]")).isEqualTo(anyOf(PosixCharClass.LOWER));
+    assertThat(RegexPattern.parse("[\\p{lower}]")).isEqualTo(anyOf(PosixCharClass.LOWER));
+    assertThat(RegexPattern.parse("[\\p{ASCII}]")).isEqualTo(anyOf(PosixCharClass.ASCII));
+    assertThat(RegexPattern.parse("[^\\p{Lower}]")).isEqualTo(noneOf(PosixCharClass.LOWER));
+  }
+
+  @Test
+  public void parse_negatedPosixCharClassInSet() {
+    assertThat(RegexPattern.parse("[\\P{Lower}]")).isEqualTo(anyOf(PosixCharClass.LOWER.negated()));
+    assertThat(RegexPattern.parse("[\\P{lower}]")).isEqualTo(anyOf(PosixCharClass.LOWER.negated()));
+    assertThat(RegexPattern.parse("[\\P{ASCII}]")).isEqualTo(anyOf(PosixCharClass.ASCII.negated()));
+    assertThat(RegexPattern.parse("[^\\P{Lower}]"))
+        .isEqualTo(noneOf(PosixCharClass.LOWER.negated()));
+  }
+
+  @Test
+  public void parse_unicodePropertyInSet() {
+    assertThat(RegexPattern.parse("[\\p{Nd}]")).isEqualTo(anyOf(new UnicodeProperty("Nd")));
+    assertThat(RegexPattern.parse("[\\p{IsGreek}]"))
+        .isEqualTo(anyOf(new UnicodeProperty("IsGreek")));
+    assertThat(RegexPattern.parse("[^\\p{Nd}]")).isEqualTo(noneOf(new UnicodeProperty("Nd")));
+  }
+
+  @Test
+  public void parse_negatedUnicodePropertyInSet() {
+    assertThat(RegexPattern.parse("[\\P{Nd}]"))
+        .isEqualTo(anyOf(new UnicodeProperty("Nd").negated()));
+    assertThat(RegexPattern.parse("[\\P{IsGreek}]"))
+        .isEqualTo(anyOf(new UnicodeProperty("IsGreek").negated()));
+    assertThat(RegexPattern.parse("[^\\P{Nd}]"))
+        .isEqualTo(noneOf(new UnicodeProperty("Nd").negated()));
+  }
+
+  @Test
+  public void parse_characterSet_mixedClasses() {
+    assertThat(RegexPattern.parse("[a-c\\p{Lower}\\p{Nd}\\w\\S]"))
+        .isEqualTo(
+            anyOf(
+                new RegexPattern.CharRange('a', 'c'),
+                PosixCharClass.LOWER,
+                new UnicodeProperty("Nd"),
+                PredefinedCharClass.WORD,
+                PredefinedCharClass.NON_WHITESPACE));
+    assertThat(RegexPattern.parse("[^a-c\\p{Lower}\\p{Nd}\\w\\S]"))
+        .isEqualTo(
+            noneOf(
+                new RegexPattern.CharRange('a', 'c'),
+                PosixCharClass.LOWER,
+                new UnicodeProperty("Nd"),
+                PredefinedCharClass.WORD,
+                PredefinedCharClass.NON_WHITESPACE));
+  }
+
+  @Test
+  public void parse_posixCharClass() {
+    assertThat(RegexPattern.parse("\\p{Lower}")).isEqualTo(PosixCharClass.LOWER);
+    assertThat(RegexPattern.parse("\\p{lower}")).isEqualTo(PosixCharClass.LOWER);
+    assertThat(RegexPattern.parse("\\p{ASCII}")).isEqualTo(PosixCharClass.ASCII);
+  }
+
+  @Test
+  public void parse_negatedPosixCharClass() {
+    assertThat(RegexPattern.parse("\\P{Lower}")).isEqualTo(PosixCharClass.LOWER.negated());
+    assertThat(RegexPattern.parse("\\P{lower}")).isEqualTo(PosixCharClass.LOWER.negated());
+    assertThat(RegexPattern.parse("\\P{ASCII}")).isEqualTo(PosixCharClass.ASCII.negated());
+  }
+
+  @Test
+  public void parse_unicodeProperty() {
+    assertThat(RegexPattern.parse("\\p{Nd}")).isEqualTo(new UnicodeProperty("Nd"));
+    assertThat(RegexPattern.parse("\\p{IsGreek}")).isEqualTo(new UnicodeProperty("IsGreek"));
+  }
+
+  @Test
+  public void parse_negatedUnicodeProperty() {
+    assertThat(RegexPattern.parse("\\P{Nd}")).isEqualTo(new UnicodeProperty("Nd").negated());
+    assertThat(RegexPattern.parse("\\P{IsGreek}"))
+        .isEqualTo(new UnicodeProperty("IsGreek").negated());
   }
 
   @Test

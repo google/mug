@@ -25,10 +25,12 @@ final class RegexParsers {
     Parser<RegexPattern> atomic =
         Parser.anyOf(
             charClass(),
+            positiveCharacterProperty(),
+            negativeCharacterProperty(),
             groupOrLookaround(lazy),
             anyOf(PredefinedCharClass.values()),
             anyOf(Anchor.values()),
-            Parser.consecutive(CharPredicate.noneOf(".[]{}()*+-?^$|\\"), "literal char")
+            Parser.consecutive(CharPredicate.noneOf(".[]{}()*+?^$|\\"), "literal char")
                 .map(Literal::new),
             ESCAPED_CHAR.map(c -> new Literal(Character.toString(c))));
     Parser<RegexPattern> sequence =
@@ -53,6 +55,34 @@ final class RegexParsers {
         .optionallyFollowedBy("?", Quantifier::reluctant);
   }
 
+  private static Parser<RegexPattern.CharacterProperty> positiveCharacterProperty() {
+    return Parser.literal("\\p").then(characterPropertySuffix());
+  }
+
+  private static Parser<RegexPattern.CharacterProperty.Negated> negativeCharacterProperty() {
+    return Parser.literal("\\P")
+        .then(characterPropertySuffix())
+        .map(RegexPattern.CharacterProperty::negated);
+  }
+
+  private static Parser<RegexPattern.CharacterProperty> characterPropertySuffix() {
+    Parser<RegexPattern.PosixCharClass> posixName =
+        stream(RegexPattern.PosixCharClass.values())
+            .map(
+                charClass ->
+                    charClass.names().stream()
+                        .map(Parser::literal)
+                        .collect(Parser.or())
+                        .thenReturn(charClass))
+            .collect(Parser.or());
+    return Parser.anyOf(
+            posixName,
+            Parser.consecutive(ALPHA.or(NUM), "unicode property name")
+                .map(RegexPattern.UnicodeProperty::new))
+        .immediatelyBetween("{", "}");
+  }
+
+
   private static Parser<RegexPattern.CharacterSet> charClass() {
     Parser<Character> literalChar =
         Parser.anyOf(
@@ -63,10 +93,16 @@ final class RegexParsers {
     Parser<CharRange> range =
         Parser.sequence(
             literalChar, Parser.literal("-").then(literalChar), RegexPattern.CharRange::new);
-    var charOrRange = Parser.anyOf(range, literalCharOrDash.map(LiteralChar::new));
+    var element =
+        Parser.anyOf(
+            positiveCharacterProperty(),
+            negativeCharacterProperty(),
+            anyOf(PredefinedCharClass.values()),
+            range,
+            literalCharOrDash.map(LiteralChar::new));
     return Parser.anyOf(
-        charOrRange.atLeastOnce().immediatelyBetween("[^", "]").map(RegexPattern::noneOf),
-        charOrRange.atLeastOnce().immediatelyBetween("[", "]").map(RegexPattern::anyOf));
+        element.atLeastOnce().immediatelyBetween("[^", "]").map(RegexPattern::noneOf),
+        element.atLeastOnce().immediatelyBetween("[", "]").map(RegexPattern::anyOf));
   }
 
   private static Parser<RegexPattern> groupOrLookaround(Parser<RegexPattern> content) {

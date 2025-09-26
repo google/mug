@@ -6,10 +6,12 @@ import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
+import static java.util.stream.Collectors.toUnmodifiableSet;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
@@ -31,6 +33,8 @@ public sealed interface RegexPattern
         RegexPattern.Group,
         RegexPattern.Literal,
         RegexPattern.PredefinedCharClass,
+        RegexPattern.CharacterProperty,
+        RegexPattern.CharacterProperty.Negated,
         RegexPattern.CharacterSet,
         RegexPattern.Anchor,
         RegexPattern.Lookaround {
@@ -305,7 +309,7 @@ public sealed interface RegexPattern
   }
 
   /** Represents a predefined character class like {@code \d} or {@code \w}. */
-  public enum PredefinedCharClass implements RegexPattern {
+  public enum PredefinedCharClass implements RegexPattern, CharSetElement {
     ANY_CHAR("."),
     DIGIT("\\d"),
     NON_DIGIT("\\D"),
@@ -356,7 +360,11 @@ public sealed interface RegexPattern
   }
 
   /** Base interface for elements within a {@link CharacterSet}. */
-  sealed interface CharSetElement permits LiteralChar, CharRange {}
+  sealed interface CharSetElement
+      permits LiteralChar, CharRange,
+        CharacterProperty,
+        CharacterProperty.Negated,
+        PredefinedCharClass {}
 
   /** Represents a single literal character within a character class. */
   record LiteralChar(char value) implements CharSetElement {
@@ -379,6 +387,76 @@ public sealed interface RegexPattern
     @Override
     public String toString() {
       return new LiteralChar(start) + "-" + new LiteralChar(end);
+    }
+  }
+
+  /** Represents a character property, like {@code \p{Lower}} or {@code \P{Lower}}. */
+  public sealed interface CharacterProperty extends CharSetElement, RegexPattern
+      permits PosixCharClass, UnicodeProperty {
+    String propertyName();
+
+    default Negated negated() {
+      return new Negated(this);
+    }
+
+    /** Represents a negated character property, like {@code \P{Lower}}. */
+    record Negated(CharacterProperty property) implements CharSetElement, RegexPattern {
+      @Override
+      public String toString() {
+        return "\\P{" + property.propertyName() + "}";
+      }
+    }
+  }
+
+  /** Represents a POSIX character class inside a CharacterSet: e.g. \p{Lower} */
+  public enum PosixCharClass implements CharacterProperty {
+    LOWER("Lower", "lower"),
+    UPPER("Upper", "upper"),
+    ASCII("ASCII", "ASCII"),
+    ALPHA("Alpha", "alpha"),
+    DIGIT("Digit", "digit"),
+    ALNUM("Alnum", "alnum"),
+    PUNCT("Punct", "punct"),
+    GRAPH("Graph", "graph"),
+    PRINT("Print", "print"),
+    BLANK("Blank", "blank"),
+    CNTRL("Cntrl", "cntrl"),
+    XDIGIT("XDigit", "xdigit"),
+    SPACE("Space", "space");
+
+    private final String posixName;
+    private final String javaStyleName;
+
+    PosixCharClass(String name, String alias) {
+      this.posixName = name;
+      this.javaStyleName = alias;
+    }
+
+    @Override
+    public String propertyName() {
+      return posixName;
+    }
+
+    /** Returns alternative name for this class, such as "lower" for "Lower". */
+    public String javaStyleName() {
+      return javaStyleName;
+    }
+
+    public Set<String> names() {
+      return Stream.of(posixName, javaStyleName).collect(toUnmodifiableSet());
+    }
+
+    @Override
+    public String toString() {
+      return "\\p{" + posixName + "}";
+    }
+  }
+
+  /** Represents a Unicode property class: e.g. \p{Nd} */
+  public record UnicodeProperty(String propertyName) implements CharacterProperty {
+    @Override
+    public String toString() {
+      return "\\p{" + propertyName + "}";
     }
   }
 
