@@ -1,6 +1,10 @@
 package com.google.common.labs.regex;
 
+import static com.google.mu.util.stream.BiStream.groupingByEach;
+import static com.google.mu.util.stream.MoreCollectors.onlyElement;
 import static java.util.Arrays.stream;
+
+import java.util.Map;
 
 import com.google.common.labs.regex.RegexPattern.Anchor;
 import com.google.common.labs.regex.RegexPattern.CharRange;
@@ -11,6 +15,7 @@ import com.google.common.labs.regex.RegexPattern.Lookaround;
 import com.google.common.labs.regex.RegexPattern.PredefinedCharClass;
 import com.google.common.labs.regex.RegexPattern.Quantifier;
 import com.google.mu.util.CharPredicate;
+import com.google.mu.util.stream.BiCollectors;
 
 /** Parsers for {@link RegexPattern}. */
 final class RegexParsers {
@@ -66,20 +71,13 @@ final class RegexParsers {
   }
 
   private static Parser<RegexPattern.CharacterProperty> characterPropertySuffix() {
-    Parser<RegexPattern.PosixCharClass> posixName =
+    Map<String, RegexPattern.CharacterProperty> posixMap =
         stream(RegexPattern.PosixCharClass.values())
-            .map(
-                charClass ->
-                    charClass.names().stream()
-                        .map(Parser::literal)
-                        .collect(Parser.or())
-                        .thenReturn(charClass))
-            .collect(Parser.or());
-    return Parser.anyOf(
-            posixName,
-            Parser.consecutive(ALPHA.or(NUM), "unicode property name")
-                .map(RegexPattern.UnicodeProperty::new))
-        .immediatelyBetween("{", "}");
+            .collect(groupingByEach(charClass -> charClass.names().stream(), onlyElement(c -> c)))
+            .collect(BiCollectors.toMap());
+    return Parser.consecutive(ALPHA.or(NUM), "character property name")
+        .immediatelyBetween("{", "}")
+        .map(name -> posixMap.getOrDefault(name, new RegexPattern.UnicodeProperty(name)));
   }
 
 
