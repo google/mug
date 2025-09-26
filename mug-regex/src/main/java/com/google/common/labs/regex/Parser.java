@@ -255,7 +255,15 @@ abstract class Parser<T> {
    * {@code close}, which are non-empty string delimiters.
    */
   public final Parser<T> immediatelyBetween(String open, String close) {
-    return literal(open).then(this).followedBy(literal(close));
+    return immediatelyBetween(literal(open), literal(close));
+  }
+
+  /**
+   * Returns a parser that matches the current parser immediately enclosed between {@code open} and
+   * {@code close}.
+   */
+  public final Parser<T> immediatelyBetween(Parser<?> open, Parser<?> close) {
+    return open.then(this).followedBy(close);
   }
 
   /** If this parser matches, returns the result of applying the given function to the match. */

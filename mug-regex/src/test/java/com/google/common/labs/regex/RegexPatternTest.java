@@ -285,6 +285,8 @@ public final class RegexPatternTest {
     assertThat(RegexPattern.parse("(?:a)")).isEqualTo(new Group.NonCapturing(new Literal("a")));
     assertThat(RegexPattern.parse("(?<name>a)"))
         .isEqualTo(new Group.Named("name", new Literal("a")));
+    assertThat(RegexPattern.parse("(?P<name>a)"))
+        .isEqualTo(new Group.Named("name", new Literal("a")));
   }
 
   @Test
@@ -506,10 +508,8 @@ public final class RegexPatternTest {
   }
 
   @Test
-  public void parse_empty_fails() {
-    Parser.ParseException e =
-        assertThrows(Parser.ParseException.class, () -> RegexPattern.parse(""));
-    assertThat(e).hasMessageThat().contains("at 0");
+  public void parse_empty() {
+    assertThat(RegexPattern.parse("")).isEqualTo(new Literal(""));
   }
 
   @Test

@@ -571,6 +571,6 @@ public sealed interface RegexPattern
    * @throws IllegalArgumentException if the regex pattern is invalid
    */
   public static RegexPattern parse(String regex) {
-    return RegexParsers.pattern().parse(regex);
+    return regex.isEmpty() ? new Literal("") : RegexParsers.pattern().parse(regex);
   }
 }

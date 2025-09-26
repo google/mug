@@ -107,7 +107,7 @@ final class RegexParsers {
   private static Parser<RegexPattern> groupOrLookaround(Parser<RegexPattern> content) {
     Parser<Group.Named> named =
         Parser.consecutive(ALPHA.or(NUM), "alphanumeric for group name")
-            .immediatelyBetween("?<", ">")
+            .immediatelyBetween(Parser.literal("?P<").or(Parser.literal("?<")), Parser.literal(">"))
             .flatMap(n -> content.map(c -> new Group.Named(n, c)))
             .immediatelyBetween("(", ")");
     return Parser.anyOf(
