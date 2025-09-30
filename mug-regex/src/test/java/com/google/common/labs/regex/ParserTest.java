@@ -19,6 +19,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.labs.regex.Parser.ParseException;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.mu.util.CharPredicate;
@@ -349,6 +350,70 @@ public class ParserTest {
     assertThrows(ParseException.class, () -> parser.parseToStream("b").toList());
     assertThrows(ParseException.class, () -> parser.parse("aab"));
     assertThrows(ParseException.class, () -> parser.parseToStream("aab").toList());
+  }
+
+  @Test
+  public void zeroOrMoreBetween_zeroMatch() {
+    Parser<List<String>> parser = literal("a").zeroOrMoreBetween("[", "]");
+    assertThat(parser.parse("[]")).isEmpty();
+    assertThat(parser.parseToStream("[]").toList()).containsExactly(ImmutableList.of());
+  }
+
+  @Test
+  public void zeroOrMoreBetween_oneMatch() {
+    Parser<List<String>> parser = literal("a").zeroOrMoreBetween("[", "]");
+    assertThat(parser.parse("[a]")).containsExactly("a");
+    assertThat(parser.parseToStream("[a]").toList()).containsExactly(ImmutableList.of("a"));
+  }
+
+  @Test
+  public void zeroOrMoreBetween_multipleMatches() {
+    Parser<List<String>> parser = literal("a").zeroOrMoreBetween("[", "]");
+    assertThat(parser.parse("[aa]")).containsExactly("a", "a");
+    assertThat(parser.parseToStream("[aa]").toList()).containsExactly(ImmutableList.of("a", "a"));
+    assertThat(parser.parse("[aaa]")).containsExactly("a", "a", "a");
+    assertThat(parser.parseToStream("[aaa]").toList())
+        .containsExactly(ImmutableList.of("a", "a", "a"));
+  }
+
+  @Test
+  public void zeroOrMoreBetween_withDelimiter_zeroMatch() {
+    Parser<List<String>> parser = literal("a").zeroOrMoreBetween("[", ",", "]");
+    assertThat(parser.parse("[]")).isEmpty();
+    assertThat(parser.parseToStream("[]").toList()).containsExactly(ImmutableList.of());
+  }
+
+  @Test
+  public void zeroOrMoreBetween_withDelimiter_oneMatch() {
+    Parser<List<String>> parser = literal("a").zeroOrMoreBetween("[", ",", "]");
+    assertThat(parser.parse("[a]")).containsExactly("a");
+    assertThat(parser.parseToStream("[a]").toList()).containsExactly(ImmutableList.of("a"));
+  }
+
+  @Test
+  public void zeroOrMoreBetween_withDelimiter_multipleMatches() {
+    Parser<List<String>> parser = literal("a").zeroOrMoreBetween("[", ",", "]");
+    assertThat(parser.parse("[a,a]")).containsExactly("a", "a");
+    assertThat(parser.parseToStream("[a,a]").toList()).containsExactly(ImmutableList.of("a", "a"));
+    assertThat(parser.parse("[a,a,a]")).containsExactly("a", "a", "a");
+    assertThat(parser.parseToStream("[a,a,a]").toList())
+        .containsExactly(ImmutableList.of("a", "a", "a"));
+  }
+
+  @Test
+  public void zeroOrMoreBetween_failure() {
+    Parser<List<String>> parser = literal("a").zeroOrMoreBetween("[", "]");
+    assertThrows(ParseException.class, () -> parser.parse("[ab]"));
+    assertThrows(ParseException.class, () -> parser.parse("[a]b"));
+  }
+
+  @Test
+  public void zeroOrMoreBetween_withDelimiter_failure() {
+    Parser<List<String>> parser = literal("a").zeroOrMoreBetween("[", ",", "]");
+    assertThrows(ParseException.class, () -> parser.parse("[a,b]"));
+    assertThrows(ParseException.class, () -> parser.parse("[a,]"));
+    assertThrows(ParseException.class, () -> parser.parse("[a,a,]"));
+    assertThrows(ParseException.class, () -> parser.parse("[,a]"));
   }
 
   @Test

@@ -26,8 +26,10 @@ import com.google.mu.util.CharPredicate;
  * A simple recursive descent parser combinator intended to parse simple grammars such as regex, csv
  * format string patterns etc.
  *
- * <p>To avoid risk of infinite loop caused by grammar bugs, all parsers are required to consume at
- * least one character upon success.
+ * <p>Different from most parser combinators (such as Haskell Parsec), a common source of bug
+ * (infinite loop caused by repetitive application of zero-consumption rules) is made impossible by
+ * outlawing parsers that consume zero input. Optionality is achieved by using the built-in
+ * combinators such as {@link #optionallyFollowedBy} , {@link #zeroOrMoreBetween} etc.
  */
 abstract class Parser<T> {
   /** Matches a character as specified by {@code matcher}. */
@@ -167,6 +169,57 @@ abstract class Parser<T> {
         }
       }
     };
+  }
+
+  /**
+   * Returns a parser that matches the current parser zero or more times between {@code open} and
+   * {@code close}, which are non-empty strings.
+   */
+  public final Parser<List<T>> zeroOrMoreBetween(String open, String close) {
+    return zeroOrMoreBetween(open, close, toUnmodifiableList());
+  }
+
+  /**
+   * Returns a parser that matches the current parser zero or more times between {@code open} and
+   * {@code close}, which are non-empty strings. {@code collector} is used to collect the parsed
+   * results.
+   */
+  public final <A, R> Parser<R> zeroOrMoreBetween(
+      String open, String close, Collector<? super T, A, ? extends R> collector) {
+    var supplier = collector.supplier();
+    var finisher = collector.finisher();
+    return anyOf(
+        atLeastOnce(collector).immediatelyBetween(open, close),
+        literal(open + close).map(unused -> finisher.apply(supplier.get())));
+  }
+
+  /**
+   * Returns a parser that matches the current parser zero or more times between {@code open} and
+   * {@code close}, delimited by {@code delimiter}.
+   *
+   * <p>For example if you want to parse a list of names {@code [a,b,c]}, you can use: {@code
+   * consecutive(ALPHA).zeroOrMoreBetween("[", ",", "]")}.
+   */
+  public final Parser<List<T>> zeroOrMoreBetween(
+      String open, String delimiter, String close) {
+    return zeroOrMoreBetween(open, delimiter, close, toUnmodifiableList());
+  }
+
+  /**
+   * Returns a parser that matches the current parser zero or more times between {@code open} and
+   * {@code close}, delimited by {@code delimiter}. {@code collector} is used to collect the parsed
+   * results.
+   *
+   * <p>For example if you want to parse a set of names {@code [a,b,c]}, you can use: {@code
+   * consecutive(ALPHA).zeroOrMoreBetween("[", ",", "]", toImmutableSet())}.
+   */
+  public final <A, R> Parser<R> zeroOrMoreBetween(
+      String open, String delimiter, String close, Collector<? super T, A, ? extends R> collector) {
+    var supplier = collector.supplier();
+    var finisher = collector.finisher();
+    return anyOf(
+        delimitedBy(delimiter, collector).immediatelyBetween(open, close),
+        literal(open + close).map(unused -> finisher.apply(supplier.get())));
   }
 
   /**
