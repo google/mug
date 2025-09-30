@@ -28,7 +28,7 @@ import com.google.mu.util.CharPredicate;
  *
  * <p>Different from most parser combinators (such as Haskell Parsec), a common source of bug
  * (infinite loop caused by repetitive application of zero-consumption rules) is made impossible by
- * outlawing parsers that consume zero input. Optionality is achieved by using the built-in
+ * outlawing parsers that consume zero input. Optionality is achieved through using the built-in
  * combinators such as {@link #optionallyFollowedBy} , {@link #zeroOrMoreBetween} etc.
  */
 abstract class Parser<T> {
