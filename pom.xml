@@ -55,7 +55,7 @@
     <module>mug-spanner</module>
     <module>mug-concurrent24</module>
     <module>mug-safesql-java16tests</module>
-    <module>mug-regex</module>
+    <module>mug-parsers</module>
   </modules>
   <distributionManagement>
     <snapshotRepository>
