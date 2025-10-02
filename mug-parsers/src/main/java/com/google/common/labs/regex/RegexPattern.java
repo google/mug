@@ -16,7 +16,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 
-import com.google.common.labs.parser.Parser;
+import com.google.common.labs.text.parser.Parser;
 import com.google.mu.util.CharPredicate;
 
 

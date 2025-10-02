@@ -1,4 +1,4 @@
-package com.google.common.labs.parser;
+package com.google.common.labs.text.parser;
 
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Arrays.stream;

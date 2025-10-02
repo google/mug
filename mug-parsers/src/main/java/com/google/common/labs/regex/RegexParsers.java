@@ -6,7 +6,6 @@ import static java.util.Arrays.stream;
 
 import java.util.Map;
 
-import com.google.common.labs.parser.Parser;
 import com.google.common.labs.regex.RegexPattern.Anchor;
 import com.google.common.labs.regex.RegexPattern.CharRange;
 import com.google.common.labs.regex.RegexPattern.Group;
@@ -15,6 +14,7 @@ import com.google.common.labs.regex.RegexPattern.LiteralChar;
 import com.google.common.labs.regex.RegexPattern.Lookaround;
 import com.google.common.labs.regex.RegexPattern.PredefinedCharClass;
 import com.google.common.labs.regex.RegexPattern.Quantifier;
+import com.google.common.labs.text.parser.Parser;
 import com.google.mu.util.CharPredicate;
 import com.google.mu.util.stream.BiCollectors;
 

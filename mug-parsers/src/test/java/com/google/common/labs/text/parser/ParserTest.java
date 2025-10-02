@@ -1,11 +1,11 @@
-package com.google.common.labs.parser;
+package com.google.common.labs.text.parser;
 
 
-import static com.google.common.labs.parser.Parser.anyOf;
-import static com.google.common.labs.parser.Parser.consecutive;
-import static com.google.common.labs.parser.Parser.literal;
-import static com.google.common.labs.parser.Parser.sequence;
-import static com.google.common.labs.parser.Parser.single;
+import static com.google.common.labs.text.parser.Parser.anyOf;
+import static com.google.common.labs.text.parser.Parser.consecutive;
+import static com.google.common.labs.text.parser.Parser.literal;
+import static com.google.common.labs.text.parser.Parser.sequence;
+import static com.google.common.labs.text.parser.Parser.single;
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
@@ -20,7 +20,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.labs.parser.Parser.ParseException;
+import com.google.common.labs.text.parser.Parser.ParseException;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.mu.util.CharPredicate;
 
