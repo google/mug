@@ -1,26 +1,27 @@
 package com.google.common.labs.text.parser;
 
-
 import static com.google.common.labs.text.parser.Parser.anyOf;
 import static com.google.common.labs.text.parser.Parser.consecutive;
 import static com.google.common.labs.text.parser.Parser.literal;
 import static com.google.common.labs.text.parser.Parser.sequence;
 import static com.google.common.labs.text.parser.Parser.single;
 import static com.google.common.truth.Truth.assertThat;
-import static java.util.Arrays.asList;
+import static com.google.common.truth.Truth8.assertThat;
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.junit.Assert.assertThrows;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
-import java.util.stream.Stream;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.labs.text.parser.Parser.ParseException;
+import com.google.common.testing.NullPointerTester;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.mu.util.CharPredicate;
 
@@ -32,7 +33,7 @@ public class ParserTest {
   public void literal_success() {
     Parser<String> parser = literal("foo");
     assertThat(parser.parse("foo")).isEqualTo("foo");
-    assertThat(parser.parseToStream("foo").toList()).containsExactly("foo");
+    assertThat(parser.parseToStream("foo")).containsExactly("foo");
     assertThat(parser.parseToStream("").toList()).isEmpty();
   }
 
@@ -58,15 +59,25 @@ public class ParserTest {
   }
 
   @Test
+  public void testNulls() {
+    NullPointerTester tester =
+        new NullPointerTester()
+            .setDefault(Parser.class, literal("a"))
+            .setDefault(Parser.OrEmpty.class, literal("a").orElse("default"))
+            .setDefault(String.class, "test");
+    tester.testAllPublicStaticMethods(Parser.class);
+  }
+
+  @Test
   public void thenReturn_success() {
     Parser<Integer> parser1 = literal("one").thenReturn(1);
     assertThat(parser1.parse("one")).isEqualTo(1);
-    assertThat(parser1.parseToStream("one").toList()).containsExactly(1);
+    assertThat(parser1.parseToStream("one")).containsExactly(1);
     assertThat(parser1.parseToStream("").toList()).isEmpty();
 
     Parser<String> parser2 = literal("two").thenReturn("deux");
     assertThat(parser2.parse("two")).isEqualTo("deux");
-    assertThat(parser2.parseToStream("two").toList()).containsExactly("deux");
+    assertThat(parser2.parseToStream("two")).containsExactly("deux");
     assertThat(parser2.parseToStream("").toList()).isEmpty();
   }
 
@@ -88,12 +99,12 @@ public class ParserTest {
   public void map_success() {
     Parser<Integer> parser1 = literal("123").map(Integer::parseInt);
     assertThat(parser1.parse("123")).isEqualTo(123);
-    assertThat(parser1.parseToStream("123").toList()).containsExactly(123);
+    assertThat(parser1.parseToStream("123")).containsExactly(123);
     assertThat(parser1.parseToStream("").toList()).isEmpty();
 
     Parser<Boolean> parser2 = literal("true").map(Boolean::parseBoolean);
     assertThat(parser2.parse("true")).isTrue();
-    assertThat(parser2.parseToStream("true").toList()).containsExactly(true);
+    assertThat(parser2.parseToStream("true")).containsExactly(true);
     assertThat(parser2.parseToStream("").toList()).isEmpty();
   }
 
@@ -118,7 +129,7 @@ public class ParserTest {
     Parser<String> parser =
         Parser.consecutive(DIGIT, "number").flatMap(number -> literal("=" + number));
     assertThat(parser.parse("123=123")).isEqualTo("=123");
-    assertThat(parser.parseToStream("123=123").toList()).containsExactly("=123");
+    assertThat(parser.parseToStream("123=123")).containsExactly("=123");
     assertThat(parser.parseToStream("").toList()).isEmpty();
   }
 
@@ -145,7 +156,7 @@ public class ParserTest {
   public void then_success() {
     Parser<Integer> parser = literal("value:").then(literal("123").map(Integer::parseInt));
     assertThat(parser.parse("value:123")).isEqualTo(123);
-    assertThat(parser.parseToStream("value:123").toList()).containsExactly(123);
+    assertThat(parser.parseToStream("value:123")).containsExactly(123);
     assertThat(parser.parseToStream("").toList()).isEmpty();
   }
 
@@ -166,10 +177,34 @@ public class ParserTest {
   }
 
   @Test
+  public void then_orEmpty_p1Fails() {
+    Parser<List<String>> parser = literal("a").then(literal("b").zeroOrMore());
+    assertThrows(ParseException.class, () -> parser.parse("c"));
+  }
+
+  @Test
+  public void then_orEmpty_p2MatchesZeroTimes() {
+    Parser<List<String>> parser = literal("a").then(literal("b").zeroOrMore());
+    assertThat(parser.parse("a")).isEmpty();
+  }
+
+  @Test
+  public void then_orEmpty_p2MatchesOnce() {
+    Parser<List<String>> parser = literal("a").then(literal("b").zeroOrMore());
+    assertThat(parser.parse("ab")).containsExactly("b");
+  }
+
+  @Test
+  public void then_orEmpty_p2MatchesMultipleTimes() {
+    Parser<List<String>> parser = literal("a").then(literal("b").zeroOrMore());
+    assertThat(parser.parse("abb")).containsExactly("b", "b");
+  }
+
+  @Test
   public void followedBy_success() {
     Parser<String> parser = literal("123").followedBy(literal("บาท"));
     assertThat(parser.parse("123บาท")).isEqualTo("123");
-    assertThat(parser.parseToStream("123บาท").toList()).containsExactly("123");
+    assertThat(parser.parseToStream("123บาท")).containsExactly("123");
     assertThat(parser.parseToStream("").toList()).isEmpty();
   }
 
@@ -199,9 +234,9 @@ public class ParserTest {
     Parser<Integer> parser =
         literal("123").map(Integer::parseInt).optionallyFollowedBy("++", n -> n + 1);
     assertThat(parser.parse("123++")).isEqualTo(124);
-    assertThat(parser.parseToStream("123++").toList()).containsExactly(124);
+    assertThat(parser.parseToStream("123++")).containsExactly(124);
     assertThat(parser.parse("123")).isEqualTo(123);
-    assertThat(parser.parseToStream("123").toList()).containsExactly(123);
+    assertThat(parser.parseToStream("123")).containsExactly(123);
     assertThat(parser.parseToStream("").toList()).isEmpty();
   }
 
@@ -233,7 +268,7 @@ public class ParserTest {
             literal("two").map(s -> 2),
             (a, b) -> String.format("%d+%d=%d", a, b, a + b));
     assertThat(parser.parse("onetwo")).isEqualTo("1+2=3");
-    assertThat(parser.parseToStream("onetwo").toList()).containsExactly("1+2=3");
+    assertThat(parser.parseToStream("onetwo")).containsExactly("1+2=3");
     assertThat(parser.parseToStream("").toList()).isEmpty();
   }
 
@@ -260,13 +295,39 @@ public class ParserTest {
   }
 
   @Test
+  public void sequence_orEmpty_leftFails() {
+    Parser<String> parser =
+        sequence(literal("a"), literal("b").zeroOrMore(), (a, list) -> a + list);
+    assertThrows(ParseException.class, () -> parser.parse("c"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("c").toList());
+  }
+
+  @Test
+  public void sequence_orEmpty_rightIsEmpty() {
+    Parser<String> parser =
+        sequence(literal("a"), literal("b").zeroOrMore(), (a, list) -> a + list);
+    assertThat(parser.parse("a")).isEqualTo("a[]");
+    assertThat(parser.parseToStream("a")).containsExactly("a[]");
+  }
+
+  @Test
+  public void sequence_orEmpty_bothSucceed() {
+    Parser<String> parser =
+        sequence(literal("a"), literal("b").zeroOrMore(), (a, list) -> a + list);
+    assertThat(parser.parse("ab")).isEqualTo("a[b]");
+    assertThat(parser.parseToStream("ab")).containsExactly("a[b]");
+    assertThat(parser.parse("abb")).isEqualTo("a[b, b]");
+    assertThat(parser.parseToStream("abb")).containsExactly("a[b, b]");
+  }
+
+  @Test
   public void or_success() {
     Parser<String> parser = literal("foo").or(literal("bar"));
     assertThat(parser.parse("foo")).isEqualTo("foo");
-    assertThat(parser.parseToStream("foo").toList()).containsExactly("foo");
+    assertThat(parser.parseToStream("foo")).containsExactly("foo");
     assertThat(parser.parse("bar")).isEqualTo("bar");
-    assertThat(parser.parseToStream("bar").toList()).containsExactly("bar");
-    assertThat(parser.parseToStream("").toList()).isEmpty();
+    assertThat(parser.parseToStream("bar")).containsExactly("bar");
+    assertThat(parser.parseToStream("")).isEmpty();
   }
 
   @Test
@@ -289,11 +350,11 @@ public class ParserTest {
   public void anyOf_success() {
     Parser<String> parser = anyOf(literal("one"), literal("two"), literal("three"));
     assertThat(parser.parse("one")).isEqualTo("one");
-    assertThat(parser.parseToStream("one").toList()).containsExactly("one");
+    assertThat(parser.parseToStream("one")).containsExactly("one");
     assertThat(parser.parse("two")).isEqualTo("two");
-    assertThat(parser.parseToStream("two").toList()).containsExactly("two");
+    assertThat(parser.parseToStream("two")).containsExactly("two");
     assertThat(parser.parse("three")).isEqualTo("three");
-    assertThat(parser.parseToStream("three").toList()).containsExactly("three");
+    assertThat(parser.parseToStream("three")).containsExactly("three");
     assertThat(parser.parseToStream("").toList()).isEmpty();
   }
 
@@ -319,18 +380,18 @@ public class ParserTest {
   public void atLeastOnce_success() {
     Parser<List<String>> parser = literal("a").atLeastOnce();
     assertThat(parser.parse("a")).containsExactly("a");
-    assertThat(parser.parseToStream("a").toList()).containsExactly(asList("a"));
+    assertThat(parser.parseToStream("a")).containsExactly(List.of("a"));
     assertThat(parser.parse("aa")).containsExactly("a", "a").inOrder();
-    assertThat(parser.parseToStream("aa").toList()).containsExactly(asList("a", "a"));
+    assertThat(parser.parseToStream("aa")).containsExactly(List.of("a", "a"));
     assertThat(parser.parse("aaa")).containsExactly("a", "a", "a").inOrder();
     assertThat(parser.parseToStream("aaa").toList())
-        .containsExactly(asList("a", "a", "a"));
+        .containsExactly(List.of("a", "a", "a"));
     assertThat(parser.parseToStream("").toList()).isEmpty();
 
     Parser<List<String>> parser2 =
         consecutive(CharPredicate.range('0', '9'), "digit").atLeastOnce();
     assertThat(parser2.parse("1230")).containsExactly("1230");
-    assertThat(parser2.parseToStream("1230").toList()).containsExactly(asList("1230"));
+    assertThat(parser2.parseToStream("1230")).containsExactly(List.of("1230"));
     assertThat(parser2.parseToStream("").toList()).isEmpty();
   }
 
@@ -353,63 +414,235 @@ public class ParserTest {
   }
 
   @Test
-  public void zeroOrMoreBetween_zeroMatch() {
-    Parser<List<String>> parser = literal("a").zeroOrMoreBetween("[", "]");
+  public void zeroOrMore_between_zeroMatch() {
+    Parser<List<String>> parser = literal("a").zeroOrMore().between("[", "]");
     assertThat(parser.parse("[]")).isEmpty();
-    assertThat(parser.parseToStream("[]").toList()).containsExactly(ImmutableList.of());
+    assertThat(parser.parseToStream("[]")).containsExactly(List.of());
   }
 
   @Test
-  public void zeroOrMoreBetween_oneMatch() {
-    Parser<List<String>> parser = literal("a").zeroOrMoreBetween("[", "]");
+  public void zeroOrMore_between_oneMatch() {
+    Parser<List<String>> parser = literal("a").zeroOrMore().between("[", "]");
     assertThat(parser.parse("[a]")).containsExactly("a");
-    assertThat(parser.parseToStream("[a]").toList()).containsExactly(ImmutableList.of("a"));
+    assertThat(parser.parseToStream("[a]")).containsExactly(List.of("a"));
   }
 
   @Test
-  public void zeroOrMoreBetween_multipleMatches() {
-    Parser<List<String>> parser = literal("a").zeroOrMoreBetween("[", "]");
+  public void zeroOrMore_between_multipleMatches() {
+    Parser<List<String>> parser = literal("a").zeroOrMore().between("[", "]");
     assertThat(parser.parse("[aa]")).containsExactly("a", "a");
-    assertThat(parser.parseToStream("[aa]").toList()).containsExactly(ImmutableList.of("a", "a"));
+    assertThat(parser.parseToStream("[aa]")).containsExactly(List.of("a", "a"));
     assertThat(parser.parse("[aaa]")).containsExactly("a", "a", "a");
     assertThat(parser.parseToStream("[aaa]").toList())
-        .containsExactly(ImmutableList.of("a", "a", "a"));
+        .containsExactly(List.of("a", "a", "a"));
   }
 
   @Test
-  public void zeroOrMoreBetween_withDelimiter_zeroMatch() {
-    Parser<List<String>> parser = literal("a").zeroOrMoreBetween("[", ",", "]");
+  public void zeroOrMore_before_zeroMatch() {
+    Parser<List<String>> parser = literal("a").zeroOrMore().before(";");
+    assertThat(parser.parse(";")).isEmpty();
+    assertThat(parser.parseToStream(";")).containsExactly(List.of());
+  }
+
+  @Test
+  public void zeroOrMore_before_oneMatch() {
+    Parser<List<String>> parser = literal("a").zeroOrMore().before(";");
+    assertThat(parser.parse("a;")).containsExactly("a");
+    assertThat(parser.parseToStream("a;")).containsExactly(List.of("a"));
+  }
+
+  @Test
+  public void zeroOrMore_before_multipleMatches() {
+    Parser<List<String>> parser = literal("a").zeroOrMore().before(";");
+    assertThat(parser.parse("aa;")).containsExactly("a", "a");
+    assertThat(parser.parseToStream("aa;")).containsExactly(List.of("a", "a"));
+    assertThat(parser.parse("aaa;")).containsExactly("a", "a", "a");
+    assertThat(parser.parseToStream("aaa;").toList())
+        .containsExactly(List.of("a", "a", "a"));
+  }
+
+  @Test
+  public void zeroOrMore_betweenParsers_zeroMatch() {
+    Parser<List<String>> parser =
+        literal("a").zeroOrMore().between(literal("["), literal("]"));
     assertThat(parser.parse("[]")).isEmpty();
-    assertThat(parser.parseToStream("[]").toList()).containsExactly(ImmutableList.of());
+    assertThat(parser.parseToStream("[]")).containsExactly(List.of());
   }
 
   @Test
-  public void zeroOrMoreBetween_withDelimiter_oneMatch() {
-    Parser<List<String>> parser = literal("a").zeroOrMoreBetween("[", ",", "]");
+  public void zeroOrMore_betweenParsers_oneMatch() {
+    Parser<List<String>> parser =
+        literal("a").zeroOrMore().between(literal("["), literal("]"));
     assertThat(parser.parse("[a]")).containsExactly("a");
-    assertThat(parser.parseToStream("[a]").toList()).containsExactly(ImmutableList.of("a"));
+    assertThat(parser.parseToStream("[a]")).containsExactly(List.of("a"));
   }
 
   @Test
-  public void zeroOrMoreBetween_withDelimiter_multipleMatches() {
-    Parser<List<String>> parser = literal("a").zeroOrMoreBetween("[", ",", "]");
-    assertThat(parser.parse("[a,a]")).containsExactly("a", "a");
-    assertThat(parser.parseToStream("[a,a]").toList()).containsExactly(ImmutableList.of("a", "a"));
-    assertThat(parser.parse("[a,a,a]")).containsExactly("a", "a", "a");
-    assertThat(parser.parseToStream("[a,a,a]").toList())
-        .containsExactly(ImmutableList.of("a", "a", "a"));
+  public void zeroOrMore_betweenParsers_multipleMatches() {
+    Parser<List<String>> parser =
+        literal("a").zeroOrMore().between(literal("["), literal("]"));
+    assertThat(parser.parse("[aa]")).containsExactly("a", "a");
+    assertThat(parser.parseToStream("[aa]")).containsExactly(List.of("a", "a"));
+    assertThat(parser.parse("[aaa]")).containsExactly("a", "a", "a");
+    assertThat(parser.parseToStream("[aaa]").toList())
+        .containsExactly(List.of("a", "a", "a"));
   }
 
   @Test
-  public void zeroOrMoreBetween_failure() {
-    Parser<List<String>> parser = literal("a").zeroOrMoreBetween("[", "]");
+  public void zeroOrMore_beforeParser_zeroMatch() {
+    Parser<List<String>> parser = literal("a").zeroOrMore().before(literal(";"));
+    assertThat(parser.parse(";")).isEmpty();
+    assertThat(parser.parseToStream(";")).containsExactly(List.of());
+  }
+
+  @Test
+  public void zeroOrMore_beforeParser_oneMatch() {
+    Parser<List<String>> parser = literal("a").zeroOrMore().before(literal(";"));
+    assertThat(parser.parse("a;")).containsExactly("a");
+    assertThat(parser.parseToStream("a;")).containsExactly(List.of("a"));
+  }
+
+  @Test
+  public void zeroOrMore_beforeParser_multipleMatches() {
+    Parser<List<String>> parser = literal("a").zeroOrMore().before(literal(";"));
+    assertThat(parser.parse("aa;")).containsExactly("a", "a");
+    assertThat(parser.parseToStream("aa;")).containsExactly(List.of("a", "a"));
+    assertThat(parser.parse("aaa;")).containsExactly("a", "a", "a");
+    assertThat(parser.parseToStream("aaa;").toList())
+        .containsExactly(List.of("a", "a", "a"));
+  }
+
+  @Test
+  public void zeroOrMore_between_failure() {
+    Parser<List<String>> parser = literal("a").zeroOrMore().between("[", "]");
     assertThrows(ParseException.class, () -> parser.parse("[ab]"));
     assertThrows(ParseException.class, () -> parser.parse("[a]b"));
   }
 
   @Test
-  public void zeroOrMoreBetween_withDelimiter_failure() {
-    Parser<List<String>> parser = literal("a").zeroOrMoreBetween("[", ",", "]");
+  public void zeroOrMore_parseEmpty() {
+    assertThat(literal("a").zeroOrMore().parse("")).isEmpty();
+  }
+
+  @Test
+  public void zeroOrMore_parseNonEmpty() {
+    assertThat(literal("a").zeroOrMore().parse("aa")).containsExactly("a", "a");
+  }
+
+  @Test
+  public void zeroOrMore_parseFail() {
+    assertThrows(ParseException.class, () -> literal("a").zeroOrMore().parse("b"));
+  }
+
+  @Test
+  public void zeroOrMoreDelimitedBy_between_zeroMatch() {
+    Parser<List<String>> parser =
+        literal("a").zeroOrMoreDelimitedBy(",").between("[", "]");
+    assertThat(parser.parse("[]")).isEmpty();
+    assertThat(parser.parseToStream("[]")).containsExactly(List.of());
+  }
+
+  @Test
+  public void zeroOrMoreDelimitedBy_between_oneMatch() {
+    Parser<List<String>> parser =
+        literal("a").zeroOrMoreDelimitedBy(",").between("[", "]");
+    assertThat(parser.parse("[a]")).containsExactly("a");
+    assertThat(parser.parseToStream("[a]")).containsExactly(List.of("a"));
+  }
+
+  @Test
+  public void zeroOrMoreDelimitedBy_between_multipleMatches() {
+    Parser<List<String>> parser =
+        literal("a").zeroOrMoreDelimitedBy(",").between("[", "]");
+    assertThat(parser.parse("[a,a]")).containsExactly("a", "a");
+    assertThat(parser.parseToStream("[a,a]")).containsExactly(List.of("a", "a"));
+    assertThat(parser.parse("[a,a,a]")).containsExactly("a", "a", "a");
+    assertThat(parser.parseToStream("[a,a,a]").toList())
+        .containsExactly(List.of("a", "a", "a"));
+  }
+
+  @Test
+  public void zeroOrMoreDelimitedBy_before_zeroMatch() {
+    Parser<List<String>> parser = literal("a").zeroOrMoreDelimitedBy(",").before(";");
+    assertThat(parser.parse(";")).isEmpty();
+    assertThat(parser.parseToStream(";")).containsExactly(List.of());
+  }
+
+  @Test
+  public void zeroOrMoreDelimitedBy_before_oneMatch() {
+    Parser<List<String>> parser = literal("a").zeroOrMoreDelimitedBy(",").before(";");
+    assertThat(parser.parse("a;")).containsExactly("a");
+    assertThat(parser.parseToStream("a;")).containsExactly(List.of("a"));
+  }
+
+  @Test
+  public void zeroOrMoreDelimitedBy_before_multipleMatches() {
+    Parser<List<String>> parser = literal("a").zeroOrMoreDelimitedBy(",").before(";");
+    assertThat(parser.parse("a,a;")).containsExactly("a", "a");
+    assertThat(parser.parseToStream("a,a;")).containsExactly(List.of("a", "a"));
+    assertThat(parser.parse("a,a,a;")).containsExactly("a", "a", "a");
+    assertThat(parser.parseToStream("a,a,a;").toList())
+        .containsExactly(List.of("a", "a", "a"));
+  }
+
+  @Test
+  public void zeroOrMoreDelimitedBy_betweenParsers_zeroMatch() {
+    Parser<List<String>> parser =
+        literal("a").zeroOrMoreDelimitedBy(",").between(literal("["), literal("]"));
+    assertThat(parser.parse("[]")).isEmpty();
+    assertThat(parser.parseToStream("[]")).containsExactly(List.of());
+  }
+
+  @Test
+  public void zeroOrMoreDelimitedBy_betweenParsers_oneMatch() {
+    Parser<List<String>> parser =
+        literal("a").zeroOrMoreDelimitedBy(",").between(literal("["), literal("]"));
+    assertThat(parser.parse("[a]")).containsExactly("a");
+    assertThat(parser.parseToStream("[a]")).containsExactly(List.of("a"));
+  }
+
+  @Test
+  public void zeroOrMoreDelimitedBy_betweenParsers_multipleMatches() {
+    Parser<List<String>> parser =
+        literal("a").zeroOrMoreDelimitedBy(",").between(literal("["), literal("]"));
+    assertThat(parser.parse("[a,a]")).containsExactly("a", "a");
+    assertThat(parser.parseToStream("[a,a]")).containsExactly(List.of("a", "a"));
+    assertThat(parser.parse("[a,a,a]")).containsExactly("a", "a", "a");
+    assertThat(parser.parseToStream("[a,a,a]").toList())
+        .containsExactly(List.of("a", "a", "a"));
+  }
+
+  @Test
+  public void zeroOrMoreDelimitedBy_beforeParser_zeroMatch() {
+    Parser<List<String>> parser =
+        literal("a").zeroOrMoreDelimitedBy(",").before(literal(";"));
+    assertThat(parser.parse(";")).isEmpty();
+    assertThat(parser.parseToStream(";")).containsExactly(List.of());
+  }
+
+  @Test
+  public void zeroOrMoreDelimitedBy_beforeParser_oneMatch() {
+    Parser<List<String>> parser =
+        literal("a").zeroOrMoreDelimitedBy(",").before(literal(";"));
+    assertThat(parser.parse("a;")).containsExactly("a");
+    assertThat(parser.parseToStream("a;")).containsExactly(List.of("a"));
+  }
+
+  @Test
+  public void zeroOrMoreDelimitedBy_beforeParser_multipleMatches() {
+    Parser<List<String>> parser =
+        literal("a").zeroOrMoreDelimitedBy(",").before(literal(";"));
+    assertThat(parser.parse("a,a;")).containsExactly("a", "a");
+    assertThat(parser.parseToStream("a,a;")).containsExactly(List.of("a", "a"));
+    assertThat(parser.parse("a,a,a;")).containsExactly("a", "a", "a");
+    assertThat(parser.parseToStream("a,a,a;").toList())
+        .containsExactly(List.of("a", "a", "a"));
+  }
+
+  @Test
+  public void zeroOrMoreDelimitedBy_between_failure() {
+    Parser<List<String>> parser =
+        literal("a").zeroOrMoreDelimitedBy(",").between("[", "]");
     assertThrows(ParseException.class, () -> parser.parse("[a,b]"));
     assertThrows(ParseException.class, () -> parser.parse("[a,]"));
     assertThrows(ParseException.class, () -> parser.parse("[a,a,]"));
@@ -417,15 +650,184 @@ public class ParserTest {
   }
 
   @Test
+  public void zeroOrMoreDelimitedBy_parseEmpty() {
+    assertThat(literal("a").zeroOrMoreDelimitedBy(",").parse("")).isEmpty();
+  }
+
+  @Test
+  public void zeroOrMoreDelimitedBy_parseNonEmpty() {
+    assertThat(literal("a").zeroOrMoreDelimitedBy(",").parse("a,a")).containsExactly("a", "a");
+  }
+
+  @Test
+  public void zeroOrMoreDelimitedBy_parseFail() {
+    assertThrows(ParseException.class, () -> literal("a").zeroOrMoreDelimitedBy(",").parse("b"));
+  }
+
+  @Test
+  public void optional_between_zeroMatch() {
+    Parser<Optional<String>> parser = literal("a").optional().between("[", "]");
+    assertThat(parser.parse("[]")).isEmpty();
+    assertThat(parser.parseToStream("[]")).containsExactly(Optional.empty());
+  }
+
+  @Test
+  public void optional_between_oneMatch() {
+    Parser<Optional<String>> parser = literal("a").optional().between("[", "]");
+    assertThat(parser.parse("[a]")).hasValue("a");
+    assertThat(parser.parseToStream("[a]")).containsExactly(Optional.of("a"));
+  }
+
+  @Test
+  public void optional_before_zeroMatch() {
+    Parser<Optional<String>> parser = literal("a").optional().before(";");
+    assertThat(parser.parse(";")).isEmpty();
+    assertThat(parser.parseToStream(";")).containsExactly(Optional.empty());
+  }
+
+  @Test
+  public void optional_before_oneMatch() {
+    Parser<Optional<String>> parser = literal("a").optional().before(";");
+    assertThat(parser.parse("a;")).hasValue("a");
+    assertThat(parser.parseToStream("a;")).containsExactly(Optional.of("a"));
+  }
+
+  @Test
+  public void optional_betweenParsers_zeroMatch() {
+    Parser<Optional<String>> parser = literal("a").optional().between(literal("["), literal("]"));
+    assertThat(parser.parse("[]")).isEmpty();
+    assertThat(parser.parseToStream("[]")).containsExactly(Optional.empty());
+  }
+
+  @Test
+  public void optional_betweenParsers_oneMatch() {
+    Parser<Optional<String>> parser = literal("a").optional().between(literal("["), literal("]"));
+    assertThat(parser.parse("[a]")).hasValue("a");
+    assertThat(parser.parseToStream("[a]")).containsExactly(Optional.of("a"));
+  }
+
+  @Test
+  public void optional_beforeParser_zeroMatch() {
+    Parser<Optional<String>> parser = literal("a").optional().before(literal(";"));
+    assertThat(parser.parse(";")).isEmpty();
+    assertThat(parser.parseToStream(";")).containsExactly(Optional.empty());
+  }
+
+  @Test
+  public void optional_beforeParser_oneMatch() {
+    Parser<Optional<String>> parser = literal("a").optional().before(literal(";"));
+    assertThat(parser.parse("a;")).hasValue("a");
+    assertThat(parser.parseToStream("a;")).containsExactly(Optional.of("a"));
+  }
+
+  @Test
+  public void optional_parseEmpty() {
+    assertThat(literal("a").optional().parse("")).isEmpty();
+  }
+
+  @Test
+  public void optional_parseNonEmpty() {
+    assertThat(literal("a").optional().parse("a")).hasValue("a");
+  }
+
+  @Test
+  public void optional_parseFail() {
+    assertThrows(ParseException.class, () -> literal("a").optional().parse("b"));
+  }
+
+  @Test
+  public void orElse_between_zeroMatch() {
+    Parser<String> parser = literal("a").orElse("default").between("[", "]");
+    assertThat(parser.parse("[]")).isEqualTo("default");
+    assertThat(parser.parseToStream("[]")).containsExactly("default");
+  }
+
+  @Test
+  public void orElse_between_oneMatch() {
+    Parser<String> parser = literal("a").orElse("default").between("[", "]");
+    assertThat(parser.parse("[a]")).isEqualTo("a");
+    assertThat(parser.parseToStream("[a]")).containsExactly("a");
+  }
+
+  @Test
+  public void orElse_before_zeroMatch() {
+    Parser<String> parser = literal("a").orElse("default").before(";");
+    assertThat(parser.parse(";")).isEqualTo("default");
+    assertThat(parser.parseToStream(";")).containsExactly("default");
+  }
+
+  @Test
+  public void orElse_before_oneMatch() {
+    Parser<String> parser = literal("a").orElse("default").before(";");
+    assertThat(parser.parse("a;")).isEqualTo("a");
+    assertThat(parser.parseToStream("a;")).containsExactly("a");
+  }
+
+  @Test
+  public void orElse_betweenParsers_zeroMatch() {
+    Parser<String> parser = literal("a").orElse("default").between(literal("["), literal("]"));
+    assertThat(parser.parse("[]")).isEqualTo("default");
+    assertThat(parser.parseToStream("[]")).containsExactly("default");
+  }
+
+  @Test
+  public void orElse_betweenParsers_oneMatch() {
+    Parser<String> parser = literal("a").orElse("default").between(literal("["), literal("]"));
+    assertThat(parser.parse("[a]")).isEqualTo("a");
+    assertThat(parser.parseToStream("[a]")).containsExactly("a");
+  }
+
+  @Test
+  public void orElse_beforeParser_zeroMatch() {
+    Parser<String> parser = literal("a").orElse("default").before(literal(";"));
+    assertThat(parser.parse(";")).isEqualTo("default");
+    assertThat(parser.parseToStream(";")).containsExactly("default");
+  }
+
+  @Test
+  public void orElse_beforeParser_oneMatch() {
+    Parser<String> parser = literal("a").orElse("default").before(literal(";"));
+    assertThat(parser.parse("a;")).isEqualTo("a");
+    assertThat(parser.parseToStream("a;")).containsExactly("a");
+  }
+
+  @Test
+  public void orElse_parseEmpty() {
+    assertThat(literal("a").orElse("default").parse("")).isEqualTo("default");
+  }
+
+  @Test
+  public void orElse_parseNonEmpty() {
+    assertThat(literal("a").orElse("default").parse("a")).isEqualTo("a");
+  }
+
+  @Test
+  public void orElse_parseFail() {
+    assertThrows(ParseException.class, () -> literal("a").orElse("default").parse("b"));
+  }
+
+  @Test
+  public void orElse_nullDefault_between_zeroMatch() {
+    Parser<String> parser = literal("a").orElse(null).between("[", "]");
+    assertThat(parser.parse("[]")).isNull();
+    assertThat(parser.parseToStream("[]")).containsExactly((String) null);
+  }
+
+  @Test
+  public void orElse_nullDefault_parseEmpty() {
+    assertThat(literal("a").orElse(null).parse("")).isNull();
+  }
+
+  @Test
   public void delimitedBy_success() {
     Parser<List<String>> parser = literal("a").delimitedBy(",");
     assertThat(parser.parse("a")).containsExactly("a").inOrder();
-    assertThat(parser.parseToStream("a").toList()).containsExactly(asList("a"));
+    assertThat(parser.parseToStream("a")).containsExactly(List.of("a"));
     assertThat(parser.parse("a,a")).containsExactly("a", "a").inOrder();
-    assertThat(parser.parseToStream("a,a").toList()).containsExactly(asList("a", "a"));
+    assertThat(parser.parseToStream("a,a")).containsExactly(List.of("a", "a"));
     assertThat(parser.parse("a,a,a")).containsExactly("a", "a", "a").inOrder();
     assertThat(parser.parseToStream("a,a,a").toList())
-        .containsExactly(asList("a", "a", "a"));
+        .containsExactly(List.of("a", "a", "a"));
     assertThat(parser.parseToStream("").toList()).isEmpty();
   }
 
@@ -461,7 +863,7 @@ public class ParserTest {
   public void immediatelyBetween_success() {
     Parser<String> parser = literal("content").immediatelyBetween("[", "]");
     assertThat(parser.parse("[content]")).isEqualTo("content");
-    assertThat(parser.parseToStream("[content]").toList()).containsExactly("content");
+    assertThat(parser.parseToStream("[content]")).containsExactly("content");
     assertThat(parser.parseToStream("").toList()).isEmpty();
   }
 
@@ -498,9 +900,9 @@ public class ParserTest {
   public void single_success() {
     Parser<Character> parser = single(DIGIT, "digit");
     assertThat(parser.parse("1")).isEqualTo('1');
-    assertThat(parser.parseToStream("1").toList()).containsExactly('1');
+    assertThat(parser.parseToStream("1")).containsExactly('1');
     assertThat(parser.parse("9")).isEqualTo('9');
-    assertThat(parser.parseToStream("9").toList()).containsExactly('9');
+    assertThat(parser.parseToStream("9")).containsExactly('9');
     assertThat(parser.parseToStream("").toList()).isEmpty();
   }
 
@@ -523,9 +925,9 @@ public class ParserTest {
   public void consecutive_success() {
     Parser<String> parser = consecutive(DIGIT, "digit");
     assertThat(parser.parse("1")).isEqualTo("1");
-    assertThat(parser.parseToStream("1").toList()).containsExactly("1");
+    assertThat(parser.parseToStream("1")).containsExactly("1");
     assertThat(parser.parse("123")).isEqualTo("123");
-    assertThat(parser.parseToStream("123").toList()).containsExactly("123");
+    assertThat(parser.parseToStream("123")).containsExactly("123");
     assertThat(parser.parseToStream("").toList()).isEmpty();
   }
 
@@ -556,13 +958,13 @@ public class ParserTest {
     Parser<UnaryOperator<Integer>> op = anyOf(inc, dec);
     Parser<Integer> parser = number.postfix(op);
     assertThat(parser.parse("10")).isEqualTo(10);
-    assertThat(parser.parseToStream("10").toList()).containsExactly(10);
+    assertThat(parser.parseToStream("10")).containsExactly(10);
     assertThat(parser.parse("10++")).isEqualTo(11);
-    assertThat(parser.parseToStream("10++").toList()).containsExactly(11);
+    assertThat(parser.parseToStream("10++")).containsExactly(11);
     assertThat(parser.parse("10--")).isEqualTo(9);
-    assertThat(parser.parseToStream("10--").toList()).containsExactly(9);
+    assertThat(parser.parseToStream("10--")).containsExactly(9);
     assertThat(parser.parse("10++--++")).isEqualTo(11);
-    assertThat(parser.parseToStream("10++--++").toList()).containsExactly(11);
+    assertThat(parser.parseToStream("10++--++")).containsExactly(11);
     assertThat(parser.parseToStream("").toList()).isEmpty();
   }
 
@@ -596,15 +998,15 @@ public class ParserTest {
   public void recursiveGrammar() {
     Parser<Integer> parser = simpleCalculator();
     assertThat(parser.parse("1")).isEqualTo(1);
-    assertThat(parser.parseToStream("1").toList()).containsExactly(1);
+    assertThat(parser.parseToStream("1")).containsExactly(1);
     assertThat(parser.parse("(2)")).isEqualTo(2);
-    assertThat(parser.parseToStream("(2)").toList()).containsExactly(2);
+    assertThat(parser.parseToStream("(2)")).containsExactly(2);
     assertThat(parser.parse("(2)+3")).isEqualTo(5);
-    assertThat(parser.parseToStream("(2)+3").toList()).containsExactly(5);
+    assertThat(parser.parseToStream("(2)+3")).containsExactly(5);
     assertThat(parser.parse("(2)+3+(4)")).isEqualTo(9);
-    assertThat(parser.parseToStream("(2)+3+(4)").toList()).containsExactly(9);
+    assertThat(parser.parseToStream("(2)+3+(4)")).containsExactly(9);
     assertThat(parser.parse("(2+(3+4))")).isEqualTo(9);
-    assertThat(parser.parseToStream("(2+(3+4))").toList()).containsExactly(9);
+    assertThat(parser.parseToStream("(2+(3+4))")).containsExactly(9);
     assertThat(parser.parseToStream("").toList()).isEmpty();
   }
 
@@ -627,7 +1029,8 @@ public class ParserTest {
   @Test
   public void lazy_setNull_throws() {
     Parser.Lazy<String> lazy = new Parser.Lazy<>();
-    assertThrows(NullPointerException.class, () -> lazy.delegateTo(null));
+    Parser<String> parser = null;
+    assertThrows(NullPointerException.class, () -> lazy.delegateTo(parser));
   }
 
   @Test
@@ -638,9 +1041,16 @@ public class ParserTest {
   }
 
   @Test
+  public void lazy_delegateToLazy_throws() {
+    Parser.Lazy<String> lazy = new Parser.Lazy<>();
+    Parser<String> actuallyLazy = lazy;
+    assertThrows(IllegalArgumentException.class, () -> lazy.delegateTo(actuallyLazy));
+  }
+
+  @Test
   public void parseToStream_success() {
     Parser<Character> parser = single(DIGIT, "digit");
-    assertThat(parser.parseToStream("123").toList()).containsExactly('1', '2', '3').inOrder();
+    assertThat(parser.parseToStream("123")).containsExactly('1', '2', '3').inOrder();
     assertThat(parser.parseToStream("").toList()).isEmpty();
   }
 
@@ -662,15 +1072,15 @@ public class ParserTest {
         .isEqualTo(
             new Format(
                 "a{b}d{e}{not a placeholder}",
-                asList(
+                List.of(
                     new Format.Placeholder(
                         "b",
                         new Format(
                             "xy{foo}z",
-                            asList(
+                            List.of(
                                 new Format.Placeholder(
-                                    "foo", new Format("bar", asList()))))),
-                    new Format.Placeholder("e", new Format("f", asList())))));
+                                    "foo", new Format("bar", List.of()))))),
+                    new Format.Placeholder("e", new Format("f", List.of())))));
   }
 
   /** An example nested placeholder grammar for demo purpose. */
@@ -679,7 +1089,7 @@ public class ParserTest {
     record Placeholder(String name, Format format) {}
 
     static class Builder {
-      private final Stream.Builder<Placeholder> placeholders = Stream.builder();
+      private final List<Placeholder> placeholders = new ArrayList<>();
       private final StringBuilder template = new StringBuilder();
 
       @CanIgnoreReturnValue
@@ -698,12 +1108,12 @@ public class ParserTest {
       @CanIgnoreReturnValue
       Builder addAll(Builder that) {
         template.append(that.template);
-        that.placeholders.build().forEach(placeholders::add);
+        placeholders.addAll(that.placeholders);
         return this;
       }
 
       Format build() {
-        return new Format(template.toString(), placeholders.build().toList());
+        return new Format(template.toString(), placeholders.stream().collect(toUnmodifiableList()));
       }
     }
 
@@ -748,8 +1158,8 @@ public class ParserTest {
 
     private static final CharPredicate ALPHANUMERIC =
         CharPredicate.range('a', 'z')
-            .or(CharPredicate.range('A', 'Z'))
-            .or(CharPredicate.range('0', '9'));
+            .orRange('A', 'Z')
+            .orRange('0', '9');
 
     static ResourceNamePattern parse(String path) {
       Parser<String> name = Parser.consecutive(ALPHANUMERIC, "name");
@@ -796,7 +1206,7 @@ public class ParserTest {
   @Test
   public void resourceNamePattern_noPlaceholder() {
     assertThat(ResourceNamePattern.parse("users"))
-        .isEqualTo(new ResourceNamePattern(asList(new PathElement.Literal("users"))));
+        .isEqualTo(new ResourceNamePattern(List.of(new PathElement.Literal("users"))));
   }
 
   @Test
@@ -804,7 +1214,7 @@ public class ParserTest {
     assertThat(ResourceNamePattern.parse("users/{userId}/messages/{messageId}"))
         .isEqualTo(
             new ResourceNamePattern(
-                asList(
+                List.of(
                     new PathElement.Literal("users"),
                     new PathElement.Placeholder("userId"),
                     new PathElement.Literal("messages"),
@@ -816,12 +1226,12 @@ public class ParserTest {
     assertThat(ResourceNamePattern.parse("v1/{name=projects/*/locations/*}/messages"))
         .isEqualTo(
             new ResourceNamePattern(
-                asList(
+                List.of(
                     new PathElement.Literal("v1"),
                     new PathElement.Subpath(
                         "name",
                         new ResourceNamePattern(
-                            asList(
+                            List.of(
                                 new PathElement.Literal("projects"),
                                 new PathElement.PathElementWildcard(),
                                 new PathElement.Literal("locations"),
@@ -834,15 +1244,14 @@ public class ParserTest {
     assertThat(ResourceNamePattern.parse("v1/{name=projects/**}/messages"))
         .isEqualTo(
             new ResourceNamePattern(
-                asList(
+                List.of(
                     new PathElement.Literal("v1"),
                     new PathElement.Subpath(
                         "name",
                         new ResourceNamePattern(
-                            asList(
+                            List.of(
                                 new PathElement.Literal("projects"),
                                 new PathElement.SubpathWildcard()))),
                     new PathElement.Literal("messages"))));
   }
 }
-

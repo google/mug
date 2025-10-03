@@ -2,18 +2,18 @@ package com.google.common.labs.text.parser;
 
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Arrays.stream;
+import static java.util.Comparator.comparingInt;
 import static java.util.Objects.requireNonNull;
-import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
@@ -25,9 +25,15 @@ import com.google.mu.util.CharPredicate;
  * format string patterns etc.
  *
  * <p>Different from most parser combinators (such as Haskell Parsec), a common source of bug
- * (infinite loop caused by repetitive application of zero-consumption rules) is made impossible by
- * outlawing parsers that consume zero input. Optionality is achieved through using the built-in
- * combinators such as {@link #optionallyFollowedBy} , {@link #zeroOrMoreBetween} etc.
+ * (infinite loop or StackOverFlowError caused by accidental zero-consumption rule in the context of
+ * many() or recursive grammar) is made impossible by requiring all parsers to consume at least one
+ * character. Optional suffix is achieved through using the built-in combinators such as {@link
+ * #optionallyFollowedBy} and {@link #postfix}; or you can use the {@link #zeroOrMore}, {@link
+ * #zeroOrMoreDelimitedBy}, {@link #orElse} and {@link #optional} fluent chains.
+ *
+ * <p>For simplicity, {@link #or} and {@link #anyOf} will always backtrack upon failure. But it's
+ * more efficient to factor out common left prefix. For example instead of {@code
+ * anyOf(expr.followedBy(";"), expr)}, use {@code expr.optionallyFollowedBy(";"))} instead.
  */
 public abstract class Parser<T> {
   /** Matches a character as specified by {@code matcher}. */
@@ -88,6 +94,18 @@ public abstract class Parser<T> {
         leftValue -> right.map(rightValue -> combiner.apply(leftValue, rightValue)));
   }
 
+  /**
+   * Sequentially matches {@code left} then {@code right} (which is allowed to be optional), and
+   * then combines the results using the {@code combiner} function. If {@code right} is empty, the
+   * default value is passed to the {@code combiner} function.
+   */
+  public static <A, B, C> Parser<C> sequence(
+      Parser<A> left,
+      Parser<B>.OrEmpty right,
+      BiFunction<? super A, ? super B, ? extends C> combiner) {
+    return right.after(requireNonNull(left), requireNonNull(combiner));
+  }
+
   /** Matches if any of the given {@code parsers} match. */
   @SafeVarargs
   public static <T> Parser<T> anyOf(Parser<? extends T>... parsers) {
@@ -116,7 +134,7 @@ public abstract class Parser<T> {
                 }
               }
               return failures.stream()
-                  .max(Comparator.comparingInt(MatchResult.Failure<?>::at))
+                  .max(comparingInt(MatchResult.Failure<?>::at))
                   .get()
                   .safeCast();
             }
@@ -170,61 +188,78 @@ public abstract class Parser<T> {
   }
 
   /**
-   * Returns a parser that matches the current parser zero or more times between {@code open} and
-   * {@code close}, which are non-empty strings.
-   */
-  public final Parser<List<T>> zeroOrMoreBetween(String open, String close) {
-    return zeroOrMoreBetween(open, close, toUnmodifiableList());
-  }
-
-  /**
-   * Returns a parser that matches the current parser zero or more times between {@code open} and
-   * {@code close}, which are non-empty strings. {@code collector} is used to collect the parsed
-   * results.
-   */
-  public final <A, R> Parser<R> zeroOrMoreBetween(
-      String open, String close, Collector<? super T, A, ? extends R> collector) {
-    var supplier = collector.supplier();
-    var finisher = collector.finisher();
-    return anyOf(
-        atLeastOnce(collector).immediatelyBetween(open, close),
-        literal(open + close).map(unused -> finisher.apply(supplier.get())));
-  }
-
-  /**
-   * Returns a parser that matches the current parser zero or more times between {@code open} and
-   * {@code close}, delimited by {@code delimiter}.
+   * Starts a fluent chain for matching the current parser zero or more times.
    *
-   * <p>For example if you want to parse a list of names {@code [a,b,c]}, you can use: {@code
-   * consecutive(ALPHA).zeroOrMoreBetween("[", ",", "]")}.
+   * <p>For example if you want to parse a list of statements between a pair of curly braces, you
+   * can use:
+   *
+   * <pre>{@code
+   * statement.zeroOrMore().between("{", "}")
+   * }</pre>
    */
-  public final Parser<List<T>> zeroOrMoreBetween(
-      String open, String delimiter, String close) {
-    return zeroOrMoreBetween(open, delimiter, close, toUnmodifiableList());
+  public final Parser<List<T>>.OrEmpty zeroOrMore() {
+    return zeroOrMore(toUnmodifiableList());
   }
 
   /**
-   * Returns a parser that matches the current parser zero or more times between {@code open} and
-   * {@code close}, delimited by {@code delimiter}. {@code collector} is used to collect the parsed
-   * results.
+   * Starts a fluent chain for matching the current parser zero or more times. {@code collector} is
+   * used to collect the parsed results and the empty collector result will be used if this parser
+   * matches zero times.
    *
-   * <p>For example if you want to parse a set of names {@code [a,b,c]}, you can use: {@code
-   * consecutive(ALPHA).zeroOrMoreBetween("[", ",", "]", toImmutableSet())}.
+   * <p>For example if you want to parse a list of statements between a pair of curly braces, you
+   * can use:
+   *
+   * <pre>{@code
+   * statement.zeroOrMore(toBlock()).between("{", "}")
+   * }</pre>
    */
-  public final <A, R> Parser<R> zeroOrMoreBetween(
-      String open, String delimiter, String close, Collector<? super T, A, ? extends R> collector) {
-    var supplier = collector.supplier();
-    var finisher = collector.finisher();
-    return anyOf(
-        delimitedBy(delimiter, collector).immediatelyBetween(open, close),
-        literal(open + close).map(unused -> finisher.apply(supplier.get())));
+  public final <A, R> Parser<R>.OrEmpty zeroOrMore(Collector<? super T, A, ? extends R> collector) {
+    return this.<A, R>atLeastOnce(collector).new OrEmpty(emptyValueSupplier(collector));
+  }
+
+  /**
+   * Starts a fluent chain for matching the current parser zero or more times, delimited by {@code
+   * delimiter}.
+   *
+   * <p>For example if you want to parse a list of names {@code [a,b,c]}, you can use:
+   *
+   * <pre>{@code
+   * consecutive(ALPHA, "item")
+   *     .zeroOrMoreDelimitedBy(",")
+   *     .between("[", "]")
+   * }</pre>
+   */
+  public final Parser<List<T>>.OrEmpty zeroOrMoreDelimitedBy(String delimiter) {
+    return zeroOrMoreDelimitedBy(delimiter, toUnmodifiableList());
+  }
+
+  /**
+   * Starts a fluent chain for matching the current parser zero or more times, delimited by {@code
+   * delimiter}. {@code collector} is used to collect the parsed results and the empty collector
+   * result will be used if this parser matches zero times.
+   *
+   * <p>For example if you want to parse a set of names {@code [a,b,c]}, you can use:
+   *
+   * <pre>{@code
+   * consecutive(ALPHA, "item")
+   *     .zeroOrMoreDelimitedBy(",", toImmutableSet())
+   *     .between("[", "]")
+   * }</pre>
+   */
+  public final <A, R> Parser<R>.OrEmpty zeroOrMoreDelimitedBy(
+      String delimiter, Collector<? super T, A, ? extends R> collector) {
+    return this.<A, R>delimitedBy(delimiter, collector).new OrEmpty(emptyValueSupplier(collector));
   }
 
   /**
    * Returns a parser that matches the current parser repeatedly, delimited by the given delimiter.
    *
-   * <p>For example if you want to express the regex pattern {@code (a|b|c)}, you can use: {@code
-   * Parser.anyOf(literal("a"), literal("b"), literal("c")).delimitedBy("|")}.
+   * <p>For example if you want to express the regex pattern {@code (a|b|c)}, you can use:
+   *
+   * <pre>{@code
+   * Parser.anyOf(literal("a"), literal("b"), literal("c"))
+   *     .delimitedBy("|")
+   * }</pre>
    */
   public final Parser<List<T>> delimitedBy(String delimiter) {
     return delimitedBy(delimiter, toUnmodifiableList());
@@ -233,9 +268,12 @@ public abstract class Parser<T> {
   /**
    * Returns a parser that matches the current parser repeatedly, delimited by the given delimiter.
    *
-   * <p>For example if you want to express the regex pattern {@code (a|b|c)}, you can use: {@code
-   * Parser.anyOf(literal("a"), literal("b"), literal("c")).delimitedBy("|",
-   * RegexPattern.asAlternation())}.
+   * <p>For example if you want to express the regex pattern {@code (a|b|c)}, you can use:
+   *
+   * <pre>{@code
+   * Parser.anyOf(literal("a"), literal("b"), literal("c"))
+   *     .delimitedBy("|", RegexPattern.asAlternation())
+   * }</pre>
    */
   public final <A, R> Parser<R> delimitedBy(
       String delimiter, Collector<? super T, A, ? extends R> collector) {
@@ -273,32 +311,15 @@ public abstract class Parser<T> {
    * postfix.
    */
   public final Parser<T> postfix(Parser<? extends UnaryOperator<T>> op) {
-    requireNonNull(op);
-    Parser<T> self = this;
-    return new Parser<>() {
-      @Override
-      MatchResult<T> match(String input, int start) {
-        switch (self.match(input, start)) {
-          case MatchResult.Success(int operandBegin, int operandEnd, T value) -> {
-            T operand = value;
-            for (int end = operandEnd; ; ) {
-              switch (op.match(input, end)) {
-                case MatchResult.Success(int opBegin, int opEnd, UnaryOperator<T> unary) -> {
-                  operand = unary.apply(operand);
-                  end = opEnd;
-                }
-                case MatchResult.Failure<?> failure -> {
-                  return new MatchResult.Success<>(start, end, operand);
-                }
-              }
-            }
+    return sequence(
+        this,
+        op.zeroOrMore(),
+        (operand, operators) -> {
+          for (UnaryOperator<T> operator : operators) {
+            operand = operator.apply(operand);
           }
-          case MatchResult.Failure<T> failure -> {
-            return failure;
-          }
-        }
-      }
-    };
+          return operand;
+        });
   }
 
   /**
@@ -366,6 +387,14 @@ public abstract class Parser<T> {
     return flatMap(unused -> next);
   }
 
+  /**
+   * If this parser matches, applies the given optional (or zero-or-more) parser on the remaining
+   * input.
+   */
+  public final <R> Parser<R> then(Parser<R>.OrEmpty next) {
+    return sequence(this, next, (unused, value) -> value);
+  }
+
   /** If this parser matches, applies the given parser on the remaining input. */
   public final Parser<T> followedBy(Parser<?> next) {
     requireNonNull(next);
@@ -379,9 +408,9 @@ public abstract class Parser<T> {
     return followedBy(literal(next));
   }
 
-  /** Returns a equivalent parser except it allows {@code suffix} if present. */
+  /** Returns an equivalent parser except it allows {@code suffix} if present. */
   public final Parser<T> optionallyFollowedBy(String suffix) {
-    return optionallyFollowedBy(literal(suffix).thenReturn(identity()));
+    return sequence(this, literal(suffix).orElse(null), (value, unused) -> value);
   }
 
   /**
@@ -393,33 +422,57 @@ public abstract class Parser<T> {
   }
 
   /**
-   * Returns a equivalent parser except it will optionally apply the unary operator resulting from
+   * Returns an equivalent parser except it will optionally apply the unary operator resulting from
    * {@code suffix}.
    */
   public final Parser<T> optionallyFollowedBy(Parser<? extends UnaryOperator<T>> suffix) {
-    requireNonNull(suffix);
-    Parser<T> self = this;
-    return new Parser<>() {
-      @Override
-      MatchResult<T> match(String input, int start) {
-        MatchResult<T> result = self.match(input, start);
-        if (result instanceof MatchResult.Success<T>(int head, int tail, T value)) {
-          return switch (suffix.match(input, tail)) {
-            case MatchResult.Success(int head2, int tail2, Function<? super T, ? extends T> op) ->
-                new MatchResult.Success<>(head, tail2, op.apply(value));
-            default -> result;
-          };
-        }
-        return result;
-      }
-    };
+    return sequence(
+        this,
+        suffix.orElse(null),
+        (operand, operator) -> operator == null ? operand : operator.apply(operand));
+  }
+
+  /**
+   * Starts a fluent chain for matching the current parser optionally. {@code defaultValue} will be
+   * the result in case the current parser doesn't match.
+   *
+   * <p>For example if you want to parse an optional placeholder name enclosed by curly braces, you
+   * can use:
+   *
+   * <pre>{@code
+   * consecutive(ALPHA, "placeholder name")
+   *     .orElse(EMPTY_PLACEHOLDER)
+   *     .between("{", "}")
+   * }</pre>
+   */
+  public final OrEmpty orElse(T defaultValue) {
+    return new OrEmpty(() -> defaultValue);
+  }
+
+  /**
+   * Starts a fluent chain for matching the current parser optionally. {@code Optional.empty()} will
+   * be the result in case the current parser doesn't match.
+   *
+   * <p>For example if you want to parse an optional placeholder name enclosed by curly braces, you
+   * can use:
+   *
+   * <pre>{@code
+   * consecutive(ALPHA, "placeholder name")
+   *     .optional()
+   *     .between("{", "}")
+   * }</pre>
+   */
+  public final Parser<Optional<T>>.OrEmpty optional() {
+    return map(Optional::ofNullable).new OrEmpty(Optional::empty);
   }
 
   /**
    * Parses the entire input string and returns the result. Upon successful return, the {@code
    * input} is fully consumed.
+   *
+   * @throws ParseException if the input cannot be parsed.
    */
-  public final T parse(String input) throws ParseException {
+  public final T parse(String input) {
     MatchResult<T> result = match(input, 0);
     switch (result) {
       case MatchResult.Success(int head, int tail, T value) -> {
@@ -462,6 +515,132 @@ public abstract class Parser<T> {
   }
 
   /**
+   * Facilitates a fluent chain for matching the current parser optionally. This is needed because
+   * we require all parsers to match at least one character. So optionality is only legal when
+   * combined together with a non-empty prefix, suffix or both, which will be specified by methods
+   * of this class.
+   *
+   * <p>In addition, the {@link #parse} convenience method is provided to parse potentially-empty
+   * input in this one stop shop without having to remember to check for emptiness, because this
+   * class already knows the default value to use when the input is empty.
+   */
+  public final class OrEmpty {
+    private final Supplier<? extends T> defaultSupplier;
+
+    private OrEmpty(Supplier<? extends T> defaultSupplier) {
+      this.defaultSupplier = defaultSupplier;
+    }
+
+    /**
+     * The current optional (or zero-or-more) parser must be enclosed between non-empty {@code
+     * prefix} and {@code suffix}.
+     */
+    public Parser<T> between(String prefix, String suffix) {
+      return between(literal(prefix), literal(suffix));
+    }
+
+    /**
+     * The current optional (or zero-or-more) parser must be enclosed between non-empty {@code
+     * prefix} and {@code suffix}.
+     */
+    public Parser<T> between(Parser<?> prefix, Parser<?> suffix) {
+      return prefix.then(before(suffix));
+    }
+
+    /**
+     * The current optional (or zero-or-more) parser must be followed by non-empty {@code suffix}.
+     */
+    public Parser<T> before(String suffix) {
+      return before(literal(suffix));
+    }
+
+    /**
+     * The current optional (or zero-or-more) parser must be followed by non-empty {@code suffix}.
+     *
+     * <p>Not public because {@code lazy.delegateTo(zeroOrMore().before(lazy))} could potentially
+     * introduce a left recursion.
+     */
+    Parser<T> before(Parser<?> suffix) {
+      return anyOf(Parser.this.followedBy(suffix), suffix.map(unused -> defaultSupplier.get()));
+    }
+
+    /**
+     * The current optional (or zero-or-more) parser must be follow non-empty {@code prefix}, and
+     * then use the given {@code combine} function to combine the results.
+     */
+    <P, R> Parser<R> after(
+        Parser<P> prefix, BiFunction<? super P, ? super T, ? extends R> combine) {
+      Parser<T> suffix = Parser.this;
+      return new Parser<R>() {
+        @Override
+        MatchResult<R> match(String input, int start) {
+          return switch (prefix.match(input, start)) {
+            case MatchResult.Success(int prefixBegin, int prefixEnd, P v1) ->
+                switch (suffix.match(input, prefixEnd)) {
+                  case MatchResult.Success(int suffixBegin, int suffixEnd, T v2) ->
+                      new MatchResult.Success<>(prefixBegin, suffixEnd, combine.apply(v1, v2));
+                  case MatchResult.Failure<?> failure ->
+                      new MatchResult.Success<>(
+                          prefixBegin, prefixEnd, combine.apply(v1, defaultSupplier.get()));
+                };
+            case MatchResult.Failure<?> failure -> failure.safeCast();
+          };
+        }
+      };
+    }
+
+    /**
+     * Parses the entire input string and returns the result; if input is empty, returns the default
+     * empty value.
+     */
+    public T parse(String input) {
+      return input.isEmpty() ? defaultSupplier.get() : Parser.this.parse(input);
+    }
+  }
+
+  /**
+   * A lazy parser, to be used for recursive grammars.
+   *
+   * <p>For example, to create a parser for a simple calculator that supports single-digit numbers,
+   * addition, and parentheses, you can write:
+   *
+   * <pre>{@code
+   * var lazy = new Parser.Lazy<Integer>();
+   * Parser<Integer> num = Parser.single(CharPredicate.range('0', '9')).map(c -> c - '0');
+   * Parser<Integer> atomic = lazy.immediatelyBetween("(", ")").or(num);
+   * Parser<Integer> expr =
+   *     atomic.delimitedBy("+").map(nums -> nums.stream().mapToInt(n -> n).sum());
+   * return lazy.delegateTo(expr);
+   * }</pre>
+   */
+  public static final class Lazy<T> extends Parser<T> {
+    private static final String DO_NOT_DELEGATE_TO_LAZY_PARSER = "Do not delegate to a Lazy parser";
+    private final AtomicReference<Parser<T>> ref = new AtomicReference<>();
+
+    @Override
+    MatchResult<T> match(String input, int start) {
+      Parser<T> p = ref.get();
+      checkState(p != null, "delegateTo() should have been called before parse()");
+      return p.match(input, start);
+    }
+
+    /** Sets and returns the delegate parser. */
+    public Parser<T> delegateTo(Parser<T> parser) {
+      requireNonNull(parser);
+      checkArgument(!(parser instanceof Lazy), DO_NOT_DELEGATE_TO_LAZY_PARSER);
+      checkState(ref.compareAndSet(null, parser), "delegateTo() already called");
+      return parser;
+    }
+  }
+
+  /** Thrown if parsing failed. */
+  public static class ParseException extends IllegalArgumentException {
+    ParseException(String message) {
+      super(message);
+    }
+  }
+
+  /**
    * Matches the input string starting at the given position.
    *
    * @return a {@link MatchResult} containing the parsed value and the [start, end) range of the
@@ -471,7 +650,7 @@ public abstract class Parser<T> {
 
   sealed interface MatchResult<V> permits MatchResult.Success, MatchResult.Failure {
     static <V> Failure<V> failAt(int at, String message, Object... args) {
-      return new Failure<>(at, message, Arrays.stream(args).toList());
+      return new Failure<>(at, message, stream(args).collect(toUnmodifiableList()));
     }
 
     /**
@@ -492,45 +671,12 @@ public abstract class Parser<T> {
     }
   }
 
-  /**
-   * A lazy parser, to be used for recursive grammars.
-   *
-   * <p>For example, to create a parser for a simple calculator that supports single-digit numbers,
-   * addition, and parentheses, you can write:
-   *
-   * <pre>{@code
-   * var lazy = new Parser.Lazy<Integer>();
-   * Parser<Integer> num = Parser.single(CharPredicate.inRange('0', '9')).map(c -> c - '0');
-   * Parser<Integer> atomic = lazy.immediatelyBetween("(", ")").or(num);
-   * Parser<Integer> expr =
-   *     atomic.delimitedBy("+").map(nums -> nums.stream().mapToInt(n -> n).sum());
-   * return lazy.delegateTo(expr);
-   * }</pre>
-   */
-  public static final class Lazy<T> extends Parser<T> {
-    private final AtomicReference<Parser<T>> ref = new AtomicReference<>();
-
-    @Override
-    MatchResult<T> match(String input, int start) {
-      Parser<T> p = ref.get();
-      checkState(p != null, "delegateTo() should have been called before parse()");
-      return p.match(input, start);
-    }
-
-    /** Sets and returns the delegate parser. */
-    public Parser<T> delegateTo(Parser<T> parser) {
-      requireNonNull(parser);
-      checkState(ref.compareAndSet(null, parser), "delegateTo() already called");
-      return parser;
-    }
+  private static <A, T> Supplier<T> emptyValueSupplier(Collector<?, A, ? extends T> collector) {
+    var supplier = collector.supplier();
+    var finisher = collector.finisher();
+    return () -> finisher.apply(supplier.get());
   }
 
-  /** Thrown if parsing failed. */
-  public static class ParseException extends IllegalArgumentException {
-    ParseException(String message) {
-      super(message);
-    }
-  }
 
   private static void checkArgument(boolean condition, String message, Object... args) {
     if (!condition) {
