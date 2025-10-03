@@ -53,14 +53,14 @@ final class RegexParsers {
     Parser<Quantifier> question = Parser.literal("?").thenReturn(Quantifier.atMost(1));
     Parser<Quantifier> star = Parser.literal("*").thenReturn(Quantifier.repeated());
     Parser<Quantifier> plus = Parser.literal("+").thenReturn(Quantifier.atLeast(1));
-    Parser<Quantifier> exact = number.immediatelyBetween("{", "}").map(Quantifier::repeated);
+    Parser<Quantifier> exact = number.between("{", "}").map(Quantifier::repeated);
     Parser<Quantifier> atLeast =
-        number.followedBy(",").immediatelyBetween("{", "}").map(Quantifier::atLeast);
+        number.followedBy(",").between("{", "}").map(Quantifier::atLeast);
     Parser<Quantifier> atMost =
-        Parser.literal(",").then(number).immediatelyBetween("{", "}").map(Quantifier::atMost);
+        Parser.literal(",").then(number).between("{", "}").map(Quantifier::atMost);
     Parser<Quantifier> range =
         Parser.sequence(number, Parser.literal(",").then(number), Quantifier::repeated)
-            .immediatelyBetween("{", "}");
+            .between("{", "}");
     return Parser.anyOf(question, star, plus, exact, atLeast, atMost, range)
         .optionallyFollowedBy("?", Quantifier::reluctant)
         .optionallyFollowedBy("+", Quantifier::possessive);
@@ -78,7 +78,7 @@ final class RegexParsers {
 
   private static Parser<RegexPattern.CharacterProperty> characterPropertySuffix() {
     return Parser.consecutive(ALPHA.or(NUM), "character property name")
-        .immediatelyBetween("{", "}")
+        .between("{", "}")
         .map(name -> POSIX_CHAR_CLASS_MAP.getOrDefault(name, new RegexPattern.UnicodeProperty(name)));
   }
 
@@ -101,24 +101,24 @@ final class RegexParsers {
             range,
             literalCharOrDash.map(LiteralChar::new));
     return Parser.anyOf(
-        element.atLeastOnce().immediatelyBetween("[^", "]").map(RegexPattern::noneOf),
-        element.atLeastOnce().immediatelyBetween("[", "]").map(RegexPattern::anyOf));
+        element.atLeastOnce().between("[^", "]").map(RegexPattern::noneOf),
+        element.atLeastOnce().between("[", "]").map(RegexPattern::anyOf));
   }
 
   private static Parser<RegexPattern> groupOrLookaround(Parser<RegexPattern> content) {
     Parser<Group.Named> named =
         Parser.consecutive(ALPHA.or(NUM), "alphanumeric for group name")
-            .immediatelyBetween(Parser.literal("?<").or(Parser.literal("?P<")), Parser.literal(">"))
+            .between(Parser.literal("?<").or(Parser.literal("?P<")), Parser.literal(">"))
             .flatMap(n -> content.map(c -> new Group.Named(n, c)))
-            .immediatelyBetween("(", ")");
+            .between("(", ")");
     return Parser.anyOf(
         named,
-        content.immediatelyBetween("(?=", ")").map(Lookaround.Lookahead::new),
-        content.immediatelyBetween("(?!", ")").map(Lookaround.NegativeLookahead::new),
-        content.immediatelyBetween("(?<=", ")").map(Lookaround.Lookbehind::new),
-        content.immediatelyBetween("(?<!", ")").map(Lookaround.NegativeLookbehind::new),
-        content.immediatelyBetween("(?:", ")").map(Group.NonCapturing::new),
-        content.immediatelyBetween("(", ")").map(Group.Capturing::new));
+        content.between("(?=", ")").map(Lookaround.Lookahead::new),
+        content.between("(?!", ")").map(Lookaround.NegativeLookahead::new),
+        content.between("(?<=", ")").map(Lookaround.Lookbehind::new),
+        content.between("(?<!", ")").map(Lookaround.NegativeLookbehind::new),
+        content.between("(?:", ")").map(Group.NonCapturing::new),
+        content.between("(", ")").map(Group.Capturing::new));
   }
 
   @SafeVarargs

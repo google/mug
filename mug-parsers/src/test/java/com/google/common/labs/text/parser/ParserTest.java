@@ -860,23 +860,23 @@ public class ParserTest {
   }
 
   @Test
-  public void immediatelyBetween_success() {
-    Parser<String> parser = literal("content").immediatelyBetween("[", "]");
+  public void between_success() {
+    Parser<String> parser = literal("content").between("[", "]");
     assertThat(parser.parse("[content]")).isEqualTo("content");
     assertThat(parser.parseToStream("[content]")).containsExactly("content");
     assertThat(parser.parseToStream("").toList()).isEmpty();
   }
 
   @Test
-  public void immediatelyBetween_failure_withLeftover() {
-    Parser<String> parser = literal("content").immediatelyBetween("[", "]");
+  public void between_failure_withLeftover() {
+    Parser<String> parser = literal("content").between("[", "]");
     assertThrows(ParseException.class, () -> parser.parse("[content]a"));
     assertThrows(ParseException.class, () -> parser.parseToStream("[content]a").toList());
   }
 
   @Test
-  public void immediatelyBetween_failure() {
-    Parser<String> parser = literal("content").immediatelyBetween("[", "]");
+  public void between_failure() {
+    Parser<String> parser = literal("content").between("[", "]");
     assertThrows(ParseException.class, () -> parser.parse("content]"));
     assertThrows(ParseException.class, () -> parser.parseToStream("content]").toList());
     assertThrows(ParseException.class, () -> parser.parse("[content"));
@@ -890,10 +890,10 @@ public class ParserTest {
   }
 
   @Test
-  public void immediatelyBetween_cannotBeEmpty() {
+  public void between_cannotBeEmpty() {
     Parser<String> parser = literal("content");
-    assertThrows(IllegalArgumentException.class, () -> parser.immediatelyBetween("", "]"));
-    assertThrows(IllegalArgumentException.class, () -> parser.immediatelyBetween("[", ""));
+    assertThrows(IllegalArgumentException.class, () -> parser.between("", "]"));
+    assertThrows(IllegalArgumentException.class, () -> parser.between("[", ""));
   }
 
   @Test
@@ -1013,7 +1013,7 @@ public class ParserTest {
   private static Parser<Integer> simpleCalculator() {
     Parser.Lazy<Integer> lazy = new Parser.Lazy<>();
     Parser<Integer> num = Parser.single(CharPredicate.range('0', '9'), "digit").map(c -> c - '0');
-    Parser<Integer> atomic = lazy.immediatelyBetween("(", ")").or(num);
+    Parser<Integer> atomic = lazy.between("(", ")").or(num);
     Parser<Integer> expr =
         atomic.delimitedBy("+").map(nums -> nums.stream().mapToInt(n -> n).sum());
     return lazy.delegateTo(expr);
@@ -1123,7 +1123,7 @@ public class ParserTest {
           Parser.consecutive(CharPredicate.range('a', 'z'), "placeholder name");
       Parser<Placeholder> placeholder =
           Parser.sequence(placeholderName.followedBy("="), lazy, Placeholder::new)
-              .immediatelyBetween("{", "}");
+              .between("{", "}");
       Parser<Format> parser =
           Parser.anyOf(
                   placeholder,
@@ -1174,10 +1174,10 @@ public class ParserTest {
                       .delimitedBy("/")
                       .map(ResourceNamePattern::new),
                   PathElement.Subpath::new)
-              .immediatelyBetween("{", "}");
+              .between("{", "}");
       return Parser.<PathElement>anyOf(
               name.map(PathElement.Literal::new),
-              name.immediatelyBetween("{", "}").map(PathElement.Placeholder::new),
+              name.between("{", "}").map(PathElement.Placeholder::new),
               subpath)
           .delimitedBy("/")
           .map(ResourceNamePattern::new)
