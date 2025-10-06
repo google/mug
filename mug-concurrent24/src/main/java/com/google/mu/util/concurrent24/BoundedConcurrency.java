@@ -128,11 +128,14 @@ public final class BoundedConcurrency {
    * {@link BiStream#findAny}, at most {@code maxConcurrency} virtual threads will be started.
    *
    * <p>Compared to the {@link Gatherers#mapConcurrent} gatherer: <ul>
+   * <li>{@code mapConcurrent()} blocks on tasks <em>sequentially</em>, which means it
+   * may not fail fast when task 2 has failed while task 1 is still running or is being blocked;
+   * {@code concurrently()} guarantees fail-fast.
    * <li>{@code mapConcurrent()} only interrupts and joins the on-the-fly virtual threads upon
-   * downstream exceptions, but is unable to interrupt or join when an <em>upstream </em> exception
-   * is thrown; whereas {@code concurrently()} will always interrupt and join. As a result,
-   * actions in the virtual threads <em>happens-before</em> actions after the collector returns or throws.
-   * <li>{@code mapConcurrent()} guarantees encounter-order. If an input element takes
+   * downstream exceptions, but is unable to interrupt or join when an <em>upstream</em> exception
+   * is thrown. {@code concurrently()} will always interrupt and join. As a result, actions in the
+   * virtual threads <em>happens-before</em> actions after the collector returns or throws.
+   * <li>{@code mapConcurrent()} promises encounter-order. If an input element takes
    * a long time or forever to process, it can potentially block or halt the program
    * when there are more than {@code maxConcurrency} elements following it, even if
    * {@code maxConcurrency - 1} virtual threads have already completed with the long-running task
