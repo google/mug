@@ -49,14 +49,14 @@ public final class Csv {
 
   private static final CharPredicate UNRESERVED_CHAR = CharPredicate.noneOf("\"\r\n");
   private static final Parser<?> NEW_LINE =
-      Stream.of("\n", "\r\n", "\r").map(Parser::literal).collect(Parser.or());
+      Stream.of("\n", "\r\n", "\r").map(Parser::string).collect(Parser.or());
   private static final Parser<?> COMMENT =
-      Parser.literal("#")
+      Parser.string("#")
           .optionallyFollowedBy(consecutive(is('\n').not(), "comment").thenReturn(identity()))
           .optionallyFollowedBy(NEW_LINE.thenReturn(identity()));
   private static final Parser<String> QUOTED =
       Parser.consecutive(is('"').not(), "quoted")
-          .or(Parser.literal("\"\"").thenReturn("\"")) // escaped quote
+          .or(Parser.string("\"\"").thenReturn("\"")) // escaped quote
           .zeroOrMore(joining()).between("\"", "\"");
 
   private final char delim;
@@ -131,7 +131,7 @@ public final class Csv {
     var supplier = rowCollector.supplier();
     var accumulator = rowCollector.accumulator();
     var finisher = rowCollector.finisher();
-    return Parser.anyOf(field, Parser.literal(String.valueOf(delim)).thenReturn(this))
+    return Parser.anyOf(field, Parser.string(String.valueOf(delim)).thenReturn(this))
         .atLeastOnce()
         .map(
             values -> {

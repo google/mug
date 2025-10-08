@@ -225,8 +225,21 @@ public final class RegexPatternTest {
   }
 
   @Test
-  public void parse_predefinedCharClass(@TestParameter PredefinedCharClass charClass) {
-    assertThat(RegexPattern.parse(charClass.toString())).isEqualTo(charClass);
+  public void parse_escapedLiteral() {
+    assertThat(RegexPattern.parse("\\a")).isEqualTo(new Literal("a"));
+    assertThat(RegexPattern.parse("\\\\")).isEqualTo(new Literal("\\"));
+    assertThat(RegexPattern.parse("\\{\\}")).isEqualTo(new Literal("{}"));
+  }
+
+  @Test
+  public void parse_escapedLiteralMixedWithPredefinedCharClasses() {
+    assertThat(RegexPattern.parse("\\a\\d\\w"))
+        .isEqualTo(sequence(new Literal("a"), PredefinedCharClass.DIGIT, PredefinedCharClass.WORD));
+  }
+
+  @Test
+  public void parse_predefinedCharClass(@TestParameter PredefinedCharClass predefinedCharClass) {
+    assertThat(RegexPattern.parse(predefinedCharClass.toString())).isEqualTo(predefinedCharClass);
   }
 
   @Test
@@ -237,7 +250,8 @@ public final class RegexPatternTest {
   @Test
   public void parse_sequence() {
     assertThat(RegexPattern.parse("ab")).isEqualTo(new Literal("ab"));
-    assertThat(RegexPattern.parse("a.")).isEqualTo(sequence(new Literal("a"), PredefinedCharClass.ANY_CHAR));
+    assertThat(RegexPattern.parse("a."))
+        .isEqualTo(sequence(new Literal("a"), PredefinedCharClass.ANY_CHAR));
   }
 
   @Test
@@ -278,6 +292,22 @@ public final class RegexPatternTest {
         .isEqualTo(new Quantified(new Literal("a"), Quantifier.atLeast(2).reluctant()));
     assertThat(RegexPattern.parse("a{2,5}?"))
         .isEqualTo(new Quantified(new Literal("a"), Quantifier.repeated(2, 5).reluctant()));
+  }
+
+  @Test
+  public void parse_quantifier_possessive() {
+    assertThat(RegexPattern.parse("a?+"))
+        .isEqualTo(new Quantified(new Literal("a"), Quantifier.atMost(1).possessive()));
+    assertThat(RegexPattern.parse("a*+"))
+        .isEqualTo(new Quantified(new Literal("a"), Quantifier.repeated().possessive()));
+    assertThat(RegexPattern.parse("a++"))
+        .isEqualTo(new Quantified(new Literal("a"), Quantifier.atLeast(1).possessive()));
+    assertThat(RegexPattern.parse("a{2}+"))
+        .isEqualTo(new Quantified(new Literal("a"), Quantifier.repeated(2, 2).possessive()));
+    assertThat(RegexPattern.parse("a{2,}+"))
+        .isEqualTo(new Quantified(new Literal("a"), Quantifier.atLeast(2).possessive()));
+    assertThat(RegexPattern.parse("a{2,5}+"))
+        .isEqualTo(new Quantified(new Literal("a"), Quantifier.repeated(2, 5).possessive()));
   }
 
   @Test
@@ -323,11 +353,9 @@ public final class RegexPatternTest {
   @Test
   public void parse_characterSet_withHyphen() {
     assertThat(RegexPattern.parse("[-a]"))
-        .isEqualTo(
-            anyOf(new RegexPattern.LiteralChar('-'), new RegexPattern.LiteralChar('a')));
+        .isEqualTo(anyOf(new RegexPattern.LiteralChar('-'), new RegexPattern.LiteralChar('a')));
     assertThat(RegexPattern.parse("[a-]"))
-        .isEqualTo(
-            anyOf(new RegexPattern.LiteralChar('a'), new RegexPattern.LiteralChar('-')));
+        .isEqualTo(anyOf(new RegexPattern.LiteralChar('a'), new RegexPattern.LiteralChar('-')));
     assertThat(RegexPattern.parse("[a-b-c]"))
         .isEqualTo(
             anyOf(
@@ -517,14 +545,14 @@ public final class RegexPatternTest {
   public void parse_group_missingRightParen() {
     Parser.ParseException e =
         assertThrows(Parser.ParseException.class, () -> RegexPattern.parse("(?:a|b"));
-    assertThat(e).hasMessageThat().contains("at 6: expecting `)`");
+    assertThat(e).hasMessageThat().contains("at 1:7: expecting `)`");
   }
 
   @Test
   public void parse_lookbehind_missingSubject() {
     Parser.ParseException e =
         assertThrows(Parser.ParseException.class, () -> RegexPattern.parse("(?<=)"));
-    assertThat(e).hasMessageThat().contains("at 4");
+    assertThat(e).hasMessageThat().contains("at 1:5:");
   }
 
   @Test
@@ -533,5 +561,38 @@ public final class RegexPatternTest {
     assertThrows(Parser.ParseException.class, () -> RegexPattern.parse("[a-"));
     assertThrows(IllegalArgumentException.class, () -> RegexPattern.parse("a{1,0}"));
     assertThrows(Parser.ParseException.class, () -> RegexPattern.parse("\\"));
+  }
+
+  @Test
+  public void parse_freeSpacingMode_spacesIgnored() {
+    assertThat(RegexPattern.parse("(?x) a b ")).isEqualTo(new Literal("ab"));
+  }
+
+  @Test
+  public void parse_freeSpacingMode_newlinesIgnored() {
+    assertThat(RegexPattern.parse("(?x) a  \n b ")).isEqualTo(new Literal("ab"));
+  }
+
+  @Test
+  public void parse_freeSpacingMode_commentsIgnored() {
+    assertThat(RegexPattern.parse("(?x) a  # comment \n (b ) "))
+        .isEqualTo(sequence(new Literal("a"), new Group.Capturing(new Literal("b"))));
+    assertThat(RegexPattern.parse("(?x)a#comment\nb")).isEqualTo(new Literal("ab"));
+    assertThat(RegexPattern.parse("(?x)a#comment b")).isEqualTo(new Literal("a"));
+  }
+
+  @Test
+  public void parse_freeSpacingMode_spaceInCharClassIsLiteral() {
+    assertThat(RegexPattern.parse("(?x) [ ] a"))
+        .isEqualTo(sequence(anyOf(new RegexPattern.LiteralChar(' ')), new Literal("a")));
+    assertThat(RegexPattern.parse("(?x) [a ]"))
+        .isEqualTo(anyOf(new RegexPattern.LiteralChar('a'), new RegexPattern.LiteralChar(' ')));
+    assertThat(RegexPattern.parse("(?x) [^ ] a"))
+        .isEqualTo(sequence(noneOf(new RegexPattern.LiteralChar(' ')), new Literal("a")));
+  }
+
+  @Test
+  public void parse_freeSpacingMode_escapedSpaceIsLiteral() {
+    assertThat(RegexPattern.parse("(?x) a\\ b")).isEqualTo(new Literal("a b"));
   }
 }

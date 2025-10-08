@@ -1,6 +1,8 @@
 package com.google.common.labs.regex;
 
 import static com.google.common.labs.regex.InternalUtils.checkArgument;
+import static com.google.mu.util.Substring.after;
+import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.stream.MoreStreams.groupConsecutive;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.joining;
@@ -572,6 +574,9 @@ public sealed interface RegexPattern
    * @throws IllegalArgumentException if the regex pattern is invalid
    */
   public static RegexPattern parse(String regex) {
-    return regex.isEmpty() ? new Literal("") : RegexParsers.pattern().parse(regex);
+    return after(prefix("(?x)"))
+        .from(regex)
+        .map(p -> RegexParsers.pattern().parseSkipping(RegexParsers.FREE_SPACES, p))
+        .orElseGet(() -> RegexParsers.pattern().orElse(new Literal("")).parse(regex));
   }
 }
